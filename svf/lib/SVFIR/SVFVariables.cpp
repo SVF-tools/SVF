@@ -34,43 +34,36 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-
 /*!
  * SVFVar constructor
  */
-SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
-    GenericPAGNodeTy(i,k), value(val)
+SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) : GenericPAGNodeTy(i, k), value(val)
 {
-    assert( ValNode <= k && k <= DummyObjNode && "new SVFIR node kind?");
+    assert(ValNode <= k && k <= DummyObjNode && "new SVFIR node kind?");
     switch (k)
     {
     case ValNode:
-    case GepValNode:
-    {
+    case GepValNode: {
         assert(val != nullptr && "value is nullptr for ValVar or GepValNode");
         isPtr = val->getType()->isPointerTy();
         break;
     }
-    case RetNode:
-    {
+    case RetNode: {
         assert(val != nullptr && "value is nullptr for RetNode");
         isPtr = SVFUtil::cast<SVFFunction>(val)->getReturnType()->isPointerTy();
         break;
     }
     case VarargNode:
-    case DummyValNode:
-    {
+    case DummyValNode: {
         isPtr = true;
         break;
     }
     case ObjNode:
     case GepObjNode:
     case FIObjNode:
-    case DummyObjNode:
-    {
+    case DummyObjNode: {
         isPtr = true;
-        if(val)
-            isPtr = val->getType()->isPointerTy();
+        if (val) isPtr = val->getType()->isPointerTy();
         break;
     }
     }
@@ -78,8 +71,7 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
 
 bool SVFVar::isIsolatedNode() const
 {
-    if (getInEdges().empty() && getOutEdges().empty())
-        return true;
+    if (getInEdges().empty() && getOutEdges().empty()) return true;
     else if (isConstDataOrAggDataButNotNullPtr())
         return true;
     else if (value && SVFUtil::isa<SVFFunction>(value))
@@ -87,7 +79,6 @@ bool SVFVar::isIsolatedNode() const
     else
         return false;
 }
-
 
 const std::string SVFVar::toString() const
 {
@@ -171,7 +162,8 @@ const std::string RetPN::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "RetPN ID: " << getId() << " unique return node for function " << SVFUtil::cast<SVFFunction>(value)->getName();
+    rawstr << "RetPN ID: " << getId() << " unique return node for function "
+           << SVFUtil::cast<SVFFunction>(value)->getName();
     return rawstr.str();
 }
 
@@ -179,7 +171,8 @@ const std::string VarArgPN::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "VarArgPN ID: " << getId() << " Var arg node for function " << SVFUtil::cast<SVFFunction>(value)->getName();
+    rawstr << "VarArgPN ID: " << getId() << " Var arg node for function "
+           << SVFUtil::cast<SVFFunction>(value)->getName();
     return rawstr.str();
 }
 
@@ -204,8 +197,8 @@ const std::string DummyObjVar::toString() const
 bool SVFVar::isConstDataOrAggDataButNotNullPtr() const
 {
     if (hasValue())
-        return value->isConstDataOrAggData() && (!SVFUtil::isa<SVFConstantNullPtr>(value)) && (!SVFUtil::isa<SVFBlackHoleValue>(value));
+        return value->isConstDataOrAggData() && (!SVFUtil::isa<SVFConstantNullPtr>(value)) &&
+               (!SVFUtil::isa<SVFBlackHoleValue>(value));
     else
         return false;
 }
-

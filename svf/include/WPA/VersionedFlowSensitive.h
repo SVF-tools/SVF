@@ -38,7 +38,7 @@ private:
 
 public:
     typedef Map<NodeID, Version> ObjToVersionMap;
-    typedef Map<VersionedVar, const DummyVersionPropSVFGNode *> VarToPropNodeMap;
+    typedef Map<VersionedVar, const DummyVersionPropSVFGNode*> VarToPropNodeMap;
 
     typedef std::vector<ObjToVersionMap> LocVersionMap;
     /// (o -> (v -> versions with rely on o:v).
@@ -51,7 +51,7 @@ public:
     static VersionedVar atKey(NodeID, Version);
 
     /// Constructor
-    VersionedFlowSensitive(SVFIR *_pag, PTATY type = VFS_WPA);
+    VersionedFlowSensitive(SVFIR* _pag, PTATY type = VFS_WPA);
 
     /// Initialize analysis
     virtual void initialize() override;
@@ -67,18 +67,18 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast
     //@{
-    static inline bool classof(const VersionedFlowSensitive *)
+    static inline bool classof(const VersionedFlowSensitive*)
     {
         return true;
     }
-    static inline bool classof(const PointerAnalysis *pta)
+    static inline bool classof(const PointerAnalysis* pta)
     {
         return pta->getAnalysisTy() == VFS_WPA;
     }
     //@}
 
     /// Create single instance of versioned flow-sensitive points-to analysis.
-    static VersionedFlowSensitive *createVFSWPA(SVFIR *_pag)
+    static VersionedFlowSensitive* createVFSWPA(SVFIR* _pag)
     {
         if (vfspta == nullptr)
         {
@@ -117,7 +117,7 @@ private:
     /// Meld label the prelabeled SVFG.
     void meldLabel(void);
     /// Melds v2 into v1 (in place), returns whether a change occurred.
-    static bool meld(MeldVersion &mv1, const MeldVersion &mv2);
+    static bool meld(MeldVersion& mv1, const MeldVersion& mv2);
 
     /// Removes all indirect edges in the SVFG.
     void removeAllIndirectSVFGEdges(void);
@@ -129,7 +129,7 @@ private:
 
     /// Propagates version v of o to version vp of o. time indicates whether it should record time
     /// taken itself.
-    void propagateVersion(const NodeID o, const Version v, const Version vp, bool time=true);
+    void propagateVersion(const NodeID o, const Version v, const Version vp, bool time = true);
 
     /// Fills in isStoreMap and isLoadMap.
     virtual void buildIsStoreLoadMaps(void);
@@ -152,7 +152,7 @@ private:
     virtual bool deltaSource(const NodeID l) const;
 
     /// Shared code for getConsume and getYield. They wrap this function.
-    Version getVersion(const NodeID l, const NodeID o, const LocVersionMap &lvm) const;
+    Version getVersion(const NodeID l, const NodeID o, const LocVersionMap& lvm) const;
 
     /// Returns the consumed version of o at l. If no such version exists, returns invalidVersion.
     Version getConsume(const NodeID l, const NodeID o) const;
@@ -161,7 +161,7 @@ private:
     Version getYield(const NodeID l, const NodeID o) const;
 
     /// Shared code for setConsume and setYield. They wrap this function.
-    void setVersion(const NodeID l, const NodeID o, const Version v, LocVersionMap &lvm);
+    void setVersion(const NodeID l, const NodeID o, const Version v, LocVersionMap& lvm);
 
     /// Sets the consumed version of o at l to v.
     void setConsume(const NodeID l, const NodeID o, const Version v);
@@ -170,10 +170,10 @@ private:
     void setYield(const NodeID l, const NodeID o, const Version v);
 
     /// Returns the versions of o which rely on o:v.
-    std::vector<Version> &getReliantVersions(const NodeID o, const Version v);
+    std::vector<Version>& getReliantVersions(const NodeID o, const Version v);
 
     /// Returns the statements which rely on o:v.
-    NodeBS &getStmtReliance(const NodeID o, const Version v);
+    NodeBS& getStmtReliance(const NodeID o, const Version v);
 
     /// Dumps versionReliance and stmtReliance.
     void dumpReliances(void) const;
@@ -190,7 +190,7 @@ private:
     void readPtsFromFile(const std::string& filename) override;
 
     /// Dumps a MeldVersion to stdout.
-    static void dumpMeldVersion(MeldVersion &v);
+    static void dumpMeldVersion(MeldVersion& v);
 
     /// Maps locations to objects to a version. The object version is what is
     /// consumed at that location.
@@ -219,7 +219,7 @@ private:
     Set<NodeID> prelabeledObjects;
 
     /// Points-to DS for working with versions.
-    BVDataPTAImpl::VersionedPTDataTy *vPtD;
+    BVDataPTAImpl::VersionedPTDataTy* vPtD;
 
     /// deltaMap[l] means SVFG node l is a delta node, i.e., may get new
     /// incoming edges due to OTF callgraph construction.
@@ -246,7 +246,7 @@ private:
     double versionPropTime;  ///< Time to propagate versions to versions which rely on them.
     //@}
 
-    static VersionedFlowSensitive *vfspta;
+    static VersionedFlowSensitive* vfspta;
 
     class SCC
     {
@@ -270,23 +270,15 @@ private:
         /// to stores are also skipped to as they yield a new version (they
         /// cannot be part of an SCC containing more than themselves).
         /// Skipped edges still form part of the footprint.
-        static unsigned detectSCCs(VersionedFlowSensitive *vfs,
-                                   const SVFG *svfg, const NodeID object,
-                                   const std::vector<const SVFGNode *> &startingNodes,
-                                   std::vector<int> &partOf,
-                                   std::vector<const IndirectSVFGEdge *> &footprint);
+        static unsigned detectSCCs(VersionedFlowSensitive* vfs, const SVFG* svfg, const NodeID object,
+                                   const std::vector<const SVFGNode*>& startingNodes, std::vector<int>& partOf,
+                                   std::vector<const IndirectSVFGEdge*>& footprint);
 
     private:
         /// Called by detectSCCs then called recursively.
-        static void visit(VersionedFlowSensitive *vfs,
-                          const NodeID object,
-                          std::vector<int> &partOf,
-                          std::vector<const IndirectSVFGEdge *> &footprint,
-                          std::vector<NodeData> &nodeData,
-                          std::stack<const SVFGNode *> &stack,
-                          int &index,
-                          int &currentSCC,
-                          const SVFGNode *v);
+        static void visit(VersionedFlowSensitive* vfs, const NodeID object, std::vector<int>& partOf,
+                          std::vector<const IndirectSVFGEdge*>& footprint, std::vector<NodeData>& nodeData,
+                          std::stack<const SVFGNode*>& stack, int& index, int& currentSCC, const SVFGNode* v);
     };
 };
 

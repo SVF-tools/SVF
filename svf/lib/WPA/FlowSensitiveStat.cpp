@@ -49,7 +49,7 @@ void FlowSensitiveStat::clearStat()
     _MaxAddrTakenVarPts = 0;
     _TotalPtsSize = 0;
 
-    for (int i=IN; i<=OUT; i++)
+    for (int i = IN; i <= OUT; i++)
     {
         /// SVFG nodes
         _NumOfSVFGNodesHaveInOut[i] = 0;
@@ -65,7 +65,8 @@ void FlowSensitiveStat::clearStat()
         _NumOfVarHaveINOUTPts[i] = 0;
         _NumOfVarHaveEmptyINOUTPts[i] = 0;
         _NumOfVarHaveINOUTPtsInFormalIn[i] = 0;
-        _NumOfVarHaveINOUTPtsInFormalOut[i] = 0;;
+        _NumOfVarHaveINOUTPtsInFormalOut[i] = 0;
+        ;
         _NumOfVarHaveINOUTPtsInActualIn[i] = 0;
         _NumOfVarHaveINOUTPtsInActualOut[i] = 0;
         _NumOfVarHaveINOUTPtsInLoad[i] = 0;
@@ -106,14 +107,13 @@ void FlowSensitiveStat::performStat()
     {
         NodeID nodeId = nodeIt->first;
         PAGNode* pagNode = nodeIt->second;
-        if(SVFUtil::isa<ObjVar>(pagNode))
+        if (SVFUtil::isa<ObjVar>(pagNode))
         {
-            const MemObj * memObj = pag->getBaseObj(nodeId);
+            const MemObj* memObj = pag->getBaseObj(nodeId);
             SymID baseId = memObj->getId();
             if (nodeSet.insert(baseId).second)
             {
-                if (memObj->isFieldInsensitive())
-                    fiObjNumber++;
+                if (memObj->isFieldInsensitive()) fiObjNumber++;
                 else
                     fsObjNumber++;
             }
@@ -130,15 +130,14 @@ void FlowSensitiveStat::performStat()
     for (; svfgNodeIt != svfgNodeEit; ++svfgNodeIt)
     {
         SVFGNode* svfgNode = svfgNodeIt->second;
-        if (SVFUtil::isa<CopySVFGNode>(svfgNode))
-            numOfCopy++;
+        if (SVFUtil::isa<CopySVFGNode>(svfgNode)) numOfCopy++;
         else if (SVFUtil::isa<StoreSVFGNode>(svfgNode))
             numOfStore++;
     }
 
     PTAStat::performStat();
 
-    timeStatMap["TotalTime"] = (endTime - startTime)/TIMEINTERVAL;
+    timeStatMap["TotalTime"] = (endTime - startTime) / TIMEINTERVAL;
     timeStatMap["SolveTime"] = fspta->solveTime;
     timeStatMap["SCCTime"] = fspta->sccTime;
     timeStatMap["ProcessTime"] = fspta->processTime;
@@ -241,8 +240,8 @@ void FlowSensitiveStat::performStat()
     timeStatMap["AvgTopLvlPtsSize"] = _AvgTopLvlPtsSize;
 
     PTNumStatMap["NumOfAddrTakenVar"] = _NumOfAddrTakeVar;
-    timeStatMap["AvgAddrTakenVarPts"] = (_NumOfAddrTakeVar == 0) ?
-                                        0 : ((double)_AvgAddrTakenVarPtsSize / _NumOfAddrTakeVar);
+    timeStatMap["AvgAddrTakenVarPts"] =
+        (_NumOfAddrTakeVar == 0) ? 0 : ((double)_AvgAddrTakenVarPtsSize / _NumOfAddrTakeVar);
     PTNumStatMap["MaxAddrTakenVarPts"] = _MaxAddrTakenVarPts;
 
     timeStatMap["AvgINPtsSize"] = _AvgInOutPtsSize[IN];
@@ -261,8 +260,7 @@ void FlowSensitiveStat::performStat()
     PTNumStatMap["NumOfNodesInSCC"] = fspta->numOfNodesInSCC;
     PTNumStatMap["MaxSCCSize"] = fspta->maxSCCSize;
     PTNumStatMap["NumOfSCC"] = fspta->numOfSCC;
-    timeStatMap["AverageSCCSize"] = (fspta->numOfSCC == 0) ? 0 :
-                                    ((double)fspta->numOfNodesInSCC / fspta->numOfSCC);
+    timeStatMap["AverageSCCSize"] = (fspta->numOfSCC == 0) ? 0 : ((double)fspta->numOfNodesInSCC / fspta->numOfSCC);
 
     PTAStat::printStat("Flow-Sensitive Pointer Analysis Statistics");
 }
@@ -270,33 +268,32 @@ void FlowSensitiveStat::performStat()
 void FlowSensitiveStat::statNullPtr()
 {
     _NumOfNullPtr = 0;
-    for (SVFIR::iterator iter = fspta->getPAG()->begin(), eiter = fspta->getPAG()->end();
-            iter != eiter; ++iter)
+    for (SVFIR::iterator iter = fspta->getPAG()->begin(), eiter = fspta->getPAG()->end(); iter != eiter; ++iter)
     {
         NodeID pagNodeId = iter->first;
         PAGNode* pagNode = iter->second;
         SVFStmt::SVFStmtSetTy& inComingStore = pagNode->getIncomingEdges(SVFStmt::Store);
         SVFStmt::SVFStmtSetTy& outGoingLoad = pagNode->getOutgoingEdges(SVFStmt::Load);
-        if (inComingStore.empty()==false || outGoingLoad.empty()==false)
+        if (inComingStore.empty() == false || outGoingLoad.empty() == false)
         {
-            ///TODO: change the condition here to fetch the points-to set
+            /// TODO: change the condition here to fetch the points-to set
             const PointsTo& pts = fspta->getPts(pagNodeId);
-            if(fspta->containBlackHoleNode(pts))
+            if (fspta->containBlackHoleNode(pts))
             {
                 _NumOfConstantPtr++;
             }
-            if(fspta->containConstantNode(pts))
+            if (fspta->containConstantNode(pts))
             {
                 _NumOfBlackholePtr++;
             }
-            if(pts.empty())
+            if (pts.empty())
             {
                 std::string str;
-                std::stringstream  rawstr(str);
+                std::stringstream rawstr(str);
                 if (!SVFUtil::isa<DummyValVar>(pagNode) && !SVFUtil::isa<DummyObjVar>(pagNode))
                 {
                     // if a pointer is in dead function, we do not care
-                    if(pagNode->getValue()->ptrInUncalledFunction() == false)
+                    if (pagNode->getValue()->ptrInUncalledFunction() == false)
                     {
                         _NumOfNullPtr++;
                         rawstr << "##Null Pointer : (NodeID " << pagNode->getId()
@@ -332,29 +329,25 @@ void FlowSensitiveStat::statPtsSize()
     /// get points-to set size information for top-level pointers.
     u32_t totalValidTopLvlPointers = 0;
     u32_t topTopLvlPtsSize = 0;
-    for (SVFIR::iterator iter = fspta->getPAG()->begin(), eiter = fspta->getPAG()->end();
-            iter != eiter; ++iter)
+    for (SVFIR::iterator iter = fspta->getPAG()->begin(), eiter = fspta->getPAG()->end(); iter != eiter; ++iter)
     {
         NodeID node = iter->first;
-        if (fspta->getPAG()->isValidTopLevelPtr(iter->second) == false)
-            continue;
+        if (fspta->getPAG()->isValidTopLevelPtr(iter->second) == false) continue;
         u32_t size = fspta->getPts(node).count();
 
         totalValidTopLvlPointers++;
-        topTopLvlPtsSize+=size;
+        topTopLvlPtsSize += size;
 
-        if(size > _MaxPtsSize)	_MaxPtsSize = size;
+        if (size > _MaxPtsSize) _MaxPtsSize = size;
 
-        if (size > _MaxTopLvlPtsSize)	_MaxTopLvlPtsSize = size;
+        if (size > _MaxTopLvlPtsSize) _MaxTopLvlPtsSize = size;
     }
 
-    if (totalValidTopLvlPointers != 0)
-        _AvgTopLvlPtsSize = (double)topTopLvlPtsSize/totalValidTopLvlPointers;
+    if (totalValidTopLvlPointers != 0) _AvgTopLvlPtsSize = (double)topTopLvlPtsSize / totalValidTopLvlPointers;
 
     _TotalPtsSize += topTopLvlPtsSize;
     u32_t totalPointer = totalValidTopLvlPointers + _NumOfVarHaveINOUTPts[IN] + _NumOfVarHaveINOUTPts[OUT];
-    if (totalPointer != 0)
-        _AvgPtsSize = (double) _TotalPtsSize / totalPointer;
+    if (totalPointer != 0) _AvgPtsSize = (double)_TotalPtsSize / totalPointer;
 }
 
 void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOrOut)
@@ -370,8 +363,7 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
         const SVFGNode* node = fspta->svfg->getSVFGNode(it->first);
 
         // Count number of SVFG nodes have IN/OUT set.
-        if (SVFUtil::isa<FormalINSVFGNode>(node))
-            _NumOfFormalInSVFGNodesHaveInOut[inOrOut]++;
+        if (SVFUtil::isa<FormalINSVFGNode>(node)) _NumOfFormalInSVFGNodesHaveInOut[inOrOut]++;
         else if (SVFUtil::isa<FormalOUTSVFGNode>(node))
             _NumOfFormalOutSVFGNodesHaveInOut[inOrOut]++;
         else if (SVFUtil::isa<ActualINSVFGNode>(node))
@@ -401,13 +393,12 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
                 continue;
             }
 
-            u32_t ptsNum = ptsIt->second.count();	/// points-to target number
+            u32_t ptsNum = ptsIt->second.count(); /// points-to target number
 
             // Only node with non-empty points-to set are counted.
             _NumOfVarHaveINOUTPts[inOrOut]++;
 
-            if (SVFUtil::isa<FormalINSVFGNode>(node))
-                _NumOfVarHaveINOUTPtsInFormalIn[inOrOut]++;
+            if (SVFUtil::isa<FormalINSVFGNode>(node)) _NumOfVarHaveINOUTPtsInFormalIn[inOrOut]++;
             else if (SVFUtil::isa<FormalOUTSVFGNode>(node))
                 _NumOfVarHaveINOUTPtsInFormalOut[inOrOut]++;
             else if (SVFUtil::isa<ActualINSVFGNode>(node))
@@ -425,8 +416,7 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
 
             inOutPtsSize += ptsNum;
 
-            if (ptsNum > _MaxInOutPtsSize[inOrOut])
-                _MaxInOutPtsSize[inOrOut] = ptsNum;
+            if (ptsNum > _MaxInOutPtsSize[inOrOut]) _MaxInOutPtsSize[inOrOut] = ptsNum;
 
             if (ptsNum > _MaxPtsSize) _MaxPtsSize = ptsNum;
         }
@@ -441,23 +431,23 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
     // l'-o->l, l''-o->l, ..., means there is a possibility of 1 IN PTS.
     // *p = q && { o } in pts_ander(p) means there is a possibility of 1 OUT PTS.
     // For OUTs at stores, we must also account for WU/SUs.
-    const SVFG *svfg = fspta->svfg;
+    const SVFG* svfg = fspta->svfg;
     for (SVFG::const_iterator it = svfg->begin(); it != svfg->end(); ++it)
     {
-        const SVFGNode *sn = it->second;
+        const SVFGNode* sn = it->second;
 
         // Unique objects coming into s.
         NodeBS incomingObjects;
-        for (const SVFGEdge *e : sn->getInEdges())
+        for (const SVFGEdge* e : sn->getInEdges())
         {
-            const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
+            const IndirectSVFGEdge* ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
             if (!ie) continue;
             for (NodeID o : ie->getPointsTo()) incomingObjects.set(o);
         }
 
         _PotentialNumOfVarHaveINOUTPts[IN] += incomingObjects.count();
 
-        if (const StoreSVFGNode *store = SVFUtil::dyn_cast<StoreSVFGNode>(sn))
+        if (const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(sn))
         {
             NodeID p = store->getPAGDstNodeID();
             // Reuse incomingObjects; what's already in there will be propagated forwarded
@@ -501,9 +491,6 @@ void FlowSensitiveStat::calculateAddrVarPts(NodeID pointer, const SVFGNode* svfg
 
         const PointsTo& cpts = fspta->getDFOutPtsSet(svfg_node, ptd);
         _AvgAddrTakenVarPtsSize += cpts.count();
-        if (cpts.count() > _MaxAddrTakenVarPts)
-            _MaxAddrTakenVarPts = cpts.count();
+        if (cpts.count() > _MaxAddrTakenVarPts) _MaxAddrTakenVarPts = cpts.count();
     }
 }
-
-

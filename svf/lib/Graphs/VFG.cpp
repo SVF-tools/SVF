@@ -27,7 +27,6 @@
  *      Author: Yulei Sui
  */
 
-
 #include <Graphs/SVFGNode.h>
 #include "Util/Options.h"
 #include "Graphs/VFG.h"
@@ -40,7 +39,7 @@ using namespace SVFUtil;
 const std::string VFGNode::toString() const
 {
     std::string str;
-    std::stringstream  rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "VFGNode ID: " << getId() << " ";
     return rawstr.str();
 }
@@ -48,7 +47,7 @@ const std::string VFGNode::toString() const
 const std::string StmtVFGNode::toString() const
 {
     std::string str;
-    std::stringstream  rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "StmtVFGNode ID: " << getId() << " ";
     rawstr << getPAGEdge()->toString();
     return rawstr.str();
@@ -73,9 +72,9 @@ const std::string LoadVFGNode::toString() const
 const NodeBS StoreVFGNode::getDefSVFVars() const
 {
     NodeBS nb;
-    for (auto edge: getOutEdges())
+    for (auto edge : getOutEdges())
     {
-        if (IndirectSVFGEdge *iedge = SVFUtil::dyn_cast<IndirectSVFGEdge>(edge))
+        if (IndirectSVFGEdge* iedge = SVFUtil::dyn_cast<IndirectSVFGEdge>(edge))
         {
             nb |= iedge->getPointsTo();
         }
@@ -121,11 +120,10 @@ const std::string CmpVFGNode::toString() const
     std::stringstream rawstr(str);
     rawstr << "CmpVFGNode ID: " << getId() << " ";
     rawstr << "PAGEdge: [" << res->getId() << " = cmp(";
-    for(CmpVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd();
-            it != eit; it++)
+    for (CmpVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd(); it != eit; it++)
         rawstr << it->second->getId() << ", ";
     rawstr << ")]\n";
-    if(res->hasValue())
+    if (res->hasValue())
     {
         rawstr << " " << res->getValue()->toString();
     }
@@ -145,11 +143,10 @@ const std::string BinaryOPVFGNode::toString() const
     std::stringstream rawstr(str);
     rawstr << "BinaryOPVFGNode ID: " << getId() << " ";
     rawstr << "PAGEdge: [" << res->getId() << " = Binary(";
-    for(BinaryOPVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd();
-            it != eit; it++)
+    for (BinaryOPVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd(); it != eit; it++)
         rawstr << it->second->getId() << ", ";
     rawstr << ")]\t";
-    if(res->hasValue())
+    if (res->hasValue())
     {
         rawstr << " " << res->getValue()->toString();
     }
@@ -169,11 +166,10 @@ const std::string UnaryOPVFGNode::toString() const
     std::stringstream rawstr(str);
     rawstr << "UnaryOPVFGNode ID: " << getId() << " ";
     rawstr << "PAGEdge: [" << res->getId() << " = Unary(";
-    for(UnaryOPVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd();
-            it != eit; it++)
+    for (UnaryOPVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd(); it != eit; it++)
         rawstr << it->second->getId() << ", ";
     rawstr << ")]\t";
-    if(res->hasValue())
+    if (res->hasValue())
     {
         rawstr << " " << res->getValue()->toString();
     }
@@ -223,17 +219,15 @@ const std::string PHIVFGNode::toString() const
     std::stringstream rawstr(str);
     rawstr << "PHIVFGNode ID: " << getId() << " ";
     rawstr << "PAGNode: [" << res->getId() << " = PHI(";
-    for(PHIVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd();
-            it != eit; it++)
+    for (PHIVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd(); it != eit; it++)
         rawstr << it->second->getId() << ", ";
     rawstr << ")]\t";
-    if(res->hasValue())
+    if (res->hasValue())
     {
         rawstr << " " << res->getValue()->toString();
     }
     return rawstr.str();
 }
-
 
 const std::string IntraPHIVFGNode::toString() const
 {
@@ -241,11 +235,10 @@ const std::string IntraPHIVFGNode::toString() const
     std::stringstream rawstr(str);
     rawstr << "IntraPHIVFGNode ID: " << getId() << " ";
     rawstr << "PAGNode: [" << res->getId() << " = PHI(";
-    for(PHIVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd();
-            it != eit; it++)
+    for (PHIVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd(); it != eit; it++)
         rawstr << it->second->getId() << ", ";
     rawstr << ")]\t";
-    if(res->hasValue())
+    if (res->hasValue())
     {
         rawstr << " " << res->getValue()->toString();
     }
@@ -267,7 +260,6 @@ const std::string AddrVFGNode::toString() const
     rawstr << getPAGEdge()->toString();
     return rawstr.str();
 }
-
 
 const std::string ArgumentVFGNode::toString() const
 {
@@ -329,7 +321,6 @@ const std::string ActualRetVFGNode::toString() const
     return rawstr.str();
 }
 
-
 const NodeBS FormalRetVFGNode::getDefSVFVars() const
 {
     NodeBS nb;
@@ -347,15 +338,16 @@ const std::string FormalRetVFGNode::toString() const
     return rawstr.str();
 }
 
-
 const std::string InterPHIVFGNode::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    if(isFormalParmPHI())
-        rawstr << "FormalParmPHI ID: " << getId() << " PAGNode ID: " << res->getId() << "\n" << res->getValue()->toString();
+    if (isFormalParmPHI())
+        rawstr << "FormalParmPHI ID: " << getId() << " PAGNode ID: " << res->getId() << "\n"
+               << res->getValue()->toString();
     else
-        rawstr << "ActualRetPHI ID: " << getId() << " PAGNode ID: " << res->getId() << "\n" << res->getValue()->toString();
+        rawstr << "ActualRetPHI ID: " << getId() << " PAGNode ID: " << res->getId() << "\n"
+               << res->getValue()->toString();
     return rawstr.str();
 }
 
@@ -374,7 +366,6 @@ const std::string NullPtrVFGNode::toString() const
     rawstr << " PAGNode ID: " << node->getId() << "\n";
     return rawstr.str();
 }
-
 
 const std::string VFGEdge::toString() const
 {
@@ -418,17 +409,12 @@ const std::string RetDirSVFGEdge::toString() const
     return rawstr.str();
 }
 
-
-
-FormalRetVFGNode::FormalRetVFGNode(NodeID id, const PAGNode* n, const SVFFunction* f) :
-    ArgumentVFGNode(id, n, FRet), fun(f)
+FormalRetVFGNode::FormalRetVFGNode(NodeID id, const PAGNode* n, const SVFFunction* f)
+    : ArgumentVFGNode(id, n, FRet), fun(f)
 {
 }
 
-PHIVFGNode::PHIVFGNode(NodeID id, const PAGNode* r,VFGNodeK k): VFGNode(id, k), res(r)
-{
-
-}
+PHIVFGNode::PHIVFGNode(NodeID id, const PAGNode* r, VFGNodeK k) : VFGNode(id, k), res(r) {}
 
 /*!
  * Constructor
@@ -438,7 +424,7 @@ PHIVFGNode::PHIVFGNode(NodeID id, const PAGNode* r,VFGNodeK k): VFGNode(id, k), 
  * 2) connect VFG edges
  *    between two statements (PAGEdges)
  */
-VFG::VFG(CallGraph* cg, VFGK k): totalVFGNode(0), callgraph(cg), pag(SVFIR::getPAG()), kind(k)
+VFG::VFG(CallGraph* cg, VFGK k) : totalVFGNode(0), callgraph(cg), pag(SVFIR::getPAG()), kind(k)
 {
 
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate VFG Top Level Node\n"));
@@ -456,7 +442,6 @@ void VFG::destroy()
     pag = nullptr;
 }
 
-
 /*!
  * Create VFG nodes for top level pointers
  */
@@ -470,16 +455,14 @@ void VFG::addVFGNodes()
 
     // initialize address nodes
     SVFStmt::SVFStmtSetTy& addrs = getPAGEdgeSet(SVFStmt::Addr);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = addrs.begin(), eiter =
-                addrs.end(); iter != eiter; ++iter)
+    for (SVFStmt::SVFStmtSetTy::iterator iter = addrs.begin(), eiter = addrs.end(); iter != eiter; ++iter)
     {
         addAddrVFGNode(SVFUtil::cast<AddrStmt>(*iter));
     }
 
     // initialize copy nodes
     SVFStmt::SVFStmtSetTy& copys = getPAGEdgeSet(SVFStmt::Copy);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = copys.begin(), eiter =
-                copys.end(); iter != eiter; ++iter)
+    for (SVFStmt::SVFStmtSetTy::iterator iter = copys.begin(), eiter = copys.end(); iter != eiter; ++iter)
     {
         const CopyStmt* edge = SVFUtil::cast<CopyStmt>(*iter);
         assert(!isPhiCopyEdge(edge) && "Copy edges can not be a PhiNode (or from PhiNode)");
@@ -488,104 +471,99 @@ void VFG::addVFGNodes()
 
     // initialize gep nodes
     SVFStmt::SVFStmtSetTy& ngeps = getPAGEdgeSet(SVFStmt::Gep);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = ngeps.begin(), eiter =
-                ngeps.end(); iter != eiter; ++iter)
+    for (SVFStmt::SVFStmtSetTy::iterator iter = ngeps.begin(), eiter = ngeps.end(); iter != eiter; ++iter)
     {
         addGepVFGNode(SVFUtil::cast<GepStmt>(*iter));
     }
 
     // initialize load nodes
     SVFStmt::SVFStmtSetTy& loads = getPAGEdgeSet(SVFStmt::Load);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = loads.begin(), eiter =
-                loads.end(); iter != eiter; ++iter)
+    for (SVFStmt::SVFStmtSetTy::iterator iter = loads.begin(), eiter = loads.end(); iter != eiter; ++iter)
     {
         addLoadVFGNode(SVFUtil::cast<LoadStmt>(*iter));
     }
 
     // initialize store nodes
     SVFStmt::SVFStmtSetTy& stores = getPAGEdgeSet(SVFStmt::Store);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = stores.begin(), eiter =
-                stores.end(); iter != eiter; ++iter)
+    for (SVFStmt::SVFStmtSetTy::iterator iter = stores.begin(), eiter = stores.end(); iter != eiter; ++iter)
     {
         addStoreVFGNode(SVFUtil::cast<StoreStmt>(*iter));
     }
 
     SVFStmt::SVFStmtSetTy& forks = getPAGEdgeSet(SVFStmt::ThreadFork);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = forks.begin(), eiter =
-                forks.end(); iter != eiter; ++iter)
+    for (SVFStmt::SVFStmtSetTy::iterator iter = forks.begin(), eiter = forks.end(); iter != eiter; ++iter)
     {
         TDForkPE* forkedge = SVFUtil::cast<TDForkPE>(*iter);
-        addActualParmVFGNode(forkedge->getRHSVar(),forkedge->getCallSite());
+        addActualParmVFGNode(forkedge->getRHSVar(), forkedge->getCallSite());
     }
 
     // initialize actual parameter nodes
-    for(SVFIR::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(), eit = pag->getCallSiteArgsMap().end(); it !=eit; ++it)
+    for (SVFIR::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(), eit = pag->getCallSiteArgsMap().end();
+         it != eit; ++it)
     {
 
-        for(SVFIR::SVFVarList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit)
+        for (SVFIR::SVFVarList::iterator pit = it->second.begin(), epit = it->second.end(); pit != epit; ++pit)
         {
             const PAGNode* pagNode = *pit;
-            if (isInterestedPAGNode(pagNode))
-                addActualParmVFGNode(pagNode,it->first);
+            if (isInterestedPAGNode(pagNode)) addActualParmVFGNode(pagNode, it->first);
         }
     }
 
     // initialize actual return nodes (callsite return)
-    for(SVFIR::CSToRetMap::iterator it = pag->getCallSiteRets().begin(), eit = pag->getCallSiteRets().end(); it !=eit; ++it)
+    for (SVFIR::CSToRetMap::iterator it = pag->getCallSiteRets().begin(), eit = pag->getCallSiteRets().end(); it != eit;
+         ++it)
     {
 
         /// for external function we do not create acutalRet VFGNode
         /// they are in the formal of AddrVFGNode if the external function returns an allocated memory
         /// if fun has body, it may also exist in isExtCall, e.g., xmalloc() in bzip2, spec2000.
-        if(isInterestedPAGNode(it->second) == false || hasDef(it->second))
-            continue;
+        if (isInterestedPAGNode(it->second) == false || hasDef(it->second)) continue;
 
-        addActualRetVFGNode(it->second,it->first->getCallICFGNode());
+        addActualRetVFGNode(it->second, it->first->getCallICFGNode());
     }
 
     // initialize formal parameter nodes
-    for(SVFIR::FunToArgsListMap::iterator it = pag->getFunArgsMap().begin(), eit = pag->getFunArgsMap().end(); it !=eit; ++it)
+    for (SVFIR::FunToArgsListMap::iterator it = pag->getFunArgsMap().begin(), eit = pag->getFunArgsMap().end();
+         it != eit; ++it)
     {
         const SVFFunction* func = it->first;
 
-        for(SVFIR::SVFVarList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit)
+        for (SVFIR::SVFVarList::iterator pit = it->second.begin(), epit = it->second.end(); pit != epit; ++pit)
         {
             const PAGNode* param = *pit;
-            if (isInterestedPAGNode(param) == false || hasBlackHoleConstObjAddrAsDef(param))
-                continue;
+            if (isInterestedPAGNode(param) == false || hasBlackHoleConstObjAddrAsDef(param)) continue;
 
             CallPESet callPEs;
             if (param->hasIncomingEdges(SVFStmt::Call))
             {
-                for (SVFStmt::SVFStmtSetTy::const_iterator cit = param->getIncomingEdgesBegin(SVFStmt::Call), ecit =
-                            param->getIncomingEdgesEnd(SVFStmt::Call); cit != ecit; ++cit)
+                for (SVFStmt::SVFStmtSetTy::const_iterator cit = param->getIncomingEdgesBegin(SVFStmt::Call),
+                                                           ecit = param->getIncomingEdgesEnd(SVFStmt::Call);
+                     cit != ecit; ++cit)
                 {
                     CallPE* callPE = SVFUtil::cast<CallPE>(*cit);
-                    if (isInterestedPAGNode(callPE->getRHSVar()))
-                        callPEs.insert(callPE);
+                    if (isInterestedPAGNode(callPE->getRHSVar())) callPEs.insert(callPE);
                 }
             }
-            addFormalParmVFGNode(param,func,callPEs);
+            addFormalParmVFGNode(param, func, callPEs);
         }
 
         if (func->isVarArg())
         {
             const PAGNode* varParam = pag->getGNode(pag->getVarargNode(func));
-            if (isInterestedPAGNode(varParam) == false || hasBlackHoleConstObjAddrAsDef(varParam))
-                continue;
+            if (isInterestedPAGNode(varParam) == false || hasBlackHoleConstObjAddrAsDef(varParam)) continue;
 
             CallPESet callPEs;
             if (varParam->hasIncomingEdges(SVFStmt::Call))
             {
-                for(SVFStmt::SVFStmtSetTy::const_iterator cit = varParam->getIncomingEdgesBegin(SVFStmt::Call),
-                        ecit = varParam->getIncomingEdgesEnd(SVFStmt::Call); cit!=ecit; ++cit)
+                for (SVFStmt::SVFStmtSetTy::const_iterator cit = varParam->getIncomingEdgesBegin(SVFStmt::Call),
+                                                           ecit = varParam->getIncomingEdgesEnd(SVFStmt::Call);
+                     cit != ecit; ++cit)
                 {
                     CallPE* callPE = SVFUtil::cast<CallPE>(*cit);
-                    if(isInterestedPAGNode(callPE->getRHSVar()))
-                        callPEs.insert(callPE);
+                    if (isInterestedPAGNode(callPE->getRHSVar())) callPEs.insert(callPE);
                 }
             }
-            addFormalParmVFGNode(varParam,func,callPEs);
+            addFormalParmVFGNode(varParam, func, callPEs);
         }
     }
 
@@ -600,72 +578,58 @@ void VFG::addVFGNodes()
         if (uniqueFunRetNode->hasOutgoingEdges(SVFStmt::Ret))
         {
             for (SVFStmt::SVFStmtSetTy::const_iterator cit = uniqueFunRetNode->getOutgoingEdgesBegin(SVFStmt::Ret),
-                    ecit = uniqueFunRetNode->getOutgoingEdgesEnd(SVFStmt::Ret);
-                    cit != ecit; ++cit)
+                                                       ecit = uniqueFunRetNode->getOutgoingEdgesEnd(SVFStmt::Ret);
+                 cit != ecit; ++cit)
             {
                 const RetPE* retPE = SVFUtil::cast<RetPE>(*cit);
-                if (isInterestedPAGNode(retPE->getLHSVar()))
-                    retPEs.insert(retPE);
+                if (isInterestedPAGNode(retPE->getLHSVar())) retPEs.insert(retPE);
             }
         }
 
-        if(isInterestedPAGNode(uniqueFunRetNode))
-            addFormalRetVFGNode(uniqueFunRetNode, func, retPEs);
+        if (isInterestedPAGNode(uniqueFunRetNode)) addFormalRetVFGNode(uniqueFunRetNode, func, retPEs);
     }
 
     // initialize llvm phi nodes (phi of top level pointers)
     SVFStmt::SVFStmtSetTy& phis = getPAGEdgeSet(SVFStmt::Phi);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = phis.begin(), eiter =
-                phis.end(); iter != eiter; ++iter)
+    for (SVFStmt::SVFStmtSetTy::iterator iter = phis.begin(), eiter = phis.end(); iter != eiter; ++iter)
     {
         const PhiStmt* edge = SVFUtil::cast<PhiStmt>(*iter);
-        if(isInterestedPAGNode(edge->getRes()))
-            addIntraPHIVFGNode(edge);
+        if (isInterestedPAGNode(edge->getRes())) addIntraPHIVFGNode(edge);
     }
     // initialize select statement
     SVFStmt::SVFStmtSetTy& selects = getPAGEdgeSet(SVFStmt::Select);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = selects.begin(), eiter =
-                selects.end(); iter != eiter; ++iter)
+    for (SVFStmt::SVFStmtSetTy::iterator iter = selects.begin(), eiter = selects.end(); iter != eiter; ++iter)
     {
         const MultiOpndStmt* edge = SVFUtil::cast<MultiOpndStmt>(*iter);
-        if(isInterestedPAGNode(edge->getRes()))
-            addIntraPHIVFGNode(edge);
+        if (isInterestedPAGNode(edge->getRes())) addIntraPHIVFGNode(edge);
     }
     // initialize llvm binary nodes (binary operators)
     SVFStmt::SVFStmtSetTy& binaryops = getPAGEdgeSet(SVFStmt::BinaryOp);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = binaryops.begin(), eiter =
-                binaryops.end(); iter != eiter; ++iter)
+    for (SVFStmt::SVFStmtSetTy::iterator iter = binaryops.begin(), eiter = binaryops.end(); iter != eiter; ++iter)
     {
         const BinaryOPStmt* edge = SVFUtil::cast<BinaryOPStmt>(*iter);
-        if(isInterestedPAGNode(edge->getRes()))
-            addBinaryOPVFGNode(edge);
+        if (isInterestedPAGNode(edge->getRes())) addBinaryOPVFGNode(edge);
     }
     // initialize llvm unary nodes (unary operators)
     SVFStmt::SVFStmtSetTy& unaryops = getPAGEdgeSet(SVFStmt::UnaryOp);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = unaryops.begin(), eiter =
-                unaryops.end(); iter != eiter; ++iter)
+    for (SVFStmt::SVFStmtSetTy::iterator iter = unaryops.begin(), eiter = unaryops.end(); iter != eiter; ++iter)
     {
         const UnaryOPStmt* edge = SVFUtil::cast<UnaryOPStmt>(*iter);
-        if(isInterestedPAGNode(edge->getRes()))
-            addUnaryOPVFGNode(edge);
+        if (isInterestedPAGNode(edge->getRes())) addUnaryOPVFGNode(edge);
     }
     // initialize llvm unary nodes (unary operators)
     SVFStmt::SVFStmtSetTy& brs = getPAGEdgeSet(SVFStmt::Branch);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = brs.begin(), eiter =
-                brs.end(); iter != eiter; ++iter)
+    for (SVFStmt::SVFStmtSetTy::iterator iter = brs.begin(), eiter = brs.end(); iter != eiter; ++iter)
     {
         const BranchStmt* edge = SVFUtil::cast<BranchStmt>(*iter);
-        if(isInterestedPAGNode(edge->getBranchInst()))
-            addBranchVFGNode(edge);
+        if (isInterestedPAGNode(edge->getBranchInst())) addBranchVFGNode(edge);
     }
     // initialize llvm cmp nodes (comparison)
     SVFStmt::SVFStmtSetTy& cmps = getPAGEdgeSet(SVFStmt::Cmp);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = cmps.begin(), eiter =
-                cmps.end(); iter != eiter; ++iter)
+    for (SVFStmt::SVFStmtSetTy::iterator iter = cmps.begin(), eiter = cmps.end(); iter != eiter; ++iter)
     {
         const CmpStmt* edge = SVFUtil::cast<CmpStmt>(*iter);
-        if(isInterestedPAGNode(edge->getRes()))
-            addCmpVFGNode(edge);
+        if (isInterestedPAGNode(edge->getRes())) addCmpVFGNode(edge);
     }
 }
 
@@ -685,9 +649,9 @@ VFGEdge* VFG::addIntraDirectVFEdge(NodeID srcId, NodeID dstId)
     }
     else
     {
-        if(srcNode!=dstNode)
+        if (srcNode != dstNode)
         {
-            IntraDirSVFGEdge* directEdge = new IntraDirSVFGEdge(srcNode,dstNode);
+            IntraDirSVFGEdge* directEdge = new IntraDirSVFGEdge(srcNode, dstNode);
             return (addVFGEdge(directEdge) ? directEdge : nullptr);
         }
         else
@@ -710,7 +674,7 @@ VFGEdge* VFG::addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId)
     }
     else
     {
-        CallDirSVFGEdge* callEdge = new CallDirSVFGEdge(srcNode,dstNode,csId);
+        CallDirSVFGEdge* callEdge = new CallDirSVFGEdge(srcNode, dstNode, csId);
         return (addVFGEdge(callEdge) ? callEdge : nullptr);
     }
 }
@@ -730,11 +694,10 @@ VFGEdge* VFG::addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId)
     }
     else
     {
-        RetDirSVFGEdge* retEdge = new RetDirSVFGEdge(srcNode,dstNode,csId);
+        RetDirSVFGEdge* retEdge = new RetDirSVFGEdge(srcNode, dstNode, csId);
         return (addVFGEdge(retEdge) ? retEdge : nullptr);
     }
 }
-
 
 /*!
  * Connect def-use chains for direct value-flow, (value-flow of top level pointers)
@@ -742,102 +705,105 @@ VFGEdge* VFG::addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId)
 void VFG::connectDirectVFGEdges()
 {
 
-    for(iterator it = begin(), eit = end(); it!=eit; ++it)
+    for (iterator it = begin(), eit = end(); it != eit; ++it)
     {
         NodeID nodeId = it->first;
         VFGNode* node = it->second;
 
-        if(StmtVFGNode* stmtNode = SVFUtil::dyn_cast<StmtVFGNode>(node))
+        if (StmtVFGNode* stmtNode = SVFUtil::dyn_cast<StmtVFGNode>(node))
         {
             /// do not handle AddrSVFG node, as it is already the source of a definition
-            if(SVFUtil::isa<AddrVFGNode>(stmtNode))
-                continue;
+            if (SVFUtil::isa<AddrVFGNode>(stmtNode)) continue;
             /// for all other cases, like copy/gep/load/ret, connect the RHS pointer to its def
             if (stmtNode->getPAGSrcNode()->isConstDataOrAggDataButNotNullPtr() == false)
                 // for ptr vfg, we skip src node of integer type if it is at a int2ptr copystmt
-                if(isInterestedPAGNode(stmtNode->getPAGSrcNode()))
+                if (isInterestedPAGNode(stmtNode->getPAGSrcNode()))
                     addIntraDirectVFEdge(getDef(stmtNode->getPAGSrcNode()), nodeId);
             if (const GepStmt* gepStmt = SVFUtil::dyn_cast<GepStmt>(stmtNode->getPAGEdge()))
             {
-                for (const auto &varType: gepStmt->getOffsetVarAndGepTypePairVec())
+                for (const auto& varType : gepStmt->getOffsetVarAndGepTypePairVec())
                 {
-                    if(varType.first->isConstDataOrAggDataButNotNullPtr() || isInterestedPAGNode(varType.first) == false)
+                    if (varType.first->isConstDataOrAggDataButNotNullPtr() ||
+                        isInterestedPAGNode(varType.first) == false)
                         continue;
                     addIntraDirectVFEdge(getDef(varType.first), nodeId);
                 }
             }
             /// for store, connect the RHS/LHS pointer to its def
-            if(SVFUtil::isa<StoreVFGNode>(stmtNode) && (stmtNode->getPAGDstNode()->isConstDataOrAggDataButNotNullPtr() == false))
+            if (SVFUtil::isa<StoreVFGNode>(stmtNode) &&
+                (stmtNode->getPAGDstNode()->isConstDataOrAggDataButNotNullPtr() == false))
             {
                 addIntraDirectVFEdge(getDef(stmtNode->getPAGDstNode()), nodeId);
             }
-
         }
-        else if(PHIVFGNode* phiNode = SVFUtil::dyn_cast<PHIVFGNode>(node))
+        else if (PHIVFGNode* phiNode = SVFUtil::dyn_cast<PHIVFGNode>(node))
         {
-            for (PHIVFGNode::OPVers::const_iterator it = phiNode->opVerBegin(), eit = phiNode->opVerEnd(); it != eit; it++)
+            for (PHIVFGNode::OPVers::const_iterator it = phiNode->opVerBegin(), eit = phiNode->opVerEnd(); it != eit;
+                 it++)
             {
                 if (it->second->isConstDataOrAggDataButNotNullPtr() == false)
                     addIntraDirectVFEdge(getDef(it->second), nodeId);
             }
         }
-        else if(BinaryOPVFGNode* binaryNode = SVFUtil::dyn_cast<BinaryOPVFGNode>(node))
+        else if (BinaryOPVFGNode* binaryNode = SVFUtil::dyn_cast<BinaryOPVFGNode>(node))
         {
-            for (BinaryOPVFGNode::OPVers::const_iterator it = binaryNode->opVerBegin(), eit = binaryNode->opVerEnd(); it != eit; it++)
+            for (BinaryOPVFGNode::OPVers::const_iterator it = binaryNode->opVerBegin(), eit = binaryNode->opVerEnd();
+                 it != eit; it++)
             {
                 if (it->second->isConstDataOrAggDataButNotNullPtr() == false)
                     addIntraDirectVFEdge(getDef(it->second), nodeId);
             }
         }
-        else if(UnaryOPVFGNode* unaryNode = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+        else if (UnaryOPVFGNode* unaryNode = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
         {
-            for (UnaryOPVFGNode::OPVers::const_iterator it = unaryNode->opVerBegin(), eit = unaryNode->opVerEnd(); it != eit; it++)
+            for (UnaryOPVFGNode::OPVers::const_iterator it = unaryNode->opVerBegin(), eit = unaryNode->opVerEnd();
+                 it != eit; it++)
             {
                 if (it->second->isConstDataOrAggDataButNotNullPtr() == false)
                     addIntraDirectVFEdge(getDef(it->second), nodeId);
             }
         }
-        else if(CmpVFGNode* cmpNode = SVFUtil::dyn_cast<CmpVFGNode>(node))
+        else if (CmpVFGNode* cmpNode = SVFUtil::dyn_cast<CmpVFGNode>(node))
         {
-            for (CmpVFGNode::OPVers::const_iterator it = cmpNode->opVerBegin(), eit = cmpNode->opVerEnd(); it != eit; it++)
+            for (CmpVFGNode::OPVers::const_iterator it = cmpNode->opVerBegin(), eit = cmpNode->opVerEnd(); it != eit;
+                 it++)
             {
                 if (it->second->isConstDataOrAggDataButNotNullPtr() == false)
                     addIntraDirectVFEdge(getDef(it->second), nodeId);
             }
         }
-        else if(BranchVFGNode* branchNode = SVFUtil::dyn_cast<BranchVFGNode>(node))
+        else if (BranchVFGNode* branchNode = SVFUtil::dyn_cast<BranchVFGNode>(node))
         {
             const SVFVar* cond = branchNode->getBranchStmt()->getCondition();
-            if (cond->isConstDataOrAggDataButNotNullPtr() == false)
-                addIntraDirectVFEdge(getDef(cond), nodeId);
+            if (cond->isConstDataOrAggDataButNotNullPtr() == false) addIntraDirectVFEdge(getDef(cond), nodeId);
         }
-        else if(ActualParmVFGNode* actualParm = SVFUtil::dyn_cast<ActualParmVFGNode>(node))
+        else if (ActualParmVFGNode* actualParm = SVFUtil::dyn_cast<ActualParmVFGNode>(node))
         {
             if (actualParm->getParam()->isConstDataOrAggDataButNotNullPtr() == false)
                 addIntraDirectVFEdge(getDef(actualParm->getParam()), nodeId);
         }
-        else if(FormalParmVFGNode* formalParm = SVFUtil::dyn_cast<FormalParmVFGNode>(node))
+        else if (FormalParmVFGNode* formalParm = SVFUtil::dyn_cast<FormalParmVFGNode>(node))
         {
-            for(CallPESet::const_iterator it = formalParm->callPEBegin(), eit = formalParm->callPEEnd();
-                    it!=eit; ++it)
+            for (CallPESet::const_iterator it = formalParm->callPEBegin(), eit = formalParm->callPEEnd(); it != eit;
+                 ++it)
             {
                 const CallICFGNode* cs = (*it)->getCallSite();
-                ActualParmVFGNode* acutalParm = getActualParmVFGNode((*it)->getRHSVar(),cs);
-                addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(cs, formalParm->getFun()));
+                ActualParmVFGNode* acutalParm = getActualParmVFGNode((*it)->getRHSVar(), cs);
+                addInterEdgeFromAPToFP(acutalParm, formalParm, getCallSiteID(cs, formalParm->getFun()));
             }
         }
-        else if(FormalRetVFGNode* calleeRet = SVFUtil::dyn_cast<FormalRetVFGNode>(node))
+        else if (FormalRetVFGNode* calleeRet = SVFUtil::dyn_cast<FormalRetVFGNode>(node))
         {
             /// connect formal ret to its definition node
             addIntraDirectVFEdge(getDef(calleeRet->getRet()), nodeId);
 
             /// connect formal ret to actual ret
-            for(RetPESet::const_iterator it = calleeRet->retPEBegin(), eit = calleeRet->retPEEnd(); it!=eit; ++it)
+            for (RetPESet::const_iterator it = calleeRet->retPEBegin(), eit = calleeRet->retPEEnd(); it != eit; ++it)
             {
                 ActualRetVFGNode* callsiteRev = getActualRetVFGNode((*it)->getLHSVar());
                 const CallICFGNode* retBlockNode = (*it)->getCallSite();
                 CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(retBlockNode->getCallSite());
-                addInterEdgeFromFRToAR(calleeRet,callsiteRev, getCallSiteID(callBlockNode, calleeRet->getFun()));
+                addInterEdgeFromFRToAR(calleeRet, callsiteRev, getCallSiteID(callBlockNode, calleeRet->getFun()));
             }
         }
         /// Do not process FormalRetVFGNode, as they are connected by copy within callee
@@ -845,27 +811,26 @@ void VFG::connectDirectVFGEdges()
     }
 
     /// connect direct value-flow edges (parameter passing) for thread fork/join
-    if(Options::EnableThreadCallGraph())
+    if (Options::EnableThreadCallGraph())
     {
         /// add fork edge
         SVFStmt::SVFStmtSetTy& forks = getPAGEdgeSet(SVFStmt::ThreadFork);
-        for (SVFStmt::SVFStmtSetTy::iterator iter = forks.begin(), eiter =
-                    forks.end(); iter != eiter; ++iter)
+        for (SVFStmt::SVFStmtSetTy::iterator iter = forks.begin(), eiter = forks.end(); iter != eiter; ++iter)
         {
             TDForkPE* forkedge = SVFUtil::cast<TDForkPE>(*iter);
-            ActualParmVFGNode* acutalParm = getActualParmVFGNode(forkedge->getRHSVar(),forkedge->getCallSite());
+            ActualParmVFGNode* acutalParm = getActualParmVFGNode(forkedge->getRHSVar(), forkedge->getCallSite());
             FormalParmVFGNode* formalParm = getFormalParmVFGNode(forkedge->getLHSVar());
-            addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(forkedge->getCallSite(), formalParm->getFun()));
+            addInterEdgeFromAPToFP(acutalParm, formalParm,
+                                   getCallSiteID(forkedge->getCallSite(), formalParm->getFun()));
         }
         /// add join edge
         SVFStmt::SVFStmtSetTy& joins = getPAGEdgeSet(SVFStmt::ThreadJoin);
-        for (SVFStmt::SVFStmtSetTy::iterator iter = joins.begin(), eiter =
-                    joins.end(); iter != eiter; ++iter)
+        for (SVFStmt::SVFStmtSetTy::iterator iter = joins.begin(), eiter = joins.end(); iter != eiter; ++iter)
         {
             TDJoinPE* joinedge = SVFUtil::cast<TDJoinPE>(*iter);
             NodeID callsiteRev = getDef(joinedge->getLHSVar());
             FormalRetVFGNode* calleeRet = getFormalRetVFGNode(joinedge->getRHSVar());
-            addRetEdge(calleeRet->getId(),callsiteRev, getCallSiteID(joinedge->getCallSite(), calleeRet->getFun()));
+            addRetEdge(calleeRet->getId(), callsiteRev, getCallSiteID(joinedge->getCallSite(), calleeRet->getFun()));
         }
     }
 }
@@ -875,7 +840,7 @@ void VFG::connectDirectVFGEdges()
  */
 VFGEdge* VFG::hasIntraVFGEdge(VFGNode* src, VFGNode* dst, VFGEdge::VFGEdgeK kind)
 {
-    VFGEdge edge(src,dst,kind);
+    VFGEdge edge(src, dst, kind);
     VFGEdge* outEdge = src->hasOutgoingEdge(&edge);
     VFGEdge* inEdge = dst->hasIncomingEdge(&edge);
     if (outEdge && inEdge)
@@ -887,13 +852,12 @@ VFGEdge* VFG::hasIntraVFGEdge(VFGNode* src, VFGNode* dst, VFGEdge::VFGEdgeK kind
         return nullptr;
 }
 
-
 /*!
  * Whether we has an thread VFG edge
  */
 VFGEdge* VFG::hasThreadVFGEdge(VFGNode* src, VFGNode* dst, VFGEdge::VFGEdgeK kind)
 {
-    VFGEdge edge(src,dst,kind);
+    VFGEdge edge(src, dst, kind);
     VFGEdge* outEdge = src->hasOutgoingEdge(&edge);
     VFGEdge* inEdge = dst->hasIncomingEdge(&edge);
     if (outEdge && inEdge)
@@ -908,9 +872,9 @@ VFGEdge* VFG::hasThreadVFGEdge(VFGNode* src, VFGNode* dst, VFGEdge::VFGEdgeK kin
 /*!
  * Whether we has an inter VFG edge
  */
-VFGEdge* VFG::hasInterVFGEdge(VFGNode* src, VFGNode* dst, VFGEdge::VFGEdgeK kind,CallSiteID csId)
+VFGEdge* VFG::hasInterVFGEdge(VFGNode* src, VFGNode* dst, VFGEdge::VFGEdgeK kind, CallSiteID csId)
 {
-    VFGEdge edge(src,dst,VFGEdge::makeEdgeFlagWithInvokeID(kind,csId));
+    VFGEdge edge(src, dst, VFGEdge::makeEdgeFlagWithInvokeID(kind, csId));
     VFGEdge* outEdge = src->hasOutgoingEdge(&edge);
     VFGEdge* inEdge = dst->hasIncomingEdge(&edge);
     if (outEdge && inEdge)
@@ -922,15 +886,13 @@ VFGEdge* VFG::hasInterVFGEdge(VFGNode* src, VFGNode* dst, VFGEdge::VFGEdgeK kind
         return nullptr;
 }
 
-
 /*!
  * Return the corresponding VFGEdge
  */
 VFGEdge* VFG::getIntraVFGEdge(const VFGNode* src, const VFGNode* dst, VFGEdge::VFGEdgeK kind)
 {
-    return hasIntraVFGEdge(const_cast<VFGNode*>(src),const_cast<VFGNode*>(dst),kind);
+    return hasIntraVFGEdge(const_cast<VFGNode*>(src), const_cast<VFGNode*>(dst), kind);
 }
-
 
 /*!
  * Dump VFG
@@ -948,7 +910,6 @@ void VFG::view()
     SVF::ViewGraph(this, "Value Flow Graph");
 }
 
-
 void VFG::updateCallGraph(PointerAnalysis* pta)
 {
     VFGEdgeSetTy vfEdgesAtIndCallSite;
@@ -958,10 +919,11 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
     {
         const CallICFGNode* newcs = iter->first;
         assert(newcs->isIndirectCall() && "this is not an indirect call?");
-        const PointerAnalysis::FunctionSet & functions = iter->second;
-        for (PointerAnalysis::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
+        const PointerAnalysis::FunctionSet& functions = iter->second;
+        for (PointerAnalysis::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end();
+             func_iter++)
         {
-            const SVFFunction*  func = *func_iter;
+            const SVFFunction* func = *func_iter;
             connectCallerAndCallee(newcs, func, vfEdgesAtIndCallSite);
         }
     }
@@ -973,13 +935,13 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
  */
 void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFunction* callee, VFGEdgeSetTy& edges)
 {
-    SVFIR * pag = SVFIR::getPAG();
-    ICFG * icfg = pag->getICFG();
+    SVFIR* pag = SVFIR::getPAG();
+    ICFG* icfg = pag->getICFG();
     CallSiteID csId = getCallSiteID(callBlockNode, callee);
     RetICFGNode* retBlockNode = icfg->getRetICFGNode(callBlockNode->getCallSite());
     // connect actual and formal param
     if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee) &&
-            matchArgs(callBlockNode->getCallSite(), callee))
+        matchArgs(callBlockNode->getCallSite(), callee))
     {
         const SVFIR::SVFVarList& csArgList = pag->getCallSiteArgsList(callBlockNode);
         const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(callee);
@@ -987,8 +949,8 @@ void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFun
         SVFIR::SVFVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
         for (; funArgIt != funArgEit && csArgIt != csArgEit; funArgIt++, csArgIt++)
         {
-            const PAGNode *cs_arg = *csArgIt;
-            const PAGNode *fun_arg = *funArgIt;
+            const PAGNode* cs_arg = *csArgIt;
+            const PAGNode* fun_arg = *funArgIt;
             if (isInterestedPAGNode(cs_arg) && isInterestedPAGNode(fun_arg))
                 connectAParamAndFParam(cs_arg, fun_arg, callBlockNode, csId, edges);
         }
@@ -1002,7 +964,7 @@ void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFun
             {
                 for (; csArgIt != csArgEit; csArgIt++)
                 {
-                    const PAGNode *cs_arg = *csArgIt;
+                    const PAGNode* cs_arg = *csArgIt;
                     if (isInterestedPAGNode(cs_arg))
                         connectAParamAndFParam(cs_arg, varFunArgNode, callBlockNode, csId, edges);
                 }
@@ -1026,31 +988,30 @@ void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFun
 const PAGNode* VFG::getLHSTopLevPtr(const VFGNode* node) const
 {
 
-    if(const AddrVFGNode* addr = SVFUtil::dyn_cast<AddrVFGNode>(node))
-        return addr->getPAGDstNode();
-    else if(const CopyVFGNode* copy = SVFUtil::dyn_cast<CopyVFGNode>(node))
+    if (const AddrVFGNode* addr = SVFUtil::dyn_cast<AddrVFGNode>(node)) return addr->getPAGDstNode();
+    else if (const CopyVFGNode* copy = SVFUtil::dyn_cast<CopyVFGNode>(node))
         return copy->getPAGDstNode();
-    else if(const GepVFGNode* gep = SVFUtil::dyn_cast<GepVFGNode>(node))
+    else if (const GepVFGNode* gep = SVFUtil::dyn_cast<GepVFGNode>(node))
         return gep->getPAGDstNode();
-    else if(const LoadVFGNode* load = SVFUtil::dyn_cast<LoadVFGNode>(node))
+    else if (const LoadVFGNode* load = SVFUtil::dyn_cast<LoadVFGNode>(node))
         return load->getPAGDstNode();
-    else if(const PHIVFGNode* phi = SVFUtil::dyn_cast<PHIVFGNode>(node))
+    else if (const PHIVFGNode* phi = SVFUtil::dyn_cast<PHIVFGNode>(node))
         return phi->getRes();
-    else if(const CmpVFGNode* cmp = SVFUtil::dyn_cast<CmpVFGNode>(node))
+    else if (const CmpVFGNode* cmp = SVFUtil::dyn_cast<CmpVFGNode>(node))
         return cmp->getRes();
-    else if(const BinaryOPVFGNode* bop = SVFUtil::dyn_cast<BinaryOPVFGNode>(node))
+    else if (const BinaryOPVFGNode* bop = SVFUtil::dyn_cast<BinaryOPVFGNode>(node))
         return bop->getRes();
-    else if(const UnaryOPVFGNode* uop = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+    else if (const UnaryOPVFGNode* uop = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
         return uop->getRes();
-    else if(const ActualParmVFGNode* ap = SVFUtil::dyn_cast<ActualParmVFGNode>(node))
+    else if (const ActualParmVFGNode* ap = SVFUtil::dyn_cast<ActualParmVFGNode>(node))
         return ap->getParam();
-    else if(const FormalParmVFGNode*fp = SVFUtil::dyn_cast<FormalParmVFGNode>(node))
+    else if (const FormalParmVFGNode* fp = SVFUtil::dyn_cast<FormalParmVFGNode>(node))
         return fp->getParam();
-    else if(const ActualRetVFGNode* ar = SVFUtil::dyn_cast<ActualRetVFGNode>(node))
+    else if (const ActualRetVFGNode* ar = SVFUtil::dyn_cast<ActualRetVFGNode>(node))
         return ar->getRev();
-    else if(const FormalRetVFGNode* fr = SVFUtil::dyn_cast<FormalRetVFGNode>(node))
+    else if (const FormalRetVFGNode* fr = SVFUtil::dyn_cast<FormalRetVFGNode>(node))
         return fr->getRet();
-    else if(const NullPtrVFGNode* nullVFG = SVFUtil::dyn_cast<NullPtrVFGNode>(node))
+    else if (const NullPtrVFGNode* nullVFG = SVFUtil::dyn_cast<NullPtrVFGNode>(node))
         return nullVFG->getPAGNode();
     else
         assert(false && "unexpected node kind!");
@@ -1062,18 +1023,16 @@ const PAGNode* VFG::getLHSTopLevPtr(const VFGNode* node) const
  */
 const SVFFunction* VFG::isFunEntryVFGNode(const VFGNode* node) const
 {
-    if(const FormalParmVFGNode* fp = SVFUtil::dyn_cast<FormalParmVFGNode>(node))
+    if (const FormalParmVFGNode* fp = SVFUtil::dyn_cast<FormalParmVFGNode>(node))
     {
         return fp->getFun();
     }
-    else if(const InterPHIVFGNode* phi = SVFUtil::dyn_cast<InterPHIVFGNode>(node))
+    else if (const InterPHIVFGNode* phi = SVFUtil::dyn_cast<InterPHIVFGNode>(node))
     {
-        if(phi->isFormalParmPHI())
-            return phi->getFun();
+        if (phi->isFormalParmPHI()) return phi->getFun();
     }
     return nullptr;
 }
-
 
 const SVFValue* StmtVFGNode::getValue() const
 {
@@ -1105,15 +1064,11 @@ const SVFValue* ArgumentVFGNode::getValue() const
  */
 namespace SVF
 {
-template<>
-struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
+template <> struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
 {
 
     typedef VFGNode NodeType;
-    DOTGraphTraits(bool isSimple = false) :
-        DOTGraphTraits<SVFIR*>(isSimple)
-    {
-    }
+    DOTGraphTraits(bool isSimple = false) : DOTGraphTraits<SVFIR*>(isSimple) {}
 
     /// Return name of the graph
     static std::string getGraphName(VFG*)
@@ -1121,32 +1076,31 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
         return "VFG";
     }
 
-    std::string getNodeLabel(NodeType *node, VFG *graph)
+    std::string getNodeLabel(NodeType* node, VFG* graph)
     {
-        if (isSimple())
-            return getSimpleNodeLabel(node, graph);
+        if (isSimple()) return getSimpleNodeLabel(node, graph);
         else
             return getCompleteNodeLabel(node, graph);
     }
 
     /// Return label of a VFG node without MemSSA information
-    static std::string getSimpleNodeLabel(NodeType *node, VFG*)
+    static std::string getSimpleNodeLabel(NodeType* node, VFG*)
     {
         std::string str;
         std::stringstream rawstr(str);
-        if(StmtVFGNode* stmtNode = SVFUtil::dyn_cast<StmtVFGNode>(node))
+        if (StmtVFGNode* stmtNode = SVFUtil::dyn_cast<StmtVFGNode>(node))
         {
             rawstr << stmtNode->toString();
         }
-        else if(PHIVFGNode* tphi = SVFUtil::dyn_cast<PHIVFGNode>(node))
+        else if (PHIVFGNode* tphi = SVFUtil::dyn_cast<PHIVFGNode>(node))
         {
             rawstr << tphi->toString();
         }
-        else if(FormalParmVFGNode* fp = SVFUtil::dyn_cast<FormalParmVFGNode>(node))
+        else if (FormalParmVFGNode* fp = SVFUtil::dyn_cast<FormalParmVFGNode>(node))
         {
             rawstr << fp->toString();
         }
-        else if(ActualParmVFGNode* ap = SVFUtil::dyn_cast<ActualParmVFGNode>(node))
+        else if (ActualParmVFGNode* ap = SVFUtil::dyn_cast<ActualParmVFGNode>(node))
         {
             rawstr << ap->toString();
         }
@@ -1158,21 +1112,22 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
         {
             rawstr << fr->toString();
         }
-        else if(SVFUtil::isa<NullPtrVFGNode>(node))
+        else if (SVFUtil::isa<NullPtrVFGNode>(node))
         {
             rawstr << "NullPtr";
         }
-        else if(BinaryOPVFGNode* bop = SVFUtil::dyn_cast<BinaryOPVFGNode>(node))
+        else if (BinaryOPVFGNode* bop = SVFUtil::dyn_cast<BinaryOPVFGNode>(node))
         {
             rawstr << bop->toString();
         }
-        else if(UnaryOPVFGNode* uop = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+        else if (UnaryOPVFGNode* uop = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
         {
             rawstr << uop->toString();
         }
-        else if(CmpVFGNode* cmp = SVFUtil::dyn_cast<CmpVFGNode>(node))
+        else if (CmpVFGNode* cmp = SVFUtil::dyn_cast<CmpVFGNode>(node))
         {
-            rawstr << cmp->toString();;
+            rawstr << cmp->toString();
+            ;
         }
         else if (BranchVFGNode* branchNode = SVFUtil::dyn_cast<BranchVFGNode>(node))
         {
@@ -1185,40 +1140,40 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
     }
 
     /// Return label of a VFG node with MemSSA information
-    static std::string getCompleteNodeLabel(NodeType *node, VFG*)
+    static std::string getCompleteNodeLabel(NodeType* node, VFG*)
     {
 
         std::string str;
         std::stringstream rawstr(str);
-        if(StmtVFGNode* stmtNode = SVFUtil::dyn_cast<StmtVFGNode>(node))
+        if (StmtVFGNode* stmtNode = SVFUtil::dyn_cast<StmtVFGNode>(node))
         {
             rawstr << stmtNode->toString();
         }
-        else if(BinaryOPVFGNode* bop = SVFUtil::dyn_cast<BinaryOPVFGNode>(node))
+        else if (BinaryOPVFGNode* bop = SVFUtil::dyn_cast<BinaryOPVFGNode>(node))
         {
             rawstr << bop->toString();
         }
-        else if(UnaryOPVFGNode* uop = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+        else if (UnaryOPVFGNode* uop = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
         {
             rawstr << uop->toString();
         }
-        else if(CmpVFGNode* cmp = SVFUtil::dyn_cast<CmpVFGNode>(node))
+        else if (CmpVFGNode* cmp = SVFUtil::dyn_cast<CmpVFGNode>(node))
         {
             rawstr << cmp->toString();
         }
-        else if(PHIVFGNode* phi = SVFUtil::dyn_cast<PHIVFGNode>(node))
+        else if (PHIVFGNode* phi = SVFUtil::dyn_cast<PHIVFGNode>(node))
         {
             rawstr << phi->toString();
         }
-        else if(FormalParmVFGNode* fp = SVFUtil::dyn_cast<FormalParmVFGNode>(node))
+        else if (FormalParmVFGNode* fp = SVFUtil::dyn_cast<FormalParmVFGNode>(node))
         {
             rawstr << fp->toString();
         }
-        else if(ActualParmVFGNode* ap = SVFUtil::dyn_cast<ActualParmVFGNode>(node))
+        else if (ActualParmVFGNode* ap = SVFUtil::dyn_cast<ActualParmVFGNode>(node))
         {
             rawstr << ap->toString();
         }
-        else if(NullPtrVFGNode* nptr = SVFUtil::dyn_cast<NullPtrVFGNode>(node))
+        else if (NullPtrVFGNode* nptr = SVFUtil::dyn_cast<NullPtrVFGNode>(node))
         {
             rawstr << nptr->toString();
         }
@@ -1244,33 +1199,33 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
         return rawstr.str();
     }
 
-    static std::string getNodeAttributes(NodeType *node, VFG*)
+    static std::string getNodeAttributes(NodeType* node, VFG*)
     {
         std::string str;
         std::stringstream rawstr(str);
 
-        if(StmtVFGNode* stmtNode = SVFUtil::dyn_cast<StmtVFGNode>(node))
+        if (StmtVFGNode* stmtNode = SVFUtil::dyn_cast<StmtVFGNode>(node))
         {
             const PAGEdge* edge = stmtNode->getPAGEdge();
             if (SVFUtil::isa<AddrStmt>(edge))
             {
-                rawstr <<  "color=green";
+                rawstr << "color=green";
             }
             else if (SVFUtil::isa<CopyStmt>(edge))
             {
-                rawstr <<  "color=black";
+                rawstr << "color=black";
             }
             else if (SVFUtil::isa<RetPE>(edge))
             {
-                rawstr <<  "color=black,style=dotted";
+                rawstr << "color=black,style=dotted";
             }
             else if (SVFUtil::isa<GepStmt>(edge))
             {
-                rawstr <<  "color=purple";
+                rawstr << "color=purple";
             }
             else if (SVFUtil::isa<StoreStmt>(edge))
             {
-                rawstr <<  "color=blue";
+                rawstr << "color=blue";
             }
             else if (SVFUtil::isa<LoadStmt>(edge))
             {
@@ -1280,7 +1235,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
             {
                 assert(0 && "No such kind edge!!");
             }
-            rawstr <<  "";
+            rawstr << "";
         }
         else if (SVFUtil::isa<CmpVFGNode>(node))
         {
@@ -1294,55 +1249,53 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
         {
             rawstr << "color=grey";
         }
-        else if(SVFUtil::isa<PHIVFGNode>(node))
+        else if (SVFUtil::isa<PHIVFGNode>(node))
         {
-            rawstr <<  "color=black";
+            rawstr << "color=black";
         }
-        else if(SVFUtil::isa<NullPtrVFGNode>(node))
+        else if (SVFUtil::isa<NullPtrVFGNode>(node))
         {
-            rawstr <<  "color=grey";
+            rawstr << "color=grey";
         }
-        else if(SVFUtil::isa<FormalParmVFGNode>(node))
+        else if (SVFUtil::isa<FormalParmVFGNode>(node))
         {
-            rawstr <<  "color=yellow,penwidth=2";
+            rawstr << "color=yellow,penwidth=2";
         }
-        else if(SVFUtil::isa<ActualParmVFGNode>(node))
+        else if (SVFUtil::isa<ActualParmVFGNode>(node))
         {
-            rawstr <<  "color=yellow,penwidth=2";
+            rawstr << "color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<ActualRetVFGNode>(node))
         {
-            rawstr <<  "color=yellow,penwidth=2";
+            rawstr << "color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<FormalRetVFGNode>(node))
         {
-            rawstr <<  "color=yellow,penwidth=2";
+            rawstr << "color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<MRSVFGNode>(node))
         {
-            rawstr <<  "color=orange,penwidth=2";
+            rawstr << "color=orange,penwidth=2";
         }
         else if (SVFUtil::isa<BranchVFGNode>(node))
         {
-            rawstr <<  "color=gold,penwidth=2";
+            rawstr << "color=gold,penwidth=2";
         }
         else
             assert(false && "no such kind of node!!");
 
-        rawstr <<  "";
+        rawstr << "";
 
         return rawstr.str();
     }
 
-    template<class EdgeIter>
-    static std::string getEdgeAttributes(NodeType*, EdgeIter EI, VFG*)
+    template <class EdgeIter> static std::string getEdgeAttributes(NodeType*, EdgeIter EI, VFG*)
     {
         VFGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
         if (SVFUtil::isa<DirectSVFGEdge>(edge))
         {
-            if (SVFUtil::isa<CallDirSVFGEdge>(edge))
-                return "style=solid,color=red";
+            if (SVFUtil::isa<CallDirSVFGEdge>(edge)) return "style=solid,color=red";
             else if (SVFUtil::isa<RetDirSVFGEdge>(edge))
                 return "style=solid,color=blue";
             else
@@ -1350,8 +1303,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
         }
         else if (SVFUtil::isa<IndirectSVFGEdge>(edge))
         {
-            if (SVFUtil::isa<CallIndSVFGEdge>(edge))
-                return "style=dashed,color=red";
+            if (SVFUtil::isa<CallIndSVFGEdge>(edge)) return "style=dashed,color=red";
             else if (SVFUtil::isa<RetIndSVFGEdge>(edge))
                 return "style=dashed,color=blue";
             else
@@ -1364,20 +1316,18 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
         return "";
     }
 
-    template<class EdgeIter>
-    static std::string getEdgeSourceLabel(NodeType*, EdgeIter EI)
+    template <class EdgeIter> static std::string getEdgeSourceLabel(NodeType*, EdgeIter EI)
     {
         VFGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
 
         std::string str;
         std::stringstream rawstr(str);
-        if (CallDirSVFGEdge* dirCall = SVFUtil::dyn_cast<CallDirSVFGEdge>(edge))
-            rawstr << dirCall->getCallSiteId();
+        if (CallDirSVFGEdge* dirCall = SVFUtil::dyn_cast<CallDirSVFGEdge>(edge)) rawstr << dirCall->getCallSiteId();
         else if (RetDirSVFGEdge* dirRet = SVFUtil::dyn_cast<RetDirSVFGEdge>(edge))
             rawstr << dirRet->getCallSiteId();
 
         return rawstr.str();
     }
 };
-} // End namespace llvm
+} // namespace SVF

@@ -45,10 +45,8 @@ IRGraph::~IRGraph()
 bool IRGraph::addEdge(SVFVar* src, SVFVar* dst, SVFStmt* edge)
 {
 
-    DBOUT(DPAGBuild,
-          outs() << "add edge from " << src->getId() << " kind :"
-          << src->getNodeKind() << " to " << dst->getId()
-          << " kind :" << dst->getNodeKind() << "\n");
+    DBOUT(DPAGBuild, outs() << "add edge from " << src->getId() << " kind :" << src->getNodeKind() << " to "
+                            << dst->getId() << " kind :" << dst->getNodeKind() << "\n");
     src->addOutEdge(edge);
     dst->addInEdge(edge);
     return true;
@@ -59,7 +57,7 @@ bool IRGraph::addEdge(SVFVar* src, SVFVar* dst, SVFStmt* edge)
  */
 SVFStmt* IRGraph::hasNonlabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind)
 {
-    SVFStmt edge(src,dst,kind, false);
+    SVFStmt edge(src, dst, kind, false);
     SVFStmt::SVFStmtSetTy::iterator it = KindToSVFStmtSetMap[kind].find(&edge);
     if (it != KindToSVFStmtSetMap[kind].end())
     {
@@ -73,7 +71,7 @@ SVFStmt* IRGraph::hasNonlabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK ki
  */
 SVFStmt* IRGraph::hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind, const SVFVar* op2)
 {
-    SVFStmt edge(src,op1,SVFStmt::makeEdgeFlagWithAddionalOpnd(kind,op2), false);
+    SVFStmt edge(src, op1, SVFStmt::makeEdgeFlagWithAddionalOpnd(kind, op2), false);
     SVFStmt::SVFStmtSetTy::iterator it = KindToSVFStmtSetMap[kind].find(&edge);
     if (it != KindToSVFStmtSetMap[kind].end())
     {
@@ -87,7 +85,7 @@ SVFStmt* IRGraph::hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind,
  */
 SVFStmt* IRGraph::hasLabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind, const ICFGNode* callInst)
 {
-    SVFStmt edge(src,dst,SVFStmt::makeEdgeFlagWithCallInst(kind,callInst), false);
+    SVFStmt edge(src, dst, SVFStmt::makeEdgeFlagWithCallInst(kind, callInst), false);
     SVFStmt::SVFStmtSetTy::iterator it = KindToSVFStmtSetMap[kind].find(&edge);
     if (it != KindToSVFStmtSetMap[kind].end())
     {
@@ -112,59 +110,52 @@ void IRGraph::view()
     SVF::ViewGraph(this, "ProgramAssignmentGraph");
 }
 
-
 namespace SVF
 {
 /*!
  * Write value flow graph into dot file for debugging
  */
-template<>
-struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
+template <> struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
 {
 
     typedef SVFVar NodeType;
     typedef NodeType::iterator ChildIteratorType;
-    DOTGraphTraits(bool isSimple = false) :
-        DefaultDOTGraphTraits(isSimple)
-    {
-    }
+    DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
 
     /// Return name of the graph
-    static std::string getGraphName(IRGraph *graph)
+    static std::string getGraphName(IRGraph* graph)
     {
         return graph->getGraphName();
     }
 
     /// isNodeHidden - If the function returns true, the given node is not
     /// displayed in the graph
-    static bool isNodeHidden(SVFVar *node, IRGraph *)
+    static bool isNodeHidden(SVFVar* node, IRGraph*)
     {
         if (Options::ShowHiddenNode()) return false;
-        else return node->isIsolatedNode();
+        else
+            return node->isIsolatedNode();
     }
 
     /// Return label of a VFG node with two display mode
     /// Either you can choose to display the name of the value or the whole instruction
-    static std::string getNodeLabel(SVFVar *node, IRGraph*)
+    static std::string getNodeLabel(SVFVar* node, IRGraph*)
     {
         std::string str;
         std::stringstream rawstr(str);
         // print function info
-        if (node->getFunction())
-            rawstr << "[" << node->getFunction()->getName() << "] ";
+        if (node->getFunction()) rawstr << "[" << node->getFunction()->getName() << "] ";
 
         rawstr << node->toString();
 
         return rawstr.str();
-
     }
 
-    static std::string getNodeAttributes(SVFVar *node, IRGraph*)
+    static std::string getNodeAttributes(SVFVar* node, IRGraph*)
     {
         if (SVFUtil::isa<ValVar>(node))
         {
-            if(SVFUtil::isa<GepValVar>(node))
-                return "shape=hexagon";
+            if (SVFUtil::isa<GepValVar>(node)) return "shape=hexagon";
             else if (SVFUtil::isa<DummyValVar>(node))
                 return "shape=diamond";
             else
@@ -172,9 +163,8 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
         }
         else if (SVFUtil::isa<ObjVar>(node))
         {
-            if(SVFUtil::isa<GepObjVar>(node))
-                return "shape=doubleoctagon";
-            else if(SVFUtil::isa<FIObjVar>(node))
+            if (SVFUtil::isa<GepObjVar>(node)) return "shape=doubleoctagon";
+            else if (SVFUtil::isa<FIObjVar>(node))
                 return "shape=box3d";
             else if (SVFUtil::isa<DummyObjVar>(node))
                 return "shape=tab";
@@ -196,8 +186,7 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
         return "";
     }
 
-    template<class EdgeIter>
-    static std::string getEdgeAttributes(SVFVar*, EdgeIter EI, IRGraph*)
+    template <class EdgeIter> static std::string getEdgeAttributes(SVFVar*, EdgeIter EI, IRGraph*)
     {
         const SVFStmt* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
@@ -266,22 +255,21 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
         exit(1);
     }
 
-    template<class EdgeIter>
-    static std::string getEdgeSourceLabel(SVFVar*, EdgeIter EI)
+    template <class EdgeIter> static std::string getEdgeSourceLabel(SVFVar*, EdgeIter EI)
     {
         const SVFStmt* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
-        if(const CallPE* calledge = SVFUtil::dyn_cast<CallPE>(edge))
+        if (const CallPE* calledge = SVFUtil::dyn_cast<CallPE>(edge))
         {
-            const SVFInstruction* callInst= calledge->getCallSite()->getCallSite();
+            const SVFInstruction* callInst = calledge->getCallSite()->getCallSite();
             return callInst->getSourceLoc();
         }
-        else if(const RetPE* retedge = SVFUtil::dyn_cast<RetPE>(edge))
+        else if (const RetPE* retedge = SVFUtil::dyn_cast<RetPE>(edge))
         {
-            const SVFInstruction* callInst= retedge->getCallSite()->getCallSite();
+            const SVFInstruction* callInst = retedge->getCallSite()->getCallSite();
             return callInst->getSourceLoc();
         }
         return "";
     }
 };
-} // End namespace llvm
+} // namespace SVF

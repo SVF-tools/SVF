@@ -34,7 +34,6 @@
 #include "SVFIR/SVFValue.h"
 #include "Util/WorkList.h"
 
-
 namespace SVF
 {
 
@@ -49,14 +48,14 @@ public:
     typedef FIFOWorkList<NodeID> WorkList;
 
     /// Constructor
-    SaberSVFGBuilder(): SVFGBuilder(true) {}
+    SaberSVFGBuilder() : SVFGBuilder(true) {}
 
     /// Destructor
     virtual ~SaberSVFGBuilder() {}
 
     inline bool isGlobalSVFGNode(const SVFGNode* node) const
     {
-        return globSVFGNodes.find(node)!=globSVFGNodes.end();
+        return globSVFGNodes.find(node) != globSVFGNodes.end();
     }
 
     /// Add ActualParmVFGNode
@@ -80,7 +79,8 @@ protected:
 protected:
     /// Remove direct value-flow edge to a dereference point for Saber source-sink memory error detection
     /// for example, given two statements: p = alloc; q = *p, the direct SVFG edge between them is deleted
-    /// Because those edges only stand for values used at the dereference points but they can not pass the value to other definitions
+    /// Because those edges only stand for values used at the dereference points but they can not pass the value to
+    /// other definitions
     void rmDerefDirSVFGEdges(BVDataPTAImpl* pta);
 
     /// Remove Incoming Edge for strong-update (SU) store instruction
@@ -97,10 +97,10 @@ protected:
     void collectGlobals(BVDataPTAImpl* pta);
 
     /// Whether points-to of a PAGNode points-to global variable
-    bool accessGlobal(BVDataPTAImpl* pta,const PAGNode* pagNode);
+    bool accessGlobal(BVDataPTAImpl* pta, const PAGNode* pagNode);
 
     /// Collect objects along points-to chains
-    PointsTo& CollectPtsChain(BVDataPTAImpl* pta,NodeID id, NodeToPTSSMap& cachedPtsMap);
+    PointsTo& CollectPtsChain(BVDataPTAImpl* pta, NodeID id, NodeToPTSSMap& cachedPtsMap);
 
     PointsTo globs;
     /// Store all global SVFG nodes

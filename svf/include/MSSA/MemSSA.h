@@ -32,7 +32,6 @@
  * Journal of Systems and Software (JSS'16), Algorithm 3 in the paper
  */
 
-
 #ifndef MEMORYSSAPASS_H_
 #define MEMORYSSAPASS_H_
 
@@ -53,7 +52,6 @@ class MemSSA
 {
 
 public:
-
     /// define condition here changes needed if we add new type
     typedef MemRegion::Condition Condition;
     typedef MSSAMU<Condition> MU;
@@ -71,7 +69,7 @@ public:
     typedef Set<CHI*> CHISet;
     typedef Set<PHI*> PHISet;
 
-    ///Define mem region set
+    /// Define mem region set
     typedef MRGenerator::MRSet MRSet;
     typedef std::vector<const MemRegion*> MRVector;
     /// Map loads/stores to its mem regions,
@@ -96,7 +94,7 @@ public:
     //@}
 
     /// For SSA renaming
-    typedef Map<const MemRegion*, std::vector<MRVer*> > MemRegToVerStackMap;
+    typedef Map<const MemRegion*, std::vector<MRVer*>> MemRegToVerStackMap;
     typedef Map<const MemRegion*, MRVERSION> MemRegToCounterMap;
 
     /// SVFIR edge list
@@ -104,10 +102,10 @@ public:
 
     /// Statistics
     //@{
-    static double timeOfGeneratingMemRegions;	///< Time for allocating regions
-    static double timeOfCreateMUCHI;	///< Time for generating mu/chi for load/store/calls
-    static double timeOfInsertingPHI;	///< Time for inserting phis
-    static double timeOfSSARenaming;	///< Time for SSA rename
+    static double timeOfGeneratingMemRegions; ///< Time for allocating regions
+    static double timeOfCreateMUCHI;          ///< Time for generating mu/chi for load/store/calls
+    static double timeOfInsertingPHI;         ///< Time for inserting phis
+    static double timeOfSSARenaming;          ///< Time for SSA rename
     //@}
 
     enum MemPartition
@@ -130,6 +128,7 @@ protected:
     virtual void SSARename(const SVFFunction& fun);
     /// SSA rename for a basic block
     virtual void SSARenameBB(const SVFBasicBlock& bb);
+
 private:
     LoadToMUSetMap load2MuSetMap;
     StoreToChiSetMap store2ChiSetMap;
@@ -165,7 +164,7 @@ private:
     /// Get the last version of the SSA ver of memory region
     inline MRVer* getTopStackVer(const MemRegion* mr)
     {
-        std::vector<MRVer*> &stack = mr2VerStackMap[mr];
+        std::vector<MRVer*>& stack = mr2VerStackMap[mr];
         assert(!stack.empty() && "stack is empty!!");
         return stack.back();
     }
@@ -174,8 +173,7 @@ private:
     //@{
     inline void collectRegUses(const MemRegion* mr)
     {
-        if (0 == varKills.count(mr))
-            usedRegs.insert(mr);
+        if (0 == varKills.count(mr)) usedRegs.insert(mr);
     }
     inline void collectRegDefs(const SVFBasicBlock* bb, const MemRegion* mr)
     {
@@ -189,40 +187,38 @@ private:
     inline void AddLoadMU(const SVFBasicBlock* bb, const LoadStmt* load, const MRSet& mrSet)
     {
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
-            AddLoadMU(bb,load,*iter);
+            AddLoadMU(bb, load, *iter);
     }
     inline void AddStoreCHI(const SVFBasicBlock* bb, const StoreStmt* store, const MRSet& mrSet)
     {
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
-            AddStoreCHI(bb,store,*iter);
+            AddStoreCHI(bb, store, *iter);
     }
-    inline void AddCallSiteMU(const CallICFGNode* cs,  const MRSet& mrSet)
+    inline void AddCallSiteMU(const CallICFGNode* cs, const MRSet& mrSet)
+    {
+        for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter) AddCallSiteMU(cs, *iter);
+    }
+    inline void AddCallSiteCHI(const CallICFGNode* cs, const MRSet& mrSet)
     {
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
-            AddCallSiteMU(cs,*iter);
-    }
-    inline void AddCallSiteCHI(const CallICFGNode* cs,  const MRSet& mrSet)
-    {
-        for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
-            AddCallSiteCHI(cs,*iter);
+            AddCallSiteCHI(cs, *iter);
     }
     inline void AddMSSAPHI(const SVFBasicBlock* bb, const MRSet& mrSet)
     {
-        for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
-            AddMSSAPHI(bb,*iter);
+        for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter) AddMSSAPHI(bb, *iter);
     }
     inline void AddLoadMU(const SVFBasicBlock* bb, const LoadStmt* load, const MemRegion* mr)
     {
-        LOADMU* mu = new LOADMU(bb,load, mr);
+        LOADMU* mu = new LOADMU(bb, load, mr);
         load2MuSetMap[load].insert(mu);
         collectRegUses(mr);
     }
     inline void AddStoreCHI(const SVFBasicBlock* bb, const StoreStmt* store, const MemRegion* mr)
     {
-        STORECHI* chi = new STORECHI(bb,store, mr);
+        STORECHI* chi = new STORECHI(bb, store, mr);
         store2ChiSetMap[store].insert(chi);
         collectRegUses(mr);
-        collectRegDefs(bb,mr);
+        collectRegDefs(bb, mr);
     }
     inline void AddCallSiteMU(const CallICFGNode* cs, const MemRegion* mr)
     {
@@ -235,7 +231,7 @@ private:
         CALLCHI* chi = new CALLCHI(cs, mr);
         callsiteToChiSetMap[cs].insert(chi);
         collectRegUses(mr);
-        collectRegDefs(chi->getBasicBlock(),mr);
+        collectRegDefs(chi->getBasicBlock(), mr);
     }
     inline void AddMSSAPHI(const SVFBasicBlock* bb, const MemRegion* mr)
     {
@@ -248,8 +244,7 @@ private:
     /// Rename mu set
     inline void RenameMuSet(const MUSet& muSet)
     {
-        for (MUSet::const_iterator mit = muSet.begin(), emit = muSet.end();
-                mit != emit; ++mit)
+        for (MUSet::const_iterator mit = muSet.begin(), emit = muSet.end(); mit != emit; ++mit)
         {
             MU* mu = (*mit);
             mu->setVer(getTopStackVer(mu->getMR()));
@@ -259,12 +254,11 @@ private:
     /// Rename chi set
     inline void RenameChiSet(const CHISet& chiSet, MRVector& memRegs)
     {
-        for (CHISet::const_iterator cit = chiSet.begin(), ecit = chiSet.end();
-                cit != ecit; ++cit)
+        for (CHISet::const_iterator cit = chiSet.begin(), ecit = chiSet.end(); cit != ecit; ++cit)
         {
             CHI* chi = (*cit);
             chi->setOpVer(getTopStackVer(chi->getMR()));
-            chi->setResVer(newSSAName(chi->getMR(),chi));
+            chi->setResVer(newSSAName(chi->getMR(), chi));
             memRegs.push_back(chi->getMR());
         }
     }
@@ -272,11 +266,10 @@ private:
     /// Rename result (LHS) of phis
     inline void RenamePhiRes(const PHISet& phiSet, MRVector& memRegs)
     {
-        for (PHISet::const_iterator iter = phiSet.begin(), eiter = phiSet.end();
-                iter != eiter; ++iter)
+        for (PHISet::const_iterator iter = phiSet.begin(), eiter = phiSet.end(); iter != eiter; ++iter)
         {
             PHI* phi = *iter;
-            phi->setResVer(newSSAName(phi->getMR(),phi));
+            phi->setResVer(newSSAName(phi->getMR(), phi));
             memRegs.push_back(phi->getMR());
         }
     }
@@ -284,8 +277,7 @@ private:
     /// Rename operands (RHS) of phis
     inline void RenamePhiOps(const PHISet& phiSet, u32_t pos, MRVector&)
     {
-        for (PHISet::const_iterator iter = phiSet.begin(), eiter = phiSet.end();
-                iter != eiter; ++iter)
+        for (PHISet::const_iterator iter = phiSet.begin(), eiter = phiSet.end(); iter != eiter; ++iter)
         {
             PHI* phi = *iter;
             phi->setOpVer(getTopStackVer(phi->getMR()), pos);
@@ -335,8 +327,7 @@ public:
     }
     inline bool hasCHI(const PAGEdge* inst) const
     {
-        if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(
-                                         inst))
+        if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(inst))
         {
             bool has_store = store2ChiSetMap.count(store) != 0;
             assert(has_store && "not associated with mem region!");
@@ -347,30 +338,30 @@ public:
     }
     inline bool hasMU(const CallICFGNode* cs) const
     {
-        return callsiteToMuSetMap.find(cs)!=callsiteToMuSetMap.end();
+        return callsiteToMuSetMap.find(cs) != callsiteToMuSetMap.end();
     }
     inline bool hasCHI(const CallICFGNode* cs) const
     {
-        return callsiteToChiSetMap.find(cs)!=callsiteToChiSetMap.end();
+        return callsiteToChiSetMap.find(cs) != callsiteToChiSetMap.end();
     }
     //@}
 
     /// Has function entry chi or return mu
     //@{
-    inline bool hasFuncEntryChi(const SVFFunction * fun) const
+    inline bool hasFuncEntryChi(const SVFFunction* fun) const
     {
         return (funToEntryChiSetMap.find(fun) != funToEntryChiSetMap.end());
     }
-    inline bool hasReturnMu(const SVFFunction * fun) const
+    inline bool hasReturnMu(const SVFFunction* fun) const
     {
         return (funToReturnMuSetMap.find(fun) != funToReturnMuSetMap.end());
     }
 
-    inline CHISet& getFuncEntryChiSet(const SVFFunction * fun)
+    inline CHISet& getFuncEntryChiSet(const SVFFunction* fun)
     {
         return funToEntryChiSetMap[fun];
     }
-    inline MUSet& getReturnMuSet(const SVFFunction * fun)
+    inline MUSet& getReturnMuSet(const SVFFunction* fun)
     {
         return funToReturnMuSetMap[fun];
     }
@@ -400,7 +391,7 @@ public:
     }
     inline bool hasPHISet(const SVFBasicBlock* bb) const
     {
-        return bb2PhiSetMap.find(bb)!=bb2PhiSetMap.end();
+        return bb2PhiSetMap.find(bb) != bb2PhiSetMap.end();
     }
     inline LoadToMUSetMap& getLoadToMUSetMap()
     {
@@ -444,7 +435,7 @@ public:
     //@}
 
     /// Print Memory SSA
-    void dumpMSSA(OutStream & Out = SVFUtil::outs());
+    void dumpMSSA(OutStream& Out = SVFUtil::outs());
 };
 
 } // End namespace SVF

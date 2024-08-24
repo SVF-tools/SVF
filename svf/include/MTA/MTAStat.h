@@ -51,9 +51,7 @@ public:
     typedef Set<const Instruction*> InstSet;
 
     /// Constructor
-    MTAStat():PTAStat(nullptr),TCTTime(0),MHPTime(0),AnnotationTime(0)
-    {
-    }
+    MTAStat() : PTAStat(nullptr), TCTTime(0), MHPTime(0), AnnotationTime(0) {}
     /// Statistics for thread call graph
     void performThreadCallGraphStat(ThreadCallGraph* tcg);
     /// Statistics for thread creation tree
@@ -61,7 +59,7 @@ public:
     /// Statistics for MHP statement pairs
     void performMHPPairStat(MHP* mhp, LockAnalysis* lsa);
     /// Statistics for annotation
-    //void performAnnotationStat(MTAAnnotator* anno);
+    // void performAnnotationStat(MTAAnnotator* anno);
 
     double TCTTime;
     double MHPTime;

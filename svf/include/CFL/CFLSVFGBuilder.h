@@ -32,7 +32,7 @@
 namespace SVF
 {
 
-class CFLSVFGBuilder: public SaberSVFGBuilder
+class CFLSVFGBuilder : public SaberSVFGBuilder
 {
 public:
     typedef Set<const SVFGNode*> SVFGNodeSet;
@@ -54,5 +54,5 @@ protected:
     virtual void rmIncomingEdgeForSUStore(BVDataPTAImpl* pta);
 };
 
-}
-#endif //SVF_CFLSVFGBUILDER_H
+} // namespace SVF
+#endif // SVF_CFLSVFGBUILDER_H

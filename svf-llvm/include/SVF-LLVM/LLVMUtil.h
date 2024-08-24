@@ -101,7 +101,8 @@ static inline Type* getPtrElementType(const PointerType* pty)
 #if (LLVM_VERSION_MAJOR < 14)
     return pty->getPointerElementType();
 #elif (LLVM_VERSION_MAJOR < 17)
-    assert(!pty->isOpaque() && "Opaque Pointer is used, please recompile the source adding '-Xclang -no-opaque-pointers'");
+    assert(!pty->isOpaque() &&
+           "Opaque Pointer is used, please recompile the source adding '-Xclang -no-opaque-pointers'");
     return pty->getNonOpaquePointerElementType();
 #else
     assert(false && "llvm version 17+ only support opaque pointers!");
@@ -110,7 +111,6 @@ static inline Type* getPtrElementType(const PointerType* pty)
 
 /// Return size of this object based on LLVM value
 u32_t getNumOfElements(const Type* ety);
-
 
 /// Return true if this value refers to a object
 bool isObject(const Value* ref);
@@ -124,17 +124,14 @@ bool isUncalledFunction(const Function* fun);
 /// whether this is an argument in dead function
 inline bool ArgInDeadFunction(const Value* val)
 {
-    return SVFUtil::isa<Argument>(val)
-           && isUncalledFunction(SVFUtil::cast<Argument>(val)->getParent());
+    return SVFUtil::isa<Argument>(val) && isUncalledFunction(SVFUtil::cast<Argument>(val)->getParent());
 }
 //@}
 
 /// Return true if this is an argument of a program entry function (e.g. main)
 inline bool ArgInProgEntryFunction(const Value* val)
 {
-    return SVFUtil::isa<Argument>(val) &&
-           LLVMUtil::isProgEntryFunction(
-               SVFUtil::cast<Argument>(val)->getParent());
+    return SVFUtil::isa<Argument>(val) && LLVMUtil::isProgEntryFunction(SVFUtil::cast<Argument>(val)->getParent());
 }
 /// Return true if this is value in a dead function (function without any caller)
 bool isPtrInUncalledFunction(const Value* value);
@@ -151,10 +148,9 @@ inline bool isNoCallerFunction(const Function* fun)
 }
 
 /// Return true if the argument in a function does not have a caller
-inline bool isArgOfUncalledFunction (const Value*  val)
+inline bool isArgOfUncalledFunction(const Value* val)
 {
-    return SVFUtil::isa<Argument>(val)
-           && isNoCallerFunction(SVFUtil::cast<Argument>(val)->getParent());
+    return SVFUtil::isa<Argument>(val) && isNoCallerFunction(SVFUtil::cast<Argument>(val)->getParent());
 }
 //@}
 
@@ -166,8 +162,7 @@ bool basicBlockHasRetInst(const BasicBlock* bb);
 bool functionDoesNotRet(const Function* fun);
 
 /// Get reachable basic block from function entry
-void getFunReachableBBs(const Function* svfFun,
-                        std::vector<const SVFBasicBlock*>& bbs);
+void getFunReachableBBs(const Function* svfFun, std::vector<const SVFBasicBlock*>& bbs);
 
 /// Strip off the constant casts
 const Value* stripConstantCasts(const Value* val);
@@ -185,8 +180,7 @@ inline const ConstantExpr* isGepConstantExpr(const Value* val)
 {
     if (const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
-        if (constExpr->getOpcode() == Instruction::GetElementPtr)
-            return constExpr;
+        if (constExpr->getOpcode() == Instruction::GetElementPtr) return constExpr;
     }
     return nullptr;
 }
@@ -195,8 +189,7 @@ inline const ConstantExpr* isInt2PtrConstantExpr(const Value* val)
 {
     if (const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
-        if (constExpr->getOpcode() == Instruction::IntToPtr)
-            return constExpr;
+        if (constExpr->getOpcode() == Instruction::IntToPtr) return constExpr;
     }
     return nullptr;
 }
@@ -205,8 +198,7 @@ inline const ConstantExpr* isPtr2IntConstantExpr(const Value* val)
 {
     if (const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
-        if (constExpr->getOpcode() == Instruction::PtrToInt)
-            return constExpr;
+        if (constExpr->getOpcode() == Instruction::PtrToInt) return constExpr;
     }
     return nullptr;
 }
@@ -215,8 +207,7 @@ inline const ConstantExpr* isCastConstantExpr(const Value* val)
 {
     if (const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
-        if (constExpr->getOpcode() == Instruction::BitCast)
-            return constExpr;
+        if (constExpr->getOpcode() == Instruction::BitCast) return constExpr;
     }
     return nullptr;
 }
@@ -225,8 +216,7 @@ inline const ConstantExpr* isSelectConstantExpr(const Value* val)
 {
     if (const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
-        if (constExpr->getOpcode() == Instruction::Select)
-            return constExpr;
+        if (constExpr->getOpcode() == Instruction::Select) return constExpr;
     }
     return nullptr;
 }
@@ -235,11 +225,9 @@ inline const ConstantExpr* isTruncConstantExpr(const Value* val)
 {
     if (const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
-        if (constExpr->getOpcode() == Instruction::Trunc ||
-                constExpr->getOpcode() == Instruction::FPTrunc ||
-                constExpr->getOpcode() == Instruction::ZExt ||
-                constExpr->getOpcode() == Instruction::SExt ||
-                constExpr->getOpcode() == Instruction::FPExt)
+        if (constExpr->getOpcode() == Instruction::Trunc || constExpr->getOpcode() == Instruction::FPTrunc ||
+            constExpr->getOpcode() == Instruction::ZExt || constExpr->getOpcode() == Instruction::SExt ||
+            constExpr->getOpcode() == Instruction::FPExt)
             return constExpr;
     }
     return nullptr;
@@ -249,8 +237,7 @@ inline const ConstantExpr* isCmpConstantExpr(const Value* val)
 {
     if (const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
-        if (constExpr->getOpcode() == Instruction::ICmp ||
-                constExpr->getOpcode() == Instruction::FCmp)
+        if (constExpr->getOpcode() == Instruction::ICmp || constExpr->getOpcode() == Instruction::FCmp)
             return constExpr;
     }
     return nullptr;
@@ -261,7 +248,7 @@ inline const ConstantExpr* isBinaryConstantExpr(const Value* val)
     if (const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
         if ((constExpr->getOpcode() >= Instruction::BinaryOpsBegin) &&
-                (constExpr->getOpcode() <= Instruction::BinaryOpsEnd))
+            (constExpr->getOpcode() <= Instruction::BinaryOpsEnd))
             return constExpr;
     }
     return nullptr;
@@ -272,7 +259,7 @@ inline const ConstantExpr* isUnaryConstantExpr(const Value* val)
     if (const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
         if ((constExpr->getOpcode() >= Instruction::UnaryOpsBegin) &&
-                (constExpr->getOpcode() <= Instruction::UnaryOpsEnd))
+            (constExpr->getOpcode() <= Instruction::UnaryOpsEnd))
             return constExpr;
     }
     return nullptr;
@@ -281,27 +268,22 @@ inline const ConstantExpr* isUnaryConstantExpr(const Value* val)
 
 inline static DataLayout* getDataLayout(Module* mod)
 {
-    static DataLayout *dl = nullptr;
-    if (dl == nullptr)
-        dl = new DataLayout(mod);
+    static DataLayout* dl = nullptr;
+    if (dl == nullptr) dl = new DataLayout(mod);
     return dl;
 }
 
 /// Get the next instructions following control flow
-void getNextInsts(const Instruction* curInst,
-                  std::vector<const SVFInstruction*>& instList);
+void getNextInsts(const Instruction* curInst, std::vector<const SVFInstruction*>& instList);
 
 /// Get the previous instructions following control flow
-void getPrevInsts(const Instruction* curInst,
-                  std::vector<const SVFInstruction*>& instList);
+void getPrevInsts(const Instruction* curInst, std::vector<const SVFInstruction*>& instList);
 
 /// Get the next instructions following control flow
-void getNextInsts(const Instruction* curInst,
-                  std::vector<const Instruction*>& instList);
+void getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList);
 
 /// Get the previous instructions following control flow
-void getPrevInsts(const Instruction* curInst,
-                  std::vector<const Instruction*>& instList);
+void getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList);
 
 /// Get num of BB's predecessors
 u32_t getBBPredecessorNum(const BasicBlock* BB);
@@ -310,8 +292,7 @@ u32_t getBBPredecessorNum(const BasicBlock* BB);
 bool isIRFile(const std::string& filename);
 
 /// Parse argument for multi-module analysis
-void processArguments(int argc, char** argv, int& arg_num, char** arg_value,
-                      std::vector<std::string>& moduleNameVec);
+void processArguments(int argc, char** argv, int& arg_num, char** arg_value, std::vector<std::string>& moduleNameVec);
 
 /// Helper method to get the size of the type from target data layout
 //@{
@@ -326,7 +307,7 @@ bool isIntrinsicInst(const Instruction* inst);
 bool isIntrinsicFun(const Function* func);
 
 /// Get all called funcions in a parent function
-std::vector<const Function *> getCalledFunctions(const Function *F);
+std::vector<const Function*> getCalledFunctions(const Function* F);
 void removeFunAnnotations(Set<Function*>& removedFuncList);
 bool isUnusedGlobalVariable(const GlobalVariable& global);
 void removeUnusedGlobalVariables(Module* module);
@@ -341,8 +322,7 @@ const SVFFunction* getFunction(const std::string& name);
 /// Return true if the value refers to constant data, e.g., i32 0
 inline bool isConstDataOrAggData(const Value* val)
 {
-    return SVFUtil::isa<ConstantData, ConstantAggregate,
-           MetadataAsValue, BlockAddress>(val);
+    return SVFUtil::isa<ConstantData, ConstantAggregate, MetadataAsValue, BlockAddress>(val);
 }
 
 /// find the unique defined global across multiple modules

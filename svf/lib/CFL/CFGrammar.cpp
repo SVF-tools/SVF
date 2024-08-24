@@ -36,13 +36,12 @@
 
 using namespace SVF;
 
-
 void GrammarBase::setRawProductions(SymbolMap<Symbol, Productions>& rawProductions)
 {
     this->rawProductions = rawProductions;
 }
 
-void GrammarBase::setKindToAttrsMap(const Map<Kind,  Set<Attribute>>& kindToAttrsMap)
+void GrammarBase::setKindToAttrsMap(const Map<Kind, Set<Attribute>>& kindToAttrsMap)
 {
     this->kindToAttrsMap = kindToAttrsMap;
 }
@@ -56,16 +55,13 @@ GrammarBase::Kind GrammarBase::strToKind(std::string str) const
 {
 
     auto tit = terminals.find(str);
-    if(tit!=terminals.end())
-        return tit->second;
+    if (tit != terminals.end()) return tit->second;
 
     auto nit = nonterminals.find(str);
-    if(nit!=nonterminals.end())
-        return nit->second;
+    if (nit != nonterminals.end()) return nit->second;
 
     auto sit = EBNFSigns.find(str);
-    if(sit!=EBNFSigns.end())
-        return sit->second;
+    if (sit != EBNFSigns.end()) return sit->second;
 
     assert(false && "kind not found!");
     abort();
@@ -78,17 +74,17 @@ GrammarBase::Symbol GrammarBase::strToSymbol(const std::string str) const
     std::string kindStr = extractKindStrFromSymbolStr(str);
     symbol.kind = strToKind(kindStr);
 
-    if ( attributeStr == "") return symbol;
+    if (attributeStr == "") return symbol;
 
-    if ( (attributeStr.size() == 1) && (std::isalpha(attributeStr[attributeStr.size()-1])) )
+    if ((attributeStr.size() == 1) && (std::isalpha(attributeStr[attributeStr.size() - 1])))
     {
-        symbol.variableAttribute = (u32_t)attributeStr[attributeStr.size()-1];
+        symbol.variableAttribute = (u32_t)attributeStr[attributeStr.size() - 1];
     }
     else
     {
-        for( char &c : attributeStr)
+        for (char& c : attributeStr)
         {
-            if ( std::isdigit(c) == false )
+            if (std::isdigit(c) == false)
             {
                 SVFUtil::errs() << SVFUtil::errMsg("\t Symbol Attribute Parse Failure :") << str
                                 << " Attribute:" << attributeStr << " (only number or single alphabet.)";
@@ -104,7 +100,7 @@ std::string GrammarBase::kindToStr(Kind kind) const
 {
 
     std::string key = "";
-    for (auto &i : terminals)
+    for (auto& i : terminals)
     {
         if (i.second == kind)
         {
@@ -114,7 +110,7 @@ std::string GrammarBase::kindToStr(Kind kind) const
     }
 
     std::string nkey = "";
-    for (auto &ni : nonterminals)
+    for (auto& ni : nonterminals)
     {
         if (ni.second == kind)
         {
@@ -124,7 +120,7 @@ std::string GrammarBase::kindToStr(Kind kind) const
     }
 
     std::string signs = "";
-    for (auto &i : EBNFSigns)
+    for (auto& i : EBNFSigns)
     {
         if (i.second == kind)
         {
@@ -142,12 +138,12 @@ std::string GrammarBase::symToStrDump(Symbol sym) const
     Attribute attribute = sym.attribute;
 
     std::string key = "";
-    for (auto &i : terminals)
+    for (auto& i : terminals)
     {
         if (i.second == kind)
         {
             key = i.first;
-            if(attribute != 0)
+            if (attribute != 0)
             {
                 key.append("_");
                 key.append(std::to_string(attribute));
@@ -157,12 +153,12 @@ std::string GrammarBase::symToStrDump(Symbol sym) const
     }
 
     std::string nkey = "";
-    for (auto &ni : nonterminals)
+    for (auto& ni : nonterminals)
     {
         if (ni.second == kind)
         {
             nkey = ni.first;
-            if(attribute != 0)
+            if (attribute != 0)
             {
                 nkey.append("_");
                 nkey.append(std::to_string(attribute));
@@ -208,7 +204,7 @@ std::string GrammarBase::extractKindStrFromSymbolStr(const std::string& symbolSt
 {
     std::string kindStr;
     // symbolStr end with '_', the whole symbolStr treat as kind, not with attribute.
-    auto underscorePosition = symbolStr.find_last_of("_", symbolStr.size()-1);
+    auto underscorePosition = symbolStr.find_last_of("_", symbolStr.size() - 1);
     if (underscorePosition == std::string::npos)
     {
         return symbolStr;
@@ -220,12 +216,12 @@ std::string GrammarBase::extractAttributeStrFromSymbolStr(const std::string& sym
 {
     std::string attributeStr;
     // symbolStr end with '_', the whole symbolStr treat as kind, not with attribute.
-    auto underscorePosition = symbolStr.find_last_of("_", symbolStr.size()-1);
+    auto underscorePosition = symbolStr.find_last_of("_", symbolStr.size() - 1);
     if (underscorePosition == std::string::npos)
     {
         return "";
     }
-    return symbolStr.substr(underscorePosition+1);
+    return symbolStr.substr(underscorePosition + 1);
 }
 
 GrammarBase::Symbol GrammarBase::insertSymbol(std::string symbolStr)
@@ -253,18 +249,18 @@ GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string symbolStr)
     std::string attributeStr = extractAttributeStrFromSymbolStr(symbolStr);
     symbol.kind = insertNonterminalKind(kindStr);
 
-    if ( attributeStr == "") return symbol;
+    if (attributeStr == "") return symbol;
 
-    if ( (attributeStr.size() == 1) && (std::isalpha(attributeStr[attributeStr.size()-1])) )
+    if ((attributeStr.size() == 1) && (std::isalpha(attributeStr[attributeStr.size() - 1])))
     {
         attributeKinds.insert(symbol.kind);
-        symbol.variableAttribute = (u32_t)attributeStr[attributeStr.size()-1];
+        symbol.variableAttribute = (u32_t)attributeStr[attributeStr.size() - 1];
     }
     else
     {
-        for( char &c : attributeStr)
+        for (char& c : attributeStr)
         {
-            if ( std::isdigit(c) == false )
+            if (std::isdigit(c) == false)
             {
                 SVFUtil::errs() << SVFUtil::errMsg("\t Symbol Attribute Parse Failure :") << symbolStr
                                 << " Attribute:" << attributeStr << " (only number or single alphabet.)";
@@ -284,18 +280,18 @@ GrammarBase::Symbol GrammarBase::insertTerminalSymbol(std::string symbolStr)
     std::string attributeStr = extractAttributeStrFromSymbolStr(symbolStr);
     symbol.kind = insertTerminalKind(kindStr);
 
-    if ( attributeStr == "") return symbol;
+    if (attributeStr == "") return symbol;
 
-    if ( (attributeStr.size() == 1) && (std::isalpha(attributeStr[attributeStr.size()-1])) )
+    if ((attributeStr.size() == 1) && (std::isalpha(attributeStr[attributeStr.size() - 1])))
     {
         attributeKinds.insert(symbol.kind);
-        symbol.variableAttribute = (u32_t)attributeStr[attributeStr.size()-1];
+        symbol.variableAttribute = (u32_t)attributeStr[attributeStr.size() - 1];
     }
     else
     {
-        for( char &c : attributeStr)
+        for (char& c : attributeStr)
         {
-            if ( std::isdigit(c) == false )
+            if (std::isdigit(c) == false)
             {
                 SVFUtil::errs() << SVFUtil::errMsg("\t Symbol Attribute Parse Failure :") << symbolStr
                                 << " Attribute:" << attributeStr << " (only number or single alphabet.)";
@@ -321,19 +317,18 @@ GrammarBase::Symbol GrammarBase::insertEBNFSigns(std::string symbolStr)
         sign = strToKind(symbolStr);
     }
     return sign;
-
 }
 
 void GrammarBase::insertAttribute(Kind kind, Attribute attribute)
 {
     attributeKinds.insert(kind);
-    if (kindToAttrsMap.find(kind)!= kindToAttrsMap.end())
+    if (kindToAttrsMap.find(kind) != kindToAttrsMap.end())
     {
         kindToAttrsMap[kind].insert(attribute);
     }
     else
     {
-        Set<CFGrammar::Attribute> attrs {attribute};
+        Set<CFGrammar::Attribute> attrs{attribute};
         kindToAttrsMap.insert(make_pair(kind, attrs));
     }
 }
@@ -356,7 +351,7 @@ void CFGrammar::dump(std::string fileName) const
 
     gramFile << "Epsilon Production:\n";
     std::vector<std::string> strV;
-    for (auto pro: this->epsilonProds)
+    for (auto pro : this->epsilonProds)
     {
         std::stringstream ss;
         for (auto sym : pro)
@@ -370,7 +365,7 @@ void CFGrammar::dump(std::string fileName) const
         strV.insert(strV.begin(), ss.str());
     }
     std::sort(strV.begin(), strV.end());
-    for (auto pro: strV)
+    for (auto pro : strV)
     {
         gramFile << '\t';
         gramFile << pro;
@@ -380,9 +375,9 @@ void CFGrammar::dump(std::string fileName) const
 
     gramFile << "Single Production:\n";
     strV = {};
-    for (auto symProPair: singleRHSToProds)
+    for (auto symProPair : singleRHSToProds)
     {
-        for (auto pro: symProPair.second)
+        for (auto pro : symProPair.second)
         {
             std::stringstream ss;
             int i = 0;
@@ -399,7 +394,7 @@ void CFGrammar::dump(std::string fileName) const
         }
     }
     std::sort(strV.begin(), strV.end());
-    for (auto pro: strV)
+    for (auto pro : strV)
     {
         gramFile << '\t';
         gramFile << pro;
@@ -409,9 +404,9 @@ void CFGrammar::dump(std::string fileName) const
 
     gramFile << "Binary Production:\n";
     strV = {};
-    for (auto symProPair: firstRHSToProds)
+    for (auto symProPair : firstRHSToProds)
     {
-        for (auto pro: symProPair.second)
+        for (auto pro : symProPair.second)
         {
             std::stringstream ss;
             int i = 0;
@@ -429,7 +424,7 @@ void CFGrammar::dump(std::string fileName) const
         }
     }
     std::sort(strV.begin(), strV.end());
-    for (auto pro: strV)
+    for (auto pro : strV)
     {
         gramFile << '\t';
         gramFile << pro;

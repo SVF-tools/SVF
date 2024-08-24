@@ -51,9 +51,7 @@ public:
 
     static double numOfChecks;
 
-    CFLSolver(CFLGraph* _graph, CFGrammar* _grammar): graph(_graph), grammar(_grammar)
-    {
-    }
+    CFLSolver(CFLGraph* _graph, CFGrammar* _grammar) : graph(_graph), grammar(_grammar) {}
 
     virtual ~CFLSolver()
     {
@@ -109,22 +107,21 @@ protected:
     CFGrammar* grammar;
     /// Worklist for resolution
     WorkList worklist;
-
 };
 
 /// Solver Utilize CFLData
 class POCRSolver : public CFLSolver
 {
 public:
-    typedef std::map<const Label, NodeBS> TypeMap;                  // Label with SparseBitVector of NodeID
-    typedef std::unordered_map<NodeID, TypeMap> DataMap;            // Each Node has a TypeMap
-    typedef typename DataMap::iterator iterator;                    // iterator for each node
+    typedef std::map<const Label, NodeBS> TypeMap;       // Label with SparseBitVector of NodeID
+    typedef std::unordered_map<NodeID, TypeMap> DataMap; // Each Node has a TypeMap
+    typedef typename DataMap::iterator iterator;         // iterator for each node
     typedef typename DataMap::const_iterator const_iterator;
 
 protected:
-    DataMap succMap;                                                // succ map for nodes contains Label: Edgeset
-    DataMap predMap;                                                // pred map for nodes contains Label: edgeset
-    const NodeBS emptyData;                                         // ??
+    DataMap succMap;        // succ map for nodes contains Label: Edgeset
+    DataMap predMap;        // pred map for nodes contains Label: edgeset
+    const NodeBS emptyData; // ??
     NodeBS diff;
     // union/add data
     //@{
@@ -140,20 +137,17 @@ protected:
 
     inline bool addPreds(const NodeID key, const NodeBS& data, const Label ty)
     {
-        if (data.empty())
-            return false;
-        return predMap[key][ty] |= data;                            // union of sparsebitvector (add to LHS)
+        if (data.empty()) return false;
+        return predMap[key][ty] |= data; // union of sparsebitvector (add to LHS)
     }
 
     inline bool addSuccs(const NodeID key, const NodeBS& data, const Label ty)
     {
-        if (data.empty())
-            return false;
-        return succMap[key][ty] |= data;                            // // union of sparsebitvector (add to LHS)
+        if (data.empty()) return false;
+        return succMap[key][ty] |= data; // // union of sparsebitvector (add to LHS)
     }
     //@}
 public:
-
     virtual void clear()
     {
         succMap.clear();
@@ -224,9 +218,8 @@ public:
         NodeBS newDsts;
         if (addSuccs(src, dstData, ty))
         {
-            for (const NodeID datum: dstData)
-                if (addPred(datum, src, ty))
-                    newDsts.set(datum);
+            for (const NodeID datum : dstData)
+                if (addPred(datum, src, ty)) newDsts.set(datum);
         }
         return newDsts;
     }
@@ -237,9 +230,8 @@ public:
         NodeBS newSrcs;
         if (addPreds(dst, srcData, ty))
         {
-            for (const NodeID datum: srcData)
-                if (addSucc(datum, dst, ty))
-                    newSrcs.set(datum);
+            for (const NodeID datum : srcData)
+                if (addSucc(datum, dst, ty)) newSrcs.set(datum);
         }
         return newSrcs;
     }
@@ -248,12 +240,10 @@ public:
     inline bool hasEdge(const NodeID src, const NodeID dst, const Label ty)
     {
         const_iterator iter1 = succMap.find(src);
-        if (iter1 == succMap.end())
-            return false;
+        if (iter1 == succMap.end()) return false;
 
         auto iter2 = iter1->second.find(ty);
-        if (iter2 == iter1->second.end())
-            return false;
+        if (iter2 == iter1->second.end()) return false;
 
         return iter2->second.test(dst);
     }
@@ -271,9 +261,7 @@ public:
         buildCFLData();
     }
     /// Destructor
-    virtual ~POCRSolver()
-    {
-    }
+    virtual ~POCRSolver() {}
 
     /// Process CFLEdge
     virtual void processCFLEdge(const CFLEdge* Y_edge);
@@ -293,20 +281,17 @@ public:
 /// Solver Utilize Hybrid Representation of Graph
 class POCRHybridSolver : public POCRSolver
 {
-//Hybrid
-//{@
+    // Hybrid
+    //{@
 public:
     struct TreeNode
     {
         NodeID id;
         std::unordered_set<TreeNode*> children;
 
-        TreeNode(NodeID nId) : id(nId)
-        {}
+        TreeNode(NodeID nId) : id(nId) {}
 
-        ~TreeNode()
-        {
-        }
+        ~TreeNode() {}
 
         inline bool operator==(const TreeNode& rhs) const
         {
@@ -320,7 +305,7 @@ public:
     };
 
 public:
-    Map<NodeID, std::unordered_map<NodeID, TreeNode*>> indMap;   // indMap[v][u] points to node v in tree(u)
+    Map<NodeID, std::unordered_map<NodeID, TreeNode*>> indMap; // indMap[v][u] points to node v in tree(u)
 
     bool hasInd_h(NodeID src, NodeID dst);
 
@@ -342,17 +327,15 @@ public:
     void addArc_h(NodeID src, NodeID dst);
 
     void meld_h(NodeID x, TreeNode* uNode, TreeNode* vNode);
-//@}
+    //@}
 public:
-    POCRHybridSolver(CFLGraph* _graph, CFGrammar* _grammar) : POCRSolver(_graph, _grammar)
-    {
-    }
+    POCRHybridSolver(CFLGraph* _graph, CFGrammar* _grammar) : POCRSolver(_graph, _grammar) {}
     /// Destructor
     virtual ~POCRHybridSolver()
     {
-        for (auto iter1: indMap)
+        for (auto iter1 : indMap)
         {
-            for (auto iter2: iter1.second)
+            for (auto iter2 : iter1.second)
             {
                 delete iter2.second;
                 iter2.second = NULL;
@@ -369,6 +352,6 @@ public:
     void addArc(NodeID src, NodeID dst);
     void meld(NodeID x, TreeNode* uNode, TreeNode* vNode);
 };
-}
+} // namespace SVF
 
 #endif /* INCLUDE_CFL_CFLSolver_H_*/

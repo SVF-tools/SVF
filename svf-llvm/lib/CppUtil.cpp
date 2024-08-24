@@ -59,27 +59,34 @@ const std::string vtableType = "(...)**";
 const std::string znwm = "_Znwm";
 const std::string zn1Label = "_ZN1"; // c++ constructor
 const std::string znstLabel = "_ZNSt";
-const std::string znst5Label = "_ZNSt5"; // _ZNSt5dequeIPK1ASaIS2_EE5frontEv -> std::deque<A const*, std::allocator<A const*> >::front()
-const std::string znst12Label = "_ZNSt12"; // _ZNSt12forward_listIPK1ASaIS2_EEC2Ev -> std::forward_list<A const*, std::allocator<A const*> >::forward_list()
-const std::string znst6Label = "_ZNSt6"; // _ZNSt6vectorIP1ASaIS1_EEC2Ev -> std::vector<A*, std::allocator<A*> >::vector()
-const std::string znst7Label = "_ZNSt7"; // _ZNSt7__cxx114listIPK1ASaIS3_EEC2Ev -> std::__cxx11::list<A const*, std::allocator<A const*> >::list()
-const std::string znst14Label = "_ZNSt14"; // _ZNSt14_Fwd_list_baseI1ASaIS0_EEC2Ev -> std::_Fwd_list_base<A, std::allocator<A> >::_Fwd_list_base()
-
+const std::string znst5Label =
+    "_ZNSt5"; // _ZNSt5dequeIPK1ASaIS2_EE5frontEv -> std::deque<A const*, std::allocator<A const*> >::front()
+const std::string znst12Label = "_ZNSt12"; // _ZNSt12forward_listIPK1ASaIS2_EEC2Ev -> std::forward_list<A const*,
+                                           // std::allocator<A const*> >::forward_list()
+const std::string znst6Label =
+    "_ZNSt6"; // _ZNSt6vectorIP1ASaIS1_EEC2Ev -> std::vector<A*, std::allocator<A*> >::vector()
+const std::string znst7Label =
+    "_ZNSt7"; // _ZNSt7__cxx114listIPK1ASaIS3_EEC2Ev -> std::__cxx11::list<A const*, std::allocator<A const*> >::list()
+const std::string znst14Label =
+    "_ZNSt14"; // _ZNSt14_Fwd_list_baseI1ASaIS0_EEC2Ev -> std::_Fwd_list_base<A, std::allocator<A> >::_Fwd_list_base()
 
 const std::string znkstLabel = "_ZNKSt";
-const std::string znkst5Label = "_ZNKSt15_"; // _ZNKSt15_Deque_iteratorIPK1ARS2_PS2_EdeEv -> std::_Deque_iterator<A const*, A const*&, A const**>::operator*() const
-const std::string znkst20Label = "_ZNKSt20_"; // _ZNKSt20_List_const_iteratorIPK1AEdeEv -> std::_List_const_iterator<A const*>::operator*() const
+const std::string znkst5Label = "_ZNKSt15_"; // _ZNKSt15_Deque_iteratorIPK1ARS2_PS2_EdeEv -> std::_Deque_iterator<A
+                                             // const*, A const*&, A const**>::operator*() const
+const std::string znkst20Label =
+    "_ZNKSt20_"; // _ZNKSt20_List_const_iteratorIPK1AEdeEv -> std::_List_const_iterator<A const*>::operator*() const
 
-const std::string znkst23Label = "_ZNKSt23_"; // _ZNKSt23_Rb_tree_const_iteratorISt4pairIKi1AEEptEv -> std::_List_const_iterator<A const*>::operator*() const
-
+const std::string znkst23Label = "_ZNKSt23_"; // _ZNKSt23_Rb_tree_const_iteratorISt4pairIKi1AEEptEv ->
+                                              // std::_List_const_iterator<A const*>::operator*() const
 
 const std::string znkLabel = "_ZNK";
-const std::string znk9Label = "_ZNK9"; // _ZNK9__gnu_cxx17__normal_iteratorIPK1ASt6vectorIS1_SaIS1_EEEdeEv -> __gnu_cxx::__normal_iterator<A const*, std::vector<A, std::allocator<A> > >::operator*() const
+const std::string znk9Label =
+    "_ZNK9"; // _ZNK9__gnu_cxx17__normal_iteratorIPK1ASt6vectorIS1_SaIS1_EEEdeEv -> __gnu_cxx::__normal_iterator<A
+             // const*, std::vector<A, std::allocator<A> > >::operator*() const
 
 const std::string ztilabel = "_ZTI";
 const std::string ztiprefix = "typeinfo for ";
 const std::string dyncast = "__dynamic_cast";
-
 
 static bool isOperOverload(const std::string& name)
 {
@@ -112,12 +119,9 @@ static std::string getBeforeParenthesis(const std::string& name)
     s32_t paren_num = 1, pos;
     for (pos = lastRightParen - 1; pos >= 0; pos--)
     {
-        if (name[pos] == ')')
-            paren_num++;
-        if (name[pos] == '(')
-            paren_num--;
-        if (paren_num == 0)
-            break;
+        if (name[pos] == ')') paren_num++;
+        if (name[pos] == '(') paren_num--;
+        if (paren_num == 0) break;
     }
     return name.substr(0, pos);
 }
@@ -133,12 +137,9 @@ std::string cppUtil::getBeforeBrackets(const std::string& name)
     s32_t bracket_num = 1, pos;
     for (pos = name.size() - 2; pos >= 0; pos--)
     {
-        if (name[pos] == '>')
-            bracket_num++;
-        if (name[pos] == '<')
-            bracket_num--;
-        if (bracket_num == 0)
-            break;
+        if (name[pos] == '>') bracket_num++;
+        if (name[pos] == '<') bracket_num--;
+        if (bracket_num == 0) break;
     }
     return name.substr(0, pos);
 }
@@ -155,14 +156,11 @@ static void handleThunkFunction(cppUtil::DemangledName& dname)
     // these prefixes, we need to remove the prefix
     // to get the real class name
 
-    static std::vector<std::string> thunkPrefixes = {VThunkFuncLabel,
-                                                     NVThunkFunLabel
-                                                    };
+    static std::vector<std::string> thunkPrefixes = {VThunkFuncLabel, NVThunkFunLabel};
     for (unsigned i = 0; i < thunkPrefixes.size(); i++)
     {
         auto prefix = thunkPrefixes[i];
-        if (dname.className.size() > prefix.size() &&
-                dname.className.compare(0, prefix.size(), prefix) == 0)
+        if (dname.className.size() > prefix.size() && dname.className.compare(0, prefix.size(), prefix) == 0)
         {
             dname.className = dname.className.substr(prefix.size());
             dname.isThunkFunc = true;
@@ -208,8 +206,7 @@ struct cppUtil::DemangledName cppUtil::demangle(const std::string& name)
     {
         std::string realnameStr = std::string(realname);
         std::string beforeParenthesis = getBeforeParenthesis(realnameStr);
-        if (beforeParenthesis.find("::") == std::string::npos ||
-                isOperOverload(beforeParenthesis))
+        if (beforeParenthesis.find("::") == std::string::npos || isOperOverload(beforeParenthesis))
         {
             dname.className = "";
             dname.funcName = "";
@@ -243,8 +240,7 @@ Set<std::string> cppUtil::getClsNamesInBrackets(const std::string& name)
 {
     Set<std::string> res;
     // Lambda to trim whitespace from both ends of a string
-    auto trim = [](std::string& s)
-    {
+    auto trim = [](std::string& s) {
         size_t first = s.find_first_not_of(' ');
         size_t last = s.find_last_not_of(' ');
         if (first != std::string::npos && last != std::string::npos)
@@ -258,8 +254,7 @@ Set<std::string> cppUtil::getClsNamesInBrackets(const std::string& name)
     };
 
     // Lambda to remove trailing '*' and '&' characters
-    auto removePointerAndReference = [](std::string& s)
-    {
+    auto removePointerAndReference = [](std::string& s) {
         while (!s.empty() && (s.back() == '*' || s.back() == '&'))
         {
             s.pop_back();
@@ -310,8 +305,7 @@ std::string cppUtil::getClassNameFromVtblObj(const std::string& vtblName)
     if (realname != nullptr)
     {
         std::string realnameStr = std::string(realname);
-        if (realnameStr.compare(0, vtblLabelAfterDemangle.size(),
-                                vtblLabelAfterDemangle) == 0)
+        if (realnameStr.compare(0, vtblLabelAfterDemangle.size(), vtblLabelAfterDemangle) == 0)
         {
             className = realnameStr.substr(vtblLabelAfterDemangle.size());
         }
@@ -320,14 +314,13 @@ std::string cppUtil::getClassNameFromVtblObj(const std::string& vtblName)
     return className;
 }
 
-const ConstantStruct *cppUtil::getVtblStruct(const GlobalValue *vtbl)
+const ConstantStruct* cppUtil::getVtblStruct(const GlobalValue* vtbl)
 {
-    const ConstantStruct *vtblStruct = SVFUtil::dyn_cast<ConstantStruct>(vtbl->getOperand(0));
+    const ConstantStruct* vtblStruct = SVFUtil::dyn_cast<ConstantStruct>(vtbl->getOperand(0));
     assert(vtblStruct && "Initializer of a vtable not a struct?");
 
-    if (vtblStruct->getNumOperands() == 2 &&
-            SVFUtil::isa<ConstantStruct>(vtblStruct->getOperand(0)) &&
-            vtblStruct->getOperand(1)->getType()->isArrayTy())
+    if (vtblStruct->getNumOperands() == 2 && SVFUtil::isa<ConstantStruct>(vtblStruct->getOperand(0)) &&
+        vtblStruct->getOperand(1)->getType()->isArrayTy())
         return SVFUtil::cast<ConstantStruct>(vtblStruct->getOperand(0));
 
     return vtblStruct;
@@ -335,11 +328,9 @@ const ConstantStruct *cppUtil::getVtblStruct(const GlobalValue *vtbl)
 
 bool cppUtil::isValVtbl(const Value* val)
 {
-    if (!SVFUtil::isa<GlobalVariable>(val))
-        return false;
+    if (!SVFUtil::isa<GlobalVariable>(val)) return false;
     std::string valName = val->getName().str();
-    return valName.compare(0, vtblLabelBeforeDemangle.size(),
-                           vtblLabelBeforeDemangle) == 0;
+    return valName.compare(0, vtblLabelBeforeDemangle.size(), vtblLabelBeforeDemangle) == 0;
 }
 
 /*
@@ -353,23 +344,19 @@ bool cppUtil::isVirtualCallSite(const CallBase* cs)
 {
     // the callsite must be an indirect one with at least one argument (this
     // ptr)
-    if (cs->getCalledFunction() != nullptr || cs->arg_empty())
-        return false;
+    if (cs->getCalledFunction() != nullptr || cs->arg_empty()) return false;
 
     // the first argument (this pointer) must be a pointer type and must be a
     // class name
-    if (cs->getArgOperand(0)->getType()->isPointerTy() == false)
-        return false;
+    if (cs->getArgOperand(0)->getType()->isPointerTy() == false) return false;
 
     const Value* vfunc = cs->getCalledOperand();
     if (const LoadInst* vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(vfunc))
     {
         const Value* vfuncptr = vfuncloadinst->getPointerOperand();
-        if (const GetElementPtrInst* vfuncptrgepinst =
-                    SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr))
+        if (const GetElementPtrInst* vfuncptrgepinst = SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr))
         {
-            if (vfuncptrgepinst->getNumIndices() != 1)
-                return false;
+            if (vfuncptrgepinst->getNumIndices() != 1) return false;
             const Value* vtbl = vfuncptrgepinst->getPointerOperand();
             if (SVFUtil::isa<LoadInst>(vtbl))
             {
@@ -434,11 +421,9 @@ const Value* cppUtil::getVCallThisPtr(const CallBase* cs)
  *   %0 = bitcast %class.B1* %this1 to %class.A*
  *   call void @A::A()(%class.A* %0)
  */
-bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1,
-        const Value* thisPtr2)
+bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* thisPtr2)
 {
-    if (thisPtr1 == thisPtr2)
-        return true;
+    if (thisPtr1 == thisPtr2) return true;
     for (const Value* thisU : thisPtr1->users())
     {
         if (const StoreInst* store = SVFUtil::dyn_cast<StoreInst>(thisU))
@@ -447,10 +432,8 @@ bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1,
             {
                 if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(storeU))
                 {
-                    if (load->getNextNode() &&
-                            SVFUtil::isa<CastInst>(load->getNextNode()))
-                        return SVFUtil::cast<CastInst>(load->getNextNode()) ==
-                               (thisPtr2->stripPointerCasts());
+                    if (load->getNextNode() && SVFUtil::isa<CastInst>(load->getNextNode()))
+                        return SVFUtil::cast<CastInst>(load->getNextNode()) == (thisPtr2->stripPointerCasts());
                 }
             }
         }
@@ -460,8 +443,7 @@ bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1,
 
 const Argument* cppUtil::getConstructorThisPtr(const Function* fun)
 {
-    assert((isConstructor(fun) || isDestructor(fun)) &&
-           "not a constructor?");
+    assert((isConstructor(fun) || isDestructor(fun)) && "not a constructor?");
     assert(fun->arg_size() >= 1 && "argument size >= 1?");
     const Argument* thisPtr = &*(fun->arg_begin());
     return thisPtr;
@@ -481,15 +463,13 @@ void stripBracketsAndNamespace(cppUtil::DemangledName& dname)
     else
     {
         // strip off namespace
-        dname.className =
-            cppUtil::getBeforeBrackets(dname.className.substr(colon + 2));
+        dname.className = cppUtil::getBeforeBrackets(dname.className.substr(colon + 2));
     }
 }
 
 bool cppUtil::isConstructor(const Function* F)
 {
-    if (F->isDeclaration())
-        return false;
+    if (F->isDeclaration()) return false;
     std::string funcName = F->getName().str();
     if (funcName.compare(0, vfunPreLabel.size(), vfunPreLabel) != 0)
     {
@@ -502,14 +482,12 @@ bool cppUtil::isConstructor(const Function* F)
     }
     stripBracketsAndNamespace(dname);
     /// TODO: on mac os function name is an empty string after demangling
-    return dname.className.size() > 0 &&
-           dname.className.compare(dname.funcName) == 0;
+    return dname.className.size() > 0 && dname.className.compare(dname.funcName) == 0;
 }
 
 bool cppUtil::isDestructor(const Function* F)
 {
-    if (F->isDeclaration())
-        return false;
+    if (F->isDeclaration()) return false;
     std::string funcName = F->getName().str();
     if (funcName.compare(0, vfunPreLabel.size(), vfunPreLabel) != 0)
     {
@@ -522,8 +500,7 @@ bool cppUtil::isDestructor(const Function* F)
     }
     stripBracketsAndNamespace(dname);
     return (dname.className.size() > 0 && dname.funcName.size() > 0 &&
-            dname.className.size() + 1 == dname.funcName.size() &&
-            dname.funcName.compare(0, 1, "~") == 0 &&
+            dname.className.size() + 1 == dname.funcName.size() && dname.funcName.compare(0, 1, "~") == 0 &&
             dname.className.compare(dname.funcName.substr(1)) == 0);
 }
 
@@ -536,12 +513,10 @@ bool cppUtil::isDestructor(const Function* F)
  */
 const Value* cppUtil::getVCallVtblPtr(const CallBase* cs)
 {
-    const LoadInst* loadInst =
-        SVFUtil::dyn_cast<LoadInst>(cs->getCalledOperand());
+    const LoadInst* loadInst = SVFUtil::dyn_cast<LoadInst>(cs->getCalledOperand());
     assert(loadInst != nullptr);
     const Value* vfuncptr = loadInst->getPointerOperand();
-    const GetElementPtrInst* gepInst =
-        SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
+    const GetElementPtrInst* gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
     assert(gepInst != nullptr);
     const Value* vtbl = gepInst->getPointerOperand();
     return vtbl;
@@ -554,13 +529,12 @@ bool cppUtil::VCallInCtorOrDtor(const CallBase* cs)
 {
     Set<std::string> classNameOfThisPtrs = cppUtil::getClassNameOfThisPtr(cs);
     const Function* func = cs->getCaller();
-    for (const auto &classNameOfThisPtr: classNameOfThisPtrs)
+    for (const auto& classNameOfThisPtr : classNameOfThisPtrs)
     {
         if (cppUtil::isConstructor(func) || cppUtil::isDestructor(func))
         {
             cppUtil::DemangledName dname = cppUtil::demangle(func->getName().str());
-            if (classNameOfThisPtr.compare(dname.className) == 0)
-                return true;
+            if (classNameOfThisPtr.compare(dname.className) == 0) return true;
         }
     }
     return false;
@@ -568,13 +542,12 @@ bool cppUtil::VCallInCtorOrDtor(const CallBase* cs)
 
 bool cppUtil::classTyHasVTable(const StructType* ty)
 {
-    if(getClassNameFromType(ty).empty()==false)
+    if (getClassNameFromType(ty).empty() == false)
     {
-        for(auto it = ty->element_begin(); it!=ty->element_end(); it++)
+        for (auto it = ty->element_begin(); it != ty->element_end(); it++)
         {
             const std::string& str = LLVMUtil::dumpType(*it);
-            if (str.find(vtableType) != std::string::npos)
-                return true;
+            if (str.find(vtableType) != std::string::npos) return true;
         }
     }
     return false;
@@ -616,19 +589,17 @@ Set<std::string> cppUtil::getClassNameOfThisPtr(const CallBase* inst)
 
     Set<std::string> ans;
     std::transform(thisPtrNames.begin(), thisPtrNames.end(), std::inserter(ans, ans.begin()),
-                   [](const std::string &thisPtrName) -> std::string
-    {
-        size_t found = thisPtrName.find_last_not_of("0123456789");
-        if (found != std::string::npos)
-        {
-            if (found != thisPtrName.size() - 1 &&
-                    thisPtrName[found] == '.')
-            {
-                return thisPtrName.substr(0, found);
-            }
-        }
-        return thisPtrName;
-    });
+                   [](const std::string& thisPtrName) -> std::string {
+                       size_t found = thisPtrName.find_last_not_of("0123456789");
+                       if (found != std::string::npos)
+                       {
+                           if (found != thisPtrName.size() - 1 && thisPtrName[found] == '.')
+                           {
+                               return thisPtrName.substr(0, found);
+                           }
+                       }
+                       return thisPtrName;
+                   });
     return ans;
 }
 
@@ -645,12 +616,10 @@ std::string cppUtil::getFunNameOfVCallSite(const CallBase* inst)
 
 s32_t cppUtil::getVCallIdx(const CallBase* cs)
 {
-    const LoadInst* vfuncloadinst =
-        SVFUtil::dyn_cast<LoadInst>(cs->getCalledOperand());
+    const LoadInst* vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(cs->getCalledOperand());
     assert(vfuncloadinst != nullptr);
     const Value* vfuncptr = vfuncloadinst->getPointerOperand();
-    const GetElementPtrInst* vfuncptrgepinst =
-        SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
+    const GetElementPtrInst* vfuncptrgepinst = SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
     User::const_op_iterator oi = vfuncptrgepinst->idx_begin();
     const ConstantInt* idx = SVFUtil::dyn_cast<ConstantInt>(oi->get());
     s32_t idx_value;
@@ -673,22 +642,21 @@ bool LLVMUtil::isConstantObjSym(const Value* val)
 {
     if (const GlobalVariable* v = SVFUtil::dyn_cast<GlobalVariable>(val))
     {
-        if (cppUtil::isValVtbl(v))
-            return false;
+        if (cppUtil::isValVtbl(v)) return false;
         else if (!v->hasInitializer())
         {
             return !v->isExternalLinkage(v->getLinkage());
         }
         else
         {
-            StInfo *stInfo = LLVMModuleSet::getLLVMModuleSet()->getSVFType(v->getInitializer()->getType())->getTypeInfo();
-            const std::vector<const SVFType*> &fields = stInfo->getFlattenFieldTypes();
+            StInfo* stInfo =
+                LLVMModuleSet::getLLVMModuleSet()->getSVFType(v->getInitializer()->getType())->getTypeInfo();
+            const std::vector<const SVFType*>& fields = stInfo->getFlattenFieldTypes();
             for (std::vector<const SVFType*>::const_iterator it = fields.begin(), eit = fields.end(); it != eit; ++it)
             {
                 const SVFType* elemTy = *it;
                 assert(!SVFUtil::isa<SVFFunctionType>(elemTy) && "Initializer of a global is a function?");
-                if (SVFUtil::isa<SVFPointerType>(elemTy))
-                    return false;
+                if (SVFUtil::isa<SVFPointerType>(elemTy)) return false;
             }
 
             return v->isConstant();
@@ -703,16 +671,15 @@ bool LLVMUtil::isConstantObjSym(const Value* val)
  * @param foo
  * @return
  */
-Set<std::string> cppUtil::extractClsNamesFromFunc(const Function *foo)
+Set<std::string> cppUtil::extractClsNamesFromFunc(const Function* foo)
 {
     assert(foo->hasName() && "foo does not have a name? possible indirect call");
-    const std::string &name = foo->getName().str();
+    const std::string& name = foo->getName().str();
     if (isConstructor(foo) || isDestructor(foo))
     {
         // c++ constructor or destructor
         DemangledName demangledName = cppUtil::demangle(name);
-        Set<std::string> clsNameInBrackets =
-            cppUtil::getClsNamesInBrackets(name);
+        Set<std::string> clsNameInBrackets = cppUtil::getClsNamesInBrackets(name);
         clsNameInBrackets.insert(demangledName.className);
         return clsNameInBrackets;
     }
@@ -732,7 +699,7 @@ Set<std::string> cppUtil::extractClsNamesFromFunc(const Function *foo)
  * @param input
  * @return
  */
-std::vector<std::string> findInnermostBrackets(const std::string &input)
+std::vector<std::string> findInnermostBrackets(const std::string& input)
 {
     typedef std::pair<u32_t, u32_t> StEdIdxPair;
     std::stack<int> stack;
@@ -771,8 +738,7 @@ std::vector<std::string> findInnermostBrackets(const std::string &input)
         }
     }
     std::vector<std::string> ans(innerMostPairs.size());
-    std::transform(innerMostPairs.begin(), innerMostPairs.end(), ans.begin(), [&input](StEdIdxPair &p) -> std::string
-    {
+    std::transform(innerMostPairs.begin(), innerMostPairs.end(), ans.begin(), [&input](StEdIdxPair& p) -> std::string {
         return input.substr(p.first + 1, p.second - p.first - 1);
     });
     return ans;
@@ -783,21 +749,15 @@ std::vector<std::string> findInnermostBrackets(const std::string &input)
  * @param str
  * @return
  */
-std::string stripWhitespaces(const std::string &str)
+std::string stripWhitespaces(const std::string& str)
 {
-    auto start = std::find_if(str.begin(), str.end(), [](unsigned char ch)
-    {
-        return !std::isspace(ch);
-    });
-    auto end = std::find_if(str.rbegin(), str.rend(), [](unsigned char ch)
-    {
-        return !std::isspace(ch);
-    }).base();
+    auto start = std::find_if(str.begin(), str.end(), [](unsigned char ch) { return !std::isspace(ch); });
+    auto end = std::find_if(str.rbegin(), str.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base();
 
     return (start < end) ? std::string(start, end) : std::string();
 }
 
-std::vector<std::string> splitAndStrip(const std::string &input, char delimiter)
+std::vector<std::string> splitAndStrip(const std::string& input, char delimiter)
 {
     std::vector<std::string> tokens;
     size_t start = 0, end = 0;
@@ -818,7 +778,7 @@ std::vector<std::string> splitAndStrip(const std::string &input, char delimiter)
  * @param oname
  * @return
  */
-Set<std::string> cppUtil::extractClsNamesFromTemplate(const std::string &oname)
+Set<std::string> cppUtil::extractClsNamesFromTemplate(const std::string& oname)
 {
     // "std::array<A const*, 2ul>" -> A
     // "std::queue<A*, std::deque<A*, std::allocator<A*> > >" -> A
@@ -826,10 +786,10 @@ Set<std::string> cppUtil::extractClsNamesFromTemplate(const std::string &oname)
     Set<std::string> ans;
     std::string demangleName = llvm::demangle(oname);
     std::vector<std::string> innermosts = findInnermostBrackets(demangleName);
-    for (const auto &innermost: innermosts)
+    for (const auto& innermost : innermosts)
     {
-        const std::vector<std::string> &allstrs = splitAndStrip(innermost, ',');
-        for (const auto &str: allstrs)
+        const std::vector<std::string>& allstrs = splitAndStrip(innermost, ',');
+        for (const auto& str : allstrs)
         {
             size_t spacePos = str.find(' ');
             if (spacePos != std::string::npos)
@@ -851,23 +811,22 @@ Set<std::string> cppUtil::extractClsNamesFromTemplate(const std::string &oname)
     return ans;
 }
 
-
 /*!
  * class sources are functions
  * where we can extract the class name (constructors/destructors or template functions)
  * @param val
  * @return
  */
-bool cppUtil::isClsNameSource(const Value *val)
+bool cppUtil::isClsNameSource(const Value* val)
 {
-    if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(val))
+    if (const auto* callBase = SVFUtil::dyn_cast<CallBase>(val))
     {
-        const Function *foo = callBase->getCalledFunction();
+        const Function* foo = callBase->getCalledFunction();
         // indirect call
-        if(!foo) return false;
+        if (!foo) return false;
         return isConstructor(foo) || isDestructor(foo) || isTemplateFunc(foo) || isDynCast(foo);
     }
-    else if (const auto *func = SVFUtil::dyn_cast<Function>(val))
+    else if (const auto* func = SVFUtil::dyn_cast<Function>(val))
     {
         return isConstructor(func) || isDestructor(func) || isTemplateFunc(func);
     }
@@ -880,7 +839,7 @@ bool cppUtil::isClsNameSource(const Value *val)
  * @param label
  * @return
  */
-bool cppUtil::matchesLabel(const std::string &foo, const std::string &label)
+bool cppUtil::matchesLabel(const std::string& foo, const std::string& label)
 {
     return foo.compare(0, label.size(), label) == 0;
 }
@@ -891,14 +850,13 @@ bool cppUtil::matchesLabel(const std::string &foo, const std::string &label)
  * @param foo
  * @return
  */
-bool cppUtil::isTemplateFunc(const Function *foo)
+bool cppUtil::isTemplateFunc(const Function* foo)
 {
     assert(foo->hasName() && "foo does not have a name? possible indirect call");
-    const std::string &name = foo->getName().str();
-    bool matchedLabel = matchesLabel(name, znstLabel) || matchesLabel(name, znkstLabel) ||
-                        matchesLabel(name, znkLabel);
+    const std::string& name = foo->getName().str();
+    bool matchedLabel = matchesLabel(name, znstLabel) || matchesLabel(name, znkstLabel) || matchesLabel(name, znkLabel);
     // we exclude "_ZNK6cArray3dupEv" -> cArray::dup() const
-    const std::string &demangledName = llvm::demangle(name);
+    const std::string& demangledName = llvm::demangle(name);
     return matchedLabel && demangledName.find('<') != std::string::npos && demangledName.find('>') != std::string::npos;
 }
 
@@ -907,7 +865,7 @@ bool cppUtil::isTemplateFunc(const Function *foo)
  * @param foo
  * @return
  */
-bool cppUtil::isDynCast(const Function *foo)
+bool cppUtil::isDynCast(const Function* foo)
 {
     assert(foo->hasName() && "foo does not have a name? possible indirect call");
     return foo->getName().str() == dyncast;
@@ -920,23 +878,22 @@ bool cppUtil::isDynCast(const Function *foo)
  */
 std::string cppUtil::extractClsNameFromDynCast(const CallBase* callBase)
 {
-    Value *tgtCast = callBase->getArgOperand(2);
-    const std::string &valueStr = LLVMUtil::dumpValue(tgtCast);
+    Value* tgtCast = callBase->getArgOperand(2);
+    const std::string& valueStr = LLVMUtil::dumpValue(tgtCast);
     u32_t leftPos = valueStr.find(ztilabel);
-    assert(leftPos != (u32_t) std::string::npos && "does not find ZTI for dyncast?");
+    assert(leftPos != (u32_t)std::string::npos && "does not find ZTI for dyncast?");
     u32_t rightPos = leftPos;
     while (rightPos < valueStr.size() && valueStr[rightPos] != ' ') rightPos++;
-    const std::string &substr = valueStr.substr(leftPos, rightPos - leftPos);
+    const std::string& substr = valueStr.substr(leftPos, rightPos - leftPos);
     std::string demangleName = llvm::demangle(substr);
-    const std::string &realName = demangleName.substr(ztiprefix.size(),
-                                  demangleName.size() - ztiprefix.size());
+    const std::string& realName = demangleName.substr(ztiprefix.size(), demangleName.size() - ztiprefix.size());
     assert(realName != "" && "real name for dyncast empty?");
     return realName;
 }
 
-const Type *cppUtil::cppClsNameToType(const std::string &className)
+const Type* cppUtil::cppClsNameToType(const std::string& className)
 {
-    StructType *classTy = StructType::getTypeByName(LLVMModuleSet::getLLVMModuleSet()->getContext(),
-                          clsName + className);
+    StructType* classTy =
+        StructType::getTypeByName(LLVMModuleSet::getLLVMModuleSet()->getContext(), clsName + className);
     return classTy ? classTy : LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->ptrType();
 }

@@ -41,9 +41,8 @@ public:
     {
         return "Remove Constant GEP Expressions";
     }
-    virtual bool runOnModule (Module & M);
+    virtual bool runOnModule(Module& M);
 };
-
 
 //
 // Pass: MergeFunctionRets
@@ -65,19 +64,17 @@ public:
     {
         return "unify function exit into one dummy exit basic block";
     }
-    virtual bool runOnModule (Module & M)
+    virtual bool runOnModule(Module& M)
     {
         UnifyFunctionExit(M);
         return true;
     }
     inline void UnifyFunctionExit(Module& module)
     {
-        for (Module::const_iterator iter = module.begin(), eiter = module.end();
-                iter != eiter; ++iter)
+        for (Module::const_iterator iter = module.begin(), eiter = module.end(); iter != eiter; ++iter)
         {
             const Function& fun = *iter;
-            if(fun.isDeclaration())
-                continue;
+            if (fun.isDeclaration()) continue;
             getUnifyExit(fun)->runOnFunction(const_cast<Function&>(fun));
         }
     }

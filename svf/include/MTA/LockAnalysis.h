@@ -48,9 +48,9 @@ public:
     /// semilattice  Empty==>TDUnlocked==>TDLocked
     enum ValDomain
     {
-        Empty,  // initial(dummy) state
-        TDLocked,  // stmt is locked
-        TDUnlocked,  //  stmt is unlocked
+        Empty,      // initial(dummy) state
+        TDLocked,   // stmt is locked
+        TDUnlocked, //  stmt is unlocked
     };
 
     typedef CxtStmt CxtLock;
@@ -60,7 +60,7 @@ public:
     typedef TCT::InstVec InstVec;
     typedef Set<const ICFGNode*> InstSet;
     typedef InstSet CISpan;
-    typedef Map<const ICFGNode*, CISpan>CILockToSpan;
+    typedef Map<const ICFGNode*, CISpan> CILockToSpan;
     typedef Set<const SVFFunction*> FunSet;
     typedef Map<const ICFGNode*, InstSet> InstToInstSetMap;
     typedef Map<CxtStmt, ValDomain> CxtStmtToLockFlagMap;
@@ -79,9 +79,7 @@ public:
 
     typedef Map<const ICFGNode*, CxtStmtSet> InstToCxtStmt;
 
-    LockAnalysis(TCT* t) : tct(t), lockTime(0),numOfTotalQueries(0), numOfLockedQueries(0), lockQueriesTime(0)
-    {
-    }
+    LockAnalysis(TCT* t) : tct(t), lockTime(0), numOfTotalQueries(0), numOfLockedQueries(0), lockQueriesTime(0) {}
 
     /// context-sensitive forward traversal from each lock site. Generate following results
     /// (1) context-sensitive lock site,
@@ -102,14 +100,14 @@ public:
     /// Return true if the lock is an intra-procedural lock
     inline bool isIntraLock(const ICFGNode* lock) const
     {
-        assert(locksites.find(lock)!=locksites.end() && "not a lock site?");
-        return ciLocktoSpan.find(lock)!=ciLocktoSpan.end();
+        assert(locksites.find(lock) != locksites.end() && "not a lock site?");
+        return ciLocktoSpan.find(lock) != ciLocktoSpan.end();
     }
 
     /// Add intra-procedural lock
     inline void addIntraLock(const ICFGNode* lockSite, const InstSet& stmts)
     {
-        for(InstSet::const_iterator it = stmts.begin(), eit = stmts.end(); it!=eit; ++it)
+        for (InstSet::const_iterator it = stmts.begin(), eit = stmts.end(); it != eit; ++it)
         {
             instCILocksMap[*it].insert(lockSite);
             ciLocktoSpan[lockSite].insert(*it);
@@ -119,7 +117,7 @@ public:
     /// Add intra-procedural lock
     inline void addCondIntraLock(const ICFGNode* lockSite, const InstSet& stmts)
     {
-        for(InstSet::const_iterator it = stmts.begin(), eit = stmts.end(); it!=eit; ++it)
+        for (InstSet::const_iterator it = stmts.begin(), eit = stmts.end(); it != eit; ++it)
         {
             instTocondCILocksMap[*it].insert(lockSite);
         }
@@ -128,19 +126,19 @@ public:
     /// Return true if a statement is inside an intra-procedural lock
     inline bool isInsideIntraLock(const ICFGNode* stmt) const
     {
-        return instCILocksMap.find(stmt)!=instCILocksMap.end() || isInsideCondIntraLock(stmt);
+        return instCILocksMap.find(stmt) != instCILocksMap.end() || isInsideCondIntraLock(stmt);
     }
 
     /// Return true if a statement is inside a partial lock/unlock pair (conditional lock with unconditional unlock)
     inline bool isInsideCondIntraLock(const ICFGNode* stmt) const
     {
-        return instTocondCILocksMap.find(stmt)!=instTocondCILocksMap.end();
+        return instTocondCILocksMap.find(stmt) != instTocondCILocksMap.end();
     }
 
     inline const InstSet& getIntraLockSet(const ICFGNode* stmt) const
     {
         InstToInstSetMap::const_iterator it = instCILocksMap.find(stmt);
-        assert(it!=instCILocksMap.end() && "intralock not found!");
+        assert(it != instCILocksMap.end() && "intralock not found!");
         return it->second;
     }
     //@}
@@ -148,9 +146,9 @@ public:
     /// Context-sensitive locks
     //@{
     /// Add inter-procedural context-sensitive lock
-    inline void addCxtLock(const CallStrCxt& cxt,const ICFGNode* inst)
+    inline void addCxtLock(const CallStrCxt& cxt, const ICFGNode* inst)
     {
-        CxtLock cxtlock(cxt,inst);
+        CxtLock cxtlock(cxt, inst);
         cxtLockset.insert(cxtlock);
         DBOUT(DMTA, SVFUtil::outs() << "LockAnalysis Process new lock "; cxtlock.dump());
     }
@@ -158,33 +156,31 @@ public:
     /// Get context-sensitive lock
     inline bool hasCxtLock(const CxtLock& cxtLock) const
     {
-        return cxtLockset.find(cxtLock)!=cxtLockset.end();
+        return cxtLockset.find(cxtLock) != cxtLockset.end();
     }
 
     /// Return true if the intersection of two locksets is not empty
-    inline bool intersects(const CxtLockSet& lockset1,const CxtLockSet& lockset2) const
+    inline bool intersects(const CxtLockSet& lockset1, const CxtLockSet& lockset2) const
     {
-        for(CxtLockSet::const_iterator it = lockset1.begin(), eit = lockset1.end(); it!=eit; ++it)
+        for (CxtLockSet::const_iterator it = lockset1.begin(), eit = lockset1.end(); it != eit; ++it)
         {
             const CxtLock& lock = *it;
-            for(CxtLockSet::const_iterator lit = lockset2.begin(), elit = lockset2.end(); lit!=elit; ++lit)
+            for (CxtLockSet::const_iterator lit = lockset2.begin(), elit = lockset2.end(); lit != elit; ++lit)
             {
-                if(lock==*lit)
-                    return true;
+                if (lock == *lit) return true;
             }
         }
         return false;
     }
     /// Return true if two locksets has at least one alias lock
-    inline bool alias(const CxtLockSet& lockset1,const CxtLockSet& lockset2)
+    inline bool alias(const CxtLockSet& lockset1, const CxtLockSet& lockset2)
     {
-        for(CxtLockSet::const_iterator it = lockset1.begin(), eit = lockset1.end(); it!=eit; ++it)
+        for (CxtLockSet::const_iterator it = lockset1.begin(), eit = lockset1.end(); it != eit; ++it)
         {
             const CxtLock& lock = *it;
-            for(CxtLockSet::const_iterator lit = lockset2.begin(), elit = lockset2.end(); lit!=elit; ++lit)
+            for (CxtLockSet::const_iterator lit = lockset2.begin(), elit = lockset2.end(); lit != elit; ++lit)
             {
-                if(isAliasedLocks(lock,*lit))
-                    return true;
+                if (isAliasedLocks(lock, *lit)) return true;
             }
         }
         return false;
@@ -194,7 +190,7 @@ public:
     /// Return true if it is a candidate function
     inline bool isLockCandidateFun(const SVFFunction* fun) const
     {
-        return lockcandidateFuncSet.find(fun)!=lockcandidateFuncSet.end();
+        return lockcandidateFuncSet.find(fun) != lockcandidateFuncSet.end();
     }
 
     /// Context-sensitive statement and lock spans
@@ -237,8 +233,8 @@ public:
     /// Add context-sensitive statement
     inline bool removeCxtStmtToSpan(CxtStmt& cts, const CxtLock& cl)
     {
-        bool find = cxtStmtToCxtLockSet[cts].find(cl)!=cxtStmtToCxtLockSet[cts].end();
-        if(find)
+        bool find = cxtStmtToCxtLockSet[cts].find(cl) != cxtStmtToCxtLockSet[cts].end();
+        if (find)
         {
             cxtStmtToCxtLockSet[cts].erase(cl);
             cxtLocktoSpan[cl].erase(cts);
@@ -266,17 +262,14 @@ public:
     }
     //@}
 
-
-
     /// Check if one instruction's context stmt is in a lock span
-    inline bool hasOneCxtInLockSpan(const ICFGNode *I, LockSpan lspan) const
+    inline bool hasOneCxtInLockSpan(const ICFGNode* I, LockSpan lspan) const
     {
-        if(!hasCxtStmtfromInst(I))
-            return false;
+        if (!hasCxtStmtfromInst(I)) return false;
         const LockSpan ctsset = getCxtStmtfromInst(I);
         for (LockSpan::const_iterator cts = ctsset.begin(), ects = ctsset.end(); cts != ects; cts++)
         {
-            if(lspan.find(*cts) != lspan.end())
+            if (lspan.find(*cts) != lspan.end())
             {
                 return true;
             }
@@ -284,10 +277,9 @@ public:
         return false;
     }
 
-    inline bool hasAllCxtInLockSpan(const ICFGNode *I, LockSpan lspan) const
+    inline bool hasAllCxtInLockSpan(const ICFGNode* I, LockSpan lspan) const
     {
-        if(!hasCxtStmtfromInst(I))
-            return false;
+        if (!hasCxtStmtfromInst(I)) return false;
         const LockSpan ctsset = getCxtStmtfromInst(I);
         for (LockSpan::const_iterator cts = ctsset.begin(), ects = ctsset.end(); cts != ects; cts++)
         {
@@ -299,19 +291,18 @@ public:
         return true;
     }
 
-
     /// Check if two Instructions are protected by common locks
     /// echo inst may have multiple cxt stmt
     /// we check whether every cxt stmt of instructions is protected by a common lock.
-    bool isProtectedByCommonLock(const ICFGNode *i1, const ICFGNode *i2);
-    bool isProtectedByCommonCxtLock(const ICFGNode *i1, const ICFGNode *i2);
+    bool isProtectedByCommonLock(const ICFGNode* i1, const ICFGNode* i2);
+    bool isProtectedByCommonCxtLock(const ICFGNode* i1, const ICFGNode* i2);
     bool isProtectedByCommonCxtLock(const CxtStmt& cxtStmt1, const CxtStmt& cxtStmt2);
-    bool isProtectedByCommonCILock(const ICFGNode *i1, const ICFGNode *i2);
+    bool isProtectedByCommonCILock(const ICFGNode* i1, const ICFGNode* i2);
 
-    bool isInSameSpan(const ICFGNode *I1, const ICFGNode *I2);
-    bool isInSameCSSpan(const ICFGNode *i1, const ICFGNode *i2) const;
+    bool isInSameSpan(const ICFGNode* I1, const ICFGNode* I2);
+    bool isInSameCSSpan(const ICFGNode* i1, const ICFGNode* i2) const;
     bool isInSameCSSpan(const CxtStmt& cxtStmt1, const CxtStmt& cxtStmt2) const;
-    bool isInSameCISpan(const ICFGNode *i1, const ICFGNode *i2) const;
+    bool isInSameCISpan(const ICFGNode* i1, const ICFGNode* i2) const;
 
     inline u32_t getNumOfCxtLocks()
     {
@@ -325,6 +316,7 @@ public:
     {
         return tct;
     }
+
 private:
     /// Handle fork
     void handleFork(const CxtStmt& cts);
@@ -358,29 +350,27 @@ private:
     void markCxtStmtFlag(const CxtStmt& tgr, const CxtStmt& src)
     {
         const CxtLockSet& srclockset = getCxtLockfromCxtStmt(src);
-        if(hasCxtLockfromCxtStmt(tgr)== false)
+        if (hasCxtLockfromCxtStmt(tgr) == false)
         {
-            for(CxtLockSet::const_iterator it = srclockset.begin(), eit = srclockset.end(); it!=eit; ++it)
+            for (CxtLockSet::const_iterator it = srclockset.begin(), eit = srclockset.end(); it != eit; ++it)
             {
-                addCxtStmtToSpan(tgr,*it);
+                addCxtStmtToSpan(tgr, *it);
             }
             pushToCTSWorkList(tgr);
         }
         else
         {
-            if(intersect(getCxtLockfromCxtStmt(tgr),srclockset))
-                pushToCTSWorkList(tgr);
+            if (intersect(getCxtLockfromCxtStmt(tgr), srclockset)) pushToCTSWorkList(tgr);
         }
     }
     bool intersect(CxtLockSet& tgrlockset, const CxtLockSet& srclockset)
     {
         CxtLockSet toBeDeleted;
-        for(CxtLockSet::const_iterator it = tgrlockset.begin(), eit = tgrlockset.end(); it!=eit; ++it)
+        for (CxtLockSet::const_iterator it = tgrlockset.begin(), eit = tgrlockset.end(); it != eit; ++it)
         {
-            if(srclockset.find(*it)==srclockset.end())
-                toBeDeleted.insert(*it);
+            if (srclockset.find(*it) == srclockset.end()) toBeDeleted.insert(*it);
         }
-        for(CxtLockSet::const_iterator it = toBeDeleted.begin(), eit = toBeDeleted.end(); it!=eit; ++it)
+        for (CxtLockSet::const_iterator it = toBeDeleted.begin(), eit = toBeDeleted.end(); it != eit; ++it)
         {
             tgrlockset.erase(*it);
         }
@@ -479,7 +469,6 @@ private:
     /// Map a statement to all its context-sensitive statements
     InstToCxtStmtSet instToCxtStmtSet;
 
-
     /// Context-sensitive locks
     CxtLockSet cxtLockset;
 
@@ -492,7 +481,7 @@ private:
 
     /// Following data structures are used for collecting context-sensitive locks
     //@{
-    CxtLockProcVec clpList;	/// CxtLockProc List
+    CxtLockProcVec clpList;     /// CxtLockProc List
     CxtLockProcSet visitedCTPs; /// Record all visited clps
     //@}
 
@@ -513,7 +502,6 @@ private:
     InstToInstSetMap instCILocksMap;
     InstToInstSetMap instTocondCILocksMap;
     //@}
-
 
 public:
     double lockTime;

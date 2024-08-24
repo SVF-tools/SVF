@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 #include "SVFIR/SVFModule.h"
 #include "SVFIR/SymbolTableInfo.h"
 #include "Util/SVFUtil.h"
@@ -34,12 +33,9 @@ SVFModule* SVFModule::svfModule = nullptr;
 
 SVFModule::~SVFModule()
 {
-    for (const SVFFunction* f : FunctionSet)
-        delete f;
-    for (const SVFConstant* c : ConstantSet)
-        delete c;
-    for (const SVFValue* o : OtherValueSet)
-        delete o;
+    for (const SVFFunction* f : FunctionSet) delete f;
+    for (const SVFConstant* c : ConstantSet) delete c;
+    for (const SVFValue* o : OtherValueSet) delete o;
     NodeIDAllocator::unset();
     ThreadAPI::destroy();
     ExtAPI::destory();

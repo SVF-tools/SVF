@@ -28,7 +28,6 @@
 #include "Util/Options.h"
 #include "CFL/CFLSVFGBuilder.h"
 
-
 using namespace SVF;
 using namespace SVFUtil;
 
@@ -52,10 +51,8 @@ void CFLSVFGBuilder::buildSVFG()
 
     AddExtActualParmSVFGNodes(pta->getCallGraph());
 
-    if(pta->printStat())
-        svfg->performStat();
+    if (pta->printStat()) svfg->performStat();
 }
-
 
 /*!
  * Remove Incoming Edge for strong-update (SU) store instruction
@@ -70,26 +67,27 @@ void CFLSVFGBuilder::buildSVFG()
 void CFLSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
 {
 
-    for(SVFG::iterator it = svfg->begin(), eit = svfg->end(); it!=eit; ++it)
+    for (SVFG::iterator it = svfg->begin(), eit = svfg->end(); it != eit; ++it)
     {
         const SVFGNode* node = it->second;
 
-        if(const StoreSVFGNode* stmtNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
+        if (const StoreSVFGNode* stmtNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
         {
-            if(SVFUtil::isa<StoreStmt>(stmtNode->getPAGEdge()))
+            if (SVFUtil::isa<StoreStmt>(stmtNode->getPAGEdge()))
             {
                 NodeID singleton;
-                if(isStrongUpdate(node, singleton, pta))
+                if (isStrongUpdate(node, singleton, pta))
                 {
                     Set<SVFGEdge*> toRemove;
-                    for (SVFGNode::const_iterator it2 = node->InEdgeBegin(), eit2 = node->InEdgeEnd(); it2 != eit2; ++it2)
+                    for (SVFGNode::const_iterator it2 = node->InEdgeBegin(), eit2 = node->InEdgeEnd(); it2 != eit2;
+                         ++it2)
                     {
                         if ((*it2)->isIndirectVFGEdge())
                         {
                             toRemove.insert(*it2);
                         }
                     }
-                    for (SVFGEdge* edge: toRemove)
+                    for (SVFGEdge* edge : toRemove)
                     {
                         svfg->removeSVFGEdge(edge);
                     }

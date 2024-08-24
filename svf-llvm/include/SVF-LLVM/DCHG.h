@@ -32,19 +32,16 @@ class DCHEdge : public GenericEdge<DCHNode>
 public:
     enum
     {
-        INHERITANCE,  // inheritance relation
-        INSTANCE,     // template-instance relation
-        FIRST_FIELD,  // src -ff-> dst => dst is first field of src
-        STD_DEF       // Edges defined by the standard like (int -std-> char)
+        INHERITANCE, // inheritance relation
+        INSTANCE,    // template-instance relation
+        FIRST_FIELD, // src -ff-> dst => dst is first field of src
+        STD_DEF      // Edges defined by the standard like (int -std-> char)
         // We also make the char --> void edge a STD_DEF edge.
     };
 
     typedef GenericNode<DCHNode, DCHEdge>::GEdgeSetTy DCHEdgeSetTy;
 
-    DCHEdge(DCHNode *src, DCHNode *dst, GEdgeFlag k = 0)
-        : GenericEdge<DCHNode>(src, dst, k), offset(0)
-    {
-    }
+    DCHEdge(DCHNode* src, DCHNode* dst, GEdgeFlag k = 0) : GenericEdge<DCHNode>(src, dst, k), offset(0) {}
 
     u32_t getConstantFieldIdx(void) const
     {
@@ -91,9 +88,9 @@ public:
         }
     }
 
-    ~DCHNode() { }
+    ~DCHNode() {}
 
-    const DIType *getType(void) const
+    const DIType* getType(void) const
     {
         return diType;
     }
@@ -151,34 +148,34 @@ public:
     }
     //@}
 
-    void addTypedef(const DIDerivedType *diTypedef)
+    void addTypedef(const DIDerivedType* diTypedef)
     {
         typedefs.insert(diTypedef);
     }
 
-    const Set<const DIDerivedType *> &getTypedefs(void) const
+    const Set<const DIDerivedType*>& getTypedefs(void) const
     {
         return typedefs;
     }
 
-    void setVTable(const SVFGlobalValue *vtbl)
+    void setVTable(const SVFGlobalValue* vtbl)
     {
         vtable = vtbl;
     }
 
-    const SVFGlobalValue *getVTable() const
+    const SVFGlobalValue* getVTable() const
     {
         return vtable;
     }
 
     /// Returns the vector of virtual function vectors.
-    const std::vector<std::vector<const Function* >> &getVfnVectors(void) const
+    const std::vector<std::vector<const Function*>>& getVfnVectors(void) const
     {
         return vfnVectors;
     }
 
     /// Return the nth virtual function vector in the vtable.
-    std::vector<const Function* > &getVfnVector(unsigned n)
+    std::vector<const Function*>& getVfnVector(unsigned n)
     {
         if (vfnVectors.size() < n + 1)
         {
@@ -190,14 +187,14 @@ public:
 
 private:
     /// Type of this node.
-    const DIType *diType;
+    const DIType* diType;
     /// Typedefs which map to this type.
-    Set<const DIDerivedType *> typedefs;
+    Set<const DIDerivedType*> typedefs;
     const SVFGlobalValue* vtable;
     std::string typeName;
     size_t flags;
     /// The virtual functions which this class actually defines/overrides.
-    std::vector<const Function* > primaryVTable;
+    std::vector<const Function*> primaryVTable;
     /// If a vtable is split into more than one vfn vector for multiple inheritance,
     /// 0 would be the primary base + this classes virtual functions, 1 would be
     /// the second parent, 2 would be third parent, etc.
@@ -224,19 +221,18 @@ public:
     static bool teq(const DIType* t1, const DIType* t2);
 
     /// Returns a human-readable version of the DIType.
-    static std::string diTypeToStr(const DIType *);
+    static std::string diTypeToStr(const DIType*);
 
     // Returns whether t is an array, a struct, a class, a union, or neither.
     static bool isAgg(const DIType* t);
 
 public:
-    DCHGraph(const SVFModule *svfMod)
-        : svfModule(svfMod), numTypes(0)   // vfID(0), buildingCHGTime(0) {
+    DCHGraph(const SVFModule* svfMod) : svfModule(svfMod), numTypes(0) // vfID(0), buildingCHGTime(0) {
     {
         this->kind = DI;
     }
 
-    virtual ~DCHGraph() { };
+    virtual ~DCHGraph(){};
 
     /// Builds the CHG from DWARF debug information. extend determines
     /// whether to extend the CHG with first field edges.
@@ -254,12 +250,12 @@ public:
         return csHasVtblsBasedonCHA(cs);
     }
 
-    virtual const VFunSet &getCSVFsBasedonCHA(CallSite cs) override;
+    virtual const VFunSet& getCSVFsBasedonCHA(CallSite cs) override;
 
     virtual bool csHasVtblsBasedonCHA(CallBase* cs)
     {
         assert(false && "not supported");
-        const DIType *type = getCanonicalType(getCSStaticType(cs));
+        const DIType* type = getCanonicalType(getCSStaticType(cs));
         if (!hasNode(type))
         {
             return false;
@@ -274,17 +270,17 @@ public:
         abort();
     }
 
-    virtual const VTableSet &getCSVtblsBasedonCHA(CallSite cs) override;
-    virtual void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
+    virtual const VTableSet& getCSVtblsBasedonCHA(CallSite cs) override;
+    virtual void getVFnsFromVtbls(CallSite cs, const VTableSet& vtbls, VFunSet& virtualFunctions) override;
 
     /// Returns true if a is a transitive base of b. firstField determines
     /// whether to consider first-field edges.
-    virtual bool isBase(const DIType *a, const DIType *b, bool firstField);
+    virtual bool isBase(const DIType* a, const DIType* b, bool firstField);
 
     /// Returns true if f is a field of b (fields from getFieldTypes).
-    virtual bool isFieldOf(const DIType *f, const DIType *b);
+    virtual bool isFieldOf(const DIType* f, const DIType* b);
 
-    static inline bool classof(const CommonCHGraph *chg)
+    static inline bool classof(const CommonCHGraph* chg)
     {
         return chg->getKind() == DI;
     }
@@ -295,7 +291,7 @@ public:
     const DIType* getCanonicalType(const DIType* t);
 
     /// Returns the type of field number idx (flattened) in base.
-    const DIType *getFieldType(const DIType *base, unsigned idx)
+    const DIType* getFieldType(const DIType* base, unsigned idx)
     {
         base = getCanonicalType(base);
         if (base == nullptr)
@@ -313,26 +309,24 @@ public:
 
         if (base->getTag() == dwarf::DW_TAG_array_type)
         {
-            const DICompositeType* cbase =
-                SVFUtil::dyn_cast<DICompositeType>(base);
+            const DICompositeType* cbase = SVFUtil::dyn_cast<DICompositeType>(base);
             assert(cbase && "DCHG: bad DIComposite case");
             return cbase->getBaseType();
         }
 
-        if (!(base->getTag() == dwarf::DW_TAG_class_type ||
-                base->getTag() == dwarf::DW_TAG_structure_type))
+        if (!(base->getTag() == dwarf::DW_TAG_class_type || base->getTag() == dwarf::DW_TAG_structure_type))
         {
             return nullptr;
         }
 
         assert(fieldTypes.find(base) != fieldTypes.end() && "DCHG: base not flattened!");
-        std::vector<const DIType *> &fields = fieldTypes[base];
+        std::vector<const DIType*>& fields = fieldTypes[base];
         assert(fields.size() > idx && "DCHG: idx into struct larger than # fields!");
         return getCanonicalType(fields[idx]);
     }
 
     /// Returns a vector of the types of all fields in base.
-    const std::vector<const DIType *> &getFieldTypes(const DIType *base)
+    const std::vector<const DIType*>& getFieldTypes(const DIType* base)
     {
         base = getCanonicalType(base);
         assert(fieldTypes.find(base) != fieldTypes.end() && "DCHG: base not flattened!");
@@ -340,7 +334,7 @@ public:
     }
 
     // Returns the number of fields in base (length of getFieldTypes).
-    unsigned getNumFields(const DIType *base)
+    unsigned getNumFields(const DIType* base)
     {
         base = getCanonicalType(base);
         assert(fieldTypes.find(base) != fieldTypes.end() && "DCHG: base not flattened!");
@@ -348,7 +342,7 @@ public:
     }
 
     /// Returns all the aggregates contained (transitively) in base.
-    const Set<const DIType *> &getAggs(const DIType *base)
+    const Set<const DIType*>& getAggs(const DIType* base)
     {
         base = getCanonicalType(base);
         assert(containingAggs.find(base) != containingAggs.end() && "DCHG: aggregates not gathered for base!");
@@ -414,7 +408,7 @@ private:
     /// Retrieves the metadata associated with a *virtual* callsite.
     const DIType* getCSStaticType(CallBase* cs) const;
 
-    const DIType *getCSStaticType(CallSite cs) const
+    const DIType* getCSStaticType(CallSite cs) const
     {
         assert(false && "not supported!");
         abort();
@@ -439,7 +433,6 @@ private:
         return nullptr;
     }
 
-
     /// Creates an edge between from t1 to t2.
     DCHEdge* addEdge(const DIType* t1, const DIType* t2, DCHEdge::GEdgeKind et);
     /// Returns the edge between t1 and t2 if it exists, returns nullptr otherwise.
@@ -457,21 +450,24 @@ namespace SVF
  * GenericGraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GenericGraphTraits<SVF::DCHNode*> : public GenericGraphTraits<SVF::GenericNode<SVF::DCHNode,SVF::DCHEdge>*  >
+template <>
+struct GenericGraphTraits<SVF::DCHNode*> : public GenericGraphTraits<SVF::GenericNode<SVF::DCHNode, SVF::DCHEdge>*>
 {
 };
 
 /// Inverse GenericGraphTraits specializations for call graph node, it is used for inverse traversal.
-template<>
-struct GenericGraphTraits<Inverse<SVF::DCHNode*> > : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::DCHNode,SVF::DCHEdge>* > >
+template <>
+struct GenericGraphTraits<Inverse<SVF::DCHNode*>>
+    : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::DCHNode, SVF::DCHEdge>*>>
 {
 };
 
-template<> struct GenericGraphTraits<SVF::DCHGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::DCHNode,SVF::DCHEdge>* >
+template <>
+struct GenericGraphTraits<SVF::DCHGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::DCHNode, SVF::DCHEdge>*>
 {
-    typedef SVF::DCHNode *NodeRef;
+    typedef SVF::DCHNode* NodeRef;
 };
 
-} // End namespace llvm
+} // namespace SVF
 
 #endif /* DCHG_H_ */

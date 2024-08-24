@@ -22,11 +22,10 @@
 namespace SVF
 {
 
-template <typename Key, typename KeySet, typename Data, typename DataSet>
-class PersistentDFPTData;
-template <typename Key, typename KeySet, typename Data, typename DataSet>
-class PersistentIncDFPTData;
-template <typename Key, typename KeySet, typename Data, typename DataSet, typename VersionedKey, typename VersionedKeySet>
+template <typename Key, typename KeySet, typename Data, typename DataSet> class PersistentDFPTData;
+template <typename Key, typename KeySet, typename Data, typename DataSet> class PersistentIncDFPTData;
+template <typename Key, typename KeySet, typename Data, typename DataSet, typename VersionedKey,
+          typename VersionedKeySet>
 class PersistentVersionedPTData;
 
 /// PTData backed by a PersistentPointsToCache.
@@ -37,6 +36,7 @@ class PersistentPTData : public PTData<Key, KeySet, Data, DataSet>
     friend class PersistentVersionedPTData;
     friend class PersistentDFPTData<Key, KeySet, Data, DataSet>;
     friend class PersistentIncDFPTData<Key, KeySet, Data, DataSet>;
+
 public:
     typedef PTData<Key, KeySet, Data, DataSet> BasePTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
@@ -45,8 +45,11 @@ public:
     typedef Map<Data, KeySet> RevPtsMap;
 
     /// Constructor
-    explicit PersistentPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersBase)
-        : BasePTData(reversePT, ty), ptCache(cache) { }
+    explicit PersistentPTData(PersistentPointsToCache<DataSet>& cache, bool reversePT = true,
+                              PTDataTy ty = PTDataTy::PersBase)
+        : BasePTData(reversePT, ty), ptCache(cache)
+    {
+    }
 
     ~PersistentPTData() override = default;
 
@@ -56,19 +59,19 @@ public:
         revPtsMap.clear();
     }
 
-    inline const DataSet& getPts(const Key &var) override
+    inline const DataSet& getPts(const Key& var) override
     {
         PointsToID id = ptsMap[var];
         return ptCache.getActualPts(id);
     }
 
-    inline const KeySet& getRevPts(const Data &data) override
+    inline const KeySet& getRevPts(const Data& data) override
     {
         assert(this->rev && "PersistentPTData::getRevPts: constructed without reverse PT support!");
         return revPtsMap[data];
     }
 
-    inline bool addPts(const Key &dstKey, const Data &element) override
+    inline bool addPts(const Key& dstKey, const Data& element) override
     {
         DataSet srcPts;
         srcPts.set(element);
@@ -88,11 +91,9 @@ public:
         return unionPtsFromId(dstKey, srcId);
     }
 
-    inline void dumpPTData() override
-    {
-    }
+    inline void dumpPTData() override {}
 
-    void clearPts(const Key &var, const Data &element) override
+    void clearPts(const Key& var, const Data& element) override
     {
         DataSet toRemoveData;
         toRemoveData.set(element);
@@ -122,7 +123,7 @@ public:
         Map<DataSet, unsigned> allPts;
         if (liveOnly)
         {
-            for (const typename KeyToIDMap::value_type &ki : ptsMap)
+            for (const typename KeyToIDMap::value_type& ki : ptsMap)
             {
                 ++allPts[ptCache.getActualPts(ki.second)];
             }
@@ -137,7 +138,7 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const PersistentPTData<Key, KeySet, Data, DataSet> *)
+    static inline bool classof(const PersistentPTData<Key, KeySet, Data, DataSet>*)
     {
         return true;
     }
@@ -151,7 +152,7 @@ public:
 private:
     /// Internal unionPts since other methods follow the same pattern.
     /// Renamed because PointsToID and Key may be the same type...
-    inline bool unionPtsFromId(const Key &dstKey, PointsToID srcId)
+    inline bool unionPtsFromId(const Key& dstKey, PointsToID srcId)
     {
         PointsToID dstId = ptsMap[dstKey];
         PointsToID newDstId = ptCache.unionPts(dstId, srcId);
@@ -165,15 +166,15 @@ private:
             // points-to set has changed (i.e., do it the first time only).
             if (this->rev)
             {
-                const DataSet &srcPts = ptCache.getActualPts(srcId);
-                for (const Data &d : srcPts) SVFUtil::insertKey(dstKey, revPtsMap[d]);
+                const DataSet& srcPts = ptCache.getActualPts(srcId);
+                for (const Data& d : srcPts) SVFUtil::insertKey(dstKey, revPtsMap[d]);
             }
         }
 
         return changed;
     }
 
-    inline void clearSingleRevPts(KeySet &revSet, const Key &k)
+    inline void clearSingleRevPts(KeySet& revSet, const Key& k)
     {
         if (this->rev)
         {
@@ -181,16 +182,16 @@ private:
         }
     }
 
-    inline void clearRevPts(const DataSet &pts, const Key &k)
+    inline void clearRevPts(const DataSet& pts, const Key& k)
     {
         if (this->rev)
         {
-            for (const Data &d : pts) clearSingleRevPts(revPtsMap[d], k);
+            for (const Data& d : pts) clearSingleRevPts(revPtsMap[d], k);
         }
     }
 
 protected:
-    PersistentPointsToCache<DataSet> &ptCache;
+    PersistentPointsToCache<DataSet>& ptCache;
     KeyToIDMap ptsMap;
     RevPtsMap revPtsMap;
 };
@@ -209,8 +210,11 @@ public:
     typedef typename BasePersPTData::RevPtsMap RevPtsMap;
 
     /// Constructor
-    explicit PersistentDiffPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersDiff)
-        : BaseDiffPTData(reversePT, ty), ptCache(cache), persPTData(cache, reversePT) { }
+    explicit PersistentDiffPTData(PersistentPointsToCache<DataSet>& cache, bool reversePT = true,
+                                  PTDataTy ty = PTDataTy::PersDiff)
+        : BaseDiffPTData(reversePT, ty), ptCache(cache), persPTData(cache, reversePT)
+    {
+    }
 
     ~PersistentDiffPTData() override = default;
 
@@ -221,18 +225,18 @@ public:
         propaPtsMap.clear();
     }
 
-    inline const DataSet &getPts(const Key& var) override
+    inline const DataSet& getPts(const Key& var) override
     {
         return persPTData.getPts(var);
     }
 
-    inline const KeySet& getRevPts(const Data &data) override
+    inline const KeySet& getRevPts(const Data& data) override
     {
         assert(this->rev && "PersistentDiffPTData::getRevPts: constructed without reverse PT support!");
         return persPTData.getRevPts(data);
     }
 
-    inline bool addPts(const Key &dstKey, const Data &element) override
+    inline bool addPts(const Key& dstKey, const Data& element) override
     {
         return persPTData.addPts(dstKey, element);
     }
@@ -242,17 +246,17 @@ public:
         return persPTData.unionPts(dstKey, srcKey);
     }
 
-    inline bool unionPts(const Key &dstKey, const DataSet &srcDataSet) override
+    inline bool unionPts(const Key& dstKey, const DataSet& srcDataSet) override
     {
         return persPTData.unionPts(dstKey, srcDataSet);
     }
 
-    void clearPts(const Key &var, const Data &element) override
+    void clearPts(const Key& var, const Data& element) override
     {
         return persPTData.clearPts(var, element);
     }
 
-    void clearFullPts(const Key &var) override
+    void clearFullPts(const Key& var) override
     {
         return persPTData.clearFullPts(var);
     }
@@ -267,13 +271,13 @@ public:
         // TODO.
     }
 
-    inline const DataSet &getDiffPts(Key &var) override
+    inline const DataSet& getDiffPts(Key& var) override
     {
         PointsToID id = diffPtsMap[var];
         return ptCache.getActualPts(id);
     }
 
-    inline bool computeDiffPts(Key &var, const DataSet &all) override
+    inline bool computeDiffPts(Key& var, const DataSet& all) override
     {
         PointsToID propaId = propaPtsMap[var];
         PointsToID allId = ptCache.emplacePts(all);
@@ -289,14 +293,14 @@ public:
         return diffId != ptCache.emptyPointsToId();
     }
 
-    inline void updatePropaPtsMap(Key &src, Key &dst) override
+    inline void updatePropaPtsMap(Key& src, Key& dst) override
     {
         PointsToID dstId = propaPtsMap[dst];
         PointsToID srcId = propaPtsMap[src];
         propaPtsMap[dst] = ptCache.intersectPts(dstId, srcId);
     }
 
-    inline void clearPropaPts(Key &var) override
+    inline void clearPropaPts(Key& var) override
     {
         propaPtsMap[var] = ptCache.emptyPointsToId();
     }
@@ -308,7 +312,7 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const PersistentDiffPTData<Key, KeySet, Data, DataSet> *)
+    static inline bool classof(const PersistentDiffPTData<Key, KeySet, Data, DataSet>*)
     {
         return true;
     }
@@ -320,7 +324,7 @@ public:
     ///@}
 
 private:
-    PersistentPointsToCache<DataSet> &ptCache;
+    PersistentPointsToCache<DataSet>& ptCache;
     /// Backing to implement basic PTData methods. Allows us to avoid multiple inheritance.
     PersistentPTData<Key, KeySet, Data, DataSet> persPTData;
     /// Diff points-to to be propagated.
@@ -343,8 +347,11 @@ public:
     typedef typename BasePersPTData::KeyToIDMap KeyToIDMap;
     typedef Map<LocID, KeyToIDMap> DFKeyToIDMap;
 
-    explicit PersistentDFPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersDataFlow)
-        : BaseDFPTData(reversePT, ty), ptCache(cache), persPTData(cache, reversePT) { }
+    explicit PersistentDFPTData(PersistentPointsToCache<DataSet>& cache, bool reversePT = true,
+                                PTDataTy ty = PTDataTy::PersDataFlow)
+        : BaseDFPTData(reversePT, ty), ptCache(cache), persPTData(cache, reversePT)
+    {
+    }
 
     ~PersistentDFPTData() override = default;
 
@@ -355,7 +362,7 @@ public:
         persPTData.clear();
     }
 
-    inline const DataSet &getPts(const Key& var) override
+    inline const DataSet& getPts(const Key& var) override
     {
         return persPTData.getPts(var);
     }
@@ -371,17 +378,17 @@ public:
         return persPTData.unionPts(dstKey, srcKey);
     }
 
-    inline bool unionPts(const Key& dstKey, const DataSet &srcDataSet) override
+    inline bool unionPts(const Key& dstKey, const DataSet& srcDataSet) override
     {
         return persPTData.unionPts(dstKey, srcDataSet);
     }
 
-    inline bool addPts(const Key &dstKey, const Data &element) override
+    inline bool addPts(const Key& dstKey, const Data& element) override
     {
         return persPTData.addPts(dstKey, element);
     }
 
-    void clearPts(const Key& var, const Data &element) override
+    void clearPts(const Key& var, const Data& element) override
     {
         persPTData.clearPts(var, element);
     }
@@ -415,7 +422,7 @@ public:
     {
         typename DFKeyToIDMap::const_iterator foundInKeyToId = dfInPtsMap.find(loc);
         if (foundInKeyToId == dfInPtsMap.end()) return false;
-        const KeyToIDMap &inKeyToId = foundInKeyToId->second;
+        const KeyToIDMap& inKeyToId = foundInKeyToId->second;
         return (inKeyToId.find(var) != inKeyToId.end());
     }
 
@@ -423,38 +430,38 @@ public:
     {
         typename DFKeyToIDMap::const_iterator foundOutKeyToId = dfOutPtsMap.find(loc);
         if (foundOutKeyToId == dfOutPtsMap.end()) return false;
-        const KeyToIDMap &outKeyToId = foundOutKeyToId->second;
+        const KeyToIDMap& outKeyToId = foundOutKeyToId->second;
         return (outKeyToId.find(var) != outKeyToId.end());
     }
 
-    const DataSet &getDFInPtsSet(LocID loc, const Key& var) override
+    const DataSet& getDFInPtsSet(LocID loc, const Key& var) override
     {
         PointsToID id = dfInPtsMap[loc][var];
         return ptCache.getActualPts(id);
     }
 
-    const DataSet &getDFOutPtsSet(LocID loc, const Key& var) override
+    const DataSet& getDFOutPtsSet(LocID loc, const Key& var) override
     {
         PointsToID id = dfOutPtsMap[loc][var];
         return ptCache.getActualPts(id);
     }
 
-    bool updateDFInFromIn(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
+    bool updateDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         return unionPtsThroughIds(getDFInPtIdRef(dstLoc, dstVar), getDFInPtIdRef(srcLoc, srcVar));
     }
 
-    bool updateAllDFInFromIn(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
+    bool updateAllDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         return updateDFInFromIn(srcLoc, srcVar, dstLoc, dstVar);
     }
 
-    bool updateDFInFromOut(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
+    bool updateDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         return unionPtsThroughIds(getDFInPtIdRef(dstLoc, dstVar), getDFOutPtIdRef(srcLoc, srcVar));
     }
 
-    bool updateAllDFInFromOut(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
+    bool updateAllDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         return updateDFInFromOut(srcLoc, srcVar, dstLoc, dstVar);
     }
@@ -464,13 +471,13 @@ public:
         return unionPtsThroughIds(getDFOutPtIdRef(dstLoc, dstVar), getDFInPtIdRef(srcLoc, srcVar));
     }
 
-    bool updateAllDFOutFromIn(LocID loc, const Key &singleton, bool strongUpdates) override
+    bool updateAllDFOutFromIn(LocID loc, const Key& singleton, bool strongUpdates) override
     {
         bool changed = false;
         if (this->hasDFInSet(loc))
         {
-            const KeyToIDMap &inKeyToId = dfInPtsMap[loc];
-            for (const typename KeyToIDMap::value_type &ki : inKeyToId)
+            const KeyToIDMap& inKeyToId = dfInPtsMap[loc];
+            for (const typename KeyToIDMap::value_type& ki : inKeyToId)
             {
                 const Key var = ki.first;
                 /// Enable strong updates if required.
@@ -483,12 +490,10 @@ public:
         return changed;
     }
 
-    void clearAllDFOutUpdatedVar(LocID) override
-    {
-    }
+    void clearAllDFOutUpdatedVar(LocID) override {}
 
     /// Update points-to set of top-level pointers with IN[srcLoc:srcVar].
-    bool updateTLVPts(LocID srcLoc, const Key &srcVar, const Key &dstVar) override
+    bool updateTLVPts(LocID srcLoc, const Key& srcVar, const Key& dstVar) override
     {
         return unionPtsThroughIds(persPTData.ptsMap[dstVar], getDFInPtIdRef(srcLoc, srcVar));
     }
@@ -501,17 +506,17 @@ public:
     Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
     {
         Map<DataSet, unsigned> allPts = persPTData.getAllPts(liveOnly);
-        for (const typename DFKeyToIDMap::value_type &lki : dfInPtsMap)
+        for (const typename DFKeyToIDMap::value_type& lki : dfInPtsMap)
         {
-            for (const typename KeyToIDMap::value_type &ki : lki.second)
+            for (const typename KeyToIDMap::value_type& ki : lki.second)
             {
                 ++allPts[ptCache.getActualPts(ki.second)];
             }
         }
 
-        for (const typename DFKeyToIDMap::value_type &lki : dfOutPtsMap)
+        for (const typename DFKeyToIDMap::value_type& lki : dfOutPtsMap)
         {
-            for (const typename KeyToIDMap::value_type &ki : lki.second)
+            for (const typename KeyToIDMap::value_type& ki : lki.second)
             {
                 ++allPts[ptCache.getActualPts(ki.second)];
             }
@@ -533,38 +538,37 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const PersistentDFPTData<Key, KeySet, Data, DataSet> *)
+    static inline bool classof(const PersistentDFPTData<Key, KeySet, Data, DataSet>*)
     {
         return true;
     }
 
-    static inline bool classof(const PTData<Key, KeySet, Data, DataSet> *ptd)
+    static inline bool classof(const PTData<Key, KeySet, Data, DataSet>* ptd)
     {
-        return ptd->getPTDTY() == PTDataTy::PersDataFlow
-               || ptd->getPTDTY() == PTDataTy::PersIncDataFlow;
+        return ptd->getPTDTY() == PTDataTy::PersDataFlow || ptd->getPTDTY() == PTDataTy::PersIncDataFlow;
     }
     ///@}
 
 protected:
-    inline bool unionPtsThroughIds(PointsToID &dst, PointsToID &src)
+    inline bool unionPtsThroughIds(PointsToID& dst, PointsToID& src)
     {
         PointsToID oldDst = dst;
         dst = ptCache.unionPts(dst, src);
         return oldDst != dst;
     }
 
-    PointsToID &getDFInPtIdRef(LocID loc, const Key &var)
+    PointsToID& getDFInPtIdRef(LocID loc, const Key& var)
     {
         return dfInPtsMap[loc][var];
     }
 
-    PointsToID &getDFOutPtIdRef(LocID loc, const Key &var)
+    PointsToID& getDFOutPtIdRef(LocID loc, const Key& var)
     {
         return dfOutPtsMap[loc][var];
     }
 
 protected:
-    PersistentPointsToCache<DataSet> &ptCache;
+    PersistentPointsToCache<DataSet>& ptCache;
 
     /// PTData for top-level pointers. We will also use its cache for address-taken pointers.
     PersistentPTData<Key, KeySet, Data, DataSet> persPTData;
@@ -591,15 +595,18 @@ public:
 
 public:
     /// Constructor
-    explicit PersistentIncDFPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = BasePTData::PersIncDataFlow)
-        : BasePersDFPTData(cache, reversePT, ty) { }
+    explicit PersistentIncDFPTData(PersistentPointsToCache<DataSet>& cache, bool reversePT = true,
+                                   PTDataTy ty = BasePTData::PersIncDataFlow)
+        : BasePersDFPTData(cache, reversePT, ty)
+    {
+    }
 
     ~PersistentIncDFPTData() override = default;
 
     inline bool updateDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
-        if (varHasNewDFInPts(srcLoc, srcVar)
-                && this->unionPtsThroughIds(this->getDFInPtIdRef(dstLoc, dstVar), this->getDFInPtIdRef(srcLoc, srcVar)))
+        if (varHasNewDFInPts(srcLoc, srcVar) &&
+            this->unionPtsThroughIds(this->getDFInPtIdRef(dstLoc, dstVar), this->getDFInPtIdRef(srcLoc, srcVar)))
         {
             setVarDFInSetUpdated(dstLoc, dstVar);
             return true;
@@ -610,8 +617,8 @@ public:
 
     inline bool updateDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
-        if (varHasNewDFOutPts(srcLoc, srcVar)
-                && this->unionPtsThroughIds(this->getDFInPtIdRef(dstLoc, dstVar), this->getDFOutPtIdRef(srcLoc, srcVar)))
+        if (varHasNewDFOutPts(srcLoc, srcVar) &&
+            this->unionPtsThroughIds(this->getDFInPtIdRef(dstLoc, dstVar), this->getDFOutPtIdRef(srcLoc, srcVar)))
         {
             setVarDFInSetUpdated(dstLoc, dstVar);
             return true;
@@ -664,7 +671,7 @@ public:
         {
             /// Only variables which have a new (IN) pts need to be updated.
             const KeySet vars = getDFInUpdatedVar(loc);
-            for (const Key &var : vars)
+            for (const Key& var : vars)
             {
                 /// Enable strong updates if it is required to do so
                 if (strongUpdates && var == singleton) continue;
@@ -702,7 +709,7 @@ public:
         if (this->hasDFOutSet(loc))
         {
             const KeySet vars = getDFOutUpdatedVar(loc);
-            for (const Key &var : vars)
+            for (const Key& var : vars)
             {
                 removeVarFromDFOutUpdatedSet(loc, var);
             }
@@ -718,19 +725,18 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const PersistentIncDFPTData<Key, KeySet, Data, DataSet> *)
+    static inline bool classof(const PersistentIncDFPTData<Key, KeySet, Data, DataSet>*)
     {
         return true;
     }
 
-    static inline bool classof(const PTData<Key, KeySet, Data, DataSet> *ptd)
+    static inline bool classof(const PTData<Key, KeySet, Data, DataSet>* ptd)
     {
         return ptd->getPTDTY() == BasePTData::PersIncDataFlow;
     }
     ///@}
 
 private:
-
     /// Handle address-taken variables whose IN pts changed
     //@{
     /// Add var into loc's IN updated set. Called when var's pts in loc's IN set is changed.
@@ -791,7 +797,6 @@ private:
     }
     ///@}
 
-
 private:
     UpdatedVarMap outUpdatedVarMap;
     UpdatedVarMap inUpdatedVarMap;
@@ -801,7 +806,8 @@ private:
 /// Implemented as a wrapper around two PersistentPTDatas: one for Keys, one
 /// for VersionedKeys.
 /// They are constructed with the same PersistentPointsToCache.
-template <typename Key, typename KeySet, typename Data, typename DataSet, typename VersionedKey, typename VersionedKeySet>
+template <typename Key, typename KeySet, typename Data, typename DataSet, typename VersionedKey,
+          typename VersionedKeySet>
 class PersistentVersionedPTData : public VersionedPTData<Key, KeySet, Data, DataSet, VersionedKey, VersionedKeySet>
 {
 public:
@@ -812,8 +818,11 @@ public:
     typedef typename PersistentPTData<Key, KeySet, Data, DataSet>::KeyToIDMap KeyToIDMap;
     typedef typename PersistentPTData<VersionedKey, VersionedKeySet, Data, DataSet>::KeyToIDMap VersionedKeyToIDMap;
 
-    explicit PersistentVersionedPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersVersioned)
-        : BaseVersionedPTData(reversePT, ty), tlPTData(cache, reversePT), atPTData(cache, reversePT) { }
+    explicit PersistentVersionedPTData(PersistentPointsToCache<DataSet>& cache, bool reversePT = true,
+                                       PTDataTy ty = PTDataTy::PersVersioned)
+        : BaseVersionedPTData(reversePT, ty), tlPTData(cache, reversePT), atPTData(cache, reversePT)
+    {
+    }
 
     ~PersistentVersionedPTData() override = default;
 
@@ -823,31 +832,32 @@ public:
         atPTData.clear();
     }
 
-    const DataSet &getPts(const Key& vk) override
+    const DataSet& getPts(const Key& vk) override
     {
         return tlPTData.getPts(vk);
     }
-    const DataSet &getPts(const VersionedKey& vk) override
+    const DataSet& getPts(const VersionedKey& vk) override
     {
         return atPTData.getPts(vk);
     }
 
-    const KeySet& getRevPts(const Data &data) override
+    const KeySet& getRevPts(const Data& data) override
     {
         assert(this->rev && "PersistentVersionedPTData::getRevPts: constructed without reverse PT support!");
         return tlPTData.getRevPts(data);
     }
-    const VersionedKeySet& getVersionedKeyRevPts(const Data &data) override
+    const VersionedKeySet& getVersionedKeyRevPts(const Data& data) override
     {
-        assert(this->rev && "PersistentVersionedPTData::getVersionedKeyRevPts: constructed without reverse PT support!");
+        assert(this->rev &&
+               "PersistentVersionedPTData::getVersionedKeyRevPts: constructed without reverse PT support!");
         return atPTData.getRevPts(data);
     }
 
-    bool addPts(const Key& k, const Data &element) override
+    bool addPts(const Key& k, const Data& element) override
     {
         return tlPTData.addPts(k, element);
     }
-    bool addPts(const VersionedKey& vk, const Data &element) override
+    bool addPts(const VersionedKey& vk, const Data& element) override
     {
         return atPTData.addPts(vk, element);
     }
@@ -868,20 +878,20 @@ public:
     {
         return tlPTData.unionPtsFromId(dstVar, atPTData.ptsMap[srcVar]);
     }
-    bool unionPts(const Key &dstVar, const DataSet &srcDataSet) override
+    bool unionPts(const Key& dstVar, const DataSet& srcDataSet) override
     {
         return tlPTData.unionPts(dstVar, srcDataSet);
     }
-    bool unionPts(const VersionedKey &dstVar, const DataSet &srcDataSet) override
+    bool unionPts(const VersionedKey& dstVar, const DataSet& srcDataSet) override
     {
         return atPTData.unionPts(dstVar, srcDataSet);
     }
 
-    void clearPts(const Key& k, const Data &element) override
+    void clearPts(const Key& k, const Data& element) override
     {
         tlPTData.clearPts(k, element);
     }
-    void clearPts(const VersionedKey& vk, const Data &element) override
+    void clearPts(const VersionedKey& vk, const Data& element) override
     {
         atPTData.clearPts(vk, element);
     }
@@ -916,7 +926,7 @@ public:
             // They will each occur one more time in the cache.
             // In essence, we want the ptCache.getAllPts() to just add the unused, non-GC'd
             // points-to sets to allPts.
-            for (typename Map<DataSet, unsigned>::value_type &pto : allPts) pto.second -= 1;
+            for (typename Map<DataSet, unsigned>::value_type& pto : allPts) pto.second -= 1;
             SVFUtil::mergePtsOccMaps<DataSet>(allPts, tlPTData.ptCache.getAllPts());
         }
 
@@ -933,7 +943,8 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const PersistentVersionedPTData<Key, KeySet, Data, DataSet, VersionedKey, VersionedKeySet> *)
+    static inline bool classof(
+        const PersistentVersionedPTData<Key, KeySet, Data, DataSet, VersionedKey, VersionedKeySet>*)
     {
         return true;
     }
@@ -952,4 +963,4 @@ private:
 };
 
 } // End namespace SVF
-#endif  // PERSISTENT_POINTSTO_H_
+#endif // PERSISTENT_POINTSTO_H_

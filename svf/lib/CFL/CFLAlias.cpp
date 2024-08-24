@@ -38,7 +38,7 @@ using namespace SVFUtil;
  */
 void CFLAlias::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges)
 {
-    for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter)
+    for (CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter != eiter; ++iter)
     {
         const CallICFGNode* cs = iter->first;
 
@@ -50,7 +50,7 @@ void CFLAlias::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, Call
             resolveCPPIndCalls(cs, getCFLPts(vtblId), newEdges);
         }
         else
-            resolveIndCalls(iter->first,getCFLPts(iter->second),newEdges);
+            resolveIndCalls(iter->first, getCFLPts(iter->second), newEdges);
     }
 }
 
@@ -62,12 +62,13 @@ void CFLAlias::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F)
 {
     assert(F);
 
-    DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << cs.getInstruction()->toString() << " to callee " << *F << "\n");
+    DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << cs.getInstruction()->toString()
+                            << " to callee " << *F << "\n");
 
     CallICFGNode* callBlockNode = svfir->getICFG()->getCallICFGNode(cs.getInstruction());
     RetICFGNode* retBlockNode = svfir->getICFG()->getRetICFGNode(cs.getInstruction());
 
-    if(SVFUtil::isHeapAllocExtFunViaRet(F) && svfir->callsiteHasRet(retBlockNode))
+    if (SVFUtil::isHeapAllocExtFunViaRet(F) && svfir->callsiteHasRet(retBlockNode))
     {
         heapAllocatorViaIndCall(cs);
     }
@@ -94,20 +95,20 @@ void CFLAlias::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F)
         // connect actual and formal param
         const SVFIR::SVFVarList& csArgList = svfir->getCallSiteArgsList(callBlockNode);
         const SVFIR::SVFVarList& funArgList = svfir->getFunArgsList(F);
-        //Go through the fixed parameters.
+        // Go through the fixed parameters.
         DBOUT(DPAGBuild, outs() << "      args:");
         SVFIR::SVFVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
-        SVFIR::SVFVarList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
+        SVFIR::SVFVarList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
         for (; funArgIt != funArgEit; ++csArgIt, ++funArgIt)
         {
-            //Some programs (e.g. Linux kernel) leave unneeded parameters empty.
-            if (csArgIt  == csArgEit)
+            // Some programs (e.g. Linux kernel) leave unneeded parameters empty.
+            if (csArgIt == csArgEit)
             {
                 DBOUT(DAndersen, outs() << " !! not enough args\n");
                 break;
             }
-            const PAGNode *cs_arg = *csArgIt ;
-            const PAGNode *fun_arg = *funArgIt;
+            const PAGNode* cs_arg = *csArgIt;
+            const PAGNode* fun_arg = *funArgIt;
 
             if (cs_arg->isPointer() && fun_arg->isPointer())
             {
@@ -118,22 +119,22 @@ void CFLAlias::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F)
             }
         }
 
-        //Any remaining actual args must be varargs.
+        // Any remaining actual args must be varargs.
         if (F->isVarArg())
         {
             NodeID vaF = svfir->getVarargNode(F);
             DBOUT(DPAGBuild, outs() << "\n      varargs:");
             for (; csArgIt != csArgEit; ++csArgIt)
             {
-                const PAGNode *cs_arg = *csArgIt;
+                const PAGNode* cs_arg = *csArgIt;
                 if (cs_arg->isPointer())
                 {
                     NodeID vnAA = cs_arg->getId();
-                    addCopyEdge(vnAA,vaF);
+                    addCopyEdge(vnAA, vaF);
                 }
             }
         }
-        if(csArgIt != csArgEit)
+        if (csArgIt != csArgEit)
         {
             writeWrnMsg("too many args to non-vararg func.");
             writeWrnMsg("(" + cs.getInstruction()->getSourceLoc() + ")");
@@ -148,7 +149,7 @@ void CFLAlias::heapAllocatorViaIndCall(CallSite cs)
     const PAGNode* cs_return = svfir->getCallSiteRet(retBlockNode);
     NodeID srcret;
     CallSite2DummyValPN::const_iterator it = callsite2DummyValPN.find(cs);
-    if(it != callsite2DummyValPN.end())
+    if (it != callsite2DummyValPN.end())
     {
         srcret = it->second;
     }
@@ -156,7 +157,7 @@ void CFLAlias::heapAllocatorViaIndCall(CallSite cs)
     {
         NodeID valNode = svfir->addDummyValNode();
         NodeID objNode = svfir->addDummyObjNode(cs.getType());
-        callsite2DummyValPN.insert(std::make_pair(cs,valNode));
+        callsite2DummyValPN.insert(std::make_pair(cs, valNode));
         graph->addCFLNode(valNode, new CFLNode(valNode));
         graph->addCFLNode(objNode, new CFLNode(objNode));
         srcret = valNode;
@@ -172,13 +173,13 @@ void CFLAlias::heapAllocatorViaIndCall(CallSite cs)
 bool CFLAlias::updateCallGraph(const CallSiteToFunPtrMap& callsites)
 {
     CallEdgeMap newEdges;
-    onTheFlyCallGraphSolve(callsites,newEdges);
-    for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it )
+    onTheFlyCallGraphSolve(callsites, newEdges);
+    for (CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it != eit; ++it)
     {
         CallSite cs = SVFUtil::getSVFCallSite(it->first->getCallSite());
-        for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
+        for (FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit != ecit; ++cit)
         {
-            connectCaller2CalleeParams(cs,*cit);
+            connectCaller2CalleeParams(cs, *cit);
         }
     }
 
@@ -214,15 +215,13 @@ void CFLAlias::finalize()
 {
     numOfChecks = solver->numOfChecks;
 
-    if(Options::PrintCFL() == true)
+    if (Options::PrintCFL() == true)
     {
-        if (Options::CFLGraph().empty())
-            svfir->dump("IR");
+        if (Options::CFLGraph().empty()) svfir->dump("IR");
         grammar->dump("Grammar");
         graph->dump("CFLGraph");
     }
-    if (Options::CFLGraph().empty())
-        PointerAnalysis::finalize();
+    if (Options::CFLGraph().empty()) PointerAnalysis::finalize();
 }
 
 void CFLAlias::solve()

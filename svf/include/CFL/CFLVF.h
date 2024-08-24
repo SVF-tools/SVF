@@ -30,7 +30,6 @@
 #ifndef INCLUDE_CFL_CFLVF_H_
 #define INCLUDE_CFL_CFLVF_H_
 
-
 #include "CFL/CFLBase.h"
 #include "CFL/CFLStat.h"
 #include "CFL/CFLSVFGBuilder.h"
@@ -42,9 +41,7 @@ class CFLVF : public CFLBase
 {
 
 public:
-    CFLVF(SVFIR* ir) : CFLBase(ir, PointerAnalysis::CFLFSCS_WPA)
-    {
-    }
+    CFLVF(SVFIR* ir) : CFLBase(ir, PointerAnalysis::CFLFSCS_WPA) {}
 
     /// Parameter Checking
     virtual void checkParameter();

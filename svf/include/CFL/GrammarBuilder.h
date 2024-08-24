@@ -71,7 +71,7 @@ class GrammarBuilder
 {
 private:
     std::string fileName;
-    GrammarBase *grammar;
+    GrammarBase* grammar;
 
     /// Parse start symbol and production from file string
     const inline std::string parseProductionsString() const;
@@ -83,7 +83,7 @@ private:
     const inline std::string stripSpace(std::string s) const;
 
 public:
-    GrammarBuilder(std::string fileName): fileName(fileName), grammar(nullptr)
+    GrammarBuilder(std::string fileName) : fileName(fileName), grammar(nullptr)
     {
         grammar = new GrammarBase();
     };
@@ -92,9 +92,9 @@ public:
     GrammarBase* build() const;
 
     /// Build grammarBase from fileName with preset str2KindMap
-    GrammarBase* build(Map<std::string, SVF::GrammarBase::Symbol> &preMap) const;
+    GrammarBase* build(Map<std::string, SVF::GrammarBase::Symbol>& preMap) const;
 };
 
-} // SVF
+} // namespace SVF
 
 #endif /* INCLUDE_CFL_GRAMMARBUILDER_H_ */

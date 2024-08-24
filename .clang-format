@@ -2,5 +2,10 @@ BasedOnStyle: Microsoft
 PointerAlignment: Left
 IndentPPDirectives: AfterHash
 AllowShortFunctionsOnASingleLine: Empty
-ColumnLimit: 80
+ColumnLimit: 120
 AccessModifierOffset: -4
+AllowShortIfStatementsOnASingleLine: Always
+AllowShortLoopsOnASingleLine: true
+AllowShortBlocksOnASingleLine: false
+BreakBeforeTernaryOperators: true
+SortIncludes: false

@@ -32,8 +32,7 @@ namespace SVF
 // differently without requiring a copy of the original graph. This could
 // be achieved by carrying more data in NodeRef. See LoopBodyTraits for one
 // example.
-template<class GraphType>
-struct GenericGraphTraits
+template <class GraphType> struct GenericGraphTraits
 {
     // Elements to provide:
 
@@ -93,58 +92,54 @@ struct GenericGraphTraits
 // df_iterator<Inverse<Method*>> I = idf_begin(M), E = idf_end(M);
 // for (; I != E; ++I) { ... }
 //
-template <class GraphType>
-struct Inverse
+template <class GraphType> struct Inverse
 {
-    const GraphType &Graph;
+    const GraphType& Graph;
 
-    inline Inverse(const GraphType &G) : Graph(G) {}
+    inline Inverse(const GraphType& G) : Graph(G) {}
 };
 
 // Provide a partial specialization of GenericGraphTraits so that the inverse of an
 // inverse falls back to the original graph.
-template <class T> struct GenericGraphTraits<Inverse<Inverse<T>>> : GenericGraphTraits<T> {};
+template <class T> struct GenericGraphTraits<Inverse<Inverse<T>>> : GenericGraphTraits<T>
+{
+};
 
 // Provide iterator ranges for the graph traits nodes and children
-template <class GraphType>
-iter_range<typename GenericGraphTraits<GraphType>::nodes_iterator>
-nodes(const GraphType &G)
+template <class GraphType> iter_range<typename GenericGraphTraits<GraphType>::nodes_iterator> nodes(const GraphType& G)
 {
-    return make_range(GenericGraphTraits<GraphType>::nodes_begin(G),
-                      GenericGraphTraits<GraphType>::nodes_end(G));
+    return make_range(GenericGraphTraits<GraphType>::nodes_begin(G), GenericGraphTraits<GraphType>::nodes_end(G));
 }
 template <class GraphType>
-iter_range<typename GenericGraphTraits<Inverse<GraphType>>::nodes_iterator>
-        inverse_nodes(const GraphType &G)
+iter_range<typename GenericGraphTraits<Inverse<GraphType>>::nodes_iterator> inverse_nodes(const GraphType& G)
 {
     return make_range(GenericGraphTraits<Inverse<GraphType>>::nodes_begin(G),
                       GenericGraphTraits<Inverse<GraphType>>::nodes_end(G));
 }
 
 template <class GraphType>
-iter_range<typename GenericGraphTraits<GraphType>::ChildIteratorType>
-children(const typename GenericGraphTraits<GraphType>::NodeRef &G)
+iter_range<typename GenericGraphTraits<GraphType>::ChildIteratorType> children(
+    const typename GenericGraphTraits<GraphType>::NodeRef& G)
 {
-    return make_range(GenericGraphTraits<GraphType>::child_begin(G),
-                      GenericGraphTraits<GraphType>::child_end(G));
+    return make_range(GenericGraphTraits<GraphType>::child_begin(G), GenericGraphTraits<GraphType>::child_end(G));
 }
 
 template <class GraphType>
-iter_range<typename GenericGraphTraits<Inverse<GraphType>>::ChildIteratorType>
-        inverse_children(const typename GenericGraphTraits<GraphType>::NodeRef &G)
+iter_range<typename GenericGraphTraits<Inverse<GraphType>>::ChildIteratorType> inverse_children(
+    const typename GenericGraphTraits<GraphType>::NodeRef& G)
 {
     return make_range(GenericGraphTraits<Inverse<GraphType>>::child_begin(G),
                       GenericGraphTraits<Inverse<GraphType>>::child_end(G));
 }
 
 template <class GraphType>
-iter_range<typename GenericGraphTraits<GraphType>::ChildEdgeIteratorType>
-children_edges(const typename GenericGraphTraits<GraphType>::NodeRef &G)
+iter_range<typename GenericGraphTraits<GraphType>::ChildEdgeIteratorType> children_edges(
+    const typename GenericGraphTraits<GraphType>::NodeRef& G)
 {
     return make_range(GenericGraphTraits<GraphType>::child_edge_begin(G),
                       GenericGraphTraits<GraphType>::child_edge_end(G));
 }
 
-} // end namespace llvm
+} // namespace SVF
 
 #endif // LLVM_ADT_GRAPHTRAITS_H

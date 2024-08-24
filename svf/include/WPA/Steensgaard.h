@@ -41,8 +41,7 @@ public:
     }
     static void releaseSteensgaard()
     {
-        if (steens)
-            delete steens;
+        if (steens) delete steens;
         steens = nullptr;
     }
 
@@ -93,8 +92,7 @@ public:
     inline NodeID getEC(NodeID id) const
     {
         NodeToEquivClassMap::const_iterator it = nodeToECMap.find(id);
-        if (it == nodeToECMap.end())
-            return id;
+        if (it == nodeToECMap.end()) return id;
         else
             return it->second;
     }
@@ -117,8 +115,7 @@ public:
     }
 
 protected:
-    CallSite2DummyValPN
-    callsite2DummyValPN; ///< Map an instruction to a dummy obj which
+    CallSite2DummyValPN callsite2DummyValPN; ///< Map an instruction to a dummy obj which
     ///< created at an indirect callsite, which invokes
     ///< a heap allocator
     void heapAllocatorViaIndCall(CallSite cs, NodePairSet& cpySrcNodes);
@@ -127,8 +124,7 @@ protected:
     virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
 
     /// Connect formal and actual parameters for indirect callsites
-    void connectCaller2CalleeParams(CallSite cs, const SVFFunction* F,
-                                    NodePairSet& cpySrcNodes);
+    void connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, NodePairSet& cpySrcNodes);
 
 private:
     static Steensgaard* steens; // static instance

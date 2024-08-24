@@ -43,16 +43,11 @@ class FileChecker : public LeakChecker
 {
 
 public:
-
     /// Constructor
-    FileChecker(): LeakChecker()
-    {
-    }
+    FileChecker() : LeakChecker() {}
 
     /// Destructor
-    virtual ~FileChecker()
-    {
-    }
+    virtual ~FileChecker() {}
 
     /// We start from here
     virtual bool runOnModule(SVFIR* pag)

@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 /*
  * WPASolver.h
  *
@@ -39,15 +38,14 @@ namespace SVF
 /*
  * Generic graph solver for whole program pointer analysis
  */
-template<class GraphType>
-class WPASolver
+template <class GraphType> class WPASolver
 {
 
 public:
-    ///Define the GTraits and node iterator for printing
+    /// Define the GTraits and node iterator for printing
     typedef SVF::GenericGraphTraits<GraphType> GTraits;
-    typedef typename GTraits::NodeRef           GNODE;
-    typedef typename GTraits::EdgeType          GEDGE;
+    typedef typename GTraits::NodeRef GNODE;
+    typedef typename GTraits::EdgeType GEDGE;
     typedef typename GTraits::ChildIteratorType child_iterator;
 
     typedef SCCDetection<GraphType> SCC;
@@ -55,11 +53,8 @@ public:
     typedef FIFOWorkList<NodeID> WorkList;
 
 protected:
-
     /// Constructor
-    WPASolver(): reanalyze(false), iterationForPrintStat(1000), _graph(nullptr), numOfIteration(0)
-    {
-    }
+    WPASolver() : reanalyze(false), iterationForPrintStat(1000), _graph(nullptr), numOfIteration(0) {}
     /// Destructor
     virtual ~WPASolver() = default;
 
@@ -130,8 +125,7 @@ protected:
         child_iterator EE = GTraits::direct_child_end(*v);
         for (; EI != EE; ++EI)
         {
-            if (propFromSrcToDst(*(EI.getCurrent())))
-                pushIntoWorklist(Node_Index(*EI));
+            if (propFromSrcToDst(*(EI.getCurrent()))) pushIntoWorklist(Node_Index(*EI));
         }
     }
     /// Propagate information from source to destination node, to be implemented in the child class
@@ -171,7 +165,6 @@ protected:
     bool reanalyze;
     /// print out statistics for i-th iteration
     u32_t iterationForPrintStat;
-
 
     /// Get node on the graph
     inline GNODE* Node(NodeID id)

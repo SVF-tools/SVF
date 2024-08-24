@@ -35,17 +35,14 @@
 #include "CFL/CFLAlias.h"
 #include "CFL/CFLVF.h"
 
-
 using namespace llvm;
 using namespace SVF;
 
-int main(int argc, char ** argv)
+int main(int argc, char** argv)
 {
     // Parses command-line arguments and stores any module names in moduleNameVec
     std::vector<std::string> moduleNameVec;
-    moduleNameVec = OptionBase::parseOptions(
-                        argc, argv, "CFL Reachability Analysis", "[options] <input-bitcode...>"
-                    );
+    moduleNameVec = OptionBase::parseOptions(argc, argv, "CFL Reachability Analysis", "[options] <input-bitcode...>");
 
     // If the WriteAnder option is set to "ir_annotator", pre-processes the bytecodes of the modules
     if (Options::WriteAnder() == "ir_annotator")
@@ -62,14 +59,13 @@ int main(int argc, char ** argv)
         SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
         SVFIRBuilder builder(svfModule);
         svfir = builder.build();
-    }  // if no dot form CFLGraph is specified, we use svfir from .bc.
+    } // if no dot form CFLGraph is specified, we use svfir from .bc.
 
     // The CFLBase pointer that will be used to run the analysis
     std::unique_ptr<CFLBase> cfl;
 
     // Determines which type of analysis to run based on the options and sets up cfl accordingly
-    if (Options::CFLSVFG())
-        cfl = std::make_unique<CFLVF>(svfir);
+    if (Options::CFLSVFG()) cfl = std::make_unique<CFLVF>(svfir);
     else if (Options::POCRHybrid())
         cfl = std::make_unique<POCRHybrid>(svfir);
     else if (Options::POCRAlias())
@@ -84,8 +80,5 @@ int main(int argc, char ** argv)
     SVFIR::releaseSVFIR();
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
 
-
     return 0;
-
 }
-

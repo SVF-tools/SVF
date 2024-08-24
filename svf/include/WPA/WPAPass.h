@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 /*
  * @file: WPA.h
  * @author: yesen
@@ -32,7 +31,6 @@
  * @section DESCRIPTION
  *
  */
-
 
 #ifndef WPA_H_
 #define WPA_H_
@@ -61,22 +59,19 @@ public:
 
     enum AliasCheckRule
     {
-        Conservative,	///< return MayAlias if any pta says alias
-        Veto,			///< return NoAlias if any pta says no alias
-        Precise			///< return alias result by the most precise pta
+        Conservative, ///< return MayAlias if any pta says alias
+        Veto,         ///< return NoAlias if any pta says no alias
+        Precise       ///< return alias result by the most precise pta
     };
 
     /// Constructor needs TargetLibraryInfo to be passed to the AliasAnalysis
-    WPAPass()
-    {
-
-    }
+    WPAPass() {}
 
     /// Destructor
     virtual ~WPAPass();
 
     /// Interface expose to users of our pointer analysis, given Value infos
-    virtual AliasResult alias(const SVFValue* V1,	const SVFValue* V2);
+    virtual AliasResult alias(const SVFValue* V1, const SVFValue* V2);
 
     /// Retrieve points-to set information
     virtual const PointsTo& getPts(const SVFValue* value);
@@ -88,13 +83,15 @@ public:
     /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref any memory location
     virtual ModRefInfo getModRefInfo(const CallSite callInst);
 
-    /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref a specific memory location, given Location infos
+    /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref a specific memory
+    /// location, given Location infos
     // virtual inline ModRefInfo getModRefInfo(const CallSite callInst, const MemoryLocation& Loc)
     // {
     //     return getModRefInfo(callInst, Loc.Ptr);
     // }
 
-    /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref a specific memory location, given Value infos
+    /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref a specific memory
+    /// location, given Value infos
     virtual ModRefInfo getModRefInfo(const CallSite callInst, const SVFValue* V);
 
     /// Interface of mod-ref analysis between two CallSite instructions
@@ -113,9 +110,9 @@ private:
     /// Create pointer analysis according to specified kind and analyze the module.
     void runPointerAnalysis(SVFIR* pag, u32_t kind);
 
-    PTAVector ptaVector;	///< all pointer analysis to be executed.
-    PointerAnalysis* _pta;	///<  pointer analysis to be executed.
-    SVFG* _svfg;  ///< svfg generated through -ander pointer analysis
+    PTAVector ptaVector;   ///< all pointer analysis to be executed.
+    PointerAnalysis* _pta; ///<  pointer analysis to be executed.
+    SVFG* _svfg;           ///< svfg generated through -ander pointer analysis
 };
 
 } // End namespace SVF

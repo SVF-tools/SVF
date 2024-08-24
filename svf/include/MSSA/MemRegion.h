@@ -57,6 +57,7 @@ class MemRegion
 
 public:
     typedef bool Condition;
+
 private:
     /// region ID 0 is reserved
     static u32_t totalMRNum;
@@ -65,14 +66,9 @@ private:
 
 public:
     /// Constructor
-    MemRegion(const NodeBS& cp) :
-        rid(++totalMRNum), cptsSet(cp)
-    {
-    }
+    MemRegion(const NodeBS& cp) : rid(++totalMRNum), cptsSet(cp) {}
     /// Destructor
-    ~MemRegion()
-    {
-    }
+    ~MemRegion() {}
 
     /// Return memory region ID
     inline MRID getMRID() const
@@ -80,7 +76,7 @@ public:
         return rid;
     }
     /// Return points-to
-    inline const NodeBS &getPointsTo() const
+    inline const NodeBS& getPointsTo() const
     {
         return cptsSet;
     }
@@ -94,8 +90,7 @@ public:
     {
         std::string str;
         str += "pts{";
-        for (NodeBS::iterator ii = cptsSet.begin(), ie = cptsSet.end();
-                ii != ie; ii++)
+        for (NodeBS::iterator ii = cptsSet.begin(), ie = cptsSet.end(); ii != ie; ii++)
         {
             char int2str[16];
             snprintf(int2str, sizeof(int2str), "%d", *ii);
@@ -137,7 +132,7 @@ public:
     /// Get typedef from Pointer Analysis
     //@{
     //@}
-    ///Define mem region set
+    /// Define mem region set
     typedef OrderedSet<const MemRegion*, MemRegion::equalMemRegion> MRSet;
     typedef Map<const PAGEdge*, const SVFFunction*> PAGEdgeToFunMap;
     typedef OrderedSet<NodeBS, SVFUtil::equalNodeBS> PointsToList;
@@ -186,14 +181,13 @@ public:
     inline const NodeBS& getRepPointsTo(const NodeBS& cpts) const
     {
         PtsToRepPtsSetMap::const_iterator it = cptsToRepCPtsMap.find(cpts);
-        assert(it!=cptsToRepCPtsMap.end() && "can not find superset of cpts??");
+        assert(it != cptsToRepCPtsMap.end() && "can not find superset of cpts??");
         return it->second;
     }
     /// Get a memory region according to cpts
     const MemRegion* getMR(const NodeBS& cpts) const;
 
 private:
-
     BVDataPTAImpl* pta;
     SCC* callGraphSCC;
     CallGraph* callGraph;
@@ -212,7 +206,7 @@ private:
     /// Map a load SVFIR Edge to its CPts set map
     LoadsToPointsToMap loadsToPointsToMap;
     /// Map a store SVFIR Edge to its CPts set map
-    StoresToPointsToMap	storesToPointsToMap;
+    StoresToPointsToMap storesToPointsToMap;
     /// Map a callsite to it refs cpts set
     CallSiteToPointsToMap callsiteToRefPointsToMap;
     /// Map a callsite to it mods cpts set
@@ -245,10 +239,10 @@ private:
     /// Clean up memory
     void destroy();
 
-    //Get all objects might pass into callee from a callsite
+    // Get all objects might pass into callee from a callsite
     void collectCallSitePts(const CallICFGNode* cs);
 
-    //Recursive collect points-to chain
+    // Recursive collect points-to chain
     NodeBS& CollectPtsChain(NodeID id);
 
     /// Return the pts chain of all callsite arguments
@@ -308,10 +302,9 @@ protected:
     /// Get all aliased mem regions from function fun according to cpts
     virtual inline void getAliasMemRegions(MRSet& aliasMRs, const NodeBS& cpts, const SVFFunction* fun)
     {
-        for(MRSet::const_iterator it = funToMRsMap[fun].begin(), eit = funToMRsMap[fun].end(); it!=eit; ++it)
+        for (MRSet::const_iterator it = funToMRsMap[fun].begin(), eit = funToMRsMap[fun].end(); it != eit; ++it)
         {
-            if(isAliasedMR(cpts,*it))
-                aliasMRs.insert(*it);
+            if (isAliasedMR(cpts, *it)) aliasMRs.insert(*it);
         }
     }
 
@@ -335,20 +328,19 @@ protected:
     /// Get Mod-Ref of a callee function
     virtual bool handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGNode* cs, const SVFFunction* fun);
 
-
     /// Add cpts to store/load
     //@{
-    inline void addCPtsToStore(NodeBS& cpts, const StoreStmt *st, const SVFFunction* fun)
+    inline void addCPtsToStore(NodeBS& cpts, const StoreStmt* st, const SVFFunction* fun)
     {
         storesToPointsToMap[st] = cpts;
         funToPointsToMap[fun].insert(cpts);
-        addModSideEffectOfFunction(fun,cpts);
+        addModSideEffectOfFunction(fun, cpts);
     }
-    inline void addCPtsToLoad(NodeBS& cpts, const LoadStmt *ld, const SVFFunction* fun)
+    inline void addCPtsToLoad(NodeBS& cpts, const LoadStmt* ld, const SVFFunction* fun)
     {
         loadsToPointsToMap[ld] = cpts;
         funToPointsToMap[fun].insert(cpts);
-        addRefSideEffectOfFunction(fun,cpts);
+        addRefSideEffectOfFunction(fun, cpts);
     }
     inline void addCPtsToCallSiteRefs(NodeBS& cpts, const CallICFGNode* cs)
     {
@@ -362,7 +354,7 @@ protected:
     }
     inline bool hasCPtsList(const SVFFunction* fun) const
     {
-        return funToPointsToMap.find(fun)!=funToPointsToMap.end();
+        return funToPointsToMap.find(fun) != funToPointsToMap.end();
     }
     inline PointsToList& getPointsToList(const SVFFunction* fun)
     {
@@ -435,7 +427,7 @@ public:
     const SVFFunction* getFunction(const PAGEdge* pagEdge) const
     {
         PAGEdgeToFunMap::const_iterator it = pagEdgeToFunMap.find(pagEdge);
-        assert(it!=pagEdgeToFunMap.end() && "can not find its function, it is a global SVFIR edge");
+        assert(it != pagEdgeToFunMap.end() && "can not find its function, it is a global SVFIR edge");
         return it->second;
     }
     /// Get Memory Region set
@@ -454,11 +446,11 @@ public:
     }
     inline bool hasRefMRSet(const CallICFGNode* cs)
     {
-        return callsiteToRefMRsMap.find(cs)!=callsiteToRefMRsMap.end();
+        return callsiteToRefMRsMap.find(cs) != callsiteToRefMRsMap.end();
     }
     inline bool hasModMRSet(const CallICFGNode* cs)
     {
-        return callsiteToModMRsMap.find(cs)!=callsiteToModMRsMap.end();
+        return callsiteToModMRsMap.find(cs) != callsiteToModMRsMap.end();
     }
     inline MRSet& getCallSiteRefMRSet(const CallICFGNode* cs)
     {
@@ -483,7 +475,6 @@ public:
     ModRefInfo getModRefInfo(const CallICFGNode* cs, const SVFValue* V);
     ModRefInfo getModRefInfo(const CallICFGNode* cs1, const CallICFGNode* cs2);
     //@}
-
 };
 
 } // End namespace SVF

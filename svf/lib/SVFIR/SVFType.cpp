@@ -7,8 +7,7 @@ namespace SVF
 SVFType* SVFType::svfI8Ty = nullptr;
 SVFType* SVFType::svfPtrTy = nullptr;
 
-__attribute__((weak))
-std::string SVFType::toString() const
+__attribute__((weak)) std::string SVFType::toString() const
 {
     std::ostringstream os;
     print(os);
@@ -28,8 +27,7 @@ void SVFPointerType::print(std::ostream& os) const
 
 void SVFIntegerType::print(std::ostream& os) const
 {
-    if (signAndWidth < 0)
-        os << 'i' << -signAndWidth;
+    if (signAndWidth < 0) os << 'i' << -signAndWidth;
     else
         os << 'u' << signAndWidth;
 }

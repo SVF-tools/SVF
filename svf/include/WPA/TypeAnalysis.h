@@ -35,20 +35,15 @@
 namespace SVF
 {
 
-class TypeAnalysis:  public AndersenBase
+class TypeAnalysis : public AndersenBase
 {
 
 public:
     /// Constructor
-    TypeAnalysis(SVFIR* pag)
-        :  AndersenBase(pag, TypeCPP_WPA)
-    {
-    }
+    TypeAnalysis(SVFIR* pag) : AndersenBase(pag, TypeCPP_WPA) {}
 
     /// Destructor
-    virtual ~TypeAnalysis()
-    {
-    }
+    virtual ~TypeAnalysis() {}
 
     /// Type analysis
     void analyze();
@@ -67,11 +62,11 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const TypeAnalysis *)
+    static inline bool classof(const TypeAnalysis*)
     {
         return true;
     }
-    static inline bool classof(const PointerAnalysis *pta)
+    static inline bool classof(const PointerAnalysis* pta)
     {
         return (pta->getAnalysisTy() == TypeCPP_WPA);
     }

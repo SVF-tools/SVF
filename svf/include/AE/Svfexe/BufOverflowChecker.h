@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 //
 // Created by Jiawei Wang on 2024/1/12.
 // The implementation is based on
@@ -33,13 +32,12 @@
 namespace SVF
 {
 
-struct BufOverflowException: public std::exception
+struct BufOverflowException : public std::exception
 {
 public:
-    BufOverflowException(std::string msg, u32_t allocLb,
-                         u32_t allocUb, u32_t accessLb, u32_t accessUb, const SVFValue* allocVal) :
-        _msg(msg), _allocLb(allocLb), _allocUb(allocUb),
-        _accessLb(accessLb), _accessUb(accessUb), _allocVar(allocVal)
+    BufOverflowException(std::string msg, u32_t allocLb, u32_t allocUb, u32_t accessLb, u32_t accessUb,
+                         const SVFValue* allocVal)
+        : _msg(msg), _allocLb(allocLb), _allocUb(allocUb), _accessLb(accessLb), _accessUb(accessUb), _allocVar(allocVal)
     {
     }
 
@@ -93,14 +91,13 @@ public:
         return _msg.c_str();
     }
 
-
 protected:
     std::string _msg;
     u32_t _allocLb, _allocUb, _accessLb, _accessUb;
     const SVFValue* _allocVar;
 };
 
-class BufOverflowChecker: public AbstractInterpretation
+class BufOverflowChecker : public AbstractInterpretation
 {
 public:
     BufOverflowChecker() : AbstractInterpretation()
@@ -117,43 +114,43 @@ public:
 
 protected:
     /**
-    * the map of external function to its API type
-    *
-    * it initialize the ext apis about buffer overflow checking
-    */
+     * the map of external function to its API type
+     *
+     * it initialize the ext apis about buffer overflow checking
+     */
     virtual void initExtFunMap() override;
 
     /**
-    * the map of ext apis of buffer overflow checking rules
-    *
-    * it initialize the rules of extapis about buffer overflow checking
-    * e.g. memcpy(dst, src, sz) -> we check allocSize(dst)>=sz and allocSize(src)>=sz
-    */
+     * the map of ext apis of buffer overflow checking rules
+     *
+     * it initialize the rules of extapis about buffer overflow checking
+     * e.g. memcpy(dst, src, sz) -> we check allocSize(dst)>=sz and allocSize(src)>=sz
+     */
     void initExtAPIBufOverflowCheckRules();
 
     /**
-    * handle external function call regarding buffer overflow checking
-    * e.g. memcpy(dst, src, sz) -> we check allocSize(dst)>=sz and allocSize(src)>=sz
-    *
-    * @param call call node whose callee is external function
-    */
-    void handleExtAPI(const CallICFGNode *call) override;
+     * handle external function call regarding buffer overflow checking
+     * e.g. memcpy(dst, src, sz) -> we check allocSize(dst)>=sz and allocSize(src)>=sz
+     *
+     * @param call call node whose callee is external function
+     */
+    void handleExtAPI(const CallICFGNode* call) override;
     /**
-    * detect buffer overflow from strcpy like apis
-    * e.g. strcpy(dst, src), if dst is shorter than src, we will throw buffer overflow
-    *
-    * @param call call node whose callee is strcpy-like external function
-    * @return true if the buffer overflow is detected
-    */
-    bool detectStrcpy(const CallICFGNode *call);
+     * detect buffer overflow from strcpy like apis
+     * e.g. strcpy(dst, src), if dst is shorter than src, we will throw buffer overflow
+     *
+     * @param call call node whose callee is strcpy-like external function
+     * @return true if the buffer overflow is detected
+     */
+    bool detectStrcpy(const CallICFGNode* call);
     /**
-    * detect buffer overflow from strcat like apis
-    * e.g. strcat(dst, src), if dst is shorter than src, we will throw buffer overflow
-    *
-    * @param call call node whose callee is strcpy-like external function
-    * @return true if the buffer overflow is detected
-    */
-    bool detectStrcat(const CallICFGNode *call);
+     * detect buffer overflow from strcat like apis
+     * e.g. strcat(dst, src), if dst is shorter than src, we will throw buffer overflow
+     *
+     * @param call call node whose callee is strcpy-like external function
+     * @return true if the buffer overflow is detected
+     */
+    bool detectStrcat(const CallICFGNode* call);
 
     /**
      * detect buffer overflow by giving a var and a length
@@ -164,18 +161,18 @@ protected:
      * @param len the length of the buffer overflow checkpoint
      * @return true if the buffer overflow is detected
      */
-    bool canSafelyAccessMemory(const SVFValue *value, const IntervalValue &len, const ICFGNode *curNode);
+    bool canSafelyAccessMemory(const SVFValue* value, const IntervalValue& len, const ICFGNode* curNode);
 
 private:
     /**
-    * handle SVF statement regarding buffer overflow checking
-    *
-    * @param stmt SVF statement
-    */
-    virtual void handleSVFStatement(const SVFStmt *stmt) override;
+     * handle SVF statement regarding buffer overflow checking
+     *
+     * @param stmt SVF statement
+     */
+    virtual void handleSVFStatement(const SVFStmt* stmt) override;
 
     // TODO: will delete later
-    virtual void handleSingletonWTO(const ICFGSingletonWTO *icfgSingletonWto) override
+    virtual void handleSingletonWTO(const ICFGSingletonWTO* icfgSingletonWto) override
     {
         AbstractInterpretation::handleSingletonWTO(icfgSingletonWto);
         const ICFGNode* repNode = _icfg->getRepNode(icfgSingletonWto->getICFGNode());
@@ -193,24 +190,23 @@ private:
     }
 
     /**
-    * check buffer overflow at ICFGNode which is a checkpoint
-    *
-    * @param node ICFGNode
-    * @return true if the buffer overflow is detected
-    */
-    bool detectBufOverflow(const ICFGNode *node);
+     * check buffer overflow at ICFGNode which is a checkpoint
+     *
+     * @param node ICFGNode
+     * @return true if the buffer overflow is detected
+     */
+    bool detectBufOverflow(const ICFGNode* node);
 
     /**
-    * add buffer overflow bug to recoder
-    *
-    * @param e the exception that is thrown by BufOverflowChecker
-    * @param node ICFGNode that causes the exception
-    */
+     * add buffer overflow bug to recoder
+     *
+     * @param e the exception that is thrown by BufOverflowChecker
+     * @param node ICFGNode that causes the exception
+     */
     void addBugToRecoder(const BufOverflowException& e, const ICFGNode* node);
 
 private:
     Map<NodeID, const GepStmt*> _addrToGep;
     Map<std::string, std::vector<std::pair<u32_t, u32_t>>> _extAPIBufOverflowCheckRules;
-
 };
-}
+} // namespace SVF

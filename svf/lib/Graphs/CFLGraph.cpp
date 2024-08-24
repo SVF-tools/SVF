@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 /*
  * CFLGraph.cpp
  *
@@ -46,8 +45,8 @@ void CFLGraph::addCFLNode(NodeID id, CFLNode* node)
 
 const CFLEdge* CFLGraph::addCFLEdge(CFLNode* src, CFLNode* dst, CFLEdge::GEdgeFlag label)
 {
-    CFLEdge* edge = new CFLEdge(src,dst,label);
-    if(cflEdgeSet.insert(edge).second)
+    CFLEdge* edge = new CFLEdge(src, dst, label);
+    if (cflEdgeSet.insert(edge).second)
     {
         src->addOutgoingEdge(edge);
         dst->addIngoingEdge(edge);
@@ -62,10 +61,9 @@ const CFLEdge* CFLGraph::addCFLEdge(CFLNode* src, CFLNode* dst, CFLEdge::GEdgeFl
 
 const CFLEdge* CFLGraph::hasEdge(CFLNode* src, CFLNode* dst, CFLEdge::GEdgeFlag label)
 {
-    CFLEdge edge(src,dst,label);
+    CFLEdge edge(src, dst, label);
     auto it = cflEdgeSet.find(&edge);
-    if(it !=cflEdgeSet.end())
-        return *it;
+    if (it != cflEdgeSet.end()) return *it;
     else
         return nullptr;
 }
@@ -85,15 +83,12 @@ namespace SVF
 /*!
  * Write CFL graph into dot file for debugging
  */
-template<>
-struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
+template <> struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
 {
 
     typedef CFLNode NodeType;
 
-    DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple)
-    {
-    }
+    DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
 
     /// Return name of the graph
     static std::string getGraphName(CFLGraph*)
@@ -101,7 +96,7 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
         return "CFL Reachability Graph";
     }
     /// Return function name;
-    static std::string getNodeLabel(CFLNode *node, CFLGraph*)
+    static std::string getNodeLabel(CFLNode* node, CFLGraph*)
     {
         std::string str;
         std::stringstream rawstr(str);
@@ -109,13 +104,12 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
         return rawstr.str();
     }
 
-    static std::string getNodeAttributes(CFLNode *node, CFLGraph*)
+    static std::string getNodeAttributes(CFLNode* node, CFLGraph*)
     {
         return "shape=box";
     }
 
-    template<class EdgeIter>
-    static std::string getEdgeAttributes(CFLNode*, EdgeIter EI, CFLGraph* graph)
+    template <class EdgeIter> static std::string getEdgeAttributes(CFLNode*, EdgeIter EI, CFLGraph* graph)
     {
         CFLEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
@@ -151,13 +145,12 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
         }
         else
         {
-            rawstr  << "style=invis";
+            rawstr << "style=invis";
         }
         return rawstr.str();
     }
 
-    template<class EdgeIter>
-    static std::string getEdgeSourceLabel(NodeType*, EdgeIter EI)
+    template <class EdgeIter> static std::string getEdgeSourceLabel(NodeType*, EdgeIter EI)
     {
         CFLEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
@@ -168,4 +161,4 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
     }
 };
 
-}
+} // namespace SVF

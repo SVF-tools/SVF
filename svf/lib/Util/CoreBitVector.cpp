@@ -11,7 +11,7 @@
 
 #include <limits.h>
 
-#include "Util/SparseBitVector.h"  // For LLVM's countPopulation.
+#include "Util/SparseBitVector.h" // For LLVM's countPopulation.
 #include "Util/CoreBitVector.h"
 #include "SVFIR/SVFType.h"
 #include "Util/SVFUtil.h"
@@ -21,26 +21,22 @@ namespace SVF
 
 const size_t CoreBitVector::WordSize = sizeof(Word) * CHAR_BIT;
 
-CoreBitVector::CoreBitVector(void)
-    : CoreBitVector(0) { }
+CoreBitVector::CoreBitVector(void) : CoreBitVector(0) {}
 
-CoreBitVector::CoreBitVector(size_t n)
-    : offset(0), words(n, 0) { }
+CoreBitVector::CoreBitVector(size_t n) : offset(0), words(n, 0) {}
 
-CoreBitVector::CoreBitVector(const CoreBitVector &cbv)
-    : offset(cbv.offset), words(cbv.words) { }
+CoreBitVector::CoreBitVector(const CoreBitVector& cbv) : offset(cbv.offset), words(cbv.words) {}
 
-CoreBitVector::CoreBitVector(CoreBitVector &&cbv)
-    : offset(cbv.offset), words(std::move(cbv.words)) { }
+CoreBitVector::CoreBitVector(CoreBitVector&& cbv) : offset(cbv.offset), words(std::move(cbv.words)) {}
 
-CoreBitVector &CoreBitVector::operator=(const CoreBitVector &rhs)
+CoreBitVector& CoreBitVector::operator=(const CoreBitVector& rhs)
 {
     this->offset = rhs.offset;
     this->words = rhs.words;
     return *this;
 }
 
-CoreBitVector &CoreBitVector::operator=(CoreBitVector &&rhs)
+CoreBitVector& CoreBitVector::operator=(CoreBitVector&& rhs)
 {
     this->offset = rhs.offset;
     this->words = std::move(rhs.words);
@@ -50,15 +46,14 @@ CoreBitVector &CoreBitVector::operator=(CoreBitVector &&rhs)
 bool CoreBitVector::empty(void) const
 {
     for (const Word& w : words)
-        if (w)
-            return false;
+        if (w) return false;
     return true;
 }
 
 u32_t CoreBitVector::count(void) const
 {
     u32_t n = 0;
-    for (const Word &w : words) n += countPopulation(w);
+    for (const Word& w : words) n += countPopulation(w);
     return n;
 }
 
@@ -72,7 +67,7 @@ void CoreBitVector::clear(void)
 bool CoreBitVector::test(u32_t bit) const
 {
     if (bit < offset || bit >= offset + words.size() * WordSize) return false;
-    const Word &containingWord = words[(bit - offset) / WordSize];
+    const Word& containingWord = words[(bit - offset) / WordSize];
     const Word mask = (Word)0b1 << (bit % WordSize);
     return mask & containingWord;
 }
@@ -89,7 +84,7 @@ void CoreBitVector::set(u32_t bit)
 {
     extendTo(bit);
 
-    Word &containingWord = words[(bit - offset) / WordSize];
+    Word& containingWord = words[(bit - offset) / WordSize];
     Word mask = (Word)0b1 << (bit % WordSize);
     containingWord |= mask;
 }
@@ -97,40 +92,42 @@ void CoreBitVector::set(u32_t bit)
 void CoreBitVector::reset(u32_t bit)
 {
     if (bit < offset || bit >= offset + words.size() * WordSize) return;
-    Word &containingWord = words[(bit - offset) / WordSize];
+    Word& containingWord = words[(bit - offset) / WordSize];
     Word mask = ~((Word)0b1 << (bit % WordSize));
     containingWord &= mask;
 }
 
-bool CoreBitVector::contains(const CoreBitVector &rhs) const
+bool CoreBitVector::contains(const CoreBitVector& rhs) const
 {
     CoreBitVector tmp(*this);
     tmp &= rhs;
     return tmp == rhs;
 }
 
-bool CoreBitVector::intersects(const CoreBitVector &rhs) const
+bool CoreBitVector::intersects(const CoreBitVector& rhs) const
 {
     // TODO: want some common iteration method.
     if (empty() && rhs.empty()) return false;
 
-    const CoreBitVector &earlierOffsetCBV = offset <= rhs.offset ? *this : rhs;
-    const CoreBitVector &laterOffsetCBV = offset <= rhs.offset ? rhs : *this;
+    const CoreBitVector& earlierOffsetCBV = offset <= rhs.offset ? *this : rhs;
+    const CoreBitVector& laterOffsetCBV = offset <= rhs.offset ? rhs : *this;
 
     size_t earlierOffset = (offset < rhs.offset ? offset : rhs.offset) / WordSize;
     size_t laterOffset = (offset > rhs.offset ? offset : rhs.offset) / WordSize;
     laterOffset -= earlierOffset;
 
-    const Word *eWords = &earlierOffsetCBV.words[0];
+    const Word* eWords = &earlierOffsetCBV.words[0];
     const size_t eSize = earlierOffsetCBV.words.size();
-    const Word *lWords = &laterOffsetCBV.words[0];
+    const Word* lWords = &laterOffsetCBV.words[0];
     const size_t lSize = laterOffsetCBV.words.size();
 
     size_t e = 0;
-    for ( ; e != laterOffset && e != eSize; ++e) { }
+    for (; e != laterOffset && e != eSize; ++e)
+    {
+    }
 
     size_t l = 0;
-    for ( ; e != eSize && l != lSize; ++e, ++l)
+    for (; e != eSize && l != lSize; ++e, ++l)
     {
         if (eWords[e] & lWords[l]) return true;
     }
@@ -138,7 +135,7 @@ bool CoreBitVector::intersects(const CoreBitVector &rhs) const
     return false;
 }
 
-bool CoreBitVector::operator==(const CoreBitVector &rhs) const
+bool CoreBitVector::operator==(const CoreBitVector& rhs) const
 {
     if (this == &rhs) return true;
 
@@ -152,8 +149,8 @@ bool CoreBitVector::operator==(const CoreBitVector &rhs) const
     {
         // If the first bit is not the same in the word or words are different,
         // then we have a mismatch.
-        if (lhsSetIndex * WordSize + offset != rhsSetIndex * WordSize + rhs.offset
-                || words[lhsSetIndex] != rhs.words[rhsSetIndex])
+        if (lhsSetIndex * WordSize + offset != rhsSetIndex * WordSize + rhs.offset ||
+            words[lhsSetIndex] != rhs.words[rhsSetIndex])
         {
             return false;
         }
@@ -166,12 +163,12 @@ bool CoreBitVector::operator==(const CoreBitVector &rhs) const
     return lhsSetIndex >= words.size() && rhsSetIndex >= rhs.words.size();
 }
 
-bool CoreBitVector::operator!=(const CoreBitVector &rhs) const
+bool CoreBitVector::operator!=(const CoreBitVector& rhs) const
 {
     return !(*this == rhs);
 }
 
-bool CoreBitVector::operator|=(const CoreBitVector &rhs)
+bool CoreBitVector::operator|=(const CoreBitVector& rhs)
 {
     if (words.size() == 0)
     {
@@ -192,15 +189,15 @@ bool CoreBitVector::operator|=(const CoreBitVector &rhs)
     size_t rhsIndex = 0;
 
     // Only need to test against rhs's size since we extended this to hold rhs.
-    Word *thisWords = &words[thisIndex];
-    const Word *rhsWords = &rhs.words[rhsIndex];
+    Word* thisWords = &words[thisIndex];
+    const Word* rhsWords = &rhs.words[rhsIndex];
     const size_t length = rhs.words.size();
     Word changed = 0;
 
     // Can start counting from 0 because we took the addresses of both
     // word vectors at the correct index.
     // #pragma omp simd
-    for (size_t i = 0 ; i < length; ++i)
+    for (size_t i = 0; i < length; ++i)
     {
         const Word oldWord = thisWords[i];
         // Is there anything in rhs not in *this?
@@ -211,7 +208,7 @@ bool CoreBitVector::operator|=(const CoreBitVector &rhs)
     return changed;
 }
 
-bool CoreBitVector::operator&=(const CoreBitVector &rhs)
+bool CoreBitVector::operator&=(const CoreBitVector& rhs)
 {
     // The first bit this and rhs have in common is the greater of
     // their offsets if the CBV with the smaller offset can hold
@@ -243,7 +240,7 @@ bool CoreBitVector::operator&=(const CoreBitVector &rhs)
     }
 
     Word oldWord;
-    for ( ; thisIndex < words.size() && rhsIndex < rhs.words.size(); ++thisIndex, ++rhsIndex)
+    for (; thisIndex < words.size() && rhsIndex < rhs.words.size(); ++thisIndex, ++rhsIndex)
     {
         if (!changed) oldWord = words[thisIndex];
         words[thisIndex] &= rhs.words[rhsIndex];
@@ -251,7 +248,7 @@ bool CoreBitVector::operator&=(const CoreBitVector &rhs)
     }
 
     // Clear the remaining bits with no rhs analogue.
-    for ( ; thisIndex < words.size(); ++thisIndex)
+    for (; thisIndex < words.size(); ++thisIndex)
     {
         if (!changed && words[thisIndex] != 0) changed = true;
         words[thisIndex] = 0;
@@ -260,7 +257,7 @@ bool CoreBitVector::operator&=(const CoreBitVector &rhs)
     return changed;
 }
 
-bool CoreBitVector::operator-=(const CoreBitVector &rhs)
+bool CoreBitVector::operator-=(const CoreBitVector& rhs)
 {
     // Similar to |= in that we only iterate over rhs within this, but we
     // don't need to extend anything since nothing from rhs is being added.
@@ -273,7 +270,7 @@ bool CoreBitVector::operator-=(const CoreBitVector &rhs)
     size_t thisIndex = indexForBit(greaterOffset);
     size_t rhsIndex = rhs.indexForBit(greaterOffset);
     Word oldWord;
-    for ( ; thisIndex < words.size() && rhsIndex < rhs.words.size(); ++thisIndex, ++rhsIndex)
+    for (; thisIndex < words.size() && rhsIndex < rhs.words.size(); ++thisIndex, ++rhsIndex)
     {
         if (!changed) oldWord = words[thisIndex];
         words[thisIndex] &= ~rhs.words[rhsIndex];
@@ -283,12 +280,12 @@ bool CoreBitVector::operator-=(const CoreBitVector &rhs)
     return changed;
 }
 
-bool CoreBitVector::intersectWithComplement(const CoreBitVector &rhs)
+bool CoreBitVector::intersectWithComplement(const CoreBitVector& rhs)
 {
     return *this -= rhs;
 }
 
-void CoreBitVector::intersectWithComplement(const CoreBitVector &lhs, const CoreBitVector &rhs)
+void CoreBitVector::intersectWithComplement(const CoreBitVector& lhs, const CoreBitVector& rhs)
 {
     // TODO: inefficient!
     *this = lhs;
@@ -299,7 +296,7 @@ size_t CoreBitVector::hash(void) const
 {
     // From https://stackoverflow.com/a/27216842
     size_t h = words.size();
-    for (const Word &w : words)
+    for (const Word& w : words)
     {
         h ^= w + 0x9e3779b9 + (h << 6) + (h >> 2);
     }
@@ -351,8 +348,10 @@ void CoreBitVector::extendTo(u32_t bit)
         offset = (bit / WordSize) * WordSize;
         words.push_back(0);
     }
-    else if (bit < offset) extendBackward(bit);
-    else if (bit >= offset + words.size() * WordSize) extendForward(bit);
+    else if (bit < offset)
+        extendBackward(bit);
+    else if (bit >= offset + words.size() * WordSize)
+        extendForward(bit);
 }
 
 size_t CoreBitVector::indexForBit(u32_t bit) const
@@ -376,7 +375,7 @@ u32_t CoreBitVector::finalBit(void) const
 size_t CoreBitVector::nextSetIndex(const size_t start) const
 {
     size_t index = start;
-    for ( ; index < words.size(); ++index)
+    for (; index < words.size(); ++index)
     {
         if (words[index]) break;
     }
@@ -384,8 +383,7 @@ size_t CoreBitVector::nextSetIndex(const size_t start) const
     return index;
 }
 
-CoreBitVector::CoreBitVectorIterator::CoreBitVectorIterator(const CoreBitVector *cbv, bool end)
-    : cbv(cbv), bit(0)
+CoreBitVector::CoreBitVectorIterator::CoreBitVectorIterator(const CoreBitVector* cbv, bool end) : cbv(cbv), bit(0)
 {
     wordIt = end ? cbv->words.end() : cbv->words.begin();
     // If user didn't request an end iterator, or words is non-empty,
@@ -394,7 +392,7 @@ CoreBitVector::CoreBitVectorIterator::CoreBitVectorIterator(const CoreBitVector 
     if (wordIt != cbv->words.end() && !(cbv->words[0] & (Word)0b1)) ++(*this);
 }
 
-const CoreBitVector::CoreBitVectorIterator &CoreBitVector::CoreBitVectorIterator::operator++(void)
+const CoreBitVector::CoreBitVectorIterator& CoreBitVector::CoreBitVectorIterator::operator++(void)
 {
     assert(!atEnd() && "CoreBitVectorIterator::++(pre): incrementing past end!");
 
@@ -435,7 +433,7 @@ u32_t CoreBitVector::CoreBitVectorIterator::operator*(void) const
     return cbv->offset + wordsIndex * WordSize + bit;
 }
 
-bool CoreBitVector::CoreBitVectorIterator::operator==(const CoreBitVectorIterator &rhs) const
+bool CoreBitVector::CoreBitVectorIterator::operator==(const CoreBitVectorIterator& rhs) const
 {
     assert(cbv == rhs.cbv && "CoreBitVectorIterator::==: comparing iterators from different CBVs");
     // When we're at the end we don't care about bit.
@@ -443,7 +441,7 @@ bool CoreBitVector::CoreBitVectorIterator::operator==(const CoreBitVectorIterato
     return wordIt == rhs.wordIt && bit == rhs.bit;
 }
 
-bool CoreBitVector::CoreBitVectorIterator::operator!=(const CoreBitVectorIterator &rhs) const
+bool CoreBitVector::CoreBitVectorIterator::operator!=(const CoreBitVectorIterator& rhs) const
 {
     assert(cbv == rhs.cbv && "CoreBitVectorIterator::!=: comparing iterators from different CBVs");
     return !(*this == rhs);
@@ -454,4 +452,4 @@ bool CoreBitVector::CoreBitVectorIterator::atEnd(void) const
     return wordIt == cbv->words.end();
 }
 
-};  // namespace SVF
+}; // namespace SVF

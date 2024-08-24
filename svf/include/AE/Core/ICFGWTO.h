@@ -52,13 +52,9 @@ public:
 
     explicit ICFGWTO(ICFG* graph, const ICFGNode* node) : Base(graph, node) {}
 
-    virtual ~ICFGWTO()
-    {
-    }
+    virtual ~ICFGWTO() {}
 
-    inline void forEachSuccessor(
-        const ICFGNode* node,
-        std::function<void(const ICFGNode*)> func) const override
+    inline void forEachSuccessor(const ICFGNode* node, std::function<void(const ICFGNode*)> func) const override
     {
         if (const auto* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
         {
@@ -69,9 +65,7 @@ public:
         {
             for (const auto& e : node->getOutEdges())
             {
-                if (!e->isIntraCFGEdge() ||
-                        node->getFun() != e->getDstNode()->getFun())
-                    continue;
+                if (!e->isIntraCFGEdge() || node->getFun() != e->getDstNode()->getFun()) continue;
                 func(e->getDstNode());
             }
         }

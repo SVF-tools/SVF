@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 /*
  * PathAllocator.cpp
  *
@@ -46,26 +45,21 @@ u32_t ContextCond::maximumPathLen = 0;
 u32_t ContextCond::maximumPath = 0;
 u32_t SaberCondAllocator::totalCondNum = 0;
 
-
-SaberCondAllocator::SaberCondAllocator()
-{
-
-}
+SaberCondAllocator::SaberCondAllocator() {}
 
 /*!
  * Allocate path condition for each branch
  */
-void SaberCondAllocator::allocate(const SVFModule *M)
+void SaberCondAllocator::allocate(const SVFModule* M)
 {
     DBOUT(DGENERAL, outs() << pasMsg("path condition allocation starts\n"));
 
-    for (const auto &func: *M)
+    for (const auto& func : *M)
     {
         if (!SVFUtil::isExtCall(func))
         {
             // Allocate conditions for a program.
-            for (SVFFunction::const_iterator bit = func->begin(), ebit = func->end();
-                    bit != ebit; ++bit)
+            for (SVFFunction::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
             {
                 const SVFBasicBlock* bb = *bit;
                 collectBBCallingProgExit(*bb);
@@ -74,8 +68,7 @@ void SaberCondAllocator::allocate(const SVFModule *M)
         }
     }
 
-    if (Options::PrintPathCond())
-        printPathCond();
+    if (Options::PrintPathCond()) printPathCond();
 
     DBOUT(DGENERAL, outs() << pasMsg("path condition allocation ends\n"));
 }
@@ -83,7 +76,7 @@ void SaberCondAllocator::allocate(const SVFModule *M)
 /*!
  * Allocate conditions for a basic block and propagate its condition to its successors.
  */
-void SaberCondAllocator::allocateForBB(const SVFBasicBlock &bb)
+void SaberCondAllocator::allocateForBB(const SVFBasicBlock& bb)
 {
 
     u32_t succ_number = bb.getNumSuccessors();
@@ -92,9 +85,9 @@ void SaberCondAllocator::allocateForBB(const SVFBasicBlock &bb)
     if (succ_number > 1)
     {
 
-        //allocate log2(num_succ) decision variables
+        // allocate log2(num_succ) decision variables
         double num = log(succ_number) / log(2);
-        u32_t bit_num = (u32_t) ceil(num);
+        u32_t bit_num = (u32_t)ceil(num);
         u32_t succ_index = 0;
         std::vector<Condition> condVec;
         for (u32_t i = 0; i < bit_num; i++)
@@ -108,14 +101,14 @@ void SaberCondAllocator::allocateForBB(const SVFBasicBlock &bb)
         {
             Condition path_cond = getTrueCond();
 
-            ///TODO: handle BranchInst and SwitchInst individually here!!
+            /// TODO: handle BranchInst and SwitchInst individually here!!
 
             // for each successor decide its bit representation
             // decide whether each bit of succ_index is 1 or 0, if (three successor) succ_index is 000 then use C1^C2^C3
             // if 001 use C1^C2^negC3
             for (u32_t j = 0; j < bit_num; j++)
             {
-                //test each bit of this successor's index (binary representation)
+                // test each bit of this successor's index (binary representation)
                 u32_t tool = 0x01 << j;
                 if (tool & succ_index)
                 {
@@ -130,18 +123,17 @@ void SaberCondAllocator::allocateForBB(const SVFBasicBlock &bb)
 
             succ_index++;
         }
-
     }
 }
 
 /*!
  * Get a branch condition
  */
-SaberCondAllocator::Condition SaberCondAllocator::getBranchCond(const SVFBasicBlock* bb, const SVFBasicBlock* succ) const
+SaberCondAllocator::Condition SaberCondAllocator::getBranchCond(const SVFBasicBlock* bb,
+                                                                const SVFBasicBlock* succ) const
 {
     u32_t pos = bb->getBBSuccessorPos(succ);
-    if(bb->getNumSuccessors() == 1)
-        return getTrueCond();
+    if (bb->getNumSuccessors() == 1) return getTrueCond();
     else
     {
         BBCondMap::const_iterator it = bbConds.find(bb);
@@ -154,8 +146,7 @@ SaberCondAllocator::Condition SaberCondAllocator::getBranchCond(const SVFBasicBl
 
 SaberCondAllocator::Condition SaberCondAllocator::getEvalBrCond(const SVFBasicBlock* bb, const SVFBasicBlock* succ)
 {
-    if (getCurEvalSVFGNode() && getCurEvalSVFGNode()->getValue())
-        return evaluateBranchCond(bb, succ);
+    if (getCurEvalSVFGNode() && getCurEvalSVFGNode()->getValue()) return evaluateBranchCond(bb, succ);
     else
         return getBranchCond(bb, succ);
 }
@@ -163,7 +154,7 @@ SaberCondAllocator::Condition SaberCondAllocator::getEvalBrCond(const SVFBasicBl
 /*!
  * Set a branch condition
  */
-void SaberCondAllocator::setBranchCond(const SVFBasicBlock* bb, const SVFBasicBlock* succ, const Condition &cond)
+void SaberCondAllocator::setBranchCond(const SVFBasicBlock* bb, const SVFBasicBlock* succ, const Condition& cond)
 {
     /// we only care about basic blocks have more than one successor
     assert(bb->getNumSuccessors() > 1 && "not more than one successor??");
@@ -172,7 +163,7 @@ void SaberCondAllocator::setBranchCond(const SVFBasicBlock* bb, const SVFBasicBl
 
     /// FIXME: llvm getNumSuccessors allows duplicated block in the successors, it makes this assertion fail
     /// In this case we may waste a condition allocation, because the overwrite of the previous cond
-    //assert(condPosMap.find(pos) == condPosMap.end() && "this branch has already been set ");
+    // assert(condPosMap.find(pos) == condPosMap.end() && "this branch has already been set ");
 
     condPosMap[pos] = cond;
 }
@@ -180,8 +171,8 @@ void SaberCondAllocator::setBranchCond(const SVFBasicBlock* bb, const SVFBasicBl
 /*!
  * Evaluate null like expression for source-sink related bug detection in SABER
  */
-SaberCondAllocator::Condition
-SaberCondAllocator::evaluateTestNullLikeExpr(const BranchStmt *branchStmt, const SVFBasicBlock* succ)
+SaberCondAllocator::Condition SaberCondAllocator::evaluateTestNullLikeExpr(const BranchStmt* branchStmt,
+                                                                           const SVFBasicBlock* succ)
 {
 
     const SVFBasicBlock* succ1 = branchStmt->getSuccessor(0)->getBB();
@@ -189,8 +180,7 @@ SaberCondAllocator::evaluateTestNullLikeExpr(const BranchStmt *branchStmt, const
     if (isTestNullExpr(branchStmt->getCondition()->getValue()))
     {
         // succ is then branch
-        if (succ1 == succ)
-            return getFalseCond();
+        if (succ1 == succ) return getFalseCond();
         // succ is else branch
         else
             return getTrueCond();
@@ -198,8 +188,7 @@ SaberCondAllocator::evaluateTestNullLikeExpr(const BranchStmt *branchStmt, const
     if (isTestNotNullExpr(branchStmt->getCondition()->getValue()))
     {
         // succ is then branch
-        if (succ1 == succ)
-            return getTrueCond();
+        if (succ1 == succ) return getTrueCond();
         // succ is else branch
         else
             return getFalseCond();
@@ -210,7 +199,8 @@ SaberCondAllocator::evaluateTestNullLikeExpr(const BranchStmt *branchStmt, const
 /*!
  * Evaluate condition for program exit (e.g., exit(0))
  */
-SaberCondAllocator::Condition SaberCondAllocator::evaluateProgExit(const BranchStmt *branchStmt, const SVFBasicBlock* succ)
+SaberCondAllocator::Condition SaberCondAllocator::evaluateProgExit(const BranchStmt* branchStmt,
+                                                                   const SVFBasicBlock* succ)
 {
     const SVFBasicBlock* succ1 = branchStmt->getSuccessor(0)->getBB();
     const SVFBasicBlock* succ2 = branchStmt->getSuccessor(1)->getBB();
@@ -222,8 +212,7 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateProgExit(const BranchS
     if (branch1 && !branch2)
     {
         // succ is then branch
-        if (succ1 == succ)
-            return getFalseCond();
+        if (succ1 == succ) return getFalseCond();
         // succ is else branch
         else
             return getTrueCond();
@@ -232,8 +221,7 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateProgExit(const BranchS
     else if (!branch1 && branch2)
     {
         // succ is else branch
-        if (succ2 == succ)
-            return getFalseCond();
+        if (succ2 == succ) return getFalseCond();
         // succ is then branch
         else
             return getTrueCond();
@@ -246,7 +234,6 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateProgExit(const BranchS
     /// no branch call program exit
     else
         return Condition::nullExpr();
-
 }
 
 /*!
@@ -254,33 +241,31 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateProgExit(const BranchS
  * bb is loop header and succ is the only exit basic block outside the loop (excluding exit bbs which call program exit)
  * for all other case, we conservatively evaluate false for now
  */
-SaberCondAllocator::Condition SaberCondAllocator::evaluateLoopExitBranch(const SVFBasicBlock* bb, const SVFBasicBlock* dst)
+SaberCondAllocator::Condition SaberCondAllocator::evaluateLoopExitBranch(const SVFBasicBlock* bb,
+                                                                         const SVFBasicBlock* dst)
 {
     const SVFFunction* svffun = bb->getParent();
     assert(svffun == dst->getParent() && "two basic blocks should be in the same function");
 
     if (svffun->isLoopHeader(bb))
     {
-        Set<const SVFBasicBlock* > filteredbbs;
+        Set<const SVFBasicBlock*> filteredbbs;
         std::vector<const SVFBasicBlock*> exitbbs;
-        svffun->getExitBlocksOfLoop(bb,exitbbs);
+        svffun->getExitBlocksOfLoop(bb, exitbbs);
         /// exclude exit bb which calls program exit
-        for(const SVFBasicBlock* eb : exitbbs)
+        for (const SVFBasicBlock* eb : exitbbs)
         {
-            if(!isBBCallsProgExit(eb))
-                filteredbbs.insert(eb);
+            if (!isBBCallsProgExit(eb)) filteredbbs.insert(eb);
         }
 
         /// if the dst dominate all other loop exit bbs, then dst can certainly be reached
         bool allPDT = true;
-        for (const auto &filteredbb: filteredbbs)
+        for (const auto& filteredbb : filteredbbs)
         {
-            if (!postDominate(dst, filteredbb))
-                allPDT = false;
+            if (!postDominate(dst, filteredbb)) allPDT = false;
         }
 
-        if (allPDT)
-            return getTrueCond();
+        if (allPDT) return getTrueCond();
     }
     return Condition::nullExpr();
 }
@@ -292,17 +277,17 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateLoopExitBranch(const S
  */
 SaberCondAllocator::Condition SaberCondAllocator::evaluateBranchCond(const SVFBasicBlock* bb, const SVFBasicBlock* succ)
 {
-    if(bb->getNumSuccessors() == 1)
+    if (bb->getNumSuccessors() == 1)
     {
         return getTrueCond();
     }
 
     const SVFInstruction* svfInst = bb->getTerminator();
-    if (ICFGNode *icfgNode = getICFG()->getICFGNode(svfInst))
+    if (ICFGNode* icfgNode = getICFG()->getICFGNode(svfInst))
     {
-        for (const auto &svfStmt: icfgNode->getSVFStmts())
+        for (const auto& svfStmt : icfgNode->getSVFStmts())
         {
-            if (const BranchStmt *branchStmt = SVFUtil::dyn_cast<BranchStmt>(svfStmt))
+            if (const BranchStmt* branchStmt = SVFUtil::dyn_cast<BranchStmt>(svfStmt))
             {
                 if (branchStmt->getNumSuccessors() == 2)
                 {
@@ -312,16 +297,13 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateBranchCond(const SVFBa
                     (void)is_succ; // Suppress warning of unused variable under release build
                     assert(is_succ && "not a successor??");
                     Condition evalLoopExit = evaluateLoopExitBranch(bb, succ);
-                    if (!eq(evalLoopExit, Condition::nullExpr()))
-                        return evalLoopExit;
+                    if (!eq(evalLoopExit, Condition::nullExpr())) return evalLoopExit;
 
                     Condition evalProgExit = evaluateProgExit(branchStmt, succ);
-                    if (!eq(evalProgExit, Condition::nullExpr()))
-                        return evalProgExit;
+                    if (!eq(evalProgExit, Condition::nullExpr())) return evalProgExit;
 
                     Condition evalTestNullLike = evaluateTestNullLikeExpr(branchStmt, succ);
-                    if (!eq(evalTestNullLike, Condition::nullExpr()))
-                        return evalTestNullLike;
+                    if (!eq(evalTestNullLike, Condition::nullExpr())) return evalTestNullLike;
                     break;
                 }
             }
@@ -331,23 +313,23 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateBranchCond(const SVFBa
     return getBranchCond(bb, succ);
 }
 
-bool SaberCondAllocator::isEQCmp(const CmpStmt *cmp) const
+bool SaberCondAllocator::isEQCmp(const CmpStmt* cmp) const
 {
     return (cmp->getPredicate() == CmpStmt::ICMP_EQ);
 }
 
-bool SaberCondAllocator::isNECmp(const CmpStmt *cmp) const
+bool SaberCondAllocator::isNECmp(const CmpStmt* cmp) const
 {
     return (cmp->getPredicate() == CmpStmt::ICMP_NE);
 }
 
 bool SaberCondAllocator::isTestNullExpr(const SVFValue* test) const
 {
-    if(const SVFInstruction* svfInst = SVFUtil::dyn_cast<SVFInstruction>(test))
+    if (const SVFInstruction* svfInst = SVFUtil::dyn_cast<SVFInstruction>(test))
     {
-        for(const SVFStmt* stmt : PAG::getPAG()->getSVFStmtList(getICFG()->getICFGNode(svfInst)))
+        for (const SVFStmt* stmt : PAG::getPAG()->getSVFStmtList(getICFG()->getICFGNode(svfInst)))
         {
-            if(const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
+            if (const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
             {
                 return isTestContainsNullAndTheValue(cmp) && isEQCmp(cmp);
             }
@@ -358,11 +340,11 @@ bool SaberCondAllocator::isTestNullExpr(const SVFValue* test) const
 
 bool SaberCondAllocator::isTestNotNullExpr(const SVFValue* test) const
 {
-    if(const SVFInstruction* svfInst = SVFUtil::dyn_cast<SVFInstruction>(test))
+    if (const SVFInstruction* svfInst = SVFUtil::dyn_cast<SVFInstruction>(test))
     {
-        for(const SVFStmt* stmt : PAG::getPAG()->getSVFStmtList(getICFG()->getICFGNode(svfInst)))
+        for (const SVFStmt* stmt : PAG::getPAG()->getSVFStmtList(getICFG()->getICFGNode(svfInst)))
         {
-            if(const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
+            if (const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
             {
                 return isTestContainsNullAndTheValue(cmp) && isNECmp(cmp);
             }
@@ -391,16 +373,16 @@ bool SaberCondAllocator::isTestNotNullExpr(const SVFValue* test) const
  *     There is an direct edge 1->2 with value %3
  *
  */
-bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt *cmp) const
+bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt* cmp) const
 {
 
     const SVFValue* op0 = cmp->getOpVar(0)->getValue();
     const SVFValue* op1 = cmp->getOpVar(1)->getValue();
     if (SVFUtil::isa<SVFConstantNullPtr>(op1))
     {
-        Set<const SVFValue* > inDirVal;
+        Set<const SVFValue*> inDirVal;
         inDirVal.insert(getCurEvalSVFGNode()->getValue());
-        for (const auto &it: getCurEvalSVFGNode()->getOutEdges())
+        for (const auto& it : getCurEvalSVFGNode()->getOutEdges())
         {
             inDirVal.insert(it->getDstNode()->getValue());
         }
@@ -408,9 +390,9 @@ bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt *cmp) const
     }
     else if (SVFUtil::isa<SVFConstantNullPtr>(op0))
     {
-        Set<const SVFValue* > inDirVal;
+        Set<const SVFValue*> inDirVal;
         inDirVal.insert(getCurEvalSVFGNode()->getValue());
-        for (const auto &it: getCurEvalSVFGNode()->getOutEdges())
+        for (const auto& it : getCurEvalSVFGNode()->getOutEdges())
         {
             inDirVal.insert(it->getDstNode()->getValue());
         }
@@ -422,7 +404,7 @@ bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt *cmp) const
 /*!
  * Whether this basic block contains program exit function call
  */
-void SaberCondAllocator::collectBBCallingProgExit(const SVFBasicBlock &bb)
+void SaberCondAllocator::collectBBCallingProgExit(const SVFBasicBlock& bb)
 {
 
     for (SVFBasicBlock::const_iterator it = bb.begin(), eit = bb.end(); it != eit; it++)
@@ -446,10 +428,9 @@ bool SaberCondAllocator::isBBCallsProgExit(const SVFBasicBlock* bb)
     FunToExitBBsMap::const_iterator it = funToExitBBsMap.find(svfun);
     if (it != funToExitBBsMap.end())
     {
-        for (const auto &bit: it->second)
+        for (const auto& bit : it->second)
         {
-            if (postDominate(bit, bb))
-                return true;
+            if (postDominate(bit, bb)) return true;
         }
     }
     return false;
@@ -461,13 +442,14 @@ bool SaberCondAllocator::isBBCallsProgExit(const SVFBasicBlock* bb)
  * Assume B0 (phi node) is the successor of both B1 and B2.
  * If B1 dominates B2, and B0 not dominate B2 then condition from B1-->B0 = neg(B1-->B2)^(B1-->B0)
  */
-SaberCondAllocator::Condition
-SaberCondAllocator::getPHIComplementCond(const SVFBasicBlock* BB1, const SVFBasicBlock* BB2, const SVFBasicBlock* BB0)
+SaberCondAllocator::Condition SaberCondAllocator::getPHIComplementCond(const SVFBasicBlock* BB1,
+                                                                       const SVFBasicBlock* BB2,
+                                                                       const SVFBasicBlock* BB0)
 {
     assert(BB1 && BB2 && "expect nullptr BB here!");
 
     /// avoid both BB0 and BB1 dominate BB2 (e.g., while loop), then BB2 is not necessarily a complement BB
-    if (dominate(BB1, BB2) && ! dominate(BB0, BB2))
+    if (dominate(BB1, BB2) && !dominate(BB0, BB2))
     {
         Condition cond = ComputeIntraVFGGuard(BB1, BB2);
         return condNeg(cond);
@@ -481,9 +463,9 @@ SaberCondAllocator::getPHIComplementCond(const SVFBasicBlock* BB1, const SVFBasi
  * src --c1--> callBB --true--> funEntryBB --c2--> dst
  * the InterCallVFGGuard is c1 ^ c2
  */
-SaberCondAllocator::Condition
-SaberCondAllocator::ComputeInterCallVFGGuard(const SVFBasicBlock* srcBB, const SVFBasicBlock* dstBB,
-        const SVFBasicBlock* callBB)
+SaberCondAllocator::Condition SaberCondAllocator::ComputeInterCallVFGGuard(const SVFBasicBlock* srcBB,
+                                                                           const SVFBasicBlock* dstBB,
+                                                                           const SVFBasicBlock* callBB)
 {
     const SVFBasicBlock* funEntryBB = dstBB->getParent()->getEntryBlock();
 
@@ -498,8 +480,9 @@ SaberCondAllocator::ComputeInterCallVFGGuard(const SVFBasicBlock* srcBB, const S
  * src --c1--> funExitBB --true--> retBB --c2--> dst
  * the InterRetVFGGuard is c1 ^ c2
  */
-SaberCondAllocator::Condition
-SaberCondAllocator::ComputeInterRetVFGGuard(const SVFBasicBlock* srcBB, const SVFBasicBlock* dstBB, const SVFBasicBlock* retBB)
+SaberCondAllocator::Condition SaberCondAllocator::ComputeInterRetVFGGuard(const SVFBasicBlock* srcBB,
+                                                                          const SVFBasicBlock* dstBB,
+                                                                          const SVFBasicBlock* retBB)
 {
     const SVFFunction* parent = srcBB->getParent();
     const SVFBasicBlock* funExitBB = parent->getExitBB();
@@ -513,13 +496,13 @@ SaberCondAllocator::ComputeInterRetVFGGuard(const SVFBasicBlock* srcBB, const SV
 /*!
  * Compute intra-procedural guards between two SVFGNodes (inside same function)
  */
-SaberCondAllocator::Condition SaberCondAllocator::ComputeIntraVFGGuard(const SVFBasicBlock* srcBB, const SVFBasicBlock* dstBB)
+SaberCondAllocator::Condition SaberCondAllocator::ComputeIntraVFGGuard(const SVFBasicBlock* srcBB,
+                                                                       const SVFBasicBlock* dstBB)
 {
 
     assert(srcBB->getParent() == dstBB->getParent() && "two basic blocks are not in the same function??");
 
-    if (postDominate(dstBB, srcBB))
-        return getTrueCond();
+    if (postDominate(dstBB, srcBB)) return getTrueCond();
 
     CFWorkList worklist;
     worklist.push(srcBB);
@@ -533,8 +516,7 @@ SaberCondAllocator::Condition SaberCondAllocator::ComputeIntraVFGGuard(const SVF
         /// if the dstBB is the eligible loop exit of the current basic block
         /// we can early terminate the computation
         Condition loopExitCond = evaluateLoopExitBranch(bb, dstBB);
-        if (!eq(loopExitCond, Condition::nullExpr()))
-            return condAnd(cond, loopExitCond);
+        if (!eq(loopExitCond, Condition::nullExpr())) return condAnd(cond, loopExitCond);
 
         for (const SVFBasicBlock* succ : bb->getSuccessors())
         {
@@ -543,26 +525,22 @@ SaberCondAllocator::Condition SaberCondAllocator::ComputeIntraVFGGuard(const SVF
             /// note that we assume loop exit always post dominate loop bodys
             /// which means loops are approximated only once.
             Condition brCond;
-            if (postDominate(succ, bb))
-                brCond = getTrueCond();
+            if (postDominate(succ, bb)) brCond = getTrueCond();
             else
                 brCond = getEvalBrCond(bb, succ);
 
-            DBOUT(DSaber, outs() << " bb (" << bb->getName() <<
-                  ") --> " << "succ_bb (" << succ->getName() << ") condition: " << brCond << "\n");
+            DBOUT(DSaber, outs() << " bb (" << bb->getName() << ") --> "
+                                 << "succ_bb (" << succ->getName() << ") condition: " << brCond << "\n");
             Condition succPathCond = condAnd(cond, brCond);
-            if (setCFCond(succ, condOr(getCFCond(succ), succPathCond)))
-                worklist.push(succ);
+            if (setCFCond(succ, condOr(getCFCond(succ), succPathCond))) worklist.push(succ);
         }
     }
 
-    DBOUT(DSaber, outs() << " src_bb (" << srcBB->getName() <<
-          ") --> " << "dst_bb (" << dstBB->getName() << ") condition: " << getCFCond(dstBB)
-          << "\n");
+    DBOUT(DSaber, outs() << " src_bb (" << srcBB->getName() << ") --> "
+                         << "dst_bb (" << dstBB->getName() << ") condition: " << getCFCond(dstBB) << "\n");
 
     return getCFCond(dstBB);
 }
-
 
 /*!
  * Print path conditions
@@ -572,13 +550,13 @@ void SaberCondAllocator::printPathCond()
 
     outs() << "print path condition\n";
 
-    for (const auto &bbCond: bbConds)
+    for (const auto& bbCond : bbConds)
     {
         const SVFBasicBlock* bb = bbCond.first;
-        for (const auto &cit: bbCond.second)
+        for (const auto& cit : bbCond.second)
         {
             u32_t i = 0;
-            for (const SVFBasicBlock* succ: bb->getSuccessors())
+            for (const SVFBasicBlock* succ : bb->getSuccessors())
             {
                 if (i == cit.first)
                 {
@@ -607,8 +585,7 @@ SaberCondAllocator::Condition SaberCondAllocator::newCond(const SVFInstruction* 
 }
 
 /// Whether lhs and rhs are equivalent branch conditions
-bool SaberCondAllocator::isEquivalentBranchCond(const Condition &lhs,
-        const Condition &rhs) const
+bool SaberCondAllocator::isEquivalentBranchCond(const Condition& lhs, const Condition& rhs) const
 {
     Condition::getSolver().push();
     Condition::getSolver().add(lhs.getExpr() != rhs.getExpr()); /// check equal using z3 solver
@@ -618,19 +595,18 @@ bool SaberCondAllocator::isEquivalentBranchCond(const Condition &lhs,
 }
 
 /// whether condition is satisfiable
-bool SaberCondAllocator::isSatisfiable(const Condition &condition)
+bool SaberCondAllocator::isSatisfiable(const Condition& condition)
 {
     Condition::getSolver().add(condition.getExpr());
     z3::check_result result = Condition::getSolver().check();
     Condition::getSolver().pop();
-    if (result == z3::sat || result == z3::unknown)
-        return true;
+    if (result == z3::sat || result == z3::unknown) return true;
     else
         return false;
 }
 
 /// extract subexpression from a Z3 expression
-void SaberCondAllocator::extractSubConds(const Condition &condition, NodeBS &support) const
+void SaberCondAllocator::extractSubConds(const Condition& condition, NodeBS& support) const
 {
     if (condition.getExpr().num_args() == 1 && isNegCond(condition.id()))
     {
@@ -638,12 +614,10 @@ void SaberCondAllocator::extractSubConds(const Condition &condition, NodeBS &sup
         return;
     }
     if (condition.getExpr().num_args() == 0)
-        if (!condition.getExpr().is_true() && !condition.getExpr().is_false())
-            support.set(condition.getExpr().id());
+        if (!condition.getExpr().is_true() && !condition.getExpr().is_false()) support.set(condition.getExpr().id());
     for (u32_t i = 0; i < condition.getExpr().num_args(); ++i)
     {
         Condition expr = condition.getExpr().arg(i);
         extractSubConds(expr, support);
     }
-
 }

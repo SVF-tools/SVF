@@ -57,7 +57,6 @@ typedef PHIVFGNode PHISVFGNode;
 typedef IntraPHIVFGNode IntraPHISVFGNode;
 typedef InterPHIVFGNode InterPHISVFGNode;
 
-
 /*!
  * Sparse value flow graph
  * Each node stands for a definition, each edge stands for value flow relations
@@ -80,10 +79,10 @@ public:
     typedef NodeBS ActualOUTSVFGNodeSet;
     typedef NodeBS FormalINSVFGNodeSet;
     typedef NodeBS FormalOUTSVFGNodeSet;
-    typedef Map<const CallICFGNode*, ActualINSVFGNodeSet>  CallSiteToActualINsMapTy;
-    typedef Map<const CallICFGNode*, ActualOUTSVFGNodeSet>  CallSiteToActualOUTsMapTy;
-    typedef Map<const SVFFunction*, FormalINSVFGNodeSet>  FunctionToFormalINsMapTy;
-    typedef Map<const SVFFunction*, FormalOUTSVFGNodeSet>  FunctionToFormalOUTsMapTy;
+    typedef Map<const CallICFGNode*, ActualINSVFGNodeSet> CallSiteToActualINsMapTy;
+    typedef Map<const CallICFGNode*, ActualOUTSVFGNodeSet> CallSiteToActualOUTsMapTy;
+    typedef Map<const SVFFunction*, FormalINSVFGNodeSet> FunctionToFormalINsMapTy;
+    typedef Map<const SVFFunction*, FormalOUTSVFGNodeSet> FunctionToFormalOUTsMapTy;
     typedef MemSSA::MUSet MUSet;
     typedef MemSSA::CHISet CHISet;
     typedef MemSSA::PHISet PHISet;
@@ -97,12 +96,12 @@ public:
     typedef MemSSA::CALLMU CALLMU;
 
 protected:
-    MSSAVarToDefMapTy MSSAVarToDefMap;	///< map a memory SSA operator to its definition SVFG node
+    MSSAVarToDefMapTy MSSAVarToDefMap; ///< map a memory SSA operator to its definition SVFG node
     CallSiteToActualINsMapTy callSiteToActualINMap;
     CallSiteToActualOUTsMapTy callSiteToActualOUTMap;
     FunctionToFormalINsMapTy funToFormalINMap;
     FunctionToFormalOUTsMapTy funToFormalOUTMap;
-    SVFGStat * stat;
+    SVFGStat* stat;
     std::unique_ptr<MemSSA> mssa;
     PointerAnalysis* pta;
 
@@ -186,22 +185,22 @@ public:
     //@{
     inline bool hasActualINSVFGNodes(const CallICFGNode* cs) const
     {
-        return callSiteToActualINMap.find(cs)!=callSiteToActualINMap.end();
+        return callSiteToActualINMap.find(cs) != callSiteToActualINMap.end();
     }
 
     inline bool hasActualOUTSVFGNodes(const CallICFGNode* cs) const
     {
-        return callSiteToActualOUTMap.find(cs)!=callSiteToActualOUTMap.end();
+        return callSiteToActualOUTMap.find(cs) != callSiteToActualOUTMap.end();
     }
 
     inline bool hasFormalINSVFGNodes(const SVFFunction* fun) const
     {
-        return funToFormalINMap.find(fun)!=funToFormalINMap.end();
+        return funToFormalINMap.find(fun) != funToFormalINMap.end();
     }
 
     inline bool hasFormalOUTSVFGNodes(const SVFFunction* fun) const
     {
-        return funToFormalOUTMap.find(fun)!=funToFormalOUTMap.end();
+        return funToFormalOUTMap.find(fun) != funToFormalOUTMap.end();
     }
     //@}
 
@@ -260,9 +259,9 @@ public:
     /// Used *only* for Versioned FSPTA to encode propagation of versions
     /// in the worklist (allowing for breadth-first propagation).
     /// Returns the created node.
-    inline const DummyVersionPropSVFGNode *addDummyVersionPropSVFGNode(const NodeID object, const NodeID version)
+    inline const DummyVersionPropSVFGNode* addDummyVersionPropSVFGNode(const NodeID object, const NodeID version)
     {
-        DummyVersionPropSVFGNode *dvpNode = new DummyVersionPropSVFGNode(totalVFGNode++, object, version);
+        DummyVersionPropSVFGNode* dvpNode = new DummyVersionPropSVFGNode(totalVFGNode++, object, version);
         // Not going through add[S]VFGNode because we have no ICFG edge.
         addGNode(dvpNode->getId(), dvpNode);
         return dvpNode;
@@ -276,38 +275,39 @@ protected:
     /// Add indirect def-use edges of a memory region between two statements,
     //@{
     SVFGEdge* addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const NodeBS& cpts);
-    SVFGEdge* addCallIndirectVFEdge(NodeID srcId, NodeID dstId, const NodeBS& cpts,CallSiteID csId);
-    SVFGEdge* addRetIndirectVFEdge(NodeID srcId, NodeID dstId, const NodeBS& cpts,CallSiteID csId);
+    SVFGEdge* addCallIndirectVFEdge(NodeID srcId, NodeID dstId, const NodeBS& cpts, CallSiteID csId);
+    SVFGEdge* addRetIndirectVFEdge(NodeID srcId, NodeID dstId, const NodeBS& cpts, CallSiteID csId);
     SVFGEdge* addThreadMHPIndirectVFEdge(NodeID srcId, NodeID dstId, const NodeBS& cpts);
     //@}
 
     /// Add inter VF edge from callsite mu to function entry chi
-    SVFGEdge* addInterIndirectVFCallEdge(const ActualINSVFGNode* src, const FormalINSVFGNode* dst,CallSiteID csId);
+    SVFGEdge* addInterIndirectVFCallEdge(const ActualINSVFGNode* src, const FormalINSVFGNode* dst, CallSiteID csId);
 
     /// Add inter VF edge from function exit mu to callsite chi
-    SVFGEdge* addInterIndirectVFRetEdge(const FormalOUTSVFGNode* src, const ActualOUTSVFGNode* dst,CallSiteID csId);
+    SVFGEdge* addInterIndirectVFRetEdge(const FormalOUTSVFGNode* src, const ActualOUTSVFGNode* dst, CallSiteID csId);
 
     /// Connect SVFG nodes between caller and callee for indirect call site
     //@{
     /// Connect actual-in and formal-in
-    virtual inline void connectAInAndFIn(const ActualINSVFGNode* actualIn, const FormalINSVFGNode* formalIn, CallSiteID csId, SVFGEdgeSetTy& edges)
+    virtual inline void connectAInAndFIn(const ActualINSVFGNode* actualIn, const FormalINSVFGNode* formalIn,
+                                         CallSiteID csId, SVFGEdgeSetTy& edges)
     {
-        SVFGEdge* edge = addInterIndirectVFCallEdge(actualIn, formalIn,csId);
-        if (edge != nullptr)
-            edges.insert(edge);
+        SVFGEdge* edge = addInterIndirectVFCallEdge(actualIn, formalIn, csId);
+        if (edge != nullptr) edges.insert(edge);
     }
     /// Connect formal-out and actual-out
-    virtual inline void connectFOutAndAOut(const FormalOUTSVFGNode* formalOut, const ActualOUTSVFGNode* actualOut, CallSiteID csId, SVFGEdgeSetTy& edges)
+    virtual inline void connectFOutAndAOut(const FormalOUTSVFGNode* formalOut, const ActualOUTSVFGNode* actualOut,
+                                           CallSiteID csId, SVFGEdgeSetTy& edges)
     {
-        SVFGEdge* edge = addInterIndirectVFRetEdge(formalOut, actualOut,csId);
-        if (edge != nullptr)
-            edges.insert(edge);
+        SVFGEdge* edge = addInterIndirectVFRetEdge(formalOut, actualOut, csId);
+        if (edge != nullptr) edges.insert(edge);
     }
     //@}
 
     /// Get inter value flow edges between indirect call site and callee.
     //@{
-    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallICFGNode*, CallSiteID csId, SVFGEdgeSetTy& edges)
+    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg,
+                                                        const CallICFGNode*, CallSiteID csId, SVFGEdgeSetTy& edges)
     {
         SVFGNode* actualParam = getSVFGNode(getDef(cs_arg));
         SVFGNode* formalParam = getSVFGNode(getDef(fun_arg));
@@ -316,7 +316,8 @@ protected:
         edges.insert(edge);
     }
 
-    virtual inline void getInterVFEdgeAtIndCSFromFRToAR(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges)
+    virtual inline void getInterVFEdgeAtIndCSFromFRToAR(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId,
+                                                        SVFGEdgeSetTy& edges)
     {
         SVFGNode* formalRet = getSVFGNode(getDef(fun_ret));
         SVFGNode* actualRet = getSVFGNode(getDef(cs_ret));
@@ -325,27 +326,28 @@ protected:
         edges.insert(edge);
     }
 
-    virtual inline void getInterVFEdgeAtIndCSFromAInToFIn(ActualINSVFGNode* actualIn, const SVFFunction* callee, SVFGEdgeSetTy& edges)
+    virtual inline void getInterVFEdgeAtIndCSFromAInToFIn(ActualINSVFGNode* actualIn, const SVFFunction* callee,
+                                                          SVFGEdgeSetTy& edges)
     {
-        for (SVFGNode::const_iterator outIt = actualIn->OutEdgeBegin(), outEit = actualIn->OutEdgeEnd(); outIt != outEit; ++outIt)
+        for (SVFGNode::const_iterator outIt = actualIn->OutEdgeBegin(), outEit = actualIn->OutEdgeEnd();
+             outIt != outEit; ++outIt)
         {
             SVFGEdge* edge = *outIt;
-            if (edge->getDstNode()->getFun() == callee)
-                edges.insert(edge);
+            if (edge->getDstNode()->getFun() == callee) edges.insert(edge);
         }
     }
 
-    virtual inline void getInterVFEdgeAtIndCSFromFOutToAOut(ActualOUTSVFGNode* actualOut, const SVFFunction* callee, SVFGEdgeSetTy& edges)
+    virtual inline void getInterVFEdgeAtIndCSFromFOutToAOut(ActualOUTSVFGNode* actualOut, const SVFFunction* callee,
+                                                            SVFGEdgeSetTy& edges)
     {
-        for (SVFGNode::const_iterator inIt = actualOut->InEdgeBegin(), inEit = actualOut->InEdgeEnd(); inIt != inEit; ++inIt)
+        for (SVFGNode::const_iterator inIt = actualOut->InEdgeBegin(), inEit = actualOut->InEdgeEnd(); inIt != inEit;
+             ++inIt)
         {
             SVFGEdge* edge = *inIt;
-            if (edge->getSrcNode()->getFun() == callee)
-                edges.insert(edge);
+            if (edge->getSrcNode()->getFun() == callee) edges.insert(edge);
         }
     }
     //@}
-
 
     /// Given a PAGNode, set/get its def SVFG node (definition of top level pointers)
     //@{
@@ -368,7 +370,7 @@ protected:
     inline void setDef(const MRVer* mvar, const SVFGNode* node)
     {
         MSSAVarToDefMapTy::iterator it = MSSAVarToDefMap.find(mvar);
-        if(it==MSSAVarToDefMap.end())
+        if (it == MSSAVarToDefMap.end())
         {
             MSSAVarToDefMap[mvar] = node->getId();
             assert(hasSVFGNode(node->getId()) && "not in the map!!");
@@ -381,7 +383,7 @@ protected:
     inline NodeID getDef(const MRVer* mvar) const
     {
         MSSAVarToDefMapTy::const_iterator it = MSSAVarToDefMap.find(mvar);
-        assert(it!=MSSAVarToDefMap.end() && "memory SSA does not have a definition??");
+        assert(it != MSSAVarToDefMap.end() && "memory SSA does not have a definition??");
         return it->second;
     }
     //@}
@@ -400,11 +402,11 @@ protected:
     }
 
     /// Add memory Function entry chi SVFG node
-    inline void addFormalINSVFGNode(const FunEntryICFGNode* funEntry,  const MRVer* resVer, const NodeID nodeId)
+    inline void addFormalINSVFGNode(const FunEntryICFGNode* funEntry, const MRVer* resVer, const NodeID nodeId)
     {
         FormalINSVFGNode* sNode = new FormalINSVFGNode(nodeId, resVer, funEntry);
         addSVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(funEntry->getFun()));
-        setDef(resVer,sNode);
+        setDef(resVer, sNode);
         funToFormalINMap[funEntry->getFun()].set(sNode->getId());
     }
 
@@ -412,7 +414,7 @@ protected:
     inline void addFormalOUTSVFGNode(const FunExitICFGNode* funExit, const MRVer* ver, const NodeID nodeId)
     {
         FormalOUTSVFGNode* sNode = new FormalOUTSVFGNode(nodeId, ver, funExit);
-        addSVFGNode(sNode,pag->getICFG()->getFunExitICFGNode(funExit->getFun()));
+        addSVFGNode(sNode, pag->getICFG()->getFunExitICFGNode(funExit->getFun()));
         funToFormalOUTMap[funExit->getFun()].set(sNode->getId());
     }
 
@@ -420,7 +422,7 @@ protected:
     inline void addActualINSVFGNode(const CallICFGNode* callsite, const MRVer* ver, const NodeID nodeId)
     {
         ActualINSVFGNode* sNode = new ActualINSVFGNode(nodeId, callsite, ver);
-        addSVFGNode(sNode,pag->getICFG()->getCallICFGNode(callsite->getCallSite()));
+        addSVFGNode(sNode, pag->getICFG()->getCallICFGNode(callsite->getCallSite()));
         callSiteToActualINMap[callsite].set(sNode->getId());
     }
 
@@ -429,28 +431,30 @@ protected:
     {
         ActualOUTSVFGNode* sNode = new ActualOUTSVFGNode(nodeId, callsite, resVer);
         addSVFGNode(sNode, pag->getICFG()->getRetICFGNode(callsite->getCallSite()));
-        setDef(resVer,sNode);
+        setDef(resVer, sNode);
         callSiteToActualOUTMap[callsite].set(sNode->getId());
     }
 
     /// Add memory SSA PHI SVFG node
-    inline void addIntraMSSAPHISVFGNode(ICFGNode* BlockICFGNode, const Map<u32_t,const MRVer*>::const_iterator opVerBegin,
-                                        const  Map<u32_t,const MRVer*>::const_iterator opVerEnd, const MRVer* resVer, const NodeID nodeId)
+    inline void addIntraMSSAPHISVFGNode(ICFGNode* BlockICFGNode,
+                                        const Map<u32_t, const MRVer*>::const_iterator opVerBegin,
+                                        const Map<u32_t, const MRVer*>::const_iterator opVerEnd, const MRVer* resVer,
+                                        const NodeID nodeId)
     {
         IntraMSSAPHISVFGNode* sNode = new IntraMSSAPHISVFGNode(nodeId, resVer);
         addSVFGNode(sNode, BlockICFGNode);
-        for(MemSSA::PHI::OPVers::const_iterator it = opVerBegin, eit=opVerEnd; it!=eit; ++it)
-            sNode->setOpVer(it->first,it->second);
-        setDef(resVer,sNode);
+        for (MemSSA::PHI::OPVers::const_iterator it = opVerBegin, eit = opVerEnd; it != eit; ++it)
+            sNode->setOpVer(it->first, it->second);
+        setDef(resVer, sNode);
     }
 
     /// Has function for EntryCHI/RetMU/CallCHI/CallMU
     //@{
-    inline bool hasFuncEntryChi(const SVFFunction*  func) const
+    inline bool hasFuncEntryChi(const SVFFunction* func) const
     {
         return (funToFormalINMap.find(func) != funToFormalINMap.end());
     }
-    inline bool hasFuncRetMu(const SVFFunction*  func) const
+    inline bool hasFuncRetMu(const SVFFunction* func) const
     {
         return (funToFormalOUTMap.find(func) != funToFormalOUTMap.end());
     }
@@ -473,19 +477,22 @@ namespace SVF
  * GenericGraphTraits specializations for SVFG to be used for generic graph algorithms.
  * Provide graph traits for traversing from a SVFG node using standard graph traversals.
  */
-//template<> struct GenericGraphTraits<SVF::SVFGNode*>: public GenericGraphTraits<SVF::GenericNode<SVF::SVFGNode,SVF::SVFGEdge>*  > {
-//};
+// template<> struct GenericGraphTraits<SVF::SVFGNode*>: public
+// GenericGraphTraits<SVF::GenericNode<SVF::SVFGNode,SVF::SVFGEdge>*  > {
+// };
 //
 ///// Inverse GenericGraphTraits specializations for Value flow node, it is used for inverse traversal.
-//template<>
-//struct GenericGraphTraits<Inverse<SVF::SVFGNode *> > : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::SVFGNode,SVF::SVFGEdge>* > > {
-//};
+// template<>
+// struct GenericGraphTraits<Inverse<SVF::SVFGNode *> > : public
+// GenericGraphTraits<Inverse<SVF::GenericNode<SVF::SVFGNode,SVF::SVFGEdge>* > > {
+// };
 
-template<> struct GenericGraphTraits<SVF::SVFG*> : public GenericGraphTraits<SVF::GenericGraph<SVF::SVFGNode,SVF::SVFGEdge>* >
+template <>
+struct GenericGraphTraits<SVF::SVFG*> : public GenericGraphTraits<SVF::GenericGraph<SVF::SVFGNode, SVF::SVFGEdge>*>
 {
-    typedef SVF::SVFGNode *NodeRef;
+    typedef SVF::SVFGNode* NodeRef;
 };
 
-} // End namespace llvm
+} // namespace SVF
 
 #endif /* SVFG_H_ */

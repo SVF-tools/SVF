@@ -49,7 +49,7 @@ public:
     typedef SVFG::SVFGEdgeSetTy SVFGEdgeSet;
 
     /// Constructor
-    explicit SVFGBuilder(bool _SVFGWithIndCall = false): svfg(nullptr), SVFGWithIndCall(_SVFGWithIndCall) {}
+    explicit SVFGBuilder(bool _SVFGWithIndCall = false) : svfg(nullptr), SVFGWithIndCall(_SVFGWithIndCall) {}
 
     /// Destructor
     virtual ~SVFGBuilder() = default;
@@ -66,13 +66,13 @@ public:
     /// Mark feasible VF edge by removing it from set vfEdgesAtIndCallSite
     inline void markValidVFEdge(SVFGEdgeSet& edges)
     {
-        for(SVFGEdgeSet::iterator it = edges.begin(), eit = edges.end(); it!=eit; ++it)
+        for (SVFGEdgeSet::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
             vfEdgesAtIndCallSite.erase(*it);
     }
     /// Return true if this is an VF Edge pre-connected by Andersen's analysis
     inline bool isSpuriousVFEdgeAtIndCallSite(const SVFGEdge* edge)
     {
-        return vfEdgesAtIndCallSite.find(const_cast<SVFGEdge*>(edge))!=vfEdgesAtIndCallSite.end();
+        return vfEdgesAtIndCallSite.find(const_cast<SVFGEdge*>(edge)) != vfEdgesAtIndCallSite.end();
     }
 
     /// Build Memory SSA

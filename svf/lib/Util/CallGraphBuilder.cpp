@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 /*
  * CallGraphBuilder.cpp
  *
@@ -52,10 +51,10 @@ CallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
             {
                 if (SVFUtil::isNonInstricCallSite(inst))
                 {
-                    if(const SVFFunction* callee = getCallee(inst))
+                    if (const SVFFunction* callee = getCallee(inst))
                     {
                         const CallICFGNode* callBlockNode = icfg->getCallICFGNode(inst);
-                        callgraph->addDirectCallGraphEdge(callBlockNode,*F,callee);
+                        callgraph->addDirectCallGraphEdge(callBlockNode, *F, callee);
                     }
                 }
             }
@@ -92,7 +91,7 @@ CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
                     // indirect call to the start routine function
                     else
                     {
-                        cg->addThreadForkEdgeSetMap(cs,nullptr);
+                        cg->addThreadForkEdgeSetMap(cs, nullptr);
                     }
                 }
             }
@@ -116,7 +115,3 @@ CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
 
     return cg;
 }
-
-
-
-

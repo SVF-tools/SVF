@@ -32,7 +32,6 @@
  *
  */
 
-
 #ifndef WORKLIST_H_
 #define WORKLIST_H_
 
@@ -52,13 +51,12 @@ namespace SVF
  * New nodes pushed at back and popped from front.
  * Elements in the list are unique as they're recorded by Set.
  */
-template<class Data>
-class List
+template <class Data> class List
 {
     class ListNode
     {
     public:
-        ListNode(const Data &d)
+        ListNode(const Data& d)
         {
             data = d;
             next = nullptr;
@@ -67,7 +65,7 @@ class List
         ~ListNode() {}
 
         Data data;
-        ListNode *next;
+        ListNode* next;
     };
 
     typedef Set<Data> DataSet;
@@ -87,18 +85,17 @@ public:
         return (head == nullptr);
     }
 
-    inline bool find(const Data &data) const
+    inline bool find(const Data& data) const
     {
         return nodeSet.find(data) != nodeSet.end();
     }
 
-    void push(const Data &data)
+    void push(const Data& data)
     {
         if (nodeSet.find(data) == nodeSet.end())
         {
-            Node *new_node = new Node(data);
-            if (head == nullptr)
-                head = new_node;// the list is empty
+            Node* new_node = new Node(data);
+            if (head == nullptr) head = new_node; // the list is empty
             else
                 tail->next = new_node;
             tail = new_node;
@@ -109,12 +106,11 @@ public:
     {
         assert(head != nullptr && "list is empty");
         /// get node from list head
-        Node *head_node = head;
+        Node* head_node = head;
 
         /// change list head to the next node
         head = head->next;
-        if (head == nullptr)
-            tail = nullptr;    /// the last node is popped.
+        if (head == nullptr) tail = nullptr; /// the last node is popped.
 
         Data data = head_node->data;
         nodeSet.erase(data);
@@ -124,8 +120,8 @@ public:
 
 private:
     DataSet nodeSet;
-    Node *head;
-    Node *tail;
+    Node* head;
+    Node* tail;
 };
 
 /**
@@ -133,11 +129,11 @@ private:
  * New nodes will be pushed at back and popped from front.
  * Elements in the list are unique as they're recorded by Set.
  */
-template<class Data>
-class FIFOWorkList
+template <class Data> class FIFOWorkList
 {
     typedef Set<Data> DataSet;
     typedef std::deque<Data> DataDeque;
+
 public:
     FIFOWorkList() {}
 
@@ -154,7 +150,7 @@ public:
         return data_list.size();
     }
 
-    inline bool find(const Data &data) const
+    inline bool find(const Data& data) const
     {
         return data_set.find(data) != data_set.end();
     }
@@ -162,7 +158,7 @@ public:
     /**
      * Push a data into the work list.
      */
-    inline bool push(const Data &data)
+    inline bool push(const Data& data)
     {
         if (!find(data))
         {
@@ -187,10 +183,10 @@ public:
     /**
      * Get reference of top data from the END of work list.
      */
-    inline Data &front()
+    inline Data& front()
     {
         assert(!empty() && "work list is empty");
-        Data &data = data_list.front();
+        Data& data = data_list.front();
         return data;
     }
 
@@ -217,7 +213,7 @@ public:
 
 private:
     DataSet data_set;    ///< store all data in the work list.
-    DataDeque data_list;    ///< work list using std::vector.
+    DataDeque data_list; ///< work list using std::vector.
 };
 
 /**
@@ -225,11 +221,11 @@ private:
  * New nodes will be pushed at back and popped from back.
  * Elements in the list are unique as they're recorded by Set.
  */
-template<class Data>
-class FILOWorkList
+template <class Data> class FILOWorkList
 {
     typedef Set<Data> DataSet;
     typedef std::vector<Data> DataVector;
+
 public:
     FILOWorkList() {}
 
@@ -246,15 +242,16 @@ public:
         return data_list.size();
     }
 
-    inline bool find(const Data &data) const
+    inline bool find(const Data& data) const
     {
-        return data_set.find(data) != data_set.end();;
+        return data_set.find(data) != data_set.end();
+        ;
     }
 
     /**
      * Push a data into the work list.
      */
-    inline bool push(const Data &data)
+    inline bool push(const Data& data)
     {
         if (!find(data))
         {
@@ -291,10 +288,10 @@ public:
     /**
      * Get reference of top data from the END of work list.
      */
-    inline Data &back()
+    inline Data& back()
     {
         assert(!empty() && "work list is empty");
-        Data &data = data_list.back();
+        Data& data = data_list.back();
         return data;
     }
 
@@ -308,8 +305,8 @@ public:
     }
 
 private:
-    DataSet data_set;    ///< store all data in the work list.
-    DataVector data_list;    ///< work list using std::vector.
+    DataSet data_set;     ///< store all data in the work list.
+    DataVector data_list; ///< work list using std::vector.
 };
 
 } // End namespace SVF

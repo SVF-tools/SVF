@@ -29,7 +29,6 @@
  *
  */
 
-
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 #include "MemoryModel/PointsTo.h"
@@ -37,11 +36,10 @@
 #include "DDA/DDAClient.h"
 #include "DDA/FlowDDA.h"
 #include <iostream>
-#include <iomanip>	// for std::setw
+#include <iomanip> // for std::setw
 
 using namespace SVF;
 using namespace SVFUtil;
-
 
 void DDAClient::answerQueries(PointerAnalysis* pta)
 {
@@ -55,16 +53,17 @@ void DDAClient::answerQueries(PointerAnalysis* pta)
     collectCandidateQueries(pta->getPAG());
 
     u32_t count = 0;
-    for (OrderedNodeSet::iterator nIter = candidateQueries.begin();
-            nIter != candidateQueries.end(); ++nIter,++count)
+    for (OrderedNodeSet::iterator nIter = candidateQueries.begin(); nIter != candidateQueries.end(); ++nIter, ++count)
     {
         PAGNode* node = pta->getPAG()->getGNode(*nIter);
-        if(pta->getPAG()->isValidTopLevelPtr(node))
+        if (pta->getPAG()->isValidTopLevelPtr(node))
         {
-            DBOUT(DGENERAL,outs() << "\n@@Computing PointsTo for :" << node->getId() <<
-                  " [" << count + 1<< "/" << candidateQueries.size() << "]" << " \n");
-            DBOUT(DDDA,outs() << "\n@@Computing PointsTo for :" << node->getId() <<
-                  " [" << count + 1<< "/" << candidateQueries.size() << "]" << " \n");
+            DBOUT(DGENERAL, outs() << "\n@@Computing PointsTo for :" << node->getId() << " [" << count + 1 << "/"
+                                   << candidateQueries.size() << "]"
+                                   << " \n");
+            DBOUT(DDDA, outs() << "\n@@Computing PointsTo for :" << node->getId() << " [" << count + 1 << "/"
+                               << candidateQueries.size() << "]"
+                               << " \n");
             setCurrentQueryPtr(node->getId());
             pta->computeDDAPts(node->getId());
         }
@@ -78,8 +77,9 @@ void DDAClient::answerQueries(PointerAnalysis* pta)
 OrderedNodeSet& FunptrDDAClient::collectCandidateQueries(SVFIR* p)
 {
     setPAG(p);
-    for(SVFIR::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
-            eit = pag->getIndirectCallsites().end(); it!=eit; ++it)
+    for (SVFIR::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
+                                                    eit = pag->getIndirectCallsites().end();
+         it != eit; ++it)
     {
         if (SVFUtil::getSVFCallSite(it->first->getCallSite()).isVirtualCall())
         {
@@ -108,8 +108,8 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
     u32_t twoTargetCallsites = 0;
     u32_t moreThanTwoCallsites = 0;
 
-    for (VTablePtrToCallSiteMap::iterator nIter = vtableToCallSiteMap.begin();
-            nIter != vtableToCallSiteMap.end(); ++nIter)
+    for (VTablePtrToCallSiteMap::iterator nIter = vtableToCallSiteMap.begin(); nIter != vtableToCallSiteMap.end();
+         ++nIter)
     {
         NodeID vtptr = nIter->first;
         const PointsTo& ddaPts = pta->getPts(vtptr);
@@ -118,42 +118,40 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
         CallGraph* callgraph = ander->getCallGraph();
         const CallICFGNode* cbn = nIter->second;
 
-        if(!callgraph->hasIndCSCallees(cbn))
+        if (!callgraph->hasIndCSCallees(cbn))
         {
-            //outs() << "virtual callsite has no callee" << *(nIter->second.getInstruction()) << "\n";
+            // outs() << "virtual callsite has no callee" << *(nIter->second.getInstruction()) << "\n";
             continue;
         }
 
         const CallGraph::FunctionSet& callees = callgraph->getIndCSCallees(cbn);
         totalCallsites++;
-        if(callees.size() == 0)
-            zeroTargetCallsites++;
-        else if(callees.size() == 1)
+        if (callees.size() == 0) zeroTargetCallsites++;
+        else if (callees.size() == 1)
             oneTargetCallsites++;
-        else if(callees.size() == 2)
+        else if (callees.size() == 2)
             twoTargetCallsites++;
         else
             moreThanTwoCallsites++;
 
-        if(ddaPts.count() >= anderPts.count() || ddaPts.empty())
-            continue;
+        if (ddaPts.count() >= anderPts.count() || ddaPts.empty()) continue;
 
         Set<const SVFFunction*> ander_vfns;
         Set<const SVFFunction*> dda_vfns;
-        ander->getVFnsFromPts(cbn,anderPts, ander_vfns);
-        pta->getVFnsFromPts(cbn,ddaPts, dda_vfns);
+        ander->getVFnsFromPts(cbn, anderPts, ander_vfns);
+        pta->getVFnsFromPts(cbn, ddaPts, dda_vfns);
 
         ++morePreciseCallsites;
         outs() << "============more precise callsite =================\n";
         outs() << (nIter->second)->getCallSite()->toString() << "\n";
         outs() << (nIter->second)->getCallSite()->getSourceLoc() << "\n";
         outs() << "\n";
-        outs() << "------ander pts or vtable num---(" << anderPts.count()  << ")--\n";
+        outs() << "------ander pts or vtable num---(" << anderPts.count() << ")--\n";
         outs() << "------DDA vfn num---(" << ander_vfns.size() << ")--\n";
-        //ander->dumpPts(vtptr, anderPts);
+        // ander->dumpPts(vtptr, anderPts);
         outs() << "------DDA pts or vtable num---(" << ddaPts.count() << ")--\n";
         outs() << "------DDA vfn num---(" << dda_vfns.size() << ")--\n";
-        //pta->dumpPts(vtptr, ddaPts);
+        // pta->dumpPts(vtptr, ddaPts);
         outs() << "-------------------------\n";
         outs() << "\n";
         outs() << "=================================================\n";
@@ -171,14 +169,12 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
     outs() << "=================================================\n";
 }
 
-
 /// Only collect function pointers as query candidates.
 OrderedNodeSet& AliasDDAClient::collectCandidateQueries(SVFIR* pag)
 {
     setPAG(pag);
     SVFStmt::SVFStmtSetTy& loads = pag->getSVFStmtSet(SVFStmt::Load);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = loads.begin(), eiter =
-                loads.end(); iter != eiter; ++iter)
+    for (SVFStmt::SVFStmtSetTy::iterator iter = loads.begin(), eiter = loads.end(); iter != eiter; ++iter)
     {
         PAGNode* loadsrc = (*iter)->getSrcNode();
         loadSrcNodes.insert(loadsrc);
@@ -186,16 +182,14 @@ OrderedNodeSet& AliasDDAClient::collectCandidateQueries(SVFIR* pag)
     }
 
     SVFStmt::SVFStmtSetTy& stores = pag->getSVFStmtSet(SVFStmt::Store);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = stores.begin(), eiter =
-                stores.end(); iter != eiter; ++iter)
+    for (SVFStmt::SVFStmtSetTy::iterator iter = stores.begin(), eiter = stores.end(); iter != eiter; ++iter)
     {
         PAGNode* storedst = (*iter)->getDstNode();
         storeDstNodes.insert(storedst);
         addCandidate(storedst->getId());
     }
     SVFStmt::SVFStmtSetTy& geps = pag->getSVFStmtSet(SVFStmt::Gep);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = geps.begin(), eiter =
-                geps.end(); iter != eiter; ++iter)
+    for (SVFStmt::SVFStmtSetTy::iterator iter = geps.begin(), eiter = geps.end(); iter != eiter; ++iter)
     {
         PAGNode* gepsrc = (*iter)->getSrcNode();
         gepSrcNodes.insert(gepsrc);
@@ -207,24 +201,22 @@ OrderedNodeSet& AliasDDAClient::collectCandidateQueries(SVFIR* pag)
 void AliasDDAClient::performStat(PointerAnalysis* pta)
 {
 
-    for(PAGNodeSet::const_iterator lit = loadSrcNodes.begin(); lit!=loadSrcNodes.end(); lit++)
+    for (PAGNodeSet::const_iterator lit = loadSrcNodes.begin(); lit != loadSrcNodes.end(); lit++)
     {
-        for(PAGNodeSet::const_iterator sit = storeDstNodes.begin(); sit!=storeDstNodes.end(); sit++)
+        for (PAGNodeSet::const_iterator sit = storeDstNodes.begin(); sit != storeDstNodes.end(); sit++)
         {
             const PAGNode* node1 = *lit;
             const PAGNode* node2 = *sit;
-            if(node1->hasValue() && node2->hasValue())
+            if (node1->hasValue() && node2->hasValue())
             {
-                AliasResult result = pta->alias(node1->getId(),node2->getId());
+                AliasResult result = pta->alias(node1->getId(), node2->getId());
 
                 outs() << "\n=================================================\n";
                 outs() << "Alias Query for (" << node1->getValue()->toString() << ",";
                 outs() << node2->getValue()->toString() << ") \n";
-                outs() << "[NodeID:" << node1->getId() <<  ", NodeID:" << node2->getId() << " " << result << "]\n";
+                outs() << "[NodeID:" << node1->getId() << ", NodeID:" << node2->getId() << " " << result << "]\n";
                 outs() << "=================================================\n";
-
             }
         }
     }
 }
-

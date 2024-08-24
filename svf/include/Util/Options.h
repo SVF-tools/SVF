@@ -159,7 +159,7 @@ public:
     static const Option<bool> PrintInterLev;
     static const Option<bool> DoLockAnalysis;
 
-    //MTAStat.cpp
+    // MTAStat.cpp
     static const Option<bool> AllPairMHP;
 
     // TCT.cpp
@@ -232,8 +232,8 @@ public:
     static const Option<std::string> CFLGraph;
     static const Option<bool> PrintCFL;
     static const Option<bool> FlexSymMap;
-    static const Option<bool>  PEGTransfer;
-    static const Option<bool>  CFLSVFG;
+    static const Option<bool> PEGTransfer;
+    static const Option<bool> CFLSVFG;
     static const Option<bool> POCRAlias;
     static const Option<bool> POCRHybrid;
     static const Option<bool> Customized;
@@ -267,6 +267,6 @@ public:
     // float precision for symbolic abstraction
     static const Option<u32_t> AEPrecision;
 };
-}  // namespace SVF
+} // namespace SVF
 
-#endif  // ifdef OPTIONS_H_
+#endif // ifdef OPTIONS_H_

@@ -41,11 +41,11 @@ namespace SVF
  * ConstraintNodes are same as PAGNodes
  * ConstraintEdges are self-defined edges (initialized with ConstraintEdges)
  */
-class ConstraintGraph :  public GenericGraph<ConstraintNode,ConstraintEdge>
+class ConstraintGraph : public GenericGraph<ConstraintNode, ConstraintEdge>
 {
 
 public:
-    typedef OrderedMap<NodeID, ConstraintNode *> ConstraintNodeIDToNodeMapTy;
+    typedef OrderedMap<NodeID, ConstraintNode*> ConstraintNodeIDToNodeMapTy;
     typedef ConstraintEdge::ConstraintEdgeSetTy::iterator ConstraintNodeIter;
     typedef Map<NodeID, NodeID> NodeToRepMap;
     typedef Map<NodeID, NodeBS> NodeToSubsMap;
@@ -67,7 +67,7 @@ protected:
 
     void destroy();
 
-    void clearSolitaries();  // remove nodes that are neither pointers nor connected with any edge
+    void clearSolitaries(); // remove nodes that are neither pointers nor connected with any edge
 
     SVFStmt::SVFStmtSetTy& getPAGEdgeSet(SVFStmt::PEDGEK kind)
     {
@@ -94,7 +94,7 @@ protected:
 
 public:
     /// Constructor
-    ConstraintGraph(SVFIR* p): pag(p), edgeIndex(0)
+    ConstraintGraph(SVFIR* p) : pag(p), edgeIndex(0)
     {
         buildCG();
     }
@@ -113,7 +113,7 @@ public:
     }
     inline void addConstraintNode(ConstraintNode* node, NodeID id)
     {
-        addGNode(id,node);
+        addGNode(id, node);
     }
     inline bool hasConstraintNode(NodeID id) const
     {
@@ -129,15 +129,14 @@ public:
     //// Return true if this edge exits
     inline bool hasEdge(ConstraintNode* src, ConstraintNode* dst, ConstraintEdge::ConstraintEdgeK kind)
     {
-        ConstraintEdge edge(src,dst,kind);
-        if(kind == ConstraintEdge::Copy ||
-                kind == ConstraintEdge::NormalGep || kind == ConstraintEdge::VariantGep)
+        ConstraintEdge edge(src, dst, kind);
+        if (kind == ConstraintEdge::Copy || kind == ConstraintEdge::NormalGep || kind == ConstraintEdge::VariantGep)
             return directEdgeSet.find(&edge) != directEdgeSet.end();
-        else if(kind == ConstraintEdge::Addr)
+        else if (kind == ConstraintEdge::Addr)
             return AddrCGEdgeSet.find(&edge) != AddrCGEdgeSet.end();
-        else if(kind == ConstraintEdge::Store)
+        else if (kind == ConstraintEdge::Store)
             return StoreCGEdgeSet.find(&edge) != StoreCGEdgeSet.end();
-        else if(kind == ConstraintEdge::Load)
+        else if (kind == ConstraintEdge::Load)
             return LoadCGEdgeSet.find(&edge) != LoadCGEdgeSet.end();
         else
             assert(false && "no other kind!");
@@ -147,23 +146,23 @@ public:
     /// Get an edge via its src and dst nodes and kind
     inline ConstraintEdge* getEdge(ConstraintNode* src, ConstraintNode* dst, ConstraintEdge::ConstraintEdgeK kind)
     {
-        ConstraintEdge edge(src,dst,kind);
-        if(kind == ConstraintEdge::Copy || kind == ConstraintEdge::NormalGep || kind == ConstraintEdge::VariantGep)
+        ConstraintEdge edge(src, dst, kind);
+        if (kind == ConstraintEdge::Copy || kind == ConstraintEdge::NormalGep || kind == ConstraintEdge::VariantGep)
         {
             auto eit = directEdgeSet.find(&edge);
             return *eit;
         }
-        else if(kind == ConstraintEdge::Addr)
+        else if (kind == ConstraintEdge::Addr)
         {
             auto eit = AddrCGEdgeSet.find(&edge);
             return *eit;
         }
-        else if(kind == ConstraintEdge::Store)
+        else if (kind == ConstraintEdge::Store)
         {
             auto eit = StoreCGEdgeSet.find(&edge);
             return *eit;
         }
-        else if(kind == ConstraintEdge::Load)
+        else if (kind == ConstraintEdge::Load)
         {
             auto eit = LoadCGEdgeSet.find(&edge);
             return *eit;
@@ -175,7 +174,7 @@ public:
         }
     }
 
-    ///Add a SVFIR edge into Edge map
+    /// Add a SVFIR edge into Edge map
     //@{
     /// Add Address edge
     AddrCGEdge* addAddrCGEdge(NodeID src, NodeID dst);
@@ -190,7 +189,7 @@ public:
     StoreCGEdge* addStoreCGEdge(NodeID src, NodeID dst);
     //@}
 
-    ///Get SVFIR edge
+    /// Get SVFIR edge
     //@{
     /// Get Address edges
     inline ConstraintEdge::ConstraintEdgeSetTy& getAddrCGEdges()
@@ -235,8 +234,7 @@ public:
     inline NodeID sccRepNode(NodeID id) const
     {
         NodeToRepMap::const_iterator it = nodeToRepMap.find(id);
-        if(it==nodeToRepMap.end())
-            return id;
+        if (it == nodeToRepMap.end()) return id;
         else
             return it->second;
     }
@@ -274,16 +272,16 @@ public:
     /// Move incoming direct edges of a sub node which is outside the SCC to its rep node
     /// Remove incoming direct edges of a sub node which is inside the SCC from its rep node
     /// Return TRUE if there's a gep edge inside this SCC (PWC).
-    bool moveInEdgesToRepNode(ConstraintNode*node, ConstraintNode* rep );
+    bool moveInEdgesToRepNode(ConstraintNode* node, ConstraintNode* rep);
 
     /// Move outgoing direct edges of a sub node which is outside the SCC to its rep node
     /// Remove outgoing direct edges of sub node which is inside the SCC from its rep node
     /// Return TRUE if there's a gep edge inside this SCC (PWC).
-    bool moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode* rep );
+    bool moveOutEdgesToRepNode(ConstraintNode* node, ConstraintNode* rep);
 
     /// Move incoming/outgoing direct edges of a sub node to its rep node
     /// Return TRUE if there's a gep edge inside this SCC (PWC).
-    inline bool moveEdgesToRepNode(ConstraintNode*node, ConstraintNode* rep )
+    inline bool moveEdgesToRepNode(ConstraintNode* node, ConstraintNode* rep)
     {
         bool gepIn = moveInEdgesToRepNode(node, rep);
         bool gepOut = moveOutEdgesToRepNode(node, rep);
@@ -291,11 +289,10 @@ public:
     }
 
     /// Check if a given edge is a NormalGepCGEdge with 0 offset.
-    inline bool isZeroOffsettedGepCGEdge(ConstraintEdge *edge) const
+    inline bool isZeroOffsettedGepCGEdge(ConstraintEdge* edge) const
     {
-        if (NormalGepCGEdge *normalGepCGEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
-            if (0 == normalGepCGEdge->getConstantFieldIdx())
-                return true;
+        if (NormalGepCGEdge* normalGepCGEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
+            if (0 == normalGepCGEdge->getConstantFieldIdx()) return true;
         return false;
     }
 
@@ -329,10 +326,9 @@ public:
     /// Get a field of a memory object
     inline NodeID getGepObjVar(NodeID id, const APOffset& apOffset)
     {
-        NodeID gep =  pag->getGepObjVar(id, apOffset);
+        NodeID gep = pag->getGepObjVar(id, apOffset);
         /// Create a node when it is (1) not exist on graph and (2) not merged
-        if(sccRepNode(gep)==gep && hasConstraintNode(gep)==false)
-            addConstraintNode(new ConstraintNode(gep),gep);
+        if (sccRepNode(gep) == gep && hasConstraintNode(gep) == false) addConstraintNode(new ConstraintNode(gep), gep);
         return gep;
     }
     /// Get a field-insensitive node of a memory object
@@ -382,24 +378,28 @@ public:
     void view();
 };
 
-
 /* !
  * GenericGraphTraits specializations for the generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GenericGraphTraits<SVF::ConstraintNode*> : public GenericGraphTraits<SVF::GenericNode<SVF::ConstraintNode,SVF::ConstraintEdge>*  >
+template <>
+struct GenericGraphTraits<SVF::ConstraintNode*>
+    : public GenericGraphTraits<SVF::GenericNode<SVF::ConstraintNode, SVF::ConstraintEdge>*>
 {
 };
 
 /// Inverse GenericGraphTraits specializations for Value flow node, it is used for inverse traversal.
-template<>
-struct GenericGraphTraits<Inverse<SVF::ConstraintNode *> > : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::ConstraintNode,SVF::ConstraintEdge>* > >
+template <>
+struct GenericGraphTraits<Inverse<SVF::ConstraintNode*>>
+    : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::ConstraintNode, SVF::ConstraintEdge>*>>
 {
 };
 
-template<> struct GenericGraphTraits<SVF::ConstraintGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::ConstraintNode,SVF::ConstraintEdge>* >
+template <>
+struct GenericGraphTraits<SVF::ConstraintGraph*>
+    : public GenericGraphTraits<SVF::GenericGraph<SVF::ConstraintNode, SVF::ConstraintEdge>*>
 {
-    typedef SVF::ConstraintNode *NodeRef;
+    typedef SVF::ConstraintNode* NodeRef;
 };
 
 } // End namespace SVF

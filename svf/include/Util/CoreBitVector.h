@@ -45,16 +45,16 @@ public:
     CoreBitVector(size_t n);
 
     /// Copy constructor.
-    CoreBitVector(const CoreBitVector &cbv);
+    CoreBitVector(const CoreBitVector& cbv);
 
     /// Move constructor.
-    CoreBitVector(CoreBitVector &&cbv);
+    CoreBitVector(CoreBitVector&& cbv);
 
     /// Copy assignment.
-    CoreBitVector &operator=(const CoreBitVector &rhs);
+    CoreBitVector& operator=(const CoreBitVector& rhs);
 
     /// Move assignment.
-    CoreBitVector &operator=(CoreBitVector &&rhs);
+    CoreBitVector& operator=(CoreBitVector&& rhs);
 
     /// Returns true if no bits are set.
     bool empty(void) const;
@@ -79,35 +79,35 @@ public:
     void reset(u32_t bit);
 
     /// Returns true if this CBV is a superset of rhs.
-    bool contains(const CoreBitVector &rhs) const;
+    bool contains(const CoreBitVector& rhs) const;
 
     /// Returns true if this CBV and rhs share any set bits.
-    bool intersects(const CoreBitVector &rhs) const;
+    bool intersects(const CoreBitVector& rhs) const;
 
     /// Returns true if this CBV and rhs have the same bits set.
-    bool operator==(const CoreBitVector &rhs) const;
+    bool operator==(const CoreBitVector& rhs) const;
 
     /// Returns true if either this CBV or rhs has a bit set unique to the other.
-    bool operator!=(const CoreBitVector &rhs) const;
+    bool operator!=(const CoreBitVector& rhs) const;
 
     /// Put union of this CBV and rhs into this CBV.
     /// Returns true if CBV changed.
-    bool operator|=(const CoreBitVector &rhs);
+    bool operator|=(const CoreBitVector& rhs);
 
     /// Put intersection of this CBV and rhs into this CBV.
     /// Returns true if CBV changed.
-    bool operator&=(const CoreBitVector &rhs);
+    bool operator&=(const CoreBitVector& rhs);
 
     /// Remove set bits in rhs from this CBV.
     /// Returns true if CBV changed.
-    bool operator-=(const CoreBitVector &rhs);
+    bool operator-=(const CoreBitVector& rhs);
 
     /// Put intersection of this CBV with complement of rhs into this CBV.
     /// Returns true if this CBV changed.
-    bool intersectWithComplement(const CoreBitVector &rhs);
+    bool intersectWithComplement(const CoreBitVector& rhs);
 
     /// Put intersection of lhs with complement of rhs into this CBV.
-    void intersectWithComplement(const CoreBitVector &lhs, const CoreBitVector &rhs);
+    void intersectWithComplement(const CoreBitVector& lhs, const CoreBitVector& rhs);
 
     /// Hash for this CBV.
     size_t hash(void) const;
@@ -135,7 +135,7 @@ private:
     u32_t finalBit(void) const;
 
     /// Returns the first bit position that both this CBV and rhs *can* hold.
-    u32_t firstCommonBit(const CoreBitVector &rhs) const;
+    u32_t firstCommonBit(const CoreBitVector& rhs) const;
 
     /// Returns the next index in the words array at or after start which contains
     /// set bits. This index and start are indices into the words array not
@@ -150,23 +150,23 @@ public:
         using iterator_category = std::forward_iterator_tag;
         using value_type = u32_t;
         using difference_type = std::ptrdiff_t;
-        using pointer = u32_t *;
-        using reference = u32_t &;
+        using pointer = u32_t*;
+        using reference = u32_t&;
 
         CoreBitVectorIterator(void) = delete;
 
         /// Returns an iterator to the beginning of cbv if end is false, and to
         /// the end of cbv if end is true.
-        CoreBitVectorIterator(const CoreBitVector *cbv, bool end=false);
+        CoreBitVectorIterator(const CoreBitVector* cbv, bool end = false);
 
-        CoreBitVectorIterator(const CoreBitVectorIterator &cbv) = default;
-        CoreBitVectorIterator(CoreBitVectorIterator &&cbv) = default;
+        CoreBitVectorIterator(const CoreBitVectorIterator& cbv) = default;
+        CoreBitVectorIterator(CoreBitVectorIterator&& cbv) = default;
 
-        CoreBitVectorIterator &operator=(const CoreBitVectorIterator &cbv) = default;
-        CoreBitVectorIterator &operator=(CoreBitVectorIterator &&cbv) = default;
+        CoreBitVectorIterator& operator=(const CoreBitVectorIterator& cbv) = default;
+        CoreBitVectorIterator& operator=(CoreBitVectorIterator&& cbv) = default;
 
         /// Pre-increment: ++it.
-        const CoreBitVectorIterator &operator++(void);
+        const CoreBitVectorIterator& operator++(void);
 
         /// Post-increment: it++.
         const CoreBitVectorIterator operator++(int);
@@ -175,17 +175,17 @@ public:
         u32_t operator*(void) const;
 
         /// Equality: *this == rhs.
-        bool operator==(const CoreBitVectorIterator &rhs) const;
+        bool operator==(const CoreBitVectorIterator& rhs) const;
 
         /// Inequality: *this != rhs.
-        bool operator!=(const CoreBitVectorIterator &rhs) const;
+        bool operator!=(const CoreBitVectorIterator& rhs) const;
 
     private:
         bool atEnd(void) const;
 
     private:
         /// CoreBitVector we are iterating over.
-        const CoreBitVector *cbv;
+        const CoreBitVector* cbv;
         /// Word in words we are looking at.
         std::vector<Word>::const_iterator wordIt;
         /// Current bit in wordIt we are looking at
@@ -200,10 +200,9 @@ private:
     std::vector<Word> words;
 };
 
-template <>
-struct Hash<CoreBitVector>
+template <> struct Hash<CoreBitVector>
 {
-    size_t operator()(const CoreBitVector &cbv) const
+    size_t operator()(const CoreBitVector& cbv) const
     {
         return cbv.hash();
     }
@@ -211,4 +210,4 @@ struct Hash<CoreBitVector>
 
 } // End namespace SVF
 
-#endif  // COREBITVECTOR_H_
+#endif // COREBITVECTOR_H_

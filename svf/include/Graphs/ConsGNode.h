@@ -36,7 +36,7 @@ namespace SVF
 /*!
  * Constraint node
  */
-typedef GenericNode<ConstraintNode,ConstraintEdge> GenericConsNodeTy;
+typedef GenericNode<ConstraintNode, ConstraintEdge> GenericConsNodeTy;
 class ConstraintNode : public GenericConsNodeTy
 {
 
@@ -46,10 +46,10 @@ public:
     bool _isPWCNode;
 
 private:
-    ConstraintEdge::ConstraintEdgeSetTy loadInEdges; ///< all incoming load edge of this node
+    ConstraintEdge::ConstraintEdgeSetTy loadInEdges;  ///< all incoming load edge of this node
     ConstraintEdge::ConstraintEdgeSetTy loadOutEdges; ///< all outgoing load edge of this node
 
-    ConstraintEdge::ConstraintEdgeSetTy storeInEdges; ///< all incoming store edge of this node
+    ConstraintEdge::ConstraintEdgeSetTy storeInEdges;  ///< all incoming store edge of this node
     ConstraintEdge::ConstraintEdgeSetTy storeOutEdges; ///< all outgoing store edge of this node
 
     /// Copy/call/ret/gep incoming edge of this node,
@@ -63,7 +63,7 @@ private:
     ConstraintEdge::ConstraintEdgeSetTy gepInEdges;
     ConstraintEdge::ConstraintEdgeSetTy gepOutEdges;
 
-    ConstraintEdge::ConstraintEdgeSetTy addressInEdges; ///< all incoming address edge of this node
+    ConstraintEdge::ConstraintEdgeSetTy addressInEdges;  ///< all incoming address edge of this node
     ConstraintEdge::ConstraintEdgeSetTy addressOutEdges; ///< all outgoing address edge of this node
 
 public:
@@ -71,10 +71,7 @@ public:
     NodeBS strides;
     NodeBS baseIds;
 
-    ConstraintNode(NodeID i) : GenericConsNodeTy(i, 0), _isPWCNode(false)
-    {
-
-    }
+    ConstraintNode(NodeID i) : GenericConsNodeTy(i, 0), _isPWCNode(false) {}
 
     /// Whether a node involves in PWC, if so, all its points-to elements should become field-insensitive.
     //@{
@@ -91,7 +88,8 @@ public:
     /// Direct and Indirect SVFIR edges
     inline bool isdirectEdge(ConstraintEdge::ConstraintEdgeK kind)
     {
-        return (kind == ConstraintEdge::Copy || kind == ConstraintEdge::NormalGep || kind == ConstraintEdge::VariantGep );
+        return (kind == ConstraintEdge::Copy || kind == ConstraintEdge::NormalGep ||
+                kind == ConstraintEdge::VariantGep);
     }
     inline bool isIndirectEdge(ConstraintEdge::ConstraintEdgeK kind)
     {
@@ -224,7 +222,7 @@ public:
 
     ///  Add constraint graph edges
     //@{
-    inline void addIncomingCopyEdge(CopyCGEdge *inEdge)
+    inline void addIncomingCopyEdge(CopyCGEdge* inEdge)
     {
         addIncomingDirectEdge(inEdge);
         copyInEdges.insert(inEdge);
@@ -234,7 +232,7 @@ public:
         addIncomingDirectEdge(inEdge);
         gepInEdges.insert(inEdge);
     }
-    inline void addOutgoingCopyEdge(CopyCGEdge *outEdge)
+    inline void addOutgoingCopyEdge(CopyCGEdge* outEdge)
     {
         addOutgoingDirectEdge(outEdge);
         copyOutEdges.insert(outEdge);
@@ -322,8 +320,7 @@ public:
 
     inline bool removeOutgoingDirectEdge(ConstraintEdge* outEdge)
     {
-        if (SVFUtil::isa<GepCGEdge>(outEdge))
-            gepOutEdges.erase(outEdge);
+        if (SVFUtil::isa<GepCGEdge>(outEdge)) gepOutEdges.erase(outEdge);
         else
             copyOutEdges.erase(outEdge);
         u32_t num1 = directOutEdges.erase(outEdge);
@@ -335,8 +332,7 @@ public:
 
     inline bool removeIncomingDirectEdge(ConstraintEdge* inEdge)
     {
-        if (SVFUtil::isa<GepCGEdge>(inEdge))
-            gepInEdges.erase(inEdge);
+        if (SVFUtil::isa<GepCGEdge>(inEdge)) gepInEdges.erase(inEdge);
         else
             copyInEdges.erase(inEdge);
         u32_t num1 = directInEdges.erase(inEdge);
@@ -387,7 +383,7 @@ public:
 
     /// Overloading operator << for dumping node
     //@{
-    friend OutStream &operator<<(OutStream &o, const ConstraintNode &node)
+    friend OutStream& operator<<(OutStream& o, const ConstraintNode& node)
     {
         o << node.toString();
         return o;

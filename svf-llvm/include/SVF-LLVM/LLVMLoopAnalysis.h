@@ -39,22 +39,22 @@ namespace SVF
 class LLVMLoopAnalysis
 {
 public:
-
     /// Constructor
-    LLVMLoopAnalysis() = default;;
+    LLVMLoopAnalysis() = default;
+    ;
 
     /// Destructor
     virtual ~LLVMLoopAnalysis() = default;
 
     /// Build llvm loops based on LoopInfo analysis
-    virtual void buildLLVMLoops(SVFModule *mod, ICFG* icfg);
+    virtual void buildLLVMLoops(SVFModule* mod, ICFG* icfg);
 
     /// Start from here
-    virtual void build(ICFG *icfg);
+    virtual void build(ICFG* icfg);
 
     /// Build SVF loops based on llvm loops
-    virtual void buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvmLoops);
+    virtual void buildSVFLoops(ICFG* icfg, std::vector<const Loop*>& llvmLoops);
 };
 } // End namespace SVF
 
-#endif //SVF_LLVMLOOPANALYSIS_H
+#endif // SVF_LLVMLOOPANALYSIS_H

@@ -41,20 +41,20 @@ public:
     typedef u32_t VariableAttribute;
     typedef struct Symbol
     {
-        Kind kind: 8;
-        Attribute attribute: 16;
-        VariableAttribute variableAttribute: 8;
+        Kind kind : 8;
+        Attribute attribute : 16;
+        VariableAttribute variableAttribute : 8;
 
         /// Default Value for Symbol is 0.
         Symbol() : kind(0), attribute(0), variableAttribute(0) {}
 
         /// Construct from u32_t move the bit to right field
-        Symbol(const u32_t& num) : kind(num & 0xFF), attribute((num >> 8 ) & 0xFFFF), variableAttribute((num >> 24)) {}
+        Symbol(const u32_t& num) : kind(num & 0xFF), attribute((num >> 8) & 0xFFFF), variableAttribute((num >> 24)) {}
 
         /// Conversion of u32_t
         operator u32_t()
         {
-            static_assert(sizeof(struct Symbol)==sizeof(u32_t), "sizeof(struct Symbol)!=sizeof(u32_t)");
+            static_assert(sizeof(struct Symbol) == sizeof(u32_t), "sizeof(struct Symbol)!=sizeof(u32_t)");
             u32_t num = 0;
             num += this->variableAttribute << 24;
             num += this->attribute << 8;
@@ -64,7 +64,7 @@ public:
 
         operator u32_t() const
         {
-            static_assert(sizeof(struct Symbol)==sizeof(u32_t), "sizeof(struct Symbol)!=sizeof(u32_t)");
+            static_assert(sizeof(struct Symbol) == sizeof(u32_t), "sizeof(struct Symbol)!=sizeof(u32_t)");
             u32_t num = 0;
             num += this->variableAttribute << 24;
             num += this->attribute << 8;
@@ -87,13 +87,14 @@ public:
         void operator=(unsigned long long num)
         {
             this->kind = num & 0xFF;
-            this->attribute = (num >> 8 ) & 0xFFFF;
+            this->attribute = (num >> 8) & 0xFFFF;
             this->variableAttribute = num >> 24;
         }
 
         bool operator==(const Symbol& s)
         {
-            return ((this->kind == s.kind) && (this->attribute == s.attribute) && (this->variableAttribute == s.variableAttribute));
+            return ((this->kind == s.kind) && (this->attribute == s.attribute) &&
+                    (this->variableAttribute == s.variableAttribute));
         }
 
         bool operator==(const Symbol& s) const
@@ -103,12 +104,12 @@ public:
 
         bool operator!=(const Symbol& s) const
         {
-            return ! (*this == s) ;
+            return !(*this == s);
         }
 
         bool operator==(const u32_t& i)
         {
-            return  u32_t(*this) == u32_t(i);
+            return u32_t(*this) == u32_t(i);
         }
 
         bool operator==(const Kind& k) const
@@ -120,22 +121,21 @@ public:
     class SymbolHash
     {
     public:
-        size_t operator()(const Symbol &s) const
+        size_t operator()(const Symbol& s) const
         {
             std::hash<u32_t> h;
             return h(u32_t(s));
         }
     };
 
-
     struct SymbolVectorHash
     {
-        size_t operator()(const std::vector<Symbol> &v) const
+        size_t operator()(const std::vector<Symbol>& v) const
         {
             size_t h = v.size();
 
             SymbolHash hf;
-            for (const Symbol &t : v)
+            for (const Symbol& t : v)
             {
                 h ^= hf(t) + 0x9e3779b9 + (h << 6) + (h >> 2);
             }
@@ -144,20 +144,18 @@ public:
         }
     };
 
-    template<typename Key, typename Value, typename Hash = SymbolHash,
-             typename KeyEqual = std::equal_to<Key>,
-             typename Allocator = std::allocator<std::pair<const Key, Value>>>
-                     using SymbolMap = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
+    template <typename Key, typename Value, typename Hash = SymbolHash, typename KeyEqual = std::equal_to<Key>,
+              typename Allocator = std::allocator<std::pair<const Key, Value>>>
+    using SymbolMap = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
 
-             template <typename Key, typename Hash = SymbolVectorHash, typename KeyEqual = std::equal_to<Key>,
-                       typename Allocator = std::allocator<Key>>
-             using SymbolSet = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
+    template <typename Key, typename Hash = SymbolVectorHash, typename KeyEqual = std::equal_to<Key>,
+              typename Allocator = std::allocator<Key>>
+    using SymbolSet = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
 
-             typedef std::vector<Symbol> Production;
-             typedef SymbolSet<Production> Productions;
+    typedef std::vector<Symbol> Production;
+    typedef SymbolSet<Production> Productions;
 
-
-             inline Map<std::string, Kind>& getNonterminals()
+    inline Map<std::string, Kind>& getNonterminals()
     {
         return this->nonterminals;
     }
@@ -192,7 +190,7 @@ public:
         return this->rawProductions;
     }
 
-    inline const Map<Kind,  Set<Attribute>>& getKindToAttrsMap() const
+    inline const Map<Kind, Set<Attribute>>& getKindToAttrsMap() const
     {
         return this->kindToAttrsMap;
     }
@@ -223,7 +221,7 @@ public:
 
     void setRawProductions(SymbolMap<Symbol, Productions>& rawProductions);
 
-    void setKindToAttrsMap(const Map<Kind,  Set<Attribute>>& kindToAttrsMap);
+    void setKindToAttrsMap(const Map<Kind, Set<Attribute>>& kindToAttrsMap);
 
     void setAttributeKinds(const Set<Kind>& attributeKind);
 
@@ -264,7 +262,7 @@ public:
 
     inline static Kind getAttributedKind(Attribute attribute, Kind kind)
     {
-        return ((attribute << EdgeKindMaskBits)| kind );
+        return ((attribute << EdgeKindMaskBits) | kind);
     }
 
     inline static Kind getVariabledKind(VariableAttribute variableAttribute, Kind kind)
@@ -273,16 +271,17 @@ public:
     }
 
 protected:
-    static constexpr unsigned char EdgeKindMaskBits = 8;  ///< We use the lower 8 bits to denote edge kind
+    static constexpr unsigned char EdgeKindMaskBits = 8;        ///< We use the lower 8 bits to denote edge kind
     static constexpr unsigned char AttributedKindMaskBits = 24; ///< We use the lower 24 bits to denote attributed kind
     static constexpr u64_t EdgeKindMask = (~0ULL) >> (64 - EdgeKindMaskBits);
     Kind startKind;
+
 private:
     Map<std::string, Kind> nonterminals;
     Map<std::string, Kind> terminals;
     Map<std::string, Kind> EBNFSigns; /// Map contains Signs' String and associated Symbols
     Set<Kind> attributeKinds;
-    Map<Kind,  Set<Attribute>> kindToAttrsMap;
+    Map<Kind, Set<Attribute>> kindToAttrsMap;
     SymbolMap<Symbol, Productions> rawProductions;
     u32_t totalKind;
 };
@@ -295,12 +294,12 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const CFGrammar *)
+    static inline bool classof(const CFGrammar*)
     {
         return true;
     }
 
-    static inline bool classof(const GrammarBase *node)
+    static inline bool classof(const GrammarBase* node)
     {
         return true;
     }
@@ -328,42 +327,41 @@ public:
     const bool hasProdsFromFirstRHS(const Symbol sym) const
     {
         auto it = firstRHSToProds.find(sym);
-        return it!=firstRHSToProds.end();
+        return it != firstRHSToProds.end();
     }
 
     const bool hasProdsFromSingleRHS(const Symbol sym) const
     {
         auto it = singleRHSToProds.find(sym);
-        return it!=singleRHSToProds.end();
+        return it != singleRHSToProds.end();
     }
 
     const bool hasProdsFromSecondRHS(const Symbol sym) const
     {
         auto it = secondRHSToProds.find(sym);
-        return it!=secondRHSToProds.end();
+        return it != secondRHSToProds.end();
     }
 
     const Productions& getProdsFromSingleRHS(const Symbol sym) const
     {
         auto it = singleRHSToProds.find(sym);
-        assert(it!=singleRHSToProds.end() && "production (X -> sym) not found for sym!!");
+        assert(it != singleRHSToProds.end() && "production (X -> sym) not found for sym!!");
         return it->second;
     }
 
     const Productions& getProdsFromFirstRHS(const Symbol sym) const
     {
         auto it = firstRHSToProds.find(sym);
-        assert(it!=firstRHSToProds.end() && "production (X -> sym Y ) not found for sym!!");
+        assert(it != firstRHSToProds.end() && "production (X -> sym Y ) not found for sym!!");
         return it->second;
     }
 
     const Productions& getProdsFromSecondRHS(const Symbol sym) const
     {
         auto it = secondRHSToProds.find(sym);
-        assert(it!=secondRHSToProds.end() && "production (X -> Y sym) not found for sym!!");
+        assert(it != secondRHSToProds.end() && "production (X -> Y sym) not found for sym!!");
         return it->second;
     }
-
 
     const Symbol& getLHSSymbol(const Production& prod) const
     {
@@ -384,7 +382,6 @@ public:
 
     void dump(std::string fileName) const;
 
-
     const inline u32_t num_generator()
     {
         return newTerminalSubscript++;
@@ -403,11 +400,11 @@ private:
  * New nodes will be pushed at back and popped from front.
  * Elements in the list are unique as they're recorded by Set.
  */
-template<class Data>
-class CFLFIFOWorkList
+template <class Data> class CFLFIFOWorkList
 {
     typedef GrammarBase::SymbolSet<Data> DataSet;
     typedef std::deque<Data> DataDeque;
+
 public:
     CFLFIFOWorkList() {}
 
@@ -460,9 +457,9 @@ public:
     }
 
 private:
-    DataSet data_set;	///< store all data in the work list.
-    DataDeque data_list;	///< work list using std::vector.
+    DataSet data_set;    ///< store all data in the work list.
+    DataDeque data_list; ///< work list using std::vector.
 };
 
-}
+} // namespace SVF
 #endif /* CFLGrammar_H_ */

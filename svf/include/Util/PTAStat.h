@@ -45,7 +45,7 @@ class PointerAnalysis;
 /*!
  * Pointer Analysis Statistics
  */
-class PTAStat: public SVFStat
+class PTAStat : public SVFStat
 {
 public:
     PTAStat(PointerAnalysis* p);
@@ -68,7 +68,6 @@ public:
     void performStat() override;
 
     void callgraphStat() override;
-
 
 protected:
     PointerAnalysis* pta;

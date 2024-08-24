@@ -50,23 +50,20 @@ typedef StmtDPItem<SVFGNode> LocDPItem;
 /*!
  * Flow sensitive demand-driven analysis on value-flow graph
  */
-class FlowDDA : public BVDataPTAImpl, public DDAVFSolver<NodeID,PointsTo,LocDPItem>
+class FlowDDA : public BVDataPTAImpl, public DDAVFSolver<NodeID, PointsTo, LocDPItem>
 {
 
 public:
     typedef BVDataPTAImpl::CallSiteSet CallSiteSet;
-    typedef BVDataPTAImpl::CallEdgeMap	CallEdgeMap;
-    typedef BVDataPTAImpl::FunctionSet	FunctionSet;
+    typedef BVDataPTAImpl::CallEdgeMap CallEdgeMap;
+    typedef BVDataPTAImpl::FunctionSet FunctionSet;
     /// Constructor
-    FlowDDA(SVFIR* _pag, DDAClient* client): BVDataPTAImpl(_pag, PointerAnalysis::FlowS_DDA),
-        DDAVFSolver<NodeID,PointsTo,LocDPItem>(),
-        _client(client)
+    FlowDDA(SVFIR* _pag, DDAClient* client)
+        : BVDataPTAImpl(_pag, PointerAnalysis::FlowS_DDA), DDAVFSolver<NodeID, PointsTo, LocDPItem>(), _client(client)
     {
     }
     /// Destructor
-    inline virtual ~FlowDDA()
-    {
-    }
+    inline virtual ~FlowDDA() {}
     /// dummy analyze method
     virtual void analyze() override {}
 
@@ -116,14 +113,13 @@ public:
         return var;
     }
     /// Handle Address SVFGNode to add proper points-to
-    virtual inline void handleAddr(PointsTo& pts,const LocDPItem& dpm,const AddrSVFGNode* addr) override
+    virtual inline void handleAddr(PointsTo& pts, const LocDPItem& dpm, const AddrSVFGNode* addr) override
     {
         NodeID srcID = addr->getPAGSrcNodeID();
         /// whether this object is set field-insensitive during pre-analysis
-        if (isFieldInsensitive(srcID))
-            srcID = getFIObjVar(srcID);
+        if (isFieldInsensitive(srcID)) srcID = getFIObjVar(srcID);
 
-        addDDAPts(pts,srcID);
+        addDDAPts(pts, srcID);
         DBOUT(DDDA, SVFUtil::outs() << "\t add points-to target " << srcID << " to dpm ");
         DBOUT(DDDA, dpm.dump());
     }
@@ -132,14 +128,14 @@ public:
 
     /// Update call graph.
     //@{
-    virtual void updateCallGraphAndSVFG(const LocDPItem& dpm,const CallICFGNode* cs,SVFGEdgeSet& svfgEdges) override
+    virtual void updateCallGraphAndSVFG(const LocDPItem& dpm, const CallICFGNode* cs, SVFGEdgeSet& svfgEdges) override
     {
         CallEdgeMap newEdges;
         resolveIndCalls(cs, getCachedPointsTo(dpm), newEdges);
-        for (CallEdgeMap::const_iterator iter = newEdges.begin(),eiter = newEdges.end(); iter != eiter; iter++)
+        for (CallEdgeMap::const_iterator iter = newEdges.begin(), eiter = newEdges.end(); iter != eiter; iter++)
         {
             const CallICFGNode* newcs = iter->first;
-            const FunctionSet & functions = iter->second;
+            const FunctionSet& functions = iter->second;
             for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
             {
                 const SVFFunction* func = *func_iter;
@@ -161,7 +157,8 @@ public:
     bool unionDDAPts(LocDPItem dpm, const PointsTo& targetPts) override
     {
         if (isTopLevelPtrStmt(dpm.getLoc())) return unionPts(dpm.getCurNodeID(), targetPts);
-        else return dpmToADCPtSetMap[dpm] |= targetPts;
+        else
+            return dpmToADCPtSetMap[dpm] |= targetPts;
     }
 
     virtual const std::string PTAName() const override
@@ -170,7 +167,7 @@ public:
     }
 
 private:
-    DDAClient* _client;				///< DDA client
+    DDAClient* _client; ///< DDA client
 };
 
 } // End namespace SVF

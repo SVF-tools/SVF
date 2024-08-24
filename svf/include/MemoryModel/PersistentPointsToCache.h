@@ -28,12 +28,11 @@ namespace SVF
 /// PointsToDS and PointsToDFDS. Hides points-to sets and union operations from users and hands
 /// out PointsToIDs.
 /// Points-to sets are interned, and union operations are lazy and hash-consed.
-template <typename Data>
-class PersistentPointsToCache
+template <typename Data> class PersistentPointsToCache
 {
 public:
     typedef Map<Data, PointsToID> PTSToIDMap;
-    typedef std::function<Data(const Data &, const Data &)> DataOp;
+    typedef std::function<Data(const Data&, const Data&)> DataOp;
     // TODO: an unordered pair type may be better.
     typedef Map<std::pair<PointsToID, PointsToID>, PointsToID> OpCache;
 
@@ -79,7 +78,7 @@ public:
     /// Remaps all points-to sets stored in the cache to the current mapping.
     void remapAllPts(void)
     {
-        for (auto &d : idToPts) d->checkAndRemap();
+        for (auto& d : idToPts) d->checkAndRemap();
 
         // Rebuild ptsToId from idToPts.
         ptsToId.clear();
@@ -88,7 +87,7 @@ public:
 
     /// If pts is not in the PersistentPointsToCache, inserts it, assigns an ID, and returns
     /// that ID. If it is, then the ID is returned.
-    PointsToID emplacePts(const Data &pts)
+    PointsToID emplacePts(const Data& pts)
     {
         // Is it already in the cache?
         typename PTSToIDMap::const_iterator foundId = ptsToId.find(pts);
@@ -103,7 +102,7 @@ public:
     }
 
     /// Returns the points-to set which id represents. id must be stored in the cache.
-    const Data &getActualPts(PointsToID id) const
+    const Data& getActualPts(PointsToID id) const
     {
         // Check if the points-to set for ID has already been stored.
         assert(idToPts.size() > id && "PPTC::getActualPts: points-to set not stored!");
@@ -113,10 +112,7 @@ public:
     /// Unions lhs and rhs and returns their union's ID.
     PointsToID unionPts(PointsToID lhs, PointsToID rhs)
     {
-        static const DataOp unionOp = [](const Data &lhs, const Data &rhs)
-        {
-            return lhs | rhs;
-        };
+        static const DataOp unionOp = [](const Data& lhs, const Data& rhs) { return lhs | rhs; };
 
         ++totalUnions;
 
@@ -164,7 +160,8 @@ public:
                 ++totalUnions;
             }
         }
-        else ++lookupUnions;
+        else
+            ++lookupUnions;
 
         return result;
     }
@@ -172,10 +169,7 @@ public:
     /// Relatively complements lhs and rhs (lhs \ rhs) and returns it's ID.
     PointsToID complementPts(PointsToID lhs, PointsToID rhs)
     {
-        static const DataOp complementOp = [](const Data &lhs, const Data &rhs)
-        {
-            return lhs - rhs;
-        };
+        static const DataOp complementOp = [](const Data& lhs, const Data& rhs) { return lhs - rhs; };
 
         ++totalComplements;
 
@@ -227,7 +221,8 @@ public:
                 ++totalComplements;
             }
         }
-        else ++lookupComplements;
+        else
+            ++lookupComplements;
 
         return result;
     }
@@ -235,10 +230,7 @@ public:
     /// Intersects lhs and rhs (lhs AND rhs) and returns the intersection's ID.
     PointsToID intersectPts(PointsToID lhs, PointsToID rhs)
     {
-        static const DataOp intersectionOp = [](const Data &lhs, const Data &rhs)
-        {
-            return lhs & rhs;
-        };
+        static const DataOp intersectionOp = [](const Data& lhs, const Data& rhs) { return lhs & rhs; };
 
         ++totalIntersections;
 
@@ -304,7 +296,8 @@ public:
                 }
             }
         }
-        else ++lookupIntersections;
+        else
+            ++lookupIntersections;
 
         return result;
     }
@@ -315,24 +308,24 @@ public:
         static const unsigned fieldWidth = 25;
         SVFUtil::outs().flags(std::ios::left);
 
-        SVFUtil::outs() << std::setw(fieldWidth) << "UniquePointsToSets"      << idToPts.size()          << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "UniquePointsToSets" << idToPts.size() << "\n";
 
-        SVFUtil::outs() << std::setw(fieldWidth) << "TotalUnions"             << totalUnions             << "\n";
-        SVFUtil::outs() << std::setw(fieldWidth) << "PropertyUnions"          << propertyUnions          << "\n";
-        SVFUtil::outs() << std::setw(fieldWidth) << "UniqueUnions"            << uniqueUnions            << "\n";
-        SVFUtil::outs() << std::setw(fieldWidth) << "LookupUnions"            << lookupUnions            << "\n";
-        SVFUtil::outs() << std::setw(fieldWidth) << "PreemptiveUnions"        << preemptiveUnions        << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "TotalUnions" << totalUnions << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "PropertyUnions" << propertyUnions << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "UniqueUnions" << uniqueUnions << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "LookupUnions" << lookupUnions << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "PreemptiveUnions" << preemptiveUnions << "\n";
 
-        SVFUtil::outs() << std::setw(fieldWidth) << "TotalComplements"        << totalComplements        << "\n";
-        SVFUtil::outs() << std::setw(fieldWidth) << "PropertyComplements"     << propertyComplements     << "\n";
-        SVFUtil::outs() << std::setw(fieldWidth) << "UniqueComplements"       << uniqueComplements       << "\n";
-        SVFUtil::outs() << std::setw(fieldWidth) << "LookupComplements"       << lookupComplements       << "\n";
-        SVFUtil::outs() << std::setw(fieldWidth) << "PreemptiveComplements"   << preemptiveComplements   << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "TotalComplements" << totalComplements << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "PropertyComplements" << propertyComplements << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "UniqueComplements" << uniqueComplements << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "LookupComplements" << lookupComplements << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "PreemptiveComplements" << preemptiveComplements << "\n";
 
-        SVFUtil::outs() << std::setw(fieldWidth) << "TotalIntersections"      << totalIntersections      << "\n";
-        SVFUtil::outs() << std::setw(fieldWidth) << "PropertyIntersections"   << propertyIntersections   << "\n";
-        SVFUtil::outs() << std::setw(fieldWidth) << "UniqueIntersections"     << uniqueIntersections     << "\n";
-        SVFUtil::outs() << std::setw(fieldWidth) << "LookupIntersections"     << lookupIntersections     << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "TotalIntersections" << totalIntersections << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "PropertyIntersections" << propertyIntersections << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "UniqueIntersections" << uniqueIntersections << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "LookupIntersections" << lookupIntersections << "\n";
         SVFUtil::outs() << std::setw(fieldWidth) << "PreemptiveIntersections" << preemptiveIntersections << "\n";
 
         SVFUtil::outs().flush();
@@ -345,7 +338,7 @@ public:
     Map<Data, unsigned> getAllPts(void)
     {
         Map<Data, unsigned> allPts;
-        for (const auto &d : idToPts) allPts[*d] = 1;
+        for (const auto& d : idToPts) allPts[*d] = 1;
         return allPts;
     }
 
@@ -362,14 +355,15 @@ private:
     /// Performs dataOp on lhs and rhs, checking the opCache first and updating it afterwards.
     /// commutative indicates whether the operation in question is commutative or not.
     /// opPerformed is set to true if the operation was *not* cached and thus performed, false otherwise.
-    inline PointsToID opPts(PointsToID lhs, PointsToID rhs, const DataOp &dataOp, OpCache &opCache,
-                            bool commutative, bool &opPerformed)
+    inline PointsToID opPts(PointsToID lhs, PointsToID rhs, const DataOp& dataOp, OpCache& opCache, bool commutative,
+                            bool& opPerformed)
     {
         std::pair<PointsToID, PointsToID> operands;
         // If we're commutative, we want to always perform the same operation: x op y.
         // Performing x op y sometimes and y op x other times is a waste of time.
         if (commutative) operands = std::minmax(lhs, rhs);
-        else operands = std::make_pair(lhs, rhs);
+        else
+            operands = std::make_pair(lhs, rhs);
 
         // Check if we have performed this operation
         OpCache::const_iterator foundResult = opCache.find(operands);
@@ -377,8 +371,8 @@ private:
 
         opPerformed = true;
 
-        const Data &lhsPts = getActualPts(lhs);
-        const Data &rhsPts = getActualPts(rhs);
+        const Data& lhsPts = getActualPts(lhs);
+        const Data& rhsPts = getActualPts(rhs);
 
         Data result = dataOp(lhsPts, rhsPts);
 
@@ -403,21 +397,21 @@ private:
     inline void initStats(void)
     {
 
-        totalUnions              = 0;
-        uniqueUnions             = 0;
-        propertyUnions           = 0;
-        lookupUnions             = 0;
-        preemptiveUnions         = 0;
-        totalComplements         = 0;
-        uniqueComplements        = 0;
-        propertyComplements      = 0;
-        lookupComplements        = 0;
-        preemptiveComplements    = 0;
-        totalIntersections       = 0;
-        uniqueIntersections      = 0;
-        propertyIntersections    = 0;
-        lookupIntersections      = 0;
-        preemptiveIntersections  = 0;
+        totalUnions = 0;
+        uniqueUnions = 0;
+        propertyUnions = 0;
+        lookupUnions = 0;
+        preemptiveUnions = 0;
+        totalComplements = 0;
+        uniqueComplements = 0;
+        propertyComplements = 0;
+        lookupComplements = 0;
+        preemptiveComplements = 0;
+        totalIntersections = 0;
+        uniqueIntersections = 0;
+        propertyIntersections = 0;
+        lookupIntersections = 0;
+        preemptiveIntersections = 0;
     }
 
 private:

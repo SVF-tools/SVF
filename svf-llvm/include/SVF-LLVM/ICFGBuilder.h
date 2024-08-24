@@ -41,7 +41,6 @@ class ICFGBuilder
 {
 
 public:
-
     typedef std::vector<const Instruction*> InstVec;
     typedef Set<const Instruction*> BBSet;
 
@@ -51,20 +50,17 @@ private:
 public:
     typedef FIFOWorkList<const Instruction*> WorkList;
 
-    ICFGBuilder(ICFG* i): icfg(i)
-    {
-
-    }
+    ICFGBuilder(ICFG* i) : icfg(i) {}
     void build(SVFModule* svfModule);
 
 private:
     /// Create edges between ICFG nodes within a function
     ///@{
-    void processFunEntry(const Function*  fun, WorkList& worklist);
+    void processFunEntry(const Function* fun, WorkList& worklist);
 
     void processFunBody(WorkList& worklist);
 
-    void processFunExit(const Function*  fun);
+    void processFunExit(const Function* fun);
     //@}
 
     void connectGlobalToProgEntry(SVFModule* svfModule);
@@ -75,22 +71,21 @@ private:
     /// Add/Get a basic block ICFGNode
     inline ICFGNode* getOrAddBlockICFGNode(const SVFInstruction* inst)
     {
-        if(SVFUtil::isNonInstricCallSite(inst))
-            return getOrAddInterBlockICFGNode(inst);
+        if (SVFUtil::isNonInstricCallSite(inst)) return getOrAddInterBlockICFGNode(inst);
         else
             return getOrAddIntraBlockICFGNode(inst);
     }
 
     /// Create edges between ICFG nodes across functions
-    void addICFGInterEdges(const SVFInstruction*  cs, const SVFFunction*  callee);
+    void addICFGInterEdges(const SVFInstruction* cs, const SVFFunction* callee);
 
     /// Add a call node
-    inline CallICFGNode* getCallICFGNode(const SVFInstruction*  cs)
+    inline CallICFGNode* getCallICFGNode(const SVFInstruction* cs)
     {
         return icfg->getCallICFGNode(cs);
     }
     /// Add a return node
-    inline RetICFGNode* getRetICFGNode(const SVFInstruction*  cs)
+    inline RetICFGNode* getRetICFGNode(const SVFInstruction* cs)
     {
         return icfg->getRetICFGNode(cs);
     }

@@ -35,9 +35,9 @@ double CFLSolver::numOfChecks = 0;
 
 void CFLSolver::initialize()
 {
-    for(auto it = graph->begin(); it!= graph->end(); it++)
+    for (auto it = graph->begin(); it != graph->end(); it++)
     {
-        for(const CFLEdge* edge : (*it).second->getOutEdges())
+        for (const CFLEdge* edge : (*it).second->getOutEdges())
         {
             pushIntoWorklist(edge);
         }
@@ -45,13 +45,13 @@ void CFLSolver::initialize()
 
     /// Foreach production X -> epsilon
     ///     add X(i,i) if not exist to E and to worklist
-    for(const Production& prod : grammar->getEpsilonProds())
+    for (const Production& prod : grammar->getEpsilonProds())
     {
-        for(auto it = graph->begin(); it!= graph->end(); it++)
+        for (auto it = graph->begin(); it != graph->end(); it++)
         {
             Symbol X = grammar->getLHSSymbol(prod);
             CFLNode* i = (*it).second;
-            if(const CFLEdge* edge = graph->addCFLEdge(i, i, X))
+            if (const CFLEdge* edge = graph->addCFLEdge(i, i, X))
             {
                 pushIntoWorklist(edge);
             }
@@ -68,11 +68,11 @@ void CFLSolver::processCFLEdge(const CFLEdge* Y_edge)
     ///     add X(i,j) if not exist to E and to worklist
     Symbol Y = Y_edge->getEdgeKind();
     if (grammar->hasProdsFromSingleRHS(Y))
-        for(const Production& prod : grammar->getProdsFromSingleRHS(Y))
+        for (const Production& prod : grammar->getProdsFromSingleRHS(Y))
         {
             Symbol X = grammar->getLHSSymbol(prod);
             numOfChecks++;
-            if(const CFLEdge* newEdge = graph->addCFLEdge(i, j, X))
+            if (const CFLEdge* newEdge = graph->addCFLEdge(i, j, X))
             {
                 pushIntoWorklist(newEdge);
             }
@@ -82,14 +82,14 @@ void CFLSolver::processCFLEdge(const CFLEdge* Y_edge)
     /// Foreach outgoing edge Z(j,k) from node j do
     ///     add X(i,k) if not exist to E and to worklist
     if (grammar->hasProdsFromFirstRHS(Y))
-        for(const Production& prod : grammar->getProdsFromFirstRHS(Y))
+        for (const Production& prod : grammar->getProdsFromFirstRHS(Y))
         {
             Symbol X = grammar->getLHSSymbol(prod);
-            for(const CFLEdge* Z_edge : j->getOutEdgeWithTy(grammar->getSecondRHSSymbol(prod)))
+            for (const CFLEdge* Z_edge : j->getOutEdgeWithTy(grammar->getSecondRHSSymbol(prod)))
             {
                 CFLNode* k = Z_edge->getDstNode();
                 numOfChecks++;
-                if(const CFLEdge* newEdge = graph->addCFLEdge(i, k, X))
+                if (const CFLEdge* newEdge = graph->addCFLEdge(i, k, X))
                 {
                     pushIntoWorklist(newEdge);
                 }
@@ -99,15 +99,15 @@ void CFLSolver::processCFLEdge(const CFLEdge* Y_edge)
     /// For each production X -> Z Y
     /// Foreach incoming edge Z(k,i) to node i do
     ///     add X(k,j) if not exist to E and to worklist
-    if(grammar->hasProdsFromSecondRHS(Y))
-        for(const Production& prod : grammar->getProdsFromSecondRHS(Y))
+    if (grammar->hasProdsFromSecondRHS(Y))
+        for (const Production& prod : grammar->getProdsFromSecondRHS(Y))
         {
             Symbol X = grammar->getLHSSymbol(prod);
-            for(const CFLEdge* Z_edge : i->getInEdgeWithTy(grammar->getFirstRHSSymbol(prod)))
+            for (const CFLEdge* Z_edge : i->getInEdgeWithTy(grammar->getFirstRHSSymbol(prod)))
             {
                 CFLNode* k = Z_edge->getSrcNode();
                 numOfChecks++;
-                if(const CFLEdge* newEdge = graph->addCFLEdge(k, j, X))
+                if (const CFLEdge* newEdge = graph->addCFLEdge(k, j, X))
                 {
                     pushIntoWorklist(newEdge);
                 }
@@ -115,13 +115,12 @@ void CFLSolver::processCFLEdge(const CFLEdge* Y_edge)
         }
 }
 
-
 void CFLSolver::solve()
 {
     /// initial worklist
     initialize();
 
-    while(!isWorklistEmpty())
+    while (!isWorklistEmpty())
     {
         /// Select and remove an edge Y(i,j) from worklist
         const CFLEdge* Y_edge = popFromWorklist();
@@ -131,8 +130,7 @@ void CFLSolver::solve()
 
 void POCRSolver::buildCFLData()
 {
-    for (CFLEdge* edge: graph->getCFLEdges())
-        addEdge(edge->getSrcID(), edge->getDstID(), edge->getEdgeKind());
+    for (CFLEdge* edge : graph->getCFLEdges()) addEdge(edge->getSrcID(), edge->getDstID(), edge->getEdgeKind());
 }
 
 void POCRSolver::processCFLEdge(const CFLEdge* Y_edge)
@@ -144,7 +142,7 @@ void POCRSolver::processCFLEdge(const CFLEdge* Y_edge)
     ///     add X(i,j) if not exist to E and to worklist
     Symbol Y = Y_edge->getEdgeKind();
     if (grammar->hasProdsFromSingleRHS(Y))
-        for(const Production& prod : grammar->getProdsFromSingleRHS(Y))
+        for (const Production& prod : grammar->getProdsFromSingleRHS(Y))
         {
             Symbol X = grammar->getLHSSymbol(prod);
             numOfChecks++;
@@ -153,19 +151,18 @@ void POCRSolver::processCFLEdge(const CFLEdge* Y_edge)
                 const CFLEdge* newEdge = graph->addCFLEdge(Y_edge->getSrcNode(), Y_edge->getDstNode(), X);
                 pushIntoWorklist(newEdge);
             }
-
         }
 
     /// For each production X -> Y Z
     /// Foreach outgoing edge Z(j,k) from node j do
     ///     add X(i,k) if not exist to E and to worklist
     if (grammar->hasProdsFromFirstRHS(Y))
-        for(const Production& prod : grammar->getProdsFromFirstRHS(Y))
+        for (const Production& prod : grammar->getProdsFromFirstRHS(Y))
         {
             Symbol X = grammar->getLHSSymbol(prod);
             NodeBS diffDsts = addEdges(i->getId(), getSuccMap(j->getId())[grammar->getSecondRHSSymbol(prod)], X);
             numOfChecks += getSuccMap(j->getId())[grammar->getSecondRHSSymbol(prod)].count();
-            for (NodeID diffDst: diffDsts)
+            for (NodeID diffDst : diffDsts)
             {
                 const CFLEdge* newEdge = graph->addCFLEdge(i, graph->getGNode(diffDst), X);
                 pushIntoWorklist(newEdge);
@@ -175,13 +172,13 @@ void POCRSolver::processCFLEdge(const CFLEdge* Y_edge)
     /// For each production X -> Z Y
     /// Foreach incoming edge Z(k,i) to node i do
     ///     add X(k,j) if not exist to E and to worklist
-    if(grammar->hasProdsFromSecondRHS(Y))
-        for(const Production& prod : grammar->getProdsFromSecondRHS(Y))
+    if (grammar->hasProdsFromSecondRHS(Y))
+        for (const Production& prod : grammar->getProdsFromSecondRHS(Y))
         {
             Symbol X = grammar->getLHSSymbol(prod);
             NodeBS diffSrcs = addEdges(getPredMap(i->getId())[grammar->getFirstRHSSymbol(prod)], j->getId(), X);
             numOfChecks += getPredMap(i->getId())[grammar->getFirstRHSSymbol(prod)].count();
-            for (NodeID diffSrc: diffSrcs)
+            for (NodeID diffSrc : diffSrcs)
             {
                 const CFLEdge* newEdge = graph->addCFLEdge(graph->getGNode(diffSrc), j, X);
                 pushIntoWorklist(newEdge);
@@ -191,16 +188,16 @@ void POCRSolver::processCFLEdge(const CFLEdge* Y_edge)
 
 void POCRSolver::initialize()
 {
-    for(auto edge : graph->getCFLEdges())
+    for (auto edge : graph->getCFLEdges())
     {
         pushIntoWorklist(edge);
     }
 
     /// Foreach production X -> epsilon
     ///     add X(i,i) if not exist to E and to worklist
-    for(const Production& prod : grammar->getEpsilonProds())
+    for (const Production& prod : grammar->getEpsilonProds())
     {
-        for(auto IDMap : getSuccMap())
+        for (auto IDMap : getSuccMap())
         {
             Symbol X = grammar->getLHSSymbol(prod);
             if (addEdge(IDMap.first, IDMap.first, X))
@@ -222,7 +219,7 @@ void POCRHybridSolver::processCFLEdge(const CFLEdge* Y_edge)
     ///     add X(i,j) if not exist to E and to worklist
     Symbol Y = Y_edge->getEdgeKind();
     if (grammar->hasProdsFromSingleRHS(Y))
-        for(const Production& prod : grammar->getProdsFromSingleRHS(Y))
+        for (const Production& prod : grammar->getProdsFromSingleRHS(Y))
         {
             Symbol X = grammar->getLHSSymbol(prod);
             numOfChecks++;
@@ -231,16 +228,16 @@ void POCRHybridSolver::processCFLEdge(const CFLEdge* Y_edge)
                 const CFLEdge* newEdge = graph->addCFLEdge(Y_edge->getSrcNode(), Y_edge->getDstNode(), X);
                 pushIntoWorklist(newEdge);
             }
-
         }
 
     /// For each production X -> Y Z
     /// Foreach outgoing edge Z(j,k) from node j do
     ///     add X(i,k) if not exist to E and to worklist
     if (grammar->hasProdsFromFirstRHS(Y))
-        for(const Production& prod : grammar->getProdsFromFirstRHS(Y))
+        for (const Production& prod : grammar->getProdsFromFirstRHS(Y))
         {
-            if ((grammar->getLHSSymbol(prod) == grammar->strToSymbol("F")) && (Y == grammar->strToSymbol("F")) && (grammar->getSecondRHSSymbol(prod) == grammar->strToSymbol("F")))
+            if ((grammar->getLHSSymbol(prod) == grammar->strToSymbol("F")) && (Y == grammar->strToSymbol("F")) &&
+                (grammar->getSecondRHSSymbol(prod) == grammar->strToSymbol("F")))
             {
                 addArc(i->getId(), j->getId());
             }
@@ -249,7 +246,7 @@ void POCRHybridSolver::processCFLEdge(const CFLEdge* Y_edge)
                 Symbol X = grammar->getLHSSymbol(prod);
                 NodeBS diffDsts = addEdges(i->getId(), getSuccMap(j->getId())[grammar->getSecondRHSSymbol(prod)], X);
                 numOfChecks += getSuccMap(j->getId())[grammar->getSecondRHSSymbol(prod)].count();
-                for (NodeID diffDst: diffDsts)
+                for (NodeID diffDst : diffDsts)
                 {
                     const CFLEdge* newEdge = graph->addCFLEdge(i, graph->getGNode(diffDst), X);
                     pushIntoWorklist(newEdge);
@@ -260,10 +257,11 @@ void POCRHybridSolver::processCFLEdge(const CFLEdge* Y_edge)
     /// For each production X -> Z Y
     /// Foreach incoming edge Z(k,i) to node i do
     ///     add X(k,j) if not exist to E and to worklist
-    if(grammar->hasProdsFromSecondRHS(Y))
-        for(const Production& prod : grammar->getProdsFromSecondRHS(Y))
+    if (grammar->hasProdsFromSecondRHS(Y))
+        for (const Production& prod : grammar->getProdsFromSecondRHS(Y))
         {
-            if ((grammar->getLHSSymbol(prod) == grammar->strToSymbol("F")) && (Y == grammar->strToSymbol("F")) && (grammar->getFirstRHSSymbol(prod) == grammar->strToSymbol("F")))
+            if ((grammar->getLHSSymbol(prod) == grammar->strToSymbol("F")) && (Y == grammar->strToSymbol("F")) &&
+                (grammar->getFirstRHSSymbol(prod) == grammar->strToSymbol("F")))
             {
                 addArc(i->getId(), j->getId());
             }
@@ -272,7 +270,7 @@ void POCRHybridSolver::processCFLEdge(const CFLEdge* Y_edge)
                 Symbol X = grammar->getLHSSymbol(prod);
                 NodeBS diffSrcs = addEdges(getPredMap(i->getId())[grammar->getFirstRHSSymbol(prod)], j->getId(), X);
                 numOfChecks += getPredMap(i->getId())[grammar->getFirstRHSSymbol(prod)].count();
-                for (NodeID diffSrc: diffSrcs)
+                for (NodeID diffSrc : diffSrcs)
                 {
                     const CFLEdge* newEdge = graph->addCFLEdge(graph->getGNode(diffSrc), j, X);
                     pushIntoWorklist(newEdge);
@@ -283,7 +281,7 @@ void POCRHybridSolver::processCFLEdge(const CFLEdge* Y_edge)
 
 void POCRHybridSolver::initialize()
 {
-    for(auto edge : graph->getCFLEdges())
+    for (auto edge : graph->getCFLEdges())
     {
         pushIntoWorklist(edge);
     }
@@ -296,9 +294,9 @@ void POCRHybridSolver::initialize()
     }
 
     ///     add X(i,i) if not exist to E and to worklist
-    for(const Production& prod : grammar->getEpsilonProds())
+    for (const Production& prod : grammar->getEpsilonProds())
     {
-        for(auto IDMap : getSuccMap())
+        for (auto IDMap : getSuccMap())
         {
             Symbol X = grammar->getLHSSymbol(prod);
             if (addEdge(IDMap.first, IDMap.first, X))
@@ -313,26 +311,23 @@ void POCRHybridSolver::initialize()
 
 void POCRHybridSolver::addArc(NodeID src, NodeID dst)
 {
-    if(hasEdge(src, dst, grammar->strToSymbol("F")))
-        return;
+    if (hasEdge(src, dst, grammar->strToSymbol("F"))) return;
 
-    for (auto& iter: indMap[src])
+    for (auto& iter : indMap[src])
     {
         meld(iter.first, getNode_h(iter.first, src), getNode_h(dst, dst));
     }
 }
-
 
 void POCRHybridSolver::meld(NodeID x, TreeNode* uNode, TreeNode* vNode)
 {
     numOfChecks++;
 
     TreeNode* newVNode = addInd_h(x, vNode->id);
-    if (!newVNode)
-        return;
+    if (!newVNode) return;
 
     insertEdge_h(uNode, newVNode);
-    for (TreeNode* vChild: vNode->children)
+    for (TreeNode* vChild : vNode->children)
     {
         meld_h(x, newVNode, vChild);
     }
@@ -341,8 +336,7 @@ void POCRHybridSolver::meld(NodeID x, TreeNode* uNode, TreeNode* vNode)
 bool POCRHybridSolver::hasInd_h(NodeID src, NodeID dst)
 {
     auto it = indMap.find(dst);
-    if (it == indMap.end())
-        return false;
+    if (it == indMap.end()) return false;
     return (it->second.find(src) != it->second.end());
 }
 
@@ -350,8 +344,7 @@ POCRHybridSolver::TreeNode* POCRHybridSolver::addInd_h(NodeID src, NodeID dst)
 {
     TreeNode* newNode = new TreeNode(dst);
     auto resIns = indMap[dst].insert(std::make_pair(src, newNode));
-    if (resIns.second)
-        return resIns.first->second;
+    if (resIns.second) return resIns.first->second;
     delete newNode;
     return nullptr;
 }
@@ -360,7 +353,7 @@ void POCRHybridSolver::addArc_h(NodeID src, NodeID dst)
 {
     if (!hasInd_h(src, dst))
     {
-        for (auto iter: indMap[src])
+        for (auto iter : indMap[src])
         {
             meld_h(iter.first, getNode_h(iter.first, src), getNode_h(dst, dst));
         }
@@ -370,11 +363,10 @@ void POCRHybridSolver::addArc_h(NodeID src, NodeID dst)
 void POCRHybridSolver::meld_h(NodeID x, TreeNode* uNode, TreeNode* vNode)
 {
     TreeNode* newVNode = addInd_h(x, vNode->id);
-    if (!newVNode)
-        return;
+    if (!newVNode) return;
 
     insertEdge_h(uNode, newVNode);
-    for (TreeNode* vChild: vNode->children)
+    for (TreeNode* vChild : vNode->children)
     {
         meld_h(x, newVNode, vChild);
     }

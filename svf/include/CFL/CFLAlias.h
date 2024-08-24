@@ -44,16 +44,13 @@ class CFLAlias : public CFLBase
 public:
     typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
 
-    CFLAlias(SVFIR* ir) : CFLBase(ir, PointerAnalysis::CFLFICI_WPA)
-    {
-    }
+    CFLAlias(SVFIR* ir) : CFLBase(ir, PointerAnalysis::CFLFICI_WPA) {}
 
     /// Initialize the grammar, graph, solver
     virtual void initialize();
 
     /// Initialize Solver
     virtual void initializeSolver();
-
 
     /// Print grammar and graph
     virtual void finalize();
@@ -66,13 +63,13 @@ public:
     {
         NodeID n1 = svfir->getValueNode(v1);
         NodeID n2 = svfir->getValueNode(v2);
-        return alias(n1,n2);
+        return alias(n1, n2);
     }
 
     /// Interface exposed to users of our Alias analysis, given PAGNodeID
     virtual AliasResult alias(NodeID node1, NodeID node2)
     {
-        if(graph->hasEdge(graph->getGNode(node1), graph->getGNode(node2), graph->startKind))
+        if (graph->hasEdge(graph->getGNode(node1), graph->getGNode(node2), graph->startKind))
             return AliasResult::MayAlias;
         else
             return AliasResult::NoAlias;
@@ -82,13 +79,13 @@ public:
     virtual const PointsTo& getCFLPts(NodeID ptr)
     {
         /// Check V Dst of ptr.
-        CFLNode *funNode = graph->getGNode(ptr);
-        for(auto outedge = funNode->getOutEdges().begin(); outedge!=funNode->getOutEdges().end(); outedge++)
+        CFLNode* funNode = graph->getGNode(ptr);
+        for (auto outedge = funNode->getOutEdges().begin(); outedge != funNode->getOutEdges().end(); outedge++)
         {
-            if((*outedge)->getEdgeKind() == graph->getStartKind())
+            if ((*outedge)->getEdgeKind() == graph->getStartKind())
             {
                 // Need to Find dst addr src
-                SVFVar *vNode = svfir->getGNode((*outedge)->getDstID());
+                SVFVar* vNode = svfir->getGNode((*outedge)->getDstID());
                 NodeID basevNodeID;
                 // Remove svfir->getBaseValVar, SVF IR api change
                 if (vNode->hasIncomingEdges(SVFStmt::Gep))
@@ -100,9 +97,9 @@ public:
                 else
                     basevNodeID = vNode->getId();
                 addPts(ptr, basevNodeID);
-                for(auto inEdge = vNode->getInEdges().begin(); inEdge!=vNode->getInEdges().end(); inEdge++)
+                for (auto inEdge = vNode->getInEdges().begin(); inEdge != vNode->getInEdges().end(); inEdge++)
                 {
-                    if((*inEdge)->getEdgeKind() == 0)
+                    if ((*inEdge)->getEdgeKind() == 0)
                     {
                         addPts(ptr, (*inEdge)->getSrcID());
                     }
@@ -117,15 +114,15 @@ public:
     /// Add copy edge on constraint graph
     virtual inline bool addCopyEdge(NodeID src, NodeID dst)
     {
-        const CFLEdge *edge = graph->hasEdge(graph->getGNode(src),graph->getGNode(dst), 1);
-        if (edge != nullptr )
+        const CFLEdge* edge = graph->hasEdge(graph->getGNode(src), graph->getGNode(dst), 1);
+        if (edge != nullptr)
         {
             return false;
         }
         CFGrammar::Kind copyKind = grammar->strToKind("copy");
         CFGrammar::Kind copybarKind = grammar->strToKind("copybar");
-        solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(src),graph->getGNode(dst), copyKind));
-        solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(dst),graph->getGNode(src), copybarKind));
+        solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(src), graph->getGNode(dst), copyKind));
+        solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(dst), graph->getGNode(src), copybarKind));
         return true;
     }
 
@@ -148,15 +145,14 @@ public:
     void heapAllocatorViaIndCall(CallSite cs);
 
 private:
-    CallSite2DummyValPN callsite2DummyValPN;        ///< Map an instruction to a dummy obj which created at an indirect callsite, which invokes a heap allocator
+    CallSite2DummyValPN callsite2DummyValPN; ///< Map an instruction to a dummy obj which created at an indirect
+                                             ///< callsite, which invokes a heap allocator
 };
 
 class POCRAlias : public CFLAlias
 {
 public:
-    POCRAlias(SVFIR* ir) : CFLAlias(ir)
-    {
-    }
+    POCRAlias(SVFIR* ir) : CFLAlias(ir) {}
     /// Initialize POCR Solver
     virtual void initializeSolver();
 };
@@ -164,9 +160,7 @@ public:
 class POCRHybrid : public CFLAlias
 {
 public:
-    POCRHybrid(SVFIR* ir) : CFLAlias(ir)
-    {
-    }
+    POCRHybrid(SVFIR* ir) : CFLAlias(ir) {}
 
     /// Initialize POCRHybrid Solver
     virtual void initializeSolver();

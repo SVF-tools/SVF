@@ -31,7 +31,7 @@
 #define Z3_EXAMPLE_ADDRESSVALUE_H
 
 #define AddressMask 0x7f000000
-#define FlippedAddressMask (AddressMask^0xffffffff)
+#define FlippedAddressMask (AddressMask ^ 0xffffffff)
 // the address of the black hole, getVirtualMemAddress(2);
 #define BlackHoleAddr 0x7f000000 + 2
 
@@ -44,28 +44,30 @@ class AddressValue
 {
 public:
     typedef Set<u32_t> AddrSet;
+
 private:
     AddrSet _addrs;
+
 public:
     /// Default constructor
     AddressValue() {}
 
     /// Constructor
-    AddressValue(const Set<u32_t> &addrs) :  _addrs(addrs) {}
+    AddressValue(const Set<u32_t>& addrs) : _addrs(addrs) {}
 
-    AddressValue(u32_t addr) :  _addrs({addr}) {}
+    AddressValue(u32_t addr) : _addrs({addr}) {}
 
     /// Default destructor
     ~AddressValue() = default;
 
     /// Copy constructor
-    AddressValue(const AddressValue &other) : _addrs(other._addrs) {}
+    AddressValue(const AddressValue& other) : _addrs(other._addrs) {}
 
     /// Move constructor
-    AddressValue(AddressValue &&other) noexcept: _addrs(std::move(other._addrs)) {}
+    AddressValue(AddressValue&& other) noexcept : _addrs(std::move(other._addrs)) {}
 
     /// Copy operator=
-    AddressValue &operator=(const AddressValue &other)
+    AddressValue& operator=(const AddressValue& other)
     {
         if (!this->equals(other))
         {
@@ -75,7 +77,7 @@ public:
     }
 
     /// Move operator=
-    AddressValue &operator=(AddressValue &&other) noexcept
+    AddressValue& operator=(AddressValue&& other) noexcept
     {
         if (this != &other)
         {
@@ -84,7 +86,7 @@ public:
         return *this;
     }
 
-    bool equals(const AddressValue &rhs) const
+    bool equals(const AddressValue& rhs) const
     {
         return _addrs == rhs._addrs;
     }
@@ -114,36 +116,35 @@ public:
         return _addrs.insert(id);
     }
 
-    const AddrSet &getVals() const
+    const AddrSet& getVals() const
     {
         return _addrs;
     }
 
-    void setVals(const AddrSet &vals)
+    void setVals(const AddrSet& vals)
     {
         _addrs = vals;
     }
 
     /// Current AddressValue joins with another AddressValue
-    bool join_with(const AddressValue &other)
+    bool join_with(const AddressValue& other)
     {
         bool changed = false;
-        for (const auto &addr: other)
+        for (const auto& addr : other)
         {
             if (!_addrs.count(addr))
             {
-                if (insert(addr).second)
-                    changed = true;
+                if (insert(addr).second) changed = true;
             }
         }
         return changed;
     }
 
     /// Return a intersected AddressValue
-    bool meet_with(const AddressValue &other)
+    bool meet_with(const AddressValue& other)
     {
         AddrSet s;
-        for (const auto &id: other._addrs)
+        for (const auto& id : other._addrs)
         {
             if (_addrs.find(id) != _addrs.end())
             {
@@ -161,7 +162,7 @@ public:
         return _addrs.count(id);
     }
 
-    bool hasIntersect(const AddressValue &other)
+    bool hasIntersect(const AddressValue& other)
     {
         AddressValue v = *this;
         v.meet_with(other);
@@ -199,7 +200,7 @@ public:
         else
         {
             rawStr << "[";
-            for (auto it = _addrs.begin(), eit = _addrs.end(); it!= eit; ++it)
+            for (auto it = _addrs.begin(), eit = _addrs.end(); it != eit; ++it)
             {
                 rawStr << *it << ", ";
             }
@@ -229,4 +230,4 @@ public:
     }
 };
 } // end namespace SVF
-#endif //Z3_EXAMPLE_ADDRESSVALUE_H
+#endif // Z3_EXAMPLE_ADDRESSVALUE_H

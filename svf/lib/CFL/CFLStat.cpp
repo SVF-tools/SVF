@@ -36,7 +36,7 @@ using namespace std;
 /*!
  * Constructor
  */
-CFLStat::CFLStat(CFLBase* p): PTAStat(p),pta(p)
+CFLStat::CFLStat(CFLBase* p) : PTAStat(p), pta(p)
 {
     startClk();
 }
@@ -44,7 +44,7 @@ CFLStat::CFLStat(CFLBase* p): PTAStat(p),pta(p)
 /*!
  * Collect CFLGraph information
  */
-void  CFLStat::CFLGraphStat()
+void CFLStat::CFLGraphStat()
 {
     pta->countSumEdges();
     CFLGraph* CFLGraph = pta->getCFLGraph();
@@ -94,4 +94,3 @@ void CFLStat::performStat()
     // Stat about Call graph and General stat
     PTAStat::performStat();
 }
-

@@ -32,7 +32,6 @@
  *
  */
 
-
 #ifndef DISNCTMRGENERATOR_H_
 #define DISNCTMRGENERATOR_H_
 
@@ -47,8 +46,7 @@ namespace SVF
 class DistinctMRG : public MRGenerator
 {
 public:
-    DistinctMRG(BVDataPTAImpl* p, bool ptrOnly) : MRGenerator(p, ptrOnly)
-    {}
+    DistinctMRG(BVDataPTAImpl* p, bool ptrOnly) : MRGenerator(p, ptrOnly) {}
 
     ~DistinctMRG() {}
 
@@ -61,10 +59,10 @@ protected:
 
     /// Get memory regions to be inserted at a load statement.
     virtual void getMRsForCallSiteRef(MRSet& aliasMRs, const NodeBS& cpts, const SVFFunction* fun);
+
 private:
     /// Create memory regions for each points-to target.
     void createDistinctMR(const SVFFunction* func, const NodeBS& cpts);
-
 };
 
 /*!
@@ -77,13 +75,11 @@ public:
     typedef Map<const SVFFunction*, PtsToSubPtsMap> FunToPtsMap;
     typedef Map<const SVFFunction*, PointsToList> FunToInterMap;
 
-    IntraDisjointMRG(BVDataPTAImpl* p, bool ptrOnly) : MRGenerator(p, ptrOnly)
-    {}
+    IntraDisjointMRG(BVDataPTAImpl* p, bool ptrOnly) : MRGenerator(p, ptrOnly) {}
 
     ~IntraDisjointMRG() {}
 
 protected:
-
     /// Partition regions
     virtual void partitionMRs();
 
@@ -93,8 +89,7 @@ protected:
      * @param fun The function being analyzed.
      * @param mrs Memory region set contains all possible target memory regions.
      */
-    virtual inline void getMRsForLoad(MRSet& aliasMRs, const NodeBS& cpts,
-                                      const SVFFunction* fun)
+    virtual inline void getMRsForLoad(MRSet& aliasMRs, const NodeBS& cpts, const SVFFunction* fun)
     {
         const PointsToList& inters = getIntersList(fun);
         getMRsForLoadFromInterList(aliasMRs, cpts, inters);
@@ -139,8 +134,7 @@ private:
 class InterDisjointMRG : public IntraDisjointMRG
 {
 public:
-    InterDisjointMRG(BVDataPTAImpl* p, bool ptrOnly) : IntraDisjointMRG(p, ptrOnly)
-    {}
+    InterDisjointMRG(BVDataPTAImpl* p, bool ptrOnly) : IntraDisjointMRG(p, ptrOnly) {}
 
     ~InterDisjointMRG() {}
 
@@ -154,8 +148,7 @@ protected:
      * @param fun The function being analyzed.
      * @param mrs Memory region set contains all possible target memory regions.
      */
-    virtual inline void getMRsForLoad(MRSet& aliasMRs, const NodeBS& cpts,
-                                      const SVFFunction*)
+    virtual inline void getMRsForLoad(MRSet& aliasMRs, const NodeBS& cpts, const SVFFunction*)
     {
         getMRsForLoadFromInterList(aliasMRs, cpts, inters);
     }

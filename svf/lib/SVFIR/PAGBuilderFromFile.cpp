@@ -28,9 +28,9 @@
  */
 
 #include "SVFIR/PAGBuilderFromFile.h"
-#include <fstream>	// for PAGBuilderFromFile
-#include <string>	// for PAGBuilderFromFile
-#include <sstream>	// for PAGBuilderFromFile
+#include <fstream> // for PAGBuilderFromFile
+#include <string>  // for PAGBuilderFromFile
+#include <sstream> // for PAGBuilderFromFile
 
 using namespace std;
 using namespace SVF;
@@ -78,8 +78,7 @@ SVFIR* PAGBuilderFromFile::build()
                 token_count++;
             }
 
-            if (token_count == 0)
-                continue;
+            if (token_count == 0) continue;
 
             else if (token_count == 2)
             {
@@ -89,8 +88,7 @@ SVFIR* PAGBuilderFromFile::build()
                 ss >> nodeId;
                 ss >> nodetype;
                 outs() << "reading node :" << nodeId << "\n";
-                if (nodetype == "v")
-                    pag->addDummyValNode(nodeId);
+                if (nodetype == "v") pag->addDummyValNode(nodeId);
                 else if (nodetype == "o")
                 {
                     const MemObj* mem = pag->addDummyMemObj(nodeId, nullptr);
@@ -112,16 +110,15 @@ SVFIR* PAGBuilderFromFile::build()
                 ss >> edge;
                 ss >> nodeDst;
                 ss >> offsetOrCSId;
-                outs() << "reading edge :" << nodeSrc << " " << edge << " "
-                       << nodeDst << " offsetOrCSId=" << offsetOrCSId << " \n";
+                outs() << "reading edge :" << nodeSrc << " " << edge << " " << nodeDst
+                       << " offsetOrCSId=" << offsetOrCSId << " \n";
                 addEdge(nodeSrc, nodeDst, offsetOrCSId, edge);
             }
             else
             {
                 if (!line.empty())
                 {
-                    outs() << "format not supported, token count = "
-                           << token_count << "\n";
+                    outs() << "format not supported, token count = " << token_count << "\n";
                     assert(false && "format not supported");
                 }
             }
@@ -134,8 +131,7 @@ SVFIR* PAGBuilderFromFile::build()
 
     /// new gep node's id from lower bound, nodeNum may not reflect the total nodes.
     u32_t lower_bound = gepNodeNumIndex;
-    for(u32_t i = 0; i < lower_bound; i++)
-        pag->incNodeNum();
+    for (u32_t i = 0; i < lower_bound; i++) pag->incNodeNum();
 
     pag->setNodeNumAfterPAGBuild(pag->getTotalNodeNum());
 
@@ -145,18 +141,16 @@ SVFIR* PAGBuilderFromFile::build()
 /*!
  * Add SVFIR edge according to a file format
  */
-void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
-                                 APOffset offsetOrCSId, std::string edge)
+void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID, APOffset offsetOrCSId, std::string edge)
 {
 
-    //check whether these two nodes available
+    // check whether these two nodes available
     PAGNode* srcNode = pag->getGNode(srcID);
     PAGNode* dstNode = pag->getGNode(dstID);
 
     /// sanity check for SVFIR from txt
     assert(SVFUtil::isa<ValVar>(dstNode) && "dst not an value node?");
-    if(edge=="addr")
-        assert(SVFUtil::isa<ObjVar>(srcNode) && "src not an value node?");
+    if (edge == "addr") assert(SVFUtil::isa<ObjVar>(srcNode) && "src not an value node?");
     else
         assert(!SVFUtil::isa<ObjVar>(srcNode) && "src not an object node?");
 
@@ -234,7 +228,7 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
     else if (edge == "call")
         pag->addEdge(srcNode, dstNode, new CallPE(srcNode, dstNode, nullptr, nullptr));
     else if (edge == "ret")
-        pag->addEdge(srcNode, dstNode, new RetPE(srcNode, dstNode, nullptr,nullptr));
+        pag->addEdge(srcNode, dstNode, new RetPE(srcNode, dstNode, nullptr, nullptr));
     else if (edge == "cmp")
         pag->addCmpStmt(srcID, dstID, dstID, dstID);
     else if (edge == "binary-op")
@@ -248,9 +242,8 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
     else if (edge == "branch")
     {
         assert(false && "fix successors here!");
-        //pag->addBranchStmt(srcID, dstID, nullptr);
+        // pag->addBranchStmt(srcID, dstID, nullptr);
     }
     else
         assert(false && "format not support, can not create such edge");
 }
-

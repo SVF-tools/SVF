@@ -32,15 +32,13 @@
 namespace SVF
 {
 
-z3::context *Z3Expr::ctx = nullptr;
+z3::context* Z3Expr::ctx = nullptr;
 z3::solver* Z3Expr::solver = nullptr;
-
 
 /// release z3 context
 void Z3Expr::releaseContext()
 {
-    if(solver)
-        releaseSolver();
+    if (solver) releaseSolver();
     delete ctx;
     ctx = nullptr;
 }
@@ -53,7 +51,7 @@ void Z3Expr::releaseSolver()
 }
 
 /// Get z3 solver, singleton design here to make sure we only have one context
-z3::solver &Z3Expr::getSolver()
+z3::solver& Z3Expr::getSolver()
 {
     if (solver == nullptr)
     {
@@ -63,7 +61,7 @@ z3::solver &Z3Expr::getSolver()
 }
 
 /// Get z3 context, singleton design here to make sure we only have one context
-z3::context &Z3Expr::getContext()
+z3::context& Z3Expr::getContext()
 {
     if (ctx == nullptr)
     {
@@ -73,7 +71,7 @@ z3::context &Z3Expr::getContext()
 }
 
 /// get the number of subexpression of a Z3 expression
-u32_t Z3Expr::getExprSize(const Z3Expr &z3Expr)
+u32_t Z3Expr::getExprSize(const Z3Expr& z3Expr)
 {
     u32_t res = 1;
     if (z3Expr.getExpr().num_args() == 0)
@@ -89,7 +87,7 @@ u32_t Z3Expr::getExprSize(const Z3Expr &z3Expr)
 }
 
 /// compute AND, used for branch condition
-Z3Expr Z3Expr::AND(const Z3Expr &lhs, const Z3Expr &rhs)
+Z3Expr Z3Expr::AND(const Z3Expr& lhs, const Z3Expr& rhs)
 {
     if (eq(lhs, Z3Expr::getFalseCond()) || eq(rhs, Z3Expr::getFalseCond()))
     {
@@ -127,7 +125,7 @@ Z3Expr Z3Expr::AND(const Z3Expr &lhs, const Z3Expr &rhs)
 }
 
 /// compute OR, used for branch condition
-Z3Expr Z3Expr::OR(const Z3Expr &lhs, const Z3Expr &rhs)
+Z3Expr Z3Expr::OR(const Z3Expr& lhs, const Z3Expr& rhs)
 {
     if (eq(lhs, Z3Expr::getTrueCond()) || eq(rhs, Z3Expr::getTrueCond()))
     {
@@ -165,11 +163,10 @@ Z3Expr Z3Expr::OR(const Z3Expr &lhs, const Z3Expr &rhs)
 }
 
 /// output Z3 expression as a string
-std::string Z3Expr::dumpStr(const Z3Expr &z3Expr)
+std::string Z3Expr::dumpStr(const Z3Expr& z3Expr)
 {
     std::ostringstream out;
     out << z3Expr.getExpr();
     return out.str();
 }
-}
-
+} // namespace SVF

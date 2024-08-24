@@ -34,21 +34,19 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-
 u64_t SVFStmt::callEdgeLabelCounter = 0;
 u64_t SVFStmt::storeEdgeLabelCounter = 0;
 u64_t SVFStmt::multiOpndLabelCounter = 0;
 SVFStmt::Inst2LabelMap SVFStmt::inst2LabelMap;
 SVFStmt::Var2LabelMap SVFStmt::var2LabelMap;
 
-
 /*!
  * SVFStmt constructor
  */
-SVFStmt::SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, bool real) :
-    GenericPAGEdgeTy(s,d,k),value(nullptr),basicBlock(nullptr),icfgNode(nullptr),edgeId(UINT_MAX)
+SVFStmt::SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, bool real)
+    : GenericPAGEdgeTy(s, d, k), value(nullptr), basicBlock(nullptr), icfgNode(nullptr), edgeId(UINT_MAX)
 {
-    if(real)
+    if (real)
     {
         edgeId = SVFIR::getPAG()->getTotalEdgeNum();
         SVFIR::getPAG()->incEdgeNum();
@@ -102,8 +100,8 @@ const std::string PhiStmt::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "PhiStmt: [Var" << getResID() << " <-- (";
-    for(u32_t i = 0; i < getOpVarNum(); i++)
-        rawstr << "[Var" << getOpVar(i)->getId() << ", ICFGNode" << getOpICFGNode(i)->getId() <<  "],";
+    for (u32_t i = 0; i < getOpVarNum(); i++)
+        rawstr << "[Var" << getOpVar(i)->getId() << ", ICFGNode" << getOpICFGNode(i)->getId() << "],";
     rawstr << ")]\t";
     if (Options::ShowSVFIRValue())
     {
@@ -117,9 +115,8 @@ const std::string SelectStmt::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "SelectStmt: (Condition Var" <<  getCondition()->getId() << ") [Var" << getResID() << " <-- (Var";
-    for(const SVFVar* op : getOpndVars())
-        rawstr << op->getId() << ",";
+    rawstr << "SelectStmt: (Condition Var" << getCondition()->getId() << ") [Var" << getResID() << " <-- (Var";
+    for (const SVFVar* op : getOpndVars()) rawstr << op->getId() << ",";
     rawstr << ")]\t";
     if (Options::ShowSVFIRValue())
     {
@@ -133,7 +130,8 @@ const std::string CmpStmt::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "CmpStmt: [Var" << getResID() << " <-- (Var" << getOpVarID(0) << " predicate" << getPredicate() << " Var" << getOpVarID(1) << ")]\t";
+    rawstr << "CmpStmt: [Var" << getResID() << " <-- (Var" << getOpVarID(0) << " predicate" << getPredicate() << " Var"
+           << getOpVarID(1) << ")]\t";
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -146,7 +144,8 @@ const std::string BinaryOPStmt::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "BinaryOPStmt: [Var" << getResID() << " <-- (Var" << getOpVarID(0) << " opcode" << getOpcode() << " Var" << getOpVarID(1) << ")]\t";
+    rawstr << "BinaryOPStmt: [Var" << getResID() << " <-- (Var" << getOpVarID(0) << " opcode" << getOpcode() << " Var"
+           << getOpVarID(1) << ")]\t";
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -159,7 +158,8 @@ const std::string UnaryOPStmt::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "UnaryOPStmt: [Var" << getResID() << " <-- " << " opcode" << getOpcode() << " Var" << getOpVarID() << "]\t";
+    rawstr << "UnaryOPStmt: [Var" << getResID() << " <-- "
+           << " opcode" << getOpcode() << " Var" << getOpVarID() << "]\t";
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -172,12 +172,13 @@ const std::string BranchStmt::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    if(isConditional())
-        rawstr << "BranchStmt: [Condition Var" <<  getCondition()->getId() << "]\n";
+    if (isConditional()) rawstr << "BranchStmt: [Condition Var" << getCondition()->getId() << "]\n";
     else
-        rawstr << "BranchStmt: [" <<  " Unconditional branch" << "]\n";
+        rawstr << "BranchStmt: ["
+               << " Unconditional branch"
+               << "]\n";
 
-    for(u32_t i = 0; i < getNumSuccessors(); i++)
+    for (u32_t i = 0; i < getNumSuccessors(); i++)
         rawstr << "Successor " << i << " ICFGNode" << getSuccessor(i)->getId() << "   ";
 
     if (Options::ShowSVFIRValue())
@@ -187,7 +188,6 @@ const std::string BranchStmt::toString() const
     }
     return rawstr.str();
 }
-
 
 const std::string LoadStmt::toString() const
 {
@@ -280,7 +280,6 @@ const std::string TDJoinPE::toString() const
     return rawstr.str();
 }
 
-
 NodeID MultiOpndStmt::getOpVarID(u32_t pos) const
 {
     return getOpVar(pos)->getId();
@@ -307,7 +306,6 @@ bool PhiStmt::isFunctionRetPhi() const
     return SVFUtil::isa<RetPN>(getRes());
 }
 
-
 /// The branch is unconditional if cond is a null value
 bool BranchStmt::isUnconditional() const
 {
@@ -316,12 +314,13 @@ bool BranchStmt::isUnconditional() const
 /// The branch is conditional if cond is not a null value
 bool BranchStmt::isConditional() const
 {
-    return cond->getId() != SymbolTableInfo::SymbolInfo()->nullPtrSymID();;
+    return cond->getId() != SymbolTableInfo::SymbolInfo()->nullPtrSymID();
+    ;
 }
 /// Return the condition
 const SVFVar* BranchStmt::getCondition() const
 {
-    //assert(isConditional() && "this is a unconditional branch");
+    // assert(isConditional() && "this is a unconditional branch");
     return cond;
 }
 
@@ -330,44 +329,32 @@ StoreStmt::StoreStmt(SVFVar* s, SVFVar* d, const IntraICFGNode* st)
 {
 }
 
-CallPE::CallPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
-               const FunEntryICFGNode* e, GEdgeKind k)
+CallPE::CallPE(SVFVar* s, SVFVar* d, const CallICFGNode* i, const FunEntryICFGNode* e, GEdgeKind k)
     : AssignStmt(s, d, makeEdgeFlagWithCallInst(k, i)), call(i), entry(e)
 {
 }
 
-RetPE::RetPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
-             const FunExitICFGNode* e, GEdgeKind k)
+RetPE::RetPE(SVFVar* s, SVFVar* d, const CallICFGNode* i, const FunExitICFGNode* e, GEdgeKind k)
     : AssignStmt(s, d, makeEdgeFlagWithCallInst(k, i)), call(i), exit(e)
 {
 }
 
-MultiOpndStmt::MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k)
-    : SVFStmt(opnds.at(0), r, k), opVars(opnds)
-{
-}
+MultiOpndStmt::MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k) : SVFStmt(opnds.at(0), r, k), opVars(opnds) {}
 
 CmpStmt::CmpStmt(SVFVar* s, const OPVars& opnds, u32_t pre)
-    : MultiOpndStmt(s, opnds,
-                    makeEdgeFlagWithAddionalOpnd(SVFStmt::Cmp, opnds.at(1))),
-      predicate(pre)
+    : MultiOpndStmt(s, opnds, makeEdgeFlagWithAddionalOpnd(SVFStmt::Cmp, opnds.at(1))), predicate(pre)
 {
     assert(opnds.size() == 2 && "CmpStmt can only have two operands!");
 }
 
 SelectStmt::SelectStmt(SVFVar* s, const OPVars& opnds, const SVFVar* cond)
-    : MultiOpndStmt(s, opnds,
-                    makeEdgeFlagWithAddionalOpnd(SVFStmt::Select, opnds.at(1))),
-      condition(cond)
+    : MultiOpndStmt(s, opnds, makeEdgeFlagWithAddionalOpnd(SVFStmt::Select, opnds.at(1))), condition(cond)
 {
     assert(opnds.size() == 2 && "SelectStmt can only have two operands!");
 }
 
 BinaryOPStmt::BinaryOPStmt(SVFVar* s, const OPVars& opnds, u32_t oc)
-    : MultiOpndStmt(
-          s, opnds,
-          makeEdgeFlagWithAddionalOpnd(SVFStmt::BinaryOp, opnds.at(1))),
-      opcode(oc)
+    : MultiOpndStmt(s, opnds, makeEdgeFlagWithAddionalOpnd(SVFStmt::BinaryOp, opnds.at(1))), opcode(oc)
 {
     assert(opnds.size() == 2 && "BinaryOPStmt can only have two operands!");
 }

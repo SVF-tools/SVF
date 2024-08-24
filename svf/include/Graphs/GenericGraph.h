@@ -45,8 +45,7 @@ template <typename, typename> class GenericGraphReader;
 /*!
  * Generic edge on the graph as base class
  */
-template<class NodeTy>
-class GenericEdge
+template <class NodeTy> class GenericEdge
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -60,21 +59,18 @@ public:
     /// (2) 8-63 bits encode a callsite instruction
     typedef u64_t GEdgeFlag;
     typedef s64_t GEdgeKind;
+
 private:
-    NodeTy* src;		///< source node
-    NodeTy* dst;		///< destination node
-    GEdgeFlag edgeFlag;	///< edge kind
+    NodeTy* src;        ///< source node
+    NodeTy* dst;        ///< destination node
+    GEdgeFlag edgeFlag; ///< edge kind
 
 public:
     /// Constructor
-    GenericEdge(NodeTy* s, NodeTy* d, GEdgeFlag k) : src(s), dst(d), edgeFlag(k)
-    {
-    }
+    GenericEdge(NodeTy* s, NodeTy* d, GEdgeFlag k) : src(s), dst(d), edgeFlag(k) {}
 
     /// Destructor
-    virtual ~GenericEdge()
-    {
-    }
+    virtual ~GenericEdge() {}
 
     ///  get methods of the components
     //@{
@@ -111,8 +107,7 @@ public:
     {
         bool operator()(const GenericEdge<NodeType>* lhs, const GenericEdge<NodeType>* rhs) const
         {
-            if (lhs->edgeFlag != rhs->edgeFlag)
-                return lhs->edgeFlag < rhs->edgeFlag;
+            if (lhs->edgeFlag != rhs->edgeFlag) return lhs->edgeFlag < rhs->edgeFlag;
             else if (lhs->getSrcID() != rhs->getSrcID())
                 return lhs->getSrcID() < rhs->getSrcID();
             else
@@ -122,23 +117,20 @@ public:
 
     virtual inline bool operator==(const GenericEdge<NodeType>* rhs) const
     {
-        return (rhs->edgeFlag == this->edgeFlag &&
-                rhs->getSrcID() == this->getSrcID() &&
+        return (rhs->edgeFlag == this->edgeFlag && rhs->getSrcID() == this->getSrcID() &&
                 rhs->getDstID() == this->getDstID());
     }
     //@}
 
 protected:
-    static constexpr unsigned char EdgeKindMaskBits = 8;  ///< We use the lower 8 bits to denote edge kind
+    static constexpr unsigned char EdgeKindMaskBits = 8; ///< We use the lower 8 bits to denote edge kind
     static constexpr u64_t EdgeKindMask = (~0ULL) >> (64 - EdgeKindMaskBits);
 };
-
 
 /*!
  * Generic node on the graph as base class
  */
-template<class NodeTy,class EdgeTy>
-class GenericNode
+template <class NodeTy, class EdgeTy> class GenericNode
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -156,24 +148,20 @@ public:
     ///@}
 
 private:
-    NodeID id;		///< Node ID
-    GNodeK nodeKind;	///< Node kind
+    NodeID id;       ///< Node ID
+    GNodeK nodeKind; ///< Node kind
 
-    GEdgeSetTy InEdges; ///< all incoming edge of this node
+    GEdgeSetTy InEdges;  ///< all incoming edge of this node
     GEdgeSetTy OutEdges; ///< all outgoing edge of this node
 
 public:
     /// Constructor
-    GenericNode(NodeID i, GNodeK k): id(i),nodeKind(k)
-    {
-
-    }
+    GenericNode(NodeID i, GNodeK k) : id(i), nodeKind(k) {}
 
     /// Destructor
     virtual ~GenericNode()
     {
-        for (auto * edge : OutEdges)
-            delete edge;
+        for (auto* edge : OutEdges) delete edge;
     }
 
     /// Get ID
@@ -320,16 +308,14 @@ public:
     inline EdgeType* hasIncomingEdge(EdgeType* edge) const
     {
         const_iterator it = InEdges.find(edge);
-        if (it != InEdges.end())
-            return *it;
+        if (it != InEdges.end()) return *it;
         else
             return nullptr;
     }
     inline EdgeType* hasOutgoingEdge(EdgeType* edge) const
     {
         const_iterator it = OutEdges.find(edge);
-        if (it != OutEdges.end())
-            return *it;
+        if (it != OutEdges.end()) return *it;
         else
             return nullptr;
     }
@@ -340,8 +326,7 @@ public:
  * Generic graph for program representation
  * It is base class and needs to be instantiated
  */
-template<class NodeTy, class EdgeTy>
-class GenericGraph
+template <class NodeTy, class EdgeTy> class GenericGraph
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -372,8 +357,7 @@ public:
     /// Release memory
     void destroy()
     {
-        for (auto &entry : IDToNodeMap)
-            delete entry.second;
+        for (auto& entry : IDToNodeMap) delete entry.second;
     }
     /// Iterators
     //@{
@@ -420,9 +404,8 @@ public:
     /// Delete a node
     inline void removeGNode(NodeType* node)
     {
-        assert(node->hasIncomingEdge() == false
-               && node->hasOutgoingEdge() == false
-               && "node which have edges can't be deleted");
+        assert(node->hasIncomingEdge() == false && node->hasOutgoingEdge() == false &&
+               "node which have edges can't be deleted");
         iterator it = IDToNodeMap.find(node->getId());
         assert(it != IDToNodeMap.end() && "can not find the node");
         IDToNodeMap.erase(it);
@@ -452,8 +435,8 @@ protected:
     IDToNodeMapTy IDToNodeMap; ///< node map
 
 public:
-    u32_t edgeNum;		///< total num of node
-    u32_t nodeNum;		///< total num of edge
+    u32_t edgeNum; ///< total num of node
+    u32_t nodeNum; ///< total num of edge
 };
 
 } // End namespace SVF
@@ -469,17 +452,13 @@ namespace SVF
 // be applied whenever operator* is invoked on the iterator.
 
 template <typename ItTy, typename FuncTy,
-          typename FuncReturnTy =
-          decltype(std::declval<FuncTy>()(*std::declval<ItTy>()))>
+          typename FuncReturnTy = decltype(std::declval<FuncTy>()(*std::declval<ItTy>()))>
 class mapped_iter
-    : public iter_adaptor_base<
-      mapped_iter<ItTy, FuncTy>, ItTy,
-      typename std::iterator_traits<ItTy>::iterator_category,
-      typename std::remove_reference<FuncReturnTy>::type>
+    : public iter_adaptor_base<mapped_iter<ItTy, FuncTy>, ItTy, typename std::iterator_traits<ItTy>::iterator_category,
+                               typename std::remove_reference<FuncReturnTy>::type>
 {
 public:
-    mapped_iter(ItTy U, FuncTy F)
-        : mapped_iter::iter_adaptor_base(std::move(U)), F(std::move(F)) {}
+    mapped_iter(ItTy U, FuncTy F) : mapped_iter::iter_adaptor_base(std::move(U)), F(std::move(F)) {}
 
     ItTy getCurrent()
     {
@@ -497,8 +476,7 @@ private:
 
 // map_iter - Provide a convenient way to create mapped_iters, just like
 // make_pair is useful for creating pairs...
-template <class ItTy, class FuncTy>
-inline mapped_iter<ItTy, FuncTy> map_iter(ItTy I, FuncTy F)
+template <class ItTy, class FuncTy> inline mapped_iter<ItTy, FuncTy> map_iter(ItTy I, FuncTy F)
 {
     return mapped_iter<ItTy, FuncTy>(std::move(I), std::move(F));
 }
@@ -506,7 +484,7 @@ inline mapped_iter<ItTy, FuncTy> map_iter(ItTy I, FuncTy F)
 /*!
  * GenericGraphTraits for nodes
  */
-template<class NodeTy,class EdgeTy> struct GenericGraphTraits<SVF::GenericNode<NodeTy,EdgeTy>*  >
+template <class NodeTy, class EdgeTy> struct GenericGraphTraits<SVF::GenericNode<NodeTy, EdgeTy>*>
 {
     typedef NodeTy NodeType;
     typedef EdgeTy EdgeType;
@@ -517,7 +495,7 @@ template<class NodeTy,class EdgeTy> struct GenericGraphTraits<SVF::GenericNode<N
     }
 
     // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
-    typedef mapped_iter<typename SVF::GenericNode<NodeTy,EdgeTy>::iterator, decltype(&edge_dest)> ChildIteratorType;
+    typedef mapped_iter<typename SVF::GenericNode<NodeTy, EdgeTy>::iterator, decltype(&edge_dest)> ChildIteratorType;
 
     static NodeType* getEntryNode(NodeType* pagN)
     {
@@ -532,11 +510,11 @@ template<class NodeTy,class EdgeTy> struct GenericGraphTraits<SVF::GenericNode<N
     {
         return map_iter(N->OutEdgeEnd(), &edge_dest);
     }
-    static inline ChildIteratorType direct_child_begin(const NodeType *N)
+    static inline ChildIteratorType direct_child_begin(const NodeType* N)
     {
         return map_iter(N->directOutEdgeBegin(), &edge_dest);
     }
-    static inline ChildIteratorType direct_child_end(const NodeType *N)
+    static inline ChildIteratorType direct_child_end(const NodeType* N)
     {
         return map_iter(N->directOutEdgeEnd(), &edge_dest);
     }
@@ -545,8 +523,7 @@ template<class NodeTy,class EdgeTy> struct GenericGraphTraits<SVF::GenericNode<N
 /*!
  * Inverse GenericGraphTraits for node which is used for inverse traversal.
  */
-template<class NodeTy,class EdgeTy>
-struct GenericGraphTraits<Inverse<SVF::GenericNode<NodeTy,EdgeTy>* > >
+template <class NodeTy, class EdgeTy> struct GenericGraphTraits<Inverse<SVF::GenericNode<NodeTy, EdgeTy>*>>
 {
     typedef NodeTy NodeType;
     typedef EdgeTy EdgeType;
@@ -557,9 +534,9 @@ struct GenericGraphTraits<Inverse<SVF::GenericNode<NodeTy,EdgeTy>* > >
     }
 
     // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
-    typedef mapped_iter<typename SVF::GenericNode<NodeTy,EdgeTy>::iterator, decltype(&edge_dest)> ChildIteratorType;
+    typedef mapped_iter<typename SVF::GenericNode<NodeTy, EdgeTy>::iterator, decltype(&edge_dest)> ChildIteratorType;
 
-    static inline NodeType* getEntryNode(Inverse<NodeType* > G)
+    static inline NodeType* getEntryNode(Inverse<NodeType*> G)
     {
         return G.Graph;
     }
@@ -582,9 +559,11 @@ struct GenericGraphTraits<Inverse<SVF::GenericNode<NodeTy,EdgeTy>* > >
 /*!
  * GraphTraints
  */
-template<class NodeTy,class EdgeTy> struct GenericGraphTraits<SVF::GenericGraph<NodeTy,EdgeTy>* > : public GenericGraphTraits<SVF::GenericNode<NodeTy,EdgeTy>*  >
+template <class NodeTy, class EdgeTy>
+struct GenericGraphTraits<SVF::GenericGraph<NodeTy, EdgeTy>*>
+    : public GenericGraphTraits<SVF::GenericNode<NodeTy, EdgeTy>*>
 {
-    typedef SVF::GenericGraph<NodeTy,EdgeTy> GenericGraphTy;
+    typedef SVF::GenericGraph<NodeTy, EdgeTy> GenericGraphTy;
     typedef NodeTy NodeType;
     typedef EdgeTy EdgeType;
 
@@ -602,11 +581,11 @@ template<class NodeTy,class EdgeTy> struct GenericGraphTraits<SVF::GenericGraph<
     // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
     typedef mapped_iter<typename GenericGraphTy::iterator, decltype(&deref_val)> nodes_iterator;
 
-    static nodes_iterator nodes_begin(GenericGraphTy *G)
+    static nodes_iterator nodes_begin(GenericGraphTy* G)
     {
         return map_iter(G->begin(), &deref_val);
     }
-    static nodes_iterator nodes_end(GenericGraphTy *G)
+    static nodes_iterator nodes_end(GenericGraphTy* G)
     {
         return map_iter(G->end(), &deref_val);
     }
@@ -620,12 +599,12 @@ template<class NodeTy,class EdgeTy> struct GenericGraphTraits<SVF::GenericGraph<
     {
         return N->getId();
     }
-    static NodeType* getNode(GenericGraphTy *G, SVF::NodeID id)
+    static NodeType* getNode(GenericGraphTy* G, SVF::NodeID id)
     {
         return G->getGNode(id);
     }
 };
 
-} // End namespace llvm
+} // namespace SVF
 
 #endif /* GENERICGRAPH_H_ */

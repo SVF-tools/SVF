@@ -32,10 +32,8 @@
  *
  */
 
-
 #ifndef SVFGOPT_H_
 #define SVFGOPT_H_
-
 
 #include "Graphs/SVFG.h"
 #include "Util/WorkList.h"
@@ -86,7 +84,8 @@ protected:
 
     /// Connect SVFG nodes between caller and callee for indirect call sites
     //@{
-    inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallICFGNode*, CallSiteID csId, SVFGEdgeSetTy& edges) override
+    inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallICFGNode*,
+                                       CallSiteID csId, SVFGEdgeSetTy& edges) override
     {
         NodeID phiId = getDef(fun_arg);
         SVFGEdge* edge = addCallEdge(getDef(cs_arg), phiId, csId);
@@ -98,15 +97,16 @@ protected:
         }
     }
     /// Connect formal-ret and actual ret
-    inline void connectFRetAndARet(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges) override
+    inline void connectFRetAndARet(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId,
+                                   SVFGEdgeSetTy& edges) override
     {
         NodeID phiId = getDef(cs_ret);
         NodeID retdef = getDef(fun_ret);
-        /// If a function does not have any return instruction. The def of a FormalRetVFGNode is itself (see VFG.h: addFormalRetVFGNode).
-        /// Therefore, we do not connect return edge from a function without any return instruction (i.e., pag->isPhiNode(fun_ret)==false)
-        /// because unique fun_ret PAGNode was not collected as a PhiNode in SVFIRBuilder::visitReturnInst
-        if (pag->isPhiNode(fun_ret)==false)
-            return;
+        /// If a function does not have any return instruction. The def of a FormalRetVFGNode is itself (see VFG.h:
+        /// addFormalRetVFGNode). Therefore, we do not connect return edge from a function without any return
+        /// instruction (i.e., pag->isPhiNode(fun_ret)==false) because unique fun_ret PAGNode was not collected as a
+        /// PhiNode in SVFIRBuilder::visitReturnInst
+        if (pag->isPhiNode(fun_ret) == false) return;
 
         SVFGEdge* edge = addRetEdge(retdef, phiId, csId);
         if (edge != nullptr)
@@ -117,29 +117,29 @@ protected:
         }
     }
     /// Connect actual-in and formal-in
-    inline void connectAInAndFIn(const ActualINSVFGNode* actualIn, const FormalINSVFGNode* formalIn, CallSiteID csId, SVFGEdgeSetTy& edges) override
+    inline void connectAInAndFIn(const ActualINSVFGNode* actualIn, const FormalINSVFGNode* formalIn, CallSiteID csId,
+                                 SVFGEdgeSetTy& edges) override
     {
         NodeBS intersection = actualIn->getPointsTo();
         intersection &= formalIn->getPointsTo();
         if (intersection.empty() == false)
         {
             NodeID aiDef = getActualINDef(actualIn->getId());
-            SVFGEdge* edge = addCallIndirectSVFGEdge(aiDef,formalIn->getId(),csId,intersection);
-            if (edge != nullptr)
-                edges.insert(edge);
+            SVFGEdge* edge = addCallIndirectSVFGEdge(aiDef, formalIn->getId(), csId, intersection);
+            if (edge != nullptr) edges.insert(edge);
         }
     }
     /// Connect formal-out and actual-out
-    inline void connectFOutAndAOut(const FormalOUTSVFGNode* formalOut, const ActualOUTSVFGNode* actualOut, CallSiteID csId, SVFGEdgeSetTy& edges) override
+    inline void connectFOutAndAOut(const FormalOUTSVFGNode* formalOut, const ActualOUTSVFGNode* actualOut,
+                                   CallSiteID csId, SVFGEdgeSetTy& edges) override
     {
         NodeBS intersection = formalOut->getPointsTo();
         intersection &= actualOut->getPointsTo();
         if (intersection.empty() == false)
         {
             NodeID foDef = getFormalOUTDef(formalOut->getId());
-            SVFGEdge* edge = addRetIndirectSVFGEdge(foDef,actualOut->getId(),csId,intersection);
-            if (edge != nullptr)
-                edges.insert(edge);
+            SVFGEdge* edge = addRetIndirectSVFGEdge(foDef, actualOut->getId(), csId, intersection);
+            if (edge != nullptr) edges.insert(edge);
         }
     }
     //@}
@@ -201,8 +201,7 @@ private:
     /// Initial work list with MSSAPHI nodes which may be removed.
     inline void initialWorkList()
     {
-        for (SVFG::const_iterator it = begin(), eit = end(); it != eit; ++it)
-            addIntoWorklist(it->second);
+        for (SVFG::const_iterator it = begin(), eit = end(); it != eit; ++it) addIntoWorklist(it->second);
     }
 
     /// Only MSSAPHI node which satisfy following conditions will be removed:
@@ -212,8 +211,7 @@ private:
     {
         if (const MSSAPHISVFGNode* phi = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node))
         {
-            if (isConnectingTwoCallSites(phi) == false && isDefOfAInFOut(phi) == false)
-                return worklist.push(phi);
+            if (isConnectingTwoCallSites(phi) == false && isDefOfAInFOut(phi) == false) return worklist.push(phi);
         }
         return false;
     }
@@ -243,17 +241,17 @@ private:
     /// Add inter PHI SVFG node for formal parameter
     inline InterPHISVFGNode* addInterPHIForFP(const FormalParmSVFGNode* fp)
     {
-        InterPHISVFGNode* sNode = new InterPHISVFGNode(totalVFGNode++,fp);
+        InterPHISVFGNode* sNode = new InterPHISVFGNode(totalVFGNode++, fp);
         addSVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(fp->getFun()));
-        resetDef(fp->getParam(),sNode);
+        resetDef(fp->getParam(), sNode);
         return sNode;
     }
     /// Add inter PHI SVFG node for actual return
     inline InterPHISVFGNode* addInterPHIForAR(const ActualRetSVFGNode* ar)
     {
-        InterPHISVFGNode* sNode = new InterPHISVFGNode(totalVFGNode++,ar);
+        InterPHISVFGNode* sNode = new InterPHISVFGNode(totalVFGNode++, ar);
         addSVFGNode(sNode, pag->getICFG()->getRetICFGNode(ar->getCallSite()->getCallSite()));
-        resetDef(ar->getRev(),sNode);
+        resetDef(ar->getRev(), sNode);
         return sNode;
     }
 
@@ -276,7 +274,7 @@ private:
     inline void setFormalOUTDef(NodeID fo, NodeID def)
     {
         bool inserted = formalOutToDefMap.emplace(fo, def).second;
-        (void) inserted;
+        (void)inserted;
         assert(inserted && "can not set formal-out's def twice");
         defNodes.set(def);
     }
@@ -323,7 +321,7 @@ private:
     /// 4. ActualOUT if it doesn't reside at indirect call site and it's not definition site
     ///    of FormalOUT
     /// 5. FormalOUT if it doesn't reside at the exit of address-taken function
-    bool canBeRemoved(const SVFGNode * node);
+    bool canBeRemoved(const SVFGNode* node);
 
     /// Remove edges of a SVFG node
     //@{
@@ -335,22 +333,19 @@ private:
     inline void removeInEdges(const SVFGNode* node)
     {
         /// remove incoming edges
-        while (node->hasIncomingEdge())
-            removeSVFGEdge(*(node->InEdgeBegin()));
+        while (node->hasIncomingEdge()) removeSVFGEdge(*(node->InEdgeBegin()));
     }
     inline void removeOutEdges(const SVFGNode* node)
     {
-        while (node->hasOutgoingEdge())
-            removeSVFGEdge(*(node->OutEdgeBegin()));
+        while (node->hasOutgoingEdge()) removeSVFGEdge(*(node->OutEdgeBegin()));
     }
     //@}
 
+    NodeIDToNodeIDMap actualInToDefMap;  ///< map actual-in to its def-site node
+    NodeIDToNodeIDMap formalOutToDefMap; ///< map formal-out to its def-site node
+    NodeBS defNodes;                     ///< preserved def nodes of formal-in/actual-out
 
-    NodeIDToNodeIDMap actualInToDefMap;	///< map actual-in to its def-site node
-    NodeIDToNodeIDMap formalOutToDefMap;	///< map formal-out to its def-site node
-    NodeBS defNodes;	///< preserved def nodes of formal-in/actual-out
-
-    WorkList worklist;	///< storing MSSAPHI nodes which may be removed.
+    WorkList worklist; ///< storing MSSAPHI nodes which may be removed.
 
     bool keepActualOutFormalIn;
     bool keepAllSelfCycle;

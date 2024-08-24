@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 /*
  * SymbolTableInfo.cpp
  *
@@ -40,12 +39,10 @@ using namespace SVFUtil;
 
 SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
 
-
 ObjTypeInfo::ObjTypeInfo(const SVFType* t, u32_t max) : type(t), flags(0), maxOffsetLimit(max), elemNum(max)
 {
     assert(t && "no type information for this object?");
 }
-
 
 void ObjTypeInfo::resetTypeForHeapStaticObj(const SVFType* t)
 {
@@ -67,7 +64,7 @@ const StInfo* SymbolTableInfo::getTypeInfo(const SVFType* T) const
 ObjTypeInfo* SymbolTableInfo::createObjTypeInfo(const SVFType* type)
 {
     ObjTypeInfo* typeInfo = new ObjTypeInfo(type, Options::MaxFieldLimit());
-    if(type && type->isPointerTy())
+    if (type && type->isPointerTy())
     {
         typeInfo->setFlag(ObjTypeInfo::HEAP_OBJ);
     }
@@ -98,7 +95,7 @@ APOffset SymbolTableInfo::getModulusOffset(const MemObj* obj, const APOffset& ap
     /// struct to represent this obj.
 
     APOffset offset = apOffset;
-    if(offset < 0)
+    if (offset < 0)
     {
         writeWrnMsg("try to create a gep node with negative offset.");
         offset = abs(offset);
@@ -110,8 +107,7 @@ APOffset SymbolTableInfo::getModulusOffset(const MemObj* obj, const APOffset& ap
      * @Options::MaxFieldLimit(): preset upper bound of field number;
      * @maxOffset: the max field number of the base object;
      */
-    if (maxOffset == 0)
-        offset = 0;
+    if (maxOffset == 0) offset = 0;
     else if (Options::MaxFieldLimit() < maxOffset)
         /*!
          * E.g., offset == 260, maxOffset == 270, Options::MaxFieldLimit() == 256 ==> offset = 4
@@ -134,26 +130,21 @@ APOffset SymbolTableInfo::getModulusOffset(const MemObj* obj, const APOffset& ap
     return offset;
 }
 
-
-
 /*!
  * Destroy the memory for this symbol table after use
  */
 void SymbolTableInfo::destroy()
 {
 
-    for (auto &pair: objMap)
+    for (auto& pair : objMap)
     {
-        if (MemObj* memObj = pair.second)
-            delete memObj;
+        if (MemObj* memObj = pair.second) delete memObj;
     }
 
-    for (const SVFType* type : svfTypes)
-        delete type;
+    for (const SVFType* type : svfTypes) delete type;
     svfTypes.clear();
 
-    for (const StInfo* st : stInfos)
-        delete st;
+    for (const StInfo* st : stInfos) delete st;
     stInfos.clear();
 
     mod = nullptr;
@@ -161,7 +152,7 @@ void SymbolTableInfo::destroy()
 
 const MemObj* SymbolTableInfo::createDummyObj(SymID symId, const SVFType* type)
 {
-    assert(objMap.find(symId)==objMap.end() && "this dummy obj has been created before");
+    assert(objMap.find(symId) == objMap.end() && "this dummy obj has been created before");
     MemObj* memObj = new MemObj(symId, createObjTypeInfo(type));
     objMap[symId] = memObj;
     return memObj;
@@ -170,8 +161,7 @@ const MemObj* SymbolTableInfo::createDummyObj(SymID symId, const SVFType* type)
 /// Number of flattened elements of an array or struct
 u32_t SymbolTableInfo::getNumOfFlattenElements(const SVFType* T)
 {
-    if(Options::ModelArrays())
-        return getTypeInfo(T)->getNumOfFlattenElements();
+    if (Options::ModelArrays()) return getTypeInfo(T)->getNumOfFlattenElements();
     else
         return getTypeInfo(T)->getNumOfFlattenFields();
 }
@@ -179,24 +169,27 @@ u32_t SymbolTableInfo::getNumOfFlattenElements(const SVFType* T)
 /// Flattened offset information of a struct or an array including its array fields
 u32_t SymbolTableInfo::getFlattenedElemIdx(const SVFType* T, u32_t origId)
 {
-    if(Options::ModelArrays())
+    if (Options::ModelArrays())
     {
         const std::vector<u32_t>& so = getTypeInfo(T)->getFlattenedElemIdxVec();
-        assert ((unsigned)origId < so.size() && !so.empty() && "element index out of bounds, can't get flattened index!");
+        assert((unsigned)origId < so.size() && !so.empty() &&
+               "element index out of bounds, can't get flattened index!");
         return so[origId];
     }
     else
     {
-        if(SVFUtil::isa<SVFStructType>(T))
+        if (SVFUtil::isa<SVFStructType>(T))
         {
             const std::vector<u32_t>& so = getTypeInfo(T)->getFlattenedFieldIdxVec();
-            assert ((unsigned)origId < so.size() && !so.empty() && "Struct index out of bounds, can't get flattened index!");
+            assert((unsigned)origId < so.size() && !so.empty() &&
+                   "Struct index out of bounds, can't get flattened index!");
             return so[origId];
         }
         else
         {
             /// When Options::ModelArrays is disabled, any element index Array is modeled as the base
-            assert(SVFUtil::isa<SVFArrayType>(T) && "Only accept struct or array type if Options::ModelArrays is disabled!");
+            assert(SVFUtil::isa<SVFArrayType>(T) &&
+                   "Only accept struct or array type if Options::ModelArrays is disabled!");
             return 0;
         }
     }
@@ -210,22 +203,23 @@ const SVFType* SymbolTableInfo::getOriginalElemType(const SVFType* baseType, u32
 /// Return the type of a flattened element given a flattened index
 const SVFType* SymbolTableInfo::getFlatternedElemType(const SVFType* baseType, u32_t flatten_idx)
 {
-    if(Options::ModelArrays())
+    if (Options::ModelArrays())
     {
         const std::vector<const SVFType*>& so = getTypeInfo(baseType)->getFlattenElementTypes();
-        assert (flatten_idx < so.size() && !so.empty() && "element index out of bounds or struct opaque type, can't get element type!");
+        assert(flatten_idx < so.size() && !so.empty() &&
+               "element index out of bounds or struct opaque type, can't get element type!");
         return so[flatten_idx];
     }
     else
     {
         const std::vector<const SVFType*>& so = getTypeInfo(baseType)->getFlattenFieldTypes();
-        assert (flatten_idx < so.size() && !so.empty() && "element index out of bounds or struct opaque type, can't get element type!");
+        assert(flatten_idx < so.size() && !so.empty() &&
+               "element index out of bounds or struct opaque type, can't get element type!");
         return so[flatten_idx];
     }
 }
 
-
-const std::vector<const SVFType*>& SymbolTableInfo::getFlattenFieldTypes(const SVFStructType *T)
+const std::vector<const SVFType*>& SymbolTableInfo::getFlattenFieldTypes(const SVFStructType* T)
 {
     return getTypeInfo(T)->getFlattenFieldTypes();
 }
@@ -243,30 +237,28 @@ void SymbolTableInfo::printFlattenFields(const SVFType* type)
                << "\t [element size = " << getNumOfFlattenElements(at) << "]\n"
                << "\n";
     }
-    else if (const SVFStructType *st = SVFUtil::dyn_cast<SVFStructType>(type))
+    else if (const SVFStructType* st = SVFUtil::dyn_cast<SVFStructType>(type))
     {
-        outs() <<"  {Type: " << *st << "}\n";
+        outs() << "  {Type: " << *st << "}\n";
         const std::vector<const SVFType*>& finfo = getTypeInfo(st)->getFlattenFieldTypes();
         int field_idx = 0;
-        for(const SVFType* type : finfo)
+        for (const SVFType* type : finfo)
         {
-            outs() << " \tField_idx = " << ++field_idx
-                   << ", field type: " << *type << "\n";
+            outs() << " \tField_idx = " << ++field_idx << ", field type: " << *type << "\n";
         }
         outs() << "\n";
     }
-    else if (const SVFPointerType* pt= SVFUtil::dyn_cast<SVFPointerType>(type))
+    else if (const SVFPointerType* pt = SVFUtil::dyn_cast<SVFPointerType>(type))
     {
         outs() << *pt << "\n";
     }
-    else if (const SVFFunctionType* fu =
-                 SVFUtil::dyn_cast<SVFFunctionType>(type))
+    else if (const SVFFunctionType* fu = SVFUtil::dyn_cast<SVFFunctionType>(type))
     {
         outs() << "  {Type: " << *fu << "}\n\n";
     }
     else if (const SVFOtherType* ot = SVFUtil::dyn_cast<SVFOtherType>(type))
     {
-        outs() << "  {Type: "<< *ot << "(SVFOtherType)}\n\n";
+        outs() << "  {Type: " << *ot << "(SVFOtherType)}\n\n";
     }
     else
     {
@@ -283,40 +275,31 @@ std::string SymbolTableInfo::toString(SYMTYPE symtype)
 {
     switch (symtype)
     {
-    case SYMTYPE::BlackHole:
-    {
+    case SYMTYPE::BlackHole: {
         return "BlackHole";
     }
-    case SYMTYPE::ConstantObj:
-    {
+    case SYMTYPE::ConstantObj: {
         return "ConstantObj";
     }
-    case SYMTYPE::BlkPtr:
-    {
+    case SYMTYPE::BlkPtr: {
         return "BlkPtr";
     }
-    case SYMTYPE::NullPtr:
-    {
+    case SYMTYPE::NullPtr: {
         return "NullPtr";
     }
-    case SYMTYPE::ValSymbol:
-    {
+    case SYMTYPE::ValSymbol: {
         return "ValSym";
     }
-    case SYMTYPE::ObjSymbol:
-    {
+    case SYMTYPE::ObjSymbol: {
         return "ObjSym";
     }
-    case SYMTYPE::RetSymbol:
-    {
+    case SYMTYPE::RetSymbol: {
         return "RetSym";
     }
-    case SYMTYPE::VarargSymbol:
-    {
+    case SYMTYPE::VarargSymbol: {
         return "VarargSym";
     }
-    default:
-    {
+    default: {
         return "Invalid SYMTYPE";
     }
     }
@@ -325,32 +308,28 @@ std::string SymbolTableInfo::toString(SYMTYPE symtype)
 void SymbolTableInfo::dump()
 {
     OrderedMap<SymID, SVFValue*> idmap;
-    for (ValueToIDMapTy::iterator iter = valSymMap.begin(); iter != valSymMap.end();
-            ++iter)
+    for (ValueToIDMapTy::iterator iter = valSymMap.begin(); iter != valSymMap.end(); ++iter)
     {
         const SymID i = iter->second;
-        SVFValue* val = (SVFValue*) iter->first;
+        SVFValue* val = (SVFValue*)iter->first;
         idmap[i] = val;
     }
-    for (ValueToIDMapTy::iterator iter = objSymMap.begin(); iter != objSymMap.end();
-            ++iter)
+    for (ValueToIDMapTy::iterator iter = objSymMap.begin(); iter != objSymMap.end(); ++iter)
     {
         const SymID i = iter->second;
-        SVFValue* val = (SVFValue*) iter->first;
+        SVFValue* val = (SVFValue*)iter->first;
         idmap[i] = val;
     }
-    for (FunToIDMapTy::iterator iter = returnSymMap.begin(); iter != returnSymMap.end();
-            ++iter)
+    for (FunToIDMapTy::iterator iter = returnSymMap.begin(); iter != returnSymMap.end(); ++iter)
     {
         const SymID i = iter->second;
-        SVFValue* val = (SVFValue*) iter->first;
+        SVFValue* val = (SVFValue*)iter->first;
         idmap[i] = val;
     }
-    for (FunToIDMapTy::iterator iter = varargSymMap.begin(); iter != varargSymMap.end();
-            ++iter)
+    for (FunToIDMapTy::iterator iter = varargSymMap.begin(); iter != varargSymMap.end(); ++iter)
     {
         const SymID i = iter->second;
-        SVFValue* val = (SVFValue*) iter->first;
+        SVFValue* val = (SVFValue*)iter->first;
         idmap[i] = val;
     }
     outs() << "{SymbolTableInfo \n";
@@ -369,14 +348,10 @@ void MemObj::setFieldSensitive()
     typeInfo->setMaxFieldOffsetLimit(typeInfo->getNumOfElements());
 }
 
-
 /*!
  * Constructor of a memory object
  */
-MemObj::MemObj(SymID id, ObjTypeInfo* ti, const SVFValue* val) :
-    typeInfo(ti), refVal(val), symId(id)
-{
-}
+MemObj::MemObj(SymID id, ObjTypeInfo* ti, const SVFValue* val) : typeInfo(ti), refVal(val), symId(id) {}
 
 /*!
  * Whether it is a black hole object
@@ -403,7 +378,6 @@ bool MemObj::isConstantByteSize() const
 {
     return typeInfo->isConstantByteSize();
 }
-
 
 /// Set the number of elements of this object
 void MemObj::setNumOfElements(u32_t num)
@@ -508,7 +482,6 @@ bool MemObj::isConstDataOrAggData() const
     return typeInfo->isConstDataOrAggData();
 }
 
-
 const std::string MemObj::toString() const
 {
     std::string str;
@@ -522,22 +495,20 @@ const std::string MemObj::toString() const
 SymID SymbolTableInfo::getValSym(const SVFValue* val)
 {
 
-    if(val->isNullPtr())
-        return nullPtrSymID();
+    if (val->isNullPtr()) return nullPtrSymID();
     else if (val->isblackHole())
         return blkPtrSymID();
     else
     {
-        ValueToIDMapTy::const_iterator iter =  valSymMap.find(val);
-        assert(iter!=valSymMap.end() &&"value sym not found");
+        ValueToIDMapTy::const_iterator iter = valSymMap.find(val);
+        assert(iter != valSymMap.end() && "value sym not found");
         return iter->second;
     }
 }
 
 bool SymbolTableInfo::hasValSym(const SVFValue* val)
 {
-    if (val->isNullPtr() || val->isblackHole())
-        return true;
+    if (val->isNullPtr() || val->isblackHole()) return true;
     else
         return (valSymMap.find(val) != valSymMap.end());
 }

@@ -42,18 +42,13 @@ namespace SVF
  * A context/path condition
  * A variable NodeID
  */
-template<class Cond>
-class CondVar
+template <class Cond> class CondVar
 {
 public:
     /// Constructor
-    CondVar(const Cond& cond, NodeID id) : m_cond(cond),m_id(id)
-    {
-    }
+    CondVar(const Cond& cond, NodeID id) : m_cond(cond), m_id(id) {}
     /// Copy constructor
-    CondVar(const CondVar& conVar) : m_cond(conVar.m_cond), m_id(conVar.m_id)
-    {
-    }
+    CondVar(const CondVar& conVar) : m_cond(conVar.m_cond), m_id(conVar.m_id) {}
     /// Default constructor
     CondVar() : m_cond(), m_id(0) {}
 
@@ -63,21 +58,20 @@ public:
      * Comparison between two elements.
      */
     ///@{
-    inline bool operator == (const CondVar & rhs) const
+    inline bool operator==(const CondVar& rhs) const
     {
         return (m_id == rhs.get_id() && m_cond == rhs.get_cond());
     }
 
-    inline bool operator != (const CondVar & rhs) const
+    inline bool operator!=(const CondVar& rhs) const
     {
         return !(*this == rhs);
     }
     ///@}
 
-
-    inline CondVar& operator= (const CondVar& rhs)
+    inline CondVar& operator=(const CondVar& rhs)
     {
-        if(*this!=rhs)
+        if (*this != rhs)
         {
             m_cond = rhs.get_cond();
             m_id = rhs.get_id();
@@ -85,14 +79,12 @@ public:
         return *this;
     }
 
-
     /**
      * Less than implementation.
      */
-    inline bool operator < (const CondVar & rhs) const
+    inline bool operator<(const CondVar& rhs) const
     {
-        if(m_id != rhs.get_id())
-            return m_id < rhs.get_id();
+        if (m_id != rhs.get_id()) return m_id < rhs.get_id();
         else
             return m_cond < rhs.get_cond();
     }
@@ -114,21 +106,21 @@ public:
         return rawstr.str();
     }
 
-    friend OutStream& operator<< (OutStream &o, const CondVar<Cond> &cvar)
+    friend OutStream& operator<<(OutStream& o, const CondVar<Cond>& cvar)
     {
         o << cvar.toString();
         return o;
     }
+
 private:
-    Cond	m_cond;
-    NodeID	m_id;
+    Cond m_cond;
+    NodeID m_id;
 };
 
 /*!
  * Conditional variable set
  */
-template<class Element>
-class CondStdSet
+template <class Element> class CondStdSet
 {
     typedef OrderedSet<Element> ElementSet;
 
@@ -140,9 +132,7 @@ public:
     ~CondStdSet() {}
 
     /// Copy constructor
-    CondStdSet(const CondStdSet<Element>& cptsSet) : elements(cptsSet.getElementSet())
-    {
-    }
+    CondStdSet(const CondStdSet<Element>& cptsSet) : elements(cptsSet.getElementSet()) {}
 
     /// Return true if the element is added
     inline bool test_and_set(const Element& var)
@@ -212,16 +202,14 @@ public:
     inline bool operator|=(const CondStdSet<Element>& rhs)
     {
         const ElementSet& rhsElementSet = rhs.getElementSet();
-        if(rhsElementSet.empty() || (*this==rhs))
-            return false;
+        if (rhsElementSet.empty() || (*this == rhs)) return false;
         u32_t oldSize = elements.size();
-        elements.insert(rhsElementSet.begin(),rhsElementSet.end());
-        return oldSize!=elements.size();
+        elements.insert(rhsElementSet.begin(), rhsElementSet.end());
+        return oldSize != elements.size();
     }
     inline bool operator&=(const CondStdSet<Element>& rhs)
     {
-        if(rhs.empty() || (*this == rhs))
-            return false;
+        if (rhs.empty() || (*this == rhs)) return false;
         bool changed = false;
         for (const_iterator i = rhs.begin(); i != rhs.end(); ++i)
         {
@@ -235,7 +223,7 @@ public:
     }
     inline bool operator!=(const CondStdSet<Element>& rhs) const
     {
-        return elements!=rhs.getElementSet();
+        return elements != rhs.getElementSet();
     }
     inline bool operator==(const CondStdSet<Element>& rhs) const
     {
@@ -243,7 +231,7 @@ public:
     }
     inline CondStdSet<Element>& operator=(const CondStdSet<Element>& rhs)
     {
-        if(*this!=rhs)
+        if (*this != rhs)
         {
             elements = rhs.getElementSet();
         }
@@ -260,13 +248,11 @@ public:
      */
     bool intersects(const CondStdSet<Element>& rhs) const
     {
-        if (empty() && rhs.empty())
-            return false;
+        if (empty() && rhs.empty()) return false;
 
         for (const_iterator i = rhs.begin(); i != rhs.end(); ++i)
         {
-            if (elements.find(*i) != elements.end())
-                return true;
+            if (elements.find(*i) != elements.end()) return true;
         }
         return false;
     }
@@ -290,18 +276,16 @@ public:
     }
 
     /// TODO: dummy to use for PointsTo in the various PTData.
-    void checkAndRemap(void) const { }
+    void checkAndRemap(void) const {}
 
 private:
     ElementSet elements;
 };
 
-
 /*!
  * Conditional Points-to set
  */
-template<class Cond>
-class CondPointsToSet
+template <class Cond> class CondPointsToSet
 {
 public:
     typedef Map<Cond, PointsTo> CondPts;
@@ -311,9 +295,7 @@ public:
 
     /// Constructor
     //@{
-    CondPointsToSet()
-    {
-    }
+    CondPointsToSet() {}
     CondPointsToSet(const Cond& cond, const PointsTo& pts)
     {
         _condPts[cond] |= pts;
@@ -329,25 +311,25 @@ public:
 
     /// Get Conditional PointsTo and standard points-to
     //@{
-    inline CondPts &pointsTo(void)
+    inline CondPts& pointsTo(void)
     {
         return _condPts;
     }
-    inline const CondPts &pointsTo(void) const
+    inline const CondPts& pointsTo(void) const
     {
         return _condPts;
     }
-    inline const PointsTo &pointsTo(Cond cond) const
+    inline const PointsTo& pointsTo(Cond cond) const
     {
         CondPtsConstIter it = _condPts.find(cond);
-        assert(it!=_condPts.end() && "do not have pts of such condition!");
+        assert(it != _condPts.end() && "do not have pts of such condition!");
         return it->second;
     }
     inline bool hasPointsTo(Cond cond) const
     {
         return (_condPts.find(cond) != _condPts.end());
     }
-    inline PointsTo &pointsTo(Cond cond)
+    inline PointsTo& pointsTo(Cond cond)
     {
         return _condPts[cond];
     }
@@ -378,11 +360,10 @@ public:
         _condPts.clear();
     }
 
-    ///Get number of points-to targets.
+    /// Get number of points-to targets.
     inline unsigned numElement() const
     {
-        if (_condPts.empty())
-            return 0;
+        if (_condPts.empty()) return 0;
         else
         {
             unsigned num = 0;
@@ -397,14 +378,12 @@ public:
     /// Return true if no element in the set
     inline bool empty() const
     {
-        return numElement()==0;
+        return numElement() == 0;
     }
-
 
     /// Overloading operators
     //@{
-    inline CondPointsToSet<Cond>& operator=(
-        const CondPointsToSet<Cond>& other)
+    inline CondPointsToSet<Cond>& operator=(const CondPointsToSet<Cond>& other)
     {
         _condPts = other.pointsTo();
         return *this;
@@ -414,16 +393,14 @@ public:
     inline bool operator==(const CondPointsToSet<Cond>& rhs) const
     {
         // Always remember give the typename when define a template variable
-        if (pointsTo().size() != rhs.pointsTo().size())
-            return false;
+        if (pointsTo().size() != rhs.pointsTo().size()) return false;
         CondPtsConstIter lit = cptsBegin(), elit = cptsEnd();
         CondPtsConstIter rit = rhs.cptsBegin(), erit = rhs.cptsEnd();
         for (; lit != elit && rit != erit; ++lit, ++rit)
         {
             const Cond& lc = lit->first;
             const Cond& rc = rit->first;
-            if (lc != rc || lit->second != rit->second)
-                return false;
+            if (lc != rc || lit->second != rit->second) return false;
         }
         return true;
     }
@@ -433,8 +410,7 @@ public:
     /// location under the same condition
     inline bool aliased(const CondPointsToSet<Cond>& rhs) const
     {
-        if (pointsTo().empty() || rhs.pointsTo().empty())
-            return false;
+        if (pointsTo().empty() || rhs.pointsTo().empty()) return false;
         else
         {
             CondPtsConstIter lit = cptsBegin(), elit = cptsEnd();
@@ -443,11 +419,10 @@ public:
                 const Cond& lc = lit->first;
                 const PointsTo& pts = lit->second;
                 CondPtsConstIter rit = rhs.pointsTo().find(lc);
-                if(rit !=rhs.pointsTo().end())
+                if (rit != rhs.pointsTo().end())
                 {
                     const PointsTo& rpts = rit->second;
-                    if (pts.intersects(rpts))
-                        return true;
+                    if (pts.intersects(rpts)) return true;
                 }
             }
             return false;
@@ -457,8 +432,7 @@ public:
     /// Check whether this CondPointsToSet is a subset of RHS
     inline bool isSubset(const CondPointsToSet<Cond>& rhs) const
     {
-        if (pointsTo().size() > rhs.pointsTo().size())
-            return false;
+        if (pointsTo().size() > rhs.pointsTo().size()) return false;
         else
         {
             CondPtsConstIter lit = cptsBegin(), elit = cptsEnd();
@@ -466,14 +440,12 @@ public:
             {
                 const Cond& lc = lit->first;
                 CondPtsConstIter rit = rhs.pointsTo().find(lc);
-                if (rit == rhs.pointsTo().end())
-                    return false;
+                if (rit == rhs.pointsTo().end()) return false;
                 else
                 {
                     const PointsTo& pts = lit->second;
                     const PointsTo& rpts = rit->second;
-                    if (!rpts.contains(pts))
-                        return false;
+                    if (!rpts.contains(pts)) return false;
                 }
             }
         }
@@ -484,8 +456,7 @@ public:
     bool intersects(const CondPointsToSet<Cond>* rhs) const
     {
         /// if either cpts is empty, just return.
-        if (pointsTo().empty() && rhs->pointsTo().empty())
-            return false;
+        if (pointsTo().empty() && rhs->pointsTo().empty()) return false;
 
         CondPtsConstIter it = rhs->cptsBegin(), eit = rhs->cptsEnd();
         for (; it != eit; ++it)
@@ -493,10 +464,9 @@ public:
             const Cond& cond = it->first;
             if (hasPointsTo(cond))
             {
-                const PointsTo& rhs_pts= it->second;
-                const PointsTo& pts= pointsTo(cond);
-                if (pts.intersects(rhs_pts))
-                    return true;
+                const PointsTo& rhs_pts = it->second;
+                const PointsTo& pts = pointsTo(cond);
+                if (pts.intersects(rhs_pts)) return true;
             }
         }
 
@@ -561,7 +531,7 @@ public:
     }
 
     /// Overloading operator &=
-    inline bool operator &= (const CondPointsToSet<Cond>& rhs)
+    inline bool operator&=(const CondPointsToSet<Cond>& rhs)
     {
         if (empty())
         {
@@ -581,8 +551,7 @@ public:
                 PointsTo& pts = it->second;
                 if (rhs.hasPointsTo(cond))
                 {
-                    if (pts &= rhs.pointsTo(cond))
-                        changed = true;
+                    if (pts &= rhs.pointsTo(cond)) changed = true;
                 }
                 else
                 {
@@ -604,10 +573,9 @@ public:
     }
     //@}
 
-
     /// Overloading operator |=
     /// Merge CondPointsToSet of RHS into this one.
-    inline bool operator |= (const CondPointsToSet<Cond>& rhs)
+    inline bool operator|=(const CondPointsToSet<Cond>& rhs)
     {
         bool changed = false;
         CondPtsConstIter rhsIt = rhs.cptsBegin();
@@ -617,8 +585,7 @@ public:
             const Cond& cond = rhsIt->first;
             const PointsTo& rhsPts = rhsIt->second;
             PointsTo& pts = pointsTo(cond);
-            if ((pts |= rhsPts))
-                changed = true;
+            if ((pts |= rhsPts)) changed = true;
         }
         return changed;
     }
@@ -631,10 +598,9 @@ public:
      *    their points-to elements.
      */
     // TODO: try to use an efficient method to compare two conditional points-to set.
-    inline bool operator< (const CondPointsToSet<Cond>& rhs) const
+    inline bool operator<(const CondPointsToSet<Cond>& rhs) const
     {
-        if (pointsTo().size() < rhs.pointsTo().size())
-            return true;
+        if (pointsTo().size() < rhs.pointsTo().size()) return true;
         else if (pointsTo().size() == rhs.pointsTo().size())
         {
             CondPtsConstIter lit = cptsBegin(), elit = cptsEnd();
@@ -643,14 +609,12 @@ public:
             {
                 const Cond& lc = lit->first;
                 const Cond& rc = rit->first;
-                if (lc < rc)
-                    return true;
+                if (lc < rc) return true;
                 else if (lc == rc)
                 {
                     const PointsTo& lpts = lit->second;
                     const PointsTo& rpts = rit->second;
-                    if (lpts.count() < rpts.count())
-                        return true;
+                    if (lpts.count() < rpts.count()) return true;
                     else if (lpts.count() == rpts.count())
                     {
                         PointsTo::iterator bit = lpts.begin();
@@ -659,8 +623,7 @@ public:
                         PointsTo::iterator reit = rpts.end();
                         for (; bit != eit && rbit != reit; bit++, rbit++)
                         {
-                            if (*bit < *rbit)
-                                return true;
+                            if (*bit < *rbit) return true;
                             else if (*bit > *rbit)
                                 return false;
                         }
@@ -708,7 +671,7 @@ public:
 
     // Print all points-to targets
     //@{
-    inline void dump(OutStream & O) const
+    inline void dump(OutStream& O) const
     {
         CondPtsConstIter it = cptsBegin();
         CondPtsConstIter eit = cptsEnd();
@@ -729,8 +692,7 @@ public:
         {
             const PointsTo& pts = it->second;
             str += "pts{";
-            for (PointsTo::iterator ii = pts.begin(), ie = pts.end();
-                    ii != ie; ii++)
+            for (PointsTo::iterator ii = pts.begin(), ie = pts.end(); ii != ie; ii++)
             {
                 char int2str[16];
                 snprintf(int2str, sizeof(int2str), "%d", *ii);
@@ -744,42 +706,41 @@ public:
     //@}
 
 private:
-
     /// Conditional Points-to Set Iterator
     class CondPtsSetIterator
     {
     public:
-        CondPtsSetIterator(CondPointsToSet<Cond> &n, bool ae = false)
-            : _curIter(n.cptsBegin()), _endIter(n.cptsEnd()),
-              _ptIter(_curIter->second.begin()), _ptEndIter(_curIter->second.end()), atEnd(ae) {}
+        CondPtsSetIterator(CondPointsToSet<Cond>& n, bool ae = false)
+            : _curIter(n.cptsBegin()), _endIter(n.cptsEnd()), _ptIter(_curIter->second.begin()),
+              _ptEndIter(_curIter->second.end()), atEnd(ae)
+        {
+        }
         ~CondPtsSetIterator() {}
-        bool operator != (int val)
+        bool operator!=(int val)
         {
             return _curIter != _endIter;
         }
         /// Operator overloading
         //@{
-        bool operator==(const CondPtsSetIterator &RHS) const
+        bool operator==(const CondPtsSetIterator& RHS) const
         {
             // If they are both at the end, ignore the rest of the fields.
-            if (atEnd && RHS.atEnd)
-                return true;
+            if (atEnd && RHS.atEnd) return true;
             // Otherwise they are the same if they have the same condVar
             return atEnd == RHS.atEnd && RHS._curIter == _curIter && RHS._ptIter == _ptIter;
         }
-        bool operator!=(const CondPtsSetIterator &RHS) const
+        bool operator!=(const CondPtsSetIterator& RHS) const
         {
             return !(*this == RHS);
         }
 
-        void operator ++(void)
+        void operator++(void)
         {
-            if(atEnd == true)
-                return;
+            if (atEnd == true) return;
 
-            if(_ptIter==_ptEndIter)
+            if (_ptIter == _ptEndIter)
             {
-                if(_curIter == _endIter)
+                if (_curIter == _endIter)
                 {
                     atEnd = true;
                     return;
@@ -791,7 +752,7 @@ private:
             else
                 _ptIter++;
         }
-        SingleCondVar operator *(void)
+        SingleCondVar operator*(void)
         {
             SingleCondVar temp_var(cond(), *_ptIter);
             return temp_var;
@@ -822,7 +783,7 @@ public:
 
     inline iterator end()
     {
-        return iterator(this,true);
+        return iterator(this, true);
     }
 
     inline iterator begin() const
@@ -832,7 +793,7 @@ public:
 
     inline iterator end() const
     {
-        return iterator(this,true);
+        return iterator(this, true);
     }
     //@}
 
@@ -843,30 +804,27 @@ private:
 } // End namespace SVF
 
 /// Specialise hash for CondVar
-template <typename Cond>
-struct std::hash<const SVF::CondVar<Cond>>
+template <typename Cond> struct std::hash<const SVF::CondVar<Cond>>
 {
-    size_t operator()(const SVF::CondVar<Cond> &cv) const
+    size_t operator()(const SVF::CondVar<Cond>& cv) const
     {
         std::hash<Cond> h;
         return h(cv.get_cond());
     }
 };
 
-template <typename Cond>
-struct std::hash<SVF::CondVar<Cond>>
+template <typename Cond> struct std::hash<SVF::CondVar<Cond>>
 {
-    size_t operator()(const SVF::CondVar<Cond> &cv) const
+    size_t operator()(const SVF::CondVar<Cond>& cv) const
     {
         std::hash<Cond> h;
         return h(cv.get_cond());
     }
 };
 
-template <typename Element>
-struct std::hash<SVF::CondStdSet<Element>>
+template <typename Element> struct std::hash<SVF::CondStdSet<Element>>
 {
-    size_t operator()(const SVF::CondStdSet<Element> &css) const
+    size_t operator()(const SVF::CondStdSet<Element>& css) const
     {
         // TODO: this is not a very good hash, but we probably won't be
         //       using it for now. Needed for other templates to compile...

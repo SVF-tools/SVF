@@ -32,7 +32,6 @@
 #include "Util/Options.h"
 #include "SVFIR/SVFFileSystem.h"
 
-
 using namespace std;
 using namespace SVF;
 
@@ -42,8 +41,7 @@ using namespace SVF;
 std::string replaceExtension(const std::string& path)
 {
     size_t pos = path.rfind('.');
-    if (pos == std::string::npos ||
-            (path.substr(pos) != ".bc" && path.substr(pos) != ".ll"))
+    if (pos == std::string::npos || (path.substr(pos) != ".bc" && path.substr(pos) != ".ll"))
     {
         SVFUtil::errs() << "Error: expect file with extension .bc or .ll\n";
         exit(EXIT_FAILURE);
@@ -53,8 +51,7 @@ std::string replaceExtension(const std::string& path)
 
 int main(int argc, char** argv)
 {
-    auto moduleNameVec = OptionBase::parseOptions(
-                             argc, argv, "llvm2svf", "[options] <input-bitcode...>");
+    auto moduleNameVec = OptionBase::parseOptions(argc, argv, "llvm2svf", "[options] <input-bitcode...>");
 
     if (Options::WriteAnder() == "ir_annotator")
     {

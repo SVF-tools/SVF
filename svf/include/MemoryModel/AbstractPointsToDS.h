@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 /// Contains abstract classes for:
 /// PTData: basic points-to data structure derived by all others.
 /// DiffPTData: PTData which only propagates new changes, not entire points-to sets.
@@ -38,7 +37,6 @@
 ///                                                ^
 ///                                                |
 ///                                        MutableIncDFPTData
-
 
 /*
  * AbstractPointsToDS.h
@@ -70,8 +68,7 @@ namespace SVF
 /// KeySet:  collection of keys.
 /// Data:    elements in points-to sets.
 /// DataSet: the points-to set; a collection of Data.
-template <typename Key, typename KeySet, typename Data, typename DataSet>
-class PTData
+template <typename Key, typename KeySet, typename Data, typename DataSet> class PTData
 {
 public:
     /// Types of a points-to data structures.
@@ -93,9 +90,9 @@ public:
         PersVersioned,
     };
 
-    PTData(bool reversePT = true, PTDataTy ty = PTDataTy::Base) : rev(reversePT), ptdTy(ty) { }
+    PTData(bool reversePT = true, PTDataTy ty = PTDataTy::Base) : rev(reversePT), ptdTy(ty) {}
 
-    virtual ~PTData() { }
+    virtual ~PTData() {}
 
     /// Get the type of points-to data structure that this is.
     inline PTDataTy getPTDTY() const
@@ -152,9 +149,9 @@ public:
     typedef PTData<Key, KeySet, Data, DataSet> BasePTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
 
-    DiffPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Diff) : BasePTData(reversePT, ty) { }
+    DiffPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Diff) : BasePTData(reversePT, ty) {}
 
-    virtual ~DiffPTData() { }
+    virtual ~DiffPTData() {}
 
     /// Get diff points to.
     virtual const DataSet& getDiffPts(Key& var) = 0;
@@ -173,15 +170,14 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const DiffPTData<Key, KeySet, Data, DataSet> *)
+    static inline bool classof(const DiffPTData<Key, KeySet, Data, DataSet>*)
     {
         return true;
     }
     static inline bool classof(const PTData<Key, KeySet, Data, DataSet>* ptd)
     {
-        return ptd->getPTDTY() == PTDataTy::Diff
-               || ptd->getPTDTY() == PTDataTy::MutDiff
-               || ptd->getPTDTY() == PTDataTy::PersDiff;
+        return ptd->getPTDTY() == PTDataTy::Diff || ptd->getPTDTY() == PTDataTy::MutDiff ||
+               ptd->getPTDTY() == PTDataTy::PersDiff;
     }
     ///@}
 };
@@ -200,9 +196,9 @@ public:
     typedef NodeID LocID;
 
     /// Constructor
-    DFPTData(bool reversePT = true, PTDataTy ty = BasePTData::DataFlow) : BasePTData(reversePT, ty) { }
+    DFPTData(bool reversePT = true, PTDataTy ty = BasePTData::DataFlow) : BasePTData(reversePT, ty) {}
 
-    virtual ~DFPTData() { }
+    virtual ~DFPTData() {}
 
     /// Determine whether the DF IN/OUT sets have points-to sets.
     ///@{
@@ -246,18 +242,16 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const DFPTData<Key, KeySet, Data, DataSet> *)
+    static inline bool classof(const DFPTData<Key, KeySet, Data, DataSet>*)
     {
         return true;
     }
 
     static inline bool classof(const PTData<Key, KeySet, Data, DataSet>* ptd)
     {
-        return ptd->getPTDTY() == BasePTData::DataFlow
-               || ptd->getPTDTY() == BasePTData::MutDataFlow
-               || ptd->getPTDTY() == BasePTData::MutIncDataFlow
-               || ptd->getPTDTY() == BasePTData::PersDataFlow
-               || ptd->getPTDTY() == BasePTData::PersIncDataFlow;
+        return ptd->getPTDTY() == BasePTData::DataFlow || ptd->getPTDTY() == BasePTData::MutDataFlow ||
+               ptd->getPTDTY() == BasePTData::MutIncDataFlow || ptd->getPTDTY() == BasePTData::PersDataFlow ||
+               ptd->getPTDTY() == BasePTData::PersIncDataFlow;
     }
     ///@}
 };
@@ -265,16 +259,17 @@ public:
 /// PTData with normal keys and versioned keys. Replicates the PTData interface for
 /// versioned keys too. Intended to be used for versioned flow-sensitive PTA--hence the
 /// name--but can be used anywhere where there are two types of keys at play.
-template <typename Key, typename KeySet, typename Data, typename DataSet, typename VersionedKey, typename VersionedKeySet>
+template <typename Key, typename KeySet, typename Data, typename DataSet, typename VersionedKey,
+          typename VersionedKeySet>
 class VersionedPTData : public PTData<Key, KeySet, Data, DataSet>
 {
 public:
     typedef PTData<Key, KeySet, Data, DataSet> BasePTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
 
-    VersionedPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Versioned) : BasePTData(reversePT, ty) { }
+    VersionedPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Versioned) : BasePTData(reversePT, ty) {}
 
-    virtual ~VersionedPTData() { }
+    virtual ~VersionedPTData() {}
 
     virtual const DataSet& getPts(const VersionedKey& vk) = 0;
     virtual const VersionedKeySet& getVersionedKeyRevPts(const Data& datum) = 0;
@@ -291,26 +286,26 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const VersionedPTData<Key, KeySet, Data, DataSet, VersionedKey, VersionedKeySet> *)
+    static inline bool classof(const VersionedPTData<Key, KeySet, Data, DataSet, VersionedKey, VersionedKeySet>*)
     {
         return true;
     }
 
     static inline bool classof(const PTData<Key, KeySet, Data, DataSet>* ptd)
     {
-        return ptd->getPTDTY() == PTDataTy::Versioned
-               || ptd->getPTDTY() == PTDataTy::MutVersioned
-               || ptd->getPTDTY() == PTDataTy::PersVersioned;
+        return ptd->getPTDTY() == PTDataTy::Versioned || ptd->getPTDTY() == PTDataTy::MutVersioned ||
+               ptd->getPTDTY() == PTDataTy::PersVersioned;
     }
+
 private:
-    using BasePTData::getPts;
     using BasePTData::addPts;
-    using BasePTData::unionPts;
-    using BasePTData::clearPts;
     using BasePTData::clearFullPts;
+    using BasePTData::clearPts;
+    using BasePTData::getPts;
+    using BasePTData::unionPts;
     ///@}
 };
 
 } // End namespace SVF
 
-#endif  // ABSTRACT_POINTSTO_H_
+#endif // ABSTRACT_POINTSTO_H_

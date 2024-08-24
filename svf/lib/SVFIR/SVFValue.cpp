@@ -4,8 +4,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-__attribute__((weak))
-std::string SVFValue::toString() const
+__attribute__((weak)) std::string SVFValue::toString() const
 {
     assert("SVFValue::toString should be implemented or supported by fronted" && false);
     abort();
@@ -26,8 +25,7 @@ void StInfo::addFldWithType(u32_t fldIdx, const SVFType* type, u32_t elemIdx)
 const SVFType* StInfo::getOriginalElemType(u32_t fldIdx) const
 {
     Map<u32_t, const SVFType*>::const_iterator it = fldIdx2TypeMap.find(fldIdx);
-    if(it!=fldIdx2TypeMap.end())
-        return it->second;
+    if (it != fldIdx2TypeMap.end()) return it->second;
     return nullptr;
 }
 
@@ -49,8 +47,7 @@ void SVFLoopAndDomInfo::getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exi
             {
                 for (const SVFBasicBlock* succ : block->getSuccessors())
                 {
-                    if ((std::find(blocks.begin(), blocks.end(), succ)==blocks.end()))
-                        exitbbs.push_back(succ);
+                    if ((std::find(blocks.begin(), blocks.end(), succ) == blocks.end())) exitbbs.push_back(succ);
                 }
             }
         }
@@ -59,8 +56,7 @@ void SVFLoopAndDomInfo::getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exi
 
 bool SVFLoopAndDomInfo::dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
 {
-    if (bbKey == bbValue)
-        return true;
+    if (bbKey == bbValue) return true;
 
     // An unreachable node is dominated by anything.
     if (isUnreachable(bbValue))
@@ -74,11 +70,11 @@ bool SVFLoopAndDomInfo::dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock
         return false;
     }
 
-    const Map<const SVFBasicBlock*,BBSet>& dtBBsMap = getDomTreeMap();
-    Map<const SVFBasicBlock*,BBSet>::const_iterator mapIter = dtBBsMap.find(bbKey);
+    const Map<const SVFBasicBlock*, BBSet>& dtBBsMap = getDomTreeMap();
+    Map<const SVFBasicBlock*, BBSet>::const_iterator mapIter = dtBBsMap.find(bbKey);
     if (mapIter != dtBBsMap.end())
     {
-        const BBSet & dtBBs = mapIter->second;
+        const BBSet& dtBBs = mapIter->second;
         if (dtBBs.find(bbValue) != dtBBs.end())
         {
             return true;
@@ -90,8 +86,7 @@ bool SVFLoopAndDomInfo::dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock
 
 bool SVFLoopAndDomInfo::postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
 {
-    if (bbKey == bbValue)
-        return true;
+    if (bbKey == bbValue) return true;
 
     // An unreachable node is dominated by anything.
     if (isUnreachable(bbValue))
@@ -105,11 +100,11 @@ bool SVFLoopAndDomInfo::postDominate(const SVFBasicBlock* bbKey, const SVFBasicB
         return false;
     }
 
-    const Map<const SVFBasicBlock*,BBSet>& dtBBsMap = getPostDomTreeMap();
-    Map<const SVFBasicBlock*,BBSet>::const_iterator mapIter = dtBBsMap.find(bbKey);
+    const Map<const SVFBasicBlock*, BBSet>& dtBBsMap = getPostDomTreeMap();
+    Map<const SVFBasicBlock*, BBSet>::const_iterator mapIter = dtBBsMap.find(bbKey);
     if (mapIter != dtBBsMap.end())
     {
-        const BBSet & dtBBs = mapIter->second;
+        const BBSet& dtBBs = mapIter->second;
         if (dtBBs.find(bbValue) != dtBBs.end())
         {
             return true;
@@ -118,18 +113,18 @@ bool SVFLoopAndDomInfo::postDominate(const SVFBasicBlock* bbKey, const SVFBasicB
     return false;
 }
 
-const SVFBasicBlock* SVFLoopAndDomInfo::findNearestCommonPDominator(const SVFBasicBlock* A, const SVFBasicBlock* B) const
+const SVFBasicBlock* SVFLoopAndDomInfo::findNearestCommonPDominator(const SVFBasicBlock* A,
+                                                                    const SVFBasicBlock* B) const
 {
     assert(A && B && "Pointers are not valid");
-    assert(A->getParent() == B->getParent() &&
-           "Two blocks are not in same function");
+    assert(A->getParent() == B->getParent() && "Two blocks are not in same function");
 
     // Use level information to go up the tree until the levels match. Then
     // continue going up til we arrive at the same node.
     while (A != B)
     {
         // no common PDominator
-        if(A == NULL) return NULL;
+        if (A == NULL) return NULL;
         const auto lvA = getBBPDomLevel().find(A);
         const auto lvB = getBBPDomLevel().find(B);
         assert(lvA != getBBPDomLevel().end() && lvB != getBBPDomLevel().end());
@@ -155,21 +150,17 @@ bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
     return false;
 }
 
-SVFFunction::SVFFunction(const SVFType* ty, const SVFFunctionType* ft,
-                         bool declare, bool intrinsic, bool adt, bool varg,
-                         SVFLoopAndDomInfo* ld)
-    : SVFValue(ty, SVFValue::SVFFunc), isDecl(declare), intrinsic(intrinsic),
-      addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg),
-      funcType(ft), loopAndDom(ld), realDefFun(nullptr), exitBlock(nullptr)
+SVFFunction::SVFFunction(const SVFType* ty, const SVFFunctionType* ft, bool declare, bool intrinsic, bool adt,
+                         bool varg, SVFLoopAndDomInfo* ld)
+    : SVFValue(ty, SVFValue::SVFFunc), isDecl(declare), intrinsic(intrinsic), addrTaken(adt), isUncalled(false),
+      isNotRet(false), varArg(varg), funcType(ft), loopAndDom(ld), realDefFun(nullptr), exitBlock(nullptr)
 {
 }
 
 SVFFunction::~SVFFunction()
 {
-    for(const SVFBasicBlock* bb : allBBs)
-        delete bb;
-    for(const SVFArgument* arg : allArgs)
-        delete arg;
+    for (const SVFBasicBlock* bb : allBBs) delete bb;
+    for (const SVFArgument* arg : allArgs) delete arg;
     delete loopAndDom;
 }
 
@@ -180,7 +171,7 @@ u32_t SVFFunction::arg_size() const
 
 const SVFArgument* SVFFunction::getArg(u32_t idx) const
 {
-    assert (idx < allArgs.size() && "getArg() out of range!");
+    assert(idx < allArgs.size() && "getArg() out of range!");
     return allArgs[idx];
 }
 
@@ -189,7 +180,7 @@ bool SVFFunction::isVarArg() const
     return varArg;
 }
 
-const SVFBasicBlock *SVFFunction::getExitBB() const
+const SVFBasicBlock* SVFFunction::getExitBB() const
 {
     assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
     assert((!hasReturn() || exitBlock->back()->isRetInst()) && "last inst must be return inst");
@@ -197,21 +188,17 @@ const SVFBasicBlock *SVFFunction::getExitBB() const
     return exitBlock;
 }
 
-void SVFFunction::setExitBlock(SVFBasicBlock *bb)
+void SVFFunction::setExitBlock(SVFBasicBlock* bb)
 {
     assert(!exitBlock && "have already set exit Basicblock!");
     exitBlock = bb;
 }
 
-SVFBasicBlock::SVFBasicBlock(const SVFType* ty, const SVFFunction* f)
-    : SVFValue(ty, SVFValue::SVFBB), fun(f)
-{
-}
+SVFBasicBlock::SVFBasicBlock(const SVFType* ty, const SVFFunction* f) : SVFValue(ty, SVFValue::SVFBB), fun(f) {}
 
 SVFBasicBlock::~SVFBasicBlock()
 {
-    for(const SVFInstruction* inst : allInsts)
-        delete inst;
+    for (const SVFInstruction* inst : allInsts) delete inst;
 }
 
 /*!
@@ -220,10 +207,9 @@ SVFBasicBlock::~SVFBasicBlock()
 u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ)
 {
     u32_t i = 0;
-    for (const SVFBasicBlock* SuccBB: succBBs)
+    for (const SVFBasicBlock* SuccBB : succBBs)
     {
-        if (SuccBB == Succ)
-            return i;
+        if (SuccBB == Succ) return i;
         i++;
     }
     assert(false && "Didn't find successor edge?");
@@ -233,10 +219,9 @@ u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ)
 u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ) const
 {
     u32_t i = 0;
-    for (const SVFBasicBlock* SuccBB: succBBs)
+    for (const SVFBasicBlock* SuccBB : succBBs)
     {
-        if (SuccBB == Succ)
-            return i;
+        if (SuccBB == Succ) return i;
         i++;
     }
     assert(false && "Didn't find successor edge?");
@@ -245,8 +230,7 @@ u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ) const
 
 const SVFInstruction* SVFBasicBlock::getTerminator() const
 {
-    if (allInsts.empty() || !allInsts.back()->isTerminator())
-        return nullptr;
+    if (allInsts.empty() || !allInsts.back()->isTerminator()) return nullptr;
     return allInsts.back();
 }
 
@@ -258,8 +242,7 @@ u32_t SVFBasicBlock::getBBPredecessorPos(const SVFBasicBlock* succbb)
     u32_t pos = 0;
     for (const SVFBasicBlock* PredBB : succbb->getPredecessors())
     {
-        if(PredBB == this)
-            return pos;
+        if (PredBB == this) return pos;
         ++pos;
     }
     assert(false && "Didn't find predecessor edge?");
@@ -270,16 +253,14 @@ u32_t SVFBasicBlock::getBBPredecessorPos(const SVFBasicBlock* succbb) const
     u32_t pos = 0;
     for (const SVFBasicBlock* PredBB : succbb->getPredecessors())
     {
-        if(PredBB == this)
-            return pos;
+        if (PredBB == this) return pos;
         ++pos;
     }
     assert(false && "Didn't find predecessor edge?");
     return pos;
 }
 
-SVFInstruction::SVFInstruction(const SVFType* ty, const SVFBasicBlock* b,
-                               bool tm, bool isRet, SVFValKind k)
+SVFInstruction::SVFInstruction(const SVFType* ty, const SVFBasicBlock* b, bool tm, bool isRet, SVFValKind k)
     : SVFValue(ty, k), bb(b), terminator(tm), ret(isRet)
 {
 }

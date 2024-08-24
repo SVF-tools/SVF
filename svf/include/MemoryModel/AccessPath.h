@@ -29,26 +29,22 @@
  *
  */
 
-
 #ifndef AccessPath_H_
 #define AccessPath_H_
 
-
 #include "SVFIR/SVFValue.h"
-
 
 namespace SVF
 {
 
 class SVFVar;
 
-
 /*
-* Location set represents a set of locations in a memory block with following offsets:
-*     { offset + \sum_{i=0}^N (stride_i * j_i) | 0 \leq j_i < M_i }
-* where N is the size of number-stride pair vector, M_i (stride_i) is i-th number (stride)
-* in the number-stride pair vector.
-*/
+ * Location set represents a set of locations in a memory block with following offsets:
+ *     { offset + \sum_{i=0}^N (stride_i * j_i) | 0 \leq j_i < M_i }
+ * where N is the size of number-stride pair vector, M_i (stride_i) is i-th number (stride)
+ * in the number-stride pair vector.
+ */
 class AccessPath
 {
     friend class SymbolTableInfo;
@@ -58,7 +54,11 @@ class AccessPath
 public:
     enum LSRelation
     {
-        NonOverlap, Overlap, Subset, Superset, Same
+        NonOverlap,
+        Overlap,
+        Subset,
+        Superset,
+        Same
     };
 
     typedef std::pair<const SVFVar*, const SVFType*> IdxOperandPair;
@@ -69,9 +69,7 @@ public:
 
     /// Copy Constructor
     AccessPath(const AccessPath& ap)
-        : fldIdx(ap.fldIdx),
-          idxOperandPairs(ap.getIdxOperandPairVec()),
-          gepPointeeType(ap.gepSrcPointeeType())
+        : fldIdx(ap.fldIdx), idxOperandPairs(ap.getIdxOperandPairVec()), gepPointeeType(ap.gepSrcPointeeType())
     {
     }
 
@@ -90,8 +88,8 @@ public:
     }
     inline bool operator==(const AccessPath& rhs) const
     {
-        return this->fldIdx == rhs.fldIdx &&
-               this->idxOperandPairs == rhs.idxOperandPairs && this->gepPointeeType == rhs.gepPointeeType;
+        return this->fldIdx == rhs.fldIdx && this->idxOperandPairs == rhs.idxOperandPairs &&
+               this->gepPointeeType == rhs.gepPointeeType;
     }
     //@}
 
@@ -146,7 +144,6 @@ public:
     /// Return element number of a type.
     u32_t getElementNum(const SVFType* type) const;
 
-
     bool addOffsetVarAndGepTypePair(const SVFVar* var, const SVFType* gepIterType);
 
     /// Return TRUE if this is a constant location set.
@@ -165,15 +162,14 @@ public:
     std::string dump() const;
 
 private:
-
     /// Check relations of two location sets
     LSRelation checkRelation(const AccessPath& LHS, const AccessPath& RHS);
 
     /// Compute all possible locations according to offset and number-stride pairs.
     NodeBS computeAllLocations() const;
 
-    APOffset fldIdx;	///< Accumulated Constant Offsets
-    IdxOperandPairs idxOperandPairs;	///< a vector of actual offset in the form of <SVF Var, iterator type>
+    APOffset fldIdx;                 ///< Accumulated Constant Offsets
+    IdxOperandPairs idxOperandPairs; ///< a vector of actual offset in the form of <SVF Var, iterator type>
     const SVFType* gepPointeeType;   /// source element type in gep instruction,
     /// e.g., %f1 = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %arrayidx, i32 0, i32 0
     /// the source element type is %struct.MyStruct
@@ -183,12 +179,11 @@ private:
 
 template <> struct std::hash<SVF::AccessPath>
 {
-    size_t operator()(const SVF::AccessPath &ap) const
+    size_t operator()(const SVF::AccessPath& ap) const
     {
         SVF::Hash<std::pair<SVF::NodeID, SVF::NodeID>> h;
         std::hash<SVF::AccessPath::IdxOperandPairs> v;
-        return h(std::make_pair(ap.getConstantStructFldIdx(),
-                                v(ap.getIdxOperandPairVec())));
+        return h(std::make_pair(ap.getConstantStructFldIdx(), v(ap.getIdxOperandPairVec())));
     }
 };
 

@@ -40,7 +40,8 @@ class LockAnalysis;
 
 /*!
  * This class serves as a base may-happen in parallel analysis for multithreaded program
- * Given a statement under an abstract thread, it tells which abstract threads may be alive at the same time (May-happen-in-parallel).
+ * Given a statement under an abstract thread, it tells which abstract threads may be alive at the same time
+ * (May-happen-in-parallel).
  */
 class MHP
 {
@@ -49,13 +50,13 @@ public:
     typedef Set<const SVFFunction*> FunSet;
     typedef FIFOWorkList<CxtThreadStmt> CxtThreadStmtWorkList;
     typedef Set<CxtThreadStmt> CxtThreadStmtSet;
-    typedef Map<CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
-    typedef Map<const ICFGNode*,CxtThreadStmtSet> InstToThreadStmtSetMap;
+    typedef Map<CxtThreadStmt, NodeBS> ThreadStmtToThreadInterleav;
+    typedef Map<const ICFGNode*, CxtThreadStmtSet> InstToThreadStmtSetMap;
     typedef SVFLoopAndDomInfo::LoopBBs LoopBBs;
 
     typedef Set<CxtStmt> LockSpan;
 
-    typedef std::pair<const SVFFunction*,const SVFFunction*> FuncPair;
+    typedef std::pair<const SVFFunction*, const SVFFunction*> FuncPair;
     typedef Map<FuncPair, bool> FuncPairToBool;
 
     /// Constructor
@@ -85,7 +86,7 @@ public:
     /// Whether the function is connected from main function in thread call graph
     bool isConnectedfromMain(const SVFFunction* fun);
 
-//    LockSpan getSpanfromCxtLock(NodeID l);
+    //    LockSpan getSpanfromCxtLock(NodeID l);
     /// Interface to query whether two instructions may happen-in-parallel
     virtual bool mayHappenInParallel(const ICFGNode* i1, const ICFGNode* i2);
     virtual bool mayHappenInParallelCache(const ICFGNode* i1, const ICFGNode* i2);
@@ -100,7 +101,7 @@ public:
     }
     inline bool hasInterleavingThreads(const CxtThreadStmt& cts) const
     {
-        return threadStmtToTheadInterLeav.find(cts)!=threadStmtToTheadInterLeav.end();
+        return threadStmtToTheadInterLeav.find(cts) != threadStmtToTheadInterLeav.end();
     }
     //@}
 
@@ -109,12 +110,12 @@ public:
     inline const CxtThreadStmtSet& getThreadStmtSet(const ICFGNode* inst) const
     {
         InstToThreadStmtSetMap::const_iterator it = instToTSMap.find(inst);
-        assert(it!=instToTSMap.end() && "no thread access the instruction?");
+        assert(it != instToTSMap.end() && "no thread access the instruction?");
         return it->second;
     }
     inline bool hasThreadStmtSet(const ICFGNode* inst) const
     {
-        return instToTSMap.find(inst)!=instToTSMap.end();
+        return instToTSMap.find(inst) != instToTSMap.end();
     }
     //@}
 
@@ -122,7 +123,6 @@ public:
     void printInterleaving();
 
 private:
-
     inline const CallGraph::FunctionSet& getCallee(const CallICFGNode* inst, CallGraph::FunctionSet& callees)
     {
         tcg->getCallees(inst, callees);
@@ -154,7 +154,7 @@ private:
     //@{
     inline void addInterleavingThread(const CxtThreadStmt& tgr, NodeID tid)
     {
-        if(threadStmtToTheadInterLeav[tgr].test_and_set(tid))
+        if (threadStmtToTheadInterLeav[tgr].test_and_set(tid))
         {
             instToTSMap[tgr.getStmt()].insert(tgr);
             pushToCTSWorkList(tgr);
@@ -163,7 +163,7 @@ private:
     inline void addInterleavingThread(const CxtThreadStmt& tgr, const CxtThreadStmt& src)
     {
         bool changed = threadStmtToTheadInterLeav[tgr] |= threadStmtToTheadInterLeav[src];
-        if(changed)
+        if (changed)
         {
             instToTSMap[tgr.getStmt()].insert(tgr);
             pushToCTSWorkList(tgr);
@@ -172,12 +172,11 @@ private:
     inline void rmInterleavingThread(const CxtThreadStmt& tgr, const NodeBS& tids, const ICFGNode* joinsite)
     {
         NodeBS joinedTids;
-        for(NodeBS::iterator it = tids.begin(), eit = tids.end(); it!=eit; ++it)
+        for (NodeBS::iterator it = tids.begin(), eit = tids.end(); it != eit; ++it)
         {
-            if(isMustJoin(tgr.getTid(),joinsite))
-                joinedTids.set(*it);
+            if (isMustJoin(tgr.getTid(), joinsite)) joinedTids.set(*it);
         }
-        if(threadStmtToTheadInterLeav[tgr].intersectWithComplement(joinedTids))
+        if (threadStmtToTheadInterLeav[tgr].intersectWithComplement(joinedTids))
         {
             pushToCTSWorkList(tgr);
         }
@@ -204,12 +203,12 @@ private:
     /// Push calling context
     inline void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
     {
-        tct->pushCxt(cxt,call,callee);
+        tct->pushCxt(cxt, call, callee);
     }
     /// Match context
     inline bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
     {
-        return tct->matchCxt(cxt,call,callee);
+        return tct->matchCxt(cxt, call, callee);
     }
 
     /// WorkList helper functions
@@ -247,23 +246,20 @@ private:
     /// Whether thread t1 happens before t2 based on ForkJoin Analysis
     bool isHBPair(NodeID tid1, NodeID tid2);
 
-    ThreadCallGraph* tcg;				///< TCG
-    TCT* tct;							///< TCT
-    ForkJoinAnalysis* fja;				///< ForJoin Analysis
-    CxtThreadStmtWorkList cxtStmtList;	///< CxtThreadStmt worklist
+    ThreadCallGraph* tcg;                                   ///< TCG
+    TCT* tct;                                               ///< TCT
+    ForkJoinAnalysis* fja;                                  ///< ForJoin Analysis
+    CxtThreadStmtWorkList cxtStmtList;                      ///< CxtThreadStmt worklist
     ThreadStmtToThreadInterleav threadStmtToTheadInterLeav; /// Map a statement to its thread interleavings
-    InstToThreadStmtSetMap instToTSMap; ///< Map an instruction to its ThreadStmtSet
+    InstToThreadStmtSetMap instToTSMap;                     ///< Map an instruction to its ThreadStmtSet
     FuncPairToBool nonCandidateFuncMHPRelMap;
 
-
 public:
-    u32_t numOfTotalQueries;		///< Total number of queries
-    u32_t numOfMHPQueries;			///< Number of queries are answered as may-happen-in-parallel
+    u32_t numOfTotalQueries; ///< Total number of queries
+    u32_t numOfMHPQueries;   ///< Number of queries are answered as may-happen-in-parallel
     double interleavingTime;
     double interleavingQueriesTime;
 };
-
-
 
 /*!
  *
@@ -275,15 +271,15 @@ public:
     /// semilattice  Empty==>TDDead==>TDAlive
     enum ValDomain
     {
-        Empty,  // initial(dummy) state
-        TDAlive,  // thread is alive
+        Empty,   // initial(dummy) state
+        TDAlive, // thread is alive
         TDDead,  //  thread is dead
     };
 
     typedef SVFLoopAndDomInfo::LoopBBs LoopBBs;
     typedef TCT::InstVec InstVec;
-    typedef Map<CxtStmt,ValDomain> CxtStmtToAliveFlagMap;
-    typedef Map<CxtStmt,NodeBS> CxtStmtToTIDMap;
+    typedef Map<CxtStmt, ValDomain> CxtStmtToAliveFlagMap;
+    typedef Map<CxtStmt, NodeBS> CxtStmtToTIDMap;
     typedef Set<NodePair> ThreadPairSet;
     typedef Map<CxtStmt, LoopBBs> CxtStmtToLoopMap;
     typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
@@ -312,26 +308,26 @@ public:
     inline const LoopBBs& getJoinInSymmetricLoop(const CxtStmt& cs) const
     {
         CxtStmtToLoopMap::const_iterator it = cxtJoinInLoop.find(cs);
-        assert(it!=cxtJoinInLoop.end() && "does not have the loop");
+        assert(it != cxtJoinInLoop.end() && "does not have the loop");
         return it->second;
     }
     inline bool hasJoinInSymmetricLoop(const CxtStmt& cs) const
     {
         CxtStmtToLoopMap::const_iterator it = cxtJoinInLoop.find(cs);
-        return it!=cxtJoinInLoop.end();
+        return it != cxtJoinInLoop.end();
     }
     /// Whether thread t1 happens-before thread t2
     inline bool isHBPair(NodeID tid1, NodeID tid2)
     {
-        bool nonhp = HBPair.find(std::make_pair(tid1,tid2))!=HBPair.end();
-        bool hp = HPPair.find(std::make_pair(tid1,tid2))!=HPPair.end();
+        bool nonhp = HBPair.find(std::make_pair(tid1, tid2)) != HBPair.end();
+        bool hp = HPPair.find(std::make_pair(tid1, tid2)) != HPPair.end();
         return nonhp && !hp;
     }
     /// Whether t1 fully joins t2
     inline bool isFullJoin(NodeID tid1, NodeID tid2)
     {
-        bool full = fullJoin.find(std::make_pair(tid1,tid2))!=fullJoin.end();
-        bool partial = partialJoin.find(std::make_pair(tid1,tid2))!=partialJoin.end();
+        bool full = fullJoin.find(std::make_pair(tid1, tid2)) != fullJoin.end();
+        bool partial = partialJoin.find(std::make_pair(tid1, tid2)) != partialJoin.end();
         return full && !partial;
     }
 
@@ -354,16 +350,16 @@ public:
     {
         return tct->hasJoinLoop(inst);
     }
-private:
 
+private:
     /// Handle fork
-    void handleFork(const CxtStmt& cts,NodeID rootTid);
+    void handleFork(const CxtStmt& cts, NodeID rootTid);
 
     /// Handle join
-    void handleJoin(const CxtStmt& cts,NodeID rootTid);
+    void handleJoin(const CxtStmt& cts, NodeID rootTid);
 
     /// Handle call
-    void handleCall(const CxtStmt& cts,NodeID rootTid);
+    void handleCall(const CxtStmt& cts, NodeID rootTid);
 
     /// Handle return
     void handleRet(const CxtStmt& cts);
@@ -380,7 +376,8 @@ private:
     /// Whether it is a matched fork join pair
     bool isAliasedForkJoin(const ICFGNode* forkSite, const ICFGNode* joinSite)
     {
-        return tct->getPTA()->alias(getForkedThread(forkSite), getJoinedThread(joinSite)) && isSameSCEV(forkSite,joinSite);
+        return tct->getPTA()->alias(getForkedThread(forkSite), getJoinedThread(joinSite)) &&
+               isSameSCEV(forkSite, joinSite);
     }
     /// Mark thread flags for cxtStmt
     //@{
@@ -388,7 +385,7 @@ private:
     inline ValDomain getMarkedFlag(const CxtStmt& cs)
     {
         CxtStmtToAliveFlagMap::const_iterator it = cxtStmtToAliveFlagMap.find(cs);
-        if(it==cxtStmtToAliveFlagMap.end())
+        if (it == cxtStmtToAliveFlagMap.end())
         {
             cxtStmtToAliveFlagMap[cs] = Empty;
             return Empty;
@@ -401,28 +398,26 @@ private:
     {
         ValDomain flag_tgr = getMarkedFlag(tgr);
         cxtStmtToAliveFlagMap[tgr] = flag;
-        if(flag_tgr!=getMarkedFlag(tgr))
-            pushToCTSWorkList(tgr);
+        if (flag_tgr != getMarkedFlag(tgr)) pushToCTSWorkList(tgr);
     }
     /// Transfer function for marking context-sensitive statement
     void markCxtStmtFlag(const CxtStmt& tgr, const CxtStmt& src)
     {
         ValDomain flag_tgr = getMarkedFlag(tgr);
         ValDomain flag_src = getMarkedFlag(src);
-        if(flag_tgr == Empty)
+        if (flag_tgr == Empty)
         {
             cxtStmtToAliveFlagMap[tgr] = flag_src;
         }
-        else if(flag_tgr == TDDead)
+        else if (flag_tgr == TDDead)
         {
-            if(flag_src==TDAlive)
-                cxtStmtToAliveFlagMap[tgr] = TDAlive;
+            if (flag_src == TDAlive) cxtStmtToAliveFlagMap[tgr] = TDAlive;
         }
         else
         {
             /// alive is at the bottom of the semilattice, nothing needs to be done here
         }
-        if(flag_tgr!=getMarkedFlag(tgr))
+        if (flag_tgr != getMarkedFlag(tgr))
         {
             pushToCTSWorkList(tgr);
         }
@@ -451,12 +446,12 @@ private:
     /// Push calling context
     inline void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
     {
-        tct->pushCxt(cxt,call,callee);
+        tct->pushCxt(cxt, call, callee);
     }
     /// Match context
     inline bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
     {
-        return tct->matchCxt(cxt,call,callee);
+        return tct->matchCxt(cxt, call, callee);
     }
 
     /// Whether it is a fork site
@@ -489,7 +484,7 @@ private:
     {
         return tct->getThreadCallGraph();
     }
-    ///maps a context-sensitive join site to a thread id
+    /// maps a context-sensitive join site to a thread id
     inline void addDirectlyJoinTID(const CxtStmt& cs, NodeID tid)
     {
         directJoinMap[cs].set(tid);
@@ -500,12 +495,12 @@ private:
     //@{
     inline void addToHPPair(NodeID tid1, NodeID tid2)
     {
-        HPPair.insert(std::make_pair(tid1,tid2));
-        HPPair.insert(std::make_pair(tid2,tid1));
+        HPPair.insert(std::make_pair(tid1, tid2));
+        HPPair.insert(std::make_pair(tid2, tid1));
     }
     inline void addToHBPair(NodeID tid1, NodeID tid2)
     {
-        HBPair.insert(std::make_pair(tid1,tid2));
+        HBPair.insert(std::make_pair(tid1, tid2));
     }
     //@}
 
@@ -513,11 +508,11 @@ private:
     //@{
     inline void addToFullJoin(NodeID tid1, NodeID tid2)
     {
-        fullJoin.insert(std::make_pair(tid1,tid2));
+        fullJoin.insert(std::make_pair(tid1, tid2));
     }
     inline void addToPartial(NodeID tid1, NodeID tid2)
     {
-        partialJoin.insert(std::make_pair(tid1,tid2));
+        partialJoin.insert(std::make_pair(tid1, tid2));
     }
     //@}
 
@@ -527,15 +522,16 @@ private:
         cxtJoinInLoop[cs] = lp;
     }
     TCT* tct;
-    CxtStmtToAliveFlagMap cxtStmtToAliveFlagMap;	///< flags for context-sensitive statements
-    CxtStmtWorkList cxtStmtList;	 ///< context-sensitive statement worklist
-    CxtStmtToTIDMap directJoinMap; ///< maps a context-sensitive join site to directly joined thread ids
-    CxtStmtToTIDMap dirAndIndJoinMap; ///< maps a context-sensitive join site to directly and indirectly joined thread ids
-    CxtStmtToLoopMap cxtJoinInLoop;		///< a set of context-sensitive join inside loop
-    ThreadPairSet HBPair;		///< thread happens-before pair
-    ThreadPairSet HPPair;		///< threads happen-in-parallel
-    ThreadPairSet fullJoin;		///< t1 fully joins t2 along all program path
-    ThreadPairSet partialJoin;		///< t1 partially joins t2 along some program path(s)
+    CxtStmtToAliveFlagMap cxtStmtToAliveFlagMap; ///< flags for context-sensitive statements
+    CxtStmtWorkList cxtStmtList;                 ///< context-sensitive statement worklist
+    CxtStmtToTIDMap directJoinMap;               ///< maps a context-sensitive join site to directly joined thread ids
+    CxtStmtToTIDMap
+        dirAndIndJoinMap;           ///< maps a context-sensitive join site to directly and indirectly joined thread ids
+    CxtStmtToLoopMap cxtJoinInLoop; ///< a set of context-sensitive join inside loop
+    ThreadPairSet HBPair;           ///< thread happens-before pair
+    ThreadPairSet HPPair;           ///< threads happen-in-parallel
+    ThreadPairSet fullJoin;         ///< t1 fully joins t2 along all program path
+    ThreadPairSet partialJoin;      ///< t1 partially joins t2 along some program path(s)
 };
 
 } // End namespace SVF

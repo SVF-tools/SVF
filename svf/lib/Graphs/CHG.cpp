@@ -34,16 +34,14 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace std;
 
-static bool hasEdge(const CHNode *src, const CHNode *dst,
-                    CHEdge::CHEDGETYPE et)
+static bool hasEdge(const CHNode* src, const CHNode* dst, CHEdge::CHEDGETYPE et)
 {
-    for (CHEdge::CHEdgeSetTy::const_iterator it = src->getOutEdges().begin(),
-            eit = src->getOutEdges().end(); it != eit; ++it)
+    for (CHEdge::CHEdgeSetTy::const_iterator it = src->getOutEdges().begin(), eit = src->getOutEdges().end(); it != eit;
+         ++it)
     {
-        CHNode *node = (*it)->getDstNode();
+        CHNode* node = (*it)->getDstNode();
         CHEdge::CHEDGETYPE edgeType = (*it)->getEdgeType();
-        if (node == dst && edgeType == et)
-            return true;
+        if (node == dst && edgeType == et) return true;
     }
     return false;
 }
@@ -52,8 +50,8 @@ static bool checkArgTypes(CallSite cs, const SVFFunction* fn)
 {
 
     // here we skip the first argument (i.e., this pointer)
-    u32_t arg_size = (fn->arg_size() > cs.arg_size()) ? cs.arg_size(): fn->arg_size();
-    if(arg_size > 1)
+    u32_t arg_size = (fn->arg_size() > cs.arg_size()) ? cs.arg_size() : fn->arg_size();
+    if (arg_size > 1)
     {
         for (unsigned i = 1; i < arg_size; i++)
         {
@@ -69,59 +67,54 @@ static bool checkArgTypes(CallSite cs, const SVFFunction* fn)
     return true;
 }
 
-void CHGraph::addEdge(const string className, const string baseClassName,
-                      CHEdge::CHEDGETYPE edgeType)
+void CHGraph::addEdge(const string className, const string baseClassName, CHEdge::CHEDGETYPE edgeType)
 {
-    CHNode *srcNode = getNode(className);
-    CHNode *dstNode = getNode(baseClassName);
+    CHNode* srcNode = getNode(className);
+    CHNode* dstNode = getNode(baseClassName);
     assert(srcNode && dstNode && "node not found?");
 
     if (!hasEdge(srcNode, dstNode, edgeType))
     {
-        CHEdge *edge = new CHEdge(srcNode, dstNode, edgeType);
+        CHEdge* edge = new CHEdge(srcNode, dstNode, edgeType);
         srcNode->addOutgoingEdge(edge);
         dstNode->addIncomingEdge(edge);
     }
 }
 
-CHNode *CHGraph::getNode(const string name) const
+CHNode* CHGraph::getNode(const string name) const
 {
     auto chNode = classNameToNodeMap.find(name);
     if (chNode != classNameToNodeMap.end()) return chNode->second;
-    else return nullptr;
+    else
+        return nullptr;
 }
-
 
 /*
  * Get virtual functions for callsite "cs" based on vtbls (calculated
  * based on pointsto set)
  */
-void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions)
+void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet& vtbls, VFunSet& virtualFunctions)
 {
 
     /// get target virtual functions
     size_t idx = cs.getFunIdxInVtable();
     /// get the function name of the virtual callsite
     string funName = cs.getFunNameOfVirtualCall();
-    for (const SVFGlobalValue *vt : vtbls)
+    for (const SVFGlobalValue* vt : vtbls)
     {
-        const CHNode *child = getNode(vt->getName());
-        if (child == nullptr)
-            continue;
+        const CHNode* child = getNode(vt->getName());
+        if (child == nullptr) continue;
         CHNode::FuncVector vfns;
         child->getVirtualFunctions(idx, vfns);
-        for (CHNode::FuncVector::const_iterator fit = vfns.begin(),
-                feit = vfns.end(); fit != feit; ++fit)
+        for (CHNode::FuncVector::const_iterator fit = vfns.begin(), feit = vfns.end(); fit != feit; ++fit)
         {
             const SVFFunction* callee = *fit;
-            if (cs.arg_size() == callee->arg_size() ||
-                    (cs.isVarArg() && callee->isVarArg()))
+            if (cs.arg_size() == callee->arg_size() || (cs.isVarArg() && callee->isVarArg()))
             {
 
                 // if argument types do not match
                 // skip this one
-                if (!checkArgTypes(cs, callee))
-                    continue;
+                if (!checkArgTypes(cs, callee)) continue;
 
                 string calleeName = callee->getName();
 
@@ -136,8 +129,7 @@ void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vir
                  */
                 const std::string suffix("[abi:cxx11]");
                 size_t suffix_pos = calleeName.rfind(suffix);
-                if (suffix_pos != string::npos)
-                    calleeName.erase(suffix_pos, suffix.size());
+                if (suffix_pos != string::npos) calleeName.erase(suffix_pos, suffix.size());
 
                 /*
                  * if we can't get the function name of a virtual callsite, all virtual
@@ -180,33 +172,28 @@ void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vir
     }
 }
 
-
-void CHNode::getVirtualFunctions(u32_t idx, FuncVector &virtualFunctions) const
+void CHNode::getVirtualFunctions(u32_t idx, FuncVector& virtualFunctions) const
 {
-    for (vector<FuncVector>::const_iterator it = virtualFunctionVectors.begin(),
-            eit = virtualFunctionVectors.end(); it != eit; ++it)
+    for (vector<FuncVector>::const_iterator it = virtualFunctionVectors.begin(), eit = virtualFunctionVectors.end();
+         it != eit; ++it)
     {
-        if ((*it).size() > idx)
-            virtualFunctions.push_back((*it)[idx]);
+        if ((*it).size() > idx) virtualFunctions.push_back((*it)[idx]);
     }
 }
 
 void CHGraph::printCH()
 {
-    for (CHGraph::const_iterator it = this->begin(), eit = this->end();
-            it != eit; ++it)
+    for (CHGraph::const_iterator it = this->begin(), eit = this->end(); it != eit; ++it)
     {
-        const CHNode *node = it->second;
+        const CHNode* node = it->second;
         outs() << "class: " << node->getName() << "\n";
-        for (CHEdge::CHEdgeSetTy::const_iterator it = node->OutEdgeBegin();
-                it != node->OutEdgeEnd(); ++it)
+        for (CHEdge::CHEdgeSetTy::const_iterator it = node->OutEdgeBegin(); it != node->OutEdgeEnd(); ++it)
         {
             if ((*it)->getEdgeType() == CHEdge::INHERITANCE)
-                outs() << (*it)->getDstNode()->getName() << " --inheritance--> "
-                       << (*it)->getSrcNode()->getName() << "\n";
+                outs() << (*it)->getDstNode()->getName() << " --inheritance--> " << (*it)->getSrcNode()->getName()
+                       << "\n";
             else
-                outs() << (*it)->getSrcNode()->getName() << " --instance--> "
-                       << (*it)->getDstNode()->getName() << "\n";
+                outs() << (*it)->getSrcNode()->getName() << " --instance--> " << (*it)->getDstNode()->getName() << "\n";
         }
     }
     outs() << '\n';
@@ -232,15 +219,11 @@ namespace SVF
 /*!
  * Write value flow graph into dot file for debugging
  */
-template<>
-struct DOTGraphTraits<CHGraph*> : public DefaultDOTGraphTraits
+template <> struct DOTGraphTraits<CHGraph*> : public DefaultDOTGraphTraits
 {
 
     typedef CHNode NodeType;
-    DOTGraphTraits(bool isSimple = false) :
-        DefaultDOTGraphTraits(isSimple)
-    {
-    }
+    DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
 
     /// Return name of the graph
     static std::string getGraphName(CHGraph*)
@@ -248,12 +231,12 @@ struct DOTGraphTraits<CHGraph*> : public DefaultDOTGraphTraits
         return "Class Hierarchy Graph";
     }
     /// Return function name;
-    static std::string getNodeLabel(CHNode *node, CHGraph*)
+    static std::string getNodeLabel(CHNode* node, CHGraph*)
     {
         return node->getName();
     }
 
-    static std::string getNodeAttributes(CHNode *node, CHGraph*)
+    static std::string getNodeAttributes(CHNode* node, CHGraph*)
     {
         if (node->isPureAbstract())
         {
@@ -263,8 +246,7 @@ struct DOTGraphTraits<CHGraph*> : public DefaultDOTGraphTraits
             return "shape=box";
     }
 
-    template<class EdgeIter>
-    static std::string getEdgeAttributes(CHNode*, EdgeIter EI, CHGraph*)
+    template <class EdgeIter> static std::string getEdgeAttributes(CHNode*, EdgeIter EI, CHGraph*)
     {
 
         CHEdge* edge = *(EI.getCurrent());
@@ -279,4 +261,4 @@ struct DOTGraphTraits<CHGraph*> : public DefaultDOTGraphTraits
         }
     }
 };
-} // End namespace llvm
+} // namespace SVF

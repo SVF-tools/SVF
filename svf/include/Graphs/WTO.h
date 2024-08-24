@@ -54,8 +54,7 @@ template <typename T, typename = void> struct has_nodetype : std::false_type
 {
 };
 
-template <typename T>
-struct has_nodetype<T, std::void_t<typename T::NodeType>> : std::true_type
+template <typename T> struct has_nodetype<T, std::void_t<typename T::NodeType>> : std::true_type
 {
 };
 
@@ -63,8 +62,7 @@ template <typename T, typename = void> struct has_edgetype : std::false_type
 {
 };
 
-template <typename T>
-struct has_edgetype<T, std::void_t<typename T::EdgeType>> : std::true_type
+template <typename T> struct has_edgetype<T, std::void_t<typename T::EdgeType>> : std::true_type
 {
 };
 
@@ -101,8 +99,7 @@ struct has_edgetype<T, std::void_t<typename T::EdgeType>> : std::true_type
 template <typename GraphT> class WTOCycleDepth
 {
 public:
-    static_assert(has_nodetype<GraphT>::value,
-                  "GraphT must have a nested type named 'NodeType'");
+    static_assert(has_nodetype<GraphT>::value, "GraphT must have a nested type named 'NodeType'");
     typedef typename GraphT::NodeType NodeT;
 
 private:
@@ -155,8 +152,8 @@ public:
     WTOCycleDepth operator^(const WTOCycleDepth& other) const
     {
         WTOCycleDepth res;
-        for (auto this_it = begin(), other_it = other.begin();
-                this_it != end() && other_it != other.end(); ++this_it, ++other_it)
+        for (auto this_it = begin(), other_it = other.begin(); this_it != end() && other_it != other.end();
+             ++this_it, ++other_it)
         {
             if (*this_it == *other_it)
             {
@@ -254,8 +251,7 @@ public:
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend std::ostream& operator<<(std::ostream& o,
-                                    const WTOCycleDepth<GraphT>& wto)
+    friend std::ostream& operator<<(std::ostream& o, const WTOCycleDepth<GraphT>& wto)
     {
         o << wto.toString();
         return o;
@@ -279,7 +275,7 @@ public:
     };
 
     /// Default constructor
-    explicit WTOComponent(WTOCT k) : _type(k) {};
+    explicit WTOComponent(WTOCT k) : _type(k){};
 
     /// Copy constructor
     WTOComponent(const WTOComponent&) noexcept = default;
@@ -308,8 +304,7 @@ public:
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend std::ostream& operator<<(std::ostream& o,
-                                    const WTOComponent<GraphT>& wto)
+    friend std::ostream& operator<<(std::ostream& o, const WTOComponent<GraphT>& wto)
     {
         o << wto.toString();
         return o;
@@ -326,8 +321,7 @@ public:
 template <typename GraphT> class WTONode final : public WTOComponent<GraphT>
 {
 public:
-    static_assert(has_nodetype<GraphT>::value,
-                  "GraphT must have a nested type named 'NodeType'");
+    static_assert(has_nodetype<GraphT>::value, "GraphT must have a nested type named 'NodeType'");
     typedef typename GraphT::NodeType NodeT;
 
 private:
@@ -335,10 +329,7 @@ private:
 
 public:
     /// Constructor
-    explicit WTONode(const NodeT* node)
-        : WTOComponent<GraphT>(WTOComponent<GraphT>::Node), _node(node)
-    {
-    }
+    explicit WTONode(const NodeT* node) : WTOComponent<GraphT>(WTOComponent<GraphT>::Node), _node(node) {}
 
     /// Return the graph node
     const NodeT* getICFGNode() const
@@ -380,8 +371,7 @@ public:
 template <typename GraphT> class WTOCycle final : public WTOComponent<GraphT>
 {
 public:
-    static_assert(has_nodetype<GraphT>::value,
-                  "GraphT must have a nested type named 'NodeType'");
+    static_assert(has_nodetype<GraphT>::value, "GraphT must have a nested type named 'NodeType'");
     typedef typename GraphT::NodeType NodeT;
     typedef WTOComponent<GraphT> WTOComponentT;
 
@@ -403,8 +393,7 @@ private:
 public:
     /// Constructor
     WTOCycle(const WTONode<GraphT>* head, WTOComponentRefList components)
-        : WTOComponent<GraphT>(WTOComponent<GraphT>::Cycle), _head(head),
-          _components(std::move(components))
+        : WTOComponent<GraphT>(WTOComponent<GraphT>::Cycle), _head(head), _components(std::move(components))
     {
     }
 
@@ -493,8 +482,7 @@ public:
     WTOComponentVisitor(WTOComponentVisitor&&) noexcept = default;
 
     /// Copy assignment operator
-    WTOComponentVisitor& operator=(const WTOComponentVisitor&) noexcept =
-        default;
+    WTOComponentVisitor& operator=(const WTOComponentVisitor&) noexcept = default;
 
     /// Move assignment operator
     WTOComponentVisitor& operator=(WTOComponentVisitor&&) noexcept = default;
@@ -517,10 +505,8 @@ template <typename GraphT> class WTO
 {
 
 public:
-    static_assert(has_nodetype<GraphT>::value,
-                  "GraphT must have a nested type named 'NodeType'");
-    static_assert(has_edgetype<GraphT>::value,
-                  "GraphT must have a nested type named 'EdgeType'");
+    static_assert(has_nodetype<GraphT>::value, "GraphT must have a nested type named 'NodeType'");
+    static_assert(has_edgetype<GraphT>::value, "GraphT must have a nested type named 'EdgeType'");
     typedef typename GraphT::NodeType NodeT;
     typedef typename GraphT::EdgeType EdgeT;
     typedef WTOCycleDepth<GraphT> GraphTWTOCycleDepth;
@@ -558,11 +544,8 @@ protected:
     const NodeT* _entry;
 
 public:
-
     /// Compute the weak topological order of the given graph
-    explicit WTO(GraphT* graph, const NodeT* entry) : _num(0), _graph(graph), _entry(entry)
-    {
-    }
+    explicit WTO(GraphT* graph, const NodeT* entry) : _num(0), _graph(graph), _entry(entry) {}
 
     /// No copy constructor
     WTO(const WTO& other) = default;
@@ -680,7 +663,6 @@ public:
     }
 
 protected:
-
     /// Visitor to build the cycle depths of each node
     class WTOCycleDepthBuilder final : public WTOComponentVisitor<GraphT>
     {
@@ -689,10 +671,8 @@ protected:
         NodeRefToWTOCycleDepthPtr& _nodeToWTOCycleDepth;
 
     public:
-        explicit WTOCycleDepthBuilder(
-            NodeRefToWTOCycleDepthPtr& nodeToWTOCycleDepth)
-            : _wtoCycleDepth(std::make_shared<GraphTWTOCycleDepth>()),
-              _nodeToWTOCycleDepth(nodeToWTOCycleDepth)
+        explicit WTOCycleDepthBuilder(NodeRefToWTOCycleDepthPtr& nodeToWTOCycleDepth)
+            : _wtoCycleDepth(std::make_shared<GraphTWTOCycleDepth>()), _nodeToWTOCycleDepth(nodeToWTOCycleDepth)
         {
         }
 
@@ -701,8 +681,7 @@ protected:
             const NodeT* head = cycle.head()->getICFGNode();
             WTOCycleDepthPtr previous_cycleDepth = _wtoCycleDepth;
             _nodeToWTOCycleDepth.insert(std::make_pair(head, _wtoCycleDepth));
-            _wtoCycleDepth =
-                std::make_shared<GraphTWTOCycleDepth>(*_wtoCycleDepth);
+            _wtoCycleDepth = std::make_shared<GraphTWTOCycleDepth>(*_wtoCycleDepth);
             _wtoCycleDepth->add(head);
             for (auto it = cycle.begin(), et = cycle.end(); it != et; ++it)
             {
@@ -713,14 +692,12 @@ protected:
 
         void visit(const WTONodeT& node) override
         {
-            _nodeToWTOCycleDepth.insert(
-                std::make_pair(node.getICFGNode(), _wtoCycleDepth));
+            _nodeToWTOCycleDepth.insert(std::make_pair(node.getICFGNode(), _wtoCycleDepth));
         }
 
     }; // end class WTOCycleDepthBuilder
 
 protected:
-
     inline virtual void forEachSuccessor(const NodeT* node, std::function<void(const NodeT*)> func) const
     {
         for (const auto& e : node->getOutEdges())
@@ -776,8 +753,7 @@ protected:
         return ptr;
     }
 
-    const WTOCycleT* newCycle(const WTONodeT* node,
-                              const WTOComponentRefList& partition)
+    const WTOCycleT* newCycle(const WTONodeT* node, const WTOComponentRefList& partition)
     {
         const WTOCycleT* ptr = new WTOCycleT(node, std::move(partition));
         _allComponents.insert(ptr);
@@ -788,8 +764,7 @@ protected:
     virtual const WTOCycleT* component(const NodeT* node)
     {
         WTOComponentRefList partition;
-        forEachSuccessor(node, [&](const NodeT* succ)
-        {
+        forEachSuccessor(node, [&](const NodeT* succ) {
             if (getCDN(succ) == 0)
             {
                 visit(succ, partition);
@@ -804,8 +779,7 @@ protected:
     /// Visit the given node
     ///
     /// Algorithm to build a weak topological order of a graph
-    virtual CycleDepthNumber visit(const NodeT* node,
-                                   WTOComponentRefList& partition)
+    virtual CycleDepthNumber visit(const NodeT* node, WTOComponentRefList& partition)
     {
         CycleDepthNumber head(0);
         CycleDepthNumber min(0);
@@ -816,8 +790,7 @@ protected:
         head = _num;
         setCDN(node, head);
         loop = false;
-        forEachSuccessor(node, [&](const NodeT* succ)
-        {
+        forEachSuccessor(node, [&](const NodeT* succ) {
             CycleDepthNumber succ_dfn = getCDN(succ);
             if (succ_dfn == CycleDepthNumber(0))
             {

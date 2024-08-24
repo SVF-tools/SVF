@@ -53,8 +53,8 @@ void FlowSensitive::initialize()
     ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
 
     // If cluster option is not set, it will give us a no-mapping points-to set.
-    assert(!(Options::ClusterFs() && Options::PlainMappingFs())
-           && "FS::init: plain-mapping and cluster-fs are mutually exclusive.");
+    assert(!(Options::ClusterFs() && Options::PlainMappingFs()) &&
+           "FS::init: plain-mapping and cluster-fs are mutually exclusive.");
     if (Options::ClusterFs())
     {
         cluster();
@@ -72,7 +72,7 @@ void FlowSensitive::initialize()
     svfg = memSSA.buildPTROnlySVFG(ander);
 
     setGraph(svfg);
-    //AndersenWaveDiff::releaseAndersenWaveDiff();
+    // AndersenWaveDiff::releaseAndersenWaveDiff();
 }
 void FlowSensitive::solveConstraints()
 {
@@ -86,15 +86,13 @@ void FlowSensitive::solveConstraints()
     {
         numOfIteration++;
 
-        if(0 == numOfIteration % OnTheFlyIterBudgetForStat)
-            dumpStat();
+        if (0 == numOfIteration % OnTheFlyIterBudgetForStat) dumpStat();
 
         callGraphSCC->find();
 
         initWorklist();
         solveWorklist();
-    }
-    while (updateCallGraph(getIndirectCallsites()));
+    } while (updateCallGraph(getIndirectCallsites()));
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
@@ -103,7 +101,6 @@ void FlowSensitive::solveConstraints()
 
     double end = stat->getClk(true);
     solveTime += (end - start) / TIMEINTERVAL;
-
 }
 
 /*!
@@ -113,11 +110,9 @@ void FlowSensitive::solveAndwritePtsToFile(const std::string& filename)
 {
     /// Initialization for the Solver
     initialize();
-    if(!filename.empty())
-        writeObjVarToFile(filename);
+    if (!filename.empty()) writeObjVarToFile(filename);
     solveConstraints();
-    if(!filename.empty())
-        writeToFile(filename);
+    if (!filename.empty()) writeToFile(filename);
     /// finalize the analysis
     finalize();
 }
@@ -127,13 +122,13 @@ void FlowSensitive::solveAndwritePtsToFile(const std::string& filename)
  */
 void FlowSensitive::analyze()
 {
-    if(!Options::ReadAnder().empty())
+    if (!Options::ReadAnder().empty())
     {
         readPtsFromFile(Options::ReadAnder());
     }
     else
     {
-        if(Options::WriteAnder().empty())
+        if (Options::WriteAnder().empty())
         {
             initialize();
             solveConstraints();
@@ -151,8 +146,7 @@ void FlowSensitive::readPtsFromFile(const std::string& filename)
     /// Initialization for the Solver
     initialize();
     /// Load the pts from file
-    if(!filename.empty())
-        this->readFromFile(filename);
+    if (!filename.empty()) this->readFromFile(filename);
     /// finalize the analysis
     finalize();
 }
@@ -162,8 +156,7 @@ void FlowSensitive::readPtsFromFile(const std::string& filename)
  */
 void FlowSensitive::finalize()
 {
-    if(Options::DumpVFG())
-        svfg->dump("fs_solved", true);
+    if (Options::DumpVFG()) svfg->dump("fs_solved", true);
 
     NodeStack& nodeStack = WPASolver<SVFG*>::SCCDetect();
     while (nodeStack.empty() == false)
@@ -171,8 +164,7 @@ void FlowSensitive::finalize()
         NodeID rep = nodeStack.top();
         nodeStack.pop();
         const NodeBS& subNodes = getSCCDetector()->subNodes(rep);
-        if (subNodes.count() > maxSCCSize)
-            maxSCCSize = subNodes.count();
+        if (subNodes.count() > maxSCCSize) maxSCCSize = subNodes.count();
         if (subNodes.count() > 1)
         {
             numOfNodesInSCC += subNodes.count();
@@ -184,7 +176,7 @@ void FlowSensitive::finalize()
     if (Options::ClusterFs())
     {
         Map<std::string, std::string> stats;
-        const PTDataTy *ptd = getPTDataTy();
+        const PTDataTy* ptd = getPTDataTy();
         // TODO: should we use liveOnly?
         Map<PointsTo, unsigned> allPts = ptd->getAllPts(true);
         // TODO: parameterise final arg.
@@ -192,11 +184,12 @@ void FlowSensitive::finalize()
         NodeIDAllocator::Clusterer::printStats("post-main: best", stats);
 
         // Do the same for the candidates. TODO: probably temporary for eval. purposes.
-        for (std::pair<hclust_fast_methods, std::vector<NodeID>> &candidate : candidateMappings)
+        for (std::pair<hclust_fast_methods, std::vector<NodeID>>& candidate : candidateMappings)
         {
             // Can reuse stats, since we're always filling it with `evaluate`, it will always be overwritten.
             NodeIDAllocator::Clusterer::evaluate(candidate.second, allPts, stats, true);
-            NodeIDAllocator::Clusterer::printStats("post-main: candidate " + SVFUtil::hclustMethodToString(candidate.first), stats);
+            NodeIDAllocator::Clusterer::printStats(
+                "post-main: candidate " + SVFUtil::hclustMethodToString(candidate.first), stats);
         }
     }
 
@@ -221,8 +214,7 @@ NodeStack& FlowSensitive::SCCDetect()
 void FlowSensitive::processNode(NodeID nodeId)
 {
     SVFGNode* node = svfg->getSVFGNode(nodeId);
-    if (processSVFGNode(node))
-        propagate(&node);
+    if (processSVFGNode(node)) propagate(&node);
 
     clearAllDFOutVarFlag(node);
 }
@@ -237,54 +229,45 @@ bool FlowSensitive::processSVFGNode(SVFGNode* node)
     if (AddrSVFGNode* addr = SVFUtil::dyn_cast<AddrSVFGNode>(node))
     {
         numOfProcessedAddr++;
-        if (processAddr(addr))
-            changed = true;
+        if (processAddr(addr)) changed = true;
     }
     else if (CopySVFGNode* copy = SVFUtil::dyn_cast<CopySVFGNode>(node))
     {
         numOfProcessedCopy++;
-        if (processCopy(copy))
-            changed = true;
+        if (processCopy(copy)) changed = true;
     }
     else if (GepSVFGNode* gep = SVFUtil::dyn_cast<GepSVFGNode>(node))
     {
         numOfProcessedGep++;
-        if(processGep(gep))
-            changed = true;
+        if (processGep(gep)) changed = true;
     }
     else if (LoadSVFGNode* load = SVFUtil::dyn_cast<LoadSVFGNode>(node))
     {
         numOfProcessedLoad++;
-        if(processLoad(load))
-            changed = true;
+        if (processLoad(load)) changed = true;
     }
     else if (StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(node))
     {
         numOfProcessedStore++;
-        if (processStore(store))
-            changed = true;
+        if (processStore(store)) changed = true;
     }
     else if (PHISVFGNode* phi = SVFUtil::dyn_cast<PHISVFGNode>(node))
     {
         numOfProcessedPhi++;
-        if (processPhi(phi))
-            changed = true;
+        if (processPhi(phi)) changed = true;
     }
-    else if (SVFUtil::isa<MSSAPHISVFGNode, FormalINSVFGNode,
-             FormalOUTSVFGNode, ActualINSVFGNode,
-             ActualOUTSVFGNode>(node))
+    else if (SVFUtil::isa<MSSAPHISVFGNode, FormalINSVFGNode, FormalOUTSVFGNode, ActualINSVFGNode, ActualOUTSVFGNode>(
+                 node))
     {
         numOfProcessedMSSANode++;
         changed = true;
     }
-    else if (SVFUtil::isa<ActualParmSVFGNode, FormalParmSVFGNode,
-             ActualRetSVFGNode, FormalRetSVFGNode,
-             NullPtrSVFGNode>(node))
+    else if (SVFUtil::isa<ActualParmSVFGNode, FormalParmSVFGNode, ActualRetSVFGNode, FormalRetSVFGNode,
+                          NullPtrSVFGNode>(node))
     {
         changed = true;
     }
-    else if (SVFUtil::isa<CmpVFGNode, BinaryOPVFGNode>(node) ||
-             SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+    else if (SVFUtil::isa<CmpVFGNode, BinaryOPVFGNode>(node) || SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
     {
     }
     else
@@ -311,15 +294,14 @@ bool FlowSensitive::propFromSrcToDst(SVFGEdge* edge)
     double start = stat->getClk();
     bool changed = false;
 
-    if (DirectSVFGEdge* dirEdge = SVFUtil::dyn_cast<DirectSVFGEdge>(edge))
-        changed = propAlongDirectEdge(dirEdge);
+    if (DirectSVFGEdge* dirEdge = SVFUtil::dyn_cast<DirectSVFGEdge>(edge)) changed = propAlongDirectEdge(dirEdge);
     else if (IndirectSVFGEdge* indEdge = SVFUtil::dyn_cast<IndirectSVFGEdge>(edge))
         changed = propAlongIndirectEdge(indEdge);
     else
         assert(false && "new kind of svfg edge?");
 
     double end = stat->getClk();
-    propagationTime += (end - start) /TIMEINTERVAL;
+    propagationTime += (end - start) / TIMEINTERVAL;
     return changed;
 }
 
@@ -335,8 +317,7 @@ bool FlowSensitive::propAlongDirectEdge(const DirectSVFGEdge* edge)
     SVFGNode* dst = edge->getDstNode();
     // If this is an actual-param or formal-ret, top-level pointer's pts must be
     // propagated from src to dst.
-    if (ActualParmSVFGNode* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(src))
-        changed = propagateFromAPToFP(ap, dst);
+    if (ActualParmSVFGNode* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(src)) changed = propagateFromAPToFP(ap, dst);
     else if (FormalRetSVFGNode* fp = SVFUtil::dyn_cast<FormalRetSVFGNode>(src))
         changed = propagateFromFRToAR(fp, dst);
     else
@@ -363,7 +344,7 @@ bool FlowSensitive::propagateFromAPToFP(const ActualParmSVFGNode* ap, const SVFG
     assert(fp && "expecting a formal param node");
 
     NodeID pagDst = fp->getParam()->getId();
-    const PointsTo &srcCPts = getPts(ap->getParam()->getId());
+    const PointsTo& srcCPts = getPts(ap->getParam()->getId());
     bool changed = unionPts(pagDst, srcCPts);
 
     return changed;
@@ -379,7 +360,7 @@ bool FlowSensitive::propagateFromFRToAR(const FormalRetSVFGNode* fr, const SVFGN
     assert(ar && "expecting an actual return node");
 
     NodeID pagDst = ar->getRev()->getId();
-    const PointsTo & srcCPts = getPts(fr->getRet()->getId());
+    const PointsTo& srcCPts = getPts(fr->getRet()->getId());
     bool changed = unionPts(pagDst, srcCPts);
 
     return changed;
@@ -404,18 +385,16 @@ bool FlowSensitive::propAlongIndirectEdge(const IndirectSVFGEdge* edge)
     {
         NodeID ptd = *ptdIt;
 
-        if (propVarPtsFromSrcToDst(ptd, src, dst))
-            changed = true;
+        if (propVarPtsFromSrcToDst(ptd, src, dst)) changed = true;
 
         if (isFieldInsensitive(ptd))
         {
             /// If this is a field-insensitive obj, propagate all field node's pts
             const NodeBS& allFields = getAllFieldsObjVars(ptd);
-            for (NodeBS::iterator fieldIt = allFields.begin(), fieldEit = allFields.end();
-                    fieldIt != fieldEit; ++fieldIt)
+            for (NodeBS::iterator fieldIt = allFields.begin(), fieldEit = allFields.end(); fieldIt != fieldEit;
+                 ++fieldIt)
             {
-                if (propVarPtsFromSrcToDst(*fieldIt, src, dst))
-                    changed = true;
+                if (propVarPtsFromSrcToDst(*fieldIt, src, dst)) changed = true;
             }
         }
     }
@@ -433,13 +412,11 @@ bool FlowSensitive::propVarPtsFromSrcToDst(NodeID var, const SVFGNode* src, cons
     bool changed = false;
     if (SVFUtil::isa<StoreSVFGNode>(src))
     {
-        if (updateInFromOut(src, var, dst, var))
-            changed = true;
+        if (updateInFromOut(src, var, dst, var)) changed = true;
     }
     else
     {
-        if (updateInFromIn(src, var, dst, var))
-            changed = true;
+        if (updateInFromIn(src, var, dst, var)) changed = true;
     }
     return changed;
 }
@@ -453,8 +430,7 @@ bool FlowSensitive::processAddr(const AddrSVFGNode* addr)
     NodeID srcID = addr->getPAGSrcNodeID();
     /// TODO: If this object has been set as field-insensitive, just
     ///       add the insensitive object node into dst pointer's pts.
-    if (isFieldInsensitive(srcID))
-        srcID = getFIObjVar(srcID);
+    if (isFieldInsensitive(srcID)) srcID = getFIObjVar(srcID);
     bool changed = addPts(addr->getPAGDstNodeID(), srcID);
     double end = stat->getClk();
     addrTime += (end - start) / TIMEINTERVAL;
@@ -481,12 +457,11 @@ bool FlowSensitive::processPhi(const PHISVFGNode* phi)
     double start = stat->getClk();
     bool changed = false;
     NodeID pagDst = phi->getRes()->getId();
-    for (PHISVFGNode::OPVers::const_iterator it = phi->opVerBegin(), eit = phi->opVerEnd();	it != eit; ++it)
+    for (PHISVFGNode::OPVers::const_iterator it = phi->opVerBegin(), eit = phi->opVerEnd(); it != eit; ++it)
     {
         NodeID src = it->second->getId();
         const PointsTo& srcPts = getPts(src);
-        if (unionPts(pagDst, srcPts))
-            changed = true;
+        if (unionPts(pagDst, srcPts)) changed = true;
     }
 
     double end = stat->getClk();
@@ -534,14 +509,12 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
         }
     }
 
-    if (unionPts(edge->getPAGDstNodeID(), tmpDstPts))
-        changed = true;
+    if (unionPts(edge->getPAGDstNodeID(), tmpDstPts)) changed = true;
 
     double end = stat->getClk();
     gepTime += (end - start) / TIMEINTERVAL;
     return changed;
 }
-
 
 /*!
  * Process load node
@@ -559,28 +532,25 @@ bool FlowSensitive::processLoad(const LoadSVFGNode* load)
     const PointsTo& srcPts = getPts(load->getPAGSrcNodeID());
 
     // p = *q, the type of p must be a pointer
-    if(load->getPAGDstNode()->isPointer())
+    if (load->getPAGDstNode()->isPointer())
     {
         for (PointsTo::iterator ptdIt = srcPts.begin(); ptdIt != srcPts.end(); ++ptdIt)
         {
             NodeID ptd = *ptdIt;
 
-            if (pag->isConstantObj(ptd))
-                continue;
+            if (pag->isConstantObj(ptd)) continue;
 
-            if (unionPtsFromIn(load, ptd, dstVar))
-                changed = true;
+            if (unionPtsFromIn(load, ptd, dstVar)) changed = true;
 
             if (isFieldInsensitive(ptd))
             {
                 /// If the ptd is a field-insensitive node, we should also get all field nodes'
                 /// points-to sets and pass them to pagDst.
                 const NodeBS& allFields = getAllFieldsObjVars(ptd);
-                for (NodeBS::iterator fieldIt = allFields.begin(), fieldEit = allFields.end();
-                        fieldIt != fieldEit; ++fieldIt)
+                for (NodeBS::iterator fieldIt = allFields.begin(), fieldEit = allFields.end(); fieldIt != fieldEit;
+                     ++fieldIt)
                 {
-                    if (unionPtsFromIn(load, *fieldIt, dstVar))
-                        changed = true;
+                    if (unionPtsFromIn(load, *fieldIt, dstVar)) changed = true;
                 }
             }
         }
@@ -599,7 +569,7 @@ bool FlowSensitive::processLoad(const LoadSVFGNode* load)
 bool FlowSensitive::processStore(const StoreSVFGNode* store)
 {
 
-    const PointsTo & dstPts = getPts(store->getPAGDstNodeID());
+    const PointsTo& dstPts = getPts(store->getPAGDstNodeID());
 
     /// STORE statement can only be processed if the pointer on the LHS
     /// points to something. If we handle STORE with an empty points-to
@@ -607,24 +577,21 @@ bool FlowSensitive::processStore(const StoreSVFGNode* store)
     /// points-to one target and it has been identified as a strong
     /// update, we can't remove those points-to information computed
     /// before this strong update from the OUT set.
-    if (dstPts.empty())
-        return false;
+    if (dstPts.empty()) return false;
 
     double start = stat->getClk();
     bool changed = false;
 
     // *p = q, the type of q must be a pointer
-    if(getPts(store->getPAGSrcNodeID()).empty() == false && store->getPAGSrcNode()->isPointer())
+    if (getPts(store->getPAGSrcNodeID()).empty() == false && store->getPAGSrcNode()->isPointer())
     {
         for (PointsTo::iterator it = dstPts.begin(), eit = dstPts.end(); it != eit; ++it)
         {
             NodeID ptd = *it;
 
-            if (pag->isConstantObj(ptd))
-                continue;
+            if (pag->isConstantObj(ptd)) continue;
 
-            if (unionPtsFromTop(store, store->getPAGSrcNodeID(), ptd))
-                changed = true;
+            if (unionPtsFromTop(store, store->getPAGSrcNodeID(), ptd)) changed = true;
         }
     }
 
@@ -639,14 +606,12 @@ bool FlowSensitive::processStore(const StoreSVFGNode* store)
     if (isSU)
     {
         svfgHasSU.set(store->getId());
-        if (strongUpdateOutFromIn(store, singleton))
-            changed = true;
+        if (strongUpdateOutFromIn(store, singleton)) changed = true;
     }
     else
     {
         svfgHasSU.reset(store->getId());
-        if (weakUpdateOutFromIn(store))
-            changed = true;
+        if (weakUpdateOutFromIn(store)) changed = true;
     }
     double updateEnd = stat->getClk();
     updateTime += (updateEnd - updateStart) / TIMEINTERVAL;
@@ -670,9 +635,8 @@ bool FlowSensitive::isStrongUpdate(const SVFGNode* node, NodeID& singleton)
             singleton = *it;
 
             // Strong update can be made if this points-to target is not heap, array or field-insensitive.
-            if (!isHeapMemObj(singleton) && !isArrayMemObj(singleton)
-                    && pag->getBaseObj(singleton)->isFieldInsensitive() == false
-                    && !isLocalVarInRecursiveFun(singleton))
+            if (!isHeapMemObj(singleton) && !isArrayMemObj(singleton) &&
+                pag->getBaseObj(singleton)->isFieldInsensitive() == false && !isLocalVarInRecursiveFun(singleton))
             {
                 isSU = true;
             }
@@ -692,25 +656,24 @@ bool FlowSensitive::updateCallGraph(const CallSiteToFunPtrMap& callsites)
 
     // Bound the new edges by the Andersen's call graph.
     // TODO: we want this to be an assertion eventually.
-    const CallEdgeMap &andersCallEdgeMap = ander->getIndCallMap();
-    for (typename CallEdgeMap::value_type &csfs : newEdges)
+    const CallEdgeMap& andersCallEdgeMap = ander->getIndCallMap();
+    for (typename CallEdgeMap::value_type& csfs : newEdges)
     {
-        const CallICFGNode *potentialCallSite = csfs.first;
-        FunctionSet &potentialFunctionSet = csfs.second;
+        const CallICFGNode* potentialCallSite = csfs.first;
+        FunctionSet& potentialFunctionSet = csfs.second;
 
         // Check this callsite even calls anything per Andersen's.
-        typename CallEdgeMap::const_iterator andersFunctionSetIt
-            = andersCallEdgeMap.find(potentialCallSite);
+        typename CallEdgeMap::const_iterator andersFunctionSetIt = andersCallEdgeMap.find(potentialCallSite);
         if (andersFunctionSetIt == andersCallEdgeMap.end())
         {
             potentialFunctionSet.clear();
         }
 
-        const FunctionSet &andersFunctionSet = andersFunctionSetIt->second;
+        const FunctionSet& andersFunctionSet = andersFunctionSetIt->second;
         for (FunctionSet::iterator potentialFunctionIt = potentialFunctionSet.begin();
-                potentialFunctionIt != potentialFunctionSet.end(); )
+             potentialFunctionIt != potentialFunctionSet.end();)
         {
-            const SVFFunction *potentialFunction = *potentialFunctionIt;
+            const SVFFunction* potentialFunction = *potentialFunctionIt;
             if (andersFunctionSet.find(potentialFunction) == andersFunctionSet.end())
             {
                 // potentialFunction is not in the Andersen's call graph -- remove it.
@@ -744,10 +707,10 @@ void FlowSensitive::connectCallerAndCallee(const CallEdgeMap& newEdges, SVFGEdge
     for (; iter != eiter; iter++)
     {
         const CallICFGNode* cs = iter->first;
-        const FunctionSet & functions = iter->second;
+        const FunctionSet& functions = iter->second;
         for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
-            const SVFFunction*  func = *func_iter;
+            const SVFFunction* func = *func_iter;
             svfg->connectCallerAndCallee(cs, func, edges);
         }
     }
@@ -781,28 +744,24 @@ void FlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& edges)
             {
                 NodeID ptd = *ptdIt;
 
-                if (propVarPtsAfterCGUpdated(ptd, srcNode, dstNode))
-                    changed = true;
+                if (propVarPtsAfterCGUpdated(ptd, srcNode, dstNode)) changed = true;
 
                 if (isFieldInsensitive(ptd))
                 {
                     /// If this is a field-insensitive obj, propagate all field node's pts
                     const NodeBS& allFields = getAllFieldsObjVars(ptd);
-                    for (NodeBS::iterator fieldIt = allFields.begin(), fieldEit = allFields.end();
-                            fieldIt != fieldEit; ++fieldIt)
+                    for (NodeBS::iterator fieldIt = allFields.begin(), fieldEit = allFields.end(); fieldIt != fieldEit;
+                         ++fieldIt)
                     {
-                        if (propVarPtsAfterCGUpdated(*fieldIt, srcNode, dstNode))
-                            changed = true;
+                        if (propVarPtsAfterCGUpdated(*fieldIt, srcNode, dstNode)) changed = true;
                     }
                 }
             }
 
-            if (changed)
-                pushIntoWorklist(dstNode->getId());
+            if (changed) pushIntoWorklist(dstNode->getId());
         }
     }
 }
-
 
 /*!
  * Propagate points-to information of a certain variable from src to dst.
@@ -811,13 +770,11 @@ bool FlowSensitive::propVarPtsAfterCGUpdated(NodeID var, const SVFGNode* src, co
 {
     if (SVFUtil::isa<StoreSVFGNode>(src))
     {
-        if (propDFOutToIn(src, var, dst, var))
-            return true;
+        if (propDFOutToIn(src, var, dst, var)) return true;
     }
     else
     {
-        if (propDFInToIn(src, var, dst, var))
-            return true;
+        if (propDFInToIn(src, var, dst, var)) return true;
     }
     return false;
 }
@@ -825,11 +782,10 @@ bool FlowSensitive::propVarPtsAfterCGUpdated(NodeID var, const SVFGNode* src, co
 void FlowSensitive::cluster(void)
 {
     std::vector<std::pair<unsigned, unsigned>> keys;
-    for (const auto& pair : *pag)
-        keys.emplace_back(pair.first, 1);
+    for (const auto& pair : *pag) keys.emplace_back(pair.first, 1);
 
-    PointsTo::MappingPtr nodeMapping =
-        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(ander, keys, candidateMappings, "aux-ander"));
+    PointsTo::MappingPtr nodeMapping = std::make_shared<std::vector<NodeID>>(
+        NodeIDAllocator::Clusterer::cluster(ander, keys, candidateMappings, "aux-ander"));
     PointsTo::MappingPtr reverseNodeMapping =
         std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
 
@@ -838,8 +794,8 @@ void FlowSensitive::cluster(void)
 
 void FlowSensitive::plainMap(void) const
 {
-    assert(Options::NodeAllocStrat() == NodeIDAllocator::Strategy::DENSE
-           && "FS::cluster: plain mapping requires dense allocation strategy.");
+    assert(Options::NodeAllocStrat() == NodeIDAllocator::Strategy::DENSE &&
+           "FS::cluster: plain mapping requires dense allocation strategy.");
 
     const size_t numObjects = NodeIDAllocator::get()->getNumObjects();
     PointsTo::MappingPtr plainMapping = std::make_shared<std::vector<NodeID>>(numObjects);
@@ -853,7 +809,7 @@ void FlowSensitive::plainMap(void) const
     PointsTo::setCurrentBestNodeMapping(plainMapping, reversePlainMapping);
 }
 
-void FlowSensitive::countAliases(Set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases)
+void FlowSensitive::countAliases(Set<std::pair<NodeID, NodeID>> cmp, unsigned* mayAliases, unsigned* noAliases)
 {
     for (std::pair<NodeID, NodeID> locPA : cmp)
     {
@@ -878,5 +834,4 @@ void FlowSensitive::countAliases(Set<std::pair<NodeID, NodeID>> cmp, unsigned *m
             }
         }
     }
-
 }

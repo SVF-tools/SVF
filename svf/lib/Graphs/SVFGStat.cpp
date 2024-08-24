@@ -34,30 +34,30 @@
 using namespace SVF;
 using namespace std;
 
-const char* MemSSAStat::TotalTimeOfConstructMemSSA = "TotalMSSATime";	///< Total time for constructing memory SSA
-const char* MemSSAStat::TimeOfGeneratingMemRegions  = "GenRegionTime";	///< Time for allocating regions
-const char* MemSSAStat::TimeOfCreateMUCHI  = "GenMUCHITime";	///< Time for generating mu/chi for load/store/calls
-const char* MemSSAStat::TimeOfInsertingPHI = "InsertPHITime";	///< Time for inserting phis
-const char* MemSSAStat::TimeOfSSARenaming = "SSARenameTime";	///< Time for SSA rename
+const char* MemSSAStat::TotalTimeOfConstructMemSSA = "TotalMSSATime"; ///< Total time for constructing memory SSA
+const char* MemSSAStat::TimeOfGeneratingMemRegions = "GenRegionTime"; ///< Time for allocating regions
+const char* MemSSAStat::TimeOfCreateMUCHI = "GenMUCHITime";   ///< Time for generating mu/chi for load/store/calls
+const char* MemSSAStat::TimeOfInsertingPHI = "InsertPHITime"; ///< Time for inserting phis
+const char* MemSSAStat::TimeOfSSARenaming = "SSARenameTime";  ///< Time for SSA rename
 
-const char* MemSSAStat::NumOfMaxRegion = "MaxRegSize";	///< Number of max points-to set in region.
-const char* MemSSAStat::NumOfAveragePtsInRegion = "AverageRegSize";	///< Number of average points-to set in region.
-const char* MemSSAStat::NumOfMemRegions = "MemRegions";	///< Number of memory regions
-const char* MemSSAStat::NumOfEntryChi = "FunEntryChi";	///< Number of function entry chi
-const char* MemSSAStat::NumOfRetMu = "FunRetMu";	///< Number of function return mu
-const char* MemSSAStat::NumOfCSChi = "CSChiNode";	///< Number of call site chi
-const char* MemSSAStat::NumOfCSMu = "CSMuNode";	///< Number of call site mu
-const char* MemSSAStat::NumOfLoadMu = "LoadMuNode";	///< Number of load mu
-const char* MemSSAStat::NumOfStoreChi = "StoreChiNode";	///< Number of store chi
-const char* MemSSAStat::NumOfMSSAPhi = "MSSAPhi";	///< Number of non-top level ptr phi
+const char* MemSSAStat::NumOfMaxRegion = "MaxRegSize";              ///< Number of max points-to set in region.
+const char* MemSSAStat::NumOfAveragePtsInRegion = "AverageRegSize"; ///< Number of average points-to set in region.
+const char* MemSSAStat::NumOfMemRegions = "MemRegions";             ///< Number of memory regions
+const char* MemSSAStat::NumOfEntryChi = "FunEntryChi";              ///< Number of function entry chi
+const char* MemSSAStat::NumOfRetMu = "FunRetMu";                    ///< Number of function return mu
+const char* MemSSAStat::NumOfCSChi = "CSChiNode";                   ///< Number of call site chi
+const char* MemSSAStat::NumOfCSMu = "CSMuNode";                     ///< Number of call site mu
+const char* MemSSAStat::NumOfLoadMu = "LoadMuNode";                 ///< Number of load mu
+const char* MemSSAStat::NumOfStoreChi = "StoreChiNode";             ///< Number of store chi
+const char* MemSSAStat::NumOfMSSAPhi = "MSSAPhi";                   ///< Number of non-top level ptr phi
 
-const char* MemSSAStat::NumOfFunHasEntryChi = "FunHasEntryChi";	///< Number of functions which have entry chi
-const char* MemSSAStat::NumOfFunHasRetMu = "FunHasRetMu";	///< Number of functions which have return mu
-const char* MemSSAStat::NumOfCSHasChi = "CSHasChi";	///< Number of call sites which have chi
-const char* MemSSAStat::NumOfCSHasMu = "CSHasMu";	///< Number of call sites which have mu
-const char* MemSSAStat::NumOfLoadHasMu = "LoadHasMu";	///< Number of loads which have mu
-const char* MemSSAStat::NumOfStoreHasChi = "StoreHasChi";	///< Number of stores which have chi
-const char* MemSSAStat::NumOfBBHasMSSAPhi = "BBHasMSSAPhi";	///< Number of basic blocks which have mssa phi
+const char* MemSSAStat::NumOfFunHasEntryChi = "FunHasEntryChi"; ///< Number of functions which have entry chi
+const char* MemSSAStat::NumOfFunHasRetMu = "FunHasRetMu";       ///< Number of functions which have return mu
+const char* MemSSAStat::NumOfCSHasChi = "CSHasChi";             ///< Number of call sites which have chi
+const char* MemSSAStat::NumOfCSHasMu = "CSHasMu";               ///< Number of call sites which have mu
+const char* MemSSAStat::NumOfLoadHasMu = "LoadHasMu";           ///< Number of loads which have mu
+const char* MemSSAStat::NumOfStoreHasChi = "StoreHasChi";       ///< Number of stores which have chi
+const char* MemSSAStat::NumOfBBHasMSSAPhi = "BBHasMSSAPhi";     ///< Number of basic blocks which have mssa phi
 
 /*!
  * Constructor
@@ -81,23 +81,22 @@ void MemSSAStat::performStat()
 
     u32_t maxRegionSize = 0;
     u32_t totalRegionPtsNum = 0;
-    MRGenerator::MRSet & mrSet = mrGenerator->getMRSet();
+    MRGenerator::MRSet& mrSet = mrGenerator->getMRSet();
     MRGenerator::MRSet::const_iterator it = mrSet.begin();
     MRGenerator::MRSet::const_iterator eit = mrSet.end();
     for (; it != eit; it++)
     {
         const MemRegion* region = *it;
         u32_t regionSize = region->getRegionSize();
-        if (regionSize > maxRegionSize)
-            maxRegionSize = regionSize;
+        if (regionSize > maxRegionSize) maxRegionSize = regionSize;
         totalRegionPtsNum += regionSize;
     }
 
-    timeStatMap[TotalTimeOfConstructMemSSA] = (endTime - startTime)/TIMEINTERVAL;
+    timeStatMap[TotalTimeOfConstructMemSSA] = (endTime - startTime) / TIMEINTERVAL;
     timeStatMap[TimeOfGeneratingMemRegions] = MemSSA::timeOfGeneratingMemRegions;
-    timeStatMap[TimeOfCreateMUCHI] =  MemSSA::timeOfCreateMUCHI;
-    timeStatMap[TimeOfInsertingPHI] =  MemSSA::timeOfInsertingPHI;
-    timeStatMap[TimeOfSSARenaming] =  MemSSA::timeOfSSARenaming;
+    timeStatMap[TimeOfCreateMUCHI] = MemSSA::timeOfCreateMUCHI;
+    timeStatMap[TimeOfInsertingPHI] = MemSSA::timeOfInsertingPHI;
+    timeStatMap[TimeOfSSARenaming] = MemSSA::timeOfSSARenaming;
 
     PTNumStatMap[NumOfMaxRegion] = maxRegionSize;
     timeStatMap[NumOfAveragePtsInRegion] = (regionNumber == 0) ? 0 : ((double)totalRegionPtsNum / regionNumber);
@@ -119,7 +118,6 @@ void MemSSAStat::performStat()
     PTNumStatMap[NumOfBBHasMSSAPhi] = mssa->getBBToPhiSetMap().size();
 
     printStat();
-
 }
 
 /*!
@@ -183,17 +181,17 @@ void SVFGStat::performStat()
 
     processGraph();
 
-    timeStatMap["TotalTime"] = (endTime - startTime)/TIMEINTERVAL;
+    timeStatMap["TotalTime"] = (endTime - startTime) / TIMEINTERVAL;
 
-    timeStatMap["ConnDirEdgeTime"] = (connectDirSVFGEdgeTimeEnd - connectDirSVFGEdgeTimeStart)/TIMEINTERVAL;
+    timeStatMap["ConnDirEdgeTime"] = (connectDirSVFGEdgeTimeEnd - connectDirSVFGEdgeTimeStart) / TIMEINTERVAL;
 
-    timeStatMap["ConnIndEdgeTime"] = (connectIndSVFGEdgeTimeEnd - connectIndSVFGEdgeTimeStart)/TIMEINTERVAL;
+    timeStatMap["ConnIndEdgeTime"] = (connectIndSVFGEdgeTimeEnd - connectIndSVFGEdgeTimeStart) / TIMEINTERVAL;
 
-    timeStatMap["TLNodeTime"] = (addTopLevelNodeTimeEnd - addTopLevelNodeTimeStart)/TIMEINTERVAL;
+    timeStatMap["TLNodeTime"] = (addTopLevelNodeTimeEnd - addTopLevelNodeTimeStart) / TIMEINTERVAL;
 
-    timeStatMap["ATNodeTime"] = (addAddrTakenNodeTimeEnd - addAddrTakenNodeTimeStart)/TIMEINTERVAL;
+    timeStatMap["ATNodeTime"] = (addAddrTakenNodeTimeEnd - addAddrTakenNodeTimeStart) / TIMEINTERVAL;
 
-    timeStatMap["OptTime"] = (svfgOptTimeEnd - svfgOptTimeStart)/TIMEINTERVAL;
+    timeStatMap["OptTime"] = (svfgOptTimeEnd - svfgOptTimeStart) / TIMEINTERVAL;
 
     PTNumStatMap["TotalNode"] = numOfNodes;
 
@@ -251,8 +249,7 @@ void SVFGStat::processGraph()
     for (; it != eit; ++it)
     {
         numOfNodes++;
-        if (SVFUtil::isa<FormalINSVFGNode>(it->second))
-            numOfFormalIn++;
+        if (SVFUtil::isa<FormalINSVFGNode>(it->second)) numOfFormalIn++;
         else if (SVFUtil::isa<FormalOUTSVFGNode>(it->second))
             numOfFormalOut++;
         else if (SVFUtil::isa<FormalParmSVFGNode>(it->second))
@@ -292,11 +289,9 @@ void SVFGStat::processGraph()
         avgOutDegree = totalOutEdge / numOfNodes;
     }
 
-    if (!nodeHasIndInEdge.empty())
-        avgIndInDegree = totalIndInEdge / nodeHasIndInEdge.size();
+    if (!nodeHasIndInEdge.empty()) avgIndInDegree = totalIndInEdge / nodeHasIndInEdge.size();
 
-    if (!nodeHasIndOutEdge.empty())
-        avgIndOutDegree = totalIndOutEdge / nodeHasIndOutEdge.size();
+    if (!nodeHasIndOutEdge.empty()) avgIndOutDegree = totalIndOutEdge / nodeHasIndOutEdge.size();
 }
 
 void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, NodeSet& nodeHasIndOutEdge)
@@ -304,8 +299,7 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
     // Incoming edge
     const SVFGEdge::SVFGEdgeSetTy& inEdges = node->getInEdges();
     // total in edge
-    if (inEdges.size() > maxInDegree)
-        maxInDegree = inEdges.size();
+    if (inEdges.size() > maxInDegree) maxInDegree = inEdges.size();
     totalInEdge += inEdges.size();
 
     // indirect in edge
@@ -325,8 +319,7 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
             totalIndEdgeLabels += cpts.count();
         }
 
-        if (SVFUtil::isa<CallDirSVFGEdge>(*edgeIt))
-            totalDirCallEdge++;
+        if (SVFUtil::isa<CallDirSVFGEdge>(*edgeIt)) totalDirCallEdge++;
         else if (SVFUtil::isa<CallIndSVFGEdge>(*edgeIt))
             totalIndCallEdge++;
         else if (SVFUtil::isa<RetDirSVFGEdge>(*edgeIt))
@@ -335,8 +328,7 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
             totalIndRetEdge++;
     }
 
-    if (indInEdges > maxIndInDegree)
-        maxIndInDegree = indInEdges;
+    if (indInEdges > maxIndInDegree) maxIndInDegree = indInEdges;
     totalIndInEdge += indInEdges;
 
     /*-----------------------------------------------------*/
@@ -344,8 +336,7 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
     // Outgoing edge
     const SVFGEdge::SVFGEdgeSetTy& outEdges = node->getOutEdges();
     // total out edge
-    if (outEdges.size() > maxOutDegree)
-        maxOutDegree = outEdges.size();
+    if (outEdges.size() > maxOutDegree) maxOutDegree = outEdges.size();
     totalOutEdge += outEdges.size();
 
     // indirect out edge
@@ -361,8 +352,7 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
         }
     }
 
-    if (indOutEdges > maxIndOutDegree)
-        maxIndOutDegree = indOutEdges;
+    if (indOutEdges > maxIndOutDegree) maxIndOutDegree = indOutEdges;
     totalIndOutEdge += indOutEdges;
 }
 
@@ -400,13 +390,12 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
     for (; it != eit; ++it)
     {
         totalNode++;
-        if(svfgSCC->isInCycle(it->first))
+        if (svfgSCC->isInCycle(it->first))
         {
             nodeInCycle++;
             sccRepNodeSet.insert(svfgSCC->repNode(it->first));
             const NodeBS& subNodes = svfgSCC->subNodes(it->first);
-            if(subNodes.count() > maxNodeInCycle)
-                maxNodeInCycle = subNodes.count();
+            if (subNodes.count() > maxNodeInCycle) maxNodeInCycle = subNodes.count();
         }
 
         SVFGEdge::SVFGEdgeSetTy::const_iterator edgeIt = it->second->InEdgeBegin();
@@ -414,10 +403,10 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
         for (; edgeIt != edgeEit; ++edgeIt)
         {
 
-            const SVFGEdge *edge = *edgeIt;
+            const SVFGEdge* edge = *edgeIt;
             totalEdge++;
             bool eCycle = false;
-            if(getSCCRep(svfgSCC,edge->getSrcID()) == getSCCRep(svfgSCC,edge->getDstID()))
+            if (getSCCRep(svfgSCC, edge->getSrcID()) == getSCCRep(svfgSCC, edge->getDstID()))
             {
                 edgeInCycle++;
                 eCycle = true;
@@ -426,25 +415,22 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
             if (edge->isDirectVFGEdge())
             {
                 totalDirectEdge++;
-                if(eCycle)
-                    directEdgeInCycle++;
-
+                if (eCycle) directEdgeInCycle++;
             }
             if (edge->isIndirectVFGEdge())
             {
                 totalIndirectEdge++;
-                if(eCycle)
-                    indirectEdgeInCycle++;
+                if (eCycle) indirectEdgeInCycle++;
             }
             if (edge->isCallVFGEdge())
             {
                 totalCallEdge++;
-                if(eCycle)
+                if (eCycle)
                 {
                     callEdgeInCycle++;
                 }
 
-                if(insensitiveCalRetEdges.find(edge)!=insensitiveCalRetEdges.end())
+                if (insensitiveCalRetEdges.find(edge) != insensitiveCalRetEdges.end())
                 {
                     insensitiveCallEdge++;
                 }
@@ -452,12 +438,12 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
             if (edge->isRetVFGEdge())
             {
                 totalRetEdge++;
-                if(eCycle)
+                if (eCycle)
                 {
                     retEdgeInCycle++;
                 }
 
-                if(insensitiveCalRetEdges.find(edge)!=insensitiveCalRetEdges.end())
+                if (insensitiveCalRetEdges.find(edge) != insensitiveCalRetEdges.end())
                 {
                     insensitiveRetEdge++;
                 }
@@ -465,9 +451,7 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
         }
     }
 
-
     totalCycle = sccRepNodeSet.size();
-
 
     PTNumStatMap["TotalNode"] = totalNode;
     PTNumStatMap["TotalCycle"] = totalCycle;
@@ -489,11 +473,9 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
     PTNumStatMap["RetEdgeInCycle"] = retEdgeInCycle;
     PTNumStatMap["InsenRetEdge"] = insensitiveRetEdge;
 
-
     PTAStat::printStat("SVFG SCC Stat");
 
     delete svfgSCC;
-
 }
 
 void SVFGStat::printStat(string str)

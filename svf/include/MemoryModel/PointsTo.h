@@ -45,17 +45,17 @@ public:
     /// Construct empty points-to set.
     PointsTo();
     /// Copy constructor.
-    PointsTo(const PointsTo &pt);
+    PointsTo(const PointsTo& pt);
     /// Move constructor.
-    PointsTo(PointsTo &&pt) noexcept ;
+    PointsTo(PointsTo&& pt) noexcept;
 
     ~PointsTo();
 
     /// Copy assignment.
-    PointsTo &operator=(const PointsTo &rhs);
+    PointsTo& operator=(const PointsTo& rhs);
 
     /// Move assignment.
-    PointsTo &operator=(PointsTo &&rhs) noexcept ;
+    PointsTo& operator=(PointsTo&& rhs) noexcept;
 
     /// Returns true if set is empty.
     bool empty() const;
@@ -80,40 +80,40 @@ public:
     void reset(u32_t n);
 
     /// Returns true if this set is a superset of rhs.
-    bool contains(const PointsTo &rhs) const;
+    bool contains(const PointsTo& rhs) const;
 
     /// Returns true if this set and rhs share any elements.
-    bool intersects(const PointsTo &rhs) const;
+    bool intersects(const PointsTo& rhs) const;
 
     /// Returns the first element the set. Returns -1 when the set is empty.
     /// TODO: should we diverge from LLVM about the int return?
     int find_first();
 
     /// Returns true if this set and rhs contain exactly the same elements.
-    bool operator==(const PointsTo &rhs) const;
+    bool operator==(const PointsTo& rhs) const;
 
     /// Returns true if either this set or rhs has an element not in the other.
-    bool operator!=(const PointsTo &rhs) const;
+    bool operator!=(const PointsTo& rhs) const;
 
     /// Put union of this set and rhs into this set.
     /// Returns true if this set changed.
-    bool operator|=(const PointsTo &rhs);
-    bool operator|=(const NodeBS &rhs);
+    bool operator|=(const PointsTo& rhs);
+    bool operator|=(const NodeBS& rhs);
 
     /// Put intersection of this set and rhs into this set.
     /// Returns true if this set changed.
-    bool operator&=(const PointsTo &rhs);
+    bool operator&=(const PointsTo& rhs);
 
     /// Remove elements in rhs from this set.
     /// Returns true if this set changed.
-    bool operator-=(const PointsTo &rhs);
+    bool operator-=(const PointsTo& rhs);
 
     /// Put intersection of this set with complement of rhs into this set.
     /// Returns true if this set changed.
-    bool intersectWithComplement(const PointsTo &rhs);
+    bool intersectWithComplement(const PointsTo& rhs);
 
     /// Put intersection of lhs with complement of rhs into this set (overwrites).
-    void intersectWithComplement(const PointsTo &lhs, const PointsTo &rhs);
+    void intersectWithComplement(const PointsTo& lhs, const PointsTo& rhs);
 
     /// Returns this points-to set as a NodeBS.
     NodeBS toNodeBS() const;
@@ -150,7 +150,7 @@ private:
 
     /// Returns true if this points-to set and pt have the same type, nodeMapping,
     /// and reverseNodeMapping
-    bool metaSame(const PointsTo &pt) const;
+    bool metaSame(const PointsTo& pt) const;
 
 private:
     /// Best node mapping we know of the for the analyses at hand.
@@ -160,8 +160,7 @@ private:
 
     /// Holds backing data structure.
     /// TODO: std::variant when we move to C++17.
-    union
-    {
+    union {
         /// Sparse bit vector backing.
         SparseBitVector<> sbv;
         /// Core bit vector backing.
@@ -184,23 +183,23 @@ public:
         using iterator_category = std::forward_iterator_tag;
         using value_type = u32_t;
         using difference_type = std::ptrdiff_t;
-        using pointer = u32_t *;
-        using reference = u32_t &;
+        using pointer = u32_t*;
+        using reference = u32_t&;
 
         /// Deleted because we don't want iterators with null pt.
         PointsToIterator() = delete;
-        PointsToIterator(const PointsToIterator &pt);
-        PointsToIterator(PointsToIterator &&pt) noexcept ;
+        PointsToIterator(const PointsToIterator& pt);
+        PointsToIterator(PointsToIterator&& pt) noexcept;
 
         /// Returns an iterator to the beginning of pt if end is false, and to
         /// the end of pt if end is true.
-        explicit PointsToIterator(const PointsTo *pt, bool end=false);
+        explicit PointsToIterator(const PointsTo* pt, bool end = false);
 
-        PointsToIterator &operator=(const PointsToIterator &rhs);
-        PointsToIterator &operator=(PointsToIterator &&rhs) noexcept ;
+        PointsToIterator& operator=(const PointsToIterator& rhs);
+        PointsToIterator& operator=(PointsToIterator&& rhs) noexcept;
 
         /// Pre-increment: ++it.
-        const PointsToIterator &operator++();
+        const PointsToIterator& operator++();
 
         /// Post-increment: it++.
         const PointsToIterator operator++(int);
@@ -209,21 +208,20 @@ public:
         u32_t operator*() const;
 
         /// Equality: *this == rhs.
-        bool operator==(const PointsToIterator &rhs) const;
+        bool operator==(const PointsToIterator& rhs) const;
 
         /// Inequality: *this != rhs.
-        bool operator!=(const PointsToIterator &rhs) const;
+        bool operator!=(const PointsToIterator& rhs) const;
 
     private:
         bool atEnd() const;
 
     private:
         /// PointsTo we are iterating over.
-        const PointsTo *pt;
+        const PointsTo* pt;
         /// Iterator into the backing data structure. Discriminated by pt->type.
         /// TODO: std::variant when we move to C++17.
-        union
-        {
+        union {
             SparseBitVector<>::iterator sbvIt;
             CoreBitVector::iterator cbvIt;
             BitVector::iterator bvIt;
@@ -232,24 +230,22 @@ public:
 };
 
 /// Returns a new lhs | rhs.
-PointsTo operator|(const PointsTo &lhs, const PointsTo &rhs);
+PointsTo operator|(const PointsTo& lhs, const PointsTo& rhs);
 
 /// Returns a new lhs & rhs.
-PointsTo operator&(const PointsTo &lhs, const PointsTo &rhs);
+PointsTo operator&(const PointsTo& lhs, const PointsTo& rhs);
 
 /// Returns a new lhs - rhs.
-PointsTo operator-(const PointsTo &lhs, const PointsTo &rhs);
+PointsTo operator-(const PointsTo& lhs, const PointsTo& rhs);
 
 } // End namespace SVF
 
-template <>
-struct std::hash<SVF::PointsTo>
+template <> struct std::hash<SVF::PointsTo>
 {
-    size_t operator()(const SVF::PointsTo &pt) const
+    size_t operator()(const SVF::PointsTo& pt) const
     {
         return pt.hash();
     }
 };
 
-
-#endif  // POINTSTO_H_
+#endif // POINTSTO_H_

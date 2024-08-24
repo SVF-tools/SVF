@@ -50,7 +50,7 @@ typedef Set<const SVFFunction*> VFunSet;
 class CommonCHGraph
 {
 public:
-    virtual ~CommonCHGraph() { };
+    virtual ~CommonCHGraph(){};
     enum CHGKind
     {
         Standard,
@@ -58,11 +58,10 @@ public:
     };
 
     virtual bool csHasVFnsBasedonCHA(CallSite cs) = 0;
-    virtual const VFunSet &getCSVFsBasedonCHA(CallSite cs) = 0;
+    virtual const VFunSet& getCSVFsBasedonCHA(CallSite cs) = 0;
     virtual bool csHasVtblsBasedonCHA(CallSite cs) = 0;
-    virtual const VTableSet &getCSVtblsBasedonCHA(CallSite cs) = 0;
-    virtual void getVFnsFromVtbls(CallSite cs, const VTableSet& vtbls,
-                                  VFunSet& virtualFunctions) = 0;
+    virtual const VTableSet& getCSVtblsBasedonCHA(CallSite cs) = 0;
+    virtual void getVFnsFromVtbls(CallSite cs, const VTableSet& vtbls, VFunSet& virtualFunctions) = 0;
 
     CHGKind getKind(void) const
     {
@@ -73,9 +72,8 @@ protected:
     CHGKind kind;
 };
 
-
 typedef GenericEdge<CHNode> GenericCHEdgeTy;
-class CHEdge: public GenericCHEdgeTy
+class CHEdge : public GenericCHEdgeTy
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -89,8 +87,7 @@ public:
 
     typedef GenericNode<CHNode, CHEdge>::GEdgeSetTy CHEdgeSetTy;
 
-    CHEdge(CHNode* s, CHNode* d, CHEDGETYPE et, GEdgeFlag k = 0)
-        : GenericCHEdgeTy(s, d, k)
+    CHEdge(CHNode* s, CHNode* d, CHEDGETYPE et, GEdgeFlag k = 0) : GenericCHEdgeTy(s, d, k)
     {
         edgeType = et;
     }
@@ -105,7 +102,7 @@ private:
 };
 
 typedef GenericNode<CHNode, CHEdge> GenericCHNodeTy;
-class CHNode: public GenericCHNodeTy
+class CHNode : public GenericCHNodeTy
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -113,20 +110,18 @@ class CHNode: public GenericCHNodeTy
 public:
     typedef enum
     {
-        PURE_ABSTRACT = 0x1, // pure virtual abstract class
+        PURE_ABSTRACT = 0x1,     // pure virtual abstract class
         MULTI_INHERITANCE = 0x2, // multi inheritance class
-        TEMPLATE = 0x04 // template class
+        TEMPLATE = 0x04          // template class
     } CLASSATTR;
 
     typedef std::vector<const SVFFunction*> FuncVector;
 
-    CHNode (const std::string& name, NodeID i = 0, GNodeK k = 0):
-        GenericCHNodeTy(i, k), vtable(nullptr), className(name), flags(0)
+    CHNode(const std::string& name, NodeID i = 0, GNodeK k = 0)
+        : GenericCHNodeTy(i, k), vtable(nullptr), className(name), flags(0)
     {
     }
-    ~CHNode()
-    {
-    }
+    ~CHNode() {}
     std::string getName() const
     {
         return className;
@@ -175,18 +170,18 @@ public:
     {
         virtualFunctionVectors.push_back(vfuncvec);
     }
-    const std::vector<FuncVector> &getVirtualFunctionVectors() const
+    const std::vector<FuncVector>& getVirtualFunctionVectors() const
     {
         return virtualFunctionVectors;
     }
-    void getVirtualFunctions(u32_t idx, FuncVector &virtualFunctions) const;
+    void getVirtualFunctions(u32_t idx, FuncVector& virtualFunctions) const;
 
-    const SVFGlobalValue *getVTable() const
+    const SVFGlobalValue* getVTable() const
     {
         return vtable;
     }
 
-    void setVTable(const SVFGlobalValue *vtbl)
+    void setVTable(const SVFGlobalValue* vtbl)
     {
         vtable = vtbl;
     }
@@ -212,7 +207,7 @@ private:
 
 /// class hierarchy graph
 typedef GenericGraph<CHNode, CHEdge> GenericCHGraphTy;
-class CHGraph: public CommonCHGraph, public GenericCHGraphTy
+class CHGraph : public CommonCHGraph, public GenericCHGraphTy
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -229,59 +224,51 @@ public:
     typedef enum
     {
         CONSTRUCTOR = 0x1, // connect node based on constructor
-        DESTRUCTOR = 0x2 // connect node based on destructor
+        DESTRUCTOR = 0x2   // connect node based on destructor
     } RELATIONTYPE;
 
-    CHGraph(SVFModule* svfModule): svfMod(svfModule), classNum(0), vfID(0), buildingCHGTime(0)
+    CHGraph(SVFModule* svfModule) : svfMod(svfModule), classNum(0), vfID(0), buildingCHGTime(0)
     {
         this->kind = Standard;
     }
     ~CHGraph() override = default;
 
-    void addEdge(const std::string className,
-                 const std::string baseClassName,
-                 CHEdge::CHEDGETYPE edgeType);
-    CHNode *getNode(const std::string name) const;
-    void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
+    void addEdge(const std::string className, const std::string baseClassName, CHEdge::CHEDGETYPE edgeType);
+    CHNode* getNode(const std::string name) const;
+    void getVFnsFromVtbls(CallSite cs, const VTableSet& vtbls, VFunSet& virtualFunctions) override;
     void dump(const std::string& filename);
     void view();
     void printCH();
 
     inline u32_t getVirtualFunctionID(const SVFFunction* vfn) const
     {
-        Map<const SVFFunction*, u32_t>::const_iterator it =
-            virtualFunctionToIDMap.find(vfn);
-        if (it != virtualFunctionToIDMap.end())
-            return it->second;
+        Map<const SVFFunction*, u32_t>::const_iterator it = virtualFunctionToIDMap.find(vfn);
+        if (it != virtualFunctionToIDMap.end()) return it->second;
         else
             return -1;
     }
     inline const SVFFunction* getVirtualFunctionBasedonID(u32_t id) const
     {
         Map<const SVFFunction*, u32_t>::const_iterator it, eit;
-        for (it = virtualFunctionToIDMap.begin(), eit =
-                    virtualFunctionToIDMap.end(); it != eit; ++it)
+        for (it = virtualFunctionToIDMap.begin(), eit = virtualFunctionToIDMap.end(); it != eit; ++it)
         {
-            if (it->second == id)
-                return it->first;
+            if (it->second == id) return it->first;
         }
         return nullptr;
     }
 
     inline void addInstances(const std::string templateName, CHNode* node)
     {
-        NameToCHNodesMap::iterator it = templateNameToInstancesMap.find(
-                                            templateName);
-        if (it != templateNameToInstancesMap.end())
-            it->second.insert(node);
+        NameToCHNodesMap::iterator it = templateNameToInstancesMap.find(templateName);
+        if (it != templateNameToInstancesMap.end()) it->second.insert(node);
         else
             templateNameToInstancesMap[templateName].insert(node);
     }
-    inline const CHNodeSetTy &getDescendants(const std::string className)
+    inline const CHNodeSetTy& getDescendants(const std::string className)
     {
         return classNameToDescendantsMap[className];
     }
-    inline const CHNodeSetTy &getInstances(const std::string className)
+    inline const CHNodeSetTy& getInstances(const std::string className)
     {
         return templateNameToInstancesMap[className];
     }
@@ -296,24 +283,23 @@ public:
         CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(cs);
         return it != csToCHAVFnsMap.end();
     }
-    inline const VTableSet &getCSVtblsBasedonCHA(CallSite cs) override
+    inline const VTableSet& getCSVtblsBasedonCHA(CallSite cs) override
     {
         CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(cs);
         assert(it != csToCHAVtblsMap.end() && "cs does not have vtabls based on CHA.");
         return it->second;
     }
-    inline const VFunSet &getCSVFsBasedonCHA(CallSite cs) override
+    inline const VFunSet& getCSVFsBasedonCHA(CallSite cs) override
     {
         CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(cs);
         assert(it != csToCHAVFnsMap.end() && "cs does not have vfns based on CHA.");
         return it->second;
     }
 
-    static inline bool classof(const CommonCHGraph *chg)
+    static inline bool classof(const CommonCHGraph* chg)
     {
         return chg->getKind() == Standard;
     }
-
 
 private:
     SVFModule* svfMod;
@@ -341,8 +327,7 @@ namespace SVF
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
 template <>
-struct GenericGraphTraits<SVF::CHNode*>
-    : public GenericGraphTraits<SVF::GenericNode<SVF::CHNode, SVF::CHEdge>*>
+struct GenericGraphTraits<SVF::CHNode*> : public GenericGraphTraits<SVF::GenericNode<SVF::CHNode, SVF::CHEdge>*>
 {
 };
 
@@ -350,18 +335,16 @@ struct GenericGraphTraits<SVF::CHNode*>
 /// for inverse traversal.
 template <>
 struct GenericGraphTraits<Inverse<SVF::CHNode*>>
-            : public GenericGraphTraits<
-              Inverse<SVF::GenericNode<SVF::CHNode, SVF::CHEdge>*>>
+    : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::CHNode, SVF::CHEdge>*>>
 {
 };
 
 template <>
-struct GenericGraphTraits<SVF::CHGraph*>
-    : public GenericGraphTraits<SVF::GenericGraph<SVF::CHNode, SVF::CHEdge>*>
+struct GenericGraphTraits<SVF::CHGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::CHNode, SVF::CHEdge>*>
 {
     typedef SVF::CHNode* NodeRef;
 };
 
-} // End namespace llvm
+} // namespace SVF
 
 #endif /* CHA_H_ */

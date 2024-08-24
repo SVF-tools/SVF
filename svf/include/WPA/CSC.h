@@ -41,7 +41,7 @@
 namespace SVF
 {
 
-typedef SCCDetection<ConstraintGraph *> CGSCC;
+typedef SCCDetection<ConstraintGraph*> CGSCC;
 
 /*!
  * class CSC: cycle stride calculation
@@ -58,15 +58,14 @@ private:
     CGSCC* _scc;
 
     NodeID _I;
-    IdToIdMap _D;       // the sum of weight of a path relevant to a certain node, while accessing the node via DFS
-    NodeStack _S;       // a stack holding a DFS branch
-    NodeSet _visited;   // a set holding visited nodes
-//    NodeStrides nodeStrides;
-//    IdToIdMap pwcReps;
+    IdToIdMap _D;     // the sum of weight of a path relevant to a certain node, while accessing the node via DFS
+    NodeStack _S;     // a stack holding a DFS branch
+    NodeSet _visited; // a set holding visited nodes
+    //    NodeStrides nodeStrides;
+    //    IdToIdMap pwcReps;
 
 public:
-    CSC(ConstraintGraph* g, CGSCC* c)
-        : _consG(g), _scc(c), _I(0) {}
+    CSC(ConstraintGraph* g, CGSCC* c) : _consG(g), _scc(c), _I(0) {}
 
     void find(NodeStack& candidates);
     void visit(NodeID nodeId, s32_t _w);
@@ -81,15 +80,15 @@ public:
     {
         _visited.insert(nId);
     }
-//    inline iterator begin() { return pwcReps.begin(); }
-//
-//    inline iterator end() { return pwcReps.end(); }
+    //    inline iterator begin() { return pwcReps.begin(); }
+    //
+    //    inline iterator end() { return pwcReps.end(); }
 
-//    NodeStrides &getNodeStrides() { return nodeStrides; }
+    //    NodeStrides &getNodeStrides() { return nodeStrides; }
 
-//    const NodeSet& getPWCReps() const { return  _pwcReps; }
+    //    const NodeSet& getPWCReps() const { return  _pwcReps; }
 };
 
 } // End namespace SVF
 
-#endif //PROJECT_CSC_H
+#endif // PROJECT_CSC_H
