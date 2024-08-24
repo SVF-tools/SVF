@@ -192,7 +192,6 @@ bool SVFFunction::isVarArg() const
 const SVFBasicBlock *SVFFunction::getExitBB() const
 {
     assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
-    assert((!hasReturn() || exitBlock->getICFGNodeList().empty() || (isRetInstNode(exitBlock->back()))) && "last inst must be return inst");
     assert(exitBlock && "must have an exitBlock");
     return exitBlock;
 }

@@ -332,6 +332,9 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
         {
             if (LLVMUtil::basicBlockHasRetInst(bb))
             {
+                assert((LLVMUtil::functionDoesNotRet(func) ||
+                        SVFUtil::isa<ReturnInst>(bb->back())) &&
+                       "last inst must be return inst");
                 svfFun->setExitBlock(svfbb);
             }
         }
@@ -372,8 +375,14 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
     }
     // For no return functions, we set the last block as exit BB
     // This ensures that each function that has definition must have an exit BB
-    if(svfFun->exitBlock == nullptr && svfFun->hasBasicBlock()) svfFun->setExitBlock(
-            const_cast<SVFBasicBlock *>(svfFun->back()));
+    if (svfFun->exitBlock == nullptr && svfFun->hasBasicBlock())
+    {
+        SVFBasicBlock* retBB = const_cast<SVFBasicBlock*>(svfFun->back());
+        assert((LLVMUtil::functionDoesNotRet(func) ||
+                SVFUtil::isa<ReturnInst>(&func->back().back())) &&
+               "last inst must be return inst");
+        svfFun->setExitBlock(retBB);
+    }
 }
 
 
