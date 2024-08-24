@@ -75,10 +75,14 @@ private:
     /// Add/Get a basic block ICFGNode
     inline ICFGNode* getOrAddBlockICFGNode(const SVFInstruction* inst)
     {
+        ICFGNode* node;
         if(SVFUtil::isNonInstricCallSite(inst))
-            return getOrAddInterBlockICFGNode(inst);
+            node = getOrAddInterBlockICFGNode(inst);
         else
-            return getOrAddIntraBlockICFGNode(inst);
+            node = getOrAddIntraBlockICFGNode(inst);
+        SVFBasicBlock* pBlock = const_cast<SVFBasicBlock*>(inst->getParent());
+        pBlock->addICFGNode(node);
+        return node;
     }
 
     /// Create edges between ICFG nodes across functions

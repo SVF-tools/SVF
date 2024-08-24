@@ -103,11 +103,11 @@ CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
     {
         for (const SVFBasicBlock* svfbb : (*F)->getBasicBlockList())
         {
-            for (const SVFInstruction* inst : svfbb->getInstructionList())
+            for (const ICFGNode* node : svfbb->getICFGNodeList())
             {
-                if (tdAPI->isTDJoin(inst))
+                if (tdAPI->isTDJoin(node))
                 {
-                    const CallICFGNode* cs = icfg->getCallICFGNode(inst);
+                    const CallICFGNode* cs = SVFUtil::cast<CallICFGNode>(node);
                     cg->addJoinsite(cs);
                 }
             }

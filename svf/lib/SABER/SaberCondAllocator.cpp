@@ -425,11 +425,10 @@ bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt *cmp) const
 void SaberCondAllocator::collectBBCallingProgExit(const SVFBasicBlock &bb)
 {
 
-    for (SVFBasicBlock::const_iterator it = bb.begin(), eit = bb.end(); it != eit; it++)
+    for (const auto& icfgNode: bb.getICFGNodeList())
     {
-        const SVFInstruction* svfInst = *it;
-        if (SVFUtil::isCallSite(svfInst))
-            if (SVFUtil::isProgExitCall(SVFUtil::getSVFCallSite(svfInst)))
+        if (const CallICFGNode* cs = SVFUtil::dyn_cast<CallICFGNode>(icfgNode))
+            if (SVFUtil::isProgExitCall(cs->getCallSite()))
             {
                 const SVFFunction* svfun = bb.getParent();
                 funToExitBBsMap[svfun].insert(&bb);

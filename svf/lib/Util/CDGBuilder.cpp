@@ -88,9 +88,9 @@ s64_t CDGBuilder::getBBSuccessorBranchID(const SVFBasicBlock *BB, const SVFBasic
     ICFG *icfg = PAG::getPAG()->getICFG();
     const ICFGNode *pred = icfg->getICFGNode(BB->getTerminator());
     const ICFGEdge *edge = nullptr;
-    for (const auto &inst: Succ->getInstructionList())
+    for (const auto &node: Succ->getICFGNodeList())
     {
-        if (const ICFGEdge *e = icfg->getICFGEdge(pred, icfg->getICFGNode(inst), ICFGEdge::ICFGEdgeK::IntraCF))
+        if (const ICFGEdge *e = icfg->getICFGEdge(pred, node, ICFGEdge::ICFGEdgeK::IntraCF))
         {
             edge = e;
             break;
@@ -192,9 +192,7 @@ void CDGBuilder::buildICFGNodeControlMap()
             const SVFBasicBlock *controllingBB = it2.first;
             //            const ICFGNode *controlNode = _bbToNode[it.first].first;
             //            if(!controlNode) continue;
-            const SVFInstruction *terminator = it.first->getInstructionList().back();
-            if (!terminator) continue;
-            const ICFGNode *controlNode = icfg->getICFGNode(terminator);
+            const ICFGNode *controlNode = it.first->getICFGNodeList().back();
             if (!controlNode) continue;
             // controlNode control at pos
             for (const auto &inst: *controllingBB)

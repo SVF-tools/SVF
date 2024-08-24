@@ -156,6 +156,15 @@ bool MRGenerator::hasSVFStmtList(const SVFInstruction* inst)
         return pag->hasSVFStmtList(pag->getICFG()->getICFGNode(inst));
 }
 
+bool MRGenerator::hasSVFStmtList(const ICFGNode* node)
+{
+    SVFIR* pag = pta->getPAG();
+    if (ptrOnlyMSSA)
+        return pag->hasPTASVFStmtList(node);
+    else
+        return pag->hasSVFStmtList(node);
+}
+
 SVFIR::SVFStmtList& MRGenerator::getPAGEdgesFromInst(const SVFInstruction* inst)
 {
     SVFIR* pag = pta->getPAG();
@@ -164,6 +173,16 @@ SVFIR::SVFStmtList& MRGenerator::getPAGEdgesFromInst(const SVFInstruction* inst)
     else
         return pag->getSVFStmtList(pag->getICFG()->getICFGNode(inst));
 }
+
+SVFIR::SVFStmtList& MRGenerator::getPAGEdgesFromInst(const ICFGNode* node)
+{
+    SVFIR* pag = pta->getPAG();
+    if (ptrOnlyMSSA)
+        return pag->getPTASVFStmtList(node);
+    else
+        return pag->getSVFStmtList(node);
+}
+
 
 /*!
  * Generate memory regions for loads/stores

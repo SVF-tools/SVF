@@ -142,9 +142,9 @@ void MTA::detect(SVFModule* module)
         // collect and create symbols inside the function body
         for (const SVFBasicBlock* svfbb : F->getBasicBlockList())
         {
-            for (const SVFInstruction* svfInst : svfbb->getInstructionList())
+            for (const ICFGNode* icfgNode : svfbb->getICFGNodeList())
             {
-                for(const SVFStmt* stmt : pag->getSVFStmtList(pag->getICFG()->getICFGNode(svfInst)))
+                for(const SVFStmt* stmt : pag->getSVFStmtList(icfgNode))
                 {
                     if (const LoadStmt* l = SVFUtil::dyn_cast<LoadStmt>(stmt))
                     {

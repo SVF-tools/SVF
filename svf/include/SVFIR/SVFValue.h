@@ -524,6 +524,8 @@ public:
     }
 };
 
+class ICFGNode;
+
 class SVFBasicBlock : public SVFValue
 {
     friend class LLVMModuleSet;
@@ -531,12 +533,14 @@ class SVFBasicBlock : public SVFValue
     friend class SVFIRReader;
     friend class SVFIRBuilder;
     friend class SVFFunction;
+    friend class ICFGBuilder;
 
 public:
     typedef std::vector<const SVFInstruction*>::const_iterator const_iterator;
 
 private:
     std::vector<const SVFInstruction*> allInsts;    ///< all Instructions in this BasicBlock
+    std::vector<const ICFGNode*> allICFGNodes;    ///< all ICFGNodes in this BasicBlock
     std::vector<const SVFBasicBlock*> succBBs;  ///< all successor BasicBlocks of this BasicBlock
     std::vector<const SVFBasicBlock*> predBBs;  ///< all predecessor BasicBlocks of this BasicBlock
     const SVFFunction* fun;                 /// Function where this BasicBlock is
@@ -546,6 +550,11 @@ protected:
     inline void addInstruction(const SVFInstruction* inst)
     {
         allInsts.push_back(inst);
+    }
+
+    inline void addICFGNode(const ICFGNode* icfgNode)
+    {
+        allICFGNodes.push_back(icfgNode);
     }
 
     inline void addSuccBasicBlock(const SVFBasicBlock* succ)
@@ -573,6 +582,11 @@ public:
     inline const std::vector<const SVFInstruction*>& getInstructionList() const
     {
         return allInsts;
+    }
+
+    inline const std::vector<const ICFGNode*>& getICFGNodeList() const
+    {
+        return allICFGNodes;
     }
 
     inline const_iterator begin() const

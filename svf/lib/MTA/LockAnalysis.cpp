@@ -74,9 +74,8 @@ void LockAnalysis::collectLockUnlocksites()
     {
         for (const SVFBasicBlock* bb : F->getBasicBlockList())
         {
-            for (const SVFInstruction* inst : bb->getInstructionList())
+            for (const ICFGNode* icfgNode : bb->getICFGNodeList())
             {
-                const ICFGNode* icfgNode = tct->getICFGNode(inst);
                 if (tcg->getThreadAPI()->isTDRelease(icfgNode))
                 {
                     unlocksites.insert(icfgNode);

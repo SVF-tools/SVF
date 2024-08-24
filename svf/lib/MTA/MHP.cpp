@@ -162,11 +162,10 @@ void MHP::updateNonCandidateFunInterleaving()
 
                 for (const SVFBasicBlock* svfbb : fun->getBasicBlockList())
                 {
-                    for (const SVFInstruction* svfInst : svfbb->getInstructionList())
+                    for (const ICFGNode* curNode : svfbb->getICFGNodeList())
                     {
-                        if (svfInst == entryinst)
+                        if (curNode == entryNode)
                             continue;
-                        const ICFGNode* curNode = tct->getICFGNode(svfInst);
                         CxtThreadStmt newCts(cts.getTid(), curCxt, curNode);
                         threadStmtToTheadInterLeav[newCts] |= threadStmtToTheadInterLeav[cts];
                         instToTSMap[curNode].insert(newCts);

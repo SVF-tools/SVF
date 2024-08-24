@@ -126,10 +126,9 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
             for (SVFFunction::const_iterator bit =  fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
             {
                 const SVFBasicBlock* bb = *bit;
-                for (SVFBasicBlock::const_iterator ii = bb->begin(), eii = bb->end(); ii != eii; ++ii)
+                for (const auto& icfgNode : bb->getICFGNodeList())
                 {
-                    const SVFInstruction* inst = *ii;
-                    for(const SVFStmt* stmt : pag->getSVFStmtList(pag->getICFG()->getICFGNode(inst)))
+                    for(const SVFStmt* stmt : pag->getSVFStmtList(icfgNode))
                     {
                         if(SVFUtil::isa<LoadStmt>(stmt))
                         {
@@ -141,7 +140,6 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
                             instSet2.insert(stmt->getICFGNode());
                         }
                     }
-
                 }
             }
         }
