@@ -44,14 +44,10 @@ class DoubleFreeChecker : public LeakChecker
 
 public:
     /// Constructor
-    DoubleFreeChecker(): LeakChecker()
-    {
-    }
+    DoubleFreeChecker() : LeakChecker() {}
 
     /// Destructor
-    virtual ~DoubleFreeChecker()
-    {
-    }
+    virtual ~DoubleFreeChecker() {}
 
     /// We start from here
     virtual bool runOnModule(SVFIR* pag) override
@@ -63,7 +59,6 @@ public:
 
     /// Report file/close bugs
     void reportBug(ProgSlice* slice) override;
-
 
     /// Validate test cases for regression test purpose
     void testsValidation(ProgSlice* slice);

@@ -62,31 +62,30 @@ public:
     enum PTATY
     {
         // Whole program analysis
-        Andersen_BASE,		///< Base Andersen PTA
-        Andersen_WPA,		///< Andersen PTA
-        AndersenSCD_WPA,    ///< Selective cycle detection andersen-style WPA
-        AndersenSFR_WPA,    ///< Stride-based field representation
-        AndersenWaveDiff_WPA,	///< Diff wave propagation andersen-style WPA
+        Andersen_BASE,        ///< Base Andersen PTA
+        Andersen_WPA,         ///< Andersen PTA
+        AndersenSCD_WPA,      ///< Selective cycle detection andersen-style WPA
+        AndersenSFR_WPA,      ///< Stride-based field representation
+        AndersenWaveDiff_WPA, ///< Diff wave propagation andersen-style WPA
         Steensgaard_WPA,      ///< Steensgaard PTA
-        CSCallString_WPA,	///< Call string based context sensitive WPA
-        CSSummary_WPA,		///< Summary based context sensitive WPA
-        FSDATAFLOW_WPA,	///< Traditional Dataflow-based flow sensitive WPA
-        FSSPARSE_WPA,		///< Sparse flow sensitive WPA
-        VFS_WPA,		///< Versioned sparse flow-sensitive WPA
-        FSCS_WPA,			///< Flow-, context- sensitive WPA
-        CFLFICI_WPA,		///< Flow-, context-, insensitive CFL-reachability-based analysis
-        CFLFSCI_WPA,		///< Flow-insensitive, context-sensitive CFL-reachability-based analysis
-        CFLFSCS_WPA,	///< Flow-, context-, CFL-reachability-based analysis
-        TypeCPP_WPA, ///<  Type-based analysis for C++
+        CSCallString_WPA,     ///< Call string based context sensitive WPA
+        CSSummary_WPA,        ///< Summary based context sensitive WPA
+        FSDATAFLOW_WPA,       ///< Traditional Dataflow-based flow sensitive WPA
+        FSSPARSE_WPA,         ///< Sparse flow sensitive WPA
+        VFS_WPA,              ///< Versioned sparse flow-sensitive WPA
+        FSCS_WPA,             ///< Flow-, context- sensitive WPA
+        CFLFICI_WPA,          ///< Flow-, context-, insensitive CFL-reachability-based analysis
+        CFLFSCI_WPA,          ///< Flow-insensitive, context-sensitive CFL-reachability-based analysis
+        CFLFSCS_WPA,          ///< Flow-, context-, CFL-reachability-based analysis
+        TypeCPP_WPA,          ///<  Type-based analysis for C++
 
         // Demand driven analysis
-        FieldS_DDA,		///< Field sensitive DDA
-        FlowS_DDA,		///< Flow sensitive DDA
-        PathS_DDA,		///< Guarded value-flow DDA
-        Cxt_DDA,		///< context sensitive DDA
+        FieldS_DDA, ///< Field sensitive DDA
+        FlowS_DDA,  ///< Flow sensitive DDA
+        PathS_DDA,  ///< Guarded value-flow DDA
+        Cxt_DDA,    ///< context sensitive DDA
 
-
-        Default_PTA		///< default pta without any analysis
+        Default_PTA ///< default pta without any analysis
     };
 
     /// Implementation type: BVDataPTAImpl or CondPTAImpl.
@@ -126,7 +125,6 @@ private:
     void destroy();
 
 protected:
-
     /// User input flags
     //@{
     /// Flag for printing the statistic results
@@ -154,7 +152,7 @@ protected:
     /// Interprocedural control-flow graph
     ICFG* icfg;
     /// CHGraph
-    CommonCHGraph *chgraph;
+    CommonCHGraph* chgraph;
 
 public:
     /// Get ICFG
@@ -233,8 +231,7 @@ public:
     virtual void computeDDAPts(NodeID) {}
 
     /// Interface exposed to users of our pointer analysis, given Value infos
-    virtual AliasResult alias(const SVFValue* V1,
-                              const SVFValue* V2) = 0;
+    virtual AliasResult alias(const SVFValue* V1, const SVFValue* V2) = 0;
 
     /// Interface exposed to users of our pointer analysis, given PAGNodeID
     virtual AliasResult alias(NodeID node1, NodeID node2) = 0;
@@ -341,12 +338,12 @@ public:
     }
     inline void setObjFieldInsensitive(NodeID id)
     {
-        MemObj* mem =  const_cast<MemObj*>(pag->getBaseObj(id));
+        MemObj* mem = const_cast<MemObj*>(pag->getBaseObj(id));
         mem->setFieldInsensitive();
     }
     inline bool isFieldInsensitive(NodeID id) const
     {
-        const MemObj* mem =  pag->getBaseObj(id);
+        const MemObj* mem = pag->getBaseObj(id);
         return mem->isFieldInsensitive();
     }
     ///@}
@@ -387,8 +384,7 @@ public:
     /// CallGraph SCC detection
     inline void callGraphSCCDetection()
     {
-        if(callGraphSCC==nullptr)
-            callGraphSCC = new CallGraphSCC(callgraph);
+        if (callGraphSCC == nullptr) callGraphSCC = new CallGraphSCC(callgraph);
 
         callGraphSCC->find();
     }
@@ -398,7 +394,7 @@ public:
         return callGraphSCC->repNode(id);
     }
     /// Return TRUE if this edge is inside a CallGraph SCC, i.e., src node and dst node are in the same SCC on the SVFG.
-    inline bool inSameCallGraphSCC(const SVFFunction* fun1,const SVFFunction* fun2)
+    inline bool inSameCallGraphSCC(const SVFFunction* fun1, const SVFFunction* fun2)
     {
         const CallGraphNode* src = callgraph->getCallGraphNode(fun1);
         const CallGraphNode* dst = callgraph->getCallGraphNode(fun2);
@@ -419,17 +415,15 @@ public:
     }
 
     /// get CHGraph
-    CommonCHGraph *getCHGraph() const
+    CommonCHGraph* getCHGraph() const
     {
         return chgraph;
     }
 
-    void getVFnsFromCHA(const CallICFGNode* cs, VFunSet &vfns);
-    void getVFnsFromPts(const CallICFGNode* cs, const PointsTo &target, VFunSet &vfns);
-    void connectVCallToVFns(const CallICFGNode* cs, const VFunSet &vfns, CallEdgeMap& newEdges);
-    virtual void resolveCPPIndCalls(const CallICFGNode* cs,
-                                    const PointsTo& target,
-                                    CallEdgeMap& newEdges);
+    void getVFnsFromCHA(const CallICFGNode* cs, VFunSet& vfns);
+    void getVFnsFromPts(const CallICFGNode* cs, const PointsTo& target, VFunSet& vfns);
+    void connectVCallToVFns(const CallICFGNode* cs, const VFunSet& vfns, CallEdgeMap& newEdges);
+    virtual void resolveCPPIndCalls(const CallICFGNode* cs, const PointsTo& target, CallEdgeMap& newEdges);
 };
 
 } // End namespace SVF

@@ -20,14 +20,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 /*
  * PointerAnalysisImpl.cpp
  *
  *  Created on: 28Mar.,2020
  *      Author: yulei
  */
-
 
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/Options.h"
@@ -41,49 +39,60 @@ using namespace std;
 /*!
  * Constructor
  */
-BVDataPTAImpl::BVDataPTAImpl(SVFIR* p, PointerAnalysis::PTATY type, bool alias_check) :
-    PointerAnalysis(p, type, alias_check), ptCache()
+BVDataPTAImpl::BVDataPTAImpl(SVFIR* p, PointerAnalysis::PTATY type, bool alias_check)
+    : PointerAnalysis(p, type, alias_check), ptCache()
 {
-    if (type == Andersen_BASE || type == Andersen_WPA || type == AndersenWaveDiff_WPA
-            || type == TypeCPP_WPA || type == FlowS_DDA
-            || type == AndersenSCD_WPA || type == AndersenSFR_WPA || type == CFLFICI_WPA || type == CFLFSCS_WPA)
+    if (type == Andersen_BASE || type == Andersen_WPA || type == AndersenWaveDiff_WPA || type == TypeCPP_WPA ||
+        type == FlowS_DDA || type == AndersenSCD_WPA || type == AndersenSFR_WPA || type == CFLFICI_WPA ||
+        type == CFLFSCS_WPA)
     {
         // Only maintain reverse points-to when the analysis is field-sensitive, as objects turning
         // field-insensitive is all it is used for.
         bool maintainRevPts = Options::MaxFieldLimit() != 0;
         if (Options::ptDataBacking() == PTBackingType::Mutable) ptD = std::make_unique<MutDiffPTDataTy>(maintainRevPts);
-        else if (Options::ptDataBacking() == PTBackingType::Persistent) ptD = std::make_unique<PersDiffPTDataTy>(getPtCache(), maintainRevPts);
-        else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
+        else if (Options::ptDataBacking() == PTBackingType::Persistent)
+            ptD = std::make_unique<PersDiffPTDataTy>(getPtCache(), maintainRevPts);
+        else
+            assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
     }
     else if (type == Steensgaard_WPA)
     {
         // Steensgaard is only field-insensitive (for now?), so no reverse points-to.
         if (Options::ptDataBacking() == PTBackingType::Mutable) ptD = std::make_unique<MutDiffPTDataTy>(false);
-        else if (Options::ptDataBacking() == PTBackingType::Persistent) ptD = std::make_unique<PersDiffPTDataTy>(getPtCache(), false);
-        else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
+        else if (Options::ptDataBacking() == PTBackingType::Persistent)
+            ptD = std::make_unique<PersDiffPTDataTy>(getPtCache(), false);
+        else
+            assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
     }
     else if (type == FSSPARSE_WPA)
     {
         if (Options::INCDFPTData())
         {
             if (Options::ptDataBacking() == PTBackingType::Mutable) ptD = std::make_unique<MutIncDFPTDataTy>(false);
-            else if (Options::ptDataBacking() == PTBackingType::Persistent) ptD = std::make_unique<PersIncDFPTDataTy>(getPtCache(), false);
-            else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
+            else if (Options::ptDataBacking() == PTBackingType::Persistent)
+                ptD = std::make_unique<PersIncDFPTDataTy>(getPtCache(), false);
+            else
+                assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
         }
         else
         {
             if (Options::ptDataBacking() == PTBackingType::Mutable) ptD = std::make_unique<MutDFPTDataTy>(false);
-            else if (Options::ptDataBacking() == PTBackingType::Persistent) ptD = std::make_unique<PersDFPTDataTy>(getPtCache(), false);
-            else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
+            else if (Options::ptDataBacking() == PTBackingType::Persistent)
+                ptD = std::make_unique<PersDFPTDataTy>(getPtCache(), false);
+            else
+                assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
         }
     }
     else if (type == VFS_WPA)
     {
         if (Options::ptDataBacking() == PTBackingType::Mutable) ptD = std::make_unique<MutVersionedPTDataTy>(false);
-        else if (Options::ptDataBacking() == PTBackingType::Persistent) ptD = std::make_unique<PersVersionedPTDataTy>(getPtCache(), false);
-        else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
+        else if (Options::ptDataBacking() == PTBackingType::Persistent)
+            ptD = std::make_unique<PersVersionedPTDataTy>(getPtCache(), false);
+        else
+            assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
     }
-    else assert(false && "no points-to data available");
+    else
+        assert(false && "no points-to data available");
 
     ptaImplTy = BVDataImpl;
 }
@@ -96,21 +105,19 @@ void BVDataPTAImpl::finalize()
     if (Options::ptDataBacking() == PTBackingType::Persistent && print_stat)
     {
         std::string moduleName(pag->getModule()->getModuleIdentifier());
-        std::vector<std::string> names = SVFUtil::split(moduleName,'/');
-        if (names.size() > 1)
-            moduleName = names[names.size() - 1];
+        std::vector<std::string> names = SVFUtil::split(moduleName, '/');
+        if (names.size() > 1) moduleName = names[names.size() - 1];
 
         std::string subtitle;
 
-        if(ptaTy >= Andersen_BASE && ptaTy <= Steensgaard_WPA)
-            subtitle = "Andersen's analysis bitvector";
-        else if(ptaTy >=FSDATAFLOW_WPA && ptaTy <=FSCS_WPA)
+        if (ptaTy >= Andersen_BASE && ptaTy <= Steensgaard_WPA) subtitle = "Andersen's analysis bitvector";
+        else if (ptaTy >= FSDATAFLOW_WPA && ptaTy <= FSCS_WPA)
             subtitle = "flow-sensitive analysis bitvector";
-        else if(ptaTy >=CFLFICI_WPA && ptaTy <=CFLFSCS_WPA)
+        else if (ptaTy >= CFLFICI_WPA && ptaTy <= CFLFSCS_WPA)
             subtitle = "CFL analysis bitvector";
-        else if(ptaTy == TypeCPP_WPA)
+        else if (ptaTy == TypeCPP_WPA)
             subtitle = "Type analysis bitvector";
-        else if(ptaTy >=FieldS_DDA && ptaTy <=Cxt_DDA)
+        else if (ptaTy >= FieldS_DDA && ptaTy <= Cxt_DDA)
             subtitle = "DDA bitvector";
         else
             subtitle = "bitvector";
@@ -122,7 +129,6 @@ void BVDataPTAImpl::finalize()
         SVFUtil::outs() << "#######################################################" << std::endl;
         SVFUtil::outs().flush();
     }
-
 }
 
 /*!
@@ -130,8 +136,9 @@ void BVDataPTAImpl::finalize()
  */
 void BVDataPTAImpl::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts)
 {
-    expandedPts = pts;;
-    for(PointsTo::iterator pit = pts.begin(), epit = pts.end(); pit!=epit; ++pit)
+    expandedPts = pts;
+    ;
+    for (PointsTo::iterator pit = pts.begin(), epit = pts.end(); pit != epit; ++pit)
     {
         if (pag->getBaseObjVar(*pit) == *pit || isFieldInsensitive(*pit))
         {
@@ -189,8 +196,6 @@ void BVDataPTAImpl::writeObjVarToFile(const string& filename)
         outs() << "\n";
         return;
     }
-
-
 }
 
 void BVDataPTAImpl::writePtsResultToFile(std::fstream& f)
@@ -199,7 +204,7 @@ void BVDataPTAImpl::writePtsResultToFile(std::fstream& f)
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
     {
         NodeID var = it->first;
-        const PointsTo &pts = getPts(var);
+        const PointsTo& pts = getPts(var);
 
         stringstream ss;
         f << var << " -> { ";
@@ -209,31 +214,29 @@ void BVDataPTAImpl::writePtsResultToFile(std::fstream& f)
         }
         else
         {
-            for (NodeID n: pts)
+            for (NodeID n : pts)
             {
                 f << n << " ";
             }
         }
         f << "}\n";
     }
-
 }
 
 void BVDataPTAImpl::writeGepObjVarMapToFile(std::fstream& f)
 {
-    //write gepObjVarMap to file(in form of: baseID offset gepObjNodeId)
-    SVFIR::NodeOffsetMap &gepObjVarMap = pag->getGepObjNodeMap();
-    for(SVFIR::NodeOffsetMap::const_iterator it = gepObjVarMap.begin(), eit = gepObjVarMap.end(); it != eit; it++)
+    // write gepObjVarMap to file(in form of: baseID offset gepObjNodeId)
+    SVFIR::NodeOffsetMap& gepObjVarMap = pag->getGepObjNodeMap();
+    for (SVFIR::NodeOffsetMap::const_iterator it = gepObjVarMap.begin(), eit = gepObjVarMap.end(); it != eit; it++)
     {
-        const SVFIR::NodeOffset offsetPair = it -> first;
-        //write the base id to file
+        const SVFIR::NodeOffset offsetPair = it->first;
+        // write the base id to file
         f << offsetPair.first << " ";
-        //write the offset to file
+        // write the offset to file
         f << offsetPair.second << " ";
-        //write the gepObjNodeId to file
+        // write the gepObjNodeId to file
         f << it->second << "\n";
     }
-
 }
 
 /*!
@@ -288,7 +291,7 @@ void BVDataPTAImpl::readPtsResultFromFile(std::ifstream& F)
 {
     string line;
     // Read analysis results from file
-    PTDataTy *ptD = getPTDataTy();
+    PTDataTy* ptD = getPTDataTy();
 
     // Read points-to sets
     string delimiter1 = " -> { ";
@@ -301,10 +304,10 @@ void BVDataPTAImpl::readPtsResultFromFile(std::ifstream& F)
         // Parse a single line in the form of "var -> { obj1 obj2 obj3 }"
         getline(F, line);
         if (line.at(0) == '[' || line == "---VERSIONED---") continue;
-        if (line == "------")     break;
+        if (line == "------") break;
         size_t pos = line.find(delimiter1);
-        if (pos == string::npos)    break;
-        if (line.back() != '}')     break;
+        if (pos == string::npos) break;
+        if (line.back() != '}') break;
 
         // var
         NodeID var = atoi(line.substr(0, pos).c_str());
@@ -334,32 +337,30 @@ void BVDataPTAImpl::readPtsResultFromFile(std::ifstream& F)
     }
 
     // map the variable ID to its pointer set
-    for (auto t: nodePtsMap)
-        ptD->unionPts(t.first, strPtsMap[t.second]);
+    for (auto t : nodePtsMap) ptD->unionPts(t.first, strPtsMap[t.second]);
 }
 
 void BVDataPTAImpl::readGepObjVarMapFromFile(std::ifstream& F)
 {
     string line;
-    //read GepObjVarMap from file
+    // read GepObjVarMap from file
     SVFIR::NodeOffsetMap gepObjVarMap = pag->getGepObjNodeMap();
     while (F.good())
     {
         getline(F, line);
-        if (line == "------")     break;
+        if (line == "------") break;
         // Parse a single line in the form of "ID baseNodeID offset"
         istringstream ss(line);
         NodeID base;
         size_t offset;
         NodeID id;
-        ss >> base >> offset >>id;
+        ss >> base >> offset >> id;
         SVFIR::NodeOffsetMap::const_iterator iter = gepObjVarMap.find(std::make_pair(base, offset));
         if (iter == gepObjVarMap.end())
         {
             SVFVar* node = pag->getGNode(base);
             const MemObj* obj = nullptr;
-            if (GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(node))
-                obj = gepObjVar->getMemObj();
+            if (GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(node)) obj = gepObjVar->getMemObj();
             else if (FIObjVar* baseNode = SVFUtil::dyn_cast<FIObjVar>(node))
                 obj = baseNode->getMemObj();
             else if (DummyObjVar* baseNode = SVFUtil::dyn_cast<DummyObjVar>(node))
@@ -369,8 +370,6 @@ void BVDataPTAImpl::readGepObjVarMapFromFile(std::ifstream& F)
             pag->addGepObjNode(obj, offset, id);
             NodeIDAllocator::get()->increaseNumOfObjAndNodes();
         }
-
-
     }
 }
 
@@ -381,18 +380,15 @@ void BVDataPTAImpl::readAndSetObjFieldSensitivity(std::ifstream& F, const std::s
     while (F.good())
     {
         getline(F, line);
-        if (line.empty() || line == delimiterStr)
-            break;
+        if (line.empty() || line == delimiterStr) break;
         // Parse a single line in the form of "baseNodeID insensitive"
         istringstream ss(line);
         NodeID base;
         bool insensitive;
         ss >> base >> insensitive;
 
-        if (insensitive)
-            setObjFieldInsensitive(base);
+        if (insensitive) setObjFieldInsensitive(base);
     }
-
 }
 
 /*!
@@ -412,13 +408,13 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
         return false;
     }
 
-    readAndSetObjFieldSensitivity(F,"------");
+    readAndSetObjFieldSensitivity(F, "------");
 
     readPtsResultFromFile(F);
 
     readGepObjVarMapFromFile(F);
 
-    readAndSetObjFieldSensitivity(F,"");
+    readAndSetObjFieldSensitivity(F, "");
 
     // Update callgraph
     updateCallGraph(pag->getIndirectCallsites());
@@ -429,14 +425,13 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
     return true;
 }
 
-
 /*!
  * Dump points-to of each pag node
  */
 void BVDataPTAImpl::dumpTopLevelPtsTo()
 {
-    for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin();
-            nIter != this->getAllValidPtrs().end(); ++nIter)
+    for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin(); nIter != this->getAllValidPtrs().end();
+         ++nIter)
     {
         const PAGNode* node = getPAG()->getGNode(*nIter);
         if (getPAG()->isValidTopLevelPtr(node))
@@ -451,9 +446,7 @@ void BVDataPTAImpl::dumpTopLevelPtsTo()
             else
             {
                 outs() << "\t\tPointsTo: { ";
-                for (PointsTo::iterator it = pts.begin(), eit = pts.end();
-                        it != eit; ++it)
-                    outs() << *it << " ";
+                for (PointsTo::iterator it = pts.begin(), eit = pts.end(); it != eit; ++it) outs() << *it << " ";
                 outs() << "}\n\n";
             }
         }
@@ -462,14 +455,13 @@ void BVDataPTAImpl::dumpTopLevelPtsTo()
     outs().flush();
 }
 
-
 /*!
  * Dump all points-to including top-level (ValVar) and address-taken (ObjVar) variables
  */
 void BVDataPTAImpl::dumpAllPts()
 {
     OrderedNodeSet pagNodes;
-    for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
+    for (SVFIR::iterator it = pag->begin(), eit = pag->end(); it != eit; it++)
     {
         pagNodes.insert(it->first);
     }
@@ -483,7 +475,6 @@ void BVDataPTAImpl::dumpAllPts()
     outs() << "----------------------------------------------\n";
 }
 
-
 /*!
  * On the fly call graph construction
  * callsites is candidate indirect callsites need to be analyzed based on points-to results
@@ -491,7 +482,7 @@ void BVDataPTAImpl::dumpAllPts()
  */
 void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges)
 {
-    for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter)
+    for (CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter != eiter; ++iter)
     {
         const CallICFGNode* cs = iter->first;
 
@@ -503,7 +494,7 @@ void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites,
             resolveCPPIndCalls(cs, getPts(vtblId), newEdges);
         }
         else
-            resolveIndCalls(iter->first,getPts(iter->second),newEdges);
+            resolveIndCalls(iter->first, getPts(iter->second), newEdges);
     }
 }
 
@@ -512,12 +503,12 @@ void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites,
  */
 void BVDataPTAImpl::normalizePointsTo()
 {
-    SVFIR::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
-    SVFIR::NodeOffsetMap &GepObjVarMap = pag->getGepObjNodeMap();
+    SVFIR::MemObjToFieldsMap& memToFieldsMap = pag->getMemToFieldsMap();
+    SVFIR::NodeOffsetMap& GepObjVarMap = pag->getGepObjNodeMap();
 
     // collect each gep node whose base node has been set as field-insensitive
     NodeBS dropNodes;
-    for (auto t: memToFieldsMap)
+    for (auto t : memToFieldsMap)
     {
         NodeID base = t.first;
         const MemObj* memObj = pag->getObject(base);
@@ -541,11 +532,10 @@ void BVDataPTAImpl::normalizePointsTo()
     {
         NodeID n = nIter->first;
 
-        const PointsTo &tmpPts = getPts(n);
+        const PointsTo& tmpPts = getPts(n);
         for (NodeID obj : tmpPts)
         {
-            if (!dropNodes.test(obj))
-                continue;
+            if (!dropNodes.test(obj)) continue;
             NodeID baseObj = pag->getBaseObjVar(obj);
             clearPts(n, obj);
             addPts(n, baseObj);
@@ -554,10 +544,10 @@ void BVDataPTAImpl::normalizePointsTo()
 
     // clear GepObjVarMap and memToFieldsMap for redundant gepnodes
     // and remove those nodes from pag
-    for (NodeID n: dropNodes)
+    for (NodeID n : dropNodes)
     {
         NodeID base = pag->getBaseObjVar(n);
-        GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(n));
+        GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(n));
         const APOffset apOffset = gepNode->getConstantFieldIdx();
         GepObjVarMap.erase(std::make_pair(base, apOffset));
         memToFieldsMap[base].reset(n);
@@ -569,10 +559,9 @@ void BVDataPTAImpl::normalizePointsTo()
 /*!
  * Return alias results based on our points-to/alias analysis
  */
-AliasResult BVDataPTAImpl::alias(const SVFValue* V1,
-                                 const SVFValue* V2)
+AliasResult BVDataPTAImpl::alias(const SVFValue* V1, const SVFValue* V2)
 {
-    return alias(pag->getValueNode(V1),pag->getValueNode(V2));
+    return alias(pag->getValueNode(V1), pag->getValueNode(V2));
 }
 
 /*!
@@ -580,7 +569,7 @@ AliasResult BVDataPTAImpl::alias(const SVFValue* V1,
  */
 AliasResult BVDataPTAImpl::alias(NodeID node1, NodeID node2)
 {
-    return alias(getPts(node1),getPts(node2));
+    return alias(getPts(node1), getPts(node2));
 }
 
 /*!
@@ -590,12 +579,11 @@ AliasResult BVDataPTAImpl::alias(const PointsTo& p1, const PointsTo& p2)
 {
 
     PointsTo pts1;
-    expandFIObjs(p1,pts1);
+    expandFIObjs(p1, pts1);
     PointsTo pts2;
-    expandFIObjs(p2,pts2);
+    expandFIObjs(p2, pts2);
 
-    if (containBlackHoleNode(pts1) || containBlackHoleNode(pts2) || pts1.intersects(pts2))
-        return AliasResult::MayAlias;
+    if (containBlackHoleNode(pts1) || containBlackHoleNode(pts2) || pts1.intersects(pts2)) return AliasResult::MayAlias;
     else
         return AliasResult::NoAlias;
 }

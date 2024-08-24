@@ -44,16 +44,12 @@ class PAGBuilderFromFile
 private:
     SVFIR* pag;
     std::string file;
+
 public:
     /// Constructor
-    PAGBuilderFromFile(std::string f) :
-        pag(SVFIR::getPAG(true)), file(f)
-    {
-    }
+    PAGBuilderFromFile(std::string f) : pag(SVFIR::getPAG(true)), file(f) {}
     /// Destructor
-    ~PAGBuilderFromFile()
-    {
-    }
+    ~PAGBuilderFromFile() {}
 
     /// Return SVFIR
     SVFIR* getPAG() const
@@ -71,8 +67,7 @@ public:
     SVFIR* build();
 
     // Add edges
-    void addEdge(NodeID nodeSrc, NodeID nodeDst, APOffset offset,
-                 std::string edge);
+    void addEdge(NodeID nodeSrc, NodeID nodeDst, APOffset offset, std::string edge);
 };
 
 } // End namespace SVF

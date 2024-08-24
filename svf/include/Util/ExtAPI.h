@@ -36,7 +36,8 @@
 #include <vector>
 #include <map>
 
-/// For a more detailed explanation of how External APIs are handled in SVF, please refer to the SVF Wiki: https://github.com/SVF-tools/SVF/wiki/Handling-External-APIs-with-extapi.c
+/// For a more detailed explanation of how External APIs are handled in SVF, please refer to the SVF Wiki:
+/// https://github.com/SVF-tools/SVF/wiki/Handling-External-APIs-with-extapi.c
 
 namespace SVF
 {
@@ -44,8 +45,7 @@ namespace SVF
 class ExtAPI
 {
 private:
-
-    static ExtAPI *extOp;
+    static ExtAPI* extOp;
 
     // extapi.bc file path
     static std::string extBcPath;
@@ -53,8 +53,7 @@ private:
     ExtAPI() = default;
 
 public:
-
-    static ExtAPI *getExtAPI();
+    static ExtAPI* getExtAPI();
 
     static void destory();
 
@@ -71,29 +70,29 @@ public:
     bool hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation);
 
     // Does (F) have a static var X (unavailable to us) that its return points to?
-    bool has_static(const SVFFunction *F);
+    bool has_static(const SVFFunction* F);
 
     // Does (F) have a memcpy_like operation?
-    bool is_memcpy(const SVFFunction *F);
+    bool is_memcpy(const SVFFunction* F);
 
     // Does (F) have a memset_like operation?
-    bool is_memset(const SVFFunction *F);
+    bool is_memset(const SVFFunction* F);
 
     // Does (F) allocate a new object and return it?
-    bool is_alloc(const SVFFunction *F);
+    bool is_alloc(const SVFFunction* F);
 
     // Does (F) allocate a new object and assign it to one of its arguments?
-    bool is_arg_alloc(const SVFFunction *F);
+    bool is_arg_alloc(const SVFFunction* F);
 
     // Get the position of argument which holds the new object
-    s32_t get_alloc_arg_pos(const SVFFunction *F);
+    s32_t get_alloc_arg_pos(const SVFFunction* F);
 
     // Does (F) reallocate a new object?
-    bool is_realloc(const SVFFunction *F);
+    bool is_realloc(const SVFFunction* F);
 
     // Should (F) be considered "external" (either not defined in the program
     //   or a user-defined version of a known alloc or no-op)?
-    bool is_ext(const SVFFunction *F);
+    bool is_ext(const SVFFunction* F);
 };
 } // End namespace SVF
 

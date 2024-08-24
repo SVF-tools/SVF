@@ -40,7 +40,7 @@
 #ifndef SCC_H_
 #define SCC_H_
 
-#include "SVFIR/SVFValue.h"	// for NodeBS
+#include "SVFIR/SVFValue.h" // for NodeBS
 #include <limits.h>
 #include <stack>
 #include <map>
@@ -50,17 +50,16 @@ namespace SVF
 
 class GNodeSCCInfo;
 
-template<class GraphType>
-class SCCDetection
+template <class GraphType> class SCCDetection
 {
 
 private:
-    ///Define the GTraits and node iterator for printing
+    /// Define the GTraits and node iterator for printing
     typedef SVF::GenericGraphTraits<GraphType> GTraits;
-    typedef typename GTraits::NodeRef          GNODE;
+    typedef typename GTraits::NodeRef GNODE;
     typedef typename GTraits::nodes_iterator node_iterator;
     typedef typename GTraits::ChildIteratorType child_iterator;
-    typedef unsigned NodeID ;
+    typedef unsigned NodeID;
 
 public:
     typedef std::stack<NodeID> GNodeStack;
@@ -78,7 +77,7 @@ public:
         {
             _visited = v;
         }
-        inline bool inSCC(void)   const
+        inline bool inSCC(void) const
         {
             return _inSCC;
         }
@@ -86,7 +85,7 @@ public:
         {
             _inSCC = v;
         }
-        inline NodeID rep(void)const
+        inline NodeID rep(void) const
         {
             return _rep;
         }
@@ -106,31 +105,28 @@ public:
         {
             return _subNodes;
         }
+
     private:
-        bool     _visited;
-        bool     _inSCC;
-        NodeID  _rep;
+        bool _visited;
+        bool _inSCC;
+        NodeID _rep;
         NodeBS _subNodes; /// nodes in the scc represented by this node
     };
 
-    typedef Map<NodeID,GNodeSCCInfo > GNODESCCInfoMap;
+    typedef Map<NodeID, GNodeSCCInfo> GNODESCCInfoMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
 
-    SCCDetection(const GraphType &GT)
-        : _graph(GT),
-          _I(0)
-    {}
-
+    SCCDetection(const GraphType& GT) : _graph(GT), _I(0) {}
 
     // Return a handle to the stack of nodes in topological
     // order.  This will be used to seed the initial solution
     // and improve efficiency.
-    inline GNodeStack &topoNodeStack()
+    inline GNodeStack& topoNodeStack()
     {
         return _T;
     }
 
-    const inline  GNODESCCInfoMap &GNodeSCCInfo() const
+    const inline GNODESCCInfoMap& GNodeSCCInfo() const
     {
         return _NodeSCCAuxInfo;
     }
@@ -139,11 +135,10 @@ public:
     inline NodeID repNode(NodeID n) const
     {
         typename GNODESCCInfoMap::const_iterator it = _NodeSCCAuxInfo.find(n);
-        assert(it!=_NodeSCCAuxInfo.end() && "scc rep not found");
+        assert(it != _NodeSCCAuxInfo.end() && "scc rep not found");
         NodeID rep = it->second.rep();
-        return rep!= UINT_MAX ? rep : n ;
+        return rep != UINT_MAX ? rep : n;
     }
-
 
     /// whether the node is in a cycle
     inline bool isInCycle(NodeID n) const
@@ -162,40 +157,39 @@ public:
             for (; EI != EE; ++EI)
             {
                 NodeID w = Node_Index(*EI);
-                if(w==rep)
-                    return true;
+                if (w == rep) return true;
             }
             return false;
         }
     }
 
     /// get all subnodes in one scc, if size is empty insert itself into the set
-    inline const NodeBS& subNodes(NodeID n)  const
+    inline const NodeBS& subNodes(NodeID n) const
     {
         typename GNODESCCInfoMap::const_iterator it = _NodeSCCAuxInfo.find(n);
-        assert(it!=_NodeSCCAuxInfo.end() && "scc rep not found");
+        assert(it != _NodeSCCAuxInfo.end() && "scc rep not found");
         return it->second.subNodes();
     }
 
     /// get all repNodeID
-    inline const NodeBS &getRepNodes() const
+    inline const NodeBS& getRepNodes() const
     {
         return repNodes;
     }
 
-    const inline GraphType & graph()
+    const inline GraphType& graph()
     {
         return _graph;
     }
+
 private:
+    GNODESCCInfoMap _NodeSCCAuxInfo;
 
-    GNODESCCInfoMap  _NodeSCCAuxInfo;
-
-    const GraphType &           _graph;
-    NodeID                   _I;
-    NodeToNodeMap            _D;
-    GNodeStack             _SS;
-    GNodeStack             _T;
+    const GraphType& _graph;
+    NodeID _I;
+    NodeToNodeMap _D;
+    GNodeStack _SS;
+    GNodeStack _T;
     NodeBS repNodes;
 
     inline bool visited(NodeID n)
@@ -207,11 +201,11 @@ private:
         return _NodeSCCAuxInfo[n].inSCC();
     }
 
-    inline void setVisited(NodeID n,bool v)
+    inline void setVisited(NodeID n, bool v)
     {
         _NodeSCCAuxInfo[n].visited(v);
     }
-    inline void setInSCC(NodeID n,bool v)
+    inline void setInSCC(NodeID n, bool v)
     {
         _NodeSCCAuxInfo[n].inSCC(v);
     }
@@ -251,8 +245,8 @@ private:
         // SVFUtil::outs() << "visit GNODE: " << Node_Index(v)<< "\n";
         _I += 1;
         _D[v] = _I;
-        this->rep(v,v);
-        this->setVisited(v,true);
+        this->rep(v, v);
+        this->setVisited(v, true);
 
         child_iterator EI = GTraits::direct_child_begin(Node(v));
         child_iterator EE = GTraits::direct_child_end(Node(v));
@@ -261,29 +255,26 @@ private:
         {
             NodeID w = Node_Index(*EI);
 
-            if (!this->visited(w))
-                visit(w);
+            if (!this->visited(w)) visit(w);
             if (!this->inSCC(w))
             {
                 NodeID rep;
-                rep = _D[this->rep(v)] < _D[this->rep(w)] ?
-                      this->rep(v) : this->rep(w);
-                this->rep(v,rep);
+                rep = _D[this->rep(v)] < _D[this->rep(w)] ? this->rep(v) : this->rep(w);
+                this->rep(v, rep);
             }
         }
         if (this->rep(v) == v)
         {
-            this->setInSCC(v,true);
+            this->setInSCC(v, true);
             while (!_SS.empty())
             {
                 NodeID w = _SS.top();
-                if (_D[w] <= _D[v])
-                    break;
+                if (_D[w] <= _D[v]) break;
                 else
                 {
                     _SS.pop();
-                    this->setInSCC(w,true);
-                    this->rep(w,v);
+                    this->setInSCC(w, true);
+                    this->rep(w, v);
                 }
             }
             _T.push(v);
@@ -298,13 +289,11 @@ private:
         _I = 0;
         _D.clear();
         repNodes.clear();
-        while(!_SS.empty())
-            _SS.pop();
-        while(!_T.empty())
-            _T.pop();
+        while (!_SS.empty()) _SS.pop();
+        while (!_T.empty()) _T.pop();
     }
-public:
 
+public:
     void find(void)
     {
         // Visit each unvisited root node.   A root node is defined
@@ -323,15 +312,14 @@ public:
                 // merging optimizations.  Any such node should have no
                 // outgoing edges and therefore should no longer be a member
                 // of an SCC.
-                if (this->rep(node) == UINT_MAX || this->rep(node) == node)
-                    visit(node);
+                if (this->rep(node) == UINT_MAX || this->rep(node) == node) visit(node);
                 else
                     this->visited(node);
             }
         }
     }
 
-    void find(NodeSet &candidates)
+    void find(NodeSet& candidates)
     {
         // This function is reloaded to only visit candidate NODES
         clear();
@@ -339,14 +327,12 @@ public:
         {
             if (!this->visited(node))
             {
-                if (this->rep(node) == UINT_MAX || this->rep(node) == node)
-                    visit(node);
+                if (this->rep(node) == UINT_MAX || this->rep(node) == node) visit(node);
                 else
                     this->visited(node);
             }
         }
     }
-
 };
 
 } // End namespace SVF

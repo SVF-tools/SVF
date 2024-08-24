@@ -42,7 +42,7 @@ AndersenWaveDiff* AndersenWaveDiff::diffWave = nullptr;
 void AndersenWaveDiff::initialize()
 {
     Andersen::initialize();
-    setDetectPWC(true);   // Standard wave propagation always collapses PWCs
+    setDetectPWC(true); // Standard wave propagation always collapses PWCs
 }
 
 /*!
@@ -81,8 +81,7 @@ void AndersenWaveDiff::processNode(NodeID nodeId)
 {
     // This node may be merged during collapseNodePts() which means it is no longer a rep node
     // in the graph. Only rep node needs to be handled.
-    if (sccRepNode(nodeId) != nodeId)
-        return;
+    if (sccRepNode(nodeId) != nodeId) return;
 
     double propStart = stat->getClk();
     ConstraintNode* node = consCG->getConstraintNode(nodeId);
@@ -101,18 +100,16 @@ void AndersenWaveDiff::postProcessNode(NodeID nodeId)
     ConstraintNode* node = consCG->getConstraintNode(nodeId);
 
     // handle load
-    for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(), eit = node->outgoingLoadsEnd();
-            it != eit; ++it)
+    for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(), eit = node->outgoingLoadsEnd(); it != eit;
+         ++it)
     {
-        if (handleLoad(nodeId, *it))
-            reanalyze = true;
+        if (handleLoad(nodeId, *it)) reanalyze = true;
     }
     // handle store
-    for (ConstraintNode::const_iterator it = node->incomingStoresBegin(), eit =  node->incomingStoresEnd();
-            it != eit; ++it)
+    for (ConstraintNode::const_iterator it = node->incomingStoresBegin(), eit = node->incomingStoresEnd(); it != eit;
+         ++it)
     {
-        if (handleStore(nodeId, *it))
-            reanalyze = true;
+        if (handleStore(nodeId, *it)) reanalyze = true;
     }
 
     double insertEnd = stat->getClk();
@@ -125,8 +122,7 @@ void AndersenWaveDiff::postProcessNode(NodeID nodeId)
 bool AndersenWaveDiff::handleLoad(NodeID nodeId, const ConstraintEdge* edge)
 {
     bool changed = false;
-    for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(nodeId).end();
-            piter != epiter; ++piter)
+    for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(nodeId).end(); piter != epiter; ++piter)
     {
         if (processLoad(*piter, edge))
         {
@@ -142,8 +138,7 @@ bool AndersenWaveDiff::handleLoad(NodeID nodeId, const ConstraintEdge* edge)
 bool AndersenWaveDiff::handleStore(NodeID nodeId, const ConstraintEdge* edge)
 {
     bool changed = false;
-    for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(nodeId).end();
-            piter != epiter; ++piter)
+    for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(nodeId).end(); piter != epiter; ++piter)
     {
         if (processStore(*piter, edge))
         {

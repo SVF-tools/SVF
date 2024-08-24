@@ -30,7 +30,6 @@
 #ifndef PROJECT_ANDERSENSFR_H
 #define PROJECT_ANDERSENSFR_H
 
-
 #include "WPA/Andersen.h"
 #include "WPA/CSC.h"
 #include "MemoryModel/PointsTo.h"
@@ -52,13 +51,10 @@ protected:
     NodeToNodeMap pwcReps;
 
 public:
-    AndersenSCD(SVFIR* _pag, PTATY type = AndersenSCD_WPA) :
-        Andersen(_pag,type)
-    {
-    }
+    AndersenSCD(SVFIR* _pag, PTATY type = AndersenSCD_WPA) : Andersen(_pag, type) {}
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenSCD *createAndersenSCD(SVFIR* _pag)
+    static AndersenSCD* createAndersenSCD(SVFIR* _pag)
     {
         if (scdAndersen == nullptr)
         {
@@ -71,8 +67,7 @@ public:
 
     static void releaseAndersenSCD()
     {
-        if (scdAndersen)
-            delete scdAndersen;
+        if (scdAndersen) delete scdAndersen;
         scdAndersen = nullptr;
     }
 
@@ -91,10 +86,7 @@ protected:
     virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
     virtual void processPWC(ConstraintNode* rep);
     virtual void handleCopyGep(ConstraintNode* node);
-
 };
-
-
 
 /*!
  * Selective Cycle Detection with Stride-based Field Representation
@@ -114,13 +106,10 @@ private:
     FieldReps fieldReps;
 
 public:
-    AndersenSFR(SVFIR* _pag, PTATY type = AndersenSFR_WPA) :
-        AndersenSCD(_pag, type), csc(nullptr)
-    {
-    }
+    AndersenSFR(SVFIR* _pag, PTATY type = AndersenSFR_WPA) : AndersenSCD(_pag, type), csc(nullptr) {}
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenSFR *createAndersenSFR(SVFIR* _pag)
+    static AndersenSFR* createAndersenSFR(SVFIR* _pag)
     {
         if (sfrAndersen == nullptr)
         {
@@ -133,15 +122,14 @@ public:
 
     static void releaseAndersenSFR()
     {
-        if (sfrAndersen)
-            delete sfrAndersen;
+        if (sfrAndersen) delete sfrAndersen;
     }
 
     ~AndersenSFR()
     {
         if (csc != nullptr)
         {
-            delete(csc);
+            delete (csc);
             csc = nullptr;
         }
     }
@@ -152,9 +140,8 @@ protected:
     void fieldExpand(NodeSet& initials, APOffset offset, NodeBS& strides, PointsTo& expandPts);
     bool processGepPts(const PointsTo& pts, const GepCGEdge* edge);
     bool mergeSrcToTgt(NodeID nodeId, NodeID newRepId);
-
 };
 
 } // End namespace SVF
 
-#endif //PROJECT_ANDERSENSFR_H
+#endif // PROJECT_ANDERSENSFR_H

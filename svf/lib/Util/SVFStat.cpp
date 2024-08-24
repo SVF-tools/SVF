@@ -40,8 +40,8 @@ bool SVFStat::printGeneralStats = true;
 
 SVFStat::SVFStat() : startTime(0), endTime(0)
 {
-    assert((Options::ClockType() == ClockType::Wall || Options::ClockType() == ClockType::CPU)
-           && "PTAStat: unknown clock type!");
+    assert((Options::ClockType() == ClockType::Wall || Options::ClockType() == ClockType::CPU) &&
+           "PTAStat: unknown clock type!");
 }
 
 double SVFStat::getClk(bool mark)
@@ -67,7 +67,7 @@ void SVFStat::printStat(string statname)
 {
 
     std::string moduleName(SVFIR::getPAG()->getModule()->getModuleIdentifier());
-    std::vector<std::string> names = SVFUtil::split(moduleName,'/');
+    std::vector<std::string> names = SVFUtil::split(moduleName, '/');
     if (names.size() > 1)
     {
         moduleName = names[names.size() - 1];
@@ -78,23 +78,21 @@ void SVFStat::printStat(string statname)
     SVFUtil::outs().flags(std::ios::left);
     unsigned field_width = 20;
 
-    for(NUMStatMap::iterator it = generalNumMap.begin(), eit = generalNumMap.end(); it!=eit; ++it)
+    for (NUMStatMap::iterator it = generalNumMap.begin(), eit = generalNumMap.end(); it != eit; ++it)
     {
         // format out put with width 20 space
         std::cout << std::setw(field_width) << it->first << it->second << "\n";
     }
 
-    if(!timeStatMap.empty())
-        SVFUtil::outs() << "----------------Time and memory stats--------------------\n";
-    for(TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it!=eit; ++it)
+    if (!timeStatMap.empty()) SVFUtil::outs() << "----------------Time and memory stats--------------------\n";
+    for (TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it != eit; ++it)
     {
         // format out put with width 20 space
         SVFUtil::outs() << std::setw(field_width) << it->first << it->second << "\n";
     }
 
-    if(!PTNumStatMap.empty())
-        SVFUtil::outs() << "----------------Numbers stats----------------------------\n";
-    for(NUMStatMap::iterator it = PTNumStatMap.begin(), eit = PTNumStatMap.end(); it!=eit; ++it)
+    if (!PTNumStatMap.empty()) SVFUtil::outs() << "----------------Numbers stats----------------------------\n";
+    for (NUMStatMap::iterator it = PTNumStatMap.begin(), eit = PTNumStatMap.end(); it != eit; ++it)
     {
         // format out put with width 20 space
         SVFUtil::outs() << std::setw(field_width) << it->first << it->second << "\n";
@@ -110,8 +108,7 @@ void SVFStat::performStat()
 {
 
     /// SVF's general statistics are only printed once even if you run multiple anayses
-    if(printGeneralStats == false)
-        return;
+    if (printGeneralStats == false) return;
 
     SVFIR* pag = SVFIR::getPAG();
     u32_t numOfFunction = 0;
@@ -127,45 +124,30 @@ void SVFStat::performStat()
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
     Set<SymID> memObjSet;
-    for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
+    for (SVFIR::iterator it = pag->begin(), eit = pag->end(); it != eit; ++it)
     {
         PAGNode* node = it->second;
-        if(ObjVar* obj = SVFUtil::dyn_cast<ObjVar>(node))
+        if (ObjVar* obj = SVFUtil::dyn_cast<ObjVar>(node))
         {
             const MemObj* mem = obj->getMemObj();
-            if (memObjSet.insert(mem->getId()).second == false)
-                continue;
-            if(mem->isBlackHoleObj())
-                continue;
-            if(mem->isFunction())
-                numOfFunction++;
-            if(mem->isGlobalObj())
-                numOfGlobal++;
-            if(mem->isStack())
-                numOfStack++;
-            if(mem->isHeap())
-                numOfHeap++;
-            if(mem->isVarArray())
-                numOfHasVarArray++;
-            if(mem->isVarStruct())
-                numOfHasVarStruct++;
-            if(mem->isConstantArray())
-                numOfHasConstArray++;
-            if(mem->isConstantStruct())
-                numOfHasConstStruct++;
-            if(mem->getType()->isPointerTy() == false)
-                numOfScalar++;
-            if(mem->isConstDataOrConstGlobal())
-                numOfConstant++;
+            if (memObjSet.insert(mem->getId()).second == false) continue;
+            if (mem->isBlackHoleObj()) continue;
+            if (mem->isFunction()) numOfFunction++;
+            if (mem->isGlobalObj()) numOfGlobal++;
+            if (mem->isStack()) numOfStack++;
+            if (mem->isHeap()) numOfHeap++;
+            if (mem->isVarArray()) numOfHasVarArray++;
+            if (mem->isVarStruct()) numOfHasVarStruct++;
+            if (mem->isConstantArray()) numOfHasConstArray++;
+            if (mem->isConstantStruct()) numOfHasConstStruct++;
+            if (mem->getType()->isPointerTy() == false) numOfScalar++;
+            if (mem->isConstDataOrConstGlobal()) numOfConstant++;
 
-            if (mem->isFieldInsensitive())
-                fiObjNumber++;
+            if (mem->isFieldInsensitive()) fiObjNumber++;
             else
                 fsObjNumber++;
         }
     }
-
-
 
     generalNumMap["TotalPointers"] = pag->getValueNodeNum() + pag->getFieldValNodeNum();
     generalNumMap["TotalObjects"] = pag->getObjectNodeNum();
@@ -179,14 +161,14 @@ void SVFStat::performStat()
     generalNumMap["AddrsNum"] = pag->getSVFStmtSet(SVFStmt::Addr).size();
     generalNumMap["LoadsNum"] = pag->getSVFStmtSet(SVFStmt::Load).size();
     generalNumMap["StoresNum"] = pag->getSVFStmtSet(SVFStmt::Store).size();
-    generalNumMap["CopysNum"] =  pag->getSVFStmtSet(SVFStmt::Copy).size();
-    generalNumMap["GepsNum"] =  pag->getSVFStmtSet(SVFStmt::Gep).size();
+    generalNumMap["CopysNum"] = pag->getSVFStmtSet(SVFStmt::Copy).size();
+    generalNumMap["GepsNum"] = pag->getSVFStmtSet(SVFStmt::Gep).size();
     generalNumMap["CallsNum"] = pag->getSVFStmtSet(SVFStmt::Call).size();
     generalNumMap["ReturnsNum"] = pag->getSVFStmtSet(SVFStmt::Ret).size();
 
     generalNumMap["FunctionObjs"] = numOfFunction;
     generalNumMap["GlobalObjs"] = numOfGlobal;
-    generalNumMap["HeapObjs"]  = numOfHeap;
+    generalNumMap["HeapObjs"] = numOfHeap;
     generalNumMap["StackObjs"] = numOfStack;
 
     generalNumMap["VarStructObj"] = numOfHasVarStruct;
@@ -211,23 +193,19 @@ void SVFStat::performStat()
     printGeneralStats = false;
 }
 
-
 void SVFStat::branchStat()
 {
     SVFModule* module = SVFIR::getPAG()->getModule();
     u32_t numOfBB_2Succ = 0;
     u32_t numOfBB_3Succ = 0;
-    for (SVFModule::const_iterator funIter = module->begin(), funEiter = module->end();
-            funIter != funEiter; ++funIter)
+    for (SVFModule::const_iterator funIter = module->begin(), funEiter = module->end(); funIter != funEiter; ++funIter)
     {
         const SVFFunction* func = *funIter;
-        for (SVFFunction::const_iterator bbIt = func->begin(), bbEit = func->end();
-                bbIt != bbEit; ++bbIt)
+        for (SVFFunction::const_iterator bbIt = func->begin(), bbEit = func->end(); bbIt != bbEit; ++bbIt)
         {
             const SVFBasicBlock* bb = *bbIt;
             u32_t numOfSucc = bb->getNumSuccessors();
-            if (numOfSucc == 2)
-                numOfBB_2Succ++;
+            if (numOfSucc == 2) numOfBB_2Succ++;
             else if (numOfSucc > 2)
                 numOfBB_3Succ++;
         }

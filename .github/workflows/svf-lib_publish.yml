@@ -33,7 +33,6 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           ln -sfn /Applications/Xcode_${{ env.XCODE_VERSION }}.app /Applications/Xcode.app
-          brew install astyle
       - name: ubuntu-setup
         if: runner.os == 'Linux'
         run: |
@@ -42,7 +41,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install cmake gcc g++ nodejs doxygen graphviz libncurses5-dev libtinfo5 libzstd-dev
           sudo apt-get update
-          sudo apt-get install -y astyle
       - name: env-setup
         if: github.event_name == 'push' && github.repository == 'SVF-tools/SVF'
         run: |
@@ -56,8 +54,7 @@ jobs:
           cd $GITHUB_WORKSPACE
           echo $(pwd)
           git pull
-          astyle --style=allman -n -r "*.h" "*.cpp"
-          if [ ! -z $FILES_CHANGED ]; then clang-format -i $FILES_CHANGED; fi
+          source ${{github.workspace}}/clang-format.sh
           git clone "https://github.com/SVF-tools/Test-Suite.git";
           source ${{github.workspace}}/build.sh
 

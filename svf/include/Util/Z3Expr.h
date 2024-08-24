@@ -38,43 +38,28 @@ namespace SVF
 class Z3Expr
 {
 public:
-    static z3::context *ctx;
+    static z3::context* ctx;
     static z3::solver* solver;
 
 private:
     z3::expr e;
 
-
-
 public:
+    Z3Expr() : e(nullExpr()) {}
 
-    Z3Expr() : e(nullExpr())
-    {
-    }
+    Z3Expr(const z3::expr& _e) : e(_e) {}
 
-    Z3Expr(const z3::expr &_e) : e(_e)
-    {
-    }
+    Z3Expr(int i) : e(getContext().int_val(i)) {}
 
-    Z3Expr(int i) : e(getContext().int_val(i))
-    {
-    }
+    Z3Expr(const Z3Expr& z3Expr) : e(z3Expr.getExpr()) {}
 
-    Z3Expr(const Z3Expr &z3Expr) : e(z3Expr.getExpr())
-    {
-    }
+    Z3Expr(float f) : Z3Expr((double)f) {}
 
-    Z3Expr(float f) : Z3Expr((double) f)
-    {
-    }
-
-    Z3Expr(double f): e(getContext().real_val(std::to_string(f).c_str()))
-    {
-    }
+    Z3Expr(double f) : e(getContext().real_val(std::to_string(f).c_str())) {}
 
     virtual ~Z3Expr() = default;
 
-    inline Z3Expr &operator=(const Z3Expr &rhs)
+    inline Z3Expr& operator=(const Z3Expr& rhs)
     {
         if (this->id() != rhs.id())
         {
@@ -83,23 +68,22 @@ public:
         return *this;
     }
 
-    const z3::expr &getExpr() const
+    const z3::expr& getExpr() const
     {
         return e;
     }
 
     /// Get z3 solver, singleton design here to make sure we only have one context
-    static z3::solver &getSolver();
+    static z3::solver& getSolver();
 
     /// Get z3 context, singleton design here to make sure we only have one context
-    static z3::context &getContext();
+    static z3::context& getContext();
 
     /// release z3 context
     static void releaseContext();
 
     /// release z3 solver
     static void releaseSolver();
-
 
     /// null expression
     static z3::expr nullExpr()
@@ -150,123 +134,123 @@ public:
     }
 
     //{% reload operator
-    friend Z3Expr operator==(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr operator==(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return lhs.getExpr() == rhs.getExpr();
     }
 
-    friend Z3Expr operator!=(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr operator!=(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return lhs.getExpr() != rhs.getExpr();
     }
 
-    friend Z3Expr operator>(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr operator>(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return lhs.getExpr() > rhs.getExpr();
     }
 
-    friend Z3Expr operator<(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr operator<(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return lhs.getExpr() < rhs.getExpr();
     }
 
-    friend Z3Expr operator<=(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr operator<=(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return lhs.getExpr() <= rhs.getExpr();
     }
 
-    friend Z3Expr operator>=(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr operator>=(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return lhs.getExpr() >= rhs.getExpr();
     }
 
-    friend Z3Expr operator+(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr operator+(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return lhs.getExpr() + rhs.getExpr();
     }
 
-    friend Z3Expr operator-(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr operator-(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return lhs.getExpr() - rhs.getExpr();
     }
 
-    friend Z3Expr operator*(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr operator*(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return lhs.getExpr() * rhs.getExpr();
     }
 
-    friend Z3Expr operator/(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr operator/(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return lhs.getExpr() / rhs.getExpr();
     }
 
-    friend Z3Expr operator%(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr operator%(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return lhs.getExpr() % rhs.getExpr();
     }
 
-    friend Z3Expr operator^(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr operator^(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return lhs.getExpr() ^ rhs.getExpr();
     }
 
-    friend Z3Expr operator&(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr operator&(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return lhs.getExpr() & rhs.getExpr();
     }
 
-    friend Z3Expr operator|(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr operator|(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return lhs.getExpr() | rhs.getExpr();
     }
 
-    friend Z3Expr ashr(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr ashr(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return ashr(lhs.getExpr(), rhs.getExpr());
     }
 
-    friend Z3Expr shl(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr shl(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return shl(lhs.getExpr(), rhs.getExpr());
     }
 
-    friend Z3Expr int2bv(u32_t n, const Z3Expr &e)
+    friend Z3Expr int2bv(u32_t n, const Z3Expr& e)
     {
         return int2bv(n, e.getExpr());
     }
 
-    friend Z3Expr bv2int(const Z3Expr &e, bool isSigned)
+    friend Z3Expr bv2int(const Z3Expr& e, bool isSigned)
     {
         return z3::bv2int(e.getExpr(), isSigned);
     }
 
-    friend Z3Expr operator&&(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr operator&&(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return lhs.getExpr() && rhs.getExpr();
     }
 
-    friend Z3Expr operator||(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr operator||(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return lhs.getExpr() || rhs.getExpr();
     }
 
-    friend Z3Expr operator!(const Z3Expr &lhs)
+    friend Z3Expr operator!(const Z3Expr& lhs)
     {
         return !lhs.getExpr();
     }
 
-    friend Z3Expr ite(const Z3Expr &cond, const Z3Expr &lhs, const Z3Expr &rhs)
+    friend Z3Expr ite(const Z3Expr& cond, const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return ite(cond.getExpr(), lhs.getExpr(), rhs.getExpr());
     }
 
-    friend std::ostream &operator<<(std::ostream &out, const Z3Expr &expr)
+    friend std::ostream& operator<<(std::ostream& out, const Z3Expr& expr)
     {
         out << expr.getExpr();
         return out;
     }
 
-    friend bool eq(const Z3Expr &lhs, const Z3Expr &rhs)
+    friend bool eq(const Z3Expr& lhs, const Z3Expr& rhs)
     {
         return eq(lhs.getExpr().simplify(), rhs.getExpr().simplify());
     }
@@ -278,18 +262,16 @@ public:
     //%}
 
     /// output Z3 expression as a string
-    static std::string dumpStr(const Z3Expr &z3Expr);
-
+    static std::string dumpStr(const Z3Expr& z3Expr);
 
     /// get the number of subexpression of a Z3 expression
-    static u32_t getExprSize(const Z3Expr &z3Expr);
+    static u32_t getExprSize(const Z3Expr& z3Expr);
 
     /// Return the unique true condition
     static inline Z3Expr getTrueCond()
     {
         return getContext().bool_val(true);
     }
-
 
     /// Return the unique false condition
     static inline Z3Expr getFalseCond()
@@ -298,28 +280,26 @@ public:
     }
 
     /// compute NEG
-    static inline Z3Expr NEG(const Z3Expr &z3Expr)
+    static inline Z3Expr NEG(const Z3Expr& z3Expr)
     {
         return (!z3Expr).simplify();
     }
 
     /// compute AND, used for branch condition
-    static Z3Expr AND(const Z3Expr &lhs, const Z3Expr &rhs);
+    static Z3Expr AND(const Z3Expr& lhs, const Z3Expr& rhs);
 
     /// compute OR, used for branch condition
-    static Z3Expr OR(const Z3Expr &lhs, const Z3Expr &rhs);
+    static Z3Expr OR(const Z3Expr& lhs, const Z3Expr& rhs);
 };
 } // End namespace SVF
 
 /// Specialise hash for AbsCxtDPItem.
-template<>
-struct std::hash<SVF::Z3Expr>
+template <> struct std::hash<SVF::Z3Expr>
 {
-    size_t operator()(const SVF::Z3Expr &z3Expr) const
+    size_t operator()(const SVF::Z3Expr& z3Expr) const
     {
         return z3Expr.id();
     }
 };
 
-#endif //Z3_EXAMPLE_Z3EXPR_H
-
+#endif // Z3_EXAMPLE_Z3EXPR_H

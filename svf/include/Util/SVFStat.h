@@ -33,14 +33,12 @@
 namespace SVF
 {
 
-
 /*!
  * Pointer Analysis Statistics
  */
 class SVFStat
 {
 public:
-
     typedef OrderedMap<std::string, u32_t> NUMStatMap;
 
     typedef OrderedMap<std::string, double> TIMEStatMap;
@@ -86,7 +84,7 @@ public:
 
     virtual void performStatPerQuery(NodeID) {}
 
-    virtual void printStatPerQuery(NodeID, const PointsTo &) {}
+    virtual void printStatPerQuery(NodeID, const PointsTo&) {}
 
     virtual void callgraphStat() {}
 
@@ -100,4 +98,4 @@ private:
 }; // End class SVFStat
 
 } // End namespace SVF
-#endif //SVF_SVFSTAT_H
+#endif // SVF_SVFSTAT_H

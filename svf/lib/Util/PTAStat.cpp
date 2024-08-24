@@ -36,12 +36,8 @@
 using namespace SVF;
 using namespace std;
 
-PTAStat::PTAStat(PointerAnalysis* p) : SVFStat(),
-    pta(p),
-    _vmrssUsageBefore(0),
-    _vmrssUsageAfter(0),
-    _vmsizeUsageBefore(0),
-    _vmsizeUsageAfter(0)
+PTAStat::PTAStat(PointerAnalysis* p)
+    : SVFStat(), pta(p), _vmrssUsageBefore(0), _vmrssUsageAfter(0), _vmsizeUsageBefore(0), _vmsizeUsageAfter(0)
 {
     u32_t vmrss = 0;
     u32_t vmsize = 0;
@@ -57,12 +53,12 @@ void PTAStat::performStat()
     callgraphStat();
 
     SVFIR* pag = SVFIR::getPAG();
-    for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
+    for (SVFIR::iterator it = pag->begin(), eit = pag->end(); it != eit; ++it)
     {
         PAGNode* node = it->second;
-        if(SVFUtil::isa<ObjVar>(node))
+        if (SVFUtil::isa<ObjVar>(node))
         {
-            if(pta->isLocalVarInRecursiveFun(node->getId()))
+            if (pta->isLocalVarInRecursiveFun(node->getId()))
             {
                 localVarInRecursion.set(node->getId());
             }
@@ -98,24 +94,23 @@ void PTAStat::callgraphStat()
     for (; it != eit; ++it)
     {
         totalNode++;
-        if(callgraphSCC->isInCycle(it->first))
+        if (callgraphSCC->isInCycle(it->first))
         {
             sccRepNodeSet.insert(callgraphSCC->repNode(it->first));
             nodeInCycle++;
             const NodeBS& subNodes = callgraphSCC->subNodes(it->first);
-            if(subNodes.count() > maxNodeInCycle)
-                maxNodeInCycle = subNodes.count();
+            if (subNodes.count() > maxNodeInCycle) maxNodeInCycle = subNodes.count();
         }
 
         CallGraphNode::const_iterator edgeIt = it->second->InEdgeBegin();
         CallGraphNode::const_iterator edgeEit = it->second->InEdgeEnd();
         for (; edgeIt != edgeEit; ++edgeIt)
         {
-            CallGraphEdge *edge = *edgeIt;
-            totalEdge+= edge->getDirectCalls().size() + edge->getIndirectCalls().size();
-            if(callgraphSCC->repNode(edge->getSrcID()) == callgraphSCC->repNode(edge->getDstID()))
+            CallGraphEdge* edge = *edgeIt;
+            totalEdge += edge->getDirectCalls().size() + edge->getIndirectCalls().size();
+            if (callgraphSCC->repNode(edge->getSrcID()) == callgraphSCC->repNode(edge->getDstID()))
             {
-                edgeInCycle+=edge->getDirectCalls().size() + edge->getIndirectCalls().size();
+                edgeInCycle += edge->getDirectCalls().size() + edge->getIndirectCalls().size();
             }
         }
     }
@@ -129,13 +124,17 @@ void PTAStat::callgraphStat()
     PTNumStatMap["TotalEdge"] = totalEdge;
     PTNumStatMap["CalRetPairInCycle"] = edgeInCycle;
 
-    if(pta->getAnalysisTy() >= PointerAnalysis::PTATY::Andersen_BASE && pta->getAnalysisTy() <= PointerAnalysis::PTATY::Steensgaard_WPA)
+    if (pta->getAnalysisTy() >= PointerAnalysis::PTATY::Andersen_BASE &&
+        pta->getAnalysisTy() <= PointerAnalysis::PTATY::Steensgaard_WPA)
         SVFStat::printStat("CallGraph Stats (Andersen analysis)");
-    else if(pta->getAnalysisTy() >= PointerAnalysis::PTATY::FSDATAFLOW_WPA && pta->getAnalysisTy() <= PointerAnalysis::PTATY::FSCS_WPA)
+    else if (pta->getAnalysisTy() >= PointerAnalysis::PTATY::FSDATAFLOW_WPA &&
+             pta->getAnalysisTy() <= PointerAnalysis::PTATY::FSCS_WPA)
         SVFStat::printStat("CallGraph Stats (Flow-sensitive analysis)");
-    else if(pta->getAnalysisTy() >= PointerAnalysis::PTATY::CFLFICI_WPA && pta->getAnalysisTy() <= PointerAnalysis::PTATY::CFLFSCS_WPA)
+    else if (pta->getAnalysisTy() >= PointerAnalysis::PTATY::CFLFICI_WPA &&
+             pta->getAnalysisTy() <= PointerAnalysis::PTATY::CFLFSCS_WPA)
         SVFStat::printStat("CallGraph Stats (CFL-R analysis)");
-    else if(pta->getAnalysisTy() >= PointerAnalysis::PTATY::FieldS_DDA && pta->getAnalysisTy() <= PointerAnalysis::PTATY::Cxt_DDA)
+    else if (pta->getAnalysisTy() >= PointerAnalysis::PTATY::FieldS_DDA &&
+             pta->getAnalysisTy() <= PointerAnalysis::PTATY::Cxt_DDA)
         SVFStat::printStat("CallGraph Stats (DDA analysis)");
     else
         SVFStat::printStat("CallGraph Stats");

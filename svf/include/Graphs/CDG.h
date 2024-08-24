@@ -42,17 +42,13 @@ typedef GenericEdge<CDGNode> GenericCDGEdgeTy;
 class CDGEdge : public GenericCDGEdgeTy
 {
 public:
-    typedef std::pair<const SVFValue *, s32_t> BranchCondition;
+    typedef std::pair<const SVFValue*, s32_t> BranchCondition;
 
     /// Constructor
-    CDGEdge(CDGNode *s, CDGNode *d) : GenericCDGEdgeTy(s, d, 0)
-    {
-    }
+    CDGEdge(CDGNode* s, CDGNode* d) : GenericCDGEdgeTy(s, d, 0) {}
 
     /// Destructor
-    ~CDGEdge()
-    {
-    }
+    ~CDGEdge() {}
 
     typedef GenericNode<CDGNode, CDGEdge>::GEdgeSetTy CDGEdgeSetTy;
     typedef CDGEdgeSetTy SVFGEdgeSetTy;
@@ -61,24 +57,24 @@ public:
     {
         std::string str;
         std::stringstream rawstr(str);
-        rawstr << "CDGEdge " << " [";
+        rawstr << "CDGEdge "
+               << " [";
         rawstr << getDstID() << "<--" << getSrcID() << "\t";
         return rawstr.str();
     }
 
     /// get/set branch condition
     //{@
-    const Set<BranchCondition> &getBranchConditions() const
+    const Set<BranchCondition>& getBranchConditions() const
     {
         return brConditions;
     }
 
-    void insertBranchCondition(const SVFValue *pNode, s32_t branchID)
+    void insertBranchCondition(const SVFValue* pNode, s32_t branchID)
     {
         brConditions.insert(std::make_pair(pNode, branchID));
     }
     //@}
-
 
 private:
     Set<BranchCondition> brConditions;
@@ -90,16 +86,12 @@ class CDGNode : public GenericCDGNodeTy
 {
 
 public:
-
     typedef CDGEdge::CDGEdgeSetTy::iterator iterator;
     typedef CDGEdge::CDGEdgeSetTy::const_iterator const_iterator;
 
 public:
     /// Constructor
-    CDGNode(const ICFGNode *icfgNode) : GenericCDGNodeTy(icfgNode->getId(), 0), _icfgNode(icfgNode)
-    {
-
-    }
+    CDGNode(const ICFGNode* icfgNode) : GenericCDGNodeTy(icfgNode->getId(), 0), _icfgNode(icfgNode) {}
 
     virtual const std::string toString() const
     {
@@ -109,14 +101,13 @@ public:
         return rawstr.str();
     }
 
-    const ICFGNode *getICFGNode() const
+    const ICFGNode* getICFGNode() const
     {
         return _icfgNode;
     }
 
-
 private:
-    const ICFGNode *_icfgNode;
+    const ICFGNode* _icfgNode;
 };
 
 typedef std::vector<std::pair<NodeID, NodeID>> NodePairVector;
@@ -126,27 +117,22 @@ class CDG : public GenericCDGTy
 {
 
 public:
-
-    typedef Map<NodeID, CDGNode *> CDGNodeIDToNodeMapTy;
+    typedef Map<NodeID, CDGNode*> CDGNodeIDToNodeMapTy;
     typedef CDGEdge::CDGEdgeSetTy CDGEdgeSetTy;
     typedef CDGNodeIDToNodeMapTy::iterator iterator;
     typedef CDGNodeIDToNodeMapTy::const_iterator const_iterator;
-    typedef std::vector<const ICFGNode *> ICFGNodeVector;
-    typedef std::vector<std::pair<const ICFGNode *, const ICFGNode *>> ICFGNodePairVector;
+    typedef std::vector<const ICFGNode*> ICFGNodeVector;
+    typedef std::vector<std::pair<const ICFGNode*, const ICFGNode*>> ICFGNodePairVector;
 
 private:
-    static CDG *controlDg; ///< Singleton pattern here
+    static CDG* controlDg; ///< Singleton pattern here
     /// Constructor
-    CDG()
-    {
-
-    }
-
+    CDG() {}
 
 public:
     /// Singleton design here to make sure we only have one instance during any analysis
     //@{
-    static inline CDG * getCDG()
+    static inline CDG* getCDG()
     {
         if (controlDg == nullptr)
         {
@@ -157,8 +143,7 @@ public:
 
     static void releaseCDG()
     {
-        if (controlDg)
-            delete controlDg;
+        if (controlDg) delete controlDg;
         controlDg = nullptr;
     }
     //@}
@@ -167,10 +152,9 @@ public:
     virtual ~CDG() {}
 
     /// Get a CDG node
-    inline CDGNode *getCDGNode(NodeID id) const
+    inline CDGNode* getCDGNode(NodeID id) const
     {
-        if (!hasCDGNode(id))
-            return nullptr;
+        if (!hasCDGNode(id)) return nullptr;
         return getGNode(id);
     }
 
@@ -181,11 +165,11 @@ public:
     }
 
     /// Whether we has a CDG edge
-    bool hasCDGEdge(CDGNode *src, CDGNode *dst)
+    bool hasCDGEdge(CDGNode* src, CDGNode* dst)
     {
         CDGEdge edge(src, dst);
-        CDGEdge *outEdge = src->hasOutgoingEdge(&edge);
-        CDGEdge *inEdge = dst->hasIncomingEdge(&edge);
+        CDGEdge* outEdge = src->hasOutgoingEdge(&edge);
+        CDGEdge* inEdge = dst->hasIncomingEdge(&edge);
         if (outEdge && inEdge)
         {
             assert(outEdge == inEdge && "edges not match");
@@ -196,12 +180,11 @@ public:
     }
 
     /// Get a control dependence edge according to src and dst
-    CDGEdge *getCDGEdge(const CDGNode *src, const CDGNode *dst)
+    CDGEdge* getCDGEdge(const CDGNode* src, const CDGNode* dst)
     {
-        CDGEdge *edge = nullptr;
+        CDGEdge* edge = nullptr;
         size_t counter = 0;
-        for (CDGEdge::CDGEdgeSetTy::iterator iter = src->OutEdgeBegin();
-                iter != src->OutEdgeEnd(); ++iter)
+        for (CDGEdge::CDGEdgeSetTy::iterator iter = src->OutEdgeBegin(); iter != src->OutEdgeEnd(); ++iter)
         {
             if ((*iter)->getDstID() == dst->getId())
             {
@@ -220,14 +203,14 @@ public:
     }
 
     /// Dump graph into dot file
-    void dump(const std::string &filename)
+    void dump(const std::string& filename)
     {
         GraphPrinter::WriteGraphToFile(SVFUtil::outs(), filename, this);
     }
 
 public:
     /// Remove a control dependence edge
-    inline void removeCDGEdge(CDGEdge *edge)
+    inline void removeCDGEdge(CDGEdge* edge)
     {
         edge->getDstNode()->removeIncomingEdge(edge);
         edge->getSrcNode()->removeOutgoingEdge(edge);
@@ -235,14 +218,12 @@ public:
     }
 
     /// Remove a CDGNode
-    inline void removeCDGNode(CDGNode *node)
+    inline void removeCDGNode(CDGNode* node)
     {
-        std::set<CDGEdge *> temp;
-        for (CDGEdge *e: node->getInEdges())
-            temp.insert(e);
-        for (CDGEdge *e: node->getOutEdges())
-            temp.insert(e);
-        for (CDGEdge *e: temp)
+        std::set<CDGEdge*> temp;
+        for (CDGEdge* e : node->getInEdges()) temp.insert(e);
+        for (CDGEdge* e : node->getOutEdges()) temp.insert(e);
+        for (CDGEdge* e : temp)
         {
             removeCDGEdge(e);
         }
@@ -261,7 +242,7 @@ public:
     }
 
     /// Add CDG edge
-    inline bool addCDGEdge(CDGEdge *edge)
+    inline bool addCDGEdge(CDGEdge* edge)
     {
         bool added1 = edge->getDstNode()->addIncomingEdge(edge);
         bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
@@ -270,7 +251,7 @@ public:
     }
 
     /// Add a CDG node
-    virtual inline void addCDGNode(CDGNode *node)
+    virtual inline void addCDGNode(CDGNode* node)
     {
         addGNode(node->getId(), node);
     }
@@ -278,7 +259,7 @@ public:
     /// Add CDG nodes from nodeid vector
     inline void addCDGNodesFromVector(ICFGNodeVector nodes)
     {
-        for (const ICFGNode *icfgNode: nodes)
+        for (const ICFGNode* icfgNode : nodes)
         {
             if (!IDToNodeMap.count(icfgNode->getId()))
             {
@@ -288,8 +269,7 @@ public:
     }
 
     /// Add CDG edges from nodeid pair
-    void addCDGEdgeFromSrcDst(const ICFGNode *src, const ICFGNode *dst, const SVFValue *pNode, s32_t branchID);
-
+    void addCDGEdgeFromSrcDst(const ICFGNode* src, const ICFGNode* dst, const SVFValue* pNode, s32_t branchID);
 };
 } // end namespace SVF
 
@@ -299,59 +279,53 @@ namespace SVF
  * GenericGraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph ICFGTraversals.
  */
-template<>
-struct GenericGraphTraits<SVF::CDGNode *>
-    : public GenericGraphTraits<SVF::GenericNode<SVF::CDGNode, SVF::CDGEdge> *>
+template <>
+struct GenericGraphTraits<SVF::CDGNode*> : public GenericGraphTraits<SVF::GenericNode<SVF::CDGNode, SVF::CDGEdge>*>
 {
 };
 
 /// Inverse GenericGraphTraits specializations for call graph node, it is used for inverse ICFGTraversal.
-template<>
-struct GenericGraphTraits<Inverse<SVF::CDGNode *> > : public GenericGraphTraits<
-    Inverse<SVF::GenericNode<SVF::CDGNode, SVF::CDGEdge> *> >
+template <>
+struct GenericGraphTraits<Inverse<SVF::CDGNode*>>
+    : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::CDGNode, SVF::CDGEdge>*>>
 {
 };
 
-template<>
-struct GenericGraphTraits<SVF::CDG *>
-    : public GenericGraphTraits<SVF::GenericGraph<SVF::CDGNode, SVF::CDGEdge> *>
+template <>
+struct GenericGraphTraits<SVF::CDG*> : public GenericGraphTraits<SVF::GenericGraph<SVF::CDGNode, SVF::CDGEdge>*>
 {
-    typedef SVF::CDGNode *NodeRef;
+    typedef SVF::CDGNode* NodeRef;
 };
 
-template<>
-struct DOTGraphTraits<SVF::CDG *> : public DOTGraphTraits<SVF::PAG *>
+template <> struct DOTGraphTraits<SVF::CDG*> : public DOTGraphTraits<SVF::PAG*>
 {
 
     typedef SVF::CDGNode NodeType;
 
-    DOTGraphTraits(bool isSimple = false) :
-        DOTGraphTraits<SVF::PAG *>(isSimple)
-    {
-    }
+    DOTGraphTraits(bool isSimple = false) : DOTGraphTraits<SVF::PAG*>(isSimple) {}
 
     /// Return name of the graph
-    static std::string getGraphName(SVF::CDG *)
+    static std::string getGraphName(SVF::CDG*)
     {
         return "Control Dependence Graph";
     }
 
-    std::string getNodeLabel(NodeType *node, SVF::CDG *graph)
+    std::string getNodeLabel(NodeType* node, SVF::CDG* graph)
     {
         return getSimpleNodeLabel(node, graph);
     }
 
     /// Return the label of an ICFG node
-    static std::string getSimpleNodeLabel(NodeType *node, SVF::CDG *)
+    static std::string getSimpleNodeLabel(NodeType* node, SVF::CDG*)
     {
         std::string str;
         std::stringstream rawstr(str);
         rawstr << "NodeID: " << node->getId() << "\n";
-        const SVF::ICFGNode *icfgNode = node->getICFGNode();
-        if (const SVF::IntraICFGNode *bNode = SVF::SVFUtil::dyn_cast<SVF::IntraICFGNode>(icfgNode))
+        const SVF::ICFGNode* icfgNode = node->getICFGNode();
+        if (const SVF::IntraICFGNode* bNode = SVF::SVFUtil::dyn_cast<SVF::IntraICFGNode>(icfgNode))
         {
             rawstr << "IntraBlockNode ID: " << bNode->getId() << " \t";
-            SVF::PAG::SVFStmtList &edges = SVF::PAG::getPAG()->getPTASVFStmtList(bNode);
+            SVF::PAG::SVFStmtList& edges = SVF::PAG::getPAG()->getPTASVFStmtList(bNode);
             if (edges.empty())
             {
                 rawstr << bNode->getInst()->toString() << " \t";
@@ -360,34 +334,34 @@ struct DOTGraphTraits<SVF::CDG *> : public DOTGraphTraits<SVF::PAG *>
             {
                 for (SVF::PAG::SVFStmtList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
                 {
-                    const SVF::PAGEdge *edge = *it;
+                    const SVF::PAGEdge* edge = *it;
                     rawstr << edge->toString();
                 }
             }
             rawstr << " {fun: " << bNode->getFun()->getName() << "}";
         }
-        else if (const SVF::FunEntryICFGNode *entry = SVF::SVFUtil::dyn_cast<SVF::FunEntryICFGNode>(icfgNode))
+        else if (const SVF::FunEntryICFGNode* entry = SVF::SVFUtil::dyn_cast<SVF::FunEntryICFGNode>(icfgNode))
         {
             rawstr << entry->toString();
         }
-        else if (const SVF::FunExitICFGNode *exit = SVF::SVFUtil::dyn_cast<SVF::FunExitICFGNode>(icfgNode))
+        else if (const SVF::FunExitICFGNode* exit = SVF::SVFUtil::dyn_cast<SVF::FunExitICFGNode>(icfgNode))
         {
             rawstr << exit->toString();
         }
-        else if (const SVF::CallICFGNode *call = SVF::SVFUtil::dyn_cast<SVF::CallICFGNode>(icfgNode))
+        else if (const SVF::CallICFGNode* call = SVF::SVFUtil::dyn_cast<SVF::CallICFGNode>(icfgNode))
         {
             rawstr << call->toString();
         }
-        else if (const SVF::RetICFGNode *ret = SVF::SVFUtil::dyn_cast<SVF::RetICFGNode>(icfgNode))
+        else if (const SVF::RetICFGNode* ret = SVF::SVFUtil::dyn_cast<SVF::RetICFGNode>(icfgNode))
         {
             rawstr << ret->toString();
         }
-        else if (const SVF::GlobalICFGNode *glob = SVF::SVFUtil::dyn_cast<SVF::GlobalICFGNode>(icfgNode))
+        else if (const SVF::GlobalICFGNode* glob = SVF::SVFUtil::dyn_cast<SVF::GlobalICFGNode>(icfgNode))
         {
-            SVF::PAG::SVFStmtList &edges = SVF::PAG::getPAG()->getPTASVFStmtList(glob);
+            SVF::PAG::SVFStmtList& edges = SVF::PAG::getPAG()->getPTASVFStmtList(glob);
             for (SVF::PAG::SVFStmtList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
             {
-                const SVF::PAGEdge *edge = *it;
+                const SVF::PAGEdge* edge = *it;
                 rawstr << edge->toString();
             }
         }
@@ -397,11 +371,11 @@ struct DOTGraphTraits<SVF::CDG *> : public DOTGraphTraits<SVF::PAG *>
         return rawstr.str();
     }
 
-    static std::string getNodeAttributes(NodeType *node, SVF::CDG *)
+    static std::string getNodeAttributes(NodeType* node, SVF::CDG*)
     {
         std::string str;
         std::stringstream rawstr(str);
-        const SVF::ICFGNode *icfgNode = node->getICFGNode();
+        const SVF::ICFGNode* icfgNode = node->getICFGNode();
 
         if (SVF::SVFUtil::isa<SVF::IntraICFGNode>(icfgNode))
         {
@@ -435,22 +409,20 @@ struct DOTGraphTraits<SVF::CDG *> : public DOTGraphTraits<SVF::PAG *>
         return rawstr.str();
     }
 
-    template<class EdgeIter>
-    static std::string getEdgeAttributes(NodeType *, EdgeIter EI, SVF::CDG *)
+    template <class EdgeIter> static std::string getEdgeAttributes(NodeType*, EdgeIter EI, SVF::CDG*)
     {
         assert(*(EI.getCurrent()) && "No edge found!!");
         return "style=solid";
     }
 
-    template<class EdgeIter>
-    static std::string getEdgeSourceLabel(NodeType *, EdgeIter EI)
+    template <class EdgeIter> static std::string getEdgeSourceLabel(NodeType*, EdgeIter EI)
     {
-        SVF::CDGEdge *edge = *(EI.getCurrent());
+        SVF::CDGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
 
         std::string str;
         std::stringstream rawstr(str);
-        for (const auto &cond: edge->getBranchConditions())
+        for (const auto& cond : edge->getBranchConditions())
         {
             rawstr << std::to_string(cond.second) << "|";
         }
@@ -462,4 +434,4 @@ struct DOTGraphTraits<SVF::CDG *> : public DOTGraphTraits<SVF::PAG *>
 };
 
 } // End namespace SVF
-#endif //SVF_CONTROLDG_H
+#endif // SVF_CONTROLDG_H

@@ -27,7 +27,6 @@
  *      Author: Pei Xu
  */
 
-
 #include "CFL/CFLBase.h"
 
 namespace SVF
@@ -53,12 +52,12 @@ void CFLBase::checkParameter()
     bool pagfile = (filename.rfind("PAGGrammar.txt") == filename.length() - std::string("PAGGrammar.txt").length());
     bool pegfile = (filename.rfind("PEGGrammar.txt") == filename.length() - std::string("PEGGrammar.txt").length());
     bool vfgfile = (filename.rfind("VFGGrammar.txt") == filename.length() - std::string("VFGGrammar.txt").length());
-    if (!Options::Customized()  && !(pagfile || pegfile || vfgfile))
+    if (!Options::Customized() && !(pagfile || pegfile || vfgfile))
     {
         SVFUtil::errs() << "Invalid alias grammar file: " << Options::GrammarFilename() << "\n"
                         << "Please use a file that ends with either 'CFGrammar.txt' or 'PEGGrammar.txt', "
                         << "or use the -customized flag to allow custom grammar files.\n";
-        assert(false && "grammar loading failed!");  // exit with error
+        assert(false && "grammar loading failed!"); // exit with error
     }
 }
 
@@ -84,7 +83,7 @@ void CFLBase::buildCFLGraph()
     if (Options::CFLGraph().empty()) // built from svfir
     {
         PointerAnalysis::initialize();
-        ConstraintGraph *consCG = new ConstraintGraph(svfir);
+        ConstraintGraph* consCG = new ConstraintGraph(svfir);
         if (Options::PEGTransfer())
             graph = cflGraphBuilder.buildBiPEGgraph(consCG, grammarBase->getStartKind(), grammarBase, svfir);
         else
@@ -150,10 +149,9 @@ CFLGraph* CFLBase::getCFLGraph()
 void CFLBase::countSumEdges()
 {
     numOfStartEdges = 0;
-    for(auto it = getCFLGraph()->getCFLEdges().begin(); it != getCFLGraph()->getCFLEdges().end(); it++ )
+    for (auto it = getCFLGraph()->getCFLEdges().begin(); it != getCFLGraph()->getCFLEdges().end(); it++)
     {
-        if ((*it)->getEdgeKind() == grammar->getStartKind())
-            numOfStartEdges++;
+        if ((*it)->getEdgeKind() == grammar->getStartKind()) numOfStartEdges++;
     }
 }
 

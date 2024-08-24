@@ -37,7 +37,6 @@ using namespace std;
 
 AndersenSCD* AndersenSCD::scdAndersen = nullptr;
 
-
 /*!
  *
  */
@@ -47,8 +46,7 @@ void AndersenSCD::solveWorklist()
     // Nodes in nodeStack are in topological order by default.
     NodeStack& nodeStack = SCCDetect();
 
-    for (NodeID nId : sccCandidates)
-        pushIntoWorklist(nId);
+    for (NodeID nId : sccCandidates) pushIntoWorklist(nId);
     sccCandidates.clear();
 
     // propagate point-to sets
@@ -90,7 +88,6 @@ void AndersenSCD::solveWorklist()
     }
 }
 
-
 /*!
  * SCC detection for SCD
  */
@@ -101,12 +98,12 @@ NodeStack& AndersenSCD::SCCDetect()
     double sccStart = stat->getClk();
     getSCCDetector()->find(sccCandidates);
     double sccEnd = stat->getClk();
-    timeOfSCCDetection +=  (sccEnd - sccStart)/TIMEINTERVAL;
+    timeOfSCCDetection += (sccEnd - sccStart) / TIMEINTERVAL;
 
     double mergeStart = stat->getClk();
     mergeSccCycle();
     double mergeEnd = stat->getClk();
-    timeOfSCCMerges +=  (mergeEnd - mergeStart)/TIMEINTERVAL;
+    timeOfSCCMerges += (mergeEnd - mergeStart) / TIMEINTERVAL;
 
     if (!Options::DetectPWC())
     {
@@ -119,7 +116,6 @@ NodeStack& AndersenSCD::SCCDetect()
     return getSCCDetector()->topoNodeStack();
 }
 
-
 /*!
  *
  */
@@ -128,8 +124,7 @@ void AndersenSCD::PWCDetect()
     // replace scc candidates by their reps
     NodeSet tmpSccCandidates = sccCandidates;
     sccCandidates.clear();
-    for (NodeID candidate : tmpSccCandidates)
-        sccCandidates.insert(sccRepNode(candidate));
+    for (NodeID candidate : tmpSccCandidates) sccCandidates.insert(sccRepNode(candidate));
     tmpSccCandidates.clear();
 
     // set scc edge type as direct edge
@@ -142,7 +137,6 @@ void AndersenSCD::PWCDetect()
     setDetectPWC(pwcFlag);
 }
 
-
 /*!
  * Compute diff points-to set before propagation
  */
@@ -150,12 +144,10 @@ void AndersenSCD::handleCopyGep(ConstraintNode* node)
 {
     NodeID nodeId = node->getId();
 
-    if (!Options::DetectPWC() && getSCCDetector()->subNodes(nodeId).count() > 1)
-        processPWC(node);
-    else if(isInWorklist(nodeId))
+    if (!Options::DetectPWC() && getSCCDetector()->subNodes(nodeId).count() > 1) processPWC(node);
+    else if (isInWorklist(nodeId))
         Andersen::handleCopyGep(node);
 }
-
 
 /*!
  *
@@ -165,13 +157,11 @@ void AndersenSCD::processPWC(ConstraintNode* rep)
     NodeID repId = rep->getId();
 
     NodeSet pwcNodes;
-    for (NodeID nId : getSCCDetector()->subNodes(repId))
-        pwcNodes.insert(nId);
+    for (NodeID nId : getSCCDetector()->subNodes(repId)) pwcNodes.insert(nId);
 
     WorkList tmpWorkList;
     for (NodeID subId : pwcNodes)
-        if (isInWorklist(subId))
-            tmpWorkList.push(subId);
+        if (isInWorklist(subId)) tmpWorkList.push(subId);
 
     while (!tmpWorkList.empty())
     {
@@ -180,16 +170,15 @@ void AndersenSCD::processPWC(ConstraintNode* rep)
 
         if (!getDiffPts(nodeId).empty())
         {
-            ConstraintNode *node = consCG->getConstraintNode(nodeId);
+            ConstraintNode* node = consCG->getConstraintNode(nodeId);
             for (ConstraintEdge* edge : node->getCopyOutEdges())
             {
                 bool changed = processCopy(nodeId, edge);
-                if (changed && pwcNodes.find(edge->getDstID()) != pwcNodes.end())
-                    tmpWorkList.push(edge->getDstID());
+                if (changed && pwcNodes.find(edge->getDstID()) != pwcNodes.end()) tmpWorkList.push(edge->getDstID());
             }
             for (ConstraintEdge* edge : node->getGepOutEdges())
             {
-                if (GepCGEdge *gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
+                if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
                 {
                     bool changed = processGep(nodeId, gepEdge);
                     if (changed && pwcNodes.find(edge->getDstID()) != pwcNodes.end())
@@ -199,7 +188,6 @@ void AndersenSCD::processPWC(ConstraintNode* rep)
         }
     }
 }
-
 
 /*!
  * Source nodes of new added edges are pushed into sccCandidates.
@@ -211,10 +199,9 @@ void AndersenSCD::handleLoadStore(ConstraintNode* node)
 
     NodeID nodeId = node->getId();
     // handle load
-    for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(),
-            eit = node->outgoingLoadsEnd(); it != eit; ++it)
-        for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter =
-                    getPts(nodeId).end(); piter != epiter; ++piter)
+    for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(), eit = node->outgoingLoadsEnd(); it != eit;
+         ++it)
+        for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(nodeId).end(); piter != epiter; ++piter)
         {
             NodeID ptd = *piter;
             if (processLoad(ptd, *it))
@@ -224,10 +211,9 @@ void AndersenSCD::handleLoadStore(ConstraintNode* node)
         }
 
     // handle store
-    for (ConstraintNode::const_iterator it = node->incomingStoresBegin(),
-            eit = node->incomingStoresEnd(); it != eit; ++it)
-        for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter =
-                    getPts(nodeId).end(); piter != epiter; ++piter)
+    for (ConstraintNode::const_iterator it = node->incomingStoresBegin(), eit = node->incomingStoresEnd(); it != eit;
+         ++it)
+        for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(nodeId).end(); piter != epiter; ++piter)
         {
             NodeID ptd = *piter;
             if (processStore(ptd, *it))
@@ -240,20 +226,18 @@ void AndersenSCD::handleLoadStore(ConstraintNode* node)
     timeOfProcessLoadStore += (insertEnd - insertStart) / TIMEINTERVAL;
 }
 
-
 /*!
  * Initialize worklist via processing addrs
  */
-void AndersenSCD::processAddr(const AddrCGEdge *addr)
+void AndersenSCD::processAddr(const AddrCGEdge* addr)
 {
     numOfProcessedAddr++;
 
     NodeID dst = addr->getDstID();
     NodeID src = addr->getSrcID();
-    addPts(dst,src);
+    addPts(dst, src);
     addSccCandidate(dst);
 }
-
 
 /*!
  * If one copy edge is successful added, the src node should be added into SCC detection
@@ -268,7 +252,6 @@ bool AndersenSCD::addCopyEdge(NodeID src, NodeID dst)
     return false;
 }
 
-
 /*!
  * Update call graph for the input indirect callsites
  */
@@ -277,14 +260,14 @@ bool AndersenSCD::updateCallGraph(const PointerAnalysis::CallSiteToFunPtrMap& ca
     double cgUpdateStart = stat->getClk();
 
     CallEdgeMap newEdges;
-    onTheFlyCallGraphSolve(callsites,newEdges);
-    NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
-    for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it )
+    onTheFlyCallGraphSolve(callsites, newEdges);
+    NodePairSet cpySrcNodes; /// nodes as a src of a generated new copy edge
+    for (CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it != eit; ++it)
     {
         CallSite cs = SVFUtil::getSVFCallSite(it->first->getCallSite());
-        for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
+        for (FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit != ecit; ++cit)
         {
-            connectCaller2CalleeParams(cs,*cit,cpySrcNodes);
+            connectCaller2CalleeParams(cs, *cit, cpySrcNodes);
         }
     }
 

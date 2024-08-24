@@ -31,21 +31,19 @@
 #include "Util/SVFUtil.h"
 #include "MemoryModel/PointsTo.h"
 
-#include <sys/resource.h>		/// increase stack size
+#include <sys/resource.h> /// increase stack size
 
 using namespace SVF;
 
 /// Color for output format
-#define KNRM  "\x1B[1;0m"
-#define KRED  "\x1B[1;31m"
-#define KGRN  "\x1B[1;32m"
-#define KYEL  "\x1B[1;33m"
-#define KBLU  "\x1B[1;34m"
-#define KPUR  "\x1B[1;35m"
-#define KCYA  "\x1B[1;36m"
-#define KWHT  "\x1B[1;37m"
-
-
+#define KNRM "\x1B[1;0m"
+#define KRED "\x1B[1;31m"
+#define KGRN "\x1B[1;32m"
+#define KYEL "\x1B[1;33m"
+#define KBLU "\x1B[1;34m"
+#define KPUR "\x1B[1;35m"
+#define KCYA "\x1B[1;36m"
+#define KWHT "\x1B[1;37m"
 
 /*!
  * print successful message by converting a string into green string output
@@ -65,8 +63,7 @@ std::string SVFUtil::wrnMsg(const std::string& msg)
 
 void SVFUtil::writeWrnMsg(const std::string& msg)
 {
-    if (Options::DisableWarn())
-        return;
+    if (Options::DisableWarn()) return;
     outs() << wrnMsg(msg) << "\n";
 }
 
@@ -122,8 +119,7 @@ void SVFUtil::dumpSparseSet(const NodeBS& bs)
 void SVFUtil::dumpPointsToList(const PointsToList& ptl)
 {
     outs() << "{";
-    for (PointsToList::const_iterator ii = ptl.begin(), ie = ptl.end();
-            ii != ie; ii++)
+    for (PointsToList::const_iterator ii = ptl.begin(), ie = ptl.end(); ii != ie; ii++)
     {
         auto bs = *ii;
         dumpSet(bs);
@@ -144,16 +140,15 @@ void SVFUtil::dumpAliasSet(unsigned node, NodeBS bs)
 /*!
  * Dump bit vector set
  */
-void SVFUtil::dumpSet(NodeBS bs, OutStream & O)
+void SVFUtil::dumpSet(NodeBS bs, OutStream& O)
 {
-    for (NodeBS::iterator ii = bs.begin(), ie = bs.end();
-            ii != ie; ii++)
+    for (NodeBS::iterator ii = bs.begin(), ie = bs.end(); ii != ie; ii++)
     {
         O << " " << *ii << " ";
     }
 }
 
-void SVFUtil::dumpSet(PointsTo pt, OutStream &o)
+void SVFUtil::dumpSet(PointsTo pt, OutStream& o)
 {
     for (NodeID n : pt)
     {
@@ -164,11 +159,10 @@ void SVFUtil::dumpSet(PointsTo pt, OutStream &o)
 /*!
  * Print memory usage
  */
-void SVFUtil::reportMemoryUsageKB(const std::string& infor, OutStream & O)
+void SVFUtil::reportMemoryUsageKB(const std::string& infor, OutStream& O)
 {
     u32_t vmrss, vmsize;
-    if (getMemoryUsageKB(&vmrss, &vmsize))
-        O << infor << "\tVmRSS: " << vmrss << "\tVmSize: " << vmsize << "\n";
+    if (getMemoryUsageKB(&vmrss, &vmsize)) O << infor << "\tVmRSS: " << vmrss << "\tVmSize: " << vmsize << "\n";
 }
 
 /*!
@@ -179,12 +173,12 @@ bool SVFUtil::getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb)
     /* Get the current process' status file from the proc filesystem */
     char buffer[8192];
     FILE* procfile = fopen("/proc/self/status", "r");
-    if(procfile)
+    if (procfile)
     {
         u32_t result = fread(buffer, sizeof(char), 8192, procfile);
         if (result == 0)
         {
-            fputs ("Reading error\n",stderr);
+            fputs("Reading error\n", stderr);
         }
     }
     else
@@ -226,7 +220,7 @@ bool SVFUtil::getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb)
  */
 void SVFUtil::increaseStackSize()
 {
-    const rlim_t kStackSize = 256L * 1024L * 1024L;   // min stack size = 256 Mb
+    const rlim_t kStackSize = 256L * 1024L * 1024L; // min stack size = 256 Mb
     struct rlimit rl;
     int result = getrlimit(RLIMIT_STACK, &rl);
     if (result == 0)
@@ -235,15 +229,14 @@ void SVFUtil::increaseStackSize()
         {
             rl.rlim_cur = kStackSize;
             result = setrlimit(RLIMIT_STACK, &rl);
-            if (result != 0)
-                writeWrnMsg("setrlimit returned result !=0 \n");
+            if (result != 0) writeWrnMsg("setrlimit returned result !=0 \n");
         }
     }
 }
 
 /*!
  * Return true if it is an llvm intrinsic instruction
-*/
+ */
 bool SVFUtil::isIntrinsicInst(const SVFInstruction* inst)
 {
     if (const SVFCallInst* call = SVFUtil::dyn_cast<SVFCallInst>(inst))

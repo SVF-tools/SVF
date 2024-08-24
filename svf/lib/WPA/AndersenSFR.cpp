@@ -34,7 +34,7 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace std;
 
-AndersenSFR *AndersenSFR::sfrAndersen = nullptr;
+AndersenSFR* AndersenSFR::sfrAndersen = nullptr;
 
 /*!
  *
@@ -42,16 +42,14 @@ AndersenSFR *AndersenSFR::sfrAndersen = nullptr;
 void AndersenSFR::initialize()
 {
     AndersenSCD::initialize();
-    setDetectPWC(false);   // SCC will detect only copy edges
+    setDetectPWC(false); // SCC will detect only copy edges
 
-    if (!csc)
-        csc = new CSC(_graph, scc.get());
+    if (!csc) csc = new CSC(_graph, scc.get());
 
     /// Detect and collapse cycles consisting of only copy edges
     getSCCDetector()->find();
     mergeSccCycle();
 }
-
 
 /*!
  * Call the PWC stride calculation method of class CSC.
@@ -61,7 +59,6 @@ void AndersenSFR::PWCDetect()
     AndersenSCD::PWCDetect();
     csc->find(getSCCDetector()->topoNodeStack());
 }
-
 
 /*!
  *
@@ -77,7 +74,6 @@ bool AndersenSFR::mergeSrcToTgt(NodeID nodeId, NodeID newRepId)
     return Andersen::mergeSrcToTgt(nodeId, newRepId);
 }
 
-
 /*!
  * Propagate point-to set via a gep edge, using SFR
  */
@@ -86,7 +82,7 @@ bool AndersenSFR::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
     ConstraintNode* dst = edge->getDstNode();
     NodeID dstId = dst->getId();
 
-    if (!dst->strides.empty() && SVFUtil::isa<NormalGepCGEdge>(edge))        // dst is in pwc
+    if (!dst->strides.empty() && SVFUtil::isa<NormalGepCGEdge>(edge)) // dst is in pwc
     {
         PointsTo tmpDstPts;
         PointsTo srcInits = pts - getPts(dstId);
@@ -94,8 +90,7 @@ bool AndersenSFR::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
         if (!srcInits.empty())
         {
             NodeSet sortSrcInits;
-            for (NodeID ptd : srcInits)
-                sortSrcInits.insert(ptd);
+            for (NodeID ptd : srcInits) sortSrcInits.insert(ptd);
 
             APOffset offset = SVFUtil::dyn_cast<NormalGepCGEdge>(edge)->getConstantFieldIdx();
             fieldExpand(sortSrcInits, offset, dst->strides, tmpDstPts);
@@ -113,7 +108,6 @@ bool AndersenSFR::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
         return Andersen::processGepPts(pts, edge);
 }
 
-
 /*!
  * Expand field IDs in target pts based on the initials and offsets
  */
@@ -126,16 +120,14 @@ void AndersenSFR::fieldExpand(NodeSet& initials, APOffset offset, NodeBS& stride
         NodeID init = *initials.begin();
         initials.erase(init);
 
-        if (consCG->isBlkObjOrConstantObj(init))
-            expandPts.set(init);
+        if (consCG->isBlkObjOrConstantObj(init)) expandPts.set(init);
         else
         {
             PAGNode* initPN = pag->getGNode(init);
             const MemObj* obj = pag->getBaseObj(init);
             const u32_t maxLimit = obj->getMaxFieldOffsetLimit();
             APOffset initOffset;
-            if (GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(initPN))
-                initOffset = gepNode->getConstantFieldIdx();
+            if (GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(initPN)) initOffset = gepNode->getConstantFieldIdx();
             else if (SVFUtil::isa<FIObjVar, DummyObjVar>(initPN))
                 initOffset = 0;
             else
@@ -156,9 +148,8 @@ void AndersenSFR::fieldExpand(NodeSet& initials, APOffset offset, NodeBS& stride
                     for (auto _s : strides)
                     {
                         APOffset _f1 = _f + _s;
-                        loopFlag = (offsets.find(_f1) == offsets.end()) && ( (u32_t)(initOffset + _f1) < maxLimit);
-                        if (loopFlag)
-                            offsets.insert(_f1);
+                        loopFlag = (offsets.find(_f1) == offsets.end()) && ((u32_t)(initOffset + _f1) < maxLimit);
+                        if (loopFlag) offsets.insert(_f1);
                     }
             }
 
@@ -166,7 +157,7 @@ void AndersenSFR::fieldExpand(NodeSet& initials, APOffset offset, NodeBS& stride
             for (APOffset _f : offsets)
             {
                 NodeID gepId = consCG->getGepObjVar(init, _f);
-                initials.erase(gepId);  // gep id in initials should be removed to avoid redundant derivation
+                initials.erase(gepId); // gep id in initials should be removed to avoid redundant derivation
                 expandPts.set(gepId);
             }
         }

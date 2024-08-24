@@ -13,17 +13,17 @@
 namespace llvm
 {
 
-template<typename ItTy = User::const_op_iterator>
+template <typename ItTy = User::const_op_iterator>
 class generic_bridge_gep_type_iterator : public std::iterator<std::forward_iterator_tag, Type*, ptrdiff_t>
 {
 
-    typedef std::iterator<std::forward_iterator_tag,Type*, ptrdiff_t> super;
+    typedef std::iterator<std::forward_iterator_tag, Type*, ptrdiff_t> super;
     ItTy OpIt;
-    PointerIntPair<Type*,1> CurTy;
+    PointerIntPair<Type*, 1> CurTy;
     unsigned AddrSpace;
     generic_bridge_gep_type_iterator() {}
-public:
 
+public:
     static generic_bridge_gep_type_iterator begin(Type* Ty, ItTy It)
     {
         generic_bridge_gep_type_iterator I;
@@ -32,8 +32,7 @@ public:
         return I;
     }
 
-    static generic_bridge_gep_type_iterator begin(Type* Ty, unsigned AddrSpace,
-            ItTy It)
+    static generic_bridge_gep_type_iterator begin(Type* Ty, unsigned AddrSpace, ItTy It)
     {
         generic_bridge_gep_type_iterator I;
         I.CurTy.setPointer(Ty);
@@ -62,20 +61,17 @@ public:
 
     Type* operator*() const
     {
-        if ( CurTy.getInt() )
-            return CurTy.getPointer()->getPointerTo(AddrSpace);
+        if (CurTy.getInt()) return CurTy.getPointer()->getPointerTo(AddrSpace);
         return CurTy.getPointer();
     }
 
     Type* getIndexedType() const
     {
         assert(false && "needs to be refactored");
-        if ( CurTy.getInt() )
-            return CurTy.getPointer();
+        if (CurTy.getInt()) return CurTy.getPointer();
 #if LLVM_VERSION_MAJOR >= 11
-        Type*  CT = CurTy.getPointer();
-        if (auto ST = dyn_cast<StructType>(CT))
-            return ST->getTypeAtIndex(getOperand());
+        Type* CT = CurTy.getPointer();
+        if (auto ST = dyn_cast<StructType>(CT)) return ST->getTypeAtIndex(getOperand());
         else if (auto Array = dyn_cast<ArrayType>(CT))
             return Array->getElementType();
         else if (auto Vector = dyn_cast<VectorType>(CT))
@@ -83,7 +79,7 @@ public:
         else
             return CT;
 #else
-        CompositeType *CT = llvm::cast<CompositeType>( CurTy.getPointer() );
+        CompositeType* CT = llvm::cast<CompositeType>(CurTy.getPointer());
         return CT->getTypeAtIndex(getOperand());
 #endif
     }
@@ -100,18 +96,16 @@ public:
         return const_cast<Value*>(&**OpIt);
     }
 
-
     generic_bridge_gep_type_iterator& operator++()
     {
-        if ( CurTy.getInt() )
+        if (CurTy.getInt())
         {
             CurTy.setInt(false);
         }
 #if LLVM_VERSION_MAJOR >= 11
-        else if ( Type*  CT = CurTy.getPointer() )
+        else if (Type* CT = CurTy.getPointer())
         {
-            if (auto ST = dyn_cast<StructType>(CT))
-                CurTy.setPointer(ST->getTypeAtIndex(getOperand()));
+            if (auto ST = dyn_cast<StructType>(CT)) CurTy.setPointer(ST->getTypeAtIndex(getOperand()));
             else if (auto Array = dyn_cast<ArrayType>(CT))
                 CurTy.setPointer(Array->getElementType());
             else if (auto Vector = dyn_cast<VectorType>(CT))
@@ -120,7 +114,7 @@ public:
                 CurTy.setPointer(nullptr);
         }
 #else
-        else if ( CompositeType * CT = dyn_cast<CompositeType>(CurTy.getPointer()) )
+        else if (CompositeType* CT = dyn_cast<CompositeType>(CurTy.getPointer()))
         {
             CurTy.setPointer(CT->getTypeAtIndex(getOperand()));
         }
@@ -133,25 +127,23 @@ public:
         return *this;
     }
 
-
     generic_bridge_gep_type_iterator operator++(int)
     {
         generic_bridge_gep_type_iterator tmp = *this;
         ++*this;
         return tmp;
     }
-
 };
-
 
 typedef generic_bridge_gep_type_iterator<> bridge_gep_iterator;
 
 inline bridge_gep_iterator bridge_gep_begin(const User* GEP)
 {
-    auto *GEPOp = llvm::cast<GEPOperator>(GEP);
-    return bridge_gep_iterator::begin(GEPOp->getSourceElementType(),
-                                      llvm::cast<PointerType>(GEPOp->getPointerOperandType()->getScalarType())->getAddressSpace(),
-                                      GEP->op_begin() + 1);
+    auto* GEPOp = llvm::cast<GEPOperator>(GEP);
+    return bridge_gep_iterator::begin(
+        GEPOp->getSourceElementType(),
+        llvm::cast<PointerType>(GEPOp->getPointerOperandType()->getScalarType())->getAddressSpace(),
+        GEP->op_begin() + 1);
 }
 
 inline bridge_gep_iterator bridge_gep_end(const User* GEP)
@@ -159,21 +151,20 @@ inline bridge_gep_iterator bridge_gep_end(const User* GEP)
     return bridge_gep_iterator::end(GEP->op_end());
 }
 
-inline bridge_gep_iterator bridge_gep_begin(const User &GEP)
+inline bridge_gep_iterator bridge_gep_begin(const User& GEP)
 {
-    auto &GEPOp = llvm::cast<GEPOperator>(GEP);
-    return bridge_gep_iterator::begin( GEPOp.getSourceElementType(),
-                                       llvm::cast<PointerType>(GEPOp.getPointerOperandType()->getScalarType())->getAddressSpace(),
-                                       GEP.op_begin() + 1);
+    auto& GEPOp = llvm::cast<GEPOperator>(GEP);
+    return bridge_gep_iterator::begin(
+        GEPOp.getSourceElementType(),
+        llvm::cast<PointerType>(GEPOp.getPointerOperandType()->getScalarType())->getAddressSpace(), GEP.op_begin() + 1);
 }
 
-inline bridge_gep_iterator bridge_gep_end(const User &GEP)
+inline bridge_gep_iterator bridge_gep_end(const User& GEP)
 {
     return bridge_gep_iterator::end(GEP.op_end());
 }
 
-template<typename T>
-inline generic_bridge_gep_type_iterator<const T*> bridge_gep_end( Type*  /*Op0*/, ArrayRef<T> A )
+template <typename T> inline generic_bridge_gep_type_iterator<const T*> bridge_gep_end(Type* /*Op0*/, ArrayRef<T> A)
 {
     return generic_bridge_gep_type_iterator<const T*>::end(A.end());
 }

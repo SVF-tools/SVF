@@ -47,11 +47,11 @@ class SaberCheckerAPI
 public:
     enum CHECKER_TYPE
     {
-        CK_DUMMY = 0,		/// dummy type
-        CK_ALLOC,		/// memory allocation
+        CK_DUMMY = 0, /// dummy type
+        CK_ALLOC,     /// memory allocation
         CK_FREE,      /// memory deallocation
-        CK_FOPEN,		/// File open
-        CK_FCLOSE		/// File close
+        CK_FOPEN,     /// File open
+        CK_FCLOSE     /// File close
     };
 
     typedef Map<std::string, CHECKER_TYPE> TDAPIMap;
@@ -61,7 +61,7 @@ private:
     TDAPIMap tdAPIMap;
 
     /// Constructor
-    SaberCheckerAPI ()
+    SaberCheckerAPI()
     {
         init();
     }
@@ -75,11 +75,10 @@ private:
     /// Get the function type of a function
     inline CHECKER_TYPE getType(const SVFFunction* F) const
     {
-        if(F)
+        if (F)
         {
-            TDAPIMap::const_iterator it= tdAPIMap.find(F->getName());
-            if(it != tdAPIMap.end())
-                return it->second;
+            TDAPIMap::const_iterator it = tdAPIMap.find(F->getName());
+            if (it != tdAPIMap.end()) return it->second;
         }
         return CK_DUMMY;
     }
@@ -88,7 +87,7 @@ public:
     /// Return a static reference
     static SaberCheckerAPI* getCheckerAPI()
     {
-        if(ckAPI == nullptr)
+        if (ckAPI == nullptr)
         {
             ckAPI = new SaberCheckerAPI();
         }
@@ -142,7 +141,6 @@ public:
         return isFClose(SVFUtil::getCallee(cs->getCallSite()));
     }
     //@}
-
 };
 
 } // End namespace SVF

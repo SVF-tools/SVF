@@ -46,7 +46,7 @@
 namespace SVF
 {
 
-typedef GraphReachSolver<SVFG*,CxtDPItem> CFLSrcSnkSolver;
+typedef GraphReachSolver<SVFG*, CxtDPItem> CFLSrcSnkSolver;
 
 /*!
  * General source-sink analysis, which serves as a base analysis to be extended for various clients
@@ -56,22 +56,22 @@ class SrcSnkDDA : public CFLSrcSnkSolver
 
 public:
     typedef ProgSlice::SVFGNodeSet SVFGNodeSet;
-    typedef Map<const SVFGNode*,ProgSlice*> SVFGNodeToSliceMap;
+    typedef Map<const SVFGNode*, ProgSlice*> SVFGNodeToSliceMap;
     typedef SVFGNodeSet::const_iterator SVFGNodeSetIter;
     typedef CxtDPItem DPIm;
-    typedef Set<DPIm> DPImSet;							///< dpitem set
-    typedef Map<const SVFGNode*, DPImSet> SVFGNodeToDPItemsMap; 	///< map a SVFGNode to its visited dpitems
+    typedef Set<DPIm> DPImSet;                                  ///< dpitem set
+    typedef Map<const SVFGNode*, DPImSet> SVFGNodeToDPItemsMap; ///< map a SVFGNode to its visited dpitems
     typedef Set<const CallICFGNode*> CallSiteSet;
     typedef NodeBS SVFGNodeBS;
     typedef ProgSlice::VFWorkList WorkList;
 
 private:
-    ProgSlice* _curSlice;		/// current program slice
-    SVFGNodeSet sources;		/// source nodes
-    SVFGNodeSet sinks;		/// source nodes
+    ProgSlice* _curSlice; /// current program slice
+    SVFGNodeSet sources;  /// source nodes
+    SVFGNodeSet sinks;    /// source nodes
     std::unique_ptr<SaberCondAllocator> saberCondAllocator;
-    SVFGNodeToDPItemsMap nodeToDPItemsMap;	///<  record forward visited dpitems
-    SVFGNodeSet visitedSet;	///<  record backward visited nodes
+    SVFGNodeToDPItemsMap nodeToDPItemsMap; ///<  record forward visited dpitems
+    SVFGNodeSet visitedSet;                ///<  record backward visited nodes
 
 protected:
     SaberSVFGBuilder memSSA;
@@ -80,7 +80,6 @@ protected:
     SVFBugReport report; /// Bug Reporter
 
 public:
-
     /// Constructor
     SrcSnkDDA() : _curSlice(nullptr), svfg(nullptr), callgraph(nullptr)
     {
@@ -95,13 +94,13 @@ public:
         _curSlice = nullptr;
 
         /// the following shared by multiple checkers, thus can not be released.
-        //if (callgraph != nullptr)
-        //    delete callgraph;
-        //callgraph = nullptr;
+        // if (callgraph != nullptr)
+        //     delete callgraph;
+        // callgraph = nullptr;
 
-        //if(pathCondAllocator)
-        //    delete pathCondAllocator;
-        //pathCondAllocator = nullptr;
+        // if(pathCondAllocator)
+        //     delete pathCondAllocator;
+        // pathCondAllocator = nullptr;
     }
 
     /// Start analysis here
@@ -186,12 +185,12 @@ public:
 
     bool isSource(const SVFGNode* node) const
     {
-        return getSources().find(node)!=getSources().end();
+        return getSources().find(node) != getSources().end();
     }
 
     bool isSink(const SVFGNode* node) const
     {
-        return getSinks().find(node)!=getSinks().end();
+        return getSinks().find(node) != getSinks().end();
     }
     ///@}
 
@@ -253,7 +252,7 @@ protected:
     inline void FWProcessCurNode(const DPIm& item) override
     {
         const SVFGNode* node = getNode(item.getCurNodeID());
-        if(isSink(node))
+        if (isSink(node))
         {
             addSinkToCurSlice(node);
             _curSlice->setPartialReachable();
@@ -265,7 +264,7 @@ protected:
     inline void BWProcessCurNode(const DPIm& item) override
     {
         const SVFGNode* node = getNode(item.getCurNodeID());
-        if(isInCurForwardSlice(node))
+        if (isInCurForwardSlice(node))
         {
             addToCurBackwardSlice(node);
         }
@@ -279,8 +278,7 @@ protected:
     inline bool forwardVisited(const SVFGNode* node, const DPIm& item)
     {
         SVFGNodeToDPItemsMap::const_iterator it = nodeToDPItemsMap.find(node);
-        if(it!=nodeToDPItemsMap.end())
-            return it->second.find(item)!=it->second.end();
+        if (it != nodeToDPItemsMap.end()) return it->second.find(item) != it->second.end();
         else
             return false;
     }
@@ -290,7 +288,7 @@ protected:
     }
     inline bool backwardVisited(const SVFGNode* node)
     {
-        return visitedSet.find(node)!=visitedSet.end();
+        return visitedSet.find(node) != visitedSet.end();
     }
     inline void addBackwardVisited(const SVFGNode* node)
     {
@@ -319,7 +317,6 @@ protected:
     void annotateSlice(ProgSlice* slice);
     void printZ3Stat();
     //@}
-
 };
 
 } // End namespace SVF

@@ -175,8 +175,7 @@ public:
         // If both BoundedInts are infinite.
         if (is_infinity() && rhs.is_infinity())
         {
-            if (is_minus_infinity())
-                return true;
+            if (is_minus_infinity()) return true;
             else
                 return rhs.is_plus_infinity();
         }
@@ -203,8 +202,7 @@ public:
         // If both BoundedInts are infinite.
         if (is_infinity() && rhs.is_infinity())
         {
-            if (is_plus_infinity())
-                return true;
+            if (is_plus_infinity()) return true;
             else
                 return rhs.is_minus_infinity();
         }
@@ -281,8 +279,7 @@ public:
     {
         // If one number is positive infinity and the other is negative
         // infinity, this is an invalid operation, so we assert false.
-        if ((lhs.is_plus_infinity() && rhs.is_minus_infinity()) ||
-                (lhs.is_minus_infinity() && rhs.is_plus_infinity()))
+        if ((lhs.is_plus_infinity() && rhs.is_minus_infinity()) || (lhs.is_minus_infinity() && rhs.is_plus_infinity()))
         {
             assert(false && "invalid add");
         }
@@ -303,16 +300,14 @@ public:
 
         // If both numbers are positive and their sum would exceed the maximum
         // representable number, the result is positive infinity.
-        if (lhs._iVal > 0 && rhs._iVal > 0 &&
-                (std::numeric_limits<s64_t>::max() - lhs._iVal) < rhs._iVal)
+        if (lhs._iVal > 0 && rhs._iVal > 0 && (std::numeric_limits<s64_t>::max() - lhs._iVal) < rhs._iVal)
         {
             return plus_infinity();
         }
 
         // If both numbers are negative and their sum would be less than the
         // most negative representable number, the result is negative infinity.
-        if (lhs._iVal < 0 && rhs._iVal < 0 &&
-                (-std::numeric_limits<s64_t>::max() - lhs._iVal) > rhs._iVal)
+        if (lhs._iVal < 0 && rhs._iVal < 0 && (-std::numeric_limits<s64_t>::max() - lhs._iVal) > rhs._iVal)
         {
             return minus_infinity();
         }
@@ -364,8 +359,7 @@ public:
     static BoundedInt safeMul(const BoundedInt& lhs, const BoundedInt& rhs)
     {
         // If either number is zero, the result is zero.
-        if (lhs._iVal == 0 || rhs._iVal == 0)
-            return 0;
+        if (lhs._iVal == 0 || rhs._iVal == 0) return 0;
 
         // If either number is infinity, the result depends on the signs of the
         // numbers.
@@ -386,16 +380,14 @@ public:
 
         // If both numbers are positive and their product would exceed the
         // maximum representable number, the result is positive infinity.
-        if (lhs._iVal > 0 && rhs._iVal > 0 &&
-                (std::numeric_limits<s64_t>::max() / lhs._iVal) < rhs._iVal)
+        if (lhs._iVal > 0 && rhs._iVal > 0 && (std::numeric_limits<s64_t>::max() / lhs._iVal) < rhs._iVal)
         {
             return plus_infinity();
         }
 
         // If both numbers are negative and their product would exceed the
         // maximum representable number, the result is positive infinity.
-        if (lhs._iVal < 0 && rhs._iVal < 0 &&
-                (std::numeric_limits<s64_t>::max() / lhs._iVal) > rhs._iVal)
+        if (lhs._iVal < 0 && rhs._iVal < 0 && (std::numeric_limits<s64_t>::max() / lhs._iVal) > rhs._iVal)
         {
             return plus_infinity();
         }
@@ -403,10 +395,8 @@ public:
         // If one number is positive and the other is negative and their product
         // would be less than the most negative representable number, the result
         // is negative infinity.
-        if ((lhs._iVal > 0 && rhs._iVal < 0 &&
-                (-std::numeric_limits<s64_t>::max() / lhs._iVal) > rhs._iVal) ||
-                (lhs._iVal < 0 && rhs._iVal > 0 &&
-                 (-std::numeric_limits<s64_t>::max() / rhs._iVal) > lhs._iVal))
+        if ((lhs._iVal > 0 && rhs._iVal < 0 && (-std::numeric_limits<s64_t>::max() / lhs._iVal) > rhs._iVal) ||
+            (lhs._iVal < 0 && rhs._iVal > 0 && (-std::numeric_limits<s64_t>::max() / rhs._iVal) > lhs._iVal))
         {
             return minus_infinity();
         }
@@ -416,11 +406,9 @@ public:
         return lhs._iVal * rhs._iVal;
     }
 
-
     friend BoundedInt operator%(const BoundedInt& lhs, const BoundedInt& rhs)
     {
-        if (rhs.is_zero())
-            assert(false && "divide by zero");
+        if (rhs.is_zero()) assert(false && "divide by zero");
         else if (!lhs.is_infinity() && !rhs.is_infinity())
             return lhs._iVal % rhs._iVal;
         else if (!lhs.is_infinity() && rhs.is_infinity())
@@ -445,8 +433,7 @@ public:
     // and overflow.
     friend BoundedInt operator/(const BoundedInt& lhs, const BoundedInt& rhs)
     {
-        if (rhs.is_zero())
-            assert(false && "divide by zero");
+        if (rhs.is_zero()) assert(false && "divide by zero");
         else if (!lhs.is_infinity() && !rhs.is_infinity())
             return lhs._iVal / rhs._iVal;
         else if (!lhs.is_infinity() && rhs.is_infinity())
@@ -509,8 +496,7 @@ public:
     friend BoundedInt operator>>(const BoundedInt& lhs, const BoundedInt& rhs)
     {
         assert(rhs.geq(0) && "rhs should be greater or equal than 0");
-        if (lhs.is_zero())
-            return lhs;
+        if (lhs.is_zero()) return lhs;
         else if (lhs.is_infinity())
             return lhs;
         else if (rhs.is_infinity())
@@ -527,8 +513,7 @@ public:
     friend BoundedInt operator<<(const BoundedInt& lhs, const BoundedInt& rhs)
     {
         assert(rhs.geq(0) && "rhs should be greater or equal than 0");
-        if (lhs.is_zero())
-            return lhs;
+        if (lhs.is_zero()) return lhs;
         else if (lhs.is_infinity())
             return lhs;
         else if (rhs.is_infinity())
@@ -540,8 +525,7 @@ public:
     // Overloads the ternary if-then-else operator for BoundedInt objects.
     // The condition is evaluated as a boolean, and the result is either the
     // second or third argument depending on the condition.
-    friend BoundedInt ite(const BoundedInt& cond, const BoundedInt& lhs,
-                          const BoundedInt& rhs)
+    friend BoundedInt ite(const BoundedInt& cond, const BoundedInt& lhs, const BoundedInt& rhs)
     {
         return cond._iVal != 0 ? lhs : rhs;
     }
@@ -568,32 +552,28 @@ public:
     // and also checks if either of them represents infinity.
     friend BoundedInt min(const BoundedInt& lhs, const BoundedInt& rhs)
     {
-        if (lhs.is_minus_infinity() || rhs.is_minus_infinity())
-            return minus_infinity();
-        else if(lhs.is_plus_infinity())
+        if (lhs.is_minus_infinity() || rhs.is_minus_infinity()) return minus_infinity();
+        else if (lhs.is_plus_infinity())
             return rhs;
-        else if(rhs.is_plus_infinity())
+        else if (rhs.is_plus_infinity())
             return lhs;
         else
             return BoundedInt(std::min(lhs._iVal, rhs._iVal));
     }
-
 
     // Defines a function to find the maximum of two BoundedInt objects.
     // This function directly compares the internal integer values of the BoundedInt objects,
     // and also checks if either of them represents infinity.
     friend BoundedInt max(const BoundedInt& lhs, const BoundedInt& rhs)
     {
-        if (lhs.is_plus_infinity() || rhs.is_plus_infinity())
-            return plus_infinity();
-        else if(lhs.is_minus_infinity())
+        if (lhs.is_plus_infinity() || rhs.is_plus_infinity()) return plus_infinity();
+        else if (lhs.is_minus_infinity())
             return rhs;
-        else if(rhs.is_minus_infinity())
+        else if (rhs.is_minus_infinity())
             return lhs;
         else
             return BoundedInt(std::max(lhs._iVal, rhs._iVal));
     }
-
 
     // Defines a function to find the minimum of a vector of BoundedInt objects.
     // This function iterates over the vector and returns the smallest
@@ -603,8 +583,7 @@ public:
         BoundedInt ret(plus_infinity());
         for (const auto& it : _l)
         {
-            if (it.is_minus_infinity())
-                return minus_infinity();
+            if (it.is_minus_infinity()) return minus_infinity();
             else if (!it.geq(ret))
             {
                 ret = it;
@@ -621,8 +600,7 @@ public:
         BoundedInt ret(minus_infinity());
         for (const auto& it : _l)
         {
-            if (it.is_plus_infinity())
-                return plus_infinity();
+            if (it.is_plus_infinity()) return plus_infinity();
             else if (!it.leq(ret))
             {
                 ret = it;
@@ -750,8 +728,7 @@ public:
 
     static bool doubleEqual(double a, double b)
     {
-        if (std::isinf(a) && std::isinf(b))
-            return a == b;
+        if (std::isinf(a) && std::isinf(b)) return a == b;
         return std::fabs(a - b) < epsilon;
     }
 
@@ -825,8 +802,7 @@ public:
         }
         if (is_infinity() && rhs.is_infinity())
         {
-            if (is_minus_infinity())
-                return true;
+            if (is_minus_infinity()) return true;
             else
                 return rhs.is_plus_infinity();
         }
@@ -849,8 +825,7 @@ public:
         }
         if (is_infinity() && rhs.is_infinity())
         {
-            if (is_plus_infinity())
-                return true;
+            if (is_plus_infinity()) return true;
             else
                 return rhs.is_minus_infinity();
         }
@@ -860,38 +835,32 @@ public:
 
     /// Reload operator
     //{%
-    friend BoundedDouble operator==(const BoundedDouble& lhs,
-                                    const BoundedDouble& rhs)
+    friend BoundedDouble operator==(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         return lhs.equal(rhs);
     }
 
-    friend BoundedDouble operator!=(const BoundedDouble& lhs,
-                                    const BoundedDouble& rhs)
+    friend BoundedDouble operator!=(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         return !lhs.equal(rhs);
     }
 
-    friend BoundedDouble operator>(const BoundedDouble& lhs,
-                                   const BoundedDouble& rhs)
+    friend BoundedDouble operator>(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         return !lhs.leq(rhs);
     }
 
-    friend BoundedDouble operator<(const BoundedDouble& lhs,
-                                   const BoundedDouble& rhs)
+    friend BoundedDouble operator<(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         return !lhs.geq(rhs);
     }
 
-    friend BoundedDouble operator<=(const BoundedDouble& lhs,
-                                    const BoundedDouble& rhs)
+    friend BoundedDouble operator<=(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         return lhs.leq(rhs);
     }
 
-    friend BoundedDouble operator>=(const BoundedDouble& lhs,
-                                    const BoundedDouble& rhs)
+    friend BoundedDouble operator>=(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         return lhs.geq(rhs);
     }
@@ -907,15 +876,12 @@ public:
      */
     static double safeAdd(double lhs, double rhs)
     {
-        if ((lhs == std::numeric_limits<double>::infinity() &&
-                rhs == -std::numeric_limits<double>::infinity()) ||
-                (lhs == -std::numeric_limits<double>::infinity() &&
-                 rhs == std::numeric_limits<double>::infinity()))
+        if ((lhs == std::numeric_limits<double>::infinity() && rhs == -std::numeric_limits<double>::infinity()) ||
+            (lhs == -std::numeric_limits<double>::infinity() && rhs == std::numeric_limits<double>::infinity()))
         {
             assert(false && "invalid add");
         }
-        double res =
-            lhs + rhs; // Perform the addition and store the result in 'res'
+        double res = lhs + rhs; // Perform the addition and store the result in 'res'
 
         // Check if the result is positive infinity due to overflow
         if (res == std::numeric_limits<double>::infinity())
@@ -934,8 +900,7 @@ public:
 
         // Check for positive overflow: verify if both operands are positive and
         // their sum exceeds the maximum double value
-        if (lhs > 0 && rhs > 0 &&
-                (std::numeric_limits<double>::max() - lhs) < rhs)
+        if (lhs > 0 && rhs > 0 && (std::numeric_limits<double>::max() - lhs) < rhs)
         {
             res = std::numeric_limits<double>::infinity(); // Set result to
             // positive infinity to
@@ -945,11 +910,9 @@ public:
 
         // Check for an underflow scenario: both numbers are negative and their
         // sum is more negative than what double can represent
-        if (lhs < 0 && rhs < 0 &&
-                (-std::numeric_limits<double>::max() - lhs) > rhs)
+        if (lhs < 0 && rhs < 0 && (-std::numeric_limits<double>::max() - lhs) > rhs)
         {
-            res = -std::numeric_limits<
-                  double>::infinity(); // Set result to negative infinity to
+            res = -std::numeric_limits<double>::infinity(); // Set result to negative infinity to
             // clarify extreme negative sum
             return res;
         }
@@ -959,8 +922,7 @@ public:
         return res;
     }
 
-    friend BoundedDouble operator+(const BoundedDouble& lhs,
-                                   const BoundedDouble& rhs)
+    friend BoundedDouble operator+(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         return safeAdd(lhs._fVal, rhs._fVal);
     }
@@ -970,8 +932,7 @@ public:
         return -lhs._fVal;
     }
 
-    friend BoundedDouble operator-(const BoundedDouble& lhs,
-                                   const BoundedDouble& rhs)
+    friend BoundedDouble operator-(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         return safeAdd(lhs._fVal, -rhs._fVal);
     }
@@ -987,8 +948,7 @@ public:
      */
     static double safeMul(double lhs, double rhs)
     {
-        if (doubleEqual(lhs, 0.0f) || doubleEqual(rhs, 0.0f))
-            return 0.0f;
+        if (doubleEqual(lhs, 0.0f) || doubleEqual(rhs, 0.0f)) return 0.0f;
         double res = lhs * rhs;
         // Check if the result is positive infinity due to overflow
         if (res == std::numeric_limits<double>::infinity())
@@ -1005,25 +965,21 @@ public:
             // negative infinity
         }
         // Check for overflow scenarios
-        if (lhs > 0 && rhs > 0 &&
-                lhs > std::numeric_limits<double>::max() / rhs)
+        if (lhs > 0 && rhs > 0 && lhs > std::numeric_limits<double>::max() / rhs)
         {
             return std::numeric_limits<double>::infinity();
         }
-        if (lhs < 0 && rhs < 0 &&
-                lhs < std::numeric_limits<double>::max() / rhs)
+        if (lhs < 0 && rhs < 0 && lhs < std::numeric_limits<double>::max() / rhs)
         {
             return std::numeric_limits<double>::infinity();
         }
 
         // Check for "underflow" scenarios (negative overflow)
-        if (lhs > 0 && rhs < 0 &&
-                rhs < std::numeric_limits<double>::lowest() / lhs)
+        if (lhs > 0 && rhs < 0 && rhs < std::numeric_limits<double>::lowest() / lhs)
         {
             return -std::numeric_limits<double>::infinity();
         }
-        if (lhs < 0 && rhs > 0 &&
-                lhs < std::numeric_limits<double>::lowest() / rhs)
+        if (lhs < 0 && rhs > 0 && lhs < std::numeric_limits<double>::lowest() / rhs)
         {
             return -std::numeric_limits<double>::infinity();
         }
@@ -1031,8 +987,7 @@ public:
         return res; // If no overflow or underflow, return the product
     }
 
-    friend BoundedDouble operator*(const BoundedDouble& lhs,
-                                   const BoundedDouble& rhs)
+    friend BoundedDouble operator*(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         return safeMul(lhs._fVal, rhs._fVal);
     }
@@ -1051,8 +1006,7 @@ public:
         // Check for division by zero
         if (doubleEqual(rhs, 0.0f))
         {
-            return (lhs >= 0.0f) ? std::numeric_limits<double>::infinity()
-                   : -std::numeric_limits<double>::infinity();
+            return (lhs >= 0.0f) ? std::numeric_limits<double>::infinity() : -std::numeric_limits<double>::infinity();
         }
         double res = lhs / rhs;
         // Check if the result is positive infinity due to overflow
@@ -1071,13 +1025,11 @@ public:
         }
 
         // Check for overflow when dividing small numbers
-        if (rhs > 0 && rhs < std::numeric_limits<double>::min() &&
-                lhs > std::numeric_limits<double>::max() * rhs)
+        if (rhs > 0 && rhs < std::numeric_limits<double>::min() && lhs > std::numeric_limits<double>::max() * rhs)
         {
             return std::numeric_limits<double>::infinity();
         }
-        if (rhs < 0 && rhs > -std::numeric_limits<double>::min() &&
-                lhs > std::numeric_limits<double>::max() * rhs)
+        if (rhs < 0 && rhs > -std::numeric_limits<double>::min() && lhs > std::numeric_limits<double>::max() * rhs)
         {
             return -std::numeric_limits<double>::infinity();
         }
@@ -1085,17 +1037,14 @@ public:
         return res; // If no special cases, return the quotient
     }
 
-    friend BoundedDouble operator/(const BoundedDouble& lhs,
-                                   const BoundedDouble& rhs)
+    friend BoundedDouble operator/(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         return safeDiv(lhs._fVal, rhs._fVal);
     }
 
-    friend BoundedDouble operator%(const BoundedDouble& lhs,
-                                   const BoundedDouble& rhs)
+    friend BoundedDouble operator%(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
-        if (rhs.is_zero())
-            assert(false && "divide by zero");
+        if (rhs.is_zero()) assert(false && "divide by zero");
         else if (!lhs.is_infinity() && !rhs.is_infinity())
             return std::fmod(lhs._fVal, rhs._fVal);
         else if (!lhs.is_infinity() && rhs.is_infinity())
@@ -1118,35 +1067,30 @@ public:
         return !is_int();
     }
 
-    friend BoundedDouble operator^(const BoundedDouble& lhs,
-                                   const BoundedDouble& rhs)
+    friend BoundedDouble operator^(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         int lInt = std::round(lhs._fVal), rInt = std::round(rhs._fVal);
         return lInt ^ rInt;
     }
 
-    friend BoundedDouble operator&(const BoundedDouble& lhs,
-                                   const BoundedDouble& rhs)
+    friend BoundedDouble operator&(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         int lInt = std::round(lhs._fVal), rInt = std::round(rhs._fVal);
         return lInt & rInt;
     }
 
-    friend BoundedDouble operator|(const BoundedDouble& lhs,
-                                   const BoundedDouble& rhs)
+    friend BoundedDouble operator|(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         int lInt = std::round(lhs._fVal), rInt = std::round(rhs._fVal);
         return lInt | rInt;
     }
 
-    friend BoundedDouble operator&&(const BoundedDouble& lhs,
-                                    const BoundedDouble& rhs)
+    friend BoundedDouble operator&&(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         return lhs._fVal && rhs._fVal;
     }
 
-    friend BoundedDouble operator||(const BoundedDouble& lhs,
-                                    const BoundedDouble& rhs)
+    friend BoundedDouble operator||(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         return lhs._fVal || rhs._fVal;
     }
@@ -1156,12 +1100,10 @@ public:
         return !lhs._fVal;
     }
 
-    friend BoundedDouble operator>>(const BoundedDouble& lhs,
-                                    const BoundedDouble& rhs)
+    friend BoundedDouble operator>>(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         assert(rhs.geq(0) && "rhs should be greater or equal than 0");
-        if (lhs.is_zero())
-            return lhs;
+        if (lhs.is_zero()) return lhs;
         else if (lhs.is_infinity())
             return lhs;
         else if (rhs.is_infinity())
@@ -1170,12 +1112,10 @@ public:
             return (s32_t)lhs.getNumeral() >> (s32_t)rhs.getNumeral();
     }
 
-    friend BoundedDouble operator<<(const BoundedDouble& lhs,
-                                    const BoundedDouble& rhs)
+    friend BoundedDouble operator<<(const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         assert(rhs.geq(0) && "rhs should be greater or equal than 0");
-        if (lhs.is_zero())
-            return lhs;
+        if (lhs.is_zero()) return lhs;
         else if (lhs.is_infinity())
             return lhs;
         else if (rhs.is_infinity())
@@ -1184,14 +1124,12 @@ public:
             return (s32_t)lhs.getNumeral() << (s32_t)rhs.getNumeral();
     }
 
-    friend BoundedDouble ite(const BoundedDouble& cond,
-                             const BoundedDouble& lhs, const BoundedDouble& rhs)
+    friend BoundedDouble ite(const BoundedDouble& cond, const BoundedDouble& lhs, const BoundedDouble& rhs)
     {
         return cond._fVal != 0.0f ? lhs._fVal : rhs._fVal;
     }
 
-    friend std::ostream& operator<<(std::ostream& out,
-                                    const BoundedDouble& expr)
+    friend std::ostream& operator<<(std::ostream& out, const BoundedDouble& expr)
     {
         out << expr._fVal;
         return out;
@@ -1217,8 +1155,7 @@ public:
         BoundedDouble ret(plus_infinity());
         for (const auto& it : _l)
         {
-            if (it.is_minus_infinity())
-                return minus_infinity();
+            if (it.is_minus_infinity()) return minus_infinity();
             else if (!it.geq(ret))
             {
                 ret = it;
@@ -1232,8 +1169,7 @@ public:
         BoundedDouble ret(minus_infinity());
         for (const auto& it : _l)
         {
-            if (it.is_plus_infinity())
-                return plus_infinity();
+            if (it.is_plus_infinity()) return plus_infinity();
             else if (!it.leq(ret))
             {
                 ret = it;

@@ -40,35 +40,29 @@ namespace SVF
  * Generic CFL solver for demand-driven analysis based on different graphs (e.g. SVFIR, VFG, ThreadVFG)
  * Extend this class for sophisticated CFL-reachability resolution (e.g. field, flow, path)
  */
-template<class GraphType, class DPIm = DPItem>
-class SrcSnkSolver
+template <class GraphType, class DPIm = DPItem> class SrcSnkSolver
 {
 
 public:
-    ///Define the GTraits and node iterator
+    /// Define the GTraits and node iterator
     typedef SVF::GenericGraphTraits<GraphType> GTraits;
-    typedef typename GTraits::NodeType          GNODE;
-    typedef typename GTraits::EdgeType          GEDGE;
+    typedef typename GTraits::NodeType GNODE;
+    typedef typename GTraits::EdgeType GEDGE;
     typedef typename GTraits::nodes_iterator node_iterator;
     typedef typename GTraits::ChildIteratorType child_iterator;
 
     /// Define inverse GTraits and note iterator
-    typedef SVF::GenericGraphTraits<SVF::Inverse<GNODE *> > InvGTraits;
+    typedef SVF::GenericGraphTraits<SVF::Inverse<GNODE*>> InvGTraits;
     typedef typename InvGTraits::ChildIteratorType inv_child_iterator;
 
     /// Define worklist
     typedef FIFOWorkList<DPIm> WorkList;
 
 protected:
-
     /// Constructor
-    SrcSnkSolver(): _graph(nullptr)
-    {
-    }
+    SrcSnkSolver() : _graph(nullptr) {}
     /// Destructor
-    virtual ~SrcSnkSolver()
-    {
-    }
+    virtual ~SrcSnkSolver() {}
     /// Get/Set graph methods
     //@{
     const inline GraphType graph() const
@@ -104,7 +98,7 @@ protected:
             child_iterator EE = GTraits::child_end(v);
             for (; EI != EE; ++EI)
             {
-                FWProcessOutgoingEdge(item,*(EI.getCurrent()) );
+                FWProcessOutgoingEdge(item, *(EI.getCurrent()));
             }
         }
     }
@@ -123,18 +117,14 @@ protected:
             inv_child_iterator EE = InvGTraits::child_end(v);
             for (; EI != EE; ++EI)
             {
-                BWProcessIncomingEdge(item,*(EI.getCurrent()) );
+                BWProcessIncomingEdge(item, *(EI.getCurrent()));
             }
         }
     }
     /// Process the DP item
     //@{
-    virtual void FWProcessCurNode(const DPIm&)
-    {
-    }
-    virtual void BWProcessCurNode(const DPIm&)
-    {
-    }
+    virtual void FWProcessCurNode(const DPIm&) {}
+    virtual void BWProcessCurNode(const DPIm&) {}
     //@}
     /// Propagation for the solving, to be implemented in the child class
     //@{
@@ -172,13 +162,11 @@ protected:
     //@}
 
 private:
-
     /// Graph
     GraphType _graph;
 
     /// Worklist for resolution
     WorkList worklist;
-
 };
 
 } // End namespace SVF

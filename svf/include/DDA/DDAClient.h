@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 /*
  * @file: DDAClient.h
  * @author: yesen
@@ -29,7 +28,6 @@
  * LICENSE
  *
  */
-
 
 #ifndef DDACLIENT_H_
 #define DDACLIENT_H_
@@ -58,8 +56,7 @@ public:
     virtual inline OrderedNodeSet& collectCandidateQueries(SVFIR* p)
     {
         setPAG(p);
-        if (solveAll)
-            candidateQueries = pag->getAllValidPtrs();
+        if (solveAll) candidateQueries = pag->getAllValidPtrs();
         else
         {
             for (OrderedNodeSet::iterator it = userInput.begin(), eit = userInput.end(); it != eit; ++it)
@@ -101,23 +98,22 @@ public:
     virtual inline void performStat(PointerAnalysis*) {}
 
     virtual inline void collectWPANum(SVFModule*) {}
+
 protected:
     void addCandidate(NodeID id)
     {
-        if (pag->isValidTopLevelPtr(pag->getGNode(id)))
-            candidateQueries.insert(id);
+        if (pag->isValidTopLevelPtr(pag->getGNode(id))) candidateQueries.insert(id);
     }
 
-    SVFIR*   pag;					///< SVFIR graph used by current DDA analysis
-    SVFModule* module;		///< LLVM module
-    NodeID curPtr;				///< current pointer being queried
-    OrderedNodeSet candidateQueries;	///< store all candidate pointers to be queried
+    SVFIR* pag;                      ///< SVFIR graph used by current DDA analysis
+    SVFModule* module;               ///< LLVM module
+    NodeID curPtr;                   ///< current pointer being queried
+    OrderedNodeSet candidateQueries; ///< store all candidate pointers to be queried
 
 private:
-    OrderedNodeSet userInput;           ///< User input queries
-    bool solveAll;				///< TRUE if all top level pointers are being queried
+    OrderedNodeSet userInput; ///< User input queries
+    bool solveAll;            ///< TRUE if all top level pointers are being queried
 };
-
 
 /**
  * DDA client with function pointers as query candidates.
@@ -125,8 +121,9 @@ private:
 class FunptrDDAClient : public DDAClient
 {
 private:
-    typedef OrderedMap<NodeID,const CallICFGNode*> VTablePtrToCallSiteMap;
+    typedef OrderedMap<NodeID, const CallICFGNode*> VTablePtrToCallSiteMap;
     VTablePtrToCallSiteMap vtableToCallSiteMap;
+
 public:
     FunptrDDAClient(SVFModule* module) : DDAClient(module) {}
     ~FunptrDDAClient() {}
@@ -135,8 +132,6 @@ public:
     virtual OrderedNodeSet& collectCandidateQueries(SVFIR* p);
     virtual void performStat(PointerAnalysis* pta);
 };
-
-
 
 /**
  * DDA client with function pointers as query candidates.
@@ -156,7 +151,7 @@ public:
     virtual void performStat(PointerAnalysis* pta);
 
 private:
-    typedef OrderedMap<NodeID,const CallICFGNode*> VTablePtrToCallSiteMap;
+    typedef OrderedMap<NodeID, const CallICFGNode*> VTablePtrToCallSiteMap;
     VTablePtrToCallSiteMap vtableToCallSiteMap;
     PAGNodeSet loadSrcNodes;
     PAGNodeSet storeDstNodes;

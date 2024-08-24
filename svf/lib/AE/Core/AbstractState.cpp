@@ -34,7 +34,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-bool AbstractState::equals(const AbstractState&other) const
+bool AbstractState::equals(const AbstractState& other) const
 {
     return *this == other;
 }
@@ -43,12 +43,12 @@ u32_t AbstractState::hash() const
 {
     size_t h = getVarToVal().size() * 2;
     Hash<u32_t> hf;
-    for (const auto &t: getVarToVal())
+    for (const auto& t : getVarToVal())
     {
         h ^= hf(t.first) + 0x9e3779b9 + (h << 6) + (h >> 2);
     }
     size_t h2 = getLocToVal().size() * 2;
-    for (const auto &t: getLocToVal())
+    for (const auto& t : getLocToVal())
     {
         h2 ^= hf(t.first) + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
     }
@@ -95,7 +95,6 @@ AbstractState AbstractState::narrowing(const AbstractState& other)
                 it->second.getInterval().narrow_with(other._addrToAbsVal.at(key).getInterval());
     }
     return es;
-
 }
 
 /// domain join with other, important! other widen this.
@@ -156,10 +155,10 @@ void AbstractState::meetWith(const AbstractState& other)
 AddressValue AbstractState::getGepObjAddrs(u32_t pointer, IntervalValue offset)
 {
     AddressValue gepAddrs;
-    APOffset lb = offset.lb().getIntNumeral() < Options::MaxFieldLimit() ? offset.lb().getIntNumeral()
-                  : Options::MaxFieldLimit();
-    APOffset ub = offset.ub().getIntNumeral() < Options::MaxFieldLimit() ? offset.ub().getIntNumeral()
-                  : Options::MaxFieldLimit();
+    APOffset lb =
+        offset.lb().getIntNumeral() < Options::MaxFieldLimit() ? offset.lb().getIntNumeral() : Options::MaxFieldLimit();
+    APOffset ub =
+        offset.ub().getIntNumeral() < Options::MaxFieldLimit() ? offset.ub().getIntNumeral() : Options::MaxFieldLimit();
     for (APOffset i = lb; i <= ub; i++)
     {
         AbstractValue addrs = (*this)[pointer];
@@ -232,8 +231,7 @@ void AbstractState::initObjVar(ObjVar* objVar)
 IntervalValue AbstractState::getElementIndex(const GepStmt* gep)
 {
     // If the GEP statement has a constant offset, return it directly as the interval value
-    if (gep->isConstantOffset())
-        return IntervalValue((s64_t)gep->accumulateConstantOffset());
+    if (gep->isConstantOffset()) return IntervalValue((s64_t)gep->accumulateConstantOffset());
 
     IntervalValue res(0);
     // Iterate over the list of offset variable and type pairs in reverse order
@@ -253,8 +251,7 @@ IntervalValue AbstractState::getElementIndex(const GepStmt* gep)
         else
         {
             IntervalValue idxItv = (*this)[PAG::getPAG()->getValueNode(value)].getInterval();
-            if (idxItv.isBottom())
-                idxLb = idxUb = 0;
+            if (idxItv.isBottom()) idxLb = idxUb = 0;
             else
             {
                 idxLb = idxItv.lb().getIntNumeral();
@@ -274,7 +271,8 @@ IntervalValue AbstractState::getElementIndex(const GepStmt* gep)
         {
             if (Options::ModelArrays())
             {
-                const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()->getTypeInfo(type)->getFlattenedElemIdxVec();
+                const std::vector<u32_t>& so =
+                    SymbolTableInfo::SymbolInfo()->getTypeInfo(type)->getFlattenedElemIdxVec();
                 if (so.empty() || idxUb >= (APOffset)so.size() || idxLb < 0)
                 {
                     idxLb = idxUb = 0;
@@ -305,8 +303,7 @@ IntervalValue AbstractState::getElementIndex(const GepStmt* gep)
 IntervalValue AbstractState::getByteOffset(const GepStmt* gep)
 {
     // If the GEP statement has a constant byte offset, return it directly as the interval value
-    if (gep->isConstantOffset())
-        return IntervalValue((s64_t)gep->accumulateConstantByteOffset());
+    if (gep->isConstantOffset()) return IntervalValue((s64_t)gep->accumulateConstantByteOffset());
 
     IntervalValue res(0); // Initialize the result interval 'res' to 0.
 
@@ -331,8 +328,8 @@ IntervalValue AbstractState::getByteOffset(const GepStmt* gep)
             {
                 // Calculate the lower bound (lb) of the interval value
                 s64_t lb = (double)Options::MaxFieldLimit() / elemByteSize >= op->getSExtValue()
-                           ? op->getSExtValue() * elemByteSize
-                           : Options::MaxFieldLimit();
+                               ? op->getSExtValue() * elemByteSize
+                               : Options::MaxFieldLimit();
                 res = res + IntervalValue(lb, lb);
             }
             else
@@ -340,19 +337,18 @@ IntervalValue AbstractState::getByteOffset(const GepStmt* gep)
                 u32_t idx = PAG::getPAG()->getValueNode(idxOperandVar->getValue());
                 IntervalValue idxVal = (*this)[idx].getInterval();
 
-                if (idxVal.isBottom())
-                    res = res + IntervalValue(0, 0);
+                if (idxVal.isBottom()) res = res + IntervalValue(0, 0);
                 else
                 {
                     // Ensure the bounds are non-negative and within the field limit
                     s64_t ub = (idxVal.ub().getIntNumeral() < 0) ? 0
                                : (double)Options::MaxFieldLimit() / elemByteSize >= idxVal.ub().getIntNumeral()
-                               ? elemByteSize * idxVal.ub().getIntNumeral()
-                               : Options::MaxFieldLimit();
+                                   ? elemByteSize * idxVal.ub().getIntNumeral()
+                                   : Options::MaxFieldLimit();
                     s64_t lb = (idxVal.lb().getIntNumeral() < 0) ? 0
                                : (double)Options::MaxFieldLimit() / elemByteSize >= idxVal.lb().getIntNumeral()
-                               ? elemByteSize * idxVal.lb().getIntNumeral()
-                               : Options::MaxFieldLimit();
+                                   ? elemByteSize * idxVal.lb().getIntNumeral()
+                                   : Options::MaxFieldLimit();
                     res = res + IntervalValue(lb, ub);
                 }
             }
@@ -394,11 +390,9 @@ void AbstractState::printAbstractState() const
     u32_t fieldWidth = 20;
     SVFUtil::outs().flags(std::ios::left);
     std::vector<std::pair<u32_t, AbstractValue>> varToAbsValVec(_varToAbsVal.begin(), _varToAbsVal.end());
-    std::sort(varToAbsValVec.begin(), varToAbsValVec.end(), [](const auto &a, const auto &b)
-    {
-        return a.first < b.first;
-    });
-    for (const auto &item: varToAbsValVec)
+    std::sort(varToAbsValVec.begin(), varToAbsValVec.end(),
+              [](const auto& a, const auto& b) { return a.first < b.first; });
+    for (const auto& item : varToAbsValVec)
     {
         SVFUtil::outs() << std::left << std::setw(fieldWidth) << ("Var" + std::to_string(item.first));
         if (item.second.isInterval())
@@ -409,7 +403,7 @@ void AbstractState::printAbstractState() const
         {
             SVFUtil::outs() << " Value: {";
             u32_t i = 0;
-            for (const auto& addr: item.second.getAddrs())
+            for (const auto& addr : item.second.getAddrs())
             {
                 ++i;
                 if (i < item.second.getAddrs().size())
@@ -430,12 +424,10 @@ void AbstractState::printAbstractState() const
     }
 
     std::vector<std::pair<u32_t, AbstractValue>> addrToAbsValVec(_addrToAbsVal.begin(), _addrToAbsVal.end());
-    std::sort(addrToAbsValVec.begin(), addrToAbsValVec.end(), [](const auto &a, const auto &b)
-    {
-        return a.first < b.first;
-    });
+    std::sort(addrToAbsValVec.begin(), addrToAbsValVec.end(),
+              [](const auto& a, const auto& b) { return a.first < b.first; });
 
-    for (const auto& item: addrToAbsValVec)
+    for (const auto& item : addrToAbsValVec)
     {
         std::ostringstream oss;
         oss << "0x" << std::hex << AbstractState::getVirtualMemAddress(item.first);
@@ -448,7 +440,7 @@ void AbstractState::printAbstractState() const
         {
             SVFUtil::outs() << " Value: {";
             u32_t i = 0;
-            for (const auto& addr: item.second.getAddrs())
+            for (const auto& addr : item.second.getAddrs())
             {
                 ++i;
                 if (i < item.second.getAddrs().size())

@@ -38,18 +38,18 @@ public:
     BitVector(size_t n);
 
     /// Copy constructor.
-    BitVector(const BitVector &bv);
+    BitVector(const BitVector& bv);
 
     /// Move constructor.
-    BitVector(BitVector &&bv);
+    BitVector(BitVector&& bv);
 
     /// Copy assignment.
-    BitVector &operator=(const BitVector &rhs);
+    BitVector& operator=(const BitVector& rhs);
 
     /// Move assignment.
-    BitVector &operator=(BitVector &&rhs);
+    BitVector& operator=(BitVector&& rhs);
 };
 
-};  // namespace SVF
+}; // namespace SVF
 
-#endif  // BITVECTOR_H_
+#endif // BITVECTOR_H_

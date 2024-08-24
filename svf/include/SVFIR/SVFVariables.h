@@ -73,12 +73,11 @@ public:
         DummyObjNode,
     };
 
-
 protected:
     const SVFValue* value; ///< value of this SVFIR node
     SVFStmt::KindToSVFStmtMapTy InEdgeKindToSetMap;
     SVFStmt::KindToSVFStmtMapTy OutEdgeKindToSetMap;
-    bool isPtr;	/// whether it is a pointer (top-level or address-taken)
+    bool isPtr; /// whether it is a pointer (top-level or address-taken)
 
     /// Constructor to create an empty object (for deserialization)
     SVFVar(NodeID i, PNODEK k) : GenericPAGNodeTy(i, k), value{} {}
@@ -93,13 +92,11 @@ public:
     //@{
     inline const SVFValue* getValue() const
     {
-        assert(this->getNodeKind() != DummyValNode &&
-               this->getNodeKind() != DummyObjNode &&
+        assert(this->getNodeKind() != DummyValNode && this->getNodeKind() != DummyObjNode &&
                "dummy node do not have value!");
         assert(!SymbolTableInfo::isBlkObjOrConstantObj(this->getId()) &&
                "blackhole and constant obj do not have value");
-        assert(value &&
-               "value is null (GepObjNode whose basenode is a DummyObj?)");
+        assert(value && "value is null (GepObjNode whose basenode is a DummyObj?)");
         return value;
     }
 
@@ -134,8 +131,7 @@ public:
     {
         if (value)
         {
-            if (auto inst = SVFUtil::dyn_cast<SVFInstruction>(value))
-                return inst->getParent()->getParent();
+            if (auto inst = SVFUtil::dyn_cast<SVFInstruction>(value)) return inst->getParent()->getParent();
             else if (auto arg = SVFUtil::dyn_cast<SVFArgument>(value))
                 return arg->getParent();
             else if (auto fun = SVFUtil::dyn_cast<SVFFunction>(value))
@@ -158,8 +154,7 @@ public:
     inline bool hasIncomingEdges(SVFStmt::PEDGEK kind) const
     {
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
-        if (it != InEdgeKindToSetMap.end())
-            return (!it->second.empty());
+        if (it != InEdgeKindToSetMap.end()) return (!it->second.empty());
         else
             return false;
     }
@@ -167,8 +162,7 @@ public:
     inline bool hasOutgoingEdges(SVFStmt::PEDGEK kind) const
     {
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
-        if (it != OutEdgeKindToSetMap.end())
-            return (!it->second.empty());
+        if (it != OutEdgeKindToSetMap.end()) return (!it->second.empty());
         else
             return false;
     }
@@ -177,7 +171,7 @@ public:
     inline SVFStmt::SVFStmtSetTy::iterator getIncomingEdgesBegin(SVFStmt::PEDGEK kind) const
     {
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
-        assert(it!=InEdgeKindToSetMap.end() && "The node does not have such kind of edge");
+        assert(it != InEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.begin();
     }
 
@@ -185,7 +179,7 @@ public:
     inline SVFStmt::SVFStmtSetTy::iterator getIncomingEdgesEnd(SVFStmt::PEDGEK kind) const
     {
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
-        assert(it!=InEdgeKindToSetMap.end() && "The node does not have such kind of edge");
+        assert(it != InEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.end();
     }
 
@@ -193,7 +187,7 @@ public:
     inline SVFStmt::SVFStmtSetTy::iterator getOutgoingEdgesBegin(SVFStmt::PEDGEK kind) const
     {
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
-        assert(it!=OutEdgeKindToSetMap.end() && "The node does not have such kind of edge");
+        assert(it != OutEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.begin();
     }
 
@@ -201,7 +195,7 @@ public:
     inline SVFStmt::SVFStmtSetTy::iterator getOutgoingEdgesEnd(SVFStmt::PEDGEK kind) const
     {
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
-        assert(it!=OutEdgeKindToSetMap.end() && "The node does not have such kind of edge");
+        assert(it != OutEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.end();
     }
     //@}
@@ -228,10 +222,9 @@ private:
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(SVFStmt::Gep);
         if (it != InEdgeKindToSetMap.end())
         {
-            for(auto gep : it->second)
+            for (auto gep : it->second)
             {
-                if(SVFUtil::cast<GepStmt>(gep)->isVariantFieldGep())
-                    return true;
+                if (SVFUtil::cast<GepStmt>(gep)->isVariantFieldGep()) return true;
             }
         }
         return false;
@@ -246,7 +239,7 @@ public:
     //@}
     /// Overloading operator << for dumping SVFVar value
     //@{
-    friend OutStream& operator<< (OutStream &o, const SVFVar &node)
+    friend OutStream& operator<<(OutStream& o, const SVFVar& node)
     {
         o << node.toString();
         return o;
@@ -254,12 +247,10 @@ public:
     //@}
 };
 
-
-
 /*
  * Value (Pointer) variable
  */
-class ValVar: public SVFVar
+class ValVar : public SVFVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -277,32 +268,24 @@ public:
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == SVFVar::ValNode ||
-               node->getNodeKind() == SVFVar::GepValNode ||
-               node->getNodeKind() == SVFVar::RetNode ||
-               node->getNodeKind() == SVFVar::VarargNode ||
+        return node->getNodeKind() == SVFVar::ValNode || node->getNodeKind() == SVFVar::GepValNode ||
+               node->getNodeKind() == SVFVar::RetNode || node->getNodeKind() == SVFVar::VarargNode ||
                node->getNodeKind() == SVFVar::DummyValNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == SVFVar::ValNode ||
-               node->getNodeKind() == SVFVar::GepValNode ||
-               node->getNodeKind() == SVFVar::RetNode ||
-               node->getNodeKind() == SVFVar::VarargNode ||
+        return node->getNodeKind() == SVFVar::ValNode || node->getNodeKind() == SVFVar::GepValNode ||
+               node->getNodeKind() == SVFVar::RetNode || node->getNodeKind() == SVFVar::VarargNode ||
                node->getNodeKind() == SVFVar::DummyValNode;
     }
     //@}
 
     /// Constructor
-    ValVar(const SVFValue* val, NodeID i, PNODEK ty = ValNode)
-        : SVFVar(val, i, ty)
-    {
-    }
+    ValVar(const SVFValue* val, NodeID i, PNODEK ty = ValNode) : SVFVar(val, i, ty) {}
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
-        if (value)
-            return value->getName();
+        if (value) return value->getName();
         return "";
     }
 
@@ -312,20 +295,18 @@ public:
 /*
  * Memory Object variable
  */
-class ObjVar: public SVFVar
+class ObjVar : public SVFVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
 protected:
-    const MemObj* mem;	///< memory object
+    const MemObj* mem; ///< memory object
     /// Constructor to create an empty ObjVar (for SVFIRReader/deserialization)
     ObjVar(NodeID i, PNODEK ty = ObjNode) : SVFVar(i, ty), mem{} {}
     /// Constructor
-    ObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode) :
-        SVFVar(val, i, ty), mem(m)
-    {
-    }
+    ObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode) : SVFVar(val, i, ty), mem(m) {}
+
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -335,17 +316,13 @@ public:
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == SVFVar::ObjNode ||
-               node->getNodeKind() == SVFVar::GepObjNode ||
-               node->getNodeKind() == SVFVar::FIObjNode ||
-               node->getNodeKind() == SVFVar::DummyObjNode;
+        return node->getNodeKind() == SVFVar::ObjNode || node->getNodeKind() == SVFVar::GepObjNode ||
+               node->getNodeKind() == SVFVar::FIObjNode || node->getNodeKind() == SVFVar::DummyObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == SVFVar::ObjNode ||
-               node->getNodeKind() == SVFVar::GepObjNode ||
-               node->getNodeKind() == SVFVar::FIObjNode ||
-               node->getNodeKind() == SVFVar::DummyObjNode;
+        return node->getNodeKind() == SVFVar::ObjNode || node->getNodeKind() == SVFVar::GepObjNode ||
+               node->getNodeKind() == SVFVar::FIObjNode || node->getNodeKind() == SVFVar::DummyObjNode;
     }
     //@}
 
@@ -358,8 +335,7 @@ public:
     /// Return name of a LLVM value
     virtual const std::string getValueName() const
     {
-        if (value)
-            return value->getName();
+        if (value) return value->getName();
         return "";
     }
     /// Return type of the value
@@ -371,19 +347,18 @@ public:
     virtual const std::string toString() const;
 };
 
-
 /*
  * Gep Value (Pointer) variable, this variable can be dynamic generated for field sensitive analysis
  * e.g. memcpy, temp gep value variable needs to be created
  * Each Gep Value variable is connected to base value variable via gep edge
  */
-class GepValVar: public ValVar
+class GepValVar : public ValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
 private:
-    AccessPath ap;	// AccessPath
+    AccessPath ap; // AccessPath
     const SVFType* gepValType;
 
     /// Constructor to create empty GeValVar (for SVFIRReader/deserialization)
@@ -392,27 +367,26 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const GepValVar *)
+    static inline bool classof(const GepValVar*)
     {
         return true;
     }
-    static inline bool classof(const ValVar * node)
+    static inline bool classof(const ValVar* node)
     {
         return node->getNodeKind() == SVFVar::GepValNode;
     }
-    static inline bool classof(const SVFVar *node)
+    static inline bool classof(const SVFVar* node)
     {
         return node->getNodeKind() == SVFVar::GepValNode;
     }
-    static inline bool classof(const GenericPAGNodeTy *node)
+    static inline bool classof(const GenericPAGNodeTy* node)
     {
         return node->getNodeKind() == SVFVar::GepValNode;
     }
     //@}
 
     /// Constructor
-    GepValVar(const SVFValue* val, NodeID i, const AccessPath& ap,
-              const SVFType* ty)
+    GepValVar(const SVFValue* val, NodeID i, const AccessPath& ap, const SVFType* ty)
         : ValVar(val, i, GepValNode), ap(ap), gepValType(ty)
     {
     }
@@ -426,9 +400,7 @@ public:
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
-        if (value)
-            return value->getName() + "_" +
-                   std::to_string(getConstantFieldIdx());
+        if (value) return value->getName() + "_" + std::to_string(getConstantFieldIdx());
         return "offset_" + std::to_string(getConstantFieldIdx());
     }
 
@@ -440,12 +412,11 @@ public:
     virtual const std::string toString() const;
 };
 
-
 /*
  * Gep Obj variable, this is dynamic generated for field sensitive analysis
  * Each gep obj variable is one field of a MemObj (base)
  */
-class GepObjVar: public ObjVar
+class GepObjVar : public ObjVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -480,8 +451,7 @@ public:
     //@}
 
     /// Constructor
-    GepObjVar(const MemObj* mem, NodeID i, const APOffset& apOffset,
-              PNODEK ty = GepObjNode)
+    GepObjVar(const MemObj* mem, NodeID i, const APOffset& apOffset, PNODEK ty = GepObjNode)
         : ObjVar(mem->getValue(), i, mem, ty), apOffset(apOffset)
     {
         base = mem->getId();
@@ -514,8 +484,7 @@ public:
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
-        if (value)
-            return value->getName() + "_" + std::to_string(apOffset);
+        if (value) return value->getName() + "_" + std::to_string(apOffset);
         return "offset_" + std::to_string(apOffset);
     }
 
@@ -526,7 +495,7 @@ public:
  * Field-insensitive Gep Obj variable, this is dynamic generated for field sensitive analysis
  * Each field-insensitive gep obj node represents all fields of a MemObj (base)
  */
-class FIObjVar: public ObjVar
+class FIObjVar : public ObjVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -557,17 +526,12 @@ public:
     //@}
 
     /// Constructor
-    FIObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
-             PNODEK ty = FIObjNode)
-        : ObjVar(val, i, mem, ty)
-    {
-    }
+    FIObjVar(const SVFValue* val, NodeID i, const MemObj* mem, PNODEK ty = FIObjNode) : ObjVar(val, i, mem, ty) {}
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
-        if (value)
-            return value->getName() + " (base object)";
+        if (value) return value->getName() + " (base object)";
         return " (base object)";
     }
 
@@ -577,7 +541,7 @@ public:
 /*
  * Unique Return node of a procedure
  */
-class RetPN: public ValVar
+class RetPN : public ValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -621,7 +585,7 @@ public:
 /*
  * Unique vararg node of a procedure
  */
-class VarArgPN: public ValVar
+class VarArgPN : public ValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -665,7 +629,7 @@ public:
 /*
  * Dummy variable without any LLVM value
  */
-class DummyValVar: public ValVar
+class DummyValVar : public ValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -705,7 +669,7 @@ public:
 /*
  * Dummy object variable
  */
-class DummyObjVar: public ObjVar
+class DummyObjVar : public ObjVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -735,10 +699,7 @@ public:
     //@}
 
     /// Constructor
-    DummyObjVar(NodeID i, const MemObj* m, PNODEK ty = DummyObjNode)
-        : ObjVar(nullptr, i, m, ty)
-    {
-    }
+    DummyObjVar(NodeID i, const MemObj* m, PNODEK ty = DummyObjNode) : ObjVar(nullptr, i, m, ty) {}
 
     /// Return name of this node
     inline const std::string getValueName() const

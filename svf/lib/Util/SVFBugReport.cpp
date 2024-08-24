@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 //
 // Created by JoelYang on 2023/4/19.
 //
@@ -35,8 +34,7 @@
 using namespace std;
 using namespace SVF;
 
-const std::map<GenericBug::BugType, std::string> GenericBug::BugType2Str =
-{
+const std::map<GenericBug::BugType, std::string> GenericBug::BugType2Str = {
     {GenericBug::FULLBUFOVERFLOW, "Full Buffer Overflow"},
     {GenericBug::PARTIALBUFOVERFLOW, "Partial Buffer Overflow"},
     {GenericBug::NEVERFREE, "Never Free"},
@@ -45,28 +43,27 @@ const std::map<GenericBug::BugType, std::string> GenericBug::BugType2Str =
     {GenericBug::FILEPARTIALCLOSE, "File Partial Close"},
     {GenericBug::DOUBLEFREE, "Double Free"},
     {GenericBug::FULLNULLPTRDEREFERENCE, "Full Null Ptr Dereference"},
-    {GenericBug::PARTIALNULLPTRDEREFERENCE, "Partial Null Ptr Dereference"}
-};
+    {GenericBug::PARTIALNULLPTRDEREFERENCE, "Partial Null Ptr Dereference"}};
 
 const std::string GenericBug::getLoc() const
 {
-    const SVFBugEvent&sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
+    const SVFBugEvent& sourceInstEvent = bugEventStack.at(bugEventStack.size() - 1);
     return sourceInstEvent.getEventLoc();
 }
 
 const std::string GenericBug::getFuncName() const
 {
-    const SVFBugEvent&sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
+    const SVFBugEvent& sourceInstEvent = bugEventStack.at(bugEventStack.size() - 1);
     return sourceInstEvent.getFuncName();
 }
 
-cJSON *BufferOverflowBug::getBugDescription() const
+cJSON* BufferOverflowBug::getBugDescription() const
 {
-    cJSON *bugDescription = cJSON_CreateObject();
-    cJSON *allocLB = cJSON_CreateNumber(allocLowerBound);
-    cJSON *allocUB = cJSON_CreateNumber(allocUpperBound);
-    cJSON *accessLB = cJSON_CreateNumber(accessLowerBound);
-    cJSON *accessUB = cJSON_CreateNumber(accessUpperBound);
+    cJSON* bugDescription = cJSON_CreateObject();
+    cJSON* allocLB = cJSON_CreateNumber(allocLowerBound);
+    cJSON* allocUB = cJSON_CreateNumber(allocUpperBound);
+    cJSON* accessLB = cJSON_CreateNumber(accessLowerBound);
+    cJSON* accessUB = cJSON_CreateNumber(accessUpperBound);
 
     cJSON_AddItemToObject(bugDescription, "AllocLowerBound", allocLB);
     cJSON_AddItemToObject(bugDescription, "AllocUpperBound", allocUB);
@@ -79,33 +76,30 @@ cJSON *BufferOverflowBug::getBugDescription() const
 void BufferOverflowBug::printBugToTerminal() const
 {
     stringstream bugInfo;
-    if(FullBufferOverflowBug::classof(this))
+    if (FullBufferOverflowBug::classof(this))
     {
-        SVFUtil::errs() << SVFUtil::bugMsg1("\t Full Overflow :") <<  " accessing at : ("
-                        << GenericBug::getLoc() << ")\n";
-
+        SVFUtil::errs() << SVFUtil::bugMsg1("\t Full Overflow :") << " accessing at : (" << GenericBug::getLoc()
+                        << ")\n";
     }
     else
     {
-        SVFUtil::errs() << SVFUtil::bugMsg1("\t Partial Overflow :") <<  " accessing at : ("
-                        << GenericBug::getLoc() << ")\n";
+        SVFUtil::errs() << SVFUtil::bugMsg1("\t Partial Overflow :") << " accessing at : (" << GenericBug::getLoc()
+                        << ")\n";
     }
     bugInfo << "\t\t  allocate size : [" << allocLowerBound << ", " << allocUpperBound << "], ";
     bugInfo << "access size : [" << accessLowerBound << ", " << accessUpperBound << "]\n";
     SVFUtil::errs() << "\t\t Info : \n" << bugInfo.str();
     SVFUtil::errs() << "\t\t Events : \n";
 
-    for(auto event : bugEventStack)
+    for (auto event : bugEventStack)
     {
-        switch(event.getEventType())
+        switch (event.getEventType())
         {
-        case SVFBugEvent::CallSite:
-        {
+        case SVFBugEvent::CallSite: {
             SVFUtil::errs() << "\t\t  callsite at : ( " << event.getEventLoc() << " )\n";
             break;
         }
-        default:
-        {
+        default: {
             // TODO: implement more events when needed
             break;
         }
@@ -113,30 +107,30 @@ void BufferOverflowBug::printBugToTerminal() const
     }
 }
 
-cJSON * NeverFreeBug::getBugDescription() const
+cJSON* NeverFreeBug::getBugDescription() const
 {
-    cJSON *bugDescription = cJSON_CreateObject();
+    cJSON* bugDescription = cJSON_CreateObject();
     return bugDescription;
 }
 
 void NeverFreeBug::printBugToTerminal() const
 {
-    SVFUtil::errs() << SVFUtil::bugMsg1("\t NeverFree :") <<  " memory allocation at : ("
-                    << GenericBug::getLoc() << ")\n";
+    SVFUtil::errs() << SVFUtil::bugMsg1("\t NeverFree :") << " memory allocation at : (" << GenericBug::getLoc()
+                    << ")\n";
 }
 
-cJSON * PartialLeakBug::getBugDescription() const
+cJSON* PartialLeakBug::getBugDescription() const
 {
-    cJSON *bugDescription = cJSON_CreateObject();
-    cJSON *pathInfo = cJSON_CreateArray();
+    cJSON* bugDescription = cJSON_CreateObject();
+    cJSON* pathInfo = cJSON_CreateArray();
     auto lastBranchEventIt = bugEventStack.end() - 1;
-    for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
+    for (auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
     {
-        cJSON *newBranch = cJSON_CreateObject();
-        cJSON *branchLoc = cJSON_Parse((*eventIt).getEventLoc().c_str());
-        if(branchLoc == nullptr) branchLoc = cJSON_CreateObject();
+        cJSON* newBranch = cJSON_CreateObject();
+        cJSON* branchLoc = cJSON_Parse((*eventIt).getEventLoc().c_str());
+        if (branchLoc == nullptr) branchLoc = cJSON_CreateObject();
 
-        cJSON *branchCondition = cJSON_CreateString((*eventIt).getEventDescription().c_str());
+        cJSON* branchCondition = cJSON_CreateString((*eventIt).getEventDescription().c_str());
 
         cJSON_AddItemToObject(newBranch, "BranchLoc", branchLoc);
         cJSON_AddItemToObject(newBranch, "BranchCond", branchCondition);
@@ -151,30 +145,31 @@ cJSON * PartialLeakBug::getBugDescription() const
 
 void PartialLeakBug::printBugToTerminal() const
 {
-    SVFUtil::errs() << SVFUtil::bugMsg2("\t PartialLeak :") <<  " memory allocation at : ("
-                    << GenericBug::getLoc() << ")\n";
+    SVFUtil::errs() << SVFUtil::bugMsg2("\t PartialLeak :") << " memory allocation at : (" << GenericBug::getLoc()
+                    << ")\n";
 
     SVFUtil::errs() << "\t\t conditional free path: \n";
     auto lastBranchEventIt = bugEventStack.end() - 1;
-    for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
+    for (auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
     {
-        SVFUtil::errs() << "\t\t  --> (" << (*eventIt).getEventLoc() << "|" << (*eventIt).getEventDescription() << ") \n";
+        SVFUtil::errs() << "\t\t  --> (" << (*eventIt).getEventLoc() << "|" << (*eventIt).getEventDescription()
+                        << ") \n";
     }
     SVFUtil::errs() << "\n";
 }
 
-cJSON * DoubleFreeBug::getBugDescription() const
+cJSON* DoubleFreeBug::getBugDescription() const
 {
-    cJSON *bugDescription = cJSON_CreateObject();
+    cJSON* bugDescription = cJSON_CreateObject();
 
-    cJSON *pathInfo = cJSON_CreateArray();
+    cJSON* pathInfo = cJSON_CreateArray();
     auto lastBranchEventIt = bugEventStack.end() - 1;
-    for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
+    for (auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
     {
-        cJSON *newBranch = cJSON_CreateObject();
-        cJSON *branchLoc = cJSON_Parse((*eventIt).getEventLoc().c_str());
-        if(branchLoc == nullptr) branchLoc = cJSON_CreateObject();
-        cJSON *branchCondition = cJSON_CreateString((*eventIt).getEventDescription().c_str());
+        cJSON* newBranch = cJSON_CreateObject();
+        cJSON* branchLoc = cJSON_Parse((*eventIt).getEventLoc().c_str());
+        if (branchLoc == nullptr) branchLoc = cJSON_CreateObject();
+        cJSON* branchCondition = cJSON_CreateString((*eventIt).getEventDescription().c_str());
 
         cJSON_AddItemToObject(newBranch, "BranchLoc", branchLoc);
         cJSON_AddItemToObject(newBranch, "BranchCond", branchCondition);
@@ -188,43 +183,44 @@ cJSON * DoubleFreeBug::getBugDescription() const
 
 void DoubleFreeBug::printBugToTerminal() const
 {
-    SVFUtil::errs() << SVFUtil::bugMsg2("\t Double Free :") <<  " memory allocation at : ("
-                    << GenericBug::getLoc() << ")\n";
+    SVFUtil::errs() << SVFUtil::bugMsg2("\t Double Free :") << " memory allocation at : (" << GenericBug::getLoc()
+                    << ")\n";
 
     SVFUtil::errs() << "\t\t double free path: \n";
     auto lastBranchEventIt = bugEventStack.end() - 1;
-    for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
+    for (auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
     {
-        SVFUtil::errs() << "\t\t  --> (" << (*eventIt).getEventLoc() << "|" << (*eventIt).getEventDescription() << ") \n";
+        SVFUtil::errs() << "\t\t  --> (" << (*eventIt).getEventLoc() << "|" << (*eventIt).getEventDescription()
+                        << ") \n";
     }
     SVFUtil::errs() << "\n";
 }
 
-cJSON * FileNeverCloseBug::getBugDescription() const
+cJSON* FileNeverCloseBug::getBugDescription() const
 {
-    cJSON *bugDescription = cJSON_CreateObject();
+    cJSON* bugDescription = cJSON_CreateObject();
     return bugDescription;
 }
 
 void FileNeverCloseBug::printBugToTerminal() const
 {
-    SVFUtil::errs() << SVFUtil::bugMsg1("\t FileNeverClose :") <<  " file open location at : ("
-                    << GenericBug::getLoc() << ")\n";
+    SVFUtil::errs() << SVFUtil::bugMsg1("\t FileNeverClose :") << " file open location at : (" << GenericBug::getLoc()
+                    << ")\n";
 }
 
-cJSON * FilePartialCloseBug::getBugDescription() const
+cJSON* FilePartialCloseBug::getBugDescription() const
 {
-    cJSON *bugDescription = cJSON_CreateObject();
+    cJSON* bugDescription = cJSON_CreateObject();
 
-    cJSON *pathInfo = cJSON_CreateArray();
+    cJSON* pathInfo = cJSON_CreateArray();
 
     auto lastBranchEventIt = bugEventStack.end() - 1;
-    for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
+    for (auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
     {
-        cJSON *newBranch = cJSON_CreateObject();
-        cJSON *branchLoc = cJSON_Parse((*eventIt).getEventLoc().c_str());
-        if(branchLoc == nullptr) branchLoc = cJSON_CreateObject();
-        cJSON *branchCondition = cJSON_CreateString((*eventIt).getEventDescription().c_str());
+        cJSON* newBranch = cJSON_CreateObject();
+        cJSON* branchLoc = cJSON_Parse((*eventIt).getEventLoc().c_str());
+        if (branchLoc == nullptr) branchLoc = cJSON_CreateObject();
+        cJSON* branchCondition = cJSON_CreateString((*eventIt).getEventDescription().c_str());
 
         cJSON_AddItemToObject(newBranch, "BranchLoc", branchLoc);
         cJSON_AddItemToObject(newBranch, "BranchCond", branchCondition);
@@ -238,39 +234,40 @@ cJSON * FilePartialCloseBug::getBugDescription() const
 
 void FilePartialCloseBug::printBugToTerminal() const
 {
-    SVFUtil::errs() << SVFUtil::bugMsg2("\t PartialFileClose :") <<  " file open location at : ("
-                    << GenericBug::getLoc() << ")\n";
+    SVFUtil::errs() << SVFUtil::bugMsg2("\t PartialFileClose :") << " file open location at : (" << GenericBug::getLoc()
+                    << ")\n";
 
     SVFUtil::errs() << "\t\t conditional file close path: \n";
     auto lastBranchEventIt = bugEventStack.end() - 1;
-    for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
+    for (auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
     {
-        SVFUtil::errs() << "\t\t  --> (" << (*eventIt).getEventLoc() << "|" << (*eventIt).getEventDescription() << ") \n";
+        SVFUtil::errs() << "\t\t  --> (" << (*eventIt).getEventLoc() << "|" << (*eventIt).getEventDescription()
+                        << ") \n";
     }
     SVFUtil::errs() << "\n";
 }
 
-cJSON *FullNullPtrDereferenceBug::getBugDescription() const
+cJSON* FullNullPtrDereferenceBug::getBugDescription() const
 {
-    cJSON *bugDescription = cJSON_CreateObject();
+    cJSON* bugDescription = cJSON_CreateObject();
     return bugDescription;
 }
 
 void FullNullPtrDereferenceBug::printBugToTerminal() const
 {
-    SVFUtil::errs() << SVFUtil::bugMsg2("\t FullNullPtrDereference :") <<  " dereference at : ("
-                    << GenericBug::getLoc() << ")\n";
+    SVFUtil::errs() << SVFUtil::bugMsg2("\t FullNullPtrDereference :") << " dereference at : (" << GenericBug::getLoc()
+                    << ")\n";
 }
 
-cJSON *PartialNullPtrDereferenceBug::getBugDescription() const
+cJSON* PartialNullPtrDereferenceBug::getBugDescription() const
 {
-    cJSON *bugDescription = cJSON_CreateObject();
+    cJSON* bugDescription = cJSON_CreateObject();
     return bugDescription;
 }
 
 void PartialNullPtrDereferenceBug::printBugToTerminal() const
 {
-    SVFUtil::errs() << SVFUtil::bugMsg2("\t PartialNullPtrDereference :") <<  " dereference at : ("
+    SVFUtil::errs() << SVFUtil::bugMsg2("\t PartialNullPtrDereference :") << " dereference at : ("
                     << GenericBug::getLoc() << ")\n";
 }
 
@@ -286,10 +283,9 @@ const std::string SVFBugEvent::getEventLoc() const
 
 const std::string SVFBugEvent::getEventDescription() const
 {
-    switch(getEventType())
+    switch (getEventType())
     {
-    case SVFBugEvent::Branch:
-    {
+    case SVFBugEvent::Branch: {
         if (typeAndInfoFlag & BRANCHFLAGMASK)
         {
             return "True";
@@ -300,11 +296,10 @@ const std::string SVFBugEvent::getEventDescription() const
         }
         break;
     }
-    case SVFBugEvent::CallSite:
-    {
+    case SVFBugEvent::CallSite: {
         std::string description("calls ");
-        const SVFFunction *callee = SVFUtil::getCallee(eventInst);
-        if(callee == nullptr)
+        const SVFFunction* callee = SVFUtil::getCallee(eventInst);
+        if (callee == nullptr)
         {
             description += "<unknown>";
         }
@@ -315,12 +310,10 @@ const std::string SVFBugEvent::getEventDescription() const
         return description;
         break;
     }
-    case SVFBugEvent::SourceInst:
-    {
+    case SVFBugEvent::SourceInst: {
         return "None";
     }
-    default:
-    {
+    default: {
         assert(false && "No such type of event!");
         abort();
     }
@@ -329,7 +322,7 @@ const std::string SVFBugEvent::getEventDescription() const
 
 SVFBugReport::~SVFBugReport()
 {
-    for(auto bugIt: bugSet)
+    for (auto bugIt : bugSet)
     {
         delete bugIt;
     }
@@ -337,13 +330,10 @@ SVFBugReport::~SVFBugReport()
 
 void SVFBugReport::dumpToJsonFile(const std::string& filePath) const
 {
-    std::map<u32_t, std::string> eventType2Str =
-    {
-        {SVFBugEvent::CallSite, "call site"},
-        {SVFBugEvent::Caller, "caller"},
-        {SVFBugEvent::Loop, "loop"},
-        {SVFBugEvent::Branch, "branch"}
-    };
+    std::map<u32_t, std::string> eventType2Str = {{SVFBugEvent::CallSite, "call site"},
+                                                  {SVFBugEvent::Caller, "caller"},
+                                                  {SVFBugEvent::Loop, "loop"},
+                                                  {SVFBugEvent::Branch, "branch"}};
 
     ofstream jsonFile(filePath, ios::out);
 
@@ -354,59 +344,53 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath) const
     size_t commaCounter = bugSet.size() - 1;
     for (auto bugPtr : bugSet)
     {
-        cJSON *singleDefect = cJSON_CreateObject();
+        cJSON* singleDefect = cJSON_CreateObject();
 
         /// Add bug information to JSON
-        cJSON *bugType = cJSON_CreateString(
-                             GenericBug::BugType2Str.at(bugPtr->getBugType()).c_str());
+        cJSON* bugType = cJSON_CreateString(GenericBug::BugType2Str.at(bugPtr->getBugType()).c_str());
         cJSON_AddItemToObject(singleDefect, "DefectType", bugType);
 
-        cJSON *bugLoc = cJSON_Parse(bugPtr->getLoc().c_str());
+        cJSON* bugLoc = cJSON_Parse(bugPtr->getLoc().c_str());
         if (bugLoc == nullptr)
         {
             bugLoc = cJSON_CreateObject();
         }
         cJSON_AddItemToObject(singleDefect, "Location", bugLoc);
 
-        cJSON *bugFunction = cJSON_CreateString(
-                                 bugPtr->getFuncName().c_str());
+        cJSON* bugFunction = cJSON_CreateString(bugPtr->getFuncName().c_str());
         cJSON_AddItemToObject(singleDefect, "Function", bugFunction);
 
-        cJSON_AddItemToObject(singleDefect, "Description",
-                              bugPtr->getBugDescription());
+        cJSON_AddItemToObject(singleDefect, "Description", bugPtr->getBugDescription());
 
         /// Add event information to JSON
-        cJSON *eventList = cJSON_CreateArray();
-        const GenericBug::EventStack &bugEventStack = bugPtr->getEventStack();
+        cJSON* eventList = cJSON_CreateArray();
+        const GenericBug::EventStack& bugEventStack = bugPtr->getEventStack();
         if (BufferOverflowBug::classof(bugPtr))
         {
             // Add only when bug is context sensitive
-            for (const SVFBugEvent &event : bugEventStack)
+            for (const SVFBugEvent& event : bugEventStack)
             {
                 if (event.getEventType() == SVFBugEvent::SourceInst)
                 {
                     continue;
                 }
 
-                cJSON *singleEvent = cJSON_CreateObject();
+                cJSON* singleEvent = cJSON_CreateObject();
                 // Event type
-                cJSON *eventType = cJSON_CreateString(
-                                       eventType2Str[event.getEventType()].c_str());
+                cJSON* eventType = cJSON_CreateString(eventType2Str[event.getEventType()].c_str());
                 cJSON_AddItemToObject(singleEvent, "EventType", eventType);
                 // Function name
-                cJSON *eventFunc = cJSON_CreateString(
-                                       event.getFuncName().c_str());
+                cJSON* eventFunc = cJSON_CreateString(event.getFuncName().c_str());
                 cJSON_AddItemToObject(singleEvent, "Function", eventFunc);
                 // Event loc
-                cJSON *eventLoc = cJSON_Parse(event.getEventLoc().c_str());
+                cJSON* eventLoc = cJSON_Parse(event.getEventLoc().c_str());
                 if (eventLoc == nullptr)
                 {
                     eventLoc = cJSON_CreateObject();
                 }
                 cJSON_AddItemToObject(singleEvent, "Location", eventLoc);
                 // Event description
-                cJSON *eventDescription = cJSON_CreateString(
-                                              event.getEventDescription().c_str());
+                cJSON* eventDescription = cJSON_CreateString(event.getEventDescription().c_str());
                 cJSON_AddItemToObject(singleEvent, "Description", eventDescription);
 
                 cJSON_AddItemToArray(eventList, singleEvent);
@@ -415,7 +399,7 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath) const
         cJSON_AddItemToObject(singleDefect, "Events", eventList);
 
         /// Dump single bug to JSON string and write to file
-        char *singleDefectStr = cJSON_Print(singleDefect);
+        char* singleDefectStr = cJSON_Print(singleDefect);
         jsonFile << singleDefectStr;
         if (commaCounter != 0)
         {

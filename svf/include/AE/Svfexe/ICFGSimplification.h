@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 //
 // Created by Jiawei Wang on 2024/2/25.
 //
@@ -41,4 +40,4 @@ public:
 
     static void mergeAdjacentNodes(ICFG* icfg);
 };
-}
+} // namespace SVF

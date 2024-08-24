@@ -23,7 +23,6 @@
 // 46th International Conference on Software Engineering. (ICSE24)
 //===----------------------------------------------------------------------===//
 
-
 //
 // Created by Jiawei Wang on 2024/2/25.
 //
@@ -42,15 +41,13 @@ void ICFGSimplification::mergeAdjacentNodes(ICFG* icfg)
         {
             for (const auto& inst : *bb)
             {
-                if (SVFUtil::isIntrinsicInst(inst))
-                    continue;
+                if (SVFUtil::isIntrinsicInst(inst)) continue;
                 const ICFGNode* icfgNode = icfg->getICFGNode(inst);
                 // e.g.
                 // block: entry
                 // insts: call = i32 %fun(i32 %arg)
                 // We put the callnode in an icfgnode alone, and the retnode is similar.
-                if (const CallICFGNode* callNode =
-                            SVFUtil::dyn_cast<CallICFGNode>(icfgNode))
+                if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(icfgNode))
                 {
                     bbToNodes[bb].push_back(callNode);
                     subNodes.insert(callNode);
@@ -113,7 +110,7 @@ void ICFGSimplification::mergeAdjacentNodes(ICFG* icfg)
         }
     }
 
-    for (auto &it: subNodes)
+    for (auto& it : subNodes)
     {
         ICFGNode* head = const_cast<ICFGNode*>(it);
         if (head->getOutEdges().size() != 1)
@@ -131,7 +128,7 @@ void ICFGSimplification::mergeAdjacentNodes(ICFG* icfg)
                 icfg->removeICFGEdge(*head->getOutEdges().begin());
                 std::vector<ICFGEdge*> rm_edges;
                 // Step 1: merge the out edges of next to head
-                for (ICFGEdge* outEdge: next->getOutEdges())
+                for (ICFGEdge* outEdge : next->getOutEdges())
                 {
                     rm_edges.push_back(outEdge);
                     ICFGNode* post = outEdge->getDstNode();
@@ -140,7 +137,8 @@ void ICFGSimplification::mergeAdjacentNodes(ICFG* icfg)
                         IntraCFGEdge* intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(outEdge);
                         if (intraEdge->getCondition())
                         {
-                            icfg->addConditionalIntraEdge(head, post, intraEdge->getCondition(), intraEdge->getSuccessorCondValue());
+                            icfg->addConditionalIntraEdge(head, post, intraEdge->getCondition(),
+                                                          intraEdge->getSuccessorCondValue());
                         }
                         else
                         {
@@ -155,19 +153,16 @@ void ICFGSimplification::mergeAdjacentNodes(ICFG* icfg)
                     // Step 3: remove the edges from next to its next, since next has been merged to head
                     // if only one out edge, we may continue to merge the next node if it is not a subnode
                     next = (*next->getOutEdges().begin())->getDstNode();
-                    for (ICFGEdge* edge: rm_edges)
-                        icfg->removeICFGEdge(edge);
-
+                    for (ICFGEdge* edge : rm_edges) icfg->removeICFGEdge(edge);
                 }
                 else
                 {
                     // if more than one out edges, we don't merge any following nodes.
-                    for (ICFGEdge* edge: rm_edges)
-                        icfg->removeICFGEdge(edge);
+                    for (ICFGEdge* edge : rm_edges) icfg->removeICFGEdge(edge);
                     break;
                 }
             }
         }
     }
 }
-}
+} // namespace SVF

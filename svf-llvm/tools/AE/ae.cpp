@@ -39,18 +39,9 @@
 using namespace SVF;
 using namespace SVFUtil;
 
+static Option<bool> SYMABS("symabs", "symbolic abstraction test", false);
 
-static Option<bool> SYMABS(
-    "symabs",
-    "symbolic abstraction test",
-    false
-);
-
-static Option<bool> AETEST(
-    "aetest",
-    "abstract execution basic function test",
-    false
-);
+static Option<bool> AETEST("aetest", "abstract execution basic function test", false);
 
 class SymblicAbstractionTest
 {
@@ -69,40 +60,31 @@ public:
         outs() << "hello print\n";
     }
 
-    AbstractState RSY_time(AbstractState& inv, const Z3Expr& phi,
-                           RelationSolver& rs)
+    AbstractState RSY_time(AbstractState& inv, const Z3Expr& phi, RelationSolver& rs)
     {
         auto start_time = std::chrono::high_resolution_clock::now();
         AbstractState resRSY = rs.RSY(inv, phi);
         auto end_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-                            end_time - start_time);
-        outs() << "running time of RSY      : " << duration.count()
-               << " microseconds\n";
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+        outs() << "running time of RSY      : " << duration.count() << " microseconds\n";
         return resRSY;
     }
-    AbstractState Bilateral_time(AbstractState& inv, const Z3Expr& phi,
-                                 RelationSolver& rs)
+    AbstractState Bilateral_time(AbstractState& inv, const Z3Expr& phi, RelationSolver& rs)
     {
         auto start_time = std::chrono::high_resolution_clock::now();
         AbstractState resBilateral = rs.bilateral(inv, phi);
         auto end_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-                            end_time - start_time);
-        outs() << "running time of Bilateral: " << duration.count()
-               << " microseconds\n";
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+        outs() << "running time of Bilateral: " << duration.count() << " microseconds\n";
         return resBilateral;
     }
-    AbstractState BS_time(AbstractState& inv, const Z3Expr& phi,
-                          RelationSolver& rs)
+    AbstractState BS_time(AbstractState& inv, const Z3Expr& phi, RelationSolver& rs)
     {
         auto start_time = std::chrono::high_resolution_clock::now();
         AbstractState resBS = rs.BS(inv, phi);
         auto end_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-                            end_time - start_time);
-        outs() << "running time of BS       : " << duration.count()
-               << " microseconds\n";
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+        outs() << "running time of BS       : " << duration.count() << " microseconds\n";
         return resBS;
     }
 
@@ -115,8 +97,7 @@ public:
         itv[0] = IntervalValue(0, 1);
         relation[0] = getContext().int_const("0");
         // var1 := var0 + 1;
-        relation[1] =
-            getContext().int_const("1") == getContext().int_const("0") + 1;
+        relation[1] = getContext().int_const("1") == getContext().int_const("0") + 1;
         itv[1] = itv[0].getInterval() + IntervalValue(1);
         // Test extract sub vars
         Set<u32_t> res;
@@ -149,8 +130,7 @@ public:
         relation[0] = getContext().int_const("0");
         itv[0] = IntervalValue(0, 1);
         // var1 := var0 + 1;
-        relation[1] =
-            getContext().int_const("1") == getContext().int_const("0") * 2;
+        relation[1] = getContext().int_const("1") == getContext().int_const("0") * 2;
         itv[1] = itv[0].getInterval() * IntervalValue(2);
 
         // Test extract sub vars
@@ -184,12 +164,10 @@ public:
         relation[0] = getContext().int_const("0");
         itv[0] = IntervalValue(0, 10);
         // var1 := var0;
-        relation[1] =
-            getContext().int_const("1") == getContext().int_const("0");
+        relation[1] = getContext().int_const("1") == getContext().int_const("0");
         itv[1] = itv[0];
         // var2 := var1 - var0;
-        relation[2] = getContext().int_const("2") ==
-                      getContext().int_const("1") - getContext().int_const("0");
+        relation[2] = getContext().int_const("2") == getContext().int_const("1") - getContext().int_const("0");
         itv[2] = itv[1].getInterval() - itv[0].getInterval();
         // Test extract sub vars
         Set<u32_t> res;
@@ -210,10 +188,8 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 10)},
-            {1, IntervalValue(0, 10)},
-            {2, IntervalValue(0, 0)}
-        };
+        AbstractState::VarToAbsValMap intendedRes = {
+            {0, IntervalValue(0, 10)}, {1, IntervalValue(0, 10)}, {2, IntervalValue(0, 0)}};
         assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -226,12 +202,10 @@ public:
         relation[0] = getContext().int_const("0");
         itv[0] = IntervalValue(0, 100);
         // var1 := var0;
-        relation[1] =
-            getContext().int_const("1") == getContext().int_const("0");
+        relation[1] = getContext().int_const("1") == getContext().int_const("0");
         itv[1] = itv[0];
         // var2 := var1 - var0;
-        relation[2] = getContext().int_const("2") ==
-                      getContext().int_const("1") - getContext().int_const("0");
+        relation[2] = getContext().int_const("2") == getContext().int_const("1") - getContext().int_const("0");
         itv[2] = itv[1].getInterval() - itv[0].getInterval();
 
         // Test extract sub vars
@@ -253,10 +227,8 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 100)},
-            {1, IntervalValue(0, 100)},
-            {2, IntervalValue(0, 0)}
-        };
+        AbstractState::VarToAbsValMap intendedRes = {
+            {0, IntervalValue(0, 100)}, {1, IntervalValue(0, 100)}, {2, IntervalValue(0, 0)}};
         assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -269,12 +241,10 @@ public:
         relation[0] = getContext().int_const("0");
         itv[0] = IntervalValue(0, 1000);
         // var1 := var0;
-        relation[1] =
-            getContext().int_const("1") == getContext().int_const("0");
+        relation[1] = getContext().int_const("1") == getContext().int_const("0");
         itv[1] = itv[0];
         // var2 := var1 - var0;
-        relation[2] = getContext().int_const("2") ==
-                      getContext().int_const("1") - getContext().int_const("0");
+        relation[2] = getContext().int_const("2") == getContext().int_const("1") - getContext().int_const("0");
         itv[2] = itv[1].getInterval() - itv[0].getInterval();
 
         // Test extract sub vars
@@ -296,10 +266,8 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1000)},
-            {1, IntervalValue(0, 1000)},
-            {2, IntervalValue(0, 0)}
-        };
+        AbstractState::VarToAbsValMap intendedRes = {
+            {0, IntervalValue(0, 1000)}, {1, IntervalValue(0, 1000)}, {2, IntervalValue(0, 0)}};
         assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -312,12 +280,10 @@ public:
         relation[0] = getContext().int_const("0");
         itv[0] = IntervalValue(0, 10000);
         // var1 := var0;
-        relation[1] =
-            getContext().int_const("1") == getContext().int_const("0");
+        relation[1] = getContext().int_const("1") == getContext().int_const("0");
         itv[1] = itv[0];
         // var2 := var1 - var0;
-        relation[2] = getContext().int_const("2") ==
-                      getContext().int_const("1") - getContext().int_const("0");
+        relation[2] = getContext().int_const("2") == getContext().int_const("1") - getContext().int_const("0");
         itv[2] = itv[1].getInterval() - itv[0].getInterval();
 
         // Test extract sub vars
@@ -339,10 +305,8 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 10000)},
-            {1, IntervalValue(0, 10000)},
-            {2, IntervalValue(0, 0)}
-        };
+        AbstractState::VarToAbsValMap intendedRes = {
+            {0, IntervalValue(0, 10000)}, {1, IntervalValue(0, 10000)}, {2, IntervalValue(0, 0)}};
         assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -355,12 +319,10 @@ public:
         relation[0] = getContext().int_const("0");
         itv[0] = IntervalValue(0, 100000);
         // var1 := var0;
-        relation[1] =
-            getContext().int_const("1") == getContext().int_const("0");
+        relation[1] = getContext().int_const("1") == getContext().int_const("0");
         itv[1] = itv[0];
         // var2 := var1 - var0;
-        relation[2] = getContext().int_const("2") ==
-                      getContext().int_const("1") - getContext().int_const("0");
+        relation[2] = getContext().int_const("2") == getContext().int_const("1") - getContext().int_const("0");
         itv[2] = itv[1].getInterval() - itv[0].getInterval();
 
         // Test extract sub vars
@@ -382,10 +344,8 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 100000)},
-            {1, IntervalValue(0, 100000)},
-            {2, IntervalValue(0, 0)}
-        };
+        AbstractState::VarToAbsValMap intendedRes = {
+            {0, IntervalValue(0, 100000)}, {1, IntervalValue(0, 100000)}, {2, IntervalValue(0, 0)}};
         assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -398,12 +358,10 @@ public:
         relation[0] = getContext().int_const("0");
         itv[0] = IntervalValue(1, 10);
         // var1 := var0;
-        relation[1] =
-            getContext().int_const("1") == getContext().int_const("0");
+        relation[1] = getContext().int_const("1") == getContext().int_const("0");
         itv[1] = itv[0];
         // var2 := var1 / var0;
-        relation[2] = getContext().int_const("2") ==
-                      getContext().int_const("1") / getContext().int_const("0");
+        relation[2] = getContext().int_const("2") == getContext().int_const("1") / getContext().int_const("0");
         itv[2] = itv[1].getInterval() / itv[0].getInterval();
         // Test extract sub vars
         Set<u32_t> res;
@@ -424,10 +382,8 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 10)},
-            {1, IntervalValue(1, 10)},
-            {2, IntervalValue(1, 1)}
-        };
+        AbstractState::VarToAbsValMap intendedRes = {
+            {0, IntervalValue(1, 10)}, {1, IntervalValue(1, 10)}, {2, IntervalValue(1, 1)}};
         assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -440,12 +396,10 @@ public:
         relation[0] = getContext().int_const("0");
         itv[0] = IntervalValue(1, 1000);
         // var1 := var0;
-        relation[1] =
-            getContext().int_const("1") == getContext().int_const("0");
+        relation[1] = getContext().int_const("1") == getContext().int_const("0");
         itv[1] = itv[0];
         // var2 := var1 / var0;
-        relation[2] = getContext().int_const("2") ==
-                      getContext().int_const("1") / getContext().int_const("0");
+        relation[2] = getContext().int_const("2") == getContext().int_const("1") / getContext().int_const("0");
         itv[2] = itv[1].getInterval() / itv[0].getInterval();
         // Test extract sub vars
         Set<u32_t> res;
@@ -466,10 +420,8 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 1000)},
-            {1, IntervalValue(1, 1000)},
-            {2, IntervalValue(1, 1)}
-        };
+        AbstractState::VarToAbsValMap intendedRes = {
+            {0, IntervalValue(1, 1000)}, {1, IntervalValue(1, 1000)}, {2, IntervalValue(1, 1)}};
         assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -482,12 +434,10 @@ public:
         relation[0] = getContext().int_const("0");
         itv[0] = IntervalValue(1, 10000);
         // var1 := var0;
-        relation[1] =
-            getContext().int_const("1") == getContext().int_const("0");
+        relation[1] = getContext().int_const("1") == getContext().int_const("0");
         itv[1] = itv[0];
         // var2 := var1 / var0;
-        relation[2] = getContext().int_const("2") ==
-                      getContext().int_const("1") / getContext().int_const("0");
+        relation[2] = getContext().int_const("2") == getContext().int_const("1") / getContext().int_const("0");
         itv[2] = itv[1].getInterval() / itv[0].getInterval();
         // Test extract sub vars
         Set<u32_t> res;
@@ -508,10 +458,8 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 10000)},
-            {1, IntervalValue(1, 10000)},
-            {2, IntervalValue(1, 1)}
-        };
+        AbstractState::VarToAbsValMap intendedRes = {
+            {0, IntervalValue(1, 10000)}, {1, IntervalValue(1, 10000)}, {2, IntervalValue(1, 1)}};
     }
 
     void testRelExeState3_4()
@@ -523,12 +471,10 @@ public:
         relation[0] = getContext().int_const("0");
         itv[0] = IntervalValue(1, 100000);
         // var1 := var0;
-        relation[1] =
-            getContext().int_const("1") == getContext().int_const("0");
+        relation[1] = getContext().int_const("1") == getContext().int_const("0");
         itv[1] = itv[0];
         // var2 := var1 / var0;
-        relation[2] = getContext().int_const("2") ==
-                      getContext().int_const("1") / getContext().int_const("0");
+        relation[2] = getContext().int_const("2") == getContext().int_const("1") / getContext().int_const("0");
         itv[2] = itv[1].getInterval() / itv[0].getInterval();
         // Test extract sub vars
         Set<u32_t> res;
@@ -549,10 +495,8 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 100000)},
-            {1, IntervalValue(1, 100000)},
-            {2, IntervalValue(1, 1)}
-        };
+        AbstractState::VarToAbsValMap intendedRes = {
+            {0, IntervalValue(1, 100000)}, {1, IntervalValue(1, 100000)}, {2, IntervalValue(1, 1)}};
         assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -565,12 +509,10 @@ public:
         relation[0] = getContext().int_const("0");
         itv[0] = IntervalValue(0, 10);
         // var1 := var0;
-        relation[1] =
-            getContext().int_const("1") == getContext().int_const("0");
+        relation[1] = getContext().int_const("1") == getContext().int_const("0");
         itv[1] = itv[0];
         // var2 := var1 / var0;
-        relation[2] = getContext().int_const("2") ==
-                      getContext().int_const("1") / getContext().int_const("0");
+        relation[2] = getContext().int_const("2") == getContext().int_const("1") / getContext().int_const("0");
         itv[2] = itv[1].getInterval() / itv[0].getInterval();
         // Test extract sub vars
         Set<u32_t> res;
@@ -594,10 +536,8 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 10)},
-            {1, IntervalValue(0, 10)},
-            {2, IntervalValue(0, 10)}
-        };
+        AbstractState::VarToAbsValMap intendedRes = {
+            {0, IntervalValue(0, 10)}, {1, IntervalValue(0, 10)}, {2, IntervalValue(0, 10)}};
         assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -637,16 +577,18 @@ public:
         assert((IntervalValue::bottom() / IntervalValue(2)).equals(IntervalValue::bottom()));
         assert((IntervalValue::top() / IntervalValue(0)).equals(IntervalValue::bottom()));
         assert((IntervalValue(4) / IntervalValue(2)).equals(IntervalValue(2)));
-        assert((IntervalValue(3) / IntervalValue(2)).equals(IntervalValue(1))); //
-        assert((IntervalValue(-3) / IntervalValue(2)).equals(IntervalValue(-1))); //
+        assert((IntervalValue(3) / IntervalValue(2)).equals(IntervalValue(1)));       //
+        assert((IntervalValue(-3) / IntervalValue(2)).equals(IntervalValue(-1)));     //
         assert((IntervalValue(1, 3) / IntervalValue(2)).equals(IntervalValue(0, 1))); //
         assert((IntervalValue(2, 7) / IntervalValue(2)).equals(IntervalValue(1, 3))); //
         assert((IntervalValue(-3, 3) / IntervalValue(2)).equals(IntervalValue(-1, 1)));
-        assert((IntervalValue(-3, IntervalValue::plus_infinity()) / IntervalValue(2)).equals(IntervalValue(-1, IntervalValue::plus_infinity())));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 3) / IntervalValue(2)).equals(IntervalValue(IntervalValue::minus_infinity(), 1)));
-        assert((IntervalValue(1, 3) / IntervalValue(1, 2)).equals(IntervalValue(0, 3)));//
+        assert((IntervalValue(-3, IntervalValue::plus_infinity()) / IntervalValue(2))
+                   .equals(IntervalValue(-1, IntervalValue::plus_infinity())));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 3) / IntervalValue(2))
+                   .equals(IntervalValue(IntervalValue::minus_infinity(), 1)));
+        assert((IntervalValue(1, 3) / IntervalValue(1, 2)).equals(IntervalValue(0, 3))); //
         assert((IntervalValue(-3, 3) / IntervalValue(1, 2)).equals(IntervalValue(-3, 3)));
-        assert((IntervalValue(2, 7) / IntervalValue(-2, 3)).equals(IntervalValue(-7, 7))); //
+        assert((IntervalValue(2, 7) / IntervalValue(-2, 3)).equals(IntervalValue(-7, 7)));  //
         assert((IntervalValue(-2, 7) / IntervalValue(-2, 3)).equals(IntervalValue(-7, 7))); //
         assert((IntervalValue(IntervalValue::minus_infinity(), 7) / IntervalValue(-2, 3)).equals(IntervalValue::top()));
         assert((IntervalValue(-2, IntervalValue::plus_infinity()) / IntervalValue(-2, 3)).equals(IntervalValue::top()));
@@ -670,7 +612,7 @@ public:
         assert((IntervalValue(IntervalValue::minus_infinity(), 3) % IntervalValue(2)).equals(IntervalValue(-1, 1)));
         assert((IntervalValue(1, 3) % IntervalValue(1, 2)).equals(IntervalValue(0, 1)));
         assert((IntervalValue(-3, 3) % IntervalValue(1, 2)).equals(IntervalValue(-1, 1)));
-        assert((IntervalValue(2, 7) % IntervalValue(-2, 3)).equals(IntervalValue::top())); //
+        assert((IntervalValue(2, 7) % IntervalValue(-2, 3)).equals(IntervalValue::top()));  //
         assert((IntervalValue(-2, 7) % IntervalValue(-2, 3)).equals(IntervalValue::top())); //
         assert((IntervalValue(IntervalValue::minus_infinity(), 7) % IntervalValue(-2, 3)).equals(IntervalValue::top()));
         assert((IntervalValue(-2, IntervalValue::plus_infinity()) % IntervalValue(-2, 3)).equals(IntervalValue::top()));
@@ -680,13 +622,19 @@ public:
         assert((IntervalValue(-6, 6) % IntervalValue(3, 9)).equals(IntervalValue(-6, 6)));
 
         // shl  <<
-        assert((IntervalValue(IntervalValue::plus_infinity()) << IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(IntervalValue::top())));
-        assert((IntervalValue(IntervalValue::plus_infinity()) << IntervalValue(2, 2)).equals(IntervalValue(IntervalValue::plus_infinity())));
-        assert((IntervalValue(IntervalValue::minus_infinity()) << IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(IntervalValue::top())));
-        assert((IntervalValue(IntervalValue::minus_infinity()) << IntervalValue(2, 2)).equals(IntervalValue(IntervalValue::minus_infinity())));
-        assert((IntervalValue(2, 2) << IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(IntervalValue::top())));
+        assert((IntervalValue(IntervalValue::plus_infinity()) << IntervalValue(IntervalValue::plus_infinity()))
+                   .equals(IntervalValue(IntervalValue::top())));
+        assert((IntervalValue(IntervalValue::plus_infinity()) << IntervalValue(2, 2))
+                   .equals(IntervalValue(IntervalValue::plus_infinity())));
+        assert((IntervalValue(IntervalValue::minus_infinity()) << IntervalValue(IntervalValue::plus_infinity()))
+                   .equals(IntervalValue(IntervalValue::top())));
+        assert((IntervalValue(IntervalValue::minus_infinity()) << IntervalValue(2, 2))
+                   .equals(IntervalValue(IntervalValue::minus_infinity())));
+        assert((IntervalValue(2, 2) << IntervalValue(IntervalValue::plus_infinity()))
+                   .equals(IntervalValue(IntervalValue::top())));
         assert((IntervalValue(0, 0) << IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(0, 0)));
-        assert((IntervalValue(-2, -2) << IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(IntervalValue::top())));
+        assert((IntervalValue(-2, -2) << IntervalValue(IntervalValue::plus_infinity()))
+                   .equals(IntervalValue(IntervalValue::top())));
         assert((IntervalValue(0, 0) << IntervalValue(2, 2)).equals(IntervalValue(0, 0)));
         assert((IntervalValue(2, 2) << IntervalValue(3, 3)).equals(IntervalValue(16, 16)));
         assert((IntervalValue(-2, -2) << IntervalValue(3, 3)).equals(IntervalValue(-16, -16)));
@@ -701,27 +649,37 @@ public:
         assert((IntervalValue(1, 3) << IntervalValue(2)).equals(IntervalValue(4, 12)));
         assert((IntervalValue(2, 7) << IntervalValue(2)).equals(IntervalValue(8, 28)));
         assert((IntervalValue(-3, 3) << IntervalValue(2)).equals(IntervalValue(-12, 12)));
-        assert((IntervalValue(-3, IntervalValue::plus_infinity()) << IntervalValue(2)).equals(IntervalValue(-12, IntervalValue::plus_infinity())));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 3) << IntervalValue(2)).equals(IntervalValue(IntervalValue::minus_infinity(), 12)));
+        assert((IntervalValue(-3, IntervalValue::plus_infinity()) << IntervalValue(2))
+                   .equals(IntervalValue(-12, IntervalValue::plus_infinity())));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 3) << IntervalValue(2))
+                   .equals(IntervalValue(IntervalValue::minus_infinity(), 12)));
         assert((IntervalValue(1, 3) << IntervalValue(1, 2)).equals(IntervalValue(2, 12)));
         assert((IntervalValue(-3, 3) << IntervalValue(1, 2)).equals(IntervalValue(-12, 12)));
         assert((IntervalValue(2, 7) << IntervalValue(-2, 3)).equals(IntervalValue(2, 56)));
         assert((IntervalValue(-2, 7) << IntervalValue(-2, 3)).equals(IntervalValue(-16, 56)));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 7) << IntervalValue(-2, 3)).equals(IntervalValue(IntervalValue::minus_infinity(), 56)));
-        assert((IntervalValue(-2, IntervalValue::plus_infinity()) << IntervalValue(-2, 3)).equals(IntervalValue(-16, IntervalValue::plus_infinity())));
-        assert((IntervalValue(-2, 7) << IntervalValue(IntervalValue::minus_infinity(), 3)).equals(IntervalValue(-16, 56)));
-        assert((IntervalValue(-2, 7) << IntervalValue(-2, IntervalValue::plus_infinity())).equals(IntervalValue::top()));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 7) << IntervalValue(-2, 3))
+                   .equals(IntervalValue(IntervalValue::minus_infinity(), 56)));
+        assert((IntervalValue(-2, IntervalValue::plus_infinity()) << IntervalValue(-2, 3))
+                   .equals(IntervalValue(-16, IntervalValue::plus_infinity())));
+        assert(
+            (IntervalValue(-2, 7) << IntervalValue(IntervalValue::minus_infinity(), 3)).equals(IntervalValue(-16, 56)));
+        assert(
+            (IntervalValue(-2, 7) << IntervalValue(-2, IntervalValue::plus_infinity())).equals(IntervalValue::top()));
         assert((IntervalValue(-6, -3) << IntervalValue(3, 9)).equals(IntervalValue(-3072, -24)));
         assert((IntervalValue(-6, 6) << IntervalValue(3, 9)).equals(IntervalValue(-3072, 3072)));
-        assert((IntervalValue(-2, 7) << IntervalValue(IntervalValue::minus_infinity(), -1)).equals(IntervalValue::bottom()));
+        assert((IntervalValue(-2, 7) << IntervalValue(IntervalValue::minus_infinity(), -1))
+                   .equals(IntervalValue::bottom()));
         assert((IntervalValue(0) << IntervalValue::top()).equals(IntervalValue(0)));
 
-
         // shr >>
-        assert((IntervalValue(IntervalValue::plus_infinity()) >> IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(IntervalValue::plus_infinity())));
-        assert((IntervalValue(IntervalValue::plus_infinity()) >> IntervalValue(2)).equals(IntervalValue(IntervalValue::plus_infinity())));
-        assert((IntervalValue(IntervalValue::minus_infinity()) >> IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(IntervalValue::minus_infinity())));
-        assert((IntervalValue(IntervalValue::minus_infinity()) >> IntervalValue(2)).equals(IntervalValue(IntervalValue::minus_infinity())));
+        assert((IntervalValue(IntervalValue::plus_infinity()) >> IntervalValue(IntervalValue::plus_infinity()))
+                   .equals(IntervalValue(IntervalValue::plus_infinity())));
+        assert((IntervalValue(IntervalValue::plus_infinity()) >> IntervalValue(2))
+                   .equals(IntervalValue(IntervalValue::plus_infinity())));
+        assert((IntervalValue(IntervalValue::minus_infinity()) >> IntervalValue(IntervalValue::plus_infinity()))
+                   .equals(IntervalValue(IntervalValue::minus_infinity())));
+        assert((IntervalValue(IntervalValue::minus_infinity()) >> IntervalValue(2))
+                   .equals(IntervalValue(IntervalValue::minus_infinity())));
         assert((IntervalValue(2) >> IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(0)));
         assert((IntervalValue(0) >> IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(0)));
         assert((IntervalValue(-2) >> IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(-1)));
@@ -739,19 +697,26 @@ public:
         assert((IntervalValue(1, 3) >> IntervalValue(2)).equals(IntervalValue(0)));
         assert((IntervalValue(2, 7) >> IntervalValue(2)).equals(IntervalValue(0, 1)));
         assert((IntervalValue(-15, 15) >> IntervalValue(2)).equals(IntervalValue(-4, 3)));
-        assert((IntervalValue(-15, IntervalValue::plus_infinity()) >> IntervalValue(2)).equals(IntervalValue(-4, IntervalValue::plus_infinity())));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 15) >> IntervalValue(2)).equals(IntervalValue(IntervalValue::minus_infinity(), 3)));
+        assert((IntervalValue(-15, IntervalValue::plus_infinity()) >> IntervalValue(2))
+                   .equals(IntervalValue(-4, IntervalValue::plus_infinity())));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 15) >> IntervalValue(2))
+                   .equals(IntervalValue(IntervalValue::minus_infinity(), 3)));
         assert((IntervalValue(0, 15) >> IntervalValue(1, 2)).equals(IntervalValue(0, 7)));
         assert((IntervalValue(-17, 15) >> IntervalValue(1, 2)).equals(IntervalValue(-9, 7)));
         assert((IntervalValue(2, 7) >> IntervalValue(-2, 3)).equals(IntervalValue(0, 7)));
         assert((IntervalValue(-2, 7) >> IntervalValue(-2, 3)).equals(IntervalValue(-2, 7)));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 7) >> IntervalValue(-2, 3)).equals(IntervalValue(IntervalValue::minus_infinity(), 7)));
-        assert((IntervalValue(-2, IntervalValue::plus_infinity()) >> IntervalValue(-2, 3)).equals(IntervalValue(-2, IntervalValue::plus_infinity())));
-        assert((IntervalValue(-2, 7) >> IntervalValue(IntervalValue::minus_infinity(), 3)).equals(IntervalValue(-2, 7)));
-        assert((IntervalValue(-2, 7) >> IntervalValue(-2, IntervalValue::plus_infinity())).equals(IntervalValue(-2, 7)));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 7) >> IntervalValue(-2, 3))
+                   .equals(IntervalValue(IntervalValue::minus_infinity(), 7)));
+        assert((IntervalValue(-2, IntervalValue::plus_infinity()) >> IntervalValue(-2, 3))
+                   .equals(IntervalValue(-2, IntervalValue::plus_infinity())));
+        assert(
+            (IntervalValue(-2, 7) >> IntervalValue(IntervalValue::minus_infinity(), 3)).equals(IntervalValue(-2, 7)));
+        assert(
+            (IntervalValue(-2, 7) >> IntervalValue(-2, IntervalValue::plus_infinity())).equals(IntervalValue(-2, 7)));
         assert((IntervalValue(-6, -3) >> IntervalValue(2, 3)).equals(IntervalValue(-2, -1)));
         assert((IntervalValue(-6, 6) >> IntervalValue(2, 3)).equals(IntervalValue(-2, 1)));
-        assert((IntervalValue(-2, 7) >> IntervalValue(IntervalValue::minus_infinity(), -1)).equals(IntervalValue::bottom()));
+        assert((IntervalValue(-2, 7) >> IntervalValue(IntervalValue::minus_infinity(), -1))
+                   .equals(IntervalValue::bottom()));
         assert((IntervalValue(0) >> IntervalValue::top()).equals(IntervalValue(0)));
 
         // and &
@@ -780,8 +745,8 @@ public:
         // Or |
         assert((IntervalValue(4) | IntervalValue::bottom()).equals(IntervalValue::bottom()));
         assert((IntervalValue::bottom() | IntervalValue(2)).equals(IntervalValue::bottom()));
-        assert((IntervalValue::top() | IntervalValue(-1)).equals(IntervalValue::top()));//
-        assert((IntervalValue(-1) | IntervalValue::top()).equals(IntervalValue::top()));//
+        assert((IntervalValue::top() | IntervalValue(-1)).equals(IntervalValue::top())); //
+        assert((IntervalValue(-1) | IntervalValue::top()).equals(IntervalValue::top())); //
         assert((IntervalValue(4) | IntervalValue(2)).equals(IntervalValue(6)));
         assert((IntervalValue(3) | IntervalValue(2)).equals(IntervalValue(3)));
         assert((IntervalValue(-3) | IntervalValue(2)).equals(IntervalValue(-1)));
@@ -840,26 +805,24 @@ public:
     }
 };
 
-
 int main(int argc, char** argv)
 {
     int arg_num = 0;
     int extraArgc = 3;
-    char **arg_value = new char *[argc + extraArgc];
+    char** arg_value = new char*[argc + extraArgc];
     for (; arg_num < argc; ++arg_num)
     {
         arg_value[arg_num] = argv[arg_num];
     }
     // add extra options
-    arg_value[arg_num++] = (char*) "-model-consts=true";
-    arg_value[arg_num++] = (char*) "-model-arrays=true";
-    arg_value[arg_num++] = (char*) "-pre-field-sensitive=false";
+    arg_value[arg_num++] = (char*)"-model-consts=true";
+    arg_value[arg_num++] = (char*)"-model-arrays=true";
+    arg_value[arg_num++] = (char*)"-pre-field-sensitive=false";
     assert(arg_num == (argc + extraArgc) && "more extra arguments? Change the value of extraArgc");
 
     std::vector<std::string> moduleNameVec;
-    moduleNameVec = OptionBase::parseOptions(
-                        arg_num, arg_value, "Static Symbolic Execution", "[options] <input-bitcode...>"
-                    );
+    moduleNameVec =
+        OptionBase::parseOptions(arg_num, arg_value, "Static Symbolic Execution", "[options] <input-bitcode...>");
     delete[] arg_value;
     if (SYMABS())
     {
@@ -876,7 +839,7 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    SVFModule *svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);

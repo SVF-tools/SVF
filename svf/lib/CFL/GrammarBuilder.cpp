@@ -52,16 +52,18 @@ const inline std::string GrammarBuilder::parseProductionsString() const
     int lineNum = 0;
     while (getline(textFile, lineString))
     {
-        if(lineNum == 1)
+        if (lineNum == 1)
         {
             startString = stripSpace(lineString);
         }
-        if(lineNum == 3)
+        if (lineNum == 3)
         {
-            symbolString = lineString.substr(lineString.find_first_not_of(WHITESPACE), lineString.find_last_not_of(WHITESPACE)+1);
+            symbolString = lineString.substr(lineString.find_first_not_of(WHITESPACE),
+                                             lineString.find_last_not_of(WHITESPACE) + 1);
         }
 
-        lines.append(lineString.substr(lineString.find_first_not_of(WHITESPACE), lineString.find_last_not_of(WHITESPACE)+1));
+        lines.append(
+            lineString.substr(lineString.find_first_not_of(WHITESPACE), lineString.find_last_not_of(WHITESPACE) + 1));
         lineNum++;
     }
 
@@ -76,7 +78,7 @@ const inline std::string GrammarBuilder::parseProductionsString() const
     while ((pos = symbolString.find(" ")) != std::string::npos)
     {
         sString = stripSpace(symbolString.substr(0, pos));
-        symbolString.erase(0, pos + 1); //Capital is Nonterminal, Otherwise is terminal
+        symbolString.erase(0, pos + 1); // Capital is Nonterminal, Otherwise is terminal
         grammar->insertSymbol(sString);
     }
     grammar->insertSymbol(symbolString);
@@ -110,7 +112,6 @@ const inline std::string GrammarBuilder::stripSpace(std::string s) const
     return matches.str(1);
 }
 
-
 /// build grammarbase from textfile
 GrammarBase* GrammarBuilder::build() const
 {
@@ -130,14 +131,15 @@ GrammarBase* GrammarBuilder::build() const
             std::string LHS = wordProd.substr(pos + delimiter1.size(), wordProd.size() - 1);
             GrammarBase::Symbol RHSSymbol = grammar->insertSymbol(RHS);
             prod.push_back(RHSSymbol);
-            if (grammar->getRawProductions().find(RHSSymbol) == grammar->getRawProductions().end())  grammar->getRawProductions().insert({RHSSymbol, {}});
+            if (grammar->getRawProductions().find(RHSSymbol) == grammar->getRawProductions().end())
+                grammar->getRawProductions().insert({RHSSymbol, {}});
             std::regex LHSRegEx("\\s*(.*)");
             std::regex_search(LHS, matches, LHSRegEx);
             LHS = matches.str(1);
             while ((pos = LHS.find(delimiter)) != std::string::npos)
             {
                 word = LHS.substr(0, pos);
-                LHS.erase(0, pos + delimiter.length()); //Capital is Nonterminal, Otherwise is terminal
+                LHS.erase(0, pos + delimiter.length()); // Capital is Nonterminal, Otherwise is terminal
                 prod.push_back(grammar->insertSymbol(word));
             }
             prod.push_back(grammar->insertSymbol(LHS));
@@ -149,4 +151,4 @@ GrammarBase* GrammarBuilder::build() const
     return grammar;
 };
 
-}
+} // namespace SVF

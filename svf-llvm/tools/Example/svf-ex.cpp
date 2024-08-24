@@ -57,19 +57,17 @@ std::string printPts(PointerAnalysis* pta, const SVFValue* svfval)
 
     NodeID pNodeId = pta->getPAG()->getValueNode(svfval);
     const PointsTo& pts = pta->getPts(pNodeId);
-    for (PointsTo::iterator ii = pts.begin(), ie = pts.end();
-            ii != ie; ii++)
+    for (PointsTo::iterator ii = pts.begin(), ie = pts.end(); ii != ie; ii++)
     {
         rawstr << " " << *ii << " ";
         PAGNode* targetObj = pta->getPAG()->getGNode(*ii);
-        if(targetObj->hasValue())
+        if (targetObj->hasValue())
         {
             rawstr << "(" << targetObj->getValue()->toString() << ")\t ";
         }
     }
 
     return rawstr.str();
-
 }
 /*!
  * An example to query/collect all successor nodes from a ICFGNode (iNode) along control-flow graph (ICFG)
@@ -84,8 +82,7 @@ void traverseOnICFG(ICFG* icfg, const ICFGNode* iNode)
     while (!worklist.empty())
     {
         const ICFGNode* vNode = worklist.pop();
-        for (ICFGNode::const_iterator it = vNode->OutEdgeBegin(), eit =
-                    vNode->OutEdgeEnd(); it != eit; ++it)
+        for (ICFGNode::const_iterator it = vNode->OutEdgeBegin(), eit = vNode->OutEdgeEnd(); it != eit; ++it)
         {
             ICFGEdge* edge = *it;
             ICFGNode* succNode = edge->getDstNode();
@@ -98,10 +95,7 @@ void traverseOnICFG(ICFG* icfg, const ICFGNode* iNode)
     }
 }
 
-void dummyVisit(const VFGNode* node)
-{
-
-}
+void dummyVisit(const VFGNode* node) {}
 /*!
  * An example to query/collect all the uses of a definition of a value along value-flow graph (VFG)
  */
@@ -109,8 +103,7 @@ void traverseOnVFG(const SVFG* vfg, const SVFValue* svfval)
 {
     SVFIR* pag = SVFIR::getPAG();
     PAGNode* pNode = pag->getGNode(pag->getValueNode(svfval));
-    if (!vfg->hasDefSVFGNode(pNode))
-        return;
+    if (!vfg->hasDefSVFGNode(pNode)) return;
     const VFGNode* vNode = vfg->getDefSVFGNode(pNode);
     FIFOWorkList<const VFGNode*> worklist;
     Set<const VFGNode*> visited;
@@ -120,8 +113,7 @@ void traverseOnVFG(const SVFG* vfg, const SVFValue* svfval)
     while (!worklist.empty())
     {
         const VFGNode* vNode = worklist.pop();
-        for (VFGNode::const_iterator it = vNode->OutEdgeBegin(), eit =
-                    vNode->OutEdgeEnd(); it != eit; ++it)
+        for (VFGNode::const_iterator it = vNode->OutEdgeBegin(), eit = vNode->OutEdgeEnd(); it != eit; ++it)
         {
             VFGEdge* edge = *it;
             VFGNode* succNode = edge->getDstNode();
@@ -134,7 +126,7 @@ void traverseOnVFG(const SVFG* vfg, const SVFValue* svfval)
     }
 
     /// Collect all LLVM Values
-    for(Set<const VFGNode*>::const_iterator it = visited.begin(), eit = visited.end(); it!=eit; ++it)
+    for (Set<const VFGNode*>::const_iterator it = visited.begin(), eit = visited.end(); it != eit; ++it)
     {
         const VFGNode* node = *it;
         dummyVisit(node);
@@ -144,13 +136,12 @@ void traverseOnVFG(const SVFG* vfg, const SVFValue* svfval)
     }
 }
 
-int main(int argc, char ** argv)
+int main(int argc, char** argv)
 {
 
     std::vector<std::string> moduleNameVec;
-    moduleNameVec = OptionBase::parseOptions(
-                        argc, argv, "Whole Program Points-to Analysis", "[options] <input-bitcode...>"
-                    );
+    moduleNameVec =
+        OptionBase::parseOptions(argc, argv, "Whole Program Points-to Analysis", "[options] <input-bitcode...>");
 
     if (Options::WriteAnder() == "ir_annotator")
     {
@@ -165,7 +156,6 @@ int main(int argc, char ** argv)
 
     /// Create Andersen's pointer analysis
     Andersen* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
-
 
     /// Call Graph
     CallGraph* callgraph = ander->getCallGraph();
@@ -194,8 +184,7 @@ int main(int argc, char ** argv)
                 for (const SVFGEdge* edge : node->getOutEdges())
                 {
                     const SVFGNode* node2 = edge->getDstNode();
-                    if (node2->getValue())
-                        aliasQuery(ander, node->getValue(), node2->getValue());
+                    if (node2->getValue()) aliasQuery(ander, node->getValue(), node2->getValue());
                 }
             }
         }
@@ -221,4 +210,3 @@ int main(int argc, char ** argv)
     llvm::llvm_shutdown();
     return 0;
 }
-

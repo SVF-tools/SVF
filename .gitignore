@@ -9,6 +9,8 @@ autoconf/
 tests/result/
 doxygen/
 .*
+!.github/
+!.clang-format-ignore
 !.config.in
 !.config.cmake.in
 !.gitignore

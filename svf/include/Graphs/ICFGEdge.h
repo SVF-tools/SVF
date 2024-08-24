@@ -38,7 +38,8 @@ class CallPE;
 class RetPE;
 
 /*!
- * Interprocedural control-flow and value-flow edge, representing the control- and value-flow dependence between two nodes
+ * Interprocedural control-flow and value-flow edge, representing the control- and value-flow dependence between two
+ * nodes
  */
 typedef GenericEdge<ICFGNode> GenericICFGEdgeTy;
 class ICFGEdge : public GenericICFGEdgeTy
@@ -61,9 +62,7 @@ public:
 
 public:
     /// Constructor
-    ICFGEdge(ICFGNode* s, ICFGNode* d, GEdgeFlag k) : GenericICFGEdgeTy(s, d, k)
-    {
-    }
+    ICFGEdge(ICFGNode* s, ICFGNode* d, GEdgeFlag k) : GenericICFGEdgeTy(s, d, k) {}
     /// Destructor
     ~ICFGEdge() {}
 
@@ -71,8 +70,7 @@ public:
     //@{
     inline bool isCFGEdge() const
     {
-        return getEdgeKind() == IntraCF || getEdgeKind() == CallCF ||
-               getEdgeKind() == RetCF;
+        return getEdgeKind() == IntraCF || getEdgeKind() == CallCF || getEdgeKind() == RetCF;
     }
     inline bool isCallCFGEdge() const
     {
@@ -117,10 +115,7 @@ class IntraCFGEdge : public ICFGEdge
 
 public:
     /// Constructor
-    IntraCFGEdge(ICFGNode* s, ICFGNode* d)
-        : ICFGEdge(s, d, IntraCF), conditionVar(nullptr), branchCondVal(0)
-    {
-    }
+    IntraCFGEdge(ICFGNode* s, ICFGNode* d) : ICFGEdge(s, d, IntraCF), conditionVar(nullptr), branchCondVal(0) {}
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const IntraCFGEdge*)
@@ -184,10 +179,7 @@ private:
 
 public:
     /// Constructor
-    CallCFGEdge(ICFGNode* s, ICFGNode* d, const SVFInstruction* c)
-        : ICFGEdge(s, d, CallCF), cs(c)
-    {
-    }
+    CallCFGEdge(ICFGNode* s, ICFGNode* d, const SVFInstruction* c) : ICFGEdge(s, d, CallCF), cs(c) {}
     /// Return callsite ID
     inline const SVFInstruction* getCallSite() const
     {
@@ -235,10 +227,7 @@ private:
 
 public:
     /// Constructor
-    RetCFGEdge(ICFGNode* s, ICFGNode* d, const SVFInstruction* c)
-        : ICFGEdge(s, d, RetCF), cs(c), retPE(nullptr)
-    {
-    }
+    RetCFGEdge(ICFGNode* s, ICFGNode* d, const SVFInstruction* c) : ICFGEdge(s, d, RetCF), cs(c), retPE(nullptr) {}
     /// Return callsite ID
     inline const SVFInstruction* getCallSite() const
     {

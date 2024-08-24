@@ -30,9 +30,9 @@
 
 using namespace SVF;
 
-CDG *CDG::controlDg = nullptr;
+CDG* CDG::controlDg = nullptr;
 
-void CDG::addCDGEdgeFromSrcDst(const ICFGNode *src, const ICFGNode *dst, const SVFValue *pNode, s32_t branchID)
+void CDG::addCDGEdgeFromSrcDst(const ICFGNode* src, const ICFGNode* dst, const SVFValue* pNode, s32_t branchID)
 {
     if (!hasCDGNode(src->getId()))
     {
@@ -44,16 +44,14 @@ void CDG::addCDGEdgeFromSrcDst(const ICFGNode *src, const ICFGNode *dst, const S
     }
     if (!hasCDGEdge(getCDGNode(src->getId()), getCDGNode(dst->getId())))
     {
-        CDGEdge *pEdge = new CDGEdge(getCDGNode(src->getId()),
-                                     getCDGNode(dst->getId()));
+        CDGEdge* pEdge = new CDGEdge(getCDGNode(src->getId()), getCDGNode(dst->getId()));
         pEdge->insertBranchCondition(pNode, branchID);
         addCDGEdge(pEdge);
         incEdgeNum();
     }
     else
     {
-        CDGEdge *pEdge = getCDGEdge(getCDGNode(src->getId()),
-                                    getCDGNode(dst->getId()));
+        CDGEdge* pEdge = getCDGEdge(getCDGNode(src->getId()), getCDGNode(dst->getId()));
         pEdge->insertBranchCondition(pNode, branchID);
     }
 }

@@ -33,12 +33,10 @@
 #include "Util/SparseBitVector.h"
 #include "Util/GeneralType.h"
 
-
 namespace SVF
 {
 class SVFType;
 class SVFPointerType;
-
 
 /*!
  * Flattened type information of StructType, ArrayType and SingleValueType
@@ -75,10 +73,7 @@ public:
     void operator=(const StInfo&) = delete;
 
     /// Constructor
-    explicit StInfo(u32_t s)
-        : stride(s), numOfFlattenElements(s), numOfFlattenFields(s)
-    {
-    }
+    explicit StInfo(u32_t s) : stride(s), numOfFlattenElements(s), numOfFlattenFields(s) {}
     /// Destructor
     ~StInfo() = default;
 
@@ -174,7 +169,6 @@ public:
     };
 
 public:
-
     inline static SVFType* getSVFPtrType()
     {
         assert(svfPtrTy && "ptr type not set?");
@@ -188,23 +182,18 @@ public:
     }
 
 private:
-
     static SVFType* svfPtrTy; ///< ptr type
-    static SVFType* svfI8Ty; ///< 8-bit int type
+    static SVFType* svfI8Ty;  ///< 8-bit int type
 
 private:
-    GNodeK kind; ///< used for classof
+    GNodeK kind;        ///< used for classof
     StInfo* typeinfo;   ///< SVF's TypeInfo
     bool isSingleValTy; ///< The type represents a single value, not struct or
-    u32_t byteSize; ///< LLVM Byte Size
+    u32_t byteSize;     ///< LLVM Byte Size
     ///< array
 
 protected:
-    SVFType(bool svt, SVFTyKind k, u32_t Sz = 1)
-        : kind(k), typeinfo(nullptr),
-          isSingleValTy(svt), byteSize(Sz)
-    {
-    }
+    SVFType(bool svt, SVFTyKind k, u32_t Sz = 1) : kind(k), typeinfo(nullptr), isSingleValTy(svt), byteSize(Sz) {}
 
 public:
     SVFType(void) = delete;
@@ -220,7 +209,6 @@ public:
     std::string toString() const;
 
     virtual void print(std::ostream& os) const = 0;
-
 
     inline void setTypeInfo(StInfo* ti)
     {
@@ -275,10 +263,7 @@ class SVFPointerType : public SVFType
     friend class SVFIRReader;
 
 public:
-    SVFPointerType(u32_t byteSize = 1)
-        : SVFType(true, SVFPointerTy, byteSize)
-    {
-    }
+    SVFPointerType(u32_t byteSize = 1) : SVFType(true, SVFPointerTy, byteSize) {}
 
     static inline bool classof(const SVFType* node)
     {
@@ -325,10 +310,7 @@ private:
     const SVFType* retTy;
 
 public:
-    SVFFunctionType(const SVFType* rt)
-        : SVFType(false, SVFFunctionTy, 1), retTy(rt)
-    {
-    }
+    SVFFunctionType(const SVFType* rt) : SVFType(false, SVFFunctionTy, 1), retTy(rt) {}
     static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFFunctionTy;
@@ -380,14 +362,11 @@ class SVFArrayType : public SVFType
     friend class SVFIRReader;
 
 private:
-    unsigned numOfElement; /// For printing & debugging
+    unsigned numOfElement;        /// For printing & debugging
     const SVFType* typeOfElement; /// For printing & debugging
 
 public:
-    SVFArrayType(u32_t byteSize = 1)
-        : SVFType(false, SVFArrayTy, byteSize), numOfElement(0), typeOfElement(nullptr)
-    {
-    }
+    SVFArrayType(u32_t byteSize = 1) : SVFType(false, SVFArrayTy, byteSize), numOfElement(0), typeOfElement(nullptr) {}
 
     static inline bool classof(const SVFType* node)
     {
@@ -410,8 +389,6 @@ public:
     {
         numOfElement = elemNum;
     }
-
-
 };
 
 class SVFOtherType : public SVFType
@@ -468,15 +445,15 @@ template <> struct Hash<NodePair>
 // https://github.com/llvm/llvm-project/blob/75e33f71c2dae584b13a7d1186ae0a038ba98838/llvm/include/llvm/Support/Debug.h#L64
 // The original LLVM implementation makes use of type. But we can get that info,
 // so we can't simulate the full behaviour for now.
-#    define SVF_DEBUG_WITH_TYPE(TYPE, X)                                       \
-        do                                                                     \
-        {                                                                      \
-            X;                                                                 \
+#    define SVF_DEBUG_WITH_TYPE(TYPE, X)                                                                               \
+        do                                                                                                             \
+        {                                                                                                              \
+            X;                                                                                                         \
         } while (false)
 #else
-#    define SVF_DEBUG_WITH_TYPE(TYPE, X)                                       \
-        do                                                                     \
-        {                                                                      \
+#    define SVF_DEBUG_WITH_TYPE(TYPE, X)                                                                               \
+        do                                                                                                             \
+        {                                                                                                              \
         } while (false)
 #endif
 
@@ -553,8 +530,7 @@ template <unsigned N> struct std::hash<SVF::SparseBitVector<N>>
     size_t operator()(const SVF::SparseBitVector<N>& sbv) const
     {
         SVF::Hash<std::pair<std::pair<size_t, size_t>, size_t>> h;
-        return h(std::make_pair(std::make_pair(sbv.count(), sbv.find_first()),
-                                sbv.find_last()));
+        return h(std::make_pair(std::make_pair(sbv.count(), sbv.find_first()), sbv.find_last()));
     }
 };
 

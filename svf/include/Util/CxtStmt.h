@@ -43,17 +43,11 @@ class CxtStmt
 {
 public:
     /// Constructor
-    CxtStmt(const CallStrCxt& c, const ICFGNode* f) :cxt(c), inst(f)
-    {
-    }
+    CxtStmt(const CallStrCxt& c, const ICFGNode* f) : cxt(c), inst(f) {}
     /// Copy constructor
-    CxtStmt(const CxtStmt& ctm) : cxt(ctm.getContext()),inst(ctm.getStmt())
-    {
-    }
+    CxtStmt(const CxtStmt& ctm) : cxt(ctm.getContext()), inst(ctm.getStmt()) {}
     /// Destructor
-    virtual ~CxtStmt()
-    {
-    }
+    virtual ~CxtStmt() {}
     /// Return current context
     inline const CallStrCxt& getContext() const
     {
@@ -66,17 +60,16 @@ public:
     }
     /// Enable compare operator to avoid duplicated item insertion in map or set
     /// to be noted that two vectors can also overload operator()
-    inline bool operator< (const CxtStmt& rhs) const
+    inline bool operator<(const CxtStmt& rhs) const
     {
-        if(inst!=rhs.getStmt())
-            return inst < rhs.getStmt();
+        if (inst != rhs.getStmt()) return inst < rhs.getStmt();
         else
             return cxt < rhs.getContext();
     }
     /// Overloading operator=
-    inline CxtStmt& operator= (const CxtStmt& rhs)
+    inline CxtStmt& operator=(const CxtStmt& rhs)
     {
-        if(*this!=rhs)
+        if (*this != rhs)
         {
             inst = rhs.getStmt();
             cxt = rhs.getContext();
@@ -84,14 +77,14 @@ public:
         return *this;
     }
     /// Overloading operator==
-    inline bool operator== (const CxtStmt& rhs) const
+    inline bool operator==(const CxtStmt& rhs) const
     {
         return (inst == rhs.getStmt() && cxt == rhs.getContext());
     }
     /// Overloading operator==
-    inline bool operator!= (const CxtStmt& rhs) const
+    inline bool operator!=(const CxtStmt& rhs) const
     {
-        return !(*this==rhs);
+        return !(*this == rhs);
     }
     /// Return context in string format
     inline std::string cxtToStr() const
@@ -99,7 +92,7 @@ public:
         std::string str;
         std::stringstream rawstr(str);
         rawstr << "[:";
-        for(CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it!=eit; ++it)
+        for (CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it != eit; ++it)
         {
             rawstr << *it << " ";
         }
@@ -117,7 +110,6 @@ protected:
     const ICFGNode* inst;
 };
 
-
 /*!
  * Context-sensitive thread statement <t,c,s>
  */
@@ -125,17 +117,11 @@ class CxtThreadStmt : public CxtStmt
 {
 public:
     /// Constructor
-    CxtThreadStmt(NodeID t, const CallStrCxt& c, const ICFGNode* f) :CxtStmt(c,f), tid(t)
-    {
-    }
+    CxtThreadStmt(NodeID t, const CallStrCxt& c, const ICFGNode* f) : CxtStmt(c, f), tid(t) {}
     /// Copy constructor
-    CxtThreadStmt(const CxtThreadStmt& ctm) :CxtStmt(ctm), tid(ctm.getTid())
-    {
-    }
+    CxtThreadStmt(const CxtThreadStmt& ctm) : CxtStmt(ctm), tid(ctm.getTid()) {}
     /// Destructor
-    virtual ~CxtThreadStmt()
-    {
-    }
+    virtual ~CxtThreadStmt() {}
     /// Return current context
     inline NodeID getTid() const
     {
@@ -143,19 +129,18 @@ public:
     }
     /// Enable compare operator to avoid duplicated item insertion in map or set
     /// to be noted that two vectors can also overload operator()
-    inline bool operator< (const CxtThreadStmt& rhs) const
+    inline bool operator<(const CxtThreadStmt& rhs) const
     {
-        if (tid != rhs.getTid())
-            return tid < rhs.getTid();
-        else if(inst!=rhs.getStmt())
+        if (tid != rhs.getTid()) return tid < rhs.getTid();
+        else if (inst != rhs.getStmt())
             return inst < rhs.getStmt();
         else
             return cxt < rhs.getContext();
     }
     /// Overloading operator=
-    inline CxtThreadStmt& operator= (const CxtThreadStmt& rhs)
+    inline CxtThreadStmt& operator=(const CxtThreadStmt& rhs)
     {
-        if(*this!=rhs)
+        if (*this != rhs)
         {
             CxtStmt::operator=(rhs);
             tid = rhs.getTid();
@@ -163,25 +148,25 @@ public:
         return *this;
     }
     /// Overloading operator==
-    inline bool operator== (const CxtThreadStmt& rhs) const
+    inline bool operator==(const CxtThreadStmt& rhs) const
     {
         return (tid == rhs.getTid() && inst == rhs.getStmt() && cxt == rhs.getContext());
     }
     /// Overloading operator==
-    inline bool operator!= (const CxtThreadStmt& rhs) const
+    inline bool operator!=(const CxtThreadStmt& rhs) const
     {
-        return !(*this==rhs);
+        return !(*this == rhs);
     }
     /// Dump CxtThreadStmt
     inline void dump() const
     {
-        SVFUtil::outs() << "[ Current Thread id: " << tid << "  Stmt: " << inst->toString() << "\t Contexts: " << cxtToStr() << "  ]\n";
+        SVFUtil::outs() << "[ Current Thread id: " << tid << "  Stmt: " << inst->toString()
+                        << "\t Contexts: " << cxtToStr() << "  ]\n";
     }
 
 private:
     NodeID tid;
 };
-
 
 /*!
  * Context-sensitive thread <c,t>
@@ -190,18 +175,14 @@ class CxtThread
 {
 public:
     /// Constructor
-    CxtThread(const CallStrCxt& c, const ICFGNode* fork) : cxt(c), forksite(fork), inloop(false), incycle(false)
-    {
-    }
+    CxtThread(const CallStrCxt& c, const ICFGNode* fork) : cxt(c), forksite(fork), inloop(false), incycle(false) {}
     /// Copy constructor
-    CxtThread(const CxtThread& ct) :
-        cxt(ct.getContext()), forksite(ct.getThread()), inloop(ct.isInloop()), incycle(ct.isIncycle())
+    CxtThread(const CxtThread& ct)
+        : cxt(ct.getContext()), forksite(ct.getThread()), inloop(ct.isInloop()), incycle(ct.isIncycle())
     {
     }
     /// Destructor
-    virtual ~CxtThread()
-    {
-    }
+    virtual ~CxtThread() {}
     /// Return context of the thread
     inline const CallStrCxt& getContext() const
     {
@@ -214,17 +195,16 @@ public:
     }
     /// Enable compare operator to avoid duplicated item insertion in map or set
     /// to be noted that two vectors can also overload operator()
-    inline bool operator< (const CxtThread& rhs) const
+    inline bool operator<(const CxtThread& rhs) const
     {
-        if (forksite != rhs.getThread())
-            return forksite < rhs.getThread();
+        if (forksite != rhs.getThread()) return forksite < rhs.getThread();
         else
             return cxt < rhs.getContext();
     }
     /// Overloading operator=
-    inline CxtThread& operator= (const CxtThread& rhs)
+    inline CxtThread& operator=(const CxtThread& rhs)
     {
-        if(*this!=rhs)
+        if (*this != rhs)
         {
             forksite = rhs.getThread();
             cxt = rhs.getContext();
@@ -232,14 +212,14 @@ public:
         return *this;
     }
     /// Overloading operator==
-    inline bool operator== (const CxtThread& rhs) const
+    inline bool operator==(const CxtThread& rhs) const
     {
         return (forksite == rhs.getThread() && cxt == rhs.getContext());
     }
     /// Overloading operator==
-    inline bool operator!= (const CxtThread& rhs) const
+    inline bool operator!=(const CxtThread& rhs) const
     {
-        return !(*this==rhs);
+        return !(*this == rhs);
     }
     /// Return context in string format
     inline std::string cxtToStr() const
@@ -247,7 +227,7 @@ public:
         std::string str;
         std::stringstream rawstr(str);
         rawstr << "[:";
-        for(CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it!=eit; ++it)
+        for (CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it != eit; ++it)
         {
             rawstr << *it << " ";
         }
@@ -278,28 +258,28 @@ public:
     /// Dump CxtThread
     inline void dump() const
     {
-        std::string loop = inloop?", inloop":"";
-        std::string cycle = incycle?", incycle":"";
+        std::string loop = inloop ? ", inloop" : "";
+        std::string cycle = incycle ? ", incycle" : "";
 
-        if(forksite)
+        if (forksite)
         {
-            SVFUtil::outs() << "[ Thread: "
-                            << forksite->toString()  << "\t Contexts: " << cxtToStr()
-                            << loop << cycle <<"  ]\n";
+            SVFUtil::outs() << "[ Thread: " << forksite->toString() << "\t Contexts: " << cxtToStr() << loop << cycle
+                            << "  ]\n";
         }
         else
         {
-            SVFUtil::outs() << "[ Thread: " << "main   "  << "\t Contexts: " << cxtToStr()
-                            << loop << cycle <<"  ]\n";
+            SVFUtil::outs() << "[ Thread: "
+                            << "main   "
+                            << "\t Contexts: " << cxtToStr() << loop << cycle << "  ]\n";
         }
     }
+
 protected:
     CallStrCxt cxt;
     const ICFGNode* forksite;
     bool inloop;
     bool incycle;
 };
-
 
 /*!
  * Context-sensitive procedure <c,m>
@@ -310,19 +290,11 @@ class CxtProc
 {
 public:
     /// Constructor
-    CxtProc(const CallStrCxt& c, const SVFFunction* f) :
-        cxt(c), fun(f)
-    {
-    }
+    CxtProc(const CallStrCxt& c, const SVFFunction* f) : cxt(c), fun(f) {}
     /// Copy constructor
-    CxtProc(const CxtProc& ctm) :
-        cxt(ctm.getContext()), fun(ctm.getProc())
-    {
-    }
+    CxtProc(const CxtProc& ctm) : cxt(ctm.getContext()), fun(ctm.getProc()) {}
     /// Destructor
-    virtual ~CxtProc()
-    {
-    }
+    virtual ~CxtProc() {}
     /// Return current procedure
     inline const SVFFunction* getProc() const
     {
@@ -337,8 +309,7 @@ public:
     /// to be noted that two vectors can also overload operator()
     inline bool operator<(const CxtProc& rhs) const
     {
-        if (fun != rhs.getProc())
-            return fun < rhs.getProc();
+        if (fun != rhs.getProc()) return fun < rhs.getProc();
         else
             return cxt < rhs.getContext();
     }
@@ -386,7 +357,6 @@ protected:
     const SVFFunction* fun;
 };
 
-
 /*!
  * Context-sensitive procedure <t,c,m>
  * t represent current thread during traversing
@@ -397,17 +367,11 @@ class CxtThreadProc : public CxtProc
 {
 public:
     /// Constructor
-    CxtThreadProc(NodeID t, const CallStrCxt& c, const SVFFunction* f) :CxtProc(c,f),tid(t)
-    {
-    }
+    CxtThreadProc(NodeID t, const CallStrCxt& c, const SVFFunction* f) : CxtProc(c, f), tid(t) {}
     /// Copy constructor
-    CxtThreadProc(const CxtThreadProc& ctm) : CxtProc(ctm.getContext(),ctm.getProc()), tid(ctm.getTid())
-    {
-    }
+    CxtThreadProc(const CxtThreadProc& ctm) : CxtProc(ctm.getContext(), ctm.getProc()), tid(ctm.getTid()) {}
     /// Destructor
-    virtual ~CxtThreadProc()
-    {
-    }
+    virtual ~CxtThreadProc() {}
     /// Return current thread id
     inline NodeID getTid() const
     {
@@ -415,19 +379,18 @@ public:
     }
     /// Enable compare operator to avoid duplicated item insertion in map or set
     /// to be noted that two vectors can also overload operator()
-    inline bool operator< (const CxtThreadProc& rhs) const
+    inline bool operator<(const CxtThreadProc& rhs) const
     {
-        if (tid != rhs.getTid())
-            return tid < rhs.getTid();
-        else if(fun!=rhs.getProc())
+        if (tid != rhs.getTid()) return tid < rhs.getTid();
+        else if (fun != rhs.getProc())
             return fun < rhs.getProc();
         else
             return cxt < rhs.getContext();
     }
     /// Overloading operator=
-    inline CxtThreadProc& operator= (const CxtThreadProc& rhs)
+    inline CxtThreadProc& operator=(const CxtThreadProc& rhs)
     {
-        if(*this!=rhs)
+        if (*this != rhs)
         {
             tid = rhs.getTid();
             fun = rhs.getProc();
@@ -436,19 +399,20 @@ public:
         return *this;
     }
     /// Overloading operator==
-    inline bool operator== (const CxtThreadProc& rhs) const
+    inline bool operator==(const CxtThreadProc& rhs) const
     {
         return (tid == rhs.getTid() && fun == rhs.getProc() && cxt == rhs.getContext());
     }
     /// Overloading operator==
-    inline bool operator!= (const CxtThreadProc& rhs) const
+    inline bool operator!=(const CxtThreadProc& rhs) const
     {
-        return !(*this==rhs);
+        return !(*this == rhs);
     }
     /// Dump CxtThreadProc
     inline void dump() const
     {
-        SVFUtil::outs() << "[ Current Thread id: " << tid << "  Proc: " << fun->getName() << "\t Contexts: " << cxtToStr() << "  ]\n";
+        SVFUtil::outs() << "[ Current Thread id: " << tid << "  Proc: " << fun->getName()
+                        << "\t Contexts: " << cxtToStr() << "  ]\n";
     }
 
 private:
@@ -486,7 +450,7 @@ template <> struct std::hash<SVF::CxtStmt>
     size_t operator()(const SVF::CxtStmt& cs) const
     {
         std::hash<SVF::ICFGNode*> h;
-        SVF::ICFGNode* inst = const_cast<SVF::ICFGNode*> (cs.getStmt());
+        SVF::ICFGNode* inst = const_cast<SVF::ICFGNode*>(cs.getStmt());
         return h(inst);
     }
 };
@@ -495,7 +459,7 @@ template <> struct std::hash<SVF::CxtProc>
     size_t operator()(const SVF::CxtProc& cs) const
     {
         std::hash<SVF::SVFFunction*> h;
-        SVF::SVFFunction* fun = const_cast<SVF::SVFFunction*> (cs.getProc());
+        SVF::SVFFunction* fun = const_cast<SVF::SVFFunction*>(cs.getProc());
         return h(fun);
     }
 };

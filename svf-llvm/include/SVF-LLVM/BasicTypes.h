@@ -28,8 +28,8 @@
 #include <llvm/Pass.h>
 
 #include <llvm/IR/Instructions.h>
-#include <llvm/IR/GetElementPtrTypeIterator.h>	//for gep iterator
-#include <llvm/IR/GlobalVariable.h>	// for GlobalVariable
+#include <llvm/IR/GetElementPtrTypeIterator.h> //for gep iterator
+#include <llvm/IR/GlobalVariable.h>            // for GlobalVariable
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IntrinsicInst.h>
 #include <llvm/IR/LLVMContext.h>
@@ -53,11 +53,11 @@
 
 #include <llvm/Support/SourceMgr.h>
 
-#include <llvm/Bitcode/BitcodeWriter.h>		// for WriteBitcodeToFile
-#include <llvm/Bitcode/BitcodeReader.h>     /// for isBitcode
-#include <llvm/IRReader/IRReader.h>	// IR reader for bit file
-#include <llvm/IR/InstVisitor.h>	// for instruction visitor
-#include <llvm/IR/InstIterator.h>	// for inst iteration
+#include <llvm/Bitcode/BitcodeWriter.h> // for WriteBitcodeToFile
+#include <llvm/Bitcode/BitcodeReader.h> /// for isBitcode
+#include <llvm/IRReader/IRReader.h>     // IR reader for bit file
+#include <llvm/IR/InstVisitor.h>        // for instruction visitor
+#include <llvm/IR/InstIterator.h>       // for inst iteration
 
 #include <llvm/BinaryFormat/Dwarf.h> // for dwarf tags
 
@@ -157,7 +157,7 @@ typedef llvm::CallBrInst CallBrInst;
 typedef llvm::ReturnInst ReturnInst;
 typedef llvm::CastInst CastInst;
 typedef llvm::CmpInst CmpInst;
-typedef llvm::ExtractValueInst  ExtractValueInst;
+typedef llvm::ExtractValueInst ExtractValueInst;
 typedef llvm::ExtractElementInst ExtractElementInst;
 typedef llvm::GetElementPtrInst GetElementPtrInst;
 typedef llvm::InvokeInst InvokeInst;
@@ -277,4 +277,4 @@ typedef llvm::succ_const_iterator succ_const_iterator;
 #endif
 } // End namespace SVF
 
-#endif  // SVF_FE_BASIC_TYPES_H
+#endif // SVF_FE_BASIC_TYPES_H

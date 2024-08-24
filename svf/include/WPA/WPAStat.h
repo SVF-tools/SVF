@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 /*
  * FlowSensitiveStat.h
  *
@@ -65,10 +64,7 @@ public:
 
     AndersenStat(AndersenBase* p);
 
-    virtual ~AndersenStat()
-    {
-
-    }
+    virtual ~AndersenStat() {}
 
     virtual void performStat();
 
@@ -88,9 +84,9 @@ public:
     typedef FlowSensitive::DFInOutMap DFInOutMap;
     typedef FlowSensitive::PtsMap PtsMap;
 
-    FlowSensitive * fspta;
+    FlowSensitive* fspta;
 
-    FlowSensitiveStat(FlowSensitive* pta): PTAStat(pta)
+    FlowSensitiveStat(FlowSensitive* pta) : PTAStat(pta)
     {
         fspta = pta;
         clearStat();
@@ -147,34 +143,34 @@ private:
     u32_t _PotentialNumOfVarHaveINOUTPts[2];
 
     /// sizes of points-to set
-    u32_t _MaxPtsSize;	///< max points-to set size.
-    u32_t _MaxTopLvlPtsSize;	///< max points-to set size in top-level pointers.
-    u32_t _MaxInOutPtsSize[2];	///< max points-to set size in IN/OUT set.
+    u32_t _MaxPtsSize;         ///< max points-to set size.
+    u32_t _MaxTopLvlPtsSize;   ///< max points-to set size in top-level pointers.
+    u32_t _MaxInOutPtsSize[2]; ///< max points-to set size in IN/OUT set.
 
-    u32_t _TotalPtsSize;	///< total points-to set size.
+    u32_t _TotalPtsSize; ///< total points-to set size.
 
-    double _AvgPtsSize;	///< average points-to set size.
-    double _AvgTopLvlPtsSize;	///< average points-to set size in top-level pointers.
-    double _AvgInOutPtsSize[2];	///< average points-to set size in IN set.
-    double _AvgAddrTakenVarPtsSize;	///< average points-to set size of addr-taken variables.
+    double _AvgPtsSize;             ///< average points-to set size.
+    double _AvgTopLvlPtsSize;       ///< average points-to set size in top-level pointers.
+    double _AvgInOutPtsSize[2];     ///< average points-to set size in IN set.
+    double _AvgAddrTakenVarPtsSize; ///< average points-to set size of addr-taken variables.
 
-    u32_t _MaxAddrTakenVarPts;	///< max points-to set size of addr-taken variables.
-    u32_t _NumOfAddrTakeVar;	///< number of occurrences of addr-taken variables in load/store.
+    u32_t _MaxAddrTakenVarPts; ///< max points-to set size of addr-taken variables.
+    u32_t _NumOfAddrTakeVar;   ///< number of occurrences of addr-taken variables in load/store.
 };
 
 class VersionedFlowSensitiveStat : public PTAStat
 {
 public:
-    VersionedFlowSensitive *vfspta;
+    VersionedFlowSensitive* vfspta;
 
-    VersionedFlowSensitiveStat(VersionedFlowSensitive* pta): PTAStat(pta)
+    VersionedFlowSensitiveStat(VersionedFlowSensitive* pta) : PTAStat(pta)
     {
         vfspta = pta;
         clearStat();
         startClk();
     }
 
-    virtual ~VersionedFlowSensitiveStat() { }
+    virtual ~VersionedFlowSensitiveStat() {}
 
     virtual void performStat();
 

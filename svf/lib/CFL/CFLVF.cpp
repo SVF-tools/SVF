@@ -40,7 +40,7 @@ void CFLVF::buildCFLGraph()
     {
         PointerAnalysis::initialize();
         AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
-        svfg =  memSSA.buildFullSVFG(ander);
+        svfg = memSSA.buildFullSVFG(ander);
         graph = cflGraphBuilder.buildBigraph(svfg, grammarBase->getStartKind(), grammarBase);
     }
     else
@@ -74,22 +74,20 @@ void CFLVF::checkParameter()
     // Check for valid grammar file before parsing other options
     std::string filename = Options::GrammarFilename();
     bool vfgfile = (filename.rfind("VFGGrammar.txt") == filename.length() - std::string("VFGGrammar.txt").length());
-    if (!Options::Customized()  && !vfgfile)
+    if (!Options::Customized() && !vfgfile)
     {
         SVFUtil::errs() << "Invalid VFG grammar file: " << Options::GrammarFilename() << "\n"
                         << "Please use a file that ends with 'VFG.txt', "
                         << "or use the -customized flag to allow custom grammar files.\n";
-        assert(false && "grammar loading failed!");  // exit with error
+        assert(false && "grammar loading failed!"); // exit with error
     }
 }
 
-
 void CFLVF::finalize()
 {
-    if(Options::PrintCFL())
+    if (Options::PrintCFL())
     {
-        if (Options::CFLGraph().empty())
-            svfir->dump("IR");
+        if (Options::CFLGraph().empty()) svfir->dump("IR");
         grammar->dump("Grammar");
         graph->dump("CFLGraph");
     }

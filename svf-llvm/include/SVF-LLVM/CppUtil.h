@@ -53,7 +53,6 @@ struct DemangledName
 
 struct DemangledName demangle(const std::string& name);
 
-
 Set<std::string> getClsNamesInBrackets(const std::string& name);
 
 std::string getBeforeBrackets(const std::string& name);
@@ -80,7 +79,7 @@ std::string getClassNameFromVtblObj(const std::string& vtblName);
  *
  *  See https://github.com/SVF-tools/SVF/issues/1114 for more.
  */
-const ConstantStruct *getVtblStruct(const GlobalValue *vtbl);
+const ConstantStruct* getVtblStruct(const GlobalValue* vtbl);
 
 bool isValVtbl(const Value* val);
 bool isVirtualCallSite(const CallBase* cs);
@@ -129,34 +128,31 @@ bool VCallInCtorOrDtor(const CallBase* cs);
  *  }
  *  this and this1 are the same thisPtr in the constructor
  */
-bool isSameThisPtrInConstructor(const Argument* thisPtr1,
-                                const Value* thisPtr2);
+bool isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* thisPtr2);
 
 /// extract class name from the c++ function name, e.g., constructor/destructors
-Set<std::string> extractClsNamesFromFunc(const Function *foo);
+Set<std::string> extractClsNamesFromFunc(const Function* foo);
 
 /// extract class names from template functions
-Set<std::string> extractClsNamesFromTemplate(const std::string &oname);
+Set<std::string> extractClsNamesFromTemplate(const std::string& oname);
 
 /// class sources can be heap allocation
 /// or functions where we can extract the class name (constructors/destructors or template functions)
-bool isClsNameSource(const Value *val);
+bool isClsNameSource(const Value* val);
 
 /// whether foo matches the mangler label
-bool matchesLabel(const std::string &foo, const std::string &label);
+bool matchesLabel(const std::string& foo, const std::string& label);
 
 /// whether foo is a cpp template function
-bool isTemplateFunc(const Function *foo);
+bool isTemplateFunc(const Function* foo);
 
 /// whether foo is a cpp dyncast function
-bool isDynCast(const Function *foo);
+bool isDynCast(const Function* foo);
 
 /// extract class name from cpp dyncast function
 std::string extractClsNameFromDynCast(const CallBase* callBase);
 
-const Type *cppClsNameToType(const std::string &className);
-
-
+const Type* cppClsNameToType(const std::string& className);
 
 /// Constants pertaining to CTir, for C and C++.
 /// TODO: move helper functions here too?

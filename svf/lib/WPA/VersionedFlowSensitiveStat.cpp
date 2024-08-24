@@ -17,19 +17,19 @@ using namespace SVFUtil;
 
 void VersionedFlowSensitiveStat::clearStat()
 {
-    _NumVersions         = 0;
-    _MaxVersions         = 0;
+    _NumVersions = 0;
+    _MaxVersions = 0;
     _NumNonEmptyVersions = 0;
-    _NumSingleVersion    = 0;
-    _NumUsedVersions     = 0;
-    _NumEmptyVersions    = 0;
-    _MaxPtsSize          = 0;
-    _MaxTopLvlPtsSize    = 0;
-    _MaxVersionPtsSize   = 0;
-    _TotalPtsSize        = 0;
-    _AvgPtsSize          = 0.0;
-    _AvgTopLvlPtsSize    = 0.0;
-    _AvgVersionPtsSize   = 0.0;
+    _NumSingleVersion = 0;
+    _NumUsedVersions = 0;
+    _NumEmptyVersions = 0;
+    _MaxPtsSize = 0;
+    _MaxTopLvlPtsSize = 0;
+    _MaxVersionPtsSize = 0;
+    _TotalPtsSize = 0;
+    _AvgPtsSize = 0.0;
+    _AvgTopLvlPtsSize = 0.0;
+    _AvgVersionPtsSize = 0.0;
 }
 
 void VersionedFlowSensitiveStat::performStat()
@@ -41,7 +41,7 @@ void VersionedFlowSensitiveStat::performStat()
 
     clearStat();
 
-    SVFIR *pag = vfspta->getPAG();
+    SVFIR* pag = vfspta->getPAG();
 
     versionStat();
     ptsSizeStat();
@@ -55,12 +55,13 @@ void VersionedFlowSensitiveStat::performStat()
         PAGNode* pagNode = it->second;
         if (SVFUtil::isa<ObjVar>(pagNode))
         {
-            const MemObj *memObj = pag->getBaseObj(nodeId);
+            const MemObj* memObj = pag->getBaseObj(nodeId);
             SymID baseId = memObj->getId();
             if (nodeSet.insert(baseId).second)
             {
                 if (memObj->isFieldInsensitive()) fiObjNumber++;
-                else fsObjNumber++;
+                else
+                    fsObjNumber++;
             }
         }
     }
@@ -74,46 +75,47 @@ void VersionedFlowSensitiveStat::performStat()
     {
         SVFGNode* svfgNode = it->second;
         if (SVFUtil::isa<CopySVFGNode>(svfgNode)) numOfCopy++;
-        else if (SVFUtil::isa<StoreSVFGNode>(svfgNode)) numOfStore++;
+        else if (SVFUtil::isa<StoreSVFGNode>(svfgNode))
+            numOfStore++;
     }
 
     PTAStat::performStat();
 
-    timeStatMap["TotalTime"]    = (endTime - startTime)/TIMEINTERVAL;
-    timeStatMap["SolveTime"]          = vfspta->solveTime;
-    timeStatMap["SCCTime"]            = vfspta->sccTime;
-    timeStatMap["ProcessTime"]        = vfspta->processTime;
-    timeStatMap["PropagationTime"]    = vfspta->propagationTime;
-    timeStatMap["DirectPropaTime"]    = vfspta->directPropaTime;
-    timeStatMap["IndirectPropaTime"]  = vfspta->indirectPropaTime;
+    timeStatMap["TotalTime"] = (endTime - startTime) / TIMEINTERVAL;
+    timeStatMap["SolveTime"] = vfspta->solveTime;
+    timeStatMap["SCCTime"] = vfspta->sccTime;
+    timeStatMap["ProcessTime"] = vfspta->processTime;
+    timeStatMap["PropagationTime"] = vfspta->propagationTime;
+    timeStatMap["DirectPropaTime"] = vfspta->directPropaTime;
+    timeStatMap["IndirectPropaTime"] = vfspta->indirectPropaTime;
     timeStatMap["Strong/WeakUpdTime"] = vfspta->updateTime;
-    timeStatMap["AddrTime"]           = vfspta->addrTime;
-    timeStatMap["CopyTime"]           = vfspta->copyTime;
-    timeStatMap["GepTime"]            = vfspta->gepTime;
-    timeStatMap["LoadTime"]           = vfspta->loadTime;
-    timeStatMap["StoreTime"]          = vfspta->storeTime;
-    timeStatMap["UpdateCGTime"]       = vfspta->updateCallGraphTime;
-    timeStatMap["PhiTime"]            = vfspta->phiTime;
-    timeStatMap["meldLabelingTime"]   = vfspta->meldLabelingTime;
-    timeStatMap["PrelabelingTime"]    = vfspta->prelabelingTime;
-    timeStatMap["VersionPropTime"]    = vfspta->versionPropTime;
+    timeStatMap["AddrTime"] = vfspta->addrTime;
+    timeStatMap["CopyTime"] = vfspta->copyTime;
+    timeStatMap["GepTime"] = vfspta->gepTime;
+    timeStatMap["LoadTime"] = vfspta->loadTime;
+    timeStatMap["StoreTime"] = vfspta->storeTime;
+    timeStatMap["UpdateCGTime"] = vfspta->updateCallGraphTime;
+    timeStatMap["PhiTime"] = vfspta->phiTime;
+    timeStatMap["meldLabelingTime"] = vfspta->meldLabelingTime;
+    timeStatMap["PrelabelingTime"] = vfspta->prelabelingTime;
+    timeStatMap["VersionPropTime"] = vfspta->versionPropTime;
 
-    PTNumStatMap["TotalPointers"]  = pag->getValueNodeNum() + pag->getFieldValNodeNum();
-    PTNumStatMap["TotalObjects"]   = pag->getObjectNodeNum() + pag->getFieldObjNodeNum();
+    PTNumStatMap["TotalPointers"] = pag->getValueNodeNum() + pag->getFieldValNodeNum();
+    PTNumStatMap["TotalObjects"] = pag->getObjectNodeNum() + pag->getFieldObjNodeNum();
 
-    PTNumStatMap["Pointers"]         = pag->getValueNodeNum();
-    PTNumStatMap["MemObjects"]       = pag->getObjectNodeNum();
+    PTNumStatMap["Pointers"] = pag->getValueNodeNum();
+    PTNumStatMap["MemObjects"] = pag->getObjectNodeNum();
     PTNumStatMap["DummyFieldPtrs"] = pag->getFieldValNodeNum();
-    PTNumStatMap["FieldObjs"]  = pag->getFieldObjNodeNum();
+    PTNumStatMap["FieldObjs"] = pag->getFieldObjNodeNum();
 
-    PTNumStatMap["TotalVersions"]     = _NumVersions;
+    PTNumStatMap["TotalVersions"] = _NumVersions;
     PTNumStatMap["MaxVersionsForObj"] = _MaxVersions;
     PTNumStatMap["TotalNonEmptyVPts"] = _NumNonEmptyVersions;
-    PTNumStatMap["TotalEmptyVPts"]    = _NumEmptyVersions;
+    PTNumStatMap["TotalEmptyVPts"] = _NumEmptyVersions;
     PTNumStatMap["TotalExistingVPts"] = _NumUsedVersions;
-    PTNumStatMap["TotalSingleVObjs"]  = _NumSingleVersion;
+    PTNumStatMap["TotalSingleVObjs"] = _NumSingleVersion;
 
-    PTNumStatMap["CopysNum"]  = numOfCopy;
+    PTNumStatMap["CopysNum"] = numOfCopy;
     PTNumStatMap["StoresNum"] = numOfStore;
 
     PTNumStatMap["SolveIterations"] = vfspta->numOfIteration;
@@ -122,29 +124,28 @@ void VersionedFlowSensitiveStat::performStat()
 
     PTNumStatMap["StrongUpdates"] = vfspta->svfgHasSU.count();
 
-    PTNumStatMap["MaxPtsSize"]        = _MaxPtsSize;
-    PTNumStatMap["MaxTopLvlPtsSize"]  = _MaxTopLvlPtsSize;
+    PTNumStatMap["MaxPtsSize"] = _MaxPtsSize;
+    PTNumStatMap["MaxTopLvlPtsSize"] = _MaxTopLvlPtsSize;
     PTNumStatMap["MaxVersionPtsSize"] = _MaxVersionPtsSize;
 
-    timeStatMap["AvgPtsSize"]        = _AvgPtsSize;
-    timeStatMap["AvgTopLvlPtsSize"]  = _AvgTopLvlPtsSize;
+    timeStatMap["AvgPtsSize"] = _AvgPtsSize;
+    timeStatMap["AvgTopLvlPtsSize"] = _AvgTopLvlPtsSize;
     timeStatMap["AvgVersionPtsSize"] = _AvgVersionPtsSize;
 
-    PTNumStatMap["ProcessedAddr"]     = vfspta->numOfProcessedAddr;
-    PTNumStatMap["ProcessedCopy"]     = vfspta->numOfProcessedCopy;
-    PTNumStatMap["ProcessedGep"]      = vfspta->numOfProcessedGep;
-    PTNumStatMap["ProcessedLoad"]     = vfspta->numOfProcessedLoad;
-    PTNumStatMap["ProcessedStore"]    = vfspta->numOfProcessedStore;
-    PTNumStatMap["ProcessedPhi"]      = vfspta->numOfProcessedPhi;
-    PTNumStatMap["ProcessedAParam"]   = vfspta->numOfProcessedActualParam;
-    PTNumStatMap["ProcessedFRet"]     = vfspta->numOfProcessedFormalRet;
+    PTNumStatMap["ProcessedAddr"] = vfspta->numOfProcessedAddr;
+    PTNumStatMap["ProcessedCopy"] = vfspta->numOfProcessedCopy;
+    PTNumStatMap["ProcessedGep"] = vfspta->numOfProcessedGep;
+    PTNumStatMap["ProcessedLoad"] = vfspta->numOfProcessedLoad;
+    PTNumStatMap["ProcessedStore"] = vfspta->numOfProcessedStore;
+    PTNumStatMap["ProcessedPhi"] = vfspta->numOfProcessedPhi;
+    PTNumStatMap["ProcessedAParam"] = vfspta->numOfProcessedActualParam;
+    PTNumStatMap["ProcessedFRet"] = vfspta->numOfProcessedFormalRet;
     PTNumStatMap["ProcessedMSSANode"] = vfspta->numOfProcessedMSSANode;
 
     PTNumStatMap["NumOfNodesInSCC"] = vfspta->numOfNodesInSCC;
-    PTNumStatMap["MaxSCCSize"]      = vfspta->maxSCCSize;
-    PTNumStatMap["NumOfSCC"]        = vfspta->numOfSCC;
-    timeStatMap["AverageSCCSize"]   = (vfspta->numOfSCC == 0) ? 0 :
-                                      ((double)vfspta->numOfNodesInSCC / vfspta->numOfSCC);
+    PTNumStatMap["MaxSCCSize"] = vfspta->maxSCCSize;
+    PTNumStatMap["NumOfSCC"] = vfspta->numOfSCC;
+    timeStatMap["AverageSCCSize"] = (vfspta->numOfSCC == 0) ? 0 : ((double)vfspta->numOfNodesInSCC / vfspta->numOfSCC);
 
     PTAStat::printStat("Versioned Flow-Sensitive Pointer Analysis Statistics");
 }
@@ -156,14 +157,11 @@ void VersionedFlowSensitiveStat::versionStat(void)
     _MaxVersions = 0;
 
     u32_t totalVersionPtsSize = 0;
-    for (const VersionedFlowSensitive::LocVersionMap *lvm :
-            {
-                &vfspta->consume, &vfspta->yield
-            })
+    for (const VersionedFlowSensitive::LocVersionMap* lvm : {&vfspta->consume, &vfspta->yield})
     {
-        for (const VersionedFlowSensitive::ObjToVersionMap  &lov : *lvm)
+        for (const VersionedFlowSensitive::ObjToVersionMap& lov : *lvm)
         {
-            for (const VersionedFlowSensitive::ObjToVersionMap::value_type &ov : lov)
+            for (const VersionedFlowSensitive::ObjToVersionMap::value_type& ov : lov)
             {
                 const NodeID o = ov.first;
                 const Version v = ov.second;
@@ -175,9 +173,10 @@ void VersionedFlowSensitiveStat::versionStat(void)
                 //       exists; an emptiness check is *not* an existence check.
                 if (vfspta->vPtD->getPts(vfspta->atKey(o, v)).empty()) continue;
 
-                const PointsTo &ovPts = vfspta->vPtD->getPts(vfspta->atKey(o, v));
+                const PointsTo& ovPts = vfspta->vPtD->getPts(vfspta->atKey(o, v));
                 if (!ovPts.empty()) ++_NumNonEmptyVersions;
-                else ++_NumEmptyVersions;
+                else
+                    ++_NumEmptyVersions;
 
                 _TotalPtsSize += ovPts.count();
                 totalVersionPtsSize += ovPts.count();
@@ -210,7 +209,8 @@ void VersionedFlowSensitiveStat::ptsSizeStat()
         if (size > _MaxTopLvlPtsSize) _MaxTopLvlPtsSize = size;
     }
 
-    if (totalValidTopLvlPointers != 0) _AvgTopLvlPtsSize = (double)totalTopLvlPtsSize / (double)totalValidTopLvlPointers;
+    if (totalValidTopLvlPointers != 0)
+        _AvgTopLvlPtsSize = (double)totalTopLvlPtsSize / (double)totalValidTopLvlPointers;
 
     _TotalPtsSize += totalTopLvlPtsSize;
 

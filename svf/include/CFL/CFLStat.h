@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 /*
  * CFLStat.h
  *
@@ -49,9 +48,7 @@ private:
 public:
     CFLStat(CFLBase* p);
 
-    virtual ~CFLStat()
-    {
-    }
+    virtual ~CFLStat() {}
 
     virtual void performStat();
 

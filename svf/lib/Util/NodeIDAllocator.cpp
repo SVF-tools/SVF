@@ -21,9 +21,9 @@ const NodeID NodeIDAllocator::constantObjectId = 1;
 const NodeID NodeIDAllocator::blackHolePointerId = 2;
 const NodeID NodeIDAllocator::nullPointerId = 3;
 
-NodeIDAllocator *NodeIDAllocator::allocator = nullptr;
+NodeIDAllocator* NodeIDAllocator::allocator = nullptr;
 
-NodeIDAllocator *NodeIDAllocator::get(void)
+NodeIDAllocator* NodeIDAllocator::get(void)
 {
     if (allocator == nullptr)
     {
@@ -45,7 +45,8 @@ void NodeIDAllocator::unset(void)
 // Initialise counts to 4 because that's how many special nodes we have.
 NodeIDAllocator::NodeIDAllocator(void)
     : numObjects(4), numValues(4), numSymbols(4), numNodes(4), strategy(Options::NodeAllocStrat())
-{ }
+{
+}
 
 NodeID NodeIDAllocator::allocateObjectId(void)
 {
@@ -89,7 +90,7 @@ NodeID NodeIDAllocator::allocateGepObjectId(NodeID base, u32_t offset, u32_t max
     if (strategy == Strategy::DENSE)
     {
         // Nothing different to the other case.
-        id =  numObjects;
+        id = numObjects;
     }
     else if (strategy == Strategy::REVERSE_DENSE)
     {
@@ -107,10 +108,7 @@ NodeID NodeIDAllocator::allocateGepObjectId(NodeID base, u32_t offset, u32_t max
         // The offset is 10, not 11, because we add 1 to the offset to ensure that the
         // high bits are never 0. For example, we do not want the gep id to be 50 when
         // the base is 50 and the offset is 0.
-        NodeID gepMultiplier = pow(10, ceil(log10(
-                                                numSymbols > maxFieldLimit ?
-                                                numSymbols : maxFieldLimit
-                                            )));
+        NodeID gepMultiplier = pow(10, ceil(log10(numSymbols > maxFieldLimit ? numSymbols : maxFieldLimit)));
         id = (offset + 1) * gepMultiplier + base;
         assert(id > numSymbols && "NodeIDAllocator::allocateGepObjectId: GEP allocation clashing with other nodes");
     }
@@ -184,10 +182,13 @@ const std::string NodeIDAllocator::Clusterer::LargestRegion = "LargestRegion";
 const std::string NodeIDAllocator::Clusterer::BestCandidate = "BestCandidate";
 const std::string NodeIDAllocator::Clusterer::NumNonTrivialRegionObjects = "NumNonTrivObj";
 
-std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> &candidates, std::string evalSubtitle)
+std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(
+    BVDataPTAImpl* pta, const std::vector<std::pair<NodeID, unsigned>> keys,
+    std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>>& candidates, std::string evalSubtitle)
 {
     assert(pta != nullptr && "Clusterer::cluster: given null BVDataPTAImpl");
-    assert(Options::NodeAllocStrat() == Strategy::DENSE && "Clusterer::cluster: only dense allocation clustering currently supported");
+    assert(Options::NodeAllocStrat() == Strategy::DENSE &&
+           "Clusterer::cluster: only dense allocation clustering currently supported");
 
     Map<std::string, std::string> overallStats;
     double fastClusterTime = 0.0;
@@ -206,18 +207,19 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, cons
 
     // Objects each object shares at least a points-to set with.
     Map<NodeID, Set<NodeID>> coPointeeGraph;
-    for (const std::pair<NodeID, unsigned> &keyOcc : keys)
+    for (const std::pair<NodeID, unsigned>& keyOcc : keys)
     {
-        const PointsTo &pts = pta->getPts(keyOcc.first);
+        const PointsTo& pts = pta->getPts(keyOcc.first);
         const size_t oldSize = pointsToSets.size();
-        pointsToSets[pts] += keyOcc.second;;
+        pointsToSets[pts] += keyOcc.second;
+        ;
 
         // Edges in this graph have no weight or uniqueness, so we only need to
         // do this for each points-to set once.
         if (oldSize != pointsToSets.size())
         {
             NodeID firstO = !pts.empty() ? *(pts.begin()) : 0;
-            Set<NodeID> &firstOsNeighbours = coPointeeGraph[firstO];
+            Set<NodeID>& firstOsNeighbours = coPointeeGraph[firstO];
             for (const NodeID o : pts)
             {
                 if (o != firstO)
@@ -286,10 +288,10 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, cons
 
     // Points-to sets which are relevant to a region, i.e., those whose elements
     // belong to that region. Pair is for occurrences.
-    std::vector<std::vector<std::pair<const PointsTo *, unsigned>>> regionsPointsTos(numRegions);
-    for (const Map<PointsTo, unsigned>::value_type &ptocc : pointsToSets)
+    std::vector<std::vector<std::pair<const PointsTo*, unsigned>>> regionsPointsTos(numRegions);
+    for (const Map<PointsTo, unsigned>::value_type& ptocc : pointsToSets)
     {
-        const PointsTo &pt = ptocc.first;
+        const PointsTo& pt = ptocc.first;
         const unsigned occ = ptocc.second;
         if (pt.empty()) continue;
         // Guaranteed that begin() != end() because of the continue above. All objects in pt
@@ -332,8 +334,7 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, cons
             // many words and multiply to get the number of bits; if we're aligning.
             if (Options::RegionAlign())
             {
-                allocCounter =
-                    ((allocCounter + NATIVE_INT_SIZE - 1) / NATIVE_INT_SIZE) * NATIVE_INT_SIZE;
+                allocCounter = ((allocCounter + NATIVE_INT_SIZE - 1) / NATIVE_INT_SIZE) * NATIVE_INT_SIZE;
             }
 
             if (regionNumObjects > largestRegion) largestRegion = regionNumObjects;
@@ -349,12 +350,12 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, cons
             ++numGtIntRegions;
             nonTrivialRegionObjects += regionNumObjects;
 
-            double *distMatrix = getDistanceMatrix(regionsPointsTos[region], regionNumObjects,
+            double* distMatrix = getDistanceMatrix(regionsPointsTos[region], regionNumObjects,
                                                    regionReverseMappings[region], distanceMatrixTime);
 
             clkStart = PTAStat::getClk(true);
-            int *dendrogram = new int[2 * (regionNumObjects - 1)];
-            double *height = new double[regionNumObjects - 1];
+            int* dendrogram = new int[2 * (regionNumObjects - 1)];
+            double* height = new double[regionNumObjects - 1];
             hclust_fast(regionNumObjects, distMatrix, method, dendrogram, height);
             delete[] distMatrix;
             delete[] height;
@@ -363,8 +364,8 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, cons
 
             clkStart = PTAStat::getClk(true);
             Set<int> visited;
-            traverseDendrogram(nodeMap, dendrogram, regionNumObjects, allocCounter,
-                               visited, regionNumObjects - 1, regionMappings[region]);
+            traverseDendrogram(nodeMap, dendrogram, regionNumObjects, allocCounter, visited, regionNumObjects - 1,
+                               regionMappings[region]);
             delete[] dendrogram;
             clkEnd = PTAStat::getClk(true);
             dendrogramTraversalTime += (clkEnd - clkStart) / TIMEINTERVAL;
@@ -379,14 +380,15 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, cons
     }
 
     // Work out which of the mappings we generated looks best.
-    std::pair<hclust_fast_methods, std::vector<NodeID>> bestMapping = determineBestMapping(candidates, pointsToSets,
-            evalSubtitle, evalTime);
+    std::pair<hclust_fast_methods, std::vector<NodeID>> bestMapping =
+        determineBestMapping(candidates, pointsToSets, evalSubtitle, evalTime);
 
     overallStats[DistanceMatrixTime] = std::to_string(distanceMatrixTime);
     overallStats[DendrogramTraversalTime] = std::to_string(dendrogramTraversalTime);
     overallStats[FastClusterTime] = std::to_string(fastClusterTime);
     overallStats[EvalTime] = std::to_string(evalTime);
-    overallStats[TotalTime] = std::to_string(distanceMatrixTime + dendrogramTraversalTime + fastClusterTime + regioningTime + evalTime);
+    overallStats[TotalTime] =
+        std::to_string(distanceMatrixTime + dendrogramTraversalTime + fastClusterTime + regioningTime + evalTime);
 
     overallStats[BestCandidate] = SVFUtil::hclustMethodToString(bestMapping.first);
     printStats(evalSubtitle + ": overall", overallStats);
@@ -394,7 +396,7 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, cons
     return bestMapping.second;
 }
 
-std::vector<NodeID> NodeIDAllocator::Clusterer::getReverseNodeMapping(const std::vector<NodeID> &nodeMapping)
+std::vector<NodeID> NodeIDAllocator::Clusterer::getReverseNodeMapping(const std::vector<NodeID>& nodeMapping)
 {
     // nodeMapping.size() may not be big enough because we leave some gaps, but it's a start.
     std::vector<NodeID> reverseNodeMapping(nodeMapping.size(), UINT_MAX);
@@ -411,10 +413,10 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::getReverseNodeMapping(const std:
 size_t NodeIDAllocator::Clusterer::condensedIndex(size_t n, size_t i, size_t j)
 {
     // From https://stackoverflow.com/a/14839010
-    return n*(n-1)/2 - (n-i)*(n-i-1)/2 + j - i - 1;
+    return n * (n - 1) / 2 - (n - i) * (n - i - 1) / 2 + j - i - 1;
 }
 
-unsigned NodeIDAllocator::Clusterer::requiredBits(const PointsTo &pts)
+unsigned NodeIDAllocator::Clusterer::requiredBits(const PointsTo& pts)
 {
     return requiredBits(pts.count());
 }
@@ -427,13 +429,13 @@ unsigned NodeIDAllocator::Clusterer::requiredBits(const size_t n)
     return ((n - 1) / NATIVE_INT_SIZE + 1) * NATIVE_INT_SIZE;
 }
 
-double *NodeIDAllocator::Clusterer::getDistanceMatrix(const std::vector<std::pair<const PointsTo *, unsigned>> pointsToSets,
-        const size_t numObjects, const Map<NodeID, unsigned> &nodeMap,
-        double &distanceMatrixTime)
+double* NodeIDAllocator::Clusterer::getDistanceMatrix(
+    const std::vector<std::pair<const PointsTo*, unsigned>> pointsToSets, const size_t numObjects,
+    const Map<NodeID, unsigned>& nodeMap, double& distanceMatrixTime)
 {
     const double clkStart = PTAStat::getClk(true);
     size_t condensedSize = (numObjects * (numObjects - 1)) / 2;
-    double *distMatrix = new double[condensedSize];
+    double* distMatrix = new double[condensedSize];
     for (size_t i = 0; i < condensedSize; ++i) distMatrix[i] = numObjects * numObjects;
 
     // TODO: maybe use machine epsilon?
@@ -441,9 +443,9 @@ double *NodeIDAllocator::Clusterer::getDistanceMatrix(const std::vector<std::pai
     // Can differentiate ~9999 occurrences.
     double occurrenceEpsilon = 0.0001;
 
-    for (const std::pair<const PointsTo *, unsigned> &ptsOcc : pointsToSets)
+    for (const std::pair<const PointsTo*, unsigned>& ptsOcc : pointsToSets)
     {
-        const PointsTo *pts = ptsOcc.first;
+        const PointsTo* pts = ptsOcc.first;
         assert(pts != nullptr);
         const unsigned occ = ptsOcc.second;
 
@@ -463,7 +465,7 @@ double *NodeIDAllocator::Clusterer::getDistanceMatrix(const std::vector<std::pai
                 const NodeID oj = ptsVec[j];
                 const Map<NodeID, unsigned>::const_iterator moj = nodeMap.find(oj);
                 assert(moj != nodeMap.end());
-                double &existingDistance = distMatrix[condensedIndex(numObjects, moi->second, moj->second)];
+                double& existingDistance = distMatrix[condensedIndex(numObjects, moi->second, moj->second)];
 
                 // Subtract extra occurrenceEpsilon to make upcoming logic simpler.
                 // When existingDistance is never whole, it is always between two distances.
@@ -489,7 +491,6 @@ double *NodeIDAllocator::Clusterer::getDistanceMatrix(const std::vector<std::pai
                 }
             }
         }
-
     }
 
     const double clkEnd = PTAStat::getClk(true);
@@ -498,7 +499,9 @@ double *NodeIDAllocator::Clusterer::getDistanceMatrix(const std::vector<std::pai
     return distMatrix;
 }
 
-void NodeIDAllocator::Clusterer::traverseDendrogram(std::vector<NodeID> &nodeMap, const int *dendrogram, const size_t numObjects, unsigned &allocCounter, Set<int> &visited, const int index, const std::vector<NodeID> &regionNodeMap)
+void NodeIDAllocator::Clusterer::traverseDendrogram(std::vector<NodeID>& nodeMap, const int* dendrogram,
+                                                    const size_t numObjects, unsigned& allocCounter, Set<int>& visited,
+                                                    const int index, const std::vector<NodeID>& regionNodeMap)
 {
     if (visited.find(index) != visited.end()) return;
     visited.insert(index);
@@ -529,12 +532,13 @@ void NodeIDAllocator::Clusterer::traverseDendrogram(std::vector<NodeID> &nodeMap
     }
 }
 
-std::vector<NodeID> NodeIDAllocator::Clusterer::regionObjects(const Map<NodeID, Set<NodeID>> &graph, size_t numObjects, size_t &numLabels)
+std::vector<NodeID> NodeIDAllocator::Clusterer::regionObjects(const Map<NodeID, Set<NodeID>>& graph, size_t numObjects,
+                                                              size_t& numLabels)
 {
     unsigned label = UINT_MAX;
     std::vector<NodeID> labels(numObjects, UINT_MAX);
     Set<NodeID> labelled;
-    for (const Map<NodeID, Set<NodeID>>::value_type &oos : graph)
+    for (const Map<NodeID, Set<NodeID>>::value_type& oos : graph)
     {
         const NodeID o = oos.first;
         if (labels[o] != UINT_MAX) continue;
@@ -569,7 +573,9 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::regionObjects(const Map<NodeID, 
     return labels;
 }
 
-void NodeIDAllocator::Clusterer::evaluate(const std::vector<NodeID> &nodeMap, const Map<PointsTo, unsigned> pointsToSets, Map<std::string, std::string> &stats, bool accountForOcc)
+void NodeIDAllocator::Clusterer::evaluate(const std::vector<NodeID>& nodeMap,
+                                          const Map<PointsTo, unsigned> pointsToSets,
+                                          Map<std::string, std::string>& stats, bool accountForOcc)
 {
     u64_t totalTheoretical = 0;
     u64_t totalOriginalSbv = 0;
@@ -577,9 +583,9 @@ void NodeIDAllocator::Clusterer::evaluate(const std::vector<NodeID> &nodeMap, co
     u64_t totalNewSbv = 0;
     u64_t totalNewBv = 0;
 
-    for (const Map<PointsTo, unsigned>::value_type &ptsOcc : pointsToSets)
+    for (const Map<PointsTo, unsigned>::value_type& ptsOcc : pointsToSets)
     {
-        const PointsTo &pts = ptsOcc.first;
+        const PointsTo& pts = ptsOcc.first;
         const unsigned occ = ptsOcc.second;
         if (pts.count() == 0) continue;
 
@@ -648,8 +654,8 @@ void NodeIDAllocator::Clusterer::evaluate(const std::vector<NodeID> &nodeMap, co
 
 // Work out which of the mappings we generated looks best.
 std::pair<hclust_fast_methods, std::vector<NodeID>> NodeIDAllocator::Clusterer::determineBestMapping(
-            const std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> &candidates,
-            Map<PointsTo, unsigned> pointsToSets, const std::string &evalSubtitle, double &evalTime)
+    const std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>>& candidates,
+    Map<PointsTo, unsigned> pointsToSets, const std::string& evalSubtitle, double& evalTime)
 {
     // In case we're not comparing anything, set to first "candidate".
     std::pair<hclust_fast_methods, std::vector<NodeID>> bestMapping = candidates[0];
@@ -657,7 +663,7 @@ std::pair<hclust_fast_methods, std::vector<NodeID>> NodeIDAllocator::Clusterer::
     size_t bestWords = std::numeric_limits<size_t>::max();
     if (evalSubtitle != "" || Options::ClusterMethod() == HCLUST_METHOD_SVF_BEST)
     {
-        for (const std::pair<hclust_fast_methods, std::vector<NodeID>> &candidate : candidates)
+        for (const std::pair<hclust_fast_methods, std::vector<NodeID>>& candidate : candidates)
         {
             Map<std::string, std::string> candidateStats;
             hclust_fast_methods candidateMethod = candidate.first;
@@ -673,8 +679,10 @@ std::pair<hclust_fast_methods, std::vector<NodeID>> NodeIDAllocator::Clusterer::
 
             size_t candidateWords = 0;
             if (Options::PtType() == PointsTo::SBV) candidateWords = std::stoull(candidateStats[NewSbvNumWords]);
-            else if (Options::PtType() == PointsTo::CBV) candidateWords = std::stoull(candidateStats[NewBvNumWords]);
-            else assert(false && "Clusterer::cluster: unsupported BV type for clustering.");
+            else if (Options::PtType() == PointsTo::CBV)
+                candidateWords = std::stoull(candidateStats[NewBvNumWords]);
+            else
+                assert(false && "Clusterer::cluster: unsupported BV type for clustering.");
 
             if (candidateWords < bestWords)
             {
@@ -687,17 +695,14 @@ std::pair<hclust_fast_methods, std::vector<NodeID>> NodeIDAllocator::Clusterer::
     return bestMapping;
 }
 
-void NodeIDAllocator::Clusterer::printStats(std::string subtitle, Map<std::string, std::string> &stats)
+void NodeIDAllocator::Clusterer::printStats(std::string subtitle, Map<std::string, std::string>& stats)
 {
     // When not in order, it is too hard to compare original/new SBV/BV words, so this array forces an order.
-    static const std::string statKeys[] =
-    {
-        NumObjects, TheoreticalNumWords, OriginalSbvNumWords, OriginalBvNumWords,
-        NewSbvNumWords, NewBvNumWords, NumRegions, NumGtIntRegions,
-        NumNonTrivialRegionObjects, LargestRegion, RegioningTime,
-        DistanceMatrixTime, FastClusterTime, DendrogramTraversalTime,
-        EvalTime, TotalTime, BestCandidate
-    };
+    static const std::string statKeys[] = {
+        NumObjects,    TheoreticalNumWords, OriginalSbvNumWords, OriginalBvNumWords,         NewSbvNumWords,
+        NewBvNumWords, NumRegions,          NumGtIntRegions,     NumNonTrivialRegionObjects, LargestRegion,
+        RegioningTime, DistanceMatrixTime,  FastClusterTime,     DendrogramTraversalTime,    EvalTime,
+        TotalTime,     BestCandidate};
 
     const unsigned fieldWidth = 20;
     SVFUtil::outs().flags(std::ios::left);
@@ -714,4 +719,4 @@ void NodeIDAllocator::Clusterer::printStats(std::string subtitle, Map<std::strin
     SVFUtil::outs().flush();
 }
 
-};  // namespace SVF.
+}; // namespace SVF.

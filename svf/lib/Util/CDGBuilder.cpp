@@ -31,11 +31,9 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-void CDGBuilder::dfsNodesBetweenPdomNodes(const SVFBasicBlock *cur,
-        const SVFBasicBlock *tgt,
-        std::vector<const SVFBasicBlock *> &path,
-        std::vector<const SVFBasicBlock *> &tgtNodes,
-        SVFLoopAndDomInfo *ld)
+void CDGBuilder::dfsNodesBetweenPdomNodes(const SVFBasicBlock* cur, const SVFBasicBlock* tgt,
+                                          std::vector<const SVFBasicBlock*>& path,
+                                          std::vector<const SVFBasicBlock*>& tgtNodes, SVFLoopAndDomInfo* ld)
 {
     path.push_back(cur);
     if (cur == tgt)
@@ -45,7 +43,7 @@ void CDGBuilder::dfsNodesBetweenPdomNodes(const SVFBasicBlock *cur,
     else
     {
         auto it = ld->getPostDomTreeMap().find(cur);
-        for (const auto &nxt: it->second)
+        for (const auto& nxt : it->second)
         {
             dfsNodesBetweenPdomNodes(nxt, tgt, path, tgtNodes, ld);
         }
@@ -60,13 +58,12 @@ void CDGBuilder::dfsNodesBetweenPdomNodes(const SVFBasicBlock *cur,
  * @param LCA
  * @param tgtNodes
  */
-void
-CDGBuilder::extractNodesBetweenPdomNodes(const SVFBasicBlock *succ, const SVFBasicBlock *LCA,
-        std::vector<const SVFBasicBlock *> &tgtNodes)
+void CDGBuilder::extractNodesBetweenPdomNodes(const SVFBasicBlock* succ, const SVFBasicBlock* LCA,
+                                              std::vector<const SVFBasicBlock*>& tgtNodes)
 {
     if (succ == LCA) return;
-    std::vector<const SVFBasicBlock *> path;
-    SVFLoopAndDomInfo *ld = const_cast<SVFFunction *>(LCA->getFunction())->getLoopAndDomInfo();
+    std::vector<const SVFBasicBlock*> path;
+    SVFLoopAndDomInfo* ld = const_cast<SVFFunction*>(LCA->getFunction())->getLoopAndDomInfo();
     dfsNodesBetweenPdomNodes(LCA, succ, path, tgtNodes, ld);
 }
 
@@ -75,31 +72,28 @@ CDGBuilder::extractNodesBetweenPdomNodes(const SVFBasicBlock *succ, const SVFBas
  */
 void CDGBuilder::build()
 {
-    if (_controlDG->getTotalNodeNum() > 0)
-        return;
-    PAG *pag = PAG::getPAG();
+    if (_controlDG->getTotalNodeNum() > 0) return;
+    PAG* pag = PAG::getPAG();
     buildControlDependence(pag->getModule());
     buildICFGNodeControlMap();
 }
 
-
-s64_t CDGBuilder::getBBSuccessorBranchID(const SVFBasicBlock *BB, const SVFBasicBlock *Succ)
+s64_t CDGBuilder::getBBSuccessorBranchID(const SVFBasicBlock* BB, const SVFBasicBlock* Succ)
 {
-    ICFG *icfg = PAG::getPAG()->getICFG();
-    const ICFGNode *pred = icfg->getICFGNode(BB->getTerminator());
-    const ICFGEdge *edge = nullptr;
-    for (const auto &inst: Succ->getInstructionList())
+    ICFG* icfg = PAG::getPAG()->getICFG();
+    const ICFGNode* pred = icfg->getICFGNode(BB->getTerminator());
+    const ICFGEdge* edge = nullptr;
+    for (const auto& inst : Succ->getInstructionList())
     {
-        if (const ICFGEdge *e = icfg->getICFGEdge(pred, icfg->getICFGNode(inst), ICFGEdge::ICFGEdgeK::IntraCF))
+        if (const ICFGEdge* e = icfg->getICFGEdge(pred, icfg->getICFGNode(inst), ICFGEdge::ICFGEdgeK::IntraCF))
         {
             edge = e;
             break;
         }
     }
-    if (const IntraCFGEdge *intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge))
+    if (const IntraCFGEdge* intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge))
     {
-        if(intraEdge->getCondition())
-            return intraEdge->getSuccessorCondValue();
+        if (intraEdge->getCondition()) return intraEdge->getSuccessorCondValue();
         else
             return 0;
     }
@@ -120,27 +114,26 @@ s64_t CDGBuilder::getBBSuccessorBranchID(const SVFBasicBlock *BB, const SVFBasic
  *     including LCA if LCA is pred, excluding LCA if LCA is not pred
  * @param svfgModule
  */
-void CDGBuilder::buildControlDependence(const SVFModule *svfgModule)
+void CDGBuilder::buildControlDependence(const SVFModule* svfgModule)
 {
-    for (const auto &svfFun: *svfgModule)
+    for (const auto& svfFun : *svfgModule)
     {
         if (SVFUtil::isExtCall(svfFun)) continue;
         // extract basic block edges to be processed
-        Map<const SVFBasicBlock *, std::vector<const SVFBasicBlock *>> BBS;
+        Map<const SVFBasicBlock*, std::vector<const SVFBasicBlock*>> BBS;
         extractBBS(svfFun, BBS);
 
-        for (const auto &item: BBS)
+        for (const auto& item : BBS)
         {
-            const SVFBasicBlock *pred = item.first;
+            const SVFBasicBlock* pred = item.first;
             // for each bb pair
-            for (const SVFBasicBlock *succ: item.second)
+            for (const SVFBasicBlock* succ : item.second)
             {
-                const SVFBasicBlock *SVFLCA = const_cast<SVFFunction *>(svfFun)->
-                                              getLoopAndDomInfo()->findNearestCommonPDominator(pred, succ);
-                std::vector<const SVFBasicBlock *> tgtNodes;
+                const SVFBasicBlock* SVFLCA =
+                    const_cast<SVFFunction*>(svfFun)->getLoopAndDomInfo()->findNearestCommonPDominator(pred, succ);
+                std::vector<const SVFBasicBlock*> tgtNodes;
                 // no common ancestor, may be exit()
-                if (SVFLCA == NULL)
-                    tgtNodes.push_back(succ);
+                if (SVFLCA == NULL) tgtNodes.push_back(succ);
                 else
                 {
                     if (SVFLCA == pred) tgtNodes.push_back(SVFLCA);
@@ -149,7 +142,7 @@ void CDGBuilder::buildControlDependence(const SVFModule *svfgModule)
                 }
 
                 s64_t pos = getBBSuccessorBranchID(pred, succ);
-                for (const SVFBasicBlock *bb: tgtNodes)
+                for (const SVFBasicBlock* bb : tgtNodes)
                 {
                     updateMap(pred, bb, pos);
                 }
@@ -158,22 +151,20 @@ void CDGBuilder::buildControlDependence(const SVFModule *svfgModule)
     }
 }
 
-
 /*!
  * (2) extract basic block edges on the CFG (pred->succ) to be processed
  * succ does not post-dominates pred (!postDT->dominates(succ, pred))
  * @param func
  * @param res
  */
-void CDGBuilder::extractBBS(const SVF::SVFFunction *func,
-                            Map<const SVF::SVFBasicBlock *, std::vector<const SVFBasicBlock *>> &res)
+void CDGBuilder::extractBBS(const SVF::SVFFunction* func,
+                            Map<const SVF::SVFBasicBlock*, std::vector<const SVFBasicBlock*>>& res)
 {
-    for (const auto &bb: *func)
+    for (const auto& bb : *func)
     {
-        for (const auto &succ: bb->getSuccessors())
+        for (const auto& succ : bb->getSuccessors())
         {
-            if (func->postDominate(succ, bb))
-                continue;
+            if (func->postDominate(succ, bb)) continue;
             res[bb].push_back(succ);
         }
     }
@@ -184,29 +175,28 @@ void CDGBuilder::extractBBS(const SVF::SVFFunction *func,
  */
 void CDGBuilder::buildICFGNodeControlMap()
 {
-    ICFG *icfg = PAG::getPAG()->getICFG();
-    for (const auto &it: _svfcontrolMap)
+    ICFG* icfg = PAG::getPAG()->getICFG();
+    for (const auto& it : _svfcontrolMap)
     {
-        for (const auto &it2: it.second)
+        for (const auto& it2 : it.second)
         {
-            const SVFBasicBlock *controllingBB = it2.first;
+            const SVFBasicBlock* controllingBB = it2.first;
             //            const ICFGNode *controlNode = _bbToNode[it.first].first;
             //            if(!controlNode) continue;
-            const SVFInstruction *terminator = it.first->getInstructionList().back();
+            const SVFInstruction* terminator = it.first->getInstructionList().back();
             if (!terminator) continue;
-            const ICFGNode *controlNode = icfg->getICFGNode(terminator);
+            const ICFGNode* controlNode = icfg->getICFGNode(terminator);
             if (!controlNode) continue;
             // controlNode control at pos
-            for (const auto &inst: *controllingBB)
+            for (const auto& inst : *controllingBB)
             {
-                const ICFGNode *controllee = icfg->getICFGNode(inst);
+                const ICFGNode* controllee = icfg->getICFGNode(inst);
                 _nodeControlMap[controlNode][controllee].insert(it2.second.begin(), it2.second.end());
                 _nodeDependentOnMap[controllee][controlNode].insert(it2.second.begin(), it2.second.end());
-                for (s32_t pos: it2.second)
+                for (s32_t pos : it2.second)
                 {
                     _controlDG->addCDGEdgeFromSrcDst(controlNode, controllee,
-                                                     SVFUtil::dyn_cast<IntraICFGNode>(controlNode)->getInst(),
-                                                     pos);
+                                                     SVFUtil::dyn_cast<IntraICFGNode>(controlNode)->getInst(), pos);
                 }
             }
         }

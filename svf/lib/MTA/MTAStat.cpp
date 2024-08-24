@@ -36,7 +36,6 @@
 
 using namespace SVF;
 
-
 /*!
  * Statistics for thread call graph
  */
@@ -46,33 +45,36 @@ void MTAStat::performThreadCallGraphStat(ThreadCallGraph* tcg)
     u32_t numOfJoinEdge = 0;
     u32_t numOfIndForksite = 0;
     u32_t numOfIndForkEdge = 0;
-    for (ThreadCallGraph::CallSiteSet::const_iterator it = tcg->forksitesBegin(), eit = tcg->forksitesEnd(); it != eit; ++it)
+    for (ThreadCallGraph::CallSiteSet::const_iterator it = tcg->forksitesBegin(), eit = tcg->forksitesEnd(); it != eit;
+         ++it)
     {
         bool indirectfork = false;
-        const SVFFunction* spawnee = SVFUtil::dyn_cast<SVFFunction>(tcg->getThreadAPI()->getForkedFun((*it)->getCallSite()));
-        if(spawnee==nullptr)
+        const SVFFunction* spawnee =
+            SVFUtil::dyn_cast<SVFFunction>(tcg->getThreadAPI()->getForkedFun((*it)->getCallSite()));
+        if (spawnee == nullptr)
         {
             numOfIndForksite++;
             indirectfork = true;
         }
-        for (ThreadCallGraph::ForkEdgeSet::const_iterator cgIt = tcg->getForkEdgeBegin(*it), ecgIt =
-                    tcg->getForkEdgeEnd(*it); cgIt != ecgIt; ++cgIt)
+        for (ThreadCallGraph::ForkEdgeSet::const_iterator cgIt = tcg->getForkEdgeBegin(*it),
+                                                          ecgIt = tcg->getForkEdgeEnd(*it);
+             cgIt != ecgIt; ++cgIt)
         {
             numOfForkEdge++;
-            if(indirectfork)
-                numOfIndForkEdge++;
+            if (indirectfork) numOfIndForkEdge++;
         }
     }
 
-    for (ThreadCallGraph::CallSiteSet::const_iterator it = tcg->joinsitesBegin(), eit = tcg->joinsitesEnd(); it != eit; ++it)
+    for (ThreadCallGraph::CallSiteSet::const_iterator it = tcg->joinsitesBegin(), eit = tcg->joinsitesEnd(); it != eit;
+         ++it)
     {
-        for (ThreadCallGraph::JoinEdgeSet::const_iterator cgIt = tcg->getJoinEdgeBegin(*it), ecgIt =
-                    tcg->getJoinEdgeEnd(*it); cgIt != ecgIt; ++cgIt)
+        for (ThreadCallGraph::JoinEdgeSet::const_iterator cgIt = tcg->getJoinEdgeBegin(*it),
+                                                          ecgIt = tcg->getJoinEdgeEnd(*it);
+             cgIt != ecgIt; ++cgIt)
         {
             numOfJoinEdge++;
         }
     }
-
 
     PTNumStatMap.clear();
     PTNumStatMap["NumOfForkSite"] = tcg->getNumOfForksite();
@@ -86,7 +88,6 @@ void MTAStat::performThreadCallGraphStat(ThreadCallGraph* tcg)
     SVFUtil::outs() << "\n****Thread Call Graph Statistics****\n";
     PTAStat::printStat();
 }
-
 
 void MTAStat::performTCTStat(TCT* tct)
 {
@@ -112,50 +113,45 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
 {
 
     SVFIR* pag = SVFIR::getPAG();
-    if(Options::AllPairMHP())
+    if (Options::AllPairMHP())
     {
         Set<const ICFGNode*> instSet1;
         Set<const ICFGNode*> instSet2;
         SVFModule* mod = mhp->getTCT()->getSVFModule();
         for (const SVFFunction* fun : mod->getFunctionSet())
         {
-            if(SVFUtil::isExtCall(fun))
-                continue;
-            if(!mhp->isConnectedfromMain(fun))
-                continue;
-            for (SVFFunction::const_iterator bit =  fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
+            if (SVFUtil::isExtCall(fun)) continue;
+            if (!mhp->isConnectedfromMain(fun)) continue;
+            for (SVFFunction::const_iterator bit = fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
             {
                 const SVFBasicBlock* bb = *bit;
                 for (SVFBasicBlock::const_iterator ii = bb->begin(), eii = bb->end(); ii != eii; ++ii)
                 {
                     const SVFInstruction* inst = *ii;
-                    for(const SVFStmt* stmt : pag->getSVFStmtList(pag->getICFG()->getICFGNode(inst)))
+                    for (const SVFStmt* stmt : pag->getSVFStmtList(pag->getICFG()->getICFGNode(inst)))
                     {
-                        if(SVFUtil::isa<LoadStmt>(stmt))
+                        if (SVFUtil::isa<LoadStmt>(stmt))
                         {
                             instSet1.insert(stmt->getICFGNode());
                         }
-                        else if(SVFUtil::isa<StoreStmt>(stmt))
+                        else if (SVFUtil::isa<StoreStmt>(stmt))
                         {
                             instSet1.insert(stmt->getICFGNode());
                             instSet2.insert(stmt->getICFGNode());
                         }
                     }
-
                 }
             }
         }
 
-
-        for(Set<const ICFGNode*>::const_iterator it1 = instSet1.begin(), eit1 = instSet1.end(); it1!=eit1; ++it1)
+        for (Set<const ICFGNode*>::const_iterator it1 = instSet1.begin(), eit1 = instSet1.end(); it1 != eit1; ++it1)
         {
-            for(Set<const ICFGNode*>::const_iterator it2 = instSet2.begin(), eit2 = instSet2.end(); it2!=eit2; ++it2)
+            for (Set<const ICFGNode*>::const_iterator it2 = instSet2.begin(), eit2 = instSet2.end(); it2 != eit2; ++it2)
             {
-                mhp->mayHappenInParallel(*it1,*it2);
+                mhp->mayHappenInParallel(*it1, *it2);
             }
         }
     }
-
 
     generalNumMap.clear();
     PTNumStatMap.clear();
@@ -174,4 +170,3 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
     SVFUtil::outs() << "\n****MHP Stmt Pairs Statistics****\n";
     PTAStat::printStat();
 }
-

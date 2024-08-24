@@ -48,35 +48,35 @@ class CFGNormalizer
 {
 
 public:
-    CFGNormalizer()
-    {
-    }
+    CFGNormalizer() {}
 
     /// Binary Normal Form(BNF) normalization with variable attribute expanded
-    CFGrammar* normalize(GrammarBase *generalGrammar);
+    CFGrammar* normalize(GrammarBase* generalGrammar);
 
     /// Expand every variable attribute in rawProductions of grammarbase
-    CFGrammar* fillAttribute(CFGrammar *grammar, const Map<CFGrammar::Kind, Set<CFGrammar::Attribute>>& kindToAttrsMap);
+    CFGrammar* fillAttribute(CFGrammar* grammar, const Map<CFGrammar::Kind, Set<CFGrammar::Attribute>>& kindToAttrsMap);
 
 private:
     /// Add nonterminal to tranfer long rules to binary rules
-    void ebnf_bin(CFGrammar *grammar);
+    void ebnf_bin(CFGrammar* grammar);
 
-    void ebnfSignReplace(char sign, CFGrammar *grammar);
+    void ebnfSignReplace(char sign, CFGrammar* grammar);
 
-    void barReplace(CFGrammar *grammar);
+    void barReplace(CFGrammar* grammar);
 
-    void insertToCFLGrammar(CFGrammar *grammar, GrammarBase::Production &prod);
+    void insertToCFLGrammar(CFGrammar* grammar, GrammarBase::Production& prod);
 
-    int ebnfBracketMatch(GrammarBase::Production& prod, int i, CFGrammar *grammar) ;
+    int ebnfBracketMatch(GrammarBase::Production& prod, int i, CFGrammar* grammar);
 
-    GrammarBase::Symbol check_head(GrammarBase::SymbolMap<GrammarBase::Symbol, GrammarBase::Productions>& grammar, GrammarBase::Production& rule);
+    GrammarBase::Symbol check_head(GrammarBase::SymbolMap<GrammarBase::Symbol, GrammarBase::Productions>& grammar,
+                                   GrammarBase::Production& rule);
 
-    void strTrans(std::string strPro, CFGrammar *grammar, GrammarBase::Production& normalProd);
+    void strTrans(std::string strPro, CFGrammar* grammar, GrammarBase::Production& normalProd);
 
-    void getFilledProductions(GrammarBase::Production &prod,const NodeSet& nodeSet, CFGrammar *grammar, GrammarBase::Productions& normalProds);
+    void getFilledProductions(GrammarBase::Production& prod, const NodeSet& nodeSet, CFGrammar* grammar,
+                              GrammarBase::Productions& normalProds);
 
-    void removeFirstSymbol(CFGrammar *grammar);
+    void removeFirstSymbol(CFGrammar* grammar);
 };
 
 } // End namespace SVF

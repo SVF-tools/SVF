@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 /*
  * MTA.cpp
  *
@@ -47,10 +46,9 @@ MTA::MTA() : tcg(nullptr), tct(nullptr), mhp(nullptr), lsa(nullptr)
 
 MTA::~MTA()
 {
-    if (tcg)
-        delete tcg;
-    //if (tct)
-    //    delete tct;
+    if (tcg) delete tcg;
+    // if (tct)
+    //     delete tct;
     delete mhp;
     delete lsa;
 }
@@ -63,8 +61,7 @@ bool MTA::runOnModule(SVFIR* pag)
     mhp = computeMHP(pag->getModule());
     lsa = computeLocksets(mhp->getTCT());
 
-    if(Options::RaceCheck())
-        detect(pag->getModule());
+    if (Options::RaceCheck()) detect(pag->getModule());
 
     return false;
 }
@@ -144,7 +141,7 @@ void MTA::detect(SVFModule* module)
         {
             for (const SVFInstruction* svfInst : svfbb->getInstructionList())
             {
-                for(const SVFStmt* stmt : pag->getSVFStmtList(pag->getICFG()->getICFGNode(svfInst)))
+                for (const SVFStmt* stmt : pag->getSVFStmtList(pag->getICFG()->getICFGNode(svfInst)))
                 {
                     if (const LoadStmt* l = SVFUtil::dyn_cast<LoadStmt>(stmt))
                     {
@@ -165,12 +162,12 @@ void MTA::detect(SVFModule* module)
         for (Set<const StoreStmt*>::const_iterator sit = stores.begin(), esit = stores.end(); sit != esit; ++sit)
         {
             const StoreStmt* store = *sit;
-            if(load->getInst()==nullptr || store->getInst()==nullptr)
-                continue;
-            if(mhp->mayHappenInParallelInst(load->getICFGNode(),store->getICFGNode()) && pta->alias(load->getRHSVarID(),store->getLHSVarID()))
-                if(lsa->isProtectedByCommonLock(load->getICFGNode(),store->getICFGNode()) == false)
-                    outs() << SVFUtil::bugMsg1("race pair(") << " store: " << store->toString() << ", load: " << load->toString() << SVFUtil::bugMsg1(")") << "\n";
+            if (load->getInst() == nullptr || store->getInst() == nullptr) continue;
+            if (mhp->mayHappenInParallelInst(load->getICFGNode(), store->getICFGNode()) &&
+                pta->alias(load->getRHSVarID(), store->getLHSVarID()))
+                if (lsa->isProtectedByCommonLock(load->getICFGNode(), store->getICFGNode()) == false)
+                    outs() << SVFUtil::bugMsg1("race pair(") << " store: " << store->toString()
+                           << ", load: " << load->toString() << SVFUtil::bugMsg1(")") << "\n";
         }
     }
 }
-

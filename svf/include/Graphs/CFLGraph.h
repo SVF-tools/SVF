@@ -44,15 +44,12 @@ class CFLNode;
 
 typedef GenericEdge<CFLNode> GenericCFLEdgeTy;
 
-class CFLEdge: public GenericCFLEdgeTy
+class CFLEdge : public GenericCFLEdgeTy
 {
 public:
     typedef GenericNode<CFLNode, CFLEdge>::GEdgeSetTy CFLEdgeSetTy;
 
-    CFLEdge(CFLNode *s, CFLNode *d, GEdgeFlag k = 0):
-        GenericCFLEdgeTy(s,d,k)
-    {
-    }
+    CFLEdge(CFLNode* s, CFLNode* d, GEdgeFlag k = 0) : GenericCFLEdgeTy(s, d, k) {}
     ~CFLEdge() override = default;
 
     inline GEdgeKind getEdgeKind() const
@@ -71,20 +68,16 @@ public:
     }
 };
 
-
-typedef GenericNode<CFLNode,CFLEdge> GenericCFLNodeTy;
-class CFLNode: public GenericCFLNodeTy
+typedef GenericNode<CFLNode, CFLEdge> GenericCFLNodeTy;
+class CFLNode : public GenericCFLNodeTy
 {
 public:
-    CFLNode (NodeID i = 0, GNodeK k = 0):
-        GenericCFLNodeTy(i, k)
-    {
-    }
+    CFLNode(NodeID i = 0, GNodeK k = 0) : GenericCFLNodeTy(i, k) {}
 
     ~CFLNode() override = default;
 
     /// Different Kind(label) associated edges set
-    typedef std::map <GrammarBase::Symbol, CFLEdge::CFLEdgeSetTy> CFLEdgeDataTy;
+    typedef std::map<GrammarBase::Symbol, CFLEdge::CFLEdgeSetTy> CFLEdgeDataTy;
 
 private:
     CFLEdgeDataTy inCFLEdges;
@@ -151,13 +144,13 @@ public:
 };
 
 /// Edge-labeled graph for CFL Reachability analysis
-typedef GenericGraph<CFLNode,CFLEdge> GenericCFLGraphTy;
-class CFLGraph: public GenericCFLGraphTy
+typedef GenericGraph<CFLNode, CFLEdge> GenericCFLGraphTy;
+class CFLGraph : public GenericCFLGraphTy
 {
 public:
     typedef CFGrammar::Symbol Symbol;
     typedef CFGrammar::Kind Kind;
-    typedef GenericNode<CFLNode,CFLEdge>::GEdgeSetTy CFLEdgeSet;
+    typedef GenericNode<CFLNode, CFLEdge>::GEdgeSetTy CFLEdgeSet;
     Kind startKind;
 
     CFLGraph(Kind kind)
@@ -187,7 +180,7 @@ private:
     CFLEdgeSet cflEdgeSet;
 };
 
-}
+} // namespace SVF
 
 namespace SVF
 {
@@ -195,21 +188,24 @@ namespace SVF
  * GenericGraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GenericGraphTraits<SVF::CFLNode*> : public GenericGraphTraits<SVF::GenericNode<SVF::CFLNode,SVF::CFLEdge>*  >
+template <>
+struct GenericGraphTraits<SVF::CFLNode*> : public GenericGraphTraits<SVF::GenericNode<SVF::CFLNode, SVF::CFLEdge>*>
 {
 };
 
 /// Inverse GenericGraphTraits specializations for call graph node, it is used for inverse traversal.
-template<>
-struct GenericGraphTraits<Inverse<SVF::CFLNode *> > : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::CFLNode,SVF::CFLEdge>* > >
+template <>
+struct GenericGraphTraits<Inverse<SVF::CFLNode*>>
+    : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::CFLNode, SVF::CFLEdge>*>>
 {
 };
 
-template<> struct GenericGraphTraits<SVF::CFLGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::CFLNode,SVF::CFLEdge>* >
+template <>
+struct GenericGraphTraits<SVF::CFLGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::CFLNode, SVF::CFLEdge>*>
 {
-    typedef SVF::CFLNode *NodeRef;
+    typedef SVF::CFLNode* NodeRef;
 };
 
-} // End namespace llvm
+} // namespace SVF
 
 #endif /* CFLG_H_ */

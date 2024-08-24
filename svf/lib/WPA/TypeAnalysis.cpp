@@ -38,7 +38,6 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace std;
 
-
 /// Initialize analysis
 void TypeAnalysis::initialize()
 {
@@ -60,8 +59,7 @@ void TypeAnalysis::initialize()
 void TypeAnalysis::finalize()
 {
     AndersenBase::finalize();
-    if (print_stat)
-        dumpCHAStats();
+    if (print_stat) dumpCHAStats();
 }
 
 void TypeAnalysis::analyze()
@@ -74,7 +72,7 @@ void TypeAnalysis::analyze()
 
 void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges)
 {
-    for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter)
+    for (CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter != eiter; ++iter)
     {
         const CallICFGNode* cbn = iter->first;
         CallSite cs = SVFUtil::getSVFCallSite(cbn->getCallSite());
@@ -90,28 +88,23 @@ void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites
     }
 }
 
-
 void TypeAnalysis::dumpCHAStats()
 {
 
-    const CHGraph *chgraph = SVFUtil::dyn_cast<CHGraph>(getCHGraph());
+    const CHGraph* chgraph = SVFUtil::dyn_cast<CHGraph>(getCHGraph());
     if (chgraph == nullptr)
     {
         SVFUtil::errs() << "dumpCHAStats only implemented for standard CHGraph.\n";
         return;
     }
 
-    u32_t pure_abstract_class_num = 0,
-          multi_inheritance_class_num = 0;
-    for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
-            it != eit; ++it)
+    u32_t pure_abstract_class_num = 0, multi_inheritance_class_num = 0;
+    for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end(); it != eit; ++it)
     {
-        CHNode *node = it->second;
+        CHNode* node = it->second;
         outs() << "class " << node->getName() << "\n";
-        if (node->isPureAbstract())
-            pure_abstract_class_num++;
-        if (node->isMultiInheritance())
-            multi_inheritance_class_num++;
+        if (node->isPureAbstract()) pure_abstract_class_num++;
+        if (node->isMultiInheritance()) multi_inheritance_class_num++;
     }
     outs() << "class_num:\t" << chgraph->getTotalNodeNum() << '\n';
     outs() << "pure_abstract_class_num:\t" << pure_abstract_class_num << '\n';
@@ -124,26 +117,20 @@ void TypeAnalysis::dumpCHAStats()
      * vtbl max vfunction
      * pure abstract class
      */
-    u32_t vtblnum = 0,
-          vfunc_total = 0,
-          vtbl_max = 0,
-          pure_abstract = 0;
+    u32_t vtblnum = 0, vfunc_total = 0, vtbl_max = 0, pure_abstract = 0;
     set<const SVFFunction*> allVirtualFunctions;
-    for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
-            it != eit; ++it)
+    for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end(); it != eit; ++it)
     {
-        CHNode *node = it->second;
-        if (node->isPureAbstract())
-            pure_abstract++;
+        CHNode* node = it->second;
+        if (node->isPureAbstract()) pure_abstract++;
 
         u32_t vfuncs_size = 0;
         const vector<CHNode::FuncVector>& vecs = node->getVirtualFunctionVectors();
-        for (vector<CHNode::FuncVector>::const_iterator vit = vecs.begin(),
-                veit = vecs.end(); vit != veit; ++vit)
+        for (vector<CHNode::FuncVector>::const_iterator vit = vecs.begin(), veit = vecs.end(); vit != veit; ++vit)
         {
             vfuncs_size += (*vit).size();
-            for (vector<const SVFFunction*>::const_iterator fit = (*vit).begin(),
-                    feit = (*vit).end(); fit != feit; ++fit)
+            for (vector<const SVFFunction*>::const_iterator fit = (*vit).begin(), feit = (*vit).end(); fit != feit;
+                 ++fit)
             {
                 const SVFFunction* func = *fit;
                 allVirtualFunctions.insert(func);
@@ -161,9 +148,7 @@ void TypeAnalysis::dumpCHAStats()
     vfunc_total = allVirtualFunctions.size();
 
     outs() << "vtblnum:\t" << vtblnum << '\n';
-    outs() << "vtbl_average:\t" << (double)(vfunc_total)/vtblnum << '\n';
+    outs() << "vtbl_average:\t" << (double)(vfunc_total) / vtblnum << '\n';
     outs() << "vtbl_max:\t" << vtbl_max << '\n';
     outs() << "pure_abstract:\t" << pure_abstract << '\n';
 }
-
-

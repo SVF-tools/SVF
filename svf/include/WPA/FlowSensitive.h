@@ -49,6 +49,7 @@ typedef WPAFSSolver<SVFG*> WPASVFGFSSolver;
 class FlowSensitive : public WPASVFGFSSolver, public BVDataPTAImpl
 {
     friend class FlowSensitiveStat;
+
 protected:
     typedef SVFG::SVFGEdgeSetTy SVFGEdgeSetTy;
 
@@ -121,11 +122,11 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast
     //@{
-    static inline bool classof(const FlowSensitive *)
+    static inline bool classof(const FlowSensitive*)
     {
         return true;
     }
-    static inline bool classof(const PointerAnalysis *pta)
+    static inline bool classof(const PointerAnalysis* pta)
     {
         return pta->getAnalysisTy() == FSSPARSE_WPA;
     }
@@ -160,12 +161,12 @@ protected:
     /// Handle weak updates
     virtual bool weakUpdateOutFromIn(const SVFGNode* node)
     {
-        return getDFPTDataTy()->updateAllDFOutFromIn(node->getId(),0,false);
+        return getDFPTDataTy()->updateAllDFOutFromIn(node->getId(), 0, false);
     }
     /// Handle strong updates
     virtual bool strongUpdateOutFromIn(const SVFGNode* node, NodeID singleton)
     {
-        return getDFPTDataTy()->updateAllDFOutFromIn(node->getId(),singleton,true);
+        return getDFPTDataTy()->updateAllDFOutFromIn(node->getId(), singleton, true);
     }
     //@}
 
@@ -176,11 +177,11 @@ protected:
 
     virtual inline bool propDFOutToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar)
     {
-        return getDFPTDataTy()->updateAllDFInFromOut(srcStmt->getId(), srcVar, dstStmt->getId(),dstVar);
+        return getDFPTDataTy()->updateAllDFInFromOut(srcStmt->getId(), srcVar, dstStmt->getId(), dstVar);
     }
     virtual inline bool propDFInToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar)
     {
-        return getDFPTDataTy()->updateAllDFInFromIn(srcStmt->getId(), srcVar, dstStmt->getId(),dstVar);
+        return getDFPTDataTy()->updateAllDFInFromIn(srcStmt->getId(), srcVar, dstStmt->getId(), dstVar);
     }
     //@}
 
@@ -188,24 +189,24 @@ protected:
     //@{
     inline bool updateOutFromIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar)
     {
-        return getDFPTDataTy()->updateDFOutFromIn(srcStmt->getId(),srcVar, dstStmt->getId(),dstVar);
+        return getDFPTDataTy()->updateDFOutFromIn(srcStmt->getId(), srcVar, dstStmt->getId(), dstVar);
     }
     virtual inline bool updateInFromIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar)
     {
-        return getDFPTDataTy()->updateDFInFromIn(srcStmt->getId(),srcVar, dstStmt->getId(),dstVar);
+        return getDFPTDataTy()->updateDFInFromIn(srcStmt->getId(), srcVar, dstStmt->getId(), dstVar);
     }
     virtual inline bool updateInFromOut(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar)
     {
-        return getDFPTDataTy()->updateDFInFromOut(srcStmt->getId(),srcVar, dstStmt->getId(),dstVar);
+        return getDFPTDataTy()->updateDFInFromOut(srcStmt->getId(), srcVar, dstStmt->getId(), dstVar);
     }
 
     virtual inline bool unionPtsFromIn(const SVFGNode* stmt, NodeID srcVar, NodeID dstVar)
     {
-        return getDFPTDataTy()->updateTLVPts(stmt->getId(),srcVar,dstVar);
+        return getDFPTDataTy()->updateTLVPts(stmt->getId(), srcVar, dstVar);
     }
     virtual inline bool unionPtsFromTop(const SVFGNode* stmt, NodeID srcVar, NodeID dstVar)
     {
-        return getDFPTDataTy()->updateATVPts(srcVar,stmt->getId(),dstVar);
+        return getDFPTDataTy()->updateATVPts(srcVar, stmt->getId(), dstVar);
     }
 
     inline void clearAllDFOutVarFlag(const SVFGNode* stmt)
@@ -240,18 +241,18 @@ protected:
     bool isStrongUpdate(const SVFGNode* node, NodeID& singleton);
 
     /// Fills may/noAliases for the location/pointer pairs in cmp.
-    virtual void countAliases(Set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases);
+    virtual void countAliases(Set<std::pair<NodeID, NodeID>> cmp, unsigned* mayAliases, unsigned* noAliases);
 
     SVFG* svfg;
-    ///Get points-to set for a node from data flow IN/OUT set at a statement.
+    /// Get points-to set for a node from data flow IN/OUT set at a statement.
     //@{
     inline const PointsTo& getDFInPtsSet(const SVFGNode* stmt, const NodeID node)
     {
-        return getDFPTDataTy()->getDFInPtsSet(stmt->getId(),node);
+        return getDFPTDataTy()->getDFInPtsSet(stmt->getId(), node);
     }
     inline const PointsTo& getDFOutPtsSet(const SVFGNode* stmt, const NodeID node)
     {
-        return getDFPTDataTy()->getDFOutPtsSet(stmt->getId(),node);
+        return getDFPTDataTy()->getDFOutPtsSet(stmt->getId(), node);
     }
     //@}
 
@@ -276,40 +277,40 @@ protected:
 
     static std::unique_ptr<FlowSensitive> fspta;
     SVFGBuilder memSSA;
-    AndersenWaveDiff *ander;
+    AndersenWaveDiff* ander;
 
     /// Save candidate mappings for evaluation's sake.
     std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> candidateMappings;
 
     /// Statistics.
     //@{
-    u32_t numOfProcessedAddr;	/// Number of processed Addr node
-    u32_t numOfProcessedCopy;	/// Number of processed Copy node
-    u32_t numOfProcessedGep;	/// Number of processed Gep node
-    u32_t numOfProcessedPhi;	/// Number of processed Phi node
-    u32_t numOfProcessedLoad;	/// Number of processed Load node
-    u32_t numOfProcessedStore;	/// Number of processed Store node
-    u32_t numOfProcessedActualParam;	/// Number of processed actual param node
-    u32_t numOfProcessedFormalRet;	/// Number of processed formal ret node
-    u32_t numOfProcessedMSSANode;	/// Number of processed mssa node
+    u32_t numOfProcessedAddr;        /// Number of processed Addr node
+    u32_t numOfProcessedCopy;        /// Number of processed Copy node
+    u32_t numOfProcessedGep;         /// Number of processed Gep node
+    u32_t numOfProcessedPhi;         /// Number of processed Phi node
+    u32_t numOfProcessedLoad;        /// Number of processed Load node
+    u32_t numOfProcessedStore;       /// Number of processed Store node
+    u32_t numOfProcessedActualParam; /// Number of processed actual param node
+    u32_t numOfProcessedFormalRet;   /// Number of processed formal ret node
+    u32_t numOfProcessedMSSANode;    /// Number of processed mssa node
 
     u32_t maxSCCSize;
     u32_t numOfSCC;
     u32_t numOfNodesInSCC;
 
-    double solveTime;	///< time of solve.
-    double sccTime;	///< time of SCC detection.
-    double processTime;	///< time of processNode.
-    double propagationTime;	///< time of points-to propagation.
-    double directPropaTime;	///< time of points-to propagation of address-taken objects
-    double indirectPropaTime; ///< time of points-to propagation of top-level pointers
-    double updateTime;	///< time of strong/weak updates.
-    double addrTime;	///< time of handling address edges
-    double copyTime;	///< time of handling copy edges
-    double gepTime;	///< time of handling gep edges
-    double loadTime;	///< time of load edges
-    double storeTime;	///< time of store edges
-    double phiTime;	///< time of phi nodes.
+    double solveTime;           ///< time of solve.
+    double sccTime;             ///< time of SCC detection.
+    double processTime;         ///< time of processNode.
+    double propagationTime;     ///< time of points-to propagation.
+    double directPropaTime;     ///< time of points-to propagation of address-taken objects
+    double indirectPropaTime;   ///< time of points-to propagation of top-level pointers
+    double updateTime;          ///< time of strong/weak updates.
+    double addrTime;            ///< time of handling address edges
+    double copyTime;            ///< time of handling copy edges
+    double gepTime;             ///< time of handling gep edges
+    double loadTime;            ///< time of load edges
+    double storeTime;           ///< time of store edges
+    double phiTime;             ///< time of phi nodes.
     double updateCallGraphTime; ///< time of updating call graph
 
     NodeBS svfgHasSU;

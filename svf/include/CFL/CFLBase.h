@@ -50,7 +50,8 @@ class CFLBase : public BVDataPTAImpl
 {
 
 public:
-    CFLBase(SVFIR* ir, PointerAnalysis::PTATY pty) : BVDataPTAImpl(ir, pty), svfir(ir), graph(nullptr), grammar(nullptr), solver(nullptr)
+    CFLBase(SVFIR* ir, PointerAnalysis::PTATY pty)
+        : BVDataPTAImpl(ir, pty), svfir(ir), graph(nullptr), grammar(nullptr), solver(nullptr)
     {
     }
 
@@ -91,18 +92,18 @@ public:
     /// Statistics
     //@{
     // Grammar
-    static double timeOfBuildCFLGrammar;            // Time of building grammarBase from text file
-    static double timeOfNormalizeGrammar;           // Time of normalizing grammarBase to CFGrammar
+    static double timeOfBuildCFLGrammar;  // Time of building grammarBase from text file
+    static double timeOfNormalizeGrammar; // Time of normalizing grammarBase to CFGrammar
     // Graph
-    static double timeOfBuildCFLGraph;              // Time of building CFLGraph
-    static double numOfTerminalEdges;               // Number of terminal labeled edges
-    static double numOfTemporaryNonterminalEdges;   // Number of temporary (ie. X0, X1..) nonterminal labeled edges
-    static double numOfNonterminalEdges;            // Number of nonterminal labeled edges
-    static double numOfStartEdges;                  // Number of start nonterminal labeled edges
+    static double timeOfBuildCFLGraph;            // Time of building CFLGraph
+    static double numOfTerminalEdges;             // Number of terminal labeled edges
+    static double numOfTemporaryNonterminalEdges; // Number of temporary (ie. X0, X1..) nonterminal labeled edges
+    static double numOfNonterminalEdges;          // Number of nonterminal labeled edges
+    static double numOfStartEdges;                // Number of start nonterminal labeled edges
     // Solver
-    static double numOfIteration;                   // Number solving Iteration
-    static double numOfChecks;                  // Number of checks
-    static double timeOfSolving;                    // time of solving CFL Reachability
+    static double numOfIteration; // Number solving Iteration
+    static double numOfChecks;    // Number of checks
+    static double timeOfSolving;  // time of solving CFL Reachability
     //@}
 
 protected:

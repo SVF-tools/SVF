@@ -28,7 +28,6 @@
  *
  */
 
-
 #ifndef DDAPASS_H_
 #define DDAPASS_H_
 
@@ -57,7 +56,7 @@ public:
     ~DDAPass();
 
     /// Interface expose to users of our pointer analysis, given Value infos
-    virtual AliasResult alias(const SVFValue* V1,	const SVFValue* V2);
+    virtual AliasResult alias(const SVFValue* V1, const SVFValue* V2);
 
     /// Interface expose to users of our pointer analysis, given PAGNodes
     virtual AliasResult alias(NodeID V1, NodeID V2);
@@ -80,18 +79,19 @@ private:
     /// Create pointer analysis according to specified kind and analyze the module.
     void runPointerAnalysis(SVFIR* module, u32_t kind);
     /// Context insensitive Edge for DDA
-    void initCxtInsensitiveEdges(PointerAnalysis* pta, const SVFG* svfg,const SVFGSCC* svfgSCC, SVFGEdgeSet& insensitveEdges);
+    void initCxtInsensitiveEdges(PointerAnalysis* pta, const SVFG* svfg, const SVFGSCC* svfgSCC,
+                                 SVFGEdgeSet& insensitveEdges);
     /// Return TRUE if this edge is inside a SVFG SCC, i.e., src node and dst node are in the same SCC on the SVFG.
-    bool edgeInSVFGSCC(const SVFGSCC* svfgSCC,const SVFGEdge* edge);
+    bool edgeInSVFGSCC(const SVFGSCC* svfgSCC, const SVFGEdge* edge);
     /// Return TRUE if this edge is inside a SVFG SCC, i.e., src node and dst node are in the same SCC on the SVFG.
-    bool edgeInCallGraphSCC(PointerAnalysis* pta,const SVFGEdge* edge);
+    bool edgeInCallGraphSCC(PointerAnalysis* pta, const SVFGEdge* edge);
 
-    void collectCxtInsenEdgeForRecur(PointerAnalysis* pta, const SVFG* svfg,SVFGEdgeSet& insensitveEdges);
-    void collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* svfg,const SVFGSCC* svfgSCC, SVFGEdgeSet& insensitveEdges);
+    void collectCxtInsenEdgeForRecur(PointerAnalysis* pta, const SVFG* svfg, SVFGEdgeSet& insensitveEdges);
+    void collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* svfg, const SVFGSCC* svfgSCC,
+                                       SVFGEdgeSet& insensitveEdges);
 
-    std::unique_ptr<PointerAnalysis> _pta;	///<  pointer analysis to be executed.
-    DDAClient* _client;		///<  DDA client used
-
+    std::unique_ptr<PointerAnalysis> _pta; ///<  pointer analysis to be executed.
+    DDAClient* _client;                    ///<  DDA client used
 };
 
 } // End namespace SVF

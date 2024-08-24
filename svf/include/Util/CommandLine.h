@@ -26,14 +26,10 @@ protected:
 
     /// Value/name/description tuples. If [1] is the value on the commandline for an option, we'd
     /// set the value for the associated Option to [0].
-    template <typename T>
-    using OptionPossibility = std::tuple<T, std::string, std::string>;
+    template <typename T> using OptionPossibility = std::tuple<T, std::string, std::string>;
 
 protected:
-    OptionBase(std::string name, std::string description)
-        : OptionBase(name, description, {})
-    {
-    }
+    OptionBase(std::string name, std::string description) : OptionBase(name, description, {}) {}
 
     OptionBase(std::string name, std::string description, PossibilityDescriptions possibilityDescriptions)
         : name(name), description(description), possibilityDescriptions(possibilityDescriptions)
@@ -72,7 +68,8 @@ protected:
 public:
     /// Parse all constructed OptionBase children, returning positional arguments
     /// in the order they appeared.
-    static std::vector<std::string> parseOptions(int argc, char *argv[], std::string description, std::string callFormat)
+    static std::vector<std::string> parseOptions(int argc, char* argv[], std::string description,
+                                                 std::string callFormat)
     {
         const std::string usage = buildUsage(description, std::string(argv[0]), callFormat);
 
@@ -95,7 +92,7 @@ public:
 
             std::string argName;
             std::string argValue;
-            OptionBase *opt = nullptr;
+            OptionBase* opt = nullptr;
 
             size_t equalsSign = arg.find('=');
             if (equalsSign != std::string::npos)
@@ -171,16 +168,14 @@ private:
     /// Sets the usage member to a usage string, built from the static list of options.
     /// argv0 is argv[0] and callFormat is how the command should be used, minus the command
     /// name (e.g. "[options] <input-bitcode...>".
-    static std::string buildUsage(
-        const std::string description, const std::string argv0, const std::string callFormat
-    )
+    static std::string buildUsage(const std::string description, const std::string argv0, const std::string callFormat)
     {
         // Determine longest option to split into two columns: options and descriptions.
         unsigned longest = 0;
-        for (const std::pair<std::string, OptionBase *> nopt : getOptionsMap())
+        for (const std::pair<std::string, OptionBase*> nopt : getOptionsMap())
         {
             const std::string name = std::get<0>(nopt);
-            const OptionBase *option = std::get<1>(nopt);
+            const OptionBase* option = std::get<1>(nopt);
             if (option->isMultiple())
             {
                 // For Multiple, description goes in left column.
@@ -191,7 +186,7 @@ private:
                 if (name.length() > longest) longest = name.length();
             }
 
-            for (const PossibilityDescription &pd : option->possibilityDescriptions)
+            for (const PossibilityDescription& pd : option->possibilityDescriptions)
             {
                 const std::string possibility = std::get<0>(pd);
                 if (possibility.length() + 3 > longest) longest = possibility.length() + 3;
@@ -209,11 +204,11 @@ private:
         ss << "OPTIONS:" << std::endl;
 
         // Required as we have OptionMultiples doing a many-to-one in options.
-        std::unordered_set<const OptionBase *> handled;
-        for (const std::pair<std::string, OptionBase *> nopt : getOptionsMap())
+        std::unordered_set<const OptionBase*> handled;
+        for (const std::pair<std::string, OptionBase*> nopt : getOptionsMap())
         {
             const std::string name = std::get<0>(nopt);
-            const OptionBase *option = std::get<1>(nopt);
+            const OptionBase* option = std::get<1>(nopt);
             if (handled.find(option) != handled.end()) continue;
             handled.insert(option);
 
@@ -224,7 +219,7 @@ private:
                 //   -name2      - description
                 //   ...
                 ss << "  " << option->description << std::endl;
-                for (const PossibilityDescription &pd : option->possibilityDescriptions)
+                for (const PossibilityDescription& pd : option->possibilityDescriptions)
                 {
                     const std::string possibility = std::get<0>(pd);
                     const std::string description = std::get<1>(pd);
@@ -242,7 +237,7 @@ private:
                 //   ...
                 ss << "  -" << name << std::string(longest - name.length() + 2, ' ');
                 ss << "- " << option->description << std::endl;
-                for (const PossibilityDescription &pd : option->possibilityDescriptions)
+                for (const PossibilityDescription& pd : option->possibilityDescriptions)
                 {
                     const std::string possibility = std::get<0>(pd);
                     const std::string description = std::get<1>(pd);
@@ -266,18 +261,20 @@ private:
     }
 
     /// Find option based on name in options map. Returns nullptr if not found.
-    static OptionBase *getOption(const std::string optName)
+    static OptionBase* getOption(const std::string optName)
     {
         auto optIt = getOptionsMap().find(optName);
         if (optIt == getOptionsMap().end()) return nullptr;
-        else return optIt->second;
+        else
+            return optIt->second;
     }
 
     /// Print usage and exit. If error is set, print to stderr and exits with code 1.
     static void usageAndExit(const std::string usage, bool error)
     {
         if (error) std::cerr << usage;
-        else std::cout << usage;
+        else
+            std::cout << usage;
         std::exit(error ? 1 : 0);
     }
 
@@ -290,11 +287,11 @@ private:
 
 protected:
     // Return the name/description part of OptionsPossibilities (second and third fields).
-    template<typename T>
+    template <typename T>
     static PossibilityDescriptions extractPossibilityDescriptions(const std::vector<OptionPossibility<T>> possibilities)
     {
         PossibilityDescriptions possibilityDescriptions;
-        for (const OptionPossibility<T> &op : possibilities)
+        for (const OptionPossibility<T>& op : possibilities)
         {
             possibilityDescriptions.push_back(std::make_pair(std::get<1>(op), std::get<2>(op)));
         }
@@ -304,13 +301,12 @@ protected:
 
     /// Not unordered map so we can have sorted names when building the usage string.
     /// Map of option names to their object.
-    static std::map<std::string, OptionBase *> &getOptionsMap(void)
+    static std::map<std::string, OptionBase*>& getOptionsMap(void)
     {
         // Not static member to avoid initialisation order problems.
-        static std::map<std::string, OptionBase *> options;
+        static std::map<std::string, OptionBase*> options;
         return options;
     }
-
 
 protected:
     std::string name;
@@ -321,8 +317,7 @@ protected:
 
 /// General -name=value options.
 /// Retrieve value by Opt().
-template <typename T>
-class Option : public OptionBase
+template <typename T> class Option : public OptionBase
 {
 public:
     Option(const std::string& name, const std::string& description, T init)
@@ -362,8 +357,7 @@ private:
     // Convert string to boolean, returning whether we succeeded.
     static bool fromString(const std::string& s, bool& value)
     {
-        if (s == "true")
-            value = true;
+        if (s == "true") value = true;
         else if (s == "false")
             value = false;
         else
@@ -372,14 +366,14 @@ private:
     }
 
     // Convert string to string, always succeeds.
-    static bool fromString(const std::string s, std::string &value)
+    static bool fromString(const std::string s, std::string& value)
     {
         value = s;
         return true;
     }
 
     // Convert string to u32_t, returning whether we succeeded.
-    static bool fromString(const std::string s, u32_t &value)
+    static bool fromString(const std::string s, u32_t& value)
     {
         // We won't allow anything except [0-9]+.
         if (s.empty()) return false;
@@ -405,15 +399,14 @@ private:
 
 /// Option allowing a limited range of values, probably corresponding to an enum.
 /// Opt() gives the value.
-template <typename T>
-class OptionMap : public OptionBase
+template <typename T> class OptionMap : public OptionBase
 {
 public:
     typedef std::vector<OptionPossibility<T>> OptionPossibilities;
 
     OptionMap(std::string name, std::string description, T init, OptionPossibilities possibilities)
-        : OptionBase(name, description, extractPossibilityDescriptions(possibilities)),
-          isExplicitlySet(false), value(init), possibilities(possibilities)
+        : OptionBase(name, description, extractPossibilityDescriptions(possibilities)), isExplicitlySet(false),
+          value(init), possibilities(possibilities)
     {
         assert(!name.empty() && "OptionMap: empty option name given");
     }
@@ -425,7 +418,7 @@ public:
 
     virtual bool parseAndSetValue(const std::string s) override
     {
-        for (const OptionPossibility<T> &op : possibilities)
+        for (const OptionPossibility<T>& op : possibilities)
         {
             // Check if the given string is a valid one.
             if (s == std::get<1>(op))
@@ -453,8 +446,7 @@ private:
 
 /// Options which form a kind of bit set. There are multiple names and n of them can be set.
 /// Opt(v) tests whether v had been set, aborting if v is invalid.
-template <typename T>
-class OptionMultiple : public OptionBase
+template <typename T> class OptionMultiple : public OptionBase
 {
 public:
     typedef std::vector<OptionPossibility<T>> OptionPossibilities;
@@ -462,12 +454,12 @@ public:
     OptionMultiple(std::string description, OptionPossibilities possibilities)
         : OptionBase("", description, extractPossibilityDescriptions(possibilities)), possibilities(possibilities)
     {
-        for (const OptionPossibility<T> &op : possibilities)
+        for (const OptionPossibility<T>& op : possibilities)
         {
             optionValues[std::get<0>(op)] = false;
         }
 
-        for (const OptionPossibility<T> &op : possibilities)
+        for (const OptionPossibility<T>& op : possibilities)
         {
             std::string possibilityName = std::get<1>(op);
             getOptionsMap()[possibilityName] = this;
@@ -482,7 +474,7 @@ public:
     virtual bool parseAndSetValue(const std::string s) override
     {
         // Like in OptionMap basically, except we can have many values.
-        for (const OptionPossibility<T> &op : possibilities)
+        for (const OptionPossibility<T>& op : possibilities)
         {
             if (s == std::get<1>(op))
             {
@@ -527,4 +519,4 @@ private:
     OptionPossibilities possibilities;
 };
 
-#endif  /* COMMANDLINE_H_ */
+#endif /* COMMANDLINE_H_ */

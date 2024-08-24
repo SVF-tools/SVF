@@ -26,8 +26,8 @@
  // Author: Yulei Sui,
  */
 
-//#include "AliasUtil/AliasAnalysisCounter.h"
-//#include "MemoryModel/ComTypeModel.h"
+// #include "AliasUtil/AliasAnalysisCounter.h"
+// #include "MemoryModel/ComTypeModel.h"
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SVFIRBuilder.h"
 #include "DDA/DDAPass.h"
@@ -36,21 +36,16 @@
 using namespace llvm;
 using namespace SVF;
 
-//static cl::list<const PassInfo*, bool, PassNameParser>
-//PassList(cl::desc("Optimizations available:"));
+// static cl::list<const PassInfo*, bool, PassNameParser>
+// PassList(cl::desc("Optimizations available:"));
 
-static Option<bool> DAA(
-    "daa",
-    "Demand-Driven Alias Analysis Pass",
-    false
-);
+static Option<bool> DAA("daa", "Demand-Driven Alias Analysis Pass", false);
 
-int main(int argc, char ** argv)
+int main(int argc, char** argv)
 {
     std::vector<std::string> moduleNameVec;
-    moduleNameVec = OptionBase::parseOptions(
-                        argc, argv, "Demand-Driven Points-to Analysis", "[options] <input-bitcode...>"
-                    );
+    moduleNameVec =
+        OptionBase::parseOptions(argc, argv, "Demand-Driven Points-to Analysis", "[options] <input-bitcode...>");
 
     if (Options::WriteAnder() == "ir_annotator")
     {
@@ -66,6 +61,4 @@ int main(int argc, char ** argv)
 
     LLVMModuleSet::releaseLLVMModuleSet();
     return 0;
-
 }
-

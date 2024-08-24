@@ -59,7 +59,7 @@ public:
         return !addrs.isBottom();
     }
 
-    AbstractValue(AbstractValue &&other)
+    AbstractValue(AbstractValue&& other)
     {
         interval = SVFUtil::move(other.interval);
         addrs = SVFUtil::move(other.addrs);
@@ -118,32 +118,32 @@ public:
         return addrs;
     }
 
-    ~AbstractValue() {};
+    ~AbstractValue(){};
 
-    bool equals(const AbstractValue &rhs) const
+    bool equals(const AbstractValue& rhs) const
     {
         return interval.equals(rhs.interval) && addrs.equals(rhs.addrs);
     }
 
-    void join_with(const AbstractValue &other)
+    void join_with(const AbstractValue& other)
     {
         interval.join_with(other.interval);
         addrs.join_with(other.addrs);
     }
 
-    void meet_with(const AbstractValue &other)
+    void meet_with(const AbstractValue& other)
     {
         interval.meet_with(other.interval);
         addrs.meet_with(other.addrs);
     }
 
-    void widen_with(const AbstractValue &other)
+    void widen_with(const AbstractValue& other)
     {
         interval.widen_with(other.interval);
         // TODO: widen Addrs
     }
 
-    void narrow_with(const AbstractValue &other)
+    void narrow_with(const AbstractValue& other)
     {
         interval.narrow_with(other.interval);
         // TODO: narrow Addrs
@@ -154,4 +154,4 @@ public:
         return "<" + interval.toString() + ", " + addrs.toString() + ">";
     }
 };
-}
+} // namespace SVF

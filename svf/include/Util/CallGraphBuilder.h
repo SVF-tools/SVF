@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 /*
  * CallGraphBuilder.h
  *
@@ -45,30 +44,24 @@ class CallGraphBuilder
 protected:
     CallGraph* callgraph;
     ICFG* icfg;
+
 public:
-    CallGraphBuilder(CallGraph* cg, ICFG* i): callgraph(cg),icfg(i)
-    {
-    }
+    CallGraphBuilder(CallGraph* cg, ICFG* i) : callgraph(cg), icfg(i) {}
 
     /// Build normal callgraph
     CallGraph* buildCallGraph(SVFModule* svfModule);
-
 };
 
 class ThreadCallGraphBuilder : public CallGraphBuilder
 {
 
 public:
-    ThreadCallGraphBuilder(ThreadCallGraph* cg, ICFG* i): CallGraphBuilder(cg,i)
-    {
-    }
+    ThreadCallGraphBuilder(ThreadCallGraph* cg, ICFG* i) : CallGraphBuilder(cg, i) {}
 
     /// Build thread-aware callgraph
     CallGraph* buildThreadCallGraph(SVFModule* svfModule);
-
 };
 
 } // End namespace SVF
-
 
 #endif /* INCLUDE_UTIL_CALLGRAPHBUILDER_H_ */

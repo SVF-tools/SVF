@@ -29,33 +29,31 @@
 #include "Util/cJSON.h"
 #include <type_traits>
 
-#define ABORT_MSG(reason)                                                      \
-    do                                                                         \
-    {                                                                          \
-        SVFUtil::errs() << __FILE__ << ':' << __LINE__ << ": " << reason       \
-                        << '\n';                                               \
-        abort();                                                               \
+#define ABORT_MSG(reason)                                                                                              \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        SVFUtil::errs() << __FILE__ << ':' << __LINE__ << ": " << reason << '\n';                                      \
+        abort();                                                                                                       \
     } while (0)
-#define ABORT_IFNOT(condition, reason)                                         \
-    do                                                                         \
-    {                                                                          \
-        if (!(condition))                                                      \
-            ABORT_MSG(reason);                                                 \
+#define ABORT_IFNOT(condition, reason)                                                                                 \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (!(condition)) ABORT_MSG(reason);                                                                           \
     } while (0)
 
 #define SVFIR_DEBUG 1 /* Turn this on if you're debugging SVFWriter */
 #if SVFIR_DEBUG
-#    define ENSURE_NOT_VISITED(graph)                                          \
-        do                                                                     \
-        {                                                                      \
-            static std::set<decltype(graph)> visited;                          \
-            bool inserted = visited.insert(graph).second;                      \
-            ABORT_IFNOT(inserted, #graph << " already visited!");              \
+#    define ENSURE_NOT_VISITED(graph)                                                                                  \
+        do                                                                                                             \
+        {                                                                                                              \
+            static std::set<decltype(graph)> visited;                                                                  \
+            bool inserted = visited.insert(graph).second;                                                              \
+            ABORT_IFNOT(inserted, #graph << " already visited!");                                                      \
         } while (0)
 #else
-#    define ENSURE_NOT_VISITED(graph)                                          \
-        do                                                                     \
-        {                                                                      \
+#    define ENSURE_NOT_VISITED(graph)                                                                                  \
+        do                                                                                                             \
+        {                                                                                                              \
         } while (0)
 #endif
 #define FIELD_NAME_ITEM(field) #field, (field)
@@ -64,35 +62,30 @@
 #define JSON_KEY(json) JSON_FIELD_OR(json, string, "NULL")
 #define JSON_CHILD(json) JSON_FIELD_OR(json, child, nullptr)
 
-#define JSON_WRITE_FIELD(root, objptr, field)                                  \
-    jsonAddJsonableToObject(root, #field, (objptr)->field)
+#define JSON_WRITE_FIELD(root, objptr, field) jsonAddJsonableToObject(root, #field, (objptr)->field)
 
-#define JSON_READ_OBJ_WITH_NAME(json, obj, name)                               \
-    do                                                                         \
-    {                                                                          \
-        ABORT_IFNOT(jsonKeyEquals(json, name),                                 \
-                    "Expect name '" << name << "', got " << JSON_KEY(json));   \
-        SVFIRReader::readJson(json, obj);                                      \
+#define JSON_READ_OBJ_WITH_NAME(json, obj, name)                                                                       \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        ABORT_IFNOT(jsonKeyEquals(json, name), "Expect name '" << name << "', got " << JSON_KEY(json));                \
+        SVFIRReader::readJson(json, obj);                                                                              \
     } while (0)
 
-#define JSON_READ_OBJ_WITH_NAME_FWD(json, obj, name)                           \
-    do                                                                         \
-    {                                                                          \
-        JSON_READ_OBJ_WITH_NAME(json, obj, name);                              \
-        json = (json)->next;                                                   \
+#define JSON_READ_OBJ_WITH_NAME_FWD(json, obj, name)                                                                   \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        JSON_READ_OBJ_WITH_NAME(json, obj, name);                                                                      \
+        json = (json)->next;                                                                                           \
     } while (0)
 
 #define JSON_READ_OBJ(json, obj) JSON_READ_OBJ_WITH_NAME(json, obj, #obj)
-#define JSON_READ_OBJ_FWD(json, obj)                                           \
-    JSON_READ_OBJ_WITH_NAME_FWD(json, obj, #obj)
-#define JSON_DEF_READ_FWD(json, type, obj, ...)                                \
-    type obj __VA_ARGS__;                                                      \
+#define JSON_READ_OBJ_FWD(json, obj) JSON_READ_OBJ_WITH_NAME_FWD(json, obj, #obj)
+#define JSON_DEF_READ_FWD(json, type, obj, ...)                                                                        \
+    type obj __VA_ARGS__;                                                                                              \
     JSON_READ_OBJ_FWD(json, obj)
-#define JSON_READ_FIELD_FWD(json, objptr, field)                               \
-    JSON_READ_OBJ_WITH_NAME_FWD(json, (objptr)->field, #field)
-#define CHECK_JSON_KEY_EQUALS(obj, key)                                        \
-    ABORT_IFNOT(jsonKeyEquals(obj, key),                                       \
-                "Expect json key: " << key << ", but get " << JSON_KEY(obj));
+#define JSON_READ_FIELD_FWD(json, objptr, field) JSON_READ_OBJ_WITH_NAME_FWD(json, (objptr)->field, #field)
+#define CHECK_JSON_KEY_EQUALS(obj, key)                                                                                \
+    ABORT_IFNOT(jsonKeyEquals(obj, key), "Expect json key: " << key << ", but get " << JSON_KEY(obj));
 #define CHECK_JSON_KEY(obj) CHECK_JSON_KEY_EQUALS(obj, #obj)
 
 namespace SVF
@@ -223,8 +216,7 @@ bool jsonAddItemToArray(cJSON* array, cJSON* item);
 bool jsonAddNumberToObject(cJSON* obj, const char* name, double number);
 bool jsonAddStringToObject(cJSON* obj, const char* name, const char* str);
 bool jsonAddStringToObject(cJSON* obj, const char* name, const std::string& s);
-#define jsonForEach(field, array)                                              \
-    for (const cJSON* field = JSON_CHILD(array); field; field = field->next)
+#define jsonForEach(field, array) for (const cJSON* field = JSON_CHILD(array); field; field = field->next)
 
 /// @brief Bookkeeping class to keep track of the IDs of objects that doesn't
 /// have any ID. E.g., SVFValue, XXXEdge.
@@ -238,14 +230,12 @@ private:
 public:
     inline size_t getID(const T* ptr)
     {
-        if (!ptr)
-            return 0;
+        if (!ptr) return 0;
 
         typename decltype(ptrToId)::iterator it;
         bool inserted;
         std::tie(it, inserted) = ptrToId.emplace(ptr, 1 + ptrPool.size());
-        if (inserted)
-            ptrPool.push_back(ptr);
+        if (inserted) ptrPool.push_back(ptr);
         return it->second;
     }
 
@@ -535,8 +525,7 @@ private:
     cJSON* contentToJson(const StInfo* stInfo);
     ///@}
 
-    template <typename NodeTy, typename EdgeTy>
-    cJSON* genericNodeToJson(const GenericNode<NodeTy, EdgeTy>* node)
+    template <typename NodeTy, typename EdgeTy> cJSON* genericNodeToJson(const GenericNode<NodeTy, EdgeTy>* node)
     {
         cJSON* root = jsonCreateObject();
         JSON_WRITE_FIELD(root, node, id);
@@ -546,8 +535,7 @@ private:
         return root;
     }
 
-    template <typename NodeTy>
-    cJSON* genericEdgeToJson(const GenericEdge<NodeTy>* edge)
+    template <typename NodeTy> cJSON* genericEdgeToJson(const GenericEdge<NodeTy>* edge)
     {
         cJSON* root = jsonCreateObject();
         JSON_WRITE_FIELD(root, edge, edgeFlag);
@@ -557,8 +545,7 @@ private:
     }
 
     template <typename NodeTy, typename EdgeTy>
-    cJSON* genericGraphToJson(const GenericGraph<NodeTy, EdgeTy>* graph,
-                              const std::vector<const EdgeTy*>& edgePool)
+    cJSON* genericGraphToJson(const GenericGraph<NodeTy, EdgeTy>* graph, const std::vector<const EdgeTy*>& edgePool)
     {
         cJSON* root = jsonCreateObject();
 
@@ -619,9 +606,7 @@ private:
         return obj;
     }
 
-    template <typename T,
-              typename = std::enable_if_t<SVFUtil::is_iterable_v<T>>>
-                                          cJSON* toJson(const T& container)
+    template <typename T, typename = std::enable_if_t<SVFUtil::is_iterable_v<T>>> cJSON* toJson(const T& container)
     {
         cJSON* array = jsonCreateArray();
         for (const auto& item : container)
@@ -632,15 +617,13 @@ private:
         return array;
     }
 
-    template <typename T>
-    bool jsonAddJsonableToObject(cJSON* obj, const char* name, const T& item)
+    template <typename T> bool jsonAddJsonableToObject(cJSON* obj, const char* name, const T& item)
     {
         cJSON* itemObj = toJson(item);
         return jsonAddItemToObject(obj, name, itemObj);
     }
 
-    template <typename T>
-    bool jsonAddContentToObject(cJSON* obj, const char* name, const T& item)
+    template <typename T> bool jsonAddContentToObject(cJSON* obj, const char* name, const T& item)
     {
         cJSON* itemObj = contentToJson(item);
         return jsonAddItemToObject(obj, name, itemObj);
@@ -657,15 +640,14 @@ private:
 template <typename T, typename = void> struct KindBaseHelper
 {
 };
-#define KIND_BASE(B, KindGetter)                                               \
-    template <typename T>                                                      \
-    struct KindBaseHelper<T, std::enable_if_t<std::is_base_of<B, T>::value>>   \
-    {                                                                          \
-        using type = B;                                                        \
-        static inline s64_t getKind(T* p)                                      \
-        {                                                                      \
-            return {p->KindGetter()};                                          \
-        }                                                                      \
+#define KIND_BASE(B, KindGetter)                                                                                       \
+    template <typename T> struct KindBaseHelper<T, std::enable_if_t<std::is_base_of<B, T>::value>>                     \
+    {                                                                                                                  \
+        using type = B;                                                                                                \
+        static inline s64_t getKind(T* p)                                                                              \
+        {                                                                                                              \
+            return {p->KindGetter()};                                                                                  \
+        }                                                                                                              \
     }
 KIND_BASE(SVFType, getKind);
 KIND_BASE(SVFValue, getKind);
@@ -693,8 +675,7 @@ public:
     /// idObjcreator : (const cJSON*) -> (id, T*) with id set
     void createObjs(const cJSON* idObjArrayJson, IdObjCreator idObjCreator)
     {
-        assert(idMap.empty() &&
-               "idToObjMap should be empty when creating objects");
+        assert(idMap.empty() && "idToObjMap should be empty when creating objects");
         ABORT_IFNOT(jsonIsArray(idObjArrayJson), "expects an array");
 
         jsonForEach(objJson, idObjArrayJson)
@@ -705,8 +686,7 @@ public:
             auto idObj = idObjCreator(objFieldJson);
             auto pair = std::pair<const cJSON*, T*>(objFieldJson, idObj.second);
             bool inserted = idMap.emplace(idObj.first, pair).second;
-            ABORT_IFNOT(inserted, "ID " << idObj.first << " duplicated in "
-                        << idObjArrayJson->string);
+            ABORT_IFNOT(inserted, "ID " << idObj.first << " duplicated in " << idObjArrayJson->string);
         }
     }
 
@@ -725,8 +705,7 @@ public:
             T* obj = pair.second.second;
             fillFunc(objFieldJson, obj);
 
-            ABORT_IFNOT(!objFieldJson, "json should be consumed by filler, but "
-                        << objFieldJson->string << " left");
+            ABORT_IFNOT(!objFieldJson, "json should be consumed by filler, but " << objFieldJson->string << " left");
         }
     }
 
@@ -766,11 +745,9 @@ public:
     /// @tparam Creator
     /// @param objArrayJson
     /// @param creator
-    template <typename Creator>
-    void createObjs(const cJSON* objArrayJson, Creator creator)
+    template <typename Creator> void createObjs(const cJSON* objArrayJson, Creator creator)
     {
-        assert(jsonArray.empty() &&
-               "jsonArray should be empty when creating objects");
+        assert(jsonArray.empty() && "jsonArray should be empty when creating objects");
         ABORT_IFNOT(jsonIsArray(objArrayJson), "expects an array");
 
         jsonForEach(objJson, objArrayJson)
@@ -785,21 +762,18 @@ public:
 
     T* getPtr(size_t id) const
     {
-        ABORT_IFNOT(id <= ptrPool.size(),
-                    "Invalid ID " << id << ". Max ID = " << ptrPool.size());
+        ABORT_IFNOT(id <= ptrPool.size(), "Invalid ID " << id << ". Max ID = " << ptrPool.size());
         return id ? ptrPool[id - 1] : nullptr;
     }
 
     template <typename FillFunc> void fillObjs(FillFunc fillFunc)
     {
-        assert(jsonArray.size() == ptrPool.size() &&
-               "jsonArray and ptrPool should have same size");
+        assert(jsonArray.size() == ptrPool.size() && "jsonArray and ptrPool should have same size");
         for (size_t i = 0; i < jsonArray.size(); ++i)
         {
             const cJSON*& objFieldJson = jsonArray[i];
             fillFunc(objFieldJson, ptrPool[i]);
-            ABORT_IFNOT(!objFieldJson, "json should be consumed by filler, but "
-                        << objFieldJson->string << " left");
+            ABORT_IFNOT(!objFieldJson, "json should be consumed by filler, but " << objFieldJson->string << " left");
         }
         jsonArray.clear();
         jsonArray.shrink_to_fit();
@@ -830,8 +804,7 @@ protected:
 
 public:
     template <typename NodeCreator, typename EdgeCreator>
-    void createObjs(const cJSON* graphJson, NodeCreator nodeCreator,
-                    EdgeCreator edgeCreator)
+    void createObjs(const cJSON* graphJson, NodeCreator nodeCreator, EdgeCreator edgeCreator)
     {
         // Read nodeNum
         const cJSON* nodeNum = graphJson->child;
@@ -872,8 +845,7 @@ public:
         return edgePool.getPtr(id);
     }
 
-    template <typename NodeFiller, typename EdgeFiller>
-    void fillObjs(NodeFiller nodeFiller, EdgeFiller edgeFiller)
+    template <typename NodeFiller, typename EdgeFiller> void fillObjs(NodeFiller nodeFiller, EdgeFiller edgeFiller)
     {
         // GenericNode<> contains field `InEdges` and `OutEdges`, which are
         // ordered set of edges with comparator `GenericEdge::equalGEdge()`,
@@ -910,8 +882,7 @@ public:
         return memObjMap.getPtr(id);
     }
 
-    template <typename MemObjCreator>
-    void createObjs(const cJSON* symTabJson, MemObjCreator memObjCreator)
+    template <typename MemObjCreator> void createObjs(const cJSON* symTabJson, MemObjCreator memObjCreator)
     {
         assert(!symTabFieldJson && "symTabFieldJson should be empty");
         ABORT_IFNOT(jsonIsObject(symTabJson), "symTableJson is not an object?");
@@ -942,8 +913,8 @@ private:
 
 public:
     template <typename NodeCreator, typename EdgeCreator, typename SVFLoopCreator>
-    void createObjs(const cJSON* icfgJson, NodeCreator nodeCreator,
-                    EdgeCreator edgeCreator, SVFLoopCreator svfLoopCreator)
+    void createObjs(const cJSON* icfgJson, NodeCreator nodeCreator, EdgeCreator edgeCreator,
+                    SVFLoopCreator svfLoopCreator)
     {
         GenericICFGReader::createObjs(icfgJson, nodeCreator, edgeCreator);
 
@@ -959,8 +930,7 @@ public:
     }
 
     template <typename NodeFiller, typename EdgeFiller, typename LoopFiller>
-    void fillObjs(NodeFiller nodeFiller, EdgeFiller edgeFiller,
-                  LoopFiller loopFiller)
+    void fillObjs(NodeFiller nodeFiller, EdgeFiller edgeFiller, LoopFiller loopFiller)
     {
         GenericICFGReader::fillObjs(nodeFiller, edgeFiller);
         svfLoopPool.fillObjs(loopFiller);
@@ -978,16 +948,13 @@ private:
     ReaderPtrPool<SVFValue> svfValuePool;
 
 public:
-    template <typename SVFTypeCreator, typename SVFTypeFiller,
-              typename SVFValueCreator, typename SVFValueFiller,
+    template <typename SVFTypeCreator, typename SVFTypeFiller, typename SVFValueCreator, typename SVFValueFiller,
               typename StInfoCreator>
-    void createObjs(const cJSON* svfModuleJson, SVFTypeCreator typeCreator,
-                    SVFTypeFiller typeFiller, SVFValueCreator valueCreator,
-                    SVFValueFiller valueFiller, StInfoCreator stInfoCreator)
+    void createObjs(const cJSON* svfModuleJson, SVFTypeCreator typeCreator, SVFTypeFiller typeFiller,
+                    SVFValueCreator valueCreator, SVFValueFiller valueFiller, StInfoCreator stInfoCreator)
     {
         assert(!svfModuleFieldJson && "SVFModule Already created?");
-        ABORT_IFNOT(jsonIsObject(svfModuleJson),
-                    "svfModuleJson not an JSON object?");
+        ABORT_IFNOT(jsonIsObject(svfModuleJson), "svfModuleJson not an JSON object?");
 
         const cJSON* const allSVFType = svfModuleJson->child;
         CHECK_JSON_KEY(allSVFType);
@@ -1058,8 +1025,7 @@ public:
         return edgeFlag & GenericEdge<void>::EdgeKindMask;
     }
     template <typename T>
-    static inline void setEdgeFlag(GenericEdge<T>* edge,
-                                   typename GenericEdge<T>::GEdgeFlag edgeFlag)
+    static inline void setEdgeFlag(GenericEdge<T>* edge, typename GenericEdge<T>::GEdgeFlag edgeFlag)
     {
         edge->edgeFlag = edgeFlag;
     }
@@ -1075,8 +1041,7 @@ private:
     static SVFVar* createPAGNode(NodeID id, GNodeK kind);
     static SVFStmt* createPAGEdge(GEdgeKind kind);
 
-    template <typename EdgeCreator>
-    static inline auto createEdgeWithFlag(GEdgeFlag flag, EdgeCreator creator)
+    template <typename EdgeCreator> static inline auto createEdgeWithFlag(GEdgeFlag flag, EdgeCreator creator)
     {
         auto kind = SVFIRReader::applyEdgeMask(flag);
         auto edge = creator(kind);
@@ -1102,9 +1067,9 @@ private:
     void readJson(const cJSON* obj, SVFStmt*& stmt);  // IRGraph Edge
     void readJson(const cJSON* obj, ICFGNode*& node); // ICFG Node
     void readJson(const cJSON* obj, ICFGEdge*& edge); // ICFG Edge
-    void readJson(const cJSON* obj, CHNode*& node); // CHGraph Node
-    void readJson(const cJSON* obj, CHEdge*& edge); // CHGraph Edge
-    void readJson(const cJSON* obj, CallSite& cs); // CHGraph's csToClassMap
+    void readJson(const cJSON* obj, CHNode*& node);   // CHGraph Node
+    void readJson(const cJSON* obj, CHEdge*& edge);   // CHGraph Edge
+    void readJson(const cJSON* obj, CallSite& cs);    // CHGraph's csToClassMap
 
     void readJson(const cJSON* obj, AccessPath& ap);
     void readJson(const cJSON* obj, SVFLoop*& loop);
@@ -1114,8 +1079,7 @@ private:
     void readJson(const cJSON* obj,
                   SVFLoopAndDomInfo*& ldInfo); // Only owned by SVFFunction
 
-    template <unsigned ElementSize>
-    inline void readJson(const cJSON* obj, SparseBitVector<ElementSize>& bv)
+    template <unsigned ElementSize> inline void readJson(const cJSON* obj, SparseBitVector<ElementSize>& bv)
     {
         ABORT_IFNOT(jsonIsArray(obj), "SparseBitVector should be an array");
         jsonForEach(nObj, obj)
@@ -1138,17 +1102,14 @@ private:
 
     /// @brief Read a pointer of some child class of
     /// SVFType/SVFValue/SVFVar/SVFStmt/ICFGNode/ICFGEdge/CHNode/CHEdge
-    template <typename T>
-    inline SVFUtil::void_t<KindBaseT<T>> readJson(const cJSON* obj, T*& ptr)
+    template <typename T> inline SVFUtil::void_t<KindBaseT<T>> readJson(const cJSON* obj, T*& ptr)
     {
         // TODO: Can be optimized?
         KindBaseT<T>* basePtr = ptr;
         readJson(obj, basePtr);
-        if (!basePtr)
-            return; // ptr is nullptr when read
+        if (!basePtr) return; // ptr is nullptr when read
         ptr = SVFUtil::dyn_cast<T>(basePtr);
-        ABORT_IFNOT(ptr, "Cast: " << obj->string << " shouldn't have kind "
-                    << KindBaseHelper<T>::getKind(ptr));
+        ABORT_IFNOT(ptr, "Cast: " << obj->string << " shouldn't have kind " << KindBaseHelper<T>::getKind(ptr));
     }
 
     /// Read a const pointer
@@ -1160,16 +1121,14 @@ private:
         cptr = ptr;
     }
 
-    template <typename T1, typename T2>
-    void readJson(const cJSON* obj, std::pair<T1, T2>& pair)
+    template <typename T1, typename T2> void readJson(const cJSON* obj, std::pair<T1, T2>& pair)
     {
         auto jpair = jsonUnpackPair(obj);
         readJson(jpair.first, pair.first);
         readJson(jpair.second, pair.second);
     }
 
-    template <typename T, size_t N>
-    void readJson(const cJSON* obj, T (&array)[N])
+    template <typename T, size_t N> void readJson(const cJSON* obj, T (&array)[N])
     {
         static_assert(N > 0, "array size should be greater than 0");
         ABORT_IFNOT(jsonIsArray(obj), "array expects an array");
@@ -1177,15 +1136,12 @@ private:
         jsonForEach(elemJson, obj)
         {
             readJson(elemJson, array[i]);
-            if (++i >= N)
-                break;
+            if (++i >= N) break;
         }
         ABORT_IFNOT(i == N, "expect array of size " << N);
     }
 
-    template <typename C>
-    std::enable_if_t<SVFUtil::is_sequence_container_v<C>> readJson(
-        const cJSON* obj, C& container)
+    template <typename C> std::enable_if_t<SVFUtil::is_sequence_container_v<C>> readJson(const cJSON* obj, C& container)
     {
         using T = typename C::value_type;
         assert(container.empty() && "container should be empty");
@@ -1197,8 +1153,7 @@ private:
         }
     }
 
-    template <typename C>
-    std::enable_if_t<SVFUtil::is_map_v<C>> readJson(const cJSON* obj, C& map)
+    template <typename C> std::enable_if_t<SVFUtil::is_map_v<C>> readJson(const cJSON* obj, C& map)
     {
         assert(map.empty() && "map should be empty");
         ABORT_IFNOT(jsonIsMap(obj), "expects an map (represented by array)");
@@ -1213,8 +1168,7 @@ private:
         }
     }
 
-    template <typename C>
-    std::enable_if_t<SVFUtil::is_set_v<C>> readJson(const cJSON* obj, C& set)
+    template <typename C> std::enable_if_t<SVFUtil::is_set_v<C>> readJson(const cJSON* obj, C& set)
     {
         using T = typename C::value_type;
         assert(set.empty() && "set should be empty");
@@ -1313,16 +1267,14 @@ private:
     void fill(const cJSON*& fieldJson, SVFArrayType* type);
     void fill(const cJSON*& fieldJson, SVFOtherType* type);
 
-    template <typename NodeTy, typename EdgeTy>
-    void fill(const cJSON*& fieldJson, GenericNode<NodeTy, EdgeTy>* node)
+    template <typename NodeTy, typename EdgeTy> void fill(const cJSON*& fieldJson, GenericNode<NodeTy, EdgeTy>* node)
     {
         // id and nodeKind have already been read.
         JSON_READ_FIELD_FWD(fieldJson, node, InEdges);
         JSON_READ_FIELD_FWD(fieldJson, node, OutEdges);
     }
 
-    template <typename NodeTy>
-    void fill(const cJSON*& fieldJson, GenericEdge<NodeTy>* edge)
+    template <typename NodeTy> void fill(const cJSON*& fieldJson, GenericEdge<NodeTy>* edge)
     {
         // edgeFlag has already been read.
         JSON_READ_FIELD_FWD(fieldJson, edge, src);

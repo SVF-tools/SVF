@@ -71,7 +71,6 @@ void DDAStat::initDefault()
     _AnaTimePerQuery = 0;
     _AnaTimeCyclePerQuery = 0;
 
-
     _NumOfDPM = 0;
     _NumOfStrongUpdates = 0;
     _NumOfMustAliases = 0;
@@ -86,17 +85,14 @@ void DDAStat::initDefault()
 
 SVFG* DDAStat::getSVFG() const
 {
-    if(flowDDA)
-        return flowDDA->getSVFG();
+    if (flowDDA) return flowDDA->getSVFG();
     else
         return contextDDA->getSVFG();
-
 }
 
 PointerAnalysis* DDAStat::getPTA() const
 {
-    if(flowDDA)
-        return flowDDA;
+    if (flowDDA) return flowDDA;
     else
         return contextDDA;
 }
@@ -109,59 +105,55 @@ void DDAStat::performStatPerQuery(NodeID ptr)
     u32_t maxNumOfDPMPerLoc = 0;
     u32_t cptsSize = 0;
     PointsTo pts;
-    if(flowDDA)
+    if (flowDDA)
     {
-        for(FlowDDA::LocToDPMVecMap::const_iterator it =  flowDDA->getLocToDPMVecMap().begin(),
-                eit = flowDDA->getLocToDPMVecMap().end(); it!=eit; ++it)
+        for (FlowDDA::LocToDPMVecMap::const_iterator it = flowDDA->getLocToDPMVecMap().begin(),
+                                                     eit = flowDDA->getLocToDPMVecMap().end();
+             it != eit; ++it)
         {
             NumOfLoc++;
             u32_t num = it->second.size();
             NumOfDPM += num;
-            if(num > maxNumOfDPMPerLoc)
-                maxNumOfDPMPerLoc = num;
+            if (num > maxNumOfDPMPerLoc) maxNumOfDPMPerLoc = num;
         }
         cptsSize = flowDDA->getPts(ptr).count();
         pts = flowDDA->getPts(ptr);
     }
-    else if(contextDDA)
+    else if (contextDDA)
     {
-        for(ContextDDA::LocToDPMVecMap::const_iterator it =  contextDDA->getLocToDPMVecMap().begin(),
-                eit = contextDDA->getLocToDPMVecMap().end(); it!=eit; ++it)
+        for (ContextDDA::LocToDPMVecMap::const_iterator it = contextDDA->getLocToDPMVecMap().begin(),
+                                                        eit = contextDDA->getLocToDPMVecMap().end();
+             it != eit; ++it)
         {
             NumOfLoc++;
             u32_t num = it->second.size();
             NumOfDPM += num;
-            if(num > maxNumOfDPMPerLoc)
-                maxNumOfDPMPerLoc = num;
+            if (num > maxNumOfDPMPerLoc) maxNumOfDPMPerLoc = num;
         }
         ContextCond cxt;
-        CxtVar var(cxt,ptr);
+        CxtVar var(cxt, ptr);
         cptsSize = contextDDA->getPts(var).count();
         pts = contextDDA->getBVPointsTo(contextDDA->getPts(var));
     }
     u32_t ptsSize = pts.count();
 
-    double avgDPMAtLoc = NumOfLoc!=0 ? (double)NumOfDPM/NumOfLoc : 0;
+    double avgDPMAtLoc = NumOfLoc != 0 ? (double)NumOfDPM / NumOfLoc : 0;
     _AvgNumOfDPMAtSVFGNode += avgDPMAtLoc;
-    if(maxNumOfDPMPerLoc > _MaxNumOfDPMAtSVFGNode)
-        _MaxNumOfDPMAtSVFGNode = maxNumOfDPMPerLoc;
+    if (maxNumOfDPMPerLoc > _MaxNumOfDPMAtSVFGNode) _MaxNumOfDPMAtSVFGNode = maxNumOfDPMPerLoc;
 
     _TotalCPtsSize += cptsSize;
-    if (_MaxCPtsSize < cptsSize)
-        _MaxCPtsSize = cptsSize;
+    if (_MaxCPtsSize < cptsSize) _MaxCPtsSize = cptsSize;
 
     _TotalPtsSize += ptsSize;
-    if(_MaxPtsSize < ptsSize)
-        _MaxPtsSize = ptsSize;
+    if (_MaxPtsSize < ptsSize) _MaxPtsSize = ptsSize;
 
-    if(cptsSize == 0)
-        _NumOfNullPtr++;
+    if (cptsSize == 0) _NumOfNullPtr++;
 
-    if(getPTA()->containBlackHoleNode(pts))
+    if (getPTA()->containBlackHoleNode(pts))
     {
         _NumOfConstantPtr++;
     }
-    if(getPTA()->containConstantNode(pts))
+    if (getPTA()->containConstantNode(pts))
     {
         _NumOfBlackholePtr++;
     }
@@ -178,8 +170,8 @@ void DDAStat::performStatPerQuery(NodeID ptr)
     timeStatMap.clear();
     NumPerQueryStatMap.clear();
 
-    timeStatMap["TimePerQuery"] = _AnaTimePerQuery/TIMEINTERVAL;
-    timeStatMap["CyleTimePerQuery"] = _AnaTimeCyclePerQuery/TIMEINTERVAL;
+    timeStatMap["TimePerQuery"] = _AnaTimePerQuery / TIMEINTERVAL;
+    timeStatMap["CyleTimePerQuery"] = _AnaTimeCyclePerQuery / TIMEINTERVAL;
 
     NumPerQueryStatMap["CPtsSize"] = cptsSize;
     NumPerQueryStatMap["PtsSize"] = ptsSize;
@@ -208,8 +200,7 @@ void DDAStat::performStatPerQuery(NodeID ptr)
 
 void DDAStat::getNumOfOOBQuery()
 {
-    if (flowDDA)
-        _TotalNumOfOutOfBudgetQuery = flowDDA->outOfBudgetDpms.size();
+    if (flowDDA) _TotalNumOfOutOfBudgetQuery = flowDDA->outOfBudgetDpms.size();
     else if (contextDDA)
         _TotalNumOfOutOfBudgetQuery = contextDDA->outOfBudgetDpms.size();
 }
@@ -225,37 +216,38 @@ void DDAStat::performStat()
 
     getNumOfOOBQuery();
 
-    for (SVFIR::const_iterator nodeIt = SVFIR::getPAG()->begin(), nodeEit = SVFIR::getPAG()->end(); nodeIt != nodeEit; nodeIt++)
+    for (SVFIR::const_iterator nodeIt = SVFIR::getPAG()->begin(), nodeEit = SVFIR::getPAG()->end(); nodeIt != nodeEit;
+         nodeIt++)
     {
         PAGNode* pagNode = nodeIt->second;
-        if(SVFUtil::isa<ObjVar>(pagNode))
+        if (SVFUtil::isa<ObjVar>(pagNode))
         {
-            if(getPTA()->isLocalVarInRecursiveFun(nodeIt->first))
+            if (getPTA()->isLocalVarInRecursiveFun(nodeIt->first))
             {
                 localVarInRecursion.set(nodeIt->first);
             }
         }
     }
 
-    timeStatMap["TotalQueryTime"] =  _TotalTimeOfQueries/TIMEINTERVAL;
-    timeStatMap["AvgTimePerQuery"] =  (_TotalTimeOfQueries/TIMEINTERVAL)/_TotalNumOfQuery;
-    timeStatMap["TotalBKCondTime"] =  (_TotalTimeOfBKCondition/TIMEINTERVAL);
+    timeStatMap["TotalQueryTime"] = _TotalTimeOfQueries / TIMEINTERVAL;
+    timeStatMap["AvgTimePerQuery"] = (_TotalTimeOfQueries / TIMEINTERVAL) / _TotalNumOfQuery;
+    timeStatMap["TotalBKCondTime"] = (_TotalTimeOfBKCondition / TIMEINTERVAL);
 
     PTNumStatMap["NumOfQuery"] = _TotalNumOfQuery;
     PTNumStatMap["NumOfOOBQuery"] = _TotalNumOfOutOfBudgetQuery;
     PTNumStatMap["NumOfDPM"] = _TotalNumOfDPM;
     PTNumStatMap["NumOfSU"] = _TotalNumOfStrongUpdates;
     PTNumStatMap["NumOfStoreSU"] = _StrongUpdateStores.count();
-    PTNumStatMap["NumOfStep"] =  _TotalNumOfStep;
-    PTNumStatMap["NumOfStepInCycle"] =  _TotalNumOfStepInCycle;
-    timeStatMap["AvgDPMAtLoc"] = (double)_AvgNumOfDPMAtSVFGNode/_TotalNumOfQuery;
+    PTNumStatMap["NumOfStep"] = _TotalNumOfStep;
+    PTNumStatMap["NumOfStepInCycle"] = _TotalNumOfStepInCycle;
+    timeStatMap["AvgDPMAtLoc"] = (double)_AvgNumOfDPMAtSVFGNode / _TotalNumOfQuery;
     PTNumStatMap["MaxDPMAtLoc"] = _MaxNumOfDPMAtSVFGNode;
     PTNumStatMap["MaxPathPerQuery"] = ContextCond::maximumPath;
     PTNumStatMap["MaxCxtPerQuery"] = ContextCond::maximumCxt;
     PTNumStatMap["MaxCPtsSize"] = _MaxCPtsSize;
     PTNumStatMap["MaxPtsSize"] = _MaxPtsSize;
-    timeStatMap["AvgCPtsSize"] = (double)_TotalCPtsSize/_TotalNumOfQuery;
-    timeStatMap["AvgPtsSize"] = (double)_TotalPtsSize/_TotalNumOfQuery;
+    timeStatMap["AvgCPtsSize"] = (double)_TotalCPtsSize / _TotalNumOfQuery;
+    timeStatMap["AvgPtsSize"] = (double)_TotalPtsSize / _TotalNumOfQuery;
     PTNumStatMap["IndEdgeSolved"] = getPTA()->getNumOfResolvedIndCallEdge();
     PTNumStatMap["NumOfNullPtr"] = _NumOfNullPtr;
     PTNumStatMap["PointsToConstPtr"] = _NumOfConstantPtr;
@@ -291,16 +283,15 @@ void DDAStat::printStatPerQuery(NodeID ptr, const PointsTo& pts)
     getPTA()->dumpPts(ptr, pts);
 }
 
-
 void DDAStat::printStat(string str)
 {
 
-    if(flowDDA)
+    if (flowDDA)
     {
         FlowDDA::ConstSVFGEdgeSet edgeSet;
         flowDDA->getSVFG()->getStat()->performSCCStat(edgeSet);
     }
-    else if(contextDDA)
+    else if (contextDDA)
     {
         contextDDA->getSVFG()->getStat()->performSCCStat(contextDDA->getInsensitiveEdgeSet());
     }

@@ -32,7 +32,6 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-
 /*!
  *
  */
@@ -41,7 +40,6 @@ void CSC::clear()
     _I = 0;
     _D.clear();
 }
-
 
 /*!
  *
@@ -57,7 +55,7 @@ void CSC::find(NodeStack& candidates)
         revCandidates.push(nId);
         candidates.pop();
 
-        if (_scc->subNodes(nId).count()>1 && !isVisited(nId))    // node is actually in a cycle
+        if (_scc->subNodes(nId).count() > 1 && !isVisited(nId)) // node is actually in a cycle
             visit(nId, 0);
     }
 
@@ -69,13 +67,12 @@ void CSC::find(NodeStack& candidates)
     }
 }
 
-
 /*!
  *
  */
 void CSC::visit(NodeID nodeId, s32_t _w)
 {
-//    pwcReps[nodeId] = _scc->repNode(nodeId);
+    //    pwcReps[nodeId] = _scc->repNode(nodeId);
     setVisited(nodeId);
 
     _I += _w;
@@ -91,8 +88,7 @@ void CSC::visit(NodeID nodeId, s32_t _w)
         else
             offset = 0;
         NodeID dstId = (*eit)->getDstID();
-        if (_scc->repNode(nodeId) == _scc->repNode(dstId) && !isVisited(dstId))
-            visit(dstId, offset);
+        if (_scc->repNode(nodeId) == _scc->repNode(dstId) && !isVisited(dstId)) visit(dstId, offset);
     }
 
     NodeStack _revS;
@@ -106,20 +102,19 @@ void CSC::visit(NodeID nodeId, s32_t _w)
         ConstraintNode* backNode = _consG->getConstraintNode(backNodeId);
         if (_consG->hasEdge(node, backNode, ConstraintEdge::NormalGep))
         {
-            NormalGepCGEdge* normalGep = SVFUtil::dyn_cast<NormalGepCGEdge>(_consG->getEdge(node, backNode, ConstraintEdge::NormalGep));
+            NormalGepCGEdge* normalGep =
+                SVFUtil::dyn_cast<NormalGepCGEdge>(_consG->getEdge(node, backNode, ConstraintEdge::NormalGep));
             s32_t _w = normalGep->getConstantFieldIdx();
-            s32_t _l = _D[nodeId] +_w - _D[backNodeId];
+            s32_t _l = _D[nodeId] + _w - _D[backNodeId];
             backNode->strides.set(_l);
-            for (auto cNodeId : _C)
-                _consG->getConstraintNode(cNodeId)->strides.set(_l);
+            for (auto cNodeId : _C) _consG->getConstraintNode(cNodeId)->strides.set(_l);
         }
         else if (_consG->hasEdge(node, backNode, ConstraintEdge::VariantGep) ||
                  _consG->hasEdge(node, backNode, ConstraintEdge::Copy))
         {
             s32_t _l = _D[nodeId] - _D[backNodeId];
             backNode->strides.set(_l);
-            for (auto cNodeId : _C)
-                _consG->getConstraintNode(cNodeId)->strides.set(_l);
+            for (auto cNodeId : _C) _consG->getConstraintNode(cNodeId)->strides.set(_l);
         }
         _C.insert(backNodeId);
     }
@@ -131,5 +126,5 @@ void CSC::visit(NodeID nodeId, s32_t _w)
         _revS.pop();
     }
 
-    _S.pop();   // after checking all the edges of the top node of _S, remove the node
+    _S.pop(); // after checking all the edges of the top node of _S, remove the node
 }

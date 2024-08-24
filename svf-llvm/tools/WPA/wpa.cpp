@@ -33,7 +33,6 @@
 #include "Util/Options.h"
 #include "SVFIR/SVFFileSystem.h"
 
-
 using namespace llvm;
 using namespace std;
 using namespace SVF;
@@ -41,8 +40,7 @@ using namespace SVF;
 int main(int argc, char** argv)
 {
     auto moduleNameVec =
-        OptionBase::parseOptions(argc, argv, "Whole Program Points-to Analysis",
-                                 "[options] <input-bitcode...>");
+        OptionBase::parseOptions(argc, argv, "Whole Program Points-to Analysis", "[options] <input-bitcode...>");
 
     // Refers to content of a singleton unique_ptr<SVFIR> in SVFIR.
     SVFIR* pag;
@@ -63,7 +61,6 @@ int main(int argc, char** argv)
         /// Build SVFIR
         SVFIRBuilder builder(svfModule);
         pag = builder.build();
-
     }
 
     WPAPass wpa;

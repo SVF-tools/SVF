@@ -20,7 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 //
 // Created by Jiawei Wang on 2024/1/10.
 // The implementation is based on
@@ -39,7 +38,7 @@ class AbstractInterpretation;
 class AEStat;
 class AEAPI;
 
-template<typename T> class FILOWorkList;
+template <typename T> class FILOWorkList;
 
 enum class AEKind
 {
@@ -56,9 +55,7 @@ public:
     {
         startTime = getClk(true);
     }
-    ~AEStat()
-    {
-    }
+    ~AEStat() {}
     inline std::string getMemUsage()
     {
         u32_t vmrss, vmsize;
@@ -75,7 +72,6 @@ public:
     std::string memory_usage;
     std::string memUsage;
     std::string bugStr;
-
 
     u32_t& getFunctionTrace()
     {
@@ -110,7 +106,14 @@ class AbstractInterpretation
     friend class AEAPI;
 
 public:
-    enum ExtAPIType { UNCLASSIFIED, MEMCPY, MEMSET, STRCPY, STRCAT };
+    enum ExtAPIType
+    {
+        UNCLASSIFIED,
+        MEMCPY,
+        MEMSET,
+        STRCPY,
+        STRCAT
+    };
     typedef SCCDetection<CallGraph*> CallGraphSCC;
     /// Constructor
     AbstractInterpretation();
@@ -146,7 +149,7 @@ protected:
      * @param icfgNode The icfg node to analyse
      * @return if this node has preceding execution state
      */
-    bool mergeStatesFromPredecessors(const ICFGNode * icfgNode);
+    bool mergeStatesFromPredecessors(const ICFGNode* icfgNode);
 
     /**
      * Check if execution state exist at the branch edge
@@ -161,7 +164,7 @@ protected:
      *
      * @param block basic block that has one instruction or a series of instructions
      */
-    virtual void handleSingletonWTO(const ICFGSingletonWTO *icfgSingletonWto);
+    virtual void handleSingletonWTO(const ICFGSingletonWTO* icfgSingletonWto);
 
     /**
      * handle call node in ICFGNode
@@ -181,7 +184,6 @@ protected:
 
     void handleWTOComponent(const ICFGWTOComp* wtoComp);
 
-
     /**
      * handle SVF Statement like CmpStmt, CallStmt, GepStmt, LoadStmt, StoreStmt, etc.
      *
@@ -196,157 +198,156 @@ protected:
      */
     virtual void SkipRecursiveCall(const CallICFGNode* callnode);
 
+    /**
+     * Check if this cmpStmt and succ are satisfiable to the execution state.
+     *
+     * @param cmpStmt CmpStmt is a conditional branch statement
+     * @param succ the value of cmpStmt (True or False)
+     * @return if this ICFGNode has preceding execution state
+     */
+    bool isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t succ, AbstractState& as);
 
     /**
-    * Check if this cmpStmt and succ are satisfiable to the execution state.
-    *
-    * @param cmpStmt CmpStmt is a conditional branch statement
-    * @param succ the value of cmpStmt (True or False)
-    * @return if this ICFGNode has preceding execution state
-    */
-    bool isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t succ,
-                             AbstractState& as);
+     * Check if this SwitchInst and succ are satisfiable to the execution state.
+     *
+     * @param var var in switch inst
+     * @param succ the case value of switch inst
+     * @return if this ICFGNode has preceding execution state
+     */
+    bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ, AbstractState& as);
 
     /**
-    * Check if this SwitchInst and succ are satisfiable to the execution state.
-    *
-    * @param var var in switch inst
-    * @param succ the case value of switch inst
-    * @return if this ICFGNode has preceding execution state
-    */
-    bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ,
-                                AbstractState& as);
-
+     * handle external function call
+     *
+     * @param call call node whose callee is external function
+     */
+    virtual void handleExtAPI(const CallICFGNode* call);
 
     /**
-    * handle external function call
-    *
-    * @param call call node whose callee is external function
-    */
-    virtual void handleExtAPI(const CallICFGNode *call);
-
-    /**
-    * the map of external function to its API type
-    *
-    * In AEAPI, this function is mainly used for abstract explanation.
-    * In subclasses, this function is mainly used to check specific bugs
-    */
+     * the map of external function to its API type
+     *
+     * In AEAPI, this function is mainly used for abstract explanation.
+     * In subclasses, this function is mainly used to check specific bugs
+     */
     virtual void initExtFunMap();
 
     /**
-    * get byte size of alloca inst
-    *
-    * @param addr Address Stmt like malloc/calloc/ALLOCA/StackAlloc
-    * @return the byte size e.g. int32_t a[10] -> return 40
-    */
-    u32_t getAllocaInstByteSize(AbstractState& as, const AddrStmt *addr);
+     * get byte size of alloca inst
+     *
+     * @param addr Address Stmt like malloc/calloc/ALLOCA/StackAlloc
+     * @return the byte size e.g. int32_t a[10] -> return 40
+     */
+    u32_t getAllocaInstByteSize(AbstractState& as, const AddrStmt* addr);
 
     /**
-    * get byte size of alloca inst
-    * e.g. source code str = "abc", there are str value, return "abc"
-    *
-    * @param rhs SVFValue of string
-    * @return the string
-    */
-    std::string strRead(AbstractState& as,const SVFValue* rhs);
+     * get byte size of alloca inst
+     * e.g. source code str = "abc", there are str value, return "abc"
+     *
+     * @param rhs SVFValue of string
+     * @return the string
+     */
+    std::string strRead(AbstractState& as, const SVFValue* rhs);
 
     /**
-    * get length of string
-    * e.g. source code str = "abc", return 3
-    *
-    * @param strValue SVFValue of string
-    * @return IntervalValue of string length
-    */
-    IntervalValue getStrlen(AbstractState& as, const SVF::SVFValue *strValue);
+     * get length of string
+     * e.g. source code str = "abc", return 3
+     *
+     * @param strValue SVFValue of string
+     * @return IntervalValue of string length
+     */
+    IntervalValue getStrlen(AbstractState& as, const SVF::SVFValue* strValue);
 
     /**
-    * get memory allocation size
-    * e.g  arr = new int[10]
-    *      ....
-    *      memset(arr, 1, 10* sizeof(int))
-    * when we trace the 'arr', we can get the alloc size [40, 40]
-    * @param value to be traced
-    * @return IntervalValue of allocation size
-    */
-    IntervalValue traceMemoryAllocationSize(AbstractState& as, const SVFValue *value);
+     * get memory allocation size
+     * e.g  arr = new int[10]
+     *      ....
+     *      memset(arr, 1, 10* sizeof(int))
+     * when we trace the 'arr', we can get the alloc size [40, 40]
+     * @param value to be traced
+     * @return IntervalValue of allocation size
+     */
+    IntervalValue traceMemoryAllocationSize(AbstractState& as, const SVFValue* value);
     /**
-    * execute strcpy in abstract execution
-    * e.g  arr = new char[10]
-    *      str = "abc"
-    *      strcpy(arr, str)
-    * we can set arr[0]='a', arr[1]='b', arr[2]='c', arr[3]='\0'
-    * @param call callnode of strcpy like api
-    */
-    virtual void handleStrcpy(const CallICFGNode *call);
+     * execute strcpy in abstract execution
+     * e.g  arr = new char[10]
+     *      str = "abc"
+     *      strcpy(arr, str)
+     * we can set arr[0]='a', arr[1]='b', arr[2]='c', arr[3]='\0'
+     * @param call callnode of strcpy like api
+     */
+    virtual void handleStrcpy(const CallICFGNode* call);
     /**
-    * execute strcpy in abstract execution
-    * e.g  arr[10] = "abc"
-    *      str = "de"
-    *      strcat(arr, str)
-    * we can set arr[3]='d', arr[4]='e', arr[5]='\0'
-    * @param call callnode of strcat like api
-    */
-    virtual void handleStrcat(const CallICFGNode *call);
+     * execute strcpy in abstract execution
+     * e.g  arr[10] = "abc"
+     *      str = "de"
+     *      strcat(arr, str)
+     * we can set arr[3]='d', arr[4]='e', arr[5]='\0'
+     * @param call callnode of strcat like api
+     */
+    virtual void handleStrcat(const CallICFGNode* call);
     /**
-    * execute memcpy in abstract execution
-    * e.g  arr = new char[10]
-    *      str = "abcd"
-    *      memcpy(arr, str, 5)
-    * we can set arr[3]='d', arr[4]='e', arr[5]='\0'
-    * @param call callnode of memcpy like api
-    */
-    virtual void handleMemcpy(AbstractState& as, const SVFValue* dst, const SVFValue* src, IntervalValue len, u32_t start_idx);
+     * execute memcpy in abstract execution
+     * e.g  arr = new char[10]
+     *      str = "abcd"
+     *      memcpy(arr, str, 5)
+     * we can set arr[3]='d', arr[4]='e', arr[5]='\0'
+     * @param call callnode of memcpy like api
+     */
+    virtual void handleMemcpy(AbstractState& as, const SVFValue* dst, const SVFValue* src, IntervalValue len,
+                              u32_t start_idx);
     /**
-    * execute memset in abstract execution
-    * e.g  arr = new char[10]
-    *      memset(arr, 'c', 2)
-    * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
-    * @param call callnode of memset like api
-    */
+     * execute memset in abstract execution
+     * e.g  arr = new char[10]
+     *      memset(arr, 'c', 2)
+     * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
+     * @param call callnode of memset like api
+     */
     virtual void handleMemset(AbstractState& as, const SVFValue* dst, IntervalValue elem, IntervalValue len);
 
     /**
-    * if this NodeID in SVFIR is a pointer, get the pointee type
-    * e.g  arr = (int*) malloc(10*sizeof(int))
-    *      getPointeeType(arr) -> return int
-    * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
-    * @param call callnode of memset like api
-    */
+     * if this NodeID in SVFIR is a pointer, get the pointee type
+     * e.g  arr = (int*) malloc(10*sizeof(int))
+     *      getPointeeType(arr) -> return int
+     * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
+     * @param call callnode of memset like api
+     */
     const SVFType* getPointeeElement(AbstractState& as, NodeID id);
 
     void collectCheckPoint();
     void checkPointAllSet();
     // helper functions for traceMemoryAllocationSize and canSafelyAccessMemory
-    void AccessMemoryViaRetNode(const CallICFGNode *callnode, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
-    void AccessMemoryViaCopyStmt(const CopyStmt *copy, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
-    void AccessMemoryViaLoadStmt(AbstractState& as, const LoadStmt *load, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
-    void AccessMemoryViaCallArgs(const SVF::SVFArgument *arg, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
+    void AccessMemoryViaRetNode(const CallICFGNode* callnode, SVF::FILOWorkList<const SVFValue*>& worklist,
+                                Set<const SVFValue*>& visited);
+    void AccessMemoryViaCopyStmt(const CopyStmt* copy, SVF::FILOWorkList<const SVFValue*>& worklist,
+                                 Set<const SVFValue*>& visited);
+    void AccessMemoryViaLoadStmt(AbstractState& as, const LoadStmt* load, SVF::FILOWorkList<const SVFValue*>& worklist,
+                                 Set<const SVFValue*>& visited);
+    void AccessMemoryViaCallArgs(const SVF::SVFArgument* arg, SVF::FILOWorkList<const SVFValue*>& worklist,
+                                 Set<const SVFValue*>& visited);
 
+    void updateStateOnAddr(const AddrStmt* addr);
 
-    void updateStateOnAddr(const AddrStmt *addr);
+    void updateStateOnBinary(const BinaryOPStmt* binary);
 
-    void updateStateOnBinary(const BinaryOPStmt *binary);
+    void updateStateOnCmp(const CmpStmt* cmp);
 
-    void updateStateOnCmp(const CmpStmt *cmp);
+    void updateStateOnLoad(const LoadStmt* load);
 
-    void updateStateOnLoad(const LoadStmt *load);
+    void updateStateOnStore(const StoreStmt* store);
 
-    void updateStateOnStore(const StoreStmt *store);
+    void updateStateOnCopy(const CopyStmt* copy);
 
-    void updateStateOnCopy(const CopyStmt *copy);
+    void updateStateOnCall(const CallPE* callPE);
 
-    void updateStateOnCall(const CallPE *callPE);
+    void updateStateOnRet(const RetPE* retPE);
 
-    void updateStateOnRet(const RetPE *retPE);
+    void updateStateOnGep(const GepStmt* gep);
 
-    void updateStateOnGep(const GepStmt *gep);
+    void updateStateOnSelect(const SelectStmt* select);
 
-    void updateStateOnSelect(const SelectStmt *select);
-
-    void updateStateOnPhi(const PhiStmt *phi);
+    void updateStateOnPhi(const PhiStmt* phi);
 
     IntervalValue getRangeLimitFromType(const SVFType* type);
-
 
     /// protected data members, also used in subclasses
     SVFIR* _svfir;
@@ -376,7 +377,6 @@ private:
     virtual void indirectCallFunPass(const CallICFGNode* callNode);
 
 protected:
-
     AbstractState& getAbsStateFromTrace(const ICFGNode* node)
     {
         const ICFGNode* repNode = _icfg->getRepNode(node);
@@ -398,10 +398,10 @@ protected:
 
 protected:
     // there data should be shared with subclasses
-    Map<std::string, std::function<void(const CallSite &)>> _func_map;
+    Map<std::string, std::function<void(const CallSite&)>> _func_map;
     Set<const CallICFGNode*> _checkpoints;
     Set<std::string> _checkpoint_names;
     Map<const ICFGNode*, AbstractState> _abstractTrace; // abstract states immediately after nodes
     std::string _moduleName;
 };
-}
+} // namespace SVF

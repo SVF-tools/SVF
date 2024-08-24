@@ -43,7 +43,7 @@ class LeakChecker : public SrcSnkDDA
 {
 
 public:
-    typedef Map<const SVFGNode*,const CallICFGNode*> SVFGNodeToCSIDMap;
+    typedef Map<const SVFGNode*, const CallICFGNode*> SVFGNodeToCSIDMap;
     typedef FIFOWorkList<const CallICFGNode*> CSWorkList;
     typedef ProgSlice::VFWorkList WorkList;
     typedef NodeBS SVFGNodeBS;
@@ -56,13 +56,9 @@ public:
     };
 
     /// Constructor
-    LeakChecker()
-    {
-    }
+    LeakChecker() {}
     /// Destructor
-    virtual ~LeakChecker()
-    {
-    }
+    virtual ~LeakChecker() {}
 
     /// We start from here
     virtual bool runOnModule(SVFIR* pag)
@@ -108,8 +104,8 @@ protected:
     }
     inline const CallICFGNode* getSrcCSID(const SVFGNode* src)
     {
-        SVFGNodeToCSIDMap::iterator it =srcToCSIDMap.find(src);
-        assert(it!=srcToCSIDMap.end() && "source node not at a callsite??");
+        SVFGNodeToCSIDMap::iterator it = srcToCSIDMap.find(src);
+        assert(it != srcToCSIDMap.end() && "source node not at a callsite??");
         return it->second;
     }
     //@}

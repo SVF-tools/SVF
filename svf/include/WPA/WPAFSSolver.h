@@ -32,7 +32,6 @@
  *
  */
 
-
 #ifndef WPAFSSOLVER_H_
 #define WPAFSSOLVER_H_
 
@@ -44,13 +43,11 @@ namespace SVF
 /*!
  * Flow-sensitive Solver
  */
-template<class GraphType>
-class WPAFSSolver : public WPASolver<GraphType>
+template <class GraphType> class WPAFSSolver : public WPASolver<GraphType>
 {
 public:
     /// Constructor
-    WPAFSSolver() : WPASolver<GraphType>()
-    {}
+    WPAFSSolver() : WPASolver<GraphType>() {}
     /// Destructor
     virtual ~WPAFSSolver() {}
 
@@ -61,7 +58,7 @@ public:
     }
 
 protected:
-    NodeStack nodeStack;	///< stack used for processing nodes.
+    NodeStack nodeStack; ///< stack used for processing nodes.
 
     /// SCC detection
     virtual NodeStack& SCCDetect()
@@ -98,13 +95,10 @@ protected:
     }
 };
 
-
-
 /*!
  * Solver based on SCC cycles.
  */
-template<class GraphType>
-class WPASCCSolver : public WPAFSSolver<GraphType>
+template <class GraphType> class WPASCCSolver : public WPAFSSolver<GraphType>
 {
 public:
     typedef typename WPASolver<GraphType>::GTraits GTraits;
@@ -120,8 +114,7 @@ protected:
     {
         /// All nodes will be solved afterwards, so the worklist
         /// can be cleared before each solve iteration.
-        while (!this->isWorklistEmpty())
-            this->popFromWorklist();
+        while (!this->isWorklistEmpty()) this->popFromWorklist();
 
         NodeStack& nodeStack = this->SCCDetect();
 
@@ -136,8 +129,7 @@ protected:
             for (NodeBS::iterator it = sccNodes.begin(), eit = sccNodes.end(); it != eit; ++it)
                 this->pushIntoWorklist(*it);
 
-            while (!this->isWorklistEmpty())
-                this->processNode(this->popFromWorklist());
+            while (!this->isWorklistEmpty()) this->processNode(this->popFromWorklist());
         }
     }
 
@@ -148,15 +140,13 @@ protected:
         child_iterator EE = GTraits::direct_child_end(v);
         for (; EI != EE; ++EI)
         {
-            if (this->propFromSrcToDst(*(EI.getCurrent())))
-                addNodeIntoWorkList(this->Node_Index(*EI));
+            if (this->propFromSrcToDst(*(EI.getCurrent()))) addNodeIntoWorkList(this->Node_Index(*EI));
         }
     }
 
     virtual inline void addNodeIntoWorkList(NodeID node)
     {
-        if (isInCurrentSCC(node))
-            this->pushIntoWorklist(node);
+        if (isInCurrentSCC(node)) this->pushIntoWorklist(node);
     }
 
     inline bool isInCurrentSCC(NodeID node)
@@ -168,16 +158,13 @@ protected:
         curSCCID = this->getSCCDetector()->repNode(id);
     }
 
-    NodeID curSCCID;	///< index of current SCC.
+    NodeID curSCCID; ///< index of current SCC.
 };
-
-
 
 /*!
  * Only solve nodes which need to be analyzed.
  */
-template<class GraphType>
-class WPAMinimumSolver : public WPASCCSolver<GraphType>
+template <class GraphType> class WPAMinimumSolver : public WPASCCSolver<GraphType>
 {
 public:
     typedef typename WPASolver<GraphType>::GTraits GTraits;
@@ -197,8 +184,7 @@ protected:
         if (!this->isWorklistEmpty())
         {
             solveAll = false;
-            while (!this->isWorklistEmpty())
-                addNewCandidate(this->popFromWorklist());
+            while (!this->isWorklistEmpty()) addNewCandidate(this->popFromWorklist());
         }
 
         NodeStack& nodeStack = this->SCCDetect();
@@ -212,22 +198,20 @@ protected:
 
             NodeBS sccNodes = this->getSCCDetector()->subNodes(rep);
             if (solveAll == false)
-                sccNodes &= getCandidates();	/// get nodes which need to be processed in this SCC cycle
+                sccNodes &= getCandidates(); /// get nodes which need to be processed in this SCC cycle
 
             for (NodeBS::iterator it = sccNodes.begin(), eit = sccNodes.end(); it != eit; ++it)
                 this->pushIntoWorklist(*it);
 
-            while (!this->isWorklistEmpty())
-                this->processNode(this->popFromWorklist());
+            while (!this->isWorklistEmpty()) this->processNode(this->popFromWorklist());
 
-            removeCandidates(sccNodes);		/// remove nodes which have been processed from the candidate set
+            removeCandidates(sccNodes); /// remove nodes which have been processed from the candidate set
         }
     }
 
     virtual inline void addNodeIntoWorkList(NodeID node)
     {
-        if (this->isInCurrentSCC(node))
-            this->pushIntoWorklist(node);
+        if (this->isInCurrentSCC(node)) this->pushIntoWorklist(node);
         else
             addNewCandidate(node);
     }
@@ -246,7 +230,7 @@ private:
         candidates.intersectWithComplement(nodes);
     }
 
-    NodeBS candidates;	///< nodes which need to be analyzed in current iteration.
+    NodeBS candidates; ///< nodes which need to be analyzed in current iteration.
 };
 
 } // End namespace SVF

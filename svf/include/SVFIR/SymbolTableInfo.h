@@ -30,7 +30,6 @@
 #ifndef INCLUDE_SVFIR_SYMBOLTABLEINFO_H_
 #define INCLUDE_SVFIR_SYMBOLTABLEINFO_H_
 
-
 #include "Util/SVFUtil.h"
 #include "MemoryModel/AccessPath.h"
 #include "SVFIR/SVFModule.h"
@@ -51,7 +50,6 @@ class SymbolTableInfo
     friend class SVFIRReader;
 
 public:
-
     /// Symbol types
     enum SYMTYPE
     {
@@ -102,14 +100,9 @@ private:
 
 protected:
     /// Constructor
-    SymbolTableInfo(void)
-        : mod(nullptr), modelConstants(false), totalSymNum(0),
-          maxStruct(nullptr), maxStSize(0)
-    {
-    }
+    SymbolTableInfo(void) : mod(nullptr), modelConstants(false), totalSymNum(0), maxStruct(nullptr), maxStSize(0) {}
 
 public:
-
     /// Singleton design here to make sure we only have one instance during any analysis
     //@{
     static SymbolTableInfo* SymbolInfo();
@@ -213,35 +206,34 @@ public:
     inline SymID getObjSym(const SVFValue* val) const
     {
         const SVFValue* svfVal = val;
-        if(const SVFGlobalValue* g = SVFUtil::dyn_cast<SVFGlobalValue>(val))
+        if (const SVFGlobalValue* g = SVFUtil::dyn_cast<SVFGlobalValue>(val))
             svfVal = g->getDefGlobalForMultipleModule();
         ValueToIDMapTy::const_iterator iter = objSymMap.find(svfVal);
-        assert(iter!=objSymMap.end() && "obj sym not found");
+        assert(iter != objSymMap.end() && "obj sym not found");
         return iter->second;
     }
 
     inline MemObj* getObj(SymID id) const
     {
         IDToMemMapTy::const_iterator iter = objMap.find(id);
-        assert(iter!=objMap.end() && "obj not found");
+        assert(iter != objMap.end() && "obj not found");
         return iter->second;
     }
 
     inline SymID getRetSym(const SVFFunction* val) const
     {
-        FunToIDMapTy::const_iterator iter =  returnSymMap.find(val);
-        assert(iter!=returnSymMap.end() && "ret sym not found");
+        FunToIDMapTy::const_iterator iter = returnSymMap.find(val);
+        assert(iter != returnSymMap.end() && "ret sym not found");
         return iter->second;
     }
 
     inline SymID getVarargSym(const SVFFunction* val) const
     {
-        FunToIDMapTy::const_iterator iter =  varargSymMap.find(val);
-        assert(iter!=varargSymMap.end() && "vararg sym not found");
+        FunToIDMapTy::const_iterator iter = varargSymMap.find(val);
+        assert(iter != varargSymMap.end() && "vararg sym not found");
         return iter->second;
     }
     //@}
-
 
     /// Statistics
     //@{
@@ -304,15 +296,15 @@ public:
 
     /// Get struct info
     //@{
-    ///Get a reference to StructInfo.
+    /// Get a reference to StructInfo.
     const StInfo* getTypeInfo(const SVFType* T) const;
     inline bool hasSVFTypeInfo(const SVFType* T)
     {
         return svfTypes.find(T) != svfTypes.end();
     }
 
-    ///Get a reference to the components of struct_info.
-    /// Number of flattened elements of an array or struct
+    /// Get a reference to the components of struct_info.
+    ///  Number of flattened elements of an array or struct
     u32_t getNumOfFlattenElements(const SVFType* T);
     /// Flattened element idx of an array or struct by considering stride
     u32_t getFlattenedElemIdx(const SVFType* T, u32_t origId);
@@ -333,20 +325,18 @@ public:
     virtual void dump();
 
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
-    virtual APOffset getModulusOffset(const MemObj* obj,
-                                      const APOffset& apOffset);
+    virtual APOffset getModulusOffset(const MemObj* obj, const APOffset& apOffset);
 
-    ///The struct type with the most fields
+    /// The struct type with the most fields
     const SVFType* maxStruct;
 
-    ///The number of fields in max_struct
+    /// The number of fields in max_struct
     u32_t maxStSize;
 
     inline void addTypeInfo(const SVFType* ty)
     {
         bool inserted = svfTypes.insert(ty).second;
-        if(!inserted)
-            assert(false && "this type info has been added before");
+        if (!inserted) assert(false && "this type info has been added before");
     }
 
     inline void addStInfo(StInfo* stInfo)
@@ -355,9 +345,8 @@ public:
     }
 
 protected:
-
     /// Return the flattened field type for struct type only
-    const std::vector<const SVFType*>& getFlattenFieldTypes(const SVFStructType *T);
+    const std::vector<const SVFType*>& getFlattenFieldTypes(const SVFStructType* T);
 
     /// Create an objectInfo based on LLVM type (value is null, and type could be null, representing a dummy object)
     ObjTypeInfo* createObjTypeInfo(const SVFType* type);
@@ -372,7 +361,6 @@ protected:
     /// @brief (owned) All StInfo
     Set<const StInfo*> stInfos;
 };
-
 
 /*!
  * Memory object symbols or MemObj (address-taken variables in LLVM-based languages)
@@ -444,7 +432,6 @@ public:
     /// Check if byte size is a const value
     bool isConstantByteSize() const;
 
-
     /// object attributes methods
     //@{
     bool isFunction() const;
@@ -484,17 +471,17 @@ class ObjTypeInfo
 public:
     typedef enum
     {
-        FUNCTION_OBJ = 0x1,  // object is a function
-        GLOBVAR_OBJ = 0x2,  // object is a global variable
-        STATIC_OBJ = 0x4,  // object is a static variable allocated before main
-        STACK_OBJ = 0x8,  // object is a stack variable
-        HEAP_OBJ = 0x10,  // object is a heap variable
-        VAR_STRUCT_OBJ = 0x20,  // object contains struct
-        VAR_ARRAY_OBJ = 0x40,  // object contains array
+        FUNCTION_OBJ = 0x1,       // object is a function
+        GLOBVAR_OBJ = 0x2,        // object is a global variable
+        STATIC_OBJ = 0x4,         // object is a static variable allocated before main
+        STACK_OBJ = 0x8,          // object is a stack variable
+        HEAP_OBJ = 0x10,          // object is a heap variable
+        VAR_STRUCT_OBJ = 0x20,    // object contains struct
+        VAR_ARRAY_OBJ = 0x40,     // object contains array
         CONST_STRUCT_OBJ = 0x80,  // constant struct
         CONST_ARRAY_OBJ = 0x100,  // constant array
-        CONST_GLOBAL_OBJ = 0x200,  // global constant object
-        CONST_DATA = 0x400,  // constant object str e.g. 5, 10, 1.0
+        CONST_GLOBAL_OBJ = 0x200, // global constant object
+        CONST_DATA = 0x400,       // constant object str e.g. 5, 10, 1.0
     } MEMTYPE;
 
 private:
@@ -513,15 +500,13 @@ private:
     u32_t byteSize;
 
     void resetTypeForHeapStaticObj(const SVFType* type);
-public:
 
+public:
     /// Constructors
     ObjTypeInfo(const SVFType* t, u32_t max);
 
     /// Destructor
-    virtual ~ObjTypeInfo()
-    {
-    }
+    virtual ~ObjTypeInfo() {}
 
     /// Get LLVM type
     inline const SVFType* getType() const
@@ -630,7 +615,7 @@ public:
     }
     inline bool isConstantArray()
     {
-        return  hasFlag(CONST_ARRAY_OBJ);
+        return hasFlag(CONST_ARRAY_OBJ);
     }
     inline bool isArray()
     {
@@ -646,7 +631,6 @@ public:
     }
     //@}
 };
-
 
 } // End namespace SVF
 

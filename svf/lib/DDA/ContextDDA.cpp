@@ -39,8 +39,8 @@ using namespace SVFUtil;
 /*!
  * Constructor
  */
-ContextDDA::ContextDDA(SVFIR* _pag,  DDAClient* client)
-    : CondPTAImpl<ContextCond>(_pag, PointerAnalysis::Cxt_DDA),DDAVFSolver<CxtVar,CxtPtSet,CxtLocDPItem>(),
+ContextDDA::ContextDDA(SVFIR* _pag, DDAClient* client)
+    : CondPTAImpl<ContextCond>(_pag, PointerAnalysis::Cxt_DDA), DDAVFSolver<CxtVar, CxtPtSet, CxtLocDPItem>(),
       _client(client)
 {
     flowDDA = new FlowDDA(_pag, client);
@@ -51,8 +51,7 @@ ContextDDA::ContextDDA(SVFIR* _pag,  DDAClient* client)
  */
 ContextDDA::~ContextDDA()
 {
-    if(flowDDA)
-        delete flowDDA;
+    if (flowDDA) delete flowDDA;
     flowDDA = nullptr;
 }
 
@@ -88,14 +87,12 @@ const CxtPtSet& ContextDDA::computeDDAPts(const CxtVar& var)
     DOTIMESTAT(ddaStat->_AnaTimePerQuery = DDAStat::getClk(true) - start);
     DOTIMESTAT(ddaStat->_TotalTimeOfQueries += ddaStat->_AnaTimePerQuery);
 
-    if(isOutOfBudgetQuery() == false)
-        unionPts(var,cpts);
+    if (isOutOfBudgetQuery() == false) unionPts(var, cpts);
     else
         handleOutOfBudgetDpm(dpm);
 
-    if (this->printStat())
-        DOSTAT(stat->performStatPerQuery(id));
-    DBOUT(DGENERAL, stat->printStatPerQuery(id,getBVPointsTo(getPts(var))));
+    if (this->printStat()) DOSTAT(stat->performStatPerQuery(id));
+    DBOUT(DGENERAL, stat->printStatPerQuery(id, getBVPointsTo(getPts(var))));
     return this->getPts(var);
 }
 
@@ -115,18 +112,18 @@ void ContextDDA::computeDDAPts(NodeID id)
 void ContextDDA::handleOutOfBudgetDpm(const CxtLocDPItem& dpm)
 {
 
-    DBOUT(DGENERAL,outs() << "~~~Out of budget query, downgrade to flow sensitive analysis \n");
+    DBOUT(DGENERAL, outs() << "~~~Out of budget query, downgrade to flow sensitive analysis \n");
     flowDDA->computeDDAPts(dpm.getCurNodeID());
     const PointsTo& flowPts = flowDDA->getPts(dpm.getCurNodeID());
     CxtPtSet cxtPts;
-    for(PointsTo::iterator it = flowPts.begin(), eit = flowPts.end(); it!=eit; ++it)
+    for (PointsTo::iterator it = flowPts.begin(), eit = flowPts.end(); it != eit; ++it)
     {
         ContextCond cxt;
         CxtVar var(cxt, *it);
         cxtPts.set(var);
     }
-    updateCachedPointsTo(dpm,cxtPts);
-    unionPts(dpm.getCondVar(),cxtPts);
+    updateCachedPointsTo(dpm, cxtPts);
+    unionPts(dpm.getCondVar(), cxtPts);
     addOutOfBudgetDpm(dpm);
 }
 
@@ -135,15 +132,13 @@ void ContextDDA::handleOutOfBudgetDpm(const CxtLocDPItem& dpm)
  */
 bool ContextDDA::isCondCompatible(const ContextCond& cxt1, const ContextCond& cxt2, bool singleton) const
 {
-    if(singleton)
-        return true;
+    if (singleton) return true;
 
     int i = cxt1.cxtSize() - 1;
     int j = cxt2.cxtSize() - 1;
-    for(; i >= 0 && j>=0; i--, j--)
+    for (; i >= 0 && j >= 0; i--, j--)
     {
-        if(cxt1[i] != cxt2[j])
-            return false;
+        if (cxt1[i] != cxt2[j]) return false;
     }
     return true;
 }
@@ -158,21 +153,20 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
     {
 
         CxtVar ptd = *piter;
-        if (isBlkObjOrConstantObj(ptd.get_id()))
-            tmpDstPts.set(ptd);
+        if (isBlkObjOrConstantObj(ptd.get_id())) tmpDstPts.set(ptd);
         else
         {
             const GepStmt* gepStmt = SVFUtil::cast<GepStmt>(gep->getPAGEdge());
             if (gepStmt->isVariantFieldGep())
             {
                 setObjFieldInsensitive(ptd.get_id());
-                CxtVar var(ptd.get_cond(),getFIObjVar(ptd.get_id()));
+                CxtVar var(ptd.get_cond(), getFIObjVar(ptd.get_id()));
                 tmpDstPts.set(var);
             }
             else
             {
-                CxtVar var(ptd.get_cond(),getGepObjVar(ptd.get_id(),
-                                                       gepStmt->getAccessPath().getConstantStructFldIdx()));
+                CxtVar var(ptd.get_cond(),
+                           getGepObjVar(ptd.get_id(), gepStmt->getAccessPath().getConstantStructFldIdx()));
                 tmpDstPts.set(var);
             }
         }
@@ -188,15 +182,14 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
 
 bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* callee, const CallICFGNode* cs)
 {
-    if(getPAG()->isIndirectCallSites(cs))
+    if (getPAG()->isIndirectCallSites(cs))
     {
         NodeID id = getPAG()->getFunPtr(cs);
         PAGNode* node = getPAG()->getGNode(id);
         CxtVar funptrVar(dpm.getCondVar().get_cond(), id);
-        CxtLocDPItem funptrDpm = getDPIm(funptrVar,getDefSVFGNode(node));
+        CxtLocDPItem funptrDpm = getDPIm(funptrVar, getDefSVFGNode(node));
         PointsTo pts = getBVPointsTo(findPT(funptrDpm));
-        if(pts.test(getPAG()->getObjectNode(callee)))
-            return true;
+        if (pts.test(getPAG()->getObjectNode(callee))) return true;
         else
             return false;
     }
@@ -219,9 +212,9 @@ CallSiteID ContextDDA::getCSIDAtCall(CxtLocDPItem&, const SVFGEdge* edge)
     const CallICFGNode* cbn = getSVFG()->getCallSite(svfg_csId);
     const SVFFunction* callee = edge->getDstNode()->getFun();
 
-    if(getCallGraph()->hasCallSiteID(cbn,callee))
+    if (getCallGraph()->hasCallSiteID(cbn, callee))
     {
-        return getCallGraph()->getCallSiteID(cbn,callee);
+        return getCallGraph()->getCallSiteID(cbn, callee);
     }
 
     return 0;
@@ -235,22 +228,20 @@ CallSiteID ContextDDA::getCSIDAtRet(CxtLocDPItem&, const SVFGEdge* edge)
 {
 
     CallSiteID svfg_csId = 0;
-    if (const RetDirSVFGEdge* retEdge = SVFUtil::dyn_cast<RetDirSVFGEdge>(edge))
-        svfg_csId = retEdge->getCallSiteId();
+    if (const RetDirSVFGEdge* retEdge = SVFUtil::dyn_cast<RetDirSVFGEdge>(edge)) svfg_csId = retEdge->getCallSiteId();
     else
         svfg_csId = SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId();
 
     const CallICFGNode* cbn = getSVFG()->getCallSite(svfg_csId);
     const SVFFunction* callee = edge->getSrcNode()->getFun();
 
-    if(getCallGraph()->hasCallSiteID(cbn,callee))
+    if (getCallGraph()->hasCallSiteID(cbn, callee))
     {
-        return getCallGraph()->getCallSiteID(cbn,callee);
+        return getCallGraph()->getCallSiteID(cbn, callee);
     }
 
     return 0;
 }
-
 
 /// Handle conditions during backward traversing
 bool ContextDDA::handleBKCondition(CxtLocDPItem& dpm, const SVFGEdge* edge)
@@ -260,21 +251,21 @@ bool ContextDDA::handleBKCondition(CxtLocDPItem& dpm, const SVFGEdge* edge)
     if (edge->isCallVFGEdge())
     {
         /// we don't handle context in recursions, they treated as assignments
-        if(CallSiteID csId = getCSIDAtCall(dpm,edge))
+        if (CallSiteID csId = getCSIDAtCall(dpm, edge))
         {
 
-            if(isEdgeInRecursion(csId))
+            if (isEdgeInRecursion(csId))
             {
-                DBOUT(DDDA,outs() << "\t\t call edge " << getCallGraph()->getCallerOfCallSite(csId)->getName() <<
-                      "=>" << getCallGraph()->getCalleeOfCallSite(csId)->getName() << "in recursion \n");
+                DBOUT(DDDA, outs() << "\t\t call edge " << getCallGraph()->getCallerOfCallSite(csId)->getName() << "=>"
+                                   << getCallGraph()->getCalleeOfCallSite(csId)->getName() << "in recursion \n");
                 popRecursiveCallSites(dpm);
             }
             else
             {
                 if (dpm.matchContext(csId) == false)
                 {
-                    DBOUT(DDDA,	outs() << "\t\t context not match, edge "
-                          << edge->getDstID() << " --| " << edge->getSrcID() << " \t");
+                    DBOUT(DDDA, outs() << "\t\t context not match, edge " << edge->getDstID() << " --| "
+                                       << edge->getSrcID() << " \t");
                     DBOUT(DDDA, dumpContexts(dpm.getCond()));
                     return false;
                 }
@@ -288,13 +279,14 @@ bool ContextDDA::handleBKCondition(CxtLocDPItem& dpm, const SVFGEdge* edge)
     else if (edge->isRetVFGEdge())
     {
         /// we don't handle context in recursions, they treated as assignments
-        if(CallSiteID csId = getCSIDAtRet(dpm,edge))
+        if (CallSiteID csId = getCSIDAtRet(dpm, edge))
         {
 
-            if(isEdgeInRecursion(csId))
+            if (isEdgeInRecursion(csId))
             {
-                DBOUT(DDDA,outs() << "\t\t return edge " << getCallGraph()->getCalleeOfCallSite(csId)->getName() <<
-                      "=>" << getCallGraph()->getCallerOfCallSite(csId)->getName() << "in recursion \n");
+                DBOUT(DDDA, outs() << "\t\t return edge " << getCallGraph()->getCalleeOfCallSite(csId)->getName()
+                                   << "=>" << getCallGraph()->getCallerOfCallSite(csId)->getName()
+                                   << "in recursion \n");
                 popRecursiveCallSites(dpm);
             }
             else
@@ -309,8 +301,8 @@ bool ContextDDA::handleBKCondition(CxtLocDPItem& dpm, const SVFGEdge* edge)
                 }
                 else
                 {
-                    assert(dpm.getCond().containCallStr(csId) ==false && "contain visited call string ??");
-                    if(dpm.pushContext(csId))
+                    assert(dpm.getCond().containCallStr(csId) == false && "contain visited call string ??");
+                    if (dpm.pushContext(csId))
                     {
                         DBOUT(DDDA, outs() << "\t\t push context ");
                         DBOUT(DDDA, dumpContexts(dpm.getCond()));
@@ -328,7 +320,6 @@ bool ContextDDA::handleBKCondition(CxtLocDPItem& dpm, const SVFGEdge* edge)
     return true;
 }
 
-
 /// we exclude concrete heap given the following conditions:
 /// (1) concrete calling context (not involved in recursion and not exceed the maximum context limit)
 /// (2) not inside loop
@@ -340,29 +331,25 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
     {
         if (!mem->getValue())
         {
-            PAGNode *pnode = _pag->getGNode(getPtrNodeID(var));
+            PAGNode* pnode = _pag->getGNode(getPtrNodeID(var));
             GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(pnode);
             if (gepobj != nullptr)
             {
-                assert(SVFUtil::isa<DummyObjVar>(_pag->getGNode(gepobj->getBaseNode()))
-                       && "empty refVal in a gep object whose base is a non-dummy object");
+                assert(SVFUtil::isa<DummyObjVar>(_pag->getGNode(gepobj->getBaseNode())) &&
+                       "empty refVal in a gep object whose base is a non-dummy object");
             }
             else
             {
-                assert((SVFUtil::isa<DummyObjVar, DummyValVar>(pnode))
-                       && "empty refVal in non-dummy object");
+                assert((SVFUtil::isa<DummyObjVar, DummyValVar>(pnode)) && "empty refVal in non-dummy object");
             }
             return true;
         }
-        else if(const SVFInstruction* mallocSite = SVFUtil::dyn_cast<SVFInstruction>(mem->getValue()))
+        else if (const SVFInstruction* mallocSite = SVFUtil::dyn_cast<SVFInstruction>(mem->getValue()))
         {
             const SVFFunction* svfFun = mallocSite->getFunction();
-            if(_ander->isInRecursion(svfFun))
-                return true;
-            if(var.get_cond().isConcreteCxt() == false)
-                return true;
-            if(_pag->getICFG()->isInLoop(mallocSite))
-                return true;
+            if (_ander->isInRecursion(svfFun)) return true;
+            if (var.get_cond().isConcreteCxt() == false) return true;
+            if (_pag->getICFG()->isInLoop(mallocSite)) return true;
         }
     }
     return false;

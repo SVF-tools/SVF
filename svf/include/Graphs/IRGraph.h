@@ -27,7 +27,6 @@
  *      Author: Yulei Sui
  */
 
-
 #ifndef IRGRAPH_H_
 #define IRGRAPH_H_
 
@@ -53,13 +52,15 @@ class IRGraph : public GenericGraph<SVFVar, SVFStmt>
 
 public:
     typedef Set<const SVFStmt*> SVFStmtSet;
-    typedef Map<const SVFValue*,SVFStmtSet> ValueToEdgeMap;
+    typedef Map<const SVFValue*, SVFStmtSet> ValueToEdgeMap;
 
 protected:
-    SVFStmt::KindToSVFStmtMapTy KindToSVFStmtSetMap; ///< SVFIR edge map containing all PAGEdges
-    SVFStmt::KindToSVFStmtMapTy KindToPTASVFStmtSetMap; ///< SVFIR edge map containing only pointer-related edges, i.e., both LHS and RHS are of pointer type
-    bool fromFile; ///< Whether the SVFIR is built according to user specified data from a txt file
-    NodeID nodeNumAfterPAGBuild; ///< initial node number after building SVFIR, excluding later added nodes, e.g., gepobj nodes
+    SVFStmt::KindToSVFStmtMapTy KindToSVFStmtSetMap;    ///< SVFIR edge map containing all PAGEdges
+    SVFStmt::KindToSVFStmtMapTy KindToPTASVFStmtSetMap; ///< SVFIR edge map containing only pointer-related edges, i.e.,
+                                                        ///< both LHS and RHS are of pointer type
+    bool fromFile;               ///< Whether the SVFIR is built according to user specified data from a txt file
+    NodeID nodeNumAfterPAGBuild; ///< initial node number after building SVFIR, excluding later added nodes, e.g.,
+                                 ///< gepobj nodes
     u32_t totalPTAPAGEdge;
     ValueToEdgeMap valueToEdgeMap; ///< Map SVFValues (e.g., ICFGNodes) to all corresponding PAGEdges
     SymbolTableInfo* symInfo;
@@ -67,7 +68,7 @@ protected:
     /// Add a node into the graph
     inline NodeID addNode(SVFVar* node, NodeID i)
     {
-        addGNode(i,node);
+        addGNode(i, node);
         return i;
     }
     /// Add an edge into the graph
@@ -78,15 +79,13 @@ protected:
     /// Return true if this labeled edge exits, including store, call and load
     /// two store edge can have same dst and src but located in different basic
     /// blocks, thus flags are needed to distinguish them
-    SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind,
-                            const ICFGNode* cs);
+    SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind, const ICFGNode* cs);
     /// Return MultiOpndStmt since it has more than one operands (we use operand
     /// 2 here to make the flag)
-    SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind,
-                            const SVFVar* op2);
+    SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind, const SVFVar* op2);
 
     /// Map a value to a set of edges
-    inline void mapValueToEdge(const SVFValue* V, SVFStmt *edge)
+    inline void mapValueToEdge(const SVFValue* V, SVFStmt* edge)
     {
         auto inserted = valueToEdgeMap.emplace(V, SVFStmtSet{edge});
         if (!inserted.second)
@@ -101,8 +100,7 @@ protected:
     }
 
 public:
-    IRGraph(bool buildFromFile)
-        : fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0)
+    IRGraph(bool buildFromFile) : fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0)
     {
         symInfo = SymbolTableInfo::SymbolInfo();
         // insert dummy value if a correct value cannot be found
@@ -126,14 +124,14 @@ public:
         auto it = valueToEdgeMap.find(V);
         if (it == valueToEdgeMap.end())
         {
-            //special empty set
+            // special empty set
             return valueToEdgeMap.at(nullptr);
         }
         return it->second;
     }
 
     /// Get SVFIR Node according to LLVM value
-    ///getNode - Return the node corresponding to the specified pointer.
+    /// getNode - Return the node corresponding to the specified pointer.
     inline NodeID getValueNode(const SVFValue* V)
     {
         return symInfo->getValSym(V);
@@ -225,7 +223,7 @@ public:
     void view();
 };
 
-}
+} // namespace SVF
 
 namespace SVF
 {
@@ -234,19 +232,23 @@ namespace SVF
  * GenericGraphTraits specializations of SVFIR to be used for the generic graph algorithms.
  * Provide graph traits for traversing from a SVFIR node using standard graph traversals.
  */
-template<> struct GenericGraphTraits<SVF::SVFVar*> : public GenericGraphTraits<SVF::GenericNode<SVF::SVFVar,SVF::SVFStmt>*  >
+template <>
+struct GenericGraphTraits<SVF::SVFVar*> : public GenericGraphTraits<SVF::GenericNode<SVF::SVFVar, SVF::SVFStmt>*>
 {
 };
 
 /// Inverse GenericGraphTraits specializations for SVFIR node, it is used for inverse traversal.
-template<> struct GenericGraphTraits<Inverse<SVF::SVFVar *> > : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::SVFVar,SVF::SVFStmt>* > >
+template <>
+struct GenericGraphTraits<Inverse<SVF::SVFVar*>>
+    : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::SVFVar, SVF::SVFStmt>*>>
 {
 };
 
-template<> struct GenericGraphTraits<SVF::IRGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::SVFVar,SVF::SVFStmt>* >
+template <>
+struct GenericGraphTraits<SVF::IRGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::SVFVar, SVF::SVFStmt>*>
 {
     typedef SVF::SVFVar* NodeRef;
 };
 
-} // End namespace llvm
+} // namespace SVF
 #endif /* IRGRAPH_H_ */
