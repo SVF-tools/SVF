@@ -585,11 +585,7 @@ Set<const Value *> &ObjTypeInference::bwfindAllocOfVar(const Value *var)
             {
                 if (!callee->isDeclaration())
                 {
-                    const SVFFunction *svfFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
-                    const Value* pValue =
-                        LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(
-                            cast<IntraICFGNode>(svfFunc->getExitBB()->back())
-                                ->getInst());
+                    const Value* pValue = &callee->back().back();
                     const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
                     ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
                     insertAllocsOrPushWorklist(retInst->getReturnValue());
@@ -894,11 +890,7 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
             {
                 if (!callee->isDeclaration())
                 {
-                    const SVFFunction *svfFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
-                    const Value* pValue =
-                        LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(
-                            cast<IntraICFGNode>(svfFunc->getExitBB()->back())
-                                ->getInst());
+                    const Value* pValue = &callee->back().back();
                     const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
                     ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
                     insertSourcesOrPushWorklist(retInst->getReturnValue());

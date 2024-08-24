@@ -371,6 +371,7 @@ bool SVFUtil::isRetInstNode(const ICFGNode* node)
     if (const auto& intraNode = dyn_cast<IntraICFGNode>(node))
     {
         return intraNode->getInst()->isRetInst();
+    } else {
+        return isa<FunExitICFGNode>(node);
     }
-    return false;
 }
