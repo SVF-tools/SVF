@@ -56,16 +56,6 @@ void ICFGBuilder::build(SVFModule* svfModule)
             processFunEntry(fun,worklist);
             processFunBody(worklist);
             processFunExit(fun);
-            for (const auto& bb : *fun)
-            {
-                for (auto it = bb.begin(), eit = bb.end(); it != eit; ++it)
-                {
-                    SVFBasicBlock* pBlock = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(&bb);
-                    pBlock->addICFGNode(getOrAddBlockICFGNode(
-                        LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(
-                            &(*it))));
-                }
-            }
         }
 
     }
