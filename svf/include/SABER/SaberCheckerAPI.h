@@ -101,13 +101,9 @@ public:
     {
         return getType(fun) == CK_ALLOC;
     }
-    inline bool isMemAlloc(const SVFInstruction* inst) const
-    {
-        return getType(SVFUtil::getCallee(inst)) == CK_ALLOC;
-    }
     inline bool isMemAlloc(const CallICFGNode* cs) const
     {
-        return isMemAlloc(cs->getCallSite());
+        return isMemAlloc(SVFUtil::getCallee(cs->getCallSite()));
     }
     //@}
 
@@ -117,13 +113,9 @@ public:
     {
         return getType(fun) == CK_FREE;
     }
-    inline bool isMemDealloc(const SVFInstruction *inst) const
-    {
-        return getType(SVFUtil::getCallee(inst)) == CK_FREE;
-    }
     inline bool isMemDealloc(const CallICFGNode* cs) const
     {
-        return isMemDealloc(cs->getCallSite());
+        return isMemDealloc(SVFUtil::getCallee(cs->getCallSite()));
     }
     //@}
 
@@ -133,13 +125,9 @@ public:
     {
         return getType(fun) == CK_FOPEN;
     }
-    inline bool isFOpen(const SVFInstruction* inst) const
-    {
-        return getType(SVFUtil::getCallee(inst)) == CK_FOPEN;
-    }
     inline bool isFOpen(const CallICFGNode* cs) const
     {
-        return isFOpen(cs->getCallSite());
+        return isFOpen(SVFUtil::getCallee(cs->getCallSite()));
     }
     //@}
 
@@ -149,13 +137,9 @@ public:
     {
         return getType(fun) == CK_FCLOSE;
     }
-    inline bool isFClose(const SVFInstruction* inst) const
-    {
-        return getType(SVFUtil::getCallee(inst)) == CK_FCLOSE;
-    }
     inline bool isFClose(const CallICFGNode* cs) const
     {
-        return isFClose(cs->getCallSite());
+        return isFClose(SVFUtil::getCallee(cs->getCallSite()));
     }
     //@}
 

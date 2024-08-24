@@ -31,7 +31,7 @@
 #ifndef INCLUDE_SVF_FE_CALLGRAPHBUILDER_H_
 #define INCLUDE_SVF_FE_CALLGRAPHBUILDER_H_
 
-#include "Graphs/PTACallGraph.h"
+#include "Graphs/CallGraph.h"
 #include "Graphs/ThreadCallGraph.h"
 
 namespace SVF
@@ -43,15 +43,15 @@ class CallGraphBuilder
 {
 
 protected:
-    PTACallGraph* callgraph;
+    CallGraph* callgraph;
     ICFG* icfg;
 public:
-    CallGraphBuilder(PTACallGraph* cg, ICFG* i): callgraph(cg),icfg(i)
+    CallGraphBuilder(CallGraph* cg, ICFG* i): callgraph(cg),icfg(i)
     {
     }
 
     /// Build normal callgraph
-    PTACallGraph* buildCallGraph(SVFModule* svfModule);
+    CallGraph* buildCallGraph(SVFModule* svfModule);
 
 };
 
@@ -64,7 +64,7 @@ public:
     }
 
     /// Build thread-aware callgraph
-    PTACallGraph* buildThreadCallGraph(SVFModule* svfModule);
+    CallGraph* buildThreadCallGraph(SVFModule* svfModule);
 
 };
 

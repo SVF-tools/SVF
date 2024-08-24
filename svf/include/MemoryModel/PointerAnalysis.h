@@ -34,7 +34,7 @@
 #include <signal.h>
 
 #include "Graphs/CHG.h"
-#include "Graphs/PTACallGraph.h"
+#include "Graphs/CallGraph.h"
 #include "Graphs/SCC.h"
 #include "MemoryModel/AbstractPointsToDS.h"
 #include "MemoryModel/ConditionalPT.h"
@@ -103,7 +103,7 @@ public:
     typedef SVFIR::CallSiteToFunPtrMap CallSiteToFunPtrMap;
     typedef Set<const SVFFunction*> FunctionSet;
     typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
-    typedef SCCDetection<PTACallGraph*> CallGraphSCC;
+    typedef SCCDetection<CallGraph*> CallGraphSCC;
     typedef Set<const SVFGlobalValue*> VTableSet;
     typedef Set<const SVFFunction*> VFunSet;
     //@}
@@ -148,7 +148,7 @@ protected:
     /// Statistics
     PTAStat* stat;
     /// Call graph used for pointer analysis
-    PTACallGraph* ptaCallGraph;
+    CallGraph* callgraph;
     /// SCC for CallGraph
     CallGraphSCC* callGraphSCC;
     /// Interprocedural control-flow graph
@@ -165,12 +165,12 @@ public:
     /// Return number of resolved indirect call edges
     inline u32_t getNumOfResolvedIndCallEdge() const
     {
-        return getPTACallGraph()->getNumOfResolvedIndCallEdge();
+        return getCallGraph()->getNumOfResolvedIndCallEdge();
     }
     /// Return call graph
-    inline PTACallGraph* getPTACallGraph() const
+    inline CallGraph* getCallGraph() const
     {
-        return ptaCallGraph;
+        return callgraph;
     }
     /// Return call graph SCC
     inline CallGraphSCC* getCallGraphSCC() const
@@ -367,15 +367,15 @@ public:
     //@{
     inline CallEdgeMap& getIndCallMap()
     {
-        return getPTACallGraph()->getIndCallMap();
+        return getCallGraph()->getIndCallMap();
     }
     inline bool hasIndCSCallees(const CallICFGNode* cs) const
     {
-        return getPTACallGraph()->hasIndCSCallees(cs);
+        return getCallGraph()->hasIndCSCallees(cs);
     }
     inline const FunctionSet& getIndCSCallees(const CallICFGNode* cs) const
     {
-        return getPTACallGraph()->getIndCSCallees(cs);
+        return getCallGraph()->getIndCSCallees(cs);
     }
     //@}
 
@@ -388,7 +388,7 @@ public:
     inline void callGraphSCCDetection()
     {
         if(callGraphSCC==nullptr)
-            callGraphSCC = new CallGraphSCC(ptaCallGraph);
+            callGraphSCC = new CallGraphSCC(callgraph);
 
         callGraphSCC->find();
     }
@@ -400,13 +400,13 @@ public:
     /// Return TRUE if this edge is inside a CallGraph SCC, i.e., src node and dst node are in the same SCC on the SVFG.
     inline bool inSameCallGraphSCC(const SVFFunction* fun1,const SVFFunction* fun2)
     {
-        const PTACallGraphNode* src = ptaCallGraph->getCallGraphNode(fun1);
-        const PTACallGraphNode* dst = ptaCallGraph->getCallGraphNode(fun2);
+        const CallGraphNode* src = callgraph->getCallGraphNode(fun1);
+        const CallGraphNode* dst = callgraph->getCallGraphNode(fun2);
         return (getCallGraphSCCRepNode(src->getId()) == getCallGraphSCCRepNode(dst->getId()));
     }
     inline bool isInRecursion(const SVFFunction* fun) const
     {
-        return callGraphSCC->isInCycle(ptaCallGraph->getCallGraphNode(fun)->getId());
+        return callGraphSCC->isInCycle(callgraph->getCallGraphNode(fun)->getId());
     }
     /// Whether a local variable is in function recursions
     bool isLocalVarInRecursiveFun(NodeID id) const;

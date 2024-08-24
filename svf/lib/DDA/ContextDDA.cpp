@@ -63,7 +63,7 @@ void ContextDDA::initialize()
 {
     CondPTAImpl<ContextCond>::initialize();
     buildSVFG(pag);
-    setCallGraph(getPTACallGraph());
+    setCallGraph(getCallGraph());
     setCallGraphSCC(getCallGraphSCC());
     stat = setDDAStat(new DDAStat(this));
     flowDDA->initialize();
@@ -219,9 +219,9 @@ CallSiteID ContextDDA::getCSIDAtCall(CxtLocDPItem&, const SVFGEdge* edge)
     const CallICFGNode* cbn = getSVFG()->getCallSite(svfg_csId);
     const SVFFunction* callee = edge->getDstNode()->getFun();
 
-    if(getPTACallGraph()->hasCallSiteID(cbn,callee))
+    if(getCallGraph()->hasCallSiteID(cbn,callee))
     {
-        return getPTACallGraph()->getCallSiteID(cbn,callee);
+        return getCallGraph()->getCallSiteID(cbn,callee);
     }
 
     return 0;
@@ -243,9 +243,9 @@ CallSiteID ContextDDA::getCSIDAtRet(CxtLocDPItem&, const SVFGEdge* edge)
     const CallICFGNode* cbn = getSVFG()->getCallSite(svfg_csId);
     const SVFFunction* callee = edge->getSrcNode()->getFun();
 
-    if(getPTACallGraph()->hasCallSiteID(cbn,callee))
+    if(getCallGraph()->hasCallSiteID(cbn,callee))
     {
-        return getPTACallGraph()->getCallSiteID(cbn,callee);
+        return getCallGraph()->getCallSiteID(cbn,callee);
     }
 
     return 0;
@@ -265,8 +265,8 @@ bool ContextDDA::handleBKCondition(CxtLocDPItem& dpm, const SVFGEdge* edge)
 
             if(isEdgeInRecursion(csId))
             {
-                DBOUT(DDDA,outs() << "\t\t call edge " << getPTACallGraph()->getCallerOfCallSite(csId)->getName() <<
-                      "=>" << getPTACallGraph()->getCalleeOfCallSite(csId)->getName() << "in recursion \n");
+                DBOUT(DDDA,outs() << "\t\t call edge " << getCallGraph()->getCallerOfCallSite(csId)->getName() <<
+                      "=>" << getCallGraph()->getCalleeOfCallSite(csId)->getName() << "in recursion \n");
                 popRecursiveCallSites(dpm);
             }
             else
@@ -293,8 +293,8 @@ bool ContextDDA::handleBKCondition(CxtLocDPItem& dpm, const SVFGEdge* edge)
 
             if(isEdgeInRecursion(csId))
             {
-                DBOUT(DDDA,outs() << "\t\t return edge " << getPTACallGraph()->getCalleeOfCallSite(csId)->getName() <<
-                      "=>" << getPTACallGraph()->getCallerOfCallSite(csId)->getName() << "in recursion \n");
+                DBOUT(DDDA,outs() << "\t\t return edge " << getCallGraph()->getCalleeOfCallSite(csId)->getName() <<
+                      "=>" << getCallGraph()->getCallerOfCallSite(csId)->getName() << "in recursion \n");
                 popRecursiveCallSites(dpm);
             }
             else
