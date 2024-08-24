@@ -111,7 +111,11 @@ const std::string MSSAPHISVFGNode::toString() const
     rawstr << ")\n";
 
     rawstr << getResVer()->getMR()->dumpStr();
-    rawstr << getICFGNode()->getBB()->back()->getSourceLoc();
+    if (const IntraICFGNode* intraNode =
+            dyn_cast<IntraICFGNode>(getICFGNode()->getBB()->back()))
+    {
+        rawstr << intraNode->getInst()->getSourceLoc();
+    }
     return rawstr.str();
 }
 

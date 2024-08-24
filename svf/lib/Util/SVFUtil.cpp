@@ -365,3 +365,12 @@ bool SVFUtil::isHeapAllocExtCall(const ICFGNode* cs)
     CallSite callSite(cast<CallICFGNode>(cs)->getCallSite());
     return isHeapAllocExtCallViaRet(callSite) || isHeapAllocExtCallViaArg(callSite);
 }
+
+bool SVFUtil::isRetInstNode(const ICFGNode* node)
+{
+    if (const auto& intraNode = dyn_cast<IntraICFGNode>(node))
+    {
+        return intraNode->getInst()->isRetInst();
+    }
+    return false;
+}

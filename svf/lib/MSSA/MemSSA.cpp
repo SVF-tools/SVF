@@ -305,7 +305,7 @@ void MemSSA::SSARenameBB(const SVFBasicBlock& bb)
             if(mrGen->hasModMRSet(cs))
                 RenameChiSet(getCHISet(cs),memRegs);
         }
-        else if(isa<IntraICFGNode>(pNode) && cast<IntraICFGNode>(pNode)->getInst()->isRetInst())
+        else if(isRetInstNode(pNode))
         {
             const SVFFunction* fun = bb.getParent();
             RenameMuSet(getReturnMuSet(fun));

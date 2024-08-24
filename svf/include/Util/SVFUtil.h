@@ -188,6 +188,8 @@ inline bool isCallSite(const SVFValue* val)
 
 bool isCallSite(const ICFGNode* inst);
 
+bool isRetInstNode(const ICFGNode* node);
+
 /// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
 inline bool isNonInstricCallSite(const SVFInstruction* inst)
 {

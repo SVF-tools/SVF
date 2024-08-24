@@ -163,7 +163,7 @@ void ICFGBuilder::processFunExit(const Function*  f)
     {
         for (const ICFGNode* inst : svfbb->getICFGNodeList())
         {
-            if(isa<IntraICFGNode>(inst) && cast<IntraICFGNode>(inst)->getInst()->isRetInst())
+            if(isRetInstNode(inst))
             {
                 icfg->addIntraEdge(const_cast<ICFGNode*>(inst), FunExitICFGNode);
             }

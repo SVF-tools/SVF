@@ -119,7 +119,7 @@ void MHP::analyzeInterleaving()
                     if (!tct->isCandidateFun(getCallee(SVFUtil::cast<CallICFGNode>(curInst), callees)))
                         handleIntra(cts);
                 }
-                else if (isa<IntraICFGNode>(curInst) && cast<IntraICFGNode>(curInst)->getInst()->isRetInst())
+                else if (isRetInstNode(curInst))
                 {
                     handleRet(cts);
                 }
@@ -758,7 +758,7 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
 
                     handleCall(cts, rootTid);
                 }
-                else if (isa<IntraICFGNode>(curInst) && cast<IntraICFGNode>(curInst)->getInst()->isRetInst())
+                else if (isRetInstNode(curInst))
                 {
                     handleRet(cts);
                 }

@@ -179,8 +179,8 @@ bool LockAnalysis::intraForwardTraverse(const ICFGNode* lockSite, InstSet& unloc
     {
         const ICFGNode *I = worklist.back();
         worklist.pop_back();
-        const SVFInstruction* exitInst = svfFun->getExitBB()->back();
-        if(tct->getICFGNode(exitInst) == I)
+        const ICFGNode* exitInst = svfFun->getExitBB()->back();
+        if(exitInst == I)
             return false;
 
         // Skip the visited Instructions.
@@ -219,7 +219,7 @@ bool LockAnalysis::intraBackwardTraverse(const InstSet& unlockSet, InstSet& back
     for(InstSet::const_iterator it = unlockSet.begin(), eit = unlockSet.end(); it!=eit; ++it)
     {
         const ICFGNode* unlockSite = *it;
-        const SVFInstruction* entryInst = unlockSite->getFun()->getEntryBlock()->back();
+        const ICFGNode* entryInst = unlockSite->getFun()->getEntryBlock()->back();
         worklist.push_back(*it);
 
         while (!worklist.empty())
@@ -227,7 +227,7 @@ bool LockAnalysis::intraBackwardTraverse(const InstSet& unlockSet, InstSet& back
             const ICFGNode *I = worklist.back();
             worklist.pop_back();
 
-            if(tct->getICFGNode(entryInst) == I)
+            if(entryInst == I)
                 return false;
 
             // Skip the visited Instructions.
@@ -374,7 +374,7 @@ void LockAnalysis::analyzeLockSpanCxtStmt()
         {
             handleCall(cts);
         }
-        else if (isa<IntraICFGNode>(curInst) && cast<IntraICFGNode>(curInst)->getInst()->isRetInst())
+        else if (isRetInstNode(curInst))
         {
             handleRet(cts);
         }

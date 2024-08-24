@@ -614,9 +614,9 @@ public:
         return allICFGNodes.front();
     }
 
-    inline const SVFInstruction* back() const
+    inline const ICFGNode* back() const
     {
-        return allInsts.back();
+        return allICFGNodes.back();
     }
 
     /// Returns the terminator instruction if the block is well formed or null
