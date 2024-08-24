@@ -168,6 +168,8 @@ void dumpPointsToList(const PointsToList& ptl);
 
 /// Return true if it is an llvm intrinsic instruction
 bool isIntrinsicInst(const SVFInstruction* inst);
+bool isIntrinsicInst(const ICFGNode* inst);
+
 //@}
 
 /// Whether an instruction is a call or invoke instruction
@@ -184,8 +186,18 @@ inline bool isCallSite(const SVFValue* val)
         return false;
 }
 
+bool isCallSite(const ICFGNode* inst);
+
 /// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
 inline bool isNonInstricCallSite(const SVFInstruction* inst)
+{
+    if(isIntrinsicInst(inst))
+        return false;
+    return isCallSite(inst);
+}
+
+/// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
+inline bool isNonInstricCallSite(const ICFGNode* inst)
 {
     if(isIntrinsicInst(inst))
         return false;
@@ -250,6 +262,8 @@ inline const SVFFunction* getCallee(const SVFInstruction *inst)
     CallSite cs(inst);
     return getCallee(cs);
 }
+
+const SVFFunction* getCallee(const ICFGNode *inst);
 //@}
 
 /// Given a map mapping points-to sets to a count, adds from into to.
