@@ -114,8 +114,6 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
             {
                 const SVFFunction* svfFun = svfinst->getFunction();
                 FunExitICFGNode* FunExitICFGNode = icfg->getFunExitICFGNode(svfFun);
-//                SVFBasicBlock* pBlock = const_cast<SVFBasicBlock*>(FunExitICFGNode->getBB());
-//                pBlock->addICFGNode(FunExitICFGNode);
                 icfg->addIntraEdge(srcNode, FunExitICFGNode);
             }
             InstVec nextInsts;
