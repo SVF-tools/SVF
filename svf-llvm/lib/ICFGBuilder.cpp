@@ -56,7 +56,18 @@ void ICFGBuilder::build(SVFModule* svfModule)
             processFunEntry(fun,worklist);
             processFunBody(worklist);
             processFunExit(fun);
+            for (const auto& bb : *fun)
+            {
+                for (auto it = bb.begin(), eit = bb.end(); it != eit; ++it)
+                {
+                    SVFBasicBlock* pBlock = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(&bb);
+                    pBlock->addICFGNode(getOrAddBlockICFGNode(
+                        LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(
+                            &(*it))));
+                }
+            }
         }
+
     }
     connectGlobalToProgEntry(svfModule);
 }
@@ -103,6 +114,8 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
             {
                 const SVFFunction* svfFun = svfinst->getFunction();
                 FunExitICFGNode* FunExitICFGNode = icfg->getFunExitICFGNode(svfFun);
+//                SVFBasicBlock* pBlock = const_cast<SVFBasicBlock*>(FunExitICFGNode->getBB());
+//                pBlock->addICFGNode(FunExitICFGNode);
                 icfg->addIntraEdge(srcNode, FunExitICFGNode);
             }
             InstVec nextInsts;

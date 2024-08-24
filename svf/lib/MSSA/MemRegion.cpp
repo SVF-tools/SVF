@@ -204,11 +204,9 @@ void MRGenerator::collectModRefForLoadStore()
                 iter != eiter; ++iter)
         {
             const SVFBasicBlock* bb = *iter;
-            for (SVFBasicBlock::const_iterator bit = bb->begin(), ebit = bb->end();
-                    bit != ebit; ++bit)
+            for (const auto& inst: bb->getICFGNodeList())
             {
-                const SVFInstruction* svfInst = *bit;
-                SVFStmtList& pagEdgeList = getPAGEdgesFromInst(svfInst);
+                SVFStmtList& pagEdgeList = getPAGEdgesFromInst(inst);
                 for (SVFStmtList::iterator bit = pagEdgeList.begin(), ebit =
                             pagEdgeList.end(); bit != ebit; ++bit)
                 {

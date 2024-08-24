@@ -40,11 +40,11 @@ void ICFGSimplification::mergeAdjacentNodes(ICFG* icfg)
     {
         for (const auto& bb : *func)
         {
-            for (const auto& inst : *bb)
+            for (const auto& inst : bb->getICFGNodeList())
             {
                 if (SVFUtil::isIntrinsicInst(inst))
                     continue;
-                const ICFGNode* icfgNode = icfg->getICFGNode(inst);
+                const ICFGNode* icfgNode = inst;
                 // e.g.
                 // block: entry
                 // insts: call = i32 %fun(i32 %arg)

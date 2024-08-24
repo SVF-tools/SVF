@@ -536,7 +536,7 @@ class SVFBasicBlock : public SVFValue
     friend class ICFGBuilder;
 
 public:
-    typedef std::vector<const SVFInstruction*>::const_iterator const_iterator;
+    typedef std::vector<const ICFGNode*>::const_iterator const_iterator;
 
 private:
     std::vector<const SVFInstruction*> allInsts;    ///< all Instructions in this BasicBlock
@@ -591,12 +591,12 @@ public:
 
     inline const_iterator begin() const
     {
-        return allInsts.begin();
+        return allICFGNodes.begin();
     }
 
     inline const_iterator end() const
     {
-        return allInsts.end();
+        return allICFGNodes.end();
     }
 
     inline const SVFFunction* getParent() const

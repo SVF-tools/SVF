@@ -437,6 +437,8 @@ inline bool isExtCall(const CallSite cs)
     return isExtCall(getCallee(cs));
 }
 
+bool isExtCall(const ICFGNode* node);
+
 inline bool isExtCall(const SVFInstruction *inst)
 {
     return isExtCall(getCallee(inst));
@@ -469,6 +471,8 @@ inline bool isHeapAllocExtCall(const CallSite cs)
 {
     return isHeapAllocExtCallViaRet(cs) || isHeapAllocExtCallViaArg(cs);
 }
+
+bool isHeapAllocExtCall(const ICFGNode* cs);
 
 inline bool isHeapAllocExtCall(const SVFInstruction *inst)
 {

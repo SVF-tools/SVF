@@ -184,7 +184,6 @@ void CDGBuilder::extractBBS(const SVF::SVFFunction *func,
  */
 void CDGBuilder::buildICFGNodeControlMap()
 {
-    ICFG *icfg = PAG::getPAG()->getICFG();
     for (const auto &it: _svfcontrolMap)
     {
         for (const auto &it2: it.second)
@@ -195,9 +194,8 @@ void CDGBuilder::buildICFGNodeControlMap()
             const ICFGNode *controlNode = it.first->getICFGNodeList().back();
             if (!controlNode) continue;
             // controlNode control at pos
-            for (const auto &inst: *controllingBB)
+            for (const auto &controllee: controllingBB->getICFGNodeList())
             {
-                const ICFGNode *controllee = icfg->getICFGNode(inst);
                 _nodeControlMap[controlNode][controllee].insert(it2.second.begin(), it2.second.end());
                 _nodeDependentOnMap[controllee][controlNode].insert(it2.second.begin(), it2.second.end());
                 for (s32_t pos: it2.second)

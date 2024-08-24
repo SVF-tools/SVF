@@ -351,3 +351,17 @@ const SVFFunction* SVFUtil::getCallee(const ICFGNode *inst)
     CallSite cs(cast<CallICFGNode>(inst)->getCallSite());
     return getCallee(cs);
 }
+
+bool SVFUtil::isExtCall(const ICFGNode* node)
+{
+    if(!isCallSite(node)) return false;
+    CallSite cs(cast<CallICFGNode>(node)->getCallSite());
+    return isExtCall(getCallee(cs));
+}
+
+bool SVFUtil::isHeapAllocExtCall(const ICFGNode* cs)
+{
+    if(!isCallSite(cs)) return false;
+    CallSite callSite(cast<CallICFGNode>(cs)->getCallSite());
+    return isHeapAllocExtCallViaRet(callSite) || isHeapAllocExtCallViaArg(callSite);
+}
