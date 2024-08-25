@@ -261,7 +261,6 @@ void MemSSA::SSARename(const SVFFunction& fun)
 void MemSSA::SSARenameBB(const SVFBasicBlock& bb)
 {
 
-//    SVFIR* pag = pta->getPAG();
     // record which mem region needs to pop stack
     MRVector memRegs;
 
@@ -575,7 +574,6 @@ u32_t MemSSA::getBBPhiNum() const
  */
 void MemSSA::dumpMSSA(OutStream& Out)
 {
-//    SVFIR* pag = pta->getPAG();
 
     for (SVFModule::iterator fit = pta->getModule()->begin(), efit = pta->getModule()->end();
             fit != efit; ++fit)

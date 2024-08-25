@@ -109,14 +109,6 @@ SVFIR* SVFIRBuilder::build()
                 {
                     pag->addFunRet(svffun,
                                    pag->getGNode(pag->getReturnNode(svffun)));
-                    FunExitICFGNode* funExitBlockNode = icfg->getFunExitICFGNode(svffun);
-                    SVFBasicBlock* pBlock = const_cast<SVFBasicBlock*>(funExitBlockNode->getBB());
-                    if (std::find(pBlock->getICFGNodeList().begin(),
-                                  pBlock->getICFGNodeList().end(),
-                                  funExitBlockNode) == pBlock->getICFGNodeList().end())
-                    {
-                        pBlock->addICFGNode(funExitBlockNode);
-                    }
                 }
 
                 /// To be noted, we do not record arguments which are in declared function without body

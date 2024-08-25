@@ -534,6 +534,7 @@ class SVFBasicBlock : public SVFValue
     friend class SVFIRBuilder;
     friend class SVFFunction;
     friend class ICFGBuilder;
+    friend class ICFG;
 
 public:
     typedef std::vector<const ICFGNode*>::const_iterator const_iterator;
@@ -549,7 +550,12 @@ protected:
 
     inline void addICFGNode(const ICFGNode* icfgNode)
     {
-        allICFGNodes.push_back(icfgNode);
+        if (std::find(getICFGNodeList().begin(),
+                      getICFGNodeList().end(),
+                      icfgNode) == getICFGNodeList().end())
+        {
+            allICFGNodes.push_back(icfgNode);
+        }
     }
 
     inline void addSuccBasicBlock(const SVFBasicBlock* succ)
