@@ -1,3 +1,4 @@
+#pragma once
 #include <SVFIR/SVFIR.h>
 #include <AE/Core/AbstractState.h>
 #include "Util/SVFBugReport.h"
@@ -7,9 +8,25 @@ namespace SVF
 class IDetector
 {
 public:
+    enum DetectorKind {
+        OVERFLOW,
+        UNKNOWN,
+    };
+    IDetector(): kind(UNKNOWN) {}
     virtual ~IDetector() = default;
-    virtual void detect(AbstractState& as, const SVFStmt* stmt) = 0;
+    static bool classof(const IDetector* detector)
+    {
+        return detector->getKind() == IDetector::UNKNOWN;
+    }
+    virtual void detect(AbstractState& as, const ICFGNode* node) = 0;
     virtual void reportBug() = 0;
+    DetectorKind getKind() const
+    {
+        return kind;
+    }
+
+protected:
+    DetectorKind kind;
 };
 
 class AEException : public std::exception {
@@ -27,16 +44,24 @@ private:
 
 class BufOverflowDetector : public IDetector
 {
+    friend class AbstractInterpretation;
 public:
     BufOverflowDetector() {
+        kind = OVERFLOW;
         initExtAPIBufOverflowCheckRules();
 
     }
     ~BufOverflowDetector() = default;
+
+    static bool classof(const IDetector* detector)
+    {
+        return detector->getKind() == IDetector::OVERFLOW;
+    }
+
     void updateGepObjOffsetFromBase(AddressValue gepAddrs,
                                     AddressValue objAddrs,
                                     IntervalValue offset);
-    void detect(AbstractState& as, const SVFStmt*);
+    void detect(AbstractState& as, const ICFGNode*);
 
     void addToGepObjOffsetFromBase(const GepObjVar* obj, const IntervalValue& offset) {
         gepObjOffsetFromBase[obj] = offset;
@@ -105,6 +130,12 @@ public:
 
     void handleExtAPI(AbstractState& as, const CallICFGNode *call);
 
+    bool canSafelyAccessMemory(AbstractState& as, const SVFValue *value, const IntervalValue &len);
+
+private:
+    bool detectStrcat(AbstractState& as, const CallICFGNode *call);
+
+    bool detectStrcpy(AbstractState& as, const CallICFGNode *call);
 
 private:
     Map<const GepObjVar*, IntervalValue> gepObjOffsetFromBase;

@@ -469,3 +469,59 @@ void AbstractState::printAbstractState() const
     }
     SVFUtil::outs() << "-----------------------------------------\n";
 }
+
+const SVFType* AbstractState::getPointeeElement(NodeID id)
+{
+    SVFIR* svfir = PAG::getPAG();
+    if (inVarToAddrsTable(id))
+    {
+        const AbstractValue& addrs = (*this)[id];
+        for (auto addr: addrs.getAddrs())
+        {
+            NodeID addr_id = AbstractState::getInternalID(addr);
+            if (addr_id == 0) // nullptr has no memobj, skip
+                continue;
+            return SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(addr_id))->getMemObj()->getType();
+        }
+    }
+    else
+    {
+        // do nothing if no record in addrs table.
+    }
+    return nullptr;
+}
+
+u32_t AbstractState::getAllocaInstByteSize(const AddrStmt *addr)
+{
+    SVFIR* svfir = PAG::getPAG();
+    if (const ObjVar* objvar = SVFUtil::dyn_cast<ObjVar>(addr->getRHSVar()))
+    {
+        objvar->getType();
+        if (objvar->getMemObj()->isConstantByteSize())
+        {
+            u32_t sz = objvar->getMemObj()->getByteSizeOfObj();
+            return sz;
+        }
+
+        else
+        {
+            const std::vector<SVFValue*>& sizes = addr->getArrSize();
+            // Default element size is set to 1.
+            u32_t elementSize = 1;
+            u64_t res = elementSize;
+            for (const SVFValue* value: sizes)
+            {
+                if (!inVarToValTable(svfir->getValueNode(value)))
+                {
+                    (*this)[svfir->getValueNode(value)] = IntervalValue(Options::MaxFieldLimit());
+                }
+                IntervalValue itv =
+                    (*this)[svfir->getValueNode(value)].getInterval();
+                res = res * itv.ub().getIntNumeral() > Options::MaxFieldLimit()? Options::MaxFieldLimit(): res * itv.ub().getIntNumeral();
+            }
+            return (u32_t)res;
+        }
+    }
+    assert (false && "Addr rhs value is not ObjVar");
+    abort();
+}

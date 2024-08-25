@@ -32,9 +32,9 @@
 #include "AE/Svfexe/ICFGSimplification.h"
 #include "WPA/Andersen.h"
 
-#include "AE/Svfexe/BufOverflowChecker.h"
 #include "AE/Core/RelExeState.h"
 #include "AE/Core/RelationSolver.h"
+#include "AE/Svfexe/AbstractInterpretation.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -51,6 +51,9 @@ static Option<bool> AETEST(
     "abstract execution basic function test",
     false
 );
+
+static Option<bool> OVERFLOW2(
+    "overflow2", "Buffer Overflow Checker", false );
 
 class SymblicAbstractionTest
 {
@@ -883,22 +886,10 @@ int main(int argc, char** argv)
     CallGraph* callgraph = ander->getCallGraph();
     builder.updateCallGraph(callgraph);
     pag->getICFG()->updateCallGraph(callgraph);
-    if (Options::ICFGMergeAdjacentNodes())
-    {
-        ICFGSimplification::mergeAdjacentNodes(pag->getICFG());
-    }
-
+    AbstractInterpretation& ae = AbstractInterpretation::getAEInstance();
     if (Options::BufferOverflowCheck())
-    {
-        BufOverflowChecker ae;
-        ae.runOnModule(pag->getICFG());
-    }
-    else
-    {
-        AbstractInterpretation ae;
         ae.addDetector(std::make_unique<BufOverflowDetector>());
-        ae.runOnModule(pag->getICFG());
-    }
+    ae.runOnModule(pag->getICFG());
 
     LLVMModuleSet::releaseLLVMModuleSet();
 
