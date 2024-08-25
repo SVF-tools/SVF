@@ -209,8 +209,7 @@ SVFBasicBlock::SVFBasicBlock(const SVFType* ty, const SVFFunction* f)
 
 SVFBasicBlock::~SVFBasicBlock()
 {
-    for(const SVFInstruction* inst : allInsts)
-        delete inst;
+
 }
 
 /*!
@@ -240,13 +239,6 @@ u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ) const
     }
     assert(false && "Didn't find successor edge?");
     return 0;
-}
-
-const SVFInstruction* SVFBasicBlock::getTerminator() const
-{
-    if (allInsts.empty() || !allInsts.back()->isTerminator())
-        return nullptr;
-    return allInsts.back();
 }
 
 /*!

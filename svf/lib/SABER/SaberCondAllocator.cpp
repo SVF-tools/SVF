@@ -99,7 +99,7 @@ void SaberCondAllocator::allocateForBB(const SVFBasicBlock &bb)
         std::vector<Condition> condVec;
         for (u32_t i = 0; i < bit_num; i++)
         {
-            const SVFInstruction* svfInst = bb.getTerminator();
+            const SVFInstruction* svfInst = cast<IntraICFGNode>(bb.back())->getInst();
             condVec.push_back(newCond(svfInst));
         }
 
@@ -297,8 +297,8 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateBranchCond(const SVFBa
         return getTrueCond();
     }
 
-    const SVFInstruction* svfInst = bb->getTerminator();
-    if (ICFGNode *icfgNode = getICFG()->getICFGNode(svfInst))
+    assert(!bb->getICFGNodeList().empty() && "bb not empty");
+    if (const ICFGNode* icfgNode = bb->back())
     {
         for (const auto &svfStmt: icfgNode->getSVFStmts())
         {

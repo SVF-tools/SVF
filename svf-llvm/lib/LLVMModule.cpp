@@ -81,6 +81,11 @@ LLVMModuleSet::LLVMModuleSet()
 
 LLVMModuleSet::~LLVMModuleSet()
 {
+    for (auto& item : LLVMInst2SVFInst)
+    {
+        delete item.second;
+        item.second = nullptr;
+    }
     delete typeInference;
     typeInference = nullptr;
 }
@@ -285,7 +290,6 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
                                        SVFUtil::isa<ReturnInst>(inst));
             }
 
-            svfBB->addInstruction(svfInst);
             addInstructionMap(&inst, svfInst);
         }
     }

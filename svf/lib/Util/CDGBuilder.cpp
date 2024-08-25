@@ -86,7 +86,8 @@ void CDGBuilder::build()
 s64_t CDGBuilder::getBBSuccessorBranchID(const SVFBasicBlock *BB, const SVFBasicBlock *Succ)
 {
     ICFG *icfg = PAG::getPAG()->getICFG();
-    const ICFGNode *pred = icfg->getICFGNode(BB->getTerminator());
+    assert(!BB->getICFGNodeList().empty() && "empty bb?");
+    const ICFGNode *pred = BB->back();
     const ICFGEdge *edge = nullptr;
     for (const auto &node: Succ->getICFGNodeList())
     {
