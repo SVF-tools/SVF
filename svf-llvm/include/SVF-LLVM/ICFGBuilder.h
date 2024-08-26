@@ -62,7 +62,7 @@ private:
     ///@{
     void processFunEntry(const Function*  fun, WorkList& worklist);
 
-    void processBBsWithNoPredecessors(const Function*  fun, WorkList& worklist);
+    void processNoPrecessorBasicBlocks(const Function*  fun, WorkList& worklist);
 
     void processFunBody(WorkList& worklist);
 

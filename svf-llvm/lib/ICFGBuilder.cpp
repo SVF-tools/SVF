@@ -54,7 +54,7 @@ void ICFGBuilder::build(SVFModule* svfModule)
                 continue;
             WorkList worklist;
             processFunEntry(fun,worklist);
-            processBBsWithNoPredecessors(fun, worklist);
+            processNoPrecessorBasicBlocks(fun, worklist);
             processFunBody(worklist);
             processFunExit(fun);
 
@@ -109,9 +109,9 @@ void ICFGBuilder::processFunEntry(const Function*  fun, WorkList& worklist)
 }
 
 /*!
- * bb with no predecessors
+ * bbs with no predecessors
  */
-void ICFGBuilder::processBBsWithNoPredecessors(const Function* fun, WorkList& worklist)
+void ICFGBuilder::processNoPrecessorBasicBlocks(const Function* fun, WorkList& worklist)
 {
     for (const auto& bb: *fun)
     {
