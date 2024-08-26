@@ -550,12 +550,9 @@ protected:
 
     inline void addICFGNode(const ICFGNode* icfgNode)
     {
-        if (std::find(getICFGNodeList().begin(),
-                      getICFGNodeList().end(),
-                      icfgNode) == getICFGNodeList().end())
-        {
-            allICFGNodes.push_back(icfgNode);
-        }
+        assert(std::find(getICFGNodeList().begin(), getICFGNodeList().end(),
+                         icfgNode) == getICFGNodeList().end() && "duplicated icfgnode");
+        allICFGNodes.push_back(icfgNode);
     }
 
     inline void addSuccBasicBlock(const SVFBasicBlock* succ)

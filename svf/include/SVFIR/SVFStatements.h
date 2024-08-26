@@ -478,7 +478,7 @@ public:
     //@}
 
     /// constructor
-    StoreStmt(SVFVar* s, SVFVar* d, const IntraICFGNode* st);
+    StoreStmt(SVFVar* s, SVFVar* d, const ICFGNode* st);
 
     virtual const std::string toString() const override;
 };

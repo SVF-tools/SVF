@@ -198,11 +198,20 @@ public:
     //@{
     ICFGNode* getICFGNode(const SVFInstruction* inst);
 
+    /// Whether has the ICFGNode
+    bool hasICFGNode(const SVFInstruction* inst);
+
     CallICFGNode* getCallICFGNode(const SVFInstruction* inst);
+
+    CallICFGNode* addCallICFGNode(const SVFInstruction* inst);
 
     RetICFGNode* getRetICFGNode(const SVFInstruction* inst);
 
+    RetICFGNode* addRetICFGNode(const SVFInstruction* inst);
+
     IntraICFGNode* getIntraICFGNode(const SVFInstruction* inst);
+
+    IntraICFGNode* addIntraICFGNode(const SVFInstruction* inst);
 
     FunEntryICFGNode* getFunEntryICFGNode(const SVFFunction*  fun);
 
@@ -275,7 +284,6 @@ private:
     {
         IntraICFGNode* sNode = new IntraICFGNode(totalICFGNode++,inst);
         addICFGNode(sNode);
-        const_cast<SVFBasicBlock*>(sNode->getBB())->addICFGNode(sNode);
         InstToBlockNodeMap[inst] = sNode;
         return sNode;
     }
@@ -317,7 +325,6 @@ private:
     {
         CallICFGNode* sNode = new CallICFGNode(totalICFGNode++, cs);
         addICFGNode(sNode);
-        const_cast<SVFBasicBlock*>(sNode->getBB())->addICFGNode(sNode);
         CSToCallNodeMap[cs] = sNode;
         return sNode;
     }
@@ -343,7 +350,6 @@ private:
         RetICFGNode* sNode = new RetICFGNode(totalICFGNode++, cs, callBlockNode);
         callBlockNode->setRetICFGNode(sNode);
         addICFGNode(sNode);
-        const_cast<SVFBasicBlock*>(sNode->getBB())->addICFGNode(sNode);
         CSToRetNodeMap[cs] = sNode;
         return sNode;
     }
