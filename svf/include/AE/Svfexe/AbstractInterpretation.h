@@ -27,11 +27,12 @@
 // Xiao Cheng, Jiawei Wang and Yulei Sui. Precise Sparse Abstract Execution via Cross-Domain Interaction.
 // 46th International Conference on Software Engineering. (ICSE24)
 //
-
+#pragma once
+#include "AE/Core/AbstractState.h"
 #include "AE/Core/ICFGWTO.h"
+#include "AE/Svfexe/AEDetector.h"
 #include "Util/SVFBugReport.h"
 #include "WPA/Andersen.h"
-#include "AE/Core/AbstractState.h"
 
 namespace SVF
 {
@@ -40,12 +41,6 @@ class AEStat;
 class AEAPI;
 
 template<typename T> class FILOWorkList;
-
-enum class AEKind
-{
-    AbstractExecution,
-    BufOverflowChecker,
-};
 
 /// AEStat: Statistic for AE
 class AEStat : public SVFStat
@@ -67,14 +62,12 @@ public:
 
     void finializeStat();
     void performStat() override;
-    void reportBug();
 
 public:
     AbstractInterpretation* _ae;
     s32_t count{0};
     std::string memory_usage;
     std::string memUsage;
-    std::string bugStr;
 
 
     u32_t& getFunctionTrace()
@@ -108,6 +101,7 @@ class AbstractInterpretation
 {
     friend class AEStat;
     friend class AEAPI;
+    friend class BufOverflowDetector;
 
 public:
     enum ExtAPIType { UNCLASSIFIED, MEMCPY, MEMSET, STRCPY, STRCAT };
@@ -123,14 +117,15 @@ public:
     /// Program entry
     void analyse();
 
-    static bool classof(const AbstractInterpretation* ae)
+    static AbstractInterpretation& getAEInstance()
     {
-        return ae->getKind() == AEKind::AbstractExecution;
+        static AbstractInterpretation instance;
+        return instance;
     }
 
-    AEKind getKind() const
+    void addDetector(std::unique_ptr<AEDetector> detector)
     {
-        return _kind;
+        detectors.push_back(std::move(detector));
     }
 
 protected:
@@ -233,13 +228,6 @@ protected:
     */
     virtual void initExtFunMap();
 
-    /**
-    * get byte size of alloca inst
-    *
-    * @param addr Address Stmt like malloc/calloc/ALLOCA/StackAlloc
-    * @return the byte size e.g. int32_t a[10] -> return 40
-    */
-    u32_t getAllocaInstByteSize(AbstractState& as, const AddrStmt *addr);
 
     /**
     * get byte size of alloca inst
@@ -259,16 +247,6 @@ protected:
     */
     IntervalValue getStrlen(AbstractState& as, const SVF::SVFValue *strValue);
 
-    /**
-    * get memory allocation size
-    * e.g  arr = new int[10]
-    *      ....
-    *      memset(arr, 1, 10* sizeof(int))
-    * when we trace the 'arr', we can get the alloc size [40, 40]
-    * @param value to be traced
-    * @return IntervalValue of allocation size
-    */
-    IntervalValue traceMemoryAllocationSize(AbstractState& as, const SVFValue *value);
     /**
     * execute strcpy in abstract execution
     * e.g  arr = new char[10]
@@ -305,23 +283,9 @@ protected:
     */
     virtual void handleMemset(AbstractState& as, const SVFValue* dst, IntervalValue elem, IntervalValue len);
 
-    /**
-    * if this NodeID in SVFIR is a pointer, get the pointee type
-    * e.g  arr = (int*) malloc(10*sizeof(int))
-    *      getPointeeType(arr) -> return int
-    * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
-    * @param call callnode of memset like api
-    */
-    const SVFType* getPointeeElement(AbstractState& as, NodeID id);
 
     void collectCheckPoint();
     void checkPointAllSet();
-    // helper functions for traceMemoryAllocationSize and canSafelyAccessMemory
-    void AccessMemoryViaRetNode(const CallICFGNode *callnode, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
-    void AccessMemoryViaCopyStmt(const CopyStmt *copy, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
-    void AccessMemoryViaLoadStmt(AbstractState& as, const LoadStmt *load, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
-    void AccessMemoryViaCallArgs(const SVF::SVFArgument *arg, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
-
 
     void updateStateOnAddr(const AddrStmt *addr);
 
@@ -349,20 +313,16 @@ protected:
 
 
     /// protected data members, also used in subclasses
-    SVFIR* _svfir;
+    SVFIR* svfir;
     /// Execution State, used to store the Interval Value of every SVF variable
-    AEAPI* _api{nullptr};
+    AEAPI* api{nullptr};
 
-    ICFG* _icfg;
-    AEStat* _stat;
-    AEKind _kind;
+    ICFG* icfg;
+    AEStat* stat;
 
-    Set<std::string> _bugLoc;
-    SVFBugReport _recoder;
-    std::vector<const CallICFGNode*> _callSiteStack;
-    Map<const ICFGNode*, std::string> _nodeToBugInfo;
-    Map<const SVFFunction*, ICFGWTO*> _funcToWTO;
-    Set<const SVFFunction*> _recursiveFuns;
+    std::vector<const CallICFGNode*> callSiteStack;
+    Map<const SVFFunction*, ICFGWTO*> funcToWTO;
+    Set<const SVFFunction*> recursiveFuns;
 
 private:
     // helper functions in handleCallSite
@@ -379,29 +339,33 @@ protected:
 
     AbstractState& getAbsStateFromTrace(const ICFGNode* node)
     {
-        const ICFGNode* repNode = _icfg->getRepNode(node);
-        if (_abstractTrace.count(repNode) == 0)
+        const ICFGNode* repNode = icfg->getRepNode(node);
+        if (abstractTrace.count(repNode) == 0)
         {
             assert(0 && "No preAbsTrace for this node");
         }
         else
         {
-            return _abstractTrace[repNode];
+            return abstractTrace[repNode];
         }
     }
 
     bool hasAbsStateFromTrace(const ICFGNode* node)
     {
-        const ICFGNode* repNode = _icfg->getRepNode(node);
-        return _abstractTrace.count(repNode) != 0;
+        const ICFGNode* repNode = icfg->getRepNode(node);
+        return abstractTrace.count(repNode) != 0;
     }
 
 protected:
     // there data should be shared with subclasses
-    Map<std::string, std::function<void(const CallSite &)>> _func_map;
-    Set<const CallICFGNode*> _checkpoints;
-    Set<std::string> _checkpoint_names;
-    Map<const ICFGNode*, AbstractState> _abstractTrace; // abstract states immediately after nodes
-    std::string _moduleName;
+    Map<std::string, std::function<void(const CallSite &)>> func_map;
+    Set<const CallICFGNode*> checkpoints;
+    Set<std::string> checkpoint_names;
+    Map<const ICFGNode*, AbstractState>
+    abstractTrace; // abstract states immediately after nodes
+    std::string moduleName;
+
+    std::vector<std::unique_ptr<AEDetector>> detectors;
+
 };
 }
