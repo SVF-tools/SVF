@@ -920,7 +920,6 @@ void AEStat::finializeStat()
     generalNumMap["Func_Num"] = funs.size();
     generalNumMap["EXT_CallSite_Num"] = extCallSiteNum;
     generalNumMap["NonEXT_CallSite_Num"] = callSiteNum;
-    generalNumMap["Bug_Num"] = _ae->nodeToBugInfo.size();
     timeStatMap["Total_Time(sec)"] = (double)(endTime - startTime) / TIMEINTERVAL;
 
 }

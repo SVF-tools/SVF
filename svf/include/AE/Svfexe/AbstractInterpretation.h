@@ -319,7 +319,6 @@ protected:
     AEStat* stat;
 
     std::vector<const CallICFGNode*> callSiteStack;
-    Map<const ICFGNode*, std::string> nodeToBugInfo;
     Map<const SVFFunction*, ICFGWTO*> funcToWTO;
     Set<const SVFFunction*> recursiveFuns;
 
