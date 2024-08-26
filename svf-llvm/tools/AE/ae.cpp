@@ -51,9 +51,6 @@ static Option<bool> AETEST(
     false
 );
 
-static Option<bool> OVERFLOW2(
-    "overflow2", "Buffer Overflow Checker", false );
-
 class SymblicAbstractionTest
 {
 public:
