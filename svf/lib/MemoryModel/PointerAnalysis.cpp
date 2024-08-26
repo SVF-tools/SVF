@@ -509,11 +509,9 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
 
         for(const CallICFGNode* callNode : pag->getCallSiteSet())
         {
-            const SVFInstruction* svfInst = callNode->getCallSite();
-            if (SVFUtil::getCallee(svfInst) == checkFun)
+            if (SVFUtil::getCallee(callNode) == checkFun)
             {
-
-                CallSite cs(svfInst);
+                CallSite cs = SVFUtil::getSVFCallSite(callNode);
                 assert(cs.getNumArgOperands() == 2
                        && "arguments should be two pointers!!");
                 const SVFValue* V1 = cs.getArgOperand(0);
@@ -551,12 +549,12 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
 
                 if (checkSuccessful)
                     outs() << sucMsg("\t SUCCESS :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
-                           << svfInst->getSourceLoc() << ")\n";
+                           << callNode->getSourceLoc() << ")\n";
                 else
                 {
                     SVFUtil::errs() << errMsg("\t FAILURE :") << fun
                                     << " check <id:" << id1 << ", id:" << id2
-                                    << "> at (" << svfInst->getSourceLoc() << ")\n";
+                                    << "> at (" << callNode->getSourceLoc() << ")\n";
                     assert(false && "test case failed!");
                 }
             }
@@ -577,10 +575,9 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
 
         for(const CallICFGNode* callNode : pag->getCallSiteSet())
         {
-            const SVFInstruction* svfInst = callNode->getCallSite();
-            if (SVFUtil::getCallee(svfInst) == checkFun)
+            if (SVFUtil::getCallee(callNode) == checkFun)
             {
-                CallSite call = getSVFCallSite(svfInst);
+                CallSite call = getSVFCallSite(callNode);
                 assert(call.arg_size() == 2
                        && "arguments should be two pointers!!");
                 const SVFValue* V1 = call.getArgOperand(0);

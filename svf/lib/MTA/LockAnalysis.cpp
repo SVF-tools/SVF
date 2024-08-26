@@ -286,7 +286,7 @@ void LockAnalysis::collectCxtLock()
                 DBOUT(DMTA,
                       outs() << "\nCollecting CxtLocks: handling direct call:" << **cit << "\t" << cgEdge->getSrcNode()->getFunction()->getName()
                       << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
-                handleCallRelation(clp, cgEdge, getSVFCallSite((*cit)->getCallSite()));
+                handleCallRelation(clp, cgEdge, *cit);
             }
             for (CallGraphEdge::CallInstSet::const_iterator ind = cgEdge->indirectCallsBegin(), eind = cgEdge->indirectCallsEnd();
                     ind != eind; ++ind)
@@ -295,7 +295,7 @@ void LockAnalysis::collectCxtLock()
                       outs() << "\nCollecting CxtLocks: handling indirect call:" << **ind << "\t"
                       << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName()
                       << "\n");
-                handleCallRelation(clp, cgEdge, getSVFCallSite((*ind)->getCallSite()));
+                handleCallRelation(clp, cgEdge, *ind);
             }
         }
     }
@@ -305,11 +305,11 @@ void LockAnalysis::collectCxtLock()
 /*!
  * Handling call relations when collecting context-sensitive locks
  */
-void LockAnalysis::handleCallRelation(CxtLockProc& clp, const CallGraphEdge* cgEdge, CallSite cs)
+void LockAnalysis::handleCallRelation(CxtLockProc& clp, const CallGraphEdge* cgEdge, const CallICFGNode* cs)
 {
 
     CallStrCxt cxt(clp.getContext());
-    const ICFGNode* curNode = tct->getICFGNode(cs.getInstruction());
+    const ICFGNode* curNode = cs;
     if (isTDAcquire(curNode))
     {
         addCxtLock(cxt,curNode);

@@ -276,7 +276,7 @@ void PartialNullPtrDereferenceBug::printBugToTerminal() const
 
 const std::string SVFBugEvent::getFuncName() const
 {
-    return eventInst->getFunction()->getName();
+    return eventInst->getFun()->getName();
 }
 
 const std::string SVFBugEvent::getEventLoc() const

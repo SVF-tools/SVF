@@ -240,13 +240,13 @@ void TCT::collectMultiForkedThreads()
 /*!
  * Handle call relations
  */
-void TCT::handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, CallSite cs)
+void TCT::handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, const CallICFGNode* cs)
 {
     const SVFFunction* callee = cgEdge->getDstNode()->getFunction();
 
     CallStrCxt cxt(ctp.getContext());
     CallStrCxt oldCxt = cxt;
-    const CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(getICFGNode(cs.getInstruction()));
+    const CallICFGNode* callNode = cs;
     pushCxt(cxt,callNode,callee);
 
     if(cgEdge->getEdgeKind() == CallGraphEdge::CallRetEdge)
@@ -416,13 +416,13 @@ void TCT::build()
                     ecit = cgEdge->directCallsEnd(); cit!=ecit; ++cit)
             {
                 DBOUT(DMTA,outs() << "\nTCT handling direct call:" << **cit << "\t" << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
-                handleCallRelation(ctp,cgEdge,getSVFCallSite((*cit)->getCallSite()));
+                handleCallRelation(ctp,cgEdge,*cit);
             }
             for(CallGraphEdge::CallInstSet::const_iterator ind = cgEdge->indirectCallsBegin(),
                     eind = cgEdge->indirectCallsEnd(); ind!=eind; ++ind)
             {
                 DBOUT(DMTA,outs() << "\nTCT handling indirect call:" << **ind << "\t" << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
-                handleCallRelation(ctp,cgEdge,getSVFCallSite((*ind)->getCallSite()));
+                handleCallRelation(ctp,cgEdge,*ind);
             }
         }
     }

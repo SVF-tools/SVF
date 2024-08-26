@@ -330,6 +330,13 @@ bool SVFUtil::isCallSite(const ICFGNode* inst)
     return SVFUtil::isa<CallICFGNode>(inst);
 }
 
+CallSite SVFUtil::getSVFCallSite(const ICFGNode* inst)
+{
+    assert(isCallSite(inst) && "not a callsite?");
+    CallSite cs(cast<CallICFGNode>(inst)->getCallSite());
+    return cs;
+}
+
 bool SVFUtil::isIntrinsicInst(const ICFGNode* inst)
 {
     if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst))

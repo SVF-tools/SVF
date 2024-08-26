@@ -206,7 +206,12 @@ inline bool isNonInstricCallSite(const ICFGNode* inst)
     return isCallSite(inst);
 }
 
-/// Return LLVM callsite given an instruction
+
+
+/// Return callsite given an instruction
+CallSite getSVFCallSite(const ICFGNode* inst);
+
+/// Return callsite given an instruction
 inline CallSite getSVFCallSite(const SVFInstruction* inst)
 {
     assert(isCallSite(inst) && "not a callsite?");
