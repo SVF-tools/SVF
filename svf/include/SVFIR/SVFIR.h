@@ -658,7 +658,7 @@ private:
     /// Add Load edge
     LoadStmt* addLoadStmt(NodeID src, NodeID dst);
     /// Add Store edge
-    StoreStmt* addStoreStmt(NodeID src, NodeID dst, const IntraICFGNode* val);
+    StoreStmt* addStoreStmt(NodeID src, NodeID dst, const ICFGNode* val);
     /// Add Call edge
     CallPE* addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs,
                       const FunEntryICFGNode* entry);

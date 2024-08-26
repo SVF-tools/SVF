@@ -104,8 +104,12 @@ SVFIR* SVFIRBuilder::build()
                 /// etc. In 176.gcc of SPEC 2000, function build_objc_string() from
                 /// c-lang.c shows an example when fun.doesNotReturn() evaluates
                 /// to TRUE because of abort().
-                if(fun.doesNotReturn() == false && fun.getReturnType()->isVoidTy() == false)
-                    pag->addFunRet(svffun,pag->getGNode(pag->getReturnNode(svffun)));
+                if (fun.doesNotReturn() == false &&
+                    fun.getReturnType()->isVoidTy() == false)
+                {
+                    pag->addFunRet(svffun,
+                                   pag->getGNode(pag->getReturnNode(svffun)));
+                }
 
                 /// To be noted, we do not record arguments which are in declared function without body
                 /// TODO: what about external functions with SVFIR imported by commandline?
@@ -1310,7 +1314,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
             pag->addGlobalPAGEdge(edge);
         else
         {
-            icfgNode = pag->getICFG()->getICFGNode(curBB->front());
+            icfgNode = const_cast<ICFGNode*>(curBB->front());
         }
     }
     else

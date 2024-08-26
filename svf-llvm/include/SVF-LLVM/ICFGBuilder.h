@@ -62,23 +62,30 @@ private:
     ///@{
     void processFunEntry(const Function*  fun, WorkList& worklist);
 
+    void processNoPrecessorBasicBlocks(const Function*  fun, WorkList& worklist);
+
     void processFunBody(WorkList& worklist);
 
     void processFunExit(const Function*  fun);
     //@}
 
+    void checkICFGNodesVisited(const Function* fun);
+
     void connectGlobalToProgEntry(SVFModule* svfModule);
 
     /// Add/Get an inter block ICFGNode
-    InterICFGNode* getOrAddInterBlockICFGNode(const SVFInstruction* inst);
+    InterICFGNode* addInterBlockICFGNode(const SVFInstruction* inst);
 
     /// Add/Get a basic block ICFGNode
-    inline ICFGNode* getOrAddBlockICFGNode(const SVFInstruction* inst)
+    inline ICFGNode* addBlockICFGNode(const SVFInstruction* inst)
     {
+        ICFGNode* node;
         if(SVFUtil::isNonInstricCallSite(inst))
-            return getOrAddInterBlockICFGNode(inst);
+            node = addInterBlockICFGNode(inst);
         else
-            return getOrAddIntraBlockICFGNode(inst);
+            node = addIntraBlockICFGNode(inst);
+        const_cast<SVFBasicBlock*>(inst->getParent())->addICFGNode(node);
+        return node;
     }
 
     /// Create edges between ICFG nodes across functions
@@ -96,10 +103,13 @@ private:
     }
 
     /// Add and get IntraBlock ICFGNode
-    IntraICFGNode* getOrAddIntraBlockICFGNode(const SVFInstruction* inst)
+    IntraICFGNode* addIntraBlockICFGNode(const SVFInstruction* inst)
     {
-        return icfg->getIntraICFGNode(inst);
+        return icfg->addIntraICFGNode(inst);
     }
+
+private:
+    BBSet visited;
 };
 
 } // End namespace SVF

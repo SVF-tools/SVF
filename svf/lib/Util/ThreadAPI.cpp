@@ -246,9 +246,8 @@ void ThreadAPI::performAPIStat(SVFModule* module)
         for (SVFFunction::const_iterator bit = (*it)->begin(), ebit = (*it)->end(); bit != ebit; ++bit)
         {
             const SVFBasicBlock* bb = *bit;
-            for (SVFBasicBlock::const_iterator ii = bb->begin(), eii = bb->end(); ii != eii; ++ii)
+            for (const auto& svfInst: bb->getICFGNodeList())
             {
-                const SVFInstruction* svfInst = *ii;
                 if (!SVFUtil::isCallSite(svfInst))
                     continue;
 

@@ -324,3 +324,52 @@ bool SVFUtil::matchArgs(const CallSite cs, const SVFFunction* callee)
     else
         return cs.arg_size() == callee->arg_size();
 }
+
+bool SVFUtil::isCallSite(const ICFGNode* inst)
+{
+    return SVFUtil::isa<CallICFGNode>(inst);
+}
+
+bool SVFUtil::isIntrinsicInst(const ICFGNode* inst)
+{
+    if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst))
+    {
+        CallSite cs(call->getCallSite());
+        const SVFFunction* func = cs.getCalledFunction();
+        if (func && func->isIntrinsic())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+const SVFFunction* SVFUtil::getCallee(const ICFGNode *inst)
+{
+    if (!isCallSite(inst))
+        return nullptr;
+    CallSite cs(cast<CallICFGNode>(inst)->getCallSite());
+    return getCallee(cs);
+}
+
+bool SVFUtil::isExtCall(const ICFGNode* node)
+{
+    if(!isCallSite(node)) return false;
+    CallSite cs(cast<CallICFGNode>(node)->getCallSite());
+    return isExtCall(getCallee(cs));
+}
+
+bool SVFUtil::isHeapAllocExtCall(const ICFGNode* cs)
+{
+    if(!isCallSite(cs)) return false;
+    CallSite callSite(cast<CallICFGNode>(cs)->getCallSite());
+    return isHeapAllocExtCallViaRet(callSite) || isHeapAllocExtCallViaArg(callSite);
+}
+
+bool SVFUtil::isRetInstNode(const ICFGNode* node)
+{
+    if (const auto& intraNode = dyn_cast<IntraICFGNode>(node))
+        return intraNode->getInst()->isRetInst();
+    else
+        return false;
+}

@@ -220,7 +220,7 @@ LoadStmt* SVFIR::addLoadStmt(NodeID src, NodeID dst)
  * Add Store edge
  * Note that two store instructions may share the same Store SVFStmt
  */
-StoreStmt* SVFIR::addStoreStmt(NodeID src, NodeID dst, const IntraICFGNode* curVal)
+StoreStmt* SVFIR::addStoreStmt(NodeID src, NodeID dst, const ICFGNode* curVal)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);

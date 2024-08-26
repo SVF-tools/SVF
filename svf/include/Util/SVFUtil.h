@@ -168,6 +168,8 @@ void dumpPointsToList(const PointsToList& ptl);
 
 /// Return true if it is an llvm intrinsic instruction
 bool isIntrinsicInst(const SVFInstruction* inst);
+bool isIntrinsicInst(const ICFGNode* inst);
+
 //@}
 
 /// Whether an instruction is a call or invoke instruction
@@ -184,8 +186,20 @@ inline bool isCallSite(const SVFValue* val)
         return false;
 }
 
+bool isCallSite(const ICFGNode* inst);
+
+bool isRetInstNode(const ICFGNode* node);
+
 /// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
 inline bool isNonInstricCallSite(const SVFInstruction* inst)
+{
+    if(isIntrinsicInst(inst))
+        return false;
+    return isCallSite(inst);
+}
+
+/// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
+inline bool isNonInstricCallSite(const ICFGNode* inst)
 {
     if(isIntrinsicInst(inst))
         return false;
@@ -250,6 +264,8 @@ inline const SVFFunction* getCallee(const SVFInstruction *inst)
     CallSite cs(inst);
     return getCallee(cs);
 }
+
+const SVFFunction* getCallee(const ICFGNode *inst);
 //@}
 
 /// Given a map mapping points-to sets to a count, adds from into to.
@@ -402,26 +418,19 @@ inline bool isArgOfUncalledFunction(const SVFValue* svfval)
 
 /// Return thread fork function
 //@{
-inline const SVFValue* getForkedFun(const CallSite cs)
-{
-    return ThreadAPI::getThreadAPI()->getForkedFun(cs.getInstruction());
-}
 inline const SVFValue* getForkedFun(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->getForkedFun(inst);
 }
 //@}
 
-/// This function servers a allocation wrapper detector
-inline bool isAnAllocationWraper(const SVFInstruction*)
-{
-    return false;
-}
 
 inline bool isExtCall(const CallSite cs)
 {
     return isExtCall(getCallee(cs));
 }
+
+bool isExtCall(const ICFGNode* node);
 
 inline bool isExtCall(const SVFInstruction *inst)
 {
@@ -451,10 +460,7 @@ inline bool isHeapAllocExtCallViaRet(const SVFInstruction *inst)
     return isPtrTy && isHeapAllocExtFunViaRet(getCallee(inst));
 }
 
-inline bool isHeapAllocExtCall(const CallSite cs)
-{
-    return isHeapAllocExtCallViaRet(cs) || isHeapAllocExtCallViaArg(cs);
-}
+bool isHeapAllocExtCall(const ICFGNode* cs);
 
 inline bool isHeapAllocExtCall(const SVFInstruction *inst)
 {
@@ -477,10 +483,6 @@ inline bool isReallocExtCall(const CallSite cs)
 
 /// Return true if this is a thread creation call
 ///@{
-inline bool isThreadForkCall(const CallSite cs)
-{
-    return ThreadAPI::getThreadAPI()->isTDFork(cs.getInstruction());
-}
 inline bool isThreadForkCall(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->isTDFork(inst);

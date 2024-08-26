@@ -845,9 +845,8 @@ void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
     FIFOWorkList<const ICFGNode *> instWorklist;
     for (const SVFBasicBlock * bb: callfun->getReachableBBs())
     {
-        for (const SVFInstruction* inst: bb->getInstructionList())
+        for (const ICFGNode* node: bb->getICFGNodeList())
         {
-            const ICFGNode* node = icfg->getICFGNode(inst);
             for (const SVFStmt *stmt: node->getSVFStmts())
             {
                 if (const StoreStmt *store = SVFUtil::dyn_cast<StoreStmt>(stmt))

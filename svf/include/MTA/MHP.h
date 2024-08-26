@@ -341,8 +341,7 @@ public:
         NodeID parentTid = tct->getParentThread(tid);
         const CxtThread& parentct = tct->getTCTNode(parentTid)->getCxtThread();
         const SVFFunction* parentRoutine = tct->getStartRoutineOfCxtThread(parentct);
-        const SVFInstruction* inst = parentRoutine->getExitBB()->back();
-        return tct->getICFGNode(inst);
+        return parentRoutine->getExitBB()->back();
     }
 
     /// Get loop for join site

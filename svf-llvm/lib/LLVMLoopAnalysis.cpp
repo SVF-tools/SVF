@@ -111,6 +111,8 @@ void LLVMLoopAnalysis::buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvm
             for (const auto &ins: *BB)
             {
                 const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&ins);
+                if(isIntrinsicInst(svfInst))
+                    continue;
                 loop_ids.insert(icfg->getICFGNode(svfInst));
                 nodes.insert(icfg->getICFGNode(svfInst));
             }
@@ -122,8 +124,13 @@ void LLVMLoopAnalysis::buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvm
         }
         // mark loop header's first inst
         BasicBlock* header_blk = llvmLoop->getHeader();
-        Instruction &in_ins = *header_blk->begin();
-        const SVFInstruction* svfInInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&in_ins);
+        Instruction* in_ins = &(*header_blk->begin());
+
+        while(LLVMUtil::isIntrinsicInst(in_ins)) {
+            in_ins = in_ins->getNextNode();
+        }
+        const SVFInstruction* svfInInst =
+            LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(in_ins);
         ICFGNode *in_node = icfg->getICFGNode(svfInInst);
         for (const auto &edge: in_node->getInEdges())
         {
@@ -162,8 +169,13 @@ void LLVMLoopAnalysis::buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvm
         for (const auto& exit_blk: ExitBlocks)
         {
             assert(!exit_blk->empty() && "exit block is empty?");
-            llvm::Instruction &out_ins = *exit_blk->begin();
-            const SVFInstruction* svfOutInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&out_ins);
+            llvm::Instruction* out_ins = &(*exit_blk->begin());
+
+            while(LLVMUtil::isIntrinsicInst(out_ins)) {
+                out_ins = out_ins->getNextNode();
+            }
+
+            const SVFInstruction* svfOutInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(out_ins);
             ICFGNode *out_node = icfg->getICFGNode(svfOutInst);
             for (const auto &edge: out_node->getInEdges())
             {

@@ -198,11 +198,20 @@ public:
     //@{
     ICFGNode* getICFGNode(const SVFInstruction* inst);
 
+    /// Whether has the ICFGNode
+    bool hasICFGNode(const SVFInstruction* inst);
+
     CallICFGNode* getCallICFGNode(const SVFInstruction* inst);
+
+    CallICFGNode* addCallICFGNode(const SVFInstruction* inst);
 
     RetICFGNode* getRetICFGNode(const SVFInstruction* inst);
 
+    RetICFGNode* addRetICFGNode(const SVFInstruction* inst);
+
     IntraICFGNode* getIntraICFGNode(const SVFInstruction* inst);
+
+    IntraICFGNode* addIntraICFGNode(const SVFInstruction* inst);
 
     FunEntryICFGNode* getFunEntryICFGNode(const SVFFunction*  fun);
 
