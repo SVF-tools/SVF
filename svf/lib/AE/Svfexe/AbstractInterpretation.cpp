@@ -965,7 +965,7 @@ void AbstractInterpretation::initExtFunMap()
 #define SSE_FUNC_PROCESS(LLVM_NAME ,FUNC_NAME) \
         auto sse_##FUNC_NAME = [this](const CallICFGNode *callNode) { \
         /* run real ext function */            \
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode->getCallSite()); \
+        const CallSite& cs = SVFUtil::getSVFCallSite(callNode); \
         AbstractState& as = getAbsStateFromTrace(callNode); \
         u32_t rhs_id = svfir->getValueNode(cs.getArgument(0)); \
         if (!as.inVarToValTable(rhs_id)) return; \
@@ -999,7 +999,7 @@ void AbstractInterpretation::initExtFunMap()
     auto sse_svf_assert = [this](const CallICFGNode* callNode)
     {
         checkpoints.erase(callNode);
-        u32_t arg0 = svfir->getValueNode(SVFUtil::getSVFCallSite(callNode->getCallSite()).getArgument(0));
+        u32_t arg0 = svfir->getValueNode(SVFUtil::getSVFCallSite(callNode).getArgument(0));
         AbstractState&as = getAbsStateFromTrace(callNode);
         as[arg0].getInterval().meet_with(IntervalValue(1, 1));
         if (as[arg0].getInterval().equals(IntervalValue(1, 1)))
@@ -1017,7 +1017,7 @@ void AbstractInterpretation::initExtFunMap()
 
     auto svf_print = [&](const CallICFGNode* callNode)
     {
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode->getCallSite());
+        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
         if (cs.arg_size() < 2) return;
         AbstractState&as = getAbsStateFromTrace(callNode);
         u32_t num_id = svfir->getValueNode(cs.getArgument(0));
@@ -1033,7 +1033,7 @@ void AbstractInterpretation::initExtFunMap()
     auto sse_scanf = [&](const CallICFGNode* callNode)
     {
         AbstractState& as = getAbsStateFromTrace(callNode);
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode->getCallSite());
+        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
         //scanf("%d", &data);
         if (cs.arg_size() < 2) return;
 
@@ -1056,7 +1056,7 @@ void AbstractInterpretation::initExtFunMap()
     auto sse_fscanf = [&](const CallICFGNode* callNode)
     {
         //fscanf(stdin, "%d", &data);
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode->getCallSite());
+        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
         if (cs.arg_size() < 3) return;
         AbstractState& as = getAbsStateFromTrace(callNode);
         u32_t dst_id = svfir->getValueNode(cs.getArgument(2));
@@ -1086,7 +1086,7 @@ void AbstractInterpretation::initExtFunMap()
 
     auto sse_fread = [&](const CallICFGNode *callNode)
     {
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode->getCallSite());
+        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
         if (cs.arg_size() < 3) return;
         AbstractState&as = getAbsStateFromTrace(callNode);
         u32_t block_count_id = svfir->getValueNode(cs.getArgument(2));
@@ -1104,7 +1104,7 @@ void AbstractInterpretation::initExtFunMap()
 
     auto sse_snprintf = [&](const CallICFGNode *callNode)
     {
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode->getCallSite());
+        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
         if (cs.arg_size() < 2) return;
         AbstractState&as = getAbsStateFromTrace(callNode);
         u32_t size_id = svfir->getValueNode(cs.getArgument(1));
@@ -1145,7 +1145,7 @@ void AbstractInterpretation::initExtFunMap()
     {
         // itoa(num, ch, 10);
         // num: int, ch: char*, 10 is decimal
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode->getCallSite());
+        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
         if (cs.arg_size() < 3) return;
         AbstractState&as = getAbsStateFromTrace(callNode);
         u32_t num_id = svfir->getValueNode(cs.getArgument(0));
@@ -1159,7 +1159,7 @@ void AbstractInterpretation::initExtFunMap()
     auto sse_strlen = [&](const CallICFGNode *callNode)
     {
         // check the arg size
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode->getCallSite());
+        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
         if (cs.arg_size() < 1) return;
         const SVFValue* strValue = cs.getArgument(0);
         AbstractState& as = getAbsStateFromTrace(callNode);
@@ -1220,7 +1220,7 @@ void AbstractInterpretation::initExtFunMap()
     auto sse_recv = [&](const CallICFGNode *callNode)
     {
         // recv(sockfd, buf, len, flags);
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode->getCallSite());
+        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
         if (cs.arg_size() < 4) return;
         AbstractState&as = getAbsStateFromTrace(callNode);
         u32_t len_id = svfir->getValueNode(cs.getArgument(2));
@@ -1232,7 +1232,7 @@ void AbstractInterpretation::initExtFunMap()
     func_map["__recv"] = sse_recv;
     auto safe_bufaccess = [&](const CallICFGNode *callNode)
     {
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode->getCallSite());
+        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
         checkpoints.erase(callNode);
         //void SAFE_BUFACCESS(void* data, int size);
         if (cs.arg_size() < 2) return;
@@ -1270,7 +1270,7 @@ void AbstractInterpretation::initExtFunMap()
 
     auto unsafe_bufaccess = [&](const CallICFGNode *callNode)
     {
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode->getCallSite());
+        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
         checkpoints.erase(callNode);
         //void UNSAFE_BUFACCESS(void* data, int size);
         if (cs.arg_size() < 2) return;
