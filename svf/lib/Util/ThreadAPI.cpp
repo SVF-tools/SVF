@@ -140,15 +140,6 @@ const SVFFunction* ThreadAPI::getCallee(const ICFGNode *inst) const
         return nullptr;
 }
 
-/*!
- *
- */
-const SVFFunction* ThreadAPI::getCallee(const SVFInstruction *inst) const
-{
-    return SVFUtil::getCallee(inst);
-}
-
-
 const CallSite ThreadAPI::getSVFCallSite(const ICFGNode *inst) const
 {
     assert(SVFUtil::isa<CallICFGNode>(inst) && "not a callsite?");
@@ -160,17 +151,9 @@ const SVFValue* ThreadAPI::getLockVal(const ICFGNode *inst) const
 {
     const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst);
     assert(call && "not a call ICFGNode?");
-    assert((isTDAcquire(call->getCallSite()) || isTDRelease(call->getCallSite())) && "not a lock acquire or release function");
-    CallSite cs = getSVFCallSite(call->getCallSite());
+    assert((isTDAcquire(call) || isTDRelease(call)) && "not a lock acquire or release function");
+    CallSite cs = getSVFCallSite(call);
     return cs.getArgument(0);
-}
-
-/*!
- *
- */
-const CallSite ThreadAPI::getSVFCallSite(const SVFInstruction *inst) const
-{
-    return SVFUtil::getSVFCallSite(inst);
 }
 
 const SVFValue* ThreadAPI::getJoinedThread(const ICFGNode *inst) const

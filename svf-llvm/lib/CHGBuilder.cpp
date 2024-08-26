@@ -679,7 +679,7 @@ void CHGBuilder::buildCSToCHAVtblsAndVfnsMap()
                     }
                     if (vtbls.size() > 0)
                     {
-                        CallSite cs = SVFUtil::getSVFCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(callInst));
+                        CallSite cs(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(callInst));
                         chg->csToCHAVtblsMap[cs] = vtbls;
                         VFunSet virtualFunctions;
                         chg->getVFnsFromVtbls(cs, vtbls, virtualFunctions);

@@ -42,9 +42,9 @@ void CFLAlias::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, Call
     {
         const CallICFGNode* cs = iter->first;
 
-        if (SVFUtil::getSVFCallSite(cs->getCallSite()).isVirtualCall())
+        if (SVFUtil::getSVFCallSite(cs).isVirtualCall())
         {
-            const SVFValue* vtbl = SVFUtil::getSVFCallSite(cs->getCallSite()).getVtablePtr();
+            const SVFValue* vtbl = SVFUtil::getSVFCallSite(cs).getVtablePtr();
             assert(pag->hasValueNode(vtbl));
             NodeID vtblId = pag->getValueNode(vtbl);
             resolveCPPIndCalls(cs, getCFLPts(vtblId), newEdges);
@@ -175,7 +175,7 @@ bool CFLAlias::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     onTheFlyCallGraphSolve(callsites,newEdges);
     for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it )
     {
-        CallSite cs = SVFUtil::getSVFCallSite(it->first->getCallSite());
+        CallSite cs = SVFUtil::getSVFCallSite(it->first);
         for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
         {
             connectCaller2CalleeParams(cs,*cit);
