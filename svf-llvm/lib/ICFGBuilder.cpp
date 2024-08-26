@@ -54,6 +54,7 @@ void ICFGBuilder::build(SVFModule* svfModule)
                 continue;
             WorkList worklist;
             processFunEntry(fun,worklist);
+            processBBsWithNoPredecessors(fun, worklist);
             processFunBody(worklist);
             processFunExit(fun);
 
@@ -103,18 +104,22 @@ void ICFGBuilder::processFunEntry(const Function*  fun, WorkList& worklist)
         icfg->addIntraEdge(FunEntryICFGNode, instNode);
     }
 
+
+
+}
+
+/*!
+ * bb with no predecessors
+ */
+void ICFGBuilder::processBBsWithNoPredecessors(const Function* fun, WorkList& worklist)
+{
     for (const auto& bb: *fun)
     {
         for (const auto& inst: bb)
         {
-            if (inst.getParent() != &fun->getEntryBlock() &&
-                pred_empty(inst.getParent()) &&
+            if (LLVMUtil::isNoPrecessorBasicBlock(inst.getParent()) &&
                 !visited.count(&inst))
             {
-                // map-1.cpp.bc
-                // try.cont: ; No predecessors!
-                //    call void @llvm.trap()
-                //    unreachable
                 visited.insert(&inst);
                 (void)addBlockICFGNode(LLVMModuleSet::getLLVMModuleSet()
                                            ->getSVFInstruction(&inst));
