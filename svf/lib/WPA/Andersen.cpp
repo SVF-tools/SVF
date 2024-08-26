@@ -661,7 +661,7 @@ bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
     for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it )
     {
-        CallSite cs = SVFUtil::getSVFCallSite(it->first->getCallSite());
+        CallSite cs = SVFUtil::getSVFCallSite(it->first);
         for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
         {
             connectCaller2CalleeParams(cs,*cit,cpySrcNodes);

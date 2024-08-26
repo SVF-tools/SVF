@@ -125,6 +125,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
 {
     const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
     const SVFCallInst* svfCall = SVFUtil::cast<SVFCallInst>(svfInst);
+    const CallICFGNode *callICFGNode = pag->getICFG()->getCallICFGNode(svfInst);
 
     if (isHeapAllocExtCallViaRet(svfCall))
     {
@@ -253,12 +254,12 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         }
     }
 
-    if (isThreadForkCall(svfInst))
+    if (isThreadForkCall(callICFGNode))
     {
-        if (const SVFFunction* forkedFun = SVFUtil::dyn_cast<SVFFunction>(getForkedFun(svfInst)))
+        if (const SVFFunction* forkedFun = SVFUtil::dyn_cast<SVFFunction>(getForkedFun(callICFGNode)))
         {
             forkedFun = forkedFun->getDefFunForMultipleModule();
-            const SVFValue* actualParm = getActualParmAtForkSite(svfInst);
+            const SVFValue* actualParm = getActualParmAtForkSite(callICFGNode);
             /// pthread_create has 1 arg.
             /// apr_thread_create has 2 arg.
             assert((forkedFun->arg_size() <= 2) && "Size of formal parameter of start routine should be one");
@@ -268,9 +269,8 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
                 /// Connect actual parameter to formal parameter of the start routine
                 if (actualParm->getType()->isPointerTy() && formalParm->getType()->isPointerTy())
                 {
-                    CallICFGNode *icfgNode = pag->getICFG()->getCallICFGNode(svfInst);
                     FunEntryICFGNode *entry = pag->getICFG()->getFunEntryICFGNode(forkedFun);
-                    addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm), icfgNode, entry);
+                    addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm), callICFGNode, entry);
                 }
             }
         }

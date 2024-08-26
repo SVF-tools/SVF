@@ -135,7 +135,7 @@ bool Steensgaard::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     for (CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end();
             it != eit; ++it)
     {
-        CallSite cs = SVFUtil::getSVFCallSite(it->first->getCallSite());
+        CallSite cs = SVFUtil::getSVFCallSite(it->first);
         for (FunctionSet::iterator cit = it->second.begin(),
                 ecit = it->second.end();
                 cit != ecit; ++cit)

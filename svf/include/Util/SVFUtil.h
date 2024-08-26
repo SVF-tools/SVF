@@ -169,14 +169,8 @@ void dumpPointsToList(const PointsToList& ptl);
 /// Return true if it is an llvm intrinsic instruction
 bool isIntrinsicInst(const SVFInstruction* inst);
 bool isIntrinsicInst(const ICFGNode* inst);
-
 //@}
 
-/// Whether an instruction is a call or invoke instruction
-inline bool isCallSite(const SVFInstruction* inst)
-{
-    return SVFUtil::isa<SVFCallInst>(inst);
-}
 /// Whether an instruction is a call or invoke instruction
 inline bool isCallSite(const SVFValue* val)
 {
@@ -207,31 +201,15 @@ inline bool isNonInstricCallSite(const ICFGNode* inst)
 }
 
 
-
 /// Return callsite given an instruction
 CallSite getSVFCallSite(const ICFGNode* inst);
 
-/// Return callsite given an instruction
-inline CallSite getSVFCallSite(const SVFInstruction* inst)
-{
-    assert(isCallSite(inst) && "not a callsite?");
-    CallSite cs(inst);
-    return cs;
-}
 
 /// Match arguments for callsite at caller and callee
 /// if the arg size does not match then we do not need to connect this parameter
 /// unless the callee is a variadic function (the first parameter of variadic function is its parameter number)
-bool matchArgs(const CallSite cs, const SVFFunction* callee);
+bool matchArgs(const CallICFGNode* cs, const SVFFunction* callee);
 
-/// Return LLVM callsite given a value
-inline CallSite getSVFCallSite(const SVFValue* value)
-{
-    assert(isCallSite(value) && "not a callsite?");
-    const SVFCallInst* svfInst = SVFUtil::cast<SVFCallInst>(value);
-    CallSite cs(svfInst);
-    return cs;
-}
 
 /// Split into two substrings around the first occurrence of a separator string.
 inline std::vector<std::string> split(const std::string& s, char separator)
@@ -423,7 +401,7 @@ inline bool isArgOfUncalledFunction(const SVFValue* svfval)
 
 /// Return thread fork function
 //@{
-inline const SVFValue* getForkedFun(const SVFInstruction *inst)
+inline const SVFValue* getForkedFun(const ICFGNode *inst)
 {
     return ThreadAPI::getThreadAPI()->getForkedFun(inst);
 }
@@ -488,7 +466,7 @@ inline bool isReallocExtCall(const CallSite cs)
 
 /// Return true if this is a thread creation call
 ///@{
-inline bool isThreadForkCall(const SVFInstruction *inst)
+inline bool isThreadForkCall(const ICFGNode *inst)
 {
     return ThreadAPI::getThreadAPI()->isTDFork(inst);
 }
@@ -496,49 +474,49 @@ inline bool isThreadForkCall(const SVFInstruction *inst)
 
 /// Return true if this is a thread join call
 ///@{
-inline bool isThreadJoinCall(const CallSite cs)
+inline bool isThreadJoinCall(const ICFGNode* cs)
 {
-    return ThreadAPI::getThreadAPI()->isTDJoin(cs.getInstruction());
+    return ThreadAPI::getThreadAPI()->isTDJoin(cs);
 }
 //@}
 
 /// Return true if this is a thread exit call
 ///@{
-inline bool isThreadExitCall(const CallSite cs)
+inline bool isThreadExitCall(const ICFGNode* cs)
 {
-    return ThreadAPI::getThreadAPI()->isTDExit(cs.getInstruction());
+    return ThreadAPI::getThreadAPI()->isTDExit(cs);
 }
 //@}
 
 /// Return true if this is a lock acquire call
 ///@{
-inline bool isLockAquireCall(const CallSite cs)
+inline bool isLockAquireCall(const ICFGNode* cs)
 {
-    return ThreadAPI::getThreadAPI()->isTDAcquire(cs.getInstruction());
+    return ThreadAPI::getThreadAPI()->isTDAcquire(cs);
 }
 //@}
 
 /// Return true if this is a lock acquire call
 ///@{
-inline bool isLockReleaseCall(const CallSite cs)
+inline bool isLockReleaseCall(const ICFGNode* cs)
 {
-    return ThreadAPI::getThreadAPI()->isTDRelease(cs.getInstruction());
+    return ThreadAPI::getThreadAPI()->isTDRelease(cs);
 }
 //@}
 
 /// Return true if this is a barrier wait call
 //@{
-inline bool isBarrierWaitCall(const CallSite cs)
+inline bool isBarrierWaitCall(const ICFGNode* cs)
 {
-    return ThreadAPI::getThreadAPI()->isTDBarWait(cs.getInstruction());
+    return ThreadAPI::getThreadAPI()->isTDBarWait(cs);
 }
 //@}
 
 /// Return sole argument of the thread routine
 //@{
-inline const SVFValue* getActualParmAtForkSite(const CallSite cs)
+inline const SVFValue* getActualParmAtForkSite(const ICFGNode* cs)
 {
-    return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(cs.getInstruction());
+    return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(cs);
 }
 //@}
 

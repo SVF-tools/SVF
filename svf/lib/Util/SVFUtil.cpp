@@ -317,9 +317,10 @@ void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
 /// unless the callee is a variadic function (the first parameter of variadic function is its parameter number)
 /// e.g., void variadicFoo(int num, ...); variadicFoo(5, 1,2,3,4,5)
 /// for variadic function, callsite arg size must be greater than or equal to callee arg size
-bool SVFUtil::matchArgs(const CallSite cs, const SVFFunction* callee)
+bool SVFUtil::matchArgs(const CallICFGNode* call, const SVFFunction* callee)
 {
-    if (callee->isVarArg() || ThreadAPI::getThreadAPI()->isTDFork(cs.getInstruction()))
+    CallSite cs(call->getCallSite());
+    if (callee->isVarArg() || ThreadAPI::getThreadAPI()->isTDFork(call))
         return cs.arg_size() >= callee->arg_size();
     else
         return cs.arg_size() == callee->arg_size();

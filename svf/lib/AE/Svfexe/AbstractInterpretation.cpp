@@ -1359,7 +1359,7 @@ void AbstractInterpretation::handleExtAPI(const CallICFGNode *call)
     AbstractState& as = getAbsStateFromTrace(call);
     const SVFFunction *fun = SVFUtil::getCallee(call->getCallSite());
     assert(fun && "SVFFunction* is nullptr");
-    CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
+    CallSite cs = SVFUtil::getSVFCallSite(call);
     ExtAPIType extType = UNCLASSIFIED;
     // get type of mem api
     for (const std::string &annotation: fun->getAnnotations())
@@ -1381,7 +1381,7 @@ void AbstractInterpretation::handleExtAPI(const CallICFGNode *call)
         }
         else
         {
-            u32_t lhsId = svfir->getValueNode(SVFUtil::getSVFCallSite(call->getCallSite()).getInstruction());
+            u32_t lhsId = svfir->getValueNode(SVFUtil::getSVFCallSite(call).getInstruction());
             if (as.inVarToAddrsTable(lhsId))
             {
 
@@ -1463,7 +1463,7 @@ void AbstractInterpretation::handleStrcpy(const CallICFGNode *call)
     // strcpy, __strcpy_chk, stpcpy , wcscpy, __wcscpy_chk
     // get the dst and src
     AbstractState& as = getAbsStateFromTrace(call);
-    CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
+    CallSite cs = SVFUtil::getSVFCallSite(call);
     const SVFValue* arg0Val = cs.getArgument(0);
     const SVFValue* arg1Val = cs.getArgument(1);
     IntervalValue strLen = getStrlen(as, arg1Val);
@@ -1553,12 +1553,12 @@ void AbstractInterpretation::handleStrcat(const SVF::CallICFGNode *call)
     // __strcat_chk, strcat, __wcscat_chk, wcscat, __strncat_chk, strncat, __wcsncat_chk, wcsncat
     // to check it is  strcat group or strncat group
     AbstractState& as = getAbsStateFromTrace(call);
-    const SVFFunction *fun = SVFUtil::getCallee(call->getCallSite());
+    const SVFFunction *fun = SVFUtil::getCallee(call);
     const std::vector<std::string> strcatGroup = {"__strcat_chk", "strcat", "__wcscat_chk", "wcscat"};
     const std::vector<std::string> strncatGroup = {"__strncat_chk", "strncat", "__wcsncat_chk", "wcsncat"};
     if (std::find(strcatGroup.begin(), strcatGroup.end(), fun->getName()) != strcatGroup.end())
     {
-        CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
+        CallSite cs = SVFUtil::getSVFCallSite(call);
         const SVFValue* arg0Val = cs.getArgument(0);
         const SVFValue* arg1Val = cs.getArgument(1);
         IntervalValue strLen0 = getStrlen(as, arg0Val);
@@ -1569,7 +1569,7 @@ void AbstractInterpretation::handleStrcat(const SVF::CallICFGNode *call)
     }
     else if (std::find(strncatGroup.begin(), strncatGroup.end(), fun->getName()) != strncatGroup.end())
     {
-        CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
+        CallSite cs = SVFUtil::getSVFCallSite(call);
         const SVFValue* arg0Val = cs.getArgument(0);
         const SVFValue* arg1Val = cs.getArgument(1);
         const SVFValue* arg2Val = cs.getArgument(2);

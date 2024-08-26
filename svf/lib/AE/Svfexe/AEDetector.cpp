@@ -148,7 +148,7 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
     SVFIR* svfir = PAG::getPAG();
     const SVFFunction *fun = SVFUtil::getCallee(call->getCallSite());
     assert(fun && "SVFFunction* is nullptr");
-    CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
+    CallSite cs = SVFUtil::getSVFCallSite(call);
 
     AbstractInterpretation::ExtAPIType extType = AbstractInterpretation::UNCLASSIFIED;
 
@@ -322,7 +322,7 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(SVF::AddressValue gepAddrs,
  */
 bool BufOverflowDetector::detectStrcpy(AbstractState& as, const CallICFGNode *call)
 {
-    CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
+    CallSite cs = SVFUtil::getSVFCallSite(call);
     const SVFValue* arg0Val = cs.getArgument(0);
     const SVFValue* arg1Val = cs.getArgument(1);
     IntervalValue strLen = AbstractInterpretation::getAEInstance().getStrlen(as, arg1Val);
@@ -349,7 +349,7 @@ bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *ca
 
     if (std::find(strcatGroup.begin(), strcatGroup.end(), fun->getName()) != strcatGroup.end())
     {
-        CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
+        CallSite cs = SVFUtil::getSVFCallSite(call);
         const SVFValue* arg0Val = cs.getArgument(0);
         const SVFValue* arg1Val = cs.getArgument(1);
         IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getStrlen(as, arg0Val);
@@ -359,7 +359,7 @@ bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *ca
     }
     else if (std::find(strncatGroup.begin(), strncatGroup.end(), fun->getName()) != strncatGroup.end())
     {
-        CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
+        CallSite cs = SVFUtil::getSVFCallSite(call);
         const SVFValue* arg0Val = cs.getArgument(0);
         const SVFValue* arg2Val = cs.getArgument(2);
         IntervalValue arg2Num = as[svfir->getValueNode(arg2Val)].getInterval();
