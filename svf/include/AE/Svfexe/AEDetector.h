@@ -42,7 +42,8 @@ public:
      * @enum DetectorKind
      * @brief Enumerates the types of detectors available.
      */
-    enum DetectorKind {
+    enum DetectorKind
+    {
         BUF_OVERFLOW,   ///< Detector for buffer overflow issues.
         UNKNOWN,    ///< Default type if the kind is not specified.
     };
@@ -96,7 +97,8 @@ protected:
  * @class AEException
  * @brief Exception class for handling errors in Abstract Execution.
  */
-class AEException : public std::exception {
+class AEException : public std::exception
+{
 public:
     /**
      * @brief Constructor initializes the exception with a message.
@@ -109,7 +111,8 @@ public:
      * @brief Provides the error message.
      * @return The error message as a C-string.
      */
-    virtual const char* what() const throw() {
+    virtual const char* what() const throw()
+    {
         return msg_.c_str();
     }
 
@@ -128,7 +131,8 @@ public:
     /**
      * @brief Constructor initializes the detector kind to BUF_OVERFLOW and sets up external API buffer overflow rules.
      */
-    BufOverflowDetector() {
+    BufOverflowDetector()
+    {
         kind = BUF_OVERFLOW;
         initExtAPIBufOverflowCheckRules();
     }
@@ -170,7 +174,8 @@ public:
      * @param obj Pointer to the GEP object.
      * @param offset The interval value of the offset.
      */
-    void addToGepObjOffsetFromBase(const GepObjVar* obj, const IntervalValue& offset) {
+    void addToGepObjOffsetFromBase(const GepObjVar* obj, const IntervalValue& offset)
+    {
         gepObjOffsetFromBase[obj] = offset;
     }
 
@@ -179,7 +184,8 @@ public:
      * @param obj Pointer to the GEP object.
      * @return True if the GEP object has an offset, false otherwise.
      */
-    bool hasGepObjOffsetFromBase(const GepObjVar* obj) const {
+    bool hasGepObjOffsetFromBase(const GepObjVar* obj) const
+    {
         return gepObjOffsetFromBase.find(obj) != gepObjOffsetFromBase.end();
     }
 
@@ -188,7 +194,8 @@ public:
      * @param obj Pointer to the GEP object.
      * @return The interval value of the offset.
      */
-    IntervalValue getGepObjOffsetFromBase(const GepObjVar* obj) const {
+    IntervalValue getGepObjOffsetFromBase(const GepObjVar* obj) const
+    {
         if (hasGepObjOffsetFromBase(obj))
             return gepObjOffsetFromBase.at(obj);
         else
@@ -209,33 +216,39 @@ public:
      * @param e The exception that was thrown.
      * @param node Pointer to the ICFG node where the bug was detected.
      */
-    void addBugToReporter(const AEException& e, const ICFGNode* node) {
+    void addBugToReporter(const AEException& e, const ICFGNode* node)
+    {
         const SVFInstruction* inst = nullptr;
 
         // Determine the instruction associated with the ICFG node
-        if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node)) {
+        if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node))
+        {
             inst = call->getCallSite(); // If the node is a call node, get the call site instruction
         }
-        else {
+        else
+        {
             inst = node->getSVFStmts().back()->getInst(); // Otherwise, get the last instruction of the node's
-                                                          // statements
+            // statements
         }
 
         GenericBug::EventStack eventStack;
         SVFBugEvent sourceInstEvent(SVFBugEvent::EventType::SourceInst, inst);
         eventStack.push_back(sourceInstEvent); // Add the source instruction event to the event stack
 
-        if (eventStack.empty()) {
+        if (eventStack.empty())
+        {
             return; // If the event stack is empty, return early
         }
 
         std::string loc = eventStack.back().getEventLoc(); // Get the location of the last event in the stack
 
         // Check if the bug at this location has already been reported
-        if (bugLoc.find(loc) != bugLoc.end()) {
+        if (bugLoc.find(loc) != bugLoc.end())
+        {
             return; // If the bug location is already reported, return early
         }
-        else {
+        else
+        {
             bugLoc.insert(loc); // Otherwise, mark this location as reported
         }
 
@@ -247,12 +260,15 @@ public:
     /**
      * @brief Reports all detected buffer overflow bugs.
      */
-    void reportBug() {
-        if (!nodeToBugInfo.empty()) {
+    void reportBug()
+    {
+        if (!nodeToBugInfo.empty())
+        {
             std::cerr << "######################Buffer Overflow (" + std::to_string(nodeToBugInfo.size())
-                             + " found)######################\n";
+                      + " found)######################\n";
             std::cerr << "---------------------------------------------\n";
-            for (const auto& it : nodeToBugInfo) {
+            for (const auto& it : nodeToBugInfo)
+            {
                 std::cerr << it.second << "\n---------------------------------------------\n";
             }
         }

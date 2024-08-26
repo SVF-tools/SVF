@@ -117,12 +117,14 @@ public:
     /// Program entry
     void analyse();
 
-    static AbstractInterpretation& getAEInstance() {
+    static AbstractInterpretation& getAEInstance()
+    {
         static AbstractInterpretation instance;
         return instance;
     }
 
-    void addDetector(std::unique_ptr<AEDetector> detector) {
+    void addDetector(std::unique_ptr<AEDetector> detector)
+    {
         detectors.push_back(std::move(detector));
     }
 
@@ -360,7 +362,7 @@ protected:
     Set<const CallICFGNode*> checkpoints;
     Set<std::string> checkpoint_names;
     Map<const ICFGNode*, AbstractState>
-        abstractTrace; // abstract states immediately after nodes
+    abstractTrace; // abstract states immediately after nodes
     std::string moduleName;
 
     std::vector<std::unique_ptr<AEDetector>> detectors;
