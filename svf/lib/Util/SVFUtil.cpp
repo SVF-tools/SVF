@@ -369,9 +369,7 @@ bool SVFUtil::isHeapAllocExtCall(const ICFGNode* cs)
 bool SVFUtil::isRetInstNode(const ICFGNode* node)
 {
     if (const auto& intraNode = dyn_cast<IntraICFGNode>(node))
-    {
         return intraNode->getInst()->isRetInst();
-    } else {
-        return isa<FunExitICFGNode>(node);
-    }
+    else
+        return false;
 }
