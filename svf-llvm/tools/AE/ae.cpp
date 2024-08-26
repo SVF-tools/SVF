@@ -29,7 +29,6 @@
 #include "WPA/WPAPass.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
-#include "AE/Svfexe/ICFGSimplification.h"
 #include "WPA/Andersen.h"
 
 #include "AE/Core/RelExeState.h"

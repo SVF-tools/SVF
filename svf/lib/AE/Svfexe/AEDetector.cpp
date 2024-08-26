@@ -1,4 +1,4 @@
-//===- Detector.cpp -- Vulnerability Detectors---------------------------------//
+//===- AEDetector.cpp -- Vulnerability Detectors---------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -25,8 +25,8 @@
 // Created by Jiawei Wang on 2024/8/20.
 //
 
+#include <AE/Svfexe/AEDetector.h>
 #include <AE/Svfexe/AbstractInterpretation.h>
-#include <AE/Svfexe/Detector.h>
 
 using namespace SVF;
 
@@ -83,7 +83,7 @@ void BufOverflowDetector::detect(AbstractState& as, const ICFGNode* node) {
         const CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(node);
         const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
         if (SVFUtil::isExtCall(callfun)) {
-            handleExtAPI(as, callNode);
+            detectExtAPI(as, callNode);
         }
     }
 }
@@ -127,7 +127,8 @@ void BufOverflowDetector::initExtAPIBufOverflowCheckRules() {
  * @param as Reference to the abstract state.
  * @param call Pointer to the call ICFG node.
  */
-void BufOverflowDetector::handleExtAPI(AbstractState& as, const SVF::CallICFGNode* call) {
+void BufOverflowDetector::detectExtAPI(AbstractState& as,
+                                       const CallICFGNode* call) {
     SVFIR* svfir = PAG::getPAG();
     const SVFFunction *fun = SVFUtil::getCallee(call->getCallSite());
     assert(fun && "SVFFunction* is nullptr");

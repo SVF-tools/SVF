@@ -28,11 +28,11 @@
 // 46th International Conference on Software Engineering. (ICSE24)
 //
 #pragma once
+#include "AE/Core/AbstractState.h"
 #include "AE/Core/ICFGWTO.h"
+#include "AE/Svfexe/AEDetector.h"
 #include "Util/SVFBugReport.h"
 #include "WPA/Andersen.h"
-#include "AE/Core/AbstractState.h"
-#include "AE/Svfexe/Detector.h"
 
 namespace SVF
 {
@@ -122,7 +122,7 @@ public:
         return instance;
     }
 
-    void addDetector(std::unique_ptr<IDetector> detector) {
+    void addDetector(std::unique_ptr<AEDetector> detector) {
         detectors.push_back(std::move(detector));
     }
 
@@ -363,7 +363,7 @@ protected:
         abstractTrace; // abstract states immediately after nodes
     std::string moduleName;
 
-    std::vector<std::unique_ptr<IDetector>> detectors;
+    std::vector<std::unique_ptr<AEDetector>> detectors;
 
 };
 }

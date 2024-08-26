@@ -1,4 +1,4 @@
-//===- Detector.h -- Vulnerability Detectors---------------------------------//
+//===- AEDetector.h -- Vulnerability Detectors---------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -32,10 +32,10 @@
 namespace SVF
 {
 /**
- * @class IDetector
+ * @class AEDetector
  * @brief Base class for all detectors.
  */
-class IDetector
+class AEDetector
 {
 public:
     /**
@@ -50,21 +50,21 @@ public:
     /**
      * @brief Constructor initializes the detector kind to UNKNOWN.
      */
-    IDetector(): kind(UNKNOWN) {}
+    AEDetector(): kind(UNKNOWN) {}
 
     /**
      * @brief Virtual destructor for safe polymorphic use.
      */
-    virtual ~IDetector() = default;
+    virtual ~AEDetector() = default;
 
     /**
      * @brief Check if the detector is of the UNKNOWN kind.
      * @param detector Pointer to the detector.
      * @return True if the detector is of type UNKNOWN, false otherwise.
      */
-    static bool classof(const IDetector* detector)
+    static bool classof(const AEDetector* detector)
     {
-        return detector->getKind() == IDetector::UNKNOWN;
+        return detector->getKind() == AEDetector::UNKNOWN;
     }
 
     /**
@@ -121,7 +121,7 @@ private:
  * @class BufOverflowDetector
  * @brief Detector for identifying buffer overflow issues.
  */
-class BufOverflowDetector : public IDetector
+class BufOverflowDetector : public AEDetector
 {
     friend class AbstractInterpretation;
 public:
@@ -143,9 +143,9 @@ public:
      * @param detector Pointer to the detector.
      * @return True if the detector is of type BUF_OVERFLOW, false otherwise.
      */
-    static bool classof(const IDetector* detector)
+    static bool classof(const AEDetector* detector)
     {
-        return detector->getKind() == IDetector::BUF_OVERFLOW;
+        return detector->getKind() == AEDetector::BUF_OVERFLOW;
     }
 
     /**
@@ -268,7 +268,7 @@ public:
      * @param as Reference to the abstract state.
      * @param call Pointer to the call ICFG node.
      */
-    void handleExtAPI(AbstractState& as, const CallICFGNode *call);
+    void detectExtAPI(AbstractState& as, const CallICFGNode *call);
 
     /**
      * @brief Checks if memory can be safely accessed.
