@@ -885,6 +885,8 @@ int main(int argc, char** argv)
     AbstractInterpretation& ae = AbstractInterpretation::getAEInstance();
     if (Options::BufferOverflowCheck())
         ae.addDetector(std::make_unique<BufOverflowDetector>());
+    if (Options::NullPtrDereference())
+        ae.addDetector(std::make_unique<NullPtrDerefDetector>());
     ae.runOnModule(pag->getICFG());
 
     LLVMModuleSet::releaseLLVMModuleSet();

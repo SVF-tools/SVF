@@ -45,7 +45,8 @@ public:
     enum DetectorKind
     {
         BUF_OVERFLOW,   ///< Detector for buffer overflow issues.
-        UNKNOWN,    ///< Default type if the kind is not specified.
+        NULLPTR_DEREF,  ///< Detector for null pointer dereference issues.
+        UNKNOWN,        ///< Default type if the kind is not specified.
     };
 
     /**
@@ -319,4 +320,40 @@ private:
     SVFBugReport recoder; ///< Recorder for abstract execution bugs.
     Map<const ICFGNode*, std::string> nodeToBugInfo; ///< Maps ICFG nodes to bug information.
 };
+
+class NullPtrDerefDetector: public AEDetector {
+    friend class AbstractInterpretation;
+public:
+    /**
+     * @brief Constructor initializes the detector kind to NULLPTR_DEREF.
+     */
+    NullPtrDerefDetector()
+    {
+        kind = NULLPTR_DEREF;
+    }
+
+    /**
+     * @brief Destructor.
+     */
+    ~NullPtrDerefDetector() = default;
+
+    /**
+     * @brief Check if the detector is of the BUF_OVERFLOW kind.
+     * @param detector Pointer to the detector.
+     * @return True if the detector is of type BUF_OVERFLOW, false otherwise.
+     */
+    static bool classof(const AEDetector* detector)
+    {
+        return detector->getKind() == AEDetector::NULLPTR_DEREF;
+    }
+
+
+    /**
+     * @brief Detect null pointer dereferece issues within a node.
+     * @param as Reference to the abstract state.
+     * @param node Pointer to the ICFG node.
+     */
+    void detect(AbstractState& as, const ICFGNode* node);
+};
+
 }

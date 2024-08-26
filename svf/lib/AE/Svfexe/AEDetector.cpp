@@ -433,3 +433,28 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
     }
     return true;
 }
+
+/**
+ * @brief Detects null pointer dereference issues within a given ICFG node.
+ *
+ * This function handles both non-call nodes, where it analyzes GEP (GetElementPtr)
+ * instructions for potential buffer overflows, and call nodes, where it checks
+ * for external API calls that may cause overflows.
+ *
+ * @param as Reference to the abstract state.
+ * @param node Pointer to the ICFG node.
+ */
+void NullPtrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
+    for (const SVFStmt* stmt : node->getSVFStmts()) {
+        if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt)) {
+            u32_t rhs = load->getRHSVarID();
+            AbstractValue &addrs = as[rhs];
+            for (const auto &addr: addrs.getAddrs()) {
+                AbstractValue v = as.load(addr);
+                if (v.getInterval().isBottom() && v.getAddrs().isBottom()) {
+                    std::cout << "NULL POINTER DEREFERENCING DETECTED @ " << load->toString() << std::endl;
+                }
+            }
+        }
+    }
+}
