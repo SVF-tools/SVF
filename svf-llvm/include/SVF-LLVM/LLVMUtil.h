@@ -308,7 +308,8 @@ void getPrevInsts(const Instruction* curInst,
 /// try.cont: ; No predecessors!
 ///    call void @llvm.trap()
 ///    unreachable
-inline bool isNoPrecessorBasicBlock(const BasicBlock* bb) {
+inline bool isNoPrecessorBasicBlock(const BasicBlock* bb)
+{
     return bb != &bb->getParent()->getEntryBlock() &&
            pred_empty(bb);
 }
