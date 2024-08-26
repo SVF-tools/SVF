@@ -105,7 +105,7 @@ SVFIR* SVFIRBuilder::build()
                 /// c-lang.c shows an example when fun.doesNotReturn() evaluates
                 /// to TRUE because of abort().
                 if (fun.doesNotReturn() == false &&
-                    fun.getReturnType()->isVoidTy() == false)
+                        fun.getReturnType()->isVoidTy() == false)
                 {
                     pag->addFunRet(svffun,
                                    pag->getGNode(pag->getReturnNode(svffun)));

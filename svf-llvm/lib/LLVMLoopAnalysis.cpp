@@ -126,7 +126,8 @@ void LLVMLoopAnalysis::buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvm
         BasicBlock* header_blk = llvmLoop->getHeader();
         Instruction* in_ins = &(*header_blk->begin());
 
-        while(LLVMUtil::isIntrinsicInst(in_ins)) {
+        while(LLVMUtil::isIntrinsicInst(in_ins))
+        {
             in_ins = in_ins->getNextNode();
         }
         const SVFInstruction* svfInInst =
@@ -171,7 +172,8 @@ void LLVMLoopAnalysis::buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvm
             assert(!exit_blk->empty() && "exit block is empty?");
             llvm::Instruction* out_ins = &(*exit_blk->begin());
 
-            while(LLVMUtil::isIntrinsicInst(out_ins)) {
+            while(LLVMUtil::isIntrinsicInst(out_ins))
+            {
                 out_ins = out_ins->getNextNode();
             }
 

@@ -587,7 +587,7 @@ Set<const Value *> &ObjTypeInference::bwfindAllocOfVar(const Value *var)
                 {
                     const SVFFunction *svfFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
                     const BasicBlock* exitBB = SVFUtil::cast<BasicBlock>(LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(
-                        svfFunc->getExitBB()));
+                                                   svfFunc->getExitBB()));
                     const Value *pValue = &exitBB->back();
                     const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
                     ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
@@ -895,7 +895,7 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
                 {
                     const SVFFunction *svfFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
                     const BasicBlock* exitBB = SVFUtil::cast<BasicBlock>(LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(
-                        svfFunc->getExitBB()));
+                                                   svfFunc->getExitBB()));
                     const Value *pValue = &exitBB->back();
                     const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
                     ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");

@@ -118,11 +118,11 @@ void ICFGBuilder::processNoPrecessorBasicBlocks(const Function* fun, WorkList& w
         for (const auto& inst: bb)
         {
             if (LLVMUtil::isNoPrecessorBasicBlock(inst.getParent()) &&
-                !visited.count(&inst))
+                    !visited.count(&inst))
             {
                 visited.insert(&inst);
                 (void)addBlockICFGNode(LLVMModuleSet::getLLVMModuleSet()
-                                           ->getSVFInstruction(&inst));
+                                       ->getSVFInstruction(&inst));
                 worklist.push(&inst);
             }
         }
@@ -155,7 +155,8 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
             const Instruction* succ = *nit;
             const SVFInstruction* svfsucc = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(succ);
             ICFGNode* dstNode;
-            if (visited.find(succ) != visited.end()) {
+            if (visited.find(succ) != visited.end())
+            {
                 dstNode = icfg->getICFGNode(svfsucc);
             }
             else
