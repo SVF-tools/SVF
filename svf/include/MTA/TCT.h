@@ -167,15 +167,6 @@ public:
     {
         destroy();
     }
-    /// Get CallICFGNode given inst
-    CallICFGNode* getCallICFGNode(const SVFInstruction* inst)
-    {
-        return pta->getICFG()->getCallICFGNode(inst);
-    }
-    const ICFGNode* getICFGNode(const SVFInstruction* inst)
-    {
-        return pta->getICFG()->getICFGNode(inst);
-    }
 
     /// Get SVFFModule
     SVFModule* getSVFModule() const
@@ -497,7 +488,7 @@ private:
     //@}
 
     /// Handle call relations
-    void handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, CallSite call);
+    void handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, const CallICFGNode* call);
 
     /// Get or create a tct node based on CxtThread
     //@{

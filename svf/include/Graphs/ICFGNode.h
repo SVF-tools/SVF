@@ -132,6 +132,8 @@ public:
 
     virtual const std::string toString() const;
 
+    virtual const std::string getSourceLoc() const = 0;
+
     void dump() const;
 
 protected:
@@ -172,6 +174,11 @@ public:
     //@}
 
     virtual const std::string toString() const;
+
+    virtual const std::string getSourceLoc() const
+    {
+        return "Global ICFGNode";
+    }
 };
 
 /*!
@@ -218,6 +225,11 @@ public:
     //@}
 
     const std::string toString() const;
+
+    virtual const std::string getSourceLoc() const
+    {
+        return inst->getSourceLoc();
+    }
 };
 
 class InterICFGNode : public ICFGNode
@@ -252,6 +264,7 @@ public:
                || node->getNodeKind() == FunRetBlock;
     }
     //@}
+    virtual const std::string getSourceLoc() const = 0;
 };
 
 
@@ -316,6 +329,11 @@ public:
     //@}
 
     const virtual std::string toString() const;
+
+    virtual const std::string getSourceLoc() const
+    {
+        return "function entry: " + fun->getSourceLoc();
+    }
 };
 
 /*!
@@ -377,6 +395,11 @@ public:
     //@}
 
     virtual const std::string toString() const;
+
+    virtual const std::string getSourceLoc() const
+    {
+        return "function ret: " + fun->getSourceLoc();
+    }
 };
 
 /*!
@@ -478,6 +501,11 @@ public:
     //@}
 
     virtual const std::string toString() const;
+
+    virtual const std::string getSourceLoc() const
+    {
+        return "CallICFGNode: " + cs->getSourceLoc();
+    }
 };
 
 
@@ -554,6 +582,11 @@ public:
     //@}
 
     virtual const std::string toString() const;
+
+    virtual const std::string getSourceLoc() const
+    {
+        return "RetICFGNode: " + cs->getSourceLoc();
+    }
 };
 
 } // End namespace SVF

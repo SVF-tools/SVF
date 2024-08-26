@@ -99,7 +99,7 @@ void SaberCondAllocator::allocateForBB(const SVFBasicBlock &bb)
         std::vector<Condition> condVec;
         for (u32_t i = 0; i < bit_num; i++)
         {
-            const SVFInstruction* svfInst = cast<IntraICFGNode>(bb.back())->getInst();
+            const IntraICFGNode* svfInst = cast<IntraICFGNode>(bb.back());
             condVec.push_back(newCond(svfInst));
         }
 
@@ -593,7 +593,7 @@ void SaberCondAllocator::printPathCond()
 }
 
 /// Allocate a new condition
-SaberCondAllocator::Condition SaberCondAllocator::newCond(const SVFInstruction* inst)
+SaberCondAllocator::Condition SaberCondAllocator::newCond(const ICFGNode* inst)
 {
     u32_t condCountIdx = totalCondNum++;
     Condition expr = Condition::getContext().bool_const(("c" + std::to_string(condCountIdx)).c_str());

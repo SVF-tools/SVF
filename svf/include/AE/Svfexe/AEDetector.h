@@ -218,21 +218,9 @@ public:
      */
     void addBugToReporter(const AEException& e, const ICFGNode* node)
     {
-        const SVFInstruction* inst = nullptr;
-
-        // Determine the instruction associated with the ICFG node
-        if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node))
-        {
-            inst = call->getCallSite(); // If the node is a call node, get the call site instruction
-        }
-        else
-        {
-            inst = node->getSVFStmts().back()->getInst(); // Otherwise, get the last instruction of the node's
-            // statements
-        }
 
         GenericBug::EventStack eventStack;
-        SVFBugEvent sourceInstEvent(SVFBugEvent::EventType::SourceInst, inst);
+        SVFBugEvent sourceInstEvent(SVFBugEvent::EventType::SourceInst, node);
         eventStack.push_back(sourceInstEvent); // Add the source instruction event to the event stack
 
         if (eventStack.empty())

@@ -912,7 +912,7 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
                 cit != ecit; ++cit)
         {
             CallStrCxt newCxt = curCxt;
-            const ICFGNode* curNode = tct->getICFGNode((*cit)->getCallSite());
+            const ICFGNode* curNode = (*cit);
             if (matchCxt(newCxt, SVFUtil::cast<CallICFGNode>(curNode), curFunNode->getFunction()))
             {
                 for(const ICFGEdge* outEdge : curNode->getOutEdges())
@@ -930,7 +930,7 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
                 cit != ecit; ++cit)
         {
             CallStrCxt newCxt = curCxt;
-            const ICFGNode* curNode = tct->getICFGNode((*cit)->getCallSite());
+            const ICFGNode* curNode = (*cit);
 
             if (matchCxt(newCxt, SVFUtil::cast<CallICFGNode>(curNode), curFunNode->getFunction()))
             {
