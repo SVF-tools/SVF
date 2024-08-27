@@ -289,14 +289,6 @@ inline static DataLayout* getDataLayout(Module* mod)
 
 /// Get the next instructions following control flow
 void getNextInsts(const Instruction* curInst,
-                  std::vector<const SVFInstruction*>& instList);
-
-/// Get the previous instructions following control flow
-void getPrevInsts(const Instruction* curInst,
-                  std::vector<const SVFInstruction*>& instList);
-
-/// Get the next instructions following control flow
-void getNextInsts(const Instruction* curInst,
                   std::vector<const Instruction*>& instList);
 
 /// Get the previous instructions following control flow

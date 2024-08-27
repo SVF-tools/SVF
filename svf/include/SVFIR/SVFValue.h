@@ -637,15 +637,11 @@ class SVFInstruction : public SVFValue
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
-public:
-    typedef std::vector<const SVFInstruction*> InstVec;
 
 private:
     const SVFBasicBlock* bb;    /// The BasicBlock where this Instruction resides
     bool terminator;    /// return true if this is a terminator instruction
     bool ret;           /// return true if this is an return instruction of a function
-    InstVec succInsts;  /// successor Instructions
-    InstVec predInsts;  /// predecessor Instructions
 
 public:
     /// Constructor without name, set name with setName()
@@ -665,34 +661,9 @@ public:
         return bb;
     }
 
-    inline InstVec& getSuccInstructions()
-    {
-        return succInsts;
-    }
-
-    inline InstVec& getPredInstructions()
-    {
-        return predInsts;
-    }
-
-    inline const InstVec& getSuccInstructions() const
-    {
-        return succInsts;
-    }
-
-    inline const InstVec& getPredInstructions() const
-    {
-        return predInsts;
-    }
-
     inline const SVFFunction* getFunction() const
     {
         return bb->getParent();
-    }
-
-    inline bool isTerminator() const
-    {
-        return terminator;
     }
 
     inline bool isRetInst() const

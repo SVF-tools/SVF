@@ -569,8 +569,6 @@ cJSON* SVFIRWriter::contentToJson(const SVFInstruction* value)
     JSON_WRITE_FIELD(root, value, bb);
     JSON_WRITE_FIELD(root, value, terminator);
     JSON_WRITE_FIELD(root, value, ret);
-    JSON_WRITE_FIELD(root, value, succInsts);
-    JSON_WRITE_FIELD(root, value, predInsts);
     return root;
 }
 
@@ -2377,8 +2375,6 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFInstruction* value)
     JSON_READ_FIELD_FWD(fieldJson, value, bb);
     JSON_READ_FIELD_FWD(fieldJson, value, terminator);
     JSON_READ_FIELD_FWD(fieldJson, value, ret);
-    JSON_READ_FIELD_FWD(fieldJson, value, succInsts);
-    JSON_READ_FIELD_FWD(fieldJson, value, predInsts);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFCallInst* value)
