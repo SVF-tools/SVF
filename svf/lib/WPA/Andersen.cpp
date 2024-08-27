@@ -661,10 +661,9 @@ bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
     for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it )
     {
-        CallSite cs = SVFUtil::getSVFCallSite(it->first);
         for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
         {
-            connectCaller2CalleeParams(cs,*cit,cpySrcNodes);
+            connectCaller2CalleeParams(it->first,*cit,cpySrcNodes);
         }
     }
     for(NodePairSet::iterator it = cpySrcNodes.begin(), eit = cpySrcNodes.end(); it!=eit; ++it)
@@ -678,10 +677,10 @@ bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     return (!newEdges.empty());
 }
 
-void Andersen::heapAllocatorViaIndCall(CallSite cs, NodePairSet &cpySrcNodes)
+void Andersen::heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet &cpySrcNodes)
 {
     assert(SVFUtil::getCallee(cs) == nullptr && "not an indirect callsite?");
-    RetICFGNode* retBlockNode = pag->getICFG()->getRetICFGNode(cs.getInstruction());
+    const RetICFGNode* retBlockNode = cs->getRetICFGNode();
     const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
     NodeID srcret;
     CallSite2DummyValPN::const_iterator it = callsite2DummyValPN.find(cs);
@@ -692,7 +691,7 @@ void Andersen::heapAllocatorViaIndCall(CallSite cs, NodePairSet &cpySrcNodes)
     else
     {
         NodeID valNode = pag->addDummyValNode();
-        NodeID objNode = pag->addDummyObjNode(cs.getType());
+        NodeID objNode = pag->addDummyObjNode(cs->getCallSite()->getType());
         addPts(valNode,objNode);
         callsite2DummyValPN.insert(std::make_pair(cs,valNode));
         consCG->addConstraintNode(new ConstraintNode(valNode),valNode);
@@ -708,14 +707,14 @@ void Andersen::heapAllocatorViaIndCall(CallSite cs, NodePairSet &cpySrcNodes)
 /*!
  * Connect formal and actual parameters for indirect callsites
  */
-void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, NodePairSet &cpySrcNodes)
+void Andersen::connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F, NodePairSet &cpySrcNodes)
 {
     assert(F);
 
     DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << cs.getInstruction()->toString() << " to callee " << *F << "\n");
 
-    CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
-    RetICFGNode* retBlockNode = pag->getICFG()->getRetICFGNode(cs.getInstruction());
+    const CallICFGNode* callBlockNode = cs;
+    const RetICFGNode* retBlockNode = cs->getRetICFGNode();
 
     if(SVFUtil::isHeapAllocExtFunViaRet(F) && pag->callsiteHasRet(retBlockNode))
     {
@@ -795,7 +794,7 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, Nod
         if(csArgIt != csArgEit)
         {
             writeWrnMsg("too many args to non-vararg func.");
-            writeWrnMsg("(" + cs.getInstruction()->getSourceLoc() + ")");
+            writeWrnMsg("(" + cs->getSourceLoc() + ")");
         }
     }
 }

@@ -249,12 +249,12 @@ public:
 
     void print(void);
 
-    virtual bool csHasVFnsBasedonCHA(CallSite cs) override
+    virtual bool csHasVFnsBasedonCHA(const CallICFGNode* cs) override
     {
         return csHasVtblsBasedonCHA(cs);
     }
 
-    virtual const VFunSet &getCSVFsBasedonCHA(CallSite cs) override;
+    virtual const VFunSet &getCSVFsBasedonCHA(const CallICFGNode* cs) override;
 
     virtual bool csHasVtblsBasedonCHA(CallBase* cs)
     {
@@ -268,14 +268,14 @@ public:
         return getNode(type)->getVTable() != nullptr;
     }
 
-    virtual bool csHasVtblsBasedonCHA(CallSite cs) override
+    virtual bool csHasVtblsBasedonCHA(const CallICFGNode* cs) override
     {
         assert(false && "not supported!");
         abort();
     }
 
-    virtual const VTableSet &getCSVtblsBasedonCHA(CallSite cs) override;
-    virtual void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
+    virtual const VTableSet &getCSVtblsBasedonCHA(const CallICFGNode* cs) override;
+    virtual void getVFnsFromVtbls(const SVFCallInst* cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
 
     /// Returns true if a is a transitive base of b. firstField determines
     /// whether to consider first-field edges.
@@ -373,7 +373,7 @@ protected:
     /// Maps types to a set with their vtable and all their children's.
     Map<const DIType*, VTableSet> vtblCHAMap;
     /// Maps callsites to a set of potential virtual functions based on CHA.
-    Map<CallSite, VFunSet> csCHAMap;
+    Map<const CallICFGNode*, VFunSet> csCHAMap;
     /// Maps types to their canonical type (many-to-one).
     Map<const DIType*, const DIType*> canonicalTypeMap;
     /// Set of all possible canonical types (i.e. values of canonicalTypeMap).
@@ -414,7 +414,7 @@ private:
     /// Retrieves the metadata associated with a *virtual* callsite.
     const DIType* getCSStaticType(CallBase* cs) const;
 
-    const DIType *getCSStaticType(CallSite cs) const
+    const DIType *getCSStaticType(const CallICFGNode* cs) const
     {
         assert(false && "not supported!");
         abort();
