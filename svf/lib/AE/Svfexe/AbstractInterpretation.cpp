@@ -90,10 +90,6 @@ void AbstractInterpretation::runOnModule(ICFG *icfg)
     _icfg = icfg;
     _svfir = PAG::getPAG();
 
-    CallGraph* cg = new CallGraph();
-    CallGraphBuilder bd(cg,_svfir->getICFG());
-    _callgraph = bd.buildCallGraph(_svfir->getModule());
-
     /// collect checkpoint
     collectCheckPoint();
 
@@ -132,17 +128,17 @@ AbstractInterpretation::~AbstractInterpretation()
 void AbstractInterpretation::initWTO()
 {
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(_svfir);
-    // Detect if the call graph has cycles by finding its strongly connected components (SCC)
+//    // Detect if the call graph has cycles by finding its strongly connected components (SCC)
     Andersen::CallGraphSCC* callGraphScc = ander->getCallGraphSCC();
     callGraphScc->find();
-    auto callGraph = ander->getCallGraph();
+    _callgraph = ander->getCallGraph();
 
     // Iterate through the call graph
-    for (auto it = callGraph->begin(); it != callGraph->end(); it++)
+    for (auto it = _callgraph->begin(); it != _callgraph->end(); it++)
     {
         // Check if the current function is part of a cycle
         if (callGraphScc->isInCycle(it->second->getId()))
-            _recursiveFuns.insert(it->second->getFunction()); // Mark the function as recursive
+            _recursiveFuns.insert(it->second); // Mark the function as recursive
     }
 
     // Initialize WTO for each function in the module
@@ -637,7 +633,15 @@ void AbstractInterpretation::extCallPass(const SVF::CallICFGNode *callNode)
 bool AbstractInterpretation::isRecursiveCall(const SVF::CallICFGNode *callNode)
 {
     const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
-    return _recursiveFuns.find(callfun) != _recursiveFuns.end();
+//    return _recursiveFuns.find(callfun) != _recursiveFuns.end();
+    if (!callfun)
+        return false;
+    else{
+        CallGraphNode *node = _callgraph->getCallGraphNode(callfun);
+        bool b = _recursiveFuns.find(node) != _recursiveFuns.end();
+        return b;
+    }
+
 }
 
 void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode)
@@ -662,9 +666,10 @@ void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode
 bool AbstractInterpretation::isDirectCall(const SVF::CallICFGNode *callNode)
 {
     const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite()); // TODO: change it to find a callgraphNode here?
-    // SVFFunction 2 CallGraph Node
-    
-    return _funcToWTO.find(_callgraph->getCallGraphNode(callfun)) != _funcToWTO.end(); // find a SVFFunction here
+    if (!callfun)
+        return false;
+    else
+        return _funcToWTO.find(_callgraph->getCallGraphNode(callfun)) != _funcToWTO.end(); // find a callgraphNode here
 }
 void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode)
 {

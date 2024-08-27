@@ -363,7 +363,7 @@ protected:
     std::vector<const CallICFGNode*> _callSiteStack;
     Map<const ICFGNode*, std::string> _nodeToBugInfo;
     Map<const CallGraphNode*, ICFGWTO*> _funcToWTO;
-    Set<const SVFFunction*> _recursiveFuns;
+    Set<const CallGraphNode*> _recursiveFuns;
 
 private:
     // helper functions in handleCallSite
