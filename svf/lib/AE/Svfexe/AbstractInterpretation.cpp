@@ -633,7 +633,7 @@ bool AbstractInterpretation::isRecursiveCall(const SVF::CallICFGNode *callNode)
     if (!callfun)
         return false;
     else
-        return recursiveFuns.find(_callgraph->getCallGraphNode(callfun)) != _recursiveFuns.end();
+        return recursiveFuns.find(_callgraph->getCallGraphNode(callfun)) != recursiveFuns.end();
 
 }
 
@@ -659,6 +659,7 @@ void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode
 bool AbstractInterpretation::isDirectCall(const SVF::CallICFGNode *callNode)
 {
     const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite()); 
+    if (!callfun)
         return false;
     else
         return funcToWTO.find(_callgraph->getCallGraphNode(callfun)) != funcToWTO.end(); 
