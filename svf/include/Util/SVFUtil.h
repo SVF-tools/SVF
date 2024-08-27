@@ -401,7 +401,7 @@ inline bool isArgOfUncalledFunction(const SVFValue* svfval)
 
 /// Return thread fork function
 //@{
-inline const SVFValue* getForkedFun(const ICFGNode *inst)
+inline const SVFValue* getForkedFun(const CallICFGNode *inst)
 {
     return ThreadAPI::getThreadAPI()->getForkedFun(inst);
 }
@@ -514,7 +514,7 @@ inline bool isBarrierWaitCall(const ICFGNode* cs)
 
 /// Return sole argument of the thread routine
 //@{
-inline const SVFValue* getActualParmAtForkSite(const ICFGNode* cs)
+inline const SVFValue* getActualParmAtForkSite(const CallICFGNode* cs)
 {
     return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(cs);
 }

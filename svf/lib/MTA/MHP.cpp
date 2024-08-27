@@ -819,7 +819,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
         const ICFGNode* forkSite = tct->getTCTNode(rootTid)->getCxtThread().getThread();
         const ICFGNode* joinSite = cts.getStmt();
 
-        if (isAliasedForkJoin(forkSite, joinSite))
+        if (isAliasedForkJoin(SVFUtil::cast<CallICFGNode>(forkSite), SVFUtil::cast<CallICFGNode>(joinSite)))
         {
             if (hasJoinLoop(joinSite))
             {

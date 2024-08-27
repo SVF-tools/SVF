@@ -122,7 +122,6 @@ public:
     /// Return the callee/callsite/func
     //@{
     const SVFFunction* getCallee(const ICFGNode *inst) const;
-    const CallSite getSVFCallSite(const ICFGNode *inst) const;
     //@}
 
     /// Return true if this call create a new thread
@@ -137,29 +136,14 @@ public:
     //@{
     /// Return the first argument of the call,
     /// Note that, it is the pthread_t pointer
-    inline const SVFValue* getForkedThread(const ICFGNode *inst) const
-    {
-        assert(isTDFork(inst) && "not a thread fork function!");
-        CallSite cs = getSVFCallSite(inst);
-        return cs.getArgument(0);
-    }
+    const SVFValue* getForkedThread(const CallICFGNode *inst) const;
     /// Return the third argument of the call,
     /// Note that, it could be function type or a void* pointer
-    inline const SVFValue* getForkedFun(const ICFGNode *inst) const
-    {
-        assert(isTDFork(inst) && "not a thread fork function!");
-        CallSite cs = getSVFCallSite(inst);
-        return cs.getArgument(2);
-    }
+    const SVFValue* getForkedFun(const CallICFGNode *inst) const;
 
     /// Return the forth argument of the call,
     /// Note that, it is the sole argument of start routine ( a void* pointer )
-    inline const SVFValue* getActualParmAtForkSite(const ICFGNode *inst) const
-    {
-        assert(isTDFork(inst) && "not a thread fork function!");
-        CallSite cs = getSVFCallSite(inst);
-        return cs.getArgument(3);
-    }
+    const SVFValue* getActualParmAtForkSite(const CallICFGNode *inst) const;
     //@}
 
     /// Return true if this call wait for a worker thread
@@ -174,15 +158,10 @@ public:
     //@{
     /// Return the first argument of the call,
     /// Note that, it is the pthread_t pointer
-    const SVFValue* getJoinedThread(const ICFGNode *inst) const;
+    const SVFValue* getJoinedThread(const CallICFGNode *inst) const;
     /// Return the send argument of the call,
     /// Note that, it is the pthread_t pointer
-    inline const SVFValue* getRetParmAtJoinedSite(const ICFGNode *inst) const
-    {
-        assert(isTDJoin(inst) && "not a thread join function!");
-        CallSite cs = getSVFCallSite(inst);
-        return cs.getArgument(1);
-    }
+    const SVFValue* getRetParmAtJoinedSite(const CallICFGNode *inst) const;
     //@}
 
 
