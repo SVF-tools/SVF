@@ -524,6 +524,8 @@ public:
     }
 };
 
+class ICFGNode;
+
 class SVFBasicBlock : public SVFValue
 {
     friend class LLVMModuleSet;
@@ -531,21 +533,26 @@ class SVFBasicBlock : public SVFValue
     friend class SVFIRReader;
     friend class SVFIRBuilder;
     friend class SVFFunction;
+    friend class ICFGBuilder;
+    friend class ICFG;
 
 public:
-    typedef std::vector<const SVFInstruction*>::const_iterator const_iterator;
+    typedef std::vector<const ICFGNode*>::const_iterator const_iterator;
 
 private:
-    std::vector<const SVFInstruction*> allInsts;    ///< all Instructions in this BasicBlock
+    std::vector<const ICFGNode*> allICFGNodes;    ///< all ICFGNodes in this BasicBlock
     std::vector<const SVFBasicBlock*> succBBs;  ///< all successor BasicBlocks of this BasicBlock
     std::vector<const SVFBasicBlock*> predBBs;  ///< all predecessor BasicBlocks of this BasicBlock
     const SVFFunction* fun;                 /// Function where this BasicBlock is
 
 protected:
     ///@{ attributes to be set only through Module builders e.g., LLVMModule
-    inline void addInstruction(const SVFInstruction* inst)
+
+    inline void addICFGNode(const ICFGNode* icfgNode)
     {
-        allInsts.push_back(inst);
+        assert(std::find(getICFGNodeList().begin(), getICFGNodeList().end(),
+                         icfgNode) == getICFGNodeList().end() && "duplicated icfgnode");
+        allICFGNodes.push_back(icfgNode);
     }
 
     inline void addSuccBasicBlock(const SVFBasicBlock* succ)
@@ -570,19 +577,19 @@ public:
         return node->getKind() == SVFBB;
     }
 
-    inline const std::vector<const SVFInstruction*>& getInstructionList() const
+    inline const std::vector<const ICFGNode*>& getICFGNodeList() const
     {
-        return allInsts;
+        return allICFGNodes;
     }
 
     inline const_iterator begin() const
     {
-        return allInsts.begin();
+        return allICFGNodes.begin();
     }
 
     inline const_iterator end() const
     {
-        return allInsts.end();
+        return allICFGNodes.end();
     }
 
     inline const SVFFunction* getParent() const
@@ -595,19 +602,17 @@ public:
         return fun;
     }
 
-    inline const SVFInstruction* front() const
+    inline const ICFGNode* front() const
     {
-        return allInsts.front();
+        assert(!allICFGNodes.empty() && "bb empty?");
+        return allICFGNodes.front();
     }
 
-    inline const SVFInstruction* back() const
+    inline const ICFGNode* back() const
     {
-        return allInsts.back();
+        assert(!allICFGNodes.empty() && "bb empty?");
+        return allICFGNodes.back();
     }
-
-    /// Returns the terminator instruction if the block is well formed or null
-    /// if the block is not well formed.
-    const SVFInstruction* getTerminator() const;
 
     inline const std::vector<const SVFBasicBlock*>& getSuccessors() const
     {

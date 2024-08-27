@@ -95,6 +95,8 @@ public:
     // storeValue
     void storeValue(NodeID varId, AbstractValue val);
 
+    u32_t getAllocaInstByteSize(const AddrStmt *addr);
+
 
     /// The physical address starts with 0x7f...... + idx
     static inline u32_t getVirtualMemAddress(u32_t idx)
@@ -281,13 +283,14 @@ public:
     /// domain meet with other, important! other widen this.
     void meetWith(const AbstractState&other);
 
-
-    /// Return int value from an expression if it is a numeral, otherwise return an approximate value
-    inline s32_t Interval2NumValue(const IntervalValue &e) const
-    {
-        //TODO: return concrete value;
-        return (s32_t) e.lb().getNumeral();
-    }
+    /**
+    * if this NodeID in SVFIR is a pointer, get the pointee type
+    * e.g  arr = (int*) malloc(10*sizeof(int))
+    *      getPointeeType(arr) -> return int
+    * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
+    * @param call callnode of memset like api
+     */
+    const SVFType* getPointeeElement(NodeID id);
 
 
     u32_t hash() const;
@@ -394,7 +397,6 @@ public:
         _addrToAbsVal.clear();
         _varToAbsVal.clear();
     }
-
 
 };
 

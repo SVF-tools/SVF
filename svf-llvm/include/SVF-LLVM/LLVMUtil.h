@@ -303,6 +303,17 @@ void getNextInsts(const Instruction* curInst,
 void getPrevInsts(const Instruction* curInst,
                   std::vector<const Instruction*>& instList);
 
+/// Basic block does not have predecessors
+/// map-1.cpp.bc
+/// try.cont: ; No predecessors!
+///    call void @llvm.trap()
+///    unreachable
+inline bool isNoPrecessorBasicBlock(const BasicBlock* bb)
+{
+    return bb != &bb->getParent()->getEntryBlock() &&
+           pred_empty(bb);
+}
+
 /// Get num of BB's predecessors
 u32_t getBBPredecessorNum(const BasicBlock* BB);
 

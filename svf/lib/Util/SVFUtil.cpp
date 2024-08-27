@@ -317,10 +317,67 @@ void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
 /// unless the callee is a variadic function (the first parameter of variadic function is its parameter number)
 /// e.g., void variadicFoo(int num, ...); variadicFoo(5, 1,2,3,4,5)
 /// for variadic function, callsite arg size must be greater than or equal to callee arg size
-bool SVFUtil::matchArgs(const SVFInstruction* cs, const SVFFunction* callee)
+bool SVFUtil::matchArgs(const CallICFGNode* call, const SVFFunction* callee)
 {
-    if (callee->isVarArg() || ThreadAPI::getThreadAPI()->isTDFork(cs))
-        return getSVFCallSite(cs).arg_size() >= callee->arg_size();
+    CallSite cs(call->getCallSite());
+    if (callee->isVarArg() || ThreadAPI::getThreadAPI()->isTDFork(call))
+        return cs.arg_size() >= callee->arg_size();
     else
-        return getSVFCallSite(cs).arg_size() == callee->arg_size();
+        return cs.arg_size() == callee->arg_size();
+}
+
+bool SVFUtil::isCallSite(const ICFGNode* inst)
+{
+    return SVFUtil::isa<CallICFGNode>(inst);
+}
+
+CallSite SVFUtil::getSVFCallSite(const ICFGNode* inst)
+{
+    assert(isCallSite(inst) && "not a callsite?");
+    CallSite cs(cast<CallICFGNode>(inst)->getCallSite());
+    return cs;
+}
+
+bool SVFUtil::isIntrinsicInst(const ICFGNode* inst)
+{
+    if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst))
+    {
+        CallSite cs(call->getCallSite());
+        const SVFFunction* func = cs.getCalledFunction();
+        if (func && func->isIntrinsic())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+const SVFFunction* SVFUtil::getCallee(const ICFGNode *inst)
+{
+    if (!isCallSite(inst))
+        return nullptr;
+    CallSite cs(cast<CallICFGNode>(inst)->getCallSite());
+    return getCallee(cs);
+}
+
+bool SVFUtil::isExtCall(const ICFGNode* node)
+{
+    if(!isCallSite(node)) return false;
+    CallSite cs(cast<CallICFGNode>(node)->getCallSite());
+    return isExtCall(getCallee(cs));
+}
+
+bool SVFUtil::isHeapAllocExtCall(const ICFGNode* cs)
+{
+    if(!isCallSite(cs)) return false;
+    CallSite callSite(cast<CallICFGNode>(cs)->getCallSite());
+    return isHeapAllocExtCallViaRet(callSite) || isHeapAllocExtCallViaArg(callSite);
+}
+
+bool SVFUtil::isRetInstNode(const ICFGNode* node)
+{
+    if (const auto& intraNode = dyn_cast<IntraICFGNode>(node))
+        return intraNode->getInst()->isRetInst();
+    else
+        return false;
 }

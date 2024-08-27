@@ -35,7 +35,6 @@
 #include "MTA/LockAnalysis.h"
 #include "MTA/MTAStat.h"
 #include "WPA/Andersen.h"
-#include "MTA/FSMPTA.h"
 #include "Util/SVFUtil.h"
 
 using namespace SVF;
@@ -66,43 +65,6 @@ bool MTA::runOnModule(SVFIR* pag)
 
     if(Options::RaceCheck())
         detect(pag->getModule());
-    /*
-    if (Options::AndersenAnno()) {
-        pta = mhp->getTCT()->getPTA();
-        if (pta->printStat())
-            stat->performMHPPairStat(mhp,lsa);
-        AndersenWaveDiff::releaseAndersenWaveDiff();
-    } else if (Options::FSAnno()) {
-
-        reportMemoryUsageKB("Mem before analysis");
-        DBOUT(DGENERAL, outs() << pasMsg("FSMPTA analysis\n"));
-        DBOUT(DMTA, outs() << pasMsg("FSMPTA analysis\n"));
-
-        DOTIMESTAT(double ptStart = stat->getClk());
-        pta = FSMPTA::createFSMPTA(module, mhp,lsa);
-        DOTIMESTAT(double ptEnd = stat->getClk());
-        DOTIMESTAT(stat->FSMPTATime += (ptEnd - ptStart) / TIMEINTERVAL);
-
-        reportMemoryUsageKB("Mem after analysis");
-
-        if (pta->printStat())
-            stat->performMHPPairStat(mhp,lsa);
-
-        FSMPTA::releaseFSMPTA();
-    }
-
-    if (DoInstrumentation) {
-        DBOUT(DGENERAL, outs() << pasMsg("ThreadSanitizer Instrumentation\n"));
-        DBOUT(DMTA, outs() << pasMsg("ThreadSanitizer Instrumentation\n"));
-        TSan tsan;
-        tsan.doInitialization(*pta->getModule());
-        for (Module::iterator it = pta->getModule()->begin(), eit = pta->getModule()->end(); it != eit; ++it) {
-            tsan.runOnFunction(*it);
-        }
-        if (pta->printStat())
-            PrintStatistics();
-    }
-    */
 
     return false;
 }
@@ -173,16 +135,15 @@ void MTA::detect(SVFModule* module)
     SVFIR* pag = SVFIR::getPAG();
     PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
 
-    Set<const SVFInstruction*> needcheckinst;
     // Add symbols for all of the functions and the instructions in them.
     for (const SVFFunction* F : module->getFunctionSet())
     {
         // collect and create symbols inside the function body
         for (const SVFBasicBlock* svfbb : F->getBasicBlockList())
         {
-            for (const SVFInstruction* svfInst : svfbb->getInstructionList())
+            for (const ICFGNode* icfgNode : svfbb->getICFGNodeList())
             {
-                for(const SVFStmt* stmt : pag->getSVFStmtList(pag->getICFG()->getICFGNode(svfInst)))
+                for(const SVFStmt* stmt : pag->getSVFStmtList(icfgNode))
                 {
                     if (const LoadStmt* l = SVFUtil::dyn_cast<LoadStmt>(stmt))
                     {
@@ -205,8 +166,8 @@ void MTA::detect(SVFModule* module)
             const StoreStmt* store = *sit;
             if(load->getInst()==nullptr || store->getInst()==nullptr)
                 continue;
-            if(mhp->mayHappenInParallelInst(load->getInst(),store->getInst()) && pta->alias(load->getRHSVarID(),store->getLHSVarID()))
-                if(lsa->isProtectedByCommonLock(load->getInst(),store->getInst()) == false)
+            if(mhp->mayHappenInParallelInst(load->getICFGNode(),store->getICFGNode()) && pta->alias(load->getRHSVarID(),store->getLHSVarID()))
+                if(lsa->isProtectedByCommonLock(load->getICFGNode(),store->getICFGNode()) == false)
                     outs() << SVFUtil::bugMsg1("race pair(") << " store: " << store->toString() << ", load: " << load->toString() << SVFUtil::bugMsg1(")") << "\n";
         }
     }

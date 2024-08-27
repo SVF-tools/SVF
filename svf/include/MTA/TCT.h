@@ -140,13 +140,13 @@ public:
     typedef TCTEdge::ThreadCreateEdgeSet ThreadCreateEdgeSet;
     typedef ThreadCreateEdgeSet::iterator TCTNodeIter;
     typedef Set<const SVFFunction*> FunSet;
-    typedef std::vector<const SVFInstruction*> InstVec;
-    typedef Set<const SVFInstruction*> InstSet;
+    typedef std::vector<const ICFGNode*> InstVec;
+    typedef Set<const ICFGNode*> InstSet;
     typedef Set<const CallGraphNode*> PTACGNodeSet;
     typedef Map<CxtThread,TCTNode*> CxtThreadToNodeMap;
     typedef Map<CxtThread,CallStrCxt> CxtThreadToForkCxt;
     typedef Map<CxtThread,const SVFFunction*> CxtThreadToFun;
-    typedef Map<const SVFInstruction*, LoopBBs> InstToLoopMap;
+    typedef Map<const ICFGNode*, LoopBBs> InstToLoopMap;
     typedef FIFOWorkList<CxtThreadProc> CxtThreadProcVec;
     typedef Set<CxtThreadProc> CxtThreadProcSet;
     typedef SCCDetection<CallGraph*> ThreadCallGraphSCC;
@@ -167,11 +167,7 @@ public:
     {
         destroy();
     }
-    /// Get CallICFGNode given inst
-    CallICFGNode* getCallICFGNode(const SVFInstruction* inst)
-    {
-        return pta->getICFG()->getCallICFGNode(inst);
-    }
+
     /// Get SVFFModule
     SVFModule* getSVFModule() const
     {
@@ -245,6 +241,19 @@ public:
         return MaxCxtSize;
     }
     //@}
+
+    /// Whether it is calling an external function
+    inline bool isExtCall(const ICFGNode* inst)
+    {
+        if(const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst))
+            return SVFUtil::isExtCall(call->getCallSite());
+        return false;
+    }
+    /// Whether it is a callsite
+    inline bool isCallSite(const ICFGNode* inst)
+    {
+        return SVFUtil::isa<CallICFGNode>(inst);
+    }
 
     /// Find/Get TCT node
     //@{
@@ -355,7 +364,7 @@ public:
     }
 
     /// Get loop for join site
-    inline LoopBBs& getJoinLoop(const SVFInstruction* join)
+    inline LoopBBs& getJoinLoop(const ICFGNode* join)
     {
         assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
         InstToLoopMap::iterator it = joinSiteToLoopMap.find(join);
@@ -363,7 +372,7 @@ public:
         return it->second;
     }
 
-    inline bool hasJoinLoop(const SVFInstruction* join) const
+    inline bool hasJoinLoop(const ICFGNode* join) const
     {
         assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
         InstToLoopMap::const_iterator it = joinSiteToLoopMap.find(join);
@@ -372,24 +381,24 @@ public:
 
     bool hasLoop(const SVFBasicBlock* bb) const
     {
-        const SVFFunction* fun = bb->getParent();
+        const SVFFunction* fun = bb->getFunction();
         return fun->hasLoopInfo(bb);
     }
-    bool hasLoop(const SVFInstruction* inst) const
+    bool hasLoop(const ICFGNode* inst) const
     {
-        return hasLoop(inst->getParent());
+        return hasLoop(inst->getBB());
     }
     /// Return true if a join instruction must be executed inside a loop
-    bool isJoinMustExecutedInLoop(const LoopBBs& lp,const SVFInstruction* join);
+    bool isJoinMustExecutedInLoop(const LoopBBs& lp,const ICFGNode* join);
     /// Get loop for an instruction
-    const LoopBBs& getLoop(const SVFInstruction* inst);
+    const LoopBBs& getLoop(const ICFGNode* inst);
     /// Get loop for fork/join site
     const LoopBBs& getLoop(const SVFBasicBlock* bb);
 
     /// Push calling context
-    void pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee);
+    void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee);
     /// Match context
-    bool matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee);
+    bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee);
 
     inline void pushCxt(CallStrCxt& cxt, CallSiteID csId)
     {
@@ -398,7 +407,7 @@ public:
             MaxCxtSize = cxt.size();
     }
     /// Whether a join site is in recursion
-    inline bool isJoinSiteInRecursion(const SVFInstruction* join) const
+    inline bool isJoinSiteInRecursion(const ICFGNode* join) const
     {
         assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
         return inRecurJoinSites.find(join)!=inRecurJoinSites.end();
@@ -473,17 +482,17 @@ private:
     /// Multi-forked threads
     //@{
     /// Whether an instruction is in a loop
-    bool isInLoopInstruction(const SVFInstruction* inst);
+    bool isInLoopInstruction(const ICFGNode* inst);
     /// Whether an instruction is in a recursion
-    bool isInRecursion(const SVFInstruction* inst) const;
+    bool isInRecursion(const ICFGNode* inst) const;
     //@}
 
     /// Handle call relations
-    void handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, CallSite call);
+    void handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, const CallICFGNode* call);
 
     /// Get or create a tct node based on CxtThread
     //@{
-    inline TCTNode* getOrCreateTCTNode(const CallStrCxt& cxt, const SVFInstruction* fork,const CallStrCxt& oldCxt, const SVFFunction* routine)
+    inline TCTNode* getOrCreateTCTNode(const CallStrCxt& cxt, const ICFGNode* fork,const CallStrCxt& oldCxt, const SVFFunction* routine)
     {
         CxtThread ct(cxt,fork);
         CxtThreadToNodeMap::const_iterator it = ctpToNodeMap.find(ct);
@@ -506,7 +515,7 @@ private:
         /// non-main thread
         if(ct.getThread() != nullptr)
         {
-            const SVFInstruction* svfInst = ct.getThread();
+            const ICFGNode* svfInst = ct.getThread();
             ct.setInloop(isInLoopInstruction(svfInst));
             ct.setIncycle(isInRecursion(svfInst));
         }
@@ -567,7 +576,7 @@ private:
     CxtThreadToForkCxt ctToForkCxtMap; /// Map a CxtThread to the context at its spawning site (fork site).
     CxtThreadToFun ctToRoutineFunMap; /// Map a CxtThread to its start routine function.
     InstToLoopMap joinSiteToLoopMap; ///< map an inloop join to its loop class
-    InstSet inRecurJoinSites;	///< Fork or Join sites in recursions
+    Set<const ICFGNode*>  inRecurJoinSites;	///< Fork or Join sites in recursions
 };
 
 } // End namespace SVF

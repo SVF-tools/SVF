@@ -99,7 +99,7 @@ void SaberCondAllocator::allocateForBB(const SVFBasicBlock &bb)
         std::vector<Condition> condVec;
         for (u32_t i = 0; i < bit_num; i++)
         {
-            const SVFInstruction* svfInst = bb.getTerminator();
+            const IntraICFGNode* svfInst = cast<IntraICFGNode>(bb.back());
             condVec.push_back(newCond(svfInst));
         }
 
@@ -297,8 +297,8 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateBranchCond(const SVFBa
         return getTrueCond();
     }
 
-    const SVFInstruction* svfInst = bb->getTerminator();
-    if (ICFGNode *icfgNode = getICFG()->getICFGNode(svfInst))
+    assert(!bb->getICFGNodeList().empty() && "bb not empty");
+    if (const ICFGNode* icfgNode = bb->back())
     {
         for (const auto &svfStmt: icfgNode->getSVFStmts())
         {
@@ -425,11 +425,10 @@ bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt *cmp) const
 void SaberCondAllocator::collectBBCallingProgExit(const SVFBasicBlock &bb)
 {
 
-    for (SVFBasicBlock::const_iterator it = bb.begin(), eit = bb.end(); it != eit; it++)
+    for (const auto& icfgNode: bb.getICFGNodeList())
     {
-        const SVFInstruction* svfInst = *it;
-        if (SVFUtil::isCallSite(svfInst))
-            if (SVFUtil::isProgExitCall(svfInst))
+        if (const CallICFGNode* cs = SVFUtil::dyn_cast<CallICFGNode>(icfgNode))
+            if (SVFUtil::isProgExitCall(cs->getCallSite()))
             {
                 const SVFFunction* svfun = bb.getParent();
                 funToExitBBsMap[svfun].insert(&bb);
@@ -594,7 +593,7 @@ void SaberCondAllocator::printPathCond()
 }
 
 /// Allocate a new condition
-SaberCondAllocator::Condition SaberCondAllocator::newCond(const SVFInstruction* inst)
+SaberCondAllocator::Condition SaberCondAllocator::newCond(const ICFGNode* inst)
 {
     u32_t condCountIdx = totalCondNum++;
     Condition expr = Condition::getContext().bool_const(("c" + std::to_string(condCountIdx)).c_str());

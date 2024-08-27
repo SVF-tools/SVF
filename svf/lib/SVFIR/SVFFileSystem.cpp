@@ -559,7 +559,6 @@ cJSON* SVFIRWriter::contentToJson(const SVFFunction* value)
 cJSON* SVFIRWriter::contentToJson(const SVFBasicBlock* value)
 {
     cJSON* root = contentToJson(static_cast<const SVFValue*>(value));
-    JSON_WRITE_FIELD(root, value, allInsts);
     JSON_WRITE_FIELD(root, value, succBBs);
     JSON_WRITE_FIELD(root, value, predBBs);
     JSON_WRITE_FIELD(root, value, fun);
@@ -2381,7 +2380,6 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFFunction* value)
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFBasicBlock* value)
 {
     fill(fieldJson, static_cast<SVFValue*>(value));
-    JSON_READ_FIELD_FWD(fieldJson, value, allInsts);
     JSON_READ_FIELD_FWD(fieldJson, value, succBBs);
     JSON_READ_FIELD_FWD(fieldJson, value, predBBs);
     JSON_READ_FIELD_FWD(fieldJson, value, fun);

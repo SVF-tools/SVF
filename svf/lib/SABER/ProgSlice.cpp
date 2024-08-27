@@ -198,7 +198,7 @@ void ProgSlice::evalFinalCond2Event(GenericBug::EventStack &eventStack) const
     NodeBS elems = pathAllocator->exactCondElem(finalCond);
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
     {
-        const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
+        const ICFGNode* tinst = pathAllocator->getCondInst(*it);
         if(pathAllocator->isNegCond(*it))
             eventStack.push_back(SVFBugEvent(
                                      SVFBugEvent::Branch|((((u32_t)false) << 4) & BRANCHFLAGMASK), tinst));
@@ -226,7 +226,7 @@ std::string ProgSlice::evalFinalCond() const
 
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
     {
-        const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
+        const ICFGNode* tinst = pathAllocator->getCondInst(*it);
         if(pathAllocator->isNegCond(*it))
             locations.insert(tinst->getSourceLoc()+"|False");
         else

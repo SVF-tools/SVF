@@ -132,28 +132,31 @@ void ThreadAPI::init()
 /*!
  *
  */
-const SVFFunction* ThreadAPI::getCallee(const SVFInstruction *inst) const
+const SVFFunction* ThreadAPI::getCallee(const ICFGNode *inst) const
 {
-    return SVFUtil::getCallee(inst);
+    if(const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst))
+        return SVFUtil::getCallee(call->getCallSite());
+    else
+        return nullptr;
 }
 
-/*!
- *
- */
-const SVFFunction* ThreadAPI::getCallee(const CallSite cs) const
+const CallSite ThreadAPI::getSVFCallSite(const ICFGNode *inst) const
 {
-    return SVFUtil::getCallee(cs);
+    assert(SVFUtil::isa<CallICFGNode>(inst) && "not a callsite?");
+    CallSite cs(SVFUtil::cast<CallICFGNode>(inst)->getCallSite());
+    return cs;
 }
 
-/*!
- *
- */
-const CallSite ThreadAPI::getSVFCallSite(const SVFInstruction *inst) const
+const SVFValue* ThreadAPI::getLockVal(const ICFGNode *inst) const
 {
-    return SVFUtil::getSVFCallSite(inst);
+    const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst);
+    assert(call && "not a call ICFGNode?");
+    assert((isTDAcquire(call) || isTDRelease(call)) && "not a lock acquire or release function");
+    CallSite cs = getSVFCallSite(call);
+    return cs.getArgument(0);
 }
 
-const SVFValue* ThreadAPI::getJoinedThread(const SVFInstruction *inst) const
+const SVFValue* ThreadAPI::getJoinedThread(const ICFGNode *inst) const
 {
     assert(isTDJoin(inst) && "not a thread join function!");
     CallSite cs = getSVFCallSite(inst);
@@ -226,12 +229,12 @@ void ThreadAPI::performAPIStat(SVFModule* module)
         for (SVFFunction::const_iterator bit = (*it)->begin(), ebit = (*it)->end(); bit != ebit; ++bit)
         {
             const SVFBasicBlock* bb = *bit;
-            for (SVFBasicBlock::const_iterator ii = bb->begin(), eii = bb->end(); ii != eii; ++ii)
+            for (const auto& svfInst: bb->getICFGNodeList())
             {
-                const SVFInstruction* svfInst = *ii;
                 if (!SVFUtil::isCallSite(svfInst))
                     continue;
-                const SVFFunction* fun = getCallee(svfInst);
+
+                const SVFFunction* fun = SVFUtil::getCallee(svfInst);
                 TD_TYPE type = getType(fun);
                 switch (type)
                 {

@@ -77,7 +77,7 @@ void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites
     for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter)
     {
         const CallICFGNode* cbn = iter->first;
-        CallSite cs = SVFUtil::getSVFCallSite(cbn->getCallSite());
+        CallSite cs = SVFUtil::getSVFCallSite(cbn);
         if (cs.isVirtualCall())
         {
             const SVFValue* vtbl = cs.getVtablePtr();

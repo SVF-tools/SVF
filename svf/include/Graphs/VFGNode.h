@@ -181,12 +181,6 @@ public:
                || node->getNodeKind() == Store
                || node->getNodeKind() == Load;
     }
-
-    inline const SVFInstruction* getInst() const
-    {
-        /// should return a valid instruction unless it is a global PAGEdge
-        return pagEdge->getInst();
-    }
     //@}
 
     const SVFValue* getValue() const override;

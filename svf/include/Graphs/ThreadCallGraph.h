@@ -163,8 +163,6 @@ class ThreadCallGraph: public CallGraph
 public:
     typedef Set<const CallICFGNode*> InstSet;
     typedef InstSet CallSiteSet;
-    typedef std::vector<const SVFInstruction*> InstVector;
-    typedef Map<const SVFInstruction*, InstSet> CallToInstMap;
     typedef Set<CallSiteSet*> CtxSet;
     typedef ThreadForkEdge::ForkEdgeSet ForkEdgeSet;
     typedef Map<const CallICFGNode*, ForkEdgeSet> CallInstToForkEdgesMap;
@@ -354,12 +352,6 @@ public:
     /// Add thread join edges
     //@{
     void addDirectJoinEdge(const CallICFGNode* cs,const CallSiteSet& forksite);
-    //@}
-
-    /// Add direct/indirect parallel for edges
-    //@{
-    void addDirectParForEdge(const CallICFGNode* cs);
-    void addIndirectParForEdge(const CallICFGNode* cs, const SVFFunction* callee);
     //@}
 
 

@@ -450,9 +450,9 @@ protected:
     /// Add Store edge
     inline void addStoreEdge(NodeID src, NodeID dst)
     {
-        IntraICFGNode* node;
+        ICFGNode* node;
         if (const SVFInstruction* inst = SVFUtil::dyn_cast<SVFInstruction>(curVal))
-            node = pag->getICFG()->getIntraICFGNode(inst);
+            node = pag->getICFG()->getICFGNode(inst);
         else
             node = nullptr;
         if (StoreStmt* edge = pag->addStoreStmt(src, dst, node))
