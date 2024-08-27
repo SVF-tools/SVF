@@ -156,8 +156,8 @@ protected:
     //@{
     ICFGEdge* addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode);
     ICFGEdge* addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFValue* condition, s32_t branchCondVal);
-    ICFGEdge* addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFInstruction* cs);
-    ICFGEdge* addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFInstruction* cs);
+    ICFGEdge* addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode);
+    ICFGEdge* addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode);
     //@}
     /// Remove a ICFG edge
     inline void removeICFGEdge(ICFGEdge* edge)
