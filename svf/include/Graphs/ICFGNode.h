@@ -534,7 +534,7 @@ public:
         return SVFUtil::cast<SVFVirtualCallInst>(cs)->getFunNameOfVirtualCall();
     }
     //@}
-    
+
     ///Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const CallICFGNode *)
