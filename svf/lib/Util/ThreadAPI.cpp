@@ -129,6 +129,32 @@ void ThreadAPI::init()
     }
 }
 
+const SVFValue* ThreadAPI::getForkedThread(const CallICFGNode *inst) const
+{
+    assert(isTDFork(inst) && "not a thread fork function!");
+    return inst->getArgument(0);
+}
+
+const SVFValue* ThreadAPI::getForkedFun(const CallICFGNode *inst) const
+{
+    assert(isTDFork(inst) && "not a thread fork function!");
+    return inst->getArgument(2);
+}
+
+/// Return the forth argument of the call,
+/// Note that, it is the sole argument of start routine ( a void* pointer )
+const SVFValue* ThreadAPI::getActualParmAtForkSite(const CallICFGNode *inst) const
+{
+    assert(isTDFork(inst) && "not a thread fork function!");
+    return inst->getArgument(3);
+}
+
+const SVFValue* ThreadAPI::getRetParmAtJoinedSite(const CallICFGNode *inst) const
+{
+    assert(isTDJoin(inst) && "not a thread join function!");
+    return inst->getArgument(1);
+}
+
 /*!
  *
  */
@@ -140,27 +166,18 @@ const SVFFunction* ThreadAPI::getCallee(const ICFGNode *inst) const
         return nullptr;
 }
 
-const CallSite ThreadAPI::getSVFCallSite(const ICFGNode *inst) const
+const SVFValue* ThreadAPI::getLockVal(const ICFGNode *cs) const
 {
-    assert(SVFUtil::isa<CallICFGNode>(inst) && "not a callsite?");
-    CallSite cs(SVFUtil::cast<CallICFGNode>(inst)->getCallSite());
-    return cs;
-}
-
-const SVFValue* ThreadAPI::getLockVal(const ICFGNode *inst) const
-{
-    const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst);
+    const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(cs);
     assert(call && "not a call ICFGNode?");
     assert((isTDAcquire(call) || isTDRelease(call)) && "not a lock acquire or release function");
-    CallSite cs = getSVFCallSite(call);
-    return cs.getArgument(0);
+    return call->getArgument(0);
 }
 
-const SVFValue* ThreadAPI::getJoinedThread(const ICFGNode *inst) const
+const SVFValue* ThreadAPI::getJoinedThread(const CallICFGNode *cs) const
 {
-    assert(isTDJoin(inst) && "not a thread join function!");
-    CallSite cs = getSVFCallSite(inst);
-    const SVFValue* join = cs.getArgument(0);
+    assert(isTDJoin(cs) && "not a thread join function!");
+    const SVFValue* join = cs->getArgument(0);
     const SVFVar* var = PAG::getPAG()->getGNode(PAG::getPAG()->getValueNode(join));
     for(const SVFStmt* stmt : var->getInEdges())
     {

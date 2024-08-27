@@ -258,8 +258,8 @@ void ICFGBuilder::addICFGInterEdges(const SVFInstruction* cs, const SVFFunction*
         {
             FunEntryICFGNode* calleeEntryNode = icfg->getFunEntryICFGNode(callee);
             FunExitICFGNode* calleeExitNode = icfg->getFunExitICFGNode(callee);
-            icfg->addCallEdge(callICFGNode, calleeEntryNode, cs);
-            icfg->addRetEdge(calleeExitNode, retBlockNode, cs);
+            icfg->addCallEdge(callICFGNode, calleeEntryNode);
+            icfg->addRetEdge(calleeExitNode, retBlockNode);
         }
     }
     /// indirect call (don't know callee)

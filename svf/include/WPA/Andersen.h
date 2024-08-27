@@ -171,7 +171,7 @@ class Andersen:  public AndersenBase
 
 public:
     typedef SCCDetection<ConstraintGraph*> CGSCC;
-    typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
+    typedef OrderedMap<const CallICFGNode*, NodeID> CallSite2DummyValPN;
 
     /// Constructor
     Andersen(SVFIR* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
@@ -243,7 +243,7 @@ public:
 protected:
 
     CallSite2DummyValPN callsite2DummyValPN;        ///< Map an instruction to a dummy obj which created at an indirect callsite, which invokes a heap allocator
-    void heapAllocatorViaIndCall(CallSite cs,NodePairSet &cpySrcNodes);
+    void heapAllocatorViaIndCall(const CallICFGNode* cs,NodePairSet &cpySrcNodes);
 
     /// Handle diff points-to set.
     virtual inline void computeDiffPts(NodeID id)
@@ -315,7 +315,7 @@ protected:
     virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
 
     /// Connect formal and actual parameters for indirect callsites
-    void connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, NodePairSet& cpySrcNodes);
+    void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F, NodePairSet& cpySrcNodes);
 
     /// Merge sub node to its rep
     virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);

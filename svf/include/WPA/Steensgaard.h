@@ -23,7 +23,7 @@ class Steensgaard : public AndersenBase
 public:
     typedef Map<NodeID, NodeID> NodeToEquivClassMap;
     typedef Map<NodeID, Set<NodeID>> NodeToSubsMap;
-    typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
+    typedef OrderedMap<const CallICFGNode*, NodeID> CallSite2DummyValPN;
 
     /// Constructor
     Steensgaard(SVFIR* _pag) : AndersenBase(_pag, Steensgaard_WPA, true) {}
@@ -121,13 +121,13 @@ protected:
     callsite2DummyValPN; ///< Map an instruction to a dummy obj which
     ///< created at an indirect callsite, which invokes
     ///< a heap allocator
-    void heapAllocatorViaIndCall(CallSite cs, NodePairSet& cpySrcNodes);
+    void heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet& cpySrcNodes);
 
     /// Update call graph for the input indirect callsites
     virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
 
     /// Connect formal and actual parameters for indirect callsites
-    void connectCaller2CalleeParams(CallSite cs, const SVFFunction* F,
+    void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F,
                                     NodePairSet& cpySrcNodes);
 
 private:

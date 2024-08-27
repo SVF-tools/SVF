@@ -373,8 +373,6 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
                     svfcall->addArgument(svfval);
                 }
             }
-            LLVMUtil::getNextInsts(inst, getSVFInstruction(inst)->getSuccInstructions());
-            LLVMUtil::getPrevInsts(inst, getSVFInstruction(inst)->getPredInstructions());
         }
     }
     // For no return functions, we set the last block as exit BB

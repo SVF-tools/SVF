@@ -1,4 +1,4 @@
-//===----- CHGBuiler.cpp -- Class hierarchy graph builder ---------------------------//
+//===----- CHGBuilder.cpp -- Class hierarchy graph builder ---------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * CHGBuiler.cpp
+ * CHGBuilder.cpp
  *
  *  Created on: Jun 4, 2021
  *      Author: Yulei Sui
@@ -679,10 +679,10 @@ void CHGBuilder::buildCSToCHAVtblsAndVfnsMap()
                     }
                     if (vtbls.size() > 0)
                     {
-                        CallSite cs(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(callInst));
+                        const SVFInstruction* cs = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(callInst);
                         chg->csToCHAVtblsMap[cs] = vtbls;
                         VFunSet virtualFunctions;
-                        chg->getVFnsFromVtbls(cs, vtbls, virtualFunctions);
+                        chg->getVFnsFromVtbls(SVFUtil::cast<SVFCallInst>(cs), vtbls, virtualFunctions);
                         if (virtualFunctions.size() > 0)
                             chg->csToCHAVFnsMap[cs] = virtualFunctions;
                     }

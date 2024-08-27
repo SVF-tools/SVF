@@ -148,7 +148,6 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
     SVFIR* svfir = PAG::getPAG();
     const SVFFunction *fun = SVFUtil::getCallee(call->getCallSite());
     assert(fun && "SVFFunction* is nullptr");
-    CallSite cs = SVFUtil::getSVFCallSite(call);
 
     AbstractInterpretation::ExtAPIType extType = AbstractInterpretation::UNCLASSIFIED;
 
@@ -177,10 +176,10 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
                                               extAPIBufOverflowCheckRules.at(fun->getName());
         for (auto arg : args)
         {
-            IntervalValue offset = as[svfir->getValueNode(cs.getArgument(arg.second))].getInterval() - IntervalValue(1);
-            if (!canSafelyAccessMemory(as, cs.getArgument(arg.first), offset))
+            IntervalValue offset = as[svfir->getValueNode(call->getArgument(arg.second))].getInterval() - IntervalValue(1);
+            if (!canSafelyAccessMemory(as, call->getArgument(arg.first), offset))
             {
-                AEException bug(call->getCallSite()->toString());
+                AEException bug(call->toString());
                 addBugToReporter(bug, call);
             }
         }
@@ -196,10 +195,10 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
                                               extAPIBufOverflowCheckRules.at(fun->getName());
         for (auto arg : args)
         {
-            IntervalValue offset = as[svfir->getValueNode(cs.getArgument(arg.second))].getInterval() - IntervalValue(1);
-            if (!canSafelyAccessMemory(as, cs.getArgument(arg.first), offset))
+            IntervalValue offset = as[svfir->getValueNode(call->getArgument(arg.second))].getInterval() - IntervalValue(1);
+            if (!canSafelyAccessMemory(as, call->getArgument(arg.first), offset))
             {
-                AEException bug(call->getCallSite()->toString());
+                AEException bug(call->toString());
                 addBugToReporter(bug, call);
             }
         }
@@ -208,7 +207,7 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
     {
         if (!detectStrcpy(as, call))
         {
-            AEException bug(call->getCallSite()->toString());
+            AEException bug(call->toString());
             addBugToReporter(bug, call);
         }
     }
@@ -216,7 +215,7 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
     {
         if (!detectStrcat(as, call))
         {
-            AEException bug(call->getCallSite()->toString());
+            AEException bug(call->toString());
             addBugToReporter(bug, call);
         }
     }
@@ -322,9 +321,8 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(SVF::AddressValue gepAddrs,
  */
 bool BufOverflowDetector::detectStrcpy(AbstractState& as, const CallICFGNode *call)
 {
-    CallSite cs = SVFUtil::getSVFCallSite(call);
-    const SVFValue* arg0Val = cs.getArgument(0);
-    const SVFValue* arg1Val = cs.getArgument(1);
+    const SVFValue* arg0Val = call->getArgument(0);
+    const SVFValue* arg1Val = call->getArgument(1);
     IntervalValue strLen = AbstractInterpretation::getAEInstance().getStrlen(as, arg1Val);
     return canSafelyAccessMemory(as, arg0Val, strLen);
 }
@@ -349,9 +347,8 @@ bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *ca
 
     if (std::find(strcatGroup.begin(), strcatGroup.end(), fun->getName()) != strcatGroup.end())
     {
-        CallSite cs = SVFUtil::getSVFCallSite(call);
-        const SVFValue* arg0Val = cs.getArgument(0);
-        const SVFValue* arg1Val = cs.getArgument(1);
+        const SVFValue* arg0Val = call->getArgument(0);
+        const SVFValue* arg1Val = call->getArgument(1);
         IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getStrlen(as, arg0Val);
         IntervalValue strLen1 = AbstractInterpretation::getAEInstance().getStrlen(as, arg1Val);
         IntervalValue totalLen = strLen0 + strLen1;
@@ -359,9 +356,8 @@ bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *ca
     }
     else if (std::find(strncatGroup.begin(), strncatGroup.end(), fun->getName()) != strncatGroup.end())
     {
-        CallSite cs = SVFUtil::getSVFCallSite(call);
-        const SVFValue* arg0Val = cs.getArgument(0);
-        const SVFValue* arg2Val = cs.getArgument(2);
+        const SVFValue* arg0Val = call->getArgument(0);
+        const SVFValue* arg2Val = call->getArgument(2);
         IntervalValue arg2Num = as[svfir->getValueNode(arg2Val)].getInterval();
         IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getStrlen(as, arg0Val);
         IntervalValue totalLen = strLen0 + arg2Num;

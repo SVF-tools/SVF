@@ -42,7 +42,7 @@ class CFLAlias : public CFLBase
 {
 
 public:
-    typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
+    typedef OrderedMap<const CallICFGNode*, NodeID> CallSite2DummyValPN;
 
     CFLAlias(SVFIR* ir) : CFLBase(ir, PointerAnalysis::CFLFICI_WPA)
     {
@@ -143,9 +143,9 @@ public:
     virtual void onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges);
 
     /// Connect formal and actual parameters for indirect callsites
-    void connectCaller2CalleeParams(CallSite cs, const SVFFunction* F);
+    void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F);
 
-    void heapAllocatorViaIndCall(CallSite cs);
+    void heapAllocatorViaIndCall(const CallICFGNode* cs);
 
 private:
     CallSite2DummyValPN callsite2DummyValPN;        ///< Map an instruction to a dummy obj which created at an indirect callsite, which invokes a heap allocator

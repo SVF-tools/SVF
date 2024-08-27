@@ -377,7 +377,7 @@ private:
     bool sameLoopTripCount(const ICFGNode* forkSite, const ICFGNode* joinSite);
 
     /// Whether it is a matched fork join pair
-    bool isAliasedForkJoin(const ICFGNode* forkSite, const ICFGNode* joinSite)
+    bool isAliasedForkJoin(const CallICFGNode* forkSite, const CallICFGNode* joinSite)
     {
         return tct->getPTA()->alias(getForkedThread(forkSite), getJoinedThread(joinSite)) && isSameSCEV(forkSite,joinSite);
     }
@@ -469,12 +469,12 @@ private:
         return getTCG()->getThreadAPI()->isTDJoin(call);
     }
     /// Get forked thread
-    inline const SVFValue* getForkedThread(const ICFGNode* call)
+    inline const SVFValue* getForkedThread(const CallICFGNode* call)
     {
         return getTCG()->getThreadAPI()->getForkedThread(call);
     }
     /// Get joined thread
-    inline const SVFValue* getJoinedThread(const ICFGNode* call)
+    inline const SVFValue* getJoinedThread(const CallICFGNode* call)
     {
         return getTCG()->getThreadAPI()->getJoinedThread(call);
     }

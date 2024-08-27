@@ -179,7 +179,7 @@ const std::string CallCFGEdge::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "CallCFGEdge " << " [ICFGNode";
-    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << cs->toString() << "\t";
+    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << getSrcNode()->toString() << "\t";
     return rawstr.str();
 }
 
@@ -188,7 +188,7 @@ const std::string RetCFGEdge::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "RetCFGEdge " << " [ICFGNode";
-    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << cs->toString() << "\t";
+    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << getDstNode()->toString() << "\t";
     return rawstr.str();
 }
 
@@ -438,7 +438,7 @@ ICFGEdge* ICFG::addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, co
 /*!
  * Add interprocedural call edges between two nodes
  */
-ICFGEdge* ICFG::addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFInstruction*  cs)
+ICFGEdge* ICFG::addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode)
 {
     ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::CallCF);
     if (edge != nullptr)
@@ -448,7 +448,7 @@ ICFGEdge* ICFG::addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFInstr
     }
     else
     {
-        CallCFGEdge* callEdge = new CallCFGEdge(srcNode,dstNode,cs);
+        CallCFGEdge* callEdge = new CallCFGEdge(srcNode,dstNode);
         return (addICFGEdge(callEdge) ? callEdge : nullptr);
     }
 }
@@ -456,7 +456,7 @@ ICFGEdge* ICFG::addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFInstr
 /*!
  * Add interprocedural return edges between two nodes
  */
-ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFInstruction*  cs)
+ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode)
 {
     ICFGEdge* edge = hasInterICFGEdge(srcNode, dstNode, ICFGEdge::RetCF);
     if (edge != nullptr)
@@ -466,7 +466,7 @@ ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFInstru
     }
     else
     {
-        RetCFGEdge* retEdge = new RetCFGEdge(srcNode,dstNode,cs);
+        RetCFGEdge* retEdge = new RetCFGEdge(srcNode,dstNode);
         return (addICFGEdge(retEdge) ? retEdge : nullptr);
     }
 }
@@ -513,7 +513,7 @@ void ICFG::updateCallGraph(CallGraph* callgraph)
             {
                 FunEntryICFGNode* calleeEntryNode = getFunEntryBlock(callee);
                 FunExitICFGNode* calleeExitNode = getFunExitBlock(callee);
-                if(ICFGEdge* callEdge = addCallEdge(callBlockNode, calleeEntryNode, cs))
+                if(ICFGEdge* callEdge = addCallEdge(callBlockNode, calleeEntryNode))
                 {
                     for (const SVFStmt *stmt : callBlockNode->getSVFStmts())
                     {
@@ -524,7 +524,7 @@ void ICFG::updateCallGraph(CallGraph* callgraph)
                         }
                     }
                 }
-                if(ICFGEdge* retEdge = addRetEdge(calleeExitNode, retBlockNode, cs))
+                if(ICFGEdge* retEdge = addRetEdge(calleeExitNode, retBlockNode))
                 {
                     for (const SVFStmt *stmt : retBlockNode->getSVFStmts())
                     {
@@ -650,9 +650,12 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>
         std::string str;
         std::stringstream rawstr(str);
         if (CallCFGEdge* dirCall = SVFUtil::dyn_cast<CallCFGEdge>(edge))
-            rawstr << dirCall->getCallSite();
+            rawstr << dirCall->getSrcNode();
         else if (RetCFGEdge* dirRet = SVFUtil::dyn_cast<RetCFGEdge>(edge))
-            rawstr << dirRet->getCallSite();
+        {
+            if(RetICFGNode* ret = SVFUtil::dyn_cast<RetICFGNode>(dirRet->getDstNode()))
+                rawstr << ret->getCallICFGNode();
+        }
 
         return rawstr.str();
     }

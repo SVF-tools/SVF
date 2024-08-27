@@ -637,15 +637,11 @@ class SVFInstruction : public SVFValue
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
-public:
-    typedef std::vector<const SVFInstruction*> InstVec;
 
 private:
     const SVFBasicBlock* bb;    /// The BasicBlock where this Instruction resides
     bool terminator;    /// return true if this is a terminator instruction
     bool ret;           /// return true if this is an return instruction of a function
-    InstVec succInsts;  /// successor Instructions
-    InstVec predInsts;  /// predecessor Instructions
 
 public:
     /// Constructor without name, set name with setName()
@@ -665,34 +661,9 @@ public:
         return bb;
     }
 
-    inline InstVec& getSuccInstructions()
-    {
-        return succInsts;
-    }
-
-    inline InstVec& getPredInstructions()
-    {
-        return predInsts;
-    }
-
-    inline const InstVec& getSuccInstructions() const
-    {
-        return succInsts;
-    }
-
-    inline const InstVec& getPredInstructions() const
-    {
-        return predInsts;
-    }
-
     inline const SVFFunction* getFunction() const
     {
         return bb->getParent();
-    }
-
-    inline bool isTerminator() const
-    {
-        return terminator;
     }
 
     inline bool isRetInst() const
@@ -1115,98 +1086,6 @@ public:
 };
 
 
-class CallSite
-{
-    friend class SVFIRReader;
-
-private:
-    const SVFCallInst* CB;
-
-    /// Constructs empty CallSite (for SVFIRReader/deserialization)
-    CallSite() : CB{} {}
-
-public:
-    CallSite(const SVFInstruction* I) : CB(SVFUtil::dyn_cast<SVFCallInst>(I))
-    {
-        assert(CB && "not a callsite?");
-    }
-    const SVFInstruction* getInstruction() const
-    {
-        return CB;
-    }
-    const SVFValue* getArgument(u32_t ArgNo) const
-    {
-        return CB->getArgOperand(ArgNo);
-    }
-    const SVFType* getType() const
-    {
-        return CB->getType();
-    }
-    u32_t arg_size() const
-    {
-        return CB->arg_size();
-    }
-    bool arg_empty() const
-    {
-        return CB->arg_empty();
-    }
-    const SVFValue* getArgOperand(u32_t i) const
-    {
-        return CB->getArgOperand(i);
-    }
-    u32_t getNumArgOperands() const
-    {
-        return CB->arg_size();
-    }
-    const SVFFunction* getCalledFunction() const
-    {
-        return CB->getCalledFunction();
-    }
-    const SVFValue* getCalledValue() const
-    {
-        return CB->getCalledOperand();
-    }
-    const SVFFunction* getCaller() const
-    {
-        return CB->getCaller();
-    }
-    bool isVarArg() const
-    {
-        return CB->isVarArg();
-    }
-    bool isVirtualCall() const
-    {
-        return SVFUtil::isa<SVFVirtualCallInst>(CB);
-    }
-    const SVFValue* getVtablePtr() const
-    {
-        assert(isVirtualCall() && "not a virtual call?");
-        return SVFUtil::cast<SVFVirtualCallInst>(CB)->getVtablePtr();
-    }
-    s32_t getFunIdxInVtable() const
-    {
-        assert(isVirtualCall() && "not a virtual call?");
-        return SVFUtil::cast<SVFVirtualCallInst>(CB)->getFunIdxInVtable();
-    }
-    const std::string& getFunNameOfVirtualCall() const
-    {
-        assert(isVirtualCall() && "not a virtual call?");
-        return SVFUtil::cast<SVFVirtualCallInst>(CB)->getFunNameOfVirtualCall();
-    }
-    bool operator==(const CallSite& CS) const
-    {
-        return CB == CS.CB;
-    }
-    bool operator!=(const CallSite& CS) const
-    {
-        return CB != CS.CB;
-    }
-    bool operator<(const CallSite& CS) const
-    {
-        return getInstruction() < CS.getInstruction();
-    }
-};
-
 /// [FOR DEBUG ONLY, DON'T USE IT UNSIDE `svf`!]
 /// Converts an SVFValue to corresponding LLVM::Value, then get the string
 /// representation of it. Use it only when you are debugging. Don't use
@@ -1221,15 +1100,5 @@ OutStream& operator<< (OutStream &o, const std::pair<F, S> &var)
 }
 
 } // End namespace SVF
-
-/// Specialise hash for CallSites.
-template <> struct std::hash<SVF::CallSite>
-{
-    size_t operator()(const SVF::CallSite &cs) const
-    {
-        std::hash<const SVF::SVFInstruction *> h;
-        return h(cs.getInstruction());
-    }
-};
 
 #endif /* INCLUDE_SVFIR_SVFVALUE_H_ */

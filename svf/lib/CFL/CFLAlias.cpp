@@ -42,9 +42,9 @@ void CFLAlias::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, Call
     {
         const CallICFGNode* cs = iter->first;
 
-        if (SVFUtil::getSVFCallSite(cs).isVirtualCall())
+        if (cs->isVirtualCall())
         {
-            const SVFValue* vtbl = SVFUtil::getSVFCallSite(cs).getVtablePtr();
+            const SVFValue* vtbl = cs->getVtablePtr();
             assert(pag->hasValueNode(vtbl));
             NodeID vtblId = pag->getValueNode(vtbl);
             resolveCPPIndCalls(cs, getCFLPts(vtblId), newEdges);
@@ -58,14 +58,14 @@ void CFLAlias::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, Call
  * Connect formal and actual parameters for indirect callsites
  */
 
-void CFLAlias::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F)
+void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F)
 {
     assert(F);
 
-    DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << cs.getInstruction()->toString() << " to callee " << *F << "\n");
+    DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << cs->toString() << " to callee " << *F << "\n");
 
-    CallICFGNode* callBlockNode = svfir->getICFG()->getCallICFGNode(cs.getInstruction());
-    RetICFGNode* retBlockNode = svfir->getICFG()->getRetICFGNode(cs.getInstruction());
+    const CallICFGNode* callBlockNode = cs;
+    const RetICFGNode* retBlockNode = cs->getRetICFGNode();
 
     if(SVFUtil::isHeapAllocExtFunViaRet(F) && svfir->callsiteHasRet(retBlockNode))
     {
@@ -136,15 +136,15 @@ void CFLAlias::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F)
         if(csArgIt != csArgEit)
         {
             writeWrnMsg("too many args to non-vararg func.");
-            writeWrnMsg("(" + cs.getInstruction()->getSourceLoc() + ")");
+            writeWrnMsg("(" + cs->getSourceLoc() + ")");
         }
     }
 }
 
-void CFLAlias::heapAllocatorViaIndCall(CallSite cs)
+void CFLAlias::heapAllocatorViaIndCall(const CallICFGNode* cs)
 {
     assert(SVFUtil::getCallee(cs) == nullptr && "not an indirect callsite?");
-    RetICFGNode* retBlockNode = svfir->getICFG()->getRetICFGNode(cs.getInstruction());
+    const RetICFGNode* retBlockNode = cs->getRetICFGNode();
     const PAGNode* cs_return = svfir->getCallSiteRet(retBlockNode);
     NodeID srcret;
     CallSite2DummyValPN::const_iterator it = callsite2DummyValPN.find(cs);
@@ -155,7 +155,7 @@ void CFLAlias::heapAllocatorViaIndCall(CallSite cs)
     else
     {
         NodeID valNode = svfir->addDummyValNode();
-        NodeID objNode = svfir->addDummyObjNode(cs.getType());
+        NodeID objNode = svfir->addDummyObjNode(cs->getCallSite()->getType());
         callsite2DummyValPN.insert(std::make_pair(cs,valNode));
         graph->addCFLNode(valNode, new CFLNode(valNode));
         graph->addCFLNode(objNode, new CFLNode(objNode));
@@ -175,10 +175,9 @@ bool CFLAlias::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     onTheFlyCallGraphSolve(callsites,newEdges);
     for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it )
     {
-        CallSite cs = SVFUtil::getSVFCallSite(it->first);
         for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
         {
-            connectCaller2CalleeParams(cs,*cit);
+            connectCaller2CalleeParams(it->first,*cit);
         }
     }
 

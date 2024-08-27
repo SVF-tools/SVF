@@ -200,11 +200,6 @@ inline bool isNonInstricCallSite(const ICFGNode* inst)
     return isCallSite(inst);
 }
 
-
-/// Return callsite given an instruction
-CallSite getSVFCallSite(const ICFGNode* inst);
-
-
 /// Match arguments for callsite at caller and callee
 /// if the arg size does not match then we do not need to connect this parameter
 /// unless the callee is a variadic function (the first parameter of variadic function is its parameter number)
@@ -235,18 +230,19 @@ inline std::vector<std::string> split(const std::string& s, char separator)
 
 /// Return callee of a callsite. Return null if this is an indirect call
 //@{
-inline const SVFFunction* getCallee(const CallSite cs)
+inline const SVFFunction* getCallee(const SVFCallInst* cs)
 {
-    return cs.getCalledFunction();
+    return cs->getCalledFunction();
 }
 
 inline const SVFFunction* getCallee(const SVFInstruction *inst)
 {
     if (!isCallSite(inst))
         return nullptr;
-    CallSite cs(inst);
-    return getCallee(cs);
+    return getCallee(cast<SVFCallInst>(inst));
 }
+
+const SVFFunction* getCallee(const CallICFGNode *inst);
 
 const SVFFunction* getCallee(const ICFGNode *inst);
 //@}
@@ -401,47 +397,37 @@ inline bool isArgOfUncalledFunction(const SVFValue* svfval)
 
 /// Return thread fork function
 //@{
-inline const SVFValue* getForkedFun(const ICFGNode *inst)
+inline const SVFValue* getForkedFun(const CallICFGNode *inst)
 {
     return ThreadAPI::getThreadAPI()->getForkedFun(inst);
 }
 //@}
 
 
-inline bool isExtCall(const CallSite cs)
+inline bool isExtCall(const CallICFGNode* cs)
 {
     return isExtCall(getCallee(cs));
 }
 
 bool isExtCall(const ICFGNode* node);
 
-inline bool isExtCall(const SVFInstruction *inst)
-{
-    return isExtCall(getCallee(inst));
-}
-
-inline bool isHeapAllocExtCallViaArg(const CallSite cs)
+inline bool isHeapAllocExtCallViaArg(const CallICFGNode* cs)
 {
     return isHeapAllocExtFunViaArg(getCallee(cs));
 }
 
 inline bool isHeapAllocExtCallViaArg(const SVFInstruction *inst)
 {
-    return isHeapAllocExtFunViaArg(getCallee(inst));
+    if(const SVFCallInst* call = SVFUtil::dyn_cast<SVFCallInst>(inst))
+        return isHeapAllocExtFunViaArg(call->getCalledFunction());
+    else
+        return false;
 }
+
+bool isHeapAllocExtCallViaRet(const SVFInstruction *inst);
 
 /// interfaces to be used externally
-inline bool isHeapAllocExtCallViaRet(const CallSite cs)
-{
-    bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
-    return isPtrTy && isHeapAllocExtFunViaRet(getCallee(cs));
-}
-
-inline bool isHeapAllocExtCallViaRet(const SVFInstruction *inst)
-{
-    bool isPtrTy = inst->getType()->isPointerTy();
-    return isPtrTy && isHeapAllocExtFunViaRet(getCallee(inst));
-}
+bool isHeapAllocExtCallViaRet(const CallICFGNode* cs);
 
 bool isHeapAllocExtCall(const ICFGNode* cs);
 
@@ -449,19 +435,16 @@ inline bool isHeapAllocExtCall(const SVFInstruction *inst)
 {
     return isHeapAllocExtCallViaRet(inst) || isHeapAllocExtCallViaArg(inst);
 }
+
 //@}
 
-inline int getHeapAllocHoldingArgPosition(const CallSite cs)
+inline int getHeapAllocHoldingArgPosition(const CallICFGNode* cs)
 {
     return getHeapAllocHoldingArgPosition(getCallee(cs));
 }
 //@}
 
-inline bool isReallocExtCall(const CallSite cs)
-{
-    bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
-    return isPtrTy && isReallocExtFun(getCallee(cs));
-}
+bool isReallocExtCall(const CallICFGNode* cs);
 //@}
 
 /// Return true if this is a thread creation call
@@ -514,14 +497,14 @@ inline bool isBarrierWaitCall(const ICFGNode* cs)
 
 /// Return sole argument of the thread routine
 //@{
-inline const SVFValue* getActualParmAtForkSite(const ICFGNode* cs)
+inline const SVFValue* getActualParmAtForkSite(const CallICFGNode* cs)
 {
     return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(cs);
 }
 //@}
 
 
-inline bool isProgExitCall(const CallSite cs)
+inline bool isProgExitCall(const CallICFGNode* cs)
 {
     return isProgExitFunction(getCallee(cs));
 }
