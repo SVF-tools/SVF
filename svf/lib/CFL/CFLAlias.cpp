@@ -42,9 +42,9 @@ void CFLAlias::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, Call
     {
         const CallICFGNode* cs = iter->first;
 
-        if (SVFUtil::getSVFCallSite(cs).isVirtualCall())
+        if (cs->isVirtualCall())
         {
-            const SVFValue* vtbl = SVFUtil::getSVFCallSite(cs).getVtablePtr();
+            const SVFValue* vtbl = cs->getVtablePtr();
             assert(pag->hasValueNode(vtbl));
             NodeID vtblId = pag->getValueNode(vtbl);
             resolveCPPIndCalls(cs, getCFLPts(vtblId), newEdges);

@@ -77,10 +77,9 @@ void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites
     for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter)
     {
         const CallICFGNode* cbn = iter->first;
-        CallSite cs = SVFUtil::getSVFCallSite(cbn);
-        if (cs.isVirtualCall())
+        if (cbn->isVirtualCall())
         {
-            const SVFValue* vtbl = cs.getVtablePtr();
+            const SVFValue* vtbl = cbn->getVtablePtr();
             (void)vtbl; // Suppress warning of unused variable under release build
             assert(pag->hasValueNode(vtbl));
             VFunSet vfns;

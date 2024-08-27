@@ -246,7 +246,7 @@ public:
     inline bool isExtCall(const ICFGNode* inst)
     {
         if(const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst))
-            return SVFUtil::isExtCall(call->getCallSite());
+            return SVFUtil::isExtCall(call);
         return false;
     }
     /// Whether it is a callsite

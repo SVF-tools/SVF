@@ -127,13 +127,13 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
     const SVFCallInst* svfCall = SVFUtil::cast<SVFCallInst>(svfInst);
     const CallICFGNode *callICFGNode = pag->getICFG()->getCallICFGNode(svfInst);
 
-    if (isHeapAllocExtCallViaRet(svfCall))
+    if (isHeapAllocExtCallViaRet(callICFGNode))
     {
         NodeID val = pag->getValueNode(svfInst);
         NodeID obj = pag->getObjectNode(svfInst);
         addAddrWithHeapSz(obj, val, cs);
     }
-    else if (isHeapAllocExtCallViaArg(svfCall))
+    else if (isHeapAllocExtCallViaArg(callICFGNode))
     {
         u32_t arg_pos = getHeapAllocHoldingArgPosition(svfCallee);
         const SVFValue* arg = svfCall->getArgOperand(arg_pos);

@@ -1179,11 +1179,6 @@ cJSON* SVFIRWriter::toJson(const CHEdge* edge)
     return jsonCreateIndex(chgWriter.getEdgeID(edge));
 }
 
-cJSON* SVFIRWriter::toJson(const CallSite& cs)
-{
-    return toJson(cs.getInstruction());
-}
-
 cJSON* SVFIRWriter::toJson(const SVFLoop* loop)
 {
     return jsonCreateIndex(icfgWriter.getSvfLoopID(loop));
@@ -1853,11 +1848,6 @@ void SVFIRReader::readJson(const cJSON* obj, CHEdge*& edge)
 {
     assert(!edge && "CHEdge already read?");
     edge = chGraphReader.getEdgePtr(jsonGetNumber(obj));
-}
-
-void SVFIRReader::readJson(const cJSON* obj, CallSite& cs)
-{
-    readJson(obj, cs.CB);
 }
 
 void SVFIRReader::readJson(const cJSON* obj, AccessPath& ap)

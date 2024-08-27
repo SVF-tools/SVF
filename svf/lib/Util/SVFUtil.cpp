@@ -319,11 +319,10 @@ void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
 /// for variadic function, callsite arg size must be greater than or equal to callee arg size
 bool SVFUtil::matchArgs(const CallICFGNode* call, const SVFFunction* callee)
 {
-    CallSite cs(call->getCallSite());
     if (callee->isVarArg() || ThreadAPI::getThreadAPI()->isTDFork(call))
-        return cs.arg_size() >= callee->arg_size();
+        return call->arg_size() >= callee->arg_size();
     else
-        return cs.arg_size() == callee->arg_size();
+        return call->arg_size() == callee->arg_size();
 }
 
 bool SVFUtil::isCallSite(const ICFGNode* inst)
@@ -331,19 +330,11 @@ bool SVFUtil::isCallSite(const ICFGNode* inst)
     return SVFUtil::isa<CallICFGNode>(inst);
 }
 
-CallSite SVFUtil::getSVFCallSite(const ICFGNode* inst)
-{
-    assert(isCallSite(inst) && "not a callsite?");
-    CallSite cs(cast<CallICFGNode>(inst)->getCallSite());
-    return cs;
-}
-
 bool SVFUtil::isIntrinsicInst(const ICFGNode* inst)
 {
     if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst))
     {
-        CallSite cs(call->getCallSite());
-        const SVFFunction* func = cs.getCalledFunction();
+        const SVFFunction* func = call->getCalledFunction();
         if (func && func->isIntrinsic())
         {
             return true;
@@ -356,22 +347,47 @@ const SVFFunction* SVFUtil::getCallee(const ICFGNode *inst)
 {
     if (!isCallSite(inst))
         return nullptr;
-    CallSite cs(cast<CallICFGNode>(inst)->getCallSite());
-    return getCallee(cs);
+    const CallICFGNode* call = SVFUtil::cast<CallICFGNode>(inst);
+    return call->getCalledFunction();
 }
+
+const SVFFunction* SVFUtil::getCallee(const CallICFGNode *inst)
+{
+    return inst->getCalledFunction();
+}
+
 
 bool SVFUtil::isExtCall(const ICFGNode* node)
 {
     if(!isCallSite(node)) return false;
-    CallSite cs(cast<CallICFGNode>(node)->getCallSite());
-    return isExtCall(getCallee(cs));
+    return isExtCall(getCallee(node));
 }
 
 bool SVFUtil::isHeapAllocExtCall(const ICFGNode* cs)
 {
     if(!isCallSite(cs)) return false;
-    CallSite callSite(cast<CallICFGNode>(cs)->getCallSite());
-    return isHeapAllocExtCallViaRet(callSite) || isHeapAllocExtCallViaArg(callSite);
+    return isHeapAllocExtCallViaRet(cast<CallICFGNode>(cs)) || isHeapAllocExtCallViaArg(cast<CallICFGNode>(cs));
+}
+
+bool SVFUtil::isHeapAllocExtCallViaRet(const CallICFGNode* cs)
+{
+    bool isPtrTy = cs->getCallSite()->getType()->isPointerTy();
+    return isPtrTy && isHeapAllocExtFunViaRet(getCallee(cs));
+}
+
+bool SVFUtil::isReallocExtCall(const CallICFGNode* cs)
+{
+    bool isPtrTy = cs->getCallSite()->getType()->isPointerTy();
+    return isPtrTy && isReallocExtFun(getCallee(cs));
+}
+
+bool SVFUtil::isHeapAllocExtCallViaRet(const SVFInstruction *inst)
+{
+    bool isPtrTy = inst->getType()->isPointerTy();
+    if(const SVFCallInst* call = SVFUtil::dyn_cast<SVFCallInst>(inst))
+        return isPtrTy && isHeapAllocExtFunViaRet(call->getCalledFunction());
+    else
+        return false;
 }
 
 bool SVFUtil::isRetInstNode(const ICFGNode* node)
