@@ -229,7 +229,7 @@ private:
 public:
     /// Constructor
     RetCFGEdge(ICFGNode* s, ICFGNode* d)
-        : ICFGEdge(s, d, RetCF)
+        : ICFGEdge(s, d, RetCF), retPE(nullptr)
     {
     }
     /// Add call parameter edge to this CallCFGEdge
