@@ -137,7 +137,7 @@ public:
     //@{
     bool isTDFork(const CallICFGNode *inst) const;
     //@}
-    
+
     /// Return true if this call wait for a worker thread
     //@{
     bool isTDJoin(const CallICFGNode *inst) const;
