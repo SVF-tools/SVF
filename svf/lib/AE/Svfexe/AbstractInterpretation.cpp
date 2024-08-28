@@ -616,8 +616,7 @@ void AbstractInterpretation::handleCallSite(const ICFGNode* node)
 
 bool AbstractInterpretation::isExtCall(const SVF::CallICFGNode *callNode)
 {
-    const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
-    return SVFUtil::isExtCall(callfun);
+    return SVFUtil::isExtCall(callNode->getCalledFunction());
 }
 
 void AbstractInterpretation::extCallPass(const SVF::CallICFGNode *callNode)
@@ -629,8 +628,7 @@ void AbstractInterpretation::extCallPass(const SVF::CallICFGNode *callNode)
 
 bool AbstractInterpretation::isRecursiveCall(const SVF::CallICFGNode *callNode)
 {
-    const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
-    return recursiveFuns.find(callfun) != recursiveFuns.end();
+    return recursiveFuns.find(callNode->getCalledFunction()) != recursiveFuns.end();
 }
 
 void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode)
@@ -654,18 +652,16 @@ void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode
 
 bool AbstractInterpretation::isDirectCall(const SVF::CallICFGNode *callNode)
 {
-    const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
-    return funcToWTO.find(callfun) != funcToWTO.end();
+    return funcToWTO.find(callNode->getCalledFunction()) != funcToWTO.end();
 }
 void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
-    const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
     callSiteStack.push_back(callNode);
 
     abstractTrace[callNode] = as;
 
-    ICFGWTO* wto = funcToWTO[callfun];
+    ICFGWTO* wto = funcToWTO[callNode->getCalledFunction()];
     handleWTOComponents(wto->getWTOComponents());
 
     callSiteStack.pop_back();
@@ -819,7 +815,6 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
 void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
-    const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
     const RetICFGNode *retNode = callNode->getRetICFGNode();
     if (retNode->getSVFStmts().size() > 0)
     {
@@ -843,7 +838,7 @@ void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
     }
     FIFOWorkList<const SVFBasicBlock *> blkWorkList;
     FIFOWorkList<const ICFGNode *> instWorklist;
-    for (const SVFBasicBlock * bb: callfun->getReachableBBs())
+    for (const SVFBasicBlock * bb: callNode->getCalledFunction()->getReachableBBs())
     {
         for (const ICFGNode* node: bb->getICFGNodeList())
         {
