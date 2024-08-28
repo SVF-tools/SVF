@@ -319,8 +319,7 @@ protected:
 
     ICFG* icfg;
     AEStat* stat;
-    CallGraph* _callgraph;
-
+    CallGraph* callGraph;
 
     std::vector<const CallICFGNode*> callSiteStack;
     Map<const CallGraphNode*, ICFGWTO*> funcToWTO;
