@@ -360,19 +360,36 @@ public:
      */
     void reportBug()
     {
-        // if (!nodeToBugInfo.empty())
-        // {
-        //     std::cerr << "######################Buffer Overflow (" + std::to_string(nodeToBugInfo.size())
-        //               + " found)######################\n";
-        //     std::cerr << "---------------------------------------------\n";
-        //     for (const auto& it : nodeToBugInfo)
-        //     {
-        //         std::cerr << it.second << "\n---------------------------------------------\n";
-        //     }
-        // }
-        std::cerr << "###################### NULL POINTER DEREFERENCE found ######################\n";
+        std::cerr << "######################Buffer Overflow (" + std::to_string(bugLoc.size())
+                    + " found)######################\n";
         std::cerr << "---------------------------------------------\n";
+        for (std::string loc : bugLoc)
+        {
+            std::cerr << loc << "\n---------------------------------------------\n";
+        }
     }
+
+
+    void addBugToReporter(const SVFStmt *stmt)
+    {
+        const SVFInstruction* inst = stmt->getInst();
+        SVFBugEvent sourceInstEvent(SVFBugEvent::EventType::SourceInst, inst);
+
+        std::string loc = sourceInstEvent.getEventLoc(); // Get the location of the last event in the stack
+
+        // Check if the bug at this location has already been reported
+        if (bugLoc.find(loc) != bugLoc.end())
+        {
+            return; // If the bug location is already reported, return early
+        }
+        else
+        {
+            bugLoc.insert(loc); // Otherwise, mark this location as reported
+        }
+    }
+
+private:
+    Set<std::string> bugLoc;    ///< Set of locations where bugs have been reported.
 };
 
 }

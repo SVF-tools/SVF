@@ -452,7 +452,8 @@ void NullPtrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
             for (const auto &addr: addrs.getAddrs()) {
                 AbstractValue v = as.load(addr);
                 if (v.getInterval().isBottom() && v.getAddrs().isBottom()) {
-                    std::cout << "NULL POINTER DEREFERENCING DETECTED @ " << load->toString() << std::endl;
+                    // std::cout << "NULL POINTER DEREFERENCING DETECTED @ " << load->toString() << std::endl;
+                    addBugToReporter(load);
                 }
             }
         }
