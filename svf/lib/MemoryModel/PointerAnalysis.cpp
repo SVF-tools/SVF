@@ -509,7 +509,7 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
 
         for(const CallICFGNode* callNode : pag->getCallSiteSet())
         {
-            if (SVFUtil::getCallee(callNode) == checkFun)
+            if (callNode->getCalledFunction() == checkFun)
             {
                 assert(callNode->getNumArgOperands() == 2
                        && "arguments should be two pointers!!");
@@ -574,7 +574,7 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
 
         for(const CallICFGNode* callNode : pag->getCallSiteSet())
         {
-            if (SVFUtil::getCallee(callNode) == checkFun)
+            if (callNode->getCalledFunction() == checkFun)
             {
                 assert(callNode->arg_size() == 2
                        && "arguments should be two pointers!!");

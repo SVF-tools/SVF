@@ -233,7 +233,7 @@ InterICFGNode* ICFGBuilder::addInterBlockICFGNode(const SVFInstruction* inst)
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
     CallICFGNode* callICFGNode = icfg->addCallICFGNode(inst);
     (void) icfg->addRetICFGNode(inst);
-    addICFGInterEdges(inst, getCallee(inst));                       //creating interprocedural edges
+    addICFGInterEdges(inst, callICFGNode->getCalledFunction());                       //creating interprocedural edges
     return callICFGNode;
 }
 

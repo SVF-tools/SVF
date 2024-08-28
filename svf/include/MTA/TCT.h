@@ -364,7 +364,7 @@ public:
     }
 
     /// Get loop for join site
-    inline LoopBBs& getJoinLoop(const ICFGNode* join)
+    inline LoopBBs& getJoinLoop(const CallICFGNode* join)
     {
         assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
         InstToLoopMap::iterator it = joinSiteToLoopMap.find(join);
@@ -372,7 +372,7 @@ public:
         return it->second;
     }
 
-    inline bool hasJoinLoop(const ICFGNode* join) const
+    inline bool hasJoinLoop(const CallICFGNode* join) const
     {
         assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
         InstToLoopMap::const_iterator it = joinSiteToLoopMap.find(join);
@@ -407,7 +407,7 @@ public:
             MaxCxtSize = cxt.size();
     }
     /// Whether a join site is in recursion
-    inline bool isJoinSiteInRecursion(const ICFGNode* join) const
+    inline bool isJoinSiteInRecursion(const CallICFGNode* join) const
     {
         assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
         return inRecurJoinSites.find(join)!=inRecurJoinSites.end();

@@ -343,24 +343,34 @@ bool SVFUtil::isIntrinsicInst(const ICFGNode* inst)
     return false;
 }
 
-const SVFFunction* SVFUtil::getCallee(const ICFGNode *inst)
+bool SVFUtil::isExtCall(const CallICFGNode* cs)
 {
-    if (!isCallSite(inst))
-        return nullptr;
-    const CallICFGNode* call = SVFUtil::cast<CallICFGNode>(inst);
-    return call->getCalledFunction();
+    return isExtCall(cs->getCalledFunction());
 }
 
-const SVFFunction* SVFUtil::getCallee(const CallICFGNode *inst)
+bool SVFUtil::isHeapAllocExtCallViaArg(const CallICFGNode* cs)
 {
-    return inst->getCalledFunction();
+    return isHeapAllocExtFunViaArg(cs->getCalledFunction());
+}
+
+bool SVFUtil::isHeapAllocExtCallViaArg(const SVFInstruction *inst)
+{
+    if(const SVFCallInst* call = SVFUtil::dyn_cast<SVFCallInst>(inst))
+        return isHeapAllocExtFunViaArg(call->getCalledFunction());
+    else
+        return false;
+}
+
+u32_t SVFUtil::getHeapAllocHoldingArgPosition(const CallICFGNode* cs)
+{
+    return getHeapAllocHoldingArgPosition(cs->getCalledFunction());
 }
 
 
 bool SVFUtil::isExtCall(const ICFGNode* node)
 {
     if(!isCallSite(node)) return false;
-    return isExtCall(getCallee(node));
+    return isExtCall(cast<CallICFGNode>(node)->getCalledFunction());
 }
 
 bool SVFUtil::isHeapAllocExtCall(const ICFGNode* cs)
@@ -372,13 +382,13 @@ bool SVFUtil::isHeapAllocExtCall(const ICFGNode* cs)
 bool SVFUtil::isHeapAllocExtCallViaRet(const CallICFGNode* cs)
 {
     bool isPtrTy = cs->getCallSite()->getType()->isPointerTy();
-    return isPtrTy && isHeapAllocExtFunViaRet(getCallee(cs));
+    return isPtrTy && isHeapAllocExtFunViaRet(cs->getCalledFunction());
 }
 
 bool SVFUtil::isReallocExtCall(const CallICFGNode* cs)
 {
     bool isPtrTy = cs->getCallSite()->getType()->isPointerTy();
-    return isPtrTy && isReallocExtFun(getCallee(cs));
+    return isPtrTy && isReallocExtFun(cs->getCalledFunction());
 }
 
 bool SVFUtil::isHeapAllocExtCallViaRet(const SVFInstruction *inst)
@@ -396,4 +406,9 @@ bool SVFUtil::isRetInstNode(const ICFGNode* node)
         return intraNode->getInst()->isRetInst();
     else
         return false;
+}
+
+bool SVFUtil::isProgExitCall(const CallICFGNode* cs)
+{
+    return isProgExitFunction(cs->getCalledFunction());
 }
