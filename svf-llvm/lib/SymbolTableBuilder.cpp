@@ -594,7 +594,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
     const Type* inferedType = nullptr;
     assert(originalPType && "empty type?");
     const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
-    if(SVFUtil::isHeapAllocExtCallViaRet(svfinst))
+    if(LLVMUtil::isHeapAllocExtCallViaRet(inst))
     {
         if(const Value* v = getFirstUseViaCastInst(inst))
         {
@@ -894,9 +894,8 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
     }
     /// if val is heap alloc
     else if (SVFUtil::isa<Instruction>(val) &&
-             isHeapAllocExtCall(
-                 LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(
-                     SVFUtil::cast<Instruction>(val))))
+             LLVMUtil::isHeapAllocExtCall(
+                     SVFUtil::cast<Instruction>(val)))
     {
         elemNum = analyzeHeapObjType(typeinfo,val);
         // analyze heap alloc like (malloc/calloc/...), the alloc functions have

@@ -369,6 +369,15 @@ std::string dumpType(const Type* type);
 
 std::string dumpValueAndDbgInfo(const Value* val);
 
+bool isHeapAllocExtCallViaRet(const Instruction *inst);
+
+bool isHeapAllocExtCallViaArg(const Instruction *inst);
+
+inline bool isHeapAllocExtCall(const Instruction *inst)
+{
+    return isHeapAllocExtCallViaRet(inst) || isHeapAllocExtCallViaArg(inst);
+}
+
 } // End namespace LLVMUtil
 
 } // End namespace SVF

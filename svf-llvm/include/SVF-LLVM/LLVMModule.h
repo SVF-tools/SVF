@@ -369,6 +369,18 @@ public:
 
     ObjTypeInference* getTypeInference();
 
+    bool hasExtFuncAnnotation(const Function* fun, const std::string& funcAnnotation)
+    {
+        assert(fun && "Null Function* pointer");
+        auto it = ExtFun2Annotations.find(fun);
+        if(it == ExtFun2Annotations.end())
+            return false;
+        for (const std::string& annotation : it->second)
+            if (annotation.find(funcAnnotation) != std::string::npos)
+                return true;
+        return false;
+    }
+
 private:
     /// Create SVFTypes
     SVFType* addSVFTypeInfo(const Type* t);

@@ -68,7 +68,7 @@ const Function* LLVMUtil::getProgFunction(const std::string& funName)
  */
 bool LLVMUtil::isObject(const Value*  ref)
 {
-    if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isHeapAllocExtCallViaRet(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(ref))))
+    if (SVFUtil::isa<Instruction>(ref) && isHeapAllocExtCallViaRet(SVFUtil::cast<Instruction>(ref)))
         return true;
     if (SVFUtil::isa<GlobalVariable>(ref))
         return true;
@@ -840,6 +840,36 @@ std::string LLVMUtil::dumpValueAndDbgInfo(const Value *val)
     else
         rawstr << " llvm Value is null";
     return rawstr.str();
+}
+
+
+bool LLVMUtil::isHeapAllocExtCallViaRet(const Instruction *inst)
+{
+    LLVMModuleSet* pSet = LLVMModuleSet::getLLVMModuleSet();
+    bool isPtrTy = inst->getType()->isPointerTy();
+    if (const CallInst* call = SVFUtil::dyn_cast<CallInst>(inst))
+    {
+        Function* fun = call->getCalledFunction();
+        if (!fun)
+            return false;
+        bool isAllocOrRealloc = pSet->hasExtFuncAnnotation(fun, "ALLOC_RET") ||
+                                pSet->hasExtFuncAnnotation(fun, "REALLOC_RET");
+        return isPtrTy && isAllocOrRealloc;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool LLVMUtil::isHeapAllocExtCallViaArg(const Instruction* inst)
+{
+    if (const CallInst* call = SVFUtil::dyn_cast<CallInst>(inst))
+        return call->getCalledFunction() &&
+               LLVMModuleSet::getLLVMModuleSet()->hasExtFuncAnnotation(
+                   call->getCalledFunction(), "ALLOC_ARG");
+    else
+        return false;
 }
 
 namespace SVF

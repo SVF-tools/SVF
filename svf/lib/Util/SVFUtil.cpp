@@ -391,14 +391,6 @@ bool SVFUtil::isReallocExtCall(const CallICFGNode* cs)
     return isPtrTy && isReallocExtFun(cs->getCalledFunction());
 }
 
-bool SVFUtil::isHeapAllocExtCallViaRet(const SVFInstruction *inst)
-{
-    bool isPtrTy = inst->getType()->isPointerTy();
-    if(const SVFCallInst* call = SVFUtil::dyn_cast<SVFCallInst>(inst))
-        return isPtrTy && isHeapAllocExtFunViaRet(call->getCalledFunction());
-    else
-        return false;
-}
 
 bool SVFUtil::isRetInstNode(const ICFGNode* node)
 {
