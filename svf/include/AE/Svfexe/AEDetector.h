@@ -355,41 +355,42 @@ public:
      */
     void detect(AbstractState& as, const ICFGNode* node);
 
+    bool isNull(AbstractValue v);
+
     /**
-     * @brief Reports all detected buffer overflow bugs.
+     * @brief Reports all detected null pointer dereference bugs.
      */
     void reportBug()
     {
-        std::cerr << "######################Buffer Overflow (" + std::to_string(bugLoc.size())
-                    + " found)######################\n";
+        std::cerr << "###################### Null Pointer Dereference (" + std::to_string(stmtToBugInfo.size())
+                    + " found) ######################\n";
         std::cerr << "---------------------------------------------\n";
-        for (std::string loc : bugLoc)
-        {
-            std::cerr << loc << "\n---------------------------------------------\n";
+        for (const auto& it : stmtToBugInfo) {
+            const LoadStmt *l = it.first;
+            std::cerr << "Location: " << it.second << "\tLoadStmt: [Var" << l->getLHSVarID() << " <-- Var" << l->getRHSVarID() << "]" << "\n---------------------------------------------\n";
         }
     }
 
-
-    void addBugToReporter(const SVFStmt *stmt)
+    /**
+     * @brief record a bug.
+     * @param stmt The SVF statement that triggers the null pointer dereference.
+     */
+    void recordBug(const LoadStmt *stmt)
     {
         const SVFInstruction* inst = stmt->getInst();
         SVFBugEvent sourceInstEvent(SVFBugEvent::EventType::SourceInst, inst);
 
         std::string loc = sourceInstEvent.getEventLoc(); // Get the location of the last event in the stack
 
-        // Check if the bug at this location has already been reported
-        if (bugLoc.find(loc) != bugLoc.end())
-        {
-            return; // If the bug location is already reported, return early
-        }
-        else
-        {
-            bugLoc.insert(loc); // Otherwise, mark this location as reported
+        if (bugLoc.find(loc) == bugLoc.end()) {
+            bugLoc.insert(loc);
+            stmtToBugInfo[stmt] = loc;
         }
     }
 
 private:
     Set<std::string> bugLoc;    ///< Set of locations where bugs have been reported.
+    Map<const LoadStmt*, std::string> stmtToBugInfo; ///< Maps SVF stmt to bug information.
 };
 
 }

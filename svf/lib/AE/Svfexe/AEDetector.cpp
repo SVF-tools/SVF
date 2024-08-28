@@ -451,11 +451,20 @@ void NullPtrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
             AbstractValue &addrs = as[rhs];
             for (const auto &addr: addrs.getAddrs()) {
                 AbstractValue v = as.load(addr);
-                if (v.getInterval().isBottom() && v.getAddrs().isBottom()) {
-                    // std::cout << "NULL POINTER DEREFERENCING DETECTED @ " << load->toString() << std::endl;
-                    addBugToReporter(load);
+                if (isNull(v)) {
+                    recordBug(load);
                 }
             }
         }
     }
+}
+
+/**
+ * @brief Check if an Abstract Value is NULL.
+ *
+ * @param v An Abstract Value of loaded from an address in an Abstract State.
+ */
+bool NullPtrDerefDetector::isNull(AbstractValue v) {
+    bool is = v.getInterval().isBottom() && v.getAddrs().isBottom();
+    return is;
 }
