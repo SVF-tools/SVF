@@ -354,6 +354,25 @@ public:
      * @param node Pointer to the ICFG node.
      */
     void detect(AbstractState& as, const ICFGNode* node);
+
+    /**
+     * @brief Reports all detected buffer overflow bugs.
+     */
+    void reportBug()
+    {
+        // if (!nodeToBugInfo.empty())
+        // {
+        //     std::cerr << "######################Buffer Overflow (" + std::to_string(nodeToBugInfo.size())
+        //               + " found)######################\n";
+        //     std::cerr << "---------------------------------------------\n";
+        //     for (const auto& it : nodeToBugInfo)
+        //     {
+        //         std::cerr << it.second << "\n---------------------------------------------\n";
+        //     }
+        // }
+        std::cerr << "###################### NULL POINTER DEREFERENCE found ######################\n";
+        std::cerr << "---------------------------------------------\n";
+    }
 };
 
 }
