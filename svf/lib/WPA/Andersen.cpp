@@ -679,7 +679,7 @@ bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites)
 
 void Andersen::heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet &cpySrcNodes)
 {
-    assert(SVFUtil::getCallee(cs) == nullptr && "not an indirect callsite?");
+    assert(cs->getCalledFunction() == nullptr && "not an indirect callsite?");
     const RetICFGNode* retBlockNode = cs->getRetICFGNode();
     const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
     NodeID srcret;

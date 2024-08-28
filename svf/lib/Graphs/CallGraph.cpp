@@ -45,13 +45,13 @@ CallSiteID CallGraph::totalCallSiteNum = 1;
 //@{
 void CallGraphEdge::addDirectCallSite(const CallICFGNode* call)
 {
-    assert(SVFUtil::getCallee(call->getCallSite()) && "not a direct callsite??");
+    assert(call->getCalledFunction() && "not a direct callsite??");
     directCalls.insert(call);
 }
 
 void CallGraphEdge::addInDirectCallSite(const CallICFGNode* call)
 {
-    assert((nullptr == SVFUtil::getCallee(call->getCallSite()) || nullptr == SVFUtil::dyn_cast<SVFFunction> (SVFUtil::getForkedFun(call))) && "not an indirect callsite??");
+    assert((nullptr == call->getCalledFunction() || nullptr == SVFUtil::dyn_cast<SVFFunction> (SVFUtil::getForkedFun(call))) && "not an indirect callsite??");
     indirectCalls.insert(call);
 }
 //@}

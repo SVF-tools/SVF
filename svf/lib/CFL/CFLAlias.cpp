@@ -143,7 +143,7 @@ void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunct
 
 void CFLAlias::heapAllocatorViaIndCall(const CallICFGNode* cs)
 {
-    assert(SVFUtil::getCallee(cs) == nullptr && "not an indirect callsite?");
+    assert(cs->getCalledFunction() == nullptr && "not an indirect callsite?");
     const RetICFGNode* retBlockNode = cs->getRetICFGNode();
     const PAGNode* cs_return = svfir->getCallSiteRet(retBlockNode);
     NodeID srcret;

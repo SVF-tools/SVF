@@ -303,7 +303,8 @@ const std::string SVFBugEvent::getEventDescription() const
     case SVFBugEvent::CallSite:
     {
         std::string description("calls ");
-        const SVFFunction *callee = SVFUtil::getCallee(eventInst);
+        assert(SVFUtil::isa<CallICFGNode>(eventInst) && "not a call ICFGNode?");
+        const SVFFunction *callee = SVFUtil::cast<CallICFGNode>(eventInst)->getCalledFunction();
         if(callee == nullptr)
         {
             description += "<unknown>";

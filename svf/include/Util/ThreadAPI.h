@@ -119,19 +119,6 @@ public:
         }
     }
 
-    /// Return the callee/callsite/func
-    //@{
-    const SVFFunction* getCallee(const ICFGNode *inst) const;
-    //@}
-
-    /// Return true if this call create a new thread
-    //@{
-    inline bool isTDFork(const ICFGNode *inst) const
-    {
-        return getType(getCallee(inst)) == TD_FORK;
-    }
-    //@}
-
     /// Return arguments/attributes of pthread_create / hare_parallel_for
     //@{
     /// Return the first argument of the call,
@@ -146,12 +133,14 @@ public:
     const SVFValue* getActualParmAtForkSite(const CallICFGNode *inst) const;
     //@}
 
+    /// Return true if this call create a new thread
+    //@{
+    bool isTDFork(const CallICFGNode *inst) const;
+    //@}
+    
     /// Return true if this call wait for a worker thread
     //@{
-    inline bool isTDJoin(const ICFGNode *inst) const
-    {
-        return getType(getCallee(inst)) == TD_JOIN;
-    }
+    bool isTDJoin(const CallICFGNode *inst) const;
     //@}
 
     /// Return arguments/attributes of pthread_join
@@ -167,26 +156,17 @@ public:
 
     /// Return true if this call exits/terminate a thread
     //@{
-    inline bool isTDExit(const ICFGNode *inst) const
-    {
-        return getType(getCallee(inst)) == TD_EXIT;
-    }
+    bool isTDExit(const CallICFGNode *inst) const;
     //@}
 
     /// Return true if this call acquire a lock
     //@{
-    inline bool isTDAcquire(const ICFGNode* inst) const
-    {
-        return getType(getCallee(inst)) == TD_ACQUIRE;
-    }
+    bool isTDAcquire(const CallICFGNode* inst) const;
     //@}
 
     /// Return true if this call release a lock
     //@{
-    inline bool isTDRelease(const ICFGNode *inst) const
-    {
-        return getType(getCallee(inst)) == TD_RELEASE;
-    }
+    bool isTDRelease(const CallICFGNode *inst) const;
     //@}
 
     /// Return lock value
@@ -197,10 +177,7 @@ public:
 
     /// Return true if this call waits for a barrier
     //@{
-    inline bool isTDBarWait(const ICFGNode *inst) const
-    {
-        return getType(getCallee(inst)) == TD_BAR_WAIT;
-    }
+    bool isTDBarWait(const CallICFGNode *inst) const;
     //@}
 
     void performAPIStat(SVFModule* m);

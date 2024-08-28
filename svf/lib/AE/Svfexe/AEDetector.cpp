@@ -94,8 +94,7 @@ void BufOverflowDetector::detect(AbstractState& as, const ICFGNode* node)
     {
         // Handle call nodes by checking for external API calls
         const CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(node);
-        const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
-        if (SVFUtil::isExtCall(callfun))
+        if (SVFUtil::isExtCall(callNode->getCalledFunction()))
         {
             detectExtAPI(as, callNode);
         }
@@ -146,13 +145,12 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
                                        const CallICFGNode* call)
 {
     SVFIR* svfir = PAG::getPAG();
-    const SVFFunction *fun = SVFUtil::getCallee(call->getCallSite());
-    assert(fun && "SVFFunction* is nullptr");
+    assert(call->getCalledFunction() && "SVFFunction* is nullptr");
 
     AbstractInterpretation::ExtAPIType extType = AbstractInterpretation::UNCLASSIFIED;
 
     // Determine the type of external memory API
-    for (const std::string &annotation : fun->getAnnotations())
+    for (const std::string &annotation : call->getCalledFunction()->getAnnotations())
     {
         if (annotation.find("MEMCPY") != std::string::npos)
             extType = AbstractInterpretation::MEMCPY;
@@ -167,13 +165,13 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
     // Apply buffer overflow checks based on the determined API type
     if (extType == AbstractInterpretation::MEMCPY)
     {
-        if (extAPIBufOverflowCheckRules.count(fun->getName()) == 0)
+        if (extAPIBufOverflowCheckRules.count(call->getCalledFunction()->getName()) == 0)
         {
-            SVFUtil::errs() << "Warning: " << fun->getName() << " is not in the rules, please implement it\n";
+            SVFUtil::errs() << "Warning: " << call->getCalledFunction()->getName() << " is not in the rules, please implement it\n";
             return;
         }
         std::vector<std::pair<u32_t, u32_t>> args =
-                                              extAPIBufOverflowCheckRules.at(fun->getName());
+                                              extAPIBufOverflowCheckRules.at(call->getCalledFunction()->getName());
         for (auto arg : args)
         {
             IntervalValue offset = as[svfir->getValueNode(call->getArgument(arg.second))].getInterval() - IntervalValue(1);
@@ -186,13 +184,13 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
     }
     else if (extType == AbstractInterpretation::MEMSET)
     {
-        if (extAPIBufOverflowCheckRules.count(fun->getName()) == 0)
+        if (extAPIBufOverflowCheckRules.count(call->getCalledFunction()->getName()) == 0)
         {
-            SVFUtil::errs() << "Warning: " << fun->getName() << " is not in the rules, please implement it\n";
+            SVFUtil::errs() << "Warning: " << call->getCalledFunction()->getName() << " is not in the rules, please implement it\n";
             return;
         }
         std::vector<std::pair<u32_t, u32_t>> args =
-                                              extAPIBufOverflowCheckRules.at(fun->getName());
+                                              extAPIBufOverflowCheckRules.at(call->getCalledFunction()->getName());
         for (auto arg : args)
         {
             IntervalValue offset = as[svfir->getValueNode(call->getArgument(arg.second))].getInterval() - IntervalValue(1);
@@ -340,12 +338,11 @@ bool BufOverflowDetector::detectStrcpy(AbstractState& as, const CallICFGNode *ca
 bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *call)
 {
     SVFIR* svfir = PAG::getPAG();
-    const SVFFunction *fun = SVFUtil::getCallee(call->getCallSite());
 
     const std::vector<std::string> strcatGroup = {"__strcat_chk", "strcat", "__wcscat_chk", "wcscat"};
     const std::vector<std::string> strncatGroup = {"__strncat_chk", "strncat", "__wcsncat_chk", "wcsncat"};
 
-    if (std::find(strcatGroup.begin(), strcatGroup.end(), fun->getName()) != strcatGroup.end())
+    if (std::find(strcatGroup.begin(), strcatGroup.end(), call->getCalledFunction()->getName()) != strcatGroup.end())
     {
         const SVFValue* arg0Val = call->getArgument(0);
         const SVFValue* arg1Val = call->getArgument(1);
@@ -354,7 +351,7 @@ bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *ca
         IntervalValue totalLen = strLen0 + strLen1;
         return canSafelyAccessMemory(as, arg0Val, totalLen);
     }
-    else if (std::find(strncatGroup.begin(), strncatGroup.end(), fun->getName()) != strncatGroup.end())
+    else if (std::find(strncatGroup.begin(), strncatGroup.end(), call->getCalledFunction()->getName()) != strncatGroup.end())
     {
         const SVFValue* arg0Val = call->getArgument(0);
         const SVFValue* arg2Val = call->getArgument(2);

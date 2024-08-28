@@ -233,10 +233,11 @@ void MHP::handleFork(const CxtThreadStmt& cts, NodeID rootTid)
 void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
 {
 
-    const ICFGNode* call = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
 
-    assert(isTDJoin(call));
+    assert(isTDJoin(cts.getStmt()));
+
+    const CallICFGNode* call = SVFUtil::cast<CallICFGNode>(cts.getStmt());
 
     NodeBS joinedTids = getDirAndIndJoinedTid(curCxt, call);
     if (!joinedTids.empty())
@@ -479,8 +480,9 @@ bool MHP::isRecurFullJoin(NodeID parentTid, NodeID curTid)
  */
 bool MHP::isMustJoin(NodeID curTid, const ICFGNode* joinsite)
 {
-    assert(isTDJoin(joinsite) && "not a join site!");
-    return !isMultiForkedThread(curTid) && !tct->isJoinSiteInRecursion(joinsite);
+    const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(joinsite);
+    assert(call && isTDJoin(call) && "not a join site!");
+    return !isMultiForkedThread(curTid) && !tct->isJoinSiteInRecursion(call);
 }
 
 /*!
@@ -821,9 +823,9 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
 
         if (isAliasedForkJoin(SVFUtil::cast<CallICFGNode>(forkSite), SVFUtil::cast<CallICFGNode>(joinSite)))
         {
-            if (hasJoinLoop(joinSite))
+            if (hasJoinLoop(SVFUtil::cast<CallICFGNode>(forkSite)))
             {
-                LoopBBs& joinLoop = getJoinLoop(joinSite);
+                LoopBBs& joinLoop = getJoinLoop(SVFUtil::cast<CallICFGNode>(forkSite));
                 std::vector<const SVFBasicBlock *> exitbbs;
                 joinSite->getFun()->getExitBlocksOfLoop(joinSite->getBB(), exitbbs);
                 while (!exitbbs.empty())
@@ -853,7 +855,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
         /// we process the loop exit
         else
         {
-            if (hasJoinLoop(joinSite))
+            if (hasJoinLoop(SVFUtil::cast<CallICFGNode>(forkSite)))
             {
                 std::vector<const SVFBasicBlock*> exitbbs;
                 joinSite->getFun()->getExitBlocksOfLoop(joinSite->getBB(), exitbbs);

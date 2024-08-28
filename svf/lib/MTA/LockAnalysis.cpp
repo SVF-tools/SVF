@@ -76,11 +76,11 @@ void LockAnalysis::collectLockUnlocksites()
         {
             for (const ICFGNode* icfgNode : bb->getICFGNodeList())
             {
-                if (tcg->getThreadAPI()->isTDRelease(icfgNode))
+                if (isa<CallICFGNode>(icfgNode) && tcg->getThreadAPI()->isTDRelease(cast<CallICFGNode>(icfgNode)))
                 {
                     unlocksites.insert(icfgNode);
                 }
-                if (tcg->getThreadAPI()->isTDAcquire(icfgNode))
+                if (isa<CallICFGNode>(icfgNode) && tcg->getThreadAPI()->isTDAcquire(cast<CallICFGNode>(icfgNode)))
                 {
                     locksites.insert(icfgNode);
                 }

@@ -462,7 +462,7 @@ public:
     /// Return true if this is an indirect call
     inline bool isIndirectCall() const
     {
-        return nullptr == SVFUtil::getCallee(cs);
+        return nullptr == SVFUtil::cast<SVFCallInst>(cs)->getCalledFunction();
     }
 
     /// Return the set of actual parameters

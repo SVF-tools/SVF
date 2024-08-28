@@ -129,6 +129,37 @@ void ThreadAPI::init()
     }
 }
 
+bool ThreadAPI::isTDFork(const CallICFGNode *inst) const
+{
+    return getType(inst->getCalledFunction()) == TD_FORK;
+}
+
+bool ThreadAPI::isTDJoin(const CallICFGNode *inst) const
+{
+    return getType(inst->getCalledFunction()) == TD_JOIN;
+}
+
+bool ThreadAPI::isTDExit(const CallICFGNode *inst) const
+{
+    return getType(inst->getCalledFunction()) == TD_EXIT;
+}
+
+bool ThreadAPI::isTDAcquire(const CallICFGNode* inst) const
+{
+    return getType(inst->getCalledFunction()) == TD_ACQUIRE;
+}
+
+bool ThreadAPI::isTDRelease(const CallICFGNode *inst) const
+{
+    return getType(inst->getCalledFunction()) == TD_RELEASE;
+}
+
+bool ThreadAPI::isTDBarWait(const CallICFGNode *inst) const
+{
+    return getType(inst->getCalledFunction()) == TD_BAR_WAIT;
+}
+
+
 const SVFValue* ThreadAPI::getForkedThread(const CallICFGNode *inst) const
 {
     assert(isTDFork(inst) && "not a thread fork function!");
@@ -153,17 +184,6 @@ const SVFValue* ThreadAPI::getRetParmAtJoinedSite(const CallICFGNode *inst) cons
 {
     assert(isTDJoin(inst) && "not a thread join function!");
     return inst->getArgument(1);
-}
-
-/*!
- *
- */
-const SVFFunction* ThreadAPI::getCallee(const ICFGNode *inst) const
-{
-    if(const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst))
-        return SVFUtil::getCallee(call->getCallSite());
-    else
-        return nullptr;
 }
 
 const SVFValue* ThreadAPI::getLockVal(const ICFGNode *cs) const
@@ -251,7 +271,7 @@ void ThreadAPI::performAPIStat(SVFModule* module)
                 if (!SVFUtil::isCallSite(svfInst))
                     continue;
 
-                const SVFFunction* fun = SVFUtil::getCallee(svfInst);
+                const SVFFunction* fun = SVFUtil::cast<CallICFGNode>(svfInst)->getCalledFunction();
                 TD_TYPE type = getType(fun);
                 switch (type)
                 {

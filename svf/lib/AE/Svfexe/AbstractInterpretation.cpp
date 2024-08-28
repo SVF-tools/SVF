@@ -616,8 +616,7 @@ void AbstractInterpretation::handleCallSite(const ICFGNode* node)
 
 bool AbstractInterpretation::isExtCall(const SVF::CallICFGNode *callNode)
 {
-    const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
-    return SVFUtil::isExtCall(callfun);
+    return SVFUtil::isExtCall(callNode->getCalledFunction());
 }
 
 void AbstractInterpretation::extCallPass(const SVF::CallICFGNode *callNode)
@@ -629,8 +628,7 @@ void AbstractInterpretation::extCallPass(const SVF::CallICFGNode *callNode)
 
 bool AbstractInterpretation::isRecursiveCall(const SVF::CallICFGNode *callNode)
 {
-    const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
-    return recursiveFuns.find(callfun) != recursiveFuns.end();
+    return recursiveFuns.find(callNode->getCalledFunction()) != recursiveFuns.end();
 }
 
 void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode)
@@ -654,18 +652,16 @@ void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode
 
 bool AbstractInterpretation::isDirectCall(const SVF::CallICFGNode *callNode)
 {
-    const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
-    return funcToWTO.find(callfun) != funcToWTO.end();
+    return funcToWTO.find(callNode->getCalledFunction()) != funcToWTO.end();
 }
 void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
-    const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
     callSiteStack.push_back(callNode);
 
     abstractTrace[callNode] = as;
 
-    ICFGWTO* wto = funcToWTO[callfun];
+    ICFGWTO* wto = funcToWTO[callNode->getCalledFunction()];
     handleWTOComponents(wto->getWTOComponents());
 
     callSiteStack.pop_back();
@@ -819,7 +815,6 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
 void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
-    const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
     const RetICFGNode *retNode = callNode->getRetICFGNode();
     if (retNode->getSVFStmts().size() > 0)
     {
@@ -843,7 +838,7 @@ void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
     }
     FIFOWorkList<const SVFBasicBlock *> blkWorkList;
     FIFOWorkList<const ICFGNode *> instWorklist;
-    for (const SVFBasicBlock * bb: callfun->getReachableBBs())
+    for (const SVFBasicBlock * bb: callNode->getCalledFunction()->getReachableBBs())
     {
         for (const ICFGNode* node: bb->getICFGNodeList())
         {
@@ -1333,7 +1328,7 @@ std::string AbstractInterpretation::strRead(AbstractState& as, const SVFValue* r
 void AbstractInterpretation::handleExtAPI(const CallICFGNode *call)
 {
     AbstractState& as = getAbsStateFromTrace(call);
-    const SVFFunction *fun = SVFUtil::getCallee(call->getCallSite());
+    const SVFFunction *fun = call->getCalledFunction();
     assert(fun && "SVFFunction* is nullptr");
     ExtAPIType extType = UNCLASSIFIED;
     // get type of mem api
@@ -1404,7 +1399,7 @@ void AbstractInterpretation::collectCheckPoint()
         const ICFGNode* node = it->second;
         if (const CallICFGNode *call = SVFUtil::dyn_cast<CallICFGNode>(node))
         {
-            if (const SVFFunction *fun = SVFUtil::getCallee(call->getCallSite()))
+            if (const SVFFunction *fun = call->getCalledFunction())
             {
                 if (checkpoint_names.find(fun->getName()) !=
                         checkpoint_names.end())
@@ -1527,7 +1522,7 @@ void AbstractInterpretation::handleStrcat(const SVF::CallICFGNode *call)
     // __strcat_chk, strcat, __wcscat_chk, wcscat, __strncat_chk, strncat, __wcsncat_chk, wcsncat
     // to check it is  strcat group or strncat group
     AbstractState& as = getAbsStateFromTrace(call);
-    const SVFFunction *fun = SVFUtil::getCallee(call);
+    const SVFFunction *fun = call->getCalledFunction();
     const std::vector<std::string> strcatGroup = {"__strcat_chk", "strcat", "__wcscat_chk", "wcscat"};
     const std::vector<std::string> strncatGroup = {"__strncat_chk", "strncat", "__wcsncat_chk", "wcsncat"};
     if (std::find(strcatGroup.begin(), strcatGroup.end(), fun->getName()) != strcatGroup.end())

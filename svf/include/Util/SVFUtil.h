@@ -228,25 +228,6 @@ inline std::vector<std::string> split(const std::string& s, char separator)
     return output;
 }
 
-/// Return callee of a callsite. Return null if this is an indirect call
-//@{
-inline const SVFFunction* getCallee(const SVFCallInst* cs)
-{
-    return cs->getCalledFunction();
-}
-
-inline const SVFFunction* getCallee(const SVFInstruction *inst)
-{
-    if (!isCallSite(inst))
-        return nullptr;
-    return getCallee(cast<SVFCallInst>(inst));
-}
-
-const SVFFunction* getCallee(const CallICFGNode *inst);
-
-const SVFFunction* getCallee(const ICFGNode *inst);
-//@}
-
 /// Given a map mapping points-to sets to a count, adds from into to.
 template <typename Data>
 void mergePtsOccMaps(Map<Data, unsigned> &to, const Map<Data, unsigned> from)
@@ -332,7 +313,7 @@ inline bool isHeapAllocExtFunViaArg(const SVFFunction* fun)
 
 /// Get the position of argument that holds an allocated heap object.
 //@{
-inline int getHeapAllocHoldingArgPosition(const SVFFunction* fun)
+inline u32_t getHeapAllocHoldingArgPosition(const SVFFunction* fun)
 {
     return ExtAPI::getExtAPI()->get_alloc_arg_pos(fun);
 }
@@ -404,25 +385,13 @@ inline const SVFValue* getForkedFun(const CallICFGNode *inst)
 //@}
 
 
-inline bool isExtCall(const CallICFGNode* cs)
-{
-    return isExtCall(getCallee(cs));
-}
+bool isExtCall(const CallICFGNode* cs);
 
 bool isExtCall(const ICFGNode* node);
 
-inline bool isHeapAllocExtCallViaArg(const CallICFGNode* cs)
-{
-    return isHeapAllocExtFunViaArg(getCallee(cs));
-}
+bool isHeapAllocExtCallViaArg(const CallICFGNode* cs);
 
-inline bool isHeapAllocExtCallViaArg(const SVFInstruction *inst)
-{
-    if(const SVFCallInst* call = SVFUtil::dyn_cast<SVFCallInst>(inst))
-        return isHeapAllocExtFunViaArg(call->getCalledFunction());
-    else
-        return false;
-}
+bool isHeapAllocExtCallViaArg(const SVFInstruction *inst);
 
 bool isHeapAllocExtCallViaRet(const SVFInstruction *inst);
 
@@ -438,10 +407,7 @@ inline bool isHeapAllocExtCall(const SVFInstruction *inst)
 
 //@}
 
-inline int getHeapAllocHoldingArgPosition(const CallICFGNode* cs)
-{
-    return getHeapAllocHoldingArgPosition(getCallee(cs));
-}
+u32_t getHeapAllocHoldingArgPosition(const CallICFGNode* cs);
 //@}
 
 bool isReallocExtCall(const CallICFGNode* cs);
@@ -449,7 +415,7 @@ bool isReallocExtCall(const CallICFGNode* cs);
 
 /// Return true if this is a thread creation call
 ///@{
-inline bool isThreadForkCall(const ICFGNode *inst)
+inline bool isThreadForkCall(const CallICFGNode *inst)
 {
     return ThreadAPI::getThreadAPI()->isTDFork(inst);
 }
@@ -457,7 +423,7 @@ inline bool isThreadForkCall(const ICFGNode *inst)
 
 /// Return true if this is a thread join call
 ///@{
-inline bool isThreadJoinCall(const ICFGNode* cs)
+inline bool isThreadJoinCall(const CallICFGNode* cs)
 {
     return ThreadAPI::getThreadAPI()->isTDJoin(cs);
 }
@@ -465,7 +431,7 @@ inline bool isThreadJoinCall(const ICFGNode* cs)
 
 /// Return true if this is a thread exit call
 ///@{
-inline bool isThreadExitCall(const ICFGNode* cs)
+inline bool isThreadExitCall(const CallICFGNode* cs)
 {
     return ThreadAPI::getThreadAPI()->isTDExit(cs);
 }
@@ -473,7 +439,7 @@ inline bool isThreadExitCall(const ICFGNode* cs)
 
 /// Return true if this is a lock acquire call
 ///@{
-inline bool isLockAquireCall(const ICFGNode* cs)
+inline bool isLockAquireCall(const CallICFGNode* cs)
 {
     return ThreadAPI::getThreadAPI()->isTDAcquire(cs);
 }
@@ -481,7 +447,7 @@ inline bool isLockAquireCall(const ICFGNode* cs)
 
 /// Return true if this is a lock acquire call
 ///@{
-inline bool isLockReleaseCall(const ICFGNode* cs)
+inline bool isLockReleaseCall(const CallICFGNode* cs)
 {
     return ThreadAPI::getThreadAPI()->isTDRelease(cs);
 }
@@ -489,7 +455,7 @@ inline bool isLockReleaseCall(const ICFGNode* cs)
 
 /// Return true if this is a barrier wait call
 //@{
-inline bool isBarrierWaitCall(const ICFGNode* cs)
+inline bool isBarrierWaitCall(const CallICFGNode* cs)
 {
     return ThreadAPI::getThreadAPI()->isTDBarWait(cs);
 }
@@ -504,10 +470,7 @@ inline const SVFValue* getActualParmAtForkSite(const CallICFGNode* cs)
 //@}
 
 
-inline bool isProgExitCall(const CallICFGNode* cs)
-{
-    return isProgExitFunction(getCallee(cs));
-}
+bool isProgExitCall(const CallICFGNode* cs);
 
 
 template<typename T>

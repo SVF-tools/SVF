@@ -52,9 +52,9 @@ CallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
             {
                 if (SVFUtil::isNonInstricCallSite(inst))
                 {
-                    if(const SVFFunction* callee = getCallee(inst))
+                    const CallICFGNode* callBlockNode = cast<CallICFGNode>(inst);
+                    if(const SVFFunction* callee = callBlockNode->getCalledFunction())
                     {
-                        const CallICFGNode* callBlockNode = cast<CallICFGNode>(inst);
                         callgraph->addDirectCallGraphEdge(callBlockNode,*F,callee);
                     }
                 }
@@ -80,7 +80,7 @@ CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
         {
             for (const ICFGNode* inst : svfbb->getICFGNodeList())
             {
-                if (tdAPI->isTDFork(inst))
+                if (SVFUtil::isa<CallICFGNode>(inst) && tdAPI->isTDFork(SVFUtil::cast<CallICFGNode>(inst)))
                 {
                     const CallICFGNode* cs = cast<CallICFGNode>(inst);
                     cg->addForksite(cs);
@@ -105,7 +105,7 @@ CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
         {
             for (const ICFGNode* node : svfbb->getICFGNodeList())
             {
-                if (tdAPI->isTDJoin(node))
+                if (SVFUtil::isa<CallICFGNode>(node) && tdAPI->isTDJoin(SVFUtil::cast<CallICFGNode>(node)))
                 {
                     const CallICFGNode* cs = SVFUtil::cast<CallICFGNode>(node);
                     cg->addJoinsite(cs);
