@@ -216,7 +216,7 @@ public:
  */
 typedef GenericGraph<CallGraphNode,CallGraphEdge> GenericCallGraphTy;
 class CallGraph : public GenericCallGraphTy
-{ 
+{
 
 public:
     typedef CallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;

@@ -30,6 +30,7 @@
 #include "Util/Options.h"
 #include "Util/WorkList.h"
 #include <cmath>
+
 using namespace SVF;
 using namespace SVFUtil;
 using namespace z3;
@@ -105,6 +106,7 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
 AbstractInterpretation::AbstractInterpretation()
 {
     stat = new AEStat(this);
+    callGraph = nullptr;
     initExtFunMap();
 }
 /// Destructor
