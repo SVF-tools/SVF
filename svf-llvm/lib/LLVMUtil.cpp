@@ -842,23 +842,13 @@ std::string LLVMUtil::dumpValueAndDbgInfo(const Value *val)
     return rawstr.str();
 }
 
-const Function* LLVMUtil::getDefCalledFunOfCallBase(const CallBase* cb)
-{
-    auto called_llvmval = cb->getCalledOperand()->stripPointerCasts();
-    if (const Function* called_llvmfunc =
-            SVFUtil::dyn_cast<Function>(called_llvmval))
-        return LLVMUtil::getDefFunForMultipleModule(called_llvmfunc);
-    else
-        return cb->getCalledFunction();
-}
-
 bool LLVMUtil::isHeapAllocExtCallViaRet(const Instruction* inst)
 {
     LLVMModuleSet* pSet = LLVMModuleSet::getLLVMModuleSet();
     bool isPtrTy = inst->getType()->isPointerTy();
     if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
     {
-        const Function* fun = getDefCalledFunOfCallBase(call);
+        const Function* fun = getCallee(call);
         return fun && isPtrTy &&
                (pSet->hasExtFuncAnnotation(fun, "ALLOC_RET") ||
                 pSet->hasExtFuncAnnotation(fun, "REALLOC_RET"));
@@ -871,7 +861,7 @@ bool LLVMUtil::isHeapAllocExtCallViaArg(const Instruction* inst)
 {
     if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
     {
-        const Function* fun = getDefCalledFunOfCallBase(call);
+        const Function* fun = getCallee(call);
         return fun && LLVMModuleSet::getLLVMModuleSet()->hasExtFuncAnnotation(
                           fun, "ALLOC_ARG");
     }
