@@ -353,13 +353,6 @@ bool SVFUtil::isHeapAllocExtCallViaArg(const CallICFGNode* cs)
     return isHeapAllocExtFunViaArg(cs->getCalledFunction());
 }
 
-bool SVFUtil::isHeapAllocExtCallViaArg(const SVFInstruction *inst)
-{
-    if(const SVFCallInst* call = SVFUtil::dyn_cast<SVFCallInst>(inst))
-        return isHeapAllocExtFunViaArg(call->getCalledFunction());
-    else
-        return false;
-}
 
 u32_t SVFUtil::getHeapAllocHoldingArgPosition(const CallICFGNode* cs)
 {
