@@ -849,11 +849,16 @@ bool LLVMUtil::isHeapAllocExtCallViaRet(const Instruction *inst)
     bool isPtrTy = inst->getType()->isPointerTy();
     if (const CallInst* call = SVFUtil::dyn_cast<CallInst>(inst))
     {
-        Function* fun = call->getCalledFunction();
+        const Function* fun = call->getCalledFunction();
         if (!fun)
             return false;
+        auto called_llvmval = call->getCalledOperand()->stripPointerCasts();
+        if (const Function* called_llvmfunc = SVFUtil::dyn_cast<Function>(called_llvmval))
+        {
+            fun = LLVMUtil::getDefFunForMultipleModule(called_llvmfunc);
+        }
         bool isAllocOrRealloc = pSet->hasExtFuncAnnotation(fun, "ALLOC_RET") ||
-                                pSet->hasExtFuncAnnotation(fun, "REALLOC_RET");
+                        pSet->hasExtFuncAnnotation(fun, "REALLOC_RET");
         return isPtrTy && isAllocOrRealloc;
     }
     else
