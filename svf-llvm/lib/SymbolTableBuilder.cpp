@@ -605,7 +605,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
         }
         inferedType = inferObjType(startValue);
     }
-    else if(SVFUtil::isHeapAllocExtCallViaArg(svfinst))
+    else if(LLVMUtil::isHeapAllocExtCallViaArg(inst))
     {
         const CallBase* cs = LLVMUtil::getLLVMCallSite(inst);
         u32_t arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::cast<SVFCallInst>(svfinst)->getCalledFunction());

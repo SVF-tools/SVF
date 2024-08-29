@@ -391,8 +391,6 @@ bool isExtCall(const ICFGNode* node);
 
 bool isHeapAllocExtCallViaArg(const CallICFGNode* cs);
 
-bool isHeapAllocExtCallViaArg(const SVFInstruction *inst);
-
 
 /// interfaces to be used externally
 bool isHeapAllocExtCallViaRet(const CallICFGNode* cs);
