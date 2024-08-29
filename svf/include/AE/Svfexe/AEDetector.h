@@ -367,7 +367,10 @@ public:
         std::cerr << "---------------------------------------------\n";
         for (const auto& it : stmtToBugInfo) {
             const LoadStmt *l = it.first;
-            std::cerr << "Location: " << it.second << "\tLoadStmt: [Var" << l->getLHSVarID() << " <-- Var" << l->getRHSVarID() << "]" << "\n---------------------------------------------\n";
+            if (it.second != "")
+                std::cerr << "Location: " << it.second << "\tLoadStmt: [Var" << l->getLHSVarID() << " <-- Var" << l->getRHSVarID() << "]" << "\n---------------------------------------------\n";
+            else
+                std::cerr << "Location: " << l->toString() << "\n---------------------------------------------\n";
         }
     }
 
