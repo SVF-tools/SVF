@@ -842,39 +842,43 @@ std::string LLVMUtil::dumpValueAndDbgInfo(const Value *val)
     return rawstr.str();
 }
 
+const Function* LLVMUtil::getDefCalledFunOfCallBase(const CallBase* cb)
+{
+    auto called_llvmval = cb->getCalledOperand()->stripPointerCasts();
+    if (const Function* called_llvmfunc =
+            SVFUtil::dyn_cast<Function>(called_llvmval))
+        return LLVMUtil::getDefFunForMultipleModule(called_llvmfunc);
+    else
+        return cb->getCalledFunction();
+}
 
-bool LLVMUtil::isHeapAllocExtCallViaRet(const Instruction *inst)
+bool LLVMUtil::isHeapAllocExtCallViaRet(const Instruction* inst)
 {
     LLVMModuleSet* pSet = LLVMModuleSet::getLLVMModuleSet();
     bool isPtrTy = inst->getType()->isPointerTy();
-    if (const CallInst* call = SVFUtil::dyn_cast<CallInst>(inst))
+    if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
     {
-        const Function* fun = call->getCalledFunction();
-        if (!fun)
-            return false;
-        auto called_llvmval = call->getCalledOperand()->stripPointerCasts();
-        if (const Function* called_llvmfunc = SVFUtil::dyn_cast<Function>(called_llvmval))
-        {
-            fun = LLVMUtil::getDefFunForMultipleModule(called_llvmfunc);
-        }
-        bool isAllocOrRealloc = pSet->hasExtFuncAnnotation(fun, "ALLOC_RET") ||
-                        pSet->hasExtFuncAnnotation(fun, "REALLOC_RET");
-        return isPtrTy && isAllocOrRealloc;
+        const Function* fun = getDefCalledFunOfCallBase(call);
+        return fun && isPtrTy &&
+               (pSet->hasExtFuncAnnotation(fun, "ALLOC_RET") ||
+                pSet->hasExtFuncAnnotation(fun, "REALLOC_RET"));
     }
     else
-    {
         return false;
-    }
 }
 
 bool LLVMUtil::isHeapAllocExtCallViaArg(const Instruction* inst)
 {
-    if (const CallInst* call = SVFUtil::dyn_cast<CallInst>(inst))
-        return call->getCalledFunction() &&
-               LLVMModuleSet::getLLVMModuleSet()->hasExtFuncAnnotation(
-                   call->getCalledFunction(), "ALLOC_ARG");
+    if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
+    {
+        const Function* fun = getDefCalledFunOfCallBase(call);
+        return fun && LLVMModuleSet::getLLVMModuleSet()->hasExtFuncAnnotation(
+                          fun, "ALLOC_ARG");
+    }
     else
+    {
         return false;
+    }
 }
 
 namespace SVF

@@ -369,6 +369,8 @@ std::string dumpType(const Type* type);
 
 std::string dumpValueAndDbgInfo(const Value* val);
 
+const Function* getDefCalledFunOfCallBase(const CallBase* cb);
+
 bool isHeapAllocExtCallViaRet(const Instruction *inst);
 
 bool isHeapAllocExtCallViaArg(const Instruction *inst);
