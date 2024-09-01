@@ -168,7 +168,7 @@ void AbstractInterpretation::handleGlobalNode()
 {
     const ICFGNode* node = icfg->getGlobalICFGNode();
     abstractTrace[node] = AbstractState();
-    abstractTrace[node][SymbolTableInfo::NullPtr] = AddressValue();
+    abstractTrace[node][SymbolTableInfo::NullPtr] = AddressValue(NullPtrAddr);    //
     // Global Node, we just need to handle addr, load, store, copy and gep
     for (const SVFStmt *stmt: node->getSVFStmts())
     {

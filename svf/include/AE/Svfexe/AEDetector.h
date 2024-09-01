@@ -355,7 +355,16 @@ public:
      */
     void detect(AbstractState& as, const ICFGNode* node);
 
-    bool isNull(AbstractValue v);
+    /**
+     * @brief Check if an Abstract Value is NULL.
+     *
+     * @param v An Abstract Value of loaded from an address in an Abstract State.
+     */
+    bool isNull(AbstractValue v) {
+        bool is = (v.getInterval().isBottom() && v.getAddrs().isBottom()) ||
+            v.getAddrs().contains(NullPtrAddr);
+        return is;
+    }
 
     /**
      * @brief Reports all detected null pointer dereference bugs.
@@ -366,11 +375,11 @@ public:
                     + " found) ######################\n";
         std::cerr << "---------------------------------------------\n";
         for (const auto& it : stmtToBugInfo) {
-            const LoadStmt *l = it.first;
-            if (it.second != "")
-                std::cerr << "Location: " << it.second << "\tLoadStmt: [Var" << l->getLHSVarID() << " <-- Var" << l->getRHSVarID() << "]" << "\n---------------------------------------------\n";
-            else
-                std::cerr << "Location: " << l->toString() << "\n---------------------------------------------\n";
+            const SVFStmt *l = it.first;
+            // if (it.second != "")
+            //     std::cerr << "Location: " << it.second << "\tStmt: [Var" << l->getSrcID() << " <-- Var" << l->getDstID() << "]" << "\n---------------------------------------------\n";
+            // else
+            std::cerr << "Location: " << l->toString() << "\n---------------------------------------------\n";
         }
     }
 
@@ -378,14 +387,16 @@ public:
      * @brief record a bug.
      * @param stmt The SVF statement that triggers the null pointer dereference.
      */
-    void recordBug(const LoadStmt *stmt)
+    void recordBug(const SVFStmt *stmt)
     {
         const SVFInstruction* inst = stmt->getInst();
         SVFBugEvent sourceInstEvent(SVFBugEvent::EventType::SourceInst, inst);
 
         std::string loc = sourceInstEvent.getEventLoc(); // Get the location of the last event in the stack
 
-        if (bugLoc.find(loc) == bugLoc.end()) {
+        if (loc == "") {
+            stmtToBugInfo[stmt] = loc;
+        } else if (bugLoc.find(loc) == bugLoc.end()) {
             bugLoc.insert(loc);
             stmtToBugInfo[stmt] = loc;
         }
@@ -393,7 +404,7 @@ public:
 
 private:
     Set<std::string> bugLoc;    ///< Set of locations where bugs have been reported.
-    Map<const LoadStmt*, std::string> stmtToBugInfo; ///< Maps SVF stmt to bug information.
+    Map<const SVFStmt*, std::string> stmtToBugInfo; ///< Maps SVF stmt to bug information.
 };
 
 }
