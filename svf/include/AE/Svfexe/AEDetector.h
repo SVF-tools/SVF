@@ -375,11 +375,8 @@ public:
                     + " found) ######################\n";
         std::cerr << "---------------------------------------------\n";
         for (const auto& it : stmtToBugInfo) {
-            const SVFStmt *l = it.first;
-            // if (it.second != "")
-            //     std::cerr << "Location: " << it.second << "\tStmt: [Var" << l->getSrcID() << " <-- Var" << l->getDstID() << "]" << "\n---------------------------------------------\n";
-            // else
-            std::cerr << "Location: " << l->toString() << "\n---------------------------------------------\n";
+            const SVFStmt *s = it.first;
+            std::cerr << "Location: " << s->toString() << "\n---------------------------------------------\n";
         }
     }
 
