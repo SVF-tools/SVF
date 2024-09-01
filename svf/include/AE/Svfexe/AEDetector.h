@@ -321,6 +321,11 @@ private:
     Map<const ICFGNode*, std::string> nodeToBugInfo; ///< Maps ICFG nodes to bug information.
 };
 
+
+/**
+ * @class NullPtrDerefDetector
+ * @brief Detector for identifying null pointer dereference issues.
+ */
 class NullPtrDerefDetector: public AEDetector {
     friend class AbstractInterpretation;
 public:
@@ -338,9 +343,9 @@ public:
     ~NullPtrDerefDetector() = default;
 
     /**
-     * @brief Check if the detector is of the BUF_OVERFLOW kind.
+     * @brief Check if the detector is of the NULLPTR_DEREF kind.
      * @param detector Pointer to the detector.
-     * @return True if the detector is of type BUF_OVERFLOW, false otherwise.
+     * @return True if the detector is of type NULLPTR_DEREF, false otherwise.
      */
     static bool classof(const AEDetector* detector)
     {
@@ -356,7 +361,7 @@ public:
     void detect(AbstractState& as, const ICFGNode* node);
 
     /**
-     * @brief Check if an Abstract Value is NULL.
+     * @brief Check if an Abstract Value is NULL (or uninitialized).
      *
      * @param v An Abstract Value of loaded from an address in an Abstract State.
      */

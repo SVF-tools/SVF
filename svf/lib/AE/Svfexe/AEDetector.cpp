@@ -437,10 +437,6 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
 /**
  * @brief Detects null pointer dereference issues within a given ICFG node.
  *
- * This function handles both non-call nodes, where it analyzes GEP (GetElementPtr)
- * instructions for potential buffer overflows, and call nodes, where it checks
- * for external API calls that may cause overflows.
- *
  * @param as Reference to the abstract state.
  * @param node Pointer to the ICFG node.
  */
