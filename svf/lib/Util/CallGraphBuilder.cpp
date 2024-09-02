@@ -48,13 +48,13 @@ CallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
     {
         for (const SVFBasicBlock* svfbb : (*F)->getBasicBlockList())
         {
-            for (const SVFInstruction* inst : svfbb->getInstructionList())
+            for (const ICFGNode* inst : svfbb->getICFGNodeList())
             {
                 if (SVFUtil::isNonInstricCallSite(inst))
                 {
-                    if(const SVFFunction* callee = getCallee(inst))
+                    const CallICFGNode* callBlockNode = cast<CallICFGNode>(inst);
+                    if(const SVFFunction* callee = callBlockNode->getCalledFunction())
                     {
-                        const CallICFGNode* callBlockNode = icfg->getCallICFGNode(inst);
                         callgraph->addDirectCallGraphEdge(callBlockNode,*F,callee);
                     }
                 }
@@ -78,13 +78,13 @@ CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
     {
         for (const SVFBasicBlock* svfbb : (*F)->getBasicBlockList())
         {
-            for (const SVFInstruction* inst : svfbb->getInstructionList())
+            for (const ICFGNode* inst : svfbb->getICFGNodeList())
             {
-                if (tdAPI->isTDFork(inst))
+                if (SVFUtil::isa<CallICFGNode>(inst) && tdAPI->isTDFork(SVFUtil::cast<CallICFGNode>(inst)))
                 {
-                    const CallICFGNode* cs = icfg->getCallICFGNode(inst);
+                    const CallICFGNode* cs = cast<CallICFGNode>(inst);
                     cg->addForksite(cs);
-                    const SVFFunction* forkee = SVFUtil::dyn_cast<SVFFunction>(tdAPI->getForkedFun(inst));
+                    const SVFFunction* forkee = SVFUtil::dyn_cast<SVFFunction>(tdAPI->getForkedFun(cs));
                     if (forkee)
                     {
                         cg->addDirectForkEdge(cs);
@@ -103,11 +103,11 @@ CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
     {
         for (const SVFBasicBlock* svfbb : (*F)->getBasicBlockList())
         {
-            for (const SVFInstruction* inst : svfbb->getInstructionList())
+            for (const ICFGNode* node : svfbb->getICFGNodeList())
             {
-                if (tdAPI->isTDJoin(inst))
+                if (SVFUtil::isa<CallICFGNode>(node) && tdAPI->isTDJoin(SVFUtil::cast<CallICFGNode>(node)))
                 {
-                    const CallICFGNode* cs = icfg->getCallICFGNode(inst);
+                    const CallICFGNode* cs = SVFUtil::cast<CallICFGNode>(node);
                     cg->addJoinsite(cs);
                 }
             }

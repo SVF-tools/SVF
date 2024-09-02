@@ -179,19 +179,13 @@ class CallCFGEdge : public ICFGEdge
     friend class SVFIRReader;
 
 private:
-    const SVFInstruction* cs;
     std::vector<const CallPE*> callPEs;
 
 public:
     /// Constructor
-    CallCFGEdge(ICFGNode* s, ICFGNode* d, const SVFInstruction* c)
-        : ICFGEdge(s, d, CallCF), cs(c)
+    CallCFGEdge(ICFGNode* s, ICFGNode* d)
+        : ICFGEdge(s, d, CallCF)
     {
-    }
-    /// Return callsite ID
-    inline const SVFInstruction* getCallSite() const
-    {
-        return cs;
     }
     /// Add call parameter edge to this CallCFGEdge
     inline void addCallPE(const CallPE* callPE)
@@ -230,19 +224,13 @@ class RetCFGEdge : public ICFGEdge
     friend class SVFIRReader;
 
 private:
-    const SVFInstruction* cs;
     const RetPE* retPE;
 
 public:
     /// Constructor
-    RetCFGEdge(ICFGNode* s, ICFGNode* d, const SVFInstruction* c)
-        : ICFGEdge(s, d, RetCF), cs(c), retPE(nullptr)
+    RetCFGEdge(ICFGNode* s, ICFGNode* d)
+        : ICFGEdge(s, d, RetCF), retPE(nullptr)
     {
-    }
-    /// Return callsite ID
-    inline const SVFInstruction* getCallSite() const
-    {
-        return cs;
     }
     /// Add call parameter edge to this CallCFGEdge
     inline void addRetPE(const RetPE* ret)

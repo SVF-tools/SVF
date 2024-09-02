@@ -524,6 +524,8 @@ public:
     }
 };
 
+class ICFGNode;
+
 class SVFBasicBlock : public SVFValue
 {
     friend class LLVMModuleSet;
@@ -531,21 +533,26 @@ class SVFBasicBlock : public SVFValue
     friend class SVFIRReader;
     friend class SVFIRBuilder;
     friend class SVFFunction;
+    friend class ICFGBuilder;
+    friend class ICFG;
 
 public:
-    typedef std::vector<const SVFInstruction*>::const_iterator const_iterator;
+    typedef std::vector<const ICFGNode*>::const_iterator const_iterator;
 
 private:
-    std::vector<const SVFInstruction*> allInsts;    ///< all Instructions in this BasicBlock
+    std::vector<const ICFGNode*> allICFGNodes;    ///< all ICFGNodes in this BasicBlock
     std::vector<const SVFBasicBlock*> succBBs;  ///< all successor BasicBlocks of this BasicBlock
     std::vector<const SVFBasicBlock*> predBBs;  ///< all predecessor BasicBlocks of this BasicBlock
     const SVFFunction* fun;                 /// Function where this BasicBlock is
 
 protected:
     ///@{ attributes to be set only through Module builders e.g., LLVMModule
-    inline void addInstruction(const SVFInstruction* inst)
+
+    inline void addICFGNode(const ICFGNode* icfgNode)
     {
-        allInsts.push_back(inst);
+        assert(std::find(getICFGNodeList().begin(), getICFGNodeList().end(),
+                         icfgNode) == getICFGNodeList().end() && "duplicated icfgnode");
+        allICFGNodes.push_back(icfgNode);
     }
 
     inline void addSuccBasicBlock(const SVFBasicBlock* succ)
@@ -570,19 +577,19 @@ public:
         return node->getKind() == SVFBB;
     }
 
-    inline const std::vector<const SVFInstruction*>& getInstructionList() const
+    inline const std::vector<const ICFGNode*>& getICFGNodeList() const
     {
-        return allInsts;
+        return allICFGNodes;
     }
 
     inline const_iterator begin() const
     {
-        return allInsts.begin();
+        return allICFGNodes.begin();
     }
 
     inline const_iterator end() const
     {
-        return allInsts.end();
+        return allICFGNodes.end();
     }
 
     inline const SVFFunction* getParent() const
@@ -595,19 +602,17 @@ public:
         return fun;
     }
 
-    inline const SVFInstruction* front() const
+    inline const ICFGNode* front() const
     {
-        return allInsts.front();
+        assert(!allICFGNodes.empty() && "bb empty?");
+        return allICFGNodes.front();
     }
 
-    inline const SVFInstruction* back() const
+    inline const ICFGNode* back() const
     {
-        return allInsts.back();
+        assert(!allICFGNodes.empty() && "bb empty?");
+        return allICFGNodes.back();
     }
-
-    /// Returns the terminator instruction if the block is well formed or null
-    /// if the block is not well formed.
-    const SVFInstruction* getTerminator() const;
 
     inline const std::vector<const SVFBasicBlock*>& getSuccessors() const
     {
@@ -632,15 +637,11 @@ class SVFInstruction : public SVFValue
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
-public:
-    typedef std::vector<const SVFInstruction*> InstVec;
 
 private:
     const SVFBasicBlock* bb;    /// The BasicBlock where this Instruction resides
     bool terminator;    /// return true if this is a terminator instruction
     bool ret;           /// return true if this is an return instruction of a function
-    InstVec succInsts;  /// successor Instructions
-    InstVec predInsts;  /// predecessor Instructions
 
 public:
     /// Constructor without name, set name with setName()
@@ -660,34 +661,9 @@ public:
         return bb;
     }
 
-    inline InstVec& getSuccInstructions()
-    {
-        return succInsts;
-    }
-
-    inline InstVec& getPredInstructions()
-    {
-        return predInsts;
-    }
-
-    inline const InstVec& getSuccInstructions() const
-    {
-        return succInsts;
-    }
-
-    inline const InstVec& getPredInstructions() const
-    {
-        return predInsts;
-    }
-
     inline const SVFFunction* getFunction() const
     {
         return bb->getParent();
-    }
-
-    inline bool isTerminator() const
-    {
-        return terminator;
     }
 
     inline bool isRetInst() const
@@ -1110,98 +1086,6 @@ public:
 };
 
 
-class CallSite
-{
-    friend class SVFIRReader;
-
-private:
-    const SVFCallInst* CB;
-
-    /// Constructs empty CallSite (for SVFIRReader/deserialization)
-    CallSite() : CB{} {}
-
-public:
-    CallSite(const SVFInstruction* I) : CB(SVFUtil::dyn_cast<SVFCallInst>(I))
-    {
-        assert(CB && "not a callsite?");
-    }
-    const SVFInstruction* getInstruction() const
-    {
-        return CB;
-    }
-    const SVFValue* getArgument(u32_t ArgNo) const
-    {
-        return CB->getArgOperand(ArgNo);
-    }
-    const SVFType* getType() const
-    {
-        return CB->getType();
-    }
-    u32_t arg_size() const
-    {
-        return CB->arg_size();
-    }
-    bool arg_empty() const
-    {
-        return CB->arg_empty();
-    }
-    const SVFValue* getArgOperand(u32_t i) const
-    {
-        return CB->getArgOperand(i);
-    }
-    u32_t getNumArgOperands() const
-    {
-        return CB->arg_size();
-    }
-    const SVFFunction* getCalledFunction() const
-    {
-        return CB->getCalledFunction();
-    }
-    const SVFValue* getCalledValue() const
-    {
-        return CB->getCalledOperand();
-    }
-    const SVFFunction* getCaller() const
-    {
-        return CB->getCaller();
-    }
-    bool isVarArg() const
-    {
-        return CB->isVarArg();
-    }
-    bool isVirtualCall() const
-    {
-        return SVFUtil::isa<SVFVirtualCallInst>(CB);
-    }
-    const SVFValue* getVtablePtr() const
-    {
-        assert(isVirtualCall() && "not a virtual call?");
-        return SVFUtil::cast<SVFVirtualCallInst>(CB)->getVtablePtr();
-    }
-    s32_t getFunIdxInVtable() const
-    {
-        assert(isVirtualCall() && "not a virtual call?");
-        return SVFUtil::cast<SVFVirtualCallInst>(CB)->getFunIdxInVtable();
-    }
-    const std::string& getFunNameOfVirtualCall() const
-    {
-        assert(isVirtualCall() && "not a virtual call?");
-        return SVFUtil::cast<SVFVirtualCallInst>(CB)->getFunNameOfVirtualCall();
-    }
-    bool operator==(const CallSite& CS) const
-    {
-        return CB == CS.CB;
-    }
-    bool operator!=(const CallSite& CS) const
-    {
-        return CB != CS.CB;
-    }
-    bool operator<(const CallSite& CS) const
-    {
-        return getInstruction() < CS.getInstruction();
-    }
-};
-
 /// [FOR DEBUG ONLY, DON'T USE IT UNSIDE `svf`!]
 /// Converts an SVFValue to corresponding LLVM::Value, then get the string
 /// representation of it. Use it only when you are debugging. Don't use
@@ -1216,15 +1100,5 @@ OutStream& operator<< (OutStream &o, const std::pair<F, S> &var)
 }
 
 } // End namespace SVF
-
-/// Specialise hash for CallSites.
-template <> struct std::hash<SVF::CallSite>
-{
-    size_t operator()(const SVF::CallSite &cs) const
-    {
-        std::hash<const SVF::SVFInstruction *> h;
-        return h(cs.getInstruction());
-    }
-};
 
 #endif /* INCLUDE_SVFIR_SVFVALUE_H_ */

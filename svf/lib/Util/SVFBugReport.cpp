@@ -276,7 +276,7 @@ void PartialNullPtrDereferenceBug::printBugToTerminal() const
 
 const std::string SVFBugEvent::getFuncName() const
 {
-    return eventInst->getFunction()->getName();
+    return eventInst->getFun()->getName();
 }
 
 const std::string SVFBugEvent::getEventLoc() const
@@ -303,7 +303,8 @@ const std::string SVFBugEvent::getEventDescription() const
     case SVFBugEvent::CallSite:
     {
         std::string description("calls ");
-        const SVFFunction *callee = SVFUtil::getCallee(eventInst);
+        assert(SVFUtil::isa<CallICFGNode>(eventInst) && "not a call ICFGNode?");
+        const SVFFunction *callee = SVFUtil::cast<CallICFGNode>(eventInst)->getCalledFunction();
         if(callee == nullptr)
         {
             description += "<unknown>";

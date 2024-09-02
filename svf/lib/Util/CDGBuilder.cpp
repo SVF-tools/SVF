@@ -86,11 +86,12 @@ void CDGBuilder::build()
 s64_t CDGBuilder::getBBSuccessorBranchID(const SVFBasicBlock *BB, const SVFBasicBlock *Succ)
 {
     ICFG *icfg = PAG::getPAG()->getICFG();
-    const ICFGNode *pred = icfg->getICFGNode(BB->getTerminator());
+    assert(!BB->getICFGNodeList().empty() && "empty bb?");
+    const ICFGNode *pred = BB->back();
     const ICFGEdge *edge = nullptr;
-    for (const auto &inst: Succ->getInstructionList())
+    for (const auto &node: Succ->getICFGNodeList())
     {
-        if (const ICFGEdge *e = icfg->getICFGEdge(pred, icfg->getICFGNode(inst), ICFGEdge::ICFGEdgeK::IntraCF))
+        if (const ICFGEdge *e = icfg->getICFGEdge(pred, node, ICFGEdge::ICFGEdgeK::IntraCF))
         {
             edge = e;
             break;
@@ -184,7 +185,6 @@ void CDGBuilder::extractBBS(const SVF::SVFFunction *func,
  */
 void CDGBuilder::buildICFGNodeControlMap()
 {
-    ICFG *icfg = PAG::getPAG()->getICFG();
     for (const auto &it: _svfcontrolMap)
     {
         for (const auto &it2: it.second)
@@ -192,14 +192,11 @@ void CDGBuilder::buildICFGNodeControlMap()
             const SVFBasicBlock *controllingBB = it2.first;
             //            const ICFGNode *controlNode = _bbToNode[it.first].first;
             //            if(!controlNode) continue;
-            const SVFInstruction *terminator = it.first->getInstructionList().back();
-            if (!terminator) continue;
-            const ICFGNode *controlNode = icfg->getICFGNode(terminator);
+            const ICFGNode *controlNode = it.first->getICFGNodeList().back();
             if (!controlNode) continue;
             // controlNode control at pos
-            for (const auto &inst: *controllingBB)
+            for (const auto &controllee: controllingBB->getICFGNodeList())
             {
-                const ICFGNode *controllee = icfg->getICFGNode(inst);
                 _nodeControlMap[controlNode][controllee].insert(it2.second.begin(), it2.second.end());
                 _nodeDependentOnMap[controllee][controlNode].insert(it2.second.begin(), it2.second.end());
                 for (s32_t pos: it2.second)

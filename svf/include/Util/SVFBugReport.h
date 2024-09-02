@@ -62,10 +62,10 @@ public:
 
 protected:
     u32_t typeAndInfoFlag;
-    const SVFInstruction *eventInst;
+    const ICFGNode *eventInst;
 
 public:
-    SVFBugEvent(u32_t typeAndInfoFlag, const SVFInstruction *eventInst): typeAndInfoFlag(typeAndInfoFlag), eventInst(eventInst) { };
+    SVFBugEvent(u32_t typeAndInfoFlag, const ICFGNode *eventInst): typeAndInfoFlag(typeAndInfoFlag), eventInst(eventInst) { };
     virtual ~SVFBugEvent() = default;
 
     inline u32_t getEventType() const

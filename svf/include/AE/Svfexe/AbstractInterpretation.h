@@ -358,7 +358,7 @@ protected:
 
 protected:
     // there data should be shared with subclasses
-    Map<std::string, std::function<void(const CallSite &)>> func_map;
+    Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
     Set<const CallICFGNode*> checkpoints;
     Set<std::string> checkpoint_names;
     Map<const ICFGNode*, AbstractState>

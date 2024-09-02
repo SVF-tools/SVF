@@ -297,64 +297,6 @@ const Value*  LLVMUtil::stripAllCasts(const Value* val)
     return nullptr;
 }
 
-/// Get the next instructions following control flow
-void LLVMUtil::getNextInsts(const Instruction* curInst, std::vector<const SVFInstruction*>& instList)
-{
-    if (!curInst->isTerminator())
-    {
-        const Instruction* nextInst = curInst->getNextNode();
-        const SVFInstruction* svfNextInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(nextInst);
-        if (LLVMUtil::isIntrinsicInst(nextInst))
-            getNextInsts(nextInst, instList);
-        else
-            instList.push_back(svfNextInst);
-    }
-    else
-    {
-        const BasicBlock* BB = curInst->getParent();
-        // Visit all successors of BB in the CFG
-        for (succ_const_iterator it = succ_begin(BB), ie = succ_end(BB); it != ie; ++it)
-        {
-            const Instruction* nextInst = &((*it)->front());
-            const SVFInstruction* svfNextInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(nextInst);
-            if (LLVMUtil::isIntrinsicInst(nextInst))
-                getNextInsts(nextInst, instList);
-            else
-                instList.push_back(svfNextInst);
-        }
-    }
-}
-
-
-/// Get the previous instructions following control flow
-void LLVMUtil::getPrevInsts(const Instruction* curInst, std::vector<const SVFInstruction*>& instList)
-{
-
-    if (curInst != &(curInst->getParent()->front()))
-    {
-        const Instruction* prevInst = curInst->getPrevNode();
-        const SVFInstruction* svfPrevInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(prevInst);
-        if (LLVMUtil::isIntrinsicInst(prevInst))
-            getPrevInsts(prevInst, instList);
-        else
-            instList.push_back(svfPrevInst);
-    }
-    else
-    {
-        const BasicBlock* BB = curInst->getParent();
-        // Visit all successors of BB in the CFG
-        for (const_pred_iterator it = pred_begin(BB), ie = pred_end(BB); it != ie; ++it)
-        {
-            const Instruction* prevInst = &((*it)->back());
-            const SVFInstruction* svfPrevInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(prevInst);
-            if (LLVMUtil::isIntrinsicInst(prevInst))
-                getPrevInsts(prevInst, instList);
-            else
-                instList.push_back(svfPrevInst);
-        }
-    }
-}
-
 /*
  * Get the first dominated cast instruction for heap allocations since they typically come from void* (i8*)
  * for example, %4 = call align 16 i8* @malloc(i64 10); %5 = bitcast i8* %4 to i32*

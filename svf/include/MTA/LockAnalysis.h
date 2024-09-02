@@ -339,7 +339,7 @@ private:
     void handleIntra(const CxtStmt& cts);
 
     /// Handle call relations
-    void handleCallRelation(CxtLockProc& clp, const CallGraphEdge* cgEdge, CallSite call);
+    void handleCallRelation(CxtLockProc& clp, const CallGraphEdge* cgEdge, const CallICFGNode* call);
 
     /// Return true it a lock matches an unlock
     bool isAliasedLocks(const CxtLock& cl1, const CxtLock& cl2)
@@ -437,17 +437,23 @@ private:
     /// Whether it is a lock site
     inline bool isTDFork(const ICFGNode* call)
     {
-        return getTCG()->getThreadAPI()->isTDFork(call);
+        if(SVFUtil::isa<CallICFGNode>(call) == false)
+            return false;
+        return getTCG()->getThreadAPI()->isTDFork(SVFUtil::cast<CallICFGNode>(call));
     }
     /// Whether it is a lock site
     inline bool isTDAcquire(const ICFGNode* call)
     {
-        return getTCG()->getThreadAPI()->isTDAcquire(call);
+        if(SVFUtil::isa<CallICFGNode>(call) == false)
+            return false;
+        return getTCG()->getThreadAPI()->isTDAcquire(SVFUtil::cast<CallICFGNode>(call));
     }
     /// Whether it is a unlock site
     inline bool isTDRelease(const ICFGNode* call)
     {
-        return getTCG()->getThreadAPI()->isTDRelease(call);
+        if(SVFUtil::isa<CallICFGNode>(call) == false)
+            return false;
+        return getTCG()->getThreadAPI()->isTDRelease(SVFUtil::cast<CallICFGNode>(call));
     }
     /// Whether it is a callsite
     inline bool isCallSite(const ICFGNode* inst)

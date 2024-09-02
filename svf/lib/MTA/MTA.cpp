@@ -135,16 +135,15 @@ void MTA::detect(SVFModule* module)
     SVFIR* pag = SVFIR::getPAG();
     PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
 
-    Set<const SVFInstruction*> needcheckinst;
     // Add symbols for all of the functions and the instructions in them.
     for (const SVFFunction* F : module->getFunctionSet())
     {
         // collect and create symbols inside the function body
         for (const SVFBasicBlock* svfbb : F->getBasicBlockList())
         {
-            for (const SVFInstruction* svfInst : svfbb->getInstructionList())
+            for (const ICFGNode* icfgNode : svfbb->getICFGNodeList())
             {
-                for(const SVFStmt* stmt : pag->getSVFStmtList(pag->getICFG()->getICFGNode(svfInst)))
+                for(const SVFStmt* stmt : pag->getSVFStmtList(icfgNode))
                 {
                     if (const LoadStmt* l = SVFUtil::dyn_cast<LoadStmt>(stmt))
                     {

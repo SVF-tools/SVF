@@ -192,7 +192,6 @@ bool SVFFunction::isVarArg() const
 const SVFBasicBlock *SVFFunction::getExitBB() const
 {
     assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
-    assert((!hasReturn() || exitBlock->back()->isRetInst()) && "last inst must be return inst");
     assert(exitBlock && "must have an exitBlock");
     return exitBlock;
 }
@@ -210,8 +209,7 @@ SVFBasicBlock::SVFBasicBlock(const SVFType* ty, const SVFFunction* f)
 
 SVFBasicBlock::~SVFBasicBlock()
 {
-    for(const SVFInstruction* inst : allInsts)
-        delete inst;
+
 }
 
 /*!
@@ -241,13 +239,6 @@ u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ) const
     }
     assert(false && "Didn't find successor edge?");
     return 0;
-}
-
-const SVFInstruction* SVFBasicBlock::getTerminator() const
-{
-    if (allInsts.empty() || !allInsts.back()->isTerminator())
-        return nullptr;
-    return allInsts.back();
 }
 
 /*!

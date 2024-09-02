@@ -42,7 +42,7 @@ void DoubleFreeChecker::reportBug(ProgSlice* slice)
         GenericBug::EventStack eventStack;
         slice->evalFinalCond2Event(eventStack);
         eventStack.push_back(
-            SVFBugEvent(SVFBugEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite()));
+            SVFBugEvent(SVFBugEvent::SourceInst, getSrcCSID(slice->getSource())));
         report.addSaberBug(GenericBug::DOUBLEFREE, eventStack);
     }
     if(Options::ValidateTests())
@@ -55,7 +55,7 @@ void DoubleFreeChecker::testsValidation(ProgSlice *slice)
 {
     const SVFGNode* source = slice->getSource();
     const CallICFGNode* cs = getSrcCSID(source);
-    const SVFFunction* fun = getCallee(cs->getCallSite());
+    const SVFFunction* fun = cs->getCalledFunction();
     if(fun==nullptr)
         return;
     validateSuccessTests(slice,fun);

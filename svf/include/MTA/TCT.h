@@ -167,15 +167,6 @@ public:
     {
         destroy();
     }
-    /// Get CallICFGNode given inst
-    CallICFGNode* getCallICFGNode(const SVFInstruction* inst)
-    {
-        return pta->getICFG()->getCallICFGNode(inst);
-    }
-    const ICFGNode* getICFGNode(const SVFInstruction* inst)
-    {
-        return pta->getICFG()->getICFGNode(inst);
-    }
 
     /// Get SVFFModule
     SVFModule* getSVFModule() const
@@ -255,7 +246,7 @@ public:
     inline bool isExtCall(const ICFGNode* inst)
     {
         if(const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst))
-            return SVFUtil::isExtCall(call->getCallSite());
+            return SVFUtil::isExtCall(call);
         return false;
     }
     /// Whether it is a callsite
@@ -373,7 +364,7 @@ public:
     }
 
     /// Get loop for join site
-    inline LoopBBs& getJoinLoop(const ICFGNode* join)
+    inline LoopBBs& getJoinLoop(const CallICFGNode* join)
     {
         assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
         InstToLoopMap::iterator it = joinSiteToLoopMap.find(join);
@@ -381,7 +372,7 @@ public:
         return it->second;
     }
 
-    inline bool hasJoinLoop(const ICFGNode* join) const
+    inline bool hasJoinLoop(const CallICFGNode* join) const
     {
         assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
         InstToLoopMap::const_iterator it = joinSiteToLoopMap.find(join);
@@ -416,7 +407,7 @@ public:
             MaxCxtSize = cxt.size();
     }
     /// Whether a join site is in recursion
-    inline bool isJoinSiteInRecursion(const ICFGNode* join) const
+    inline bool isJoinSiteInRecursion(const CallICFGNode* join) const
     {
         assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
         return inRecurJoinSites.find(join)!=inRecurJoinSites.end();
@@ -497,7 +488,7 @@ private:
     //@}
 
     /// Handle call relations
-    void handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, CallSite call);
+    void handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, const CallICFGNode* call);
 
     /// Get or create a tct node based on CxtThread
     //@{

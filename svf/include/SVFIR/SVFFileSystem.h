@@ -421,7 +421,6 @@ private:
     cJSON* toJson(const CHNode* node);         // CHGraph Node
     cJSON* toJson(const CHEdge* edge);         // CHGraph Edge
 
-    cJSON* toJson(const CallSite& cs);
     cJSON* toJson(const AccessPath& ap);
     cJSON* toJson(const SVFLoop* loop);
     cJSON* toJson(const MemObj* memObj);
@@ -1104,7 +1103,6 @@ private:
     void readJson(const cJSON* obj, ICFGEdge*& edge); // ICFG Edge
     void readJson(const cJSON* obj, CHNode*& node); // CHGraph Node
     void readJson(const cJSON* obj, CHEdge*& edge); // CHGraph Edge
-    void readJson(const cJSON* obj, CallSite& cs); // CHGraph's csToClassMap
 
     void readJson(const cJSON* obj, AccessPath& ap);
     void readJson(const cJSON* obj, SVFLoop*& loop);

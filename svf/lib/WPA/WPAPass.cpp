@@ -218,33 +218,26 @@ AliasResult WPAPass::alias(const SVFValue* V1, const SVFValue* V2)
 /*!
  * Return mod-ref result of a Callsite
  */
-ModRefInfo WPAPass::getModRefInfo(const CallSite callInst)
+ModRefInfo WPAPass::getModRefInfo(const CallICFGNode* callInst)
 {
     assert(Options::PASelected(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG() && "mod-ref query is only support with -ander and -svfg turned on");
-    ICFG* icfg = _svfg->getPAG()->getICFG();
-    const CallICFGNode* cbn = icfg->getCallICFGNode(callInst.getInstruction());
-    return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn);
+    return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(callInst);
 }
 
 /*!
  * Return mod-ref results of a Callsite to a specific memory location
  */
-ModRefInfo WPAPass::getModRefInfo(const CallSite callInst, const SVFValue* V)
+ModRefInfo WPAPass::getModRefInfo(const CallICFGNode* callInst, const SVFValue* V)
 {
     assert(Options::PASelected(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG() && "mod-ref query is only support with -ander and -svfg turned on");
-    ICFG* icfg = _svfg->getPAG()->getICFG();
-    const CallICFGNode* cbn = icfg->getCallICFGNode(callInst.getInstruction());
-    return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn, V);
+    return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(callInst, V);
 }
 
 /*!
  * Return mod-ref result between two CallInsts
  */
-ModRefInfo WPAPass::getModRefInfo(const CallSite callInst1, const CallSite callInst2)
+ModRefInfo WPAPass::getModRefInfo(const CallICFGNode* callInst1, const CallICFGNode* callInst2)
 {
     assert(Options::PASelected(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG() && "mod-ref query is only support with -ander and -svfg turned on");
-    ICFG* icfg = _svfg->getPAG()->getICFG();
-    const CallICFGNode* cbn1 = icfg->getCallICFGNode(callInst1.getInstruction());
-    const CallICFGNode* cbn2 = icfg->getCallICFGNode(callInst2.getInstruction());
-    return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn1, cbn2);
+    return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(callInst1, callInst2);
 }

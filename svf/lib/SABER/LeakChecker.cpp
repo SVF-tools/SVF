@@ -154,7 +154,7 @@ void LeakChecker::reportBug(ProgSlice* slice)
         // full leakage
         GenericBug::EventStack eventStack =
         {
-            SVFBugEvent(SVFBugEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite())
+            SVFBugEvent(SVFBugEvent::SourceInst, getSrcCSID(slice->getSource()))
         };
         report.addSaberBug(GenericBug::NEVERFREE, eventStack);
     }
@@ -164,7 +164,7 @@ void LeakChecker::reportBug(ProgSlice* slice)
         GenericBug::EventStack eventStack;
         slice->evalFinalCond2Event(eventStack);
         eventStack.push_back(
-            SVFBugEvent(SVFBugEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite()));
+            SVFBugEvent(SVFBugEvent::SourceInst, getSrcCSID(slice->getSource())));
         report.addSaberBug(GenericBug::PARTIALLEAK, eventStack);
     }
 
@@ -180,7 +180,7 @@ void LeakChecker::testsValidation(const ProgSlice* slice)
 {
     const SVFGNode* source = slice->getSource();
     const CallICFGNode* cs = getSrcCSID(source);
-    const SVFFunction* fun = getCallee(cs->getCallSite());
+    const SVFFunction* fun = cs->getCalledFunction();
     if(fun==nullptr)
         return;
 

@@ -325,7 +325,7 @@ const SVFVar* BranchStmt::getCondition() const
     return cond;
 }
 
-StoreStmt::StoreStmt(SVFVar* s, SVFVar* d, const IntraICFGNode* st)
+StoreStmt::StoreStmt(SVFVar* s, SVFVar* d, const ICFGNode* st)
     : AssignStmt(s, d, makeEdgeFlagWithStoreInst(SVFStmt::Store, st))
 {
 }

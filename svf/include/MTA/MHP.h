@@ -227,12 +227,14 @@ private:
     /// Whether it is a fork site
     inline bool isTDFork(const ICFGNode* call)
     {
-        return tcg->getThreadAPI()->isTDFork(call);
+        const CallICFGNode* fork = SVFUtil::dyn_cast<CallICFGNode>(call);
+        return fork && tcg->getThreadAPI()->isTDFork(fork);
     }
     /// Whether it is a join site
     inline bool isTDJoin(const ICFGNode* call)
     {
-        return tcg->getThreadAPI()->isTDJoin(call);
+        const CallICFGNode* join = SVFUtil::dyn_cast<CallICFGNode>(call);
+        return join && tcg->getThreadAPI()->isTDJoin(join);
     }
 
     /// Return thread id(s) which are directly or indirectly joined at this join site
@@ -341,16 +343,15 @@ public:
         NodeID parentTid = tct->getParentThread(tid);
         const CxtThread& parentct = tct->getTCTNode(parentTid)->getCxtThread();
         const SVFFunction* parentRoutine = tct->getStartRoutineOfCxtThread(parentct);
-        const SVFInstruction* inst = parentRoutine->getExitBB()->back();
-        return tct->getICFGNode(inst);
+        return parentRoutine->getExitBB()->back();
     }
 
     /// Get loop for join site
-    inline LoopBBs& getJoinLoop(const ICFGNode* inst)
+    inline LoopBBs& getJoinLoop(const CallICFGNode* inst)
     {
         return tct->getJoinLoop(inst);
     }
-    inline bool hasJoinLoop(const ICFGNode* inst)
+    inline bool hasJoinLoop(const CallICFGNode* inst)
     {
         return tct->hasJoinLoop(inst);
     }
@@ -378,7 +379,7 @@ private:
     bool sameLoopTripCount(const ICFGNode* forkSite, const ICFGNode* joinSite);
 
     /// Whether it is a matched fork join pair
-    bool isAliasedForkJoin(const ICFGNode* forkSite, const ICFGNode* joinSite)
+    bool isAliasedForkJoin(const CallICFGNode* forkSite, const CallICFGNode* joinSite)
     {
         return tct->getPTA()->alias(getForkedThread(forkSite), getJoinedThread(joinSite)) && isSameSCEV(forkSite,joinSite);
     }
@@ -462,20 +463,22 @@ private:
     /// Whether it is a fork site
     inline bool isTDFork(const ICFGNode* call)
     {
-        return getTCG()->getThreadAPI()->isTDFork(call);
+        const CallICFGNode* fork = SVFUtil::dyn_cast<CallICFGNode>(call);
+        return fork && getTCG()->getThreadAPI()->isTDFork(fork);
     }
     /// Whether it is a join site
     inline bool isTDJoin(const ICFGNode* call)
     {
-        return getTCG()->getThreadAPI()->isTDJoin(call);
+        const CallICFGNode* join = SVFUtil::dyn_cast<CallICFGNode>(call);
+        return join && getTCG()->getThreadAPI()->isTDJoin(join);
     }
     /// Get forked thread
-    inline const SVFValue* getForkedThread(const ICFGNode* call)
+    inline const SVFValue* getForkedThread(const CallICFGNode* call)
     {
         return getTCG()->getThreadAPI()->getForkedThread(call);
     }
     /// Get joined thread
-    inline const SVFValue* getJoinedThread(const ICFGNode* call)
+    inline const SVFValue* getJoinedThread(const CallICFGNode* call)
     {
         return getTCG()->getThreadAPI()->getJoinedThread(call);
     }

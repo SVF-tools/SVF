@@ -156,8 +156,8 @@ protected:
     //@{
     ICFGEdge* addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode);
     ICFGEdge* addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFValue* condition, s32_t branchCondVal);
-    ICFGEdge* addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFInstruction* cs);
-    ICFGEdge* addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFInstruction* cs);
+    ICFGEdge* addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode);
+    ICFGEdge* addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode);
     //@}
     /// Remove a ICFG edge
     inline void removeICFGEdge(ICFGEdge* edge)
@@ -198,11 +198,20 @@ public:
     //@{
     ICFGNode* getICFGNode(const SVFInstruction* inst);
 
+    /// Whether has the ICFGNode
+    bool hasICFGNode(const SVFInstruction* inst);
+
     CallICFGNode* getCallICFGNode(const SVFInstruction* inst);
+
+    CallICFGNode* addCallICFGNode(const SVFInstruction* inst);
 
     RetICFGNode* getRetICFGNode(const SVFInstruction* inst);
 
+    RetICFGNode* addRetICFGNode(const SVFInstruction* inst);
+
     IntraICFGNode* getIntraICFGNode(const SVFInstruction* inst);
+
+    IntraICFGNode* addIntraICFGNode(const SVFInstruction* inst);
 
     FunEntryICFGNode* getFunEntryICFGNode(const SVFFunction*  fun);
 

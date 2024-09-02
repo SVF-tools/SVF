@@ -443,7 +443,6 @@ cJSON* SVFIRWriter::contentToJson(const IntraCFGEdge* edge)
 cJSON* SVFIRWriter::contentToJson(const CallCFGEdge* edge)
 {
     cJSON* root = contentToJson(static_cast<const ICFGEdge*>(edge));
-    JSON_WRITE_FIELD(root, edge, cs);
     JSON_WRITE_FIELD(root, edge, callPEs);
     return root;
 }
@@ -451,7 +450,6 @@ cJSON* SVFIRWriter::contentToJson(const CallCFGEdge* edge)
 cJSON* SVFIRWriter::contentToJson(const RetCFGEdge* edge)
 {
     cJSON* root = contentToJson(static_cast<const ICFGEdge*>(edge));
-    JSON_WRITE_FIELD(root, edge, cs);
     JSON_WRITE_FIELD(root, edge, retPE);
     return root;
 }
@@ -559,7 +557,6 @@ cJSON* SVFIRWriter::contentToJson(const SVFFunction* value)
 cJSON* SVFIRWriter::contentToJson(const SVFBasicBlock* value)
 {
     cJSON* root = contentToJson(static_cast<const SVFValue*>(value));
-    JSON_WRITE_FIELD(root, value, allInsts);
     JSON_WRITE_FIELD(root, value, succBBs);
     JSON_WRITE_FIELD(root, value, predBBs);
     JSON_WRITE_FIELD(root, value, fun);
@@ -572,8 +569,6 @@ cJSON* SVFIRWriter::contentToJson(const SVFInstruction* value)
     JSON_WRITE_FIELD(root, value, bb);
     JSON_WRITE_FIELD(root, value, terminator);
     JSON_WRITE_FIELD(root, value, ret);
-    JSON_WRITE_FIELD(root, value, succInsts);
-    JSON_WRITE_FIELD(root, value, predInsts);
     return root;
 }
 
@@ -1180,11 +1175,6 @@ cJSON* SVFIRWriter::toJson(const CHEdge* edge)
     return jsonCreateIndex(chgWriter.getEdgeID(edge));
 }
 
-cJSON* SVFIRWriter::toJson(const CallSite& cs)
-{
-    return toJson(cs.getInstruction());
-}
-
 cJSON* SVFIRWriter::toJson(const SVFLoop* loop)
 {
     return jsonCreateIndex(icfgWriter.getSvfLoopID(loop));
@@ -1614,9 +1604,9 @@ ICFGEdge* SVFIRReader::createICFGEdge(GEdgeKind kind)
     case ICFGEdge::IntraCF:
         return new IntraCFGEdge(src, dst);
     case ICFGEdge::CallCF:
-        return new CallCFGEdge(src, dst, nullptr);
+        return new CallCFGEdge(src, dst);
     case ICFGEdge::RetCF:
-        return new RetCFGEdge(src, dst, nullptr);
+        return new RetCFGEdge(src, dst);
     }
 }
 
@@ -1854,11 +1844,6 @@ void SVFIRReader::readJson(const cJSON* obj, CHEdge*& edge)
 {
     assert(!edge && "CHEdge already read?");
     edge = chGraphReader.getEdgePtr(jsonGetNumber(obj));
-}
-
-void SVFIRReader::readJson(const cJSON* obj, CallSite& cs)
-{
-    readJson(obj, cs.CB);
 }
 
 void SVFIRReader::readJson(const cJSON* obj, AccessPath& ap)
@@ -2271,14 +2256,12 @@ void SVFIRReader::fill(const cJSON*& fieldJson, IntraCFGEdge* edge)
 void SVFIRReader::fill(const cJSON*& fieldJson, CallCFGEdge* edge)
 {
     fill(fieldJson, static_cast<ICFGEdge*>(edge));
-    JSON_READ_FIELD_FWD(fieldJson, edge, cs);
     JSON_READ_FIELD_FWD(fieldJson, edge, callPEs);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, RetCFGEdge* edge)
 {
     fill(fieldJson, static_cast<ICFGEdge*>(edge));
-    JSON_READ_FIELD_FWD(fieldJson, edge, cs);
     JSON_READ_FIELD_FWD(fieldJson, edge, retPE);
 }
 
@@ -2381,7 +2364,6 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFFunction* value)
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFBasicBlock* value)
 {
     fill(fieldJson, static_cast<SVFValue*>(value));
-    JSON_READ_FIELD_FWD(fieldJson, value, allInsts);
     JSON_READ_FIELD_FWD(fieldJson, value, succBBs);
     JSON_READ_FIELD_FWD(fieldJson, value, predBBs);
     JSON_READ_FIELD_FWD(fieldJson, value, fun);
@@ -2393,8 +2375,6 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFInstruction* value)
     JSON_READ_FIELD_FWD(fieldJson, value, bb);
     JSON_READ_FIELD_FWD(fieldJson, value, terminator);
     JSON_READ_FIELD_FWD(fieldJson, value, ret);
-    JSON_READ_FIELD_FWD(fieldJson, value, succInsts);
-    JSON_READ_FIELD_FWD(fieldJson, value, predInsts);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFCallInst* value)

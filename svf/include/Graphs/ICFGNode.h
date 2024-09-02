@@ -132,6 +132,8 @@ public:
 
     virtual const std::string toString() const;
 
+    virtual const std::string getSourceLoc() const = 0;
+
     void dump() const;
 
 protected:
@@ -172,6 +174,11 @@ public:
     //@}
 
     virtual const std::string toString() const;
+
+    virtual const std::string getSourceLoc() const
+    {
+        return "Global ICFGNode";
+    }
 };
 
 /*!
@@ -218,6 +225,11 @@ public:
     //@}
 
     const std::string toString() const;
+
+    virtual const std::string getSourceLoc() const
+    {
+        return inst->getSourceLoc();
+    }
 };
 
 class InterICFGNode : public ICFGNode
@@ -252,6 +264,7 @@ public:
                || node->getNodeKind() == FunRetBlock;
     }
     //@}
+    virtual const std::string getSourceLoc() const = 0;
 };
 
 
@@ -316,6 +329,11 @@ public:
     //@}
 
     const virtual std::string toString() const;
+
+    virtual const std::string getSourceLoc() const
+    {
+        return "function entry: " + fun->getSourceLoc();
+    }
 };
 
 /*!
@@ -377,6 +395,11 @@ public:
     //@}
 
     virtual const std::string toString() const;
+
+    virtual const std::string getSourceLoc() const
+    {
+        return "function ret: " + fun->getSourceLoc();
+    }
 };
 
 /*!
@@ -439,7 +462,7 @@ public:
     /// Return true if this is an indirect call
     inline bool isIndirectCall() const
     {
-        return nullptr == SVFUtil::getCallee(cs);
+        return nullptr == SVFUtil::cast<SVFCallInst>(cs)->getCalledFunction();
     }
 
     /// Return the set of actual parameters
@@ -453,6 +476,64 @@ public:
     {
         APNodes.push_back(ap);
     }
+    /// Parameter operations
+    //@{
+    const SVFValue* getArgument(u32_t ArgNo) const
+    {
+        return SVFUtil::cast<SVFCallInst>(cs)->getArgOperand(ArgNo);
+    }
+    const SVFType* getType() const
+    {
+        return SVFUtil::cast<SVFCallInst>(cs)->getType();
+    }
+    u32_t arg_size() const
+    {
+        return SVFUtil::cast<SVFCallInst>(cs)->arg_size();
+    }
+    bool arg_empty() const
+    {
+        return SVFUtil::cast<SVFCallInst>(cs)->arg_empty();
+    }
+    const SVFValue* getArgOperand(u32_t i) const
+    {
+        return SVFUtil::cast<SVFCallInst>(cs)->getArgOperand(i);
+    }
+    u32_t getNumArgOperands() const
+    {
+        return SVFUtil::cast<SVFCallInst>(cs)->arg_size();
+    }
+    const SVFFunction* getCalledFunction() const
+    {
+        return SVFUtil::cast<SVFCallInst>(cs)->getCalledFunction();
+    }
+    const SVFValue* getCalledValue() const
+    {
+        return SVFUtil::cast<SVFCallInst>(cs)->getCalledOperand();
+    }
+    bool isVarArg() const
+    {
+        return SVFUtil::cast<SVFCallInst>(cs)->isVarArg();
+    }
+    bool isVirtualCall() const
+    {
+        return SVFUtil::isa<SVFVirtualCallInst>(cs);
+    }
+    const SVFValue* getVtablePtr() const
+    {
+        assert(isVirtualCall() && "not a virtual call?");
+        return SVFUtil::cast<SVFVirtualCallInst>(cs)->getVtablePtr();
+    }
+    s32_t getFunIdxInVtable() const
+    {
+        assert(isVirtualCall() && "not a virtual call?");
+        return SVFUtil::cast<SVFVirtualCallInst>(cs)->getFunIdxInVtable();
+    }
+    const std::string& getFunNameOfVirtualCall() const
+    {
+        assert(isVirtualCall() && "not a virtual call?");
+        return SVFUtil::cast<SVFVirtualCallInst>(cs)->getFunNameOfVirtualCall();
+    }
+    //@}
 
     ///Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -478,6 +559,11 @@ public:
     //@}
 
     virtual const std::string toString() const;
+
+    virtual const std::string getSourceLoc() const
+    {
+        return "CallICFGNode: " + cs->getSourceLoc();
+    }
 };
 
 
@@ -554,6 +640,11 @@ public:
     //@}
 
     virtual const std::string toString() const;
+
+    virtual const std::string getSourceLoc() const
+    {
+        return "RetICFGNode: " + cs->getSourceLoc();
+    }
 };
 
 } // End namespace SVF

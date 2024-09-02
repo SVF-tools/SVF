@@ -544,7 +544,7 @@ void DCHGraph::buildCHG(bool extend)
     }
 }
 
-const VFunSet &DCHGraph::getCSVFsBasedonCHA(CallSite cs)
+const VFunSet &DCHGraph::getCSVFsBasedonCHA(const CallICFGNode* cs)
 {
     if (csCHAMap.find(cs) != csCHAMap.end())
     {
@@ -553,7 +553,7 @@ const VFunSet &DCHGraph::getCSVFsBasedonCHA(CallSite cs)
 
     VFunSet vfns;
     const VTableSet &vtbls = getCSVtblsBasedonCHA(cs);
-    getVFnsFromVtbls(cs, vtbls, vfns);
+    getVFnsFromVtbls(SVFUtil::cast<SVFCallInst>(cs->getCallSite()), vtbls, vfns);
 
     // Cache.
     csCHAMap.insert({cs, vfns});
@@ -561,7 +561,7 @@ const VFunSet &DCHGraph::getCSVFsBasedonCHA(CallSite cs)
     return csCHAMap[cs];
 }
 
-const VTableSet &DCHGraph::getCSVtblsBasedonCHA(CallSite cs)
+const VTableSet &DCHGraph::getCSVtblsBasedonCHA(const CallICFGNode* cs)
 {
     const DIType *type = getCanonicalType(getCSStaticType(cs));
     // Check if we've already computed.
@@ -589,10 +589,11 @@ const VTableSet &DCHGraph::getCSVtblsBasedonCHA(CallSite cs)
     return vtblCHAMap[type];
 }
 
-void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions)
+void DCHGraph::getVFnsFromVtbls(const SVFCallInst* callsite, const VTableSet &vtbls, VFunSet &virtualFunctions)
 {
-    size_t idx = cs.getFunIdxInVtable();
-    std::string funName = cs.getFunNameOfVirtualCall();
+    const SVFVirtualCallInst* cs = SVFUtil::cast<SVFVirtualCallInst>(callsite);
+    size_t idx = cs->getFunIdxInVtable();
+    std::string funName = cs->getFunNameOfVirtualCall();
     for (const SVFGlobalValue *vtbl : vtbls)
     {
         assert(vtblToTypeMap.find(vtbl) != vtblToTypeMap.end() && "floating vtbl");
@@ -610,7 +611,7 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
 
             const Function* callee = vfnV[idx];
             // Practically a copy of that in lib/MemoryModel/CHA.cpp
-            if (cs.arg_size() == callee->arg_size() || (cs.isVarArg() && callee->isVarArg()))
+            if (cs->arg_size() == callee->arg_size() || (cs->isVarArg() && callee->isVarArg()))
             {
                 cppUtil::DemangledName dname = cppUtil::demangle(callee->getName().str());
                 std::string calleeName = dname.funcName;
