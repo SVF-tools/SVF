@@ -61,7 +61,7 @@ public:
     typedef Map<const SVFValue*, const Value*> SVFValue2LLVMValueMap;
     typedef Map<const Type*, SVFType*> LLVMType2SVFTypeMap;
     typedef Map<const Type*, StInfo*> Type2TypeInfoMap;
-    typedef Map<const Function*,  std::vector<std::string>> Fun2AnnoMap;
+    typedef Map<std::string, std::vector<std::string>> Fun2AnnoMap;
 
 private:
     static LLVMModuleSet* llvmModuleSet;
@@ -253,18 +253,7 @@ public:
 
     SVFOtherValue* getSVFOtherValue(const Value* ov);
 
-    /// Remove unused function in extapi.bc module
-    bool isCalledExtFunction(Function* func)
-    {
-        /// if this function func defined in extapi.bc but never used in application code (without any corresponding declared functions).
-        if (func->getParent()->getName().str() == ExtAPI::getExtAPI()->getExtBcPath()
-                && FunDefToDeclsMap.find(func) == FunDefToDeclsMap.end()
-                && std::find(ExtFuncsVec.begin(), ExtFuncsVec.end(), func) == ExtFuncsVec.end())
-        {
-            return true;
-        }
-        return false;
-    }
+    void addFunctionAnnotations(SVFFunction* func);
 
     /// Get the corresponding Function based on its name
     inline const SVFFunction* getSVFFunction(const std::string& name)
