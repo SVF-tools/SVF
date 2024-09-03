@@ -1051,10 +1051,13 @@ void AbstractInterpretation::initExtFunMap()
         assert(lb.getInterval().is_numeral() && ub.getInterval().is_numeral());
         num.getInterval().set_to_top();
         num.getInterval().meet_with(IntervalValue(lb.getInterval().lb(), ub.getInterval().ub()));
-        if (icfg->hasICFGNode(SVFUtil::cast<SVFInstruction>(callNode->getArgument(0)))) {
+        if (icfg->hasICFGNode(SVFUtil::cast<SVFInstruction>(callNode->getArgument(0))))
+        {
             const ICFGNode* node = icfg->getICFGNode(SVFUtil::cast<SVFInstruction>(callNode->getArgument(0)));
-            for (const SVFStmt* stmt: node->getSVFStmts()) {
-                if (SVFUtil::isa<LoadStmt>(stmt)) {
+            for (const SVFStmt* stmt: node->getSVFStmts())
+            {
+                if (SVFUtil::isa<LoadStmt>(stmt))
+                {
                     const LoadStmt* load = SVFUtil::cast<LoadStmt>(stmt);
                     NodeID rhsId = load->getRHSVarID();
                     as.storeValue(rhsId, num);
@@ -1756,15 +1759,19 @@ void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
             // if IntraEdge, check the condition, if it is feasible, join the value
             // if IntraEdge but not conditional edge, join the value
             // if not IntraEdge, join the value
-            if (edge) {
+            if (edge)
+            {
                 const IntraCFGEdge* intraEdge = SVFUtil::cast<IntraCFGEdge>(edge);
-                if (intraEdge->getCondition()) {
+                if (intraEdge->getCondition())
+                {
                     if (isBranchFeasible(intraEdge, tmpEs))
                         rhs.join_with(opAs[curId]);
                 }
                 else
                     rhs.join_with(opAs[curId]);
-            } else {
+            }
+            else
+            {
                 rhs.join_with(opAs[curId]);
             }
         }
@@ -1868,22 +1875,27 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
     u32_t op0 = cmp->getOpVarID(0);
     u32_t op1 = cmp->getOpVarID(1);
     // if it is address
-    if (as.inVarToAddrsTable(op0) && as.inVarToAddrsTable(op1)) {
+    if (as.inVarToAddrsTable(op0) && as.inVarToAddrsTable(op1))
+    {
         IntervalValue resVal;
         AddressValue addrOp0 = as[op0].getAddrs();
         AddressValue addrOp1 = as[op1].getAddrs();
         u32_t res = cmp->getResID();
-        if (addrOp0.equals(addrOp1)) {
+        if (addrOp0.equals(addrOp1))
+        {
             resVal = IntervalValue(1, 1);
         }
-        else if (addrOp0.hasIntersect(addrOp1)) {
+        else if (addrOp0.hasIntersect(addrOp1))
+        {
             resVal = IntervalValue(0, 1);
         }
-        else {
+        else
+        {
             resVal = IntervalValue(0, 0);
         }
         as[res] = resVal;
-    } else
+    }
+    else
     {
         if (!as.inVarToValTable(op0))
             as[op0] = IntervalValue::top();
@@ -1896,7 +1908,7 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
             if (as[op0].isInterval() && as[op1].isInterval())
             {
                 IntervalValue &lhs = as[op0].getInterval(),
-                              &rhs = as[op1].getInterval();
+                               &rhs = as[op1].getInterval();
                 // AbstractValue
                 auto predicate = cmp->getPredicate();
                 switch (predicate)
@@ -1942,7 +1954,8 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 case CmpStmt::FCMP_TRUE:
                     resVal = IntervalValue(1, 1);
                     break;
-                default: {
+                default:
+                {
                     assert(false && "undefined compare: ");
                 }
                 }
@@ -1951,13 +1964,14 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
             else if (as[op0].isAddr() && as[op1].isAddr())
             {
                 AddressValue &lhs = as[op0].getAddrs(),
-                             &rhs = as[op1].getAddrs();
+                              &rhs = as[op1].getAddrs();
                 auto predicate = cmp->getPredicate();
                 switch (predicate)
                 {
                 case CmpStmt::ICMP_EQ:
                 case CmpStmt::FCMP_OEQ:
-                case CmpStmt::FCMP_UEQ: {
+                case CmpStmt::FCMP_UEQ:
+                {
                     if (lhs.hasIntersect(rhs))
                     {
                         resVal = IntervalValue(0, 1);
@@ -1974,7 +1988,8 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 }
                 case CmpStmt::ICMP_NE:
                 case CmpStmt::FCMP_ONE:
-                case CmpStmt::FCMP_UNE: {
+                case CmpStmt::FCMP_UNE:
+                {
                     if (lhs.hasIntersect(rhs))
                     {
                         resVal = IntervalValue(0, 1);
@@ -1992,7 +2007,8 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 case CmpStmt::ICMP_UGT:
                 case CmpStmt::ICMP_SGT:
                 case CmpStmt::FCMP_OGT:
-                case CmpStmt::FCMP_UGT: {
+                case CmpStmt::FCMP_UGT:
+                {
                     if (lhs.size() == 1 && rhs.size() == 1)
                     {
                         resVal = IntervalValue(*lhs.begin() > *rhs.begin());
@@ -2006,7 +2022,8 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 case CmpStmt::ICMP_UGE:
                 case CmpStmt::ICMP_SGE:
                 case CmpStmt::FCMP_OGE:
-                case CmpStmt::FCMP_UGE: {
+                case CmpStmt::FCMP_UGE:
+                {
                     if (lhs.size() == 1 && rhs.size() == 1)
                     {
                         resVal = IntervalValue(*lhs.begin() >= *rhs.begin());
@@ -2020,7 +2037,8 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 case CmpStmt::ICMP_ULT:
                 case CmpStmt::ICMP_SLT:
                 case CmpStmt::FCMP_OLT:
-                case CmpStmt::FCMP_ULT: {
+                case CmpStmt::FCMP_ULT:
+                {
                     if (lhs.size() == 1 && rhs.size() == 1)
                     {
                         resVal = IntervalValue(*lhs.begin() < *rhs.begin());
@@ -2034,7 +2052,8 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 case CmpStmt::ICMP_ULE:
                 case CmpStmt::ICMP_SLE:
                 case CmpStmt::FCMP_OLE:
-                case CmpStmt::FCMP_ULE: {
+                case CmpStmt::FCMP_ULE:
+                {
                     if (lhs.size() == 1 && rhs.size() == 1)
                     {
                         resVal = IntervalValue(*lhs.begin() <= *rhs.begin());
@@ -2051,7 +2070,8 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 case CmpStmt::FCMP_TRUE:
                     resVal = IntervalValue(1, 1);
                     break;
-                default: {
+                default:
+                {
                     assert(false && "undefined compare: ");
                 }
                 }
@@ -2125,7 +2145,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
     };
 
     auto getTruncValue = [&](const AbstractState& as, const SVF::SVFVar* var,
-                            const SVFType* dstType)
+                             const SVFType* dstType)
     {
         const IntervalValue& itv = as[var->getId()].getInterval();
         if(itv.isBottom()) return itv;
