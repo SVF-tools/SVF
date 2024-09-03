@@ -995,7 +995,6 @@ void AbstractInterpretation::initExtFunMap()
         checkpoints.erase(callNode);
         u32_t arg0 = svfir->getValueNode(callNode->getArgument(0));
         AbstractState&as = getAbsStateFromTrace(callNode);
-        as[arg0].getInterval().meet_with(IntervalValue(1, 1));
         if (as[arg0].getInterval().equals(IntervalValue(1, 1)))
         {
             SVFUtil::errs() << SVFUtil::sucMsg("The assertion is successfully verified!!\n");
@@ -1009,6 +1008,25 @@ void AbstractInterpretation::initExtFunMap()
     };
     func_map["svf_assert"] = sse_svf_assert;
 
+    auto svf_assert_eq = [this](const CallICFGNode* callNode)
+    {
+        checkpoints.erase(callNode);
+        u32_t arg0 = svfir->getValueNode(callNode->getArgument(0));
+        u32_t arg1 = svfir->getValueNode(callNode->getArgument(1));
+        AbstractState&as = getAbsStateFromTrace(callNode);
+        if (as[arg0].getInterval().equals(as[arg1].getInterval()))
+        {
+            SVFUtil::errs() << SVFUtil::sucMsg("The assertion is successfully verified!!\n");
+        }
+        else
+        {
+            SVFUtil::errs() <<"svf_assert_eq Fail. " << callNode->toString() << "\n";
+            assert(false);
+        }
+        return;
+    };
+    func_map["svf_assert_eq"] = svf_assert_eq;
+
     auto svf_print = [&](const CallICFGNode* callNode)
     {
         if (callNode->arg_size() < 2) return;
@@ -1017,11 +1035,35 @@ void AbstractInterpretation::initExtFunMap()
         std::string text = strRead(as, callNode->getArgument(1));
         assert(as.inVarToValTable(num_id) && "print() should pass integer");
         IntervalValue itv = as[num_id].getInterval();
-        std::cout << "Text: " << text <<", Value: " << callNode->getArgument(0)->toString() << ", PrintVal: " << itv.toString() << std::endl;
+        std::cout << "Text: " << text <<", Value: " << callNode->getArgument(0)->toString()
+                  << ", PrintVal: " << itv.toString() << ", Loc:" << callNode->getSourceLoc() << std::endl;
         return;
     };
     func_map["svf_print"] = svf_print;
 
+    auto svf_set_value = [&](const CallICFGNode* callNode)
+    {
+        if (callNode->arg_size() < 2) return;
+        AbstractState&as = getAbsStateFromTrace(callNode);
+        AbstractValue& num = as[svfir->getValueNode(callNode->getArgument(0))];
+        AbstractValue& lb = as[svfir->getValueNode(callNode->getArgument(1))];
+        AbstractValue& ub = as[svfir->getValueNode(callNode->getArgument(2))];
+        assert(lb.getInterval().is_numeral() && ub.getInterval().is_numeral());
+        num.getInterval().set_to_top();
+        num.getInterval().meet_with(IntervalValue(lb.getInterval().lb(), ub.getInterval().ub()));
+        if (icfg->hasICFGNode(SVFUtil::cast<SVFInstruction>(callNode->getArgument(0)))) {
+            const ICFGNode* node = icfg->getICFGNode(SVFUtil::cast<SVFInstruction>(callNode->getArgument(0)));
+            for (const SVFStmt* stmt: node->getSVFStmts()) {
+                if (SVFUtil::isa<LoadStmt>(stmt)) {
+                    const LoadStmt* load = SVFUtil::cast<LoadStmt>(stmt);
+                    NodeID rhsId = load->getRHSVarID();
+                    as.storeValue(rhsId, num);
+                }
+            }
+        }
+        return;
+    };
+    func_map["set_value"] = svf_set_value;
 
     auto sse_scanf = [&](const CallICFGNode* callNode)
     {
@@ -1708,8 +1750,23 @@ void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
         const ICFGNode* opICFGNode = phi->getOpICFGNode(i);
         if (hasAbsStateFromTrace(opICFGNode))
         {
+            AbstractState tmpEs = abstractTrace[opICFGNode];
             AbstractState& opAs = getAbsStateFromTrace(opICFGNode);
-            rhs.join_with(opAs[curId]);
+            const ICFGEdge* edge =  icfg->getICFGEdge(opICFGNode, icfgNode, ICFGEdge::IntraCF);
+            // if IntraEdge, check the condition, if it is feasible, join the value
+            // if IntraEdge but not conditional edge, join the value
+            // if not IntraEdge, join the value
+            if (edge) {
+                const IntraCFGEdge* intraEdge = SVFUtil::cast<IntraCFGEdge>(edge);
+                if (intraEdge->getCondition()) {
+                    if (isBranchFeasible(intraEdge, tmpEs))
+                        rhs.join_with(opAs[curId]);
+                }
+                else
+                    rhs.join_with(opAs[curId]);
+            } else {
+                rhs.join_with(opAs[curId]);
+            }
         }
     }
     as[res] = rhs;
@@ -1810,181 +1867,196 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
     AbstractState& as = getAbsStateFromTrace(cmp->getICFGNode());
     u32_t op0 = cmp->getOpVarID(0);
     u32_t op1 = cmp->getOpVarID(1);
-    if (!as.inVarToValTable(op0)) as[op0] = IntervalValue::top();
-    if (!as.inVarToValTable(op1)) as[op1] = IntervalValue::top();
-    u32_t res = cmp->getResID();
-    if (as.inVarToValTable(op0) && as.inVarToValTable(op1))
-    {
+    // if it is address
+    if (as.inVarToAddrsTable(op0) && as.inVarToAddrsTable(op1)) {
         IntervalValue resVal;
-        if (as[op0].isInterval() && as[op1].isInterval())
-        {
-            IntervalValue &lhs = as[op0].getInterval(), &rhs = as[op1].getInterval();
-            //AbstractValue
-            auto predicate = cmp->getPredicate();
-            switch (predicate)
-            {
-            case CmpStmt::ICMP_EQ:
-            case CmpStmt::FCMP_OEQ:
-            case CmpStmt::FCMP_UEQ:
-                resVal = (lhs == rhs);
-                // resVal = (lhs.getInterval() == rhs.getInterval());
-                break;
-            case CmpStmt::ICMP_NE:
-            case CmpStmt::FCMP_ONE:
-            case CmpStmt::FCMP_UNE:
-                resVal = (lhs != rhs);
-                break;
-            case CmpStmt::ICMP_UGT:
-            case CmpStmt::ICMP_SGT:
-            case CmpStmt::FCMP_OGT:
-            case CmpStmt::FCMP_UGT:
-                resVal = (lhs > rhs);
-                break;
-            case CmpStmt::ICMP_UGE:
-            case CmpStmt::ICMP_SGE:
-            case CmpStmt::FCMP_OGE:
-            case CmpStmt::FCMP_UGE:
-                resVal = (lhs >= rhs);
-                break;
-            case CmpStmt::ICMP_ULT:
-            case CmpStmt::ICMP_SLT:
-            case CmpStmt::FCMP_OLT:
-            case CmpStmt::FCMP_ULT:
-                resVal = (lhs < rhs);
-                break;
-            case CmpStmt::ICMP_ULE:
-            case CmpStmt::ICMP_SLE:
-            case CmpStmt::FCMP_OLE:
-            case CmpStmt::FCMP_ULE:
-                resVal = (lhs <= rhs);
-                break;
-            case CmpStmt::FCMP_FALSE:
-                resVal = IntervalValue(0, 0);
-                break;
-            case CmpStmt::FCMP_TRUE:
-                resVal = IntervalValue(1, 1);
-                break;
-            default:
-            {
-                assert(false && "undefined compare: ");
-            }
-            }
-            as[res] = resVal;
+        AddressValue addrOp0 = as[op0].getAddrs();
+        AddressValue addrOp1 = as[op1].getAddrs();
+        u32_t res = cmp->getResID();
+        if (addrOp0.equals(addrOp1)) {
+            resVal = IntervalValue(1, 1);
         }
-        else if (as[op0].isAddr() && as[op1].isAddr())
+        else if (addrOp0.hasIntersect(addrOp1)) {
+            resVal = IntervalValue(0, 1);
+        }
+        else {
+            resVal = IntervalValue(0, 0);
+        }
+        as[res] = resVal;
+    } else
+    {
+        if (!as.inVarToValTable(op0))
+            as[op0] = IntervalValue::top();
+        if (!as.inVarToValTable(op1))
+            as[op1] = IntervalValue::top();
+        u32_t res = cmp->getResID();
+        if (as.inVarToValTable(op0) && as.inVarToValTable(op1))
         {
-            AddressValue &lhs = as[op0].getAddrs(), &rhs = as[op1].getAddrs();
-            auto predicate = cmp->getPredicate();
-            switch (predicate)
+            IntervalValue resVal;
+            if (as[op0].isInterval() && as[op1].isInterval())
             {
-            case CmpStmt::ICMP_EQ:
-            case CmpStmt::FCMP_OEQ:
-            case CmpStmt::FCMP_UEQ:
-            {
-                if (lhs.hasIntersect(rhs))
+                IntervalValue &lhs = as[op0].getInterval(),
+                              &rhs = as[op1].getInterval();
+                // AbstractValue
+                auto predicate = cmp->getPredicate();
+                switch (predicate)
                 {
-                    resVal = IntervalValue(0, 1);
-                }
-                else if (lhs.empty() && rhs.empty())
-                {
-                    resVal = IntervalValue(1, 1);
-                }
-                else
-                {
+                case CmpStmt::ICMP_EQ:
+                case CmpStmt::FCMP_OEQ:
+                case CmpStmt::FCMP_UEQ:
+                    resVal = (lhs == rhs);
+                    // resVal = (lhs.getInterval() == rhs.getInterval());
+                    break;
+                case CmpStmt::ICMP_NE:
+                case CmpStmt::FCMP_ONE:
+                case CmpStmt::FCMP_UNE:
+                    resVal = (lhs != rhs);
+                    break;
+                case CmpStmt::ICMP_UGT:
+                case CmpStmt::ICMP_SGT:
+                case CmpStmt::FCMP_OGT:
+                case CmpStmt::FCMP_UGT:
+                    resVal = (lhs > rhs);
+                    break;
+                case CmpStmt::ICMP_UGE:
+                case CmpStmt::ICMP_SGE:
+                case CmpStmt::FCMP_OGE:
+                case CmpStmt::FCMP_UGE:
+                    resVal = (lhs >= rhs);
+                    break;
+                case CmpStmt::ICMP_ULT:
+                case CmpStmt::ICMP_SLT:
+                case CmpStmt::FCMP_OLT:
+                case CmpStmt::FCMP_ULT:
+                    resVal = (lhs < rhs);
+                    break;
+                case CmpStmt::ICMP_ULE:
+                case CmpStmt::ICMP_SLE:
+                case CmpStmt::FCMP_OLE:
+                case CmpStmt::FCMP_ULE:
+                    resVal = (lhs <= rhs);
+                    break;
+                case CmpStmt::FCMP_FALSE:
                     resVal = IntervalValue(0, 0);
-                }
-                break;
-            }
-            case CmpStmt::ICMP_NE:
-            case CmpStmt::FCMP_ONE:
-            case CmpStmt::FCMP_UNE:
-            {
-                if (lhs.hasIntersect(rhs))
-                {
-                    resVal = IntervalValue(0, 1);
-                }
-                else if (lhs.empty() && rhs.empty())
-                {
-                    resVal = IntervalValue(0, 0);
-                }
-                else
-                {
+                    break;
+                case CmpStmt::FCMP_TRUE:
                     resVal = IntervalValue(1, 1);
+                    break;
+                default: {
+                    assert(false && "undefined compare: ");
                 }
-                break;
+                }
+                as[res] = resVal;
             }
-            case CmpStmt::ICMP_UGT:
-            case CmpStmt::ICMP_SGT:
-            case CmpStmt::FCMP_OGT:
-            case CmpStmt::FCMP_UGT:
+            else if (as[op0].isAddr() && as[op1].isAddr())
             {
-                if (lhs.size() == 1 && rhs.size() == 1)
+                AddressValue &lhs = as[op0].getAddrs(),
+                             &rhs = as[op1].getAddrs();
+                auto predicate = cmp->getPredicate();
+                switch (predicate)
                 {
-                    resVal = IntervalValue(*lhs.begin() > *rhs.begin());
+                case CmpStmt::ICMP_EQ:
+                case CmpStmt::FCMP_OEQ:
+                case CmpStmt::FCMP_UEQ: {
+                    if (lhs.hasIntersect(rhs))
+                    {
+                        resVal = IntervalValue(0, 1);
+                    }
+                    else if (lhs.empty() && rhs.empty())
+                    {
+                        resVal = IntervalValue(1, 1);
+                    }
+                    else
+                    {
+                        resVal = IntervalValue(0, 0);
+                    }
+                    break;
                 }
-                else
-                {
-                    resVal = IntervalValue(0, 1);
+                case CmpStmt::ICMP_NE:
+                case CmpStmt::FCMP_ONE:
+                case CmpStmt::FCMP_UNE: {
+                    if (lhs.hasIntersect(rhs))
+                    {
+                        resVal = IntervalValue(0, 1);
+                    }
+                    else if (lhs.empty() && rhs.empty())
+                    {
+                        resVal = IntervalValue(0, 0);
+                    }
+                    else
+                    {
+                        resVal = IntervalValue(1, 1);
+                    }
+                    break;
                 }
-                break;
+                case CmpStmt::ICMP_UGT:
+                case CmpStmt::ICMP_SGT:
+                case CmpStmt::FCMP_OGT:
+                case CmpStmt::FCMP_UGT: {
+                    if (lhs.size() == 1 && rhs.size() == 1)
+                    {
+                        resVal = IntervalValue(*lhs.begin() > *rhs.begin());
+                    }
+                    else
+                    {
+                        resVal = IntervalValue(0, 1);
+                    }
+                    break;
+                }
+                case CmpStmt::ICMP_UGE:
+                case CmpStmt::ICMP_SGE:
+                case CmpStmt::FCMP_OGE:
+                case CmpStmt::FCMP_UGE: {
+                    if (lhs.size() == 1 && rhs.size() == 1)
+                    {
+                        resVal = IntervalValue(*lhs.begin() >= *rhs.begin());
+                    }
+                    else
+                    {
+                        resVal = IntervalValue(0, 1);
+                    }
+                    break;
+                }
+                case CmpStmt::ICMP_ULT:
+                case CmpStmt::ICMP_SLT:
+                case CmpStmt::FCMP_OLT:
+                case CmpStmt::FCMP_ULT: {
+                    if (lhs.size() == 1 && rhs.size() == 1)
+                    {
+                        resVal = IntervalValue(*lhs.begin() < *rhs.begin());
+                    }
+                    else
+                    {
+                        resVal = IntervalValue(0, 1);
+                    }
+                    break;
+                }
+                case CmpStmt::ICMP_ULE:
+                case CmpStmt::ICMP_SLE:
+                case CmpStmt::FCMP_OLE:
+                case CmpStmt::FCMP_ULE: {
+                    if (lhs.size() == 1 && rhs.size() == 1)
+                    {
+                        resVal = IntervalValue(*lhs.begin() <= *rhs.begin());
+                    }
+                    else
+                    {
+                        resVal = IntervalValue(0, 1);
+                    }
+                    break;
+                }
+                case CmpStmt::FCMP_FALSE:
+                    resVal = IntervalValue(0, 0);
+                    break;
+                case CmpStmt::FCMP_TRUE:
+                    resVal = IntervalValue(1, 1);
+                    break;
+                default: {
+                    assert(false && "undefined compare: ");
+                }
+                }
+                as[res] = resVal;
             }
-            case CmpStmt::ICMP_UGE:
-            case CmpStmt::ICMP_SGE:
-            case CmpStmt::FCMP_OGE:
-            case CmpStmt::FCMP_UGE:
-            {
-                if (lhs.size() == 1 && rhs.size() == 1)
-                {
-                    resVal = IntervalValue(*lhs.begin() >= *rhs.begin());
-                }
-                else
-                {
-                    resVal = IntervalValue(0, 1);
-                }
-                break;
-            }
-            case CmpStmt::ICMP_ULT:
-            case CmpStmt::ICMP_SLT:
-            case CmpStmt::FCMP_OLT:
-            case CmpStmt::FCMP_ULT:
-            {
-                if (lhs.size() == 1 && rhs.size() == 1)
-                {
-                    resVal = IntervalValue(*lhs.begin() < *rhs.begin());
-                }
-                else
-                {
-                    resVal = IntervalValue(0, 1);
-                }
-                break;
-            }
-            case CmpStmt::ICMP_ULE:
-            case CmpStmt::ICMP_SLE:
-            case CmpStmt::FCMP_OLE:
-            case CmpStmt::FCMP_ULE:
-            {
-                if (lhs.size() == 1 && rhs.size() == 1)
-                {
-                    resVal = IntervalValue(*lhs.begin() <= *rhs.begin());
-                }
-                else
-                {
-                    resVal = IntervalValue(0, 1);
-                }
-                break;
-            }
-            case CmpStmt::FCMP_FALSE:
-                resVal = IntervalValue(0, 0);
-                break;
-            case CmpStmt::FCMP_TRUE:
-                resVal = IntervalValue(1, 1);
-                break;
-            default:
-            {
-                assert(false && "undefined compare: ");
-            }
-            }
-            as[res] = resVal;
         }
     }
 }
@@ -2052,7 +2124,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
         return IntervalValue::top(); // TODO: may have better solution
     };
 
-    auto getTruncValue = [](const AbstractState& as, const SVF::SVFVar* var,
+    auto getTruncValue = [&](const AbstractState& as, const SVF::SVFVar* var,
                             const SVFType* dstType)
     {
         const IntervalValue& itv = as[var->getId()].getInterval();
@@ -2070,7 +2142,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
             if (s8_lb > s8_ub)
             {
                 // return range of s8
-                return IntervalValue::top();
+                return this->getRangeLimitFromType(dstType);
             }
             return IntervalValue(s8_lb, s8_ub);
         }
@@ -2082,7 +2154,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
             if (s16_lb > s16_ub)
             {
                 // return range of s16
-                return IntervalValue::top();
+                return this->getRangeLimitFromType(dstType);
             }
             return IntervalValue(s16_lb, s16_ub);
         }
@@ -2094,7 +2166,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
             if (s32_lb > s32_ub)
             {
                 // return range of s32
-                return IntervalValue::top();
+                return this->getRangeLimitFromType(dstType);
             }
             return IntervalValue(s32_lb, s32_ub);
         }
