@@ -188,6 +188,10 @@ public:
     {
 
     }
+    inline const std::string &getName() const
+    {
+        return fun->getName();
+    }
 
     /// Get function of this call node
     inline const SVFFunction* getFunction() const

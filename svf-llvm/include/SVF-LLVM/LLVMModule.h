@@ -93,6 +93,7 @@ private:
     LLVMType2SVFTypeMap LLVMType2SVFType;
     Type2TypeInfoMap Type2TypeInfo;
     ObjTypeInference* typeInference;
+    NodeID callGraphNodeNum;
 
     /// Constructor
     LLVMModuleSet();

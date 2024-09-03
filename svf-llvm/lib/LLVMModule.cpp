@@ -77,6 +77,7 @@ LLVMModuleSet::LLVMModuleSet()
     : symInfo(SymbolTableInfo::SymbolInfo()),
       svfModule(SVFModule::getSVFModule()), typeInference(new ObjTypeInference())
 {
+    callGraphNodeNum = 0;
 }
 
 LLVMModuleSet::~LLVMModuleSet()
@@ -243,6 +244,13 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
         func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
     svfModule->addFunctionSet(svfFunc);
+
+    NodeID id = callGraphNodeNum;
+    CallGraphNode* callGraphNode = new CallGraphNode(id, svfFunc);
+    svfModule->addCallGraphNode(callGraphNode);
+    callGraphNodeNum++;
+    // std::printf("callGraphNodeNum: %d\n",callGraphNodeNum);
+
     if (ExtFun2Annotations.find(func) != ExtFun2Annotations.end())
         svfFunc->setAnnotations(ExtFun2Annotations[func]);
     addFunctionMap(func, svfFunc);
