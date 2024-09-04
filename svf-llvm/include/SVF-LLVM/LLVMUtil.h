@@ -328,8 +328,6 @@ const std::string getSourceLocOfFunction(const Function* F);
 bool isIntrinsicInst(const Instruction* inst);
 bool isIntrinsicFun(const Function* func);
 
-/// Get all called funcions in a parent function
-std::vector<const Function *> getCalledFunctions(const Function *F);
 // Converts a mangled name to C naming style to match functions in extapi.c.
 std::string restoreFuncName(std::string funcName);
 
