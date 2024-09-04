@@ -352,8 +352,7 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
                 auto called_llvmval = call->getCalledOperand()->stripPointerCasts();
                 if (const Function* called_llvmfunc = SVFUtil::dyn_cast<Function>(called_llvmval))
                 {
-                    const Function* llvmfunc_def = LLVMUtil::getDefFunForMultipleModule(called_llvmfunc);
-                    SVFFunction* callee = getSVFFunction(llvmfunc_def);
+                    SVFFunction* callee = getSVFFunction(called_llvmfunc);
                     svfcall->setCalledOperand(callee);
                 }
                 else
@@ -911,7 +910,6 @@ void LLVMModuleSet::buildFunToFunMap()
     Set<const Function*> funDecls, funDefs, extFuncs, overwriteExtFuncs;
     OrderedSet<string> declNames, defNames, intersectNames;
     typedef Map<string, const Function*> NameToFunDefMapTy;
-    typedef Map<string, Set<const Function*>> NameToFunDeclsMapTy;
     for (Module& mod : modules)
     {
         // extapi.bc functions
@@ -984,52 +982,6 @@ void LLVMModuleSet::buildFunToFunMap()
         if (intersectNames.find(funName) != intersectNames.end())
         {
             nameToFunDefMap.emplace(std::move(funName), fdef);
-        }
-    }
-
-    ///// name to decls map
-    NameToFunDeclsMapTy nameToFunDeclsMap;
-    for (const Function* fdecl : funDecls)
-    {
-        string funName = fdecl->getName().str();
-        if (intersectNames.find(funName) != intersectNames.end())
-        {
-            // pair with key funName will be created automatically if it does
-            // not exist
-            nameToFunDeclsMap[std::move(funName)].insert(fdecl);
-        }
-    }
-
-    /// Fun decl --> def
-    for (const Function* fdecl : funDecls)
-    {
-        string funName = fdecl->getName().str();
-        NameToFunDefMapTy::iterator mit;
-        if (intersectNames.find(funName) != intersectNames.end() &&
-                (mit = nameToFunDefMap.find(funName)) != nameToFunDefMap.end())
-        {
-            FunDeclToDefMap[fdecl] = mit->second;
-        }
-    }
-
-    /// Fun def --> decls
-    for (const Function* fdef : funDefs)
-    {
-        string funName = fdef->getName().str();
-        if (intersectNames.find(funName) == intersectNames.end())
-            continue;
-        NameToFunDeclsMapTy::iterator mit = nameToFunDeclsMap.find(funName);
-        if (mit == nameToFunDeclsMap.end())
-            continue;
-
-        std::vector<const Function*>& decls = FunDefToDeclsMap[fdef];
-        const auto& declsSet = mit->second;
-        // Reserve space for decls to avoid more than 1 reallocation
-        decls.reserve(decls.size() + declsSet.size());
-
-        for (const Function* decl : declsSet)
-        {
-            decls.push_back(decl);
         }
     }
 
@@ -1240,7 +1192,7 @@ void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
         const Function* func = SVFUtil::cast<Function>(val);
         svffun->setIsNotRet(LLVMUtil::functionDoesNotRet(func));
         svffun->setIsUncalledFunction(LLVMUtil::isUncalledFunction(func));
-        svffun->setDefFunForMultipleModule(getSVFFunction(LLVMUtil::getDefFunForMultipleModule(func)));
+        svffun->setDefFunForMultipleModule(getSVFFunction(func));
     }
 
     svfvalue->setSourceLoc(LLVMUtil::getSourceLoc(val));

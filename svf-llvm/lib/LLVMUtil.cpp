@@ -36,16 +36,6 @@
 
 using namespace SVF;
 
-const Function* LLVMUtil::getDefFunForMultipleModule(const Function* fun)
-{
-    if (fun == nullptr)
-        return nullptr;
-    LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
-    if (fun->isDeclaration() && llvmModuleset->hasDefinition(fun))
-        fun = LLVMModuleSet::getLLVMModuleSet()->getDefinition(fun);
-    return fun;
-}
-
 const Function* LLVMUtil::getProgFunction(const std::string& funName)
 {
     for (const Module& M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
@@ -176,22 +166,6 @@ bool LLVMUtil::isUncalledFunction (const Function*  fun)
     {
         if (LLVMUtil::isCallSite(*i))
             return false;
-    }
-    if (LLVMModuleSet::getLLVMModuleSet()->hasDeclaration(fun))
-    {
-        const LLVMModuleSet::FunctionSetType &decls = LLVMModuleSet::getLLVMModuleSet()->getDeclaration(fun);
-        for (LLVMModuleSet::FunctionSetType::const_iterator it = decls.begin(),
-                eit = decls.end(); it != eit; ++it)
-        {
-            const Function* decl = *it;
-            if(decl->hasAddressTaken())
-                return false;
-            for (Value::const_user_iterator i = decl->user_begin(), e = decl->user_end(); i != e; ++i)
-            {
-                if (LLVMUtil::isCallSite(*i))
-                    return false;
-            }
-        }
     }
     return true;
 }
@@ -683,7 +657,7 @@ bool LLVMUtil::isHeapAllocExtCallViaRet(const Instruction* inst)
     bool isPtrTy = inst->getType()->isPointerTy();
     if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
     {
-        const Function* fun = getCallee(call);
+        const Function* fun = call->getCalledFunction();
         return fun && isPtrTy &&
                (pSet->hasExtFuncAnnotation(fun, "ALLOC_RET") ||
                 pSet->hasExtFuncAnnotation(fun, "REALLOC_RET"));
@@ -696,7 +670,7 @@ bool LLVMUtil::isHeapAllocExtCallViaArg(const Instruction* inst)
 {
     if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
     {
-        const Function* fun = getCallee(call);
+        const Function* fun = call->getCalledFunction();
         return fun && LLVMModuleSet::getLLVMModuleSet()->hasExtFuncAnnotation(
                           fun, "ALLOC_ARG");
     }

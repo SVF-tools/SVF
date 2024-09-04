@@ -52,8 +52,6 @@ inline bool isCallSite(const Value* val)
     return SVFUtil::isa<CallBase>(val);
 }
 
-/// Get the definition of a function across multiple modules
-const Function* getDefFunForMultipleModule(const Function* fun);
 
 /// Return LLVM callsite given a value
 inline const CallBase* getLLVMCallSite(const Value* value)
@@ -65,8 +63,7 @@ inline const CallBase* getLLVMCallSite(const Value* value)
 inline const Function* getCallee(const CallBase* cs)
 {
     // FIXME: do we need to strip-off the casts here to discover more library functions
-    const Function* callee = SVFUtil::dyn_cast<Function>(cs->getCalledOperand()->stripPointerCasts());
-    return callee ? getDefFunForMultipleModule(callee) : nullptr;
+    return SVFUtil::dyn_cast<Function>(cs->getCalledOperand()->stripPointerCasts());
 }
 
 /// Return LLVM function if this value is
