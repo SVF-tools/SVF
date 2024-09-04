@@ -328,13 +328,6 @@ const std::string getSourceLocOfFunction(const Function* F);
 bool isIntrinsicInst(const Instruction* inst);
 bool isIntrinsicFun(const Function* func);
 
-/// Get all called funcions in a parent function
-std::vector<const Function *> getCalledFunctions(const Function *F);
-void removeFunAnnotations(Set<Function*>& removedFuncList);
-bool isUnusedGlobalVariable(const GlobalVariable& global);
-void removeUnusedGlobalVariables(Module* module);
-/// Delete unused functions, annotations and global variables in extapi.bc
-void removeUnusedFuncsAndAnnotationsAndGlobalVariables(Set<Function*> removedFuncList);
 // Converts a mangled name to C naming style to match functions in extapi.c.
 std::string restoreFuncName(std::string funcName);
 

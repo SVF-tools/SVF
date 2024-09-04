@@ -39,6 +39,7 @@
 #include "MSSA/SVFGBuilder.h"
 #include "llvm/Support/FileSystem.h"
 #include "SVF-LLVM/ObjTypeInference.h"
+#include "llvm/Transforms/Utils/Cloning.h"
 
 using namespace std;
 using namespace SVF;
@@ -159,7 +160,6 @@ void LLVMModuleSet::build()
 
     buildFunToFunMap();
     buildGlobalDefToRepMap();
-    removeUnusedExtAPIs();
 
     if (Options::SVFMain())
         addSVFMain();
@@ -243,9 +243,8 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
         func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
     svfModule->addFunctionSet(svfFunc);
-    if (ExtFun2Annotations.find(func) != ExtFun2Annotations.end())
-        svfFunc->setAnnotations(ExtFun2Annotations[func]);
     addFunctionMap(func, svfFunc);
+    addFunctionAnnotations(svfFunc);
 
     for (const Argument& arg : func->args())
     {
@@ -839,7 +838,7 @@ void LLVMModuleSet::collectExtFunAnnotations(const Module* mod)
         {
             std::string annotation = data->getAsString().str();
             if (!annotation.empty())
-                ExtFun2Annotations[fun].push_back(annotation);
+                ExtFun2Annotations[fun->getName().str()].push_back(annotation);
         }
     }
 }
@@ -932,17 +931,13 @@ void LLVMModuleSet::buildFunToFunMap()
                 else if (fun.getName().str() == "svf__main")
                 {
                     ExtFuncsVec.push_back(&fun);
-                    // Get all called functions in svf_main()
-                    std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(&fun);
-                    ExtFuncsVec.insert(ExtFuncsVec.end(), calledFunctions.begin(), calledFunctions.end());
                 }
                 else
                 {
                     extFuncs.insert(&fun);
-                    // Find overwrite functions in extapi.bc
-                    if (ExtFun2Annotations.find(&fun) != ExtFun2Annotations.end())
+                    if (ExtFun2Annotations.find(fun.getName().str()) != ExtFun2Annotations.end())
                     {
-                        std::vector<std::string> annotations = ExtFun2Annotations[&fun];
+                        std::vector<std::string> annotations = ExtFun2Annotations[fun.getName().str()];
                         auto it =
                             std::find_if(annotations.begin(), annotations.end(),
                                          [&](const std::string& annotation)
@@ -1038,6 +1033,30 @@ void LLVMModuleSet::buildFunToFunMap()
         }
     }
 
+    auto cloneAndReplaceFunction = [](Function* oldFunction, Function* newFunction) {
+        // Get parent module of the old function
+        Module* parentModule = oldFunction->getParent();
+        // Create a new function with the same signature as newFunction
+        Function *clonedFunction = Function::Create(newFunction->getFunctionType(), Function::ExternalLinkage, newFunction->getName(), parentModule);
+        // Map the arguments of the new function to the arguments of newFunction
+        llvm::ValueToValueMapTy valueMap;
+        Function::arg_iterator destArg = clonedFunction->arg_begin();
+        for (Function::const_arg_iterator srcArg = newFunction->arg_begin(); srcArg != newFunction->arg_end(); ++srcArg) {
+            destArg->setName(srcArg->getName()); // Copy the name of the original argument
+            valueMap[&*srcArg] = &*destArg++; // Add a mapping from the old arg to the new arg
+        }
+        // Clone the body of newFunction into clonedFunction
+        llvm::SmallVector<ReturnInst*, 8> ignoredReturns;  
+        CloneFunctionInto(clonedFunction, newFunction, valueMap, llvm::CloneFunctionChangeType::LocalChangesOnly, ignoredReturns, "", nullptr);
+        // Replace all uses of oldFunction with clonedFunction
+        oldFunction->replaceAllUsesWith(clonedFunction);
+        std::string oldFunctionName = oldFunction->getName().str();
+        // Delete the old function
+        oldFunction->eraseFromParent(); 
+        // Restore the original function name  
+        clonedFunction->setName(oldFunctionName);
+    };
+
     /// App Func decl -> SVF extern Func def
     for (const Function* fdecl : funDecls)
     {
@@ -1046,15 +1065,12 @@ void LLVMModuleSet::buildFunToFunMap()
         {
             if (extfun->getName().str().compare(declName) == 0)
             {
-                // AppDecl -> ExtDef in Table 1
-                FunDeclToDefMap[fdecl] = extfun;
-                // ExtDef -> AppDecl in Table 1
-                std::vector<const Function*>& decls = FunDefToDeclsMap[extfun];
-                decls.push_back(fdecl);
-                // Keep all called functions in extfun
-                // ExtDecl -> ExtDecl in Table 1
-                std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(extfun);
-                ExtFuncsVec.insert(ExtFuncsVec.end(), calledFunctions.begin(), calledFunctions.end());
+                auto it = ExtFun2Annotations.find(extfun->getName().str());
+                // Without annotations, this function is normal function with useful function body
+                if (it == ExtFun2Annotations.end()) 
+                {
+                    cloneAndReplaceFunction(const_cast<Function*>(fdecl), const_cast<Function*>(extfun));
+                }
                 break;
             }
         }
@@ -1105,27 +1121,23 @@ void LLVMModuleSet::buildFunToFunMap()
                 if (argMismatch)
                     continue;
 
-                Function* fun = const_cast<Function*>(appfunc);
-                Module* mod = fun->getParent();
-                FunctionType* funType = fun->getFunctionType();
-                std::string funName = fun->getName().str();
-                // Replace app function definition with declaration
-                Function* declaration = Function::Create(funType, GlobalValue::ExternalLinkage, funName, mod);
-                fun->replaceAllUsesWith(declaration);
-                fun->eraseFromParent();
-                declaration->setName(funName);
-                // AppDef -> ExtDef in Table 1, AppDef has been changed to AppDecl
-                FunDeclToDefMap[declaration] = owfunc;
-                // ExtDef -> AppDef in Table 1
-                std::vector<const Function*>& decls = FunDefToDeclsMap[owfunc];
-                decls.push_back(declaration);
-                // Keep all called functions in owfunc
-                // ExtDecl -> ExtDecl in Table 1
-                std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(owfunc);
-                ExtFuncsVec.insert(ExtFuncsVec.end(), calledFunctions.begin(), calledFunctions.end());
+                cloneAndReplaceFunction(const_cast<Function*>(appfunc), const_cast<Function*>(owfunc));
+
                 break;
             }
         }
+    }
+
+    // Remove ExtAPI module from modules
+    auto it = std::find_if(modules.begin(), modules.end(),
+        [](const std::reference_wrapper<llvm::Module>& moduleRef) {
+            return moduleRef.get().getName().str() == ExtAPI::getExtAPI()->getExtBcPath();
+        });
+
+    if (it != modules.end()) {
+        size_t index = std::distance(modules.begin(), it);
+        modules.erase(it);
+        owned_modules.erase(owned_modules.begin() + index);
     }
 }
 
@@ -1171,23 +1183,13 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
     }
 }
 
-void LLVMModuleSet::removeUnusedExtAPIs()
+void LLVMModuleSet::addFunctionAnnotations(SVFFunction* func)
 {
-    Set<Function*> removedFuncList;
-    for (Module& mod : modules)
+    std::string name = LLVMUtil::restoreFuncName(func->getName());
+    if (ExtFun2Annotations.find(name) != ExtFun2Annotations.end())
     {
-        if (mod.getName().str() != ExtAPI::getExtAPI()->getExtBcPath())
-            continue;
-        for (Function& func : mod.functions())
-        {
-            if (isCalledExtFunction(&func))
-            {
-                removedFuncList.insert(&func);
-                ExtFun2Annotations.erase(&func);
-            }
-        }
+        func->setAnnotations(ExtFun2Annotations[name]);
     }
-    LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(removedFuncList);
 }
 
 // Dump modules to files

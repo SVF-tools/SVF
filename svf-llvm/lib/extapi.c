@@ -1046,49 +1046,58 @@ void _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcRKS3_(void **arg
     *arg0 = arg1;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 const unsigned short **__ctype_b_loc(void)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 int **__ctype_tolower_loc(void)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 int **__ctype_toupper_loc(void)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 int *__errno_location(void)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 int * __h_errno_location(void)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void* __res_state(void)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *asctime(const void *timeptr)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char * bindtextdomain(const char * domainname, const char * dirname)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char * bind_textdomain_codeset(const char * domainname, const char * codeset)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
 char *ctermid(char *s)
@@ -1096,152 +1105,182 @@ char *ctermid(char *s)
     return s;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char * dcgettext(const char * domainname, const char * msgid, int category)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char * dgettext(const char * domainname, const char * msgid)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char * dngettext(const char * domainname, const char * msgid, const char * msgid_plural, unsigned long int n)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct group *getgrgid(unsigned int gid)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct group *getgrnam(const char *name)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct hostent *gethostbyaddr(const void *addr, unsigned int len, int type)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct hostent *gethostbyname(const char *name)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct hostent *gethostbyname2(const char *name, int af)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct mntent *getmntent(void *stream)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct protoent *getprotobyname(const char *name)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct protoent *getprotobynumber(int proto)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct passwd *getpwent(void)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct passwd *getpwnam(const char *name)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct passwd *getpwuid(unsigned int uid)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct servent *getservbyname(const char *name, const char *proto)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct servent *getservbyport(int port, const char *proto)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct spwd *getspnam(const char *name)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char * gettext(const char * msgid)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct tm *gmtime(const void *timer)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 const char *gnu_get_libc_version(void)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 const char * gnutls_check_version(const char * req_version)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct lconv *localeconv(void)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct tm *localtime(const void *timer)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char * ngettext(const char * msgid, const char * msgid_plural, unsigned long int n)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *pango_cairo_font_map_get_default(void)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *re_comp(const char *regex)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *setlocale(int category, const char *locale)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *tgoto(const char *cap, int col, int row)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *tparm(char *str, ...)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 const char *zError(int a)
 {
-    return STATIC_OBJECT;
+    return NULL;
 }
