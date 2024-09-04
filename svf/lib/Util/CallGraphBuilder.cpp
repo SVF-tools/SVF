@@ -38,7 +38,7 @@ using namespace SVFUtil;
 CallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
 {
     /// create nodes
-    for (SVFModule::const_iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F)
+    for (SVFModule::const_callgraphnode_iterator F = svfModule->callgraphnode_begin(), E = svfModule->callgraphnode_end(); F != E; ++F)
     {
         callgraph->addCallGraphNode(*F);
     }

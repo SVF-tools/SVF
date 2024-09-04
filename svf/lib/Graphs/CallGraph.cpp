@@ -107,7 +107,6 @@ bool CallGraphNode::isReachableFromProgEntry() const
 /// Constructor
 CallGraph::CallGraph(CGEK k): kind(k)
 {
-    callGraphNodeNum = 0;
     numOfResolvedIndCallEdge = 0;
 }
 
@@ -121,13 +120,10 @@ void CallGraph::destroy()
 /*!
  * Add call graph node
  */
-void CallGraph::addCallGraphNode(const SVFFunction* fun)
+void CallGraph::addCallGraphNode(const CallGraphNode* callGraphNode)
 {
-    NodeID id = callGraphNodeNum;
-    CallGraphNode* callGraphNode = new CallGraphNode(id, fun);
-    addGNode(id,callGraphNode);
-    funToCallGraphNodeMap[fun] = callGraphNode;
-    callGraphNodeNum++;
+    addGNode(callGraphNode->getId(), const_cast<CallGraphNode*>(callGraphNode));
+    funToCallGraphNodeMap[callGraphNode->getFunction()] = const_cast<CallGraphNode*>(callGraphNode);
 }
 
 /*!
