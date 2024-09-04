@@ -1036,7 +1036,7 @@ void LLVMModuleSet::buildFunToFunMap()
         }
     }
 
-    auto cloneAndReplaceFunction = [](Function* oldFunction, Function* newFunction, bool cloneBody) {
+    auto cloneAndReplaceFunction = [](Function* oldFunction, Function* newFunction) {
         // Get parent module of the old function
         Module* parentModule = oldFunction->getParent();
         // Create a new function with the same signature as newFunction
@@ -1048,18 +1048,15 @@ void LLVMModuleSet::buildFunToFunMap()
             destArg->setName(srcArg->getName()); // Copy the name of the original argument
             valueMap[&*srcArg] = &*destArg++; // Add a mapping from the old arg to the new arg
         }
-
-        if (cloneBody) {
-            // Clone the body of newFunction into clonedFunction
-            llvm::SmallVector<ReturnInst*, 8> ignoredReturns;  
-            CloneFunctionInto(clonedFunction, newFunction, valueMap, llvm::CloneFunctionChangeType::LocalChangesOnly, ignoredReturns, "", nullptr);
-        }
-
+        // Clone the body of newFunction into clonedFunction
+        llvm::SmallVector<ReturnInst*, 8> ignoredReturns;  
+        CloneFunctionInto(clonedFunction, newFunction, valueMap, llvm::CloneFunctionChangeType::LocalChangesOnly, ignoredReturns, "", nullptr);
         // Replace all uses of oldFunction with clonedFunction
         oldFunction->replaceAllUsesWith(clonedFunction);
         std::string oldFunctionName = oldFunction->getName().str();
         // Delete the old function
-        oldFunction->eraseFromParent();   
+        oldFunction->eraseFromParent(); 
+        // Restore the original function name  
         clonedFunction->setName(oldFunctionName);
     };
 
@@ -1075,7 +1072,7 @@ void LLVMModuleSet::buildFunToFunMap()
                 // Without annotations, this function is normal function with useful function body
                 if (it == ExtFun2Annotations.end()) 
                 {
-                    cloneAndReplaceFunction(const_cast<Function*>(fdecl), const_cast<Function*>(extfun), true);
+                    cloneAndReplaceFunction(const_cast<Function*>(fdecl), const_cast<Function*>(extfun));
                 }
                 break;
             }
@@ -1127,7 +1124,7 @@ void LLVMModuleSet::buildFunToFunMap()
                 if (argMismatch)
                     continue;
 
-                cloneAndReplaceFunction(const_cast<Function*>(appfunc), const_cast<Function*>(owfunc), true);
+                cloneAndReplaceFunction(const_cast<Function*>(appfunc), const_cast<Function*>(owfunc));
 
                 break;
             }
