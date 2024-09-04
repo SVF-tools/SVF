@@ -389,7 +389,6 @@ private:
     void prePassSchedule();
     void buildSymbolTable() const;
     void collectExtFunAnnotations(const Module* mod);
-    void removeUnusedExtAPIs();
 };
 
 } // End namespace SVF
