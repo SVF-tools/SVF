@@ -308,17 +308,6 @@ u32_t LLVMUtil::getNumOfElements(const Type* ety)
     return numOfFields;
 }
 
-/*!
- * Get the num of BB's predecessors
- */
-u32_t LLVMUtil::getBBPredecessorNum(const BasicBlock* BB)
-{
-    u32_t num = 0;
-    for (const_pred_iterator it = pred_begin(BB), et = pred_end(BB); it != et; ++it)
-        num++;
-    return num;
-}
-
 /*
  * Reference functions:
  * llvm::parseIRFile (lib/IRReader/IRReader.cpp)
@@ -413,26 +402,6 @@ const Value* LLVMUtil::getGlobalRep(const Value* val)
             val = LLVMModuleSet::getLLVMModuleSet()->getGlobalRep(gvar);
     }
     return val;
-}
-
-u32_t LLVMUtil::getTypeSizeInBytes(const Type* type)
-{
-    // if the type has size then simply return it, otherwise just return 0
-    if(type->isSized())
-        return getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule())->getTypeStoreSize(const_cast<Type*>(type));
-    else
-        return 0;
-}
-
-u32_t LLVMUtil::getTypeSizeInBytes(const StructType *sty, u32_t field_idx)
-{
-
-    const StructLayout *stTySL = getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule())->getStructLayout( const_cast<StructType *>(sty) );
-    /// if this struct type does not have any element, i.e., opaque
-    if(sty->isOpaque())
-        return 0;
-    else
-        return stTySL->getElementOffset(field_idx);
 }
 
 /*!
