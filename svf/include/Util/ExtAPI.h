@@ -43,6 +43,7 @@ namespace SVF
 
 class ExtAPI
 {
+    friend class LLVMModuleSet;
 private:
 
     static ExtAPI *extOp;
@@ -72,9 +73,6 @@ public:
 
     const std::vector<std::string>& getExtFuncAnnotations(const SVFFunction* fun);
 
-    // Set the annotation of (F)
-    void setExtFuncAnnotations(const SVFFunction* fun, const std::vector<std::string>& funcAnnotations);
-
     // Does (F) have some annotation?
     bool hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation);
 
@@ -102,6 +100,10 @@ public:
     // Should (F) be considered "external" (either not defined in the program
     //   or a user-defined version of a known alloc or no-op)?
     bool is_ext(const SVFFunction *F);
+
+private:
+    // Set the annotation of (F)
+    void setExtFuncAnnotations(const SVFFunction* fun, const std::vector<std::string>& funcAnnotations);
 };
 } // End namespace SVF
 
