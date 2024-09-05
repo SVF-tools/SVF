@@ -249,8 +249,6 @@ public:
 
     SVFOtherValue* getSVFOtherValue(const Value* ov);
 
-    void addFunctionAnnotations(SVFFunction* func);
-
     /// Get the corresponding Function based on its name
     inline const SVFFunction* getSVFFunction(const std::string& name)
     {

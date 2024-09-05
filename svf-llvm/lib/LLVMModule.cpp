@@ -202,6 +202,13 @@ void LLVMModuleSet::createSVFDataStructure()
         createSVFFunction(func);
     }
 
+    // Store annotations of functions in extapi.bc
+    for (const auto& pair : ExtFun2Annotations)
+    {
+        const SVFFunction* svffun = getSVFFunction(pair.first);
+        ExtAPI::getExtAPI()->setExtFuncAnnotations(svffun, pair.second);
+    }
+
     /// then traverse candidate sets
     for (const Module& mod : modules)
     {
@@ -244,7 +251,6 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
         func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
     svfModule->addFunctionSet(svfFunc);
     addFunctionMap(func, svfFunc);
-    addFunctionAnnotations(svfFunc);
 
     for (const Argument& arg : func->args())
     {
@@ -842,69 +848,6 @@ void LLVMModuleSet::collectExtFunAnnotations(const Module* mod)
     }
 }
 
-/*
-    For a more detailed explanation of the Function declaration and definition mapping relationships and how External APIs are handled,
-    please refer to the SVF Wiki: https://github.com/SVF-tools/SVF/wiki/Handling-External-APIs-with-extapi.c
-
-                                    Table 1
-    | ------- | ----------------- | --------------- | ----------------- | ----------- |
-    |         |      AppDef       |     AppDecl     |      ExtDef       |   ExtDecl   |
-    | ------- | ----------------- | --------------- | ----------------- | ----------- |
-    | AppDef  |        X          | FunDefToDeclsMap| FunDeclToDefMap   |      X      |
-    | ------- | ----------------- | --------------- | ----------------- | ----------- |
-    | AppDecl | FunDeclToDefMap   |        X        | FunDeclToDefMap   |      X      |
-    | ------- | ----------------- | --------------- | ----------------- | ----------- |
-    | ExtDef  | FunDefToDeclsMap  | FunDefToDeclsMap|        X          |      X      |
-    | ------- | ----------------- | --------------- | ----------------- | ----------- |
-    | ExtDecl | FunDeclToDefMap   |        X        |        X          | ExtFuncsVec |
-    | ------- | ----------------- | --------------- | ----------------- | ----------- |
-
-    When a user wants to use functions in extapi.c to overwrite the functions defined in the app code, two relationships, "AppDef -> ExtDef" and "ExtDef -> AppDef," are used.
-    Use Ext function definition to override the App function definition (Ext function with "__attribute__((annotate("OVERWRITE")))" in extapi.c).
-    The app function definition will be changed to an app function declaration.
-    Then, put the app function declaration and its corresponding Ext function definition into FunDeclToDefMap/FunDefToDeclsMap.
-    ------------------------------------------------------
-    AppDef -> ExtDef (overwrite):
-        For example,
-            App function:
-                char* foo(char *a, char *b){return a;}
-            Ext function:
-                __attribute__((annotate("OVERWRITE")))
-                char* foo(char *a, char *b){return b;}
-
-            When SVF handles the foo function in the App module,
-            the definition of
-                foo: char* foo(char *a, char *b){return a;}
-            will be changed to a declaration
-                foo: char* foo(char *a, char *b);
-            Then,
-                foo: char* foo(char *a, char *b);
-                and
-                __attribute__((annotate("OVERWRITE")))
-                char* foo(char *a, char *b){return b;}
-            will be put into FunDeclToDefMap
-    ------------------------------------------------------
-    ExtDef -> AppDef (overwrite):
-        __attribute__((annotate("OVERWRITE")))
-        char* foo(char *a, char *b){return b;}
-        and
-        foo: char* foo(char *a, char *b);
-        are put into FunDefToDeclsMap;
-    ------------------------------------------------------
-    In principle, all functions in extapi.c have bodies (definitions), but some functions (those starting with "sse_")
-    have only function declarations without definitions. ExtFuncsVec is used to record function declarations starting with "sse_" that are used.
-
-    ExtDecl -> ExtDecl:
-        For example,
-        App function:
-            foo(){call memcpy();}
-        Ext function:
-            declare sse_check_overflow();
-            memcpy(){sse_check_overflow();}
-
-        sse_check_overflow() used in the Ext function but not in the App function.
-        sse_check_overflow should be kept in ExtFuncsVec.
-*/
 void LLVMModuleSet::buildFunToFunMap()
 {
     Set<const Function*> funDecls, funDefs, extFuncs, overwriteExtFuncs;
@@ -985,7 +928,8 @@ void LLVMModuleSet::buildFunToFunMap()
         }
     }
 
-    auto cloneAndReplaceFunction = [](Function* oldFunction, Function* newFunction) {
+    auto cloneAndReplaceFunction = [](Function* oldFunction, Function* newFunction, bool cloneBody) -> Function*
+    {
         // Get parent module of the old function
         Module* parentModule = oldFunction->getParent();
         // Create a new function with the same signature as newFunction
@@ -997,16 +941,20 @@ void LLVMModuleSet::buildFunToFunMap()
             destArg->setName(srcArg->getName()); // Copy the name of the original argument
             valueMap[&*srcArg] = &*destArg++; // Add a mapping from the old arg to the new arg
         }
-        // Clone the body of newFunction into clonedFunction
-        llvm::SmallVector<ReturnInst*, 8> ignoredReturns;  
-        CloneFunctionInto(clonedFunction, newFunction, valueMap, llvm::CloneFunctionChangeType::LocalChangesOnly, ignoredReturns, "", nullptr);
+
+        if (cloneBody) {
+            // Clone the body of newFunction into clonedFunction
+            llvm::SmallVector<ReturnInst*, 8> ignoredReturns;
+            CloneFunctionInto(clonedFunction, newFunction, valueMap, llvm::CloneFunctionChangeType::LocalChangesOnly, ignoredReturns, "", nullptr);
+        }
+
         // Replace all uses of oldFunction with clonedFunction
         oldFunction->replaceAllUsesWith(clonedFunction);
         std::string oldFunctionName = oldFunction->getName().str();
         // Delete the old function
-        oldFunction->eraseFromParent(); 
-        // Restore the original function name  
+        oldFunction->eraseFromParent();
         clonedFunction->setName(oldFunctionName);
+        return clonedFunction;
     };
 
     /// App Func decl -> SVF extern Func def
@@ -1021,7 +969,11 @@ void LLVMModuleSet::buildFunToFunMap()
                 // Without annotations, this function is normal function with useful function body
                 if (it == ExtFun2Annotations.end()) 
                 {
-                    cloneAndReplaceFunction(const_cast<Function*>(fdecl), const_cast<Function*>(extfun));
+                    cloneAndReplaceFunction(const_cast<Function*>(fdecl), const_cast<Function*>(extfun), true);
+                }
+                else
+                {
+                    ExtFuncsVec.push_back(fdecl);
                 }
                 break;
             }
@@ -1073,12 +1025,41 @@ void LLVMModuleSet::buildFunToFunMap()
                 if (argMismatch)
                     continue;
 
-                cloneAndReplaceFunction(const_cast<Function*>(appfunc), const_cast<Function*>(owfunc));
-
+                auto it = ExtFun2Annotations.find(appfuncName);
+                if (it != ExtFun2Annotations.end())
+                {
+                    std::vector<std::string> annotations = it->second;
+                    if (annotations.size() == 1 && annotations[0].find("OVERWRITE") != std::string::npos)
+                    {
+                        cloneAndReplaceFunction(const_cast<Function*>(appfunc), const_cast<Function*>(owfunc), true);
+                    }
+                    else
+                    {
+                        Function* newFunction = cloneAndReplaceFunction(const_cast<Function*>(appfunc), const_cast<Function*>(owfunc), false);
+                        ExtFuncsVec.push_back(newFunction);
+                    }
+                }
                 break;
             }
         }
     }
+
+    // Remove unused annotations in ExtFun2Annotations according to the functions in ExtFuncsVec
+    Fun2AnnoMap newFun2AnnoMap;
+    for (const Function* extfun : ExtFuncsVec)
+    {
+        std::string name = LLVMUtil::restoreFuncName(extfun->getName().str());
+        auto it = ExtFun2Annotations.find(name);
+        if (it != ExtFun2Annotations.end())
+        {
+            std::string newKey = name;
+            if (name != extfun->getName().str()) {
+                newKey = extfun->getName().str();
+            }
+            newFun2AnnoMap.insert({newKey, it->second});
+        }
+    }
+    ExtFun2Annotations.swap(newFun2AnnoMap);
 
     // Remove ExtAPI module from modules
     auto it = std::find_if(modules.begin(), modules.end(),
@@ -1132,15 +1113,6 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
         {
             GlobalDefToRepMap[cur] = rep;
         }
-    }
-}
-
-void LLVMModuleSet::addFunctionAnnotations(SVFFunction* func)
-{
-    std::string name = LLVMUtil::restoreFuncName(func->getName());
-    if (ExtFun2Annotations.find(name) != ExtFun2Annotations.end())
-    {
-        func->setAnnotations(ExtFun2Annotations[name]);
     }
 }
 
