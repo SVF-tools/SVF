@@ -288,9 +288,6 @@ inline static DataLayout* getDataLayout(Module* mod)
 void getNextInsts(const Instruction* curInst,
                   std::vector<const Instruction*>& instList);
 
-/// Get the previous instructions following control flow
-void getPrevInsts(const Instruction* curInst,
-                  std::vector<const Instruction*>& instList);
 
 /// Basic block does not have predecessors
 /// map-1.cpp.bc

@@ -554,31 +554,6 @@ void LLVMUtil::getNextInsts(const Instruction* curInst, std::vector<const Instru
 }
 
 
-/// Get the previous instructions following control flow
-void LLVMUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList)
-{
-    if (curInst != &(curInst->getParent()->front()))
-    {
-        const Instruction* prevInst = curInst->getPrevNode();
-        if (LLVMUtil::isIntrinsicInst(prevInst))
-            getPrevInsts(prevInst, instList);
-        else
-            instList.push_back(prevInst);
-    }
-    else
-    {
-        const BasicBlock *BB = curInst->getParent();
-        // Visit all successors of BB in the CFG
-        for (const_pred_iterator it = pred_begin(BB), ie = pred_end(BB); it != ie; ++it)
-        {
-            const Instruction* prevInst = &((*it)->back());
-            if (LLVMUtil::isIntrinsicInst(prevInst))
-                getPrevInsts(prevInst, instList);
-            else
-                instList.push_back(prevInst);
-        }
-    }
-}
 
 /// Check whether this value points-to a constant object
 bool LLVMUtil::isConstantObjSym(const SVFValue* val)
