@@ -1551,7 +1551,7 @@ StInfo* LLVMModuleSet::collectSimpleTypeInfo(const Type* ty)
 bool LLVMModuleSet::hasExtFuncAnnotation(const Function* fun, const std::string& funcAnnotation)
 {
     assert(fun && "Null Function* pointer");
-    const string& funcName = LLVMUtil::restoreFuncName(fun->getName().str());
+    const string& funcName = fun->getName().str();
     auto it = ExtFun2Annotations.find(funcName);
     if(it == ExtFun2Annotations.end())
         return false;
