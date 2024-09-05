@@ -1332,7 +1332,7 @@ void AbstractInterpretation::handleExtAPI(const CallICFGNode *call)
     assert(fun && "SVFFunction* is nullptr");
     ExtAPIType extType = UNCLASSIFIED;
     // get type of mem api
-    for (const std::string &annotation: fun->getAnnotations())
+    for (const std::string &annotation: ExtAPI::getExtAPI()->getExtFuncAnnotations(fun))
     {
         if (annotation.find("MEMCPY") != std::string::npos)
             extType =  MEMCPY;

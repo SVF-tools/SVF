@@ -47,6 +47,9 @@ private:
 
     static ExtAPI *extOp;
 
+    // Map SVFFunction to its annotations
+    Map<const SVFFunction*, std::vector<std::string>> func2Annotations;
+
     // extapi.bc file path
     static std::string extBcPath;
 
@@ -66,6 +69,11 @@ public:
 
     // Get the annotation of (F)
     std::string getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation);
+
+    const std::vector<std::string>& getExtFuncAnnotations(const SVFFunction* fun);
+
+    // Set the annotation of (F)
+    void setExtFuncAnnotations(const SVFFunction* fun, const std::vector<std::string>& funcAnnotations);
 
     // Does (F) have some annotation?
     bool hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation);

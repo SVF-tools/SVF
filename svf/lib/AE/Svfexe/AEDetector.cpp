@@ -150,7 +150,7 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
     AbstractInterpretation::ExtAPIType extType = AbstractInterpretation::UNCLASSIFIED;
 
     // Determine the type of external memory API
-    for (const std::string &annotation : call->getCalledFunction()->getAnnotations())
+    for (const std::string &annotation : ExtAPI::getExtAPI()->getExtFuncAnnotations(call->getCalledFunction()))
     {
         if (annotation.find("MEMCPY") != std::string::npos)
             extType = AbstractInterpretation::MEMCPY;

@@ -748,7 +748,7 @@ u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val)
                     calledFunction);
             std::vector<const Value*> args;
             // Heap alloc functions have annoation like "AllocSize:Arg1"
-            for (std::string annotation : svfFunction->getAnnotations())
+            for (std::string annotation : ExtAPI::getExtAPI()->getExtFuncAnnotations(svfFunction))
             {
                 if (annotation.find("AllocSize:") != std::string::npos)
                 {
