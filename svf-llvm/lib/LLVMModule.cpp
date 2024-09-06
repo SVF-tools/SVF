@@ -849,13 +849,30 @@ void LLVMModuleSet::collectExtFunAnnotations(const Module* mod)
     }
 }
 
+/*
+    There are three types of functions(definitions) in extapi.c:
+    1. (Fun_Overwrite): Functions with "OVERWRITE" annotion: 
+        These functions are used to replace the corresponding function definitions in the application.
+    2. (Fun_Annotation): Functions with annotation(s) but without "OVERWRITE" annotation:
+        These functions are used to tell SVF to do special processing, like malloc().
+    3. (Fun_Noraml): Functions without any annotation:
+        These functions are used to replace the corresponding function declarations in the application.
+
+
+    We will iterate over declarations (appFunDecl) and definitons (appFunDef) of functions in the application and extapi.c to do the following clone or replace operations:
+    1. appFuncDecl --> Fun_Normal:     Clone the Fun_Overwrite and replace the appFuncDecl in application.
+    2. appFuncDecl --> Fun_Annotation: Move the annotions on Fun_Annotation to appFuncDecl in application.
+    
+    3. appFunDef --> Fun_Overwrite:    Clone the Fun_Overwrite and overwrite the appFunDef in application.
+    4. appFunDef --> Fun_Annotation:   Replace the appFunDef with appFunDecl and move the annotions to appFunDecl in application 
+*/
 void LLVMModuleSet::buildFunToFunMap()
 {
-    Set<const Function*> funDecls, funDefs, extFuncs, overwriteExtFuncs, clonedFuncs;
+    Set<const Function*> appFunDecls, appFunDefs, extFuncs, clonedFuncs;
     OrderedSet<string> declNames, defNames, intersectNames;
     typedef Map<string, const Function*> NameToFunDefMapTy;
     typedef Map<string, Set<const Function*>> NameToFunDeclsMapTy;
-    FunDeclToDefMapTy extFuncs2ClonedFuncs;
+    Map<const Function*, const Function*> extFuncs2ClonedFuncs;
     for (Module& mod : modules)
     {
         // extapi.bc functions
@@ -868,7 +885,7 @@ void LLVMModuleSet::buildFunToFunMap()
                 // main definition in app bc.
                 if (fun.getName().str() == "main")
                 {
-                    funDecls.insert(&fun);
+                    appFunDecls.insert(&fun);
                     declNames.insert(fun.getName().str());
                 }
                 /// Keep svf_main() function and all the functions called in svf_main()
@@ -879,21 +896,6 @@ void LLVMModuleSet::buildFunToFunMap()
                 else
                 {
                     extFuncs.insert(&fun);
-                    if (ExtFun2Annotations.find(fun.getName().str()) != ExtFun2Annotations.end())
-                    {
-                        std::vector<std::string> annotations = ExtFun2Annotations[fun.getName().str()];
-                        auto it =
-                            std::find_if(annotations.begin(), annotations.end(),
-                                         [&](const std::string& annotation)
-                        {
-                            return annotation.find("OVERWRITE") !=
-                                   std::string::npos;
-                        });
-                        if (it != annotations.end())
-                        {
-                            overwriteExtFuncs.insert(&fun);
-                        }
-                    }
                 }
             }
         }
@@ -904,12 +906,12 @@ void LLVMModuleSet::buildFunToFunMap()
             {
                 if (fun.isDeclaration())
                 {
-                    funDecls.insert(&fun);
+                    appFunDecls.insert(&fun);
                     declNames.insert(fun.getName().str());
                 }
                 else
                 {
-                    funDefs.insert(&fun);
+                    appFunDefs.insert(&fun);
                     defNames.insert(fun.getName().str());
                 }
             }
@@ -922,51 +924,51 @@ void LLVMModuleSet::buildFunToFunMap()
 
     ///// name to def map
     NameToFunDefMapTy nameToFunDefMap;
-    for (const Function* fdef : funDefs)
+    for (const Function* appFunDef : appFunDefs)
     {
-        string funName = fdef->getName().str();
+        string funName = appFunDef->getName().str();
         if (intersectNames.find(funName) != intersectNames.end())
         {
-            nameToFunDefMap.emplace(std::move(funName), fdef);
+            nameToFunDefMap.emplace(std::move(funName), appFunDef);
         }
     }
 
     ///// name to decls map
     NameToFunDeclsMapTy nameToFunDeclsMap;
-    for (const Function* fdecl : funDecls)
+    for (const Function* appFunDecl : appFunDecls)
     {
-        string funName = fdecl->getName().str();
+        string funName = appFunDecl->getName().str();
         if (intersectNames.find(funName) != intersectNames.end())
         {
             // pair with key funName will be created automatically if it does
             // not exist
-            nameToFunDeclsMap[std::move(funName)].insert(fdecl);
+            nameToFunDeclsMap[std::move(funName)].insert(appFunDecl);
         }
     }
 
     /// Fun decl --> def
-    for (const Function* fdecl : funDecls)
+    for (const Function* appFunDecl : appFunDecls)
     {
-        string funName = fdecl->getName().str();
+        string funName = appFunDecl->getName().str();
         NameToFunDefMapTy::iterator mit;
         if (intersectNames.find(funName) != intersectNames.end() &&
                 (mit = nameToFunDefMap.find(funName)) != nameToFunDefMap.end())
         {
-            FunDeclToDefMap[fdecl] = mit->second;
+            FunDeclToDefMap[appFunDecl] = mit->second;
         }
     }
 
     /// Fun def --> decls
-    for (const Function* fdef : funDefs)
+    for (const Function* appFunDef : appFunDefs)
     {
-        string funName = fdef->getName().str();
+        string funName = appFunDef->getName().str();
         if (intersectNames.find(funName) == intersectNames.end())
             continue;
         NameToFunDeclsMapTy::iterator mit = nameToFunDeclsMap.find(funName);
         if (mit == nameToFunDeclsMap.end())
             continue;
 
-        std::vector<const Function*>& decls = FunDefToDeclsMap[fdef];
+        std::vector<const Function*>& decls = FunDefToDeclsMap[appFunDef];
         const auto& declsSet = mit->second;
         // Reserve space for decls to avoid more than 1 reallocation
         decls.reserve(decls.size() + declsSet.size());
@@ -977,59 +979,58 @@ void LLVMModuleSet::buildFunToFunMap()
         }
     }
 
-    auto cloneAndReplaceFunction = [&](const Function* functionToClone, Function* srcFunction, Module* parentModule, bool cloneBody) -> Function* 
+    auto cloneAndReplaceFunction = [&](const Function* extFunToClone, Function* appFunToReplace, Module* appModule, bool cloneBody) -> Function* 
     {
-        assert(!(srcFunction == NULL && parentModule == NULL) && "srcFunction and parentModule cannot both be NULL");
+        assert(!(appFunToReplace == NULL && appModule == NULL) && "appFunToReplace and appModule cannot both be NULL");
 
-        if (srcFunction) 
+        if (appFunToReplace) 
         {
-            parentModule = srcFunction->getParent();
+            appModule = appFunToReplace->getParent();
         }
-        // Create a new function with the same signature as functionToClone
-        Function *clonedFunction = Function::Create(functionToClone->getFunctionType(), Function::ExternalLinkage, functionToClone->getName(), parentModule);
-        // Map the arguments of the new function to the arguments of functionToClone
+        // Create a new function with the same signature as extFunToClone
+        Function *clonedFunction = Function::Create(extFunToClone->getFunctionType(), Function::ExternalLinkage, extFunToClone->getName(), appModule);
+        // Map the arguments of the new function to the arguments of extFunToClone
         llvm::ValueToValueMapTy valueMap;
         Function::arg_iterator destArg = clonedFunction->arg_begin();
-        for (Function::const_arg_iterator srcArg = functionToClone->arg_begin(); srcArg != functionToClone->arg_end(); ++srcArg) {
+        for (Function::const_arg_iterator srcArg = extFunToClone->arg_begin(); srcArg != extFunToClone->arg_end(); ++srcArg) {
             destArg->setName(srcArg->getName()); // Copy the name of the original argument
             valueMap[&*srcArg] = &*destArg++; // Add a mapping from the old arg to the new arg
         }
         if (cloneBody) {
-            // Clone the body of functionToClone into clonedFunction
+            // Clone the body of extFunToClone into clonedFunction
             llvm::SmallVector<ReturnInst*, 8> ignoredReturns;
-            CloneFunctionInto(clonedFunction, functionToClone, valueMap, llvm::CloneFunctionChangeType::LocalChangesOnly, ignoredReturns, "", nullptr);
+            CloneFunctionInto(clonedFunction, extFunToClone, valueMap, llvm::CloneFunctionChangeType::LocalChangesOnly, ignoredReturns, "", nullptr);
         }
-        if (srcFunction) {
-            // Replace all uses of srcFunction with clonedFunction
-            srcFunction->replaceAllUsesWith(clonedFunction);
-            std::string oldFunctionName = srcFunction->getName().str();
+        if (appFunToReplace) {
+            // Replace all uses of appFunToReplace with clonedFunction
+            appFunToReplace->replaceAllUsesWith(clonedFunction);
+            std::string oldFunctionName = appFunToReplace->getName().str();
             // Delete the old function
-            srcFunction->eraseFromParent();
+            appFunToReplace->eraseFromParent();
             clonedFunction->setName(oldFunctionName);
         }
         return clonedFunction;
     };
 
     /// App Func decl -> SVF extern Func def
-    for (const Function* fdecl : funDecls)
+    for (const Function* appFunDecl : appFunDecls)
     {
-        std::string declName = LLVMUtil::restoreFuncName(fdecl->getName().str());
-        for (const Function* extfun : extFuncs)
+        std::string appFunDeclName = LLVMUtil::restoreFuncName(appFunDecl->getName().str());
+        for (const Function* extFun : extFuncs)
         {
-            if (extfun->getName().str().compare(declName) == 0)
+            if (extFun->getName().str().compare(appFunDeclName) == 0)
             {
-                auto it = ExtFun2Annotations.find(extfun->getName().str());
+                auto it = ExtFun2Annotations.find(extFun->getName().str());
                 // Without annotations, this function is normal function with useful function body
                 if (it == ExtFun2Annotations.end()) 
                 {
-                    Function* clonedFunction = cloneAndReplaceFunction(const_cast<Function*>(extfun), const_cast<Function*>(fdecl), nullptr, true);
-                    extFuncs2ClonedFuncs[extfun] = clonedFunction;
-                    ExtFuncsVec.push_back(extfun);
+                    Function* clonedFunction = cloneAndReplaceFunction(const_cast<Function*>(extFun), const_cast<Function*>(appFunDecl), nullptr, true);
+                    extFuncs2ClonedFuncs[extFun] = clonedFunction;
                     clonedFuncs.insert(clonedFunction);
                 }
                 else
                 {
-                    ExtFuncsVec.push_back(fdecl);
+                    ExtFuncsVec.push_back(appFunDecl);
                 }
                 break;
             }
@@ -1038,15 +1039,15 @@ void LLVMModuleSet::buildFunToFunMap()
 
     /// Overwrite
     /// App Func def -> SVF extern Func def
-    for (const Function* appfunc : funDefs)
+    for (const Function* appFunDef : appFunDefs)
     {
-        std::string appfuncName = LLVMUtil::restoreFuncName(appfunc->getName().str());
-        for (const Function* owfunc : overwriteExtFuncs)
+        std::string appFunDefName = LLVMUtil::restoreFuncName(appFunDef->getName().str());
+        for (const Function* extFunc : extFuncs)
         {
-            if (appfuncName.compare(owfunc->getName().str()) == 0)
+            if (appFunDefName.compare(extFunc->getName().str()) == 0)
             {
-                Type* returnType1 = appfunc->getReturnType();
-                Type* returnType2 = owfunc->getReturnType();
+                Type* returnType1 = appFunDef->getReturnType();
+                Type* returnType2 = extFunc->getReturnType();
 
                 // Check if the return types are compatible:
                 // (1) The types are exactly the same,
@@ -1058,13 +1059,13 @@ void LLVMModuleSet::buildFunToFunMap()
                     continue;
                 }
 
-                if (appfunc->arg_size() != owfunc->arg_size())
+                if (appFunDef->arg_size() != extFunc->arg_size())
                     continue;
 
                 bool argMismatch = false;
-                Function::const_arg_iterator argIter1 = appfunc->arg_begin();
-                Function::const_arg_iterator argIter2 = owfunc->arg_begin();
-                while (argIter1 != appfunc->arg_end() && argIter2 != owfunc->arg_end())
+                Function::const_arg_iterator argIter1 = appFunDef->arg_begin();
+                Function::const_arg_iterator argIter2 = extFunc->arg_begin();
+                while (argIter1 != appFunDef->arg_end() && argIter2 != extFunc->arg_end())
                 {
                     Type* argType1 = argIter1->getType();
                     Type* argType2 = argIter2->getType();
@@ -1081,20 +1082,19 @@ void LLVMModuleSet::buildFunToFunMap()
                 if (argMismatch)
                     continue;
 
-                auto it = ExtFun2Annotations.find(appfuncName);
+                auto it = ExtFun2Annotations.find(appFunDefName);
                 if (it != ExtFun2Annotations.end())
                 {
                     std::vector<std::string> annotations = it->second;
                     if (annotations.size() == 1 && annotations[0].find("OVERWRITE") != std::string::npos)
                     {
-                        Function* clonedFunction = cloneAndReplaceFunction(const_cast<Function*>(owfunc), const_cast<Function*>(appfunc), nullptr, true);
-                        extFuncs2ClonedFuncs[owfunc] = clonedFunction;
-                        ExtFuncsVec.push_back(owfunc);
+                        Function* clonedFunction = cloneAndReplaceFunction(const_cast<Function*>(extFunc), const_cast<Function*>(appFunDef), nullptr, true);
+                        extFuncs2ClonedFuncs[extFunc] = clonedFunction;
                         clonedFuncs.insert(clonedFunction);
                     }
                     else
                     {
-                        Function* newFunction = cloneAndReplaceFunction(const_cast<Function*>(owfunc), const_cast<Function*>(appfunc), nullptr, false);
+                        Function* newFunction = cloneAndReplaceFunction(const_cast<Function*>(extFunc), const_cast<Function*>(appFunDef), nullptr, false);
                         ExtFuncsVec.push_back(newFunction);
                     }
                 }
@@ -1118,22 +1118,22 @@ void LLVMModuleSet::buildFunToFunMap()
     };
 
     std::function<void(const Function*, Function*)> cloneAndLinkFunction;
-    cloneAndLinkFunction = [&](const Function* functionToClone, Function* caller) 
+    cloneAndLinkFunction = [&](const Function* extFunToClone, Function* appClonedFun) 
     {
-        if (clonedFuncs.find(functionToClone) != clonedFuncs.end())
+        if (clonedFuncs.find(extFunToClone) != clonedFuncs.end())
             return;
 
-        Module* parentModule = caller->getParent();
+        Module* appModule = appClonedFun->getParent();
         // Check if the function already exists in the parent module
-        if (parentModule->getFunction(functionToClone->getName())) {
+        if (appModule->getFunction(extFunToClone->getName())) {
             // The function already exists, no need to clone, but need to link it with the caller
-            Function*  func = parentModule->getFunction(functionToClone->getName());
-            linkFunctions(caller, func);
+            Function*  func = appModule->getFunction(extFunToClone->getName());
+            linkFunctions(appClonedFun, func);
             return;
         }
         // Decide whether to clone the function body based on ExtFun2Annotations
         bool cloneBody = true;
-        auto it = ExtFun2Annotations.find(functionToClone->getName().str());
+        auto it = ExtFun2Annotations.find(extFunToClone->getName().str());
         if (it != ExtFun2Annotations.end())
         {
             std::vector<std::string> annotations = it->second;
@@ -1143,15 +1143,15 @@ void LLVMModuleSet::buildFunToFunMap()
             }
         }
 
-        Function* clonedFunction = cloneAndReplaceFunction(functionToClone, nullptr, parentModule, cloneBody);
+        Function* clonedFunction = cloneAndReplaceFunction(extFunToClone, nullptr, appModule, cloneBody);
 
         clonedFuncs.insert(clonedFunction);
         // Add the cloned function to ExtFuncsVec for further processing
         ExtFuncsVec.push_back(clonedFunction);
 
-        linkFunctions(caller, clonedFunction);
+        linkFunctions(appClonedFun, clonedFunction);
 
-        std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(functionToClone);
+        std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(extFunToClone);
 
         for (const auto& calledFunction : calledFunctions) {
             cloneAndLinkFunction(calledFunction, clonedFunction);
@@ -1160,27 +1160,27 @@ void LLVMModuleSet::buildFunToFunMap()
 
     // Recursive clone called functions
     for (const auto& pair : extFuncs2ClonedFuncs) {
-        Function* extfun = const_cast<Function*>(pair.first);
-        Function* clonedFunction = const_cast<Function*>(pair.second);
-        std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(extfun);
+        Function* extFun = const_cast<Function*>(pair.first);
+        Function* clonedExtFun = const_cast<Function*>(pair.second);
+        std::vector<const Function*> extCalledFuns = LLVMUtil::getCalledFunctions(extFun);
 
-        for (const auto& calledFunction : calledFunctions) 
+        for (const auto& extCalledFun : extCalledFuns) 
         {
-            cloneAndLinkFunction(calledFunction, clonedFunction);
+            cloneAndLinkFunction(extCalledFun, clonedExtFun);
         }
     }
 
     // Remove unused annotations in ExtFun2Annotations according to the functions in ExtFuncsVec
     Fun2AnnoMap newFun2AnnoMap;
-    for (const Function* extfun : ExtFuncsVec)
+    for (const Function* extFun : ExtFuncsVec)
     {
-        std::string name = LLVMUtil::restoreFuncName(extfun->getName().str());
+        std::string name = LLVMUtil::restoreFuncName(extFun->getName().str());
         auto it = ExtFun2Annotations.find(name);
         if (it != ExtFun2Annotations.end())
         {
             std::string newKey = name;
-            if (name != extfun->getName().str()) {
-                newKey = extfun->getName().str();
+            if (name != extFun->getName().str()) {
+                newKey = extFun->getName().str();
             }
             newFun2AnnoMap.insert({newKey, it->second});
         }
