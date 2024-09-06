@@ -398,6 +398,26 @@ void LLVMUtil::processArguments(int argc, char **argv, int &arg_num, char **arg_
     }
 }
 
+/// Get all called funcions in a parent function
+std::vector<const Function *> LLVMUtil::getCalledFunctions(const Function *F)
+{
+    std::vector<const Function *> calledFunctions;
+    for (const Instruction &I : instructions(F))
+    {
+        if (const CallBase *callInst = SVFUtil::dyn_cast<CallBase>(&I))
+        {
+            Function *calledFunction = callInst->getCalledFunction();
+            if (calledFunction)
+            {
+                calledFunctions.push_back(calledFunction);
+                std::vector<const Function *> nestedCalledFunctions = getCalledFunctions(calledFunction);
+                calledFunctions.insert(calledFunctions.end(), nestedCalledFunctions.begin(), nestedCalledFunctions.end());
+            }
+        }
+    }
+    return calledFunctions;
+}
+
 std::string LLVMUtil::restoreFuncName(std::string funcName)
 {
     assert(!funcName.empty() && "Empty function name");

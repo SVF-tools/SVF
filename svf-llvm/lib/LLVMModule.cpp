@@ -851,10 +851,11 @@ void LLVMModuleSet::collectExtFunAnnotations(const Module* mod)
 
 void LLVMModuleSet::buildFunToFunMap()
 {
-    Set<const Function*> funDecls, funDefs, extFuncs, overwriteExtFuncs;
+    Set<const Function*> funDecls, funDefs, extFuncs, overwriteExtFuncs, clonedFuncs;
     OrderedSet<string> declNames, defNames, intersectNames;
     typedef Map<string, const Function*> NameToFunDefMapTy;
     typedef Map<string, Set<const Function*>> NameToFunDeclsMapTy;
+    FunDeclToDefMapTy extFuncs2ClonedFuncs;
     for (Module& mod : modules)
     {
         // extapi.bc functions
@@ -976,32 +977,36 @@ void LLVMModuleSet::buildFunToFunMap()
         }
     }
 
-    auto cloneAndReplaceFunction = [](Function* oldFunction, Function* newFunction, bool cloneBody) -> Function* 
+    auto cloneAndReplaceFunction = [&](const Function* functionToClone, Function* srcFunction, Module* parentModule, bool cloneBody) -> Function* 
     {
-        // Get parent module of the old function
-        Module* parentModule = oldFunction->getParent();
-        // Create a new function with the same signature as newFunction
-        Function *clonedFunction = Function::Create(newFunction->getFunctionType(), Function::ExternalLinkage, newFunction->getName(), parentModule);
-        // Map the arguments of the new function to the arguments of newFunction
+        assert(!(srcFunction == NULL && parentModule == NULL) && "srcFunction and parentModule cannot both be NULL");
+
+        if (srcFunction) 
+        {
+            parentModule = srcFunction->getParent();
+        }
+        // Create a new function with the same signature as functionToClone
+        Function *clonedFunction = Function::Create(functionToClone->getFunctionType(), Function::ExternalLinkage, functionToClone->getName(), parentModule);
+        // Map the arguments of the new function to the arguments of functionToClone
         llvm::ValueToValueMapTy valueMap;
         Function::arg_iterator destArg = clonedFunction->arg_begin();
-        for (Function::const_arg_iterator srcArg = newFunction->arg_begin(); srcArg != newFunction->arg_end(); ++srcArg) {
+        for (Function::const_arg_iterator srcArg = functionToClone->arg_begin(); srcArg != functionToClone->arg_end(); ++srcArg) {
             destArg->setName(srcArg->getName()); // Copy the name of the original argument
             valueMap[&*srcArg] = &*destArg++; // Add a mapping from the old arg to the new arg
         }
-
         if (cloneBody) {
-            // Clone the body of newFunction into clonedFunction
-            llvm::SmallVector<ReturnInst*, 8> ignoredReturns;  
-            CloneFunctionInto(clonedFunction, newFunction, valueMap, llvm::CloneFunctionChangeType::LocalChangesOnly, ignoredReturns, "", nullptr);
+            // Clone the body of functionToClone into clonedFunction
+            llvm::SmallVector<ReturnInst*, 8> ignoredReturns;
+            CloneFunctionInto(clonedFunction, functionToClone, valueMap, llvm::CloneFunctionChangeType::LocalChangesOnly, ignoredReturns, "", nullptr);
         }
-
-        // Replace all uses of oldFunction with clonedFunction
-        oldFunction->replaceAllUsesWith(clonedFunction);
-        std::string oldFunctionName = oldFunction->getName().str();
-        // Delete the old function
-        oldFunction->eraseFromParent();   
-        clonedFunction->setName(oldFunctionName);
+        if (srcFunction) {
+            // Replace all uses of srcFunction with clonedFunction
+            srcFunction->replaceAllUsesWith(clonedFunction);
+            std::string oldFunctionName = srcFunction->getName().str();
+            // Delete the old function
+            srcFunction->eraseFromParent();
+            clonedFunction->setName(oldFunctionName);
+        }
         return clonedFunction;
     };
 
@@ -1017,7 +1022,10 @@ void LLVMModuleSet::buildFunToFunMap()
                 // Without annotations, this function is normal function with useful function body
                 if (it == ExtFun2Annotations.end()) 
                 {
-                    cloneAndReplaceFunction(const_cast<Function*>(fdecl), const_cast<Function*>(extfun), true);
+                    Function* clonedFunction = cloneAndReplaceFunction(const_cast<Function*>(extfun), const_cast<Function*>(fdecl), nullptr, true);
+                    extFuncs2ClonedFuncs[extfun] = clonedFunction;
+                    ExtFuncsVec.push_back(extfun);
+                    clonedFuncs.insert(clonedFunction);
                 }
                 else
                 {
@@ -1074,21 +1082,91 @@ void LLVMModuleSet::buildFunToFunMap()
                     continue;
 
                 auto it = ExtFun2Annotations.find(appfuncName);
-                if (it != ExtFun2Annotations.end()) 
+                if (it != ExtFun2Annotations.end())
                 {
                     std::vector<std::string> annotations = it->second;
                     if (annotations.size() == 1 && annotations[0].find("OVERWRITE") != std::string::npos)
                     {
-                        cloneAndReplaceFunction(const_cast<Function*>(appfunc), const_cast<Function*>(owfunc), true);
+                        Function* clonedFunction = cloneAndReplaceFunction(const_cast<Function*>(owfunc), const_cast<Function*>(appfunc), nullptr, true);
+                        extFuncs2ClonedFuncs[owfunc] = clonedFunction;
+                        ExtFuncsVec.push_back(owfunc);
+                        clonedFuncs.insert(clonedFunction);
                     }
                     else
                     {
-                        Function* newFunction = cloneAndReplaceFunction(const_cast<Function*>(appfunc), const_cast<Function*>(owfunc), false);
+                        Function* newFunction = cloneAndReplaceFunction(const_cast<Function*>(owfunc), const_cast<Function*>(appfunc), nullptr, false);
                         ExtFuncsVec.push_back(newFunction);
                     }
                 }
                 break;
             }
+        }
+    }
+
+    auto linkFunctions = [&](Function* caller, Function* callee) {
+        for (inst_iterator I = inst_begin(caller), E = inst_end(caller); I != E; ++I) {
+            Instruction *inst = &*I;
+
+            if (CallInst *callInst = SVFUtil::dyn_cast<CallInst>(inst)) {
+                Function *calledFunc = callInst->getCalledFunction();
+
+                if (calledFunc && calledFunc->getName() == callee->getName()) {
+                    callInst->setCalledFunction(callee);
+                }
+            }
+        }
+    };
+
+    std::function<void(const Function*, Function*)> cloneAndLinkFunction;
+    cloneAndLinkFunction = [&](const Function* functionToClone, Function* caller) 
+    {
+        if (clonedFuncs.find(functionToClone) != clonedFuncs.end())
+            return;
+
+        Module* parentModule = caller->getParent();
+        // Check if the function already exists in the parent module
+        if (parentModule->getFunction(functionToClone->getName())) {
+            // The function already exists, no need to clone, but need to link it with the caller
+            Function*  func = parentModule->getFunction(functionToClone->getName());
+            linkFunctions(caller, func);
+            return;
+        }
+        // Decide whether to clone the function body based on ExtFun2Annotations
+        bool cloneBody = true;
+        auto it = ExtFun2Annotations.find(functionToClone->getName().str());
+        if (it != ExtFun2Annotations.end())
+        {
+            std::vector<std::string> annotations = it->second;
+            if (!(annotations.size() == 1 && annotations[0].find("OVERWRITE") != std::string::npos))
+            {
+                cloneBody = false;
+            }
+        }
+
+        Function* clonedFunction = cloneAndReplaceFunction(functionToClone, nullptr, parentModule, cloneBody);
+
+        clonedFuncs.insert(clonedFunction);
+        // Add the cloned function to ExtFuncsVec for further processing
+        ExtFuncsVec.push_back(clonedFunction);
+
+        linkFunctions(caller, clonedFunction);
+
+        std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(functionToClone);
+
+        for (const auto& calledFunction : calledFunctions) {
+            cloneAndLinkFunction(calledFunction, clonedFunction);
+        }
+    };
+
+    // Recursive clone called functions
+    for (const auto& pair : extFuncs2ClonedFuncs) {
+        Function* extfun = const_cast<Function*>(pair.first);
+        Function* clonedFunction = const_cast<Function*>(pair.second);
+        std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(extfun);
+
+        for (const auto& calledFunction : calledFunctions) 
+        {
+            cloneAndLinkFunction(calledFunction, clonedFunction);
         }
     }
 
