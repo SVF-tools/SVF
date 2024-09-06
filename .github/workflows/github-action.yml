@@ -41,12 +41,12 @@ jobs:
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
           sudo apt-get update
           sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo5 libzstd-dev
-          sudo mkdir -p /var/cache/swap/
-          sudo dd if=/dev/zero of=/var/cache/swap/swap0 bs=64M count=96
-          sudo chmod 0600 /var/cache/swap/swap0
-          sudo mkswap /var/cache/swap/swap0
-          sudo swapon /var/cache/swap/swap0
-          sudo swapon -s
+          # sudo mkdir -p /var/cache/swap/
+          # sudo dd if=/dev/zero of=/var/cache/swap/swap0 bs=64M count=96
+          # sudo chmod 0600 /var/cache/swap/swap0
+          # sudo mkswap /var/cache/swap/swap0
+          # sudo swapon /var/cache/swap/swap0
+          # sudo swapon -s
 
       # build-svf
       - name: build-svf
