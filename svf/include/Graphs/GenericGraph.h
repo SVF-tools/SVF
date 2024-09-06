@@ -372,6 +372,8 @@ public:
     /// Release memory
     void destroy()
     {
+        for (auto &entry : IDToNodeMap)
+            delete entry.second;
     }
     /// Iterators
     //@{
