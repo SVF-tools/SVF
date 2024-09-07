@@ -313,8 +313,6 @@ public:
 
     ObjTypeInference* getTypeInference();
 
-    bool hasExtFuncAnnotation(const Function* fun, const std::string& funcAnnotation);
-
 private:
     /// Create SVFTypes
     SVFType* addSVFTypeInfo(const Type* t);

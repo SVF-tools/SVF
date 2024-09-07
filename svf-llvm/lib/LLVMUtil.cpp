@@ -618,13 +618,14 @@ std::string LLVMUtil::dumpValueAndDbgInfo(const Value *val)
 bool LLVMUtil::isHeapAllocExtCallViaRet(const Instruction* inst)
 {
     LLVMModuleSet* pSet = LLVMModuleSet::getLLVMModuleSet();
+    ExtAPI* extApi = ExtAPI::getExtAPI();
     bool isPtrTy = inst->getType()->isPointerTy();
     if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
     {
         const Function* fun = call->getCalledFunction();
         return fun && isPtrTy &&
-               (pSet->hasExtFuncAnnotation(fun, "ALLOC_RET") ||
-                pSet->hasExtFuncAnnotation(fun, "REALLOC_RET"));
+               (extApi->is_alloc(pSet->getSVFFunction(fun)) ||
+                extApi->is_realloc(pSet->getSVFFunction(fun)));
     }
     else
         return false;
@@ -635,8 +636,9 @@ bool LLVMUtil::isHeapAllocExtCallViaArg(const Instruction* inst)
     if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
     {
         const Function* fun = call->getCalledFunction();
-        return fun && LLVMModuleSet::getLLVMModuleSet()->hasExtFuncAnnotation(
-                          fun, "ALLOC_ARG");
+        return fun &&
+               ExtAPI::getExtAPI()->is_arg_alloc(
+                   LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun));
     }
     else
     {
