@@ -36,7 +36,7 @@
 
 namespace SVF
 {
-
+class CallGraphNode;
 class SVFModule
 {
     friend class SVFIRWriter;
@@ -48,6 +48,7 @@ public:
     typedef std::vector<SVFGlobalValue*> AliasSetType;
     typedef std::vector<SVFConstant*> ConstantType;
     typedef std::vector<SVFOtherValue*> OtherValueType;
+    typedef std::vector<const CallGraphNode*> CallGraphNodeSetType; 
 
     /// Iterators type def
     typedef FunctionSetType::iterator iterator;
@@ -60,6 +61,8 @@ public:
     typedef ConstantType::const_iterator const_cdata_iterator;
     typedef OtherValueType::iterator ovalue_iterator;
     typedef OtherValueType::const_iterator const_ovalue_iterator;
+    typedef CallGraphNodeSetType::iterator callgraphnode_iterator;
+    typedef CallGraphNodeSetType::const_iterator const_callgraphnode_iterator;
 
 private:
     static SVFModule* svfModule;
@@ -70,6 +73,7 @@ private:
     AliasSetType AliasSet;        ///< The Aliases in the module
     ConstantType ConstantSet;     ///< The ConstantData in the module
     OtherValueType OtherValueSet; ///< All other values in the module
+    CallGraphNodeSetType CallGraphNodeSet;
 
     /// Constructors
     SVFModule() = default;
@@ -106,6 +110,10 @@ public:
     inline void addFunctionSet(SVFFunction* svfFunc)
     {
         FunctionSet.push_back(svfFunc);
+    }
+    inline void addCallGraphNode(CallGraphNode* cgn)
+    {
+        CallGraphNodeSet.push_back(cgn);
     }
     inline void addGlobalSet(SVFGlobalValue* glob)
     {
@@ -145,6 +153,23 @@ public:
     const_iterator end() const
     {
         return FunctionSet.end();
+    }
+
+    callgraphnode_iterator callgraphnode_begin()
+    {
+        return CallGraphNodeSet.begin();
+    }
+    const_callgraphnode_iterator callgraphnode_begin() const
+    {
+        return CallGraphNodeSet.begin();
+    }
+    callgraphnode_iterator callgraphnode_end()
+    {
+        return CallGraphNodeSet.end();
+    }
+    const_callgraphnode_iterator callgraphnode_end() const
+    {
+        return CallGraphNodeSet.end();
     }
 
     global_iterator global_begin()
@@ -216,6 +241,10 @@ public:
     inline const FunctionSetType& getFunctionSet() const
     {
         return FunctionSet;
+    }
+    inline const CallGraphNodeSetType& getCallGraphNodeSet() const
+    {
+        return CallGraphNodeSet;
     }
     inline const ConstantType& getConstantSet() const
     {

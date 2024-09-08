@@ -188,6 +188,10 @@ public:
     {
 
     }
+    inline const std::string &getName() const
+    {
+        return fun->getName();
+    }
 
     /// Get function of this call node
     inline const SVFFunction* getFunction() const
@@ -250,7 +254,6 @@ protected:
     FunToCallGraphNodeMap funToCallGraphNodeMap; ///< Call Graph node map
     CallInstToCallGraphEdgesMap callinstToCallGraphEdgesMap; ///< Map a call instruction to its corresponding call edges
 
-    NodeID callGraphNodeNum;
     u32_t numOfResolvedIndCallEdge;
 
     /// Clean up memory
@@ -261,7 +264,7 @@ public:
     CallGraph(CGEK k = NormCallGraph);
 
     /// Add callgraph Node
-    void addCallGraphNode(const SVFFunction* fun);
+    void addCallGraphNode(const CallGraphNode* fun);
 
     /// Destructor
     virtual ~CallGraph()

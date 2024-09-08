@@ -26,6 +26,7 @@
 #include "Util/SVFUtil.h"
 #include "Util/SVFStat.h"
 #include "Util/Options.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 
@@ -40,6 +41,8 @@ SVFModule::~SVFModule()
         delete c;
     for (const SVFValue* o : OtherValueSet)
         delete o;
+    for (const CallGraphNode* cgn : CallGraphNodeSet)
+         delete cgn;
     NodeIDAllocator::unset();
     ThreadAPI::destroy();
     ExtAPI::destory();
