@@ -319,7 +319,6 @@ private:
     const SVFFunction* realDefFun;  /// the definition of a function across multiple modules
     std::vector<const SVFBasicBlock*> allBBs;   /// all BasicBlocks of this function
     std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
-    std::vector<std::string> annotations; /// annotations of this function
     SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
 
 protected:
@@ -461,16 +460,6 @@ public:
     inline bool hasReturn() const
     {
         return  !isNotRet;
-    }
-
-    inline const std::vector<std::string>& getAnnotations() const
-    {
-        return annotations;
-    }
-
-    inline void setAnnotations(std::vector<std::string>& annotations)
-    {
-        this->annotations = annotations;
     }
 
     inline void getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exitbbs) const

@@ -115,8 +115,8 @@ const Type *ObjTypeInference::defaultType(const Value *val)
 {
     ABORT_IFNOT(val, "val cannot be null");
     // heap has a default type of 8-bit integer type
-    if (SVFUtil::isa<Instruction>(val) && SVFUtil::isHeapAllocExtCallViaRet(
-                LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(val))))
+    if (SVFUtil::isa<Instruction>(val) && LLVMUtil::isHeapAllocExtCallViaRet(
+                SVFUtil::cast<Instruction>(val)))
         return int8Type();
     // otherwise we return a pointer type in the default address space
     return ptrType();

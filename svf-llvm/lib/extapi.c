@@ -728,7 +728,6 @@ void* _ZNSt5arrayIPK1ALm2EE4backEv(void *arg)
 }
 
 __attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
-__attribute__((annotate("OVERWRITE")))
 void *SyGetmem(unsigned long size)
 {
     return NULL;

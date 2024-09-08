@@ -161,22 +161,43 @@ std::string ExtAPI::getExtBcPath()
     abort();
 }
 
-std::string ExtAPI::getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation)
+void ExtAPI::setExtFuncAnnotations(const SVFFunction* fun, const std::vector<std::string>& funcAnnotations)
 {
     assert(fun && "Null SVFFunction* pointer");
-    for (const std::string& annotation : fun->getAnnotations())
-        if (annotation.find(funcAnnotation) != std::string::npos)
-            return annotation;
-    return "";
+    func2Annotations[fun] = funcAnnotations;
 }
 
 bool ExtAPI::hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation)
 {
     assert(fun && "Null SVFFunction* pointer");
-    for (const std::string& annotation : fun->getAnnotations())
-        if (annotation.find(funcAnnotation) != std::string::npos)
-            return true;
+    auto it = func2Annotations.find(fun);
+    if (it != func2Annotations.end()) {
+        for (const std::string& annotation : it->second)
+            if (annotation.find(funcAnnotation) != std::string::npos)
+                return true;
+    }
     return false;
+}
+
+std::string ExtAPI::getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation)
+{
+    assert(fun && "Null SVFFunction* pointer");
+    auto it = func2Annotations.find(fun);
+    if (it != func2Annotations.end()) {
+        for (const std::string& annotation : it->second)
+            if (annotation.find(funcAnnotation) != std::string::npos)
+                return annotation;
+    }
+    return "";
+}
+
+const std::vector<std::string>& ExtAPI::getExtFuncAnnotations(const SVFFunction* fun)
+{
+    assert(fun && "Null SVFFunction* pointer");
+    auto it = func2Annotations.find(fun);
+    if (it != func2Annotations.end())
+        return it->second;
+    return func2Annotations[fun];
 }
 
 bool ExtAPI::is_memcpy(const SVFFunction *F)
@@ -232,8 +253,8 @@ bool ExtAPI::is_ext(const SVFFunction* F)
     assert(F && "Null SVFFunction* pointer");
     if (F->isDeclaration() || F->isIntrinsic())
         return true;
-    else if (hasExtFuncAnnotation(F, "OVERWRITE") && F->getAnnotations().size() == 1)
+    else if (hasExtFuncAnnotation(F, "OVERWRITE") && getExtFuncAnnotations(F).size() == 1)
         return false;
     else
-        return !F->getAnnotations().empty();
+        return !getExtFuncAnnotations(F).empty();
 }
