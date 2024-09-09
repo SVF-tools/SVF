@@ -1007,6 +1007,17 @@ void LLVMModuleSet::buildFunToFunMap()
                 Function* clonedFunction = cloneAndReplaceFunction(const_cast<Function*>(extFuncDef), const_cast<Function*>(appFuncDef), nullptr, true);
                 extFuncs2ClonedFuncs[extFuncDef] = clonedFunction;
                 clonedFuncs.insert(clonedFunction);
+            } else {
+                if (annotations.size() >= 2)
+                {
+                    for (const auto& annotation : annotations)
+                    {
+                        if(annotation.find("OVERWRITE") != std::string::npos)
+                        {
+                            assert(false && "overwrite and other annotations cannot co-exist");
+                        }
+                    }
+                }
             }
         }
     }
