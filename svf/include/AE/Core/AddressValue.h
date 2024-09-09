@@ -32,6 +32,8 @@
 
 #define AddressMask 0x7f000000
 #define FlippedAddressMask (AddressMask^0xffffffff)
+// the address of the null pointer
+#define NullPtrAddr 0x7f000000 + 0
 // the address of the black hole, getVirtualMemAddress(2);
 #define BlackHoleAddr 0x7f000000 + 2
 
@@ -219,7 +221,7 @@ public:
     /// Check bit value of val start with 0x7F000000, filter by 0xFF000000
     static inline bool isVirtualMemAddress(u32_t val)
     {
-        return (val & 0xff000000) == AddressMask && val != AddressMask + 0;
+        return (val & 0xff000000) == AddressMask;
     }
 
     /// Return the internal index if idx is an address otherwise return the value of idx

@@ -506,3 +506,33 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
     }
     return true;
 }
+
+/**
+ * @brief Detects null pointer dereference issues within a given ICFG node.
+ *
+ * @param as Reference to the abstract state.
+ * @param node Pointer to the ICFG node.
+ */
+void NullPtrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
+    for (const SVFStmt* stmt : node->getSVFStmts()) {
+        if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt)) {
+            u32_t rhs = load->getRHSVarID();
+            AbstractValue &addrs = as[rhs];
+            for (const auto &addr: addrs.getAddrs()) {
+                AbstractValue v = as.load(addr);
+                if (isNull(v)) {
+                    recordBug(load);
+                }
+            }
+        } else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt)) {
+            u32_t lhs = store->getLHSVarID();
+            AbstractValue &addrs = as[lhs];
+            for (const auto &addr: addrs.getAddrs()) {
+                AbstractValue v = as.load(addr);
+                if (isNull(v)) {
+                    recordBug(store);
+                }
+            }
+        }
+    }
+}
