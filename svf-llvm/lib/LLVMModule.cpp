@@ -867,17 +867,19 @@ void LLVMModuleSet::collectExtFunAnnotations(const Module* mod)
 */
 void LLVMModuleSet::buildFunToFunMap()
 {
-    Set<const Function*> appFunDecls, appFunDefs, extFuncs, overwriteExtFuncs, clonedFuncs;
-    OrderedSet<string> declNames, defNames, intersectNames;
-    typedef Map<string, const Function*> NameToFunDefMapTy;
-    typedef Map<string, Set<const Function*>> NameToFunDeclsMapTy;
+    Set<const Function*> appFunDecls, appFunDefs, extFuncs, clonedFuncs;
+    OrderedSet<string> appFuncDeclNames, appFuncDefNames, extFunDefNames, intersectNames;
     Map<const Function*, const Function*> extFuncs2ClonedFuncs;
+    Module* appModule = nullptr;
+    Module* extModule = nullptr;
+
     for (Module& mod : modules)
     {
         // extapi.bc functions
         if (mod.getName().str() == ExtAPI::getExtAPI()->getExtBcPath())
         {
             collectExtFunAnnotations(&mod);
+            extModule = &mod;
             for (const Function& fun : mod.functions())
             {
                 // there is main declaration in ext bc, it should be mapped to
@@ -885,7 +887,7 @@ void LLVMModuleSet::buildFunToFunMap()
                 if (fun.getName().str() == "main")
                 {
                     appFunDecls.insert(&fun);
-                    declNames.insert(fun.getName().str());
+                    appFuncDeclNames.insert(fun.getName().str());
                 }
                 /// Keep svf_main() function and all the functions called in svf_main()
                 else if (fun.getName().str() == "svf__main")
@@ -895,70 +897,34 @@ void LLVMModuleSet::buildFunToFunMap()
                 else
                 {
                     extFuncs.insert(&fun);
-                    if (ExtFun2Annotations.find(fun.getName().str()) != ExtFun2Annotations.end())
-                    {
-                        std::vector<std::string> annotations = ExtFun2Annotations[fun.getName().str()];
-                        auto it =
-                            std::find_if(annotations.begin(), annotations.end(),
-                                         [&](const std::string& annotation)
-                                         {
-                                             return annotation.find("OVERWRITE") !=
-                                                    std::string::npos;
-                                         });
-                        if (it != annotations.end())
-                        {
-                            overwriteExtFuncs.insert(&fun);
-                        }
-                    }
+                    extFunDefNames.insert(fun.getName().str());
                 }
             }
         }
         else
         {
+            appModule = &mod;
             /// app functions
             for (const Function& fun : mod.functions())
             {
                 if (fun.isDeclaration())
                 {
                     appFunDecls.insert(&fun);
-                    declNames.insert(fun.getName().str());
+                    appFuncDeclNames.insert(fun.getName().str());
                 }
                 else
                 {
                     appFunDefs.insert(&fun);
-                    defNames.insert(fun.getName().str());
+                    appFuncDefNames.insert(fun.getName().str());
                 }
             }
         }
     }
-    // Find the intersectNames
+
+    // Find the intersectNames between appFuncDefNames and externalFunDefNames
     std::set_intersection(
-        declNames.begin(), declNames.end(), defNames.begin(), defNames.end(),
+        appFuncDefNames.begin(), appFuncDefNames.end(), extFunDefNames.begin(), extFunDefNames.end(),
         std::inserter(intersectNames, intersectNames.end()));
-
-    ///// name to def map
-    NameToFunDefMapTy nameToFunDefMap;
-    for (const Function* appFunDef : appFunDefs)
-    {
-        string funName = appFunDef->getName().str();
-        if (intersectNames.find(funName) != intersectNames.end())
-        {
-            nameToFunDefMap.emplace(std::move(funName), appFunDef);
-        }
-    }
-
-    ///// name to decls map
-    NameToFunDeclsMapTy nameToFunDeclsMap;
-    for (const Function* appFunDecl : appFunDecls)
-    {
-        string funName = appFunDecl->getName().str();
-        if (intersectNames.find(funName) != intersectNames.end())
-        {
-            // pair with key funName will be created automatically if it does
-            // not exist
-            nameToFunDeclsMap[std::move(funName)].insert(appFunDecl);
-        }
-    }
 
     auto cloneAndReplaceFunction = [&](const Function* extFunToClone, Function* appFunToReplace, Module* appModule, bool cloneBody) -> Function*
     {
@@ -1020,66 +986,27 @@ void LLVMModuleSet::buildFunToFunMap()
 
     /// Overwrite
     /// App Func def -> SVF extern Func def
-    for (const Function* appFunDef : appFunDefs)
+    for (string sameFuncDef: intersectNames)
     {
-        std::string appFunDefName = LLVMUtil::restoreFuncName(appFunDef->getName().str());
-        for (const Function* extFunc : overwriteExtFuncs)
+        Function* appFuncDef = appModule->getFunction(sameFuncDef);
+        Function* extFuncDef = extModule->getFunction(sameFuncDef);
+        if (appFuncDef == nullptr || extFuncDef == nullptr)
+            continue;
+
+        FunctionType *appFuncDefType = appFuncDef->getFunctionType();
+        FunctionType *extFuncDefType = extFuncDef->getFunctionType();
+        if (appFuncDefType != extFuncDefType)
+            continue;
+        
+        auto it = ExtFun2Annotations.find(sameFuncDef);
+        if (it != ExtFun2Annotations.end())
         {
-            if (appFunDefName.compare(extFunc->getName().str()) == 0)
+            std::vector<std::string> annotations = it->second;
+            if (annotations.size() == 1 && annotations[0].find("OVERWRITE") != std::string::npos)
             {
-                Type* returnType1 = appFunDef->getReturnType();
-                Type* returnType2 = extFunc->getReturnType();
-
-                // Check if the return types are compatible:
-                // (1) The types are exactly the same,
-                // (2) Both are pointer types, and at least one of them is a void*.
-                // Note that getPointerElementType() will be deprecated in the future versions of LLVM.
-                // Considering compatibility, avoid using getPointerElementType()->isIntegerTy(8) to determine if it is a void * type.
-                if (!(returnType1 == returnType2 || (returnType1->isPointerTy() && returnType2->isPointerTy())))
-                {
-                    continue;
-                }
-
-                if (appFunDef->arg_size() != extFunc->arg_size())
-                    continue;
-
-                bool argMismatch = false;
-                Function::const_arg_iterator argIter1 = appFunDef->arg_begin();
-                Function::const_arg_iterator argIter2 = extFunc->arg_begin();
-                while (argIter1 != appFunDef->arg_end() && argIter2 != extFunc->arg_end())
-                {
-                    Type* argType1 = argIter1->getType();
-                    Type* argType2 = argIter2->getType();
-
-                    // Check if the parameters types are compatible: (1) The types are exactly the same, (2) Both are pointer types, and at least one of them is a void*.
-                    if (!(argType1 == argType2 || (argType1->isPointerTy() && argType2->isPointerTy())))
-                    {
-                        argMismatch = true;
-                        break;
-                    }
-                    argIter1++;
-                    argIter2++;
-                }
-                if (argMismatch)
-                    continue;
-
-                auto it = ExtFun2Annotations.find(appFunDefName);
-                if (it != ExtFun2Annotations.end())
-                {
-                    std::vector<std::string> annotations = it->second;
-                    if (annotations.size() == 1 && annotations[0].find("OVERWRITE") != std::string::npos)
-                    {
-                        Function* clonedFunction = cloneAndReplaceFunction(const_cast<Function*>(extFunc), const_cast<Function*>(appFunDef), nullptr, true);
-                        extFuncs2ClonedFuncs[extFunc] = clonedFunction;
-                        clonedFuncs.insert(clonedFunction);
-                    }
-                    else
-                    {
-                        Function* newFunction = cloneAndReplaceFunction(const_cast<Function*>(extFunc), const_cast<Function*>(appFunDef), nullptr, false);
-                        ExtFuncsVec.push_back(newFunction);
-                    }
-                }
-                break;
+                Function* clonedFunction = cloneAndReplaceFunction(const_cast<Function*>(extFuncDef), const_cast<Function*>(appFuncDef), nullptr, true);
+                extFuncs2ClonedFuncs[extFuncDef] = clonedFunction;
+                clonedFuncs.insert(clonedFunction);
             }
         }
     }
@@ -1170,9 +1097,9 @@ void LLVMModuleSet::buildFunToFunMap()
 
     // Remove ExtAPI module from modules
     auto it = std::find_if(modules.begin(), modules.end(),
-                           [](const std::reference_wrapper<llvm::Module>& moduleRef) {
-                               return moduleRef.get().getName().str() == ExtAPI::getExtAPI()->getExtBcPath();
-                           });
+                        [&extModule](const std::reference_wrapper<llvm::Module>& moduleRef) {
+                            return &moduleRef.get() == extModule;
+                        });
 
     if (it != modules.end()) {
         size_t index = std::distance(modules.begin(), it);
