@@ -52,8 +52,6 @@ inline bool isCallSite(const Value* val)
     return SVFUtil::isa<CallBase>(val);
 }
 
-/// Get the definition of a function across multiple modules
-const Function* getDefFunForMultipleModule(const Function* fun);
 
 /// Return LLVM callsite given a value
 inline const CallBase* getLLVMCallSite(const Value* value)
@@ -65,8 +63,7 @@ inline const CallBase* getLLVMCallSite(const Value* value)
 inline const Function* getCallee(const CallBase* cs)
 {
     // FIXME: do we need to strip-off the casts here to discover more library functions
-    const Function* callee = SVFUtil::dyn_cast<Function>(cs->getCalledOperand()->stripPointerCasts());
-    return callee ? getDefFunForMultipleModule(callee) : nullptr;
+    return SVFUtil::dyn_cast<Function>(cs->getCalledOperand()->stripPointerCasts());
 }
 
 /// Return LLVM function if this value is
@@ -291,9 +288,6 @@ inline static DataLayout* getDataLayout(Module* mod)
 void getNextInsts(const Instruction* curInst,
                   std::vector<const Instruction*>& instList);
 
-/// Get the previous instructions following control flow
-void getPrevInsts(const Instruction* curInst,
-                  std::vector<const Instruction*>& instList);
 
 /// Basic block does not have predecessors
 /// map-1.cpp.bc
@@ -306,9 +300,6 @@ inline bool isNoPrecessorBasicBlock(const BasicBlock* bb)
            pred_empty(bb);
 }
 
-/// Get num of BB's predecessors
-u32_t getBBPredecessorNum(const BasicBlock* BB);
-
 /// Check whether a file is an LLVM IR file
 bool isIRFile(const std::string& filename);
 
@@ -316,10 +307,6 @@ bool isIRFile(const std::string& filename);
 void processArguments(int argc, char** argv, int& arg_num, char** arg_value,
                       std::vector<std::string>& moduleNameVec);
 
-/// Helper method to get the size of the type from target data layout
-//@{
-u32_t getTypeSizeInBytes(const Type* type);
-u32_t getTypeSizeInBytes(const StructType* sty, u32_t field_index);
 //@}
 
 const std::string getSourceLoc(const Value* val);
@@ -330,11 +317,6 @@ bool isIntrinsicFun(const Function* func);
 
 /// Get all called funcions in a parent function
 std::vector<const Function *> getCalledFunctions(const Function *F);
-void removeFunAnnotations(Set<Function*>& removedFuncList);
-bool isUnusedGlobalVariable(const GlobalVariable& global);
-void removeUnusedGlobalVariables(Module* module);
-/// Delete unused functions, annotations and global variables in extapi.bc
-void removeUnusedFuncsAndAnnotationsAndGlobalVariables(Set<Function*> removedFuncList);
 // Converts a mangled name to C naming style to match functions in extapi.c.
 std::string restoreFuncName(std::string funcName);
 
@@ -368,6 +350,15 @@ std::string dumpValue(const Value* val);
 std::string dumpType(const Type* type);
 
 std::string dumpValueAndDbgInfo(const Value* val);
+
+bool isHeapAllocExtCallViaRet(const Instruction *inst);
+
+bool isHeapAllocExtCallViaArg(const Instruction *inst);
+
+inline bool isHeapAllocExtCall(const Instruction *inst)
+{
+    return isHeapAllocExtCallViaRet(inst) || isHeapAllocExtCallViaArg(inst);
+}
 
 } // End namespace LLVMUtil
 

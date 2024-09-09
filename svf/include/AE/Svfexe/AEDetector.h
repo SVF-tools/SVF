@@ -281,7 +281,7 @@ public:
      * @param len The interval value representing the length of the memory access.
      * @return True if the memory access is safe, false otherwise.
      */
-    bool canSafelyAccessMemory(AbstractState& as, const SVFValue *value, const IntervalValue &len);
+    bool canSafelyAccessMemory(AbstractState& as, const SVFVar *value, const IntervalValue &len);
 
 private:
     /**

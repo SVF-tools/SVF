@@ -31,14 +31,14 @@
 #include "AE/Core/AbstractState.h"
 #include "AE/Core/ICFGWTO.h"
 #include "AE/Svfexe/AEDetector.h"
-#include "AE/Svfexe/AbsInterpretationUtils.h"
+#include "AE/Svfexe/AbsExtAPI.h"
 #include "Util/SVFBugReport.h"
 #include "WPA/Andersen.h"
 
 namespace SVF
 {
 class AbstractInterpretation;
-class AbsInterpretationUtils;
+class AbsExtAPI;
 class AEStat;
 class AEAPI;
 
@@ -284,7 +284,7 @@ protected:
         return abstractTrace.count(repNode) != 0;
     }
 
-    AbsInterpretationUtils* getUtils()
+    AbsExtAPI* getUtils()
     {
         return utils;
     }
@@ -298,7 +298,7 @@ protected:
     std::string moduleName;
 
     std::vector<std::unique_ptr<AEDetector>> detectors;
-    AbsInterpretationUtils* utils;
+    AbsExtAPI* utils;
 
 };
 }

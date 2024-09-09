@@ -1,14 +1,14 @@
-#include "AE/Svfexe/AbsInterpretationUtils.h"
+#include "AE/Svfexe/AbsExtAPI.h"
 
 using namespace SVF;
-AbsInterpretationUtils::AbsInterpretationUtils(Map<const ICFGNode*, AbstractState>& traces): abstractTrace(traces)
+AbsExtAPI::AbsExtAPI(Map<const ICFGNode*, AbstractState>& traces): abstractTrace(traces)
 {
     svfir = PAG::getPAG();
     icfg = svfir->getICFG();
     initExtFunMap();
 }
 
-void AbsInterpretationUtils::initExtFunMap()
+void AbsExtAPI::initExtFunMap()
 {
 #define SSE_FUNC_PROCESS(LLVM_NAME ,FUNC_NAME) \
         auto sse_##FUNC_NAME = [this](const CallICFGNode *callNode) { \
@@ -83,7 +83,7 @@ void AbsInterpretationUtils::initExtFunMap()
         if (callNode->arg_size() < 2) return;
         AbstractState&as = getAbsStateFromTrace(callNode);
         u32_t num_id = svfir->getValueNode(callNode->getArgument(0));
-        std::string text = strRead(as, callNode->getArgument(1));
+        std::string text = strRead(as, getSVFVar(callNode->getArgument(1)));
         assert(as.inVarToValTable(num_id) && "print() should pass integer");
         IntervalValue itv = as[num_id].getInterval();
         std::cout << "Text: " << text <<", Value: " << callNode->getArgument(0)->toString()
@@ -314,7 +314,7 @@ void AbsInterpretationUtils::initExtFunMap()
     func_map["__recv"] = sse_recv;
 };
 
-std::string AbsInterpretationUtils::strRead(AbstractState& as, const SVFValue* rhs)
+std::string AbsExtAPI::strRead(AbstractState& as, const SVFVar* rhs)
 {
     // sse read string nodeID->string
     std::string str0;
@@ -322,9 +322,9 @@ std::string AbsInterpretationUtils::strRead(AbstractState& as, const SVFValue* r
     for (u32_t index = 0; index < Options::MaxFieldLimit(); index++)
     {
         // dead loop for string and break if there's a \0. If no \0, it will throw err.
-        if (!as.inVarToAddrsTable(svfir->getValueNode(rhs))) continue;
+        if (!as.inVarToAddrsTable(rhs->getId())) continue;
         AbstractValue expr0 =
-            as.getGepObjAddrs(svfir->getValueNode(rhs), IntervalValue(index));
+            as.getGepObjAddrs(rhs->getId(), IntervalValue(index));
 
         AbstractValue val;
         for (const auto &addr: expr0.getAddrs())
@@ -344,14 +344,14 @@ std::string AbsInterpretationUtils::strRead(AbstractState& as, const SVFValue* r
     return str0;
 }
 
-void AbsInterpretationUtils::handleExtAPI(const CallICFGNode *call)
+void AbsExtAPI::handleExtAPI(const CallICFGNode *call)
 {
     AbstractState& as = getAbsStateFromTrace(call);
     const SVFFunction *fun = call->getCalledFunction();
     assert(fun && "SVFFunction* is nullptr");
     ExtAPIType extType = UNCLASSIFIED;
     // get type of mem api
-    for (const std::string &annotation: fun->getAnnotations())
+    for (const std::string &annotation: ExtAPI::getExtAPI()->getExtFuncAnnotations(fun))
     {
         if (annotation.find("MEMCPY") != std::string::npos)
             extType =  MEMCPY;
@@ -386,14 +386,15 @@ void AbsInterpretationUtils::handleExtAPI(const CallICFGNode *call)
     else if (extType == MEMCPY)
     {
         IntervalValue len = as[svfir->getValueNode(call->getArgument(2))].getInterval();
-        handleMemcpy(as, call->getArgument(0), call->getArgument(1), len, 0);
+        svfir->getGNode(svfir->getValueNode(call->getArgument(0)));
+        handleMemcpy(as, getSVFVar(call->getArgument(0)), getSVFVar(call->getArgument(1)), len, 0);
     }
     else if (extType == MEMSET)
     {
         // memset dst is arg0, elem is arg1, size is arg2
         IntervalValue len = as[svfir->getValueNode(call->getArgument(2))].getInterval();
         IntervalValue elem = as[svfir->getValueNode(call->getArgument(1))].getInterval();
-        handleMemset(as,call->getArgument(0), elem, len);
+        handleMemset(as, getSVFVar(call->getArgument(0)), elem, len);
     }
     else if (extType == STRCPY)
     {
@@ -410,21 +411,21 @@ void AbsInterpretationUtils::handleExtAPI(const CallICFGNode *call)
     return;
 }
 
-void AbsInterpretationUtils::handleStrcpy(const CallICFGNode *call)
+void AbsExtAPI::handleStrcpy(const CallICFGNode *call)
 {
     // strcpy, __strcpy_chk, stpcpy , wcscpy, __wcscpy_chk
     // get the dst and src
     AbstractState& as = getAbsStateFromTrace(call);
-    const SVFValue* arg0Val = call->getArgument(0);
-    const SVFValue* arg1Val = call->getArgument(1);
+    const SVFVar* arg0Val = getSVFVar(call->getArgument(0));
+    const SVFVar* arg1Val = getSVFVar(call->getArgument(1));
     IntervalValue strLen = getStrlen(as, arg1Val);
     // no need to -1, since it has \0 as the last byte
     handleMemcpy(as, arg0Val, arg1Val, strLen, strLen.lb().getIntNumeral());
 }
 
-IntervalValue AbsInterpretationUtils::getStrlen(AbstractState& as, const SVF::SVFValue *strValue)
+IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValue)
 {
-    NodeID value_id = svfir->getValueNode(strValue);
+    NodeID value_id = strValue->getId();
     u32_t dst_size = 0;
     for (const auto& addr : as[value_id].getAddrs())
     {
@@ -446,14 +447,13 @@ IntervalValue AbsInterpretationUtils::getStrlen(AbstractState& as, const SVF::SV
         }
     }
     u32_t len = 0;
-    NodeID dstid = svfir->getValueNode(strValue);
     u32_t elemSize = 1;
-    if (as.inVarToAddrsTable(dstid))
+    if (as.inVarToAddrsTable(value_id))
     {
         for (u32_t index = 0; index < dst_size; index++)
         {
             AbstractValue expr0 =
-                as.getGepObjAddrs(dstid, IntervalValue(index));
+                as.getGepObjAddrs(value_id, IntervalValue(index));
             AbstractValue val;
             for (const auto &addr: expr0.getAddrs())
             {
@@ -471,7 +471,7 @@ IntervalValue AbsInterpretationUtils::getStrlen(AbstractState& as, const SVF::SV
         }
         else if (strValue->getType()->isPointerTy())
         {
-            if (const SVFType* elemType = as.getPointeeElement(svfir->getValueNode(strValue)))
+            if (const SVFType* elemType = as.getPointeeElement(value_id))
             {
                 if (elemType->isArrayTy())
                     elemSize = SVFUtil::dyn_cast<SVFArrayType>(elemType)->getTypeOfElement()->getByteSize();
@@ -499,7 +499,7 @@ IntervalValue AbsInterpretationUtils::getStrlen(AbstractState& as, const SVF::SV
 }
 
 
-void AbsInterpretationUtils::handleStrcat(const SVF::CallICFGNode *call)
+void AbsExtAPI::handleStrcat(const SVF::CallICFGNode *call)
 {
     // __strcat_chk, strcat, __wcscat_chk, wcscat, __strncat_chk, strncat, __wcsncat_chk, wcsncat
     // to check it is  strcat group or strncat group
@@ -509,8 +509,8 @@ void AbsInterpretationUtils::handleStrcat(const SVF::CallICFGNode *call)
     const std::vector<std::string> strncatGroup = {"__strncat_chk", "strncat", "__wcsncat_chk", "wcsncat"};
     if (std::find(strcatGroup.begin(), strcatGroup.end(), fun->getName()) != strcatGroup.end())
     {
-        const SVFValue* arg0Val = call->getArgument(0);
-        const SVFValue* arg1Val = call->getArgument(1);
+        const SVFVar* arg0Val = getSVFVar(call->getArgument(0));
+        const SVFVar* arg1Val = getSVFVar(call->getArgument(1));
         IntervalValue strLen0 = getStrlen(as, arg0Val);
         IntervalValue strLen1 = getStrlen(as, arg1Val);
         IntervalValue totalLen = strLen0 + strLen1;
@@ -519,10 +519,10 @@ void AbsInterpretationUtils::handleStrcat(const SVF::CallICFGNode *call)
     }
     else if (std::find(strncatGroup.begin(), strncatGroup.end(), fun->getName()) != strncatGroup.end())
     {
-        const SVFValue* arg0Val = call->getArgument(0);
-        const SVFValue* arg1Val = call->getArgument(1);
-        const SVFValue* arg2Val = call->getArgument(2);
-        IntervalValue arg2Num = as[svfir->getValueNode(arg2Val)].getInterval();
+        const SVFVar* arg0Val = getSVFVar(call->getArgument(0));
+        const SVFVar* arg1Val = getSVFVar(call->getArgument(1));
+        const SVFVar* arg2Val = getSVFVar(call->getArgument(2));
+        IntervalValue arg2Num = as[arg2Val->getId()].getInterval();
         IntervalValue strLen0 = getStrlen(as, arg0Val);
         IntervalValue totalLen = strLen0 + arg2Num;
         handleMemcpy(as, arg0Val, arg1Val, arg2Num, strLen0.lb().getIntNumeral());
@@ -534,10 +534,10 @@ void AbsInterpretationUtils::handleStrcat(const SVF::CallICFGNode *call)
     }
 }
 
-void AbsInterpretationUtils::handleMemcpy(AbstractState& as, const SVF::SVFValue *dst, const SVF::SVFValue *src, IntervalValue len,  u32_t start_idx)
+void AbsExtAPI::handleMemcpy(AbstractState& as, const SVF::SVFVar *dst, const SVF::SVFVar *src, IntervalValue len,  u32_t start_idx)
 {
-    u32_t dstId = svfir->getValueNode(dst); // pts(dstId) = {objid}  objbar objtypeinfo->getType().
-    u32_t srcId = svfir->getValueNode(src);
+    u32_t dstId = dst->getId(); // pts(dstId) = {objid}  objbar objtypeinfo->getType().
+    u32_t srcId = src->getId();
     u32_t elemSize = 1;
     if (dst->getType()->isArrayTy())
     {
@@ -546,7 +546,7 @@ void AbsInterpretationUtils::handleMemcpy(AbstractState& as, const SVF::SVFValue
     // memcpy(i32*, i32*, 40)
     else if (dst->getType()->isPointerTy())
     {
-        if (const SVFType* elemType = as.getPointeeElement(svfir->getValueNode(dst)))
+        if (const SVFType* elemType = as.getPointeeElement(dstId))
         {
             if (elemType->isArrayTy())
                 elemSize = SVFUtil::dyn_cast<SVFArrayType>(elemType)->getTypeOfElement()->getByteSize();
@@ -592,9 +592,9 @@ void AbsInterpretationUtils::handleMemcpy(AbstractState& as, const SVF::SVFValue
     }
 }
 
-void AbsInterpretationUtils::handleMemset(AbstractState& as, const SVF::SVFValue *dst, IntervalValue elem, IntervalValue len)
+void AbsExtAPI::handleMemset(AbstractState& as, const SVF::SVFVar *dst, IntervalValue elem, IntervalValue len)
 {
-    u32_t dstId = svfir->getValueNode(dst);
+    u32_t dstId = dst->getId();
     u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getIntNumeral());
     u32_t elemSize = 1;
     if (dst->getType()->isArrayTy())
@@ -603,7 +603,7 @@ void AbsInterpretationUtils::handleMemset(AbstractState& as, const SVF::SVFValue
     }
     else if (dst->getType()->isPointerTy())
     {
-        if (const SVFType* elemType = as.getPointeeElement(svfir->getValueNode(dst)))
+        if (const SVFType* elemType = as.getPointeeElement(dstId))
         {
             elemSize = elemType->getByteSize();
         }
@@ -655,7 +655,7 @@ void AbsInterpretationUtils::handleMemset(AbstractState& as, const SVF::SVFValue
  *
  * @return       An IntervalValue representing the lower and upper bounds of the range.
  */
-IntervalValue AbsInterpretationUtils::getRangeLimitFromType(const SVFType* type)
+IntervalValue AbsExtAPI::getRangeLimitFromType(const SVFType* type)
 {
     if (const SVFIntegerType* intType = SVFUtil::dyn_cast<SVFIntegerType>(type))
     {
@@ -715,4 +715,10 @@ IntervalValue AbsInterpretationUtils::getRangeLimitFromType(const SVFType* type)
         return IntervalValue::top();
         // other types, return top interval
     }
+}
+
+const SVFVar* AbsExtAPI::getSVFVar(const SVF::SVFValue* val)
+{
+    assert(svfir->hasGNode(svfir->getValueNode(val)));
+    return svfir->getGNode(svfir->getValueNode(val));
 }

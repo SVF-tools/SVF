@@ -2,27 +2,28 @@
 #include "AE/Core/AbstractState.h"
 #include "AE/Core/ICFGWTO.h"
 #include "AE/Svfexe/AEDetector.h"
-#include "AE/Svfexe/AbsInterpretationUtils.h"
+#include "AE/Svfexe/AbsExtAPI.h"
 #include "Util/SVFBugReport.h"
 #include "WPA/Andersen.h"
 
 namespace SVF {
 class AbstractInterpretation;
-class AbsInterpretationUtils {// AbsExtAPI
+class AbsExtAPI
+{
 public:
     enum ExtAPIType { UNCLASSIFIED, MEMCPY, MEMSET, STRCPY, STRCAT };
 
-    AbsInterpretationUtils(Map<const ICFGNode*, AbstractState>&);
+    AbsExtAPI(Map<const ICFGNode*, AbstractState>&);
 
     void initExtFunMap();
-    std::string strRead(AbstractState& as, const SVFValue* rhs);
+    std::string strRead(AbstractState& as, const SVFVar* rhs);
     void handleExtAPI(const CallICFGNode *call);
     void handleStrcpy(const CallICFGNode *call);
-    IntervalValue getStrlen(AbstractState& as, const SVF::SVFValue *strValue);
+    IntervalValue getStrlen(AbstractState& as, const SVF::SVFVar *strValue);
     void handleStrcat(const SVF::CallICFGNode *call);
-    // SVFValue -> ICFGNode SVFVar
-    void handleMemcpy(AbstractState& as, const SVF::SVFValue *dst, const SVF::SVFValue *src, IntervalValue len,  u32_t start_idx);
-    void handleMemset(AbstractState& as, const SVFValue* dst,
+
+    void handleMemcpy(AbstractState& as, const SVF::SVFVar *dst, const SVF::SVFVar *src, IntervalValue len,  u32_t start_idx);
+    void handleMemset(AbstractState& as, const SVFVar* dst,
                       IntervalValue elem, IntervalValue len);
     IntervalValue getRangeLimitFromType(const SVFType* type);
     AbstractState& getAbsStateFromTrace(const ICFGNode* node)
@@ -37,6 +38,8 @@ public:
             return abstractTrace[repNode];
         }
     }
+
+    const SVFVar* getSVFVar(const SVFValue* val);
 
 protected:
     SVFIR* svfir;

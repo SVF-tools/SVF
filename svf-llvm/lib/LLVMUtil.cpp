@@ -36,16 +36,6 @@
 
 using namespace SVF;
 
-const Function* LLVMUtil::getDefFunForMultipleModule(const Function* fun)
-{
-    if (fun == nullptr)
-        return nullptr;
-    LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
-    if (fun->isDeclaration() && llvmModuleset->hasDefinition(fun))
-        fun = LLVMModuleSet::getLLVMModuleSet()->getDefinition(fun);
-    return fun;
-}
-
 const Function* LLVMUtil::getProgFunction(const std::string& funName)
 {
     for (const Module& M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
@@ -68,7 +58,7 @@ const Function* LLVMUtil::getProgFunction(const std::string& funName)
  */
 bool LLVMUtil::isObject(const Value*  ref)
 {
-    if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isHeapAllocExtCallViaRet(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(ref))))
+    if (SVFUtil::isa<Instruction>(ref) && isHeapAllocExtCallViaRet(SVFUtil::cast<Instruction>(ref)))
         return true;
     if (SVFUtil::isa<GlobalVariable>(ref))
         return true;
@@ -176,22 +166,6 @@ bool LLVMUtil::isUncalledFunction (const Function*  fun)
     {
         if (LLVMUtil::isCallSite(*i))
             return false;
-    }
-    if (LLVMModuleSet::getLLVMModuleSet()->hasDeclaration(fun))
-    {
-        const LLVMModuleSet::FunctionSetType &decls = LLVMModuleSet::getLLVMModuleSet()->getDeclaration(fun);
-        for (LLVMModuleSet::FunctionSetType::const_iterator it = decls.begin(),
-                eit = decls.end(); it != eit; ++it)
-        {
-            const Function* decl = *it;
-            if(decl->hasAddressTaken())
-                return false;
-            for (Value::const_user_iterator i = decl->user_begin(), e = decl->user_end(); i != e; ++i)
-            {
-                if (LLVMUtil::isCallSite(*i))
-                    return false;
-            }
-        }
     }
     return true;
 }
@@ -334,17 +308,6 @@ u32_t LLVMUtil::getNumOfElements(const Type* ety)
     return numOfFields;
 }
 
-/*!
- * Get the num of BB's predecessors
- */
-u32_t LLVMUtil::getBBPredecessorNum(const BasicBlock* BB)
-{
-    u32_t num = 0;
-    for (const_pred_iterator it = pred_begin(BB), et = pred_end(BB); it != et; ++it)
-        num++;
-    return num;
-}
-
 /*
  * Reference functions:
  * llvm::parseIRFile (lib/IRReader/IRReader.cpp)
@@ -398,73 +361,6 @@ void LLVMUtil::processArguments(int argc, char **argv, int &arg_num, char **arg_
     }
 }
 
-void LLVMUtil::removeFunAnnotations(Set<Function*>& removedFuncList)
-{
-    if (removedFuncList.empty())
-        return; // No functions to remove annotations in extapi.bc module
-
-    Module* module = (*removedFuncList.begin())->getParent();
-    GlobalVariable* glob = module->getGlobalVariable("llvm.global.annotations");
-    if (glob == nullptr || !glob->hasInitializer())
-        return;
-
-    ConstantArray* ca = SVFUtil::dyn_cast<ConstantArray>(glob->getInitializer());
-    if (ca == nullptr)
-        return;
-
-    std::vector<Constant*> newAnnotations;
-    for (unsigned i = 0; i < ca->getNumOperands(); ++i)
-    {
-        ConstantStruct* structAn = SVFUtil::dyn_cast<ConstantStruct>(ca->getOperand(i));
-        if (structAn == nullptr)
-            continue;
-
-        Function* annotatedFunc = nullptr;
-
-        // Non-opague pointer, try to cast to ConstantExpr and check for BitCast
-        if (ConstantExpr* expr = SVFUtil::dyn_cast<ConstantExpr>(structAn->getOperand(0)))
-        {
-            if (expr->getOpcode() == Instruction::BitCast)
-            {
-                annotatedFunc = SVFUtil::dyn_cast<Function>(expr->getOperand(0));
-            }
-        }
-
-        // Opague pointer, If the above method didn't work, try casting directly to Function
-        if (!annotatedFunc)
-        {
-            annotatedFunc = SVFUtil::dyn_cast<Function>(structAn->getOperand(0));
-        }
-
-        // Process the annotated function if it's not in the removed list
-        if (annotatedFunc && std::find(removedFuncList.begin(), removedFuncList.end(), annotatedFunc) == removedFuncList.end())
-        {
-            newAnnotations.push_back(structAn);
-        }
-    }
-
-    if (newAnnotations.size() == ca->getNumOperands())
-        return; // No annotations to remove
-
-    ArrayType* annotationsType = ArrayType::get(ca->getType()->getElementType(), newAnnotations.size());
-    Constant* newCA = ConstantArray::get(annotationsType, newAnnotations);
-
-    glob->setName("llvm.global.annotations.old");
-    GlobalVariable *GV = new GlobalVariable(newCA->getType(), glob->isConstant(), glob->getLinkage(), newCA, "llvm.global.annotations");
-    GV->setSection(glob->getSection());
-
-#if (LLVM_VERSION_MAJOR < 17)
-    module->getGlobalList().push_back(GV);
-#elif (LLVM_VERSION_MAJOR >= 17)
-    module->insertGlobalVariable(GV);
-#else
-    assert(false && "llvm version not supported!");
-#endif
-
-    glob->replaceAllUsesWith(GV);
-    glob->eraseFromParent();
-}
-
 /// Get all called funcions in a parent function
 std::vector<const Function *> LLVMUtil::getCalledFunctions(const Function *F)
 {
@@ -483,84 +379,6 @@ std::vector<const Function *> LLVMUtil::getCalledFunctions(const Function *F)
         }
     }
     return calledFunctions;
-}
-
-bool LLVMUtil::isUnusedGlobalVariable(const GlobalVariable& global)
-{
-    // Check if it is an empty global annotations
-    if (global.getName() == "llvm.global.annotations" && SVFUtil::isa<ConstantArray>(global.getInitializer()))
-        return false;
-    else
-    {
-        // Check if any global strings has at least one effective user
-        for (auto& use : global.uses())
-            if (use.getUser()->getNumUses() != 0)
-                return false;
-    }
-    return true;
-}
-
-void LLVMUtil::removeUnusedGlobalVariables(Module* module)
-{
-    assert(module && "Null module pointer!");
-    std::vector<GlobalVariable*> unusedGlobals;
-    for (GlobalVariable& global : module->globals())
-        if (isUnusedGlobalVariable(global))
-            // Record unused global variables
-            unusedGlobals.push_back(&global);
-
-    // Delete unused global variables
-    for (GlobalVariable* global : unusedGlobals)
-        global->eraseFromParent();
-}
-
-/// Delete unused functions, annotations and global variables in extapi.bc
-void LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(Set<Function*> removedFuncList)
-{
-    if (removedFuncList.empty())
-        return;
-
-    Module* mod = (*removedFuncList.begin())->getParent();
-    if (mod->getName().str() != ExtAPI::getExtAPI()->getExtBcPath())
-        return;
-
-    /// Delete unused function annotations
-    LLVMUtil::removeFunAnnotations(removedFuncList);
-
-    /// Delete unused functions
-    /// The functions to be deleted from extapi.bc can be categorized into two types.
-    /// The first type includes functions do not contain any invocation statements,
-    /// The second type includes functions whose contain invocation statements.
-    /// It is necessary to delete functions of the second type first before deleting those of the first type;
-    /// Otherwise, errors may occur when calling eraseFromParent().
-    std::vector<Function*> funcsToKeep;
-    /// Check whether a function is called by other functions
-    auto isCalledFunction = [](llvm::Function* F)
-    {
-        assert(F && "Null function pointer!");
-        for (auto& use : F->uses())
-        {
-            llvm::User* user = use.getUser();
-            if (llvm::isa<llvm::CallBase>(user))
-                return true;
-        }
-        return false;
-    };
-
-    for (Function* func : removedFuncList)
-    {
-        if (isCalledFunction(func))
-            // Record first kind function(which does not contain any invocation statements)
-            funcsToKeep.push_back(func);
-        else
-            // Delete second kind function(which contains invocation statements)
-            func->eraseFromParent();
-    }
-    // Delete first kind functions
-    for (Function* func : funcsToKeep)
-        func->eraseFromParent();
-    // Delete unused global variables
-    removeUnusedGlobalVariables(mod);
 }
 
 std::string LLVMUtil::restoreFuncName(std::string funcName)
@@ -604,26 +422,6 @@ const Value* LLVMUtil::getGlobalRep(const Value* val)
             val = LLVMModuleSet::getLLVMModuleSet()->getGlobalRep(gvar);
     }
     return val;
-}
-
-u32_t LLVMUtil::getTypeSizeInBytes(const Type* type)
-{
-    // if the type has size then simply return it, otherwise just return 0
-    if(type->isSized())
-        return getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule())->getTypeStoreSize(const_cast<Type*>(type));
-    else
-        return 0;
-}
-
-u32_t LLVMUtil::getTypeSizeInBytes(const StructType *sty, u32_t field_idx)
-{
-
-    const StructLayout *stTySL = getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule())->getStructLayout( const_cast<StructType *>(sty) );
-    /// if this struct type does not have any element, i.e., opaque
-    if(sty->isOpaque())
-        return 0;
-    else
-        return stTySL->getElementOffset(field_idx);
 }
 
 /*!
@@ -776,31 +574,6 @@ void LLVMUtil::getNextInsts(const Instruction* curInst, std::vector<const Instru
 }
 
 
-/// Get the previous instructions following control flow
-void LLVMUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList)
-{
-    if (curInst != &(curInst->getParent()->front()))
-    {
-        const Instruction* prevInst = curInst->getPrevNode();
-        if (LLVMUtil::isIntrinsicInst(prevInst))
-            getPrevInsts(prevInst, instList);
-        else
-            instList.push_back(prevInst);
-    }
-    else
-    {
-        const BasicBlock *BB = curInst->getParent();
-        // Visit all successors of BB in the CFG
-        for (const_pred_iterator it = pred_begin(BB), ie = pred_end(BB); it != ie; ++it)
-        {
-            const Instruction* prevInst = &((*it)->back());
-            if (LLVMUtil::isIntrinsicInst(prevInst))
-                getPrevInsts(prevInst, instList);
-            else
-                instList.push_back(prevInst);
-        }
-    }
-}
 
 /// Check whether this value points-to a constant object
 bool LLVMUtil::isConstantObjSym(const SVFValue* val)
@@ -840,6 +613,37 @@ std::string LLVMUtil::dumpValueAndDbgInfo(const Value *val)
     else
         rawstr << " llvm Value is null";
     return rawstr.str();
+}
+
+bool LLVMUtil::isHeapAllocExtCallViaRet(const Instruction* inst)
+{
+    LLVMModuleSet* pSet = LLVMModuleSet::getLLVMModuleSet();
+    ExtAPI* extApi = ExtAPI::getExtAPI();
+    bool isPtrTy = inst->getType()->isPointerTy();
+    if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
+    {
+        const Function* fun = call->getCalledFunction();
+        return fun && isPtrTy &&
+               (extApi->is_alloc(pSet->getSVFFunction(fun)) ||
+                extApi->is_realloc(pSet->getSVFFunction(fun)));
+    }
+    else
+        return false;
+}
+
+bool LLVMUtil::isHeapAllocExtCallViaArg(const Instruction* inst)
+{
+    if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
+    {
+        const Function* fun = call->getCalledFunction();
+        return fun &&
+               ExtAPI::getExtAPI()->is_arg_alloc(
+                   LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun));
+    }
+    else
+    {
+        return false;
+    }
 }
 
 namespace SVF

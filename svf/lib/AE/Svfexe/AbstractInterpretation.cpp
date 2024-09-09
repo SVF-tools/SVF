@@ -26,7 +26,7 @@
 //
 
 #include "AE/Svfexe/AbstractInterpretation.h"
-#include "AE/Svfexe/AbsInterpretationUtils.h"
+#include "AE/Svfexe/AbsExtAPI.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
 #include "Util/WorkList.h"
@@ -90,7 +90,7 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
     stat->startClk();
     icfg = _icfg;
     svfir = PAG::getPAG();
-    utils = new AbsInterpretationUtils(abstractTrace);
+    utils = new AbsExtAPI(abstractTrace);
 
     /// collect checkpoint
     collectCheckPoint();
