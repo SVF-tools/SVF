@@ -61,7 +61,7 @@ public:
     typedef Map<const SVFValue*, const Value*> SVFValue2LLVMValueMap;
     typedef Map<const Type*, SVFType*> LLVMType2SVFTypeMap;
     typedef Map<const Type*, StInfo*> Type2TypeInfoMap;
-    typedef Map<const Function*,  std::vector<std::string>> Fun2AnnoMap;
+    typedef Map<std::string, std::vector<std::string>> Fun2AnnoMap;
 
 private:
     static LLVMModuleSet* llvmModuleSet;
@@ -72,10 +72,6 @@ private:
     std::vector<std::unique_ptr<Module>> owned_modules;
     std::vector<std::reference_wrapper<Module>> modules;
 
-    /// Function declaration to function definition map
-    FunDeclToDefMapTy FunDeclToDefMap;
-    /// Function definition to function declaration map
-    FunDefToDeclsMapTy FunDefToDeclsMap;
     /// Record some "sse_" function declarations used in other ext function definition, e.g., svf_ext_foo(), and svf_ext_foo() used in app functions
     FunctionSetType ExtFuncsVec;
     /// Record annotations of function in extapi.bc
@@ -253,19 +249,6 @@ public:
 
     SVFOtherValue* getSVFOtherValue(const Value* ov);
 
-    /// Remove unused function in extapi.bc module
-    bool isCalledExtFunction(Function* func)
-    {
-        /// if this function func defined in extapi.bc but never used in application code (without any corresponding declared functions).
-        if (func->getParent()->getName().str() == ExtAPI::getExtAPI()->getExtBcPath()
-                && FunDefToDeclsMap.find(func) == FunDefToDeclsMap.end()
-                && std::find(ExtFuncsVec.begin(), ExtFuncsVec.end(), func) == ExtFuncsVec.end())
-        {
-            return true;
-        }
-        return false;
-    }
-
     /// Get the corresponding Function based on its name
     inline const SVFFunction* getSVFFunction(const std::string& name)
     {
@@ -281,45 +264,6 @@ public:
             }
         }
         return nullptr;
-    }
-
-    bool hasDefinition(const Function* fun) const
-    {
-        assert(fun->isDeclaration() && "not a function declaration?");
-        FunDeclToDefMapTy::const_iterator it = FunDeclToDefMap.find(fun);
-        return it != FunDeclToDefMap.end();
-    }
-
-    const Function* getDefinition(const Function* fun) const
-    {
-        assert(fun->isDeclaration() && "not a function declaration?");
-        FunDeclToDefMapTy::const_iterator it = FunDeclToDefMap.find(fun);
-        assert(it != FunDeclToDefMap.end() && "has no definition?");
-        return it->second;
-    }
-
-    bool hasDeclaration(const Function* fun) const
-    {
-        if(fun->isDeclaration() && !hasDefinition(fun))
-            return false;
-
-        const Function* funDef = fun;
-        if(fun->isDeclaration() && hasDefinition(fun))
-            funDef = getDefinition(fun);
-
-        FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(funDef);
-        return it != FunDefToDeclsMap.end();
-    }
-
-    const FunctionSetType& getDeclaration(const Function* fun) const
-    {
-        const Function* funDef = fun;
-        if(fun->isDeclaration() && hasDefinition(fun))
-            funDef = getDefinition(fun);
-
-        FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(funDef);
-        assert(it != FunDefToDeclsMap.end() && "does not have a function definition (body)?");
-        return it->second;
     }
 
     /// Global to rep
@@ -400,7 +344,6 @@ private:
     void prePassSchedule();
     void buildSymbolTable() const;
     void collectExtFunAnnotations(const Module* mod);
-    void removeUnusedExtAPIs();
 };
 
 } // End namespace SVF
