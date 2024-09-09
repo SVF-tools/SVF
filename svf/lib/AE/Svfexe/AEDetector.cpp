@@ -26,6 +26,7 @@
 //
 
 #include <AE/Svfexe/AEDetector.h>
+#include <AE/Svfexe/AbsExtAPI.h>
 #include <AE/Svfexe/AbstractInterpretation.h>
 
 using namespace SVF;
@@ -101,6 +102,85 @@ void BufOverflowDetector::detect(AbstractState& as, const ICFGNode* node)
     }
 }
 
+
+/**
+ * @brief Handles stub functions within the ICFG node.
+ *
+ * This function is a placeholder for handling stub functions within the ICFG node.
+ *
+ * @param node Pointer to the ICFG node.
+ */
+void BufOverflowDetector::handleStubFunctions(const SVF::CallICFGNode* callNode)
+{
+    // get function name
+    SVFIR* svfir = PAG::getPAG();
+    std::string funcName = callNode->getCalledFunction()->getName();
+    if (funcName == "SAFE_BUFACCESS")
+    {
+        // void SAFE_BUFACCESS(void* data, int size);
+        AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
+        if (callNode->arg_size() < 2)
+            return;
+        AbstractState& as =
+            AbstractInterpretation::getAEInstance().getAbsStateFromTrace(
+                callNode);
+        u32_t size_id = svfir->getValueNode(callNode->getArgument(1));
+        IntervalValue val = as[size_id].getInterval();
+        if (val.isBottom())
+        {
+            val = IntervalValue(0);
+            assert(false && "SAFE_BUFACCESS size is bottom");
+        }
+        const SVFVar* arg0Val =
+            AbstractInterpretation::getAEInstance().getUtils()->getSVFVar(
+                callNode->getArgument(0));
+        bool isSafe = canSafelyAccessMemory(as, arg0Val, val);
+        if (isSafe)
+        {
+            std::cout << "safe buffer access success: " << callNode->toString()
+                      << std::endl;
+            return;
+        }
+        else
+        {
+            std::string err_msg = "this SAFE_BUFACCESS should be a safe access but detected buffer overflow. Pos: ";
+            err_msg += callNode->getSourceLoc();
+            std::cerr << err_msg << std::endl;
+            assert(false);
+        }
+    }
+    else if (funcName == "UNSAFE_BUFACCESS")
+    {
+        // handle other stub functions
+        //void UNSAFE_BUFACCESS(void* data, int size);
+        AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
+        if (callNode->arg_size() < 2) return;
+        AbstractState&as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
+        u32_t size_id = svfir->getValueNode(callNode->getArgument(1));
+        IntervalValue val = as[size_id].getInterval();
+        if (val.isBottom())
+        {
+            assert(false && "UNSAFE_BUFACCESS size is bottom");
+        }
+        const SVFVar* arg0Val =
+            AbstractInterpretation::getAEInstance().getUtils()->getSVFVar(
+                callNode->getArgument(0));
+        bool isSafe = canSafelyAccessMemory(as, arg0Val, val);
+        if (!isSafe)
+        {
+            std::cout << "detect buffer overflow success: " << callNode->toString() << std::endl;
+            return;
+        }
+        else
+        {
+            std::string err_msg = "this UNSAFE_BUFACCESS should be a buffer overflow but not detected. Pos: ";
+            err_msg += callNode->getSourceLoc();
+            std::cerr << err_msg << std::endl;
+            assert(false);
+        }
+    }
+}
+
 /**
  * @brief Initializes external API buffer overflow check rules.
  *
@@ -147,23 +227,23 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
     SVFIR* svfir = PAG::getPAG();
     assert(call->getCalledFunction() && "SVFFunction* is nullptr");
 
-    AbstractInterpretation::ExtAPIType extType = AbstractInterpretation::UNCLASSIFIED;
+    AbsExtAPI::ExtAPIType extType = AbsExtAPI::UNCLASSIFIED;
 
     // Determine the type of external memory API
     for (const std::string &annotation : ExtAPI::getExtAPI()->getExtFuncAnnotations(call->getCalledFunction()))
     {
         if (annotation.find("MEMCPY") != std::string::npos)
-            extType = AbstractInterpretation::MEMCPY;
+            extType = AbsExtAPI::MEMCPY;
         if (annotation.find("MEMSET") != std::string::npos)
-            extType = AbstractInterpretation::MEMSET;
+            extType = AbsExtAPI::MEMSET;
         if (annotation.find("STRCPY") != std::string::npos)
-            extType = AbstractInterpretation::STRCPY;
+            extType = AbsExtAPI::STRCPY;
         if (annotation.find("STRCAT") != std::string::npos)
-            extType = AbstractInterpretation::STRCAT;
+            extType = AbsExtAPI::STRCAT;
     }
 
     // Apply buffer overflow checks based on the determined API type
-    if (extType == AbstractInterpretation::MEMCPY)
+    if (extType == AbsExtAPI::MEMCPY)
     {
         if (extAPIBufOverflowCheckRules.count(call->getCalledFunction()->getName()) == 0)
         {
@@ -175,14 +255,15 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
         for (auto arg : args)
         {
             IntervalValue offset = as[svfir->getValueNode(call->getArgument(arg.second))].getInterval() - IntervalValue(1);
-            if (!canSafelyAccessMemory(as, call->getArgument(arg.first), offset))
+            const SVFVar* argVar = AbstractInterpretation::getAEInstance().getUtils()->getSVFVar(call->getArgument(arg.first));
+            if (!canSafelyAccessMemory(as, argVar, offset))
             {
                 AEException bug(call->toString());
                 addBugToReporter(bug, call);
             }
         }
     }
-    else if (extType == AbstractInterpretation::MEMSET)
+    else if (extType == AbsExtAPI::MEMSET)
     {
         if (extAPIBufOverflowCheckRules.count(call->getCalledFunction()->getName()) == 0)
         {
@@ -194,14 +275,15 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
         for (auto arg : args)
         {
             IntervalValue offset = as[svfir->getValueNode(call->getArgument(arg.second))].getInterval() - IntervalValue(1);
-            if (!canSafelyAccessMemory(as, call->getArgument(arg.first), offset))
+            const SVFVar* argVar = AbstractInterpretation::getAEInstance().getUtils()->getSVFVar(call->getArgument(arg.first));
+            if (!canSafelyAccessMemory(as, argVar, offset))
             {
                 AEException bug(call->toString());
                 addBugToReporter(bug, call);
             }
         }
     }
-    else if (extType == AbstractInterpretation::STRCPY)
+    else if (extType == AbsExtAPI::STRCPY)
     {
         if (!detectStrcpy(as, call))
         {
@@ -209,7 +291,7 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
             addBugToReporter(bug, call);
         }
     }
-    else if (extType == AbstractInterpretation::STRCAT)
+    else if (extType == AbsExtAPI::STRCAT)
     {
         if (!detectStrcat(as, call))
         {
@@ -319,9 +401,9 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(SVF::AddressValue gepAddrs,
  */
 bool BufOverflowDetector::detectStrcpy(AbstractState& as, const CallICFGNode *call)
 {
-    const SVFValue* arg0Val = call->getArgument(0);
-    const SVFValue* arg1Val = call->getArgument(1);
-    IntervalValue strLen = AbstractInterpretation::getAEInstance().getStrlen(as, arg1Val);
+    const SVFVar* arg0Val = AbstractInterpretation::getAEInstance().getUtils()->getSVFVar(call->getArgument(0));
+    const SVFVar* arg1Val = AbstractInterpretation::getAEInstance().getUtils()->getSVFVar(call->getArgument(1));
+    IntervalValue strLen = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg1Val);
     return canSafelyAccessMemory(as, arg0Val, strLen);
 }
 
@@ -337,26 +419,24 @@ bool BufOverflowDetector::detectStrcpy(AbstractState& as, const CallICFGNode *ca
  */
 bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *call)
 {
-    SVFIR* svfir = PAG::getPAG();
-
     const std::vector<std::string> strcatGroup = {"__strcat_chk", "strcat", "__wcscat_chk", "wcscat"};
     const std::vector<std::string> strncatGroup = {"__strncat_chk", "strncat", "__wcsncat_chk", "wcsncat"};
 
     if (std::find(strcatGroup.begin(), strcatGroup.end(), call->getCalledFunction()->getName()) != strcatGroup.end())
     {
-        const SVFValue* arg0Val = call->getArgument(0);
-        const SVFValue* arg1Val = call->getArgument(1);
-        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getStrlen(as, arg0Val);
-        IntervalValue strLen1 = AbstractInterpretation::getAEInstance().getStrlen(as, arg1Val);
+        const SVFVar* arg0Val = AbstractInterpretation::getAEInstance().getUtils()->getSVFVar(call->getArgument(0));
+        const SVFVar* arg1Val = AbstractInterpretation::getAEInstance().getUtils()->getSVFVar(call->getArgument(1));
+        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg0Val);
+        IntervalValue strLen1 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg1Val);
         IntervalValue totalLen = strLen0 + strLen1;
         return canSafelyAccessMemory(as, arg0Val, totalLen);
     }
     else if (std::find(strncatGroup.begin(), strncatGroup.end(), call->getCalledFunction()->getName()) != strncatGroup.end())
     {
-        const SVFValue* arg0Val = call->getArgument(0);
-        const SVFValue* arg2Val = call->getArgument(2);
-        IntervalValue arg2Num = as[svfir->getValueNode(arg2Val)].getInterval();
-        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getStrlen(as, arg0Val);
+        const SVFVar* arg0Val = AbstractInterpretation::getAEInstance().getUtils()->getSVFVar(call->getArgument(0));
+        const SVFVar* arg2Val = AbstractInterpretation::getAEInstance().getUtils()->getSVFVar(call->getArgument(2));
+        IntervalValue arg2Num = as[arg2Val->getId()].getInterval();
+        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg0Val);
         IntervalValue totalLen = strLen0 + arg2Num;
         return canSafelyAccessMemory(as, arg0Val, totalLen);
     }
@@ -374,14 +454,14 @@ bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *ca
  * does not exceed the allocated size of the buffer.
  *
  * @param as Reference to the abstract state.
- * @param value Pointer to the SVF value.
+ * @param value Pointer to the SVF var.
  * @param len The interval value representing the length of the memory access.
  * @return True if the memory access is safe, false otherwise.
  */
-bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SVFValue* value, const SVF::IntervalValue& len)
+bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SVFVar* value, const SVF::IntervalValue& len)
 {
     SVFIR* svfir = PAG::getPAG();
-    NodeID value_id = svfir->getValueNode(value);
+    NodeID value_id = value->getId();
 
     assert(as[value_id].isAddr());
     for (const auto& addr : as[value_id].getAddrs())
