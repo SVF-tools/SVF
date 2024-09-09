@@ -25,6 +25,7 @@
 // Created by Jiawei Wang on 2024/9/9.
 //
 #include "AE/Svfexe/AbsExtAPI.h"
+#include "AE/Svfexe/AbstractInterpretation.h"
 
 using namespace SVF;
 AbsExtAPI::AbsExtAPI(Map<const ICFGNode*, AbstractState>& traces): abstractTrace(traces)
@@ -71,6 +72,7 @@ void AbsExtAPI::initExtFunMap()
 
     auto sse_svf_assert = [this](const CallICFGNode* callNode)
     {
+        AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
         u32_t arg0 = svfir->getValueNode(callNode->getArgument(0));
         AbstractState&as = getAbsStateFromTrace(callNode);
         if (as[arg0].getInterval().equals(IntervalValue(1, 1)))
@@ -339,6 +341,19 @@ void AbsExtAPI::initExtFunMap()
     func_map["recv"] = sse_recv;
     func_map["__recv"] = sse_recv;
 };
+
+AbstractState& AbsExtAPI::getAbsStateFromTrace(const SVF::ICFGNode* node)
+{
+    const ICFGNode* repNode = icfg->getRepNode(node);
+    if (abstractTrace.count(repNode) == 0)
+    {
+        assert(0 && "No preAbsTrace for this node");
+    }
+    else
+    {
+        return abstractTrace[repNode];
+    }
+}
 
 std::string AbsExtAPI::strRead(AbstractState& as, const SVFVar* rhs)
 {

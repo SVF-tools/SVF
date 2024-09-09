@@ -129,7 +129,9 @@ public:
         detectors.push_back(std::move(detector));
     }
 
-protected:
+    Set<const CallICFGNode*> checkpoints; // for CI check
+
+private:
     /// Global ICFGNode is handled at the entry of the program,
     virtual void handleGlobalNode();
 
@@ -252,18 +254,6 @@ protected:
     Map<const SVFFunction*, ICFGWTO*> funcToWTO;
     Set<const SVFFunction*> recursiveFuns;
 
-private:
-    // helper functions in handleCallSite
-    virtual bool isExtCall(const CallICFGNode* callNode);
-    virtual void extCallPass(const CallICFGNode* callNode);
-    virtual bool isRecursiveCall(const CallICFGNode* callNode);
-    virtual void recursiveCallPass(const CallICFGNode* callNode);
-    virtual bool isDirectCall(const CallICFGNode* callNode);
-    virtual void directCallFunPass(const CallICFGNode* callNode);
-    virtual bool isIndirectCall(const CallICFGNode* callNode);
-    virtual void indirectCallFunPass(const CallICFGNode* callNode);
-
-protected:
 
     AbstractState& getAbsStateFromTrace(const ICFGNode* node)
     {
@@ -289,16 +279,26 @@ protected:
         return utils;
     }
 
-protected:
+    // helper functions in handleCallSite
+    virtual bool isExtCall(const CallICFGNode* callNode);
+    virtual void extCallPass(const CallICFGNode* callNode);
+    virtual bool isRecursiveCall(const CallICFGNode* callNode);
+    virtual void recursiveCallPass(const CallICFGNode* callNode);
+    virtual bool isDirectCall(const CallICFGNode* callNode);
+    virtual void directCallFunPass(const CallICFGNode* callNode);
+    virtual bool isIndirectCall(const CallICFGNode* callNode);
+    virtual void indirectCallFunPass(const CallICFGNode* callNode);
+
     // there data should be shared with subclasses
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
-    Set<const CallICFGNode*> checkpoints;
-    Set<std::string> checkpoint_names;
+
     Map<const ICFGNode*, AbstractState> abstractTrace; // abstract states immediately after nodes
     std::string moduleName;
 
     std::vector<std::unique_ptr<AEDetector>> detectors;
     AbsExtAPI* utils;
+
+
 
 };
 }

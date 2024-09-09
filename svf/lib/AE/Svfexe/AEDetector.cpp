@@ -102,6 +102,85 @@ void BufOverflowDetector::detect(AbstractState& as, const ICFGNode* node)
     }
 }
 
+
+/**
+ * @brief Handles stub functions within the ICFG node.
+ *
+ * This function is a placeholder for handling stub functions within the ICFG node.
+ *
+ * @param node Pointer to the ICFG node.
+ */
+void BufOverflowDetector::handleStubFunctions(const SVF::CallICFGNode* callNode)
+{
+    // get function name
+    SVFIR* svfir = PAG::getPAG();
+    std::string funcName = callNode->getCalledFunction()->getName();
+    if (funcName == "SAFE_BUFACCESS")
+    {
+        // void SAFE_BUFACCESS(void* data, int size);
+        AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
+        if (callNode->arg_size() < 2)
+            return;
+        AbstractState& as =
+            AbstractInterpretation::getAEInstance().getAbsStateFromTrace(
+                callNode);
+        u32_t size_id = svfir->getValueNode(callNode->getArgument(1));
+        IntervalValue val = as[size_id].getInterval();
+        if (val.isBottom())
+        {
+            val = IntervalValue(0);
+            assert(false && "SAFE_BUFACCESS size is bottom");
+        }
+        const SVFVar* arg0Val =
+            AbstractInterpretation::getAEInstance().getUtils()->getSVFVar(
+                callNode->getArgument(0));
+        bool isSafe = canSafelyAccessMemory(as, arg0Val, val);
+        if (isSafe)
+        {
+            std::cout << "safe buffer access success: " << callNode->toString()
+                      << std::endl;
+            return;
+        }
+        else
+        {
+            std::string err_msg = "this SAFE_BUFACCESS should be a safe access but detected buffer overflow. Pos: ";
+            err_msg += callNode->getSourceLoc();
+            std::cerr << err_msg << std::endl;
+            assert(false);
+        }
+    }
+    else if (funcName == "UNSAFE_BUFACCESS")
+    {
+        // handle other stub functions
+        //void UNSAFE_BUFACCESS(void* data, int size);
+        AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
+        if (callNode->arg_size() < 2) return;
+        AbstractState&as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
+        u32_t size_id = svfir->getValueNode(callNode->getArgument(1));
+        IntervalValue val = as[size_id].getInterval();
+        if (val.isBottom())
+        {
+            assert(false && "UNSAFE_BUFACCESS size is bottom");
+        }
+        const SVFVar* arg0Val =
+            AbstractInterpretation::getAEInstance().getUtils()->getSVFVar(
+                callNode->getArgument(0));
+        bool isSafe = canSafelyAccessMemory(as, arg0Val, val);
+        if (!isSafe)
+        {
+            std::cout << "detect buffer overflow success: " << callNode->toString() << std::endl;
+            return;
+        }
+        else
+        {
+            std::string err_msg = "this UNSAFE_BUFACCESS should be a buffer overflow but not detected. Pos: ";
+            err_msg += callNode->getSourceLoc();
+            std::cerr << err_msg << std::endl;
+            assert(false);
+        }
+    }
+}
+
 /**
  * @brief Initializes external API buffer overflow check rules.
  *
