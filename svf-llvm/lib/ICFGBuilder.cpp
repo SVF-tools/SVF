@@ -233,7 +233,7 @@ InterICFGNode* ICFGBuilder::addInterBlockICFGNode(const SVFInstruction* inst)
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
     CallICFGNode* callICFGNode = icfg->addCallICFGNode(inst);
     (void) icfg->addRetICFGNode(inst);
-    addICFGInterEdges(inst, getCallee(inst));                       //creating interprocedural edges
+    addICFGInterEdges(inst, callICFGNode->getCalledFunction());                       //creating interprocedural edges
     return callICFGNode;
 }
 
@@ -258,8 +258,8 @@ void ICFGBuilder::addICFGInterEdges(const SVFInstruction* cs, const SVFFunction*
         {
             FunEntryICFGNode* calleeEntryNode = icfg->getFunEntryICFGNode(callee);
             FunExitICFGNode* calleeExitNode = icfg->getFunExitICFGNode(callee);
-            icfg->addCallEdge(callICFGNode, calleeEntryNode, cs);
-            icfg->addRetEdge(calleeExitNode, retBlockNode, cs);
+            icfg->addCallEdge(callICFGNode, calleeEntryNode);
+            icfg->addRetEdge(calleeExitNode, retBlockNode);
         }
     }
     /// indirect call (don't know callee)

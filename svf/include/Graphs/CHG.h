@@ -57,11 +57,11 @@ public:
         DI
     };
 
-    virtual bool csHasVFnsBasedonCHA(CallSite cs) = 0;
-    virtual const VFunSet &getCSVFsBasedonCHA(CallSite cs) = 0;
-    virtual bool csHasVtblsBasedonCHA(CallSite cs) = 0;
-    virtual const VTableSet &getCSVtblsBasedonCHA(CallSite cs) = 0;
-    virtual void getVFnsFromVtbls(CallSite cs, const VTableSet& vtbls,
+    virtual bool csHasVFnsBasedonCHA(const CallICFGNode* cs) = 0;
+    virtual const VFunSet &getCSVFsBasedonCHA(const CallICFGNode* cs) = 0;
+    virtual bool csHasVtblsBasedonCHA(const CallICFGNode* cs) = 0;
+    virtual const VTableSet &getCSVtblsBasedonCHA(const CallICFGNode* cs) = 0;
+    virtual void getVFnsFromVtbls(const SVFCallInst* cs, const VTableSet& vtbls,
                                   VFunSet& virtualFunctions) = 0;
 
     CHGKind getKind(void) const
@@ -222,9 +222,9 @@ public:
     typedef Set<const CHNode*> CHNodeSetTy;
     typedef FIFOWorkList<const CHNode*> WorkList;
     typedef Map<std::string, CHNodeSetTy> NameToCHNodesMap;
-    typedef Map<CallSite, CHNodeSetTy> CallSiteToCHNodesMap;
-    typedef Map<CallSite, VTableSet> CallSiteToVTableSetMap;
-    typedef Map<CallSite, VFunSet> CallSiteToVFunSetMap;
+    typedef Map<const SVFInstruction*, CHNodeSetTy> CallSiteToCHNodesMap;
+    typedef Map<const SVFInstruction*, VTableSet> CallSiteToVTableSetMap;
+    typedef Map<const SVFInstruction*, VFunSet> CallSiteToVFunSetMap;
 
     typedef enum
     {
@@ -242,7 +242,7 @@ public:
                  const std::string baseClassName,
                  CHEdge::CHEDGETYPE edgeType);
     CHNode *getNode(const std::string name) const;
-    void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
+    void getVFnsFromVtbls(const SVFCallInst* cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
     void dump(const std::string& filename);
     void view();
     void printCH();
@@ -286,28 +286,10 @@ public:
         return templateNameToInstancesMap[className];
     }
 
-    inline bool csHasVtblsBasedonCHA(CallSite cs) override
-    {
-        CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(cs);
-        return it != csToCHAVtblsMap.end();
-    }
-    inline bool csHasVFnsBasedonCHA(CallSite cs) override
-    {
-        CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(cs);
-        return it != csToCHAVFnsMap.end();
-    }
-    inline const VTableSet &getCSVtblsBasedonCHA(CallSite cs) override
-    {
-        CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(cs);
-        assert(it != csToCHAVtblsMap.end() && "cs does not have vtabls based on CHA.");
-        return it->second;
-    }
-    inline const VFunSet &getCSVFsBasedonCHA(CallSite cs) override
-    {
-        CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(cs);
-        assert(it != csToCHAVFnsMap.end() && "cs does not have vfns based on CHA.");
-        return it->second;
-    }
+    bool csHasVtblsBasedonCHA(const CallICFGNode* cs) override;
+    bool csHasVFnsBasedonCHA(const CallICFGNode* cs) override;
+    const VTableSet &getCSVtblsBasedonCHA(const CallICFGNode* cs) override;
+    const VFunSet &getCSVFsBasedonCHA(const CallICFGNode* cs) override;
 
     static inline bool classof(const CommonCHGraph *chg)
     {

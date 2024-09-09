@@ -601,7 +601,7 @@ bool MRGenerator::isNonLocalObject(NodeID id, const SVFFunction* curFun) const
 bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGNode* cs, const SVFFunction* callee)
 {
     /// if a callee is a heap allocator function, then its mod set of this callsite is the heap object.
-    if(isHeapAllocExtCall(cs->getCallSite()))
+    if(isHeapAllocExtCall(cs))
     {
         SVFStmtList& pagEdgeList = getPAGEdgesFromInst(cs);
         for (SVFStmtList::const_iterator bit = pagEdgeList.begin(),
@@ -667,7 +667,7 @@ void MRGenerator::modRefAnalysis(CallGraphNode* callGraphNode, WorkList& worklis
  */
 NodeBS MRGenerator::getModInfoForCall(const CallICFGNode* cs)
 {
-    if (isExtCall(cs->getCallSite()) && !isHeapAllocExtCall(cs->getCallSite()))
+    if (isExtCall(cs) && !isHeapAllocExtCall(cs))
     {
         SVFStmtList& pagEdgeList = getPAGEdgesFromInst(cs);
         NodeBS mods;
@@ -691,7 +691,7 @@ NodeBS MRGenerator::getModInfoForCall(const CallICFGNode* cs)
  */
 NodeBS MRGenerator::getRefInfoForCall(const CallICFGNode* cs)
 {
-    if (isExtCall(cs->getCallSite()) && !isHeapAllocExtCall(cs->getCallSite()))
+    if (isExtCall(cs) && !isHeapAllocExtCall(cs))
     {
         SVFStmtList& pagEdgeList = getPAGEdgesFromInst(cs);
         NodeBS refs;

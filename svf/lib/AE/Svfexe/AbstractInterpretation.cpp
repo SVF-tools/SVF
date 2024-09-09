@@ -616,8 +616,7 @@ void AbstractInterpretation::handleCallSite(const ICFGNode* node)
 
 bool AbstractInterpretation::isExtCall(const SVF::CallICFGNode *callNode)
 {
-    const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
-    return SVFUtil::isExtCall(callfun);
+    return SVFUtil::isExtCall(callNode->getCalledFunction());
 }
 
 void AbstractInterpretation::extCallPass(const SVF::CallICFGNode *callNode)
@@ -629,8 +628,7 @@ void AbstractInterpretation::extCallPass(const SVF::CallICFGNode *callNode)
 
 bool AbstractInterpretation::isRecursiveCall(const SVF::CallICFGNode *callNode)
 {
-    const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
-    return recursiveFuns.find(callfun) != recursiveFuns.end();
+    return recursiveFuns.find(callNode->getCalledFunction()) != recursiveFuns.end();
 }
 
 void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode)
@@ -654,18 +652,16 @@ void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode
 
 bool AbstractInterpretation::isDirectCall(const SVF::CallICFGNode *callNode)
 {
-    const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
-    return funcToWTO.find(callfun) != funcToWTO.end();
+    return funcToWTO.find(callNode->getCalledFunction()) != funcToWTO.end();
 }
 void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
-    const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
     callSiteStack.push_back(callNode);
 
     abstractTrace[callNode] = as;
 
-    ICFGWTO* wto = funcToWTO[callfun];
+    ICFGWTO* wto = funcToWTO[callNode->getCalledFunction()];
     handleWTOComponents(wto->getWTOComponents());
 
     callSiteStack.pop_back();
@@ -819,7 +815,6 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
 void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
-    const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
     const RetICFGNode *retNode = callNode->getRetICFGNode();
     if (retNode->getSVFStmts().size() > 0)
     {
@@ -843,7 +838,7 @@ void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
     }
     FIFOWorkList<const SVFBasicBlock *> blkWorkList;
     FIFOWorkList<const ICFGNode *> instWorklist;
-    for (const SVFBasicBlock * bb: callfun->getReachableBBs())
+    for (const SVFBasicBlock * bb: callNode->getCalledFunction()->getReachableBBs())
     {
         for (const ICFGNode* node: bb->getICFGNodeList())
         {
@@ -906,7 +901,7 @@ void AEStat::finializeStat()
         }
         if (const CallICFGNode *callNode = dyn_cast<CallICFGNode>(it.second))
         {
-            if (!isExtCall(callNode->getCallSite()))
+            if (!isExtCall(callNode))
             {
                 callSiteNum++;
             }
@@ -965,13 +960,12 @@ void AbstractInterpretation::initExtFunMap()
 #define SSE_FUNC_PROCESS(LLVM_NAME ,FUNC_NAME) \
         auto sse_##FUNC_NAME = [this](const CallICFGNode *callNode) { \
         /* run real ext function */            \
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode); \
         AbstractState& as = getAbsStateFromTrace(callNode); \
-        u32_t rhs_id = svfir->getValueNode(cs.getArgument(0)); \
+        u32_t rhs_id = svfir->getValueNode(callNode->getArgument(0)); \
         if (!as.inVarToValTable(rhs_id)) return; \
         u32_t rhs = as[rhs_id].getInterval().lb().getIntNumeral(); \
         s32_t res = FUNC_NAME(rhs);            \
-        u32_t lhsId = svfir->getValueNode(cs.getInstruction());               \
+        u32_t lhsId = svfir->getValueNode(callNode->getCallSite());               \
         as[lhsId] = IntervalValue(res);           \
         return; \
     };                                                                         \
@@ -999,9 +993,8 @@ void AbstractInterpretation::initExtFunMap()
     auto sse_svf_assert = [this](const CallICFGNode* callNode)
     {
         checkpoints.erase(callNode);
-        u32_t arg0 = svfir->getValueNode(SVFUtil::getSVFCallSite(callNode).getArgument(0));
+        u32_t arg0 = svfir->getValueNode(callNode->getArgument(0));
         AbstractState&as = getAbsStateFromTrace(callNode);
-        as[arg0].getInterval().meet_with(IntervalValue(1, 1));
         if (as[arg0].getInterval().equals(IntervalValue(1, 1)))
         {
             SVFUtil::errs() << SVFUtil::sucMsg("The assertion is successfully verified!!\n");
@@ -1015,29 +1008,73 @@ void AbstractInterpretation::initExtFunMap()
     };
     func_map["svf_assert"] = sse_svf_assert;
 
+    auto svf_assert_eq = [this](const CallICFGNode* callNode)
+    {
+        checkpoints.erase(callNode);
+        u32_t arg0 = svfir->getValueNode(callNode->getArgument(0));
+        u32_t arg1 = svfir->getValueNode(callNode->getArgument(1));
+        AbstractState&as = getAbsStateFromTrace(callNode);
+        if (as[arg0].getInterval().equals(as[arg1].getInterval()))
+        {
+            SVFUtil::errs() << SVFUtil::sucMsg("The assertion is successfully verified!!\n");
+        }
+        else
+        {
+            SVFUtil::errs() <<"svf_assert_eq Fail. " << callNode->toString() << "\n";
+            assert(false);
+        }
+        return;
+    };
+    func_map["svf_assert_eq"] = svf_assert_eq;
+
     auto svf_print = [&](const CallICFGNode* callNode)
     {
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
-        if (cs.arg_size() < 2) return;
+        if (callNode->arg_size() < 2) return;
         AbstractState&as = getAbsStateFromTrace(callNode);
-        u32_t num_id = svfir->getValueNode(cs.getArgument(0));
-        std::string text = strRead(as, cs.getArgument(1));
+        u32_t num_id = svfir->getValueNode(callNode->getArgument(0));
+        std::string text = strRead(as, callNode->getArgument(1));
         assert(as.inVarToValTable(num_id) && "print() should pass integer");
         IntervalValue itv = as[num_id].getInterval();
-        std::cout << "Text: " << text <<", Value: " << cs.getArgument(0)->toString() << ", PrintVal: " << itv.toString() << std::endl;
+        std::cout << "Text: " << text <<", Value: " << callNode->getArgument(0)->toString()
+                  << ", PrintVal: " << itv.toString() << ", Loc:" << callNode->getSourceLoc() << std::endl;
         return;
     };
     func_map["svf_print"] = svf_print;
 
+    auto svf_set_value = [&](const CallICFGNode* callNode)
+    {
+        if (callNode->arg_size() < 2) return;
+        AbstractState&as = getAbsStateFromTrace(callNode);
+        AbstractValue& num = as[svfir->getValueNode(callNode->getArgument(0))];
+        AbstractValue& lb = as[svfir->getValueNode(callNode->getArgument(1))];
+        AbstractValue& ub = as[svfir->getValueNode(callNode->getArgument(2))];
+        assert(lb.getInterval().is_numeral() && ub.getInterval().is_numeral());
+        num.getInterval().set_to_top();
+        num.getInterval().meet_with(IntervalValue(lb.getInterval().lb(), ub.getInterval().ub()));
+        if (icfg->hasICFGNode(SVFUtil::cast<SVFInstruction>(callNode->getArgument(0))))
+        {
+            const ICFGNode* node = icfg->getICFGNode(SVFUtil::cast<SVFInstruction>(callNode->getArgument(0)));
+            for (const SVFStmt* stmt: node->getSVFStmts())
+            {
+                if (SVFUtil::isa<LoadStmt>(stmt))
+                {
+                    const LoadStmt* load = SVFUtil::cast<LoadStmt>(stmt);
+                    NodeID rhsId = load->getRHSVarID();
+                    as.storeValue(rhsId, num);
+                }
+            }
+        }
+        return;
+    };
+    func_map["set_value"] = svf_set_value;
 
     auto sse_scanf = [&](const CallICFGNode* callNode)
     {
         AbstractState& as = getAbsStateFromTrace(callNode);
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
         //scanf("%d", &data);
-        if (cs.arg_size() < 2) return;
+        if (callNode->arg_size() < 2) return;
 
-        u32_t dst_id = svfir->getValueNode(cs.getArgument(1));
+        u32_t dst_id = svfir->getValueNode(callNode->getArgument(1));
         if (!as.inVarToAddrsTable(dst_id))
         {
             return;
@@ -1056,10 +1093,9 @@ void AbstractInterpretation::initExtFunMap()
     auto sse_fscanf = [&](const CallICFGNode* callNode)
     {
         //fscanf(stdin, "%d", &data);
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
-        if (cs.arg_size() < 3) return;
+        if (callNode->arg_size() < 3) return;
         AbstractState& as = getAbsStateFromTrace(callNode);
-        u32_t dst_id = svfir->getValueNode(cs.getArgument(2));
+        u32_t dst_id = svfir->getValueNode(callNode->getArgument(2));
         if (!as.inVarToAddrsTable(dst_id))
         {
         }
@@ -1086,11 +1122,10 @@ void AbstractInterpretation::initExtFunMap()
 
     auto sse_fread = [&](const CallICFGNode *callNode)
     {
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
-        if (cs.arg_size() < 3) return;
+        if (callNode->arg_size() < 3) return;
         AbstractState&as = getAbsStateFromTrace(callNode);
-        u32_t block_count_id = svfir->getValueNode(cs.getArgument(2));
-        u32_t block_size_id = svfir->getValueNode(cs.getArgument(1));
+        u32_t block_count_id = svfir->getValueNode(callNode->getArgument(2));
+        u32_t block_size_id = svfir->getValueNode(callNode->getArgument(1));
         IntervalValue block_count = as[block_count_id].getInterval();
         IntervalValue block_size = as[block_size_id].getInterval();
         IntervalValue block_byte = block_count * block_size;
@@ -1104,20 +1139,19 @@ void AbstractInterpretation::initExtFunMap()
 
     auto sse_snprintf = [&](const CallICFGNode *callNode)
     {
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
-        if (cs.arg_size() < 2) return;
+        if (callNode->arg_size() < 2) return;
         AbstractState&as = getAbsStateFromTrace(callNode);
-        u32_t size_id = svfir->getValueNode(cs.getArgument(1));
-        u32_t dst_id = svfir->getValueNode(cs.getArgument(0));
+        u32_t size_id = svfir->getValueNode(callNode->getArgument(1));
+        u32_t dst_id = svfir->getValueNode(callNode->getArgument(0));
         // get elem size of arg2
         u32_t elemSize = 1;
-        if (cs.getArgument(2)->getType()->isArrayTy())
+        if (callNode->getArgument(2)->getType()->isArrayTy())
         {
-            elemSize = SVFUtil::dyn_cast<SVFArrayType>(cs.getArgument(2)->getType())->getTypeOfElement()->getByteSize();
+            elemSize = SVFUtil::dyn_cast<SVFArrayType>(callNode->getArgument(2)->getType())->getTypeOfElement()->getByteSize();
         }
-        else if (cs.getArgument(2)->getType()->isPointerTy())
+        else if (callNode->getArgument(2)->getType()->isPointerTy())
         {
-            elemSize = as.getPointeeElement(svfir->getValueNode(cs.getArgument(2)))->getByteSize();
+            elemSize = as.getPointeeElement(svfir->getValueNode(callNode->getArgument(2)))->getByteSize();
         }
         else
         {
@@ -1145,10 +1179,9 @@ void AbstractInterpretation::initExtFunMap()
     {
         // itoa(num, ch, 10);
         // num: int, ch: char*, 10 is decimal
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
-        if (cs.arg_size() < 3) return;
+        if (callNode->arg_size() < 3) return;
         AbstractState&as = getAbsStateFromTrace(callNode);
-        u32_t num_id = svfir->getValueNode(cs.getArgument(0));
+        u32_t num_id = svfir->getValueNode(callNode->getArgument(0));
 
         u32_t num = (u32_t) as[num_id].getInterval().getNumeral();
         std::string snum = std::to_string(num);
@@ -1159,12 +1192,11 @@ void AbstractInterpretation::initExtFunMap()
     auto sse_strlen = [&](const CallICFGNode *callNode)
     {
         // check the arg size
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
-        if (cs.arg_size() < 1) return;
-        const SVFValue* strValue = cs.getArgument(0);
+        if (callNode->arg_size() < 1) return;
+        const SVFValue* strValue = callNode->getArgument(0);
         AbstractState& as = getAbsStateFromTrace(callNode);
         NodeID value_id = svfir->getValueNode(strValue);
-        u32_t lhsId = svfir->getValueNode(cs.getInstruction());
+        u32_t lhsId = svfir->getValueNode(callNode->getCallSite());
         u32_t dst_size = 0;
         for (const auto& addr : as[value_id].getAddrs())
         {
@@ -1220,24 +1252,22 @@ void AbstractInterpretation::initExtFunMap()
     auto sse_recv = [&](const CallICFGNode *callNode)
     {
         // recv(sockfd, buf, len, flags);
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
-        if (cs.arg_size() < 4) return;
+        if (callNode->arg_size() < 4) return;
         AbstractState&as = getAbsStateFromTrace(callNode);
-        u32_t len_id = svfir->getValueNode(cs.getArgument(2));
+        u32_t len_id = svfir->getValueNode(callNode->getArgument(2));
         IntervalValue len = as[len_id].getInterval() - IntervalValue(1);
-        u32_t lhsId = svfir->getValueNode(cs.getInstruction());
+        u32_t lhsId = svfir->getValueNode(callNode->getCallSite());
         as[lhsId] = len;
     };
     func_map["recv"] = sse_recv;
     func_map["__recv"] = sse_recv;
     auto safe_bufaccess = [&](const CallICFGNode *callNode)
     {
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
         checkpoints.erase(callNode);
         //void SAFE_BUFACCESS(void* data, int size);
-        if (cs.arg_size() < 2) return;
+        if (callNode->arg_size() < 2) return;
         AbstractState&as = getAbsStateFromTrace(callNode);
-        u32_t size_id = svfir->getValueNode(cs.getArgument(1));
+        u32_t size_id = svfir->getValueNode(callNode->getArgument(1));
         IntervalValue val = as[size_id].getInterval();
         if (val.isBottom())
         {
@@ -1250,7 +1280,7 @@ void AbstractInterpretation::initExtFunMap()
             if (SVFUtil::isa<BufOverflowDetector>(detector))
             {
                 BufOverflowDetector* bufDetector = SVFUtil::cast<BufOverflowDetector>(detector.get());
-                bool isSafe = bufDetector->canSafelyAccessMemory(as, cs.getArgument(0), val);
+                bool isSafe = bufDetector->canSafelyAccessMemory(as, callNode->getArgument(0), val);
                 if (isSafe)
                 {
                     std::cout << "safe buffer access success: " << callNode->toString() << std::endl;
@@ -1259,7 +1289,7 @@ void AbstractInterpretation::initExtFunMap()
                 else
                 {
                     std::string err_msg = "this SAFE_BUFACCESS should be a safe access but detected buffer overflow. Pos: ";
-                    err_msg += cs.getInstruction()->getSourceLoc();
+                    err_msg += callNode->getSourceLoc();
                     std::cerr << err_msg << std::endl;
                     assert(false);
                 }
@@ -1270,12 +1300,11 @@ void AbstractInterpretation::initExtFunMap()
 
     auto unsafe_bufaccess = [&](const CallICFGNode *callNode)
     {
-        const CallSite& cs = SVFUtil::getSVFCallSite(callNode);
         checkpoints.erase(callNode);
         //void UNSAFE_BUFACCESS(void* data, int size);
-        if (cs.arg_size() < 2) return;
+        if (callNode->arg_size() < 2) return;
         AbstractState&as = getAbsStateFromTrace(callNode);
-        u32_t size_id = svfir->getValueNode(cs.getArgument(1));
+        u32_t size_id = svfir->getValueNode(callNode->getArgument(1));
         IntervalValue val = as[size_id].getInterval();
         if (val.isBottom())
         {
@@ -1287,7 +1316,7 @@ void AbstractInterpretation::initExtFunMap()
             if (SVFUtil::isa<BufOverflowDetector>(detector))
             {
                 BufOverflowDetector* bufDetector = SVFUtil::cast<BufOverflowDetector>(detector.get());
-                bool isSafe = bufDetector->canSafelyAccessMemory(as, cs.getArgument(0), val);
+                bool isSafe = bufDetector->canSafelyAccessMemory(as, callNode->getArgument(0), val);
                 if (!isSafe)
                 {
                     std::cout << "detect buffer overflow success: " << callNode->toString() << std::endl;
@@ -1296,7 +1325,7 @@ void AbstractInterpretation::initExtFunMap()
                 else
                 {
                     std::string err_msg = "this UNSAFE_BUFACCESS should be a buffer overflow but not detected. Pos: ";
-                    err_msg += cs.getInstruction()->getSourceLoc();
+                    err_msg += callNode->getSourceLoc();
                     std::cerr << err_msg << std::endl;
                     assert(false);
                 }
@@ -1344,9 +1373,8 @@ std::string AbstractInterpretation::strRead(AbstractState& as, const SVFValue* r
 void AbstractInterpretation::handleExtAPI(const CallICFGNode *call)
 {
     AbstractState& as = getAbsStateFromTrace(call);
-    const SVFFunction *fun = SVFUtil::getCallee(call->getCallSite());
+    const SVFFunction *fun = call->getCalledFunction();
     assert(fun && "SVFFunction* is nullptr");
-    CallSite cs = SVFUtil::getSVFCallSite(call);
     ExtAPIType extType = UNCLASSIFIED;
     // get type of mem api
     for (const std::string &annotation: fun->getAnnotations())
@@ -1368,7 +1396,7 @@ void AbstractInterpretation::handleExtAPI(const CallICFGNode *call)
         }
         else
         {
-            u32_t lhsId = svfir->getValueNode(SVFUtil::getSVFCallSite(call).getInstruction());
+            u32_t lhsId = svfir->getValueNode(call->getCallSite());
             if (as.inVarToAddrsTable(lhsId))
             {
 
@@ -1383,15 +1411,15 @@ void AbstractInterpretation::handleExtAPI(const CallICFGNode *call)
     // 1. memcpy functions like memcpy_chk, strncpy, annotate("MEMCPY"), annotate("BUF_CHECK:Arg0, Arg2"), annotate("BUF_CHECK:Arg1, Arg2")
     else if (extType == MEMCPY)
     {
-        IntervalValue len = as[svfir->getValueNode(cs.getArgument(2))].getInterval();
-        handleMemcpy(as, cs.getArgument(0), cs.getArgument(1), len, 0);
+        IntervalValue len = as[svfir->getValueNode(call->getArgument(2))].getInterval();
+        handleMemcpy(as, call->getArgument(0), call->getArgument(1), len, 0);
     }
     else if (extType == MEMSET)
     {
         // memset dst is arg0, elem is arg1, size is arg2
-        IntervalValue len = as[svfir->getValueNode(cs.getArgument(2))].getInterval();
-        IntervalValue elem = as[svfir->getValueNode(cs.getArgument(1))].getInterval();
-        handleMemset(as,cs.getArgument(0), elem, len);
+        IntervalValue len = as[svfir->getValueNode(call->getArgument(2))].getInterval();
+        IntervalValue elem = as[svfir->getValueNode(call->getArgument(1))].getInterval();
+        handleMemset(as,call->getArgument(0), elem, len);
     }
     else if (extType == STRCPY)
     {
@@ -1416,7 +1444,7 @@ void AbstractInterpretation::collectCheckPoint()
         const ICFGNode* node = it->second;
         if (const CallICFGNode *call = SVFUtil::dyn_cast<CallICFGNode>(node))
         {
-            if (const SVFFunction *fun = SVFUtil::getCallee(call->getCallSite()))
+            if (const SVFFunction *fun = call->getCalledFunction())
             {
                 if (checkpoint_names.find(fun->getName()) !=
                         checkpoint_names.end())
@@ -1450,9 +1478,8 @@ void AbstractInterpretation::handleStrcpy(const CallICFGNode *call)
     // strcpy, __strcpy_chk, stpcpy , wcscpy, __wcscpy_chk
     // get the dst and src
     AbstractState& as = getAbsStateFromTrace(call);
-    CallSite cs = SVFUtil::getSVFCallSite(call);
-    const SVFValue* arg0Val = cs.getArgument(0);
-    const SVFValue* arg1Val = cs.getArgument(1);
+    const SVFValue* arg0Val = call->getArgument(0);
+    const SVFValue* arg1Val = call->getArgument(1);
     IntervalValue strLen = getStrlen(as, arg1Val);
     // no need to -1, since it has \0 as the last byte
     handleMemcpy(as, arg0Val, arg1Val, strLen, strLen.lb().getIntNumeral());
@@ -1540,14 +1567,13 @@ void AbstractInterpretation::handleStrcat(const SVF::CallICFGNode *call)
     // __strcat_chk, strcat, __wcscat_chk, wcscat, __strncat_chk, strncat, __wcsncat_chk, wcsncat
     // to check it is  strcat group or strncat group
     AbstractState& as = getAbsStateFromTrace(call);
-    const SVFFunction *fun = SVFUtil::getCallee(call);
+    const SVFFunction *fun = call->getCalledFunction();
     const std::vector<std::string> strcatGroup = {"__strcat_chk", "strcat", "__wcscat_chk", "wcscat"};
     const std::vector<std::string> strncatGroup = {"__strncat_chk", "strncat", "__wcsncat_chk", "wcsncat"};
     if (std::find(strcatGroup.begin(), strcatGroup.end(), fun->getName()) != strcatGroup.end())
     {
-        CallSite cs = SVFUtil::getSVFCallSite(call);
-        const SVFValue* arg0Val = cs.getArgument(0);
-        const SVFValue* arg1Val = cs.getArgument(1);
+        const SVFValue* arg0Val = call->getArgument(0);
+        const SVFValue* arg1Val = call->getArgument(1);
         IntervalValue strLen0 = getStrlen(as, arg0Val);
         IntervalValue strLen1 = getStrlen(as, arg1Val);
         IntervalValue totalLen = strLen0 + strLen1;
@@ -1556,10 +1582,9 @@ void AbstractInterpretation::handleStrcat(const SVF::CallICFGNode *call)
     }
     else if (std::find(strncatGroup.begin(), strncatGroup.end(), fun->getName()) != strncatGroup.end())
     {
-        CallSite cs = SVFUtil::getSVFCallSite(call);
-        const SVFValue* arg0Val = cs.getArgument(0);
-        const SVFValue* arg1Val = cs.getArgument(1);
-        const SVFValue* arg2Val = cs.getArgument(2);
+        const SVFValue* arg0Val = call->getArgument(0);
+        const SVFValue* arg1Val = call->getArgument(1);
+        const SVFValue* arg2Val = call->getArgument(2);
         IntervalValue arg2Num = as[svfir->getValueNode(arg2Val)].getInterval();
         IntervalValue strLen0 = getStrlen(as, arg0Val);
         IntervalValue totalLen = strLen0 + arg2Num;
@@ -1728,8 +1753,27 @@ void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
         const ICFGNode* opICFGNode = phi->getOpICFGNode(i);
         if (hasAbsStateFromTrace(opICFGNode))
         {
+            AbstractState tmpEs = abstractTrace[opICFGNode];
             AbstractState& opAs = getAbsStateFromTrace(opICFGNode);
-            rhs.join_with(opAs[curId]);
+            const ICFGEdge* edge =  icfg->getICFGEdge(opICFGNode, icfgNode, ICFGEdge::IntraCF);
+            // if IntraEdge, check the condition, if it is feasible, join the value
+            // if IntraEdge but not conditional edge, join the value
+            // if not IntraEdge, join the value
+            if (edge)
+            {
+                const IntraCFGEdge* intraEdge = SVFUtil::cast<IntraCFGEdge>(edge);
+                if (intraEdge->getCondition())
+                {
+                    if (isBranchFeasible(intraEdge, tmpEs))
+                        rhs.join_with(opAs[curId]);
+                }
+                else
+                    rhs.join_with(opAs[curId]);
+            }
+            else
+            {
+                rhs.join_with(opAs[curId]);
+            }
         }
     }
     as[res] = rhs;
@@ -1830,181 +1874,209 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
     AbstractState& as = getAbsStateFromTrace(cmp->getICFGNode());
     u32_t op0 = cmp->getOpVarID(0);
     u32_t op1 = cmp->getOpVarID(1);
-    if (!as.inVarToValTable(op0)) as[op0] = IntervalValue::top();
-    if (!as.inVarToValTable(op1)) as[op1] = IntervalValue::top();
-    u32_t res = cmp->getResID();
-    if (as.inVarToValTable(op0) && as.inVarToValTable(op1))
+    // if it is address
+    if (as.inVarToAddrsTable(op0) && as.inVarToAddrsTable(op1))
     {
         IntervalValue resVal;
-        if (as[op0].isInterval() && as[op1].isInterval())
+        AddressValue addrOp0 = as[op0].getAddrs();
+        AddressValue addrOp1 = as[op1].getAddrs();
+        u32_t res = cmp->getResID();
+        if (addrOp0.equals(addrOp1))
         {
-            IntervalValue &lhs = as[op0].getInterval(), &rhs = as[op1].getInterval();
-            //AbstractValue
-            auto predicate = cmp->getPredicate();
-            switch (predicate)
-            {
-            case CmpStmt::ICMP_EQ:
-            case CmpStmt::FCMP_OEQ:
-            case CmpStmt::FCMP_UEQ:
-                resVal = (lhs == rhs);
-                // resVal = (lhs.getInterval() == rhs.getInterval());
-                break;
-            case CmpStmt::ICMP_NE:
-            case CmpStmt::FCMP_ONE:
-            case CmpStmt::FCMP_UNE:
-                resVal = (lhs != rhs);
-                break;
-            case CmpStmt::ICMP_UGT:
-            case CmpStmt::ICMP_SGT:
-            case CmpStmt::FCMP_OGT:
-            case CmpStmt::FCMP_UGT:
-                resVal = (lhs > rhs);
-                break;
-            case CmpStmt::ICMP_UGE:
-            case CmpStmt::ICMP_SGE:
-            case CmpStmt::FCMP_OGE:
-            case CmpStmt::FCMP_UGE:
-                resVal = (lhs >= rhs);
-                break;
-            case CmpStmt::ICMP_ULT:
-            case CmpStmt::ICMP_SLT:
-            case CmpStmt::FCMP_OLT:
-            case CmpStmt::FCMP_ULT:
-                resVal = (lhs < rhs);
-                break;
-            case CmpStmt::ICMP_ULE:
-            case CmpStmt::ICMP_SLE:
-            case CmpStmt::FCMP_OLE:
-            case CmpStmt::FCMP_ULE:
-                resVal = (lhs <= rhs);
-                break;
-            case CmpStmt::FCMP_FALSE:
-                resVal = IntervalValue(0, 0);
-                break;
-            case CmpStmt::FCMP_TRUE:
-                resVal = IntervalValue(1, 1);
-                break;
-            default:
-            {
-                assert(false && "undefined compare: ");
-            }
-            }
-            as[res] = resVal;
+            resVal = IntervalValue(1, 1);
         }
-        else if (as[op0].isAddr() && as[op1].isAddr())
+        else if (addrOp0.hasIntersect(addrOp1))
         {
-            AddressValue &lhs = as[op0].getAddrs(), &rhs = as[op1].getAddrs();
-            auto predicate = cmp->getPredicate();
-            switch (predicate)
+            resVal = IntervalValue(0, 1);
+        }
+        else
+        {
+            resVal = IntervalValue(0, 0);
+        }
+        as[res] = resVal;
+    }
+    else
+    {
+        if (!as.inVarToValTable(op0))
+            as[op0] = IntervalValue::top();
+        if (!as.inVarToValTable(op1))
+            as[op1] = IntervalValue::top();
+        u32_t res = cmp->getResID();
+        if (as.inVarToValTable(op0) && as.inVarToValTable(op1))
+        {
+            IntervalValue resVal;
+            if (as[op0].isInterval() && as[op1].isInterval())
             {
-            case CmpStmt::ICMP_EQ:
-            case CmpStmt::FCMP_OEQ:
-            case CmpStmt::FCMP_UEQ:
-            {
-                if (lhs.hasIntersect(rhs))
+                IntervalValue &lhs = as[op0].getInterval(),
+                               &rhs = as[op1].getInterval();
+                // AbstractValue
+                auto predicate = cmp->getPredicate();
+                switch (predicate)
                 {
-                    resVal = IntervalValue(0, 1);
-                }
-                else if (lhs.empty() && rhs.empty())
-                {
-                    resVal = IntervalValue(1, 1);
-                }
-                else
-                {
+                case CmpStmt::ICMP_EQ:
+                case CmpStmt::FCMP_OEQ:
+                case CmpStmt::FCMP_UEQ:
+                    resVal = (lhs == rhs);
+                    // resVal = (lhs.getInterval() == rhs.getInterval());
+                    break;
+                case CmpStmt::ICMP_NE:
+                case CmpStmt::FCMP_ONE:
+                case CmpStmt::FCMP_UNE:
+                    resVal = (lhs != rhs);
+                    break;
+                case CmpStmt::ICMP_UGT:
+                case CmpStmt::ICMP_SGT:
+                case CmpStmt::FCMP_OGT:
+                case CmpStmt::FCMP_UGT:
+                    resVal = (lhs > rhs);
+                    break;
+                case CmpStmt::ICMP_UGE:
+                case CmpStmt::ICMP_SGE:
+                case CmpStmt::FCMP_OGE:
+                case CmpStmt::FCMP_UGE:
+                    resVal = (lhs >= rhs);
+                    break;
+                case CmpStmt::ICMP_ULT:
+                case CmpStmt::ICMP_SLT:
+                case CmpStmt::FCMP_OLT:
+                case CmpStmt::FCMP_ULT:
+                    resVal = (lhs < rhs);
+                    break;
+                case CmpStmt::ICMP_ULE:
+                case CmpStmt::ICMP_SLE:
+                case CmpStmt::FCMP_OLE:
+                case CmpStmt::FCMP_ULE:
+                    resVal = (lhs <= rhs);
+                    break;
+                case CmpStmt::FCMP_FALSE:
                     resVal = IntervalValue(0, 0);
-                }
-                break;
-            }
-            case CmpStmt::ICMP_NE:
-            case CmpStmt::FCMP_ONE:
-            case CmpStmt::FCMP_UNE:
-            {
-                if (lhs.hasIntersect(rhs))
-                {
-                    resVal = IntervalValue(0, 1);
-                }
-                else if (lhs.empty() && rhs.empty())
-                {
-                    resVal = IntervalValue(0, 0);
-                }
-                else
-                {
+                    break;
+                case CmpStmt::FCMP_TRUE:
                     resVal = IntervalValue(1, 1);
+                    break;
+                default:
+                {
+                    assert(false && "undefined compare: ");
                 }
-                break;
+                }
+                as[res] = resVal;
             }
-            case CmpStmt::ICMP_UGT:
-            case CmpStmt::ICMP_SGT:
-            case CmpStmt::FCMP_OGT:
-            case CmpStmt::FCMP_UGT:
+            else if (as[op0].isAddr() && as[op1].isAddr())
             {
-                if (lhs.size() == 1 && rhs.size() == 1)
+                AddressValue &lhs = as[op0].getAddrs(),
+                              &rhs = as[op1].getAddrs();
+                auto predicate = cmp->getPredicate();
+                switch (predicate)
                 {
-                    resVal = IntervalValue(*lhs.begin() > *rhs.begin());
-                }
-                else
+                case CmpStmt::ICMP_EQ:
+                case CmpStmt::FCMP_OEQ:
+                case CmpStmt::FCMP_UEQ:
                 {
-                    resVal = IntervalValue(0, 1);
+                    if (lhs.hasIntersect(rhs))
+                    {
+                        resVal = IntervalValue(0, 1);
+                    }
+                    else if (lhs.empty() && rhs.empty())
+                    {
+                        resVal = IntervalValue(1, 1);
+                    }
+                    else
+                    {
+                        resVal = IntervalValue(0, 0);
+                    }
+                    break;
                 }
-                break;
+                case CmpStmt::ICMP_NE:
+                case CmpStmt::FCMP_ONE:
+                case CmpStmt::FCMP_UNE:
+                {
+                    if (lhs.hasIntersect(rhs))
+                    {
+                        resVal = IntervalValue(0, 1);
+                    }
+                    else if (lhs.empty() && rhs.empty())
+                    {
+                        resVal = IntervalValue(0, 0);
+                    }
+                    else
+                    {
+                        resVal = IntervalValue(1, 1);
+                    }
+                    break;
+                }
+                case CmpStmt::ICMP_UGT:
+                case CmpStmt::ICMP_SGT:
+                case CmpStmt::FCMP_OGT:
+                case CmpStmt::FCMP_UGT:
+                {
+                    if (lhs.size() == 1 && rhs.size() == 1)
+                    {
+                        resVal = IntervalValue(*lhs.begin() > *rhs.begin());
+                    }
+                    else
+                    {
+                        resVal = IntervalValue(0, 1);
+                    }
+                    break;
+                }
+                case CmpStmt::ICMP_UGE:
+                case CmpStmt::ICMP_SGE:
+                case CmpStmt::FCMP_OGE:
+                case CmpStmt::FCMP_UGE:
+                {
+                    if (lhs.size() == 1 && rhs.size() == 1)
+                    {
+                        resVal = IntervalValue(*lhs.begin() >= *rhs.begin());
+                    }
+                    else
+                    {
+                        resVal = IntervalValue(0, 1);
+                    }
+                    break;
+                }
+                case CmpStmt::ICMP_ULT:
+                case CmpStmt::ICMP_SLT:
+                case CmpStmt::FCMP_OLT:
+                case CmpStmt::FCMP_ULT:
+                {
+                    if (lhs.size() == 1 && rhs.size() == 1)
+                    {
+                        resVal = IntervalValue(*lhs.begin() < *rhs.begin());
+                    }
+                    else
+                    {
+                        resVal = IntervalValue(0, 1);
+                    }
+                    break;
+                }
+                case CmpStmt::ICMP_ULE:
+                case CmpStmt::ICMP_SLE:
+                case CmpStmt::FCMP_OLE:
+                case CmpStmt::FCMP_ULE:
+                {
+                    if (lhs.size() == 1 && rhs.size() == 1)
+                    {
+                        resVal = IntervalValue(*lhs.begin() <= *rhs.begin());
+                    }
+                    else
+                    {
+                        resVal = IntervalValue(0, 1);
+                    }
+                    break;
+                }
+                case CmpStmt::FCMP_FALSE:
+                    resVal = IntervalValue(0, 0);
+                    break;
+                case CmpStmt::FCMP_TRUE:
+                    resVal = IntervalValue(1, 1);
+                    break;
+                default:
+                {
+                    assert(false && "undefined compare: ");
+                }
+                }
+                as[res] = resVal;
             }
-            case CmpStmt::ICMP_UGE:
-            case CmpStmt::ICMP_SGE:
-            case CmpStmt::FCMP_OGE:
-            case CmpStmt::FCMP_UGE:
-            {
-                if (lhs.size() == 1 && rhs.size() == 1)
-                {
-                    resVal = IntervalValue(*lhs.begin() >= *rhs.begin());
-                }
-                else
-                {
-                    resVal = IntervalValue(0, 1);
-                }
-                break;
-            }
-            case CmpStmt::ICMP_ULT:
-            case CmpStmt::ICMP_SLT:
-            case CmpStmt::FCMP_OLT:
-            case CmpStmt::FCMP_ULT:
-            {
-                if (lhs.size() == 1 && rhs.size() == 1)
-                {
-                    resVal = IntervalValue(*lhs.begin() < *rhs.begin());
-                }
-                else
-                {
-                    resVal = IntervalValue(0, 1);
-                }
-                break;
-            }
-            case CmpStmt::ICMP_ULE:
-            case CmpStmt::ICMP_SLE:
-            case CmpStmt::FCMP_OLE:
-            case CmpStmt::FCMP_ULE:
-            {
-                if (lhs.size() == 1 && rhs.size() == 1)
-                {
-                    resVal = IntervalValue(*lhs.begin() <= *rhs.begin());
-                }
-                else
-                {
-                    resVal = IntervalValue(0, 1);
-                }
-                break;
-            }
-            case CmpStmt::FCMP_FALSE:
-                resVal = IntervalValue(0, 0);
-                break;
-            case CmpStmt::FCMP_TRUE:
-                resVal = IntervalValue(1, 1);
-                break;
-            default:
-            {
-                assert(false && "undefined compare: ");
-            }
-            }
-            as[res] = resVal;
         }
     }
 }
@@ -2072,8 +2144,8 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
         return IntervalValue::top(); // TODO: may have better solution
     };
 
-    auto getTruncValue = [](const AbstractState& as, const SVF::SVFVar* var,
-                            const SVFType* dstType)
+    auto getTruncValue = [&](const AbstractState& as, const SVF::SVFVar* var,
+                             const SVFType* dstType)
     {
         const IntervalValue& itv = as[var->getId()].getInterval();
         if(itv.isBottom()) return itv;
@@ -2090,7 +2162,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
             if (s8_lb > s8_ub)
             {
                 // return range of s8
-                return IntervalValue::top();
+                return this->getRangeLimitFromType(dstType);
             }
             return IntervalValue(s8_lb, s8_ub);
         }
@@ -2102,7 +2174,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
             if (s16_lb > s16_ub)
             {
                 // return range of s16
-                return IntervalValue::top();
+                return this->getRangeLimitFromType(dstType);
             }
             return IntervalValue(s16_lb, s16_ub);
         }
@@ -2114,7 +2186,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
             if (s32_lb > s32_ub)
             {
                 // return range of s32
-                return IntervalValue::top();
+                return this->getRangeLimitFromType(dstType);
             }
             return IntervalValue(s32_lb, s32_ub);
         }

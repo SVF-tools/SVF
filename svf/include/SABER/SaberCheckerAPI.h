@@ -103,7 +103,7 @@ public:
     }
     inline bool isMemAlloc(const CallICFGNode* cs) const
     {
-        return isMemAlloc(SVFUtil::getCallee(cs->getCallSite()));
+        return isMemAlloc(cs->getCalledFunction());
     }
     //@}
 
@@ -115,7 +115,7 @@ public:
     }
     inline bool isMemDealloc(const CallICFGNode* cs) const
     {
-        return isMemDealloc(SVFUtil::getCallee(cs->getCallSite()));
+        return isMemDealloc(cs->getCalledFunction());
     }
     //@}
 
@@ -127,7 +127,7 @@ public:
     }
     inline bool isFOpen(const CallICFGNode* cs) const
     {
-        return isFOpen(SVFUtil::getCallee(cs->getCallSite()));
+        return isFOpen(cs->getCalledFunction());
     }
     //@}
 
@@ -139,7 +139,7 @@ public:
     }
     inline bool isFClose(const CallICFGNode* cs) const
     {
-        return isFClose(SVFUtil::getCallee(cs->getCallSite()));
+        return isFClose(cs->getCalledFunction());
     }
     //@}
 

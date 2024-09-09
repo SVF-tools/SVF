@@ -55,7 +55,7 @@ void DoubleFreeChecker::testsValidation(ProgSlice *slice)
 {
     const SVFGNode* source = slice->getSource();
     const CallICFGNode* cs = getSrcCSID(source);
-    const SVFFunction* fun = getCallee(cs->getCallSite());
+    const SVFFunction* fun = cs->getCalledFunction();
     if(fun==nullptr)
         return;
     validateSuccessTests(slice,fun);
