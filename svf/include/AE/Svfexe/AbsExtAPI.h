@@ -32,7 +32,8 @@
 #include "Util/SVFBugReport.h"
 #include "WPA/Andersen.h"
 
-namespace SVF {
+namespace SVF
+{
 
 // Forward declaration of AbstractInterpretation class
 class AbstractInterpretation;

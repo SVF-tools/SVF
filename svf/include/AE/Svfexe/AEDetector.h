@@ -180,7 +180,7 @@ public:
      * @brief Handles external API calls related to buffer overflow detection.
      * @param call Pointer to the call ICFG node.
      */
-     void handleStubFunctions(const CallICFGNode*);
+    void handleStubFunctions(const CallICFGNode*);
 
     /**
      * @brief Adds an offset to a GEP object.

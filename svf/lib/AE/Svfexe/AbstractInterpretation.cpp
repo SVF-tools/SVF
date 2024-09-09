@@ -624,7 +624,8 @@ void AbstractInterpretation::extCallPass(const SVF::CallICFGNode *callNode)
 {
     callSiteStack.push_back(callNode);
     utils->handleExtAPI(callNode);
-    for (auto& detector : detectors) {
+    for (auto& detector : detectors)
+    {
         detector->handleStubFunctions(callNode);
     }
     callSiteStack.pop_back();
@@ -973,13 +974,14 @@ void AbstractInterpretation::collectCheckPoint()
             if (const SVFFunction *fun = call->getCalledFunction())
             {
                 if (ae_checkpoint_names.find(fun->getName()) !=
-                    ae_checkpoint_names.end())
+                        ae_checkpoint_names.end())
                 {
                     checkpoints.insert(call);
                 }
-                if (Options::BufferOverflowCheck()) {
+                if (Options::BufferOverflowCheck())
+                {
                     if (buf_checkpoint_names.find(fun->getName()) !=
-                        buf_checkpoint_names.end())
+                            buf_checkpoint_names.end())
                     {
                         checkpoints.insert(call);
                     }
