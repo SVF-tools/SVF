@@ -171,7 +171,8 @@ bool ExtAPI::hasExtFuncAnnotation(const SVFFunction* fun, const std::string& fun
 {
     assert(fun && "Null SVFFunction* pointer");
     auto it = func2Annotations.find(fun);
-    if (it != func2Annotations.end()) {
+    if (it != func2Annotations.end())
+    {
         for (const std::string& annotation : it->second)
             if (annotation.find(funcAnnotation) != std::string::npos)
                 return true;
@@ -183,7 +184,8 @@ std::string ExtAPI::getExtFuncAnnotation(const SVFFunction* fun, const std::stri
 {
     assert(fun && "Null SVFFunction* pointer");
     auto it = func2Annotations.find(fun);
-    if (it != func2Annotations.end()) {
+    if (it != func2Annotations.end())
+    {
         for (const std::string& annotation : it->second)
             if (annotation.find(funcAnnotation) != std::string::npos)
                 return annotation;

@@ -895,7 +895,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
     /// if val is heap alloc
     else if (SVFUtil::isa<Instruction>(val) &&
              LLVMUtil::isHeapAllocExtCall(
-                     SVFUtil::cast<Instruction>(val)))
+                 SVFUtil::cast<Instruction>(val)))
     {
         elemNum = analyzeHeapObjType(typeinfo,val);
         // analyze heap alloc like (malloc/calloc/...), the alloc functions have

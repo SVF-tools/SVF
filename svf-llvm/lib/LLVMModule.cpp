@@ -659,7 +659,7 @@ std::vector<const Function* > LLVMModuleSet::getLLVMGlobalFunctions(const Global
     };
 
     std::priority_queue<LLVMGlobalFunction, std::vector<LLVMGlobalFunction>,
-                        greater<LLVMGlobalFunction>>
+        greater<LLVMGlobalFunction>>
         queue;
     std::vector<const Function* > result;
 
@@ -667,7 +667,7 @@ std::vector<const Function* > LLVMModuleSet::getLLVMGlobalFunctions(const Global
     // struct has three fields: {i32 priority, void ()* @ctor/dtor, i8* @data}.
     // First get the array here.
     if(const ConstantArray *globalFuncArray =
-            SVFUtil::dyn_cast<ConstantArray>(global->getInitializer()))
+                SVFUtil::dyn_cast<ConstantArray>(global->getInitializer()))
     {
         // Get each struct in the array.
         for (unsigned int i = 0; i < globalFuncArray->getNumOperands(); ++i)
@@ -680,14 +680,14 @@ std::vector<const Function* > LLVMModuleSet::getLLVMGlobalFunctions(const Global
 
                 // Extract priority and function from the struct
                 const ConstantInt* priority = SVFUtil::dyn_cast<ConstantInt>(
-                    globalFuncItem->getOperand(0));
+                                                  globalFuncItem->getOperand(0));
                 const Function* func = SVFUtil::dyn_cast<Function>(
-                    globalFuncItem->getOperand(1));
+                                           globalFuncItem->getOperand(1));
 
                 if (priority && func)
                 {
                     queue.push(LLVMGlobalFunction(priority
-                                                      ->getZExtValue(),
+                                                  ->getZExtValue(),
                                                   func));
                 }
             }
@@ -743,7 +743,7 @@ void LLVMModuleSet::addSVFMain()
     // Only create svf.main when the original main function is found, and also
     // there are global constructor or destructor functions.
     if (orgMain && getModuleNum() > 0 &&
-        (ctor_funcs.size() > 0 || dtor_funcs.size() > 0))
+            (ctor_funcs.size() > 0 || dtor_funcs.size() > 0))
     {
         assert(mainMod && "Module with main function not found.");
         Module& M = *mainMod;
@@ -753,17 +753,17 @@ void LLVMModuleSet::addSVFMain()
         // define void @svf.main(i32, i8**, i8**)
 #if (LLVM_VERSION_MAJOR >= 9)
         FunctionCallee svfmainFn = M.getOrInsertFunction(
-            SVF_MAIN_FUNC_NAME,
-            Type::getVoidTy(M.getContext()),
-            i32,ptr,ptr
-        );
+                                       SVF_MAIN_FUNC_NAME,
+                                       Type::getVoidTy(M.getContext()),
+                                       i32,ptr,ptr
+                                   );
         Function* svfmain = SVFUtil::dyn_cast<Function>(svfmainFn.getCallee());
 #else
         Function* svfmain = SVFUtil::dyn_cast<Function>(M.getOrInsertFunction(
-            SVF_MAIN_FUNC_NAME,
-            Type::getVoidTy(M.getContext()),
-            i32,i8ptr2,i8ptr2
-            ));
+                                SVF_MAIN_FUNC_NAME,
+                                Type::getVoidTy(M.getContext()),
+                                i32,i8ptr2,i8ptr2
+                            ));
 #endif
         svfmain->setCallingConv(llvm::CallingConv::C);
         BasicBlock* block = BasicBlock::Create(M.getContext(), "entry", svfmain);
@@ -773,9 +773,9 @@ void LLVMModuleSet::addSVFMain()
         for (auto& ctor : ctor_funcs)
         {
             auto target = M.getOrInsertFunction(
-                ctor->getName(),
-                Type::getVoidTy(M.getContext())
-            );
+                              ctor->getName(),
+                              Type::getVoidTy(M.getContext())
+                          );
             Builder.CreateCall(target);
         }
         // main() should be called after all ctor functions and before dtor
@@ -939,16 +939,19 @@ void LLVMModuleSet::buildFunToFunMap()
         // Map the arguments of the new function to the arguments of extFunToClone
         llvm::ValueToValueMapTy valueMap;
         Function::arg_iterator destArg = clonedFunction->arg_begin();
-        for (Function::const_arg_iterator srcArg = extFunToClone->arg_begin(); srcArg != extFunToClone->arg_end(); ++srcArg) {
+        for (Function::const_arg_iterator srcArg = extFunToClone->arg_begin(); srcArg != extFunToClone->arg_end(); ++srcArg)
+        {
             destArg->setName(srcArg->getName()); // Copy the name of the original argument
             valueMap[&*srcArg] = &*destArg++; // Add a mapping from the old arg to the new arg
         }
-        if (cloneBody) {
+        if (cloneBody)
+        {
             // Clone the body of extFunToClone into clonedFunction
             llvm::SmallVector<ReturnInst*, 8> ignoredReturns;
             CloneFunctionInto(clonedFunction, extFunToClone, valueMap, llvm::CloneFunctionChangeType::LocalChangesOnly, ignoredReturns, "", nullptr);
         }
-        if (appFunToReplace) {
+        if (appFunToReplace)
+        {
             // Replace all uses of appFunToReplace with clonedFunction
             appFunToReplace->replaceAllUsesWith(clonedFunction);
             std::string oldFunctionName = appFunToReplace->getName().str();
@@ -997,7 +1000,7 @@ void LLVMModuleSet::buildFunToFunMap()
         FunctionType *extFuncDefType = extFuncDef->getFunctionType();
         if (appFuncDefType != extFuncDefType)
             continue;
-        
+
         auto it = ExtFun2Annotations.find(sameFuncDef);
         if (it != ExtFun2Annotations.end())
         {
@@ -1007,7 +1010,9 @@ void LLVMModuleSet::buildFunToFunMap()
                 Function* clonedFunction = cloneAndReplaceFunction(const_cast<Function*>(extFuncDef), const_cast<Function*>(appFuncDef), nullptr, true);
                 extFuncs2ClonedFuncs[extFuncDef] = clonedFunction;
                 clonedFuncs.insert(clonedFunction);
-            } else {
+            }
+            else
+            {
                 if (annotations.size() >= 2)
                 {
                     for (const auto& annotation : annotations)
@@ -1022,14 +1027,18 @@ void LLVMModuleSet::buildFunToFunMap()
         }
     }
 
-    auto linkFunctions = [&](Function* caller, Function* callee) {
-        for (inst_iterator I = inst_begin(caller), E = inst_end(caller); I != E; ++I) {
+    auto linkFunctions = [&](Function* caller, Function* callee)
+    {
+        for (inst_iterator I = inst_begin(caller), E = inst_end(caller); I != E; ++I)
+        {
             Instruction *inst = &*I;
 
-            if (CallInst *callInst = SVFUtil::dyn_cast<CallInst>(inst)) {
+            if (CallInst *callInst = SVFUtil::dyn_cast<CallInst>(inst))
+            {
                 Function *calledFunc = callInst->getCalledFunction();
 
-                if (calledFunc && calledFunc->getName() == callee->getName()) {
+                if (calledFunc && calledFunc->getName() == callee->getName())
+                {
                     callInst->setCalledFunction(callee);
                 }
             }
@@ -1044,7 +1053,8 @@ void LLVMModuleSet::buildFunToFunMap()
 
         Module* appModule = appClonedFun->getParent();
         // Check if the function already exists in the parent module
-        if (appModule->getFunction(extFunToClone->getName())) {
+        if (appModule->getFunction(extFunToClone->getName()))
+        {
             // The function already exists, no need to clone, but need to link it with the caller
             Function*  func = appModule->getFunction(extFunToClone->getName());
             linkFunctions(appClonedFun, func);
@@ -1072,13 +1082,15 @@ void LLVMModuleSet::buildFunToFunMap()
 
         std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(extFunToClone);
 
-        for (const auto& calledFunction : calledFunctions) {
+        for (const auto& calledFunction : calledFunctions)
+        {
             cloneAndLinkFunction(calledFunction, clonedFunction);
         }
     };
 
     // Recursive clone called functions
-    for (const auto& pair : extFuncs2ClonedFuncs) {
+    for (const auto& pair : extFuncs2ClonedFuncs)
+    {
         Function* extFun = const_cast<Function*>(pair.first);
         Function* clonedExtFun = const_cast<Function*>(pair.second);
         std::vector<const Function*> extCalledFuns = LLVMUtil::getCalledFunctions(extFun);
@@ -1098,7 +1110,8 @@ void LLVMModuleSet::buildFunToFunMap()
         if (it != ExtFun2Annotations.end())
         {
             std::string newKey = name;
-            if (name != extFun->getName().str()) {
+            if (name != extFun->getName().str())
+            {
                 newKey = extFun->getName().str();
             }
             newFun2AnnoMap.insert({newKey, it->second});
@@ -1108,11 +1121,13 @@ void LLVMModuleSet::buildFunToFunMap()
 
     // Remove ExtAPI module from modules
     auto it = std::find_if(modules.begin(), modules.end(),
-                        [&extModule](const std::reference_wrapper<llvm::Module>& moduleRef) {
-                            return &moduleRef.get() == extModule;
-                        });
+                           [&extModule](const std::reference_wrapper<llvm::Module>& moduleRef)
+    {
+        return &moduleRef.get() == extModule;
+    });
 
-    if (it != modules.end()) {
+    if (it != modules.end())
+    {
         size_t index = std::distance(modules.begin(), it);
         modules.erase(it);
         owned_modules.erase(owned_modules.begin() + index);
@@ -1144,15 +1159,15 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
         const auto repIt =
             std::find_if(globals.begin(), globals.end(),
                          [](GlobalVariable* g)
-                         {
-                             return g->hasInitializer();
-                         });
+        {
+            return g->hasInitializer();
+        });
         GlobalVariable* rep =
             repIt != globals.end()
-                ? *repIt
-                // When there is no initializer, just pick the first one.
-                : (assert(!globals.empty() && "Empty global set"),
-                   *globals.begin());
+            ? *repIt
+            // When there is no initializer, just pick the first one.
+            : (assert(!globals.empty() && "Empty global set"),
+               *globals.begin());
 
         for (const GlobalVariable* cur : globals)
         {
@@ -1246,10 +1261,10 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
             {
                 const llvm::fltSemantics& semantics = cfp->getValueAPF().getSemantics();
                 if (&semantics == &llvm::APFloat::IEEEhalf() ||
-                    &semantics == &llvm::APFloat::IEEEsingle() ||
-                    &semantics == &llvm::APFloat::IEEEdouble() ||
-                    &semantics == &llvm::APFloat::IEEEquad() ||
-                    &semantics == &llvm::APFloat::x87DoubleExtended())
+                        &semantics == &llvm::APFloat::IEEEsingle() ||
+                        &semantics == &llvm::APFloat::IEEEdouble() ||
+                        &semantics == &llvm::APFloat::IEEEquad() ||
+                        &semantics == &llvm::APFloat::x87DoubleExtended())
                 {
                     dval = cfp->getValueAPF().convertToDouble();
                 }
@@ -1307,8 +1322,8 @@ SVFOtherValue* LLVMModuleSet::getSVFOtherValue(const Value* ov)
     {
         SVFOtherValue* svfov =
             SVFUtil::isa<MetadataAsValue>(ov)
-                ? new SVFMetadataAsValue(getSVFType(ov->getType()))
-                : new SVFOtherValue(getSVFType(ov->getType()));
+            ? new SVFMetadataAsValue(getSVFType(ov->getType()))
+            : new SVFOtherValue(getSVFType(ov->getType()));
         svfModule->addOtherValue(svfov);
         addOtherValueMap(ov,svfov);
         return svfov;
@@ -1523,7 +1538,7 @@ StInfo* LLVMModuleSet::collectArrayInfo(const ArrayType* ty)
  * Given a Struct type, we recursively extend and record its fields and types.
  */
 StInfo* LLVMModuleSet::collectStructInfo(const StructType* structTy,
-                                         u32_t& numFields)
+        u32_t& numFields)
 {
     /// The struct info should not be processed before
     StInfo* stInfo = new StInfo(1);
