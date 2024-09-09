@@ -379,8 +379,8 @@ public:
      */
     void recordBug(const SVFStmt *stmt)
     {
-        const SVFInstruction* inst = stmt->getInst();
-        SVFBugEvent sourceInstEvent(SVFBugEvent::EventType::SourceInst, inst);
+        const ICFGNode *eventInst = stmt->getICFGNode();
+        SVFBugEvent sourceInstEvent(SVFBugEvent::EventType::SourceInst, eventInst);
 
         std::string loc = sourceInstEvent.getEventLoc(); // Get the location of the last event in the stack
 
