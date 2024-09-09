@@ -277,7 +277,7 @@ public:
     /**
      * @brief Checks if memory can be safely accessed.
      * @param as Reference to the abstract state.
-     * @param value Pointer to the SVF value.
+     * @param value Pointer to the SVF var.
      * @param len The interval value representing the length of the memory access.
      * @return True if the memory access is safe, false otherwise.
      */

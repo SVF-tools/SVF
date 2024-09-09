@@ -375,7 +375,7 @@ bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *ca
  * does not exceed the allocated size of the buffer.
  *
  * @param as Reference to the abstract state.
- * @param value Pointer to the SVF value.
+ * @param value Pointer to the SVF var.
  * @param len The interval value representing the length of the memory access.
  * @return True if the memory access is safe, false otherwise.
  */
