@@ -31,12 +31,14 @@
 #include "AE/Core/AbstractState.h"
 #include "AE/Core/ICFGWTO.h"
 #include "AE/Svfexe/AEDetector.h"
+#include "AE/Svfexe/AbsInterpretationUtils.h"
 #include "Util/SVFBugReport.h"
 #include "WPA/Andersen.h"
 
 namespace SVF
 {
 class AbstractInterpretation;
+class AbsInterpretationUtils;
 class AEStat;
 class AEAPI;
 
@@ -104,7 +106,6 @@ class AbstractInterpretation
     friend class BufOverflowDetector;
 
 public:
-    enum ExtAPIType { UNCLASSIFIED, MEMCPY, MEMSET, STRCPY, STRCAT };
     typedef SCCDetection<CallGraph*> CallGraphSCC;
     /// Constructor
     AbstractInterpretation();
@@ -213,77 +214,6 @@ protected:
                                 AbstractState& as);
 
 
-    /**
-    * handle external function call
-    *
-    * @param call call node whose callee is external function
-    */
-    virtual void handleExtAPI(const CallICFGNode *call);
-
-    /**
-    * the map of external function to its API type
-    *
-    * In AEAPI, this function is mainly used for abstract explanation.
-    * In subclasses, this function is mainly used to check specific bugs
-    */
-    virtual void initExtFunMap();
-
-
-    /**
-    * get byte size of alloca inst
-    * e.g. source code str = "abc", there are str value, return "abc"
-    *
-    * @param rhs SVFValue of string
-    * @return the string
-    */
-    std::string strRead(AbstractState& as,const SVFValue* rhs);
-
-    /**
-    * get length of string
-    * e.g. source code str = "abc", return 3
-    *
-    * @param strValue SVFValue of string
-    * @return IntervalValue of string length
-    */
-    IntervalValue getStrlen(AbstractState& as, const SVF::SVFValue *strValue);
-
-    /**
-    * execute strcpy in abstract execution
-    * e.g  arr = new char[10]
-    *      str = "abc"
-    *      strcpy(arr, str)
-    * we can set arr[0]='a', arr[1]='b', arr[2]='c', arr[3]='\0'
-    * @param call callnode of strcpy like api
-    */
-    virtual void handleStrcpy(const CallICFGNode *call);
-    /**
-    * execute strcpy in abstract execution
-    * e.g  arr[10] = "abc"
-    *      str = "de"
-    *      strcat(arr, str)
-    * we can set arr[3]='d', arr[4]='e', arr[5]='\0'
-    * @param call callnode of strcat like api
-    */
-    virtual void handleStrcat(const CallICFGNode *call);
-    /**
-    * execute memcpy in abstract execution
-    * e.g  arr = new char[10]
-    *      str = "abcd"
-    *      memcpy(arr, str, 5)
-    * we can set arr[3]='d', arr[4]='e', arr[5]='\0'
-    * @param call callnode of memcpy like api
-    */
-    virtual void handleMemcpy(AbstractState& as, const SVFValue* dst, const SVFValue* src, IntervalValue len, u32_t start_idx);
-    /**
-    * execute memset in abstract execution
-    * e.g  arr = new char[10]
-    *      memset(arr, 'c', 2)
-    * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
-    * @param call callnode of memset like api
-    */
-    virtual void handleMemset(AbstractState& as, const SVFValue* dst, IntervalValue elem, IntervalValue len);
-
-
     void collectCheckPoint();
     void checkPointAllSet();
 
@@ -308,8 +238,6 @@ protected:
     void updateStateOnSelect(const SelectStmt *select);
 
     void updateStateOnPhi(const PhiStmt *phi);
-
-    IntervalValue getRangeLimitFromType(const SVFType* type);
 
 
     /// protected data members, also used in subclasses
@@ -356,16 +284,21 @@ protected:
         return abstractTrace.count(repNode) != 0;
     }
 
+    AbsInterpretationUtils* getUtils()
+    {
+        return utils;
+    }
+
 protected:
     // there data should be shared with subclasses
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
     Set<const CallICFGNode*> checkpoints;
     Set<std::string> checkpoint_names;
-    Map<const ICFGNode*, AbstractState>
-    abstractTrace; // abstract states immediately after nodes
+    Map<const ICFGNode*, AbstractState> abstractTrace; // abstract states immediately after nodes
     std::string moduleName;
 
     std::vector<std::unique_ptr<AEDetector>> detectors;
+    AbsInterpretationUtils* utils;
 
 };
 }

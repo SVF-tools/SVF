@@ -27,6 +27,7 @@
 
 #include <AE/Svfexe/AEDetector.h>
 #include <AE/Svfexe/AbstractInterpretation.h>
+#include <AE/Svfexe/AbsInterpretationUtils.h>
 
 using namespace SVF;
 
@@ -147,23 +148,23 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
     SVFIR* svfir = PAG::getPAG();
     assert(call->getCalledFunction() && "SVFFunction* is nullptr");
 
-    AbstractInterpretation::ExtAPIType extType = AbstractInterpretation::UNCLASSIFIED;
+    AbsInterpretationUtils::ExtAPIType extType = AbsInterpretationUtils::UNCLASSIFIED;
 
     // Determine the type of external memory API
     for (const std::string &annotation : call->getCalledFunction()->getAnnotations())
     {
         if (annotation.find("MEMCPY") != std::string::npos)
-            extType = AbstractInterpretation::MEMCPY;
+            extType = AbsInterpretationUtils::MEMCPY;
         if (annotation.find("MEMSET") != std::string::npos)
-            extType = AbstractInterpretation::MEMSET;
+            extType = AbsInterpretationUtils::MEMSET;
         if (annotation.find("STRCPY") != std::string::npos)
-            extType = AbstractInterpretation::STRCPY;
+            extType = AbsInterpretationUtils::STRCPY;
         if (annotation.find("STRCAT") != std::string::npos)
-            extType = AbstractInterpretation::STRCAT;
+            extType = AbsInterpretationUtils::STRCAT;
     }
 
     // Apply buffer overflow checks based on the determined API type
-    if (extType == AbstractInterpretation::MEMCPY)
+    if (extType == AbsInterpretationUtils::MEMCPY)
     {
         if (extAPIBufOverflowCheckRules.count(call->getCalledFunction()->getName()) == 0)
         {
@@ -182,7 +183,7 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
             }
         }
     }
-    else if (extType == AbstractInterpretation::MEMSET)
+    else if (extType == AbsInterpretationUtils::MEMSET)
     {
         if (extAPIBufOverflowCheckRules.count(call->getCalledFunction()->getName()) == 0)
         {
@@ -201,7 +202,7 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
             }
         }
     }
-    else if (extType == AbstractInterpretation::STRCPY)
+    else if (extType == AbsInterpretationUtils::STRCPY)
     {
         if (!detectStrcpy(as, call))
         {
@@ -209,7 +210,7 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
             addBugToReporter(bug, call);
         }
     }
-    else if (extType == AbstractInterpretation::STRCAT)
+    else if (extType == AbsInterpretationUtils::STRCAT)
     {
         if (!detectStrcat(as, call))
         {
@@ -321,7 +322,7 @@ bool BufOverflowDetector::detectStrcpy(AbstractState& as, const CallICFGNode *ca
 {
     const SVFValue* arg0Val = call->getArgument(0);
     const SVFValue* arg1Val = call->getArgument(1);
-    IntervalValue strLen = AbstractInterpretation::getAEInstance().getStrlen(as, arg1Val);
+    IntervalValue strLen = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg1Val);
     return canSafelyAccessMemory(as, arg0Val, strLen);
 }
 
@@ -346,8 +347,8 @@ bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *ca
     {
         const SVFValue* arg0Val = call->getArgument(0);
         const SVFValue* arg1Val = call->getArgument(1);
-        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getStrlen(as, arg0Val);
-        IntervalValue strLen1 = AbstractInterpretation::getAEInstance().getStrlen(as, arg1Val);
+        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg0Val);
+        IntervalValue strLen1 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg1Val);
         IntervalValue totalLen = strLen0 + strLen1;
         return canSafelyAccessMemory(as, arg0Val, totalLen);
     }
@@ -356,7 +357,7 @@ bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *ca
         const SVFValue* arg0Val = call->getArgument(0);
         const SVFValue* arg2Val = call->getArgument(2);
         IntervalValue arg2Num = as[svfir->getValueNode(arg2Val)].getInterval();
-        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getStrlen(as, arg0Val);
+        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg0Val);
         IntervalValue totalLen = strLen0 + arg2Num;
         return canSafelyAccessMemory(as, arg0Val, totalLen);
     }
