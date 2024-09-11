@@ -360,6 +360,16 @@ public:
     }
 
     /**
+     * @brief Check if an Abstract Value is uninitialized.
+     *
+     * @param v An Abstract Value in an Abstract State.
+     */
+    bool isUninit(AbstractValue v) {
+        bool is = (v.getInterval().isBottom() && v.getAddrs().isBottom());
+        return is;
+    }
+
+    /**
      * @brief Reports all detected null pointer dereference bugs.
      */
     void reportBug()
