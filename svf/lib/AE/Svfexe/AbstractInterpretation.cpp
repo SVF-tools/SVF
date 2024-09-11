@@ -1289,10 +1289,75 @@ void AbstractInterpretation::initExtFunMap()
     };
     func_map["UNSAFE_BUFACCESS"] = unsafe_bufaccess;
 
+    auto unsafe_load = [&](const CallICFGNode *callNode)
+    {
+        checkpoints.erase(callNode);
+        // void UNSAFE_LOAD(void* data);
+        if (callNode->arg_size() < 1) return;
+        AbstractState &as = getAbsStateFromTrace(callNode);
+
+
+        for (auto& detector: detectors)
+        {
+            // if detector is a buffer overflow detector, call it
+            if (SVFUtil::isa<NullPtrDerefDetector>(detector))
+            {
+                NullPtrDerefDetector* nullDetector = SVFUtil::cast<NullPtrDerefDetector>(detector.get());
+                bool isSafe = nullDetector->canSafelyDerefPtr(as, callNode->getArgument(0));
+                if (!isSafe)
+                {
+                    std::cout << "detect null pointer deference success: " << callNode->toString() << std::endl;
+                    return;
+                }
+                else
+                {
+                    std::string err_msg = "this UNSAFE_LOAD should be a null pointer dereference but not detected. Pos: ";
+                    err_msg += callNode->getSourceLoc();
+                    std::cerr << err_msg << std::endl;
+                    assert(false);
+                }
+            }
+        }
+    };
+    func_map["UNSAFE_LOAD"] = unsafe_load;
+
+    auto safe_load = [&](const CallICFGNode *callNode)
+    {
+        checkpoints.erase(callNode);
+        // void UNSAFE_LOAD(void* data);
+        if (callNode->arg_size() < 1) return;
+        AbstractState &as = getAbsStateFromTrace(callNode);
+
+        for (auto& detector: detectors)
+        {
+            // if detector is a buffer overflow detector, call it
+            if (SVFUtil::isa<NullPtrDerefDetector>(detector))
+            {
+                NullPtrDerefDetector* nullDetector = SVFUtil::cast<NullPtrDerefDetector>(detector.get());
+                bool isSafe = nullDetector->canSafelyDerefPtr(as, callNode->getArgument(0));
+                if (isSafe)
+                {
+                    std::cout << "safe load pointer success: " << callNode->toString() << std::endl;
+                    return;
+                }
+                else
+                {
+                    std::string err_msg = "this SAFE_LOAD should be a safe but a null pointer dereference detected. Pos: ";
+                    err_msg += callNode->getSourceLoc();
+                    std::cerr << err_msg << std::endl;
+                    assert(false);
+                }
+            }
+        }
+    };
+    func_map["SAFE_LOAD"] = safe_load;
+
     // init checkpoint_names
     checkpoint_names.insert("svf_assert");
     checkpoint_names.insert("UNSAFE_ACCESS");
     checkpoint_names.insert("SAFE_ACCESS");
+    checkpoint_names.insert("UNSAFE_LOAD");
+    checkpoint_names.insert("SAFE_LOAD");
 };
 
 std::string AbstractInterpretation::strRead(AbstractState& as, const SVFValue* rhs)
