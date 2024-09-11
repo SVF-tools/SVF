@@ -456,3 +456,23 @@ void NullPtrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
         }
     }
 }
+
+/**
+ * @brief Checks if pointer can be safely dereferenced.
+ * @param as Reference to the abstract state.
+ * @param ptr_id Pointer to the SVF value.
+ * @return True if the pointer dereference is safe, false otherwise.
+ */
+bool NullPtrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVF::SVFValue* value) {
+    SVFIR* svfir = PAG::getPAG();
+    NodeID value_id = svfir->getValueNode(value);
+    if (isUninit(as[value_id])) return false;
+    assert(as[value_id].isAddr());
+    AbstractValue &addrs = as[value_id];
+    for (const auto &addr: addrs.getAddrs()) {
+        AbstractValue v = as.load(addr);
+        if (isNull(v))
+            return false;
+    }
+    return true;
+}

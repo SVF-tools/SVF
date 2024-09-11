@@ -402,6 +402,15 @@ public:
         }
     }
 
+    /**
+     * @brief Checks if pointer can be safely dereferenced.
+     * @param as Reference to the abstract state.
+     * @param value Pointer to the SVF value.
+     * @return True if the pointer dereference is safe, false otherwise.
+     */
+    bool canSafelyDerefPtr(AbstractState& as, const SVF::SVFValue* value);
+
+
 private:
     Set<std::string> bugLoc;    ///< Set of locations where bugs have been reported.
     Map<const SVFStmt*, std::string> stmtToBugInfo; ///< Maps SVF stmt to bug information.
