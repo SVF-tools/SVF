@@ -319,10 +319,11 @@ protected:
 
     ICFG* icfg;
     AEStat* stat;
+    CallGraph* aeCallGraph;
 
     std::vector<const CallICFGNode*> callSiteStack;
-    Map<const SVFFunction*, ICFGWTO*> funcToWTO;
-    Set<const SVFFunction*> recursiveFuns;
+    Map<const CallGraphNode*, ICFGWTO*> funcToWTO;
+    Set<const CallGraphNode*> recursiveFuns;
 
 private:
     // helper functions in handleCallSite

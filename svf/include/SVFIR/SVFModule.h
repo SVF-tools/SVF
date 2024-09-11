@@ -106,6 +106,8 @@ public:
 
     const SVFFunction* getSVFFunction(const std::string& name);
 
+    const CallGraphNode* getCallGraphNode(const std::string& name);
+
     ///@{
     inline void addFunctionSet(SVFFunction* svfFunc)
     {

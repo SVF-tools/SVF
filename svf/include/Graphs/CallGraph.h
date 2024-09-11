@@ -224,7 +224,7 @@ class CallGraph : public GenericCallGraphTy
 
 public:
     typedef CallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
-    typedef Map<const SVFFunction*, CallGraphNode *> FunToCallGraphNodeMap;
+    typedef Map<const SVFFunction*, CallGraphNode *> FunToCallGraphNodeMap; //TODO: HWG
     typedef Map<const CallICFGNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
     typedef std::pair<const CallICFGNode*, const SVFFunction*> CallSitePair;
     typedef Map<CallSitePair, CallSiteID> CallSiteToIdMap;

@@ -60,6 +60,18 @@ const SVFFunction* SVFModule::getSVFFunction(const std::string& name)
     return nullptr;
 }
 
+const CallGraphNode* SVFModule::getCallGraphNode(const std::string& name)
+{
+    for (const CallGraphNode* cgn : getCallGraphNodeSet())
+    {
+        if (cgn->getName() == name)
+        {
+            return cgn;
+        }
+    }
+    return nullptr;
+}
+
 SVFModule* SVFModule::getSVFModule()
 {
     if (svfModule == nullptr)
