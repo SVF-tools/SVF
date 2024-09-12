@@ -39,7 +39,7 @@
 
 namespace SVF
 {
-
+class CallGraphNode;
 /*
  * Util class to assist pointer analysis
  */
@@ -337,11 +337,11 @@ inline bool isProgEntryFunction(const SVFFunction* fun)
 /// Get program entry function from module.
 inline const SVFFunction* getProgFunction(SVFModule* svfModule, const std::string& funName)
 {
-    for (SVFModule::const_iterator it = svfModule->begin(), eit = svfModule->end(); it != eit; ++it)
+    for (SVFModule::const_callgraphnode_iterator it = svfModule->callgraphnode_begin(), eit = svfModule->callgraphnode_end(); it != eit; ++it)
     {
-        const SVFFunction *fun = *it;
+        const CallGraphNode *fun = *it;
         if (fun->getName()==funName)
-            return fun;
+            return fun->getFunction();
     }
     return nullptr;
 }
@@ -349,11 +349,11 @@ inline const SVFFunction* getProgFunction(SVFModule* svfModule, const std::strin
 /// Get program entry function from module.
 inline const SVFFunction* getProgEntryFunction(SVFModule* svfModule)
 {
-    for (SVFModule::const_iterator it = svfModule->begin(), eit = svfModule->end(); it != eit; ++it)
+    for (SVFModule::const_callgraphnode_iterator it = svfModule->callgraphnode_begin(), eit = svfModule->callgraphnode_end(); it != eit; ++it)
     {
-        const SVFFunction *fun = *it;
-        if (isProgEntryFunction(fun))
-            return (fun);
+        const CallGraphNode *fun = *it;
+        if (isProgEntryFunction(fun->getFunction()))
+            return (fun->getFunction());
     }
     return nullptr;
 }

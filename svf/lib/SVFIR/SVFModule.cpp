@@ -35,8 +35,6 @@ SVFModule* SVFModule::svfModule = nullptr;
 
 SVFModule::~SVFModule()
 {
-    for (const SVFFunction* f : FunctionSet)
-        delete f;
     for (const SVFConstant* c : ConstantSet)
         delete c;
     for (const SVFValue* o : OtherValueSet)
@@ -48,17 +46,6 @@ SVFModule::~SVFModule()
     ExtAPI::destory();
 }
 
-const SVFFunction* SVFModule::getSVFFunction(const std::string& name)
-{
-    for (const SVFFunction* fun : getFunctionSet())
-    {
-        if (fun->getName() == name)
-        {
-            return fun;
-        }
-    }
-    return nullptr;
-}
 
 const CallGraphNode* SVFModule::getCallGraphNode(const std::string& name)
 {

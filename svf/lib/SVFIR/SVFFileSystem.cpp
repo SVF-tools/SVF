@@ -978,8 +978,8 @@ SVFModuleWriter::SVFModuleWriter(const SVFModule* svfModule)
     {
         stInfoPool.saveID(stInfo);
     }
-
-    svfValuePool.reserve(svfModule->getFunctionSet().size() +
+    //TODO:HWG
+    svfValuePool.reserve(svfModule->getCallGraphNodeSet().size() +
                          svfModule->getConstantSet().size() +
                          svfModule->getOtherValueSet().size());
 }

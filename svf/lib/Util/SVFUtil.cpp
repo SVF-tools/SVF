@@ -30,6 +30,7 @@
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 #include "MemoryModel/PointsTo.h"
+#include "Graphs/CallGraph.h"
 
 #include <sys/resource.h>		/// increase stack size
 
