@@ -70,9 +70,9 @@ void LockAnalysis::collectLockUnlocksites()
 {
     ThreadCallGraph* tcg=tct->getThreadCallGraph();
 
-    for (const SVFFunction* F : tct->getSVFModule()->getFunctionSet())
+    for (const CallGraphNode* F : tct->getSVFModule()->getCallGraphNodeSet())
     {
-        for (const SVFBasicBlock* bb : F->getBasicBlockList())
+        for (const SVFBasicBlock* bb : F->getFunction()->getBasicBlockList())
         {
             for (const ICFGNode* icfgNode : bb->getICFGNodeList())
             {
