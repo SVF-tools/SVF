@@ -173,6 +173,8 @@ public:
 typedef GenericNode<CallGraphNode,CallGraphEdge> GenericCallGraphNodeTy;
 class CallGraphNode : public GenericCallGraphNodeTy
 {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     typedef CallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;

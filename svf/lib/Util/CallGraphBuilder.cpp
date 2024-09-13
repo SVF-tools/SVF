@@ -44,9 +44,9 @@ CallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
     }
 
     /// create edges
-    for (SVFModule::const_iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F)
+    for (SVFModule::const_callgraphnode_iterator F = svfModule->callgraphnode_begin(), E = svfModule->callgraphnode_end(); F != E; ++F)
     {
-        for (const SVFBasicBlock* svfbb : (*F)->getBasicBlockList())
+        for (const SVFBasicBlock* svfbb : (*F)->getFunction()->getBasicBlockList())
         {
             for (const ICFGNode* inst : svfbb->getICFGNodeList())
             {
@@ -55,7 +55,7 @@ CallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
                     const CallICFGNode* callBlockNode = cast<CallICFGNode>(inst);
                     if(const SVFFunction* callee = callBlockNode->getCalledFunction())
                     {
-                        callgraph->addDirectCallGraphEdge(callBlockNode,*F,callee);
+                        callgraph->addDirectCallGraphEdge(callBlockNode,(*F)->getFunction(),callee);
                     }
                 }
             }
@@ -74,9 +74,9 @@ CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
     assert(cg && "not a thread callgraph?");
 
     ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();
-    for (SVFModule::const_iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F)
+    for (SVFModule::const_callgraphnode_iterator F = svfModule->callgraphnode_begin(), E = svfModule->callgraphnode_end(); F != E; ++F)
     {
-        for (const SVFBasicBlock* svfbb : (*F)->getBasicBlockList())
+        for (const SVFBasicBlock* svfbb : (*F)->getFunction()->getBasicBlockList())
         {
             for (const ICFGNode* inst : svfbb->getICFGNodeList())
             {
@@ -99,9 +99,9 @@ CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
         }
     }
     // record join sites
-    for (SVFModule::const_iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F)
+    for (SVFModule::const_callgraphnode_iterator F = svfModule->callgraphnode_begin(), E = svfModule->callgraphnode_end(); F != E; ++F)
     {
-        for (const SVFBasicBlock* svfbb : (*F)->getBasicBlockList())
+        for (const SVFBasicBlock* svfbb : (*F)->getFunction()->getBasicBlockList())
         {
             for (const ICFGNode* node : svfbb->getICFGNodeList())
             {

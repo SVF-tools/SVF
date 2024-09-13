@@ -335,28 +335,11 @@ inline bool isProgEntryFunction(const SVFFunction* fun)
 }
 
 /// Get program entry function from module.
-inline const SVFFunction* getProgFunction(SVFModule* svfModule, const std::string& funName)
-{
-    for (SVFModule::const_callgraphnode_iterator it = svfModule->callgraphnode_begin(), eit = svfModule->callgraphnode_end(); it != eit; ++it)
-    {
-        const CallGraphNode *fun = *it;
-        if (fun->getName()==funName)
-            return fun->getFunction();
-    }
-    return nullptr;
-}
+const SVFFunction* getProgFunction(SVFModule* svfModule, const std::string& funName);
+
 
 /// Get program entry function from module.
-inline const SVFFunction* getProgEntryFunction(SVFModule* svfModule)
-{
-    for (SVFModule::const_callgraphnode_iterator it = svfModule->callgraphnode_begin(), eit = svfModule->callgraphnode_end(); it != eit; ++it)
-    {
-        const CallGraphNode *fun = *it;
-        if (isProgEntryFunction(fun->getFunction()))
-            return (fun->getFunction());
-    }
-    return nullptr;
-}
+const SVFFunction* getProgEntryFunction(SVFModule* svfModule);
 
 /// Return true if this is a program exit function call
 //@{

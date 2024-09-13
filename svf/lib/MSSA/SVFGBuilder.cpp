@@ -102,11 +102,11 @@ std::unique_ptr<MemSSA> SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyM
     auto mssa = std::make_unique<MemSSA>(pta, ptrOnlyMSSA);
 
     SVFModule* svfModule = mssa->getPTA()->getModule();
-    for (SVFModule::const_iterator iter = svfModule->begin(), eiter = svfModule->end();
+    for (SVFModule::const_callgraphnode_iterator iter = svfModule->callgraphnode_begin(), eiter = svfModule->callgraphnode_end();
             iter != eiter; ++iter)
     {
 
-        const SVFFunction *fun = *iter;
+        const SVFFunction *fun = (*iter)->getFunction();
         if (isExtCall(fun))
             continue;
 

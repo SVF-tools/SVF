@@ -33,6 +33,7 @@
 #include "Util/ThreadAPI.h"
 #include "Util/SVFUtil.h"
 #include "SVFIR/SVFIR.h"
+#include "Graphs/CallGraph.h" // Add this line to include the CallGraphNode definition
 
 #include <iostream>		/// std output
 #include <stdio.h>
@@ -261,9 +262,9 @@ void ThreadAPI::performAPIStat(SVFModule* module)
 
     statInit(tdAPIStatMap);
 
-    for (SVFModule::const_iterator it = module->begin(), eit = module->end(); it != eit; ++it)
+    for (SVFModule::const_callgraphnode_iterator it = module->callgraphnode_begin(), eit = module->callgraphnode_end(); it != eit; ++it)
     {
-        for (SVFFunction::const_iterator bit = (*it)->begin(), ebit = (*it)->end(); bit != ebit; ++bit)
+        for (SVFFunction::const_iterator bit = (*it)->getFunction()->begin(), ebit = (*it)->getFunction()->end(); bit != ebit; ++bit)
         {
             const SVFBasicBlock* bb = *bit;
             for (const auto& svfInst: bb->getICFGNodeList())

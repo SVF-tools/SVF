@@ -174,10 +174,10 @@ void MRGenerator::collectModRefForLoadStore()
 {
 
     SVFModule* svfModule = pta->getModule();
-    for (SVFModule::const_iterator fi = svfModule->begin(), efi = svfModule->end(); fi != efi;
+    for (SVFModule::const_callgraphnode_iterator fi = svfModule->callgraphnode_begin(), efi = svfModule->callgraphnode_end(); fi != efi;
             ++fi)
     {
-        const SVFFunction& fun = **fi;
+        const SVFFunction& fun = *((*fi)->getFunction());
 
         /// if this function does not have any caller, then we do not care its MSSA
         if (Options::IgnoreDeadFun() && fun.isUncalledFunction())

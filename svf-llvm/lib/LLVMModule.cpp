@@ -243,7 +243,6 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             getSVFType(func->getFunctionType())),
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
         func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
-    svfModule->addFunctionSet(svfFunc);
 
     NodeID id = callGraphNodeNum;
     CallGraphNode* callGraphNode = new CallGraphNode(id, svfFunc);
