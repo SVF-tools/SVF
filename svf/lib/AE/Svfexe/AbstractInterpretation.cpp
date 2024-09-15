@@ -96,6 +96,8 @@ void AbstractInterpretation::initWTO()
     // Initialize WTO for each function in the module
     for (const SVFFunction* fun : svfir->getModule()->getFunctionSet())
     {
+        if(fun->isDeclaration())
+            continue;
         auto* wto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(fun));
         wto->init();
         funcToWTO[fun] = wto;

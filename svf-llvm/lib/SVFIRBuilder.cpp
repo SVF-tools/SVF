@@ -62,7 +62,7 @@ SVFIR* SVFIRBuilder::build()
     // Build ICFG
     ICFG* icfg = new ICFG();
     ICFGBuilder icfgbuilder(icfg);
-    icfgbuilder.build(svfModule);
+    icfgbuilder.build();
     pag->setICFG(icfg);
 
     CHGraph* chg = new CHGraph(pag->getModule());

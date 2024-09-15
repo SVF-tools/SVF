@@ -44,6 +44,7 @@ class ObjTypeInference;
 class LLVMModuleSet
 {
     friend class SVFIRBuilder;
+    friend class ICFGBuilder;
 
 public:
 
@@ -62,6 +63,12 @@ public:
     typedef Map<const Type*, SVFType*> LLVMType2SVFTypeMap;
     typedef Map<const Type*, StInfo*> Type2TypeInfoMap;
     typedef Map<std::string, std::vector<std::string>> Fun2AnnoMap;
+
+    typedef Map<const Instruction*, CallICFGNode *> CSToCallNodeMapTy;
+    typedef Map<const Instruction*, RetICFGNode *> CSToRetNodeMapTy;
+    typedef Map<const Instruction*, IntraICFGNode *> InstToBlockNodeMapTy;
+    typedef Map<const Function*, FunEntryICFGNode *> FunToFunEntryNodeMapTy;
+    typedef Map<const Function*, FunExitICFGNode *> FunToFunExitNodeMapTy;
 
 private:
     static LLVMModuleSet* llvmModuleSet;
@@ -89,6 +96,12 @@ private:
     LLVMType2SVFTypeMap LLVMType2SVFType;
     Type2TypeInfoMap Type2TypeInfo;
     ObjTypeInference* typeInference;
+
+    CSToCallNodeMapTy CSToCallNodeMap; ///< map a callsite to its CallICFGNode
+    CSToRetNodeMapTy CSToRetNodeMap; ///< map a callsite to its RetICFGNode
+    InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
+    FunToFunEntryNodeMapTy FunToFunEntryNodeMap; ///< map a function to its FunExitICFGNode
+    FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryICFGNode
 
     /// Constructor
     LLVMModuleSet();
