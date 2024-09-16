@@ -238,13 +238,13 @@ InterICFGNode* ICFGBuilder::addInterBlockICFGNode(const Instruction* inst)
         llvmModuleSet()->getSVFInstruction(inst);
     assert(LLVMUtil::isCallSite(inst) && "not a call instruction?");
     assert(LLVMUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-    assert(getCallBlock(inst)==nullptr && "duplicate CallICFGNode");
+    assert(llvmModuleSet()->getCallBlock(inst)==nullptr && "duplicate CallICFGNode");
     CallICFGNode* callICFGNode = new CallICFGNode(icfg->totalICFGNode++, svfInst);
     icfg->addICFGNode(callICFGNode);
     icfg->CSToCallNodeMap[svfInst] = callICFGNode;
     csToCallNodeMap()[inst] = callICFGNode;
 
-    assert(getRetBlock(inst)==nullptr && "duplicate RetICFGNode");
+    assert(llvmModuleSet()->getRetBlock(inst)==nullptr && "duplicate RetICFGNode");
     RetICFGNode* retICFGNode = new RetICFGNode(icfg->totalICFGNode++, svfInst, callICFGNode);
     callICFGNode->setRetICFGNode(retICFGNode);
     icfg->addICFGNode(retICFGNode);
@@ -334,67 +334,6 @@ IntraICFGNode* ICFGBuilder::addIntraBlockICFGNode(const Instruction* inst)
     icfg->InstToBlockNodeMap[svfInst] = sNode;
     instToBlockNodeMap()[inst] = sNode;
     return sNode;
-}
-
-CallICFGNode* ICFGBuilder::getCallBlock(const Instruction* cs)
-{
-    CSToCallNodeMapTy::const_iterator it = csToCallNodeMap().find(cs);
-    if (it == csToCallNodeMap().end())
-        return nullptr;
-    return it->second;
-}
-
-/// Get a basic block ICFGNode
-ICFGNode* ICFGBuilder::getICFGNode(const Instruction* inst)
-{
-    ICFGNode* node;
-    if(LLVMUtil::isNonInstricCallSite(inst))
-        node = getCallICFGNode(inst);
-    else if(LLVMUtil::isIntrinsicInst(inst))
-        node = getIntraICFGNode(inst);
-    else
-        node = getIntraICFGNode(inst);
-
-    assert (node!=nullptr && "no ICFGNode for this instruction?");
-    return node;
-}
-
-bool ICFGBuilder::hasICFGNode(const Instruction* inst)
-{
-    ICFGNode* node;
-    if(LLVMUtil::isNonInstricCallSite(inst))
-        node = getCallBlock(inst);
-    else if(LLVMUtil::isIntrinsicInst(inst))
-        node = getIntraBlock(inst);
-    else
-        node = getIntraBlock(inst);
-
-    return node != nullptr;
-}
-
-CallICFGNode* ICFGBuilder::getCallICFGNode(const Instruction* inst)
-{
-    assert(LLVMUtil::isCallSite(inst) && "not a call instruction?");
-    assert(LLVMUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-    CallICFGNode* node = getCallBlock(inst);
-    assert (node!=nullptr && "no CallICFGNode for this instruction?");
-    return node;
-}
-
-RetICFGNode* ICFGBuilder::getRetICFGNode(const Instruction* inst)
-{
-    assert(LLVMUtil::isCallSite(inst) && "not a call instruction?");
-    assert(LLVMUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-    RetICFGNode* node = getRetBlock(inst);
-    assert (node!=nullptr && "no RetICFGNode for this instruction?");
-    return node;
-}
-
-IntraICFGNode* ICFGBuilder::getIntraICFGNode(const Instruction* inst)
-{
-    IntraICFGNode* node = getIntraBlock(inst);
-    assert (node!=nullptr && "no IntraICFGNode for this instruction?");
-    return node;
 }
 
 FunEntryICFGNode* ICFGBuilder::addFunEntryBlock(const Function* fun)

@@ -1380,6 +1380,60 @@ SVFType* LLVMModuleSet::getSVFType(const Type* T)
     return svfType;
 }
 
+
+/// Get a basic block ICFGNode
+ICFGNode* LLVMModuleSet::getICFGNode(const Instruction* inst)
+{
+    ICFGNode* node;
+    if(LLVMUtil::isNonInstricCallSite(inst))
+        node = getCallICFGNode(inst);
+    else if(LLVMUtil::isIntrinsicInst(inst))
+        node = getIntraICFGNode(inst);
+    else
+        node = getIntraICFGNode(inst);
+
+    assert (node!=nullptr && "no ICFGNode for this instruction?");
+    return node;
+}
+
+bool LLVMModuleSet::hasICFGNode(const Instruction* inst)
+{
+    ICFGNode* node;
+    if(LLVMUtil::isNonInstricCallSite(inst))
+        node = getCallBlock(inst);
+    else if(LLVMUtil::isIntrinsicInst(inst))
+        node = getIntraBlock(inst);
+    else
+        node = getIntraBlock(inst);
+
+    return node != nullptr;
+}
+
+CallICFGNode* LLVMModuleSet::getCallICFGNode(const Instruction* inst)
+{
+    assert(LLVMUtil::isCallSite(inst) && "not a call instruction?");
+    assert(LLVMUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
+    CallICFGNode* node = getCallBlock(inst);
+    assert (node!=nullptr && "no CallICFGNode for this instruction?");
+    return node;
+}
+
+RetICFGNode* LLVMModuleSet::getRetICFGNode(const Instruction* inst)
+{
+    assert(LLVMUtil::isCallSite(inst) && "not a call instruction?");
+    assert(LLVMUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
+    RetICFGNode* node = getRetBlock(inst);
+    assert (node!=nullptr && "no RetICFGNode for this instruction?");
+    return node;
+}
+
+IntraICFGNode* LLVMModuleSet::getIntraICFGNode(const Instruction* inst)
+{
+    IntraICFGNode* node = getIntraBlock(inst);
+    assert (node!=nullptr && "no IntraICFGNode for this instruction?");
+    return node;
+}
+
 StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
 {
     Type2TypeInfoMap::iterator tit = Type2TypeInfo.find(T);

@@ -279,6 +279,33 @@ public:
         return nullptr;
     }
 
+    ICFGNode* getICFGNode(const Instruction* inst);
+
+    bool hasICFGNode(const Instruction* inst);
+
+    /// get a call node
+    CallICFGNode* getCallICFGNode(const Instruction*  cs);
+    /// get a return node
+    RetICFGNode* getRetICFGNode(const Instruction*  cs);
+    /// get a intra node
+    IntraICFGNode* getIntraICFGNode(const Instruction* inst);
+
+    /// Add a function entry node
+    inline FunEntryICFGNode* getFunEntryICFGNode(const Function*  fun)
+    {
+        FunEntryICFGNode* b = getFunEntryBlock(fun);
+        assert(b && "Function entry not created?");
+        return b;
+    }
+    /// Add a function exit node
+    inline FunExitICFGNode* getFunExitICFGNode(const Function*  fun)
+    {
+        FunExitICFGNode* b = getFunExitBlock(fun);
+        assert(b && "Function exit not created?");
+        return b;
+    }
+
+
     /// Global to rep
     bool hasGlobalRep(const GlobalVariable* val) const
     {
@@ -357,6 +384,49 @@ private:
     void prePassSchedule();
     void buildSymbolTable() const;
     void collectExtFunAnnotations(const Module* mod);
+
+    /// Get/Add a call node
+    inline CallICFGNode* getCallBlock(const Instruction* cs) {
+        CSToCallNodeMapTy::const_iterator it = CSToCallNodeMap.find(cs);
+        if (it == CSToCallNodeMap.end())
+            return nullptr;
+        return it->second;
+    }
+
+    /// Get/Add a return node
+    inline RetICFGNode* getRetBlock(const Instruction* cs)
+    {
+        CSToRetNodeMapTy::const_iterator it = CSToRetNodeMap.find(cs);
+        if (it == CSToRetNodeMap.end())
+            return nullptr;
+        return it->second;
+    }
+
+    inline IntraICFGNode* getIntraBlock(const Instruction* inst)
+    {
+        InstToBlockNodeMapTy::const_iterator it = InstToBlockNodeMap.find(inst);
+        if (it == InstToBlockNodeMap.end())
+            return nullptr;
+        return it->second;
+    }
+
+    /// Get/Add a function entry node
+    inline FunEntryICFGNode* getFunEntryBlock(const Function* fun)
+    {
+        FunToFunEntryNodeMapTy::const_iterator it = FunToFunEntryNodeMap.find(fun);
+        if (it == FunToFunEntryNodeMap.end())
+            return nullptr;
+        return it->second;
+    }
+
+    /// Get/Add a function exit node
+    inline FunExitICFGNode* getFunExitBlock(const Function* fun)
+    {
+        FunToFunExitNodeMapTy::const_iterator it = FunToFunExitNodeMap.find(fun);
+        if (it == FunToFunExitNodeMap.end())
+            return nullptr;
+        return it->second;
+    }
 };
 
 } // End namespace SVF

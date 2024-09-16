@@ -668,8 +668,7 @@ void SVFIRBuilder::visitPHINode(PHINode &inst)
         (void) matched; // Suppress warning of unused variable under release build
         assert(matched && "incomingInst's Function incorrect");
         const Instruction* predInst = &inst.getIncomingBlock(i)->back();
-        const SVFInstruction* svfPrevInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(predInst);
-        const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(svfPrevInst);
+        const ICFGNode* icfgNode = LLVMModuleSet::getLLVMModuleSet()->getICFGNode(predInst);
         NodeID src = getValueNode(val);
         addPhiStmt(dst,src,icfgNode);
     }
@@ -885,8 +884,7 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
 
         NodeID rnF = getReturnNode(F);
         NodeID vnS = getValueNode(src);
-        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&inst);
-        const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(svfInst);
+        const ICFGNode* icfgNode = LLVMModuleSet::getLLVMModuleSet()->getICFGNode(&inst);
         //vnS may be null if src is a null ptr
         addPhiStmt(rnF,vnS,icfgNode);
     }
@@ -943,8 +941,7 @@ void SVFIRBuilder::visitBranchInst(BranchInst &inst)
     for (const Instruction* succInst : nextInsts)
     {
         assert(branchID <= 1 && "if/else has more than two branches?");
-        const SVFInstruction* svfSuccInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(succInst);
-        const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(svfSuccInst);
+        const ICFGNode* icfgNode = LLVMModuleSet::getLLVMModuleSet()->getICFGNode(succInst);
         successors.push_back(std::make_pair(icfgNode, 1-branchID));
         branchID++;
     }
@@ -1013,8 +1010,7 @@ void SVFIRBuilder::visitSwitchInst(SwitchInst &inst)
         s64_t val = -1;
         if (condVal && condVal->getBitWidth() <= 64)
             val = condVal->getSExtValue();
-        const SVFInstruction* svfSuccInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(succInst);
-        const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(svfSuccInst);
+        const ICFGNode* icfgNode = LLVMModuleSet::getLLVMModuleSet()->getICFGNode(succInst);
         successors.push_back(std::make_pair(icfgNode, val));
     }
     addBranchStmt(brinst, cond, successors);
@@ -1270,6 +1266,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     // backmap in valuToEdgeMap
     pag->mapValueToEdge(curVal, edge);
     ICFGNode* icfgNode = pag->getICFG()->getGlobalICFGNode();
+    LLVMModuleSet* llvmModuleSet = LLVMModuleSet::getLLVMModuleSet();
     if (const SVFInstruction* curInst = SVFUtil::dyn_cast<SVFInstruction>(curVal))
     {
         const SVFFunction* srcFun = edge->getSrcNode()->getFunction();
@@ -1297,7 +1294,9 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
             if(SVFUtil::isa<RetPE>(edge))
                 icfgNode = pag->getICFG()->getRetICFGNode(curInst);
             else
-                icfgNode = pag->getICFG()->getICFGNode(curInst);
+                icfgNode =
+                    llvmModuleSet->getICFGNode(SVFUtil::cast<Instruction>(
+                        llvmModuleSet->getLLVMValue(curInst)));
         }
     }
     else if (const SVFArgument* arg = SVFUtil::dyn_cast<SVFArgument>(curVal))

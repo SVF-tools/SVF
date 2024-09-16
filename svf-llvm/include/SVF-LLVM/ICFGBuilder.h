@@ -107,22 +107,6 @@ private:
 
     void connectGlobalToProgEntry();
 
-    inline void addGlobalICFGNode()
-    {
-        icfg->globalBlockNode = new GlobalICFGNode(icfg->totalICFGNode++);
-        icfg->addICFGNode(icfg->globalBlockNode);
-    }
-
-    inline GlobalICFGNode* getGlobalICFGNode() const
-    {
-        return icfg->getGlobalICFGNode();
-    }
-
-    /// Add/Get an inter block ICFGNode
-    InterICFGNode* addInterBlockICFGNode(const Instruction* inst);
-
-    /// Add/Get a basic block ICFGNode
-    inline ICFGNode* addBlockICFGNode(const Instruction* inst);
 
     /// Create edges between ICFG nodes across functions
     void addICFGInterEdges(const Instruction*  cs, const Function*  callee);
@@ -138,74 +122,60 @@ private:
         return icfg->getRetICFGNode(cs);
     }
 
-    ICFGNode* getICFGNode(const Instruction* inst);
+    inline ICFGNode* getICFGNode(const Instruction* inst) {
+        return llvmModuleSet()->getICFGNode(inst);
+    }
 
-    bool hasICFGNode(const Instruction* inst);
+    inline bool hasICFGNode(const Instruction* inst) {
+        return llvmModuleSet()->hasICFGNode(inst);
+    }
 
     /// get a call node
-    CallICFGNode* getCallICFGNode(const Instruction*  cs);
+    inline CallICFGNode* getCallICFGNode(const Instruction*  cs) {
+        return llvmModuleSet()->getCallICFGNode(cs);
+    }
     /// get a return node
-    RetICFGNode* getRetICFGNode(const Instruction*  cs);
+    inline RetICFGNode* getRetICFGNode(const Instruction*  cs) {
+        return llvmModuleSet()->getRetICFGNode(cs);
+    }
     /// get a intra node
-    IntraICFGNode* getIntraICFGNode(const Instruction* inst);
+    inline IntraICFGNode* getIntraICFGNode(const Instruction* inst) {
+        return llvmModuleSet()->getIntraICFGNode(inst);
+    }
+
+    /// get a function entry node
+    inline FunEntryICFGNode* getFunEntryICFGNode(const Function*  fun)
+    {
+        return llvmModuleSet()->getFunEntryICFGNode(fun);
+    }
+    /// get a function exit node
+    inline FunExitICFGNode* getFunExitICFGNode(const Function*  fun)
+    {
+        return llvmModuleSet()->getFunExitICFGNode(fun);
+    }
+
+    inline GlobalICFGNode* getGlobalICFGNode() const
+    {
+        return icfg->getGlobalICFGNode();
+    }
+
+    /// Add/Get an inter block ICFGNode
+    InterICFGNode* addInterBlockICFGNode(const Instruction* inst);
+
+    /// Add/Get a basic block ICFGNode
+    inline ICFGNode* addBlockICFGNode(const Instruction* inst);
 
     /// Add and get IntraBlock ICFGNode
     IntraICFGNode* addIntraBlockICFGNode(const Instruction* inst);
 
-    /// Get/Add a call node
-    CallICFGNode* getCallBlock(const Instruction* cs);
-
-    /// Get/Add a return node
-    inline RetICFGNode* getRetBlock(const Instruction* cs)
-    {
-        CSToRetNodeMapTy::const_iterator it = csToRetNodeMap().find(cs);
-        if (it == csToRetNodeMap().end())
-            return nullptr;
-        return it->second;
-    }
-
-    inline IntraICFGNode* getIntraBlock(const Instruction* inst)
-    {
-        InstToBlockNodeMapTy::const_iterator it = instToBlockNodeMap().find(inst);
-        if (it == instToBlockNodeMap().end())
-            return nullptr;
-        return it->second;
-    }
-
-    /// Get/Add a function entry node
-    inline FunEntryICFGNode* getFunEntryBlock(const Function* fun)
-    {
-        FunToFunEntryNodeMapTy::const_iterator it = funToFunEntryNodeMap().find(fun);
-        if (it == funToFunEntryNodeMap().end())
-            return nullptr;
-        return it->second;
-    }
     FunEntryICFGNode* addFunEntryBlock(const Function* fun);
 
-    /// Get/Add a function exit node
-    inline FunExitICFGNode* getFunExitBlock(const Function* fun)
-    {
-        FunToFunExitNodeMapTy::const_iterator it = funToFunExitNodeMap().find(fun);
-        if (it == funToFunExitNodeMap().end())
-            return nullptr;
-        return it->second;
-    }
     FunExitICFGNode* addFunExitBlock(const Function* fun);
 
-
-    /// Add a function entry node
-    inline FunEntryICFGNode* getFunEntryICFGNode(const Function*  fun)
+    inline void addGlobalICFGNode()
     {
-        FunEntryICFGNode* b = getFunEntryBlock(fun);
-        assert(b && "Function entry not created?");
-        return b;
-    }
-    /// Add a function exit node
-    inline FunExitICFGNode* getFunExitICFGNode(const Function*  fun)
-    {
-        FunExitICFGNode* b = getFunExitBlock(fun);
-        assert(b && "Function exit not created?");
-        return b;
+        icfg->globalBlockNode = new GlobalICFGNode(icfg->totalICFGNode++);
+        icfg->addICFGNode(icfg->globalBlockNode);
     }
 
 private:

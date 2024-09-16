@@ -451,8 +451,10 @@ protected:
     inline void addStoreEdge(NodeID src, NodeID dst)
     {
         ICFGNode* node;
+        LLVMModuleSet* llvmModuleSet = LLVMModuleSet::getLLVMModuleSet();
         if (const SVFInstruction* inst = SVFUtil::dyn_cast<SVFInstruction>(curVal))
-            node = pag->getICFG()->getICFGNode(inst);
+            node = llvmModuleSet->getICFGNode(
+                SVFUtil::cast<Instruction>(llvmModuleSet->getLLVMValue(inst)));
         else
             node = nullptr;
         if (StoreStmt* edge = pag->addStoreStmt(src, dst, node))
