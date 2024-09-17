@@ -190,10 +190,10 @@ public:
     {
 
     }
-    ~CallGraphNode()
-    {
-        delete fun;
-    }
+    // ~CallGraphNode()
+    // {
+    //     delete fun;
+    // }
     inline const std::string &getName() const
     {
         return fun->getName();

@@ -43,6 +43,7 @@ SVFModule::~SVFModule()
         delete o;
     for (const CallGraphNode* cgn : CallGraphNodeSet)
          delete cgn;
+
     NodeIDAllocator::unset();
     ThreadAPI::destroy();
     ExtAPI::destory();
