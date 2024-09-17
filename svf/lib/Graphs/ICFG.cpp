@@ -192,6 +192,13 @@ const std::string RetCFGEdge::toString() const
     return rawstr.str();
 }
 
+/// Return call ICFGNode at the callsite
+const CallICFGNode* RetCFGEdge::getCallSite() const
+{
+    assert(SVFUtil::isa<RetICFGNode>(getDstNode()) && "not a RetICFGNode?");
+    return SVFUtil::cast<RetICFGNode>(getDstNode())->getCallICFGNode();
+}
+
 /*!
  * Constructor
  *  * Build ICFG
