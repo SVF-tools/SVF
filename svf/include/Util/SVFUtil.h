@@ -39,7 +39,7 @@
 
 namespace SVF
 {
-class CallGraphNode;
+class PTACallGraphNode;
 /*
  * Util class to assist pointer analysis
  */

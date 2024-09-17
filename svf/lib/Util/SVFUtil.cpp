@@ -27,10 +27,10 @@
  *      Author: Yulei Sui
  */
 
-#include "Util/Options.h"
 #include "Util/SVFUtil.h"
+#include "Graphs/PTACallGraph.h"
 #include "MemoryModel/PointsTo.h"
-#include "Graphs/CallGraph.h"
+#include "Util/Options.h"
 
 #include <sys/resource.h>		/// increase stack size
 
@@ -419,7 +419,7 @@ const SVFFunction* SVFUtil::getProgFunction(SVFModule* svfModule, const std::str
 {
     for (SVFModule::const_callgraphnode_iterator it = svfModule->callgraphnode_begin(), eit = svfModule->callgraphnode_end(); it != eit; ++it)
     {
-        const CallGraphNode *fun = *it;
+        const PTACallGraphNode*fun = *it;
         if (fun->getName()==funName)
             return fun->getFunction();
     }
@@ -431,7 +431,7 @@ const SVFFunction* SVFUtil::getProgEntryFunction(SVFModule* svfModule)
 {
     for (SVFModule::const_callgraphnode_iterator it = svfModule->callgraphnode_begin(), eit = svfModule->callgraphnode_end(); it != eit; ++it)
     {
-        const CallGraphNode *fun = *it;
+        const PTACallGraphNode*fun = *it;
         if (isProgEntryFunction(fun->getFunction()))
             return (fun->getFunction());
     }

@@ -35,12 +35,12 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-CallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
+PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
 {
     /// create nodes
     for (SVFModule::const_callgraphnode_iterator F = svfModule->callgraphnode_begin(), E = svfModule->callgraphnode_end(); F != E; ++F)
     {
-        callgraph->addCallGraphNode(*F);
+        callgraph->addPTACallGraphNode(*F);
     }
 
     /// create edges
@@ -65,7 +65,7 @@ CallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
     return callgraph;
 }
 
-CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
+PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
 {
 
     buildCallGraph(svfModule);

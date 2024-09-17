@@ -142,7 +142,7 @@ void AbstractInterpretation::initWTO()
     }
 
     // Initialize WTO for each function in the module
-    for (const CallGraphNode* cgn : svfir->getModule()->getCallGraphNodeSet())
+    for (const PTACallGraphNode* cgn : svfir->getModule()->getCallGraphNodeSet())
     {
         const SVFFunction* fun = cgn->getFunction();
         auto* wto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(fun)); //TODO: HWG
@@ -158,7 +158,7 @@ void AbstractInterpretation::analyse()
     handleGlobalNode();
     getAbsStateFromTrace(
         icfg->getGlobalICFGNode())[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
-    if (const CallGraphNode* cgn = svfir->getModule()->getCallGraphNode("main"))
+    if (const PTACallGraphNode* cgn = svfir->getModule()->getCallGraphNode("main"))
     {
         ICFGWTO* wto = funcToWTO[aeCallGraph->getCallGraphNode(cgn->getFunction())];
         handleWTOComponents(wto->getWTOComponents());

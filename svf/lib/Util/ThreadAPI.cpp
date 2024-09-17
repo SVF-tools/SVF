@@ -31,9 +31,9 @@
 #define THREADAPI_CPP_
 
 #include "Util/ThreadAPI.h"
-#include "Util/SVFUtil.h"
+#include "Graphs/PTACallGraph.h" // Add this line to include the PTACallGraphNode definition
 #include "SVFIR/SVFIR.h"
-#include "Graphs/CallGraph.h" // Add this line to include the CallGraphNode definition
+#include "Util/SVFUtil.h"
 
 #include <iostream>		/// std output
 #include <stdio.h>

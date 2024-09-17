@@ -36,7 +36,7 @@
 
 namespace SVF
 {
-class CallGraphNode;
+class PTACallGraphNode;
 class SVFModule
 {
     friend class SVFIRWriter;
@@ -48,7 +48,7 @@ public:
     typedef std::vector<SVFGlobalValue*> AliasSetType;
     typedef std::vector<SVFConstant*> ConstantType;
     typedef std::vector<SVFOtherValue*> OtherValueType;
-    typedef std::vector<const CallGraphNode*> CallGraphNodeSetType; 
+    typedef std::vector<const PTACallGraphNode*> CallGraphNodeSetType;
 
     /// Iterators type def
     typedef FunctionSetType::iterator iterator;
@@ -104,7 +104,7 @@ public:
         return !pagReadFromTxt.empty();
     }
 
-    const CallGraphNode* getCallGraphNode(const std::string& name);
+    const PTACallGraphNode* getCallGraphNode(const std::string& name);
 
     inline void addFunctionSet(SVFFunction* svfFunc)
     {
@@ -112,7 +112,7 @@ public:
     }
 
     ///@{
-    inline void addCallGraphNode(CallGraphNode* cgn)
+    inline void addCallGraphNode(PTACallGraphNode* cgn)
     {
         CallGraphNodeSet.push_back(cgn);
     }

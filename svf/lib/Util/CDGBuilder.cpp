@@ -27,7 +27,7 @@
  *      Author: Xiao Cheng
  */
 #include "Util/CDGBuilder.h"
-#include "Graphs/CallGraph.h" // Add this line to include the definition of CallGraphNode
+#include "Graphs/PTACallGraph.h" // Add this line to include the definition of PTACallGraphNode
 
 using namespace SVF;
 using namespace SVFUtil;

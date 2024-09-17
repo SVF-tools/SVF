@@ -117,7 +117,7 @@ void PointerAnalysis::initialize()
     }
     else
     {
-        CallGraph* cg = new CallGraph();
+        PTACallGraph* cg = new PTACallGraph();
         CallGraphBuilder bd(cg,pag->getICFG());
         callgraph = bd.buildCallGraph(pag->getModule());
     }
@@ -415,7 +415,7 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
                     callgraph->addIndirectCallGraphEdge(cs, cs->getCaller(), callee);
                     // FIXME: do we need to update llvm call graph here?
                     // The indirect call is maintained by ourself, We may update llvm's when we need to
-                    //CallGraphNode* callgraphNode = callgraph->getOrInsertFunction(cs.getCaller());
+                    //PTACallGraphNode* callgraphNode = callgraph->getOrInsertFunction(cs.getCaller());
                     //callgraphNode->addCalledFunction(cs,callgraph->getOrInsertFunction(callee));
                 }
             }
@@ -502,7 +502,7 @@ void PointerAnalysis::resolveCPPIndCalls(const CallICFGNode* cs, const PointsTo&
 void PointerAnalysis::validateSuccessTests(std::string fun)
 {
     // check for must alias cases, whether our alias analysis produce the correct results
-    if (const CallGraphNode* cgn = svfMod->getCallGraphNode(fun))
+    if (const PTACallGraphNode* cgn = svfMod->getCallGraphNode(fun))
     {
         const SVFFunction* checkFun = cgn->getFunction();
         if(!checkFun->isUncalledFunction())
@@ -568,7 +568,7 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
 void PointerAnalysis::validateExpectedFailureTests(std::string fun)
 {
 
-    if (const CallGraphNode* cgn = svfMod->getCallGraphNode(fun))
+    if (const PTACallGraphNode* cgn = svfMod->getCallGraphNode(fun))
     {
         const SVFFunction* checkFun = cgn->getFunction();
         if(!checkFun->isUncalledFunction())

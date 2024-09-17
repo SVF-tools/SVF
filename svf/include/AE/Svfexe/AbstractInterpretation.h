@@ -105,7 +105,7 @@ class AbstractInterpretation
 
 public:
     enum ExtAPIType { UNCLASSIFIED, MEMCPY, MEMSET, STRCPY, STRCAT };
-    typedef SCCDetection<CallGraph*> CallGraphSCC;
+    typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     /// Constructor
     AbstractInterpretation();
 
@@ -319,11 +319,11 @@ protected:
 
     ICFG* icfg;
     AEStat* stat;
-    CallGraph* aeCallGraph;
+    PTACallGraph* aeCallGraph;
 
     std::vector<const CallICFGNode*> callSiteStack;
-    Map<const CallGraphNode*, ICFGWTO*> funcToWTO;
-    Set<const CallGraphNode*> recursiveFuns;
+    Map<const PTACallGraphNode*, ICFGWTO*> funcToWTO;
+    Set<const PTACallGraphNode*> recursiveFuns;
 
 private:
     // helper functions in handleCallSite
