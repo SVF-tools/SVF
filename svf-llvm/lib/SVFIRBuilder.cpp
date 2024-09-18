@@ -65,6 +65,20 @@ SVFIR* SVFIRBuilder::build()
     icfgbuilder.build();
     pag->setICFG(icfg);
 
+    // Set icfgnode in memobj
+    for (auto& it : SymbolTableInfo::SymbolInfo()->idToObjMap())
+    {
+        if(!it.second->getValue())
+            continue;
+        if (const Instruction* inst =
+                SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(
+                    it.second->getValue())))
+        {
+            if(llvmModuleSet()->hasICFGNode(inst))
+                it.second->icfgNode = llvmModuleSet()->getICFGNode(inst);
+        }
+    }
+
     CHGraph* chg = new CHGraph(pag->getModule());
     CHGBuilder chgbuilder(chg);
     chgbuilder.buildCHG();
@@ -200,7 +214,17 @@ void SVFIRBuilder::initialiseNodes()
         DBOUT(DPAGBuild, outs() << "add val node " << iter->second << "\n");
         if(iter->second == symTable->blkPtrSymID() || iter->second == symTable->nullPtrSymID())
             continue;
-        pag->addValNode(iter->first, iter->second);
+
+        const ICFGNode* icfgNode = nullptr;
+        if (const Instruction* inst =
+                SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(iter->first)))
+        {
+            if (llvmModuleSet()->hasICFGNode(inst))
+            {
+                icfgNode = llvmModuleSet()->getICFGNode(inst);
+            }
+        }
+        pag->addValNode(iter->first, iter->second, icfgNode);
     }
 
     for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
@@ -831,13 +855,12 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
     if(isIntrinsicInst(cs))
         return;
 
-    const SVFInstruction* svfcall = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
-
     DBOUT(DPAGBuild,
           outs() << "process callsite " << svfcall->toString() << "\n");
 
-    CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(svfcall);
-    RetICFGNode* retBlockNode = pag->getICFG()->getRetICFGNode(svfcall);
+
+    CallICFGNode* callBlockNode = llvmModuleSet()->getCallICFGNode(cs);
+    RetICFGNode* retBlockNode = llvmModuleSet()->getRetICFGNode(cs);
 
     pag->addCallSite(callBlockNode);
 
@@ -1053,10 +1076,10 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
 {
 
     assert(F);
-    const SVFInstruction* svfcall = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
+    CallICFGNode* callICFGNode = llvmModuleSet()->getCallICFGNode(cs);
     const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(F);
     DBOUT(DPAGBuild,
-          outs() << "handle direct call " << svfcall->toString() << " callee " << F->getName().str() << "\n");
+          outs() << "handle direct call " << LLVMUtil::dumpValue(cs) << " callee " << F->getName().str() << "\n");
 
     //Only handle the ret.val. if it's used as a ptr.
     NodeID dstrec = getValueNode(cs);
@@ -1064,7 +1087,6 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
     if (!cs->getType()->isVoidTy())
     {
         NodeID srcret = getReturnNode(svffun);
-        CallICFGNode* callICFGNode = pag->getICFG()->getCallICFGNode(svfcall);
         FunExitICFGNode* exitICFGNode = pag->getICFG()->getFunExitICFGNode(svffun);
         addRetEdge(srcret, dstrec,callICFGNode, exitICFGNode);
     }
@@ -1087,9 +1109,8 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
 
         NodeID dstFA = getValueNode(FA);
         NodeID srcAA = getValueNode(AA);
-        CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(svfcall);
         FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svffun);
-        addCallEdge(srcAA, dstFA, icfgNode, entry);
+        addCallEdge(srcAA, dstFA, callICFGNode, entry);
     }
     //Any remaining actual args must be varargs.
     if (F->isVarArg())
@@ -1100,9 +1121,8 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
         {
             const Value* AA = cs->getArgOperand(itA);
             NodeID vnAA = getValueNode(AA);
-            CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(svfcall);
             FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svffun);
-            addCallEdge(vnAA,vaF, icfgNode,entry);
+            addCallEdge(vnAA,vaF, callICFGNode,entry);
         }
     }
     if(itA != ieA)
@@ -1110,7 +1130,7 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
         /// FIXME: this assertion should be placed for correct checking except
         /// bug program like 188.ammp, 300.twolf
         writeWrnMsg("too many args to non-vararg func.");
-        writeWrnMsg("(" + svfcall->getSourceLoc() + ")");
+        writeWrnMsg("(" + callICFGNode->getSourceLoc() + ")");
 
     }
 }
@@ -1138,10 +1158,9 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
  */
 void SVFIRBuilder::handleIndCall(CallBase* cs)
 {
-    const SVFInstruction* svfcall = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
     const SVFValue* svfcalledval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cs->getCalledOperand());
 
-    const CallICFGNode* cbn = pag->getICFG()->getCallICFGNode(svfcall);
+    const CallICFGNode* cbn = llvmModuleSet()->getCallICFGNode(cs);
     pag->addIndirectCallsites(cbn,pag->getValueNode(svfcalledval));
 }
 
@@ -1292,7 +1311,9 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         else
         {
             if(SVFUtil::isa<RetPE>(edge))
-                icfgNode = pag->getICFG()->getRetICFGNode(curInst);
+                icfgNode =
+                    llvmModuleSet->getRetICFGNode(SVFUtil::cast<Instruction>(
+                        llvmModuleSet->getLLVMValue(curInst)));
             else
                 icfgNode =
                     llvmModuleSet->getICFGNode(SVFUtil::cast<Instruction>(

@@ -111,17 +111,6 @@ private:
     /// Create edges between ICFG nodes across functions
     void addICFGInterEdges(const Instruction*  cs, const Function*  callee);
 
-    /// Add a call node
-    inline CallICFGNode* getCallICFGNode(const SVFInstruction*  cs)
-    {
-        return icfg->getCallICFGNode(cs);
-    }
-    /// Add a return node
-    inline RetICFGNode* getRetICFGNode(const SVFInstruction*  cs)
-    {
-        return icfg->getRetICFGNode(cs);
-    }
-
     inline ICFGNode* getICFGNode(const Instruction* inst) {
         return llvmModuleSet()->getICFGNode(inst);
     }

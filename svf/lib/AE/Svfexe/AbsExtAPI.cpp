@@ -130,7 +130,7 @@ void AbsExtAPI::initExtFunMap()
         assert(lb.getInterval().is_numeral() && ub.getInterval().is_numeral());
         num.getInterval().set_to_top();
         num.getInterval().meet_with(IntervalValue(lb.getInterval().lb(), ub.getInterval().ub()));
-        const ICFGNode* node = icfg->getICFGNode(SVFUtil::cast<SVFInstruction>(callNode->getArgument(0)));
+        const ICFGNode* node = SVFUtil::cast<ValVar>(callNode->getArgumentVar(0))->getICFGNode();
         for (const SVFStmt* stmt: node->getSVFStmts())
         {
             if (SVFUtil::isa<LoadStmt>(stmt))
@@ -283,7 +283,7 @@ void AbsExtAPI::initExtFunMap()
             }
             else
             {
-                const ICFGNode* addrNode = svfir->getICFG()->getICFGNode(SVFUtil::cast<SVFInstruction>(svfir->getBaseObj(objId)->getValue()));
+                const ICFGNode* addrNode = svfir->getBaseObj(objId)->getICFGNode();
                 for (const SVFStmt* stmt2: addrNode->getSVFStmts())
                 {
                     if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
@@ -474,7 +474,7 @@ IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValu
         }
         else
         {
-            const ICFGNode* addrNode = svfir->getICFG()->getICFGNode(SVFUtil::cast<SVFInstruction>(svfir->getBaseObj(objId)->getValue()));
+            const ICFGNode* addrNode = svfir->getBaseObj(objId)->getICFGNode();
             for (const SVFStmt* stmt2: addrNode->getSVFStmts())
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))

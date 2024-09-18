@@ -373,8 +373,8 @@ void MemObj::setFieldSensitive()
 /*!
  * Constructor of a memory object
  */
-MemObj::MemObj(SymID id, ObjTypeInfo* ti, const SVFValue* val) :
-    typeInfo(ti), refVal(val), symId(id)
+MemObj::MemObj(SymID id, ObjTypeInfo* ti, const SVFValue* val, const ICFGNode* node) :
+    typeInfo(ti), refVal(val), symId(id), icfgNode(node)
 {
 }
 

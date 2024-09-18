@@ -381,6 +381,7 @@ class MemObj
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class SVFIRBuilder;
 
 private:
     /// Type information of this object
@@ -390,9 +391,11 @@ private:
     /// The unique id to represent this symbol
     SymID symId;
 
+    const ICFGNode* icfgNode;
+
 public:
     /// Constructor
-    MemObj(SymID id, ObjTypeInfo* ti, const SVFValue* val = nullptr);
+    MemObj(SymID id, ObjTypeInfo* ti, const SVFValue* val = nullptr, const ICFGNode* node = nullptr);
 
     /// Destructor
     virtual ~MemObj()
@@ -406,6 +409,12 @@ public:
     inline const SVFValue* getValue() const
     {
         return refVal;
+    }
+
+    /// Get the reference value to this object
+    inline const ICFGNode* getICFGNode() const
+    {
+        return icfgNode;
     }
 
     /// Get the memory object id

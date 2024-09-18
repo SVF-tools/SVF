@@ -222,47 +222,6 @@ ICFG::~ICFG()
     icfgNodeToSVFLoopVec.clear();
 }
 
-/// Get a basic block ICFGNode
-ICFGNode* ICFG::getICFGNode(const SVFInstruction* inst)
-{
-    ICFGNode* node;
-    if(SVFUtil::isNonInstricCallSite(inst))
-        node = getCallICFGNode(inst);
-    else if(SVFUtil::isIntrinsicInst(inst))
-        node = getIntraICFGNode(inst);
-    else
-        node = getIntraICFGNode(inst);
-
-    assert (node!=nullptr && "no ICFGNode for this instruction?");
-    return node;
-}
-
-
-CallICFGNode* ICFG::getCallICFGNode(const SVFInstruction* inst)
-{
-    assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
-    assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-    CallICFGNode* node = getCallBlock(inst);
-    assert (node!=nullptr && "no CallICFGNode for this instruction?");
-    return node;
-}
-
-RetICFGNode* ICFG::getRetICFGNode(const SVFInstruction* inst)
-{
-    assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
-    assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-    RetICFGNode* node = getRetBlock(inst);
-    assert (node!=nullptr && "no RetICFGNode for this instruction?");
-    return node;
-}
-
-IntraICFGNode* ICFG::getIntraICFGNode(const SVFInstruction* inst)
-{
-    IntraICFGNode* node = getIntraBlock(inst);
-    assert (node!=nullptr && "no IntraICFGNode for this instruction?");
-    return node;
-}
-
 
 /// Add a function entry node
 FunEntryICFGNode* ICFG::getFunEntryICFGNode(const SVFFunction*  fun)

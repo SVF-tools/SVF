@@ -63,7 +63,7 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
         {
             SymbolTableBuilder builder(pag->getSymbolInfo());
             builder.collectSym(offset);
-            pag->addValNode(svfOffset, pag->getSymbolInfo()->getValSym(svfOffset));
+            pag->addValNode(svfOffset, pag->getSymbolInfo()->getValSym(svfOffset), nullptr);
         }
         ls.addOffsetVarAndGepTypePair(getPAG()->getGNode(getPAG()->getValueNode(svfOffset)), nullptr);
         fields.push_back(ls);
@@ -125,7 +125,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
 {
     const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
     const SVFCallInst* svfCall = SVFUtil::cast<SVFCallInst>(svfInst);
-    const CallICFGNode *callICFGNode = pag->getICFG()->getCallICFGNode(svfInst);
+    const CallICFGNode *callICFGNode = llvmModuleSet()->getCallICFGNode(cs);
 
     if (isHeapAllocExtCallViaRet(callICFGNode))
     {

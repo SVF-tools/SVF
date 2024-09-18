@@ -586,7 +586,7 @@ void SVFG::dump(const std::string& file, bool simple)
 void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, const SVFFunction* callee, SVFGEdgeSetTy& edges)
 {
     CallSiteID csId = getCallSiteID(callICFGNode, callee);
-    RetICFGNode* retICFGNode = pag->getICFG()->getRetICFGNode(callICFGNode->getCallSite());
+    const RetICFGNode* retICFGNode = callICFGNode->getRetICFGNode();
 
     // Find inter direct call edges between actual param and formal param.
     if (pag->hasCallSiteArgsMap(callICFGNode) && pag->hasFunArgsList(callee))

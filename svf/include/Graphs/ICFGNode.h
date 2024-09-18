@@ -482,6 +482,12 @@ public:
     {
         return SVFUtil::cast<SVFCallInst>(cs)->getArgOperand(ArgNo);
     }
+
+    const SVFVar* getArgumentVar(u32_t ArgNo) const
+    {
+        return getActualParms()[ArgNo];
+    }
+
     const SVFType* getType() const
     {
         return SVFUtil::cast<SVFCallInst>(cs)->getType();

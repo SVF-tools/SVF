@@ -70,7 +70,7 @@ void BufOverflowDetector::detect(AbstractState& as, const ICFGNode* node)
                     }
                     else
                     {
-                        const ICFGNode* addrNode = svfir->getICFG()->getICFGNode(SVFUtil::cast<SVFInstruction>(svfir->getBaseObj(objId)->getValue()));
+                        const ICFGNode* addrNode = svfir->getBaseObj(objId)->getICFGNode();
                         for (const SVFStmt* stmt2 : addrNode->getSVFStmts())
                         {
                             if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
@@ -477,7 +477,7 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
         else
         {
             // if the object is not a constant size object, get the size from the addrStmt
-            const ICFGNode* addrNode = svfir->getICFG()->getICFGNode(SVFUtil::cast<SVFInstruction>(svfir->getBaseObj(objId)->getValue()));
+            const ICFGNode* addrNode = svfir->getBaseObj(objId)->getICFGNode();
             for (const SVFStmt* stmt2 : addrNode->getSVFStmts())
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))

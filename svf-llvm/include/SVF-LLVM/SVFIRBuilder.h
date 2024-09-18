@@ -272,7 +272,7 @@ protected:
     {
         LLVMContext& cxt = LLVMModuleSet::getLLVMModuleSet()->getContext();
         ConstantPointerNull* constNull = ConstantPointerNull::get(PointerType::getUnqual(cxt));
-        NodeID nullPtr = pag->addValNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(constNull),pag->getNullPtr());
+        NodeID nullPtr = pag->addValNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(constNull),pag->getNullPtr(), nullptr);
         setCurrentLocation(constNull, nullptr);
         addBlackHoleAddrEdge(pag->getBlkPtr());
         return nullPtr;
@@ -505,6 +505,11 @@ protected:
     //@}
 
     AccessPath getAccessPathFromBaseNode(NodeID nodeId);
+
+private:
+    LLVMModuleSet* llvmModuleSet() {
+        return LLVMModuleSet::getLLVMModuleSet();
+    }
 };
 
 } // End namespace SVF

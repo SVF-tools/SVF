@@ -531,9 +531,9 @@ private:
     /// add node into SVFIR
     //@{
     /// Add a value (pointer) node
-    inline NodeID addValNode(const SVFValue* val, NodeID i)
+    inline NodeID addValNode(const SVFValue* val, NodeID i, const ICFGNode* icfgNode)
     {
-        SVFVar *node = new ValVar(val,i);
+        SVFVar *node = new ValVar(val,i, ValVar::ValNode, icfgNode);
         return addValNode(val, node, i);
     }
     /// Add a memory obj node
