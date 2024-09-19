@@ -191,7 +191,7 @@ void CDGBuilder::buildICFGNodeControlMap()
             const SVFBasicBlock *controllingBB = it2.first;
             const ICFGNode *controlNode = it.first->getICFGNodeList().back();
             if (const CallICFGNode* callNode =
-                    SVFUtil::dyn_cast<CallICFGNode>(controlNode))
+                        SVFUtil::dyn_cast<CallICFGNode>(controlNode))
             {
                 // not a branch statement:
                 //  invoke void %3(ptr noundef nonnull align 8 dereferenceable(8) %1, ptr noundef %2)
@@ -207,18 +207,20 @@ void CDGBuilder::buildICFGNodeControlMap()
                 for (s32_t pos: it2.second)
                 {
                     if (const IntraICFGNode* intraNode =
-                            dyn_cast<IntraICFGNode>(controlNode))
+                                dyn_cast<IntraICFGNode>(controlNode))
                     {
                         assert(intraNode->getSVFStmts().size() == 1 &&
                                "not a branch stmt?");
                         const SVFVar* condition =
                             SVFUtil::cast<BranchStmt>(
                                 intraNode->getSVFStmts().front())
-                                ->getCondition();
+                            ->getCondition();
                         _controlDG->addCDGEdgeFromSrcDst(controlNode, controllee,
                                                          condition,
                                                          pos);
-                    } else {
+                    }
+                    else
+                    {
                         // not a branch statement:
                         //  invoke void %3(ptr noundef nonnull align 8 dereferenceable(8) %1, ptr noundef %2)
                         //          to label %invoke.cont1 unwind label %lpad
