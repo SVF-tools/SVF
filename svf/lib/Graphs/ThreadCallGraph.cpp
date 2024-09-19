@@ -44,77 +44,77 @@ ThreadCallGraph::ThreadCallGraph() :
 }
 
 
-/*
- * Update call graph using pointer analysis results
- * (1) resolve function pointers for non-fork calls
- * (2) resolve function pointers for fork sites
- * (3) resolve function pointers for parallel_for sites
- */
-void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
-{
-
-    PointerAnalysis::CallEdgeMap::const_iterator iter = pta->getIndCallMap().begin();
-    PointerAnalysis::CallEdgeMap::const_iterator eiter = pta->getIndCallMap().end();
-    for (; iter != eiter; iter++)
-    {
-        const CallICFGNode* cs = iter->first;
-        const CallGraph::FunctionSet &functions = iter->second;
-        for (CallGraph::FunctionSet::const_iterator func_iter =
-                    functions.begin(); func_iter != functions.end(); func_iter++)
-        {
-            const SVFFunction* callee = *func_iter;
-            this->addIndirectCallGraphEdge(cs, cs->getCaller(), callee);
-        }
-    }
-
-    // Fork sites
-    for (CallSiteSet::const_iterator it = forksitesBegin(), eit = forksitesEnd(); it != eit; ++it)
-    {
-        const SVFValue* forkedval = tdAPI->getForkedFun(*it);
-        if(SVFUtil::dyn_cast<SVFFunction>(forkedval)==nullptr)
-        {
-            SVFIR* pag = pta->getPAG();
-            const NodeBS targets = pta->getPts(pag->getValueNode(forkedval)).toNodeBS();
-            for (NodeBS::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ii++)
-            {
-                if(ObjVar* objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
-                {
-                    const MemObj* obj = pag->getObject(objPN);
-                    if(obj->isFunction())
-                    {
-                        const SVFFunction* svfCallee = SVFUtil::cast<SVFFunction>(obj->getValue());
-                        this->addIndirectForkEdge(*it, svfCallee);
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-/*!
- * Update join edge using pointer analysis results
- */
-void ThreadCallGraph::updateJoinEdge(PointerAnalysis* pta)
-{
-
-    for (CallSiteSet::const_iterator it = joinsitesBegin(), eit = joinsitesEnd(); it != eit; ++it)
-    {
-        const SVFValue* jointhread = tdAPI->getJoinedThread(*it);
-        // find its corresponding fork sites first
-        CallSiteSet forkset;
-        for (CallSiteSet::const_iterator it = forksitesBegin(), eit = forksitesEnd(); it != eit; ++it)
-        {
-            const SVFValue* forkthread = tdAPI->getForkedThread(*it);
-            if (pta->alias(jointhread, forkthread))
-            {
-                forkset.insert(*it);
-            }
-        }
-        assert(!forkset.empty() && "Can't find a forksite for this join!!");
-        addDirectJoinEdge(*it,forkset);
-    }
-}
+///*
+// * Update call graph using pointer analysis results
+// * (1) resolve function pointers for non-fork calls
+// * (2) resolve function pointers for fork sites
+// * (3) resolve function pointers for parallel_for sites
+// */
+//void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
+//{
+//
+//    PointerAnalysis::CallEdgeMap::const_iterator iter = pta->getIndCallMap().begin();
+//    PointerAnalysis::CallEdgeMap::const_iterator eiter = pta->getIndCallMap().end();
+//    for (; iter != eiter; iter++)
+//    {
+//        const CallICFGNode* cs = iter->first;
+//        const CallGraph::FunctionSet &functions = iter->second;
+//        for (CallGraph::FunctionSet::const_iterator func_iter =
+//                    functions.begin(); func_iter != functions.end(); func_iter++)
+//        {
+//            const SVFFunction* callee = *func_iter;
+//            this->addIndirectCallGraphEdge(cs, cs->getCaller(), callee);
+//        }
+//    }
+//
+//    // Fork sites
+//    for (CallSiteSet::const_iterator it = forksitesBegin(), eit = forksitesEnd(); it != eit; ++it)
+//    {
+//        const SVFValue* forkedval = tdAPI->getForkedFun(*it);
+//        if(SVFUtil::dyn_cast<SVFFunction>(forkedval)==nullptr)
+//        {
+//            SVFIR* pag = pta->getPAG();
+//            const NodeBS targets = pta->getPts(pag->getValueNode(forkedval)).toNodeBS();
+//            for (NodeBS::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ii++)
+//            {
+//                if(ObjVar* objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
+//                {
+//                    const MemObj* obj = pag->getObject(objPN);
+//                    if(obj->isFunction())
+//                    {
+//                        const SVFFunction* svfCallee = SVFUtil::cast<SVFFunction>(obj->getValue());
+//                        this->addIndirectForkEdge(*it, svfCallee);
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
+//
+//
+///*!
+// * Update join edge using pointer analysis results
+// */
+//void ThreadCallGraph::updateJoinEdge(PointerAnalysis* pta)
+//{
+//
+//    for (CallSiteSet::const_iterator it = joinsitesBegin(), eit = joinsitesEnd(); it != eit; ++it)
+//    {
+//        const SVFValue* jointhread = tdAPI->getJoinedThread(*it);
+//        // find its corresponding fork sites first
+//        CallSiteSet forkset;
+//        for (CallSiteSet::const_iterator it = forksitesBegin(), eit = forksitesEnd(); it != eit; ++it)
+//        {
+//            const SVFValue* forkthread = tdAPI->getForkedThread(*it);
+//            if (pta->alias(jointhread, forkthread))
+//            {
+//                forkset.insert(*it);
+//            }
+//        }
+//        assert(!forkset.empty() && "Can't find a forksite for this join!!");
+//        addDirectJoinEdge(*it,forkset);
+//    }
+//}
 
 /*!
  * Add direct fork edges

@@ -130,7 +130,8 @@ bool Steensgaard::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     double cgUpdateStart = stat->getClk();
 
     CallEdgeMap newEdges;
-    onTheFlyCallGraphSolve(callsites, newEdges);
+    CallEdgeMap newForkEdges;
+    onTheFlyCallGraphSolve(callsites, newEdges, newForkEdges);
     NodePairSet cpySrcNodes; /// nodes as a src of a generated new copy edge
     for (CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end();
             it != eit; ++it)
@@ -140,6 +141,14 @@ bool Steensgaard::updateCallGraph(const CallSiteToFunPtrMap& callsites)
                 cit != ecit; ++cit)
         {
             connectCaller2CalleeParams(it->first, *cit, cpySrcNodes);
+        }
+    }
+    for (CallEdgeMap::iterator it = newForkEdges.begin(), eit = newForkEdges.end(); it != eit; it++){
+        for (FunctionSet::iterator cit = it->second.begin(),
+                ecit = it->second.end();
+                cit != ecit; ++cit)
+        {
+            connectCaller2ForkedFunParams(it->first, *cit, cpySrcNodes);
         }
     }
     for (NodePairSet::iterator it = cpySrcNodes.begin(),
@@ -152,7 +161,7 @@ bool Steensgaard::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     double cgUpdateEnd = stat->getClk();
     timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
 
-    return (!newEdges.empty());
+    return (!(newEdges.empty() && newForkEdges.empty()));
 }
 
 void Steensgaard::heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet& cpySrcNodes)
@@ -282,6 +291,49 @@ void Steensgaard::connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFu
         {
             writeWrnMsg("too many args to non-vararg func.");
             writeWrnMsg("(" + cs->getSourceLoc() + ")");
+        }
+    }
+}
+
+/*!
+ * Connect formal and actual parameters for indirect forksites
+ */
+void Steensgaard::connectCaller2ForkedFunParams(const CallICFGNode* cs, const SVFFunction* F,
+                                   NodePairSet& cpySrcNodes)
+{
+    assert(F);
+
+    DBOUT(DAndersen, outs() << "connect parameters from indirect forksite "
+                            << cs.getInstruction()->toString() << " to forked function "
+                            << *F << "\n");
+
+    const CallICFGNode* callBlockNode = cs;
+
+    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(F))
+    {
+        // connect actual and formal param
+        const SVFIR::SVFVarList& csArgList =
+            pag->getCallSiteArgsList(callBlockNode);
+        const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(F);
+
+        // pthread_create has 4 parameters
+        assert(csArgList.size() == 4 && "num of forksite args is not 4");
+        // forked functions are of type void *()(void *args)
+        assert(funArgList.size() == 1 && "num of forked function args is not 1");
+
+        const PAGNode *cs_arg = csArgList[3];
+        const PAGNode *fun_arg = funArgList[0];
+
+        if(cs_arg->isPointer() && fun_arg->isPointer())
+        {
+            DBOUT(DAndersen, outs() << "process actual parm"
+                    << cs_arg->toString() << "\n");
+            NodeID srcAA = getEC(cs_arg->getId());
+            NodeID dstFA = getEC(fun_arg->getId());
+            if (addCopyEdge(srcAA, dstFA))
+            {
+                cpySrcNodes.insert(std::make_pair(srcAA, dstFA));
+            }
         }
     }
 }

@@ -155,7 +155,7 @@ public:
     TCT(PointerAnalysis* p) :pta(p),TCTNodeNum(0),TCTEdgeNum(0),MaxCxtSize(0)
     {
         tcg = SVFUtil::cast<ThreadCallGraph>(pta->getCallGraph());
-        tcg->updateCallGraph(pta);
+        //tcg->updateCallGraph(pta);
         //tcg->updateJoinEdge(pta);
         tcgSCC = pta->getCallGraphSCC();
         tcgSCC->find();

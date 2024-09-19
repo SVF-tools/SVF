@@ -199,6 +199,9 @@ protected:
     /// On the fly call graph construction
     virtual void onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges);
 
+    /// On the fly call graph construction respecting forksite
+    virtual void onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges, CallEdgeMap& newForkEdges);
+
     /// Normalize points-to information for field-sensitive analysis,
     /// i.e., replace fieldObj with baseObj if it is field-insensitive
     virtual void normalizePointsTo();

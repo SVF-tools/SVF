@@ -34,7 +34,7 @@
 #include <signal.h>
 
 #include "Graphs/CHG.h"
-#include "Graphs/CallGraph.h"
+#include "Graphs/ThreadCallGraph.h"
 #include "Graphs/SCC.h"
 #include "MemoryModel/AbstractPointsToDS.h"
 #include "MemoryModel/ConditionalPT.h"

@@ -130,6 +130,10 @@ protected:
     void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F,
                                     NodePairSet& cpySrcNodes);
 
+    /// Connect formal and actual parameters for indirect forksites
+    void connectCaller2ForkedFunParams(const CallICFGNode* cs, const SVFFunction* F,
+                                    NodePairSet& cpySrcNodes);
+
 private:
     static Steensgaard* steens; // static instance
     NodeToEquivClassMap nodeToECMap;

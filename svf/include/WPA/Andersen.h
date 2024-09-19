@@ -315,7 +315,12 @@ protected:
     virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
 
     /// Connect formal and actual parameters for indirect callsites
-    void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F, NodePairSet& cpySrcNodes);
+    void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F,
+                                    NodePairSet& cpySrcNodes);
+
+    /// Connect formal and actual parameters for indirect forksites
+    void connectCaller2ForkedFunParams(const CallICFGNode* cs, const SVFFunction* F,
+                                       NodePairSet& cpySrcNodes);
 
     /// Merge sub node to its rep
     virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);

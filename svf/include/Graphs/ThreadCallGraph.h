@@ -31,7 +31,7 @@
 #define RCG_H_
 
 #include "Graphs/CallGraph.h"
-#include "MemoryModel/PointerAnalysisImpl.h"
+//#include "MemoryModel/PointerAnalysisImpl.h"
 
 namespace SVF
 {
@@ -190,10 +190,10 @@ public:
     }
     //@}
 
-    /// Update call graph using pointer results
-    void updateCallGraph(PointerAnalysis* pta);
-    /// Update join edge using pointer analysis results
-    void updateJoinEdge(PointerAnalysis* pta);
+//    /// Update call graph using pointer results
+//    void updateCallGraph(PointerAnalysis* pta);
+//    /// Update join edge using pointer analysis results
+//    void updateJoinEdge(PointerAnalysis* pta);
 
 
     /// Get call graph edge via call instruction
@@ -247,6 +247,14 @@ public:
                 }
             }
         }
+    }
+    //@}
+
+    /// Get callees from an indirect callsite
+    ///@{
+    inline CallEdgeMap& getIndForkMap()
+    {
+        return indirectForkMap;
     }
     //@}
 
@@ -407,6 +415,8 @@ private:
     CallInstToForkEdgesMap callinstToThreadForkEdgesMap; ///< Map a call instruction to its corresponding fork edges
     CallInstToJoinEdgesMap callinstToThreadJoinEdgesMap; ///< Map a call instruction to its corresponding join edges
     CallInstToParForEdgesMap callinstToHareParForEdgesMap; ///< Map a call instruction to its corresponding hare_parallel_for edges
+
+    CallEdgeMap indirectForkMap; ///< Indirect call map
 };
 
 } // End namespace SVF
