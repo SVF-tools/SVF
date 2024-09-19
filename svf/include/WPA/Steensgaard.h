@@ -23,7 +23,6 @@ class Steensgaard : public AndersenBase
 public:
     typedef Map<NodeID, NodeID> NodeToEquivClassMap;
     typedef Map<NodeID, Set<NodeID>> NodeToSubsMap;
-    typedef OrderedMap<const CallICFGNode*, NodeID> CallSite2DummyValPN;
 
     /// Constructor
     Steensgaard(SVFIR* _pag) : AndersenBase(_pag, Steensgaard_WPA, true) {}
@@ -98,6 +97,11 @@ public:
         else
             return it->second;
     }
+    /// Universal API for getting the substitude of a ConsG Node
+    virtual inline NodeID getSubstitudeID(NodeID id) const
+    {
+        return getEC(id);
+    }
     void setEC(NodeID node, NodeID rep);
 
     inline Set<NodeID>& getSubNodes(NodeID id)
@@ -115,20 +119,6 @@ public:
     {
         return consCG->addCopyCGEdge(src, dst);
     }
-
-protected:
-    CallSite2DummyValPN
-    callsite2DummyValPN; ///< Map an instruction to a dummy obj which
-    ///< created at an indirect callsite, which invokes
-    ///< a heap allocator
-    void heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet& cpySrcNodes);
-
-//    /// Update call graph for the input indirect callsites
-//    virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
-
-    /// Connect formal and actual parameters for indirect callsites
-    void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F,
-                                    NodePairSet& cpySrcNodes);
 
 private:
     static Steensgaard* steens; // static instance
