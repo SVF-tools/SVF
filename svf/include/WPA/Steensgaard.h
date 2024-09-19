@@ -116,6 +116,19 @@ public:
         return consCG->addCopyCGEdge(src, dst);
     }
 
+    /// Worklist operations
+    //@{
+    inline NodeID popFromWorklist() override
+    {
+        return getEC(worklist.pop());
+    }
+
+    inline void pushIntoWorklist(NodeID id) override
+    {
+        worklist.push(getEC(id));
+    }
+    //@}
+
 protected:
     CallSite2DummyValPN
     callsite2DummyValPN; ///< Map an instruction to a dummy obj which

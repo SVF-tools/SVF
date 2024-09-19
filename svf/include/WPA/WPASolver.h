@@ -148,7 +148,7 @@ protected:
 
     /// Worklist operations
     //@{
-    inline NodeID popFromWorklist()
+    virtual inline NodeID popFromWorklist()
     {
         return sccRepNode(worklist.pop());
     }
