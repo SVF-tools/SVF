@@ -149,12 +149,23 @@ void ConstraintGraph::buildCG()
  */
 void ConstraintGraph::clearSolitaries()
 {
+    /// We don't remove return SVFVar from an indirect callsite
+    NodeSet retFromIndCalls;
+    for(auto cs_pair : pag->getIndirectCallsites())
+    {
+        const RetICFGNode* retBlockNode = cs_pair.first->getRetICFGNode();
+        if(pag->callsiteHasRet(retBlockNode))
+            retFromIndCalls.insert(pag->getCallSiteRet(retBlockNode)->getId());
+    }
+
     Set<ConstraintNode*> nodesToRemove;
     for (auto it = this->begin(); it != this->end(); ++it)
     {
         if (it->second->hasIncomingEdge() || it->second->hasOutgoingEdge())
             continue;
         if (pag->getGNode(it->first)->isPointer())
+            continue;
+        if (retFromIndCalls.find(it->first)!=retFromIndCalls.end())
             continue;
         nodesToRemove.insert(it->second);
     }

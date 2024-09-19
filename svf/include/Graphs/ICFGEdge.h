@@ -192,6 +192,12 @@ public:
     {
         callPEs.push_back(callPE);
     }
+    /// Return call ICFGNode at the callsite
+    inline const CallICFGNode* getCallSite() const
+    {
+        assert(SVFUtil::isa<CallICFGNode>(getSrcNode()) && "not a CallICFGNode?");
+        return SVFUtil::cast<CallICFGNode>(getSrcNode());
+    }
     /// Add get parameter edge to this CallCFGEdge
     inline const std::vector<const CallPE*>& getCallPEs() const
     {
@@ -243,6 +249,9 @@ public:
     {
         return retPE;
     }
+    /// Return call ICFGNode at the callsite
+    const CallICFGNode* getCallSite() const;
+
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const RetCFGEdge*)
