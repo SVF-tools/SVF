@@ -419,7 +419,7 @@ const SVFFunction* SVFUtil::getProgFunction(SVFModule* svfModule, const std::str
 {
     for (SVFModule::const_callgraphnode_iterator it = svfModule->callgraphnode_begin(), eit = svfModule->callgraphnode_end(); it != eit; ++it)
     {
-        const PTACallGraphNode*fun = *it;
+        const CallGraphNode*fun = *it;
         if (fun->getName()==funName)
             return fun->getFunction();
     }
@@ -431,7 +431,7 @@ const SVFFunction* SVFUtil::getProgEntryFunction(SVFModule* svfModule)
 {
     for (SVFModule::const_callgraphnode_iterator it = svfModule->callgraphnode_begin(), eit = svfModule->callgraphnode_end(); it != eit; ++it)
     {
-        const PTACallGraphNode*fun = *it;
+        const CallGraphNode*fun = *it;
         if (isProgEntryFunction(fun->getFunction()))
             return (fun->getFunction());
     }

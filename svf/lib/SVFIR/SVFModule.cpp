@@ -21,7 +21,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "SVFIR/SVFModule.h"
-#include "Graphs/PTACallGraph.h"
 #include "SVFIR/SymbolTableInfo.h"
 #include "Util/Options.h"
 #include "Util/SVFStat.h"
@@ -40,7 +39,7 @@ SVFModule::~SVFModule()
         delete c;
     for (const SVFValue* o : OtherValueSet)
         delete o;
-    for (const PTACallGraphNode* cgn : CallGraphNodeSet)
+    for (const CallGraphNode* cgn : CallGraphNodeSet)
          delete cgn;
 
     NodeIDAllocator::unset();
@@ -49,9 +48,9 @@ SVFModule::~SVFModule()
 }
 
 
-const PTACallGraphNode* SVFModule::getCallGraphNode(const std::string& name)
+const CallGraphNode* SVFModule::getCallGraphNode(const std::string& name)
 {
-    for (const PTACallGraphNode* cgn : getCallGraphNodeSet())
+    for (const CallGraphNode* cgn : getCallGraphNodeSet())
     {
         if (cgn->getName() == name)
         {

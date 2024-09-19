@@ -246,7 +246,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
     svfModule->addFunctionSet(svfFunc);
 
     NodeID id = callGraphNodeNum;
-    PTACallGraphNode* callGraphNode = new PTACallGraphNode(id, svfFunc);
+    CallGraphNode* callGraphNode = new CallGraphNode(id, svfFunc);
     svfModule->addCallGraphNode(callGraphNode);
     callGraphNodeNum++;
     // std::printf("callGraphNodeNum: %d\n",callGraphNodeNum);

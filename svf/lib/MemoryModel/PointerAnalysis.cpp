@@ -125,7 +125,7 @@ void PointerAnalysis::initialize()
 
     // dump callgraph
     if (Options::CallGraphDotGraph())
-        getCallGraph()->dump("callgraph_initial");
+        getCallGraph()->dump("pta_callgraph_initial");
 }
 
 
@@ -502,7 +502,7 @@ void PointerAnalysis::resolveCPPIndCalls(const CallICFGNode* cs, const PointsTo&
 void PointerAnalysis::validateSuccessTests(std::string fun)
 {
     // check for must alias cases, whether our alias analysis produce the correct results
-    if (const PTACallGraphNode* cgn = svfMod->getCallGraphNode(fun))
+    if (const CallGraphNode* cgn = svfMod->getCallGraphNode(fun))
     {
         const SVFFunction* checkFun = cgn->getFunction();
         if(!checkFun->isUncalledFunction())
@@ -568,7 +568,7 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
 void PointerAnalysis::validateExpectedFailureTests(std::string fun)
 {
 
-    if (const PTACallGraphNode* cgn = svfMod->getCallGraphNode(fun))
+    if (const CallGraphNode* cgn = svfMod->getCallGraphNode(fun))
     {
         const SVFFunction* checkFun = cgn->getFunction();
         if(!checkFun->isUncalledFunction())
