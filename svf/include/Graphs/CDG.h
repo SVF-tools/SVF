@@ -42,7 +42,7 @@ typedef GenericEdge<CDGNode> GenericCDGEdgeTy;
 class CDGEdge : public GenericCDGEdgeTy
 {
 public:
-    typedef std::pair<const SVFValue *, s32_t> BranchCondition;
+    typedef std::pair<const SVFVar *, s32_t> BranchCondition;
 
     /// Constructor
     CDGEdge(CDGNode *s, CDGNode *d) : GenericCDGEdgeTy(s, d, 0)
@@ -73,7 +73,7 @@ public:
         return brConditions;
     }
 
-    void insertBranchCondition(const SVFValue *pNode, s32_t branchID)
+    void insertBranchCondition(const SVFVar *pNode, s32_t branchID)
     {
         brConditions.insert(std::make_pair(pNode, branchID));
     }
@@ -288,7 +288,7 @@ public:
     }
 
     /// Add CDG edges from nodeid pair
-    void addCDGEdgeFromSrcDst(const ICFGNode *src, const ICFGNode *dst, const SVFValue *pNode, s32_t branchID);
+    void addCDGEdgeFromSrcDst(const ICFGNode *src, const ICFGNode *dst, const SVFVar *pNode, s32_t branchID);
 
 };
 } // end namespace SVF
