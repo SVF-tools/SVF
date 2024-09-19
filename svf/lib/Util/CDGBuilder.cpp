@@ -88,15 +88,14 @@ s64_t CDGBuilder::getBBSuccessorBranchID(const SVFBasicBlock *BB, const SVFBasic
     ICFG *icfg = PAG::getPAG()->getICFG();
     assert(!BB->getICFGNodeList().empty() && "empty bb?");
     const ICFGNode *pred = BB->back();
-    const ICFGEdge *edge = nullptr;
-    for (const auto &node: Succ->getICFGNodeList())
+    if (const CallICFGNode* callNode = dyn_cast<CallICFGNode>(pred))
     {
-        if (const ICFGEdge *e = icfg->getICFGEdge(pred, node, ICFGEdge::ICFGEdgeK::IntraCF))
-        {
-            edge = e;
-            break;
-        }
+        // not a branch statement:
+        //  invoke void %3(ptr noundef nonnull align 8 dereferenceable(8) %1, ptr noundef %2)
+        //          to label %invoke.cont1 unwind label %lpad
+        pred = callNode->getRetICFGNode();
     }
+    const ICFGEdge *edge = icfg->getICFGEdge(pred, Succ->front(), ICFGEdge::ICFGEdgeK::IntraCF);
     if (const IntraCFGEdge *intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge))
     {
         if(intraEdge->getCondition())
@@ -190,9 +189,15 @@ void CDGBuilder::buildICFGNodeControlMap()
         for (const auto &it2: it.second)
         {
             const SVFBasicBlock *controllingBB = it2.first;
-            //            const ICFGNode *controlNode = _bbToNode[it.first].first;
-            //            if(!controlNode) continue;
             const ICFGNode *controlNode = it.first->getICFGNodeList().back();
+            if (const CallICFGNode* callNode =
+                    SVFUtil::dyn_cast<CallICFGNode>(controlNode))
+            {
+                // not a branch statement:
+                //  invoke void %3(ptr noundef nonnull align 8 dereferenceable(8) %1, ptr noundef %2)
+                //          to label %invoke.cont1 unwind label %lpad
+                controlNode = callNode->getRetICFGNode();
+            }
             if (!controlNode) continue;
             // controlNode control at pos
             for (const auto &controllee: controllingBB->getICFGNodeList())
@@ -201,9 +206,28 @@ void CDGBuilder::buildICFGNodeControlMap()
                 _nodeDependentOnMap[controllee][controlNode].insert(it2.second.begin(), it2.second.end());
                 for (s32_t pos: it2.second)
                 {
-                    _controlDG->addCDGEdgeFromSrcDst(controlNode, controllee,
-                                                     SVFUtil::dyn_cast<IntraICFGNode>(controlNode)->getInst(),
-                                                     pos);
+                    if (const IntraICFGNode* intraNode =
+                            dyn_cast<IntraICFGNode>(controlNode))
+                    {
+                        assert(intraNode->getSVFStmts().size() == 1 &&
+                               "not a branch stmt?");
+                        const SVFVar* condition =
+                            SVFUtil::cast<BranchStmt>(
+                                intraNode->getSVFStmts().front())
+                                ->getCondition();
+                        _controlDG->addCDGEdgeFromSrcDst(controlNode, controllee,
+                                                         condition,
+                                                         pos);
+                    } else {
+                        // not a branch statement:
+                        //  invoke void %3(ptr noundef nonnull align 8 dereferenceable(8) %1, ptr noundef %2)
+                        //          to label %invoke.cont1 unwind label %lpad
+                        SVFIR* pag = PAG::getPAG();
+                        _controlDG->addCDGEdgeFromSrcDst(
+                            controlNode, controllee,
+                            pag->getGNode(pag->getNullPtr()), pos);
+                    }
+
                 }
             }
         }
