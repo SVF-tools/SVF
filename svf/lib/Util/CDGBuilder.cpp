@@ -95,15 +95,7 @@ s64_t CDGBuilder::getBBSuccessorBranchID(const SVFBasicBlock *BB, const SVFBasic
         //          to label %invoke.cont1 unwind label %lpad
         pred = callNode->getRetICFGNode();
     }
-    const ICFGEdge *edge = nullptr;
-    for (const auto &node: Succ->getICFGNodeList())
-    {
-        if (const ICFGEdge *e = icfg->getICFGEdge(pred, node, ICFGEdge::ICFGEdgeK::IntraCF))
-        {
-            edge = e;
-            break;
-        }
-    }
+    const ICFGEdge *edge = icfg->getICFGEdge(pred, Succ->front(), ICFGEdge::ICFGEdgeK::IntraCF);
     if (const IntraCFGEdge *intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge))
     {
         if(intraEdge->getCondition())
@@ -230,9 +222,10 @@ void CDGBuilder::buildICFGNodeControlMap()
                         // not a branch statement:
                         //  invoke void %3(ptr noundef nonnull align 8 dereferenceable(8) %1, ptr noundef %2)
                         //          to label %invoke.cont1 unwind label %lpad
-                        _controlDG->addCDGEdgeFromSrcDst(controlNode, controllee,
-                                                         nullptr,
-                                                         pos);
+                        SVFIR* pag = PAG::getPAG();
+                        _controlDG->addCDGEdgeFromSrcDst(
+                            controlNode, controllee,
+                            pag->getGNode(pag->getNullPtr()), pos);
                     }
 
                 }
