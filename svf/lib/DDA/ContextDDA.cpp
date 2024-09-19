@@ -354,15 +354,19 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
             }
             return true;
         }
-        else if(const ICFGNode* node = mem->getICFGNode())
+        else if(const GenericNodeBase* gNode = mem->getGNode())
         {
-            const SVFFunction* svfFun = node->getFun();
-            if(_ander->isInRecursion(svfFun))
-                return true;
-            if(var.get_cond().isConcreteCxt() == false)
-                return true;
-            if(_pag->getICFG()->isInLoop(node))
-                return true;
+            if (const auto& node =
+                    SVFUtil::dyn_cast<ICFGNode>(gNode))
+            {
+                const SVFFunction* svfFun = node->getFun();
+                if(_ander->isInRecursion(svfFun))
+                    return true;
+                if(var.get_cond().isConcreteCxt() == false)
+                    return true;
+                if(_pag->getICFG()->isInLoop(node))
+                    return true;
+            }
         }
     }
     return false;

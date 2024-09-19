@@ -283,7 +283,7 @@ void AbsExtAPI::initExtFunMap()
             }
             else
             {
-                const ICFGNode* addrNode = svfir->getBaseObj(objId)->getICFGNode();
+                const ICFGNode* addrNode = SVFUtil::cast<ICFGNode>(svfir->getBaseObj(objId)->getGNode());
                 for (const SVFStmt* stmt2: addrNode->getSVFStmts())
                 {
                     if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
@@ -474,8 +474,8 @@ IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValu
         }
         else
         {
-            const ICFGNode* addrNode = svfir->getBaseObj(objId)->getICFGNode();
-            for (const SVFStmt* stmt2: addrNode->getSVFStmts())
+            const ICFGNode* icfgNode = SVFUtil::cast<ICFGNode>( svfir->getBaseObj(objId)->getGNode());
+            for (const SVFStmt* stmt2: icfgNode->getSVFStmts())
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
                 {

@@ -75,7 +75,7 @@ SVFIR* SVFIRBuilder::build()
                     it.second->getValue())))
         {
             if(llvmModuleSet()->hasICFGNode(inst))
-                it.second->icfgNode = llvmModuleSet()->getICFGNode(inst);
+                it.second->gNode = llvmModuleSet()->getICFGNode(inst);
         }
     }
 

@@ -134,46 +134,50 @@ protected:
 };
 
 
-/*!
- * Generic node on the graph as base class
- */
-template<class NodeTy,class EdgeTy>
-class GenericNode
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+class GenericNodeBase {
 
 public:
-    typedef NodeTy NodeType;
-    typedef EdgeTy EdgeType;
-    /// Edge kind
-    typedef s64_t GNodeK;
-    typedef OrderedSet<EdgeType*, typename EdgeType::equalGEdge> GEdgeSetTy;
-    /// Edge iterator
-    ///@{
-    typedef typename GEdgeSetTy::iterator iterator;
-    typedef typename GEdgeSetTy::const_iterator const_iterator;
-    ///@}
+    enum GNodeK
+    {
+        // ICFG node kinds
+        IntraBlock,
+        FunEntryBlock,
+        FunExitBlock,
+        FunCallBlock,
+        FunRetBlock,
+        GlobalBlock,
 
-private:
-    NodeID id;		///< Node ID
-    GNodeK nodeKind;	///< Node kind
+        // IRGraph node kinds
+        ValNode,
+        ObjNode,
+        RetNode,
+        VarargNode,
+        GepValNode,
+        GepObjNode,
+        FIObjNode,
+        DummyValNode,
+        DummyObjNode,
 
-    GEdgeSetTy InEdges; ///< all incoming edge of this node
-    GEdgeSetTy OutEdges; ///< all outgoing edge of this node
+        // VFG node kinds
+        Addr, Copy, Gep, Store, Load, Cmp, BinaryOp, UnaryOp, Branch, TPhi, TIntraPhi, TInterPhi,
+        MPhi, MIntraPhi, MInterPhi, FRet, ARet, AParm, FParm,
+        APIN, APOUT, FPIN, FPOUT, NPtr, DummyVProp,
 
-public:
-    /// Constructor
-    GenericNode(NodeID i, GNodeK k): id(i),nodeKind(k)
+        CallNodeKd,
+        CDNodeKd,
+        CFLNodeKd,
+        CHNodeKd,
+        ConstraintNodeKd,
+
+        TCTNodeKd,
+
+        DCHNodeKd,
+        OtherKd
+    };
+
+    GenericNodeBase(NodeID i, GNodeK k): id(i),nodeKind(k)
     {
 
-    }
-
-    /// Destructor
-    virtual ~GenericNode()
-    {
-        for (auto * edge : OutEdges)
-            delete edge;
     }
 
     /// Get ID
@@ -186,6 +190,50 @@ public:
     inline GNodeK getNodeKind() const
     {
         return nodeKind;
+    }
+
+protected:
+    NodeID id;		///< Node ID
+    GNodeK nodeKind;	///< Node kind
+};
+
+/*!
+ * Generic node on the graph as base class
+ */
+template<class NodeTy,class EdgeTy>
+class GenericNode: public GenericNodeBase
+{
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
+public:
+    typedef NodeTy NodeType;
+    typedef EdgeTy EdgeType;
+    /// Edge kind
+    typedef OrderedSet<EdgeType*, typename EdgeType::equalGEdge> GEdgeSetTy;
+    /// Edge iterator
+    ///@{
+    typedef typename GEdgeSetTy::iterator iterator;
+    typedef typename GEdgeSetTy::const_iterator const_iterator;
+    ///@}
+
+private:
+
+    GEdgeSetTy InEdges; ///< all incoming edge of this node
+    GEdgeSetTy OutEdges; ///< all outgoing edge of this node
+
+public:
+    /// Constructor
+    GenericNode(NodeID i, GNodeK k): GenericNodeBase(i, k)
+    {
+
+    }
+
+    /// Destructor
+    virtual ~GenericNode()
+    {
+        for (auto * edge : OutEdges)
+            delete edge;
     }
 
     /// Get incoming/outgoing edge set
@@ -334,6 +382,16 @@ public:
             return nullptr;
     }
     //@}
+
+    static inline bool classof(const GenericNode<NodeTy, EdgeTy>*)
+    {
+        return true;
+    }
+
+    static inline bool classof(const GenericNodeBase*)
+    {
+        return true;
+    }
 };
 
 /*

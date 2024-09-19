@@ -73,7 +73,7 @@ public:
 
     typedef std::vector<const Function*> FuncVector;
 
-    DCHNode(const DIType* diType, NodeID i = 0, GNodeK k = 0)
+    DCHNode(const DIType* diType, NodeID i = 0, GNodeK k = GNodeK::DCHNodeKd)
         : GenericNode<DCHNode, DCHEdge>(i, k), vtable(nullptr), flags(0)
     {
         this->diType = diType;
