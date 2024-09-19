@@ -46,7 +46,7 @@ public:
         steens = nullptr;
     }
 
-    virtual void solveWorklist();
+    virtual void solveWorklist() override;
 
     void processAllAddr();
 
@@ -69,18 +69,18 @@ public:
     //@}
 
     /// Operation of points-to set
-    virtual inline const PointsTo& getPts(NodeID id)
+    virtual inline const PointsTo& getPts(NodeID id) override
     {
         return getPTDataTy()->getPts(getEC(id));
     }
     /// pts(id) = pts(id) U target
-    virtual inline bool unionPts(NodeID id, const PointsTo& target)
+    virtual inline bool unionPts(NodeID id, const PointsTo& target) override
     {
         id = getEC(id);
         return getPTDataTy()->unionPts(id, target);
     }
     /// pts(id) = pts(id) U pts(ptd)
-    virtual inline bool unionPts(NodeID id, NodeID ptd)
+    virtual inline bool unionPts(NodeID id, NodeID ptd) override
     {
         id = getEC(id);
         ptd = getEC(ptd);
@@ -137,7 +137,7 @@ protected:
     void heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet& cpySrcNodes);
 
     /// Update call graph for the input indirect callsites
-    virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
+    virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites) override;
 
     /// Connect formal and actual parameters for indirect callsites
     void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F,
