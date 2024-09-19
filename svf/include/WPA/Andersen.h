@@ -82,10 +82,11 @@ public:
     virtual void finalize() override;
 
     /// Implement it in child class to update call graph
-    virtual inline bool updateCallGraph(const CallSiteToFunPtrMap&) override
-    {
-        return false;
-    }
+    virtual bool updateCallGraph(const CallSiteToFunPtrMap&) override;
+
+    /// Connect formal and actual parameters for indirect callsites
+    virtual void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F,
+                                    NodePairSet& cpySrcNodes) { };
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -311,8 +312,8 @@ protected:
         return false;
     }
 
-    /// Update call graph for the input indirect callsites
-    virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
+//    /// Update call graph for the input indirect callsites
+//    virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
 
     /// Connect formal and actual parameters for indirect callsites
     void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F, NodePairSet& cpySrcNodes);

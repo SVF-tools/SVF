@@ -187,6 +187,37 @@ void AndersenBase::cleanConsCG(NodeID id)
     assert(!consCG->hasGNode(id) && "this is either a rep nodeid or a sub nodeid should have already been merged to its field-insensitive base! ");
 }
 
+bool AndersenBase::updateCallGraph(const CallSiteToFunPtrMap& callsites)
+{
+
+    double cgUpdateStart = stat->getClk();
+
+    CallEdgeMap newEdges;
+    onTheFlyCallGraphSolve(callsites, newEdges);
+    NodePairSet cpySrcNodes; /// nodes as a src of a generated new copy edge
+    for (CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end();
+         it != eit; ++it)
+    {
+        for (FunctionSet::iterator cit = it->second.begin(),
+                                   ecit = it->second.end();
+             cit != ecit; ++cit)
+        {
+            connectCaller2CalleeParams(it->first, *cit, cpySrcNodes);
+        }
+    }
+    for (NodePairSet::iterator it = cpySrcNodes.begin(),
+                               eit = cpySrcNodes.end();
+         it != eit; ++it)
+    {
+        pushIntoWorklist(it->first);
+    }
+
+    double cgUpdateEnd = stat->getClk();
+    timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
+
+    return (!newEdges.empty());
+}
+
 void AndersenBase::normalizePointsTo()
 {
     SVFIR::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
@@ -648,34 +679,34 @@ NodeStack& Andersen::SCCDetect()
     return getSCCDetector()->topoNodeStack();
 }
 
-/*!
- * Update call graph for the input indirect callsites
- */
-bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites)
-{
-
-    double cgUpdateStart = stat->getClk();
-
-    CallEdgeMap newEdges;
-    onTheFlyCallGraphSolve(callsites,newEdges);
-    NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
-    for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it )
-    {
-        for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
-        {
-            connectCaller2CalleeParams(it->first,*cit,cpySrcNodes);
-        }
-    }
-    for(NodePairSet::iterator it = cpySrcNodes.begin(), eit = cpySrcNodes.end(); it!=eit; ++it)
-    {
-        pushIntoWorklist(it->first);
-    }
-
-    double cgUpdateEnd = stat->getClk();
-    timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
-
-    return (!newEdges.empty());
-}
+///*!
+// * Update call graph for the input indirect callsites
+// */
+//bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites)
+//{
+//
+//    double cgUpdateStart = stat->getClk();
+//
+//    CallEdgeMap newEdges;
+//    onTheFlyCallGraphSolve(callsites,newEdges);
+//    NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
+//    for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it )
+//    {
+//        for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
+//        {
+//            connectCaller2CalleeParams(it->first,*cit,cpySrcNodes);
+//        }
+//    }
+//    for(NodePairSet::iterator it = cpySrcNodes.begin(), eit = cpySrcNodes.end(); it!=eit; ++it)
+//    {
+//        pushIntoWorklist(it->first);
+//    }
+//
+//    double cgUpdateEnd = stat->getClk();
+//    timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
+//
+//    return (!newEdges.empty());
+//}
 
 void Andersen::heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet &cpySrcNodes)
 {

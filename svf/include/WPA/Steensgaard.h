@@ -123,8 +123,8 @@ protected:
     ///< a heap allocator
     void heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet& cpySrcNodes);
 
-    /// Update call graph for the input indirect callsites
-    virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
+//    /// Update call graph for the input indirect callsites
+//    virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
 
     /// Connect formal and actual parameters for indirect callsites
     void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F,

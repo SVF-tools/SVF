@@ -124,36 +124,36 @@ void Steensgaard::processAllAddr()
     }
 }
 
-bool Steensgaard::updateCallGraph(const CallSiteToFunPtrMap& callsites)
-{
-
-    double cgUpdateStart = stat->getClk();
-
-    CallEdgeMap newEdges;
-    onTheFlyCallGraphSolve(callsites, newEdges);
-    NodePairSet cpySrcNodes; /// nodes as a src of a generated new copy edge
-    for (CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end();
-            it != eit; ++it)
-    {
-        for (FunctionSet::iterator cit = it->second.begin(),
-                ecit = it->second.end();
-                cit != ecit; ++cit)
-        {
-            connectCaller2CalleeParams(it->first, *cit, cpySrcNodes);
-        }
-    }
-    for (NodePairSet::iterator it = cpySrcNodes.begin(),
-            eit = cpySrcNodes.end();
-            it != eit; ++it)
-    {
-        pushIntoWorklist(it->first);
-    }
-
-    double cgUpdateEnd = stat->getClk();
-    timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
-
-    return (!newEdges.empty());
-}
+//bool Steensgaard::updateCallGraph(const CallSiteToFunPtrMap& callsites)
+//{
+//
+//    double cgUpdateStart = stat->getClk();
+//
+//    CallEdgeMap newEdges;
+//    onTheFlyCallGraphSolve(callsites, newEdges);
+//    NodePairSet cpySrcNodes; /// nodes as a src of a generated new copy edge
+//    for (CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end();
+//            it != eit; ++it)
+//    {
+//        for (FunctionSet::iterator cit = it->second.begin(),
+//                ecit = it->second.end();
+//                cit != ecit; ++cit)
+//        {
+//            connectCaller2CalleeParams(it->first, *cit, cpySrcNodes);
+//        }
+//    }
+//    for (NodePairSet::iterator it = cpySrcNodes.begin(),
+//            eit = cpySrcNodes.end();
+//            it != eit; ++it)
+//    {
+//        pushIntoWorklist(it->first);
+//    }
+//
+//    double cgUpdateEnd = stat->getClk();
+//    timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
+//
+//    return (!newEdges.empty());
+//}
 
 void Steensgaard::heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet& cpySrcNodes)
 {
