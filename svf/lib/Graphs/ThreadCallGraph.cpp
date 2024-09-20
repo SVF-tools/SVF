@@ -140,7 +140,8 @@ bool ThreadCallGraph::addDirectForkEdge(const CallICFGNode* cs)
         addEdge(edge);
         addThreadForkEdgeSetMap(cs, edge);
         return true;
-    }else
+    }
+    else
         return false;
 }
 
@@ -164,7 +165,8 @@ bool ThreadCallGraph::addIndirectForkEdge(const CallICFGNode* cs, const SVFFunct
         addEdge(edge);
         addThreadForkEdgeSetMap(cs, edge);
         return true;
-    }else
+    }
+    else
         return false;
 }
 

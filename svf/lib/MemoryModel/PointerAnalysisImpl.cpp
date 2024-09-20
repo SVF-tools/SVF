@@ -513,13 +513,13 @@ void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites,
  * newEdges is the new indirect call edges discovered
  */
 void BVDataPTAImpl::onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& callsites,
-                                                CallEdgeMap& newForkEdges)
+        CallEdgeMap& newForkEdges)
 {
     // add indirect fork edges
     if(ThreadCallGraph *tdCallGraph = SVFUtil::dyn_cast<ThreadCallGraph>(callgraph))
     {
         for(CallSiteSet::const_iterator it = tdCallGraph->forksitesBegin(),
-                                         eit = tdCallGraph->forksitesEnd(); it != eit; ++it)
+                eit = tdCallGraph->forksitesEnd(); it != eit; ++it)
         {
             const SVFValue* forkedVal =tdCallGraph->getThreadAPI()->getForkedFun(*it);
             if(SVFUtil::dyn_cast<SVFFunction>(forkedVal) == nullptr)

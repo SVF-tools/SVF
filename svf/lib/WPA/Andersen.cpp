@@ -196,11 +196,11 @@ bool AndersenBase::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     onTheFlyCallGraphSolve(callsites, newEdges);
     NodePairSet cpySrcNodes; /// nodes as a src of a generated new copy edge
     for (CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end();
-         it != eit; ++it)
+            it != eit; ++it)
     {
         for (FunctionSet::iterator cit = it->second.begin(),
-                                   ecit = it->second.end();
-             cit != ecit; ++cit)
+                ecit = it->second.end();
+                cit != ecit; ++cit)
         {
             connectCaller2CalleeParams(it->first, *cit, cpySrcNodes);
         }
@@ -209,8 +209,8 @@ bool AndersenBase::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     bool hasNewForkEdges = updateThreadCallGraph(callsites, cpySrcNodes);
 
     for (NodePairSet::iterator it = cpySrcNodes.begin(),
-                               eit = cpySrcNodes.end();
-         it != eit; ++it)
+            eit = cpySrcNodes.end();
+            it != eit; ++it)
     {
         pushIntoWorklist(it->first);
     }
@@ -222,14 +222,15 @@ bool AndersenBase::updateCallGraph(const CallSiteToFunPtrMap& callsites)
 }
 
 bool AndersenBase::updateThreadCallGraph(const CallSiteToFunPtrMap& callsites,
-                                         NodePairSet& cpySrcNodes)
+        NodePairSet& cpySrcNodes)
 {
     CallEdgeMap newForkEdges;
     onTheFlyThreadCallGraphSolve(callsites, newForkEdges);
-    for (CallEdgeMap::iterator it = newForkEdges.begin(), eit = newForkEdges.end(); it != eit; it++){
+    for (CallEdgeMap::iterator it = newForkEdges.begin(), eit = newForkEdges.end(); it != eit; it++)
+    {
         for (FunctionSet::iterator cit = it->second.begin(),
-                                   ecit = it->second.end();
-             cit != ecit; ++cit)
+                ecit = it->second.end();
+                cit != ecit; ++cit)
         {
             connectCaller2ForkedFunParams(it->first, *cit, cpySrcNodes);
         }
@@ -241,13 +242,13 @@ bool AndersenBase::updateThreadCallGraph(const CallSiteToFunPtrMap& callsites,
  * Connect formal and actual parameters for indirect forksites
  */
 void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const SVFFunction* F,
-                                             NodePairSet& cpySrcNodes)
+        NodePairSet& cpySrcNodes)
 {
     assert(F);
 
     DBOUT(DAndersen, outs() << "connect parameters from indirect forksite "
-                            << cs.getInstruction()->toString() << " to forked function "
-                            << *F << "\n");
+          << cs.getInstruction()->toString() << " to forked function "
+          << *F << "\n");
 
     ThreadCallGraph *tdCallGraph = SVFUtil::dyn_cast<ThreadCallGraph>(callgraph);
 
@@ -257,7 +258,7 @@ void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const S
     if(cs_arg->isPointer() && fun_arg->isPointer())
     {
         DBOUT(DAndersen, outs() << "process actual parm"
-                                << cs_arg->toString() << "\n");
+              << cs_arg->toString() << "\n");
         NodeID srcAA = sccRepNode(cs_arg->getId());
         NodeID dstFA = sccRepNode(fun_arg->getId());
         if (addCopyEdge(srcAA, dstFA))
@@ -271,12 +272,12 @@ void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const S
 // * Connect formal and actual parameters for indirect callsites
 // */
 void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs,
-                                              const SVFFunction* F, NodePairSet &cpySrcNodes)
+        const SVFFunction* F, NodePairSet &cpySrcNodes)
 {
     assert(F);
 
     DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " <<
-                         cs.getInstruction()->toString() << " to callee " << *F << "\n");
+          cs.getInstruction()->toString() << " to callee " << *F << "\n");
 
     const CallICFGNode* callBlockNode = cs;
     const RetICFGNode* retBlockNode = cs->getRetICFGNode();

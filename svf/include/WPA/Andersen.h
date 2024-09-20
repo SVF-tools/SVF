@@ -94,11 +94,11 @@ public:
 
     /// Connect formal and actual parameters for indirect forksites
     virtual void connectCaller2ForkedFunParams(const CallICFGNode* cs, const SVFFunction* F,
-                                                 NodePairSet& cpySrcNodes);
+            NodePairSet& cpySrcNodes);
 
     /// Connect formal and actual parameters for indirect callsites
     virtual void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F,
-                                    NodePairSet& cpySrcNodes);
+                                            NodePairSet& cpySrcNodes);
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -177,7 +177,7 @@ protected:
     /// Constraint Graph
     ConstraintGraph* consCG;
     CallSite2DummyValPN
-        callsite2DummyValPN; ///< Map an instruction to a dummy obj which
+    callsite2DummyValPN; ///< Map an instruction to a dummy obj which
     ///< created at an indirect callsite, which invokes
     ///< a heap allocator
     void heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet& cpySrcNodes);

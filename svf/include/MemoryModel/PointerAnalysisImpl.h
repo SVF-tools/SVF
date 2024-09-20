@@ -201,7 +201,7 @@ protected:
 
     /// On the fly thread call graph construction respecting forksite
     virtual void onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& callsites,
-                                              CallEdgeMap& newForkEdges);
+            CallEdgeMap& newForkEdges);
 
     /// Normalize points-to information for field-sensitive analysis,
     /// i.e., replace fieldObj with baseObj if it is field-insensitive
