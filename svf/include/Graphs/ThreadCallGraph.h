@@ -31,13 +31,13 @@
 #define RCG_H_
 
 #include "Graphs/CallGraph.h"
-#include "MemoryModel/PointerAnalysisImpl.h"
 
 namespace SVF
 {
 
 class SVFModule;
 class ThreadAPI;
+class PointerAnalysis;
 /*!
  * PTA thread fork edge from fork site to the entry of a start routine function
  */
@@ -201,7 +201,8 @@ public:
     /// whether this call instruction has a valid call graph edge
     inline bool hasThreadForkEdge(const CallICFGNode* cs) const
     {
-        return callinstToThreadForkEdgesMap.find(cs) != callinstToThreadForkEdgesMap.end();
+        return callinstToThreadForkEdgesMap.find(cs) !=
+               callinstToThreadForkEdgesMap.end();
     }
     inline ForkEdgeSet::const_iterator getForkEdgeBegin(const CallICFGNode* cs) const
     {
@@ -345,8 +346,8 @@ public:
 
     /// Add direct/indirect thread fork edges
     //@{
-    void addDirectForkEdge(const CallICFGNode* cs);
-    void addIndirectForkEdge(const CallICFGNode* cs, const SVFFunction* callee);
+    bool addDirectForkEdge(const CallICFGNode* cs);
+    bool addIndirectForkEdge(const CallICFGNode* cs, const SVFFunction* callee);
     //@}
 
     /// Add thread join edges

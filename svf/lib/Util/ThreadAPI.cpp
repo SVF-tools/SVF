@@ -172,12 +172,22 @@ const SVFValue* ThreadAPI::getForkedFun(const CallICFGNode *inst) const
     return inst->getArgument(2);
 }
 
-/// Return the forth argument of the call,
-/// Note that, it is the sole argument of start routine ( a void* pointer )
-const SVFValue* ThreadAPI::getActualParmAtForkSite(const CallICFGNode *inst) const
+const SVFVar* ThreadAPI::getActualParmAtForkSite(const CallICFGNode* inst) const
 {
-    assert(isTDFork(inst) && "not a thread fork function!");
-    return inst->getArgument(3);
+    assert(PAG::getPAG()->hasCallSiteArgsMap(inst) && "forksite has no args list!");
+    const SVFIR::SVFVarList& csArgList = PAG::getPAG()->getCallSiteArgsList(inst);
+    // pthread_create has 4 parameters
+    assert(csArgList.size() == 4 && "num of forksite args is not 4");
+    return csArgList[3];
+}
+
+const SVFVar* ThreadAPI::getFormalParmOfForkedFun(const SVFFunction* F) const
+{
+    assert(PAG::getPAG()->hasFunArgsList(F) && "forked function has no args list!");
+    const SVFIR::SVFVarList& funArgList = PAG::getPAG()->getFunArgsList(F);
+    // in pthread, forked functions are of type void *()(void *args)
+    assert(funArgList.size() == 1 && "num of pthread forked function args is not 1!");
+    return funArgList[0];
 }
 
 const SVFValue* ThreadAPI::getRetParmAtJoinedSite(const CallICFGNode *inst) const

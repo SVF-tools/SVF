@@ -187,6 +187,210 @@ void AndersenBase::cleanConsCG(NodeID id)
     assert(!consCG->hasGNode(id) && "this is either a rep nodeid or a sub nodeid should have already been merged to its field-insensitive base! ");
 }
 
+bool AndersenBase::updateCallGraph(const CallSiteToFunPtrMap& callsites)
+{
+
+    double cgUpdateStart = stat->getClk();
+
+    CallEdgeMap newEdges;
+    onTheFlyCallGraphSolve(callsites, newEdges);
+    NodePairSet cpySrcNodes; /// nodes as a src of a generated new copy edge
+    for (CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end();
+         it != eit; ++it)
+    {
+        for (FunctionSet::iterator cit = it->second.begin(),
+                                   ecit = it->second.end();
+             cit != ecit; ++cit)
+        {
+            connectCaller2CalleeParams(it->first, *cit, cpySrcNodes);
+        }
+    }
+
+    bool hasNewForkEdges = updateThreadCallGraph(callsites, cpySrcNodes);
+
+    for (NodePairSet::iterator it = cpySrcNodes.begin(),
+                               eit = cpySrcNodes.end();
+         it != eit; ++it)
+    {
+        pushIntoWorklist(it->first);
+    }
+
+    double cgUpdateEnd = stat->getClk();
+    timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
+
+    return ((!newEdges.empty()) || hasNewForkEdges);
+}
+
+bool AndersenBase::updateThreadCallGraph(const CallSiteToFunPtrMap& callsites,
+                                         NodePairSet& cpySrcNodes)
+{
+    CallEdgeMap newForkEdges;
+    onTheFlyThreadCallGraphSolve(callsites, newForkEdges);
+    for (CallEdgeMap::iterator it = newForkEdges.begin(), eit = newForkEdges.end(); it != eit; it++){
+        for (FunctionSet::iterator cit = it->second.begin(),
+                                   ecit = it->second.end();
+             cit != ecit; ++cit)
+        {
+            connectCaller2ForkedFunParams(it->first, *cit, cpySrcNodes);
+        }
+    }
+    return !newForkEdges.empty();
+}
+
+/*!
+ * Connect formal and actual parameters for indirect forksites
+ */
+void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const SVFFunction* F,
+                                             NodePairSet& cpySrcNodes)
+{
+    assert(F);
+
+    DBOUT(DAndersen, outs() << "connect parameters from indirect forksite "
+                            << cs.getInstruction()->toString() << " to forked function "
+                            << *F << "\n");
+
+    ThreadCallGraph *tdCallGraph = SVFUtil::dyn_cast<ThreadCallGraph>(callgraph);
+
+    const PAGNode *cs_arg = tdCallGraph->getThreadAPI()->getActualParmAtForkSite(cs);
+    const PAGNode *fun_arg = tdCallGraph->getThreadAPI()->getFormalParmOfForkedFun(F);
+
+    if(cs_arg->isPointer() && fun_arg->isPointer())
+    {
+        DBOUT(DAndersen, outs() << "process actual parm"
+                                << cs_arg->toString() << "\n");
+        NodeID srcAA = sccRepNode(cs_arg->getId());
+        NodeID dstFA = sccRepNode(fun_arg->getId());
+        if (addCopyEdge(srcAA, dstFA))
+        {
+            cpySrcNodes.insert(std::make_pair(srcAA, dstFA));
+        }
+    }
+}
+
+///*!
+// * Connect formal and actual parameters for indirect callsites
+// */
+void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs,
+                                              const SVFFunction* F, NodePairSet &cpySrcNodes)
+{
+    assert(F);
+
+    DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " <<
+                         cs.getInstruction()->toString() << " to callee " << *F << "\n");
+
+    const CallICFGNode* callBlockNode = cs;
+    const RetICFGNode* retBlockNode = cs->getRetICFGNode();
+
+    if(SVFUtil::isHeapAllocExtFunViaRet(F) && pag->callsiteHasRet(retBlockNode))
+    {
+        heapAllocatorViaIndCall(cs,cpySrcNodes);
+    }
+
+    if (pag->funHasRet(F) && pag->callsiteHasRet(retBlockNode))
+    {
+        const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
+        const PAGNode* fun_return = pag->getFunRet(F);
+        if (cs_return->isPointer() && fun_return->isPointer())
+        {
+            NodeID dstrec = sccRepNode(cs_return->getId());
+            NodeID srcret = sccRepNode(fun_return->getId());
+            if(addCopyEdge(srcret, dstrec))
+            {
+                cpySrcNodes.insert(std::make_pair(srcret,dstrec));
+            }
+        }
+        else
+        {
+            DBOUT(DAndersen, outs() << "not a pointer ignored\n");
+        }
+    }
+
+    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(F))
+    {
+
+        // connect actual and formal param
+        const SVFIR::SVFVarList& csArgList = pag->getCallSiteArgsList(callBlockNode);
+        const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(F);
+        //Go through the fixed parameters.
+        DBOUT(DPAGBuild, outs() << "      args:");
+        SVFIR::SVFVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
+        SVFIR::SVFVarList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
+        for (; funArgIt != funArgEit; ++csArgIt, ++funArgIt)
+        {
+            //Some programs (e.g. Linux kernel) leave unneeded parameters empty.
+            if (csArgIt  == csArgEit)
+            {
+                DBOUT(DAndersen, outs() << " !! not enough args\n");
+                break;
+            }
+            const PAGNode *cs_arg = *csArgIt ;
+            const PAGNode *fun_arg = *funArgIt;
+
+            if (cs_arg->isPointer() && fun_arg->isPointer())
+            {
+                DBOUT(DAndersen, outs() << "process actual parm  " << cs_arg->toString() << " \n");
+                NodeID srcAA = sccRepNode(cs_arg->getId());
+                NodeID dstFA = sccRepNode(fun_arg->getId());
+                if(addCopyEdge(srcAA, dstFA))
+                {
+                    cpySrcNodes.insert(std::make_pair(srcAA,dstFA));
+                }
+            }
+        }
+
+        //Any remaining actual args must be varargs.
+        if (F->isVarArg())
+        {
+            NodeID vaF = sccRepNode(pag->getVarargNode(F));
+            DBOUT(DPAGBuild, outs() << "\n      varargs:");
+            for (; csArgIt != csArgEit; ++csArgIt)
+            {
+                const PAGNode *cs_arg = *csArgIt;
+                if (cs_arg->isPointer())
+                {
+                    NodeID vnAA = sccRepNode(cs_arg->getId());
+                    if (addCopyEdge(vnAA,vaF))
+                    {
+                        cpySrcNodes.insert(std::make_pair(vnAA,vaF));
+                    }
+                }
+            }
+        }
+        if(csArgIt != csArgEit)
+        {
+            writeWrnMsg("too many args to non-vararg func.");
+            writeWrnMsg("(" + cs->getSourceLoc() + ")");
+        }
+    }
+}
+
+void AndersenBase::heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet &cpySrcNodes)
+{
+    assert(cs->getCalledFunction() == nullptr && "not an indirect callsite?");
+    const RetICFGNode* retBlockNode = cs->getRetICFGNode();
+    const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
+    NodeID srcret;
+    CallSite2DummyValPN::const_iterator it = callsite2DummyValPN.find(cs);
+    if(it != callsite2DummyValPN.end())
+    {
+        srcret = sccRepNode(it->second);
+    }
+    else
+    {
+        NodeID valNode = pag->addDummyValNode();
+        NodeID objNode = pag->addDummyObjNode(cs->getCallSite()->getType());
+        addPts(valNode,objNode);
+        callsite2DummyValPN.insert(std::make_pair(cs,valNode));
+        consCG->addConstraintNode(new ConstraintNode(valNode),valNode);
+        consCG->addConstraintNode(new ConstraintNode(objNode),objNode);
+        srcret = valNode;
+    }
+
+    NodeID dstrec = sccRepNode(cs_return->getId());
+    if(addCopyEdge(srcret, dstrec))
+        cpySrcNodes.insert(std::make_pair(srcret,dstrec));
+}
+
 void AndersenBase::normalizePointsTo()
 {
     SVFIR::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
@@ -646,157 +850,6 @@ NodeStack& Andersen::SCCDetect()
     timeOfSCCMerges +=  (mergeEnd - mergeStart)/TIMEINTERVAL;
 
     return getSCCDetector()->topoNodeStack();
-}
-
-/*!
- * Update call graph for the input indirect callsites
- */
-bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites)
-{
-
-    double cgUpdateStart = stat->getClk();
-
-    CallEdgeMap newEdges;
-    onTheFlyCallGraphSolve(callsites,newEdges);
-    NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
-    for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it )
-    {
-        for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
-        {
-            connectCaller2CalleeParams(it->first,*cit,cpySrcNodes);
-        }
-    }
-    for(NodePairSet::iterator it = cpySrcNodes.begin(), eit = cpySrcNodes.end(); it!=eit; ++it)
-    {
-        pushIntoWorklist(it->first);
-    }
-
-    double cgUpdateEnd = stat->getClk();
-    timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
-
-    return (!newEdges.empty());
-}
-
-void Andersen::heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet &cpySrcNodes)
-{
-    assert(cs->getCalledFunction() == nullptr && "not an indirect callsite?");
-    const RetICFGNode* retBlockNode = cs->getRetICFGNode();
-    const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
-    NodeID srcret;
-    CallSite2DummyValPN::const_iterator it = callsite2DummyValPN.find(cs);
-    if(it != callsite2DummyValPN.end())
-    {
-        srcret = sccRepNode(it->second);
-    }
-    else
-    {
-        NodeID valNode = pag->addDummyValNode();
-        NodeID objNode = pag->addDummyObjNode(cs->getCallSite()->getType());
-        addPts(valNode,objNode);
-        callsite2DummyValPN.insert(std::make_pair(cs,valNode));
-        consCG->addConstraintNode(new ConstraintNode(valNode),valNode);
-        consCG->addConstraintNode(new ConstraintNode(objNode),objNode);
-        srcret = valNode;
-    }
-
-    NodeID dstrec = sccRepNode(cs_return->getId());
-    if(addCopyEdge(srcret, dstrec))
-        cpySrcNodes.insert(std::make_pair(srcret,dstrec));
-}
-
-/*!
- * Connect formal and actual parameters for indirect callsites
- */
-void Andersen::connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F, NodePairSet &cpySrcNodes)
-{
-    assert(F);
-
-    DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << cs.getInstruction()->toString() << " to callee " << *F << "\n");
-
-    const CallICFGNode* callBlockNode = cs;
-    const RetICFGNode* retBlockNode = cs->getRetICFGNode();
-
-    if(SVFUtil::isHeapAllocExtFunViaRet(F) && pag->callsiteHasRet(retBlockNode))
-    {
-        heapAllocatorViaIndCall(cs,cpySrcNodes);
-    }
-
-    if (pag->funHasRet(F) && pag->callsiteHasRet(retBlockNode))
-    {
-        const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
-        const PAGNode* fun_return = pag->getFunRet(F);
-        if (cs_return->isPointer() && fun_return->isPointer())
-        {
-            NodeID dstrec = sccRepNode(cs_return->getId());
-            NodeID srcret = sccRepNode(fun_return->getId());
-            if(addCopyEdge(srcret, dstrec))
-            {
-                cpySrcNodes.insert(std::make_pair(srcret,dstrec));
-            }
-        }
-        else
-        {
-            DBOUT(DAndersen, outs() << "not a pointer ignored\n");
-        }
-    }
-
-    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(F))
-    {
-
-        // connect actual and formal param
-        const SVFIR::SVFVarList& csArgList = pag->getCallSiteArgsList(callBlockNode);
-        const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(F);
-        //Go through the fixed parameters.
-        DBOUT(DPAGBuild, outs() << "      args:");
-        SVFIR::SVFVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
-        SVFIR::SVFVarList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
-        for (; funArgIt != funArgEit; ++csArgIt, ++funArgIt)
-        {
-            //Some programs (e.g. Linux kernel) leave unneeded parameters empty.
-            if (csArgIt  == csArgEit)
-            {
-                DBOUT(DAndersen, outs() << " !! not enough args\n");
-                break;
-            }
-            const PAGNode *cs_arg = *csArgIt ;
-            const PAGNode *fun_arg = *funArgIt;
-
-            if (cs_arg->isPointer() && fun_arg->isPointer())
-            {
-                DBOUT(DAndersen, outs() << "process actual parm  " << cs_arg->toString() << " \n");
-                NodeID srcAA = sccRepNode(cs_arg->getId());
-                NodeID dstFA = sccRepNode(fun_arg->getId());
-                if(addCopyEdge(srcAA, dstFA))
-                {
-                    cpySrcNodes.insert(std::make_pair(srcAA,dstFA));
-                }
-            }
-        }
-
-        //Any remaining actual args must be varargs.
-        if (F->isVarArg())
-        {
-            NodeID vaF = sccRepNode(pag->getVarargNode(F));
-            DBOUT(DPAGBuild, outs() << "\n      varargs:");
-            for (; csArgIt != csArgEit; ++csArgIt)
-            {
-                const PAGNode *cs_arg = *csArgIt;
-                if (cs_arg->isPointer())
-                {
-                    NodeID vnAA = sccRepNode(cs_arg->getId());
-                    if (addCopyEdge(vnAA,vaF))
-                    {
-                        cpySrcNodes.insert(std::make_pair(vnAA,vaF));
-                    }
-                }
-            }
-        }
-        if(csArgIt != csArgEit)
-        {
-            writeWrnMsg("too many args to non-vararg func.");
-            writeWrnMsg("(" + cs->getSourceLoc() + ")");
-        }
-    }
 }
 
 /*!
