@@ -38,6 +38,7 @@ namespace SVF
 class SVFModule;
 class ICFGNode;
 class CallICFGNode;
+class SVFVar;
 
 /*
  * ThreadAPI class contains interfaces for pthread programs
@@ -128,10 +129,15 @@ public:
     /// Note that, it could be function type or a void* pointer
     const SVFValue* getForkedFun(const CallICFGNode *inst) const;
 
-    /// Return the forth argument of the call,
+    /// Return the actual param of forksite
     /// Note that, it is the sole argument of start routine ( a void* pointer )
-    const SVFValue* getActualParmAtForkSite(const CallICFGNode *inst) const;
+    const SVFVar* getActualParmAtForkSite(const CallICFGNode *inst) const;
+
+    /// Return the formal parm of forked function (the first arg in pthread)
+    const SVFVar* getFormalParmOfForkedFun(const SVFFunction* F) const;
     //@}
+
+
 
     /// Return true if this call create a new thread
     //@{

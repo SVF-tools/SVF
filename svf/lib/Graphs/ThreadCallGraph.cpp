@@ -30,6 +30,8 @@
 #include "SVFIR/SVFModule.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Util/ThreadAPI.h"
+#include "SVFIR/SVFIR.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 
 using namespace SVF;
 using namespace SVFUtil;

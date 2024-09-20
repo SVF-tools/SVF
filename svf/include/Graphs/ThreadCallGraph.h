@@ -31,13 +31,13 @@
 #define RCG_H_
 
 #include "Graphs/CallGraph.h"
-#include "MemoryModel/PointerAnalysisImpl.h"
 
 namespace SVF
 {
 
 class SVFModule;
 class ThreadAPI;
+class PointerAnalysis;
 /*!
  * PTA thread fork edge from fork site to the entry of a start routine function
  */
@@ -201,7 +201,8 @@ public:
     /// whether this call instruction has a valid call graph edge
     inline bool hasThreadForkEdge(const CallICFGNode* cs) const
     {
-        return callinstToThreadForkEdgesMap.find(cs) != callinstToThreadForkEdgesMap.end();
+        return callinstToThreadForkEdgesMap.find(cs) !=
+               callinstToThreadForkEdgesMap.end();
     }
     inline ForkEdgeSet::const_iterator getForkEdgeBegin(const CallICFGNode* cs) const
     {
@@ -247,6 +248,14 @@ public:
                 }
             }
         }
+    }
+    //@}
+
+    /// Get callees from an indirect callsite
+    ///@{
+    inline CallEdgeMap& getIndForkMap()
+    {
+        return indirectForkMap;
     }
     //@}
 
@@ -407,6 +416,8 @@ private:
     CallInstToForkEdgesMap callinstToThreadForkEdgesMap; ///< Map a call instruction to its corresponding fork edges
     CallInstToJoinEdgesMap callinstToThreadJoinEdgesMap; ///< Map a call instruction to its corresponding join edges
     CallInstToParForEdgesMap callinstToHareParForEdgesMap; ///< Map a call instruction to its corresponding hare_parallel_for edges
+
+    CallEdgeMap indirectForkMap; ///< Indirect call map
 };
 
 } // End namespace SVF

@@ -205,6 +205,9 @@ bool AndersenBase::updateCallGraph(const CallSiteToFunPtrMap& callsites)
             connectCaller2CalleeParams(it->first, *cit, cpySrcNodes);
         }
     }
+
+    bool hasNewForkEdges = updateThreadCallGraph(callsites, cpySrcNodes);
+
     for (NodePairSet::iterator it = cpySrcNodes.begin(),
                                eit = cpySrcNodes.end();
          it != eit; ++it)
@@ -215,17 +218,65 @@ bool AndersenBase::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     double cgUpdateEnd = stat->getClk();
     timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
 
-    return (!newEdges.empty());
+    return ((!newEdges.empty()) || hasNewForkEdges);
+}
+
+bool AndersenBase::updateThreadCallGraph(const CallSiteToFunPtrMap& callsites,
+                                         NodePairSet& cpySrcNodes)
+{
+    CallEdgeMap newForkEdges;
+    onTheFlyThreadCallGraphSolve(callsites, newForkEdges);
+    for (CallEdgeMap::iterator it = newForkEdges.begin(), eit = newForkEdges.end(); it != eit; it++){
+        for (FunctionSet::iterator cit = it->second.begin(),
+                                   ecit = it->second.end();
+             cit != ecit; ++cit)
+        {
+            connectCaller2ForkedFunParams(it->first, *cit, cpySrcNodes);
+        }
+    }
+    return !newForkEdges.empty();
+}
+
+/*!
+ * Connect formal and actual parameters for indirect forksites
+ */
+void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const SVFFunction* F,
+                                             NodePairSet& cpySrcNodes)
+{
+    assert(F);
+
+    DBOUT(DAndersen, outs() << "connect parameters from indirect forksite "
+                            << cs.getInstruction()->toString() << " to forked function "
+                            << *F << "\n");
+
+    ThreadCallGraph *tdCallGraph = SVFUtil::dyn_cast<ThreadCallGraph>(callgraph);
+
+    const PAGNode *cs_arg = tdCallGraph->getThreadAPI()->getActualParmAtForkSite(cs);
+    const PAGNode *fun_arg = tdCallGraph->getThreadAPI()->getFormalParmOfForkedFun(F);
+
+    if(cs_arg->isPointer() && fun_arg->isPointer())
+    {
+        DBOUT(DAndersen, outs() << "process actual parm"
+                                << cs_arg->toString() << "\n");
+        NodeID srcAA = sccRepNode(cs_arg->getId());
+        NodeID dstFA = sccRepNode(fun_arg->getId());
+        if (addCopyEdge(srcAA, dstFA))
+        {
+            cpySrcNodes.insert(std::make_pair(srcAA, dstFA));
+        }
+    }
 }
 
 ///*!
 // * Connect formal and actual parameters for indirect callsites
 // */
-void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F, NodePairSet &cpySrcNodes)
+void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs,
+                                              const SVFFunction* F, NodePairSet &cpySrcNodes)
 {
     assert(F);
 
-    DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << cs.getInstruction()->toString() << " to callee " << *F << "\n");
+    DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " <<
+                         cs.getInstruction()->toString() << " to callee " << *F << "\n");
 
     const CallICFGNode* callBlockNode = cs;
     const RetICFGNode* retBlockNode = cs->getRetICFGNode();
@@ -309,6 +360,47 @@ void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs, const SVFF
         {
             writeWrnMsg("too many args to non-vararg func.");
             writeWrnMsg("(" + cs->getSourceLoc() + ")");
+        }
+    }
+}
+
+/*!
+ * On the fly call graph construction respecting forksite
+ * callsites is candidate indirect callsites need to be analyzed based on points-to results
+ * newEdges is the new indirect call edges discovered
+ */
+void AndersenBase::onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& callsites,
+                                                CallEdgeMap& newForkEdges)
+{
+    // add indirect fork edges
+    if(ThreadCallGraph *tdCallGraph = SVFUtil::dyn_cast<ThreadCallGraph>(callgraph))
+    {
+        for(CallSiteSet::const_iterator it = tdCallGraph->forksitesBegin(),
+                                         eit = tdCallGraph->forksitesEnd(); it != eit; ++it)
+        {
+            const SVFValue* forkedVal =tdCallGraph->getThreadAPI()->getForkedFun(*it);
+            if(SVFUtil::dyn_cast<SVFFunction>(forkedVal) == nullptr)
+            {
+                SVFIR *pag = this->getPAG();
+                const NodeBS targets = this->getPts(pag->getValueNode(forkedVal)).toNodeBS();
+                for(NodeBS::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ++ii)
+                {
+                    if(ObjVar *objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
+                    {
+                        const MemObj *obj = pag->getObject(objPN);
+                        if(obj->isFunction())
+                        {
+                            const SVFFunction *svfForkedFun = SVFUtil::cast<SVFFunction>(obj->getValue());
+                            if(tdCallGraph->getIndForkMap()[*it].count(svfForkedFun) == 0)
+                            {
+                                tdCallGraph->addIndirectForkEdge(*it, svfForkedFun);
+                                newForkEdges[*it].insert(svfForkedFun);
+                                tdCallGraph->getIndForkMap()[*it].insert(svfForkedFun);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -47,6 +47,8 @@ namespace SVF
 
 class SVFModule;
 
+class ThreadCallGraph;
+
 /*!
  * Abstract class of inclusion-based Pointer Analysis
  */
@@ -84,12 +86,23 @@ public:
     /// Finalize analysis
     virtual void finalize() override;
 
-    /// Implement it in child class to update call graph
+    /// Update call graph
     virtual bool updateCallGraph(const CallSiteToFunPtrMap&) override;
+
+    /// Update thread call graph
+    virtual bool updateThreadCallGraph(const CallSiteToFunPtrMap&, NodePairSet&);
+
+    /// Connect formal and actual parameters for indirect forksites
+    virtual void connectCaller2ForkedFunParams(const CallICFGNode* cs, const SVFFunction* F,
+                                                 NodePairSet& cpySrcNodes);
 
     /// Connect formal and actual parameters for indirect callsites
     virtual void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F,
                                     NodePairSet& cpySrcNodes);
+
+    /// On the fly thread call graph construction respecting forksite
+    virtual void onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& callsites,
+                                              CallEdgeMap& newForkEdges);
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
