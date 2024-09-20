@@ -128,11 +128,7 @@ public:
     //@}
 
     /// Add copy edge on constraint graph
-    virtual inline bool addCopyEdge(NodeID src, NodeID dst)
-    {
-        assert(false && "this function should never be executed!");
-        return false;
-    }
+    virtual inline bool addCopyEdge(NodeID src, NodeID dst) = 0;
 
     /// dump statistics
     inline void printStat()
