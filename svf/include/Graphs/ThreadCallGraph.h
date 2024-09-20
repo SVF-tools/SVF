@@ -251,14 +251,6 @@ public:
     }
     //@}
 
-    /// Get callees from an indirect callsite
-    ///@{
-    inline CallEdgeMap& getIndForkMap()
-    {
-        return indirectForkMap;
-    }
-    //@}
-
     /// Whether a callsite is a fork or join or hare_parallel_for
     ///@{
     inline bool isForksite(const CallICFGNode* csInst)
@@ -354,8 +346,8 @@ public:
 
     /// Add direct/indirect thread fork edges
     //@{
-    void addDirectForkEdge(const CallICFGNode* cs);
-    void addIndirectForkEdge(const CallICFGNode* cs, const SVFFunction* callee);
+    bool addDirectForkEdge(const CallICFGNode* cs);
+    bool addIndirectForkEdge(const CallICFGNode* cs, const SVFFunction* callee);
     //@}
 
     /// Add thread join edges
@@ -416,8 +408,6 @@ private:
     CallInstToForkEdgesMap callinstToThreadForkEdgesMap; ///< Map a call instruction to its corresponding fork edges
     CallInstToJoinEdgesMap callinstToThreadJoinEdgesMap; ///< Map a call instruction to its corresponding join edges
     CallInstToParForEdgesMap callinstToHareParForEdgesMap; ///< Map a call instruction to its corresponding hare_parallel_for edges
-
-    CallEdgeMap indirectForkMap; ///< Indirect call map
 };
 
 } // End namespace SVF

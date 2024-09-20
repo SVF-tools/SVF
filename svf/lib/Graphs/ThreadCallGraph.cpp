@@ -121,7 +121,7 @@ void ThreadCallGraph::updateJoinEdge(PointerAnalysis* pta)
 /*!
  * Add direct fork edges
  */
-void ThreadCallGraph::addDirectForkEdge(const CallICFGNode* cs)
+bool ThreadCallGraph::addDirectForkEdge(const CallICFGNode* cs)
 {
 
     CallGraphNode* caller = getCallGraphNode(cs->getCaller());
@@ -139,13 +139,15 @@ void ThreadCallGraph::addDirectForkEdge(const CallICFGNode* cs)
 
         addEdge(edge);
         addThreadForkEdgeSetMap(cs, edge);
-    }
+        return true;
+    }else
+        return false;
 }
 
 /*!
  * Add indirect fork edge to update call graph
  */
-void ThreadCallGraph::addIndirectForkEdge(const CallICFGNode* cs, const SVFFunction* calleefun)
+bool ThreadCallGraph::addIndirectForkEdge(const CallICFGNode* cs, const SVFFunction* calleefun)
 {
     CallGraphNode* caller = getCallGraphNode(cs->getCaller());
     CallGraphNode* callee = getCallGraphNode(calleefun);
@@ -161,7 +163,9 @@ void ThreadCallGraph::addIndirectForkEdge(const CallICFGNode* cs, const SVFFunct
 
         addEdge(edge);
         addThreadForkEdgeSetMap(cs, edge);
-    }
+        return true;
+    }else
+        return false;
 }
 
 /*!

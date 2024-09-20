@@ -100,10 +100,6 @@ public:
     virtual void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F,
                                     NodePairSet& cpySrcNodes);
 
-    /// On the fly thread call graph construction respecting forksite
-    virtual void onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& callsites,
-                                              CallEdgeMap& newForkEdges);
-
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const AndersenBase *)

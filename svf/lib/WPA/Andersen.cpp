@@ -364,47 +364,6 @@ void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs,
     }
 }
 
-/*!
- * On the fly call graph construction respecting forksite
- * callsites is candidate indirect callsites need to be analyzed based on points-to results
- * newEdges is the new indirect call edges discovered
- */
-void AndersenBase::onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& callsites,
-                                                CallEdgeMap& newForkEdges)
-{
-    // add indirect fork edges
-    if(ThreadCallGraph *tdCallGraph = SVFUtil::dyn_cast<ThreadCallGraph>(callgraph))
-    {
-        for(CallSiteSet::const_iterator it = tdCallGraph->forksitesBegin(),
-                                         eit = tdCallGraph->forksitesEnd(); it != eit; ++it)
-        {
-            const SVFValue* forkedVal =tdCallGraph->getThreadAPI()->getForkedFun(*it);
-            if(SVFUtil::dyn_cast<SVFFunction>(forkedVal) == nullptr)
-            {
-                SVFIR *pag = this->getPAG();
-                const NodeBS targets = this->getPts(pag->getValueNode(forkedVal)).toNodeBS();
-                for(NodeBS::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ++ii)
-                {
-                    if(ObjVar *objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
-                    {
-                        const MemObj *obj = pag->getObject(objPN);
-                        if(obj->isFunction())
-                        {
-                            const SVFFunction *svfForkedFun = SVFUtil::cast<SVFFunction>(obj->getValue());
-                            if(tdCallGraph->getIndForkMap()[*it].count(svfForkedFun) == 0)
-                            {
-                                tdCallGraph->addIndirectForkEdge(*it, svfForkedFun);
-                                newForkEdges[*it].insert(svfForkedFun);
-                                tdCallGraph->getIndForkMap()[*it].insert(svfForkedFun);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 void AndersenBase::heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet &cpySrcNodes)
 {
     assert(cs->getCalledFunction() == nullptr && "not an indirect callsite?");
