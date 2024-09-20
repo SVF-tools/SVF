@@ -241,8 +241,8 @@ void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs, const SVFF
         const PAGNode* fun_return = pag->getFunRet(F);
         if (cs_return->isPointer() && fun_return->isPointer())
         {
-            NodeID dstrec = getSubstitudeID(cs_return->getId());
-            NodeID srcret = getSubstitudeID(fun_return->getId());
+            NodeID dstrec = sccRepNode(cs_return->getId());
+            NodeID srcret = sccRepNode(fun_return->getId());
             if(addCopyEdge(srcret, dstrec))
             {
                 cpySrcNodes.insert(std::make_pair(srcret,dstrec));
@@ -278,8 +278,8 @@ void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs, const SVFF
             if (cs_arg->isPointer() && fun_arg->isPointer())
             {
                 DBOUT(DAndersen, outs() << "process actual parm  " << cs_arg->toString() << " \n");
-                NodeID srcAA = getSubstitudeID(cs_arg->getId());
-                NodeID dstFA = getSubstitudeID(fun_arg->getId());
+                NodeID srcAA = sccRepNode(cs_arg->getId());
+                NodeID dstFA = sccRepNode(fun_arg->getId());
                 if(addCopyEdge(srcAA, dstFA))
                 {
                     cpySrcNodes.insert(std::make_pair(srcAA,dstFA));
@@ -290,14 +290,14 @@ void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs, const SVFF
         //Any remaining actual args must be varargs.
         if (F->isVarArg())
         {
-            NodeID vaF = getSubstitudeID(pag->getVarargNode(F));
+            NodeID vaF = sccRepNode(pag->getVarargNode(F));
             DBOUT(DPAGBuild, outs() << "\n      varargs:");
             for (; csArgIt != csArgEit; ++csArgIt)
             {
                 const PAGNode *cs_arg = *csArgIt;
                 if (cs_arg->isPointer())
                 {
-                    NodeID vnAA = getSubstitudeID(cs_arg->getId());
+                    NodeID vnAA = sccRepNode(cs_arg->getId());
                     if (addCopyEdge(vnAA,vaF))
                     {
                         cpySrcNodes.insert(std::make_pair(vnAA,vaF));
@@ -322,7 +322,7 @@ void AndersenBase::heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet &
     CallSite2DummyValPN::const_iterator it = callsite2DummyValPN.find(cs);
     if(it != callsite2DummyValPN.end())
     {
-        srcret = getSubstitudeID(it->second);
+        srcret = sccRepNode(it->second);
     }
     else
     {
@@ -335,7 +335,7 @@ void AndersenBase::heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet &
         srcret = valNode;
     }
 
-    NodeID dstrec = getSubstitudeID(cs_return->getId());
+    NodeID dstrec = sccRepNode(cs_return->getId());
     if(addCopyEdge(srcret, dstrec))
         cpySrcNodes.insert(std::make_pair(srcret,dstrec));
 }

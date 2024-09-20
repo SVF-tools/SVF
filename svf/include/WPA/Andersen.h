@@ -121,10 +121,6 @@ public:
     {
         return consCG->sccRepNode(id);
     }
-    virtual inline NodeID getSubstitudeID(NodeID id) const
-    {
-        return sccRepNode(id);
-    }
     inline NodeBS& sccSubNodes(NodeID repId)
     {
         return consCG->sccSubNodes(repId);
@@ -134,6 +130,7 @@ public:
     /// Add copy edge on constraint graph
     virtual inline bool addCopyEdge(NodeID src, NodeID dst)
     {
+        assert(false && "this function should never be executed!");
         return false;
     }
 

@@ -45,7 +45,7 @@ public:
         steens = nullptr;
     }
 
-    virtual void solveWorklist();
+    virtual void solveWorklist() override;
 
     void processAllAddr();
 
@@ -68,18 +68,18 @@ public:
     //@}
 
     /// Operation of points-to set
-    virtual inline const PointsTo& getPts(NodeID id)
+    virtual inline const PointsTo& getPts(NodeID id) override
     {
         return getPTDataTy()->getPts(getEC(id));
     }
     /// pts(id) = pts(id) U target
-    virtual inline bool unionPts(NodeID id, const PointsTo& target)
+    virtual inline bool unionPts(NodeID id, const PointsTo& target) override
     {
         id = getEC(id);
         return getPTDataTy()->unionPts(id, target);
     }
     /// pts(id) = pts(id) U pts(ptd)
-    virtual inline bool unionPts(NodeID id, NodeID ptd)
+    virtual inline bool unionPts(NodeID id, NodeID ptd) override
     {
         id = getEC(id);
         ptd = getEC(ptd);
@@ -97,8 +97,8 @@ public:
         else
             return it->second;
     }
-    /// Universal API for getting the substitude of a ConsG Node
-    virtual inline NodeID getSubstitudeID(NodeID id) const
+    /// Return getEC(id)
+    inline NodeID sccRepNode(NodeID id) const override
     {
         return getEC(id);
     }
@@ -115,7 +115,7 @@ public:
     }
 
     /// Add copy edge on constraint graph
-    virtual inline bool addCopyEdge(NodeID src, NodeID dst)
+    virtual inline bool addCopyEdge(NodeID src, NodeID dst) override
     {
         return consCG->addCopyCGEdge(src, dst);
     }
