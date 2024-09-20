@@ -28,7 +28,7 @@
  */
 #include "Util/CDGBuilder.h"
 #include "Graphs/PTACallGraph.h" // Add this line to include the definition of PTACallGraphNode
-
+#include "Graphs/CallGraph.h"
 using namespace SVF;
 using namespace SVFUtil;
 

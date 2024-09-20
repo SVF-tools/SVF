@@ -33,6 +33,8 @@
 #include "Graphs/SVFG.h"
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/Andersen.h"
+#include "Graphs/CallGraph.h"
+
 
 using namespace SVF;
 using namespace SVFUtil;

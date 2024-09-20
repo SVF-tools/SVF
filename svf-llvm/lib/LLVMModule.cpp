@@ -39,6 +39,7 @@
 #include "MSSA/SVFGBuilder.h"
 #include "llvm/Support/FileSystem.h"
 #include "SVF-LLVM/ObjTypeInference.h"
+#include "Graphs/CallGraph.h"
 
 using namespace std;
 using namespace SVF;
@@ -231,6 +232,25 @@ void LLVMModuleSet::createSVFDataStructure()
                 ifunc.getName().str(), getSVFType(ifunc.getType()));
             svfModule->addAliasSet(svfifunc);
             addGlobalValueMap(&ifunc, svfifunc);
+        }
+    }
+
+    /// create edges
+    for (SVFModule::const_callgraphnode_iterator F = svfModule->callgraphnode_begin(), E = svfModule->callgraphnode_end(); F != E; ++F)
+    {
+        for (const SVFBasicBlock* svfbb : (*F)->getFunction()->getBasicBlockList())
+        {
+            for (const ICFGNode* inst : svfbb->getICFGNodeList())
+            {
+                if (SVFUtil::isNonInstricCallSite(inst))
+                {
+                    const CallICFGNode* callBlockNode = SVFUtil::cast<CallICFGNode>(inst);
+                    if(const SVFFunction* callee = callBlockNode->getCalledFunction())
+                    {
+                        svfModule->callgraph->addDirectCallGraphEdge(callBlockNode,(*F)->getFunction(),callee);
+                    }
+                }
+            }
         }
     }
 }

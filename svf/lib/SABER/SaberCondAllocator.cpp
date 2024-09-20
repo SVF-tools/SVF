@@ -35,6 +35,7 @@
 #include <climits>
 #include <cmath>
 #include "SVFIR/SVFStatements.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;

@@ -29,6 +29,7 @@
 
 #include "Util/SVFUtil.h"
 #include "Graphs/PTACallGraph.h"
+#include "Graphs/CallGraph.h"
 #include "MemoryModel/PointsTo.h"
 #include "Util/Options.h"
 

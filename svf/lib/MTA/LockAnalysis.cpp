@@ -32,6 +32,7 @@
 #include "MTA/MTA.h"
 #include "Util/SVFUtil.h"
 #include "Util/PTAStat.h"
+#include "Graphs/CallGraph.h"
 
 
 using namespace SVF;

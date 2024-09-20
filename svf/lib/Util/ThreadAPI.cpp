@@ -32,6 +32,7 @@
 
 #include "Util/ThreadAPI.h"
 #include "Graphs/PTACallGraph.h" // Add this line to include the PTACallGraphNode definition
+#include "Graphs/CallGraph.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/SVFUtil.h"
 

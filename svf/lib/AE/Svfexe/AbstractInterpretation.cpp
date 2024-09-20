@@ -29,6 +29,7 @@
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
 #include "Util/WorkList.h"
+#include "Graphs/CallGraph.h"
 #include <cmath>
 
 using namespace SVF;

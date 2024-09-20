@@ -31,6 +31,7 @@
 #include "Util/SVFUtil.h"
 #include "Util/CallGraphBuilder.h"
 #include "Graphs/ICFG.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;

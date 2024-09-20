@@ -36,6 +36,8 @@
 #include "MTA/MTAStat.h"
 #include "WPA/Andersen.h"
 #include "Util/SVFUtil.h"
+#include "Graphs/CallGraph.h"
+
 
 using namespace SVF;
 using namespace SVFUtil;

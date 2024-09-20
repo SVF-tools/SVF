@@ -29,6 +29,7 @@
  */
 
 #include "Graphs/PTACallGraph.h"
+#include "Graphs/CallGraph.h"
 #include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include <sstream>

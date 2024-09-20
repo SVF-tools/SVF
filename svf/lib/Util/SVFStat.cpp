@@ -29,6 +29,7 @@
 
 #include "Util/Options.h"
 #include "Util/SVFStat.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace std;

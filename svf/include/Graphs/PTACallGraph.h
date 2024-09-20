@@ -33,7 +33,7 @@
 #include "Graphs/GenericGraph.h"
 #include "SVFIR/SVFValue.h"
 #include "Graphs/ICFG.h"
-#include "Graphs/CallGraph.h"
+//#include "Graphs/CallGraph.h"
 #include <set>
 
 namespace SVF

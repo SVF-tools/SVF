@@ -25,6 +25,7 @@
 #include "Util/Options.h"
 #include "Util/SVFStat.h"
 #include "Util/SVFUtil.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 
@@ -33,8 +34,8 @@ SVFModule* SVFModule::svfModule = nullptr;
 
 SVFModule::~SVFModule()
 {
-    for (const SVFFunction* f : FunctionSet)
-        delete f;
+//    for (const SVFFunction* f : FunctionSet)
+//        delete f;
     for (const SVFConstant* c : ConstantSet)
         delete c;
     for (const SVFValue* o : OtherValueSet)

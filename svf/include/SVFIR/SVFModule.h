@@ -37,6 +37,7 @@
 namespace SVF
 {
 class CallGraphNode;
+class CallGraph;
 class SVFModule
 {
     friend class SVFIRWriter;
@@ -63,6 +64,8 @@ public:
     typedef OtherValueType::const_iterator const_ovalue_iterator;
     typedef CallGraphNodeSetType::iterator callgraphnode_iterator;
     typedef CallGraphNodeSetType::const_iterator const_callgraphnode_iterator;
+
+    CallGraph* callgraph;
 
 private:
     static SVFModule* svfModule;
