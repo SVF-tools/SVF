@@ -40,8 +40,8 @@ SVFModule::~SVFModule()
         delete c;
     for (const SVFValue* o : OtherValueSet)
         delete o;
-    for (const CallGraphNode* cgn : CallGraphNodeSet)
-         delete cgn;
+    // for (const CallGraphNode* cgn : CallGraphNodeSet)
+    //      delete cgn;
 
     NodeIDAllocator::unset();
     ThreadAPI::destroy();
