@@ -115,7 +115,7 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
         const PointsTo& ddaPts = pta->getPts(vtptr);
         const PointsTo& anderPts = ander->getPts(vtptr);
 
-        PTACallGraph* callgraph = ander->getCallGraph();
+        PTACallGraph* callgraph = ander->getPTACallGraph();
         const CallICFGNode* cbn = nIter->second;
 
         if(!callgraph->hasIndCSCallees(cbn))
@@ -162,7 +162,7 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
     outs() << "=================================================\n";
     outs() << "Total virtual callsites: " << vtableToCallSiteMap.size() << "\n";
     outs() << "Total analyzed virtual callsites: " << totalCallsites << "\n";
-    outs() << "Indirect call map size: " << ander->getCallGraph()->getIndCallMap().size() << "\n";
+    outs() << "Indirect call map size: " << ander->getPTACallGraph()->getIndCallMap().size() << "\n";
     outs() << "Precise callsites: " << morePreciseCallsites << "\n";
     outs() << "Zero target callsites: " << zeroTargetCallsites << "\n";
     outs() << "One target callsites: " << oneTargetCallsites << "\n";

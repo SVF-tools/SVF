@@ -485,7 +485,7 @@ void VersionedFlowSensitive::buildDeltaMaps(void)
         {
             PTACallGraphEdge::CallInstSet callsites;
             /// use pre-analysis call graph to approximate all potential callsites
-            ander->getCallGraph()->getIndCallSitesInvokingCallee(fn, callsites);
+            ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fn, callsites);
             isDelta = !callsites.empty();
 
             if (isDelta)
@@ -983,7 +983,7 @@ void VersionedFlowSensitive::readPtsFromFile(const std::string& filename)
 
         readAndSetObjFieldSensitivity(F,"");
 
-        // Update callgraph
+        // Update ptaCallGraph
         updateCallGraph(pag->getIndirectCallsites());
 
         F.close();

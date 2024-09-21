@@ -200,7 +200,7 @@ public:
     }
     //}@
 
-    /// connect PAG edges based on callgraph
+    /// connect PAG edges based on ptaCallGraph
     void updateCallGraph(PTACallGraph* callgraph);
 
 protected:

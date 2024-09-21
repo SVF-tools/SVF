@@ -81,7 +81,7 @@ void PTAStat::performStat()
 void PTAStat::callgraphStat()
 {
 
-    PTACallGraph* graph = pta->getCallGraph();
+    PTACallGraph* graph = pta->getPTACallGraph();
     PointerAnalysis::CallGraphSCC* callgraphSCC = new PointerAnalysis::CallGraphSCC(graph);
     callgraphSCC->find();
 

@@ -21,27 +21,24 @@
 //===----------------------------------------------------------------------===//
 
 
-/*
- * CallGraphBuilder.cpp
- *
- *  Created on:
- *      Author: Yulei
- */
+//
+// Created by WeigangHe on 21/09/24.
+//
 
-#include "Util/SVFUtil.h"
-#include "Util/CallGraphBuilder.h"
 #include "Graphs/ICFG.h"
-#include "Graphs/CallGraph.h"
+#include "Util/CallGraphBuilder.h"
+#include "Util/SVFUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;
 
-PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
+
+CallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
 {
     /// create nodes
     for (SVFModule::const_callgraphnode_iterator F = svfModule->callgraphnode_begin(), E = svfModule->callgraphnode_end(); F != E; ++F)
     {
-        callgraph->addPTACallGraphNode(*F);
+        callgraph->addCallGraphNode(*F);
     }
 
     /// create edges
@@ -65,59 +62,3 @@ PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
 
     return callgraph;
 }
-
-PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
-{
-
-    buildCallGraph(svfModule);
-
-    ThreadCallGraph* cg = dyn_cast<ThreadCallGraph>(callgraph);
-    assert(cg && "not a thread callgraph?");
-
-    ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();
-    for (SVFModule::const_callgraphnode_iterator F = svfModule->callgraphnode_begin(), E = svfModule->callgraphnode_end(); F != E; ++F)
-    {
-        for (const SVFBasicBlock* svfbb : (*F)->getFunction()->getBasicBlockList())
-        {
-            for (const ICFGNode* inst : svfbb->getICFGNodeList())
-            {
-                if (SVFUtil::isa<CallICFGNode>(inst) && tdAPI->isTDFork(SVFUtil::cast<CallICFGNode>(inst)))
-                {
-                    const CallICFGNode* cs = cast<CallICFGNode>(inst);
-                    cg->addForksite(cs);
-                    const SVFFunction* forkee = SVFUtil::dyn_cast<SVFFunction>(tdAPI->getForkedFun(cs));
-                    if (forkee)
-                    {
-                        cg->addDirectForkEdge(cs);
-                    }
-                    // indirect call to the start routine function
-                    else
-                    {
-                        cg->addThreadForkEdgeSetMap(cs,nullptr);
-                    }
-                }
-            }
-        }
-    }
-    // record join sites
-    for (SVFModule::const_callgraphnode_iterator F = svfModule->callgraphnode_begin(), E = svfModule->callgraphnode_end(); F != E; ++F)
-    {
-        for (const SVFBasicBlock* svfbb : (*F)->getFunction()->getBasicBlockList())
-        {
-            for (const ICFGNode* node : svfbb->getICFGNodeList())
-            {
-                if (SVFUtil::isa<CallICFGNode>(node) && tdAPI->isTDJoin(SVFUtil::cast<CallICFGNode>(node)))
-                {
-                    const CallICFGNode* cs = SVFUtil::cast<CallICFGNode>(node);
-                    cg->addJoinsite(cs);
-                }
-            }
-        }
-    }
-
-    return cg;
-}
-
-
-
-

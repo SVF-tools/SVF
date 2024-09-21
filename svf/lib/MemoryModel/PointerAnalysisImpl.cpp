@@ -420,7 +420,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
 
     readAndSetObjFieldSensitivity(F,"");
 
-    // Update callgraph
+    // Update ptaCallGraph
     updateCallGraph(pag->getIndirectCallsites());
 
     F.close();

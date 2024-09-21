@@ -40,6 +40,8 @@
 #include "SVFIR/SVFValue.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
+//#include "Graphs/CallGraph.h"
+#include "Util/CallGraphBuilder.h"
 
 using namespace std;
 using namespace SVF;
@@ -148,6 +150,13 @@ SVFIR* SVFIRBuilder::build()
     pag->initialiseCandidatePointers();
 
     pag->setNodeNumAfterPAGBuild(pag->getTotalNodeNum());
+
+    CallGraph* cg = new CallGraph();
+    CallGraphBuilder cgbuilder(cg,pag->getICFG());
+    cgbuilder.buildCallGraph(pag->getModule());
+    pag->setCG(cg);
+    cg->dump("hwg_callgraph.dot");
+    cg->view();
 
     // dump SVFIR
     if (Options::PAGDotGraph())

@@ -154,7 +154,7 @@ public:
     /// Constructor
     TCT(PointerAnalysis* p) :pta(p),TCTNodeNum(0),TCTEdgeNum(0),MaxCxtSize(0)
     {
-        tcg = SVFUtil::cast<ThreadCallGraph>(pta->getCallGraph());
+        tcg = SVFUtil::cast<ThreadCallGraph>(pta->getPTACallGraph());
         tcg->updateCallGraph(pta);
         //tcg->updateJoinEdge(pta);
         tcgSCC = pta->getCallGraphSCC();
@@ -284,7 +284,7 @@ public:
     {
         return candidateFuncSet.find(fun)!=candidateFuncSet.end();
     }
-    /// Whether two functions in the same callgraph scc
+    /// Whether two functions in the same ptaCallGraph scc
     inline bool inSameCallGraphSCC(const PTACallGraphNode* src,const PTACallGraphNode* dst)
     {
         return (tcgSCC->repNode(src->getId()) == tcgSCC->repNode(dst->getId()));

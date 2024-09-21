@@ -57,7 +57,7 @@ void SaberSVFGBuilder::buildSVFG()
 
     DBOUT(DGENERAL, outs() << pasMsg("\tAdd Sink SVFG Nodes\n"));
 
-    AddExtActualParmSVFGNodes(pta->getCallGraph());
+    AddExtActualParmSVFGNodes(pta->getPTACallGraph());
 
     if(pta->printStat())
         svfg->performStat();

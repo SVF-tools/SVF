@@ -262,7 +262,7 @@ protected:
             for(CallSiteSet::const_iterator it = csSet.begin(), eit = csSet.end(); it!=eit; ++it)
                 updateCallGraphAndSVFG(dpm, (*it),newIndirectEdges);
         }
-        /// callgraph scc detection for local variable in recursion
+        /// ptaCallGraph scc detection for local variable in recursion
         if(!newIndirectEdges.empty())
             _callGraphSCC->find();
         reComputeForEdges(dpm,newIndirectEdges,true);
@@ -505,7 +505,7 @@ protected:
         {
             CallInstSet csSet;
             /// use pre-analysis call graph to approximate all potential callsites
-            _ander->getCallGraph()->getIndCallSitesInvokingCallee(fun,csSet);
+            _ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fun,csSet);
             for(CallInstSet::const_iterator it = csSet.begin(), eit = csSet.end(); it!=eit; ++it)
             {
                 NodeID funPtr = _pag->getFunPtr(*it);
@@ -623,7 +623,7 @@ protected:
     {
         return (getSVFGSCCRepNode(edge->getSrcID()) == getSVFGSCCRepNode(edge->getDstID()));
     }
-    /// Set callgraph
+    /// Set ptaCallGraph
     inline void setCallGraph (PTACallGraph* cg)
     {
         _callGraph = cg;

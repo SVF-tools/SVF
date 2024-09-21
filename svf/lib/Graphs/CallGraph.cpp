@@ -47,12 +47,6 @@ void CallGraphEdge::addDirectCallSite(const CallICFGNode* call)
     assert(call->getCalledFunction() && "not a direct callsite??");
     directCalls.insert(call);
 }
-
-void CallGraphEdge::addInDirectCallSite(const CallICFGNode* call)
-{
-    assert((nullptr == call->getCalledFunction() || nullptr == SVFUtil::dyn_cast<SVFFunction> (SVFUtil::getForkedFun(call))) && "not an indirect callsite??");
-    indirectCalls.insert(call);
-}
 //@}
 
 const std::string CallGraphEdge::toString() const
@@ -60,10 +54,7 @@ const std::string CallGraphEdge::toString() const
     std::string str;
     std::stringstream  rawstr(str);
     rawstr << "CallSite ID: " << getCallSiteID();
-    if(isDirectCallEdge())
-        rawstr << "direct call";
-    else
-        rawstr << "indirect call";
+    rawstr << "direct call";
     rawstr << "[" << getDstID() << "<--" << getSrcID() << "]\t";
     return rawstr.str();
 }
@@ -121,7 +112,8 @@ void CallGraph::destroy()
  */
 void CallGraph::addCallGraphNode(const CallGraphNode* callGraphNode)
 {
-    CallGraphNode* newNode = new CallGraphNode(callGraphNode->getId(), callGraphNode->getFunction());
+    CallGraphNode* newNode= const_cast<CallGraphNode*>(callGraphNode);
+//    CallGraphNode* newNode = new CallGraphNode(callGraphNode->getId(),callGraphNode->getFunction());
     addGNode(callGraphNode->getId(), newNode);
     funToCallGraphNodeMap[callGraphNode->getFunction()] = newNode;
 }
@@ -183,50 +175,6 @@ void CallGraph::addDirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction*
 }
 
 /*!
- * Add indirect call edge to update call graph
- */
-void CallGraph::addIndirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun)
-{
-
-    CallGraphNode* caller = getCallGraphNode(callerFun);
-    CallGraphNode* callee = getCallGraphNode(calleeFun);
-
-    numOfResolvedIndCallEdge++;
-
-    CallSiteID csId = addCallSite(cs, callee->getFunction());
-
-    if(!hasGraphEdge(caller,callee, CallGraphEdge::CallRetEdge,csId))
-    {
-        CallGraphEdge* edge = new CallGraphEdge(caller,callee, CallGraphEdge::CallRetEdge, csId);
-        edge->addInDirectCallSite(cs);
-        addEdge(edge);
-        callinstToCallGraphEdgesMap[cs].insert(edge);
-    }
-}
-
-/*!
- * Get all callsite invoking this callee
- */
-void CallGraph::getAllCallSitesInvokingCallee(const SVFFunction* callee, CallGraphEdge::CallInstSet& csSet)
-{
-    CallGraphNode* callGraphNode = getCallGraphNode(callee);
-    for(CallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
-            it!=eit; ++it)
-    {
-        for(CallGraphEdge::CallInstSet::const_iterator cit = (*it)->directCallsBegin(),
-                ecit = (*it)->directCallsEnd(); cit!=ecit; ++cit)
-        {
-            csSet.insert((*cit));
-        }
-        for(CallGraphEdge::CallInstSet::const_iterator cit = (*it)->indirectCallsBegin(),
-                ecit = (*it)->indirectCallsEnd(); cit!=ecit; ++cit)
-        {
-            csSet.insert((*cit));
-        }
-    }
-}
-
-/*!
  * Get direct callsite invoking this callee
  */
 void CallGraph::getDirCallSitesInvokingCallee(const SVFFunction* callee, CallGraphEdge::CallInstSet& csSet)
@@ -243,22 +191,6 @@ void CallGraph::getDirCallSitesInvokingCallee(const SVFFunction* callee, CallGra
     }
 }
 
-/*!
- * Get indirect callsite invoking this callee
- */
-void CallGraph::getIndCallSitesInvokingCallee(const SVFFunction* callee, CallGraphEdge::CallInstSet& csSet)
-{
-    CallGraphNode* callGraphNode = getCallGraphNode(callee);
-    for(CallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
-            it!=eit; ++it)
-    {
-        for(CallGraphEdge::CallInstSet::const_iterator cit = (*it)->indirectCallsBegin(),
-                ecit = (*it)->indirectCallsEnd(); cit!=ecit; ++cit)
-        {
-            csSet.insert((*cit));
-        }
-    }
-}
 
 /*!
  * Issue a warning if the function which has indirect call sites can not be reached from program entry.
@@ -385,10 +317,6 @@ struct DOTGraphTraits<CallGraph*> : public DefaultDOTGraphTraits
         else
         {
             color = "color=black";
-        }
-        if (0 != edge->getIndirectCalls().size())
-        {
-            color = "color=red";
         }
         return color;
     }

@@ -132,7 +132,7 @@ void AbstractInterpretation::initWTO()
     // Detect if the call graph has cycles by finding its strongly connected components (SCC)
     Andersen::CallGraphSCC* callGraphScc = ander->getCallGraphSCC();
     callGraphScc->find();
-    aeCallGraph = ander->getCallGraph();
+    aeCallGraph = ander->getPTACallGraph();
 
     // Iterate through the call graph
     for (auto it = aeCallGraph->begin(); it != aeCallGraph->end(); it++)

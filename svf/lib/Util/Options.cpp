@@ -272,7 +272,7 @@ const Option<bool> Options::ReadJson(
 );
 
 const Option<bool> Options::CallGraphDotGraph(
-    "dump-callgraph",
+    "dump-ptaCallGraph",
     "Dump dot graph of Call Graph",
     false
 );

@@ -197,11 +197,11 @@ void LLVMModuleSet::createSVFDataStructure()
 
     for (const Function* func: candidateDefs)
     {
-        createSVFFunction(func);
+        createCallGraphNode(func);
     }
     for (const Function* func: candidateDecls)
     {
-        createSVFFunction(func);
+        createCallGraphNode(func);
     }
 
     /// then traverse candidate sets
@@ -235,27 +235,10 @@ void LLVMModuleSet::createSVFDataStructure()
         }
     }
 
-    /// create edges
-    for (SVFModule::const_callgraphnode_iterator F = svfModule->callgraphnode_begin(), E = svfModule->callgraphnode_end(); F != E; ++F)
-    {
-        for (const SVFBasicBlock* svfbb : (*F)->getFunction()->getBasicBlockList())
-        {
-            for (const ICFGNode* inst : svfbb->getICFGNodeList())
-            {
-                if (SVFUtil::isNonInstricCallSite(inst))
-                {
-                    const CallICFGNode* callBlockNode = SVFUtil::cast<CallICFGNode>(inst);
-                    if(const SVFFunction* callee = callBlockNode->getCalledFunction())
-                    {
-                        svfModule->callgraph->addDirectCallGraphEdge(callBlockNode,(*F)->getFunction(),callee);
-                    }
-                }
-            }
-        }
-    }
+
 }
 
-void LLVMModuleSet::createSVFFunction(const Function* func)
+void LLVMModuleSet::createCallGraphNode(const Function* func)
 {
     SVFFunction* svfFunc = new SVFFunction(
         getSVFType(func->getType()),

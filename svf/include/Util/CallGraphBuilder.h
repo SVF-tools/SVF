@@ -20,19 +20,14 @@
 //
 //===----------------------------------------------------------------------===//
 
+//
+// Created by Weigang He on 21/09/24.
+//
 
-/*
- * CallGraphBuilder.h
- *
- *  Created on: 13Mar.,2020
- *      Author: Yulei Sui
- */
+#ifndef SVF_CALLGRAPHBUILDER_H
+#define SVF_CALLGRAPHBUILDER_H
 
-#ifndef INCLUDE_SVF_FE_CALLGRAPHBUILDER_H_
-#define INCLUDE_SVF_FE_CALLGRAPHBUILDER_H_
-
-#include "Graphs/PTACallGraph.h"
-#include "Graphs/ThreadCallGraph.h"
+#include "Graphs/CallGraph.h"
 
 namespace SVF
 {
@@ -43,32 +38,14 @@ class CallGraphBuilder
 {
 
 protected:
-    PTACallGraph* callgraph;
+    CallGraph* callgraph;
     ICFG* icfg;
+
 public:
-    CallGraphBuilder(PTACallGraph* cg, ICFG* i): callgraph(cg),icfg(i)
-    {
-    }
+    CallGraphBuilder(CallGraph* cg, ICFG* i) : callgraph(cg), icfg(i) {}
 
     /// Build normal callgraph
-    PTACallGraph* buildCallGraph(SVFModule* svfModule);
-
+    CallGraph* buildCallGraph(SVFModule* svfModule);
 };
-
-class ThreadCallGraphBuilder : public CallGraphBuilder
-{
-
-public:
-    ThreadCallGraphBuilder(ThreadCallGraph* cg, ICFG* i): CallGraphBuilder(cg,i)
-    {
-    }
-
-    /// Build thread-aware callgraph
-    PTACallGraph* buildThreadCallGraph(SVFModule* svfModule);
-
-};
-
-} // End namespace SVF
-
-
-#endif /* INCLUDE_UTIL_CALLGRAPHBUILDER_H_ */
+}
+#endif // SVF_CALLGRAPHBUILDER_H

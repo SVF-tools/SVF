@@ -282,8 +282,8 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
             ///    pag->addIndirectCallsites(cs,pag->getValueNode(fun));
         }
         /// If forkedFun does not pass to spawnee as function type but as void pointer
-        /// remember to update inter-procedural callgraph/SVFIR/SVFG etc. when indirect call targets are resolved
-        /// We don't connect the callgraph here, further investigation is need to handle mod-ref during SVFG construction.
+        /// remember to update inter-procedural ptaCallGraph/SVFIR/SVFG etc. when indirect call targets are resolved
+        /// We don't connect the ptaCallGraph here, further investigation is need to handle mod-ref during SVFG construction.
     }
 
     /// TODO: inter-procedural SVFIR edges for thread joins

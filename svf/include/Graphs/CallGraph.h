@@ -39,7 +39,6 @@ public:
 
 private:
     CallInstSet directCalls;
-    CallInstSet indirectCalls;
     CallSiteID csId;
 public:
     /// Constructor
@@ -62,37 +61,19 @@ public:
     {
         return csId;
     }
-    inline bool isDirectCallEdge() const
-    {
-        return !directCalls.empty() && indirectCalls.empty();
-    }
-    inline bool isIndirectCallEdge() const
-    {
-        return directCalls.empty() && !indirectCalls.empty();
-    }
     inline CallInstSet& getDirectCalls()
     {
         return directCalls;
     }
-    inline CallInstSet& getIndirectCalls()
-    {
-        return indirectCalls;
-    }
     inline const CallInstSet& getDirectCalls() const
     {
         return directCalls;
-    }
-    inline const CallInstSet& getIndirectCalls() const
-    {
-        return indirectCalls;
     }
     //@}
 
     /// Add direct and indirect callsite
     //@{
     void addDirectCallSite(const CallICFGNode* call);
-
-    void addInDirectCallSite(const CallICFGNode* call);
     //@}
 
     /// Iterators for direct and indirect callsites
@@ -104,15 +85,6 @@ public:
     inline CallInstSet::const_iterator directCallsEnd() const
     {
         return directCalls.end();
-    }
-
-    inline CallInstSet::const_iterator indirectCallsBegin() const
-    {
-        return indirectCalls.begin();
-    }
-    inline CallInstSet::const_iterator indirectCallsEnd() const
-    {
-        return indirectCalls.end();
     }
     //@}
 
@@ -306,8 +278,7 @@ public:
     }
     inline CallGraphNode* getCallGraphNode(const SVFFunction* fun) const
     {
-        FunToCallGraphNodeMap::const_iterator it =
-            funToCallGraphNodeMap.find(fun);
+        FunToCallGraphNodeMap::const_iterator it = funToCallGraphNodeMap.find(fun);
         assert(it!= funToCallGraphNodeMap.end() && "call graph node not found!!");
         return it->second;
     }
@@ -414,16 +385,11 @@ public:
     /// Add direct/indirect call edges
     //@{
     void addDirectCallGraphEdge(const CallICFGNode* call, const SVFFunction* callerFun, const SVFFunction* calleeFun);
-    void addIndirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun);
     //@}
 
     /// Get callsites invoking the callee
     //@{
-    void getAllCallSitesInvokingCallee(const SVFFunction* callee,
-                                       CallGraphEdge::CallInstSet& csSet);
     void getDirCallSitesInvokingCallee(const SVFFunction* callee,
-                                       CallGraphEdge::CallInstSet& csSet);
-    void getIndCallSitesInvokingCallee(const SVFFunction* callee,
                                        CallGraphEdge::CallInstSet& csSet);
     //@}
 

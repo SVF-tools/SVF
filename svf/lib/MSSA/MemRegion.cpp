@@ -42,7 +42,7 @@ u32_t MRVer::totalVERNum = 0;
 MRGenerator::MRGenerator(BVDataPTAImpl* p, bool ptrOnly) :
     pta(p), ptrOnlyMSSA(ptrOnly)
 {
-    callGraph = pta->getCallGraph();
+    callGraph = pta->getPTACallGraph();
     callGraphSCC = new SCC(callGraph);
 }
 
