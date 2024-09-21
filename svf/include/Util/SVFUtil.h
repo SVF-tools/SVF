@@ -457,7 +457,7 @@ inline bool isBarrierWaitCall(const CallICFGNode* cs)
 
 /// Return sole argument of the thread routine
 //@{
-inline const SVFValue* getActualParmAtForkSite(const CallICFGNode* cs)
+inline const SVFVar* getActualParmAtForkSite(const CallICFGNode* cs)
 {
     return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(cs);
 }

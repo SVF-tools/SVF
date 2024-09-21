@@ -47,6 +47,8 @@ namespace SVF
 
 class SVFModule;
 
+class ThreadCallGraph;
+
 /*!
  * Abstract class of inclusion-based Pointer Analysis
  */
@@ -54,6 +56,9 @@ typedef WPASolver<ConstraintGraph*> WPAConstraintSolver;
 
 class AndersenBase:  public WPAConstraintSolver, public BVDataPTAImpl
 {
+public:
+    typedef OrderedMap<const CallICFGNode*, NodeID> CallSite2DummyValPN;
+
 public:
 
     /// Constructor
@@ -81,11 +86,19 @@ public:
     /// Finalize analysis
     virtual void finalize() override;
 
-    /// Implement it in child class to update call graph
-    virtual inline bool updateCallGraph(const CallSiteToFunPtrMap&) override
-    {
-        return false;
-    }
+    /// Update call graph
+    virtual bool updateCallGraph(const CallSiteToFunPtrMap&) override;
+
+    /// Update thread call graph
+    virtual bool updateThreadCallGraph(const CallSiteToFunPtrMap&, NodePairSet&);
+
+    /// Connect formal and actual parameters for indirect forksites
+    virtual void connectCaller2ForkedFunParams(const CallICFGNode* cs, const SVFFunction* F,
+            NodePairSet& cpySrcNodes);
+
+    /// Connect formal and actual parameters for indirect callsites
+    virtual void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F,
+                                            NodePairSet& cpySrcNodes);
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -122,6 +135,9 @@ public:
         return consCG->sccSubNodes(repId);
     }
     //@}
+
+    /// Add copy edge on constraint graph
+    virtual inline bool addCopyEdge(NodeID src, NodeID dst) = 0;
 
     /// dump statistics
     inline void printStat()
@@ -160,6 +176,11 @@ public:
 protected:
     /// Constraint Graph
     ConstraintGraph* consCG;
+    CallSite2DummyValPN
+    callsite2DummyValPN; ///< Map an instruction to a dummy obj which
+    ///< created at an indirect callsite, which invokes
+    ///< a heap allocator
+    void heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet& cpySrcNodes);
 };
 
 /*!
@@ -171,7 +192,6 @@ class Andersen:  public AndersenBase
 
 public:
     typedef SCCDetection<ConstraintGraph*> CGSCC;
-    typedef OrderedMap<const CallICFGNode*, NodeID> CallSite2DummyValPN;
 
     /// Constructor
     Andersen(SVFIR* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
@@ -243,7 +263,6 @@ public:
 protected:
 
     CallSite2DummyValPN callsite2DummyValPN;        ///< Map an instruction to a dummy obj which created at an indirect callsite, which invokes a heap allocator
-    void heapAllocatorViaIndCall(const CallICFGNode* cs,NodePairSet &cpySrcNodes);
 
     /// Handle diff points-to set.
     virtual inline void computeDiffPts(NodeID id)
@@ -310,12 +329,6 @@ protected:
         }
         return false;
     }
-
-    /// Update call graph for the input indirect callsites
-    virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
-
-    /// Connect formal and actual parameters for indirect callsites
-    void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F, NodePairSet& cpySrcNodes);
 
     /// Merge sub node to its rep
     virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);
