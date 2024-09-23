@@ -287,10 +287,10 @@ class ValVar: public SVFVar
     friend class SVFIRReader;
 
 private:
-    const ICFGNode* icfgNode; // constant, gepValvar, retPN, dummy could be null
+    const GenericNodeBase* gNode; // constant, gepValvar, retPN, dummy could be null
 protected:
     /// Constructor to create an empty ValVar (for SVFIRReader/deserialization)
-    ValVar(NodeID i, PNODEK ty = ValNode) : SVFVar(i, ty), icfgNode(nullptr) {}
+    ValVar(NodeID i, PNODEK ty = ValNode) : SVFVar(i, ty), gNode(nullptr) {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -326,8 +326,8 @@ public:
     //@}
 
     /// Constructor
-    ValVar(const SVFValue* val, NodeID i, PNODEK ty = ValNode, const ICFGNode* node = nullptr)
-        : SVFVar(val, i, ty), icfgNode(node)
+    ValVar(const SVFValue* val, NodeID i, PNODEK ty = ValNode, const GenericNodeBase* node = nullptr)
+        : SVFVar(val, i, ty), gNode(node)
     {
     }
     /// Return name of a LLVM value
@@ -338,8 +338,8 @@ public:
         return "";
     }
 
-    const ICFGNode* getICFGNode() const {
-        return icfgNode;
+    const GenericNodeBase* getGNode() const {
+        return gNode;
     }
 
     virtual const std::string toString() const;
