@@ -354,7 +354,7 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
             }
             return true;
         }
-        else if(const GenericNodeBase* gNode = mem->getGNode())
+        else if(const SVFValueNode* gNode = mem->getGNode())
         {
             if (const auto& node =
                     SVFUtil::dyn_cast<ICFGNode>(gNode))

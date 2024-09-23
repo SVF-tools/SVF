@@ -221,7 +221,7 @@ public:
         return node->getNodeKind() == CallNodeKd;
     }
 
-    static inline bool classof(const GenericNodeBase* node) {
+    static inline bool classof(const SVFValueNode* node) {
         return node->getNodeKind() == CallNodeKd;
     }
     //@}

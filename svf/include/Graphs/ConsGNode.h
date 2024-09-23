@@ -405,7 +405,7 @@ public:
         return node->getNodeKind() == ConstraintNodeKd;
     }
 
-    static inline bool classof(const GenericNodeBase* node) {
+    static inline bool classof(const SVFValueNode* node) {
         return node->getNodeKind() == ConstraintNodeKd;
     }
     //@}

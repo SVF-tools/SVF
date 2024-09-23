@@ -215,7 +215,7 @@ void SVFIRBuilder::initialiseNodes()
         if(iter->second == symTable->blkPtrSymID() || iter->second == symTable->nullPtrSymID())
             continue;
 
-        const GenericNodeBase* gNode = nullptr;
+        const SVFValueNode* gNode = nullptr;
         if (const Instruction* inst =
                 SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(iter->first)))
         {

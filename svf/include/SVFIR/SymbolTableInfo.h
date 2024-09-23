@@ -373,7 +373,7 @@ protected:
     Set<const StInfo*> stInfos;
 };
 
-class GenericNodeBase;
+class SVFValueNode;
 
 /*!
  * Memory object symbols or MemObj (address-taken variables in LLVM-based languages)
@@ -392,11 +392,11 @@ private:
     /// The unique id to represent this symbol
     SymID symId;
 
-    const GenericNodeBase* gNode;
+    const SVFValueNode* gNode;
 
 public:
     /// Constructor
-    MemObj(SymID id, ObjTypeInfo* ti, const SVFValue* val = nullptr, const GenericNodeBase* node = nullptr);
+    MemObj(SymID id, ObjTypeInfo* ti, const SVFValue* val = nullptr, const SVFValueNode* node = nullptr);
 
     /// Destructor
     virtual ~MemObj()
@@ -413,7 +413,7 @@ public:
     }
 
     /// Get the reference value to this object
-    inline const GenericNodeBase* getGNode() const
+    inline const SVFValueNode* getGNode() const
     {
         return gNode;
     }

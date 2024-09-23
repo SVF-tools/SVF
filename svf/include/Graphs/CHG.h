@@ -202,7 +202,7 @@ public:
         return node->getNodeKind() == CHNodeKd;
     }
 
-    static inline bool classof(const GenericNodeBase* node) {
+    static inline bool classof(const SVFValueNode* node) {
         return node->getNodeKind() == CHNodeKd;
     }
     //@}
