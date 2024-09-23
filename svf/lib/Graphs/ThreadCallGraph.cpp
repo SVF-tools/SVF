@@ -30,6 +30,8 @@
 #include "SVFIR/SVFModule.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Util/ThreadAPI.h"
+#include "SVFIR/SVFIR.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -118,7 +120,7 @@ void ThreadCallGraph::updateJoinEdge(PointerAnalysis* pta)
 /*!
  * Add direct fork edges
  */
-void ThreadCallGraph::addDirectForkEdge(const CallICFGNode* cs)
+bool ThreadCallGraph::addDirectForkEdge(const CallICFGNode* cs)
 {
 
     PTACallGraphNode* caller = getCallGraphNode(cs->getCaller());
@@ -136,13 +138,16 @@ void ThreadCallGraph::addDirectForkEdge(const CallICFGNode* cs)
 
         addEdge(edge);
         addThreadForkEdgeSetMap(cs, edge);
+        return true;
     }
+    else
+        return false;
 }
 
 /*!
  * Add indirect fork edge to update call graph
  */
-void ThreadCallGraph::addIndirectForkEdge(const CallICFGNode* cs, const SVFFunction* calleefun)
+bool ThreadCallGraph::addIndirectForkEdge(const CallICFGNode* cs, const SVFFunction* calleefun)
 {
     PTACallGraphNode* caller = getCallGraphNode(cs->getCaller());
     PTACallGraphNode* callee = getCallGraphNode(calleefun);
@@ -158,7 +163,10 @@ void ThreadCallGraph::addIndirectForkEdge(const CallICFGNode* cs, const SVFFunct
 
         addEdge(edge);
         addThreadForkEdgeSetMap(cs, edge);
+        return true;
     }
+    else
+        return false;
 }
 
 /*!

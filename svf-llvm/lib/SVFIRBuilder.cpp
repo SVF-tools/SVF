@@ -860,7 +860,6 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
 
     if (const Function *callee = LLVMUtil::getCallee(cs))
     {
-        callee = LLVMUtil::getDefFunForMultipleModule(callee);
         const SVFFunction* svfcallee = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
         if (isExtCall(svfcallee))
         {

@@ -549,7 +549,6 @@ cJSON* SVFIRWriter::contentToJson(const SVFFunction* value)
     F(realDefFun);
     F(allBBs);
     F(allArgs);
-    F(annotations);
 #undef F
     return root;
 }
@@ -2357,7 +2356,6 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFFunction* value)
     F(realDefFun);
     F(allBBs);
     F(allArgs);
-    F(annotations);
 #undef F
 }
 

@@ -76,6 +76,12 @@ public:
     virtual void detect(AbstractState& as, const ICFGNode* node) = 0;
 
     /**
+     * @brief Pure virtual function for handling stub external API calls. (e.g. UNSAFE_BUFACCESS)
+     * @param call Pointer to the ext call ICFG node.
+     */
+    virtual void handleStubFunctions(const CallICFGNode* call) = 0;
+
+    /**
      * @brief Pure virtual function to report detected bugs.
      */
     virtual void reportBug() = 0;
@@ -168,6 +174,13 @@ public:
      * @param node Pointer to the ICFG node.
      */
     void detect(AbstractState& as, const ICFGNode*);
+
+
+    /**
+     * @brief Handles external API calls related to buffer overflow detection.
+     * @param call Pointer to the call ICFG node.
+     */
+    void handleStubFunctions(const CallICFGNode*);
 
     /**
      * @brief Adds an offset to a GEP object.
@@ -277,11 +290,11 @@ public:
     /**
      * @brief Checks if memory can be safely accessed.
      * @param as Reference to the abstract state.
-     * @param value Pointer to the SVF value.
+     * @param value Pointer to the SVF var.
      * @param len The interval value representing the length of the memory access.
      * @return True if the memory access is safe, false otherwise.
      */
-    bool canSafelyAccessMemory(AbstractState& as, const SVFValue *value, const IntervalValue &len);
+    bool canSafelyAccessMemory(AbstractState& as, const SVFVar *value, const IntervalValue &len);
 
 private:
     /**

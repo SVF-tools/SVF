@@ -23,7 +23,6 @@ class Steensgaard : public AndersenBase
 public:
     typedef Map<NodeID, NodeID> NodeToEquivClassMap;
     typedef Map<NodeID, Set<NodeID>> NodeToSubsMap;
-    typedef OrderedMap<const CallICFGNode*, NodeID> CallSite2DummyValPN;
 
     /// Constructor
     Steensgaard(SVFIR* _pag) : AndersenBase(_pag, Steensgaard_WPA, true) {}
@@ -46,7 +45,7 @@ public:
         steens = nullptr;
     }
 
-    virtual void solveWorklist();
+    virtual void solveWorklist() override;
 
     void processAllAddr();
 
@@ -69,18 +68,18 @@ public:
     //@}
 
     /// Operation of points-to set
-    virtual inline const PointsTo& getPts(NodeID id)
+    virtual inline const PointsTo& getPts(NodeID id) override
     {
         return getPTDataTy()->getPts(getEC(id));
     }
     /// pts(id) = pts(id) U target
-    virtual inline bool unionPts(NodeID id, const PointsTo& target)
+    virtual inline bool unionPts(NodeID id, const PointsTo& target) override
     {
         id = getEC(id);
         return getPTDataTy()->unionPts(id, target);
     }
     /// pts(id) = pts(id) U pts(ptd)
-    virtual inline bool unionPts(NodeID id, NodeID ptd)
+    virtual inline bool unionPts(NodeID id, NodeID ptd) override
     {
         id = getEC(id);
         ptd = getEC(ptd);
@@ -98,6 +97,11 @@ public:
         else
             return it->second;
     }
+    /// Return getEC(id)
+    inline NodeID sccRepNode(NodeID id) const override
+    {
+        return getEC(id);
+    }
     void setEC(NodeID node, NodeID rep);
 
     inline Set<NodeID>& getSubNodes(NodeID id)
@@ -111,24 +115,10 @@ public:
     }
 
     /// Add copy edge on constraint graph
-    virtual inline bool addCopyEdge(NodeID src, NodeID dst)
+    virtual inline bool addCopyEdge(NodeID src, NodeID dst) override
     {
         return consCG->addCopyCGEdge(src, dst);
     }
-
-protected:
-    CallSite2DummyValPN
-    callsite2DummyValPN; ///< Map an instruction to a dummy obj which
-    ///< created at an indirect callsite, which invokes
-    ///< a heap allocator
-    void heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet& cpySrcNodes);
-
-    /// Update call graph for the input indirect callsites
-    virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
-
-    /// Connect formal and actual parameters for indirect callsites
-    void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F,
-                                    NodePairSet& cpySrcNodes);
 
 private:
     static Steensgaard* steens; // static instance

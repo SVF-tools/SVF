@@ -35,6 +35,7 @@
 
 #include "Graphs/CHG.h"
 #include "Graphs/PTACallGraph.h"
+#include "Graphs/ThreadCallGraph.h"
 #include "Graphs/SCC.h"
 #include "MemoryModel/AbstractPointsToDS.h"
 #include "MemoryModel/ConditionalPT.h"

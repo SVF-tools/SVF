@@ -374,19 +374,13 @@ bool isExtCall(const ICFGNode* node);
 
 bool isHeapAllocExtCallViaArg(const CallICFGNode* cs);
 
-bool isHeapAllocExtCallViaArg(const SVFInstruction *inst);
-
-bool isHeapAllocExtCallViaRet(const SVFInstruction *inst);
 
 /// interfaces to be used externally
 bool isHeapAllocExtCallViaRet(const CallICFGNode* cs);
 
 bool isHeapAllocExtCall(const ICFGNode* cs);
 
-inline bool isHeapAllocExtCall(const SVFInstruction *inst)
-{
-    return isHeapAllocExtCallViaRet(inst) || isHeapAllocExtCallViaArg(inst);
-}
+
 
 //@}
 
@@ -446,7 +440,7 @@ inline bool isBarrierWaitCall(const CallICFGNode* cs)
 
 /// Return sole argument of the thread routine
 //@{
-inline const SVFValue* getActualParmAtForkSite(const CallICFGNode* cs)
+inline const SVFVar* getActualParmAtForkSite(const CallICFGNode* cs)
 {
     return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(cs);
 }

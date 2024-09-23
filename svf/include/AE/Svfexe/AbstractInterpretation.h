@@ -31,12 +31,14 @@
 #include "AE/Core/AbstractState.h"
 #include "AE/Core/ICFGWTO.h"
 #include "AE/Svfexe/AEDetector.h"
+#include "AE/Svfexe/AbsExtAPI.h"
 #include "Util/SVFBugReport.h"
 #include "WPA/Andersen.h"
 
 namespace SVF
 {
 class AbstractInterpretation;
+class AbsExtAPI;
 class AEStat;
 class AEAPI;
 
@@ -104,7 +106,6 @@ class AbstractInterpretation
     friend class BufOverflowDetector;
 
 public:
-    enum ExtAPIType { UNCLASSIFIED, MEMCPY, MEMSET, STRCPY, STRCAT };
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     /// Constructor
     AbstractInterpretation();
@@ -128,7 +129,9 @@ public:
         detectors.push_back(std::move(detector));
     }
 
-protected:
+    Set<const CallICFGNode*> checkpoints; // for CI check
+
+private:
     /// Global ICFGNode is handled at the entry of the program,
     virtual void handleGlobalNode();
 
@@ -213,77 +216,6 @@ protected:
                                 AbstractState& as);
 
 
-    /**
-    * handle external function call
-    *
-    * @param call call node whose callee is external function
-    */
-    virtual void handleExtAPI(const CallICFGNode *call);
-
-    /**
-    * the map of external function to its API type
-    *
-    * In AEAPI, this function is mainly used for abstract explanation.
-    * In subclasses, this function is mainly used to check specific bugs
-    */
-    virtual void initExtFunMap();
-
-
-    /**
-    * get byte size of alloca inst
-    * e.g. source code str = "abc", there are str value, return "abc"
-    *
-    * @param rhs SVFValue of string
-    * @return the string
-    */
-    std::string strRead(AbstractState& as,const SVFValue* rhs);
-
-    /**
-    * get length of string
-    * e.g. source code str = "abc", return 3
-    *
-    * @param strValue SVFValue of string
-    * @return IntervalValue of string length
-    */
-    IntervalValue getStrlen(AbstractState& as, const SVF::SVFValue *strValue);
-
-    /**
-    * execute strcpy in abstract execution
-    * e.g  arr = new char[10]
-    *      str = "abc"
-    *      strcpy(arr, str)
-    * we can set arr[0]='a', arr[1]='b', arr[2]='c', arr[3]='\0'
-    * @param call callnode of strcpy like api
-    */
-    virtual void handleStrcpy(const CallICFGNode *call);
-    /**
-    * execute strcpy in abstract execution
-    * e.g  arr[10] = "abc"
-    *      str = "de"
-    *      strcat(arr, str)
-    * we can set arr[3]='d', arr[4]='e', arr[5]='\0'
-    * @param call callnode of strcat like api
-    */
-    virtual void handleStrcat(const CallICFGNode *call);
-    /**
-    * execute memcpy in abstract execution
-    * e.g  arr = new char[10]
-    *      str = "abcd"
-    *      memcpy(arr, str, 5)
-    * we can set arr[3]='d', arr[4]='e', arr[5]='\0'
-    * @param call callnode of memcpy like api
-    */
-    virtual void handleMemcpy(AbstractState& as, const SVFValue* dst, const SVFValue* src, IntervalValue len, u32_t start_idx);
-    /**
-    * execute memset in abstract execution
-    * e.g  arr = new char[10]
-    *      memset(arr, 'c', 2)
-    * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
-    * @param call callnode of memset like api
-    */
-    virtual void handleMemset(AbstractState& as, const SVFValue* dst, IntervalValue elem, IntervalValue len);
-
-
     void collectCheckPoint();
     void checkPointAllSet();
 
@@ -309,8 +241,6 @@ protected:
 
     void updateStateOnPhi(const PhiStmt *phi);
 
-    IntervalValue getRangeLimitFromType(const SVFType* type);
-
 
     /// protected data members, also used in subclasses
     SVFIR* svfir;
@@ -325,18 +255,6 @@ protected:
     Map<const PTACallGraphNode*, ICFGWTO*> funcToWTO;
     Set<const PTACallGraphNode*> recursiveFuns;
 
-private:
-    // helper functions in handleCallSite
-    virtual bool isExtCall(const CallICFGNode* callNode);
-    virtual void extCallPass(const CallICFGNode* callNode);
-    virtual bool isRecursiveCall(const CallICFGNode* callNode);
-    virtual void recursiveCallPass(const CallICFGNode* callNode);
-    virtual bool isDirectCall(const CallICFGNode* callNode);
-    virtual void directCallFunPass(const CallICFGNode* callNode);
-    virtual bool isIndirectCall(const CallICFGNode* callNode);
-    virtual void indirectCallFunPass(const CallICFGNode* callNode);
-
-protected:
 
     AbstractState& getAbsStateFromTrace(const ICFGNode* node)
     {
@@ -357,16 +275,77 @@ protected:
         return abstractTrace.count(repNode) != 0;
     }
 
-protected:
+    AbsExtAPI* getUtils()
+    {
+        return utils;
+    }
+
+    // helper functions in handleCallSite
+    virtual bool isExtCall(const CallICFGNode* callNode);
+    virtual void extCallPass(const CallICFGNode* callNode);
+    virtual bool isRecursiveCall(const CallICFGNode* callNode);
+    virtual void recursiveCallPass(const CallICFGNode* callNode);
+    virtual bool isDirectCall(const CallICFGNode* callNode);
+    virtual void directCallFunPass(const CallICFGNode* callNode);
+    virtual bool isIndirectCall(const CallICFGNode* callNode);
+    virtual void indirectCallFunPass(const CallICFGNode* callNode);
+
     // there data should be shared with subclasses
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
-    Set<const CallICFGNode*> checkpoints;
-    Set<std::string> checkpoint_names;
-    Map<const ICFGNode*, AbstractState>
-    abstractTrace; // abstract states immediately after nodes
+
+    Map<const ICFGNode*, AbstractState> abstractTrace; // abstract states immediately after nodes
     std::string moduleName;
 
     std::vector<std::unique_ptr<AEDetector>> detectors;
+    AbsExtAPI* utils;
+
+    // according to varieties of cmp insts,
+    // maybe var X var, var X const, const X var, const X const
+    // we accept 'var X const' 'var X var' 'const X const'
+    // if 'const X var', we need to reverse op0 op1 and its predicate 'var X' const'
+    // X' is reverse predicate of X
+    // == -> !=, != -> ==, > -> <=, >= -> <, < -> >=, <= -> >
+
+    Map<s32_t, s32_t> _reverse_predicate =
+    {
+        {CmpStmt::Predicate::FCMP_OEQ, CmpStmt::Predicate::FCMP_ONE},  // == -> !=
+        {CmpStmt::Predicate::FCMP_UEQ, CmpStmt::Predicate::FCMP_UNE},  // == -> !=
+        {CmpStmt::Predicate::FCMP_OGT, CmpStmt::Predicate::FCMP_OLE},  // > -> <=
+        {CmpStmt::Predicate::FCMP_OGE, CmpStmt::Predicate::FCMP_OLT},  // >= -> <
+        {CmpStmt::Predicate::FCMP_OLT, CmpStmt::Predicate::FCMP_OGE},  // < -> >=
+        {CmpStmt::Predicate::FCMP_OLE, CmpStmt::Predicate::FCMP_OGT},  // <= -> >
+        {CmpStmt::Predicate::FCMP_ONE, CmpStmt::Predicate::FCMP_OEQ},  // != -> ==
+        {CmpStmt::Predicate::FCMP_UNE, CmpStmt::Predicate::FCMP_UEQ},  // != -> ==
+        {CmpStmt::Predicate::ICMP_EQ, CmpStmt::Predicate::ICMP_NE},  // == -> !=
+        {CmpStmt::Predicate::ICMP_NE, CmpStmt::Predicate::ICMP_EQ},  // != -> ==
+        {CmpStmt::Predicate::ICMP_UGT, CmpStmt::Predicate::ICMP_ULE},  // > -> <=
+        {CmpStmt::Predicate::ICMP_ULT, CmpStmt::Predicate::ICMP_UGE},  // < -> >=
+        {CmpStmt::Predicate::ICMP_UGE, CmpStmt::Predicate::ICMP_ULT},  // >= -> <
+        {CmpStmt::Predicate::ICMP_SGT, CmpStmt::Predicate::ICMP_SLE},  // > -> <=
+        {CmpStmt::Predicate::ICMP_SLT, CmpStmt::Predicate::ICMP_SGE},  // < -> >=
+        {CmpStmt::Predicate::ICMP_SGE, CmpStmt::Predicate::ICMP_SLT},  // >= -> <
+    };
+
+
+    Map<s32_t, s32_t> _switch_lhsrhs_predicate =
+    {
+        {CmpStmt::Predicate::FCMP_OEQ, CmpStmt::Predicate::FCMP_OEQ},  // == -> ==
+        {CmpStmt::Predicate::FCMP_UEQ, CmpStmt::Predicate::FCMP_UEQ},  // == -> ==
+        {CmpStmt::Predicate::FCMP_OGT, CmpStmt::Predicate::FCMP_OLT},  // > -> <
+        {CmpStmt::Predicate::FCMP_OGE, CmpStmt::Predicate::FCMP_OLE},  // >= -> <=
+        {CmpStmt::Predicate::FCMP_OLT, CmpStmt::Predicate::FCMP_OGT},  // < -> >
+        {CmpStmt::Predicate::FCMP_OLE, CmpStmt::Predicate::FCMP_OGE},  // <= -> >=
+        {CmpStmt::Predicate::FCMP_ONE, CmpStmt::Predicate::FCMP_ONE},  // != -> !=
+        {CmpStmt::Predicate::FCMP_UNE, CmpStmt::Predicate::FCMP_UNE},  // != -> !=
+        {CmpStmt::Predicate::ICMP_EQ, CmpStmt::Predicate::ICMP_EQ},  // == -> ==
+        {CmpStmt::Predicate::ICMP_NE, CmpStmt::Predicate::ICMP_NE},  // != -> !=
+        {CmpStmt::Predicate::ICMP_UGT, CmpStmt::Predicate::ICMP_ULT},  // > -> <
+        {CmpStmt::Predicate::ICMP_ULT, CmpStmt::Predicate::ICMP_UGT},  // < -> >
+        {CmpStmt::Predicate::ICMP_UGE, CmpStmt::Predicate::ICMP_ULE},  // >= -> <=
+        {CmpStmt::Predicate::ICMP_SGT, CmpStmt::Predicate::ICMP_SLT},  // > -> <
+        {CmpStmt::Predicate::ICMP_SLT, CmpStmt::Predicate::ICMP_SGT},  // < -> >
+        {CmpStmt::Predicate::ICMP_SGE, CmpStmt::Predicate::ICMP_SLE},  // >= -> <=
+    };
 
 };
 }
