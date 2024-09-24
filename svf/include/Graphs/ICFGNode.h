@@ -138,7 +138,7 @@ public:
                kind == FunCallBlock || kind == FunRetBlock || kind == GlobalBlock;
     }
 
-    static inline bool classof(const SVFValueNode* node) {
+    static inline bool classof(const SVFBaseNode* node) {
         GNodeK kind = node->getNodeKind();
         return kind == IntraBlock || kind == FunEntryBlock || kind == FunExitBlock ||
                kind == FunCallBlock || kind == FunRetBlock || kind == GlobalBlock;
@@ -268,7 +268,7 @@ public:
                kind == FunCallBlock || kind == FunRetBlock;
     }
 
-    static inline bool classof(const SVFValueNode* node) {
+    static inline bool classof(const SVFBaseNode* node) {
         ICFGNode::GNodeK kind = node->getNodeKind();
         return kind == FunEntryBlock || kind == FunExitBlock ||
                kind == FunCallBlock || kind == FunRetBlock;
@@ -340,7 +340,7 @@ public:
         return node->getNodeKind() == FunEntryBlock;
     }
 
-    static inline bool classof(const SVFValueNode*node)
+    static inline bool classof(const SVFBaseNode*node)
     {
         return node->getNodeKind() == FunEntryBlock;
     }
@@ -411,7 +411,7 @@ public:
         return node->getNodeKind() == FunExitBlock;
     }
 
-    static inline bool classof(const SVFValueNode*node)
+    static inline bool classof(const SVFBaseNode*node)
     {
         return node->getNodeKind() == FunExitBlock;
     }
@@ -586,7 +586,7 @@ public:
         return node->getNodeKind() == FunCallBlock;
     }
 
-    static inline bool classof(const SVFValueNode*node)
+    static inline bool classof(const SVFBaseNode*node)
     {
         return node->getNodeKind() == FunCallBlock;
     }
@@ -671,7 +671,7 @@ public:
     {
         return node->getNodeKind() == FunRetBlock;
     }
-    static inline bool classof(const SVFValueNode*node)
+    static inline bool classof(const SVFBaseNode*node)
     {
         return node->getNodeKind() == FunRetBlock;
     }

@@ -160,7 +160,7 @@ public:
         return node->getNodeKind() == CFLNodeKd;
     }
 
-    static inline bool classof(const SVFValueNode* node) {
+    static inline bool classof(const SVFBaseNode* node) {
         return node->getNodeKind() == CFLNodeKd;
     }
     //@}

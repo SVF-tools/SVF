@@ -134,7 +134,7 @@ protected:
 };
 
 
-class SVFValueNode
+class SVFBaseNode
 {
 
 public:
@@ -176,7 +176,7 @@ public:
         OtherKd
     };
 
-    SVFValueNode(NodeID i, GNodeK k): id(i),nodeKind(k)
+    SVFBaseNode(NodeID i, GNodeK k): id(i), nodeKind(k)
     {
 
     }
@@ -202,7 +202,7 @@ protected:
  * Generic node on the graph as base class
  */
 template<class NodeTy,class EdgeTy>
-class GenericNode: public SVFValueNode
+class GenericNode: public SVFBaseNode
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -225,7 +225,7 @@ private:
 
 public:
     /// Constructor
-    GenericNode(NodeID i, GNodeK k): SVFValueNode(i, k)
+    GenericNode(NodeID i, GNodeK k): SVFBaseNode(i, k)
     {
 
     }
@@ -389,7 +389,7 @@ public:
         return true;
     }
 
-    static inline bool classof(const SVFValueNode*)
+    static inline bool classof(const SVFBaseNode*)
     {
         return true;
     }
