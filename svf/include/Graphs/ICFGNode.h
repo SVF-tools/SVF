@@ -133,15 +133,11 @@ public:
     }
 
     static inline bool classof(const GenericICFGNodeTy* node) {
-        GNodeK kind = node->getNodeKind();
-        return kind == IntraBlock || kind == FunEntryBlock || kind == FunExitBlock ||
-               kind == FunCallBlock || kind == FunRetBlock || kind == GlobalBlock;
+        return ICFGNodeKinds.count(node->getNodeKind());
     }
 
     static inline bool classof(const SVFBaseNode* node) {
-        GNodeK kind = node->getNodeKind();
-        return kind == IntraBlock || kind == FunEntryBlock || kind == FunExitBlock ||
-               kind == FunCallBlock || kind == FunRetBlock || kind == GlobalBlock;
+        return ICFGNodeKinds.count(node->getNodeKind());
     }
 
 protected:
@@ -257,21 +253,15 @@ public:
     }
 
     static inline bool classof(const ICFGNode* node) {
-        ICFGNode::GNodeK kind = node->getNodeKind();
-        return kind == FunEntryBlock || kind == FunExitBlock ||
-               kind == FunCallBlock || kind == FunRetBlock;
+        return InterICFGNodeKinds.count(node->getNodeKind());
     }
 
     static inline bool classof(const GenericICFGNodeTy* node) {
-        ICFGNode::GNodeK kind = node->getNodeKind();
-        return kind == FunEntryBlock || kind == FunExitBlock ||
-               kind == FunCallBlock || kind == FunRetBlock;
+        return InterICFGNodeKinds.count(node->getNodeKind());
     }
 
     static inline bool classof(const SVFBaseNode* node) {
-        ICFGNode::GNodeK kind = node->getNodeKind();
-        return kind == FunEntryBlock || kind == FunExitBlock ||
-               kind == FunCallBlock || kind == FunRetBlock;
+        return InterICFGNodeKinds.count(node->getNodeKind());
     }
 
     //@}

@@ -202,28 +202,12 @@ public:
 
     static inline bool classof(const GenericPAGNodeTy * node)
     {
-        return node->getNodeKind() == ValNode ||
-               node->getNodeKind() == ObjNode ||
-               node->getNodeKind() == RetNode ||
-               node->getNodeKind() == VarargNode ||
-               node->getNodeKind() == GepValNode ||
-               node->getNodeKind() == GepObjNode ||
-               node->getNodeKind() == FIObjNode ||
-               node->getNodeKind() == DummyValNode ||
-               node->getNodeKind() == DummyObjNode;
+        return SVFVarKinds.count(node->getNodeKind());
     }
 
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == ValNode ||
-               node->getNodeKind() == ObjNode ||
-               node->getNodeKind() == RetNode ||
-               node->getNodeKind() == VarargNode ||
-               node->getNodeKind() == GepValNode ||
-               node->getNodeKind() == GepObjNode ||
-               node->getNodeKind() == FIObjNode ||
-               node->getNodeKind() == DummyValNode ||
-               node->getNodeKind() == DummyObjNode;
+        return SVFVarKinds.count(node->getNodeKind());
 
     }
 
@@ -300,27 +284,15 @@ public:
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == SVFVar::ValNode ||
-               node->getNodeKind() == SVFVar::GepValNode ||
-               node->getNodeKind() == SVFVar::RetNode ||
-               node->getNodeKind() == SVFVar::VarargNode ||
-               node->getNodeKind() == SVFVar::DummyValNode;
+        return ValVarKinds.count(node->getNodeKind());
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == SVFVar::ValNode ||
-               node->getNodeKind() == SVFVar::GepValNode ||
-               node->getNodeKind() == SVFVar::RetNode ||
-               node->getNodeKind() == SVFVar::VarargNode ||
-               node->getNodeKind() == SVFVar::DummyValNode;
+        return ValVarKinds.count(node->getNodeKind());
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == SVFVar::ValNode ||
-               node->getNodeKind() == SVFVar::GepValNode ||
-               node->getNodeKind() == SVFVar::RetNode ||
-               node->getNodeKind() == SVFVar::VarargNode ||
-               node->getNodeKind() == SVFVar::DummyValNode;
+        return ValVarKinds.count(node->getNodeKind());
     }
     //@}
 
@@ -370,24 +342,15 @@ public:
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == SVFVar::ObjNode ||
-               node->getNodeKind() == SVFVar::GepObjNode ||
-               node->getNodeKind() == SVFVar::FIObjNode ||
-               node->getNodeKind() == SVFVar::DummyObjNode;
+        return ObjVarKinds.count(node->getNodeKind());
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == SVFVar::ObjNode ||
-               node->getNodeKind() == SVFVar::GepObjNode ||
-               node->getNodeKind() == SVFVar::FIObjNode ||
-               node->getNodeKind() == SVFVar::DummyObjNode;
+        return ObjVarKinds.count(node->getNodeKind());
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == SVFVar::ObjNode ||
-               node->getNodeKind() == SVFVar::GepObjNode ||
-               node->getNodeKind() == SVFVar::FIObjNode ||
-               node->getNodeKind() == SVFVar::DummyObjNode;
+        return ObjVarKinds.count(node->getNodeKind());
     }
     //@}
 

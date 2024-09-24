@@ -138,9 +138,10 @@ class SVFBaseNode
 {
 
 public:
+
     enum GNodeK
     {
-        // ICFG node kinds
+        /// 6 kinds of ICFG node
         IntraBlock,
         FunEntryBlock,
         FunExitBlock,
@@ -148,7 +149,7 @@ public:
         FunRetBlock,
         GlobalBlock,
 
-        // IRGraph node kinds
+        // 9 kinds of IRGraph node kinds
         ValNode,
         ObjNode,
         RetNode,
@@ -159,22 +160,36 @@ public:
         DummyValNode,
         DummyObjNode,
 
-        // VFG node kinds
+        /// 25 kinds of VFG node
+        /// Gep represents offset edge for field sensitivity
         Addr, Copy, Gep, Store, Load, Cmp, BinaryOp, UnaryOp, Branch, TPhi, TIntraPhi, TInterPhi,
         MPhi, MIntraPhi, MInterPhi, FRet, ARet, AParm, FParm,
         APIN, APOUT, FPIN, FPOUT, NPtr, DummyVProp,
 
+        /// Callgraph node
         CallNodeKd,
+
+        /// Control dependence graph node
         CDNodeKd,
+
+        /// CFL graph node
         CFLNodeKd,
+
+        /// Class hierarchy graph node
         CHNodeKd,
+
+        /// Constraint graph node
         ConstraintNodeKd,
 
+        /// Thread creation tree node
         TCTNodeKd,
 
+        /// DCHG node
         DCHNodeKd,
         OtherKd
     };
+
+    typedef Set<GNodeK> GNodeKSet;
 
     SVFBaseNode(NodeID i, GNodeK k): id(i), nodeKind(k)
     {
@@ -196,6 +211,20 @@ public:
 protected:
     NodeID id;		///< Node ID
     GNodeK nodeKind;	///< Node kind
+
+    static GNodeKSet InterICFGNodeKinds;
+    static GNodeKSet ICFGNodeKinds;
+
+    static GNodeKSet ValVarKinds;
+    static GNodeKSet ObjVarKinds;
+    static GNodeKSet SVFVarKinds;
+
+    static GNodeKSet MSSAPHISVFGNodeKinds;
+    static GNodeKSet MRSVFGNodeKinds;
+    static GNodeKSet StmtVFGNodeKinds;
+    static GNodeKSet PHIVFGNodeKinds;
+    static GNodeKSet ArgumentVFGNodeKinds;
+    static GNodeKSet VFGNodeKinds;
 };
 
 /*!
