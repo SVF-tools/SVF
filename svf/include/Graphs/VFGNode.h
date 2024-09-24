@@ -107,19 +107,61 @@ public:
     }
 
     static inline bool classof(const GenericVFGNodeTy * node) {
-        static const Set<GNodeK> vfgNodeKinds{Addr, Copy, Gep, Store, Load, Cmp, BinaryOp, UnaryOp, Branch, TPhi, TIntraPhi, TInterPhi,
-                                              MPhi, MIntraPhi, MInterPhi, FRet, ARet, AParm, FParm,
-                                              APIN, APOUT, FPIN, FPOUT, NPtr, DummyVProp};
-        return vfgNodeKinds.count(node->getNodeKind());
+        return node->getNodeKind() == Addr ||
+               node->getNodeKind() == Copy ||
+               node->getNodeKind() == Gep ||
+               node->getNodeKind() == Store ||
+               node->getNodeKind() == Load ||
+               node->getNodeKind() == Cmp ||
+               node->getNodeKind() == BinaryOp ||
+               node->getNodeKind() == UnaryOp ||
+               node->getNodeKind() == Branch ||
+               node->getNodeKind() == TPhi ||
+               node->getNodeKind() == TIntraPhi ||
+               node->getNodeKind() == TInterPhi ||
+               node->getNodeKind() == MPhi ||
+               node->getNodeKind() == MIntraPhi ||
+               node->getNodeKind() == MInterPhi ||
+               node->getNodeKind() == FRet ||
+               node->getNodeKind() == ARet ||
+               node->getNodeKind() == AParm ||
+               node->getNodeKind() == FParm ||
+               node->getNodeKind() == APIN ||
+               node->getNodeKind() == APOUT ||
+               node->getNodeKind() == FPIN ||
+               node->getNodeKind() == FPOUT ||
+               node->getNodeKind() == NPtr ||
+               node->getNodeKind() == DummyVProp;
     }
 
 
     static inline bool classof(const SVFValueNode* node)
     {
-        static const Set<GNodeK> vfgNodeKinds{Addr, Copy, Gep, Store, Load, Cmp, BinaryOp, UnaryOp, Branch, TPhi, TIntraPhi, TInterPhi,
-            MPhi, MIntraPhi, MInterPhi, FRet, ARet, AParm, FParm,
-            APIN, APOUT, FPIN, FPOUT, NPtr, DummyVProp};
-        return vfgNodeKinds.count(node->getNodeKind());
+        return node->getNodeKind() == Addr ||
+               node->getNodeKind() == Copy ||
+               node->getNodeKind() == Gep ||
+               node->getNodeKind() == Store ||
+               node->getNodeKind() == Load ||
+               node->getNodeKind() == Cmp ||
+               node->getNodeKind() == BinaryOp ||
+               node->getNodeKind() == UnaryOp ||
+               node->getNodeKind() == Branch ||
+               node->getNodeKind() == TPhi ||
+               node->getNodeKind() == TIntraPhi ||
+               node->getNodeKind() == TInterPhi ||
+               node->getNodeKind() == MPhi ||
+               node->getNodeKind() == MIntraPhi ||
+               node->getNodeKind() == MInterPhi ||
+               node->getNodeKind() == FRet ||
+               node->getNodeKind() == ARet ||
+               node->getNodeKind() == AParm ||
+               node->getNodeKind() == FParm ||
+               node->getNodeKind() == APIN ||
+               node->getNodeKind() == APOUT ||
+               node->getNodeKind() == FPIN ||
+               node->getNodeKind() == FPOUT ||
+               node->getNodeKind() == NPtr ||
+               node->getNodeKind() == DummyVProp;
     }
 
 protected:

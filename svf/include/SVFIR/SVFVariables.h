@@ -202,30 +202,29 @@ public:
 
     static inline bool classof(const GenericPAGNodeTy * node)
     {
-        static const Set<GNodeK> svfVarKinds{ValNode,
-                                             ObjNode,
-                                             RetNode,
-                                             VarargNode,
-                                             GepValNode,
-                                             GepObjNode,
-                                             FIObjNode,
-                                             DummyValNode,
-                                             DummyObjNode};
-        return svfVarKinds.count(node->getNodeKind());
+        return node->getNodeKind() == ValNode ||
+               node->getNodeKind() == ObjNode ||
+               node->getNodeKind() == RetNode ||
+               node->getNodeKind() == VarargNode ||
+               node->getNodeKind() == GepValNode ||
+               node->getNodeKind() == GepObjNode ||
+               node->getNodeKind() == FIObjNode ||
+               node->getNodeKind() == DummyValNode ||
+               node->getNodeKind() == DummyObjNode;
     }
 
     static inline bool classof(const SVFValueNode* node)
     {
-        static const Set<GNodeK> svfVarKinds{ValNode,
-            ObjNode,
-            RetNode,
-            VarargNode,
-            GepValNode,
-            GepObjNode,
-            FIObjNode,
-            DummyValNode,
-            DummyObjNode};
-        return svfVarKinds.count(node->getNodeKind());
+        return node->getNodeKind() == ValNode ||
+               node->getNodeKind() == ObjNode ||
+               node->getNodeKind() == RetNode ||
+               node->getNodeKind() == VarargNode ||
+               node->getNodeKind() == GepValNode ||
+               node->getNodeKind() == GepObjNode ||
+               node->getNodeKind() == FIObjNode ||
+               node->getNodeKind() == DummyValNode ||
+               node->getNodeKind() == DummyObjNode;
+
     }
 
 private:
