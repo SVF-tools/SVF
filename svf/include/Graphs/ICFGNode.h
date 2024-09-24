@@ -133,11 +133,11 @@ public:
     }
 
     static inline bool classof(const GenericICFGNodeTy* node) {
-        return ICFGNodeKinds.count(node->getNodeKind());
+        return isICFGNodeKinds(node->getNodeKind());
     }
 
     static inline bool classof(const SVFBaseNode* node) {
-        return ICFGNodeKinds.count(node->getNodeKind());
+        return isICFGNodeKinds(node->getNodeKind());
     }
 
 protected:
@@ -253,15 +253,15 @@ public:
     }
 
     static inline bool classof(const ICFGNode* node) {
-        return InterICFGNodeKinds.count(node->getNodeKind());
+        return isInterICFGNodeKind(node->getNodeKind());
     }
 
     static inline bool classof(const GenericICFGNodeTy* node) {
-        return InterICFGNodeKinds.count(node->getNodeKind());
+        return isInterICFGNodeKind(node->getNodeKind());
     }
 
     static inline bool classof(const SVFBaseNode* node) {
-        return InterICFGNodeKinds.count(node->getNodeKind());
+        return isInterICFGNodeKind(node->getNodeKind());
     }
 
     //@}

@@ -107,13 +107,13 @@ public:
     }
 
     static inline bool classof(const GenericVFGNodeTy * node) {
-        return VFGNodeKinds.count(node->getNodeKind());
+        return isVFGNodeKinds(node->getNodeKind());
     }
 
 
     static inline bool classof(const SVFBaseNode* node)
     {
-        return VFGNodeKinds.count(node->getNodeKind());
+        return isVFGNodeKinds(node->getNodeKind());
     }
 
 protected:
@@ -177,15 +177,15 @@ public:
     }
     static inline bool classof(const VFGNode *node)
     {
-        return StmtVFGNodeKinds.count(node->getNodeKind());
+        return isStmtVFGNodeKinds(node->getNodeKind());
     }
     static inline bool classof(const GenericVFGNodeTy *node)
     {
-        return StmtVFGNodeKinds.count(node->getNodeKind());
+        return isStmtVFGNodeKinds(node->getNodeKind());
     }
     static inline bool classof(const SVFBaseNode*node)
     {
-        return StmtVFGNodeKinds.count(node->getNodeKind());
+        return isStmtVFGNodeKinds(node->getNodeKind());
     }
     //@}
 
@@ -721,15 +721,15 @@ public:
     }
     static inline bool classof(const VFGNode *node)
     {
-        return PHIVFGNodeKinds.count(node->getNodeKind());
+        return isPHIVFGNodeKinds(node->getNodeKind());
     }
     static inline bool classof(const GenericVFGNodeTy *node)
     {
-        return PHIVFGNodeKinds.count(node->getNodeKind());
+        return isPHIVFGNodeKinds(node->getNodeKind());
     }
     static inline bool classof(const SVFBaseNode*node)
     {
-        return PHIVFGNodeKinds.count(node->getNodeKind());
+        return isPHIVFGNodeKinds(node->getNodeKind());
     }
     //@}
 
@@ -866,15 +866,15 @@ public:
     }
     static inline bool classof(const VFGNode *node)
     {
-        return ArgumentVFGNodeKinds.count(node->getNodeKind());
+        return isArgumentVFGNodeKinds(node->getNodeKind());
     }
     static inline bool classof(const GenericVFGNodeTy *node)
     {
-        return ArgumentVFGNodeKinds.count(node->getNodeKind());
+        return isArgumentVFGNodeKinds(node->getNodeKind());
     }
     static inline bool classof(const SVFBaseNode*node)
     {
-        return ArgumentVFGNodeKinds.count(node->getNodeKind());
+        return isArgumentVFGNodeKinds(node->getNodeKind());
     }
     //@}
 

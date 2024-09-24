@@ -202,13 +202,12 @@ public:
 
     static inline bool classof(const GenericPAGNodeTy * node)
     {
-        return SVFVarKinds.count(node->getNodeKind());
+        return isSVFVarKind(node->getNodeKind());
     }
 
     static inline bool classof(const SVFBaseNode* node)
     {
-        return SVFVarKinds.count(node->getNodeKind());
-
+        return isSVFVarKind(node->getNodeKind());
     }
 
 private:
@@ -284,15 +283,15 @@ public:
     }
     static inline bool classof(const SVFVar* node)
     {
-        return ValVarKinds.count(node->getNodeKind());
+        return isValVarKinds(node->getNodeKind());
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return ValVarKinds.count(node->getNodeKind());
+        return isValVarKinds(node->getNodeKind());
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return ValVarKinds.count(node->getNodeKind());
+        return isValVarKinds(node->getNodeKind());
     }
     //@}
 
@@ -342,15 +341,15 @@ public:
     }
     static inline bool classof(const SVFVar* node)
     {
-        return ObjVarKinds.count(node->getNodeKind());
+        return isObjVarKinds(node->getNodeKind());
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return ObjVarKinds.count(node->getNodeKind());
+        return isObjVarKinds(node->getNodeKind());
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return ObjVarKinds.count(node->getNodeKind());
+        return isObjVarKinds(node->getNodeKind());
     }
     //@}
 
@@ -503,9 +502,9 @@ public:
     }
 
     /// Set the base object from which this GEP node came from.
-    inline void setBaseNode(NodeID base)
+    inline void setBaseNode(NodeID bs)
     {
-        this->base = base;
+        this->base = bs;
     }
 
     /// Return the base object from which this GEP node came from.

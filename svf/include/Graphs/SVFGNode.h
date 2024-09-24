@@ -64,11 +64,11 @@ public:
     }
     static inline bool classof(const VFGNode *node)
     {
-        return MRSVFGNodeKinds.count(node->getNodeKind());
+        return isMRSVFGNodeKinds(node->getNodeKind());
     }
     static inline bool classof(const GenericVFGNodeTy *node)
     {
-        return MRSVFGNodeKinds.count(node->getNodeKind());
+        return isMRSVFGNodeKinds(node->getNodeKind());
     }
     //@}
 
@@ -316,15 +316,15 @@ public:
     }
     static inline bool classof(const MRSVFGNode *node)
     {
-        return MSSAPHISVFGNodeKinds.count(node->getNodeKind());
+        return isMSSAPHISVFGNodeKinds(node->getNodeKind());
     }
     static inline bool classof(const VFGNode *node)
     {
-        return MSSAPHISVFGNodeKinds.count(node->getNodeKind());
+        return isMSSAPHISVFGNodeKinds(node->getNodeKind());
     }
     static inline bool classof(const GenericVFGNodeTy *node)
     {
-        return MSSAPHISVFGNodeKinds.count(node->getNodeKind());
+        return isMSSAPHISVFGNodeKinds(node->getNodeKind());
     }
     //@}
 
