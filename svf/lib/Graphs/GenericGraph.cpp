@@ -165,6 +165,7 @@ SVFBaseNode::GNodeKSet SVFBaseNode::VFGNodeKinds = []() {
     result.insert(UnaryOp);
     result.insert(Branch);
     result.insert(NPtr);
+    result.insert(DummyVProp);
     assert(result.size() == 25 && "25 kinds of VFGNode");
     return result;
 }();
