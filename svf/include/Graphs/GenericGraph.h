@@ -304,7 +304,7 @@ protected:
         static_assert(DummyValNode - ValNode == 4,
                       "The number of ValVarKinds has changed, make sure the "
                       "range is correct");
-        return n <= DummyObjNode && n >= ValNode;
+        return n <= DummyValNode && n >= ValNode;
     }
 
     static inline bool isObjVarKinds(GNodeK n)
