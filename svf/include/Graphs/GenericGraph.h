@@ -360,7 +360,7 @@ protected:
         static_assert(MInterPhi - MPhi == 2,
                       "The number of MSSAPHISVFGNodeKinds has changed, make "
                       "sure the range is correct");
-        return n <= MInterPhi && n >= FPIN;
+        return n <= MInterPhi && n >= MPhi;
     }
     //@}
 };
