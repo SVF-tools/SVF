@@ -86,7 +86,8 @@ const std::string PTACallGraphEdge::toString() const
  */
 void PTACallGraph::addPTACallGraphNode(const CallGraphNode* callGraphNode)
 {
-    CallGraphNode* newNode = new CallGraphNode(callGraphNode->getId(), callGraphNode->getFunction());
+    CallGraphNode* newNode = new CallGraphNode(callGraphNode->getId(), callGraphNode->getFunction(), callGraphNode->isDeclaration(), callGraphNode->isIntrinsic(),
+                                               callGraphNode->hasAddressTaken(), callGraphNode->isVarArg());
     addGNode(callGraphNode->getId(), newNode);
     funToCallGraphNodeMap[callGraphNode->getFunction()] = newNode;
 }

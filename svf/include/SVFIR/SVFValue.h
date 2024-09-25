@@ -46,6 +46,7 @@ class SVFBasicBlock;
 class SVFArgument;
 class SVFFunction;
 class SVFType;
+class CallGraphNode;
 
 class SVFLoopAndDomInfo
 {
@@ -865,16 +866,22 @@ class SVFArgument : public SVFValue
     friend class SVFIRReader;
 private:
     const SVFFunction* fun;
+    const CallGraphNode* cgn;
     u32_t argNo;
     bool uncalled;
 public:
-    SVFArgument(const SVFType* ty, const SVFFunction* fun, u32_t argNo,
+    SVFArgument(const SVFType* ty, const SVFFunction* fun, const CallGraphNode* cgn, u32_t argNo,
                 bool uncalled)
-        : SVFValue(ty, SVFValue::SVFArg), fun(fun), argNo(argNo),
+        : SVFValue(ty, SVFValue::SVFArg), fun(fun), cgn(cgn), argNo(argNo),
           uncalled(uncalled)
     {
     }
     SVFArgument() = delete;
+
+    inline const CallGraphNode* getCallGraphNode() const
+    {
+        return cgn;
+    }
 
     inline const SVFFunction* getParent() const
     {

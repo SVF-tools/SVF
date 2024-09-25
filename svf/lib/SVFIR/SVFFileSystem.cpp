@@ -66,7 +66,7 @@ static SVFValue* createSVFValue(SVFValue::GNodeK kind, const SVFType* type,
         case SVFValue::SVFGlob:
             return new SVFGlobalValue(type);
         case SVFValue::SVFArg:
-            return new SVFArgument(type, {}, {}, {});
+            return new SVFArgument(type, {}, {}, {}, {});
         case SVFValue::SVFConst:
             return new SVFConstant(type);
         case SVFValue::SVFConstData:

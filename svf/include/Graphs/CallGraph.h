@@ -154,16 +154,45 @@ public:
 
 private:
     const SVFFunction* fun;
+    bool isDecl;   /// return true if this function does not have a body
+    bool intrinsic; /// return true if this function is an intrinsic function (e.g., llvm.dbg), which does not reside in the application code
+    bool addrTaken; /// return true if this function is address-taken (for indirect call purposes)
+    bool isUncalled;    /// return true if this function is never called
+    bool isNotRet;   /// return true if this function never returns
+    bool varArg;    /// return true if this function supports variable arguments
 
 public:
     /// Constructor
-    CallGraphNode(NodeID i, const SVFFunction* f) : GenericCallGraphNodeTy(i,CallNodeKd), fun(f)
+    CallGraphNode(NodeID i, const SVFFunction* f, bool declare, bool intrinsic, bool addrTaken, bool varg) :
+          GenericCallGraphNodeTy(i,CallNodeKd), fun(f), isDecl(declare), intrinsic(intrinsic),
+          addrTaken(addrTaken), isUncalled(false), isNotRet(false), varArg(varg)
     {
 
     }
      ~CallGraphNode()
      {
      }
+
+     inline bool isDeclaration() const
+     {
+         return isDecl;
+     }
+
+     inline bool isIntrinsic() const
+     {
+         return intrinsic;
+     }
+
+     inline bool hasAddressTaken() const
+     {
+         return addrTaken;
+     }
+
+    inline  bool isVarArg() const
+     {
+         return varArg;
+     }
+
     inline const std::string &getName() const
     {
         return fun->getName();
