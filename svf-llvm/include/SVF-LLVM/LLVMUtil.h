@@ -360,6 +360,21 @@ inline bool isHeapAllocExtCall(const Instruction *inst)
     return isHeapAllocExtCallViaRet(inst) || isHeapAllocExtCallViaArg(inst);
 }
 
+/// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
+bool isNonInstricCallSite(const Instruction* inst);
+
+/// Get program entry function from module.
+inline const Function* getProgEntryFunction(Module& module)
+{
+    for (auto it = module.begin(), eit = module.end(); it != eit; ++it)
+    {
+        const Function *fun = &(*it);
+        if (isProgEntryFunction(fun))
+            return (fun);
+    }
+    return nullptr;
+}
+
 } // End namespace LLVMUtil
 
 } // End namespace SVF

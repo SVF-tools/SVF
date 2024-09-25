@@ -120,7 +120,7 @@ public:
 
     typedef std::vector<const SVFFunction*> FuncVector;
 
-    CHNode (const std::string& name, NodeID i = 0, GNodeK k = 0):
+    CHNode (const std::string& name, NodeID i = 0, GNodeK k = CHNodeKd):
         GenericCHNodeTy(i, k), vtable(nullptr), className(name), flags(0)
     {
     }
@@ -190,6 +190,24 @@ public:
     {
         vtable = vtbl;
     }
+
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const CHNode *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const GenericCHNodeTy * node)
+    {
+        return node->getNodeKind() == CHNodeKd;
+    }
+
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == CHNodeKd;
+    }
+    //@}
 
 private:
     const SVFGlobalValue* vtable;

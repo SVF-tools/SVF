@@ -34,6 +34,7 @@
 #include "Util/Options.h"
 #include "SVFIR/SVFModule.h"
 
+
 using namespace std;
 using namespace SVF;
 using namespace SVFUtil;
@@ -373,8 +374,8 @@ void MemObj::setFieldSensitive()
 /*!
  * Constructor of a memory object
  */
-MemObj::MemObj(SymID id, ObjTypeInfo* ti, const SVFValue* val) :
-    typeInfo(ti), refVal(val), symId(id)
+MemObj::MemObj(SymID id, ObjTypeInfo* ti, const SVFValue* val, const SVFBaseNode* node) :
+    typeInfo(ti), refVal(val), symId(id), gNode(node)
 {
 }
 

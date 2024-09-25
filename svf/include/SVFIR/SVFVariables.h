@@ -60,19 +60,8 @@ public:
     /// GepValNode: temporary gep obj node for field sensitivity
     /// FIObjNode: for field insensitive analysis
     /// DummyValNode and DummyObjNode: for non-llvm-value node
-    enum PNODEK
-    {
-        ValNode,
-        ObjNode,
-        RetNode,
-        VarargNode,
-        GepValNode,
-        GepObjNode,
-        FIObjNode,
-        DummyValNode,
-        DummyObjNode,
-    };
-
+    typedef GNodeK PNODEK;
+    typedef s64_t GEdgeKind;
 
 protected:
     const SVFValue* value; ///< value of this SVFIR node
@@ -206,19 +195,34 @@ public:
     }
     //@}
 
+    static inline bool classof(const SVFVar *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const GenericPAGNodeTy * node)
+    {
+        return isSVFVarKind(node->getNodeKind());
+    }
+
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return isSVFVarKind(node->getNodeKind());
+    }
+
 private:
     ///  add methods of the components
     //@{
     inline void addInEdge(SVFStmt* inEdge)
     {
-        GNodeK kind = inEdge->getEdgeKind();
+        GEdgeKind kind = inEdge->getEdgeKind();
         InEdgeKindToSetMap[kind].insert(inEdge);
         addIncomingEdge(inEdge);
     }
 
     inline void addOutEdge(SVFStmt* outEdge)
     {
-        GNodeK kind = outEdge->getEdgeKind();
+        GEdgeKind kind = outEdge->getEdgeKind();
         OutEdgeKindToSetMap[kind].insert(outEdge);
         addOutgoingEdge(outEdge);
     }
@@ -264,9 +268,11 @@ class ValVar: public SVFVar
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
+private:
+    const SVFBaseNode* gNode; // constant, gepValvar, retPN, dummy could be null
 protected:
     /// Constructor to create an empty ValVar (for SVFIRReader/deserialization)
-    ValVar(NodeID i, PNODEK ty = ValNode) : SVFVar(i, ty) {}
+    ValVar(NodeID i, PNODEK ty = ValNode) : SVFVar(i, ty), gNode(nullptr) {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -277,25 +283,21 @@ public:
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == SVFVar::ValNode ||
-               node->getNodeKind() == SVFVar::GepValNode ||
-               node->getNodeKind() == SVFVar::RetNode ||
-               node->getNodeKind() == SVFVar::VarargNode ||
-               node->getNodeKind() == SVFVar::DummyValNode;
+        return isValVarKinds(node->getNodeKind());
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == SVFVar::ValNode ||
-               node->getNodeKind() == SVFVar::GepValNode ||
-               node->getNodeKind() == SVFVar::RetNode ||
-               node->getNodeKind() == SVFVar::VarargNode ||
-               node->getNodeKind() == SVFVar::DummyValNode;
+        return isValVarKinds(node->getNodeKind());
+    }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return isValVarKinds(node->getNodeKind());
     }
     //@}
 
     /// Constructor
-    ValVar(const SVFValue* val, NodeID i, PNODEK ty = ValNode)
-        : SVFVar(val, i, ty)
+    ValVar(const SVFValue* val, NodeID i, PNODEK ty = ValNode, const SVFBaseNode* node = nullptr)
+        : SVFVar(val, i, ty), gNode(node)
     {
     }
     /// Return name of a LLVM value
@@ -304,6 +306,11 @@ public:
         if (value)
             return value->getName();
         return "";
+    }
+
+    const SVFBaseNode* getGNode() const
+    {
+        return gNode;
     }
 
     virtual const std::string toString() const;
@@ -335,17 +342,15 @@ public:
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == SVFVar::ObjNode ||
-               node->getNodeKind() == SVFVar::GepObjNode ||
-               node->getNodeKind() == SVFVar::FIObjNode ||
-               node->getNodeKind() == SVFVar::DummyObjNode;
+        return isObjVarKinds(node->getNodeKind());
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == SVFVar::ObjNode ||
-               node->getNodeKind() == SVFVar::GepObjNode ||
-               node->getNodeKind() == SVFVar::FIObjNode ||
-               node->getNodeKind() == SVFVar::DummyObjNode;
+        return isObjVarKinds(node->getNodeKind());
+    }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return isObjVarKinds(node->getNodeKind());
     }
     //@}
 
@@ -477,6 +482,10 @@ public:
     {
         return node->getNodeKind() == SVFVar::GepObjNode;
     }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == SVFVar::GepObjNode;
+    }
     //@}
 
     /// Constructor
@@ -494,9 +503,9 @@ public:
     }
 
     /// Set the base object from which this GEP node came from.
-    inline void setBaseNode(NodeID base)
+    inline void setBaseNode(NodeID bs)
     {
-        this->base = base;
+        this->base = bs;
     }
 
     /// Return the base object from which this GEP node came from.
@@ -554,6 +563,10 @@ public:
     {
         return node->getNodeKind() == SVFVar::FIObjNode;
     }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == SVFVar::FIObjNode;
+    }
     //@}
 
     /// Constructor
@@ -604,6 +617,10 @@ public:
     {
         return node->getNodeKind() == SVFVar::RetNode;
     }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == SVFVar::RetNode;
+    }
     //@}
 
     /// Constructor
@@ -648,6 +665,10 @@ public:
     {
         return node->getNodeKind() == SVFVar::VarargNode;
     }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == SVFVar::VarargNode;
+    }
     //@}
 
     /// Constructor
@@ -685,6 +706,10 @@ public:
         return node->getNodeKind() == SVFVar::DummyValNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
+    {
+        return node->getNodeKind() == SVFVar::DummyValNode;
+    }
+    static inline bool classof(const SVFBaseNode* node)
     {
         return node->getNodeKind() == SVFVar::DummyValNode;
     }
@@ -729,6 +754,11 @@ public:
         return node->getNodeKind() == SVFVar::DummyObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
+    {
+        return node->getNodeKind() == SVFVar::DummyObjNode;
+    }
+
+    static inline bool classof(const SVFBaseNode* node)
     {
         return node->getNodeKind() == SVFVar::DummyObjNode;
     }

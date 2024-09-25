@@ -57,17 +57,6 @@ class ICFGNode : public GenericICFGNodeTy
     friend class SVFIRReader;
 
 public:
-    /// 22 kinds of ICFG node
-    /// Gep represents offset edge for field sensitivity
-    enum ICFGNodeK
-    {
-        IntraBlock,
-        FunEntryBlock,
-        FunExitBlock,
-        FunCallBlock,
-        FunRetBlock,
-        GlobalBlock
-    };
 
     typedef ICFGEdge::ICFGEdgeSetTy::iterator iterator;
     typedef ICFGEdge::ICFGEdgeSetTy::const_iterator const_iterator;
@@ -75,10 +64,11 @@ public:
     typedef Set<const RetPE *> RetPESet;
     typedef std::list<const VFGNode*> VFGNodeList;
     typedef std::list<const SVFStmt*> SVFStmtList;
+    typedef GNodeK ICFGNodeK;
 
 public:
     /// Constructor
-    ICFGNode(NodeID i, ICFGNodeK k) : GenericICFGNodeTy(i, k), fun(nullptr), bb(nullptr)
+    ICFGNode(NodeID i, GNodeK k) : GenericICFGNodeTy(i, k), fun(nullptr), bb(nullptr)
     {
     }
 
@@ -135,6 +125,22 @@ public:
     virtual const std::string getSourceLoc() const = 0;
 
     void dump() const;
+
+
+    static inline bool classof(const ICFGNode *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const GenericICFGNodeTy* node)
+    {
+        return isICFGNodeKinds(node->getNodeKind());
+    }
+
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return isICFGNodeKinds(node->getNodeKind());
+    }
 
 protected:
     const SVFFunction* fun;
@@ -248,24 +254,26 @@ public:
         return true;
     }
 
-    static inline bool classof(const ICFGNode *node)
+    static inline bool classof(const ICFGNode* node)
     {
-        return node->getNodeKind() == FunEntryBlock
-               || node->getNodeKind() == FunExitBlock
-               || node->getNodeKind() == FunCallBlock
-               || node->getNodeKind() == FunRetBlock;
+        return isInterICFGNodeKind(node->getNodeKind());
     }
 
-    static inline bool classof(const GenericICFGNodeTy *node)
+    static inline bool classof(const GenericICFGNodeTy* node)
     {
-        return node->getNodeKind() == FunEntryBlock
-               || node->getNodeKind() == FunExitBlock
-               || node->getNodeKind() == FunCallBlock
-               || node->getNodeKind() == FunRetBlock;
+        return isInterICFGNodeKind(node->getNodeKind());
     }
+
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return isInterICFGNodeKind(node->getNodeKind());
+    }
+
     //@}
     virtual const std::string getSourceLoc() const = 0;
 };
+
+
 
 
 /*!
@@ -323,6 +331,11 @@ public:
     }
 
     static inline bool classof(const GenericICFGNodeTy *node)
+    {
+        return node->getNodeKind() == FunEntryBlock;
+    }
+
+    static inline bool classof(const SVFBaseNode*node)
     {
         return node->getNodeKind() == FunEntryBlock;
     }
@@ -389,6 +402,11 @@ public:
     }
 
     static inline bool classof(const GenericICFGNodeTy *node)
+    {
+        return node->getNodeKind() == FunExitBlock;
+    }
+
+    static inline bool classof(const SVFBaseNode*node)
     {
         return node->getNodeKind() == FunExitBlock;
     }
@@ -482,6 +500,12 @@ public:
     {
         return SVFUtil::cast<SVFCallInst>(cs)->getArgOperand(ArgNo);
     }
+
+    const SVFVar* getArgumentVar(u32_t ArgNo) const
+    {
+        return getActualParms()[ArgNo];
+    }
+
     const SVFType* getType() const
     {
         return SVFUtil::cast<SVFCallInst>(cs)->getType();
@@ -553,6 +577,11 @@ public:
     }
 
     static inline bool classof(const GenericICFGNodeTy *node)
+    {
+        return node->getNodeKind() == FunCallBlock;
+    }
+
+    static inline bool classof(const SVFBaseNode*node)
     {
         return node->getNodeKind() == FunCallBlock;
     }
@@ -634,6 +663,10 @@ public:
     }
 
     static inline bool classof(const GenericICFGNodeTy *node)
+    {
+        return node->getNodeKind() == FunRetBlock;
+    }
+    static inline bool classof(const SVFBaseNode*node)
     {
         return node->getNodeKind() == FunRetBlock;
     }

@@ -41,7 +41,6 @@ void LeakChecker::initSrcs()
 {
 
     SVFIR* pag = getPAG();
-    ICFG* icfg = pag->getICFG();
     for(SVFIR::CSToRetMap::iterator it = pag->getCallSiteRets().begin(),
             eit = pag->getCallSiteRets().end(); it!=eit; ++it)
     {
@@ -65,7 +64,7 @@ void LeakChecker::initSrcs()
                 while (!worklist.empty())
                 {
                     const CallICFGNode* cs = worklist.pop();
-                    const RetICFGNode* retBlockNode = icfg->getRetICFGNode(cs->getCallSite());
+                    const RetICFGNode* retBlockNode = cs->getRetICFGNode();
                     const PAGNode* pagNode = pag->getCallSiteRet(retBlockNode);
                     const SVFGNode* node = getSVFG()->getDefSVFGNode(pagNode);
                     if (visited.test(node->getId()) == 0)

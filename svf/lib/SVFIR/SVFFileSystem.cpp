@@ -1115,9 +1115,6 @@ cJSON* SVFIRWriter::toJson(const ICFG* icfg)
     F(totalICFGNode);
     F(FunToFunEntryNodeMap);
     F(FunToFunExitNodeMap);
-    F(CSToCallNodeMap);
-    F(CSToRetNodeMap);
-    F(InstToBlockNodeMap);
     F(globalBlockNode);
     F(icfgNodeToSVFLoopVec);
 #undef F
@@ -1741,9 +1738,6 @@ void SVFIRReader::readJson(ICFG* icfg)
     F(totalICFGNode);
     F(FunToFunEntryNodeMap);
     F(FunToFunExitNodeMap);
-    F(CSToCallNodeMap);
-    F(CSToRetNodeMap);
-    F(InstToBlockNodeMap);
     F(globalBlockNode);
     F(icfgNodeToSVFLoopVec);
 #undef F

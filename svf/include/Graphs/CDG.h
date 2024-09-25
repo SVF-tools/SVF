@@ -96,7 +96,7 @@ public:
 
 public:
     /// Constructor
-    CDGNode(const ICFGNode *icfgNode) : GenericCDGNodeTy(icfgNode->getId(), 0), _icfgNode(icfgNode)
+    CDGNode(const ICFGNode *icfgNode) : GenericCDGNodeTy(icfgNode->getId(), CDNodeKd), _icfgNode(icfgNode)
     {
 
     }
@@ -114,6 +114,23 @@ public:
         return _icfgNode;
     }
 
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const CDGNode *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const GenericICFGNodeTy* node)
+    {
+        return node->getNodeKind() == CDNodeKd;
+    }
+
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == CDNodeKd;
+    }
+    //@}
 
 private:
     const ICFGNode *_icfgNode;

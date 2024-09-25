@@ -189,7 +189,8 @@ SaberCondAllocator::evaluateTestNullLikeExpr(const BranchStmt *branchStmt, const
 
     const SVFBasicBlock* succ1 = branchStmt->getSuccessor(0)->getBB();
 
-    if (isTestNullExpr(branchStmt->getCondition()->getValue()))
+    const ValVar* condVar = SVFUtil::cast<ValVar>(branchStmt->getCondition());
+    if (isTestNullExpr(SVFUtil::cast<ICFGNode>(condVar->getGNode())))
     {
         // succ is then branch
         if (succ1 == succ)
@@ -198,7 +199,7 @@ SaberCondAllocator::evaluateTestNullLikeExpr(const BranchStmt *branchStmt, const
         else
             return getTrueCond();
     }
-    if (isTestNotNullExpr(branchStmt->getCondition()->getValue()))
+    if (isTestNotNullExpr(SVFUtil::cast<ICFGNode>(condVar->getGNode())))
     {
         // succ is then branch
         if (succ1 == succ)
@@ -344,31 +345,27 @@ bool SaberCondAllocator::isNECmp(const CmpStmt *cmp) const
     return (cmp->getPredicate() == CmpStmt::ICMP_NE);
 }
 
-bool SaberCondAllocator::isTestNullExpr(const SVFValue* test) const
+bool SaberCondAllocator::isTestNullExpr(const ICFGNode* test) const
 {
-    if(const SVFInstruction* svfInst = SVFUtil::dyn_cast<SVFInstruction>(test))
+    if(!test) return false;
+    for(const SVFStmt* stmt : PAG::getPAG()->getSVFStmtList(test))
     {
-        for(const SVFStmt* stmt : PAG::getPAG()->getSVFStmtList(getICFG()->getICFGNode(svfInst)))
+        if(const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
         {
-            if(const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
-            {
-                return isTestContainsNullAndTheValue(cmp) && isEQCmp(cmp);
-            }
+            return isTestContainsNullAndTheValue(cmp) && isEQCmp(cmp);
         }
     }
     return false;
 }
 
-bool SaberCondAllocator::isTestNotNullExpr(const SVFValue* test) const
+bool SaberCondAllocator::isTestNotNullExpr(const ICFGNode* test) const
 {
-    if(const SVFInstruction* svfInst = SVFUtil::dyn_cast<SVFInstruction>(test))
+    if(!test) return false;
+    for(const SVFStmt* stmt : PAG::getPAG()->getSVFStmtList(test))
     {
-        for(const SVFStmt* stmt : PAG::getPAG()->getSVFStmtList(getICFG()->getICFGNode(svfInst)))
+        if(const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
         {
-            if(const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
-            {
-                return isTestContainsNullAndTheValue(cmp) && isNECmp(cmp);
-            }
+            return isTestContainsNullAndTheValue(cmp) && isNECmp(cmp);
         }
     }
     return false;

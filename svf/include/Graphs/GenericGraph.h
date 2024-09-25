@@ -134,46 +134,126 @@ protected:
 };
 
 
-/*!
- * Generic node on the graph as base class
- */
-template<class NodeTy,class EdgeTy>
-class GenericNode
+class SVFBaseNode
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
-    typedef NodeTy NodeType;
-    typedef EdgeTy EdgeType;
-    /// Edge kind
-    typedef s64_t GNodeK;
-    typedef OrderedSet<EdgeType*, typename EdgeType::equalGEdge> GEdgeSetTy;
-    /// Edge iterator
-    ///@{
-    typedef typename GEdgeSetTy::iterator iterator;
-    typedef typename GEdgeSetTy::const_iterator const_iterator;
-    ///@}
 
-private:
-    NodeID id;		///< Node ID
-    GNodeK nodeKind;	///< Node kind
+    enum GNodeK
+    {
+        // ┌── ICFGNodeKinds: Combines inter-procedural and intra-procedural control flow graph nodes
+        // │   ├── Represents a node within a single procedure
+        IntraBlock,
+        // │   └── Represents a global-level block
+        GlobalBlock,
+        // │   └─ InterICFGNodeKinds: Types of inter-procedural control flow graph nodes
+        // │      ├── Entry point of a function
+        FunEntryBlock,
+        // │      ├── Exit point of a function
+        FunExitBlock,
+        // │      ├── Call site in the function
+        FunCallBlock,
+        // │      └── Return site in the function
+        FunRetBlock,
+        // └────────
 
-    GEdgeSetTy InEdges; ///< all incoming edge of this node
-    GEdgeSetTy OutEdges; ///< all outgoing edge of this node
+        // ┌── SVFVarKinds: Combines ValVarKinds and ObjVarKinds for variable nodes
+        // │   ┌── ValVarKinds: Types of value variable nodes
+        // │   │   ├── Represents a standard value variable
+        ValNode,
+        // │   │   ├── Represents a GEP value variable
+        GepValNode,
+        // │   │   ├── Represents a return value node
+        RetNode,
+        // │   │   ├── Represents a variadic argument node
+        VarargNode,
+        // │   │   └── Dummy node for uninitialized values
+        DummyValNode,
+        // │   └── ObjVarKinds: Types of object variable nodes
+        // │       ├── Represents an object variable
+        ObjNode,
+        // │       ├── GepObjNode: Represents a GEP object variable
+        GepObjNode,
+        // │       ├── FIObjNode: Represents a flow-insensitive object node
+        FIObjNode,
+        // │       └── DummyObjNode: Dummy node for uninitialized objects
+        DummyObjNode,
+        // └────────
 
-public:
-    /// Constructor
-    GenericNode(NodeID i, GNodeK k): id(i),nodeKind(k)
+        // ┌── VFGNodeKinds: Various Value Flow Graph (VFG) node kinds with operations
+        // │   ├── Represents a comparison operation
+        Cmp,
+        // │   ├── Represents a binary operation
+        BinaryOp,
+        // │   ├── Represents a unary operation
+        UnaryOp,
+        // │   ├── Represents a branch operation
+        Branch,
+        // │   ├── Dummy node for value propagation
+        DummyVProp,
+        // │   └── Represents a null pointer operation
+        NPtr,
+        // │   └── ArgumentVFGNodeKinds: Types of argument nodes in VFG
+        // │        ├── Represents a function return value
+        FRet,
+        // │        ├── Represents an argument return value
+        ARet,
+        // │        ├── Represents an argument parameter
+        AParm,
+        // │        └── FParm: Represents a function parameter
+        FParm,
+        // │   └── StmtVFGNodeKinds: Types of statement nodes in VFG
+        // │        ├── Represents an address operation
+        Addr,
+        // │        ├── Represents a copy operation
+        Copy,
+        // │        ├── Represents a GEP operation
+        Gep,
+        // │        ├── Represents a store operation
+        Store,
+        // │        └── Represents a load operation
+        Load,
+        // │   └── PHIVFGNodeKinds: Types of PHI nodes in VFG
+        // │        ├── Represents a type-based PHI node
+        TPhi,
+        // │        ├── Represents an intra-procedural PHI node
+        TIntraPhi,
+        // │        └── Represents an inter-procedural PHI node
+        TInterPhi,
+        // │   └── MRSVFGNodeKinds: Memory-related SVFG nodes
+        // │        ├── Function parameter input
+        FPIN,
+        // │        ├── Function parameter output
+        FPOUT,
+        // │        ├── Argument parameter input
+        APIN,
+        // │        └── Argument parameter output
+        APOUT,
+        // │        └── MSSAPHISVFGNodeKinds: Mem SSA PHI nodes for SVFG
+        // │            ├── Memory PHI node
+        MPhi,
+        // │            ├── Intra-procedural memory PHI node
+        MIntraPhi,
+        // │            └── MInterPhi: Inter-procedural memory PHI node
+        MInterPhi,
+        // └────────
+
+        // Additional specific graph node types
+        CallNodeKd,    // Callgraph node
+        CDNodeKd,      // Control dependence graph node
+        CFLNodeKd,     // CFL graph node
+        CHNodeKd,      // Class hierarchy graph node
+        ConstraintNodeKd, // Constraint graph node
+        TCTNodeKd,     // Thread creation tree node
+        DCHNodeKd,     // DCHG node
+        OtherKd        // Other node kind
+    };
+
+
+
+    SVFBaseNode(NodeID i, GNodeK k): id(i), nodeKind(k)
     {
 
-    }
-
-    /// Destructor
-    virtual ~GenericNode()
-    {
-        for (auto * edge : OutEdges)
-            delete edge;
     }
 
     /// Get ID
@@ -186,6 +266,142 @@ public:
     inline GNodeK getNodeKind() const
     {
         return nodeKind;
+    }
+
+protected:
+    NodeID id;		///< Node ID
+    GNodeK nodeKind;	///< Node kind
+
+    /// Helper functions to check node kinds
+    //{@ Check node kind
+    static inline bool isICFGNodeKinds(GNodeK n)
+    {
+        static_assert(FunRetBlock - IntraBlock == 5,
+                      "the number of ICFGNodeKinds has changed, make sure "
+                      "the range is correct");
+        return n <= FunRetBlock && n >= IntraBlock;
+    }
+
+    static inline bool isInterICFGNodeKind(GNodeK n)
+    {
+        static_assert(FunRetBlock - FunEntryBlock == 3,
+                      "the number of InterICFGNodeKind has changed, make sure "
+                      "the range is correct");
+        return n <= FunRetBlock && n >= FunEntryBlock;
+    }
+
+    static inline bool isSVFVarKind(GNodeK n)
+    {
+        static_assert(DummyObjNode - ValNode == 8,
+                      "The number of SVFVarKinds has changed, make sure the "
+                      "range is correct");
+
+        return n <= DummyObjNode && n >= ValNode;
+    }
+
+    static inline bool isValVarKinds(GNodeK n)
+    {
+        static_assert(DummyValNode - ValNode == 4,
+                      "The number of ValVarKinds has changed, make sure the "
+                      "range is correct");
+        return n <= DummyValNode && n >= ValNode;
+    }
+
+    static inline bool isObjVarKinds(GNodeK n)
+    {
+        static_assert(DummyObjNode - ObjNode == 3,
+                      "The number of ObjVarKinds has changed, make sure the "
+                      "range is correct");
+        return n <= DummyObjNode && n >= ObjNode;
+    }
+
+    static inline bool isVFGNodeKinds(GNodeK n)
+    {
+        static_assert(MInterPhi - Cmp == 24,
+                      "The number of VFGNodeKinds has changed, make sure the "
+                      "range is correct");
+        return n <= MInterPhi && n >= Cmp;
+    }
+
+    static inline bool isArgumentVFGNodeKinds(GNodeK n)
+    {
+        static_assert(FParm - FRet == 3,
+                      "The number of ArgumentVFGNodeKinds has changed, make "
+                      "sure the range is correct");
+        return n <= FParm && n >= FRet;
+    }
+
+    static inline bool isStmtVFGNodeKinds(GNodeK n)
+    {
+        static_assert(Load - Addr == 4,
+                      "The number of StmtVFGNodeKinds has changed, make sure "
+                      "the range is correct");
+        return n <= Load && n >= Addr;
+    }
+
+    static inline bool isPHIVFGNodeKinds(GNodeK n)
+    {
+        static_assert(TInterPhi - TPhi == 2,
+                      "The number of PHIVFGNodeKinds has changed, make sure "
+                      "the range is correct");
+        return n <= TInterPhi && n >= TPhi;
+    }
+
+    static inline bool isMRSVFGNodeKinds(GNodeK n)
+    {
+        static_assert(MInterPhi - FPIN == 6,
+                      "The number of MRSVFGNodeKinds has changed, make sure "
+                      "the range is correct");
+        return n <= MInterPhi && n >= FPIN;
+    }
+
+    static inline bool isMSSAPHISVFGNodeKinds(GNodeK n)
+    {
+        static_assert(MInterPhi - MPhi == 2,
+                      "The number of MSSAPHISVFGNodeKinds has changed, make "
+                      "sure the range is correct");
+        return n <= MInterPhi && n >= MPhi;
+    }
+    //@}
+};
+
+/*!
+ * Generic node on the graph as base class
+ */
+template<class NodeTy,class EdgeTy>
+class GenericNode: public SVFBaseNode
+{
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
+public:
+    typedef NodeTy NodeType;
+    typedef EdgeTy EdgeType;
+    /// Edge kind
+    typedef OrderedSet<EdgeType*, typename EdgeType::equalGEdge> GEdgeSetTy;
+    /// Edge iterator
+    ///@{
+    typedef typename GEdgeSetTy::iterator iterator;
+    typedef typename GEdgeSetTy::const_iterator const_iterator;
+    ///@}
+
+private:
+
+    GEdgeSetTy InEdges; ///< all incoming edge of this node
+    GEdgeSetTy OutEdges; ///< all outgoing edge of this node
+
+public:
+    /// Constructor
+    GenericNode(NodeID i, GNodeK k): SVFBaseNode(i, k)
+    {
+
+    }
+
+    /// Destructor
+    virtual ~GenericNode()
+    {
+        for (auto * edge : OutEdges)
+            delete edge;
     }
 
     /// Get incoming/outgoing edge set
@@ -334,6 +550,16 @@ public:
             return nullptr;
     }
     //@}
+
+    static inline bool classof(const GenericNode<NodeTy, EdgeTy>*)
+    {
+        return true;
+    }
+
+    static inline bool classof(const SVFBaseNode*)
+    {
+        return true;
+    }
 };
 
 /*

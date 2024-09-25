@@ -110,11 +110,10 @@ void LLVMLoopAnalysis::buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvm
         {
             for (const auto &ins: *BB)
             {
-                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&ins);
-                if(isIntrinsicInst(svfInst))
+                if(LLVMUtil::isIntrinsicInst(&ins))
                     continue;
-                loop_ids.insert(icfg->getICFGNode(svfInst));
-                nodes.insert(icfg->getICFGNode(svfInst));
+                loop_ids.insert(LLVMModuleSet::getLLVMModuleSet()->getICFGNode(&ins));
+                nodes.insert(LLVMModuleSet::getLLVMModuleSet()->getICFGNode(&ins));
             }
         }
         SVFLoop *svf_loop = new SVFLoop(nodes, Options::LoopBound());
@@ -130,9 +129,7 @@ void LLVMLoopAnalysis::buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvm
         {
             in_ins = in_ins->getNextNode();
         }
-        const SVFInstruction* svfInInst =
-            LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(in_ins);
-        ICFGNode *in_node = icfg->getICFGNode(svfInInst);
+        ICFGNode *in_node = LLVMModuleSet::getLLVMModuleSet()->getICFGNode(in_ins);
         for (const auto &edge: in_node->getInEdges())
         {
             if (loop_ids.find(edge->getSrcNode()) == loop_ids.end())
@@ -150,8 +147,7 @@ void LLVMLoopAnalysis::buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvm
         }
         // handle in edge
         llvm::Instruction &br_ins = header_blk->back();
-        const SVFInstruction* svfBrInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&br_ins);
-        ICFGNode *br_node = icfg->getICFGNode(svfBrInst);
+        ICFGNode *br_node = LLVMModuleSet::getLLVMModuleSet()->getICFGNode(&br_ins);
         for (const auto &edge: br_node->getOutEdges())
         {
             if (loop_ids.find(edge->getDstNode()) != loop_ids.end())
@@ -177,8 +173,7 @@ void LLVMLoopAnalysis::buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvm
                 out_ins = out_ins->getNextNode();
             }
 
-            const SVFInstruction* svfOutInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(out_ins);
-            ICFGNode *out_node = icfg->getICFGNode(svfOutInst);
+            ICFGNode *out_node = LLVMModuleSet::getLLVMModuleSet()->getICFGNode(out_ins);
             for (const auto &edge: out_node->getInEdges())
             {
                 svf_loop->addOutICFGEdge(edge);

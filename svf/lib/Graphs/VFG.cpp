@@ -835,8 +835,7 @@ void VFG::connectDirectVFGEdges()
             for(RetPESet::const_iterator it = calleeRet->retPEBegin(), eit = calleeRet->retPEEnd(); it!=eit; ++it)
             {
                 ActualRetVFGNode* callsiteRev = getActualRetVFGNode((*it)->getLHSVar());
-                const CallICFGNode* retBlockNode = (*it)->getCallSite();
-                CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(retBlockNode->getCallSite());
+                const CallICFGNode* callBlockNode = (*it)->getCallSite();
                 addInterEdgeFromFRToAR(calleeRet,callsiteRev, getCallSiteID(callBlockNode, calleeRet->getFun()));
             }
         }
@@ -974,9 +973,8 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
 void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFunction* callee, VFGEdgeSetTy& edges)
 {
     SVFIR * pag = SVFIR::getPAG();
-    ICFG * icfg = pag->getICFG();
     CallSiteID csId = getCallSiteID(callBlockNode, callee);
-    RetICFGNode* retBlockNode = icfg->getRetICFGNode(callBlockNode->getCallSite());
+    const RetICFGNode* retBlockNode = callBlockNode->getRetICFGNode();
     // connect actual and formal param
     if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee) &&
             matchArgs(callBlockNode, callee))

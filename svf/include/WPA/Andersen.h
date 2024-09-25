@@ -137,7 +137,7 @@ public:
     //@}
 
     /// Add copy edge on constraint graph
-    virtual inline bool addCopyEdge(NodeID src, NodeID dst) = 0;
+    virtual bool addCopyEdge(NodeID src, NodeID dst) = 0;
 
     /// dump statistics
     inline void printStat()

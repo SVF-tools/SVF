@@ -99,7 +99,9 @@ void AbstractInterpretation::initWTO()
     for (const CallGraphNode* cgn : svfir->getModule()->getCallGraphNodeSet())
     {
         const SVFFunction* fun = cgn->getFunction();
-        auto* wto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(fun)); //TODO: HWG
+        if(fun->isDeclaration())
+            continue;
+        auto* wto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(fun));
         wto->init();
         funcToWTO[aeCallGraph->getCallGraphNode(fun)] = wto; // the AE call graph is different from the SVFIR call graph
     }

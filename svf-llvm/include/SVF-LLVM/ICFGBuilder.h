@@ -33,6 +33,7 @@
 #include "Graphs/ICFG.h"
 #include "Util/WorkList.h"
 #include "BasicTypes.h"
+#include "LLVMModule.h"
 
 namespace SVF
 {
@@ -44,6 +45,12 @@ public:
 
     typedef std::vector<const Instruction*> InstVec;
     typedef Set<const Instruction*> BBSet;
+    typedef Map<const Instruction*, CallICFGNode *> CSToCallNodeMapTy;
+    typedef Map<const Instruction*, RetICFGNode *> CSToRetNodeMapTy;
+    typedef Map<const Instruction*, IntraICFGNode *> InstToBlockNodeMapTy;
+    typedef Map<const Function*, FunEntryICFGNode *> FunToFunEntryNodeMapTy;
+    typedef Map<const Function*, FunExitICFGNode *> FunToFunExitNodeMapTy;
+
 
 private:
     ICFG* icfg;
@@ -55,9 +62,42 @@ public:
     {
 
     }
-    void build(SVFModule* svfModule);
+    void build();
 
 private:
+
+    LLVMModuleSet* llvmModuleSet()
+    {
+        return LLVMModuleSet::getLLVMModuleSet();
+    }
+
+    CSToRetNodeMapTy& csToRetNodeMap()
+    {
+        return llvmModuleSet()->CSToRetNodeMap;
+    }
+
+    CSToCallNodeMapTy& csToCallNodeMap()
+    {
+        return llvmModuleSet()->CSToCallNodeMap;
+    }
+
+    InstToBlockNodeMapTy& instToBlockNodeMap()
+    {
+        return llvmModuleSet()->InstToBlockNodeMap;
+    }
+
+    FunToFunEntryNodeMapTy& funToFunEntryNodeMap()
+    {
+        return llvmModuleSet()->FunToFunEntryNodeMap;
+    }
+
+    FunToFunExitNodeMapTy& funToFunExitNodeMap()
+    {
+        return llvmModuleSet()->FunToFunExitNodeMap;
+    }
+
+private:
+
     /// Create edges between ICFG nodes within a function
     ///@{
     void processFunEntry(const Function*  fun, WorkList& worklist);
@@ -71,41 +111,71 @@ private:
 
     void checkICFGNodesVisited(const Function* fun);
 
-    void connectGlobalToProgEntry(SVFModule* svfModule);
+    void connectGlobalToProgEntry();
 
-    /// Add/Get an inter block ICFGNode
-    InterICFGNode* addInterBlockICFGNode(const SVFInstruction* inst);
-
-    /// Add/Get a basic block ICFGNode
-    inline ICFGNode* addBlockICFGNode(const SVFInstruction* inst)
-    {
-        ICFGNode* node;
-        if(SVFUtil::isNonInstricCallSite(inst))
-            node = addInterBlockICFGNode(inst);
-        else
-            node = addIntraBlockICFGNode(inst);
-        const_cast<SVFBasicBlock*>(inst->getParent())->addICFGNode(node);
-        return node;
-    }
 
     /// Create edges between ICFG nodes across functions
-    void addICFGInterEdges(const SVFInstruction*  cs, const SVFFunction*  callee);
+    void addICFGInterEdges(const Instruction*  cs, const Function*  callee);
 
-    /// Add a call node
-    inline CallICFGNode* getCallICFGNode(const SVFInstruction*  cs)
+    inline ICFGNode* getICFGNode(const Instruction* inst)
     {
-        return icfg->getCallICFGNode(cs);
+        return llvmModuleSet()->getICFGNode(inst);
     }
-    /// Add a return node
-    inline RetICFGNode* getRetICFGNode(const SVFInstruction*  cs)
+
+    inline bool hasICFGNode(const Instruction* inst)
     {
-        return icfg->getRetICFGNode(cs);
+        return llvmModuleSet()->hasICFGNode(inst);
     }
+
+    /// get a call node
+    inline CallICFGNode* getCallICFGNode(const Instruction*  cs)
+    {
+        return llvmModuleSet()->getCallICFGNode(cs);
+    }
+    /// get a return node
+    inline RetICFGNode* getRetICFGNode(const Instruction*  cs)
+    {
+        return llvmModuleSet()->getRetICFGNode(cs);
+    }
+    /// get a intra node
+    inline IntraICFGNode* getIntraICFGNode(const Instruction* inst)
+    {
+        return llvmModuleSet()->getIntraICFGNode(inst);
+    }
+
+    /// get a function entry node
+    inline FunEntryICFGNode* getFunEntryICFGNode(const Function*  fun)
+    {
+        return llvmModuleSet()->getFunEntryICFGNode(fun);
+    }
+    /// get a function exit node
+    inline FunExitICFGNode* getFunExitICFGNode(const Function*  fun)
+    {
+        return llvmModuleSet()->getFunExitICFGNode(fun);
+    }
+
+    inline GlobalICFGNode* getGlobalICFGNode() const
+    {
+        return icfg->getGlobalICFGNode();
+    }
+
+    /// Add/Get an inter block ICFGNode
+    InterICFGNode* addInterBlockICFGNode(const Instruction* inst);
+
+    /// Add/Get a basic block ICFGNode
+    inline ICFGNode* addBlockICFGNode(const Instruction* inst);
 
     /// Add and get IntraBlock ICFGNode
-    IntraICFGNode* addIntraBlockICFGNode(const SVFInstruction* inst)
+    IntraICFGNode* addIntraBlockICFGNode(const Instruction* inst);
+
+    FunEntryICFGNode* addFunEntryBlock(const Function* fun);
+
+    FunExitICFGNode* addFunExitBlock(const Function* fun);
+
+    inline void addGlobalICFGNode()
     {
-        return icfg->addIntraICFGNode(inst);
+        icfg->globalBlockNode = new GlobalICFGNode(icfg->totalICFGNode++);
+        icfg->addICFGNode(icfg->globalBlockNode);
     }
 
 private:

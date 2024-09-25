@@ -88,7 +88,7 @@ class TCTNode: public GenericTCTNodeTy
 public:
     /// Constructor
     TCTNode(NodeID i, const CxtThread& cctx) :
-        GenericTCTNodeTy(i, 0), ctx(cctx), multiforked(false)
+        GenericTCTNodeTy(i, TCTNodeKd), ctx(cctx), multiforked(false)
     {
     }
 
@@ -122,6 +122,24 @@ public:
         return multiforked;
     }
     //@}
+
+    ///Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const TCTNode *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const GenericTCTNodeTy *node)
+    {
+        return node->getNodeKind() == TCTNodeKd;
+    }
+    static inline bool classof(const SVFBaseNode*node)
+    {
+        return node->getNodeKind() == TCTNodeKd;
+    }
+    //@}
+
 
 private:
     const CxtThread ctx;

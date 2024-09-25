@@ -318,11 +318,11 @@ void SymbolTableBuilder::collectVal(const Value* val)
 void SymbolTableBuilder::collectObj(const Value* val)
 {
     val = LLVMUtil::getGlobalRep(val);
-    SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->objSymMap.find(
-                LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
+    LLVMModuleSet* llvmModuleSet = LLVMModuleSet::getLLVMModuleSet();
+    SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->objSymMap.find(llvmModuleSet->getSVFValue(val));
     if (iter == symInfo->objSymMap.end())
     {
-        SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
+        SVFValue* svfVal = llvmModuleSet->getSVFValue(val);
         // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
         // then we treat them as one ConstantObj
         if (isConstantObjSym(val) && !symInfo->getModelConstants())
@@ -341,7 +341,7 @@ void SymbolTableBuilder::collectObj(const Value* val)
             // create a memory object
             MemObj* mem =
                 new MemObj(id, createObjTypeInfo(val),
-                           LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
+                           llvmModuleSet->getSVFValue(val));
             assert(symInfo->objMap.find(id) == symInfo->objMap.end());
             symInfo->objMap[id] = mem;
         }
