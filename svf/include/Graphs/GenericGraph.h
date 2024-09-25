@@ -143,99 +143,99 @@ public:
     {
         // ┌── ICFGNodeKinds: Combines inter-procedural and intra-procedural control flow graph nodes
         // │   ├── Represents a node within a single procedure
-                   IntraBlock,
+        IntraBlock,
         // │   └── Represents a global-level block
-                   GlobalBlock,
+        GlobalBlock,
         // │   └─ InterICFGNodeKinds: Types of inter-procedural control flow graph nodes
         // │      ├── Entry point of a function
-                      FunEntryBlock,
+        FunEntryBlock,
         // │      ├── Exit point of a function
-                      FunExitBlock,
+        FunExitBlock,
         // │      ├── Call site in the function
-                      FunCallBlock,
+        FunCallBlock,
         // │      └── Return site in the function
-                      FunRetBlock,
+        FunRetBlock,
         // └────────
 
         // ┌── SVFVarKinds: Combines ValVarKinds and ObjVarKinds for variable nodes
         // │   ┌── ValVarKinds: Types of value variable nodes
         // │   │   ├── Represents a standard value variable
-                       ValNode,
+        ValNode,
         // │   │   ├── Represents a GEP value variable
-                       GepValNode,
+        GepValNode,
         // │   │   ├── Represents a return value node
-                       RetNode,
+        RetNode,
         // │   │   ├── Represents a variadic argument node
-                       VarargNode,
+        VarargNode,
         // │   │   └── Dummy node for uninitialized values
-                       DummyValNode,
+        DummyValNode,
         // │   └── ObjVarKinds: Types of object variable nodes
         // │       ├── Represents an object variable
-                       ObjNode,
+        ObjNode,
         // │       ├── GepObjNode: Represents a GEP object variable
-                       GepObjNode,
+        GepObjNode,
         // │       ├── FIObjNode: Represents a flow-insensitive object node
-                       FIObjNode,
+        FIObjNode,
         // │       └── DummyObjNode: Dummy node for uninitialized objects
-                       DummyObjNode,
+        DummyObjNode,
         // └────────
 
         // ┌── VFGNodeKinds: Various Value Flow Graph (VFG) node kinds with operations
         // │   ├── Represents a comparison operation
-                   Cmp,
+        Cmp,
         // │   ├── Represents a binary operation
-                   BinaryOp,
+        BinaryOp,
         // │   ├── Represents a unary operation
-                   UnaryOp,
+        UnaryOp,
         // │   ├── Represents a branch operation
-                   Branch,
+        Branch,
         // │   ├── Dummy node for value propagation
-                   DummyVProp,
+        DummyVProp,
         // │   └── Represents a null pointer operation
-                   NPtr,
+        NPtr,
         // │   └── ArgumentVFGNodeKinds: Types of argument nodes in VFG
         // │        ├── Represents a function return value
-                        FRet,
+        FRet,
         // │        ├── Represents an argument return value
-                        ARet,
+        ARet,
         // │        ├── Represents an argument parameter
-                        AParm,
+        AParm,
         // │        └── FParm: Represents a function parameter
-                        FParm,
+        FParm,
         // │   └── StmtVFGNodeKinds: Types of statement nodes in VFG
         // │        ├── Represents an address operation
-                        Addr,
+        Addr,
         // │        ├── Represents a copy operation
-                        Copy,
+        Copy,
         // │        ├── Represents a GEP operation
-                        Gep,
+        Gep,
         // │        ├── Represents a store operation
-                        Store,
+        Store,
         // │        └── Represents a load operation
-                        Load,
+        Load,
         // │   └── PHIVFGNodeKinds: Types of PHI nodes in VFG
         // │        ├── Represents a type-based PHI node
-                        TPhi,
+        TPhi,
         // │        ├── Represents an intra-procedural PHI node
-                        TIntraPhi,
+        TIntraPhi,
         // │        └── Represents an inter-procedural PHI node
-                        TInterPhi,
+        TInterPhi,
         // │   └── MRSVFGNodeKinds: Memory-related SVFG nodes
         // │        ├── Function parameter input
-                        FPIN,
+        FPIN,
         // │        ├── Function parameter output
-                        FPOUT,
+        FPOUT,
         // │        ├── Argument parameter input
-                        APIN,
+        APIN,
         // │        └── Argument parameter output
-                        APOUT,
+        APOUT,
         // │        └── MSSAPHISVFGNodeKinds: Mem SSA PHI nodes for SVFG
         // │            ├── Memory PHI node
-                            MPhi,
+        MPhi,
         // │            ├── Intra-procedural memory PHI node
-                            MIntraPhi,
+        MIntraPhi,
         // │            └── MInterPhi: Inter-procedural memory PHI node
-                            MInterPhi,
+        MInterPhi,
         // └────────
 
         // Additional specific graph node types

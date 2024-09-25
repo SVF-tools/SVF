@@ -71,8 +71,8 @@ SVFIR* SVFIRBuilder::build()
         if(!it.second->getValue())
             continue;
         if (const Instruction* inst =
-                SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(
-                    it.second->getValue())))
+                    SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(
+                                it.second->getValue())))
         {
             if(llvmModuleSet()->hasICFGNode(inst))
                 it.second->gNode = llvmModuleSet()->getICFGNode(inst);
@@ -217,7 +217,7 @@ void SVFIRBuilder::initialiseNodes()
 
         const SVFBaseNode* gNode = nullptr;
         if (const Instruction* inst =
-                SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(iter->first)))
+                    SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(iter->first)))
         {
             if (llvmModuleSet()->hasICFGNode(inst))
             {

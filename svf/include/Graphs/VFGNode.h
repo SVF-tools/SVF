@@ -106,7 +106,8 @@ public:
         return true;
     }
 
-    static inline bool classof(const GenericVFGNodeTy * node) {
+    static inline bool classof(const GenericVFGNodeTy * node)
+    {
         return isVFGNodeKinds(node->getNodeKind());
     }
 

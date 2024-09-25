@@ -217,11 +217,13 @@ public:
         return true;
     }
 
-    static inline bool classof(const GenericICFGNodeTy* node) {
+    static inline bool classof(const GenericICFGNodeTy* node)
+    {
         return node->getNodeKind() == CallNodeKd;
     }
 
-    static inline bool classof(const SVFBaseNode* node) {
+    static inline bool classof(const SVFBaseNode* node)
+    {
         return node->getNodeKind() == CallNodeKd;
     }
     //@}

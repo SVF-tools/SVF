@@ -453,7 +453,7 @@ protected:
         ICFGNode* node;
         if (const SVFInstruction* inst = SVFUtil::dyn_cast<SVFInstruction>(curVal))
             node = llvmModuleSet()->getICFGNode(
-                SVFUtil::cast<Instruction>(llvmModuleSet()->getLLVMValue(inst)));
+                       SVFUtil::cast<Instruction>(llvmModuleSet()->getLLVMValue(inst)));
         else
             node = nullptr;
         if (StoreStmt* edge = pag->addStoreStmt(src, dst, node))
@@ -506,7 +506,8 @@ protected:
     AccessPath getAccessPathFromBaseNode(NodeID nodeId);
 
 private:
-    LLVMModuleSet* llvmModuleSet() {
+    LLVMModuleSet* llvmModuleSet()
+    {
         return LLVMModuleSet::getLLVMModuleSet();
     }
 };

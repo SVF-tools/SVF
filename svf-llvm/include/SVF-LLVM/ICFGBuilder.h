@@ -66,27 +66,33 @@ public:
 
 private:
 
-    LLVMModuleSet* llvmModuleSet() {
+    LLVMModuleSet* llvmModuleSet()
+    {
         return LLVMModuleSet::getLLVMModuleSet();
     }
 
-    CSToRetNodeMapTy& csToRetNodeMap() {
+    CSToRetNodeMapTy& csToRetNodeMap()
+    {
         return llvmModuleSet()->CSToRetNodeMap;
     }
 
-    CSToCallNodeMapTy& csToCallNodeMap() {
+    CSToCallNodeMapTy& csToCallNodeMap()
+    {
         return llvmModuleSet()->CSToCallNodeMap;
     }
 
-    InstToBlockNodeMapTy& instToBlockNodeMap() {
+    InstToBlockNodeMapTy& instToBlockNodeMap()
+    {
         return llvmModuleSet()->InstToBlockNodeMap;
     }
 
-    FunToFunEntryNodeMapTy& funToFunEntryNodeMap() {
+    FunToFunEntryNodeMapTy& funToFunEntryNodeMap()
+    {
         return llvmModuleSet()->FunToFunEntryNodeMap;
     }
 
-    FunToFunExitNodeMapTy& funToFunExitNodeMap() {
+    FunToFunExitNodeMapTy& funToFunExitNodeMap()
+    {
         return llvmModuleSet()->FunToFunExitNodeMap;
     }
 
@@ -111,24 +117,29 @@ private:
     /// Create edges between ICFG nodes across functions
     void addICFGInterEdges(const Instruction*  cs, const Function*  callee);
 
-    inline ICFGNode* getICFGNode(const Instruction* inst) {
+    inline ICFGNode* getICFGNode(const Instruction* inst)
+    {
         return llvmModuleSet()->getICFGNode(inst);
     }
 
-    inline bool hasICFGNode(const Instruction* inst) {
+    inline bool hasICFGNode(const Instruction* inst)
+    {
         return llvmModuleSet()->hasICFGNode(inst);
     }
 
     /// get a call node
-    inline CallICFGNode* getCallICFGNode(const Instruction*  cs) {
+    inline CallICFGNode* getCallICFGNode(const Instruction*  cs)
+    {
         return llvmModuleSet()->getCallICFGNode(cs);
     }
     /// get a return node
-    inline RetICFGNode* getRetICFGNode(const Instruction*  cs) {
+    inline RetICFGNode* getRetICFGNode(const Instruction*  cs)
+    {
         return llvmModuleSet()->getRetICFGNode(cs);
     }
     /// get a intra node
-    inline IntraICFGNode* getIntraICFGNode(const Instruction* inst) {
+    inline IntraICFGNode* getIntraICFGNode(const Instruction* inst)
+    {
         return llvmModuleSet()->getIntraICFGNode(inst);
     }
 

@@ -301,7 +301,9 @@ void ICFGBuilder::connectGlobalToProgEntry()
             GlobalICFGNode* globalNode = getGlobalICFGNode();
             IntraCFGEdge* intraEdge = new IntraCFGEdge(globalNode, entryNode);
             icfg->addICFGEdge(intraEdge);
-        } else {
+        }
+        else
+        {
             // not main function
         }
     }
@@ -317,7 +319,7 @@ inline ICFGNode* ICFGBuilder::addBlockICFGNode(const Instruction* inst)
     else
         node = addIntraBlockICFGNode(inst);
     const_cast<SVFBasicBlock*>(svfINst->getParent())
-        ->addICFGNode(node);
+    ->addICFGNode(node);
     return node;
 }
 

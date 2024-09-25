@@ -132,11 +132,13 @@ public:
         return true;
     }
 
-    static inline bool classof(const GenericICFGNodeTy* node) {
+    static inline bool classof(const GenericICFGNodeTy* node)
+    {
         return isICFGNodeKinds(node->getNodeKind());
     }
 
-    static inline bool classof(const SVFBaseNode* node) {
+    static inline bool classof(const SVFBaseNode* node)
+    {
         return isICFGNodeKinds(node->getNodeKind());
     }
 
@@ -252,15 +254,18 @@ public:
         return true;
     }
 
-    static inline bool classof(const ICFGNode* node) {
+    static inline bool classof(const ICFGNode* node)
+    {
         return isInterICFGNodeKind(node->getNodeKind());
     }
 
-    static inline bool classof(const GenericICFGNodeTy* node) {
+    static inline bool classof(const GenericICFGNodeTy* node)
+    {
         return isInterICFGNodeKind(node->getNodeKind());
     }
 
-    static inline bool classof(const SVFBaseNode* node) {
+    static inline bool classof(const SVFBaseNode* node)
+    {
         return isInterICFGNodeKind(node->getNodeKind());
     }
 

@@ -198,11 +198,13 @@ public:
         return true;
     }
 
-    static inline bool classof(const GenericCHNodeTy * node) {
+    static inline bool classof(const GenericCHNodeTy * node)
+    {
         return node->getNodeKind() == CHNodeKd;
     }
 
-    static inline bool classof(const SVFBaseNode* node) {
+    static inline bool classof(const SVFBaseNode* node)
+    {
         return node->getNodeKind() == CHNodeKd;
     }
     //@}

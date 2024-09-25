@@ -386,7 +386,8 @@ private:
     void collectExtFunAnnotations(const Module* mod);
 
     /// Get/Add a call node
-    inline CallICFGNode* getCallBlock(const Instruction* cs) {
+    inline CallICFGNode* getCallBlock(const Instruction* cs)
+    {
         CSToCallNodeMapTy::const_iterator it = CSToCallNodeMap.find(cs);
         if (it == CSToCallNodeMap.end())
             return nullptr;

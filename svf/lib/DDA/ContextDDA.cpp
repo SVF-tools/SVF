@@ -357,7 +357,7 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
         else if(const SVFBaseNode* gNode = mem->getGNode())
         {
             if (const auto& node =
-                    SVFUtil::dyn_cast<ICFGNode>(gNode))
+                        SVFUtil::dyn_cast<ICFGNode>(gNode))
             {
                 const SVFFunction* svfFun = node->getFun();
                 if(_ander->isInRecursion(svfFun))

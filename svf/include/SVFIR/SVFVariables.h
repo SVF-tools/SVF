@@ -308,7 +308,8 @@ public:
         return "";
     }
 
-    const SVFBaseNode* getGNode() const {
+    const SVFBaseNode* getGNode() const
+    {
         return gNode;
     }
 
