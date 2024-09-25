@@ -420,7 +420,7 @@ protected:
     inline void addActualINSVFGNode(const CallICFGNode* callsite, const MRVer* ver, const NodeID nodeId)
     {
         ActualINSVFGNode* sNode = new ActualINSVFGNode(nodeId, callsite, ver);
-        addSVFGNode(sNode,pag->getICFG()->getCallICFGNode(callsite->getCallSite()));
+        addSVFGNode(sNode, const_cast<CallICFGNode*>(callsite));
         callSiteToActualINMap[callsite].set(sNode->getId());
     }
 
@@ -428,7 +428,7 @@ protected:
     inline void addActualOUTSVFGNode(const CallICFGNode* callsite, const MRVer* resVer, const NodeID nodeId)
     {
         ActualOUTSVFGNode* sNode = new ActualOUTSVFGNode(nodeId, callsite, resVer);
-        addSVFGNode(sNode, pag->getICFG()->getRetICFGNode(callsite->getCallSite()));
+        addSVFGNode(sNode,const_cast<RetICFGNode*>(callsite->getRetICFGNode()));
         setDef(resVer,sNode);
         callSiteToActualOUTMap[callsite].set(sNode->getId());
     }

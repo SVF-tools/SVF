@@ -130,17 +130,15 @@ void AbsExtAPI::initExtFunMap()
         assert(lb.getInterval().is_numeral() && ub.getInterval().is_numeral());
         num.getInterval().set_to_top();
         num.getInterval().meet_with(IntervalValue(lb.getInterval().lb(), ub.getInterval().ub()));
-        if (icfg->hasICFGNode(SVFUtil::cast<SVFInstruction>(callNode->getArgument(0))))
+        const ICFGNode* node = SVFUtil::cast<ICFGNode>(
+            SVFUtil::cast<ValVar>(callNode->getArgumentVar(0))->getGNode());
+        for (const SVFStmt* stmt: node->getSVFStmts())
         {
-            const ICFGNode* node = icfg->getICFGNode(SVFUtil::cast<SVFInstruction>(callNode->getArgument(0)));
-            for (const SVFStmt* stmt: node->getSVFStmts())
+            if (SVFUtil::isa<LoadStmt>(stmt))
             {
-                if (SVFUtil::isa<LoadStmt>(stmt))
-                {
-                    const LoadStmt* load = SVFUtil::cast<LoadStmt>(stmt);
-                    NodeID rhsId = load->getRHSVarID();
-                    as.storeValue(rhsId, num);
-                }
+                const LoadStmt* load = SVFUtil::cast<LoadStmt>(stmt);
+                NodeID rhsId = load->getRHSVarID();
+                as.storeValue(rhsId, num);
             }
         }
         return;
@@ -286,7 +284,7 @@ void AbsExtAPI::initExtFunMap()
             }
             else
             {
-                const ICFGNode* addrNode = svfir->getICFG()->getICFGNode(SVFUtil::cast<SVFInstruction>(svfir->getBaseObj(objId)->getValue()));
+                const ICFGNode* addrNode = SVFUtil::cast<ICFGNode>(svfir->getBaseObj(objId)->getGNode());
                 for (const SVFStmt* stmt2: addrNode->getSVFStmts())
                 {
                     if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
@@ -477,8 +475,8 @@ IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValu
         }
         else
         {
-            const ICFGNode* addrNode = svfir->getICFG()->getICFGNode(SVFUtil::cast<SVFInstruction>(svfir->getBaseObj(objId)->getValue()));
-            for (const SVFStmt* stmt2: addrNode->getSVFStmts())
+            const ICFGNode* icfgNode = SVFUtil::cast<ICFGNode>( svfir->getBaseObj(objId)->getGNode());
+            for (const SVFStmt* stmt2: icfgNode->getSVFStmts())
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
                 {

@@ -229,102 +229,20 @@ ICFG::~ICFG()
     icfgNodeToSVFLoopVec.clear();
 }
 
-/// Get a basic block ICFGNode
-ICFGNode* ICFG::getICFGNode(const SVFInstruction* inst)
-{
-    ICFGNode* node;
-    if(SVFUtil::isNonInstricCallSite(inst))
-        node = getCallICFGNode(inst);
-    else if(SVFUtil::isIntrinsicInst(inst))
-        node = getIntraICFGNode(inst);
-    else
-        node = getIntraICFGNode(inst);
-
-    assert (node!=nullptr && "no ICFGNode for this instruction?");
-    return node;
-}
-
-bool ICFG::hasICFGNode(const SVF::SVFInstruction* inst)
-{
-    ICFGNode* node;
-    if(SVFUtil::isNonInstricCallSite(inst))
-        node = getCallBlock(inst);
-    else if(SVFUtil::isIntrinsicInst(inst))
-        node = getIntraBlock(inst);
-    else
-        node = getIntraBlock(inst);
-
-    return node != nullptr;
-}
-
-
-CallICFGNode* ICFG::getCallICFGNode(const SVFInstruction* inst)
-{
-    assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
-    assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-    CallICFGNode* node = getCallBlock(inst);
-    assert (node!=nullptr && "no CallICFGNode for this instruction?");
-    return node;
-}
-
-CallICFGNode* ICFG::addCallICFGNode(const SVFInstruction* inst)
-{
-    assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
-    assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-    assert(getCallBlock(inst)==nullptr && "duplicate CallICFGNode");
-    return addCallBlock(inst);
-}
-
-RetICFGNode* ICFG::getRetICFGNode(const SVFInstruction* inst)
-{
-    assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
-    assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-    RetICFGNode* node = getRetBlock(inst);
-    assert (node!=nullptr && "no RetICFGNode for this instruction?");
-    return node;
-}
-
-RetICFGNode* ICFG::addRetICFGNode(const SVFInstruction* inst)
-{
-    assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
-    assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-    assert(getRetBlock(inst)==nullptr && "duplicate RetICFGNode");
-    return addRetBlock(inst);
-}
-
-IntraICFGNode* ICFG::getIntraICFGNode(const SVFInstruction* inst)
-{
-    IntraICFGNode* node = getIntraBlock(inst);
-    assert (node!=nullptr && "no IntraICFGNode for this instruction?");
-    return node;
-}
-
-
-IntraICFGNode* ICFG::addIntraICFGNode(const SVFInstruction* inst)
-{
-    IntraICFGNode* node = getIntraBlock(inst);
-    assert (node==nullptr && "no IntraICFGNode for this instruction?");
-    return addIntraBlock(inst);
-}
-
 
 /// Add a function entry node
 FunEntryICFGNode* ICFG::getFunEntryICFGNode(const SVFFunction*  fun)
 {
-    FunEntryICFGNode* b = getFunEntryBlock(fun);
-    if (b == nullptr)
-        return addFunEntryBlock(fun);
-    else
-        return b;
+    FunEntryICFGNode* entry = getFunEntryBlock(fun);
+    assert (entry && "fun entry not created in ICFGBuilder?");
+    return entry;
 }
 /// Add a function exit node
 FunExitICFGNode* ICFG::getFunExitICFGNode(const SVFFunction*  fun)
 {
-    FunExitICFGNode* b = getFunExitBlock(fun);
-    if (b == nullptr)
-        return addFunExitBlock(fun);
-    else
-        return b;
+    FunExitICFGNode* exit = getFunExitBlock(fun);
+    assert (exit && "fun exit not created in ICFGBuilder?");
+    return exit;
 }
 
 /*!
@@ -504,15 +422,13 @@ void ICFG::updateCallGraph(CallGraph* callgraph)
     CallGraph::CallEdgeMap::const_iterator eiter = callgraph->getIndCallMap().end();
     for (; iter != eiter; iter++)
     {
-        const CallICFGNode* callBlock = iter->first;
-        const SVFInstruction* cs = callBlock->getCallSite();
-        assert(callBlock->isIndirectCall() && "this is not an indirect call?");
+        CallICFGNode* callBlockNode = const_cast<CallICFGNode*>(iter->first);
+        assert(callBlockNode->isIndirectCall() && "this is not an indirect call?");
         const CallGraph::FunctionSet & functions = iter->second;
         for (CallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
             const SVFFunction*  callee = *func_iter;
-            CallICFGNode* callBlockNode = getCallICFGNode(cs);
-            RetICFGNode* retBlockNode = getRetICFGNode(cs);
+            RetICFGNode* retBlockNode = const_cast<RetICFGNode*>(callBlockNode->getRetICFGNode());
             /// if this is an external function (no function body), connect calleeEntryNode to calleeExitNode
             if (isExtCall(callee))
                 addIntraEdge(callBlockNode, retBlockNode);

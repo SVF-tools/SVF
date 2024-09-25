@@ -73,6 +73,9 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
             isPtr = val->getType()->isPointerTy();
         break;
     }
+    default:
+        assert(false && "var not handled");
+        break;
     }
 }
 

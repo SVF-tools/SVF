@@ -49,12 +49,7 @@ class VFGNode : public GenericVFGNodeTy
 public:
     /// 25 kinds of ICFG node
     /// Gep represents offset edge for field sensitivity
-    enum VFGNodeK
-    {
-        Addr, Copy, Gep, Store, Load, Cmp, BinaryOp, UnaryOp, Branch, TPhi, TIntraPhi, TInterPhi,
-        MPhi, MIntraPhi, MInterPhi, FRet, ARet, AParm, FParm,
-        APIN, APOUT, FPIN, FPOUT, NPtr, DummyVProp
-    };
+    typedef GNodeK VFGNodeK;
 
     typedef VFGEdge::VFGEdgeSetTy::iterator iterator;
     typedef VFGEdge::VFGEdgeSetTy::const_iterator const_iterator;
@@ -105,6 +100,21 @@ public:
     //@}
 
     virtual const std::string toString() const;
+
+    static inline bool classof(const VFGNode *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const GenericVFGNodeTy * node) {
+        return isVFGNodeKinds(node->getNodeKind());
+    }
+
+
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return isVFGNodeKinds(node->getNodeKind());
+    }
 
 protected:
     const ICFGNode* icfgNode;
@@ -167,19 +177,15 @@ public:
     }
     static inline bool classof(const VFGNode *node)
     {
-        return node->getNodeKind() == Addr
-               || node->getNodeKind() == Copy
-               || node->getNodeKind() == Gep
-               || node->getNodeKind() == Store
-               || node->getNodeKind() == Load;
+        return isStmtVFGNodeKinds(node->getNodeKind());
     }
     static inline bool classof(const GenericVFGNodeTy *node)
     {
-        return node->getNodeKind() == Addr
-               || node->getNodeKind() == Copy
-               || node->getNodeKind() == Gep
-               || node->getNodeKind() == Store
-               || node->getNodeKind() == Load;
+        return isStmtVFGNodeKinds(node->getNodeKind());
+    }
+    static inline bool classof(const SVFBaseNode*node)
+    {
+        return isStmtVFGNodeKinds(node->getNodeKind());
     }
     //@}
 
@@ -218,6 +224,10 @@ public:
         return node->getNodeKind() == Load;
     }
     static inline bool classof(const GenericVFGNodeTy *node)
+    {
+        return node->getNodeKind() == Load;
+    }
+    static inline bool classof(const SVFBaseNode*node)
     {
         return node->getNodeKind() == Load;
     }
@@ -262,6 +272,10 @@ public:
     {
         return node->getNodeKind() == Store;
     }
+    static inline bool classof(const SVFBaseNode*node)
+    {
+        return node->getNodeKind() == Store;
+    }
     //@}
 
     const NodeBS getDefSVFVars() const override;
@@ -300,6 +314,10 @@ public:
         return node->getNodeKind() == Copy;
     }
     static inline bool classof(const GenericVFGNodeTy *node)
+    {
+        return node->getNodeKind() == Copy;
+    }
+    static inline bool classof(const SVFBaseNode*node)
     {
         return node->getNodeKind() == Copy;
     }
@@ -342,6 +360,10 @@ public:
         return node->getNodeKind() == Cmp;
     }
     static inline bool classof(const GenericVFGNodeTy *node)
+    {
+        return node->getNodeKind() == Cmp;
+    }
+    static inline bool classof(const SVFBaseNode*node)
     {
         return node->getNodeKind() == Cmp;
     }
@@ -416,6 +438,10 @@ public:
     {
         return node->getNodeKind() == BinaryOp;
     }
+    static inline bool classof(const SVFBaseNode*node)
+    {
+        return node->getNodeKind() == BinaryOp;
+    }
     //@}
     /// Operands at a BinaryNode
     //@{
@@ -483,6 +509,10 @@ public:
         return node->getNodeKind() == UnaryOp;
     }
     static inline bool classof(const GenericVFGNodeTy *node)
+    {
+        return node->getNodeKind() == UnaryOp;
+    }
+    static inline bool classof(const SVFBaseNode*node)
     {
         return node->getNodeKind() == UnaryOp;
     }
@@ -554,6 +584,10 @@ public:
     {
         return node->getNodeKind() == Branch;
     }
+    static inline bool classof(const SVFBaseNode*node)
+    {
+        return node->getNodeKind() == Branch;
+    }
     //@}
 
     /// Return the branch statement
@@ -613,6 +647,10 @@ public:
         return node->getNodeKind() == Gep;
     }
     static inline bool classof(const GenericVFGNodeTy *node)
+    {
+        return node->getNodeKind() == Gep;
+    }
+    static inline bool classof(const SVFBaseNode*node)
     {
         return node->getNodeKind() == Gep;
     }
@@ -683,11 +721,15 @@ public:
     }
     static inline bool classof(const VFGNode *node)
     {
-        return (node->getNodeKind() == TPhi || node->getNodeKind() == TIntraPhi || node->getNodeKind() == TInterPhi);
+        return isPHIVFGNodeKinds(node->getNodeKind());
     }
     static inline bool classof(const GenericVFGNodeTy *node)
     {
-        return (node->getNodeKind() == TPhi || node->getNodeKind() == TIntraPhi || node->getNodeKind() == TInterPhi);
+        return isPHIVFGNodeKinds(node->getNodeKind());
+    }
+    static inline bool classof(const SVFBaseNode*node)
+    {
+        return isPHIVFGNodeKinds(node->getNodeKind());
     }
     //@}
 
@@ -745,6 +787,10 @@ public:
     {
         return node->getNodeKind() == TIntraPhi;
     }
+    static inline bool classof(const SVFBaseNode*node)
+    {
+        return node->getNodeKind() == TIntraPhi;
+    }
     //@}
 
     const std::string toString() const override;
@@ -782,6 +828,10 @@ public:
     {
         return node->getNodeKind() == Addr;
     }
+    static inline bool classof(const SVFBaseNode*node)
+    {
+        return node->getNodeKind() == Addr;
+    }
     //@}
 
     const NodeBS getDefSVFVars() const override;
@@ -816,17 +866,15 @@ public:
     }
     static inline bool classof(const VFGNode *node)
     {
-        return node->getNodeKind() == FRet
-               || node->getNodeKind() == ARet
-               || node->getNodeKind() == AParm
-               || node->getNodeKind() == FParm;
+        return isArgumentVFGNodeKinds(node->getNodeKind());
     }
     static inline bool classof(const GenericVFGNodeTy *node)
     {
-        return node->getNodeKind() == FRet
-               || node->getNodeKind() == ARet
-               || node->getNodeKind() == AParm
-               || node->getNodeKind() == FParm;
+        return isArgumentVFGNodeKinds(node->getNodeKind());
+    }
+    static inline bool classof(const SVFBaseNode*node)
+    {
+        return isArgumentVFGNodeKinds(node->getNodeKind());
     }
     //@}
 
@@ -875,6 +923,10 @@ public:
         return node->getNodeKind() == AParm;
     }
     static inline bool classof(const GenericVFGNodeTy *node)
+    {
+        return node->getNodeKind() == AParm;
+    }
+    static inline bool classof(const SVFBaseNode*node)
     {
         return node->getNodeKind() == AParm;
     }
@@ -948,6 +1000,10 @@ public:
     {
         return node->getNodeKind() == FParm;
     }
+    static inline bool classof(const SVFBaseNode*node)
+    {
+        return node->getNodeKind() == FParm;
+    }
     //@}
 
     const NodeBS getDefSVFVars() const override;
@@ -1003,6 +1059,10 @@ public:
         return node->getNodeKind() == ARet;
     }
     static inline bool classof(const GenericVFGNodeTy *node)
+    {
+        return node->getNodeKind() == ARet;
+    }
+    static inline bool classof(const SVFBaseNode*node)
     {
         return node->getNodeKind() == ARet;
     }
@@ -1072,6 +1132,10 @@ public:
     {
         return node->getNodeKind() == FRet;
     }
+    static inline bool classof(const SVFBaseNode*node)
+    {
+        return node->getNodeKind() == FRet;
+    }
     //@}
 
     const NodeBS getDefSVFVars() const override;
@@ -1131,6 +1195,10 @@ public:
     {
         return node->getNodeKind() == TInterPhi;
     }
+    static inline bool classof(const SVFBaseNode*node)
+    {
+        return node->getNodeKind() == TInterPhi;
+    }
     //@}
 
     const std::string toString() const override;
@@ -1176,6 +1244,10 @@ public:
         return node->getNodeKind() == NPtr;
     }
     static inline bool classof(const GenericVFGNodeTy *node)
+    {
+        return node->getNodeKind() == NPtr;
+    }
+    static inline bool classof(const SVFBaseNode*node)
     {
         return node->getNodeKind() == NPtr;
     }
