@@ -192,10 +192,7 @@ public:
     {
 
     }
-    // ~PTACallGraphNode()
-    // {
-    //     delete fun;
-    // }
+
     inline const std::string &getName() const
     {
         return fun->getName();
