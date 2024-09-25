@@ -63,7 +63,7 @@ struct GenericGraphTraits
     // static ChildEdgeIteratorType child_edge_begin(NodeRef)
     // static ChildEdgeIteratorType child_edge_end(NodeRef)
     //     Return iterators that point to the beginning and ending of the
-    //     edge list for the given ptaCallGraph node.
+    //     edge list for the given callgraph node.
     //
     // static NodeRef edge_dest(EdgeRef)
     //     Return the destination node of an edge.

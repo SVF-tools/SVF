@@ -65,8 +65,6 @@ public:
     typedef CallGraphNodeSetType::iterator callgraphnode_iterator;
     typedef CallGraphNodeSetType::const_iterator const_callgraphnode_iterator;
 
-    CallGraph* callgraph;
-
 private:
     static SVFModule* svfModule;
     static std::string pagReadFromTxt;
@@ -76,7 +74,6 @@ private:
     ConstantType ConstantSet;     ///< The ConstantData in the module
     OtherValueType OtherValueSet; ///< All other values in the module
     CallGraphNodeSetType CallGraphNodeSet;
-    FunctionSetType FunctionSet;  ///< going to delete
 
     /// Constructors
     SVFModule() = default;
@@ -109,10 +106,6 @@ public:
 
     const CallGraphNode* getCallGraphNode(const std::string& name);
 
-    inline void addFunctionSet(SVFFunction* svfFunc)
-    {
-        FunctionSet.push_back(svfFunc);
-    }
 
     ///@{
     inline void addCallGraphNode(CallGraphNode* cgn)
@@ -142,22 +135,6 @@ public:
 
     /// Iterators
     ///@{
-        iterator begin()
-    {
-        return FunctionSet.begin();
-    }
-    const_iterator begin() const
-    {
-        return FunctionSet.begin();
-    }
-    iterator end()
-    {
-        return FunctionSet.end();
-    }
-    const_iterator end() const
-    {
-        return FunctionSet.end();
-    }
 
     callgraphnode_iterator callgraphnode_begin()
     {

@@ -1,6 +1,30 @@
+//===- CallGraph.h -- Call graph representation----------------------------//
 //
-// Created by Weigang He on 18/09/24.
+//                     SVF: Static Value-Flow Analysis
 //
+// Copyright (C) <2013-2024>  <Yulei Sui>
+//
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+//===----------------------------------------------------------------------===//
+
+/*
+ * CallGraph.h
+ *
+ * Created by Weigang He on 18/09/24.
+ */
 
 #ifndef SVF_CALLGRAPH_H
 #define SVF_CALLGRAPH_H
@@ -345,8 +369,7 @@ public:
     {
         if(hasCallGraphEdge(cs))
         {
-            for (CallGraphEdgeSet::const_iterator it = getCallEdgeBegin(cs), eit =
-                                                                                 getCallEdgeEnd(cs); it != eit; ++it)
+            for (CallGraphEdgeSet::const_iterator it = getCallEdgeBegin(cs), eit = getCallEdgeEnd(cs); it != eit; ++it)
             {
                 callees.insert((*it)->getDstNode()->getFunction());
             }
@@ -389,8 +412,7 @@ public:
 
     /// Get callsites invoking the callee
     //@{
-    void getDirCallSitesInvokingCallee(const SVFFunction* callee,
-                                       CallGraphEdge::CallInstSet& csSet);
+    void getDirCallSitesInvokingCallee(const SVFFunction* callee, CallGraphEdge::CallInstSet& csSet);
     //@}
 
     /// Whether its reachable between two functions
@@ -423,7 +445,7 @@ struct GenericGraphTraits<Inverse<SVF::CallGraphNode*> > : public GenericGraphTr
 
 template<> struct GenericGraphTraits<SVF::CallGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::CallGraphNode,SVF::CallGraphEdge>* >
 {
-    typedef SVF::CallGraphNode*NodeRef;
+    typedef SVF::CallGraphNode *NodeRef;
 };
 
 } // End namespace llvm

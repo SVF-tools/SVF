@@ -407,8 +407,7 @@ public:
     }
     inline bool isInRecursion(const SVFFunction* fun) const
     {
-        return callGraphSCC->isInCycle(
-            ptaCallGraph->getCallGraphNode(fun)->getId());
+        return callGraphSCC->isInCycle(ptaCallGraph->getCallGraphNode(fun)->getId());
     }
     /// Whether a local variable is in function recursions
     bool isLocalVarInRecursiveFun(NodeID id) const;

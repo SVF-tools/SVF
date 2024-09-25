@@ -184,11 +184,11 @@ public:
         return chgraph;
     }
     /// Set/Get CG
-    inline void setCG(CallGraph* c)
+    inline void setCallGraph(CallGraph* c)
     {
         callGraph = c;
     }
-    inline CallGraph* getCG()
+    inline CallGraph* getCallGraph()
     {
         assert(callGraph && "empty CallGraph! Build SVF IR first!");
         return callGraph;

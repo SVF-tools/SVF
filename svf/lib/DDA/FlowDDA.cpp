@@ -185,7 +185,7 @@ bool FlowDDA::isHeapCondMemObj(const NodeID& var, const StoreSVFGNode*)
 //            const SVFFunction* curFun = store->getBB() ? store->getBB()->getParent() : nullptr;
 //            if(fun!=curFun)
 //                return true;
-//            if(_callGraphSCC->isInCycle(_callGraph->getCallGraphNode(fun)->getId()))
+//            if(_callGraphSCC->isInCycle(_ptaCallGraph->getCallGraphNode(fun)->getId()))
 //                return true;
 //            if(_pag->getICFG()->isInLoop(mallocSite))
 //                return true;

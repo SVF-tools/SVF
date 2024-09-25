@@ -62,7 +62,7 @@ public:
     typedef OrderedMap<const SVFGNode*, DPTItemSet> StoreToPMSetMap;
 
     ///Constructor
-    DDAVFSolver(): outOfBudgetQuery(false),_pag(nullptr),_svfg(nullptr),_ander(nullptr),_callGraph(nullptr), _callGraphSCC(nullptr), _svfgSCC(nullptr), ddaStat(nullptr)
+    DDAVFSolver(): outOfBudgetQuery(false),_pag(nullptr),_svfg(nullptr),_ander(nullptr), _ptaCallGraph(nullptr), _callGraphSCC(nullptr), _svfgSCC(nullptr), ddaStat(nullptr)
     {
     }
     /// Destructor
@@ -84,7 +84,7 @@ public:
             delete _svfgSCC;
         _svfgSCC = nullptr;
 
-        _callGraph = nullptr;
+        _ptaCallGraph = nullptr;
         _callGraphSCC = nullptr;
     }
     /// Return candidate pointers for DDA
@@ -477,7 +477,8 @@ protected:
         {
             if(const SVFFunction* svffun = _pag->getGNode(id)->getFunction())
             {
-                return _callGraphSCC->isInCycle(_callGraph->getCallGraphNode(svffun)->getId());
+                return _callGraphSCC->isInCycle(
+                    _ptaCallGraph->getCallGraphNode(svffun)->getId());
             }
         }
         return false;
@@ -626,7 +627,7 @@ protected:
     /// Set ptaCallGraph
     inline void setCallGraph (PTACallGraph* cg)
     {
-        _callGraph = cg;
+        _ptaCallGraph = cg;
     }
     /// Set callgraphSCC
     inline void setCallGraphSCC (CallGraphSCC* scc)
@@ -775,7 +776,7 @@ protected:
     SVFG* _svfg;					///< SVFG
     AndersenWaveDiff* _ander;		///< Andersen's analysis
     NodeBS candidateQueries;		///< candidate pointers;
-    PTACallGraph* _callGraph;		///< PTACallGraph
+    PTACallGraph* _ptaCallGraph;		///< PTACallGraph
     CallGraphSCC* _callGraphSCC;	///< SCC for PTACallGraph
     SVFGSCC* _svfgSCC;				///< SCC for SVFG
     DPTItemSet backwardVisited;		///< visited map during backward traversing

@@ -384,8 +384,7 @@ public:
     }
 
     /// has thread join edge
-    inline ThreadJoinEdge* hasThreadJoinEdge(const CallICFGNode* call, PTACallGraphNode* joinFunNode,
-        PTACallGraphNode* threadRoutineFunNode, CallSiteID csId) const
+    inline ThreadJoinEdge* hasThreadJoinEdge(const CallICFGNode* call, PTACallGraphNode* joinFunNode, PTACallGraphNode* threadRoutineFunNode, CallSiteID csId) const
     {
         ThreadJoinEdge joinEdge(joinFunNode,threadRoutineFunNode, csId);
         CallInstToJoinEdgesMap::const_iterator it = callinstToThreadJoinEdgesMap.find(call);

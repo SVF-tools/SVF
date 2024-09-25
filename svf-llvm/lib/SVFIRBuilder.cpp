@@ -154,9 +154,7 @@ SVFIR* SVFIRBuilder::build()
     CallGraph* cg = new CallGraph();
     CallGraphBuilder cgbuilder(cg,pag->getICFG());
     cgbuilder.buildCallGraph(pag->getModule());
-    pag->setCG(cg);
-//    cg->dump("hwg_callgraph.dot");
-//    cg->view();
+    pag->setCallGraph(cg);
 
     // dump SVFIR
     if (Options::PAGDotGraph())
