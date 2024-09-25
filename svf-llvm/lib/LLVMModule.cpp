@@ -253,7 +253,8 @@ void LLVMModuleSet::createCallGraphNode(const Function* func)
         func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
 
     NodeID id = callGraphNodeNum;
-    CallGraphNode* callGraphNode = new CallGraphNode(id, svfFunc);
+    CallGraphNode* callGraphNode = new CallGraphNode(id, svfFunc, func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
+                                                     func->hasAddressTaken(), func->isVarArg());
     svfModule->addCallGraphNode(callGraphNode);
     callGraphNodeNum++;
     addFunctionMap(func, svfFunc);
@@ -261,7 +262,7 @@ void LLVMModuleSet::createCallGraphNode(const Function* func)
     for (const Argument& arg : func->args())
     {
         SVFArgument* svfarg = new SVFArgument(
-            getSVFType(arg.getType()), svfFunc, arg.getArgNo(),
+            getSVFType(arg.getType()), svfFunc, callGraphNode, arg.getArgNo(),
             LLVMUtil::isArgOfUncalledFunction(&arg));
         // Setting up arg name
         if (!arg.hasName())

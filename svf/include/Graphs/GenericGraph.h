@@ -240,6 +240,7 @@ public:
 
         // Additional specific graph node types
         CallNodeKd,    // Callgraph node
+        PTACallGraphNodeKd, // PTA callgraph node
         CDNodeKd,      // Control dependence graph node
         CFLNodeKd,     // CFL graph node
         CHNodeKd,      // Class hierarchy graph node

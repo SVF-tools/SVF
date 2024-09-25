@@ -99,7 +99,7 @@ void AbstractInterpretation::initWTO()
     for (const CallGraphNode* cgn : svfir->getModule()->getCallGraphNodeSet())
     {
         const SVFFunction* fun = cgn->getFunction();
-        if(fun->isDeclaration())
+        if(cgn->isDeclaration())
             continue;
         auto* wto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(fun));
         wto->init();

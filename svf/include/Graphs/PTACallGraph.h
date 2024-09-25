@@ -188,7 +188,7 @@ private:
 
 public:
     /// Constructor
-    PTACallGraphNode(NodeID i, const SVFFunction* f) : GenericPTACallGraphNodeTy(i,CallNodeKd), fun(f)
+    PTACallGraphNode(NodeID i, const SVFFunction* f) : GenericPTACallGraphNodeTy(i,PTACallGraphNodeKd), fun(f)
     {
 
     }
@@ -214,6 +214,24 @@ public:
     {
         o << node.toString();
         return o;
+    }
+    //@}
+
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const PTACallGraphNode *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const GenericICFGNodeTy* node)
+    {
+        return node->getNodeKind() == PTACallGraphNodeKd;
+    }
+
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == PTACallGraphNodeKd;
     }
     //@}
 

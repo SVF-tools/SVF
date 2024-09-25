@@ -662,7 +662,7 @@ bool SVFIR::isValidPointer(NodeID nodeId) const
     {
         if(const SVFArgument* arg = SVFUtil::dyn_cast<SVFArgument>(node->getValue()))
         {
-            if (!(arg->getParent()->isDeclaration()))
+            if (!(arg->getCallGraphNode()->isDeclaration()))
                 return true;
         }
     }
