@@ -113,7 +113,6 @@ void CallGraph::destroy()
 void CallGraph::addCallGraphNode(const CallGraphNode* callGraphNode)
 {
     CallGraphNode* newNode= const_cast<CallGraphNode*>(callGraphNode);
-//    CallGraphNode* newNode = new CallGraphNode(callGraphNode->getId(),callGraphNode->getFunction());
     addGNode(callGraphNode->getId(), newNode);
     funToCallGraphNodeMap[callGraphNode->getFunction()] = newNode;
 }
