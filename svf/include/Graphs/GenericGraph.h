@@ -251,7 +251,7 @@ public:
 
 
 
-    SVFBaseNode(NodeID i, GNodeK k): id(i), nodeKind(k)
+    SVFBaseNode(NodeID i, GNodeK k, SVFType* ty = nullptr): id(i),nodeKind(k), type(ty)
     {
 
     }
@@ -268,9 +268,15 @@ public:
         return nodeKind;
     }
 
+    virtual const SVFType* getType() const
+    {
+        return type;
+    }
+
 protected:
     NodeID id;		///< Node ID
     GNodeK nodeKind;	///< Node kind
+    const SVFType* type; ///< SVF type
 
     /// Helper functions to check node kinds
     //{@ Check node kind

@@ -1186,7 +1186,7 @@ void SVFIRBuilder::updateCallGraph(CallGraph* callgraph)
             }
             else
             {
-                setCurrentLocation(callBlock->getCallSite(), callBlock->getCallSite()->getParent());
+                setCurrentLocation(callBlock->getCallSite(), callBlock->getBB());
                 handleDirectCall(const_cast<CallBase*>(callbase), callee);
             }
         }

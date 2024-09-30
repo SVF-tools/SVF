@@ -688,4 +688,18 @@ std::string SVFValue::toString() const
     return rawstr.str();
 }
 
+const std::string ICFGNode::instString() const
+{
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    LLVMModuleSet* pSet = LLVMModuleSet::getLLVMModuleSet();
+    auto llvmVal = pSet->getLLVMValue(this);
+    if (llvmVal)
+        rawstr << " " << *llvmVal << " ";
+    else
+        rawstr << " No llvmVal found";
+    rawstr << this->getSourceLoc();
+    return rawstr.str();
+}
+
 } // namespace SVF

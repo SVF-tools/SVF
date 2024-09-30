@@ -93,7 +93,7 @@ public:
 
     ~DCHNode() { }
 
-    const DIType *getType(void) const
+    const DIType * getDIType(void) const
     {
         return diType;
     }

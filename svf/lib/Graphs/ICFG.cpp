@@ -36,6 +36,12 @@
 using namespace SVF;
 using namespace SVFUtil;
 
+__attribute__((weak))
+const std::string ICFGNode::instString() const
+{
+    assert("ICFGNode::toString should be implemented or supported by fronted" && false);
+    abort();
+}
 
 FunEntryICFGNode::FunEntryICFGNode(NodeID id, const SVFFunction* f) : InterICFGNode(id, FunEntryBlock)
 {
@@ -87,11 +93,11 @@ const std::string IntraICFGNode::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "IntraICFGNode" << getId();
-    rawstr << " {fun: " << getFun()->getName() << getInst()->getSourceLoc() << "}";
+    rawstr << " {fun: " << getFun()->getName() << getSourceLoc() << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     if(getSVFStmts().empty())
-        rawstr << "\n" << getInst()->toString();
+        rawstr << "\n" << instString();
     return rawstr.str();
 }
 
@@ -120,7 +126,7 @@ const std::string FunExitICFGNode::toString() const
     // ensure the enclosing function has exit basic block
     if (!isExtCall(fun) && fun->hasReturn())
         if(const IntraICFGNode* intraICFGNode = dyn_cast<IntraICFGNode>(fun->getExitBB()->front()))
-            rawstr << intraICFGNode->getInst()->getSourceLoc();
+            rawstr << intraICFGNode->getSourceLoc();
     rawstr << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
@@ -133,11 +139,11 @@ const std::string CallICFGNode::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "CallICFGNode" << getId();
-    rawstr << " {fun: " << getFun()->getName() << getCallSite()->getSourceLoc() << "}";
+    rawstr << " {fun: " << getFun()->getName() << ICFGNode::getSourceLoc() << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
-    if(getSVFStmts().empty() && cs)
-        rawstr << "\n" << cs->toString();
+    if(getSVFStmts().empty())
+        rawstr << "\n" << instString();
     return rawstr.str();
 }
 
@@ -146,11 +152,11 @@ const std::string RetICFGNode::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "RetICFGNode" << getId();
-    rawstr << " {fun: " << getFun()->getName() << getCallSite()->getSourceLoc() << "}";
+    rawstr << " {fun: " << getFun()->getName() << ICFGNode::getSourceLoc() << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
-    if(getSVFStmts().empty() && cs)
-        rawstr << "\n" << cs->toString();
+    if(getSVFStmts().empty())
+        rawstr << "\n" << instString();
     return rawstr.str();
 }
 

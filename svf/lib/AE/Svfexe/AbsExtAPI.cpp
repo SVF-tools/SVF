@@ -45,7 +45,7 @@ void AbsExtAPI::initExtFunMap()
         if (!as.inVarToValTable(rhs_id)) return; \
         u32_t rhs = as[rhs_id].getInterval().lb().getIntNumeral(); \
         s32_t res = FUNC_NAME(rhs);            \
-        u32_t lhsId = svfir->getValueNode(callNode->getCallSite());               \
+        u32_t lhsId = callNode->getRetICFGNode()->getActualRet()->getId();               \
         as[lhsId] = IntervalValue(res);           \
         return; \
     };                                                                         \
@@ -273,7 +273,7 @@ void AbsExtAPI::initExtFunMap()
         const SVFValue* strValue = callNode->getArgument(0);
         AbstractState& as = getAbsStateFromTrace(callNode);
         NodeID value_id = svfir->getValueNode(strValue);
-        u32_t lhsId = svfir->getValueNode(callNode->getCallSite());
+        u32_t lhsId = callNode->getRetICFGNode()->getActualRet()->getId();
         u32_t dst_size = 0;
         for (const auto& addr : as[value_id].getAddrs())
         {
@@ -333,7 +333,7 @@ void AbsExtAPI::initExtFunMap()
         AbstractState&as = getAbsStateFromTrace(callNode);
         u32_t len_id = svfir->getValueNode(callNode->getArgument(2));
         IntervalValue len = as[len_id].getInterval() - IntervalValue(1);
-        u32_t lhsId = svfir->getValueNode(callNode->getCallSite());
+        u32_t lhsId = callNode->getRetICFGNode()->getActualRet()->getId();
         as[lhsId] = len;
     };
     func_map["recv"] = sse_recv;
@@ -409,14 +409,17 @@ void AbsExtAPI::handleExtAPI(const CallICFGNode *call)
         }
         else
         {
-            u32_t lhsId = svfir->getValueNode(call->getCallSite());
-            if (as.inVarToAddrsTable(lhsId))
+            if (const SVFVar* ret = call->getRetICFGNode()->getActualRet())
             {
+                u32_t lhsId = ret->getId();
+                if (as.inVarToAddrsTable(lhsId))
+                {
 
-            }
-            else
-            {
-                as[lhsId] = IntervalValue();
+                }
+                else
+                {
+                    as[lhsId] = IntervalValue();
+                }
             }
             return;
         }

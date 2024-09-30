@@ -251,7 +251,7 @@ const NodeBS &DCHGraph::cha(const DIType *type, bool firstField)
             continue;
         }
 
-        const NodeBS &cchildren = cha(edge->getSrcNode()->getType(), firstField);
+        const NodeBS &cchildren = cha(edge->getSrcNode()->getDIType(), firstField);
         // Children's children are my children.
         for (NodeID cchild : cchildren)
         {
@@ -530,10 +530,10 @@ void DCHGraph::buildCHG(bool extend)
         for (iterator nodeI = begin(); nodeI != end(); ++nodeI)
         {
             // Everything without a parent gets char as a parent.
-            if (nodeI->second->getType() != nullptr
+            if (nodeI->second->getDIType() != nullptr
                     && nodeI->second->getOutEdges().size() == 0)
             {
-                addEdge(nodeI->second->getType(), charType, DCHEdge::STD_DEF);
+                addEdge(nodeI->second->getDIType(), charType, DCHEdge::STD_DEF);
             }
         }
     }
@@ -957,8 +957,8 @@ bool DCHGraph::isFirstField(const DIType *f, const DIType *b)
         // Only care about first-field edges.
         if (edge->getEdgeKind() == DCHEdge::FIRST_FIELD)
         {
-            if (edge->getSrcNode()->getType() == b) return true;
-            if (isFirstField(edge->getSrcNode()->getType(), b)) return true;
+            if (edge->getSrcNode()->getDIType() == b) return true;
+            if (isFirstField(edge->getSrcNode()->getDIType(), b)) return true;
         }
     }
 
@@ -1163,13 +1163,14 @@ void DCHGraph::print(void)
 
         const DCHNode *node = getGNode(id);
 
-        SVFUtil::outs() << indent(currIndent) << id << ": " << diTypeToStr(node->getType()) << " [" << node->getType() << "]" << "\n";
-        if (node->getType() != nullptr
-                && (node->getType()->getTag() == dwarf::DW_TAG_class_type
-                    || node->getType()->getTag() == dwarf::DW_TAG_structure_type))
+        SVFUtil::outs() << indent(currIndent) << id << ": " << diTypeToStr(node->getDIType()) << " [" << node->getDIType() << "]" << "\n";
+        if (node->getDIType() != nullptr
+                && (node->getDIType()->getTag() == dwarf::DW_TAG_class_type
+                    ||
+             node->getDIType()->getTag() == dwarf::DW_TAG_structure_type))
         {
             ++numStructs;
-            unsigned numFields = getFieldTypes(node->getType()).size();
+            unsigned numFields = getFieldTypes(node->getDIType()).size();
             largestStruct = numFields > largestStruct ? numFields : largestStruct;
         }
 
@@ -1225,8 +1226,8 @@ void DCHGraph::print(void)
                 arrow = "----unknown---->";
             }
 
-            SVFUtil::outs() << indent(currIndent) << "[ " << diTypeToStr(node->getType()) << " ] "
-                            << arrow << " [ " << diTypeToStr(edge->getDstNode()->getType()) << " ]\n";
+            SVFUtil::outs() << indent(currIndent) << "[ " << diTypeToStr(node->getDIType()) << " ] "
+                            << arrow << " [ " << diTypeToStr(edge->getDstNode()->getDIType()) << " ]\n";
         }
 
         if (node->getOutEdges().size() == 0)

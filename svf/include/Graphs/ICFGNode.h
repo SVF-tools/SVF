@@ -120,9 +120,13 @@ public:
     }
     ///@}
 
+    const std::string instString() const;
+
     virtual const std::string toString() const;
 
-    virtual const std::string getSourceLoc() const = 0;
+    virtual const std::string getSourceLoc() const {
+        return sourceLoc;
+    }
 
     void dump() const;
 
@@ -142,11 +146,18 @@ public:
         return isICFGNodeKinds(node->getNodeKind());
     }
 
+    inline virtual void setSourceLoc(const std::string& sourceCodeInfo)
+    {
+        sourceLoc = sourceCodeInfo;
+    }
+
 protected:
     const SVFFunction* fun;
     const SVFBasicBlock* bb;
     VFGNodeList VFGNodes; //< a list of VFGNodes
     SVFStmtList pagEdges; //< a list of PAGEdges
+
+    std::string sourceLoc;  ///< Source code information of this value
 
 };
 
@@ -195,21 +206,16 @@ class IntraICFGNode : public ICFGNode
     friend class SVFIRWriter;
     friend class SVFIRReader;
 private:
-    const SVFInstruction *inst;
+    bool isRet;
 
     /// Constructor to create empty IntraICFGNode (for SVFIRReader/deserialization)
-    IntraICFGNode(NodeID id) : ICFGNode(id, IntraBlock), inst(nullptr) {}
+    IntraICFGNode(NodeID id) : ICFGNode(id, IntraBlock), isRet(false) {}
 
 public:
-    IntraICFGNode(NodeID id, const SVFInstruction *i) : ICFGNode(id, IntraBlock), inst(i)
+    IntraICFGNode(NodeID id, const SVFBasicBlock* b, bool isReturn) : ICFGNode(id, IntraBlock), isRet(isReturn)
     {
-        fun = inst->getFunction();
-        bb = inst->getParent();
-    }
-
-    inline const SVFInstruction *getInst() const
-    {
-        return inst;
+        fun = b->getFunction();
+        bb = b;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -232,9 +238,8 @@ public:
 
     const std::string toString() const;
 
-    virtual const std::string getSourceLoc() const
-    {
-        return inst->getSourceLoc();
+    inline bool isRetInst() const {
+        return isRet;
     }
 };
 
@@ -270,7 +275,6 @@ public:
     }
 
     //@}
-    virtual const std::string getSourceLoc() const = 0;
 };
 
 
@@ -439,11 +443,12 @@ private:
     CallICFGNode(NodeID id) : InterICFGNode(id, FunCallBlock), cs{}, ret{} {}
 
 public:
-    CallICFGNode(NodeID id, const SVFInstruction* c)
+    CallICFGNode(NodeID id, const SVFInstruction* c, const SVFType* ty)
         : InterICFGNode(id, FunCallBlock), cs(c), ret(nullptr)
     {
         fun = cs->getFunction();
         bb = cs->getParent();
+        type = ty;
     }
 
     /// Return callsite
@@ -468,13 +473,13 @@ public:
     /// Return callsite
     inline const SVFFunction* getCaller() const
     {
-        return cs->getFunction();
+        return getFun();
     }
 
     /// Return Basic Block
     inline const SVFBasicBlock* getParent() const
     {
-        return cs->getParent();
+        return getBB();
     }
 
     /// Return true if this is an indirect call
@@ -506,10 +511,6 @@ public:
         return getActualParms()[ArgNo];
     }
 
-    const SVFType* getType() const
-    {
-        return SVFUtil::cast<SVFCallInst>(cs)->getType();
-    }
     u32_t arg_size() const
     {
         return SVFUtil::cast<SVFCallInst>(cs)->arg_size();
@@ -591,7 +592,7 @@ public:
 
     virtual const std::string getSourceLoc() const
     {
-        return "CallICFGNode: " + cs->getSourceLoc();
+        return "CallICFGNode: " + ICFGNode::getSourceLoc();
     }
 };
 
@@ -621,6 +622,7 @@ public:
     {
         fun = cs->getFunction();
         bb = cs->getParent();
+        type = callBlockNode->getType();
     }
 
     /// Return callsite
@@ -676,7 +678,7 @@ public:
 
     virtual const std::string getSourceLoc() const
     {
-        return "RetICFGNode: " + cs->getSourceLoc();
+        return "RetICFGNode: " + ICFGNode::getSourceLoc();
     }
 };
 
