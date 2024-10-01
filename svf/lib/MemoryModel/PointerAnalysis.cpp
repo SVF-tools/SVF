@@ -454,7 +454,7 @@ void PointerAnalysis::getVFnsFromPts(const CallICFGNode* cs, const PointsTo &tar
                 }
             }
         }
-        chgraph->getVFnsFromVtbls(SVFUtil::cast<SVFCallInst>(cs->getCallSite()), vtbls, vfns);
+        chgraph->getVFnsFromVtbls(cs, vtbls, vfns);
     }
 }
 

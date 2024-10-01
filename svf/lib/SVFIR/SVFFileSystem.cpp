@@ -1153,10 +1153,10 @@ cJSON* SVFIRWriter::toJson(const CHGraph* graph)
     F(classNameToAncestorsMap);
     F(classNameToInstAndDescsMap);
     F(templateNameToInstancesMap);
-    F(csToClassesMap);
+    F(callNodeToClassesMap);
     F(virtualFunctionToIDMap);
-    F(csToCHAVtblsMap);
-    F(csToCHAVFnsMap);
+    F(callNodeToCHAVtblsMap);
+    F(callNodeToCHAVFnsMap);
 #undef F
     return root;
 }
@@ -1755,10 +1755,10 @@ void SVFIRReader::readJson(CHGraph* graph)
     F(classNameToAncestorsMap);
     F(classNameToInstAndDescsMap);
     F(templateNameToInstancesMap);
-    F(csToClassesMap);
+    F(callNodeToClassesMap);
     F(virtualFunctionToIDMap);
-    F(csToCHAVtblsMap);
-    F(csToCHAVFnsMap);
+    F(callNodeToCHAVtblsMap);
+    F(callNodeToCHAVFnsMap);
 #undef F
 }
 

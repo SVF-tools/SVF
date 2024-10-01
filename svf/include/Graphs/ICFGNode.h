@@ -434,7 +434,8 @@ class CallICFGNode : public InterICFGNode
 
 public:
     typedef std::vector<const SVFVar *> ActualParmNodeVec;
-private:
+
+protected:
     const SVFInstruction* cs;
     const RetICFGNode* ret;
     ActualParmNodeVec APNodes;
@@ -449,12 +450,6 @@ public:
         fun = cs->getFunction();
         bb = cs->getParent();
         type = ty;
-    }
-
-    /// Return callsite
-    inline const SVFInstruction* getCallSite() const
-    {
-        return cs;
     }
 
     /// Return callsite

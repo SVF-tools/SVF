@@ -57,13 +57,17 @@ const string pureVirtualFunName = "__cxa_pure_virtual";
 
 const string ztiLabel = "_ZTI";
 
+LLVMModuleSet* CHGBuilder::llvmModuleSet()
+{
+    return LLVMModuleSet::getLLVMModuleSet();
+}
 
 void CHGBuilder::buildCHG()
 {
 
     double timeStart, timeEnd;
     timeStart = PTAStat::getClk(true);
-    for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
+    for (Module &M : llvmModuleSet()->getLLVMModules())
     {
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("construct CHGraph From module "
                 + M.getName().str() + "...\n"));
@@ -375,7 +379,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
             assert(node && "node not found?");
 
             SVFGlobalValue* pValue =
-                LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(
+                llvmModuleSet()->getSVFGlobalValue(
                     globalvalue);
             pValue->setName(vtblClassName);
             node->setVTable(pValue);
@@ -655,7 +659,7 @@ void CHGBuilder::buildVirtualFunctionToIDMap()
 void CHGBuilder::buildCSToCHAVtblsAndVfnsMap()
 {
 
-    for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
+    for (Module &M : llvmModuleSet()->getLLVMModules())
     {
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
@@ -679,12 +683,13 @@ void CHGBuilder::buildCSToCHAVtblsAndVfnsMap()
                     }
                     if (vtbls.size() > 0)
                     {
-                        const SVFInstruction* cs = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(callInst);
-                        chg->csToCHAVtblsMap[cs] = vtbls;
+                        ICFGNode* icfgNode =
+                            llvmModuleSet()->getICFGNode(callInst);
+                        chg->callNodeToCHAVtblsMap[icfgNode] = vtbls;
                         VFunSet virtualFunctions;
-                        chg->getVFnsFromVtbls(SVFUtil::cast<SVFCallInst>(cs), vtbls, virtualFunctions);
+                        chg->getVFnsFromVtbls(SVFUtil::cast<CallICFGNode>(icfgNode), vtbls, virtualFunctions);
                         if (virtualFunctions.size() > 0)
-                            chg->csToCHAVFnsMap[cs] = virtualFunctions;
+                            chg->callNodeToCHAVFnsMap[icfgNode] = virtualFunctions;
                     }
                 }
             }
@@ -696,10 +701,11 @@ void CHGBuilder::buildCSToCHAVtblsAndVfnsMap()
 const CHGraph::CHNodeSetTy& CHGBuilder::getCSClasses(const CallBase* cs)
 {
     assert(cppUtil::isVirtualCallSite(cs) && "not virtual callsite!");
-    const SVFInstruction* svfcall = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
 
-    CHGraph::CallSiteToCHNodesMap::const_iterator it = chg->csToClassesMap.find(svfcall);
-    if (it != chg->csToClassesMap.end())
+    ICFGNode* icfgNode = llvmModuleSet()->getICFGNode(cs);
+
+    CHGraph::CallNodeToCHNodesMap::const_iterator it = chg->callNodeToClassesMap.find(icfgNode);
+    if (it != chg->callNodeToClassesMap.end())
     {
         return it->second;
     }
@@ -712,9 +718,9 @@ const CHGraph::CHNodeSetTy& CHGBuilder::getCSClasses(const CallBase* cs)
             // if we cannot infer classname, conservatively push all class nodes
             for (const auto &node: *chg)
             {
-                chg->csToClassesMap[svfcall].insert(node.second);
+                chg->callNodeToClassesMap[icfgNode].insert(node.second);
             }
-            return chg->csToClassesMap[svfcall];
+            return chg->callNodeToClassesMap[icfgNode];
         }
 
         for (const auto &thisPtrClassName: thisPtrClassNames)
@@ -722,12 +728,12 @@ const CHGraph::CHNodeSetTy& CHGBuilder::getCSClasses(const CallBase* cs)
             if (const CHNode* thisNode = chg->getNode(thisPtrClassName))
             {
                 const CHGraph::CHNodeSetTy& instAndDesces = getInstancesAndDescendants(thisPtrClassName);
-                chg->csToClassesMap[svfcall].insert(thisNode);
+                chg->callNodeToClassesMap[icfgNode].insert(thisNode);
                 for (CHGraph::CHNodeSetTy::const_iterator it2 = instAndDesces.begin(), eit = instAndDesces.end(); it2 != eit; ++it2)
-                    chg->csToClassesMap[svfcall].insert(*it2);
+                    chg->callNodeToClassesMap[icfgNode].insert(*it2);
             }
         }
-        return chg->csToClassesMap[svfcall];
+        return chg->callNodeToClassesMap[icfgNode];
     }
 }
 
@@ -738,14 +744,14 @@ void CHGBuilder::addFuncToFuncVector(CHNode::FuncVector &v, const Function *lf)
         if (const auto* tf = cppUtil::getThunkTarget(lf))
         {
             SVFFunction* pFunction =
-                LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(tf);
+                llvmModuleSet()->getSVFFunction(tf);
             v.push_back(pFunction);
         }
     }
     else
     {
         SVFFunction* pFunction =
-            LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(lf);
+            llvmModuleSet()->getSVFFunction(lf);
         v.push_back(pFunction);
     }
 }

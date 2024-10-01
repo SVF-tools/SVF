@@ -553,7 +553,7 @@ const VFunSet &DCHGraph::getCSVFsBasedonCHA(const CallICFGNode* cs)
 
     VFunSet vfns;
     const VTableSet &vtbls = getCSVtblsBasedonCHA(cs);
-    getVFnsFromVtbls(SVFUtil::cast<SVFCallInst>(cs->getCallSite()), vtbls, vfns);
+    getVFnsFromVtbls(cs, vtbls, vfns);
 
     // Cache.
     csCHAMap.insert({cs, vfns});
@@ -589,11 +589,10 @@ const VTableSet &DCHGraph::getCSVtblsBasedonCHA(const CallICFGNode* cs)
     return vtblCHAMap[type];
 }
 
-void DCHGraph::getVFnsFromVtbls(const SVFCallInst* callsite, const VTableSet &vtbls, VFunSet &virtualFunctions)
+void DCHGraph::getVFnsFromVtbls(const CallICFGNode* callsite, const VTableSet &vtbls, VFunSet &virtualFunctions)
 {
-    const SVFVirtualCallInst* cs = SVFUtil::cast<SVFVirtualCallInst>(callsite);
-    size_t idx = cs->getFunIdxInVtable();
-    std::string funName = cs->getFunNameOfVirtualCall();
+    size_t idx = callsite->getFunIdxInVtable();
+    std::string funName = callsite->getFunNameOfVirtualCall();
     for (const SVFGlobalValue *vtbl : vtbls)
     {
         assert(vtblToTypeMap.find(vtbl) != vtblToTypeMap.end() && "floating vtbl");
@@ -611,7 +610,7 @@ void DCHGraph::getVFnsFromVtbls(const SVFCallInst* callsite, const VTableSet &vt
 
             const Function* callee = vfnV[idx];
             // Practically a copy of that in lib/MemoryModel/CHA.cpp
-            if (cs->arg_size() == callee->arg_size() || (cs->isVarArg() && callee->isVarArg()))
+            if (callsite->arg_size() == callee->arg_size() || (callsite->isVarArg() && callee->isVarArg()))
             {
                 cppUtil::DemangledName dname = cppUtil::demangle(callee->getName().str());
                 std::string calleeName = dname.funcName;
