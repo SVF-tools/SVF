@@ -30,6 +30,7 @@
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
 #include "Util/WorkList.h"
+#include "Graphs/CallGraph.h"
 #include <cmath>
 
 using namespace SVF;
@@ -60,6 +61,7 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
 AbstractInterpretation::AbstractInterpretation()
 {
     stat = new AEStat(this);
+    aeCallGraph = nullptr;
 }
 /// Destructor
 AbstractInterpretation::~AbstractInterpretation()
@@ -83,24 +85,26 @@ void AbstractInterpretation::initWTO()
     // Detect if the call graph has cycles by finding its strongly connected components (SCC)
     Andersen::CallGraphSCC* callGraphScc = ander->getCallGraphSCC();
     callGraphScc->find();
-    auto callGraph = ander->getCallGraph();
+    aeCallGraph = ander->getPTACallGraph();
 
     // Iterate through the call graph
-    for (auto it = callGraph->begin(); it != callGraph->end(); it++)
+    for (auto it = aeCallGraph->begin(); it != aeCallGraph->end(); it++)
     {
         // Check if the current function is part of a cycle
         if (callGraphScc->isInCycle(it->second->getId()))
-            recursiveFuns.insert(it->second->getFunction()); // Mark the function as recursive
+            recursiveFuns.insert(it->second); // Mark the function as recursive
     }
 
     // Initialize WTO for each function in the module
-    for (const SVFFunction* fun : svfir->getModule()->getFunctionSet())
+    for (const auto& item: *PAG::getPAG()->getCallGraph())
     {
+        const CallGraphNode* cgn = item.second;
+        const SVFFunction* fun = cgn->getFunction();
         if(fun->isDeclaration())
             continue;
         auto* wto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(fun));
         wto->init();
-        funcToWTO[fun] = wto;
+        funcToWTO[aeCallGraph->getCallGraphNode(fun)] = wto; // the AE call graph is different from the SVFIR call graph
     }
 }
 /// Program entry
@@ -111,9 +115,9 @@ void AbstractInterpretation::analyse()
     handleGlobalNode();
     getAbsStateFromTrace(
         icfg->getGlobalICFGNode())[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
-    if (const SVFFunction* fun = svfir->getModule()->getSVFFunction("main"))
+    if (const CallGraphNode* cgn = svfir->getModule()->getCallGraphNode("main"))
     {
-        ICFGWTO* wto = funcToWTO[fun];
+        ICFGWTO* wto = funcToWTO[aeCallGraph->getCallGraphNode(cgn->getFunction())];
         handleWTOComponents(wto->getWTOComponents());
     }
 }
@@ -587,7 +591,11 @@ void AbstractInterpretation::extCallPass(const SVF::CallICFGNode *callNode)
 
 bool AbstractInterpretation::isRecursiveCall(const SVF::CallICFGNode *callNode)
 {
-    return recursiveFuns.find(callNode->getCalledFunction()) != recursiveFuns.end();
+    const SVFFunction *callfun = callNode->getCalledFunction();
+    if (!callfun)
+        return false;
+    else
+        return recursiveFuns.find(aeCallGraph->getCallGraphNode(callfun)) != recursiveFuns.end();
 }
 
 void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode)
@@ -611,7 +619,11 @@ void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode
 
 bool AbstractInterpretation::isDirectCall(const SVF::CallICFGNode *callNode)
 {
-    return funcToWTO.find(callNode->getCalledFunction()) != funcToWTO.end();
+    const SVFFunction *callfun =callNode->getCalledFunction();
+    if (!callfun)
+        return false;
+    else
+        return funcToWTO.find(aeCallGraph->getCallGraphNode(callfun)) != funcToWTO.end();
 }
 void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode)
 {
@@ -620,7 +632,7 @@ void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode
 
     abstractTrace[callNode] = as;
 
-    ICFGWTO* wto = funcToWTO[callNode->getCalledFunction()];
+    ICFGWTO* wto = funcToWTO[aeCallGraph->getCallGraphNode(callNode->getCalledFunction())];
     handleWTOComponents(wto->getWTOComponents());
 
     callSiteStack.pop_back();
@@ -654,7 +666,7 @@ void AbstractInterpretation::indirectCallFunPass(const SVF::CallICFGNode *callNo
         callSiteStack.push_back(callNode);
         abstractTrace[callNode] = as;
 
-        ICFGWTO* wto = funcToWTO[callfun];
+        ICFGWTO* wto = funcToWTO[aeCallGraph->getCallGraphNode(callfun)];
         handleWTOComponents(wto->getWTOComponents());
         callSiteStack.pop_back();
         // handle Ret node

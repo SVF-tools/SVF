@@ -36,7 +36,8 @@
 
 namespace SVF
 {
-
+class CallGraphNode;
+class CallGraph;
 class SVFModule
 {
     friend class SVFIRWriter;
@@ -100,7 +101,8 @@ public:
         return !pagReadFromTxt.empty();
     }
 
-    const SVFFunction* getSVFFunction(const std::string& name);
+    const CallGraphNode* getCallGraphNode(const std::string& name);
+
 
     ///@{
     inline void addFunctionSet(SVFFunction* svfFunc)
@@ -130,23 +132,6 @@ public:
 
     /// Iterators
     ///@{
-    iterator begin()
-    {
-        return FunctionSet.begin();
-    }
-    const_iterator begin() const
-    {
-        return FunctionSet.begin();
-    }
-    iterator end()
-    {
-        return FunctionSet.end();
-    }
-    const_iterator end() const
-    {
-        return FunctionSet.end();
-    }
-
     global_iterator global_begin()
     {
         return GlobalSet.begin();
@@ -213,10 +198,6 @@ public:
         }
     }
 
-    inline const FunctionSetType& getFunctionSet() const
-    {
-        return FunctionSet;
-    }
     inline const ConstantType& getConstantSet() const
     {
         return ConstantSet;

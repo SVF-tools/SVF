@@ -35,6 +35,7 @@
 #include <climits>
 #include <cmath>
 #include "SVFIR/SVFStatements.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -59,8 +60,9 @@ void SaberCondAllocator::allocate(const SVFModule *M)
 {
     DBOUT(DGENERAL, outs() << pasMsg("path condition allocation starts\n"));
 
-    for (const auto &func: *M)
+    for (const auto& item: *PAG::getPAG()->getCallGraph())
     {
+        const SVFFunction *func = (item.second)->getFunction();
         if (!SVFUtil::isExtCall(func))
         {
             // Allocate conditions for a program.

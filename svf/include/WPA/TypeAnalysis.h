@@ -66,10 +66,10 @@ public:
         return false;
     }
 
-    /// Resolve callgraph based on CHA
+    /// Resolve ptaCallGraph based on CHA
     void callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges);
 
-    /// Statistics of CHA and callgraph
+    /// Statistics of CHA and ptaCallGraph
     void dumpCHAStats();
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:

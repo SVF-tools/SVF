@@ -31,7 +31,7 @@
 #include "Util/Options.h"
 #include "MTA/TCT.h"
 #include "MTA/MTA.h"
-
+#include "Graphs/CallGraph.h"
 #include <string>
 
 using namespace SVF;
@@ -52,19 +52,21 @@ bool TCT::isInLoopInstruction(const ICFGNode* inst)
 
     while(!worklist.empty())
     {
-        const ICFGNode* inst = worklist.pop();
-        insts.insert(inst);
-        CallGraphNode* cgnode = tcg->getCallGraphNode(inst->getFun());
+        const ICFGNode* instNode = worklist.pop();
+        insts.insert(instNode);
+        CallGraphNode* cgnode = tcg->getCallGraphNode(instNode->getFun());
         for(CallGraphNode::const_iterator nit = cgnode->InEdgeBegin(), neit = cgnode->InEdgeEnd(); nit!=neit; nit++)
         {
-            for(CallGraphEdge::CallInstSet::const_iterator cit = (*nit)->directCallsBegin(),
+
+            for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*nit)->directCallsBegin(),
                     ecit = (*nit)->directCallsEnd(); cit!=ecit; ++cit)
             {
                 if(insts.insert(*cit).second)
                     worklist.push(*cit);
             }
-            for(CallGraphEdge::CallInstSet::const_iterator cit = (*nit)->indirectCallsBegin(),
-                    ecit = (*nit)->indirectCallsEnd(); cit!=ecit; ++cit)
+            PTACallGraphEdge* edge = dyn_cast<PTACallGraphEdge>(*nit);
+            for(PTACallGraphEdge::CallInstSet::const_iterator cit = edge->indirectCallsBegin(),
+                    ecit = edge->indirectCallsEnd(); cit!=ecit; ++cit)
             {
                 if(insts.insert(*cit).second)
                     worklist.push(*cit);
@@ -105,15 +107,16 @@ bool TCT::isInRecursion(const ICFGNode* inst) const
 
         for(CallGraphNode::const_iterator nit = cgnode->InEdgeBegin(), neit = cgnode->InEdgeEnd(); nit!=neit; nit++)
         {
-            for(CallGraphEdge::CallInstSet::const_iterator cit = (*nit)->directCallsBegin(),
+            for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*nit)->directCallsBegin(),
                     ecit = (*nit)->directCallsEnd(); cit!=ecit; ++cit)
             {
                 const SVFFunction* caller = (*cit)->getCallSite()->getFunction();
                 if(visits.find(caller)==visits.end())
                     worklist.push(caller);
             }
-            for(CallGraphEdge::CallInstSet::const_iterator cit = (*nit)->indirectCallsBegin(),
-                    ecit = (*nit)->indirectCallsEnd(); cit!=ecit; ++cit)
+            PTACallGraphEdge* pCallGraphEdge = dyn_cast<PTACallGraphEdge>(*nit);
+            for(PTACallGraphEdge::CallInstSet::const_iterator cit = pCallGraphEdge->indirectCallsBegin(),
+                    ecit = pCallGraphEdge->indirectCallsEnd(); cit!=ecit; ++cit)
             {
                 const SVFFunction* caller = (*cit)->getCallSite()->getFunction();
                 if(visits.find(caller)==visits.end())
@@ -185,9 +188,9 @@ void TCT::markRelProcs(const SVFFunction* svffun)
  */
 void TCT::collectEntryFunInCallGraph()
 {
-    for(SVFModule::const_iterator it = getSVFModule()->begin(), eit = getSVFModule()->end(); it!=eit; ++it)
+    for(const auto& item: *PAG::getPAG()->getCallGraph())
     {
-        const SVFFunction* fun = (*it);
+        const SVFFunction* fun = (item.second)->getFunction();
         if (SVFUtil::isExtCall(fun))
             continue;
         CallGraphNode* node = tcg->getCallGraphNode(fun);
@@ -240,7 +243,7 @@ void TCT::collectMultiForkedThreads()
 /*!
  * Handle call relations
  */
-void TCT::handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, const CallICFGNode* cs)
+void TCT::handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge, const CallICFGNode* cs)
 {
     const SVFFunction* callee = cgEdge->getDstNode()->getFunction();
 
@@ -249,7 +252,7 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, co
     const CallICFGNode* callNode = cs;
     pushCxt(cxt,callNode,callee);
 
-    if(cgEdge->getEdgeKind() == CallGraphEdge::CallRetEdge)
+    if(cgEdge->getEdgeKind() == PTACallGraphEdge::CallRetEdge)
     {
         CxtThreadProc newctp(ctp.getTid(),cxt,callee);
         if(pushToCTPWorkList(newctp))
@@ -259,7 +262,7 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, co
         }
     }
 
-    else if(cgEdge->getEdgeKind() == CallGraphEdge::TDForkEdge)
+    else if(cgEdge->getEdgeKind() == PTACallGraphEdge::TDForkEdge)
     {
         /// Create spawnee TCT node
         TCTNode* spawneeNode = getOrCreateTCTNode(cxt,callNode, oldCxt, callee);
@@ -410,15 +413,15 @@ void TCT::build()
 
         for(CallGraphNode::const_iterator nit = cgNode->OutEdgeBegin(), neit = cgNode->OutEdgeEnd(); nit!=neit; nit++)
         {
-            const CallGraphEdge* cgEdge = (*nit);
+            const PTACallGraphEdge* cgEdge = dyn_cast<PTACallGraphEdge>(*nit);
 
-            for(CallGraphEdge::CallInstSet::const_iterator cit = cgEdge->directCallsBegin(),
+            for(PTACallGraphEdge::CallInstSet::const_iterator cit = cgEdge->directCallsBegin(),
                     ecit = cgEdge->directCallsEnd(); cit!=ecit; ++cit)
             {
                 DBOUT(DMTA,outs() << "\nTCT handling direct call:" << **cit << "\t" << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
                 handleCallRelation(ctp,cgEdge,*cit);
             }
-            for(CallGraphEdge::CallInstSet::const_iterator ind = cgEdge->indirectCallsBegin(),
+            for(PTACallGraphEdge::CallInstSet::const_iterator ind = cgEdge->indirectCallsBegin(),
                     eind = cgEdge->indirectCallsEnd(); ind!=eind; ++ind)
             {
                 DBOUT(DMTA,outs() << "\nTCT handling indirect call:" << **ind << "\t" << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
@@ -545,7 +548,7 @@ TCTEdge* TCT::hasGraphEdge(TCTNode* src, TCTNode* dst, TCTEdge::CEDGEK kind) con
 }
 
 /*!
- * get CallGraph edge via nodes
+ * get PTACallGraph edge via nodes
  */
 TCTEdge* TCT::getGraphEdge(TCTNode* src, TCTNode* dst, TCTEdge::CEDGEK kind)
 {

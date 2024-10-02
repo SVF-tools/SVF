@@ -977,9 +977,8 @@ SVFModuleWriter::SVFModuleWriter(const SVFModule* svfModule)
     {
         stInfoPool.saveID(stInfo);
     }
-
-    svfValuePool.reserve(svfModule->getFunctionSet().size() +
-                         svfModule->getConstantSet().size() +
+    //TODO:delete
+    svfValuePool.reserve(svfModule->getConstantSet().size() +
                          svfModule->getOtherValueSet().size());
 }
 
@@ -1319,7 +1318,7 @@ cJSON* SVFIRWriter::toJson(const SVFModule* module)
     F(pagReadFromTxt);
     F(moduleIdentifier);
 
-    F(FunctionSet);
+    // F(CallGraphNodeSet);
     F(GlobalSet);
     F(AliasSet);
     F(ConstantSet);
@@ -1773,7 +1772,7 @@ void SVFIRReader::readJson(SVFModule* module)
 #define F(field) JSON_READ_FIELD_FWD(obj, module, field)
     F(pagReadFromTxt);
     F(moduleIdentifier);
-    F(FunctionSet);
+    // F(CallGraphNodeSet);
     F(GlobalSet);
     F(AliasSet);
     F(ConstantSet);

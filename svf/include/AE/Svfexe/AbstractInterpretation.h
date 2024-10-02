@@ -106,7 +106,7 @@ class AbstractInterpretation
     friend class BufOverflowDetector;
 
 public:
-    typedef SCCDetection<CallGraph*> CallGraphSCC;
+    typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     /// Constructor
     AbstractInterpretation();
 
@@ -249,10 +249,11 @@ private:
 
     ICFG* icfg;
     AEStat* stat;
+    PTACallGraph* aeCallGraph;
 
     std::vector<const CallICFGNode*> callSiteStack;
-    Map<const SVFFunction*, ICFGWTO*> funcToWTO;
-    Set<const SVFFunction*> recursiveFuns;
+    Map<const CallGraphNode*, ICFGWTO*> funcToWTO;
+    Set<const CallGraphNode*> recursiveFuns;
 
 
     AbstractState& getAbsStateFromTrace(const ICFGNode* node)

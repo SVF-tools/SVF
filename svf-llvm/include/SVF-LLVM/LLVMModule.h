@@ -102,6 +102,7 @@ private:
     InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
     FunToFunEntryNodeMapTy FunToFunEntryNodeMap; ///< map a function to its FunExitICFGNode
     FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryICFGNode
+    CallGraph* callgraph;
 
     /// Constructor
     LLVMModuleSet();
@@ -373,7 +374,7 @@ private:
     void addSVFMain();
 
     void createSVFDataStructure();
-    void createSVFFunction(const Function* func);
+    void createCallGraphNode(const Function* func);
     void initSVFFunction();
     void initSVFBasicBlock(const Function* func);
     void initDomTree(SVFFunction* func, const Function* f);

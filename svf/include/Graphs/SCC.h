@@ -191,7 +191,7 @@ private:
 
     GNODESCCInfoMap  _NodeSCCAuxInfo;
 
-    const GraphType &           _graph;
+    const GraphType           _graph;
     NodeID                   _I;
     NodeToNodeMap            _D;
     GNodeStack             _SS;

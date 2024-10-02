@@ -33,6 +33,7 @@
 #include "MTA/MHP.h"
 #include "MTA/LockAnalysis.h"
 #include "Graphs/ThreadCallGraph.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 
@@ -116,9 +117,10 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
     {
         Set<const ICFGNode*> instSet1;
         Set<const ICFGNode*> instSet2;
-        SVFModule* mod = mhp->getTCT()->getSVFModule();
-        for (const SVFFunction* fun : mod->getFunctionSet())
+        for (const auto& item: *PAG::getPAG()->getCallGraph())
         {
+            const CallGraphNode* cgn = item.second;
+            const SVFFunction* fun = cgn->getFunction();
             if(SVFUtil::isExtCall(fun))
                 continue;
             if(!mhp->isConnectedfromMain(fun))

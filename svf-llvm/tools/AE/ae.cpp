@@ -879,9 +879,9 @@ int main(int argc, char** argv)
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
-    CallGraph* callgraph = ander->getCallGraph();
-    builder.updateCallGraph(callgraph);
-    pag->getICFG()->updateCallGraph(callgraph);
+    PTACallGraph* ptaCallGraph = ander->getPTACallGraph();
+    builder.updateCallGraph(ptaCallGraph);
+    pag->getICFG()->updateCallGraph(ptaCallGraph);
     AbstractInterpretation& ae = AbstractInterpretation::getAEInstance();
     if (Options::BufferOverflowCheck())
         ae.addDetector(std::make_unique<BufOverflowDetector>());

@@ -161,7 +161,7 @@ protected:
     /// Finalization of pointer analysis, and normalize points-to information to Bit Vector representation
     void finalize() override;
 
-    /// Update callgraph. This should be implemented by its subclass.
+    /// Update ptaCallGraph. This should be implemented by its subclass.
     virtual inline bool updateCallGraph(const CallSiteToFunPtrMap&)
     {
         assert(false && "Virtual function not implemented!");

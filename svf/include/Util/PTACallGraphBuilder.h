@@ -1,4 +1,4 @@
-//===- CallGraphBuilder.h ----------------------------------------------------------------//
+//===- PTACallGraphBuilder.h ----------------------------------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -22,16 +22,16 @@
 
 
 /*
- * CallGraphBuilder.h
+ * PTACallGraphBuilder.h
  *
  *  Created on: 13Mar.,2020
  *      Author: Yulei Sui
  */
 
-#ifndef INCLUDE_SVF_FE_CALLGRAPHBUILDER_H_
-#define INCLUDE_SVF_FE_CALLGRAPHBUILDER_H_
+#ifndef INCLUDE_SVF_FE_PTACALLGRAPHBUILDER_H_
+#define INCLUDE_SVF_FE_PTACALLGRAPHBUILDER_H_
 
-#include "Graphs/CallGraph.h"
+#include "Graphs/PTACallGraph.h"
 #include "Graphs/ThreadCallGraph.h"
 
 namespace SVF
@@ -39,32 +39,32 @@ namespace SVF
 
 class ICFG;
 
-class CallGraphBuilder
+class PTACallGraphBuilder
 {
 
 protected:
-    CallGraph* callgraph;
+    PTACallGraph* ptaCallGraph;
     ICFG* icfg;
 public:
-    CallGraphBuilder(CallGraph* cg, ICFG* i): callgraph(cg),icfg(i)
+    PTACallGraphBuilder(PTACallGraph* cg, ICFG* i): ptaCallGraph(cg),icfg(i)
     {
     }
 
-    /// Build normal callgraph
-    CallGraph* buildCallGraph(SVFModule* svfModule);
+    /// Build PTA ptaCallGraph
+    PTACallGraph* buildPTACallGraph();
 
 };
 
-class ThreadCallGraphBuilder : public CallGraphBuilder
+class ThreadCallGraphBuilder : public PTACallGraphBuilder
 {
 
 public:
-    ThreadCallGraphBuilder(ThreadCallGraph* cg, ICFG* i): CallGraphBuilder(cg,i)
+    ThreadCallGraphBuilder(ThreadCallGraph* cg, ICFG* i): PTACallGraphBuilder(cg,i)
     {
     }
 
-    /// Build thread-aware callgraph
-    CallGraph* buildThreadCallGraph(SVFModule* svfModule);
+    /// Build thread-aware ptaCallGraph
+    PTACallGraph* buildThreadCallGraph(SVFModule* svfModule);
 
 };
 

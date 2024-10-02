@@ -27,9 +27,10 @@
  *      Author: Yulei Sui
  */
 
-#include "Util/Options.h"
 #include "Util/SVFUtil.h"
+#include "Graphs/CallGraph.h"
 #include "MemoryModel/PointsTo.h"
+#include "Util/Options.h"
 
 #include <sys/resource.h>		/// increase stack size
 
@@ -396,4 +397,28 @@ bool SVFUtil::isRetInstNode(const ICFGNode* node)
 bool SVFUtil::isProgExitCall(const CallICFGNode* cs)
 {
     return isProgExitFunction(cs->getCalledFunction());
+}
+
+/// Get program entry function from module.
+const SVFFunction* SVFUtil::getProgFunction(SVFModule* svfModule, const std::string& funName)
+{
+    for(const auto& item: *PAG::getPAG()->getCallGraph())
+    {
+        const CallGraphNode*fun = item.second;
+        if (fun->getName()==funName)
+            return fun->getFunction();
+    }
+    return nullptr;
+}
+
+/// Get program entry function from module.
+const SVFFunction* SVFUtil::getProgEntryFunction(SVFModule* svfModule)
+{
+    for(const auto& item: *PAG::getPAG()->getCallGraph())
+    {
+        const CallGraphNode*fun = item.second;
+        if (isProgEntryFunction(fun->getFunction()))
+            return (fun->getFunction());
+    }
+    return nullptr;
 }

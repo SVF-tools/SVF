@@ -27,11 +27,11 @@
  *      Author: Yulei Sui
  */
 
-#include <iomanip>
-#include "Graphs/CallGraph.h"
 #include "Util/PTAStat.h"
+#include "Graphs/PTACallGraph.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "SVFIR/SVFIR.h"
+#include <iomanip>
 
 using namespace SVF;
 using namespace std;
@@ -81,7 +81,7 @@ void PTAStat::performStat()
 void PTAStat::callgraphStat()
 {
 
-    CallGraph* graph = pta->getCallGraph();
+    PTACallGraph* graph = pta->getPTACallGraph();
     PointerAnalysis::CallGraphSCC* callgraphSCC = new PointerAnalysis::CallGraphSCC(graph);
     callgraphSCC->find();
 
@@ -93,8 +93,8 @@ void PTAStat::callgraphStat()
     unsigned edgeInCycle = 0;
 
     NodeSet sccRepNodeSet;
-    CallGraph::iterator it = graph->begin();
-    CallGraph::iterator eit = graph->end();
+    PTACallGraph::iterator it = graph->begin();
+    PTACallGraph::iterator eit = graph->end();
     for (; it != eit; ++it)
     {
         totalNode++;
@@ -111,7 +111,7 @@ void PTAStat::callgraphStat()
         CallGraphNode::const_iterator edgeEit = it->second->InEdgeEnd();
         for (; edgeIt != edgeEit; ++edgeIt)
         {
-            CallGraphEdge *edge = *edgeIt;
+            PTACallGraphEdge*edge = SVFUtil::dyn_cast<PTACallGraphEdge>(*edgeIt);
             totalEdge+= edge->getDirectCalls().size() + edge->getIndirectCalls().size();
             if(callgraphSCC->repNode(edge->getSrcID()) == callgraphSCC->repNode(edge->getDstID()))
             {
@@ -130,15 +130,15 @@ void PTAStat::callgraphStat()
     PTNumStatMap["CalRetPairInCycle"] = edgeInCycle;
 
     if(pta->getAnalysisTy() >= PointerAnalysis::PTATY::Andersen_BASE && pta->getAnalysisTy() <= PointerAnalysis::PTATY::Steensgaard_WPA)
-        SVFStat::printStat("CallGraph Stats (Andersen analysis)");
+        SVFStat::printStat("PTACallGraph Stats (Andersen analysis)");
     else if(pta->getAnalysisTy() >= PointerAnalysis::PTATY::FSDATAFLOW_WPA && pta->getAnalysisTy() <= PointerAnalysis::PTATY::FSCS_WPA)
-        SVFStat::printStat("CallGraph Stats (Flow-sensitive analysis)");
+        SVFStat::printStat("PTACallGraph Stats (Flow-sensitive analysis)");
     else if(pta->getAnalysisTy() >= PointerAnalysis::PTATY::CFLFICI_WPA && pta->getAnalysisTy() <= PointerAnalysis::PTATY::CFLFSCS_WPA)
-        SVFStat::printStat("CallGraph Stats (CFL-R analysis)");
+        SVFStat::printStat("PTACallGraph Stats (CFL-R analysis)");
     else if(pta->getAnalysisTy() >= PointerAnalysis::PTATY::FieldS_DDA && pta->getAnalysisTy() <= PointerAnalysis::PTATY::Cxt_DDA)
-        SVFStat::printStat("CallGraph Stats (DDA analysis)");
+        SVFStat::printStat("PTACallGraph Stats (DDA analysis)");
     else
-        SVFStat::printStat("CallGraph Stats");
+        SVFStat::printStat("PTACallGraph Stats");
 
     delete callgraphSCC;
 }

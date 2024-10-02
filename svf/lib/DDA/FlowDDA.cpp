@@ -85,9 +85,9 @@ bool FlowDDA::testIndCallReachability(LocDPItem&, const SVFFunction* callee, Cal
 
     if(getPAG()->isIndirectCallSites(cbn))
     {
-        if(getCallGraph()->hasIndCSCallees(cbn))
+        if(getPTACallGraph()->hasIndCSCallees(cbn))
         {
-            const FunctionSet& funset = getCallGraph()->getIndCSCallees(cbn);
+            const FunctionSet& funset = getPTACallGraph()->getIndCSCallees(cbn);
             if(funset.find(callee)!=funset.end())
                 return true;
         }
@@ -185,7 +185,7 @@ bool FlowDDA::isHeapCondMemObj(const NodeID& var, const StoreSVFGNode*)
 //            const SVFFunction* curFun = store->getBB() ? store->getBB()->getParent() : nullptr;
 //            if(fun!=curFun)
 //                return true;
-//            if(_callGraphSCC->isInCycle(_callGraph->getCallGraphNode(fun)->getId()))
+//            if(_callGraphSCC->isInCycle(_ptaCallGraph->getCallGraphNode(fun)->getId()))
 //                return true;
 //            if(_pag->getICFG()->isInLoop(mallocSite))
 //                return true;

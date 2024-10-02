@@ -40,6 +40,7 @@
 #include "llvm/Support/FileSystem.h"
 #include "SVF-LLVM/ObjTypeInference.h"
 #include "llvm/Transforms/Utils/Cloning.h"
+#include "Graphs/CallGraph.h"
 
 using namespace std;
 using namespace SVF;
@@ -193,13 +194,15 @@ void LLVMModuleSet::createSVFDataStructure()
         }
     }
 
+    callgraph = new CallGraph();
+
     for (const Function* func: candidateDefs)
     {
-        createSVFFunction(func);
+        createCallGraphNode(func);
     }
     for (const Function* func: candidateDecls)
     {
-        createSVFFunction(func);
+        createCallGraphNode(func);
     }
 
     // Store annotations of functions in extapi.bc
@@ -241,7 +244,7 @@ void LLVMModuleSet::createSVFDataStructure()
     }
 }
 
-void LLVMModuleSet::createSVFFunction(const Function* func)
+void LLVMModuleSet::createCallGraphNode(const Function* func)
 {
     SVFFunction* svfFunc = new SVFFunction(
         getSVFType(func->getType()),
@@ -250,6 +253,11 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
         func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
     svfModule->addFunctionSet(svfFunc);
+    // create call graph node
+    callgraph->addCallGraphNode(
+        new CallGraphNode(callgraph->getCallGraphNodeNum(), svfFunc));
+    callgraph->incCallGraphNodeNum();
+
     addFunctionMap(func, svfFunc);
 
     for (const Argument& arg : func->args())

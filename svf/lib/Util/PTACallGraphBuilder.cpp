@@ -1,4 +1,4 @@
-//===- CallGraphBuilder.cpp ----------------------------------------------------------------//
+//===- PTACallGraphBuilder.cpp ----------------------------------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -22,31 +22,34 @@
 
 
 /*
- * CallGraphBuilder.cpp
+ * PTACallGraphBuilder.cpp
  *
  *  Created on:
  *      Author: Yulei
  */
 
-#include "Util/SVFUtil.h"
-#include "Util/CallGraphBuilder.h"
+#include "Util/PTACallGraphBuilder.h"
 #include "Graphs/ICFG.h"
+#include "Util/SVFUtil.h"
+#include "SVFIR/SVFIR.h"
 
 using namespace SVF;
 using namespace SVFUtil;
 
-CallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
+PTACallGraph* PTACallGraphBuilder::buildPTACallGraph()
 {
+    CallGraph* callGraph = PAG::getPAG()->getCallGraph();
+
     /// create nodes
-    for (SVFModule::const_iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F)
+    for (const auto& item : *callGraph)
     {
-        callgraph->addCallGraphNode(*F);
+        ptaCallGraph->addPTACallGraphNode(item.second);
     }
 
     /// create edges
-    for (SVFModule::const_iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F)
+    for (const auto& item : *callGraph)
     {
-        for (const SVFBasicBlock* svfbb : (*F)->getBasicBlockList())
+        for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())
         {
             for (const ICFGNode* inst : svfbb->getICFGNodeList())
             {
@@ -55,28 +58,28 @@ CallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
                     const CallICFGNode* callBlockNode = cast<CallICFGNode>(inst);
                     if(const SVFFunction* callee = callBlockNode->getCalledFunction())
                     {
-                        callgraph->addDirectCallGraphEdge(callBlockNode,*F,callee);
+                        ptaCallGraph->addDirectCallGraphEdge(callBlockNode,(item.second)->getFunction(),callee);
                     }
                 }
             }
         }
     }
 
-    return callgraph;
+    return ptaCallGraph;
 }
 
-CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
+PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
 {
 
-    buildCallGraph(svfModule);
+    buildPTACallGraph();
 
-    ThreadCallGraph* cg = dyn_cast<ThreadCallGraph>(callgraph);
-    assert(cg && "not a thread callgraph?");
+    ThreadCallGraph* cg = dyn_cast<ThreadCallGraph>(ptaCallGraph);
+    assert(cg && "not a thread ptaCallGraph?");
 
     ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();
-    for (SVFModule::const_iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F)
+    for (const auto& item: *PAG::getPAG()->getCallGraph())
     {
-        for (const SVFBasicBlock* svfbb : (*F)->getBasicBlockList())
+        for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())
         {
             for (const ICFGNode* inst : svfbb->getICFGNodeList())
             {
@@ -99,9 +102,9 @@ CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
         }
     }
     // record join sites
-    for (SVFModule::const_iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F)
+    for (const auto& item: *PAG::getPAG()->getCallGraph())
     {
-        for (const SVFBasicBlock* svfbb : (*F)->getBasicBlockList())
+        for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())
         {
             for (const ICFGNode* node : svfbb->getICFGNodeList())
             {

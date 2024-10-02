@@ -25,7 +25,7 @@
  * CallGraph.cpp
  *
  *  Created on: Nov 7, 2013
- *      Author: Yulei Sui
+ *      Author: Yulei Sui, Weigang He
  */
 
 #include <sstream>
@@ -48,12 +48,6 @@ void CallGraphEdge::addDirectCallSite(const CallICFGNode* call)
     assert(call->getCalledFunction() && "not a direct callsite??");
     directCalls.insert(call);
 }
-
-void CallGraphEdge::addInDirectCallSite(const CallICFGNode* call)
-{
-    assert((nullptr == call->getCalledFunction() || nullptr == SVFUtil::dyn_cast<SVFFunction> (SVFUtil::getForkedFun(call))) && "not an indirect callsite??");
-    indirectCalls.insert(call);
-}
 //@}
 
 const std::string CallGraphEdge::toString() const
@@ -61,10 +55,7 @@ const std::string CallGraphEdge::toString() const
     std::string str;
     std::stringstream  rawstr(str);
     rawstr << "CallSite ID: " << getCallSiteID();
-    if(isDirectCallEdge())
-        rawstr << "direct call";
-    else
-        rawstr << "indirect call";
+    rawstr << "direct call";
     rawstr << "[" << getDstID() << "<--" << getSrcID() << "]\t";
     return rawstr.str();
 }
@@ -121,21 +112,21 @@ void CallGraph::destroy()
 /*!
  * Add call graph node
  */
-void CallGraph::addCallGraphNode(const SVFFunction* fun)
+void CallGraph::addCallGraphNode(const CallGraphNode* callGraphNode)
 {
-    NodeID id = callGraphNodeNum;
-    CallGraphNode* callGraphNode = new CallGraphNode(id, fun);
-    addGNode(id,callGraphNode);
-    funToCallGraphNodeMap[fun] = callGraphNode;
-    callGraphNodeNum++;
+    CallGraphNode* newNode= const_cast<CallGraphNode*>(callGraphNode);
+    addGNode(callGraphNode->getId(), newNode);
+    funToCallGraphNodeMap[callGraphNode->getFunction()] = newNode;
 }
 
 /*!
  *  Whether we have already created this call graph edge
  */
-CallGraphEdge* CallGraph::hasGraphEdge(CallGraphNode* src, CallGraphNode* dst,CallGraphEdge::CEDGEK kind, CallSiteID csId) const
+CallGraphEdge* CallGraph::hasGraphEdge(CallGraphNode* src,
+                                          CallGraphNode* dst,
+                                             CallGraphEdge::CEDGEK cedgek, CallSiteID csId) const
 {
-    CallGraphEdge edge(src,dst,kind,csId);
+    CallGraphEdge edge(src,dst, cedgek,csId);
     CallGraphEdge* outEdge = src->hasOutgoingEdge(&edge);
     CallGraphEdge* inEdge = dst->hasIncomingEdge(&edge);
     if (outEdge && inEdge)
@@ -150,13 +141,15 @@ CallGraphEdge* CallGraph::hasGraphEdge(CallGraphNode* src, CallGraphNode* dst,Ca
 /*!
  * get CallGraph edge via nodes
  */
-CallGraphEdge* CallGraph::getGraphEdge(CallGraphNode* src, CallGraphNode* dst,CallGraphEdge::CEDGEK kind, CallSiteID)
+CallGraphEdge* CallGraph::getGraphEdge(CallGraphNode* src,
+                                          CallGraphNode* dst,
+                                             CallGraphEdge::CEDGEK cedgek, CallSiteID)
 {
     for (CallGraphEdge::CallGraphEdgeSet::iterator iter = src->OutEdgeBegin();
             iter != src->OutEdgeEnd(); ++iter)
     {
         CallGraphEdge* edge = (*iter);
-        if (edge->getEdgeKind() == kind && edge->getDstID() == dst->getId())
+        if (edge->getEdgeKind() == cedgek && edge->getDstID() == dst->getId())
             return edge;
     }
     return nullptr;
@@ -175,54 +168,10 @@ void CallGraph::addDirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction*
 
     if(!hasGraphEdge(caller,callee, CallGraphEdge::CallRetEdge,csId))
     {
-        CallGraphEdge* edge = new CallGraphEdge(caller,callee,CallGraphEdge::CallRetEdge,csId);
+        CallGraphEdge* edge = new CallGraphEdge(caller,callee, CallGraphEdge::CallRetEdge,csId);
         edge->addDirectCallSite(cs);
         addEdge(edge);
         callinstToCallGraphEdgesMap[cs].insert(edge);
-    }
-}
-
-/*!
- * Add indirect call edge to update call graph
- */
-void CallGraph::addIndirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun)
-{
-
-    CallGraphNode* caller = getCallGraphNode(callerFun);
-    CallGraphNode* callee = getCallGraphNode(calleeFun);
-
-    numOfResolvedIndCallEdge++;
-
-    CallSiteID csId = addCallSite(cs, callee->getFunction());
-
-    if(!hasGraphEdge(caller,callee, CallGraphEdge::CallRetEdge,csId))
-    {
-        CallGraphEdge* edge = new CallGraphEdge(caller,callee,CallGraphEdge::CallRetEdge, csId);
-        edge->addInDirectCallSite(cs);
-        addEdge(edge);
-        callinstToCallGraphEdgesMap[cs].insert(edge);
-    }
-}
-
-/*!
- * Get all callsite invoking this callee
- */
-void CallGraph::getAllCallSitesInvokingCallee(const SVFFunction* callee, CallGraphEdge::CallInstSet& csSet)
-{
-    CallGraphNode* callGraphNode = getCallGraphNode(callee);
-    for(CallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
-            it!=eit; ++it)
-    {
-        for(CallGraphEdge::CallInstSet::const_iterator cit = (*it)->directCallsBegin(),
-                ecit = (*it)->directCallsEnd(); cit!=ecit; ++cit)
-        {
-            csSet.insert((*cit));
-        }
-        for(CallGraphEdge::CallInstSet::const_iterator cit = (*it)->indirectCallsBegin(),
-                ecit = (*it)->indirectCallsEnd(); cit!=ecit; ++cit)
-        {
-            csSet.insert((*cit));
-        }
     }
 }
 
@@ -243,42 +192,6 @@ void CallGraph::getDirCallSitesInvokingCallee(const SVFFunction* callee, CallGra
     }
 }
 
-/*!
- * Get indirect callsite invoking this callee
- */
-void CallGraph::getIndCallSitesInvokingCallee(const SVFFunction* callee, CallGraphEdge::CallInstSet& csSet)
-{
-    CallGraphNode* callGraphNode = getCallGraphNode(callee);
-    for(CallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
-            it!=eit; ++it)
-    {
-        for(CallGraphEdge::CallInstSet::const_iterator cit = (*it)->indirectCallsBegin(),
-                ecit = (*it)->indirectCallsEnd(); cit!=ecit; ++cit)
-        {
-            csSet.insert((*cit));
-        }
-    }
-}
-
-/*!
- * Issue a warning if the function which has indirect call sites can not be reached from program entry.
- */
-void CallGraph::verifyCallGraph()
-{
-    CallEdgeMap::const_iterator it = indirectCallMap.begin();
-    CallEdgeMap::const_iterator eit = indirectCallMap.end();
-    for (; it != eit; ++it)
-    {
-        const FunctionSet& targets = it->second;
-        if (targets.empty() == false)
-        {
-            const CallICFGNode* cs = it->first;
-            const SVFFunction* func = cs->getCaller();
-            if (getCallGraphNode(func)->isReachableFromProgEntry() == false)
-                writeWrnMsg(func->getName() + " has indirect call site but not reachable from main");
-        }
-    }
-}
 
 /*!
  * Whether its reachable between two functions
@@ -385,10 +298,10 @@ struct DOTGraphTraits<CallGraph*> : public DefaultDOTGraphTraits
         {
             color = "color=black";
         }
-        if (0 != edge->getIndirectCalls().size())
-        {
-            color = "color=red";
-        }
+//        if (0 != edge->getIndirectCalls().size())
+//        {
+//            color = "color=red";
+//        }
         return color;
     }
 

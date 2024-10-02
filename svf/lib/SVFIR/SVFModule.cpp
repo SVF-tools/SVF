@@ -20,12 +20,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 #include "SVFIR/SVFModule.h"
 #include "SVFIR/SymbolTableInfo.h"
-#include "Util/SVFUtil.h"
-#include "Util/SVFStat.h"
 #include "Util/Options.h"
+#include "Util/SVFStat.h"
+#include "Util/SVFUtil.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 
@@ -40,18 +40,21 @@ SVFModule::~SVFModule()
         delete c;
     for (const SVFValue* o : OtherValueSet)
         delete o;
+
     NodeIDAllocator::unset();
     ThreadAPI::destroy();
     ExtAPI::destory();
 }
 
-const SVFFunction* SVFModule::getSVFFunction(const std::string& name)
+
+const CallGraphNode* SVFModule::getCallGraphNode(const std::string& name)
 {
-    for (const SVFFunction* fun : getFunctionSet())
+    for (const auto& item: *PAG::getPAG()->getCallGraph())
     {
-        if (fun->getName() == name)
+        const CallGraphNode* cgn = item.second;
+        if (cgn->getName() == name)
         {
-            return fun;
+            return cgn;
         }
     }
     return nullptr;

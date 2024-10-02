@@ -168,13 +168,13 @@ int main(int argc, char ** argv)
 
 
     /// Call Graph
-    CallGraph* callgraph = ander->getCallGraph();
+    PTACallGraph* ptaCallGraph = ander->getPTACallGraph();
 
     /// ICFG
     ICFG* icfg = pag->getICFG();
 
     /// Value-Flow Graph (VFG)
-    VFG* vfg = new VFG(callgraph);
+    VFG* vfg = new VFG(ptaCallGraph);
 
     /// Sparse value-flow graph (SVFG)
     SVFGBuilder svfBuilder;

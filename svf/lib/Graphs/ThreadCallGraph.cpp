@@ -39,8 +39,7 @@ using namespace SVFUtil;
 /*!
  * Constructor
  */
-ThreadCallGraph::ThreadCallGraph() :
-    CallGraph(ThdCallGraph), tdAPI(ThreadAPI::getThreadAPI())
+ThreadCallGraph::ThreadCallGraph() : PTACallGraph(ThdCallGraph), tdAPI(ThreadAPI::getThreadAPI())
 {
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Building ThreadCallGraph\n"));
 }
@@ -60,8 +59,8 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
     for (; iter != eiter; iter++)
     {
         const CallICFGNode* cs = iter->first;
-        const CallGraph::FunctionSet &functions = iter->second;
-        for (CallGraph::FunctionSet::const_iterator func_iter =
+        const PTACallGraph::FunctionSet &functions = iter->second;
+        for (PTACallGraph::FunctionSet::const_iterator func_iter =
                     functions.begin(); func_iter != functions.end(); func_iter++)
         {
             const SVFFunction* callee = *func_iter;
@@ -130,7 +129,7 @@ bool ThreadCallGraph::addDirectForkEdge(const CallICFGNode* cs)
     CallGraphNode* callee = getCallGraphNode(forkee->getDefFunForMultipleModule());
     CallSiteID csId = addCallSite(cs, callee->getFunction());
 
-    if (!hasGraphEdge(caller, callee, CallGraphEdge::TDForkEdge, csId))
+    if (!hasGraphEdge(caller, callee, PTACallGraphEdge::TDForkEdge, csId))
     {
         assert(cs->getCaller() == caller->getFunction() && "callee instruction not inside caller??");
 
@@ -155,7 +154,7 @@ bool ThreadCallGraph::addIndirectForkEdge(const CallICFGNode* cs, const SVFFunct
 
     CallSiteID csId = addCallSite(cs, callee->getFunction());
 
-    if (!hasGraphEdge(caller, callee, CallGraphEdge::TDForkEdge, csId))
+    if (!hasGraphEdge(caller, callee, PTACallGraphEdge::TDForkEdge, csId))
     {
         assert(cs->getCaller() == caller->getFunction() && "callee instruction not inside caller??");
 

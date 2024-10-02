@@ -30,7 +30,7 @@
 #ifndef RCG_H_
 #define RCG_H_
 
-#include "Graphs/CallGraph.h"
+#include "Graphs/PTACallGraph.h"
 
 namespace SVF
 {
@@ -41,13 +41,13 @@ class PointerAnalysis;
 /*!
  * PTA thread fork edge from fork site to the entry of a start routine function
  */
-class ThreadForkEdge: public CallGraphEdge
+class ThreadForkEdge: public PTACallGraphEdge
 {
 
 public:
     /// Constructor
     ThreadForkEdge(CallGraphNode* s, CallGraphNode* d, CallSiteID csId) :
-        CallGraphEdge(s, d, CallGraphEdge::TDForkEdge, csId)
+          PTACallGraphEdge( s, d,PTACallGraphEdge::TDForkEdge, csId)
     {
     }
     /// Destructor
@@ -61,9 +61,9 @@ public:
     {
         return true;
     }
-    static inline bool classof(const CallGraphEdge *edge)
+    static inline bool classof(const PTACallGraphEdge*edge)
     {
-        return edge->getEdgeKind() == CallGraphEdge::TDForkEdge;
+        return edge->getEdgeKind() == PTACallGraphEdge::TDForkEdge;
     }
     //@}
 
@@ -84,13 +84,13 @@ public:
 /*!
  * PTA thread join edge from the exit of a start routine function to a join point of the thread
  */
-class ThreadJoinEdge: public CallGraphEdge
+class ThreadJoinEdge: public PTACallGraphEdge
 {
 
 public:
     /// Constructor
     ThreadJoinEdge(CallGraphNode* s, CallGraphNode* d, CallSiteID csId) :
-        CallGraphEdge(s, d, CallGraphEdge::TDJoinEdge, csId)
+          PTACallGraphEdge( s, d,PTACallGraphEdge::TDJoinEdge, csId)
     {
     }
     /// Destructor
@@ -102,9 +102,9 @@ public:
     {
         return true;
     }
-    static inline bool classof(const CallGraphEdge *edge)
+    static inline bool classof(const PTACallGraphEdge*edge)
     {
-        return edge->getEdgeKind() == CallGraphEdge::TDJoinEdge;
+        return edge->getEdgeKind() == PTACallGraphEdge::TDJoinEdge;
     }
 
     virtual const std::string toString() const
@@ -124,13 +124,13 @@ public:
 /*!
  * hare_parallel_for edge from fork site to the entry of a start routine function
  */
-class HareParForEdge: public CallGraphEdge
+class HareParForEdge: public PTACallGraphEdge
 {
 
 public:
     /// Constructor
     HareParForEdge(CallGraphNode* s, CallGraphNode* d, CallSiteID csId) :
-        CallGraphEdge(s, d, CallGraphEdge::HareParForEdge, csId)
+          PTACallGraphEdge( s, d, PTACallGraphEdge::HareParForEdge, csId)
     {
     }
     /// Destructor
@@ -144,9 +144,9 @@ public:
     {
         return true;
     }
-    static inline bool classof(const CallGraphEdge *edge)
+    static inline bool classof(const PTACallGraphEdge*edge)
     {
-        return edge->getEdgeKind() == CallGraphEdge::HareParForEdge;
+        return edge->getEdgeKind() == PTACallGraphEdge::HareParForEdge;
     }
     //@}
 
@@ -157,7 +157,7 @@ public:
 /*!
  * Thread sensitive call graph
  */
-class ThreadCallGraph: public CallGraph
+class ThreadCallGraph: public PTACallGraph
 {
 
 public:
@@ -184,9 +184,9 @@ public:
     {
         return true;
     }
-    static inline bool classof(const CallGraph *g)
+    static inline bool classof(const PTACallGraph*g)
     {
-        return g->getKind() == CallGraph::ThdCallGraph;
+        return g->getKind() == PTACallGraph::ThdCallGraph;
     }
     //@}
 
@@ -356,33 +356,33 @@ public:
     //@}
 
 
-    /// map call instruction to its CallGraphEdge map
+    /// map call instruction to its PTACallGraphEdge map
     inline void addThreadForkEdgeSetMap(const CallICFGNode* cs, ThreadForkEdge* edge)
     {
         if(edge!=nullptr)
         {
             callinstToThreadForkEdgesMap[cs].insert(edge);
-            callinstToCallGraphEdgesMap[cs].insert(edge);
+            callinstToPTACallGraphEdgesMap[cs].insert(edge);
         }
     }
 
-    /// map call instruction to its CallGraphEdge map
+    /// map call instruction to its PTACallGraphEdge map
     inline void addThreadJoinEdgeSetMap(const CallICFGNode* cs, ThreadJoinEdge* edge)
     {
         if(edge!=nullptr)
         {
             callinstToThreadJoinEdgesMap[cs].insert(edge);
-            callinstToCallGraphEdgesMap[cs].insert(edge);
+            callinstToPTACallGraphEdgesMap[cs].insert(edge);
         }
     }
 
-    /// map call instruction to its CallGraphEdge map
+    /// map call instruction to its PTACallGraphEdge map
     inline void addHareParForEdgeSetMap(const CallICFGNode* cs, HareParForEdge* edge)
     {
         if(edge!=nullptr)
         {
             callinstToHareParForEdgesMap[cs].insert(edge);
-            callinstToCallGraphEdgesMap[cs].insert(edge);
+            callinstToPTACallGraphEdgesMap[cs].insert(edge);
         }
     }
 

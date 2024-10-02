@@ -38,7 +38,7 @@
 namespace SVF
 {
 
-class CallGraph;
+class PTACallGraph;
 
 /*!
  * Interprocedural Control-Flow Graph (ICFG)
@@ -111,7 +111,7 @@ public:
     void view();
 
     /// update ICFG for indirect calls
-    void updateCallGraph(CallGraph* callgraph);
+    void updateCallGraph(PTACallGraph* callgraph);
 
     /// Whether node is in a loop
     inline bool isInLoop(const ICFGNode *node)

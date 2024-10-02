@@ -31,6 +31,7 @@
 
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/Options.h"
+#include "Graphs/ThreadCallGraph.h"
 #include <fstream>
 #include <sstream>
 
@@ -420,7 +421,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
 
     readAndSetObjFieldSensitivity(F,"");
 
-    // Update callgraph
+    // Update ptaCallGraph
     updateCallGraph(pag->getIndirectCallsites());
 
     F.close();
@@ -516,7 +517,7 @@ void BVDataPTAImpl::onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& call
         CallEdgeMap& newForkEdges)
 {
     // add indirect fork edges
-    if(ThreadCallGraph *tdCallGraph = SVFUtil::dyn_cast<ThreadCallGraph>(callgraph))
+    if(ThreadCallGraph *tdCallGraph = SVFUtil::dyn_cast<ThreadCallGraph>(ptaCallGraph))
     {
         for(CallSiteSet::const_iterator it = tdCallGraph->forksitesBegin(),
                 eit = tdCallGraph->forksitesEnd(); it != eit; ++it)

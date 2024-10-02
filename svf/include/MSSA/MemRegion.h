@@ -35,7 +35,6 @@
 #define MEMORYREGION_H_
 
 #include "Graphs/ICFG.h"
-#include "Graphs/CallGraph.h"
 #include "Graphs/SCC.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/WorkList.h"
@@ -46,7 +45,7 @@ namespace SVF
 {
 
 class BVDataPTAImpl;
-
+class PTACallGraph;
 typedef NodeID MRID;
 typedef NodeID MRVERID;
 typedef NodeID MRVERSION;
@@ -196,7 +195,7 @@ private:
 
     BVDataPTAImpl* pta;
     SCC* callGraphSCC;
-    CallGraph* callGraph;
+    PTACallGraph* callGraph;
     bool ptrOnlyMSSA;
 
     /// Map a function to all its memory regions

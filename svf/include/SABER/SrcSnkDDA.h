@@ -76,7 +76,7 @@ private:
 protected:
     SaberSVFGBuilder memSSA;
     SVFG* svfg;
-    CallGraph* callgraph;
+    PTACallGraph* callgraph;
     SVFBugReport report; /// Bug Reporter
 
 public:
@@ -95,9 +95,9 @@ public:
         _curSlice = nullptr;
 
         /// the following shared by multiple checkers, thus can not be released.
-        //if (callgraph != nullptr)
-        //    delete callgraph;
-        //callgraph = nullptr;
+        //if (ptaCallGraph != nullptr)
+        //    delete ptaCallGraph;
+        //ptaCallGraph = nullptr;
 
         //if(pathCondAllocator)
         //    delete pathCondAllocator;
@@ -129,7 +129,7 @@ public:
     }
 
     /// Get Callgraph
-    inline CallGraph* getCallgraph() const
+    inline PTACallGraph* getCallgraph() const
     {
         return callgraph;
     }

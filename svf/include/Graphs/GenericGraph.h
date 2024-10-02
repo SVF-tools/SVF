@@ -632,6 +632,7 @@ public:
     inline NodeType* getGNode(NodeID id) const
     {
         const_iterator it = IDToNodeMap.find(id);
+        std::cout << "IDToNodeMap size: " << IDToNodeMap.size() << std::endl;
         assert(it != IDToNodeMap.end() && "Node not found!");
         return it->second;
     }

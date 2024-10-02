@@ -31,6 +31,7 @@
 #include "SVFIR/SVFModule.h"
 #include "MSSA/MemRegion.h"
 #include "MSSA/MSSAMuChi.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -41,7 +42,7 @@ u32_t MRVer::totalVERNum = 0;
 MRGenerator::MRGenerator(BVDataPTAImpl* p, bool ptrOnly) :
     pta(p), ptrOnlyMSSA(ptrOnly)
 {
-    callGraph = pta->getCallGraph();
+    callGraph = pta->getPTACallGraph();
     callGraphSCC = new SCC(callGraph);
 }
 
@@ -173,11 +174,9 @@ SVFIR::SVFStmtList& MRGenerator::getPAGEdgesFromInst(const ICFGNode* node)
 void MRGenerator::collectModRefForLoadStore()
 {
 
-    SVFModule* svfModule = pta->getModule();
-    for (SVFModule::const_iterator fi = svfModule->begin(), efi = svfModule->end(); fi != efi;
-            ++fi)
+    for(const auto& item: *PAG::getPAG()->getCallGraph())
     {
-        const SVFFunction& fun = **fi;
+        const SVFFunction& fun = *((item.second)->getFunction());
 
         /// if this function does not have any caller, then we do not care its MSSA
         if (Options::IgnoreDeadFun() && fun.isUncalledFunction())
@@ -637,10 +636,10 @@ void MRGenerator::modRefAnalysis(CallGraphNode* callGraphNode, WorkList& worklis
     for(CallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
             it!=eit; ++it)
     {
-        CallGraphEdge* edge = *it;
+        PTACallGraphEdge* edge = dyn_cast<PTACallGraphEdge>(*it);
 
         /// handle direct callsites
-        for(CallGraphEdge::CallInstSet::iterator cit = edge->getDirectCalls().begin(),
+        for(PTACallGraphEdge::CallInstSet::iterator cit = edge->getDirectCalls().begin(),
                 ecit = edge->getDirectCalls().end(); cit!=ecit; ++cit)
         {
             NodeBS mod, ref;
@@ -650,7 +649,7 @@ void MRGenerator::modRefAnalysis(CallGraphNode* callGraphNode, WorkList& worklis
                 worklist.push(edge->getSrcID());
         }
         /// handle indirect callsites
-        for(CallGraphEdge::CallInstSet::iterator cit = edge->getIndirectCalls().begin(),
+        for(PTACallGraphEdge::CallInstSet::iterator cit = edge->getIndirectCalls().begin(),
                 ecit = edge->getIndirectCalls().end(); cit!=ecit; ++cit)
         {
             NodeBS mod, ref;

@@ -50,7 +50,7 @@ class DDAVFSolver
 public:
     typedef SCCDetection<SVFG*> SVFGSCC;
     typedef SCCDetection<CallGraph*> CallGraphSCC;
-    typedef CallGraphEdge::CallInstSet CallInstSet;
+    typedef PTACallGraphEdge::CallInstSet CallInstSet;
     typedef SVFIR::CallSiteSet CallSiteSet;
     typedef OrderedSet<DPIm> DPTItemSet;
     typedef OrderedMap<DPIm, CPtSet> DPImToCPtSetMap;
@@ -62,7 +62,7 @@ public:
     typedef OrderedMap<const SVFGNode*, DPTItemSet> StoreToPMSetMap;
 
     ///Constructor
-    DDAVFSolver(): outOfBudgetQuery(false),_pag(nullptr),_svfg(nullptr),_ander(nullptr),_callGraph(nullptr), _callGraphSCC(nullptr), _svfgSCC(nullptr), ddaStat(nullptr)
+    DDAVFSolver(): outOfBudgetQuery(false),_pag(nullptr),_svfg(nullptr),_ander(nullptr), _ptaCallGraph(nullptr), _callGraphSCC(nullptr), _svfgSCC(nullptr), ddaStat(nullptr)
     {
     }
     /// Destructor
@@ -84,7 +84,7 @@ public:
             delete _svfgSCC;
         _svfgSCC = nullptr;
 
-        _callGraph = nullptr;
+        _ptaCallGraph = nullptr;
         _callGraphSCC = nullptr;
     }
     /// Return candidate pointers for DDA
@@ -262,7 +262,7 @@ protected:
             for(CallSiteSet::const_iterator it = csSet.begin(), eit = csSet.end(); it!=eit; ++it)
                 updateCallGraphAndSVFG(dpm, (*it),newIndirectEdges);
         }
-        /// callgraph scc detection for local variable in recursion
+        /// ptaCallGraph scc detection for local variable in recursion
         if(!newIndirectEdges.empty())
             _callGraphSCC->find();
         reComputeForEdges(dpm,newIndirectEdges,true);
@@ -477,7 +477,8 @@ protected:
         {
             if(const SVFFunction* svffun = _pag->getGNode(id)->getFunction())
             {
-                return _callGraphSCC->isInCycle(_callGraph->getCallGraphNode(svffun)->getId());
+                return _callGraphSCC->isInCycle(
+                    _ptaCallGraph->getCallGraphNode(svffun)->getId());
             }
         }
         return false;
@@ -505,7 +506,7 @@ protected:
         {
             CallInstSet csSet;
             /// use pre-analysis call graph to approximate all potential callsites
-            _ander->getCallGraph()->getIndCallSitesInvokingCallee(fun,csSet);
+            _ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fun,csSet);
             for(CallInstSet::const_iterator it = csSet.begin(), eit = csSet.end(); it!=eit; ++it)
             {
                 NodeID funPtr = _pag->getFunPtr(*it);
@@ -623,10 +624,10 @@ protected:
     {
         return (getSVFGSCCRepNode(edge->getSrcID()) == getSVFGSCCRepNode(edge->getDstID()));
     }
-    /// Set callgraph
-    inline void setCallGraph (CallGraph* cg)
+    /// Set ptaCallGraph
+    inline void setCallGraph (PTACallGraph* cg)
     {
-        _callGraph = cg;
+        _ptaCallGraph = cg;
     }
     /// Set callgraphSCC
     inline void setCallGraphSCC (CallGraphSCC* scc)
@@ -775,8 +776,8 @@ protected:
     SVFG* _svfg;					///< SVFG
     AndersenWaveDiff* _ander;		///< Andersen's analysis
     NodeBS candidateQueries;		///< candidate pointers;
-    CallGraph* _callGraph;		///< CallGraph
-    CallGraphSCC* _callGraphSCC;	///< SCC for CallGraph
+    PTACallGraph* _ptaCallGraph;		///< PTACallGraph
+    CallGraphSCC* _callGraphSCC;	///< SCC for PTACallGraph
     SVFGSCC* _svfgSCC;				///< SCC for SVFG
     DPTItemSet backwardVisited;		///< visited map during backward traversing
     DPImToCPtSetMap dpmToTLCPtSetMap;	///< points-to caching map for top-level vars

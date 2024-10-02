@@ -33,6 +33,7 @@
 #include "MTA/LockAnalysis.h"
 #include "Util/SVFUtil.h"
 #include "Util/PTAStat.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -115,7 +116,7 @@ void MHP::analyzeInterleaving()
                 else if (tct->isCallSite(curInst) && !tct->isExtCall(curInst))
                 {
                     handleCall(cts, rootTid);
-                    CallGraph::FunctionSet callees;
+                    PTACallGraph::FunctionSet callees;
                     if (!tct->isCandidateFun(getCallee(SVFUtil::cast<CallICFGNode>(curInst), callees)))
                         handleIntra(cts);
                 }
@@ -143,9 +144,10 @@ void MHP::analyzeInterleaving()
  */
 void MHP::updateNonCandidateFunInterleaving()
 {
-    SVFModule* module = tct->getSVFModule();
-    for (const SVFFunction* fun : module->getFunctionSet())
+    for (const auto& item: *PAG::getPAG()->getCallGraph())
     {
+        const CallGraphNode* cgn = item.second;
+        const SVFFunction* fun = cgn->getFunction();
         if (!tct->isCandidateFun(fun) && !isExtCall(fun))
         {
             const ICFGNode* entryNode = fun->getEntryBlock()->front();
@@ -295,7 +297,7 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
     const CallICFGNode* cbn = cast<CallICFGNode>(call);
     if (tct->getThreadCallGraph()->hasCallGraphEdge(cbn))
     {
-        for (CallGraph::CallGraphEdgeSet::const_iterator cgIt = tcg->getCallEdgeBegin(cbn),
+        for (PTACallGraph::PTACallGraphEdgeSet::const_iterator cgIt = tcg->getCallEdgeBegin(cbn),
                 ecgIt = tcg->getCallEdgeEnd(cbn);
                 cgIt != ecgIt; ++cgIt)
         {
@@ -319,11 +321,12 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
 void MHP::handleRet(const CxtThreadStmt& cts)
 {
     CallGraphNode* curFunNode = tcg->getCallGraphNode(cts.getStmt()->getFun());
-    for (CallGraphEdge* edge : curFunNode->getInEdges())
+    for (CallGraphEdge* e : curFunNode->getInEdges())
     {
+        PTACallGraphEdge* edge = dyn_cast<PTACallGraphEdge>(e);
         if (SVFUtil::isa<ThreadForkEdge, ThreadJoinEdge>(edge))
             continue;
-        for (CallGraphEdge::CallInstSet::const_iterator cit = (edge)->directCallsBegin(),
+        for (PTACallGraphEdge::CallInstSet::const_iterator cit = (edge)->directCallsBegin(),
                 ecit = (edge)->directCallsEnd();
                 cit != ecit; ++cit)
         {
@@ -340,7 +343,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
                 }
             }
         }
-        for (CallGraphEdge::CallInstSet::const_iterator cit = (edge)->indirectCallsBegin(),
+        for (PTACallGraphEdge::CallInstSet::const_iterator cit = (edge)->indirectCallsBegin(),
                 ecit = (edge)->indirectCallsEnd();
                 cit != ecit; ++cit)
         {
@@ -746,7 +749,7 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
                 DBOUT(DMTA, outs() << "-----\nForkJoinAnalysis root thread: " << tpair.first << " ");
                 DBOUT(DMTA, cts.dump());
                 DBOUT(DMTA, outs() << "-----\n");
-                CallGraph::FunctionSet callees;
+                PTACallGraph::FunctionSet callees;
                 if (isTDFork(curInst))
                 {
                     handleFork(cts, rootTid);
@@ -882,7 +885,7 @@ void ForkJoinAnalysis::handleCall(const CxtStmt& cts, NodeID rootTid)
     const CallICFGNode* cbn = SVFUtil::cast<CallICFGNode>(call);
     if (getTCG()->hasCallGraphEdge(cbn))
     {
-        for (CallGraph::CallGraphEdgeSet::const_iterator cgIt = getTCG()->getCallEdgeBegin(cbn),
+        for (PTACallGraph::PTACallGraphEdgeSet::const_iterator cgIt = getTCG()->getCallEdgeBegin(cbn),
                 ecgIt = getTCG()->getCallEdgeEnd(cbn);
                 cgIt != ecgIt; ++cgIt)
         {
@@ -905,11 +908,12 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
     const CallStrCxt& curCxt = cts.getContext();
 
     CallGraphNode* curFunNode = getTCG()->getCallGraphNode(curInst->getFun());
-    for (CallGraphEdge* edge : curFunNode->getInEdges())
+    for (CallGraphEdge* cgEdge : curFunNode->getInEdges())
     {
+        PTACallGraphEdge* edge = dyn_cast<PTACallGraphEdge>(cgEdge);
         if (SVFUtil::isa<ThreadForkEdge, ThreadJoinEdge>(edge))
             continue;
-        for (CallGraphEdge::CallInstSet::const_iterator cit = edge->directCallsBegin(),
+        for (PTACallGraphEdge::CallInstSet::const_iterator cit = edge->directCallsBegin(),
                 ecit = edge->directCallsEnd();
                 cit != ecit; ++cit)
         {
@@ -927,7 +931,7 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
                 }
             }
         }
-        for (CallGraphEdge::CallInstSet::const_iterator cit = edge->indirectCallsBegin(),
+        for (PTACallGraphEdge::CallInstSet::const_iterator cit = edge->indirectCallsBegin(),
                 ecit = edge->indirectCallsEnd();
                 cit != ecit; ++cit)
         {

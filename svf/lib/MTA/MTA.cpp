@@ -36,6 +36,7 @@
 #include "MTA/MTAStat.h"
 #include "WPA/Andersen.h"
 #include "Util/SVFUtil.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -86,7 +87,7 @@ MHP* MTA::computeMHP(SVFModule* module)
     DBOUT(DMTA, outs() << pasMsg("MTA analysis\n"));
     SVFIR* pag = PAG::getPAG();
     PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
-    pta->getCallGraph()->dump("ptacg");
+    pta->getPTACallGraph()->dump("ptacg");
 
     DBOUT(DGENERAL, outs() << pasMsg("Build TCT\n"));
     DBOUT(DMTA, outs() << pasMsg("Build TCT\n"));
@@ -136,8 +137,10 @@ void MTA::detect(SVFModule* module)
     PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
 
     // Add symbols for all of the functions and the instructions in them.
-    for (const SVFFunction* F : module->getFunctionSet())
+    for (const auto& item : *pag->getCallGraph())
     {
+        const CallGraphNode* cgn = item.second;
+        const SVFFunction* F = cgn->getFunction();
         // collect and create symbols inside the function body
         for (const SVFBasicBlock* svfbb : F->getBasicBlockList())
         {

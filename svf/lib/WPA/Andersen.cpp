@@ -250,7 +250,7 @@ void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const S
           << cs.getInstruction()->toString() << " to forked function "
           << *F << "\n");
 
-    ThreadCallGraph *tdCallGraph = SVFUtil::dyn_cast<ThreadCallGraph>(callgraph);
+    ThreadCallGraph *tdCallGraph = SVFUtil::dyn_cast<ThreadCallGraph>(ptaCallGraph);
 
     const PAGNode *cs_arg = tdCallGraph->getThreadAPI()->getActualParmAtForkSite(cs);
     const PAGNode *fun_arg = tdCallGraph->getThreadAPI()->getFormalParmOfForkedFun(F);

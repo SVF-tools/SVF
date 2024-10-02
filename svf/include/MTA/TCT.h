@@ -31,7 +31,6 @@
 #define TCTNodeDetector_H_
 
 #include "Graphs/SCC.h"
-#include "Graphs/ThreadCallGraph.h"
 #include "Util/CxtStmt.h"
 #include "Util/SVFUtil.h"
 #include <set>
@@ -41,7 +40,7 @@ namespace SVF
 {
 
 class TCTNode;
-
+class ThreadCallGraph;
 
 /*
  * Thread creation edge represents a spawning relation between two context sensitive threads
@@ -172,7 +171,7 @@ public:
     /// Constructor
     TCT(PointerAnalysis* p) :pta(p),TCTNodeNum(0),TCTEdgeNum(0),MaxCxtSize(0)
     {
-        tcg = SVFUtil::cast<ThreadCallGraph>(pta->getCallGraph());
+        tcg = SVFUtil::cast<ThreadCallGraph>(pta->getPTACallGraph());
         tcg->updateCallGraph(pta);
         //tcg->updateJoinEdge(pta);
         tcgSCC = pta->getCallGraphSCC();
@@ -288,9 +287,9 @@ public:
     //@}
 
     /// Whether it is a candidate function for indirect call
-    inline bool isCandidateFun(const CallGraph::FunctionSet& callees) const
+    inline bool isCandidateFun(const PTACallGraph::FunctionSet& callees) const
     {
-        for(CallGraph::FunctionSet::const_iterator cit = callees.begin(),
+        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
                 ecit = callees.end(); cit!=ecit; cit++)
         {
             if(candidateFuncSet.find((*cit))!=candidateFuncSet.end())
@@ -302,7 +301,7 @@ public:
     {
         return candidateFuncSet.find(fun)!=candidateFuncSet.end();
     }
-    /// Whether two functions in the same callgraph scc
+    /// Whether two functions in the same ptaCallGraph scc
     inline bool inSameCallGraphSCC(const CallGraphNode* src,const CallGraphNode* dst)
     {
         return (tcgSCC->repNode(src->getId()) == tcgSCC->repNode(dst->getId()));
@@ -506,7 +505,7 @@ private:
     //@}
 
     /// Handle call relations
-    void handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, const CallICFGNode* call);
+    void handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge, const CallICFGNode* call);
 
     /// Get or create a tct node based on CxtThread
     //@{

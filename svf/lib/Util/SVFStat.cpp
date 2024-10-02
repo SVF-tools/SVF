@@ -29,6 +29,7 @@
 
 #include "Util/Options.h"
 #include "Util/SVFStat.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace std;
@@ -214,13 +215,11 @@ void SVFStat::performStat()
 
 void SVFStat::branchStat()
 {
-    SVFModule* module = SVFIR::getPAG()->getModule();
     u32_t numOfBB_2Succ = 0;
     u32_t numOfBB_3Succ = 0;
-    for (SVFModule::const_iterator funIter = module->begin(), funEiter = module->end();
-            funIter != funEiter; ++funIter)
+    for (const auto& item: *PAG::getPAG()->getCallGraph())
     {
-        const SVFFunction* func = *funIter;
+        const SVFFunction* func = (item.second)->getFunction();
         for (SVFFunction::const_iterator bbIt = func->begin(), bbEit = func->end();
                 bbIt != bbEit; ++bbIt)
         {
