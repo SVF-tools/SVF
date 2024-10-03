@@ -434,7 +434,7 @@ void LockAnalysis::handleCall(const CxtStmt& cts)
     const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(cts.getStmt());
     if (getTCG()->hasCallGraphEdge(call))
     {
-        for (PTACallGraph::PTACallGraphEdgeSet::const_iterator cgIt = getTCG()->getCallEdgeBegin(call), ecgIt = getTCG()->getCallEdgeEnd(call);
+        for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = getTCG()->getCallEdgeBegin(call), ecgIt = getTCG()->getCallEdgeEnd(call);
                 cgIt != ecgIt; ++cgIt)
         {
             const SVFFunction* svfcallee = (*cgIt)->getDstNode()->getFunction();

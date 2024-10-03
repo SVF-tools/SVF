@@ -362,7 +362,7 @@ public:
         if(edge!=nullptr)
         {
             callinstToThreadForkEdgesMap[cs].insert(edge);
-            callinstToPTACallGraphEdgesMap[cs].insert(edge);
+            callinstToCallGraphEdgesMap[cs].insert(edge);
         }
     }
 
@@ -372,7 +372,7 @@ public:
         if(edge!=nullptr)
         {
             callinstToThreadJoinEdgesMap[cs].insert(edge);
-            callinstToPTACallGraphEdgesMap[cs].insert(edge);
+            callinstToCallGraphEdgesMap[cs].insert(edge);
         }
     }
 
@@ -382,7 +382,7 @@ public:
         if(edge!=nullptr)
         {
             callinstToHareParForEdgesMap[cs].insert(edge);
-            callinstToPTACallGraphEdgesMap[cs].insert(edge);
+            callinstToCallGraphEdgesMap[cs].insert(edge);
         }
     }
 

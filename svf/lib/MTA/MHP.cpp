@@ -297,7 +297,7 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
     const CallICFGNode* cbn = cast<CallICFGNode>(call);
     if (tct->getThreadCallGraph()->hasCallGraphEdge(cbn))
     {
-        for (PTACallGraph::PTACallGraphEdgeSet::const_iterator cgIt = tcg->getCallEdgeBegin(cbn),
+        for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = tcg->getCallEdgeBegin(cbn),
                 ecgIt = tcg->getCallEdgeEnd(cbn);
                 cgIt != ecgIt; ++cgIt)
         {
@@ -885,7 +885,7 @@ void ForkJoinAnalysis::handleCall(const CxtStmt& cts, NodeID rootTid)
     const CallICFGNode* cbn = SVFUtil::cast<CallICFGNode>(call);
     if (getTCG()->hasCallGraphEdge(cbn))
     {
-        for (PTACallGraph::PTACallGraphEdgeSet::const_iterator cgIt = getTCG()->getCallEdgeBegin(cbn),
+        for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = getTCG()->getCallEdgeBegin(cbn),
                 ecgIt = getTCG()->getCallEdgeEnd(cbn);
                 cgIt != ecgIt; ++cgIt)
         {

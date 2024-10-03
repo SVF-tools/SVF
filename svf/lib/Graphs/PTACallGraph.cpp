@@ -108,7 +108,7 @@ void PTACallGraph::addDirectCallGraphEdge(const CallICFGNode* cs,const SVFFuncti
         PTACallGraphEdge* edge = new PTACallGraphEdge(caller,callee, PTACallGraphEdge::CallRetEdge,csId);
         edge->addDirectCallSite(cs);
         addEdge(edge);
-        callinstToPTACallGraphEdgesMap[cs].insert(edge);
+        callinstToCallGraphEdgesMap[cs].insert(edge);
     }
 }
 
@@ -130,7 +130,7 @@ void PTACallGraph::addIndirectCallGraphEdge(const CallICFGNode* cs,const SVFFunc
         PTACallGraphEdge* edge = new PTACallGraphEdge(caller,callee, PTACallGraphEdge::CallRetEdge, csId);
         edge->addInDirectCallSite(cs);
         addEdge(edge);
-        callinstToPTACallGraphEdgesMap[cs].insert(edge);
+        callinstToCallGraphEdgesMap[cs].insert(edge);
     }
 }
 
@@ -151,23 +151,6 @@ void PTACallGraph::getAllCallSitesInvokingCallee(const SVFFunction* callee, PTAC
         PTACallGraphEdge  * edge = dyn_cast<PTACallGraphEdge>(*it);
         for(PTACallGraphEdge::CallInstSet::const_iterator cit = edge->indirectCallsBegin(),
                 ecit = edge->indirectCallsEnd(); cit!=ecit; ++cit)
-        {
-            csSet.insert((*cit));
-        }
-    }
-}
-
-/*!
- * Get direct callsite invoking this callee
- */
-void PTACallGraph::getDirCallSitesInvokingCallee(const SVFFunction* callee, PTACallGraphEdge::CallInstSet& csSet)
-{
-    CallGraphNode* callGraphNode = getCallGraphNode(callee);
-    for(CallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
-            it!=eit; ++it)
-    {
-        for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*it)->directCallsBegin(),
-                ecit = (*it)->directCallsEnd(); cit!=ecit; ++cit)
         {
             csSet.insert((*cit));
         }

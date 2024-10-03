@@ -42,7 +42,7 @@ namespace SVF
 class SVFModule;
 
 /*
- * Call Graph edge representing a calling relation between two functions
+ * PTA Call Graph edge representing a calling relation between two functions
  * Multiple calls from function A to B are merged into one call edge
  * Each call edge has a set of direct callsites and a set of indirect callsites
  */
@@ -125,9 +125,6 @@ public:
 
     virtual const std::string toString() const;
 
-    typedef GenericNode<CallGraphNode, PTACallGraphEdge>::GEdgeSetTy
-        PTACallGraphEdgeSet;
-
 };
 
 
@@ -136,23 +133,12 @@ public:
  */
 class PTACallGraph : public CallGraph
 {
-
-public:
-    typedef PTACallGraphEdge::PTACallGraphEdgeSet PTACallGraphEdgeSet;
-    typedef Map<const CallICFGNode*, PTACallGraphEdgeSet> CallInstToPTACallGraphEdgesMap;
-    typedef PTACallGraphEdgeSet::iterator CallGraphEdgeIter;
-    typedef PTACallGraphEdgeSet::const_iterator CallGraphEdgeConstIter;
-
-
 private:
-
     /// Indirect call map
     CallEdgeMap indirectCallMap;
 
 protected:
-    CallInstToPTACallGraphEdgesMap callinstToPTACallGraphEdgesMap;
-
-
+    u32_t numOfResolvedIndCallEdge;
     /// Clean up memory
     void destroy();
 
@@ -187,71 +173,17 @@ public:
         return it->second;
     }
     //@}
-    inline u32_t getTotalCallSiteNumber() const
-    {
-        return totalCallSiteNum;
-    }
 
     inline u32_t getNumOfResolvedIndCallEdge() const
     {
         return numOfResolvedIndCallEdge;
     }
 
-    inline const CallInstToPTACallGraphEdgesMap& getCallInstToCallGraphEdgesMap() const
-    {
-        return callinstToPTACallGraphEdgesMap;
-    }
-
     /// Issue a warning if the function which has indirect call sites can not be reached from program entry.
     void verifyCallGraph();
 
 
-    /// Get all callees for a callsite
-    inline void getCallees(const CallICFGNode* cs, FunctionSet& callees)
-    {
-        if(hasCallGraphEdge(cs))
-        {
-            for (PTACallGraphEdgeSet::const_iterator it = getCallEdgeBegin(cs), eit =
-                        getCallEdgeEnd(cs); it != eit; ++it)
-            {
-                callees.insert((*it)->getDstNode()->getFunction());
-            }
-        }
-    }
-
-    /// Get call graph edge via call instruction
-    //@{
-    /// whether this call instruction has a valid call graph edge
-    inline bool hasCallGraphEdge(const CallICFGNode* inst) const
-    {
-        return callinstToPTACallGraphEdgesMap.find(inst)!=
-               callinstToPTACallGraphEdgesMap.end();
-    }
-    inline PTACallGraphEdgeSet::const_iterator getCallEdgeBegin(const CallICFGNode* inst) const
-    {
-        CallInstToPTACallGraphEdgesMap::const_iterator it =
-            callinstToPTACallGraphEdgesMap.find(inst);
-        assert(it!= callinstToPTACallGraphEdgesMap.end()
-               && "call instruction does not have a valid callee");
-        return it->second.begin();
-    }
-    inline PTACallGraphEdgeSet::const_iterator getCallEdgeEnd(const CallICFGNode* inst) const
-    {
-        CallInstToPTACallGraphEdgesMap::const_iterator it =
-            callinstToPTACallGraphEdgesMap.find(inst);
-        assert(it!= callinstToPTACallGraphEdgesMap.end()
-               && "call instruction does not have a valid callee");
-        return it->second.end();
-    }
-    //@}
-    /// Add call graph edge
-//    inline void addEdge(PTACallGraphEdge* edge)
-//    {
-//        edge->getDstNode()->addIncomingEdge(edge);
-//        edge->getSrcNode()->addOutgoingEdge(edge);
-//    }
-
-    /// Add direct/indirect call edges
+    /// Add indirect call edges
     //@{
     void addDirectCallGraphEdge(const CallICFGNode* call, const SVFFunction* callerFun, const SVFFunction* calleeFun);
     void addIndirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun);
@@ -261,8 +193,7 @@ public:
     //@{
     void getAllCallSitesInvokingCallee(const SVFFunction* callee,
                                        PTACallGraphEdge::CallInstSet& csSet);
-    void getDirCallSitesInvokingCallee(const SVFFunction* callee,
-                                       PTACallGraphEdge::CallInstSet& csSet);
+
     void getIndCallSitesInvokingCallee(const SVFFunction* callee,
                                        PTACallGraphEdge::CallInstSet& csSet);
     //@}

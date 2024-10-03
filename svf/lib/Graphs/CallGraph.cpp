@@ -99,7 +99,6 @@ bool CallGraphNode::isReachableFromProgEntry() const
 CallGraph::CallGraph(CGEK k): kind(k)
 {
     callGraphNodeNum = 0;
-    numOfResolvedIndCallEdge = 0;
 }
 
 /*!
@@ -298,10 +297,6 @@ struct DOTGraphTraits<CallGraph*> : public DefaultDOTGraphTraits
         {
             color = "color=black";
         }
-//        if (0 != edge->getIndirectCalls().size())
-//        {
-//            color = "color=red";
-//        }
         return color;
     }
 

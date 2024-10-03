@@ -45,7 +45,7 @@ class SVFModule;
 /*
  * Call Graph edge representing a calling relation between two functions
  * Multiple calls from function A to B are merged into one call edge
- * Each call edge has a set of direct callsites and a set of indirect callsites
+ * Each call edge has a set of direct callsites
  */
 typedef GenericEdge<CallGraphNode> GenericCallGraphEdgeTy;
 class CallGraphEdge : public GenericCallGraphEdgeTy
@@ -92,7 +92,7 @@ public:
     }
     //@}
 
-    /// Add direct and indirect callsite
+    /// Add direct callsite
     //@{
     void addDirectCallSite(const CallICFGNode* call);
     //@}
@@ -245,7 +245,7 @@ protected:
     FunToCallGraphNodeMap funToCallGraphNodeMap; ///< Call Graph node map
     CallInstToCallGraphEdgesMap callinstToCallGraphEdgesMap; ///< Map a call instruction to its corresponding call edges
 
-    u32_t numOfResolvedIndCallEdge;
+
 
     /// Clean up memory
     void destroy();
@@ -269,10 +269,9 @@ public:
         return kind;
     }
 
-
-    inline u32_t getNumOfResolvedIndCallEdge() const
+    inline u32_t getTotalCallSiteNumber() const
     {
-        return numOfResolvedIndCallEdge;
+        return totalCallSiteNum;
     }
 
     inline const CallInstToCallGraphEdgesMap& getCallInstToCallGraphEdgesMap() const
@@ -391,9 +390,8 @@ public:
         edge->getSrcNode()->addOutgoingEdge(edge);
     }
 
-    /// Add direct/indirect call edges
     //@{
-    void addDirectCallGraphEdge(const CallICFGNode* call, const SVFFunction* callerFun, const SVFFunction* calleeFun);
+    virtual void addDirectCallGraphEdge(const CallICFGNode* call, const SVFFunction* callerFun, const SVFFunction* calleeFun);
     //@}
 
     /// Get callsites invoking the callee
