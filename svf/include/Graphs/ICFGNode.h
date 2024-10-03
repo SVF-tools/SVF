@@ -496,12 +496,7 @@ public:
     }
     /// Parameter operations
     //@{
-    const SVFValue* getArgument(u32_t ArgNo) const
-    {
-        return SVFUtil::cast<SVFCallInst>(cs)->getArgOperand(ArgNo);
-    }
-
-    const SVFVar* getArgumentVar(u32_t ArgNo) const
+    const SVFVar* getArgument(u32_t ArgNo) const
     {
         return getActualParms()[ArgNo];
     }

@@ -31,6 +31,7 @@
 #include "Util/SVFUtil.h"
 #include "Util/CallGraphBuilder.h"
 #include "Graphs/ICFG.h"
+#include "SVFIR/SVFIR.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -84,7 +85,7 @@ CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
                 {
                     const CallICFGNode* cs = cast<CallICFGNode>(inst);
                     cg->addForksite(cs);
-                    const SVFFunction* forkee = SVFUtil::dyn_cast<SVFFunction>(tdAPI->getForkedFun(cs));
+                    const SVFFunction* forkee = SVFUtil::dyn_cast<SVFFunction>(tdAPI->getForkedFun(cs)->getValue());
                     if (forkee)
                     {
                         cg->addDirectForkEdge(cs);

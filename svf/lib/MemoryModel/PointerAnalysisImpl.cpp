@@ -521,7 +521,7 @@ void BVDataPTAImpl::onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& call
         for(CallSiteSet::const_iterator it = tdCallGraph->forksitesBegin(),
                 eit = tdCallGraph->forksitesEnd(); it != eit; ++it)
         {
-            const SVFValue* forkedVal =tdCallGraph->getThreadAPI()->getForkedFun(*it);
+            const SVFValue* forkedVal =tdCallGraph->getThreadAPI()->getForkedFun(*it)->getValue();
             if(SVFUtil::dyn_cast<SVFFunction>(forkedVal) == nullptr)
             {
                 SVFIR *pag = this->getPAG();

@@ -124,12 +124,12 @@ public:
     //@{
     /// Return the first argument of the call,
     /// Note that, it is the pthread_t pointer
-    const SVFValue* getForkedThread(const CallICFGNode *inst) const;
+    const SVFVar* getForkedThread(const CallICFGNode *inst) const;
     /// Return the third argument of the call,
     /// Note that, it could be function type or a void* pointer
-    const SVFValue* getForkedFun(const CallICFGNode *inst) const;
+    const SVFVar* getForkedFun(const CallICFGNode *inst) const;
 
-    /// Return the actual param of forksite
+    /// Return the forth argument of the call,
     /// Note that, it is the sole argument of start routine ( a void* pointer )
     const SVFVar* getActualParmAtForkSite(const CallICFGNode *inst) const;
 
@@ -153,10 +153,10 @@ public:
     //@{
     /// Return the first argument of the call,
     /// Note that, it is the pthread_t pointer
-    const SVFValue* getJoinedThread(const CallICFGNode *inst) const;
+    const SVFVar* getJoinedThread(const CallICFGNode *inst) const;
     /// Return the send argument of the call,
     /// Note that, it is the pthread_t pointer
-    const SVFValue* getRetParmAtJoinedSite(const CallICFGNode *inst) const;
+    const SVFVar* getRetParmAtJoinedSite(const CallICFGNode *inst) const;
     //@}
 
 
@@ -178,7 +178,7 @@ public:
     /// Return lock value
     //@{
     /// First argument of pthread_mutex_lock/pthread_mutex_unlock
-    const SVFValue* getLockVal(const ICFGNode *inst) const;
+    const SVFVar* getLockVal(const ICFGNode *inst) const;
     //@}
 
     /// Return true if this call waits for a barrier
