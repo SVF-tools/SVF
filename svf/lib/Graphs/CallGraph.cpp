@@ -121,9 +121,7 @@ void CallGraph::addCallGraphNode(const CallGraphNode* callGraphNode)
 /*!
  *  Whether we have already created this call graph edge
  */
-CallGraphEdge* CallGraph::hasGraphEdge(CallGraphNode* src,
-                                          CallGraphNode* dst,
-                                             CallGraphEdge::CEDGEK cedgek, CallSiteID csId) const
+CallGraphEdge* CallGraph::hasGraphEdge(CallGraphNode* src, CallGraphNode* dst, CallGraphEdge::CEDGEK cedgek, CallSiteID csId) const
 {
     CallGraphEdge edge(src,dst, cedgek,csId);
     CallGraphEdge* outEdge = src->hasOutgoingEdge(&edge);
@@ -140,9 +138,7 @@ CallGraphEdge* CallGraph::hasGraphEdge(CallGraphNode* src,
 /*!
  * get CallGraph edge via nodes
  */
-CallGraphEdge* CallGraph::getGraphEdge(CallGraphNode* src,
-                                          CallGraphNode* dst,
-                                             CallGraphEdge::CEDGEK cedgek, CallSiteID)
+CallGraphEdge* CallGraph::getGraphEdge(CallGraphNode* src, CallGraphNode* dst, CallGraphEdge::CEDGEK cedgek, CallSiteID)
 {
     for (CallGraphEdge::CallGraphEdgeSet::iterator iter = src->OutEdgeBegin();
             iter != src->OutEdgeEnd(); ++iter)

@@ -203,27 +203,4 @@ public:
 
 } // End namespace SVF
 
-namespace SVF
-{
-/* !
- * GenericGraphTraits specializations for generic graph algorithms.
- * Provide graph traits for traversing from a constraint node using standard graph traversals.
- */
-//template<> struct GenericGraphTraits<SVF::CallGraphNode*> : public GenericGraphTraits<SVF::GenericNode<SVF::CallGraphNode,SVF::PTACallGraphEdge>*  >
-//{
-//};
-//
-///// Inverse GenericGraphTraits specializations for call graph node, it is used for inverse traversal.
-//template<>
-//struct GenericGraphTraits<Inverse<SVF::CallGraphNode*> > : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::CallGraphNode,SVF::PTACallGraphEdge>* > >
-//{
-//};
-
-//template<> struct GenericGraphTraits<SVF::PTACallGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::CallGraphNode,SVF::CallGraphEdge>* >
-//{
-//    typedef SVF::CallGraphNode*NodeRef;
-//};
-
-} // End namespace llvm
-
 #endif /* CALLGRAPH_H_ */
