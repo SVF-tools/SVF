@@ -1166,7 +1166,7 @@ void DCHGraph::print(void)
         if (node->getDIType() != nullptr
                 && (node->getDIType()->getTag() == dwarf::DW_TAG_class_type
                     ||
-             node->getDIType()->getTag() == dwarf::DW_TAG_structure_type))
+                    node->getDIType()->getTag() == dwarf::DW_TAG_structure_type))
         {
             ++numStructs;
             unsigned numFields = getFieldTypes(node->getDIType()).size();

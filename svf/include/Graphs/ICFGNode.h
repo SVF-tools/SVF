@@ -229,7 +229,8 @@ public:
 
     const std::string toString() const override;
 
-    inline bool isRetInst() const {
+    inline bool isRetInst() const
+    {
         return isRet;
     }
 };

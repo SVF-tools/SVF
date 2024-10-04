@@ -278,7 +278,8 @@ public:
         sourceLoc = sourceCodeInfo;
     }
 
-    virtual const std::string getSourceLoc() const {
+    virtual const std::string getSourceLoc() const
+    {
         return sourceLoc;
     }
 
