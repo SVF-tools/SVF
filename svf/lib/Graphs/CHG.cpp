@@ -30,6 +30,7 @@
 #include "Graphs/CHG.h"
 #include "Util/SVFUtil.h"
 #include "Graphs/ICFG.h"
+#include "SVFIR/SVFIR.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -58,7 +59,7 @@ static bool checkArgTypes(const CallICFGNode* cs, const SVFFunction* fn)
     {
         for (unsigned i = 1; i < arg_size; i++)
         {
-            auto cs_arg = cs->getArgOperand(i);
+            auto cs_arg = cs->getArgument(i);
             auto fn_arg = fn->getArg(i);
             if (cs_arg->getType() != fn_arg->getType())
             {

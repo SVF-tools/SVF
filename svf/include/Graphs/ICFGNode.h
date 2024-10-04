@@ -503,19 +503,16 @@ public:
 
     u32_t arg_size() const
     {
-        return SVFUtil::cast<SVFCallInst>(cs)->arg_size();
+        return APNodes.size();
     }
     bool arg_empty() const
     {
-        return SVFUtil::cast<SVFCallInst>(cs)->arg_empty();
+        return APNodes.empty();
     }
-    const SVFValue* getArgOperand(u32_t i) const
-    {
-        return SVFUtil::cast<SVFCallInst>(cs)->getArgOperand(i);
-    }
+
     u32_t getNumArgOperands() const
     {
-        return SVFUtil::cast<SVFCallInst>(cs)->arg_size();
+        return arg_size();
     }
     const SVFFunction* getCalledFunction() const
     {
