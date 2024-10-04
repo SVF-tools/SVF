@@ -205,7 +205,7 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
                 {
                     collectSym(sw->getCondition());
                 }
-                else if (isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&inst)))
+                else if (isNonInstricCallSite(&inst))
                 {
 
                     const CallBase* cs = LLVMUtil::getLLVMCallSite(&inst);
@@ -634,7 +634,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
 
     // We consider two types of objects:
     // (1) A heap/static object from a callsite
-    if (I && isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I)))
+    if (I && isNonInstricCallSite(I))
     {
         objTy = inferTypeOfHeapObjOrStaticObj(I);
     }

@@ -251,7 +251,7 @@ public:
 
 
 
-    SVFBaseNode(NodeID i, GNodeK k): id(i), nodeKind(k)
+    SVFBaseNode(NodeID i, GNodeK k, SVFType* ty = nullptr): id(i),nodeKind(k), type(ty)
     {
 
     }
@@ -268,9 +268,29 @@ public:
         return nodeKind;
     }
 
+    virtual const SVFType* getType() const
+    {
+        return type;
+    }
+
+    inline virtual void setSourceLoc(const std::string& sourceCodeInfo)
+    {
+        sourceLoc = sourceCodeInfo;
+    }
+
+    virtual const std::string getSourceLoc() const {
+        return sourceLoc;
+    }
+
+    virtual const std::string toString() const;
+
+
 protected:
     NodeID id;		///< Node ID
     GNodeK nodeKind;	///< Node kind
+    const SVFType* type; ///< SVF type
+
+    std::string sourceLoc;  ///< Source code information of this value
 
     /// Helper functions to check node kinds
     //{@ Check node kind

@@ -60,6 +60,7 @@ public:
     typedef Map<const Constant*, SVFConstant*> LLVMConst2SVFConstMap;
     typedef Map<const Value*, SVFOtherValue*> LLVMValue2SVFOtherValueMap;
     typedef Map<const SVFValue*, const Value*> SVFValue2LLVMValueMap;
+    typedef Map<const SVFBaseNode*, const Value*> SVFBaseNode2LLVMValueMap;
     typedef Map<const Type*, SVFType*> LLVMType2SVFTypeMap;
     typedef Map<const Type*, StInfo*> Type2TypeInfoMap;
     typedef Map<std::string, std::vector<std::string>> Fun2AnnoMap;
@@ -97,6 +98,7 @@ private:
     Type2TypeInfoMap Type2TypeInfo;
     ObjTypeInference* typeInference;
 
+    SVFBaseNode2LLVMValueMap SVFBaseNode2LLVMValue;
     CSToCallNodeMapTy CSToCallNodeMap; ///< map a callsite to its CallICFGNode
     CSToRetNodeMapTy CSToRetNodeMap; ///< map a callsite to its RetICFGNode
     InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
@@ -213,6 +215,13 @@ public:
     {
         SVFValue2LLVMValueMap::const_iterator it = SVFValue2LLVMValue.find(value);
         assert(it!=SVFValue2LLVMValue.end() && "can't find corresponding llvm value!");
+        return it->second;
+    }
+
+    const Value* getLLVMValue(const SVFBaseNode* value) const
+    {
+        SVFBaseNode2LLVMValueMap ::const_iterator it = SVFBaseNode2LLVMValue.find(value);
+        assert(it!=SVFBaseNode2LLVMValue.end() && "can't find corresponding llvm value!");
         return it->second;
     }
 
@@ -378,6 +387,7 @@ private:
     void initSVFBasicBlock(const Function* func);
     void initDomTree(SVFFunction* func, const Function* f);
     void setValueAttr(const Value* val, SVFValue* value);
+    void setValueAttr(const Value* val, SVFBaseNode* svfBaseNode);
     void buildFunToFunMap();
     void buildGlobalDefToRepMap();
     /// Invoke llvm passes to modify module

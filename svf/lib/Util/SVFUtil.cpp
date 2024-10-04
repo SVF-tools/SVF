@@ -374,13 +374,13 @@ bool SVFUtil::isHeapAllocExtCall(const ICFGNode* cs)
 
 bool SVFUtil::isHeapAllocExtCallViaRet(const CallICFGNode* cs)
 {
-    bool isPtrTy = cs->getCallSite()->getType()->isPointerTy();
+    bool isPtrTy = cs->getType()->isPointerTy();
     return isPtrTy && isHeapAllocExtFunViaRet(cs->getCalledFunction());
 }
 
 bool SVFUtil::isReallocExtCall(const CallICFGNode* cs)
 {
-    bool isPtrTy = cs->getCallSite()->getType()->isPointerTy();
+    bool isPtrTy = cs->getType()->isPointerTy();
     return isPtrTy && isReallocExtFun(cs->getCalledFunction());
 }
 
@@ -388,7 +388,7 @@ bool SVFUtil::isReallocExtCall(const CallICFGNode* cs)
 bool SVFUtil::isRetInstNode(const ICFGNode* node)
 {
     if (const auto& intraNode = dyn_cast<IntraICFGNode>(node))
-        return intraNode->getInst()->isRetInst();
+        return intraNode->isRetInst();
     else
         return false;
 }
@@ -396,4 +396,10 @@ bool SVFUtil::isRetInstNode(const ICFGNode* node)
 bool SVFUtil::isProgExitCall(const CallICFGNode* cs)
 {
     return isProgExitFunction(cs->getCalledFunction());
+}
+
+__attribute__((weak))
+const std::string SVFBaseNode::toString() const {
+    assert("SVFBaseNode::toString should be implemented or supported by fronted" && false);
+    abort();
 }

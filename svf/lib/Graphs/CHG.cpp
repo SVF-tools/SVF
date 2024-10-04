@@ -30,6 +30,7 @@
 #include "Graphs/CHG.h"
 #include "Util/SVFUtil.h"
 #include "Graphs/ICFG.h"
+#include "SVFIR/SVFIR.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -49,7 +50,7 @@ static bool hasEdge(const CHNode *src, const CHNode *dst,
     return false;
 }
 
-static bool checkArgTypes(const SVFCallInst* cs, const SVFFunction* fn)
+static bool checkArgTypes(const CallICFGNode* cs, const SVFFunction* fn)
 {
 
     // here we skip the first argument (i.e., this pointer)
@@ -58,7 +59,7 @@ static bool checkArgTypes(const SVFCallInst* cs, const SVFFunction* fn)
     {
         for (unsigned i = 1; i < arg_size; i++)
         {
-            auto cs_arg = cs->getArgOperand(i);
+            auto cs_arg = cs->getArgument(i);
             auto fn_arg = fn->getArg(i);
             if (cs_arg->getType() != fn_arg->getType())
             {
@@ -72,24 +73,24 @@ static bool checkArgTypes(const SVFCallInst* cs, const SVFFunction* fn)
 
 bool CHGraph::csHasVtblsBasedonCHA(const CallICFGNode* cs)
 {
-    CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(cs->getCallSite());
-    return it != csToCHAVtblsMap.end();
+    CallNodeToVTableSetMap::const_iterator it = callNodeToCHAVtblsMap.find(cs);
+    return it != callNodeToCHAVtblsMap.end();
 }
 bool CHGraph::csHasVFnsBasedonCHA(const CallICFGNode* cs)
 {
-    CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(cs->getCallSite());
-    return it != csToCHAVFnsMap.end();
+    CallNodeToVFunSetMap::const_iterator it = callNodeToCHAVFnsMap.find(cs);
+    return it != callNodeToCHAVFnsMap.end();
 }
 const VTableSet& CHGraph::getCSVtblsBasedonCHA(const CallICFGNode* cs)
 {
-    CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(cs->getCallSite());
-    assert(it != csToCHAVtblsMap.end() && "cs does not have vtabls based on CHA.");
+    CallNodeToVTableSetMap::const_iterator it = callNodeToCHAVtblsMap.find(cs);
+    assert(it != callNodeToCHAVtblsMap.end() && "cs does not have vtabls based on CHA.");
     return it->second;
 }
 const VFunSet& CHGraph::getCSVFsBasedonCHA(const CallICFGNode* cs)
 {
-    CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(cs->getCallSite());
-    assert(it != csToCHAVFnsMap.end() && "cs does not have vfns based on CHA.");
+    CallNodeToVFunSetMap::const_iterator it = callNodeToCHAVFnsMap.find(cs);
+    assert(it != callNodeToCHAVFnsMap.end() && "cs does not have vfns based on CHA.");
     return it->second;
 }
 
@@ -120,13 +121,12 @@ CHNode *CHGraph::getNode(const string name) const
  * Get virtual functions for callsite "cs" based on vtbls (calculated
  * based on pointsto set)
  */
-void CHGraph::getVFnsFromVtbls(const SVFCallInst* callsite, const VTableSet &vtbls, VFunSet &virtualFunctions)
+void CHGraph::getVFnsFromVtbls(const CallICFGNode* callsite, const VTableSet &vtbls, VFunSet &virtualFunctions)
 {
-    const SVFVirtualCallInst* cs = SVFUtil::cast<SVFVirtualCallInst>(callsite);
     /// get target virtual functions
-    size_t idx = cs->getFunIdxInVtable();
+    size_t idx = callsite->getFunIdxInVtable();
     /// get the function name of the virtual callsite
-    string funName = cs->getFunNameOfVirtualCall();
+    string funName = callsite->getFunNameOfVirtualCall();
     for (const SVFGlobalValue *vt : vtbls)
     {
         const CHNode *child = getNode(vt->getName());
@@ -138,13 +138,13 @@ void CHGraph::getVFnsFromVtbls(const SVFCallInst* callsite, const VTableSet &vtb
                 feit = vfns.end(); fit != feit; ++fit)
         {
             const SVFFunction* callee = *fit;
-            if (cs->arg_size() == callee->arg_size() ||
-                    (cs->isVarArg() && callee->isVarArg()))
+            if (callsite->arg_size() == callee->arg_size() ||
+                    (callsite->isVarArg() && callee->isVarArg()))
             {
 
                 // if argument types do not match
                 // skip this one
-                if (!checkArgTypes(cs, callee))
+                if (!checkArgTypes(callsite, callee))
                     continue;
 
                 string calleeName = callee->getName();

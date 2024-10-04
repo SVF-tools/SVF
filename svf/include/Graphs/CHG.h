@@ -61,7 +61,7 @@ public:
     virtual const VFunSet &getCSVFsBasedonCHA(const CallICFGNode* cs) = 0;
     virtual bool csHasVtblsBasedonCHA(const CallICFGNode* cs) = 0;
     virtual const VTableSet &getCSVtblsBasedonCHA(const CallICFGNode* cs) = 0;
-    virtual void getVFnsFromVtbls(const SVFCallInst* cs, const VTableSet& vtbls,
+    virtual void getVFnsFromVtbls(const CallICFGNode* cs, const VTableSet& vtbls,
                                   VFunSet& virtualFunctions) = 0;
 
     CHGKind getKind(void) const
@@ -240,9 +240,10 @@ public:
     typedef Set<const CHNode*> CHNodeSetTy;
     typedef FIFOWorkList<const CHNode*> WorkList;
     typedef Map<std::string, CHNodeSetTy> NameToCHNodesMap;
-    typedef Map<const SVFInstruction*, CHNodeSetTy> CallSiteToCHNodesMap;
-    typedef Map<const SVFInstruction*, VTableSet> CallSiteToVTableSetMap;
-    typedef Map<const SVFInstruction*, VFunSet> CallSiteToVFunSetMap;
+
+    typedef Map<const ICFGNode*, CHNodeSetTy> CallNodeToCHNodesMap;
+    typedef Map<const ICFGNode*, VTableSet> CallNodeToVTableSetMap;
+    typedef Map<const ICFGNode*, VFunSet> CallNodeToVFunSetMap;
 
     typedef enum
     {
@@ -260,7 +261,7 @@ public:
                  const std::string baseClassName,
                  CHEdge::CHEDGETYPE edgeType);
     CHNode *getNode(const std::string name) const;
-    void getVFnsFromVtbls(const SVFCallInst* cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
+    void getVFnsFromVtbls(const CallICFGNode* cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
     void dump(const std::string& filename);
     void view();
     void printCH();
@@ -325,11 +326,12 @@ private:
     NameToCHNodesMap classNameToAncestorsMap;
     NameToCHNodesMap classNameToInstAndDescsMap;
     NameToCHNodesMap templateNameToInstancesMap;
-    CallSiteToCHNodesMap csToClassesMap;
+    CallNodeToCHNodesMap callNodeToClassesMap;
 
     Map<const SVFFunction*, u32_t> virtualFunctionToIDMap;
-    CallSiteToVTableSetMap csToCHAVtblsMap;
-    CallSiteToVFunSetMap csToCHAVFnsMap;
+
+    CallNodeToVTableSetMap callNodeToCHAVtblsMap;
+    CallNodeToVFunSetMap callNodeToCHAVFnsMap;
 };
 
 } // End namespace SVF

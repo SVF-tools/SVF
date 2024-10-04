@@ -371,7 +371,7 @@ struct DOTGraphTraits<SVF::CDG *> : public DOTGraphTraits<SVF::PAG *>
             SVF::PAG::SVFStmtList &edges = SVF::PAG::getPAG()->getPTASVFStmtList(bNode);
             if (edges.empty())
             {
-                rawstr << bNode->getInst()->toString() << " \t";
+                rawstr << (bNode)->toString() << " \t";
             }
             else
             {

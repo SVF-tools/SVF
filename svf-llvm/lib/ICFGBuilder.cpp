@@ -239,15 +239,19 @@ InterICFGNode* ICFGBuilder::addInterBlockICFGNode(const Instruction* inst)
     assert(LLVMUtil::isCallSite(inst) && "not a call instruction?");
     assert(LLVMUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
     assert(llvmModuleSet()->getCallBlock(inst)==nullptr && "duplicate CallICFGNode");
-    CallICFGNode* callICFGNode = new CallICFGNode(icfg->totalICFGNode++, svfInst);
+    CallICFGNode* callICFGNode =
+        new CallICFGNode(icfg->totalICFGNode++, svfInst,
+                         llvmModuleSet()->getSVFType(inst->getType()));
     icfg->addICFGNode(callICFGNode);
     csToCallNodeMap()[inst] = callICFGNode;
+    llvmModuleSet()->setValueAttr(inst, callICFGNode);
 
     assert(llvmModuleSet()->getRetBlock(inst)==nullptr && "duplicate RetICFGNode");
     RetICFGNode* retICFGNode = new RetICFGNode(icfg->totalICFGNode++, svfInst, callICFGNode);
     callICFGNode->setRetICFGNode(retICFGNode);
     icfg->addICFGNode(retICFGNode);
     csToRetNodeMap()[inst] = retICFGNode;
+    llvmModuleSet()->setValueAttr(inst, retICFGNode);
 
     addICFGInterEdges(inst, LLVMUtil::getCallee(SVFUtil::cast<CallBase>(inst)));    //creating interprocedural edges
     return callICFGNode;
@@ -329,9 +333,12 @@ IntraICFGNode* ICFGBuilder::addIntraBlockICFGNode(const Instruction* inst)
         llvmModuleSet()->getSVFInstruction(inst);
     IntraICFGNode* node = llvmModuleSet()->getIntraBlock(inst);
     assert (node==nullptr && "no IntraICFGNode for this instruction?");
-    IntraICFGNode* sNode = new IntraICFGNode(icfg->totalICFGNode++,svfInst);
+    IntraICFGNode* sNode =
+        new IntraICFGNode(icfg->totalICFGNode++, svfInst->getParent(),
+                          SVFUtil::isa<ReturnInst>(inst));
     icfg->addICFGNode(sNode);
     instToBlockNodeMap()[inst] = sNode;
+    llvmModuleSet()->setValueAttr(inst, sNode);
     return sNode;
 }
 

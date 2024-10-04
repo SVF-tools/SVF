@@ -381,7 +381,7 @@ private:
     /// Whether it is a matched fork join pair
     bool isAliasedForkJoin(const CallICFGNode* forkSite, const CallICFGNode* joinSite)
     {
-        return tct->getPTA()->alias(getForkedThread(forkSite), getJoinedThread(joinSite)) && isSameSCEV(forkSite,joinSite);
+        return tct->getPTA()->alias(getForkedThread(forkSite)->getId(), getJoinedThread(joinSite)->getId()) && isSameSCEV(forkSite,joinSite);
     }
     /// Mark thread flags for cxtStmt
     //@{
@@ -473,12 +473,12 @@ private:
         return join && getTCG()->getThreadAPI()->isTDJoin(join);
     }
     /// Get forked thread
-    inline const SVFValue* getForkedThread(const CallICFGNode* call)
+    inline const SVFVar* getForkedThread(const CallICFGNode* call)
     {
         return getTCG()->getThreadAPI()->getForkedThread(call);
     }
     /// Get joined thread
-    inline const SVFValue* getJoinedThread(const CallICFGNode* call)
+    inline const SVFVar* getJoinedThread(const CallICFGNode* call)
     {
         return getTCG()->getThreadAPI()->getJoinedThread(call);
     }

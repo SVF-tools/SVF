@@ -93,7 +93,7 @@ public:
 
     ~DCHNode() { }
 
-    const DIType *getType(void) const
+    const DIType * getDIType(void) const
     {
         return diType;
     }
@@ -275,7 +275,7 @@ public:
     }
 
     virtual const VTableSet &getCSVtblsBasedonCHA(const CallICFGNode* cs) override;
-    virtual void getVFnsFromVtbls(const SVFCallInst* cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
+    virtual void getVFnsFromVtbls(const CallICFGNode* cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
 
     /// Returns true if a is a transitive base of b. firstField determines
     /// whether to consider first-field edges.

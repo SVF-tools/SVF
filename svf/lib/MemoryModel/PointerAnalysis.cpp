@@ -454,7 +454,7 @@ void PointerAnalysis::getVFnsFromPts(const CallICFGNode* cs, const PointsTo &tar
                 }
             }
         }
-        chgraph->getVFnsFromVtbls(SVFUtil::cast<SVFCallInst>(cs->getCallSite()), vtbls, vfns);
+        chgraph->getVFnsFromVtbls(cs, vtbls, vfns);
     }
 }
 
@@ -513,9 +513,9 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
             {
                 assert(callNode->getNumArgOperands() == 2
                        && "arguments should be two pointers!!");
-                const SVFValue* V1 = callNode->getArgOperand(0);
-                const SVFValue* V2 = callNode->getArgOperand(1);
-                AliasResult aliasRes = alias(V1, V2);
+                const SVFVar* V1 = callNode->getArgument(0);
+                const SVFVar* V2 = callNode->getArgument(1);
+                AliasResult aliasRes = alias(V1->getId(), V2->getId());
 
                 bool checkSuccessful = false;
                 if (fun == aliasTestMayAlias || fun == aliasTestMayAliasMangled)
@@ -543,8 +543,8 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
                 else
                     assert(false && "not supported alias check!!");
 
-                NodeID id1 = pag->getValueNode(V1);
-                NodeID id2 = pag->getValueNode(V2);
+                NodeID id1 = V1->getId();
+                NodeID id2 = V2->getId();
 
                 if (checkSuccessful)
                     outs() << sucMsg("\t SUCCESS :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
@@ -578,9 +578,9 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
             {
                 assert(callNode->arg_size() == 2
                        && "arguments should be two pointers!!");
-                const SVFValue* V1 = callNode->getArgOperand(0);
-                const SVFValue* V2 = callNode->getArgOperand(1);
-                AliasResult aliasRes = alias(V1, V2);
+                const SVFVar* V1 = callNode->getArgument(0);
+                const SVFVar* V2 = callNode->getArgument(1);
+                AliasResult aliasRes = alias(V1->getId(), V2->getId());
 
                 bool expectedFailure = false;
                 if (fun == aliasTestFailMayAlias || fun == aliasTestFailMayAliasMangled)
@@ -598,8 +598,8 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
                 else
                     assert(false && "not supported alias check!!");
 
-                NodeID id1 = pag->getValueNode(V1);
-                NodeID id2 = pag->getValueNode(V2);
+                NodeID id1 = V1->getId();
+                NodeID id2 = V2->getId();
 
                 if (expectedFailure)
                     outs() << sucMsg("\t EXPECTED-FAILURE :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("

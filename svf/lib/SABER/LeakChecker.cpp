@@ -48,7 +48,7 @@ void LeakChecker::initSrcs()
         /// if this callsite return reside in a dead function then we do not care about its leaks
         /// for example instruction `int* p = malloc(size)` is in a dead function, then program won't allocate this memory
         /// for example a customized malloc `int p = malloc()` returns an integer value, then program treat it as a system malloc
-        if(cs->getCallSite()->ptrInUncalledFunction() || !cs->getCallSite()->getType()->isPointerTy())
+        if(cs->getFun()->isUncalledFunction() || !cs->getType()->isPointerTy())
             continue;
 
         CallGraph::FunctionSet callees;
@@ -86,7 +86,7 @@ void LeakChecker::initSrcs()
                     else
                     {
                         // exclude sources in dead functions or sources in functions that have summary
-                        if (!cs->getCallSite()->ptrInUncalledFunction() && !isExtCall(cs->getCallSite()->getParent()->getParent()))
+                        if (!cs->getFun()->isUncalledFunction() && !isExtCall(cs->getBB()->getParent()))
                         {
                             addToSources(node);
                             addSrcToCSID(node, cs);
@@ -231,14 +231,14 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction
     if (success)
     {
         outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << getSrcCSID(source)->getCallSite()->toString() << "> at ("
-               << cs->getCallSite()->getSourceLoc() << ")\n";
+               << ", cs id:" << (getSrcCSID(source))->toString() << "> at ("
+               << cs->getSourceLoc() << ")\n";
     }
     else
     {
         SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
-                        << ", cs id:" << getSrcCSID(source)->getCallSite()->toString() << "> at ("
-                        << cs->getCallSite()->getSourceLoc() << ")\n";
+                        << ", cs id:" << (getSrcCSID(source))->toString() << "> at ("
+                        << cs->getSourceLoc() << ")\n";
         assert(false && "test case failed!");
     }
 }
@@ -281,15 +281,15 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVF
     if (expectedFailure)
     {
         outs() << sucMsg("\t EXPECTED-FAILURE :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << getSrcCSID(source)->getCallSite()->toString() << "> at ("
-               << cs->getCallSite()->getSourceLoc() << ")\n";
+               << ", cs id:" << (getSrcCSID(source))->toString() << "> at ("
+               << cs->getSourceLoc() << ")\n";
     }
     else
     {
         SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName
                         << " check <src id:" << source->getId()
-                        << ", cs id:" << getSrcCSID(source)->getCallSite()->toString() << "> at ("
-                        << cs->getCallSite()->getSourceLoc() << ")\n";
+                        << ", cs id:" << (getSrcCSID(source))->toString() << "> at ("
+                        << cs->getSourceLoc() << ")\n";
         assert(false && "test case failed!");
     }
 }

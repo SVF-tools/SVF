@@ -648,17 +648,13 @@ bool LLVMUtil::isHeapAllocExtCallViaArg(const Instruction* inst)
 
 bool LLVMUtil::isNonInstricCallSite(const Instruction* inst)
 {
-    SVFInstruction* svfINst =
-        LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
-    bool res = SVFUtil::isNonInstricCallSite(svfINst);
-    bool res2 = false;
+    bool res = false;
 
     if(isIntrinsicInst(inst))
-        res2 = false;
+        res = false;
     else
-        res2 = isCallSite(inst);
-    assert(res == res2);
-    return res2;
+        res = isCallSite(inst);
+    return res;
 }
 
 namespace SVF
@@ -685,6 +681,27 @@ std::string SVFValue::toString() const
             rawstr << " No llvmVal found";
     }
     rawstr << this->getSourceLoc();
+    return rawstr.str();
+}
+
+
+const std::string SVFBaseNode::toString() const
+{
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    if (const SVF::CallGraphNode* fun = SVFUtil::dyn_cast<CallGraphNode>(this))
+    {
+        rawstr << "Function: " << fun->getFunction()->getName() << " ";
+    }
+    else
+    {
+        auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
+        if (llvmVal)
+            rawstr << " " << *llvmVal << " ";
+        else
+            rawstr << " No llvmVal found";
+    }
+    rawstr << getSourceLoc();
     return rawstr.str();
 }
 

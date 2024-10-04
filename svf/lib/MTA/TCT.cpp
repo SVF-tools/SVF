@@ -108,14 +108,14 @@ bool TCT::isInRecursion(const ICFGNode* inst) const
             for(CallGraphEdge::CallInstSet::const_iterator cit = (*nit)->directCallsBegin(),
                     ecit = (*nit)->directCallsEnd(); cit!=ecit; ++cit)
             {
-                const SVFFunction* caller = (*cit)->getCallSite()->getFunction();
+                const SVFFunction* caller = (*cit)->getFun();
                 if(visits.find(caller)==visits.end())
                     worklist.push(caller);
             }
             for(CallGraphEdge::CallInstSet::const_iterator cit = (*nit)->indirectCallsBegin(),
                     ecit = (*nit)->indirectCallsEnd(); cit!=ecit; ++cit)
             {
-                const SVFFunction* caller = (*cit)->getCallSite()->getFunction();
+                const SVFFunction* caller = (*cit)->getFun();
                 if(visits.find(caller)==visits.end())
                     worklist.push(caller);
             }
@@ -499,7 +499,7 @@ void TCT::dumpCxt(CallStrCxt& cxt)
     for(CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it!=eit; ++it)
     {
         rawstr << " ' "<< *it << " ' ";
-        rawstr << tcg->getCallSite(*it)->getCallSite()->toString();
+        rawstr << (tcg->getCallSite(*it))->toString();
         rawstr << "  call  " << tcg->getCallSite(*it)->getCaller()->getName() << "-->" << tcg->getCalleeOfCallSite(*it)->getName() << ", \n";
     }
     rawstr << " ]";

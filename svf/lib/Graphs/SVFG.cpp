@@ -79,10 +79,10 @@ const std::string ActualINSVFGNode::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ActualINSVFGNode ID: " << getId() << " at callsite: " <<  getCallSite()->getCallSite()->toString() << " {fun: " << getFun()->getName() << "}";
+    rawstr << "ActualINSVFGNode ID: " << getId() << " at callsite: " <<  (getCallSite())->toString() << " {fun: " << getFun()->getName() << "}";
     rawstr << "CSMU(" << getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() << ")\n";
     rawstr << getMRVer()->getMR()->dumpStr() << "\n";
-    rawstr << "CS[" << getCallSite()->getCallSite()->getSourceLoc() << "]";
+    rawstr << "CS[" << getCallSite()->getSourceLoc() << "]";
     return rawstr.str();
 }
 
@@ -90,11 +90,11 @@ const std::string ActualOUTSVFGNode::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ActualOUTSVFGNode ID: " << getId() << " at callsite: " <<  getCallSite()->getCallSite()->toString() << " {fun: " << getFun()->getName() << "}";
+    rawstr << "ActualOUTSVFGNode ID: " << getId() << " at callsite: " <<  (getCallSite())->toString() << " {fun: " << getFun()->getName() << "}";
     rawstr <<  getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() <<
            " = CSCHI(MR_" << getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() << ")\n";
     rawstr << getMRVer()->getMR()->dumpStr() << "\n";
-    rawstr << "CS[" << getCallSite()->getCallSite()->getSourceLoc() << "]" ;
+    rawstr << "CS[" << getCallSite()->getSourceLoc() << "]" ;
     return rawstr.str();
 }
 
@@ -114,7 +114,7 @@ const std::string MSSAPHISVFGNode::toString() const
     if (const IntraICFGNode* intraNode =
                 dyn_cast<IntraICFGNode>(getICFGNode()->getBB()->back()))
     {
-        rawstr << intraNode->getInst()->getSourceLoc();
+        rawstr << intraNode->getSourceLoc();
     }
     return rawstr.str();
 }
@@ -142,7 +142,7 @@ const std::string InterMSSAPHISVFGNode::toString() const
     if(isFormalINPHI())
         rawstr << "FormalINPHISVFGNode ID: " << getId() << " {fun: " << getFun()->getName() << "}";
     else
-        rawstr << "ActualOUTPHISVFGNode ID: " << getId() << " at callsite: " <<  getCallSite()->getCallSite()->toString() << " {fun: " << getFun()->getName() << "}";
+        rawstr << "ActualOUTPHISVFGNode ID: " << getId() << " at callsite: " <<  (getCallSite())->toString() << " {fun: " << getFun()->getName() << "}";
     rawstr << MSSAPHISVFGNode::toString();
     return rawstr.str();
 }

@@ -1171,7 +1171,7 @@ void SVFIRBuilder::updateCallGraph(CallGraph* callgraph)
     for (; iter != eiter; iter++)
     {
         const CallICFGNode* callBlock = iter->first;
-        const CallBase* callbase = SVFUtil::cast<CallBase>(llvmModuleSet()->getLLVMValue(callBlock->getCallSite()));
+        const CallBase* callbase = SVFUtil::cast<CallBase>(llvmModuleSet()->getLLVMValue(callBlock));
         assert(callBlock->isIndirectCall() && "this is not an indirect call?");
         const CallGraph::FunctionSet& functions = iter->second;
         for (CallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
@@ -1186,7 +1186,7 @@ void SVFIRBuilder::updateCallGraph(CallGraph* callgraph)
             }
             else
             {
-                setCurrentLocation(callBlock->getCallSite(), callBlock->getCallSite()->getParent());
+                setCurrentLocation(llvmModuleSet()->getSVFValue(llvmModuleSet()->getLLVMValue(callBlock)), callBlock->getBB());
                 handleDirectCall(const_cast<CallBase*>(callbase), callee);
             }
         }

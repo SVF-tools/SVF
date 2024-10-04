@@ -379,7 +379,7 @@ void AndersenBase::heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet &
     else
     {
         NodeID valNode = pag->addDummyValNode();
-        NodeID objNode = pag->addDummyObjNode(cs->getCallSite()->getType());
+        NodeID objNode = pag->addDummyObjNode(cs->getType());
         addPts(valNode,objNode);
         callsite2DummyValPN.insert(std::make_pair(cs,valNode));
         consCG->addConstraintNode(new ConstraintNode(valNode),valNode);

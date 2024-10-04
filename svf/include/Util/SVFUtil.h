@@ -184,13 +184,6 @@ bool isCallSite(const ICFGNode* inst);
 
 bool isRetInstNode(const ICFGNode* node);
 
-/// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
-inline bool isNonInstricCallSite(const SVFInstruction* inst)
-{
-    if(isIntrinsicInst(inst))
-        return false;
-    return isCallSite(inst);
-}
 
 /// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
 inline bool isNonInstricCallSite(const ICFGNode* inst)
@@ -378,7 +371,7 @@ inline bool isArgOfUncalledFunction(const SVFValue* svfval)
 
 /// Return thread fork function
 //@{
-inline const SVFValue* getForkedFun(const CallICFGNode *inst)
+inline const SVFVar* getForkedFun(const CallICFGNode *inst)
 {
     return ThreadAPI::getThreadAPI()->getForkedFun(inst);
 }
