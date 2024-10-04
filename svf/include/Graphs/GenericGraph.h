@@ -273,10 +273,24 @@ public:
         return type;
     }
 
+    inline virtual void setSourceLoc(const std::string& sourceCodeInfo)
+    {
+        sourceLoc = sourceCodeInfo;
+    }
+
+    virtual const std::string getSourceLoc() const {
+        return sourceLoc;
+    }
+
+    virtual const std::string toString() const;
+
+
 protected:
     NodeID id;		///< Node ID
     GNodeK nodeKind;	///< Node kind
     const SVFType* type; ///< SVF type
+
+    std::string sourceLoc;  ///< Source code information of this value
 
     /// Helper functions to check node kinds
     //{@ Check node kind

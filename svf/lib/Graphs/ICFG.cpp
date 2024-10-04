@@ -36,12 +36,6 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-__attribute__((weak))
-const std::string ICFGNode::instString() const
-{
-    assert("ICFGNode::toString should be implemented or supported by fronted" && false);
-    abort();
-}
 
 FunEntryICFGNode::FunEntryICFGNode(NodeID id, const SVFFunction* f) : InterICFGNode(id, FunEntryBlock)
 {
@@ -97,7 +91,7 @@ const std::string IntraICFGNode::toString() const
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     if(getSVFStmts().empty())
-        rawstr << "\n" << instString();
+        rawstr << "\n" << SVFBaseNode::toString();
     return rawstr.str();
 }
 
@@ -143,7 +137,7 @@ const std::string CallICFGNode::toString() const
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     if(getSVFStmts().empty())
-        rawstr << "\n" << instString();
+        rawstr << "\n" << SVFBaseNode::toString();
     return rawstr.str();
 }
 
@@ -156,7 +150,7 @@ const std::string RetICFGNode::toString() const
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     if(getSVFStmts().empty())
-        rawstr << "\n" << instString();
+        rawstr << "\n" << SVFBaseNode::toString();
     return rawstr.str();
 }
 

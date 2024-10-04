@@ -120,13 +120,9 @@ public:
     }
     ///@}
 
-    const std::string instString() const;
+    const std::string toString() const override;
 
-    virtual const std::string toString() const;
 
-    virtual const std::string getSourceLoc() const {
-        return sourceLoc;
-    }
 
     void dump() const;
 
@@ -146,18 +142,13 @@ public:
         return isICFGNodeKinds(node->getNodeKind());
     }
 
-    inline virtual void setSourceLoc(const std::string& sourceCodeInfo)
-    {
-        sourceLoc = sourceCodeInfo;
-    }
+
 
 protected:
     const SVFFunction* fun;
     const SVFBasicBlock* bb;
     VFGNodeList VFGNodes; //< a list of VFGNodes
     SVFStmtList pagEdges; //< a list of PAGEdges
-
-    std::string sourceLoc;  ///< Source code information of this value
 
 };
 
@@ -190,9 +181,9 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 
-    virtual const std::string getSourceLoc() const
+    const std::string getSourceLoc() const override
     {
         return "Global ICFGNode";
     }
@@ -236,7 +227,7 @@ public:
     }
     //@}
 
-    const std::string toString() const;
+    const std::string toString() const override;
 
     inline bool isRetInst() const {
         return isRet;
@@ -345,9 +336,9 @@ public:
     }
     //@}
 
-    const virtual std::string toString() const;
+    const std::string toString() const override;
 
-    virtual const std::string getSourceLoc() const
+    const std::string getSourceLoc() const override
     {
         return "function entry: " + fun->getSourceLoc();
     }
@@ -416,9 +407,9 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 
-    virtual const std::string getSourceLoc() const
+    const std::string getSourceLoc() const override
     {
         return "function ret: " + fun->getSourceLoc();
     }
@@ -575,9 +566,9 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 
-    virtual const std::string getSourceLoc() const
+    const std::string getSourceLoc() const override
     {
         return "CallICFGNode: " + ICFGNode::getSourceLoc();
     }
@@ -610,12 +601,6 @@ public:
         fun = cs->getFunction();
         bb = cs->getParent();
         type = callBlockNode->getType();
-    }
-
-    /// Return callsite
-    inline const SVFInstruction* getCallSite() const
-    {
-        return cs;
     }
 
     inline const CallICFGNode* getCallICFGNode() const
@@ -661,9 +646,9 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 
-    virtual const std::string getSourceLoc() const
+    const std::string getSourceLoc() const override
     {
         return "RetICFGNode: " + ICFGNode::getSourceLoc();
     }

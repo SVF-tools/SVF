@@ -688,17 +688,24 @@ std::string SVFValue::toString() const
     return rawstr.str();
 }
 
-const std::string ICFGNode::instString() const
+
+const std::string SVFBaseNode::toString() const
 {
     std::string str;
     llvm::raw_string_ostream rawstr(str);
-    LLVMModuleSet* pSet = LLVMModuleSet::getLLVMModuleSet();
-    auto llvmVal = pSet->getLLVMValue(this);
-    if (llvmVal)
-        rawstr << " " << *llvmVal << " ";
+    if (const SVF::CallGraphNode* fun = SVFUtil::dyn_cast<CallGraphNode>(this))
+    {
+        rawstr << "Function: " << fun->getFunction()->getName() << " ";
+    }
     else
-        rawstr << " No llvmVal found";
-    rawstr << this->getSourceLoc();
+    {
+        auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
+        if (llvmVal)
+            rawstr << " " << *llvmVal << " ";
+        else
+            rawstr << " No llvmVal found";
+    }
+    rawstr << getSourceLoc();
     return rawstr.str();
 }
 

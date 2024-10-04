@@ -145,7 +145,7 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
 
         ++morePreciseCallsites;
         outs() << "============more precise callsite =================\n";
-        outs() << (nIter->second)->instString() << "\n";
+        outs() << ((SVFBaseNode*) nIter->second)->toString() << "\n";
         outs() << (nIter->second)->getSourceLoc() << "\n";
         outs() << "\n";
         outs() << "------ander pts or vtable num---(" << anderPts.count()  << ")--\n";

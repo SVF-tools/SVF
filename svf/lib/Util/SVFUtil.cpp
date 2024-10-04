@@ -397,3 +397,9 @@ bool SVFUtil::isProgExitCall(const CallICFGNode* cs)
 {
     return isProgExitFunction(cs->getCalledFunction());
 }
+
+__attribute__((weak))
+const std::string SVFBaseNode::toString() const {
+    assert("SVFBaseNode::toString should be implemented or supported by fronted" && false);
+    abort();
+}
