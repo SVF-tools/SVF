@@ -291,7 +291,7 @@ public:
     FunEntryICFGNode(NodeID id, const SVFFunction* f);
 
     /// Return function
-    inline const SVFFunction* getFun() const
+    inline const SVFFunction* getFun() const override
     {
         return fun;
     }
@@ -362,7 +362,7 @@ public:
     FunExitICFGNode(NodeID id, const SVFFunction* f);
 
     /// Return function
-    inline const SVFFunction* getFun() const
+    inline const SVFFunction* getFun() const override
     {
         return fun;
     }
