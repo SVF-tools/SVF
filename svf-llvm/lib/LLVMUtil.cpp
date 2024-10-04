@@ -648,17 +648,13 @@ bool LLVMUtil::isHeapAllocExtCallViaArg(const Instruction* inst)
 
 bool LLVMUtil::isNonInstricCallSite(const Instruction* inst)
 {
-    SVFInstruction* svfINst =
-        LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
-    bool res = SVFUtil::isNonInstricCallSite(svfINst);
-    bool res2 = false;
+    bool res = false;
 
     if(isIntrinsicInst(inst))
-        res2 = false;
+        res = false;
     else
-        res2 = isCallSite(inst);
-    assert(res == res2);
-    return res2;
+        res = isCallSite(inst);
+    return res;
 }
 
 namespace SVF
