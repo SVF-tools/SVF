@@ -120,7 +120,7 @@ public:
     }
     ///@}
 
-    const std::string toString() const override;
+    virtual const std::string toString() const;
 
 
 

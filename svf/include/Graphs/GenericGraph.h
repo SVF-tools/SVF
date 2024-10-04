@@ -282,7 +282,7 @@ public:
         return sourceLoc;
     }
 
-    virtual const std::string toString() const;
+    const std::string toString() const;
 
 
 protected:
