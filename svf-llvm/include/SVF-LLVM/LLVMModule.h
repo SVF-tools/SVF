@@ -387,6 +387,7 @@ private:
     void initSVFBasicBlock(const Function* func);
     void initDomTree(SVFFunction* func, const Function* f);
     void setValueAttr(const Value* val, SVFValue* value);
+    void setValueAttr(const Value* val, SVFBaseNode* svfBaseNode);
     void buildFunToFunMap();
     void buildGlobalDefToRepMap();
     /// Invoke llvm passes to modify module

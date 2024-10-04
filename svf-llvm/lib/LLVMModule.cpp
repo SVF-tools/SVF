@@ -1230,6 +1230,12 @@ void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
     svfvalue->setSourceLoc(LLVMUtil::getSourceLoc(val));
 }
 
+void LLVMModuleSet::setValueAttr(const SVF::Value* val, SVF::SVFBaseNode* svfBaseNode)
+{
+    SVFBaseNode2LLVMValue[svfBaseNode] = val;
+    svfBaseNode->setSourceLoc(LLVMUtil::getSourceLoc(val));
+}
+
 SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
 {
     LLVMConst2SVFConstMap::const_iterator it = LLVMConst2SVFConst.find(cd);
