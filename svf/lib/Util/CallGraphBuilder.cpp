@@ -67,6 +67,27 @@ CallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
 
     return callgraph;
 }
+CallGraph* CallGraphBuilder::buildSVFIRCallGraph()
+{
+    for (const auto& item : *callgraph)
+    {
+        for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())
+        {
+            for (const ICFGNode* inst : svfbb->getICFGNodeList())
+            {
+                if (SVFUtil::isNonInstricCallSite(inst))
+                {
+                    const CallICFGNode* callBlockNode = cast<CallICFGNode>(inst);
+                    if(const SVFFunction* callee = callBlockNode->getCalledFunction())
+                    {
+                        callgraph->addDirectCallGraphEdge(callBlockNode,(item.second)->getFunction(),callee);
+                    }
+                }
+            }
+        }
+    }
+    return callgraph;
+}
 
 CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
 {

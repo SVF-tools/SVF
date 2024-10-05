@@ -53,6 +53,9 @@ public:
     /// Build normal callgraph
     CallGraph* buildCallGraph(SVFModule* svfModule);
 
+    /// Buidl SVFIR callgraoh
+    CallGraph* buildSVFIRCallGraph();
+
 };
 
 class ThreadCallGraphBuilder : public CallGraphBuilder

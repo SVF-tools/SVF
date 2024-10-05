@@ -38,6 +38,7 @@
 #include "SVFIR/SVFFileSystem.h"
 #include "SVFIR/SVFModule.h"
 #include "SVFIR/SVFValue.h"
+#include "Util/CallGraphBuilder.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 
@@ -165,23 +166,10 @@ SVFIR* SVFIRBuilder::build()
 
     CallGraph* cg = llvmModuleSet()->callgraph;
     /// create callgraph edges
-    for (const auto& item : *cg)
-    {
-        for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())
-        {
-            for (const ICFGNode* inst : svfbb->getICFGNodeList())
-            {
-                if (SVFUtil::isNonInstricCallSite(inst))
-                {
-                    const CallICFGNode* callBlockNode = cast<CallICFGNode>(inst);
-                    if(const SVFFunction* callee = callBlockNode->getCalledFunction())
-                    {
-                        cg->addDirectCallGraphEdge(callBlockNode,(item.second)->getFunction(),callee);
-                    }
-                }
-            }
-        }
-    }
+    
+    CallGraphBuilder callgraphbuilder(cg, icfg);
+    callgraphbuilder.buildSVFIRCallGraph();
+    
     pag->setCallGraph(cg);
 
     // dump SVFIR
