@@ -131,6 +131,12 @@ void CallGraph::addCallGraphNode(const SVFFunction* fun)
     callGraphNodeNum++;
 }
 
+void CallGraph::addIRCallGraphNode(CallGraphNode* callGraphNode) {
+//    CallGraphNode* newNode= const_cast<CallGraphNode*>(callGraphNode);
+    addGNode(callGraphNode->getId(), callGraphNode);
+    funToCallGraphNodeMap[callGraphNode->getFunction()] = callGraphNode;
+}
+
 /*!
  *  Whether we have already created this call graph edge
  */
@@ -324,6 +330,7 @@ void CallGraph::view()
 {
     SVF::ViewGraph(this, "Call Graph");
 }
+
 
 namespace SVF
 {

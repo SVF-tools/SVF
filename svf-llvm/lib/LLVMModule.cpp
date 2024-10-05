@@ -40,6 +40,7 @@
 #include "llvm/Support/FileSystem.h"
 #include "SVF-LLVM/ObjTypeInference.h"
 #include "llvm/Transforms/Utils/Cloning.h"
+#include "Graphs/CallGraph.h"
 
 using namespace std;
 using namespace SVF;
@@ -193,6 +194,9 @@ void LLVMModuleSet::createSVFDataStructure()
         }
     }
 
+    callgraph = new CallGraph();
+
+
     for (const Function* func: candidateDefs)
     {
         createSVFFunction(func);
@@ -251,6 +255,11 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
         func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
     svfModule->addFunctionSet(svfFunc);
     addFunctionMap(func, svfFunc);
+
+    // create call graph node
+    CallGraphNode *callGraphNode = new CallGraphNode(callgraph->getCallGraphNodeNum(), svfFunc);
+    callgraph->addIRCallGraphNode(callGraphNode);
+    callgraph->incCallGraphNodeNum();
 
     for (const Argument& arg : func->args())
     {
