@@ -281,6 +281,8 @@ public:
     /// Add callgraph Node
     void addCallGraphNode(const SVFFunction* fun);
 
+    void addIRCallGraphNode(CallGraphNode* cgn);
+
     /// Destructor
     virtual ~CallGraph()
     {
@@ -459,6 +461,15 @@ public:
 
     /// View the graph from the debugger
     void view();
+
+
+    NodeID getCallGraphNodeNum() const {
+        return callGraphNodeNum;
+    }
+
+    void incCallGraphNodeNum() {
+        callGraphNodeNum++;
+    }
 };
 
 } // End namespace SVF
