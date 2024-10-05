@@ -189,6 +189,11 @@ public:
 
     }
 
+    inline const std::string &getName() const
+    {
+        return fun->getName();
+    }
+
     /// Get function of this call node
     inline const SVFFunction* getFunction() const
     {
@@ -279,7 +284,7 @@ public:
     CallGraph(CGEK k = NormCallGraph);
 
     /// Add callgraph Node
-    void addCallGraphNode(const SVFFunction* fun);
+    void addPTACallGraphNode(const CallGraphNode* cgn);
 
     void addIRCallGraphNode(CallGraphNode* cgn);
 

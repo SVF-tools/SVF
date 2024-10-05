@@ -121,17 +121,14 @@ void CallGraph::destroy()
 /*!
  * Add call graph node
  */
-void CallGraph::addCallGraphNode(const SVFFunction* fun)
+void CallGraph::addPTACallGraphNode(const CallGraphNode* cgn)
 {
-    NodeID id = callGraphNodeNum;
-    CallGraphNode* callGraphNode = new CallGraphNode(id, fun);
-    addGNode(id,callGraphNode);
-    funToCallGraphNodeMap[fun] = callGraphNode;
-    callGraphNodeNum++;
+    CallGraphNode* callGraphNode = new CallGraphNode(cgn->getId(), cgn->getFunction());
+    addGNode(cgn->getId(),callGraphNode);
+    funToCallGraphNodeMap[cgn->getFunction()] = callGraphNode;
 }
 
 void CallGraph::addIRCallGraphNode(CallGraphNode* callGraphNode) {
-//    CallGraphNode* newNode= const_cast<CallGraphNode*>(callGraphNode);
     addGNode(callGraphNode->getId(), callGraphNode);
     funToCallGraphNodeMap[callGraphNode->getFunction()] = callGraphNode;
 }
