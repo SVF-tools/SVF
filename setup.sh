@@ -27,7 +27,6 @@ function set_llvm {
 
 if set_llvm; then
     export LLVM_DIR
-    export PATH="$LLVM_DIR/bin:$PATH"
     echo "LLVM_DIR=$LLVM_DIR"
 else
     echo "- LLVM_DIR not set, probably system-wide installation"
