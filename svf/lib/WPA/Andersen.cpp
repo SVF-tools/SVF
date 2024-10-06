@@ -247,7 +247,7 @@ void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const S
     assert(F);
 
     DBOUT(DAndersen, outs() << "connect parameters from indirect forksite "
-          << cs.getInstruction()->toString() << " to forked function "
+          << cs->valueOnlyToString() << " to forked function "
           << *F << "\n");
 
     ThreadCallGraph *tdCallGraph = SVFUtil::dyn_cast<ThreadCallGraph>(callgraph);
@@ -276,8 +276,7 @@ void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs,
 {
     assert(F);
 
-    DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " <<
-          cs.getInstruction()->toString() << " to callee " << *F << "\n");
+    DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << cs->valueOnlyToString() << " to callee " << *F << "\n");
 
     const CallICFGNode* callBlockNode = cs;
     const RetICFGNode* retBlockNode = cs->getRetICFGNode();

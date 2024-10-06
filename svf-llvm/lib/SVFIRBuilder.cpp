@@ -856,7 +856,7 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
         return;
 
     DBOUT(DPAGBuild,
-          outs() << "process callsite " << svfcall->toString() << "\n");
+          outs() << "process callsite " << svfcall->valueOnlyToString() << "\n");
 
 
     CallICFGNode* callBlockNode = llvmModuleSet()->getCallICFGNode(cs);

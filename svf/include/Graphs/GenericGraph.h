@@ -283,7 +283,7 @@ public:
         return sourceLoc;
     }
 
-    const std::string toString() const;
+    const std::string valueOnlyToString() const;
 
 
 protected:
