@@ -231,13 +231,13 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction
     if (success)
     {
         outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << (getSrcCSID(source))->frontendValueToString() << "> at ("
+               << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("
                << cs->getSourceLoc() << ")\n";
     }
     else
     {
         SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
-                        << ", cs id:" << (getSrcCSID(source))->frontendValueToString() << "> at ("
+                        << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("
                         << cs->getSourceLoc() << ")\n";
         assert(false && "test case failed!");
     }
@@ -281,14 +281,14 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVF
     if (expectedFailure)
     {
         outs() << sucMsg("\t EXPECTED-FAILURE :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << (getSrcCSID(source))->frontendValueToString() << "> at ("
+               << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("
                << cs->getSourceLoc() << ")\n";
     }
     else
     {
         SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName
                         << " check <src id:" << source->getId()
-                        << ", cs id:" << (getSrcCSID(source))->frontendValueToString() << "> at ("
+                        << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("
                         << cs->getSourceLoc() << ")\n";
         assert(false && "test case failed!");
     }
