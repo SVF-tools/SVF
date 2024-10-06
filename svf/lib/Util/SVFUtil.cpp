@@ -397,10 +397,3 @@ bool SVFUtil::isProgExitCall(const CallICFGNode* cs)
 {
     return isProgExitFunction(cs->getCalledFunction());
 }
-
-__attribute__((weak))
-const std::string SVFBaseNode::valueOnlyToString() const
-{
-    assert("SVFBaseNode::valueOnlyToString should be implemented or supported by fronted" && false);
-    abort();
-}
