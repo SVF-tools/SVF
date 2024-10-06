@@ -94,14 +94,14 @@ void DoubleFreeChecker::validateSuccessTests(ProgSlice *slice, const SVFFunction
     if (success)
     {
         outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << (getSrcCSID(source))->toString() << "> at ("
+               << ", cs id:" << (getSrcCSID(source))->frontendValueToString() << "> at ("
                << cs->getSourceLoc() << ")\n";
         outs() << "\t\t double free path: \n" << slice->evalFinalCond() << "\n";
     }
     else
     {
         SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
-                        << ", cs id:" << (getSrcCSID(source))->toString() << "> at ("
+                        << ", cs id:" << (getSrcCSID(source))->frontendValueToString() << "> at ("
                         << cs->getSourceLoc() << ")\n";
         SVFUtil::errs() << "\t\t double free path: \n" << slice->evalFinalCond() << "\n";
         assert(false && "test case failed!");
@@ -140,7 +140,7 @@ void DoubleFreeChecker::validateExpectedFailureTests(ProgSlice *slice, const SVF
     if (expectedFailure)
     {
         outs() << sucMsg("\t EXPECTED-FAILURE :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << (getSrcCSID(source))->toString() << "> at ("
+               << ", cs id:" << (getSrcCSID(source))->frontendValueToString() << "> at ("
                << cs->getSourceLoc() << ")\n";
         outs() << "\t\t double free path: \n" << slice->evalFinalCond() << "\n";
     }
@@ -148,7 +148,7 @@ void DoubleFreeChecker::validateExpectedFailureTests(ProgSlice *slice, const SVF
     {
         SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName
                         << " check <src id:" << source->getId()
-                        << ", cs id:" << (getSrcCSID(source))->toString() << "> at ("
+                        << ", cs id:" << (getSrcCSID(source))->frontendValueToString() << "> at ("
                         << cs->getSourceLoc() << ")\n";
         SVFUtil::errs() << "\t\t double free path: \n" << slice->evalFinalCond() << "\n";
         assert(false && "test case failed!");

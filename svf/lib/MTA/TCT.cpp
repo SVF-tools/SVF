@@ -499,7 +499,7 @@ void TCT::dumpCxt(CallStrCxt& cxt)
     for(CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it!=eit; ++it)
     {
         rawstr << " ' "<< *it << " ' ";
-        rawstr << (tcg->getCallSite(*it))->toString();
+        rawstr << (tcg->getCallSite(*it))->frontendValueToString();
         rawstr << "  call  " << tcg->getCallSite(*it)->getCaller()->getName() << "-->" << tcg->getCalleeOfCallSite(*it)->getName() << ", \n";
     }
     rawstr << " ]";

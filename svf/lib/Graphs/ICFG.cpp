@@ -91,7 +91,7 @@ const std::string IntraICFGNode::toString() const
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     if(getSVFStmts().empty())
-        rawstr << "\n" << SVFBaseNode::toString();
+        rawstr << "\n" << frontendValueToString();
     return rawstr.str();
 }
 
@@ -137,7 +137,7 @@ const std::string CallICFGNode::toString() const
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     if(getSVFStmts().empty())
-        rawstr << "\n" << SVFBaseNode::toString();
+        rawstr << "\n" << frontendValueToString();
     return rawstr.str();
 }
 
@@ -150,7 +150,7 @@ const std::string RetICFGNode::toString() const
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     if(getSVFStmts().empty())
-        rawstr << "\n" << SVFBaseNode::toString();
+        rawstr << "\n" << frontendValueToString();
     return rawstr.str();
 }
 
