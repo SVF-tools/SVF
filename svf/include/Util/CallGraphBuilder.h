@@ -51,7 +51,7 @@ public:
     }
 
     /// Build normal callgraph
-    CallGraph* buildCallGraph(SVFModule* svfModule);
+    CallGraph* buildCallGraph();
 
     /// Buidl SVFIR callgraoh
     CallGraph* buildSVFIRCallGraph();
@@ -67,7 +67,7 @@ public:
     }
 
     /// Build thread-aware callgraph
-    CallGraph* buildThreadCallGraph(SVFModule* svfModule);
+    CallGraph* buildThreadCallGraph();
 
 };
 

@@ -113,13 +113,13 @@ void PointerAnalysis::initialize()
     {
         ThreadCallGraph* cg = new ThreadCallGraph();
         ThreadCallGraphBuilder bd(cg, pag->getICFG());
-        callgraph = bd.buildThreadCallGraph(pag->getModule());
+        callgraph = bd.buildThreadCallGraph();
     }
     else
     {
         CallGraph* cg = new CallGraph();
         CallGraphBuilder bd(cg,pag->getICFG());
-        callgraph = bd.buildCallGraph(pag->getModule());
+        callgraph = bd.buildCallGraph();
     }
     callGraphSCCDetection();
 

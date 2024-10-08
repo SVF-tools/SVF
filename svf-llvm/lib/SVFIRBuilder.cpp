@@ -164,9 +164,8 @@ SVFIR* SVFIRBuilder::build()
 
     pag->setNodeNumAfterPAGBuild(pag->getTotalNodeNum());
 
-    CallGraph* cg = llvmModuleSet()->callgraph;
     /// create callgraph edges
-    
+    CallGraph* cg = llvmModuleSet()->callgraph;
     CallGraphBuilder callgraphbuilder(cg, icfg);
     callgraphbuilder.buildSVFIRCallGraph();
     

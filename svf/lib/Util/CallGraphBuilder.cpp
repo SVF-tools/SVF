@@ -36,18 +36,18 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-CallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
+CallGraph* CallGraphBuilder::buildCallGraph()
 {
-    CallGraph* callGraph = PAG::getPAG()->getCallGraph();
+    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
 
-    /// create nodes
-    for (const auto& item : *callGraph)
+    /// clone nodes
+    for (const auto& item : *svfirCallGraph)
     {
-        callgraph->addPTACallGraphNode(item.second);
+        callgraph->cloneCallGraphNode(item.second);
     }
 
     /// create edges
-    for (const auto& item : *callGraph)
+    for (const auto& item : *svfirCallGraph)
     {
         for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())
         {
@@ -67,6 +67,7 @@ CallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
 
     return callgraph;
 }
+
 CallGraph* CallGraphBuilder::buildSVFIRCallGraph()
 {
     for (const auto& item : *callgraph)
@@ -89,10 +90,10 @@ CallGraph* CallGraphBuilder::buildSVFIRCallGraph()
     return callgraph;
 }
 
-CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
+CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph()
 {
 
-    buildCallGraph(svfModule);
+    buildCallGraph();
 
     ThreadCallGraph* cg = dyn_cast<ThreadCallGraph>(callgraph);
     assert(cg && "not a thread callgraph?");
