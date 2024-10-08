@@ -871,6 +871,11 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
     if(!cs->getType()->isVoidTy())
         pag->addCallSiteRets(retBlockNode,pag->getGNode(getValueNode(cs)));
 
+    if (callBlockNode->isVirtualCall())
+    {
+        const Value* value = cppUtil::getVCallVtblPtr(cs);
+        callBlockNode->setVtablePtr(pag->getGNode(getValueNode(value)));
+    }
     if (const Function *callee = LLVMUtil::getCallee(cs))
     {
         const SVFFunction* svfcallee = llvmModuleSet()->getSVFFunction(callee);

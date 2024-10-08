@@ -412,7 +412,6 @@ cJSON* SVFIRWriter::contentToJson(const FunExitICFGNode* node)
 cJSON* SVFIRWriter::contentToJson(const CallICFGNode* node)
 {
     cJSON* root = contentToJson(static_cast<const ICFGNode*>(node));
-    JSON_WRITE_FIELD(root, node, cs);
     JSON_WRITE_FIELD(root, node, ret);
     JSON_WRITE_FIELD(root, node, APNodes);
     return root;
@@ -421,7 +420,6 @@ cJSON* SVFIRWriter::contentToJson(const CallICFGNode* node)
 cJSON* SVFIRWriter::contentToJson(const RetICFGNode* node)
 {
     cJSON* root = contentToJson(static_cast<const ICFGNode*>(node));
-    JSON_WRITE_FIELD(root, node, cs);
     JSON_WRITE_FIELD(root, node, actualRet);
     JSON_WRITE_FIELD(root, node, callBlockNode);
     return root;
@@ -2205,7 +2203,6 @@ void SVFIRReader::fill(const cJSON*& fieldJson, FunExitICFGNode* node)
 void SVFIRReader::fill(const cJSON*& fieldJson, CallICFGNode* node)
 {
     fill(fieldJson, static_cast<ICFGNode*>(node));
-    JSON_READ_FIELD_FWD(fieldJson, node, cs);
     JSON_READ_FIELD_FWD(fieldJson, node, ret);
     JSON_READ_FIELD_FWD(fieldJson, node, APNodes);
 }
@@ -2213,7 +2210,6 @@ void SVFIRReader::fill(const cJSON*& fieldJson, CallICFGNode* node)
 void SVFIRReader::fill(const cJSON*& fieldJson, RetICFGNode* node)
 {
     fill(fieldJson, static_cast<ICFGNode*>(node));
-    JSON_READ_FIELD_FWD(fieldJson, node, cs);
     JSON_READ_FIELD_FWD(fieldJson, node, actualRet);
     JSON_READ_FIELD_FWD(fieldJson, node, callBlockNode);
 }
