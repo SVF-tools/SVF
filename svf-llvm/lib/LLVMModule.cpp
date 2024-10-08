@@ -257,9 +257,7 @@ void LLVMModuleSet::createCallGraphNode(const Function* func)
     addFunctionMap(func, svfFunc);
 
     // create call graph node
-    CallGraphNode *callGraphNode = new CallGraphNode(callgraph->getCallGraphNodeNum(), svfFunc);
-    callgraph->addIRCallGraphNode(callGraphNode);
-    callgraph->incCallGraphNodeNum();
+    callgraph->addIRCallGraphNode(svfFunc);
 
     for (const Argument& arg : func->args())
     {

@@ -38,16 +38,16 @@ using namespace SVFUtil;
 
 CallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
 {
-    CallGraph* callGraph = PAG::getPAG()->getCallGraph();
+    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
 
     /// create nodes
-    for (const auto& item : *callGraph)
+    for (const auto& item : *svfirCallGraph)
     {
-        callgraph->addPTACallGraphNode(item.second);
+        callgraph->addCallGraphNode(item.second);
     }
 
     /// create edges
-    for (const auto& item : *callGraph)
+    for (const auto& item : *svfirCallGraph)
     {
         for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())
         {

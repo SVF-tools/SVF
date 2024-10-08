@@ -284,9 +284,9 @@ public:
     CallGraph(CGEK k = NormCallGraph);
 
     /// Add callgraph Node
-    void addPTACallGraphNode(const CallGraphNode* cgn);
+    void addCallGraphNode(const CallGraphNode* cgn);
 
-    void addIRCallGraphNode(CallGraphNode* cgn);
+    void addIRCallGraphNode(SVFFunction* svfFunc);
 
     /// Destructor
     virtual ~CallGraph()
@@ -466,15 +466,7 @@ public:
 
     /// View the graph from the debugger
     void view();
-
-
-    NodeID getCallGraphNodeNum() const {
-        return callGraphNodeNum;
-    }
-
-    void incCallGraphNodeNum() {
-        callGraphNodeNum++;
-    }
+    
 };
 
 } // End namespace SVF
