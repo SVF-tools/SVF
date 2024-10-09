@@ -40,6 +40,7 @@
 #include "llvm/Support/FileSystem.h"
 #include "SVF-LLVM/ObjTypeInference.h"
 #include "llvm/Transforms/Utils/Cloning.h"
+#include "SVF-LLVM/ICFGBuilder.h"
 
 using namespace std;
 using namespace SVF;
@@ -166,6 +167,9 @@ void LLVMModuleSet::build()
 
     createSVFDataStructure();
     initSVFFunction();
+    icfg = new ICFG();
+    ICFGBuilder icfgbuilder(icfg);
+    icfgbuilder.build();
 }
 
 void LLVMModuleSet::createSVFDataStructure()

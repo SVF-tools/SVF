@@ -76,6 +76,7 @@ private:
     static bool preProcessed;
     SymbolTableInfo* symInfo;
     SVFModule* svfModule; ///< Borrowed from singleton SVFModule::svfModule
+    ICFG* icfg;
     std::unique_ptr<LLVMContext> owned_ctx;
     std::vector<std::unique_ptr<Module>> owned_modules;
     std::vector<std::reference_wrapper<Module>> modules;
@@ -361,6 +362,10 @@ public:
     const Type* getLLVMType(const SVFType* T) const;
 
     ObjTypeInference* getTypeInference();
+
+    inline ICFG* getICFG() {
+        return icfg;
+    }
 
 private:
     /// Create SVFTypes
