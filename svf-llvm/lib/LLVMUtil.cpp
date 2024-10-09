@@ -685,7 +685,7 @@ std::string SVFValue::toString() const
 }
 
 
-const std::string SVFBaseNode::toString() const
+const std::string SVFBaseNode::valueOnlyToString() const
 {
     std::string str;
     llvm::raw_string_ostream rawstr(str);

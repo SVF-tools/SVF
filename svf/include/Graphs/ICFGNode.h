@@ -428,19 +428,28 @@ public:
     typedef std::vector<const SVFVar *> ActualParmNodeVec;
 
 protected:
-    const SVFInstruction* cs;
     const RetICFGNode* ret;
-    ActualParmNodeVec APNodes;
+    ActualParmNodeVec APNodes;      /// arguments
+    const SVFFunction* calledFunc;  /// called function
+    bool isvararg;                  /// is variable argument
+    bool isVirCallInst;             /// is virtual call inst
+    SVFVar* vtabPtr;                /// virtual table pointer
+    s32_t virtualFunIdx;            /// virtual function index of the virtual table(s) at a virtual call
+    std::string funNameOfVcall;     /// the function name of this virtual call
 
     /// Constructor to create empty CallICFGNode (for SVFIRReader/deserialization)
-    CallICFGNode(NodeID id) : InterICFGNode(id, FunCallBlock), cs{}, ret{} {}
+    CallICFGNode(NodeID id) : InterICFGNode(id, FunCallBlock), ret{} {}
 
 public:
-    CallICFGNode(NodeID id, const SVFInstruction* c, const SVFType* ty)
-        : InterICFGNode(id, FunCallBlock), cs(c), ret(nullptr)
+    CallICFGNode(NodeID id, const SVFBasicBlock* b, const SVFType* ty,
+                 const SVFFunction* cf, bool iv, bool ivc, s32_t vfi,
+                 const std::string& fnv)
+        : InterICFGNode(id, FunCallBlock), ret(nullptr), calledFunc(cf),
+          isvararg(iv), isVirCallInst(ivc), vtabPtr(nullptr),
+          virtualFunIdx(vfi), funNameOfVcall(fnv)
     {
-        fun = cs->getFunction();
-        bb = cs->getParent();
+        fun = b->getFunction();
+        bb = b;
         type = ty;
     }
 
@@ -472,7 +481,7 @@ public:
     /// Return true if this is an indirect call
     inline bool isIndirectCall() const
     {
-        return nullptr == SVFUtil::cast<SVFCallInst>(cs)->getCalledFunction();
+        return nullptr == calledFunc;
     }
 
     /// Return the set of actual parameters
@@ -488,54 +497,61 @@ public:
     }
     /// Parameter operations
     //@{
-    const SVFVar* getArgument(u32_t ArgNo) const
+    inline const SVFVar* getArgument(u32_t ArgNo) const
     {
         return getActualParms()[ArgNo];
     }
 
-    u32_t arg_size() const
+    inline u32_t arg_size() const
     {
         return APNodes.size();
     }
-    bool arg_empty() const
+    inline bool arg_empty() const
     {
         return APNodes.empty();
     }
 
-    u32_t getNumArgOperands() const
+    inline u32_t getNumArgOperands() const
     {
         return arg_size();
     }
-    const SVFFunction* getCalledFunction() const
+    inline const SVFFunction* getCalledFunction() const
     {
-        return SVFUtil::cast<SVFCallInst>(cs)->getCalledFunction();
+        return calledFunc;
     }
-    const SVFValue* getCalledValue() const
+
+    inline bool isVarArg() const
     {
-        return SVFUtil::cast<SVFCallInst>(cs)->getCalledOperand();
+        return isvararg;
     }
-    bool isVarArg() const
+    inline bool isVirtualCall() const
     {
-        return SVFUtil::cast<SVFCallInst>(cs)->isVarArg();
+        return isVirCallInst;
     }
-    bool isVirtualCall() const
+
+    inline void setVtablePtr(SVFVar* v)
     {
-        return SVFUtil::isa<SVFVirtualCallInst>(cs);
+        vtabPtr = v;
     }
-    const SVFValue* getVtablePtr() const
+
+    inline const SVFVar* getVtablePtr() const
     {
         assert(isVirtualCall() && "not a virtual call?");
-        return SVFUtil::cast<SVFVirtualCallInst>(cs)->getVtablePtr();
+        return vtabPtr;
     }
-    s32_t getFunIdxInVtable() const
+
+
+    inline s32_t getFunIdxInVtable() const
     {
         assert(isVirtualCall() && "not a virtual call?");
-        return SVFUtil::cast<SVFVirtualCallInst>(cs)->getFunIdxInVtable();
+        assert(virtualFunIdx >=0 && "virtual function idx is less than 0? not set yet?");
+        return virtualFunIdx;
     }
-    const std::string& getFunNameOfVirtualCall() const
+
+    inline const std::string& getFunNameOfVirtualCall() const
     {
         assert(isVirtualCall() && "not a virtual call?");
-        return SVFUtil::cast<SVFVirtualCallInst>(cs)->getFunNameOfVirtualCall();
+        return funNameOfVcall;
     }
     //@}
 
@@ -585,23 +601,22 @@ class RetICFGNode : public InterICFGNode
     friend class SVFIRReader;
 
 private:
-    const SVFInstruction* cs;
     const SVFVar *actualRet;
     const CallICFGNode* callBlockNode;
 
     /// Constructor to create empty RetICFGNode (for SVFIRReader/deserialization)
     RetICFGNode(NodeID id)
-        : InterICFGNode(id, FunRetBlock), cs{}, actualRet{}, callBlockNode{}
+        : InterICFGNode(id, FunRetBlock), actualRet{}, callBlockNode{}
     {
     }
 
 public:
-    RetICFGNode(NodeID id, const SVFInstruction* c, CallICFGNode* cb) :
-        InterICFGNode(id, FunRetBlock), cs(c), actualRet(nullptr), callBlockNode(cb)
+    RetICFGNode(NodeID id, CallICFGNode* cb) :
+        InterICFGNode(id, FunRetBlock), actualRet(nullptr), callBlockNode(cb)
     {
-        fun = cs->getFunction();
-        bb = cs->getParent();
-        type = callBlockNode->getType();
+        fun = cb->getFun();
+        bb = cb->getBB();
+        type = cb->getType();
     }
 
     inline const CallICFGNode* getCallICFGNode() const

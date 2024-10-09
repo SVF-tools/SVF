@@ -1,15 +1,9 @@
 #include "SVFIR/SVFValue.h"
 #include "Util/SVFUtil.h"
+#include "Graphs/GenericGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
-
-__attribute__((weak))
-std::string SVFValue::toString() const
-{
-    assert("SVFValue::toString should be implemented or supported by fronted" && false);
-    abort();
-}
 
 /// Add field (index and offset) with its corresponding type
 void StInfo::addFldWithType(u32_t fldIdx, const SVFType* type, u32_t elemIdx)
@@ -273,4 +267,18 @@ SVFInstruction::SVFInstruction(const SVFType* ty, const SVFBasicBlock* b,
                                bool tm, bool isRet, SVFValKind k)
     : SVFValue(ty, k), bb(b), terminator(tm), ret(isRet)
 {
+}
+
+__attribute__((weak))
+std::string SVFValue::toString() const
+{
+    assert("SVFValue::toString should be implemented or supported by fronted" && false);
+    abort();
+}
+
+__attribute__((weak))
+const std::string SVFBaseNode::valueOnlyToString() const
+{
+    assert("SVFBaseNode::valueOnlyToString should be implemented or supported by fronted" && false);
+    abort();
 }

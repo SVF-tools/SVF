@@ -421,10 +421,3 @@ const SVFFunction* SVFUtil::getProgEntryFunction(SVFModule* svfModule)
     }
     return nullptr;
 }
-
-__attribute__((weak))
-const std::string SVFBaseNode::toString() const
-{
-    assert("SVFBaseNode::toString should be implemented or supported by fronted" && false);
-    abort();
-}

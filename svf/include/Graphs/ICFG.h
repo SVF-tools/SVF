@@ -172,6 +172,49 @@ protected:
         }
     }
 
+    virtual inline IntraICFGNode* addIntraICFGNode(const SVFBasicBlock* bb, bool isRet)
+    {
+        IntraICFGNode* intraIcfgNode =
+            new IntraICFGNode(totalICFGNode++, bb, isRet);
+        addICFGNode(intraIcfgNode);
+        return intraIcfgNode;
+    }
+
+    virtual inline CallICFGNode* addCallICFGNode(
+        const SVFBasicBlock* bb, const SVFType* ty,
+        const SVFFunction* calledFunc, bool isVararg, bool isvcall,
+        s32_t vcallIdx, const std::string& funNameOfVcall)
+    {
+
+        CallICFGNode* callICFGNode =
+            new CallICFGNode(totalICFGNode++, bb, ty, calledFunc, isVararg,
+                             isvcall, vcallIdx, funNameOfVcall);
+        addICFGNode(callICFGNode);
+        return callICFGNode;
+    }
+
+    virtual inline RetICFGNode* addRetICFGNode(CallICFGNode* call)
+    {
+        RetICFGNode* retICFGNode = new RetICFGNode(totalICFGNode++, call);
+        call->setRetICFGNode(retICFGNode);
+        addICFGNode(retICFGNode);
+        return retICFGNode;
+    }
+
+    virtual inline FunEntryICFGNode* addFunEntryICFGNode(const SVFFunction* svfFunc)
+    {
+        FunEntryICFGNode* sNode = new FunEntryICFGNode(totalICFGNode++,svfFunc);
+        addICFGNode(sNode);
+        return FunToFunEntryNodeMap[svfFunc] = sNode;
+    }
+
+    virtual inline FunExitICFGNode* addFunExitICFGNode(const SVFFunction* svfFunc)
+    {
+        FunExitICFGNode* sNode = new FunExitICFGNode(totalICFGNode++, svfFunc);
+        addICFGNode(sNode);
+        return FunToFunExitNodeMap[svfFunc] = sNode;
+    }
+
     /// Add a ICFG node
     virtual inline void addICFGNode(ICFGNode* node)
     {
