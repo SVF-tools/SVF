@@ -83,9 +83,9 @@ OrderedNodeSet& FunptrDDAClient::collectCandidateQueries(SVFIR* p)
     {
         if (it->first->isVirtualCall())
         {
-            const SVFValue* vtblPtr = it->first->getVtablePtr();
-            assert(pag->hasValueNode(vtblPtr) && "not a vtable pointer?");
-            NodeID vtblId = pag->getValueNode(vtblPtr);
+            const SVFVar* vtblPtr = it->first->getVtablePtr();
+            assert(vtblPtr != nullptr && "not a vtable pointer?");
+            NodeID vtblId = vtblPtr->getId();
             addCandidate(vtblId);
             vtableToCallSiteMap[vtblId] = it->first;
         }
