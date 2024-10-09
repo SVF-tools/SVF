@@ -40,7 +40,7 @@ using namespace SVFUtil;
 /*!
  * Create ICFG nodes and edges
  */
-void ICFGBuilder::build()
+ICFG* ICFGBuilder::build()
 {
     DBOUT(DGENERAL, outs() << pasMsg("\t Building ICFG ...\n"));
     // Add the unique global ICFGNode at the entry of a program (before the main method).
@@ -78,6 +78,7 @@ void ICFGBuilder::build()
 
     }
     connectGlobalToProgEntry();
+    return icfg;
 }
 
 void ICFGBuilder::checkICFGNodesVisited(const Function* fun)

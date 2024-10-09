@@ -167,9 +167,8 @@ void LLVMModuleSet::build()
 
     createSVFDataStructure();
     initSVFFunction();
-    icfg = new ICFG();
-    ICFGBuilder icfgbuilder(icfg);
-    icfgbuilder.build();
+    ICFGBuilder icfgbuilder;
+    icfg = icfgbuilder.build();
 }
 
 void LLVMModuleSet::createSVFDataStructure()
