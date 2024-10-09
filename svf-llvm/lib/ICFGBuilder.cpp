@@ -251,14 +251,14 @@ InterICFGNode* ICFGBuilder::addInterBlockICFGNode(const Instruction* inst)
     else
     {
         calledFunc = SVFUtil::dyn_cast<SVFFunction>(
-            llvmModuleSet()->getSVFValue(called_llvmval));
+                         llvmModuleSet()->getSVFValue(called_llvmval));
     }
 
     CallICFGNode* callICFGNode = icfg->addCallICFGNode(
-        svfInst->getParent(), llvmModuleSet()->getSVFType(inst->getType()),
-        calledFunc, cb->getFunctionType()->isVarArg(), isvcall,
-        isvcall ? cppUtil::getVCallIdx(cb) : 0,
-        isvcall ? cppUtil::getFunNameOfVCallSite(cb) : "");
+                                     svfInst->getParent(), llvmModuleSet()->getSVFType(inst->getType()),
+                                     calledFunc, cb->getFunctionType()->isVarArg(), isvcall,
+                                     isvcall ? cppUtil::getVCallIdx(cb) : 0,
+                                     isvcall ? cppUtil::getFunNameOfVCallSite(cb) : "");
     csToCallNodeMap()[inst] = callICFGNode;
     llvmModuleSet()->setValueAttr(inst, callICFGNode);
 
@@ -348,7 +348,7 @@ IntraICFGNode* ICFGBuilder::addIntraBlockICFGNode(const Instruction* inst)
     IntraICFGNode* node = llvmModuleSet()->getIntraBlock(inst);
     assert (node==nullptr && "no IntraICFGNode for this instruction?");
     IntraICFGNode* sNode = icfg->addIntraICFGNode(
-        svfInst->getParent(), SVFUtil::isa<ReturnInst>(inst));
+                               svfInst->getParent(), SVFUtil::isa<ReturnInst>(inst));
     instToBlockNodeMap()[inst] = sNode;
     llvmModuleSet()->setValueAttr(inst, sNode);
     return sNode;

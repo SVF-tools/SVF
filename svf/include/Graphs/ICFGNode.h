@@ -529,7 +529,8 @@ public:
         return isVirCallInst;
     }
 
-    inline void setVtablePtr(SVFVar* v) {
+    inline void setVtablePtr(SVFVar* v)
+    {
         vtabPtr = v;
     }
 
