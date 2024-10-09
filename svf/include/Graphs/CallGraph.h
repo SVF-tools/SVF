@@ -284,8 +284,6 @@ public:
 
     /// Copy constructor
     CallGraph(const CallGraph& other);
-    /// Add callgraph Node
-    void cloneCallGraphNode(const CallGraphNode* cgn);
 
     void addCallGraphNode(SVFFunction* fun);
 

@@ -151,13 +151,6 @@ void CallGraph::destroy()
 {
 }
 
-void CallGraph::cloneCallGraphNode(const CallGraphNode* cgn)
-{
-    CallGraphNode* callGraphNode = new CallGraphNode(cgn->getId(), cgn->getFunction());
-    addGNode(cgn->getId(),callGraphNode);
-    funToCallGraphNodeMap[cgn->getFunction()] = callGraphNode;
-}
-
 /*!
  * Add call graph node
  */
@@ -362,6 +355,7 @@ void CallGraph::view()
 {
     SVF::ViewGraph(this, "Call Graph");
 }
+
 
 namespace SVF
 {
