@@ -36,38 +36,6 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-CallGraph* CallGraphBuilder::buildCallGraph()
-{
-    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
-
-    /// clone nodes
-    for (const auto& item : *svfirCallGraph)
-    {
-        callgraph->cloneCallGraphNode(item.second);
-    }
-
-    /// create edges
-    for (const auto& item : *svfirCallGraph)
-    {
-        for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())
-        {
-            for (const ICFGNode* inst : svfbb->getICFGNodeList())
-            {
-                if (SVFUtil::isNonInstricCallSite(inst))
-                {
-                    const CallICFGNode* callBlockNode = cast<CallICFGNode>(inst);
-                    if(const SVFFunction* callee = callBlockNode->getCalledFunction())
-                    {
-                        callgraph->addDirectCallGraphEdge(callBlockNode,(item.second)->getFunction(),callee);
-                    }
-                }
-            }
-        }
-    }
-
-    return callgraph;
-}
-
 CallGraph* CallGraphBuilder::buildSVFIRCallGraph()
 {
     for (const auto& item : *callgraph)
@@ -92,9 +60,6 @@ CallGraph* CallGraphBuilder::buildSVFIRCallGraph()
 
 CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph()
 {
-
-    buildCallGraph();
-
     ThreadCallGraph* cg = dyn_cast<ThreadCallGraph>(callgraph);
     assert(cg && "not a thread callgraph?");
 

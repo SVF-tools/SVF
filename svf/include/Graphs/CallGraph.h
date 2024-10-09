@@ -259,8 +259,6 @@ public:
     };
 
 private:
-    CGEK kind;
-
     /// Indirect call map
     CallEdgeMap indirectCallMap;
 
@@ -275,6 +273,7 @@ protected:
 
     NodeID callGraphNodeNum;
     u32_t numOfResolvedIndCallEdge;
+    CGEK kind;
 
     /// Clean up memory
     void destroy();
@@ -283,6 +282,8 @@ public:
     /// Constructor
     CallGraph(CGEK k = NormCallGraph);
 
+    /// Copy constructor
+    CallGraph(const CallGraph& other);
     /// Add callgraph Node
     void cloneCallGraphNode(const CallGraphNode* cgn);
 

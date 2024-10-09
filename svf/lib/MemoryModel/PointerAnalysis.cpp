@@ -111,15 +111,16 @@ void PointerAnalysis::initialize()
     /// initialise pta call graph for every pointer analysis instance
     if(Options::EnableThreadCallGraph())
     {
-        ThreadCallGraph* cg = new ThreadCallGraph();
-        ThreadCallGraphBuilder bd(cg, pag->getICFG());
+        CallGraph* cg = pag->getCallGraph();
+        ThreadCallGraph* tcg = new ThreadCallGraph(*cg);
+        ThreadCallGraphBuilder bd(tcg, pag->getICFG());
         callgraph = bd.buildThreadCallGraph();
     }
     else
     {
-        CallGraph* cg = new CallGraph();
-        CallGraphBuilder bd(cg,pag->getICFG());
-        callgraph = bd.buildCallGraph();
+        CallGraph* cg = pag->getCallGraph();
+        CallGraph* ptaCG = new CallGraph(*cg);
+        callgraph = ptaCG;
     }
     callGraphSCCDetection();
 
