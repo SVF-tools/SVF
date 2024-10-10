@@ -250,16 +250,16 @@ InterICFGNode* ICFGBuilder::addInterBlockICFGNode(const Instruction* inst)
     else
     {
         calledFunc = SVFUtil::dyn_cast<SVFFunction>(
-            llvmModuleSet()->getSVFValue(called_llvmval));
+                         llvmModuleSet()->getSVFValue(called_llvmval));
     }
 
     SVFBasicBlock* bb = llvmModuleSet()->getSVFBasicBlock(inst->getParent());
 
     CallICFGNode* callICFGNode = icfg->addCallICFGNode(
-        bb, llvmModuleSet()->getSVFType(inst->getType()),
-        calledFunc, cb->getFunctionType()->isVarArg(), isvcall,
-        isvcall ? cppUtil::getVCallIdx(cb) : 0,
-        isvcall ? cppUtil::getFunNameOfVCallSite(cb) : "");
+                                     bb, llvmModuleSet()->getSVFType(inst->getType()),
+                                     calledFunc, cb->getFunctionType()->isVarArg(), isvcall,
+                                     isvcall ? cppUtil::getVCallIdx(cb) : 0,
+                                     isvcall ? cppUtil::getFunNameOfVCallSite(cb) : "");
     csToCallNodeMap()[inst] = callICFGNode;
     llvmModuleSet()->setValueAttr(inst, callICFGNode);
 
@@ -337,7 +337,7 @@ inline ICFGNode* ICFGBuilder::addBlockICFGNode(const Instruction* inst)
         node = addIntraBlockICFGNode(inst);
     const_cast<SVFBasicBlock*>(
         llvmModuleSet()->getSVFBasicBlock(inst->getParent()))
-        ->addICFGNode(node);
+    ->addICFGNode(node);
     return node;
 }
 
@@ -346,7 +346,7 @@ IntraICFGNode* ICFGBuilder::addIntraBlockICFGNode(const Instruction* inst)
     IntraICFGNode* node = llvmModuleSet()->getIntraBlock(inst);
     assert (node==nullptr && "no IntraICFGNode for this instruction?");
     IntraICFGNode* sNode = icfg->addIntraICFGNode(
-        llvmModuleSet()->getSVFBasicBlock(inst->getParent()), SVFUtil::isa<ReturnInst>(inst));
+                               llvmModuleSet()->getSVFBasicBlock(inst->getParent()), SVFUtil::isa<ReturnInst>(inst));
     instToBlockNodeMap()[inst] = sNode;
     llvmModuleSet()->setValueAttr(inst, sNode);
     return sNode;

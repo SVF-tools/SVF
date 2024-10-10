@@ -363,7 +363,8 @@ public:
 
     ObjTypeInference* getTypeInference();
 
-    inline ICFG* getICFG() {
+    inline ICFG* getICFG()
+    {
         return icfg;
     }
 
