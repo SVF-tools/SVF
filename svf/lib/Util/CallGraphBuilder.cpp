@@ -38,9 +38,9 @@ using namespace SVFUtil;
 
 CallGraph* CallGraphBuilder::buildSVFIRCallGraph()
 {
-//    for (const SVFFunction* svfFunc: *svfFunctionSet){
-//        callgraph->addCallGraphNode(svfFunc);
-//    }
+    for (const SVFFunction* svfFunc: *svfFunctionSet){
+        callgraph->addCallGraphNode(svfFunc);
+    }
 
     for (const auto& item : *callgraph)
     {

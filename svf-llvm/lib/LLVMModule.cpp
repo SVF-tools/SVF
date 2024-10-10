@@ -172,15 +172,8 @@ void LLVMModuleSet::build()
     ICFGBuilder icfgbuilder;
     icfg = icfgbuilder.build();
 
-    callgraph = new CallGraph();
-//
-    // create call graph node
-    for (const SVFFunction* svfFunc: svfModule->getFunctionSet()){
-        callgraph->addCallGraphNode(svfFunc);
-    }
-    CallGraphBuilder callGraphBuilder(callgraph, icfg);
-    // connect nodes
-    callGraphBuilder.buildSVFIRCallGraph();
+    CallGraphBuilder callGraphBuilder(&(svfModule->getFunctionSet()), icfg);
+    callgraph = callGraphBuilder.buildSVFIRCallGraph();
 
 }
 

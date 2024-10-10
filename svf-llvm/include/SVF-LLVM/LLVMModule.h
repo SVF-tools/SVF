@@ -53,7 +53,6 @@ public:
     typedef Map<const Function*, FunctionSetType> FunDefToDeclsMapTy;
     typedef Map<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
 
-    typedef Map<const Function*, CallGraphNode*> LLVMFun2CallGraphNodeMap;
     typedef Map<const Function*, SVFFunction*> LLVMFun2SVFFunMap;
     typedef Map<const BasicBlock*, SVFBasicBlock*> LLVMBB2SVFBBMap;
     typedef Map<const Instruction*, SVFInstruction*> LLVMInst2SVFInstMap;
@@ -89,7 +88,6 @@ private:
     /// Global definition to a rep definition map
     GlobalDefToRepMapTy GlobalDefToRepMap;
 
-    LLVMFun2CallGraphNodeMap LLVMFunc2CallGraphNode; ///< Map an LLVM Function to an CallGraphNode
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
     LLVMBB2SVFBBMap LLVMBB2SVFBB;
     LLVMInst2SVFInstMap LLVMInst2SVFInst;
