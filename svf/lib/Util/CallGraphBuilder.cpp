@@ -110,7 +110,8 @@ CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph()
 
     return cg;
 }
-
-
-
-
+ThreadCallGraphBuilder::ThreadCallGraphBuilder() {
+    icfg = PAG::getPAG()->getICFG();
+    callgraph = new ThreadCallGraph(*(PAG::getPAG()->getCallGraph()));
+    svfFunctionSet = nullptr;
+}
