@@ -60,10 +60,7 @@ SVFIR* SVFIRBuilder::build()
     pag->setModule(svfModule);
 
     // Build ICFG
-    ICFG* icfg = new ICFG();
-    ICFGBuilder icfgbuilder(icfg);
-    icfgbuilder.build();
-    pag->setICFG(icfg);
+    pag->setICFG(llvmModuleSet()->getICFG());
 
     // Set icfgnode in memobj
     for (auto& it : SymbolTableInfo::SymbolInfo()->idToObjMap())
