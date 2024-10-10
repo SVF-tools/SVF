@@ -786,7 +786,7 @@ const Option<std::string> Options::OutputName(
 const Option<bool> Options::BufferOverflowCheck(
     "overflow","Buffer Overflow Detection",false);
 const Option<bool> Options::NullPtrDereference(
-    "nullptr_dereference","Null Pointer Dereference Detection",false);
+    "nullptr","Null Pointer Dereference Detection",false);
 const Option<bool> Options::MemoryLeakCheck(
     "leak", "Memory Leak Detection",false);
 const Option<bool> Options::FileCheck(
