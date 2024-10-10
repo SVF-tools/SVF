@@ -38,34 +38,27 @@ namespace SVF
 {
 
 class ICFG;
+class SVFModule;
 
 class CallGraphBuilder
 {
-
 protected:
-    CallGraph* callgraph;
+    const SVFModule::FunctionSetType* svfFunctionSet;
     ICFG* icfg;
+//    CallGraph* callgraph;
+
 public:
-    CallGraphBuilder(CallGraph* cg, ICFG* i): callgraph(cg),icfg(i)
+    CallGraphBuilder(const SVFModule::FunctionSetType* fs, ICFG* i): svfFunctionSet(fs),icfg(i)
     {
     }
 
-    /// Build normal callgraph
-    CallGraph* buildCallGraph(SVFModule* svfModule);
+    CallGraphBuilder();
 
-};
-
-class ThreadCallGraphBuilder : public CallGraphBuilder
-{
-
-public:
-    ThreadCallGraphBuilder(ThreadCallGraph* cg, ICFG* i): CallGraphBuilder(cg,i)
-    {
-    }
+    /// Buidl SVFIR callgraoh
+    CallGraph* buildSVFIRCallGraph();
 
     /// Build thread-aware callgraph
-    CallGraph* buildThreadCallGraph(SVFModule* svfModule);
-
+    CallGraph* buildThreadCallGraph();
 };
 
 } // End namespace SVF
