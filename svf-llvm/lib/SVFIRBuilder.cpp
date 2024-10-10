@@ -63,6 +63,9 @@ SVFIR* SVFIRBuilder::build()
     // Build ICFG
     pag->setICFG(llvmModuleSet()->getICFG());
 
+    // Set callgraph
+    pag->setCallGraph(llvmModuleSet()->callgraph);
+
     // Set icfgnode in memobj
     for (auto& it : SymbolTableInfo::SymbolInfo()->idToObjMap())
     {
@@ -160,13 +163,6 @@ SVFIR* SVFIRBuilder::build()
     pag->initialiseCandidatePointers();
 
     pag->setNodeNumAfterPAGBuild(pag->getTotalNodeNum());
-
-    /// create callgraph edges
-    CallGraph* cg = llvmModuleSet()->callgraph;
-    CallGraphBuilder callgraphbuilder(cg, icfg);
-    callgraphbuilder.buildSVFIRCallGraph();
-    
-    pag->setCallGraph(cg);
 
     // dump SVFIR
     if (Options::PAGDotGraph())

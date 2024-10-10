@@ -285,7 +285,7 @@ public:
     /// Copy constructor
     CallGraph(const CallGraph& other);
 
-    void addCallGraphNode(SVFFunction* fun);
+    void addCallGraphNode(const SVFFunction* fun);
 
     /// Destructor
     virtual ~CallGraph()

@@ -38,20 +38,24 @@ namespace SVF
 {
 
 class ICFG;
+class SVFModule;
 
 class CallGraphBuilder
 {
 
 protected:
-    CallGraph* callgraph;
+    const SVFModule::FunctionSetType* svfFunctionSet;
     ICFG* icfg;
+    CallGraph* callgraph;
 public:
-    CallGraphBuilder(CallGraph* cg, ICFG* i): callgraph(cg),icfg(i)
+    CallGraphBuilder(const SVFModule::FunctionSetType* fs, ICFG* i): svfFunctionSet(fs),icfg(i)
     {
+        callgraph = new CallGraph();
     }
-
-    /// Build normal callgraph
-    CallGraph* buildCallGraph();
+    CallGraphBuilder(CallGraph* cg, ICFG* i): icfg(i),callgraph(cg)
+    {
+        svfFunctionSet = nullptr;
+    }
 
     /// Buidl SVFIR callgraoh
     CallGraph* buildSVFIRCallGraph();

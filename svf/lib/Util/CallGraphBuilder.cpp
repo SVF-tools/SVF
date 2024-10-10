@@ -38,6 +38,10 @@ using namespace SVFUtil;
 
 CallGraph* CallGraphBuilder::buildSVFIRCallGraph()
 {
+//    for (const SVFFunction* svfFunc: *svfFunctionSet){
+//        callgraph->addCallGraphNode(svfFunc);
+//    }
+
     for (const auto& item : *callgraph)
     {
         for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())

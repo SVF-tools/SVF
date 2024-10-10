@@ -154,7 +154,7 @@ void CallGraph::destroy()
 /*!
  * Add call graph node
  */
-void CallGraph::addCallGraphNode(SVFFunction* fun) {
+void CallGraph::addCallGraphNode(const SVFFunction* fun) {
     NodeID id  = callGraphNodeNum;
     CallGraphNode *callGraphNode = new CallGraphNode(id, fun);
     addGNode(id, callGraphNode);

@@ -42,6 +42,7 @@
 #include "llvm/Transforms/Utils/Cloning.h"
 #include "SVF-LLVM/ICFGBuilder.h"
 #include "Graphs/CallGraph.h"
+#include "Util/CallGraphBuilder.h"
 
 using namespace std;
 using namespace SVF;
@@ -170,6 +171,17 @@ void LLVMModuleSet::build()
     initSVFFunction();
     ICFGBuilder icfgbuilder;
     icfg = icfgbuilder.build();
+
+    callgraph = new CallGraph();
+//
+    // create call graph node
+    for (const SVFFunction* svfFunc: svfModule->getFunctionSet()){
+        callgraph->addCallGraphNode(svfFunc);
+    }
+    CallGraphBuilder callGraphBuilder(callgraph, icfg);
+    // connect nodes
+    callGraphBuilder.buildSVFIRCallGraph();
+
 }
 
 void LLVMModuleSet::createSVFDataStructure()
@@ -197,16 +209,14 @@ void LLVMModuleSet::createSVFDataStructure()
         }
     }
 
-    callgraph = new CallGraph();
-
 
     for (const Function* func: candidateDefs)
     {
-        createCallGraphNode(func);
+        createSVFFunction(func);
     }
     for (const Function* func: candidateDecls)
     {
-        createCallGraphNode(func);
+        createSVFFunction(func);
     }
 
     // Store annotations of functions in extapi.bc
@@ -248,7 +258,7 @@ void LLVMModuleSet::createSVFDataStructure()
     }
 }
 
-void LLVMModuleSet::createCallGraphNode(const Function* func)
+void LLVMModuleSet::createSVFFunction(const Function* func)
 {
     SVFFunction* svfFunc = new SVFFunction(
         getSVFType(func->getType()),
@@ -259,8 +269,6 @@ void LLVMModuleSet::createCallGraphNode(const Function* func)
     svfModule->addFunctionSet(svfFunc);
     addFunctionMap(func, svfFunc);
 
-    // create call graph node
-    callgraph->addCallGraphNode(svfFunc);
 
     for (const Argument& arg : func->args())
     {
