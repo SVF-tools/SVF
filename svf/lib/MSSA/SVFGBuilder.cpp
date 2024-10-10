@@ -101,7 +101,7 @@ std::unique_ptr<MemSSA> SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyM
 
     auto mssa = std::make_unique<MemSSA>(pta, ptrOnlyMSSA);
 
-    for(const auto& item: *PAG::getPAG()->getCallGraph())
+    for (const auto& item: *PAG::getPAG()->getCallGraph())
     {
 
         const SVFFunction *fun = item.second->getFunction();

@@ -216,7 +216,7 @@ void SVFStat::branchStat()
 {
     u32_t numOfBB_2Succ = 0;
     u32_t numOfBB_3Succ = 0;
-    for(const auto& item: *PAG::getPAG()->getCallGraph())
+    for (const auto& item: *PAG::getPAG()->getCallGraph())
     {
         const SVFFunction* func = item.second->getFunction();
         for (SVFFunction::const_iterator bbIt = func->begin(), bbEit = func->end();

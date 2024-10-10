@@ -356,7 +356,6 @@ void CallGraph::view()
     SVF::ViewGraph(this, "Call Graph");
 }
 
-
 namespace SVF
 {
 

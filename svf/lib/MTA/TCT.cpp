@@ -185,7 +185,7 @@ void TCT::markRelProcs(const SVFFunction* svffun)
  */
 void TCT::collectEntryFunInCallGraph()
 {
-    for(const auto& item: *PAG::getPAG()->getCallGraph())
+    for (const auto& item: *PAG::getPAG()->getCallGraph())
     {
         const SVFFunction* fun = item.second->getFunction();
         if (SVFUtil::isExtCall(fun))

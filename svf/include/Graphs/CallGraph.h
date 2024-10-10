@@ -465,7 +465,6 @@ public:
 
     /// View the graph from the debugger
     void view();
-
 };
 
 } // End namespace SVF

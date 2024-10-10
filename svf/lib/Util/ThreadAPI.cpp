@@ -270,7 +270,7 @@ void ThreadAPI::performAPIStat(SVFModule* module)
 
     statInit(tdAPIStatMap);
 
-    for(const auto& item: *PAG::getPAG()->getCallGraph())
+    for (const auto& item: *PAG::getPAG()->getCallGraph())
     {
         for (SVFFunction::const_iterator bit = (item.second)->getFunction()->begin(), ebit = (item.second)->getFunction()->end(); bit != ebit; ++bit)
         {
