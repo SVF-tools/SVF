@@ -38,6 +38,7 @@ using namespace SVFUtil;
 
 CallGraph* CallGraphBuilder::buildSVFIRCallGraph()
 {
+    CallGraph* callgraph = new CallGraph();
     for (const SVFFunction* svfFunc: *svfFunctionSet){
         callgraph->addCallGraphNode(svfFunc);
     }
@@ -62,8 +63,9 @@ CallGraph* CallGraphBuilder::buildSVFIRCallGraph()
     return callgraph;
 }
 
-CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph()
+CallGraph* CallGraphBuilder::buildThreadCallGraph()
 {
+    CallGraph* callgraph = new ThreadCallGraph(*(PAG::getPAG()->getCallGraph()));
     ThreadCallGraph* cg = dyn_cast<ThreadCallGraph>(callgraph);
     assert(cg && "not a thread callgraph?");
 
@@ -110,8 +112,7 @@ CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph()
 
     return cg;
 }
-ThreadCallGraphBuilder::ThreadCallGraphBuilder() {
+CallGraphBuilder::CallGraphBuilder() {
     icfg = PAG::getPAG()->getICFG();
-    callgraph = new ThreadCallGraph(*(PAG::getPAG()->getCallGraph()));
     svfFunctionSet = nullptr;
 }

@@ -111,7 +111,7 @@ void PointerAnalysis::initialize()
     /// initialise pta call graph for every pointer analysis instance
     if(Options::EnableThreadCallGraph())
     {
-        ThreadCallGraphBuilder bd;
+        CallGraphBuilder bd;
         callgraph = bd.buildThreadCallGraph();
     }
     else
