@@ -63,6 +63,9 @@ SVFIR* SVFIRBuilder::build()
     // Build ICFG
     pag->setICFG(llvmModuleSet()->getICFG());
 
+    // Set callgraph
+    pag->setCallGraph(llvmModuleSet()->callgraph);
+
     CHGraph* chg = new CHGraph(pag->getModule());
     CHGBuilder chgbuilder(chg);
     chgbuilder.buildCHG();
