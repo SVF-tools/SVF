@@ -38,8 +38,8 @@ using namespace SVFUtil;
 /*!
  * SVFVar constructor
  */
-SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
-    GenericPAGNodeTy(i,k), value(val)
+SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k, const SVFBaseNode* bNode) :
+    GenericPAGNodeTy(i,k), value(val), baseNode(bNode)
 {
     assert( ValNode <= k && k <= DummyObjNode && "new SVFIR node kind?");
     switch (k)
@@ -77,6 +77,14 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
         assert(false && "var not handled");
         break;
     }
+}
+
+const ICFGNode* SVFVar::getICFGNode() const
+{
+    if(!baseNode)
+        return nullptr;
+    else
+        return SVFUtil::dyn_cast<ICFGNode>(baseNode);
 }
 
 bool SVFVar::isIsolatedNode() const

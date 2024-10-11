@@ -1362,6 +1362,19 @@ SVFValue* LLVMModuleSet::getSVFValue(const Value* value)
         return getSVFOtherValue(value);
 }
 
+SVFBaseNode* LLVMModuleSet::getSVFBaseNode(const Value* value)
+{
+    if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
+    {
+        if(!LLVMUtil::isIntrinsicInst(inst))
+            return getICFGNode(inst);
+    } else {
+        // TODO: add more llvm value to svfbase node map
+    }
+
+    return nullptr;
+}
+
 const Type* LLVMModuleSet::getLLVMType(const SVFType* T) const
 {
     for(LLVMType2SVFTypeMap::const_iterator it = LLVMType2SVFType.begin(), eit = LLVMType2SVFType.end(); it!=eit; ++it)

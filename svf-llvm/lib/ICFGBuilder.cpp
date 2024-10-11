@@ -42,6 +42,7 @@ using namespace SVFUtil;
  */
 ICFG* ICFGBuilder::build()
 {
+    icfg = new ICFG();
     DBOUT(DGENERAL, outs() << pasMsg("\t Building ICFG ...\n"));
     // Add the unique global ICFGNode at the entry of a program (before the main method).
     addGlobalICFGNode();

@@ -187,7 +187,7 @@ SaberCondAllocator::evaluateTestNullLikeExpr(const BranchStmt *branchStmt, const
     const SVFBasicBlock* succ1 = branchStmt->getSuccessor(0)->getBB();
 
     const ValVar* condVar = SVFUtil::cast<ValVar>(branchStmt->getCondition());
-    if (isTestNullExpr(SVFUtil::cast<ICFGNode>(condVar->getGNode())))
+    if (isTestNullExpr(condVar->getICFGNode()))
     {
         // succ is then branch
         if (succ1 == succ)
@@ -196,7 +196,7 @@ SaberCondAllocator::evaluateTestNullLikeExpr(const BranchStmt *branchStmt, const
         else
             return getTrueCond();
     }
-    if (isTestNotNullExpr(SVFUtil::cast<ICFGNode>(condVar->getGNode())))
+    if (isTestNotNullExpr(condVar->getICFGNode()))
     {
         // succ is then branch
         if (succ1 == succ)

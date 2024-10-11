@@ -42,6 +42,14 @@ using namespace SVFUtil;
 SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
 
 
+const ICFGNode* MemObj::getICFGNode() const
+{
+    if(!baseNode)
+        return nullptr;
+    else
+        return SVFUtil::dyn_cast<ICFGNode>(baseNode);
+}
+
 ObjTypeInfo::ObjTypeInfo(const SVFType* t, u32_t max) : type(t), flags(0), maxOffsetLimit(max), elemNum(max)
 {
     assert(t && "no type information for this object?");
@@ -375,7 +383,7 @@ void MemObj::setFieldSensitive()
  * Constructor of a memory object
  */
 MemObj::MemObj(SymID id, ObjTypeInfo* ti, const SVFValue* val, const SVFBaseNode* node) :
-    typeInfo(ti), refVal(val), symId(id), gNode(node)
+    typeInfo(ti), refVal(val), symId(id), baseNode(node)
 {
 }
 

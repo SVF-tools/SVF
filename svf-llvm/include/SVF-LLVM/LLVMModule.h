@@ -212,6 +212,8 @@ public:
 
     SVFValue* getSVFValue(const Value* value);
 
+    SVFBaseNode* getSVFBaseNode(const Value* value);
+
     const Value* getLLVMValue(const SVFValue* value) const
     {
         SVFValue2LLVMValueMap::const_iterator it = SVFValue2LLVMValue.find(value);

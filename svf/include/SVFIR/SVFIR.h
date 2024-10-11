@@ -537,11 +537,11 @@ private:
         return addValNode(val, node, i);
     }
     /// Add a memory obj node
-    inline NodeID addObjNode(const SVFValue* val, NodeID i)
+    inline NodeID addObjNode(const SVFValue* val, NodeID i, const SVFBaseNode* gNode)
     {
         const MemObj* mem = getMemObj(val);
         assert(mem->getId() == i && "not same object id?");
-        return addFIObjNode(mem);
+        return addFIObjNode(mem, gNode);
     }
     /// Add a unique return node for a procedure
     inline NodeID addRetNode(const SVFFunction* val, NodeID i)
@@ -561,7 +561,7 @@ private:
     /// Add a field obj node, this method can only invoked by getGepObjVar
     NodeID addGepObjNode(const MemObj* obj, const APOffset& apOffset, const NodeID gepId);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
-    NodeID addFIObjNode(const MemObj* obj);
+    NodeID addFIObjNode(const MemObj* obj, const SVFBaseNode* gNode);
     //@}
 
     ///  Add a dummy value/object node according to node ID (llvm value is null)

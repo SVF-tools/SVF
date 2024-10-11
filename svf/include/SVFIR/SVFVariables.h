@@ -69,12 +69,14 @@ protected:
     SVFStmt::KindToSVFStmtMapTy OutEdgeKindToSetMap;
     bool isPtr;	/// whether it is a pointer (top-level or address-taken)
 
+    const SVFBaseNode* baseNode;
+
     /// Constructor to create an empty object (for deserialization)
     SVFVar(NodeID i, PNODEK k) : GenericPAGNodeTy(i, k), value{} {}
 
 public:
     /// Constructor
-    SVFVar(const SVFValue* val, NodeID i, PNODEK k);
+    SVFVar(const SVFValue* val, NodeID i, PNODEK k, const SVFBaseNode* bNode = nullptr);
     /// Destructor
     virtual ~SVFVar() {}
 
@@ -107,6 +109,10 @@ public:
     {
         return isPtr;
     }
+
+    /// Return the ICFGNode that defines the svfvar
+    const ICFGNode* getICFGNode() const;
+
     /// Whether it is constant data, i.e., "0", "1.001", "str"
     /// or llvm's metadata, i.e., metadata !4087
     bool isConstDataOrAggDataButNotNullPtr() const;
@@ -268,11 +274,9 @@ class ValVar: public SVFVar
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
-private:
-    const SVFBaseNode* gNode; // constant, gepValvar, retPN, dummy could be null
 protected:
     /// Constructor to create an empty ValVar (for SVFIRReader/deserialization)
-    ValVar(NodeID i, PNODEK ty = ValNode) : SVFVar(i, ty), gNode(nullptr) {}
+    ValVar(NodeID i, PNODEK ty = ValNode) : SVFVar(i, ty) {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -297,7 +301,7 @@ public:
 
     /// Constructor
     ValVar(const SVFValue* val, NodeID i, PNODEK ty = ValNode, const SVFBaseNode* node = nullptr)
-        : SVFVar(val, i, ty), gNode(node)
+        : SVFVar(val, i, ty, node)
     {
     }
     /// Return name of a LLVM value
@@ -306,11 +310,6 @@ public:
         if (value)
             return value->getName();
         return "";
-    }
-
-    const SVFBaseNode* getGNode() const
-    {
-        return gNode;
     }
 
     virtual const std::string toString() const;
@@ -329,8 +328,8 @@ protected:
     /// Constructor to create an empty ObjVar (for SVFIRReader/deserialization)
     ObjVar(NodeID i, PNODEK ty = ObjNode) : SVFVar(i, ty), mem{} {}
     /// Constructor
-    ObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode) :
-        SVFVar(val, i, ty), mem(m)
+    ObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode, const SVFBaseNode* bNode = nullptr) :
+        SVFVar(val, i, ty, bNode), mem(m)
     {
     }
 public:
@@ -571,8 +570,8 @@ public:
 
     /// Constructor
     FIObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
-             PNODEK ty = FIObjNode)
-        : ObjVar(val, i, mem, ty)
+             PNODEK ty = FIObjNode, const SVFBaseNode* bNode = nullptr)
+        : ObjVar(val, i, mem, ty, bNode)
     {
     }
 

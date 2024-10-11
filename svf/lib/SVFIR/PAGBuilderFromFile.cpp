@@ -94,7 +94,7 @@ SVFIR* PAGBuilderFromFile::build()
                 else if (nodetype == "o")
                 {
                     const MemObj* mem = pag->addDummyMemObj(nodeId, nullptr);
-                    pag->addFIObjNode(mem);
+                    pag->addFIObjNode(mem, nullptr);
                 }
                 else
                     assert(false && "format not support, pls specify node type");

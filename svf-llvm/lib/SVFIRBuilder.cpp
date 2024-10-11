@@ -62,20 +62,6 @@ SVFIR* SVFIRBuilder::build()
     // Build ICFG
     pag->setICFG(llvmModuleSet()->getICFG());
 
-    // Set icfgnode in memobj
-    for (auto& it : SymbolTableInfo::SymbolInfo()->idToObjMap())
-    {
-        if(!it.second->getValue())
-            continue;
-        if (const Instruction* inst =
-                    SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(
-                                it.second->getValue())))
-        {
-            if(llvmModuleSet()->hasICFGNode(inst))
-                it.second->gNode = llvmModuleSet()->getICFGNode(inst);
-        }
-    }
-
     CHGraph* chg = new CHGraph(pag->getModule());
     CHGBuilder chgbuilder(chg);
     chgbuilder.buildCHG();
@@ -99,6 +85,10 @@ SVFIR* SVFIRBuilder::build()
     ///// handle globals
     visitGlobal(svfModule);
     ///// collect exception vals in the program
+
+
+    /// set memobj value attributes
+    setMemObjValueAttr();
 
     /// handle functions
     for (Module& M : llvmModuleSet()->getLLVMModules())
@@ -190,6 +180,18 @@ SVFIR* SVFIRBuilder::build()
     return pag;
 }
 
+void SVFIRBuilder::setMemObjValueAttr()
+{
+    // Set icfgnode in memobj
+    for (auto& it : SymbolTableInfo::SymbolInfo()->idToObjMap())
+    {
+        if(!it.second->getValue())
+            continue;
+        it.second->baseNode = llvmModuleSet()->getSVFBaseNode(
+            llvmModuleSet()->getLLVMValue(it.second->getValue()));
+    }
+}
+
 /*
  * Initial all the nodes from symbol table
  */
@@ -212,15 +214,8 @@ void SVFIRBuilder::initialiseNodes()
         if(iter->second == symTable->blkPtrSymID() || iter->second == symTable->nullPtrSymID())
             continue;
 
-        const SVFBaseNode* gNode = nullptr;
-        if (const Instruction* inst =
-                    SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(iter->first)))
-        {
-            if (llvmModuleSet()->hasICFGNode(inst))
-            {
-                gNode = llvmModuleSet()->getICFGNode(inst);
-            }
-        }
+        const SVFBaseNode* gNode = llvmModuleSet()->getSVFBaseNode(
+            llvmModuleSet()->getLLVMValue(iter->first));
         pag->addValNode(iter->first, iter->second, gNode);
     }
 
@@ -231,7 +226,9 @@ void SVFIRBuilder::initialiseNodes()
         DBOUT(DPAGBuild, outs() << "add obj node " << iter->second << "\n");
         if(iter->second == symTable->blackholeSymID() || iter->second == symTable->constantSymID())
             continue;
-        pag->addObjNode(iter->first, iter->second);
+        const SVFBaseNode* gNode = llvmModuleSet()->getSVFBaseNode(
+            llvmModuleSet()->getLLVMValue(iter->first));
+        pag->addObjNode(iter->first, iter->second, gNode);
     }
 
     for (SymbolTableInfo::FunToIDMapTy::iterator iter =

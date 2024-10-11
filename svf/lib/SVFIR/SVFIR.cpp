@@ -462,12 +462,13 @@ NodeID SVFIR::addGepObjNode(const MemObj* obj, const APOffset& apOffset, const N
 /*!
  * Add a field-insensitive node, this method can only invoked by getFIGepObjNode
  */
-NodeID SVFIR::addFIObjNode(const MemObj* obj)
+NodeID SVFIR::addFIObjNode(const MemObj* obj, const SVFBaseNode* gNode)
 {
     //assert(findPAGNode(i) == false && "this node should not be created before");
     NodeID base = obj->getId();
     memToFieldsMap[base].set(obj->getId());
-    FIObjVar *node = new FIObjVar(obj->getValue(), obj->getId(), obj);
+    FIObjVar* node = new FIObjVar(obj->getValue(), obj->getId(), obj,
+                                  SVFBaseNode::FIObjNode, gNode);
     return addObjNode(obj->getValue(), node, obj->getId());
 }
 
