@@ -39,7 +39,7 @@ using namespace SVFUtil;
 /*!
  * Constructor
  */
-ThreadCallGraph::ThreadCallGraph(CallGraph& cg) :
+ThreadCallGraph::ThreadCallGraph(const CallGraph& cg) :
     CallGraph(cg), tdAPI(ThreadAPI::getThreadAPI())
 {
     kind = ThdCallGraph;

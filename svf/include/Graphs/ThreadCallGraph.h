@@ -172,11 +172,13 @@ public:
     typedef Map<const CallICFGNode*, ParForEdgeSet> CallInstToParForEdgesMap;
 
     /// Constructor
-    ThreadCallGraph(CallGraph& cg);
+    ThreadCallGraph(const CallGraph& cg);
     /// Destructor
     virtual ~ThreadCallGraph()
     {
     }
+
+    ThreadCallGraph(ThreadCallGraph& cg) = delete;
 
     /// ClassOf
     //@{
