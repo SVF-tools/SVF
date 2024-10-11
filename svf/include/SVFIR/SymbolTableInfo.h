@@ -392,7 +392,7 @@ private:
     /// The unique id to represent this symbol
     SymID symId;
 
-    const SVFBaseNode* gNode;
+    const SVFBaseNode* baseNode;
 
 public:
     /// Constructor
@@ -413,10 +413,7 @@ public:
     }
 
     /// Get the reference value to this object
-    inline const SVFBaseNode* getGNode() const
-    {
-        return gNode;
-    }
+    const ICFGNode* getICFGNode() const;
 
     /// Get the memory object id
     inline SymID getId() const
