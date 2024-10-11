@@ -362,6 +362,12 @@ public:
     void detect(AbstractState& as, const ICFGNode* node);
 
     /**
+     * @brief Handles external API calls related to null pointer dereference detection.
+     * @param call Pointer to the call ICFG node.
+     */
+    void handleStubFunctions(const CallICFGNode*);
+
+    /**
      * @brief Check if an Abstract Value is NULL (or uninitialized).
      *
      * @param v An Abstract Value of loaded from an address in an Abstract State.
