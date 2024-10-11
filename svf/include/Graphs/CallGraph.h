@@ -189,6 +189,11 @@ public:
 
     }
 
+    inline const std::string &getName() const
+    {
+        return fun->getName();
+    }
+
     /// Get function of this call node
     inline const SVFFunction* getFunction() const
     {
@@ -254,8 +259,6 @@ public:
     };
 
 private:
-    CGEK kind;
-
     /// Indirect call map
     CallEdgeMap indirectCallMap;
 
@@ -270,6 +273,7 @@ protected:
 
     NodeID callGraphNodeNum;
     u32_t numOfResolvedIndCallEdge;
+    CGEK kind;
 
     /// Clean up memory
     void destroy();
@@ -278,7 +282,9 @@ public:
     /// Constructor
     CallGraph(CGEK k = NormCallGraph);
 
-    /// Add callgraph Node
+    /// Copy constructor
+    CallGraph(const CallGraph& other);
+
     void addCallGraphNode(const SVFFunction* fun);
 
     /// Destructor

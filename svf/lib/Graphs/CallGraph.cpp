@@ -112,6 +112,38 @@ CallGraph::CallGraph(CGEK k): kind(k)
     numOfResolvedIndCallEdge = 0;
 }
 
+/// Copy constructor
+CallGraph::CallGraph(const CallGraph& other) {
+    callGraphNodeNum = other.callGraphNodeNum;
+    numOfResolvedIndCallEdge = 0;
+    kind = other.kind;
+
+    /// copy call graph nodes
+    for (const auto& item : other)
+    {
+        const CallGraphNode* cgn = item.second;
+        CallGraphNode* callGraphNode = new CallGraphNode(cgn->getId(), cgn->getFunction());
+        addGNode(cgn->getId(),callGraphNode);
+        funToCallGraphNodeMap[cgn->getFunction()] = callGraphNode;
+    }
+
+    /// copy edges
+    for (const auto& item : other.callinstToCallGraphEdgesMap)
+    {
+        const CallICFGNode* cs = item.first;
+        for (const CallGraphEdge* edge : item.second)
+        {
+            CallGraphNode* src = getCallGraphNode(edge->getSrcID());
+            CallGraphNode* dst = getCallGraphNode(edge->getDstID());
+            CallGraphEdge* newEdge = new CallGraphEdge(src,dst,CallGraphEdge::CallRetEdge,edge->getCallSiteID());
+            newEdge->addDirectCallSite(cs);
+            addEdge(newEdge);
+            callinstToCallGraphEdgesMap[cs].insert(newEdge);
+        }
+    }
+
+}
+
 /*!
  *  Memory has been cleaned up at GenericGraph
  */
@@ -122,12 +154,11 @@ void CallGraph::destroy()
 /*!
  * Add call graph node
  */
-void CallGraph::addCallGraphNode(const SVFFunction* fun)
-{
-    NodeID id = callGraphNodeNum;
-    CallGraphNode* callGraphNode = new CallGraphNode(id, fun);
-    addGNode(id,callGraphNode);
-    funToCallGraphNodeMap[fun] = callGraphNode;
+void CallGraph::addCallGraphNode(const SVFFunction* fun) {
+    NodeID id  = callGraphNodeNum;
+    CallGraphNode *callGraphNode = new CallGraphNode(id, fun);
+    addGNode(id, callGraphNode);
+    funToCallGraphNodeMap[callGraphNode->getFunction()] = callGraphNode;
     callGraphNodeNum++;
 }
 

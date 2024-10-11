@@ -130,23 +130,6 @@ public:
 
     /// Iterators
     ///@{
-    iterator begin()
-    {
-        return FunctionSet.begin();
-    }
-    const_iterator begin() const
-    {
-        return FunctionSet.begin();
-    }
-    iterator end()
-    {
-        return FunctionSet.end();
-    }
-    const_iterator end() const
-    {
-        return FunctionSet.end();
-    }
-
     global_iterator global_begin()
     {
         return GlobalSet.begin();

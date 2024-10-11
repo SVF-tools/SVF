@@ -397,3 +397,29 @@ bool SVFUtil::isProgExitCall(const CallICFGNode* cs)
 {
     return isProgExitFunction(cs->getCalledFunction());
 }
+
+/// Get program entry function from module.
+const SVFFunction* SVFUtil::getProgFunction(const std::string& funName)
+{
+    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    for (const auto& item: *svfirCallGraph)
+    {
+        const CallGraphNode*fun = item.second;
+        if (fun->getName()==funName)
+            return fun->getFunction();
+    }
+    return nullptr;
+}
+
+/// Get program entry function from module.
+const SVFFunction* SVFUtil::getProgEntryFunction()
+{
+    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    for (const auto& item: *svfirCallGraph)
+    {
+        const CallGraphNode*fun = item.second;
+        if (isProgEntryFunction(fun->getFunction()))
+            return (fun->getFunction());
+    }
+    return nullptr;
+}

@@ -41,6 +41,8 @@
 #include "SVF-LLVM/ObjTypeInference.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 #include "SVF-LLVM/ICFGBuilder.h"
+#include "Graphs/CallGraph.h"
+#include "Util/CallGraphBuilder.h"
 
 using namespace std;
 using namespace SVF;
@@ -169,6 +171,9 @@ void LLVMModuleSet::build()
     initSVFFunction();
     ICFGBuilder icfgbuilder;
     icfg = icfgbuilder.build();
+
+    CallGraphBuilder callGraphBuilder;
+    callgraph = callGraphBuilder.buildSVFIRCallGraph(svfModule);
 }
 
 void LLVMModuleSet::createSVFDataStructure()
