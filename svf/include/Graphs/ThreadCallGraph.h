@@ -173,12 +173,13 @@ public:
 
     /// Constructor
     ThreadCallGraph(const CallGraph& cg);
+
+    ThreadCallGraph(ThreadCallGraph& cg) = delete;
+
     /// Destructor
     virtual ~ThreadCallGraph()
     {
     }
-
-    ThreadCallGraph(ThreadCallGraph& cg) = delete;
 
     /// ClassOf
     //@{
