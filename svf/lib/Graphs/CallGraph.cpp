@@ -113,7 +113,8 @@ CallGraph::CallGraph(CGEK k): kind(k)
 }
 
 /// Copy constructor
-CallGraph::CallGraph(const CallGraph& other) {
+CallGraph::CallGraph(const CallGraph& other)
+{
     callGraphNodeNum = other.callGraphNodeNum;
     numOfResolvedIndCallEdge = 0;
     kind = other.kind;
@@ -154,7 +155,8 @@ void CallGraph::destroy()
 /*!
  * Add call graph node
  */
-void CallGraph::addCallGraphNode(const SVFFunction* fun) {
+void CallGraph::addCallGraphNode(const SVFFunction* fun)
+{
     NodeID id  = callGraphNodeNum;
     CallGraphNode *callGraphNode = new CallGraphNode(id, fun);
     addGNode(id, callGraphNode);
