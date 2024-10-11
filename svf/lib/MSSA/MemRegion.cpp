@@ -173,7 +173,8 @@ SVFIR::SVFStmtList& MRGenerator::getPAGEdgesFromInst(const ICFGNode* node)
 void MRGenerator::collectModRefForLoadStore()
 {
 
-    for (const auto& item: *PAG::getPAG()->getCallGraph())
+    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    for (const auto& item: *svfirCallGraph)
     {
         const SVFFunction& fun = *item.second->getFunction();
 

@@ -63,14 +63,14 @@ CallGraph* CallGraphBuilder::buildSVFIRCallGraph()
     return callgraph;
 }
 
-CallGraph* CallGraphBuilder::buildThreadCallGraph()
+ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
 {
-    CallGraph* callgraph = new ThreadCallGraph(*(PAG::getPAG()->getCallGraph()));
-    ThreadCallGraph* cg = dyn_cast<ThreadCallGraph>(callgraph);
+    ThreadCallGraph* cg = new ThreadCallGraph(*(PAG::getPAG()->getCallGraph()));
     assert(cg && "not a thread callgraph?");
 
     ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();
-    for (const auto& item: *PAG::getPAG()->getCallGraph())
+    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    for (const auto& item: *svfirCallGraph)
     {
         for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())
         {
@@ -95,7 +95,7 @@ CallGraph* CallGraphBuilder::buildThreadCallGraph()
         }
     }
     // record join sites
-    for (const auto& item: *PAG::getPAG()->getCallGraph())
+    for (const auto& item: *svfirCallGraph)
     {
         for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())
         {
