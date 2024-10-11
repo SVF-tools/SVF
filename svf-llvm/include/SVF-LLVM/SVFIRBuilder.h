@@ -90,14 +90,14 @@ public:
         processCE(V);
 
         // strip off the constant cast and return the value node
-        SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(V);
+        SVFValue* svfVal = llvmModuleSet()->getSVFValue(V);
         return pag->getValueNode(svfVal);
     }
 
     /// GetObject - Return the object node (stack/global/heap/function) according to a LLVM Value
     inline NodeID getObjectNode(const Value* V)
     {
-        SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(V);
+        SVFValue* svfVal = llvmModuleSet()->getSVFValue(V);
         return pag->getObjectNode(svfVal);
     }
 
@@ -240,8 +240,8 @@ protected:
     /// Set current basic block in order to keep track of control flow information
     inline void setCurrentLocation(const Value* val, const BasicBlock* bb)
     {
-        curBB = (bb == nullptr? nullptr : LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(bb));
-        curVal = (val == nullptr ? nullptr: LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
+        curBB = (bb == nullptr? nullptr : llvmModuleSet()->getSVFBasicBlock(bb));
+        curVal = (val == nullptr ? nullptr: llvmModuleSet()->getSVFValue(val));
     }
     inline void setCurrentLocation(const SVFValue* val, const SVFBasicBlock* bb)
     {
@@ -270,9 +270,9 @@ protected:
     /// Add NullPtr PAGNode
     inline NodeID addNullPtrNode()
     {
-        LLVMContext& cxt = LLVMModuleSet::getLLVMModuleSet()->getContext();
+        LLVMContext& cxt = llvmModuleSet()->getContext();
         ConstantPointerNull* constNull = ConstantPointerNull::get(PointerType::getUnqual(cxt));
-        NodeID nullPtr = pag->addValNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(constNull),pag->getNullPtr());
+        NodeID nullPtr = pag->addValNode(llvmModuleSet()->getSVFValue(constNull),pag->getNullPtr(), nullptr);
         setCurrentLocation(constNull, nullptr);
         addBlackHoleAddrEdge(pag->getBlkPtr());
         return nullPtr;
@@ -305,7 +305,7 @@ protected:
         AddrStmt* edge = addAddrEdge(src, dst);
         if (inst.getArraySize())
         {
-            SVFValue* arrSz = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(inst.getArraySize());
+            SVFValue* arrSz = llvmModuleSet()->getSVFValue(inst.getArraySize());
             edge->addArrSize(arrSz);
         }
         return edge;
@@ -332,7 +332,7 @@ protected:
             if (cs->arg_size() > 0)
             {
                 const llvm::Value* val = cs->getArgOperand(0);
-                SVFValue* svfval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
+                SVFValue* svfval = llvmModuleSet()->getSVFValue(val);
                 edge->addArrSize(svfval);
             }
         }
@@ -342,8 +342,8 @@ protected:
         {
             if (cs->arg_size() > 1)
             {
-                edge->addArrSize(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cs->getArgOperand(0)));
-                edge->addArrSize(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cs->getArgOperand(1)));
+                edge->addArrSize(llvmModuleSet()->getSVFValue(cs->getArgOperand(0)));
+                edge->addArrSize(llvmModuleSet()->getSVFValue(cs->getArgOperand(1)));
             }
         }
         else
@@ -351,7 +351,7 @@ protected:
             if (cs->arg_size() > 0)
             {
                 const llvm::Value* val = cs->getArgOperand(0);
-                SVFValue* svfval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
+                SVFValue* svfval = llvmModuleSet()->getSVFValue(val);
                 edge->addArrSize(svfval);
             }
         }
@@ -452,7 +452,8 @@ protected:
     {
         ICFGNode* node;
         if (const SVFInstruction* inst = SVFUtil::dyn_cast<SVFInstruction>(curVal))
-            node = pag->getICFG()->getICFGNode(inst);
+            node = llvmModuleSet()->getICFGNode(
+                       SVFUtil::cast<Instruction>(llvmModuleSet()->getLLVMValue(inst)));
         else
             node = nullptr;
         if (StoreStmt* edge = pag->addStoreStmt(src, dst, node))
@@ -503,6 +504,12 @@ protected:
     //@}
 
     AccessPath getAccessPathFromBaseNode(NodeID nodeId);
+
+private:
+    LLVMModuleSet* llvmModuleSet()
+    {
+        return LLVMModuleSet::getLLVMModuleSet();
+    }
 };
 
 } // End namespace SVF

@@ -497,13 +497,50 @@ void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites,
 
         if (cs->isVirtualCall())
         {
-            const SVFValue* vtbl = cs->getVtablePtr();
-            assert(pag->hasValueNode(vtbl));
-            NodeID vtblId = pag->getValueNode(vtbl);
+            const SVFVar* vtbl = cs->getVtablePtr();
+            assert(vtbl != nullptr);
+            NodeID vtblId = vtbl->getId();
             resolveCPPIndCalls(cs, getPts(vtblId), newEdges);
         }
         else
             resolveIndCalls(iter->first,getPts(iter->second),newEdges);
+    }
+}
+
+/*!
+ * On the fly call graph construction respecting forksite
+ * callsites is candidate indirect callsites need to be analyzed based on points-to results
+ * newEdges is the new indirect call edges discovered
+ */
+void BVDataPTAImpl::onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& callsites,
+        CallEdgeMap& newForkEdges)
+{
+    // add indirect fork edges
+    if(ThreadCallGraph *tdCallGraph = SVFUtil::dyn_cast<ThreadCallGraph>(callgraph))
+    {
+        for(CallSiteSet::const_iterator it = tdCallGraph->forksitesBegin(),
+                eit = tdCallGraph->forksitesEnd(); it != eit; ++it)
+        {
+            const SVFValue* forkedVal =tdCallGraph->getThreadAPI()->getForkedFun(*it)->getValue();
+            if(SVFUtil::dyn_cast<SVFFunction>(forkedVal) == nullptr)
+            {
+                SVFIR *pag = this->getPAG();
+                const NodeBS targets = this->getPts(pag->getValueNode(forkedVal)).toNodeBS();
+                for(NodeBS::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ++ii)
+                {
+                    if(ObjVar *objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
+                    {
+                        const MemObj *obj = pag->getObject(objPN);
+                        if(obj->isFunction())
+                        {
+                            const SVFFunction *svfForkedFun = SVFUtil::cast<SVFFunction>(obj->getValue());
+                            if(tdCallGraph->addIndirectForkEdge(*it, svfForkedFun))
+                                newForkEdges[*it].insert(svfForkedFun);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

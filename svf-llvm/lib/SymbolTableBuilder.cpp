@@ -205,7 +205,7 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
                 {
                     collectSym(sw->getCondition());
                 }
-                else if (isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&inst)))
+                else if (isNonInstricCallSite(&inst))
                 {
 
                     const CallBase* cs = LLVMUtil::getLLVMCallSite(&inst);
@@ -318,11 +318,11 @@ void SymbolTableBuilder::collectVal(const Value* val)
 void SymbolTableBuilder::collectObj(const Value* val)
 {
     val = LLVMUtil::getGlobalRep(val);
-    SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->objSymMap.find(
-                LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
+    LLVMModuleSet* llvmModuleSet = LLVMModuleSet::getLLVMModuleSet();
+    SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->objSymMap.find(llvmModuleSet->getSVFValue(val));
     if (iter == symInfo->objSymMap.end())
     {
-        SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
+        SVFValue* svfVal = llvmModuleSet->getSVFValue(val);
         // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
         // then we treat them as one ConstantObj
         if (isConstantObjSym(val) && !symInfo->getModelConstants())
@@ -341,7 +341,7 @@ void SymbolTableBuilder::collectObj(const Value* val)
             // create a memory object
             MemObj* mem =
                 new MemObj(id, createObjTypeInfo(val),
-                           LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
+                           llvmModuleSet->getSVFValue(val));
             assert(symInfo->objMap.find(id) == symInfo->objMap.end());
             symInfo->objMap[id] = mem;
         }
@@ -594,7 +594,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
     const Type* inferedType = nullptr;
     assert(originalPType && "empty type?");
     const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
-    if(SVFUtil::isHeapAllocExtCallViaRet(svfinst))
+    if(LLVMUtil::isHeapAllocExtCallViaRet(inst))
     {
         if(const Value* v = getFirstUseViaCastInst(inst))
         {
@@ -605,7 +605,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
         }
         inferedType = inferObjType(startValue);
     }
-    else if(SVFUtil::isHeapAllocExtCallViaArg(svfinst))
+    else if(LLVMUtil::isHeapAllocExtCallViaArg(inst))
     {
         const CallBase* cs = LLVMUtil::getLLVMCallSite(inst);
         u32_t arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::cast<SVFCallInst>(svfinst)->getCalledFunction());
@@ -634,7 +634,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
 
     // We consider two types of objects:
     // (1) A heap/static object from a callsite
-    if (I && isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I)))
+    if (I && isNonInstricCallSite(I))
     {
         objTy = inferTypeOfHeapObjOrStaticObj(I);
     }
@@ -748,7 +748,7 @@ u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val)
                     calledFunction);
             std::vector<const Value*> args;
             // Heap alloc functions have annoation like "AllocSize:Arg1"
-            for (std::string annotation : svfFunction->getAnnotations())
+            for (std::string annotation : ExtAPI::getExtAPI()->getExtFuncAnnotations(svfFunction))
             {
                 if (annotation.find("AllocSize:") != std::string::npos)
                 {
@@ -894,9 +894,8 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
     }
     /// if val is heap alloc
     else if (SVFUtil::isa<Instruction>(val) &&
-             isHeapAllocExtCall(
-                 LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(
-                     SVFUtil::cast<Instruction>(val))))
+             LLVMUtil::isHeapAllocExtCall(
+                 SVFUtil::cast<Instruction>(val)))
     {
         elemNum = analyzeHeapObjType(typeinfo,val);
         // analyze heap alloc like (malloc/calloc/...), the alloc functions have

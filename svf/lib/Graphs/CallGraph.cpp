@@ -32,6 +32,7 @@
 #include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "Graphs/CallGraph.h"
+#include "SVFIR/SVFIR.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -51,7 +52,7 @@ void CallGraphEdge::addDirectCallSite(const CallICFGNode* call)
 
 void CallGraphEdge::addInDirectCallSite(const CallICFGNode* call)
 {
-    assert((nullptr == call->getCalledFunction() || nullptr == SVFUtil::dyn_cast<SVFFunction> (SVFUtil::getForkedFun(call))) && "not an indirect callsite??");
+    assert((nullptr == call->getCalledFunction() || nullptr == SVFUtil::dyn_cast<SVFFunction> (SVFUtil::getForkedFun(call)->getValue())) && "not an indirect callsite??");
     indirectCalls.insert(call);
 }
 //@}

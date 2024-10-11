@@ -51,13 +51,20 @@ public:
     }
 
     /// Type analysis
-    void analyze();
+    void analyze() override;
 
     /// Initialize analysis
-    void initialize();
+    void initialize() override;
 
     /// Finalize analysis
-    virtual inline void finalize();
+    virtual inline void finalize() override;
+
+    /// Add copy edge on constraint graph
+    inline bool addCopyEdge(NodeID src, NodeID dst) override
+    {
+        assert(false && "this function should never be executed!");
+        return false;
+    }
 
     /// Resolve callgraph based on CHA
     void callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges);

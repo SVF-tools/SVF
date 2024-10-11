@@ -71,7 +71,7 @@ public:
     NodeBS strides;
     NodeBS baseIds;
 
-    ConstraintNode(NodeID i) : GenericConsNodeTy(i, 0), _isPWCNode(false)
+    ConstraintNode(NodeID i) : GenericConsNodeTy(i, ConstraintNodeKd), _isPWCNode(false)
     {
 
     }
@@ -391,6 +391,24 @@ public:
     {
         o << node.toString();
         return o;
+    }
+    //@}
+
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const ConstraintNode *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const GenericICFGNodeTy* node)
+    {
+        return node->getNodeKind() == ConstraintNodeKd;
+    }
+
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == ConstraintNodeKd;
     }
     //@}
 };

@@ -73,7 +73,7 @@ public:
 
     typedef std::vector<const Function*> FuncVector;
 
-    DCHNode(const DIType* diType, NodeID i = 0, GNodeK k = 0)
+    DCHNode(const DIType* diType, NodeID i = 0, GNodeK k = GNodeK::DCHNodeKd)
         : GenericNode<DCHNode, DCHEdge>(i, k), vtable(nullptr), flags(0)
     {
         this->diType = diType;
@@ -93,7 +93,7 @@ public:
 
     ~DCHNode() { }
 
-    const DIType *getType(void) const
+    const DIType * getDIType(void) const
     {
         return diType;
     }
@@ -275,7 +275,7 @@ public:
     }
 
     virtual const VTableSet &getCSVtblsBasedonCHA(const CallICFGNode* cs) override;
-    virtual void getVFnsFromVtbls(const SVFCallInst* cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
+    virtual void getVFnsFromVtbls(const CallICFGNode* cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
 
     /// Returns true if a is a transitive base of b. firstField determines
     /// whether to consider first-field edges.

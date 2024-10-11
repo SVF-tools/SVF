@@ -33,6 +33,8 @@
 namespace SVF
 {
 
+class LLVMModuleSet;
+
 class CHGBuilder
 {
 
@@ -67,6 +69,9 @@ public:
     void buildCSToCHAVtblsAndVfnsMap();
     const CHNodeSetTy& getCSClasses(const CallBase* cs);
     void addFuncToFuncVector(CHNode::FuncVector &v, const Function *f);
+
+private:
+    LLVMModuleSet* llvmModuleSet();
 };
 
 } // End namespace SVF

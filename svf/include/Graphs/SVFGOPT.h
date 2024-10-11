@@ -252,7 +252,8 @@ private:
     inline InterPHISVFGNode* addInterPHIForAR(const ActualRetSVFGNode* ar)
     {
         InterPHISVFGNode* sNode = new InterPHISVFGNode(totalVFGNode++,ar);
-        addSVFGNode(sNode, pag->getICFG()->getRetICFGNode(ar->getCallSite()->getCallSite()));
+        addSVFGNode(sNode, const_cast<RetICFGNode*>(
+                        ar->getCallSite()->getRetICFGNode()));
         resetDef(ar->getRev(),sNode);
         return sNode;
     }

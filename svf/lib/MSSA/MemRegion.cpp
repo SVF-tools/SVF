@@ -479,8 +479,8 @@ void MRGenerator::collectCallSitePts(const CallICFGNode* cs)
     /// collect the pts chain of the callsite arguments
     NodeBS& argsPts = csToCallSiteArgsPtsMap[cs];
     SVFIR* pag = pta->getPAG();
-    CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(cs->getCallSite());
-    RetICFGNode* retBlockNode = pag->getICFG()->getRetICFGNode(cs->getCallSite());
+    CallICFGNode* callBlockNode = const_cast<CallICFGNode*>(cs);
+    const RetICFGNode* retBlockNode = cs->getRetICFGNode();
 
     WorkList worklist;
     if (pag->hasCallSiteArgsMap(callBlockNode))

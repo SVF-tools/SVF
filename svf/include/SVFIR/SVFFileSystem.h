@@ -1064,7 +1064,7 @@ public:
     }
 
 private:
-    using GNodeK = GenericNode<int, GenericEdge<void>>::GNodeK;
+    using GNodeK = s32_t;
     using GEdgeFlag = GenericEdge<void>::GEdgeFlag;
     using GEdgeKind = GenericEdge<void>::GEdgeKind;
     static ICFGNode* createICFGNode(NodeID id, GNodeK type);

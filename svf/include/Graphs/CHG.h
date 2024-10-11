@@ -61,7 +61,7 @@ public:
     virtual const VFunSet &getCSVFsBasedonCHA(const CallICFGNode* cs) = 0;
     virtual bool csHasVtblsBasedonCHA(const CallICFGNode* cs) = 0;
     virtual const VTableSet &getCSVtblsBasedonCHA(const CallICFGNode* cs) = 0;
-    virtual void getVFnsFromVtbls(const SVFCallInst* cs, const VTableSet& vtbls,
+    virtual void getVFnsFromVtbls(const CallICFGNode* cs, const VTableSet& vtbls,
                                   VFunSet& virtualFunctions) = 0;
 
     CHGKind getKind(void) const
@@ -120,7 +120,7 @@ public:
 
     typedef std::vector<const SVFFunction*> FuncVector;
 
-    CHNode (const std::string& name, NodeID i = 0, GNodeK k = 0):
+    CHNode (const std::string& name, NodeID i = 0, GNodeK k = CHNodeKd):
         GenericCHNodeTy(i, k), vtable(nullptr), className(name), flags(0)
     {
     }
@@ -191,6 +191,24 @@ public:
         vtable = vtbl;
     }
 
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const CHNode *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const GenericCHNodeTy * node)
+    {
+        return node->getNodeKind() == CHNodeKd;
+    }
+
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == CHNodeKd;
+    }
+    //@}
+
 private:
     const SVFGlobalValue* vtable;
     std::string className;
@@ -222,9 +240,10 @@ public:
     typedef Set<const CHNode*> CHNodeSetTy;
     typedef FIFOWorkList<const CHNode*> WorkList;
     typedef Map<std::string, CHNodeSetTy> NameToCHNodesMap;
-    typedef Map<const SVFInstruction*, CHNodeSetTy> CallSiteToCHNodesMap;
-    typedef Map<const SVFInstruction*, VTableSet> CallSiteToVTableSetMap;
-    typedef Map<const SVFInstruction*, VFunSet> CallSiteToVFunSetMap;
+
+    typedef Map<const ICFGNode*, CHNodeSetTy> CallNodeToCHNodesMap;
+    typedef Map<const ICFGNode*, VTableSet> CallNodeToVTableSetMap;
+    typedef Map<const ICFGNode*, VFunSet> CallNodeToVFunSetMap;
 
     typedef enum
     {
@@ -242,7 +261,7 @@ public:
                  const std::string baseClassName,
                  CHEdge::CHEDGETYPE edgeType);
     CHNode *getNode(const std::string name) const;
-    void getVFnsFromVtbls(const SVFCallInst* cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
+    void getVFnsFromVtbls(const CallICFGNode* cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
     void dump(const std::string& filename);
     void view();
     void printCH();
@@ -307,11 +326,12 @@ private:
     NameToCHNodesMap classNameToAncestorsMap;
     NameToCHNodesMap classNameToInstAndDescsMap;
     NameToCHNodesMap templateNameToInstancesMap;
-    CallSiteToCHNodesMap csToClassesMap;
+    CallNodeToCHNodesMap callNodeToClassesMap;
 
     Map<const SVFFunction*, u32_t> virtualFunctionToIDMap;
-    CallSiteToVTableSetMap csToCHAVtblsMap;
-    CallSiteToVFunSetMap csToCHAVFnsMap;
+
+    CallNodeToVTableSetMap callNodeToCHAVtblsMap;
+    CallNodeToVFunSetMap callNodeToCHAVFnsMap;
 };
 
 } // End namespace SVF

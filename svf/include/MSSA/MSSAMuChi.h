@@ -246,7 +246,7 @@ public:
     /// Return basic block
     inline const SVFBasicBlock* getBasicBlock() const
     {
-        return callsite->getCallSite()->getParent();
+        return callsite->getBB();
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -537,7 +537,7 @@ public:
     /// Return basic block
     inline const SVFBasicBlock* getBasicBlock() const
     {
-        return callsite->getCallSite()->getParent();
+        return callsite->getBB();
     }
 
     /// Return callsite

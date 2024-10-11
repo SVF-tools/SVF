@@ -44,9 +44,10 @@ void CFLAlias::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, Call
 
         if (cs->isVirtualCall())
         {
-            const SVFValue* vtbl = cs->getVtablePtr();
-            assert(pag->hasValueNode(vtbl));
-            NodeID vtblId = pag->getValueNode(vtbl);
+            const SVFVar* vtbl = cs->getVtablePtr();
+
+            assert(vtbl != nullptr);
+            NodeID vtblId = vtbl->getId();
             resolveCPPIndCalls(cs, getCFLPts(vtblId), newEdges);
         }
         else
@@ -155,7 +156,7 @@ void CFLAlias::heapAllocatorViaIndCall(const CallICFGNode* cs)
     else
     {
         NodeID valNode = svfir->addDummyValNode();
-        NodeID objNode = svfir->addDummyObjNode(cs->getCallSite()->getType());
+        NodeID objNode = svfir->addDummyObjNode(cs->getType());
         callsite2DummyValPN.insert(std::make_pair(cs,valNode));
         graph->addCFLNode(valNode, new CFLNode(valNode));
         graph->addCFLNode(objNode, new CFLNode(objNode));

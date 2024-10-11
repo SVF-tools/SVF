@@ -83,9 +83,9 @@ OrderedNodeSet& FunptrDDAClient::collectCandidateQueries(SVFIR* p)
     {
         if (it->first->isVirtualCall())
         {
-            const SVFValue* vtblPtr = it->first->getVtablePtr();
-            assert(pag->hasValueNode(vtblPtr) && "not a vtable pointer?");
-            NodeID vtblId = pag->getValueNode(vtblPtr);
+            const SVFVar* vtblPtr = it->first->getVtablePtr();
+            assert(vtblPtr != nullptr && "not a vtable pointer?");
+            NodeID vtblId = vtblPtr->getId();
             addCandidate(vtblId);
             vtableToCallSiteMap[vtblId] = it->first;
         }
@@ -145,8 +145,8 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
 
         ++morePreciseCallsites;
         outs() << "============more precise callsite =================\n";
-        outs() << (nIter->second)->getCallSite()->toString() << "\n";
-        outs() << (nIter->second)->getCallSite()->getSourceLoc() << "\n";
+        outs() << (nIter->second)->toString() << "\n";
+        outs() << (nIter->second)->getSourceLoc() << "\n";
         outs() << "\n";
         outs() << "------ander pts or vtable num---(" << anderPts.count()  << ")--\n";
         outs() << "------DDA vfn num---(" << ander_vfns.size() << ")--\n";

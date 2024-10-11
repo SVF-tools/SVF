@@ -353,13 +353,6 @@ bool SVFUtil::isHeapAllocExtCallViaArg(const CallICFGNode* cs)
     return isHeapAllocExtFunViaArg(cs->getCalledFunction());
 }
 
-bool SVFUtil::isHeapAllocExtCallViaArg(const SVFInstruction *inst)
-{
-    if(const SVFCallInst* call = SVFUtil::dyn_cast<SVFCallInst>(inst))
-        return isHeapAllocExtFunViaArg(call->getCalledFunction());
-    else
-        return false;
-}
 
 u32_t SVFUtil::getHeapAllocHoldingArgPosition(const CallICFGNode* cs)
 {
@@ -381,29 +374,21 @@ bool SVFUtil::isHeapAllocExtCall(const ICFGNode* cs)
 
 bool SVFUtil::isHeapAllocExtCallViaRet(const CallICFGNode* cs)
 {
-    bool isPtrTy = cs->getCallSite()->getType()->isPointerTy();
+    bool isPtrTy = cs->getType()->isPointerTy();
     return isPtrTy && isHeapAllocExtFunViaRet(cs->getCalledFunction());
 }
 
 bool SVFUtil::isReallocExtCall(const CallICFGNode* cs)
 {
-    bool isPtrTy = cs->getCallSite()->getType()->isPointerTy();
+    bool isPtrTy = cs->getType()->isPointerTy();
     return isPtrTy && isReallocExtFun(cs->getCalledFunction());
 }
 
-bool SVFUtil::isHeapAllocExtCallViaRet(const SVFInstruction *inst)
-{
-    bool isPtrTy = inst->getType()->isPointerTy();
-    if(const SVFCallInst* call = SVFUtil::dyn_cast<SVFCallInst>(inst))
-        return isPtrTy && isHeapAllocExtFunViaRet(call->getCalledFunction());
-    else
-        return false;
-}
 
 bool SVFUtil::isRetInstNode(const ICFGNode* node)
 {
     if (const auto& intraNode = dyn_cast<IntraICFGNode>(node))
-        return intraNode->getInst()->isRetInst();
+        return intraNode->isRetInst();
     else
         return false;
 }

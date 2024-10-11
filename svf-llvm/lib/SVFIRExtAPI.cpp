@@ -63,7 +63,7 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
         {
             SymbolTableBuilder builder(pag->getSymbolInfo());
             builder.collectSym(offset);
-            pag->addValNode(svfOffset, pag->getSymbolInfo()->getValSym(svfOffset));
+            pag->addValNode(svfOffset, pag->getSymbolInfo()->getValSym(svfOffset), nullptr);
         }
         ls.addOffsetVarAndGepTypePair(getPAG()->getGNode(getPAG()->getValueNode(svfOffset)), nullptr);
         fields.push_back(ls);
@@ -125,7 +125,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
 {
     const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
     const SVFCallInst* svfCall = SVFUtil::cast<SVFCallInst>(svfInst);
-    const CallICFGNode *callICFGNode = pag->getICFG()->getCallICFGNode(svfInst);
+    const CallICFGNode *callICFGNode = llvmModuleSet()->getCallICFGNode(cs);
 
     if (isHeapAllocExtCallViaRet(callICFGNode))
     {
@@ -256,10 +256,10 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
 
     if (isThreadForkCall(callICFGNode))
     {
-        if (const SVFFunction* forkedFun = SVFUtil::dyn_cast<SVFFunction>(getForkedFun(callICFGNode)))
+        if (const SVFFunction* forkedFun = SVFUtil::dyn_cast<SVFFunction>(getForkedFun(callICFGNode)->getValue()))
         {
             forkedFun = forkedFun->getDefFunForMultipleModule();
-            const SVFValue* actualParm = getActualParmAtForkSite(callICFGNode);
+            const SVFVar* actualParm = getActualParmAtForkSite(callICFGNode);
             /// pthread_create has 1 arg.
             /// apr_thread_create has 2 arg.
             assert((forkedFun->arg_size() <= 2) && "Size of formal parameter of start routine should be one");
@@ -267,10 +267,10 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
             {
                 const SVFArgument* formalParm = forkedFun->getArg(0);
                 /// Connect actual parameter to formal parameter of the start routine
-                if (actualParm->getType()->isPointerTy() && formalParm->getType()->isPointerTy())
+                if (actualParm->isPointer() && formalParm->getType()->isPointerTy())
                 {
                     FunEntryICFGNode *entry = pag->getICFG()->getFunEntryICFGNode(forkedFun);
-                    addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm), callICFGNode, entry);
+                    addThreadForkEdge(actualParm->getId(), pag->getValueNode(formalParm), callICFGNode, entry);
                 }
             }
         }

@@ -184,7 +184,7 @@ private:
 
 public:
     /// Constructor
-    CallGraphNode(NodeID i, const SVFFunction* f) : GenericCallGraphNodeTy(i,0), fun(f)
+    CallGraphNode(NodeID i, const SVFFunction* f) : GenericCallGraphNodeTy(i,CallNodeKd), fun(f)
     {
 
     }
@@ -209,6 +209,24 @@ public:
     //@}
 
     virtual const std::string toString() const;
+
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const CallGraphNode *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const GenericICFGNodeTy* node)
+    {
+        return node->getNodeKind() == CallNodeKd;
+    }
+
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == CallNodeKd;
+    }
+    //@}
 };
 
 /*!

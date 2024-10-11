@@ -160,13 +160,13 @@ bool ThreadAPI::isTDBarWait(const CallICFGNode *inst) const
 }
 
 
-const SVFValue* ThreadAPI::getForkedThread(const CallICFGNode *inst) const
+const SVFVar* ThreadAPI::getForkedThread(const CallICFGNode *inst) const
 {
     assert(isTDFork(inst) && "not a thread fork function!");
     return inst->getArgument(0);
 }
 
-const SVFValue* ThreadAPI::getForkedFun(const CallICFGNode *inst) const
+const SVFVar* ThreadAPI::getForkedFun(const CallICFGNode *inst) const
 {
     assert(isTDFork(inst) && "not a thread fork function!");
     return inst->getArgument(2);
@@ -174,19 +174,28 @@ const SVFValue* ThreadAPI::getForkedFun(const CallICFGNode *inst) const
 
 /// Return the forth argument of the call,
 /// Note that, it is the sole argument of start routine ( a void* pointer )
-const SVFValue* ThreadAPI::getActualParmAtForkSite(const CallICFGNode *inst) const
+const SVFVar* ThreadAPI::getActualParmAtForkSite(const CallICFGNode *inst) const
 {
     assert(isTDFork(inst) && "not a thread fork function!");
     return inst->getArgument(3);
 }
 
-const SVFValue* ThreadAPI::getRetParmAtJoinedSite(const CallICFGNode *inst) const
+const SVFVar* ThreadAPI::getFormalParmOfForkedFun(const SVFFunction* F) const
+{
+    assert(PAG::getPAG()->hasFunArgsList(F) && "forked function has no args list!");
+    const SVFIR::SVFVarList& funArgList = PAG::getPAG()->getFunArgsList(F);
+    // in pthread, forked functions are of type void *()(void *args)
+    assert(funArgList.size() == 1 && "num of pthread forked function args is not 1!");
+    return funArgList[0];
+}
+
+const SVFVar* ThreadAPI::getRetParmAtJoinedSite(const CallICFGNode *inst) const
 {
     assert(isTDJoin(inst) && "not a thread join function!");
     return inst->getArgument(1);
 }
 
-const SVFValue* ThreadAPI::getLockVal(const ICFGNode *cs) const
+const SVFVar* ThreadAPI::getLockVal(const ICFGNode *cs) const
 {
     const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(cs);
     assert(call && "not a call ICFGNode?");
@@ -194,17 +203,16 @@ const SVFValue* ThreadAPI::getLockVal(const ICFGNode *cs) const
     return call->getArgument(0);
 }
 
-const SVFValue* ThreadAPI::getJoinedThread(const CallICFGNode *cs) const
+const SVFVar* ThreadAPI::getJoinedThread(const CallICFGNode *cs) const
 {
     assert(isTDJoin(cs) && "not a thread join function!");
-    const SVFValue* join = cs->getArgument(0);
-    const SVFVar* var = PAG::getPAG()->getGNode(PAG::getPAG()->getValueNode(join));
-    for(const SVFStmt* stmt : var->getInEdges())
+    const SVFVar* join = cs->getArgument(0);
+    for(const SVFStmt* stmt : join->getInEdges())
     {
         if(SVFUtil::isa<LoadStmt>(stmt))
-            return stmt->getSrcNode()->getValue();
+            return stmt->getSrcNode();
     }
-    if(SVFUtil::isa<SVFArgument>(join))
+    if(SVFUtil::isa<SVFArgument>(join->getValue()))
         return join;
 
     assert(false && "the value of the first argument at join is not a load instruction?");

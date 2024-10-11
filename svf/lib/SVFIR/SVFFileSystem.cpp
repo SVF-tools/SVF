@@ -386,7 +386,7 @@ cJSON* SVFIRWriter::contentToJson(const GlobalICFGNode* node)
 cJSON* SVFIRWriter::contentToJson(const IntraICFGNode* node)
 {
     cJSON* root = contentToJson(static_cast<const ICFGNode*>(node));
-    JSON_WRITE_FIELD(root, node, inst);
+    JSON_WRITE_FIELD(root, node, isRet);
     return root;
 }
 
@@ -412,7 +412,6 @@ cJSON* SVFIRWriter::contentToJson(const FunExitICFGNode* node)
 cJSON* SVFIRWriter::contentToJson(const CallICFGNode* node)
 {
     cJSON* root = contentToJson(static_cast<const ICFGNode*>(node));
-    JSON_WRITE_FIELD(root, node, cs);
     JSON_WRITE_FIELD(root, node, ret);
     JSON_WRITE_FIELD(root, node, APNodes);
     return root;
@@ -421,7 +420,6 @@ cJSON* SVFIRWriter::contentToJson(const CallICFGNode* node)
 cJSON* SVFIRWriter::contentToJson(const RetICFGNode* node)
 {
     cJSON* root = contentToJson(static_cast<const ICFGNode*>(node));
-    JSON_WRITE_FIELD(root, node, cs);
     JSON_WRITE_FIELD(root, node, actualRet);
     JSON_WRITE_FIELD(root, node, callBlockNode);
     return root;
@@ -549,7 +547,6 @@ cJSON* SVFIRWriter::contentToJson(const SVFFunction* value)
     F(realDefFun);
     F(allBBs);
     F(allArgs);
-    F(annotations);
 #undef F
     return root;
 }
@@ -1116,9 +1113,6 @@ cJSON* SVFIRWriter::toJson(const ICFG* icfg)
     F(totalICFGNode);
     F(FunToFunEntryNodeMap);
     F(FunToFunExitNodeMap);
-    F(CSToCallNodeMap);
-    F(CSToRetNodeMap);
-    F(InstToBlockNodeMap);
     F(globalBlockNode);
     F(icfgNodeToSVFLoopVec);
 #undef F
@@ -1157,10 +1151,10 @@ cJSON* SVFIRWriter::toJson(const CHGraph* graph)
     F(classNameToAncestorsMap);
     F(classNameToInstAndDescsMap);
     F(templateNameToInstancesMap);
-    F(csToClassesMap);
+    F(callNodeToClassesMap);
     F(virtualFunctionToIDMap);
-    F(csToCHAVtblsMap);
-    F(csToCHAVFnsMap);
+    F(callNodeToCHAVtblsMap);
+    F(callNodeToCHAVFnsMap);
 #undef F
     return root;
 }
@@ -1742,9 +1736,6 @@ void SVFIRReader::readJson(ICFG* icfg)
     F(totalICFGNode);
     F(FunToFunEntryNodeMap);
     F(FunToFunExitNodeMap);
-    F(CSToCallNodeMap);
-    F(CSToRetNodeMap);
-    F(InstToBlockNodeMap);
     F(globalBlockNode);
     F(icfgNodeToSVFLoopVec);
 #undef F
@@ -1762,10 +1753,10 @@ void SVFIRReader::readJson(CHGraph* graph)
     F(classNameToAncestorsMap);
     F(classNameToInstAndDescsMap);
     F(templateNameToInstancesMap);
-    F(csToClassesMap);
+    F(callNodeToClassesMap);
     F(virtualFunctionToIDMap);
-    F(csToCHAVtblsMap);
-    F(csToCHAVFnsMap);
+    F(callNodeToCHAVtblsMap);
+    F(callNodeToCHAVFnsMap);
 #undef F
 }
 
@@ -2189,7 +2180,7 @@ void SVFIRReader::fill(const cJSON*& fieldJson, GlobalICFGNode* node)
 void SVFIRReader::fill(const cJSON*& fieldJson, IntraICFGNode* node)
 {
     fill(fieldJson, static_cast<ICFGNode*>(node));
-    JSON_READ_FIELD_FWD(fieldJson, node, inst);
+    JSON_READ_FIELD_FWD(fieldJson, node, isRet);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, InterICFGNode* node)
@@ -2212,7 +2203,6 @@ void SVFIRReader::fill(const cJSON*& fieldJson, FunExitICFGNode* node)
 void SVFIRReader::fill(const cJSON*& fieldJson, CallICFGNode* node)
 {
     fill(fieldJson, static_cast<ICFGNode*>(node));
-    JSON_READ_FIELD_FWD(fieldJson, node, cs);
     JSON_READ_FIELD_FWD(fieldJson, node, ret);
     JSON_READ_FIELD_FWD(fieldJson, node, APNodes);
 }
@@ -2220,7 +2210,6 @@ void SVFIRReader::fill(const cJSON*& fieldJson, CallICFGNode* node)
 void SVFIRReader::fill(const cJSON*& fieldJson, RetICFGNode* node)
 {
     fill(fieldJson, static_cast<ICFGNode*>(node));
-    JSON_READ_FIELD_FWD(fieldJson, node, cs);
     JSON_READ_FIELD_FWD(fieldJson, node, actualRet);
     JSON_READ_FIELD_FWD(fieldJson, node, callBlockNode);
 }
@@ -2357,7 +2346,6 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFFunction* value)
     F(realDefFun);
     F(allBBs);
     F(allArgs);
-    F(annotations);
 #undef F
 }
 

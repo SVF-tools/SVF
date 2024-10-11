@@ -349,7 +349,7 @@ private:
     bool isAliasedLocks(const ICFGNode* i1, const ICFGNode* i2)
     {
         /// todo: must alias
-        return tct->getPTA()->alias(getLockVal(i1), getLockVal(i2));
+        return tct->getPTA()->alias(getLockVal(i1)->getId(), getLockVal(i2)->getId());
     }
 
     /// Mark thread flags for cxtStmt
@@ -466,7 +466,7 @@ private:
         return tct->isExtCall(inst);
     }
     /// Get lock value
-    inline const SVFValue* getLockVal(const ICFGNode* call)
+    inline const SVFVar* getLockVal(const ICFGNode* call)
     {
         return getTCG()->getThreadAPI()->getLockVal(call);
     }
