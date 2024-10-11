@@ -427,7 +427,7 @@ public:
      * @param value Pointer to the SVF value.
      * @return True if the pointer dereference is safe, false otherwise.
      */
-    bool canSafelyDerefPtr(AbstractState& as, const SVF::SVFValue* value);
+    bool canSafelyDerefPtr(AbstractState& as, const SVF::SVFVar* value);
 
 
 private:
