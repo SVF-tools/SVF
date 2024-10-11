@@ -65,11 +65,10 @@ CallGraph* CallGraphBuilder::buildSVFIRCallGraph()
 
 ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
 {
-    ThreadCallGraph* cg = new ThreadCallGraph(*(PAG::getPAG()->getCallGraph()));
-    assert(cg && "not a thread callgraph?");
+    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    ThreadCallGraph* cg = new ThreadCallGraph(*svfirCallGraph);
 
     ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();
-    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
         for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())

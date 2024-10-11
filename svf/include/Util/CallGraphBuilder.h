@@ -51,7 +51,7 @@ protected:
 
 public:
 
-    CallGraphBuilder(const SVFModule::FunctionSetType* fs, ICFG* i): svfFunctionSet(fs),icfg(i)
+    CallGraphBuilder(FunctionSetType* fs, ICFG* i): svfFunctionSet(fs),icfg(i)
     {
     }
 
