@@ -11,7 +11,6 @@ project(SVF
 include(GNUInstallDirs)
 
 # Configurable (string) options for building SVF
-set(SVFSANITIZE "address")
 set(SVF_SANITIZE "" CACHE STRING "Create sanitizer build (address)")
 
 # Configurable (boolean) options for building SVF
