@@ -36,10 +36,10 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-CallGraph* CallGraphBuilder::buildSVFIRCallGraph()
+CallGraph* CallGraphBuilder::buildSVFIRCallGraph(SVFModule* svfModule)
 {
     CallGraph* callgraph = new CallGraph();
-    for (const SVFFunction* svfFunc: *svfFunctionSet){
+    for (const SVFFunction* svfFunc: svfModule->getFunctionSet()){
         callgraph->addCallGraphNode(svfFunc);
     }
 
@@ -110,8 +110,4 @@ ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
     }
 
     return cg;
-}
-CallGraphBuilder::CallGraphBuilder() {
-    icfg = PAG::getPAG()->getICFG();
-    svfFunctionSet = nullptr;
 }

@@ -43,22 +43,10 @@ class SVFModule;
 class CallGraphBuilder
 {
 public:
-    typedef SVFModule::FunctionSetType FunctionSetType;
-
-protected:
-    const FunctionSetType* svfFunctionSet;
-    ICFG* icfg;
-
-public:
-
-    CallGraphBuilder(FunctionSetType* fs, ICFG* i): svfFunctionSet(fs),icfg(i)
-    {
-    }
-
-    CallGraphBuilder();
+    CallGraphBuilder()=default;
 
     /// Buidl SVFIR callgraoh
-    CallGraph* buildSVFIRCallGraph();
+    CallGraph* buildSVFIRCallGraph(SVFModule* svfModule);
 
     /// Build thread-aware callgraph
     ThreadCallGraph* buildThreadCallGraph();

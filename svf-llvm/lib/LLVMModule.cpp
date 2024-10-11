@@ -172,8 +172,8 @@ void LLVMModuleSet::build()
     ICFGBuilder icfgbuilder;
     icfg = icfgbuilder.build();
 
-    CallGraphBuilder callGraphBuilder(&(svfModule->getFunctionSet()), icfg);
-    callgraph = callGraphBuilder.buildSVFIRCallGraph();
+    CallGraphBuilder callGraphBuilder;
+    callgraph = callGraphBuilder.buildSVFIRCallGraph(svfModule);
 }
 
 void LLVMModuleSet::createSVFDataStructure()
