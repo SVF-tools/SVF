@@ -157,7 +157,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
         }
         InstVec nextInsts;
         LLVMUtil::getNextInsts(inst, nextInsts);
-        u32_t branchID = 0;
+        s64_t branchID = 0;
         for (InstVec::const_iterator nit = nextInsts.begin(), enit =
                     nextInsts.end(); nit != enit; ++nit)
         {
@@ -185,7 +185,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
             {
                 assert(branchID <= 1 && "if/else has more than two branches?");
                 if(br->isConditional())
-                    icfg->addConditionalIntraEdge(srcNode, dstNode, llvmModuleSet()->getSVFValue(br->getCondition()), 1 - branchID);
+                    icfg->addConditionalIntraEdge(srcNode, dstNode, 1 - branchID);
                 else
                     icfg->addIntraEdge(srcNode, dstNode);
             }
@@ -197,7 +197,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                 s64_t val = -1;
                 if (condVal && condVal->getBitWidth() <= 64)
                     val = condVal->getSExtValue();
-                icfg->addConditionalIntraEdge(srcNode, dstNode, llvmModuleSet()->getSVFValue(si->getCondition()),val);
+                icfg->addConditionalIntraEdge(srcNode, dstNode,val);
             }
             else
                 icfg->addIntraEdge(srcNode, dstNode);

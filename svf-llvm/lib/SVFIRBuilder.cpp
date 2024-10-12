@@ -975,6 +975,17 @@ void SVFIRBuilder::visitBranchInst(BranchInst &inst)
         branchID++;
     }
     addBranchStmt(brinst, cond, successors);
+    /// set conditional svf var
+    if (inst.isConditional())
+    {
+        for (auto& edge : llvmModuleSet()->getICFGNode(&inst)->getOutEdges())
+        {
+            if (IntraCFGEdge* intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge))
+            {
+                intraEdge->setConditionVar(pag->getGNode(cond));
+            }
+        }
+    }
 }
 
 
@@ -1043,6 +1054,14 @@ void SVFIRBuilder::visitSwitchInst(SwitchInst &inst)
         successors.push_back(std::make_pair(icfgNode, val));
     }
     addBranchStmt(brinst, cond, successors);
+    /// set conditional svf var
+    for (auto& edge : llvmModuleSet()->getICFGNode(&inst)->getOutEdges())
+    {
+        if (IntraCFGEdge* intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge))
+        {
+            intraEdge->setConditionVar(pag->getGNode(cond));
+        }
+    }
 }
 
 
