@@ -374,7 +374,7 @@ public:
      */
     bool isNull(AbstractValue v) {
         bool is = (v.getInterval().isBottom() && v.getAddrs().isBottom()) ||
-            v.getAddrs().contains(NullPtrAddr);
+            v.getAddrs().contains(BlackHoleAddr);
         return is;
     }
 

@@ -166,7 +166,7 @@ AddressValue AbstractState::getGepObjAddrs(u32_t pointer, IntervalValue offset)
         for (const auto& addr : addrs.getAddrs())
         {
             if (isNullPtr(addr)) {
-                gepAddrs.insert(NullPtrAddr);
+                gepAddrs.insert(BlackHoleAddr);
                 continue;
             }
             s64_t baseObj = AbstractState::getInternalID(addr);
@@ -441,7 +441,6 @@ void AbstractState::printAbstractState() const
 
     for (const auto& item: addrToAbsValVec)
     {
-        if (item.first == 0) continue;
         std::ostringstream oss;
         oss << "0x" << std::hex << AbstractState::getVirtualMemAddress(item.first);
         SVFUtil::outs() << std::left << std::setw(fieldWidth) << oss.str();
