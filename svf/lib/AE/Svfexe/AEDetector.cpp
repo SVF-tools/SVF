@@ -530,14 +530,12 @@ void NullPtrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
  * @return True if the pointer dereference is safe, false otherwise.
  */
 bool NullPtrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVF::SVFVar* value) {
-    // SVFIR* svfir = PAG::getPAG();
     NodeID value_id = value->getId();
     if (isUninit(as[value_id])) return false;
-    assert(as[value_id].isAddr());
+    if (!as[value_id].isAddr()) return true;    // Loading an Interval Value
     AbstractValue &addrs = as[value_id];
     for (const auto &addr: addrs.getAddrs()) {
-        AbstractValue v = as.load(addr);
-        if (isNull(v))
+        if (isNull(as.load(addr)))
             return false;
     }
     return true;
