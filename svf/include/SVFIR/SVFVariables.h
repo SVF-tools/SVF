@@ -480,8 +480,8 @@ public:
 
     /// Constructor
     GepObjVar(const MemObj* mem, NodeID i, const APOffset& apOffset,
-              PNODEK ty = GepObjNode)
-        : ObjVar(mem->getValue(), i, mem, ty), apOffset(apOffset)
+              PNODEK ty = GepObjNode, const SVFBaseNode* bNode = nullptr)
+        : ObjVar(mem->getValue(), i, mem, ty, bNode), apOffset(apOffset)
     {
         base = mem->getId();
     }

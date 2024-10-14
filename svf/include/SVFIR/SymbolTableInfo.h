@@ -374,7 +374,7 @@ protected:
 };
 
 class SVFBaseNode;
-
+class CallGraphNode;
 /*!
  * Memory object symbols or MemObj (address-taken variables in LLVM-based languages)
  */
@@ -413,7 +413,13 @@ public:
     }
 
     /// Get the reference value to this object
+    inline const SVFBaseNode* getBaseNode() const {
+        return baseNode;
+    }
+
     const ICFGNode* getICFGNode() const;
+
+    const CallGraphNode* getCallGraphNode() const;
 
     /// Get the memory object id
     inline SymID getId() const

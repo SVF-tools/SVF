@@ -454,7 +454,8 @@ NodeID SVFIR::addGepObjNode(const MemObj* obj, const APOffset& apOffset, const N
            && "this node should not be created before");
 
     GepObjVarMap[std::make_pair(base, apOffset)] = gepId;
-    GepObjVar *node = new GepObjVar(obj, gepId, apOffset);
+    GepObjVar* node = new GepObjVar(obj, gepId, apOffset, GepObjVar::GepObjNode,
+                                    obj->getBaseNode());
     memToFieldsMap[base].set(gepId);
     return addObjNode(obj->getValue(), node, gepId);
 }

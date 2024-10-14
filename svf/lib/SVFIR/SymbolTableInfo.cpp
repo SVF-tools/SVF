@@ -50,6 +50,14 @@ const ICFGNode* MemObj::getICFGNode() const
         return SVFUtil::dyn_cast<ICFGNode>(baseNode);
 }
 
+const CallGraphNode* MemObj::getCallGraphNode() const
+{
+    if(!baseNode)
+        return nullptr;
+    else
+        return SVFUtil::dyn_cast<CallGraphNode>(baseNode);
+}
+
 ObjTypeInfo::ObjTypeInfo(const SVFType* t, u32_t max) : type(t), flags(0), maxOffsetLimit(max), elemNum(max)
 {
     assert(t && "no type information for this object?");
