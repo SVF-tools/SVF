@@ -512,22 +512,12 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
 void NullPtrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
     for (const SVFStmt* stmt : node->getSVFStmts()) {
         if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt)) {
-            u32_t rhs = load->getRHSVarID();
-            AbstractValue &addrs = as[rhs];
-            for (const auto &addr: addrs.getAddrs()) {
-                AbstractValue v = as.load(addr);
-                if (isNull(v)) {
-                    recordBug(load);
-                }
+            if (!canSafelyDerefPtr(as, load->getRHSVar())) {
+                recordBug(load);
             }
         } else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt)) {
-            u32_t lhs = store->getLHSVarID();
-            AbstractValue &addrs = as[lhs];
-            for (const auto &addr: addrs.getAddrs()) {
-                AbstractValue v = as.load(addr);
-                if (isNull(v)) {
-                    recordBug(store);
-                }
+            if (!canSafelyDerefPtr(as, store->getLHSVar())) {
+                recordBug(store);
             }
         }
     }
@@ -536,7 +526,7 @@ void NullPtrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
 /**
  * @brief Checks if pointer can be safely dereferenced.
  * @param as Reference to the abstract state.
- * @param ptr_id Pointer to the SVF value.
+ * @param value Pointer to the SVF value of the pointer being dereferenced.
  * @return True if the pointer dereference is safe, false otherwise.
  */
 bool NullPtrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVF::SVFVar* value) {
