@@ -648,7 +648,7 @@ void AbstractInterpretation::indirectCallFunPass(const SVF::CallICFGNode *callNo
     AbstractValue Addrs = as[call_id];
     NodeID addr = *Addrs.getAddrs().begin();
     SVFVar *func_var = svfir->getGNode(AbstractState::getInternalID(addr));
-    const SVFFunction *callfun = SVFUtil::dyn_cast<SVFFunction>(func_var->getValue());
+    const SVFFunction *callfun = func_var->getCallGraphNode()->getFunction();
     if (callfun)
     {
         callSiteStack.push_back(callNode);

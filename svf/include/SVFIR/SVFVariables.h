@@ -38,6 +38,7 @@ namespace SVF
 {
 
 class SVFVar;
+class CallGraphNode;
 /*
  * SVFIR program variables (PAGNodes)
  */
@@ -113,6 +114,8 @@ public:
     /// Return the ICFGNode that defines the svfvar
     const ICFGNode* getICFGNode() const;
 
+    const CallGraphNode* getCallGraphNode() const;
+
     /// Whether it is constant data, i.e., "0", "1.001", "str"
     /// or llvm's metadata, i.e., metadata !4087
     bool isConstDataOrAggDataButNotNullPtr() const;
@@ -125,19 +128,7 @@ public:
     virtual const std::string getValueName() const = 0;
 
     /// Return the function that this SVFVar resides in. Return nullptr if it is a global or constantexpr node
-    virtual inline const SVFFunction* getFunction() const
-    {
-        if (value)
-        {
-            if (auto inst = SVFUtil::dyn_cast<SVFInstruction>(value))
-                return inst->getParent()->getParent();
-            else if (auto arg = SVFUtil::dyn_cast<SVFArgument>(value))
-                return arg->getParent();
-            else if (auto fun = SVFUtil::dyn_cast<SVFFunction>(value))
-                return fun;
-        }
-        return nullptr;
-    }
+    virtual const SVFFunction* getFunction() const;
 
     /// Get incoming SVFIR statements (edges)
     inline SVFStmt::SVFStmtSetTy& getIncomingEdges(SVFStmt::PEDGEK kind)

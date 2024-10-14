@@ -69,31 +69,6 @@ private:
         return LLVMModuleSet::getLLVMModuleSet();
     }
 
-    inline CSToRetNodeMapTy& csToRetNodeMap()
-    {
-        return llvmModuleSet()->CSToRetNodeMap;
-    }
-
-    inline CSToCallNodeMapTy& csToCallNodeMap()
-    {
-        return llvmModuleSet()->CSToCallNodeMap;
-    }
-
-    inline InstToBlockNodeMapTy& instToBlockNodeMap()
-    {
-        return llvmModuleSet()->InstToBlockNodeMap;
-    }
-
-    inline FunToFunEntryNodeMapTy& funToFunEntryNodeMap()
-    {
-        return llvmModuleSet()->FunToFunEntryNodeMap;
-    }
-
-    inline FunToFunExitNodeMapTy& funToFunExitNodeMap()
-    {
-        return llvmModuleSet()->FunToFunExitNodeMap;
-    }
-
 private:
 
     /// Create edges between ICFG nodes within a function

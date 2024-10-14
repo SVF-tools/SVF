@@ -521,11 +521,11 @@ void BVDataPTAImpl::onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& call
         for(CallSiteSet::const_iterator it = tdCallGraph->forksitesBegin(),
                 eit = tdCallGraph->forksitesEnd(); it != eit; ++it)
         {
-            const SVFValue* forkedVal =tdCallGraph->getThreadAPI()->getForkedFun(*it)->getValue();
-            if(SVFUtil::dyn_cast<SVFFunction>(forkedVal) == nullptr)
+            const SVFVar* forkedVal =tdCallGraph->getThreadAPI()->getForkedFun(*it);
+            if(forkedVal->getCallGraphNode() == nullptr)
             {
                 SVFIR *pag = this->getPAG();
-                const NodeBS targets = this->getPts(pag->getValueNode(forkedVal)).toNodeBS();
+                const NodeBS targets = this->getPts(forkedVal->getId()).toNodeBS();
                 for(NodeBS::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ++ii)
                 {
                     if(ObjVar *objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))

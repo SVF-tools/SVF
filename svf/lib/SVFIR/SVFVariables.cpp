@@ -87,6 +87,35 @@ const ICFGNode* SVFVar::getICFGNode() const
         return SVFUtil::dyn_cast<ICFGNode>(baseNode);
 }
 
+const CallGraphNode* SVFVar::getCallGraphNode() const
+{
+    if(!baseNode)
+        return nullptr;
+    else
+        return SVFUtil::dyn_cast<CallGraphNode>(baseNode);
+}
+
+const SVFFunction* SVFVar::getFunction() const
+{
+    if (baseNode)
+    {
+        if (auto node = getICFGNode())
+        {
+            return node->getFun();
+        }
+        else if (auto call = getCallGraphNode())
+        {
+            return call->getFunction();
+        }
+    }
+    if (value)
+    {
+        if (auto arg = SVFUtil::dyn_cast<SVFArgument>(value))
+            return arg->getParent();
+    }
+    return nullptr;
+}
+
 bool SVFVar::isIsolatedNode() const
 {
     if (getInEdges().empty() && getOutEdges().empty())

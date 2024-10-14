@@ -174,6 +174,12 @@ void LLVMModuleSet::build()
 
     CallGraphBuilder callGraphBuilder;
     callgraph = callGraphBuilder.buildSVFIRCallGraph(svfModule);
+
+    for (const auto& func : svfModule->getFunctionSet())
+    {
+        addFunctionMap(SVFUtil::cast<Function>(getLLVMValue(func)),
+                       callgraph->getCallGraphNode(func));
+    }
 }
 
 void LLVMModuleSet::createSVFDataStructure()
@@ -1373,10 +1379,15 @@ SVFBaseNode* LLVMModuleSet::getSVFBaseNode(const Value* value)
     {
         if(!LLVMUtil::isIntrinsicInst(inst))
             return getICFGNode(inst);
-    } else {
+    }
+    else if (const Function* func = SVFUtil::dyn_cast<Function>(value))
+    {
+        return getCallGraphNode(func);
+    }
+    else
+    {
         // TODO: add more llvm value to svfbase node map
     }
-
     return nullptr;
 }
 
