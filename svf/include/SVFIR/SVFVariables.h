@@ -407,8 +407,8 @@ public:
 
     /// Constructor
     GepValVar(const SVFValue* val, NodeID i, const AccessPath& ap,
-              const SVFType* ty)
-        : ValVar(val, i, GepValNode), ap(ap), gepValType(ty)
+              const SVFType* ty, const SVFBaseNode* baseNode)
+        : ValVar(val, i, GepValNode, baseNode), ap(ap), gepValType(ty)
     {
     }
 
@@ -614,7 +614,7 @@ public:
     //@}
 
     /// Constructor
-    RetPN(const SVFFunction* val, NodeID i) : ValVar(val, i, RetNode) {}
+    RetPN(const SVFFunction* val, NodeID i, const SVFBaseNode* node) : ValVar(val, i, RetNode, node) {}
 
     /// Return name of a LLVM value
     const std::string getValueName() const
@@ -662,7 +662,7 @@ public:
     //@}
 
     /// Constructor
-    VarArgPN(const SVFFunction* val, NodeID i) : ValVar(val, i, VarargNode) {}
+    VarArgPN(const SVFFunction* val, NodeID i, const SVFBaseNode* baseNode) : ValVar(val, i, VarargNode, baseNode) {}
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const

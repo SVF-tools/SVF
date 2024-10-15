@@ -377,20 +377,22 @@ GepStmt* SVFIR::addVariantGepStmt(NodeID src, NodeID dst, const AccessPath& ap)
     }
 }
 
-
-
 /*!
  * Add a temp field value node, this method can only invoked by getGepValVar
- * due to constraint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
+ * due to constraint expression, curInst is used to distinguish different
+ * instructions (e.g., memorycpy) when creating GepValVar.
  */
-NodeID SVFIR::addGepValNode(const SVFValue* curInst,const SVFValue* gepVal, const AccessPath& ap, NodeID i, const SVFType* type)
+NodeID SVFIR::addGepValNode(const SVFValue* curInst, const SVFValue* gepVal,
+                            const AccessPath& ap, NodeID i, const SVFType* type,
+                            const SVFBaseNode* baseNode)
 {
     NodeID base = getValueNode(gepVal);
-    //assert(findPAGNode(i) == false && "this node should not be created before");
-    assert(0==GepValObjMap[curInst].count(std::make_pair(base, ap))
-           && "this node should not be created before");
+    // assert(findPAGNode(i) == false && "this node should not be created
+    // before");
+    assert(0 == GepValObjMap[curInst].count(std::make_pair(base, ap)) &&
+           "this node should not be created before");
     GepValObjMap[curInst][std::make_pair(base, ap)] = i;
-    GepValVar *node = new GepValVar(gepVal, i, ap, type);
+    GepValVar* node = new GepValVar(gepVal, i, ap, type, baseNode);
     return addValNode(gepVal, node, i);
 }
 

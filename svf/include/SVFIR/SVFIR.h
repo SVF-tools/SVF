@@ -557,20 +557,23 @@ private:
         return addFIObjNode(mem, gNode);
     }
     /// Add a unique return node for a procedure
-    inline NodeID addRetNode(const SVFFunction* val, NodeID i)
+    inline NodeID addRetNode(const SVFFunction* val, NodeID i, const SVFBaseNode* baseNode)
     {
-        SVFVar *node = new RetPN(val,i);
+        SVFVar *node = new RetPN(val,i,baseNode);
         return addRetNode(val, node, i);
     }
     /// Add a unique vararg node for a procedure
-    inline NodeID addVarargNode(const SVFFunction* val, NodeID i)
+    inline NodeID addVarargNode(const SVFFunction* val, NodeID i, const SVFBaseNode* baseNode)
     {
-        SVFVar *node = new VarArgPN(val,i);
+        SVFVar *node = new VarArgPN(val,i, baseNode);
         return addNode(node,i);
     }
 
-    /// Add a temp field value node, this method can only invoked by getGepValVar
-    NodeID addGepValNode(const SVFValue* curInst,const SVFValue* val, const AccessPath& ap, NodeID i, const SVFType* type);
+    /// Add a temp field value node, this method can only invoked by
+    /// getGepValVar
+    NodeID addGepValNode(const SVFValue* curInst, const SVFValue* val,
+                         const AccessPath& ap, NodeID i, const SVFType* type,
+                         const SVFBaseNode* baseNode);
     /// Add a field obj node, this method can only invoked by getGepObjVar
     NodeID addGepObjNode(const MemObj* obj, const APOffset& apOffset, const NodeID gepId);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode

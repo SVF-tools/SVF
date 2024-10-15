@@ -240,7 +240,9 @@ void SVFIRBuilder::initialiseNodes()
             ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add ret node " << iter->second << "\n");
-        pag->addRetNode(iter->first, iter->second);
+        const SVFBaseNode* gNode = llvmModuleSet()->getSVFBaseNode(
+            llvmModuleSet()->getLLVMValue(iter->first));
+        pag->addRetNode(iter->first, iter->second, gNode);
     }
 
     for (SymbolTableInfo::FunToIDMapTy::iterator iter =
@@ -248,7 +250,9 @@ void SVFIRBuilder::initialiseNodes()
             iter != symTable->varargSyms().end(); ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add vararg node " << iter->second << "\n");
-        pag->addVarargNode(iter->first, iter->second);
+        const SVFBaseNode* gNode = llvmModuleSet()->getSVFBaseNode(
+            llvmModuleSet()->getLLVMValue(iter->first));
+        pag->addVarargNode(iter->first, iter->second, gNode);
     }
 
     /// add address edges for constant nodes.
@@ -1252,9 +1256,13 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const 
         const SVFBasicBlock* cbb = getCurrentBB();
         setCurrentLocation(curVal, nullptr);
         LLVMModuleSet* llvmmodule = llvmModuleSet();
-        NodeID gepNode = pag->addGepValNode(curVal, llvmmodule->getSVFValue(val), ap,
-                                            NodeIDAllocator::get()->allocateValueId(),
-                                            llvmmodule->getSVFType(PointerType::getUnqual(llvmmodule->getContext())));
+        NodeID gepNode =
+            pag->addGepValNode(curVal, llvmmodule->getSVFValue(val), ap,
+                               NodeIDAllocator::get()->allocateValueId(),
+                               llvmmodule->getSVFType(PointerType::getUnqual(
+                                   llvmmodule->getContext())),
+                               llvmModuleSet()->getSVFBaseNode(
+                                   llvmModuleSet()->getLLVMValue(curVal)));
         addGepEdge(base, gepNode, ap, true);
         setCurrentLocation(cval, cbb);
         return gepNode;

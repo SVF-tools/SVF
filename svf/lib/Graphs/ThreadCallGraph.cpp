@@ -85,7 +85,7 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
                     const MemObj* obj = pag->getObject(objPN);
                     if(obj->isFunction())
                     {
-                        const SVFFunction* svfCallee = SVFUtil::cast<SVFFunction>(obj->getValue());
+                        const SVFFunction* svfCallee = obj->getCallGraphNode()->getFunction();
                         this->addIndirectForkEdge(*it, svfCallee);
                     }
                 }

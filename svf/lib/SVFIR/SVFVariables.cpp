@@ -54,7 +54,7 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k, const SVFBaseNode* bNode
     case RetNode:
     {
         assert(val != nullptr && "value is nullptr for RetNode");
-        isPtr = SVFUtil::cast<SVFFunction>(val)->getReturnType()->isPointerTy();
+        isPtr = getCallGraphNode()->getFunction()->getReturnType()->isPointerTy();
         break;
     }
     case VarargNode:
@@ -123,7 +123,7 @@ bool SVFVar::isIsolatedNode() const
     else if (isConstDataOrAggDataButNotNullPtr())
         return true;
     else if (value && SVFUtil::isa<SVFFunction>(value))
-        return SVFUtil::cast<SVFFunction>(value)->isIntrinsic();
+        return getCallGraphNode()->getFunction()->isIntrinsic();
     else
         return false;
 }
@@ -211,7 +211,7 @@ const std::string RetPN::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "RetPN ID: " << getId() << " unique return node for function " << SVFUtil::cast<SVFFunction>(value)->getName();
+    rawstr << "RetPN ID: " << getId() << " unique return node for function " << getCallGraphNode()->getFunction()->getName();
     return rawstr.str();
 }
 
@@ -219,7 +219,7 @@ const std::string VarArgPN::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "VarArgPN ID: " << getId() << " Var arg node for function " << SVFUtil::cast<SVFFunction>(value)->getName();
+    rawstr << "VarArgPN ID: " << getId() << " Var arg node for function " << getCallGraphNode()->getFunction()->getName();
     return rawstr.str();
 }
 
