@@ -370,7 +370,7 @@ public:
         return node->getKind() == SVFFunc;
     }
 
-    inline SVFLoopAndDomInfo* getLoopAndDomInfo()
+    inline SVFLoopAndDomInfo* getLoopAndDomInfo() const
     {
         return loopAndDom;
     }
