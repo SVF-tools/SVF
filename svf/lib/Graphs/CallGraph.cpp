@@ -143,6 +143,16 @@ void CallGraph::view()
     SVF::ViewGraph(this, "Call Graph");
 }
 
+const CallGraphNode* CallGraph::getCallGraphNode(const std::string& name)
+{
+    for (const auto& item : *this)
+    {
+        if (item.second->getName() == name)
+            return item.second;
+    }
+    return nullptr;
+}
+
 namespace SVF
 {
 
