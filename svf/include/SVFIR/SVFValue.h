@@ -40,7 +40,7 @@ namespace SVF
 /// LLVM Aliases and constants
 typedef SVF::GraphPrinter GraphPrinter;
 
-
+class CallGraphNode;
 class SVFInstruction;
 class SVFBasicBlock;
 class SVFArgument;
@@ -320,8 +320,19 @@ private:
     std::vector<const SVFBasicBlock*> allBBs;   /// all BasicBlocks of this function
     std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
     SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
+    const CallGraphNode *callGraphNode;          /// call graph node for this function
 
 protected:
+    inline void setCallGraphNode(CallGraphNode *cgn)
+    {
+        callGraphNode = cgn;
+    }
+
+    inline const CallGraphNode* getCallGraphNode()
+    {
+        return callGraphNode;
+    }
+
     ///@{ attributes to be set only through Module builders e.g., LLVMModule
     inline void addBasicBlock(const SVFBasicBlock* bb)
     {
