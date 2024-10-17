@@ -328,11 +328,6 @@ protected:
         callGraphNode = cgn;
     }
 
-    inline const CallGraphNode* getCallGraphNode()
-    {
-        return callGraphNode;
-    }
-
     ///@{ attributes to be set only through Module builders e.g., LLVMModule
     inline void addBasicBlock(const SVFBasicBlock* bb)
     {
@@ -364,6 +359,11 @@ public:
     SVFFunction(const SVFType* ty,const SVFFunctionType* ft, bool declare, bool intrinsic, bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
+
+    inline const CallGraphNode* getCallGraphNode() const
+    {
+        return callGraphNode;
+    }
 
     static inline bool classof(const SVFValue *node)
     {
