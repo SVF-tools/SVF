@@ -353,13 +353,8 @@ class CallGraph : public GenericCallGraphTy
 
 public:
     typedef CallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
-    typedef Map<const SVFFunction*, CallGraphNode*> FunToCallGraphNodeMap;
     typedef Map<const CallICFGNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
-    typedef Set<const SVFFunction*> FunctionSet;
-    typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
-
 protected:
-    FunToCallGraphNodeMap funToCallGraphNodeMap; ///< Call Graph node map
     CallInstToCallGraphEdgesMap callinstToCallGraphEdgesMap; ///< Map a call instruction to its corresponding call edges
 
     NodeID callGraphNodeNum;
@@ -395,13 +390,6 @@ public:
     {
         return getGNode(id);
     }
-    inline CallGraphNode* getCallGraphNode(const SVFFunction* fun) const
-    {
-        FunToCallGraphNodeMap::const_iterator it = funToCallGraphNodeMap.find(fun);
-        assert(it!=funToCallGraphNodeMap.end() && "call graph node not found!!");
-        return it->second;
-    }
-
     //@}
 
     /// Whether we have already created this call graph edge
@@ -409,7 +397,7 @@ public:
                                 const CallICFGNode* callIcfgNode) const;
 
     /// Add direct call edges
-    void addDirectCallGraphEdge(const CallICFGNode* call, const SVFFunction* callerFun, const SVFFunction* calleeFun);
+    void addDirectCallGraphEdge(const CallICFGNode* call, CallGraphNode* callerFun,  CallGraphNode* calleeFun);
     /// Dump the graph
     void dump(const std::string& filename);
 

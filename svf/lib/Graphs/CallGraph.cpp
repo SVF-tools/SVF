@@ -107,7 +107,6 @@ void CallGraph::addCallGraphNode(const SVFFunction* fun)
     NodeID id  = callGraphNodeNum;
     CallGraphNode *callGraphNode = new CallGraphNode(id, fun);
     addGNode(id, callGraphNode);
-    funToCallGraphNodeMap[callGraphNode->getFunction()] = callGraphNode;
     callGraphNodeNum++;
 }
 
@@ -133,13 +132,8 @@ CallGraphEdge* CallGraph::hasGraphEdge(CallGraphNode* src,
 /*!
  * Add direct call edges
  */
-void CallGraph::addDirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun)
+void CallGraph::addDirectCallGraphEdge(const CallICFGNode* cs, CallGraphNode* caller, CallGraphNode* callee)
 {
-
-    CallGraphNode* caller = getCallGraphNode(callerFun);
-    CallGraphNode* callee = getCallGraphNode(calleeFun);
-
-
     if(!hasGraphEdge(caller,callee, cs))
     {
         CallGraphEdge* edge = new CallGraphEdge(caller,callee, cs);

@@ -322,7 +322,7 @@ private:
     BasicBlockGraph* bbGraph; /// the basic block graph of this function
 
 protected:
-    inline void setCallGraphNode(CallGraphNode *cgn)
+    inline void setCallGraphNode(const CallGraphNode *cgn)
     {
         callGraphNode = cgn;
     }
