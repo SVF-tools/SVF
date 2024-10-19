@@ -327,29 +327,11 @@ inline bool isProgEntryFunction(const SVFFunction* fun)
     return fun && fun->getName() == "main";
 }
 
-/// Get program entry function from module.
-inline const SVFFunction* getProgFunction(SVFModule* svfModule, const std::string& funName)
-{
-    for (SVFModule::const_iterator it = svfModule->begin(), eit = svfModule->end(); it != eit; ++it)
-    {
-        const SVFFunction *fun = *it;
-        if (fun->getName()==funName)
-            return fun;
-    }
-    return nullptr;
-}
+/// Get program entry function from function name.
+const SVFFunction* getProgFunction(const std::string& funName);
 
-/// Get program entry function from module.
-inline const SVFFunction* getProgEntryFunction(SVFModule* svfModule)
-{
-    for (SVFModule::const_iterator it = svfModule->begin(), eit = svfModule->end(); it != eit; ++it)
-    {
-        const SVFFunction *fun = *it;
-        if (isProgEntryFunction(fun))
-            return (fun);
-    }
-    return nullptr;
-}
+/// Get program entry function.
+const SVFFunction* getProgEntryFunction();
 
 /// Return true if this is a program exit function call
 //@{

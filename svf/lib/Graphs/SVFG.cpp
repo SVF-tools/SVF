@@ -427,9 +427,7 @@ void SVFG::connectIndirectSVFGEdges()
  */
 void SVFG::connectFromGlobalToProgEntry()
 {
-    SVFModule* svfModule = mssa->getPTA()->getModule();
-    const SVFFunction* mainFunc =
-        SVFUtil::getProgEntryFunction(svfModule);
+    const SVFFunction* mainFunc = SVFUtil::getProgEntryFunction();
     FormalINSVFGNodeSet& formalIns = getFormalINSVFGNodes(mainFunc);
     if (formalIns.empty())
         return;

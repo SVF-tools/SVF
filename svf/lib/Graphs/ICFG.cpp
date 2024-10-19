@@ -341,7 +341,7 @@ ICFGEdge* ICFG::addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode)
 /*!
  * Add conditional intraprocedural edges between two nodes
  */
-ICFGEdge* ICFG::addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFValue* condition, s32_t branchCondVal)
+ICFGEdge* ICFG::addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, s64_t branchCondVal)
 {
 
     checkIntraEdgeParents(srcNode, dstNode);
@@ -354,7 +354,7 @@ ICFGEdge* ICFG::addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, co
     else
     {
         IntraCFGEdge* intraEdge = new IntraCFGEdge(srcNode,dstNode);
-        intraEdge->setBranchCondition(condition,branchCondVal);
+        intraEdge->setBranchCondVal(branchCondVal);
         return (addICFGEdge(intraEdge) ? intraEdge : nullptr);
     }
 }

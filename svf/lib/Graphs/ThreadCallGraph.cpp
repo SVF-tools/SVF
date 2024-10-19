@@ -39,9 +39,10 @@ using namespace SVFUtil;
 /*!
  * Constructor
  */
-ThreadCallGraph::ThreadCallGraph() :
-    CallGraph(ThdCallGraph), tdAPI(ThreadAPI::getThreadAPI())
+ThreadCallGraph::ThreadCallGraph(const CallGraph& cg) :
+    CallGraph(cg), tdAPI(ThreadAPI::getThreadAPI())
 {
+    kind = ThdCallGraph;
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Building ThreadCallGraph\n"));
 }
 
