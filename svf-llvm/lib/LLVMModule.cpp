@@ -174,6 +174,12 @@ void LLVMModuleSet::build()
 
     CallGraphBuilder callGraphBuilder;
     callgraph = callGraphBuilder.buildSVFIRCallGraph(svfModule);
+
+    for (const auto& func : svfModule->getFunctionSet())
+    {
+        addFunctionMap(SVFUtil::cast<Function>(getLLVMValue(func)),
+                       callgraph->getCallGraphNode(func));
+    }
 }
 
 void LLVMModuleSet::createSVFDataStructure()
@@ -284,13 +290,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             SVFInstruction* svfInst = nullptr;
             if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(&inst))
             {
-                if (cppUtil::isVirtualCallSite(call))
-                    svfInst = new SVFVirtualCallInst(
-                        getSVFType(call->getType()), svfBB,
-                        call->getFunctionType()->isVarArg(),
-                        inst.isTerminator());
-                else
-                    svfInst = new SVFCallInst(
+                svfInst = new SVFCallInst(
                         getSVFType(call->getType()), svfBB,
                         call->getFunctionType()->isVarArg(),
                         inst.isTerminator());
@@ -372,12 +372,6 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
                 else
                 {
                     svfcall->setCalledOperand(getSVFValue(called_llvmval));
-                }
-                if(SVFVirtualCallInst* virtualCall = SVFUtil::dyn_cast<SVFVirtualCallInst>(svfcall))
-                {
-                    virtualCall->setVtablePtr(getSVFValue(cppUtil::getVCallVtblPtr(call)));
-                    virtualCall->setFunIdxInVtable(cppUtil::getVCallIdx(call));
-                    virtualCall->setFunNameOfVirtualCall(cppUtil::getFunNameOfVCallSite(call));
                 }
                 for(u32_t i = 0; i < call->arg_size(); i++)
                 {
@@ -1365,6 +1359,24 @@ SVFValue* LLVMModuleSet::getSVFValue(const Value* value)
     }
     else
         return getSVFOtherValue(value);
+}
+
+SVFBaseNode* LLVMModuleSet::getSVFBaseNode(const Value* value)
+{
+    if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
+    {
+        if(!LLVMUtil::isIntrinsicInst(inst))
+            return getICFGNode(inst);
+    }
+    else if (const Function* func = SVFUtil::dyn_cast<Function>(value))
+    {
+        return getCallGraphNode(func);
+    }
+    else
+    {
+        // TODO: add more llvm value to svfbase node map
+    }
+    return nullptr;
 }
 
 const Type* LLVMModuleSet::getLLVMType(const SVFType* T) const

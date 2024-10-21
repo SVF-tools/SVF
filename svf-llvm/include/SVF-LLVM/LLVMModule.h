@@ -54,6 +54,7 @@ public:
     typedef Map<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
 
     typedef Map<const Function*, SVFFunction*> LLVMFun2SVFFunMap;
+    typedef Map<const Function*, CallGraphNode*> LLVMFun2CallGraphNodeMap;
     typedef Map<const BasicBlock*, SVFBasicBlock*> LLVMBB2SVFBBMap;
     typedef Map<const Instruction*, SVFInstruction*> LLVMInst2SVFInstMap;
     typedef Map<const Argument*, SVFArgument*> LLVMArgument2SVFArgumentMap;
@@ -89,6 +90,7 @@ private:
     GlobalDefToRepMapTy GlobalDefToRepMap;
 
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
+    LLVMFun2CallGraphNodeMap LLVMFun2CallGraphNode; ///< Map an LLVM Function to a callgraph node
     LLVMBB2SVFBBMap LLVMBB2SVFBB;
     LLVMInst2SVFInstMap LLVMInst2SVFInst;
     LLVMArgument2SVFArgumentMap LLVMArgument2SVFArgument;
@@ -170,6 +172,11 @@ public:
         LLVMFunc2SVFFunc[func] = svfFunc;
         setValueAttr(func,svfFunc);
     }
+    inline void addFunctionMap(const Function* func, CallGraphNode* svfFunc)
+    {
+        LLVMFun2CallGraphNode[func] = svfFunc;
+        setValueAttr(func,svfFunc);
+    }
     inline void addBasicBlockMap(const BasicBlock* bb, SVFBasicBlock* svfBB)
     {
         LLVMBB2SVFBB[bb] = svfBB;
@@ -180,6 +187,22 @@ public:
         LLVMInst2SVFInst[inst] = svfInst;
         setValueAttr(inst,svfInst);
     }
+    inline void addInstructionMap(const Instruction* inst, CallICFGNode* svfInst)
+    {
+        CSToCallNodeMap[inst] = svfInst;
+        setValueAttr(inst,svfInst);
+    }
+    inline void addInstructionMap(const Instruction* inst, RetICFGNode* svfInst)
+    {
+        CSToRetNodeMap[inst] = svfInst;
+        setValueAttr(inst,svfInst);
+    }
+    inline void addInstructionMap(const Instruction* inst, IntraICFGNode* svfInst)
+    {
+        InstToBlockNodeMap[inst] = svfInst;
+        setValueAttr(inst,svfInst);
+    }
+
     inline void addArgumentMap(const Argument* arg, SVFArgument* svfArg)
     {
         LLVMArgument2SVFArgument[arg] = svfArg;
@@ -213,6 +236,8 @@ public:
 
     SVFValue* getSVFValue(const Value* value);
 
+    SVFBaseNode* getSVFBaseNode(const Value* value);
+
     const Value* getLLVMValue(const SVFValue* value) const
     {
         SVFValue2LLVMValueMap::const_iterator it = SVFValue2LLVMValue.find(value);
@@ -224,6 +249,13 @@ public:
     {
         SVFBaseNode2LLVMValueMap ::const_iterator it = SVFBaseNode2LLVMValue.find(value);
         assert(it!=SVFBaseNode2LLVMValue.end() && "can't find corresponding llvm value!");
+        return it->second;
+    }
+
+    inline CallGraphNode* getCallGraphNode(const Function* fun) const
+    {
+        LLVMFun2CallGraphNodeMap::const_iterator it = LLVMFun2CallGraphNode.find(fun);
+        assert(it!=LLVMFun2CallGraphNode.end() && "SVF Function not found!");
         return it->second;
     }
 

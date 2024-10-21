@@ -66,20 +66,6 @@ SVFIR* SVFIRBuilder::build()
     // Set callgraph
     pag->setCallGraph(llvmModuleSet()->callgraph);
 
-    // Set icfgnode in memobj
-    for (auto& it : SymbolTableInfo::SymbolInfo()->idToObjMap())
-    {
-        if(!it.second->getValue())
-            continue;
-        if (const Instruction* inst =
-                    SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(
-                                it.second->getValue())))
-        {
-            if(llvmModuleSet()->hasICFGNode(inst))
-                it.second->gNode = llvmModuleSet()->getICFGNode(inst);
-        }
-    }
-
     CHGraph* chg = new CHGraph(pag->getModule());
     CHGBuilder chgbuilder(chg);
     chgbuilder.buildCHG();
@@ -103,6 +89,10 @@ SVFIR* SVFIRBuilder::build()
     ///// handle globals
     visitGlobal(svfModule);
     ///// collect exception vals in the program
+
+
+    /// set memobj value attributes
+    setMemObjValueAttr();
 
     /// handle functions
     for (Module& M : llvmModuleSet()->getLLVMModules())
@@ -192,6 +182,18 @@ SVFIR* SVFIRBuilder::build()
     SVFStat::timeOfBuildingSVFIR = (endTime - startTime) / TIMEINTERVAL;
 
     return pag;
+}
+
+void SVFIRBuilder::setMemObjValueAttr()
+{
+    // Set icfgnode in memobj
+    for (auto& it : SymbolTableInfo::SymbolInfo()->idToObjMap())
+    {
+        if(!it.second->getValue())
+            continue;
+        it.second->gNode = llvmModuleSet()->getSVFBaseNode(
+            llvmModuleSet()->getLLVMValue(it.second->getValue()));
+    }
 }
 
 /*
