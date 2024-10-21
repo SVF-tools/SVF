@@ -116,8 +116,8 @@ void PointerAnalysis::initialize()
     }
     else
     {
-        CallGraph* cg = pag->getCallGraph();
-        callgraph = new CallGraph(*cg);
+        PTACallGraph* cg = pag->getCallGraph();
+        callgraph = new PTACallGraph(*cg);
     }
     callGraphSCCDetection();
 
@@ -413,7 +413,7 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
                     callgraph->addIndirectCallGraphEdge(cs, cs->getCaller(), callee);
                     // FIXME: do we need to update llvm call graph here?
                     // The indirect call is maintained by ourself, We may update llvm's when we need to
-                    //CallGraphNode* callgraphNode = callgraph->getOrInsertFunction(cs.getCaller());
+                    //PTACallGraphNode* callgraphNode = callgraph->getOrInsertFunction(cs.getCaller());
                     //callgraphNode->addCalledFunction(cs,callgraph->getOrInsertFunction(callee));
                 }
             }

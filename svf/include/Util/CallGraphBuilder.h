@@ -31,7 +31,7 @@
 #ifndef INCLUDE_SVF_FE_CALLGRAPHBUILDER_H_
 #define INCLUDE_SVF_FE_CALLGRAPHBUILDER_H_
 
-#include "Graphs/CallGraph.h"
+#include "Graphs/PTACallGraph.h"
 #include "Graphs/ThreadCallGraph.h"
 
 namespace SVF
@@ -46,7 +46,7 @@ public:
     CallGraphBuilder()=default;
 
     /// Buidl SVFIR callgraoh
-    CallGraph* buildSVFIRCallGraph(SVFModule* svfModule);
+    PTACallGraph* buildSVFIRCallGraph(SVFModule* svfModule);
 
     /// Build thread-aware callgraph
     ThreadCallGraph* buildThreadCallGraph();

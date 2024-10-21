@@ -1,4 +1,4 @@
-//===- CallGraph.h -- Call graph representation----------------------------//
+//===- PTACallGraph.h -- Call graph representation----------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,14 +21,14 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * CallGraph.h
+ * PTACallGraph.h
  *
  *  Created on: Nov 7, 2013
  *      Author: Yulei Sui
  */
 
-#ifndef CALLGRAPH_H_
-#define CALLGRAPH_H_
+#ifndef PTACALLGRAPH_H_
+#define PTACALLGRAPH_H_
 
 #include "Graphs/GenericGraph.h"
 #include "SVFIR/SVFValue.h"
@@ -38,7 +38,7 @@
 namespace SVF
 {
 
-class CallGraphNode;
+class PTACallGraphNode;
 class SVFModule;
 
 
@@ -47,8 +47,8 @@ class SVFModule;
  * Multiple calls from function A to B are merged into one call edge
  * Each call edge has a set of direct callsites and a set of indirect callsites
  */
-typedef GenericEdge<CallGraphNode> GenericCallGraphEdgeTy;
-class CallGraphEdge : public GenericCallGraphEdgeTy
+typedef GenericEdge<PTACallGraphNode> GenericCallGraphEdgeTy;
+class PTACallGraphEdge : public GenericCallGraphEdgeTy
 {
 
 public:
@@ -65,12 +65,12 @@ private:
     CallSiteID csId;
 public:
     /// Constructor
-    CallGraphEdge(CallGraphNode* s, CallGraphNode* d, CEDGEK kind, CallSiteID cs) :
+    PTACallGraphEdge(PTACallGraphNode* s, PTACallGraphNode* d, CEDGEK kind, CallSiteID cs) :
         GenericCallGraphEdgeTy(s, d, makeEdgeFlagWithInvokeID(kind, cs)), csId(cs)
     {
     }
     /// Destructor
-    virtual ~CallGraphEdge()
+    virtual ~PTACallGraphEdge()
     {
     }
     /// Compute the unique edgeFlag value from edge kind and CallSiteID.
@@ -140,21 +140,21 @@ public:
 
     /// ClassOf
     //@{
-    static inline bool classof(const CallGraphEdge*)
+    static inline bool classof(const PTACallGraphEdge*)
     {
         return true;
     }
     static inline bool classof(const GenericCallGraphEdgeTy *edge)
     {
-        return edge->getEdgeKind() == CallGraphEdge::CallRetEdge ||
-               edge->getEdgeKind() == CallGraphEdge::TDForkEdge ||
-               edge->getEdgeKind() == CallGraphEdge::TDJoinEdge;
+        return edge->getEdgeKind() == PTACallGraphEdge::CallRetEdge ||
+               edge->getEdgeKind() == PTACallGraphEdge::TDForkEdge ||
+               edge->getEdgeKind() == PTACallGraphEdge::TDJoinEdge;
     }
     //@}
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend OutStream& operator<< (OutStream &o, const CallGraphEdge &edge)
+    friend OutStream& operator<< (OutStream &o, const PTACallGraphEdge&edge)
     {
         o << edge.toString();
         return o;
@@ -163,28 +163,28 @@ public:
 
     virtual const std::string toString() const;
 
-    typedef GenericNode<CallGraphNode,CallGraphEdge>::GEdgeSetTy CallGraphEdgeSet;
+    typedef GenericNode<PTACallGraphNode, PTACallGraphEdge>::GEdgeSetTy CallGraphEdgeSet;
 
 };
 
 /*
  * Call Graph node representing a function
  */
-typedef GenericNode<CallGraphNode,CallGraphEdge> GenericCallGraphNodeTy;
-class CallGraphNode : public GenericCallGraphNodeTy
+typedef GenericNode<PTACallGraphNode, PTACallGraphEdge> GenericCallGraphNodeTy;
+class PTACallGraphNode : public GenericCallGraphNodeTy
 {
 
 public:
-    typedef CallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
-    typedef CallGraphEdge::CallGraphEdgeSet::iterator iterator;
-    typedef CallGraphEdge::CallGraphEdgeSet::const_iterator const_iterator;
+    typedef PTACallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
+    typedef PTACallGraphEdge::CallGraphEdgeSet::iterator iterator;
+    typedef PTACallGraphEdge::CallGraphEdgeSet::const_iterator const_iterator;
 
 private:
     const SVFFunction* fun;
 
 public:
     /// Constructor
-    CallGraphNode(NodeID i, const SVFFunction* f) : GenericCallGraphNodeTy(i,CallNodeKd), fun(f)
+    PTACallGraphNode(NodeID i, const SVFFunction* f) : GenericCallGraphNodeTy(i,CallNodeKd), fun(f)
     {
 
     }
@@ -206,7 +206,7 @@ public:
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend OutStream& operator<< (OutStream &o, const CallGraphNode &node)
+    friend OutStream& operator<< (OutStream &o, const PTACallGraphNode&node)
     {
         o << node.toString();
         return o;
@@ -217,7 +217,7 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const CallGraphNode *)
+    static inline bool classof(const PTACallGraphNode*)
     {
         return true;
     }
@@ -237,13 +237,13 @@ public:
 /*!
  * Pointer Analysis Call Graph used internally for various pointer analysis
  */
-typedef GenericGraph<CallGraphNode,CallGraphEdge> GenericCallGraphTy;
-class CallGraph : public GenericCallGraphTy
+typedef GenericGraph<PTACallGraphNode, PTACallGraphEdge> GenericCallGraphTy;
+class PTACallGraph : public GenericCallGraphTy
 {
 
 public:
-    typedef CallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
-    typedef Map<const SVFFunction*, CallGraphNode *> FunToCallGraphNodeMap;
+    typedef PTACallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
+    typedef Map<const SVFFunction*, PTACallGraphNode*> FunToCallGraphNodeMap;
     typedef Map<const CallICFGNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
     typedef std::pair<const CallICFGNode*, const SVFFunction*> CallSitePair;
     typedef Map<CallSitePair, CallSiteID> CallSiteToIdMap;
@@ -280,15 +280,15 @@ protected:
 
 public:
     /// Constructor
-    CallGraph(CGEK k = NormCallGraph);
+    PTACallGraph(CGEK k = NormCallGraph);
 
     /// Copy constructor
-    CallGraph(const CallGraph& other);
+    PTACallGraph(const PTACallGraph& other);
 
     void addCallGraphNode(const SVFFunction* fun);
 
     /// Destructor
-    virtual ~CallGraph()
+    virtual ~PTACallGraph()
     {
         destroy();
     }
@@ -336,11 +336,11 @@ public:
 
     /// Get call graph node
     //@{
-    inline CallGraphNode* getCallGraphNode(NodeID id) const
+    inline PTACallGraphNode* getCallGraphNode(NodeID id) const
     {
         return getGNode(id);
     }
-    inline CallGraphNode* getCallGraphNode(const SVFFunction* fun) const
+    inline PTACallGraphNode* getCallGraphNode(const SVFFunction* fun) const
     {
         FunToCallGraphNodeMap::const_iterator it = funToCallGraphNodeMap.find(fun);
         assert(it!=funToCallGraphNodeMap.end() && "call graph node not found!!");
@@ -398,9 +398,11 @@ public:
     }
     //@}
     /// Whether we have already created this call graph edge
-    CallGraphEdge* hasGraphEdge(CallGraphNode* src, CallGraphNode* dst,CallGraphEdge::CEDGEK kind, CallSiteID csId) const;
+    PTACallGraphEdge* hasGraphEdge(PTACallGraphNode* src, PTACallGraphNode* dst,
+                                   PTACallGraphEdge::CEDGEK kind, CallSiteID csId) const;
     /// Get call graph edge via nodes
-    CallGraphEdge* getGraphEdge(CallGraphNode* src, CallGraphNode* dst,CallGraphEdge::CEDGEK kind, CallSiteID csId);
+    PTACallGraphEdge* getGraphEdge(PTACallGraphNode* src, PTACallGraphNode* dst,
+                                   PTACallGraphEdge::CEDGEK kind, CallSiteID csId);
 
     /// Get all callees for a callsite
     inline void getCallees(const CallICFGNode* cs, FunctionSet& callees)
@@ -438,7 +440,7 @@ public:
     }
     //@}
     /// Add call graph edge
-    inline void addEdge(CallGraphEdge* edge)
+    inline void addEdge(PTACallGraphEdge* edge)
     {
         edge->getDstNode()->addIncomingEdge(edge);
         edge->getSrcNode()->addOutgoingEdge(edge);
@@ -452,9 +454,9 @@ public:
 
     /// Get callsites invoking the callee
     //@{
-    void getAllCallSitesInvokingCallee(const SVFFunction* callee, CallGraphEdge::CallInstSet& csSet);
-    void getDirCallSitesInvokingCallee(const SVFFunction* callee, CallGraphEdge::CallInstSet& csSet);
-    void getIndCallSitesInvokingCallee(const SVFFunction* callee, CallGraphEdge::CallInstSet& csSet);
+    void getAllCallSitesInvokingCallee(const SVFFunction* callee, PTACallGraphEdge::CallInstSet& csSet);
+    void getDirCallSitesInvokingCallee(const SVFFunction* callee, PTACallGraphEdge::CallInstSet& csSet);
+    void getIndCallSitesInvokingCallee(const SVFFunction* callee, PTACallGraphEdge::CallInstSet& csSet);
     //@}
 
     /// Whether its reachable between two functions
@@ -475,19 +477,19 @@ namespace SVF
  * GenericGraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GenericGraphTraits<SVF::CallGraphNode*> : public GenericGraphTraits<SVF::GenericNode<SVF::CallGraphNode,SVF::CallGraphEdge>*  >
+template<> struct GenericGraphTraits<SVF::PTACallGraphNode*> : public GenericGraphTraits<SVF::GenericNode<SVF::PTACallGraphNode,SVF::PTACallGraphEdge>*  >
 {
 };
 
 /// Inverse GenericGraphTraits specializations for call graph node, it is used for inverse traversal.
 template<>
-struct GenericGraphTraits<Inverse<SVF::CallGraphNode *> > : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::CallGraphNode,SVF::CallGraphEdge>* > >
+struct GenericGraphTraits<Inverse<SVF::PTACallGraphNode*> > : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::PTACallGraphNode,SVF::PTACallGraphEdge>* > >
 {
 };
 
-template<> struct GenericGraphTraits<SVF::CallGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::CallGraphNode,SVF::CallGraphEdge>* >
+template<> struct GenericGraphTraits<SVF::PTACallGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::PTACallGraphNode,SVF::PTACallGraphEdge>* >
 {
-    typedef SVF::CallGraphNode *NodeRef;
+    typedef SVF::PTACallGraphNode*NodeRef;
 };
 
 } // End namespace llvm

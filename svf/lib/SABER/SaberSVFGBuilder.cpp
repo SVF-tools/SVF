@@ -291,15 +291,15 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
 
 
 /// Add actual parameter SVFGNode for 1st argument of a deallocation like external function
-void SaberSVFGBuilder::AddExtActualParmSVFGNodes(CallGraph* callgraph)
+void SaberSVFGBuilder::AddExtActualParmSVFGNodes(PTACallGraph* callgraph)
 {
     SVFIR* pag = SVFIR::getPAG();
     for(SVFIR::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it)
     {
-        CallGraph::FunctionSet callees;
+        PTACallGraph::FunctionSet callees;
         callgraph->getCallees(it->first, callees);
-        for (CallGraph::FunctionSet::const_iterator cit = callees.begin(),
+        for (PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
                 ecit = callees.end(); cit != ecit; cit++)
         {
 

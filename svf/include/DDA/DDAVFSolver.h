@@ -49,8 +49,8 @@ class DDAVFSolver
     friend class DDAStat;
 public:
     typedef SCCDetection<SVFG*> SVFGSCC;
-    typedef SCCDetection<CallGraph*> CallGraphSCC;
-    typedef CallGraphEdge::CallInstSet CallInstSet;
+    typedef SCCDetection<PTACallGraph*> CallGraphSCC;
+    typedef PTACallGraphEdge::CallInstSet CallInstSet;
     typedef SVFIR::CallSiteSet CallSiteSet;
     typedef OrderedSet<DPIm> DPTItemSet;
     typedef OrderedMap<DPIm, CPtSet> DPImToCPtSetMap;
@@ -624,7 +624,7 @@ protected:
         return (getSVFGSCCRepNode(edge->getSrcID()) == getSVFGSCCRepNode(edge->getDstID()));
     }
     /// Set callgraph
-    inline void setCallGraph (CallGraph* cg)
+    inline void setCallGraph (PTACallGraph* cg)
     {
         _callGraph = cg;
     }
@@ -775,8 +775,8 @@ protected:
     SVFG* _svfg;					///< SVFG
     AndersenWaveDiff* _ander;		///< Andersen's analysis
     NodeBS candidateQueries;		///< candidate pointers;
-    CallGraph* _callGraph;		///< CallGraph
-    CallGraphSCC* _callGraphSCC;	///< SCC for CallGraph
+    PTACallGraph* _callGraph;		///< PTACallGraph
+    CallGraphSCC* _callGraphSCC;	///< SCC for PTACallGraph
     SVFGSCC* _svfgSCC;				///< SCC for SVFG
     DPTItemSet backwardVisited;		///< visited map during backward traversing
     DPImToCPtSetMap dpmToTLCPtSetMap;	///< points-to caching map for top-level vars

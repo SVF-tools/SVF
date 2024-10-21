@@ -32,7 +32,7 @@
 
 
 #include "SVFIR/SVFIR.h"
-#include "Graphs/CallGraph.h"
+#include "Graphs/PTACallGraph.h"
 #include "Graphs/VFGNode.h"
 #include "Graphs/VFGEdge.h"
 
@@ -100,7 +100,7 @@ protected:
     FunToVFGNodesMapTy funToVFGNodesMap; ///< map a function to its VFGNodes;
 
     GlobalVFGNodeSet globalVFGNodes;	///< set of global store VFG nodes
-    CallGraph* callgraph;
+    PTACallGraph* callgraph;
     SVFIR* pag;
     VFGK kind;
 
@@ -109,7 +109,7 @@ protected:
 
 public:
     /// Constructor
-    VFG(CallGraph* callgraph, VFGK k = FULLSVFG);
+    VFG(PTACallGraph* callgraph, VFGK k = FULLSVFG);
 
     /// Destructor
     virtual ~VFG()
@@ -135,8 +135,8 @@ public:
         return pag;
     }
 
-    /// Return CallGraph
-    inline CallGraph* getCallGraph() const
+    /// Return PTACallGraph
+    inline PTACallGraph* getCallGraph() const
     {
         return callgraph;
     }

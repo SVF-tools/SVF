@@ -41,7 +41,7 @@
 #include "SVF-LLVM/ObjTypeInference.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 #include "SVF-LLVM/ICFGBuilder.h"
-#include "Graphs/CallGraph.h"
+#include "Graphs/PTACallGraph.h"
 #include "Util/CallGraphBuilder.h"
 
 using namespace std;
