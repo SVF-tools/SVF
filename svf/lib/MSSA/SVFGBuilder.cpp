@@ -33,6 +33,8 @@
 #include "Graphs/SVFG.h"
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/Andersen.h"
+#include "Graphs/CallGraph.h"
+
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -101,7 +103,7 @@ std::unique_ptr<MemSSA> SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyM
 
     auto mssa = std::make_unique<MemSSA>(pta, ptrOnlyMSSA);
 
-    PTACallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
 

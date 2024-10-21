@@ -116,7 +116,7 @@ void PointerAnalysis::initialize()
     }
     else
     {
-        PTACallGraph* cg = pag->getCallGraph();
+        CallGraph* cg = pag->getCallGraph();
         callgraph = new PTACallGraph(*cg);
     }
     callGraphSCCDetection();
