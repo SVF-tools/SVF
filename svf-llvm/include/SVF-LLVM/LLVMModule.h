@@ -172,8 +172,11 @@ public:
         LLVMFunc2SVFFunc[func] = svfFunc;
         setValueAttr(func,svfFunc);
     }
-    void addFunctionMap(const Function* func, CallGraphNode* cgNode);
-
+    inline void addFunctionMap(const Function* func, CallGraphNode* svfFunc)
+    {
+        LLVMFun2CallGraphNode[func] = svfFunc;
+        setValueAttr(func,svfFunc);
+    }
     inline void addBasicBlockMap(const BasicBlock* bb, SVFBasicBlock* svfBB)
     {
         LLVMBB2SVFBB[bb] = svfBB;
@@ -184,6 +187,22 @@ public:
         LLVMInst2SVFInst[inst] = svfInst;
         setValueAttr(inst,svfInst);
     }
+    inline void addInstructionMap(const Instruction* inst, CallICFGNode* svfInst)
+    {
+        CSToCallNodeMap[inst] = svfInst;
+        setValueAttr(inst,svfInst);
+    }
+    inline void addInstructionMap(const Instruction* inst, RetICFGNode* svfInst)
+    {
+        CSToRetNodeMap[inst] = svfInst;
+        setValueAttr(inst,svfInst);
+    }
+    inline void addInstructionMap(const Instruction* inst, IntraICFGNode* svfInst)
+    {
+        InstToBlockNodeMap[inst] = svfInst;
+        setValueAttr(inst,svfInst);
+    }
+
     inline void addArgumentMap(const Argument* arg, SVFArgument* svfArg)
     {
         LLVMArgument2SVFArgument[arg] = svfArg;
@@ -231,17 +250,17 @@ public:
         return it->second;
     }
 
+    inline CallGraphNode* getCallGraphNode(const Function* fun) const
+    {
+        LLVMFun2CallGraphNodeMap::const_iterator it = LLVMFun2CallGraphNode.find(fun);
+        assert(it!=LLVMFun2CallGraphNode.end() && "SVF Function not found!");
+        return it->second;
+    }
+
     inline SVFFunction* getSVFFunction(const Function* fun) const
     {
         LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
         assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
-        return it->second;
-    }
-
-    inline CallGraphNode* getCallGraphNode(const Function* fun) const
-    {
-        LLVMFun2CallGraphNodeMap::const_iterator it = LLVMFunc2CallGraphNode.find(fun);
-        assert(it!=LLVMFunc2CallGraphNode.end() && "CallGraph Node not found!");
         return it->second;
     }
 

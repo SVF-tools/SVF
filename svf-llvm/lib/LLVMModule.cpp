@@ -298,13 +298,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             SVFInstruction* svfInst = nullptr;
             if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(&inst))
             {
-                if (cppUtil::isVirtualCallSite(call))
-                    svfInst = new SVFVirtualCallInst(
-                        getSVFType(call->getType()), svfBB,
-                        call->getFunctionType()->isVarArg(),
-                        inst.isTerminator());
-                else
-                    svfInst = new SVFCallInst(
+                svfInst = new SVFCallInst(
                         getSVFType(call->getType()), svfBB,
                         call->getFunctionType()->isVarArg(),
                         inst.isTerminator());
@@ -386,12 +380,6 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
                 else
                 {
                     svfcall->setCalledOperand(getSVFValue(called_llvmval));
-                }
-                if(SVFVirtualCallInst* virtualCall = SVFUtil::dyn_cast<SVFVirtualCallInst>(svfcall))
-                {
-                    virtualCall->setVtablePtr(getSVFValue(cppUtil::getVCallVtblPtr(call)));
-                    virtualCall->setFunIdxInVtable(cppUtil::getVCallIdx(call));
-                    virtualCall->setFunNameOfVirtualCall(cppUtil::getFunNameOfVCallSite(call));
                 }
                 for(u32_t i = 0; i < call->arg_size(); i++)
                 {
@@ -1222,12 +1210,6 @@ void LLVMModuleSet::dumpModulesToFile(const std::string& suffix)
 
         OS.flush();
     }
-}
-
-void LLVMModuleSet::addFunctionMap(const SVF::Function* func, SVF::CallGraphNode* cgNode)
-{
-    LLVMFunc2CallGraphNode[func] = cgNode;
-    setValueAttr(func, cgNode);
 }
 
 void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)

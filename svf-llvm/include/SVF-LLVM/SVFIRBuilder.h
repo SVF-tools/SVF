@@ -71,6 +71,8 @@ public:
         return pag;
     }
 
+    void setMemObjValueAttr();
+
     /// Initialize nodes and edges
     //@{
     void initialiseNodes();
