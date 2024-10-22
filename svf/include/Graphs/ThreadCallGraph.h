@@ -47,7 +47,7 @@ class ThreadForkEdge: public PTACallGraphEdge
 public:
     /// Constructor
     ThreadForkEdge(PTACallGraphNode* s, PTACallGraphNode* d, CallSiteID csId) :
-          PTACallGraphEdge(s, d, PTACallGraphEdge::TDForkEdge, csId)
+        PTACallGraphEdge(s, d, PTACallGraphEdge::TDForkEdge, csId)
     {
     }
     /// Destructor
@@ -90,7 +90,7 @@ class ThreadJoinEdge: public PTACallGraphEdge
 public:
     /// Constructor
     ThreadJoinEdge(PTACallGraphNode* s, PTACallGraphNode* d, CallSiteID csId) :
-          PTACallGraphEdge(s, d, PTACallGraphEdge::TDJoinEdge, csId)
+        PTACallGraphEdge(s, d, PTACallGraphEdge::TDJoinEdge, csId)
     {
     }
     /// Destructor
@@ -130,7 +130,7 @@ class HareParForEdge: public PTACallGraphEdge
 public:
     /// Constructor
     HareParForEdge(PTACallGraphNode* s, PTACallGraphNode* d, CallSiteID csId) :
-          PTACallGraphEdge(s, d, PTACallGraphEdge::HareParForEdge, csId)
+        PTACallGraphEdge(s, d, PTACallGraphEdge::HareParForEdge, csId)
     {
     }
     /// Destructor

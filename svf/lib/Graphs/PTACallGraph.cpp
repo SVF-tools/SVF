@@ -168,8 +168,8 @@ void PTACallGraph::addCallGraphNode(const SVFFunction* fun)
  *  Whether we have already created this call graph edge
  */
 PTACallGraphEdge* PTACallGraph::hasGraphEdge(PTACallGraphNode* src,
-                                          PTACallGraphNode* dst,
-                                             PTACallGraphEdge::CEDGEK kind, CallSiteID csId) const
+        PTACallGraphNode* dst,
+        PTACallGraphEdge::CEDGEK kind, CallSiteID csId) const
 {
     PTACallGraphEdge edge(src,dst,kind,csId);
     PTACallGraphEdge* outEdge = src->hasOutgoingEdge(&edge);
@@ -187,8 +187,8 @@ PTACallGraphEdge* PTACallGraph::hasGraphEdge(PTACallGraphNode* src,
  * get PTACallGraph edge via nodes
  */
 PTACallGraphEdge* PTACallGraph::getGraphEdge(PTACallGraphNode* src,
-                                          PTACallGraphNode* dst,
-                                             PTACallGraphEdge::CEDGEK kind, CallSiteID)
+        PTACallGraphNode* dst,
+        PTACallGraphEdge::CEDGEK kind, CallSiteID)
 {
     for (PTACallGraphEdge::CallGraphEdgeSet::iterator iter = src->OutEdgeBegin();
             iter != src->OutEdgeEnd(); ++iter)

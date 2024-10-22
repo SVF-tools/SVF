@@ -40,7 +40,7 @@ using namespace SVFUtil;
  * Constructor
  */
 ThreadCallGraph::ThreadCallGraph(const PTACallGraph& cg) :
-      PTACallGraph(cg), tdAPI(ThreadAPI::getThreadAPI())
+    PTACallGraph(cg), tdAPI(ThreadAPI::getThreadAPI())
 {
     kind = ThdCallGraph;
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Building ThreadCallGraph\n"));
