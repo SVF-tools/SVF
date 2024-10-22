@@ -115,7 +115,7 @@ void MHP::analyzeInterleaving()
                 else if (tct->isCallSite(curInst) && !tct->isExtCall(curInst))
                 {
                     handleCall(cts, rootTid);
-                    CallGraph::FunctionSet callees;
+                    PTACallGraph::FunctionSet callees;
                     if (!tct->isCandidateFun(getCallee(SVFUtil::cast<CallICFGNode>(curInst), callees)))
                         handleIntra(cts);
                 }
@@ -184,8 +184,8 @@ void MHP::handleNonCandidateFun(const CxtThreadStmt& cts)
     const SVFFunction* curfun = curInst->getFun();
     assert((curInst == curfun->getEntryBlock()->front()) && "curInst is not the entry of non candidate function.");
     const CallStrCxt& curCxt = cts.getContext();
-    CallGraphNode* node = tcg->getCallGraphNode(curfun);
-    for (CallGraphNode::const_iterator nit = node->OutEdgeBegin(), neit = node->OutEdgeEnd(); nit != neit; nit++)
+    PTACallGraphNode* node = tcg->getCallGraphNode(curfun);
+    for (PTACallGraphNode::const_iterator nit = node->OutEdgeBegin(), neit = node->OutEdgeEnd(); nit != neit; nit++)
     {
         const SVFFunction* callee = (*nit)->getDstNode()->getFunction();
         if (!isExtCall(callee))
@@ -295,7 +295,7 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
     const CallICFGNode* cbn = cast<CallICFGNode>(call);
     if (tct->getThreadCallGraph()->hasCallGraphEdge(cbn))
     {
-        for (CallGraph::CallGraphEdgeSet::const_iterator cgIt = tcg->getCallEdgeBegin(cbn),
+        for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = tcg->getCallEdgeBegin(cbn),
                 ecgIt = tcg->getCallEdgeEnd(cbn);
                 cgIt != ecgIt; ++cgIt)
         {
@@ -318,12 +318,12 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
  */
 void MHP::handleRet(const CxtThreadStmt& cts)
 {
-    CallGraphNode* curFunNode = tcg->getCallGraphNode(cts.getStmt()->getFun());
-    for (CallGraphEdge* edge : curFunNode->getInEdges())
+    PTACallGraphNode* curFunNode = tcg->getCallGraphNode(cts.getStmt()->getFun());
+    for (PTACallGraphEdge* edge : curFunNode->getInEdges())
     {
         if (SVFUtil::isa<ThreadForkEdge, ThreadJoinEdge>(edge))
             continue;
-        for (CallGraphEdge::CallInstSet::const_iterator cit = (edge)->directCallsBegin(),
+        for (PTACallGraphEdge::CallInstSet::const_iterator cit = (edge)->directCallsBegin(),
                 ecit = (edge)->directCallsEnd();
                 cit != ecit; ++cit)
         {
@@ -340,7 +340,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
                 }
             }
         }
-        for (CallGraphEdge::CallInstSet::const_iterator cit = (edge)->indirectCallsBegin(),
+        for (PTACallGraphEdge::CallInstSet::const_iterator cit = (edge)->indirectCallsBegin(),
                 ecit = (edge)->indirectCallsEnd();
                 cit != ecit; ++cit)
         {
@@ -520,19 +520,19 @@ bool MHP::isHBPair(NodeID tid1, NodeID tid2)
 
 bool MHP::isConnectedfromMain(const SVFFunction* fun)
 {
-    CallGraphNode* cgnode = tcg->getCallGraphNode(fun);
-    FIFOWorkList<const CallGraphNode*> worklist;
+    PTACallGraphNode* cgnode = tcg->getCallGraphNode(fun);
+    FIFOWorkList<const PTACallGraphNode*> worklist;
     TCT::PTACGNodeSet visited;
     worklist.push(cgnode);
     visited.insert(cgnode);
     while (!worklist.empty())
     {
-        const CallGraphNode* node = worklist.pop();
+        const PTACallGraphNode* node = worklist.pop();
         if ("main" == node->getFunction()->getName())
             return true;
-        for (CallGraphNode::const_iterator nit = node->InEdgeBegin(), neit = node->InEdgeEnd(); nit != neit; nit++)
+        for (PTACallGraphNode::const_iterator nit = node->InEdgeBegin(), neit = node->InEdgeEnd(); nit != neit; nit++)
         {
-            const CallGraphNode* srcNode = (*nit)->getSrcNode();
+            const PTACallGraphNode* srcNode = (*nit)->getSrcNode();
             if (visited.find(srcNode) == visited.end())
             {
                 visited.insert(srcNode);
@@ -746,7 +746,7 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
                 DBOUT(DMTA, outs() << "-----\nForkJoinAnalysis root thread: " << tpair.first << " ");
                 DBOUT(DMTA, cts.dump());
                 DBOUT(DMTA, outs() << "-----\n");
-                CallGraph::FunctionSet callees;
+                PTACallGraph::FunctionSet callees;
                 if (isTDFork(curInst))
                 {
                     handleFork(cts, rootTid);
@@ -882,7 +882,7 @@ void ForkJoinAnalysis::handleCall(const CxtStmt& cts, NodeID rootTid)
     const CallICFGNode* cbn = SVFUtil::cast<CallICFGNode>(call);
     if (getTCG()->hasCallGraphEdge(cbn))
     {
-        for (CallGraph::CallGraphEdgeSet::const_iterator cgIt = getTCG()->getCallEdgeBegin(cbn),
+        for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = getTCG()->getCallEdgeBegin(cbn),
                 ecgIt = getTCG()->getCallEdgeEnd(cbn);
                 cgIt != ecgIt; ++cgIt)
         {
@@ -904,12 +904,12 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
     const ICFGNode* curInst = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
 
-    CallGraphNode* curFunNode = getTCG()->getCallGraphNode(curInst->getFun());
-    for (CallGraphEdge* edge : curFunNode->getInEdges())
+    PTACallGraphNode* curFunNode = getTCG()->getCallGraphNode(curInst->getFun());
+    for (PTACallGraphEdge* edge : curFunNode->getInEdges())
     {
         if (SVFUtil::isa<ThreadForkEdge, ThreadJoinEdge>(edge))
             continue;
-        for (CallGraphEdge::CallInstSet::const_iterator cit = edge->directCallsBegin(),
+        for (PTACallGraphEdge::CallInstSet::const_iterator cit = edge->directCallsBegin(),
                 ecit = edge->directCallsEnd();
                 cit != ecit; ++cit)
         {
@@ -927,7 +927,7 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
                 }
             }
         }
-        for (CallGraphEdge::CallInstSet::const_iterator cit = edge->indirectCallsBegin(),
+        for (PTACallGraphEdge::CallInstSet::const_iterator cit = edge->indirectCallsBegin(),
                 ecit = edge->indirectCallsEnd();
                 cit != ecit; ++cit)
         {

@@ -27,7 +27,7 @@
  *      Author: Xiao Cheng
  */
 #include "Util/CDGBuilder.h"
-#include "Graphs/CallGraph.h"
+#include "Graphs/PTACallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -123,7 +123,7 @@ s64_t CDGBuilder::getBBSuccessorBranchID(const SVFBasicBlock *BB, const SVFBasic
  */
 void CDGBuilder::buildControlDependence(const SVFModule *svfgModule)
 {
-    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    PTACallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
         const SVFFunction *svfFun = (item.second)->getFunction();

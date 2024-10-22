@@ -35,7 +35,7 @@
 #define MEMORYREGION_H_
 
 #include "Graphs/ICFG.h"
-#include "Graphs/CallGraph.h"
+#include "Graphs/PTACallGraph.h"
 #include "Graphs/SCC.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/WorkList.h"
@@ -175,7 +175,7 @@ public:
     /// SVFIR edge list
     typedef SVFIR::SVFStmtList SVFStmtList;
     /// Call Graph SCC
-    typedef SCCDetection<CallGraph*> SCC;
+    typedef SCCDetection<PTACallGraph*> SCC;
 
     MRSet& getMRSet()
     {
@@ -196,7 +196,7 @@ private:
 
     BVDataPTAImpl* pta;
     SCC* callGraphSCC;
-    CallGraph* callGraph;
+    PTACallGraph* callGraph;
     bool ptrOnlyMSSA;
 
     /// Map a function to all its memory regions
@@ -330,7 +330,7 @@ protected:
     }
 
     /// Mod-Ref analysis for callsite invoking this callGraphNode
-    virtual void modRefAnalysis(CallGraphNode* callGraphNode, WorkList& worklist);
+    virtual void modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& worklist);
 
     /// Get Mod-Ref of a callee function
     virtual bool handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGNode* cs, const SVFFunction* fun);

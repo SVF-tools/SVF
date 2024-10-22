@@ -76,7 +76,7 @@ private:
 protected:
     SaberSVFGBuilder memSSA;
     SVFG* svfg;
-    CallGraph* callgraph;
+    PTACallGraph* callgraph;
     SVFBugReport report; /// Bug Reporter
 
 public:
@@ -129,7 +129,7 @@ public:
     }
 
     /// Get Callgraph
-    inline CallGraph* getCallgraph() const
+    inline PTACallGraph* getCallgraph() const
     {
         return callgraph;
     }

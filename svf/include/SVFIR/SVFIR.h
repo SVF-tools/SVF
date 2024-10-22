@@ -98,7 +98,7 @@ private:
     ICFG* icfg; // ICFG
     CommonCHGraph* chgraph; // class hierarchy graph
     CallSiteSet callSiteSet; /// all the callsites of a program
-    CallGraph* callGraph; /// call graph
+    PTACallGraph* callGraph; /// call graph
 
     static std::unique_ptr<SVFIR> pag;	///< Singleton pattern here to enable instance of SVFIR can only be created once.
 
@@ -185,13 +185,13 @@ public:
     }
 
     /// Set/Get CG
-    inline void setCallGraph(CallGraph* c)
+    inline void setCallGraph(PTACallGraph* c)
     {
         callGraph = c;
     }
-    inline CallGraph* getCallGraph()
+    inline PTACallGraph* getCallGraph()
     {
-        assert(callGraph && "empty CallGraph! Build SVF IR first!");
+        assert(callGraph && "empty PTACallGraph! Build SVF IR first!");
         return callGraph;
     }
 

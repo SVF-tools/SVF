@@ -32,8 +32,8 @@
 
 #include "Util/ThreadAPI.h"
 #include "Util/SVFUtil.h"
+#include "Graphs/PTACallGraph.h"
 #include "SVFIR/SVFIR.h"
-#include "Graphs/CallGraph.h"
 
 #include <iostream>		/// std output
 #include <stdio.h>
@@ -270,7 +270,7 @@ void ThreadAPI::performAPIStat(SVFModule* module)
 
     statInit(tdAPIStatMap);
 
-    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    PTACallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
         for (SVFFunction::const_iterator bit = (item.second)->getFunction()->begin(), ebit = (item.second)->getFunction()->end(); bit != ebit; ++bit)
