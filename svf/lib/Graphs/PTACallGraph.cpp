@@ -40,7 +40,7 @@ using namespace SVFUtil;
 
 PTACallGraph::CallSiteToIdMap PTACallGraph::csToIdMap;
 PTACallGraph::IdToCallSiteMap PTACallGraph::idToCSMap;
-CallSiteID PTACallGraph::totalCallSiteNum = 1;
+CallSiteID PTACallGraph::totalCallSiteNum;
 
 
 /// Add direct and indirect callsite
@@ -119,6 +119,7 @@ PTACallGraph::PTACallGraph(const CallGraph& other)
     callGraphNodeNum = other.getTotalNodeNum();
     numOfResolvedIndCallEdge = 0;
     kind = static_cast<CGEK>(other.kind);
+    totalCallSiteNum = other.totalCallSiteNum;
 
     /// copy call graph nodes
     for (const auto& item : other)
