@@ -492,4 +492,4 @@ template<> struct GenericGraphTraits<SVF::PTACallGraph*> : public GenericGraphTr
 
 } // End namespace llvm
 
-#endif /* CALLGRAPH_H_ */
+#endif /* PTACALLGRAPH_H_ */

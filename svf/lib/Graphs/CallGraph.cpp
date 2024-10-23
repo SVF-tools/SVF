@@ -69,38 +69,11 @@ const std::string CallGraphNode::toString() const
     return rawstr.str();
 }
 
-bool CallGraphNode::isReachableFromProgEntry() const
-{
-    std::stack<const CallGraphNode*> nodeStack;
-    NodeBS visitedNodes;
-    nodeStack.push(this);
-    visitedNodes.set(getId());
-
-    while (nodeStack.empty() == false)
-    {
-        CallGraphNode* node = const_cast<CallGraphNode*>(nodeStack.top());
-        nodeStack.pop();
-
-        if (SVFUtil::isProgEntryFunction(node->getFunction()))
-            return true;
-
-        for (const_iterator it = node->InEdgeBegin(), eit = node->InEdgeEnd(); it != eit; ++it)
-        {
-            CallGraphEdge* edge = *it;
-            if (visitedNodes.test_and_set(edge->getSrcID()))
-                nodeStack.push(edge->getSrcNode());
-        }
-    }
-
-    return false;
-}
-
 
 /// Constructor
 CallGraph::CallGraph(CGEK k): kind(k)
 {
     callGraphNodeNum = 0;
-    numOfResolvedIndCallEdge = 0;
 }
 
 
@@ -143,23 +116,6 @@ CallGraphEdge* CallGraph::hasGraphEdge(CallGraphNode* src,
 }
 
 /*!
- * get CallGraph edge via nodes
- */
-CallGraphEdge* CallGraph::getGraphEdge(CallGraphNode* src,
-                                          CallGraphNode* dst,
-                                             CallGraphEdge::CEDGEK kind, CallSiteID)
-{
-    for (CallGraphEdge::CallGraphEdgeSet::iterator iter = src->OutEdgeBegin();
-            iter != src->OutEdgeEnd(); ++iter)
-    {
-        CallGraphEdge* edge = (*iter);
-        if (edge->getEdgeKind() == kind && edge->getDstID() == dst->getId())
-            return edge;
-    }
-    return nullptr;
-}
-
-/*!
  * Add direct call edges
  */
 void CallGraph::addDirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun)
@@ -177,54 +133,6 @@ void CallGraph::addDirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction*
         addEdge(edge);
         callinstToCallGraphEdgesMap[cs].insert(edge);
     }
-}
-
-/*!
- * Get direct callsite invoking this callee
- */
-void CallGraph::getDirCallSitesInvokingCallee(const SVFFunction* callee, CallGraphEdge::CallInstSet& csSet)
-{
-    CallGraphNode* callGraphNode = getCallGraphNode(callee);
-    for(CallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
-            it!=eit; ++it)
-    {
-        for(CallGraphEdge::CallInstSet::const_iterator cit = (*it)->directCallsBegin(),
-                ecit = (*it)->directCallsEnd(); cit!=ecit; ++cit)
-        {
-            csSet.insert((*cit));
-        }
-    }
-}
-
-/*!
- * Whether its reachable between two functions
- */
-bool CallGraph::isReachableBetweenFunctions(const SVFFunction* srcFn, const SVFFunction* dstFn) const
-{
-    CallGraphNode* dstNode = getCallGraphNode(dstFn);
-
-    std::stack<const CallGraphNode*> nodeStack;
-    NodeBS visitedNodes;
-    nodeStack.push(dstNode);
-    visitedNodes.set(dstNode->getId());
-
-    while (nodeStack.empty() == false)
-    {
-        CallGraphNode* node = const_cast<CallGraphNode*>(nodeStack.top());
-        nodeStack.pop();
-
-        if (node->getFunction() == srcFn)
-            return true;
-
-        for (CallGraphEdgeConstIter it = node->InEdgeBegin(), eit = node->InEdgeEnd(); it != eit; ++it)
-        {
-            CallGraphEdge* edge = *it;
-            if (visitedNodes.test_and_set(edge->getSrcID()))
-                nodeStack.push(edge->getSrcNode());
-        }
-    }
-
-    return false;
 }
 
 /*!

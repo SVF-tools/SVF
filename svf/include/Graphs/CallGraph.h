@@ -158,7 +158,6 @@ public:
     /// Constructor
     CallGraphNode(NodeID i, const SVFFunction* f) : GenericCallGraphNodeTy(i,CallNodeKd), fun(f)
     {
-
     }
 
     inline const std::string &getName() const
@@ -171,9 +170,6 @@ public:
     {
         return fun;
     }
-
-    /// Return TRUE if this function can be reached from main.
-    bool isReachableFromProgEntry() const;
 
 
     /// Overloading operator << for dumping ICFG node ID
@@ -223,12 +219,10 @@ public:
     typedef Map<CallSiteID, CallSitePair> IdToCallSiteMap;
     typedef Set<const SVFFunction*> FunctionSet;
     typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
-    typedef CallGraphEdgeSet::iterator CallGraphEdgeIter;
-    typedef CallGraphEdgeSet::const_iterator CallGraphEdgeConstIter;
 
     enum CGEK
     {
-        NormCallGraph, ThdCallGraph
+        NormCallGraph
     };
 
 private:
@@ -242,7 +236,6 @@ protected:
     CallInstToCallGraphEdgesMap callinstToCallGraphEdgesMap; ///< Map a call instruction to its corresponding call edges
 
     NodeID callGraphNodeNum;
-    u32_t numOfResolvedIndCallEdge;
     CGEK kind;
 
     /// Clean up memory
@@ -253,11 +246,6 @@ public:
     CallGraph(CGEK k = NormCallGraph);
 
     void addCallGraphNode(const SVFFunction* fun);
-
-    CallSiteToIdMap* getcsToIdMap() const
-    {
-        return &csToIdMap;
-    }
 
     /// Destructor
     virtual ~CallGraph()
@@ -270,23 +258,6 @@ public:
     {
         return kind;
     }
-
-    //@}
-    inline u32_t getTotalCallSiteNumber() const
-    {
-        return totalCallSiteNum;
-    }
-
-    inline u32_t getNumOfResolvedIndCallEdge() const
-    {
-        return numOfResolvedIndCallEdge;
-    }
-
-    inline const CallInstToCallGraphEdgesMap& getCallInstToCallGraphEdgesMap() const
-    {
-        return callinstToCallGraphEdgesMap;
-    }
-
 
     /// Get call graph node
     //@{
@@ -342,34 +313,12 @@ public:
     {
         return getCallSitePair(id).first;
     }
-    inline const SVFFunction* getCallerOfCallSite(CallSiteID id) const
-    {
-        return getCallSite(id)->getCaller();
-    }
-    inline const SVFFunction* getCalleeOfCallSite(CallSiteID id) const
-    {
-        return getCallSitePair(id).second;
-    }
     //@}
+
     /// Whether we have already created this call graph edge
     CallGraphEdge* hasGraphEdge(CallGraphNode* src, CallGraphNode* dst,
                                    CallGraphEdge::CEDGEK kind, CallSiteID csId) const;
-    /// Get call graph edge via nodes
-    CallGraphEdge* getGraphEdge(CallGraphNode* src, CallGraphNode* dst,
-                                   CallGraphEdge::CEDGEK kind, CallSiteID csId);
 
-    /// Get all callees for a callsite
-    inline void getCallees(const CallICFGNode* cs, FunctionSet& callees)
-    {
-        if(hasCallGraphEdge(cs))
-        {
-            for (CallGraphEdgeSet::const_iterator it = getCallEdgeBegin(cs), eit =
-                        getCallEdgeEnd(cs); it != eit; ++it)
-            {
-                callees.insert((*it)->getDstNode()->getFunction());
-            }
-        }
-    }
 
     /// Get call graph edge via call instruction
     //@{
@@ -405,13 +354,6 @@ public:
     void addDirectCallGraphEdge(const CallICFGNode* call, const SVFFunction* callerFun, const SVFFunction* calleeFun);
     //@}
 
-    /// Get callsites invoking the callee
-    //@{
-    void getDirCallSitesInvokingCallee(const SVFFunction* callee, CallGraphEdge::CallInstSet& csSet);
-    //@}
-
-    /// Whether its reachable between two functions
-    bool isReachableBetweenFunctions(const SVFFunction* srcFn, const SVFFunction* dstFn) const;
 
     /// Dump the graph
     void dump(const std::string& filename);
