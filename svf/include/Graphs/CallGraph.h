@@ -290,29 +290,6 @@ public:
         }
         return it->second;
     }
-    inline CallSiteID getCallSiteID(const CallICFGNode* cs, const SVFFunction* callee) const
-    {
-        CallSitePair newCS(std::make_pair(cs, callee));
-        CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
-        assert(it != csToIdMap.end() && "callsite id not found! This maybe a partially resolved callgraph, please check the indCallEdge limit");
-        return it->second;
-    }
-    inline bool hasCallSiteID(const CallICFGNode* cs, const SVFFunction* callee) const
-    {
-        CallSitePair newCS(std::make_pair(cs, callee));
-        CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
-        return it != csToIdMap.end();
-    }
-    inline const CallSitePair& getCallSitePair(CallSiteID id) const
-    {
-        IdToCallSiteMap::const_iterator it = idToCSMap.find(id);
-        assert(it != idToCSMap.end() && "cannot find call site for this CallSiteID");
-        return (it->second);
-    }
-    inline const CallICFGNode* getCallSite(CallSiteID id) const
-    {
-        return getCallSitePair(id).first;
-    }
     //@}
 
     /// Whether we have already created this call graph edge
@@ -320,28 +297,6 @@ public:
                                    CallGraphEdge::CEDGEK kind, CallSiteID csId) const;
 
 
-    /// Get call graph edge via call instruction
-    //@{
-    /// whether this call instruction has a valid call graph edge
-    inline bool hasCallGraphEdge(const CallICFGNode* inst) const
-    {
-        return callinstToCallGraphEdgesMap.find(inst)!=callinstToCallGraphEdgesMap.end();
-    }
-    inline CallGraphEdgeSet::const_iterator getCallEdgeBegin(const CallICFGNode* inst) const
-    {
-        CallInstToCallGraphEdgesMap::const_iterator it = callinstToCallGraphEdgesMap.find(inst);
-        assert(it!=callinstToCallGraphEdgesMap.end()
-               && "call instruction does not have a valid callee");
-        return it->second.begin();
-    }
-    inline CallGraphEdgeSet::const_iterator getCallEdgeEnd(const CallICFGNode* inst) const
-    {
-        CallInstToCallGraphEdgesMap::const_iterator it = callinstToCallGraphEdgesMap.find(inst);
-        assert(it!=callinstToCallGraphEdgesMap.end()
-               && "call instruction does not have a valid callee");
-        return it->second.end();
-    }
-    //@}
     /// Add call graph edge
     inline void addEdge(CallGraphEdge* edge)
     {
