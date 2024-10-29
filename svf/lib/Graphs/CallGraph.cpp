@@ -196,20 +196,7 @@ struct DOTGraphTraits<CallGraph*> : public DefaultDOTGraphTraits
         CallGraphEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
 
-        std::string color;
-
-        if (edge->getEdgeKind() == CallGraphEdge::TDJoinEdge)
-        {
-            color = "color=green";
-        }
-        else if (edge->getEdgeKind() == CallGraphEdge::TDForkEdge)
-        {
-            color = "color=blue";
-        }
-        else
-        {
-            color = "color=black";
-        }
+        std::string color = "color=black";
         return color;
     }
 

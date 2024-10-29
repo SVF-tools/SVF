@@ -55,7 +55,7 @@ public:
     typedef Set<const CallICFGNode*> CallInstSet;
     enum CEDGEK
     {
-        CallRetEdge,TDForkEdge,TDJoinEdge,HareParForEdge
+        CallRetEdge
     };
 
 
@@ -77,21 +77,11 @@ public:
     {
         return (cs << EdgeKindMaskBits) | k;
     }
-    /// Get direct and indirect calls
-    //@{
+    /// Get direct calls
     inline CallSiteID getCallSiteID() const
     {
         return csId;
     }
-    inline CallInstSet& getDirectCalls()
-    {
-        return directCalls;
-    }
-    inline const CallInstSet& getDirectCalls() const
-    {
-        return directCalls;
-    }
-    //@}
 
     /// Add direct callsite
     //@{
@@ -118,9 +108,7 @@ public:
     }
     static inline bool classof(const GenericCallGraphEdgeTy *edge)
     {
-        return edge->getEdgeKind() == CallGraphEdge::CallRetEdge ||
-               edge->getEdgeKind() == CallGraphEdge::TDForkEdge ||
-               edge->getEdgeKind() == CallGraphEdge::TDJoinEdge;
+        return edge->getEdgeKind() == CallGraphEdge::CallRetEdge;
     }
     //@}
 
@@ -241,6 +229,30 @@ protected:
     /// Clean up memory
     void destroy();
 
+    /// Add CallSiteID
+    inline CallSiteID addCallSite(const CallICFGNode* cs, const SVFFunction* callee)
+    {
+        std::pair<const CallICFGNode*, const SVFFunction*> newCS(std::make_pair(cs, callee));
+        CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
+        //assert(it == csToIdMap.end() && "cannot add a callsite twice");
+        if(it == csToIdMap.end())
+        {
+            CallSiteID id = totalCallSiteNum++;
+            csToIdMap.insert(std::make_pair(newCS, id));
+            idToCSMap.insert(std::make_pair(id, newCS));
+            return id;
+        }
+        return it->second;
+    }
+
+    /// Add call graph edge
+    inline void addEdge(CallGraphEdge* edge)
+    {
+        edge->getDstNode()->addIncomingEdge(edge);
+        edge->getSrcNode()->addOutgoingEdge(edge);
+    }
+
+
 public:
     /// Constructor
     CallGraph(CGEK k = NormCallGraph);
@@ -274,42 +286,12 @@ public:
 
     //@}
 
-    /// Add/Get CallSiteID
-    //@{
-    inline CallSiteID addCallSite(const CallICFGNode* cs, const SVFFunction* callee)
-    {
-        std::pair<const CallICFGNode*, const SVFFunction*> newCS(std::make_pair(cs, callee));
-        CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
-        //assert(it == csToIdMap.end() && "cannot add a callsite twice");
-        if(it == csToIdMap.end())
-        {
-            CallSiteID id = totalCallSiteNum++;
-            csToIdMap.insert(std::make_pair(newCS, id));
-            idToCSMap.insert(std::make_pair(id, newCS));
-            return id;
-        }
-        return it->second;
-    }
-    //@}
-
     /// Whether we have already created this call graph edge
     CallGraphEdge* hasGraphEdge(CallGraphNode* src, CallGraphNode* dst,
-                                   CallGraphEdge::CEDGEK kind, CallSiteID csId) const;
+                                CallGraphEdge::CEDGEK kind, CallSiteID csId) const;
 
-
-    /// Add call graph edge
-    inline void addEdge(CallGraphEdge* edge)
-    {
-        edge->getDstNode()->addIncomingEdge(edge);
-        edge->getSrcNode()->addOutgoingEdge(edge);
-    }
-
-    /// Add direct/indirect call edges
-    //@{
+    /// Add direct call edges
     void addDirectCallGraphEdge(const CallICFGNode* call, const SVFFunction* callerFun, const SVFFunction* calleeFun);
-    //@}
-
-
     /// Dump the graph
     void dump(const std::string& filename);
 

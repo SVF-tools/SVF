@@ -279,6 +279,30 @@ protected:
     /// Clean up memory
     void destroy();
 
+protected:
+    /// Add CallSiteID
+    inline CallSiteID addCallSite(const CallICFGNode* cs, const SVFFunction* callee)
+    {
+        std::pair<const CallICFGNode*, const SVFFunction*> newCS(std::make_pair(cs, callee));
+        CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
+        //assert(it == csToIdMap.end() && "cannot add a callsite twice");
+        if(it == csToIdMap.end())
+        {
+            CallSiteID id = totalCallSiteNum++;
+            csToIdMap.insert(std::make_pair(newCS, id));
+            idToCSMap.insert(std::make_pair(id, newCS));
+            return id;
+        }
+        return it->second;
+    }
+
+    /// Add call graph edge
+    inline void addEdge(PTACallGraphEdge* edge)
+    {
+        edge->getDstNode()->addIncomingEdge(edge);
+        edge->getSrcNode()->addOutgoingEdge(edge);
+    }
+
 public:
     /// Constructor
     PTACallGraph(CGEK k = NormCallGraph);
@@ -348,22 +372,8 @@ public:
 
     //@}
 
-    /// Add/Get CallSiteID
+    /// Get CallSiteID
     //@{
-    inline CallSiteID addCallSite(const CallICFGNode* cs, const SVFFunction* callee)
-    {
-        std::pair<const CallICFGNode*, const SVFFunction*> newCS(std::make_pair(cs, callee));
-        CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
-        //assert(it == csToIdMap.end() && "cannot add a callsite twice");
-        if(it == csToIdMap.end())
-        {
-            CallSiteID id = totalCallSiteNum++;
-            csToIdMap.insert(std::make_pair(newCS, id));
-            idToCSMap.insert(std::make_pair(id, newCS));
-            return id;
-        }
-        return it->second;
-    }
     inline CallSiteID getCallSiteID(const CallICFGNode* cs, const SVFFunction* callee) const
     {
         CallSitePair newCS(std::make_pair(cs, callee));
@@ -438,12 +448,7 @@ public:
         return it->second.end();
     }
     //@}
-    /// Add call graph edge
-    inline void addEdge(PTACallGraphEdge* edge)
-    {
-        edge->getDstNode()->addIncomingEdge(edge);
-        edge->getSrcNode()->addOutgoingEdge(edge);
-    }
+
 
     /// Add indirect call edges
     //@{
