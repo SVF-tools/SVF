@@ -37,10 +37,6 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-CallGraph::CallSiteToIdMap CallGraph::csToIdMap;
-CallGraph::IdToCallSiteMap CallGraph::idToCSMap;
-CallSiteID CallGraph::totalCallSiteNum = 1;
-
 
 /// Add direct callsite
 //@{
@@ -55,7 +51,7 @@ const std::string CallGraphEdge::toString() const
 {
     std::string str;
     std::stringstream  rawstr(str);
-    rawstr << "CallSite ID: " << getCallSiteID();
+    rawstr << "CallICFGNode ID: " << getEdgeKindWithoutMask();
     rawstr << "direct call";
     rawstr << "[" << getDstID() << "<--" << getSrcID() << "]\t";
     return rawstr.str();
@@ -101,9 +97,9 @@ void CallGraph::addCallGraphNode(const SVFFunction* fun)
  */
 CallGraphEdge* CallGraph::hasGraphEdge(CallGraphNode* src,
                                           CallGraphNode* dst,
-                                             CallGraphEdge::CEDGEK kind, CallSiteID csId) const
+                                            const CallICFGNode* callIcfgNode) const
 {
-    CallGraphEdge edge(src,dst,kind,csId);
+    CallGraphEdge edge(src,dst,callIcfgNode);
     CallGraphEdge* outEdge = src->hasOutgoingEdge(&edge);
     CallGraphEdge* inEdge = dst->hasIncomingEdge(&edge);
     if (outEdge && inEdge)
@@ -124,11 +120,10 @@ void CallGraph::addDirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction*
     CallGraphNode* caller = getCallGraphNode(callerFun);
     CallGraphNode* callee = getCallGraphNode(calleeFun);
 
-    CallSiteID csId = addCallSite(cs, callee->getFunction());
 
-    if(!hasGraphEdge(caller,callee, CallGraphEdge::CallRetEdge,csId))
+    if(!hasGraphEdge(caller,callee, cs))
     {
-        CallGraphEdge* edge = new CallGraphEdge(caller,callee, CallGraphEdge::CallRetEdge,csId);
+        CallGraphEdge* edge = new CallGraphEdge(caller,callee, cs);
         edge->addDirectCallSite(cs);
         addEdge(edge);
         callinstToCallGraphEdgesMap[cs].insert(edge);
@@ -208,7 +203,7 @@ struct DOTGraphTraits<CallGraph*> : public DefaultDOTGraphTraits
 
         std::string str;
         std::stringstream rawstr(str);
-        rawstr << edge->getCallSiteID();
+        rawstr << edge->getEdgeKindWithoutMask();
 
         return rawstr.str();
     }

@@ -53,34 +53,18 @@ class CallGraphEdge : public GenericCallGraphEdgeTy
 
 public:
     typedef Set<const CallICFGNode*> CallInstSet;
-    enum CEDGEK
-    {
-        CallRetEdge
-    };
-
 
 private:
     CallInstSet directCalls;
-    CallSiteID csId;
 public:
     /// Constructor
-    CallGraphEdge(CallGraphNode* s, CallGraphNode* d, CEDGEK kind, CallSiteID cs) :
-        GenericCallGraphEdgeTy(s, d, makeEdgeFlagWithInvokeID(kind, cs)), csId(cs)
+    CallGraphEdge(CallGraphNode* s, CallGraphNode* d, const CallICFGNode* icfgNode) :
+        GenericCallGraphEdgeTy(s, d, icfgNode->getId())
     {
     }
     /// Destructor
     virtual ~CallGraphEdge()
     {
-    }
-    /// Compute the unique edgeFlag value from edge kind and CallSiteID.
-    static inline GEdgeFlag makeEdgeFlagWithInvokeID(GEdgeKind k, CallSiteID cs)
-    {
-        return (cs << EdgeKindMaskBits) | k;
-    }
-    /// Get direct calls
-    inline CallSiteID getCallSiteID() const
-    {
-        return csId;
     }
 
     /// Add direct callsite
@@ -106,10 +90,6 @@ public:
     {
         return true;
     }
-    static inline bool classof(const GenericCallGraphEdgeTy *edge)
-    {
-        return edge->getEdgeKind() == CallGraphEdge::CallRetEdge;
-    }
     //@}
 
     /// Overloading operator << for dumping ICFG node ID
@@ -133,12 +113,6 @@ public:
 typedef GenericNode<CallGraphNode, CallGraphEdge> GenericCallGraphNodeTy;
 class CallGraphNode : public GenericCallGraphNodeTy
 {
-
-public:
-    typedef CallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
-    typedef CallGraphEdge::CallGraphEdgeSet::iterator iterator;
-    typedef CallGraphEdge::CallGraphEdgeSet::const_iterator const_iterator;
-
 private:
     const SVFFunction* fun;
 
@@ -203,8 +177,6 @@ public:
     typedef Map<const SVFFunction*, CallGraphNode*> FunToCallGraphNodeMap;
     typedef Map<const CallICFGNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
     typedef std::pair<const CallICFGNode*, const SVFFunction*> CallSitePair;
-    typedef Map<CallSitePair, CallSiteID> CallSiteToIdMap;
-    typedef Map<CallSiteID, CallSitePair> IdToCallSiteMap;
     typedef Set<const SVFFunction*> FunctionSet;
     typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
 
@@ -212,12 +184,6 @@ public:
     {
         NormCallGraph
     };
-
-private:
-    /// Call site information
-    static CallSiteToIdMap csToIdMap;	///< Map a pair of call instruction and callee to a callsite ID
-    static IdToCallSiteMap idToCSMap;	///< Map a callsite ID to a pair of call instruction and callee
-    static CallSiteID totalCallSiteNum;	///< CallSiteIDs, start from 1;
 
 protected:
     FunToCallGraphNodeMap funToCallGraphNodeMap; ///< Call Graph node map
@@ -228,22 +194,6 @@ protected:
 
     /// Clean up memory
     void destroy();
-
-    /// Add CallSiteID
-    inline CallSiteID addCallSite(const CallICFGNode* cs, const SVFFunction* callee)
-    {
-        std::pair<const CallICFGNode*, const SVFFunction*> newCS(std::make_pair(cs, callee));
-        CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
-        //assert(it == csToIdMap.end() && "cannot add a callsite twice");
-        if(it == csToIdMap.end())
-        {
-            CallSiteID id = totalCallSiteNum++;
-            csToIdMap.insert(std::make_pair(newCS, id));
-            idToCSMap.insert(std::make_pair(id, newCS));
-            return id;
-        }
-        return it->second;
-    }
 
     /// Add call graph edge
     inline void addEdge(CallGraphEdge* edge)
@@ -288,7 +238,7 @@ public:
 
     /// Whether we have already created this call graph edge
     CallGraphEdge* hasGraphEdge(CallGraphNode* src, CallGraphNode* dst,
-                                CallGraphEdge::CEDGEK kind, CallSiteID csId) const;
+                                 const CallICFGNode* callIcfgNode) const;
 
     /// Add direct call edges
     void addDirectCallGraphEdge(const CallICFGNode* call, const SVFFunction* callerFun, const SVFFunction* calleeFun);

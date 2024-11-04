@@ -38,9 +38,6 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-PTACallGraph::CallSiteToIdMap PTACallGraph::csToIdMap;
-PTACallGraph::IdToCallSiteMap PTACallGraph::idToCSMap;
-CallSiteID PTACallGraph::totalCallSiteNum;
 
 
 /// Add direct and indirect callsite
@@ -119,7 +116,7 @@ PTACallGraph::PTACallGraph(const CallGraph& other)
     callGraphNodeNum = other.getTotalNodeNum();
     numOfResolvedIndCallEdge = 0;
     kind = static_cast<CGEK>(other.kind);
-    totalCallSiteNum = SVF::CallGraph::totalCallSiteNum;
+    totalCallSiteNum = 1;
 
     /// copy call graph nodes
     for (const auto& item : other)
@@ -138,14 +135,14 @@ PTACallGraph::PTACallGraph(const CallGraph& other)
         {
             PTACallGraphNode* src = getCallGraphNode(edge->getSrcID());
             PTACallGraphNode* dst = getCallGraphNode(edge->getDstID());
-            PTACallGraphEdge* newEdge = new PTACallGraphEdge(src,dst, PTACallGraphEdge::CallRetEdge,edge->getCallSiteID());
+            CallSiteID csId = addCallSite(cs, dst->getFunction());
+
+            PTACallGraphEdge* newEdge = new PTACallGraphEdge(src,dst, PTACallGraphEdge::CallRetEdge,csId);
             newEdge->addDirectCallSite(cs);
             addEdge(newEdge);
             callinstToCallGraphEdgesMap[cs].insert(newEdge);
         }
     }
-    csToIdMap = SVF::CallGraph::csToIdMap;
-    idToCSMap = SVF::CallGraph::idToCSMap;
 
 }
 

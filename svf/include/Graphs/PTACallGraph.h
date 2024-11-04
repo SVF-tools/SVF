@@ -174,12 +174,6 @@ public:
 typedef GenericNode<PTACallGraphNode, PTACallGraphEdge> GenericPTACallGraphNodeTy;
 class PTACallGraphNode : public GenericPTACallGraphNodeTy
 {
-
-public:
-    typedef PTACallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
-    typedef PTACallGraphEdge::CallGraphEdgeSet::iterator iterator;
-    typedef PTACallGraphEdge::CallGraphEdgeSet::const_iterator const_iterator;
-
 private:
     const SVFFunction* fun;
 
@@ -264,9 +258,9 @@ private:
     CallEdgeMap indirectCallMap;
 
     /// Call site information
-    static CallSiteToIdMap csToIdMap;	///< Map a pair of call instruction and callee to a callsite ID
-    static IdToCallSiteMap idToCSMap;	///< Map a callsite ID to a pair of call instruction and callee
-    static CallSiteID totalCallSiteNum;	///< CallSiteIDs, start from 1;
+    CallSiteToIdMap csToIdMap;	///< Map a pair of call instruction and callee to a callsite ID
+    IdToCallSiteMap idToCSMap;	///< Map a callsite ID to a pair of call instruction and callee
+    CallSiteID totalCallSiteNum=1;	///< CallSiteIDs, start from 1;
 
 protected:
     FunToCallGraphNodeMap funToCallGraphNodeMap; ///< Call Graph node map
