@@ -66,6 +66,12 @@ CallGraph* CallGraphBuilder::buildSVFIRCallGraph(SVFModule* svfModule)
     return callgraph;
 }
 
+PTACallGraph* CallGraphBuilder::buildPTACallGraph()
+{
+    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    return new PTACallGraph(*svfirCallGraph);
+}
+
 ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
 {
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();

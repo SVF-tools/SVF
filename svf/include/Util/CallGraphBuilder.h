@@ -49,6 +49,9 @@ public:
     /// Buidl SVFIR callgraoh
     CallGraph* buildSVFIRCallGraph(SVFModule* svfModule);
 
+    /// Buidl PTA callgraoh
+    PTACallGraph* buildPTACallGraph();
+
     /// Build thread-aware callgraph
     ThreadCallGraph* buildThreadCallGraph();
 };
