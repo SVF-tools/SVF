@@ -256,9 +256,9 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
 
     if (isThreadForkCall(callICFGNode))
     {
-        if (const SVFFunction* forkedFun = SVFUtil::dyn_cast<FuncObjVar>(getForkedFun(callICFGNode))->getFunction())
+        if (const FuncObjVar* forkedVar = SVFUtil::dyn_cast<FuncObjVar>(getForkedFun(callICFGNode)))
         {
-            forkedFun = forkedFun->getDefFunForMultipleModule();
+            const SVFFunction* forkedFun = forkedVar->getFunction()->getDefFunForMultipleModule();
             const SVFVar* actualParm = getActualParmAtForkSite(callICFGNode);
             /// pthread_create has 1 arg.
             /// apr_thread_create has 2 arg.
