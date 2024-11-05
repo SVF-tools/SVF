@@ -225,7 +225,7 @@ public:
 
     /// Whether we have already created this call graph edge
     CallGraphEdge* hasGraphEdge(CallGraphNode* src, CallGraphNode* dst,
-                                 const CallICFGNode* callIcfgNode) const;
+                                const CallICFGNode* callIcfgNode) const;
 
     /// Add direct call edges
     void addDirectCallGraphEdge(const CallICFGNode* call, const SVFFunction* callerFun, const SVFFunction* calleeFun);
