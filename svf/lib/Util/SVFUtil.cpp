@@ -424,3 +424,15 @@ const SVFFunction* SVFUtil::getProgEntryFunction()
     }
     return nullptr;
 }
+
+bool SVFUtil::isArgOfUncalledFunction(const SVFVar* svfval)
+{
+    if (!svfval->hasValue())
+        return false;
+    if (const SVFArgument* arg = SVFUtil::dyn_cast<SVFArgument>(svfval->getValue()))
+    {
+        return arg->isArgOfUncalledFunction();
+    } else {
+        return false;
+    }
+}

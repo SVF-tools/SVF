@@ -39,6 +39,7 @@
 #include "SVFIR/SVFModule.h"
 #include "SVFIR/SVFValue.h"
 #include "Util/CallGraphBuilder.h"
+#include "Graphs/CallGraph.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 
@@ -77,6 +78,10 @@ SVFIR* SVFIRBuilder::build()
         {
             if(llvmModuleSet()->hasICFGNode(inst))
                 it.second->gNode = llvmModuleSet()->getICFGNode(inst);
+        } else if (const Function* func = SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(
+                     it.second->getValue())))
+        {
+            it.second->gNode = llvmModuleSet()->getCallGraphNode(func);
         }
     }
 
@@ -216,16 +221,16 @@ void SVFIRBuilder::initialiseNodes()
         if(iter->second == symTable->blkPtrSymID() || iter->second == symTable->nullPtrSymID())
             continue;
 
-        const SVFBaseNode* gNode = nullptr;
+        const ICFGNode* icfgNode = nullptr;
         if (const Instruction* inst =
                     SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(iter->first)))
         {
             if (llvmModuleSet()->hasICFGNode(inst))
             {
-                gNode = llvmModuleSet()->getICFGNode(inst);
+                icfgNode = llvmModuleSet()->getICFGNode(inst);
             }
         }
-        pag->addValNode(iter->first, iter->second, gNode);
+        pag->addValNode(iter->first, iter->second, icfgNode);
     }
 
     for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
@@ -235,7 +240,13 @@ void SVFIRBuilder::initialiseNodes()
         DBOUT(DPAGBuild, outs() << "add obj node " << iter->second << "\n");
         if(iter->second == symTable->blackholeSymID() || iter->second == symTable->constantSymID())
             continue;
-        pag->addObjNode(iter->first, iter->second);
+        CallGraphNode* pNode = nullptr;
+        if (const Function* func = SVFUtil::dyn_cast<Function>(
+                llvmModuleSet()->getLLVMValue(iter->first)))
+        {
+            pNode = llvmModuleSet()->getCallGraphNode(func);
+        }
+        pag->addObjNode(iter->first, pNode, iter->second);
     }
 
     for (SymbolTableInfo::FunToIDMapTy::iterator iter =
@@ -243,7 +254,9 @@ void SVFIRBuilder::initialiseNodes()
             ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add ret node " << iter->second << "\n");
-        pag->addRetNode(iter->first, iter->second);
+        pag->addRetNode(llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(
+                llvmModuleSet()->getLLVMValue(iter->first))),
+            iter->second);
     }
 
     for (SymbolTableInfo::FunToIDMapTy::iterator iter =
@@ -251,7 +264,8 @@ void SVFIRBuilder::initialiseNodes()
             iter != symTable->varargSyms().end(); ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add vararg node " << iter->second << "\n");
-        pag->addVarargNode(iter->first, iter->second);
+        pag->addVarargNode(llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(
+                               llvmModuleSet()->getLLVMValue(iter->first))), iter->second);
     }
 
     /// add address edges for constant nodes.
@@ -1319,7 +1333,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         {
             assert(srcFun==curInst->getFunction() && "SrcNode of the PAGEdge not in the same function?");
         }
-        if(dstFun!=nullptr && !SVFUtil::isa<CallPE>(edge) && !SVFUtil::isa<SVFFunction>(edge->getDstNode()->getValue()))
+        if(dstFun!=nullptr && !SVFUtil::isa<CallPE>(edge) && !SVFUtil::isa<RetPN>(edge->getDstNode()))
         {
             assert(dstFun==curInst->getFunction() && "DstNode of the PAGEdge not in the same function?");
         }

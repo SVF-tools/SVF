@@ -138,7 +138,7 @@ PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta, NodeID id, NodeT
             if(pta->isFIObjNode(baseId) && pag->getGNode(baseId)->hasValue())
             {
                 ValVar* valVar = SVFUtil::dyn_cast<ValVar>(pag->getGNode(baseId));
-                if(valVar && valVar->getGNode() && SVFUtil::isExtCall(SVFUtil::cast<ICFGNode>(valVar->getGNode())))
+                if(valVar && valVar->getICFGNode() && SVFUtil::isExtCall(valVar->getICFGNode()))
                 {
                     return pts;
                 }

@@ -87,7 +87,7 @@ public:
                "dummy node do not have value!");
         assert(!SymbolTableInfo::isBlkObjOrConstantObj(this->getId()) &&
                "blackhole and constant obj do not have value");
-        assert(value &&
+        assert((getNodeKind() == RetNode || getNodeKind() == FuncObjNode || getNodeKind() == VarargNode || value) &&
                "value is null (GepObjNode whose basenode is a DummyObj?)");
         return value;
     }
@@ -112,7 +112,7 @@ public:
     bool isConstDataOrAggDataButNotNullPtr() const;
 
     /// Whether this is an isolated node on the SVFIR graph
-    bool isIsolatedNode() const;
+    virtual bool isIsolatedNode() const;
 
     /// Get name of the LLVM value
     // TODO: (Optimization) Should it return const reference instead of value?
@@ -127,8 +127,6 @@ public:
                 return inst->getParent()->getParent();
             else if (auto arg = SVFUtil::dyn_cast<SVFArgument>(value))
                 return arg->getParent();
-            else if (auto fun = SVFUtil::dyn_cast<SVFFunction>(value))
-                return fun;
         }
         return nullptr;
     }
@@ -269,10 +267,10 @@ class ValVar: public SVFVar
     friend class SVFIRReader;
 
 private:
-    const SVFBaseNode* gNode; // constant, gepValvar, retPN, dummy could be null
+    const ICFGNode* icfgNode; // icfgnode related to valvar
 protected:
     /// Constructor to create an empty ValVar (for SVFIRReader/deserialization)
-    ValVar(NodeID i, PNODEK ty = ValNode) : SVFVar(i, ty), gNode(nullptr) {}
+    ValVar(NodeID i, PNODEK ty = ValNode) : SVFVar(i, ty), icfgNode(nullptr) {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -296,8 +294,8 @@ public:
     //@}
 
     /// Constructor
-    ValVar(const SVFValue* val, NodeID i, PNODEK ty = ValNode, const SVFBaseNode* node = nullptr)
-        : SVFVar(val, i, ty), gNode(node)
+    ValVar(const SVFValue* val, NodeID i, PNODEK ty = ValNode, const ICFGNode* node = nullptr)
+        : SVFVar(val, i, ty), icfgNode(node)
     {
     }
     /// Return name of a LLVM value
@@ -308,9 +306,9 @@ public:
         return "";
     }
 
-    const SVFBaseNode* getGNode() const
+    const ICFGNode* getICFGNode() const
     {
-        return gNode;
+        return icfgNode;
     }
 
     virtual const std::string toString() const;
@@ -540,7 +538,7 @@ class FIObjVar: public ObjVar
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
-private:
+protected:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
     FIObjVar(NodeID i, PNODEK ty = FIObjNode) : ObjVar(i, ty) {}
 
@@ -553,19 +551,19 @@ public:
     }
     static inline bool classof(const ObjVar* node)
     {
-        return node->getNodeKind() == SVFVar::FIObjNode;
+        return isFIObjVarKinds(node->getNodeKind());
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == SVFVar::FIObjNode;
+        return isFIObjVarKinds(node->getNodeKind());
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == SVFVar::FIObjNode;
+        return isFIObjVarKinds(node->getNodeKind());
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == SVFVar::FIObjNode;
+        return isFIObjVarKinds(node->getNodeKind());
     }
     //@}
 
@@ -587,6 +585,63 @@ public:
     virtual const std::string toString() const;
 };
 
+class CallGraphNode;
+
+class FuncObjVar: public FIObjVar {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
+private:
+    const CallGraphNode* callGraphNode;
+
+private:
+    /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
+    FuncObjVar(NodeID i, PNODEK ty = FuncObjNode) : FIObjVar(i, ty) {}
+
+public:
+    ///  Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const FuncObjVar*)
+    {
+        return true;
+    }
+    static inline bool classof(const FIObjVar* node)
+    {
+        return node->getNodeKind() == FuncObjNode;
+    }
+    static inline bool classof(const ObjVar* node)
+    {
+        return node->getNodeKind() == FuncObjNode;
+    }
+    static inline bool classof(const SVFVar* node)
+    {
+        return node->getNodeKind() == FuncObjNode;
+    }
+    static inline bool classof(const GenericPAGNodeTy* node)
+    {
+        return node->getNodeKind() == FuncObjNode;
+    }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == FuncObjNode;
+    }
+    //@}
+
+    /// Constructor
+    FuncObjVar(const CallGraphNode* cgNode, NodeID i, const MemObj* mem,
+             PNODEK ty = FuncObjNode);
+
+    inline const CallGraphNode* getCallGraphNode() const {
+        return callGraphNode;
+    }
+
+    virtual bool isIsolatedNode() const;
+
+    virtual const SVFFunction* getFunction() const;
+
+    virtual const std::string toString() const;
+};
+
 /*
  * Unique Return node of a procedure
  */
@@ -595,6 +650,8 @@ class RetPN: public ValVar
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
+private:
+    const CallGraphNode* callGraphNode;
 private:
     /// Constructor to create empty RetPN (for SVFIRReader/deserialization)
     RetPN(NodeID i) : ValVar(i, RetNode) {}
@@ -623,14 +680,16 @@ public:
     }
     //@}
 
+
     /// Constructor
-    RetPN(const SVFFunction* val, NodeID i) : ValVar(val, i, RetNode) {}
+    RetPN(const CallGraphNode* node, NodeID i);
+
+    inline const CallGraphNode* getCallGraphNode() const {
+        return callGraphNode;
+    }
 
     /// Return name of a LLVM value
-    const std::string getValueName() const
-    {
-        return value->getName() + "_ret";
-    }
+    const std::string getValueName() const;
 
     virtual const std::string toString() const;
 };
@@ -642,6 +701,8 @@ class VarArgPN: public ValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+private:
+    const CallGraphNode* callGraphNode;
 
 private:
     /// Constructor to create empty VarArgPN (for SVFIRReader/deserialization)
@@ -672,13 +733,10 @@ public:
     //@}
 
     /// Constructor
-    VarArgPN(const SVFFunction* val, NodeID i) : ValVar(val, i, VarargNode) {}
+    VarArgPN(const CallGraphNode* val, NodeID i) : ValVar(nullptr, i, VarargNode), callGraphNode(val) {}
 
     /// Return name of a LLVM value
-    inline const std::string getValueName() const
-    {
-        return value->getName() + "_vararg";
-    }
+    const std::string getValueName() const;
 
     virtual const std::string toString() const;
 };

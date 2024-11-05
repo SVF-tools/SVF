@@ -472,6 +472,15 @@ NodeID SVFIR::addFIObjNode(const MemObj* obj)
     return addObjNode(obj->getValue(), node, obj->getId());
 }
 
+NodeID SVFIR::addFuncObjNode(const CallGraphNode* callGraphNode, const MemObj* obj)
+{
+    //assert(findPAGNode(i) == false && "this node should not be created before");
+    NodeID base = obj->getId();
+    memToFieldsMap[base].set(obj->getId());
+    FuncObjVar *node = new FuncObjVar(callGraphNode, obj->getId(), obj);
+    return addObjNode(obj->getValue(), node, obj->getId());
+}
+
 /*!
  * Get all fields object nodes of an object
  */
@@ -675,9 +684,9 @@ bool SVFIR::isValidTopLevelPtr(const SVFVar* node)
 {
     if (SVFUtil::isa<ValVar>(node))
     {
-        if (isValidPointer(node->getId()) && node->hasValue())
+        if (isValidPointer(node->getId()))
         {
-            return !SVFUtil::isArgOfUncalledFunction(node->getValue());
+            return !SVFUtil::isArgOfUncalledFunction(node);
         }
     }
     return false;

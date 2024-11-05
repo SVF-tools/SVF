@@ -130,8 +130,7 @@ void AbsExtAPI::initExtFunMap()
         assert(lb.getInterval().is_numeral() && ub.getInterval().is_numeral());
         num.getInterval().set_to_top();
         num.getInterval().meet_with(IntervalValue(lb.getInterval().lb(), ub.getInterval().ub()));
-        const ICFGNode* node = SVFUtil::cast<ICFGNode>(
-                                   SVFUtil::cast<ValVar>(callNode->getArgument(0))->getGNode());
+        const ICFGNode* node = SVFUtil::cast<ValVar>(callNode->getArgument(0))->getICFGNode();
         for (const SVFStmt* stmt: node->getSVFStmts())
         {
             if (SVFUtil::isa<LoadStmt>(stmt))

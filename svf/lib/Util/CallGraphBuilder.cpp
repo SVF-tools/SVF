@@ -88,7 +88,7 @@ ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
                 {
                     const CallICFGNode* cs = cast<CallICFGNode>(inst);
                     cg->addForksite(cs);
-                    const SVFFunction* forkee = SVFUtil::dyn_cast<SVFFunction>(tdAPI->getForkedFun(cs)->getValue());
+                    const SVFFunction* forkee = SVFUtil::dyn_cast<FuncObjVar>(tdAPI->getForkedFun(cs))->getFunction();
                     if (forkee)
                     {
                         cg->addDirectForkEdge(cs);

@@ -343,13 +343,7 @@ inline bool isProgExitFunction (const SVFFunction * fun)
 }
 
 /// Return true if this argument belongs to an uncalled function
-inline bool isArgOfUncalledFunction(const SVFValue* svfval)
-{
-    if(const SVFArgument* arg = SVFUtil::dyn_cast<SVFArgument>(svfval))
-        return arg->isArgOfUncalledFunction();
-    else
-        return false;
-}
+bool isArgOfUncalledFunction(const SVFVar* svfval);
 
 /// Return thread fork function
 //@{
