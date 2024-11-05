@@ -176,21 +176,14 @@ public:
     typedef CallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
     typedef Map<const SVFFunction*, CallGraphNode*> FunToCallGraphNodeMap;
     typedef Map<const CallICFGNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
-    typedef std::pair<const CallICFGNode*, const SVFFunction*> CallSitePair;
     typedef Set<const SVFFunction*> FunctionSet;
     typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
-
-    enum CGEK
-    {
-        NormCallGraph
-    };
 
 protected:
     FunToCallGraphNodeMap funToCallGraphNodeMap; ///< Call Graph node map
     CallInstToCallGraphEdgesMap callinstToCallGraphEdgesMap; ///< Map a call instruction to its corresponding call edges
 
     NodeID callGraphNodeNum;
-    CGEK kind;
 
     /// Clean up memory
     void destroy();
@@ -205,7 +198,7 @@ protected:
 
 public:
     /// Constructor
-    CallGraph(CGEK k = NormCallGraph);
+    CallGraph();
 
     void addCallGraphNode(const SVFFunction* fun);
 
@@ -213,12 +206,6 @@ public:
     virtual ~CallGraph()
     {
         destroy();
-    }
-
-    /// Return type of this callgraph
-    inline CGEK getKind() const
-    {
-        return kind;
     }
 
     /// Get call graph node

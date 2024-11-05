@@ -117,8 +117,7 @@ PTACallGraph::PTACallGraph(const CallGraph& other)
 {
     callGraphNodeNum = other.getTotalNodeNum();
     numOfResolvedIndCallEdge = 0;
-    kind = static_cast<CGEK>(other.kind);
-//    totalCallSiteNum = 1;
+    kind = NormCallGraph;
 
     /// copy call graph nodes
     for (const auto& item : other)

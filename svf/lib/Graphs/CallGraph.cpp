@@ -67,7 +67,7 @@ const std::string CallGraphNode::toString() const
 
 
 /// Constructor
-CallGraph::CallGraph(CGEK k): kind(k)
+CallGraph::CallGraph()
 {
     callGraphNodeNum = 0;
 }
