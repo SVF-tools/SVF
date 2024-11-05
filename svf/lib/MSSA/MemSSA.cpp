@@ -31,6 +31,7 @@
 #include "MSSA/MemPartition.h"
 #include "MSSA/MemSSA.h"
 #include "Graphs/SVFGStat.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -575,7 +576,7 @@ u32_t MemSSA::getBBPhiNum() const
 void MemSSA::dumpMSSA(OutStream& Out)
 {
 
-    PTACallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
         const SVFFunction* fun = item.second->getFunction();

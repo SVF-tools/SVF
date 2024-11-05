@@ -31,6 +31,7 @@
 #include "Util/Options.h"
 #include "MTA/TCT.h"
 #include "MTA/MTA.h"
+#include "Graphs/CallGraph.h"
 
 #include <string>
 
@@ -185,7 +186,7 @@ void TCT::markRelProcs(const SVFFunction* svffun)
  */
 void TCT::collectEntryFunInCallGraph()
 {
-    PTACallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
         const SVFFunction* fun = item.second->getFunction();

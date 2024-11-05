@@ -105,7 +105,7 @@ private:
     InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
     FunToFunEntryNodeMapTy FunToFunEntryNodeMap; ///< map a function to its FunExitICFGNode
     FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryICFGNode
-    PTACallGraph* callgraph;
+    CallGraph* callgraph;
 
     /// Constructor
     LLVMModuleSet();

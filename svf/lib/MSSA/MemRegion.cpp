@@ -31,6 +31,7 @@
 #include "SVFIR/SVFModule.h"
 #include "MSSA/MemRegion.h"
 #include "MSSA/MSSAMuChi.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -173,7 +174,7 @@ SVFIR::SVFStmtList& MRGenerator::getPAGEdgesFromInst(const ICFGNode* node)
 void MRGenerator::collectModRefForLoadStore()
 {
 
-    PTACallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
         const SVFFunction& fun = *item.second->getFunction();

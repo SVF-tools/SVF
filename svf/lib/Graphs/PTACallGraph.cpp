@@ -29,6 +29,7 @@
  */
 
 #include "Graphs/PTACallGraph.h"
+#include "Graphs/CallGraph.h"
 #include "SVFIR/SVFIR.h"
 #include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
@@ -39,8 +40,7 @@ using namespace SVFUtil;
 
 PTACallGraph::CallSiteToIdMap PTACallGraph::csToIdMap;
 PTACallGraph::IdToCallSiteMap PTACallGraph::idToCSMap;
-CallSiteID PTACallGraph::totalCallSiteNum = 1;
-
+CallSiteID PTACallGraph::totalCallSiteNum=1;
 
 /// Add direct and indirect callsite
 //@{
@@ -113,16 +113,16 @@ PTACallGraph::PTACallGraph(CGEK k): kind(k)
 }
 
 /// Copy constructor
-PTACallGraph::PTACallGraph(const PTACallGraph& other)
+PTACallGraph::PTACallGraph(const CallGraph& other)
 {
-    callGraphNodeNum = other.callGraphNodeNum;
+    callGraphNodeNum = other.getTotalNodeNum();
     numOfResolvedIndCallEdge = 0;
-    kind = other.kind;
+    kind = NormCallGraph;
 
     /// copy call graph nodes
     for (const auto& item : other)
     {
-        const PTACallGraphNode* cgn = item.second;
+        const CallGraphNode* cgn = item.second;
         PTACallGraphNode* callGraphNode = new PTACallGraphNode(cgn->getId(), cgn->getFunction());
         addGNode(cgn->getId(),callGraphNode);
         funToCallGraphNodeMap[cgn->getFunction()] = callGraphNode;
@@ -132,11 +132,13 @@ PTACallGraph::PTACallGraph(const PTACallGraph& other)
     for (const auto& item : other.callinstToCallGraphEdgesMap)
     {
         const CallICFGNode* cs = item.first;
-        for (const PTACallGraphEdge* edge : item.second)
+        for (const CallGraphEdge* edge : item.second)
         {
             PTACallGraphNode* src = getCallGraphNode(edge->getSrcID());
             PTACallGraphNode* dst = getCallGraphNode(edge->getDstID());
-            PTACallGraphEdge* newEdge = new PTACallGraphEdge(src,dst, PTACallGraphEdge::CallRetEdge,edge->getCallSiteID());
+            CallSiteID csId = addCallSite(cs, dst->getFunction());
+
+            PTACallGraphEdge* newEdge = new PTACallGraphEdge(src,dst, PTACallGraphEdge::CallRetEdge,csId);
             newEdge->addDirectCallSite(cs);
             addEdge(newEdge);
             callinstToCallGraphEdgesMap[cs].insert(newEdge);
@@ -150,18 +152,6 @@ PTACallGraph::PTACallGraph(const PTACallGraph& other)
  */
 void PTACallGraph::destroy()
 {
-}
-
-/*!
- * Add call graph node
- */
-void PTACallGraph::addCallGraphNode(const SVFFunction* fun)
-{
-    NodeID id  = callGraphNodeNum;
-    PTACallGraphNode*callGraphNode = new PTACallGraphNode(id, fun);
-    addGNode(id, callGraphNode);
-    funToCallGraphNodeMap[callGraphNode->getFunction()] = callGraphNode;
-    callGraphNodeNum++;
 }
 
 /*!
@@ -200,25 +190,6 @@ PTACallGraphEdge* PTACallGraph::getGraphEdge(PTACallGraphNode* src,
     return nullptr;
 }
 
-/*!
- * Add direct call edges
- */
-void PTACallGraph::addDirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun)
-{
-
-    PTACallGraphNode* caller = getCallGraphNode(callerFun);
-    PTACallGraphNode* callee = getCallGraphNode(calleeFun);
-
-    CallSiteID csId = addCallSite(cs, callee->getFunction());
-
-    if(!hasGraphEdge(caller,callee, PTACallGraphEdge::CallRetEdge,csId))
-    {
-        PTACallGraphEdge* edge = new PTACallGraphEdge(caller,callee, PTACallGraphEdge::CallRetEdge,csId);
-        edge->addDirectCallSite(cs);
-        addEdge(edge);
-        callinstToCallGraphEdgesMap[cs].insert(edge);
-    }
-}
 
 /*!
  * Add indirect call edge to update call graph
