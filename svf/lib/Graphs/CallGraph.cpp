@@ -96,8 +96,8 @@ void CallGraph::addCallGraphNode(const SVFFunction* fun)
  *  Whether we have already created this call graph edge
  */
 CallGraphEdge* CallGraph::hasGraphEdge(CallGraphNode* src,
-                                          CallGraphNode* dst,
-                                            const CallICFGNode* callIcfgNode) const
+                                       CallGraphNode* dst,
+                                       const CallICFGNode* callIcfgNode) const
 {
     CallGraphEdge edge(src,dst,callIcfgNode);
     CallGraphEdge* outEdge = src->hasOutgoingEdge(&edge);
