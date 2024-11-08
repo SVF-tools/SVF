@@ -1,0 +1,31 @@
+#ifndef CONFIG_H_IN
+#define CONFIG_H_IN
+
+// Directory structure of SVF source tree (could be moved)
+#define SVF_ROOT_DIR "@SVF_SOURCE_DIR@"
+#define SVF_SOURCE_DIR "@SVF_SOURCE_DIR@"
+#define SVF_BUILD_DIR "@CMAKE_BINARY_DIR@"
+
+// Expose the root directory SVF is installed to
+#define SVF_INSTALL_ROOT "@CMAKE_INSTALL_PREFIX@"
+#define SVF_INSTALL_BINDIR "@CMAKE_INSTALL_PREFIX@/@SVF_INSTALL_BINDIR@"
+#define SVF_INSTALL_LIBDIR "@CMAKE_INSTALL_PREFIX@/@SVF_INSTALL_LIBDIR@"
+#define SVF_INSTALL_INCLUDEDIR "@CMAKE_INSTALL_PREFIX@/@SVF_INSTALL_INCLUDEDIR@"
+
+// Expose where (relative to installation root) the ExtAPI bitcode file is
+#define SVF_EXTAPI_DIR "@CMAKE_INSTALL_PREFIX@/@SVF_EXTAPI_INSTALL_DIR@"
+#define SVF_EXTAPI_FILE "@CMAKE_INSTALL_PREFIX@/@SVF_EXTAPI_INSTALL_FILE@"
+
+// Build mode used to build SVF
+#define SVF_BUILD_TYPE "@CMAKE_BUILD_TYPE@"
+
+// Sanitiser mode used for building SVF
+#cmakedefine SVF_SANITIZE "@SVF_SANITIZE@"
+
+// Build options used when building SVF
+#cmakedefine SVF_COVERAGE
+#cmakedefine SVF_WARN_AS_ERROR
+#cmakedefine SVF_EXPORT_DYNAMIC
+#cmakedefine SVF_ENABLE_ASSERTIONS
+
+#endif // CONFIG_H_IN
