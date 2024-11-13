@@ -102,8 +102,7 @@ void SaberCondAllocator::allocateForBB(const SVFBasicBlock &bb)
         std::vector<Condition> condVec;
         for (u32_t i = 0; i < bit_num; i++)
         {
-            const IntraICFGNode* svfInst = cast<IntraICFGNode>(bb.back());
-            condVec.push_back(newCond(svfInst));
+            condVec.push_back(newCond(bb.back()));
         }
 
         // iterate each successor
