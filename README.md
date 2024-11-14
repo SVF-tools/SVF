@@ -28,7 +28,7 @@
 ## Documentation
 
 <br />
-<p>We release the SVF source code with the hope of benefiting the open-source community. You are kindly requested to acknowledge usage of the tool by citing relevant publications from our list at http://svf-tools.github.io/SVF and the ones specified below: </p>
+<p>We release the SVF source code with the hope of benefiting the open-source community. You are kindly requested to acknowledge usage of the tool by referring to or citing relevant publications below: </p>
 
 <b>SVF</b> is a static value-flow analysis tool for LLVM-based languages. <b>SVF</b> ([CC'16](https://yuleisui.github.io/publications/cc16.pdf)) is able to perform
 * [AE](https://github.com/SVF-tools/SVF/tree/master/svf/include/AE) (<b>abstract execution</b>): cross-domain execution ([ICSE'24](https://yuleisui.github.io/publications/icse24a.pdf)), typestate analysis ([FSE'24](https://yuleisui.github.io/publications/fse24a.pdf));
