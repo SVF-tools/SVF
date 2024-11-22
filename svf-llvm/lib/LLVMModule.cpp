@@ -41,7 +41,7 @@
 #include "SVF-LLVM/ObjTypeInference.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 #include "SVF-LLVM/ICFGBuilder.h"
-#include "Graphs/PTACallGraph.h"
+#include "Graphs/CallGraph.h"
 #include "Util/CallGraphBuilder.h"
 
 using namespace std;
@@ -174,6 +174,13 @@ void LLVMModuleSet::build()
 
     CallGraphBuilder callGraphBuilder;
     callgraph = callGraphBuilder.buildSVFIRCallGraph(svfModule);
+
+    for (const auto& it : *callgraph)
+    {
+        addFunctionMap(
+            SVFUtil::cast<Function>(getLLVMValue(it.second->getFunction())),
+            it.second);
+    }
 }
 
 void LLVMModuleSet::createSVFDataStructure()
@@ -1208,6 +1215,12 @@ void LLVMModuleSet::dumpModulesToFile(const std::string& suffix)
 
         OS.flush();
     }
+}
+
+void LLVMModuleSet::addFunctionMap(const SVF::Function* func, SVF::CallGraphNode* svfFunc)
+{
+    LLVMFunc2CallGraphNode[func] = svfFunc;
+    setValueAttr(func,svfFunc);
 }
 
 void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)

@@ -82,11 +82,8 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
             if(SVFUtil::isa<DummyObjVar>(pag->getGNode(gepobj->getBaseNode())))
                 continue;
         }
-        if(const SVFValue* val = pagNode->getValue())
-        {
-            if(SVFUtil::isa<SVFGlobalValue>(val))
-                worklist.push_back(it->first);
-        }
+        if(pagNode->hasValue() && SVFUtil::isa<SVFGlobalValue>(pagNode->getValue()))
+            worklist.push_back(it->first);
     }
 
     NodeToPTSSMap cachedPtsMap;
@@ -138,7 +135,7 @@ PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta, NodeID id, NodeT
             if(pta->isFIObjNode(baseId) && pag->getGNode(baseId)->hasValue())
             {
                 ValVar* valVar = SVFUtil::dyn_cast<ValVar>(pag->getGNode(baseId));
-                if(valVar && valVar->getGNode() && SVFUtil::isExtCall(SVFUtil::cast<ICFGNode>(valVar->getGNode())))
+                if(valVar && valVar->getICFGNode() && SVFUtil::isExtCall(valVar->getICFGNode()))
                 {
                     return pts;
                 }

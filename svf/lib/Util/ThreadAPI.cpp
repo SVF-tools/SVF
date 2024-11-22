@@ -161,13 +161,13 @@ bool ThreadAPI::isTDBarWait(const CallICFGNode *inst) const
 }
 
 
-const SVFVar* ThreadAPI::getForkedThread(const CallICFGNode *inst) const
+const ValVar* ThreadAPI::getForkedThread(const CallICFGNode *inst) const
 {
     assert(isTDFork(inst) && "not a thread fork function!");
     return inst->getArgument(0);
 }
 
-const SVFVar* ThreadAPI::getForkedFun(const CallICFGNode *inst) const
+const ValVar* ThreadAPI::getForkedFun(const CallICFGNode *inst) const
 {
     assert(isTDFork(inst) && "not a thread fork function!");
     return inst->getArgument(2);
@@ -175,7 +175,7 @@ const SVFVar* ThreadAPI::getForkedFun(const CallICFGNode *inst) const
 
 /// Return the forth argument of the call,
 /// Note that, it is the sole argument of start routine ( a void* pointer )
-const SVFVar* ThreadAPI::getActualParmAtForkSite(const CallICFGNode *inst) const
+const ValVar* ThreadAPI::getActualParmAtForkSite(const CallICFGNode *inst) const
 {
     assert(isTDFork(inst) && "not a thread fork function!");
     return inst->getArgument(3);

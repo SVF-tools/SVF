@@ -1090,7 +1090,7 @@ const SVFValue* BinaryOPVFGNode::getValue() const
 
 const SVFValue* PHIVFGNode::getValue() const
 {
-    return getRes()->getValue();
+    return getRes()->hasValue() ? getRes()->getValue(): nullptr;
 }
 
 const SVFValue* ArgumentVFGNode::getValue() const
