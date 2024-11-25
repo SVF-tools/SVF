@@ -551,22 +551,20 @@ private:
         return addValNode(val, node, i);
     }
 
-    NodeID addFuncValNode(const CallGraphNode* callGraphNode, NodeID i, const ICFGNode* icfgNode) {
+    NodeID addFunValNode(const CallGraphNode* callGraphNode, NodeID i, const ICFGNode* icfgNode) {
         FunValVar* node = new FunValVar(callGraphNode, i, icfgNode);
         return addValNode(nullptr, node, i);
     }
 
     /// Add a memory obj node
-    inline NodeID addObjNode(const SVFValue* val, const CallGraphNode* callGraphNode, NodeID i)
+    inline NodeID addObjNode(const SVFValue* val, NodeID i)
     {
         const MemObj* mem = getMemObj(val);
         assert(mem->getId() == i && "not same object id?");
-        if(callGraphNode)
-            return addFuncObjNode(callGraphNode, mem);
-        else
-            return addFIObjNode(mem);
+        return addFIObjNode(mem);
     }
 
+    NodeID addFunObjNode(const CallGraphNode* callGraphNode, NodeID id);
     /// Add a unique return node for a procedure
     inline NodeID addRetNode(const CallGraphNode* callGraphNode, NodeID i)
     {
@@ -586,7 +584,7 @@ private:
     NodeID addGepObjNode(const MemObj* obj, const APOffset& apOffset, const NodeID gepId);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
     NodeID addFIObjNode(const MemObj* obj);
-    NodeID addFuncObjNode(const CallGraphNode* callGraphNode, const MemObj* obj);
+
     //@}
 
     ///  Add a dummy value/object node according to node ID (llvm value is null)

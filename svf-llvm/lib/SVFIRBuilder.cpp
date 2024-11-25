@@ -235,7 +235,7 @@ void SVFIRBuilder::initialiseNodes()
                 SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(iter->first)))
         {
             const CallGraphNode* cgn = llvmModuleSet()->getCallGraphNode(func);
-            pag->addFuncValNode(cgn, iter->second, icfgNode);
+            pag->addFunValNode(cgn, iter->second, icfgNode);
         } else {
             pag->addValNode(iter->first, iter->second, icfgNode);
         }
@@ -248,13 +248,13 @@ void SVFIRBuilder::initialiseNodes()
         DBOUT(DPAGBuild, outs() << "add obj node " << iter->second << "\n");
         if(iter->second == symTable->blackholeSymID() || iter->second == symTable->constantSymID())
             continue;
-        CallGraphNode* pNode = nullptr;
         if (const Function* func = SVFUtil::dyn_cast<Function>(
                 llvmModuleSet()->getLLVMValue(iter->first)))
         {
-            pNode = llvmModuleSet()->getCallGraphNode(func);
+            pag->addFunObjNode(llvmModuleSet()->getCallGraphNode(func), iter->second);
+        } else {
+            pag->addObjNode(iter->first, iter->second);
         }
-        pag->addObjNode(iter->first, pNode, iter->second);
     }
 
     for (SymbolTableInfo::FunToIDMapTy::iterator iter =
