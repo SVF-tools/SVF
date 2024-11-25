@@ -53,12 +53,12 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
         break;
     }
     case RetNode:
-    case FuncObjNode:
+    case FunObjNode:
     {
         // to be completed in derived class
         break;
     }
-    case FuncValNode:
+    case FunValNode:
     case VarargNode:
     case DummyValNode:
     {
@@ -184,11 +184,11 @@ const std::string FIObjVar::toString() const
     return rawstr.str();
 }
 
-const std::string FuncValVar::toString() const
+const std::string FunValVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "FuncValVar ID: " << getId();
+    rawstr << "FunValVar ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -197,23 +197,23 @@ const std::string FuncValVar::toString() const
     return rawstr.str();
 }
 
-FuncObjVar::FuncObjVar(const CallGraphNode* cgNode, NodeID i, const MemObj* mem,
+FunObjVar::FunObjVar(const CallGraphNode* cgNode, NodeID i, const MemObj* mem,
            PNODEK ty)
     : FIObjVar(nullptr, i, mem, ty), callGraphNode(cgNode)
 {
     isPtr = callGraphNode->getFunction()->getType()->isPointerTy();
 }
 
-bool FuncObjVar::isIsolatedNode() const
+bool FunObjVar::isIsolatedNode() const
 {
     return callGraphNode->getFunction()->isIntrinsic();
 }
 
-const std::string FuncObjVar::toString() const
+const std::string FunObjVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "FuncObjVar ID: " << getId() << " (base object)";
+    rawstr << "FunObjVar ID: " << getId() << " (base object)";
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";

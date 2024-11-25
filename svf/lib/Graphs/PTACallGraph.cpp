@@ -52,7 +52,7 @@ void PTACallGraphEdge::addDirectCallSite(const CallICFGNode* call)
 
 void PTACallGraphEdge::addInDirectCallSite(const CallICFGNode* call)
 {
-    assert((nullptr == call->getCalledFunction() || !SVFUtil::isa<FuncValVar>(SVFUtil::getForkedFun(call))) &&
+    assert((nullptr == call->getCalledFunction() || !SVFUtil::isa<FunValVar>(SVFUtil::getForkedFun(call))) &&
            "not an indirect callsite??");
     indirectCalls.insert(call);
 }

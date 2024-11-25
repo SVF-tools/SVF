@@ -586,7 +586,7 @@ public:
 
 class CallGraphNode;
 
-class FuncValVar: public ValVar {
+class FunValVar : public ValVar {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 private:
@@ -595,25 +595,25 @@ private:
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FuncValVar*)
+    static inline bool classof(const FunValVar*)
     {
         return true;
     }
     static inline bool classof(const ValVar* node)
     {
-        return node->getNodeKind() == FuncValNode;
+        return node->getNodeKind() == FunValNode;
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == FuncValNode;
+        return node->getNodeKind() == FunValNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == FuncValNode;
+        return node->getNodeKind() == FunValNode;
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == FuncValNode;
+        return node->getNodeKind() == FunValNode;
     }
     //@}
 
@@ -622,8 +622,8 @@ public:
     }
 
     /// Constructor
-    FuncValVar(const CallGraphNode* cgn, NodeID i, const ICFGNode* icn,
-               PNODEK ty = FuncValNode)
+    FunValVar(const CallGraphNode* cgn, NodeID i, const ICFGNode* icn,
+               PNODEK ty = FunValNode)
         : ValVar(nullptr, i, ty, icn), callGraphNode(cgn)
     {
 
@@ -632,7 +632,7 @@ public:
     virtual const std::string toString() const;
 };
 
-class FuncObjVar: public FIObjVar {
+class FunObjVar : public FIObjVar {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
@@ -641,40 +641,40 @@ private:
 
 private:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
-    FuncObjVar(NodeID i, PNODEK ty = FuncObjNode) : FIObjVar(i, ty) {}
+    FunObjVar(NodeID i, PNODEK ty = FunObjNode) : FIObjVar(i, ty) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FuncObjVar*)
+    static inline bool classof(const FunObjVar*)
     {
         return true;
     }
     static inline bool classof(const FIObjVar* node)
     {
-        return node->getNodeKind() == FuncObjNode;
+        return node->getNodeKind() == FunObjNode;
     }
     static inline bool classof(const ObjVar* node)
     {
-        return node->getNodeKind() == FuncObjNode;
+        return node->getNodeKind() == FunObjNode;
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == FuncObjNode;
+        return node->getNodeKind() == FunObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == FuncObjNode;
+        return node->getNodeKind() == FunObjNode;
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == FuncObjNode;
+        return node->getNodeKind() == FunObjNode;
     }
     //@}
 
     /// Constructor
-    FuncObjVar(const CallGraphNode* cgNode, NodeID i, const MemObj* mem,
-             PNODEK ty = FuncObjNode);
+    FunObjVar(const CallGraphNode* cgNode, NodeID i, const MemObj* mem,
+             PNODEK ty = FunObjNode);
 
     inline const CallGraphNode* getCallGraphNode() const {
         return callGraphNode;

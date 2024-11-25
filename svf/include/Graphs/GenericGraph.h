@@ -162,7 +162,7 @@ public:
         // │   │   ├── Represents a standard value variable
         ValNode,
         // │   │   ├── Represents a Function value variable
-        FuncValNode,
+        FunValNode,
         // │   │   ├── Represents a GEP value variable
         GepValNode,
         // │   │   ├── Represents a return value node
@@ -178,8 +178,8 @@ public:
         GepObjNode,
         // │       └── FIObjNode: Represents a flow-insensitive object node
         FIObjNode,
-        // │            ├──FuncObjNode: Types of function object
-        FuncObjNode,
+        // │            ├──FunObjNode: Types of function object
+        FunObjNode,
         // │       └── DummyObjNode: Dummy node for uninitialized objects
         DummyObjNode,
         // └────────
@@ -342,10 +342,10 @@ protected:
 
     static inline bool isFIObjVarKinds(GNodeK n)
     {
-        static_assert(FuncObjNode - FIObjNode == 1,
+        static_assert(FunObjNode - FIObjNode == 1,
                       "The number of FIObjVarKinds has changed, make sure the "
                       "range is correct");
-        return n <= FuncObjNode && n >= FIObjNode;
+        return n <= FunObjNode && n >= FIObjNode;
     }
 
     static inline bool isVFGNodeKinds(GNodeK n)

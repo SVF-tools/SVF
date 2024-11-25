@@ -477,7 +477,7 @@ NodeID SVFIR::addFuncObjNode(const CallGraphNode* callGraphNode, const MemObj* o
     //assert(findPAGNode(i) == false && "this node should not be created before");
     NodeID base = obj->getId();
     memToFieldsMap[base].set(obj->getId());
-    FuncObjVar *node = new FuncObjVar(callGraphNode, obj->getId(), obj);
+    FunObjVar*node = new FunObjVar(callGraphNode, obj->getId(), obj);
     return addObjNode(obj->getValue(), node, obj->getId());
 }
 
@@ -687,7 +687,7 @@ bool SVFIR::isValidTopLevelPtr(const SVFVar* node)
         if (isValidPointer(node->getId()))
         {
             // TODO: after svf value is removed, we use type to determine top level ptr
-            if (SVFUtil::isa<RetPN>(node) || SVFUtil::isa<VarArgPN>(node) || SVFUtil::isa<FuncValVar>(node))
+            if (SVFUtil::isa<RetPN>(node) || SVFUtil::isa<VarArgPN>(node) || SVFUtil::isa<FunValVar>(node))
             {
                 return true;
             } else if(node->hasValue())

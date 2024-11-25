@@ -552,7 +552,7 @@ private:
     }
 
     NodeID addFuncValNode(const CallGraphNode* callGraphNode, NodeID i, const ICFGNode* icfgNode) {
-        FuncValVar* node = new FuncValVar(callGraphNode, i, icfgNode);
+        FunValVar* node = new FunValVar(callGraphNode, i, icfgNode);
         return addValNode(nullptr, node, i);
     }
 

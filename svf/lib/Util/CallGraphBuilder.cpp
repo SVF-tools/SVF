@@ -89,7 +89,7 @@ ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
                     const CallICFGNode* cs = cast<CallICFGNode>(inst);
                     cg->addForksite(cs);
                     const ValVar* svfVar = tdAPI->getForkedFun(cs);
-                    if (SVFUtil::isa<FuncValVar>(svfVar))
+                    if (SVFUtil::isa<FunValVar>(svfVar))
                     {
                         cg->addDirectForkEdge(cs);
                     }

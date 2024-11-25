@@ -75,7 +75,7 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
     for (CallSiteSet::const_iterator it = forksitesBegin(), eit = forksitesEnd(); it != eit; ++it)
     {
         const ValVar* forkedval = tdAPI->getForkedFun(*it);
-        if(SVFUtil::dyn_cast<FuncValVar>(forkedval)==nullptr)
+        if(SVFUtil::dyn_cast<FunValVar>(forkedval)==nullptr)
         {
             SVFIR* pag = pta->getPAG();
             const NodeBS targets = pta->getPts(forkedval->getId()).toNodeBS();
@@ -127,7 +127,7 @@ bool ThreadCallGraph::addDirectForkEdge(const CallICFGNode* cs)
 {
 
     PTACallGraphNode* caller = getCallGraphNode(cs->getCaller());
-    const SVFFunction* forkee = SVFUtil::dyn_cast<FuncValVar>(tdAPI->getForkedFun(cs))
+    const SVFFunction* forkee = SVFUtil::dyn_cast<FunValVar>(tdAPI->getForkedFun(cs))
                                     ->getCallGraphNode()->getFunction();
     assert(forkee && "callee does not exist");
     PTACallGraphNode* callee = getCallGraphNode(forkee->getDefFunForMultipleModule());
@@ -188,7 +188,7 @@ void ThreadCallGraph::addDirectJoinEdge(const CallICFGNode* cs,const CallSiteSet
     {
 
         const SVFFunction* threadRoutineFun =
-            SVFUtil::dyn_cast<FuncValVar>(tdAPI->getForkedFun(*it))
+            SVFUtil::dyn_cast<FunValVar>(tdAPI->getForkedFun(*it))
                 ->getCallGraphNode()
                 ->getFunction();
         assert(threadRoutineFun && "thread routine function does not exist");

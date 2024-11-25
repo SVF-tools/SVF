@@ -51,7 +51,7 @@ void MTAStat::performThreadCallGraphStat(ThreadCallGraph* tcg)
     {
         bool indirectfork = false;
         const ValVar* pValVar = tcg->getThreadAPI()->getForkedFun(*it);
-        if(!SVFUtil::isa<FuncValVar>(pValVar))
+        if(!SVFUtil::isa<FunValVar>(pValVar))
         {
             numOfIndForksite++;
             indirectfork = true;
