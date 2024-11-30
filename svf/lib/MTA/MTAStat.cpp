@@ -33,6 +33,7 @@
 #include "MTA/MHP.h"
 #include "MTA/LockAnalysis.h"
 #include "Graphs/ThreadCallGraph.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 
@@ -49,8 +50,8 @@ void MTAStat::performThreadCallGraphStat(ThreadCallGraph* tcg)
     for (ThreadCallGraph::CallSiteSet::const_iterator it = tcg->forksitesBegin(), eit = tcg->forksitesEnd(); it != eit; ++it)
     {
         bool indirectfork = false;
-        const SVFFunction* spawnee = SVFUtil::dyn_cast<SVFFunction>(tcg->getThreadAPI()->getForkedFun(*it)->getValue());
-        if(spawnee==nullptr)
+        const ValVar* pValVar = tcg->getThreadAPI()->getForkedFun(*it);
+        if(!SVFUtil::isa<FunValVar>(pValVar))
         {
             numOfIndForksite++;
             indirectfork = true;

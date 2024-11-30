@@ -30,6 +30,7 @@
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
 #include "Util/WorkList.h"
+#include "Graphs/CallGraph.h"
 #include <cmath>
 
 using namespace SVF;
@@ -646,9 +647,9 @@ void AbstractInterpretation::indirectCallFunPass(const SVF::CallICFGNode *callNo
     AbstractValue Addrs = as[call_id];
     NodeID addr = *Addrs.getAddrs().begin();
     SVFVar *func_var = svfir->getGNode(AbstractState::getInternalID(addr));
-    const SVFFunction *callfun = SVFUtil::dyn_cast<SVFFunction>(func_var->getValue());
-    if (callfun)
+    if(const FunObjVar*funObjVar = SVFUtil::dyn_cast<FunObjVar>(func_var))
     {
+        const SVFFunction* callfun = funObjVar->getCallGraphNode()->getFunction();
         callSiteStack.push_back(callNode);
         abstractTrace[callNode] = as;
 
@@ -656,7 +657,7 @@ void AbstractInterpretation::indirectCallFunPass(const SVF::CallICFGNode *callNo
         handleWTOComponents(wto->getWTOComponents());
         callSiteStack.pop_back();
         // handle Ret node
-        const RetICFGNode *retNode = callNode->getRetICFGNode();
+        const RetICFGNode* retNode = callNode->getRetICFGNode();
         abstractTrace[retNode] = abstractTrace[callNode];
     }
 }

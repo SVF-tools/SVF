@@ -88,15 +88,15 @@ ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
                 {
                     const CallICFGNode* cs = cast<CallICFGNode>(inst);
                     cg->addForksite(cs);
-                    const SVFFunction* forkee = SVFUtil::dyn_cast<SVFFunction>(tdAPI->getForkedFun(cs)->getValue());
-                    if (forkee)
+                    const ValVar* svfVar = tdAPI->getForkedFun(cs);
+                    if (SVFUtil::isa<FunValVar>(svfVar))
                     {
                         cg->addDirectForkEdge(cs);
                     }
                     // indirect call to the start routine function
                     else
                     {
-                        cg->addThreadForkEdgeSetMap(cs,nullptr);
+                        cg->addThreadForkEdgeSetMap(cs, nullptr);
                     }
                 }
             }

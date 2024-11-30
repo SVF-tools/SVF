@@ -39,6 +39,8 @@ class SVFModule;
 class ICFGNode;
 class CallICFGNode;
 class SVFVar;
+class ValVar;
+class ObjVar;
 
 /*
  * ThreadAPI class contains interfaces for pthread programs
@@ -124,14 +126,14 @@ public:
     //@{
     /// Return the first argument of the call,
     /// Note that, it is the pthread_t pointer
-    const SVFVar* getForkedThread(const CallICFGNode *inst) const;
+    const ValVar* getForkedThread(const CallICFGNode *inst) const;
     /// Return the third argument of the call,
     /// Note that, it could be function type or a void* pointer
-    const SVFVar* getForkedFun(const CallICFGNode *inst) const;
+    const ValVar* getForkedFun(const CallICFGNode *inst) const;
 
     /// Return the forth argument of the call,
     /// Note that, it is the sole argument of start routine ( a void* pointer )
-    const SVFVar* getActualParmAtForkSite(const CallICFGNode *inst) const;
+    const ValVar* getActualParmAtForkSite(const CallICFGNode *inst) const;
 
     /// Return the formal parm of forked function (the first arg in pthread)
     const SVFVar* getFormalParmOfForkedFun(const SVFFunction* F) const;
