@@ -144,7 +144,8 @@ const std::string GepValVar::toString() const
     return rawstr.str();
 }
 
-RetPN::RetPN(const CallGraphNode* node, NodeID i) : ValVar(i, RetNode), callGraphNode(node) {
+RetPN::RetPN(const CallGraphNode* node, NodeID i) : ValVar(i, RetNode), callGraphNode(node)
+{
     isPtr = node->getFunction()->getReturnType()->isPointerTy();
 }
 
@@ -198,7 +199,7 @@ const std::string FunValVar::toString() const
 }
 
 FunObjVar::FunObjVar(const CallGraphNode* cgNode, NodeID i, const MemObj* mem,
-           PNODEK ty)
+                     PNODEK ty)
     : FIObjVar(nullptr, i, mem, ty), callGraphNode(cgNode)
 {
     isPtr = callGraphNode->getFunction()->getType()->isPointerTy();
@@ -230,7 +231,8 @@ const std::string RetPN::toString() const
     return rawstr.str();
 }
 
-const SVFFunction* VarArgPN::getFunction() const {
+const SVFFunction* VarArgPN::getFunction() const
+{
     return callGraphNode->getFunction();
 }
 

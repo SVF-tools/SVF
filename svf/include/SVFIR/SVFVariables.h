@@ -586,7 +586,8 @@ public:
 
 class CallGraphNode;
 
-class FunValVar : public ValVar {
+class FunValVar : public ValVar
+{
     friend class SVFIRWriter;
     friend class SVFIRReader;
 private:
@@ -617,13 +618,14 @@ public:
     }
     //@}
 
-    inline const CallGraphNode* getCallGraphNode() const {
+    inline const CallGraphNode* getCallGraphNode() const
+    {
         return callGraphNode;
     }
 
     /// Constructor
     FunValVar(const CallGraphNode* cgn, NodeID i, const ICFGNode* icn,
-               PNODEK ty = FunValNode)
+              PNODEK ty = FunValNode)
         : ValVar(nullptr, i, ty, icn), callGraphNode(cgn)
     {
 
@@ -632,7 +634,8 @@ public:
     virtual const std::string toString() const;
 };
 
-class FunObjVar : public FIObjVar {
+class FunObjVar : public FIObjVar
+{
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
@@ -674,9 +677,10 @@ public:
 
     /// Constructor
     FunObjVar(const CallGraphNode* cgNode, NodeID i, const MemObj* mem,
-             PNODEK ty = FunObjNode);
+              PNODEK ty = FunObjNode);
 
-    inline const CallGraphNode* getCallGraphNode() const {
+    inline const CallGraphNode* getCallGraphNode() const
+    {
         return callGraphNode;
     }
 
@@ -727,7 +731,8 @@ public:
     /// Constructor
     RetPN(const CallGraphNode* node, NodeID i);
 
-    inline const CallGraphNode* getCallGraphNode() const {
+    inline const CallGraphNode* getCallGraphNode() const
+    {
         return callGraphNode;
     }
 
