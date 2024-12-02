@@ -45,7 +45,8 @@ public:
     enum DetectorKind
     {
         BUF_OVERFLOW,   ///< Detector for buffer overflow issues.
-        UNKNOWN,    ///< Default type if the kind is not specified.
+        NULLPTR_DEREF,  ///< Detector for null pointer dereference issues.
+        UNKNOWN,        ///< Default type if the kind is not specified.
     };
 
     /**
@@ -320,4 +321,118 @@ private:
     SVFBugReport recoder; ///< Recorder for abstract execution bugs.
     Map<const ICFGNode*, std::string> nodeToBugInfo; ///< Maps ICFG nodes to bug information.
 };
+
+
+/**
+ * @class NullPtrDerefDetector
+ * @brief Detector for identifying null pointer dereference issues.
+ */
+class NullPtrDerefDetector: public AEDetector {
+    friend class AbstractInterpretation;
+public:
+    /**
+     * @brief Constructor initializes the detector kind to NULLPTR_DEREF.
+     */
+    NullPtrDerefDetector()
+    {
+        kind = NULLPTR_DEREF;
+    }
+
+    /**
+     * @brief Destructor.
+     */
+    ~NullPtrDerefDetector() = default;
+
+    /**
+     * @brief Check if the detector is of the NULLPTR_DEREF kind.
+     * @param detector Pointer to the detector.
+     * @return True if the detector is of type NULLPTR_DEREF, false otherwise.
+     */
+    static bool classof(const AEDetector* detector)
+    {
+        return detector->getKind() == AEDetector::NULLPTR_DEREF;
+    }
+
+
+    /**
+     * @brief Detect null pointer dereferece issues within a node.
+     * @param as Reference to the abstract state.
+     * @param node Pointer to the ICFG node.
+     */
+    void detect(AbstractState& as, const ICFGNode* node);
+
+    /**
+     * @brief Handles external API calls related to null pointer dereference detection.
+     * @param call Pointer to the call ICFG node.
+     */
+    void handleStubFunctions(const CallICFGNode*);
+
+    /**
+     * @brief Check if an Abstract Value is NULL (or uninitialized).
+     *
+     * @param v An Abstract Value of loaded from an address in an Abstract State.
+     */
+    bool isNull(AbstractValue v) {
+        bool is = (v.getInterval().isBottom() && v.getAddrs().isBottom()) ||
+            v.getAddrs().contains(BlackHoleAddr);
+        return is;
+    }
+
+    /**
+     * @brief Check if an Abstract Value is uninitialized.
+     *
+     * @param v An Abstract Value in an Abstract State.
+     */
+    bool isUninit(AbstractValue v) {
+        bool is = (v.getInterval().isBottom() && v.getAddrs().isBottom());
+        return is;
+    }
+
+    /**
+     * @brief Reports all detected null pointer dereference bugs.
+     */
+    void reportBug()
+    {
+        std::cerr << "###################### Null Pointer Dereference (" + std::to_string(stmtToBugInfo.size())
+                    + " found) ######################\n";
+        std::cerr << "---------------------------------------------\n";
+        for (const auto& it : stmtToBugInfo) {
+            const SVFStmt *s = it.first;
+            std::cerr << "Location: " << s->toString() << "\n---------------------------------------------\n";
+        }
+    }
+
+    /**
+     * @brief record a bug.
+     * @param stmt The SVF statement that triggers the null pointer dereference.
+     */
+    void recordBug(const SVFStmt *stmt)
+    {
+        const ICFGNode *eventInst = stmt->getICFGNode();
+        SVFBugEvent sourceInstEvent(SVFBugEvent::EventType::SourceInst, eventInst);
+
+        std::string loc = sourceInstEvent.getEventLoc(); // Get the location of the last event in the stack
+
+        if (loc == "") {
+            stmtToBugInfo[stmt] = loc;
+        } else if (bugLoc.find(loc) == bugLoc.end()) {
+            bugLoc.insert(loc);
+            stmtToBugInfo[stmt] = loc;
+        }
+    }
+
+    /**
+     * @brief Checks if pointer can be safely dereferenced.
+     * @param as Reference to the abstract state.
+     * @param value Pointer to the SVF value.
+     * @return True if the pointer dereference is safe, false otherwise.
+     */
+    bool canSafelyDerefPtr(AbstractState& as, const SVF::SVFVar* value);
+
+
+private:
+    Set<std::string> bugLoc;    ///< Set of locations where bugs have been reported.
+    Map<const SVFStmt*, std::string> stmtToBugInfo; ///< Maps SVF stmt to bug information.
+};
+
 }
