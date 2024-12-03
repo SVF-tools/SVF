@@ -556,6 +556,7 @@ private:
         return addValNode(nullptr, node, i);
     }
 
+
     /// Add a memory obj node
     inline NodeID addObjNode(const SVFValue* val, NodeID i)
     {
@@ -576,6 +577,90 @@ private:
     {
         SVFVar *node = new VarArgPN(val,i);
         return addNode(node,i);
+    }
+
+    inline NodeID addConstantValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode) {
+        if (const SVFConstantFP* constFp = SVFUtil::dyn_cast<SVFConstantFP>(curInst))
+        {
+            SVFVar* node = new ConstantFPValVar(constFp, i, icfgNode);
+            return addNode(node,i);
+        }
+        // ConstantInt
+        else if (const SVFConstantInt* constInt = SVFUtil::dyn_cast<SVFConstantInt>(curInst))
+        {
+            SVFVar* node = new ConstantIntValVar(constInt, i, icfgNode);
+            return addNode(node,i);
+        }
+        // constNullptr
+        else if (const SVFConstantNullPtr* constNullPtr =
+                     SVFUtil::dyn_cast<SVFConstantNullPtr>(curInst)) {
+            SVFVar* node = new ConstantNullPtrValVar(constNullPtr, i, icfgNode);
+            return addNode(node,i);
+        }
+
+        else if (const SVFGlobalValue* globalVal =
+                     SVFUtil::dyn_cast<SVFGlobalValue>(curInst))
+        {
+            SVFVar* node = new GlobalValueValvar(globalVal, i, icfgNode);
+            return addNode(node,i);
+        }
+
+        else if (const SVFConstantData* dataVal = SVFUtil::dyn_cast<SVFConstantData>(curInst)) {
+            SVFVar* node = new ConstantDataValVar(dataVal, i, icfgNode);
+            return addNode(node,i);
+        }
+
+        else if (const SVFConstant* constVal =
+                     SVFUtil::dyn_cast<SVFConstant>(curInst))
+        {
+            SVFVar* node = new ConstantValVar(constVal, i, icfgNode);
+            return addNode(node, i);
+        }
+        assert(false && "not a constant value?");
+    }
+
+    inline NodeID addConstantObjNode(const SVFValue* curInst, const NodeID i) {
+        // const MemObj* mem = getMemObj(callGraphNode->getFunction());
+        //     assert(mem->getId() == id && "not same object id?");
+        //     //assert(findPAGNode(i) == false && "this node should not be created before"); NodeID base = mem->getId();
+        //     memToFieldsMap[base].set(mem->getId());
+        //     FunObjVar*node = new FunObjVar(callGraphNode, mem->getId(), mem);
+        //     return addObjNode(mem->getValue(), node, mem->getId());
+        const MemObj* mem = getMemObj(curInst);
+        NodeID base = mem->getId();
+        memToFieldsMap[base].set(mem->getId());
+        if (const SVFConstantFP* constFp = SVFUtil::dyn_cast<SVFConstantFP>(curInst))
+        {
+            ConstantFPObjVar* node = new ConstantFPObjVar(mem->getId(), mem);
+            return addObjNode(mem->getValue(), node, mem->getId());
+        }
+        // ConstantInt
+        else if (const SVFConstantInt* constInt = SVFUtil::dyn_cast<SVFConstantInt>(curInst))
+        {
+            ConstantIntObjVar* node = new ConstantIntObjVar(mem->getId(), mem);
+            return addObjNode(mem->getValue(), node, mem->getId());
+        }
+        //TODO： constNullptrObj
+
+        else if (const SVFGlobalValue* globalVal =
+                     SVFUtil::dyn_cast<SVFGlobalValue>(curInst))
+        {
+            GlobalValueObjVar* node = new GlobalValueObjVar(mem->getId(), mem);
+            return addObjNode(mem->getValue(), node, mem->getId());
+        }
+
+        else if (const SVFConstantData* dataVal = SVFUtil::dyn_cast<SVFConstantData>(curInst)) {
+            ConstantDataObjVar* node = new ConstantDataObjVar(mem->getId(), mem);
+            return addObjNode(mem->getValue(), node, mem->getId());
+        }
+
+        else if (const SVFConstant* constVal =
+                    SVFUtil::dyn_cast<SVFConstant>(curInst))
+        {
+            ConstantObjVar* node = new ConstantObjVar(nullptr, mem->getId(), mem);
+            return addObjNode(mem->getValue(), node, mem->getId());
+        }
+        assert(false && "not a constant value?");
     }
 
     /// Add a temp field value node, this method can only invoked by getGepValVar

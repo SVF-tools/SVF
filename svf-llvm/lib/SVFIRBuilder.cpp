@@ -218,8 +218,12 @@ void SVFIRBuilder::initialiseNodes()
             ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add val node " << iter->second << "\n");
-        if(iter->second == symTable->blkPtrSymID() || iter->second == symTable->nullPtrSymID())
+        if(iter->second == symTable->blkPtrSymID())
             continue;
+        if (iter->second == symTable->nullPtrSymID()) {
+            //onst SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode
+            pag->addConstantValNode(iter->first, iter->second, nullptr);
+        }
 
         const ICFGNode* icfgNode = nullptr;
         if (const Instruction* inst =
@@ -236,7 +240,11 @@ void SVFIRBuilder::initialiseNodes()
         {
             const CallGraphNode* cgn = llvmModuleSet()->getCallGraphNode(func);
             pag->addFunValNode(cgn, iter->second, icfgNode);
-        } else {
+        }
+        else if (SVFUtil::isa<Constant>(llvmModuleSet()->getLLVMValue(iter->first))) {
+            pag->addConstantValNode(iter->first, iter->second, icfgNode);
+        }
+        else {
             pag->addValNode(iter->first, iter->second, icfgNode);
         }
     }
@@ -252,7 +260,11 @@ void SVFIRBuilder::initialiseNodes()
                 llvmModuleSet()->getLLVMValue(iter->first)))
         {
             pag->addFunObjNode(llvmModuleSet()->getCallGraphNode(func), iter->second);
-        } else {
+        }
+        else if (SVFUtil::isa<Constant>(llvmModuleSet()->getLLVMValue(iter->first))) {
+            pag->addConstantObjNode(iter->first, iter->second);
+        }
+        else {
             pag->addObjNode(iter->first, iter->second);
         }
     }

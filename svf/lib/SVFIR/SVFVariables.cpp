@@ -60,6 +60,12 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     }
     case FunValNode:
     case VarargNode:
+    case ConstantValNode:
+    case ConstantDataValNode:
+    case GlobalValueValNode:
+    case BlackHoleNode:
+    case ConstantFPValNode:
+    case ConstantIntValNode:
     case DummyValNode:
     {
         isPtr = true;
@@ -68,6 +74,12 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     case ObjNode:
     case GepObjNode:
     case FIObjNode:
+    case ConstantObjNode:
+    case ConstantDataObjNode:
+    case GlobalValueObjNode:
+    case ConstantFPObjNode:
+    case ConstantIntObjNode:
+    case ConstantNullptrNode:
     case DummyObjNode:
     {
         isPtr = true;
