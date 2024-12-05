@@ -83,6 +83,11 @@ SVFIR* SVFIRBuilder::build()
         {
             it.second->gNode = llvmModuleSet()->getCallGraphNode(func);
         }
+        else if (const Function* func = SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(
+                                            it.second->getValue())))
+        {
+            it.second->gNode = llvmModuleSet()->getCallGraphNode(func);
+        }
     }
 
     CHGraph* chg = new CHGraph(pag->getModule());
@@ -236,15 +241,13 @@ void SVFIRBuilder::initialiseNodes()
         }
 
         if (const Function* func =
-                SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(iter->first)))
+                    SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(iter->first)))
         {
             const CallGraphNode* cgn = llvmModuleSet()->getCallGraphNode(func);
             pag->addFunValNode(cgn, iter->second, icfgNode);
         }
-        else if (SVFUtil::isa<Constant>(llvmModuleSet()->getLLVMValue(iter->first))) {
-            pag->addConstantValNode(iter->first, iter->second, icfgNode);
-        }
-        else {
+        else
+        {
             pag->addValNode(iter->first, iter->second, icfgNode);
         }
     }
@@ -257,14 +260,12 @@ void SVFIRBuilder::initialiseNodes()
         if(iter->second == symTable->blackholeSymID() || iter->second == symTable->constantSymID())
             continue;
         if (const Function* func = SVFUtil::dyn_cast<Function>(
-                llvmModuleSet()->getLLVMValue(iter->first)))
+                                       llvmModuleSet()->getLLVMValue(iter->first)))
         {
             pag->addFunObjNode(llvmModuleSet()->getCallGraphNode(func), iter->second);
         }
-        else if (SVFUtil::isa<Constant>(llvmModuleSet()->getLLVMValue(iter->first))) {
-            pag->addConstantObjNode(iter->first, iter->second);
-        }
-        else {
+        else
+        {
             pag->addObjNode(iter->first, iter->second);
         }
     }
@@ -276,7 +277,7 @@ void SVFIRBuilder::initialiseNodes()
         DBOUT(DPAGBuild, outs() << "add ret node " << iter->second << "\n");
         pag->addRetNode(
             llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(
-                llvmModuleSet()->getLLVMValue(iter->first))),
+                    llvmModuleSet()->getLLVMValue(iter->first))),
             iter->second);
     }
 
@@ -287,7 +288,7 @@ void SVFIRBuilder::initialiseNodes()
         DBOUT(DPAGBuild, outs() << "add vararg node " << iter->second << "\n");
         pag->addVarargNode(
             llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(
-                llvmModuleSet()->getLLVMValue(iter->first))),
+                    llvmModuleSet()->getLLVMValue(iter->first))),
             iter->second);
     }
 

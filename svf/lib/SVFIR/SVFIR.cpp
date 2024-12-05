@@ -692,7 +692,8 @@ bool SVFIR::isValidTopLevelPtr(const SVFVar* node)
             if (SVFUtil::isa<RetPN>(node) || SVFUtil::isa<VarArgPN>(node) || SVFUtil::isa<FunValVar>(node))
             {
                 return true;
-            } else if(node->hasValue())
+            }
+            else if(node->hasValue())
                 return !SVFUtil::isArgOfUncalledFunction(node->getValue());
         }
     }

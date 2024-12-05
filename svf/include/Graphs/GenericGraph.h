@@ -193,7 +193,7 @@ public:
         ObjNode,
         // │       ├── GepObjNode: Represents a GEP object variable
         GepObjNode,
-        // │       ├── FIObjNode: Represents a flow-insensitive object node
+        // │       └── FIObjNode: Represents a flow-insensitive object node
         FIObjNode,
         // │       ├── FunObjNode: Types of function object
         FunObjNode,

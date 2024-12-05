@@ -1397,7 +1397,8 @@ public:
     /// Constructor
     RetPN(const CallGraphNode* node, NodeID i);
 
-    inline const CallGraphNode* getCallGraphNode() const {
+    inline const CallGraphNode* getCallGraphNode() const
+    {
         return callGraphNode;
     }
 

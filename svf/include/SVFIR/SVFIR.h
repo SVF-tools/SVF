@@ -551,11 +551,11 @@ private:
         return addValNode(val, node, i);
     }
 
-    NodeID addFunValNode(const CallGraphNode* callGraphNode, NodeID i, const ICFGNode* icfgNode) {
+    NodeID addFunValNode(const CallGraphNode* callGraphNode, NodeID i, const ICFGNode* icfgNode)
+    {
         FunValVar* node = new FunValVar(callGraphNode, i, icfgNode);
         return addValNode(nullptr, node, i);
     }
-
 
     /// Add a memory obj node
     inline NodeID addObjNode(const SVFValue* val, NodeID i)
