@@ -169,15 +169,23 @@ public:
         RetNode,
         // │   │   ├── Represents a variadic argument node
         VarargNode,
-        // │   │   └── Dummy node for uninitialized values
+        // │   │   ├── Represents a constant value node
         ConstantValNode,
+        // │   │   ├── Represents a constant data value node
         ConstantDataValNode,
+        // │   │   ├── Represents a global value node
         GlobalValueValNode,
+        // │   │   ├── Represents a black hole  node
         BlackHoleNode,
+        // │   │   ├── Represents a constant float-point value node
         ConstantFPValNode,
+        // │   │   ├── Represents a constant integer value node
         ConstantIntValNode,
+        // │   ｜   └── Represents a constant nullptr value node
+        ConstantNullptrValNode,
+        // │   └── Dummy node for uninitialized values
         DummyValNode,
-        // │   └── ObjVarKinds: Types of object variable nodes
+        // └────────
 
 
 
@@ -185,17 +193,23 @@ public:
         ObjNode,
         // │       ├── GepObjNode: Represents a GEP object variable
         GepObjNode,
-        // │       └── FIObjNode: Represents a flow-insensitive object node
+        // │       ├── FIObjNode: Represents a flow-insensitive object node
         FIObjNode,
-        // │            ├──FunObjNode: Types of function object
+        // │       ├── FunObjNode: Types of function object
         FunObjNode,
-        // │       └── DummyObjNode: Dummy node for uninitialized objects
+        // │       ├── ConstantObjNode: Types of constant object
         ConstantObjNode,
+        // │       ├── ConstantDataObjNode: Types of constant data object
         ConstantDataObjNode,
+        // │       ├── GlobalValueObjNode: Types of global value object
         GlobalValueObjNode,
+        // │       ├── ConstantFPObjNode: Types of constant float-point object
         ConstantFPObjNode,
+        // │       ├── ConstantIntObjNode: Types of constant integer object
         ConstantIntObjNode,
-        ConstantNullptrNode,
+        // │       ├── ConstantNullptrObjNode: Types of constant nullptr object
+        ConstantNullptrObjNode,
+        // │       └── DummyObjNode: Dummy node for uninitialized objects
         DummyObjNode,
         // └────────
 
@@ -334,7 +348,7 @@ protected:
 
     static inline bool isSVFVarKind(GNodeK n)
     {
-        static_assert(DummyObjNode - ValNode == 22,
+        static_assert(DummyObjNode - ValNode == 23,
                       "The number of SVFVarKinds has changed, make sure the "
                       "range is correct");
 
@@ -343,7 +357,7 @@ protected:
 
     static inline bool isValVarKinds(GNodeK n)
     {
-        static_assert(DummyValNode - ValNode == 11,
+        static_assert(DummyValNode - ValNode == 12,
                       "The number of ValVarKinds has changed, make sure the "
                       "range is correct");
         return n <= DummyValNode && n >= ValNode;
@@ -359,10 +373,10 @@ protected:
 
     static inline bool isFIObjVarKinds(GNodeK n)
     {
-        static_assert(ConstantNullptrNode - FIObjNode == 7,
+        static_assert(ConstantNullptrObjNode - FIObjNode == 7,
                       "The number of FIObjVarKinds has changed, make sure the "
                       "range is correct");
-        return n <= ConstantNullptrNode && n >= FIObjNode;
+        return n <= ConstantNullptrObjNode && n >= FIObjNode;
     }
 
     static inline bool isVFGNodeKinds(GNodeK n)

@@ -188,20 +188,20 @@ void AbstractState::initObjVar(ObjVar* objVar)
         // Handle constant data, arrays, and structures
         if (obj->isConstDataOrConstGlobal() || obj->isConstantArray() || obj->isConstantStruct())
         {
-            if (const SVFConstantInt* consInt = SVFUtil::dyn_cast<SVFConstantInt>(obj->getValue()))
+            if (const ConstantIntObjVar* consInt = SVFUtil::dyn_cast<ConstantIntObjVar>(objVar))
             {
                 s64_t numeral = consInt->getSExtValue();
                 (*this)[varId] = IntervalValue(numeral, numeral);
             }
-            else if (const SVFConstantFP* consFP = SVFUtil::dyn_cast<SVFConstantFP>(obj->getValue()))
+            else if (const ConstantFPObjVar* consFP = SVFUtil::dyn_cast<ConstantFPObjVar>(objVar))
             {
                 (*this)[varId] = IntervalValue(consFP->getFPValue(), consFP->getFPValue());
             }
-            else if (SVFUtil::isa<SVFConstantNullPtr>(obj->getValue()))
+            else if (SVFUtil::isa<ConstantNullPtrObjVar>(objVar))
             {
                 (*this)[varId] = IntervalValue(0, 0);
             }
-            else if (SVFUtil::isa<SVFGlobalValue>(obj->getValue()))
+            else if (SVFUtil::isa<GlobalValueObjVar>(objVar))
             {
                 (*this)[varId] = AddressValue(AbstractState::getVirtualMemAddress(varId));
             }
@@ -240,7 +240,7 @@ IntervalValue AbstractState::getElementIndex(const GepStmt* gep)
     for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
     {
         AccessPath::IdxOperandPair IdxVarAndType = gep->getOffsetVarAndGepTypePairVec()[i];
-        const SVFValue* value = gep->getOffsetVarAndGepTypePairVec()[i].first->getValue();
+        const SVFVar* var = gep->getOffsetVarAndGepTypePairVec()[i].first;
         const SVFType* type = IdxVarAndType.second;
 
         // Variables to store the lower and upper bounds of the index value
@@ -248,11 +248,11 @@ IntervalValue AbstractState::getElementIndex(const GepStmt* gep)
         s64_t idxUb;
 
         // Determine the lower and upper bounds based on whether the value is a constant
-        if (const SVFConstantInt* constInt = SVFUtil::dyn_cast<SVFConstantInt>(value))
+        if (const ConstantIntObjVar* constInt = SVFUtil::dyn_cast<ConstantIntObjVar>(var))
             idxLb = idxUb = constInt->getSExtValue();
         else
         {
-            IntervalValue idxItv = (*this)[PAG::getPAG()->getValueNode(value)].getInterval();
+            IntervalValue idxItv = (*this)[var->getId()].getInterval();
             if (idxItv.isBottom())
                 idxLb = idxUb = 0;
             else
@@ -327,7 +327,7 @@ IntervalValue AbstractState::getByteOffset(const GepStmt* gep)
             else
                 assert(false && "idxOperandType must be ArrType or PtrType");
 
-            if (const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(idxOperandVar->getValue()))
+            if (const ConstantIntObjVar* op = SVFUtil::dyn_cast<ConstantIntObjVar>(idxOperandVar))
             {
                 // Calculate the lower bound (lb) of the interval value
                 s64_t lb = (double)Options::MaxFieldLimit() / elemByteSize >= op->getSExtValue()
@@ -337,7 +337,7 @@ IntervalValue AbstractState::getByteOffset(const GepStmt* gep)
             }
             else
             {
-                u32_t idx = PAG::getPAG()->getValueNode(idxOperandVar->getValue());
+                u32_t idx = idxOperandVar->getId();
                 IntervalValue idxVal = (*this)[idx].getInterval();
 
                 if (idxVal.isBottom())

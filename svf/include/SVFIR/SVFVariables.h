@@ -729,7 +729,12 @@ public:
     }
 
     virtual const std::string toString() const {
-        return "ConstantValVar";
+        std::string str;
+        std::stringstream rawstr(str);
+        rawstr << "ConstantValNode ID: " << getId();
+        rawstr << "\n";
+        rawstr << value->toString();
+        return rawstr.str();
     }
 };
 
@@ -771,8 +776,13 @@ public:
 
     }
 
-    virtual const std::string toString() const {
-        return "ConstantDataValVar";
+    virtual const std::string toString() const  {
+        std::string str;
+        std::stringstream rawstr(str);
+        rawstr << "ConstantDataValNode ID: " << getId();
+        rawstr << "\n";
+        rawstr << value->toString();
+        return rawstr.str();
     }
 };
 
@@ -814,8 +824,13 @@ public:
 
     }
 
-    virtual const std::string toString() const {
-        return "GlobalValueValvar";
+    virtual const std::string toString() const  {
+        std::string str;
+        std::stringstream rawstr(str);
+        rawstr << "GlobalValueValVar ID: " << getId();
+        rawstr << "\n";
+        rawstr << value->toString();
+        return rawstr.str();
     }
 };
 
@@ -899,8 +914,13 @@ public:
 
     }
 
-    virtual const std::string toString() const {
-        return "ConstantFPValVar";
+    virtual const std::string toString() const  {
+        std::string str;
+        std::stringstream rawstr(str);
+        rawstr << "ConstantFPValVar ID: " << getId();
+        rawstr << "\n";
+        rawstr << value->toString();
+        return rawstr.str();
     }
 };
 
@@ -941,8 +961,13 @@ public:
     {
 
     }
-    virtual const std::string toString() const {
-        return "ConstantIntValVar";
+    virtual const std::string toString() const  {
+        std::string str;
+        std::stringstream rawstr(str);
+        rawstr << "ConstantIntValNode ID: " << getId();
+        rawstr << "\n";
+        rawstr << value->toString();
+        return rawstr.str();
     }
 };
 
@@ -960,32 +985,37 @@ public:
     }
     static inline bool classof(const ValVar* node)
     {
-        return node->getNodeKind() == ConstantNullptrNode;
+        return node->getNodeKind() == ConstantNullptrValNode;
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == ConstantNullptrNode;
+        return node->getNodeKind() == ConstantNullptrValNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == ConstantNullptrNode;
+        return node->getNodeKind() == ConstantNullptrValNode;
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == ConstantNullptrNode;
+        return node->getNodeKind() == ConstantNullptrValNode;
     }
     //@}
 
     /// Constructor
     ConstantNullPtrValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
-                     PNODEK ty = ConstantNullptrNode)
+                     PNODEK ty = ConstantNullptrValNode)
         : ConstantDataValVar(val, i,  icn, ty)
     {
 
     }
 
-    virtual const std::string toString() const {
-        return "ConstantNullPtrValVar";
+    virtual const std::string toString() const  {
+        std::string str;
+        std::stringstream rawstr(str);
+        rawstr << "ConstantNullPtrValNode ID: " << getId();
+        rawstr << "\n";
+        rawstr << value->toString();
+        return rawstr.str();
     }
 };
 
@@ -996,7 +1026,7 @@ class ConstantObjVar: public FIObjVar
 
 protected:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
-    ConstantObjVar(NodeID i, PNODEK ty = FIObjNode) : FIObjVar(i, ty) {}
+    ConstantObjVar(NodeID i, PNODEK ty = ConstantObjNode) : FIObjVar(i, ty) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1025,7 +1055,7 @@ public:
 
     /// Constructor
     ConstantObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
-             PNODEK ty = FIObjNode)
+             PNODEK ty = ConstantObjNode)
         : FIObjVar(val, i, mem, ty)
     {
     }
@@ -1039,7 +1069,12 @@ public:
     }
 
     virtual const std::string toString() const {
-        return "ConstantObjVar: " + getValueName();
+        std::string str;
+        std::stringstream rawstr(str);
+        rawstr << "ConstantObjVar ID: " << getId();
+        rawstr << "\n";
+        rawstr << value->toString();
+        return rawstr.str();
     }
 };
 
@@ -1085,14 +1120,19 @@ public:
     //@}
 
     /// Constructor
-    GlobalValueObjVar(NodeID i, const MemObj* mem,
-              PNODEK ty = GlobalValueObjNode): ConstantObjVar(nullptr,i,mem,ty){
+    GlobalValueObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
+              PNODEK ty = GlobalValueObjNode): ConstantObjVar(val,i,mem,ty){
 
     }
 
 
-    virtual const std::string toString() const {
-        return "GlobalValueObjVar";
+    virtual const std::string toString() const  {
+        std::string str;
+        std::stringstream rawstr(str);
+        rawstr << "GlobalValueObjVar ID: " << getId();
+        rawstr << "\n";
+        rawstr << value->toString();
+        return rawstr.str();
     }
 };
 
@@ -1130,19 +1170,18 @@ public:
     //@}
 
     /// Constructor
-    ConstantDataObjVar(NodeID i, const MemObj* m, PNODEK ty = ConstantDataObjNode)
-        : ConstantObjVar(nullptr, i, m, ty)
+    ConstantDataObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ConstantDataObjNode)
+        : ConstantObjVar(val, i, m, ty)
     {
     }
 
-    /// Return name of this node
-    inline const std::string getValueName() const
-    {
-        return "dummyObj";
-    }
-
-    virtual const std::string toString() const {
-        return "ConstantDataObjVar";
+    virtual const std::string toString() const  {
+        std::string str;
+        std::stringstream rawstr(str);
+        rawstr << "ConstantDataObjVar ID: " << getId();
+        rawstr << "\n";
+        rawstr << value->toString();
+        return rawstr.str();
     }
 };
 
@@ -1181,20 +1220,25 @@ public:
     //@}
 
     /// Constructor
-    ConstantFPObjVar(NodeID i, const MemObj* m, PNODEK ty = ConstantFPObjNode)
-        : ConstantDataObjVar(i, m, ty)
+    ConstantFPObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ConstantFPObjNode)
+        : ConstantDataObjVar(val, i, m, ty)
     {
     }
 
-    /// Return name of this node
-    inline const std::string getValueName() const
+    inline double getFPValue () const
     {
-        return "dummyObj";
+        return SVFUtil::dyn_cast<SVFConstantFP>(value)->getFPValue();
     }
+
 
     virtual const std::string toString() const
     {
-        return "ConstantFPObjVar";
+        std::string str;
+        std::stringstream rawstr(str);
+        rawstr << "ConstantFPObjVar ID: " << getId();
+        rawstr << "\n";
+        rawstr << value->toString();
+        return rawstr.str();
     }
 };
 
@@ -1230,27 +1274,87 @@ public:
     {
         return node->getNodeKind() == SVFVar::ConstantIntObjNode;
     }
+
+    s64_t getSExtValue() const
+    {
+        return SVFUtil::dyn_cast<SVFConstantInt>(value)->getSExtValue();
+    }
+
+
+    u64_t getZExtValue() const
+    {
+        return SVFUtil::dyn_cast<SVFConstantInt>(value)->getZExtValue();
+    }
     //@}
 
     /// Constructor
-    ConstantIntObjVar(NodeID i, const MemObj* m, PNODEK ty = ConstantIntObjNode)
-        : ConstantDataObjVar(i, m, ty)
+    ConstantIntObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ConstantIntObjNode)
+        : ConstantDataObjVar(val, i, m, ty)
     {
     }
 
-    /// Return name of this node
-    inline const std::string getValueName() const
-    {
-        return "dummyObj";
-    }
 
     virtual const std::string toString() const {
-        return "ConstantIntObjVar";
+        std::string str;
+        std::stringstream rawstr(str);
+        rawstr << "ConstantIntObjVar ID: " << getId();
+        rawstr << "\n";
+        rawstr << value->toString();
+        return rawstr.str();
     }
 };
 
 
+class ConstantNullPtrObjVar: public ConstantDataObjVar
+{
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
 
+private:
+    /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
+    ConstantNullPtrObjVar(NodeID i) : ConstantDataObjVar(i) {}
+
+public:
+    //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
+    static inline bool classof(const ConstantDataObjVar*)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFVar* node)
+    {
+        return node->getNodeKind() == SVFVar::ConstantNullptrObjNode;
+    }
+    static inline bool classof(const ObjVar* node)
+    {
+        return node->getNodeKind() == SVFVar::ConstantNullptrObjNode;
+    }
+    static inline bool classof(const GenericPAGNodeTy* node)
+    {
+        return node->getNodeKind() == SVFVar::ConstantNullptrObjNode;
+    }
+
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == SVFVar::ConstantNullptrObjNode;
+    }
+    //@}
+
+    /// Constructor
+    ConstantNullPtrObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ConstantNullptrObjNode)
+        : ConstantDataObjVar(val, i, m, ty)
+    {
+    }
+
+
+    virtual const std::string toString() const {
+        std::string str;
+        std::stringstream rawstr(str);
+        rawstr << "ConstantNullPtrObjVar ID: " << getId();
+        rawstr << "\n";
+        rawstr << value->toString();
+        return rawstr.str();
+    }
+};
 /*
  * Unique Return node of a procedure
  */
