@@ -547,8 +547,13 @@ private:
     /// Add a value (pointer) node
     inline NodeID addValNode(const SVFValue* val, NodeID i, const ICFGNode* icfgNode)
     {
-        SVFVar *node = new ValVar(val,i, ValVar::ValNode, icfgNode);
-        return addValNode(val, node, i);
+        if (SVFUtil::isa<SVFConstant>(val))
+            return addConstantValNode(val, i, icfgNode);
+        else
+        {
+            SVFVar* node = new ValVar(val, i, ValVar::ValNode, icfgNode);
+            return addValNode(val, node, i);
+        }
     }
 
     NodeID addFunValNode(const CallGraphNode* callGraphNode, NodeID i, const ICFGNode* icfgNode)
@@ -562,7 +567,10 @@ private:
     {
         const MemObj* mem = getMemObj(val);
         assert(mem->getId() == i && "not same object id?");
-        return addFIObjNode(mem);
+        if (SVFUtil::isa<SVFConstant>(val))
+            return addConstantObjNode(val, i);
+        else
+            return addFIObjNode(mem);
     }
 
     NodeID addFunObjNode(const CallGraphNode* callGraphNode, NodeID id);
