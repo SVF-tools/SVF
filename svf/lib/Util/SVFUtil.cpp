@@ -424,3 +424,10 @@ const SVFFunction* SVFUtil::getProgEntryFunction()
     }
     return nullptr;
 }
+
+
+const ObjVar* SVFUtil::getObjVarOfValVar(const SVF::ValVar* valVar)
+{
+    assert(valVar->getInEdges().size() == 1);
+    return SVFUtil::dyn_cast<ObjVar>((*valVar->getInEdges().begin())->getSrcNode());
+}

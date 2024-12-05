@@ -425,7 +425,7 @@ class CallICFGNode : public InterICFGNode
     friend class SVFIRReader;
 
 public:
-    typedef std::vector<const SVFVar *> ActualParmNodeVec;
+    typedef std::vector<const ValVar *> ActualParmNodeVec;
 
 protected:
     const RetICFGNode* ret;
@@ -491,13 +491,13 @@ public:
     }
 
     /// Add actual parameters
-    inline void addActualParms(const SVFVar *ap)
+    inline void addActualParms(const ValVar *ap)
     {
         APNodes.push_back(ap);
     }
     /// Parameter operations
     //@{
-    inline const SVFVar* getArgument(u32_t ArgNo) const
+    inline const ValVar* getArgument(u32_t ArgNo) const
     {
         return getActualParms()[ArgNo];
     }

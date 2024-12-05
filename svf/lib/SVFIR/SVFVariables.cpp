@@ -30,6 +30,7 @@
 #include "SVFIR/SVFVariables.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -52,11 +53,12 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
         break;
     }
     case RetNode:
+    case FunObjNode:
     {
-        assert(val != nullptr && "value is nullptr for RetNode");
-        isPtr = SVFUtil::cast<SVFFunction>(val)->getReturnType()->isPointerTy();
+        // to be completed in derived class
         break;
     }
+    case FunValNode:
     case VarargNode:
     case DummyValNode:
     {
@@ -85,8 +87,6 @@ bool SVFVar::isIsolatedNode() const
         return true;
     else if (isConstDataOrAggDataButNotNullPtr())
         return true;
-    else if (value && SVFUtil::isa<SVFFunction>(value))
-        return SVFUtil::cast<SVFFunction>(value)->isIntrinsic();
     else
         return false;
 }
@@ -144,6 +144,21 @@ const std::string GepValVar::toString() const
     return rawstr.str();
 }
 
+RetPN::RetPN(const CallGraphNode* node, NodeID i) : ValVar(i, RetNode), callGraphNode(node)
+{
+    isPtr = node->getFunction()->getReturnType()->isPointerTy();
+}
+
+const SVFFunction* RetPN::getFunction() const
+{
+    return callGraphNode->getFunction();
+}
+
+const std::string RetPN::getValueName() const
+{
+    return callGraphNode->getName() + "_ret";
+}
+
 const std::string GepObjVar::toString() const
 {
     std::string str;
@@ -170,19 +185,67 @@ const std::string FIObjVar::toString() const
     return rawstr.str();
 }
 
+const std::string FunValVar::toString() const
+{
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "FunValVar ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << callGraphNode->getName();
+    }
+    return rawstr.str();
+}
+
+FunObjVar::FunObjVar(const CallGraphNode* cgNode, NodeID i, const MemObj* mem,
+                     PNODEK ty)
+    : FIObjVar(nullptr, i, mem, ty), callGraphNode(cgNode)
+{
+    isPtr = callGraphNode->getFunction()->getType()->isPointerTy();
+}
+
+bool FunObjVar::isIsolatedNode() const
+{
+    return callGraphNode->getFunction()->isIntrinsic();
+}
+
+const std::string FunObjVar::toString() const
+{
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "FunObjVar ID: " << getId() << " (base object)";
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << callGraphNode->getName();
+    }
+    return rawstr.str();
+}
+
 const std::string RetPN::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "RetPN ID: " << getId() << " unique return node for function " << SVFUtil::cast<SVFFunction>(value)->getName();
+    rawstr << "RetPN ID: " << getId() << " unique return node for function " << callGraphNode->getName();
     return rawstr.str();
+}
+
+const SVFFunction* VarArgPN::getFunction() const
+{
+    return callGraphNode->getFunction();
+}
+
+const std::string VarArgPN::getValueName() const
+{
+    return callGraphNode->getName() + "_vararg";
 }
 
 const std::string VarArgPN::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "VarArgPN ID: " << getId() << " Var arg node for function " << SVFUtil::cast<SVFFunction>(value)->getName();
+    rawstr << "VarArgPN ID: " << getId() << " Var arg node for function " << callGraphNode->getName();
     return rawstr.str();
 }
 

@@ -31,6 +31,7 @@
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
 #include "SVF-LLVM/ObjTypeInference.h"
+#include "Graphs/CallGraph.h"
 
 using namespace std;
 using namespace SVF;
@@ -256,9 +257,11 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
 
     if (isThreadForkCall(callICFGNode))
     {
-        if (const SVFFunction* forkedFun = SVFUtil::dyn_cast<SVFFunction>(getForkedFun(callICFGNode)->getValue()))
+        const ValVar* valVar = getForkedFun(callICFGNode);
+        if (const FunValVar* funcValVar = SVFUtil::dyn_cast<FunValVar>(valVar))
         {
-            forkedFun = forkedFun->getDefFunForMultipleModule();
+            const SVFFunction* forkedFun = funcValVar->getCallGraphNode()->getFunction()
+                                           ->getDefFunForMultipleModule();
             const SVFVar* actualParm = getActualParmAtForkSite(callICFGNode);
             /// pthread_create has 1 arg.
             /// apr_thread_create has 2 arg.

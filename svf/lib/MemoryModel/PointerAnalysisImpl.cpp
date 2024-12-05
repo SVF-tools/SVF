@@ -34,6 +34,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "Graphs/CallGraph.h"
+
 using namespace SVF;
 using namespace SVFUtil;
 using namespace std;
@@ -521,11 +523,11 @@ void BVDataPTAImpl::onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& call
         for(CallSiteSet::const_iterator it = tdCallGraph->forksitesBegin(),
                 eit = tdCallGraph->forksitesEnd(); it != eit; ++it)
         {
-            const SVFValue* forkedVal =tdCallGraph->getThreadAPI()->getForkedFun(*it)->getValue();
-            if(SVFUtil::dyn_cast<SVFFunction>(forkedVal) == nullptr)
+            const ValVar* pVar = tdCallGraph->getThreadAPI()->getForkedFun(*it);
+            if(SVFUtil::dyn_cast<FunValVar>(pVar) == nullptr)
             {
                 SVFIR *pag = this->getPAG();
-                const NodeBS targets = this->getPts(pag->getValueNode(forkedVal)).toNodeBS();
+                const NodeBS targets = this->getPts(pVar->getId()).toNodeBS();
                 for(NodeBS::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ++ii)
                 {
                     if(ObjVar *objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
@@ -533,7 +535,7 @@ void BVDataPTAImpl::onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& call
                         const MemObj *obj = pag->getObject(objPN);
                         if(obj->isFunction())
                         {
-                            const SVFFunction *svfForkedFun = SVFUtil::cast<SVFFunction>(obj->getValue());
+                            const SVFFunction *svfForkedFun = SVFUtil::cast<CallGraphNode>(obj->getGNode())->getFunction();
                             if(tdCallGraph->addIndirectForkEdge(*it, svfForkedFun))
                                 newForkEdges[*it].insert(svfForkedFun);
                         }

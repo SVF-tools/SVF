@@ -515,7 +515,7 @@ public:
 
 /*!
  *
- *  StoreCHI is annotated at each store instruction, representing a memory object is modified here
+ *  CallCHI is annotated at callsite, representing a memory object is indirect modified by callee
  */
 template<class Cond>
 class CallCHI : public MSSACHI<Cond>
@@ -523,7 +523,7 @@ class CallCHI : public MSSACHI<Cond>
 private:
     const CallICFGNode* callsite;
 public:
-    /// Constructors for StoreCHI
+    /// Constructors for CallCHI
     //@{
     CallCHI(const CallICFGNode* cs, const MemRegion* m, Cond c = true) :
         MSSACHI<Cond>(MSSADEF::CallMSSACHI,m,c), callsite(cs)

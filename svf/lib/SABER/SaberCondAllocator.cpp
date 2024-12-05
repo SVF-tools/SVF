@@ -102,8 +102,7 @@ void SaberCondAllocator::allocateForBB(const SVFBasicBlock &bb)
         std::vector<Condition> condVec;
         for (u32_t i = 0; i < bit_num; i++)
         {
-            const IntraICFGNode* svfInst = cast<IntraICFGNode>(bb.back());
-            condVec.push_back(newCond(svfInst));
+            condVec.push_back(newCond(bb.back()));
         }
 
         // iterate each successor
@@ -190,7 +189,13 @@ SaberCondAllocator::evaluateTestNullLikeExpr(const BranchStmt *branchStmt, const
     const SVFBasicBlock* succ1 = branchStmt->getSuccessor(0)->getBB();
 
     const ValVar* condVar = SVFUtil::cast<ValVar>(branchStmt->getCondition());
-    if (isTestNullExpr(SVFUtil::cast<ICFGNode>(condVar->getGNode())))
+    if (condVar->isConstDataOrAggDataButNotNullPtr())
+    {
+        // branch condition is a constant value, return nullexpr because it cannot be test null
+        //  br i1 false, label %44, label %75, !dbg !7669 { "ln": 2033, "cl": 7, "fl": "re_lexer.c" }
+        return Condition::nullExpr();
+    }
+    if (isTestNullExpr(SVFUtil::cast<ICFGNode>(condVar->getICFGNode())))
     {
         // succ is then branch
         if (succ1 == succ)
@@ -199,7 +204,7 @@ SaberCondAllocator::evaluateTestNullLikeExpr(const BranchStmt *branchStmt, const
         else
             return getTrueCond();
     }
-    if (isTestNotNullExpr(SVFUtil::cast<ICFGNode>(condVar->getGNode())))
+    if (isTestNotNullExpr(condVar->getICFGNode()))
     {
         // succ is then branch
         if (succ1 == succ)

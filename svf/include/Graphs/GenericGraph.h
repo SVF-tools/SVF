@@ -161,6 +161,8 @@ public:
         // │   ┌── ValVarKinds: Types of value variable nodes
         // │   │   ├── Represents a standard value variable
         ValNode,
+        // │   │   ├── Represents a Function value variable
+        FunValNode,
         // │   │   ├── Represents a GEP value variable
         GepValNode,
         // │   │   ├── Represents a return value node
@@ -174,8 +176,10 @@ public:
         ObjNode,
         // │       ├── GepObjNode: Represents a GEP object variable
         GepObjNode,
-        // │       ├── FIObjNode: Represents a flow-insensitive object node
+        // │       └── FIObjNode: Represents a flow-insensitive object node
         FIObjNode,
+        // │            ├──FunObjNode: Types of function object
+        FunObjNode,
         // │       └── DummyObjNode: Dummy node for uninitialized objects
         DummyObjNode,
         // └────────
@@ -313,7 +317,7 @@ protected:
 
     static inline bool isSVFVarKind(GNodeK n)
     {
-        static_assert(DummyObjNode - ValNode == 8,
+        static_assert(DummyObjNode - ValNode == 10,
                       "The number of SVFVarKinds has changed, make sure the "
                       "range is correct");
 
@@ -322,7 +326,7 @@ protected:
 
     static inline bool isValVarKinds(GNodeK n)
     {
-        static_assert(DummyValNode - ValNode == 4,
+        static_assert(DummyValNode - ValNode == 5,
                       "The number of ValVarKinds has changed, make sure the "
                       "range is correct");
         return n <= DummyValNode && n >= ValNode;
@@ -330,10 +334,18 @@ protected:
 
     static inline bool isObjVarKinds(GNodeK n)
     {
-        static_assert(DummyObjNode - ObjNode == 3,
+        static_assert(DummyObjNode - ObjNode == 4,
                       "The number of ObjVarKinds has changed, make sure the "
                       "range is correct");
         return n <= DummyObjNode && n >= ObjNode;
+    }
+
+    static inline bool isFIObjVarKinds(GNodeK n)
+    {
+        static_assert(FunObjNode - FIObjNode == 1,
+                      "The number of FIObjVarKinds has changed, make sure the "
+                      "range is correct");
+        return n <= FunObjNode && n >= FIObjNode;
     }
 
     static inline bool isVFGNodeKinds(GNodeK n)

@@ -472,6 +472,17 @@ NodeID SVFIR::addFIObjNode(const MemObj* obj)
     return addObjNode(obj->getValue(), node, obj->getId());
 }
 
+NodeID SVFIR::addFunObjNode(const CallGraphNode* callGraphNode, NodeID id)
+{
+    const MemObj* mem = getMemObj(callGraphNode->getFunction());
+    assert(mem->getId() == id && "not same object id?");
+    //assert(findPAGNode(i) == false && "this node should not be created before");
+    NodeID base = mem->getId();
+    memToFieldsMap[base].set(mem->getId());
+    FunObjVar*node = new FunObjVar(callGraphNode, mem->getId(), mem);
+    return addObjNode(mem->getValue(), node, mem->getId());
+}
+
 /*!
  * Get all fields object nodes of an object
  */
@@ -675,9 +686,15 @@ bool SVFIR::isValidTopLevelPtr(const SVFVar* node)
 {
     if (SVFUtil::isa<ValVar>(node))
     {
-        if (isValidPointer(node->getId()) && node->hasValue())
+        if (isValidPointer(node->getId()))
         {
-            return !SVFUtil::isArgOfUncalledFunction(node->getValue());
+            // TODO: after svf value is removed, we use type to determine top level ptr
+            if (SVFUtil::isa<RetPN>(node) || SVFUtil::isa<VarArgPN>(node) || SVFUtil::isa<FunValVar>(node))
+            {
+                return true;
+            }
+            else if(node->hasValue())
+                return !SVFUtil::isArgOfUncalledFunction(node->getValue());
         }
     }
     return false;
