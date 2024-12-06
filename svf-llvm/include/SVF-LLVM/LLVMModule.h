@@ -172,7 +172,7 @@ public:
         LLVMFunc2SVFFunc[func] = svfFunc;
         setValueAttr(func,svfFunc);
     }
-    void addFunctionMap(const Function* func, CallGraphNode* svfFunc);
+    void addFunctionMap(const Function* func, CallGraphNode* cgNode);
 
     inline void addBasicBlockMap(const BasicBlock* bb, SVFBasicBlock* svfBB)
     {

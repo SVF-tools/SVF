@@ -202,6 +202,8 @@ public:
 
     void addCallGraphNode(const SVFFunction* fun);
 
+    const CallGraphNode* getCallGraphNode(const std::string& name);
+
     /// Destructor
     virtual ~CallGraph()
     {
