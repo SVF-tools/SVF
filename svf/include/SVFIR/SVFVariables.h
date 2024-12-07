@@ -698,25 +698,25 @@ class ConstantValVar: public ValVar
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FunValVar*)
+    static inline bool classof(const ConstantValVar*)
     {
         return true;
     }
     static inline bool classof(const ValVar* node)
     {
-        return node->getNodeKind() == ConstantValNode;
+        return isConstantValVar(node->getNodeKind());
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == ConstantValNode;
+        return isConstantValVar(node->getNodeKind());
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == ConstantValNode;
+        return isConstantValVar(node->getNodeKind());
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == ConstantValNode;
+        return isConstantValVar(node->getNodeKind());
     }
     //@}
 
@@ -746,25 +746,25 @@ class ConstantDataValVar: public ConstantValVar
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FunValVar*)
+    static inline bool classof(const ConstantDataValVar*)
     {
         return true;
     }
     static inline bool classof(const ValVar* node)
     {
-        return node->getNodeKind() == ConstantDataValNode;
+        return isConstantDataValVar(node->getNodeKind());
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == ConstantDataValNode;
+        return isConstantDataValVar(node->getNodeKind());
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == ConstantDataValNode;
+        return isConstantDataValVar(node->getNodeKind());
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == ConstantDataValNode;
+        return isConstantDataValVar(node->getNodeKind());
     }
     //@}
 
@@ -1037,19 +1037,19 @@ public:
     }
     static inline bool classof(const ObjVar* node)
     {
-        return isFIObjVarKinds(node->getNodeKind());
+        return isConstantObjVarKinds(node->getNodeKind());
     }
     static inline bool classof(const SVFVar* node)
     {
-        return isFIObjVarKinds(node->getNodeKind());
+        return isConstantObjVarKinds(node->getNodeKind());
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return isFIObjVarKinds(node->getNodeKind());
+        return isConstantObjVarKinds(node->getNodeKind());
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return isFIObjVarKinds(node->getNodeKind());
+        return isConstantObjVarKinds(node->getNodeKind());
     }
     //@}
 
@@ -1152,20 +1152,20 @@ public:
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantDataObjNode;
+        return isConstantDataObjVarKinds(node->getNodeKind());
     }
     static inline bool classof(const ObjVar* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantDataObjNode;
+        return isConstantDataObjVarKinds(node->getNodeKind());
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantDataObjNode;
+        return isConstantDataObjVarKinds(node->getNodeKind());
     }
 
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantDataObjNode;
+        return isConstantDataObjVarKinds(node->getNodeKind());
     }
     //@}
 

@@ -171,10 +171,10 @@ public:
         VarargNode,
         // │   │   ├── Represents a constant value node
         ConstantValNode,
-        // │   │   ├── Represents a constant data value node
-        ConstantDataValNode,
         // │   │   ├── Represents a global value node
         GlobalValueValNode,
+        // │   │   ├── Represents a constant data value node
+        ConstantDataValNode,
         // │   │   ├── Represents a black hole  node
         BlackHoleNode,
         // │   │   ├── Represents a constant float-point value node
@@ -199,10 +199,10 @@ public:
         FunObjNode,
         // │       ├── ConstantObjNode: Types of constant object
         ConstantObjNode,
-        // │       ├── ConstantDataObjNode: Types of constant data object
-        ConstantDataObjNode,
         // │       ├── GlobalValueObjNode: Types of global value object
         GlobalValueObjNode,
+        // │       ├── ConstantDataObjNode: Types of constant data object
+        ConstantDataObjNode,
         // │       ├── ConstantFPObjNode: Types of constant float-point object
         ConstantFPObjNode,
         // │       ├── ConstantIntObjNode: Types of constant integer object
@@ -363,6 +363,22 @@ protected:
         return n <= DummyValNode && n >= ValNode;
     }
 
+    static inline bool isConstantValVar(GNodeK n)
+    {
+        static_assert(ConstantNullptrValNode - ConstantValNode == 6,
+                      "The number of ConstantValVarKinds has changed, make sure "
+                      "the range is correct");
+        return n <= ConstantNullptrValNode && n >= ConstantValNode;
+    }
+
+    static inline bool isConstantDataValVar(GNodeK n)
+    {
+        static_assert(ConstantNullptrValNode - ConstantDataValNode == 4,
+                      "The number of ConstantDataValVarKinds has changed, make "
+                      "sure the range is correct");
+        return n <= ConstantIntValNode && n >= ConstantValNode;
+    }
+
     static inline bool isObjVarKinds(GNodeK n)
     {
         static_assert(DummyObjNode - ObjNode == 10,
@@ -377,6 +393,22 @@ protected:
                       "The number of FIObjVarKinds has changed, make sure the "
                       "range is correct");
         return n <= ConstantNullptrObjNode && n >= FIObjNode;
+    }
+
+    static inline bool isConstantObjVarKinds(GNodeK n)
+    {
+        static_assert(ConstantNullptrObjNode - ConstantObjNode == 5,
+                      "The number of ConstantObjVarKinds has changed, make "
+                      "sure the range is correct");
+        return n <= ConstantNullptrObjNode && n >= ConstantObjNode;
+    }
+
+    static inline bool isConstantDataObjVarKinds(GNodeK n)
+    {
+        static_assert(ConstantNullptrObjNode - ConstantDataObjNode == 3,
+                      "The number of ConstantDataObjVarKinds has changed, make "
+                      "sure the range is correct");
+        return n <= ConstantNullptrObjNode && n >= ConstantDataObjNode;
     }
 
     static inline bool isVFGNodeKinds(GNodeK n)
