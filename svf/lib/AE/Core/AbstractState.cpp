@@ -181,46 +181,39 @@ void AbstractState::initObjVar(ObjVar* objVar)
     NodeID varId = objVar->getId();
 
     // Check if the object variable has an associated value
-    if (objVar->hasValue())
-    {
-        const MemObj* obj = objVar->getMemObj();
 
-        // Handle constant data, arrays, and structures
-        if (obj->isConstDataOrConstGlobal() || obj->isConstantArray() || obj->isConstantStruct())
+    const MemObj* obj = objVar->getMemObj();
+
+    // Handle constant data, arrays, and structures
+    if (obj->isConstDataOrConstGlobal() || obj->isConstantArray() || obj->isConstantStruct())
+    {
+        if (const ConstantIntObjVar* consInt = SVFUtil::dyn_cast<ConstantIntObjVar>(objVar))
         {
-            if (const ConstantIntObjVar* consInt = SVFUtil::dyn_cast<ConstantIntObjVar>(objVar))
-            {
-                s64_t numeral = consInt->getSExtValue();
-                (*this)[varId] = IntervalValue(numeral, numeral);
-            }
-            else if (const ConstantFPObjVar* consFP = SVFUtil::dyn_cast<ConstantFPObjVar>(objVar))
-            {
-                (*this)[varId] = IntervalValue(consFP->getFPValue(), consFP->getFPValue());
-            }
-            else if (SVFUtil::isa<ConstantNullPtrObjVar>(objVar))
-            {
-                (*this)[varId] = IntervalValue(0, 0);
-            }
-            else if (SVFUtil::isa<GlobalValueObjVar>(objVar))
-            {
-                (*this)[varId] = AddressValue(AbstractState::getVirtualMemAddress(varId));
-            }
-            else if (obj->isConstantArray() || obj->isConstantStruct())
-            {
-                (*this)[varId] = IntervalValue::top();
-            }
-            else
-            {
-                (*this)[varId] = IntervalValue::top();
-            }
+            s64_t numeral = consInt->getSExtValue();
+            (*this)[varId] = IntervalValue(numeral, numeral);
         }
-        // Handle non-constant memory objects
-        else
+        else if (const ConstantFPObjVar* consFP = SVFUtil::dyn_cast<ConstantFPObjVar>(objVar))
+        {
+            (*this)[varId] = IntervalValue(consFP->getFPValue(), consFP->getFPValue());
+        }
+        else if (SVFUtil::isa<ConstantNullPtrObjVar>(objVar))
+        {
+            (*this)[varId] = IntervalValue(0, 0);
+        }
+        else if (SVFUtil::isa<GlobalValueObjVar>(objVar))
         {
             (*this)[varId] = AddressValue(AbstractState::getVirtualMemAddress(varId));
         }
+        else if (obj->isConstantArray() || obj->isConstantStruct())
+        {
+            (*this)[varId] = IntervalValue::top();
+        }
+        else
+        {
+            (*this)[varId] = IntervalValue::top();
+        }
     }
-    // If the object variable does not have an associated value, set it to a virtual memory address
+    // Handle non-constant memory objects
     else
     {
         (*this)[varId] = AddressValue(AbstractState::getVirtualMemAddress(varId));

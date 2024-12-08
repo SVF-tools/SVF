@@ -721,9 +721,9 @@ public:
     //@}
 
     /// Constructor
-    ConstantValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
+    ConstantValVar(NodeID i, const ICFGNode* icn,
               PNODEK ty = ConstantValNode)
-        : ValVar(val, i, ty, icn)
+        : ValVar(nullptr, i, ty, icn)
     {
 
     }
@@ -769,9 +769,9 @@ public:
     //@}
 
     /// Constructor
-    ConstantDataValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
+    ConstantDataValVar(NodeID i, const ICFGNode* icn,
                    PNODEK ty = ConstantDataValNode)
-        : ConstantValVar(val, i,  icn, ty)
+        : ConstantValVar(i,  icn, ty)
     {
 
     }
@@ -817,9 +817,9 @@ public:
     //@}
 
     /// Constructor
-    GlobalValueValvar(const SVFValue* val, NodeID i, const ICFGNode* icn,
+    GlobalValueValvar(NodeID i, const ICFGNode* icn,
                        PNODEK ty = GlobalValueValNode)
-        : ConstantValVar(val, i,  icn, ty)
+        : ConstantValVar(i,  icn, ty)
     {
 
     }
@@ -866,7 +866,7 @@ public:
 
     /// Constructor
     BlackHoleVar(NodeID i, PNODEK ty = BlackHoleNode)
-        : ConstantDataValVar(nullptr, i,  nullptr, ty)
+        : ConstantDataValVar(i,  nullptr, ty)
     {
 
     }
@@ -880,6 +880,8 @@ class ConstantFPValVar: public ConstantDataValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+private:
+    float dval;
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -906,10 +908,15 @@ public:
     }
     //@}
 
+    inline double getFPValue() const
+    {
+        return dval;
+    }
+
     /// Constructor
-    ConstantFPValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
+    ConstantFPValVar(double dv, NodeID i, const ICFGNode* icn,
                       PNODEK ty = ConstantFPValNode)
-        : ConstantDataValVar(val, i,  icn, ty)
+        : ConstantDataValVar(i,  icn, ty), dval(dv)
     {
 
     }
@@ -928,6 +935,9 @@ class ConstantIntValVar: public ConstantDataValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+private:
+    u64_t zval;
+    s64_t sval;
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -954,10 +964,21 @@ public:
     }
     //@}
 
+    s64_t getSExtValue() const
+    {
+        return sval;
+    }
+
+
+    u64_t getZExtValue() const
+    {
+        return zval;
+    }
+
     /// Constructor
-    ConstantIntValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
+    ConstantIntValVar(s64_t sv, u64_t zv, NodeID i, const ICFGNode* icn,
                      PNODEK ty = ConstantIntValNode)
-        : ConstantDataValVar(val, i,  icn, ty)
+        : ConstantDataValVar(i,  icn, ty), zval(zv), sval(sv)
     {
 
     }
@@ -1002,9 +1023,9 @@ public:
     //@}
 
     /// Constructor
-    ConstantNullPtrValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
+    ConstantNullPtrValVar(NodeID i, const ICFGNode* icn,
                      PNODEK ty = ConstantNullptrValNode)
-        : ConstantDataValVar(val, i,  icn, ty)
+        : ConstantDataValVar(i,  icn, ty)
     {
 
     }
@@ -1054,9 +1075,9 @@ public:
     //@}
 
     /// Constructor
-    ConstantObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
+    ConstantObjVar(NodeID i, const MemObj* mem,
              PNODEK ty = ConstantObjNode)
-        : FIObjVar(val, i, mem, ty)
+        : FIObjVar(nullptr, i, mem, ty)
     {
     }
 
@@ -1120,8 +1141,8 @@ public:
     //@}
 
     /// Constructor
-    GlobalValueObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
-              PNODEK ty = GlobalValueObjNode): ConstantObjVar(val,i,mem,ty){
+    GlobalValueObjVar(NodeID i, const MemObj* mem,
+              PNODEK ty = GlobalValueObjNode): ConstantObjVar(i,mem,ty){
 
     }
 
@@ -1170,8 +1191,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantDataObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ConstantDataObjNode)
-        : ConstantObjVar(val, i, m, ty)
+    ConstantDataObjVar(NodeID i, const MemObj* m, PNODEK ty = ConstantDataObjNode)
+        : ConstantObjVar(i, m, ty)
     {
     }
 
@@ -1193,6 +1214,9 @@ class ConstantFPObjVar: public ConstantDataObjVar
 private:
     /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
     ConstantFPObjVar(NodeID i) : ConstantDataObjVar(i) {}
+
+private:
+    float dval;
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1220,14 +1244,14 @@ public:
     //@}
 
     /// Constructor
-    ConstantFPObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ConstantFPObjNode)
-        : ConstantDataObjVar(val, i, m, ty)
+    ConstantFPObjVar(double dv, NodeID i, const MemObj* m, PNODEK ty = ConstantFPObjNode)
+        : ConstantDataObjVar(i, m, ty), dval(dv)
     {
     }
 
-    inline double getFPValue () const
+    inline double getFPValue() const
     {
-        return SVFUtil::dyn_cast<SVFConstantFP>(value)->getFPValue();
+        return dval;
     }
 
 
@@ -1250,6 +1274,10 @@ class ConstantIntObjVar: public ConstantDataObjVar
 private:
     /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
     ConstantIntObjVar(NodeID i) : ConstantDataObjVar(i) {}
+
+private:
+    u64_t zval;
+    s64_t sval;
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1277,19 +1305,19 @@ public:
 
     s64_t getSExtValue() const
     {
-        return SVFUtil::dyn_cast<SVFConstantInt>(value)->getSExtValue();
+        return sval;
     }
 
 
     u64_t getZExtValue() const
     {
-        return SVFUtil::dyn_cast<SVFConstantInt>(value)->getZExtValue();
+        return zval;
     }
     //@}
 
     /// Constructor
-    ConstantIntObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ConstantIntObjNode)
-        : ConstantDataObjVar(val, i, m, ty)
+    ConstantIntObjVar(s64_t sv, u64_t zv, NodeID i, const MemObj* m, PNODEK ty = ConstantIntObjNode)
+        : ConstantDataObjVar(i, m, ty), zval(zv), sval(sv)
     {
     }
 
@@ -1340,8 +1368,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantNullPtrObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ConstantNullptrObjNode)
-        : ConstantDataObjVar(val, i, m, ty)
+    ConstantNullPtrObjVar(NodeID i, const MemObj* m, PNODEK ty = ConstantNullptrObjNode)
+        : ConstantDataObjVar(i, m, ty)
     {
     }
 

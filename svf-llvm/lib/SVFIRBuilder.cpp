@@ -246,6 +246,9 @@ void SVFIRBuilder::initialiseNodes()
             const CallGraphNode* cgn = llvmModuleSet()->getCallGraphNode(func);
             pag->addFunValNode(cgn, iter->second, icfgNode);
         }
+        else if (const Constant* cons = SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(iter->first))) {
+            pag->addConstantValNode(iter->first, iter->second, icfgNode);
+        }
         else
         {
             pag->addValNode(iter->first, iter->second, icfgNode);
@@ -263,6 +266,9 @@ void SVFIRBuilder::initialiseNodes()
                                        llvmModuleSet()->getLLVMValue(iter->first)))
         {
             pag->addFunObjNode(llvmModuleSet()->getCallGraphNode(func), iter->second);
+        }
+        else if (const Constant* cons = SVFUtil::dyn_cast<Constant>(llvmModuleSet()->getLLVMValue(iter->first))) {
+            pag->addConstantObjNode(iter->first, iter->second);
         }
         else
         {

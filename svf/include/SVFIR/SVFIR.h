@@ -547,13 +547,8 @@ private:
     /// Add a value (pointer) node
     inline NodeID addValNode(const SVFValue* val, NodeID i, const ICFGNode* icfgNode)
     {
-        if (SVFUtil::isa<SVFConstant>(val))
-            return addConstantValNode(val, i, icfgNode);
-        else
-        {
-            SVFVar* node = new ValVar(val, i, ValVar::ValNode, icfgNode);
-            return addValNode(val, node, i);
-        }
+        SVFVar* node = new ValVar(val, i, ValVar::ValNode, icfgNode);
+        return addValNode(val, node, i);
     }
 
     NodeID addFunValNode(const CallGraphNode* callGraphNode, NodeID i, const ICFGNode* icfgNode)
@@ -567,10 +562,7 @@ private:
     {
         const MemObj* mem = getMemObj(val);
         assert(mem->getId() == i && "not same object id?");
-        if (SVFUtil::isa<SVFConstant>(val))
-            return addConstantObjNode(val, i);
-        else
-            return addFIObjNode(mem);
+        return addFIObjNode(mem);
     }
 
     NodeID addFunObjNode(const CallGraphNode* callGraphNode, NodeID id);
@@ -587,41 +579,74 @@ private:
         return addNode(node,i);
     }
 
+    inline bool isConstant(const SVFValue* curInst) {
+        if (const SVFConstantFP* constFp = SVFUtil::dyn_cast<SVFConstantFP>(curInst))
+        {
+            return true;
+        }
+        // ConstantInt
+        else if (const SVFConstantInt* constInt = SVFUtil::dyn_cast<SVFConstantInt>(curInst))
+        {
+            return true;
+        }
+        // constNullptr
+        else if (const SVFConstantNullPtr* constNullPtr =
+                     SVFUtil::dyn_cast<SVFConstantNullPtr>(curInst)) {
+            return true;
+        }
+
+        else if (const SVFGlobalValue* globalVal =
+                     SVFUtil::dyn_cast<SVFGlobalValue>(curInst))
+        {
+            return true;
+        }
+
+        else if (const SVFConstantData* dataVal = SVFUtil::dyn_cast<SVFConstantData>(curInst)) {
+            return true;
+        }
+
+        else if (const SVFConstant* constVal = SVFUtil::dyn_cast<SVFConstant>(curInst))
+        {
+            return true;
+        }
+        return false;
+    }
+
+
     inline NodeID addConstantValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode) {
         if (const SVFConstantFP* constFp = SVFUtil::dyn_cast<SVFConstantFP>(curInst))
         {
-            SVFVar* node = new ConstantFPValVar(constFp, i, icfgNode);
+            SVFVar* node = new ConstantFPValVar(constFp->getFPValue(), i, icfgNode);
             return addNode(node,i);
         }
         // ConstantInt
         else if (const SVFConstantInt* constInt = SVFUtil::dyn_cast<SVFConstantInt>(curInst))
         {
-            SVFVar* node = new ConstantIntValVar(constInt, i, icfgNode);
+            SVFVar* node = new ConstantIntValVar(constInt->getSExtValue(), constInt->getZExtValue(), i, icfgNode);
             return addNode(node,i);
         }
         // constNullptr
         else if (const SVFConstantNullPtr* constNullPtr =
                      SVFUtil::dyn_cast<SVFConstantNullPtr>(curInst)) {
-            SVFVar* node = new ConstantNullPtrValVar(constNullPtr, i, icfgNode);
+            SVFVar* node = new ConstantNullPtrValVar(i, icfgNode);
             return addNode(node,i);
         }
 
         else if (const SVFGlobalValue* globalVal =
                      SVFUtil::dyn_cast<SVFGlobalValue>(curInst))
         {
-            SVFVar* node = new GlobalValueValvar(globalVal, i, icfgNode);
+            SVFVar* node = new GlobalValueValvar(i, icfgNode);
             return addNode(node,i);
         }
 
         else if (const SVFConstantData* dataVal = SVFUtil::dyn_cast<SVFConstantData>(curInst)) {
-            SVFVar* node = new ConstantDataValVar(dataVal, i, icfgNode);
+            SVFVar* node = new ConstantDataValVar(i, icfgNode);
             return addNode(node,i);
         }
 
-        else if (const SVFConstant* constVal =
-                     SVFUtil::dyn_cast<SVFConstant>(curInst))
+        else if (const SVFConstant* constVal = SVFUtil::dyn_cast<SVFConstant>(curInst))
         {
-            SVFVar* node = new ConstantValVar(constVal, i, icfgNode);
+            SVFVar* node = new ConstantValVar(i, icfgNode);
             return addNode(node, i);
         }
         assert(false && "not a constant value?");
@@ -639,33 +664,38 @@ private:
         memToFieldsMap[base].set(mem->getId());
         if (const SVFConstantFP* constFp = SVFUtil::dyn_cast<SVFConstantFP>(curInst))
         {
-            ConstantFPObjVar* node = new ConstantFPObjVar(constFp, mem->getId(), mem);
+            ConstantFPObjVar* node = new ConstantFPObjVar(constFp->getFPValue(), mem->getId(), mem);
             return addObjNode(mem->getValue(), node, mem->getId());
         }
         // ConstantInt
         else if (const SVFConstantInt* constInt = SVFUtil::dyn_cast<SVFConstantInt>(curInst))
         {
-            ConstantIntObjVar* node = new ConstantIntObjVar(constInt, mem->getId(), mem);
+            ConstantIntObjVar* node = new ConstantIntObjVar(constInt->getSExtValue(), constInt->getZExtValue(), mem->getId(), mem);
             return addObjNode(mem->getValue(), node, mem->getId());
         }
-        //TODO： constNullptrObj
+        // constNullptr
+        else if (const SVFConstantNullPtr* constNullPtr =
+                     SVFUtil::dyn_cast<SVFConstantNullPtr>(curInst)) {
+            SVFVar* node = new ConstantNullPtrObjVar(mem->getId(), mem);
+            return addObjNode(mem->getValue(), node, mem->getId());
+        }
 
         else if (const SVFGlobalValue* globalVal =
                      SVFUtil::dyn_cast<SVFGlobalValue>(curInst))
         {
-            GlobalValueObjVar* node = new GlobalValueObjVar(globalVal, mem->getId(), mem);
+            GlobalValueObjVar* node = new GlobalValueObjVar(mem->getId(), mem);
             return addObjNode(mem->getValue(), node, mem->getId());
         }
 
         else if (const SVFConstantData* dataVal = SVFUtil::dyn_cast<SVFConstantData>(curInst)) {
-            ConstantDataObjVar* node = new ConstantDataObjVar(dataVal, mem->getId(), mem);
+            ConstantDataObjVar* node = new ConstantDataObjVar(mem->getId(), mem);
             return addObjNode(mem->getValue(), node, mem->getId());
         }
 
         else if (const SVFConstant* constVal =
                     SVFUtil::dyn_cast<SVFConstant>(curInst))
         {
-            ConstantObjVar* node = new ConstantObjVar(constVal, mem->getId(), mem);
+            ConstantObjVar* node = new ConstantObjVar(mem->getId(), mem);
             return addObjNode(mem->getValue(), node, mem->getId());
         }
         assert(false && "not a constant value?");
