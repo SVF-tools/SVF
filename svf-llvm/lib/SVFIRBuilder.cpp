@@ -78,6 +78,10 @@ SVFIR* SVFIRBuilder::build()
         {
             if(llvmModuleSet()->hasICFGNode(inst))
                 it.second->gNode = llvmModuleSet()->getICFGNode(inst);
+        } else if (const Function* func = SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(
+                     it.second->getValue())))
+        {
+            it.second->gNode = llvmModuleSet()->getCallGraphNode(func);
         }
         else if (const Function* func = SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(
                                             it.second->getValue())))
@@ -219,8 +223,12 @@ void SVFIRBuilder::initialiseNodes()
             ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add val node " << iter->second << "\n");
-        if(iter->second == symTable->blkPtrSymID() || iter->second == symTable->nullPtrSymID())
+        if(iter->second == symTable->blkPtrSymID())
             continue;
+        if (iter->second == symTable->nullPtrSymID()) {
+            //onst SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode
+            pag->addConstantValNode(iter->first, iter->second, nullptr);
+        }
 
         const ICFGNode* icfgNode = nullptr;
         if (const Instruction* inst =
@@ -237,6 +245,9 @@ void SVFIRBuilder::initialiseNodes()
         {
             const CallGraphNode* cgn = llvmModuleSet()->getCallGraphNode(func);
             pag->addFunValNode(cgn, iter->second, icfgNode);
+        }
+        else if (SVFUtil::isa<Constant>(llvmModuleSet()->getLLVMValue(iter->first))) {
+            pag->addConstantValNode(iter->first, iter->second, icfgNode);
         }
         else
         {
@@ -255,6 +266,9 @@ void SVFIRBuilder::initialiseNodes()
                                        llvmModuleSet()->getLLVMValue(iter->first)))
         {
             pag->addFunObjNode(llvmModuleSet()->getCallGraphNode(func), iter->second);
+        }
+        else if (SVFUtil::isa<Constant>(llvmModuleSet()->getLLVMValue(iter->first))) {
+            pag->addConstantObjNode(iter->first, iter->second);
         }
         else
         {
