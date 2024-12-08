@@ -579,39 +579,6 @@ private:
         return addNode(node,i);
     }
 
-    inline bool isConstant(const SVFValue* curInst) {
-        if (const SVFConstantFP* constFp = SVFUtil::dyn_cast<SVFConstantFP>(curInst))
-        {
-            return true;
-        }
-        // ConstantInt
-        else if (const SVFConstantInt* constInt = SVFUtil::dyn_cast<SVFConstantInt>(curInst))
-        {
-            return true;
-        }
-        // constNullptr
-        else if (const SVFConstantNullPtr* constNullPtr =
-                     SVFUtil::dyn_cast<SVFConstantNullPtr>(curInst)) {
-            return true;
-        }
-
-        else if (const SVFGlobalValue* globalVal =
-                     SVFUtil::dyn_cast<SVFGlobalValue>(curInst))
-        {
-            return true;
-        }
-
-        else if (const SVFConstantData* dataVal = SVFUtil::dyn_cast<SVFConstantData>(curInst)) {
-            return true;
-        }
-
-        else if (const SVFConstant* constVal = SVFUtil::dyn_cast<SVFConstant>(curInst))
-        {
-            return true;
-        }
-        return false;
-    }
-
 
     inline NodeID addConstantValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode) {
         if (const SVFConstantFP* constFp = SVFUtil::dyn_cast<SVFConstantFP>(curInst))
