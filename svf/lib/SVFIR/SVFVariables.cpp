@@ -46,6 +46,13 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     switch (k)
     {
     case ValNode:
+    case ConstantValNode:
+    case ConstantDataValNode:
+    case GlobalValueValNode:
+    case BlackHoleNode:
+    case ConstantFPValNode:
+    case ConstantIntValNode:
+    case ConstantNullptrValNode:
     case GepValNode:
     {
         assert(val != nullptr && "value is nullptr for ValVar or GepValNode");
@@ -60,13 +67,6 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     }
     case FunValNode:
     case VarargNode:
-    case ConstantValNode:
-    case ConstantDataValNode:
-    case GlobalValueValNode:
-    case BlackHoleNode:
-    case ConstantFPValNode:
-    case ConstantIntValNode:
-    case ConstantNullptrValNode:
     case DummyValNode:
     {
         isPtr = true;
