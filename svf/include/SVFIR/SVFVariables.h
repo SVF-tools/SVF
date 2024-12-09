@@ -728,14 +728,7 @@ public:
 
     }
 
-    virtual const std::string toString() const {
-        std::string str;
-        std::stringstream rawstr(str);
-        rawstr << "ConstantValNode ID: " << getId();
-        rawstr << "\n";
-        rawstr << value->toString();
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 
 class ConstantDataValVar: public ConstantValVar
@@ -776,14 +769,7 @@ public:
 
     }
 
-    virtual const std::string toString() const  {
-        std::string str;
-        std::stringstream rawstr(str);
-        rawstr << "ConstantDataValNode ID: " << getId();
-        rawstr << "\n";
-        rawstr << value->toString();
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 
 class GlobalValueValvar: public ConstantValVar
@@ -824,14 +810,7 @@ public:
 
     }
 
-    virtual const std::string toString() const  {
-        std::string str;
-        std::stringstream rawstr(str);
-        rawstr << "GlobalValueValVar ID: " << getId();
-        rawstr << "\n";
-        rawstr << value->toString();
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 
 class BlackHoleVar: public ConstantDataValVar
@@ -921,14 +900,7 @@ public:
 
     }
 
-    virtual const std::string toString() const  {
-        std::string str;
-        std::stringstream rawstr(str);
-        rawstr << "ConstantFPValVar ID: " << getId();
-        rawstr << "\n";
-        rawstr << value->toString();
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 
 class ConstantIntValVar: public ConstantDataValVar
@@ -982,14 +954,7 @@ public:
     {
 
     }
-    virtual const std::string toString() const  {
-        std::string str;
-        std::stringstream rawstr(str);
-        rawstr << "ConstantIntValNode ID: " << getId();
-        rawstr << "\n";
-        rawstr << value->toString();
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 
 class ConstantNullPtrValVar: public ConstantDataValVar
@@ -1030,14 +995,7 @@ public:
 
     }
 
-    virtual const std::string toString() const  {
-        std::string str;
-        std::stringstream rawstr(str);
-        rawstr << "ConstantNullPtrValNode ID: " << getId();
-        rawstr << "\n";
-        rawstr << value->toString();
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 
 class ConstantObjVar: public FIObjVar
@@ -1089,14 +1047,7 @@ public:
         return " (base object)";
     }
 
-    virtual const std::string toString() const {
-        std::string str;
-        std::stringstream rawstr(str);
-        rawstr << "ConstantObjVar ID: " << getId();
-        rawstr << "\n";
-        rawstr << value->toString();
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 
 class GlobalValueObjVar: public ConstantObjVar {
@@ -1147,14 +1098,7 @@ public:
     }
 
 
-    virtual const std::string toString() const  {
-        std::string str;
-        std::stringstream rawstr(str);
-        rawstr << "GlobalValueObjVar ID: " << getId();
-        rawstr << "\n";
-        rawstr << value->toString();
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 
 class ConstantDataObjVar: public ConstantObjVar {
@@ -1196,14 +1140,7 @@ public:
     {
     }
 
-    virtual const std::string toString() const  {
-        std::string str;
-        std::stringstream rawstr(str);
-        rawstr << "ConstantDataObjVar ID: " << getId();
-        rawstr << "\n";
-        rawstr << value->toString();
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 
 class ConstantFPObjVar: public ConstantDataObjVar
@@ -1255,15 +1192,7 @@ public:
     }
 
 
-    virtual const std::string toString() const
-    {
-        std::string str;
-        std::stringstream rawstr(str);
-        rawstr << "ConstantFPObjVar ID: " << getId();
-        rawstr << "\n";
-        rawstr << value->toString();
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 
 class ConstantIntObjVar: public ConstantDataObjVar
@@ -1322,14 +1251,7 @@ public:
     }
 
 
-    virtual const std::string toString() const {
-        std::string str;
-        std::stringstream rawstr(str);
-        rawstr << "ConstantIntObjVar ID: " << getId();
-        rawstr << "\n";
-        rawstr << value->toString();
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 
 
@@ -1374,14 +1296,7 @@ public:
     }
 
 
-    virtual const std::string toString() const {
-        std::string str;
-        std::stringstream rawstr(str);
-        rawstr << "ConstantNullPtrObjVar ID: " << getId();
-        rawstr << "\n";
-        rawstr << value->toString();
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 /*
  * Unique Return node of a procedure
