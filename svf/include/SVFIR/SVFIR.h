@@ -618,12 +618,6 @@ private:
     }
 
     inline NodeID addConstantObjNode(const SVFValue* curInst, const NodeID i) {
-        // const MemObj* mem = getMemObj(callGraphNode->getFunction());
-        //     assert(mem->getId() == id && "not same object id?");
-        //     //assert(findPAGNode(i) == false && "this node should not be created before"); NodeID base = mem->getId();
-        //     memToFieldsMap[base].set(mem->getId());
-        //     FunObjVar*node = new FunObjVar(callGraphNode, mem->getId(), mem);
-        //     return addObjNode(mem->getValue(), node, mem->getId());
         const MemObj* mem = getMemObj(curInst);
         NodeID base = mem->getId();
         memToFieldsMap[base].set(mem->getId());
