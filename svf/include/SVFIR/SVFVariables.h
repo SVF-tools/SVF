@@ -721,9 +721,9 @@ public:
     //@}
 
     /// Constructor
-    ConstantValVar(NodeID i, const ICFGNode* icn,
+    ConstantValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
               PNODEK ty = ConstantValNode)
-        : ValVar(nullptr, i, ty, icn)
+        : ValVar(val, i, ty, icn)
     {
 
     }
@@ -769,9 +769,9 @@ public:
     //@}
 
     /// Constructor
-    ConstantDataValVar(NodeID i, const ICFGNode* icn,
+    ConstantDataValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
                    PNODEK ty = ConstantDataValNode)
-        : ConstantValVar(i,  icn, ty)
+        : ConstantValVar(val, i,  icn, ty)
     {
 
     }
@@ -817,9 +817,9 @@ public:
     //@}
 
     /// Constructor
-    GlobalValueValvar(NodeID i, const ICFGNode* icn,
+    GlobalValueValvar(const SVFValue* val, NodeID i, const ICFGNode* icn,
                        PNODEK ty = GlobalValueValNode)
-        : ConstantValVar(i,  icn, ty)
+        : ConstantValVar(val, i,  icn, ty)
     {
 
     }
@@ -866,7 +866,7 @@ public:
 
     /// Constructor
     BlackHoleVar(NodeID i, PNODEK ty = BlackHoleNode)
-        : ConstantDataValVar(i,  nullptr, ty)
+        : ConstantDataValVar(nullptr, i,  nullptr, ty)
     {
 
     }
@@ -914,9 +914,9 @@ public:
     }
 
     /// Constructor
-    ConstantFPValVar(double dv, NodeID i, const ICFGNode* icn,
+    ConstantFPValVar(const SVFValue* val, double dv, NodeID i, const ICFGNode* icn,
                       PNODEK ty = ConstantFPValNode)
-        : ConstantDataValVar(i,  icn, ty), dval(dv)
+        : ConstantDataValVar(val, i,  icn, ty), dval(dv)
     {
 
     }
@@ -976,9 +976,9 @@ public:
     }
 
     /// Constructor
-    ConstantIntValVar(s64_t sv, u64_t zv, NodeID i, const ICFGNode* icn,
+    ConstantIntValVar(const SVFValue* val, s64_t sv, u64_t zv, NodeID i, const ICFGNode* icn,
                      PNODEK ty = ConstantIntValNode)
-        : ConstantDataValVar(i,  icn, ty), zval(zv), sval(sv)
+        : ConstantDataValVar(val, i,  icn, ty), zval(zv), sval(sv)
     {
 
     }
@@ -1023,9 +1023,9 @@ public:
     //@}
 
     /// Constructor
-    ConstantNullPtrValVar(NodeID i, const ICFGNode* icn,
+    ConstantNullPtrValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
                      PNODEK ty = ConstantNullptrValNode)
-        : ConstantDataValVar(i,  icn, ty)
+        : ConstantDataValVar(val, i,  icn, ty)
     {
 
     }
@@ -1075,9 +1075,9 @@ public:
     //@}
 
     /// Constructor
-    ConstantObjVar(NodeID i, const MemObj* mem,
+    ConstantObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
              PNODEK ty = ConstantObjNode)
-        : FIObjVar(nullptr, i, mem, ty)
+        : FIObjVar(val, i, mem, ty)
     {
     }
 
@@ -1141,8 +1141,8 @@ public:
     //@}
 
     /// Constructor
-    GlobalValueObjVar(NodeID i, const MemObj* mem,
-              PNODEK ty = GlobalValueObjNode): ConstantObjVar(i,mem,ty){
+    GlobalValueObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
+              PNODEK ty = GlobalValueObjNode): ConstantObjVar(val, i,mem,ty){
 
     }
 
@@ -1191,8 +1191,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantDataObjVar(NodeID i, const MemObj* m, PNODEK ty = ConstantDataObjNode)
-        : ConstantObjVar(i, m, ty)
+    ConstantDataObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ConstantDataObjNode)
+        : ConstantObjVar(val, i, m, ty)
     {
     }
 
@@ -1244,8 +1244,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantFPObjVar(double dv, NodeID i, const MemObj* m, PNODEK ty = ConstantFPObjNode)
-        : ConstantDataObjVar(i, m, ty), dval(dv)
+    ConstantFPObjVar(const SVFValue* val, double dv, NodeID i, const MemObj* m, PNODEK ty = ConstantFPObjNode)
+        : ConstantDataObjVar(val, i, m, ty), dval(dv)
     {
     }
 
@@ -1316,8 +1316,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantIntObjVar(s64_t sv, u64_t zv, NodeID i, const MemObj* m, PNODEK ty = ConstantIntObjNode)
-        : ConstantDataObjVar(i, m, ty), zval(zv), sval(sv)
+    ConstantIntObjVar(const SVFValue* val, s64_t sv, u64_t zv, NodeID i, const MemObj* m, PNODEK ty = ConstantIntObjNode)
+        : ConstantDataObjVar(val, i, m, ty), zval(zv), sval(sv)
     {
     }
 
@@ -1368,8 +1368,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantNullPtrObjVar(NodeID i, const MemObj* m, PNODEK ty = ConstantNullptrObjNode)
-        : ConstantDataObjVar(i, m, ty)
+    ConstantNullPtrObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ConstantNullptrObjNode)
+        : ConstantDataObjVar(val, i, m, ty)
     {
     }
 

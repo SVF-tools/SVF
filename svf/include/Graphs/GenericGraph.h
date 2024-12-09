@@ -376,7 +376,7 @@ protected:
         static_assert(ConstantNullptrValNode - ConstantDataValNode == 4,
                       "The number of ConstantDataValVarKinds has changed, make "
                       "sure the range is correct");
-        return n <= ConstantIntValNode && n >= ConstantValNode;
+        return n <= ConstantIntValNode && n >= ConstantDataValNode;
     }
 
     static inline bool isObjVarKinds(GNodeK n)

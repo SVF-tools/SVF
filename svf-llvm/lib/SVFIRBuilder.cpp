@@ -83,11 +83,6 @@ SVFIR* SVFIRBuilder::build()
         {
             it.second->gNode = llvmModuleSet()->getCallGraphNode(func);
         }
-        else if (const Function* func = SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(
-                                            it.second->getValue())))
-        {
-            it.second->gNode = llvmModuleSet()->getCallGraphNode(func);
-        }
     }
 
     CHGraph* chg = new CHGraph(pag->getModule());
@@ -226,7 +221,6 @@ void SVFIRBuilder::initialiseNodes()
         if(iter->second == symTable->blkPtrSymID())
             continue;
         if (iter->second == symTable->nullPtrSymID()) {
-            //onst SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode
             pag->addConstantValNode(iter->first, iter->second, nullptr);
         }
 
