@@ -299,9 +299,9 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(&inst))
             {
                 svfInst = new SVFCallInst(
-                        getSVFType(call->getType()), svfBB,
-                        call->getFunctionType()->isVarArg(),
-                        inst.isTerminator());
+                    getSVFType(call->getType()), svfBB,
+                    call->getFunctionType()->isVarArg(),
+                    inst.isTerminator());
             }
             else
             {
