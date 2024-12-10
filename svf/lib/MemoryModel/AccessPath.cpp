@@ -223,21 +223,22 @@ APOffset AccessPath::computeConstantOffset() const
         return getConstantStructFldIdx();
     for(int i = idxOperandPairs.size() - 1; i >= 0; i--)
     {
-        const SVFValue* value = idxOperandPairs[i].first->getValue();
+        const SVFVar* var = idxOperandPairs[i].first;
         const SVFType* type = idxOperandPairs[i].second;
-        const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
-        assert(op && "not a constant offset?");
+        assert(SVFUtil::isa<ConstantIntValVar>(var) && "not a constant offset?");
+        s64_t constOffset = SVFUtil::dyn_cast<ConstantIntValVar>(var)->getSExtValue();
+
         if(type==nullptr)
         {
-            totalConstOffset += op->getSExtValue();
+            totalConstOffset += constOffset;
             continue;
         }
 
         if(SVFUtil::isa<SVFPointerType>(type))
-            totalConstOffset += op->getSExtValue() * getElementNum(gepPointeeType);
+            totalConstOffset += constOffset * getElementNum(gepPointeeType);
         else
         {
-            APOffset offset = op->getSExtValue();
+            APOffset offset = constOffset;
             if (offset >= 0)
             {
                 const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()->getTypeInfo(type)->getFlattenedElemIdxVec();

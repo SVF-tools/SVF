@@ -313,72 +313,6 @@ public:
     virtual const std::string toString() const;
 };
 
-/*
- * Memory Object variable
- */
-class ObjVar: public SVFVar
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
-protected:
-    const MemObj* mem;	///< memory object
-    /// Constructor to create an empty ObjVar (for SVFIRReader/deserialization)
-    ObjVar(NodeID i, PNODEK ty = ObjNode) : SVFVar(i, ty), mem{} {}
-    /// Constructor
-    ObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode) :
-        SVFVar(val, i, ty), mem(m)
-    {
-    }
-public:
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const ObjVar*)
-    {
-        return true;
-    }
-    static inline bool classof(const SVFVar* node)
-    {
-        return isObjVarKinds(node->getNodeKind());
-    }
-    static inline bool classof(const GenericPAGNodeTy* node)
-    {
-        return isObjVarKinds(node->getNodeKind());
-    }
-    static inline bool classof(const SVFBaseNode* node)
-    {
-        return isObjVarKinds(node->getNodeKind());
-    }
-    //@}
-
-    /// Return memory object
-    const MemObj* getMemObj() const
-    {
-        return mem;
-    }
-
-    /// Return name of a LLVM value
-    virtual const std::string getValueName() const
-    {
-        if (value)
-            return value->getName();
-        return "";
-    }
-    /// Return type of the value
-    inline virtual const SVFType* getType() const
-    {
-        return mem->getType();
-    }
-
-    virtual const std::string toString() const;
-};
-
-
-/*
- * Gep Value (Pointer) variable, this variable can be dynamic generated for field sensitive analysis
- * e.g. memcpy, temp gep value variable needs to be created
- * Each Gep Value variable is connected to base value variable via gep edge
- */
 class GepValVar: public ValVar
 {
     friend class SVFIRWriter;
@@ -441,6 +375,69 @@ public:
 
     virtual const std::string toString() const;
 };
+
+
+
+/*
+ * Memory Object variable
+ */
+class ObjVar: public SVFVar
+{
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
+protected:
+    const MemObj* mem;	///< memory object
+    /// Constructor to create an empty ObjVar (for SVFIRReader/deserialization)
+    ObjVar(NodeID i, PNODEK ty = ObjNode) : SVFVar(i, ty), mem{} {}
+    /// Constructor
+    ObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode) :
+        SVFVar(val, i, ty), mem(m)
+    {
+    }
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const ObjVar*)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFVar* node)
+    {
+        return isObjVarKinds(node->getNodeKind());
+    }
+    static inline bool classof(const GenericPAGNodeTy* node)
+    {
+        return isObjVarKinds(node->getNodeKind());
+    }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return isObjVarKinds(node->getNodeKind());
+    }
+    //@}
+
+    /// Return memory object
+    const MemObj* getMemObj() const
+    {
+        return mem;
+    }
+
+    /// Return name of a LLVM value
+    virtual const std::string getValueName() const
+    {
+        if (value)
+            return value->getName();
+        return "";
+    }
+    /// Return type of the value
+    inline virtual const SVFType* getType() const
+    {
+        return mem->getType();
+    }
+
+    virtual const std::string toString() const;
+};
+
 
 
 /*

@@ -181,7 +181,7 @@ public:
         ConstantFPValNode,
         // │   │   ├── Represents a constant integer value node
         ConstantIntValNode,
-        // │   ｜   └── Represents a constant nullptr value node
+        // │   │   ├── Represents a constant nullptr value node
         ConstantNullptrValNode,
         // │   └── Dummy node for uninitialized values
         DummyValNode,
