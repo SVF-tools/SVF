@@ -28,6 +28,7 @@
 #include <AE/Svfexe/AEDetector.h>
 #include <AE/Svfexe/AbsExtAPI.h>
 #include <AE/Svfexe/AbstractInterpretation.h>
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 
@@ -219,12 +220,12 @@ void BufOverflowDetector::initExtAPIBufOverflowCheckRules()
 void BufOverflowDetector::detectExtAPI(AbstractState& as,
                                        const CallICFGNode* call)
 {
-    assert(call->getCalledFunction() && "SVFFunction* is nullptr");
+    assert(call->getCalledFunction() && "CallGraphNode* is nullptr");
 
     AbsExtAPI::ExtAPIType extType = AbsExtAPI::UNCLASSIFIED;
 
     // Determine the type of external memory API
-    for (const std::string &annotation : ExtAPI::getExtAPI()->getExtFuncAnnotations(call->getCalledFunction()))
+    for (const std::string &annotation : ExtAPI::getExtAPI()->getExtFuncAnnotations(call->getCalledFunction()->getFunction()))
     {
         if (annotation.find("MEMCPY") != std::string::npos)
             extType = AbsExtAPI::MEMCPY;

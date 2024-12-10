@@ -504,7 +504,7 @@ void PointerAnalysis::resolveCPPIndCalls(const CallICFGNode* cs, const PointsTo&
 void PointerAnalysis::validateSuccessTests(std::string fun)
 {
     // check for must alias cases, whether our alias analysis produce the correct results
-    if (const SVFFunction* checkFun = svfMod->getSVFFunction(fun))
+    if (const CallGraphNode* checkFun = pag->getCallGraph()->getCallGraphNode(fun))
     {
         if(!checkFun->isUncalledFunction())
             outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
@@ -569,7 +569,7 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
 void PointerAnalysis::validateExpectedFailureTests(std::string fun)
 {
 
-    if (const SVFFunction* checkFun = svfMod->getSVFFunction(fun))
+    if (const CallGraphNode* checkFun = pag->getCallGraph()->getCallGraphNode(fun))
     {
         if(!checkFun->isUncalledFunction())
             outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";

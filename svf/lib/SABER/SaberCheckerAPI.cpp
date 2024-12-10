@@ -28,6 +28,7 @@
  */
 #include "SABER/SaberCheckerAPI.h"
 #include <stdio.h>
+#include "Graphs/CallGraph.h"
 
 using namespace std;
 using namespace SVF;
@@ -171,6 +172,17 @@ void SaberCheckerAPI::init()
     }
 }
 
-
+/// Get the function type of a function
+SaberCheckerAPI::CHECKER_TYPE SaberCheckerAPI::getType(
+    const CallGraphNode* F) const
+{
+    if(F)
+    {
+        TDAPIMap::const_iterator it= tdAPIMap.find(F->getName());
+        if(it != tdAPIMap.end())
+            return it->second;
+    }
+    return CK_DUMMY;
+}
 
 

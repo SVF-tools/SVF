@@ -30,6 +30,7 @@
 #include "SABER/DoubleFreeChecker.h"
 #include "Util/SVFUtil.h"
 #include "Util/Options.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -55,14 +56,14 @@ void DoubleFreeChecker::testsValidation(ProgSlice *slice)
 {
     const SVFGNode* source = slice->getSource();
     const CallICFGNode* cs = getSrcCSID(source);
-    const SVFFunction* fun = cs->getCalledFunction();
+    const CallGraphNode* fun = cs->getCalledFunction();
     if(fun==nullptr)
         return;
     validateSuccessTests(slice,fun);
     validateExpectedFailureTests(slice,fun);
 }
 
-void DoubleFreeChecker::validateSuccessTests(ProgSlice *slice, const SVFFunction *fun)
+void DoubleFreeChecker::validateSuccessTests(ProgSlice *slice, const CallGraphNode *fun)
 {
     const SVFGNode* source = slice->getSource();
     const CallICFGNode* cs = getSrcCSID(source);
@@ -108,7 +109,7 @@ void DoubleFreeChecker::validateSuccessTests(ProgSlice *slice, const SVFFunction
     }
 }
 
-void DoubleFreeChecker::validateExpectedFailureTests(ProgSlice *slice, const SVFFunction *fun)
+void DoubleFreeChecker::validateExpectedFailureTests(ProgSlice *slice, const CallGraphNode *fun)
 {
     const SVFGNode* source = slice->getSource();
     const CallICFGNode* cs = getSrcCSID(source);

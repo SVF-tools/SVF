@@ -60,9 +60,9 @@ void CallGraphBuilder::connectSVFIRCallGraphEdge(CallGraph* callgraph)
                 if (SVFUtil::isNonInstricCallSite(inst))
                 {
                     const CallICFGNode* callBlockNode = cast<CallICFGNode>(inst);
-                    if(const SVFFunction* callee = callBlockNode->getCalledFunction())
+                    if(const CallGraphNode* callee = callBlockNode->getCalledFunction())
                     {
-                        callgraph->addDirectCallGraphEdge(callBlockNode,(item.second)->getFunction(),callee);
+                        callgraph->addDirectCallGraphEdge(callBlockNode,(item.second)->getFunction(),callee->getFunction());
                     }
                 }
             }

@@ -241,17 +241,18 @@ InterICFGNode* ICFGBuilder::addInterBlockICFGNode(const Instruction* inst)
     assert(llvmModuleSet()->getCallBlock(inst)==nullptr && "duplicate CallICFGNode");
     const CallBase* cb = SVFUtil::dyn_cast<CallBase>(inst);
     bool isvcall = cppUtil::isVirtualCallSite(cb);
-    SVFFunction* calledFunc = nullptr;
+    const CallGraphNode* calledFunc = nullptr;
     auto called_llvmval = cb->getCalledOperand()->stripPointerCasts();
     if (const Function* called_llvmfunc = SVFUtil::dyn_cast<Function>(called_llvmval))
     {
-        calledFunc = llvmModuleSet()->getSVFFunction(called_llvmfunc);
+        calledFunc = llvmModuleSet()->getCallGraphNode(called_llvmfunc);
     }
-    else
-    {
-        calledFunc = SVFUtil::dyn_cast<SVFFunction>(
-                         llvmModuleSet()->getSVFValue(called_llvmval));
-    }
+//    else
+//    {
+//        const SVFFunction* func = SVFUtil::dyn_cast<SVFFunction>(
+//            llvmModuleSet()->getSVFValue(called_llvmval));
+//        calledFunc = func?func->getCallGraphNode(): nullptr ;
+//    }
 
     SVFBasicBlock* bb = llvmModuleSet()->getSVFBasicBlock(inst->getParent());
 

@@ -130,6 +130,18 @@ void ThreadAPI::init()
     }
 }
 
+/// Get the function type if it is a threadAPI function
+ThreadAPI::TD_TYPE ThreadAPI::getType(const CallGraphNode* F) const
+{
+    if(F)
+    {
+        TDAPIMap::const_iterator it= tdAPIMap.find(F->getName());
+        if(it != tdAPIMap.end())
+            return it->second;
+    }
+    return TD_DUMMY;
+}
+
 bool ThreadAPI::isTDFork(const CallICFGNode *inst) const
 {
     return getType(inst->getCalledFunction()) == TD_FORK;
@@ -281,7 +293,7 @@ void ThreadAPI::performAPIStat(SVFModule* module)
                 if (!SVFUtil::isCallSite(svfInst))
                     continue;
 
-                const SVFFunction* fun = SVFUtil::cast<CallICFGNode>(svfInst)->getCalledFunction();
+                const CallGraphNode* fun = SVFUtil::cast<CallICFGNode>(svfInst)->getCalledFunction();
                 TD_TYPE type = getType(fun);
                 switch (type)
                 {

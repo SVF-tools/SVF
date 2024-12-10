@@ -182,7 +182,7 @@ protected:
 
     virtual inline CallICFGNode* addCallICFGNode(
         const SVFBasicBlock* bb, const SVFType* ty,
-        const SVFFunction* calledFunc, bool isVararg, bool isvcall,
+        const CallGraphNode* calledFunc, bool isVararg, bool isvcall,
         s32_t vcallIdx, const std::string& funNameOfVcall)
     {
 

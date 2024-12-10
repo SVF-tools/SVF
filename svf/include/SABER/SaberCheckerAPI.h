@@ -73,16 +73,7 @@ private:
     static SaberCheckerAPI* ckAPI;
 
     /// Get the function type of a function
-    inline CHECKER_TYPE getType(const SVFFunction* F) const
-    {
-        if(F)
-        {
-            TDAPIMap::const_iterator it= tdAPIMap.find(F->getName());
-            if(it != tdAPIMap.end())
-                return it->second;
-        }
-        return CK_DUMMY;
-    }
+    CHECKER_TYPE getType(const CallGraphNode* F) const;
 
 public:
     /// Return a static reference
@@ -97,7 +88,7 @@ public:
 
     /// Return true if this call is a memory allocation
     //@{
-    inline bool isMemAlloc(const SVFFunction* fun) const
+    inline bool isMemAlloc(const CallGraphNode* fun) const
     {
         return getType(fun) == CK_ALLOC;
     }
@@ -109,7 +100,7 @@ public:
 
     /// Return true if this call is a memory deallocation
     //@{
-    inline bool isMemDealloc(const SVFFunction* fun) const
+    inline bool isMemDealloc(const CallGraphNode* fun) const
     {
         return getType(fun) == CK_FREE;
     }
@@ -121,7 +112,7 @@ public:
 
     /// Return true if this call is a file open
     //@{
-    inline bool isFOpen(const SVFFunction* fun) const
+    inline bool isFOpen(const CallGraphNode* fun) const
     {
         return getType(fun) == CK_FOPEN;
     }
@@ -133,7 +124,7 @@ public:
 
     /// Return true if this call is a file close
     //@{
-    inline bool isFClose(const SVFFunction* fun) const
+    inline bool isFClose(const CallGraphNode* fun) const
     {
         return getType(fun) == CK_FCLOSE;
     }

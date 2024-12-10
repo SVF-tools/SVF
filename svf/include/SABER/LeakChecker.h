@@ -80,12 +80,12 @@ public:
     /// Whether the function is a heap allocator/reallocator (allocate memory)
     virtual inline bool isSourceLikeFun(const SVFFunction* fun) override
     {
-        return SaberCheckerAPI::getCheckerAPI()->isMemAlloc(fun);
+        return SaberCheckerAPI::getCheckerAPI()->isMemAlloc(fun->getCallGraphNode());
     }
     /// Whether the function is a heap deallocator (free/release memory)
     virtual inline bool isSinkLikeFun(const SVFFunction* fun) override
     {
-        return SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun);
+        return SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun->getCallGraphNode());
     }
     //@}
 
@@ -97,8 +97,8 @@ protected:
 
     /// Validate test cases for regression test purpose
     void testsValidation(const ProgSlice* slice);
-    void validateSuccessTests(const SVFGNode* source, const SVFFunction* fun);
-    void validateExpectedFailureTests(const SVFGNode* source, const SVFFunction* fun);
+    void validateSuccessTests(const SVFGNode* source, const CallGraphNode* fun);
+    void validateExpectedFailureTests(const SVFGNode* source, const CallGraphNode* fun);
 
     /// Record a source to its callsite
     //@{

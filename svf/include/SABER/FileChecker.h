@@ -64,12 +64,12 @@ public:
 
     inline bool isSourceLikeFun(const SVFFunction* fun)
     {
-        return SaberCheckerAPI::getCheckerAPI()->isFOpen(fun);
+        return SaberCheckerAPI::getCheckerAPI()->isFOpen(fun->getCallGraphNode());
     }
     /// Whether the function is a heap deallocator (free/release memory)
     inline bool isSinkLikeFun(const SVFFunction* fun)
     {
-        return SaberCheckerAPI::getCheckerAPI()->isFClose(fun);
+        return SaberCheckerAPI::getCheckerAPI()->isFClose(fun->getCallGraphNode());
     }
     /// Report file/close bugs
     void reportBug(ProgSlice* slice);

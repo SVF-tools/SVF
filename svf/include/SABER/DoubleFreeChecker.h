@@ -67,8 +67,8 @@ public:
 
     /// Validate test cases for regression test purpose
     void testsValidation(ProgSlice* slice);
-    void validateSuccessTests(ProgSlice* slice, const SVFFunction* fun);
-    void validateExpectedFailureTests(ProgSlice* slice, const SVFFunction* fun);
+    void validateSuccessTests(ProgSlice* slice, const CallGraphNode* fun);
+    void validateExpectedFailureTests(ProgSlice* slice, const CallGraphNode* fun);
 };
 
 } // End namespace SVF

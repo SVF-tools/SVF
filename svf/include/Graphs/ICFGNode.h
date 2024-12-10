@@ -430,7 +430,7 @@ public:
 protected:
     const RetICFGNode* ret;
     ActualParmNodeVec APNodes;      /// arguments
-    const SVFFunction* calledFunc;  /// called function
+    const CallGraphNode* calledFunc;  /// called function
     bool isvararg;                  /// is variable argument
     bool isVirCallInst;             /// is virtual call inst
     SVFVar* vtabPtr;                /// virtual table pointer
@@ -442,7 +442,7 @@ protected:
 
 public:
     CallICFGNode(NodeID id, const SVFBasicBlock* b, const SVFType* ty,
-                 const SVFFunction* cf, bool iv, bool ivc, s32_t vfi,
+                 const CallGraphNode* cf, bool iv, bool ivc, s32_t vfi,
                  const std::string& fnv)
         : InterICFGNode(id, FunCallBlock), ret(nullptr), calledFunc(cf),
           isvararg(iv), isVirCallInst(ivc), vtabPtr(nullptr),
@@ -515,7 +515,7 @@ public:
     {
         return arg_size();
     }
-    inline const SVFFunction* getCalledFunction() const
+    inline const CallGraphNode* getCalledFunction() const
     {
         return calledFunc;
     }

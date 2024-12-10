@@ -26,6 +26,7 @@
 //
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "AE/Svfexe/AbstractInterpretation.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 AbsExtAPI::AbsExtAPI(Map<const ICFGNode*, AbstractState>& traces): abstractTrace(traces)
@@ -386,8 +387,9 @@ std::string AbsExtAPI::strRead(AbstractState& as, const SVFVar* rhs)
 void AbsExtAPI::handleExtAPI(const CallICFGNode *call)
 {
     AbstractState& as = getAbsStateFromTrace(call);
-    const SVFFunction *fun = call->getCalledFunction();
-    assert(fun && "SVFFunction* is nullptr");
+    const CallGraphNode *cgNode = call->getCalledFunction();
+    assert(cgNode && "CallGraphNode* is nullptr");
+    const SVFFunction *fun = cgNode->getFunction();
     ExtAPIType extType = UNCLASSIFIED;
     // get type of mem api
     for (const std::string &annotation: ExtAPI::getExtAPI()->getExtFuncAnnotations(fun))
@@ -546,7 +548,7 @@ void AbsExtAPI::handleStrcat(const SVF::CallICFGNode *call)
     // __strcat_chk, strcat, __wcscat_chk, wcscat, __strncat_chk, strncat, __wcsncat_chk, wcsncat
     // to check it is  strcat group or strncat group
     AbstractState& as = getAbsStateFromTrace(call);
-    const SVFFunction *fun = call->getCalledFunction();
+    const CallGraphNode *fun = call->getCalledFunction();
     const std::vector<std::string> strcatGroup = {"__strcat_chk", "strcat", "__wcscat_chk", "wcscat"};
     const std::vector<std::string> strncatGroup = {"__strncat_chk", "strncat", "__wcsncat_chk", "wcsncat"};
     if (std::find(strcatGroup.begin(), strcatGroup.end(), fun->getName()) != strcatGroup.end())

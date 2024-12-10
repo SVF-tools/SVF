@@ -335,7 +335,7 @@ bool SVFUtil::isIntrinsicInst(const ICFGNode* inst)
 {
     if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst))
     {
-        const SVFFunction* func = call->getCalledFunction();
+        const CallGraphNode* func = call->getCalledFunction();
         if (func && func->isIntrinsic())
         {
             return true;
@@ -351,13 +351,16 @@ bool SVFUtil::isExtCall(const CallICFGNode* cs)
 
 bool SVFUtil::isHeapAllocExtCallViaArg(const CallICFGNode* cs)
 {
-    return isHeapAllocExtFunViaArg(cs->getCalledFunction());
+    if (cs->getCalledFunction())
+        return isHeapAllocExtFunViaArg(cs->getCalledFunction()->getFunction());
+    else
+        return false;
 }
 
 
 u32_t SVFUtil::getHeapAllocHoldingArgPosition(const CallICFGNode* cs)
 {
-    return getHeapAllocHoldingArgPosition(cs->getCalledFunction());
+    return getHeapAllocHoldingArgPosition(cs->getCalledFunction()->getFunction());
 }
 
 
@@ -376,13 +379,14 @@ bool SVFUtil::isHeapAllocExtCall(const ICFGNode* cs)
 bool SVFUtil::isHeapAllocExtCallViaRet(const CallICFGNode* cs)
 {
     bool isPtrTy = cs->getType()->isPointerTy();
-    return isPtrTy && isHeapAllocExtFunViaRet(cs->getCalledFunction());
+    const CallGraphNode* fun = cs->getCalledFunction();
+    return fun && isPtrTy && isHeapAllocExtFunViaRet(fun->getFunction());
 }
 
 bool SVFUtil::isReallocExtCall(const CallICFGNode* cs)
 {
     bool isPtrTy = cs->getType()->isPointerTy();
-    return isPtrTy && isReallocExtFun(cs->getCalledFunction());
+    return isPtrTy && isReallocExtFun(cs->getCalledFunction()->getFunction());
 }
 
 
@@ -438,4 +442,16 @@ const ObjVar* SVFUtil::getObjVarOfValVar(const SVF::ValVar* valVar)
 {
     assert(valVar->getInEdges().size() == 1);
     return SVFUtil::dyn_cast<ObjVar>((*valVar->getInEdges().begin())->getSrcNode());
+}
+
+bool SVFUtil::isExtCall(const CallGraphNode* fun)
+{
+    return fun && ExtAPI::getExtAPI()->is_ext(fun->getFunction());
+}
+
+bool SVFUtil::isProgExitFunction (const CallGraphNode * fun)
+{
+    return fun && (fun->getName() == "exit" ||
+                   fun->getName() == "__assert_rtn" ||
+                   fun->getName() == "__assert_fail" );
 }

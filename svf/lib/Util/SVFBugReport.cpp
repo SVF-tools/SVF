@@ -31,6 +31,7 @@
 #include "Util/SVFUtil.h"
 #include <sstream>
 #include <fstream>
+#include "Graphs/CallGraph.h"
 
 using namespace std;
 using namespace SVF;
@@ -304,7 +305,7 @@ const std::string SVFBugEvent::getEventDescription() const
     {
         std::string description("calls ");
         assert(SVFUtil::isa<CallICFGNode>(eventInst) && "not a call ICFGNode?");
-        const SVFFunction *callee = SVFUtil::cast<CallICFGNode>(eventInst)->getCalledFunction();
+        const CallGraphNode *callee = SVFUtil::cast<CallICFGNode>(eventInst)->getCalledFunction();
         if(callee == nullptr)
         {
             description += "<unknown>";
