@@ -116,7 +116,6 @@ class SVFFunction;
 class SVFBasicBlock;
 class SVFInstruction;
 class SVFCallInst;
-class SVFVirtualCallInst;
 class SVFConstant;
 class SVFGlobalValue;
 class SVFArgument;
@@ -516,7 +515,6 @@ private:
     cJSON* contentToJson(const SVFBasicBlock* value);
     cJSON* contentToJson(const SVFInstruction* value);
     cJSON* contentToJson(const SVFCallInst* value);
-    cJSON* contentToJson(const SVFVirtualCallInst* value);
     cJSON* contentToJson(const SVFConstant* value);
     cJSON* contentToJson(const SVFGlobalValue* value);
     cJSON* contentToJson(const SVFArgument* value);
@@ -1290,7 +1288,6 @@ private:
     void fill(const cJSON*& fieldJson, SVFBasicBlock* value);
     void fill(const cJSON*& fieldJson, SVFInstruction* value);
     void fill(const cJSON*& fieldJson, SVFCallInst* value);
-    void fill(const cJSON*& fieldJson, SVFVirtualCallInst* value);
     void fill(const cJSON*& fieldJson, SVFConstant* value);
     void fill(const cJSON*& fieldJson, SVFGlobalValue* value);
     void fill(const cJSON*& fieldJson, SVFArgument* value);

@@ -58,42 +58,15 @@ private:
 public:
     typedef FIFOWorkList<const Instruction*> WorkList;
 
-    ICFGBuilder(): icfg(new ICFG())
-    {
+    ICFGBuilder() = default;
 
-    }
     ICFG* build();
 
 private:
 
-    LLVMModuleSet* llvmModuleSet()
+    inline LLVMModuleSet* llvmModuleSet()
     {
         return LLVMModuleSet::getLLVMModuleSet();
-    }
-
-    CSToRetNodeMapTy& csToRetNodeMap()
-    {
-        return llvmModuleSet()->CSToRetNodeMap;
-    }
-
-    CSToCallNodeMapTy& csToCallNodeMap()
-    {
-        return llvmModuleSet()->CSToCallNodeMap;
-    }
-
-    InstToBlockNodeMapTy& instToBlockNodeMap()
-    {
-        return llvmModuleSet()->InstToBlockNodeMap;
-    }
-
-    FunToFunEntryNodeMapTy& funToFunEntryNodeMap()
-    {
-        return llvmModuleSet()->FunToFunEntryNodeMap;
-    }
-
-    FunToFunExitNodeMapTy& funToFunExitNodeMap()
-    {
-        return llvmModuleSet()->FunToFunExitNodeMap;
     }
 
 private:
