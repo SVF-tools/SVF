@@ -746,66 +746,6 @@ public:
     }
 };
 
-class SVFVirtualCallInst : public SVFCallInst
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-    friend class LLVMModuleSet;
-
-private:
-    const SVFValue* vCallVtblPtr;   /// virtual table pointer
-    s32_t virtualFunIdx;            /// virtual function index of the virtual table(s) at a virtual call
-    std::string funNameOfVcall;     /// the function name of this virtual call
-
-protected:
-    inline void setFunIdxInVtable(s32_t idx)
-    {
-        virtualFunIdx = idx;
-    }
-    inline void setFunNameOfVirtualCall(const std::string& name)
-    {
-        funNameOfVcall = name;
-    }
-    inline void setVtablePtr(const SVFValue* vptr)
-    {
-        vCallVtblPtr = vptr;
-    }
-
-public:
-    SVFVirtualCallInst(const SVFType* ty, const SVFBasicBlock* b, bool vararg,
-                       bool tm)
-        : SVFCallInst(ty, b, vararg, tm, SVFVCall), vCallVtblPtr(nullptr),
-          virtualFunIdx(-1), funNameOfVcall()
-    {
-    }
-    inline const SVFValue* getVtablePtr() const
-    {
-        assert(vCallVtblPtr && "virtual call does not have a vtblptr? set it first");
-        return vCallVtblPtr;
-    }
-    inline s32_t getFunIdxInVtable() const
-    {
-        assert(virtualFunIdx >=0 && "virtual function idx is less than 0? not set yet?");
-        return virtualFunIdx;
-    }
-    inline const std::string& getFunNameOfVirtualCall() const
-    {
-        return funNameOfVcall;
-    }
-    static inline bool classof(const SVFValue *node)
-    {
-        return node->getKind() == SVFVCall;
-    }
-    static inline bool classof(const SVFInstruction *node)
-    {
-        return node->getKind() == SVFVCall;
-    }
-    static inline bool classof(const SVFCallInst *node)
-    {
-        return node->getKind() == SVFVCall;
-    }
-};
-
 class SVFConstant : public SVFValue
 {
     friend class SVFIRWriter;
