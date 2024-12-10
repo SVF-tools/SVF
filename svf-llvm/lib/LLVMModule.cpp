@@ -1212,6 +1212,12 @@ void LLVMModuleSet::dumpModulesToFile(const std::string& suffix)
     }
 }
 
+void LLVMModuleSet::addFunctionMap(const Function* func, CallGraphNode* svfFunc)
+{
+    LLVMFunc2CallGraphNode[func] = svfFunc;
+    setValueAttr(func, svfFunc);
+}
+
 void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
 {
     SVFValue2LLVMValue[svfvalue] = val;

@@ -172,11 +172,9 @@ public:
         LLVMFunc2SVFFunc[func] = svfFunc;
         setValueAttr(func,svfFunc);
     }
-    inline void addFunctionMap(const Function* func, CallGraphNode* svfFunc)
-    {
-        LLVMFun2CallGraphNode[func] = svfFunc;
-        setValueAttr(func,svfFunc);
-    }
+
+    void addFunctionMap(const Function* func, CallGraphNode* svfFunc);
+
     inline void addBasicBlockMap(const BasicBlock* bb, SVFBasicBlock* svfBB)
     {
         LLVMBB2SVFBB[bb] = svfBB;
@@ -252,8 +250,8 @@ public:
 
     inline CallGraphNode* getCallGraphNode(const Function* fun) const
     {
-        LLVMFun2CallGraphNodeMap::const_iterator it = LLVMFun2CallGraphNode.find(fun);
-        assert(it!=LLVMFun2CallGraphNode.end() && "SVF Function not found!");
+        LLVMFun2CallGraphNodeMap::const_iterator it = LLVMFunc2CallGraphNode.find(fun);
+        assert(it!=LLVMFunc2CallGraphNode.end() && "SVF Function not found!");
         return it->second;
     }
 
