@@ -38,14 +38,18 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-CallGraph* CallGraphBuilder::buildSVFIRCallGraph(SVFModule* svfModule)
+CallGraph* CallGraphBuilder::createSVFIRCallGraph(SVFModule* svfModule)
 {
     CallGraph* callgraph = new CallGraph();
     for (const SVFFunction* svfFunc: svfModule->getFunctionSet())
     {
         callgraph->addCallGraphNode(svfFunc);
     }
+    return callgraph;
+}
 
+void CallGraphBuilder::connectSVFIRCallGraphEdge(CallGraph* callgraph)
+{
     for (const auto& item : *callgraph)
     {
         for (auto it : *(item.second)->getFunction())
@@ -64,8 +68,8 @@ CallGraph* CallGraphBuilder::buildSVFIRCallGraph(SVFModule* svfModule)
             }
         }
     }
-    return callgraph;
 }
+
 
 PTACallGraph* CallGraphBuilder::buildPTACallGraph()
 {

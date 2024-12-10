@@ -47,7 +47,9 @@ public:
     CallGraphBuilder()=default;
 
     /// Buidl SVFIR callgraoh
-    CallGraph* buildSVFIRCallGraph(SVFModule* svfModule);
+    CallGraph* createSVFIRCallGraph(SVFModule* svfModule);
+
+    void connectSVFIRCallGraphEdge(CallGraph* callGraph);
 
     /// Buidl PTA callgraoh
     PTACallGraph* buildPTACallGraph();
