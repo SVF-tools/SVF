@@ -126,11 +126,11 @@ void CDGBuilder::buildControlDependence(const SVFModule *svfgModule)
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
-        const SVFFunction *svfFun = (item.second)->getFunction();
-        if (SVFUtil::isExtCall(svfFun)) continue;
+        CallGraphNode* cgn = item.second;
+        if (SVFUtil::isExtCall(cgn)) continue;
         // extract basic block edges to be processed
         Map<const SVFBasicBlock *, std::vector<const SVFBasicBlock *>> BBS;
-        extractBBS(svfFun, BBS);
+        extractBBS(cgn, BBS);
 
         for (const auto &item: BBS)
         {
@@ -138,8 +138,7 @@ void CDGBuilder::buildControlDependence(const SVFModule *svfgModule)
             // for each bb pair
             for (const SVFBasicBlock *succ: item.second)
             {
-                const SVFBasicBlock *SVFLCA = const_cast<SVFFunction *>(svfFun)->
-                                              getLoopAndDomInfo()->findNearestCommonPDominator(pred, succ);
+                const SVFBasicBlock *SVFLCA = cgn->getLoopAndDomInfo()->findNearestCommonPDominator(pred, succ);
                 std::vector<const SVFBasicBlock *> tgtNodes;
                 // no common ancestor, may be exit()
                 if (SVFLCA == NULL)
@@ -168,7 +167,7 @@ void CDGBuilder::buildControlDependence(const SVFModule *svfgModule)
  * @param func
  * @param res
  */
-void CDGBuilder::extractBBS(const SVF::SVFFunction *func,
+void CDGBuilder::extractBBS(const SVF::CallGraphNode *func,
                             Map<const SVF::SVFBasicBlock *, std::vector<const SVFBasicBlock *>> &res)
 {
     for (const auto &it: *func)
