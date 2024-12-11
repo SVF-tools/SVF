@@ -477,7 +477,8 @@ protected:
         {
             if(const SVFFunction* svffun = _pag->getGNode(id)->getFunction())
             {
-                return _callGraphSCC->isInCycle(_callGraph->getCallGraphNode(svffun->getCallGraphNode())->getId());
+                return _callGraphSCC->isInCycle(
+                    _callGraph->getPTACallGraphNode(svffun->getCallGraphNode())->getId());
             }
         }
         return false;

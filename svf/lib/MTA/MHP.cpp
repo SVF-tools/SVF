@@ -185,7 +185,8 @@ void MHP::handleNonCandidateFun(const CxtThreadStmt& cts)
     const SVFFunction* curfun = curInst->getFun();
     assert((curInst == curfun->getEntryBlock()->front()) && "curInst is not the entry of non candidate function.");
     const CallStrCxt& curCxt = cts.getContext();
-    PTACallGraphNode* node = tcg->getCallGraphNode(curfun->getCallGraphNode());
+    PTACallGraphNode* node =
+        tcg->getPTACallGraphNode(curfun->getCallGraphNode());
     for (PTACallGraphNode::const_iterator nit = node->OutEdgeBegin(), neit = node->OutEdgeEnd(); nit != neit; nit++)
     {
         const SVFFunction* callee = (*nit)->getDstNode()->getCallNode()->getFunction();
@@ -319,7 +320,8 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
  */
 void MHP::handleRet(const CxtThreadStmt& cts)
 {
-    PTACallGraphNode* curFunNode = tcg->getCallGraphNode(cts.getStmt()->getFun()->getCallGraphNode());
+    PTACallGraphNode* curFunNode =
+        tcg->getPTACallGraphNode(cts.getStmt()->getFun()->getCallGraphNode());
     for (PTACallGraphEdge* edge : curFunNode->getInEdges())
     {
         if (SVFUtil::isa<ThreadForkEdge, ThreadJoinEdge>(edge))
@@ -521,7 +523,8 @@ bool MHP::isHBPair(NodeID tid1, NodeID tid2)
 
 bool MHP::isConnectedfromMain(const SVFFunction* fun)
 {
-    PTACallGraphNode* cgnode = tcg->getCallGraphNode(fun->getCallGraphNode());
+    PTACallGraphNode* cgnode =
+        tcg->getPTACallGraphNode(fun->getCallGraphNode());
     FIFOWorkList<const PTACallGraphNode*> worklist;
     TCT::PTACGNodeSet visited;
     worklist.push(cgnode);
@@ -905,7 +908,8 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
     const ICFGNode* curInst = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
 
-    PTACallGraphNode* curFunNode = getTCG()->getCallGraphNode(curInst->getFun()->getCallGraphNode());
+    PTACallGraphNode* curFunNode =
+        getTCG()->getPTACallGraphNode(curInst->getFun()->getCallGraphNode());
     for (PTACallGraphEdge* edge : curFunNode->getInEdges())
     {
         if (SVFUtil::isa<ThreadForkEdge, ThreadJoinEdge>(edge))

@@ -239,7 +239,7 @@ class PTACallGraph : public GenericPTACallGraphTy
 
 public:
     typedef PTACallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
-    typedef Map<const CallGraphNode*, PTACallGraphNode*> FunToCallGraphNodeMap;
+    typedef Map<const CallGraphNode*, PTACallGraphNode*> CgNodeToPTACallGraphNodeMap;
     typedef Map<const CallICFGNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
     typedef std::pair<const CallICFGNode*, const SVFFunction*> CallSitePair;
     typedef Map<CallSitePair, CallSiteID> CallSiteToIdMap;
@@ -264,7 +264,7 @@ private:
     static CallSiteID totalCallSiteNum;	///< CallSiteIDs, start from 1;
 
 protected:
-    FunToCallGraphNodeMap funToCallGraphNodeMap; ///< Call Graph node map
+    CgNodeToPTACallGraphNodeMap cgNodeToPtaCallGraphNodeMap; ///< Call Graph node map
     CallInstToCallGraphEdgesMap callinstToCallGraphEdgesMap; ///< Map a call instruction to its corresponding call edges
 
     NodeID callGraphNodeNum;
@@ -359,10 +359,11 @@ public:
         return getGNode(id);
     }
 
-    inline PTACallGraphNode* getCallGraphNode(const CallGraphNode* fun) const
+    inline PTACallGraphNode* getPTACallGraphNode(const CallGraphNode* fun) const
     {
-        FunToCallGraphNodeMap::const_iterator it = funToCallGraphNodeMap.find(fun);
-        assert(it!=funToCallGraphNodeMap.end() && "call graph node not found!!");
+        CgNodeToPTACallGraphNodeMap::const_iterator it =
+            cgNodeToPtaCallGraphNodeMap.find(fun);
+        assert(it!= cgNodeToPtaCallGraphNodeMap.end() && "call graph node not found!!");
         return it->second;
     }
 

@@ -239,8 +239,12 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
 
                     if(srcFun && dstFun)
                     {
-                        NodeID src = pta->getCallGraph()->getCallGraphNode(srcFun->getCallGraphNode())->getId();
-                        NodeID dst = pta->getCallGraph()->getCallGraphNode(dstFun->getCallGraphNode())->getId();
+                        NodeID src = pta->getCallGraph()
+                                         ->getPTACallGraphNode(
+                                             srcFun->getCallGraphNode())->getId();
+                        NodeID dst = pta->getCallGraph()
+                                         ->getPTACallGraphNode(
+                                             dstFun->getCallGraphNode())->getId();
                         insensitvefunPairs.insert(std::make_pair(src,dst));
                         insensitvefunPairs.insert(std::make_pair(dst,src));
                     }
@@ -266,8 +270,12 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
 
                 if(srcFun && dstFun)
                 {
-                    NodeID src = pta->getCallGraph()->getCallGraphNode(srcFun->getCallGraphNode())->getId();
-                    NodeID dst = pta->getCallGraph()->getCallGraphNode(dstFun->getCallGraphNode())->getId();
+                    NodeID src =
+                        pta->getCallGraph()
+                            ->getPTACallGraphNode(srcFun->getCallGraphNode())->getId();
+                    NodeID dst =
+                        pta->getCallGraph()
+                            ->getPTACallGraphNode(dstFun->getCallGraphNode())->getId();
                     if(insensitvefunPairs.find(std::make_pair(src,dst))!=insensitvefunPairs.end())
                         insensitveEdges.insert(edge);
                     else if(insensitvefunPairs.find(std::make_pair(dst,src))!=insensitvefunPairs.end())

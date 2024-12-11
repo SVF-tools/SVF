@@ -398,13 +398,16 @@ public:
     /// Return TRUE if this edge is inside a PTACallGraph SCC, i.e., src node and dst node are in the same SCC on the SVFG.
     inline bool inSameCallGraphSCC(const SVFFunction* fun1,const SVFFunction* fun2)
     {
-        const PTACallGraphNode* src = callgraph->getCallGraphNode(fun1->getCallGraphNode());
-        const PTACallGraphNode* dst = callgraph->getCallGraphNode(fun2->getCallGraphNode());
+        const PTACallGraphNode* src =
+            callgraph->getPTACallGraphNode(fun1->getCallGraphNode());
+        const PTACallGraphNode* dst =
+            callgraph->getPTACallGraphNode(fun2->getCallGraphNode());
         return (getCallGraphSCCRepNode(src->getId()) == getCallGraphSCCRepNode(dst->getId()));
     }
     inline bool isInRecursion(const SVFFunction* fun) const
     {
-        return callGraphSCC->isInCycle(callgraph->getCallGraphNode(fun->getCallGraphNode())->getId());
+        return callGraphSCC->isInCycle(
+            callgraph->getPTACallGraphNode(fun->getCallGraphNode())->getId());
     }
     /// Whether a local variable is in function recursions
     bool isLocalVarInRecursiveFun(NodeID id) const;
