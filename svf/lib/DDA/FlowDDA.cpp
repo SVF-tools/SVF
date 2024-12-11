@@ -78,7 +78,7 @@ void FlowDDA::handleOutOfBudgetDpm(const LocDPItem& dpm)
     addOutOfBudgetDpm(dpm);
 }
 
-bool FlowDDA::testIndCallReachability(LocDPItem&, const SVFFunction* callee, CallSiteID csId)
+bool FlowDDA::testIndCallReachability(LocDPItem&, const CallGraphNode* callee, CallSiteID csId)
 {
 
     const CallICFGNode* cbn = getSVFG()->getCallSite(csId);
@@ -88,7 +88,7 @@ bool FlowDDA::testIndCallReachability(LocDPItem&, const SVFFunction* callee, Cal
         if(getCallGraph()->hasIndCSCallees(cbn))
         {
             const FunctionSet& funset = getCallGraph()->getIndCSCallees(cbn);
-            if(funset.find(callee->getCallGraphNode())!=funset.end())
+            if(funset.find(callee)!=funset.end())
                 return true;
         }
 

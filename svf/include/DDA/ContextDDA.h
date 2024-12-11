@@ -110,7 +110,7 @@ public:
     virtual bool isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode* store) override;
 
     /// refine indirect call edge
-    bool testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* callee, const CallICFGNode* cs);
+    bool testIndCallReachability(CxtLocDPItem& dpm, const CallGraphNode* callee, const CallICFGNode* cs);
 
     /// get callsite id from call, return 0 if it is a spurious call edge
     CallSiteID getCSIDAtCall(CxtLocDPItem& dpm, const SVFGEdge* edge);

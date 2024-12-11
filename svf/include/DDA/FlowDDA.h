@@ -80,7 +80,7 @@ public:
     virtual bool handleBKCondition(LocDPItem& dpm, const SVFGEdge* edge) override;
 
     /// refine indirect call edge
-    bool testIndCallReachability(LocDPItem& dpm, const SVFFunction* callee, CallSiteID csId);
+    bool testIndCallReachability(LocDPItem& dpm, const CallGraphNode* callee, CallSiteID csId);
 
     /// Initialization of the analysis
     inline virtual void initialize() override

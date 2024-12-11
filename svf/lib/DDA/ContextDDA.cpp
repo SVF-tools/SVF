@@ -186,7 +186,7 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
     return tmpDstPts;
 }
 
-bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* callee, const CallICFGNode* cs)
+bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const CallGraphNode* callee, const CallICFGNode* cs)
 {
     if(getPAG()->isIndirectCallSites(cs))
     {
@@ -195,7 +195,7 @@ bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* c
         CxtVar funptrVar(dpm.getCondVar().get_cond(), id);
         CxtLocDPItem funptrDpm = getDPIm(funptrVar,getDefSVFGNode(node));
         PointsTo pts = getBVPointsTo(findPT(funptrDpm));
-        if(pts.test(getPAG()->getFunObjVar(callee->getCallGraphNode())->getId()))
+        if(pts.test(getPAG()->getFunObjVar(callee)->getId()))
             return true;
         else
             return false;
