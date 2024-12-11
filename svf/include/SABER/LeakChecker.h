@@ -78,14 +78,14 @@ public:
     virtual void initSrcs() override;
     virtual void initSnks() override;
     /// Whether the function is a heap allocator/reallocator (allocate memory)
-    virtual inline bool isSourceLikeFun(const SVFFunction* fun) override
+    virtual inline bool isSourceLikeFun(const CallGraphNode* fun) override
     {
-        return SaberCheckerAPI::getCheckerAPI()->isMemAlloc(fun->getCallGraphNode());
+        return SaberCheckerAPI::getCheckerAPI()->isMemAlloc(fun);
     }
     /// Whether the function is a heap deallocator (free/release memory)
-    virtual inline bool isSinkLikeFun(const SVFFunction* fun) override
+    virtual inline bool isSinkLikeFun(const CallGraphNode* fun) override
     {
-        return SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun->getCallGraphNode());
+        return SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun);
     }
     //@}
 

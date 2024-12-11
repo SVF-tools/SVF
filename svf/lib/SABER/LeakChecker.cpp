@@ -57,7 +57,7 @@ void LeakChecker::initSrcs()
         for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
         {
             const SVFFunction* fun = *cit;
-            if (isSourceLikeFun(fun))
+            if (isSourceLikeFun(fun->getCallGraphNode()))
             {
                 CSWorkList worklist;
                 SVFGNodeBS visited;
@@ -117,7 +117,7 @@ void LeakChecker::initSnks()
         for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
         {
             const SVFFunction* fun = *cit;
-            if (isSinkLikeFun(fun))
+            if (isSinkLikeFun(fun->getCallGraphNode()))
             {
                 SVFIR::SVFVarList &arglist = it->second;
                 assert(!arglist.empty()	&& "no actual parameter at deallocation site?");
