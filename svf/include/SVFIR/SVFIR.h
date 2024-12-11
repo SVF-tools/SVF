@@ -58,12 +58,12 @@ public:
     typedef std::vector<const SVFStmt*> SVFStmtList;
     typedef std::vector<const SVFVar*> SVFVarList;
     typedef Map<const SVFVar*,PhiStmt*> PHINodeMap;
-    typedef Map<const SVFFunction*,SVFVarList> FunToArgsListMap;
+    typedef Map<const CallGraphNode*,SVFVarList> FunToArgsListMap;
     typedef Map<const CallICFGNode*,SVFVarList> CSToArgsListMap;
     typedef Map<const RetICFGNode*,const SVFVar*> CSToRetMap;
-    typedef Map<const SVFFunction*,const SVFVar*> FunToRetMap;
+    typedef Map<const CallGraphNode*,const SVFVar*> FunToRetMap;
     typedef Map<const CallGraphNode*,const FunObjVar *> FunToFunObjVarMap;
-    typedef Map<const SVFFunction*,SVFStmtSet> FunToPAGEdgeSetMap;
+    typedef Map<const CallGraphNode*,SVFStmtSet> FunToPAGEdgeSetMap;
     typedef Map<const ICFGNode*,SVFStmtList> ICFGNode2SVFStmtsMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
     typedef std::pair<NodeID, APOffset> NodeOffset;
@@ -264,7 +264,7 @@ public:
     }
 
     /// Function has arguments list
-    inline bool hasFunArgsList(const SVFFunction* func) const
+    inline bool hasFunArgsList(const CallGraphNode* func) const
     {
         return (funArgsListMap.find(func) != funArgsListMap.end());
     }
@@ -274,7 +274,7 @@ public:
         return funArgsListMap;
     }
     /// Get function arguments list
-    inline const SVFVarList& getFunArgsList(const SVFFunction*  func) const
+    inline const SVFVarList& getFunArgsList(const CallGraphNode*  func) const
     {
         FunToArgsListMap::const_iterator it = funArgsListMap.find(func);
         assert(it != funArgsListMap.end() && "this function doesn't have arguments");
@@ -319,13 +319,13 @@ public:
         return funRetMap;
     }
     /// Get function return list
-    inline const SVFVar* getFunRet(const SVFFunction*  func) const
+    inline const SVFVar* getFunRet(const CallGraphNode*  func) const
     {
         FunToRetMap::const_iterator it = funRetMap.find(func);
         assert(it != funRetMap.end() && "this function doesn't have return");
         return it->second;
     }
-    inline bool funHasRet(const SVFFunction* func) const
+    inline bool funHasRet(const CallGraphNode* func) const
     {
         return funRetMap.find(func) != funRetMap.end();
     }
@@ -504,16 +504,16 @@ private:
     /// Get/set method for function/callsite arguments and returns
     //@{
     /// Add function arguments
-    inline void addFunArgs(const SVFFunction* fun, const SVFVar* arg)
+    inline void addFunArgs(const CallGraphNode* fun, const SVFVar* arg)
     {
-        FunEntryICFGNode* funEntryBlockNode = icfg->getFunEntryICFGNode(fun->getCallGraphNode());
+        FunEntryICFGNode* funEntryBlockNode = icfg->getFunEntryICFGNode(fun);
         funEntryBlockNode->addFormalParms(arg);
         funArgsListMap[fun].push_back(arg);
     }
     /// Add function returns
-    inline void addFunRet(const SVFFunction* fun, const SVFVar* ret)
+    inline void addFunRet(const CallGraphNode* fun, const SVFVar* ret)
     {
-        FunExitICFGNode* funExitBlockNode = icfg->getFunExitICFGNode(fun->getCallGraphNode());
+        FunExitICFGNode* funExitBlockNode = icfg->getFunExitICFGNode(fun);
         funExitBlockNode->addFormalRet(ret);
         funRetMap[fun] = ret;
     }
@@ -763,7 +763,7 @@ private:
         return addNode(node);
     }
     /// Add a unique vararg node for a procedure
-    inline NodeID addVarargNode(const SVFFunction*, SVFVar *node)
+    inline NodeID addVarargNode(const CallGraphNode*, SVFVar *node)
     {
         return addNode(node);
     }

@@ -589,10 +589,10 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
     const RetICFGNode* retICFGNode = callICFGNode->getRetICFGNode();
 
     // Find inter direct call edges between actual param and formal param.
-    if (pag->hasCallSiteArgsMap(callICFGNode) && pag->hasFunArgsList(callee->getFunction()))
+    if (pag->hasCallSiteArgsMap(callICFGNode) && pag->hasFunArgsList(callee))
     {
         const SVFIR::SVFVarList& csArgList = pag->getCallSiteArgsList(callICFGNode);
-        const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(callee->getFunction());
+        const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(callee);
         SVFIR::SVFVarList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
         SVFIR::SVFVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
         for (; funArgIt != funArgEit && csArgIt != csArgEit; funArgIt++, csArgIt++)
@@ -605,7 +605,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
         assert(funArgIt == funArgEit && "function has more arguments than call site");
         if (callee->isVarArg())
         {
-            NodeID varFunArg = pag->getVarargNode(callee->getFunction());
+            NodeID varFunArg = pag->getVarargNode(callee);
             const PAGNode* varFunArgNode = pag->getGNode(varFunArg);
             if (isInterestedPAGNode(varFunArgNode))
             {
@@ -620,10 +620,10 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
     }
 
     // Find inter direct return edges between actual return and formal return.
-    if (pag->funHasRet(callee->getFunction()) && pag->callsiteHasRet(retICFGNode))
+    if (pag->funHasRet(callee) && pag->callsiteHasRet(retICFGNode))
     {
         const PAGNode* cs_return = pag->getCallSiteRet(retICFGNode);
-        const PAGNode* fun_return = pag->getFunRet(callee->getFunction());
+        const PAGNode* fun_return = pag->getFunRet(callee);
         if (isInterestedPAGNode(cs_return) && isInterestedPAGNode(fun_return))
             getInterVFEdgeAtIndCSFromFRToAR(fun_return, cs_return, csId, edges);
     }

@@ -56,14 +56,14 @@ IRGraph::~IRGraph()
     destorySymTable();
 }
 
-NodeID IRGraph::getReturnNode(const SVFFunction *func) const
+NodeID IRGraph::getReturnNode(const CallGraphNode *func) const
 {
     FunToIDMapTy::const_iterator iter =  returnSymMap.find(func);
     assert(iter!=returnSymMap.end() && "ret sym not found");
     return iter->second;
 }
 
-NodeID IRGraph::getVarargNode(const SVFFunction *func) const
+NodeID IRGraph::getVarargNode(const CallGraphNode *func) const
 {
     FunToIDMapTy::const_iterator iter =  varargSymMap.find(func);
     assert(iter!=varargSymMap.end() && "vararg sym not found");

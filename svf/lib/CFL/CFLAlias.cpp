@@ -74,10 +74,10 @@ void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const CallGrap
         heapAllocatorViaIndCall(cs);
     }
 
-    if (svfir->funHasRet(F->getFunction()) && svfir->callsiteHasRet(retBlockNode))
+    if (svfir->funHasRet(F) && svfir->callsiteHasRet(retBlockNode))
     {
         const PAGNode* cs_return = svfir->getCallSiteRet(retBlockNode);
-        const PAGNode* fun_return = svfir->getFunRet(F->getFunction());
+        const PAGNode* fun_return = svfir->getFunRet(F);
         if (cs_return->isPointer() && fun_return->isPointer())
         {
             NodeID dstrec = cs_return->getId();
@@ -90,12 +90,12 @@ void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const CallGrap
         }
     }
 
-    if (svfir->hasCallSiteArgsMap(callBlockNode) && svfir->hasFunArgsList(F->getFunction()))
+    if (svfir->hasCallSiteArgsMap(callBlockNode) && svfir->hasFunArgsList(F))
     {
 
         // connect actual and formal param
         const SVFIR::SVFVarList& csArgList = svfir->getCallSiteArgsList(callBlockNode);
-        const SVFIR::SVFVarList& funArgList = svfir->getFunArgsList(F->getFunction());
+        const SVFIR::SVFVarList& funArgList = svfir->getFunArgsList(F);
         //Go through the fixed parameters.
         DBOUT(DPAGBuild, outs() << "      args:");
         SVFIR::SVFVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
@@ -123,7 +123,7 @@ void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const CallGrap
         //Any remaining actual args must be varargs.
         if (F->isVarArg())
         {
-            NodeID vaF = svfir->getVarargNode(F->getFunction());
+            NodeID vaF = svfir->getVarargNode(F);
             DBOUT(DPAGBuild, outs() << "\n      varargs:");
             for (; csArgIt != csArgEit; ++csArgIt)
             {

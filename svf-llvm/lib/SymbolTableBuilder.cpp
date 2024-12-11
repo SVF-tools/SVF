@@ -352,8 +352,8 @@ void SymbolTableBuilder::collectObj(const Value* val)
  */
 void SymbolTableBuilder::collectRet(const Function* val)
 {
-    const SVFFunction* svffun =
-        llvmModuleSet()->getSVFFunction(val);
+    const CallGraphNode* svffun =
+        llvmModuleSet()->getCallGraphNode(val);
     IRGraph::FunToIDMapTy::iterator iter =
         svfir->returnSymMap.find(svffun);
     if (iter == svfir->returnSymMap.end())
@@ -369,8 +369,8 @@ void SymbolTableBuilder::collectRet(const Function* val)
  */
 void SymbolTableBuilder::collectVararg(const Function* val)
 {
-    const SVFFunction* svffun =
-        llvmModuleSet()->getSVFFunction(val);
+    const CallGraphNode* svffun =
+        llvmModuleSet()->getCallGraphNode(val);
     IRGraph::FunToIDMapTy::iterator iter =
         svfir->varargSymMap.find(svffun);
     if (iter == svfir->varargSymMap.end())

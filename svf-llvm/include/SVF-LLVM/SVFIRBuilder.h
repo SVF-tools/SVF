@@ -104,13 +104,13 @@ public:
     /// getReturnNode - Return the node representing the unique return value of a function.
     inline NodeID getReturnNode(const CallGraphNode *func)
     {
-        return pag->getReturnNode(func->getFunction());
+        return pag->getReturnNode(func);
     }
 
     /// getVarargNode - Return the node representing the unique variadic argument of a function.
     inline NodeID getVarargNode(const CallGraphNode *func)
     {
-        return pag->getVarargNode(func->getFunction());
+        return pag->getVarargNode(func);
     }
     //@}
 
