@@ -33,6 +33,7 @@
 #include "MemoryModel/PointsTo.h"
 #include "WPA/Andersen.h"
 #include "WPA/Steensgaard.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -202,7 +203,7 @@ bool AndersenBase::updateCallGraph(const CallSiteToFunPtrMap& callsites)
                 ecit = it->second.end();
                 cit != ecit; ++cit)
         {
-            connectCaller2CalleeParams(it->first, *cit, cpySrcNodes);
+            connectCaller2CalleeParams(it->first, (*cit)->getCallGraphNode(), cpySrcNodes);
         }
     }
 
@@ -232,7 +233,7 @@ bool AndersenBase::updateThreadCallGraph(const CallSiteToFunPtrMap& callsites,
                 ecit = it->second.end();
                 cit != ecit; ++cit)
         {
-            connectCaller2ForkedFunParams(it->first, *cit, cpySrcNodes);
+            connectCaller2ForkedFunParams(it->first, (*cit)->getCallGraphNode(), cpySrcNodes);
         }
     }
     return !newForkEdges.empty();
@@ -241,19 +242,19 @@ bool AndersenBase::updateThreadCallGraph(const CallSiteToFunPtrMap& callsites,
 /*!
  * Connect formal and actual parameters for indirect forksites
  */
-void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const SVFFunction* F,
+void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const CallGraphNode* cgNode,
         NodePairSet& cpySrcNodes)
 {
-    assert(F);
+    assert(cgNode);
 
     DBOUT(DAndersen, outs() << "connect parameters from indirect forksite "
           << cs->valueOnlyToString() << " to forked function "
-          << *F << "\n");
+          << *cgNode << "\n");
 
     ThreadCallGraph *tdCallGraph = SVFUtil::dyn_cast<ThreadCallGraph>(callgraph);
 
     const PAGNode *cs_arg = tdCallGraph->getThreadAPI()->getActualParmAtForkSite(cs);
-    const PAGNode *fun_arg = tdCallGraph->getThreadAPI()->getFormalParmOfForkedFun(F);
+    const PAGNode *fun_arg = tdCallGraph->getThreadAPI()->getFormalParmOfForkedFun(cgNode);
 
     if(cs_arg->isPointer() && fun_arg->isPointer())
     {
@@ -272,7 +273,7 @@ void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const S
 // * Connect formal and actual parameters for indirect callsites
 // */
 void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs,
-        const SVFFunction* F, NodePairSet &cpySrcNodes)
+        const CallGraphNode* F, NodePairSet &cpySrcNodes)
 {
     assert(F);
 
@@ -281,15 +282,15 @@ void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs,
     const CallICFGNode* callBlockNode = cs;
     const RetICFGNode* retBlockNode = cs->getRetICFGNode();
 
-    if(SVFUtil::isHeapAllocExtFunViaRet(F) && pag->callsiteHasRet(retBlockNode))
+    if(SVFUtil::isHeapAllocExtFunViaRet(F->getFunction()) && pag->callsiteHasRet(retBlockNode))
     {
         heapAllocatorViaIndCall(cs,cpySrcNodes);
     }
 
-    if (pag->funHasRet(F) && pag->callsiteHasRet(retBlockNode))
+    if (pag->funHasRet(F->getFunction()) && pag->callsiteHasRet(retBlockNode))
     {
         const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
-        const PAGNode* fun_return = pag->getFunRet(F);
+        const PAGNode* fun_return = pag->getFunRet(F->getFunction());
         if (cs_return->isPointer() && fun_return->isPointer())
         {
             NodeID dstrec = sccRepNode(cs_return->getId());
@@ -305,12 +306,12 @@ void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs,
         }
     }
 
-    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(F))
+    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(F->getFunction()))
     {
 
         // connect actual and formal param
         const SVFIR::SVFVarList& csArgList = pag->getCallSiteArgsList(callBlockNode);
-        const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(F);
+        const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(F->getFunction());
         //Go through the fixed parameters.
         DBOUT(DPAGBuild, outs() << "      args:");
         SVFIR::SVFVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
@@ -341,7 +342,7 @@ void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs,
         //Any remaining actual args must be varargs.
         if (F->isVarArg())
         {
-            NodeID vaF = sccRepNode(pag->getVarargNode(F));
+            NodeID vaF = sccRepNode(pag->getVarargNode(F->getFunction()));
             DBOUT(DPAGBuild, outs() << "\n      varargs:");
             for (; csArgIt != csArgEit; ++csArgIt)
             {

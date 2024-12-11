@@ -127,7 +127,7 @@ public:
     const ValVar* getActualParmAtForkSite(const CallICFGNode *inst) const;
 
     /// Return the formal parm of forked function (the first arg in pthread)
-    const SVFVar* getFormalParmOfForkedFun(const SVFFunction* F) const;
+    const SVFVar* getFormalParmOfForkedFun(const CallGraphNode* F) const;
     //@}
 
 

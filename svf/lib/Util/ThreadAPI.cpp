@@ -193,8 +193,9 @@ const ValVar* ThreadAPI::getActualParmAtForkSite(const CallICFGNode *inst) const
     return inst->getArgument(3);
 }
 
-const SVFVar* ThreadAPI::getFormalParmOfForkedFun(const SVFFunction* F) const
+const SVFVar* ThreadAPI::getFormalParmOfForkedFun(const CallGraphNode* cgNode) const
 {
+    const SVFFunction* F = cgNode->getFunction();
     assert(PAG::getPAG()->hasFunArgsList(F) && "forked function has no args list!");
     const SVFIR::SVFVarList& funArgList = PAG::getPAG()->getFunArgsList(F);
     // in pthread, forked functions are of type void *()(void *args)
