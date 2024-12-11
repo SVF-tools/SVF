@@ -550,7 +550,7 @@ void VFG::addVFGNodes()
                         callPEs.insert(callPE);
                 }
             }
-            addFormalParmVFGNode(param,func,callPEs);
+            addFormalParmVFGNode(param,func->getCallGraphNode(),callPEs);
         }
 
         if (func->isVarArg())
@@ -570,7 +570,7 @@ void VFG::addVFGNodes()
                         callPEs.insert(callPE);
                 }
             }
-            addFormalParmVFGNode(varParam,func,callPEs);
+            addFormalParmVFGNode(varParam,func->getCallGraphNode(),callPEs);
         }
     }
 
@@ -595,7 +595,7 @@ void VFG::addVFGNodes()
         }
 
         if(isInterestedPAGNode(uniqueFunRetNode))
-            addFormalRetVFGNode(uniqueFunRetNode, func, retPEs);
+            addFormalRetVFGNode(uniqueFunRetNode, func->getCallGraphNode(), retPEs);
     }
 
     // initialize llvm phi nodes (phi of top level pointers)
@@ -946,7 +946,7 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
         for (PointerAnalysis::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
             const CallGraphNode*  func = *func_iter;
-            connectCallerAndCallee(newcs, func->getFunction(), vfEdgesAtIndCallSite);
+            connectCallerAndCallee(newcs, func, vfEdgesAtIndCallSite);
         }
     }
 }
@@ -955,17 +955,17 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
  * Connect actual params/return to formal params/return for top-level variables.
  * Also connect indirect actual in/out and formal in/out.
  */
-void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFunction* callee, VFGEdgeSetTy& edges)
+void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const CallGraphNode* callee, VFGEdgeSetTy& edges)
 {
     SVFIR * pag = SVFIR::getPAG();
-    CallSiteID csId = getCallSiteID(callBlockNode, callee->getCallGraphNode());
+    CallSiteID csId = getCallSiteID(callBlockNode, callee);
     const RetICFGNode* retBlockNode = callBlockNode->getRetICFGNode();
     // connect actual and formal param
-    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee) &&
-            matchArgs(callBlockNode, callee))
+    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee->getFunction()) &&
+            matchArgs(callBlockNode, callee->getFunction()))
     {
         const SVFIR::SVFVarList& csArgList = pag->getCallSiteArgsList(callBlockNode);
-        const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(callee);
+        const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(callee->getFunction());
         SVFIR::SVFVarList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
         SVFIR::SVFVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
         for (; funArgIt != funArgEit && csArgIt != csArgEit; funArgIt++, csArgIt++)
@@ -979,7 +979,7 @@ void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFun
 
         if (callee->isVarArg())
         {
-            NodeID varFunArg = pag->getVarargNode(callee);
+            NodeID varFunArg = pag->getVarargNode(callee->getFunction());
             const PAGNode* varFunArgNode = pag->getGNode(varFunArg);
             if (isInterestedPAGNode(varFunArgNode))
             {
@@ -994,10 +994,10 @@ void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFun
     }
 
     // connect actual return and formal return
-    if (pag->funHasRet(callee) && pag->callsiteHasRet(retBlockNode))
+    if (pag->funHasRet(callee->getFunction()) && pag->callsiteHasRet(retBlockNode))
     {
         const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
-        const PAGNode* fun_return = pag->getFunRet(callee);
+        const PAGNode* fun_return = pag->getFunRet(callee->getFunction());
         if (isInterestedPAGNode(cs_return) && isInterestedPAGNode(fun_return))
             connectFRetAndARet(fun_return, cs_return, csId, edges);
     }

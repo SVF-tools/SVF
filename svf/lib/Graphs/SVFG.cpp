@@ -428,7 +428,9 @@ void SVFG::connectIndirectSVFGEdges()
 void SVFG::connectFromGlobalToProgEntry()
 {
     const SVFFunction* mainFunc = SVFUtil::getProgEntryFunction();
-    FormalINSVFGNodeSet& formalIns = getFormalINSVFGNodes(mainFunc);
+    if (!mainFunc)
+        return;
+    FormalINSVFGNodeSet& formalIns = getFormalINSVFGNodes(mainFunc->getCallGraphNode());
     if (formalIns.empty())
         return;
 
@@ -581,16 +583,16 @@ void SVFG::dump(const std::string& file, bool simple)
 /**
  * Get all inter value flow edges at this indirect call site, including call and return edges.
  */
-void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, const SVFFunction* callee, SVFGEdgeSetTy& edges)
+void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, const CallGraphNode* callee, SVFGEdgeSetTy& edges)
 {
-    CallSiteID csId = getCallSiteID(callICFGNode, callee->getCallGraphNode());
+    CallSiteID csId = getCallSiteID(callICFGNode, callee);
     const RetICFGNode* retICFGNode = callICFGNode->getRetICFGNode();
 
     // Find inter direct call edges between actual param and formal param.
-    if (pag->hasCallSiteArgsMap(callICFGNode) && pag->hasFunArgsList(callee))
+    if (pag->hasCallSiteArgsMap(callICFGNode) && pag->hasFunArgsList(callee->getFunction()))
     {
         const SVFIR::SVFVarList& csArgList = pag->getCallSiteArgsList(callICFGNode);
-        const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(callee);
+        const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(callee->getFunction());
         SVFIR::SVFVarList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
         SVFIR::SVFVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
         for (; funArgIt != funArgEit && csArgIt != csArgEit; funArgIt++, csArgIt++)
@@ -603,7 +605,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
         assert(funArgIt == funArgEit && "function has more arguments than call site");
         if (callee->isVarArg())
         {
-            NodeID varFunArg = pag->getVarargNode(callee);
+            NodeID varFunArg = pag->getVarargNode(callee->getFunction());
             const PAGNode* varFunArgNode = pag->getGNode(varFunArg);
             if (isInterestedPAGNode(varFunArgNode))
             {
@@ -618,10 +620,10 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
     }
 
     // Find inter direct return edges between actual return and formal return.
-    if (pag->funHasRet(callee) && pag->callsiteHasRet(retICFGNode))
+    if (pag->funHasRet(callee->getFunction()) && pag->callsiteHasRet(retICFGNode))
     {
         const PAGNode* cs_return = pag->getCallSiteRet(retICFGNode);
-        const PAGNode* fun_return = pag->getFunRet(callee);
+        const PAGNode* fun_return = pag->getFunRet(callee->getFunction());
         if (isInterestedPAGNode(cs_return) && isInterestedPAGNode(fun_return))
             getInterVFEdgeAtIndCSFromFRToAR(fun_return, cs_return, csId, edges);
     }
@@ -655,11 +657,11 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
  * Connect actual params/return to formal params/return for top-level variables.
  * Also connect indirect actual in/out and formal in/out.
  */
-void SVFG::connectCallerAndCallee(const CallICFGNode* cs, const SVFFunction* callee, SVFGEdgeSetTy& edges)
+void SVFG::connectCallerAndCallee(const CallICFGNode* cs, const CallGraphNode* callee, SVFGEdgeSetTy& edges)
 {
     VFG::connectCallerAndCallee(cs,callee,edges);
 
-    CallSiteID csId = getCallSiteID(cs, callee->getCallGraphNode());
+    CallSiteID csId = getCallSiteID(cs, callee);
 
     // connect actual in and formal in
     if (hasFuncEntryChi(callee) && hasCallSiteMu(cs))
