@@ -189,7 +189,7 @@ void MHP::handleNonCandidateFun(const CxtThreadStmt& cts)
         tcg->getPTACallGraphNode(curfun);
     for (PTACallGraphNode::const_iterator nit = node->OutEdgeBegin(), neit = node->OutEdgeEnd(); nit != neit; nit++)
     {
-        const SVFFunction* callee = (*nit)->getDstNode()->getCallNode()->getFunction();
+        const CallGraphNode* callee = (*nit)->getDstNode()->getCallNode();
         if (!isExtCall(callee))
         {
             const ICFGNode* calleeInst = callee->getEntryBlock()->front();
@@ -521,10 +521,10 @@ bool MHP::isHBPair(NodeID tid1, NodeID tid2)
     return fja->isHBPair(tid1, tid2);
 }
 
-bool MHP::isConnectedfromMain(const SVFFunction* fun)
+bool MHP::isConnectedfromMain(const CallGraphNode* fun)
 {
     PTACallGraphNode* cgnode =
-        tcg->getPTACallGraphNode(fun->getCallGraphNode());
+        tcg->getPTACallGraphNode(fun);
     FIFOWorkList<const PTACallGraphNode*> worklist;
     TCT::PTACGNodeSet visited;
     worklist.push(cgnode);
@@ -597,7 +597,7 @@ bool MHP::mayHappenInParallelCache(const ICFGNode* i1, const ICFGNode* i2)
 {
     if (!tct->isCandidateFun(i1->getFun()) && !tct->isCandidateFun(i2->getFun()))
     {
-        FuncPair funpair = std::make_pair(i1->getFun()->getFunction(), i2->getFun()->getFunction());
+        FuncPair funpair = std::make_pair(i1->getFun(), i2->getFun());
         FuncPairToBool::const_iterator it = nonCandidateFuncMHPRelMap.find(funpair);
         if (it == nonCandidateFuncMHPRelMap.end())
         {
@@ -671,7 +671,7 @@ void MHP::printInterleaving()
 void ForkJoinAnalysis::collectSCEVInfo()
 {
     // typedef Set<const ICFGNode*> CallInstSet;
-    // typedef Map<const SVFFunction*, CallInstSet> FunToFJSites;
+    // typedef Map<const CallGraphNode*, CallInstSet> FunToFJSites;
     // FunToFJSites funToFJSites;
 
     // for (ThreadCallGraph::CallSiteSet::const_iterator it = tct->getThreadCallGraph()->forksitesBegin(),

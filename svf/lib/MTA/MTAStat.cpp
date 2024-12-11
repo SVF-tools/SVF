@@ -122,7 +122,7 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
         {
             if(SVFUtil::isExtCall(fun))
                 continue;
-            if(!mhp->isConnectedfromMain(fun))
+            if(!mhp->isConnectedfromMain(fun->getCallGraphNode()))
                 continue;
             for (SVFFunction::const_iterator bit =  fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
             {
