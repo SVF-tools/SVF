@@ -361,7 +361,7 @@ void SVFG::connectIndirectSVFGEdges()
         else if(const FormalINSVFGNode* formalIn = SVFUtil::dyn_cast<FormalINSVFGNode>(node))
         {
             PTACallGraphEdge::CallInstSet callInstSet;
-            mssa->getPTA()->getCallGraph()->getDirCallSitesInvokingCallee(formalIn->getFun()->getCallGraphNode(),callInstSet);
+            mssa->getPTA()->getCallGraph()->getDirCallSitesInvokingCallee(formalIn->getFun(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
             {
                 const CallICFGNode* cs = *it;
@@ -379,7 +379,7 @@ void SVFG::connectIndirectSVFGEdges()
         {
             PTACallGraphEdge::CallInstSet callInstSet;
             // const MemSSA::RETMU* retMu = formalOut->getRetMU();
-            mssa->getPTA()->getCallGraph()->getDirCallSitesInvokingCallee(formalOut->getFun()->getCallGraphNode(),callInstSet);
+            mssa->getPTA()->getCallGraph()->getDirCallSitesInvokingCallee(formalOut->getFun(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
             {
                 const CallICFGNode* cs = *it;
@@ -583,7 +583,7 @@ void SVFG::dump(const std::string& file, bool simple)
  */
 void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, const SVFFunction* callee, SVFGEdgeSetTy& edges)
 {
-    CallSiteID csId = getCallSiteID(callICFGNode, callee);
+    CallSiteID csId = getCallSiteID(callICFGNode, callee->getCallGraphNode());
     const RetICFGNode* retICFGNode = callICFGNode->getRetICFGNode();
 
     // Find inter direct call edges between actual param and formal param.
@@ -659,7 +659,7 @@ void SVFG::connectCallerAndCallee(const CallICFGNode* cs, const SVFFunction* cal
 {
     VFG::connectCallerAndCallee(cs,callee,edges);
 
-    CallSiteID csId = getCallSiteID(cs, callee);
+    CallSiteID csId = getCallSiteID(cs, callee->getCallGraphNode());
 
     // connect actual in and formal in
     if (hasFuncEntryChi(callee) && hasCallSiteMu(cs))
@@ -703,7 +703,7 @@ void SVFG::connectCallerAndCallee(const CallICFGNode* cs, const SVFFunction* cal
 /*!
  * Whether this is an function entry SVFGNode (formal parameter, formal In)
  */
-const SVFFunction* SVFG::isFunEntrySVFGNode(const SVFGNode* node) const
+const CallGraphNode* SVFG::isFunEntrySVFGNode(const SVFGNode* node) const
 {
     if(const FormalParmSVFGNode* fp = SVFUtil::dyn_cast<FormalParmSVFGNode>(node))
     {

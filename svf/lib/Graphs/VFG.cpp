@@ -405,7 +405,7 @@ const std::string RetDirSVFGEdge::toString() const
 
 
 
-FormalRetVFGNode::FormalRetVFGNode(NodeID id, const PAGNode* n, const SVFFunction* f) :
+FormalRetVFGNode::FormalRetVFGNode(NodeID id, const PAGNode* n, const CallGraphNode* f) :
     ArgumentVFGNode(id, n, FRet), fun(f)
 {
 }
@@ -958,7 +958,7 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
 void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFunction* callee, VFGEdgeSetTy& edges)
 {
     SVFIR * pag = SVFIR::getPAG();
-    CallSiteID csId = getCallSiteID(callBlockNode, callee);
+    CallSiteID csId = getCallSiteID(callBlockNode, callee->getCallGraphNode());
     const RetICFGNode* retBlockNode = callBlockNode->getRetICFGNode();
     // connect actual and formal param
     if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee) &&
@@ -1043,7 +1043,7 @@ const PAGNode* VFG::getLHSTopLevPtr(const VFGNode* node) const
 /*!
  * Whether this is an function entry VFGNode (formal parameter, formal In)
  */
-const SVFFunction* VFG::isFunEntryVFGNode(const VFGNode* node) const
+const CallGraphNode* VFG::isFunEntryVFGNode(const VFGNode* node) const
 {
     if(const FormalParmVFGNode* fp = SVFUtil::dyn_cast<FormalParmVFGNode>(node))
     {

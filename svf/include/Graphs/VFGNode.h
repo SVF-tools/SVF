@@ -76,12 +76,9 @@ public:
     }
 
     /// Get the function of this SVFGNode
-    virtual const SVFFunction* getFun() const
+    virtual const CallGraphNode* getFun() const
     {
-        if (icfgNode->getFun() == nullptr)
-            return nullptr;
-        else
-            return icfgNode->getFun()->getFunction();
+        return icfgNode->getFun();
     }
 
     /// Return the corresponding LLVM value, if possible, nullptr otherwise.
@@ -950,12 +947,12 @@ public:
 class FormalParmVFGNode : public ArgumentVFGNode
 {
 private:
-    const SVFFunction* fun;
+    const CallGraphNode* fun;
     CallPESet callPEs;
 
 public:
     /// Constructor
-    FormalParmVFGNode(NodeID id, const PAGNode* n, const SVFFunction* f):
+    FormalParmVFGNode(NodeID id, const PAGNode* n, const CallGraphNode* f):
         ArgumentVFGNode(id, n, FParm),  fun(f)
     {
     }
@@ -967,7 +964,7 @@ public:
     }
 
     /// Return function
-    inline const SVFFunction* getFun() const override
+    inline const CallGraphNode* getFun() const override
     {
         return fun;
     }
@@ -1041,9 +1038,9 @@ public:
         return cs;
     }
     /// Receive parameter at callsite
-    inline const SVFFunction* getCaller() const
+    inline const CallGraphNode* getCaller() const
     {
-        return cs->getCaller()->getFunction();
+        return cs->getCaller();
     }
     /// Receive parameter at callsite
     inline const PAGNode* getRev() const
@@ -1085,7 +1082,7 @@ public:
 class FormalRetVFGNode: public ArgumentVFGNode
 {
 private:
-    const SVFFunction* fun;
+    const CallGraphNode* fun;
     RetPESet retPEs;
 
     FormalRetVFGNode();                      ///< place holder
@@ -1094,7 +1091,7 @@ private:
 
 public:
     /// Constructor
-    FormalRetVFGNode(NodeID id, const PAGNode* n, const SVFFunction* f);
+    FormalRetVFGNode(NodeID id, const PAGNode* n, const CallGraphNode* f);
 
     /// Return value at callee
     inline const PAGNode* getRet() const
@@ -1102,7 +1099,7 @@ public:
         return param;
     }
     /// Function
-    inline const SVFFunction* getFun() const override
+    inline const CallGraphNode* getFun() const override
     {
         return fun;
     }
@@ -1171,7 +1168,7 @@ public:
         return (fun!=nullptr) && (callInst != nullptr);
     }
 
-    inline const SVFFunction* getFun() const override
+    inline const CallGraphNode* getFun() const override
     {
         assert((isFormalParmPHI() || isActualRetPHI())  && "expect a formal parameter phi");
         return fun;
@@ -1210,7 +1207,7 @@ public:
     const std::string toString() const override;
 
 private:
-    const SVFFunction* fun;
+    const CallGraphNode* fun;
     const CallICFGNode* callInst;
 };
 

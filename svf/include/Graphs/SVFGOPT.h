@@ -244,7 +244,7 @@ private:
     inline InterPHISVFGNode* addInterPHIForFP(const FormalParmSVFGNode* fp)
     {
         InterPHISVFGNode* sNode = new InterPHISVFGNode(totalVFGNode++,fp);
-        addSVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(fp->getFun()->getCallGraphNode()));
+        addSVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(fp->getFun()));
         resetDef(fp->getParam(),sNode);
         return sNode;
     }

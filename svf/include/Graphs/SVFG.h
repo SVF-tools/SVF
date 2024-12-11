@@ -229,7 +229,7 @@ public:
     //@}
 
     /// Whether a node is function entry SVFGNode
-    const SVFFunction* isFunEntrySVFGNode(const SVFGNode* node) const;
+    const CallGraphNode* isFunEntrySVFGNode(const SVFGNode* node) const;
 
     /// Whether a node is callsite return SVFGNode
     const CallICFGNode* isCallSiteRetSVFGNode(const SVFGNode* node) const;
@@ -330,7 +330,7 @@ protected:
         for (SVFGNode::const_iterator outIt = actualIn->OutEdgeBegin(), outEit = actualIn->OutEdgeEnd(); outIt != outEit; ++outIt)
         {
             SVFGEdge* edge = *outIt;
-            if (edge->getDstNode()->getFun() == callee)
+            if (edge->getDstNode()->getFun()->getFunction() == callee)
                 edges.insert(edge);
         }
     }
@@ -340,7 +340,7 @@ protected:
         for (SVFGNode::const_iterator inIt = actualOut->InEdgeBegin(), inEit = actualOut->InEdgeEnd(); inIt != inEit; ++inIt)
         {
             SVFGEdge* edge = *inIt;
-            if (edge->getSrcNode()->getFun() == callee)
+            if (edge->getSrcNode()->getFun()->getFunction() == callee)
                 edges.insert(edge);
         }
     }

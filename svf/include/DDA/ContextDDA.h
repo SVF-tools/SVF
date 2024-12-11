@@ -159,11 +159,11 @@ public:
     /// Return TRUE if this edge is inside a SVFG SCC, i.e., src node and dst node are in the same SCC on the SVFG.
     inline bool edgeInCallGraphSCC(const SVFGEdge* edge)
     {
-        const SVFFunction* srcfun = edge->getSrcNode()->getFun();
-        const SVFFunction* dstfun = edge->getDstNode()->getFun();
+        const CallGraphNode* srcfun = edge->getSrcNode()->getFun();
+        const CallGraphNode* dstfun = edge->getDstNode()->getFun();
 
         if(srcfun && dstfun)
-            return inSameCallGraphSCC(srcfun->getCallGraphNode(),dstfun->getCallGraphNode());
+            return inSameCallGraphSCC(srcfun,dstfun);
 
         assert(edge->isRetVFGEdge() == false && "should not be an inter-procedural return edge" );
 

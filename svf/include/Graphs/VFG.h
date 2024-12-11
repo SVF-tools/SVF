@@ -175,9 +175,9 @@ public:
 
     /// Get callsite given a callsiteID
     //@{
-    inline CallSiteID getCallSiteID(const CallICFGNode* cs, const SVFFunction* func) const
+    inline CallSiteID getCallSiteID(const CallICFGNode* cs, const CallGraphNode* func) const
     {
-        return callgraph->getCallSiteID(cs, func->getCallGraphNode());
+        return callgraph->getCallSiteID(cs, func);
     }
     inline const CallICFGNode* getCallSite(CallSiteID id) const
     {
@@ -259,7 +259,7 @@ public:
     //@}
 
     /// Whether a node is function entry VFGNode
-    const SVFFunction* isFunEntryVFGNode(const VFGNode* node) const;
+    const CallGraphNode* isFunEntryVFGNode(const VFGNode* node) const;
 
     /// Whether a PAGNode has a blackhole or const object as its definition
     inline bool hasBlackHoleConstObjAddrAsDef(const PAGNode* pagNode) const
@@ -350,8 +350,8 @@ protected:
     /// sanitize Intra edges, verify that both nodes belong to the same function.
     inline void checkIntraEdgeParents(const VFGNode *srcNode, const VFGNode *dstNode)
     {
-        const SVFFunction *srcfun = srcNode->getFun();
-        const SVFFunction *dstfun = dstNode->getFun();
+        const CallGraphNode *srcfun = srcNode->getFun();
+        const CallGraphNode *dstfun = dstNode->getFun();
         if(srcfun != nullptr && dstfun != nullptr)
         {
             assert((srcfun == dstfun) && "src and dst nodes of an intra VFG edge are not in the same function?");
@@ -537,7 +537,7 @@ protected:
     /// Add a formal parameter VFG node
     inline void addFormalParmVFGNode(const PAGNode* fparm, const SVFFunction* fun, CallPESet& callPEs)
     {
-        FormalParmVFGNode* sNode = new FormalParmVFGNode(totalVFGNode++,fparm,fun);
+        FormalParmVFGNode* sNode = new FormalParmVFGNode(totalVFGNode++,fparm,fun->getCallGraphNode());
         addVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(fun->getCallGraphNode()));
         for(CallPESet::const_iterator it = callPEs.begin(), eit=callPEs.end();
                 it!=eit; ++it)
@@ -551,7 +551,7 @@ protected:
     /// Otherwise, we need to handle formalRet using <PAGNodeID,CallSiteID> pair to find FormalRetVFG node same as handling actual parameters
     inline void addFormalRetVFGNode(const PAGNode* uniqueFunRet, const SVFFunction* fun, RetPESet& retPEs)
     {
-        FormalRetVFGNode *sNode = new FormalRetVFGNode(totalVFGNode++, uniqueFunRet, fun);
+        FormalRetVFGNode *sNode = new FormalRetVFGNode(totalVFGNode++, uniqueFunRet, fun->getCallGraphNode());
         addVFGNode(sNode, pag->getICFG()->getFunExitICFGNode(fun->getCallGraphNode()));
         for (RetPESet::const_iterator it = retPEs.begin(), eit = retPEs.end(); it != eit; ++it)
             sNode->addRetPE(*it);
