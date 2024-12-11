@@ -63,7 +63,7 @@ void SaberCondAllocator::allocate(const SVFModule *M)
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
-        const SVFFunction *func = (item.second)->getFunction();
+        const CallGraphNode *func = item.second;
         if (!SVFUtil::isExtCall(func))
         {
             // Allocate conditions for a program.
@@ -437,7 +437,7 @@ void SaberCondAllocator::collectBBCallingProgExit(const SVFBasicBlock &bb)
             if (SVFUtil::isProgExitCall(cs))
             {
                 const SVFFunction* svfun = bb.getParent();
-                funToExitBBsMap[svfun].insert(&bb);
+                funToExitBBsMap[svfun->getCallGraphNode()].insert(&bb);
             }
     }
 }
@@ -448,7 +448,7 @@ void SaberCondAllocator::collectBBCallingProgExit(const SVFBasicBlock &bb)
 bool SaberCondAllocator::isBBCallsProgExit(const SVFBasicBlock* bb)
 {
     const SVFFunction* svfun = bb->getParent();
-    FunToExitBBsMap::const_iterator it = funToExitBBsMap.find(svfun);
+    FunToExitBBsMap::const_iterator it = funToExitBBsMap.find(svfun->getCallGraphNode());
     if (it != funToExitBBsMap.end())
     {
         for (const auto &bit: it->second)

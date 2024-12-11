@@ -53,7 +53,7 @@ public:
     typedef Map<u32_t,Condition> CondPosMap;		///< map a branch to its Condition
     typedef Map<const SVFBasicBlock*, CondPosMap > BBCondMap;	/// map bb to a Condition
     typedef Set<const SVFBasicBlock*> BasicBlockSet;
-    typedef Map<const SVFFunction*,  BasicBlockSet> FunToExitBBsMap;  ///< map a function to all its basic blocks calling program exit
+    typedef Map<const CallGraphNode*,  BasicBlockSet> FunToExitBBsMap;  ///< map a function to all its basic blocks calling program exit
     typedef Map<const SVFBasicBlock*, Condition> BBToCondMap;	///< map a basic block to its condition during control-flow guard computation
     typedef FIFOWorkList<const SVFBasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
     typedef Map<const SVFGNode*, Set<const SVFGNode*>> SVFGNodeToSVFGNodeSetMap;
