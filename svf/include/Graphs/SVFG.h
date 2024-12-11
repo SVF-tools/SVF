@@ -403,17 +403,17 @@ protected:
     inline void addFormalINSVFGNode(const FunEntryICFGNode* funEntry,  const MRVer* resVer, const NodeID nodeId)
     {
         FormalINSVFGNode* sNode = new FormalINSVFGNode(nodeId, resVer, funEntry);
-        addSVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(funEntry->getFun()));
+        addSVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(funEntry->getFun()->getFunction()));
         setDef(resVer,sNode);
-        funToFormalINMap[funEntry->getFun()].set(sNode->getId());
+        funToFormalINMap[funEntry->getFun()->getFunction()].set(sNode->getId());
     }
 
     /// Add memory Function return mu SVFG node
     inline void addFormalOUTSVFGNode(const FunExitICFGNode* funExit, const MRVer* ver, const NodeID nodeId)
     {
         FormalOUTSVFGNode* sNode = new FormalOUTSVFGNode(nodeId, ver, funExit);
-        addSVFGNode(sNode,pag->getICFG()->getFunExitICFGNode(funExit->getFun()));
-        funToFormalOUTMap[funExit->getFun()].set(sNode->getId());
+        addSVFGNode(sNode,pag->getICFG()->getFunExitICFGNode(funExit->getFun()->getFunction()));
+        funToFormalOUTMap[funExit->getFun()->getFunction()].set(sNode->getId());
     }
 
     /// Add memory callsite mu SVFG node

@@ -56,7 +56,7 @@ bool TCT::isInLoopInstruction(const ICFGNode* inst)
         const ICFGNode* inst = worklist.pop();
         insts.insert(inst);
         PTACallGraphNode* cgnode =
-            tcg->getPTACallGraphNode(inst->getFun()->getCallGraphNode());
+            tcg->getPTACallGraphNode(inst->getFun());
         for(PTACallGraphNode::const_iterator nit = cgnode->InEdgeBegin(), neit = cgnode->InEdgeEnd(); nit!=neit; nit++)
         {
             for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*nit)->directCallsBegin(),
@@ -91,35 +91,35 @@ bool TCT::isInLoopInstruction(const ICFGNode* inst)
  */
 bool TCT::isInRecursion(const ICFGNode* inst) const
 {
-    const SVFFunction* f = inst->getFun();
-    FIFOWorkList<const SVFFunction*> worklist;
-    Set<const SVFFunction*> visits;
+    const CallGraphNode* f = inst->getFun();
+    FIFOWorkList<const CallGraphNode*> worklist;
+    Set<const CallGraphNode*> visits;
     worklist.push(f);
 
     while(!worklist.empty())
     {
-        const SVFFunction* svffun = worklist.pop();
+        const CallGraphNode* svffun = worklist.pop();
         visits.insert(svffun);
         if(tcgSCC->isInCycle(
-                tcg->getPTACallGraphNode(svffun->getCallGraphNode())->getId()))
+                tcg->getPTACallGraphNode(svffun)->getId()))
             return true;
 
         const PTACallGraphNode* cgnode =
-            tcg->getPTACallGraphNode(svffun->getCallGraphNode());
+            tcg->getPTACallGraphNode(svffun);
 
         for(PTACallGraphNode::const_iterator nit = cgnode->InEdgeBegin(), neit = cgnode->InEdgeEnd(); nit!=neit; nit++)
         {
             for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*nit)->directCallsBegin(),
                     ecit = (*nit)->directCallsEnd(); cit!=ecit; ++cit)
             {
-                const SVFFunction* caller = (*cit)->getFun();
+                const CallGraphNode* caller = (*cit)->getFun();
                 if(visits.find(caller)==visits.end())
                     worklist.push(caller);
             }
             for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*nit)->indirectCallsBegin(),
                     ecit = (*nit)->indirectCallsEnd(); cit!=ecit; ++cit)
             {
-                const SVFFunction* caller = (*cit)->getFun();
+                const CallGraphNode* caller = (*cit)->getFun();
                 if(visits.find(caller)==visits.end())
                     worklist.push(caller);
             }
@@ -296,7 +296,7 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge,
 bool TCT::isJoinMustExecutedInLoop(const LoopBBs& lp,const ICFGNode* join)
 {
     assert(!lp.empty() && "this is not a loop, empty basic block");
-    const SVFFunction* svffun = join->getFun();
+    const CallGraphNode* svffun = join->getFun();
     const SVFBasicBlock* loopheadbb = svffun->getLoopHeader(lp);
     const SVFBasicBlock* joinbb = join->getBB();
     assert(loopheadbb->getParent()==joinbb->getParent() && "should inside same function");
@@ -322,7 +322,7 @@ void TCT::collectLoopInfoForJoin()
     for(ThreadCallGraph::CallSiteSet::const_iterator it = tcg->joinsitesBegin(), eit = tcg->joinsitesEnd(); it!=eit; ++it)
     {
         const ICFGNode* join = *it;
-        const SVFFunction* svffun = join->getFun();
+        const CallGraphNode* svffun = join->getFun();
         const SVFBasicBlock* svfbb = join->getBB();
 
         if(svffun->hasLoopInfo(svfbb))
@@ -451,15 +451,15 @@ void TCT::build()
 void TCT::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
 {
 
-    const SVFFunction* caller = call->getFun();
+    const CallGraphNode* caller = call->getFun();
     CallSiteID csId = tcg->getCallSiteID(call, callee->getCallGraphNode());
 
     /// handle calling context for candidate functions only
-    if(isCandidateFun(caller) == false)
+    if(isCandidateFun(caller->getFunction()) == false)
         return;
 
     if(inSameCallGraphSCC(
-            tcg->getPTACallGraphNode(caller->getCallGraphNode()),
+            tcg->getPTACallGraphNode(caller),
             tcg->getPTACallGraphNode(callee->getCallGraphNode()))==false)
     {
         pushCxt(cxt,csId);
@@ -474,11 +474,11 @@ void TCT::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* 
 bool TCT::matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
 {
 
-    const SVFFunction* caller = call->getFun();
+    const CallGraphNode* caller = call->getFun();
     CallSiteID csId = tcg->getCallSiteID(call, callee->getCallGraphNode());
 
     /// handle calling context for candidate functions only
-    if(isCandidateFun(caller) == false)
+    if(isCandidateFun(caller->getFunction()) == false)
         return true;
 
     /// partial match
@@ -486,7 +486,7 @@ bool TCT::matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction*
         return true;
 
     if(inSameCallGraphSCC(
-            tcg->getPTACallGraphNode(caller->getCallGraphNode()),
+            tcg->getPTACallGraphNode(caller),
             tcg->getPTACallGraphNode(callee->getCallGraphNode()))==false)
     {
         if(cxt.back() == csId)

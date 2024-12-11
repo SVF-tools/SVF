@@ -467,8 +467,8 @@ protected:
         vfgNode->setICFGNode(icfgNode);
         icfgNode->addVFGNode(vfgNode);
 
-        if(const SVFFunction* fun = icfgNode->getFun())
-            funToVFGNodesMap[fun].insert(vfgNode);
+        if(const CallGraphNode* cgn = icfgNode->getFun())
+            funToVFGNodesMap[cgn->getFunction()].insert(vfgNode);
         else
             globalVFGNodes.insert(vfgNode);
     }

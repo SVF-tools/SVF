@@ -164,8 +164,8 @@ protected:
     /// sanitize Intra edges, verify that both nodes belong to the same function.
     inline void checkIntraEdgeParents(const ICFGNode *srcNode, const ICFGNode *dstNode)
     {
-        const SVFFunction* srcfun = srcNode->getFun();
-        const SVFFunction* dstfun = dstNode->getFun();
+        const CallGraphNode* srcfun = srcNode->getFun();
+        const CallGraphNode* dstfun = dstNode->getFun();
         if(srcfun != nullptr && dstfun != nullptr)
         {
             assert((srcfun == dstfun) && "src and dst nodes of an intra edge should in the same function!" );

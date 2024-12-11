@@ -353,12 +353,12 @@ protected:
     inline void addCPtsToCallSiteRefs(NodeBS& cpts, const CallICFGNode* cs)
     {
         callsiteToRefPointsToMap[cs] |= cpts;
-        funToPointsToMap[cs->getCaller()].insert(cpts);
+        funToPointsToMap[cs->getCaller()->getFunction()].insert(cpts);
     }
     inline void addCPtsToCallSiteMods(NodeBS& cpts, const CallICFGNode* cs)
     {
         callsiteToModPointsToMap[cs] |= cpts;
-        funToPointsToMap[cs->getCaller()].insert(cpts);
+        funToPointsToMap[cs->getCaller()->getFunction()].insert(cpts);
     }
     inline bool hasCPtsList(const SVFFunction* fun) const
     {

@@ -851,7 +851,7 @@ void AEStat::finializeStat()
     generalNumMap["ICFG_Node_Num"] = _ae->svfir->getICFG()->nodeNum;
     u32_t callSiteNum = 0;
     u32_t extCallSiteNum = 0;
-    Set<const SVFFunction *> funs;
+    Set<const CallGraphNode *> funs;
     for (const auto &it: *_ae->svfir->getICFG())
     {
         if (it.second->getFun())

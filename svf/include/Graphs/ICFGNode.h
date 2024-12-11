@@ -73,7 +73,7 @@ public:
     }
 
     /// Return the function of this ICFGNode
-    virtual const SVFFunction* getFun() const
+    virtual const CallGraphNode* getFun() const
     {
         return fun;
     }
@@ -145,7 +145,7 @@ public:
 
 
 protected:
-    const SVFFunction* fun;
+    const CallGraphNode* fun;
     const SVFBasicBlock* bb;
     VFGNodeList VFGNodes; //< a list of VFGNodes
     SVFStmtList pagEdges; //< a list of PAGEdges
@@ -205,7 +205,7 @@ private:
 public:
     IntraICFGNode(NodeID id, const SVFBasicBlock* b, bool isReturn) : ICFGNode(id, IntraBlock), isRet(isReturn)
     {
-        fun = b->getFunction();
+        fun = b->getFunction()->getCallGraphNode();
         bb = b;
     }
 
@@ -292,7 +292,7 @@ public:
     FunEntryICFGNode(NodeID id, const SVFFunction* f);
 
     /// Return function
-    inline const SVFFunction* getFun() const override
+    inline const CallGraphNode* getFun() const override
     {
         return fun;
     }
@@ -339,10 +339,8 @@ public:
 
     const std::string toString() const override;
 
-    const std::string getSourceLoc() const override
-    {
-        return "function entry: " + fun->getSourceLoc();
-    }
+    const std::string getSourceLoc() const override;
+
 };
 
 /*!
@@ -363,7 +361,7 @@ public:
     FunExitICFGNode(NodeID id, const SVFFunction* f);
 
     /// Return function
-    inline const SVFFunction* getFun() const override
+    inline const CallGraphNode* getFun() const override
     {
         return fun;
     }
@@ -410,10 +408,7 @@ public:
 
     const std::string toString() const override;
 
-    const std::string getSourceLoc() const override
-    {
-        return "function ret: " + fun->getSourceLoc();
-    }
+    const std::string getSourceLoc() const override;
 };
 
 /*!
@@ -448,7 +443,7 @@ public:
           isvararg(iv), isVirCallInst(ivc), vtabPtr(nullptr),
           virtualFunIdx(vfi), funNameOfVcall(fnv)
     {
-        fun = b->getFunction();
+        fun = b->getFunction()->getCallGraphNode();
         bb = b;
         type = ty;
     }
@@ -467,7 +462,7 @@ public:
     }
 
     /// Return callsite
-    inline const SVFFunction* getCaller() const
+    inline const CallGraphNode* getCaller() const
     {
         return getFun();
     }

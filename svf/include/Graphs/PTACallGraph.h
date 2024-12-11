@@ -394,7 +394,7 @@ public:
     {
         return getCallSitePair(id).first;
     }
-    inline const SVFFunction* getCallerOfCallSite(CallSiteID id) const
+    inline const CallGraphNode* getCallerOfCallSite(CallSiteID id) const
     {
         return getCallSite(id)->getCaller();
     }
@@ -449,7 +449,7 @@ public:
 
     /// Add indirect call edges
     //@{
-    void addIndirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun);
+    void addIndirectCallGraphEdge(const CallICFGNode* cs,const CallGraphNode* callerFun, const CallGraphNode* calleeFun);
     //@}
 
     /// Get callsites invoking the callee

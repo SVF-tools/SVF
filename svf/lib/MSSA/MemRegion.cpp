@@ -375,10 +375,10 @@ void MRGenerator::updateAliasMRs()
     for(CallSiteToPointsToMap::const_iterator it =  callsiteToModPointsToMap.begin(),
             eit = callsiteToModPointsToMap.end(); it!=eit; ++it)
     {
-        const SVFFunction* fun = it->first->getCaller();
+        const CallGraphNode* fun = it->first->getCaller();
         MRSet aliasMRs;
         const NodeBS& callsiteModCPts = it->second;
-        getAliasMemRegions(aliasMRs,callsiteModCPts,fun);
+        getAliasMemRegions(aliasMRs,callsiteModCPts,fun->getFunction());
         for(MRSet::iterator ait = aliasMRs.begin(), eait = aliasMRs.end(); ait!=eait; ++ait)
         {
             callsiteToModMRsMap[it->first].insert(*ait);
@@ -387,10 +387,10 @@ void MRGenerator::updateAliasMRs()
     for(CallSiteToPointsToMap::const_iterator it =  callsiteToRefPointsToMap.begin(),
             eit = callsiteToRefPointsToMap.end(); it!=eit; ++it)
     {
-        const SVFFunction* fun = it->first->getCaller();
+        const CallGraphNode* fun = it->first->getCaller();
         MRSet aliasMRs;
         const NodeBS& callsiteRefCPts = it->second;
-        getMRsForCallSiteRef(aliasMRs, callsiteRefCPts, fun);
+        getMRsForCallSiteRef(aliasMRs, callsiteRefCPts, fun->getFunction());
         for(MRSet::iterator ait = aliasMRs.begin(), eait = aliasMRs.end(); ait!=eait; ++ait)
         {
             callsiteToRefMRsMap[it->first].insert(*ait);
@@ -433,7 +433,7 @@ bool MRGenerator::addRefSideEffectOfCallSite(const CallICFGNode* cs, const NodeB
         NodeBS refset = refs;
         refset &= getCallSiteArgsPts(cs);
         getEscapObjviaGlobals(refset,refs);
-        addRefSideEffectOfFunction(cs->getCaller(),refset);
+        addRefSideEffectOfFunction(cs->getCaller()->getFunction(),refset);
         return csToRefsMap[cs] |= refset;
     }
     return false;
@@ -449,7 +449,7 @@ bool MRGenerator::addModSideEffectOfCallSite(const CallICFGNode* cs, const NodeB
         NodeBS modset = mods;
         modset &= (getCallSiteArgsPts(cs) | getCallSiteRetPts(cs));
         getEscapObjviaGlobals(modset,mods);
-        addModSideEffectOfFunction(cs->getCaller(),modset);
+        addModSideEffectOfFunction(cs->getCaller()->getFunction(),modset);
         return csToModsMap[cs] |= modset;
     }
     return false;

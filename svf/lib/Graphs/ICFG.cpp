@@ -39,7 +39,7 @@ using namespace SVFUtil;
 
 FunEntryICFGNode::FunEntryICFGNode(NodeID id, const SVFFunction* f) : InterICFGNode(id, FunEntryBlock)
 {
-    fun = f;
+    fun = f->getCallGraphNode();
     // if function is implemented
     if (f->begin() != f->end())
     {
@@ -50,7 +50,7 @@ FunEntryICFGNode::FunEntryICFGNode(NodeID id, const SVFFunction* f) : InterICFGN
 FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f)
     : InterICFGNode(id, FunExitBlock), formalRet(nullptr)
 {
-    fun = f;
+    fun = f->getCallGraphNode();
     // if function is implemented
     if (f->begin() != f->end())
     {
@@ -110,9 +110,14 @@ const std::string FunEntryICFGNode::toString() const
     return rawstr.str();
 }
 
+const std::string FunEntryICFGNode::getSourceLoc() const
+{
+    return "function entry: " + fun->getSourceLoc();
+}
+
 const std::string FunExitICFGNode::toString() const
 {
-    const SVFFunction *fun = getFun();
+    const CallGraphNode *fun = getFun();
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "FunExitICFGNode" << getId();
@@ -127,6 +132,10 @@ const std::string FunExitICFGNode::toString() const
     return rawstr.str();
 }
 
+const std::string FunExitICFGNode::getSourceLoc() const
+{
+    return "function ret: " + fun->getSourceLoc();
+}
 
 const std::string CallICFGNode::toString() const
 {

@@ -31,6 +31,7 @@
 #define SVF_CONTROLDG_H
 
 #include "SVFIR/SVFIR.h"
+#include "Graphs/CallGraph.h"
 
 namespace SVF
 {

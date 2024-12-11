@@ -195,13 +195,13 @@ PTACallGraphEdge* PTACallGraph::getGraphEdge(PTACallGraphNode* src,
 /*!
  * Add indirect call edge to update call graph
  */
-void PTACallGraph::addIndirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun)
+void PTACallGraph::addIndirectCallGraphEdge(const CallICFGNode* cs,const CallGraphNode* callerFun, const CallGraphNode* calleeFun)
 {
 
     PTACallGraphNode* caller =
-        getPTACallGraphNode(callerFun->getCallGraphNode());
+        getPTACallGraphNode(callerFun);
     PTACallGraphNode* callee =
-        getPTACallGraphNode(calleeFun->getCallGraphNode());
+        getPTACallGraphNode(calleeFun);
 
     numOfResolvedIndCallEdge++;
 
@@ -288,8 +288,8 @@ void PTACallGraph::verifyCallGraph()
         if (targets.empty() == false)
         {
             const CallICFGNode* cs = it->first;
-            const SVFFunction* func = cs->getCaller();
-            if (getPTACallGraphNode(func->getCallGraphNode())->isReachableFromProgEntry() == false)
+            const CallGraphNode* func = cs->getCaller();
+            if (getPTACallGraphNode(func)->isReachableFromProgEntry() == false)
                 writeWrnMsg(func->getName() + " has indirect call site but not reachable from main");
         }
     }

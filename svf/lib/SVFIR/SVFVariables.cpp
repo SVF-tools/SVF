@@ -71,7 +71,7 @@ void SVFVar::dump() const
 const SVFFunction* ValVar::getFunction() const
 {
     if(icfgNode)
-        return icfgNode->getFun();
+        return icfgNode->getFun()->getFunction();
     return nullptr;
 }
 
@@ -205,7 +205,7 @@ bool BaseObjVar::isBlackHoleObj() const
 const SVFFunction* BaseObjVar::getFunction() const
 {
     if(icfgNode)
-        return icfgNode->getFun();
+        return icfgNode->getFun()->getFunction();
     return nullptr;
 }
 const std::string BaseObjVar::toString() const

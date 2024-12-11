@@ -97,7 +97,7 @@ void MHP::analyzeInterleaving()
             DBOUT(DMTA, outs() << " >\n-----\n");
 
             /// handle non-candidate function
-            if (!tct->isCandidateFun(curInst->getFun()))
+            if (!tct->isCandidateFun(curInst->getFun()->getFunction()))
             {
                 handleNonCandidateFun(cts);
             }
@@ -182,11 +182,11 @@ void MHP::updateNonCandidateFunInterleaving()
 void MHP::handleNonCandidateFun(const CxtThreadStmt& cts)
 {
     const ICFGNode* curInst = cts.getStmt();
-    const SVFFunction* curfun = curInst->getFun();
+    const CallGraphNode* curfun = curInst->getFun();
     assert((curInst == curfun->getEntryBlock()->front()) && "curInst is not the entry of non candidate function.");
     const CallStrCxt& curCxt = cts.getContext();
     PTACallGraphNode* node =
-        tcg->getPTACallGraphNode(curfun->getCallGraphNode());
+        tcg->getPTACallGraphNode(curfun);
     for (PTACallGraphNode::const_iterator nit = node->OutEdgeBegin(), neit = node->OutEdgeEnd(); nit != neit; nit++)
     {
         const SVFFunction* callee = (*nit)->getDstNode()->getCallNode()->getFunction();
@@ -321,7 +321,7 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
 void MHP::handleRet(const CxtThreadStmt& cts)
 {
     PTACallGraphNode* curFunNode =
-        tcg->getPTACallGraphNode(cts.getStmt()->getFun()->getCallGraphNode());
+        tcg->getPTACallGraphNode(cts.getStmt()->getFun());
     for (PTACallGraphEdge* edge : curFunNode->getInEdges())
     {
         if (SVFUtil::isa<ThreadForkEdge, ThreadJoinEdge>(edge))
@@ -595,9 +595,9 @@ bool MHP::mayHappenInParallelInst(const ICFGNode* i1, const ICFGNode* i2)
 
 bool MHP::mayHappenInParallelCache(const ICFGNode* i1, const ICFGNode* i2)
 {
-    if (!tct->isCandidateFun(i1->getFun()) && !tct->isCandidateFun(i2->getFun()))
+    if (!tct->isCandidateFun(i1->getFun()->getFunction()) && !tct->isCandidateFun(i2->getFun()->getFunction()))
     {
-        FuncPair funpair = std::make_pair(i1->getFun(), i2->getFun());
+        FuncPair funpair = std::make_pair(i1->getFun()->getFunction(), i2->getFun()->getFunction());
         FuncPairToBool::const_iterator it = nonCandidateFuncMHPRelMap.find(funpair);
         if (it == nonCandidateFuncMHPRelMap.end())
         {
@@ -909,7 +909,7 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
     const CallStrCxt& curCxt = cts.getContext();
 
     PTACallGraphNode* curFunNode =
-        getTCG()->getPTACallGraphNode(curInst->getFun()->getCallGraphNode());
+        getTCG()->getPTACallGraphNode(curInst->getFun());
     for (PTACallGraphEdge* edge : curFunNode->getInEdges())
     {
         if (SVFUtil::isa<ThreadForkEdge, ThreadJoinEdge>(edge))

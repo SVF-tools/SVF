@@ -133,9 +133,9 @@ public:
     /// Whether call/return inside recursion
     inline virtual bool isEdgeInRecursion(CallSiteID csId)
     {
-        const SVFFunction* caller = getCallGraph()->getCallerOfCallSite(csId);
+        const CallGraphNode* caller = getCallGraph()->getCallerOfCallSite(csId);
         const CallGraphNode* callee = getCallGraph()->getCalleeOfCallSite(csId);
-        return inSameCallGraphSCC(caller, callee->getFunction());
+        return inSameCallGraphSCC(caller, callee);
     }
     /// Update call graph.
     //@{
@@ -163,7 +163,7 @@ public:
         const SVFFunction* dstfun = edge->getDstNode()->getFun();
 
         if(srcfun && dstfun)
-            return inSameCallGraphSCC(srcfun,dstfun);
+            return inSameCallGraphSCC(srcfun->getCallGraphNode(),dstfun->getCallGraphNode());
 
         assert(edge->isRetVFGEdge() == false && "should not be an inter-procedural return edge" );
 

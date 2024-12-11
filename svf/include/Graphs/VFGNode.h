@@ -78,7 +78,10 @@ public:
     /// Get the function of this SVFGNode
     virtual const SVFFunction* getFun() const
     {
-        return icfgNode->getFun();
+        if (icfgNode->getFun() == nullptr)
+            return nullptr;
+        else
+            return icfgNode->getFun()->getFunction();
     }
 
     /// Return the corresponding LLVM value, if possible, nullptr otherwise.
@@ -1040,7 +1043,7 @@ public:
     /// Receive parameter at callsite
     inline const SVFFunction* getCaller() const
     {
-        return cs->getCaller();
+        return cs->getCaller()->getFunction();
     }
     /// Receive parameter at callsite
     inline const PAGNode* getRev() const
