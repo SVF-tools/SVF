@@ -111,7 +111,7 @@ std::unique_ptr<MemSSA> SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyM
         if (isExtCall(fun))
             continue;
 
-        mssa->buildMemSSA(*(fun->getFunction()));
+        mssa->buildMemSSA(*(fun));
     }
 
     mssa->performStat();

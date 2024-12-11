@@ -85,8 +85,8 @@ public:
     //@}
 
     /// Map from fun to its entry chi set and return mu set
-    typedef Map<const SVFFunction*, CHISet> FunToEntryChiSetMap;
-    typedef Map<const SVFFunction*, MUSet> FunToReturnMuSetMap;
+    typedef Map<const CallGraphNode*, CHISet> FunToEntryChiSetMap;
+    typedef Map<const CallGraphNode*, MUSet> FunToReturnMuSetMap;
 
     /// For phi insertion
     //@{
@@ -123,11 +123,11 @@ protected:
     MemSSAStat* stat;
 
     /// Create mu chi for candidate regions in a function
-    virtual void createMUCHI(const SVFFunction& fun);
+    virtual void createMUCHI(const CallGraphNode& fun);
     /// Insert phi for candidate regions in a function
-    virtual void insertPHI(const SVFFunction& fun);
+    virtual void insertPHI(const CallGraphNode& fun);
     /// SSA rename for a function
-    virtual void SSARename(const SVFFunction& fun);
+    virtual void SSARename(const CallGraphNode& fun);
     /// SSA rename for a basic block
     virtual void SSARenameBB(const SVFBasicBlock& bb);
 private:
@@ -315,7 +315,7 @@ public:
         return mrGen;
     }
     /// We start from here
-    virtual void buildMemSSA(const SVFFunction& fun);
+    virtual void buildMemSSA(const CallGraphNode& fun);
 
     /// Perform statistics
     void performStat();
@@ -357,20 +357,20 @@ public:
 
     /// Has function entry chi or return mu
     //@{
-    inline bool hasFuncEntryChi(const SVFFunction * fun) const
+    inline bool hasFuncEntryChi(const CallGraphNode * fun) const
     {
         return (funToEntryChiSetMap.find(fun) != funToEntryChiSetMap.end());
     }
-    inline bool hasReturnMu(const SVFFunction * fun) const
+    inline bool hasReturnMu(const CallGraphNode * fun) const
     {
         return (funToReturnMuSetMap.find(fun) != funToReturnMuSetMap.end());
     }
 
-    inline CHISet& getFuncEntryChiSet(const SVFFunction * fun)
+    inline CHISet& getFuncEntryChiSet(const CallGraphNode * fun)
     {
         return funToEntryChiSetMap[fun];
     }
-    inline MUSet& getReturnMuSet(const SVFFunction * fun)
+    inline MUSet& getReturnMuSet(const CallGraphNode * fun)
     {
         return funToReturnMuSetMap[fun];
     }
