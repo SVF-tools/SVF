@@ -240,16 +240,16 @@ ICFG::~ICFG()
 
 
 /// Add a function entry node
-FunEntryICFGNode* ICFG::getFunEntryICFGNode(const SVFFunction*  fun)
+FunEntryICFGNode* ICFG::getFunEntryICFGNode(const CallGraphNode*  fun)
 {
-    FunEntryICFGNode* entry = getFunEntryBlock(fun->getCallGraphNode());
+    FunEntryICFGNode* entry = getFunEntryBlock(fun);
     assert (entry && "fun entry not created in ICFGBuilder?");
     return entry;
 }
 /// Add a function exit node
-FunExitICFGNode* ICFG::getFunExitICFGNode(const SVFFunction*  fun)
+FunExitICFGNode* ICFG::getFunExitICFGNode(const CallGraphNode*  fun)
 {
-    FunExitICFGNode* exit = getFunExitBlock(fun->getCallGraphNode());
+    FunExitICFGNode* exit = getFunExitBlock(fun);
     assert (exit && "fun exit not created in ICFGBuilder?");
     return exit;
 }

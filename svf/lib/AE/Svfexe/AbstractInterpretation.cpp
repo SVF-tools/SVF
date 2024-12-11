@@ -94,7 +94,7 @@ void AbstractInterpretation::initWTO()
             recursiveFuns.insert(it->second); // Mark the function as recursive
         if (it->second->getFunction()->isDeclaration())
             continue;
-        auto* wto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(it->second->getFunction()));
+        auto* wto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(it->second));
         wto->init();
         funcToWTO[it->second] = wto;
     }

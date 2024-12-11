@@ -201,18 +201,18 @@ protected:
         return retICFGNode;
     }
 
-    virtual inline FunEntryICFGNode* addFunEntryICFGNode(const CallGraphNode* svfFunc)
+    virtual inline FunEntryICFGNode* addFunEntryICFGNode(const CallGraphNode* cgn)
     {
-        FunEntryICFGNode* sNode = new FunEntryICFGNode(totalICFGNode++,svfFunc);
+        FunEntryICFGNode* sNode = new FunEntryICFGNode(totalICFGNode++, cgn);
         addICFGNode(sNode);
-        return FunToFunEntryNodeMap[svfFunc] = sNode;
+        return FunToFunEntryNodeMap[cgn] = sNode;
     }
 
-    virtual inline FunExitICFGNode* addFunExitICFGNode(const CallGraphNode* svfFunc)
+    virtual inline FunExitICFGNode* addFunExitICFGNode(const CallGraphNode* cgn)
     {
-        FunExitICFGNode* sNode = new FunExitICFGNode(totalICFGNode++, svfFunc);
+        FunExitICFGNode* sNode = new FunExitICFGNode(totalICFGNode++, cgn);
         addICFGNode(sNode);
-        return FunToFunExitNodeMap[svfFunc] = sNode;
+        return FunToFunExitNodeMap[cgn] = sNode;
     }
 
     /// Add a ICFG node
@@ -229,9 +229,9 @@ public:
     //@{
 
 
-    FunEntryICFGNode* getFunEntryICFGNode(const SVFFunction*  fun);
+    FunEntryICFGNode* getFunEntryICFGNode(const CallGraphNode*  fun);
 
-    FunExitICFGNode* getFunExitICFGNode(const SVFFunction*  fun);
+    FunExitICFGNode* getFunExitICFGNode(const CallGraphNode*  fun);
 
     inline GlobalICFGNode* getGlobalICFGNode() const
     {

@@ -506,14 +506,14 @@ private:
     /// Add function arguments
     inline void addFunArgs(const SVFFunction* fun, const SVFVar* arg)
     {
-        FunEntryICFGNode* funEntryBlockNode = icfg->getFunEntryICFGNode(fun);
+        FunEntryICFGNode* funEntryBlockNode = icfg->getFunEntryICFGNode(fun->getCallGraphNode());
         funEntryBlockNode->addFormalParms(arg);
         funArgsListMap[fun].push_back(arg);
     }
     /// Add function returns
     inline void addFunRet(const SVFFunction* fun, const SVFVar* ret)
     {
-        FunExitICFGNode* funExitBlockNode = icfg->getFunExitICFGNode(fun);
+        FunExitICFGNode* funExitBlockNode = icfg->getFunExitICFGNode(fun->getCallGraphNode());
         funExitBlockNode->addFormalRet(ret);
         funRetMap[fun] = ret;
     }

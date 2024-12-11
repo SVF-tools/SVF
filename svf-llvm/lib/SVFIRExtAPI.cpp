@@ -276,7 +276,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
                 /// Connect actual parameter to formal parameter of the start routine
                 if (actualParm->isPointer() && formalParm->getType()->isPointerTy())
                 {
-                    FunEntryICFGNode *entry = pag->getICFG()->getFunEntryICFGNode(forkedFun);
+                    FunEntryICFGNode *entry = pag->getICFG()->getFunEntryICFGNode(forkedFun->getCallGraphNode());
                     addThreadForkEdge(actualParm->getId(), llvmModuleSet()->getValueNode(formalParm), callICFGNode, entry);
                 }
             }

@@ -403,7 +403,7 @@ protected:
     inline void addFormalINSVFGNode(const FunEntryICFGNode* funEntry,  const MRVer* resVer, const NodeID nodeId)
     {
         FormalINSVFGNode* sNode = new FormalINSVFGNode(nodeId, resVer, funEntry);
-        addSVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(funEntry->getFun()->getFunction()));
+        addSVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(funEntry->getFun()));
         setDef(resVer,sNode);
         funToFormalINMap[funEntry->getFun()->getFunction()].set(sNode->getId());
     }
@@ -412,7 +412,7 @@ protected:
     inline void addFormalOUTSVFGNode(const FunExitICFGNode* funExit, const MRVer* ver, const NodeID nodeId)
     {
         FormalOUTSVFGNode* sNode = new FormalOUTSVFGNode(nodeId, ver, funExit);
-        addSVFGNode(sNode,pag->getICFG()->getFunExitICFGNode(funExit->getFun()->getFunction()));
+        addSVFGNode(sNode,pag->getICFG()->getFunExitICFGNode(funExit->getFun()));
         funToFormalOUTMap[funExit->getFun()->getFunction()].set(sNode->getId());
     }
 

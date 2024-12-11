@@ -1040,7 +1040,7 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
 
     if(Value* src = inst.getReturnValue())
     {
-        const SVFFunction *F = llvmModuleSet()->getSVFFunction(inst.getParent()->getParent());
+        const CallGraphNode *F = llvmModuleSet()->getCallGraphNode(inst.getParent()->getParent());
 
         NodeID rnF = getReturnNode(F);
         NodeID vnS = getValueNode(src);
@@ -1233,7 +1233,7 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
 
     assert(F);
     CallICFGNode* callICFGNode = llvmModuleSet()->getCallICFGNode(cs);
-    const SVFFunction* svffun = llvmModuleSet()->getSVFFunction(F);
+    const CallGraphNode* cgn = llvmModuleSet()->getCallGraphNode(F);
     DBOUT(DPAGBuild,
           outs() << "handle direct call " << LLVMUtil::dumpValue(cs) << " callee " << F->getName().str() << "\n");
 
@@ -1242,8 +1242,8 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
     //Does it actually return a ptr?
     if (!cs->getType()->isVoidTy())
     {
-        NodeID srcret = getReturnNode(svffun);
-        FunExitICFGNode* exitICFGNode = pag->getICFG()->getFunExitICFGNode(svffun);
+        NodeID srcret = getReturnNode(cgn);
+        FunExitICFGNode* exitICFGNode = pag->getICFG()->getFunExitICFGNode(cgn);
         addRetEdge(srcret, dstrec,callICFGNode, exitICFGNode);
     }
     //Iterators for the actual and formal parameters
@@ -1265,19 +1265,19 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
 
         NodeID dstFA = getValueNode(FA);
         NodeID srcAA = getValueNode(AA);
-        FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svffun);
+        FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(cgn);
         addCallEdge(srcAA, dstFA, callICFGNode, entry);
     }
     //Any remaining actual args must be varargs.
     if (F->isVarArg())
     {
-        NodeID vaF = getVarargNode(svffun);
+        NodeID vaF = getVarargNode(cgn);
         DBOUT(DPAGBuild, outs() << "\n      varargs:");
         for (; itA != ieA; ++itA)
         {
             const Value* AA = cs->getArgOperand(itA);
             NodeID vnAA = getValueNode(AA);
-            FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svffun);
+            FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(cgn);
             addCallEdge(vnAA,vaF, callICFGNode,entry);
         }
     }
@@ -1466,7 +1466,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         /// We will have one unique function exit ICFGNode for all returns
         if(curInst->isRetInst())
         {
-            icfgNode = pag->getICFG()->getFunExitICFGNode(curInst->getFunction());
+            icfgNode = pag->getICFG()->getFunExitICFGNode(curInst->getFunction()->getCallGraphNode());
         }
         else
         {
@@ -1479,7 +1479,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     else if (const SVFArgument* arg = SVFUtil::dyn_cast<SVFArgument>(curVal))
     {
         assert(curBB && (curBB->getParent()->getEntryBlock() == curBB));
-        icfgNode = pag->getICFG()->getFunEntryICFGNode(arg->getParent());
+        icfgNode = pag->getICFG()->getFunEntryICFGNode(arg->getParent()->getCallGraphNode());
     }
     else if (SVFUtil::isa<SVFConstant>(curVal) ||
              SVFUtil::isa<SVFFunction>(curVal) ||
