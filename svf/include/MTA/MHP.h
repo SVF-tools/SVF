@@ -202,12 +202,12 @@ private:
         return tct->getTCTNode(curTid)->isMultiforked();
     }
     /// Push calling context
-    inline void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
+    inline void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const CallGraphNode* callee)
     {
         tct->pushCxt(cxt,call,callee);
     }
     /// Match context
-    inline bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
+    inline bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const CallGraphNode* callee)
     {
         return tct->matchCxt(cxt,call,callee);
     }
@@ -342,7 +342,7 @@ public:
     {
         NodeID parentTid = tct->getParentThread(tid);
         const CxtThread& parentct = tct->getTCTNode(parentTid)->getCxtThread();
-        const SVFFunction* parentRoutine = tct->getStartRoutineOfCxtThread(parentct);
+        const CallGraphNode* parentRoutine = tct->getStartRoutineOfCxtThread(parentct);
         return parentRoutine->getExitBB()->back();
     }
 
@@ -450,12 +450,12 @@ private:
     //@}
 
     /// Push calling context
-    inline void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
+    inline void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const CallGraphNode* callee)
     {
         tct->pushCxt(cxt,call,callee);
     }
     /// Match context
-    inline bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
+    inline bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const CallGraphNode* callee)
     {
         return tct->matchCxt(cxt,call,callee);
     }
