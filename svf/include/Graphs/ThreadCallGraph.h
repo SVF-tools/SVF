@@ -350,7 +350,7 @@ public:
     /// Add direct/indirect thread fork edges
     //@{
     bool addDirectForkEdge(const CallICFGNode* cs);
-    bool addIndirectForkEdge(const CallICFGNode* cs, const SVFFunction* callee);
+    bool addIndirectForkEdge(const CallICFGNode* cs, const CallGraphNode* callee);
     //@}
 
     /// Add thread join edges

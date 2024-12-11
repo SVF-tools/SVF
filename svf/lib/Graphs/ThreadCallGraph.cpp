@@ -86,7 +86,7 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
                     const BaseObjVar* obj = pag->getBaseObject(objPN->getId());
                     if(obj->isFunction())
                     {
-                        const SVFFunction* svfCallee = SVFUtil::cast<FunObjVar>(obj)->getFunction();
+                        const CallGraphNode* svfCallee = SVFUtil::cast<FunObjVar>(obj)->getCallGraphNode();
                         this->addIndirectForkEdge(*it, svfCallee);
                     }
                 }
@@ -153,12 +153,12 @@ bool ThreadCallGraph::addDirectForkEdge(const CallICFGNode* cs)
 /*!
  * Add indirect fork edge to update call graph
  */
-bool ThreadCallGraph::addIndirectForkEdge(const CallICFGNode* cs, const SVFFunction* calleefun)
+bool ThreadCallGraph::addIndirectForkEdge(const CallICFGNode* cs, const CallGraphNode* calleefun)
 {
     PTACallGraphNode* caller =
         getPTACallGraphNode(cs->getCaller());
     PTACallGraphNode* callee =
-        getPTACallGraphNode(calleefun->getCallGraphNode());
+        getPTACallGraphNode(calleefun);
 
     CallSiteID csId = addCallSite(cs, callee->getCallNode());
 
