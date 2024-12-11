@@ -320,6 +320,7 @@ class GepValVar: public ValVar
 
 private:
     AccessPath ap;	// AccessPath
+    NodeID base;	// base node id
     const SVFType* gepValType;
 
     /// Constructor to create empty GeValVar (for SVFIRReader/deserialization)
@@ -347,9 +348,9 @@ public:
     //@}
 
     /// Constructor
-    GepValVar(const SVFValue* val, NodeID i, const AccessPath& ap,
+    GepValVar(NodeID baseID, const SVFValue* val, NodeID i, const AccessPath& ap,
               const SVFType* ty)
-        : ValVar(val, i, GepValNode), ap(ap), gepValType(ty)
+        : ValVar(val, i, GepValNode), ap(ap), base(baseID), gepValType(ty)
     {
     }
 
@@ -357,6 +358,12 @@ public:
     inline APOffset getConstantFieldIdx() const
     {
         return ap.getConstantStructFldIdx();
+    }
+
+    /// Return the base object from which this GEP node came from.
+    inline NodeID getBaseNode(void) const
+    {
+        return base;
     }
 
     /// Return name of a LLVM value

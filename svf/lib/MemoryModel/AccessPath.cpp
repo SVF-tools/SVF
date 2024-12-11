@@ -50,7 +50,7 @@ bool AccessPath::isConstantOffset() const
 {
     for(auto it : idxOperandPairs)
     {
-        if(SVFUtil::isa<SVFConstantInt>(it.first->getValue()) == false)
+        if(SVFUtil::isa<ConstantIntValVar>(it.first) == false)
             return false;
     }
     return true;
@@ -97,9 +97,8 @@ u32_t AccessPath::getElementNum(const SVFType* type) const
 //  then the return byte offset is 16 Bytes.
 u32_t AccessPath::getStructFieldOffset(const SVFVar* idxOperandVar, const SVFStructType* idxOperandType) const
 {
-    const SVFValue* idxValue = idxOperandVar->getValue();
     u32_t structByteOffset = 0;
-    if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxValue))
+    if (const ConstantIntValVar *op = SVFUtil::dyn_cast<ConstantIntValVar>(idxOperandVar))
     {
         for (u32_t structField = 0; structField < (u32_t) op->getSExtValue(); ++structField)
         {
@@ -132,7 +131,7 @@ APOffset AccessPath::computeConstantByteOffset() const
         /// For example, there is struct DEST{int a, char b[10], int c[5]}
         /// (1) %c = getelementptr inbounds %struct.DEST, %struct.DEST* %arr, i32 0, i32 2
         //  (2) %arrayidx = getelementptr inbounds [10 x i8], [10 x i8]* %b, i64 0, i64 8
-        const SVFValue* value = idxOperandPairs[i].first->getValue();
+        const SVFVar* var = idxOperandPairs[i].first;
         /// for (1) offsetVarAndGepTypePairs.size()  = 2
         ///     i = 0, type: %struct.DEST*, PtrType, op = 0
         ///     i = 1, type: %struct.DEST, StructType, op = 2
@@ -157,7 +156,7 @@ APOffset AccessPath::computeConstantByteOffset() const
             type2 = gepSrcPointeeType();
         }
 
-        const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
+        const ConstantIntValVar* op = SVFUtil::dyn_cast<ConstantIntValVar>(var);
         if (const SVFStructType* structType = SVFUtil::dyn_cast<SVFStructType>(type))
         {
             /// for (1) structType: %struct.DEST
