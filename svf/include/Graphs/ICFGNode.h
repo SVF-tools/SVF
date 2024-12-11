@@ -289,7 +289,7 @@ private:
     FunEntryICFGNode(NodeID id) : InterICFGNode(id, FunEntryBlock) {}
 
 public:
-    FunEntryICFGNode(NodeID id, const SVFFunction* f);
+    FunEntryICFGNode(NodeID id, const CallGraphNode* f);
 
     /// Return function
     inline const CallGraphNode* getFun() const override
@@ -358,7 +358,7 @@ private:
     FunExitICFGNode(NodeID id) : InterICFGNode(id, FunExitBlock), formalRet{} {}
 
 public:
-    FunExitICFGNode(NodeID id, const SVFFunction* f);
+    FunExitICFGNode(NodeID id, const CallGraphNode* f);
 
     /// Return function
     inline const CallGraphNode* getFun() const override

@@ -37,9 +37,9 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-FunEntryICFGNode::FunEntryICFGNode(NodeID id, const SVFFunction* f) : InterICFGNode(id, FunEntryBlock)
+FunEntryICFGNode::FunEntryICFGNode(NodeID id, const CallGraphNode* f) : InterICFGNode(id, FunEntryBlock)
 {
-    fun = f->getCallGraphNode();
+    fun = f;
     // if function is implemented
     if (f->begin() != f->end())
     {
@@ -47,10 +47,10 @@ FunEntryICFGNode::FunEntryICFGNode(NodeID id, const SVFFunction* f) : InterICFGN
     }
 }
 
-FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f)
+FunExitICFGNode::FunExitICFGNode(NodeID id, const CallGraphNode* f)
     : InterICFGNode(id, FunExitBlock), formalRet(nullptr)
 {
-    fun = f->getCallGraphNode();
+    fun = f;
     // if function is implemented
     if (f->begin() != f->end())
     {
@@ -242,14 +242,14 @@ ICFG::~ICFG()
 /// Add a function entry node
 FunEntryICFGNode* ICFG::getFunEntryICFGNode(const SVFFunction*  fun)
 {
-    FunEntryICFGNode* entry = getFunEntryBlock(fun);
+    FunEntryICFGNode* entry = getFunEntryBlock(fun->getCallGraphNode());
     assert (entry && "fun entry not created in ICFGBuilder?");
     return entry;
 }
 /// Add a function exit node
 FunExitICFGNode* ICFG::getFunExitICFGNode(const SVFFunction*  fun)
 {
-    FunExitICFGNode* exit = getFunExitBlock(fun);
+    FunExitICFGNode* exit = getFunExitBlock(fun->getCallGraphNode());
     assert (exit && "fun exit not created in ICFGBuilder?");
     return exit;
 }
@@ -436,7 +436,7 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
         const PTACallGraph::FunctionSet & functions = iter->second;
         for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
-            const SVFFunction*  callee = (*func_iter)->getFunction();
+            const CallGraphNode*  callee = *func_iter;
             RetICFGNode* retBlockNode = const_cast<RetICFGNode*>(callBlockNode->getRetICFGNode());
             /// if this is an external function (no function body), connect calleeEntryNode to calleeExitNode
             if (isExtCall(callee))

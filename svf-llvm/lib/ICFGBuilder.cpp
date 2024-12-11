@@ -353,11 +353,11 @@ IntraICFGNode* ICFGBuilder::addIntraBlockICFGNode(const Instruction* inst)
 FunEntryICFGNode* ICFGBuilder::addFunEntryBlock(const Function* fun)
 {
     return llvmModuleSet()->FunToFunEntryNodeMap[fun] =
-               icfg->addFunEntryICFGNode(llvmModuleSet()->getSVFFunction(fun));
+               icfg->addFunEntryICFGNode(llvmModuleSet()->getCallGraphNode(fun));
 }
 
 inline FunExitICFGNode* ICFGBuilder::addFunExitBlock(const Function* fun)
 {
     return llvmModuleSet()->FunToFunExitNodeMap[fun] =
-               icfg->addFunExitICFGNode(llvmModuleSet()->getSVFFunction(fun));
+               icfg->addFunExitICFGNode(llvmModuleSet()->getCallGraphNode(fun));
 }

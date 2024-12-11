@@ -121,7 +121,9 @@ public:
     typedef SVFLoopAndDomInfo::BBSet BBSet;
     typedef SVFLoopAndDomInfo::BBList BBList;
     typedef SVFLoopAndDomInfo::LoopBBs LoopBBs;
-    typedef std::vector<const SVFBasicBlock*>::const_iterator bb_const_iterator;
+
+    typedef BasicBlockGraph::IDToNodeMapTy::const_iterator const_bb_iterator;
+
 
 private:
     const SVFFunction* fun;
@@ -304,9 +306,29 @@ public:
         return allArgs[idx];
     }
 
+    inline const SVFBasicBlock* front() const
+    {
+        return getEntryBlock();
+    }
 
+    inline const SVFBasicBlock* back() const
+    {
+        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
+        /// Carefully! 'back' is just the last basic block of function,
+        /// but not necessarily a exit basic block
+        /// more refer to: https://github.com/SVF-tools/SVF/pull/1262
+        return std::prev(bbGraph->end())->second;
+    }
 
+    inline const_bb_iterator begin() const
+    {
+        return bbGraph->begin();
+    }
 
+    inline const_bb_iterator end() const
+    {
+        return bbGraph->end();
+    }
 
     inline const std::string &getName() const
     {

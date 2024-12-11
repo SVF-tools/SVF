@@ -58,8 +58,8 @@ public:
     typedef ICFGNodeIDToNodeMapTy::iterator iterator;
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;
 
-    typedef Map<const SVFFunction*, FunEntryICFGNode *> FunToFunEntryNodeMapTy;
-    typedef Map<const SVFFunction*, FunExitICFGNode *> FunToFunExitNodeMapTy;
+    typedef Map<const CallGraphNode*, FunEntryICFGNode *> FunToFunEntryNodeMapTy;
+    typedef Map<const CallGraphNode*, FunExitICFGNode *> FunToFunExitNodeMapTy;
     typedef std::vector<const SVFLoop *> SVFLoopVec;
     typedef Map<const ICFGNode *, SVFLoopVec> ICFGNodeToSVFLoopVec;
 
@@ -201,14 +201,14 @@ protected:
         return retICFGNode;
     }
 
-    virtual inline FunEntryICFGNode* addFunEntryICFGNode(const SVFFunction* svfFunc)
+    virtual inline FunEntryICFGNode* addFunEntryICFGNode(const CallGraphNode* svfFunc)
     {
         FunEntryICFGNode* sNode = new FunEntryICFGNode(totalICFGNode++,svfFunc);
         addICFGNode(sNode);
         return FunToFunEntryNodeMap[svfFunc] = sNode;
     }
 
-    virtual inline FunExitICFGNode* addFunExitICFGNode(const SVFFunction* svfFunc)
+    virtual inline FunExitICFGNode* addFunExitICFGNode(const CallGraphNode* svfFunc)
     {
         FunExitICFGNode* sNode = new FunExitICFGNode(totalICFGNode++, svfFunc);
         addICFGNode(sNode);
@@ -284,7 +284,7 @@ private:
     }
 
     /// Get/Add a function entry node
-    inline FunEntryICFGNode* getFunEntryBlock(const SVFFunction* fun)
+    inline FunEntryICFGNode* getFunEntryBlock(const CallGraphNode* fun)
     {
         FunToFunEntryNodeMapTy::const_iterator it = FunToFunEntryNodeMap.find(fun);
         if (it == FunToFunEntryNodeMap.end())
@@ -293,7 +293,7 @@ private:
     }
 
     /// Get/Add a function exit node
-    inline FunExitICFGNode* getFunExitBlock(const SVFFunction* fun)
+    inline FunExitICFGNode* getFunExitBlock(const CallGraphNode* fun)
     {
         FunToFunExitNodeMapTy::const_iterator it = FunToFunExitNodeMap.find(fun);
         if (it == FunToFunExitNodeMap.end())
