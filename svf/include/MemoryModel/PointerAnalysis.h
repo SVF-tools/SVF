@@ -101,11 +101,11 @@ public:
     //@{
     typedef Set<const CallICFGNode*> CallSiteSet;
     typedef SVFIR::CallSiteToFunPtrMap CallSiteToFunPtrMap;
-    typedef Set<const SVFFunction*> FunctionSet;
+    typedef Set<const CallGraphNode*> FunctionSet;
     typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     typedef Set<const GlobalObjVar*> VTableSet;
-    typedef Set<const SVFFunction*> VFunSet;
+    typedef Set<const CallGraphNode*> VFunSet;
     //@}
 
     static const std::string aliasTestMayAlias;

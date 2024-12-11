@@ -45,7 +45,7 @@ class CHNode;
 class GlobalObjVar;
 
 typedef Set<const GlobalObjVar*> VTableSet;
-typedef Set<const SVFFunction*> VFunSet;
+typedef Set<const CallGraphNode*> VFunSet;
 
 /// Common base for class hierarchy graph. Only implements what PointerAnalysis needs.
 class CommonCHGraph

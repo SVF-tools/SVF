@@ -325,7 +325,7 @@ void PointerAnalysis::printIndCSTargets(const CallICFGNode* cs, const FunctionSe
         FunctionSet::const_iterator feit = targets.end();
         for (; fit != feit; ++fit)
         {
-            const SVFFunction* callee = *fit;
+            const CallGraphNode* callee = *fit;
             outs() << "\n\t" << callee->getName();
         }
     }
@@ -402,10 +402,10 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
                 if(SVFUtil::matchArgs(cs, callee) == false)
                     continue;
 
-                if(0 == getIndCallMap()[cs].count(callee))
+                if(0 == getIndCallMap()[cs].count(callee->getCallGraphNode()))
                 {
-                    newEdges[cs].insert(callee);
-                    getIndCallMap()[cs].insert(callee);
+                    newEdges[cs].insert(callee->getCallGraphNode());
+                    getIndCallMap()[cs].insert(callee->getCallGraphNode());
 
                     callgraph->addIndirectCallGraphEdge(cs, cs->getCaller(), callee);
                     // FIXME: do we need to update llvm call graph here?
@@ -471,8 +471,8 @@ void PointerAnalysis::connectVCallToVFns(const CallICFGNode* cs, const VFunSet &
     for (VFunSet::const_iterator fit = vfns.begin(),
             feit = vfns.end(); fit != feit; ++fit)
     {
-        const SVFFunction* callee = *fit;
-        callee = callee->getDefFunForMultipleModule();
+        const CallGraphNode* callee = *fit;
+        callee = callee->getDefFunForMultipleModule()->getCallGraphNode();
         if (getIndCallMap()[cs].count(callee) > 0)
             continue;
         if(cs->arg_size() == callee->arg_size() ||
@@ -481,7 +481,7 @@ void PointerAnalysis::connectVCallToVFns(const CallICFGNode* cs, const VFunSet &
             newEdges[cs].insert(callee);
             getIndCallMap()[cs].insert(callee);
             const CallICFGNode* callBlockNode = cs;
-            callgraph->addIndirectCallGraphEdge(callBlockNode, cs->getCaller(),callee);
+            callgraph->addIndirectCallGraphEdge(callBlockNode, cs->getCaller(),callee->getFunction());
         }
     }
 }

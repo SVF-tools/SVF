@@ -142,7 +142,7 @@ public:
             const FunctionSet & functions = iter->second;
             for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
             {
-                const SVFFunction* func = *func_iter;
+                const SVFFunction* func = (*func_iter)->getFunction();
                 getSVFG()->connectCallerAndCallee(newcs, func, svfgEdges);
             }
         }

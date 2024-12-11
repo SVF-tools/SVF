@@ -945,8 +945,8 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
         const PointerAnalysis::FunctionSet & functions = iter->second;
         for (PointerAnalysis::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
-            const SVFFunction*  func = *func_iter;
-            connectCallerAndCallee(newcs, func, vfEdgesAtIndCallSite);
+            const CallGraphNode*  func = *func_iter;
+            connectCallerAndCallee(newcs, func->getFunction(), vfEdgesAtIndCallSite);
         }
     }
 }

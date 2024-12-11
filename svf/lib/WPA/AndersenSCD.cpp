@@ -283,7 +283,7 @@ bool AndersenSCD::updateCallGraph(const PointerAnalysis::CallSiteToFunPtrMap& ca
     {
         for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
         {
-            connectCaller2CalleeParams(it->first,(*cit)->getCallGraphNode(),cpySrcNodes);
+            connectCaller2CalleeParams(it->first,*cit,cpySrcNodes);
         }
     }
 

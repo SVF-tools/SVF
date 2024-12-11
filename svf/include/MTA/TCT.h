@@ -293,7 +293,7 @@ public:
         for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
                 ecit = callees.end(); cit!=ecit; cit++)
         {
-            if(candidateFuncSet.find((*cit))!=candidateFuncSet.end())
+            if(candidateFuncSet.find((*cit)->getFunction())!=candidateFuncSet.end())
                 return true;
         }
         return false;

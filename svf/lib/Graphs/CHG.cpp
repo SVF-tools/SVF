@@ -169,7 +169,7 @@ void CHGraph::getVFnsFromVtbls(const CallICFGNode* callsite, const VTableSet &vt
                  */
                 if (funName.size() == 0)
                 {
-                    virtualFunctions.insert(callee);
+                    virtualFunctions.insert(callee->getCallGraphNode());
                 }
                 else if (funName[0] == '~')
                 {
@@ -185,7 +185,7 @@ void CHGraph::getVFnsFromVtbls(const CallICFGNode* callsite, const VTableSet &vt
                      */
                     if (calleeName[0] == '~')
                     {
-                        virtualFunctions.insert(callee);
+                        virtualFunctions.insert(callee->getCallGraphNode());
                     }
                 }
                 else
@@ -196,7 +196,7 @@ void CHGraph::getVFnsFromVtbls(const CallICFGNode* callsite, const VTableSet &vt
                      */
                     if (funName.compare(calleeName) == 0)
                     {
-                        virtualFunctions.insert(callee);
+                        virtualFunctions.insert(callee->getCallGraphNode());
                     }
                 }
             }

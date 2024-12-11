@@ -427,7 +427,7 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
         const PTACallGraph::FunctionSet & functions = iter->second;
         for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
-            const SVFFunction*  callee = *func_iter;
+            const SVFFunction*  callee = (*func_iter)->getFunction();
             RetICFGNode* retBlockNode = const_cast<RetICFGNode*>(callBlockNode->getRetICFGNode());
             /// if this is an external function (no function body), connect calleeEntryNode to calleeExitNode
             if (isExtCall(callee))

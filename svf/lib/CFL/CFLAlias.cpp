@@ -179,7 +179,7 @@ bool CFLAlias::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     {
         for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
         {
-            connectCaller2CalleeParams(it->first,(*cit)->getCallGraphNode());
+            connectCaller2CalleeParams(it->first,*cit);
         }
     }
 

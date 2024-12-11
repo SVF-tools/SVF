@@ -244,7 +244,7 @@ public:
     typedef std::pair<const CallICFGNode*, const CallGraphNode*> CallSitePair;
     typedef Map<CallSitePair, CallSiteID> CallSiteToIdMap;
     typedef Map<CallSiteID, CallSitePair> IdToCallSiteMap;
-    typedef Set<const SVFFunction*> FunctionSet;
+    typedef Set<const CallGraphNode*> FunctionSet;
     typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
     typedef CallGraphEdgeSet::iterator CallGraphEdgeIter;
     typedef CallGraphEdgeSet::const_iterator CallGraphEdgeConstIter;
@@ -418,8 +418,7 @@ public:
             for (CallGraphEdgeSet::const_iterator it = getCallEdgeBegin(cs), eit =
                         getCallEdgeEnd(cs); it != eit; ++it)
             {
-                callees.insert(
-                    (*it)->getDstNode()->getCallNode()->getFunction());
+                callees.insert((*it)->getDstNode()->getCallNode());
             }
         }
     }

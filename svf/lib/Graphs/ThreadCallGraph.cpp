@@ -66,8 +66,8 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
         for (PTACallGraph::FunctionSet::const_iterator func_iter =
                     functions.begin(); func_iter != functions.end(); func_iter++)
         {
-            const SVFFunction* callee = *func_iter;
-            this->addIndirectCallGraphEdge(cs, cs->getCaller(), callee);
+            const CallGraphNode* callee = *func_iter;
+            this->addIndirectCallGraphEdge(cs, cs->getCaller(), callee->getFunction());
         }
     }
 
