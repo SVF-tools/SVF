@@ -239,7 +239,7 @@ class PTACallGraph : public GenericPTACallGraphTy
 
 public:
     typedef PTACallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
-    typedef Map<const SVFFunction*, PTACallGraphNode*> FunToCallGraphNodeMap;
+    typedef Map<const CallGraphNode*, PTACallGraphNode*> FunToCallGraphNodeMap;
     typedef Map<const CallICFGNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
     typedef std::pair<const CallICFGNode*, const SVFFunction*> CallSitePair;
     typedef Map<CallSitePair, CallSiteID> CallSiteToIdMap;
@@ -358,7 +358,8 @@ public:
     {
         return getGNode(id);
     }
-    inline PTACallGraphNode* getCallGraphNode(const SVFFunction* fun) const
+
+    inline PTACallGraphNode* getCallGraphNode(const CallGraphNode* fun) const
     {
         FunToCallGraphNodeMap::const_iterator it = funToCallGraphNodeMap.find(fun);
         assert(it!=funToCallGraphNodeMap.end() && "call graph node not found!!");

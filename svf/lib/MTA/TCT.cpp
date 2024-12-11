@@ -55,7 +55,7 @@ bool TCT::isInLoopInstruction(const ICFGNode* inst)
     {
         const ICFGNode* inst = worklist.pop();
         insts.insert(inst);
-        PTACallGraphNode* cgnode = tcg->getCallGraphNode(inst->getFun());
+        PTACallGraphNode* cgnode = tcg->getCallGraphNode(inst->getFun()->getCallGraphNode());
         for(PTACallGraphNode::const_iterator nit = cgnode->InEdgeBegin(), neit = cgnode->InEdgeEnd(); nit!=neit; nit++)
         {
             for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*nit)->directCallsBegin(),
@@ -99,10 +99,10 @@ bool TCT::isInRecursion(const ICFGNode* inst) const
     {
         const SVFFunction* svffun = worklist.pop();
         visits.insert(svffun);
-        if(tcgSCC->isInCycle(tcg->getCallGraphNode(svffun)->getId()))
+        if(tcgSCC->isInCycle(tcg->getCallGraphNode(svffun->getCallGraphNode())->getId()))
             return true;
 
-        const PTACallGraphNode* cgnode = tcg->getCallGraphNode(svffun);
+        const PTACallGraphNode* cgnode = tcg->getCallGraphNode(svffun->getCallGraphNode());
 
         for(PTACallGraphNode::const_iterator nit = cgnode->InEdgeBegin(), neit = cgnode->InEdgeEnd(); nit!=neit; nit++)
         {
@@ -160,7 +160,7 @@ void TCT::markRelProcs()
  */
 void TCT::markRelProcs(const SVFFunction* svffun)
 {
-    PTACallGraphNode* cgnode = tcg->getCallGraphNode(svffun);
+    PTACallGraphNode* cgnode = tcg->getCallGraphNode(svffun->getCallGraphNode());
     FIFOWorkList<const PTACallGraphNode*> worklist;
     PTACGNodeSet visited;
     worklist.push(cgnode);
@@ -192,7 +192,7 @@ void TCT::collectEntryFunInCallGraph()
         const SVFFunction* fun = item.second->getFunction();
         if (SVFUtil::isExtCall(fun))
             continue;
-        PTACallGraphNode* node = tcg->getCallGraphNode(fun);
+        PTACallGraphNode* node = tcg->getCallGraphNode(fun->getCallGraphNode());
         if (!node->hasIncomingEdge())
         {
             entryFuncSet.insert(fun);
@@ -406,7 +406,7 @@ void TCT::build()
     while(!ctpList.empty())
     {
         CxtThreadProc ctp = popFromCTPWorkList();
-        PTACallGraphNode* cgNode = tcg->getCallGraphNode(ctp.getProc());
+        PTACallGraphNode* cgNode = tcg->getCallGraphNode(ctp.getProc()->getCallGraphNode());
         if(isCandidateFun(cgNode->getCallNode()->getFunction()) == false)
             continue;
 
@@ -452,7 +452,7 @@ void TCT::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* 
     if(isCandidateFun(caller) == false)
         return;
 
-    if(inSameCallGraphSCC(tcg->getCallGraphNode(caller),tcg->getCallGraphNode(callee))==false)
+    if(inSameCallGraphSCC(tcg->getCallGraphNode(caller->getCallGraphNode()),tcg->getCallGraphNode(callee->getCallGraphNode()))==false)
     {
         pushCxt(cxt,csId);
         DBOUT(DMTA,dumpCxt(cxt));
@@ -477,7 +477,7 @@ bool TCT::matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction*
     if(cxt.empty())
         return true;
 
-    if(inSameCallGraphSCC(tcg->getCallGraphNode(caller),tcg->getCallGraphNode(callee))==false)
+    if(inSameCallGraphSCC(tcg->getCallGraphNode(caller->getCallGraphNode()),tcg->getCallGraphNode(callee->getCallGraphNode()))==false)
     {
         if(cxt.back() == csId)
             cxt.pop_back();

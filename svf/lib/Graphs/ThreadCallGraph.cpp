@@ -126,11 +126,11 @@ void ThreadCallGraph::updateJoinEdge(PointerAnalysis* pta)
 bool ThreadCallGraph::addDirectForkEdge(const CallICFGNode* cs)
 {
 
-    PTACallGraphNode* caller = getCallGraphNode(cs->getCaller());
+    PTACallGraphNode* caller = getCallGraphNode(cs->getCaller()->getCallGraphNode());
     const SVFFunction* forkee = SVFUtil::dyn_cast<FunValVar>(tdAPI->getForkedFun(cs))
                                 ->getCallGraphNode()->getFunction();
     assert(forkee && "callee does not exist");
-    PTACallGraphNode* callee = getCallGraphNode(forkee->getDefFunForMultipleModule());
+    PTACallGraphNode* callee = getCallGraphNode(forkee->getDefFunForMultipleModule()->getCallGraphNode());
     CallSiteID csId = addCallSite(cs, callee->getCallNode()->getFunction());
 
     if (!hasGraphEdge(caller, callee, PTACallGraphEdge::TDForkEdge, csId))
@@ -153,8 +153,8 @@ bool ThreadCallGraph::addDirectForkEdge(const CallICFGNode* cs)
  */
 bool ThreadCallGraph::addIndirectForkEdge(const CallICFGNode* cs, const SVFFunction* calleefun)
 {
-    PTACallGraphNode* caller = getCallGraphNode(cs->getCaller());
-    PTACallGraphNode* callee = getCallGraphNode(calleefun);
+    PTACallGraphNode* caller = getCallGraphNode(cs->getCaller()->getCallGraphNode());
+    PTACallGraphNode* callee = getCallGraphNode(calleefun->getCallGraphNode());
 
     CallSiteID csId = addCallSite(cs, callee->getCallNode()->getFunction());
 
@@ -182,18 +182,17 @@ bool ThreadCallGraph::addIndirectForkEdge(const CallICFGNode* cs, const SVFFunct
 void ThreadCallGraph::addDirectJoinEdge(const CallICFGNode* cs,const CallSiteSet& forkset)
 {
 
-    PTACallGraphNode* joinFunNode = getCallGraphNode(cs->getCaller());
+    PTACallGraphNode* joinFunNode = getCallGraphNode(cs->getCaller()->getCallGraphNode());
 
     for (CallSiteSet::const_iterator it = forkset.begin(), eit = forkset.end(); it != eit; ++it)
     {
 
-        const SVFFunction* threadRoutineFun =
+        const CallGraphNode* threadRoutineFun =
             SVFUtil::dyn_cast<FunValVar>(tdAPI->getForkedFun(*it))
-            ->getCallGraphNode()
-            ->getFunction();
+            ->getCallGraphNode();
         assert(threadRoutineFun && "thread routine function does not exist");
         PTACallGraphNode* threadRoutineFunNode = getCallGraphNode(threadRoutineFun);
-        CallSiteID csId = addCallSite(cs, threadRoutineFun);
+        CallSiteID csId = addCallSite(cs, threadRoutineFun->getFunction());
 
         if (!hasThreadJoinEdge(cs,joinFunNode,threadRoutineFunNode, csId))
         {

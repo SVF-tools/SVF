@@ -126,7 +126,7 @@ PTACallGraph::PTACallGraph(const CallGraph& other)
         const CallGraphNode* cgn = item.second;
         PTACallGraphNode* callGraphNode = new PTACallGraphNode(cgn->getId(), cgn);
         addGNode(cgn->getId(),callGraphNode);
-        funToCallGraphNodeMap[cgn->getFunction()] = callGraphNode;
+        funToCallGraphNodeMap[cgn] = callGraphNode;
     }
 
     /// copy edges
@@ -198,8 +198,8 @@ PTACallGraphEdge* PTACallGraph::getGraphEdge(PTACallGraphNode* src,
 void PTACallGraph::addIndirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun)
 {
 
-    PTACallGraphNode* caller = getCallGraphNode(callerFun);
-    PTACallGraphNode* callee = getCallGraphNode(calleeFun);
+    PTACallGraphNode* caller = getCallGraphNode(callerFun->getCallGraphNode());
+    PTACallGraphNode* callee = getCallGraphNode(calleeFun->getCallGraphNode());
 
     numOfResolvedIndCallEdge++;
 
@@ -219,7 +219,7 @@ void PTACallGraph::addIndirectCallGraphEdge(const CallICFGNode* cs,const SVFFunc
  */
 void PTACallGraph::getAllCallSitesInvokingCallee(const SVFFunction* callee, PTACallGraphEdge::CallInstSet& csSet)
 {
-    PTACallGraphNode* callGraphNode = getCallGraphNode(callee);
+    PTACallGraphNode* callGraphNode = getCallGraphNode(callee->getCallGraphNode());
     for(PTACallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
             it!=eit; ++it)
     {
@@ -241,7 +241,7 @@ void PTACallGraph::getAllCallSitesInvokingCallee(const SVFFunction* callee, PTAC
  */
 void PTACallGraph::getDirCallSitesInvokingCallee(const SVFFunction* callee, PTACallGraphEdge::CallInstSet& csSet)
 {
-    PTACallGraphNode* callGraphNode = getCallGraphNode(callee);
+    PTACallGraphNode* callGraphNode = getCallGraphNode(callee->getCallGraphNode());
     for(PTACallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
             it!=eit; ++it)
     {
@@ -258,7 +258,7 @@ void PTACallGraph::getDirCallSitesInvokingCallee(const SVFFunction* callee, PTAC
  */
 void PTACallGraph::getIndCallSitesInvokingCallee(const SVFFunction* callee, PTACallGraphEdge::CallInstSet& csSet)
 {
-    PTACallGraphNode* callGraphNode = getCallGraphNode(callee);
+    PTACallGraphNode* callGraphNode = getCallGraphNode(callee->getCallGraphNode());
     for(PTACallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
             it!=eit; ++it)
     {
@@ -284,7 +284,7 @@ void PTACallGraph::verifyCallGraph()
         {
             const CallICFGNode* cs = it->first;
             const SVFFunction* func = cs->getCaller();
-            if (getCallGraphNode(func)->isReachableFromProgEntry() == false)
+            if (getCallGraphNode(func->getCallGraphNode())->isReachableFromProgEntry() == false)
                 writeWrnMsg(func->getName() + " has indirect call site but not reachable from main");
         }
     }
@@ -295,7 +295,7 @@ void PTACallGraph::verifyCallGraph()
  */
 bool PTACallGraph::isReachableBetweenFunctions(const SVFFunction* srcFn, const SVFFunction* dstFn) const
 {
-    PTACallGraphNode* dstNode = getCallGraphNode(dstFn);
+    PTACallGraphNode* dstNode = getCallGraphNode(dstFn->getCallGraphNode());
 
     std::stack<const PTACallGraphNode*> nodeStack;
     NodeBS visitedNodes;

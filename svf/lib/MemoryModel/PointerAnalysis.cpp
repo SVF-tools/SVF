@@ -139,7 +139,7 @@ bool PointerAnalysis::isLocalVarInRecursiveFun(NodeID id) const
     {
         if(const SVFFunction* svffun = pag->getGNode(id)->getFunction())
         {
-            return callGraphSCC->isInCycle(getCallGraph()->getCallGraphNode(svffun)->getId());
+            return callGraphSCC->isInCycle(getCallGraph()->getCallGraphNode(svffun->getCallGraphNode())->getId());
         }
     }
     return false;
