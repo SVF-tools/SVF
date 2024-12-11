@@ -506,7 +506,7 @@ protected:
         {
             CallInstSet csSet;
             /// use pre-analysis call graph to approximate all potential callsites
-            _ander->getCallGraph()->getIndCallSitesInvokingCallee(fun,csSet);
+            _ander->getCallGraph()->getIndCallSitesInvokingCallee(fun->getCallGraphNode(),csSet);
             for(CallInstSet::const_iterator it = csSet.begin(), eit = csSet.end(); it!=eit; ++it)
             {
                 NodeID funPtr = _pag->getFunPtr(*it);

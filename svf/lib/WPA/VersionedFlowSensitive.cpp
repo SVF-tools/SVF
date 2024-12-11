@@ -485,7 +485,7 @@ void VersionedFlowSensitive::buildDeltaMaps(void)
         {
             PTACallGraphEdge::CallInstSet callsites;
             /// use pre-analysis call graph to approximate all potential callsites
-            ander->getCallGraph()->getIndCallSitesInvokingCallee(fn, callsites);
+            ander->getCallGraph()->getIndCallSitesInvokingCallee(fn->getCallGraphNode(), callsites);
             isDelta = !callsites.empty();
 
             if (isDelta)

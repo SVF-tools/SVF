@@ -454,13 +454,13 @@ public:
 
     /// Get callsites invoking the callee
     //@{
-    void getAllCallSitesInvokingCallee(const SVFFunction* callee, PTACallGraphEdge::CallInstSet& csSet);
-    void getDirCallSitesInvokingCallee(const SVFFunction* callee, PTACallGraphEdge::CallInstSet& csSet);
-    void getIndCallSitesInvokingCallee(const SVFFunction* callee, PTACallGraphEdge::CallInstSet& csSet);
+    void getAllCallSitesInvokingCallee(const CallGraphNode* callee, PTACallGraphEdge::CallInstSet& csSet);
+    void getDirCallSitesInvokingCallee(const CallGraphNode* callee, PTACallGraphEdge::CallInstSet& csSet);
+    void getIndCallSitesInvokingCallee(const CallGraphNode* callee, PTACallGraphEdge::CallInstSet& csSet);
     //@}
 
     /// Whether its reachable between two functions
-    bool isReachableBetweenFunctions(const SVFFunction* srcFn, const SVFFunction* dstFn) const;
+    bool isReachableBetweenFunctions(const CallGraphNode* srcFn, const CallGraphNode* dstFn) const;
 
     /// Dump the graph
     void dump(const std::string& filename);

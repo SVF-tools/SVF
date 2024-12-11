@@ -361,7 +361,7 @@ void SVFG::connectIndirectSVFGEdges()
         else if(const FormalINSVFGNode* formalIn = SVFUtil::dyn_cast<FormalINSVFGNode>(node))
         {
             PTACallGraphEdge::CallInstSet callInstSet;
-            mssa->getPTA()->getCallGraph()->getDirCallSitesInvokingCallee(formalIn->getFun(),callInstSet);
+            mssa->getPTA()->getCallGraph()->getDirCallSitesInvokingCallee(formalIn->getFun()->getCallGraphNode(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
             {
                 const CallICFGNode* cs = *it;
@@ -379,7 +379,7 @@ void SVFG::connectIndirectSVFGEdges()
         {
             PTACallGraphEdge::CallInstSet callInstSet;
             // const MemSSA::RETMU* retMu = formalOut->getRetMU();
-            mssa->getPTA()->getCallGraph()->getDirCallSitesInvokingCallee(formalOut->getFun(),callInstSet);
+            mssa->getPTA()->getCallGraph()->getDirCallSitesInvokingCallee(formalOut->getFun()->getCallGraphNode(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
             {
                 const CallICFGNode* cs = *it;

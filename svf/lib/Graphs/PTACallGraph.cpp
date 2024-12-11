@@ -219,10 +219,10 @@ void PTACallGraph::addIndirectCallGraphEdge(const CallICFGNode* cs,const CallGra
 /*!
  * Get all callsite invoking this callee
  */
-void PTACallGraph::getAllCallSitesInvokingCallee(const SVFFunction* callee, PTACallGraphEdge::CallInstSet& csSet)
+void PTACallGraph::getAllCallSitesInvokingCallee(const CallGraphNode* callee, PTACallGraphEdge::CallInstSet& csSet)
 {
     PTACallGraphNode* callGraphNode =
-        getPTACallGraphNode(callee->getCallGraphNode());
+        getPTACallGraphNode(callee);
     for(PTACallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
             it!=eit; ++it)
     {
@@ -242,10 +242,10 @@ void PTACallGraph::getAllCallSitesInvokingCallee(const SVFFunction* callee, PTAC
 /*!
  * Get direct callsite invoking this callee
  */
-void PTACallGraph::getDirCallSitesInvokingCallee(const SVFFunction* callee, PTACallGraphEdge::CallInstSet& csSet)
+void PTACallGraph::getDirCallSitesInvokingCallee(const CallGraphNode* callee, PTACallGraphEdge::CallInstSet& csSet)
 {
     PTACallGraphNode* callGraphNode =
-        getPTACallGraphNode(callee->getCallGraphNode());
+        getPTACallGraphNode(callee);
     for(PTACallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
             it!=eit; ++it)
     {
@@ -260,10 +260,10 @@ void PTACallGraph::getDirCallSitesInvokingCallee(const SVFFunction* callee, PTAC
 /*!
  * Get indirect callsite invoking this callee
  */
-void PTACallGraph::getIndCallSitesInvokingCallee(const SVFFunction* callee, PTACallGraphEdge::CallInstSet& csSet)
+void PTACallGraph::getIndCallSitesInvokingCallee(const CallGraphNode* callee, PTACallGraphEdge::CallInstSet& csSet)
 {
     PTACallGraphNode* callGraphNode =
-        getPTACallGraphNode(callee->getCallGraphNode());
+        getPTACallGraphNode(callee);
     for(PTACallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
             it!=eit; ++it)
     {
@@ -298,9 +298,9 @@ void PTACallGraph::verifyCallGraph()
 /*!
  * Whether its reachable between two functions
  */
-bool PTACallGraph::isReachableBetweenFunctions(const SVFFunction* srcFn, const SVFFunction* dstFn) const
+bool PTACallGraph::isReachableBetweenFunctions(const CallGraphNode* srcFn, const CallGraphNode* dstFn) const
 {
-    PTACallGraphNode* dstNode = getPTACallGraphNode(dstFn->getCallGraphNode());
+    PTACallGraphNode* dstNode = getPTACallGraphNode(dstFn);
 
     std::stack<const PTACallGraphNode*> nodeStack;
     NodeBS visitedNodes;
@@ -312,7 +312,7 @@ bool PTACallGraph::isReachableBetweenFunctions(const SVFFunction* srcFn, const S
         PTACallGraphNode* node = const_cast<PTACallGraphNode*>(nodeStack.top());
         nodeStack.pop();
 
-        if (node->getCallNode()->getFunction() == srcFn)
+        if (node->getCallNode() == srcFn)
             return true;
 
         for (CallGraphEdgeConstIter it = node->InEdgeBegin(), eit = node->InEdgeEnd(); it != eit; ++it)
