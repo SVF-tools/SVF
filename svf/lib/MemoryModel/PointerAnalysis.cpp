@@ -436,7 +436,6 @@ void PointerAnalysis::getVFnsFromCHA(const CallICFGNode* cs, VFunSet &vfns)
  */
 void PointerAnalysis::getVFnsFromPts(const CallICFGNode* cs, const PointsTo &target, VFunSet &vfns)
 {
-
     if (chgraph->csHasVtblsBasedonCHA(cs))
     {
         Set<const SVFGlobalValue*> vtbls;
@@ -446,10 +445,17 @@ void PointerAnalysis::getVFnsFromPts(const CallICFGNode* cs, const PointsTo &tar
             const PAGNode *ptdnode = pag->getGNode(*it);
             if (ptdnode->hasValue())
             {
-                if (const SVFGlobalValue *vtbl = SVFUtil::dyn_cast<SVFGlobalValue>(ptdnode->getValue()))
-                {
-                    if (chaVtbls.find(vtbl) != chaVtbls.end())
-                        vtbls.insert(vtbl);
+                // ptd is global obj var or ptd's base is global val/obj var
+                if (SVFUtil::isa<GlobalValueValVar, GlobalValueObjVar>(ptdnode)) {
+                    const SVFGlobalValue* globalValue = SVFUtil::dyn_cast<SVFGlobalValue>(ptdnode->getValue());
+                    if (chaVtbls.find(globalValue) != chaVtbls.end())
+                        vtbls.insert(globalValue);
+                } else if (const GepObjVar *gep_vtbl = SVFUtil::dyn_cast<GepObjVar>(ptdnode)) {
+                    if (SVFUtil::isa<GlobalValueValVar, GlobalValueObjVar>(pag->getGNode(gep_vtbl->getBaseNode()))) {
+                        const SVFGlobalValue* globalValue = SVFUtil::dyn_cast<SVFGlobalValue>(gep_vtbl->getValue());
+                        if (chaVtbls.find(globalValue) != chaVtbls.end())
+                            vtbls.insert(globalValue);
+                    }
                 }
             }
         }

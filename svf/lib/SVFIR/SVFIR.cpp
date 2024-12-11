@@ -391,7 +391,7 @@ NodeID SVFIR::addGepValNode(const SVFValue* curInst,const SVFValue* gepVal, cons
     assert(0==GepValObjMap[curInst].count(std::make_pair(base, ap))
            && "this node should not be created before");
     GepValObjMap[curInst][std::make_pair(base, ap)] = i;
-    GepValVar *node = new GepValVar(gepVal, i, ap, type);
+    GepValVar *node = new GepValVar(base, gepVal, i, ap, type);
     return addValNode(gepVal, node, i);
 }
 
