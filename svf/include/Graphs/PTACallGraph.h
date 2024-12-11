@@ -33,6 +33,7 @@
 #include "Graphs/GenericGraph.h"
 #include "SVFIR/SVFValue.h"
 #include "Graphs/ICFG.h"
+#include "Graphs/CallGraph.h"
 #include <set>
 
 namespace SVF
@@ -175,11 +176,11 @@ typedef GenericNode<PTACallGraphNode, PTACallGraphEdge> GenericPTACallGraphNodeT
 class PTACallGraphNode : public GenericPTACallGraphNodeTy
 {
 private:
-    const SVFFunction* fun;
+    const CallGraphNode* fun;
 
 public:
     /// Constructor
-    PTACallGraphNode(NodeID i, const SVFFunction* f) : GenericPTACallGraphNodeTy(i,CallNodeKd), fun(f)
+    PTACallGraphNode(NodeID i, const CallGraphNode* f) : GenericPTACallGraphNodeTy(i,CallNodeKd), fun(f)
     {
 
     }
@@ -190,7 +191,7 @@ public:
     }
 
     /// Get function of this call node
-    inline const SVFFunction* getFunction() const
+    inline const CallGraphNode* getCallNode() const
     {
         return fun;
     }
@@ -415,7 +416,8 @@ public:
             for (CallGraphEdgeSet::const_iterator it = getCallEdgeBegin(cs), eit =
                         getCallEdgeEnd(cs); it != eit; ++it)
             {
-                callees.insert((*it)->getDstNode()->getFunction());
+                callees.insert(
+                    (*it)->getDstNode()->getCallNode()->getFunction());
             }
         }
     }

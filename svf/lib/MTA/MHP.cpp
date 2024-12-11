@@ -188,7 +188,7 @@ void MHP::handleNonCandidateFun(const CxtThreadStmt& cts)
     PTACallGraphNode* node = tcg->getCallGraphNode(curfun);
     for (PTACallGraphNode::const_iterator nit = node->OutEdgeBegin(), neit = node->OutEdgeEnd(); nit != neit; nit++)
     {
-        const SVFFunction* callee = (*nit)->getDstNode()->getFunction();
+        const SVFFunction* callee = (*nit)->getDstNode()->getCallNode()->getFunction();
         if (!isExtCall(callee))
         {
             const ICFGNode* calleeInst = callee->getEntryBlock()->front();
@@ -216,7 +216,7 @@ void MHP::handleFork(const CxtThreadStmt& cts, NodeID rootTid)
                 ecgIt = tcg->getForkEdgeEnd(cbn);
                 cgIt != ecgIt; ++cgIt)
         {
-            const SVFFunction* svfroutine = (*cgIt)->getDstNode()->getFunction();
+            const SVFFunction* svfroutine = (*cgIt)->getDstNode()->getCallNode()->getFunction();
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt, cbn, svfroutine);
             const ICFGNode* stmt = svfroutine->getEntryBlock()->front();
@@ -301,7 +301,7 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
                 cgIt != ecgIt; ++cgIt)
         {
 
-            const SVFFunction* svfcallee = (*cgIt)->getDstNode()->getFunction();
+            const SVFFunction* svfcallee = (*cgIt)->getDstNode()->getCallNode()->getFunction();
             if (isExtCall(svfcallee))
                 continue;
             CallStrCxt newCxt = curCxt;
@@ -329,7 +329,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
                 cit != ecit; ++cit)
         {
             CallStrCxt newCxt = cts.getContext();
-            if (matchCxt(newCxt, *cit, curFunNode->getFunction()))
+            if (matchCxt(newCxt, *cit, curFunNode->getCallNode()->getFunction()))
             {
                 for(const ICFGEdge* outEdge : cts.getStmt()->getOutEdges())
                 {
@@ -346,7 +346,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
                 cit != ecit; ++cit)
         {
             CallStrCxt newCxt = cts.getContext();
-            if (matchCxt(newCxt, *cit, curFunNode->getFunction()))
+            if (matchCxt(newCxt, *cit, curFunNode->getCallNode()->getFunction()))
             {
                 for(const ICFGEdge* outEdge : cts.getStmt()->getOutEdges())
                 {
@@ -529,7 +529,7 @@ bool MHP::isConnectedfromMain(const SVFFunction* fun)
     while (!worklist.empty())
     {
         const PTACallGraphNode* node = worklist.pop();
-        if ("main" == node->getFunction()->getName())
+        if ("main" == node->getCallNode()->getName())
             return true;
         for (PTACallGraphNode::const_iterator nit = node->InEdgeBegin(), neit = node->InEdgeEnd(); nit != neit; nit++)
         {
@@ -796,7 +796,7 @@ void ForkJoinAnalysis::handleFork(const CxtStmt& cts, NodeID rootTid)
                 ecgIt = getTCG()->getForkEdgeEnd(cbn);
                 cgIt != ecgIt; ++cgIt)
         {
-            const SVFFunction* callee = (*cgIt)->getDstNode()->getFunction();
+            const SVFFunction* callee = (*cgIt)->getDstNode()->getCallNode()->getFunction();
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt, cbn, callee);
             CxtThread ct(newCxt, call);
@@ -887,7 +887,7 @@ void ForkJoinAnalysis::handleCall(const CxtStmt& cts, NodeID rootTid)
                 ecgIt = getTCG()->getCallEdgeEnd(cbn);
                 cgIt != ecgIt; ++cgIt)
         {
-            const SVFFunction* svfcallee = (*cgIt)->getDstNode()->getFunction();
+            const SVFFunction* svfcallee = (*cgIt)->getDstNode()->getCallNode()->getFunction();
             if (isExtCall(svfcallee))
                 continue;
             CallStrCxt newCxt = curCxt;
@@ -916,7 +916,8 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
         {
             CallStrCxt newCxt = curCxt;
             const ICFGNode* curNode = (*cit);
-            if (matchCxt(newCxt, SVFUtil::cast<CallICFGNode>(curNode), curFunNode->getFunction()))
+            if (matchCxt(newCxt, SVFUtil::cast<CallICFGNode>(curNode),
+                         curFunNode->getCallNode()->getFunction()))
             {
                 for(const ICFGEdge* outEdge : curNode->getOutEdges())
                 {
@@ -935,7 +936,8 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
             CallStrCxt newCxt = curCxt;
             const ICFGNode* curNode = (*cit);
 
-            if (matchCxt(newCxt, SVFUtil::cast<CallICFGNode>(curNode), curFunNode->getFunction()))
+            if (matchCxt(newCxt, SVFUtil::cast<CallICFGNode>(curNode),
+                         curFunNode->getCallNode()->getFunction()))
             {
                 for(const ICFGEdge* outEdge : curNode->getOutEdges())
                 {

@@ -91,7 +91,7 @@ bool PTACallGraphNode::isReachableFromProgEntry() const
         PTACallGraphNode* node = const_cast<PTACallGraphNode*>(nodeStack.top());
         nodeStack.pop();
 
-        if (SVFUtil::isProgEntryFunction(node->getFunction()))
+        if (SVFUtil::isProgEntryFunction(node->getCallNode()->getFunction()))
             return true;
 
         for (const_iterator it = node->InEdgeBegin(), eit = node->InEdgeEnd(); it != eit; ++it)
@@ -124,7 +124,7 @@ PTACallGraph::PTACallGraph(const CallGraph& other)
     for (const auto& item : other)
     {
         const CallGraphNode* cgn = item.second;
-        PTACallGraphNode* callGraphNode = new PTACallGraphNode(cgn->getId(), cgn->getFunction());
+        PTACallGraphNode* callGraphNode = new PTACallGraphNode(cgn->getId(), cgn);
         addGNode(cgn->getId(),callGraphNode);
         funToCallGraphNodeMap[cgn->getFunction()] = callGraphNode;
     }
@@ -137,7 +137,7 @@ PTACallGraph::PTACallGraph(const CallGraph& other)
         {
             PTACallGraphNode* src = getCallGraphNode(edge->getSrcID());
             PTACallGraphNode* dst = getCallGraphNode(edge->getDstID());
-            CallSiteID csId = addCallSite(cs, dst->getFunction());
+            CallSiteID csId = addCallSite(cs, dst->getCallNode()->getFunction());
 
             PTACallGraphEdge* newEdge = new PTACallGraphEdge(src,dst, PTACallGraphEdge::CallRetEdge,csId);
             newEdge->addDirectCallSite(cs);
@@ -203,7 +203,7 @@ void PTACallGraph::addIndirectCallGraphEdge(const CallICFGNode* cs,const SVFFunc
 
     numOfResolvedIndCallEdge++;
 
-    CallSiteID csId = addCallSite(cs, callee->getFunction());
+    CallSiteID csId = addCallSite(cs, callee->getCallNode()->getFunction());
 
     if(!hasGraphEdge(caller,callee, PTACallGraphEdge::CallRetEdge,csId))
     {
@@ -307,7 +307,7 @@ bool PTACallGraph::isReachableBetweenFunctions(const SVFFunction* srcFn, const S
         PTACallGraphNode* node = const_cast<PTACallGraphNode*>(nodeStack.top());
         nodeStack.pop();
 
-        if (node->getFunction() == srcFn)
+        if (node->getCallNode()->getFunction() == srcFn)
             return true;
 
         for (CallGraphEdgeConstIter it = node->InEdgeBegin(), eit = node->InEdgeEnd(); it != eit; ++it)
@@ -364,7 +364,7 @@ struct DOTGraphTraits<PTACallGraph*> : public DefaultDOTGraphTraits
 
     static std::string getNodeAttributes(PTACallGraphNode*node, PTACallGraph*)
     {
-        const SVFFunction* fun = node->getFunction();
+        const SVFFunction* fun = node->getCallNode()->getFunction();
         if (!SVFUtil::isExtCall(fun))
         {
             return "shape=box";

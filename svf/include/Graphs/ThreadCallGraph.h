@@ -73,8 +73,8 @@ public:
         std::stringstream rawstr(str);
         rawstr << "ThreadForkEdge ";
         rawstr << "CallSiteID: " << getCallSiteID();
-        rawstr << " srcNodeID " << getSrcID() << " (fun: " << getSrcNode()->getFunction()->getName() << ")";
-        rawstr << " dstNodeID " << getDstID() << " (fun: " << getDstNode()->getFunction()->getName() << ")";
+        rawstr << " srcNodeID " << getSrcID() << " (fun: " << getSrcNode()->getCallNode()->getName() << ")";
+        rawstr << " dstNodeID " << getDstID() << " (fun: " << getDstNode()->getCallNode()->getName() << ")";
         return rawstr.str();
     }
 
@@ -113,8 +113,8 @@ public:
         std::stringstream rawstr(str);
         rawstr << "ThreadJoinEdge ";
         rawstr << "CallSiteID: " << getCallSiteID();
-        rawstr << " srcNodeID " << getSrcID() << " (fun: " << getSrcNode()->getFunction()->getName() << ")";
-        rawstr << " dstNodeID " << getDstID() << " (fun: " << getDstNode()->getFunction()->getName() << ")";
+        rawstr << " srcNodeID " << getSrcID() << " (fun: " << getSrcNode()->getCallNode()->getName() << ")";
+        rawstr << " dstNodeID " << getDstID() << " (fun: " << getDstNode()->getCallNode()->getName() << ")";
         return rawstr.str();
     }
 

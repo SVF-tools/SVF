@@ -140,7 +140,7 @@ void TCT::markRelProcs()
         for(ThreadCallGraph::ForkEdgeSet::const_iterator nit = tcg->getForkEdgeBegin(*it), neit = tcg->getForkEdgeEnd(*it); nit!=neit; nit++)
         {
             const PTACallGraphNode* forkeeNode = (*nit)->getDstNode();
-            candidateFuncSet.insert(forkeeNode->getFunction());
+            candidateFuncSet.insert(forkeeNode->getCallNode()->getFunction());
         }
 
     }
@@ -168,7 +168,7 @@ void TCT::markRelProcs(const SVFFunction* svffun)
     while(!worklist.empty())
     {
         const PTACallGraphNode* node = worklist.pop();
-        candidateFuncSet.insert(node->getFunction());
+        candidateFuncSet.insert(node->getCallNode()->getFunction());
         for(PTACallGraphNode::const_iterator nit = node->InEdgeBegin(), neit = node->InEdgeEnd(); nit!=neit; nit++)
         {
             const PTACallGraphNode* srcNode = (*nit)->getSrcNode();
@@ -244,7 +244,7 @@ void TCT::collectMultiForkedThreads()
  */
 void TCT::handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge, const CallICFGNode* cs)
 {
-    const SVFFunction* callee = cgEdge->getDstNode()->getFunction();
+    const SVFFunction* callee = cgEdge->getDstNode()->getCallNode()->getFunction();
 
     CallStrCxt cxt(ctp.getContext());
     CallStrCxt oldCxt = cxt;
@@ -407,7 +407,7 @@ void TCT::build()
     {
         CxtThreadProc ctp = popFromCTPWorkList();
         PTACallGraphNode* cgNode = tcg->getCallGraphNode(ctp.getProc());
-        if(isCandidateFun(cgNode->getFunction()) == false)
+        if(isCandidateFun(cgNode->getCallNode()->getFunction()) == false)
             continue;
 
         for(PTACallGraphNode::const_iterator nit = cgNode->OutEdgeBegin(), neit = cgNode->OutEdgeEnd(); nit!=neit; nit++)

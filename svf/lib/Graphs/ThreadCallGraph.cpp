@@ -131,11 +131,11 @@ bool ThreadCallGraph::addDirectForkEdge(const CallICFGNode* cs)
                                 ->getCallGraphNode()->getFunction();
     assert(forkee && "callee does not exist");
     PTACallGraphNode* callee = getCallGraphNode(forkee->getDefFunForMultipleModule());
-    CallSiteID csId = addCallSite(cs, callee->getFunction());
+    CallSiteID csId = addCallSite(cs, callee->getCallNode()->getFunction());
 
     if (!hasGraphEdge(caller, callee, PTACallGraphEdge::TDForkEdge, csId))
     {
-        assert(cs->getCaller() == caller->getFunction() && "callee instruction not inside caller??");
+        assert(cs->getCaller() == caller->getCallNode()->getFunction() && "callee instruction not inside caller??");
 
         ThreadForkEdge* edge = new ThreadForkEdge(caller, callee, csId);
         edge->addDirectCallSite(cs);
@@ -156,11 +156,11 @@ bool ThreadCallGraph::addIndirectForkEdge(const CallICFGNode* cs, const SVFFunct
     PTACallGraphNode* caller = getCallGraphNode(cs->getCaller());
     PTACallGraphNode* callee = getCallGraphNode(calleefun);
 
-    CallSiteID csId = addCallSite(cs, callee->getFunction());
+    CallSiteID csId = addCallSite(cs, callee->getCallNode()->getFunction());
 
     if (!hasGraphEdge(caller, callee, PTACallGraphEdge::TDForkEdge, csId))
     {
-        assert(cs->getCaller() == caller->getFunction() && "callee instruction not inside caller??");
+        assert(cs->getCaller() == caller->getCallNode()->getFunction() && "callee instruction not inside caller??");
 
         ThreadForkEdge* edge = new ThreadForkEdge(caller, callee, csId);
         edge->addInDirectCallSite(cs);
@@ -197,7 +197,7 @@ void ThreadCallGraph::addDirectJoinEdge(const CallICFGNode* cs,const CallSiteSet
 
         if (!hasThreadJoinEdge(cs,joinFunNode,threadRoutineFunNode, csId))
         {
-            assert(cs->getCaller() == joinFunNode->getFunction() && "callee instruction not inside caller??");
+            assert(cs->getCaller() == joinFunNode->getCallNode()->getFunction() && "callee instruction not inside caller??");
             ThreadJoinEdge* edge = new ThreadJoinEdge(joinFunNode,threadRoutineFunNode,csId);
             edge->addDirectCallSite(cs);
 
