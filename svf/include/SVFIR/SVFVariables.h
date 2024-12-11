@@ -776,7 +776,7 @@ public:
     virtual const std::string toString() const;
 };
 
-class GlobalValueValvar: public ConstantValVar
+class GlobalValueValVar : public ConstantValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -807,7 +807,7 @@ public:
     //@}
 
     /// Constructor
-    GlobalValueValvar(const SVFValue* val, NodeID i, const ICFGNode* icn,
+    GlobalValueValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
                        PNODEK ty = GlobalValueValNode)
         : ConstantValVar(val, i,  icn, ty)
     {

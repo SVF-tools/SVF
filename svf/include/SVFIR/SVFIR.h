@@ -601,7 +601,7 @@ private:
 
     inline NodeID addGlobalValueValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode)
     {
-        SVFVar* node = new GlobalValueValvar(curInst, i, icfgNode);
+        SVFVar* node = new GlobalValueValVar(curInst, i, icfgNode);
         return addNode(node, i);
     }
 

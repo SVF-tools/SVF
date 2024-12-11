@@ -235,7 +235,7 @@ const std::string ConstantDataValVar::toString() const {
     return rawstr.str();
 }
 
-const std::string GlobalValueValvar::toString() const {
+const std::string GlobalValueValVar::toString() const {
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "GlobalValueValVar ID: " << getId();
