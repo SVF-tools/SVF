@@ -133,7 +133,7 @@ bool ThreadCallGraph::addDirectForkEdge(const CallICFGNode* cs)
     assert(forkee && "callee does not exist");
     PTACallGraphNode* callee = getPTACallGraphNode(
         forkee->getDefFunForMultipleModule()->getCallGraphNode());
-    CallSiteID csId = addCallSite(cs, callee->getCallNode()->getFunction());
+    CallSiteID csId = addCallSite(cs, callee->getCallNode());
 
     if (!hasGraphEdge(caller, callee, PTACallGraphEdge::TDForkEdge, csId))
     {
@@ -160,7 +160,7 @@ bool ThreadCallGraph::addIndirectForkEdge(const CallICFGNode* cs, const SVFFunct
     PTACallGraphNode* callee =
         getPTACallGraphNode(calleefun->getCallGraphNode());
 
-    CallSiteID csId = addCallSite(cs, callee->getCallNode()->getFunction());
+    CallSiteID csId = addCallSite(cs, callee->getCallNode());
 
     if (!hasGraphEdge(caller, callee, PTACallGraphEdge::TDForkEdge, csId))
     {
@@ -198,7 +198,7 @@ void ThreadCallGraph::addDirectJoinEdge(const CallICFGNode* cs,const CallSiteSet
         assert(threadRoutineFun && "thread routine function does not exist");
         PTACallGraphNode* threadRoutineFunNode =
             getPTACallGraphNode(threadRoutineFun);
-        CallSiteID csId = addCallSite(cs, threadRoutineFun->getFunction());
+        CallSiteID csId = addCallSite(cs, threadRoutineFun);
 
         if (!hasThreadJoinEdge(cs,joinFunNode,threadRoutineFunNode, csId))
         {

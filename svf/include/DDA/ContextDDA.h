@@ -134,8 +134,8 @@ public:
     inline virtual bool isEdgeInRecursion(CallSiteID csId)
     {
         const SVFFunction* caller = getCallGraph()->getCallerOfCallSite(csId);
-        const SVFFunction* callee = getCallGraph()->getCalleeOfCallSite(csId);
-        return inSameCallGraphSCC(caller, callee);
+        const CallGraphNode* callee = getCallGraph()->getCalleeOfCallSite(csId);
+        return inSameCallGraphSCC(caller, callee->getFunction());
     }
     /// Update call graph.
     //@{

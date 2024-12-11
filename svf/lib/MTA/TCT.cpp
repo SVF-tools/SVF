@@ -452,7 +452,7 @@ void TCT::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* 
 {
 
     const SVFFunction* caller = call->getFun();
-    CallSiteID csId = tcg->getCallSiteID(call, callee);
+    CallSiteID csId = tcg->getCallSiteID(call, callee->getCallGraphNode());
 
     /// handle calling context for candidate functions only
     if(isCandidateFun(caller) == false)
@@ -475,7 +475,7 @@ bool TCT::matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction*
 {
 
     const SVFFunction* caller = call->getFun();
-    CallSiteID csId = tcg->getCallSiteID(call, callee);
+    CallSiteID csId = tcg->getCallSiteID(call, callee->getCallGraphNode());
 
     /// handle calling context for candidate functions only
     if(isCandidateFun(caller) == false)

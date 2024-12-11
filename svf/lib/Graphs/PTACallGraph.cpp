@@ -137,7 +137,7 @@ PTACallGraph::PTACallGraph(const CallGraph& other)
         {
             PTACallGraphNode* src = getCallGraphNode(edge->getSrcID());
             PTACallGraphNode* dst = getCallGraphNode(edge->getDstID());
-            CallSiteID csId = addCallSite(cs, dst->getCallNode()->getFunction());
+            CallSiteID csId = addCallSite(cs, dst->getCallNode());
 
             PTACallGraphEdge* newEdge = new PTACallGraphEdge(src,dst, PTACallGraphEdge::CallRetEdge,csId);
             newEdge->addDirectCallSite(cs);
@@ -205,7 +205,7 @@ void PTACallGraph::addIndirectCallGraphEdge(const CallICFGNode* cs,const SVFFunc
 
     numOfResolvedIndCallEdge++;
 
-    CallSiteID csId = addCallSite(cs, callee->getCallNode()->getFunction());
+    CallSiteID csId = addCallSite(cs, callee->getCallNode());
 
     if(!hasGraphEdge(caller,callee, PTACallGraphEdge::CallRetEdge,csId))
     {

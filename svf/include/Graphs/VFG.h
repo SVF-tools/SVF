@@ -177,7 +177,7 @@ public:
     //@{
     inline CallSiteID getCallSiteID(const CallICFGNode* cs, const SVFFunction* func) const
     {
-        return callgraph->getCallSiteID(cs, func);
+        return callgraph->getCallSiteID(cs, func->getCallGraphNode());
     }
     inline const CallICFGNode* getCallSite(CallSiteID id) const
     {
