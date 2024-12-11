@@ -67,7 +67,7 @@ void MRGenerator::destroy()
 /*!
  * Generate a memory region and put in into functions which use it
  */
-void MRGenerator::createMR(const SVFFunction* fun, const NodeBS& cpts)
+void MRGenerator::createMR(const CallGraphNode* fun, const NodeBS& cpts)
 {
     const NodeBS& repCPts = getRepPointsTo(cpts);
     MemRegion mr(repCPts);
@@ -177,7 +177,7 @@ void MRGenerator::collectModRefForLoadStore()
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
-        const SVFFunction& fun = *item.second->getFunction();
+        const CallGraphNode& fun = *item.second;
 
         /// if this function does not have any caller, then we do not care its MSSA
         if (Options::IgnoreDeadFun() && fun.isUncalledFunction())
@@ -331,7 +331,7 @@ void MRGenerator::partitionMRs()
     for(FunToPointsTosMap::iterator it = getFunToPointsToList().begin(), eit = getFunToPointsToList().end();
             it!=eit; ++it)
     {
-        const SVFFunction* fun = it->first;
+        const CallGraphNode* fun = it->first;
         for(PointsToList::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
         {
             createMR(fun,*cit);
@@ -350,7 +350,7 @@ void MRGenerator::updateAliasMRs()
     for(StoresToPointsToMap::const_iterator it = storesToPointsToMap.begin(), eit = storesToPointsToMap.end(); it!=eit; ++it)
     {
         MRSet aliasMRs;
-        const SVFFunction* fun = getFunction(it->first);
+        const CallGraphNode* fun = getFunction(it->first);
         const NodeBS& storeCPts = it->second;
         getAliasMemRegions(aliasMRs,storeCPts,fun);
         for(MRSet::iterator ait = aliasMRs.begin(), eait = aliasMRs.end(); ait!=eait; ++ait)
@@ -362,7 +362,7 @@ void MRGenerator::updateAliasMRs()
     for(LoadsToPointsToMap::const_iterator it = loadsToPointsToMap.begin(), eit = loadsToPointsToMap.end(); it!=eit; ++it)
     {
         MRSet aliasMRs;
-        const SVFFunction* fun = getFunction(it->first);
+        const CallGraphNode* fun = getFunction(it->first);
         const NodeBS& loadCPts = it->second;
         getMRsForLoad(aliasMRs, loadCPts, fun);
         for(MRSet::iterator ait = aliasMRs.begin(), eait = aliasMRs.end(); ait!=eait; ++ait)
@@ -378,7 +378,7 @@ void MRGenerator::updateAliasMRs()
         const CallGraphNode* fun = it->first->getCaller();
         MRSet aliasMRs;
         const NodeBS& callsiteModCPts = it->second;
-        getAliasMemRegions(aliasMRs,callsiteModCPts,fun->getFunction());
+        getAliasMemRegions(aliasMRs,callsiteModCPts,fun);
         for(MRSet::iterator ait = aliasMRs.begin(), eait = aliasMRs.end(); ait!=eait; ++ait)
         {
             callsiteToModMRsMap[it->first].insert(*ait);
@@ -390,7 +390,7 @@ void MRGenerator::updateAliasMRs()
         const CallGraphNode* fun = it->first->getCaller();
         MRSet aliasMRs;
         const NodeBS& callsiteRefCPts = it->second;
-        getMRsForCallSiteRef(aliasMRs, callsiteRefCPts, fun->getFunction());
+        getMRsForCallSiteRef(aliasMRs, callsiteRefCPts, fun);
         for(MRSet::iterator ait = aliasMRs.begin(), eait = aliasMRs.end(); ait!=eait; ++ait)
         {
             callsiteToRefMRsMap[it->first].insert(*ait);
@@ -402,7 +402,7 @@ void MRGenerator::updateAliasMRs()
 /*!
  * Add indirect uses an memory object in the function
  */
-void MRGenerator::addRefSideEffectOfFunction(const SVFFunction* fun, const NodeBS& refs)
+void MRGenerator::addRefSideEffectOfFunction(const CallGraphNode* fun, const NodeBS& refs)
 {
     for(NodeBS::iterator it = refs.begin(), eit = refs.end(); it!=eit; ++it)
     {
@@ -414,7 +414,7 @@ void MRGenerator::addRefSideEffectOfFunction(const SVFFunction* fun, const NodeB
 /*!
  * Add indirect def an memory object in the function
  */
-void MRGenerator::addModSideEffectOfFunction(const SVFFunction* fun, const NodeBS& mods)
+void MRGenerator::addModSideEffectOfFunction(const CallGraphNode* fun, const NodeBS& mods)
 {
     for(NodeBS::iterator it = mods.begin(), eit = mods.end(); it!=eit; ++it)
     {
@@ -433,7 +433,7 @@ bool MRGenerator::addRefSideEffectOfCallSite(const CallICFGNode* cs, const NodeB
         NodeBS refset = refs;
         refset &= getCallSiteArgsPts(cs);
         getEscapObjviaGlobals(refset,refs);
-        addRefSideEffectOfFunction(cs->getCaller()->getFunction(),refset);
+        addRefSideEffectOfFunction(cs->getCaller(),refset);
         return csToRefsMap[cs] |= refset;
     }
     return false;
@@ -449,7 +449,7 @@ bool MRGenerator::addModSideEffectOfCallSite(const CallICFGNode* cs, const NodeB
         NodeBS modset = mods;
         modset &= (getCallSiteArgsPts(cs) | getCallSiteRetPts(cs));
         getEscapObjviaGlobals(modset,mods);
-        addModSideEffectOfFunction(cs->getCaller()->getFunction(),modset);
+        addModSideEffectOfFunction(cs->getCaller(),modset);
         return csToModsMap[cs] |= modset;
     }
     return false;
@@ -573,7 +573,7 @@ void MRGenerator::getEscapObjviaGlobals(NodeBS& globs, const NodeBS& calleeModRe
  * Whether the object node is a non-local object
  * including global, heap, and stack variable in recursions
  */
-bool MRGenerator::isNonLocalObject(NodeID id, const SVFFunction* curFun) const
+bool MRGenerator::isNonLocalObject(NodeID id, const CallGraphNode* curFun) const
 {
     //ABTest
     const BaseObjVar* obj = pta->getPAG()->getBaseObject(id);
@@ -587,13 +587,13 @@ bool MRGenerator::isNonLocalObject(NodeID id, const SVFFunction* curFun) const
     /// or a local variable is in function recursion cycles
     else if(SVFUtil::isa<StackObjVar>(pVar))
     {
-        if(const SVFFunction* svffun = pVar->getFunction())
+        if(const CallGraphNode* svffun = pVar->getFunction()->getCallGraphNode())
         {
             if(svffun!=curFun)
                 return true;
             else
                 return callGraphSCC->isInCycle(
-                    callGraph->getPTACallGraphNode(svffun->getCallGraphNode())->getId());
+                    callGraph->getPTACallGraphNode(svffun)->getId());
         }
     }
 
@@ -603,7 +603,7 @@ bool MRGenerator::isNonLocalObject(NodeID id, const SVFFunction* curFun) const
 /*!
  * Get Mod-Ref of a callee function
  */
-bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGNode* cs, const SVFFunction* callee)
+bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGNode* cs, const CallGraphNode* callee)
 {
     /// if a callee is a heap allocator function, then its mod set of this callsite is the heap object.
     if(isHeapAllocExtCall(cs))
@@ -650,7 +650,7 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
         {
             NodeBS mod, ref;
             const CallICFGNode* cs = (*cit);
-            bool modrefchanged = handleCallsiteModRef(mod, ref, cs, callGraphNode->getCallNode()->getFunction());
+            bool modrefchanged = handleCallsiteModRef(mod, ref, cs, callGraphNode->getCallNode());
             if(modrefchanged)
                 worklist.push(edge->getSrcID());
         }
@@ -660,7 +660,7 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
         {
             NodeBS mod, ref;
             const CallICFGNode* cs = (*cit);
-            bool modrefchanged = handleCallsiteModRef(mod, ref, cs, callGraphNode->getCallNode()->getFunction());
+            bool modrefchanged = handleCallsiteModRef(mod, ref, cs, callGraphNode->getCallNode());
             if(modrefchanged)
                 worklist.push(edge->getSrcID());
         }
