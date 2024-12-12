@@ -46,7 +46,6 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     switch (k)
     {
     case ValNode:
-    case ConstantValNode:
     case ConstantDataValNode:
     case GlobalValueValNode:
     case BlackHoleNode:
@@ -75,7 +74,6 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     case ObjNode:
     case GepObjNode:
     case FIObjNode:
-    case ConstantObjNode:
     case ConstantDataObjNode:
     case GlobalValueObjNode:
     case ConstantFPObjNode:
@@ -211,18 +209,6 @@ const std::string FunValVar::toString() const
     return rawstr.str();
 }
 
-const std::string ConstantValVar::toString() const {
-    std::string str;
-    std::stringstream rawstr(str);
-    rawstr << "ConstantValNode ID: " << getId();
-    if (Options::ShowSVFIRValue())
-    {
-        rawstr << "\n";
-        rawstr << valueOnlyToString();
-    }
-    return rawstr.str();
-}
-
 const std::string ConstantDataValVar::toString() const {
     std::string str;
     std::stringstream rawstr(str);
@@ -283,17 +269,6 @@ const std::string ConstantNullPtrValVar::toString() const {
     return rawstr.str();
 }
 
-const std::string ConstantObjVar::toString() const {
-    std::string str;
-    std::stringstream rawstr(str);
-    rawstr << "ConstantNullPtrValNode ID: " << getId();
-    if (Options::ShowSVFIRValue())
-    {
-        rawstr << "\n";
-        rawstr << valueOnlyToString();
-    }
-    return rawstr.str();
-}
 
 const std::string GlobalValueObjVar::toString() const {
     std::string str;

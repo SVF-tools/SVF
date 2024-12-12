@@ -169,8 +169,6 @@ public:
         RetNode,
         // │   │   ├── Represents a variadic argument node
         VarargNode,
-        // │   │   ├── Represents a constant value node
-        ConstantValNode,
         // │   │   ├── Represents a global value node
         GlobalValueValNode,
         // │   │   ├── Represents a constant data value node
@@ -197,8 +195,6 @@ public:
         FIObjNode,
         // │       ├── FunObjNode: Types of function object
         FunObjNode,
-        // │       ├── ConstantObjNode: Types of constant object
-        ConstantObjNode,
         // │       ├── GlobalValueObjNode: Types of global value object
         GlobalValueObjNode,
         // │       ├── ConstantDataObjNode: Types of constant data object
@@ -348,7 +344,7 @@ protected:
 
     static inline bool isSVFVarKind(GNodeK n)
     {
-        static_assert(DummyObjNode - ValNode == 23,
+        static_assert(DummyObjNode - ValNode == 21,
                       "The number of SVFVarKinds has changed, make sure the "
                       "range is correct");
 
@@ -357,19 +353,12 @@ protected:
 
     static inline bool isValVarKinds(GNodeK n)
     {
-        static_assert(DummyValNode - ValNode == 12,
+        static_assert(DummyValNode - ValNode == 11,
                       "The number of ValVarKinds has changed, make sure the "
                       "range is correct");
         return n <= DummyValNode && n >= ValNode;
     }
 
-    static inline bool isConstantValVar(GNodeK n)
-    {
-        static_assert(ConstantNullptrValNode - ConstantValNode == 6,
-                      "The number of ConstantValVarKinds has changed, make sure "
-                      "the range is correct");
-        return n <= ConstantNullptrValNode && n >= ConstantValNode;
-    }
 
     static inline bool isConstantDataValVar(GNodeK n)
     {
@@ -381,7 +370,7 @@ protected:
 
     static inline bool isObjVarKinds(GNodeK n)
     {
-        static_assert(DummyObjNode - ObjNode == 10,
+        static_assert(DummyObjNode - ObjNode == 9,
                       "The number of ObjVarKinds has changed, make sure the "
                       "range is correct");
         return n <= DummyObjNode && n >= ObjNode;
@@ -389,19 +378,12 @@ protected:
 
     static inline bool isFIObjVarKinds(GNodeK n)
     {
-        static_assert(ConstantNullptrObjNode - FIObjNode == 7,
+        static_assert(ConstantNullptrObjNode - FIObjNode == 6,
                       "The number of FIObjVarKinds has changed, make sure the "
                       "range is correct");
         return n <= ConstantNullptrObjNode && n >= FIObjNode;
     }
 
-    static inline bool isConstantObjVarKinds(GNodeK n)
-    {
-        static_assert(ConstantNullptrObjNode - ConstantObjNode == 5,
-                      "The number of ConstantObjVarKinds has changed, make "
-                      "sure the range is correct");
-        return n <= ConstantNullptrObjNode && n >= ConstantObjNode;
-    }
 
     static inline bool isConstantDataObjVarKinds(GNodeK n)
     {

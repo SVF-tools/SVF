@@ -611,12 +611,6 @@ private:
         return addNode(node, i);
     }
 
-    inline NodeID addConstantValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode)
-    {
-        SVFVar* node = new ConstantValVar(curInst, i, icfgNode);
-        return addNode(node, i);
-    }
-
     inline NodeID addConstantFPObjNode(const SVFValue* curInst, double dval, const NodeID i)
     {
         const MemObj* mem = getMemObj(curInst);
@@ -653,12 +647,6 @@ private:
         return addObjNode(mem->getValue(), node, mem->getId());
     }
 
-    inline NodeID addConstantObjNode(const SVFValue* curInst, const NodeID i)
-    {
-        const MemObj* mem = getMemObj(curInst);
-        ConstantObjVar* node = new ConstantObjVar(curInst, mem->getId(), mem);
-        return addObjNode(mem->getValue(), node, mem->getId());
-    }
 
 
     /// Add a temp field value node, this method can only invoked by getGepValVar

@@ -266,10 +266,6 @@ void SVFIRBuilder::initialiseNodes()
             pag->addGlobalValueValNode(iter->first, iter->second, icfgNode);
             llvmModuleSet()->setValueAttr(dataValue, pag->getGNode(iter->second));
         }
-        else if (auto conValue = SVFUtil::dyn_cast<Constant>(llvmValue)) {
-            pag->addConstantValNode(iter->first, iter->second, icfgNode);
-            llvmModuleSet()->setValueAttr(conValue, pag->getGNode(iter->second));
-        }
         else
         {
             pag->addValNode(iter->first, iter->second, icfgNode);
@@ -315,10 +311,6 @@ void SVFIRBuilder::initialiseNodes()
             {
                 pag->addGlobalValueObjNode(iter->first, iter->second);
                 llvmModuleSet()->setValueAttr(dataValue, pag->getGNode(iter->second));
-            }
-            else if (auto conValue = SVFUtil::dyn_cast<Constant>(llvmValue)) {
-                pag->addConstantObjNode(iter->first, iter->second);
-                llvmModuleSet()->setValueAttr(conValue, pag->getGNode(iter->second));
             }
             else
             {

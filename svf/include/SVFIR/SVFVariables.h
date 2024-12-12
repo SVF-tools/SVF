@@ -690,52 +690,7 @@ public:
 };
 
 
-/*
- *  Constant objects, including ConstantValVar inherited from ValVar,
- *  and ConstantObjVar inherited from FIObjVar
- */
-class ConstantValVar: public ValVar
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
-public:
-    ///  Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const ConstantValVar*)
-    {
-        return true;
-    }
-    static inline bool classof(const ValVar* node)
-    {
-        return isConstantValVar(node->getNodeKind());
-    }
-    static inline bool classof(const SVFVar* node)
-    {
-        return isConstantValVar(node->getNodeKind());
-    }
-    static inline bool classof(const GenericPAGNodeTy* node)
-    {
-        return isConstantValVar(node->getNodeKind());
-    }
-    static inline bool classof(const SVFBaseNode* node)
-    {
-        return isConstantValVar(node->getNodeKind());
-    }
-    //@}
-
-    /// Constructor
-    ConstantValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
-              PNODEK ty = ConstantValNode)
-        : ValVar(val, i, ty, icn)
-    {
-
-    }
-
-    virtual const std::string toString() const;
-};
-
-class ConstantDataValVar: public ConstantValVar
+class ConstantDataValVar: public ValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -768,7 +723,7 @@ public:
     /// Constructor
     ConstantDataValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
                    PNODEK ty = ConstantDataValNode)
-        : ConstantValVar(val, i,  icn, ty)
+        : ValVar(val, i,  ty,  icn)
     {
 
     }
@@ -776,7 +731,7 @@ public:
     virtual const std::string toString() const;
 };
 
-class GlobalValueValVar : public ConstantValVar
+class GlobalValueValVar : public ValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -809,7 +764,7 @@ public:
     /// Constructor
     GlobalValueValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
                        PNODEK ty = GlobalValueValNode)
-        : ConstantValVar(val, i,  icn, ty)
+        : ValVar(val, i, ty, icn)
     {
 
     }
@@ -1002,65 +957,13 @@ public:
     virtual const std::string toString() const;
 };
 
-class ConstantObjVar: public FIObjVar
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
-protected:
-    /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
-    ConstantObjVar(NodeID i, PNODEK ty = ConstantObjNode) : FIObjVar(i, ty) {}
-
-public:
-    ///  Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const ConstantObjVar*)
-    {
-        return true;
-    }
-    static inline bool classof(const ObjVar* node)
-    {
-        return isConstantObjVarKinds(node->getNodeKind());
-    }
-    static inline bool classof(const SVFVar* node)
-    {
-        return isConstantObjVarKinds(node->getNodeKind());
-    }
-    static inline bool classof(const GenericPAGNodeTy* node)
-    {
-        return isConstantObjVarKinds(node->getNodeKind());
-    }
-    static inline bool classof(const SVFBaseNode* node)
-    {
-        return isConstantObjVarKinds(node->getNodeKind());
-    }
-    //@}
-
-    /// Constructor
-    ConstantObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
-             PNODEK ty = ConstantObjNode)
-        : FIObjVar(val, i, mem, ty)
-    {
-    }
-
-    /// Return name of a LLVM value
-    inline const std::string getValueName() const
-    {
-        if (value)
-            return value->getName() + " (base object)";
-        return " (base object)";
-    }
-
-    virtual const std::string toString() const;
-};
-
-class GlobalValueObjVar: public ConstantObjVar {
+class GlobalValueObjVar: public FIObjVar {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
 private:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
-    GlobalValueObjVar(NodeID i, PNODEK ty = GlobalValueObjNode) : ConstantObjVar(i, ty) {}
+    GlobalValueObjVar(NodeID i, PNODEK ty = GlobalValueObjNode) : FIObjVar(i, ty) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1068,10 +971,6 @@ public:
     static inline bool classof(const GlobalValueObjVar*)
     {
         return true;
-    }
-    static inline bool classof(const ConstantObjVar* node)
-    {
-        return node->getNodeKind() == GlobalValueObjNode;
     }
     static inline bool classof(const FIObjVar* node)
     {
@@ -1097,7 +996,7 @@ public:
 
     /// Constructor
     GlobalValueObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
-              PNODEK ty = GlobalValueObjNode): ConstantObjVar(val, i,mem,ty){
+              PNODEK ty = GlobalValueObjNode): FIObjVar(val, i,mem,ty){
 
     }
 
@@ -1105,13 +1004,13 @@ public:
     virtual const std::string toString() const;
 };
 
-class ConstantDataObjVar: public ConstantObjVar {
+class ConstantDataObjVar: public FIObjVar {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
 protected:
     /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
-    ConstantDataObjVar(NodeID i) : ConstantObjVar(i, ConstantDataObjNode) {}
+    ConstantDataObjVar(NodeID i) : FIObjVar(i, ConstantDataObjNode) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1124,6 +1023,10 @@ public:
         return isConstantDataObjVarKinds(node->getNodeKind());
     }
     static inline bool classof(const ObjVar* node)
+    {
+        return isConstantDataObjVarKinds(node->getNodeKind());
+    }
+    static inline bool classof(const FIObjVar* node)
     {
         return isConstantDataObjVarKinds(node->getNodeKind());
     }
@@ -1140,7 +1043,7 @@ public:
 
     /// Constructor
     ConstantDataObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ConstantDataObjNode)
-        : ConstantObjVar(val, i, m, ty)
+        : FIObjVar(val, i, m, ty)
     {
     }
 
