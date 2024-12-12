@@ -137,11 +137,11 @@ bool PointerAnalysis::isLocalVarInRecursiveFun(NodeID id) const
     assert(baseObjVar && "base object not found!!");
     if(SVFUtil::isa<StackObjVar>(baseObjVar))
     {
-        if(const SVFFunction* svffun = pag->getGNode(id)->getFunction())
+        if(const CallGraphNode* svffun = pag->getGNode(id)->getFunction())
         {
             return callGraphSCC->isInCycle(
                 getCallGraph()
-                    ->getPTACallGraphNode(svffun->getCallGraphNode())->getId());
+                    ->getPTACallGraphNode(svffun)->getId());
         }
     }
     return false;
@@ -396,7 +396,7 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
 
             if(obj->isFunction())
             {
-                const SVFFunction* calleefun = SVFUtil::cast<FunObjVar>(obj)->getFunction();
+                const CallGraphNode* calleefun = SVFUtil::cast<FunObjVar>(obj)->getFunction();
                 const SVFFunction* callee = calleefun->getDefFunForMultipleModule();
 
                 if(SVFUtil::matchArgs(cs, callee) == false)

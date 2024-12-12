@@ -57,7 +57,7 @@ const std::string CallGraphEdge::toString() const
     return rawstr.str();
 }
 
-CallGraphNode::CallGraphNode(NodeID i, const SVFFunction* f): GenericCallGraphNodeTy(i,CallNodeKd), fun(f)
+CallGraphNode::CallGraphNode(NodeID i, const SVFFunction* f): GenericCallGraphNodeTy(i,CallNodeKd, f->getType()), fun(f)
 {
     isUncalled = f->isUncalledFunction();
     isNotRet = !(f->hasReturn());

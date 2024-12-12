@@ -475,10 +475,10 @@ protected:
         assert(baseObj && "base object is null??");
         if(SVFUtil::isa<StackObjVar>(baseObj))
         {
-            if(const SVFFunction* svffun = _pag->getGNode(id)->getFunction())
+            if(const CallGraphNode* svffun = _pag->getGNode(id)->getFunction())
             {
                 return _callGraphSCC->isInCycle(
-                    _callGraph->getPTACallGraphNode(svffun->getCallGraphNode())->getId());
+                    _callGraph->getPTACallGraphNode(svffun)->getId());
             }
         }
         return false;

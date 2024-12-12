@@ -1448,15 +1448,15 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     LLVMModuleSet* llvmMS = llvmModuleSet();
     if (const SVFInstruction* curInst = SVFUtil::dyn_cast<SVFInstruction>(curVal))
     {
-        const SVFFunction* srcFun = edge->getSrcNode()->getFunction();
-        const SVFFunction* dstFun = edge->getDstNode()->getFunction();
+        const CallGraphNode* srcFun = edge->getSrcNode()->getFunction();
+        const CallGraphNode* dstFun = edge->getDstNode()->getFunction();
         if(srcFun!=nullptr && !SVFUtil::isa<RetPE>(edge) && !SVFUtil::isa<FunValVar>(edge->getSrcNode()) && !SVFUtil::isa<FunObjVar>(edge->getSrcNode()))
         {
-            assert(srcFun==curInst->getFunction() && "SrcNode of the PAGEdge not in the same function?");
+            assert(srcFun==curInst->getFunction()->getCallGraphNode() && "SrcNode of the PAGEdge not in the same function?");
         }
         if(dstFun!=nullptr && !SVFUtil::isa<CallPE>(edge) && !SVFUtil::isa<RetValPN>(edge->getDstNode()))
         {
-            assert(dstFun==curInst->getFunction() && "DstNode of the PAGEdge not in the same function?");
+            assert(dstFun==curInst->getFunction()->getCallGraphNode() && "DstNode of the PAGEdge not in the same function?");
         }
 
         /// We assume every GepValVar and its GepStmt are unique across whole program

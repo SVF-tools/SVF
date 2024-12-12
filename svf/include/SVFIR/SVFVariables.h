@@ -101,7 +101,7 @@ public:
     virtual const std::string getValueName() const = 0;
 
     /// Get containing function, or null for globals/constants
-    virtual inline const SVFFunction* getFunction() const
+    virtual inline const CallGraphNode* getFunction() const
     {
         return nullptr;
     }
@@ -183,17 +183,7 @@ public:
     }
 
     /// Check if this pointer is in an uncalled function
-    inline virtual bool ptrInUncalledFunction() const
-    {
-        if (const SVFFunction* fun = getFunction())
-        {
-            return fun->isUncalledFunction();
-        }
-        else
-        {
-            return false;
-        }
-    }
+    virtual bool ptrInUncalledFunction() const;
 
     /// Check if this variable represents constant/aggregate data
     virtual bool isConstDataOrAggData() const
@@ -302,7 +292,7 @@ public:
         return icfgNode;
     }
 
-    virtual const SVFFunction* getFunction() const;
+    virtual const CallGraphNode* getFunction() const;
 
     virtual const std::string toString() const;
 };
@@ -409,9 +399,9 @@ public:
         return getName() + " (argument valvar)";
     }
 
-    virtual const SVFFunction* getFunction() const;
+    virtual const CallGraphNode* getFunction() const;
 
-    const SVFFunction* getParent() const;
+    const CallGraphNode* getParent() const;
 
     ///  Return the index of this formal argument in its containing function.
     /// For example in "void foo(int a, float b)" a is 0 and b is 1.
@@ -507,7 +497,7 @@ public:
         return gepValType;
     }
 
-    virtual const SVFFunction* getFunction() const
+    virtual const CallGraphNode* getFunction() const
     {
         return base->getFunction();
     }
@@ -726,7 +716,7 @@ public:
         typeInfo = nullptr;
     }
 
-    virtual const SVFFunction* getFunction() const;
+    virtual const CallGraphNode* getFunction() const;
 
 };
 
@@ -808,7 +798,7 @@ public:
         return getName() + "_" + std::to_string(apOffset);
     }
 
-    virtual const SVFFunction* getFunction() const
+    virtual const CallGraphNode* getFunction() const
     {
         return base->getFunction();
     }
@@ -1062,7 +1052,7 @@ public:
         return callGraphNode;
     }
 
-    virtual const SVFFunction* getFunction() const;
+    virtual const CallGraphNode* getFunction() const;
 
     virtual bool isPointer() const;
 
@@ -1821,7 +1811,7 @@ public:
         return callGraphNode;
     }
 
-    virtual const SVFFunction* getFunction() const;
+    virtual const CallGraphNode* getFunction() const;
 
     virtual bool isPointer() const;
 
@@ -1875,7 +1865,7 @@ public:
     {
     }
 
-    virtual const SVFFunction* getFunction() const;
+    virtual const CallGraphNode* getFunction() const;
 
     /// Return name of a LLVM value
     const std::string getValueName() const;

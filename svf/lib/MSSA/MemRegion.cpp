@@ -587,7 +587,7 @@ bool MRGenerator::isNonLocalObject(NodeID id, const CallGraphNode* curFun) const
     /// or a local variable is in function recursion cycles
     else if(SVFUtil::isa<StackObjVar>(pVar))
     {
-        if(const CallGraphNode* svffun = pVar->getFunction()->getCallGraphNode())
+        if(const CallGraphNode* svffun = pVar->getFunction())
         {
             if(svffun!=curFun)
                 return true;
