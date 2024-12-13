@@ -221,7 +221,7 @@ const std::string ConstantDataValVar::toString() const {
     return rawstr.str();
 }
 
-const std::string GlobalValueValVar::toString() const {
+const std::string GlobalValVar::toString() const {
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "GlobalValueValVar ID: " << getId();
@@ -260,7 +260,7 @@ const std::string ConstantIntValVar::toString() const {
 const std::string ConstantNullPtrValVar::toString() const {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ConstantObjVar ID: " << getId();
+    rawstr << "ConstantNullPtrValVar ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -269,8 +269,7 @@ const std::string ConstantNullPtrValVar::toString() const {
     return rawstr.str();
 }
 
-
-const std::string GlobalValueObjVar::toString() const {
+const std::string GlobalObjVar::toString() const {
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "GlobalValueObjNode ID: " << getId();

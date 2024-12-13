@@ -82,7 +82,7 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
             if(SVFUtil::isa<DummyObjVar>(pag->getGNode(gepobj->getBaseNode())))
                 continue;
         }
-        if(pagNode->hasValue() && SVFUtil::isa<GlobalValueValVar, GlobalValueObjVar>(pagNode))
+        if(pagNode->hasValue() && pag->isGlobalVar(pagNode))
             worklist.push_back(it->first);
     }
 
