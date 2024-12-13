@@ -745,25 +745,25 @@ public:
     }
     static inline bool classof(const ValVar* node)
     {
-        return node->getNodeKind() == GlobalValueValNode;
+        return node->getNodeKind() == GlobalValNode;
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == GlobalValueValNode;
+        return node->getNodeKind() == GlobalValNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == GlobalValueValNode;
+        return node->getNodeKind() == GlobalValNode;
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == GlobalValueValNode;
+        return node->getNodeKind() == GlobalValNode;
     }
     //@}
 
     /// Constructor
     GlobalValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
-                       PNODEK ty = GlobalValueValNode)
+                       PNODEK ty = GlobalValNode)
         : ValVar(val, i, ty, icn)
     {
 
@@ -963,7 +963,7 @@ class GlobalObjVar : public FIObjVar {
 
 private:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
-    GlobalObjVar(NodeID i, PNODEK ty = GlobalValueObjNode) : FIObjVar(i, ty) {}
+    GlobalObjVar(NodeID i, PNODEK ty = GlobalObjNode) : FIObjVar(i, ty) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -974,29 +974,29 @@ public:
     }
     static inline bool classof(const FIObjVar* node)
     {
-        return node->getNodeKind() == GlobalValueObjNode;
+        return node->getNodeKind() == GlobalObjNode;
     }
     static inline bool classof(const ObjVar* node)
     {
-        return node->getNodeKind() == GlobalValueObjNode;
+        return node->getNodeKind() == GlobalObjNode;
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == GlobalValueObjNode;
+        return node->getNodeKind() == GlobalObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == GlobalValueObjNode;
+        return node->getNodeKind() == GlobalObjNode;
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == GlobalValueObjNode;
+        return node->getNodeKind() == GlobalObjNode;
     }
     //@}
 
     /// Constructor
     GlobalObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
-              PNODEK ty = GlobalValueObjNode): FIObjVar(val, i,mem,ty){
+              PNODEK ty = GlobalObjNode): FIObjVar(val, i,mem,ty){
 
     }
 

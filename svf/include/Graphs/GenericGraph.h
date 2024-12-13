@@ -170,7 +170,7 @@ public:
         // │   │   ├── Represents a variadic argument node
         VarargNode,
         // │   │   ├── Represents a global value node
-        GlobalValueValNode,
+        GlobalValNode,
         // │   │   ├── Represents a constant data value node
         ConstantDataValNode,
         // │   │   ├── Represents a black hole  node
@@ -196,7 +196,7 @@ public:
         // │       ├── FunObjNode: Types of function object
         FunObjNode,
         // │       ├── GlobalValueObjNode: Types of global value object
-        GlobalValueObjNode,
+        GlobalObjNode,
         // │       ├── ConstantDataObjNode: Types of constant data object
         ConstantDataObjNode,
         // │       ├── ConstantFPObjNode: Types of constant float-point object

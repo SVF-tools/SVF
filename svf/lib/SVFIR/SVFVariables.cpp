@@ -47,7 +47,7 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     {
     case ValNode:
     case ConstantDataValNode:
-    case GlobalValueValNode:
+    case GlobalValNode:
     case BlackHoleNode:
     case ConstantFPValNode:
     case ConstantIntValNode:
@@ -75,7 +75,7 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     case GepObjNode:
     case FIObjNode:
     case ConstantDataObjNode:
-    case GlobalValueObjNode:
+    case GlobalObjNode:
     case ConstantFPObjNode:
     case ConstantIntObjNode:
     case ConstantNullptrObjNode:
