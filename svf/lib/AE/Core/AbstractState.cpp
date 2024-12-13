@@ -200,7 +200,7 @@ void AbstractState::initObjVar(ObjVar* objVar)
         {
             (*this)[varId] = IntervalValue(0, 0);
         }
-        else if (SVFUtil::isa<GlobalValueObjVar>(objVar))
+        else if (SVFUtil::isa<GlobalObjVar>(objVar))
         {
             (*this)[varId] = AddressValue(AbstractState::getVirtualMemAddress(varId));
         }

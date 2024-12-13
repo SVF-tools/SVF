@@ -174,6 +174,11 @@ public:
         assert(icfg->totalICFGNode>0 && "empty ICFG! Build SVF IR first!");
         return icfg;
     }
+
+    inline bool isGlobalVar(const SVFVar* var) const {
+        return SVFUtil::isa<GlobalValVar>(var) || SVFUtil::isa<GlobalObjVar>(var);
+    }
+
     /// Set/Get CHG
     inline void setCHG(CommonCHGraph* c)
     {
@@ -601,7 +606,7 @@ private:
 
     inline NodeID addGlobalValueValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode)
     {
-        SVFVar* node = new GlobalValueValVar(curInst, i, icfgNode);
+        SVFVar* node = new GlobalValVar(curInst, i, icfgNode);
         return addNode(node, i);
     }
 
@@ -636,7 +641,7 @@ private:
     inline NodeID addGlobalValueObjNode(const SVFValue* curInst, const NodeID i)
     {
         const MemObj* mem = getMemObj(curInst);
-        GlobalValueObjVar* node = new GlobalValueObjVar(curInst, mem->getId(), mem);
+        GlobalObjVar* node = new GlobalObjVar(curInst, mem->getId(), mem);
         return addObjNode(mem->getValue(), node, mem->getId());
     }
 
@@ -646,7 +651,6 @@ private:
         ConstantDataObjVar* node = new ConstantDataObjVar(curInst, mem->getId(), mem);
         return addObjNode(mem->getValue(), node, mem->getId());
     }
-
 
 
     /// Add a temp field value node, this method can only invoked by getGepValVar

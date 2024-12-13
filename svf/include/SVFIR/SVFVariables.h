@@ -731,7 +731,7 @@ public:
     virtual const std::string toString() const;
 };
 
-class GlobalValueValVar : public ValVar
+class GlobalValVar : public ValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -762,7 +762,7 @@ public:
     //@}
 
     /// Constructor
-    GlobalValueValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
+    GlobalValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
                        PNODEK ty = GlobalValueValNode)
         : ValVar(val, i, ty, icn)
     {
@@ -957,18 +957,18 @@ public:
     virtual const std::string toString() const;
 };
 
-class GlobalValueObjVar: public FIObjVar {
+class GlobalObjVar : public FIObjVar {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
 private:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
-    GlobalValueObjVar(NodeID i, PNODEK ty = GlobalValueObjNode) : FIObjVar(i, ty) {}
+    GlobalObjVar(NodeID i, PNODEK ty = GlobalValueObjNode) : FIObjVar(i, ty) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const GlobalValueObjVar*)
+    static inline bool classof(const GlobalObjVar*)
     {
         return true;
     }
@@ -995,7 +995,7 @@ public:
     //@}
 
     /// Constructor
-    GlobalValueObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
+    GlobalObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
               PNODEK ty = GlobalValueObjNode): FIObjVar(val, i,mem,ty){
 
     }

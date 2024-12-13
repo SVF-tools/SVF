@@ -401,14 +401,6 @@ bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt *cmp) const
 
     const SVFVar* op0 = cmp->getOpVar(0);
     const SVFVar* op1 = cmp->getOpVar(1);
-    bool a = SVFUtil::dyn_cast<ConstantNullPtrValVar>(op0) ||
-             SVFUtil::dyn_cast<ConstantNullPtrObjVar>(op0);
-    bool b = SVFUtil::dyn_cast<ConstantNullPtrValVar>(op1) ||
-             SVFUtil::dyn_cast<ConstantNullPtrObjVar>(op1);
-    bool c = SVFUtil::dyn_cast<SVFConstantNullPtr>(op0->getValue());
-    bool d = SVFUtil::dyn_cast<SVFConstantNullPtr>(op1->getValue());
-    assert(a == c);
-    assert(b == d);
     if (SVFUtil::isa<ConstantNullPtrValVar, ConstantNullPtrObjVar>(op1))
     {
         Set<const SVFValue* > inDirVal;
