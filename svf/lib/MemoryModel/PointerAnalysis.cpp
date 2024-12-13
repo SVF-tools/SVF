@@ -446,16 +446,10 @@ void PointerAnalysis::getVFnsFromPts(const CallICFGNode* cs, const PointsTo &tar
             if (ptdnode->hasValue())
             {
                 // ptd is global obj var or ptd's base is global val/obj var
-                if (pag->isGlobalVar(ptdnode)) {
+                if (SVFUtil::varHasGlobalValue(ptdnode)) {
                     const SVFGlobalValue* globalValue = SVFUtil::dyn_cast<SVFGlobalValue>(ptdnode->getValue());
                     if (chaVtbls.find(globalValue) != chaVtbls.end())
                         vtbls.insert(globalValue);
-                } else if (const GepObjVar *gep_vtbl = SVFUtil::dyn_cast<GepObjVar>(ptdnode)) {
-                    if (SVFUtil::isa<GlobalValVar, GlobalObjVar>(pag->getGNode(gep_vtbl->getBaseNode()))) {
-                        const SVFGlobalValue* globalValue = SVFUtil::dyn_cast<SVFGlobalValue>(gep_vtbl->getValue());
-                        if (chaVtbls.find(globalValue) != chaVtbls.end())
-                            vtbls.insert(globalValue);
-                    }
                 }
             }
         }

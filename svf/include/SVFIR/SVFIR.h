@@ -175,9 +175,6 @@ public:
         return icfg;
     }
 
-    inline bool isGlobalVar(const SVFVar* var) const {
-        return SVFUtil::isa<GlobalValVar>(var) || SVFUtil::isa<GlobalObjVar>(var);
-    }
 
     /// Set/Get CHG
     inline void setCHG(CommonCHGraph* c)

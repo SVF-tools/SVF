@@ -443,6 +443,7 @@ inline const ValVar* getActualParmAtForkSite(const CallICFGNode* cs)
 
 bool isProgExitCall(const CallICFGNode* cs);
 
+bool varHasGlobalValue(const SVFVar* var);
 
 template<typename T>
 constexpr typename std::remove_reference<T>::type &&
