@@ -374,9 +374,6 @@ bool isHeapAllocExtCallViaRet(const CallICFGNode* cs);
 
 bool isHeapAllocExtCall(const ICFGNode* cs);
 
-/// Check if the given variable originates from the heap.
-bool isStackOriginVar(const SVFVar* var);
-
 //@}
 
 u32_t getHeapAllocHoldingArgPosition(const CallICFGNode* cs);
