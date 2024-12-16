@@ -577,9 +577,9 @@ bool MRGenerator::isNonLocalObject(NodeID id, const SVFFunction* curFun) const
     const MemObj* obj = pta->getPAG()->getObject(id);
     assert(obj && "object not found!!");
     /// if the object is heap or global
-    const SVFVar* pVar = pta->getPAG()->getGNode(id);
-    assert(isa<ObjVar>(pVar) && "object not found!");
-    if(obj->isGlobalObj() || SVFUtil::isHeapOriginVar(pVar))
+    const BaseObjVar* pVar = pta->getPAG()->getBaseObject(id);
+    assert(pVar && "object not found!");
+    if(obj->isGlobalObj() || SVFUtil::isa<HeapObjVar, DummyObjVar>(pVar))
         return true;
     /// or if the local variable of its callers
     /// or a local variable is in function recursion cycles

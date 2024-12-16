@@ -403,7 +403,7 @@ NodeID SVFIR::getGepObjVar(NodeID id, const APOffset& apOffset)
     SVFVar* node = pag->getGNode(id);
     if (GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(node))
         return getGepObjVar(gepNode->getMemObj(), gepNode->getConstantFieldIdx() + apOffset);
-    else if (FIObjVar* baseNode = SVFUtil::dyn_cast<FIObjVar>(node))
+    else if (BaseObjVar* baseNode = SVFUtil::dyn_cast<BaseObjVar>(node))
         return getGepObjVar(baseNode->getMemObj(), apOffset);
     else if (DummyObjVar* baseNode = SVFUtil::dyn_cast<DummyObjVar>(node))
         return getGepObjVar(baseNode->getMemObj(), apOffset);
@@ -468,7 +468,7 @@ NodeID SVFIR::addFIObjNode(const MemObj* obj)
     //assert(findPAGNode(i) == false && "this node should not be created before");
     NodeID base = obj->getId();
     memToFieldsMap[base].set(obj->getId());
-    FIObjVar *node = new FIObjVar(obj->getValue(), obj->getId(), obj);
+    BaseObjVar*node = new BaseObjVar(obj->getValue(), obj->getId(), obj);
     return addObjNode(obj->getValue(), node, obj->getId());
 }
 

@@ -176,8 +176,8 @@ public:
         ObjNode,
         // │       ├── GepObjNode: Represents a GEP object variable
         GepObjNode,
-        // │       └── FIObjNode: Represents a flow-insensitive object node
-        FIObjNode,
+        // │       └── BaseObjNode: Represents a flow-insensitive object node
+        BaseObjNode,
         // │            ├──FunObjNode: Types of function object
         FunObjNode,
         // │            ├──HeapObjNode: Types of heap object
@@ -344,12 +344,12 @@ protected:
         return n <= DummyObjNode && n >= ObjNode;
     }
 
-    static inline bool isFIObjVarKinds(GNodeK n)
+    static inline bool isBaseObjVarKinds(GNodeK n)
     {
-        static_assert(StackObjNode - FIObjNode == 3,
-                      "The number of FIObjVarKinds has changed, make sure the "
+        static_assert(DummyObjNode - BaseObjNode == 4,
+                      "The number of BaseObjVarKinds has changed, make sure the "
                       "range is correct");
-        return n <= StackObjNode && n >= FIObjNode;
+        return n <= DummyObjNode && n >= BaseObjNode;
     }
 
     static inline bool isVFGNodeKinds(GNodeK n)

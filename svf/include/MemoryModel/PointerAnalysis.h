@@ -304,7 +304,7 @@ public:
     //@{
     inline bool isHeapMemObj(NodeID id) const
     {
-        return SVFUtil::isHeapOriginVar(pag->getGNode(id));
+        return pag->getBaseObject(id) && SVFUtil::isa<HeapObjVar, DummyObjVar>(pag->getBaseObject(id));
     }
 
     inline bool isArrayMemObj(NodeID id) const
@@ -319,7 +319,7 @@ public:
     ///@{
     inline bool isFIObjNode(NodeID id) const
     {
-        return (SVFUtil::isa<FIObjVar>(pag->getGNode(id)));
+        return (SVFUtil::isa<BaseObjVar>(pag->getGNode(id)));
     }
     inline NodeID getBaseObjVar(NodeID id)
     {

@@ -362,7 +362,7 @@ void BVDataPTAImpl::readGepObjVarMapFromFile(std::ifstream& F)
             const MemObj* obj = nullptr;
             if (GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(node))
                 obj = gepObjVar->getMemObj();
-            else if (FIObjVar* baseNode = SVFUtil::dyn_cast<FIObjVar>(node))
+            else if (BaseObjVar* baseNode = SVFUtil::dyn_cast<BaseObjVar>(node))
                 obj = baseNode->getMemObj();
             else if (DummyObjVar* baseNode = SVFUtil::dyn_cast<DummyObjVar>(node))
                 obj = baseNode->getMemObj();

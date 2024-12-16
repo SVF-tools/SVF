@@ -58,7 +58,7 @@ public:
     /// Vararg: unique node for vararg parameter
     /// GepValNode: temporary gep value node for field sensitivity
     /// GepValNode: temporary gep obj node for field sensitivity
-    /// FIObjNode: for field insensitive analysis
+    /// BaseObjNode: for field insensitive analysis
     /// DummyValNode and DummyObjNode: for non-llvm-value node
     typedef GNodeK PNODEK;
     typedef s64_t GEdgeKind;
@@ -546,43 +546,43 @@ public:
  * Field-insensitive Gep Obj variable, this is dynamic generated for field sensitive analysis
  * Each field-insensitive gep obj node represents all fields of a MemObj (base)
  */
-class FIObjVar: public ObjVar
+class BaseObjVar : public ObjVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
 protected:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
-    FIObjVar(NodeID i, PNODEK ty = FIObjNode) : ObjVar(i, ty) {}
+    BaseObjVar(NodeID i, PNODEK ty = BaseObjNode) : ObjVar(i, ty) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FIObjVar*)
+    static inline bool classof(const BaseObjVar*)
     {
         return true;
     }
     static inline bool classof(const ObjVar* node)
     {
-        return isFIObjVarKinds(node->getNodeKind());
+        return isBaseObjVarKinds(node->getNodeKind());
     }
     static inline bool classof(const SVFVar* node)
     {
-        return isFIObjVarKinds(node->getNodeKind());
+        return isBaseObjVarKinds(node->getNodeKind());
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return isFIObjVarKinds(node->getNodeKind());
+        return isBaseObjVarKinds(node->getNodeKind());
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return isFIObjVarKinds(node->getNodeKind());
+        return isBaseObjVarKinds(node->getNodeKind());
     }
     //@}
 
     /// Constructor
-    FIObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
-             PNODEK ty = FIObjNode)
+    BaseObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
+             PNODEK ty = BaseObjNode)
         : ObjVar(val, i, mem, ty)
     {
     }
@@ -602,17 +602,18 @@ public:
 /**
  * @brief Class representing a heap object variable in the SVFIR
  * 
- * This class models heap-allocated objects in the program analysis. It extends FIObjVar
+ * This class models heap-allocated objects in the program analysis. It extends BaseObjVar
  * to specifically handle heap memory locations.
  */
-class HeapObjVar: public FIObjVar {
+class HeapObjVar: public BaseObjVar
+{
 
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
 protected:
     /// Constructor to create heap object var
-    HeapObjVar(NodeID i, PNODEK ty = HeapObjNode) : FIObjVar(i, ty) {}
+    HeapObjVar(NodeID i, PNODEK ty = HeapObjNode) : BaseObjVar(i, ty) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -621,7 +622,7 @@ public:
     {
         return true;
     }
-    static inline bool classof(const FIObjVar* node)
+    static inline bool classof(const BaseObjVar* node)
     {
         return node->getNodeKind() == HeapObjNode;
     }
@@ -659,20 +660,21 @@ public:
 
 /**
  * @brief Represents a stack-allocated object variable in the SVFIR (SVF Intermediate Representation)
- * @inherits FIObjVar
+ * @inherits BaseObjVar
  * 
  * This class models variables that are allocated on the stack in the program.
  * It provides type checking functionality through LLVM-style RTTI (Runtime Type Information)
  * methods like classof.
  */
-class StackObjVar: public FIObjVar {
+class StackObjVar: public BaseObjVar
+{
 
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
 protected:
     /// Constructor to create stack object var
-    StackObjVar(NodeID i, PNODEK ty = StackObjNode) : FIObjVar(i, ty) {}
+    StackObjVar(NodeID i, PNODEK ty = StackObjNode) : BaseObjVar(i, ty) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -681,7 +683,7 @@ public:
     {
         return true;
     }
-    static inline bool classof(const FIObjVar* node)
+    static inline bool classof(const BaseObjVar* node)
     {
         return node->getNodeKind() == StackObjNode;
     }
@@ -763,7 +765,7 @@ public:
     virtual const std::string toString() const;
 };
 
-class FunObjVar : public FIObjVar
+class FunObjVar : public BaseObjVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -773,7 +775,7 @@ private:
 
 private:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
-    FunObjVar(NodeID i, PNODEK ty = FunObjNode) : FIObjVar(i, ty) {}
+    FunObjVar(NodeID i, PNODEK ty = FunObjNode) : BaseObjVar(i, ty) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -782,7 +784,7 @@ public:
     {
         return true;
     }
-    static inline bool classof(const FIObjVar* node)
+    static inline bool classof(const BaseObjVar* node)
     {
         return node->getNodeKind() == FunObjNode;
     }
@@ -969,14 +971,14 @@ public:
 /*
  * Dummy object variable
  */
-class DummyObjVar: public ObjVar
+class DummyObjVar: public BaseObjVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
 private:
     /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
-    DummyObjVar(NodeID i) : ObjVar(i, DummyObjNode) {}
+    DummyObjVar(NodeID i) : BaseObjVar(i, DummyObjNode) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1005,7 +1007,7 @@ public:
 
     /// Constructor
     DummyObjVar(NodeID i, const MemObj* m, PNODEK ty = DummyObjNode)
-        : ObjVar(nullptr, i, m, ty)
+        : BaseObjVar(nullptr, i, m, ty)
     {
     }
 

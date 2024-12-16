@@ -316,8 +316,8 @@ IntervalValue BufOverflowDetector::getAccessOffset(SVF::AbstractState& as, SVF::
     SVFIR* svfir = PAG::getPAG();
     auto obj = svfir->getGNode(objId);
 
-    // if the object is a FIObjVar, return the byte offset directly
-    if (SVFUtil::isa<FIObjVar>(obj))
+    // if the object is a BaseObjVar, return the byte offset directly
+    if (SVFUtil::isa<BaseObjVar>(obj))
     {
         return as.getByteOffset(gep);
     }
@@ -351,8 +351,8 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(SVF::AddressValue gepAddrs,
     {
         NodeID objId = AbstractState::getInternalID(objAddr);
         auto obj = svfir->getGNode(objId);
-        // if the object is a FIObjVar, add the offset directly
-        if (SVFUtil::isa<FIObjVar>(obj))
+        // if the object is a BaseObjVar, add the offset directly
+        if (SVFUtil::isa<BaseObjVar>(obj))
         {
             for (const auto& gepAddr : gepAddrs)
             {
@@ -491,7 +491,7 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
         }
         else
         {
-            // if the object is a FIObjVar, get the offset directly
+            // if the object is a BaseObjVar, get the offset directly
             offset = len;
         }
         // if the offset is greater than the size, return false

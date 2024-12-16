@@ -61,7 +61,7 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     }
     case ObjNode:
     case GepObjNode:
-    case FIObjNode:
+    case BaseObjNode:
     case DummyObjNode:
     {
         isPtr = true;
@@ -173,11 +173,11 @@ const std::string GepObjVar::toString() const
     return rawstr.str();
 }
 
-const std::string FIObjVar::toString() const
+const std::string BaseObjVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "FIObjVar ID: " << getId() << " (base object)";
+    rawstr << "BaseObjVar ID: " << getId() << " (base object)";
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -188,7 +188,7 @@ const std::string FIObjVar::toString() const
 
 HeapObjVar::HeapObjVar(const SVFFunction* f, const SVFType* svfType, NodeID i,
                        const MemObj* mem, PNODEK ty)
-    : FIObjVar(nullptr, i, mem, ty)
+    : BaseObjVar(nullptr, i, mem, ty)
 {
     isPtr = svfType->isPointerTy();
     func = f;
@@ -209,7 +209,7 @@ const std::string HeapObjVar::toString() const
 
 StackObjVar::StackObjVar(const SVFFunction* f, const SVFType* svfType, NodeID i,
                          const MemObj* mem, PNODEK ty)
-    : FIObjVar(nullptr, i, mem, ty)
+    : BaseObjVar(nullptr, i, mem, ty)
 {
     isPtr = svfType->isPointerTy();
     func = f;
@@ -252,7 +252,7 @@ const std::string FunValVar::toString() const
 
 FunObjVar::FunObjVar(const CallGraphNode* cgNode, NodeID i, const MemObj* mem,
                      PNODEK ty)
-    : FIObjVar(nullptr, i, mem, ty), callGraphNode(cgNode)
+    : BaseObjVar(nullptr, i, mem, ty), callGraphNode(cgNode)
 {
     isPtr = callGraphNode->getFunction()->getType()->isPointerTy();
 }

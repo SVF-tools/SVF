@@ -176,7 +176,8 @@ PointsTo FlowDDA::processGepPts(const GepSVFGNode* gep, const PointsTo& srcPts)
 /// (4) not involved in recursion
 bool FlowDDA::isHeapCondMemObj(const NodeID& var, const StoreSVFGNode*)
 {
-    if(SVFUtil::isHeapOriginVar(_pag->getGNode(getPtrNodeID(var))))
+    const BaseObjVar* pVar = _pag->getBaseObject(getPtrNodeID(var));
+    if(pVar && SVFUtil::isa<HeapObjVar, DummyObjVar>(pVar))
     {
 //        if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getValue())) {
 //            const SVFFunction* fun = mallocSite->getParent()->getParent();
