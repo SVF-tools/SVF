@@ -181,46 +181,39 @@ void AbstractState::initObjVar(ObjVar* objVar)
     NodeID varId = objVar->getId();
 
     // Check if the object variable has an associated value
-    if (objVar->hasValue())
-    {
-        const MemObj* obj = objVar->getMemObj();
 
-        // Handle constant data, arrays, and structures
-        if (obj->isConstDataOrConstGlobal() || obj->isConstantArray() || obj->isConstantStruct())
+    const MemObj* obj = objVar->getMemObj();
+
+    // Handle constant data, arrays, and structures
+    if (obj->isConstDataOrConstGlobal() || obj->isConstantArray() || obj->isConstantStruct())
+    {
+        if (const ConstantIntObjVar* consInt = SVFUtil::dyn_cast<ConstantIntObjVar>(objVar))
         {
-            if (const SVFConstantInt* consInt = SVFUtil::dyn_cast<SVFConstantInt>(obj->getValue()))
-            {
-                s64_t numeral = consInt->getSExtValue();
-                (*this)[varId] = IntervalValue(numeral, numeral);
-            }
-            else if (const SVFConstantFP* consFP = SVFUtil::dyn_cast<SVFConstantFP>(obj->getValue()))
-            {
-                (*this)[varId] = IntervalValue(consFP->getFPValue(), consFP->getFPValue());
-            }
-            else if (SVFUtil::isa<SVFConstantNullPtr>(obj->getValue()))
-            {
-                (*this)[varId] = IntervalValue(0, 0);
-            }
-            else if (SVFUtil::isa<SVFGlobalValue>(obj->getValue()))
-            {
-                (*this)[varId] = AddressValue(AbstractState::getVirtualMemAddress(varId));
-            }
-            else if (obj->isConstantArray() || obj->isConstantStruct())
-            {
-                (*this)[varId] = IntervalValue::top();
-            }
-            else
-            {
-                (*this)[varId] = IntervalValue::top();
-            }
+            s64_t numeral = consInt->getSExtValue();
+            (*this)[varId] = IntervalValue(numeral, numeral);
         }
-        // Handle non-constant memory objects
-        else
+        else if (const ConstantFPObjVar* consFP = SVFUtil::dyn_cast<ConstantFPObjVar>(objVar))
+        {
+            (*this)[varId] = IntervalValue(consFP->getFPValue(), consFP->getFPValue());
+        }
+        else if (SVFUtil::isa<ConstantNullPtrObjVar>(objVar))
+        {
+            (*this)[varId] = IntervalValue(0, 0);
+        }
+        else if (SVFUtil::isa<GlobalObjVar>(objVar))
         {
             (*this)[varId] = AddressValue(AbstractState::getVirtualMemAddress(varId));
         }
+        else if (obj->isConstantArray() || obj->isConstantStruct())
+        {
+            (*this)[varId] = IntervalValue::top();
+        }
+        else
+        {
+            (*this)[varId] = IntervalValue::top();
+        }
     }
-    // If the object variable does not have an associated value, set it to a virtual memory address
+    // Handle non-constant memory objects
     else
     {
         (*this)[varId] = AddressValue(AbstractState::getVirtualMemAddress(varId));
@@ -240,7 +233,7 @@ IntervalValue AbstractState::getElementIndex(const GepStmt* gep)
     for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
     {
         AccessPath::IdxOperandPair IdxVarAndType = gep->getOffsetVarAndGepTypePairVec()[i];
-        const SVFValue* value = gep->getOffsetVarAndGepTypePairVec()[i].first->getValue();
+        const SVFVar* var = gep->getOffsetVarAndGepTypePairVec()[i].first;
         const SVFType* type = IdxVarAndType.second;
 
         // Variables to store the lower and upper bounds of the index value
@@ -248,11 +241,11 @@ IntervalValue AbstractState::getElementIndex(const GepStmt* gep)
         s64_t idxUb;
 
         // Determine the lower and upper bounds based on whether the value is a constant
-        if (const SVFConstantInt* constInt = SVFUtil::dyn_cast<SVFConstantInt>(value))
+        if (const ConstantIntValVar* constInt = SVFUtil::dyn_cast<ConstantIntValVar>(var))
             idxLb = idxUb = constInt->getSExtValue();
         else
         {
-            IntervalValue idxItv = (*this)[PAG::getPAG()->getValueNode(value)].getInterval();
+            IntervalValue idxItv = (*this)[var->getId()].getInterval();
             if (idxItv.isBottom())
                 idxLb = idxUb = 0;
             else
@@ -327,18 +320,17 @@ IntervalValue AbstractState::getByteOffset(const GepStmt* gep)
             else
                 assert(false && "idxOperandType must be ArrType or PtrType");
 
-            if (const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(idxOperandVar->getValue()))
+            if (const ConstantIntValVar* op = SVFUtil::dyn_cast<ConstantIntValVar>(idxOperandVar))
             {
                 // Calculate the lower bound (lb) of the interval value
                 s64_t lb = (double)Options::MaxFieldLimit() / elemByteSize >= op->getSExtValue()
-                           ? op->getSExtValue() * elemByteSize
-                           : Options::MaxFieldLimit();
+                               ? op->getSExtValue() * elemByteSize
+                               : Options::MaxFieldLimit();
                 res = res + IntervalValue(lb, lb);
             }
             else
             {
-                u32_t idx = PAG::getPAG()->getValueNode(idxOperandVar->getValue());
-                IntervalValue idxVal = (*this)[idx].getInterval();
+                IntervalValue idxVal = (*this)[idxOperandVar->getId()].getInterval();
 
                 if (idxVal.isBottom())
                     res = res + IntervalValue(0, 0);
@@ -347,12 +339,12 @@ IntervalValue AbstractState::getByteOffset(const GepStmt* gep)
                     // Ensure the bounds are non-negative and within the field limit
                     s64_t ub = (idxVal.ub().getIntNumeral() < 0) ? 0
                                : (double)Options::MaxFieldLimit() / elemByteSize >= idxVal.ub().getIntNumeral()
-                               ? elemByteSize * idxVal.ub().getIntNumeral()
-                               : Options::MaxFieldLimit();
+                                   ? elemByteSize * idxVal.ub().getIntNumeral()
+                                   : Options::MaxFieldLimit();
                     s64_t lb = (idxVal.lb().getIntNumeral() < 0) ? 0
                                : (double)Options::MaxFieldLimit() / elemByteSize >= idxVal.lb().getIntNumeral()
-                               ? elemByteSize * idxVal.lb().getIntNumeral()
-                               : Options::MaxFieldLimit();
+                                   ? elemByteSize * idxVal.lb().getIntNumeral()
+                                   : Options::MaxFieldLimit();
                     res = res + IntervalValue(lb, ub);
                 }
             }
@@ -395,9 +387,9 @@ void AbstractState::printAbstractState() const
     SVFUtil::outs().flags(std::ios::left);
     std::vector<std::pair<u32_t, AbstractValue>> varToAbsValVec(_varToAbsVal.begin(), _varToAbsVal.end());
     std::sort(varToAbsValVec.begin(), varToAbsValVec.end(), [](const auto &a, const auto &b)
-    {
-        return a.first < b.first;
-    });
+              {
+                  return a.first < b.first;
+              });
     for (const auto &item: varToAbsValVec)
     {
         SVFUtil::outs() << std::left << std::setw(fieldWidth) << ("Var" + std::to_string(item.first));
@@ -431,9 +423,9 @@ void AbstractState::printAbstractState() const
 
     std::vector<std::pair<u32_t, AbstractValue>> addrToAbsValVec(_addrToAbsVal.begin(), _addrToAbsVal.end());
     std::sort(addrToAbsValVec.begin(), addrToAbsValVec.end(), [](const auto &a, const auto &b)
-    {
-        return a.first < b.first;
-    });
+              {
+                  return a.first < b.first;
+              });
 
     for (const auto& item: addrToAbsValVec)
     {

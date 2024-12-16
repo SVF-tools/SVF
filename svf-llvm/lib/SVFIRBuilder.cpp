@@ -78,9 +78,8 @@ SVFIR* SVFIRBuilder::build()
         {
             if(llvmModuleSet()->hasICFGNode(inst))
                 it.second->gNode = llvmModuleSet()->getICFGNode(inst);
-        }
-        else if (const Function* func = SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(
-                                            it.second->getValue())))
+        } else if (const Function* func = SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(
+                     it.second->getValue())))
         {
             it.second->gNode = llvmModuleSet()->getCallGraphNode(func);
         }
@@ -219,12 +218,16 @@ void SVFIRBuilder::initialiseNodes()
             ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add val node " << iter->second << "\n");
-        if(iter->second == symTable->blkPtrSymID() || iter->second == symTable->nullPtrSymID())
+        if(iter->second == symTable->blkPtrSymID())
             continue;
+        if (iter->second == symTable->nullPtrSymID()) {
+            pag->addConstantNullPtrValNode(iter->first, iter->second, nullptr);
+        }
 
         const ICFGNode* icfgNode = nullptr;
+        auto llvmValue = llvmModuleSet()->getLLVMValue(iter->first);
         if (const Instruction* inst =
-                    SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(iter->first)))
+                    SVFUtil::dyn_cast<Instruction>(llvmValue))
         {
             if (llvmModuleSet()->hasICFGNode(inst))
             {
@@ -233,10 +236,35 @@ void SVFIRBuilder::initialiseNodes()
         }
 
         if (const Function* func =
-                    SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(iter->first)))
+                    SVFUtil::dyn_cast<Function>(llvmValue))
         {
             const CallGraphNode* cgn = llvmModuleSet()->getCallGraphNode(func);
             pag->addFunValNode(cgn, iter->second, icfgNode);
+        }
+        else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
+        {
+            pag->addConstantFPValNode(iter->first, fpValue->getValueAPF().convertToDouble(), iter->second, icfgNode);
+            llvmModuleSet()->setValueAttr(fpValue, pag->getGNode(iter->second));
+        }
+        else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
+        {
+            pag->addConstantIntValNode(iter->first, intValue->getSExtValue(), intValue->getZExtValue(), iter->second, icfgNode);
+            llvmModuleSet()->setValueAttr(intValue, pag->getGNode(iter->second));
+        }
+        else if (auto nullValue = SVFUtil::dyn_cast<ConstantPointerNull>(llvmValue))
+        {
+            pag->addConstantNullPtrValNode(iter->first, iter->second, icfgNode);
+            llvmModuleSet()->setValueAttr(nullValue, pag->getGNode(iter->second));
+        }
+        else if (auto globalValue = SVFUtil::dyn_cast<GlobalVariable>(llvmValue))
+        {
+            pag->addGlobalValueValNode(iter->first, iter->second, icfgNode);
+            llvmModuleSet()->setValueAttr(globalValue, pag->getGNode(iter->second));
+        }
+        else if (auto dataValue = SVFUtil::dyn_cast<ConstantData>(llvmValue))
+        {
+            pag->addGlobalValueValNode(iter->first, iter->second, icfgNode);
+            llvmModuleSet()->setValueAttr(dataValue, pag->getGNode(iter->second));
         }
         else
         {
@@ -251,14 +279,43 @@ void SVFIRBuilder::initialiseNodes()
         DBOUT(DPAGBuild, outs() << "add obj node " << iter->second << "\n");
         if(iter->second == symTable->blackholeSymID() || iter->second == symTable->constantSymID())
             continue;
+        auto llvmValue = llvmModuleSet()->getLLVMValue(iter->first);
+
         if (const Function* func = SVFUtil::dyn_cast<Function>(
-                                       llvmModuleSet()->getLLVMValue(iter->first)))
+                                       llvmValue))
         {
             pag->addFunObjNode(llvmModuleSet()->getCallGraphNode(func), iter->second);
         }
-        else
-        {
-            pag->addObjNode(iter->first, iter->second);
+        else {
+            if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
+            {
+                pag->addConstantFPObjNode(iter->first, fpValue->getValueAPF().convertToDouble(), iter->second);
+                llvmModuleSet()->setValueAttr(fpValue, pag->getGNode(iter->second));
+            }
+            else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
+            {
+                pag->addConstantIntObjNode(iter->first, intValue->getSExtValue(), intValue->getZExtValue(), iter->second);
+                llvmModuleSet()->setValueAttr(intValue, pag->getGNode(iter->second));
+            }
+            else if (auto nullValue = SVFUtil::dyn_cast<ConstantPointerNull>(llvmValue))
+            {
+                pag->addConstantNullPtrObjNode(iter->first, iter->second);
+                llvmModuleSet()->setValueAttr(nullValue, pag->getGNode(iter->second));
+            }
+            else if (auto globalValue = SVFUtil::dyn_cast<GlobalVariable>(llvmValue))
+            {
+                pag->addGlobalValueObjNode(iter->first, iter->second);
+                llvmModuleSet()->setValueAttr(globalValue, pag->getGNode(iter->second));
+            }
+            else if (auto dataValue = SVFUtil::dyn_cast<ConstantData>(llvmValue))
+            {
+                pag->addGlobalValueObjNode(iter->first, iter->second);
+                llvmModuleSet()->setValueAttr(dataValue, pag->getGNode(iter->second));
+            }
+            else
+            {
+                pag->addObjNode(iter->first, iter->second);
+            }
         }
     }
 

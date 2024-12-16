@@ -431,3 +431,18 @@ const ObjVar* SVFUtil::getObjVarOfValVar(const SVF::ValVar* valVar)
     assert(valVar->getInEdges().size() == 1);
     return SVFUtil::dyn_cast<ObjVar>((*valVar->getInEdges().begin())->getSrcNode());
 }
+
+bool SVFUtil::varHasGlobalValue(const SVF::SVFVar* var)
+{
+    if(isa<GlobalObjVar, GlobalValVar>(var)) return true;
+    SVFIR* pag = SVFIR::getPAG();
+    if(const auto globalValVar = dyn_cast<GepValVar>(var))
+    {
+        return isa<GlobalValVar>(pag->getGNode(globalValVar->getBaseNode()));
+    }
+    else if (const auto globalObjVar = dyn_cast<GepObjVar>(var))
+    {
+        return isa<GlobalObjVar>(pag->getGNode(globalObjVar->getBaseNode()));
+    }
+    return false;
+}

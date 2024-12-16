@@ -174,6 +174,8 @@ public:
         assert(icfg->totalICFGNode>0 && "empty ICFG! Build SVF IR first!");
         return icfg;
     }
+
+
     /// Set/Get CHG
     inline void setCHG(CommonCHGraph* c)
     {
@@ -547,7 +549,7 @@ private:
     /// Add a value (pointer) node
     inline NodeID addValNode(const SVFValue* val, NodeID i, const ICFGNode* icfgNode)
     {
-        SVFVar *node = new ValVar(val,i, ValVar::ValNode, icfgNode);
+        SVFVar* node = new ValVar(val, i, ValVar::ValNode, icfgNode);
         return addValNode(val, node, i);
     }
 
@@ -578,6 +580,75 @@ private:
         SVFVar *node = new VarArgPN(val,i);
         return addNode(node,i);
     }
+
+    inline NodeID addConstantFPValNode(const SVFValue* curInst, double dval, const NodeID i,
+                                       const ICFGNode* icfgNode)
+    {
+        SVFVar* node = new ConstantFPValVar(curInst,  dval, i, icfgNode);
+        return addNode(node, i);
+    }
+
+    inline NodeID addConstantIntValNode(const SVFValue* curInst, s64_t sval, u64_t zval, const NodeID i,
+                                        const ICFGNode* icfgNode)
+    {
+        SVFVar* node = new ConstantIntValVar(curInst, sval, zval, i, icfgNode);
+        return addNode(node, i);
+    }
+
+    inline NodeID addConstantNullPtrValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode)
+    {
+        SVFVar* node = new ConstantNullPtrValVar(curInst, i, icfgNode);
+        return addNode(node, i);
+    }
+
+    inline NodeID addGlobalValueValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode)
+    {
+        SVFVar* node = new GlobalValVar(curInst, i, icfgNode);
+        return addNode(node, i);
+    }
+
+    inline NodeID addConstantDataValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode)
+    {
+        SVFVar* node = new ConstantDataValVar(curInst, i, icfgNode);
+        return addNode(node, i);
+    }
+
+    inline NodeID addConstantFPObjNode(const SVFValue* curInst, double dval, const NodeID i)
+    {
+        const MemObj* mem = getMemObj(curInst);
+        ConstantFPObjVar* node = new ConstantFPObjVar(curInst, dval, mem->getId(), mem);
+        return addObjNode(curInst, node, mem->getId());
+    }
+
+
+    inline NodeID addConstantIntObjNode(const SVFValue* curInst, s64_t sval, u64_t zval, const NodeID i) {
+        const MemObj* mem = getMemObj(curInst);
+        ConstantIntObjVar* node =
+            new ConstantIntObjVar(curInst, sval, zval, mem->getId(), mem);
+        return addObjNode(curInst, node, mem->getId());
+    }
+
+
+    inline NodeID addConstantNullPtrObjNode(const SVFValue* curInst, const NodeID i) {
+        const MemObj* mem = getMemObj(curInst);
+        ConstantNullPtrObjVar* node = new ConstantNullPtrObjVar(curInst, mem->getId(), mem);
+        return addObjNode(mem->getValue(), node, mem->getId());
+    }
+
+    inline NodeID addGlobalValueObjNode(const SVFValue* curInst, const NodeID i)
+    {
+        const MemObj* mem = getMemObj(curInst);
+        GlobalObjVar* node = new GlobalObjVar(curInst, mem->getId(), mem);
+        return addObjNode(mem->getValue(), node, mem->getId());
+    }
+
+    inline NodeID addConstantDataObjNode(const SVFValue* curInst, const NodeID i)
+    {
+        const MemObj* mem = getMemObj(curInst);
+        ConstantDataObjVar* node = new ConstantDataObjVar(curInst, mem->getId(), mem);
+        return addObjNode(mem->getValue(), node, mem->getId());
+    }
+
 
     /// Add a temp field value node, this method can only invoked by getGepValVar
     NodeID addGepValNode(const SVFValue* curInst,const SVFValue* val, const AccessPath& ap, NodeID i, const SVFType* type);

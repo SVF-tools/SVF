@@ -169,20 +169,47 @@ public:
         RetNode,
         // │   │   ├── Represents a variadic argument node
         VarargNode,
-        // │   │   └── Dummy node for uninitialized values
+        // │   │   ├── Represents a global value node
+        GlobalValNode,
+        // │   │   ├── Represents a constant data value node
+        ConstantDataValNode,
+        // │   │   ├── Represents a black hole  node
+        BlackHoleNode,
+        // │   │   ├── Represents a constant float-point value node
+        ConstantFPValNode,
+        // │   │   ├── Represents a constant integer value node
+        ConstantIntValNode,
+        // │   │   ├── Represents a constant nullptr value node
+        ConstantNullptrValNode,
+        // │   └── Dummy node for uninitialized values
         DummyValNode,
-        // │   └── ObjVarKinds: Types of object variable nodes
+        // └────────
+
+
+
         // │       ├── Represents an object variable
         ObjNode,
         // │       ├── GepObjNode: Represents a GEP object variable
         GepObjNode,
         // │       └── FIObjNode: Represents a flow-insensitive object node
         FIObjNode,
-        // │            ├──FunObjNode: Types of function object
+        // │       ├── FunObjNode: Types of function object
         FunObjNode,
+        // │       ├── GlobalValueObjNode: Types of global value object
+        GlobalObjNode,
+        // │       ├── ConstantDataObjNode: Types of constant data object
+        ConstantDataObjNode,
+        // │       ├── ConstantFPObjNode: Types of constant float-point object
+        ConstantFPObjNode,
+        // │       ├── ConstantIntObjNode: Types of constant integer object
+        ConstantIntObjNode,
+        // │       ├── ConstantNullptrObjNode: Types of constant nullptr object
+        ConstantNullptrObjNode,
         // │       └── DummyObjNode: Dummy node for uninitialized objects
         DummyObjNode,
         // └────────
+
+
 
         // ┌── VFGNodeKinds: Various Value Flow Graph (VFG) node kinds with operations
         // │   ├── Represents a comparison operation
@@ -317,7 +344,7 @@ protected:
 
     static inline bool isSVFVarKind(GNodeK n)
     {
-        static_assert(DummyObjNode - ValNode == 10,
+        static_assert(DummyObjNode - ValNode == 21,
                       "The number of SVFVarKinds has changed, make sure the "
                       "range is correct");
 
@@ -326,15 +353,24 @@ protected:
 
     static inline bool isValVarKinds(GNodeK n)
     {
-        static_assert(DummyValNode - ValNode == 5,
+        static_assert(DummyValNode - ValNode == 11,
                       "The number of ValVarKinds has changed, make sure the "
                       "range is correct");
         return n <= DummyValNode && n >= ValNode;
     }
 
+
+    static inline bool isConstantDataValVar(GNodeK n)
+    {
+        static_assert(ConstantNullptrValNode - ConstantDataValNode == 4,
+                      "The number of ConstantDataValVarKinds has changed, make "
+                      "sure the range is correct");
+        return n <= ConstantIntValNode && n >= ConstantDataValNode;
+    }
+
     static inline bool isObjVarKinds(GNodeK n)
     {
-        static_assert(DummyObjNode - ObjNode == 4,
+        static_assert(DummyObjNode - ObjNode == 9,
                       "The number of ObjVarKinds has changed, make sure the "
                       "range is correct");
         return n <= DummyObjNode && n >= ObjNode;
@@ -342,10 +378,19 @@ protected:
 
     static inline bool isFIObjVarKinds(GNodeK n)
     {
-        static_assert(FunObjNode - FIObjNode == 1,
+        static_assert(ConstantNullptrObjNode - FIObjNode == 6,
                       "The number of FIObjVarKinds has changed, make sure the "
                       "range is correct");
-        return n <= FunObjNode && n >= FIObjNode;
+        return n <= ConstantNullptrObjNode && n >= FIObjNode;
+    }
+
+
+    static inline bool isConstantDataObjVarKinds(GNodeK n)
+    {
+        static_assert(ConstantNullptrObjNode - ConstantDataObjNode == 3,
+                      "The number of ConstantDataObjVarKinds has changed, make "
+                      "sure the range is correct");
+        return n <= ConstantNullptrObjNode && n >= ConstantDataObjNode;
     }
 
     static inline bool isVFGNodeKinds(GNodeK n)
