@@ -373,6 +373,39 @@ bool SVFUtil::isHeapAllocExtCall(const ICFGNode* cs)
     return isHeapAllocExtCallViaRet(cast<CallICFGNode>(cs)) || isHeapAllocExtCallViaArg(cast<CallICFGNode>(cs));
 }
 
+/**
+ * \brief Check if the given variable originates from the heap.
+ *
+ * \param var The variable to check.
+ * \return true if the variable is a heap object or a dummy object, false otherwise.
+ */
+bool SVFUtil::isHeapOriginVar(const SVFVar* var)
+{
+    if (SVFUtil::isa<HeapObjVar, DummyObjVar>(var))
+        return true;
+    if (const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(var))
+    {
+        return SVFUtil::isa<DummyObjVar, HeapObjVar>(SVFIR::getPAG()->getGNode(gepObjVar->getBaseNode()));
+    }
+    return false;
+}/**
+ * \brief Check if the given variable originates from the stack.
+ *
+ * \param var The variable to check.
+ * \return true if the variable is a stack object, false otherwise.
+ */
+bool SVFUtil::isStackOriginVar(const SVFVar* var)
+{
+    if(SVFUtil::isa<StackObjVar>(var)) return true;
+    if(const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(var))
+    {
+        return SVFUtil::isa<StackObjVar>(SVFIR::getPAG()->getGNode(gepObjVar->getBaseNode()));
+    }
+    return false;
+}
+
+
+
 bool SVFUtil::isHeapAllocExtCallViaRet(const CallICFGNode* cs)
 {
     bool isPtrTy = cs->getType()->isPointerTy();

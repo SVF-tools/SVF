@@ -565,6 +565,30 @@ private:
         return addFIObjNode(mem);
     }
 
+    /**
+     * Creates and adds a heap object node to the SVFIR
+     */
+    inline NodeID addHeapObjNode(const SVFValue* val, const SVFFunction* f, NodeID i)
+    {
+        const MemObj* mem = getMemObj(val);
+        assert(mem->getId() == i && "not same object id?");
+        memToFieldsMap[i].set(i);
+        HeapObjVar *node = new HeapObjVar(f, val->getType(), i, mem);
+        return addObjNode(val, node, i);
+    }
+
+    /**
+     * Creates and adds a stack object node to the SVFIR
+     */
+    inline NodeID addStackObjNode(const SVFValue* val, const SVFFunction* f, NodeID i)
+    {
+        const MemObj* mem = getMemObj(val);
+        assert(mem->getId() == i && "not same object id?");
+        memToFieldsMap[i].set(i);
+        StackObjVar *node = new  StackObjVar(f, val->getType(), i, mem);
+        return addObjNode(val, node, i);
+    }
+
     NodeID addFunObjNode(const CallGraphNode* callGraphNode, NodeID id);
     /// Add a unique return node for a procedure
     inline NodeID addRetNode(const CallGraphNode* callGraphNode, NodeID i)

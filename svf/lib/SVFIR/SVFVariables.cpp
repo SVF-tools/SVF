@@ -40,7 +40,7 @@ using namespace SVFUtil;
  * SVFVar constructor
  */
 SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
-    GenericPAGNodeTy(i,k), value(val)
+    GenericPAGNodeTy(i,k), value(val), func(nullptr)
 {
     assert( ValNode <= k && k <= DummyObjNode && "new SVFIR node kind?");
     switch (k)
@@ -50,12 +50,6 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     {
         assert(val != nullptr && "value is nullptr for ValVar or GepValNode");
         isPtr = val->getType()->isPointerTy();
-        break;
-    }
-    case RetNode:
-    case FunObjNode:
-    {
-        // to be completed in derived class
         break;
     }
     case FunValNode:
@@ -73,6 +67,13 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
         isPtr = true;
         if(val)
             isPtr = val->getType()->isPointerTy();
+        break;
+    }
+    case RetNode:
+    case FunObjNode:
+    case HeapObjNode:
+    case StackObjNode: {
+        // to be completed in derived class
         break;
     }
     default:
@@ -183,6 +184,57 @@ const std::string FIObjVar::toString() const
         rawstr << value->toString();
     }
     return rawstr.str();
+}
+
+HeapObjVar::HeapObjVar(const SVFFunction* f, const SVFType* svfType, NodeID i,
+                       const MemObj* mem, PNODEK ty)
+    : FIObjVar(nullptr, i, mem, ty)
+{
+    isPtr = svfType->isPointerTy();
+    func = f;
+}
+
+const std::string HeapObjVar::toString() const
+{
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "HeapObjVar ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << valueOnlyToString();
+    }
+    return rawstr.str();
+}
+
+StackObjVar::StackObjVar(const SVFFunction* f, const SVFType* svfType, NodeID i,
+                         const MemObj* mem, PNODEK ty)
+    : FIObjVar(nullptr, i, mem, ty)
+{
+    isPtr = svfType->isPointerTy();
+    func = f;
+}
+
+const std::string StackObjVar::toString() const
+{
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "StackObjVar ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << valueOnlyToString();
+    }
+    return rawstr.str();
+}
+
+
+
+FunValVar::FunValVar(const CallGraphNode* cgn, NodeID i, const ICFGNode* icn,
+                     PNODEK ty)
+    : ValVar(nullptr, i, ty, icn), callGraphNode(cgn)
+{
+    isPtr = cgn->getFunction()->getType()->isPointerTy();
 }
 
 const std::string FunValVar::toString() const

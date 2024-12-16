@@ -135,7 +135,7 @@ bool PointerAnalysis::isLocalVarInRecursiveFun(NodeID id) const
 {
     const MemObj* obj = pag->getObject(id);
     assert(obj && "object not found!!");
-    if(obj->isStack())
+    if(SVFUtil::isStackOriginVar(pag->getGNode(id)))
     {
         if(const SVFFunction* svffun = pag->getGNode(id)->getFunction())
         {

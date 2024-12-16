@@ -68,6 +68,7 @@ protected:
     SVFStmt::KindToSVFStmtMapTy InEdgeKindToSetMap;
     SVFStmt::KindToSVFStmtMapTy OutEdgeKindToSetMap;
     bool isPtr;	/// whether it is a pointer (top-level or address-taken)
+    const SVFFunction* func; /// function containing this variable
 
     /// Constructor to create an empty object (for deserialization)
     SVFVar(NodeID i, PNODEK k) : GenericPAGNodeTy(i, k), value{} {}
@@ -117,16 +118,29 @@ public:
     // TODO: (Optimization) Should it return const reference instead of value?
     virtual const std::string getValueName() const = 0;
 
-    /// Return the function that this SVFVar resides in. Return nullptr if it is a global or constantexpr node
+    /// Return the function containing this SVFVar 
+    /// @return The SVFFunction containing this variable, or nullptr if it's a global/constant expression
     virtual inline const SVFFunction* getFunction() const
     {
+        // Return cached function if available
+        if(func) return func;
+        
+        // If we have an associated LLVM value, check its parent function
         if (value)
         {
+            // For instructions, return the function containing the parent basic block
             if (auto inst = SVFUtil::dyn_cast<SVFInstruction>(value))
-                return inst->getParent()->getParent();
+            {
+                return inst->getParent()->getParent(); 
+            }
+            // For function arguments, return their parent function
             else if (auto arg = SVFUtil::dyn_cast<SVFArgument>(value))
+            {
                 return arg->getParent();
+            }
         }
+        
+        // Return nullptr for globals/constants with no parent function
         return nullptr;
     }
 
@@ -584,6 +598,125 @@ public:
     virtual const std::string toString() const;
 };
 
+
+/**
+ * @brief Class representing a heap object variable in the SVFIR
+ * 
+ * This class models heap-allocated objects in the program analysis. It extends FIObjVar
+ * to specifically handle heap memory locations.
+ */
+class HeapObjVar: public FIObjVar {
+
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
+protected:
+    /// Constructor to create heap object var
+    HeapObjVar(NodeID i, PNODEK ty = HeapObjNode) : FIObjVar(i, ty) {}
+
+public:
+    ///  Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const HeapObjVar*)
+    {
+        return true;
+    }
+    static inline bool classof(const FIObjVar* node)
+    {
+        return node->getNodeKind() == HeapObjNode;
+    }
+    static inline bool classof(const ObjVar* node)
+    {
+        return node->getNodeKind() == HeapObjNode;
+    }
+    static inline bool classof(const SVFVar* node)
+    {
+        return node->getNodeKind() == HeapObjNode;
+    }
+    static inline bool classof(const GenericPAGNodeTy* node)
+    {
+        return node->getNodeKind() == HeapObjNode;
+    }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == HeapObjNode;
+    }
+    //@}
+
+    /// Constructor
+    HeapObjVar(const SVFFunction* func, const SVFType* svfType, NodeID i,
+               const MemObj* mem, PNODEK ty = HeapObjNode);
+
+    /// Return name of a LLVM value
+    inline const std::string getValueName() const
+    {
+        return " (heap base object)";
+    }
+
+    virtual const std::string toString() const;
+};
+
+
+/**
+ * @brief Represents a stack-allocated object variable in the SVFIR (SVF Intermediate Representation)
+ * @inherits FIObjVar
+ * 
+ * This class models variables that are allocated on the stack in the program.
+ * It provides type checking functionality through LLVM-style RTTI (Runtime Type Information)
+ * methods like classof.
+ */
+class StackObjVar: public FIObjVar {
+
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
+protected:
+    /// Constructor to create stack object var
+    StackObjVar(NodeID i, PNODEK ty = StackObjNode) : FIObjVar(i, ty) {}
+
+public:
+    ///  Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const StackObjVar*)
+    {
+        return true;
+    }
+    static inline bool classof(const FIObjVar* node)
+    {
+        return node->getNodeKind() == StackObjNode;
+    }
+    static inline bool classof(const ObjVar* node)
+    {
+        return node->getNodeKind() == StackObjNode;
+    }
+    static inline bool classof(const SVFVar* node)
+    {
+        return node->getNodeKind() == StackObjNode;
+    }
+    static inline bool classof(const GenericPAGNodeTy* node)
+    {
+        return node->getNodeKind() == StackObjNode;
+    }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == StackObjNode;
+    }
+    //@}
+
+    /// Constructor
+    StackObjVar(const SVFFunction* f, const SVFType* svfType, NodeID i,
+                const MemObj* mem, PNODEK ty = StackObjNode);
+
+    /// Return name of a LLVM value
+    inline const std::string getValueName() const
+    {
+        return " (stack base object)";
+    }
+
+    virtual const std::string toString() const;
+};
+
+
 class CallGraphNode;
 
 class FunValVar : public ValVar
@@ -625,11 +758,7 @@ public:
 
     /// Constructor
     FunValVar(const CallGraphNode* cgn, NodeID i, const ICFGNode* icn,
-              PNODEK ty = FunValNode)
-        : ValVar(nullptr, i, ty, icn), callGraphNode(cgn)
-    {
-
-    }
+              PNODEK ty = FunValNode);
 
     virtual const std::string toString() const;
 };

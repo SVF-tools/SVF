@@ -473,7 +473,7 @@ protected:
         NodeID id = getPtrNodeID(var);
         const MemObj* obj = _pag->getObject(id);
         assert(obj && "object not found!!");
-        if(obj->isStack())
+        if(SVFUtil::isStackOriginVar(_pag->getGNode(id)))
         {
             if(const SVFFunction* svffun = _pag->getGNode(id)->getFunction())
             {
@@ -637,9 +637,7 @@ protected:
     //@{
     virtual inline bool isHeapCondMemObj(const CVar& var, const StoreSVFGNode*)
     {
-        const MemObj* mem = _pag->getObject(getPtrNodeID(var));
-        assert(mem && "memory object is null??");
-        return mem->isHeap();
+        return SVFUtil::isHeapOriginVar(_pag->getGNode(getPtrNodeID(var)));
     }
 
     inline bool isArrayCondMemObj(const CVar& var) const

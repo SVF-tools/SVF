@@ -646,6 +646,30 @@ bool LLVMUtil::isHeapAllocExtCallViaArg(const Instruction* inst)
     }
 }
 
+/**
+ * Check if a given value represents a heap object.
+ *
+ * @param val The value to check.
+ * @return True if the value represents a heap object, false otherwise.
+ */
+bool LLVMUtil::isHeapObj(const Value* val)
+{
+    // Check if the value is an argument in the program entry function
+    if (ArgInProgEntryFunction(val))
+    {
+        // Return true if the value does not have a first use via cast instruction
+        return !getFirstUseViaCastInst(val);
+    }
+    // Check if the value is an instruction and if it is a heap allocation external call
+    else if (SVFUtil::isa<Instruction>(val) &&
+             LLVMUtil::isHeapAllocExtCall(SVFUtil::cast<Instruction>(val)))
+    {
+        return true;
+    }
+    // Return false if none of the above conditions are met
+    return false;
+}
+
 bool LLVMUtil::isNonInstricCallSite(const Instruction* inst)
 {
     bool res = false;

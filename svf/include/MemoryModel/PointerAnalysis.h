@@ -304,9 +304,7 @@ public:
     //@{
     inline bool isHeapMemObj(NodeID id) const
     {
-        const MemObj* mem = pag->getObject(id);
-        assert(mem && "memory object is null??");
-        return mem->isHeap();
+        return SVFUtil::isHeapOriginVar(pag->getGNode(id));
     }
 
     inline bool isArrayMemObj(NodeID id) const

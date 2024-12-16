@@ -689,7 +689,7 @@ bool SVFIR::isValidTopLevelPtr(const SVFVar* node)
         if (isValidPointer(node->getId()))
         {
             // TODO: after svf value is removed, we use type to determine top level ptr
-            if (SVFUtil::isa<RetPN>(node) || SVFUtil::isa<VarArgPN>(node) || SVFUtil::isa<FunValVar>(node))
+            if (SVFUtil::isa<RetPN, VarArgPN, FunValVar, HeapObjVar, StackObjVar>(node))
             {
                 return true;
             }
