@@ -893,7 +893,9 @@ bool cppUtil::matchesLabel(const std::string &foo, const std::string &label)
  */
 bool cppUtil::isTemplateFunc(const Function *foo)
 {
-    assert(foo->hasName() && "foo does not have a name? possible indirect call");
+    /// if the function does not have a name, it can be a compiler generated internal function.
+    if(foo->hasName() == false)
+        return false;
     const std::string &name = foo->getName().str();
     bool matchedLabel = matchesLabel(name, znstLabel) || matchesLabel(name, znkstLabel) ||
                         matchesLabel(name, znkLabel);
