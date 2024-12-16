@@ -388,7 +388,9 @@ bool SVFUtil::isHeapOriginVar(const SVFVar* var)
         return SVFUtil::isa<DummyObjVar, HeapObjVar>(SVFIR::getPAG()->getGNode(gepObjVar->getBaseNode()));
     }
     return false;
-}/**
+}
+
+/**
  * \brief Check if the given variable originates from the stack.
  *
  * \param var The variable to check.
