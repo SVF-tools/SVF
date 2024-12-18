@@ -168,6 +168,7 @@ public:
         HeapObjNode,      // ├──Types of heap object
         StackObjNode,     // ├──Types of stack object
         DummyObjNode,     // ├──Dummy node for uninitialized objects
+                          // └────────
 
         // ┌── VFGNode: Classes of Value Flow Graph (VFG) node kinds with operations
         Cmp,              // ├──Represents a comparison operation
@@ -200,7 +201,7 @@ public:
         MPhi,             // ├──Memory PHI node
         MIntraPhi,        // ├──Intra-procedural memory PHI node
         MInterPhi,        // ├──Inter-procedural memory PHI node
-                   // └────────
+                          // └────────
 
         // Additional specific graph node types
         CallNodeKd,    // Callgraph node
