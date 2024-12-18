@@ -218,11 +218,13 @@ cJSON* SVFIRWriter::virtToJson(const SVFVar* var)
         CASE(VarargNode, VarArgPN);
         CASE(GepValNode, GepValVar);
         CASE(GepObjNode, GepObjVar);
-        CASE(FIObjNode, FIObjVar);
+        CASE(BaseObjNode, BaseObjVar);
         CASE(DummyValNode, DummyValVar);
         CASE(DummyObjNode, DummyObjVar);
         CASE(FunObjNode, FunObjVar);
         CASE(FunValNode, FunValVar);
+        CASE(HeapObjNode, HeapObjVar);
+        CASE(StackObjNode, StackObjVar);
 #undef CASE
     }
 }
@@ -341,7 +343,7 @@ cJSON* SVFIRWriter::contentToJson(const GepObjVar* var)
     return root;
 }
 
-cJSON* SVFIRWriter::contentToJson(const FIObjVar* var)
+cJSON* SVFIRWriter::contentToJson(const BaseObjVar* var)
 {
     return contentToJson(static_cast<const ObjVar*>(var));
 }
@@ -1621,7 +1623,7 @@ SVFVar* SVFIRReader::createPAGNode(NodeID id, GNodeK kind)
         CASE(VarargNode, VarArgPN);
         CASE(GepValNode, GepValVar);
         CASE(GepObjNode, GepObjVar);
-        CASE(FIObjNode, FIObjVar);
+        CASE(BaseObjNode, BaseObjVar);
         CASE(DummyValNode, DummyValVar);
         CASE(DummyObjNode, DummyObjVar);
 #undef CASE
@@ -1903,7 +1905,7 @@ void SVFIRReader::virtFill(const cJSON*& fieldJson, SVFVar* var)
         CASE(VarargNode, VarArgPN);
         CASE(GepValNode, GepValVar);
         CASE(GepObjNode, GepObjVar);
-        CASE(FIObjNode, FIObjVar);
+        CASE(BaseObjNode, BaseObjVar);
         CASE(DummyValNode, DummyValVar);
         CASE(DummyObjNode, DummyObjVar);
 #undef CASE
@@ -1944,7 +1946,7 @@ void SVFIRReader::fill(const cJSON*& fieldJson, GepObjVar* var)
     JSON_READ_FIELD_FWD(fieldJson, var, base);
 }
 
-void SVFIRReader::fill(const cJSON*& fieldJson, FIObjVar* var)
+void SVFIRReader::fill(const cJSON*& fieldJson, BaseObjVar* var)
 {
     fill(fieldJson, static_cast<ObjVar*>(var));
 }

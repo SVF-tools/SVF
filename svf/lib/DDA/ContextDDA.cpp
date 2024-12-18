@@ -336,7 +336,9 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
 {
     const MemObj* mem = _pag->getObject(getPtrNodeID(var));
     assert(mem && "memory object is null??");
-    if (mem->isHeap())
+    const BaseObjVar* baseVar = _pag->getBaseObject(getPtrNodeID(var));
+    assert(baseVar && "base object is null??");
+    if (SVFUtil::isa<HeapObjVar, DummyObjVar>(baseVar))
     {
         if (!mem->getValue())
         {
