@@ -401,6 +401,16 @@ public:
         else
             return nullptr;
     }
+
+    inline const BaseObjVar* getBaseObject(NodeID id) const {
+        const SVFVar* node = getGNode(id);
+        if(const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(node))
+            return SVFUtil::dyn_cast<BaseObjVar>(
+                getGNode(gepObjVar->getBaseNode()));
+        else
+            return SVFUtil::dyn_cast<BaseObjVar>(node);
+    }
+
     inline const MemObj*getObject(const ObjVar* node) const
     {
         return node->getMemObj();
@@ -563,6 +573,30 @@ private:
         const MemObj* mem = getMemObj(val);
         assert(mem->getId() == i && "not same object id?");
         return addFIObjNode(mem);
+    }
+
+    /**
+     * Creates and adds a heap object node to the SVFIR
+     */
+    inline NodeID addHeapObjNode(const SVFValue* val, const SVFFunction* f, NodeID i)
+    {
+        const MemObj* mem = getMemObj(val);
+        assert(mem->getId() == i && "not same object id?");
+        memToFieldsMap[i].set(i);
+        HeapObjVar *node = new HeapObjVar(f, val->getType(), i, mem);
+        return addObjNode(val, node, i);
+    }
+
+    /**
+     * Creates and adds a stack object node to the SVFIR
+     */
+    inline NodeID addStackObjNode(const SVFValue* val, const SVFFunction* f, NodeID i)
+    {
+        const MemObj* mem = getMemObj(val);
+        assert(mem->getId() == i && "not same object id?");
+        memToFieldsMap[i].set(i);
+        StackObjVar *node = new  StackObjVar(f, val->getType(), i, mem);
+        return addObjNode(val, node, i);
     }
 
     NodeID addFunObjNode(const CallGraphNode* callGraphNode, NodeID id);

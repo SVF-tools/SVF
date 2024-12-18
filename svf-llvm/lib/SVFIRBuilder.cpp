@@ -214,53 +214,88 @@ void SVFIRBuilder::initialiseNodes()
     pag->addBlackholePtrNode();
     addNullPtrNode();
 
-    for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
-                symTable->valSyms().begin(); iter != symTable->valSyms().end();
-            ++iter)
+    // Iterate over all value symbols in the symbol table
+for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
+            symTable->valSyms().begin(); iter != symTable->valSyms().end();
+        ++iter)
+{
+    // Debug output for adding value node
+    DBOUT(DPAGBuild, outs() << "add val node " << iter->second << "\n");
+
+    // Skip blackhole and null pointer symbols
+    if(iter->second == symTable->blkPtrSymID() || iter->second == symTable->nullPtrSymID())
+        continue;
+
+    const ICFGNode* icfgNode = nullptr;
+
+    // Check if the value is an instruction and get its ICFG node
+    if (const Instruction* inst =
+                SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(iter->first)))
     {
-        DBOUT(DPAGBuild, outs() << "add val node " << iter->second << "\n");
-        if(iter->second == symTable->blkPtrSymID() || iter->second == symTable->nullPtrSymID())
-            continue;
-
-        const ICFGNode* icfgNode = nullptr;
-        if (const Instruction* inst =
-                    SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(iter->first)))
+        if (llvmModuleSet()->hasICFGNode(inst))
         {
-            if (llvmModuleSet()->hasICFGNode(inst))
-            {
-                icfgNode = llvmModuleSet()->getICFGNode(inst);
-            }
-        }
-
-        if (const Function* func =
-                    SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(iter->first)))
-        {
-            const CallGraphNode* cgn = llvmModuleSet()->getCallGraphNode(func);
-            pag->addFunValNode(cgn, iter->second, icfgNode);
-        }
-        else
-        {
-            pag->addValNode(iter->first, iter->second, icfgNode);
+            icfgNode = llvmModuleSet()->getICFGNode(inst);
         }
     }
 
-    for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
-                symTable->objSyms().begin(); iter != symTable->objSyms().end();
-            ++iter)
+    // Check if the value is a function and get its call graph node
+    if (const Function* func =
+                SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(iter->first)))
     {
-        DBOUT(DPAGBuild, outs() << "add obj node " << iter->second << "\n");
-        if(iter->second == symTable->blackholeSymID() || iter->second == symTable->constantSymID())
-            continue;
-        if (const Function* func = SVFUtil::dyn_cast<Function>(
-                                       llvmModuleSet()->getLLVMValue(iter->first)))
-        {
-            pag->addFunObjNode(llvmModuleSet()->getCallGraphNode(func), iter->second);
-        }
-        else
-        {
-            pag->addObjNode(iter->first, iter->second);
-        }
+        const CallGraphNode* cgn = llvmModuleSet()->getCallGraphNode(func);
+        // add value node representing the function
+        pag->addFunValNode(cgn, iter->second, icfgNode);
     }
+    else
+    {
+        // Add value node to PAG
+        pag->addValNode(iter->first, iter->second, icfgNode);
+    }
+}
+
+    // Iterate over all object symbols in the symbol table
+for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
+            symTable->objSyms().begin(); iter != symTable->objSyms().end();
+        ++iter)
+{
+    // Debug output for adding object node
+    DBOUT(DPAGBuild, outs() << "add obj node " << iter->second << "\n");
+
+    // Skip blackhole and constant symbols
+    if(iter->second == symTable->blackholeSymID() || iter->second == symTable->constantSymID())
+        continue;
+
+    // Get the LLVM value corresponding to the symbol
+    const Value* llvmValue = llvmModuleSet()->getLLVMValue(iter->first);
+
+    // Check if the value is a function and add a function object node
+    if (const Function* func = SVFUtil::dyn_cast<Function>(llvmValue))
+    {
+        pag->addFunObjNode(llvmModuleSet()->getCallGraphNode(func), iter->second);
+    }
+    // Check if the value is a heap object and add a heap object node
+    else if (LLVMUtil::isHeapObj(llvmValue))
+    {
+        const SVFFunction* f =
+            SVFUtil::cast<SVFInstruction>(iter->first)->getFunction();
+        pag->addHeapObjNode(iter->first, f, iter->second);
+        llvmModuleSet()->setValueAttr(llvmValue,pag->getGNode(iter->second));
+    }
+    // Check if the value is an alloca instruction and add a stack object node
+    else if (SVFUtil::isa<AllocaInst>(llvmValue))
+    {
+        const SVFFunction* f =
+            SVFUtil::cast<SVFInstruction>(iter->first)->getFunction();
+        pag->addStackObjNode(iter->first, f, iter->second);
+        llvmModuleSet()->setValueAttr(llvmValue,
+                                      pag->getGNode(iter->second));
+    }
+    // Add a generic object node for other types of values
+    else
+    {
+        pag->addObjNode(iter->first, iter->second);
+    }
+}
 
     for (SymbolTableInfo::FunToIDMapTy::iterator iter =
                 symTable->retSyms().begin(); iter != symTable->retSyms().end();
@@ -1347,7 +1382,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     {
         const SVFFunction* srcFun = edge->getSrcNode()->getFunction();
         const SVFFunction* dstFun = edge->getDstNode()->getFunction();
-        if(srcFun!=nullptr && !SVFUtil::isa<RetPE>(edge) && !SVFUtil::isa<SVFFunction>(edge->getSrcNode()->getValue()))
+        if(srcFun!=nullptr && !SVFUtil::isa<RetPE>(edge) && edge->getSrcNode()->hasValue() && !SVFUtil::isa<SVFFunction>(edge->getSrcNode()->getValue()))
         {
             assert(srcFun==curInst->getFunction() && "SrcNode of the PAGEdge not in the same function?");
         }

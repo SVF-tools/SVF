@@ -174,7 +174,7 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
         {
             if(SVFUtil::isa<GepObjVar>(node))
                 return "shape=doubleoctagon";
-            else if(SVFUtil::isa<FIObjVar>(node))
+            else if(SVFUtil::isa<BaseObjVar>(node))
                 return "shape=box3d";
             else if (SVFUtil::isa<DummyObjVar>(node))
                 return "shape=tab";

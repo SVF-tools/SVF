@@ -471,9 +471,11 @@ protected:
     virtual inline bool isLocalCVarInRecursion(const CVar& var) const
     {
         NodeID id = getPtrNodeID(var);
+        const BaseObjVar* baseObj = _pag->getBaseObject(id);
+        assert(baseObj && "base object is null??");
         const MemObj* obj = _pag->getObject(id);
         assert(obj && "object not found!!");
-        if(obj->isStack())
+        if(SVFUtil::isa<StackObjVar>(baseObj))
         {
             if(const SVFFunction* svffun = _pag->getGNode(id)->getFunction())
             {
@@ -637,9 +639,8 @@ protected:
     //@{
     virtual inline bool isHeapCondMemObj(const CVar& var, const StoreSVFGNode*)
     {
-        const MemObj* mem = _pag->getObject(getPtrNodeID(var));
-        assert(mem && "memory object is null??");
-        return mem->isHeap();
+        const BaseObjVar* pVar = _pag->getBaseObject(getPtrNodeID(var));
+        return pVar && SVFUtil::isa<HeapObjVar, DummyObjVar>(pVar);
     }
 
     inline bool isArrayCondMemObj(const CVar& var) const

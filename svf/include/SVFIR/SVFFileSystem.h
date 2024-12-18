@@ -166,7 +166,7 @@ class ValVar;
 class ObjVar;
 class GepValVar;
 class GepObjVar;
-class FIObjVar;
+class BaseObjVar;
 class RetPN;
 class VarArgPN;
 class DummyValVar;
@@ -456,7 +456,7 @@ private:
     cJSON* contentToJson(const ObjVar* var);
     cJSON* contentToJson(const GepValVar* var);
     cJSON* contentToJson(const GepObjVar* var);
-    cJSON* contentToJson(const FIObjVar* var);
+    cJSON* contentToJson(const BaseObjVar* var);
     cJSON* contentToJson(const RetPN* var);
     cJSON* contentToJson(const VarArgPN* var);
     cJSON* contentToJson(const DummyValVar* var);
@@ -1231,7 +1231,7 @@ private:
     void fill(const cJSON*& fieldJson, ObjVar* var);
     void fill(const cJSON*& fieldJson, GepValVar* var);
     void fill(const cJSON*& fieldJson, GepObjVar* var);
-    void fill(const cJSON*& fieldJson, FIObjVar* var);
+    void fill(const cJSON*& fieldJson, BaseObjVar* var);
     void fill(const cJSON*& fieldJson, RetPN* var);
     void fill(const cJSON*& fieldJson, VarArgPN* var);
     void fill(const cJSON*& fieldJson, DummyValVar* var);

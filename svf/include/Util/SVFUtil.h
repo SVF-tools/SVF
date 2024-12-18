@@ -374,8 +374,6 @@ bool isHeapAllocExtCallViaRet(const CallICFGNode* cs);
 
 bool isHeapAllocExtCall(const ICFGNode* cs);
 
-
-
 //@}
 
 u32_t getHeapAllocHoldingArgPosition(const CallICFGNode* cs);

@@ -136,7 +136,7 @@ void AndersenSFR::fieldExpand(NodeSet& initials, APOffset offset, NodeBS& stride
             APOffset initOffset;
             if (GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(initPN))
                 initOffset = gepNode->getConstantFieldIdx();
-            else if (SVFUtil::isa<FIObjVar, DummyObjVar>(initPN))
+            else if (SVFUtil::isa<BaseObjVar, DummyObjVar>(initPN))
                 initOffset = 0;
             else
             {
