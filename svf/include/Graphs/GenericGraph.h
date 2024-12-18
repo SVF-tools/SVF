@@ -152,7 +152,7 @@ public:
                           // └────────
 
         // ┌── SVFVar: Classes of top-level variables (ValVar) and address-taken variables (ObjVar)
-        // │   └── ValVar: classes of top-level variable nodes
+        // │   └── ValVar: Classes of top-level variable nodes
         ValNode,          // ├──Represents a standard value variable
         FunValNode,       // ├──Represents a Function value variable
         GepValNode,       // ├──Represents a GEP value variable
