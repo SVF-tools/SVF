@@ -118,20 +118,20 @@ public:
     // TODO: (Optimization) Should it return const reference instead of value?
     virtual const std::string getValueName() const = 0;
 
-    /// Return the function containing this SVFVar 
+    /// Return the function containing this SVFVar
     /// @return The SVFFunction containing this variable, or nullptr if it's a global/constant expression
     virtual inline const SVFFunction* getFunction() const
     {
         // Return cached function if available
         if(func) return func;
-        
+
         // If we have an associated LLVM value, check its parent function
         if (value)
         {
             // For instructions, return the function containing the parent basic block
             if (auto inst = SVFUtil::dyn_cast<SVFInstruction>(value))
             {
-                return inst->getParent()->getParent(); 
+                return inst->getParent()->getParent();
             }
             // For function arguments, return their parent function
             else if (auto arg = SVFUtil::dyn_cast<SVFArgument>(value))
@@ -139,7 +139,7 @@ public:
                 return arg->getParent();
             }
         }
-        
+
         // Return nullptr for globals/constants with no parent function
         return nullptr;
     }
@@ -582,7 +582,7 @@ public:
 
     /// Constructor
     BaseObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
-             PNODEK ty = BaseObjNode)
+               PNODEK ty = BaseObjNode)
         : ObjVar(val, i, mem, ty)
     {
     }
@@ -601,7 +601,7 @@ public:
 
 /**
  * @brief Class representing a heap object variable in the SVFIR
- * 
+ *
  * This class models heap-allocated objects in the program analysis. It extends BaseObjVar
  * to specifically handle heap memory locations.
  */
@@ -661,7 +661,7 @@ public:
 /**
  * @brief Represents a stack-allocated object variable in the SVFIR (SVF Intermediate Representation)
  * @inherits BaseObjVar
- * 
+ *
  * This class models variables that are allocated on the stack in the program.
  * It provides type checking functionality through LLVM-style RTTI (Runtime Type Information)
  * methods like classof.

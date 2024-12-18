@@ -72,7 +72,8 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     case RetNode:
     case FunObjNode:
     case HeapObjNode:
-    case StackObjNode: {
+    case StackObjNode:
+    {
         // to be completed in derived class
         break;
     }
