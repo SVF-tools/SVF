@@ -141,65 +141,65 @@ public:
 
     enum GNodeK
     {
-        // ┌── ICFGNodeKinds: Combines inter-procedural and intra-procedural control flow graph nodes
-        IntraBlock,       // Represents a node within a single procedure
-        GlobalBlock,      // Represents a global-level block
-        // │   └─ InterICFGNodeKinds: Types of inter-procedural control flow graph nodes
-        FunEntryBlock,    // Entry point of a function
-        FunExitBlock,     // Exit point of a function
-        FunCallBlock,     // Call site in the function
-        FunRetBlock,      // Return site in the function
-                       // └────────
+        // ┌── ICFGNode: Classes of inter-procedural and intra-procedural control flow graph nodes
+        IntraBlock,       // ├──Represents a node within a single procedure
+        GlobalBlock,      // ├──Represents a global-level block
+        // │   └─ InterICFGNode: Classes of inter-procedural control flow graph nodes
+        FunEntryBlock,    // ├──Entry point of a function
+        FunExitBlock,     // ├──Exit point of a function
+        FunCallBlock,     // ├──Call site in the function
+        FunRetBlock,      // ├──Return site in the function
+                          // └────────
 
-        // ┌── SVFVarKinds: Combines ValVarKinds and ObjVarKinds for variable nodes
-        // │   ┌── ValVarKinds: Types of value variable nodes
-        ValNode,          // Represents a standard value variable
-        FunValNode,       // Represents a Function value variable
-        GepValNode,       // Represents a GEP value variable
-        RetNode,          // Represents a return value node
-        VarargNode,       // Represents a variadic argument node
-        DummyValNode,     // Dummy node for uninitialized values
-        // │   └── ObjVarKinds: Types of object variable nodes
-        ObjNode,          // Represents an object variable
-        GepObjNode,       // Represents a GEP object variable
-        // │        └── BaseObjVarKinds: Types of base object nodes
-        BaseObjNode,      // Represents a base object node
-        FunObjNode,             // Types of function object
-        HeapObjNode,            // Types of heap object
-        StackObjNode,           // Types of stack object
-        DummyObjNode,           // Dummy node for uninitialized objects
+        // ┌── SVFVar: Classes of top-level variables (ValVar) and address-taken variables (ObjVar)
+        // │   └── ValVar: classes of top-level variable nodes
+        ValNode,          // ├──Represents a standard value variable
+        FunValNode,       // ├──Represents a Function value variable
+        GepValNode,       // ├──Represents a GEP value variable
+        RetNode,          // ├──Represents a return value node
+        VarargNode,       // ├──Represents a variadic argument node
+        DummyValNode,     // ├──Dummy node for uninitialized values
+        // │   └── ObjVar: Classes of object variable nodes
+        ObjNode,          // ├──Represents an object variable
+        GepObjNode,       // ├──Represents a GEP object variable
+        // │        └── BaseObjVar: Classes of base object nodes
+        BaseObjNode,      // ├──Represents a base object node
+        FunObjNode,       // ├──Types of function object
+        HeapObjNode,      // ├──Types of heap object
+        StackObjNode,     // ├──Types of stack object
+        DummyObjNode,     // ├──Dummy node for uninitialized objects
 
-        // ┌── VFGNodeKinds: Various Value Flow Graph (VFG) node kinds with operations
-        Cmp,              // Represents a comparison operation
-        BinaryOp,         // Represents a binary operation
-        UnaryOp,          // Represents a unary operation
-        Branch,           // Represents a branch operation
-        DummyVProp,       // Dummy node for value propagation
-        NPtr,             // Represents a null pointer operation
-        // │   └── ArgumentVFGNodeKinds: Types of argument nodes in VFG
-        FRet,             // Represents a function return value
-        ARet,             // Represents an argument return value
-        AParm,            // Represents an argument parameter
-        FParm,            // Represents a function parameter
-        // │   └── StmtVFGNodeKinds: Types of statement nodes in VFG
-        Addr,             // Represents an address operation
-        Copy,             // Represents a copy operation
-        Gep,              // Represents a GEP operation
-        Store,            // Represents a store operation
-        Load,             // Represents a load operation
-        // │   └── PHIVFGNodeKinds: Types of PHI nodes in VFG
-        TPhi,             // Represents a type-based PHI node
-        TIntraPhi,        // Represents an intra-procedural PHI node
-        TInterPhi,        // Represents an inter-procedural PHI node
-        // │   └── MRSVFGNodeKinds: Memory-related SVFG nodes
-        FPIN,             // Function parameter input
-        FPOUT,            // Function parameter output
-        APIN,             // Argument parameter input
-        APOUT,            // Argument parameter output
-        // │        └── MSSAPHISVFGNodeKinds: Mem SSA PHI nodes for SVFG
-        MPhi,             // Memory PHI node
-        MIntraPhi,        // Intra-procedural memory PHI node
-        MInterPhi,        // Inter-procedural memory PHI node
+        // ┌── VFGNode: Classes of Value Flow Graph (VFG) node kinds with operations
+        Cmp,              // ├──Represents a comparison operation
+        BinaryOp,         // ├──Represents a binary operation
+        UnaryOp,          // ├──Represents a unary operation
+        Branch,           // ├──Represents a branch operation
+        DummyVProp,       // ├──Dummy node for value propagation
+        NPtr,             // ├──Represents a null pointer operation
+        // │   └── ArgumentVFGNode: Classes of argument nodes in VFG
+        FRet,             // ├──Represents a function return value
+        ARet,             // ├──Represents an argument return value
+        AParm,            // ├──Represents an argument parameter
+        FParm,            // ├──Represents a function parameter
+        // │   └── StmtVFGNode: Classes of statement nodes in VFG
+        Addr,             // ├──Represents an address operation
+        Copy,             // ├──Represents a copy operation
+        Gep,              // ├──Represents a GEP operation
+        Store,            // ├──Represents a store operation
+        Load,             // ├──Represents a load operation
+        // │   └── PHIVFGNode: Classes of PHI nodes in VFG
+        TPhi,             // ├──Represents a type-based PHI node
+        TIntraPhi,        // ├──Represents an intra-procedural PHI node
+        TInterPhi,        // ├──Represents an inter-procedural PHI node
+        // │   └── MRSVFGNode: Classes of Memory-related SVFG nodes
+        FPIN,             // ├──Function parameter input
+        FPOUT,            // ├──Function parameter output
+        APIN,             // ├──Argument parameter input
+        APOUT,            // ├──Argument parameter output
+        // │        └── MSSAPHISVFGNode: Classes of Mem SSA PHI nodes for SVFG
+        MPhi,             // ├──Memory PHI node
+        MIntraPhi,        // ├──Intra-procedural memory PHI node
+        MInterPhi,        // ├──Inter-procedural memory PHI node
                    // └────────
 
         // Additional specific graph node types
