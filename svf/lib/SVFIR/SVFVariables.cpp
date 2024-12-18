@@ -189,7 +189,7 @@ const std::string BaseObjVar::toString() const
 
 HeapObjVar::HeapObjVar(const SVFFunction* f, const SVFType* svfType, NodeID i,
                        const MemObj* mem, PNODEK ty)
-    : BaseObjVar(nullptr, i, mem, ty)
+    : BaseObjVar(mem->getValue(), i, mem, ty)
 {
     isPtr = svfType->isPointerTy();
     func = f;
@@ -210,7 +210,7 @@ const std::string HeapObjVar::toString() const
 
 StackObjVar::StackObjVar(const SVFFunction* f, const SVFType* svfType, NodeID i,
                          const MemObj* mem, PNODEK ty)
-    : BaseObjVar(nullptr, i, mem, ty)
+    : BaseObjVar(mem->getValue(), i, mem, ty)
 {
     isPtr = svfType->isPointerTy();
     func = f;
@@ -233,7 +233,7 @@ const std::string StackObjVar::toString() const
 
 FunValVar::FunValVar(const CallGraphNode* cgn, NodeID i, const ICFGNode* icn,
                      PNODEK ty)
-    : ValVar(nullptr, i, ty, icn), callGraphNode(cgn)
+    : ValVar(cgn->getFunction(), i, ty, icn), callGraphNode(cgn)
 {
     isPtr = cgn->getFunction()->getType()->isPointerTy();
 }
@@ -253,7 +253,7 @@ const std::string FunValVar::toString() const
 
 FunObjVar::FunObjVar(const CallGraphNode* cgNode, NodeID i, const MemObj* mem,
                      PNODEK ty)
-    : BaseObjVar(nullptr, i, mem, ty), callGraphNode(cgNode)
+    : BaseObjVar(mem->getValue(), i, mem, ty), callGraphNode(cgNode)
 {
     isPtr = callGraphNode->getFunction()->getType()->isPointerTy();
 }
