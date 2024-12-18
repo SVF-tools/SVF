@@ -149,7 +149,7 @@ public:
         FunExitBlock,     // ├──Exit point of a function
         FunCallBlock,     // ├──Call site in the function
         FunRetBlock,      // ├──Return site in the function
-                          // └────────
+        // └────────
 
         // ┌── SVFVar: Classes of top-level variables (ValVar) and address-taken variables (ObjVar)
         // │   └── ValVar: Classes of top-level variable nodes
@@ -168,7 +168,7 @@ public:
         HeapObjNode,      // ├──Types of heap object
         StackObjNode,     // ├──Types of stack object
         DummyObjNode,     // ├──Dummy node for uninitialized objects
-                          // └────────
+        // └────────
 
         // ┌── VFGNode: Classes of Value Flow Graph (VFG) node kinds with operations
         Cmp,              // ├──Represents a comparison operation
@@ -201,7 +201,7 @@ public:
         MPhi,             // ├──Memory PHI node
         MIntraPhi,        // ├──Intra-procedural memory PHI node
         MInterPhi,        // ├──Inter-procedural memory PHI node
-                          // └────────
+        // └────────
 
         // Additional specific graph node types
         CallNodeKd,    // Callgraph node

@@ -402,11 +402,12 @@ public:
             return nullptr;
     }
 
-    inline const BaseObjVar* getBaseObject(NodeID id) const {
+    inline const BaseObjVar* getBaseObject(NodeID id) const
+    {
         const SVFVar* node = getGNode(id);
         if(const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(node))
             return SVFUtil::dyn_cast<BaseObjVar>(
-                getGNode(gepObjVar->getBaseNode()));
+                       getGNode(gepObjVar->getBaseNode()));
         else
             return SVFUtil::dyn_cast<BaseObjVar>(node);
     }
