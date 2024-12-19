@@ -216,19 +216,24 @@ bool ExtAPI::is_memset(const SVFFunction *F)
 
 bool ExtAPI::is_alloc(const SVFFunction* F)
 {
-    return F && hasExtFuncAnnotation(F, "ALLOC_RET");
+    return F && hasExtFuncAnnotation(F, "ALLOC_HEAP_RET");
 }
 
 // Does (F) allocate a new object and assign it to one of its arguments?
 bool ExtAPI::is_arg_alloc(const SVFFunction* F)
 {
-    return F && hasExtFuncAnnotation(F, "ALLOC_ARG");
+    return F && hasExtFuncAnnotation(F, "ALLOC_HEAP_ARG");
+}
+
+bool ExtAPI::is_alloc_stack_ret(const SVFFunction* F)
+{
+    return F && hasExtFuncAnnotation(F, "ALLOC_STACK_RET");
 }
 
 // Get the position of argument which holds the new object
 s32_t ExtAPI::get_alloc_arg_pos(const SVFFunction* F)
 {
-    std::string allocArg = getExtFuncAnnotation(F, "ALLOC_ARG");
+    std::string allocArg = getExtFuncAnnotation(F, "ALLOC_HEAP_ARG");
     assert(!allocArg.empty() && "Not an alloc call via argument or incorrect extern function annotation!");
 
     std::string number;
@@ -237,14 +242,14 @@ s32_t ExtAPI::get_alloc_arg_pos(const SVFFunction* F)
         if (isdigit(c))
             number.push_back(c);
     }
-    assert(!number.empty() && "Incorrect naming convention for svf external functions(ALLOC_ARG + number)?");
+    assert(!number.empty() && "Incorrect naming convention for svf external functions(ALLOC_HEAP_ARG + number)?");
     return std::stoi(number);
 }
 
 // Does (F) reallocate a new object?
 bool ExtAPI::is_realloc(const SVFFunction* F)
 {
-    return F && hasExtFuncAnnotation(F, "REALLOC_RET");
+    return F && hasExtFuncAnnotation(F, "REALLOC_HEAP_RET");
 }
 
 
