@@ -7,7 +7,7 @@ on:
 jobs:
   docker-x86-image:
     if: github.repository == 'SVF-tools/SVF'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -31,7 +31,7 @@ jobs:
           
   dispatch:
       needs: docker-x86-image
-      runs-on: ubuntu-22.04
+      runs-on: ubuntu-latest
       strategy: 
         matrix:
           repo: ['SVF-tools/Software-Security-Analysis', 'SVF-tools/Teaching-Software-Analysis', 'SVF-tools/Teaching-Software-Verification', 'SVF-tools/SVF-example']

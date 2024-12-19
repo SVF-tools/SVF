@@ -16,9 +16,9 @@ jobs:
       XCODE_VERSION: '15.3.0'
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-latest]
+        os: [ubuntu-latest, macos-latest]
         include:
-          - os: [ubuntu-22.04]
+          - os: [ubuntu-latest]
             sanitizer: address
     steps:
       # checkout the repo
