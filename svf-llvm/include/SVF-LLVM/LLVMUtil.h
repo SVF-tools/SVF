@@ -362,7 +362,7 @@ inline bool isHeapAllocExtCall(const Instruction *inst)
 
 bool isStackAllocExtCallViaRet(const Instruction *inst);
 
-bool isStackAllocExtCall(const Instruction *inst)
+inline bool isStackAllocExtCall(const Instruction *inst)
 {
     return isStackAllocExtCallViaRet(inst);
 }
