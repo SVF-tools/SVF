@@ -19,7 +19,7 @@ jobs:
       XCODE_VERSION: '15.3.0'  # Define Xcode version here to reuse it
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-22.04, macos-latest]
     steps:
       # checkout the repo
       - uses: actions/checkout@v2
