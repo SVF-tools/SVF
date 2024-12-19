@@ -17,9 +17,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       XCODE_VERSION: '15.3.0'  # Define Xcode version here to reuse it
+      UBUNTU_VERSION: '22.04'
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-${{ env.UBUNTU_VERSION }}, macos-latest]
     steps:
       # checkout the repo
       - uses: actions/checkout@v2

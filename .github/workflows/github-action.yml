@@ -14,11 +14,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       XCODE_VERSION: '15.3.0'
+      UBUNTU_VERSION: '22.04'
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-${{ env.UBUNTU_VERSION }}, macos-latest]
         include:
-          - os: [ubuntu-latest]
+          - os: [ubuntu-${{ env.UBUNTU_VERSION }}]
             sanitizer: address
     steps:
       # checkout the repo
