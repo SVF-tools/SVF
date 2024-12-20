@@ -60,7 +60,9 @@ public:
 
 private:
     /// Add nonterminal to tranfer long rules to binary rules
-    void ebnf_bin(CFGrammar *grammar);
+    void
+
+    ebnf_bin(CFGrammar *grammar);
 
     void ebnfSignReplace(char sign, CFGrammar *grammar);
 
