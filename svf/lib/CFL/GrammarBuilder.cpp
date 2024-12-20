@@ -29,7 +29,6 @@
 
 #include <string>
 #include <fstream>
-#include <regex>
 #include <sstream>
 #include <iostream>
 #include "CFL/GrammarBuilder.h"
@@ -44,47 +43,68 @@ const inline std::string GrammarBuilder::parseProductionsString() const
         std::cerr << "Can't open CFL grammar file `" << fileName << "`" << std::endl;
         abort();
     }
+
     std::string lineString;
     std::string lines = "";
     std::string startString;
     std::string symbolString;
     const std::string WHITESPACE = " \n\r\t\f\v";
     int lineNum = 0;
+
     while (getline(textFile, lineString))
     {
-        if(lineNum == 1)
+        if (lineNum == 1)
         {
             startString = stripSpace(lineString);
         }
-        if(lineNum == 3)
+        else if (lineNum == 3)
         {
-            symbolString = lineString.substr(lineString.find_first_not_of(WHITESPACE), lineString.find_last_not_of(WHITESPACE)+1);
+            // Trim leading and trailing whitespace
+            size_t start = lineString.find_first_not_of(WHITESPACE);
+            size_t end = lineString.find_last_not_of(WHITESPACE);
+            if (start != std::string::npos && end != std::string::npos)
+            {
+                symbolString = lineString.substr(start, end - start + 1);
+            }
         }
 
-        lines.append(lineString.substr(lineString.find_first_not_of(WHITESPACE), lineString.find_last_not_of(WHITESPACE)+1));
+        // Append line to `lines` with whitespace trimmed
+        size_t start = lineString.find_first_not_of(WHITESPACE);
+        size_t end = lineString.find_last_not_of(WHITESPACE);
+        if (start != std::string::npos && end != std::string::npos)
+        {
+            lines.append(lineString.substr(start, end - start + 1));
+        }
+
         lineNum++;
     }
 
-    std::regex reg("Start:([\\s\\S]*)Terminal:(.*)Productions:([\\s\\S]*)");
-    std::smatch matches;
-    if (std::regex_search(lines, matches, reg))
+    // Extract "Productions:" part from `lines` manually
+    size_t productionsPos = lines.find("Productions:");
+    if (productionsPos != std::string::npos)
     {
-        lines = matches.str(3);
+        lines = lines.substr(productionsPos + std::string("Productions:").length());
     }
+
+    // Parse `symbolString` to insert symbols
     std::string sString;
     size_t pos = 0;
     while ((pos = symbolString.find(" ")) != std::string::npos)
     {
         sString = stripSpace(symbolString.substr(0, pos));
-        symbolString.erase(0, pos + 1); //Capital is Nonterminal, Otherwise is terminal
+        symbolString.erase(0, pos + 1); // Remove the processed part
         grammar->insertSymbol(sString);
     }
+    // Insert the remaining symbol
     grammar->insertSymbol(symbolString);
+
+    // Set the start kind and add the epsilon terminal
     grammar->setStartKind(grammar->insertSymbol(startString));
     grammar->insertTerminalKind("epsilon");
 
     return lines;
 }
+
 
 const inline std::vector<std::string> GrammarBuilder::loadWordProductions() const
 {
@@ -104,17 +124,20 @@ const inline std::vector<std::string> GrammarBuilder::loadWordProductions() cons
 
 const inline std::string GrammarBuilder::stripSpace(std::string s) const
 {
-    std::smatch matches;
-    std::regex stripReg("\\s*(\\S*)\\s*");
-    std::regex_search(s, matches, stripReg);
-    return matches.str(1);
+    // Remove leading spaces
+    size_t start = s.find_first_not_of(" ");
+    if (start == std::string::npos) {
+        return ""; // Return an empty string if no non-space character is found
+    }
+
+    // Remove trailing spaces
+    size_t end = s.find_last_not_of(" ");
+    return s.substr(start, end - start + 1);
 }
 
-
-/// build grammarbase from textfile
+/// Build grammarbase from textfile
 GrammarBase* GrammarBuilder::build() const
 {
-    std::smatch matches;
     std::string delimiter = " ";
     std::string delimiter1 = "->";
     std::string word = "";
@@ -124,29 +147,50 @@ GrammarBase* GrammarBuilder::build() const
 
     for (auto wordProd : wordProdVec)
     {
+        // Find the position of the '->' delimiter
         if ((pos = wordProd.find(delimiter1)) != std::string::npos)
         {
+            // Extract and strip RHS (right-hand side) and LHS (left-hand side)
             std::string RHS = stripSpace(wordProd.substr(0, pos));
-            std::string LHS = wordProd.substr(pos + delimiter1.size(), wordProd.size() - 1);
+            std::string LHS = stripSpace(wordProd.substr(pos + delimiter1.size()));
+
+            // Insert RHS symbol into grammar
             GrammarBase::Symbol RHSSymbol = grammar->insertSymbol(RHS);
             prod.push_back(RHSSymbol);
-            if (grammar->getRawProductions().find(RHSSymbol) == grammar->getRawProductions().end())  grammar->getRawProductions().insert({RHSSymbol, {}});
-            std::regex LHSRegEx("\\s*(.*)");
-            std::regex_search(LHS, matches, LHSRegEx);
-            LHS = matches.str(1);
+
+            // Ensure RHS symbol exists in raw productions
+            if (grammar->getRawProductions().find(RHSSymbol) == grammar->getRawProductions().end())
+            {
+                grammar->getRawProductions().insert({RHSSymbol, {}});
+            }
+
+            // Parse LHS string into symbols
             while ((pos = LHS.find(delimiter)) != std::string::npos)
             {
-                word = LHS.substr(0, pos);
-                LHS.erase(0, pos + delimiter.length()); //Capital is Nonterminal, Otherwise is terminal
+                // Extract each word before the space
+                word = stripSpace(LHS.substr(0, pos));
+                LHS.erase(0, pos + delimiter.length());
+
+                // Insert symbol into production
                 prod.push_back(grammar->insertSymbol(word));
             }
-            prod.push_back(grammar->insertSymbol(LHS));
+
+            // Insert the remaining word (if any) into the production
+            if (!LHS.empty())
+            {
+                prod.push_back(grammar->insertSymbol(stripSpace(LHS)));
+            }
+
+            // Add the production to raw productions
             grammar->getRawProductions().at(RHSSymbol).insert(prod);
+
+            // Clear the production for the next iteration
             prod = {};
         }
     }
 
     return grammar;
-};
+}
+
 
 }

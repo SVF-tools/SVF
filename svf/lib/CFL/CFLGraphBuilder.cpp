@@ -193,49 +193,79 @@ CFLGraph* CFLGraphBuilder::buildFromText(std::string fileName, GrammarBase *gram
     return cflGraph;
 }
 
-CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *grammar, BuildDirection direction)
+CFLGraph *CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *grammar, BuildDirection direction)
 {
     buildlabelToKindMap(grammar);
     cflGraph = new CFLGraph(grammar->getStartKind());
     std::string lineString;
     std::ifstream inputFile(fileName);
     std::cout << "Building CFL Graph from dot file: " << fileName << "..\n";
-    std::regex reg("Node(\\w+)\\s*->\\s*Node(\\w+)\\s*\\[.*label=(.*)\\]");
     std::cout << std::boolalpha;
-    u32_t lineNum = 0 ;
+
+    u32_t lineNum = 0;
     current = labelToKindMap.size();
 
     while (getline(inputFile, lineString))
     {
         lineNum += 1;
-        std::smatch matches;
-        if (std::regex_search(lineString, matches, reg))
+
+        // Find "Node" prefixes and "->"
+        size_t srcStart = lineString.find("Node");
+        if (srcStart == std::string::npos) continue;
+
+        size_t srcEnd = lineString.find(" ", srcStart);
+        if (srcEnd == std::string::npos) continue;
+
+        size_t arrowPos = lineString.find("->", srcEnd);
+        if (arrowPos == std::string::npos) continue;
+
+        size_t dstStart = lineString.find("Node", arrowPos);
+        if (dstStart == std::string::npos) continue;
+
+        size_t dstEnd = lineString.find(" ", dstStart);
+        if (dstEnd == std::string::npos) continue;
+
+        size_t labelStart = lineString.find("label=", dstEnd);
+        if (labelStart == std::string::npos) continue;
+
+        labelStart += 6; // Move past "label=" to the start of the label
+        size_t labelEnd = lineString.find_first_of("]", labelStart);
+        if (labelEnd == std::string::npos) continue;
+
+        // Extract the source ID, destination ID, and label
+        std::string srcIDStr = lineString.substr(srcStart + 4, srcEnd - (srcStart + 4));
+        std::string dstIDStr = lineString.substr(dstStart + 4, dstEnd - (dstStart + 4));
+        std::string label = lineString.substr(labelStart, labelEnd - labelStart);
+
+        // Convert source and destination IDs from hexadecimal
+        u32_t srcID = std::stoul(srcIDStr, nullptr, 16);
+        u32_t dstID = std::stoul(dstIDStr, nullptr, 16);
+
+        CFLNode *src = addGNode(srcID);
+        CFLNode *dst = addGNode(dstID);
+
+        if (labelToKindMap.find(label) != labelToKindMap.end())
         {
-            u32_t srcID = std::stoul(matches.str(1), nullptr, 16);
-            u32_t dstID = std::stoul(matches.str(2), nullptr, 16);
-            std::string label = matches.str(3);
-            CFLNode *src = addGNode(srcID);
-            CFLNode *dst = addGNode(dstID);
-            if (labelToKindMap.find(label) != labelToKindMap.end())
+            cflGraph->addCFLEdge(src, dst, labelToKindMap[label]);
+        }
+        else
+        {
+            if (Options::FlexSymMap() == true)
+            {
+                labelToKindMap.insert({label, current++});
                 cflGraph->addCFLEdge(src, dst, labelToKindMap[label]);
+            }
             else
             {
-                if(Options::FlexSymMap() == true)
-                {
-                    labelToKindMap.insert({label, current++});
-                    cflGraph->addCFLEdge(src, dst, labelToKindMap[label]);
-                }
-                else
-                {
-                    std::string msg = "In line " + std::to_string(lineNum) +
-                                      " sym can not find in grammar, please correct the input dot or set --flexsymmap.";
-                    SVFUtil::errMsg(msg);
-                    std::cout << msg;
-                    abort();
-                }
+                std::string msg = "In line " + std::to_string(lineNum) +
+                                  " sym cannot be found in grammar. Please correct the input dot or set --flexsymmap.";
+                SVFUtil::errMsg(msg);
+                std::cout << msg;
+                abort();
             }
         }
     }
+
     inputFile.close();
     return cflGraph;
 }
@@ -246,7 +276,6 @@ CFLGraph* CFLGraphBuilder::buildFromJson(std::string fileName, GrammarBase *gram
     cflGraph = new CFLGraph(grammar->getStartKind());
     return cflGraph;
 }
-
 
 CFLGraph* AliasCFLGraphBuilder::buildBigraph(ConstraintGraph *graph, Kind startKind, GrammarBase *grammar)
 {
