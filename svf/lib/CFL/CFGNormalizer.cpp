@@ -32,7 +32,6 @@
 #include "Util/WorkList.h"
 #include "SVFIR/SVFValue.h"
 #include <string>
-#include <regex>
 #include <fstream>
 #include <sstream>
 #include <iostream>
