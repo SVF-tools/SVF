@@ -646,6 +646,21 @@ bool LLVMUtil::isHeapAllocExtCallViaArg(const Instruction* inst)
     }
 }
 
+bool LLVMUtil::isStackAllocExtCallViaRet(const Instruction *inst)
+{
+    LLVMModuleSet* pSet = LLVMModuleSet::getLLVMModuleSet();
+    ExtAPI* extApi = ExtAPI::getExtAPI();
+    bool isPtrTy = inst->getType()->isPointerTy();
+    if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
+    {
+        const Function* fun = call->getCalledFunction();
+        return fun && isPtrTy &&
+               extApi->is_alloc_stack_ret(pSet->getSVFFunction(fun));
+    }
+    else
+        return false;
+}
+
 /**
  * Check if a given value represents a heap object.
  *
@@ -663,6 +678,26 @@ bool LLVMUtil::isHeapObj(const Value* val)
     // Check if the value is an instruction and if it is a heap allocation external call
     else if (SVFUtil::isa<Instruction>(val) &&
              LLVMUtil::isHeapAllocExtCall(SVFUtil::cast<Instruction>(val)))
+    {
+        return true;
+    }
+    // Return false if none of the above conditions are met
+    return false;
+}
+
+/**
+ * @param val The value to check.
+ * @return True if the value represents a stack object, false otherwise.
+ */
+bool LLVMUtil::isStackObj(const Value* val)
+{
+    if (SVFUtil::isa<AllocaInst>(val))
+    {
+        return true;
+    }
+    // Check if the value is an instruction and if it is a stack allocation external call
+    else if (SVFUtil::isa<Instruction>(val) &&
+             LLVMUtil::isStackAllocExtCall(SVFUtil::cast<Instruction>(val)))
     {
         return true;
     }

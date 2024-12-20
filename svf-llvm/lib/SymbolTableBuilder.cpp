@@ -724,13 +724,13 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
 
 /*!
  * Analyze byte size of heap alloc function (e.g. malloc/calloc/...)
- * 1) __attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
+ * 1) __attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
      void* safe_malloc(unsigned long size).
      Byte Size is the size(Arg0)
-   2)__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0*Arg1")))
+   2)__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0*Arg1")))
     char* safecalloc(int a, int b)
     Byte Size is a(Arg0) * b(Arg1)
-   3)__attribute__((annotate("ALLOC_RET"), annotate("UNKNOWN")))
+   3)__attribute__((annotate("ALLOC_HEAP_RET"), annotate("UNKNOWN")))
     void* __sysv_signal(int a, void *b)
     Byte Size is Unknown
     If all required arg values are constant, byte Size is also constant,

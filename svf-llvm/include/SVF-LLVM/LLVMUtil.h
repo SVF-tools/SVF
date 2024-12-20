@@ -360,8 +360,18 @@ inline bool isHeapAllocExtCall(const Instruction *inst)
     return isHeapAllocExtCallViaRet(inst) || isHeapAllocExtCallViaArg(inst);
 }
 
+bool isStackAllocExtCallViaRet(const Instruction *inst);
+
+inline bool isStackAllocExtCall(const Instruction *inst)
+{
+    return isStackAllocExtCallViaRet(inst);
+}
+
 // Check if a given value represents a heap object.
 bool isHeapObj(const Value* val);
+
+// Check if a given value represents a stack object.
+bool isStackObj(const Value* val);
 
 /// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
 bool isNonInstricCallSite(const Instruction* inst);

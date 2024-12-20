@@ -282,7 +282,7 @@ void SVFIRBuilder::initialiseNodes()
             llvmModuleSet()->setValueAttr(llvmValue,pag->getGNode(iter->second));
         }
         // Check if the value is an alloca instruction and add a stack object node
-        else if (SVFUtil::isa<AllocaInst>(llvmValue))
+        else if (LLVMUtil::isStackObj(llvmValue))
         {
             const SVFFunction* f =
                 SVFUtil::cast<SVFInstruction>(iter->first)->getFunction();

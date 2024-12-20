@@ -91,6 +91,9 @@ public:
     // Does (F) allocate a new object and assign it to one of its arguments?
     bool is_arg_alloc(const SVFFunction *F);
 
+    // Does (F) allocate a new stack object and return it?
+    bool is_alloc_stack_ret(const SVFFunction *F);
+
     // Get the position of argument which holds the new object
     s32_t get_alloc_arg_pos(const SVFFunction *F);
 
