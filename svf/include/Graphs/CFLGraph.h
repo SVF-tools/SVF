@@ -33,7 +33,6 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <regex>
 #include "CFL/CFGrammar.h"
 #include "Graphs/GenericGraph.h"
 #include "Graphs/ConsG.h"

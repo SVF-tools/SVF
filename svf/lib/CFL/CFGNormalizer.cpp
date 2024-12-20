@@ -32,7 +32,6 @@
 #include "Util/WorkList.h"
 #include "SVFIR/SVFValue.h"
 #include <string>
-#include <regex>
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -437,13 +436,20 @@ void CFGNormalizer::ebnfSignReplace(char sign, CFGrammar *grammar)
 
 void CFGNormalizer::strTrans(std::string LHS, CFGrammar *grammar, GrammarBase::Production& normalProd)
 {
-    std::smatch matches;
-    std::regex LHSReg("\\s*(.*)");
+    // Find the position of the first non-whitespace character
+    size_t start = LHS.find_first_not_of(" \t\n\r");
+    // If the string contains non-whitespace characters, remove leading spaces
+    if (start != std::string::npos) {
+        LHS = LHS.substr(start);
+    } else {
+        // If the string contains only spaces, clear it
+        LHS.clear();
+    }
+
     std::string delimiter;
     size_t pos;
     std::string word;
-    std::regex_search(LHS, matches, LHSReg);
-    LHS = matches.str(1);
+
     delimiter = " ";
     while ((pos = LHS.find(delimiter)) != std::string::npos)
     {
@@ -453,6 +459,7 @@ void CFGNormalizer::strTrans(std::string LHS, CFGrammar *grammar, GrammarBase::P
     }
     normalProd.push_back(grammar->strToSymbol(LHS));
 }
+
 
 GrammarBase::Symbol CFGNormalizer::check_head(GrammarBase::SymbolMap<GrammarBase::Symbol, GrammarBase::Productions> &grammar, GrammarBase::Production &rule)
 {
