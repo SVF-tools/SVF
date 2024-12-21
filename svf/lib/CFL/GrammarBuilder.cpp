@@ -126,7 +126,8 @@ const inline std::string GrammarBuilder::stripSpace(std::string s) const
 {
     // Remove leading spaces
     size_t start = s.find_first_not_of(" ");
-    if (start == std::string::npos) {
+    if (start == std::string::npos)
+    {
         return ""; // Return an empty string if no non-space character is found
     }
 
