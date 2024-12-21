@@ -439,9 +439,12 @@ void CFGNormalizer::strTrans(std::string LHS, CFGrammar *grammar, GrammarBase::P
     // Find the position of the first non-whitespace character
     size_t start = LHS.find_first_not_of(" \t\n\r");
     // If the string contains non-whitespace characters, remove leading spaces
-    if (start != std::string::npos) {
+    if (start != std::string::npos)
+    {
         LHS = LHS.substr(start);
-    } else {
+    }
+    else
+    {
         // If the string contains only spaces, clear it
         LHS.clear();
     }

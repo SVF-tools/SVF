@@ -49,7 +49,7 @@ public:
     typedef GenericNode<CFLNode, CFLEdge>::GEdgeSetTy CFLEdgeSetTy;
 
     CFLEdge(CFLNode *s, CFLNode *d, GEdgeFlag k = 0):
-          GenericCFLEdgeTy(s,d,k)
+        GenericCFLEdgeTy(s,d,k)
     {
     }
     ~CFLEdge() override = default;
@@ -76,7 +76,7 @@ class CFLNode: public GenericCFLNodeTy
 {
 public:
     CFLNode (NodeID i = 0, GNodeK k = CFLNodeKd):
-          GenericCFLNodeTy(i, k)
+        GenericCFLNodeTy(i, k)
     {
     }
 
