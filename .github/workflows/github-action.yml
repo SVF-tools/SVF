@@ -16,9 +16,9 @@ jobs:
       XCODE_VERSION: '15.3.0'
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-latest]
+        os: [ubuntu-latest, macos-latest]
         include:
-          - os: [ubuntu-22.04]
+          - os: [ubuntu-latest]
             sanitizer: address
     steps:
       # checkout the repo
@@ -132,7 +132,7 @@ jobs:
           lcov --remove coverage.info '/usr/*' --output-file coverage.info
           lcov --remove coverage.info '${{github.workspace}}/z3.obj/*' --output-file coverage.info
           lcov --remove coverage.info '${{github.workspace}}/llvm-*.obj/*' --output-file coverage.info
-          lcov --remove coverage.info '${{github.workspace}}/svf/include/FastCluster/*' --output-file coverage.info
+          lcov --remove coverage.info '${{github.workspace}}/svf/include/FastCluster/*' --output-file coverage.info --ignore-errors unused
           lcov --remove coverage.info '${{github.workspace}}/svf/lib/FastCluster/*' --output-file coverage.info
 
       - name: upload-coverage
