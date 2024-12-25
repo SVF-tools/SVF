@@ -75,7 +75,7 @@ private:
     ///@{
     void processFunEntry(const Function*  fun, WorkList& worklist);
 
-    void processNoPrecessorBasicBlocks(const Function*  fun, WorkList& worklist);
+    void processUnreachableFromEntry(const Function*  fun, WorkList& worklist);
 
     void processFunBody(WorkList& worklist);
 
