@@ -109,6 +109,8 @@ private:
     FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryICFGNode
     CallGraph* callgraph;
 
+    Map<const Function*, DominatorTree> FunToDominatorTree;
+
     /// Constructor
     LLVMModuleSet();
 
@@ -396,6 +398,8 @@ public:
     {
         return icfg;
     }
+
+    DominatorTree& getDomTree(const Function* fun);
 
 private:
     /// Create SVFTypes

@@ -75,8 +75,7 @@ void LLVMUtil::getFunReachableBBs (const Function* fun, std::vector<const SVFBas
 {
     assert(!SVFUtil::isExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun)) && "The calling function cannot be an external function.");
     //initial DominatorTree
-    DominatorTree dt;
-    dt.recalculate(const_cast<Function&>(*fun));
+    DominatorTree& dt = LLVMModuleSet::getLLVMModuleSet()->getDomTree(fun);
 
     Set<const BasicBlock*> visited;
     std::vector<const BasicBlock*> bbVec;

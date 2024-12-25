@@ -70,7 +70,7 @@ ICFG* ICFGBuilder::build()
                 continue;
             WorkList worklist;
             processFunEntry(fun,worklist);
-            processNoPrecessorBasicBlocks(fun, worklist);
+            processUnreachableFromEntry(fun, worklist);
             processFunBody(worklist);
             processFunExit(fun);
 
@@ -122,21 +122,20 @@ void ICFGBuilder::processFunEntry(const Function*  fun, WorkList& worklist)
 }
 
 /*!
- * bbs with no predecessors
+ * bbs unreachable from function entry
  */
-void ICFGBuilder::processNoPrecessorBasicBlocks(const Function* fun, WorkList& worklist)
+void ICFGBuilder::processUnreachableFromEntry(const Function* fun, WorkList& worklist)
 {
-    for (const auto& bb: *fun)
+    SVFLoopAndDomInfo* pInfo =
+        llvmModuleSet()->getSVFFunction(fun)->getLoopAndDomInfo();
+    for (const auto& bb : *fun)
     {
-        for (const auto& inst: bb)
+        if (pInfo->isUnreachable(llvmModuleSet()->getSVFBasicBlock(&bb)) &&
+            !visited.count(&bb.front()))
         {
-            if (LLVMUtil::isNoPrecessorBasicBlock(inst.getParent()) &&
-                    !visited.count(&inst))
-            {
-                visited.insert(&inst);
-                (void)addBlockICFGNode(&inst);
-                worklist.push(&inst);
-            }
+            visited.insert(&bb.front());
+            (void)addBlockICFGNode(&bb.front());
+            worklist.push(&bb.front());
         }
     }
 }
