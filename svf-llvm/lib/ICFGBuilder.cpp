@@ -126,11 +126,12 @@ void ICFGBuilder::processFunEntry(const Function*  fun, WorkList& worklist)
  */
 void ICFGBuilder::processUnreachableFromEntry(const Function* fun, WorkList& worklist)
 {
-    DominatorTree dt;
-    dt.recalculate(const_cast<Function&>(*fun));
+    SVFLoopAndDomInfo* pInfo =
+        llvmModuleSet()->getSVFFunction(fun)->getLoopAndDomInfo();
     for (const auto& bb : *fun)
     {
-        if (!dt.isReachableFromEntry(&bb) && !visited.count(&bb.front()))
+        if (pInfo->isUnreachable(llvmModuleSet()->getSVFBasicBlock(&bb)) &&
+            !visited.count(&bb.front()))
         {
             visited.insert(&bb.front());
             (void)addBlockICFGNode(&bb.front());
