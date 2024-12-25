@@ -131,7 +131,7 @@ void ICFGBuilder::processUnreachableFromEntry(const Function* fun, WorkList& wor
     for (const auto& bb : *fun)
     {
         if (pInfo->isUnreachable(llvmModuleSet()->getSVFBasicBlock(&bb)) &&
-            !visited.count(&bb.front()))
+                !visited.count(&bb.front()))
         {
             visited.insert(&bb.front());
             (void)addBlockICFGNode(&bb.front());
