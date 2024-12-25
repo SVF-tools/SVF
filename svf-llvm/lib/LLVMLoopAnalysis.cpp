@@ -48,7 +48,6 @@ using namespace SVFUtil;
  */
 void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, ICFG* icfg)
 {
-    llvm::DominatorTree DT = llvm::DominatorTree();
     std::vector<const Loop *> loop_stack;
     for (Module& M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
@@ -59,7 +58,7 @@ void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, ICFG* icfg)
             if (func->isDeclaration()) continue;
             // do not analyze external call
             if (SVFUtil::isExtCall(svffun)) continue;
-            DT.recalculate(const_cast<Function&>(*func));
+            llvm::DominatorTree& DT = LLVMModuleSet::getLLVMModuleSet()->getDomTree(func);
             llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop> loopInfo;
             std::vector<const Loop*> llvmLoops;
             loopInfo.analyze(DT);
