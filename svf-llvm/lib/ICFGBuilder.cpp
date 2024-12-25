@@ -126,10 +126,10 @@ void ICFGBuilder::processFunEntry(const Function*  fun, WorkList& worklist)
  */
 void ICFGBuilder::processUnreachableFromEntry(const Function* fun, WorkList& worklist)
 {
-    for (const auto& bb: *fun)
+    DominatorTree dt;
+    dt.recalculate(const_cast<Function&>(*fun));
+    for (const auto& bb : *fun)
     {
-        DominatorTree dt;
-        dt.recalculate(const_cast<Function&>(*fun));
         if (!dt.isReachableFromEntry(&bb) && !visited.count(&bb.front()))
         {
             visited.insert(&bb.front());
