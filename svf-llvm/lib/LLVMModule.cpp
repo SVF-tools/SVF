@@ -99,6 +99,15 @@ ObjTypeInference* LLVMModuleSet::getTypeInference()
     return typeInference;
 }
 
+DominatorTree& LLVMModuleSet::getDomTree(const SVF::Function* fun)
+{
+    auto it = FunToDominatorTree.find(fun);
+    if(it != FunToDominatorTree.end()) return it->second;
+    DominatorTree& dt = FunToDominatorTree[fun];
+    dt.recalculate(const_cast<Function&>(*fun));
+    return dt;
+}
+
 SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 {
     LLVMModuleSet* mset = getLLVMModuleSet();
@@ -407,9 +416,8 @@ void LLVMModuleSet::initDomTree(SVFFunction* svffun, const Function* fun)
     if (fun->isDeclaration())
         return;
     //process and stored dt & df
-    DominatorTree dt;
     DominanceFrontier df;
-    dt.recalculate(const_cast<Function&>(*fun));
+    DominatorTree& dt = getDomTree(fun);
     df.analyze(dt);
     LoopInfo loopInfo = LoopInfo(dt);
     PostDominatorTree pdt = PostDominatorTree(const_cast<Function&>(*fun));
