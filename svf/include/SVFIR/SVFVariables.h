@@ -739,7 +739,7 @@ class GlobalValVar : public ValVar
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FunValVar*)
+    static inline bool classof(const GlobalValVar*)
     {
         return true;
     }
@@ -780,7 +780,7 @@ class BlackHoleVar: public ConstantDataValVar
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FunValVar*)
+    static inline bool classof(const GlobalValVar*)
     {
         return true;
     }
@@ -824,9 +824,13 @@ private:
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FunValVar*)
+    static inline bool classof(const ConstantFPValVar*)
     {
         return true;
+    }
+    static inline bool classof(const ConstantDataValVar* node)
+    {
+        return node->getNodeKind() == ConstantFPValNode;
     }
     static inline bool classof(const ValVar* node)
     {
@@ -873,9 +877,13 @@ private:
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FunValVar*)
+    static inline bool classof(const ConstantIntValVar*)
     {
         return true;
+    }
+    static inline bool classof(const ConstantDataValVar* node)
+    {
+        return node->getNodeKind() == ConstantIntValNode;
     }
     static inline bool classof(const ValVar* node)
     {
@@ -924,9 +932,13 @@ class ConstantNullPtrValVar: public ConstantDataValVar
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FunValVar*)
+    static inline bool classof(const ConstantNullPtrValVar*)
     {
         return true;
+    }
+    static inline bool classof(const ConstantDataValVar* node)
+    {
+        return node->getNodeKind() == ConstantNullptrValNode;
     }
     static inline bool classof(const ValVar* node)
     {
@@ -1018,15 +1030,15 @@ public:
     {
         return true;
     }
+    static inline bool classof(const FIObjVar* node)
+    {
+        return isConstantDataObjVarKinds(node->getNodeKind());
+    }
     static inline bool classof(const SVFVar* node)
     {
         return isConstantDataObjVarKinds(node->getNodeKind());
     }
     static inline bool classof(const ObjVar* node)
-    {
-        return isConstantDataObjVarKinds(node->getNodeKind());
-    }
-    static inline bool classof(const FIObjVar* node)
     {
         return isConstantDataObjVarKinds(node->getNodeKind());
     }
@@ -1064,18 +1076,28 @@ private:
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const ConstantDataObjVar*)
+    static inline bool classof(const ConstantFPObjVar*)
     {
         return true;
     }
+    static inline bool classof(const ConstantDataObjVar* node)
+    {
+        return node->getNodeKind() == SVFVar::ConstantFPObjNode;
+    }
+    static inline bool classof(const FIObjVar* node) {
+        return node->getNodeKind() == SVFVar::ConstantFPObjNode;
+    }
+
     static inline bool classof(const SVFVar* node)
     {
         return node->getNodeKind() == SVFVar::ConstantFPObjNode;
     }
+
     static inline bool classof(const ObjVar* node)
     {
         return node->getNodeKind() == SVFVar::ConstantFPObjNode;
     }
+
     static inline bool classof(const GenericPAGNodeTy* node)
     {
         return node->getNodeKind() == SVFVar::ConstantFPObjNode;
@@ -1117,10 +1139,21 @@ private:
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const ConstantDataObjVar*)
+    static inline bool classof(const ConstantIntObjVar*)
     {
         return true;
     }
+
+    static inline bool classof(const ConstantDataObjVar* node)
+    {
+        return node->getNodeKind() == SVFVar::ConstantIntObjNode;
+    }
+
+    static inline bool classof(const FIObjVar* node)
+    {
+        return node->getNodeKind() == SVFVar::ConstantIntObjNode;
+    }
+
     static inline bool classof(const SVFVar* node)
     {
         return node->getNodeKind() == SVFVar::ConstantIntObjNode;
@@ -1173,10 +1206,21 @@ private:
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const ConstantDataObjVar*)
+    static inline bool classof(const ConstantNullPtrObjVar*)
     {
         return true;
     }
+
+    static inline bool classof(const ConstantDataObjVar* node)
+    {
+        return node->getNodeKind() == SVFVar::ConstantNullptrObjNode;
+    }
+
+    static inline bool classof(const FIObjVar* node)
+    {
+        return node->getNodeKind() == SVFVar::ConstantNullptrObjNode;
+    }
+
     static inline bool classof(const SVFVar* node)
     {
         return node->getNodeKind() == SVFVar::ConstantNullptrObjNode;
