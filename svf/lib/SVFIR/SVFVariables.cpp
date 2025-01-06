@@ -40,12 +40,18 @@ using namespace SVFUtil;
  * SVFVar constructor
  */
 SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
-    GenericPAGNodeTy(i,k), value(val), func(nullptr)
+      GenericPAGNodeTy(i,k), value(val), func(nullptr)
 {
     assert( ValNode <= k && k <= DummyObjNode && "new SVFIR node kind?");
     switch (k)
     {
     case ValNode:
+    case ConstantDataValNode:
+    case GlobalValNode:
+    case BlackHoleNode:
+    case ConstantFPValNode:
+    case ConstantIntValNode:
+    case ConstantNullptrValNode:
     case GepValNode:
     {
         assert(val != nullptr && "value is nullptr for ValVar or GepValNode");
@@ -62,6 +68,11 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     case ObjNode:
     case GepObjNode:
     case BaseObjNode:
+    case ConstantDataObjNode:
+    case GlobalObjNode:
+    case ConstantFPObjNode:
+    case ConstantIntObjNode:
+    case ConstantNullptrObjNode:
     case DummyObjNode:
     {
         isPtr = true;
@@ -247,6 +258,126 @@ const std::string FunValVar::toString() const
     {
         rawstr << "\n";
         rawstr << callGraphNode->getName();
+    }
+    return rawstr.str();
+}
+
+const std::string ConstantDataValVar::toString() const {
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "ConstantDataValNode ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << valueOnlyToString();
+    }
+    return rawstr.str();
+}
+
+const std::string GlobalValVar::toString() const {
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "GlobalValVar ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << valueOnlyToString();
+    }
+    return rawstr.str();
+}
+
+const std::string ConstantFPValVar::toString() const {
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "ConstantFPValNode ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << valueOnlyToString();
+    }
+    return rawstr.str();
+}
+
+const std::string ConstantIntValVar::toString() const {
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "ConstantIntValNode ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << valueOnlyToString();
+    }
+    return rawstr.str();
+}
+
+const std::string ConstantNullPtrValVar::toString() const {
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "ConstantNullPtrValVar ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << valueOnlyToString();
+    }
+    return rawstr.str();
+}
+
+const std::string GlobalObjVar::toString() const {
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "GlobalObjNode ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << valueOnlyToString();
+    }
+    return rawstr.str();
+}
+
+const std::string ConstantDataObjVar::toString() const {
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "ConstantDataObjVar ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << valueOnlyToString();
+    }
+    return rawstr.str();
+}
+
+const std::string ConstantFPObjVar::toString() const {
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "ConstantFPObjVar ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << valueOnlyToString();
+    }
+    return rawstr.str();
+}
+
+const std::string ConstantIntObjVar::toString() const {
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "ConstantIntObjVar ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << valueOnlyToString();
+    }
+    return rawstr.str();
+}
+
+const std::string ConstantNullPtrObjVar::toString() const {
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "ConstantNullPtrObjVar ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << valueOnlyToString();
     }
     return rawstr.str();
 }

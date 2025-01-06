@@ -446,11 +446,14 @@ void PointerAnalysis::getVFnsFromPts(const CallICFGNode* cs, const PointsTo &tar
             const PAGNode *ptdnode = pag->getGNode(*it);
             if (ptdnode->hasValue())
             {
-                if (const SVFGlobalValue *vtbl = SVFUtil::dyn_cast<SVFGlobalValue>(ptdnode->getValue()))
+                if ((isa<ObjVar>(ptdnode) && isa<GlobalObjVar>(pag->getBaseObject(ptdnode->getId())))
+                    || (isa<ValVar>(ptdnode) && isa<GlobalValVar>(pag->getBaseValVar(ptdnode->getId()))))
                 {
-                    if (chaVtbls.find(vtbl) != chaVtbls.end())
-                        vtbls.insert(vtbl);
+                    const SVFGlobalValue* globalValue = SVFUtil::dyn_cast<SVFGlobalValue>(ptdnode->getValue());
+                    if (chaVtbls.find(globalValue) != chaVtbls.end())
+                        vtbls.insert(globalValue);
                 }
+
             }
         }
         chgraph->getVFnsFromVtbls(cs, vtbls, vfns);

@@ -227,10 +227,9 @@ void SVFIRBuilder::initialiseNodes()
             continue;
 
         const ICFGNode* icfgNode = nullptr;
-
-        // Check if the value is an instruction and get its ICFG node
+        auto llvmValue = llvmModuleSet()->getLLVMValue(iter->first);
         if (const Instruction* inst =
-                    SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(iter->first)))
+                    SVFUtil::dyn_cast<Instruction>(llvmValue))
         {
             if (llvmModuleSet()->hasICFGNode(inst))
             {
@@ -240,11 +239,41 @@ void SVFIRBuilder::initialiseNodes()
 
         // Check if the value is a function and get its call graph node
         if (const Function* func =
-                    SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(iter->first)))
+                    SVFUtil::dyn_cast<Function>(llvmValue))
         {
             const CallGraphNode* cgn = llvmModuleSet()->getCallGraphNode(func);
             // add value node representing the function
             pag->addFunValNode(cgn, iter->second, icfgNode);
+        }
+        else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
+        {
+            pag->addConstantFPValNode(iter->first, fpValue->getValueAPF().convertToDouble(), iter->second, icfgNode);
+            llvmModuleSet()->addToLLVMVal2SVFVarMap(
+                fpValue, pag->getGNode(iter->second));
+        }
+        else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
+        {
+            pag->addConstantIntValNode(iter->first, intValue->getSExtValue(), intValue->getZExtValue(), iter->second, icfgNode);
+            llvmModuleSet()->addToLLVMVal2SVFVarMap(
+                intValue, pag->getGNode(iter->second));
+        }
+        else if (auto nullValue = SVFUtil::dyn_cast<ConstantPointerNull>(llvmValue))
+        {
+            pag->addConstantNullPtrValNode(iter->first, iter->second, icfgNode);
+            llvmModuleSet()->addToLLVMVal2SVFVarMap(
+                nullValue, pag->getGNode(iter->second));
+        }
+        else if (auto globalValue = SVFUtil::dyn_cast<GlobalValue>(llvmValue))
+        {
+            pag->addGlobalValueValNode(iter->first, iter->second, icfgNode);
+            llvmModuleSet()->addToLLVMVal2SVFVarMap(
+                globalValue, pag->getGNode(iter->second));
+        }
+        else if (auto dataValue = SVFUtil::dyn_cast<ConstantData>(llvmValue))
+        {
+            pag->addConstantDataValNode(iter->first, iter->second, icfgNode);
+            llvmModuleSet()->addToLLVMVal2SVFVarMap(
+                dataValue, pag->getGNode(iter->second));
         }
         else
         {
@@ -279,7 +308,8 @@ void SVFIRBuilder::initialiseNodes()
             const SVFFunction* f =
                 SVFUtil::cast<SVFInstruction>(iter->first)->getFunction();
             pag->addHeapObjNode(iter->first, f, iter->second);
-            llvmModuleSet()->setValueAttr(llvmValue,pag->getGNode(iter->second));
+            llvmModuleSet()->addToLLVMVal2SVFVarMap(
+                llvmValue, pag->getGNode(iter->second));
         }
         // Check if the value is an alloca instruction and add a stack object node
         else if (LLVMUtil::isStackObj(llvmValue))
@@ -287,8 +317,38 @@ void SVFIRBuilder::initialiseNodes()
             const SVFFunction* f =
                 SVFUtil::cast<SVFInstruction>(iter->first)->getFunction();
             pag->addStackObjNode(iter->first, f, iter->second);
-            llvmModuleSet()->setValueAttr(llvmValue,
-                                          pag->getGNode(iter->second));
+            llvmModuleSet()->addToLLVMVal2SVFVarMap(
+                llvmValue, pag->getGNode(iter->second));
+        }
+        else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
+        {
+            pag->addConstantFPObjNode(iter->first, fpValue->getValueAPF().convertToDouble(), iter->second);
+            llvmModuleSet()->addToLLVMVal2SVFVarMap(
+                fpValue, pag->getGNode(iter->second));
+        }
+        else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
+        {
+            pag->addConstantIntObjNode(iter->first, intValue->getSExtValue(), intValue->getZExtValue(), iter->second);
+            llvmModuleSet()->addToLLVMVal2SVFVarMap(
+                intValue, pag->getGNode(iter->second));
+        }
+        else if (auto nullValue = SVFUtil::dyn_cast<ConstantPointerNull>(llvmValue))
+        {
+            pag->addConstantNullPtrObjNode(iter->first, iter->second);
+            llvmModuleSet()->addToLLVMVal2SVFVarMap(
+                nullValue, pag->getGNode(iter->second));
+        }
+        else if (auto globalValue = SVFUtil::dyn_cast<GlobalValue>(llvmValue))
+        {
+            pag->addGlobalValueObjNode(iter->first, iter->second);
+            llvmModuleSet()->addToLLVMVal2SVFVarMap(
+                globalValue, pag->getGNode(iter->second));
+        }
+        else if (auto dataValue = SVFUtil::dyn_cast<ConstantData>(llvmValue))
+        {
+            pag->addConstantDataObjNode(iter->first, iter->second);
+            llvmModuleSet()->addToLLVMVal2SVFVarMap(
+                dataValue, pag->getGNode(iter->second));
         }
         // Add a generic object node for other types of values
         else
