@@ -959,7 +959,7 @@ class ConstantFPValVar: public ConstantDataValVar
     friend class SVFIRWriter;
     friend class SVFIRReader;
 private:
-    float dval;
+    double dval;
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
