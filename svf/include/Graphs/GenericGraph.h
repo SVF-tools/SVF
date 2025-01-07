@@ -153,21 +153,32 @@ public:
 
         // ┌── SVFVar: Classes of top-level variables (ValVar) and address-taken variables (ObjVar)
         // │   └── ValVar: Classes of top-level variable nodes
-        ValNode,          // ├──Represents a standard value variable
-        FunValNode,       // ├──Represents a Function value variable
-        GepValNode,       // ├──Represents a GEP value variable
-        RetNode,          // ├──Represents a return value node
-        VarargNode,       // ├──Represents a variadic argument node
-        DummyValNode,     // ├──Dummy node for uninitialized values
+        ValNode,                 // ├──Represents a standard value variable
+        FunValNode,              // ├──Represents a Function value variable
+        GepValNode,              // ├──Represents a GEP value variable
+        RetNode,                 // ├──Represents a return value node
+        VarargNode,              // ├──Represents a variadic argument node
+        GlobalValNode,           // ├──Represents a global variable node
+        ConstantDataValNode,     // ├──Represents a constant data variable
+        BlackHoleNode,           // ├──Represents a black hole node
+        ConstantFPValNode,       // ├──Represents a constant float-point value node
+        ConstantIntValNode,      // ├── Represents a constant integer value node
+        ConstantNullptrValNode,  // ├── Represents a constant nullptr value node
+        DummyValNode,            // ├──Dummy node for uninitialized values
         // │   └── ObjVar: Classes of object variable nodes
-        ObjNode,          // ├──Represents an object variable
-        GepObjNode,       // ├──Represents a GEP object variable
+        ObjNode,                 // ├──Represents an object variable
+        GepObjNode,              // ├──Represents a GEP object variable
         // │        └── BaseObjVar: Classes of base object nodes
-        BaseObjNode,      // ├──Represents a base object node
-        FunObjNode,       // ├──Types of function object
-        HeapObjNode,      // ├──Types of heap object
-        StackObjNode,     // ├──Types of stack object
-        DummyObjNode,     // ├──Dummy node for uninitialized objects
+        BaseObjNode,             // ├──Represents a base object node
+        FunObjNode,              // ├──Types of function object
+        HeapObjNode,             // ├──Types of heap object
+        StackObjNode,            // ├──Types of stack object
+        GlobalObjNode,           // ├──Types of global object
+        ConstantDataObjNode,     // ├──Types of constant data object
+        ConstantFPObjNode,       // ├──Types of constant float-point object
+        ConstantIntObjNode,      // ├──Types of constant integer object
+        ConstantNullptrObjNode,  // ├──Types of constant nullptr object
+        DummyObjNode,            // ├──Dummy node for uninitialized objects
         // └────────
 
         // ┌── VFGNode: Classes of Value Flow Graph (VFG) node kinds with operations
@@ -278,7 +289,7 @@ protected:
 
     static inline bool isSVFVarKind(GNodeK n)
     {
-        static_assert(DummyObjNode - ValNode == 12,
+        static_assert(DummyObjNode - ValNode == 23,
                       "The number of SVFVarKinds has changed, make sure the "
                       "range is correct");
 
@@ -287,15 +298,24 @@ protected:
 
     static inline bool isValVarKinds(GNodeK n)
     {
-        static_assert(DummyValNode - ValNode == 5,
+        static_assert(DummyValNode - ValNode == 11,
                       "The number of ValVarKinds has changed, make sure the "
                       "range is correct");
         return n <= DummyValNode && n >= ValNode;
     }
 
+
+    static inline bool isConstantDataValVar(GNodeK n)
+    {
+        static_assert(ConstantNullptrValNode - ConstantDataValNode == 4,
+                      "The number of ConstantDataValVarKinds has changed, make "
+                      "sure the range is correct");
+        return n <= ConstantNullptrValNode && n >= ConstantDataValNode;
+    }
+
     static inline bool isObjVarKinds(GNodeK n)
     {
-        static_assert(DummyObjNode - ObjNode == 6,
+        static_assert(DummyObjNode - ObjNode == 11,
                       "The number of ObjVarKinds has changed, make sure the "
                       "range is correct");
         return n <= DummyObjNode && n >= ObjNode;
@@ -303,10 +323,18 @@ protected:
 
     static inline bool isBaseObjVarKinds(GNodeK n)
     {
-        static_assert(DummyObjNode - BaseObjNode == 4,
+        static_assert(DummyObjNode - BaseObjNode == 9,
                       "The number of BaseObjVarKinds has changed, make sure the "
                       "range is correct");
         return n <= DummyObjNode && n >= BaseObjNode;
+    }
+
+    static inline bool isConstantDataObjVarKinds(GNodeK n)
+    {
+        static_assert(ConstantNullptrObjNode - ConstantDataObjNode == 3,
+                      "The number of ConstantDataObjVarKinds has changed, make "
+                      "sure the range is correct");
+        return n <= ConstantNullptrObjNode && n >= ConstantDataObjNode;
     }
 
     static inline bool isVFGNodeKinds(GNodeK n)

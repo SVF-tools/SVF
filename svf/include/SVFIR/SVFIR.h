@@ -412,6 +412,16 @@ public:
             return SVFUtil::dyn_cast<BaseObjVar>(node);
     }
 
+    inline const ValVar* getBaseValVar(NodeID id) const
+    {
+        const SVFVar* node = getGNode(id);
+        if(const GepValVar* gepVar = SVFUtil::dyn_cast<GepValVar>(node))
+            return SVFUtil::dyn_cast<ValVar>(
+                getGNode(gepVar->getBaseNode()));
+        else
+            return SVFUtil::dyn_cast<ValVar>(node);
+    }
+
     inline const MemObj*getObject(const ObjVar* node) const
     {
         return node->getMemObj();
@@ -568,6 +578,39 @@ private:
         return addValNode(nullptr, node, i);
     }
 
+    inline NodeID addConstantFPValNode(const SVFValue* curInst, double dval, const NodeID i,
+                                       const ICFGNode* icfgNode)
+    {
+        SVFVar* node = new ConstantFPValVar(curInst,  dval, i, icfgNode);
+        return addNode(node, i);
+    }
+
+    inline NodeID addConstantIntValNode(const SVFValue* curInst, s64_t sval, u64_t zval, const NodeID i,
+                                        const ICFGNode* icfgNode)
+    {
+        SVFVar* node = new ConstantIntValVar(curInst, sval, zval, i, icfgNode);
+        return addNode(node, i);
+    }
+
+    inline NodeID addConstantNullPtrValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode)
+    {
+        SVFVar* node = new ConstantNullPtrValVar(curInst, i, icfgNode);
+        return addNode(node, i);
+    }
+
+    inline NodeID addGlobalValueValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode)
+    {
+        SVFVar* node = new GlobalValVar(curInst, i, icfgNode);
+        return addNode(node, i);
+    }
+
+    inline NodeID addConstantDataValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode)
+    {
+        SVFVar* node = new ConstantDataValVar(curInst, i, icfgNode);
+        return addNode(node, i);
+    }
+
+
     /// Add a memory obj node
     inline NodeID addObjNode(const SVFValue* val, NodeID i)
     {
@@ -601,6 +644,54 @@ private:
     }
 
     NodeID addFunObjNode(const CallGraphNode* callGraphNode, NodeID id);
+
+
+    inline NodeID addConstantFPObjNode(const SVFValue* curInst, double dval, const NodeID i)
+    {
+        const MemObj* mem = getMemObj(curInst);
+        NodeID base = mem->getId();
+        memToFieldsMap[base].set(mem->getId());
+        ConstantFPObjVar* node = new ConstantFPObjVar(curInst, dval, mem->getId(), mem);
+        return addObjNode(curInst, node, mem->getId());
+    }
+
+
+    inline NodeID addConstantIntObjNode(const SVFValue* curInst, s64_t sval, u64_t zval, const NodeID i) {
+        const MemObj* mem = getMemObj(curInst);
+        NodeID base = mem->getId();
+        memToFieldsMap[base].set(mem->getId());
+        ConstantIntObjVar* node =
+            new ConstantIntObjVar(curInst, sval, zval, mem->getId(), mem);
+        return addObjNode(curInst, node, mem->getId());
+    }
+
+
+    inline NodeID addConstantNullPtrObjNode(const SVFValue* curInst, const NodeID i) {
+        const MemObj* mem = getMemObj(curInst);
+        NodeID base = mem->getId();
+        memToFieldsMap[base].set(mem->getId());
+        ConstantNullPtrObjVar* node = new ConstantNullPtrObjVar(curInst, mem->getId(), mem);
+        return addObjNode(mem->getValue(), node, mem->getId());
+    }
+
+    inline NodeID addGlobalValueObjNode(const SVFValue* curInst, const NodeID i)
+    {
+        const MemObj* mem = getMemObj(curInst);
+        NodeID base = mem->getId();
+        memToFieldsMap[base].set(mem->getId());
+        GlobalObjVar* node = new GlobalObjVar(curInst, mem->getId(), mem);
+        return addObjNode(mem->getValue(), node, mem->getId());
+    }
+
+    inline NodeID addConstantDataObjNode(const SVFValue* curInst, const NodeID i)
+    {
+        const MemObj* mem = getMemObj(curInst);
+        NodeID base = mem->getId();
+        memToFieldsMap[base].set(mem->getId());
+        ConstantDataObjVar* node = new ConstantDataObjVar(curInst, mem->getId(), mem);
+        return addObjNode(mem->getValue(), node, mem->getId());
+    }
+
     /// Add a unique return node for a procedure
     inline NodeID addRetNode(const CallGraphNode* callGraphNode, NodeID i)
     {
