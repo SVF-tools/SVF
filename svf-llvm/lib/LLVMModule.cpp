@@ -1255,7 +1255,7 @@ void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
 }
 
 void LLVMModuleSet::addToLLVMVal2SVFVarMap(const Value* val,
-                                           SVFBaseNode* svfBaseNode)
+        SVFBaseNode* svfBaseNode)
 {
     SVFBaseNode2LLVMValue[svfBaseNode] = val;
     svfBaseNode->setSourceLoc(LLVMUtil::getSourceLoc(val));
