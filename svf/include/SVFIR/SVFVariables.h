@@ -949,7 +949,8 @@ public:
 
     }
 
-    virtual const std::string toString() const {
+    virtual const std::string toString() const
+    {
         return "BlackHoleVar";
     }
 };
@@ -1109,7 +1110,8 @@ public:
     virtual const std::string toString() const;
 };
 
-class GlobalObjVar : public BaseObjVar {
+class GlobalObjVar : public BaseObjVar
+{
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
@@ -1148,7 +1150,8 @@ public:
 
     /// Constructor
     GlobalObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
-                 PNODEK ty = GlobalObjNode): BaseObjVar(val, i,mem,ty){
+                 PNODEK ty = GlobalObjNode): BaseObjVar(val, i,mem,ty)
+    {
 
     }
 
@@ -1156,7 +1159,8 @@ public:
     virtual const std::string toString() const;
 };
 
-class ConstantDataObjVar: public BaseObjVar {
+class ConstantDataObjVar: public BaseObjVar
+{
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
@@ -1224,7 +1228,8 @@ public:
     {
         return node->getNodeKind() == SVFVar::ConstantFPObjNode;
     }
-    static inline bool classof(const BaseObjVar* node) {
+    static inline bool classof(const BaseObjVar* node)
+    {
         return node->getNodeKind() == SVFVar::ConstantFPObjNode;
     }
 

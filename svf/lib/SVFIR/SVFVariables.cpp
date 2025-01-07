@@ -40,7 +40,7 @@ using namespace SVFUtil;
  * SVFVar constructor
  */
 SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
-      GenericPAGNodeTy(i,k), value(val), func(nullptr)
+    GenericPAGNodeTy(i,k), value(val), func(nullptr)
 {
     assert( ValNode <= k && k <= DummyObjNode && "new SVFIR node kind?");
     switch (k)
@@ -262,7 +262,8 @@ const std::string FunValVar::toString() const
     return rawstr.str();
 }
 
-const std::string ConstantDataValVar::toString() const {
+const std::string ConstantDataValVar::toString() const
+{
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ConstantDataValNode ID: " << getId();
@@ -274,7 +275,8 @@ const std::string ConstantDataValVar::toString() const {
     return rawstr.str();
 }
 
-const std::string GlobalValVar::toString() const {
+const std::string GlobalValVar::toString() const
+{
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "GlobalValVar ID: " << getId();
@@ -286,7 +288,8 @@ const std::string GlobalValVar::toString() const {
     return rawstr.str();
 }
 
-const std::string ConstantFPValVar::toString() const {
+const std::string ConstantFPValVar::toString() const
+{
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ConstantFPValNode ID: " << getId();
@@ -298,7 +301,8 @@ const std::string ConstantFPValVar::toString() const {
     return rawstr.str();
 }
 
-const std::string ConstantIntValVar::toString() const {
+const std::string ConstantIntValVar::toString() const
+{
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ConstantIntValNode ID: " << getId();
@@ -310,7 +314,8 @@ const std::string ConstantIntValVar::toString() const {
     return rawstr.str();
 }
 
-const std::string ConstantNullPtrValVar::toString() const {
+const std::string ConstantNullPtrValVar::toString() const
+{
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ConstantNullPtrValVar ID: " << getId();
@@ -322,7 +327,8 @@ const std::string ConstantNullPtrValVar::toString() const {
     return rawstr.str();
 }
 
-const std::string GlobalObjVar::toString() const {
+const std::string GlobalObjVar::toString() const
+{
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "GlobalObjNode ID: " << getId();
@@ -334,7 +340,8 @@ const std::string GlobalObjVar::toString() const {
     return rawstr.str();
 }
 
-const std::string ConstantDataObjVar::toString() const {
+const std::string ConstantDataObjVar::toString() const
+{
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ConstantDataObjVar ID: " << getId();
@@ -346,7 +353,8 @@ const std::string ConstantDataObjVar::toString() const {
     return rawstr.str();
 }
 
-const std::string ConstantFPObjVar::toString() const {
+const std::string ConstantFPObjVar::toString() const
+{
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ConstantFPObjVar ID: " << getId();
@@ -358,7 +366,8 @@ const std::string ConstantFPObjVar::toString() const {
     return rawstr.str();
 }
 
-const std::string ConstantIntObjVar::toString() const {
+const std::string ConstantIntObjVar::toString() const
+{
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ConstantIntObjVar ID: " << getId();
@@ -370,7 +379,8 @@ const std::string ConstantIntObjVar::toString() const {
     return rawstr.str();
 }
 
-const std::string ConstantNullPtrObjVar::toString() const {
+const std::string ConstantNullPtrObjVar::toString() const
+{
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ConstantNullPtrObjVar ID: " << getId();
