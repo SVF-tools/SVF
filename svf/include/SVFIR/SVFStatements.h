@@ -316,7 +316,7 @@ private:
     AddrStmt(const AddrStmt&);       ///< place holder
     void operator=(const AddrStmt&); ///< place holder
 
-    std::vector<SVFValue*> arrSize;	///< Array size of the allocated memory
+    std::vector<SVFVar*> arrSize;	///< Array size of the allocated memory
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -340,13 +340,13 @@ public:
 
     virtual const std::string toString() const override;
 
-    inline void addArrSize(SVFValue* size)   //TODO:addSizeVar
+    inline void addArrSize(SVFVar* size)   //TODO:addSizeVar
     {
         arrSize.push_back(size);
     }
 
     ///< get array size of the allocated memory
-    inline const std::vector<SVFValue*>& getArrSize() const   //TODO:getSizeVars
+    inline const std::vector<SVFVar*>& getArrSize() const   //TODO:getSizeVars
     {
         return arrSize;
     }

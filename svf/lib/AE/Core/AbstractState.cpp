@@ -485,7 +485,6 @@ const SVFType* AbstractState::getPointeeElement(NodeID id)
 
 u32_t AbstractState::getAllocaInstByteSize(const AddrStmt *addr)
 {
-    SVFIR* svfir = PAG::getPAG();
     if (const ObjVar* objvar = SVFUtil::dyn_cast<ObjVar>(addr->getRHSVar()))
     {
         objvar->getType();
@@ -497,18 +496,18 @@ u32_t AbstractState::getAllocaInstByteSize(const AddrStmt *addr)
 
         else
         {
-            const std::vector<SVFValue*>& sizes = addr->getArrSize();
+            const std::vector<SVFVar*>& sizes = addr->getArrSize();
             // Default element size is set to 1.
             u32_t elementSize = 1;
             u64_t res = elementSize;
-            for (const SVFValue* value: sizes)
+            for (const SVFVar* value: sizes)
             {
-                if (!inVarToValTable(svfir->getValueNode(value)))
+                if (!inVarToValTable(value->getId()))
                 {
-                    (*this)[svfir->getValueNode(value)] = IntervalValue(Options::MaxFieldLimit());
+                    (*this)[value->getId()] = IntervalValue(Options::MaxFieldLimit());
                 }
                 IntervalValue itv =
-                    (*this)[svfir->getValueNode(value)].getInterval();
+                    (*this)[value->getId()].getInterval();
                 res = res * itv.ub().getIntNumeral() > Options::MaxFieldLimit()? Options::MaxFieldLimit(): res * itv.ub().getIntNumeral();
             }
             return (u32_t)res;
