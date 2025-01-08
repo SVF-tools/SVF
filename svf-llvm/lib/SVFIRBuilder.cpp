@@ -247,13 +247,16 @@ void SVFIRBuilder::initialiseNodes()
         }
         else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
         {
-            pag->addConstantFPValNode(iter->first, fpValue->getValueAPF().convertToDouble(), iter->second, icfgNode);
+            pag->addConstantFPValNode(iter->first, LLVMUtil::getDoubleValue(fpValue), iter->second, icfgNode);
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 fpValue, pag->getGNode(iter->second));
         }
         else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
         {
-            pag->addConstantIntValNode(iter->first, intValue->getSExtValue(), intValue->getZExtValue(), iter->second, icfgNode);
+            if (intValue->getBitWidth() <= 64 && intValue->getBitWidth() >= 1)
+                pag->addConstantIntValNode(iter->first, intValue->getSExtValue(), intValue->getZExtValue(), iter->second, icfgNode);
+            else
+                pag->addConstantIntValNode(iter->first, 0, 0, iter->second, icfgNode);
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 intValue, pag->getGNode(iter->second));
         }
@@ -322,13 +325,17 @@ void SVFIRBuilder::initialiseNodes()
         }
         else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
         {
-            pag->addConstantFPObjNode(iter->first, fpValue->getValueAPF().convertToDouble(), iter->second);
+            pag->addConstantFPObjNode(iter->first, LLVMUtil::getDoubleValue(fpValue), iter->second);
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 fpValue, pag->getGNode(iter->second));
         }
         else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
         {
             pag->addConstantIntObjNode(iter->first, intValue->getSExtValue(), intValue->getZExtValue(), iter->second);
+            if (intValue->getBitWidth() <= 64 && intValue->getBitWidth() >= 1)
+                pag->addConstantIntObjNode(iter->first, intValue->getSExtValue(), intValue->getZExtValue(), iter->second);
+            else
+                pag->addConstantIntObjNode(iter->first, 0, 0, iter->second);
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 intValue, pag->getGNode(iter->second));
         }
