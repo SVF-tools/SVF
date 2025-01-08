@@ -661,7 +661,7 @@ s32_t cppUtil::getVCallIdx(const CallBase* cs)
     }
     else
     {
-        idx_value = (s32_t)idx->getSExtValue();
+        idx_value = LLVMUtil::getIntegerValue(idx).first;
     }
     return idx_value;
 }

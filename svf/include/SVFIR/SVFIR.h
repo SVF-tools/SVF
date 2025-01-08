@@ -585,10 +585,10 @@ private:
         return addNode(node, i);
     }
 
-    inline NodeID addConstantIntValNode(const SVFValue* curInst, s64_t sval, u64_t zval, const NodeID i,
+    inline NodeID addConstantIntValNode(const SVFValue* curInst, const std::pair<s64_t, u64_t>& intValue, const NodeID i,
                                         const ICFGNode* icfgNode)
     {
-        SVFVar* node = new ConstantIntValVar(curInst, sval, zval, i, icfgNode);
+        SVFVar* node = new ConstantIntValVar(curInst, intValue.first, intValue.second, i, icfgNode);
         return addNode(node, i);
     }
 
@@ -656,13 +656,12 @@ private:
     }
 
 
-    inline NodeID addConstantIntObjNode(const SVFValue* curInst, s64_t sval, u64_t zval, const NodeID i)
-    {
+    inline NodeID addConstantIntObjNode(const SVFValue* curInst, const std::pair<s64_t, u64_t>& intValue, const NodeID i) {
         const MemObj* mem = getMemObj(curInst);
         NodeID base = mem->getId();
         memToFieldsMap[base].set(mem->getId());
         ConstantIntObjVar* node =
-            new ConstantIntObjVar(curInst, sval, zval, mem->getId(), mem);
+            new ConstantIntObjVar(curInst, intValue.first, intValue.second, mem->getId(), mem);
         return addObjNode(curInst, node, mem->getId());
     }
 

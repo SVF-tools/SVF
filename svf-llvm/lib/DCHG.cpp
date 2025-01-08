@@ -1087,7 +1087,7 @@ std::string DCHGraph::diTypeToStr(const DIType *t)
                 int64_t count = -1;
                 if (const ConstantInt* ci = sr->getCount().dyn_cast<ConstantInt* >())
                 {
-                    count = ci->getSExtValue();
+                    count = LLVMUtil::getIntegerValue(ci).first;
                 }
 
                 ss << "[" << count << "]";

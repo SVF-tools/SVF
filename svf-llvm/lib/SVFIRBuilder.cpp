@@ -247,13 +247,13 @@ void SVFIRBuilder::initialiseNodes()
         }
         else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
         {
-            pag->addConstantFPValNode(iter->first, fpValue->getValueAPF().convertToDouble(), iter->second, icfgNode);
+            pag->addConstantFPValNode(iter->first, LLVMUtil::getDoubleValue(fpValue), iter->second, icfgNode);
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 fpValue, pag->getGNode(iter->second));
         }
         else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
         {
-            pag->addConstantIntValNode(iter->first, intValue->getSExtValue(), intValue->getZExtValue(), iter->second, icfgNode);
+            pag->addConstantIntValNode(iter->first, LLVMUtil::getIntegerValue(intValue), iter->second, icfgNode);
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 intValue, pag->getGNode(iter->second));
         }
@@ -322,13 +322,13 @@ void SVFIRBuilder::initialiseNodes()
         }
         else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
         {
-            pag->addConstantFPObjNode(iter->first, fpValue->getValueAPF().convertToDouble(), iter->second);
+            pag->addConstantFPObjNode(iter->first, LLVMUtil::getDoubleValue(fpValue), iter->second);
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 fpValue, pag->getGNode(iter->second));
         }
         else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
         {
-            pag->addConstantIntObjNode(iter->first, intValue->getSExtValue(), intValue->getZExtValue(), iter->second);
+            pag->addConstantIntObjNode(iter->first, LLVMUtil::getIntegerValue(intValue), iter->second);
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 intValue, pag->getGNode(iter->second));
         }
@@ -457,9 +457,9 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
         // but we can distinguish different field of an array of struct, e.g. s[1].f1 is different from s[0].f2
         if(const ArrayType* arrTy = SVFUtil::dyn_cast<ArrayType>(gepTy))
         {
-            if(!op || (arrTy->getArrayNumElements() <= (u32_t)op->getSExtValue()))
+            if(!op || (arrTy->getArrayNumElements() <= (u32_t)LLVMUtil::getIntegerValue(op).first))
                 continue;
-            APOffset idx = op->getSExtValue();
+            APOffset idx = (u32_t)LLVMUtil::getIntegerValue(op).first;
             u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(llvmModuleSet()->getSVFType(arrTy), idx);
             ap.setFldIdx(ap.getConstantStructFldIdx() + offset);
         }
@@ -467,7 +467,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
         {
             assert(op && "non-const offset accessing a struct");
             //The actual index
-            APOffset idx = op->getSExtValue();
+            APOffset idx = (u32_t)LLVMUtil::getIntegerValue(op).first;
             u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(llvmModuleSet()->getSVFType(ST), idx);
             ap.setFldIdx(ap.getConstantStructFldIdx() + offset);
         }
@@ -1176,7 +1176,7 @@ void SVFIRBuilder::visitSwitchInst(SwitchInst &inst)
         /// default case is set to -1;
         s64_t val = -1;
         if (condVal && condVal->getBitWidth() <= 64)
-            val = condVal->getSExtValue();
+            val = (u32_t)LLVMUtil::getIntegerValue(condVal).first;
         const ICFGNode* icfgNode = llvmModuleSet()->getICFGNode(succInst);
         successors.push_back(std::make_pair(icfgNode, val));
     }
@@ -1297,7 +1297,7 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
         for (bridge_gep_iterator gi = bridge_gep_begin(gep), ge = bridge_gep_end(gep); gi != ge; ++gi)
         {
             if(const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
-                totalidx += op->getSExtValue();
+                totalidx += LLVMUtil::getIntegerValue(op).first;
         }
         if(totalidx == 0 && !SVFUtil::isa<StructType>(value->getType()))
             value = gep->getPointerOperand();
