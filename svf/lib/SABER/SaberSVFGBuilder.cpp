@@ -83,7 +83,7 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
                 continue;
         }
         if ((isa<ObjVar>(pagNode) && isa<GlobalObjVar>(pag->getBaseObject(pagNode->getId()))) ||
-            (isa<ValVar>(pagNode) && isa<GlobalValVar>(pag->getBaseValVar(pagNode->getId()))))
+                (isa<ValVar>(pagNode) && isa<GlobalValVar>(pag->getBaseValVar(pagNode->getId()))))
             worklist.push_back(it->first);
     }
 

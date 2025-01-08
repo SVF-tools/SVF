@@ -447,7 +447,7 @@ void PointerAnalysis::getVFnsFromPts(const CallICFGNode* cs, const PointsTo &tar
             if (ptdnode->hasValue())
             {
                 if ((isa<ObjVar>(ptdnode) && isa<GlobalObjVar>(pag->getBaseObject(ptdnode->getId())))
-                    || (isa<ValVar>(ptdnode) && isa<GlobalValVar>(pag->getBaseValVar(ptdnode->getId()))))
+                        || (isa<ValVar>(ptdnode) && isa<GlobalValVar>(pag->getBaseValVar(ptdnode->getId()))))
                 {
                     const SVFGlobalValue* globalValue = SVFUtil::dyn_cast<SVFGlobalValue>(ptdnode->getValue());
                     if (chaVtbls.find(globalValue) != chaVtbls.end())

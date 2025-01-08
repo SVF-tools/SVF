@@ -417,7 +417,7 @@ public:
         const SVFVar* node = getGNode(id);
         if(const GepValVar* gepVar = SVFUtil::dyn_cast<GepValVar>(node))
             return SVFUtil::dyn_cast<ValVar>(
-                getGNode(gepVar->getBaseNode()));
+                       getGNode(gepVar->getBaseNode()));
         else
             return SVFUtil::dyn_cast<ValVar>(node);
     }
@@ -666,7 +666,8 @@ private:
     }
 
 
-    inline NodeID addConstantNullPtrObjNode(const SVFValue* curInst, const NodeID i) {
+    inline NodeID addConstantNullPtrObjNode(const SVFValue* curInst, const NodeID i)
+    {
         const MemObj* mem = getMemObj(curInst);
         NodeID base = mem->getId();
         memToFieldsMap[base].set(mem->getId());
