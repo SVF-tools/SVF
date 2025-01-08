@@ -79,6 +79,13 @@ inline double getDoubleValue(const ConstantFP* fpValue) {
     return dval;
 }
 
+inline std::pair<s64_t, u64_t> getIntegerValue(const ConstantInt* intValue) {
+    if (intValue->getBitWidth() <= 64 && intValue->getBitWidth() >= 1)
+        return std::make_pair(intValue->getSExtValue(), intValue->getZExtValue());
+    else
+        return std::make_pair(0,0);
+}
+
 /// Return LLVM callsite given a value
 inline const CallBase* getLLVMCallSite(const Value* value)
 {

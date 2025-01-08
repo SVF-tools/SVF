@@ -253,10 +253,7 @@ void SVFIRBuilder::initialiseNodes()
         }
         else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
         {
-            if (intValue->getBitWidth() <= 64 && intValue->getBitWidth() >= 1)
-                pag->addConstantIntValNode(iter->first, intValue->getSExtValue(), intValue->getZExtValue(), iter->second, icfgNode);
-            else
-                pag->addConstantIntValNode(iter->first, 0, 0, iter->second, icfgNode);
+            pag->addConstantIntValNode(iter->first, LLVMUtil::getIntegerValue(intValue), iter->second, icfgNode);
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 intValue, pag->getGNode(iter->second));
         }
@@ -331,11 +328,7 @@ void SVFIRBuilder::initialiseNodes()
         }
         else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
         {
-            pag->addConstantIntObjNode(iter->first, intValue->getSExtValue(), intValue->getZExtValue(), iter->second);
-            if (intValue->getBitWidth() <= 64 && intValue->getBitWidth() >= 1)
-                pag->addConstantIntObjNode(iter->first, intValue->getSExtValue(), intValue->getZExtValue(), iter->second);
-            else
-                pag->addConstantIntObjNode(iter->first, 0, 0, iter->second);
+            pag->addConstantIntObjNode(iter->first, LLVMUtil::getIntegerValue(intValue), iter->second);
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 intValue, pag->getGNode(iter->second));
         }
