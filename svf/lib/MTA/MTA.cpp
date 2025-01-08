@@ -164,7 +164,7 @@ void MTA::detect(SVFModule* module)
         for (Set<const StoreStmt*>::const_iterator sit = stores.begin(), esit = stores.end(); sit != esit; ++sit)
         {
             const StoreStmt* store = *sit;
-            if(load->getInst()==nullptr || store->getInst()==nullptr)
+            if(SVFUtil::isa<GlobalICFGNode>(load->getICFGNode()) || SVFUtil::isa<GlobalICFGNode>(store->getICFGNode()))
                 continue;
             if(mhp->mayHappenInParallelInst(load->getICFGNode(),store->getICFGNode()) && pta->alias(load->getRHSVarID(),store->getLHSVarID()))
                 if(lsa->isProtectedByCommonLock(load->getICFGNode(),store->getICFGNode()) == false)

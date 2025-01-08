@@ -399,27 +399,28 @@ bool SaberCondAllocator::isTestNotNullExpr(const ICFGNode* test) const
 bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt *cmp) const
 {
 
+    // must be val var?
     const SVFVar* op0 = cmp->getOpVar(0);
     const SVFVar* op1 = cmp->getOpVar(1);
     if (SVFUtil::isa<ConstantNullPtrValVar>(op1))
     {
-        Set<const SVFValue* > inDirVal;
+        Set<const SVFVar* > inDirVal;
         inDirVal.insert(getCurEvalSVFGNode()->getValue());
         for (const auto &it: getCurEvalSVFGNode()->getOutEdges())
         {
             inDirVal.insert(it->getDstNode()->getValue());
         }
-        return inDirVal.find(op0->getValue()) != inDirVal.end();
+        return inDirVal.find(op0) != inDirVal.end();
     }
     else if (SVFUtil::isa<ConstantNullPtrValVar>(op0))
     {
-        Set<const SVFValue* > inDirVal;
+        Set<const SVFVar* > inDirVal;
         inDirVal.insert(getCurEvalSVFGNode()->getValue());
         for (const auto &it: getCurEvalSVFGNode()->getOutEdges())
         {
             inDirVal.insert(it->getDstNode()->getValue());
         }
-        return inDirVal.find(op1->getValue()) != inDirVal.end();
+        return inDirVal.find(op1) != inDirVal.end();
     }
     return false;
 }

@@ -78,7 +78,7 @@ public:
     };
 
 private:
-    const SVFValue* value;           ///< LLVM value
+    const SVFVar* value;           ///< LLVM value
     const SVFBasicBlock* basicBlock; ///< LLVM BasicBlock
     ICFGNode* icfgNode;              ///< ICFGNode
     EdgeID edgeId;                   ///< Edge ID
@@ -134,20 +134,15 @@ public:
 
     /// Get/set methods for llvm instruction
     //@{
-    inline const SVFInstruction* getInst() const
-    {
-        if (const SVFInstruction* i = SVFUtil::dyn_cast<SVFInstruction>(value))
-            return i;
-        return nullptr;
-    }
-    inline void setValue(const SVFValue* val)
+
+    inline void setValue(const SVFVar* val)
     {
         value = val;
     }
-    inline const SVFValue* getValue() const
-    {
+    inline const SVFVar* getValue() const {
         return value;
     }
+
     inline void setBB(const SVFBasicBlock* bb)
     {
         basicBlock = bb;
