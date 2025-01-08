@@ -704,8 +704,7 @@ std::vector<const Function* > LLVMModuleSet::getLLVMGlobalFunctions(const Global
 
                 if (priority && func)
                 {
-                    queue.push(LLVMGlobalFunction(priority
-                                                  ->getZExtValue(),
+                    queue.push(LLVMGlobalFunction(LLVMUtil::getIntegerValue(priority).second,
                                                   func));
                 }
             }

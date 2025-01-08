@@ -628,7 +628,7 @@ void ObjTypeInference::validateTypeCheck(const CallBase *cs)
                 SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
             assert(pInt && "the second argument is a integer");
             u32_t iTyNum = objTyToNumFields(objType);
-            if (iTyNum >= pInt->getZExtValue())
+            if (iTyNum >= LLVMUtil::getIntegerValue(pInt).second)
                 SVFUtil::outs() << SVFUtil::sucMsg("\t SUCCESS :") << dumpValueAndDbgInfo(cs)
                                 << SVFUtil::pasMsg(" TYPE: ")
                                 << dumpType(objType) << "\n";
