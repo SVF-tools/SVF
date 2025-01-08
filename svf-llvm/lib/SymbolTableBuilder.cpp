@@ -781,7 +781,7 @@ u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val)
                                 llvm::dyn_cast<llvm::ConstantInt>(arg))
                     {
                         // Multiply the constant Value if all Args are const
-                        product *= constIntArg->getZExtValue();
+                        product *= LLVMUtil::getIntegerValue(constIntArg).second;
                     }
                     else
                     {
@@ -871,8 +871,8 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
         /// In most cases, `NumElements` is not specified in the instruction, which means there is only one element (objSize=1).
         if(const ConstantInt* sz = SVFUtil::dyn_cast<ConstantInt>(allocaInst->getArraySize()))
         {
-            elemNum = sz->getZExtValue() * getNumOfElements(objTy);
-            byteSize = sz->getZExtValue() * typeinfo->getType()->getByteSize();
+            elemNum = LLVMUtil::getIntegerValue(sz).second * getNumOfElements(objTy);
+            byteSize = LLVMUtil::getIntegerValue(sz).second * typeinfo->getType()->getByteSize();
         }
         /// if ArraySize is not constant, byteSize is not static determined.
         else

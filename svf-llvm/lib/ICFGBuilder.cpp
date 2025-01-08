@@ -196,7 +196,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                 /// default case is set to -1;
                 s64_t val = -1;
                 if (condVal && condVal->getBitWidth() <= 64)
-                    val = condVal->getSExtValue();
+                    val = LLVMUtil::getIntegerValue(condVal).first;
                 icfg->addConditionalIntraEdge(srcNode, dstNode,val);
             }
             else
