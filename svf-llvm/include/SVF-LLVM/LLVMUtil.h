@@ -52,16 +52,17 @@ inline bool isCallSite(const Value* val)
     return SVFUtil::isa<CallBase>(val);
 }
 
-inline double getDoubleValue(const ConstantFP* fpValue) {
+inline double getDoubleValue(const ConstantFP* fpValue)
+{
     double dval = 0;
     if (fpValue->isNormalFP())
     {
         const llvm::fltSemantics& semantics = fpValue->getValueAPF().getSemantics();
         if (&semantics == &llvm::APFloat::IEEEhalf() ||
-            &semantics == &llvm::APFloat::IEEEsingle() ||
-            &semantics == &llvm::APFloat::IEEEdouble() ||
-            &semantics == &llvm::APFloat::IEEEquad() ||
-            &semantics == &llvm::APFloat::x87DoubleExtended())
+                &semantics == &llvm::APFloat::IEEEsingle() ||
+                &semantics == &llvm::APFloat::IEEEdouble() ||
+                &semantics == &llvm::APFloat::IEEEquad() ||
+                &semantics == &llvm::APFloat::x87DoubleExtended())
         {
             dval = fpValue->getValueAPF().convertToDouble();
         }
@@ -79,7 +80,8 @@ inline double getDoubleValue(const ConstantFP* fpValue) {
     return dval;
 }
 
-inline std::pair<s64_t, u64_t> getIntegerValue(const ConstantInt* intValue) {
+inline std::pair<s64_t, u64_t> getIntegerValue(const ConstantInt* intValue)
+{
     if (intValue->getBitWidth() <= 64 && intValue->getBitWidth() >= 1)
         return std::make_pair(intValue->getSExtValue(), intValue->getZExtValue());
     else

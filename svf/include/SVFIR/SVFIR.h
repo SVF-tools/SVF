@@ -656,7 +656,8 @@ private:
     }
 
 
-    inline NodeID addConstantIntObjNode(const SVFValue* curInst, const std::pair<s64_t, u64_t>& intValue, const NodeID i) {
+    inline NodeID addConstantIntObjNode(const SVFValue* curInst, const std::pair<s64_t, u64_t>& intValue, const NodeID i)
+    {
         const MemObj* mem = getMemObj(curInst);
         NodeID base = mem->getId();
         memToFieldsMap[base].set(mem->getId());
