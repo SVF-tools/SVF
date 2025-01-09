@@ -107,10 +107,9 @@ void dummyVisit(const VFGNode* node)
  */
 void traverseOnVFG(const SVFG* vfg, const SVFVar* svfval)
 {
-    PAGNode* pNode = const_cast<PAGNode*>(svfval);
-    if (!vfg->hasDefSVFGNode(pNode))
+    if (!vfg->hasDefSVFGNode(svfval))
         return;
-    const VFGNode* vNode = vfg->getDefSVFGNode(pNode);
+    const VFGNode* vNode = vfg->getDefSVFGNode(svfval);
     FIFOWorkList<const VFGNode*> worklist;
     Set<const VFGNode*> visited;
     worklist.push(vNode);
