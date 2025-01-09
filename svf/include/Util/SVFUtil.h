@@ -351,6 +351,8 @@ inline bool isArgOfUncalledFunction(const SVFValue* svfval)
         return false;
 }
 
+bool isArgOfUncalledFunction(const SVFVar* svfvar);
+
 const ObjVar* getObjVarOfValVar(const ValVar* valVar);
 
 /// Return thread fork function
