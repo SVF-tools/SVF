@@ -82,7 +82,7 @@ public:
     }
 
     /// Return the corresponding LLVM value, if possible, nullptr otherwise.
-    virtual const SVFValue* getValue() const
+    virtual const SVFVar* getValue() const
     {
         return nullptr;
     }
@@ -190,7 +190,7 @@ public:
     }
     //@}
 
-    const SVFValue* getValue() const override;
+    const SVFVar* getValue() const override;
     const std::string toString() const override;
 };
 
@@ -401,7 +401,9 @@ public:
 
     const NodeBS getDefSVFVars() const override;
 
-    const SVFValue* getValue() const override;
+    const SVFVar* getValue() const override;
+
+
     const std::string toString() const override;
 };
 
@@ -476,7 +478,7 @@ public:
 
     const NodeBS getDefSVFVars() const override;
 
-    const SVFValue* getValue() const override;
+    const SVFVar* getValue() const override;
     const std::string toString() const override;
 };
 
@@ -736,7 +738,7 @@ public:
 
     const NodeBS getDefSVFVars() const override;
 
-    const SVFValue* getValue() const override;
+    const SVFVar* getValue() const override;
     const std::string toString() const override;
 };
 
@@ -879,7 +881,7 @@ public:
     }
     //@}
 
-    const SVFValue* getValue() const override;
+    const SVFVar* getValue() const override;
     const std::string toString() const override;
 };
 
