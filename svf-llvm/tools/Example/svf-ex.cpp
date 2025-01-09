@@ -41,21 +41,21 @@ using namespace SVF;
 /*!
  * An example to query alias results of two SVF values
  */
-SVF::AliasResult aliasQuery(PointerAnalysis* pta, const SVFValue* v1, const SVFValue* v2)
+SVF::AliasResult aliasQuery(PointerAnalysis* pta, const SVFVar* v1, const SVFVar* v2)
 {
-    return pta->alias(v1, v2);
+    return pta->alias(v1->getId(), v2->getId());
 }
 
 /*!
  * An example to print points-to set of an SVF value
  */
-std::string printPts(PointerAnalysis* pta, const SVFValue* svfval)
+std::string printPts(PointerAnalysis* pta, const SVFVar* svfval)
 {
 
     std::string str;
     raw_string_ostream rawstr(str);
 
-    NodeID pNodeId = pta->getPAG()->getValueNode(svfval);
+    NodeID pNodeId = svfval->getId();
     const PointsTo& pts = pta->getPts(pNodeId);
     for (PointsTo::iterator ii = pts.begin(), ie = pts.end();
             ii != ie; ii++)
@@ -105,13 +105,11 @@ void dummyVisit(const VFGNode* node)
 /*!
  * An example to query/collect all the uses of a definition of a value along value-flow graph (VFG)
  */
-void traverseOnVFG(const SVFG* vfg, const SVFValue* svfval)
+void traverseOnVFG(const SVFG* vfg, const SVFVar* svfval)
 {
-    SVFIR* pag = SVFIR::getPAG();
-    PAGNode* pNode = pag->getGNode(pag->getValueNode(svfval));
-    if (!vfg->hasDefSVFGNode(pNode))
+    if (!vfg->hasDefSVFGNode(svfval))
         return;
-    const VFGNode* vNode = vfg->getDefSVFGNode(pNode);
+    const VFGNode* vNode = vfg->getDefSVFGNode(svfval);
     FIFOWorkList<const VFGNode*> worklist;
     Set<const VFGNode*> visited;
     worklist.push(vNode);
