@@ -139,7 +139,8 @@ public:
     {
         value = val;
     }
-    inline const SVFVar* getValue() const {
+    inline const SVFVar* getValue() const
+    {
         return value;
     }
 
