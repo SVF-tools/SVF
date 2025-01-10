@@ -670,11 +670,10 @@ bool SVFIR::isValidPointer(NodeID nodeId) const
 
     if (node->hasValue() && node->isPointer())
     {
-        if(const SVFArgument* arg = SVFUtil::dyn_cast<SVFArgument>(node->getValue()))
-        {
-            if (!(arg->getParent()->isDeclaration()))
-                return true;
-        }
+        if (const ValVar* pVar = pag->getBaseValVar(nodeId))
+            if (const ArgValVar* arg = SVFUtil::dyn_cast<ArgValVar>(pVar))
+                if (!(arg->getParent()->isDeclaration()))
+                    return true;
     }
 
     if ((node->getInEdges().empty() && node->getOutEdges().empty()))
@@ -694,7 +693,7 @@ bool SVFIR::isValidTopLevelPtr(const SVFVar* node)
                 return true;
             }
             else if(node->hasValue())
-                return !SVFUtil::isArgOfUncalledFunction(node->getValue());
+                return !SVFUtil::isArgOfUncalledFunction(node);
         }
     }
     return false;

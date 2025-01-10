@@ -425,6 +425,14 @@ const SVFFunction* SVFUtil::getProgEntryFunction()
     return nullptr;
 }
 
+bool SVFUtil::isArgOfUncalledFunction(const SVFVar* svfvar)
+{
+    const ValVar* pVar = PAG::getPAG()->getBaseValVar(svfvar->getId());
+    if(const ArgValVar* arg = SVFUtil::dyn_cast<ArgValVar>(pVar))
+        return arg->isArgOfUncalledFunction();
+    else
+        return false;
+}
 
 const ObjVar* SVFUtil::getObjVarOfValVar(const SVF::ValVar* valVar)
 {

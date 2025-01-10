@@ -154,6 +154,7 @@ public:
         // ┌── SVFVar: Classes of top-level variables (ValVar) and address-taken variables (ObjVar)
         // │   └── ValVar: Classes of top-level variable nodes
         ValNode,                 // ├──Represents a standard value variable
+        ArgNode,                 // ├──Represents an argument value variable
         FunValNode,              // ├──Represents a Function value variable
         GepValNode,              // ├──Represents a GEP value variable
         RetNode,                 // ├──Represents a return value node
@@ -289,7 +290,7 @@ protected:
 
     static inline bool isSVFVarKind(GNodeK n)
     {
-        static_assert(DummyObjNode - ValNode == 23,
+        static_assert(DummyObjNode - ValNode == 24,
                       "The number of SVFVarKinds has changed, make sure the "
                       "range is correct");
 
@@ -298,7 +299,7 @@ protected:
 
     static inline bool isValVarKinds(GNodeK n)
     {
-        static_assert(DummyValNode - ValNode == 11,
+        static_assert(DummyValNode - ValNode == 12,
                       "The number of ValVarKinds has changed, make sure the "
                       "range is correct");
         return n <= DummyValNode && n >= ValNode;

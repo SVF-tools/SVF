@@ -207,13 +207,13 @@ const SVFVar* ThreadAPI::getLockVal(const ICFGNode *cs) const
 const SVFVar* ThreadAPI::getJoinedThread(const CallICFGNode *cs) const
 {
     assert(isTDJoin(cs) && "not a thread join function!");
-    const SVFVar* join = cs->getArgument(0);
+    const ValVar* join = cs->getArgument(0);
     for(const SVFStmt* stmt : join->getInEdges())
     {
         if(SVFUtil::isa<LoadStmt>(stmt))
             return stmt->getSrcNode();
     }
-    if(SVFUtil::isa<SVFArgument>(join->getValue()))
+    if(SVFUtil::isa<ArgValVar>(join))
         return join;
 
     assert(false && "the value of the first argument at join is not a load instruction?");

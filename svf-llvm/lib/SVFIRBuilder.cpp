@@ -244,6 +244,13 @@ void SVFIRBuilder::initialiseNodes()
             const CallGraphNode* cgn = llvmModuleSet()->getCallGraphNode(func);
             // add value node representing the function
             pag->addFunValNode(cgn, iter->second, icfgNode);
+        } else if (auto argval = SVFUtil::dyn_cast<Argument>(llvmValue)) {
+            pag->addArgValNode(
+                iter->second, argval->getArgNo(), icfgNode,
+                llvmModuleSet()->getCallGraphNode(argval->getParent()),
+                LLVMUtil::isArgOfUncalledFunction(argval));
+            llvmModuleSet()->addToLLVMVal2SVFVarMap(
+                argval, pag->getGNode(iter->second));
         }
         else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
         {
