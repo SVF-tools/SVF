@@ -389,7 +389,8 @@ public:
  * This class models function argument in the program analysis. It extends ValVar
  * to specifically handle function argument.
  */
-class ArgValVar: public ValVar {
+class ArgValVar: public ValVar
+{
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
