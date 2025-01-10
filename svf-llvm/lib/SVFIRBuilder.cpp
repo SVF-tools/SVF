@@ -243,10 +243,8 @@ void SVFIRBuilder::initialiseNodes()
         {
             const CallGraphNode* cgn = llvmModuleSet()->getCallGraphNode(func);
             // add value node representing the function
-            pag->addFunValNode(cgn, iter->second, icfgNode);
-        }
-        else if (auto argval = SVFUtil::dyn_cast<Argument>(llvmValue))
-        {
+            pag->addFunValNode(iter->second, icfgNode, cgn);
+        } else if (auto argval = SVFUtil::dyn_cast<Argument>(llvmValue)) {
             pag->addArgValNode(
                 iter->second, argval->getArgNo(), icfgNode,
                 llvmModuleSet()->getCallGraphNode(argval->getParent()),
@@ -256,13 +254,13 @@ void SVFIRBuilder::initialiseNodes()
         }
         else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
         {
-            pag->addConstantFPValNode(iter->first, LLVMUtil::getDoubleValue(fpValue), iter->second, icfgNode);
+            pag->addConstantFPValNode(iter->first, iter->second, LLVMUtil::getDoubleValue(fpValue), icfgNode);
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 fpValue, pag->getGNode(iter->second));
         }
         else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
         {
-            pag->addConstantIntValNode(iter->first, LLVMUtil::getIntegerValue(intValue), iter->second, icfgNode);
+            pag->addConstantIntValNode(iter->first, iter->second, LLVMUtil::getIntegerValue(intValue), icfgNode);
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 intValue, pag->getGNode(iter->second));
         }
@@ -309,14 +307,14 @@ void SVFIRBuilder::initialiseNodes()
         // Check if the value is a function and add a function object node
         if (const Function* func = SVFUtil::dyn_cast<Function>(llvmValue))
         {
-            pag->addFunObjNode(llvmModuleSet()->getCallGraphNode(func), iter->second);
+            pag->addFunObjNode(iter->second, llvmModuleSet()->getCallGraphNode(func));
         }
         // Check if the value is a heap object and add a heap object node
         else if (LLVMUtil::isHeapObj(llvmValue))
         {
             const SVFFunction* f =
                 SVFUtil::cast<SVFInstruction>(iter->first)->getFunction();
-            pag->addHeapObjNode(iter->first, f, iter->second);
+            pag->addHeapObjNode(iter->first, iter->second, f);
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 llvmValue, pag->getGNode(iter->second));
         }
@@ -325,19 +323,19 @@ void SVFIRBuilder::initialiseNodes()
         {
             const SVFFunction* f =
                 SVFUtil::cast<SVFInstruction>(iter->first)->getFunction();
-            pag->addStackObjNode(iter->first, f, iter->second);
+            pag->addStackObjNode(iter->first, iter->second, f);
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 llvmValue, pag->getGNode(iter->second));
         }
         else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
         {
-            pag->addConstantFPObjNode(iter->first, LLVMUtil::getDoubleValue(fpValue), iter->second);
+            pag->addConstantFPObjNode(iter->first, iter->second, LLVMUtil::getDoubleValue(fpValue));
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 fpValue, pag->getGNode(iter->second));
         }
         else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
         {
-            pag->addConstantIntObjNode(iter->first, LLVMUtil::getIntegerValue(intValue), iter->second);
+            pag->addConstantIntObjNode(iter->first, iter->second, LLVMUtil::getIntegerValue(intValue));
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 intValue, pag->getGNode(iter->second));
         }
@@ -371,10 +369,9 @@ void SVFIRBuilder::initialiseNodes()
             ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add ret node " << iter->second << "\n");
-        pag->addRetNode(
+        pag->addRetNode(iter->second,
             llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(
-                    llvmModuleSet()->getLLVMValue(iter->first))),
-            iter->second);
+                    llvmModuleSet()->getLLVMValue(iter->first))));
     }
 
     for (SymbolTableInfo::FunToIDMapTy::iterator iter =
@@ -382,10 +379,9 @@ void SVFIRBuilder::initialiseNodes()
             iter != symTable->varargSyms().end(); ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add vararg node " << iter->second << "\n");
-        pag->addVarargNode(
+        pag->addVarargNode(iter->second,
             llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(
-                    llvmModuleSet()->getLLVMValue(iter->first))),
-            iter->second);
+                    llvmModuleSet()->getLLVMValue(iter->first))));
     }
 
     /// add address edges for constant nodes.

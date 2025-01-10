@@ -472,14 +472,14 @@ NodeID SVFIR::addFIObjNode(const MemObj* obj)
     return addObjNode(obj->getValue(), node, obj->getId());
 }
 
-NodeID SVFIR::addFunObjNode(const CallGraphNode* callGraphNode, NodeID id)
+NodeID SVFIR::addFunObjNode(NodeID id, const CallGraphNode* callGraphNode)
 {
     const MemObj* mem = getMemObj(callGraphNode->getFunction());
     assert(mem->getId() == id && "not same object id?");
     //assert(findPAGNode(i) == false && "this node should not be created before");
     NodeID base = mem->getId();
     memToFieldsMap[base].set(mem->getId());
-    FunObjVar*node = new FunObjVar(callGraphNode, mem->getId(), mem);
+    FunObjVar*node = new FunObjVar(id, mem, callGraphNode);
     return addObjNode(mem->getValue(), node, mem->getId());
 }
 
