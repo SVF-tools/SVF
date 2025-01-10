@@ -246,9 +246,9 @@ void SVFIRBuilder::initialiseNodes()
             pag->addFunValNode(cgn, iter->second, icfgNode);
         } else if (auto argval = SVFUtil::dyn_cast<Argument>(llvmValue)) {
             pag->addArgValNode(
+                iter->second, argval->getArgNo(), icfgNode,
                 llvmModuleSet()->getCallGraphNode(argval->getParent()),
-                argval->getArgNo(), LLVMUtil::isArgOfUncalledFunction(argval), iter->second,
-                icfgNode);
+                LLVMUtil::isArgOfUncalledFunction(argval));
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 argval, pag->getGNode(iter->second));
         }

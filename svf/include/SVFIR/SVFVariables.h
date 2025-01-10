@@ -428,8 +428,8 @@ public:
     //@}
 
     /// Constructor
-    ArgValVar(NodeID i, const CallGraphNode* callGraphNode, u32_t argNo,
-              bool isUncalled, const ICFGNode* icn, PNODEK ty = ArgNode);
+    ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn, const CallGraphNode* callGraphNode,
+              bool isUncalled = false, PNODEK ty = ArgNode);
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const

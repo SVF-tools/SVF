@@ -145,11 +145,11 @@ const std::string ObjVar::toString() const
     return rawstr.str();
 }
 
-ArgValVar::ArgValVar(SVF::NodeID i, const SVF::CallGraphNode* callGraphNode,
-                     SVF::u32_t argNo, bool isUncalled,
-                     const SVF::ICFGNode* icn, SVF::SVFVar::PNODEK ty)
-    : ValVar(callGraphNode->getFunction()->getArg(argNo), i, ty, icn), cgNode(callGraphNode),
-      argNo(argNo), uncalled(isUncalled)
+ArgValVar::ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn,
+                     const SVF::CallGraphNode* callGraphNode, bool isUncalled,
+                     SVF::SVFVar::PNODEK ty)
+    : ValVar(callGraphNode->getFunction()->getArg(argNo), i, ty, icn),
+      cgNode(callGraphNode), argNo(argNo), uncalled(isUncalled)
 {
     isPtr =
         callGraphNode->getFunction()->getArg(argNo)->getType()->isPointerTy();
