@@ -578,7 +578,8 @@ private:
         return addValNode(nullptr, node, i);
     }
 
-    NodeID addArgValNode(NodeID i, u32_t argNo, const ICFGNode* icfgNode, const CallGraphNode* callGraphNode, bool isUncalled = false) {
+    NodeID addArgValNode(NodeID i, u32_t argNo, const ICFGNode* icfgNode, const CallGraphNode* callGraphNode, bool isUncalled = false)
+    {
         ArgValVar* node =
             new ArgValVar(i, argNo, icfgNode, callGraphNode, isUncalled);
         return addValNode(nullptr, node, i);
