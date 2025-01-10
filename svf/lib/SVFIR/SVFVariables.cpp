@@ -46,6 +46,7 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     switch (k)
     {
     case ValNode:
+    case ArgNode:
     case ConstantDataValNode:
     case GlobalValNode:
     case BlackHoleNode:
@@ -140,6 +141,39 @@ const std::string ObjVar::toString() const
     {
         rawstr << "\n";
         rawstr << value->toString();
+    }
+    return rawstr.str();
+}
+
+ArgValVar::ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn,
+                     const SVF::CallGraphNode* callGraphNode, bool isUncalled,
+                     SVF::SVFVar::PNODEK ty)
+    : ValVar(callGraphNode->getFunction()->getArg(argNo), i, ty, icn),
+      cgNode(callGraphNode), argNo(argNo), uncalled(isUncalled)
+{
+    isPtr =
+        callGraphNode->getFunction()->getArg(argNo)->getType()->isPointerTy();
+}
+
+const SVFFunction* ArgValVar::getFunction() const
+{
+    return getParent();
+}
+
+const SVFFunction* ArgValVar::getParent() const
+{
+    return cgNode->getFunction();
+}
+
+const std::string ArgValVar::toString() const
+{
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "ArgValVar ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << valueOnlyToString();
     }
     return rawstr.str();
 }
@@ -468,4 +502,3 @@ bool SVFVar::isConstDataOrAggDataButNotNullPtr() const
     else
         return false;
 }
-

@@ -133,11 +133,6 @@ public:
             {
                 return inst->getParent()->getParent();
             }
-            // For function arguments, return their parent function
-            else if (auto arg = SVFUtil::dyn_cast<SVFArgument>(value))
-            {
-                return arg->getParent();
-            }
         }
 
         // Return nullptr for globals/constants with no parent function
@@ -382,6 +377,82 @@ public:
     inline virtual const SVFType* getType() const
     {
         return mem->getType();
+    }
+
+    virtual const std::string toString() const;
+};
+
+
+/**
+ * @brief Class representing a function argument variable in the SVFIR
+ *
+ * This class models function argument in the program analysis. It extends ValVar
+ * to specifically handle function argument.
+ */
+class ArgValVar: public ValVar {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
+private:
+    const CallGraphNode* cgNode;
+    u32_t argNo;
+    bool uncalled;
+
+protected:
+    /// Constructor to create function argument (for SVFIRReader/deserialization)
+    ArgValVar(NodeID i, PNODEK ty = ArgNode) : ValVar(i, ty) {}
+
+public:
+    ///  Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const ArgValVar*)
+    {
+        return true;
+    }
+    static inline bool classof(const ValVar* node)
+    {
+        return node->getNodeKind() == ArgNode;
+    }
+    static inline bool classof(const SVFVar* node)
+    {
+        return node->getNodeKind() == ArgNode;
+    }
+    static inline bool classof(const GenericPAGNodeTy* node)
+    {
+        return node->getNodeKind() == ArgNode;
+    }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == ArgNode;
+    }
+    //@}
+
+    /// Constructor
+    ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn, const CallGraphNode* callGraphNode,
+              bool isUncalled = false, PNODEK ty = ArgNode);
+
+    /// Return name of a LLVM value
+    inline const std::string getValueName() const
+    {
+        if (value)
+            return value->getName() + " (argument valvar)";
+        return " (argument valvar)";
+    }
+
+    virtual const SVFFunction* getFunction() const;
+
+    const SVFFunction* getParent() const;
+
+    ///  Return the index of this formal argument in its containing function.
+    /// For example in "void foo(int a, float b)" a is 0 and b is 1.
+    inline u32_t getArgNo() const
+    {
+        return argNo;
+    }
+
+    inline bool isArgOfUncalledFunction() const
+    {
+        return uncalled;
     }
 
     virtual const std::string toString() const;
