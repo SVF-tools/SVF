@@ -244,7 +244,9 @@ void SVFIRBuilder::initialiseNodes()
             const CallGraphNode* cgn = llvmModuleSet()->getCallGraphNode(func);
             // add value node representing the function
             pag->addFunValNode(iter->second, icfgNode, cgn);
-        } else if (auto argval = SVFUtil::dyn_cast<Argument>(llvmValue)) {
+        }
+        else if (auto argval = SVFUtil::dyn_cast<Argument>(llvmValue))
+        {
             pag->addArgValNode(
                 iter->second, argval->getArgNo(), icfgNode,
                 llvmModuleSet()->getCallGraphNode(argval->getParent()),
@@ -370,8 +372,8 @@ void SVFIRBuilder::initialiseNodes()
     {
         DBOUT(DPAGBuild, outs() << "add ret node " << iter->second << "\n");
         pag->addRetNode(iter->second,
-            llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(
-                    llvmModuleSet()->getLLVMValue(iter->first))));
+                        llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(
+                                    llvmModuleSet()->getLLVMValue(iter->first))));
     }
 
     for (SymbolTableInfo::FunToIDMapTy::iterator iter =
@@ -380,8 +382,8 @@ void SVFIRBuilder::initialiseNodes()
     {
         DBOUT(DPAGBuild, outs() << "add vararg node " << iter->second << "\n");
         pag->addVarargNode(iter->second,
-            llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(
-                    llvmModuleSet()->getLLVMValue(iter->first))));
+                           llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(
+                                       llvmModuleSet()->getLLVMValue(iter->first))));
     }
 
     /// add address edges for constant nodes.
