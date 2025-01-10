@@ -572,9 +572,9 @@ private:
         return addValNode(val, node, i);
     }
 
-    NodeID addFunValNode(const CallGraphNode* callGraphNode, NodeID i, const ICFGNode* icfgNode)
+    NodeID addFunValNode(NodeID i, const ICFGNode* icfgNode, const CallGraphNode* callGraphNode)
     {
-        FunValVar* node = new FunValVar(callGraphNode, i, icfgNode);
+        FunValVar* node = new FunValVar(i, icfgNode, callGraphNode);
         return addValNode(nullptr, node, i);
     }
 
@@ -585,17 +585,17 @@ private:
         return addValNode(nullptr, node, i);
     }
 
-    inline NodeID addConstantFPValNode(const SVFValue* curInst, double dval, const NodeID i,
+    inline NodeID addConstantFPValNode(const SVFValue* curInst, const NodeID i, double dval,
                                        const ICFGNode* icfgNode)
     {
-        SVFVar* node = new ConstantFPValVar(curInst,  dval, i, icfgNode);
+        SVFVar* node = new ConstantFPValVar(curInst,  i, dval, icfgNode);
         return addNode(node, i);
     }
 
-    inline NodeID addConstantIntValNode(const SVFValue* curInst, const std::pair<s64_t, u64_t>& intValue, const NodeID i,
+    inline NodeID addConstantIntValNode(const SVFValue* curInst, NodeID i, const std::pair<s64_t, u64_t>& intValue,
                                         const ICFGNode* icfgNode)
     {
-        SVFVar* node = new ConstantIntValVar(curInst, intValue.first, intValue.second, i, icfgNode);
+        SVFVar* node = new ConstantIntValVar(curInst, i, intValue.first, intValue.second, icfgNode);
         return addNode(node, i);
     }
 
@@ -629,47 +629,47 @@ private:
     /**
      * Creates and adds a heap object node to the SVFIR
      */
-    inline NodeID addHeapObjNode(const SVFValue* val, const SVFFunction* f, NodeID i)
+    inline NodeID addHeapObjNode(const SVFValue* val, NodeID i, const SVFFunction* f)
     {
         const MemObj* mem = getMemObj(val);
         assert(mem->getId() == i && "not same object id?");
         memToFieldsMap[i].set(i);
-        HeapObjVar *node = new HeapObjVar(f, val->getType(), i, mem);
+        HeapObjVar *node = new HeapObjVar(i, mem, val->getType(), f);
         return addObjNode(val, node, i);
     }
 
     /**
      * Creates and adds a stack object node to the SVFIR
      */
-    inline NodeID addStackObjNode(const SVFValue* val, const SVFFunction* f, NodeID i)
+    inline NodeID addStackObjNode(const SVFValue* val, NodeID i, const SVFFunction* f)
     {
         const MemObj* mem = getMemObj(val);
         assert(mem->getId() == i && "not same object id?");
         memToFieldsMap[i].set(i);
-        StackObjVar *node = new  StackObjVar(f, val->getType(), i, mem);
+        StackObjVar *node = new  StackObjVar(i, mem, val->getType(), f);
         return addObjNode(val, node, i);
     }
 
-    NodeID addFunObjNode(const CallGraphNode* callGraphNode, NodeID id);
+    NodeID addFunObjNode(NodeID id, const CallGraphNode* callGraphNode);
 
 
-    inline NodeID addConstantFPObjNode(const SVFValue* curInst, double dval, const NodeID i)
+    inline NodeID addConstantFPObjNode(const SVFValue* curInst, NodeID i, double dval)
     {
         const MemObj* mem = getMemObj(curInst);
         NodeID base = mem->getId();
         memToFieldsMap[base].set(mem->getId());
-        ConstantFPObjVar* node = new ConstantFPObjVar(curInst, dval, mem->getId(), mem);
+        ConstantFPObjVar* node = new ConstantFPObjVar(curInst, i, dval, mem);
         return addObjNode(curInst, node, mem->getId());
     }
 
 
-    inline NodeID addConstantIntObjNode(const SVFValue* curInst, const std::pair<s64_t, u64_t>& intValue, const NodeID i)
+    inline NodeID addConstantIntObjNode(const SVFValue* curInst, NodeID i, const std::pair<s64_t, u64_t>& intValue)
     {
         const MemObj* mem = getMemObj(curInst);
         NodeID base = mem->getId();
         memToFieldsMap[base].set(mem->getId());
         ConstantIntObjVar* node =
-            new ConstantIntObjVar(curInst, intValue.first, intValue.second, mem->getId(), mem);
+            new ConstantIntObjVar(curInst, i, intValue.first, intValue.second,  mem);
         return addObjNode(curInst, node, mem->getId());
     }
 
@@ -702,15 +702,15 @@ private:
     }
 
     /// Add a unique return node for a procedure
-    inline NodeID addRetNode(const CallGraphNode* callGraphNode, NodeID i)
+    inline NodeID addRetNode(NodeID i, const CallGraphNode* callGraphNode)
     {
-        SVFVar *node = new RetPN(callGraphNode,i);
+        SVFVar *node = new RetPN(i, callGraphNode);
         return addRetNode(callGraphNode, node, i);
     }
     /// Add a unique vararg node for a procedure
-    inline NodeID addVarargNode(const CallGraphNode* val, NodeID i)
+    inline NodeID addVarargNode(NodeID i, const CallGraphNode* val)
     {
-        SVFVar *node = new VarArgPN(val,i);
+        SVFVar *node = new VarArgPN(i, val);
         return addNode(node,i);
     }
 
