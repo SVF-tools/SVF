@@ -512,7 +512,6 @@ private:
 
     cJSON* contentToJson(const SVFValue* value);
     cJSON* contentToJson(const SVFFunction* value);
-    cJSON* contentToJson(const SVFBasicBlock* value);
     cJSON* contentToJson(const SVFInstruction* value);
     cJSON* contentToJson(const SVFCallInst* value);
     cJSON* contentToJson(const SVFConstant* value);
@@ -1285,7 +1284,6 @@ private:
     void virtFill(const cJSON*& fieldJson, SVFValue* value);
     void fill(const cJSON*& fieldJson, SVFValue* value);
     void fill(const cJSON*& fieldJson, SVFFunction* value);
-    void fill(const cJSON*& fieldJson, SVFBasicBlock* value);
     void fill(const cJSON*& fieldJson, SVFInstruction* value);
     void fill(const cJSON*& fieldJson, SVFCallInst* value);
     void fill(const cJSON*& fieldJson, SVFConstant* value);

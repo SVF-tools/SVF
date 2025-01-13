@@ -1224,7 +1224,15 @@ void LLVMModuleSet::addFunctionMap(const Function* func, CallGraphNode* svfFunc)
     LLVMFunc2CallGraphNode[func] = svfFunc;
     addToLLVMVal2SVFVarMap(func, svfFunc);
 }
+void LLVMModuleSet::addBasicBlockMap(const BasicBlock* bb, SVFBasicBlock* svfBB)
+{
+    LLVMBB2SVFBB[bb] = svfBB;
+    SVFBB2LLVMBB[svfBB] = bb;
+    svfBB->setSourceLoc(LLVMUtil::getSourceLoc(bb));
 
+    if (bb->hasName())
+        svfBB->setName(bb->getName().str());
+}
 void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
 {
     SVFValue2LLVMValue[svfvalue] = val;
@@ -1364,8 +1372,6 @@ SVFValue* LLVMModuleSet::getSVFValue(const Value* value)
 {
     if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
         return getSVFFunction(fun);
-    else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(value))
-        return getSVFBasicBlock(bb);
     else if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
         return getSVFInstruction(inst);
     else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(value))

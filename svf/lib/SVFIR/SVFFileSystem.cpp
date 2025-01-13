@@ -55,8 +55,6 @@ static SVFValue* createSVFValue(SVFValue::GNodeK kind, const SVFType* type,
             ABORT_MSG("Creation of RAW SVFValue isn't allowed");
         case SVFValue::SVFFunc:
             return new SVFFunction(type, {}, {}, {}, {}, {}, {});
-        case SVFValue::SVFBB:
-            return new SVFBasicBlock(type, {});
         case SVFValue::SVFInst:
             return new SVFInstruction(type, {}, {}, {});
         case SVFValue::SVFCall:
@@ -184,7 +182,6 @@ cJSON* SVFIRWriter::virtToJson(const SVFValue* value)
 
         CASE(SVFVal, SVFValue);
         CASE(SVFFunc, SVFFunction);
-        CASE(SVFBB, SVFBasicBlock);
         CASE(SVFInst, SVFInstruction);
         CASE(SVFCall, SVFCallInst);
         CASE(SVFGlob, SVFGlobalValue);
@@ -384,7 +381,6 @@ cJSON* SVFIRWriter::contentToJson(const ICFGNode* node)
 {
     cJSON* root = genericNodeToJson(node);
     JSON_WRITE_FIELD(root, node, fun);
-    JSON_WRITE_FIELD(root, node, bb);
     // TODO: Ensure this?
     assert(node->VFGNodes.empty() && "VFGNodes list not empty?");
     JSON_WRITE_FIELD(root, node, pagEdges);
@@ -564,19 +560,11 @@ cJSON* SVFIRWriter::contentToJson(const SVFFunction* value)
     return root;
 }
 
-cJSON* SVFIRWriter::contentToJson(const SVFBasicBlock* value)
-{
-    cJSON* root = contentToJson(static_cast<const SVFValue*>(value));
-    JSON_WRITE_FIELD(root, value, succBBs);
-    JSON_WRITE_FIELD(root, value, predBBs);
-    JSON_WRITE_FIELD(root, value, fun);
-    return root;
-}
+
 
 cJSON* SVFIRWriter::contentToJson(const SVFInstruction* value)
 {
     cJSON* root = contentToJson(static_cast<const SVFValue*>(value));
-    JSON_WRITE_FIELD(root, value, bb);
     JSON_WRITE_FIELD(root, value, terminator);
     JSON_WRITE_FIELD(root, value, ret);
     return root;
@@ -656,7 +644,6 @@ cJSON* SVFIRWriter::contentToJson(const SVFStmt* edge)
 {
     cJSON* root = genericEdgeToJson(edge);
     JSON_WRITE_FIELD(root, edge, value);
-    JSON_WRITE_FIELD(root, edge, basicBlock);
     JSON_WRITE_FIELD(root, edge, icfgNode);
     JSON_WRITE_FIELD(root, edge, edgeId);
     return root;
@@ -1888,13 +1875,6 @@ void SVFIRReader::readJson(const cJSON* obj, SVFLoopAndDomInfo*& ldInfo)
 
     ldInfo = new SVFLoopAndDomInfo();
 
-    JSON_READ_FIELD_FWD(field, ldInfo, reachableBBs);
-    JSON_READ_FIELD_FWD(field, ldInfo, dtBBsMap);
-    JSON_READ_FIELD_FWD(field, ldInfo, pdtBBsMap);
-    JSON_READ_FIELD_FWD(field, ldInfo, dfBBsMap);
-    JSON_READ_FIELD_FWD(field, ldInfo, bb2LoopMap);
-    JSON_READ_FIELD_FWD(field, ldInfo, bb2PdomLevel);
-    JSON_READ_FIELD_FWD(field, ldInfo, bb2PIdom);
 
     ABORT_IFNOT(!field,
                 "Extra field in SVFLoopAndDomInfo: " << JSON_KEY(field));
@@ -2019,7 +1999,6 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFStmt* stmt)
 {
     fill(fieldJson, static_cast<GenericPAGEdgeTy*>(stmt));
     JSON_READ_FIELD_FWD(fieldJson, stmt, value);
-    JSON_READ_FIELD_FWD(fieldJson, stmt, basicBlock);
     JSON_READ_FIELD_FWD(fieldJson, stmt, icfgNode);
     JSON_READ_FIELD_FWD(fieldJson, stmt, edgeId);
 }
@@ -2171,7 +2150,6 @@ void SVFIRReader::fill(const cJSON*& fieldJson, ICFGNode* node)
 {
     fill(fieldJson, static_cast<GenericICFGNodeTy*>(node));
     JSON_READ_FIELD_FWD(fieldJson, node, fun);
-    JSON_READ_FIELD_FWD(fieldJson, node, bb);
     // Skip VFGNodes as it is empty
     JSON_READ_FIELD_FWD(fieldJson, node, pagEdges);
 }
@@ -2309,7 +2287,6 @@ void SVFIRReader::virtFill(const cJSON*& fieldJson, SVFValue* value)
 
         CASE(SVFVal, SVFValue);
         CASE(SVFFunc, SVFFunction);
-        CASE(SVFBB, SVFBasicBlock);
         CASE(SVFInst, SVFInstruction);
         CASE(SVFCall, SVFCallInst);
         CASE(SVFGlob, SVFGlobalValue);
@@ -2347,23 +2324,15 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFFunction* value)
     F(funcType);
     F(loopAndDom);
     F(realDefFun);
-    F(allBBs);
     F(allArgs);
 #undef F
 }
 
-void SVFIRReader::fill(const cJSON*& fieldJson, SVFBasicBlock* value)
-{
-    fill(fieldJson, static_cast<SVFValue*>(value));
-    JSON_READ_FIELD_FWD(fieldJson, value, succBBs);
-    JSON_READ_FIELD_FWD(fieldJson, value, predBBs);
-    JSON_READ_FIELD_FWD(fieldJson, value, fun);
-}
+
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFInstruction* value)
 {
     fill(fieldJson, static_cast<SVFValue*>(value));
-    JSON_READ_FIELD_FWD(fieldJson, value, bb);
     JSON_READ_FIELD_FWD(fieldJson, value, terminator);
     JSON_READ_FIELD_FWD(fieldJson, value, ret);
 }

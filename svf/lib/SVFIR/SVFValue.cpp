@@ -196,15 +196,10 @@ void SVFFunction::setExitBlock(SVFBasicBlock *bb)
     exitBlock = bb;
 }
 
-SVFBasicBlock::SVFBasicBlock(const SVFType* ty, const SVFFunction* f)
-    : SVFValue(ty, SVFValue::SVFBB), fun(f)
+SVFBasicBlock::SVFBasicBlock(const SVFType* ty, const SVFFunction* f): type(ty), fun(f)
 {
 }
 
-SVFBasicBlock::~SVFBasicBlock()
-{
-
-}
 
 /*!
  * Get position of a successor basic block

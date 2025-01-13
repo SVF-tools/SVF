@@ -526,7 +526,7 @@ public:
 
 class ICFGNode;
 
-class SVFBasicBlock : public SVFValue
+class SVFBasicBlock
 {
     friend class LLVMModuleSet;
     friend class SVFIRWriter;
@@ -539,6 +539,10 @@ class SVFBasicBlock : public SVFValue
 public:
     typedef std::vector<const ICFGNode*>::const_iterator const_iterator;
 
+protected:
+    const SVFType* type;   ///< Type of this SVFValue
+    std::string name;       ///< Short name of value for printing & debugging
+    std::string sourceLoc;  ///< Source code information of this value
 private:
     std::vector<const ICFGNode*> allICFGNodes;    ///< all ICFGNodes in this BasicBlock
     std::vector<const SVFBasicBlock*> succBBs;  ///< all successor BasicBlocks of this BasicBlock
@@ -570,12 +574,8 @@ public:
     /// Constructor without name
     SVFBasicBlock(const SVFType* ty, const SVFFunction* f);
     SVFBasicBlock() = delete;
-    ~SVFBasicBlock() override;
+    virtual ~SVFBasicBlock() = default;
 
-    static inline bool classof(const SVFValue *node)
-    {
-        return node->getKind() == SVFBB;
-    }
 
     inline const std::vector<const ICFGNode*>& getICFGNodeList() const
     {
@@ -631,6 +631,36 @@ public:
     u32_t getBBSuccessorPos(const SVFBasicBlock* succbb) const;
     u32_t getBBPredecessorPos(const SVFBasicBlock* succbb);
     u32_t getBBPredecessorPos(const SVFBasicBlock* succbb) const;
+    inline const std::string &getName() const
+    {
+        return name;
+    }
+    inline void setName(const std::string& n)
+    {
+        name = n;
+    }
+    inline void setName(std::string&& n)
+    {
+        name = std::move(n);
+    }
+
+    inline virtual const SVFType* getType() const
+    {
+        return type;
+    }
+
+    inline virtual void setSourceLoc(const std::string& sourceCodeInfo)
+    {
+        sourceLoc = sourceCodeInfo;
+    }
+    inline virtual const std::string getSourceLoc() const
+    {
+        return sourceLoc;
+    }
+
+    inline const std::string toString() const {
+        return "BasicBlock: " + getName();
+    }
 };
 
 class SVFInstruction : public SVFValue

@@ -61,6 +61,8 @@ public:
     typedef Map<const Constant*, SVFConstant*> LLVMConst2SVFConstMap;
     typedef Map<const Value*, SVFOtherValue*> LLVMValue2SVFOtherValueMap;
     typedef Map<const SVFValue*, const Value*> SVFValue2LLVMValueMap;
+
+    typedef Map<const SVFBasicBlock*, const BasicBlock*> SVFBB2LLVMBBMap;
     typedef Map<const SVFBaseNode*, const Value*> SVFBaseNode2LLVMValueMap;
     typedef Map<const Type*, SVFType*> LLVMType2SVFTypeMap;
     typedef Map<const Type*, StInfo*> Type2TypeInfoMap;
@@ -92,6 +94,7 @@ private:
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
     LLVMFun2CallGraphNodeMap LLVMFunc2CallGraphNode; ///< Map an LLVM Function to an CallGraph Node
     LLVMBB2SVFBBMap LLVMBB2SVFBB;
+    SVFBB2LLVMBBMap SVFBB2LLVMBB;
     LLVMInst2SVFInstMap LLVMInst2SVFInst;
     LLVMArgument2SVFArgumentMap LLVMArgument2SVFArgument;
     LLVMConst2SVFConstMap LLVMConst2SVFConst;
@@ -177,11 +180,8 @@ public:
 
     void addFunctionMap(const Function* func, CallGraphNode* svfFunc);
 
-    inline void addBasicBlockMap(const BasicBlock* bb, SVFBasicBlock* svfBB)
-    {
-        LLVMBB2SVFBB[bb] = svfBB;
-        setValueAttr(bb,svfBB);
-    }
+    void addBasicBlockMap(const BasicBlock* bb, SVFBasicBlock* svfBB);
+
     inline void addInstructionMap(const Instruction* inst, SVFInstruction* svfInst)
     {
         LLVMInst2SVFInst[inst] = svfInst;
@@ -247,6 +247,12 @@ public:
     {
         SVFBaseNode2LLVMValueMap ::const_iterator it = SVFBaseNode2LLVMValue.find(value);
         assert(it!=SVFBaseNode2LLVMValue.end() && "can't find corresponding llvm value!");
+        return it->second;
+    }
+
+    inline const BasicBlock* getBasicBlock(const SVFBasicBlock* bb) const {
+        SVFBB2LLVMBBMap::const_iterator it = SVFBB2LLVMBB.find(bb);
+        assert(it != SVFBB2LLVMBB.end() && "can't find corresponding llvm basic block!");
         return it->second;
     }
 
