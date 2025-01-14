@@ -323,7 +323,10 @@ public:
     }
     inline bool isSingleFieldObj(NodeID id) const
     {
+        // ABTest
+        const BaseObjVar* baseObj = pag->getBaseObject(id);
         const MemObj* mem = pag->getBaseObj(id);
+        assert( (mem->getMaxFieldOffsetLimit() == 1) == (baseObj->getMaxFieldOffsetLimit() == 1));
         return (mem->getMaxFieldOffsetLimit() == 1);
     }
     /// Get a field of a memory object

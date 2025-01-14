@@ -91,7 +91,7 @@ SymbolTableInfo* SymbolTableInfo::SymbolInfo()
 /*!
  * Get modulus offset given the type information
  */
-APOffset SymbolTableInfo::getModulusOffset(const MemObj* obj, const APOffset& apOffset)
+APOffset SymbolTableInfo::getModulusOffset(const BaseObjVar* baseObj, const MemObj* obj, const APOffset& apOffset)
 {
 
     /// if the offset is negative, it's possible that we're looking for an obj node out of range
@@ -104,7 +104,9 @@ APOffset SymbolTableInfo::getModulusOffset(const MemObj* obj, const APOffset& ap
         writeWrnMsg("try to create a gep node with negative offset.");
         offset = abs(offset);
     }
-    u32_t maxOffset = obj->getMaxFieldOffsetLimit();
+    //ABTest
+    assert(obj->getMaxFieldOffsetLimit() == baseObj->getMaxFieldOffsetLimit());
+    u32_t maxOffset = baseObj->getMaxFieldOffsetLimit();
 
     /*!
      * @offset: the index allocated to the newly generated field node;

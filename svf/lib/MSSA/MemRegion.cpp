@@ -560,8 +560,11 @@ void MRGenerator::getEscapObjviaGlobals(NodeBS& globs, const NodeBS& calleeModRe
 {
     for(NodeBS::iterator it = calleeModRef.begin(), eit = calleeModRef.end(); it!=eit; ++it)
     {
+        //ABTest
         const MemObj* obj = pta->getPAG()->getObject(*it);
-        (void)obj; // Suppress warning of unused variable under release build
+        const BaseObjVar* pVar = pta->getPAG()->getObject2(*it);
+        (void)pVar;
+        //(void)obj; // Suppress warning of unused variable under release build
         assert(obj && "object not found!!");
         if(allGlobals.test(*it))
             globs.set(*it);
@@ -574,12 +577,15 @@ void MRGenerator::getEscapObjviaGlobals(NodeBS& globs, const NodeBS& calleeModRe
  */
 bool MRGenerator::isNonLocalObject(NodeID id, const SVFFunction* curFun) const
 {
+    //ABTest
     const MemObj* obj = pta->getPAG()->getObject(id);
+    const BaseObjVar* obj2 = pta->getPAG()->getObject2(id);
+    assert(obj->isGlobalObj() == obj2->isGlobalObj());
     assert(obj && "object not found!!");
     /// if the object is heap or global
     const BaseObjVar* pVar = pta->getPAG()->getBaseObject(id);
     assert(pVar && "object not found!");
-    if(obj->isGlobalObj() || SVFUtil::isa<HeapObjVar, DummyObjVar>(pVar))
+    if(obj2->isGlobalObj() || SVFUtil::isa<HeapObjVar, DummyObjVar>(pVar))
         return true;
     /// or if the local variable of its callers
     /// or a local variable is in function recursion cycles

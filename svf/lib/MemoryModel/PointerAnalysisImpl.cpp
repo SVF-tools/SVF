@@ -360,15 +360,26 @@ void BVDataPTAImpl::readGepObjVarMapFromFile(std::ifstream& F)
         {
             SVFVar* node = pag->getGNode(base);
             const MemObj* obj = nullptr;
+            const BaseObjVar* obj2 = nullptr;
             if (GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(node))
+            {
                 obj = gepObjVar->getMemObj();
+                obj2 = gepObjVar->getBaseObj();
+            }
             else if (BaseObjVar* baseNode = SVFUtil::dyn_cast<BaseObjVar>(node))
+            {
                 obj = baseNode->getMemObj();
+                obj2 = baseNode;
+            }
             else if (DummyObjVar* baseNode = SVFUtil::dyn_cast<DummyObjVar>(node))
+            {
                 obj = baseNode->getMemObj();
+                obj2 = baseNode;
+            }
             else
                 assert(false && "new gep obj node kind?");
-            pag->addGepObjNode(obj, offset, id);
+            assert(obj->getValue() == obj2->getValue());
+            pag->addGepObjNode(obj2, obj, offset, id);
             NodeIDAllocator::get()->increaseNumOfObjAndNodes();
         }
 
@@ -559,9 +570,12 @@ void BVDataPTAImpl::normalizePointsTo()
     for (auto t: memToFieldsMap)
     {
         NodeID base = t.first;
+        //ABTest
         const MemObj* memObj = pag->getObject(base);
+        const BaseObjVar* obj = pag->getObject2(base);
         assert(memObj && "Invalid memobj in memToFieldsMap");
-        if (memObj->isFieldInsensitive())
+        assert(memObj->isFieldInsensitive() == obj->isFieldInsensitive());
+        if (obj->isFieldInsensitive())
         {
             for (NodeID id : t.second)
             {

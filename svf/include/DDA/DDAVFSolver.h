@@ -645,13 +645,22 @@ protected:
 
     inline bool isArrayCondMemObj(const CVar& var) const
     {
+        // ABTest
         const MemObj* mem = _pag->getObject(getPtrNodeID(var));
+        const BaseObjVar* obj = _pag->getObject2(getPtrNodeID(var));
+        assert (mem->isArray() == obj->isArray());
+
         assert(mem && "memory object is null??");
-        return mem->isArray();
+        return obj->isArray();
     }
     inline bool isFieldInsenCondMemObj(const CVar& var) const
     {
+        // ABTest: getBaseObj -> getBaseObject
+        const BaseObjVar* baseObj = _pag->getBaseObject(getPtrNodeID(var));
+
         const MemObj* mem =  _pag->getBaseObj(getPtrNodeID(var));
+
+        assert(mem->isFieldInsensitive() == baseObj->isFieldInsensitive());
         return mem->isFieldInsensitive();
     }
     //@}

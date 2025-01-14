@@ -108,7 +108,11 @@ void FlowSensitiveStat::performStat()
         PAGNode* pagNode = nodeIt->second;
         if(SVFUtil::isa<ObjVar>(pagNode))
         {
+            // ABTest
             const MemObj * memObj = pag->getBaseObj(nodeId);
+            const BaseObjVar* baseObj = pag->getBaseObject(nodeId);
+            assert(memObj->getId() == baseObj->getId());
+            assert(memObj->isFieldInsensitive() == baseObj->isFieldInsensitive());
             SymID baseId = memObj->getId();
             if (nodeSet.insert(baseId).second)
             {
