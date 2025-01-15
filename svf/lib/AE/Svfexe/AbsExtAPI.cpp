@@ -278,13 +278,13 @@ void AbsExtAPI::initExtFunMap()
         for (const auto& addr : as[value_id].getAddrs())
         {
             NodeID objId = AbstractState::getInternalID(addr);
-            if (svfir->getBaseObj(objId)->isConstantByteSize())
+            if (svfir->getBaseObject(objId)->isConstantByteSize())
             {
-                dst_size = svfir->getBaseObj(objId)->getByteSizeOfObj();
+                dst_size = svfir->getBaseObject(objId)->getByteSizeOfObj();
             }
             else
             {
-                const ICFGNode* addrNode = SVFUtil::cast<ICFGNode>(svfir->getBaseObj(objId)->getGNode());
+                const ICFGNode* addrNode = SVFUtil::cast<ICFGNode>(svfir->getBaseObject(objId)->getGNode());
                 for (const SVFStmt* stmt2: addrNode->getSVFStmts())
                 {
                     if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
@@ -472,13 +472,13 @@ IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValu
     for (const auto& addr : as[value_id].getAddrs())
     {
         NodeID objId = AbstractState::getInternalID(addr);
-        if (svfir->getBaseObj(objId)->isConstantByteSize())
+        if (svfir->getBaseObject(objId)->isConstantByteSize())
         {
-            dst_size = svfir->getBaseObj(objId)->getByteSizeOfObj();
+            dst_size = svfir->getBaseObject(objId)->getByteSizeOfObj();
         }
         else
         {
-            const ICFGNode* icfgNode = SVFUtil::cast<ICFGNode>( svfir->getBaseObj(objId)->getGNode());
+            const ICFGNode* icfgNode = SVFUtil::cast<ICFGNode>( svfir->getBaseObject(objId)->getGNode());
             for (const SVFStmt* stmt2: icfgNode->getSVFStmts())
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))

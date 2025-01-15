@@ -40,6 +40,7 @@ namespace SVF
 class MemObj;
 class ObjTypeInfo;
 class StInfo;
+class BaseObjVar;
 
 /*!
  * Symbol table of the memory model for analysis
@@ -333,8 +334,7 @@ public:
     virtual void dump();
 
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
-    virtual APOffset getModulusOffset(const MemObj* obj,
-                                      const APOffset& apOffset);
+    virtual APOffset getModulusOffset(const BaseObjVar* baseObj, const APOffset& apOffset);
 
     ///The struct type with the most fields
     const SVFType* maxStruct;
@@ -422,6 +422,11 @@ public:
     inline SymID getId() const
     {
         return symId;
+    }
+
+    ObjTypeInfo* getObjTypeInfo() const
+    {
+        return typeInfo;
     }
 
     /// Get obj type

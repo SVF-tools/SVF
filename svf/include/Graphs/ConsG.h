@@ -323,8 +323,8 @@ public:
     }
     inline bool isSingleFieldObj(NodeID id) const
     {
-        const MemObj* mem = pag->getBaseObj(id);
-        return (mem->getMaxFieldOffsetLimit() == 1);
+        const BaseObjVar* baseObj = pag->getBaseObject(id);
+        return (baseObj->getMaxFieldOffsetLimit() == 1);
     }
     /// Get a field of a memory object
     inline NodeID getGepObjVar(NodeID id, const APOffset& apOffset)
