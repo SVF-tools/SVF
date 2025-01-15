@@ -333,12 +333,8 @@ public:
     /// Another debug method
     virtual void dump();
 
-    // AB Test: getModulusOffset for baseObjVar
-
-
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
-    virtual APOffset getModulusOffset(const BaseObjVar* baseObj, const MemObj* obj,
-                                      const APOffset& apOffset);
+    virtual APOffset getModulusOffset(const BaseObjVar* baseObj, const APOffset& apOffset);
 
     ///The struct type with the most fields
     const SVFType* maxStruct;

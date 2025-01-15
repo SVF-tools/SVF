@@ -331,12 +331,11 @@ class ObjVar: public SVFVar
     friend class SVFIRReader;
 
 protected:
-    const MemObj* mem;	///< memory object
     /// Constructor to create an empty ObjVar (for SVFIRReader/deserialization)
-    ObjVar(NodeID i, PNODEK ty = ObjNode) : SVFVar(i, ty), mem{} {}
+    ObjVar(NodeID i, PNODEK ty = ObjNode) : SVFVar(i, ty) {}
     /// Constructor
-    ObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode) :
-        SVFVar(val, i, ty), mem(m)
+    ObjVar(const SVFValue* val, NodeID i, PNODEK ty = ObjNode) :
+        SVFVar(val, i, ty)
     {
     }
 public:
@@ -360,12 +359,6 @@ public:
     }
     //@}
 
-    /// Return memory object
-    const MemObj* getMemObj() const
-    {
-        return mem;
-    }
-
     /// Return name of a LLVM value
     virtual const std::string getValueName() const
     {
@@ -376,7 +369,7 @@ public:
     /// Return type of the value
     inline virtual const SVFType* getType() const
     {
-        return mem->getType();
+        return value->getType();
     }
 
     virtual const std::string toString() const;
@@ -578,11 +571,9 @@ public:
     }
     //@}
 
-    /// Constructor
-
-    // AB Test: we keep both mem and typ1eInfo in BaseObjVar
-    BaseObjVar(const SVFValue* val, NodeID i, const MemObj* mem, ObjTypeInfo* ti, PNODEK ty = BaseObjNode)
-        :  ObjVar(val, i, mem, ty), typeInfo(ti)
+    /// Constructorx
+    BaseObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFBaseNode* node, PNODEK ty = BaseObjNode)
+        :  ObjVar(val, i, ty), typeInfo(ti), gNode(node)
     {
     }
 
@@ -791,10 +782,9 @@ public:
     //@}
 
     /// Constructor
-    // AB Test: keep both baseObj and mem
-    GepObjVar(const BaseObjVar* baseObj, const MemObj* mem, NodeID i,
+    GepObjVar(const BaseObjVar* baseObj, NodeID i,
               const APOffset& apOffset, PNODEK ty = GepObjNode)
-        : ObjVar(mem->getValue(), i, mem, ty), apOffset(apOffset), base(baseObj)
+        : ObjVar(baseObj->hasValue()? baseObj->getValue(): nullptr, i, ty), apOffset(apOffset), base(baseObj)
     {
 
     }
@@ -819,11 +809,7 @@ public:
     /// Return the type of this gep object
     inline virtual const SVFType* getType() const
     {
-        // ABTest Assertion: base getType == mem getType
-        assert(SymbolTableInfo::SymbolInfo()->getFlatternedElemType(mem->getType(), apOffset)
-                == SymbolTableInfo::SymbolInfo()->getFlatternedElemType(base->getType(), apOffset));
-
-        return SymbolTableInfo::SymbolInfo()->getFlatternedElemType(mem->getType(), apOffset);
+        return SymbolTableInfo::SymbolInfo()->getFlatternedElemType(value->getType(), apOffset);
     }
 
     /// Return name of a LLVM value
@@ -885,7 +871,7 @@ public:
     //@}
 
     /// Constructor
-    HeapObjVar(NodeID i, const MemObj* mem, ObjTypeInfo* ti, const SVFType* svfType,
+    HeapObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFBaseNode* node,
                const SVFFunction* fun, PNODEK ty = HeapObjNode);
 
     /// Return name of a LLVM value
@@ -946,7 +932,7 @@ public:
     //@}
 
     /// Constructor
-    StackObjVar(NodeID i, const MemObj* mem, ObjTypeInfo* ti, const SVFType* svfType,
+    StackObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFBaseNode* node,
                 const SVFFunction* fun, PNODEK ty = StackObjNode);
 
     /// Return name of a LLVM value
@@ -1047,7 +1033,7 @@ public:
     //@}
 
     /// Constructor
-    FunObjVar(NodeID i, const MemObj* mem, const CallGraphNode* cgNode,
+    FunObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFBaseNode* node, const CallGraphNode* cgNode,
               PNODEK ty = FunObjNode);
 
     inline const CallGraphNode* getCallGraphNode() const
@@ -1382,8 +1368,8 @@ public:
     //@}
 
     /// Constructor
-    GlobalObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
-                 PNODEK ty = GlobalObjNode): BaseObjVar(val, i,mem, mem->getObjTypeInfo(), ty)
+    GlobalObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFBaseNode* node,
+                 PNODEK ty = GlobalObjNode): BaseObjVar(val, i, ti, node, ty)
     {
 
     }
@@ -1431,8 +1417,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantDataObjVar(const SVFValue* val, NodeID i, const MemObj* m, ObjTypeInfo* ti, PNODEK ty = ConstantDataObjNode)
-        : BaseObjVar(m->getValue(), i, m, ti, ty)
+    ConstantDataObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFBaseNode* node, PNODEK ty = ConstantDataObjNode)
+        : BaseObjVar(val, i, ti, node, ty)
     {
     }
 
@@ -1488,8 +1474,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantFPObjVar(const SVFValue* val, NodeID i, double dv, const MemObj* m, ObjTypeInfo* ti, PNODEK ty = ConstantFPObjNode)
-        : ConstantDataObjVar(val, i, m, ti, ty), dval(dv)
+    ConstantFPObjVar(const SVFValue* val, NodeID i, double dv, ObjTypeInfo* ti, const SVFBaseNode* node, PNODEK ty = ConstantFPObjNode)
+        : ConstantDataObjVar(val, i, ti, node, ty), dval(dv)
     {
     }
 
@@ -1563,8 +1549,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantIntObjVar(const SVFValue* val, NodeID i, s64_t sv, u64_t zv, const MemObj* m, ObjTypeInfo* ti,  PNODEK ty = ConstantIntObjNode)
-        : ConstantDataObjVar(val, i, m, ti, ty), zval(zv), sval(sv)
+    ConstantIntObjVar(const SVFValue* val, NodeID i, s64_t sv, u64_t zv, ObjTypeInfo* ti, const SVFBaseNode* node, PNODEK ty = ConstantIntObjNode)
+        : ConstantDataObjVar(val, i, ti,node, ty), zval(zv), sval(sv)
     {
     }
 
@@ -1618,8 +1604,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantNullPtrObjVar(const SVFValue* val, NodeID i, const MemObj* m, ObjTypeInfo* ti, PNODEK ty = ConstantNullptrObjNode)
-        : ConstantDataObjVar(val, i, m, ti, ty)
+    ConstantNullPtrObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFBaseNode* node, PNODEK ty = ConstantNullptrObjNode)
+        : ConstantDataObjVar(val, i, ti, node, ty)
     {
     }
 
@@ -1816,8 +1802,8 @@ public:
     //@}
 
     /// Constructor
-    DummyObjVar(NodeID i, const MemObj* m, PNODEK ty = DummyObjNode)
-        : BaseObjVar(nullptr, i, m, m->getObjTypeInfo(), ty)
+    DummyObjVar(NodeID i, ObjTypeInfo* ti, const SVFBaseNode* node, PNODEK ty = DummyObjNode)
+        : BaseObjVar(nullptr, i, ti, node, ty)
     {
     }
 

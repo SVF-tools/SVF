@@ -473,8 +473,6 @@ protected:
         NodeID id = getPtrNodeID(var);
         const BaseObjVar* baseObj = _pag->getBaseObject(id);
         assert(baseObj && "base object is null??");
-        const MemObj* obj = _pag->getObject(id);
-        assert(obj && "object not found!!");
         if(SVFUtil::isa<StackObjVar>(baseObj))
         {
             if(const SVFFunction* svffun = _pag->getGNode(id)->getFunction())
@@ -645,23 +643,14 @@ protected:
 
     inline bool isArrayCondMemObj(const CVar& var) const
     {
-        // ABTest
-        const MemObj* mem = _pag->getObject(getPtrNodeID(var));
-        const BaseObjVar* obj = _pag->getObject2(getPtrNodeID(var));
-        assert (mem->isArray() == obj->isArray());
-
-        assert(mem && "memory object is null??");
+        const BaseObjVar* obj = _pag->getBaseObject(getPtrNodeID(var));
+        assert(obj && "base object is null??");
         return obj->isArray();
     }
     inline bool isFieldInsenCondMemObj(const CVar& var) const
     {
-        // ABTest: getBaseObj -> getBaseObject
         const BaseObjVar* baseObj = _pag->getBaseObject(getPtrNodeID(var));
-
-        const MemObj* mem =  _pag->getBaseObj(getPtrNodeID(var));
-
-        assert(mem->isFieldInsensitive() == baseObj->isFieldInsensitive());
-        return mem->isFieldInsensitive();
+        return baseObj->isFieldInsensitive();
     }
     //@}
 private:

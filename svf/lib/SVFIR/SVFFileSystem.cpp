@@ -335,7 +335,7 @@ cJSON* SVFIRWriter::contentToJson(const ValVar* var)
 cJSON* SVFIRWriter::contentToJson(const ObjVar* var)
 {
     cJSON* root = contentToJson(static_cast<const SVFVar*>(var));
-    JSON_WRITE_FIELD(root, var, mem);
+    //JSON_WRITE_FIELD(root, var, mem);
     return root;
 }
 
@@ -1941,7 +1941,7 @@ void SVFIRReader::fill(const cJSON*& fieldJson, ValVar* var)
 void SVFIRReader::fill(const cJSON*& fieldJson, ObjVar* var)
 {
     fill(fieldJson, static_cast<SVFVar*>(var));
-    JSON_READ_FIELD_FWD(fieldJson, var, mem);
+    //JSON_READ_FIELD_FWD(fieldJson, var, mem);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, GepValVar* var)

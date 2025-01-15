@@ -134,10 +134,6 @@ void AndersenSFR::fieldExpand(NodeSet& initials, APOffset offset, NodeBS& stride
             // ABTest
             const BaseObjVar* baseObj = pag->getBaseObject(init);
 
-            const MemObj* obj = pag->getBaseObj(init);
-
-            assert(baseObj->getMaxFieldOffsetLimit() == obj->getMaxFieldOffsetLimit());
-
             const u32_t maxLimit = baseObj->getMaxFieldOffsetLimit();
             APOffset initOffset;
             if (GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(initPN))

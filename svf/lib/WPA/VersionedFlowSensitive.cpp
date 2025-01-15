@@ -785,8 +785,7 @@ void VersionedFlowSensitive::cluster(void)
         unsigned occ = 1;
         //ABTest
         unsigned v = pit->first;
-        assert((pag->getObject2(v)!=nullptr) == (pag->getObject(v) != nullptr));
-        if (Options::PredictPtOcc() && pag->getObject(v) != nullptr) occ = stmtReliance[v].size() + 1;
+        if (Options::PredictPtOcc() && pag->getBaseObject(v) != nullptr) occ = stmtReliance[v].size() + 1;
         assert(occ != 0);
         keys.push_back(std::make_pair(v, occ));
     }

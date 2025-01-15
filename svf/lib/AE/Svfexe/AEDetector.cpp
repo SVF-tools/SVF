@@ -64,14 +64,14 @@ void BufOverflowDetector::detect(AbstractState& as, const ICFGNode* node)
                     NodeID objId = AbstractState::getInternalID(addr);
                     u32_t size = 0;
 
-                    if (svfir->getBaseObj(objId)->isConstantByteSize())
+                    if (svfir->getBaseObject(objId)->isConstantByteSize())
                     {
-                        size = svfir->getBaseObj(objId)->getByteSizeOfObj();
+                        size = svfir->getBaseObject(objId)->getByteSizeOfObj();
                     }
                     else
                     {
                         const ICFGNode* addrNode = SVFUtil::cast<ICFGNode>(
-                                                       svfir->getBaseObj(objId)->getGNode());
+                                                       svfir->getBaseObject(objId)->getGNode());
                         for (const SVFStmt* stmt2 : addrNode->getSVFStmts())
                         {
                             if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
@@ -465,15 +465,15 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
         u32_t size = 0;
 
         // if the object is a constant size object, get the size directly
-        if (svfir->getBaseObj(objId)->isConstantByteSize())
+        if (svfir->getBaseObject(objId)->isConstantByteSize())
         {
-            size = svfir->getBaseObj(objId)->getByteSizeOfObj();
+            size = svfir->getBaseObject(objId)->getByteSizeOfObj();
         }
         else
         {
             // if the object is not a constant size object, get the size from the addrStmt
             const ICFGNode* addrNode = SVFUtil::cast<ICFGNode>(
-                                           svfir->getBaseObj(objId)->getGNode());
+                                           svfir->getBaseObject(objId)->getGNode());
             for (const SVFStmt* stmt2 : addrNode->getSVFStmts())
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))

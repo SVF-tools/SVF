@@ -309,12 +309,8 @@ public:
 
     inline bool isArrayMemObj(NodeID id) const
     {
-        // ABTest
-        const BaseObjVar* obj = pag->getObject2(id);
-
-        const MemObj* mem = pag->getObject(id);
-        assert(mem && "memory object is null??");
-        assert(obj->isArray() == mem->isArray());
+        const BaseObjVar* obj = pag->getBaseObject(id);
+        assert(obj && "base object is null??");
         return obj->isArray();
     }
     //@}
@@ -343,16 +339,12 @@ public:
     }
     inline void setObjFieldInsensitive(NodeID id)
     {
-        // ABTest
         BaseObjVar* baseObj = const_cast<BaseObjVar*>(pag->getBaseObject(id));
         baseObj->setFieldInsensitive();
     }
     inline bool isFieldInsensitive(NodeID id) const
     {
-        // ABTest
         const BaseObjVar* baseObj = pag->getBaseObject(id);
-        const MemObj* mem =  pag->getBaseObj(id);
-        assert(mem->isFieldInsensitive() == baseObj->isFieldInsensitive());
         return baseObj->isFieldInsensitive();
     }
     ///@}
