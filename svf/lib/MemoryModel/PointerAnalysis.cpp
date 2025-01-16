@@ -396,11 +396,11 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
 
         if(ObjVar* objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
         {
-            const MemObj* obj = pag->getObject(objPN);
+            const BaseObjVar* obj = pag->getBaseObject(objPN->getId());
 
             if(obj->isFunction())
             {
-                const SVFFunction* calleefun = SVFUtil::cast<CallGraphNode>(obj->getGNode())->getFunction();
+                const SVFFunction* calleefun = SVFUtil::cast<FunObjVar>(obj)->getFunction();
                 const SVFFunction* callee = calleefun->getDefFunForMultipleModule();
 
                 if(SVFUtil::matchArgs(cs, callee) == false)

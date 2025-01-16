@@ -118,9 +118,9 @@ protected:
     ///Get a reference to StructInfo.
     StInfo* getOrAddSVFTypeInfo(const Type* T);
 
-    MemObj* createBlkObj(SymID symId);
+    ObjTypeInfo* createBlkObjTypeInfo(SymID symId);
 
-    MemObj* createConstantObj(SymID symId);
+    ObjTypeInfo* createConstantObjTypeInfo(SymID symId);
 };
 
 } // End namespace SVF

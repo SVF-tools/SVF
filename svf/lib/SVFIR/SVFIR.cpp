@@ -462,29 +462,6 @@ NodeID SVFIR::addGepObjNode(const BaseObjVar* baseObj, const APOffset& apOffset,
 }
 
 /*!
- * Add a field-insensitive node, this method can only invoked by getFIGepObjNode
- */
-NodeID SVFIR::addFIObjNode(const MemObj* obj)
-{
-    //assert(findPAGNode(i) == false && "this node should not be created before");
-    NodeID base = obj->getId();
-    memToFieldsMap[base].set(obj->getId());
-    BaseObjVar* node = new BaseObjVar(obj->getValue(), obj->getId(), obj->getObjTypeInfo(), obj->getGNode());
-    return addObjNode(obj->getValue(), node, obj->getId());
-}
-
-NodeID SVFIR::addFunObjNode(NodeID id, const CallGraphNode* callGraphNode)
-{
-    const MemObj* mem = getMemObj(callGraphNode->getFunction());
-    assert(mem->getId() == id && "not same object id?");
-    //assert(findPAGNode(i) == false && "this node should not be created before");
-    NodeID base = mem->getId();
-    memToFieldsMap[base].set(mem->getId());
-    FunObjVar* node = new FunObjVar(mem->getValue(), id, mem->getObjTypeInfo(), mem->getGNode(), callGraphNode);
-    return addObjNode(mem->getValue(), node, mem->getId());
-}
-
-/*!
  * Get all fields object nodes of an object
  */
 NodeBS& SVFIR::getAllFieldsObjVars(const BaseObjVar* obj)

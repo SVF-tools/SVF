@@ -538,7 +538,7 @@ void BVDataPTAImpl::onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& call
                 {
                     if(ObjVar *objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
                     {
-                        const MemObj *obj = pag->getObject(objPN);
+                        const BaseObjVar* obj = pag->getBaseObject(objPN->getId());
                         if(obj->isFunction())
                         {
                             const SVFFunction *svfForkedFun = SVFUtil::cast<CallGraphNode>(obj->getGNode())->getFunction();

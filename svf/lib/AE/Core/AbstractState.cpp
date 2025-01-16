@@ -471,7 +471,7 @@ const SVFType* AbstractState::getPointeeElement(NodeID id)
         for (auto addr: addrs.getAddrs())
         {
             NodeID addr_id = AbstractState::getInternalID(addr);
-            if (addr_id == 0) // nullptr has no memobj, skip
+            if (addr_id == 0) // nullptr skip
                 continue;
             return svfir->getBaseObject(addr_id)->getType();
         }

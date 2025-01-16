@@ -94,12 +94,6 @@ protected:
             inserted.first->second.emplace(edge);
         }
     }
-    /// get MemObj according to LLVM value
-    inline const MemObj* getMemObj(const SVFValue* val) const
-    {
-        return symInfo->getObj(symInfo->getObjSym(val));
-    }
-
 public:
     IRGraph(bool buildFromFile)
         : fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0)
@@ -174,14 +168,6 @@ public:
     {
         return symInfo->nullPtrSymID();
     }
-    inline const MemObj* getBlackHoleObj() const
-    {
-        return symInfo->getBlkObj();
-    }
-    inline const MemObj* getConstantObj() const
-    {
-        return symInfo->getConstantObj();
-    }
 
     inline u32_t getValueNodeNum() const
     {
@@ -189,7 +175,7 @@ public:
     }
     inline u32_t getObjectNodeNum() const
     {
-        return symInfo->idToObjMap().size();
+        return symInfo->idToObjTypeInfoMap().size();
     }
     inline u32_t getNodeNumAfterPAGBuild() const
     {
