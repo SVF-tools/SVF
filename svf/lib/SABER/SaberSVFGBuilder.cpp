@@ -232,11 +232,11 @@ bool SaberSVFGBuilder::isStrongUpdate(const SVFGNode* node, NodeID& singleton, B
             singleton = *it;
 
             // Strong update can be made if this points-to target is not heap, array or field-insensitive.
-            if (!pta->isHeapMemObj(singleton) && !pta->isArrayMemObj(singleton)
-                    && SVFIR::getPAG()->getBaseObj(singleton)->isFieldInsensitive() == false
-                    && !pta->isLocalVarInRecursiveFun(singleton))
-            {
-                isSU = true;
+            if (!pta->isHeapMemObj(singleton) && !pta->isArrayMemObj(singleton)) {
+                if (SVFIR::getPAG()->getBaseObject(singleton)->isFieldInsensitive() == false
+                    && !pta->isLocalVarInRecursiveFun(singleton)) {
+                    isSU = true;
+                }
             }
         }
     }

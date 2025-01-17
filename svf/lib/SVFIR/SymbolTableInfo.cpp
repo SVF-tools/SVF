@@ -91,7 +91,7 @@ SymbolTableInfo* SymbolTableInfo::SymbolInfo()
 /*!
  * Get modulus offset given the type information
  */
-APOffset SymbolTableInfo::getModulusOffset(const MemObj* obj, const APOffset& apOffset)
+APOffset SymbolTableInfo::getModulusOffset(const BaseObjVar* baseObj, const APOffset& apOffset)
 {
 
     /// if the offset is negative, it's possible that we're looking for an obj node out of range
@@ -104,7 +104,7 @@ APOffset SymbolTableInfo::getModulusOffset(const MemObj* obj, const APOffset& ap
         writeWrnMsg("try to create a gep node with negative offset.");
         offset = abs(offset);
     }
-    u32_t maxOffset = obj->getMaxFieldOffsetLimit();
+    u32_t maxOffset = baseObj->getMaxFieldOffsetLimit();
 
     /*!
      * @offset: the index allocated to the newly generated field node;
@@ -143,10 +143,10 @@ APOffset SymbolTableInfo::getModulusOffset(const MemObj* obj, const APOffset& ap
 void SymbolTableInfo::destroy()
 {
 
-    for (auto &pair: objMap)
+    for (auto &pair: objTypeInfoMap)
     {
-        if (MemObj* memObj = pair.second)
-            delete memObj;
+        if (ObjTypeInfo* ti = pair.second)
+            delete ti;
     }
 
     for (const SVFType* type : svfTypes)
@@ -160,12 +160,14 @@ void SymbolTableInfo::destroy()
     mod = nullptr;
 }
 
-const MemObj* SymbolTableInfo::createDummyObj(SymID symId, const SVFType* type)
+const ObjTypeInfo* SymbolTableInfo::createDummyObjTypeInfo(SymID symId, const SVFType* type)
 {
-    assert(objMap.find(symId)==objMap.end() && "this dummy obj has been created before");
-    MemObj* memObj = new MemObj(symId, createObjTypeInfo(type));
-    objMap[symId] = memObj;
-    return memObj;
+    if (objTypeInfoMap.find(symId)==objTypeInfoMap.end()) {
+        ObjTypeInfo* ti = createObjTypeInfo(type);
+        objTypeInfoMap[symId] = ti;
+    }
+    ObjTypeInfo* ti = objTypeInfoMap[symId];
+    return ti;
 }
 
 /// Number of flattened elements of an array or struct
@@ -362,161 +364,6 @@ void SymbolTableInfo::dump()
     outs() << "}\n";
 }
 
-/*!
- * Set mem object to be field sensitive (up to maximum field limit)
- */
-void MemObj::setFieldSensitive()
-{
-    typeInfo->setMaxFieldOffsetLimit(typeInfo->getNumOfElements());
-}
-
-
-/*!
- * Constructor of a memory object
- */
-MemObj::MemObj(SymID id, ObjTypeInfo* ti, const SVFValue* val, const SVFBaseNode* node) :
-    typeInfo(ti), refVal(val), symId(id), gNode(node)
-{
-}
-
-/*!
- * Whether it is a black hole object
- */
-bool MemObj::isBlackHoleObj() const
-{
-    return SymbolTableInfo::isBlkObj(getId());
-}
-
-/// Get the number of elements of this object
-u32_t MemObj::getNumOfElements() const
-{
-    return typeInfo->getNumOfElements();
-}
-
-/// Get the byte size of this object
-u32_t MemObj::getByteSizeOfObj() const
-{
-    return typeInfo->getByteSizeOfObj();
-}
-
-/// Check if byte size is static determined
-bool MemObj::isConstantByteSize() const
-{
-    return typeInfo->isConstantByteSize();
-}
-
-
-/// Set the number of elements of this object
-void MemObj::setNumOfElements(u32_t num)
-{
-    return typeInfo->setNumOfElements(num);
-}
-
-/// Get obj type info
-const SVFType* MemObj::getType() const
-{
-    return typeInfo->getType();
-}
-/*
- * Destroy the fields of the memory object
- */
-void MemObj::destroy()
-{
-    delete typeInfo;
-    typeInfo = nullptr;
-}
-
-/// Get max field offset limit
-u32_t MemObj::getMaxFieldOffsetLimit() const
-{
-    return typeInfo->getMaxFieldOffsetLimit();
-}
-
-/// Return true if its field limit is 0
-bool MemObj::isFieldInsensitive() const
-{
-    return getMaxFieldOffsetLimit() == 0;
-}
-
-/// Set the memory object to be field insensitive
-void MemObj::setFieldInsensitive()
-{
-    typeInfo->setMaxFieldOffsetLimit(0);
-}
-
-bool MemObj::isFunction() const
-{
-    return typeInfo->isFunction();
-}
-
-bool MemObj::isGlobalObj() const
-{
-    return typeInfo->isGlobalObj();
-}
-
-bool MemObj::isStaticObj() const
-{
-    return typeInfo->isStaticObj();
-}
-
-bool MemObj::isStack() const
-{
-    return typeInfo->isStack();
-}
-
-bool MemObj::isHeap() const
-{
-    return typeInfo->isHeap();
-}
-
-bool MemObj::isStruct() const
-{
-    return typeInfo->isStruct();
-}
-
-bool MemObj::isArray() const
-{
-    return typeInfo->isArray();
-}
-
-bool MemObj::isVarStruct() const
-{
-    return typeInfo->isVarStruct();
-}
-
-bool MemObj::isVarArray() const
-{
-    return typeInfo->isVarArray();
-}
-
-bool MemObj::isConstantStruct() const
-{
-    return typeInfo->isConstantStruct();
-}
-
-bool MemObj::isConstantArray() const
-{
-    return typeInfo->isConstantArray();
-}
-
-bool MemObj::isConstDataOrConstGlobal() const
-{
-    return typeInfo->isConstDataOrConstGlobal();
-}
-
-bool MemObj::isConstDataOrAggData() const
-{
-    return typeInfo->isConstDataOrAggData();
-}
-
-
-const std::string MemObj::toString() const
-{
-    std::string str;
-    std::stringstream rawstr(str);
-    rawstr << "MemObj : " << getId() << getValue()->toString() << "\n";
-    return rawstr.str();
-}
 
 /// Get different kinds of syms
 //@{

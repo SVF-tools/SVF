@@ -109,7 +109,7 @@ void MRGenerator::collectGlobals()
     {
         if(ObjVar* obj = SVFUtil::dyn_cast<ObjVar>(nIter->second))
         {
-            if (obj->getMemObj()->isGlobalObj())
+            if (pag->getBaseObject(obj->getId())->isGlobalObj())
             {
                 allGlobals.set(nIter->first);
                 allGlobals |= CollectPtsChain(nIter->first);
@@ -560,9 +560,10 @@ void MRGenerator::getEscapObjviaGlobals(NodeBS& globs, const NodeBS& calleeModRe
 {
     for(NodeBS::iterator it = calleeModRef.begin(), eit = calleeModRef.end(); it!=eit; ++it)
     {
-        const MemObj* obj = pta->getPAG()->getObject(*it);
-        (void)obj; // Suppress warning of unused variable under release build
-        assert(obj && "object not found!!");
+        const BaseObjVar* pVar = pta->getPAG()->getBaseObject(*it);
+        (void)pVar;
+        //(void)obj; // Suppress warning of unused variable under release build
+        assert(pVar && "object not found!!");
         if(allGlobals.test(*it))
             globs.set(*it);
     }
@@ -574,7 +575,8 @@ void MRGenerator::getEscapObjviaGlobals(NodeBS& globs, const NodeBS& calleeModRe
  */
 bool MRGenerator::isNonLocalObject(NodeID id, const SVFFunction* curFun) const
 {
-    const MemObj* obj = pta->getPAG()->getObject(id);
+    //ABTest
+    const BaseObjVar* obj = pta->getPAG()->getBaseObject(id);
     assert(obj && "object not found!!");
     /// if the object is heap or global
     const BaseObjVar* pVar = pta->getPAG()->getBaseObject(id);

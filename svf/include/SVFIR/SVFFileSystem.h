@@ -129,8 +129,6 @@ class SVFMetadataAsValue;
 
 class SVFLoopAndDomInfo; // Part of SVFFunction
 
-// Classes created upon buildSymbolTableInfo
-class MemObj;
 
 // Classes created upon ICFG construction
 class ICFGNode;
@@ -422,7 +420,6 @@ private:
 
     cJSON* toJson(const AccessPath& ap);
     cJSON* toJson(const SVFLoop* loop);
-    cJSON* toJson(const MemObj* memObj);
     cJSON* toJson(const ObjTypeInfo* objTypeInfo);  // Only owned by MemObj
     cJSON* toJson(const SVFLoopAndDomInfo* ldInfo); // Only owned by SVFFunction
     cJSON* toJson(const StInfo* stInfo);
@@ -528,7 +525,6 @@ private:
 
     // Other classes
     cJSON* contentToJson(const SVFLoop* loop);
-    cJSON* contentToJson(const MemObj* memObj); // Owned by SymbolTable->objMap
     cJSON* contentToJson(const StInfo* stInfo);
     ///@}
 
@@ -899,13 +895,8 @@ class SymbolTableInfoReader
 
 private:
     const cJSON* symTabFieldJson = nullptr;
-    ReaderIDToObjMap<MemObj> memObjMap;
 
 public:
-    inline MemObj* getMemObjPtr(unsigned id) const
-    {
-        return memObjMap.getPtr(id);
-    }
 
     template <typename MemObjCreator>
     void createObjs(const cJSON* symTabJson, MemObjCreator memObjCreator)
@@ -915,7 +906,6 @@ public:
 
         const cJSON* const allMemObj = symTabJson->child;
         CHECK_JSON_KEY(allMemObj);
-        memObjMap.createObjs(allMemObj, memObjCreator);
 
         symTabFieldJson = allMemObj->next;
     }
@@ -1104,7 +1094,6 @@ private:
 
     void readJson(const cJSON* obj, AccessPath& ap);
     void readJson(const cJSON* obj, SVFLoop*& loop);
-    void readJson(const cJSON* obj, MemObj*& memObj);
     void readJson(const cJSON* obj,
                   ObjTypeInfo*& objTypeInfo); // Only owned by MemObj
     void readJson(const cJSON* obj,
@@ -1257,7 +1246,6 @@ private:
     void fill(const cJSON*& fieldJson, TDForkPE* stmt);
     void fill(const cJSON*& fieldJson, TDJoinPE* stmt);
 
-    void fill(const cJSON*& fieldJson, MemObj* memObj);
     void fill(const cJSON*& fieldJson, StInfo* stInfo);
     // ICFG
     void virtFill(const cJSON*& fieldJson, ICFGNode* node);

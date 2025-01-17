@@ -359,16 +359,22 @@ void BVDataPTAImpl::readGepObjVarMapFromFile(std::ifstream& F)
         if (iter == gepObjVarMap.end())
         {
             SVFVar* node = pag->getGNode(base);
-            const MemObj* obj = nullptr;
+            const BaseObjVar* obj = nullptr;
             if (GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(node))
-                obj = gepObjVar->getMemObj();
+            {
+                obj = gepObjVar->getBaseObj();
+            }
             else if (BaseObjVar* baseNode = SVFUtil::dyn_cast<BaseObjVar>(node))
-                obj = baseNode->getMemObj();
+            {
+                obj = baseNode;
+            }
             else if (DummyObjVar* baseNode = SVFUtil::dyn_cast<DummyObjVar>(node))
-                obj = baseNode->getMemObj();
+            {
+                obj = baseNode;
+            }
             else
                 assert(false && "new gep obj node kind?");
-            pag->addGepObjNode(obj, offset, id);
+            pag->addGepObjNode( obj, offset, id);
             NodeIDAllocator::get()->increaseNumOfObjAndNodes();
         }
 
@@ -532,7 +538,7 @@ void BVDataPTAImpl::onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& call
                 {
                     if(ObjVar *objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
                     {
-                        const MemObj *obj = pag->getObject(objPN);
+                        const BaseObjVar* obj = pag->getBaseObject(objPN->getId());
                         if(obj->isFunction())
                         {
                             const SVFFunction *svfForkedFun = SVFUtil::cast<CallGraphNode>(obj->getGNode())->getFunction();
@@ -559,9 +565,10 @@ void BVDataPTAImpl::normalizePointsTo()
     for (auto t: memToFieldsMap)
     {
         NodeID base = t.first;
-        const MemObj* memObj = pag->getObject(base);
-        assert(memObj && "Invalid memobj in memToFieldsMap");
-        if (memObj->isFieldInsensitive())
+        const BaseObjVar* obj = pag->getBaseObject(base);
+        assert(obj && "Invalid baseObj in memToFieldsMap");
+        assert(obj->isFieldInsensitive() == obj->isFieldInsensitive());
+        if (obj->isFieldInsensitive())
         {
             for (NodeID id : t.second)
             {
