@@ -65,10 +65,11 @@ protected:
     SymbolTableInfo* symInfo;
 
     /// Add a node into the graph
-    inline NodeID addNode(SVFVar* node, NodeID i)
+    inline NodeID addNode(SVFVar* node)
     {
-        addGNode(i,node);
-        return i;
+        assert(node && "cannot add a null node");
+        addGNode(node->getId(),node);
+        return node->getId();
     }
     /// Add an edge into the graph
     bool addEdge(SVFVar* src, SVFVar* dst, SVFStmt* edge);

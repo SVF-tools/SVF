@@ -162,9 +162,11 @@ void SymbolTableInfo::destroy()
 
 const ObjTypeInfo* SymbolTableInfo::createDummyObjTypeInfo(SymID symId, const SVFType* type)
 {
-    assert(objTypeInfoMap.find(symId)==objTypeInfoMap.end() && "this dummy obj typeinfo has been created before");
-    ObjTypeInfo* ti = createObjTypeInfo(type);
-    objTypeInfoMap[symId] = ti;
+    if (objTypeInfoMap.find(symId)==objTypeInfoMap.end()) {
+        ObjTypeInfo* ti = createObjTypeInfo(type);
+        objTypeInfoMap[symId] = ti;
+    }
+    ObjTypeInfo* ti = objTypeInfoMap[symId];
     return ti;
 }
 

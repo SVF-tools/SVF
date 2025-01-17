@@ -392,7 +392,7 @@ NodeID SVFIR::addGepValNode(const SVFValue* curInst,const SVFValue* gepVal, cons
            && "this node should not be created before");
     GepValObjMap[curInst][std::make_pair(base, ap)] = i;
     GepValVar *node = new GepValVar(base, gepVal, i, ap, type);
-    return addValNode(gepVal, node, i);
+    return addValNode(gepVal, node);
 }
 
 /*!
@@ -458,7 +458,7 @@ NodeID SVFIR::addGepObjNode(const BaseObjVar* baseObj, const APOffset& apOffset,
     //ABTest
     GepObjVar *node = new GepObjVar(baseObj, gepId, apOffset);
     memToFieldsMap[base].set(gepId);
-    return addObjNode(baseObj->hasValue()? baseObj->getValue(): nullptr, node, gepId);
+    return addObjNode(baseObj->hasValue()? baseObj->getValue(): nullptr, node);
 }
 
 /*!

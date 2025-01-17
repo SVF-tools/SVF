@@ -47,22 +47,27 @@ using namespace LLVMUtil;
 ObjTypeInfo* SymbolTableBuilder::createBlkObjTypeInfo(SymID symId)
 {
     assert(symInfo->isBlkObj(symId));
-    assert(symInfo->objTypeInfoMap.find(symId)==symInfo->objTypeInfoMap.end());
     LLVMModuleSet* llvmset = LLVMModuleSet::getLLVMModuleSet();
-    ObjTypeInfo* ti =symInfo->createObjTypeInfo(llvmset->getSVFType(
-        IntegerType::get(llvmset->getContext(), 32)));
-    symInfo->objTypeInfoMap[symId] = ti;
+    if (symInfo->objTypeInfoMap.find(symId)==symInfo->objTypeInfoMap.end()) {
+        ObjTypeInfo* ti =symInfo->createObjTypeInfo(llvmset->getSVFType(
+            IntegerType::get(llvmset->getContext(), 32)));
+        symInfo->objTypeInfoMap[symId] = ti;
+    }
+    ObjTypeInfo* ti = symInfo->objTypeInfoMap[symId];
     return ti;
 }
 
 ObjTypeInfo* SymbolTableBuilder::createConstantObjTypeInfo(SymID symId)
 {
     assert(symInfo->isConstantObj(symId));
-    assert(symInfo->objTypeInfoMap.find(symId)==symInfo->objTypeInfoMap.end());
     LLVMModuleSet* llvmset = LLVMModuleSet::getLLVMModuleSet();
-    ObjTypeInfo* ti =symInfo->createObjTypeInfo(llvmset->getSVFType(
-        IntegerType::get(llvmset->getContext(), 32)));
-    symInfo->objTypeInfoMap[symId] = ti;
+    if (symInfo->objTypeInfoMap.find(symId)==symInfo->objTypeInfoMap.end())
+    {
+        ObjTypeInfo* ti = symInfo->createObjTypeInfo(
+            llvmset->getSVFType(IntegerType::get(llvmset->getContext(), 32)));
+        symInfo->objTypeInfoMap[symId] = ti;
+    }
+    ObjTypeInfo* ti = symInfo->objTypeInfoMap[symId];
     return ti;
 }
 
