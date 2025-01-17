@@ -37,9 +37,9 @@
 namespace SVF
 {
 
-class MemObj;
 class ObjTypeInfo;
 class StInfo;
+class BaseObjVar;
 
 /*!
  * Symbol table of the memory model for analysis
@@ -70,8 +70,9 @@ public:
     /// llvm value to sym id map
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
     typedef OrderedMap<const SVFValue*, SymID> ValueToIDMapTy;
-    /// sym id to memory object map
-    typedef OrderedMap<SymID, MemObj*> IDToMemMapTy;
+    /// sym id to obj type info map
+    typedef OrderedMap<SymID, ObjTypeInfo*> IDToTypeInfoMapTy;
+
     /// function to sym id map
     typedef OrderedMap<const SVFFunction*, SymID> FunToIDMapTy;
     /// struct type to struct info map
@@ -83,7 +84,7 @@ private:
     ValueToIDMapTy objSymMap;  ///< map a obj reference to its sym id
     FunToIDMapTy returnSymMap; ///< return map
     FunToIDMapTy varargSymMap; ///< vararg map
-    IDToMemMapTy objMap;       ///< map a memory sym id to its obj
+    IDToTypeInfoMapTy objTypeInfoMap;       ///< map a memory sym id to its obj
 
     // Singleton pattern here to enable instance of SymbolTableInfo can only be created once.
     static SymbolTableInfo* symInfo;
@@ -171,15 +172,6 @@ public:
         return (isBlkObj(id) || isConstantObj(id));
     }
 
-    inline MemObj* getBlkObj() const
-    {
-        return getObj(blackholeSymID());
-    }
-    inline MemObj* getConstantObj() const
-    {
-        return getObj(constantSymID());
-    }
-
     inline SymID blkPtrSymID() const
     {
         return BlkPtr;
@@ -200,10 +192,6 @@ public:
         return BlackHole;
     }
 
-    /// Can only be invoked by SVFIR::addDummyNode() when creating SVFIR from file.
-    const MemObj* createDummyObj(SymID symId, const SVFType* type);
-    // @}
-
     /// Get different kinds of syms
     //@{
     SymID getValSym(const SVFValue* val);
@@ -220,10 +208,10 @@ public:
         return iter->second;
     }
 
-    inline MemObj* getObj(SymID id) const
+    inline ObjTypeInfo* getObjTypeInfo(SymID id) const
     {
-        IDToMemMapTy::const_iterator iter = objMap.find(id);
-        assert(iter!=objMap.end() && "obj not found");
+        IDToTypeInfoMapTy::const_iterator iter = objTypeInfoMap.find(id);
+        assert(iter!=objTypeInfoMap.end() && "obj type info not found");
         return iter->second;
     }
 
@@ -267,14 +255,14 @@ public:
         return objSymMap;
     }
 
-    inline IDToMemMapTy& idToObjMap()
+    inline IDToTypeInfoMapTy& idToObjTypeInfoMap()
     {
-        return objMap;
+        return objTypeInfoMap;
     }
 
-    inline const IDToMemMapTy& idToObjMap() const
+    inline const IDToTypeInfoMapTy& idToObjTypeInfoMap() const
     {
-        return objMap;
+        return objTypeInfoMap;
     }
 
     inline FunToIDMapTy& retSyms()
@@ -311,6 +299,11 @@ public:
         return svfTypes.find(T) != svfTypes.end();
     }
 
+    /// Create an objectInfo based on LLVM type (value is null, and type could be null, representing a dummy object)
+    ObjTypeInfo* createObjTypeInfo(const SVFType* type);
+
+    const ObjTypeInfo* createDummyObjTypeInfo(SymID symId, const SVFType* type);
+
     ///Get a reference to the components of struct_info.
     /// Number of flattened elements of an array or struct
     u32_t getNumOfFlattenElements(const SVFType* T);
@@ -333,8 +326,7 @@ public:
     virtual void dump();
 
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
-    virtual APOffset getModulusOffset(const MemObj* obj,
-                                      const APOffset& apOffset);
+    virtual APOffset getModulusOffset(const BaseObjVar* baseObj, const APOffset& apOffset);
 
     ///The struct type with the most fields
     const SVFType* maxStruct;
@@ -359,9 +351,6 @@ protected:
     /// Return the flattened field type for struct type only
     const std::vector<const SVFType*>& getFlattenFieldTypes(const SVFStructType *T);
 
-    /// Create an objectInfo based on LLVM type (value is null, and type could be null, representing a dummy object)
-    ObjTypeInfo* createObjTypeInfo(const SVFType* type);
-
     /// (owned) All SVF Types
     /// Every type T is mapped to StInfo
     /// which contains size (fsize) , offset(foffset)
@@ -374,113 +363,6 @@ protected:
 };
 
 class SVFBaseNode;
-
-/*!
- * Memory object symbols or MemObj (address-taken variables in LLVM-based languages)
- */
-class MemObj
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-    friend class SVFIRBuilder;
-
-private:
-    /// Type information of this object
-    ObjTypeInfo* typeInfo;
-    /// The unique value of this symbol/variable
-    const SVFValue* refVal;
-    /// The unique id to represent this symbol
-    SymID symId;
-
-    const SVFBaseNode* gNode;
-
-public:
-    /// Constructor
-    MemObj(SymID id, ObjTypeInfo* ti, const SVFValue* val = nullptr, const SVFBaseNode* node = nullptr);
-
-    /// Destructor
-    virtual ~MemObj()
-    {
-        destroy();
-    }
-
-    virtual const std::string toString() const;
-
-    /// Get the reference value to this object
-    inline const SVFValue* getValue() const
-    {
-        return refVal;
-    }
-
-    /// Get the reference value to this object
-    inline const SVFBaseNode* getGNode() const
-    {
-        return gNode;
-    }
-
-    /// Get the memory object id
-    inline SymID getId() const
-    {
-        return symId;
-    }
-
-    /// Get obj type
-    const SVFType* getType() const;
-
-    /// Get the number of elements of this object
-    u32_t getNumOfElements() const;
-
-    /// Set the number of elements of this object
-    void setNumOfElements(u32_t num);
-
-    /// Get max field offset limit
-    u32_t getMaxFieldOffsetLimit() const;
-
-    /// Return true if its field limit is 0
-    bool isFieldInsensitive() const;
-
-    /// Set the memory object to be field insensitive
-    void setFieldInsensitive();
-
-    /// Set the memory object to be field sensitive (up to max field limit)
-    void setFieldSensitive();
-
-    /// Whether it is a black hole object
-    bool isBlackHoleObj() const;
-
-    /// Get the byte size of this object
-    u32_t getByteSizeOfObj() const;
-
-    /// Check if byte size is a const value
-    bool isConstantByteSize() const;
-
-
-    /// object attributes methods
-    //@{
-    bool isFunction() const;
-    bool isGlobalObj() const;
-    bool isStaticObj() const;
-    bool isStack() const;
-    bool isHeap() const;
-    bool isStruct() const;
-    bool isArray() const;
-    bool isVarStruct() const;
-    bool isVarArray() const;
-    bool isConstantStruct() const;
-    bool isConstantArray() const;
-    bool isConstDataOrConstGlobal() const;
-    bool isConstDataOrAggData() const;
-    //@}
-
-    /// Operator overloading
-    inline bool operator==(const MemObj& mem) const
-    {
-        return getValue() == mem.getValue();
-    }
-
-    /// Clean up memory
-    void destroy();
-};
 
 /*!
  * Type Info of an abstract memory object

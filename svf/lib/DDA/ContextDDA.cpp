@@ -334,13 +334,13 @@ bool ContextDDA::handleBKCondition(CxtLocDPItem& dpm, const SVFGEdge* edge)
 /// (2) not inside loop
 bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
 {
-    const MemObj* mem = _pag->getObject(getPtrNodeID(var));
-    assert(mem && "memory object is null??");
+    const BaseObjVar* obj = _pag->getBaseObject(getPtrNodeID(var));
+    assert(obj && "base object is null??");
     const BaseObjVar* baseVar = _pag->getBaseObject(getPtrNodeID(var));
     assert(baseVar && "base object is null??");
     if (SVFUtil::isa<HeapObjVar, DummyObjVar>(baseVar))
     {
-        if (!mem->getValue())
+        if (!obj->getValue())
         {
             PAGNode *pnode = _pag->getGNode(getPtrNodeID(var));
             GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(pnode);
@@ -356,7 +356,7 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
             }
             return true;
         }
-        else if(const SVFBaseNode* gNode = mem->getGNode())
+        else if(const SVFBaseNode* gNode = obj->getGNode())
         {
             if (const auto& node =
                         SVFUtil::dyn_cast<ICFGNode>(gNode))

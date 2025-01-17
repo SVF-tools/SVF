@@ -153,7 +153,7 @@ void PointerAnalysis::resetObjFieldSensitive()
     for (SVFIR::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
     {
         if(ObjVar* node = SVFUtil::dyn_cast<ObjVar>(nIter->second))
-            const_cast<MemObj*>(node->getMemObj())->setFieldSensitive();
+            const_cast<BaseObjVar*>(pag->getBaseObject(node->getId()))->setFieldSensitive();
     }
 }
 
@@ -396,11 +396,11 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
 
         if(ObjVar* objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
         {
-            const MemObj* obj = pag->getObject(objPN);
+            const BaseObjVar* obj = pag->getBaseObject(objPN->getId());
 
             if(obj->isFunction())
             {
-                const SVFFunction* calleefun = SVFUtil::cast<CallGraphNode>(obj->getGNode())->getFunction();
+                const SVFFunction* calleefun = SVFUtil::cast<FunObjVar>(obj)->getFunction();
                 const SVFFunction* callee = calleefun->getDefFunForMultipleModule();
 
                 if(SVFUtil::matchArgs(cs, callee) == false)

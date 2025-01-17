@@ -67,25 +67,6 @@ SVFIR* SVFIRBuilder::build()
     // Set callgraph
     pag->setCallGraph(llvmModuleSet()->callgraph);
 
-    // Set icfgnode in memobj
-    for (auto& it : SymbolTableInfo::SymbolInfo()->idToObjMap())
-    {
-        if(!it.second->getValue())
-            continue;
-        if (const Instruction* inst =
-                    SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(
-                                it.second->getValue())))
-        {
-            if(llvmModuleSet()->hasICFGNode(inst))
-                it.second->gNode = llvmModuleSet()->getICFGNode(inst);
-        }
-        else if (const Function* func = SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(
-                                            it.second->getValue())))
-        {
-            it.second->gNode = llvmModuleSet()->getCallGraphNode(func);
-        }
-    }
-
     CHGraph* chg = new CHGraph(pag->getModule());
     CHGBuilder chgbuilder(chg);
     chgbuilder.buildCHG();
@@ -309,60 +290,87 @@ void SVFIRBuilder::initialiseNodes()
         // Check if the value is a function and add a function object node
         if (const Function* func = SVFUtil::dyn_cast<Function>(llvmValue))
         {
-            pag->addFunObjNode(iter->second, llvmModuleSet()->getCallGraphNode(func));
+            SymID id = symTable->getObjSym(llvmModuleSet()->getCallGraphNode(func)->getFunction());
+            pag->addFunObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id),  llvmModuleSet()->getCallGraphNode(func));
         }
         // Check if the value is a heap object and add a heap object node
         else if (LLVMUtil::isHeapObj(llvmValue))
         {
+            SymID id = symTable->getObjSym(iter->first);
             const SVFFunction* f =
                 SVFUtil::cast<SVFInstruction>(iter->first)->getFunction();
-            pag->addHeapObjNode(iter->first, iter->second, f);
+            pag->addHeapObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id),  f);
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 llvmValue, pag->getGNode(iter->second));
         }
         // Check if the value is an alloca instruction and add a stack object node
         else if (LLVMUtil::isStackObj(llvmValue))
         {
+            NodeID id = symTable->getObjSym(iter->first);
             const SVFFunction* f =
                 SVFUtil::cast<SVFInstruction>(iter->first)->getFunction();
-            pag->addStackObjNode(iter->first, iter->second, f);
+            pag->addStackObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id), f);
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 llvmValue, pag->getGNode(iter->second));
         }
         else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
         {
-            pag->addConstantFPObjNode(iter->first, iter->second, LLVMUtil::getDoubleValue(fpValue));
+            NodeID id = symTable->getObjSym(iter->first);
+            pag->addConstantFPObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id),  LLVMUtil::getDoubleValue(fpValue));
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 fpValue, pag->getGNode(iter->second));
         }
         else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
         {
-            pag->addConstantIntObjNode(iter->first, iter->second, LLVMUtil::getIntegerValue(intValue));
+            NodeID id = symTable->getObjSym(iter->first);
+            pag->addConstantIntObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id), LLVMUtil::getIntegerValue(intValue));
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 intValue, pag->getGNode(iter->second));
         }
         else if (auto nullValue = SVFUtil::dyn_cast<ConstantPointerNull>(llvmValue))
         {
-            pag->addConstantNullPtrObjNode(iter->first, iter->second);
+            NodeID id = symTable->getObjSym(iter->first);
+            pag->addConstantNullPtrObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id));
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 nullValue, pag->getGNode(iter->second));
         }
         else if (auto globalValue = SVFUtil::dyn_cast<GlobalValue>(llvmValue))
         {
-            pag->addGlobalValueObjNode(iter->first, iter->second);
+            NodeID id = symTable->getObjSym(iter->first);
+            pag->addGlobalValueObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id));
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 globalValue, pag->getGNode(iter->second));
         }
         else if (auto dataValue = SVFUtil::dyn_cast<ConstantData>(llvmValue))
         {
-            pag->addConstantDataObjNode(iter->first, iter->second);
+            NodeID id = symTable->getObjSym(iter->first);
+            pag->addConstantDataObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id));
             llvmModuleSet()->addToLLVMVal2SVFVarMap(
                 dataValue, pag->getGNode(iter->second));
         }
         // Add a generic object node for other types of values
         else
         {
-            pag->addObjNode(iter->first, iter->second);
+            NodeID id = symTable->getObjSym(iter->first);
+            pag->addObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id));
+        }
+    }
+
+    for (auto& it : SymbolTableInfo::SymbolInfo()->idToObjTypeInfoMap()) {
+        NodeID id = it.first;
+        if (BaseObjVar* obj = SVFUtil::dyn_cast<BaseObjVar>(pag->getGNode(id))) {
+            if (!obj->hasValue())
+                continue;
+
+            if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(obj->getValue())))
+            {
+                if(llvmModuleSet()->hasICFGNode(inst))
+                    obj->gNode = llvmModuleSet()->getICFGNode(inst);
+            }
+            else if (const Function* func = SVFUtil::dyn_cast<Function>(llvmModuleSet()->getLLVMValue(obj->getValue())))
+            {
+                obj->gNode = llvmModuleSet()->getCallGraphNode(func);
+            }
         }
     }
 

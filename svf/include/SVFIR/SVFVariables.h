@@ -331,12 +331,11 @@ class ObjVar: public SVFVar
     friend class SVFIRReader;
 
 protected:
-    const MemObj* mem;	///< memory object
     /// Constructor to create an empty ObjVar (for SVFIRReader/deserialization)
-    ObjVar(NodeID i, PNODEK ty = ObjNode) : SVFVar(i, ty), mem{} {}
+    ObjVar(NodeID i, PNODEK ty = ObjNode) : SVFVar(i, ty) {}
     /// Constructor
-    ObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode) :
-        SVFVar(val, i, ty), mem(m)
+    ObjVar(const SVFValue* val, NodeID i, PNODEK ty = ObjNode) :
+        SVFVar(val, i, ty)
     {
     }
 public:
@@ -360,12 +359,6 @@ public:
     }
     //@}
 
-    /// Return memory object
-    const MemObj* getMemObj() const
-    {
-        return mem;
-    }
-
     /// Return name of a LLVM value
     virtual const std::string getValueName() const
     {
@@ -376,7 +369,7 @@ public:
     /// Return type of the value
     inline virtual const SVFType* getType() const
     {
-        return mem->getType();
+        return value->getType();
     }
 
     virtual const std::string toString() const;
@@ -535,92 +528,6 @@ public:
     virtual const std::string toString() const;
 };
 
-
-/*
- * Gep Obj variable, this is dynamic generated for field sensitive analysis
- * Each gep obj variable is one field of a MemObj (base)
- */
-class GepObjVar: public ObjVar
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
-private:
-    APOffset apOffset = 0;
-    NodeID base = 0;
-
-    /// Constructor to create empty GepObjVar (for SVFIRReader/deserialization)
-    //  only for reading from file when we don't have MemObj*
-    GepObjVar(NodeID i, PNODEK ty = GepObjNode) : ObjVar(i, ty) {}
-
-public:
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const GepObjVar*)
-    {
-        return true;
-    }
-    static inline bool classof(const ObjVar* node)
-    {
-        return node->getNodeKind() == SVFVar::GepObjNode;
-    }
-    static inline bool classof(const SVFVar* node)
-    {
-        return node->getNodeKind() == SVFVar::GepObjNode;
-    }
-    static inline bool classof(const GenericPAGNodeTy* node)
-    {
-        return node->getNodeKind() == SVFVar::GepObjNode;
-    }
-    static inline bool classof(const SVFBaseNode* node)
-    {
-        return node->getNodeKind() == SVFVar::GepObjNode;
-    }
-    //@}
-
-    /// Constructor
-    GepObjVar(const MemObj* mem, NodeID i, const APOffset& apOffset,
-              PNODEK ty = GepObjNode)
-        : ObjVar(mem->getValue(), i, mem, ty), apOffset(apOffset)
-    {
-        base = mem->getId();
-    }
-
-    /// offset of the mem object
-    inline APOffset getConstantFieldIdx() const
-    {
-        return apOffset;
-    }
-
-    /// Set the base object from which this GEP node came from.
-    inline void setBaseNode(NodeID bs)
-    {
-        this->base = bs;
-    }
-
-    /// Return the base object from which this GEP node came from.
-    inline NodeID getBaseNode(void) const
-    {
-        return base;
-    }
-
-    /// Return the type of this gep object
-    inline virtual const SVFType* getType() const
-    {
-        return SymbolTableInfo::SymbolInfo()->getFlatternedElemType(mem->getType(), apOffset);
-    }
-
-    /// Return name of a LLVM value
-    inline const std::string getValueName() const
-    {
-        if (value)
-            return value->getName() + "_" + std::to_string(apOffset);
-        return "offset_" + std::to_string(apOffset);
-    }
-
-    virtual const std::string toString() const;
-};
-
 /*
  * Field-insensitive Gep Obj variable, this is dynamic generated for field sensitive analysis
  * Each field-insensitive gep obj node represents all fields of a MemObj (base)
@@ -629,6 +536,11 @@ class BaseObjVar : public ObjVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class SVFIRBuilder;
+private:
+    ObjTypeInfo* typeInfo;
+
+    const SVFBaseNode* gNode;
 
 protected:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
@@ -659,11 +571,20 @@ public:
     }
     //@}
 
-    /// Constructor
-    BaseObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
-               PNODEK ty = BaseObjNode)
-        : ObjVar(val, i, mem, ty)
+    /// Constructorx
+    BaseObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, PNODEK ty = BaseObjNode)
+        :  ObjVar(val, i, ty), typeInfo(ti)
     {
+    }
+
+    virtual const BaseObjVar* getBaseMemObj() const {
+        return this;
+    }
+
+    /// Get the reference value to this object
+    inline const SVFBaseNode* getGNode() const
+    {
+        return gNode;
     }
 
     /// Return name of a LLVM value
@@ -675,7 +596,227 @@ public:
     }
 
     virtual const std::string toString() const;
+
+    /// Get the memory object id
+    inline SymID getId() const
+    {
+        return id;
+    }
+
+    /// Get obj type
+    const SVFType* getType() const
+    {
+        return typeInfo->getType();
+    }
+
+    /// Get the number of elements of this object
+    u32_t getNumOfElements() const
+    {
+        return typeInfo->getNumOfElements();
+    }
+
+    /// Set the number of elements of this object
+    void setNumOfElements(u32_t num)
+    {
+        return typeInfo->setNumOfElements(num);
+    }
+
+    /// Get max field offset limit
+    u32_t getMaxFieldOffsetLimit() const
+    {
+        return typeInfo->getMaxFieldOffsetLimit();
+    }
+
+
+    /// Return true if its field limit is 0
+    bool isFieldInsensitive() const
+    {
+        return getMaxFieldOffsetLimit() == 0;
+    }
+
+    /// Set the memory object to be field insensitive
+    void setFieldInsensitive()
+    {
+        typeInfo->setMaxFieldOffsetLimit(0);
+    }
+
+
+    /// Set the memory object to be field sensitive (up to max field limit)
+    void setFieldSensitive()
+    {
+        typeInfo->setMaxFieldOffsetLimit(typeInfo->getNumOfElements());
+    }
+
+    /// Whether it is a black hole object
+    bool isBlackHoleObj() const
+    {
+        return SymbolTableInfo::isBlkObj(getId());
+    }
+
+    /// Get the byte size of this object
+    u32_t getByteSizeOfObj() const
+    {
+        return typeInfo->getByteSizeOfObj();
+    }
+
+    /// Check if byte size is a const value
+    bool isConstantByteSize() const
+    {
+        return typeInfo->isConstantByteSize();
+    }
+
+
+    /// object attributes methods
+    //@{
+    bool isFunction() const
+    {
+        return typeInfo->isFunction();
+    }
+    bool isGlobalObj() const
+    {
+        return typeInfo->isGlobalObj();
+    }
+    bool isStaticObj() const
+    {
+        return typeInfo->isStaticObj();
+    }
+    bool isStack() const
+    {
+        return typeInfo->isStack();
+    }
+    bool isHeap() const
+    {
+        return typeInfo->isHeap();
+    }
+    bool isStruct() const
+    {
+        return typeInfo->isStruct();
+    }
+    bool isArray() const
+    {
+        return typeInfo->isArray();
+    }
+    bool isVarStruct() const
+    {
+        return typeInfo->isVarStruct();
+    }
+    bool isVarArray() const
+    {
+        return typeInfo->isVarArray();
+    }
+    bool isConstantStruct() const
+    {
+        return typeInfo->isConstantStruct();
+    }
+    bool isConstantArray() const
+    {
+        return typeInfo->isConstantArray();
+    }
+    bool isConstDataOrConstGlobal() const
+    {
+        return typeInfo->isConstDataOrConstGlobal();
+    }
+    bool isConstDataOrAggData() const
+    {
+        return typeInfo->isConstDataOrAggData();
+    }
+    //@}
+
+    /// Clean up memory
+    void destroy() {
+        delete typeInfo;
+        typeInfo = nullptr;
+    }
+
+
 };
+
+
+/*
+ * Gep Obj variable, this is dynamic generated for field sensitive analysis
+ * Each gep obj variable is one field of a BaseObjVar (base)
+ */
+class GepObjVar: public ObjVar
+{
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
+private:
+    APOffset apOffset = 0;
+
+    const BaseObjVar* base;
+
+    /// Constructor to create empty GepObjVar (for SVFIRReader/deserialization)
+    //  only for reading from file when we don't have BaseObjVar*
+    GepObjVar(NodeID i, PNODEK ty = GepObjNode) : ObjVar(i, ty), base{} {}
+
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const GepObjVar*)
+    {
+        return true;
+    }
+    static inline bool classof(const ObjVar* node)
+    {
+        return node->getNodeKind() == SVFVar::GepObjNode;
+    }
+    static inline bool classof(const SVFVar* node)
+    {
+        return node->getNodeKind() == SVFVar::GepObjNode;
+    }
+    static inline bool classof(const GenericPAGNodeTy* node)
+    {
+        return node->getNodeKind() == SVFVar::GepObjNode;
+    }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == SVFVar::GepObjNode;
+    }
+    //@}
+
+    /// Constructor
+    GepObjVar(const BaseObjVar* baseObj, NodeID i,
+              const APOffset& apOffset, PNODEK ty = GepObjNode)
+        : ObjVar(baseObj->hasValue()? baseObj->getValue(): nullptr, i, ty), apOffset(apOffset), base(baseObj)
+    {
+
+    }
+
+    /// offset of the mem object
+    inline APOffset getConstantFieldIdx() const
+    {
+        return apOffset;
+    }
+
+    /// Return the base object from which this GEP node came from.
+    inline NodeID getBaseNode(void) const
+    {
+        return base->getId();
+    }
+
+    inline const BaseObjVar* getBaseObj() const
+    {
+        return base;
+    }
+
+    /// Return the type of this gep object
+    inline virtual const SVFType* getType() const
+    {
+        return SymbolTableInfo::SymbolInfo()->getFlatternedElemType(value->getType(), apOffset);
+    }
+
+    /// Return name of a LLVM value
+    inline const std::string getValueName() const
+    {
+        if (value)
+            return value->getName() + "_" + std::to_string(apOffset);
+        return "offset_" + std::to_string(apOffset);
+    }
+
+    virtual const std::string toString() const;
+};
+
 
 
 /**
@@ -724,8 +865,13 @@ public:
     //@}
 
     /// Constructor
-    HeapObjVar(NodeID i, const MemObj* mem, const SVFType* svfType,
-               const SVFFunction* fun, PNODEK ty = HeapObjNode);
+    HeapObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti,
+               const SVFFunction* f, PNODEK ty = HeapObjNode):
+          BaseObjVar(val, i, ti, ty)
+    {
+        isPtr = val->getType()->isPointerTy();
+        func = f;
+    }
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const
@@ -785,8 +931,13 @@ public:
     //@}
 
     /// Constructor
-    StackObjVar(NodeID i, const MemObj* mem, const SVFType* svfType,
-                const SVFFunction* fun, PNODEK ty = StackObjNode);
+    StackObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti,
+                const SVFFunction* fun, PNODEK ty = StackObjNode):
+          BaseObjVar(val, i, ti, ty)
+    {
+        isPtr = val->getType()->isPointerTy();
+        func = fun;
+    }
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const
@@ -886,13 +1037,15 @@ public:
     //@}
 
     /// Constructor
-    FunObjVar(NodeID i, const MemObj* mem, const CallGraphNode* cgNode,
+    FunObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const CallGraphNode* cgNode,
               PNODEK ty = FunObjNode);
 
     inline const CallGraphNode* getCallGraphNode() const
     {
         return callGraphNode;
     }
+
+    virtual const SVFFunction* getFunction() const;
 
     virtual bool isIsolatedNode() const;
 
@@ -1221,8 +1374,8 @@ public:
     //@}
 
     /// Constructor
-    GlobalObjVar(const SVFValue* val, NodeID i, const MemObj* mem,
-                 PNODEK ty = GlobalObjNode): BaseObjVar(val, i,mem,ty)
+    GlobalObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti,
+                 PNODEK ty = GlobalObjNode): BaseObjVar(val, i, ti, ty)
     {
 
     }
@@ -1270,8 +1423,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantDataObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ConstantDataObjNode)
-        : BaseObjVar(val, i, m, ty)
+    ConstantDataObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti,  PNODEK ty = ConstantDataObjNode)
+        : BaseObjVar(val, i, ti, ty)
     {
     }
 
@@ -1327,8 +1480,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantFPObjVar(const SVFValue* val, NodeID i, double dv, const MemObj* m, PNODEK ty = ConstantFPObjNode)
-        : ConstantDataObjVar(val, i, m, ty), dval(dv)
+    ConstantFPObjVar(const SVFValue* val, NodeID i, double dv, ObjTypeInfo* ti, PNODEK ty = ConstantFPObjNode)
+        : ConstantDataObjVar(val, i, ti, ty), dval(dv)
     {
     }
 
@@ -1402,8 +1555,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantIntObjVar(const SVFValue* val, NodeID i, s64_t sv, u64_t zv, const MemObj* m, PNODEK ty = ConstantIntObjNode)
-        : ConstantDataObjVar(val, i, m, ty), zval(zv), sval(sv)
+    ConstantIntObjVar(const SVFValue* val, NodeID i, s64_t sv, u64_t zv, ObjTypeInfo* ti, PNODEK ty = ConstantIntObjNode)
+        : ConstantDataObjVar(val, i, ti, ty), zval(zv), sval(sv)
     {
     }
 
@@ -1457,8 +1610,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantNullPtrObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ConstantNullptrObjNode)
-        : ConstantDataObjVar(val, i, m, ty)
+    ConstantNullPtrObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, PNODEK ty = ConstantNullptrObjNode)
+        : ConstantDataObjVar(val, i, ti, ty)
     {
     }
 
@@ -1655,8 +1808,8 @@ public:
     //@}
 
     /// Constructor
-    DummyObjVar(NodeID i, const MemObj* m, PNODEK ty = DummyObjNode)
-        : BaseObjVar(nullptr, i, m, ty)
+    DummyObjVar(NodeID i, ObjTypeInfo* ti, PNODEK ty = DummyObjNode)
+        : BaseObjVar(nullptr, i, ti, ty)
     {
     }
 

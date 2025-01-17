@@ -133,7 +133,7 @@ void SVFStat::performStat()
         PAGNode* node = it->second;
         if(ObjVar* obj = SVFUtil::dyn_cast<ObjVar>(node))
         {
-            const MemObj* mem = obj->getMemObj();
+            const BaseObjVar* mem = pag->getBaseObject(obj->getId());
             if (memObjSet.insert(mem->getId()).second == false)
                 continue;
             if(mem->isBlackHoleObj())

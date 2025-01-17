@@ -783,8 +783,9 @@ void VersionedFlowSensitive::cluster(void)
     for (SVFIR::iterator pit = pag->begin(); pit != pag->end(); ++pit)
     {
         unsigned occ = 1;
+        //ABTest
         unsigned v = pit->first;
-        if (Options::PredictPtOcc() && pag->getObject(v) != nullptr) occ = stmtReliance[v].size() + 1;
+        if (Options::PredictPtOcc() && pag->getBaseObject(v) != nullptr) occ = stmtReliance[v].size() + 1;
         assert(occ != 0);
         keys.push_back(std::make_pair(v, occ));
     }
