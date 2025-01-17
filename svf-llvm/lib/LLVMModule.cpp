@@ -1222,7 +1222,7 @@ void LLVMModuleSet::dumpModulesToFile(const std::string& suffix)
 void LLVMModuleSet::addFunctionMap(const Function* func, CallGraphNode* svfFunc)
 {
     LLVMFunc2CallGraphNode[func] = svfFunc;
-    addToLLVMVal2SVFVarMap(func, svfFunc);
+    addToSVFVar2LLVMValueMap(func, svfFunc);
 }
 
 void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
@@ -1253,7 +1253,7 @@ void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
     svfvalue->setSourceLoc(LLVMUtil::getSourceLoc(val));
 }
 
-void LLVMModuleSet::addToLLVMVal2SVFVarMap(const Value* val,
+void LLVMModuleSet::addToSVFVar2LLVMValueMap(const Value* val,
         SVFBaseNode* svfBaseNode)
 {
     SVFBaseNode2LLVMValue[svfBaseNode] = val;

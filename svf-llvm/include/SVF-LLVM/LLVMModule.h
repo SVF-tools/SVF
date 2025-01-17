@@ -190,17 +190,17 @@ public:
     inline void addInstructionMap(const Instruction* inst, CallICFGNode* svfInst)
     {
         CSToCallNodeMap[inst] = svfInst;
-        addToLLVMVal2SVFVarMap(inst, svfInst);
+        addToSVFVar2LLVMValueMap(inst, svfInst);
     }
     inline void addInstructionMap(const Instruction* inst, RetICFGNode* svfInst)
     {
         CSToRetNodeMap[inst] = svfInst;
-        addToLLVMVal2SVFVarMap(inst, svfInst);
+        addToSVFVar2LLVMValueMap(inst, svfInst);
     }
     inline void addInstructionMap(const Instruction* inst, IntraICFGNode* svfInst)
     {
         InstToBlockNodeMap[inst] = svfInst;
-        addToLLVMVal2SVFVarMap(inst, svfInst);
+        addToSVFVar2LLVMValueMap(inst, svfInst);
     }
 
     inline void addArgumentMap(const Argument* arg, SVFArgument* svfArg)
@@ -426,7 +426,7 @@ private:
     void initSVFBasicBlock(const Function* func);
     void initDomTree(SVFFunction* func, const Function* f);
     void setValueAttr(const Value* val, SVFValue* value);
-    void addToLLVMVal2SVFVarMap(const Value* val, SVFBaseNode* svfBaseNode);
+    void addToSVFVar2LLVMValueMap(const Value* val, SVFBaseNode* svfBaseNode);
     void buildFunToFunMap();
     void buildGlobalDefToRepMap();
     /// Invoke llvm passes to modify module
