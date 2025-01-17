@@ -705,7 +705,14 @@ private:
     }
     inline NodeID addDummyObjNode(NodeID i, const SVFType* type)
     {
-        return addObjNode(nullptr, new DummyObjVar(i,symInfo->createObjTypeInfo(type)), i);
+        if (symInfo->idToObjTypeInfoMap().find(i) == symInfo->idToObjTypeInfoMap().end()) {
+            ObjTypeInfo* ti = symInfo->createObjTypeInfo(type);
+            symInfo->idToObjTypeInfoMap()[i] = ti;
+            return addObjNode(nullptr, new DummyObjVar(i, ti), i);
+        }
+        else {
+            return addObjNode(nullptr, new DummyObjVar(i, symInfo->getObjTypeInfo(i)), i);
+        }
     }
 
     inline NodeID addBlackholeObjNode()
