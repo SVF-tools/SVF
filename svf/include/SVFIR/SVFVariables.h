@@ -529,8 +529,7 @@ public:
 };
 
 /*
- * Field-insensitive Gep Obj variable, this is dynamic generated for field sensitive analysis
- * Each field-insensitive gep obj node represents all fields of a MemObj (base)
+ * Base memory object variable (address-taken variables in LLVM-based languages)
  */
 class BaseObjVar : public ObjVar
 {
@@ -540,7 +539,7 @@ class BaseObjVar : public ObjVar
 private:
     ObjTypeInfo* typeInfo;
 
-    const SVFBaseNode* gNode;
+    const ICFGNode* icfgNode; /// ICFGNode related to the creation of this object
 
 protected:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
@@ -571,7 +570,7 @@ public:
     }
     //@}
 
-    /// Constructorx
+    /// Constructor
     BaseObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, PNODEK ty = BaseObjNode)
         :  ObjVar(val, i, ty), typeInfo(ti)
     {
@@ -582,10 +581,10 @@ public:
         return this;
     }
 
-    /// Get the reference value to this object
-    inline const SVFBaseNode* getGNode() const
+    /// Get the ICFGNode related to the creation of this object
+    inline const ICFGNode* getICFGNode() const
     {
-        return gNode;
+        return icfgNode;
     }
 
     /// Return name of a LLVM value
