@@ -339,7 +339,7 @@ void SVFIRBuilder::initialiseNodes()
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
 
         if (BaseObjVar* baseObjVar =
-                SVFUtil::dyn_cast<BaseObjVar>(pag->getGNode(iter->second)))
+                    SVFUtil::dyn_cast<BaseObjVar>(pag->getGNode(iter->second)))
         {
             baseObjVar->icfgNode = icfgNode;
         }
