@@ -577,7 +577,8 @@ public:
     {
     }
 
-    virtual const BaseObjVar* getBaseMemObj() const {
+    virtual const BaseObjVar* getBaseMemObj() const
+    {
         return this;
     }
 
@@ -723,7 +724,8 @@ public:
     //@}
 
     /// Clean up memory
-    void destroy() {
+    void destroy()
+    {
         delete typeInfo;
         typeInfo = nullptr;
     }
@@ -867,7 +869,7 @@ public:
     /// Constructor
     HeapObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti,
                const SVFFunction* f, PNODEK ty = HeapObjNode):
-          BaseObjVar(val, i, ti, ty)
+        BaseObjVar(val, i, ti, ty)
     {
         isPtr = val->getType()->isPointerTy();
         func = f;
@@ -933,7 +935,7 @@ public:
     /// Constructor
     StackObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti,
                 const SVFFunction* fun, PNODEK ty = StackObjNode):
-          BaseObjVar(val, i, ti, ty)
+        BaseObjVar(val, i, ti, ty)
     {
         isPtr = val->getType()->isPointerTy();
         func = fun;

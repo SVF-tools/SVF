@@ -48,9 +48,10 @@ ObjTypeInfo* SymbolTableBuilder::createBlkObjTypeInfo(SymID symId)
 {
     assert(symInfo->isBlkObj(symId));
     LLVMModuleSet* llvmset = LLVMModuleSet::getLLVMModuleSet();
-    if (symInfo->objTypeInfoMap.find(symId)==symInfo->objTypeInfoMap.end()) {
+    if (symInfo->objTypeInfoMap.find(symId)==symInfo->objTypeInfoMap.end())
+    {
         ObjTypeInfo* ti =symInfo->createObjTypeInfo(llvmset->getSVFType(
-            IntegerType::get(llvmset->getContext(), 32)));
+                             IntegerType::get(llvmset->getContext(), 32)));
         symInfo->objTypeInfoMap[symId] = ti;
     }
     ObjTypeInfo* ti = symInfo->objTypeInfoMap[symId];
@@ -64,7 +65,7 @@ ObjTypeInfo* SymbolTableBuilder::createConstantObjTypeInfo(SymID symId)
     if (symInfo->objTypeInfoMap.find(symId)==symInfo->objTypeInfoMap.end())
     {
         ObjTypeInfo* ti = symInfo->createObjTypeInfo(
-            llvmset->getSVFType(IntegerType::get(llvmset->getContext(), 32)));
+                              llvmset->getSVFType(IntegerType::get(llvmset->getContext(), 32)));
         symInfo->objTypeInfoMap[symId] = ti;
     }
     ObjTypeInfo* ti = symInfo->objTypeInfoMap[symId];

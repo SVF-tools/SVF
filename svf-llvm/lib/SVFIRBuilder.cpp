@@ -356,9 +356,11 @@ void SVFIRBuilder::initialiseNodes()
         }
     }
 
-    for (auto& it : SymbolTableInfo::SymbolInfo()->idToObjTypeInfoMap()) {
+    for (auto& it : SymbolTableInfo::SymbolInfo()->idToObjTypeInfoMap())
+    {
         NodeID id = it.first;
-        if (BaseObjVar* obj = SVFUtil::dyn_cast<BaseObjVar>(pag->getGNode(id))) {
+        if (BaseObjVar* obj = SVFUtil::dyn_cast<BaseObjVar>(pag->getGNode(id)))
+        {
             if (!obj->hasValue())
                 continue;
 

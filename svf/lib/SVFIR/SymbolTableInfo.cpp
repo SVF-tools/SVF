@@ -162,7 +162,8 @@ void SymbolTableInfo::destroy()
 
 const ObjTypeInfo* SymbolTableInfo::createDummyObjTypeInfo(SymID symId, const SVFType* type)
 {
-    if (objTypeInfoMap.find(symId)==objTypeInfoMap.end()) {
+    if (objTypeInfoMap.find(symId)==objTypeInfoMap.end())
+    {
         ObjTypeInfo* ti = createObjTypeInfo(type);
         objTypeInfoMap[symId] = ti;
     }
