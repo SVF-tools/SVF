@@ -2,7 +2,7 @@
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013-2017>  <Yulei Sui>
+// Copyright (C) <2013->  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 /*
  * SVFBaseNode.h
  *
- *  Created on: Jan 18, 2024
+ *  Created on: Jan 18, 2025
  *      Author: Xiao Cheng
  */
 #ifndef SVF_SVFBASENODE_H
