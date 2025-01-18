@@ -70,6 +70,7 @@ public:
     /// Constructor
     ICFGNode(NodeID i, GNodeK k) : GenericICFGNodeTy(i, k), fun(nullptr), bb(nullptr)
     {
+        assert(isICFGNodeKinds(k) && "invalid node type!");
     }
 
     /// Return the function of this ICFGNode
@@ -242,6 +243,7 @@ public:
     /// Constructor
     InterICFGNode(NodeID id, ICFGNodeK k) : ICFGNode(id, k)
     {
+        assert(isInterICFGNodeKind(k) && "invalid node type!");
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
