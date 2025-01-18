@@ -32,7 +32,7 @@
 
 #define AddressMask 0x7f000000
 #define FlippedAddressMask (AddressMask^0xffffffff)
-// the address of the black hole, getVirtualMemAddress(2);
+// the address of the black hole, getVirtualMemAddress(2); Also used to represent nullptr.
 #define BlackHoleAddr 0x7f000000 + 2
 
 #include "Util/GeneralType.h"

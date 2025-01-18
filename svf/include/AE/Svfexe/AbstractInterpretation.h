@@ -104,7 +104,7 @@ class AbstractInterpretation
     friend class AEStat;
     friend class AEAPI;
     friend class BufOverflowDetector;
-
+    friend class NullPtrDerefDetector;
 public:
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     /// Constructor

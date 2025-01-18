@@ -785,6 +785,8 @@ const Option<std::string> Options::OutputName(
     "output","output db file","output.db");
 const Option<bool> Options::BufferOverflowCheck(
     "overflow","Buffer Overflow Detection",false);
+const Option<bool> Options::NullPtrDereference(
+    "nullptr","Null Pointer Dereference Detection",false);
 const Option<bool> Options::MemoryLeakCheck(
     "leak", "Memory Leak Detection",false);
 const Option<bool> Options::FileCheck(
