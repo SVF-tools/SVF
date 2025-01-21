@@ -288,6 +288,8 @@ protected:
 
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 
+    void setSVFVarAttr(const Value* val, SVFVar* var);
+
     inline void addBlackHoleAddrEdge(NodeID node)
     {
         if(PAGEdge *edge = pag->addBlackHoleAddrStmt(node))

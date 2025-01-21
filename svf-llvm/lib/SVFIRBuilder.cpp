@@ -258,11 +258,7 @@ void SVFIRBuilder::initialiseNodes()
             // Add value node to PAG
             pag->addValNode(iter->first, iter->second, icfgNode);
         }
-        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
-        if (LLVMUtil::isPtrInUncalledFunction(llvmValue))
-            pag->getGNode(iter->second)->setPtrInUncalledFunction();
-        if(LLVMUtil::isConstDataOrAggData(llvmValue))
-            pag->getGNode(iter->second)->setConstDataOrAggData();
+        setSVFVarAttr(llvmValue, pag->getGNode(iter->second));
     }
 
     // Iterate over all object symbols in the symbol table
@@ -340,11 +336,7 @@ void SVFIRBuilder::initialiseNodes()
             NodeID id = symTable->getObjSym(iter->first);
             pag->addObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id));
         }
-        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
-        if (LLVMUtil::isPtrInUncalledFunction(llvmValue))
-            pag->getGNode(iter->second)->setPtrInUncalledFunction();
-        if(LLVMUtil::isConstDataOrAggData(llvmValue))
-            pag->getGNode(iter->second)->setConstDataOrAggData();
+        setSVFVarAttr(llvmValue, pag->getGNode(iter->second));
 
         if (BaseObjVar* baseObjVar =
                     SVFUtil::dyn_cast<BaseObjVar>(pag->getGNode(iter->second)))
@@ -361,11 +353,7 @@ void SVFIRBuilder::initialiseNodes()
         DBOUT(DPAGBuild, outs() << "add ret node " << iter->second << "\n");
         pag->addRetNode(iter->second,
                         llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(llvmValue)));
-        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
-        if (LLVMUtil::isPtrInUncalledFunction(llvmValue))
-            pag->getGNode(iter->second)->setPtrInUncalledFunction();
-        if(LLVMUtil::isConstDataOrAggData(llvmValue))
-            pag->getGNode(iter->second)->setConstDataOrAggData();
+        setSVFVarAttr(llvmValue, pag->getGNode(iter->second));
     }
 
     for (SymbolTableInfo::FunToIDMapTy::iterator iter =
@@ -376,11 +364,7 @@ void SVFIRBuilder::initialiseNodes()
         DBOUT(DPAGBuild, outs() << "add vararg node " << iter->second << "\n");
         pag->addVarargNode(iter->second,
                            llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(llvmValue)));
-        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
-        if (LLVMUtil::isPtrInUncalledFunction(llvmValue))
-            pag->getGNode(iter->second)->setPtrInUncalledFunction();
-        if(LLVMUtil::isConstDataOrAggData(llvmValue))
-            pag->getGNode(iter->second)->setConstDataOrAggData();
+        setSVFVarAttr(llvmValue, pag->getGNode(iter->second));
     }
 
     /// add address edges for constant nodes.
@@ -405,6 +389,14 @@ void SVFIRBuilder::initialiseNodes()
 
 }
 
+void SVFIRBuilder::setSVFVarAttr(const SVF::Value* llvmValue, SVF::SVFVar* var)
+{
+    llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, var);
+    if (LLVMUtil::isPtrInUncalledFunction(llvmValue))
+        var->setPtrInUncalledFunction();
+    if (LLVMUtil::isConstDataOrAggData(llvmValue))
+        var->setConstDataOrAggData();
+}
 /*
     https://github.com/SVF-tools/SVF/issues/524
     Handling single value types, for constant index, including pointer, integer, etc
