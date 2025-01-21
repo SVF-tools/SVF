@@ -246,7 +246,8 @@ public:
     const Value* getLLVMValue(const SVFBaseNode* value) const
     {
         SVFBaseNode2LLVMValueMap ::const_iterator it = SVFBaseNode2LLVMValue.find(value);
-        return it == SVFBaseNode2LLVMValue.end()? nullptr : it->second;
+        assert(it!=SVFBaseNode2LLVMValue.end() && "can't find corresponding llvm value!");
+        return it->second;
     }
 
     inline CallGraphNode* getCallGraphNode(const Function* fun) const
