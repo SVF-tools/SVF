@@ -757,7 +757,7 @@ const std::string SVFBaseNode::valueOnlyToString() const
         if (llvmVal)
             rawstr << " " << *llvmVal << " ";
         else
-            rawstr << " No llvmVal found";
+            rawstr << "";
     }
     rawstr << getSourceLoc();
     return rawstr.str();

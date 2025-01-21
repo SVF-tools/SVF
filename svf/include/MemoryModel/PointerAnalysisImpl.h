@@ -570,7 +570,7 @@ public:
                 }
                 else if (!SVFUtil::isa<DummyValVar>(node))
                 {
-                    SVFUtil::outs() << "##<" << node->getValue()->getName() << "> ";
+                    SVFUtil::outs() << "##<" << node->toString() << "> ";
                     //SVFUtil::outs() << "Source Loc: " << SVFUtil::getSourceLoc(node->getValue());
                 }
 

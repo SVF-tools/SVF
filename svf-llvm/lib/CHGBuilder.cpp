@@ -381,8 +381,14 @@ void CHGBuilder::analyzeVTables(const Module &M)
             SVFGlobalValue* pValue =
                 llvmModuleSet()->getSVFGlobalValue(
                     globalvalue);
-            pValue->setName(vtblClassName);
-            node->setVTable(pValue);
+            SymID i = SymbolTableInfo::SymbolInfo()->getObjSym(pValue);
+            SVFVar* pVar = PAG::getPAG()->getGNode(i);
+            GlobalObjVar* globalObjVar = SVFUtil::cast<GlobalObjVar>(pVar);
+            string vtblValueName = vtblClassName;
+            string vtblName = vtblClassName;
+            pValue->setName(std::move(vtblValueName));
+            globalObjVar->setName(std::move(vtblName));
+            node->setVTable(globalObjVar);
 
             for (unsigned int ei = 0; ei < vtblStruct->getNumOperands(); ++ei)
             {
@@ -675,7 +681,7 @@ void CHGBuilder::buildCSToCHAVtblsAndVfnsMap()
                     for (CHNodeSetTy::const_iterator it = chClasses.begin(), eit = chClasses.end(); it != eit; ++it)
                     {
                         const CHNode *child = *it;
-                        const SVFGlobalValue *vtbl = child->getVTable();
+                        const GlobalObjVar *vtbl = child->getVTable();
                         if (vtbl != nullptr)
                         {
                             vtbls.insert(vtbl);

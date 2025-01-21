@@ -46,6 +46,7 @@ class SVFVar : public GenericPAGNodeTy
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class SVFIRBuilder;
     friend class IRGraph;
     friend class SVFIR;
     friend class VFG;
@@ -68,10 +69,23 @@ protected:
     SVFStmt::KindToSVFStmtMapTy InEdgeKindToSetMap;
     SVFStmt::KindToSVFStmtMapTy OutEdgeKindToSetMap;
     bool isPtr;	/// whether it is a pointer (top-level or address-taken)
+    bool ptrInUncalledFun;  ///< true if this pointer is in an uncalled function
+    bool constDataOrAggData;    ///< true if this value is a ConstantData (e.g., numbers, string, floats) or a constantAggregate
+
     const SVFFunction* func; /// function containing this variable
 
     /// Constructor to create an empty object (for deserialization)
-    SVFVar(NodeID i, PNODEK k) : GenericPAGNodeTy(i, k), value{} {}
+    SVFVar(NodeID i, PNODEK k) : GenericPAGNodeTy(i, k), value{}, ptrInUncalledFun{false}, constDataOrAggData{false} {}
+
+    inline void setPtrInUncalledFunction()
+    {
+        ptrInUncalledFun = true;
+    }
+
+    inline void setConstDataOrAggData()
+    {
+        constDataOrAggData = true;
+    }
 
 public:
     /// Constructor
@@ -109,7 +123,7 @@ public:
     }
     /// Whether it is constant data, i.e., "0", "1.001", "str"
     /// or llvm's metadata, i.e., metadata !4087
-    bool isConstDataOrAggDataButNotNullPtr() const;
+    virtual bool isConstDataOrAggDataButNotNullPtr() const;
 
     /// Whether this is an isolated node on the SVFIR graph
     virtual bool isIsolatedNode() const;
@@ -215,6 +229,17 @@ public:
     {
         return isSVFVarKind(node->getNodeKind());
     }
+
+    inline bool ptrInUncalledFunction() const
+    {
+        return ptrInUncalledFun;
+    }
+
+    inline bool isConstDataOrAggData() const
+    {
+        return constDataOrAggData;
+    }
+
 
 private:
     ///  add methods of the components
@@ -465,7 +490,7 @@ class GepValVar: public ValVar
 
 private:
     AccessPath ap;	// AccessPath
-    NodeID base;	// base node id
+    ValVar* base;	// base node
     const SVFType* gepValType;
 
     /// Constructor to create empty GeValVar (for SVFIRReader/deserialization)
@@ -493,11 +518,8 @@ public:
     //@}
 
     /// Constructor
-    GepValVar(NodeID baseID, const SVFValue* val, NodeID i, const AccessPath& ap,
-              const SVFType* ty)
-        : ValVar(val, i, GepValNode), ap(ap), base(baseID), gepValType(ty)
-    {
-    }
+    GepValVar(ValVar* baseNode, const SVFValue* val, NodeID i, const AccessPath& ap,
+              const SVFType* ty);
 
     /// offset of the base value variable
     inline APOffset getConstantFieldIdx() const
@@ -506,7 +528,7 @@ public:
     }
 
     /// Return the base object from which this GEP node came from.
-    inline NodeID getBaseNode(void) const
+    inline ValVar* getBaseNode(void) const
     {
         return base;
     }
@@ -781,7 +803,10 @@ public:
               const APOffset& apOffset, PNODEK ty = GepObjNode)
         : ObjVar(baseObj->hasValue()? baseObj->getValue(): nullptr, i, ty), apOffset(apOffset), base(baseObj)
     {
-
+        if(baseObj->ptrInUncalledFunction())
+            setPtrInUncalledFunction();
+        if(baseObj->isConstDataOrAggData())
+            setConstDataOrAggData();
     }
 
     /// offset of the mem object

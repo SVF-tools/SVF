@@ -67,11 +67,6 @@ SVFIR* SVFIRBuilder::build()
     // Set callgraph
     pag->setCallGraph(llvmModuleSet()->callgraph);
 
-    CHGraph* chg = new CHGraph(pag->getModule());
-    CHGBuilder chgbuilder(chg);
-    chgbuilder.buildCHG();
-    pag->setCHG(chg);
-
     // We read SVFIR from a user-defined txt instead of parsing SVFIR from LLVM IR
     if (SVFModule::pagReadFromTXT())
     {
@@ -90,6 +85,11 @@ SVFIR* SVFIRBuilder::build()
     ///// handle globals
     visitGlobal(svfModule);
     ///// collect exception vals in the program
+
+    CHGraph* chg = new CHGraph(pag->getModule());
+    CHGBuilder chgbuilder(chg);
+    chgbuilder.buildCHG();
+    pag->setCHG(chg);
 
     /// handle functions
     for (Module& M : llvmModuleSet()->getLLVMModules())
@@ -259,6 +259,10 @@ void SVFIRBuilder::initialiseNodes()
             pag->addValNode(iter->first, iter->second, icfgNode);
         }
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
+        if (LLVMUtil::isPtrInUncalledFunction(llvmValue))
+            pag->getGNode(iter->second)->setPtrInUncalledFunction();
+        if(LLVMUtil::isConstDataOrAggData(llvmValue))
+            pag->getGNode(iter->second)->setConstDataOrAggData();
     }
 
     // Iterate over all object symbols in the symbol table
@@ -337,6 +341,10 @@ void SVFIRBuilder::initialiseNodes()
             pag->addObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id));
         }
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
+        if (LLVMUtil::isPtrInUncalledFunction(llvmValue))
+            pag->getGNode(iter->second)->setPtrInUncalledFunction();
+        if(LLVMUtil::isConstDataOrAggData(llvmValue))
+            pag->getGNode(iter->second)->setConstDataOrAggData();
 
         if (BaseObjVar* baseObjVar =
                     SVFUtil::dyn_cast<BaseObjVar>(pag->getGNode(iter->second)))
@@ -349,22 +357,30 @@ void SVFIRBuilder::initialiseNodes()
                 symTable->retSyms().begin(); iter != symTable->retSyms().end();
             ++iter)
     {
+        const Value* llvmValue = llvmModuleSet()->getLLVMValue(iter->first);
         DBOUT(DPAGBuild, outs() << "add ret node " << iter->second << "\n");
         pag->addRetNode(iter->second,
-                        llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(
-                                    llvmModuleSet()->getLLVMValue(iter->first))));
-        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmModuleSet()->getLLVMValue(iter->first), pag->getGNode(iter->second));
+                        llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(llvmValue)));
+        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
+        if (LLVMUtil::isPtrInUncalledFunction(llvmValue))
+            pag->getGNode(iter->second)->setPtrInUncalledFunction();
+        if(LLVMUtil::isConstDataOrAggData(llvmValue))
+            pag->getGNode(iter->second)->setConstDataOrAggData();
     }
 
     for (SymbolTableInfo::FunToIDMapTy::iterator iter =
                 symTable->varargSyms().begin();
             iter != symTable->varargSyms().end(); ++iter)
     {
+        const Value* llvmValue = llvmModuleSet()->getLLVMValue(iter->first);
         DBOUT(DPAGBuild, outs() << "add vararg node " << iter->second << "\n");
         pag->addVarargNode(iter->second,
-                           llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(
-                                       llvmModuleSet()->getLLVMValue(iter->first))));
-        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmModuleSet()->getLLVMValue(iter->first), pag->getGNode(iter->second));
+                           llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(llvmValue)));
+        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
+        if (LLVMUtil::isPtrInUncalledFunction(llvmValue))
+            pag->getGNode(iter->second)->setPtrInUncalledFunction();
+        if(LLVMUtil::isConstDataOrAggData(llvmValue))
+            pag->getGNode(iter->second)->setConstDataOrAggData();
     }
 
     /// add address edges for constant nodes.

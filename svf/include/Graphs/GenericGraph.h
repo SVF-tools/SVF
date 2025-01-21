@@ -250,6 +250,16 @@ public:
         return type;
     }
 
+    inline virtual void setName(std::string&& nameInfo)
+    {
+        name = std::move(nameInfo);
+    }
+
+    virtual const std::string& getName() const
+    {
+        return name;
+    }
+
     inline virtual void setSourceLoc(const std::string& sourceCodeInfo)
     {
         sourceLoc = sourceCodeInfo;
@@ -268,6 +278,7 @@ protected:
     GNodeK nodeKind;	///< Node kind
     const SVFType* type; ///< SVF type
 
+    std::string name;
     std::string sourceLoc;  ///< Source code information of this value
 
     /// Helper functions to check node kinds

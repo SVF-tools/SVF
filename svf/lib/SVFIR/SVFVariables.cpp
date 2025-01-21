@@ -40,7 +40,7 @@ using namespace SVFUtil;
  * SVFVar constructor
  */
 SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
-    GenericPAGNodeTy(i,k), value(val), func(nullptr)
+    GenericPAGNodeTy(i,k), value(val), ptrInUncalledFun(false), constDataOrAggData(false), func(nullptr)
 {
     assert( ValNode <= k && k <= DummyObjNode && "new SVFIR node kind?");
     switch (k)
@@ -176,6 +176,16 @@ const std::string ArgValVar::toString() const
         rawstr << valueOnlyToString();
     }
     return rawstr.str();
+}
+
+GepValVar::GepValVar(ValVar* baseNode, const SVFValue* val, NodeID i,
+                     const AccessPath& ap, const SVFType* ty)
+    : ValVar(val, i, GepValNode), ap(ap), base(baseNode), gepValType(ty)
+{
+    if(baseNode->ptrInUncalledFunction())
+        setPtrInUncalledFunction();
+    if(baseNode->isConstDataOrAggData())
+        setConstDataOrAggData();    
 }
 
 const std::string GepValVar::toString() const
