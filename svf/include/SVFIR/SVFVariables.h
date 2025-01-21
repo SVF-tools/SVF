@@ -515,6 +515,10 @@ public:
     {
         return node->getNodeKind() == SVFVar::GepValNode;
     }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == SVFVar::GepValNode;
+    }
     //@}
 
     /// Constructor
