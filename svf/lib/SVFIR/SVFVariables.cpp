@@ -182,10 +182,7 @@ GepValVar::GepValVar(ValVar* baseNode, const SVFValue* val, NodeID i,
                      const AccessPath& ap, const SVFType* ty)
     : ValVar(val, i, GepValNode), ap(ap), base(baseNode), gepValType(ty)
 {
-    if(baseNode->ptrInUncalledFunction())
-        setPtrInUncalledFunction();
-    if(baseNode->isConstDataOrAggData())
-        setConstDataOrAggData();    
+
 }
 
 const std::string GepValVar::toString() const

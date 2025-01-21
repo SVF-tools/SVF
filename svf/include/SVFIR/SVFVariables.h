@@ -230,12 +230,12 @@ public:
         return isSVFVarKind(node->getNodeKind());
     }
 
-    inline bool ptrInUncalledFunction() const
+    inline virtual bool ptrInUncalledFunction() const
     {
         return ptrInUncalledFun;
     }
 
-    inline bool isConstDataOrAggData() const
+    inline virtual bool isConstDataOrAggData() const
     {
         return constDataOrAggData;
     }
@@ -554,6 +554,16 @@ public:
     virtual const std::string toString() const;
 
     virtual const std::string valueOnlyToString() const;
+
+    virtual inline bool ptrInUncalledFunction() const
+    {
+        return base->ptrInUncalledFunction();
+    }
+
+    virtual inline bool isConstDataOrAggData() const
+    {
+        return base->isConstDataOrAggData();
+    }
 };
 
 /*
@@ -744,7 +754,7 @@ public:
     {
         return typeInfo->isConstDataOrConstGlobal();
     }
-    bool isConstDataOrAggData() const
+    virtual inline bool isConstDataOrAggData() const
     {
         return typeInfo->isConstDataOrAggData();
     }
@@ -809,10 +819,6 @@ public:
               const APOffset& apOffset, PNODEK ty = GepObjNode)
         : ObjVar(baseObj->hasValue()? baseObj->getValue(): nullptr, i, ty), apOffset(apOffset), base(baseObj)
     {
-        if(baseObj->ptrInUncalledFunction())
-            setPtrInUncalledFunction();
-        if(baseObj->isConstDataOrAggData())
-            setConstDataOrAggData();
     }
 
     /// offset of the mem object
@@ -847,6 +853,16 @@ public:
     }
 
     virtual const std::string toString() const;
+
+    virtual inline bool ptrInUncalledFunction() const
+    {
+        return base->ptrInUncalledFunction();
+    }
+
+    virtual inline bool isConstDataOrAggData() const
+    {
+        return base->isConstDataOrAggData();
+    }
 };
 
 
