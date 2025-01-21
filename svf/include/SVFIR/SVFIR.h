@@ -393,21 +393,6 @@ public:
     /// return whole allocated memory object if this node is a gep obj node
     /// return nullptr is this node is not a ObjVar type
     //@{
-    inline const SVFVar* getBaseVar(NodeID id) const
-    {
-        const SVFVar* node = getGNode(id);
-        assert((SVFUtil::isa<ValVar>(node) || SVFUtil::isa<ObjVar>(node)) &&
-               "not a ValVar or ObjVar node?");
-        if (SVFUtil::isa<ValVar>(node))
-        {
-            return getBaseValVar(id);
-        }
-        else
-        {
-            return getBaseObject(id);
-        }
-    }
-
     inline const BaseObjVar* getBaseObject(NodeID id) const
     {
         const SVFVar* node = getGNode(id);

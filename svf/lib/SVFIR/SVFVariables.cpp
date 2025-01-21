@@ -201,6 +201,13 @@ const std::string GepValVar::toString() const
     return rawstr.str();
 }
 
+__attribute__((weak))
+const std::string GepValVar::valueOnlyToString() const
+{
+    assert("GepValVar::valueOnlyToString should be implemented or supported by fronted" && false);
+    abort();
+}
+
 RetPN::RetPN(NodeID i, const CallGraphNode* node) : ValVar(i, RetNode), callGraphNode(node)
 {
     isPtr = node->getFunction()->getReturnType()->isPointerTy();

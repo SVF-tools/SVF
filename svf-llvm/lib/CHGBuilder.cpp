@@ -377,17 +377,10 @@ void CHGBuilder::analyzeVTables(const Module &M)
             string vtblClassName = getClassNameFromVtblObj(globalvalue->getName().str());
             CHNode *node = chg->getNode(vtblClassName);
             assert(node && "node not found?");
-
-            SVFGlobalValue* pValue =
-                llvmModuleSet()->getSVFGlobalValue(
-                    globalvalue);
-            SymID i = SymbolTableInfo::SymbolInfo()->getObjSym(pValue);
+            SymID i = SymbolTableInfo::SymbolInfo()->getObjSym(llvmModuleSet()->getSVFGlobalValue(globalvalue));
             SVFVar* pVar = PAG::getPAG()->getGNode(i);
             GlobalObjVar* globalObjVar = SVFUtil::cast<GlobalObjVar>(pVar);
-            string vtblValueName = vtblClassName;
-            string vtblName = vtblClassName;
-            pValue->setName(std::move(vtblValueName));
-            globalObjVar->setName(std::move(vtblName));
+            globalObjVar->setName(vtblClassName);
             node->setVTable(globalObjVar);
 
             for (unsigned int ei = 0; ei < vtblStruct->getNumOperands(); ++ei)

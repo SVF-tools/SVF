@@ -250,6 +250,11 @@ public:
         return type;
     }
 
+    inline virtual void setName(const std::string& nameInfo)
+    {
+        name = nameInfo;
+    }
+
     inline virtual void setName(std::string&& nameInfo)
     {
         name = std::move(nameInfo);
