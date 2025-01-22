@@ -249,9 +249,13 @@ void SVFIRBuilder::initialiseNodes()
         {
             pag->addGlobalValueValNode(iter->first, iter->second, icfgNode);
         }
-        else if (SVFUtil::isa<ConstantData>(llvmValue))
+        else if (SVFUtil::isa<ConstantData, MetadataAsValue, BlockAddress>(llvmValue))
         {
             pag->addConstantDataValNode(iter->first, iter->second, icfgNode);
+        }
+        else if (SVFUtil::isa<ConstantAggregate>(llvmValue))
+        {
+            pag->addConstantAggValNode(iter->first, iter->second, icfgNode);
         }
         else
         {
@@ -325,16 +329,22 @@ void SVFIRBuilder::initialiseNodes()
             NodeID id = symTable->getObjSym(iter->first);
             pag->addGlobalValueObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id));
         }
-        else if (SVFUtil::isa<ConstantData>(llvmValue))
+        else if (SVFUtil::isa<ConstantData, MetadataAsValue, BlockAddress>(llvmValue))
         {
             NodeID id = symTable->getObjSym(iter->first);
             pag->addConstantDataObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id));
+        }
+        else if (SVFUtil::isa<ConstantAggregate>(llvmValue))
+        {
+            NodeID id = symTable->getObjSym(iter->first);
+            pag->addConstantAggObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id));
         }
         // Add a generic object node for other types of values
         else
         {
             NodeID id = symTable->getObjSym(iter->first);
-            pag->addObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id));
+            pag->addObjNode(iter->first, iter->second,
+                            symTable->getObjTypeInfo(id));
         }
         setSVFVarAttr(llvmValue, pag->getGNode(iter->second));
 
@@ -392,10 +402,6 @@ void SVFIRBuilder::initialiseNodes()
 void SVFIRBuilder::setSVFVarAttr(const SVF::Value* llvmValue, SVF::SVFVar* var)
 {
     llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, var);
-    if (LLVMUtil::isPtrInUncalledFunction(llvmValue))
-        var->setPtrInUncalledFunction();
-    if (LLVMUtil::isConstDataOrAggData(llvmValue))
-        var->setConstDataOrAggData();
 }
 /*
     https://github.com/SVF-tools/SVF/issues/524

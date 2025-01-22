@@ -589,6 +589,12 @@ private:
         return addNode(node);
     }
 
+    inline NodeID addConstantAggValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode)
+    {
+        SVFVar* node = new ConstantAggValVar(curInst, i, icfgNode);
+        return addNode(node);
+    }
+
     inline NodeID addConstantDataValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode)
     {
         SVFVar* node = new ConstantDataValVar(curInst, i, icfgNode);
@@ -660,7 +666,13 @@ private:
         GlobalObjVar* gObj = new GlobalObjVar(curInst, i, ti);
         return addObjNode(curInst, gObj);
     }
-
+    inline NodeID addConstantAggObjNode(const SVFValue* curInst,
+                                         const NodeID i, ObjTypeInfo* ti)
+    {
+        memToFieldsMap[i].set(i);
+        ConstantAggObjVar* conObj = new ConstantAggObjVar(curInst, i, ti);
+        return addObjNode(curInst, conObj);
+    }
     inline NodeID addConstantDataObjNode(const SVFValue* curInst, const NodeID i, ObjTypeInfo* ti)
     {
         memToFieldsMap[i].set(i);

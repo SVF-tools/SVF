@@ -273,12 +273,7 @@ protected:
         LLVMContext& cxt = llvmModuleSet()->getContext();
         ConstantPointerNull* constNull = ConstantPointerNull::get(PointerType::getUnqual(cxt));
         NodeID nullPtr = pag->addConstantNullPtrValNode(llvmModuleSet()->getSVFValue(constNull),pag->getNullPtr(), nullptr);
-        llvmModuleSet()->addToSVFVar2LLVMValueMap(
-            constNull, pag->getGNode(pag->getNullPtr()));
-        if(LLVMUtil::isConstDataOrAggData(constNull))
-            pag->getGNode(nullPtr)->setConstDataOrAggData();
-        if(LLVMUtil::isPtrInUncalledFunction(constNull))
-            pag->getGNode(nullPtr)->setPtrInUncalledFunction();
+        setSVFVarAttr(constNull, pag->getGNode(pag->getNullPtr()));
         setCurrentLocation(constNull, nullptr);
         addBlackHoleAddrEdge(pag->getBlkPtr());
         return nullPtr;
