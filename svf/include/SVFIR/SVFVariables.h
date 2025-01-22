@@ -574,7 +574,7 @@ private:
 
 protected:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
-    BaseObjVar(NodeID i, PNODEK ty = BaseObjNode) : ObjVar(i, ty) {}
+    BaseObjVar(NodeID i, PNODEK ty = BaseObjNode) : ObjVar(i, ty), icfgNode(nullptr) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -603,7 +603,7 @@ public:
 
     /// Constructor
     BaseObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, PNODEK ty = BaseObjNode)
-        :  ObjVar(val, i, ty), typeInfo(ti)
+        :  ObjVar(val, i, ty), typeInfo(ti), icfgNode(nullptr)
     {
     }
 
