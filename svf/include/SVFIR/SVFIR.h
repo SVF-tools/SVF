@@ -583,15 +583,15 @@ private:
         return addNode(node);
     }
 
-    inline NodeID addGlobalValueValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode)
+    inline NodeID addGlobalValueValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode, const SVFType* svfType)
     {
-        SVFVar* node = new GlobalValVar(curInst, i, icfgNode);
+        SVFVar* node = new GlobalValVar(curInst, i, icfgNode, svfType);
         return addNode(node);
     }
 
-    inline NodeID addConstantAggValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode)
+    inline NodeID addConstantAggValNode(const SVFValue* curInst, const NodeID i, const ICFGNode* icfgNode, const SVFType* svfType)
     {
-        SVFVar* node = new ConstantAggValVar(curInst, i, icfgNode);
+        SVFVar* node = new ConstantAggValVar(curInst, i, icfgNode, svfType);
         return addNode(node);
     }
 

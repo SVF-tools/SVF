@@ -246,7 +246,7 @@ void SVFIRBuilder::initialiseNodes()
         }
         else if (SVFUtil::isa<GlobalValue>(llvmValue))
         {
-            pag->addGlobalValueValNode(iter->first, iter->second, icfgNode);
+            pag->addGlobalValueValNode(iter->first, iter->second, icfgNode, iter->first->getType());
         }
         else if (SVFUtil::isa<ConstantData, MetadataAsValue, BlockAddress>(llvmValue))
         {
@@ -254,7 +254,7 @@ void SVFIRBuilder::initialiseNodes()
         }
         else if (SVFUtil::isa<ConstantAggregate>(llvmValue))
         {
-            pag->addConstantAggValNode(iter->first, iter->second, icfgNode);
+            pag->addConstantAggValNode(iter->first, iter->second, icfgNode, iter->first->getType());
         }
         else
         {
@@ -1441,7 +1441,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     {
         const SVFFunction* srcFun = edge->getSrcNode()->getFunction();
         const SVFFunction* dstFun = edge->getDstNode()->getFunction();
-        if(srcFun!=nullptr && !SVFUtil::isa<RetPE>(edge) && edge->getSrcNode()->hasValue() && !SVFUtil::isa<SVFFunction>(edge->getSrcNode()->getValue()))
+        if(srcFun!=nullptr && !SVFUtil::isa<RetPE>(edge) && !SVFUtil::isa<FunValVar>(edge->getSrcNode()) && !SVFUtil::isa<FunObjVar>(edge->getSrcNode()))
         {
             assert(srcFun==curInst->getFunction() && "SrcNode of the PAGEdge not in the same function?");
         }

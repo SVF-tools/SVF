@@ -121,6 +121,13 @@ void SVFVar::dump() const
     outs() << this->toString() << "\n";
 }
 
+const SVFFunction* ValVar::getFunction() const
+{
+    if(icfgNode)
+        return icfgNode->getFun();
+    return nullptr;
+}
+
 const std::string ValVar::toString() const
 {
     std::string str;
@@ -153,8 +160,7 @@ ArgValVar::ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn,
     : ValVar(callGraphNode->getFunction()->getArg(argNo), i, ty, icn),
       cgNode(callGraphNode), argNo(argNo), uncalled(isUncalled)
 {
-    isPtr =
-        callGraphNode->getFunction()->getArg(argNo)->getType()->isPointerTy();
+
 }
 
 const SVFFunction* ArgValVar::getFunction() const
@@ -165,6 +171,11 @@ const SVFFunction* ArgValVar::getFunction() const
 const SVFFunction* ArgValVar::getParent() const
 {
     return cgNode->getFunction();
+}
+
+bool ArgValVar::isPointer() const
+{
+    return cgNode->getFunction()->getArg(argNo)->getType()->isPointerTy();
 }
 
 const std::string ArgValVar::toString() const
@@ -230,6 +241,12 @@ const std::string GepObjVar::toString() const
     return rawstr.str();
 }
 
+const SVFFunction* BaseObjVar::getFunction() const
+{
+    if(icfgNode)
+        return icfgNode->getFun();
+    return nullptr;
+}
 const std::string BaseObjVar::toString() const
 {
     std::string str;

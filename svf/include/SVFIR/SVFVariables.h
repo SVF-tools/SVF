@@ -343,6 +343,8 @@ public:
         return icfgNode;
     }
 
+    virtual const SVFFunction* getFunction() const;
+
     virtual const std::string toString() const;
 };
 
@@ -473,6 +475,8 @@ public:
         return uncalled;
     }
 
+    virtual bool isPointer() const;
+
     virtual const std::string toString() const;
 };
 
@@ -548,6 +552,10 @@ public:
     inline const SVFType* getType() const
     {
         return gepValType;
+    }
+
+    virtual const SVFFunction* getFunction() const {
+        return base->getFunction();
     }
 
     virtual const std::string toString() const;
@@ -768,6 +776,7 @@ public:
         typeInfo = nullptr;
     }
 
+    virtual const SVFFunction* getFunction() const;
 
 };
 
@@ -851,6 +860,10 @@ public:
         if (value)
             return value->getName() + "_" + std::to_string(apOffset);
         return "offset_" + std::to_string(apOffset);
+    }
+
+    virtual const SVFFunction* getFunction() const {
+        return base->getFunction();
     }
 
     virtual const std::string toString() const;
@@ -1137,10 +1150,15 @@ public:
     //@}
 
     /// Constructor
-    GlobalValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
+    GlobalValVar(const SVFValue* val, NodeID i, const ICFGNode* icn, const SVFType* svfType,
                  PNODEK ty = GlobalValNode)
         : ValVar(val, i, ty, icn)
     {
+        type = svfType;
+    }
+
+    virtual bool isPointer() const {
+        return type->isPointerTy();
     }
 
     virtual const std::string toString() const;
@@ -1177,11 +1195,15 @@ public:
     //@}
 
     /// Constructor
-    ConstantAggValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
-                      PNODEK ty = ConstantAggValNode)
+    ConstantAggValVar(const SVFValue* val, NodeID i, const ICFGNode* icn, const SVFType* svfTy,
+                       PNODEK ty = ConstantAggValNode)
         : ValVar(val, i,  ty,  icn)
     {
+        type = svfTy;
+    }
 
+    virtual bool isPointer() const {
+        return type->isPointerTy();
     }
 
     virtual bool isConstDataOrAggData() const
