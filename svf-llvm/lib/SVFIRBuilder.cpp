@@ -297,17 +297,13 @@ void SVFIRBuilder::initialiseNodes()
         else if (LLVMUtil::isHeapObj(llvmValue))
         {
             SymID id = symTable->getObjSym(iter->first);
-            const SVFFunction* f =
-                SVFUtil::cast<SVFInstruction>(iter->first)->getFunction();
-            pag->addHeapObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id),  f);
+            pag->addHeapObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id));
         }
         // Check if the value is an alloca instruction and add a stack object node
         else if (LLVMUtil::isStackObj(llvmValue))
         {
             NodeID id = symTable->getObjSym(iter->first);
-            const SVFFunction* f =
-                SVFUtil::cast<SVFInstruction>(iter->first)->getFunction();
-            pag->addStackObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id), f);
+            pag->addStackObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id));
         }
         else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
         {

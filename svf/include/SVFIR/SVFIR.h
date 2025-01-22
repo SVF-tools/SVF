@@ -611,20 +611,20 @@ private:
     /**
      * Creates and adds a heap object node to the SVFIR
      */
-    inline NodeID addHeapObjNode(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFFunction* f)
+    inline NodeID addHeapObjNode(const SVFValue* val, NodeID i, ObjTypeInfo* ti)
     {
         memToFieldsMap[i].set(i);
-        HeapObjVar *heapObj = new HeapObjVar(val, i, ti, f);
+        HeapObjVar *heapObj = new HeapObjVar(val, i, ti);
         return addObjNode(val, heapObj);
     }
 
     /**
      * Creates and adds a stack object node to the SVFIR
      */
-    inline NodeID addStackObjNode(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFFunction* f)
+    inline NodeID addStackObjNode(const SVFValue* val, NodeID i, ObjTypeInfo* ti)
     {
         memToFieldsMap[i].set(i);
-        StackObjVar *stackObj = new StackObjVar(val, i, ti, f);
+        StackObjVar *stackObj = new StackObjVar(val, i, ti);
         return addObjNode(val, stackObj);
     }
 

@@ -70,8 +70,6 @@ protected:
     SVFStmt::KindToSVFStmtMapTy OutEdgeKindToSetMap;
     bool isPtr;	/// whether it is a pointer (top-level or address-taken)
 
-    const SVFFunction* func; /// function containing this variable
-
     /// Constructor to create an empty object (for deserialization)
     SVFVar(NodeID i, PNODEK k) : GenericPAGNodeTy(i, k), value{} {}
 
@@ -128,20 +126,6 @@ public:
     /// @return The SVFFunction containing this variable, or nullptr if it's a global/constant expression
     virtual inline const SVFFunction* getFunction() const
     {
-        // Return cached function if available
-        if(func) return func;
-
-        // If we have an associated LLVM value, check its parent function
-        if (value)
-        {
-            // For instructions, return the function containing the parent basic block
-            if (auto inst = SVFUtil::dyn_cast<SVFInstruction>(value))
-            {
-                return inst->getParent()->getParent();
-            }
-        }
-
-        // Return nullptr for globals/constants with no parent function
         return nullptr;
     }
 
@@ -932,12 +916,10 @@ public:
     //@}
 
     /// Constructor
-    HeapObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti,
-               const SVFFunction* f, PNODEK ty = HeapObjNode):
+    HeapObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, PNODEK ty = HeapObjNode):
         BaseObjVar(val, i, ti, ty)
     {
         isPtr = val->getType()->isPointerTy();
-        func = f;
     }
 
     /// Return name of a LLVM value
@@ -998,12 +980,10 @@ public:
     //@}
 
     /// Constructor
-    StackObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti,
-                const SVFFunction* fun, PNODEK ty = StackObjNode):
+    StackObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, PNODEK ty = StackObjNode):
         BaseObjVar(val, i, ti, ty)
     {
         isPtr = val->getType()->isPointerTy();
-        func = fun;
     }
 
     /// Return name of a LLVM value
