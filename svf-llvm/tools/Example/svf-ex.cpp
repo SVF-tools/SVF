@@ -62,10 +62,7 @@ std::string printPts(PointerAnalysis* pta, const SVFVar* svfval)
     {
         rawstr << " " << *ii << " ";
         PAGNode* targetObj = pta->getPAG()->getGNode(*ii);
-        if(targetObj->hasValue())
-        {
-            rawstr << "(" << targetObj->getValue()->toString() << ")\t ";
-        }
+        rawstr << "(" << targetObj->valueOnlyToString() << ")\t ";
     }
 
     return rawstr.str();

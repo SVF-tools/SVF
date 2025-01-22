@@ -340,7 +340,7 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
     assert(baseVar && "base object is null??");
     if (SVFUtil::isa<HeapObjVar, DummyObjVar>(baseVar))
     {
-        if (!obj->getValue())
+        if (!isa<DummyObjVar>(baseVar))
         {
             PAGNode *pnode = _pag->getGNode(getPtrNodeID(var));
             GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(pnode);

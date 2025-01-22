@@ -42,8 +42,9 @@ namespace SVF
 
 class SVFModule;
 class CHNode;
+class GlobalObjVar;
 
-typedef Set<const SVFGlobalValue*> VTableSet;
+typedef Set<const GlobalObjVar*> VTableSet;
 typedef Set<const SVFFunction*> VFunSet;
 
 /// Common base for class hierarchy graph. Only implements what PointerAnalysis needs.
@@ -127,7 +128,7 @@ public:
     ~CHNode()
     {
     }
-    std::string getName() const
+    virtual const std::string& getName() const
     {
         return className;
     }
@@ -181,12 +182,12 @@ public:
     }
     void getVirtualFunctions(u32_t idx, FuncVector &virtualFunctions) const;
 
-    const SVFGlobalValue *getVTable() const
+    const GlobalObjVar *getVTable() const
     {
         return vtable;
     }
 
-    void setVTable(const SVFGlobalValue *vtbl)
+    void setVTable(const GlobalObjVar *vtbl)
     {
         vtable = vtbl;
     }
@@ -210,7 +211,7 @@ public:
     //@}
 
 private:
-    const SVFGlobalValue* vtable;
+    const GlobalObjVar* vtable;
     std::string className;
     size_t flags;
     /*

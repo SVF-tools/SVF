@@ -160,12 +160,13 @@ public:
         RetNode,                 // ├──Represents a return value node
         VarargNode,              // ├──Represents a variadic argument node
         GlobalValNode,           // ├──Represents a global variable node
+        ConstantAggValNode,      // ├──Represents a constant aggregate value node
         ConstantDataValNode,     // ├──Represents a constant data variable
         BlackHoleNode,           // ├──Represents a black hole node
         ConstantFPValNode,       // ├──Represents a constant float-point value node
         ConstantIntValNode,      // ├── Represents a constant integer value node
         ConstantNullptrValNode,  // ├── Represents a constant nullptr value node
-        DummyValNode,            // ├──Dummy node for uninitialized values
+        DummyValNode,            // ├──Represents a dummy node for uninitialized values
         // │   └── ObjVar: Classes of object variable nodes
         ObjNode,                 // ├──Represents an object variable
         GepObjNode,              // ├──Represents a GEP object variable
@@ -175,6 +176,7 @@ public:
         HeapObjNode,             // ├──Types of heap object
         StackObjNode,            // ├──Types of stack object
         GlobalObjNode,           // ├──Types of global object
+        ConstantAggObjNode,      // ├──Types of constant aggregate object
         ConstantDataObjNode,     // ├──Types of constant data object
         ConstantFPObjNode,       // ├──Types of constant float-point object
         ConstantIntObjNode,      // ├──Types of constant integer object
@@ -250,6 +252,21 @@ public:
         return type;
     }
 
+    inline virtual void setName(const std::string& nameInfo)
+    {
+        name = nameInfo;
+    }
+
+    inline virtual void setName(std::string&& nameInfo)
+    {
+        name = std::move(nameInfo);
+    }
+
+    virtual const std::string& getName() const
+    {
+        return name;
+    }
+
     inline virtual void setSourceLoc(const std::string& sourceCodeInfo)
     {
         sourceLoc = sourceCodeInfo;
@@ -268,6 +285,7 @@ protected:
     GNodeK nodeKind;	///< Node kind
     const SVFType* type; ///< SVF type
 
+    std::string name;
     std::string sourceLoc;  ///< Source code information of this value
 
     /// Helper functions to check node kinds
@@ -290,7 +308,7 @@ protected:
 
     static inline bool isSVFVarKind(GNodeK n)
     {
-        static_assert(DummyObjNode - ValNode == 24,
+        static_assert(DummyObjNode - ValNode == 26,
                       "The number of SVFVarKinds has changed, make sure the "
                       "range is correct");
 
@@ -299,7 +317,7 @@ protected:
 
     static inline bool isValVarKinds(GNodeK n)
     {
-        static_assert(DummyValNode - ValNode == 12,
+        static_assert(DummyValNode - ValNode == 13,
                       "The number of ValVarKinds has changed, make sure the "
                       "range is correct");
         return n <= DummyValNode && n >= ValNode;
@@ -316,7 +334,7 @@ protected:
 
     static inline bool isObjVarKinds(GNodeK n)
     {
-        static_assert(DummyObjNode - ObjNode == 11,
+        static_assert(DummyObjNode - ObjNode == 12,
                       "The number of ObjVarKinds has changed, make sure the "
                       "range is correct");
         return n <= DummyObjNode && n >= ObjNode;
@@ -324,7 +342,7 @@ protected:
 
     static inline bool isBaseObjVarKinds(GNodeK n)
     {
-        static_assert(DummyObjNode - BaseObjNode == 9,
+        static_assert(DummyObjNode - BaseObjNode == 10,
                       "The number of BaseObjVarKinds has changed, make sure the "
                       "range is correct");
         return n <= DummyObjNode && n >= BaseObjNode;
