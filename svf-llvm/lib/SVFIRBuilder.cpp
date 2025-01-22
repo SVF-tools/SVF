@@ -262,7 +262,8 @@ void SVFIRBuilder::initialiseNodes()
             // Add value node to PAG
             pag->addValNode(iter->first, iter->second, icfgNode);
         }
-        setSVFVarAttr(llvmValue, pag->getGNode(iter->second));
+        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue,
+                                                  pag->getGNode(iter->second));
     }
 
     // Iterate over all object symbols in the symbol table
@@ -346,7 +347,7 @@ void SVFIRBuilder::initialiseNodes()
             pag->addObjNode(iter->first, iter->second,
                             symTable->getObjTypeInfo(id));
         }
-        setSVFVarAttr(llvmValue, pag->getGNode(iter->second));
+        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
 
         if (BaseObjVar* baseObjVar =
                     SVFUtil::dyn_cast<BaseObjVar>(pag->getGNode(iter->second)))
@@ -363,7 +364,7 @@ void SVFIRBuilder::initialiseNodes()
         DBOUT(DPAGBuild, outs() << "add ret node " << iter->second << "\n");
         pag->addRetNode(iter->second,
                         llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(llvmValue)));
-        setSVFVarAttr(llvmValue, pag->getGNode(iter->second));
+        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
     }
 
     for (SymbolTableInfo::FunToIDMapTy::iterator iter =
@@ -374,7 +375,8 @@ void SVFIRBuilder::initialiseNodes()
         DBOUT(DPAGBuild, outs() << "add vararg node " << iter->second << "\n");
         pag->addVarargNode(iter->second,
                            llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(llvmValue)));
-        setSVFVarAttr(llvmValue, pag->getGNode(iter->second));
+        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
+
     }
 
     /// add address edges for constant nodes.
@@ -399,10 +401,6 @@ void SVFIRBuilder::initialiseNodes()
 
 }
 
-void SVFIRBuilder::setSVFVarAttr(const SVF::Value* llvmValue, SVF::SVFVar* var)
-{
-    llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, var);
-}
 /*
     https://github.com/SVF-tools/SVF/issues/524
     Handling single value types, for constant index, including pointer, integer, etc

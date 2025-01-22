@@ -67,7 +67,8 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
             builder.collectSym(offset);
             SymID id = pag->getSymbolInfo()->getValSym(svfOffset);
             pag->addConstantIntValNode(svfOffset, id, LLVMUtil::getIntegerValue(offset), nullptr);
-            setSVFVarAttr(offset, pag->getGNode(id));
+            llvmModuleSet()->addToSVFVar2LLVMValueMap(offset,
+                                                      pag->getGNode(id));
         }
         ls.addOffsetVarAndGepTypePair(getPAG()->getGNode(getPAG()->getValueNode(svfOffset)), nullptr);
         fields.push_back(ls);
