@@ -667,7 +667,7 @@ private:
         return addObjNode(curInst, gObj);
     }
     inline NodeID addConstantAggObjNode(const SVFValue* curInst,
-                                         const NodeID i, ObjTypeInfo* ti)
+                                        const NodeID i, ObjTypeInfo* ti)
     {
         memToFieldsMap[i].set(i);
         ConstantAggObjVar* conObj = new ConstantAggObjVar(curInst, i, ti);

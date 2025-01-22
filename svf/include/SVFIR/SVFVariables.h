@@ -112,7 +112,10 @@ public:
     }
     /// Whether it is constant data, i.e., "0", "1.001", "str"
     /// or llvm's metadata, i.e., metadata !4087
-    virtual bool isConstDataOrAggDataButNotNullPtr() const { return false; }
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return false;
+    }
 
     /// Whether this is an isolated node on the SVFIR graph
     virtual bool isIsolatedNode() const;
@@ -224,12 +227,17 @@ public:
         if (const SVFFunction* fun = getFunction())
         {
             return fun->isUncalledFunction();
-        } else {
+        }
+        else
+        {
             return false;
         }
     }
 
-    virtual bool isConstDataOrAggData() const { return false; }
+    virtual bool isConstDataOrAggData() const
+    {
+        return false;
+    }
 
 
 private:
@@ -1170,15 +1178,21 @@ public:
 
     /// Constructor
     ConstantAggValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
-                       PNODEK ty = ConstantAggValNode)
+                      PNODEK ty = ConstantAggValNode)
         : ValVar(val, i,  ty,  icn)
     {
 
     }
 
-    virtual bool isConstDataOrAggData() const { return true; }
+    virtual bool isConstDataOrAggData() const
+    {
+        return true;
+    }
 
-    virtual bool isConstDataOrAggDataButNotNullPtr() const { return true; }
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return true;
+    }
 
     virtual const std::string toString() const;
 };
@@ -1222,9 +1236,15 @@ public:
 
     }
 
-    virtual bool isConstDataOrAggData() const { return true; }
+    virtual bool isConstDataOrAggData() const
+    {
+        return true;
+    }
 
-    virtual bool isConstDataOrAggDataButNotNullPtr() const { return true; }
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return true;
+    }
 
     virtual const std::string toString() const;
 };
@@ -1270,7 +1290,10 @@ public:
 
     }
 
-    virtual bool isConstDataOrAggDataButNotNullPtr() const { return false; }
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return false;
+    }
 
     virtual const std::string toString() const
     {
@@ -1430,7 +1453,10 @@ public:
 
     }
 
-    virtual bool isConstDataOrAggDataButNotNullPtr() const { return false; }
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return false;
+    }
 
     virtual const std::string toString() const;
 };
@@ -1527,9 +1553,15 @@ public:
 
     }
 
-    virtual bool isConstDataOrAggData() const { return true; }
+    virtual bool isConstDataOrAggData() const
+    {
+        return true;
+    }
 
-    virtual bool isConstDataOrAggDataButNotNullPtr() const { return true; }
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return true;
+    }
 
     virtual const std::string toString() const;
 };
@@ -1578,9 +1610,15 @@ public:
     {
     }
 
-    virtual bool isConstDataOrAggData() const { return true; }
+    virtual bool isConstDataOrAggData() const
+    {
+        return true;
+    }
 
-    virtual bool isConstDataOrAggDataButNotNullPtr() const { return true; }
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return true;
+    }
 
     virtual const std::string toString() const;
 };
@@ -1769,7 +1807,10 @@ public:
     {
     }
 
-    virtual bool isConstDataOrAggDataButNotNullPtr() const { return false; }
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return false;
+    }
 
     virtual const std::string toString() const;
 };
