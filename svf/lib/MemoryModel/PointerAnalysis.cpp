@@ -239,11 +239,11 @@ void PointerAnalysis::dumpAllTypes()
         if (SVFUtil::isa<DummyObjVar, DummyValVar>(node))
             continue;
 
-        outs() << "##<" << node->getValue()->getName() << "> ";
-        outs() << "Source Loc: " << node->getValue()->getSourceLoc();
+        outs() << "##<" << node->getName() << "> ";
+        outs() << "Source Loc: " << node->getSourceLoc();
         outs() << "\nNodeID " << node->getId() << "\n";
 
-        const SVFType* type = node->getValue()->getType();
+        const SVFType* type = node->getType();
         pag->getSymbolInfo()->printFlattenFields(type);
     }
 }
@@ -262,11 +262,8 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
     }
     else if (!SVFUtil::isa<DummyValVar>(node) && !SVFModule::pagReadFromTXT())
     {
-        if (node->hasValue())
-        {
-            outs() << "##<" << node->getValue()->getName() << "> ";
-            outs() << "Source Loc: " << node->getValue()->getSourceLoc();
-        }
+        outs() << "##<" << node->getName() << "> ";
+        outs() << "Source Loc: " << node->getSourceLoc();
     }
     outs() << "\nPtr " << node->getId() << " ";
 
@@ -301,12 +298,9 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
         {
             if (!SVFModule::pagReadFromTXT())
             {
-                if (node->hasValue())
-                {
-                    outs() << "<" << pagNode->getValue()->getName() << "> ";
-                    outs() << "Source Loc: "
-                           << pagNode->getValue()->getSourceLoc() << "] \n";
-                }
+                outs() << "<" << pagNode->getName() << "> ";
+                outs() << "Source Loc: "
+                       << pagNode->getSourceLoc() << "] \n";
             }
         }
     }
@@ -439,22 +433,28 @@ void PointerAnalysis::getVFnsFromPts(const CallICFGNode* cs, const PointsTo &tar
 
     if (chgraph->csHasVtblsBasedonCHA(cs))
     {
-        Set<const SVFGlobalValue*> vtbls;
+        Set<const GlobalObjVar*> vtbls;
         const VTableSet &chaVtbls = chgraph->getCSVtblsBasedonCHA(cs);
         for (PointsTo::iterator it = target.begin(), eit = target.end(); it != eit; ++it)
         {
             const PAGNode *ptdnode = pag->getGNode(*it);
-            if (ptdnode->hasValue())
+            const GlobalObjVar* pVar = nullptr;
+            if (isa<ObjVar>(ptdnode) && isa<GlobalObjVar>(pag->getBaseObject(ptdnode->getId())))
             {
-                if ((isa<ObjVar>(ptdnode) && isa<GlobalObjVar>(pag->getBaseObject(ptdnode->getId())))
-                        || (isa<ValVar>(ptdnode) && isa<GlobalValVar>(pag->getBaseValVar(ptdnode->getId()))))
-                {
-                    const SVFGlobalValue* globalValue = SVFUtil::dyn_cast<SVFGlobalValue>(ptdnode->getValue());
-                    if (chaVtbls.find(globalValue) != chaVtbls.end())
-                        vtbls.insert(globalValue);
-                }
+                pVar = cast<GlobalObjVar>(pag->getBaseObject(ptdnode->getId()));
 
             }
+            else if (isa<ValVar>(ptdnode) &&
+                     isa<GlobalValVar>(
+                         pag->getBaseValVar(ptdnode->getId())))
+            {
+                pVar = cast<GlobalObjVar>(
+                    SVFUtil::getObjVarOfValVar(cast<GlobalValVar>(
+                        pag->getBaseValVar(ptdnode->getId()))));
+            }
+
+            if (pVar && chaVtbls.find(pVar) != chaVtbls.end())
+                vtbls.insert(pVar);
         }
         chgraph->getVFnsFromVtbls(cs, vtbls, vfns);
     }

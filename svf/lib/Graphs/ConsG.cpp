@@ -775,7 +775,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
             if (SVFUtil::isa<ValVar>(node))
             {
                 if (nameDisplay)
-                    rawstr << node->getId() << ":" << node->getValueName();
+                    rawstr << node->getId() << ":" << node->getName();
                 else
                     rawstr << node->getId();
             }

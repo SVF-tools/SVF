@@ -125,10 +125,7 @@ const std::string CmpVFGNode::toString() const
             it != eit; it++)
         rawstr << it->second->getId() << ", ";
     rawstr << ")]\n";
-    if(res->hasValue())
-    {
-        rawstr << " " << res->getValue()->toString();
-    }
+    rawstr << " " << res->valueOnlyToString();
     return rawstr.str();
 }
 
@@ -149,10 +146,7 @@ const std::string BinaryOPVFGNode::toString() const
             it != eit; it++)
         rawstr << it->second->getId() << ", ";
     rawstr << ")]\t";
-    if(res->hasValue())
-    {
-        rawstr << " " << res->getValue()->toString();
-    }
+    rawstr << " " << res->valueOnlyToString();
     return rawstr.str();
 }
 
@@ -173,10 +167,7 @@ const std::string UnaryOPVFGNode::toString() const
             it != eit; it++)
         rawstr << it->second->getId() << ", ";
     rawstr << ")]\t";
-    if(res->hasValue())
-    {
-        rawstr << " " << res->getValue()->toString();
-    }
+    rawstr << " " << res->valueOnlyToString();
     return rawstr.str();
 }
 
@@ -227,10 +218,7 @@ const std::string PHIVFGNode::toString() const
             it != eit; it++)
         rawstr << it->second->getId() << ", ";
     rawstr << ")]\t";
-    if(res->hasValue())
-    {
-        rawstr << " " << res->getValue()->toString();
-    }
+    rawstr << " " << res->valueOnlyToString();
     return rawstr.str();
 }
 
@@ -245,10 +233,7 @@ const std::string IntraPHIVFGNode::toString() const
             it != eit; it++)
         rawstr << it->second->getId() << ", ";
     rawstr << ")]\t";
-    if(res->hasValue())
-    {
-        rawstr << " " << res->getValue()->toString();
-    }
+    rawstr << " " << res->valueOnlyToString();
     return rawstr.str();
 }
 
@@ -353,9 +338,9 @@ const std::string InterPHIVFGNode::toString() const
     std::string str;
     std::stringstream rawstr(str);
     if(isFormalParmPHI())
-        rawstr << "FormalParmPHI ID: " << getId() << " PAGNode ID: " << res->getId() << "\n" << res->getValue()->toString();
+        rawstr << "FormalParmPHI ID: " << getId() << " PAGNode ID: " << res->getId() << "\n" << res->valueOnlyToString();
     else
-        rawstr << "ActualRetPHI ID: " << getId() << " PAGNode ID: " << res->getId() << "\n" << res->getValue()->toString();
+        rawstr << "ActualRetPHI ID: " << getId() << " PAGNode ID: " << res->getId() << "\n" << res->valueOnlyToString();
     return rawstr.str();
 }
 
@@ -1090,12 +1075,12 @@ const SVFVar* BinaryOPVFGNode::getValue() const
 
 const SVFVar* PHIVFGNode::getValue() const
 {
-    return getRes()->hasValue() ? getRes(): nullptr;
+    return getRes();
 }
 
 const SVFVar* ArgumentVFGNode::getValue() const
 {
-    return param->hasValue() ? param : nullptr;
+    return param;
 }
 
 /*!

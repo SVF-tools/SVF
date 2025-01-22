@@ -244,10 +244,7 @@ public:
     {
         return name;
     }
-    inline void setName(const std::string& n)
-    {
-        name = n;
-    }
+
     inline void setName(std::string&& n)
     {
         name = std::move(n);

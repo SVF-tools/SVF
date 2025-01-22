@@ -98,7 +98,7 @@ public:
         return diType;
     }
 
-    std::string getName() const
+    virtual const std::string& getName() const
     {
         return typeName;
     }
@@ -161,12 +161,12 @@ public:
         return typedefs;
     }
 
-    void setVTable(const SVFGlobalValue *vtbl)
+    void setVTable(const GlobalObjVar *vtbl)
     {
         vtable = vtbl;
     }
 
-    const SVFGlobalValue *getVTable() const
+    const GlobalObjVar *getVTable() const
     {
         return vtable;
     }
@@ -193,7 +193,7 @@ private:
     const DIType *diType;
     /// Typedefs which map to this type.
     Set<const DIDerivedType *> typedefs;
-    const SVFGlobalValue* vtable;
+    const GlobalObjVar* vtable;
     std::string typeName;
     size_t flags;
     /// The virtual functions which this class actually defines/overrides.
@@ -365,7 +365,7 @@ protected:
     /// Maps DITypes to their nodes.
     Map<const DIType*, DCHNode*> diTypeToNodeMap;
     /// Maps VTables to the DIType associated with them.
-    Map<const SVFGlobalValue*, const DIType*> vtblToTypeMap;
+    Map<const GlobalObjVar*, const DIType*> vtblToTypeMap;
     /// Maps types to all children (i.e. CHA).
     Map<const DIType*, NodeBS> chaMap;
     /// Maps types to all children but also considering first field.

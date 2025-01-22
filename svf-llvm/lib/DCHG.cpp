@@ -178,8 +178,11 @@ void DCHGraph::buildVTables(const SVFModule &module)
                 assert(type && "DCHG::buildVTables: bad metadata for ctir.vt");
                 DCHNode *node = getOrCreateNode(type);
                 const SVFGlobalValue* svfgv = LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(gv);
-                node->setVTable(svfgv);
-                vtblToTypeMap[svfgv] = getCanonicalType(type);
+                SymID i = SymbolTableInfo::SymbolInfo()->getObjSym(svfgv);
+                GlobalObjVar* globalObjVar =
+                    SVFUtil::cast<GlobalObjVar>(PAG::getPAG()->getGNode(i));
+                node->setVTable(globalObjVar);
+                vtblToTypeMap[globalObjVar] = getCanonicalType(type);
 
                 const ConstantStruct *vtbls = cppUtil::getVtblStruct(gv);
                 for (unsigned nthVtbl = 0; nthVtbl < vtbls->getNumOperands(); ++nthVtbl)
@@ -575,7 +578,7 @@ const VTableSet &DCHGraph::getCSVtblsBasedonCHA(const CallICFGNode* cs)
     for (NodeID childId : children)
     {
         DCHNode *child = getGNode(childId);
-        const SVFGlobalValue *vtbl = child->getVTable();
+        const GlobalObjVar *vtbl = child->getVTable();
         // TODO: what if it is null?
         if (vtbl != nullptr)
         {
@@ -593,7 +596,7 @@ void DCHGraph::getVFnsFromVtbls(const CallICFGNode* callsite, const VTableSet &v
 {
     size_t idx = callsite->getFunIdxInVtable();
     std::string funName = callsite->getFunNameOfVirtualCall();
-    for (const SVFGlobalValue *vtbl : vtbls)
+    for (const GlobalObjVar *vtbl : vtbls)
     {
         assert(vtblToTypeMap.find(vtbl) != vtblToTypeMap.end() && "floating vtbl");
         const DIType *type = vtblToTypeMap[vtbl];

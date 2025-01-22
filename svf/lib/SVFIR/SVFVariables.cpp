@@ -48,6 +48,7 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     case ValNode:
     case ArgNode:
     case ConstantDataValNode:
+    case ConstantAggValNode:
     case GlobalValNode:
     case BlackHoleNode:
     case ConstantFPValNode:
@@ -69,6 +70,7 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     case ObjNode:
     case GepObjNode:
     case BaseObjNode:
+    case ConstantAggObjNode:
     case ConstantDataObjNode:
     case GlobalObjNode:
     case ConstantFPObjNode:
@@ -178,6 +180,13 @@ const std::string ArgValVar::toString() const
     return rawstr.str();
 }
 
+GepValVar::GepValVar(ValVar* baseNode, const SVFValue* val, NodeID i,
+                     const AccessPath& ap, const SVFType* ty)
+    : ValVar(val, i, GepValNode), ap(ap), base(baseNode), gepValType(ty)
+{
+
+}
+
 const std::string GepValVar::toString() const
 {
     std::string str;
@@ -190,6 +199,8 @@ const std::string GepValVar::toString() const
     }
     return rawstr.str();
 }
+
+
 
 RetPN::RetPN(NodeID i, const CallGraphNode* node) : ValVar(i, RetNode), callGraphNode(node)
 {
@@ -280,6 +291,18 @@ const std::string FunValVar::toString() const
     return rawstr.str();
 }
 
+const std::string ConstantAggValVar::toString() const
+{
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "ConstantAggValNode ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << valueOnlyToString();
+    }
+    return rawstr.str();
+}
 const std::string ConstantDataValVar::toString() const
 {
     std::string str;
@@ -357,7 +380,18 @@ const std::string GlobalObjVar::toString() const
     }
     return rawstr.str();
 }
-
+const std::string ConstantAggObjVar::toString() const
+{
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "ConstantAggObjVar ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << valueOnlyToString();
+    }
+    return rawstr.str();
+}
 const std::string ConstantDataObjVar::toString() const
 {
     std::string str;
@@ -482,12 +516,3 @@ const std::string DummyObjVar::toString() const
     return rawstr.str();
 }
 
-/// Whether it is constant data, i.e., "0", "1.001", "str"
-/// or llvm's metadata, i.e., metadata !4087
-bool SVFVar::isConstDataOrAggDataButNotNullPtr() const
-{
-    if (hasValue())
-        return value->isConstDataOrAggData() && (!SVFUtil::isa<SVFConstantNullPtr>(value)) && (!SVFUtil::isa<SVFBlackHoleValue>(value));
-    else
-        return false;
-}
