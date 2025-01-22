@@ -263,7 +263,7 @@ void SVFIRBuilder::initialiseNodes()
             pag->addValNode(iter->first, iter->second, icfgNode);
         }
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue,
-                                                  pag->getGNode(iter->second));
+                pag->getGNode(iter->second));
     }
 
     // Iterate over all object symbols in the symbol table
