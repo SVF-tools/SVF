@@ -39,8 +39,8 @@ using namespace SVFUtil;
 /*!
  * SVFVar constructor
  */
-SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
-    GenericPAGNodeTy(i,k), value(val)
+SVFVar::SVFVar(const SVFValue* val, NodeID i, const SVFType* svfType, PNODEK k) :
+    GenericPAGNodeTy(i,k, svfType), value(val)
 {
     assert( ValNode <= k && k <= DummyObjNode && "new SVFIR node kind?");
     switch (k)
@@ -57,7 +57,7 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     case GepValNode:
     {
         assert(val != nullptr && "value is nullptr for ValVar or GepValNode");
-        isPtr = val->getType()->isPointerTy();
+        isPtr = svfType->isPointerTy();
         break;
     }
     case FunValNode:
@@ -80,7 +80,7 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     {
         isPtr = true;
         if(val)
-            isPtr = val->getType()->isPointerTy();
+            isPtr = svfType->isPointerTy();
         break;
     }
     case RetNode:
@@ -136,7 +136,7 @@ const std::string ValVar::toString() const
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
-        rawstr << value->toString();
+        rawstr << valueOnlyToString();
     }
     return rawstr.str();
 }
@@ -149,15 +149,14 @@ const std::string ObjVar::toString() const
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
-        rawstr << value->toString();
+        rawstr << valueOnlyToString();
     }
     return rawstr.str();
 }
 
 ArgValVar::ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn,
-                     const SVF::CallGraphNode* callGraphNode, bool isUncalled,
-                     SVF::SVFVar::PNODEK ty)
-    : ValVar(callGraphNode->getFunction()->getArg(argNo), i, ty, icn),
+                     const SVF::CallGraphNode* callGraphNode, const SVFType* svfType, bool isUncalled)
+    : ValVar(callGraphNode->getFunction()->getArg(argNo), i, svfType, ArgNode, icn),
       cgNode(callGraphNode), argNo(argNo), uncalled(isUncalled)
 {
 
@@ -193,7 +192,7 @@ const std::string ArgValVar::toString() const
 
 GepValVar::GepValVar(ValVar* baseNode, const SVFValue* val, NodeID i,
                      const AccessPath& ap, const SVFType* ty)
-    : ValVar(val, i, GepValNode), ap(ap), base(baseNode), gepValType(ty)
+    : ValVar(val, i, ty, GepValNode), ap(ap), base(baseNode), gepValType(ty)
 {
 
 }
@@ -206,14 +205,13 @@ const std::string GepValVar::toString() const
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
-        rawstr << value->toString();
+        rawstr << valueOnlyToString();
     }
     return rawstr.str();
 }
 
-
-
-RetPN::RetPN(NodeID i, const CallGraphNode* node) : ValVar(i, RetNode), callGraphNode(node)
+RetPN::RetPN(NodeID i, const CallGraphNode* node, const SVFType* svfType)
+    : ValVar(nullptr, i, svfType, RetNode), callGraphNode(node)
 {
     isPtr = node->getFunction()->getReturnType()->isPointerTy();
 }
@@ -236,7 +234,7 @@ const std::string GepObjVar::toString() const
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
-        rawstr << value->toString();
+        rawstr << valueOnlyToString();
     }
     return rawstr.str();
 }
@@ -255,7 +253,7 @@ const std::string BaseObjVar::toString() const
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
-        rawstr << value->toString();
+        rawstr << valueOnlyToString();
     }
     return rawstr.str();
 }
@@ -289,8 +287,8 @@ const std::string StackObjVar::toString() const
 
 
 
-FunValVar::FunValVar(NodeID i, const ICFGNode* icn, const CallGraphNode* cgn, PNODEK ty)
-    : ValVar(cgn->getFunction(), i, ty, icn), callGraphNode(cgn)
+FunValVar::FunValVar(NodeID i, const ICFGNode* icn, const CallGraphNode* cgn, const SVFType* svfType)
+    : ValVar(cgn->getFunction(), i, svfType, FunValNode, icn), callGraphNode(cgn)
 {
     isPtr = cgn->getFunction()->getType()->isPointerTy();
 }
@@ -461,9 +459,8 @@ const std::string ConstantNullPtrObjVar::toString() const
     return rawstr.str();
 }
 
-FunObjVar::FunObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const CallGraphNode* cgNode,
-                     PNODEK ty)
-    : BaseObjVar(val, i, ti, ty), callGraphNode(cgNode)
+FunObjVar::FunObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const CallGraphNode* cgNode, const SVFType* svfType)
+    : BaseObjVar(val, i, ti, svfType, FunObjNode), callGraphNode(cgNode)
 {
     isPtr = callGraphNode->getFunction()->getType()->isPointerTy();
 }

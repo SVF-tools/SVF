@@ -230,7 +230,7 @@ public:
 
 
 
-    SVFBaseNode(NodeID i, GNodeK k, SVFType* ty = nullptr): id(i),nodeKind(k), type(ty)
+    SVFBaseNode(NodeID i, GNodeK k, const SVFType* ty = nullptr): id(i),nodeKind(k), type(ty)
     {
 
     }
@@ -433,7 +433,7 @@ private:
 
 public:
     /// Constructor
-    GenericNode(NodeID i, GNodeK k): SVFBaseNode(i, k)
+    GenericNode(NodeID i, GNodeK k, const SVFType* svfType = nullptr): SVFBaseNode(i, k, svfType)
     {
 
     }
