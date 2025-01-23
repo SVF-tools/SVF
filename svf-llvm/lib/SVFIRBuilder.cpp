@@ -169,11 +169,6 @@ SVFIR* SVFIRBuilder::build()
         loopAnalysis.build(pag->getICFG());
     }
 
-    // dump SVFIR as JSON
-    if (!Options::DumpJson().empty())
-    {
-        SVFIRWriter::writeJsonToPath(pag, Options::DumpJson());
-    }
 
     double endTime = SVFStat::getClk(true);
     SVFStat::timeOfBuildingSVFIR = (endTime - startTime) / TIMEINTERVAL;
