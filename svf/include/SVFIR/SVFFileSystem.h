@@ -1,4 +1,3 @@
-
 //===- SVFFileSystem.h -- SVF IR Reader and Writer ------------------------===//
 //
 //  SVF - Static Value-Flow Analysis Framework
@@ -21,7 +20,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
-/*
+
 #ifndef INCLUDE_SVFFILESYSTEM_H_
 #define INCLUDE_SVFFILESYSTEM_H_
 
@@ -44,7 +43,7 @@
             ABORT_MSG(reason);                                                 \
     } while (0)
 
-#define SVFIR_DEBUG 1 // Turn this on if you're debugging SVFWriter
+#define SVFIR_DEBUG 1 /* Turn this on if you're debugging SVFWriter */
 #if SVFIR_DEBUG
 #    define ENSURE_NOT_VISITED(graph)                                          \
         do                                                                     \
@@ -114,6 +113,7 @@ class StInfo; // Every SVFType is linked to a StInfo. It also references SVFType
 
 class SVFValue;
 class SVFFunction;
+class SVFBasicBlock;
 class SVFInstruction;
 class SVFCallInst;
 class SVFConstant;
@@ -509,6 +509,7 @@ private:
 
     cJSON* contentToJson(const SVFValue* value);
     cJSON* contentToJson(const SVFFunction* value);
+    cJSON* contentToJson(const SVFBasicBlock* value);
     cJSON* contentToJson(const SVFInstruction* value);
     cJSON* contentToJson(const SVFCallInst* value);
     cJSON* contentToJson(const SVFConstant* value);
@@ -577,31 +578,31 @@ private:
         return root;
     }
 
-//    * The following 2 functions are intended to convert SparseBitVectors
-//     * to JSON. But they're buggy. Commenting them out would enable the
-//     * toJson(T) where is_iterable_v<T> is true. But that implementation is less
-//     * space-efficient if the bitvector contains many elements.
-//     * It is observed that upon construction, SVF IR bitvectors contain at most
-//     * 1 element. In that case, we can just use the toJson(T) for iterable T
-//     * without much space overhead.
-//
-//    template <unsigned ElementSize>
-//    cJSON* toJson(const SparseBitVectorElement<ElementSize>& element)
-//    {
-//        cJSON* array = jsonCreateArray();
-//        for (const auto v : element.Bits)
-//        {
-//            jsonAddItemToArray(array, toJson(v));
-//        }
-//        return array;
-//    }
-//
-//    template <unsigned ElementSize>
-//    cJSON* toJson(const SparseBitVector<ElementSize>& bv)
-//    {
-//        return toJson(bv.Elements);
-//    }
-//
+    /** The following 2 functions are intended to convert SparseBitVectors
+     * to JSON. But they're buggy. Commenting them out would enable the
+     * toJson(T) where is_iterable_v<T> is true. But that implementation is less
+     * space-efficient if the bitvector contains many elements.
+     * It is observed that upon construction, SVF IR bitvectors contain at most
+     * 1 element. In that case, we can just use the toJson(T) for iterable T
+     * without much space overhead.
+
+    template <unsigned ElementSize>
+    cJSON* toJson(const SparseBitVectorElement<ElementSize>& element)
+    {
+        cJSON* array = jsonCreateArray();
+        for (const auto v : element.Bits)
+        {
+            jsonAddItemToArray(array, toJson(v));
+        }
+        return array;
+    }
+
+    template <unsigned ElementSize>
+    cJSON* toJson(const SparseBitVector<ElementSize>& bv)
+    {
+        return toJson(bv.Elements);
+    }
+    */
 
     template <typename T, typename U> cJSON* toJson(const std::pair<T, U>& pair)
     {
@@ -638,10 +639,10 @@ private:
         return jsonAddItemToObject(obj, name, itemObj);
     }
 };
-//
-//
-//  Reader Part
-//
+
+/*
+ * Reader Part
+ */
 
 /// @brief Type trait to get base type.
 /// Helper struct to detect inheritance from Node/Edge
@@ -1012,9 +1013,9 @@ public:
     }
 };
 
-// SVFIRReader
-// Read SVFIR from JSON
-//
+/* SVFIRReader
+ * Read SVFIR from JSON
+ */
 
 class SVFIRReader
 {
@@ -1110,15 +1111,15 @@ private:
         }
     }
 
-//     See comment of toJson(SparseBitVectorElement) for reason of commenting
-//       it out.
-//    template <unsigned ElementSize>
-//    inline void readJson(const cJSON* obj,
-//                         SparseBitVectorElement<ElementSize>& element)
-//    {
-//        readJson(obj, element.Bits);
-//    }
-//
+    /* See comment of toJson(SparseBitVectorElement) for reason of commenting
+       it out.
+    template <unsigned ElementSize>
+    inline void readJson(const cJSON* obj,
+                         SparseBitVectorElement<ElementSize>& element)
+    {
+        readJson(obj, element.Bits);
+    }
+    */
 
     /// @brief Read a pointer of some child class of
     /// SVFType/SVFValue/SVFVar/SVFStmt/ICFGNode/ICFGEdge/CHNode/CHEdge
@@ -1133,6 +1134,15 @@ private:
         ptr = SVFUtil::dyn_cast<T>(basePtr);
         ABORT_IFNOT(ptr, "Cast: " << obj->string << " shouldn't have kind "
                     << KindBaseHelper<T>::getKind(ptr));
+    }
+
+    /// Read a const pointer
+    template <typename T> inline void readJson(const cJSON* obj, const T*& cptr)
+    {
+        assert(!cptr && "const pointer should be NULL");
+        T* ptr{};
+        readJson(obj, ptr);
+        cptr = ptr;
     }
 
     template <typename T1, typename T2>
@@ -1263,6 +1273,7 @@ private:
     void virtFill(const cJSON*& fieldJson, SVFValue* value);
     void fill(const cJSON*& fieldJson, SVFValue* value);
     void fill(const cJSON*& fieldJson, SVFFunction* value);
+    void fill(const cJSON*& fieldJson, SVFBasicBlock* value);
     void fill(const cJSON*& fieldJson, SVFInstruction* value);
     void fill(const cJSON*& fieldJson, SVFCallInst* value);
     void fill(const cJSON*& fieldJson, SVFConstant* value);
@@ -1305,4 +1316,3 @@ private:
 } // namespace SVF
 
 #endif // !INCLUDE_SVFFILESYSTEM_H_
-*/

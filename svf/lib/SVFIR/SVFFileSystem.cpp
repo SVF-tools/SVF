@@ -1,4 +1,3 @@
-/*
 #include "SVFIR/SVFFileSystem.h"
 #include "Graphs/CHG.h"
 #include "SVFIR/SVFIR.h"
@@ -139,7 +138,7 @@ cJSON* SVFIRWriter::virtToJson(const SVFValue* value)
 
         CASE(SVFVal, SVFValue);
         CASE(SVFFunc, SVFFunction);
-        CASE(SVFBB, BasicBlockNode);
+        CASE(SVFBB, SVFBasicBlock);
         CASE(SVFInst, SVFInstruction);
         CASE(SVFCall, SVFCallInst);
         CASE(SVFGlob, SVFGlobalValue);
@@ -520,7 +519,7 @@ cJSON* SVFIRWriter::contentToJson(const SVFFunction* value)
     return root;
 }
 
-cJSON* SVFIRWriter::contentToJson(const BasicBlockNode* value)
+cJSON* SVFIRWriter::contentToJson(const SVFBasicBlock* value)
 {
     cJSON* root = contentToJson(static_cast<const SVFValue*>(value));
     JSON_WRITE_FIELD(root, value, succBBs);
@@ -764,9 +763,9 @@ bool jsonAddStringToObject(cJSON* obj, const char* name, const std::string& s)
 bool jsonIsBool(const cJSON* item)
 {
     return humanReadableOption()
-               ? cJSON_IsBool(item)
-               : cJSON_IsNumber(item) &&
-                     (item->valuedouble == 0 || item->valuedouble == 1);
+           ? cJSON_IsBool(item)
+           : cJSON_IsNumber(item) &&
+           (item->valuedouble == 0 || item->valuedouble == 1);
 }
 
 bool jsonIsBool(const cJSON* item, bool& flag)
@@ -898,7 +897,7 @@ bool jsonAddPairToMap(cJSON* mapObj, cJSON* key, cJSON* value)
 bool jsonAddItemToObject(cJSON* obj, const char* name, cJSON* item)
 {
     return humanReadableOption() ? cJSON_AddItemToObject(obj, name, item)
-                                 : cJSON_AddItemToArray(obj, item);
+           : cJSON_AddItemToArray(obj, item);
 }
 
 bool jsonAddItemToArray(cJSON* array, cJSON* item)
@@ -983,7 +982,7 @@ SVFIRWriter::autoCStr SVFIRWriter::generateJsonString()
 {
     autoJSON object = generateJson();
     char* str = humanReadableOption() ? cJSON_Print(object.get())
-                                      : cJSON_PrintUnformatted(object.get());
+                : cJSON_PrintUnformatted(object.get());
     return {str, cJSON_free};
 }
 
@@ -1355,27 +1354,27 @@ void SVFIRReader::readJson(const cJSON* obj, unsigned long& val)
 {
     readBigNumber(obj, val,
                   [](const char* s)
-                  {
-                      return std::strtoul(s, nullptr, 10);
-                  });
+    {
+        return std::strtoul(s, nullptr, 10);
+    });
 }
 
 void SVFIRReader::readJson(const cJSON* obj, long long& val)
 {
     readBigNumber(obj, val,
                   [](const char* s)
-                  {
-                      return std::strtoll(s, nullptr, 10);
-                  });
+    {
+        return std::strtoll(s, nullptr, 10);
+    });
 }
 
 void SVFIRReader::readJson(const cJSON* obj, unsigned long long& val)
 {
     readBigNumber(obj, val,
                   [](const char* s)
-                  {
-                      return std::strtoull(s, nullptr, 10);
-                  });
+    {
+        return std::strtoull(s, nullptr, 10);
+    });
 }
 
 void SVFIRReader::readJson(const cJSON* obj, std::string& str)
@@ -2108,7 +2107,7 @@ void SVFIRReader::virtFill(const cJSON*& fieldJson, SVFValue* value)
 
         CASE(SVFVal, SVFValue);
         CASE(SVFFunc, SVFFunction);
-        CASE(SVFBB, BasicBlockNode);
+        CASE(SVFBB, SVFBasicBlock);
         CASE(SVFInst, SVFInstruction);
         CASE(SVFCall, SVFCallInst);
         CASE(SVFGlob, SVFGlobalValue);
@@ -2151,7 +2150,7 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFFunction* value)
 #undef F
 }
 
-void SVFIRReader::fill(const cJSON*& fieldJson, BasicBlockNode* value)
+void SVFIRReader::fill(const cJSON*& fieldJson, SVFBasicBlock* value)
 {
     fill(fieldJson, static_cast<SVFValue*>(value));
     JSON_READ_FIELD_FWD(fieldJson, value, succBBs);
@@ -2339,4 +2338,3 @@ SVFIR* SVFIRReader::read(const std::string& path)
 }
 
 } // namespace SVF
-*/
