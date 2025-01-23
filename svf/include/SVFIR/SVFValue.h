@@ -30,10 +30,10 @@
 #ifndef INCLUDE_SVFIR_SVFVALUE_H_
 #define INCLUDE_SVFIR_SVFVALUE_H_
 
-#include "SVFIR/SVFType.h"
+#include "Graphs/BasicBlockG.h"
 #include "Graphs/GraphPrinter.h"
+#include "SVFIR/SVFType.h"
 #include "Util/Casting.h"
-#include "Graphs/BBG.h"
 
 namespace SVF
 {
@@ -52,18 +52,18 @@ class SVFLoopAndDomInfo
     friend class SVFIRWriter;
     friend class SVFIRReader;
 public:
-    typedef Set<const SVFBasicBlock*> BBSet;
-    typedef std::vector<const SVFBasicBlock*> BBList;
+    typedef Set<const BasicBlockNode*> BBSet;
+    typedef std::vector<const BasicBlockNode*> BBList;
     typedef BBList LoopBBs;
 
 private:
     BBList reachableBBs;    ///< reachable BasicBlocks from the function entry.
-    Map<const SVFBasicBlock*,BBSet> dtBBsMap;   ///< map a BasicBlock to BasicBlocks it Dominates
-    Map<const SVFBasicBlock*,BBSet> pdtBBsMap;   ///< map a BasicBlock to BasicBlocks it PostDominates
-    Map<const SVFBasicBlock*,BBSet> dfBBsMap;    ///< map a BasicBlock to its Dominate Frontier BasicBlocks
-    Map<const SVFBasicBlock*, LoopBBs> bb2LoopMap;  ///< map a BasicBlock (if it is in a loop) to all the BasicBlocks in this loop
-    Map<const SVFBasicBlock*, u32_t> bb2PdomLevel;  ///< map a BasicBlock to its level in pdom tree, used in findNearestCommonPDominator
-    Map<const SVFBasicBlock*, const SVFBasicBlock*> bb2PIdom;  ///< map a BasicBlock to its immediate dominator in pdom tree, used in findNearestCommonPDominator
+    Map<const BasicBlockNode*,BBSet> dtBBsMap;   ///< map a BasicBlock to BasicBlocks it Dominates
+    Map<const BasicBlockNode*,BBSet> pdtBBsMap;   ///< map a BasicBlock to BasicBlocks it PostDominates
+    Map<const BasicBlockNode*,BBSet> dfBBsMap;    ///< map a BasicBlock to its Dominate Frontier BasicBlocks
+    Map<const BasicBlockNode*, LoopBBs> bb2LoopMap;  ///< map a BasicBlock (if it is in a loop) to all the BasicBlocks in this loop
+    Map<const BasicBlockNode*, u32_t> bb2PdomLevel;  ///< map a BasicBlock to its level in pdom tree, used in findNearestCommonPDominator
+    Map<const BasicBlockNode*, const BasicBlockNode*> bb2PIdom;  ///< map a BasicBlock to its immediate dominator in pdom tree, used in findNearestCommonPDominator
 
 public:
     SVFLoopAndDomInfo()
@@ -72,81 +72,81 @@ public:
 
     virtual ~SVFLoopAndDomInfo() {}
 
-    inline const Map<const SVFBasicBlock*,BBSet>& getDomFrontierMap() const
+    inline const Map<const BasicBlockNode*,BBSet>& getDomFrontierMap() const
     {
         return dfBBsMap;
     }
 
-    inline Map<const SVFBasicBlock*,BBSet>& getDomFrontierMap()
+    inline Map<const BasicBlockNode*,BBSet>& getDomFrontierMap()
     {
         return dfBBsMap;
     }
 
-    inline bool hasLoopInfo(const SVFBasicBlock* bb) const
+    inline bool hasLoopInfo(const BasicBlockNode* bb) const
     {
         return bb2LoopMap.find(bb) != bb2LoopMap.end();
     }
 
-    const LoopBBs& getLoopInfo(const SVFBasicBlock* bb) const;
+    const LoopBBs& getLoopInfo(const BasicBlockNode* bb) const;
 
-    inline const SVFBasicBlock* getLoopHeader(const LoopBBs& lp) const
+    inline const BasicBlockNode* getLoopHeader(const LoopBBs& lp) const
     {
         assert(!lp.empty() && "this is not a loop, empty basic block");
         return lp.front();
     }
 
-    inline bool loopContainsBB(const LoopBBs& lp, const SVFBasicBlock* bb) const
+    inline bool loopContainsBB(const LoopBBs& lp, const BasicBlockNode* bb) const
     {
         return std::find(lp.begin(), lp.end(), bb) != lp.end();
     }
 
-    inline void addToBB2LoopMap(const SVFBasicBlock* bb, const SVFBasicBlock* loopBB)
+    inline void addToBB2LoopMap(const BasicBlockNode* bb, const BasicBlockNode* loopBB)
     {
         bb2LoopMap[bb].push_back(loopBB);
     }
 
-    inline const Map<const SVFBasicBlock*,BBSet>& getPostDomTreeMap() const
+    inline const Map<const BasicBlockNode*,BBSet>& getPostDomTreeMap() const
     {
         return pdtBBsMap;
     }
 
-    inline Map<const SVFBasicBlock*,BBSet>& getPostDomTreeMap()
+    inline Map<const BasicBlockNode*,BBSet>& getPostDomTreeMap()
     {
         return pdtBBsMap;
     }
 
-    inline const Map<const SVFBasicBlock*,u32_t>& getBBPDomLevel() const
+    inline const Map<const BasicBlockNode*,u32_t>& getBBPDomLevel() const
     {
         return bb2PdomLevel;
     }
 
-    inline Map<const SVFBasicBlock*,u32_t>& getBBPDomLevel()
+    inline Map<const BasicBlockNode*,u32_t>& getBBPDomLevel()
     {
         return bb2PdomLevel;
     }
 
-    inline const Map<const SVFBasicBlock*,const SVFBasicBlock*>& getBB2PIdom() const
+    inline const Map<const BasicBlockNode*,const BasicBlockNode*>& getBB2PIdom() const
     {
         return bb2PIdom;
     }
 
-    inline Map<const SVFBasicBlock*,const SVFBasicBlock*>& getBB2PIdom()
+    inline Map<const BasicBlockNode*,const BasicBlockNode*>& getBB2PIdom()
     {
         return bb2PIdom;
     }
 
 
-    inline Map<const SVFBasicBlock*,BBSet>& getDomTreeMap()
+    inline Map<const BasicBlockNode*,BBSet>& getDomTreeMap()
     {
         return dtBBsMap;
     }
 
-    inline const Map<const SVFBasicBlock*,BBSet>& getDomTreeMap() const
+    inline const Map<const BasicBlockNode*,BBSet>& getDomTreeMap() const
     {
         return dtBBsMap;
     }
 
-    inline bool isUnreachable(const SVFBasicBlock* bb) const
+    inline bool isUnreachable(const BasicBlockNode* bb) const
     {
         return std::find(reachableBBs.begin(), reachableBBs.end(), bb) ==
                reachableBBs.end();
@@ -162,16 +162,16 @@ public:
         reachableBBs = bbs;
     }
 
-    void getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exitbbs) const;
+    void getExitBlocksOfLoop(const BasicBlockNode* bb, BBList& exitbbs) const;
 
-    bool isLoopHeader(const SVFBasicBlock* bb) const;
+    bool isLoopHeader(const BasicBlockNode* bb) const;
 
-    bool dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const;
+    bool dominate(const BasicBlockNode* bbKey, const BasicBlockNode* bbValue) const;
 
-    bool postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const;
+    bool postDominate(const BasicBlockNode* bbKey, const BasicBlockNode* bbValue) const;
 
     /// find nearest common post dominator of two basic blocks
-    const SVFBasicBlock *findNearestCommonPDominator(const SVFBasicBlock *A, const SVFBasicBlock *B) const;
+    const BasicBlockNode*findNearestCommonPDominator(const BasicBlockNode*A, const BasicBlockNode*B) const;
 };
 
 class SVFValue
@@ -299,7 +299,7 @@ class SVFFunction : public SVFValue
     friend class SVFIRBuilder;
 
 public:
-    typedef std::vector<const SVFBasicBlock*>::const_iterator const_iterator;
+    typedef std::vector<const BasicBlockNode*>::const_iterator const_iterator;
     typedef SVFLoopAndDomInfo::BBSet BBSet;
     typedef SVFLoopAndDomInfo::BBList BBList;
     typedef SVFLoopAndDomInfo::LoopBBs LoopBBs;
@@ -314,9 +314,9 @@ private:
     const SVFFunctionType* funcType; /// FunctionType, which is different from the type (PointerType) of this SVFFunction
     SVFLoopAndDomInfo* loopAndDom;  /// the loop and dominate information
     const SVFFunction* realDefFun;  /// the definition of a function across multiple modules
-    std::vector<const SVFBasicBlock*> allBBs;   /// all BasicBlocks of this function
+    std::vector<const BasicBlockNode*> allBBs;   /// all BasicBlocks of this function
     std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
-    SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
+    BasicBlockNode*exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
     const CallGraphNode *callGraphNode;          /// call graph node for this function
 
 protected:
@@ -326,7 +326,7 @@ protected:
     }
 
     ///@{ attributes to be set only through Module builders e.g., LLVMModule
-    inline void addBasicBlock(const SVFBasicBlock* bb)
+    inline void addBasicBlock(const BasicBlockNode* bb)
     {
         allBBs.push_back(bb);
     }
@@ -414,7 +414,7 @@ public:
         return !allBBs.empty();
     }
 
-    inline const SVFBasicBlock* getEntryBlock() const
+    inline const BasicBlockNode* getEntryBlock() const
     {
         assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
         return allBBs.front();
@@ -422,16 +422,16 @@ public:
 
     /// Carefully! when you call getExitBB, you need ensure the function has return instruction
     /// more refer to: https://github.com/SVF-tools/SVF/pull/1262
-    const SVFBasicBlock* getExitBB() const;
+    const BasicBlockNode* getExitBB() const;
 
-    void setExitBlock(SVFBasicBlock *bb);
+    void setExitBlock(BasicBlockNode*bb);
 
-    inline const SVFBasicBlock* front() const
+    inline const BasicBlockNode* front() const
     {
         return getEntryBlock();
     }
 
-    inline const SVFBasicBlock* back() const
+    inline const BasicBlockNode* back() const
     {
         assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
         /// Carefully! 'back' is just the last basic block of function,
@@ -450,12 +450,12 @@ public:
         return allBBs.end();
     }
 
-    inline const std::vector<const SVFBasicBlock*>& getBasicBlockList() const
+    inline const std::vector<const BasicBlockNode*>& getBasicBlockList() const
     {
         return allBBs;
     }
 
-    inline const std::vector<const SVFBasicBlock*>& getReachableBBs() const
+    inline const std::vector<const BasicBlockNode*>& getReachableBBs() const
     {
         return loopAndDom->getReachableBBs();
     }
@@ -470,52 +470,52 @@ public:
         return  !isNotRet;
     }
 
-    inline void getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exitbbs) const
+    inline void getExitBlocksOfLoop(const BasicBlockNode* bb, BBList& exitbbs) const
     {
         return loopAndDom->getExitBlocksOfLoop(bb,exitbbs);
     }
 
-    inline bool hasLoopInfo(const SVFBasicBlock* bb) const
+    inline bool hasLoopInfo(const BasicBlockNode* bb) const
     {
         return loopAndDom->hasLoopInfo(bb);
     }
 
-    const LoopBBs& getLoopInfo(const SVFBasicBlock* bb) const
+    const LoopBBs& getLoopInfo(const BasicBlockNode* bb) const
     {
         return loopAndDom->getLoopInfo(bb);
     }
 
-    inline const SVFBasicBlock* getLoopHeader(const BBList& lp) const
+    inline const BasicBlockNode* getLoopHeader(const BBList& lp) const
     {
         return loopAndDom->getLoopHeader(lp);
     }
 
-    inline bool loopContainsBB(const BBList& lp, const SVFBasicBlock* bb) const
+    inline bool loopContainsBB(const BBList& lp, const BasicBlockNode* bb) const
     {
         return loopAndDom->loopContainsBB(lp,bb);
     }
 
-    inline const Map<const SVFBasicBlock*,BBSet>& getDomTreeMap() const
+    inline const Map<const BasicBlockNode*,BBSet>& getDomTreeMap() const
     {
         return loopAndDom->getDomTreeMap();
     }
 
-    inline const Map<const SVFBasicBlock*,BBSet>& getDomFrontierMap() const
+    inline const Map<const BasicBlockNode*,BBSet>& getDomFrontierMap() const
     {
         return loopAndDom->getDomFrontierMap();
     }
 
-    inline bool isLoopHeader(const SVFBasicBlock* bb) const
+    inline bool isLoopHeader(const BasicBlockNode* bb) const
     {
         return loopAndDom->isLoopHeader(bb);
     }
 
-    inline bool dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
+    inline bool dominate(const BasicBlockNode* bbKey, const BasicBlockNode* bbValue) const
     {
         return loopAndDom->dominate(bbKey,bbValue);
     }
 
-    inline bool postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
+    inline bool postDominate(const BasicBlockNode* bbKey, const BasicBlockNode* bbValue) const
     {
         return loopAndDom->postDominate(bbKey,bbValue);
     }
@@ -529,13 +529,13 @@ class SVFInstruction : public SVFValue
     friend class SVFIRReader;
 
 private:
-    const SVFBasicBlock* bb;    /// The BasicBlock where this Instruction resides
+    const BasicBlockNode* bb;    /// The BasicBlock where this Instruction resides
     bool terminator;    /// return true if this is a terminator instruction
     bool ret;           /// return true if this is an return instruction of a function
 
 public:
     /// Constructor without name, set name with setName()
-    SVFInstruction(const SVFType* ty, const SVFBasicBlock* b, bool tm,
+    SVFInstruction(const SVFType* ty, const BasicBlockNode* b, bool tm,
                    bool isRet, SVFValKind k = SVFInst);
     SVFInstruction(void) = delete;
 
@@ -546,7 +546,7 @@ public:
                node->getKind() == SVFVCall;
     }
 
-    inline const SVFBasicBlock* getParent() const
+    inline const BasicBlockNode* getParent() const
     {
         return bb;
     }
@@ -587,7 +587,7 @@ protected:
     /// @}
 
 public:
-    SVFCallInst(const SVFType* ty, const SVFBasicBlock* b, bool va, bool tm, SVFValKind k = SVFCall) :
+    SVFCallInst(const SVFType* ty, const BasicBlockNode* b, bool va, bool tm, SVFValKind k = SVFCall) :
         SVFInstruction(ty, b, tm, false, k), varArg(va), calledVal(nullptr)
     {
     }

@@ -126,7 +126,7 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
                 continue;
             for (SVFFunction::const_iterator bit =  fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
             {
-                const SVFBasicBlock* bb = *bit;
+                const BasicBlockNode* bb = *bit;
                 for (const auto& icfgNode : bb->getICFGNodeList())
                 {
                     for(const SVFStmt* stmt : pag->getSVFStmtList(icfgNode))

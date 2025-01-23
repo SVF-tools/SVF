@@ -230,7 +230,7 @@ void SVFStat::branchStat()
         for (SVFFunction::const_iterator bbIt = func->begin(), bbEit = func->end();
                 bbIt != bbEit; ++bbIt)
         {
-            const SVFBasicBlock* bb = *bbIt;
+            const BasicBlockNode* bb = *bbIt;
             u32_t numOfSucc = bb->getNumSuccessors();
             if (numOfSucc == 2)
                 numOfBB_2Succ++;

@@ -167,12 +167,12 @@ class LoadMU : public MSSAMU<Cond>
 
 private:
     const LoadStmt* inst;
-    const SVFBasicBlock* bb;
+    const BasicBlockNode* bb;
 
 public:
     /// Constructor/Destructor for MU
     //@{
-    LoadMU(const SVFBasicBlock* b,const LoadStmt* i, const MemRegion* m, Cond c = true) :
+    LoadMU(const BasicBlockNode* b,const LoadStmt* i, const MemRegion* m, Cond c = true) :
         MSSAMU<Cond>(MSSAMU<Cond>::LoadMSSAMU,m,c), inst(i), bb(b)
     {
     }
@@ -189,7 +189,7 @@ public:
     }
 
     /// Return basic block
-    inline const SVFBasicBlock* getBasicBlock() const
+    inline const BasicBlockNode* getBasicBlock() const
     {
         return bb;
     }
@@ -244,7 +244,7 @@ public:
     }
 
     /// Return basic block
-    inline const SVFBasicBlock* getBasicBlock() const
+    inline const BasicBlockNode* getBasicBlock() const
     {
         return callsite->getBB();
     }
@@ -461,12 +461,12 @@ template<class Cond>
 class StoreCHI : public MSSACHI<Cond>
 {
 private:
-    const SVFBasicBlock* bb;
+    const BasicBlockNode* bb;
     const StoreStmt* inst;
 public:
     /// Constructors for StoreCHI
     //@{
-    StoreCHI(const SVFBasicBlock* b, const StoreStmt* i, const MemRegion* m, Cond c = true) :
+    StoreCHI(const BasicBlockNode* b, const StoreStmt* i, const MemRegion* m, Cond c = true) :
         MSSACHI<Cond>(MSSADEF::StoreMSSACHI,m,c), bb(b), inst(i)
     {
     }
@@ -476,7 +476,7 @@ public:
     //@}
 
     /// Get basic block
-    inline const SVFBasicBlock* getBasicBlock() const
+    inline const BasicBlockNode* getBasicBlock() const
     {
         return bb;
     }
@@ -535,7 +535,7 @@ public:
     //@}
 
     /// Return basic block
-    inline const SVFBasicBlock* getBasicBlock() const
+    inline const BasicBlockNode* getBasicBlock() const
     {
         return callsite->getBB();
     }
@@ -632,13 +632,13 @@ class MSSAPHI : public MSSADEF
 public:
     typedef Map<u32_t,const MRVer*> OPVers;
 private:
-    const SVFBasicBlock* bb;
+    const BasicBlockNode* bb;
     OPVers opVers;
     Cond cond;
 public:
     /// Constructors for PHI
     //@{
-    MSSAPHI(const SVFBasicBlock* b, const MemRegion* m, Cond c = true) :
+    MSSAPHI(const BasicBlockNode* b, const MemRegion* m, Cond c = true) :
         MSSADEF(MSSADEF::SSAPHI,m), bb(b), cond(c)
     {
     }
@@ -681,7 +681,7 @@ public:
     //@}
 
     /// Return the basic block
-    inline const SVFBasicBlock* getBasicBlock() const
+    inline const BasicBlockNode* getBasicBlock() const
     {
         return bb;
     }

@@ -71,7 +71,7 @@ bool LLVMUtil::isObject(const Value*  ref)
 /*!
  * Return reachable bbs from function entry
  */
-void LLVMUtil::getFunReachableBBs (const Function* fun, std::vector<const SVFBasicBlock*> &reachableBBs)
+void LLVMUtil::getFunReachableBBs (const Function* fun, std::vector<const BasicBlockNode*> &reachableBBs)
 {
     assert(!SVFUtil::isExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun)) && "The calling function cannot be an external function.");
     //initial DominatorTree
@@ -84,7 +84,7 @@ void LLVMUtil::getFunReachableBBs (const Function* fun, std::vector<const SVFBas
     {
         const BasicBlock* bb = bbVec.back();
         bbVec.pop_back();
-        const SVFBasicBlock* svfbb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(bb);
+        const BasicBlockNode* svfbb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(bb);
         reachableBBs.push_back(svfbb);
         if(DomTreeNode *dtNode = dt.getNode(const_cast<BasicBlock*>(bb)))
         {

@@ -159,7 +159,7 @@ void MHP::updateNonCandidateFunInterleaving()
             {
                 const CallStrCxt& curCxt = cts.getContext();
 
-                for (const SVFBasicBlock* svfbb : fun->getBasicBlockList())
+                for (const BasicBlockNode* svfbb : fun->getBasicBlockList())
                 {
                     for (const ICFGNode* curNode : svfbb->getICFGNodeList())
                     {
@@ -244,11 +244,11 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
     {
         if (fja->hasJoinLoop(call))
         {
-            std::vector<const SVFBasicBlock*> exitbbs;
+            std::vector<const BasicBlockNode*> exitbbs;
             call->getFun()->getExitBlocksOfLoop(call->getBB(), exitbbs);
             while (!exitbbs.empty())
             {
-                const SVFBasicBlock* eb = exitbbs.back();
+                const BasicBlockNode* eb = exitbbs.back();
                 exitbbs.pop_back();
                 const ICFGNode* svfEntryInst = eb->front();
                 CxtThreadStmt newCts(cts.getTid(), curCxt, svfEntryInst);
@@ -269,11 +269,11 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
     {
         if (fja->hasJoinLoop(call))
         {
-            std::vector<const SVFBasicBlock*> exitbbs;
+            std::vector<const BasicBlockNode*> exitbbs;
             call->getFun()->getExitBlocksOfLoop(call->getBB(), exitbbs);
             while (!exitbbs.empty())
             {
-                const SVFBasicBlock* eb = exitbbs.back();
+                const BasicBlockNode* eb = exitbbs.back();
                 exitbbs.pop_back();
                 const ICFGNode* svfEntryInst = eb->front();
                 CxtThreadStmt newCts(cts.getTid(), cts.getContext(), svfEntryInst);
@@ -826,11 +826,11 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
             if (hasJoinLoop(SVFUtil::cast<CallICFGNode>(forkSite)))
             {
                 LoopBBs& joinLoop = getJoinLoop(SVFUtil::cast<CallICFGNode>(forkSite));
-                std::vector<const SVFBasicBlock *> exitbbs;
+                std::vector<const BasicBlockNode*> exitbbs;
                 joinSite->getFun()->getExitBlocksOfLoop(joinSite->getBB(), exitbbs);
                 while (!exitbbs.empty())
                 {
-                    const SVFBasicBlock* eb = exitbbs.back();
+                    const BasicBlockNode* eb = exitbbs.back();
                     exitbbs.pop_back();
                     const ICFGNode* svfEntryInst = eb->front();
                     CxtStmt newCts(curCxt, svfEntryInst);
@@ -857,11 +857,11 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
         {
             if (hasJoinLoop(SVFUtil::cast<CallICFGNode>(forkSite)))
             {
-                std::vector<const SVFBasicBlock*> exitbbs;
+                std::vector<const BasicBlockNode*> exitbbs;
                 joinSite->getFun()->getExitBlocksOfLoop(joinSite->getBB(), exitbbs);
                 while (!exitbbs.empty())
                 {
-                    const SVFBasicBlock* eb = exitbbs.back();
+                    const BasicBlockNode* eb = exitbbs.back();
                     exitbbs.pop_back();
                     const ICFGNode* svfEntryInst = eb->front();
                     CxtStmt newCts(curCxt, svfEntryInst);

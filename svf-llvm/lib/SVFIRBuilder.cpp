@@ -511,7 +511,7 @@ void SVFIRBuilder::processCE(const Value* val)
             bool constGep = computeGepOffset(gepce, ap);
             // must invoke pag methods here, otherwise it will be a dead recursion cycle
             const SVFValue* cval = getCurrentValue();
-            const SVFBasicBlock* cbb = getCurrentBB();
+            const BasicBlockNode* cbb = getCurrentBB();
             setCurrentLocation(gepce, nullptr);
             /*
              * The gep edge created are like constexpr (same edge may appear at multiple callsites)
@@ -526,7 +526,7 @@ void SVFIRBuilder::processCE(const Value* val)
             const Constant* opnd = castce->getOperand(0);
             processCE(opnd);
             const SVFValue* cval = getCurrentValue();
-            const SVFBasicBlock* cbb = getCurrentBB();
+            const BasicBlockNode* cbb = getCurrentBB();
             setCurrentLocation(castce, nullptr);
             addCopyEdge(pag->getValueNode(llvmModuleSet()->getSVFValue(opnd)), pag->getValueNode(llvmModuleSet()->getSVFValue(castce)), CopyStmt::BITCAST);
             setCurrentLocation(cval, cbb);
@@ -539,7 +539,7 @@ void SVFIRBuilder::processCE(const Value* val)
             processCE(src1);
             processCE(src2);
             const SVFValue* cval = getCurrentValue();
-            const SVFBasicBlock* cbb = getCurrentBB();
+            const BasicBlockNode* cbb = getCurrentBB();
             setCurrentLocation(selectce, nullptr);
             NodeID cond = pag->getValueNode(llvmModuleSet()->getSVFValue(selectce->getOperand(0)));
             NodeID nsrc1 = pag->getValueNode(llvmModuleSet()->getSVFValue(src1));
@@ -553,7 +553,7 @@ void SVFIRBuilder::processCE(const Value* val)
         {
             const Constant* opnd = int2Ptrce->getOperand(0);
             processCE(opnd);
-            const SVFBasicBlock* cbb = getCurrentBB();
+            const BasicBlockNode* cbb = getCurrentBB();
             const SVFValue* cval = getCurrentValue();
             setCurrentLocation(int2Ptrce, nullptr);
             addCopyEdge(pag->getValueNode(llvmModuleSet()->getSVFValue(opnd)), pag->getValueNode(llvmModuleSet()->getSVFValue(int2Ptrce)), CopyStmt::INTTOPTR);
@@ -563,7 +563,7 @@ void SVFIRBuilder::processCE(const Value* val)
         {
             const Constant* opnd = ptr2Intce->getOperand(0);
             processCE(opnd);
-            const SVFBasicBlock* cbb = getCurrentBB();
+            const BasicBlockNode* cbb = getCurrentBB();
             const SVFValue* cval = getCurrentValue();
             setCurrentLocation(ptr2Intce, nullptr);
             addCopyEdge(pag->getValueNode(llvmModuleSet()->getSVFValue(opnd)), pag->getValueNode(llvmModuleSet()->getSVFValue(ptr2Intce)), CopyStmt::PTRTOINT);
@@ -573,7 +573,7 @@ void SVFIRBuilder::processCE(const Value* val)
         {
             // we don't handle trunc and cmp instruction for now
             const SVFValue* cval = getCurrentValue();
-            const SVFBasicBlock* cbb = getCurrentBB();
+            const BasicBlockNode* cbb = getCurrentBB();
             setCurrentLocation(ref, nullptr);
             NodeID dst = pag->getValueNode(llvmModuleSet()->getSVFValue(ref));
             addBlackHoleAddrEdge(dst);
@@ -583,7 +583,7 @@ void SVFIRBuilder::processCE(const Value* val)
         {
             // we don't handle binary constant expression like add(x,y) now
             const SVFValue* cval = getCurrentValue();
-            const SVFBasicBlock* cbb = getCurrentBB();
+            const BasicBlockNode* cbb = getCurrentBB();
             setCurrentLocation(ref, nullptr);
             NodeID dst = pag->getValueNode(llvmModuleSet()->getSVFValue(ref));
             addBlackHoleAddrEdge(dst);
@@ -593,7 +593,7 @@ void SVFIRBuilder::processCE(const Value* val)
         {
             // we don't handle unary constant expression like fneg(x) now
             const SVFValue* cval = getCurrentValue();
-            const SVFBasicBlock* cbb = getCurrentBB();
+            const BasicBlockNode* cbb = getCurrentBB();
             setCurrentLocation(ref, nullptr);
             NodeID dst = pag->getValueNode(llvmModuleSet()->getSVFValue(ref));
             addBlackHoleAddrEdge(dst);
@@ -608,7 +608,7 @@ void SVFIRBuilder::processCE(const Value* val)
             // blockaddress instruction (e.g. i8* blockaddress(@run_vm, %182))
             // is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and SVFIRBuilder.cpp:183-194
             const SVFValue* cval = getCurrentValue();
-            const SVFBasicBlock* cbb = getCurrentBB();
+            const BasicBlockNode* cbb = getCurrentBB();
             setCurrentLocation(ref, nullptr);
             NodeID dst = pag->getValueNode(llvmModuleSet()->getSVFValue(ref));
             addAddrEdge(pag->getConstantNode(), dst);
@@ -1398,7 +1398,7 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const 
         // We assume every GepValNode and its GepEdge to the baseNode are unique across the whole program
         // We preserve the current BB information to restore it after creating the gepNode
         const SVFValue* cval = getCurrentValue();
-        const SVFBasicBlock* cbb = getCurrentBB();
+        const BasicBlockNode* cbb = getCurrentBB();
         setCurrentLocation(curVal, nullptr);
         LLVMModuleSet* llvmmodule = llvmModuleSet();
         NodeID gepNode = pag->addGepValNode(curVal, llvmmodule->getSVFValue(val), ap,

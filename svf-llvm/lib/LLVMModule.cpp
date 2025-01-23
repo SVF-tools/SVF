@@ -91,6 +91,7 @@ LLVMModuleSet::~LLVMModuleSet()
         item.second = nullptr;
     }
     delete typeInference;
+    delete basicBlockGraph;
     typeInference = nullptr;
 }
 
@@ -170,7 +171,7 @@ void LLVMModuleSet::build()
     if(preProcessed==false)
         prePassSchedule();
 
-    bbg = new BasicBlockGraph();
+    basicBlockGraph = new BasicBlockGraph();
 
     buildFunToFunMap();
     buildGlobalDefToRepMap();
@@ -300,7 +301,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
 
     for (const BasicBlock& bb : *func)
     {
-        SVFBasicBlock* svfBB = bbg->addBasicBlock(svfFunc);
+        BasicBlockNode* svfBB = basicBlockGraph->addBasicBlock(svfFunc);
         svfFunc->addBasicBlock(svfBB);
         addBasicBlockMap(&bb, svfBB);
         for (const Instruction& inst : bb)
@@ -350,15 +351,15 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
     for (Function::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
     {
         const BasicBlock* bb = &*bit;
-        SVFBasicBlock* svfbb = getSVFBasicBlock(bb);
+        BasicBlockNode* svfbb = getSVFBasicBlock(bb);
         for (succ_const_iterator succ_it = succ_begin(bb); succ_it != succ_end(bb); succ_it++)
         {
-            const SVFBasicBlock* svf_scc_bb = getSVFBasicBlock(*succ_it);
+            const BasicBlockNode* svf_scc_bb = getSVFBasicBlock(*succ_it);
             svfbb->addSuccBasicBlock(svf_scc_bb);
         }
         for (const_pred_iterator pred_it = pred_begin(bb); pred_it != pred_end(bb); pred_it++)
         {
-            const SVFBasicBlock* svf_pred_bb = getSVFBasicBlock(*pred_it);
+            const BasicBlockNode* svf_pred_bb = getSVFBasicBlock(*pred_it);
             svfbb->addPredBasicBlock(svf_pred_bb);
         }
 
@@ -403,7 +404,7 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
     // This ensures that each function that has definition must have an exit BB
     if (svfFun->exitBlock == nullptr && svfFun->hasBasicBlock())
     {
-        SVFBasicBlock* retBB = const_cast<SVFBasicBlock*>(svfFun->back());
+        BasicBlockNode* retBB = const_cast<BasicBlockNode*>(svfFun->back());
         assert((LLVMUtil::functionDoesNotRet(func) ||
                 SVFUtil::isa<ReturnInst>(&func->back().back())) &&
                "last inst must be return inst");
@@ -424,25 +425,25 @@ void LLVMModuleSet::initDomTree(SVFFunction* svffun, const Function* fun)
     PostDominatorTree pdt = PostDominatorTree(const_cast<Function&>(*fun));
     SVFLoopAndDomInfo* ld = svffun->getLoopAndDomInfo();
 
-    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>> & dfBBsMap = ld->getDomFrontierMap();
+    Map<const BasicBlockNode*,Set<const BasicBlockNode*>> & dfBBsMap = ld->getDomFrontierMap();
     for (DominanceFrontierBase::const_iterator dfIter = df.begin(), eDfIter = df.end(); dfIter != eDfIter; dfIter++)
     {
         const BasicBlock* keyBB = dfIter->first;
         const std::set<BasicBlock* >& domSet = dfIter->second;
-        Set<const SVFBasicBlock*>& valueBasicBlocks = dfBBsMap[getSVFBasicBlock(keyBB)];
+        Set<const BasicBlockNode*>& valueBasicBlocks = dfBBsMap[getSVFBasicBlock(keyBB)];
         for (const BasicBlock* bbValue:domSet)
         {
             valueBasicBlocks.insert(getSVFBasicBlock(bbValue));
         }
     }
-    std::vector<const SVFBasicBlock*> reachableBBs;
+    std::vector<const BasicBlockNode*> reachableBBs;
     LLVMUtil::getFunReachableBBs(fun, reachableBBs);
     ld->setReachableBBs(reachableBBs);
 
     for (Function::const_iterator bit = fun->begin(), beit = fun->end(); bit!=beit; ++bit)
     {
         const BasicBlock &bb = *bit;
-        SVFBasicBlock* svfBB = getSVFBasicBlock(&bb);
+        BasicBlockNode* svfBB = getSVFBasicBlock(&bb);
         if (DomTreeNode* dtNode = dt.getNode(&bb))
         {
             SVFLoopAndDomInfo::BBSet& bbSet = ld->getDomTreeMap()[svfBB];
@@ -458,7 +459,7 @@ void LLVMModuleSet::initDomTree(SVFFunction* svffun, const Function* fun)
             u32_t level = pdtNode->getLevel();
             ld->getBBPDomLevel()[svfBB] = level;
             BasicBlock* idomBB = pdtNode->getIDom()->getBlock();
-            const SVFBasicBlock* idom = idomBB == NULL ? NULL: getSVFBasicBlock(idomBB);
+            const BasicBlockNode* idom = idomBB == NULL ? NULL: getSVFBasicBlock(idomBB);
             ld->getBB2PIdom()[svfBB] = idom;
 
             SVFLoopAndDomInfo::BBSet& bbSet = ld->getPostDomTreeMap()[svfBB];
@@ -473,7 +474,7 @@ void LLVMModuleSet::initDomTree(SVFFunction* svffun, const Function* fun)
         {
             for (const BasicBlock* loopBlock : loop->getBlocks())
             {
-                const SVFBasicBlock* loopbb = getSVFBasicBlock(loopBlock);
+                const BasicBlockNode* loopbb = getSVFBasicBlock(loopBlock);
                 ld->addToBB2LoopMap(svfBB, loopbb);
             }
         }
@@ -1366,8 +1367,6 @@ SVFValue* LLVMModuleSet::getSVFValue(const Value* value)
 {
     if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
         return getSVFFunction(fun);
-//    else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(value))
-//        return getSVFBasicBlock(bb);
     else if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
         return getSVFInstruction(inst);
     else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(value))

@@ -25,23 +25,23 @@ const SVFType* StInfo::getOriginalElemType(u32_t fldIdx) const
     return nullptr;
 }
 
-const SVFLoopAndDomInfo::LoopBBs& SVFLoopAndDomInfo::getLoopInfo(const SVFBasicBlock* bb) const
+const SVFLoopAndDomInfo::LoopBBs& SVFLoopAndDomInfo::getLoopInfo(const BasicBlockNode* bb) const
 {
     assert(hasLoopInfo(bb) && "loopinfo does not exist (bb not in a loop)");
-    Map<const SVFBasicBlock*, LoopBBs>::const_iterator mapIter = bb2LoopMap.find(bb);
+    Map<const BasicBlockNode*, LoopBBs>::const_iterator mapIter = bb2LoopMap.find(bb);
     return mapIter->second;
 }
 
-void SVFLoopAndDomInfo::getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exitbbs) const
+void SVFLoopAndDomInfo::getExitBlocksOfLoop(const BasicBlockNode* bb, BBList& exitbbs) const
 {
     if (hasLoopInfo(bb))
     {
         const LoopBBs blocks = getLoopInfo(bb);
         if (!blocks.empty())
         {
-            for (const SVFBasicBlock* block : blocks)
+            for (const BasicBlockNode* block : blocks)
             {
-                for (const SVFBasicBlock* succ : block->getSuccessors())
+                for (const BasicBlockNode* succ : block->getSuccessors())
                 {
                     if ((std::find(blocks.begin(), blocks.end(), succ)==blocks.end()))
                         exitbbs.push_back(succ);
@@ -51,7 +51,7 @@ void SVFLoopAndDomInfo::getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exi
     }
 }
 
-bool SVFLoopAndDomInfo::dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
+bool SVFLoopAndDomInfo::dominate(const BasicBlockNode* bbKey, const BasicBlockNode* bbValue) const
 {
     if (bbKey == bbValue)
         return true;
@@ -68,8 +68,8 @@ bool SVFLoopAndDomInfo::dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock
         return false;
     }
 
-    const Map<const SVFBasicBlock*,BBSet>& dtBBsMap = getDomTreeMap();
-    Map<const SVFBasicBlock*,BBSet>::const_iterator mapIter = dtBBsMap.find(bbKey);
+    const Map<const BasicBlockNode*,BBSet>& dtBBsMap = getDomTreeMap();
+    Map<const BasicBlockNode*,BBSet>::const_iterator mapIter = dtBBsMap.find(bbKey);
     if (mapIter != dtBBsMap.end())
     {
         const BBSet & dtBBs = mapIter->second;
@@ -82,7 +82,7 @@ bool SVFLoopAndDomInfo::dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock
     return false;
 }
 
-bool SVFLoopAndDomInfo::postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
+bool SVFLoopAndDomInfo::postDominate(const BasicBlockNode* bbKey, const BasicBlockNode* bbValue) const
 {
     if (bbKey == bbValue)
         return true;
@@ -99,8 +99,8 @@ bool SVFLoopAndDomInfo::postDominate(const SVFBasicBlock* bbKey, const SVFBasicB
         return false;
     }
 
-    const Map<const SVFBasicBlock*,BBSet>& dtBBsMap = getPostDomTreeMap();
-    Map<const SVFBasicBlock*,BBSet>::const_iterator mapIter = dtBBsMap.find(bbKey);
+    const Map<const BasicBlockNode*,BBSet>& dtBBsMap = getPostDomTreeMap();
+    Map<const BasicBlockNode*,BBSet>::const_iterator mapIter = dtBBsMap.find(bbKey);
     if (mapIter != dtBBsMap.end())
     {
         const BBSet & dtBBs = mapIter->second;
@@ -112,7 +112,7 @@ bool SVFLoopAndDomInfo::postDominate(const SVFBasicBlock* bbKey, const SVFBasicB
     return false;
 }
 
-const SVFBasicBlock* SVFLoopAndDomInfo::findNearestCommonPDominator(const SVFBasicBlock* A, const SVFBasicBlock* B) const
+const BasicBlockNode* SVFLoopAndDomInfo::findNearestCommonPDominator(const BasicBlockNode* A, const BasicBlockNode* B) const
 {
     assert(A && B && "Pointers are not valid");
     assert(A->getParent() == B->getParent() &&
@@ -138,7 +138,7 @@ const SVFBasicBlock* SVFLoopAndDomInfo::findNearestCommonPDominator(const SVFBas
     return A;
 }
 
-bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
+bool SVFLoopAndDomInfo::isLoopHeader(const BasicBlockNode* bb) const
 {
     if (hasLoopInfo(bb))
     {
@@ -160,7 +160,7 @@ SVFFunction::SVFFunction(const SVFType* ty, const SVFFunctionType* ft,
 
 SVFFunction::~SVFFunction()
 {
-    for(const SVFBasicBlock* bb : allBBs)
+    for(const BasicBlockNode* bb : allBBs)
         delete bb;
     for(const SVFArgument* arg : allArgs)
         delete arg;
@@ -183,21 +183,21 @@ bool SVFFunction::isVarArg() const
     return varArg;
 }
 
-const SVFBasicBlock *SVFFunction::getExitBB() const
+const BasicBlockNode*SVFFunction::getExitBB() const
 {
     assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
     assert(exitBlock && "must have an exitBlock");
     return exitBlock;
 }
 
-void SVFFunction::setExitBlock(SVFBasicBlock *bb)
+void SVFFunction::setExitBlock(BasicBlockNode*bb)
 {
     assert(!exitBlock && "have already set exit Basicblock!");
     exitBlock = bb;
 }
 
 
-SVFInstruction::SVFInstruction(const SVFType* ty, const SVFBasicBlock* b,
+SVFInstruction::SVFInstruction(const SVFType* ty, const BasicBlockNode* b,
                                bool tm, bool isRet, SVFValKind k)
     : SVFValue(ty, k), bb(b), terminator(tm), ret(isRet)
 {

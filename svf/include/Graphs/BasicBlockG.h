@@ -1,8 +1,8 @@
-//===- BasicBlockGraph.h -- ICFG node------------------------------------------------//
+//===- BasicBlockG.h -- BasicBlock node------------------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013-2018>  <Yulei Sui>
+// Copyright (C) <2013-2025>  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
@@ -23,21 +23,24 @@
 /*
  * ICFGNode.h
  *
- *  Created on: Sep 11, 2018
- *      Author: Yulei
+ *  Created on: 23 Jan, 2025
+ *      Author: Jiawei, Xiao
  */
 
 #ifndef BASICBLOCKGRAPH_H_
 #define BASICBLOCKGRAPH_H_
 #include "GenericGraph.h"
+#include <sstream>
+#include <algorithm>
+
 
 namespace SVF
 {
-class SVFBasicBlock;
+class BasicBlockNode;
 class BasicBlockEdge;
 class ICFGNode;
 class SVFFunction;
-typedef GenericEdge<SVFBasicBlock> GenericBasicBlockEdgeTy;
+typedef GenericEdge<BasicBlockNode> GenericBasicBlockEdgeTy;
 class BasicBlockEdge: public GenericBasicBlockEdgeTy
 {
     friend class SVFIRWriter;
@@ -46,7 +49,7 @@ class BasicBlockEdge: public GenericBasicBlockEdgeTy
 public:
 public:
     /// Constructor
-    BasicBlockEdge(SVFBasicBlock* s, SVFBasicBlock* d) : GenericBasicBlockEdgeTy(s, d, 0)
+    BasicBlockEdge(BasicBlockNode* s, BasicBlockNode* d) : GenericBasicBlockEdgeTy(s, d, 0)
     {
     }
     /// Destructor
@@ -71,8 +74,8 @@ public:
 };
 
 
-typedef GenericNode<SVFBasicBlock, BasicBlockEdge> GenericBasicBlockNodeTy;
-class SVFBasicBlock : public GenericBasicBlockNodeTy
+typedef GenericNode<BasicBlockNode, BasicBlockEdge> GenericBasicBlockNodeTy;
+class BasicBlockNode : public GenericBasicBlockNodeTy
 {
     friend class LLVMModuleSet;
     friend class SVFIRWriter;
@@ -84,8 +87,8 @@ class SVFBasicBlock : public GenericBasicBlockNodeTy
 
 public:
     typedef std::vector<const ICFGNode*>::const_iterator const_iterator;
-    std::vector<const SVFBasicBlock*> succBBs;
-    std::vector<const SVFBasicBlock*> predBBs;
+    std::vector<const BasicBlockNode*> succBBs;
+    std::vector<const BasicBlockNode*> predBBs;
 
 private:
     std::vector<const ICFGNode*> allICFGNodes;    ///< all ICFGNodes in this BasicBlock
@@ -109,27 +112,22 @@ public:
     /// Constructor without name
     ///TODO: rewrite ID and GNodeK
 
-    SVFBasicBlock(NodeID id, const SVFFunction* f): GenericBasicBlockNodeTy(id, OtherKd), fun(f){
+    BasicBlockNode(NodeID id, const SVFFunction* f): GenericBasicBlockNodeTy(id, OtherKd), fun(f){
 
     }
-    SVFBasicBlock() = delete;
-    ~SVFBasicBlock() {
+    BasicBlockNode() = delete;
+    ~BasicBlockNode() {
 
     }
 
     //@{
-    friend OutStream &operator<<(OutStream &o, const SVFBasicBlock &node)
+    friend OutStream &operator<<(OutStream &o, const BasicBlockNode&node)
     {
         o << node.toString();
         return o;
     }
     //@}
 
-
-
-    inline const std::string getName() const {
-        return "";
-    }
 
     inline const std::string toString() const {
         return "";
@@ -150,10 +148,10 @@ public:
         return allICFGNodes.end();
     }
 
-    inline void addSuccBasicBlock(const SVFBasicBlock* succ2)
+    inline void addSuccBasicBlock(const BasicBlockNode* succ2)
     {
         // TODO: discuss shall we check duplicated edges
-        SVFBasicBlock* succ = const_cast<SVFBasicBlock*>(succ2);
+        BasicBlockNode* succ = const_cast<BasicBlockNode*>(succ2);
         BasicBlockEdge* edge = new BasicBlockEdge(this, succ);
         this->addOutgoingEdge(edge);
         succ->addIncomingEdge(edge);
@@ -162,9 +160,9 @@ public:
 
     }
 
-    inline void addPredBasicBlock(const SVFBasicBlock* pred2)
+    inline void addPredBasicBlock(const BasicBlockNode* pred2)
     {
-        SVFBasicBlock* pred = const_cast<SVFBasicBlock*>(pred2);
+        BasicBlockNode* pred = const_cast<BasicBlockNode*>(pred2);
         BasicBlockEdge* edge = new BasicBlockEdge(pred, this);
         this->addIncomingEdge(edge);
         pred->addOutgoingEdge(edge);
@@ -194,9 +192,9 @@ public:
         return allICFGNodes.back();
     }
 
-    inline std::vector<const SVFBasicBlock*> getSuccessors() const
+    inline std::vector<const BasicBlockNode*> getSuccessors() const
     {
-        std::vector<const SVFBasicBlock*> res;
+        std::vector<const BasicBlockNode*> res;
         for (auto edge : this->getOutEdges())
         {
             res.push_back(edge->getDstNode());
@@ -204,9 +202,9 @@ public:
         return res;
     }
 
-    inline std::vector<const SVFBasicBlock*> getPredecessors() const
+    inline std::vector<const BasicBlockNode*> getPredecessors() const
     {
-        std::vector<const SVFBasicBlock*> res;
+        std::vector<const BasicBlockNode*> res;
         for (auto edge : this->getInEdges())
         {
             res.push_back(edge->getSrcNode());
@@ -217,9 +215,9 @@ public:
     {
         return this->getOutEdges().size();
     }
-    u32_t getBBSuccessorPos(const SVFBasicBlock* Succ) {
+    u32_t getBBSuccessorPos(const BasicBlockNode* Succ) {
         u32_t i = 0;
-        for (const SVFBasicBlock* SuccBB: succBBs)
+        for (const BasicBlockNode* SuccBB: succBBs)
         {
             if (SuccBB == Succ)
                 return i;
@@ -228,9 +226,9 @@ public:
         assert(false && "Didn't find successor edge?");
         return 0;
     }
-    u32_t getBBSuccessorPos(const SVFBasicBlock* Succ) const {
+    u32_t getBBSuccessorPos(const BasicBlockNode* Succ) const {
         u32_t i = 0;
-        for (const SVFBasicBlock* SuccBB: succBBs)
+        for (const BasicBlockNode* SuccBB: succBBs)
         {
             if (SuccBB == Succ)
                 return i;
@@ -240,9 +238,9 @@ public:
         return 0;
 
     }
-    u32_t getBBPredecessorPos(const SVFBasicBlock* succbb) {
+    u32_t getBBPredecessorPos(const BasicBlockNode* succbb) {
         u32_t pos = 0;
-        for (const SVFBasicBlock* PredBB : succbb->getPredecessors())
+        for (const BasicBlockNode* PredBB : succbb->getPredecessors())
         {
             if(PredBB == this)
                 return pos;
@@ -251,9 +249,9 @@ public:
         assert(false && "Didn't find predecessor edge?");
         return pos;
     }
-    u32_t getBBPredecessorPos(const SVFBasicBlock* succbb) const {
+    u32_t getBBPredecessorPos(const BasicBlockNode* succbb) const {
         u32_t pos = 0;
-        for (const SVFBasicBlock* PredBB : succbb->getPredecessors())
+        for (const BasicBlockNode* PredBB : succbb->getPredecessors())
         {
             if(PredBB == this)
                 return pos;
@@ -266,7 +264,7 @@ public:
 
 
 
-typedef GenericGraph<SVFBasicBlock, BasicBlockEdge> GenericBasicBlockGraphTy;
+typedef GenericGraph<BasicBlockNode, BasicBlockEdge> GenericBasicBlockGraphTy;
 class BasicBlockGraph: public GenericBasicBlockGraphTy
 {
 private:
@@ -277,10 +275,10 @@ public:
 
     }
 
-    SVFBasicBlock* addBasicBlock(const SVFFunction* f)
+    BasicBlockNode* addBasicBlock(const SVFFunction* f)
     {
         id++;
-        SVFBasicBlock* bb = new SVFBasicBlock(id, f);
+        BasicBlockNode* bb = new BasicBlockNode(id, f);
         addGNode(id, bb);
         return bb;
     }

@@ -56,7 +56,7 @@ public:
     typedef Map<const SVFGNode*, Condition> SVFGNodeToCondMap; 	///< map a SVFGNode to its condition during value-flow guard computation
 
     typedef FIFOWorkList<const SVFGNode*> VFWorkList;		    ///< worklist for value-flow guard computation
-    typedef FIFOWorkList<const SVFBasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
+    typedef FIFOWorkList<const BasicBlockNode*> CFWorkList;	///< worklist for control-flow guard computation
 
     typedef SaberCondAllocator::SVFGNodeToSVFGNodeSetMap SVFGNodeToSVFGNodeSetMap;
 
@@ -249,15 +249,15 @@ protected:
 
     /// Compute guards for value-flows
     //@{
-    inline Condition ComputeIntraVFGGuard(const SVFBasicBlock* src, const SVFBasicBlock* dst)
+    inline Condition ComputeIntraVFGGuard(const BasicBlockNode* src, const BasicBlockNode* dst)
     {
         return pathAllocator->ComputeIntraVFGGuard(src,dst);
     }
-    inline Condition ComputeInterCallVFGGuard(const SVFBasicBlock* src, const SVFBasicBlock* dst, const SVFBasicBlock* callBB)
+    inline Condition ComputeInterCallVFGGuard(const BasicBlockNode* src, const BasicBlockNode* dst, const BasicBlockNode* callBB)
     {
         return pathAllocator->ComputeInterCallVFGGuard(src,dst,callBB);
     }
-    inline Condition ComputeInterRetVFGGuard(const SVFBasicBlock* src, const SVFBasicBlock* dst, const SVFBasicBlock* retBB)
+    inline Condition ComputeInterRetVFGGuard(const BasicBlockNode* src, const BasicBlockNode* dst, const BasicBlockNode* retBB)
     {
         return pathAllocator->ComputeInterRetVFGGuard(src,dst,retBB);
     }
@@ -271,7 +271,7 @@ protected:
     /// Return the basic block where a SVFGNode resides in
     /// a SVFGNode may not in a basic block if it is not a program statement
     /// (e.g. PAGEdge is an global assignment or NullPtrSVFGNode)
-    inline const SVFBasicBlock* getSVFGNodeBB(const SVFGNode* node) const
+    inline const BasicBlockNode* getSVFGNodeBB(const SVFGNode* node) const
     {
         const ICFGNode* icfgNode = node->getICFGNode();
         if(SVFUtil::isa<NullPtrSVFGNode>(node) == false)

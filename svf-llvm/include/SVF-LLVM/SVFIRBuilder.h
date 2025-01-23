@@ -49,7 +49,7 @@ class SVFIRBuilder: public llvm::InstVisitor<SVFIRBuilder>
 private:
     SVFIR* pag;
     SVFModule* svfModule;
-    const SVFBasicBlock* curBB;	///< Current basic block during SVFIR construction when visiting the module
+    const BasicBlockNode* curBB;	///< Current basic block during SVFIR construction when visiting the module
     const SVFValue* curVal;	///< Current Value during SVFIR construction when visiting the module
 
 public:
@@ -243,7 +243,7 @@ protected:
         curBB = (bb == nullptr? nullptr : llvmModuleSet()->getSVFBasicBlock(bb));
         curVal = (val == nullptr ? nullptr: llvmModuleSet()->getSVFValue(val));
     }
-    inline void setCurrentLocation(const SVFValue* val, const SVFBasicBlock* bb)
+    inline void setCurrentLocation(const SVFValue* val, const BasicBlockNode* bb)
     {
         curBB = bb;
         curVal = val;
@@ -252,7 +252,7 @@ protected:
     {
         return curVal;
     }
-    inline const SVFBasicBlock* getCurrentBB() const
+    inline const BasicBlockNode* getCurrentBB() const
     {
         return curBB;
     }
@@ -261,7 +261,7 @@ protected:
     void addGlobalBlackHoleAddrEdge(NodeID node, const ConstantExpr *int2Ptrce)
     {
         const SVFValue* cval = getCurrentValue();
-        const SVFBasicBlock* cbb = getCurrentBB();
+        const BasicBlockNode* cbb = getCurrentBB();
         setCurrentLocation(int2Ptrce,nullptr);
         addBlackHoleAddrEdge(node);
         setCurrentLocation(cval,cbb);

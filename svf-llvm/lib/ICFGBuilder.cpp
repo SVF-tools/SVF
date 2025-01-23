@@ -253,7 +253,7 @@ InterICFGNode* ICFGBuilder::addInterBlockICFGNode(const Instruction* inst)
                          llvmModuleSet()->getSVFValue(called_llvmval));
     }
 
-    SVFBasicBlock* bb = llvmModuleSet()->getSVFBasicBlock(inst->getParent());
+    BasicBlockNode* bb = llvmModuleSet()->getSVFBasicBlock(inst->getParent());
 
     CallICFGNode* callICFGNode = icfg->addCallICFGNode(
                                      bb, llvmModuleSet()->getSVFType(inst->getType()),
@@ -333,7 +333,7 @@ inline ICFGNode* ICFGBuilder::addBlockICFGNode(const Instruction* inst)
         node = addInterBlockICFGNode(inst);
     else
         node = addIntraBlockICFGNode(inst);
-    const_cast<SVFBasicBlock*>(
+    const_cast<BasicBlockNode*>(
         llvmModuleSet()->getSVFBasicBlock(inst->getParent()))
     ->addICFGNode(node);
     return node;

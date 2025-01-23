@@ -140,7 +140,7 @@ void MemSSA::createMUCHI(const SVFFunction& fun)
     for (BBList::const_iterator iter = reachableBBs.begin(), eiter = reachableBBs.end();
             iter != eiter; ++iter)
     {
-        const SVFBasicBlock* bb = *iter;
+        const BasicBlockNode* bb = *iter;
         varKills.clear();
         for (const auto& inst: bb->getICFGNodeList())
         {
@@ -204,7 +204,7 @@ void MemSSA::insertPHI(const SVFFunction& fun)
     DBOUT(DMSSA,
           outs() << "\t insert phi for function " << fun.getName() << "\n");
 
-    const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& df = fun.getDomFrontierMap();
+    const Map<const BasicBlockNode*,Set<const BasicBlockNode*>>& df = fun.getDomFrontierMap();
     // record whether a phi of mr has already been inserted into the bb.
     BBToMRSetMap bb2MRSetMap;
 
@@ -217,16 +217,16 @@ void MemSSA::insertPHI(const SVFFunction& fun)
         BBList bbs = reg2BBMap[mr];
         while (!bbs.empty())
         {
-            const SVFBasicBlock* bb = bbs.back();
+            const BasicBlockNode* bb = bbs.back();
             bbs.pop_back();
-            Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>::const_iterator it = df.find(bb);
+            Map<const BasicBlockNode*,Set<const BasicBlockNode*>>::const_iterator it = df.find(bb);
             if(it == df.end())
             {
                 writeWrnMsg("bb not in the dominance frontier map??");
                 continue;
             }
-            const Set<const SVFBasicBlock*>& domSet = it->second;
-            for (const SVFBasicBlock* pbb : domSet)
+            const Set<const BasicBlockNode*>& domSet = it->second;
+            for (const BasicBlockNode* pbb : domSet)
             {
                 // if we never insert this phi node before
                 if (0 == bb2MRSetMap[pbb].count(mr))
@@ -259,7 +259,7 @@ void MemSSA::SSARename(const SVFFunction& fun)
  * Renaming for each memory regions
  * See the renaming algorithm in book Engineering A Compiler (Figure 9.12)
  */
-void MemSSA::SSARenameBB(const SVFBasicBlock& bb)
+void MemSSA::SSARenameBB(const BasicBlockNode& bb)
 {
 
     // record which mem region needs to pop stack
@@ -314,7 +314,7 @@ void MemSSA::SSARenameBB(const SVFBasicBlock& bb)
 
 
     // fill phi operands of succ basic blocks
-    for (const SVFBasicBlock* succ : bb.getSuccessors())
+    for (const BasicBlockNode* succ : bb.getSuccessors())
     {
         u32_t pos = bb.getBBPredecessorPos(succ);
         if (hasPHISet(succ))
@@ -323,12 +323,12 @@ void MemSSA::SSARenameBB(const SVFBasicBlock& bb)
 
     // for succ basic block in dominator tree
     const SVFFunction* fun = bb.getParent();
-    const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& dtBBsMap = fun->getDomTreeMap();
-    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>::const_iterator mapIter = dtBBsMap.find(&bb);
+    const Map<const BasicBlockNode*,Set<const BasicBlockNode*>>& dtBBsMap = fun->getDomTreeMap();
+    Map<const BasicBlockNode*,Set<const BasicBlockNode*>>::const_iterator mapIter = dtBBsMap.find(&bb);
     if (mapIter != dtBBsMap.end())
     {
-        const Set<const SVFBasicBlock*>& dtBBs = mapIter->second;
-        for (const SVFBasicBlock* dtbb : dtBBs)
+        const Set<const BasicBlockNode*>& dtBBs = mapIter->second;
+        for (const BasicBlockNode* dtbb : dtBBs)
         {
             SSARenameBB(*dtbb);
         }
@@ -597,7 +597,7 @@ void MemSSA::dumpMSSA(OutStream& Out)
         for (SVFFunction::const_iterator bit = fun->begin(), ebit = fun->end();
                 bit != ebit; ++bit)
         {
-            const SVFBasicBlock* bb = *bit;
+            const BasicBlockNode* bb = *bit;
             Out << bb->getName() << "\n";
             PHISet& phiSet = getPHISet(bb);
             for(PHISet::iterator pi = phiSet.begin(), epi = phiSet.end(); pi !=epi; ++pi)
