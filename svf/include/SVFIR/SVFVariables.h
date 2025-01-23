@@ -65,37 +65,19 @@ public:
     typedef s64_t GEdgeKind;
 
 protected:
-    const SVFValue* value; ///< value of this SVFIR node
     SVFStmt::KindToSVFStmtMapTy InEdgeKindToSetMap;
     SVFStmt::KindToSVFStmtMapTy OutEdgeKindToSetMap;
 
     /// Constructor to create an empty object (for deserialization)
-    SVFVar(NodeID i, PNODEK k) : GenericPAGNodeTy(i, k), value{} {}
+    SVFVar(NodeID i, PNODEK k) : GenericPAGNodeTy(i, k) {}
 
 
 public:
     /// Constructor
-    SVFVar(const SVFValue* val, NodeID i, const SVFType* svfType, PNODEK k);
+    SVFVar(NodeID i, const SVFType* svfType, PNODEK k);
     /// Destructor
     virtual ~SVFVar() {}
 
-    ///  Get/has methods of the components
-    //@{
-    inline const SVFValue* getValue() const
-    {
-        assert(this->getNodeKind() != DummyValNode &&
-               this->getNodeKind() != DummyObjNode &&
-               "dummy node do not have value!");
-        assert(!SymbolTableInfo::isBlkObjOrConstantObj(this->getId()) &&
-               "blackhole and constant obj do not have value");
-        assert(value && "value is null (GepObjNode whose basenode is a DummyObj?)");
-        return value;
-    }
-
-    inline bool hasValue() const
-    {
-        return value != nullptr;
-    }
     /// Whether it is a pointer
     virtual inline bool isPointer() const
     {
@@ -304,8 +286,8 @@ public:
     //@}
 
     /// Constructor
-    ValVar(const SVFValue* val, NodeID i, const SVFType* svfType, PNODEK ty = ValNode, const ICFGNode* node = nullptr)
-        : SVFVar(val, i, svfType, ty), icfgNode(node)
+    ValVar(NodeID i, const SVFType* svfType, PNODEK ty = ValNode, const ICFGNode* node = nullptr)
+        : SVFVar(i, svfType, ty), icfgNode(node)
     {
     }
     /// Return name of a LLVM value
@@ -336,8 +318,8 @@ protected:
     /// Constructor to create an empty ObjVar (for SVFIRReader/deserialization)
     ObjVar(NodeID i, PNODEK ty = ObjNode) : SVFVar(i, ty) {}
     /// Constructor
-    ObjVar(const SVFValue* val, NodeID i, const SVFType* svfType, PNODEK ty = ObjNode) :
-        SVFVar(val, i, svfType, ty)
+    ObjVar(NodeID i, const SVFType* svfType, PNODEK ty = ObjNode) :
+        SVFVar(i, svfType, ty)
     {
     }
 public:
@@ -492,7 +474,7 @@ public:
     //@}
 
     /// Constructor
-    GepValVar(ValVar* baseNode, const SVFValue* val, NodeID i, const AccessPath& ap,
+    GepValVar(ValVar* baseNode, NodeID i, const AccessPath& ap,
               const SVFType* ty);
 
     /// offset of the base value variable
@@ -587,10 +569,10 @@ public:
     //@}
 
     /// Constructor
-    BaseObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti,
+    BaseObjVar(NodeID i, ObjTypeInfo* ti,
                const SVFType* svfType, PNODEK ty = BaseObjNode,
                const ICFGNode* node = nullptr)
-        : ObjVar(val, i, svfType, ty), typeInfo(ti), icfgNode(node)
+        : ObjVar(i, svfType, ty), typeInfo(ti), icfgNode(node)
     {
     }
 
@@ -796,7 +778,7 @@ public:
     /// Constructor
     GepObjVar(const BaseObjVar* baseObj, NodeID i,
               const APOffset& apOffset, PNODEK ty = GepObjNode)
-        : ObjVar(baseObj->hasValue()? baseObj->getValue(): nullptr, i, baseObj->getType(), ty), apOffset(apOffset), base(baseObj)
+        : ObjVar(i, baseObj->getType(), ty), apOffset(apOffset), base(baseObj)
     {
     }
 
@@ -903,8 +885,8 @@ public:
     //@}
 
     /// Constructor
-    HeapObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFType* svfType):
-        BaseObjVar(val, i, ti, svfType, HeapObjNode)
+    HeapObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType):
+        BaseObjVar(i, ti, svfType, HeapObjNode)
     {
     }
 
@@ -966,8 +948,8 @@ public:
     //@}
 
     /// Constructor
-    StackObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFType* svfType):
-        BaseObjVar(val, i, ti, svfType, StackObjNode)
+    StackObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType):
+        BaseObjVar(i, ti, svfType, StackObjNode)
     {
     }
 
@@ -1073,7 +1055,7 @@ public:
     //@}
 
     /// Constructor
-    FunObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const CallGraphNode* cgNode, const SVFType* svfType);
+    FunObjVar(NodeID i, ObjTypeInfo* ti, const CallGraphNode* cgNode, const SVFType* svfType);
 
     inline const CallGraphNode* getCallGraphNode() const
     {
@@ -1120,8 +1102,8 @@ public:
     //@}
 
     /// Constructor
-    GlobalValVar(const SVFValue* val, NodeID i, const ICFGNode* icn, const SVFType* svfType)
-        : ValVar(val, i, svfType, GlobalValNode, icn)
+    GlobalValVar(NodeID i, const ICFGNode* icn, const SVFType* svfType)
+        : ValVar(i, svfType, GlobalValNode, icn)
     {
         type = svfType;
     }
@@ -1161,8 +1143,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantAggValVar(const SVFValue* val, NodeID i, const ICFGNode* icn, const SVFType* svfTy)
-        : ValVar(val, i, svfTy, ConstantAggValNode, icn)
+    ConstantAggValVar(NodeID i, const ICFGNode* icn, const SVFType* svfTy)
+        : ValVar(i, svfTy, ConstantAggValNode, icn)
     {
         type = svfTy;
     }
@@ -1213,9 +1195,9 @@ public:
     //@}
 
     /// Constructor
-    ConstantDataValVar(const SVFValue* val, NodeID i, const ICFGNode* icn, const SVFType* svfType,
+    ConstantDataValVar(NodeID i, const ICFGNode* icn, const SVFType* svfType,
                        PNODEK ty = ConstantDataValNode)
-        : ValVar(val, i, svfType, ty, icn)
+        : ValVar(i, svfType, ty, icn)
     {
 
     }
@@ -1269,9 +1251,14 @@ public:
 
     /// Constructor
     BlackHoleVar(NodeID i, const SVFType* svfType, PNODEK ty = BlackHoleNode)
-        : ConstantDataValVar(nullptr, i,  nullptr, svfType, ty)
+        : ConstantDataValVar(i,  nullptr, svfType, ty)
     {
 
+    }
+
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return false;
     }
 
     virtual const std::string toString() const
@@ -1322,9 +1309,9 @@ public:
     }
 
     /// Constructor
-    ConstantFPValVar(const SVFValue* val, NodeID i, double dv,
+    ConstantFPValVar(NodeID i, double dv,
                      const ICFGNode* icn, const SVFType* svfType)
-        : ConstantDataValVar(val, i, icn, svfType, ConstantFPValNode), dval(dv)
+        : ConstantDataValVar(i, icn, svfType, ConstantFPValNode), dval(dv)
     {
     }
 
@@ -1380,8 +1367,8 @@ public:
     }
 
     /// Constructor
-    ConstantIntValVar(const SVFValue* val, NodeID i, s64_t sv, u64_t zv, const ICFGNode* icn, const SVFType* svfType)
-        : ConstantDataValVar(val, i,  icn, svfType, ConstantIntValNode), zval(zv), sval(sv)
+    ConstantIntValVar(NodeID i, s64_t sv, u64_t zv, const ICFGNode* icn, const SVFType* svfType)
+        : ConstantDataValVar(i,  icn, svfType, ConstantIntValNode), zval(zv), sval(sv)
     {
 
     }
@@ -1423,10 +1410,15 @@ public:
     //@}
 
     /// Constructor
-    ConstantNullPtrValVar(const SVFValue* val, NodeID i, const ICFGNode* icn, const SVFType* svfType)
-        : ConstantDataValVar(val, i,  icn, svfType, ConstantNullptrValNode)
+    ConstantNullPtrValVar(NodeID i, const ICFGNode* icn, const SVFType* svfType)
+        : ConstantDataValVar(i,  icn, svfType, ConstantNullptrValNode)
     {
 
+    }
+
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return false;
     }
 
     virtual const std::string toString() const;
@@ -1471,8 +1463,8 @@ public:
     //@}
 
     /// Constructor
-    GlobalObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFType* svfType,
-                 PNODEK ty = GlobalObjNode): BaseObjVar(val, i, ti, svfType, ty)
+    GlobalObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType,
+                 PNODEK ty = GlobalObjNode): BaseObjVar(i, ti, svfType, ty)
     {
 
     }
@@ -1517,8 +1509,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantAggObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFType* svfType)
-        : BaseObjVar(val, i,  ti, svfType, ConstantAggObjNode)
+    ConstantAggObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType)
+        : BaseObjVar(i,  ti, svfType, ConstantAggObjNode)
     {
 
     }
@@ -1575,8 +1567,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantDataObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFType* svfType, PNODEK ty = ConstantDataObjNode)
-        : BaseObjVar(val, i, ti, svfType, ty)
+    ConstantDataObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, PNODEK ty = ConstantDataObjNode)
+        : BaseObjVar(i, ti, svfType, ty)
     {
     }
 
@@ -1642,8 +1634,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantFPObjVar(const SVFValue* val, NodeID i, double dv, ObjTypeInfo* ti, const SVFType* svfType)
-        : ConstantDataObjVar(val, i, ti, svfType, ConstantFPObjNode), dval(dv)
+    ConstantFPObjVar(NodeID i, double dv, ObjTypeInfo* ti, const SVFType* svfType)
+        : ConstantDataObjVar(i, ti, svfType, ConstantFPObjNode), dval(dv)
     {
     }
 
@@ -1717,8 +1709,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantIntObjVar(const SVFValue* val, NodeID i, s64_t sv, u64_t zv, ObjTypeInfo* ti, const SVFType* svfType)
-        : ConstantDataObjVar(val, i, ti, svfType, ConstantIntObjNode), zval(zv), sval(sv)
+    ConstantIntObjVar(NodeID i, s64_t sv, u64_t zv, ObjTypeInfo* ti, const SVFType* svfType)
+        : ConstantDataObjVar(i, ti, svfType, ConstantIntObjNode), zval(zv), sval(sv)
     {
     }
 
@@ -1772,11 +1764,14 @@ public:
     //@}
 
     /// Constructor
-    ConstantNullPtrObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFType* svfType)
-        : ConstantDataObjVar(val, i, ti, svfType, ConstantNullptrObjNode)
+    ConstantNullPtrObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType)
+        : ConstantDataObjVar(i, ti, svfType, ConstantNullptrObjNode)
     {
     }
-
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return false;
+    }
     virtual const std::string toString() const;
 };
 /*
@@ -1876,7 +1871,7 @@ public:
 
     /// Constructor
     VarArgPN(NodeID i, const CallGraphNode* node, const SVFType* svfType)
-        : ValVar(nullptr, i, svfType, VarargNode), callGraphNode(node)
+        : ValVar(i, svfType, VarargNode), callGraphNode(node)
     {
     }
 
@@ -1925,7 +1920,7 @@ public:
 
     /// Constructor
     DummyValVar(NodeID i, const SVFType* svfType = SVFType::getSVFPtrType())
-        : ValVar(nullptr, i, svfType, DummyValNode)
+        : ValVar(i, svfType, DummyValNode)
     {
     }
 
@@ -1985,7 +1980,7 @@ public:
 
     /// Constructor
     DummyObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType = SVFType::getSVFPtrType())
-        : BaseObjVar(nullptr, i, ti, svfType, DummyObjNode)
+        : BaseObjVar(i, ti, svfType, DummyObjNode)
     {
     }
 

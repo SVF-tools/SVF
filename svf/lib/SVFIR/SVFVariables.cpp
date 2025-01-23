@@ -39,8 +39,8 @@ using namespace SVFUtil;
 /*!
  * SVFVar constructor
  */
-SVFVar::SVFVar(const SVFValue* val, NodeID i, const SVFType* svfType, PNODEK k) :
-    GenericPAGNodeTy(i,k, svfType), value(val)
+SVFVar::SVFVar(NodeID i, const SVFType* svfType, PNODEK k) :
+    GenericPAGNodeTy(i,k, svfType)
 {
 }
 
@@ -103,7 +103,7 @@ const std::string ObjVar::toString() const
 
 ArgValVar::ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn,
                      const SVF::CallGraphNode* callGraphNode, const SVFType* svfType, bool isUncalled)
-    : ValVar(callGraphNode->getFunction()->getArg(argNo), i, svfType, ArgNode, icn),
+    : ValVar(i, svfType, ArgNode, icn),
       cgNode(callGraphNode), argNo(argNo), uncalled(isUncalled)
 {
 
@@ -137,9 +137,9 @@ const std::string ArgValVar::toString() const
     return rawstr.str();
 }
 
-GepValVar::GepValVar(ValVar* baseNode, const SVFValue* val, NodeID i,
+GepValVar::GepValVar(ValVar* baseNode, NodeID i,
                      const AccessPath& ap, const SVFType* ty)
-    : ValVar(val, i, ty, GepValNode), ap(ap), base(baseNode), gepValType(ty)
+    : ValVar(i, ty, GepValNode), ap(ap), base(baseNode), gepValType(ty)
 {
 
 }
@@ -158,7 +158,7 @@ const std::string GepValVar::toString() const
 }
 
 RetPN::RetPN(NodeID i, const CallGraphNode* node, const SVFType* svfType)
-    : ValVar(nullptr, i, svfType, RetNode), callGraphNode(node)
+    : ValVar(i, svfType, RetNode), callGraphNode(node)
 {
 }
 
@@ -240,7 +240,7 @@ const std::string StackObjVar::toString() const
 
 
 FunValVar::FunValVar(NodeID i, const ICFGNode* icn, const CallGraphNode* cgn, const SVFType* svfType)
-    : ValVar(cgn->getFunction(), i, svfType, FunValNode, icn), callGraphNode(cgn)
+    : ValVar(i, svfType, FunValNode, icn), callGraphNode(cgn)
 {
 }
 
@@ -410,8 +410,8 @@ const std::string ConstantNullPtrObjVar::toString() const
     return rawstr.str();
 }
 
-FunObjVar::FunObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const CallGraphNode* cgNode, const SVFType* svfType)
-    : BaseObjVar(val, i, ti, svfType, FunObjNode), callGraphNode(cgNode)
+FunObjVar::FunObjVar(NodeID i, ObjTypeInfo* ti, const CallGraphNode* cgNode, const SVFType* svfType)
+    : BaseObjVar(i, ti, svfType, FunObjNode), callGraphNode(cgNode)
 {
 }
 

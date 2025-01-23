@@ -234,33 +234,33 @@ void SVFIRBuilder::initialiseNodes()
         }
         else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
         {
-            pag->addConstantFPValNode(iter->first, iter->second, LLVMUtil::getDoubleValue(fpValue), icfgNode, iter->first->getType());
+            pag->addConstantFPValNode(iter->second, LLVMUtil::getDoubleValue(fpValue), icfgNode, iter->first->getType());
         }
         else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
         {
-            pag->addConstantIntValNode(iter->first, iter->second, LLVMUtil::getIntegerValue(intValue), icfgNode, iter->first->getType());
+            pag->addConstantIntValNode(iter->second, LLVMUtil::getIntegerValue(intValue), icfgNode, iter->first->getType());
         }
         else if (SVFUtil::isa<ConstantPointerNull>(llvmValue))
         {
-            pag->addConstantNullPtrValNode(iter->first, iter->second, icfgNode, iter->first->getType());
+            pag->addConstantNullPtrValNode(iter->second, icfgNode, iter->first->getType());
         }
         else if (SVFUtil::isa<GlobalValue>(llvmValue))
         {
-            pag->addGlobalValNode(iter->first, iter->second, icfgNode,
+            pag->addGlobalValNode(iter->second, icfgNode,
                                   iter->first->getType());
         }
         else if (SVFUtil::isa<ConstantData, MetadataAsValue, BlockAddress>(llvmValue))
         {
-            pag->addConstantDataValNode(iter->first, iter->second, icfgNode, iter->first->getType());
+            pag->addConstantDataValNode(iter->second, icfgNode, iter->first->getType());
         }
         else if (SVFUtil::isa<ConstantAggregate>(llvmValue))
         {
-            pag->addConstantAggValNode(iter->first, iter->second, icfgNode, iter->first->getType());
+            pag->addConstantAggValNode(iter->second, icfgNode, iter->first->getType());
         }
         else
         {
             // Add value node to PAG
-            pag->addValNode(iter->first, iter->second, iter->first->getType(), icfgNode);
+            pag->addValNode(iter->second, iter->first->getType(), icfgNode);
         }
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue,
                 pag->getGNode(iter->second));
@@ -292,57 +292,57 @@ void SVFIRBuilder::initialiseNodes()
         if (const Function* func = SVFUtil::dyn_cast<Function>(llvmValue))
         {
             SymID id = symTable->getObjSym(llvmModuleSet()->getCallGraphNode(func)->getFunction());
-            pag->addFunObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id),  llvmModuleSet()->getCallGraphNode(func), iter->first->getType());
+            pag->addFunObjNode(iter->second, symTable->getObjTypeInfo(id),  llvmModuleSet()->getCallGraphNode(func), iter->first->getType());
         }
         // Check if the value is a heap object and add a heap object node
         else if (LLVMUtil::isHeapObj(llvmValue))
         {
             SymID id = symTable->getObjSym(iter->first);
-            pag->addHeapObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id), iter->first->getType());
+            pag->addHeapObjNode(iter->second, symTable->getObjTypeInfo(id), iter->first->getType());
         }
         // Check if the value is an alloca instruction and add a stack object node
         else if (LLVMUtil::isStackObj(llvmValue))
         {
             NodeID id = symTable->getObjSym(iter->first);
-            pag->addStackObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id), iter->first->getType());
+            pag->addStackObjNode(iter->second, symTable->getObjTypeInfo(id), iter->first->getType());
         }
         else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
         {
             NodeID id = symTable->getObjSym(iter->first);
-            pag->addConstantFPObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id),  LLVMUtil::getDoubleValue(fpValue), iter->first->getType());
+            pag->addConstantFPObjNode(iter->second, symTable->getObjTypeInfo(id),  LLVMUtil::getDoubleValue(fpValue), iter->first->getType());
         }
         else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
         {
             NodeID id = symTable->getObjSym(iter->first);
-            pag->addConstantIntObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id), LLVMUtil::getIntegerValue(intValue), iter->first->getType());
+            pag->addConstantIntObjNode(iter->second, symTable->getObjTypeInfo(id), LLVMUtil::getIntegerValue(intValue), iter->first->getType());
         }
         else if (SVFUtil::isa<ConstantPointerNull>(llvmValue))
         {
             NodeID id = symTable->getObjSym(iter->first);
-            pag->addConstantNullPtrObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id), iter->first->getType());
+            pag->addConstantNullPtrObjNode(iter->second, symTable->getObjTypeInfo(id), iter->first->getType());
         }
         else if (SVFUtil::isa<GlobalValue>(llvmValue))
         {
             NodeID id = symTable->getObjSym(iter->first);
-            pag->addGlobalObjNode(iter->first, iter->second,
+            pag->addGlobalObjNode(iter->second,
                                   symTable->getObjTypeInfo(id),
                                   iter->first->getType());
         }
         else if (SVFUtil::isa<ConstantData, MetadataAsValue, BlockAddress>(llvmValue))
         {
             NodeID id = symTable->getObjSym(iter->first);
-            pag->addConstantDataObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id), iter->first->getType());
+            pag->addConstantDataObjNode(iter->second, symTable->getObjTypeInfo(id), iter->first->getType());
         }
         else if (SVFUtil::isa<ConstantAggregate>(llvmValue))
         {
             NodeID id = symTable->getObjSym(iter->first);
-            pag->addConstantAggObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id), iter->first->getType());
+            pag->addConstantAggObjNode(iter->second, symTable->getObjTypeInfo(id), iter->first->getType());
         }
         // Add a generic object node for other types of values
         else
         {
             NodeID id = symTable->getObjSym(iter->first);
-            pag->addObjNode(iter->first, iter->second,
+            pag->addObjNode(iter->second,
                             symTable->getObjTypeInfo(id), iter->first->getType());
         }
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));

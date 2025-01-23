@@ -93,7 +93,7 @@ SVFIR* PAGBuilderFromFile::build()
                     pag->addDummyValNode(nodeId);
                 else if (nodetype == "o")
                 {
-                    pag->addFIObjNode(nullptr, nodeId, pag->getSymbolInfo()->createObjTypeInfo(nullptr), SVFType::getSVFPtrType());
+                    pag->addFIObjNode(nodeId, pag->getSymbolInfo()->createObjTypeInfo(nullptr), SVFType::getSVFPtrType());
                 }
                 else
                     assert(false && "format not support, pls specify node type");
