@@ -68,7 +68,6 @@ protected:
     const SVFValue* value; ///< value of this SVFIR node
     SVFStmt::KindToSVFStmtMapTy InEdgeKindToSetMap;
     SVFStmt::KindToSVFStmtMapTy OutEdgeKindToSetMap;
-    bool isPtr;	/// whether it is a pointer (top-level or address-taken)
 
     /// Constructor to create an empty object (for deserialization)
     SVFVar(NodeID i, PNODEK k) : GenericPAGNodeTy(i, k), value{} {}
@@ -100,7 +99,8 @@ public:
     /// Whether it is a pointer
     virtual inline bool isPointer() const
     {
-        return isPtr;
+        assert(type && "type is null?");
+        return type->isPointerTy();
     }
     /// Whether it is constant data, i.e., "0", "1.001", "str"
     /// or llvm's metadata, i.e., metadata !4087
@@ -514,6 +514,10 @@ public:
                    std::to_string(getConstantFieldIdx());
     }
 
+    virtual bool isPointer() const {
+        return base->isPointer();
+    }
+
     inline const SVFType* getType() const
     {
         return gepValType;
@@ -845,6 +849,10 @@ public:
     {
         return base->isConstDataOrAggDataButNotNullPtr();
     }
+
+    virtual bool isPointer() const {
+        return base->isPointer();
+    }
 };
 
 
@@ -898,7 +906,6 @@ public:
     HeapObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFType* svfType):
         BaseObjVar(val, i, ti, svfType, HeapObjNode)
     {
-        isPtr = val->getType()->isPointerTy();
     }
 
     /// Return name of a LLVM value
@@ -962,7 +969,6 @@ public:
     StackObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const SVFType* svfType):
         BaseObjVar(val, i, ti, svfType, StackObjNode)
     {
-        isPtr = val->getType()->isPointerTy();
     }
 
     /// Return name of a LLVM value
@@ -1016,6 +1022,11 @@ public:
 
     /// Constructor
     FunValVar(NodeID i, const ICFGNode* icn, const CallGraphNode* cgn, const SVFType* svfType);
+
+
+    virtual bool isPointer() const {
+        return true;
+    }
 
     virtual const std::string toString() const;
 };
@@ -1071,6 +1082,8 @@ public:
 
     virtual const SVFFunction* getFunction() const;
 
+    virtual bool isPointer() const;
+
     virtual bool isIsolatedNode() const;
 
     virtual const std::string toString() const;
@@ -1113,9 +1126,6 @@ public:
         type = svfType;
     }
 
-    virtual bool isPointer() const {
-        return type->isPointerTy();
-    }
 
     virtual const std::string toString() const;
 };
@@ -1157,9 +1167,6 @@ public:
         type = svfTy;
     }
 
-    virtual bool isPointer() const {
-        return type->isPointerTy();
-    }
 
     virtual bool isConstDataOrAggData() const
     {
@@ -1265,11 +1272,6 @@ public:
         : ConstantDataValVar(nullptr, i,  nullptr, svfType, ty)
     {
 
-    }
-
-    virtual bool isConstDataOrAggDataButNotNullPtr() const
-    {
-        return false;
     }
 
     virtual const std::string toString() const
@@ -1425,11 +1427,6 @@ public:
         : ConstantDataValVar(val, i,  icn, svfType, ConstantNullptrValNode)
     {
 
-    }
-
-    virtual bool isConstDataOrAggDataButNotNullPtr() const
-    {
-        return false;
     }
 
     virtual const std::string toString() const;
@@ -1780,11 +1777,6 @@ public:
     {
     }
 
-    virtual bool isConstDataOrAggDataButNotNullPtr() const
-    {
-        return false;
-    }
-
     virtual const std::string toString() const;
 };
 /*
@@ -1835,6 +1827,8 @@ public:
     }
 
     virtual const SVFFunction* getFunction() const;
+
+    virtual bool isPointer() const;
 
     /// Return name of a LLVM value
     const std::string getValueName() const;
@@ -1891,6 +1885,9 @@ public:
     /// Return name of a LLVM value
     const std::string getValueName() const;
 
+    virtual bool isPointer() const {
+        return true;
+    }
     virtual const std::string toString() const;
 };
 
@@ -1936,6 +1933,10 @@ public:
     inline const std::string getValueName() const
     {
         return "dummyVal";
+    }
+
+    virtual bool isPointer() const {
+        return true;
     }
 
     virtual const std::string toString() const;
@@ -1992,6 +1993,10 @@ public:
     inline const std::string getValueName() const
     {
         return "dummyObj";
+    }
+
+    virtual bool isPointer() const {
+        return true;
     }
 
     virtual const std::string toString() const;

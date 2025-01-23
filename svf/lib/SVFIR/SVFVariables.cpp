@@ -42,59 +42,6 @@ using namespace SVFUtil;
 SVFVar::SVFVar(const SVFValue* val, NodeID i, const SVFType* svfType, PNODEK k) :
     GenericPAGNodeTy(i,k, svfType), value(val)
 {
-    assert( ValNode <= k && k <= DummyObjNode && "new SVFIR node kind?");
-    switch (k)
-    {
-    case ValNode:
-    case ArgNode:
-    case ConstantDataValNode:
-    case ConstantAggValNode:
-    case GlobalValNode:
-    case BlackHoleNode:
-    case ConstantFPValNode:
-    case ConstantIntValNode:
-    case ConstantNullptrValNode:
-    case GepValNode:
-    {
-        assert(val != nullptr && "value is nullptr for ValVar or GepValNode");
-        isPtr = svfType->isPointerTy();
-        break;
-    }
-    case FunValNode:
-    case VarargNode:
-    case DummyValNode:
-    {
-        isPtr = true;
-        break;
-    }
-    case ObjNode:
-    case GepObjNode:
-    case BaseObjNode:
-    case ConstantAggObjNode:
-    case ConstantDataObjNode:
-    case GlobalObjNode:
-    case ConstantFPObjNode:
-    case ConstantIntObjNode:
-    case ConstantNullptrObjNode:
-    case DummyObjNode:
-    {
-        isPtr = true;
-        if(val)
-            isPtr = svfType->isPointerTy();
-        break;
-    }
-    case RetNode:
-    case FunObjNode:
-    case HeapObjNode:
-    case StackObjNode:
-    {
-        // to be completed in derived class
-        break;
-    }
-    default:
-        assert(false && "var not handled");
-        break;
-    }
 }
 
 bool SVFVar::isIsolatedNode() const
@@ -213,13 +160,18 @@ const std::string GepValVar::toString() const
 RetPN::RetPN(NodeID i, const CallGraphNode* node, const SVFType* svfType)
     : ValVar(nullptr, i, svfType, RetNode), callGraphNode(node)
 {
-    isPtr = node->getFunction()->getReturnType()->isPointerTy();
 }
 
 const SVFFunction* RetPN::getFunction() const
 {
     return callGraphNode->getFunction();
 }
+
+bool RetPN::isPointer() const
+{
+    return getFunction()->getReturnType()->isPointerTy();
+}
+
 
 const std::string RetPN::getValueName() const
 {
@@ -290,7 +242,6 @@ const std::string StackObjVar::toString() const
 FunValVar::FunValVar(NodeID i, const ICFGNode* icn, const CallGraphNode* cgn, const SVFType* svfType)
     : ValVar(cgn->getFunction(), i, svfType, FunValNode, icn), callGraphNode(cgn)
 {
-    isPtr = cgn->getFunction()->getType()->isPointerTy();
 }
 
 const std::string FunValVar::toString() const
@@ -462,7 +413,11 @@ const std::string ConstantNullPtrObjVar::toString() const
 FunObjVar::FunObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti, const CallGraphNode* cgNode, const SVFType* svfType)
     : BaseObjVar(val, i, ti, svfType, FunObjNode), callGraphNode(cgNode)
 {
-    isPtr = callGraphNode->getFunction()->getType()->isPointerTy();
+}
+
+bool FunObjVar::isPointer() const
+{
+    return getFunction()->getType()->isPointerTy();
 }
 
 bool FunObjVar::isIsolatedNode() const
