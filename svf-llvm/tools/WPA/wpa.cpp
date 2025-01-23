@@ -31,7 +31,6 @@
 #include "WPA/WPAPass.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
-#include "SVFIR/SVFFileSystem.h"
 
 
 using namespace llvm;
@@ -49,7 +48,7 @@ int main(int argc, char** argv)
 
     if (Options::ReadJson())
     {
-        pag = SVFIRReader::read(moduleNameVec.front());
+        assert(false && "please implement SVFIRReader::read");
     }
     else
     {
