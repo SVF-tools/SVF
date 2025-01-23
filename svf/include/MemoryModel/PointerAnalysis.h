@@ -104,7 +104,7 @@ public:
     typedef Set<const SVFFunction*> FunctionSet;
     typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
-    typedef Set<const SVFGlobalValue*> VTableSet;
+    typedef Set<const GlobalObjVar*> VTableSet;
     typedef Set<const SVFFunction*> VFunSet;
     //@}
 

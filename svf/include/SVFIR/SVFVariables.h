@@ -46,6 +46,7 @@ class SVFVar : public GenericPAGNodeTy
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class SVFIRBuilder;
     friend class IRGraph;
     friend class SVFIR;
     friend class VFG;
@@ -68,10 +69,12 @@ protected:
     SVFStmt::KindToSVFStmtMapTy InEdgeKindToSetMap;
     SVFStmt::KindToSVFStmtMapTy OutEdgeKindToSetMap;
     bool isPtr;	/// whether it is a pointer (top-level or address-taken)
+
     const SVFFunction* func; /// function containing this variable
 
     /// Constructor to create an empty object (for deserialization)
     SVFVar(NodeID i, PNODEK k) : GenericPAGNodeTy(i, k), value{} {}
+
 
 public:
     /// Constructor
@@ -109,7 +112,10 @@ public:
     }
     /// Whether it is constant data, i.e., "0", "1.001", "str"
     /// or llvm's metadata, i.e., metadata !4087
-    bool isConstDataOrAggDataButNotNullPtr() const;
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return false;
+    }
 
     /// Whether this is an isolated node on the SVFIR graph
     virtual bool isIsolatedNode() const;
@@ -215,6 +221,24 @@ public:
     {
         return isSVFVarKind(node->getNodeKind());
     }
+
+    inline virtual bool ptrInUncalledFunction() const
+    {
+        if (const SVFFunction* fun = getFunction())
+        {
+            return fun->isUncalledFunction();
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    virtual bool isConstDataOrAggData() const
+    {
+        return false;
+    }
+
 
 private:
     ///  add methods of the components
@@ -465,7 +489,7 @@ class GepValVar: public ValVar
 
 private:
     AccessPath ap;	// AccessPath
-    NodeID base;	// base node id
+    ValVar* base;	// base node
     const SVFType* gepValType;
 
     /// Constructor to create empty GeValVar (for SVFIRReader/deserialization)
@@ -490,14 +514,15 @@ public:
     {
         return node->getNodeKind() == SVFVar::GepValNode;
     }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == SVFVar::GepValNode;
+    }
     //@}
 
     /// Constructor
-    GepValVar(NodeID baseID, const SVFValue* val, NodeID i, const AccessPath& ap,
-              const SVFType* ty)
-        : ValVar(val, i, GepValNode), ap(ap), base(baseID), gepValType(ty)
-    {
-    }
+    GepValVar(ValVar* baseNode, const SVFValue* val, NodeID i, const AccessPath& ap,
+              const SVFType* ty);
 
     /// offset of the base value variable
     inline APOffset getConstantFieldIdx() const
@@ -506,7 +531,7 @@ public:
     }
 
     /// Return the base object from which this GEP node came from.
-    inline NodeID getBaseNode(void) const
+    inline ValVar* getBaseNode(void) const
     {
         return base;
     }
@@ -526,6 +551,20 @@ public:
     }
 
     virtual const std::string toString() const;
+
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return base->isConstDataOrAggDataButNotNullPtr();
+    }
+    virtual inline bool ptrInUncalledFunction() const
+    {
+        return base->ptrInUncalledFunction();
+    }
+
+    virtual inline bool isConstDataOrAggData() const
+    {
+        return base->isConstDataOrAggData();
+    }
 };
 
 /*
@@ -716,7 +755,7 @@ public:
     {
         return typeInfo->isConstDataOrConstGlobal();
     }
-    bool isConstDataOrAggData() const
+    virtual inline bool isConstDataOrAggData() const
     {
         return typeInfo->isConstDataOrAggData();
     }
@@ -781,7 +820,6 @@ public:
               const APOffset& apOffset, PNODEK ty = GepObjNode)
         : ObjVar(baseObj->hasValue()? baseObj->getValue(): nullptr, i, ty), apOffset(apOffset), base(baseObj)
     {
-
     }
 
     /// offset of the mem object
@@ -816,6 +854,21 @@ public:
     }
 
     virtual const std::string toString() const;
+
+    virtual inline bool ptrInUncalledFunction() const
+    {
+        return base->ptrInUncalledFunction();
+    }
+
+    virtual inline bool isConstDataOrAggData() const
+    {
+        return base->isConstDataOrAggData();
+    }
+
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return base->isConstDataOrAggDataButNotNullPtr();
+    }
 };
 
 
@@ -1093,6 +1146,58 @@ public:
     virtual const std::string toString() const;
 };
 
+class ConstantAggValVar: public ValVar
+{
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
+public:
+    ///  Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const ConstantAggValVar*)
+    {
+        return true;
+    }
+    static inline bool classof(const ValVar* node)
+    {
+        return node->getNodeKind() == ConstantAggValNode;
+    }
+    static inline bool classof(const SVFVar* node)
+    {
+        return node->getNodeKind() == ConstantAggValNode;
+    }
+    static inline bool classof(const GenericPAGNodeTy* node)
+    {
+        return node->getNodeKind() == ConstantAggValNode;
+    }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == ConstantAggValNode;
+    }
+    //@}
+
+    /// Constructor
+    ConstantAggValVar(const SVFValue* val, NodeID i, const ICFGNode* icn,
+                      PNODEK ty = ConstantAggValNode)
+        : ValVar(val, i,  ty,  icn)
+    {
+
+    }
+
+    virtual bool isConstDataOrAggData() const
+    {
+        return true;
+    }
+
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return true;
+    }
+
+    virtual const std::string toString() const;
+};
+
+
 class ConstantDataValVar: public ValVar
 {
     friend class SVFIRWriter;
@@ -1129,6 +1234,16 @@ public:
         : ValVar(val, i,  ty,  icn)
     {
 
+    }
+
+    virtual bool isConstDataOrAggData() const
+    {
+        return true;
+    }
+
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return true;
     }
 
     virtual const std::string toString() const;
@@ -1173,6 +1288,11 @@ public:
         : ConstantDataValVar(nullptr, i,  nullptr, ty)
     {
 
+    }
+
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return false;
     }
 
     virtual const std::string toString() const
@@ -1333,6 +1453,11 @@ public:
 
     }
 
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return false;
+    }
+
     virtual const std::string toString() const;
 };
 
@@ -1385,6 +1510,62 @@ public:
     virtual const std::string toString() const;
 };
 
+class ConstantAggObjVar: public BaseObjVar
+{
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
+public:
+    ///  Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const ConstantAggObjVar*)
+    {
+        return true;
+    }
+    static inline bool classof(const BaseObjVar* node)
+    {
+        return node->getNodeKind() == ConstantAggObjNode;
+    }
+
+    static inline bool classof(const ObjVar* node)
+    {
+        return node->getNodeKind() == ConstantAggObjNode;
+    }
+    static inline bool classof(const SVFVar* node)
+    {
+        return node->getNodeKind() == ConstantAggObjNode;
+    }
+    static inline bool classof(const GenericPAGNodeTy* node)
+    {
+        return node->getNodeKind() == ConstantAggObjNode;
+    }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == ConstantAggObjNode;
+    }
+    //@}
+
+    /// Constructor
+    ConstantAggObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti,
+                      PNODEK ty = ConstantAggObjNode)
+        : BaseObjVar(val, i,  ti, ty)
+    {
+
+    }
+
+    virtual bool isConstDataOrAggData() const
+    {
+        return true;
+    }
+
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return true;
+    }
+
+    virtual const std::string toString() const;
+};
+
 class ConstantDataObjVar: public BaseObjVar
 {
     friend class SVFIRWriter;
@@ -1427,6 +1608,16 @@ public:
     ConstantDataObjVar(const SVFValue* val, NodeID i, ObjTypeInfo* ti,  PNODEK ty = ConstantDataObjNode)
         : BaseObjVar(val, i, ti, ty)
     {
+    }
+
+    virtual bool isConstDataOrAggData() const
+    {
+        return true;
+    }
+
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return true;
     }
 
     virtual const std::string toString() const;
@@ -1616,6 +1807,10 @@ public:
     {
     }
 
+    virtual bool isConstDataOrAggDataButNotNullPtr() const
+    {
+        return false;
+    }
 
     virtual const std::string toString() const;
 };

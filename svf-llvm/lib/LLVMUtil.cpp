@@ -749,11 +749,26 @@ const std::string SVFBaseNode::valueOnlyToString() const
     }
     else
     {
-        auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
-        if (llvmVal)
-            rawstr << " " << *llvmVal << " ";
+        const SVFBaseNode* baseNode = this;
+        if (const GepValVar* valVar = SVFUtil::dyn_cast<GepValVar>(this))
+        {
+            baseNode = valVar->getBaseNode();
+        }
+        else if (const GepObjVar* objVar = SVFUtil::dyn_cast<GepObjVar>(this))
+        {
+            baseNode = objVar->getBaseObj();
+        }
+        if (SVFUtil::isa<DummyObjVar, DummyValVar, BlackHoleVar>(baseNode))
+            rawstr << "";
         else
-            rawstr << " No llvmVal found";
+        {
+            auto llvmVal =
+                LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(baseNode);
+            if (llvmVal)
+                rawstr << " " << *llvmVal << " ";
+            else
+                rawstr << "";
+        }
     }
     rawstr << getSourceLoc();
     return rawstr.str();

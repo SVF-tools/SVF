@@ -391,7 +391,7 @@ NodeID SVFIR::addGepValNode(const SVFValue* curInst,const SVFValue* gepVal, cons
     assert(0==GepValObjMap[curInst].count(std::make_pair(base, ap))
            && "this node should not be created before");
     GepValObjMap[curInst][std::make_pair(base, ap)] = i;
-    GepValVar *node = new GepValVar(base, gepVal, i, ap, type);
+    GepValVar *node = new GepValVar(cast<ValVar>(getGNode(base)), gepVal, i, ap, type);
     return addValNode(gepVal, node);
 }
 
@@ -645,13 +645,11 @@ bool SVFIR::isValidPointer(NodeID nodeId) const
 {
     SVFVar* node = pag->getGNode(nodeId);
 
-    if (node->hasValue() && node->isPointer())
-    {
+    if(node->isPointer())
         if (const ValVar* pVar = pag->getBaseValVar(nodeId))
             if (const ArgValVar* arg = SVFUtil::dyn_cast<ArgValVar>(pVar))
                 if (!(arg->getParent()->isDeclaration()))
                     return true;
-    }
 
     if ((node->getInEdges().empty() && node->getOutEdges().empty()))
         return false;
@@ -664,13 +662,9 @@ bool SVFIR::isValidTopLevelPtr(const SVFVar* node)
     {
         if (isValidPointer(node->getId()))
         {
-            // TODO: after svf value is removed, we use type to determine top level ptr
-            if (SVFUtil::isa<RetPN, VarArgPN, FunValVar, HeapObjVar, StackObjVar>(node))
-            {
-                return true;
-            }
-            else if(node->hasValue())
-                return !SVFUtil::isArgOfUncalledFunction(node);
+            const ValVar* baseVar = pag->getBaseValVar(node->getId());
+            if(!SVFUtil::isa<DummyValVar, BlackHoleVar>(baseVar))
+                return !SVFUtil::isArgOfUncalledFunction(baseVar);
         }
     }
     return false;

@@ -67,11 +67,6 @@ SVFIR* SVFIRBuilder::build()
     // Set callgraph
     pag->setCallGraph(llvmModuleSet()->callgraph);
 
-    CHGraph* chg = new CHGraph(pag->getModule());
-    CHGBuilder chgbuilder(chg);
-    chgbuilder.buildCHG();
-    pag->setCHG(chg);
-
     // We read SVFIR from a user-defined txt instead of parsing SVFIR from LLVM IR
     if (SVFModule::pagReadFromTXT())
     {
@@ -90,6 +85,11 @@ SVFIR* SVFIRBuilder::build()
     ///// handle globals
     visitGlobal(svfModule);
     ///// collect exception vals in the program
+
+    CHGraph* chg = new CHGraph(pag->getModule());
+    CHGBuilder chgbuilder(chg);
+    chgbuilder.buildCHG();
+    pag->setCHG(chg);
 
     /// handle functions
     for (Module& M : llvmModuleSet()->getLLVMModules())
@@ -249,16 +249,21 @@ void SVFIRBuilder::initialiseNodes()
         {
             pag->addGlobalValueValNode(iter->first, iter->second, icfgNode);
         }
-        else if (SVFUtil::isa<ConstantData>(llvmValue))
+        else if (SVFUtil::isa<ConstantData, MetadataAsValue, BlockAddress>(llvmValue))
         {
             pag->addConstantDataValNode(iter->first, iter->second, icfgNode);
+        }
+        else if (SVFUtil::isa<ConstantAggregate>(llvmValue))
+        {
+            pag->addConstantAggValNode(iter->first, iter->second, icfgNode);
         }
         else
         {
             // Add value node to PAG
             pag->addValNode(iter->first, iter->second, icfgNode);
         }
-        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
+        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue,
+                pag->getGNode(iter->second));
     }
 
     // Iterate over all object symbols in the symbol table
@@ -325,16 +330,22 @@ void SVFIRBuilder::initialiseNodes()
             NodeID id = symTable->getObjSym(iter->first);
             pag->addGlobalValueObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id));
         }
-        else if (SVFUtil::isa<ConstantData>(llvmValue))
+        else if (SVFUtil::isa<ConstantData, MetadataAsValue, BlockAddress>(llvmValue))
         {
             NodeID id = symTable->getObjSym(iter->first);
             pag->addConstantDataObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id));
+        }
+        else if (SVFUtil::isa<ConstantAggregate>(llvmValue))
+        {
+            NodeID id = symTable->getObjSym(iter->first);
+            pag->addConstantAggObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id));
         }
         // Add a generic object node for other types of values
         else
         {
             NodeID id = symTable->getObjSym(iter->first);
-            pag->addObjNode(iter->first, iter->second, symTable->getObjTypeInfo(id));
+            pag->addObjNode(iter->first, iter->second,
+                            symTable->getObjTypeInfo(id));
         }
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
 
@@ -349,22 +360,23 @@ void SVFIRBuilder::initialiseNodes()
                 symTable->retSyms().begin(); iter != symTable->retSyms().end();
             ++iter)
     {
+        const Value* llvmValue = llvmModuleSet()->getLLVMValue(iter->first);
         DBOUT(DPAGBuild, outs() << "add ret node " << iter->second << "\n");
         pag->addRetNode(iter->second,
-                        llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(
-                                    llvmModuleSet()->getLLVMValue(iter->first))));
-        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmModuleSet()->getLLVMValue(iter->first), pag->getGNode(iter->second));
+                        llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(llvmValue)));
+        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
     }
 
     for (SymbolTableInfo::FunToIDMapTy::iterator iter =
                 symTable->varargSyms().begin();
             iter != symTable->varargSyms().end(); ++iter)
     {
+        const Value* llvmValue = llvmModuleSet()->getLLVMValue(iter->first);
         DBOUT(DPAGBuild, outs() << "add vararg node " << iter->second << "\n");
         pag->addVarargNode(iter->second,
-                           llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(
-                                       llvmModuleSet()->getLLVMValue(iter->first))));
-        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmModuleSet()->getLLVMValue(iter->first), pag->getGNode(iter->second));
+                           llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(llvmValue)));
+        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
+
     }
 
     /// add address edges for constant nodes.
