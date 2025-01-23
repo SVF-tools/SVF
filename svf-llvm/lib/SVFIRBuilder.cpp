@@ -35,7 +35,6 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
 #include "SVFIR/PAGBuilderFromFile.h"
-#include "SVFIR/SVFFileSystem.h"
 #include "SVFIR/SVFModule.h"
 #include "SVFIR/SVFValue.h"
 #include "Util/CallGraphBuilder.h"
@@ -172,7 +171,7 @@ SVFIR* SVFIRBuilder::build()
     // dump SVFIR as JSON
     if (!Options::DumpJson().empty())
     {
-        SVFIRWriter::writeJsonToPath(pag, Options::DumpJson());
+        assert(false && "please implement SVFIRWriter::writeJsonToPath");
     }
 
     double endTime = SVFStat::getClk(true);

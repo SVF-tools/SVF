@@ -30,7 +30,6 @@
 #include "SVF-LLVM/SVFIRBuilder.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
-#include "SVFIR/SVFFileSystem.h"
 
 
 using namespace std;
@@ -61,12 +60,10 @@ int main(int argc, char** argv)
         LLVMModuleSet::preProcessBCs(moduleNameVec);
     }
 
-    SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
     const std::string jsonPath = replaceExtension(moduleNameVec.front());
     // PAG is borrowed from a unique_ptr, so we don't need to delete it.
-    const SVFIR* pag = SVFIRBuilder(svfModule).build();
 
-    SVFIRWriter::writeJsonToPath(pag, jsonPath);
+    assert(false && "Please implement SVFIRWriter::writeJsonToPath");
     SVFUtil::outs() << "SVF IR is written to '" << jsonPath << "'\n";
     LLVMModuleSet::releaseLLVMModuleSet();
     return 0;
