@@ -292,11 +292,11 @@ bool TCT::isJoinMustExecutedInLoop(const LoopBBs& lp,const ICFGNode* join)
 {
     assert(!lp.empty() && "this is not a loop, empty basic block");
     const SVFFunction* svffun = join->getFun();
-    const SVFBasicBlock* loopheadbb = svffun->getLoopHeader(lp);
-    const SVFBasicBlock* joinbb = join->getBB();
+    const BasicBlockNode* loopheadbb = svffun->getLoopHeader(lp);
+    const BasicBlockNode* joinbb = join->getBB();
     assert(loopheadbb->getParent()==joinbb->getParent() && "should inside same function");
 
-    for (const SVFBasicBlock* svf_scc_bb : loopheadbb->getSuccessors())
+    for (const BasicBlockNode* svf_scc_bb : loopheadbb->getSuccessors())
     {
         if(svffun->loopContainsBB(lp,svf_scc_bb))
         {
@@ -318,7 +318,7 @@ void TCT::collectLoopInfoForJoin()
     {
         const ICFGNode* join = *it;
         const SVFFunction* svffun = join->getFun();
-        const SVFBasicBlock* svfbb = join->getBB();
+        const BasicBlockNode* svfbb = join->getBB();
 
         if(svffun->hasLoopInfo(svfbb))
         {
@@ -337,7 +337,7 @@ void TCT::collectLoopInfoForJoin()
 /*!
  * Return true if a given bb is a loop head of a inloop join site
  */
-bool TCT::isLoopHeaderOfJoinLoop(const SVFBasicBlock* bb)
+bool TCT::isLoopHeaderOfJoinLoop(const BasicBlockNode* bb)
 {
     for(InstToLoopMap::const_iterator it = joinSiteToLoopMap.begin(), eit = joinSiteToLoopMap.end(); it!=eit; ++it)
     {
@@ -351,15 +351,15 @@ bool TCT::isLoopHeaderOfJoinLoop(const SVFBasicBlock* bb)
 /*!
  * Whether a given bb is an exit of a inloop join site
  */
-bool TCT::isLoopExitOfJoinLoop(const SVFBasicBlock* bb)
+bool TCT::isLoopExitOfJoinLoop(const BasicBlockNode* bb)
 {
     for(InstToLoopMap::const_iterator it = joinSiteToLoopMap.begin(), eit = joinSiteToLoopMap.end(); it!=eit; ++it)
     {
-        std::vector<const SVFBasicBlock*> exitbbs;
+        std::vector<const BasicBlockNode*> exitbbs;
         it->first->getFun()->getExitBlocksOfLoop(it->first->getBB(),exitbbs);
         while(!exitbbs.empty())
         {
-            const SVFBasicBlock* eb = exitbbs.back();
+            const BasicBlockNode* eb = exitbbs.back();
             exitbbs.pop_back();
             if(eb == bb)
                 return true;
@@ -372,7 +372,7 @@ bool TCT::isLoopExitOfJoinLoop(const SVFBasicBlock* bb)
 /*!
  * Get loop for fork/join site
  */
-const TCT::LoopBBs& TCT::getLoop(const SVFBasicBlock* bb)
+const TCT::LoopBBs& TCT::getLoop(const BasicBlockNode* bb)
 {
     const SVFFunction* fun = bb->getParent();
     return fun->getLoopInfo(bb);

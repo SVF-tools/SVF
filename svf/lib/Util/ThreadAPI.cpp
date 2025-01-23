@@ -275,7 +275,7 @@ void ThreadAPI::performAPIStat(SVFModule* module)
     {
         for (SVFFunction::const_iterator bit = (item.second)->getFunction()->begin(), ebit = (item.second)->getFunction()->end(); bit != ebit; ++bit)
         {
-            const SVFBasicBlock* bb = *bit;
+            const BasicBlockNode* bb = *bit;
             for (const auto& svfInst: bb->getICFGNodeList())
             {
                 if (!SVFUtil::isCallSite(svfInst))

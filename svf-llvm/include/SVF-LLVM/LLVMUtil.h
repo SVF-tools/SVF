@@ -199,7 +199,7 @@ bool functionDoesNotRet(const Function* fun);
 
 /// Get reachable basic block from function entry
 void getFunReachableBBs(const Function* svfFun,
-                        std::vector<const SVFBasicBlock*>& bbs);
+                        std::vector<const BasicBlockNode*>& bbs);
 
 /// Strip off the constant casts
 const Value* stripConstantCasts(const Value* val);

@@ -51,11 +51,11 @@ public:
     typedef Z3Expr Condition;   /// z3 condition
     typedef Map<u32_t, const ICFGNode*> IndexToTermInstMap; /// id to instruction map for z3
     typedef Map<u32_t,Condition> CondPosMap;		///< map a branch to its Condition
-    typedef Map<const SVFBasicBlock*, CondPosMap > BBCondMap;	/// map bb to a Condition
-    typedef Set<const SVFBasicBlock*> BasicBlockSet;
+    typedef Map<const BasicBlockNode*, CondPosMap > BBCondMap;	/// map bb to a Condition
+    typedef Set<const BasicBlockNode*> BasicBlockSet;
     typedef Map<const SVFFunction*,  BasicBlockSet> FunToExitBBsMap;  ///< map a function to all its basic blocks calling program exit
-    typedef Map<const SVFBasicBlock*, Condition> BBToCondMap;	///< map a basic block to its condition during control-flow guard computation
-    typedef FIFOWorkList<const SVFBasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
+    typedef Map<const BasicBlockNode*, Condition> BBToCondMap;	///< map a basic block to its condition during control-flow guard computation
+    typedef FIFOWorkList<const BasicBlockNode*> CFWorkList;	///< worklist for control-flow guard computation
     typedef Map<const SVFGNode*, Set<const SVFGNode*>> SVFGNodeToSVFGNodeSetMap;
 
 
@@ -144,7 +144,7 @@ public:
         return negConds.test(id);
     }
 
-    inline bool postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
+    inline bool postDominate(const BasicBlockNode* bbKey, const BasicBlockNode* bbValue) const
     {
         const SVFFunction*  keyFunc = bbKey->getParent();
         const SVFFunction*  valueFunc = bbValue->getParent();
@@ -154,7 +154,7 @@ public:
         return keyFunc->postDominate(bbKey,bbValue);
     }
 
-    inline bool dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
+    inline bool dominate(const BasicBlockNode* bbKey, const BasicBlockNode* bbValue) const
     {
         const SVFFunction*  keyFunc = bbKey->getParent();
         const SVFFunction*  valueFunc = bbValue->getParent();
@@ -166,13 +166,13 @@ public:
 
     /// Guard Computation for a value-flow (between two basic blocks)
     //@{
-    virtual Condition ComputeIntraVFGGuard(const SVFBasicBlock* src, const SVFBasicBlock* dst);
-    virtual Condition ComputeInterCallVFGGuard(const SVFBasicBlock* src, const SVFBasicBlock* dst, const SVFBasicBlock* callBB);
-    virtual Condition ComputeInterRetVFGGuard(const SVFBasicBlock* src, const SVFBasicBlock* dst, const SVFBasicBlock* retBB);
+    virtual Condition ComputeIntraVFGGuard(const BasicBlockNode* src, const BasicBlockNode* dst);
+    virtual Condition ComputeInterCallVFGGuard(const BasicBlockNode* src, const BasicBlockNode* dst, const BasicBlockNode* callBB);
+    virtual Condition ComputeInterRetVFGGuard(const BasicBlockNode* src, const BasicBlockNode* dst, const BasicBlockNode* retBB);
 
     /// Get complement condition (from B1 to B0) according to a complementBB (BB2) at a phi
     /// e.g., B0: dstBB; B1:incomingBB; B2:complementBB
-    virtual Condition getPHIComplementCond(const SVFBasicBlock* BB1, const SVFBasicBlock* BB2, const SVFBasicBlock* BB0);
+    virtual Condition getPHIComplementCond(const BasicBlockNode* BB1, const BasicBlockNode* BB2, const BasicBlockNode* BB0);
 
     inline void clearCFCond()
     {
@@ -212,7 +212,7 @@ public:
 
     /// Get/Set control-flow conditions
     //@{
-    inline bool setCFCond(const SVFBasicBlock* bb, const Condition& cond)
+    inline bool setCFCond(const BasicBlockNode* bb, const Condition& cond)
     {
         BBToCondMap::iterator it = bbToCondMap.find(bb);
         // until a fixed-point is reached (condition is not changed)
@@ -222,7 +222,7 @@ public:
         bbToCondMap[bb] = cond;
         return true;
     }
-    inline Condition getCFCond(const SVFBasicBlock* bb) const
+    inline Condition getCFCond(const BasicBlockNode* bb) const
     {
         BBToCondMap::const_iterator it = bbToCondMap.find(bb);
         if(it==bbToCondMap.end())
@@ -249,30 +249,30 @@ public:
 private:
 
     /// Allocate path condition for every basic block
-    virtual void allocateForBB(const SVFBasicBlock& bb);
+    virtual void allocateForBB(const BasicBlockNode& bb);
 
     /// Get/Set a branch condition, and its terminator instruction
     //@{
     /// Set branch condition
-    void setBranchCond(const SVFBasicBlock* bb, const SVFBasicBlock* succ, const Condition& cond);
+    void setBranchCond(const BasicBlockNode* bb, const BasicBlockNode* succ, const Condition& cond);
     /// Get branch condition
-    Condition getBranchCond(const SVFBasicBlock*  bb, const SVFBasicBlock* succ) const;
+    Condition getBranchCond(const BasicBlockNode*  bb, const BasicBlockNode* succ) const;
     ///Get a condition, evaluate the value for conditions if necessary (e.g., testNull like express)
-    Condition getEvalBrCond(const SVFBasicBlock*  bb, const SVFBasicBlock* succ);
+    Condition getEvalBrCond(const BasicBlockNode*  bb, const BasicBlockNode* succ);
     //@}
     /// Evaluate branch conditions
     //@{
     /// Evaluate the branch condition
-    Condition evaluateBranchCond(const SVFBasicBlock*  bb, const SVFBasicBlock* succ) ;
+    Condition evaluateBranchCond(const BasicBlockNode*  bb, const BasicBlockNode* succ) ;
     /// Evaluate loop exit branch
-    Condition evaluateLoopExitBranch(const SVFBasicBlock*  bb, const SVFBasicBlock* succ);
+    Condition evaluateLoopExitBranch(const BasicBlockNode*  bb, const BasicBlockNode* succ);
     /// Return branch condition after evaluating test null like expression
-    Condition evaluateTestNullLikeExpr(const BranchStmt* branchStmt, const SVFBasicBlock* succ);
+    Condition evaluateTestNullLikeExpr(const BranchStmt* branchStmt, const BasicBlockNode* succ);
     /// Return condition when there is a branch calls program exit
-    Condition evaluateProgExit(const BranchStmt* branchStmt, const SVFBasicBlock* succ);
+    Condition evaluateProgExit(const BranchStmt* branchStmt, const BasicBlockNode* succ);
     /// Collect basic block contains program exit function call
-    void collectBBCallingProgExit(const SVFBasicBlock& bb);
-    bool isBBCallsProgExit(const SVFBasicBlock* bb);
+    void collectBBCallingProgExit(const BasicBlockNode& bb);
+    bool isBBCallsProgExit(const BasicBlockNode* bb);
     //@}
 
     /// Evaluate test null/not null like expressions

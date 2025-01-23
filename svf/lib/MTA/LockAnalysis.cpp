@@ -72,7 +72,7 @@ void LockAnalysis::collectLockUnlocksites()
 
     for (const SVFFunction* F : tct->getSVFModule()->getFunctionSet())
     {
-        for (const SVFBasicBlock* bb : F->getBasicBlockList())
+        for (const BasicBlockNode* bb : F->getBasicBlockList())
         {
             for (const ICFGNode* icfgNode : bb->getICFGNodeList())
             {

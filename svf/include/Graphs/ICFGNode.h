@@ -79,7 +79,7 @@ public:
     }
 
     /// Return the basic block of this ICFGNode
-    virtual const SVFBasicBlock* getBB() const
+    virtual const BasicBlockNode* getBB() const
     {
         return bb;
     }
@@ -146,7 +146,7 @@ public:
 
 protected:
     const SVFFunction* fun;
-    const SVFBasicBlock* bb;
+    const BasicBlockNode* bb;
     VFGNodeList VFGNodes; //< a list of VFGNodes
     SVFStmtList pagEdges; //< a list of PAGEdges
 
@@ -203,7 +203,7 @@ private:
     IntraICFGNode(NodeID id) : ICFGNode(id, IntraBlock), isRet(false) {}
 
 public:
-    IntraICFGNode(NodeID id, const SVFBasicBlock* b, bool isReturn) : ICFGNode(id, IntraBlock), isRet(isReturn)
+    IntraICFGNode(NodeID id, const BasicBlockNode* b, bool isReturn) : ICFGNode(id, IntraBlock), isRet(isReturn)
     {
         fun = b->getFunction();
         bb = b;
@@ -441,7 +441,7 @@ protected:
     CallICFGNode(NodeID id) : InterICFGNode(id, FunCallBlock), ret{} {}
 
 public:
-    CallICFGNode(NodeID id, const SVFBasicBlock* b, const SVFType* ty,
+    CallICFGNode(NodeID id, const BasicBlockNode* b, const SVFType* ty,
                  const SVFFunction* cf, bool iv, bool ivc, s32_t vfi,
                  const std::string& fnv)
         : InterICFGNode(id, FunCallBlock), ret(nullptr), calledFunc(cf),
@@ -473,7 +473,7 @@ public:
     }
 
     /// Return Basic Block
-    inline const SVFBasicBlock* getParent() const
+    inline const BasicBlockNode* getParent() const
     {
         return getBB();
     }

@@ -30,9 +30,10 @@
 #ifndef INCLUDE_SVF_FE_LLVMMODULE_H_
 #define INCLUDE_SVF_FE_LLVMMODULE_H_
 
+#include "Graphs/BasicBlockG.h"
 #include "SVF-LLVM/BasicTypes.h"
-#include "SVFIR/SVFValue.h"
 #include "SVFIR/SVFModule.h"
+#include "SVFIR/SVFValue.h"
 #include "Util/Options.h"
 
 namespace SVF
@@ -55,7 +56,9 @@ public:
 
     typedef Map<const Function*, SVFFunction*> LLVMFun2SVFFunMap;
     typedef Map<const Function*, CallGraphNode*> LLVMFun2CallGraphNodeMap;
-    typedef Map<const BasicBlock*, SVFBasicBlock*> LLVMBB2SVFBBMap;
+    typedef Map<const BasicBlock*, BasicBlockNode*> LLVMBB2SVFBBMap;
+    typedef Map<const BasicBlockNode*, const BasicBlock*> SVFBB2LLVMBBMap;
+
     typedef Map<const Instruction*, SVFInstruction*> LLVMInst2SVFInstMap;
     typedef Map<const Argument*, SVFArgument*> LLVMArgument2SVFArgumentMap;
     typedef Map<const Constant*, SVFConstant*> LLVMConst2SVFConstMap;
@@ -92,11 +95,13 @@ private:
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
     LLVMFun2CallGraphNodeMap LLVMFunc2CallGraphNode; ///< Map an LLVM Function to an CallGraph Node
     LLVMBB2SVFBBMap LLVMBB2SVFBB;
+    SVFBB2LLVMBBMap SVFBB2LLVMBB;
     LLVMInst2SVFInstMap LLVMInst2SVFInst;
     LLVMArgument2SVFArgumentMap LLVMArgument2SVFArgument;
     LLVMConst2SVFConstMap LLVMConst2SVFConst;
     LLVMValue2SVFOtherValueMap LLVMValue2SVFOtherValue;
     SVFValue2LLVMValueMap SVFValue2LLVMValue;
+
     LLVMType2SVFTypeMap LLVMType2SVFType;
     Type2TypeInfoMap Type2TypeInfo;
     ObjTypeInference* typeInference;
@@ -108,6 +113,7 @@ private:
     FunToFunEntryNodeMapTy FunToFunEntryNodeMap; ///< map a function to its FunExitICFGNode
     FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryICFGNode
     CallGraph* callgraph;
+    BasicBlockGraph* basicBlockGraph;
 
     Map<const Function*, DominatorTree> FunToDominatorTree;
 
@@ -177,10 +183,11 @@ public:
 
     void addFunctionMap(const Function* func, CallGraphNode* svfFunc);
 
-    inline void addBasicBlockMap(const BasicBlock* bb, SVFBasicBlock* svfBB)
+    inline void addBasicBlockMap(const BasicBlock* bb, BasicBlockNode* svfBB)
     {
         LLVMBB2SVFBB[bb] = svfBB;
-        setValueAttr(bb,svfBB);
+        SVFBB2LLVMBB[svfBB] = bb;
+        //setValueAttr(bb,svfBB);
     }
     inline void addInstructionMap(const Instruction* inst, SVFInstruction* svfInst)
     {
@@ -250,6 +257,20 @@ public:
         return it->second;
     }
 
+    BasicBlockNode* getSVFBasicBlock(const BasicBlock* bb)
+    {
+        LLVMBB2SVFBBMap::const_iterator it = LLVMBB2SVFBB.find(bb);
+        assert(it!=LLVMBB2SVFBB.end() && "SVF BasicBlock not found!");
+        return it->second;
+    }
+
+    const BasicBlock* getLLVMBasicBlock(const BasicBlockNode* bb) const
+    {
+        SVFBB2LLVMBBMap::const_iterator it = SVFBB2LLVMBB.find(bb);
+        assert(it!=SVFBB2LLVMBB.end() && "LLVM BasicBlock not found!");
+        return it->second;
+    }
+
     inline CallGraphNode* getCallGraphNode(const Function* fun) const
     {
         LLVMFun2CallGraphNodeMap::const_iterator it = LLVMFunc2CallGraphNode.find(fun);
@@ -261,13 +282,6 @@ public:
     {
         LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
         assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
-        return it->second;
-    }
-
-    inline SVFBasicBlock* getSVFBasicBlock(const BasicBlock* bb) const
-    {
-        LLVMBB2SVFBBMap::const_iterator it = LLVMBB2SVFBB.find(bb);
-        assert(it!=LLVMBB2SVFBB.end() && "SVF BasicBlock not found!");
         return it->second;
     }
 

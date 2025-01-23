@@ -48,7 +48,7 @@ CallGraph* CallGraphBuilder::buildSVFIRCallGraph(SVFModule* svfModule)
 
     for (const auto& item : *callgraph)
     {
-        for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())
+        for (const BasicBlockNode* svfbb : (item.second)->getFunction()->getBasicBlockList())
         {
             for (const ICFGNode* inst : svfbb->getICFGNodeList())
             {
@@ -80,7 +80,7 @@ ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
     ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();
     for (const auto& item: *svfirCallGraph)
     {
-        for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())
+        for (const BasicBlockNode* svfbb : (item.second)->getFunction()->getBasicBlockList())
         {
             for (const ICFGNode* inst : svfbb->getICFGNodeList())
             {
@@ -105,7 +105,7 @@ ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
     // record join sites
     for (const auto& item: *svfirCallGraph)
     {
-        for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())
+        for (const BasicBlockNode* svfbb : (item.second)->getFunction()->getBasicBlockList())
         {
             for (const ICFGNode* node : svfbb->getICFGNodeList())
             {

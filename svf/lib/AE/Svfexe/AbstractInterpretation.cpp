@@ -798,9 +798,9 @@ void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
             return;
         }
     }
-    FIFOWorkList<const SVFBasicBlock *> blkWorkList;
+    FIFOWorkList<const BasicBlockNode*> blkWorkList;
     FIFOWorkList<const ICFGNode *> instWorklist;
-    for (const SVFBasicBlock * bb: callNode->getCalledFunction()->getReachableBBs())
+    for (const BasicBlockNode* bb: callNode->getCalledFunction()->getReachableBBs())
     {
         for (const ICFGNode* node: bb->getICFGNodeList())
         {

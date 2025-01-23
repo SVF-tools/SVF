@@ -397,7 +397,7 @@ public:
         return it!=joinSiteToLoopMap.end();
     }
 
-    bool hasLoop(const SVFBasicBlock* bb) const
+    bool hasLoop(const BasicBlockNode* bb) const
     {
         const SVFFunction* fun = bb->getFunction();
         return fun->hasLoopInfo(bb);
@@ -411,7 +411,7 @@ public:
     /// Get loop for an instruction
     const LoopBBs& getLoop(const ICFGNode* inst);
     /// Get loop for fork/join site
-    const LoopBBs& getLoop(const SVFBasicBlock* bb);
+    const LoopBBs& getLoop(const BasicBlockNode* bb);
 
     /// Push calling context
     void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee);
@@ -492,9 +492,9 @@ private:
     /// collect loop info for join sites
     void collectLoopInfoForJoin();
     /// Whether a given bb is a loop head of a inloop join site
-    bool isLoopHeaderOfJoinLoop(const SVFBasicBlock* bb);
+    bool isLoopHeaderOfJoinLoop(const BasicBlockNode* bb);
     /// Whether a given bb is an exit of a inloop join site
-    bool isLoopExitOfJoinLoop(const SVFBasicBlock* bb);
+    bool isLoopExitOfJoinLoop(const BasicBlockNode* bb);
     //@}
 
     /// Multi-forked threads

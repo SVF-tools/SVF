@@ -62,8 +62,8 @@ bool ProgSlice::AllPathReachableSolve()
             if(inBackwardSlice(succ))
             {
                 Condition vfCond;
-                const SVFBasicBlock* nodeBB = getSVFGNodeBB(node);
-                const SVFBasicBlock* succBB = getSVFGNodeBB(succ);
+                const BasicBlockNode* nodeBB = getSVFGNodeBB(node);
+                const BasicBlockNode* succBB = getSVFGNodeBB(succ);
                 /// clean up the control flow conditions for next round guard computation
                 clearCFCond();
 
@@ -107,7 +107,7 @@ bool ProgSlice::AllPathReachableSolve()
  */
 ProgSlice::Condition ProgSlice::computeInvalidCondFromRemovedSUVFEdge(const SVFGNode * cur)
 {
-    Set<const SVFBasicBlock*> validOutBBs; // the BBs of valid successors
+    Set<const BasicBlockNode*> validOutBBs; // the BBs of valid successors
     for(SVFGNode::const_iterator it = cur->OutEdgeBegin(), eit = cur->OutEdgeEnd(); it!=eit; ++it)
     {
         const SVFGEdge* edge = (*it);
@@ -126,8 +126,8 @@ ProgSlice::Condition ProgSlice::computeInvalidCondFromRemovedSUVFEdge(const SVFG
             if (!validOutBBs.count(getSVFGNodeBB(succ)))
             {
                 // removed vfg node does not reside in the BBs of valid successors
-                const SVFBasicBlock *nodeBB = getSVFGNodeBB(cur);
-                const SVFBasicBlock *succBB = getSVFGNodeBB(succ);
+                const BasicBlockNode*nodeBB = getSVFGNodeBB(cur);
+                const BasicBlockNode*succBB = getSVFGNodeBB(succ);
                 clearCFCond();
                 invalidCond = condOr(invalidCond, ComputeIntraVFGGuard(nodeBB, succBB));
             }
