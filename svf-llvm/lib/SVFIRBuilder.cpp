@@ -172,7 +172,7 @@ SVFIR* SVFIRBuilder::build()
     // dump SVFIR as JSON
     if (!Options::DumpJson().empty())
     {
-        SVFIRWriter::writeJsonToPath(pag, Options::DumpJson());
+//        SVFIRWriter::writeJsonToPath(pag, Options::DumpJson());
     }
 
     double endTime = SVFStat::getClk(true);

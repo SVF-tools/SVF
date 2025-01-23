@@ -65,8 +65,8 @@ int main(int argc, char** argv)
     const std::string jsonPath = replaceExtension(moduleNameVec.front());
     // PAG is borrowed from a unique_ptr, so we don't need to delete it.
     const SVFIR* pag = SVFIRBuilder(svfModule).build();
-
-    SVFIRWriter::writeJsonToPath(pag, jsonPath);
+    std::cout << pag->isBlkObj(0) << std::endl;
+//    SVFIRWriter::writeJsonToPath(pag, jsonPath);
     SVFUtil::outs() << "SVF IR is written to '" << jsonPath << "'\n";
     LLVMModuleSet::releaseLLVMModuleSet();
     return 0;

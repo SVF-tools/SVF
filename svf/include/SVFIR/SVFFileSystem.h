@@ -113,7 +113,6 @@ class StInfo; // Every SVFType is linked to a StInfo. It also references SVFType
 
 class SVFValue;
 class SVFFunction;
-class SVFBasicBlock;
 class SVFInstruction;
 class SVFCallInst;
 class SVFConstant;
@@ -509,7 +508,6 @@ private:
 
     cJSON* contentToJson(const SVFValue* value);
     cJSON* contentToJson(const SVFFunction* value);
-    cJSON* contentToJson(const SVFBasicBlock* value);
     cJSON* contentToJson(const SVFInstruction* value);
     cJSON* contentToJson(const SVFCallInst* value);
     cJSON* contentToJson(const SVFConstant* value);
@@ -1136,15 +1134,6 @@ private:
                     << KindBaseHelper<T>::getKind(ptr));
     }
 
-    /// Read a const pointer
-    template <typename T> inline void readJson(const cJSON* obj, const T*& cptr)
-    {
-        assert(!cptr && "const pointer should be NULL");
-        T* ptr{};
-        readJson(obj, ptr);
-        cptr = ptr;
-    }
-
     template <typename T1, typename T2>
     void readJson(const cJSON* obj, std::pair<T1, T2>& pair)
     {
@@ -1273,7 +1262,6 @@ private:
     void virtFill(const cJSON*& fieldJson, SVFValue* value);
     void fill(const cJSON*& fieldJson, SVFValue* value);
     void fill(const cJSON*& fieldJson, SVFFunction* value);
-    void fill(const cJSON*& fieldJson, SVFBasicBlock* value);
     void fill(const cJSON*& fieldJson, SVFInstruction* value);
     void fill(const cJSON*& fieldJson, SVFCallInst* value);
     void fill(const cJSON*& fieldJson, SVFConstant* value);
