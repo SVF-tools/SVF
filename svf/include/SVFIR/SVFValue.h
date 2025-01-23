@@ -367,7 +367,7 @@ public:
         return node->getKind() == SVFFunc;
     }
 
-    inline SVFLoopAndDomInfo* getLoopAndDomInfo()
+    inline SVFLoopAndDomInfo* getLoopAndDomInfo() const
     {
         return loopAndDom;
     }
@@ -408,6 +408,10 @@ public:
     u32_t arg_size() const;
     const SVFArgument* getArg(u32_t idx) const;
     bool isVarArg() const;
+    inline const std::vector<const SVFArgument*>& getArgsList() const
+    {
+        return allArgs;
+    }
 
     inline bool hasBasicBlock() const
     {
