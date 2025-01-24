@@ -55,7 +55,7 @@ class SVFVar : public GenericPAGNodeTy
 public:
     /// Node kinds for SVFIR variables:
     /// ValNode - LLVM pointer value
-    /// ObjNode - Memory object 
+    /// ObjNode - Memory object
     /// RetValNode - Function return value
     /// VarargNode - Variable argument parameter
     /// GepValNode - Temporary value for field-sensitive analysis
@@ -77,7 +77,7 @@ protected:
 public:
     /// Standard constructor with ID, type and kind
     SVFVar(NodeID i, const SVFType* svfType, PNODEK k);
-    
+
     /// Virtual destructor
     virtual ~SVFVar() {}
 
@@ -494,10 +494,11 @@ public:
     inline const std::string getValueName() const
     {
         return getName() + "_" +
-                   std::to_string(getConstantFieldIdx());
+               std::to_string(getConstantFieldIdx());
     }
 
-    virtual bool isPointer() const {
+    virtual bool isPointer() const
+    {
         return base->isPointer();
     }
 
@@ -506,7 +507,8 @@ public:
         return gepValType;
     }
 
-    virtual const SVFFunction* getFunction() const {
+    virtual const SVFFunction* getFunction() const
+    {
         return base->getFunction();
     }
 
@@ -811,7 +813,8 @@ public:
         return getName() + "_" + std::to_string(apOffset);
     }
 
-    virtual const SVFFunction* getFunction() const {
+    virtual const SVFFunction* getFunction() const
+    {
         return base->getFunction();
     }
 
@@ -832,7 +835,8 @@ public:
         return base->isConstDataOrAggDataButNotNullPtr();
     }
 
-    virtual bool isPointer() const {
+    virtual bool isPointer() const
+    {
         return base->isPointer();
     }
 };
@@ -1006,7 +1010,8 @@ public:
     FunValVar(NodeID i, const ICFGNode* icn, const CallGraphNode* cgn, const SVFType* svfType);
 
 
-    virtual bool isPointer() const {
+    virtual bool isPointer() const
+    {
         return true;
     }
 
@@ -1196,7 +1201,7 @@ public:
 
     /// Constructor
     ConstDataValVar(NodeID i, const ICFGNode* icn, const SVFType* svfType,
-                       PNODEK ty = ConstDataValNode)
+                    PNODEK ty = ConstDataValNode)
         : ValVar(i, svfType, icn, ty)
     {
 
@@ -1310,7 +1315,7 @@ public:
 
     /// Constructor
     ConstFPValVar(NodeID i, double dv,
-                     const ICFGNode* icn, const SVFType* svfType)
+                  const ICFGNode* icn, const SVFType* svfType)
         : ConstDataValVar(i, icn, svfType, ConstFPValNode), dval(dv)
     {
     }
@@ -1880,7 +1885,8 @@ public:
     /// Return name of a LLVM value
     const std::string getValueName() const;
 
-    virtual bool isPointer() const {
+    virtual bool isPointer() const
+    {
         return true;
     }
     virtual const std::string toString() const;
@@ -1930,7 +1936,8 @@ public:
         return "dummyVal";
     }
 
-    virtual bool isPointer() const {
+    virtual bool isPointer() const
+    {
         return true;
     }
 
@@ -1990,7 +1997,8 @@ public:
         return "dummyObj";
     }
 
-    virtual bool isPointer() const {
+    virtual bool isPointer() const
+    {
         return true;
     }
 
