@@ -172,7 +172,7 @@ public:
         ConstIntValNode,         // │   ├── Represents a constant integer value node
         ConstNullptrValNode,     // │   └── Represents a constant nullptr value node
         // │   └─ Subclass: DummyValVar
-        DummyValNode,            // │       Dummy node for uninitialized values
+        DummyValNode,            // │   └── Dummy node for uninitialized values
 
         // └─ Subclass: ObjVar (Object variable nodes)
         ObjNode,                 // ├── Represents an object variable
@@ -185,12 +185,13 @@ public:
         StackObjNode,            // │   ├── Represents a stack object
         GlobalObjNode,           // │   ├── Represents a global object
         ConstAggObjNode,         // │   ├── Represents a constant aggregate object
+        // │   └─ Subclass: ConstDataObjVar
         ConstDataObjNode,        // │   ├── Represents a constant data object
         ConstFPObjNode,          // │   ├── Represents a constant floating-point object
         ConstIntObjNode,         // │   ├── Represents a constant integer object
         ConstNullptrObjNode,     // │   └── Represents a constant nullptr object
         // │   └─ Subclass: DummyObjVar
-        DummyObjNode,            // │       Dummy node for uninitialized objects
+        DummyObjNode,            // │   └── Dummy node for uninitialized objects
 
         // ┌─────────────────────────────────────────────────────────────────────────┐
         // │ VFGNode: Classes of Value Flow Graph (VFG) node kinds (Parent class:   │
