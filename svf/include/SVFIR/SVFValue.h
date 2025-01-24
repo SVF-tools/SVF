@@ -33,6 +33,7 @@
 #include "SVFIR/SVFType.h"
 #include "Graphs/GraphPrinter.h"
 #include "Util/Casting.h"
+#include "Graphs/BasicBlockG.h"
 
 namespace SVF
 {
@@ -522,113 +523,6 @@ public:
 };
 
 class ICFGNode;
-
-class SVFBasicBlock : public SVFValue
-{
-    friend class LLVMModuleSet;
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-    friend class SVFIRBuilder;
-    friend class SVFFunction;
-    friend class ICFGBuilder;
-    friend class ICFG;
-
-public:
-    typedef std::vector<const ICFGNode*>::const_iterator const_iterator;
-
-private:
-    std::vector<const ICFGNode*> allICFGNodes;    ///< all ICFGNodes in this BasicBlock
-    std::vector<const SVFBasicBlock*> succBBs;  ///< all successor BasicBlocks of this BasicBlock
-    std::vector<const SVFBasicBlock*> predBBs;  ///< all predecessor BasicBlocks of this BasicBlock
-    const SVFFunction* fun;                 /// Function where this BasicBlock is
-
-protected:
-    ///@{ attributes to be set only through Module builders e.g., LLVMModule
-
-    inline void addICFGNode(const ICFGNode* icfgNode)
-    {
-        assert(std::find(getICFGNodeList().begin(), getICFGNodeList().end(),
-                         icfgNode) == getICFGNodeList().end() && "duplicated icfgnode");
-        allICFGNodes.push_back(icfgNode);
-    }
-
-    inline void addSuccBasicBlock(const SVFBasicBlock* succ)
-    {
-        succBBs.push_back(succ);
-    }
-
-    inline void addPredBasicBlock(const SVFBasicBlock* pred)
-    {
-        predBBs.push_back(pred);
-    }
-    /// @}
-
-public:
-    /// Constructor without name
-    SVFBasicBlock(const SVFType* ty, const SVFFunction* f);
-    SVFBasicBlock() = delete;
-    ~SVFBasicBlock() override;
-
-    static inline bool classof(const SVFValue *node)
-    {
-        return node->getKind() == SVFBB;
-    }
-
-    inline const std::vector<const ICFGNode*>& getICFGNodeList() const
-    {
-        return allICFGNodes;
-    }
-
-    inline const_iterator begin() const
-    {
-        return allICFGNodes.begin();
-    }
-
-    inline const_iterator end() const
-    {
-        return allICFGNodes.end();
-    }
-
-    inline const SVFFunction* getParent() const
-    {
-        return fun;
-    }
-
-    inline const SVFFunction* getFunction() const
-    {
-        return fun;
-    }
-
-    inline const ICFGNode* front() const
-    {
-        assert(!allICFGNodes.empty() && "bb empty?");
-        return allICFGNodes.front();
-    }
-
-    inline const ICFGNode* back() const
-    {
-        assert(!allICFGNodes.empty() && "bb empty?");
-        return allICFGNodes.back();
-    }
-
-    inline const std::vector<const SVFBasicBlock*>& getSuccessors() const
-    {
-        return succBBs;
-    }
-
-    inline const std::vector<const SVFBasicBlock*>& getPredecessors() const
-    {
-        return predBBs;
-    }
-    u32_t getNumSuccessors() const
-    {
-        return succBBs.size();
-    }
-    u32_t getBBSuccessorPos(const SVFBasicBlock* succbb);
-    u32_t getBBSuccessorPos(const SVFBasicBlock* succbb) const;
-    u32_t getBBPredecessorPos(const SVFBasicBlock* succbb);
-    u32_t getBBPredecessorPos(const SVFBasicBlock* succbb) const;
-};
 
 class SVFInstruction : public SVFValue
 {

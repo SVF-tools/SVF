@@ -160,8 +160,6 @@ SVFFunction::SVFFunction(const SVFType* ty, const SVFFunctionType* ft,
 
 SVFFunction::~SVFFunction()
 {
-    for(const SVFBasicBlock* bb : allBBs)
-        delete bb;
     for(const SVFArgument* arg : allArgs)
         delete arg;
     delete loopAndDom;
@@ -196,72 +194,6 @@ void SVFFunction::setExitBlock(SVFBasicBlock *bb)
     exitBlock = bb;
 }
 
-SVFBasicBlock::SVFBasicBlock(const SVFType* ty, const SVFFunction* f)
-    : SVFValue(ty, SVFValue::SVFBB), fun(f)
-{
-}
-
-SVFBasicBlock::~SVFBasicBlock()
-{
-
-}
-
-/*!
- * Get position of a successor basic block
- */
-u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ)
-{
-    u32_t i = 0;
-    for (const SVFBasicBlock* SuccBB: succBBs)
-    {
-        if (SuccBB == Succ)
-            return i;
-        i++;
-    }
-    assert(false && "Didn't find successor edge?");
-    return 0;
-}
-
-u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ) const
-{
-    u32_t i = 0;
-    for (const SVFBasicBlock* SuccBB: succBBs)
-    {
-        if (SuccBB == Succ)
-            return i;
-        i++;
-    }
-    assert(false && "Didn't find successor edge?");
-    return 0;
-}
-
-/*!
- * Return a position index from current bb to it successor bb
- */
-u32_t SVFBasicBlock::getBBPredecessorPos(const SVFBasicBlock* succbb)
-{
-    u32_t pos = 0;
-    for (const SVFBasicBlock* PredBB : succbb->getPredecessors())
-    {
-        if(PredBB == this)
-            return pos;
-        ++pos;
-    }
-    assert(false && "Didn't find predecessor edge?");
-    return pos;
-}
-u32_t SVFBasicBlock::getBBPredecessorPos(const SVFBasicBlock* succbb) const
-{
-    u32_t pos = 0;
-    for (const SVFBasicBlock* PredBB : succbb->getPredecessors())
-    {
-        if(PredBB == this)
-            return pos;
-        ++pos;
-    }
-    assert(false && "Didn't find predecessor edge?");
-    return pos;
-}
 
 SVFInstruction::SVFInstruction(const SVFType* ty, const SVFBasicBlock* b,
                                bool tm, bool isRet, SVFValKind k)

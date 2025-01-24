@@ -726,10 +726,6 @@ std::string SVFValue::toString() const
     {
         rawstr << "Function: " << fun->getName() << " ";
     }
-    else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(this))
-    {
-        rawstr << "BasicBlock: " << bb->getName() << " ";
-    }
     else
     {
         auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
