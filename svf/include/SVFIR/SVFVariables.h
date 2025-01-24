@@ -39,7 +39,8 @@ namespace SVF
 
 class SVFVar;
 /*
- * SVFIR program variables (PAGNodes)
+ * Program variables in SVFIR (based on PAG nodes)
+ * These represent variables in the program analysis graph
  */
 typedef GenericNode<SVFVar, SVFStmt> GenericPAGNodeTy;
 class SVFVar : public GenericPAGNodeTy
@@ -52,70 +53,71 @@ class SVFVar : public GenericPAGNodeTy
     friend class VFG;
 
 public:
-    /// Nine kinds of SVFIR variables
-    /// ValNode: llvm pointer value
-    /// ObjNode: memory object
-    /// RetValNode: unique return node
-    /// Vararg: unique node for vararg parameter
-    /// GepValNode: temporary gep value node for field sensitivity
-    /// GepValNode: temporary gep obj node for field sensitivity
-    /// BaseObjNode: for field insensitive analysis
-    /// DummyValNode and DummyObjNode: for non-llvm-value node
+    /// Node kinds for SVFIR variables:
+    /// ValNode - LLVM pointer value
+    /// ObjNode - Memory object 
+    /// RetValNode - Function return value
+    /// VarargNode - Variable argument parameter
+    /// GepValNode - Temporary value for field-sensitive analysis
+    /// GepObjNode - Temporary object for field-sensitive analysis
+    /// BaseObjNode - Base object for field-insensitive analysis
+    /// DummyValNode/DummyObjNode - Nodes for non-LLVM values
     typedef GNodeK PNODEK;
     typedef s64_t GEdgeKind;
 
 protected:
+    /// Maps tracking incoming and outgoing edges by kind
     SVFStmt::KindToSVFStmtMapTy InEdgeKindToSetMap;
     SVFStmt::KindToSVFStmtMapTy OutEdgeKindToSetMap;
 
-    /// Constructor to create an empty object (for deserialization)
+    /// Empty constructor for deserialization
     SVFVar(NodeID i, PNODEK k) : GenericPAGNodeTy(i, k) {}
 
 
 public:
-    /// Constructor
+    /// Standard constructor with ID, type and kind
     SVFVar(NodeID i, const SVFType* svfType, PNODEK k);
-    /// Destructor
+    
+    /// Virtual destructor
     virtual ~SVFVar() {}
 
-    /// Whether it is a pointer
+    /// Check if this variable represents a pointer
     virtual inline bool isPointer() const
     {
         assert(type && "type is null?");
         return type->isPointerTy();
     }
-    /// Whether it is constant data, i.e., "0", "1.001", "str"
-    /// or llvm's metadata, i.e., metadata !4087
+
+    /// Check if this variable represents constant data/metadata but not null pointer
     virtual bool isConstDataOrAggDataButNotNullPtr() const
     {
         return false;
     }
 
-    /// Whether this is an isolated node on the SVFIR graph
+    /// Check if this node is isolated (no edges) in the SVFIR graph
     virtual bool isIsolatedNode() const;
 
-    /// Get name of the LLVM value
-    // TODO: (Optimization) Should it return const reference instead of value?
+    /// Get string name of the represented LLVM value
     virtual const std::string getValueName() const = 0;
 
-    /// Return the function containing this SVFVar
-    /// @return The SVFFunction containing this variable, or nullptr if it's a global/constant expression
+    /// Get containing function, or null for globals/constants
     virtual inline const SVFFunction* getFunction() const
     {
         return nullptr;
     }
 
-    /// Get incoming SVFIR statements (edges)
+    /// Edge accessors and checkers
+    //@{
     inline SVFStmt::SVFStmtSetTy& getIncomingEdges(SVFStmt::PEDGEK kind)
     {
         return InEdgeKindToSetMap[kind];
     }
-    /// Get outgoing SVFIR statements (edges)
+
     inline SVFStmt::SVFStmtSetTy& getOutgoingEdges(SVFStmt::PEDGEK kind)
     {
         return OutEdgeKindToSetMap[kind];
     }
-    /// Has incoming SVFIR statements (edges)
+
     inline bool hasIncomingEdges(SVFStmt::PEDGEK kind) const
     {
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
@@ -124,7 +126,7 @@ public:
         else
             return false;
     }
-    /// Has outgoing SVFIR statements (edges)
+
     inline bool hasOutgoingEdges(SVFStmt::PEDGEK kind) const
     {
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
@@ -134,39 +136,37 @@ public:
             return false;
     }
 
-    /// Get incoming SVFStmt iterator
+    /// Edge iterators
     inline SVFStmt::SVFStmtSetTy::iterator getIncomingEdgesBegin(SVFStmt::PEDGEK kind) const
     {
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
-        assert(it!=InEdgeKindToSetMap.end() && "The node does not have such kind of edge");
+        assert(it!=InEdgeKindToSetMap.end() && "Edge kind not found");
         return it->second.begin();
     }
 
-    /// Get incoming SVFStmt iterator
     inline SVFStmt::SVFStmtSetTy::iterator getIncomingEdgesEnd(SVFStmt::PEDGEK kind) const
     {
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
-        assert(it!=InEdgeKindToSetMap.end() && "The node does not have such kind of edge");
+        assert(it!=InEdgeKindToSetMap.end() && "Edge kind not found");
         return it->second.end();
     }
 
-    /// Get outgoing SVFStmt iterator
     inline SVFStmt::SVFStmtSetTy::iterator getOutgoingEdgesBegin(SVFStmt::PEDGEK kind) const
     {
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
-        assert(it!=OutEdgeKindToSetMap.end() && "The node does not have such kind of edge");
+        assert(it!=OutEdgeKindToSetMap.end() && "Edge kind not found");
         return it->second.begin();
     }
 
-    /// Get outgoing SVFStmt iterator
     inline SVFStmt::SVFStmtSetTy::iterator getOutgoingEdgesEnd(SVFStmt::PEDGEK kind) const
     {
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
-        assert(it!=OutEdgeKindToSetMap.end() && "The node does not have such kind of edge");
+        assert(it!=OutEdgeKindToSetMap.end() && "Edge kind not found");
         return it->second.end();
     }
     //@}
 
+    /// Type checking support for LLVM-style RTTI
     static inline bool classof(const SVFVar *)
     {
         return true;
@@ -182,6 +182,7 @@ public:
         return isSVFVarKind(node->getNodeKind());
     }
 
+    /// Check if this pointer is in an uncalled function
     inline virtual bool ptrInUncalledFunction() const
     {
         if (const SVFFunction* fun = getFunction())
@@ -194,6 +195,7 @@ public:
         }
     }
 
+    /// Check if this variable represents constant/aggregate data
     virtual bool isConstDataOrAggData() const
     {
         return false;
@@ -201,7 +203,7 @@ public:
 
 
 private:
-    ///  add methods of the components
+    /// Edge management methods
     //@{
     inline void addInEdge(SVFStmt* inEdge)
     {
@@ -216,7 +218,8 @@ private:
         OutEdgeKindToSetMap[kind].insert(outEdge);
         addOutgoingEdge(outEdge);
     }
-    /// Has incoming VariantGepEdges
+
+    /// Check for incoming variable field GEP edges
     inline bool hasIncomingVariantGepEdge() const
     {
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(SVFStmt::Gep);
@@ -232,20 +235,18 @@ private:
     }
 
 public:
+    /// Get string representation
     virtual const std::string toString() const;
 
-    /// Dump to console for debugging
+    /// Debug dump to console
     void dump() const;
 
-    //@}
-    /// Overloading operator << for dumping SVFVar value
-    //@{
+    /// Stream operator overload for output
     friend OutStream& operator<< (OutStream &o, const SVFVar &node)
     {
         o << node.toString();
         return o;
     }
-    //@}
 };
 
 
