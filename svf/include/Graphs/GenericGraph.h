@@ -139,7 +139,8 @@ class SVFBaseNode
 
 public:
 
-    enum GNodeK {
+    enum GNodeK
+    {
         // ┌─────────────────────────────────────────────────────────────────────────┐
         // │ ICFGNode: Classes of inter-procedural and intra-procedural control flow │
         // │ graph nodes (Parent class: ICFGNode)                                   │

@@ -372,7 +372,8 @@ void SVFIRBuilder::initialiseNodes()
         const Value* llvmValue = llvmModuleSet()->getLLVMValue(iter->first);
 
         const ICFGNode *icfgNode = nullptr;
-        if (const Instruction *inst = SVFUtil::dyn_cast<Instruction>(llvmValue)) {
+        if (const Instruction *inst = SVFUtil::dyn_cast<Instruction>(llvmValue))
+        {
             if (llvmModuleSet()->hasICFGNode(inst))
                 icfgNode = llvmModuleSet()->getICFGNode(inst);
         }
@@ -1407,9 +1408,10 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const 
         LLVMModuleSet* llvmmodule = llvmModuleSet();
         const ICFGNode* node = nullptr;
         if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(llvmmodule->getLLVMValue(curVal)))
-        if (llvmmodule->hasICFGNode(inst)) {
-            node = llvmmodule->getICFGNode(inst);
-        }
+            if (llvmmodule->hasICFGNode(inst))
+            {
+                node = llvmmodule->getICFGNode(inst);
+            }
         NodeID gepNode = pag->addGepValNode(curVal, llvmmodule->getSVFValue(val), ap,
                                             NodeIDAllocator::get()->allocateValueId(),
                                             llvmmodule->getSVFType(PointerType::getUnqual(llvmmodule->getContext())), node);
