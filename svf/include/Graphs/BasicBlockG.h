@@ -257,7 +257,6 @@ public:
         return pos;
     }
 
-    const std::string& getName() const override;
     const std::string toString() const;
 
 };
@@ -275,11 +274,12 @@ public:
 
     }
 
-    SVFBasicBlock* addBasicBlock(const SVFFunction* f)
+    SVFBasicBlock* addBasicBlockToFunction(const std::string& bbname, const SVFFunction* f)
     {
         id++;
         SVFBasicBlock* bb = new SVFBasicBlock(id, f);
         addGNode(id, bb);
+        bb->setName(bbname);
         return bb;
     }
 

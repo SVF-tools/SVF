@@ -751,12 +751,6 @@ const std::string SVFBasicBlock::toString() const
     return rawstr.str();
 }
 
-const std::string& SVFBasicBlock::getName() const {
-    auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
-    return llvmVal->getName().str();
-}
-
-
 const std::string SVFBaseNode::valueOnlyToString() const
 {
     std::string str;
