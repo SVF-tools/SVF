@@ -384,15 +384,15 @@ GepStmt* SVFIR::addVariantGepStmt(NodeID src, NodeID dst, const AccessPath& ap)
  * Add a temp field value node, this method can only invoked by getGepValVar
  * due to constraint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
  */
-NodeID SVFIR::addGepValNode(const SVFValue* curInst,const SVFValue* gepVal, const AccessPath& ap, NodeID i, const SVFType* type)
+NodeID SVFIR::addGepValNode(const SVFValue* curInst,const SVFValue* gepVal, const AccessPath& ap, NodeID i, const SVFType* type, const ICFGNode* icn)
 {
     NodeID base = getValueNode(gepVal);
     //assert(findPAGNode(i) == false && "this node should not be created before");
     assert(0==GepValObjMap[curInst].count(std::make_pair(base, ap))
            && "this node should not be created before");
     GepValObjMap[curInst][std::make_pair(base, ap)] = i;
-    GepValVar *node = new GepValVar(cast<ValVar>(getGNode(base)), gepVal, i, ap, type);
-    return addValNode(gepVal, node);
+    GepValVar *node = new GepValVar(cast<ValVar>(getGNode(base)), i, ap, type, icn);
+    return addValNode(node);
 }
 
 /*!
@@ -458,7 +458,7 @@ NodeID SVFIR::addGepObjNode(const BaseObjVar* baseObj, const APOffset& apOffset,
     //ABTest
     GepObjVar *node = new GepObjVar(baseObj, gepId, apOffset);
     memToFieldsMap[base].set(gepId);
-    return addObjNode(baseObj->hasValue()? baseObj->getValue(): nullptr, node);
+    return addObjNode(node);
 }
 
 /*!
@@ -663,7 +663,7 @@ bool SVFIR::isValidTopLevelPtr(const SVFVar* node)
         if (isValidPointer(node->getId()))
         {
             const ValVar* baseVar = pag->getBaseValVar(node->getId());
-            if(!SVFUtil::isa<DummyValVar, BlackHoleVar>(baseVar))
+            if(!SVFUtil::isa<DummyValVar, BlackHoleValVar>(baseVar))
                 return !SVFUtil::isArgOfUncalledFunction(baseVar);
         }
     }

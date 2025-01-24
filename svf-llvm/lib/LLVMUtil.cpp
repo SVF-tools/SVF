@@ -762,7 +762,7 @@ const std::string SVFBaseNode::valueOnlyToString() const
         {
             baseNode = objVar->getBaseObj();
         }
-        if (SVFUtil::isa<DummyObjVar, DummyValVar, BlackHoleVar>(baseNode))
+        if (SVFUtil::isa<DummyObjVar, DummyValVar, BlackHoleValVar>(baseNode))
             rawstr << "";
         else
         {
