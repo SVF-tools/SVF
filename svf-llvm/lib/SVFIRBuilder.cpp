@@ -189,9 +189,9 @@ void SVFIRBuilder::initialiseNodes()
 
     SymbolTableInfo* symTable = pag->getSymbolInfo();
 
-    pag->addBlackholeObjNode(nullptr);
-    pag->addConstantObjNode(nullptr);
-    pag->addBlackholePtrNode(nullptr);
+    pag->addBlackholeObjNode();
+    pag->addConstantObjNode();
+    pag->addBlackholePtrNode();
     addNullPtrNode();
 
     // Iterate over all value symbols in the symbol table

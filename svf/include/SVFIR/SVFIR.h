@@ -471,13 +471,13 @@ public:
     NodeBS& getAllFieldsObjVars(NodeID id);
     NodeBS getFieldsAfterCollapse(NodeID id);
     //@}
-    inline NodeID addDummyValNode(const ICFGNode* node)
+    inline NodeID addDummyValNode()
     {
-        return addDummyValNode(NodeIDAllocator::get()->allocateValueId(), node);
+        return addDummyValNode(NodeIDAllocator::get()->allocateValueId(), nullptr);
     }
-    inline NodeID addDummyObjNode(const SVFType* type, const ICFGNode* node)
+    inline NodeID addDummyObjNode(const SVFType* type)
     {
-        return addDummyObjNode(NodeIDAllocator::get()->allocateObjectId(), type, node);
+        return addDummyObjNode(NodeIDAllocator::get()->allocateObjectId(), type);
     }
     /// Whether a node is a valid pointer
     //@{
@@ -713,31 +713,31 @@ private:
     {
         return addValNode(new DummyValVar(i, node));
     }
-    inline NodeID addDummyObjNode(NodeID i, const SVFType* type, const ICFGNode* node)
+    inline NodeID addDummyObjNode(NodeID i, const SVFType* type)
     {
         if (symInfo->idToObjTypeInfoMap().find(i) == symInfo->idToObjTypeInfoMap().end())
         {
             ObjTypeInfo* ti = symInfo->createObjTypeInfo(type);
             symInfo->idToObjTypeInfoMap()[i] = ti;
-            return addObjNode(new DummyObjVar(i, ti, node, type));
+            return addObjNode(new DummyObjVar(i, ti, nullptr, type));
         }
         else
         {
-            return addObjNode(new DummyObjVar(i, symInfo->getObjTypeInfo(i), node, type));
+            return addObjNode(new DummyObjVar(i, symInfo->getObjTypeInfo(i), nullptr, type));
         }
     }
 
-    inline NodeID addBlackholeObjNode(const ICFGNode* node)
+    inline NodeID addBlackholeObjNode()
     {
-        return addObjNode(new DummyObjVar(getBlackHoleNode(), symInfo->getObjTypeInfo(getBlackHoleNode()), node));
+        return addObjNode(new DummyObjVar(getBlackHoleNode(), symInfo->getObjTypeInfo(getBlackHoleNode()), nullptr));
     }
-    inline NodeID addConstantObjNode(const ICFGNode* node)
+    inline NodeID addConstantObjNode()
     {
-        return addObjNode(new DummyObjVar(getConstantNode(), symInfo->getObjTypeInfo(getConstantNode()), node));
+        return addObjNode(new DummyObjVar(getConstantNode(), symInfo->getObjTypeInfo(getConstantNode()), nullptr));
     }
-    inline NodeID addBlackholePtrNode(const ICFGNode* node)
+    inline NodeID addBlackholePtrNode()
     {
-        return addDummyValNode(getBlkPtr(), node);
+        return addDummyValNode(getBlkPtr(), nullptr);
     }
     //@}
 

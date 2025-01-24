@@ -155,8 +155,8 @@ void CFLAlias::heapAllocatorViaIndCall(const CallICFGNode* cs)
     }
     else
     {
-        NodeID valNode = svfir->addDummyValNode(nullptr);
-        NodeID objNode = svfir->addDummyObjNode(cs->getType(), nullptr);
+        NodeID valNode = svfir->addDummyValNode();
+        NodeID objNode = svfir->addDummyObjNode(cs->getType());
         callsite2DummyValPN.insert(std::make_pair(cs,valNode));
         graph->addCFLNode(valNode, new CFLNode(valNode));
         graph->addCFLNode(objNode, new CFLNode(objNode));

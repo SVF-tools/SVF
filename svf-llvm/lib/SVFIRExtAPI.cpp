@@ -104,7 +104,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
 
     if (fields.size() == 1 && (LLVMUtil::isConstDataOrAggData(D) || LLVMUtil::isConstDataOrAggData(S)))
     {
-        NodeID dummy = pag->addDummyValNode(nullptr);
+        NodeID dummy = pag->addDummyValNode();
         addLoadEdge(vnD,dummy);
         addStoreEdge(dummy,vnS);
         return;
@@ -120,7 +120,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
                                       fields[index].getConstantStructFldIdx());
         NodeID dField = getGepValVar(D,fields[index],dElementType);
         NodeID sField = getGepValVar(S,fields[index],sElementType);
-        NodeID dummy = pag->addDummyValNode(nullptr);
+        NodeID dummy = pag->addDummyValNode();
         addLoadEdge(sField,dummy);
         addStoreEdge(dummy,dField);
     }
@@ -145,8 +145,8 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         if (arg->getType()->isPointerTy())
         {
             NodeID vnArg = pag->getValueNode(arg);
-            NodeID dummy = pag->addDummyValNode(nullptr);
-            NodeID obj = pag->addDummyObjNode(arg->getType(), nullptr);
+            NodeID dummy = pag->addDummyValNode();
+            NodeID obj = pag->addDummyObjNode(arg->getType());
             if (vnArg && dummy && obj)
             {
                 addAddrWithHeapSz(obj, dummy, cs);
