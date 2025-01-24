@@ -255,6 +255,14 @@ public:
         return it->second;
     }
 
+    const Value* getLLVMValue(const SVFBasicBlock* value) const
+    {
+        SVFBB2LLVMBBMap::const_iterator it = SVFBB2LLVMBB.find(value);
+        assert(it!=SVFBB2LLVMBB.end() && "can't find corresponding llvm value!");
+        return it->second;
+    }
+
+
     inline CallGraphNode* getCallGraphNode(const Function* fun) const
     {
         LLVMFun2CallGraphNodeMap::const_iterator it = LLVMFunc2CallGraphNode.find(fun);
