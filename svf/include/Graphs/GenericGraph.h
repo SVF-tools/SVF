@@ -240,6 +240,7 @@ public:
         ConstraintNodeKd, // Constraint graph node
         TCTNodeKd,        // Thread creation tree node
         DCHNodeKd,        // DCHG node
+        BasicBlockKd,     // Basic block node
         OtherKd           // Other node kind
     };
 
