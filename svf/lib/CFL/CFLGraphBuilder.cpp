@@ -354,7 +354,6 @@ CFLGraph* AliasCFLGraphBuilder::buildBiPEGgraph(ConstraintGraph *graph, Kind sta
                 }
                 if (DerefNode == nullptr)
                 {
-
                     NodeID refId = pag->addDummyValNode();
                     CFLDerefNode = new CFLNode(refId);
                     cflGraph->addCFLNode(refId, CFLDerefNode);

@@ -187,16 +187,16 @@ void AbstractState::initObjVar(ObjVar* objVar)
     // Handle constant data, arrays, and structures
     if (obj->isConstDataOrConstGlobal() || obj->isConstantArray() || obj->isConstantStruct())
     {
-        if (const ConstantIntObjVar* consInt = SVFUtil::dyn_cast<ConstantIntObjVar>(objVar))
+        if (const ConstIntObjVar* consInt = SVFUtil::dyn_cast<ConstIntObjVar>(objVar))
         {
             s64_t numeral = consInt->getSExtValue();
             (*this)[varId] = IntervalValue(numeral, numeral);
         }
-        else if (const ConstantFPObjVar* consFP = SVFUtil::dyn_cast<ConstantFPObjVar>(objVar))
+        else if (const ConstFPObjVar* consFP = SVFUtil::dyn_cast<ConstFPObjVar>(objVar))
         {
             (*this)[varId] = IntervalValue(consFP->getFPValue(), consFP->getFPValue());
         }
-        else if (SVFUtil::isa<ConstantNullPtrObjVar>(objVar))
+        else if (SVFUtil::isa<ConstNullPtrObjVar>(objVar))
         {
             (*this)[varId] = IntervalValue(0, 0);
         }
@@ -241,7 +241,7 @@ IntervalValue AbstractState::getElementIndex(const GepStmt* gep)
         s64_t idxUb;
 
         // Determine the lower and upper bounds based on whether the value is a constant
-        if (const ConstantIntValVar* constInt = SVFUtil::dyn_cast<ConstantIntValVar>(var))
+        if (const ConstIntValVar* constInt = SVFUtil::dyn_cast<ConstIntValVar>(var))
             idxLb = idxUb = constInt->getSExtValue();
         else
         {
@@ -320,7 +320,7 @@ IntervalValue AbstractState::getByteOffset(const GepStmt* gep)
             else
                 assert(false && "idxOperandType must be ArrType or PtrType");
 
-            if (const ConstantIntValVar* op = SVFUtil::dyn_cast<ConstantIntValVar>(idxOperandVar))
+            if (const ConstIntValVar* op = SVFUtil::dyn_cast<ConstIntValVar>(idxOperandVar))
             {
                 // Calculate the lower bound (lb) of the interval value
                 s64_t lb = (double)Options::MaxFieldLimit() / elemByteSize >= op->getSExtValue()

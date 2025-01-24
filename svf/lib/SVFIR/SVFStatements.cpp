@@ -304,7 +304,7 @@ NodeID UnaryOPStmt::getResID() const
 /// to receive one or multiple return values of this function
 bool PhiStmt::isFunctionRetPhi() const
 {
-    return SVFUtil::isa<RetPN>(getRes());
+    return SVFUtil::isa<RetValPN>(getRes());
 }
 
 
