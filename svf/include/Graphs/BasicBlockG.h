@@ -64,13 +64,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const
-    {
-        //TODO: BBG
-        std::string str;
-        std::stringstream rawstr(str);
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 
 
@@ -110,9 +104,7 @@ protected:
 
 public:
     /// Constructor without name
-    ///TODO: rewrite ID and GNodeK
-
-    SVFBasicBlock(NodeID id, const SVFFunction* f): GenericBasicBlockNodeTy(id, OtherKd), fun(f){
+    SVFBasicBlock(NodeID id, const SVFFunction* f): GenericBasicBlockNodeTy(id, BasicBlockKd), fun(f){
 
     }
     SVFBasicBlock() = delete;
@@ -146,14 +138,12 @@ public:
 
     inline void addSuccBasicBlock(const SVFBasicBlock* succ2)
     {
-        // TODO: discuss shall we check duplicated edges
         SVFBasicBlock* succ = const_cast<SVFBasicBlock*>(succ2);
         BasicBlockEdge* edge = new BasicBlockEdge(this, succ);
         this->addOutgoingEdge(edge);
         succ->addIncomingEdge(edge);
         this->succBBs.push_back(succ);
         succ->predBBs.push_back(this);
-
     }
 
     inline void addPredBasicBlock(const SVFBasicBlock* pred2)
