@@ -287,7 +287,7 @@ public:
     //@}
 
     /// Constructor
-    ValVar(NodeID i, const SVFType* svfType, PNODEK ty = ValNode, const ICFGNode* node = nullptr)
+    ValVar(NodeID i, const SVFType* svfType, const ICFGNode* node, PNODEK ty = ValNode)
         : SVFVar(i, svfType, ty), icfgNode(node)
     {
     }
@@ -476,7 +476,7 @@ public:
 
     /// Constructor
     GepValVar(ValVar* baseNode, NodeID i, const AccessPath& ap,
-              const SVFType* ty);
+              const SVFType* ty, const ICFGNode* node);
 
     /// offset of the base value variable
     inline APOffset getConstantFieldIdx() const
@@ -542,7 +542,7 @@ private:
 
 protected:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
-    BaseObjVar(NodeID i, PNODEK ty = BaseObjNode, const ICFGNode* node = nullptr) : ObjVar(i, ty), icfgNode(node) {}
+    BaseObjVar(NodeID i, const ICFGNode* node, PNODEK ty = BaseObjNode) : ObjVar(i, ty), icfgNode(node) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -571,8 +571,7 @@ public:
 
     /// Constructor
     BaseObjVar(NodeID i, ObjTypeInfo* ti,
-               const SVFType* svfType, PNODEK ty = BaseObjNode,
-               const ICFGNode* node = nullptr)
+               const SVFType* svfType, const ICFGNode* node, PNODEK ty = BaseObjNode)
         : ObjVar(i, svfType, ty), typeInfo(ti), icfgNode(node)
     {
     }
@@ -854,7 +853,7 @@ class HeapObjVar: public BaseObjVar
 
 protected:
     /// Constructor to create heap object var
-    HeapObjVar(NodeID i) : BaseObjVar(i, HeapObjNode) {}
+    HeapObjVar(NodeID i, const ICFGNode* node) : BaseObjVar(i, node, HeapObjNode) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -886,8 +885,8 @@ public:
     //@}
 
     /// Constructor
-    HeapObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType):
-        BaseObjVar(i, ti, svfType, HeapObjNode)
+    HeapObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node):
+        BaseObjVar(i, ti, svfType, node, HeapObjNode)
     {
     }
 
@@ -917,7 +916,7 @@ class StackObjVar: public BaseObjVar
 
 protected:
     /// Constructor to create stack object var
-    StackObjVar(NodeID i) : BaseObjVar(i, StackObjNode) {}
+    StackObjVar(NodeID i, const ICFGNode* node) : BaseObjVar(i, node, StackObjNode) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -949,8 +948,8 @@ public:
     //@}
 
     /// Constructor
-    StackObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType):
-        BaseObjVar(i, ti, svfType, StackObjNode)
+    StackObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node):
+        BaseObjVar(i, ti, svfType, node, StackObjNode)
     {
     }
 
@@ -1024,7 +1023,7 @@ private:
 
 private:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
-    FunObjVar(NodeID i, PNODEK ty = FunObjNode) : BaseObjVar(i, ty) {}
+    FunObjVar(NodeID i, const ICFGNode* node) : BaseObjVar(i,node, FunObjNode) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1056,7 +1055,7 @@ public:
     //@}
 
     /// Constructor
-    FunObjVar(NodeID i, ObjTypeInfo* ti, const CallGraphNode* cgNode, const SVFType* svfType);
+    FunObjVar(NodeID i, ObjTypeInfo* ti, const CallGraphNode* cgNode, const SVFType* svfType, const ICFGNode* node);
 
     inline const CallGraphNode* getCallGraphNode() const
     {
@@ -1104,7 +1103,7 @@ public:
 
     /// Constructor
     GlobalValVar(NodeID i, const ICFGNode* icn, const SVFType* svfType)
-        : ValVar(i, svfType, GlobalValNode, icn)
+        : ValVar(i, svfType, icn, GlobalValNode)
     {
         type = svfType;
     }
@@ -1145,7 +1144,7 @@ public:
 
     /// Constructor
     ConstAggValVar(NodeID i, const ICFGNode* icn, const SVFType* svfTy)
-        : ValVar(i, svfTy, ConstAggValNode, icn)
+        : ValVar(i, svfTy, icn, ConstAggValNode)
     {
         type = svfTy;
     }
@@ -1198,7 +1197,7 @@ public:
     /// Constructor
     ConstDataValVar(NodeID i, const ICFGNode* icn, const SVFType* svfType,
                        PNODEK ty = ConstDataValNode)
-        : ValVar(i, svfType, ty, icn)
+        : ValVar(i, svfType, icn, ty)
     {
 
     }
@@ -1432,7 +1431,7 @@ class GlobalObjVar : public BaseObjVar
 
 private:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
-    GlobalObjVar(NodeID i, PNODEK ty = GlobalObjNode) : BaseObjVar(i, ty) {}
+    GlobalObjVar(NodeID i, const ICFGNode* node) : BaseObjVar(i, node, GlobalObjNode) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1464,8 +1463,8 @@ public:
     //@}
 
     /// Constructor
-    GlobalObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType,
-                 PNODEK ty = GlobalObjNode): BaseObjVar(i, ti, svfType, ty)
+    GlobalObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node,
+                 PNODEK ty = GlobalObjNode): BaseObjVar(i, ti, svfType, node, ty)
     {
 
     }
@@ -1510,8 +1509,8 @@ public:
     //@}
 
     /// Constructor
-    ConstAggObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType)
-        : BaseObjVar(i,  ti, svfType, ConstAggObjNode)
+    ConstAggObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node)
+        : BaseObjVar(i,  ti, svfType, node, ConstAggObjNode)
     {
 
     }
@@ -1536,7 +1535,7 @@ class ConstDataObjVar : public BaseObjVar
 
 protected:
     /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
-    ConstDataObjVar(NodeID i) : BaseObjVar(i, ConstDataObjNode) {}
+    ConstDataObjVar(NodeID i, const ICFGNode* node) : BaseObjVar(i, node, ConstDataObjNode) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1568,8 +1567,8 @@ public:
     //@}
 
     /// Constructor
-    ConstDataObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, PNODEK ty = ConstDataObjNode)
-        : BaseObjVar(i, ti, svfType, ty)
+    ConstDataObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node, PNODEK ty = ConstDataObjNode)
+        : BaseObjVar(i, ti, svfType, node, ty)
     {
     }
 
@@ -1593,7 +1592,7 @@ class ConstFPObjVar : public ConstDataObjVar
 
 private:
     /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
-    ConstFPObjVar(NodeID i) : ConstDataObjVar(i) {}
+    ConstFPObjVar(NodeID i, const ICFGNode* node) : ConstDataObjVar(i, node) {}
 
 private:
     float dval;
@@ -1635,8 +1634,8 @@ public:
     //@}
 
     /// Constructor
-    ConstFPObjVar(NodeID i, double dv, ObjTypeInfo* ti, const SVFType* svfType)
-        : ConstDataObjVar(i, ti, svfType, ConstFPObjNode), dval(dv)
+    ConstFPObjVar(NodeID i, double dv, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node)
+        : ConstDataObjVar(i, ti, svfType, node, ConstFPObjNode), dval(dv)
     {
     }
 
@@ -1656,7 +1655,7 @@ class ConstIntObjVar : public ConstDataObjVar
 
 private:
     /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
-    ConstIntObjVar(NodeID i) : ConstDataObjVar(i) {}
+    ConstIntObjVar(NodeID i, const ICFGNode* node) : ConstDataObjVar(i, node) {}
 
 private:
     u64_t zval;
@@ -1710,8 +1709,8 @@ public:
     //@}
 
     /// Constructor
-    ConstIntObjVar(NodeID i, s64_t sv, u64_t zv, ObjTypeInfo* ti, const SVFType* svfType)
-        : ConstDataObjVar(i, ti, svfType, ConstIntObjNode), zval(zv), sval(sv)
+    ConstIntObjVar(NodeID i, s64_t sv, u64_t zv, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node)
+        : ConstDataObjVar(i, ti, svfType, node, ConstIntObjNode), zval(zv), sval(sv)
     {
     }
 
@@ -1726,7 +1725,7 @@ class ConstNullPtrObjVar : public ConstDataObjVar
 
 private:
     /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
-    ConstNullPtrObjVar(NodeID i) : ConstDataObjVar(i) {}
+    ConstNullPtrObjVar(NodeID i, const ICFGNode* node) : ConstDataObjVar(i, node) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1765,8 +1764,8 @@ public:
     //@}
 
     /// Constructor
-    ConstNullPtrObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType)
-        : ConstDataObjVar(i, ti, svfType, ConstNullptrObjNode)
+    ConstNullPtrObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node)
+        : ConstDataObjVar(i, ti, svfType, node, ConstNullptrObjNode)
     {
     }
     virtual bool isConstDataOrAggDataButNotNullPtr() const
@@ -1815,7 +1814,7 @@ public:
 
 
     /// Constructor
-    RetValPN(NodeID i, const CallGraphNode* node, const SVFType* svfType);
+    RetValPN(NodeID i, const CallGraphNode* node, const SVFType* svfType, const ICFGNode* icn);
 
     inline const CallGraphNode* getCallGraphNode() const
     {
@@ -1871,8 +1870,8 @@ public:
     //@}
 
     /// Constructor
-    VarArgValPN(NodeID i, const CallGraphNode* node, const SVFType* svfType)
-        : ValVar(i, svfType, VarargValNode), callGraphNode(node)
+    VarArgValPN(NodeID i, const CallGraphNode* node, const SVFType* svfType, const ICFGNode* icn)
+        : ValVar(i, svfType, icn, VarargValNode), callGraphNode(node)
     {
     }
 
@@ -1920,8 +1919,8 @@ public:
     //@}
 
     /// Constructor
-    DummyValVar(NodeID i, const SVFType* svfType = SVFType::getSVFPtrType())
-        : ValVar(i, svfType, DummyValNode)
+    DummyValVar(NodeID i, const ICFGNode* node, const SVFType* svfType = SVFType::getSVFPtrType())
+        : ValVar(i, svfType, node, DummyValNode)
     {
     }
 
@@ -1948,7 +1947,7 @@ class DummyObjVar: public BaseObjVar
 
 private:
     /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
-    DummyObjVar(NodeID i) : BaseObjVar(i, DummyObjNode) {}
+    DummyObjVar(NodeID i, const ICFGNode* node) : BaseObjVar(i, node, DummyObjNode) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1980,8 +1979,8 @@ public:
     //@}
 
     /// Constructor
-    DummyObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType = SVFType::getSVFPtrType())
-        : BaseObjVar(i, ti, svfType, DummyObjNode)
+    DummyObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node, const SVFType* svfType = SVFType::getSVFPtrType())
+        : BaseObjVar(i, ti, svfType, node, DummyObjNode)
     {
     }
 
