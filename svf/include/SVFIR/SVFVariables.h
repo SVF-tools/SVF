@@ -1112,7 +1112,7 @@ public:
     virtual const std::string toString() const;
 };
 
-class ConstantAggValVar: public ValVar
+class ConstAggValVar: public ValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -1120,7 +1120,7 @@ class ConstantAggValVar: public ValVar
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const ConstantAggValVar*)
+    static inline bool classof(const ConstAggValVar*)
     {
         return true;
     }
@@ -1143,7 +1143,7 @@ public:
     //@}
 
     /// Constructor
-    ConstantAggValVar(NodeID i, const ICFGNode* icn, const SVFType* svfTy)
+    ConstAggValVar(NodeID i, const ICFGNode* icn, const SVFType* svfTy)
         : ValVar(i, svfTy, ConstAggValNode, icn)
     {
         type = svfTy;

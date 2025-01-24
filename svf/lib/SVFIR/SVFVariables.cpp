@@ -257,7 +257,7 @@ const std::string FunValVar::toString() const
     return rawstr.str();
 }
 
-const std::string ConstantAggValVar::toString() const
+const std::string ConstAggValVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);

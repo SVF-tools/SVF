@@ -591,7 +591,7 @@ private:
 
     inline NodeID addConstantAggValNode(const NodeID i, const ICFGNode* icfgNode, const SVFType* svfType)
     {
-        SVFVar* node = new ConstantAggValVar(i, icfgNode, svfType);
+        SVFVar* node = new ConstAggValVar(i, icfgNode, svfType);
         return addNode(node);
     }
 
