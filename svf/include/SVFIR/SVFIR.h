@@ -566,20 +566,20 @@ private:
     inline NodeID addConstantFPValNode(const NodeID i, double dval,
                                        const ICFGNode* icfgNode, const SVFType* type)
     {
-        SVFVar* node = new ConstantFPValVar(i, dval, icfgNode, type);
+        SVFVar* node = new ConstFPValVar(i, dval, icfgNode, type);
         return addNode(node);
     }
 
     inline NodeID addConstantIntValNode(NodeID i, const std::pair<s64_t, u64_t>& intValue,
                                         const ICFGNode* icfgNode, const SVFType* type)
     {
-        SVFVar* node = new ConstantIntValVar(i, intValue.first, intValue.second, icfgNode, type);
+        SVFVar* node = new ConstIntValVar(i, intValue.first, intValue.second, icfgNode, type);
         return addNode(node);
     }
 
     inline NodeID addConstantNullPtrValNode(const NodeID i, const ICFGNode* icfgNode, const SVFType* type)
     {
-        SVFVar* node = new ConstantNullPtrValVar(i, icfgNode, type);
+        SVFVar* node = new ConstNullPtrValVar(i, icfgNode, type);
         return addNode(node);
     }
 
@@ -597,7 +597,7 @@ private:
 
     inline NodeID addConstantDataValNode(const NodeID i, const ICFGNode* icfgNode, const SVFType* type)
     {
-        SVFVar* node = new ConstantDataValVar(i, icfgNode, type);
+        SVFVar* node = new ConstDataValVar(i, icfgNode, type);
         return addNode(node);
     }
 
@@ -639,7 +639,7 @@ private:
     inline NodeID addConstantFPObjNode(NodeID i, ObjTypeInfo* ti, double dval, const SVFType* type)
     {
         memToFieldsMap[i].set(i);
-        ConstantFPObjVar* conObj = new ConstantFPObjVar(i, dval, ti, type);
+        ConstFPObjVar* conObj = new ConstFPObjVar(i, dval, ti, type);
         return addObjNode(conObj);
     }
 
@@ -647,8 +647,8 @@ private:
     inline NodeID addConstantIntObjNode(NodeID i, ObjTypeInfo* ti, const std::pair<s64_t, u64_t>& intValue, const SVFType* type)
     {
         memToFieldsMap[i].set(i);
-        ConstantIntObjVar* conObj =
-            new ConstantIntObjVar(i, intValue.first, intValue.second, ti, type);
+        ConstIntObjVar* conObj =
+            new ConstIntObjVar(i, intValue.first, intValue.second, ti, type);
         return addObjNode(conObj);
     }
 
@@ -656,7 +656,7 @@ private:
     inline NodeID addConstantNullPtrObjNode(const NodeID i, ObjTypeInfo* ti, const SVFType* type)
     {
         memToFieldsMap[i].set(i);
-        ConstantNullPtrObjVar* conObj = new ConstantNullPtrObjVar(i, ti, type);
+        ConstNullPtrObjVar* conObj = new ConstNullPtrObjVar(i, ti, type);
         return addObjNode(conObj);
     }
 
@@ -669,26 +669,26 @@ private:
     inline NodeID addConstantAggObjNode(const NodeID i, ObjTypeInfo* ti, const SVFType* type)
     {
         memToFieldsMap[i].set(i);
-        ConstantAggObjVar* conObj = new ConstantAggObjVar(i, ti, type);
+        ConstAggObjVar* conObj = new ConstAggObjVar(i, ti, type);
         return addObjNode(conObj);
     }
     inline NodeID addConstantDataObjNode(const NodeID i, ObjTypeInfo* ti, const SVFType* type)
     {
         memToFieldsMap[i].set(i);
-        ConstantDataObjVar* conObj = new ConstantDataObjVar(i, ti, type);
+        ConstDataObjVar* conObj = new ConstDataObjVar(i, ti, type);
         return addObjNode(conObj);
     }
 
     /// Add a unique return node for a procedure
     inline NodeID addRetNode(NodeID i, const CallGraphNode* callGraphNode, const SVFType* type)
     {
-        SVFVar *node = new RetPN(i, callGraphNode, type);
+        SVFVar *node = new RetValPN(i, callGraphNode, type);
         return addRetNode(callGraphNode, node);
     }
     /// Add a unique vararg node for a procedure
     inline NodeID addVarargNode(NodeID i, const CallGraphNode* val, const SVFType* type)
     {
-        SVFVar *node = new VarArgPN(i, val, type);
+        SVFVar *node = new VarArgValPN(i, val, type);
         return addNode(node);
     }
 

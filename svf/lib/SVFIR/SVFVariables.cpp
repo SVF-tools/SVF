@@ -103,7 +103,7 @@ const std::string ObjVar::toString() const
 
 ArgValVar::ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn,
                      const SVF::CallGraphNode* callGraphNode, const SVFType* svfType, bool isUncalled)
-    : ValVar(i, svfType, ArgNode, icn),
+    : ValVar(i, svfType, ArgValNode, icn),
       cgNode(callGraphNode), argNo(argNo), uncalled(isUncalled)
 {
 
@@ -157,23 +157,23 @@ const std::string GepValVar::toString() const
     return rawstr.str();
 }
 
-RetPN::RetPN(NodeID i, const CallGraphNode* node, const SVFType* svfType)
-    : ValVar(i, svfType, RetNode), callGraphNode(node)
+RetValPN::RetValPN(NodeID i, const CallGraphNode* node, const SVFType* svfType)
+    : ValVar(i, svfType, RetValNode), callGraphNode(node)
 {
 }
 
-const SVFFunction* RetPN::getFunction() const
+const SVFFunction* RetValPN::getFunction() const
 {
     return callGraphNode->getFunction();
 }
 
-bool RetPN::isPointer() const
+bool RetValPN::isPointer() const
 {
     return getFunction()->getReturnType()->isPointerTy();
 }
 
 
-const std::string RetPN::getValueName() const
+const std::string RetValPN::getValueName() const
 {
     return callGraphNode->getName() + "_ret";
 }
@@ -261,7 +261,7 @@ const std::string ConstantAggValVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ConstantAggValNode ID: " << getId();
+    rawstr << "ConstAggValNode ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -269,11 +269,11 @@ const std::string ConstantAggValVar::toString() const
     }
     return rawstr.str();
 }
-const std::string ConstantDataValVar::toString() const
+const std::string ConstDataValVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ConstantDataValNode ID: " << getId();
+    rawstr << "ConstDataValNode ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -295,11 +295,11 @@ const std::string GlobalValVar::toString() const
     return rawstr.str();
 }
 
-const std::string ConstantFPValVar::toString() const
+const std::string ConstFPValVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ConstantFPValNode ID: " << getId();
+    rawstr << "ConstFPValNode ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -308,11 +308,11 @@ const std::string ConstantFPValVar::toString() const
     return rawstr.str();
 }
 
-const std::string ConstantIntValVar::toString() const
+const std::string ConstIntValVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ConstantIntValNode ID: " << getId();
+    rawstr << "ConstIntValNode ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -321,11 +321,11 @@ const std::string ConstantIntValVar::toString() const
     return rawstr.str();
 }
 
-const std::string ConstantNullPtrValVar::toString() const
+const std::string ConstNullPtrValVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ConstantNullPtrValVar ID: " << getId();
+    rawstr << "ConstNullPtrValVar ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -346,11 +346,11 @@ const std::string GlobalObjVar::toString() const
     }
     return rawstr.str();
 }
-const std::string ConstantAggObjVar::toString() const
+const std::string ConstAggObjVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ConstantAggObjVar ID: " << getId();
+    rawstr << "ConstAggObjVar ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -358,24 +358,11 @@ const std::string ConstantAggObjVar::toString() const
     }
     return rawstr.str();
 }
-const std::string ConstantDataObjVar::toString() const
+const std::string ConstDataObjVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ConstantDataObjVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
-    {
-        rawstr << "\n";
-        rawstr << valueOnlyToString();
-    }
-    return rawstr.str();
-}
-
-const std::string ConstantFPObjVar::toString() const
-{
-    std::string str;
-    std::stringstream rawstr(str);
-    rawstr << "ConstantFPObjVar ID: " << getId();
+    rawstr << "ConstDataObjVar ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -384,11 +371,11 @@ const std::string ConstantFPObjVar::toString() const
     return rawstr.str();
 }
 
-const std::string ConstantIntObjVar::toString() const
+const std::string ConstFPObjVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ConstantIntObjVar ID: " << getId();
+    rawstr << "ConstFPObjVar ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -397,11 +384,24 @@ const std::string ConstantIntObjVar::toString() const
     return rawstr.str();
 }
 
-const std::string ConstantNullPtrObjVar::toString() const
+const std::string ConstIntObjVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ConstantNullPtrObjVar ID: " << getId();
+    rawstr << "ConstIntObjVar ID: " << getId();
+    if (Options::ShowSVFIRValue())
+    {
+        rawstr << "\n";
+        rawstr << valueOnlyToString();
+    }
+    return rawstr.str();
+}
+
+const std::string ConstNullPtrObjVar::toString() const
+{
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "ConstNullPtrObjVar ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -443,29 +443,29 @@ const std::string FunObjVar::toString() const
     return rawstr.str();
 }
 
-const std::string RetPN::toString() const
+const std::string RetValPN::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "RetPN ID: " << getId() << " unique return node for function " << callGraphNode->getName();
+    rawstr << "RetValPN ID: " << getId() << " unique return node for function " << callGraphNode->getName();
     return rawstr.str();
 }
 
-const SVFFunction* VarArgPN::getFunction() const
+const SVFFunction* VarArgValPN::getFunction() const
 {
     return callGraphNode->getFunction();
 }
 
-const std::string VarArgPN::getValueName() const
+const std::string VarArgValPN::getValueName() const
 {
     return callGraphNode->getName() + "_vararg";
 }
 
-const std::string VarArgPN::toString() const
+const std::string VarArgValPN::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "VarArgPN ID: " << getId() << " Var arg node for function " << callGraphNode->getName();
+    rawstr << "VarArgValPN ID: " << getId() << " Var arg node for function " << callGraphNode->getName();
     return rawstr.str();
 }
 

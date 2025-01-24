@@ -663,7 +663,7 @@ bool SVFIR::isValidTopLevelPtr(const SVFVar* node)
         if (isValidPointer(node->getId()))
         {
             const ValVar* baseVar = pag->getBaseValVar(node->getId());
-            if(!SVFUtil::isa<DummyValVar, BlackHoleVar>(baseVar))
+            if(!SVFUtil::isa<DummyValVar, BlackHoleValVar>(baseVar))
                 return !SVFUtil::isArgOfUncalledFunction(baseVar);
         }
     }

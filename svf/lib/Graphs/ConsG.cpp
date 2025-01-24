@@ -818,11 +818,11 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
             else
                 return "shape=component";
         }
-        else if (SVFUtil::isa<RetPN>(node))
+        else if (SVFUtil::isa<RetValPN>(node))
         {
             return "shape=Mrecord";
         }
-        else if (SVFUtil::isa<VarArgPN>(node))
+        else if (SVFUtil::isa<VarArgValPN>(node))
         {
             return "shape=octagon";
         }

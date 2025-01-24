@@ -55,7 +55,7 @@ public:
     /// Nine kinds of SVFIR variables
     /// ValNode: llvm pointer value
     /// ObjNode: memory object
-    /// RetNode: unique return node
+    /// RetValNode: unique return node
     /// Vararg: unique node for vararg parameter
     /// GepValNode: temporary gep value node for field sensitivity
     /// GepValNode: temporary gep obj node for field sensitivity
@@ -371,7 +371,7 @@ private:
 
 protected:
     /// Constructor to create function argument (for SVFIRReader/deserialization)
-    ArgValVar(NodeID i, PNODEK ty = ArgNode) : ValVar(i, ty) {}
+    ArgValVar(NodeID i, PNODEK ty = ArgValNode) : ValVar(i, ty) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -382,19 +382,19 @@ public:
     }
     static inline bool classof(const ValVar* node)
     {
-        return node->getNodeKind() == ArgNode;
+        return node->getNodeKind() == ArgValNode;
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == ArgNode;
+        return node->getNodeKind() == ArgValNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == ArgNode;
+        return node->getNodeKind() == ArgValNode;
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == ArgNode;
+        return node->getNodeKind() == ArgValNode;
     }
     //@}
 
@@ -1126,25 +1126,25 @@ public:
     }
     static inline bool classof(const ValVar* node)
     {
-        return node->getNodeKind() == ConstantAggValNode;
+        return node->getNodeKind() == ConstAggValNode;
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == ConstantAggValNode;
+        return node->getNodeKind() == ConstAggValNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == ConstantAggValNode;
+        return node->getNodeKind() == ConstAggValNode;
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == ConstantAggValNode;
+        return node->getNodeKind() == ConstAggValNode;
     }
     //@}
 
     /// Constructor
     ConstantAggValVar(NodeID i, const ICFGNode* icn, const SVFType* svfTy)
-        : ValVar(i, svfTy, ConstantAggValNode, icn)
+        : ValVar(i, svfTy, ConstAggValNode, icn)
     {
         type = svfTy;
     }
@@ -1164,7 +1164,7 @@ public:
 };
 
 
-class ConstantDataValVar: public ValVar
+class ConstDataValVar : public ValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -1172,7 +1172,7 @@ class ConstantDataValVar: public ValVar
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const ConstantDataValVar*)
+    static inline bool classof(const ConstDataValVar*)
     {
         return true;
     }
@@ -1195,8 +1195,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantDataValVar(NodeID i, const ICFGNode* icn, const SVFType* svfType,
-                       PNODEK ty = ConstantDataValNode)
+    ConstDataValVar(NodeID i, const ICFGNode* icn, const SVFType* svfType,
+                       PNODEK ty = ConstDataValNode)
         : ValVar(i, svfType, ty, icn)
     {
 
@@ -1215,7 +1215,7 @@ public:
     virtual const std::string toString() const;
 };
 
-class BlackHoleVar: public ConstantDataValVar
+class BlackHoleValVar : public ConstDataValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -1223,35 +1223,35 @@ class BlackHoleVar: public ConstantDataValVar
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const BlackHoleVar*)
+    static inline bool classof(const BlackHoleValVar*)
     {
         return true;
     }
-    static inline bool classof(const ConstantDataValVar* node)
+    static inline bool classof(const ConstDataValVar* node)
     {
-        return node->getNodeKind() == BlackHoleNode;
+        return node->getNodeKind() == BlackHoleValNode;
     }
     static inline bool classof(const ValVar* node)
     {
-        return node->getNodeKind() == BlackHoleNode;
+        return node->getNodeKind() == BlackHoleValNode;
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == BlackHoleNode;
+        return node->getNodeKind() == BlackHoleValNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == BlackHoleNode;
+        return node->getNodeKind() == BlackHoleValNode;
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == BlackHoleNode;
+        return node->getNodeKind() == BlackHoleValNode;
     }
     //@}
 
     /// Constructor
-    BlackHoleVar(NodeID i, const SVFType* svfType, PNODEK ty = BlackHoleNode)
-        : ConstantDataValVar(i,  nullptr, svfType, ty)
+    BlackHoleValVar(NodeID i, const SVFType* svfType, PNODEK ty = BlackHoleValNode)
+        : ConstDataValVar(i,  nullptr, svfType, ty)
     {
 
     }
@@ -1263,11 +1263,11 @@ public:
 
     virtual const std::string toString() const
     {
-        return "BlackHoleVar";
+        return "BlackHoleValVar";
     }
 };
 
-class ConstantFPValVar: public ConstantDataValVar
+class ConstFPValVar : public ConstDataValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -1277,29 +1277,29 @@ private:
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const ConstantFPValVar*)
+    static inline bool classof(const ConstFPValVar*)
     {
         return true;
     }
-    static inline bool classof(const ConstantDataValVar* node)
+    static inline bool classof(const ConstDataValVar* node)
     {
-        return node->getNodeKind() == ConstantFPValNode;
+        return node->getNodeKind() == ConstFPValNode;
     }
     static inline bool classof(const ValVar* node)
     {
-        return node->getNodeKind() == ConstantFPValNode;
+        return node->getNodeKind() == ConstFPValNode;
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == ConstantFPValNode;
+        return node->getNodeKind() == ConstFPValNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == ConstantFPValNode;
+        return node->getNodeKind() == ConstFPValNode;
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == ConstantFPValNode;
+        return node->getNodeKind() == ConstFPValNode;
     }
     //@}
 
@@ -1309,16 +1309,16 @@ public:
     }
 
     /// Constructor
-    ConstantFPValVar(NodeID i, double dv,
+    ConstFPValVar(NodeID i, double dv,
                      const ICFGNode* icn, const SVFType* svfType)
-        : ConstantDataValVar(i, icn, svfType, ConstantFPValNode), dval(dv)
+        : ConstDataValVar(i, icn, svfType, ConstFPValNode), dval(dv)
     {
     }
 
     virtual const std::string toString() const;
 };
 
-class ConstantIntValVar: public ConstantDataValVar
+class ConstIntValVar : public ConstDataValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -1329,29 +1329,29 @@ private:
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const ConstantIntValVar*)
+    static inline bool classof(const ConstIntValVar*)
     {
         return true;
     }
-    static inline bool classof(const ConstantDataValVar* node)
+    static inline bool classof(const ConstDataValVar* node)
     {
-        return node->getNodeKind() == ConstantIntValNode;
+        return node->getNodeKind() == ConstIntValNode;
     }
     static inline bool classof(const ValVar* node)
     {
-        return node->getNodeKind() == ConstantIntValNode;
+        return node->getNodeKind() == ConstIntValNode;
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == ConstantIntValNode;
+        return node->getNodeKind() == ConstIntValNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == ConstantIntValNode;
+        return node->getNodeKind() == ConstIntValNode;
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == ConstantIntValNode;
+        return node->getNodeKind() == ConstIntValNode;
     }
     //@}
 
@@ -1367,15 +1367,15 @@ public:
     }
 
     /// Constructor
-    ConstantIntValVar(NodeID i, s64_t sv, u64_t zv, const ICFGNode* icn, const SVFType* svfType)
-        : ConstantDataValVar(i,  icn, svfType, ConstantIntValNode), zval(zv), sval(sv)
+    ConstIntValVar(NodeID i, s64_t sv, u64_t zv, const ICFGNode* icn, const SVFType* svfType)
+        : ConstDataValVar(i,  icn, svfType, ConstIntValNode), zval(zv), sval(sv)
     {
 
     }
     virtual const std::string toString() const;
 };
 
-class ConstantNullPtrValVar: public ConstantDataValVar
+class ConstNullPtrValVar : public ConstDataValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -1383,35 +1383,35 @@ class ConstantNullPtrValVar: public ConstantDataValVar
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const ConstantNullPtrValVar*)
+    static inline bool classof(const ConstNullPtrValVar*)
     {
         return true;
     }
-    static inline bool classof(const ConstantDataValVar* node)
+    static inline bool classof(const ConstDataValVar* node)
     {
-        return node->getNodeKind() == ConstantNullptrValNode;
+        return node->getNodeKind() == ConstNullptrValNode;
     }
     static inline bool classof(const ValVar* node)
     {
-        return node->getNodeKind() == ConstantNullptrValNode;
+        return node->getNodeKind() == ConstNullptrValNode;
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == ConstantNullptrValNode;
+        return node->getNodeKind() == ConstNullptrValNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == ConstantNullptrValNode;
+        return node->getNodeKind() == ConstNullptrValNode;
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == ConstantNullptrValNode;
+        return node->getNodeKind() == ConstNullptrValNode;
     }
     //@}
 
     /// Constructor
-    ConstantNullPtrValVar(NodeID i, const ICFGNode* icn, const SVFType* svfType)
-        : ConstantDataValVar(i,  icn, svfType, ConstantNullptrValNode)
+    ConstNullPtrValVar(NodeID i, const ICFGNode* icn, const SVFType* svfType)
+        : ConstDataValVar(i,  icn, svfType, ConstNullptrValNode)
     {
 
     }
@@ -1473,7 +1473,7 @@ public:
     virtual const std::string toString() const;
 };
 
-class ConstantAggObjVar: public BaseObjVar
+class ConstAggObjVar : public BaseObjVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -1481,36 +1481,36 @@ class ConstantAggObjVar: public BaseObjVar
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const ConstantAggObjVar*)
+    static inline bool classof(const ConstAggObjVar*)
     {
         return true;
     }
     static inline bool classof(const BaseObjVar* node)
     {
-        return node->getNodeKind() == ConstantAggObjNode;
+        return node->getNodeKind() == ConstAggObjNode;
     }
 
     static inline bool classof(const ObjVar* node)
     {
-        return node->getNodeKind() == ConstantAggObjNode;
+        return node->getNodeKind() == ConstAggObjNode;
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == ConstantAggObjNode;
+        return node->getNodeKind() == ConstAggObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == ConstantAggObjNode;
+        return node->getNodeKind() == ConstAggObjNode;
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == ConstantAggObjNode;
+        return node->getNodeKind() == ConstAggObjNode;
     }
     //@}
 
     /// Constructor
-    ConstantAggObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType)
-        : BaseObjVar(i,  ti, svfType, ConstantAggObjNode)
+    ConstAggObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType)
+        : BaseObjVar(i,  ti, svfType, ConstAggObjNode)
     {
 
     }
@@ -1528,18 +1528,18 @@ public:
     virtual const std::string toString() const;
 };
 
-class ConstantDataObjVar: public BaseObjVar
+class ConstDataObjVar : public BaseObjVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
 protected:
     /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
-    ConstantDataObjVar(NodeID i) : BaseObjVar(i, ConstantDataObjNode) {}
+    ConstDataObjVar(NodeID i) : BaseObjVar(i, ConstDataObjNode) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const ConstantDataObjVar*)
+    static inline bool classof(const ConstDataObjVar*)
     {
         return true;
     }
@@ -1567,7 +1567,7 @@ public:
     //@}
 
     /// Constructor
-    ConstantDataObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, PNODEK ty = ConstantDataObjNode)
+    ConstDataObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, PNODEK ty = ConstDataObjNode)
         : BaseObjVar(i, ti, svfType, ty)
     {
     }
@@ -1585,57 +1585,57 @@ public:
     virtual const std::string toString() const;
 };
 
-class ConstantFPObjVar: public ConstantDataObjVar
+class ConstFPObjVar : public ConstDataObjVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
 private:
     /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
-    ConstantFPObjVar(NodeID i) : ConstantDataObjVar(i) {}
+    ConstFPObjVar(NodeID i) : ConstDataObjVar(i) {}
 
 private:
     float dval;
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const ConstantFPObjVar*)
+    static inline bool classof(const ConstFPObjVar*)
     {
         return true;
     }
-    static inline bool classof(const ConstantDataObjVar* node)
+    static inline bool classof(const ConstDataObjVar* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantFPObjNode;
+        return node->getNodeKind() == SVFVar::ConstFPObjNode;
     }
     static inline bool classof(const BaseObjVar* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantFPObjNode;
+        return node->getNodeKind() == SVFVar::ConstFPObjNode;
     }
 
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantFPObjNode;
+        return node->getNodeKind() == SVFVar::ConstFPObjNode;
     }
 
     static inline bool classof(const ObjVar* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantFPObjNode;
+        return node->getNodeKind() == SVFVar::ConstFPObjNode;
     }
 
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantFPObjNode;
+        return node->getNodeKind() == SVFVar::ConstFPObjNode;
     }
 
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantFPObjNode;
+        return node->getNodeKind() == SVFVar::ConstFPObjNode;
     }
     //@}
 
     /// Constructor
-    ConstantFPObjVar(NodeID i, double dv, ObjTypeInfo* ti, const SVFType* svfType)
-        : ConstantDataObjVar(i, ti, svfType, ConstantFPObjNode), dval(dv)
+    ConstFPObjVar(NodeID i, double dv, ObjTypeInfo* ti, const SVFType* svfType)
+        : ConstDataObjVar(i, ti, svfType, ConstFPObjNode), dval(dv)
     {
     }
 
@@ -1648,14 +1648,14 @@ public:
     virtual const std::string toString() const;
 };
 
-class ConstantIntObjVar: public ConstantDataObjVar
+class ConstIntObjVar : public ConstDataObjVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
 private:
     /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
-    ConstantIntObjVar(NodeID i) : ConstantDataObjVar(i) {}
+    ConstIntObjVar(NodeID i) : ConstDataObjVar(i) {}
 
 private:
     u64_t zval;
@@ -1663,37 +1663,37 @@ private:
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const ConstantIntObjVar*)
+    static inline bool classof(const ConstIntObjVar*)
     {
         return true;
     }
 
-    static inline bool classof(const ConstantDataObjVar* node)
+    static inline bool classof(const ConstDataObjVar* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantIntObjNode;
+        return node->getNodeKind() == SVFVar::ConstIntObjNode;
     }
 
     static inline bool classof(const BaseObjVar* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantIntObjNode;
+        return node->getNodeKind() == SVFVar::ConstIntObjNode;
     }
 
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantIntObjNode;
+        return node->getNodeKind() == SVFVar::ConstIntObjNode;
     }
     static inline bool classof(const ObjVar* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantIntObjNode;
+        return node->getNodeKind() == SVFVar::ConstIntObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantIntObjNode;
+        return node->getNodeKind() == SVFVar::ConstIntObjNode;
     }
 
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantIntObjNode;
+        return node->getNodeKind() == SVFVar::ConstIntObjNode;
     }
 
     s64_t getSExtValue() const
@@ -1709,8 +1709,8 @@ public:
     //@}
 
     /// Constructor
-    ConstantIntObjVar(NodeID i, s64_t sv, u64_t zv, ObjTypeInfo* ti, const SVFType* svfType)
-        : ConstantDataObjVar(i, ti, svfType, ConstantIntObjNode), zval(zv), sval(sv)
+    ConstIntObjVar(NodeID i, s64_t sv, u64_t zv, ObjTypeInfo* ti, const SVFType* svfType)
+        : ConstDataObjVar(i, ti, svfType, ConstIntObjNode), zval(zv), sval(sv)
     {
     }
 
@@ -1718,54 +1718,54 @@ public:
     virtual const std::string toString() const;
 };
 
-class ConstantNullPtrObjVar: public ConstantDataObjVar
+class ConstNullPtrObjVar : public ConstDataObjVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
 private:
     /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
-    ConstantNullPtrObjVar(NodeID i) : ConstantDataObjVar(i) {}
+    ConstNullPtrObjVar(NodeID i) : ConstDataObjVar(i) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const ConstantNullPtrObjVar*)
+    static inline bool classof(const ConstNullPtrObjVar*)
     {
         return true;
     }
 
-    static inline bool classof(const ConstantDataObjVar* node)
+    static inline bool classof(const ConstDataObjVar* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantNullptrObjNode;
+        return node->getNodeKind() == SVFVar::ConstNullptrObjNode;
     }
 
     static inline bool classof(const BaseObjVar* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantNullptrObjNode;
+        return node->getNodeKind() == SVFVar::ConstNullptrObjNode;
     }
 
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantNullptrObjNode;
+        return node->getNodeKind() == SVFVar::ConstNullptrObjNode;
     }
     static inline bool classof(const ObjVar* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantNullptrObjNode;
+        return node->getNodeKind() == SVFVar::ConstNullptrObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantNullptrObjNode;
+        return node->getNodeKind() == SVFVar::ConstNullptrObjNode;
     }
 
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == SVFVar::ConstantNullptrObjNode;
+        return node->getNodeKind() == SVFVar::ConstNullptrObjNode;
     }
     //@}
 
     /// Constructor
-    ConstantNullPtrObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType)
-        : ConstantDataObjVar(i, ti, svfType, ConstantNullptrObjNode)
+    ConstNullPtrObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType)
+        : ConstDataObjVar(i, ti, svfType, ConstNullptrObjNode)
     {
     }
     virtual bool isConstDataOrAggDataButNotNullPtr() const
@@ -1777,7 +1777,7 @@ public:
 /*
  * Unique Return node of a procedure
  */
-class RetPN: public ValVar
+class RetValPN : public ValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -1785,36 +1785,36 @@ class RetPN: public ValVar
 private:
     const CallGraphNode* callGraphNode;
 private:
-    /// Constructor to create empty RetPN (for SVFIRReader/deserialization)
-    RetPN(NodeID i) : ValVar(i, RetNode) {}
+    /// Constructor to create empty RetValPN (for SVFIRReader/deserialization)
+    RetValPN(NodeID i) : ValVar(i, RetValNode) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const RetPN*)
+    static inline bool classof(const RetValPN*)
     {
         return true;
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == SVFVar::RetNode;
+        return node->getNodeKind() == SVFVar::RetValNode;
     }
     static inline bool classof(const ValVar* node)
     {
-        return node->getNodeKind() == SVFVar::RetNode;
+        return node->getNodeKind() == SVFVar::RetValNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == SVFVar::RetNode;
+        return node->getNodeKind() == SVFVar::RetValNode;
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == SVFVar::RetNode;
+        return node->getNodeKind() == SVFVar::RetValNode;
     }
     //@}
 
 
     /// Constructor
-    RetPN(NodeID i, const CallGraphNode* node, const SVFType* svfType);
+    RetValPN(NodeID i, const CallGraphNode* node, const SVFType* svfType);
 
     inline const CallGraphNode* getCallGraphNode() const
     {
@@ -1834,7 +1834,7 @@ public:
 /*
  * Unique vararg node of a procedure
  */
-class VarArgPN: public ValVar
+class VarArgValPN : public ValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -1842,36 +1842,36 @@ private:
     const CallGraphNode* callGraphNode;
 
 private:
-    /// Constructor to create empty VarArgPN (for SVFIRReader/deserialization)
-    VarArgPN(NodeID i) : ValVar(i, VarargNode) {}
+    /// Constructor to create empty VarArgValPN (for SVFIRReader/deserialization)
+    VarArgValPN(NodeID i) : ValVar(i, VarargValNode) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const VarArgPN*)
+    static inline bool classof(const VarArgValPN*)
     {
         return true;
     }
     static inline bool classof(const SVFVar* node)
     {
-        return node->getNodeKind() == SVFVar::VarargNode;
+        return node->getNodeKind() == SVFVar::VarargValNode;
     }
     static inline bool classof(const ValVar* node)
     {
-        return node->getNodeKind() == SVFVar::VarargNode;
+        return node->getNodeKind() == SVFVar::VarargValNode;
     }
     static inline bool classof(const GenericPAGNodeTy* node)
     {
-        return node->getNodeKind() == SVFVar::VarargNode;
+        return node->getNodeKind() == SVFVar::VarargValNode;
     }
     static inline bool classof(const SVFBaseNode* node)
     {
-        return node->getNodeKind() == SVFVar::VarargNode;
+        return node->getNodeKind() == SVFVar::VarargValNode;
     }
     //@}
 
     /// Constructor
-    VarArgPN(NodeID i, const CallGraphNode* node, const SVFType* svfType)
-        : ValVar(i, svfType, VarargNode), callGraphNode(node)
+    VarArgValPN(NodeID i, const CallGraphNode* node, const SVFType* svfType)
+        : ValVar(i, svfType, VarargValNode), callGraphNode(node)
     {
     }
 
