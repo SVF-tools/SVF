@@ -186,7 +186,7 @@ void MRGenerator::collectModRefForLoadStore()
         for (SVFFunction::const_iterator iter = fun.begin(), eiter = fun.end();
                 iter != eiter; ++iter)
         {
-            const SVFBasicBlock* bb = *iter;
+            const SVFBasicBlock* bb = iter->second;
             for (const auto& inst: bb->getICFGNodeList())
             {
                 SVFStmtList& pagEdgeList = getPAGEdgesFromInst(inst);

@@ -111,7 +111,6 @@ private:
     FunToFunEntryNodeMapTy FunToFunEntryNodeMap; ///< map a function to its FunExitICFGNode
     FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryICFGNode
     CallGraph* callgraph;
-    BasicBlockGraph* basicBlockGraph;
 
     Map<const Function*, DominatorTree> FunToDominatorTree;
 
@@ -250,18 +249,20 @@ public:
 
     const Value* getLLVMValue(const SVFBaseNode* value) const
     {
-        SVFBaseNode2LLVMValueMap ::const_iterator it = SVFBaseNode2LLVMValue.find(value);
-        assert(it!=SVFBaseNode2LLVMValue.end() && "can't find corresponding llvm value!");
-        return it->second;
+        if (value->getNodeKind() == SVFBaseNode::BasicBlockKd)
+        {
+            const SVFBasicBlock* bb = SVFUtil::cast<SVFBasicBlock>(value);
+            SVFBB2LLVMBBMap::const_iterator it = SVFBB2LLVMBB.find(bb);
+            assert(it!=SVFBB2LLVMBB.end() && "can't find corresponding llvm value!");
+            return it->second;
+        }
+        else
+        {
+            SVFBaseNode2LLVMValueMap ::const_iterator it = SVFBaseNode2LLVMValue.find(value);
+            assert(it != SVFBaseNode2LLVMValue.end() && "can't find corresponding llvm value!");
+            return it->second;
+        }
     }
-
-    const Value* getLLVMValue(const SVFBasicBlock* value) const
-    {
-        SVFBB2LLVMBBMap::const_iterator it = SVFBB2LLVMBB.find(value);
-        assert(it!=SVFBB2LLVMBB.end() && "can't find corresponding llvm value!");
-        return it->second;
-    }
-
 
     inline CallGraphNode* getCallGraphNode(const Function* fun) const
     {

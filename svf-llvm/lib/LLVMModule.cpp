@@ -91,7 +91,6 @@ LLVMModuleSet::~LLVMModuleSet()
         item.second = nullptr;
     }
     delete typeInference;
-    delete basicBlockGraph;
     typeInference = nullptr;
 }
 
@@ -170,8 +169,6 @@ void LLVMModuleSet::build()
 {
     if(preProcessed==false)
         prePassSchedule();
-
-    basicBlockGraph = new BasicBlockGraph();
 
     buildFunToFunMap();
     buildGlobalDefToRepMap();
@@ -283,6 +280,8 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             getSVFType(func->getFunctionType())),
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
         func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
+    BasicBlockGraph* bbGraph = new BasicBlockGraph(svfFunc);
+    svfFunc->setBasicBlockGraph(bbGraph);
     svfModule->addFunctionSet(svfFunc);
     addFunctionMap(func, svfFunc);
 
@@ -301,8 +300,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
 
     for (const BasicBlock& bb : *func)
     {
-        SVFBasicBlock* svfBB = basicBlockGraph->addBasicBlockToFunction(bb.getName().str(), svfFunc);
-        svfFunc->addBasicBlock(svfBB);
+        SVFBasicBlock* svfBB = svfFunc->addBasicBlock(bb.getName().str());
         addBasicBlockMap(&bb, svfBB);
         for (const Instruction& inst : bb)
         {

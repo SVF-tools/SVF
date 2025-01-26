@@ -258,21 +258,22 @@ class BasicBlockGraph: public GenericBasicBlockGraphTy
 {
 private:
     NodeID id{0};
+    const SVFFunction* fun;
 public:
     /// Constructor
-    BasicBlockGraph() {
+    BasicBlockGraph(const SVFFunction* f): fun(f)
+    {
 
     }
 
-    SVFBasicBlock* addBasicBlockToFunction(const std::string& bbname, const SVFFunction* f)
+    SVFBasicBlock* addBasicBlock(const std::string& bbname)
     {
         id++;
-        SVFBasicBlock* bb = new SVFBasicBlock(id, f);
+        SVFBasicBlock* bb = new SVFBasicBlock(id, fun);
         addGNode(id, bb);
         bb->setName(bbname);
         return bb;
     }
-
 
 };
 }

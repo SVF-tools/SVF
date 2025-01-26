@@ -163,6 +163,7 @@ SVFFunction::~SVFFunction()
     for(const SVFArgument* arg : allArgs)
         delete arg;
     delete loopAndDom;
+    delete bbGraph;
 }
 
 u32_t SVFFunction::arg_size() const
