@@ -250,7 +250,6 @@ void MRGenerator::collectModRefForCall()
         {
             PTACallGraphNode* subCallGraphNode = callGraph->getCallGraphNode(*it);
             /// Get mod-ref of all callsites calling callGraphNode
-            std::cout << subCallGraphNode->getFunction()->getName() << std::endl;
             modRefAnalysis(subCallGraphNode,worklist);
         }
     }
