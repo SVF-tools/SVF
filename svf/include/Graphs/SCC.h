@@ -136,7 +136,7 @@ public:
     inline GNodeStack revTopoNodeStack()
     {
         GNodeStack revTopoOrder;
-        GNodeStack &topoOrder = topoNodeStack();
+        GNodeStack topoOrder = topoNodeStack();
         while(!topoOrder.empty())
         {
             NodeID nodeID = topoOrder.top();
