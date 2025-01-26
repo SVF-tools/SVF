@@ -139,9 +139,9 @@ public:
         GNodeStack &topoOrder = topoNodeStack();
         while(!topoOrder.empty())
         {
-            NodeID callgraphNodeID = topoOrder.top();
+            NodeID nodeID = topoOrder.top();
             topoOrder.pop();
-            revTopoOrder.push(callgraphNodeID);
+            revTopoOrder.push(nodeID);
         }
         return revTopoOrder;
     }
