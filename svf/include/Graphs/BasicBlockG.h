@@ -112,6 +112,16 @@ public:
 
     }
 
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == SVFBaseNode::BasicBlockKd;
+    }
+
+    static inline bool classof(const SVFBasicBlock* node)
+    {
+        return true;
+    }
+
     //@{
     friend OutStream &operator<<(OutStream &o, const SVFBasicBlock&node)
     {

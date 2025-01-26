@@ -249,7 +249,7 @@ public:
 
     const Value* getLLVMValue(const SVFBaseNode* value) const
     {
-        if (value->getNodeKind() == SVFBaseNode::BasicBlockKd)
+        if (SVFUtil::isa<SVFBasicBlock>(value))
         {
             const SVFBasicBlock* bb = SVFUtil::cast<SVFBasicBlock>(value);
             SVFBB2LLVMBBMap::const_iterator it = SVFBB2LLVMBB.find(bb);

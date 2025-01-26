@@ -300,7 +300,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
 
     for (const BasicBlock& bb : *func)
     {
-        SVFBasicBlock* svfBB = svfFunc->addBasicBlock(bb.getName().str());
+        SVFBasicBlock* svfBB = bbGraph->addBasicBlock(bb.getName().str());
         addBasicBlockMap(&bb, svfBB);
         for (const Instruction& inst : bb)
         {

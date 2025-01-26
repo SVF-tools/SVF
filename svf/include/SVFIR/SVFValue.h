@@ -327,12 +327,6 @@ protected:
         callGraphNode = cgn;
     }
 
-
-    inline SVFBasicBlock* addBasicBlock(const std::string& bbName) {
-        SVFBasicBlock* bb = bbGraph->addBasicBlock(bbName);
-        return bb;
-    }
-
     inline void addArgument(SVFArgument* arg)
     {
         allArgs.push_back(arg);
@@ -457,16 +451,6 @@ public:
         return bbGraph->end();
     }
 
-    inline std::vector<const SVFBasicBlock*> getBasicBlockList() const
-    {
-        std::vector<const SVFBasicBlock*> blockList;
-        blockList.reserve(bbGraph->getTotalNodeNum());
-        std::transform(bbGraph->begin(), bbGraph->end(), std::back_inserter(blockList),
-                       [](const BasicBlockGraph::IDToNodeMapTy::value_type& pair) {
-                           return pair.second;
-                       });
-        return blockList;
-    }
 
     inline const std::vector<const SVFBasicBlock*>& getReachableBBs() const
     {

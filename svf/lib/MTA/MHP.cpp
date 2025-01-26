@@ -159,8 +159,9 @@ void MHP::updateNonCandidateFunInterleaving()
             {
                 const CallStrCxt& curCxt = cts.getContext();
 
-                for (const SVFBasicBlock* svfbb : fun->getBasicBlockList())
+                for (auto it : *fun)
                 {
+                    const SVFBasicBlock* svfbb = it.second;
                     for (const ICFGNode* curNode : svfbb->getICFGNodeList())
                     {
                         if (curNode == entryNode)
