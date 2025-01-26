@@ -138,6 +138,12 @@ public:
 
     inline void addSuccBasicBlock(const SVFBasicBlock* succ2)
     {
+        // check if the edge already exists
+        for (auto edge: this->getOutEdges()) {
+            if (edge->getDstNode() == succ2)
+                return;
+        }
+
         SVFBasicBlock* succ = const_cast<SVFBasicBlock*>(succ2);
         BasicBlockEdge* edge = new BasicBlockEdge(this, succ);
         this->addOutgoingEdge(edge);
@@ -148,6 +154,11 @@ public:
 
     inline void addPredBasicBlock(const SVFBasicBlock* pred2)
     {
+        // check if the edge already exists
+        for (auto edge: this->getInEdges()) {
+            if (edge->getSrcNode() == pred2)
+                return;
+        }
         SVFBasicBlock* pred = const_cast<SVFBasicBlock*>(pred2);
         BasicBlockEdge* edge = new BasicBlockEdge(pred, this);
         this->addIncomingEdge(edge);
