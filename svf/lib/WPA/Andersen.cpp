@@ -709,24 +709,20 @@ inline void Andersen::collapseFields()
  */
 void Andersen::mergeSccCycle()
 {
-    NodeStack revTopoOrder;
-    NodeStack & topoOrder = getSCCDetector()->topoNodeStack();
-    while (!topoOrder.empty())
+    NodeStack revTopoOrder = getSCCDetector()->revTopoNodeStack();
+    /// referenced topoOrder is used for restoring the topological order for later solving.
+    NodeStack &topoOrder = getSCCDetector()->topoNodeStack();
+    while (!revTopoOrder.empty())
     {
-        NodeID repNodeId = topoOrder.top();
-        topoOrder.pop();
-        revTopoOrder.push(repNodeId);
+        NodeID repNodeId = revTopoOrder.top();
+        revTopoOrder.pop();
+
         const NodeBS& subNodes = getSCCDetector()->subNodes(repNodeId);
         // merge sub nodes to rep node
         mergeSccNodes(repNodeId, subNodes);
-    }
 
-    // restore the topological order for later solving.
-    while (!revTopoOrder.empty())
-    {
-        NodeID nodeId = revTopoOrder.top();
-        revTopoOrder.pop();
-        topoOrder.push(nodeId);
+        /// restore the topological order for later solving.
+        topoOrder.push(repNodeId);
     }
 }
 

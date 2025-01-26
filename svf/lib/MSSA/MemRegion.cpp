@@ -250,6 +250,7 @@ void MRGenerator::collectModRefForCall()
         {
             PTACallGraphNode* subCallGraphNode = callGraph->getCallGraphNode(*it);
             /// Get mod-ref of all callsites calling callGraphNode
+            std::cout << subCallGraphNode->getFunction()->getName() << std::endl;
             modRefAnalysis(subCallGraphNode,worklist);
         }
     }
@@ -461,20 +462,11 @@ bool MRGenerator::addModSideEffectOfCallSite(const CallICFGNode* cs, const NodeB
  */
 void MRGenerator::getCallGraphSCCRevTopoOrder(WorkList& worklist)
 {
-    /// get topological order
-    NodeStack& topoOrder = callGraphSCC->topoNodeStack();
-    std::vector<NodeID> topoOrderVec(topoOrder.size());
-    while(!topoOrder.empty())
+    NodeStack revTopoNodeStack = callGraphSCC->revTopoNodeStack();
+    while(!revTopoNodeStack.empty())
     {
-        NodeID callgraphNodeID = topoOrder.top();
-        topoOrder.pop();
-        topoOrderVec.push_back(callgraphNodeID);
-    }
-
-    /// reverse topological order
-    for (auto it = topoOrderVec.rbegin(); it!= topoOrderVec.rend(); ++it)
-    {
-        NodeID callgraphNodeID = *it;
+        NodeID callgraphNodeID = revTopoNodeStack.top();
+        revTopoNodeStack.pop();
         worklist.push(callgraphNodeID);
     }
 }
