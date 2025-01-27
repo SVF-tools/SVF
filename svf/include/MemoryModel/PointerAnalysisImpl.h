@@ -216,7 +216,8 @@ private:
 public:
     /// Interface expose to users of our pointer analysis, given Value infos
     AliasResult alias(const SVFVar* V1,
-                      const SVFVar* V2) override {
+                      const SVFVar* V2) override
+    {
         return alias(V1->getId(), V2->getId());
     }
 
