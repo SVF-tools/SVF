@@ -300,15 +300,14 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
 
     for (const BasicBlock& bb : *func)
     {
-        SVFBasicBlock* svfBB = bbGraph->addBasicBlock(bb.getName().str());
-        addBasicBlockMap(&bb, svfBB);
+        addBasicBlock(svfFunc, &bb);
         for (const Instruction& inst : bb)
         {
             SVFInstruction* svfInst = nullptr;
             if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(&inst))
             {
                 svfInst = new SVFCallInst(
-                    getSVFType(call->getType()), svfBB,
+                    getSVFType(call->getType()), getSVFBasicBlock(&bb),
                     call->getFunctionType()->isVarArg(),
                     inst.isTerminator());
             }
@@ -316,7 +315,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             {
                 svfInst =
                     new SVFInstruction(getSVFType(inst.getType()),
-                                       svfBB, inst.isTerminator(),
+                                       getSVFBasicBlock(&bb), inst.isTerminator(),
                                        SVFUtil::isa<ReturnInst>(inst));
             }
 

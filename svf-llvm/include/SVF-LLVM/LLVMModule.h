@@ -178,8 +178,10 @@ public:
 
     void addFunctionMap(const Function* func, CallGraphNode* svfFunc);
 
-    inline void addBasicBlockMap(const BasicBlock* bb, SVFBasicBlock* svfBB)
+    // create a SVFBasicBlock according to LLVM BasicBlock, then add it to SVFFunction's BasicBlockGraph
+    inline void addBasicBlock(SVFFunction* fun, const BasicBlock* bb)
     {
+        SVFBasicBlock* svfBB = fun->getBasicBlockGraph()->addBasicBlock(bb->getName().str());
         LLVMBB2SVFBB[bb] = svfBB;
         SVFBaseNode2LLVMValue[svfBB] = bb;
     }

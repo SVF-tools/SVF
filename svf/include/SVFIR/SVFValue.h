@@ -377,6 +377,16 @@ public:
         this->bbGraph = graph;
     }
 
+    BasicBlockGraph* getBasicBlockGraph()
+    {
+        return bbGraph;
+    }
+
+    const BasicBlockGraph* getBasicBlockGraph() const
+    {
+        return bbGraph;
+    }
+
     inline bool isIntrinsic() const
     {
         return intrinsic;
