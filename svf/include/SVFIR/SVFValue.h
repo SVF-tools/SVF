@@ -418,6 +418,7 @@ public:
     inline const SVFBasicBlock* getEntryBlock() const
     {
         assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
+        assert(bbGraph->begin()->second->getInEdges().size() == 0 && "the first basic block is not entry block");
         return bbGraph->begin()->second;
     }
 

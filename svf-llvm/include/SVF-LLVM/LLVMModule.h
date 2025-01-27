@@ -57,7 +57,6 @@ public:
     typedef Map<const Function*, SVFFunction*> LLVMFun2SVFFunMap;
     typedef Map<const Function*, CallGraphNode*> LLVMFun2CallGraphNodeMap;
     typedef Map<const BasicBlock*, SVFBasicBlock*> LLVMBB2SVFBBMap;
-    typedef Map<const SVFBasicBlock*, const BasicBlock*> SVFBB2LLVMBBMap;
     typedef Map<const Instruction*, SVFInstruction*> LLVMInst2SVFInstMap;
     typedef Map<const Argument*, SVFArgument*> LLVMArgument2SVFArgumentMap;
     typedef Map<const Constant*, SVFConstant*> LLVMConst2SVFConstMap;
@@ -94,7 +93,6 @@ private:
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
     LLVMFun2CallGraphNodeMap LLVMFunc2CallGraphNode; ///< Map an LLVM Function to an CallGraph Node
     LLVMBB2SVFBBMap LLVMBB2SVFBB;
-    SVFBB2LLVMBBMap SVFBB2LLVMBB;
     LLVMInst2SVFInstMap LLVMInst2SVFInst;
     LLVMArgument2SVFArgumentMap LLVMArgument2SVFArgument;
     LLVMConst2SVFConstMap LLVMConst2SVFConst;
@@ -183,7 +181,7 @@ public:
     inline void addBasicBlockMap(const BasicBlock* bb, SVFBasicBlock* svfBB)
     {
         LLVMBB2SVFBB[bb] = svfBB;
-        SVFBB2LLVMBB[svfBB] = bb;
+        SVFBaseNode2LLVMValue[svfBB] = bb;
     }
 
     inline void addInstructionMap(const Instruction* inst, SVFInstruction* svfInst)
@@ -249,19 +247,9 @@ public:
 
     const Value* getLLVMValue(const SVFBaseNode* value) const
     {
-        if (SVFUtil::isa<SVFBasicBlock>(value))
-        {
-            const SVFBasicBlock* bb = SVFUtil::cast<SVFBasicBlock>(value);
-            SVFBB2LLVMBBMap::const_iterator it = SVFBB2LLVMBB.find(bb);
-            assert(it!=SVFBB2LLVMBB.end() && "can't find corresponding llvm value!");
-            return it->second;
-        }
-        else
-        {
-            SVFBaseNode2LLVMValueMap ::const_iterator it = SVFBaseNode2LLVMValue.find(value);
-            assert(it != SVFBaseNode2LLVMValue.end() && "can't find corresponding llvm value!");
-            return it->second;
-        }
+        SVFBaseNode2LLVMValueMap ::const_iterator it = SVFBaseNode2LLVMValue.find(value);
+        assert(it != SVFBaseNode2LLVMValue.end() && "can't find corresponding llvm value!");
+        return it->second;
     }
 
     inline CallGraphNode* getCallGraphNode(const Function* fun) const
@@ -282,13 +270,6 @@ public:
     {
         LLVMBB2SVFBBMap::const_iterator it = LLVMBB2SVFBB.find(bb);
         assert(it!=LLVMBB2SVFBB.end() && "SVF BasicBlock not found!");
-        return it->second;
-    }
-
-    const BasicBlock* getLLVMBasicBlock(const SVFBasicBlock* bb) const
-    {
-        SVFBB2LLVMBBMap::const_iterator it = SVFBB2LLVMBB.find(bb);
-        assert(it!=SVFBB2LLVMBB.end() && "LLVM BasicBlock not found!");
         return it->second;
     }
 
