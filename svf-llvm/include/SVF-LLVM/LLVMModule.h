@@ -34,6 +34,7 @@
 #include "SVFIR/SVFValue.h"
 #include "SVFIR/SVFModule.h"
 #include "Util/Options.h"
+#include "Graphs/BasicBlockG.h"
 
 namespace SVF
 {
@@ -177,11 +178,14 @@ public:
 
     void addFunctionMap(const Function* func, CallGraphNode* svfFunc);
 
-    inline void addBasicBlockMap(const BasicBlock* bb, SVFBasicBlock* svfBB)
+    // create a SVFBasicBlock according to LLVM BasicBlock, then add it to SVFFunction's BasicBlockGraph
+    inline void addBasicBlock(SVFFunction* fun, const BasicBlock* bb)
     {
+        SVFBasicBlock* svfBB = fun->getBasicBlockGraph()->addBasicBlock(bb->getName().str());
         LLVMBB2SVFBB[bb] = svfBB;
-        setValueAttr(bb,svfBB);
+        SVFBaseNode2LLVMValue[svfBB] = bb;
     }
+
     inline void addInstructionMap(const Instruction* inst, SVFInstruction* svfInst)
     {
         LLVMInst2SVFInst[inst] = svfInst;
@@ -246,7 +250,7 @@ public:
     const Value* getLLVMValue(const SVFBaseNode* value) const
     {
         SVFBaseNode2LLVMValueMap ::const_iterator it = SVFBaseNode2LLVMValue.find(value);
-        assert(it!=SVFBaseNode2LLVMValue.end() && "can't find corresponding llvm value!");
+        assert(it != SVFBaseNode2LLVMValue.end() && "can't find corresponding llvm value!");
         return it->second;
     }
 
@@ -264,7 +268,7 @@ public:
         return it->second;
     }
 
-    inline SVFBasicBlock* getSVFBasicBlock(const BasicBlock* bb) const
+    SVFBasicBlock* getSVFBasicBlock(const BasicBlock* bb)
     {
         LLVMBB2SVFBBMap::const_iterator it = LLVMBB2SVFBB.find(bb);
         assert(it!=LLVMBB2SVFBB.end() && "SVF BasicBlock not found!");

@@ -33,6 +33,7 @@
 #include "SVFIR/SVFType.h"
 #include "Graphs/GraphPrinter.h"
 #include "Util/Casting.h"
+#include "Graphs/BasicBlockG.h"
 
 namespace SVF
 {
@@ -299,7 +300,8 @@ class SVFFunction : public SVFValue
     friend class SVFIRBuilder;
 
 public:
-    typedef std::vector<const SVFBasicBlock*>::const_iterator const_iterator;
+    typename BasicBlockGraph::IDToNodeMapTy::iterator iterator;
+    typedef BasicBlockGraph::IDToNodeMapTy::const_iterator const_iterator;
     typedef SVFLoopAndDomInfo::BBSet BBSet;
     typedef SVFLoopAndDomInfo::BBList BBList;
     typedef SVFLoopAndDomInfo::LoopBBs LoopBBs;
@@ -314,21 +316,15 @@ private:
     const SVFFunctionType* funcType; /// FunctionType, which is different from the type (PointerType) of this SVFFunction
     SVFLoopAndDomInfo* loopAndDom;  /// the loop and dominate information
     const SVFFunction* realDefFun;  /// the definition of a function across multiple modules
-    std::vector<const SVFBasicBlock*> allBBs;   /// all BasicBlocks of this function
     std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
     SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
     const CallGraphNode *callGraphNode;          /// call graph node for this function
+    BasicBlockGraph* bbGraph; /// the basic block graph of this function
 
 protected:
     inline void setCallGraphNode(CallGraphNode *cgn)
     {
         callGraphNode = cgn;
-    }
-
-    ///@{ attributes to be set only through Module builders e.g., LLVMModule
-    inline void addBasicBlock(const SVFBasicBlock* bb)
-    {
-        allBBs.push_back(bb);
     }
 
     inline void addArgument(SVFArgument* arg)
@@ -376,6 +372,21 @@ public:
         return isDecl;
     }
 
+    void setBasicBlockGraph(BasicBlockGraph* graph)
+    {
+        this->bbGraph = graph;
+    }
+
+    BasicBlockGraph* getBasicBlockGraph()
+    {
+        return bbGraph;
+    }
+
+    const BasicBlockGraph* getBasicBlockGraph() const
+    {
+        return bbGraph;
+    }
+
     inline bool isIntrinsic() const
     {
         return intrinsic;
@@ -411,13 +422,14 @@ public:
 
     inline bool hasBasicBlock() const
     {
-        return !allBBs.empty();
+        return bbGraph && bbGraph->begin() != bbGraph->end();
     }
 
     inline const SVFBasicBlock* getEntryBlock() const
     {
         assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
-        return allBBs.front();
+        assert(bbGraph->begin()->second->getInEdges().size() == 0 && "the first basic block is not entry block");
+        return bbGraph->begin()->second;
     }
 
     /// Carefully! when you call getExitBB, you need ensure the function has return instruction
@@ -437,23 +449,19 @@ public:
         /// Carefully! 'back' is just the last basic block of function,
         /// but not necessarily a exit basic block
         /// more refer to: https://github.com/SVF-tools/SVF/pull/1262
-        return allBBs.back();
+        return std::prev(bbGraph->end())->second;
     }
 
     inline const_iterator begin() const
     {
-        return allBBs.begin();
+        return bbGraph->begin();
     }
 
     inline const_iterator end() const
     {
-        return allBBs.end();
+        return bbGraph->end();
     }
 
-    inline const std::vector<const SVFBasicBlock*>& getBasicBlockList() const
-    {
-        return allBBs;
-    }
 
     inline const std::vector<const SVFBasicBlock*>& getReachableBBs() const
     {
@@ -522,113 +530,6 @@ public:
 };
 
 class ICFGNode;
-
-class SVFBasicBlock : public SVFValue
-{
-    friend class LLVMModuleSet;
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-    friend class SVFIRBuilder;
-    friend class SVFFunction;
-    friend class ICFGBuilder;
-    friend class ICFG;
-
-public:
-    typedef std::vector<const ICFGNode*>::const_iterator const_iterator;
-
-private:
-    std::vector<const ICFGNode*> allICFGNodes;    ///< all ICFGNodes in this BasicBlock
-    std::vector<const SVFBasicBlock*> succBBs;  ///< all successor BasicBlocks of this BasicBlock
-    std::vector<const SVFBasicBlock*> predBBs;  ///< all predecessor BasicBlocks of this BasicBlock
-    const SVFFunction* fun;                 /// Function where this BasicBlock is
-
-protected:
-    ///@{ attributes to be set only through Module builders e.g., LLVMModule
-
-    inline void addICFGNode(const ICFGNode* icfgNode)
-    {
-        assert(std::find(getICFGNodeList().begin(), getICFGNodeList().end(),
-                         icfgNode) == getICFGNodeList().end() && "duplicated icfgnode");
-        allICFGNodes.push_back(icfgNode);
-    }
-
-    inline void addSuccBasicBlock(const SVFBasicBlock* succ)
-    {
-        succBBs.push_back(succ);
-    }
-
-    inline void addPredBasicBlock(const SVFBasicBlock* pred)
-    {
-        predBBs.push_back(pred);
-    }
-    /// @}
-
-public:
-    /// Constructor without name
-    SVFBasicBlock(const SVFType* ty, const SVFFunction* f);
-    SVFBasicBlock() = delete;
-    ~SVFBasicBlock() override;
-
-    static inline bool classof(const SVFValue *node)
-    {
-        return node->getKind() == SVFBB;
-    }
-
-    inline const std::vector<const ICFGNode*>& getICFGNodeList() const
-    {
-        return allICFGNodes;
-    }
-
-    inline const_iterator begin() const
-    {
-        return allICFGNodes.begin();
-    }
-
-    inline const_iterator end() const
-    {
-        return allICFGNodes.end();
-    }
-
-    inline const SVFFunction* getParent() const
-    {
-        return fun;
-    }
-
-    inline const SVFFunction* getFunction() const
-    {
-        return fun;
-    }
-
-    inline const ICFGNode* front() const
-    {
-        assert(!allICFGNodes.empty() && "bb empty?");
-        return allICFGNodes.front();
-    }
-
-    inline const ICFGNode* back() const
-    {
-        assert(!allICFGNodes.empty() && "bb empty?");
-        return allICFGNodes.back();
-    }
-
-    inline const std::vector<const SVFBasicBlock*>& getSuccessors() const
-    {
-        return succBBs;
-    }
-
-    inline const std::vector<const SVFBasicBlock*>& getPredecessors() const
-    {
-        return predBBs;
-    }
-    u32_t getNumSuccessors() const
-    {
-        return succBBs.size();
-    }
-    u32_t getBBSuccessorPos(const SVFBasicBlock* succbb);
-    u32_t getBBSuccessorPos(const SVFBasicBlock* succbb) const;
-    u32_t getBBPredecessorPos(const SVFBasicBlock* succbb);
-    u32_t getBBPredecessorPos(const SVFBasicBlock* succbb) const;
-};
 
 class SVFInstruction : public SVFValue
 {

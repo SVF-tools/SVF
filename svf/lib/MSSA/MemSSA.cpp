@@ -597,7 +597,7 @@ void MemSSA::dumpMSSA(OutStream& Out)
         for (SVFFunction::const_iterator bit = fun->begin(), ebit = fun->end();
                 bit != ebit; ++bit)
         {
-            const SVFBasicBlock* bb = *bit;
+            const SVFBasicBlock* bb = bit->second;
             Out << bb->getName() << "\n";
             PHISet& phiSet = getPHISet(bb);
             for(PHISet::iterator pi = phiSet.begin(), epi = phiSet.end(); pi !=epi; ++pi)

@@ -171,8 +171,9 @@ void CDGBuilder::buildControlDependence(const SVFModule *svfgModule)
 void CDGBuilder::extractBBS(const SVF::SVFFunction *func,
                             Map<const SVF::SVFBasicBlock *, std::vector<const SVFBasicBlock *>> &res)
 {
-    for (const auto &bb: *func)
+    for (const auto &it: *func)
     {
+        const SVFBasicBlock* bb = it.second;
         for (const auto &succ: bb->getSuccessors())
         {
             if (func->postDominate(succ, bb))

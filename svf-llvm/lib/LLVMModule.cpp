@@ -280,6 +280,8 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             getSVFType(func->getFunctionType())),
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
         func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
+    BasicBlockGraph* bbGraph = new BasicBlockGraph(svfFunc);
+    svfFunc->setBasicBlockGraph(bbGraph);
     svfModule->addFunctionSet(svfFunc);
     addFunctionMap(func, svfFunc);
 
@@ -298,17 +300,14 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
 
     for (const BasicBlock& bb : *func)
     {
-        SVFBasicBlock* svfBB =
-            new SVFBasicBlock(getSVFType(bb.getType()), svfFunc);
-        svfFunc->addBasicBlock(svfBB);
-        addBasicBlockMap(&bb, svfBB);
+        addBasicBlock(svfFunc, &bb);
         for (const Instruction& inst : bb)
         {
             SVFInstruction* svfInst = nullptr;
             if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(&inst))
             {
                 svfInst = new SVFCallInst(
-                    getSVFType(call->getType()), svfBB,
+                    getSVFType(call->getType()), getSVFBasicBlock(&bb),
                     call->getFunctionType()->isVarArg(),
                     inst.isTerminator());
             }
@@ -316,7 +315,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             {
                 svfInst =
                     new SVFInstruction(getSVFType(inst.getType()),
-                                       svfBB, inst.isTerminator(),
+                                       getSVFBasicBlock(&bb), inst.isTerminator(),
                                        SVFUtil::isa<ReturnInst>(inst));
             }
 
@@ -1365,8 +1364,6 @@ SVFValue* LLVMModuleSet::getSVFValue(const Value* value)
 {
     if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
         return getSVFFunction(fun);
-    else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(value))
-        return getSVFBasicBlock(bb);
     else if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
         return getSVFInstruction(inst);
     else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
