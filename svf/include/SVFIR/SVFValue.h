@@ -422,7 +422,7 @@ public:
 
     inline bool hasBasicBlock() const
     {
-        return bbGraph && bbGraph->getTotalNodeNum()>0;
+        return bbGraph && bbGraph->begin() != bbGraph->end();
     }
 
     inline const SVFBasicBlock* getEntryBlock() const
