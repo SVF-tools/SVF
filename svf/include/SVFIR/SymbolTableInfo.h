@@ -126,28 +126,6 @@ public:
     }
     //@}
 
-    /// Set / Get modelConstants
-    //@{
-    void setModelConstants(bool _modelConstants)
-    {
-        modelConstants = _modelConstants;
-    }
-    bool getModelConstants() const
-    {
-        return modelConstants;
-    }
-    //@}
-
-    /// Module
-    inline SVFModule* getModule()
-    {
-        return mod;
-    }
-    /// Module
-    inline void setModule(SVFModule* m)
-    {
-        mod = m;
-    }
 
     /// special value
     // @{

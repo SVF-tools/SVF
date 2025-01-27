@@ -80,8 +80,6 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 {
     SVFUtil::increaseStackSize();
 
-    symInfo->setModule(svfModule);
-
     // Pointer #0 always represents the null pointer.
     assert(symInfo->totalSymNum++ == SymbolTableInfo::NullPtr && "Something changed!");
 
@@ -329,7 +327,7 @@ void SymbolTableBuilder::collectObj(const Value* val)
         SVFValue* svfVal = llvmModuleSet->getSVFValue(val);
         // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
         // then we treat them as one ConstantObj
-        if (isConstantObjSym(val) && !symInfo->getModelConstants())
+        if (isConstantObjSym(val) && !Options::ModelConsts())
         {
             symInfo->objSymMap.insert(std::make_pair(svfVal, symInfo->constantSymID()));
         }

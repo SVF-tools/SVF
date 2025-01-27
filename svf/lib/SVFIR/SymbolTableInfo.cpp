@@ -83,7 +83,6 @@ SymbolTableInfo* SymbolTableInfo::SymbolInfo()
     if (symInfo == nullptr)
     {
         symInfo = new SymbolTableInfo();
-        symInfo->setModelConstants(Options::ModelConsts());
     }
     return symInfo;
 }
