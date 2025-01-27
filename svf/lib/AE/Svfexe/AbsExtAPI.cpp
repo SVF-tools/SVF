@@ -758,9 +758,3 @@ IntervalValue AbsExtAPI::getRangeLimitFromType(const SVFType* type)
         // other types, return top interval
     }
 }
-
-const SVFVar* AbsExtAPI::getSVFVar(const SVF::SVFValue* val)
-{
-    assert(svfir->hasGNode(svfir->getValueNode(val)));
-    return svfir->getGNode(svfir->getValueNode(val));
-}

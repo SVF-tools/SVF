@@ -130,13 +130,6 @@ public:
      */
     AbstractState& getAbsStateFromTrace(const ICFGNode* node);
 
-    /**
-     * @brief Retrieves the SVF variable from a given SVF value.
-     * @param val Pointer to the SVF value.
-     * @return Pointer to the corresponding SVF variable.
-     */
-    const SVFVar* getSVFVar(const SVFValue* val);
-
 protected:
     SVFIR* svfir; ///< Pointer to the SVF intermediate representation.
     ICFG* icfg; ///< Pointer to the interprocedural control flow graph.

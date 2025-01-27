@@ -612,14 +612,6 @@ void BVDataPTAImpl::normalizePointsTo()
     }
 }
 
-/*!
- * Return alias results based on our points-to/alias analysis
- */
-AliasResult BVDataPTAImpl::alias(const SVFValue* V1,
-                                 const SVFValue* V2)
-{
-    return alias(pag->getValueNode(V1),pag->getValueNode(V2));
-}
 
 /*!
  * Return alias results based on our points-to/alias analysis

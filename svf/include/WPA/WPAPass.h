@@ -75,11 +75,7 @@ public:
     /// Destructor
     virtual ~WPAPass();
 
-    /// Interface expose to users of our pointer analysis, given Value infos
-    virtual AliasResult alias(const SVFValue* V1,	const SVFValue* V2);
-
     /// Retrieve points-to set information
-    virtual const PointsTo& getPts(const SVFValue* value);
     virtual const PointsTo& getPts(NodeID var);
 
     /// Print all alias pairs
@@ -93,9 +89,6 @@ public:
     // {
     //     return getModRefInfo(callInst, Loc.Ptr);
     // }
-
-    /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref a specific memory location, given Value infos
-    virtual ModRefInfo getModRefInfo(const CallICFGNode* callInst, const SVFValue* V);
 
     /// Interface of mod-ref analysis between two CallSite instructions
     virtual ModRefInfo getModRefInfo(const CallICFGNode* callInst1, const CallICFGNode* callInst2);

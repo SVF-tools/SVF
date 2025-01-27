@@ -137,7 +137,7 @@ const std::string ArgValVar::toString() const
     return rawstr.str();
 }
 
-GepValVar::GepValVar(ValVar* baseNode, NodeID i,
+GepValVar::GepValVar(const ValVar* baseNode, NodeID i,
                      const AccessPath& ap, const SVFType* ty, const ICFGNode* node)
     : ValVar(i, ty, node, GepValNode), ap(ap), base(baseNode), gepValType(ty)
 {

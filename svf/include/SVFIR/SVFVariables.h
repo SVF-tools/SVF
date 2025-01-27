@@ -443,7 +443,7 @@ class GepValVar: public ValVar
 
 private:
     AccessPath ap;	// AccessPath
-    ValVar* base;	// base node
+    const ValVar* base;	// base node
     const SVFType* gepValType;
 
     /// Constructor to create empty GeValVar (for SVFIRReader/deserialization)
@@ -475,7 +475,7 @@ public:
     //@}
 
     /// Constructor
-    GepValVar(ValVar* baseNode, NodeID i, const AccessPath& ap,
+    GepValVar(const ValVar* baseNode, NodeID i, const AccessPath& ap,
               const SVFType* ty, const ICFGNode* node);
 
     /// offset of the base value variable
@@ -485,7 +485,7 @@ public:
     }
 
     /// Return the base object from which this GEP node came from.
-    inline ValVar* getBaseNode(void) const
+    inline const ValVar* getBaseNode(void) const
     {
         return base;
     }

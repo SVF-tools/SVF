@@ -384,14 +384,14 @@ GepStmt* SVFIR::addVariantGepStmt(NodeID src, NodeID dst, const AccessPath& ap)
  * Add a temp field value node, this method can only invoked by getGepValVar
  * due to constraint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
  */
-NodeID SVFIR::addGepValNode(const SVFValue* curInst,const SVFValue* gepVal, const AccessPath& ap, NodeID i, const SVFType* type, const ICFGNode* icn)
+NodeID SVFIR::addGepValNode(NodeID curInst,const ValVar* baseVar, const AccessPath& ap, NodeID i, const SVFType* type, const ICFGNode* icn)
 {
-    NodeID base = getValueNode(gepVal);
+    NodeID base = baseVar->getId();
     //assert(findPAGNode(i) == false && "this node should not be created before");
     assert(0==GepValObjMap[curInst].count(std::make_pair(base, ap))
            && "this node should not be created before");
     GepValObjMap[curInst][std::make_pair(base, ap)] = i;
-    GepValVar *node = new GepValVar(cast<ValVar>(getGNode(base)), i, ap, type, icn);
+    GepValVar *node = new GepValVar(baseVar, i, ap, type, icn);
     return addValNode(node);
 }
 
@@ -503,7 +503,7 @@ NodeBS SVFIR::getFieldsAfterCollapse(NodeID id)
 /*!
  * It is used to create a dummy GepValVar during global initialization.
  */
-NodeID SVFIR::getGepValVar(const SVFValue* curInst, NodeID base, const AccessPath& ap) const
+NodeID SVFIR::getGepValVar(NodeID curInst, NodeID base, const AccessPath& ap) const
 {
     GepValueVarMap::const_iterator iter = GepValObjMap.find(curInst);
     if(iter==GepValObjMap.end())

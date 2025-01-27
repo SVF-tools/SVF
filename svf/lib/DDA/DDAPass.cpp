@@ -290,34 +290,7 @@ AliasResult DDAPass::alias(NodeID node1, NodeID node2)
 
     return _pta->alias(node1,node2);
 }
-/*!
- * Return alias results based on our points-to/alias analysis
- * TODO: Need to handle PartialAlias and MustAlias here.
- */
-AliasResult DDAPass::alias(const SVFValue* V1, const SVFValue* V2)
-{
-    SVFIR* pag = _pta->getPAG();
 
-    /// TODO: When this method is invoked during compiler optimizations, the IR
-    ///       used for pointer analysis may been changed, so some Values may not
-    ///       find corresponding SVFIR node. In this case, we only check alias
-    ///       between two Values if they both have SVFIR nodes. Otherwise, MayAlias
-    ///       will be returned.
-    if (pag->hasValueNode(V1) && pag->hasValueNode(V2))
-    {
-        PAGNode* node1 = pag->getGNode(pag->getValueNode(V1));
-        if(pag->isValidTopLevelPtr(node1))
-            _pta->computeDDAPts(node1->getId());
-
-        PAGNode* node2 = pag->getGNode(pag->getValueNode(V2));
-        if(pag->isValidTopLevelPtr(node2))
-            _pta->computeDDAPts(node2->getId());
-
-        return _pta->alias(V1,V2);
-    }
-
-    return AliasResult::MayAlias;
-}
 
 /*!
  * Print queries' pts
