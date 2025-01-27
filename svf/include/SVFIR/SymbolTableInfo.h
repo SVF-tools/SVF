@@ -89,14 +89,8 @@ private:
     // Singleton pattern here to enable instance of SymbolTableInfo can only be created once.
     static SymbolTableInfo* symInfo;
 
-    /// Module
-    SVFModule* mod;
-
     /// Clean up memory
     void destroy();
-
-    /// Whether to model constants
-    bool modelConstants;
 
     /// total number of symbols
     SymID totalSymNum;
@@ -104,7 +98,7 @@ private:
 protected:
     /// Constructor
     SymbolTableInfo(void)
-        : mod(nullptr), modelConstants(false), totalSymNum(0),
+        : totalSymNum(0),
           maxStruct(nullptr), maxStSize(0)
     {
     }

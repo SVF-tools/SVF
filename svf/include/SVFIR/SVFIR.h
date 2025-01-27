@@ -431,27 +431,17 @@ public:
 
     /// Get black hole and constant id
     //@{
-    inline bool isBlkPtr(NodeID id) const
-    {
-        return (SymbolTableInfo::isBlkPtr(id));
-    }
-    inline bool isNullPtr(NodeID id) const
-    {
-        return (SymbolTableInfo::isNullPtr(id));
-    }
+
     inline bool isBlkObjOrConstantObj(NodeID id) const
     {
         return (isBlkObj(id) || isConstantObj(id));
     }
-    inline bool isBlkObj(NodeID id) const
-    {
-        return SymbolTableInfo::isBlkObj(id);
-    }
+
     inline bool isConstantObj(NodeID id) const
     {
         const BaseObjVar* obj = getBaseObject(id);
         assert(obj && "not an object node?");
-        return SymbolTableInfo::isConstantObj(id) ||
+        return isConstantSym(id) ||
                obj->isConstDataOrConstGlobal();
     }
     //@}
@@ -715,25 +705,25 @@ private:
     }
     inline NodeID addDummyObjNode(NodeID i, const SVFType* type)
     {
-        if (symInfo->idToObjTypeInfoMap().find(i) == symInfo->idToObjTypeInfoMap().end())
+        if (idToObjTypeInfoMap().find(i) == idToObjTypeInfoMap().end())
         {
-            ObjTypeInfo* ti = symInfo->createObjTypeInfo(type);
-            symInfo->idToObjTypeInfoMap()[i] = ti;
+            ObjTypeInfo* ti = createObjTypeInfo(type);
+            idToObjTypeInfoMap()[i] = ti;
             return addObjNode(new DummyObjVar(i, ti, nullptr, type));
         }
         else
         {
-            return addObjNode(new DummyObjVar(i, symInfo->getObjTypeInfo(i), nullptr, type));
+            return addObjNode(new DummyObjVar(i, getObjTypeInfo(i), nullptr, type));
         }
     }
 
     inline NodeID addBlackholeObjNode()
     {
-        return addObjNode(new DummyObjVar(getBlackHoleNode(), symInfo->getObjTypeInfo(getBlackHoleNode()), nullptr));
+        return addObjNode(new DummyObjVar(getBlackHoleNode(), getObjTypeInfo(getBlackHoleNode()), nullptr));
     }
     inline NodeID addConstantObjNode()
     {
-        return addObjNode(new DummyObjVar(getConstantNode(), symInfo->getObjTypeInfo(getConstantNode()), nullptr));
+        return addObjNode(new DummyObjVar(getConstantNode(), getObjTypeInfo(getConstantNode()), nullptr));
     }
     inline NodeID addBlackholePtrNode()
     {

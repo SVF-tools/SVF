@@ -191,6 +191,15 @@ const std::string GepObjVar::toString() const
     return rawstr.str();
 }
 
+const SVFType *GepObjVar::getType() const {
+    return SVFIR::getPAG()->getFlatternedElemType(type, apOffset);
+}
+
+bool BaseObjVar::isBlackHoleObj() const {
+    return IRGraph::isBlkObj(getId());
+}
+
+
 const SVFFunction* BaseObjVar::getFunction() const
 {
     if(icfgNode)

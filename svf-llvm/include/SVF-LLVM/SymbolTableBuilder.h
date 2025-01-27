@@ -45,11 +45,11 @@ class SymbolTableBuilder
 {
     friend class SVFIRBuilder;
 private:
-    SymbolTableInfo* symInfo;
+    SVFIR* svfir;
 
 public:
     /// Constructor
-    SymbolTableBuilder(SymbolTableInfo* si): symInfo(si)
+    SymbolTableBuilder(SVFIR* ir): svfir(ir)
     {
     }
 

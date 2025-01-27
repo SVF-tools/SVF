@@ -155,8 +155,6 @@ void SymbolTableInfo::destroy()
     for (const StInfo* st : stInfos)
         delete st;
     stInfos.clear();
-
-    mod = nullptr;
 }
 
 const ObjTypeInfo* SymbolTableInfo::createDummyObjTypeInfo(SymID symId, const SVFType* type)
