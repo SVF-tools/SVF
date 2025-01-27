@@ -171,14 +171,6 @@ bool isIntrinsicInst(const SVFInstruction* inst);
 bool isIntrinsicInst(const ICFGNode* inst);
 //@}
 
-/// Whether an instruction is a call or invoke instruction
-inline bool isCallSite(const SVFValue* val)
-{
-    if(SVFUtil::isa<SVFCallInst>(val))
-        return true;
-    else
-        return false;
-}
 
 bool isCallSite(const ICFGNode* inst);
 
@@ -342,14 +334,6 @@ inline bool isProgExitFunction (const SVFFunction * fun)
                    fun->getName() == "__assert_fail" );
 }
 
-/// Return true if this argument belongs to an uncalled function
-inline bool isArgOfUncalledFunction(const SVFValue* svfval)
-{
-    if(const SVFArgument* arg = SVFUtil::dyn_cast<SVFArgument>(svfval))
-        return arg->isArgOfUncalledFunction();
-    else
-        return false;
-}
 
 bool isArgOfUncalledFunction(const SVFVar* svfvar);
 

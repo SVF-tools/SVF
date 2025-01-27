@@ -53,7 +53,6 @@ class IRGraph : public GenericGraph<SVFVar, SVFStmt>
 
 public:
     typedef Set<const SVFStmt*> SVFStmtSet;
-    typedef Map<const SVFValue*,SVFStmtSet> ValueToEdgeMap;
 
 protected:
     SVFStmt::KindToSVFStmtMapTy KindToSVFStmtSetMap; ///< SVFIR edge map containing all PAGEdges
@@ -61,7 +60,6 @@ protected:
     bool fromFile; ///< Whether the SVFIR is built according to user specified data from a txt file
     NodeID nodeNumAfterPAGBuild; ///< initial node number after building SVFIR, excluding later added nodes, e.g., gepobj nodes
     u32_t totalPTAPAGEdge;
-    ValueToEdgeMap valueToEdgeMap; ///< Map SVFValues (e.g., ICFGNodes) to all corresponding PAGEdges
     SymbolTableInfo* symInfo;
 
     /// Add a node into the graph
@@ -86,22 +84,11 @@ protected:
     SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind,
                             const SVFVar* op2);
 
-    /// Map a value to a set of edges
-    inline void mapValueToEdge(const SVFValue* V, SVFStmt *edge)
-    {
-        auto inserted = valueToEdgeMap.emplace(V, SVFStmtSet{edge});
-        if (!inserted.second)
-        {
-            inserted.first->second.emplace(edge);
-        }
-    }
 public:
     IRGraph(bool buildFromFile)
         : fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0)
     {
         symInfo = SymbolTableInfo::SymbolInfo();
-        // insert dummy value if a correct value cannot be found
-        valueToEdgeMap[nullptr] = SVFStmtSet();
     }
 
     virtual ~IRGraph();
@@ -114,17 +101,6 @@ public:
     inline bool isBuiltFromFile()
     {
         return fromFile;
-    }
-    /// Get all SVFIR Edges that corresponds to an LLVM value
-    inline const SVFStmtSet& getValueEdges(const SVFValue* V)
-    {
-        auto it = valueToEdgeMap.find(V);
-        if (it == valueToEdgeMap.end())
-        {
-            //special empty set
-            return valueToEdgeMap.at(nullptr);
-        }
-        return it->second;
     }
 
     /// Get SVFIR Node according to LLVM value
