@@ -76,11 +76,6 @@ protected:
 
     /// Wrappers used internally, not expose to Andersen Pass
     //@{
-    inline NodeID getValueNode(const SVFValue* value) const
-    {
-        return sccRepNode(pag->getValueNode(value));
-    }
-
     inline NodeID getReturnNode(const SVFFunction* value) const
     {
         return pag->getReturnNode(value);

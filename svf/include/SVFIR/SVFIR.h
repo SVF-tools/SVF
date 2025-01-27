@@ -70,7 +70,7 @@ public:
     typedef std::pair<NodeID, AccessPath> NodeAccessPath;
     typedef Map<NodeOffset,NodeID> NodeOffsetMap;
     typedef Map<NodeAccessPath,NodeID> NodeAccessPathMap;
-    typedef Map<const SVFValue*, NodeAccessPathMap> GepValueVarMap;
+    typedef Map<NodeID, NodeAccessPathMap> GepValueVarMap;
     typedef std::pair<const SVFType*, std::vector<AccessPath>> SVFTypeLocSetsPair;
     typedef Map<NodeID, SVFTypeLocSetsPair> TypeLocSetsMap;
     typedef Map<NodePair,NodeID> NodePairSetMap;
@@ -343,7 +343,7 @@ public:
     //@}
 
     /// Due to constraint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
-    NodeID getGepValVar(const SVFValue* curInst, NodeID base,
+    NodeID getGepValVar(NodeID curInst, NodeID base,
                         const AccessPath& ap) const;
 
     /// Add/get indirect callsites
@@ -693,7 +693,7 @@ private:
     }
 
     /// Add a temp field value node, this method can only invoked by getGepValVar
-    NodeID addGepValNode(const SVFValue* curInst,const SVFValue* val, const AccessPath& ap, NodeID i, const SVFType* type, const ICFGNode* node);
+    NodeID addGepValNode(NodeID curInst, const ValVar* base, const AccessPath& ap, NodeID i, const SVFType* type, const ICFGNode* node);
     /// Add a field obj node, this method can only invoked by getGepObjVar
     NodeID addGepObjNode(const BaseObjVar* baseObj, const APOffset& apOffset, const NodeID gepId);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode

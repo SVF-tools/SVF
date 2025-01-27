@@ -233,8 +233,8 @@ public:
     virtual void computeDDAPts(NodeID) {}
 
     /// Interface exposed to users of our pointer analysis, given Value infos
-    virtual AliasResult alias(const SVFValue* V1,
-                              const SVFValue* V2) = 0;
+    virtual AliasResult alias(const SVFVar* V1,
+                              const SVFVar* V2) = 0;
 
     /// Interface exposed to users of our pointer analysis, given PAGNodeID
     virtual AliasResult alias(NodeID node1, NodeID node2) = 0;

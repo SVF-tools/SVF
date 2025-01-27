@@ -1386,7 +1386,7 @@ void SVFIRBuilder::sanityCheck()
 NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const SVFType* elementType)
 {
     NodeID base = getValueNode(val);
-    NodeID gepval = pag->getGepValVar(curVal, base, ap);
+    NodeID gepval = pag->getGepValVar(pag->getValueNode(curVal), base, ap);
     if (gepval==UINT_MAX)
     {
         assert(((int) UINT_MAX)==-1 && "maximum limit of unsigned int is not -1?");
@@ -1412,7 +1412,7 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const 
             {
                 node = llvmmodule->getICFGNode(inst);
             }
-        NodeID gepNode = pag->addGepValNode(curVal, llvmmodule->getSVFValue(val), ap,
+        NodeID gepNode = pag->addGepValNode(pag->getValueNode(curVal), cast<ValVar>(pag->getGNode(getValueNode(val))), ap,
                                             NodeIDAllocator::get()->allocateValueId(),
                                             llvmmodule->getSVFType(PointerType::getUnqual(llvmmodule->getContext())), node);
         addGepEdge(base, gepNode, ap, true);
@@ -1445,8 +1445,6 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     assert(curVal && "current Val is nullptr?");
     edge->setBB(curBB!=nullptr ? curBB : nullptr);
     edge->setValue(pag->getGNode(pag->getValueNode(curVal)));
-    // backmap in valuToEdgeMap
-    pag->mapValueToEdge(curVal, edge);
     ICFGNode* icfgNode = pag->getICFG()->getGlobalICFGNode();
     LLVMModuleSet* llvmMS = llvmModuleSet();
     if (const SVFInstruction* curInst = SVFUtil::dyn_cast<SVFInstruction>(curVal))
