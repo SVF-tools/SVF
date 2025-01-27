@@ -586,8 +586,8 @@ Set<const Value *> &ObjTypeInference::bwfindAllocOfVar(const Value *var)
                 if (!callee->isDeclaration())
                 {
                     const SVFFunction *svfFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
-                    assert(SVFUtil::isa<BasicBlock>(LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfFunc->getExitBB())) && "exit bb is not a basic block?");
                     const BasicBlock* exitBB = SVFUtil::dyn_cast<BasicBlock>(LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfFunc->getExitBB()));
+                    assert (exitBB && "exit bb is not a basic block?");
                     const Value *pValue = &exitBB->back();
                     const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
                     ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
@@ -894,8 +894,8 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
                 if (!callee->isDeclaration())
                 {
                     const SVFFunction *svfFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
-                    assert(SVFUtil::isa<BasicBlock>(LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfFunc->getExitBB())) && "exit bb is not a basic block?");
                     const BasicBlock* exitBB = SVFUtil::dyn_cast<BasicBlock>(LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfFunc->getExitBB()));
+                    assert (exitBB && "exit bb is not a basic block?");
                     const Value *pValue = &exitBB->back();
                     const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
                     ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
