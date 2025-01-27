@@ -104,11 +104,13 @@ protected:
 
 public:
     /// Constructor without name
-    SVFBasicBlock(NodeID id, const SVFFunction* f): GenericBasicBlockNodeTy(id, BasicBlockKd), fun(f){
+    SVFBasicBlock(NodeID id, const SVFFunction* f): GenericBasicBlockNodeTy(id, BasicBlockKd), fun(f)
+    {
 
     }
     SVFBasicBlock() = delete;
-    ~SVFBasicBlock() {
+    ~SVFBasicBlock()
+    {
 
     }
 
@@ -149,7 +151,8 @@ public:
     inline void addSuccBasicBlock(const SVFBasicBlock* succ2)
     {
         // check if the edge already exists
-        for (auto edge: this->getOutEdges()) {
+        for (auto edge: this->getOutEdges())
+        {
             if (edge->getDstNode() == succ2)
                 return;
         }
@@ -165,7 +168,8 @@ public:
     inline void addPredBasicBlock(const SVFBasicBlock* pred2)
     {
         // check if the edge already exists
-        for (auto edge: this->getInEdges()) {
+        for (auto edge: this->getInEdges())
+        {
             if (edge->getSrcNode() == pred2)
                 return;
         }
@@ -222,7 +226,8 @@ public:
     {
         return this->getOutEdges().size();
     }
-    u32_t getBBSuccessorPos(const SVFBasicBlock* Succ) {
+    u32_t getBBSuccessorPos(const SVFBasicBlock* Succ)
+    {
         u32_t i = 0;
         for (const SVFBasicBlock* SuccBB: succBBs)
         {
@@ -233,7 +238,8 @@ public:
         assert(false && "Didn't find successor edge?");
         return 0;
     }
-    u32_t getBBSuccessorPos(const SVFBasicBlock* Succ) const {
+    u32_t getBBSuccessorPos(const SVFBasicBlock* Succ) const
+    {
         u32_t i = 0;
         for (const SVFBasicBlock* SuccBB: succBBs)
         {
@@ -245,7 +251,8 @@ public:
         return 0;
 
     }
-    u32_t getBBPredecessorPos(const SVFBasicBlock* succbb) {
+    u32_t getBBPredecessorPos(const SVFBasicBlock* succbb)
+    {
         u32_t pos = 0;
         for (const SVFBasicBlock* PredBB : succbb->getPredecessors())
         {
@@ -256,7 +263,8 @@ public:
         assert(false && "Didn't find predecessor edge?");
         return pos;
     }
-    u32_t getBBPredecessorPos(const SVFBasicBlock* succbb) const {
+    u32_t getBBPredecessorPos(const SVFBasicBlock* succbb) const
+    {
         u32_t pos = 0;
         for (const SVFBasicBlock* PredBB : succbb->getPredecessors())
         {
