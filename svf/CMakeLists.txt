@@ -1,39 +1,31 @@
 # Define the core library
 add_library(SvfCore)
+set_target_properties(SvfCore PROPERTIES VERSION ${SVF_VERSION} SOVERSION ${SVF_VERSION_MAJOR})
 
 # Add the public headers as an include directory
-target_include_directories(SvfCore
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${SVF_INSTALL_INCLUDE_DIR}>
-)
+target_include_directories(SvfCore PRIVATE ${PROJECT_BINARY_DIR}/include)
+target_include_directories(SvfCore PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                                          $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SVF>)
 
-set_target_properties(SvfCore PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-)
+target_link_libraries(SvfCore PUBLIC ${Z3_LIBRARIES})
 
-# Get the source files (i.e. all *.c/*.cpp files) for SVF's subprojects and add them to SvfCore
-file(GLOB_RECURSE SVF_CORE_SOURCES lib/*.cpp)
-target_sources(SvfCore PRIVATE ${SVF_CORE_SOURCES})
+# Ensure that the build artifacts are placed into lib/bin/include relative to the top of the build directory
+set_target_properties(
+    SvfCore
+    PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin
+               LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib
+               ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 
-# Get all of the public header files (i.e. all *.h/*.hpp files) for SVF's subprojects and add them
-file(GLOB_RECURSE SVF_CORE_HEADERS include/*.h include/*.hpp)
+# Sources and headers are defined in the subdirectories
+add_subdirectory(include)
+add_subdirectory(lib)
 
-target_sources(SvfCore
-  PUBLIC
-    FILE_SET HEADERS
-    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
-    FILES ${SVF_CORE_HEADERS}
-)
-
-# Install the headers and compiled libraries (associate SvfCore with the SVF package's targets)
+# Set the installation configuration for the SvfCore package (relative to install prefix)
 install(
-  TARGETS SvfCore
-  EXPORT SVFTargets
-  RUNTIME DESTINATION ${SVF_INSTALL_BIN_DIR}
-  LIBRARY DESTINATION ${SVF_INSTALL_LIB_DIR}
-  ARCHIVE DESTINATION ${SVF_INSTALL_LIB_DIR}
-  FILE_SET HEADERS DESTINATION ${SVF_INSTALL_INCLUDE_DIR}
-)
+    TARGETS SvfCore
+    EXPORT SVF_EXPORTED_TARGETS
+    LIBRARY DESTINATION ${SVF_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${SVF_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${SVF_INSTALL_BINDIR}
+            FILE_SET HEADERS
+            DESTINATION ${SVF_INSTALL_INCLUDEDIR})
