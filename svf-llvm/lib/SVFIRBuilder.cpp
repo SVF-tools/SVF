@@ -194,7 +194,7 @@ void SVFIRBuilder::initialiseNodes()
     addNullPtrNode();
 
     // Iterate over all value symbols in the symbol table
-    for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
+    for (IRGraph::ValueToIDMapTy::iterator iter =
                 pag->valSyms().begin(); iter != pag->valSyms().end();
             ++iter)
     {
@@ -266,7 +266,7 @@ void SVFIRBuilder::initialiseNodes()
     }
 
     // Iterate over all object symbols in the symbol table
-    for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
+    for (IRGraph::ValueToIDMapTy::iterator iter =
                 pag->objSyms().begin(); iter != pag->objSyms().end();
             ++iter)
     {
@@ -347,7 +347,7 @@ void SVFIRBuilder::initialiseNodes()
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
     }
 
-    for (SymbolTableInfo::FunToIDMapTy::iterator iter =
+    for (IRGraph::FunToIDMapTy::iterator iter =
                 pag->retSyms().begin(); iter != pag->retSyms().end();
             ++iter)
     {
@@ -364,7 +364,7 @@ void SVFIRBuilder::initialiseNodes()
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
     }
 
-    for (SymbolTableInfo::FunToIDMapTy::iterator iter =
+    for (IRGraph::FunToIDMapTy::iterator iter =
                 pag->varargSyms().begin();
             iter != pag->varargSyms().end(); ++iter)
     {
@@ -384,7 +384,7 @@ void SVFIRBuilder::initialiseNodes()
     }
 
     /// add address edges for constant nodes.
-    for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
+    for (IRGraph::ValueToIDMapTy::iterator iter =
                 pag->objSyms().begin(); iter != pag->objSyms().end(); ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add address edges for constant node " << iter->second << "\n");

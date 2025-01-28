@@ -81,18 +81,18 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
     SVFUtil::increaseStackSize();
 
     // Pointer #0 always represents the null pointer.
-    assert(svfir->totalSymNum++ == SymbolTableInfo::NullPtr && "Something changed!");
+    assert(svfir->totalSymNum++ == IRGraph::NullPtr && "Something changed!");
 
     // Pointer #1 always represents the pointer points-to black hole.
-    assert(svfir->totalSymNum++ == SymbolTableInfo::BlkPtr && "Something changed!");
+    assert(svfir->totalSymNum++ == IRGraph::BlkPtr && "Something changed!");
 
     // Object #2 is black hole the object that may point to any object
-    assert(svfir->totalSymNum++ == SymbolTableInfo::BlackHole && "Something changed!");
-    createBlkObjTypeInfo(SymbolTableInfo::BlackHole);
+    assert(svfir->totalSymNum++ == IRGraph::BlackHole && "Something changed!");
+    createBlkObjTypeInfo(IRGraph::BlackHole);
 
     // Object #3 always represents the unique constant of a program (merging all constants if Options::ModelConsts is disabled)
-    assert(svfir->totalSymNum++ == SymbolTableInfo::ConstantObj && "Something changed!");
-    createConstantObjTypeInfo(SymbolTableInfo::ConstantObj);
+    assert(svfir->totalSymNum++ == IRGraph::ConstantObj && "Something changed!");
+    createConstantObjTypeInfo(IRGraph::ConstantObj);
 
     for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
@@ -295,7 +295,7 @@ void SymbolTableBuilder::collectVal(const Value* val)
     {
         return;
     }
-    SymbolTableInfo::ValueToIDMapTy::iterator iter = svfir->valSymMap.find(
+    IRGraph::ValueToIDMapTy::iterator iter = svfir->valSymMap.find(
                 LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
     if (iter == svfir->valSymMap.end())
     {
@@ -321,7 +321,7 @@ void SymbolTableBuilder::collectObj(const Value* val)
 {
     val = LLVMUtil::getGlobalRep(val);
     LLVMModuleSet* llvmModuleSet = LLVMModuleSet::getLLVMModuleSet();
-    SymbolTableInfo::ValueToIDMapTy::iterator iter = svfir->objSymMap.find(llvmModuleSet->getSVFValue(val));
+    IRGraph::ValueToIDMapTy::iterator iter = svfir->objSymMap.find(llvmModuleSet->getSVFValue(val));
     if (iter == svfir->objSymMap.end())
     {
         SVFValue* svfVal = llvmModuleSet->getSVFValue(val);
@@ -355,7 +355,7 @@ void SymbolTableBuilder::collectRet(const Function* val)
 {
     const SVFFunction* svffun =
         LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(val);
-    SymbolTableInfo::FunToIDMapTy::iterator iter =
+    IRGraph::FunToIDMapTy::iterator iter =
         svfir->returnSymMap.find(svffun);
     if (iter == svfir->returnSymMap.end())
     {
@@ -372,7 +372,7 @@ void SymbolTableBuilder::collectVararg(const Function* val)
 {
     const SVFFunction* svffun =
         LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(val);
-    SymbolTableInfo::FunToIDMapTy::iterator iter =
+    IRGraph::FunToIDMapTy::iterator iter =
         svfir->varargSymMap.find(svffun);
     if (iter == svfir->varargSymMap.end())
     {
