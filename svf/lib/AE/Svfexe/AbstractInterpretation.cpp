@@ -119,7 +119,7 @@ void AbstractInterpretation::handleGlobalNode()
 {
     const ICFGNode* node = icfg->getGlobalICFGNode();
     abstractTrace[node] = AbstractState();
-    abstractTrace[node][SymbolTableInfo::NullPtr] = AddressValue();
+    abstractTrace[node][SymbolTableInfo::NullPtr] = AddressValue(BlackHoleAddr);    // Use BlackHoleAddr to represent nullptr
     // Global Node, we just need to handle addr, load, store, copy and gep
     for (const SVFStmt *stmt: node->getSVFStmts())
     {
@@ -922,6 +922,7 @@ void AbstractInterpretation::collectCheckPoint()
     // traverse every ICFGNode
     Set<std::string> ae_checkpoint_names = {"svf_assert"};
     Set<std::string> buf_checkpoint_names = {"UNSAFE_BUFACCESS", "SAFE_BUFACCESS"};
+    Set<std::string> nullptr_checkpoint_names = {"UNSAFE_LOAD", "SAFE_LOAD"};
 
     for (auto it = svfir->getICFG()->begin(); it != svfir->getICFG()->end(); ++it)
     {
@@ -939,6 +940,14 @@ void AbstractInterpretation::collectCheckPoint()
                 {
                     if (buf_checkpoint_names.find(fun->getName()) !=
                             buf_checkpoint_names.end())
+                    {
+                        checkpoints.insert(call);
+                    }
+                }
+                if (Options::NullPtrDereference())
+                {
+                    if (nullptr_checkpoint_names.find(fun->getName()) !=
+                            nullptr_checkpoint_names.end())
                     {
                         checkpoints.insert(call);
                     }

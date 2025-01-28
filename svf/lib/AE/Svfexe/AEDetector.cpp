@@ -500,3 +500,97 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
     }
     return true;
 }
+
+/**
+ * @brief Detects null pointer dereference issues within a given ICFG node.
+ *
+ * @param as Reference to the abstract state.
+ * @param node Pointer to the ICFG node.
+ */
+void NullPtrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
+    for (const SVFStmt* stmt : node->getSVFStmts()) {
+        if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt)) {
+            if (!canSafelyDerefPtr(as, load->getRHSVar())) {
+                recordBug(load);
+            }
+        } else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt)) {
+            if (!canSafelyDerefPtr(as, store->getLHSVar())) {
+                recordBug(store);
+            }
+        }
+    }
+}
+
+/**
+ * @brief Checks if pointer can be safely dereferenced.
+ * @param as Reference to the abstract state.
+ * @param value Pointer to the SVF value of the pointer being dereferenced.
+ * @return True if the pointer dereference is safe, false otherwise.
+ */
+bool NullPtrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVF::SVFVar* value) {
+    NodeID value_id = value->getId();
+    if (isUninit(as[value_id])) return false;
+    if (!as[value_id].isAddr()) return true;    // Loading an Interval Value
+    AbstractValue &addrs = as[value_id];
+    for (const auto &addr: addrs.getAddrs()) {
+        if (isNull(as.load(addr)))
+            return false;
+    }
+    return true;
+}
+
+
+/**
+ * @brief Handles stub functions within the ICFG node.
+ *
+ * @param callNode Pointer to the ICFG node.
+ */
+void NullPtrDerefDetector::handleStubFunctions(const SVF::CallICFGNode* callNode)
+{
+    // get function name
+    std::string funcName = callNode->getCalledFunction()->getName();
+    if (funcName == "UNSAFE_LOAD")
+    {
+        // void UNSAFE_LOAD(void* ptr);
+        AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
+        if (callNode->arg_size() < 1)
+            return;
+        AbstractState& as =
+            AbstractInterpretation::getAEInstance().getAbsStateFromTrace(
+                callNode);
+        
+        const SVFVar* arg0Val = callNode->getArgument(0);
+        bool isSafe = canSafelyDerefPtr(as, arg0Val);
+        if (!isSafe) {
+            std::cout << "detect null pointer deference success: " << callNode->toString() << std::endl;
+            return;
+        }
+        else
+        {
+            std::string err_msg = "this UNSAFE_LOAD should be a null pointer dereference but not detected. Pos: ";
+            err_msg += callNode->getSourceLoc();
+            std::cerr << err_msg << std::endl;
+            assert(false);
+        }
+    }
+    else if (funcName == "SAFE_LOAD")
+    {
+        // void SAFE_LOAD(void* ptr);
+        AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
+        if (callNode->arg_size() < 1) return;
+        AbstractState&as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
+        const SVFVar* arg0Val = callNode->getArgument(0);
+        bool isSafe = canSafelyDerefPtr(as, arg0Val);
+        if (isSafe) {
+            std::cout << "safe load pointer success: " << callNode->toString() << std::endl;
+            return;
+        }
+        else
+        {
+            std::string err_msg = "this SAFE_LOAD should be a safe but a null pointer dereference detected. Pos: ";
+            err_msg += callNode->getSourceLoc();
+            std::cerr << err_msg << std::endl;
+            assert(false);
+        }
+    }
+}
