@@ -31,7 +31,7 @@
 #define INCLUDE_SVFIR_SVFVARIABLE_H_
 
 #include "Graphs/GenericGraph.h"
-#include "SVFIR/SymbolTableInfo.h"
+#include "SVFIR/ObjTypeInfo.h"
 #include "SVFIR/SVFStatements.h"
 
 namespace SVF

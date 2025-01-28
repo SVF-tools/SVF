@@ -39,7 +39,7 @@
 #include "SVF-LLVM/CHGBuilder.h"
 #include "Util/Options.h"
 #include "SVF-LLVM/CppUtil.h"
-#include "SVFIR/SymbolTableInfo.h"
+#include "SVFIR/ObjTypeInfo.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVFIR/SVFModule.h"

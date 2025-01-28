@@ -1,4 +1,4 @@
-//===- SymbolTableInfo.h -- Symbol information from IR------------------------//
+//===- ObjTypeInfo.h -- Object type information------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,14 +21,14 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * SymbolTableInfo.h
+ * ObjTypeInfo.h
  *
  *  Created on: Nov 11, 2013
  *      Author: Yulei Sui
  */
 
-#ifndef INCLUDE_SVFIR_SYMBOLTABLEINFO_H_
-#define INCLUDE_SVFIR_SYMBOLTABLEINFO_H_
+#ifndef INCLUDE_SVFIR_OBJTYPEINFO_H_
+#define INCLUDE_SVFIR_OBJTYPEINFO_H_
 
 
 #include "Util/SVFUtil.h"
@@ -77,11 +77,16 @@ private:
     /// Byte size of object
     u32_t byteSize;
 
-    void resetTypeForHeapStaticObj(const SVFType* type);
+    inline void resetTypeForHeapStaticObj(const SVFType* t) {
+        assert((isStaticObj() || isHeap()) && "can only reset the inferred type for heap and static objects!");
+        type = t;
+    }
 public:
 
     /// Constructors
-    ObjTypeInfo(const SVFType* t, u32_t max);
+    ObjTypeInfo(const SVFType* t, u32_t max) : type(t), flags(0), maxOffsetLimit(max), elemNum(max) {
+        assert(t && "no type information for this object?");
+    }
 
     /// Destructor
     virtual ~ObjTypeInfo()
@@ -215,4 +220,4 @@ public:
 
 } // End namespace SVF
 
-#endif /* INCLUDE_SVFIR_SYMBOLTABLEINFO_H_ */
+#endif /* INCLUDE_SVFIR_OBJTYPEINFO_H_ */

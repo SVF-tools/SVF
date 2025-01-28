@@ -31,7 +31,7 @@
 #define SymbolTableBuilder_H_
 
 #include "SVF-LLVM/LLVMModule.h"
-#include "SVFIR/SymbolTableInfo.h"
+#include "SVFIR/ObjTypeInfo.h"
 
 /*
 * This class is to build SymbolTableInfo, MemObjs and ObjTypeInfo
