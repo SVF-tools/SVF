@@ -428,7 +428,7 @@ NodeID SVFIR::getGepObjVar(const BaseObjVar* baseObj, const APOffset& apOffset)
     if (baseObj->isFieldInsensitive())
         return getFIObjVar(baseObj);
 
-    APOffset newLS = pag->getSymbolInfo()->getModulusOffset(baseObj, apOffset);
+    APOffset newLS = pag->getModulusOffset(baseObj, apOffset);
 
     // Base and first field are the same memory location.
     if (Options::FirstFieldEqBase() && newLS == 0) return base;

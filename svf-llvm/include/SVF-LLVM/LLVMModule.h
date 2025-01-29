@@ -76,7 +76,7 @@ public:
 private:
     static LLVMModuleSet* llvmModuleSet;
     static bool preProcessed;
-    SymbolTableInfo* symInfo;
+    SVFIR* svfir;
     SVFModule* svfModule; ///< Borrowed from singleton SVFModule::svfModule
     ICFG* icfg;
     std::unique_ptr<LLVMContext> owned_ctx;

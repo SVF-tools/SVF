@@ -31,7 +31,7 @@
 #define INCLUDE_SVFIR_SVFVARIABLE_H_
 
 #include "Graphs/GenericGraph.h"
-#include "SVFIR/SymbolTableInfo.h"
+#include "SVFIR/ObjTypeInfo.h"
 #include "SVFIR/SVFStatements.h"
 
 namespace SVF
@@ -648,10 +648,7 @@ public:
     }
 
     /// Whether it is a black hole object
-    bool isBlackHoleObj() const
-    {
-        return SymbolTableInfo::isBlkObj(getId());
-    }
+    bool isBlackHoleObj() const;
 
     /// Get the byte size of this object
     u32_t getByteSizeOfObj() const
@@ -802,10 +799,8 @@ public:
     }
 
     /// Return the type of this gep object
-    inline virtual const SVFType* getType() const
-    {
-        return SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, apOffset);
-    }
+    inline virtual const SVFType* getType() const;
+
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const
