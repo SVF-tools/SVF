@@ -73,12 +73,12 @@ public:
     //{@
     /// llvm value to sym id map
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
-    typedef OrderedMap<const SVFValue*, SymID> ValueToIDMapTy;
+    typedef OrderedMap<const SVFValue*, NodeID> ValueToIDMapTy;
     /// sym id to obj type info map
-    typedef OrderedMap<SymID, ObjTypeInfo*> IDToTypeInfoMapTy;
+    typedef OrderedMap<NodeID, ObjTypeInfo*> IDToTypeInfoMapTy;
 
     /// function to sym id map
-    typedef OrderedMap<const SVFFunction*, SymID> FunToIDMapTy;
+    typedef OrderedMap<const SVFFunction*, NodeID> FunToIDMapTy;
     /// struct type to struct info map
     typedef Set<const SVFType*> SVFTypeSet;
     //@}
@@ -101,7 +101,7 @@ private:
     Set<const StInfo*> stInfos;
 
     /// total number of symbols
-    SymID totalSymNum;
+    NodeID totalSymNum;
 
     void destorySymTable();
 
@@ -176,22 +176,22 @@ public:
         return (isBlkObj(id) || isConstantSym(id));
     }
 
-    inline SymID blkPtrSymID() const
+    inline NodeID blkPtrSymID() const
     {
         return BlkPtr;
     }
 
-    inline SymID nullPtrSymID() const
+    inline NodeID nullPtrSymID() const
     {
         return NullPtr;
     }
 
-    inline SymID constantSymID() const
+    inline NodeID constantSymID() const
     {
         return ConstantObj;
     }
 
-    inline SymID blackholeSymID() const
+    inline NodeID blackholeSymID() const
     {
         return BlackHole;
     }
@@ -252,7 +252,7 @@ public:
     /// specified global, heap or alloca instruction according to llvm value.
     NodeID getObjectNode(const SVFValue* V);
 
-    inline ObjTypeInfo* getObjTypeInfo(SymID id) const
+    inline ObjTypeInfo* getObjTypeInfo(NodeID id) const
     {
         IDToTypeInfoMapTy::const_iterator iter = objTypeInfoMap.find(id);
         assert(iter!=objTypeInfoMap.end() && "obj type info not found");
@@ -317,7 +317,7 @@ public:
     /// Create an objectInfo based on LLVM type (value is null, and type could be null, representing a dummy object)
     ObjTypeInfo* createObjTypeInfo(const SVFType* type);
 
-    const ObjTypeInfo* createDummyObjTypeInfo(SymID symId, const SVFType* type);
+    const ObjTypeInfo* createDummyObjTypeInfo(NodeID symId, const SVFType* type);
 
     ///Get a reference to the components of struct_info.
     /// Number of flattened elements of an array or struct

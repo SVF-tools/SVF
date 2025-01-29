@@ -98,32 +98,32 @@ NodeID IRGraph::getVarargNode(const SVFFunction *func) const {
 
 void IRGraph::dumpSymTable()
 {
-    OrderedMap<SymID, SVFValue*> idmap;
+    OrderedMap<NodeID, SVFValue*> idmap;
     for (ValueToIDMapTy::iterator iter = valSymMap.begin(); iter != valSymMap.end();
             ++iter)
     {
-        const SymID i = iter->second;
+        const NodeID i = iter->second;
         SVFValue* val = (SVFValue*) iter->first;
         idmap[i] = val;
     }
     for (ValueToIDMapTy::iterator iter = objSymMap.begin(); iter != objSymMap.end();
             ++iter)
     {
-        const SymID i = iter->second;
+        const NodeID i = iter->second;
         SVFValue* val = (SVFValue*) iter->first;
         idmap[i] = val;
     }
     for (FunToIDMapTy::iterator iter = returnSymMap.begin(); iter != returnSymMap.end();
             ++iter)
     {
-        const SymID i = iter->second;
+        const NodeID i = iter->second;
         SVFValue* val = (SVFValue*) iter->first;
         idmap[i] = val;
     }
     for (FunToIDMapTy::iterator iter = varargSymMap.begin(); iter != varargSymMap.end();
             ++iter)
     {
-        const SymID i = iter->second;
+        const NodeID i = iter->second;
         SVFValue* val = (SVFValue*) iter->first;
         idmap[i] = val;
     }
@@ -233,7 +233,7 @@ u32_t IRGraph::getNumOfFlattenElements(const SVFType *T) {
         return getTypeInfo(T)->getNumOfFlattenFields();
 }
 
-const ObjTypeInfo *IRGraph::createDummyObjTypeInfo(SymID symId, const SVFType *type) {
+const ObjTypeInfo *IRGraph::createDummyObjTypeInfo(NodeID symId, const SVFType *type) {
     if (objTypeInfoMap.find(symId)==objTypeInfoMap.end())
     {
         ObjTypeInfo* ti = createObjTypeInfo(type);
