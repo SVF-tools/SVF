@@ -77,14 +77,16 @@ private:
     /// Byte size of object
     u32_t byteSize;
 
-    inline void resetTypeForHeapStaticObj(const SVFType* t) {
+    inline void resetTypeForHeapStaticObj(const SVFType* t)
+    {
         assert((isStaticObj() || isHeap()) && "can only reset the inferred type for heap and static objects!");
         type = t;
     }
 public:
 
     /// Constructors
-    ObjTypeInfo(const SVFType* t, u32_t max) : type(t), flags(0), maxOffsetLimit(max), elemNum(max) {
+    ObjTypeInfo(const SVFType* t, u32_t max) : type(t), flags(0), maxOffsetLimit(max), elemNum(max)
+    {
         assert(t && "no type information for this object?");
     }
 

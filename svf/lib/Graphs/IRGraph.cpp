@@ -33,7 +33,8 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-void IRGraph::destorySymTable() {
+void IRGraph::destorySymTable()
+{
 
     for (auto &pair: objTypeInfoMap)
     {
@@ -55,7 +56,8 @@ IRGraph::~IRGraph()
     destorySymTable();
 }
 
-NodeID IRGraph::getValueNode(const SVFValue* val) {
+NodeID IRGraph::getValueNode(const SVFValue* val)
+{
     if(val->isNullPtr())
         return nullPtrSymID();
     else if (val->isblackHole())
@@ -68,14 +70,16 @@ NodeID IRGraph::getValueNode(const SVFValue* val) {
     }
 }
 
-bool IRGraph::hasValueNode(const SVFValue *val) {
+bool IRGraph::hasValueNode(const SVFValue *val)
+{
     if (val->isNullPtr() || val->isblackHole())
         return true;
     else
         return (valSymMap.find(val) != valSymMap.end());
 }
 
-NodeID IRGraph::getObjectNode(const SVFValue *val) {
+NodeID IRGraph::getObjectNode(const SVFValue *val)
+{
     const SVFValue* svfVal = val;
     if(const SVFGlobalValue* g = SVFUtil::dyn_cast<SVFGlobalValue>(val))
         svfVal = g->getDefGlobalForMultipleModule();
@@ -84,13 +88,15 @@ NodeID IRGraph::getObjectNode(const SVFValue *val) {
     return iter->second;
 }
 
-NodeID IRGraph::getReturnNode(const SVFFunction *func) const {
+NodeID IRGraph::getReturnNode(const SVFFunction *func) const
+{
     FunToIDMapTy::const_iterator iter =  returnSymMap.find(func);
     assert(iter!=returnSymMap.end() && "ret sym not found");
     return iter->second;
 }
 
-NodeID IRGraph::getVarargNode(const SVFFunction *func) const {
+NodeID IRGraph::getVarargNode(const SVFFunction *func) const
+{
     FunToIDMapTy::const_iterator iter =  varargSymMap.find(func);
     assert(iter!=varargSymMap.end() && "vararg sym not found");
     return iter->second;
@@ -135,7 +141,8 @@ void IRGraph::dumpSymTable()
     outs() << "}\n";
 }
 
-void IRGraph::printFlattenFields(const SVFType *type) {
+void IRGraph::printFlattenFields(const SVFType *type)
+{
     if (const SVFArrayType* at = SVFUtil::dyn_cast<SVFArrayType>(type))
     {
         outs() << "  {Type: " << *at << "}\n"
@@ -179,11 +186,13 @@ void IRGraph::printFlattenFields(const SVFType *type) {
     }
 }
 
-const std::vector<const SVFType *> &IRGraph::getFlattenFieldTypes(const SVFStructType *T) {
+const std::vector<const SVFType *> &IRGraph::getFlattenFieldTypes(const SVFStructType *T)
+{
     return getTypeInfo(T)->getFlattenFieldTypes();
 }
 
-const SVFType *IRGraph::getFlatternedElemType(const SVFType *baseType, u32_t flatten_idx) {
+const SVFType *IRGraph::getFlatternedElemType(const SVFType *baseType, u32_t flatten_idx)
+{
     if(Options::ModelArrays())
     {
         const std::vector<const SVFType*>& so = getTypeInfo(baseType)->getFlattenElementTypes();
@@ -198,11 +207,13 @@ const SVFType *IRGraph::getFlatternedElemType(const SVFType *baseType, u32_t fla
     }
 }
 
-const SVFType *IRGraph::getOriginalElemType(const SVFType *baseType, u32_t origId) const {
+const SVFType *IRGraph::getOriginalElemType(const SVFType *baseType, u32_t origId) const
+{
     return getTypeInfo(baseType)->getOriginalElemType(origId);
 }
 
-u32_t IRGraph::getFlattenedElemIdx(const SVFType *T, u32_t origId) {
+u32_t IRGraph::getFlattenedElemIdx(const SVFType *T, u32_t origId)
+{
     if(Options::ModelArrays())
     {
         const std::vector<u32_t>& so = getTypeInfo(T)->getFlattenedElemIdxVec();
@@ -226,14 +237,16 @@ u32_t IRGraph::getFlattenedElemIdx(const SVFType *T, u32_t origId) {
     }
 }
 
-u32_t IRGraph::getNumOfFlattenElements(const SVFType *T) {
+u32_t IRGraph::getNumOfFlattenElements(const SVFType *T)
+{
     if(Options::ModelArrays())
         return getTypeInfo(T)->getNumOfFlattenElements();
     else
         return getTypeInfo(T)->getNumOfFlattenFields();
 }
 
-const ObjTypeInfo *IRGraph::createDummyObjTypeInfo(NodeID symId, const SVFType *type) {
+const ObjTypeInfo *IRGraph::createDummyObjTypeInfo(NodeID symId, const SVFType *type)
+{
     if (objTypeInfoMap.find(symId)==objTypeInfoMap.end())
     {
         ObjTypeInfo* ti = createObjTypeInfo(type);
@@ -243,7 +256,8 @@ const ObjTypeInfo *IRGraph::createDummyObjTypeInfo(NodeID symId, const SVFType *
     return ti;
 }
 
-APOffset IRGraph::getModulusOffset(const BaseObjVar *baseObj, const APOffset &apOffset) {
+APOffset IRGraph::getModulusOffset(const BaseObjVar *baseObj, const APOffset &apOffset)
+{
     /// if the offset is negative, it's possible that we're looking for an obj node out of range
     /// of current struct. Make the offset positive so we can still get a node within current
     /// struct to represent this obj.
@@ -267,25 +281,26 @@ APOffset IRGraph::getModulusOffset(const BaseObjVar *baseObj, const APOffset &ap
         /*!
          * E.g., offset == 260, maxOffset == 270, Options::MaxFieldLimit() == 256 ==> offset = 4
          */
-            offset = offset % maxOffset;
+        offset = offset % maxOffset;
     else if ((u32_t)offset > maxOffset - 1)
     {
         if (Options::CyclicFldIdx())
             /*!
              * E.g., offset == 100, maxOffset == 98, Options::MaxFieldLimit() == 256 ==> offset = 2
              */
-                offset = offset % maxOffset;
+            offset = offset % maxOffset;
         else
             /*!
              * E.g., offset == 100, maxOffset == 98, Options::MaxFieldLimit() == 256 ==> offset = 97
              */
-                offset = maxOffset - 1;
+            offset = maxOffset - 1;
     }
 
     return offset;
 }
 
-ObjTypeInfo *IRGraph::createObjTypeInfo(const SVFType *type) {
+ObjTypeInfo *IRGraph::createObjTypeInfo(const SVFType *type)
+{
 
     ObjTypeInfo* typeInfo = new ObjTypeInfo(type, Options::MaxFieldLimit());
     if(type && type->isPointerTy())
@@ -295,7 +310,8 @@ ObjTypeInfo *IRGraph::createObjTypeInfo(const SVFType *type) {
     return typeInfo;
 }
 
-const StInfo *IRGraph::getTypeInfo(const SVFType *T) const {
+const StInfo *IRGraph::getTypeInfo(const SVFType *T) const
+{
     assert(T);
     SVFTypeSet::const_iterator it = svfTypes.find(T);
     assert(it != svfTypes.end() && "type info not found? collect them first during SVFIR Building");

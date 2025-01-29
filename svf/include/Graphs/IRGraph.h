@@ -139,8 +139,8 @@ protected:
 
 public:
     IRGraph(bool buildFromFile)
-    : totalSymNum(0), fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0),
-      maxStruct(nullptr), maxStSize(0)
+        : totalSymNum(0), fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0),
+          maxStruct(nullptr), maxStSize(0)
     {
     }
 

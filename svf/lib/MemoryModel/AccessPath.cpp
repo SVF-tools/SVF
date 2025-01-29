@@ -255,7 +255,7 @@ APOffset AccessPath::computeConstantOffset() const
 
                 u32_t flattenOffset =
                     PAG::getPAG()->getFlattenedElemIdx(type,
-                            offset);
+                                                       offset);
                 totalConstOffset += flattenOffset;
             }
         }
