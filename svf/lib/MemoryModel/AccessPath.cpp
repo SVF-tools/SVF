@@ -64,7 +64,7 @@ u32_t AccessPath::getElementNum(const SVFType* type) const
 {
     if (SVFUtil::isa<SVFArrayType, SVFStructType>(type))
     {
-        return SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(type);
+        return PAG::getPAG()->getNumOfFlattenElements(type);
     }
     else if (type->isPointerTy())
     {
@@ -240,7 +240,7 @@ APOffset AccessPath::computeConstantOffset() const
             APOffset offset = constOffset;
             if (offset >= 0)
             {
-                const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()->getTypeInfo(type)->getFlattenedElemIdxVec();
+                const std::vector<u32_t>& so = PAG::getPAG()->getTypeInfo(type)->getFlattenedElemIdxVec();
                 // if offset is larger than the size of getFlattenedElemIdxVec (overflow)
                 // set offset the last index of getFlattenedElemIdxVec to avoid assertion
                 if (offset >= (APOffset)so.size())
@@ -254,8 +254,8 @@ APOffset AccessPath::computeConstantOffset() const
                 }
 
                 u32_t flattenOffset =
-                    SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type,
-                            offset);
+                    PAG::getPAG()->getFlattenedElemIdx(type,
+                                                       offset);
                 totalConstOffset += flattenOffset;
             }
         }

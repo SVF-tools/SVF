@@ -22,7 +22,7 @@
 
 
 #include "SVFIR/SVFModule.h"
-#include "SVFIR/SymbolTableInfo.h"
+#include "SVFIR/ObjTypeInfo.h"
 #include "Util/SVFUtil.h"
 #include "Util/SVFStat.h"
 #include "Util/Options.h"

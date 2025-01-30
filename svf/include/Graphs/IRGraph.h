@@ -42,6 +42,8 @@ namespace SVF
 typedef SVFVar PAGNode;
 typedef SVFStmt PAGEdge;
 
+class ObjTypeInfo;
+
 /*
  * Graph representation of SVF IR.
  * It can be seen as a program assignment graph (PAG).
@@ -50,6 +52,58 @@ class IRGraph : public GenericGraph<SVFVar, SVFStmt>
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class SymbolTableBuilder;
+
+public:
+
+    /// Symbol types
+    enum SYMTYPE
+    {
+        NullPtr,
+        BlkPtr,
+        BlackHole,
+        ConstantObj,
+        ValSymbol,
+        ObjSymbol,
+        RetSymbol,
+        VarargSymbol
+    };
+
+    /// various maps defined
+    //{@
+    /// llvm value to sym id map
+    /// local (%) and global (@) identifiers are pointer types which have a value node id.
+    typedef OrderedMap<const SVFValue*, NodeID> ValueToIDMapTy;
+    /// sym id to obj type info map
+    typedef OrderedMap<NodeID, ObjTypeInfo*> IDToTypeInfoMapTy;
+
+    /// function to sym id map
+    typedef OrderedMap<const SVFFunction*, NodeID> FunToIDMapTy;
+    /// struct type to struct info map
+    typedef Set<const SVFType*> SVFTypeSet;
+    //@}
+
+private:
+    ValueToIDMapTy valSymMap;  ///< map a value to its sym id
+    ValueToIDMapTy objSymMap;  ///< map a obj reference to its sym id
+    FunToIDMapTy returnSymMap; ///< return map
+    FunToIDMapTy varargSymMap; ///< vararg map
+    IDToTypeInfoMapTy objTypeInfoMap;       ///< map a memory sym id to its obj
+
+    /// (owned) All SVF Types
+    /// Every type T is mapped to StInfo
+    /// which contains size (fsize) , offset(foffset)
+    /// fsize[i] is the number of fields in the largest such struct, else fsize[i] = 1.
+    /// fsize[0] is always the size of the expanded struct.
+    SVFTypeSet svfTypes;
+
+    /// @brief (owned) All StInfo
+    Set<const StInfo*> stInfos;
+
+    /// total number of symbols
+    NodeID totalSymNum;
+
+    void destorySymTable();
 
 public:
     typedef Set<const SVFStmt*> SVFStmtSet;
@@ -60,7 +114,6 @@ protected:
     bool fromFile; ///< Whether the SVFIR is built according to user specified data from a txt file
     NodeID nodeNumAfterPAGBuild; ///< initial node number after building SVFIR, excluding later added nodes, e.g., gepobj nodes
     u32_t totalPTAPAGEdge;
-    SymbolTableInfo* symInfo;
 
     /// Add a node into the graph
     inline NodeID addNode(SVFVar* node)
@@ -86,74 +139,203 @@ protected:
 
 public:
     IRGraph(bool buildFromFile)
-        : fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0)
+        : totalSymNum(0), fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0),
+          maxStruct(nullptr), maxStSize(0)
     {
-        symInfo = SymbolTableInfo::SymbolInfo();
     }
 
     virtual ~IRGraph();
 
-    inline SymbolTableInfo* getSymbolInfo() const
-    {
-        return symInfo;
-    }
+
     /// Whether this SVFIR built from a txt file
     inline bool isBuiltFromFile()
     {
         return fromFile;
     }
 
+    /// special value
+    // @{
+    static inline bool isBlkPtr(NodeID id)
+    {
+        return (id == BlkPtr);
+    }
+    static inline bool isNullPtr(NodeID id)
+    {
+        return (id == NullPtr);
+    }
+    static inline bool isBlkObj(NodeID id)
+    {
+        return (id == BlackHole);
+    }
+    static inline bool isConstantSym(NodeID id)
+    {
+        return (id == ConstantObj);
+    }
+    static inline bool isBlkObjOrConstantObj(NodeID id)
+    {
+        return (isBlkObj(id) || isConstantSym(id));
+    }
+
+    inline NodeID blkPtrSymID() const
+    {
+        return BlkPtr;
+    }
+
+    inline NodeID nullPtrSymID() const
+    {
+        return NullPtr;
+    }
+
+    inline NodeID constantSymID() const
+    {
+        return ConstantObj;
+    }
+
+    inline NodeID blackholeSymID() const
+    {
+        return BlackHole;
+    }
+
+    /// Statistics
+    //@{
+    inline u32_t getTotalSymNum() const
+    {
+        return totalSymNum;
+    }
+    inline u32_t getMaxStructSize() const
+    {
+        return maxStSize;
+    }
+    //@}
+
+    /// Get different kinds of syms maps
+    //@{
+    inline ValueToIDMapTy& valSyms()
+    {
+        return valSymMap;
+    }
+
+    inline ValueToIDMapTy& objSyms()
+    {
+        return objSymMap;
+    }
+
+    inline IDToTypeInfoMapTy& idToObjTypeInfoMap()
+    {
+        return objTypeInfoMap;
+    }
+
+    inline const IDToTypeInfoMapTy& idToObjTypeInfoMap() const
+    {
+        return objTypeInfoMap;
+    }
+
+    inline FunToIDMapTy& retSyms()
+    {
+        return returnSymMap;
+    }
+
+    inline FunToIDMapTy& varargSyms()
+    {
+        return varargSymMap;
+    }
+
+    //@}
+
     /// Get SVFIR Node according to LLVM value
     ///getNode - Return the node corresponding to the specified pointer.
-    inline NodeID getValueNode(const SVFValue* V)
-    {
-        return symInfo->getValSym(V);
-    }
-    inline bool hasValueNode(const SVFValue* V)
-    {
-        return symInfo->hasValSym(V);
-    }
+    NodeID getValueNode(const SVFValue* V);
+
+    bool hasValueNode(const SVFValue* V);
+
     /// getObject - Return the obj node id refer to the memory object for the
     /// specified global, heap or alloca instruction according to llvm value.
-    inline NodeID getObjectNode(const SVFValue* V)
+    NodeID getObjectNode(const SVFValue* V);
+
+    inline ObjTypeInfo* getObjTypeInfo(NodeID id) const
     {
-        return symInfo->getObjSym(V);
+        IDToTypeInfoMapTy::const_iterator iter = objTypeInfoMap.find(id);
+        assert(iter!=objTypeInfoMap.end() && "obj type info not found");
+        return iter->second;
     }
+
     /// GetReturnNode - Return the unique node representing the return value of a function
-    inline NodeID getReturnNode(const SVFFunction* func) const
-    {
-        return symInfo->getRetSym(func);
-    }
+    NodeID getReturnNode(const SVFFunction* func) const;
+
     /// getVarargNode - Return the unique node representing the variadic argument of a variadic function.
-    inline NodeID getVarargNode(const SVFFunction* func) const
-    {
-        return symInfo->getVarargSym(func);
-    }
+    NodeID getVarargNode(const SVFFunction* func) const;
+
     inline NodeID getBlackHoleNode() const
     {
-        return symInfo->blackholeSymID();
+        return blackholeSymID();
     }
     inline NodeID getConstantNode() const
     {
-        return symInfo->constantSymID();
+        return constantSymID();
     }
     inline NodeID getBlkPtr() const
     {
-        return symInfo->blkPtrSymID();
+        return blkPtrSymID();
     }
     inline NodeID getNullPtr() const
     {
-        return symInfo->nullPtrSymID();
+        return nullPtrSymID();
     }
 
     inline u32_t getValueNodeNum() const
     {
-        return symInfo->valSyms().size();
+        return valSymMap.size();
     }
     inline u32_t getObjectNodeNum() const
     {
-        return symInfo->idToObjTypeInfoMap().size();
+        return objTypeInfoMap.size();
     }
+
+    /// Constant reader that won't change the state of the symbol table
+    //@{
+    inline const SVFTypeSet& getSVFTypes() const
+    {
+        return svfTypes;
+    }
+
+    inline const Set<const StInfo*>& getStInfos() const
+    {
+        return stInfos;
+    }
+    //@}
+    /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
+    virtual APOffset getModulusOffset(const BaseObjVar* baseObj, const APOffset& apOffset);
+    /// Get struct info
+    //@{
+    ///Get a reference to StructInfo.
+    const StInfo* getTypeInfo(const SVFType* T) const;
+    inline bool hasSVFTypeInfo(const SVFType* T)
+    {
+        return svfTypes.find(T) != svfTypes.end();
+    }
+
+    /// Create an objectInfo based on LLVM type (value is null, and type could be null, representing a dummy object)
+    ObjTypeInfo* createObjTypeInfo(const SVFType* type);
+
+    const ObjTypeInfo* createDummyObjTypeInfo(NodeID symId, const SVFType* type);
+
+    ///Get a reference to the components of struct_info.
+    /// Number of flattened elements of an array or struct
+    u32_t getNumOfFlattenElements(const SVFType* T);
+    /// Flattened element idx of an array or struct by considering stride
+    u32_t getFlattenedElemIdx(const SVFType* T, u32_t origId);
+    /// Return the type of a flattened element given a flattened index
+    const SVFType* getFlatternedElemType(const SVFType* baseType, u32_t flatten_idx);
+    ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
+    ///  OriginalElemType of b with field_idx 1 : Struct A
+    ///  FlatternedElemType of b with field_idx 1 : int
+    const SVFType* getOriginalElemType(const SVFType* baseType, u32_t origId) const;
+    //@}
+
+    /// Debug method
+    void printFlattenFields(const SVFType* type);
+
+
     inline u32_t getNodeNumAfterPAGBuild() const
     {
         return nodeNumAfterPAGBuild;
@@ -181,11 +363,38 @@ public:
         return "SVFIR";
     }
 
+    void dumpSymTable();
+
     /// Dump SVFIR
     void dump(std::string name);
 
     /// View graph from the debugger
     void view();
+
+
+
+    ///The struct type with the most fields
+    const SVFType* maxStruct;
+
+    ///The number of fields in max_struct
+    u32_t maxStSize;
+
+    inline void addTypeInfo(const SVFType* ty)
+    {
+        bool inserted = svfTypes.insert(ty).second;
+        if(!inserted)
+            assert(false && "this type info has been added before");
+    }
+
+    inline void addStInfo(StInfo* stInfo)
+    {
+        stInfos.insert(stInfo);
+    }
+
+protected:
+
+    /// Return the flattened field type for struct type only
+    const std::vector<const SVFType*>& getFlattenFieldTypes(const SVFStructType *T);
 };
 
 }

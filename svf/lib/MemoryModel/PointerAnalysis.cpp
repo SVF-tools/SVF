@@ -246,7 +246,7 @@ void PointerAnalysis::dumpAllTypes()
         outs() << "\nNodeID " << node->getId() << "\n";
 
         const SVFType* type = node->getType();
-        pag->getSymbolInfo()->printFlattenFields(type);
+        pag->printFlattenFields(type);
     }
 }
 

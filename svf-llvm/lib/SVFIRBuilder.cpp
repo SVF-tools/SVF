@@ -187,7 +187,6 @@ void SVFIRBuilder::initialiseNodes()
 {
     DBOUT(DPAGBuild, outs() << "Initialise SVFIR Nodes ...\n");
 
-    SymbolTableInfo* symTable = pag->getSymbolInfo();
 
     pag->addBlackholeObjNode();
     pag->addConstantObjNode();
@@ -195,15 +194,15 @@ void SVFIRBuilder::initialiseNodes()
     addNullPtrNode();
 
     // Iterate over all value symbols in the symbol table
-    for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
-                symTable->valSyms().begin(); iter != symTable->valSyms().end();
+    for (IRGraph::ValueToIDMapTy::iterator iter =
+                pag->valSyms().begin(); iter != pag->valSyms().end();
             ++iter)
     {
         // Debug output for adding value node
         DBOUT(DPAGBuild, outs() << "add val node " << iter->second << "\n");
 
         // Skip blackhole and null pointer symbols
-        if(iter->second == symTable->blkPtrSymID() || iter->second == symTable->nullPtrSymID())
+        if(iter->second == pag->blkPtrSymID() || iter->second == pag->nullPtrSymID())
             continue;
 
         const ICFGNode* icfgNode = nullptr;
@@ -267,15 +266,15 @@ void SVFIRBuilder::initialiseNodes()
     }
 
     // Iterate over all object symbols in the symbol table
-    for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
-                symTable->objSyms().begin(); iter != symTable->objSyms().end();
+    for (IRGraph::ValueToIDMapTy::iterator iter =
+                pag->objSyms().begin(); iter != pag->objSyms().end();
             ++iter)
     {
         // Debug output for adding object node
         DBOUT(DPAGBuild, outs() << "add obj node " << iter->second << "\n");
 
         // Skip blackhole and constant symbols
-        if(iter->second == symTable->blackholeSymID() || iter->second == symTable->constantSymID())
+        if(iter->second == pag->blackholeSymID() || iter->second == pag->constantSymID())
             continue;
 
         // Get the LLVM value corresponding to the symbol
@@ -291,65 +290,65 @@ void SVFIRBuilder::initialiseNodes()
         // Check if the value is a function and add a function object node
         if (const Function* func = SVFUtil::dyn_cast<Function>(llvmValue))
         {
-            SymID id = symTable->getObjSym(llvmModuleSet()->getCallGraphNode(func)->getFunction());
-            pag->addFunObjNode(iter->second, symTable->getObjTypeInfo(id),  llvmModuleSet()->getCallGraphNode(func), iter->first->getType(), icfgNode);
+            SymID id = pag->getObjectNode(llvmModuleSet()->getCallGraphNode(func)->getFunction());
+            pag->addFunObjNode(iter->second, pag->getObjTypeInfo(id),  llvmModuleSet()->getCallGraphNode(func), iter->first->getType(), icfgNode);
         }
         // Check if the value is a heap object and add a heap object node
         else if (LLVMUtil::isHeapObj(llvmValue))
         {
-            SymID id = symTable->getObjSym(iter->first);
-            pag->addHeapObjNode(iter->second, symTable->getObjTypeInfo(id), iter->first->getType(), icfgNode);
+            SymID id = pag->getObjectNode(iter->first);
+            pag->addHeapObjNode(iter->second, pag->getObjTypeInfo(id), iter->first->getType(), icfgNode);
         }
         // Check if the value is an alloca instruction and add a stack object node
         else if (LLVMUtil::isStackObj(llvmValue))
         {
-            NodeID id = symTable->getObjSym(iter->first);
-            pag->addStackObjNode(iter->second, symTable->getObjTypeInfo(id), iter->first->getType(), icfgNode);
+            NodeID id = pag->getObjectNode(iter->first);
+            pag->addStackObjNode(iter->second, pag->getObjTypeInfo(id), iter->first->getType(), icfgNode);
         }
         else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
         {
-            NodeID id = symTable->getObjSym(iter->first);
-            pag->addConstantFPObjNode(iter->second, symTable->getObjTypeInfo(id),  LLVMUtil::getDoubleValue(fpValue), iter->first->getType(), icfgNode);
+            NodeID id = pag->getObjectNode(iter->first);
+            pag->addConstantFPObjNode(iter->second, pag->getObjTypeInfo(id),  LLVMUtil::getDoubleValue(fpValue), iter->first->getType(), icfgNode);
         }
         else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
         {
-            NodeID id = symTable->getObjSym(iter->first);
-            pag->addConstantIntObjNode(iter->second, symTable->getObjTypeInfo(id), LLVMUtil::getIntegerValue(intValue), iter->first->getType(), icfgNode);
+            NodeID id = pag->getObjectNode(iter->first);
+            pag->addConstantIntObjNode(iter->second, pag->getObjTypeInfo(id), LLVMUtil::getIntegerValue(intValue), iter->first->getType(), icfgNode);
         }
         else if (SVFUtil::isa<ConstantPointerNull>(llvmValue))
         {
-            NodeID id = symTable->getObjSym(iter->first);
-            pag->addConstantNullPtrObjNode(iter->second, symTable->getObjTypeInfo(id), iter->first->getType(), icfgNode);
+            NodeID id = pag->getObjectNode(iter->first);
+            pag->addConstantNullPtrObjNode(iter->second, pag->getObjTypeInfo(id), iter->first->getType(), icfgNode);
         }
         else if (SVFUtil::isa<GlobalValue>(llvmValue))
         {
-            NodeID id = symTable->getObjSym(iter->first);
+            NodeID id = pag->getObjectNode(iter->first);
             pag->addGlobalObjNode(iter->second,
-                                  symTable->getObjTypeInfo(id),
+                                  pag->getObjTypeInfo(id),
                                   iter->first->getType(), icfgNode);
         }
         else if (SVFUtil::isa<ConstantData, MetadataAsValue, BlockAddress>(llvmValue))
         {
-            NodeID id = symTable->getObjSym(iter->first);
-            pag->addConstantDataObjNode(iter->second, symTable->getObjTypeInfo(id), iter->first->getType(), icfgNode);
+            NodeID id = pag->getObjectNode(iter->first);
+            pag->addConstantDataObjNode(iter->second, pag->getObjTypeInfo(id), iter->first->getType(), icfgNode);
         }
         else if (SVFUtil::isa<ConstantAggregate>(llvmValue))
         {
-            NodeID id = symTable->getObjSym(iter->first);
-            pag->addConstantAggObjNode(iter->second, symTable->getObjTypeInfo(id), iter->first->getType(), icfgNode);
+            NodeID id = pag->getObjectNode(iter->first);
+            pag->addConstantAggObjNode(iter->second, pag->getObjTypeInfo(id), iter->first->getType(), icfgNode);
         }
         // Add a generic object node for other types of values
         else
         {
-            NodeID id = symTable->getObjSym(iter->first);
+            NodeID id = pag->getObjectNode(iter->first);
             pag->addObjNode(iter->second,
-                            symTable->getObjTypeInfo(id), iter->first->getType(), icfgNode);
+                            pag->getObjTypeInfo(id), iter->first->getType(), icfgNode);
         }
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
     }
 
-    for (SymbolTableInfo::FunToIDMapTy::iterator iter =
-                symTable->retSyms().begin(); iter != symTable->retSyms().end();
+    for (IRGraph::FunToIDMapTy::iterator iter =
+                pag->retSyms().begin(); iter != pag->retSyms().end();
             ++iter)
     {
         const Value* llvmValue = llvmModuleSet()->getLLVMValue(iter->first);
@@ -365,9 +364,9 @@ void SVFIRBuilder::initialiseNodes()
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
     }
 
-    for (SymbolTableInfo::FunToIDMapTy::iterator iter =
-                symTable->varargSyms().begin();
-            iter != symTable->varargSyms().end(); ++iter)
+    for (IRGraph::FunToIDMapTy::iterator iter =
+                pag->varargSyms().begin();
+            iter != pag->varargSyms().end(); ++iter)
     {
         const Value* llvmValue = llvmModuleSet()->getLLVMValue(iter->first);
 
@@ -385,8 +384,8 @@ void SVFIRBuilder::initialiseNodes()
     }
 
     /// add address edges for constant nodes.
-    for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
-                symTable->objSyms().begin(); iter != symTable->objSyms().end(); ++iter)
+    for (IRGraph::ValueToIDMapTy::iterator iter =
+                pag->objSyms().begin(); iter != pag->objSyms().end(); ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add address edges for constant node " << iter->second << "\n");
         const SVFValue* val = iter->first;
@@ -401,7 +400,7 @@ void SVFIRBuilder::initialiseNodes()
         }
     }
 
-    assert(pag->getTotalNodeNum() >= symTable->getTotalSymNum()
+    assert(pag->getTotalNodeNum() >= pag->getTotalSymNum()
            && "not all node have been initialized!!!");
 
 }
@@ -465,7 +464,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
             if(!op || (arrTy->getArrayNumElements() <= (u32_t)LLVMUtil::getIntegerValue(op).first))
                 continue;
             APOffset idx = (u32_t)LLVMUtil::getIntegerValue(op).first;
-            u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(llvmModuleSet()->getSVFType(arrTy), idx);
+            u32_t offset = pag->getFlattenedElemIdx(llvmModuleSet()->getSVFType(arrTy), idx);
             ap.setFldIdx(ap.getConstantStructFldIdx() + offset);
         }
         else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(gepTy))
@@ -473,7 +472,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
             assert(op && "non-const offset accessing a struct");
             //The actual index
             APOffset idx = (u32_t)LLVMUtil::getIntegerValue(op).first;
-            u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(llvmModuleSet()->getSVFType(ST), idx);
+            u32_t offset = pag->getFlattenedElemIdx(llvmModuleSet()->getSVFType(ST), idx);
             ap.setFldIdx(ap.getConstantStructFldIdx() + offset);
         }
         else if (gepTy->isSingleValueType())
@@ -704,7 +703,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             return;
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
         {
-            u32_t off = pag->getSymbolInfo()->getFlattenedElemIdx(llvmModuleSet()->getSVFType(C->getType()), i);
+            u32_t off = pag->getFlattenedElemIdx(llvmModuleSet()->getSVFType(C->getType()), i);
             InitialGlobal(gvar, SVFUtil::cast<Constant>(C->getOperand(i)), offset + off);
         }
     }
@@ -716,7 +715,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             {
                 for(u32_t i = 0; i < seq->getNumElements(); i++)
                 {
-                    u32_t off = pag->getSymbolInfo()->getFlattenedElemIdx(llvmModuleSet()->getSVFType(C->getType()), i);
+                    u32_t off = pag->getFlattenedElemIdx(llvmModuleSet()->getSVFType(C->getType()), i);
                     Constant* ct = seq->getElementAsConstant(i);
                     InitialGlobal(gvar, ct, offset + off);
                 }

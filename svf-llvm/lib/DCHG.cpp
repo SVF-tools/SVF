@@ -178,7 +178,7 @@ void DCHGraph::buildVTables(const SVFModule &module)
                 assert(type && "DCHG::buildVTables: bad metadata for ctir.vt");
                 DCHNode *node = getOrCreateNode(type);
                 const SVFGlobalValue* svfgv = LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(gv);
-                SymID i = SymbolTableInfo::SymbolInfo()->getObjSym(svfgv);
+                SymID i = PAG::getPAG()->getObjectNode(svfgv);
                 GlobalObjVar* globalObjVar =
                     SVFUtil::cast<GlobalObjVar>(PAG::getPAG()->getGNode(i));
                 node->setVTable(globalObjVar);

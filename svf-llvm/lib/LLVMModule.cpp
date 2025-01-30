@@ -78,7 +78,7 @@ LLVMModuleSet* LLVMModuleSet::llvmModuleSet = nullptr;
 bool LLVMModuleSet::preProcessed = false;
 
 LLVMModuleSet::LLVMModuleSet()
-    : symInfo(SymbolTableInfo::SymbolInfo()),
+    : svfir(PAG::getPAG()),
       svfModule(SVFModule::getSVFModule()), typeInference(new ObjTypeInference())
 {
 }
@@ -157,7 +157,7 @@ void LLVMModuleSet::buildSymbolTable() const
     {
         /// building symbol table
         DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
-        SymbolTableBuilder builder(symInfo);
+        SymbolTableBuilder builder(svfir);
         builder.buildMemModel(svfModule);
     }
     double endSymInfoTime = SVFStat::getClk(true);
@@ -1476,10 +1476,10 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
     {
         u32_t nf;
         stInfo = collectStructInfo(sty, nf);
-        if (nf > symInfo->maxStSize)
+        if (nf > svfir->maxStSize)
         {
-            symInfo->maxStruct = getSVFType(sty);
-            symInfo->maxStSize = nf;
+            svfir->maxStruct = getSVFType(sty);
+            svfir->maxStSize = nf;
         }
     }
     else
@@ -1487,7 +1487,7 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
         stInfo = collectSimpleTypeInfo(T);
     }
     Type2TypeInfo.emplace(T, stInfo);
-    symInfo->addStInfo(stInfo);
+    svfir->addStInfo(stInfo);
     return stInfo;
 }
 
@@ -1544,7 +1544,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         svftype = ot;
     }
 
-    symInfo->addTypeInfo(svftype);
+    svfir->addTypeInfo(svftype);
     LLVMType2SVFType[T] = svftype;
 
     return svftype;
