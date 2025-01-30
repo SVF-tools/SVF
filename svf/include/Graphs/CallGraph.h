@@ -134,7 +134,7 @@ private:
     const SVFFunctionType* funcType; /// FunctionType, which is different from the type (PointerType) of this SVFFunction
     SVFLoopAndDomInfo* loopAndDom;  /// the loop and dominate information
     const SVFFunction* realDefFun;  /// the definition of a function across multiple modules
-    std::vector<const SVFBasicBlock*> allBBs;   /// all BasicBlocks of this function
+    BasicBlockGraph* bbGraph; /// the basic block graph of this function
     std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
     const SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
 
@@ -252,39 +252,24 @@ public:
         return realDefFun;
     }
 
+    void setBasicBlockGraph(BasicBlockGraph* graph)
+    {
+        this->bbGraph = graph;
+    }
+
+    BasicBlockGraph* getBasicBlockGraph()
+    {
+        return bbGraph;
+    }
+
+    const BasicBlockGraph* getBasicBlockGraph() const
+    {
+        return bbGraph;
+    }
+
     inline bool hasBasicBlock() const
     {
-        return !allBBs.empty();
-    }
-
-    inline const SVFBasicBlock* getEntryBlock() const
-    {
-        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
-        return allBBs.front();
-    }
-
-    inline const SVFBasicBlock* back() const
-    {
-        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
-        /// Carefully! 'back' is just the last basic block of function,
-        /// but not necessarily a exit basic block
-        /// more refer to: https://github.com/SVF-tools/SVF/pull/1262
-        return allBBs.back();
-    }
-
-    inline bb_const_iterator begin() const
-    {
-        return allBBs.begin();
-    }
-
-    inline bb_const_iterator end() const
-    {
-        return allBBs.end();
-    }
-
-    inline const std::vector<const SVFBasicBlock*>& getBasicBlockList() const
-    {
-        return allBBs;
+        return bbGraph && bbGraph->begin() != bbGraph->end();
     }
 
     inline const SVFBasicBlock* getExitBB() const
