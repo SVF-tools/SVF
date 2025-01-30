@@ -28,6 +28,7 @@
  */
 
 #include "CFL/CFLAlias.h"
+#include "Graphs/CallGraph.h"
 using namespace SVF;
 using namespace SVFUtil;
 
@@ -59,7 +60,7 @@ void CFLAlias::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, Call
  * Connect formal and actual parameters for indirect callsites
  */
 
-void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F)
+void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const CallGraphNode* F)
 {
     assert(F);
 
@@ -68,15 +69,15 @@ void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunct
     const CallICFGNode* callBlockNode = cs;
     const RetICFGNode* retBlockNode = cs->getRetICFGNode();
 
-    if(SVFUtil::isHeapAllocExtFunViaRet(F) && svfir->callsiteHasRet(retBlockNode))
+    if(SVFUtil::isHeapAllocExtFunViaRet(F->getFunction()) && svfir->callsiteHasRet(retBlockNode))
     {
         heapAllocatorViaIndCall(cs);
     }
 
-    if (svfir->funHasRet(F) && svfir->callsiteHasRet(retBlockNode))
+    if (svfir->funHasRet(F->getFunction()) && svfir->callsiteHasRet(retBlockNode))
     {
         const PAGNode* cs_return = svfir->getCallSiteRet(retBlockNode);
-        const PAGNode* fun_return = svfir->getFunRet(F);
+        const PAGNode* fun_return = svfir->getFunRet(F->getFunction());
         if (cs_return->isPointer() && fun_return->isPointer())
         {
             NodeID dstrec = cs_return->getId();
@@ -89,12 +90,12 @@ void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunct
         }
     }
 
-    if (svfir->hasCallSiteArgsMap(callBlockNode) && svfir->hasFunArgsList(F))
+    if (svfir->hasCallSiteArgsMap(callBlockNode) && svfir->hasFunArgsList(F->getFunction()))
     {
 
         // connect actual and formal param
         const SVFIR::SVFVarList& csArgList = svfir->getCallSiteArgsList(callBlockNode);
-        const SVFIR::SVFVarList& funArgList = svfir->getFunArgsList(F);
+        const SVFIR::SVFVarList& funArgList = svfir->getFunArgsList(F->getFunction());
         //Go through the fixed parameters.
         DBOUT(DPAGBuild, outs() << "      args:");
         SVFIR::SVFVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
@@ -122,7 +123,7 @@ void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunct
         //Any remaining actual args must be varargs.
         if (F->isVarArg())
         {
-            NodeID vaF = svfir->getVarargNode(F);
+            NodeID vaF = svfir->getVarargNode(F->getFunction());
             DBOUT(DPAGBuild, outs() << "\n      varargs:");
             for (; csArgIt != csArgEit; ++csArgIt)
             {
@@ -178,7 +179,7 @@ bool CFLAlias::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     {
         for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
         {
-            connectCaller2CalleeParams(it->first,*cit);
+            connectCaller2CalleeParams(it->first,(*cit)->getCallGraphNode());
         }
     }
 
