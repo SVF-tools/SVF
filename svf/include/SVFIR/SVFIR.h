@@ -39,7 +39,6 @@ class CallGraph;
 /*!
  * SVF Intermediate representation, representing variables and statements as a Program Assignment Graph (PAG)
  * Variables as nodes and statements as edges.
- * SymID and NodeID are equal here (same numbering).
  */
 class SVFIR : public IRGraph
 {

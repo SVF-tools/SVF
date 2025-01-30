@@ -44,7 +44,7 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace LLVMUtil;
 
-ObjTypeInfo* SymbolTableBuilder::createBlkObjTypeInfo(SymID symId)
+ObjTypeInfo* SymbolTableBuilder::createBlkObjTypeInfo(NodeID symId)
 {
     assert(svfir->isBlkObj(symId));
     LLVMModuleSet* llvmset = LLVMModuleSet::getLLVMModuleSet();
@@ -58,7 +58,7 @@ ObjTypeInfo* SymbolTableBuilder::createBlkObjTypeInfo(SymID symId)
     return ti;
 }
 
-ObjTypeInfo* SymbolTableBuilder::createConstantObjTypeInfo(SymID symId)
+ObjTypeInfo* SymbolTableBuilder::createConstantObjTypeInfo(NodeID symId)
 {
     assert(IRGraph::isConstantSym(symId));
     LLVMModuleSet* llvmset = LLVMModuleSet::getLLVMModuleSet();
@@ -301,7 +301,7 @@ void SymbolTableBuilder::collectVal(const Value* val)
     {
         // create val sym and sym type
         SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
-        SymID id = NodeIDAllocator::get()->allocateValueId();
+        NodeID id = NodeIDAllocator::get()->allocateValueId();
         svfir->valSymMap.insert(std::make_pair(svfVal, id));
         DBOUT(DMemModel,
               outs() << "create a new value sym " << id << "\n");
@@ -335,7 +335,7 @@ void SymbolTableBuilder::collectObj(const Value* val)
         else
         {
             // create obj sym and sym type
-            SymID id = NodeIDAllocator::get()->allocateObjectId();
+            NodeID id = NodeIDAllocator::get()->allocateObjectId();
             svfir->objSymMap.insert(std::make_pair(svfVal, id));
             DBOUT(DMemModel,
                   outs() << "create a new obj sym " << id << "\n");
@@ -359,7 +359,7 @@ void SymbolTableBuilder::collectRet(const Function* val)
         svfir->returnSymMap.find(svffun);
     if (iter == svfir->returnSymMap.end())
     {
-        SymID id = NodeIDAllocator::get()->allocateValueId();
+        NodeID id = NodeIDAllocator::get()->allocateValueId();
         svfir->returnSymMap.insert(std::make_pair(svffun, id));
         DBOUT(DMemModel, outs() << "create a return sym " << id << "\n");
     }
@@ -376,7 +376,7 @@ void SymbolTableBuilder::collectVararg(const Function* val)
         svfir->varargSymMap.find(svffun);
     if (iter == svfir->varargSymMap.end())
     {
-        SymID id = NodeIDAllocator::get()->allocateValueId();
+        NodeID id = NodeIDAllocator::get()->allocateValueId();
         svfir->varargSymMap.insert(std::make_pair(svffun, id));
         DBOUT(DMemModel, outs() << "create a vararg sym " << id << "\n");
     }

@@ -290,13 +290,13 @@ void SVFIRBuilder::initialiseNodes()
         // Check if the value is a function and add a function object node
         if (const Function* func = SVFUtil::dyn_cast<Function>(llvmValue))
         {
-            SymID id = pag->getObjectNode(llvmModuleSet()->getCallGraphNode(func)->getFunction());
+            NodeID id = pag->getObjectNode(llvmModuleSet()->getCallGraphNode(func)->getFunction());
             pag->addFunObjNode(iter->second, pag->getObjTypeInfo(id),  llvmModuleSet()->getCallGraphNode(func), iter->first->getType(), icfgNode);
         }
         // Check if the value is a heap object and add a heap object node
         else if (LLVMUtil::isHeapObj(llvmValue))
         {
-            SymID id = pag->getObjectNode(iter->first);
+            NodeID id = pag->getObjectNode(iter->first);
             pag->addHeapObjNode(iter->second, pag->getObjTypeInfo(id), iter->first->getType(), icfgNode);
         }
         // Check if the value is an alloca instruction and add a stack object node

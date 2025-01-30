@@ -48,7 +48,7 @@ void VersionedFlowSensitiveStat::performStat()
 
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
-    Set<SymID> nodeSet;
+    Set<NodeID> nodeSet;
     for (SVFIR::const_iterator it = pag->begin(); it != pag->end(); ++it)
     {
         NodeID nodeId = it->first;
@@ -56,7 +56,7 @@ void VersionedFlowSensitiveStat::performStat()
         if (SVFUtil::isa<ObjVar>(pagNode))
         {
             const BaseObjVar* baseObj = pag->getBaseObject(nodeId);
-            SymID baseId = baseObj->getId();
+            NodeID baseId = baseObj->getId();
             if (nodeSet.insert(baseId).second)
             {
                 if (baseObj->isFieldInsensitive()) fiObjNumber++;

@@ -598,7 +598,7 @@ public:
     virtual const std::string toString() const;
 
     /// Get the memory object id
-    inline SymID getId() const
+    inline NodeID getId() const
     {
         return id;
     }
