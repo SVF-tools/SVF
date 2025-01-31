@@ -138,9 +138,9 @@ public:
     /// Return a handle to the stack of nodes in reverse topological
     /// order. This will be used to seed the initial solution
     /// and improve efficiency.
-    inline GNodeStack revTopoNodeStack() const
+    inline FIFOWorkList<NodeID> revTopoNodeStack() const
     {
-        GNodeStack revTopoOrder;
+        FIFOWorkList<NodeID> revTopoOrder;
         GNodeStack topoOrder = topoNodeStack();
         while(!topoOrder.empty())
         {

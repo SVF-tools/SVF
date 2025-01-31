@@ -238,11 +238,11 @@ void MRGenerator::collectModRefForCall()
 
     DBOUT(DGENERAL, outs() << pasMsg("\t\tPerform Callsite Mod-Ref \n"));
 
-    NodeStack worklist = callGraphSCC->revTopoNodeStack();
+    WorkList worklist = callGraphSCC->revTopoNodeStack();
 
     while(!worklist.empty())
     {
-        NodeID callGraphNodeID = worklist.top();
+        NodeID callGraphNodeID = worklist.front();
         worklist.pop();
         /// handle all sub scc nodes of this rep node
         const NodeBS& subNodes = callGraphSCC->subNodes(callGraphNodeID);
@@ -619,7 +619,7 @@ bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGN
  * Call site mod-ref analysis
  * Compute mod-ref of all callsites invoking this call graph node
  */
-void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, NodeStack& worklist)
+void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& worklist)
 {
 
     /// add ref/mod set of callee to its invocation callsites at caller

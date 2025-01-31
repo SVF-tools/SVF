@@ -328,7 +328,7 @@ protected:
     }
 
     /// Mod-Ref analysis for callsite invoking this callGraphNode
-    virtual void modRefAnalysis(PTACallGraphNode* callGraphNode, NodeStack& worklist);
+    virtual void modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& worklist);
 
     /// Get Mod-Ref of a callee function
     virtual bool handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGNode* cs, const SVFFunction* fun);
