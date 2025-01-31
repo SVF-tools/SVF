@@ -228,8 +228,7 @@ void SVFIRBuilder::initialiseNodes()
         {
             pag->addArgValNode(
                 iter->second, argval->getArgNo(), icfgNode,
-                llvmModuleSet()->getCallGraphNode(argval->getParent()),iter->first->getType(),
-                LLVMUtil::isArgOfUncalledFunction(argval));
+                llvmModuleSet()->getCallGraphNode(argval->getParent()),iter->first->getType());
             if (!argval->hasName())
                 pag->getGNode(iter->second)->setName(std::to_string(argval->getArgNo()));
         }

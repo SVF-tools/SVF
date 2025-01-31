@@ -368,7 +368,6 @@ class ArgValVar: public ValVar
 private:
     const CallGraphNode* cgNode;
     u32_t argNo;
-    bool uncalled;
 
 protected:
     /// Constructor to create function argument (for SVFIRReader/deserialization)
@@ -401,7 +400,7 @@ public:
 
     /// Constructor
     ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn, const CallGraphNode* callGraphNode,
-              const SVFType* svfType, bool isUncalled = false);
+              const SVFType* svfType);
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const
@@ -422,7 +421,7 @@ public:
 
     inline bool isArgOfUncalledFunction() const
     {
-        return uncalled;
+        return getFunction()->isUncalledFunction();
     }
 
     virtual bool isPointer() const;
