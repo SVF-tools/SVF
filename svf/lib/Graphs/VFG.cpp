@@ -962,7 +962,7 @@ void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const CallGr
     const RetICFGNode* retBlockNode = callBlockNode->getRetICFGNode();
     // connect actual and formal param
     if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee) &&
-            matchArgs(callBlockNode, callee->getFunction()))
+            matchArgs(callBlockNode, callee))
     {
         const SVFIR::SVFVarList& csArgList = pag->getCallSiteArgsList(callBlockNode);
         const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(callee);

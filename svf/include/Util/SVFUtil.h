@@ -187,7 +187,7 @@ inline bool isNonInstricCallSite(const ICFGNode* inst)
 /// Match arguments for callsite at caller and callee
 /// if the arg size does not match then we do not need to connect this parameter
 /// unless the callee is a variadic function (the first parameter of variadic function is its parameter number)
-bool matchArgs(const CallICFGNode* cs, const SVFFunction* callee);
+bool matchArgs(const CallICFGNode* cs, const CallGraphNode* callee);
 
 
 /// Split into two substrings around the first occurrence of a separator string.

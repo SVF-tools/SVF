@@ -67,9 +67,6 @@ CallGraphNode::CallGraphNode(NodeID i, const SVFFunction* f): GenericCallGraphNo
     varArg = f->isVarArg();
     funcType = f->getFunctionType();
     loopAndDom = f->getLoopAndDomInfo();
-    realDefFun = f->getDefFunForMultipleModule();
-    bbGraph = const_cast<SVF::BasicBlockGraph*>(f->getBasicBlockGraph());
-    allArgs = f->getArgsList();
 }
 
 void CallGraphNode::init()

@@ -399,7 +399,7 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
                 const CallGraphNode* calleefun = SVFUtil::cast<FunObjVar>(obj)->getFunction();
                 const SVFFunction* callee = calleefun->getDefFunForMultipleModule();
 
-                if(SVFUtil::matchArgs(cs, callee) == false)
+                if(SVFUtil::matchArgs(cs, callee->getCallGraphNode()) == false)
                     continue;
 
                 if(0 == getIndCallMap()[cs].count(callee->getCallGraphNode()))
