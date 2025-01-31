@@ -285,7 +285,7 @@ void ThreadAPI::performAPIStat(SVFModule* module)
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
-        for (SVFFunction::const_iterator bit = (item.second)->getFunction()->begin(), ebit = (item.second)->getFunction()->end(); bit != ebit; ++bit)
+        for (CallGraphNode::const_bb_iterator bit = (item.second)->begin(), ebit = (item.second)->end(); bit != ebit; ++bit)
         {
             const SVFBasicBlock* bb = bit->second;
             for (const auto& svfInst: bb->getICFGNodeList())

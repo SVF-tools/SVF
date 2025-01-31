@@ -427,10 +427,10 @@ void SVFG::connectIndirectSVFGEdges()
  */
 void SVFG::connectFromGlobalToProgEntry()
 {
-    const SVFFunction* mainFunc = SVFUtil::getProgEntryFunction();
+    const CallGraphNode* mainFunc = SVFUtil::getProgEntryFunction();
     if (!mainFunc)
         return;
-    FormalINSVFGNodeSet& formalIns = getFormalINSVFGNodes(mainFunc->getCallGraphNode());
+    FormalINSVFGNodeSet& formalIns = getFormalINSVFGNodes(mainFunc);
     if (formalIns.empty())
         return;
 

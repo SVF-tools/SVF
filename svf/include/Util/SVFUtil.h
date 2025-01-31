@@ -321,10 +321,10 @@ inline bool isProgEntryFunction(const SVFFunction* fun)
 }
 
 /// Get program entry function from function name.
-const SVFFunction* getProgFunction(const std::string& funName);
+const CallGraphNode* getProgFunction(const std::string& funName);
 
 /// Get program entry function.
-const SVFFunction* getProgEntryFunction();
+const CallGraphNode* getProgEntryFunction();
 
 /// Return true if this is a program exit function call
 //@{
