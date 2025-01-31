@@ -101,7 +101,7 @@ void FlowSensitiveStat::performStat()
 
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
-    Set<SymID> nodeSet;
+    Set<NodeID> nodeSet;
     for (SVFIR::const_iterator nodeIt = pag->begin(), nodeEit = pag->end(); nodeIt != nodeEit; nodeIt++)
     {
         NodeID nodeId = nodeIt->first;
@@ -109,7 +109,7 @@ void FlowSensitiveStat::performStat()
         if(SVFUtil::isa<ObjVar>(pagNode))
         {
             const BaseObjVar* baseObj = pag->getBaseObject(nodeId);
-            SymID baseId = baseObj->getId();
+            NodeID baseId = baseObj->getId();
             if (nodeSet.insert(baseId).second)
             {
                 if (baseObj->isFieldInsensitive())
@@ -154,8 +154,8 @@ void FlowSensitiveStat::performStat()
     timeStatMap["UpdateCGTime"] = fspta->updateCallGraphTime;
     timeStatMap["PhiTime"] = fspta->phiTime;
 
-    PTNumStatMap["TotalPointers"] = pag->getValueNodeNum() + pag->getFieldValNodeNum();
-    PTNumStatMap["TotalObjects"] = pag->getObjectNodeNum() + pag->getFieldObjNodeNum();
+    PTNumStatMap["TotalPointers"] = pag->getValueNodeNum();
+    PTNumStatMap["TotalObjects"] = pag->getObjectNodeNum();
 
     PTNumStatMap["Pointers"] = pag->getValueNodeNum();
     PTNumStatMap["MemObjects"] = pag->getObjectNodeNum();

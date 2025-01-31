@@ -242,21 +242,7 @@ void SVFUtil::increaseStackSize()
     }
 }
 
-/*!
- * Return true if it is an llvm intrinsic instruction
-*/
-bool SVFUtil::isIntrinsicInst(const SVFInstruction* inst)
-{
-    if (const SVFCallInst* call = SVFUtil::dyn_cast<SVFCallInst>(inst))
-    {
-        const SVFFunction* func = call->getCalledFunction();
-        if (func && func->isIntrinsic())
-        {
-            return true;
-        }
-    }
-    return false;
-}
+
 
 std::string SVFUtil::hclustMethodToString(hclust_fast_methods method)
 {

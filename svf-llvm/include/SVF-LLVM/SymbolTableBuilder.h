@@ -84,6 +84,10 @@ protected:
     void handleCE(const Value* val);
     // @}
 
+    inline LLVMModuleSet* llvmModuleSet()
+    {
+        return LLVMModuleSet::getLLVMModuleSet();
+    }
 
     ObjTypeInference* getTypeInference();
 
@@ -118,9 +122,9 @@ protected:
     ///Get a reference to StructInfo.
     StInfo* getOrAddSVFTypeInfo(const Type* T);
 
-    ObjTypeInfo* createBlkObjTypeInfo(SymID symId);
+    ObjTypeInfo* createBlkObjTypeInfo(NodeID symId);
 
-    ObjTypeInfo* createConstantObjTypeInfo(SymID symId);
+    ObjTypeInfo* createConstantObjTypeInfo(NodeID symId);
 };
 
 } // End namespace SVF
