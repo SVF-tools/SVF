@@ -160,8 +160,6 @@ SVFFunction::SVFFunction(const SVFType* ty, const SVFFunctionType* ft,
 
 SVFFunction::~SVFFunction()
 {
-    for(const SVFArgument* arg : allArgs)
-        delete arg;
     delete loopAndDom;
     delete bbGraph;
 }
@@ -171,7 +169,7 @@ u32_t SVFFunction::arg_size() const
     return allArgs.size();
 }
 
-const SVFArgument* SVFFunction::getArg(u32_t idx) const
+const ArgValVar* SVFFunction::getArg(u32_t idx) const
 {
     assert (idx < allArgs.size() && "getArg() out of range!");
     return allArgs[idx];
