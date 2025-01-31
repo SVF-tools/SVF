@@ -56,38 +56,6 @@ IRGraph::~IRGraph()
     destorySymTable();
 }
 
-NodeID IRGraph::getValueNode(const SVFValue* val)
-{
-    if(val->isNullPtr())
-        return nullPtrSymID();
-    else if (val->isblackHole())
-        return blkPtrSymID();
-    else
-    {
-        ValueToIDMapTy::const_iterator iter =  valSymMap.find(val);
-        assert(iter!=valSymMap.end() &&"value sym not found");
-        return iter->second;
-    }
-}
-
-bool IRGraph::hasValueNode(const SVFValue *val)
-{
-    if (val->isNullPtr() || val->isblackHole())
-        return true;
-    else
-        return (valSymMap.find(val) != valSymMap.end());
-}
-
-NodeID IRGraph::getObjectNode(const SVFValue *val)
-{
-    const SVFValue* svfVal = val;
-    if(const SVFGlobalValue* g = SVFUtil::dyn_cast<SVFGlobalValue>(val))
-        svfVal = g->getDefGlobalForMultipleModule();
-    ValueToIDMapTy::const_iterator iter = objSymMap.find(svfVal);
-    assert(iter!=objSymMap.end() && "obj sym not found");
-    return iter->second;
-}
-
 NodeID IRGraph::getReturnNode(const SVFFunction *func) const
 {
     FunToIDMapTy::const_iterator iter =  returnSymMap.find(func);
@@ -100,45 +68,6 @@ NodeID IRGraph::getVarargNode(const SVFFunction *func) const
     FunToIDMapTy::const_iterator iter =  varargSymMap.find(func);
     assert(iter!=varargSymMap.end() && "vararg sym not found");
     return iter->second;
-}
-
-void IRGraph::dumpSymTable()
-{
-    OrderedMap<NodeID, SVFValue*> idmap;
-    for (ValueToIDMapTy::iterator iter = valSymMap.begin(); iter != valSymMap.end();
-            ++iter)
-    {
-        const NodeID i = iter->second;
-        SVFValue* val = (SVFValue*) iter->first;
-        idmap[i] = val;
-    }
-    for (ValueToIDMapTy::iterator iter = objSymMap.begin(); iter != objSymMap.end();
-            ++iter)
-    {
-        const NodeID i = iter->second;
-        SVFValue* val = (SVFValue*) iter->first;
-        idmap[i] = val;
-    }
-    for (FunToIDMapTy::iterator iter = returnSymMap.begin(); iter != returnSymMap.end();
-            ++iter)
-    {
-        const NodeID i = iter->second;
-        SVFValue* val = (SVFValue*) iter->first;
-        idmap[i] = val;
-    }
-    for (FunToIDMapTy::iterator iter = varargSymMap.begin(); iter != varargSymMap.end();
-            ++iter)
-    {
-        const NodeID i = iter->second;
-        SVFValue* val = (SVFValue*) iter->first;
-        idmap[i] = val;
-    }
-    outs() << "{SymbolTableInfo \n";
-    for (auto iter : idmap)
-    {
-        outs() << iter.first << " " << iter.second->toString() << "\n";
-    }
-    outs() << "}\n";
 }
 
 void IRGraph::printFlattenFields(const SVFType *type)
@@ -390,6 +319,29 @@ void IRGraph::view()
 {
     SVF::ViewGraph(this, "ProgramAssignmentGraph");
 }
+
+
+u32_t IRGraph::getValueNodeNum() {
+    if (valVarNum != 0) return valVarNum;
+    u32_t num = 0;
+    for (const auto& item: *this) {
+        if (SVFUtil::isa<ValVar>(item.second))
+            num++;
+    }
+    return valVarNum = num;
+}
+
+
+u32_t IRGraph::getObjectNodeNum() {
+    if (objVarNum != 0) return objVarNum;
+    u32_t num = 0;
+    for (const auto& item: *this) {
+        if (SVFUtil::isa<ObjVar>(item.second))
+            num++;
+    }
+    return objVarNum = num;
+}
+
 
 
 namespace SVF

@@ -39,13 +39,13 @@
 namespace SVF
 {
 
-class SymbolTableInfo;
 class ObjTypeInference;
 
 class LLVMModuleSet
 {
     friend class SVFIRBuilder;
     friend class ICFGBuilder;
+    friend class SymbolTableBuilder;
 
 public:
 
@@ -72,6 +72,10 @@ public:
     typedef Map<const Instruction*, IntraICFGNode *> InstToBlockNodeMapTy;
     typedef Map<const Function*, FunEntryICFGNode *> FunToFunEntryNodeMapTy;
     typedef Map<const Function*, FunExitICFGNode *> FunToFunExitNodeMapTy;
+
+    /// llvm value to sym id map
+    /// local (%) and global (@) identifiers are pointer types which have a value node id.
+    typedef OrderedMap<const SVFValue*, NodeID> ValueToIDMapTy;
 
 private:
     static LLVMModuleSet* llvmModuleSet;
@@ -111,6 +115,9 @@ private:
     CallGraph* callgraph;
 
     Map<const Function*, DominatorTree> FunToDominatorTree;
+
+    ValueToIDMapTy valSymMap;  ///< map a value to its sym id
+    ValueToIDMapTy objSymMap;  ///< map a obj reference to its sym id
 
     /// Constructor
     LLVMModuleSet();
@@ -170,6 +177,41 @@ public:
     // Dump modules to files
     void dumpModulesToFile(const std::string& suffix);
 
+public:
+
+    inline u32_t getValueNodeNum() const
+    {
+        return valSymMap.size();
+    }
+
+    inline u32_t getObjNodeNum() const
+    {
+        return objSymMap.size();
+    }
+
+    inline ValueToIDMapTy& valSyms()
+    {
+        return valSymMap;
+    }
+
+    inline ValueToIDMapTy& objSyms()
+    {
+        return objSymMap;
+    }
+
+    /// Get SVFIR Node according to LLVM value
+    ///getNode - Return the node corresponding to the specified pointer.
+    NodeID getValueNode(const SVFValue* V);
+
+    bool hasValueNode(const SVFValue* V);
+
+    /// getObject - Return the obj node id refer to the memory object for the
+    /// specified global, heap or alloca instruction according to llvm value.
+    NodeID getObjectNode(const SVFValue* V);
+
+    void dumpSymTable();
+
+public:
     inline void addFunctionMap(const Function* func, SVFFunction* svfFunc)
     {
         LLVMFunc2SVFFunc[func] = svfFunc;

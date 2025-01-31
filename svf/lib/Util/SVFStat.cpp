@@ -127,7 +127,7 @@ void SVFStat::performStat()
     u32_t numOfConstant = 0;
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
-    Set<SymID> memObjSet;
+    Set<NodeID> memObjSet;
     for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
         PAGNode* node = it->second;
@@ -174,7 +174,7 @@ void SVFStat::performStat()
 
 
 
-    generalNumMap["TotalPointers"] = pag->getValueNodeNum() + pag->getFieldValNodeNum();
+    generalNumMap["TotalPointers"] = pag->getValueNodeNum();
     generalNumMap["TotalObjects"] = pag->getObjectNodeNum();
     generalNumMap["TotalFieldObjects"] = pag->getFieldObjNodeNum();
     generalNumMap["MaxStructSize"] = pag->getMaxStructSize();

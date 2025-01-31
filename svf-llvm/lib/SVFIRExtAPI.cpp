@@ -61,16 +61,16 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
         // make a ConstantInt and create char for the content type due to byte-wise copy
         const ConstantInt* offset = ConstantInt::get(context, llvm::APInt(32, ei));
         const SVFValue* svfOffset = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offset);
-        if (!pag->hasValueNode(svfOffset))
+        if (!llvmModuleSet()->hasValueNode(svfOffset))
         {
             SymbolTableBuilder builder(pag);
             builder.collectSym(offset);
-            SymID id = pag->getValueNode(svfOffset);
+            NodeID id = llvmModuleSet()->getValueNode(svfOffset);
             pag->addConstantIntValNode(id, LLVMUtil::getIntegerValue(offset), nullptr, svfOffset->getType());
             llvmModuleSet()->addToSVFVar2LLVMValueMap(offset,
                     pag->getGNode(id));
         }
-        ls.addOffsetVarAndGepTypePair(getPAG()->getGNode(getPAG()->getValueNode(svfOffset)), nullptr);
+        ls.addOffsetVarAndGepTypePair(getPAG()->getGNode(llvmModuleSet()->getValueNode(svfOffset)), nullptr);
         fields.push_back(ls);
     }
     return objType;
@@ -134,8 +134,8 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
 
     if (isHeapAllocExtCallViaRet(callICFGNode))
     {
-        NodeID val = pag->getValueNode(svfInst);
-        NodeID obj = pag->getObjectNode(svfInst);
+        NodeID val = llvmModuleSet()->getValueNode(svfInst);
+        NodeID obj = llvmModuleSet()->getObjectNode(svfInst);
         addAddrWithHeapSz(obj, val, cs);
     }
     else if (isHeapAllocExtCallViaArg(callICFGNode))
@@ -144,7 +144,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         const SVFValue* arg = svfCall->getArgOperand(arg_pos);
         if (arg->getType()->isPointerTy())
         {
-            NodeID vnArg = pag->getValueNode(arg);
+            NodeID vnArg = llvmModuleSet()->getValueNode(arg);
             NodeID dummy = pag->addDummyValNode();
             NodeID obj = pag->addDummyObjNode(arg->getType());
             if (vnArg && dummy && obj)
@@ -237,7 +237,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
 
         // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
         // Now we calculate the offset from base to vArg3
-        NodeID vnArg3 = pag->getValueNode(svfCall->getArgOperand(3));
+        NodeID vnArg3 = llvmModuleSet()->getValueNode(svfCall->getArgOperand(3));
         APOffset offset =
             getAccessPathFromBaseNode(vnArg3).getConstantStructFldIdx();
 
@@ -253,7 +253,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
             const SVFType* elementType = pag->getFlatternedElemType(pag->getTypeLocSetsMap(vnArg3).first,
                                          fields[i].getConstantStructFldIdx());
             NodeID vnD = getGepValVar(cs->getArgOperand(3), fields[i], elementType);
-            NodeID vnS = pag->getValueNode(svfCall->getArgOperand(1));
+            NodeID vnS = llvmModuleSet()->getValueNode(svfCall->getArgOperand(1));
             if(vnD && vnS)
                 addStoreEdge(vnS,vnD);
         }
@@ -277,7 +277,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
                 if (actualParm->isPointer() && formalParm->getType()->isPointerTy())
                 {
                     FunEntryICFGNode *entry = pag->getICFG()->getFunEntryICFGNode(forkedFun);
-                    addThreadForkEdge(actualParm->getId(), pag->getValueNode(formalParm), callICFGNode, entry);
+                    addThreadForkEdge(actualParm->getId(), llvmModuleSet()->getValueNode(formalParm), callICFGNode, entry);
                 }
             }
         }

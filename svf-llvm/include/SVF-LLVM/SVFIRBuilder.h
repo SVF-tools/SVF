@@ -91,14 +91,14 @@ public:
 
         // strip off the constant cast and return the value node
         SVFValue* svfVal = llvmModuleSet()->getSVFValue(V);
-        return pag->getValueNode(svfVal);
+        return llvmModuleSet()->getValueNode(svfVal);
     }
 
     /// GetObject - Return the object node (stack/global/heap/function) according to a LLVM Value
     inline NodeID getObjectNode(const Value* V)
     {
         SVFValue* svfVal = llvmModuleSet()->getSVFValue(V);
-        return pag->getObjectNode(svfVal);
+        return llvmModuleSet()->getObjectNode(svfVal);
     }
 
     /// getReturnNode - Return the node representing the unique return value of a function.
