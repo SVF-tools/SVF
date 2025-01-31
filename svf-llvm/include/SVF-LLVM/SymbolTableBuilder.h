@@ -31,7 +31,7 @@
 #define SymbolTableBuilder_H_
 
 #include "SVF-LLVM/LLVMModule.h"
-#include "SVFIR/SymbolTableInfo.h"
+#include "SVFIR/ObjTypeInfo.h"
 
 /*
 * This class is to build SymbolTableInfo, MemObjs and ObjTypeInfo
@@ -45,11 +45,11 @@ class SymbolTableBuilder
 {
     friend class SVFIRBuilder;
 private:
-    SymbolTableInfo* symInfo;
+    SVFIR* svfir;
 
 public:
     /// Constructor
-    SymbolTableBuilder(SymbolTableInfo* si): symInfo(si)
+    SymbolTableBuilder(SVFIR* ir): svfir(ir)
     {
     }
 
@@ -84,6 +84,10 @@ protected:
     void handleCE(const Value* val);
     // @}
 
+    inline LLVMModuleSet* llvmModuleSet()
+    {
+        return LLVMModuleSet::getLLVMModuleSet();
+    }
 
     ObjTypeInference* getTypeInference();
 
@@ -118,9 +122,9 @@ protected:
     ///Get a reference to StructInfo.
     StInfo* getOrAddSVFTypeInfo(const Type* T);
 
-    ObjTypeInfo* createBlkObjTypeInfo(SymID symId);
+    ObjTypeInfo* createBlkObjTypeInfo(NodeID symId);
 
-    ObjTypeInfo* createConstantObjTypeInfo(SymID symId);
+    ObjTypeInfo* createConstantObjTypeInfo(NodeID symId);
 };
 
 } // End namespace SVF

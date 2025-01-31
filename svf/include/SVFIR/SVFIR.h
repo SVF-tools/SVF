@@ -39,7 +39,6 @@ class CallGraph;
 /*!
  * SVF Intermediate representation, representing variables and statements as a Program Assignment Graph (PAG)
  * Variables as nodes and statements as edges.
- * SymID and NodeID are equal here (same numbering).
  */
 class SVFIR : public IRGraph
 {
@@ -63,6 +62,7 @@ public:
     typedef Map<const CallICFGNode*,SVFVarList> CSToArgsListMap;
     typedef Map<const RetICFGNode*,const SVFVar*> CSToRetMap;
     typedef Map<const SVFFunction*,const SVFVar*> FunToRetMap;
+    typedef Map<const CallGraphNode*,const FunObjVar *> FunToFunObjVarMap;
     typedef Map<const SVFFunction*,SVFStmtSet> FunToPAGEdgeSetMap;
     typedef Map<const ICFGNode*,SVFStmtList> ICFGNode2SVFStmtsMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
@@ -70,7 +70,7 @@ public:
     typedef std::pair<NodeID, AccessPath> NodeAccessPath;
     typedef Map<NodeOffset,NodeID> NodeOffsetMap;
     typedef Map<NodeAccessPath,NodeID> NodeAccessPathMap;
-    typedef Map<const SVFValue*, NodeAccessPathMap> GepValueVarMap;
+    typedef Map<NodeID, NodeAccessPathMap> GepValueVarMap;
     typedef std::pair<const SVFType*, std::vector<AccessPath>> SVFTypeLocSetsPair;
     typedef Map<NodeID, SVFTypeLocSetsPair> TypeLocSetsMap;
     typedef Map<NodePair,NodeID> NodePairSetMap;
@@ -90,6 +90,7 @@ private:
     CSToArgsListMap callSiteArgsListMap;	///< Map a callsite to a list of all its actual parameters
     CSToRetMap callSiteRetMap;	///< Map a callsite to its callsite returns PAGNodes
     FunToRetMap funRetMap;	///< Map a function to its unique function return PAGNodes
+    FunToFunObjVarMap funToFunObjvarMap;    ///< Map a function to its unique function object PAGNodes
     CallSiteToFunPtrMap indCallSiteToFunPtrMap; ///< Map an indirect callsite to its function pointer
     FunPtrToCallSitesMap funPtrToCallSitesMap;	///< Map a function pointer to the callsites where it is used
     /// Valid pointers for pointer analysis resolution connected by SVFIR edges (constraints)
@@ -330,6 +331,12 @@ public:
     }
     //@}
 
+    inline const FunObjVar* getFunObjVar(const CallGraphNode*  node) const
+    {
+        FunToFunObjVarMap::const_iterator it = funToFunObjvarMap.find(node);
+        assert(it != funToFunObjvarMap.end() && "this function doesn't have funobjvar");
+        return it->second;
+    }
     /// Node and edge statistics
     //@{
     inline u32_t getFieldValNodeNum() const
@@ -343,7 +350,7 @@ public:
     //@}
 
     /// Due to constraint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
-    NodeID getGepValVar(const SVFValue* curInst, NodeID base,
+    NodeID getGepValVar(NodeID curInst, NodeID base,
                         const AccessPath& ap) const;
 
     /// Add/get indirect callsites
@@ -431,27 +438,17 @@ public:
 
     /// Get black hole and constant id
     //@{
-    inline bool isBlkPtr(NodeID id) const
-    {
-        return (SymbolTableInfo::isBlkPtr(id));
-    }
-    inline bool isNullPtr(NodeID id) const
-    {
-        return (SymbolTableInfo::isNullPtr(id));
-    }
+
     inline bool isBlkObjOrConstantObj(NodeID id) const
     {
         return (isBlkObj(id) || isConstantObj(id));
     }
-    inline bool isBlkObj(NodeID id) const
-    {
-        return SymbolTableInfo::isBlkObj(id);
-    }
+
     inline bool isConstantObj(NodeID id) const
     {
         const BaseObjVar* obj = getBaseObject(id);
         assert(obj && "not an object node?");
-        return SymbolTableInfo::isConstantObj(id) ||
+        return isConstantSym(id) ||
                obj->isConstDataOrConstGlobal();
     }
     //@}
@@ -632,6 +629,7 @@ private:
     {
         memToFieldsMap[id].set(id);
         FunObjVar* funObj = new FunObjVar(id, ti, callGraphNode, type, node);
+        funToFunObjvarMap[callGraphNode] = funObj;
         return addObjNode(funObj);
     }
 
@@ -693,7 +691,7 @@ private:
     }
 
     /// Add a temp field value node, this method can only invoked by getGepValVar
-    NodeID addGepValNode(const SVFValue* curInst,const SVFValue* val, const AccessPath& ap, NodeID i, const SVFType* type, const ICFGNode* node);
+    NodeID addGepValNode(NodeID curInst, const ValVar* base, const AccessPath& ap, NodeID i, const SVFType* type, const ICFGNode* node);
     /// Add a field obj node, this method can only invoked by getGepObjVar
     NodeID addGepObjNode(const BaseObjVar* baseObj, const APOffset& apOffset, const NodeID gepId);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
@@ -715,25 +713,25 @@ private:
     }
     inline NodeID addDummyObjNode(NodeID i, const SVFType* type)
     {
-        if (symInfo->idToObjTypeInfoMap().find(i) == symInfo->idToObjTypeInfoMap().end())
+        if (idToObjTypeInfoMap().find(i) == idToObjTypeInfoMap().end())
         {
-            ObjTypeInfo* ti = symInfo->createObjTypeInfo(type);
-            symInfo->idToObjTypeInfoMap()[i] = ti;
+            ObjTypeInfo* ti = createObjTypeInfo(type);
+            idToObjTypeInfoMap()[i] = ti;
             return addObjNode(new DummyObjVar(i, ti, nullptr, type));
         }
         else
         {
-            return addObjNode(new DummyObjVar(i, symInfo->getObjTypeInfo(i), nullptr, type));
+            return addObjNode(new DummyObjVar(i, getObjTypeInfo(i), nullptr, type));
         }
     }
 
     inline NodeID addBlackholeObjNode()
     {
-        return addObjNode(new DummyObjVar(getBlackHoleNode(), symInfo->getObjTypeInfo(getBlackHoleNode()), nullptr));
+        return addObjNode(new DummyObjVar(getBlackHoleNode(), getObjTypeInfo(getBlackHoleNode()), nullptr));
     }
     inline NodeID addConstantObjNode()
     {
-        return addObjNode(new DummyObjVar(getConstantNode(), symInfo->getObjTypeInfo(getConstantNode()), nullptr));
+        return addObjNode(new DummyObjVar(getConstantNode(), getObjTypeInfo(getConstantNode()), nullptr));
     }
     inline NodeID addBlackholePtrNode()
     {

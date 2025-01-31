@@ -78,7 +78,7 @@ LLVMModuleSet* LLVMModuleSet::llvmModuleSet = nullptr;
 bool LLVMModuleSet::preProcessed = false;
 
 LLVMModuleSet::LLVMModuleSet()
-    : symInfo(SymbolTableInfo::SymbolInfo()),
+    : svfir(PAG::getPAG()),
       svfModule(SVFModule::getSVFModule()), typeInference(new ObjTypeInference())
 {
 }
@@ -157,7 +157,7 @@ void LLVMModuleSet::buildSymbolTable() const
     {
         /// building symbol table
         DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
-        SymbolTableBuilder builder(symInfo);
+        SymbolTableBuilder builder(svfir);
         builder.buildMemModel(svfModule);
     }
     double endSymInfoTime = SVFStat::getClk(true);
@@ -280,6 +280,8 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             getSVFType(func->getFunctionType())),
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
         func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
+    BasicBlockGraph* bbGraph = new BasicBlockGraph(svfFunc);
+    svfFunc->setBasicBlockGraph(bbGraph);
     svfModule->addFunctionSet(svfFunc);
     addFunctionMap(func, svfFunc);
 
@@ -298,17 +300,14 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
 
     for (const BasicBlock& bb : *func)
     {
-        SVFBasicBlock* svfBB =
-            new SVFBasicBlock(getSVFType(bb.getType()), svfFunc);
-        svfFunc->addBasicBlock(svfBB);
-        addBasicBlockMap(&bb, svfBB);
+        addBasicBlock(svfFunc, &bb);
         for (const Instruction& inst : bb)
         {
             SVFInstruction* svfInst = nullptr;
             if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(&inst))
             {
                 svfInst = new SVFCallInst(
-                    getSVFType(call->getType()), svfBB,
+                    getSVFType(call->getType()), getSVFBasicBlock(&bb),
                     call->getFunctionType()->isVarArg(),
                     inst.isTerminator());
             }
@@ -316,7 +315,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             {
                 svfInst =
                     new SVFInstruction(getSVFType(inst.getType()),
-                                       svfBB, inst.isTerminator(),
+                                       getSVFBasicBlock(&bb), inst.isTerminator(),
                                        SVFUtil::isa<ReturnInst>(inst));
             }
 
@@ -1219,6 +1218,77 @@ void LLVMModuleSet::dumpModulesToFile(const std::string& suffix)
     }
 }
 
+NodeID LLVMModuleSet::getValueNode(const SVFValue *val)
+{
+    if (val->isNullPtr())
+        return svfir->nullPtrSymID();
+    else if (val->isblackHole())
+        return svfir->blkPtrSymID();
+    else
+    {
+        ValueToIDMapTy::const_iterator iter = valSymMap.find(val);
+        assert(iter!=valSymMap.end() &&"value sym not found");
+        return iter->second;
+    }
+}
+bool LLVMModuleSet::hasValueNode(const SVFValue *val)
+{
+    if (val->isNullPtr() || val->isblackHole())
+        return true;
+    else
+        return (valSymMap.find(val) != valSymMap.end());
+}
+
+NodeID LLVMModuleSet::getObjectNode(const SVFValue *val)
+{
+    const SVFValue *svfVal = val;
+    if (const SVFGlobalValue *g = SVFUtil::dyn_cast<SVFGlobalValue>(val))
+        svfVal = g->getDefGlobalForMultipleModule();
+    ValueToIDMapTy::const_iterator iter = objSymMap.find(svfVal);
+    assert(iter!=objSymMap.end() && "obj sym not found");
+    return iter->second;
+}
+
+
+void LLVMModuleSet::dumpSymTable()
+{
+    OrderedMap<NodeID, SVFValue*> idmap;
+    for (ValueToIDMapTy::iterator iter = valSymMap.begin(); iter != valSymMap.end();
+            ++iter)
+    {
+        const NodeID i = iter->second;
+        SVFValue* val = (SVFValue*) iter->first;
+        idmap[i] = val;
+    }
+    for (ValueToIDMapTy::iterator iter = objSymMap.begin(); iter != objSymMap.end();
+            ++iter)
+    {
+        const NodeID i = iter->second;
+        SVFValue* val = (SVFValue*) iter->first;
+        idmap[i] = val;
+    }
+    for (SVFIR::FunToIDMapTy::iterator iter = svfir->retSyms().begin(); iter != svfir->retSyms().end();
+            ++iter)
+    {
+        const NodeID i = iter->second;
+        SVFValue* val = (SVFValue*) iter->first;
+        idmap[i] = val;
+    }
+    for (SVFIR::FunToIDMapTy::iterator iter = svfir->varargSyms().begin(); iter != svfir->varargSyms().end();
+            ++iter)
+    {
+        const NodeID i = iter->second;
+        SVFValue* val = (SVFValue*) iter->first;
+        idmap[i] = val;
+    }
+    SVFUtil::outs() << "{SymbolTableInfo \n";
+    for (auto iter : idmap)
+    {
+        SVFUtil::outs() << iter.first << " " << iter.second->toString() << "\n";
+    }
+    SVFUtil::outs() << "}\n";
+}
+
 void LLVMModuleSet::addFunctionMap(const Function* func, CallGraphNode* svfFunc)
 {
     LLVMFunc2CallGraphNode[func] = svfFunc;
@@ -1365,8 +1435,6 @@ SVFValue* LLVMModuleSet::getSVFValue(const Value* value)
 {
     if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
         return getSVFFunction(fun);
-    else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(value))
-        return getSVFBasicBlock(bb);
     else if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
         return getSVFInstruction(inst);
     else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
@@ -1482,10 +1550,10 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
     {
         u32_t nf;
         stInfo = collectStructInfo(sty, nf);
-        if (nf > symInfo->maxStSize)
+        if (nf > svfir->maxStSize)
         {
-            symInfo->maxStruct = getSVFType(sty);
-            symInfo->maxStSize = nf;
+            svfir->maxStruct = getSVFType(sty);
+            svfir->maxStSize = nf;
         }
     }
     else
@@ -1493,7 +1561,7 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
         stInfo = collectSimpleTypeInfo(T);
     }
     Type2TypeInfo.emplace(T, stInfo);
-    symInfo->addStInfo(stInfo);
+    svfir->addStInfo(stInfo);
     return stInfo;
 }
 
@@ -1550,7 +1618,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         svftype = ot;
     }
 
-    symInfo->addTypeInfo(svftype);
+    svfir->addTypeInfo(svftype);
     LLVMType2SVFType[T] = svftype;
 
     return svftype;

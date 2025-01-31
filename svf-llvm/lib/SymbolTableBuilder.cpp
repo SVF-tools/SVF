@@ -44,31 +44,31 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace LLVMUtil;
 
-ObjTypeInfo* SymbolTableBuilder::createBlkObjTypeInfo(SymID symId)
+ObjTypeInfo* SymbolTableBuilder::createBlkObjTypeInfo(NodeID symId)
 {
-    assert(symInfo->isBlkObj(symId));
-    LLVMModuleSet* llvmset = LLVMModuleSet::getLLVMModuleSet();
-    if (symInfo->objTypeInfoMap.find(symId)==symInfo->objTypeInfoMap.end())
+    assert(svfir->isBlkObj(symId));
+    LLVMModuleSet* llvmset = llvmModuleSet();
+    if (svfir->objTypeInfoMap.find(symId)==svfir->objTypeInfoMap.end())
     {
-        ObjTypeInfo* ti =symInfo->createObjTypeInfo(llvmset->getSVFType(
+        ObjTypeInfo* ti =svfir->createObjTypeInfo(llvmset->getSVFType(
                              IntegerType::get(llvmset->getContext(), 32)));
-        symInfo->objTypeInfoMap[symId] = ti;
+        svfir->objTypeInfoMap[symId] = ti;
     }
-    ObjTypeInfo* ti = symInfo->objTypeInfoMap[symId];
+    ObjTypeInfo* ti = svfir->objTypeInfoMap[symId];
     return ti;
 }
 
-ObjTypeInfo* SymbolTableBuilder::createConstantObjTypeInfo(SymID symId)
+ObjTypeInfo* SymbolTableBuilder::createConstantObjTypeInfo(NodeID symId)
 {
-    assert(symInfo->isConstantObj(symId));
-    LLVMModuleSet* llvmset = LLVMModuleSet::getLLVMModuleSet();
-    if (symInfo->objTypeInfoMap.find(symId)==symInfo->objTypeInfoMap.end())
+    assert(IRGraph::isConstantSym(symId));
+    LLVMModuleSet* llvmset = llvmModuleSet();
+    if (svfir->objTypeInfoMap.find(symId)==svfir->objTypeInfoMap.end())
     {
-        ObjTypeInfo* ti = symInfo->createObjTypeInfo(
+        ObjTypeInfo* ti = svfir->createObjTypeInfo(
                               llvmset->getSVFType(IntegerType::get(llvmset->getContext(), 32)));
-        symInfo->objTypeInfoMap[symId] = ti;
+        svfir->objTypeInfoMap[symId] = ti;
     }
-    ObjTypeInfo* ti = symInfo->objTypeInfoMap[symId];
+    ObjTypeInfo* ti = svfir->objTypeInfoMap[symId];
     return ti;
 }
 
@@ -80,23 +80,21 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 {
     SVFUtil::increaseStackSize();
 
-    symInfo->setModule(svfModule);
-
     // Pointer #0 always represents the null pointer.
-    assert(symInfo->totalSymNum++ == SymbolTableInfo::NullPtr && "Something changed!");
+    assert(svfir->totalSymNum++ == IRGraph::NullPtr && "Something changed!");
 
     // Pointer #1 always represents the pointer points-to black hole.
-    assert(symInfo->totalSymNum++ == SymbolTableInfo::BlkPtr && "Something changed!");
+    assert(svfir->totalSymNum++ == IRGraph::BlkPtr && "Something changed!");
 
     // Object #2 is black hole the object that may point to any object
-    assert(symInfo->totalSymNum++ == SymbolTableInfo::BlackHole && "Something changed!");
-    createBlkObjTypeInfo(SymbolTableInfo::BlackHole);
+    assert(svfir->totalSymNum++ == IRGraph::BlackHole && "Something changed!");
+    createBlkObjTypeInfo(IRGraph::BlackHole);
 
     // Object #3 always represents the unique constant of a program (merging all constants if Options::ModelConsts is disabled)
-    assert(symInfo->totalSymNum++ == SymbolTableInfo::ConstantObj && "Something changed!");
-    createConstantObjTypeInfo(SymbolTableInfo::ConstantObj);
+    assert(svfir->totalSymNum++ == IRGraph::ConstantObj && "Something changed!");
+    createConstantObjTypeInfo(IRGraph::ConstantObj);
 
-    for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
+    for (Module &M : llvmModuleSet()->getLLVMModules())
     {
         // Add symbols for all the globals .
         for (const GlobalVariable& gv : M.globals())
@@ -234,10 +232,10 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
         }
     }
 
-    symInfo->totalSymNum = NodeIDAllocator::get()->endSymbolAllocation();
+    svfir->totalSymNum = NodeIDAllocator::get()->endSymbolAllocation();
     if (Options::SymTabPrint())
     {
-        symInfo->dump();
+        llvmModuleSet()->dumpSymTable();
     }
 }
 
@@ -269,7 +267,7 @@ void SymbolTableBuilder::collectSym(const Value* val)
     DBOUT(DMemModel,
           outs()
           << "collect sym from ##"
-          << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)->toString()
+          << llvmModuleSet()->getSVFValue(val)->toString()
           << " \n");
     //TODO handle constant expression value here??
     handleCE(val);
@@ -297,14 +295,14 @@ void SymbolTableBuilder::collectVal(const Value* val)
     {
         return;
     }
-    SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->valSymMap.find(
-                LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
-    if (iter == symInfo->valSymMap.end())
+    LLVMModuleSet::ValueToIDMapTy::iterator iter = llvmModuleSet()->valSymMap.find(
+                llvmModuleSet()->getSVFValue(val));
+    if (iter == llvmModuleSet()->valSymMap.end())
     {
         // create val sym and sym type
-        SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
-        SymID id = NodeIDAllocator::get()->allocateValueId();
-        symInfo->valSymMap.insert(std::make_pair(svfVal, id));
+        SVFValue* svfVal = llvmModuleSet()->getSVFValue(val);
+        NodeID id = NodeIDAllocator::get()->allocateValueId();
+        llvmModuleSet()->valSymMap.insert(std::make_pair(svfVal, id));
         DBOUT(DMemModel,
               outs() << "create a new value sym " << id << "\n");
         ///  handle global constant expression here
@@ -322,30 +320,29 @@ void SymbolTableBuilder::collectVal(const Value* val)
 void SymbolTableBuilder::collectObj(const Value* val)
 {
     val = LLVMUtil::getGlobalRep(val);
-    LLVMModuleSet* llvmModuleSet = LLVMModuleSet::getLLVMModuleSet();
-    SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->objSymMap.find(llvmModuleSet->getSVFValue(val));
-    if (iter == symInfo->objSymMap.end())
+    LLVMModuleSet::ValueToIDMapTy::iterator iter = llvmModuleSet()->objSymMap.find(llvmModuleSet()->getSVFValue(val));
+    if (iter == llvmModuleSet()->objSymMap.end())
     {
-        SVFValue* svfVal = llvmModuleSet->getSVFValue(val);
+        SVFValue* svfVal = llvmModuleSet()->getSVFValue(val);
         // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
         // then we treat them as one ConstantObj
-        if (isConstantObjSym(val) && !symInfo->getModelConstants())
+        if (isConstantObjSym(val) && !Options::ModelConsts())
         {
-            symInfo->objSymMap.insert(std::make_pair(svfVal, symInfo->constantSymID()));
+            llvmModuleSet()->objSymMap.insert(std::make_pair(svfVal, svfir->constantSymID()));
         }
         // otherwise, we will create an object for each abstract memory location
         else
         {
             // create obj sym and sym type
-            SymID id = NodeIDAllocator::get()->allocateObjectId();
-            symInfo->objSymMap.insert(std::make_pair(svfVal, id));
+            NodeID id = NodeIDAllocator::get()->allocateObjectId();
+            llvmModuleSet()->objSymMap.insert(std::make_pair(svfVal, id));
             DBOUT(DMemModel,
                   outs() << "create a new obj sym " << id << "\n");
 
             // create a memory object
             ObjTypeInfo* ti = createObjTypeInfo(val);
-            assert(symInfo->objTypeInfoMap.find(id) == symInfo->objTypeInfoMap.end());
-            symInfo->objTypeInfoMap[id] = ti;
+            assert(svfir->objTypeInfoMap.find(id) == svfir->objTypeInfoMap.end());
+            svfir->objTypeInfoMap[id] = ti;
         }
     }
 }
@@ -356,13 +353,13 @@ void SymbolTableBuilder::collectObj(const Value* val)
 void SymbolTableBuilder::collectRet(const Function* val)
 {
     const SVFFunction* svffun =
-        LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(val);
-    SymbolTableInfo::FunToIDMapTy::iterator iter =
-        symInfo->returnSymMap.find(svffun);
-    if (iter == symInfo->returnSymMap.end())
+        llvmModuleSet()->getSVFFunction(val);
+    IRGraph::FunToIDMapTy::iterator iter =
+        svfir->returnSymMap.find(svffun);
+    if (iter == svfir->returnSymMap.end())
     {
-        SymID id = NodeIDAllocator::get()->allocateValueId();
-        symInfo->returnSymMap.insert(std::make_pair(svffun, id));
+        NodeID id = NodeIDAllocator::get()->allocateValueId();
+        svfir->returnSymMap.insert(std::make_pair(svffun, id));
         DBOUT(DMemModel, outs() << "create a return sym " << id << "\n");
     }
 }
@@ -373,13 +370,13 @@ void SymbolTableBuilder::collectRet(const Function* val)
 void SymbolTableBuilder::collectVararg(const Function* val)
 {
     const SVFFunction* svffun =
-        LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(val);
-    SymbolTableInfo::FunToIDMapTy::iterator iter =
-        symInfo->varargSymMap.find(svffun);
-    if (iter == symInfo->varargSymMap.end())
+        llvmModuleSet()->getSVFFunction(val);
+    IRGraph::FunToIDMapTy::iterator iter =
+        svfir->varargSymMap.find(svffun);
+    if (iter == svfir->varargSymMap.end())
     {
-        SymID id = NodeIDAllocator::get()->allocateValueId();
-        symInfo->varargSymMap.insert(std::make_pair(svffun, id));
+        NodeID id = NodeIDAllocator::get()->allocateValueId();
+        svfir->varargSymMap.insert(std::make_pair(svffun, id));
         DBOUT(DMemModel, outs() << "create a vararg sym " << id << "\n");
     }
 }
@@ -394,7 +391,7 @@ void SymbolTableBuilder::handleCE(const Value* val)
         if (const ConstantExpr* ce = isGepConstantExpr(ref))
         {
             DBOUT(DMemModelCE, outs() << "handle constant expression "
-                  << LLVMModuleSet::getLLVMModuleSet()
+                  << llvmModuleSet()
                   ->getSVFValue(ref)
                   ->toString()
                   << "\n");
@@ -411,7 +408,7 @@ void SymbolTableBuilder::handleCE(const Value* val)
         else if (const ConstantExpr* ce = isCastConstantExpr(ref))
         {
             DBOUT(DMemModelCE, outs() << "handle constant expression "
-                  << LLVMModuleSet::getLLVMModuleSet()
+                  << llvmModuleSet()
                   ->getSVFValue(ref)
                   ->toString()
                   << "\n");
@@ -424,7 +421,7 @@ void SymbolTableBuilder::handleCE(const Value* val)
         else if (const ConstantExpr* ce = isSelectConstantExpr(ref))
         {
             DBOUT(DMemModelCE, outs() << "handle constant expression "
-                  << LLVMModuleSet::getLLVMModuleSet()
+                  << llvmModuleSet()
                   ->getSVFValue(ref)
                   ->toString()
                   << "\n");
@@ -577,7 +574,7 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant* C)
 
 ObjTypeInference *SymbolTableBuilder::getTypeInference()
 {
-    return LLVMModuleSet::getLLVMModuleSet()->getTypeInference();
+    return llvmModuleSet()->getTypeInference();
 }
 
 
@@ -595,7 +592,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
     const PointerType *originalPType = SVFUtil::dyn_cast<PointerType>(inst->getType());
     const Type* inferedType = nullptr;
     assert(originalPType && "empty type?");
-    const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
+    const SVFInstruction* svfinst = llvmModuleSet()->getSVFInstruction(inst);
     if(LLVMUtil::isHeapAllocExtCallViaRet(inst))
     {
         if(const Value* v = getFirstUseViaCastInst(inst))
@@ -668,7 +665,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
     {
         (void) getOrAddSVFTypeInfo(objTy);
         ObjTypeInfo* typeInfo = new ObjTypeInfo(
-            LLVMModuleSet::getLLVMModuleSet()->getSVFType(objTy),
+            llvmModuleSet()->getSVFType(objTy),
             Options::MaxFieldLimit());
         initTypeInfo(typeInfo,val, objTy);
         return typeInfo;
@@ -677,11 +674,11 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
     {
         writeWrnMsg("try to create an object with a non-pointer type.");
         writeWrnMsg(val->getName().str());
-        writeWrnMsg("(" + LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)->getSourceLoc() + ")");
+        writeWrnMsg("(" + llvmModuleSet()->getSVFValue(val)->getSourceLoc() + ")");
         if (isConstantObjSym(val))
         {
             ObjTypeInfo* typeInfo = new ObjTypeInfo(
-                LLVMModuleSet::getLLVMModuleSet()->getSVFType(val->getType()),
+                llvmModuleSet()->getSVFType(val->getType()),
                 0);
             initTypeInfo(typeInfo,val, val->getType());
             return typeInfo;
@@ -699,7 +696,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
  */
 void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
 {
-    const Type *elemTy = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(typeinfo->getType());
+    const Type *elemTy = llvmModuleSet()->getLLVMType(typeinfo->getType());
     // Find the inter nested array element
     while (const ArrayType* AT = SVFUtil::dyn_cast<ArrayType>(elemTy))
     {
@@ -746,7 +743,7 @@ u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val)
                     callInst->getCalledFunction())
         {
             const SVFFunction* svfFunction =
-                LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(
+                llvmModuleSet()->getSVFFunction(
                     calledFunction);
             std::vector<const Value*> args;
             // Heap alloc functions have annoation like "AllocSize:Arg1"
@@ -812,7 +809,7 @@ u32_t SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value*
 {
     typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
     analyzeObjType(typeinfo, val);
-    const Type* objTy = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(typeinfo->getType());
+    const Type* objTy = llvmModuleSet()->getLLVMType(typeinfo->getType());
     if(SVFUtil::isa<ArrayType>(objTy))
         return getNumOfElements(objTy);
     else if(const StructType* st = SVFUtil::dyn_cast<StructType>(objTy))
@@ -820,8 +817,8 @@ u32_t SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value*
         /// For an C++ class, it can have variant elements depending on the vtable size,
         /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
         if(cppUtil::classTyHasVTable(st))
-            typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(
-                                                    LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->ptrType()));
+            typeinfo->resetTypeForHeapStaticObj(llvmModuleSet()->getSVFType(
+                                                    llvmModuleSet()->getTypeInference()->ptrType()));
         else
             return getNumOfElements(objTy);
     }
@@ -961,5 +958,5 @@ u32_t SymbolTableBuilder::getNumOfFlattenElements(const Type* T)
 
 StInfo* SymbolTableBuilder::getOrAddSVFTypeInfo(const Type* T)
 {
-    return LLVMModuleSet::getLLVMModuleSet()->getSVFType(T)->getTypeInfo();
+    return llvmModuleSet()->getSVFType(T)->getTypeInfo();
 }

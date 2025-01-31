@@ -186,7 +186,7 @@ void MRGenerator::collectModRefForLoadStore()
         for (SVFFunction::const_iterator iter = fun.begin(), eiter = fun.end();
                 iter != eiter; ++iter)
         {
-            const SVFBasicBlock* bb = *iter;
+            const SVFBasicBlock* bb = iter->second;
             for (const auto& inst: bb->getICFGNodeList())
             {
                 SVFStmtList& pagEdgeList = getPAGEdgesFromInst(inst);
@@ -722,26 +722,23 @@ ModRefInfo MRGenerator::getModRefInfo(const CallICFGNode* cs)
  * Determine whether a const CallICFGNode* instruction can mod or ref
  * a specific memory location pointed by V
  */
-ModRefInfo MRGenerator::getModRefInfo(const CallICFGNode* cs, const SVFValue* V)
+ModRefInfo MRGenerator::getModRefInfo(const CallICFGNode* cs, const SVFVar* V)
 {
     bool ref = false;
     bool mod = false;
 
-    if (pta->getPAG()->hasValueNode(V))
-    {
-        const NodeBS pts(pta->getPts(pta->getPAG()->getValueNode(V)).toNodeBS());
-        const NodeBS csRef = getRefInfoForCall(cs);
-        const NodeBS csMod = getModInfoForCall(cs);
-        NodeBS ptsExpanded, csRefExpanded, csModExpanded;
-        pta->expandFIObjs(pts, ptsExpanded);
-        pta->expandFIObjs(csRef, csRefExpanded);
-        pta->expandFIObjs(csMod, csModExpanded);
+    const NodeBS pts(pta->getPts(V->getId()).toNodeBS());
+    const NodeBS csRef = getRefInfoForCall(cs);
+    const NodeBS csMod = getModInfoForCall(cs);
+    NodeBS ptsExpanded, csRefExpanded, csModExpanded;
+    pta->expandFIObjs(pts, ptsExpanded);
+    pta->expandFIObjs(csRef, csRefExpanded);
+    pta->expandFIObjs(csMod, csModExpanded);
 
-        if (csRefExpanded.intersects(ptsExpanded))
-            ref = true;
-        if (csModExpanded.intersects(ptsExpanded))
-            mod = true;
-    }
+    if (csRefExpanded.intersects(ptsExpanded))
+        ref = true;
+    if (csModExpanded.intersects(ptsExpanded))
+        mod = true;
 
     if (mod && ref)
         return ModRefInfo::ModRef;

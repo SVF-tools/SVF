@@ -46,7 +46,7 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
     assert(V);
     const Value* value = getBaseValueForExtArg(V);
     const Type *objType = LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->inferObjType(value);
-    u32_t numOfElems = pag->getSymbolInfo()->getNumOfFlattenElements(LLVMModuleSet::getLLVMModuleSet()->getSVFType(objType));
+    u32_t numOfElems = pag->getNumOfFlattenElements(LLVMModuleSet::getLLVMModuleSet()->getSVFType(objType));
     /// use user-specified size for this copy operation if the size is a constaint int
     if(szValue && SVFUtil::isa<ConstantInt>(szValue))
     {
@@ -61,16 +61,16 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
         // make a ConstantInt and create char for the content type due to byte-wise copy
         const ConstantInt* offset = ConstantInt::get(context, llvm::APInt(32, ei));
         const SVFValue* svfOffset = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offset);
-        if (!pag->getSymbolInfo()->hasValSym(svfOffset))
+        if (!llvmModuleSet()->hasValueNode(svfOffset))
         {
-            SymbolTableBuilder builder(pag->getSymbolInfo());
+            SymbolTableBuilder builder(pag);
             builder.collectSym(offset);
-            SymID id = pag->getSymbolInfo()->getValSym(svfOffset);
+            NodeID id = llvmModuleSet()->getValueNode(svfOffset);
             pag->addConstantIntValNode(id, LLVMUtil::getIntegerValue(offset), nullptr, svfOffset->getType());
             llvmModuleSet()->addToSVFVar2LLVMValueMap(offset,
                     pag->getGNode(id));
         }
-        ls.addOffsetVarAndGepTypePair(getPAG()->getGNode(getPAG()->getValueNode(svfOffset)), nullptr);
+        ls.addOffsetVarAndGepTypePair(getPAG()->getGNode(llvmModuleSet()->getValueNode(svfOffset)), nullptr);
         fields.push_back(ls);
     }
     return objType;
@@ -114,9 +114,9 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     for (u32_t index = 0; index < sz; index++)
     {
         LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
-        const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(dtype),
+        const SVFType* dElementType = pag->getFlatternedElemType(llvmmodule->getSVFType(dtype),
                                       fields[index].getConstantStructFldIdx());
-        const SVFType* sElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(stype),
+        const SVFType* sElementType = pag->getFlatternedElemType(llvmmodule->getSVFType(stype),
                                       fields[index].getConstantStructFldIdx());
         NodeID dField = getGepValVar(D,fields[index],dElementType);
         NodeID sField = getGepValVar(S,fields[index],sElementType);
@@ -134,8 +134,8 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
 
     if (isHeapAllocExtCallViaRet(callICFGNode))
     {
-        NodeID val = pag->getValueNode(svfInst);
-        NodeID obj = pag->getObjectNode(svfInst);
+        NodeID val = llvmModuleSet()->getValueNode(svfInst);
+        NodeID obj = llvmModuleSet()->getObjectNode(svfInst);
         addAddrWithHeapSz(obj, val, cs);
     }
     else if (isHeapAllocExtCallViaArg(callICFGNode))
@@ -144,7 +144,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         const SVFValue* arg = svfCall->getArgOperand(arg_pos);
         if (arg->getType()->isPointerTy())
         {
-            NodeID vnArg = pag->getValueNode(arg);
+            NodeID vnArg = llvmModuleSet()->getValueNode(arg);
             NodeID dummy = pag->addDummyValNode();
             NodeID obj = pag->addDummyObjNode(arg->getType());
             if (vnArg && dummy && obj)
@@ -184,7 +184,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         for (u32_t index = 0; index < sz; index++)
         {
             LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
-            const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(dtype),
+            const SVFType* dElementType = pag->getFlatternedElemType(llvmmodule->getSVFType(dtype),
                                           dstFields[index].getConstantStructFldIdx());
             NodeID dField = getGepValVar(cs->getArgOperand(0), dstFields[index], dElementType);
             addStoreEdge(getValueNode(cs->getArgOperand(1)),dField);
@@ -237,7 +237,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
 
         // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
         // Now we calculate the offset from base to vArg3
-        NodeID vnArg3 = pag->getValueNode(svfCall->getArgOperand(3));
+        NodeID vnArg3 = llvmModuleSet()->getValueNode(svfCall->getArgOperand(3));
         APOffset offset =
             getAccessPathFromBaseNode(vnArg3).getConstantStructFldIdx();
 
@@ -250,10 +250,10 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         {
             if((u32_t)i >= fields.size())
                 break;
-            const SVFType* elementType = pag->getSymbolInfo()->getFlatternedElemType(pag->getTypeLocSetsMap(vnArg3).first,
+            const SVFType* elementType = pag->getFlatternedElemType(pag->getTypeLocSetsMap(vnArg3).first,
                                          fields[i].getConstantStructFldIdx());
             NodeID vnD = getGepValVar(cs->getArgOperand(3), fields[i], elementType);
-            NodeID vnS = pag->getValueNode(svfCall->getArgOperand(1));
+            NodeID vnS = llvmModuleSet()->getValueNode(svfCall->getArgOperand(1));
             if(vnD && vnS)
                 addStoreEdge(vnS,vnD);
         }
@@ -277,7 +277,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
                 if (actualParm->isPointer() && formalParm->getType()->isPointerTy())
                 {
                     FunEntryICFGNode *entry = pag->getICFG()->getFunEntryICFGNode(forkedFun);
-                    addThreadForkEdge(actualParm->getId(), pag->getValueNode(formalParm), callICFGNode, entry);
+                    addThreadForkEdge(actualParm->getId(), llvmModuleSet()->getValueNode(formalParm), callICFGNode, entry);
                 }
             }
         }

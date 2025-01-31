@@ -39,7 +39,7 @@
 #include "SVF-LLVM/CHGBuilder.h"
 #include "Util/Options.h"
 #include "SVF-LLVM/CppUtil.h"
-#include "SVFIR/SymbolTableInfo.h"
+#include "SVFIR/ObjTypeInfo.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVFIR/SVFModule.h"
@@ -377,7 +377,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
             string vtblClassName = getClassNameFromVtblObj(globalvalue->getName().str());
             CHNode *node = chg->getNode(vtblClassName);
             assert(node && "node not found?");
-            SymID i = SymbolTableInfo::SymbolInfo()->getObjSym(llvmModuleSet()->getSVFGlobalValue(globalvalue));
+            NodeID i = llvmModuleSet()->getObjectNode(llvmModuleSet()->getSVFGlobalValue(globalvalue));
             SVFVar* pVar = PAG::getPAG()->getGNode(i);
             GlobalObjVar* globalObjVar = SVFUtil::cast<GlobalObjVar>(pVar);
             globalObjVar->setName(vtblClassName);

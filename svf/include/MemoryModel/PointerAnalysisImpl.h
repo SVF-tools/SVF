@@ -215,8 +215,11 @@ private:
 
 public:
     /// Interface expose to users of our pointer analysis, given Value infos
-    AliasResult alias(const SVFValue* V1,
-                      const SVFValue* V2) override;
+    AliasResult alias(const SVFVar* V1,
+                      const SVFVar* V2) override
+    {
+        return alias(V1->getId(), V2->getId());
+    }
 
     /// Interface expose to users of our pointer analysis, given PAGNodeID
     AliasResult alias(NodeID node1, NodeID node2) override;
@@ -501,9 +504,9 @@ public:
     }
 
     /// Interface expose to users of our pointer analysis, given Value infos
-    virtual inline AliasResult alias(const SVFValue* V1, const SVFValue* V2)
+    virtual inline AliasResult alias(const SVFVar* V1, const SVFVar* V2)
     {
-        return  alias(pag->getValueNode(V1),pag->getValueNode(V2));
+        return  alias(V1->getId(), V2->getId());
     }
     /// Interface expose to users of our pointer analysis, given two pointers
     virtual inline AliasResult alias(NodeID node1, NodeID node2)

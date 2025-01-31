@@ -127,7 +127,7 @@ void SVFStat::performStat()
     u32_t numOfConstant = 0;
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
-    Set<SymID> memObjSet;
+    Set<NodeID> memObjSet;
     for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
         PAGNode* node = it->second;
@@ -174,10 +174,10 @@ void SVFStat::performStat()
 
 
 
-    generalNumMap["TotalPointers"] = pag->getValueNodeNum() + pag->getFieldValNodeNum();
+    generalNumMap["TotalPointers"] = pag->getValueNodeNum();
     generalNumMap["TotalObjects"] = pag->getObjectNodeNum();
     generalNumMap["TotalFieldObjects"] = pag->getFieldObjNodeNum();
-    generalNumMap["MaxStructSize"] = SymbolTableInfo::SymbolInfo()->getMaxStructSize();
+    generalNumMap["MaxStructSize"] = pag->getMaxStructSize();
     generalNumMap["TotalSVFStmts"] = pag->getPAGEdgeNum();
     generalNumMap["TotalPTASVFStmts"] = pag->getPTAPAGEdgeNum();
     generalNumMap["FIObjNum"] = fiObjNumber;
@@ -230,7 +230,7 @@ void SVFStat::branchStat()
         for (SVFFunction::const_iterator bbIt = func->begin(), bbEit = func->end();
                 bbIt != bbEit; ++bbIt)
         {
-            const SVFBasicBlock* bb = *bbIt;
+            const SVFBasicBlock* bb = bbIt->second;
             u32_t numOfSucc = bb->getNumSuccessors();
             if (numOfSucc == 2)
                 numOfBB_2Succ++;

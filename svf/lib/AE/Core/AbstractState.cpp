@@ -267,15 +267,15 @@ IntervalValue AbstractState::getElementIndex(const GepStmt* gep)
         {
             if (Options::ModelArrays())
             {
-                const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()->getTypeInfo(type)->getFlattenedElemIdxVec();
+                const std::vector<u32_t>& so = PAG::getPAG()->getTypeInfo(type)->getFlattenedElemIdxVec();
                 if (so.empty() || idxUb >= (APOffset)so.size() || idxLb < 0)
                 {
                     idxLb = idxUb = 0;
                 }
                 else
                 {
-                    idxLb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, idxLb);
-                    idxUb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, idxUb);
+                    idxLb = PAG::getPAG()->getFlattenedElemIdx(type, idxLb);
+                    idxUb = PAG::getPAG()->getFlattenedElemIdx(type, idxUb);
                 }
             }
             else

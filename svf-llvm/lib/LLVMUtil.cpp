@@ -28,7 +28,7 @@
  */
 
 #include "SVF-LLVM/LLVMUtil.h"
-#include "SVFIR/SymbolTableInfo.h"
+#include "SVFIR/ObjTypeInfo.h"
 #include <sstream>
 #include <llvm/Support/raw_ostream.h>
 #include "SVF-LLVM/LLVMModule.h"
@@ -726,10 +726,6 @@ std::string SVFValue::toString() const
     {
         rawstr << "Function: " << fun->getName() << " ";
     }
-    else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(this))
-    {
-        rawstr << "BasicBlock: " << bb->getName() << " ";
-    }
     else
     {
         auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
@@ -742,6 +738,18 @@ std::string SVFValue::toString() const
     return rawstr.str();
 }
 
+const std::string SVFBasicBlock::toString() const
+{
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
+    if (llvmVal)
+        rawstr << " " << *llvmVal << " ";
+    else
+        rawstr << " No llvmVal found";
+    rawstr << this->getSourceLoc();
+    return rawstr.str();
+}
 
 const std::string SVFBaseNode::valueOnlyToString() const
 {

@@ -72,8 +72,9 @@ void LockAnalysis::collectLockUnlocksites()
 
     for (const SVFFunction* F : tct->getSVFModule()->getFunctionSet())
     {
-        for (const SVFBasicBlock* bb : F->getBasicBlockList())
+        for (auto it : *F)
         {
+            const SVFBasicBlock* bb = it.second;
             for (const ICFGNode* icfgNode : bb->getICFGNodeList())
             {
                 if (isa<CallICFGNode>(icfgNode) && tcg->getThreadAPI()->isTDRelease(cast<CallICFGNode>(icfgNode)))

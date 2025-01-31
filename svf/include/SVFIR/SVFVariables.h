@@ -31,7 +31,7 @@
 #define INCLUDE_SVFIR_SVFVARIABLE_H_
 
 #include "Graphs/GenericGraph.h"
-#include "SVFIR/SymbolTableInfo.h"
+#include "SVFIR/ObjTypeInfo.h"
 #include "SVFIR/SVFStatements.h"
 
 namespace SVF
@@ -443,7 +443,7 @@ class GepValVar: public ValVar
 
 private:
     AccessPath ap;	// AccessPath
-    ValVar* base;	// base node
+    const ValVar* base;	// base node
     const SVFType* gepValType;
 
     /// Constructor to create empty GeValVar (for SVFIRReader/deserialization)
@@ -475,7 +475,7 @@ public:
     //@}
 
     /// Constructor
-    GepValVar(ValVar* baseNode, NodeID i, const AccessPath& ap,
+    GepValVar(const ValVar* baseNode, NodeID i, const AccessPath& ap,
               const SVFType* ty, const ICFGNode* node);
 
     /// offset of the base value variable
@@ -485,7 +485,7 @@ public:
     }
 
     /// Return the base object from which this GEP node came from.
-    inline ValVar* getBaseNode(void) const
+    inline const ValVar* getBaseNode(void) const
     {
         return base;
     }
@@ -598,7 +598,7 @@ public:
     virtual const std::string toString() const;
 
     /// Get the memory object id
-    inline SymID getId() const
+    inline NodeID getId() const
     {
         return id;
     }
@@ -648,10 +648,7 @@ public:
     }
 
     /// Whether it is a black hole object
-    bool isBlackHoleObj() const
-    {
-        return SymbolTableInfo::isBlkObj(getId());
-    }
+    bool isBlackHoleObj() const;
 
     /// Get the byte size of this object
     u32_t getByteSizeOfObj() const
@@ -802,10 +799,8 @@ public:
     }
 
     /// Return the type of this gep object
-    inline virtual const SVFType* getType() const
-    {
-        return SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, apOffset);
-    }
+    inline virtual const SVFType* getType() const;
+
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const
