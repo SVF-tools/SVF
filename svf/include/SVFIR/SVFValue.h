@@ -292,6 +292,8 @@ public:
     //@}
 };
 
+class ArgValVar;
+
 class SVFFunction : public SVFValue
 {
     friend class LLVMModuleSet;
@@ -316,7 +318,7 @@ private:
     const SVFFunctionType* funcType; /// FunctionType, which is different from the type (PointerType) of this SVFFunction
     SVFLoopAndDomInfo* loopAndDom;  /// the loop and dominate information
     const SVFFunction* realDefFun;  /// the definition of a function across multiple modules
-    std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
+    std::vector<const ArgValVar*> allArgs;    /// all formal arguments of this function
     SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
     const CallGraphNode *callGraphNode;          /// call graph node for this function
     BasicBlockGraph* bbGraph; /// the basic block graph of this function
@@ -327,7 +329,7 @@ protected:
         callGraphNode = cgn;
     }
 
-    inline void addArgument(SVFArgument* arg)
+    inline void addArgument(const ArgValVar* arg)
     {
         allArgs.push_back(arg);
     }
@@ -417,7 +419,7 @@ public:
     }
 
     u32_t arg_size() const;
-    const SVFArgument* getArg(u32_t idx) const;
+    const ArgValVar* getArg(u32_t idx) const;
     bool isVarArg() const;
 
     inline bool hasBasicBlock() const

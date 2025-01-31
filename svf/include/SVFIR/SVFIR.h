@@ -553,10 +553,10 @@ private:
         return addValNode(node);
     }
 
-    NodeID addArgValNode(NodeID i, u32_t argNo, const ICFGNode* icfgNode, const CallGraphNode* callGraphNode, const SVFType* type, bool isUncalled = false)
+    NodeID addArgValNode(NodeID i, u32_t argNo, const ICFGNode* icfgNode, const CallGraphNode* callGraphNode, const SVFType* type)
     {
         ArgValVar* node =
-            new ArgValVar(i, argNo, icfgNode, callGraphNode, type, isUncalled);
+            new ArgValVar(i, argNo, icfgNode, callGraphNode, type);
         return addValNode(node);
     }
 
