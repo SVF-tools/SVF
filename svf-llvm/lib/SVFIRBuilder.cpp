@@ -405,8 +405,9 @@ void SVFIRBuilder::initialiseNodes()
            && "not all node have been initialized!!!");
 
     /// add argvalvar for svffunctions
-    for (auto& fun: svfModule->getFunctionSet()) {
-       const Function* llvmFun = SVFUtil::cast<Function>(llvmModuleSet()->getLLVMValue(fun));
+    for (auto& fun: svfModule->getFunctionSet())
+    {
+        const Function* llvmFun = SVFUtil::cast<Function>(llvmModuleSet()->getLLVMValue(fun));
         for (const Argument& arg : llvmFun->args())
         {
             const_cast<SVFFunction *>(fun)->addArgument(
