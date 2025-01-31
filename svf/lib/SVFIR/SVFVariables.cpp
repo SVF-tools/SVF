@@ -102,9 +102,9 @@ const std::string ObjVar::toString() const
 }
 
 ArgValVar::ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn,
-                     const SVF::CallGraphNode* callGraphNode, const SVFType* svfType, bool isUncalled)
+                     const SVF::CallGraphNode* callGraphNode, const SVFType* svfType)
     : ValVar(i, svfType, icn, ArgValNode),
-      cgNode(callGraphNode), argNo(argNo), uncalled(isUncalled)
+      cgNode(callGraphNode), argNo(argNo)
 {
 
 }
