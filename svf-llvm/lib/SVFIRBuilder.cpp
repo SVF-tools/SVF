@@ -230,7 +230,7 @@ void SVFIRBuilder::initialiseNodes()
                 iter->second, argval->getArgNo(), icfgNode,
                 llvmModuleSet()->getCallGraphNode(argval->getParent()),iter->first->getType());
             if (!argval->hasName())
-                pag->getGNode(iter->second)->setName(std::to_string(argval->getArgNo()));
+                pag->getGNode(iter->second)->setName("arg_" + std::to_string(argval->getArgNo()));
         }
         else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
         {
