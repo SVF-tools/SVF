@@ -73,10 +73,10 @@ protected:
 
         /// Both rep and sub nodes need to be processed later.
         /// Collect sub nodes from SCCDetector.
-        NodeStack revTopoStack = this->getSCCDetector()->revTopoNodeStack();
+        FIFOWorkList<NodeID> revTopoStack = this->getSCCDetector()->revTopoNodeStack();
         while (!revTopoStack.empty())
         {
-            NodeID nodeId = revTopoStack.top();
+            NodeID nodeId = revTopoStack.front();
             revTopoStack.pop();
             const NodeBS& subNodes = this->getSCCDetector()->subNodes(nodeId);
             for (NodeBS::iterator it = subNodes.begin(), eit = subNodes.end(); it != eit; ++it)

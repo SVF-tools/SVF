@@ -130,12 +130,17 @@ public:
         return _T;
     }
 
+    inline const GNodeStack& topoNodeStack() const
+    {
+        return _T;
+    }
+
     /// Return a handle to the stack of nodes in reverse topological
     /// order. This will be used to seed the initial solution
     /// and improve efficiency.
-    inline GNodeStack revTopoNodeStack()
+    inline FIFOWorkList<NodeID> revTopoNodeStack() const
     {
-        GNodeStack revTopoOrder;
+        FIFOWorkList<NodeID> revTopoOrder;
         GNodeStack topoOrder = topoNodeStack();
         while(!topoOrder.empty())
         {

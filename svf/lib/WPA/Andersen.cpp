@@ -709,12 +709,12 @@ inline void Andersen::collapseFields()
  */
 void Andersen::mergeSccCycle()
 {
-    NodeStack revTopoOrder = getSCCDetector()->revTopoNodeStack();
-    while (!revTopoOrder.empty())
-    {
-        NodeID repNodeId = revTopoOrder.top();
-        revTopoOrder.pop();
+    NodeStack topoOrder = getSCCDetector()->topoNodeStack();
 
+    while (!topoOrder.empty())
+    {
+        NodeID repNodeId = topoOrder.top();
+        topoOrder.pop();
         const NodeBS& subNodes = getSCCDetector()->subNodes(repNodeId);
         // merge sub nodes to rep node
         mergeSccNodes(repNodeId, subNodes);
