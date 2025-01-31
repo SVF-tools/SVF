@@ -238,12 +238,12 @@ void MRGenerator::collectModRefForCall()
 
     DBOUT(DGENERAL, outs() << pasMsg("\t\tPerform Callsite Mod-Ref \n"));
 
-    WorkList worklist;
-    getCallGraphSCCRevTopoOrder(worklist);
+    NodeStack worklist = callGraphSCC->revTopoNodeStack();
 
     while(!worklist.empty())
     {
-        NodeID callGraphNodeID = worklist.pop();
+        NodeID callGraphNodeID = worklist.top();
+        worklist.pop();
         /// handle all sub scc nodes of this rep node
         const NodeBS& subNodes = callGraphSCC->subNodes(callGraphNodeID);
         for(NodeBS::iterator it = subNodes.begin(), eit = subNodes.end(); it!=eit; ++it)
@@ -457,20 +457,6 @@ bool MRGenerator::addModSideEffectOfCallSite(const CallICFGNode* cs, const NodeB
 
 
 /*!
- * Get the reverse topo order of scc call graph
- */
-void MRGenerator::getCallGraphSCCRevTopoOrder(WorkList& worklist)
-{
-    NodeStack revTopoNodeStack = callGraphSCC->revTopoNodeStack();
-    while(!revTopoNodeStack.empty())
-    {
-        NodeID callgraphNodeID = revTopoNodeStack.top();
-        revTopoNodeStack.pop();
-        worklist.push(callgraphNodeID);
-    }
-}
-
-/*!
  * Get all objects might pass into and pass out of callee(s) from a callsite
  */
 void MRGenerator::collectCallSitePts(const CallICFGNode* cs)
@@ -633,7 +619,7 @@ bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGN
  * Call site mod-ref analysis
  * Compute mod-ref of all callsites invoking this call graph node
  */
-void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& worklist)
+void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, NodeStack& worklist)
 {
 
     /// add ref/mod set of callee to its invocation callsites at caller

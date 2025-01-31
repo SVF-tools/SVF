@@ -268,8 +268,6 @@ private:
     /// Get all the objects in callee's modref escaped via global objects (the chain pts of globals)
     void getEscapObjviaGlobals(NodeBS& globs, const NodeBS& pts);
 
-    /// Get reverse topo call graph scc
-    void getCallGraphSCCRevTopoOrder(WorkList& worklist);
 
 protected:
     MRGenerator(BVDataPTAImpl* p, bool ptrOnly);
@@ -330,7 +328,7 @@ protected:
     }
 
     /// Mod-Ref analysis for callsite invoking this callGraphNode
-    virtual void modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& worklist);
+    virtual void modRefAnalysis(PTACallGraphNode* callGraphNode, NodeStack& worklist);
 
     /// Get Mod-Ref of a callee function
     virtual bool handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGNode* cs, const SVFFunction* fun);
