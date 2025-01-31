@@ -62,7 +62,7 @@ public:
     typedef Map<const CallICFGNode*,SVFVarList> CSToArgsListMap;
     typedef Map<const RetICFGNode*,const SVFVar*> CSToRetMap;
     typedef Map<const SVFFunction*,const SVFVar*> FunToRetMap;
-    typedef Map<const CallGraphNode*,const SVFVar *> FunToFunObjVarMap;
+    typedef Map<const CallGraphNode*,const FunObjVar *> FunToFunObjVarMap;
     typedef Map<const SVFFunction*,SVFStmtSet> FunToPAGEdgeSetMap;
     typedef Map<const ICFGNode*,SVFStmtList> ICFGNode2SVFStmtsMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
@@ -331,7 +331,7 @@ public:
     }
     //@}
 
-    inline const SVFVar* getFunObjVar(const CallGraphNode*  node) const
+    inline const FunObjVar* getFunObjVar(const CallGraphNode*  node) const
     {
         FunToFunObjVarMap::const_iterator it = funToFunObjvarMap.find(node);
         assert(it != funToFunObjvarMap.end() && "this function doesn't have funobjvar");
