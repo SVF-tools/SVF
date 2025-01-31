@@ -283,7 +283,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
     CallGraphNode* callFunc = callgraph->addCallGraphNode(svfFunc);
     BasicBlockGraph* bbGraph = new BasicBlockGraph(callFunc);
     svfFunc->setBasicBlockGraph(bbGraph);
-    svfModule->addFunctionSet(svfFunc);
+    svfModule->addFunctionSet(callFunc);
     addFunctionMap(func, svfFunc);
 
     for (const Argument& arg : func->args())

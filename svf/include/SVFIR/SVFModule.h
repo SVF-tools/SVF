@@ -43,7 +43,7 @@ class SVFModule
     friend class SVFIRReader;
 
 public:
-    typedef std::vector<const SVFFunction*> FunctionSetType;
+    typedef std::vector<const CallGraphNode*> FunctionSetType;
     typedef std::vector<SVFGlobalValue*> GlobalSetType;
     typedef std::vector<SVFGlobalValue*> AliasSetType;
     typedef std::vector<SVFConstant*> ConstantType;
@@ -100,10 +100,10 @@ public:
         return !pagReadFromTxt.empty();
     }
 
-    const SVFFunction* getSVFFunction(const std::string& name);
+    const CallGraphNode* getSVFFunction(const std::string& name);
 
     ///@{
-    inline void addFunctionSet(SVFFunction* svfFunc)
+    inline void addFunctionSet(CallGraphNode* svfFunc)
     {
         FunctionSet.push_back(svfFunc);
     }

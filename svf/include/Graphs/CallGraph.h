@@ -144,6 +144,10 @@ public:
     /// Constructor
     CallGraphNode(NodeID i, const SVFFunction* f);
 
+    ~CallGraphNode(){
+        delete fun;
+    }
+
     void init();
 
     inline bool isDeclaration() const

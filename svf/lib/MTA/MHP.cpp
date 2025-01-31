@@ -144,9 +144,9 @@ void MHP::analyzeInterleaving()
 void MHP::updateNonCandidateFunInterleaving()
 {
     SVFModule* module = tct->getSVFModule();
-    for (const SVFFunction* fun : module->getFunctionSet())
+    for (const CallGraphNode* fun : module->getFunctionSet())
     {
-        if (!tct->isCandidateFun(fun->getCallGraphNode()) && !isExtCall(fun))
+        if (!tct->isCandidateFun(fun) && !isExtCall(fun))
         {
             const ICFGNode* entryNode = fun->getEntryBlock()->front();
 
