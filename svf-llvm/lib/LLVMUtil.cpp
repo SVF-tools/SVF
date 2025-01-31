@@ -718,14 +718,6 @@ bool LLVMUtil::isNonInstricCallSite(const Instruction* inst)
 namespace SVF
 {
 
-u32_t IRGraph::getValueNodeNum() const {
-    return LLVMModuleSet::getLLVMModuleSet()->getValueNodeNum();
-}
-
-u32_t IRGraph::getObjectNodeNum() const {
-    return LLVMModuleSet::getLLVMModuleSet()->getObjNodeNum();
-}
-
 std::string SVFValue::toString() const
 {
     std::string str;

@@ -154,8 +154,8 @@ void FlowSensitiveStat::performStat()
     timeStatMap["UpdateCGTime"] = fspta->updateCallGraphTime;
     timeStatMap["PhiTime"] = fspta->phiTime;
 
-    PTNumStatMap["TotalPointers"] = pag->getValueNodeNum() + pag->getFieldValNodeNum();
-    PTNumStatMap["TotalObjects"] = pag->getObjectNodeNum() + pag->getFieldObjNodeNum();
+    PTNumStatMap["TotalPointers"] = pag->getValueNodeNum();
+    PTNumStatMap["TotalObjects"] = pag->getObjectNodeNum();
 
     PTNumStatMap["Pointers"] = pag->getValueNodeNum();
     PTNumStatMap["MemObjects"] = pag->getObjectNodeNum();

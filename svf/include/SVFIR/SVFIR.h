@@ -62,6 +62,7 @@ public:
     typedef Map<const CallICFGNode*,SVFVarList> CSToArgsListMap;
     typedef Map<const RetICFGNode*,const SVFVar*> CSToRetMap;
     typedef Map<const SVFFunction*,const SVFVar*> FunToRetMap;
+    typedef Map<const CallGraphNode*,const SVFVar *> FunToFunObjVarMap;
     typedef Map<const SVFFunction*,SVFStmtSet> FunToPAGEdgeSetMap;
     typedef Map<const ICFGNode*,SVFStmtList> ICFGNode2SVFStmtsMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
@@ -89,6 +90,7 @@ private:
     CSToArgsListMap callSiteArgsListMap;	///< Map a callsite to a list of all its actual parameters
     CSToRetMap callSiteRetMap;	///< Map a callsite to its callsite returns PAGNodes
     FunToRetMap funRetMap;	///< Map a function to its unique function return PAGNodes
+    FunToFunObjVarMap funToFunObjvarMap;    ///< Map a function to its unique function object PAGNodes
     CallSiteToFunPtrMap indCallSiteToFunPtrMap; ///< Map an indirect callsite to its function pointer
     FunPtrToCallSitesMap funPtrToCallSitesMap;	///< Map a function pointer to the callsites where it is used
     /// Valid pointers for pointer analysis resolution connected by SVFIR edges (constraints)
@@ -329,6 +331,12 @@ public:
     }
     //@}
 
+    inline const SVFVar* getFunObjVar(const CallGraphNode*  node) const
+    {
+        FunToFunObjVarMap::const_iterator it = funToFunObjvarMap.find(node);
+        assert(it != funToFunObjvarMap.end() && "this function doesn't have funobjvar");
+        return it->second;
+    }
     /// Node and edge statistics
     //@{
     inline u32_t getFieldValNodeNum() const
@@ -621,6 +629,7 @@ private:
     {
         memToFieldsMap[id].set(id);
         FunObjVar* funObj = new FunObjVar(id, ti, callGraphNode, type, node);
+        funToFunObjvarMap[callGraphNode] = funObj;
         return addObjNode(funObj);
     }
 

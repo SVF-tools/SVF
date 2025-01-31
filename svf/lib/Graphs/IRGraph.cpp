@@ -321,17 +321,25 @@ void IRGraph::view()
 }
 
 
-__attribute__((weak))
-u32_t IRGraph::getValueNodeNum() const {
-    assert("IRGraph::getValueNodeNum should be implemented or supported by fronted" && false);
-    abort();
+u32_t IRGraph::getValueNodeNum() {
+    if (valVarNum != 0) return valVarNum;
+    u32_t num = 0;
+    for (const auto& item: *this) {
+        if (SVFUtil::isa<ValVar>(item.second))
+            num++;
+    }
+    return valVarNum = num;
 }
 
 
-__attribute__((weak))
-u32_t IRGraph::getObjectNodeNum() const {
-    assert("IRGraph::getObjectNodeNum should be implemented or supported by fronted" && false);
-    abort();
+u32_t IRGraph::getObjectNodeNum() {
+    if (objVarNum != 0) return objVarNum;
+    u32_t num = 0;
+    for (const auto& item: *this) {
+        if (SVFUtil::isa<ObjVar>(item.second))
+            num++;
+    }
+    return objVarNum = num;
 }
 
 

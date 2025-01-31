@@ -195,10 +195,10 @@ bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* c
         CxtVar funptrVar(dpm.getCondVar().get_cond(), id);
         CxtLocDPItem funptrDpm = getDPIm(funptrVar,getDefSVFGNode(node));
         PointsTo pts = getBVPointsTo(findPT(funptrDpm));
-        // if(pts.test(getPAG()->getObjectNode(callee)))
-        //     return true;
-        // else
-        //     return false;
+        if(pts.test(getPAG()->getFunObjVar(callee->getCallGraphNode())->getId()))
+            return true;
+        else
+            return false;
     }
     return true;
 }

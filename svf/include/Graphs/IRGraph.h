@@ -109,6 +109,8 @@ protected:
     bool fromFile; ///< Whether the SVFIR is built according to user specified data from a txt file
     NodeID nodeNumAfterPAGBuild; ///< initial node number after building SVFIR, excluding later added nodes, e.g., gepobj nodes
     u32_t totalPTAPAGEdge;
+    u32_t valVarNum;
+    u32_t objVarNum;
 
     /// Add a node into the graph
     inline NodeID addNode(SVFVar* node)
@@ -134,7 +136,7 @@ protected:
 
 public:
     IRGraph(bool buildFromFile)
-        : totalSymNum(0), fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0),
+        : totalSymNum(0), fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0), valVarNum(0), objVarNum(0),
           maxStruct(nullptr), maxStSize(0)
     {
     }
@@ -257,9 +259,9 @@ public:
         return nullPtrSymID();
     }
 
-    u32_t getValueNodeNum() const;
+    u32_t getValueNodeNum();
 
-    u32_t getObjectNodeNum() const;
+    u32_t getObjectNodeNum();
 
     /// Constant reader that won't change the state of the symbol table
     //@{
