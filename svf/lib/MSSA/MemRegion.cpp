@@ -183,7 +183,7 @@ void MRGenerator::collectModRefForLoadStore()
         if (Options::IgnoreDeadFun() && fun.isUncalledFunction())
             continue;
 
-        for (SVFFunction::const_iterator iter = fun.begin(), eiter = fun.end();
+        for (CallGraphNode::const_bb_iterator iter = fun.begin(), eiter = fun.end();
                 iter != eiter; ++iter)
         {
             const SVFBasicBlock* bb = iter->second;

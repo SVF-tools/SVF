@@ -594,7 +594,7 @@ void MemSSA::dumpMSSA(OutStream& Out)
             }
         }
 
-        for (SVFFunction::const_iterator bit = fun->begin(), ebit = fun->end();
+        for (CallGraphNode::const_bb_iterator bit = fun->begin(), ebit = fun->end();
                 bit != ebit; ++bit)
         {
             const SVFBasicBlock* bb = bit->second;

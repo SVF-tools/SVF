@@ -67,7 +67,7 @@ void SaberCondAllocator::allocate(const SVFModule *M)
         if (!SVFUtil::isExtCall(func))
         {
             // Allocate conditions for a program.
-            for (SVFFunction::const_iterator bit = func->begin(), ebit = func->end();
+            for (CallGraphNode::const_bb_iterator bit = func->begin(), ebit = func->end();
                     bit != ebit; ++bit)
             {
                 const SVFBasicBlock* bb = bit->second;
