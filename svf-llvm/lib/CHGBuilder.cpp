@@ -377,7 +377,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
             string vtblClassName = getClassNameFromVtblObj(globalvalue->getName().str());
             CHNode *node = chg->getNode(vtblClassName);
             assert(node && "node not found?");
-            NodeID i = PAG::getPAG()->getObjectNode(llvmModuleSet()->getSVFGlobalValue(globalvalue));
+            NodeID i = llvmModuleSet()->getObjectNode(llvmModuleSet()->getSVFGlobalValue(globalvalue));
             SVFVar* pVar = PAG::getPAG()->getGNode(i);
             GlobalObjVar* globalObjVar = SVFUtil::cast<GlobalObjVar>(pVar);
             globalObjVar->setName(vtblClassName);

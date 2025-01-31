@@ -167,7 +167,6 @@ typedef OrderedSet<PointsTo, equalPointsTo> PointsToList;
 void dumpPointsToList(const PointsToList& ptl);
 
 /// Return true if it is an llvm intrinsic instruction
-bool isIntrinsicInst(const SVFInstruction* inst);
 bool isIntrinsicInst(const ICFGNode* inst);
 //@}
 

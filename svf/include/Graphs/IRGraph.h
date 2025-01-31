@@ -71,9 +71,6 @@ public:
 
     /// various maps defined
     //{@
-    /// llvm value to sym id map
-    /// local (%) and global (@) identifiers are pointer types which have a value node id.
-    typedef OrderedMap<const SVFValue*, NodeID> ValueToIDMapTy;
     /// sym id to obj type info map
     typedef OrderedMap<NodeID, ObjTypeInfo*> IDToTypeInfoMapTy;
 
@@ -84,8 +81,6 @@ public:
     //@}
 
 private:
-    ValueToIDMapTy valSymMap;  ///< map a value to its sym id
-    ValueToIDMapTy objSymMap;  ///< map a obj reference to its sym id
     FunToIDMapTy returnSymMap; ///< return map
     FunToIDMapTy varargSymMap; ///< vararg map
     IDToTypeInfoMapTy objTypeInfoMap;       ///< map a memory sym id to its obj
@@ -210,16 +205,6 @@ public:
 
     /// Get different kinds of syms maps
     //@{
-    inline ValueToIDMapTy& valSyms()
-    {
-        return valSymMap;
-    }
-
-    inline ValueToIDMapTy& objSyms()
-    {
-        return objSymMap;
-    }
-
     inline IDToTypeInfoMapTy& idToObjTypeInfoMap()
     {
         return objTypeInfoMap;
@@ -241,16 +226,6 @@ public:
     }
 
     //@}
-
-    /// Get SVFIR Node according to LLVM value
-    ///getNode - Return the node corresponding to the specified pointer.
-    NodeID getValueNode(const SVFValue* V);
-
-    bool hasValueNode(const SVFValue* V);
-
-    /// getObject - Return the obj node id refer to the memory object for the
-    /// specified global, heap or alloca instruction according to llvm value.
-    NodeID getObjectNode(const SVFValue* V);
 
     inline ObjTypeInfo* getObjTypeInfo(NodeID id) const
     {
@@ -282,14 +257,9 @@ public:
         return nullPtrSymID();
     }
 
-    inline u32_t getValueNodeNum() const
-    {
-        return valSymMap.size();
-    }
-    inline u32_t getObjectNodeNum() const
-    {
-        return objTypeInfoMap.size();
-    }
+    u32_t getValueNodeNum() const;
+
+    u32_t getObjectNodeNum() const;
 
     /// Constant reader that won't change the state of the symbol table
     //@{

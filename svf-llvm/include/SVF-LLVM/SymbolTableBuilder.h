@@ -84,6 +84,9 @@ protected:
     void handleCE(const Value* val);
     // @}
 
+    inline LLVMModuleSet* llvmModuleSet() {
+        return LLVMModuleSet::getLLVMModuleSet();
+    }
 
     ObjTypeInference* getTypeInference();
 
