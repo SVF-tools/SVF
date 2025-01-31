@@ -1452,11 +1452,11 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         const CallGraphNode* dstFun = edge->getDstNode()->getFunction();
         if(srcFun!=nullptr && !SVFUtil::isa<RetPE>(edge) && !SVFUtil::isa<FunValVar>(edge->getSrcNode()) && !SVFUtil::isa<FunObjVar>(edge->getSrcNode()))
         {
-            assert(srcFun==curInst->getFunction()->getCallGraphNode() && "SrcNode of the PAGEdge not in the same function?");
+            assert(srcFun==curInst->getFunction() && "SrcNode of the PAGEdge not in the same function?");
         }
         if(dstFun!=nullptr && !SVFUtil::isa<CallPE>(edge) && !SVFUtil::isa<RetValPN>(edge->getDstNode()))
         {
-            assert(dstFun==curInst->getFunction()->getCallGraphNode() && "DstNode of the PAGEdge not in the same function?");
+            assert(dstFun==curInst->getFunction() && "DstNode of the PAGEdge not in the same function?");
         }
 
         /// We assume every GepValVar and its GepStmt are unique across whole program
@@ -1466,7 +1466,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         /// We will have one unique function exit ICFGNode for all returns
         if(curInst->isRetInst())
         {
-            icfgNode = pag->getICFG()->getFunExitICFGNode(curInst->getFunction()->getCallGraphNode());
+            icfgNode = pag->getICFG()->getFunExitICFGNode(curInst->getFunction());
         }
         else
         {

@@ -40,10 +40,14 @@ using namespace SVFUtil;
 
 CallGraph* CallGraphBuilder::createSVFIRCallGraph(SVFModule* svfModule)
 {
-    CallGraph* callgraph = new CallGraph();
-    for (const SVFFunction* svfFunc: svfModule->getFunctionSet())
+    return new CallGraph();
+}
+
+CallGraph* CallGraphBuilder::initVFIRCallGraph(CallGraph* callgraph)
+{
+    for (const auto& item : *callgraph)
     {
-        callgraph->addCallGraphNode(svfFunc);
+        (item.second)->init();
     }
     return callgraph;
 }

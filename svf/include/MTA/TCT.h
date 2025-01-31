@@ -399,7 +399,7 @@ public:
 
     bool hasLoop(const SVFBasicBlock* bb) const
     {
-        const SVFFunction* fun = bb->getFunction();
+        const CallGraphNode* fun = bb->getFunction();
         return fun->hasLoopInfo(bb);
     }
     bool hasLoop(const ICFGNode* inst) const

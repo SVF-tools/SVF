@@ -67,7 +67,7 @@ CDGBuilder::extractNodesBetweenPdomNodes(const SVFBasicBlock *succ, const SVFBas
 {
     if (succ == LCA) return;
     std::vector<const SVFBasicBlock *> path;
-    SVFLoopAndDomInfo *ld = const_cast<SVFFunction *>(LCA->getFunction())->getLoopAndDomInfo();
+    SVFLoopAndDomInfo *ld = const_cast<CallGraphNode *>(LCA->getFunction())->getLoopAndDomInfo();
     dfsNodesBetweenPdomNodes(LCA, succ, path, tgtNodes, ld);
 }
 

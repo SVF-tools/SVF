@@ -205,7 +205,7 @@ private:
 public:
     IntraICFGNode(NodeID id, const SVFBasicBlock* b, bool isReturn) : ICFGNode(id, IntraBlock), isRet(isReturn)
     {
-        fun = b->getFunction()->getCallGraphNode();
+        fun = b->getFunction();
         bb = b;
     }
 
@@ -443,7 +443,7 @@ public:
           isvararg(iv), isVirCallInst(ivc), vtabPtr(nullptr),
           virtualFunIdx(vfi), funNameOfVcall(fnv)
     {
-        fun = b->getFunction()->getCallGraphNode();
+        fun = b->getFunction();
         bb = b;
         type = ty;
     }

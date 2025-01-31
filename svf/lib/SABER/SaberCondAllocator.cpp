@@ -265,7 +265,7 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateProgExit(const BranchS
  */
 SaberCondAllocator::Condition SaberCondAllocator::evaluateLoopExitBranch(const SVFBasicBlock* bb, const SVFBasicBlock* dst)
 {
-    const SVFFunction* svffun = bb->getParent();
+    const CallGraphNode* svffun = bb->getParent();
     assert(svffun == dst->getParent() && "two basic blocks should be in the same function");
 
     if (svffun->isLoopHeader(bb))
@@ -436,8 +436,8 @@ void SaberCondAllocator::collectBBCallingProgExit(const SVFBasicBlock &bb)
         if (const CallICFGNode* cs = SVFUtil::dyn_cast<CallICFGNode>(icfgNode))
             if (SVFUtil::isProgExitCall(cs))
             {
-                const SVFFunction* svfun = bb.getParent();
-                funToExitBBsMap[svfun->getCallGraphNode()].insert(&bb);
+                const CallGraphNode* svfun = bb.getParent();
+                funToExitBBsMap[svfun].insert(&bb);
             }
     }
 }
@@ -447,8 +447,8 @@ void SaberCondAllocator::collectBBCallingProgExit(const SVFBasicBlock &bb)
  */
 bool SaberCondAllocator::isBBCallsProgExit(const SVFBasicBlock* bb)
 {
-    const SVFFunction* svfun = bb->getParent();
-    FunToExitBBsMap::const_iterator it = funToExitBBsMap.find(svfun->getCallGraphNode());
+    const CallGraphNode* svfun = bb->getParent();
+    FunToExitBBsMap::const_iterator it = funToExitBBsMap.find(svfun);
     if (it != funToExitBBsMap.end())
     {
         for (const auto &bit: it->second)
@@ -506,7 +506,7 @@ SaberCondAllocator::ComputeInterCallVFGGuard(const SVFBasicBlock* srcBB, const S
 SaberCondAllocator::Condition
 SaberCondAllocator::ComputeInterRetVFGGuard(const SVFBasicBlock* srcBB, const SVFBasicBlock* dstBB, const SVFBasicBlock* retBB)
 {
-    const SVFFunction* parent = srcBB->getParent();
+    const CallGraphNode* parent = srcBB->getParent();
     const SVFBasicBlock* funExitBB = parent->getExitBB();
 
     Condition c1 = ComputeIntraVFGGuard(srcBB, funExitBB);

@@ -137,8 +137,8 @@ void TCT::markRelProcs()
 {
     for (ThreadCallGraph::CallSiteSet::const_iterator it = tcg->forksitesBegin(), eit = tcg->forksitesEnd(); it != eit; ++it)
     {
-        const SVFFunction* svfun = (*it)->getParent()->getParent();
-        markRelProcs(svfun->getCallGraphNode());
+        const CallGraphNode* svfun = (*it)->getParent()->getParent();
+        markRelProcs(svfun);
 
         for(ThreadCallGraph::ForkEdgeSet::const_iterator nit = tcg->getForkEdgeBegin(*it), neit = tcg->getForkEdgeEnd(*it); nit!=neit; nit++)
         {
@@ -150,8 +150,8 @@ void TCT::markRelProcs()
 
     for (ThreadCallGraph::CallSiteSet::const_iterator it = tcg->joinsitesBegin(), eit = tcg->joinsitesEnd(); it != eit; ++it)
     {
-        const SVFFunction* svfun = (*it)->getParent()->getParent();
-        markRelProcs(svfun->getCallGraphNode());
+        const CallGraphNode* svfun = (*it)->getParent()->getParent();
+        markRelProcs(svfun);
     }
 
     if(candidateFuncSet.empty())
@@ -379,7 +379,7 @@ bool TCT::isLoopExitOfJoinLoop(const SVFBasicBlock* bb)
  */
 const TCT::LoopBBs& TCT::getLoop(const SVFBasicBlock* bb)
 {
-    const SVFFunction* fun = bb->getParent();
+    const CallGraphNode* fun = bb->getParent();
     return fun->getLoopInfo(bb);
 }
 

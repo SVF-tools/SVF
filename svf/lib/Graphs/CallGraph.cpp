@@ -70,8 +70,23 @@ CallGraphNode::CallGraphNode(NodeID i, const SVFFunction* f): GenericCallGraphNo
     realDefFun = f->getDefFunForMultipleModule();
     bbGraph = const_cast<SVF::BasicBlockGraph*>(f->getBasicBlockGraph());
     allArgs = f->getArgsList();
-    if (f->hasBasicBlock())
-        exitBlock = f->getExitBB();
+}
+
+void CallGraphNode::init()
+{
+    isUncalled = fun->isUncalledFunction();
+    isNotRet = !(fun->hasReturn());
+    isDecl = fun->isDeclaration();
+    intrinsic = fun->isIntrinsic();
+    addrTaken = fun->hasAddressTaken();
+    varArg = fun->isVarArg();
+    funcType = fun->getFunctionType();
+    loopAndDom = fun->getLoopAndDomInfo();
+    realDefFun = fun->getDefFunForMultipleModule();
+    bbGraph = const_cast<SVF::BasicBlockGraph*>(fun->getBasicBlockGraph());
+    allArgs = fun->getArgsList();
+    if (fun->hasBasicBlock())
+        exitBlock = fun->getExitBB();
 }
 
 
@@ -102,12 +117,13 @@ void CallGraph::destroy()
 /*!
  * Add call graph node
  */
-void CallGraph::addCallGraphNode(const SVFFunction* fun)
+CallGraphNode* CallGraph::addCallGraphNode(const SVFFunction* fun)
 {
     NodeID id  = callGraphNodeNum;
     CallGraphNode *callGraphNode = new CallGraphNode(id, fun);
     addGNode(id, callGraphNode);
     callGraphNodeNum++;
+    return callGraphNode;
 }
 
 /*!

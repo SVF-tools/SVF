@@ -146,8 +146,8 @@ public:
 
     inline bool postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
     {
-        const SVFFunction*  keyFunc = bbKey->getParent();
-        const SVFFunction*  valueFunc = bbValue->getParent();
+        const CallGraphNode*  keyFunc = bbKey->getParent();
+        const CallGraphNode*  valueFunc = bbValue->getParent();
         bool funcEq = (keyFunc == valueFunc);
         (void)funcEq; // Suppress warning of unused variable under release build
         assert(funcEq && "two basicblocks should be in the same function!");
@@ -156,8 +156,8 @@ public:
 
     inline bool dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
     {
-        const SVFFunction*  keyFunc = bbKey->getParent();
-        const SVFFunction*  valueFunc = bbValue->getParent();
+        const CallGraphNode*  keyFunc = bbKey->getParent();
+        const CallGraphNode*  valueFunc = bbValue->getParent();
         bool funcEq = (keyFunc == valueFunc);
         (void)funcEq; // Suppress warning of unused variable under release build
         assert(funcEq && "two basicblocks should be in the same function!");

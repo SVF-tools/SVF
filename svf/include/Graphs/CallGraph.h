@@ -144,6 +144,7 @@ public:
     /// Constructor
     CallGraphNode(NodeID i, const SVFFunction* f);
 
+    void init();
 
     inline bool isDeclaration() const
     {
@@ -403,7 +404,7 @@ public:
     /// Constructor
     CallGraph();
 
-    void addCallGraphNode(const SVFFunction* fun);
+    CallGraphNode* addCallGraphNode(const SVFFunction* fun);
 
     const CallGraphNode* getCallGraphNode(const std::string& name);
 

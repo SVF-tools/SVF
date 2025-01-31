@@ -176,11 +176,13 @@ void LLVMModuleSet::build()
     if (Options::SVFMain())
         addSVFMain();
 
-    createSVFDataStructure();
-    initSVFFunction();
-
     CallGraphBuilder callGraphBuilder;
     callgraph = callGraphBuilder.createSVFIRCallGraph(svfModule);
+
+    createSVFDataStructure();
+    initSVFFunction();
+    callGraphBuilder.initVFIRCallGraph(callgraph);
+
     for (const auto& it : *callgraph)
     {
         SVFFunction* svffunc = const_cast<SVFFunction*>(it.second->getFunction());
@@ -190,6 +192,7 @@ void LLVMModuleSet::build()
 
     ICFGBuilder icfgbuilder;
     icfg = icfgbuilder.build();
+
 
     callGraphBuilder.connectSVFIRCallGraphEdge(callgraph);
 
@@ -277,7 +280,8 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             getSVFType(func->getFunctionType())),
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
         func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
-    BasicBlockGraph* bbGraph = new BasicBlockGraph(svfFunc);
+    CallGraphNode* callFunc = callgraph->addCallGraphNode(svfFunc);
+    BasicBlockGraph* bbGraph = new BasicBlockGraph(callFunc);
     svfFunc->setBasicBlockGraph(bbGraph);
     svfModule->addFunctionSet(svfFunc);
     addFunctionMap(func, svfFunc);

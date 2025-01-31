@@ -307,8 +307,8 @@ void MemSSA::SSARenameBB(const SVFBasicBlock& bb)
         }
         else if(isRetInstNode(pNode))
         {
-            const SVFFunction* fun = bb.getParent();
-            RenameMuSet(getReturnMuSet(fun->getCallGraphNode()));
+            const CallGraphNode* fun = bb.getParent();
+            RenameMuSet(getReturnMuSet(fun));
         }
     }
 
@@ -322,7 +322,7 @@ void MemSSA::SSARenameBB(const SVFBasicBlock& bb)
     }
 
     // for succ basic block in dominator tree
-    const SVFFunction* fun = bb.getParent();
+    const CallGraphNode* fun = bb.getParent();
     const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& dtBBsMap = fun->getDomTreeMap();
     Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>::const_iterator mapIter = dtBBsMap.find(&bb);
     if (mapIter != dtBBsMap.end())

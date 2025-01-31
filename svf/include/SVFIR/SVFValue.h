@@ -563,7 +563,7 @@ public:
         return bb;
     }
 
-    inline const SVFFunction* getFunction() const
+    inline const CallGraphNode* getFunction() const
     {
         return bb->getParent();
     }
@@ -642,7 +642,7 @@ public:
     {
         return SVFUtil::dyn_cast<SVFFunction>(calledVal);
     }
-    inline  const SVFFunction* getCaller() const
+    inline  const CallGraphNode* getCaller() const
     {
         return getFunction();
     }
