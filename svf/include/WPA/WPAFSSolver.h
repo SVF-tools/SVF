@@ -69,29 +69,21 @@ protected:
         /// SCC detection
         this->getSCCDetector()->find();
 
-        /// Both rep and sub nodes need to be processed later.
-        /// Collect sub nodes from SCCDetector.
-        NodeStack revTopoStack;
-        NodeStack& topoStack = this->getSCCDetector()->topoNodeStack();
-        while (!topoStack.empty())
-        {
-            NodeID nodeId = topoStack.top();
-            topoStack.pop();
-            const NodeBS& subNodes = this->getSCCDetector()->subNodes(nodeId);
-            for (NodeBS::iterator it = subNodes.begin(), eit = subNodes.end(); it != eit; ++it)
-            {
-                revTopoStack.push(*it);
-            }
-        }
-
         assert(nodeStack.empty() && "node stack is not empty, some nodes are not popped properly.");
 
-        /// restore the topological order.
+        /// Both rep and sub nodes need to be processed later.
+        /// Collect sub nodes from SCCDetector.
+        NodeStack revTopoStack = this->getSCCDetector()->revTopoNodeStack();
         while (!revTopoStack.empty())
         {
             NodeID nodeId = revTopoStack.top();
             revTopoStack.pop();
-            nodeStack.push(nodeId);
+            const NodeBS& subNodes = this->getSCCDetector()->subNodes(nodeId);
+            for (NodeBS::iterator it = subNodes.begin(), eit = subNodes.end(); it != eit; ++it)
+            {
+                /// restore the topological order.
+                nodeStack.push(*it);
+            }
         }
 
         return nodeStack;

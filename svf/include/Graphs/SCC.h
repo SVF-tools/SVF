@@ -123,14 +123,30 @@ public:
 
 
     // Return a handle to the stack of nodes in topological
-    // order.  This will be used to seed the initial solution
+    // order. This will be used to seed the initial solution
     // and improve efficiency.
     inline GNodeStack &topoNodeStack()
     {
         return _T;
     }
 
-    const inline  GNODESCCInfoMap &GNodeSCCInfo() const
+    /// Return a handle to the stack of nodes in reverse topological
+    /// order. This will be used to seed the initial solution
+    /// and improve efficiency.
+    inline GNodeStack revTopoNodeStack()
+    {
+        GNodeStack revTopoOrder;
+        GNodeStack topoOrder = topoNodeStack();
+        while(!topoOrder.empty())
+        {
+            NodeID nodeID = topoOrder.top();
+            topoOrder.pop();
+            revTopoOrder.push(nodeID);
+        }
+        return revTopoOrder;
+    }
+
+    const inline GNODESCCInfoMap &GNodeSCCInfo() const
     {
         return _NodeSCCAuxInfo;
     }

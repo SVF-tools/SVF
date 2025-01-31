@@ -461,12 +461,11 @@ bool MRGenerator::addModSideEffectOfCallSite(const CallICFGNode* cs, const NodeB
  */
 void MRGenerator::getCallGraphSCCRevTopoOrder(WorkList& worklist)
 {
-
-    NodeStack& topoOrder = callGraphSCC->topoNodeStack();
-    while(!topoOrder.empty())
+    NodeStack revTopoNodeStack = callGraphSCC->revTopoNodeStack();
+    while(!revTopoNodeStack.empty())
     {
-        NodeID callgraphNodeID = topoOrder.top();
-        topoOrder.pop();
+        NodeID callgraphNodeID = revTopoNodeStack.top();
+        revTopoNodeStack.pop();
         worklist.push(callgraphNodeID);
     }
 }
