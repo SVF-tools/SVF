@@ -321,10 +321,12 @@ void IRGraph::view()
 }
 
 
-u32_t IRGraph::getValueNodeNum() {
+u32_t IRGraph::getValueNodeNum()
+{
     if (valVarNum != 0) return valVarNum;
     u32_t num = 0;
-    for (const auto& item: *this) {
+    for (const auto& item: *this)
+    {
         if (SVFUtil::isa<ValVar>(item.second))
             num++;
     }
@@ -332,10 +334,12 @@ u32_t IRGraph::getValueNodeNum() {
 }
 
 
-u32_t IRGraph::getObjectNodeNum() {
+u32_t IRGraph::getObjectNodeNum()
+{
     if (objVarNum != 0) return objVarNum;
     u32_t num = 0;
-    for (const auto& item: *this) {
+    for (const auto& item: *this)
+    {
         if (SVFUtil::isa<ObjVar>(item.second))
             num++;
     }

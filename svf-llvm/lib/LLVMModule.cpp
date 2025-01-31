@@ -1218,25 +1218,29 @@ void LLVMModuleSet::dumpModulesToFile(const std::string& suffix)
     }
 }
 
-NodeID LLVMModuleSet::getValueNode(const SVFValue *val) {
+NodeID LLVMModuleSet::getValueNode(const SVFValue *val)
+{
     if (val->isNullPtr())
         return svfir->nullPtrSymID();
     else if (val->isblackHole())
         return svfir->blkPtrSymID();
-    else {
+    else
+    {
         ValueToIDMapTy::const_iterator iter = valSymMap.find(val);
         assert(iter!=valSymMap.end() &&"value sym not found");
         return iter->second;
     }
 }
-bool LLVMModuleSet::hasValueNode(const SVFValue *val) {
+bool LLVMModuleSet::hasValueNode(const SVFValue *val)
+{
     if (val->isNullPtr() || val->isblackHole())
         return true;
     else
         return (valSymMap.find(val) != valSymMap.end());
 }
 
-NodeID LLVMModuleSet::getObjectNode(const SVFValue *val) {
+NodeID LLVMModuleSet::getObjectNode(const SVFValue *val)
+{
     const SVFValue *svfVal = val;
     if (const SVFGlobalValue *g = SVFUtil::dyn_cast<SVFGlobalValue>(val))
         svfVal = g->getDefGlobalForMultipleModule();
@@ -1246,7 +1250,8 @@ NodeID LLVMModuleSet::getObjectNode(const SVFValue *val) {
 }
 
 
-void LLVMModuleSet::dumpSymTable() {
+void LLVMModuleSet::dumpSymTable()
+{
     OrderedMap<NodeID, SVFValue*> idmap;
     for (ValueToIDMapTy::iterator iter = valSymMap.begin(); iter != valSymMap.end();
             ++iter)
