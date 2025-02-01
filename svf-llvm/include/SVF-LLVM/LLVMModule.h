@@ -50,10 +50,9 @@ class LLVMModuleSet
 public:
 
     typedef std::vector<const Function*> FunctionSetType;
-    typedef Map<const Function*, const Function*> FunDeclToDefMapTy;
-    typedef Map<const Function*, FunctionSetType> FunDefToDeclsMapTy;
     typedef Map<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
 
+    typedef Map<const CallGraphNode*, SVFFunction*> CGN2SVFFunMap;
     typedef Map<const Function*, SVFFunction*> LLVMFun2SVFFunMap;
     typedef Map<const Function*, CallGraphNode*> LLVMFun2CallGraphNodeMap;
     typedef Map<const BasicBlock*, SVFBasicBlock*> LLVMBB2SVFBBMap;
@@ -113,6 +112,7 @@ private:
     FunToFunEntryNodeMapTy FunToFunEntryNodeMap; ///< map a function to its FunExitICFGNode
     FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryICFGNode
     CallGraph* callgraph;
+    CGN2SVFFunMap CallGraphNode2SVFFunMap;
 
     Map<const Function*, DominatorTree> FunToDominatorTree;
 

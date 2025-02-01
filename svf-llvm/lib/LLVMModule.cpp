@@ -182,11 +182,29 @@ void LLVMModuleSet::build()
     createSVFDataStructure();
     initSVFFunction();
 
-    callGraphBuilder.initVFIRCallGraph(callgraph);
-
+    // iterate over CallGraphNode2SVFFunMap
+    for (auto& item : CallGraphNode2SVFFunMap)
+    {
+        CallGraphNode* callNode = const_cast<CallGraphNode*>(item.first);
+        SVFFunction* fun = item.second;
+        callNode->init(fun->getFunctionType(),
+                       fun->isUncalledFunction(),
+                       !(fun->hasReturn()),
+                       fun->isDeclaration(),
+                       fun->isIntrinsic(),
+                       fun->hasAddressTaken(),
+                       fun->isVarArg(),
+                       fun->getLoopAndDomInfo(),
+            const_cast<CallGraphNode*>(fun->getDefFunForMultipleModule()->getCallGraphNode()),
+                       const_cast<SVF::BasicBlockGraph*>(fun->getBasicBlockGraph()),
+                       fun->getArgsList(),
+                       fun->hasBasicBlock()?  const_cast<SVFBasicBlock*>(fun->getExitBB()) : nullptr
+        );
+    }
 
     ICFGBuilder icfgbuilder;
     icfg = icfgbuilder.build();
+
 
 
     callGraphBuilder.connectSVFIRCallGraphEdge(callgraph);
@@ -275,13 +293,18 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             getSVFType(func->getFunctionType())),
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
         func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
-    CallGraphNode* funcNode = callgraph->addCallGraphNode(svfFunc);
+    CallGraphNode* funcNode = callgraph->addCallGraphNode(getSVFType(func->getType()),
+                                                          SVFUtil::cast<SVFFunctionType>(
+                                                              getSVFType(func->getFunctionType())),
+                                                          func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
+                                                          func->hasAddressTaken(), func->isVarArg(), nullptr);
     svfFunc->setCallGraphNode(funcNode);
     BasicBlockGraph* bbGraph = new BasicBlockGraph(funcNode);
     svfFunc->setBasicBlockGraph(bbGraph);
     svfModule->addFunctionSet(funcNode);
     addFunctionMap(func, funcNode);
     addFunctionMap(func, svfFunc);
+    CallGraphNode2SVFFunMap[funcNode] = svfFunc;
 
 
     for (const Argument& arg : func->args())

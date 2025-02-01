@@ -43,15 +43,6 @@ CallGraph* CallGraphBuilder::createSVFIRCallGraph(SVFModule* svfModule)
     return new CallGraph();
 }
 
-CallGraph* CallGraphBuilder::initVFIRCallGraph(CallGraph* callgraph)
-{
-    for (const auto& item : *callgraph)
-    {
-        (item.second)->init();
-    }
-    return callgraph;
-}
-
 void CallGraphBuilder::connectSVFIRCallGraphEdge(CallGraph* callgraph)
 {
     for (const auto& item : *callgraph)

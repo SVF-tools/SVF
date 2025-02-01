@@ -57,36 +57,33 @@ const std::string CallGraphEdge::toString() const
     return rawstr.str();
 }
 
-CallGraphNode::CallGraphNode(NodeID i, const SVFFunction* f): GenericCallGraphNodeTy(i,CallNodeKd, f->getType()), fun(f)
+
+void CallGraphNode::init(const SVFFunctionType* ft, bool uncalled, bool notRet, bool declare, bool intr, bool adt,
+                         bool varg, SVFLoopAndDomInfo* ld, CallGraphNode* cgn, BasicBlockGraph* bbG, std::vector<const SVFArgument*> allArg, SVFBasicBlock* eBb)
 {
-    isUncalled = f->isUncalledFunction();
-    isNotRet = !(f->hasReturn());
-    isDecl = f->isDeclaration();
-    intrinsic = f->isIntrinsic();
-    addrTaken = f->hasAddressTaken();
-    varArg = f->isVarArg();
-    funcType = f->getFunctionType();
-    loopAndDom = f->getLoopAndDomInfo();
+    this->isUncalled = uncalled;
+    this->isNotRet = notRet;
+    this->isDecl =  declare;
+    this->intrinsic = intr;
+    this->addrTaken =adt;
+    this->varArg = varg;
+    this->funcType = ft;
+    this->loopAndDom = ld;
+    this->realDefFun = cgn;
+    this->bbGraph = bbG;
+    this->allArgs = allArg;
+    this->exitBlock = eBb;
 }
 
-void CallGraphNode::init()
+CallGraphNode::CallGraphNode(NodeID i,
+                             const SVFType* ty, const SVFFunctionType* ft,
+                             bool declare, bool intrinsic, bool adt,
+                             bool varg, SVFLoopAndDomInfo* ld)
+    : GenericNode(i,CallNodeKd,ty),isDecl(declare), intrinsic(intrinsic),
+      addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg),
+      funcType(ft), loopAndDom(ld), realDefFun(nullptr), exitBlock(nullptr)
 {
-    isUncalled = fun->isUncalledFunction();
-    isNotRet = !(fun->hasReturn());
-    isDecl = fun->isDeclaration();
-    intrinsic = fun->isIntrinsic();
-    addrTaken = fun->hasAddressTaken();
-    varArg = fun->isVarArg();
-    funcType = fun->getFunctionType();
-    loopAndDom = fun->getLoopAndDomInfo();
-    realDefFun = fun->getDefFunForMultipleModule()->getCallGraphNode();
-    bbGraph = const_cast<SVF::BasicBlockGraph*>(fun->getBasicBlockGraph());
-    allArgs = fun->getArgsList();
-    if (fun->hasBasicBlock())
-        exitBlock = fun->getExitBB();
 }
-
-
 
 const std::string CallGraphNode::toString() const
 {
@@ -114,10 +111,12 @@ void CallGraph::destroy()
 /*!
  * Add call graph node
  */
-CallGraphNode* CallGraph::addCallGraphNode(const SVFFunction* fun)
+CallGraphNode* CallGraph::addCallGraphNode(const SVFType* ty, const SVFFunctionType* ft,
+                             bool declare, bool intrinsic, bool adt,
+                             bool varg, SVFLoopAndDomInfo* ld)
 {
     NodeID id  = callGraphNodeNum;
-    CallGraphNode *callGraphNode = new CallGraphNode(id, fun);
+    CallGraphNode *callGraphNode = new CallGraphNode(id, ty, ft, declare, intrinsic, adt, varg, ld);
     addGNode(id, callGraphNode);
     callGraphNodeNum++;
     return callGraphNode;

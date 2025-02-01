@@ -126,29 +126,31 @@ public:
 
 
 private:
-    const SVFFunction* fun;
     bool isDecl;   /// return true if this function does not have a body
     bool intrinsic; /// return true if this function is an intrinsic function (e.g., llvm.dbg), which does not reside in the application code
     bool addrTaken; /// return true if this function is address-taken (for indirect call purposes)
     bool isUncalled;    /// return true if this function is never called
     bool isNotRet;   /// return true if this function never returns
     bool varArg;    /// return true if this function supports variable arguments
-    const SVFFunctionType* funcType; /// FunctionType, which is different from the type (PointerType) of this SVFFunction
+    const SVFFunctionType* funcType; /// FunctionType, which is different from the type (PointerType) of this SVF Function
     SVFLoopAndDomInfo* loopAndDom;  /// the loop and dominate information
     const CallGraphNode * realDefFun{nullptr};  /// the definition of a function across multiple modules
     BasicBlockGraph* bbGraph; /// the basic block graph of this function
     std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
-    const SVFBasicBlock *exitBlock{nullptr};             /// a 'single' basic block having no successors and containing return instruction in a function
+    SVFBasicBlock *exitBlock{nullptr};             /// a 'single' basic block having no successors and containing return instruction in a function
 
 public:
     /// Constructor
-    CallGraphNode(NodeID i, const SVFFunction* f);
+    CallGraphNode(NodeID i, const SVFType* ty,
+                  const SVFFunctionType* ft, bool declare, bool intrinsic,
+                  bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
 
     ~CallGraphNode(){
-        delete fun;
     }
 
-    void init();
+    void init(const SVFFunctionType* ft, bool uncalled, bool notRet, bool declare, bool intr, bool adt,
+                             bool varg, SVFLoopAndDomInfo* ld, CallGraphNode* cgn, BasicBlockGraph* bbG,
+              std::vector<const SVFArgument*> allArg, SVFBasicBlock* eBb);
 
     inline bool isDeclaration() const
     {
@@ -402,7 +404,9 @@ public:
     /// Constructor
     CallGraph();
 
-    CallGraphNode* addCallGraphNode(const SVFFunction* fun);
+    CallGraphNode* addCallGraphNode( const SVFType* ty,
+                  const SVFFunctionType* ft, bool declare, bool intrinsic,
+                  bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
 
     const CallGraphNode* getCallGraphNode(const std::string& name);
 
