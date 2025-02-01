@@ -43,7 +43,7 @@ class SVFModule
     friend class SVFIRReader;
 
 public:
-    typedef std::vector<const CallGraphNode*> FunctionSetType;
+    typedef std::vector<CallGraphNode*> FunctionSetType;
     typedef std::vector<SVFGlobalValue*> GlobalSetType;
     typedef std::vector<SVFGlobalValue*> AliasSetType;
     typedef std::vector<SVFConstant*> ConstantType;

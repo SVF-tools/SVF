@@ -115,9 +115,9 @@ const std::string ObjVar::toString() const
 }
 
 ArgValVar::ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn,
-                     const SVF::CallGraphNode* callGraphNode, const SVFType* svfType, bool isUncalled)
+                     const SVF::CallGraphNode* callGraphNode, const SVFType* svfType)
     : ValVar(i, svfType, icn, ArgValNode),
-      cgNode(callGraphNode), argNo(argNo), uncalled(isUncalled)
+      cgNode(callGraphNode), argNo(argNo)
 {
 
 }
@@ -130,6 +130,11 @@ const CallGraphNode* ArgValVar::getFunction() const
 const CallGraphNode* ArgValVar::getParent() const
 {
     return cgNode;
+}
+
+bool ArgValVar::isArgOfUncalledFunction() const
+{
+    return getFunction()->isUncalledFunction();
 }
 
 bool ArgValVar::isPointer() const

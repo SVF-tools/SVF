@@ -95,6 +95,12 @@ LLVMModuleSet::~LLVMModuleSet()
         delete item.second;
     }
     
+
+    for (auto& item: LLVMArgument2SVFArgument)
+    {
+        delete item.second;
+        item.second = nullptr;
+    }
     delete typeInference;
     typeInference = nullptr;
 }
@@ -321,7 +327,6 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
         if (!arg.hasName())
             svfarg->setName(std::to_string(arg.getArgNo()));
 
-        svfFunc->addArgument(svfarg);
         addArgumentMap(&arg, svfarg);
     }
 

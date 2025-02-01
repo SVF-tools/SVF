@@ -59,7 +59,7 @@ const std::string CallGraphEdge::toString() const
 
 
 void CallGraphNode::init(const SVFFunctionType* ft, bool uncalled, bool notRet, bool declare, bool intr, bool adt,
-                         bool varg, SVFLoopAndDomInfo* ld, CallGraphNode* cgn, BasicBlockGraph* bbG, std::vector<const SVFArgument*> allArg, SVFBasicBlock* eBb)
+                         bool varg, SVFLoopAndDomInfo* ld, CallGraphNode* cgn, BasicBlockGraph* bbG, std::vector<const ArgValVar*> allArg, SVFBasicBlock* eBb)
 {
     this->isUncalled = uncalled;
     this->isNotRet = notRet;

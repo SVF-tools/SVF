@@ -228,8 +228,9 @@ void SVFIRBuilder::initialiseNodes()
         {
             pag->addArgValNode(
                 iter->second, argval->getArgNo(), icfgNode,
-                llvmModuleSet()->getCallGraphNode(argval->getParent()),iter->first->getType(),
-                LLVMUtil::isArgOfUncalledFunction(argval));
+                llvmModuleSet()->getCallGraphNode(argval->getParent()),iter->first->getType());
+            if (!argval->hasName())
+                pag->getGNode(iter->second)->setName("arg_" + std::to_string(argval->getArgNo()));
         }
         else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
         {
@@ -402,6 +403,18 @@ void SVFIRBuilder::initialiseNodes()
 
     assert(pag->getTotalNodeNum() >= pag->getTotalSymNum()
            && "not all node have been initialized!!!");
+
+    /// add argvalvar for svffunctions
+    for (auto& fun: svfModule->getFunctionSet())
+    {
+        const Function* llvmFun = SVFUtil::cast<Function>(llvmModuleSet()->getLLVMValue(fun));
+        for (const Argument& arg : llvmFun->args())
+        {
+            fun->addArgument(
+                SVFUtil::cast<ArgValVar>(
+                    pag->getGNode(llvmModuleSet()->getValueNode(llvmModuleSet()->getSVFArgument(&arg)))));
+        }
+    }
 
 }
 

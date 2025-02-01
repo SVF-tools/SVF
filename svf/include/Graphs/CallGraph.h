@@ -136,7 +136,7 @@ private:
     SVFLoopAndDomInfo* loopAndDom;  /// the loop and dominate information
     const CallGraphNode * realDefFun{nullptr};  /// the definition of a function across multiple modules
     BasicBlockGraph* bbGraph; /// the basic block graph of this function
-    std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
+    std::vector<const ArgValVar*> allArgs;    /// all formal arguments of this function
     SVFBasicBlock *exitBlock{nullptr};             /// a 'single' basic block having no successors and containing return instruction in a function
 
 public:
@@ -150,7 +150,12 @@ public:
 
     void init(const SVFFunctionType* ft, bool uncalled, bool notRet, bool declare, bool intr, bool adt,
                              bool varg, SVFLoopAndDomInfo* ld, CallGraphNode* cgn, BasicBlockGraph* bbG,
-              std::vector<const SVFArgument*> allArg, SVFBasicBlock* eBb);
+              std::vector<const ArgValVar*> allArg, SVFBasicBlock* eBb);
+
+    inline void addArgument(const ArgValVar* arg)
+    {
+        allArgs.push_back(arg);
+    }
 
     inline bool isDeclaration() const
     {
@@ -307,7 +312,7 @@ public:
         return allArgs.size();
     }
 
-    inline const SVFArgument*  getArg(u32_t idx) const
+    inline const ArgValVar*  getArg(u32_t idx) const
     {
         assert (idx < allArgs.size() && "getArg() out of range!");
         return allArgs[idx];
