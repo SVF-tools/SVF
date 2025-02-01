@@ -209,8 +209,7 @@ struct DOTGraphTraits<CallGraph*> : public DefaultDOTGraphTraits
 
     static std::string getNodeAttributes(CallGraphNode*node, CallGraph*)
     {
-        const SVFFunction* fun = node->getFunction();
-        if (!SVFUtil::isExtCall(fun))
+        if (!SVFUtil::isExtCall(node))
         {
             return "shape=box";
         }

@@ -128,11 +128,11 @@ bool ThreadCallGraph::addDirectForkEdge(const CallICFGNode* cs)
 
     PTACallGraphNode* caller =
         getPTACallGraphNode(cs->getCaller());
-    const SVFFunction* forkee = SVFUtil::dyn_cast<FunValVar>(tdAPI->getForkedFun(cs))
-                                ->getCallGraphNode()->getFunction();
+    const CallGraphNode* forkee = SVFUtil::dyn_cast<FunValVar>(tdAPI->getForkedFun(cs))
+                                ->getCallGraphNode();
     assert(forkee && "callee does not exist");
     PTACallGraphNode* callee = getPTACallGraphNode(
-        forkee->getDefFunForMultipleModule()->getCallGraphNode());
+        forkee->getDefFunForMultipleModule());
     CallSiteID csId = addCallSite(cs, callee->getCallNode());
 
     if (!hasGraphEdge(caller, callee, PTACallGraphEdge::TDForkEdge, csId))

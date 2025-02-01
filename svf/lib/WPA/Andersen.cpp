@@ -282,7 +282,7 @@ void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs,
     const CallICFGNode* callBlockNode = cs;
     const RetICFGNode* retBlockNode = cs->getRetICFGNode();
 
-    if(SVFUtil::isHeapAllocExtFunViaRet(F->getFunction()) && pag->callsiteHasRet(retBlockNode))
+    if(SVFUtil::isHeapAllocExtFunViaRet(F) && pag->callsiteHasRet(retBlockNode))
     {
         heapAllocatorViaIndCall(cs,cpySrcNodes);
     }

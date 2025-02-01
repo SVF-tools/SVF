@@ -389,10 +389,9 @@ void AbsExtAPI::handleExtAPI(const CallICFGNode *call)
     AbstractState& as = getAbsStateFromTrace(call);
     const CallGraphNode *cgNode = call->getCalledFunction();
     assert(cgNode && "CallGraphNode* is nullptr");
-    const SVFFunction *fun = cgNode->getFunction();
     ExtAPIType extType = UNCLASSIFIED;
     // get type of mem api
-    for (const std::string &annotation: ExtAPI::getExtAPI()->getExtFuncAnnotations(fun))
+    for (const std::string &annotation: ExtAPI::getExtAPI()->getExtFuncAnnotations(cgNode))
     {
         if (annotation.find("MEMCPY") != std::string::npos)
             extType =  MEMCPY;
@@ -405,9 +404,9 @@ void AbsExtAPI::handleExtAPI(const CallICFGNode *call)
     }
     if (extType == UNCLASSIFIED)
     {
-        if (func_map.find(fun->getName()) != func_map.end())
+        if (func_map.find(cgNode->getName()) != func_map.end())
         {
-            func_map[fun->getName()](call);
+            func_map[cgNode->getName()](call);
         }
         else
         {

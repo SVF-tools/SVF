@@ -182,13 +182,6 @@ void LLVMModuleSet::build()
     createSVFDataStructure();
     initSVFFunction();
 
-    for (const auto& it : *callgraph)
-    {
-        SVFFunction* svffunc = const_cast<SVFFunction*>(it.second->getFunction());
-        svffunc->setCallGraphNode(it.second);
-        addFunctionMap(SVFUtil::cast<Function>(getLLVMValue(svffunc)), it.second);
-    }
-
     callGraphBuilder.initVFIRCallGraph(callgraph);
 
 
@@ -238,8 +231,8 @@ void LLVMModuleSet::createSVFDataStructure()
     // Store annotations of functions in extapi.bc
     for (const auto& pair : ExtFun2Annotations)
     {
-        const SVFFunction* svffun = getSVFFunction(pair.first);
-        ExtAPI::getExtAPI()->setExtFuncAnnotations(svffun, pair.second);
+        const CallGraphNode* funNode = getFunctionNode(pair.first);
+        ExtAPI::getExtAPI()->setExtFuncAnnotations(funNode, pair.second);
     }
 
     /// then traverse candidate sets
@@ -282,11 +275,14 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             getSVFType(func->getFunctionType())),
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
         func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
-    CallGraphNode* callFunc = callgraph->addCallGraphNode(svfFunc);
-    BasicBlockGraph* bbGraph = new BasicBlockGraph(callFunc);
+    CallGraphNode* funcNode = callgraph->addCallGraphNode(svfFunc);
+    svfFunc->setCallGraphNode(funcNode);
+    BasicBlockGraph* bbGraph = new BasicBlockGraph(funcNode);
     svfFunc->setBasicBlockGraph(bbGraph);
-    svfModule->addFunctionSet(callFunc);
+    svfModule->addFunctionSet(funcNode);
+    addFunctionMap(func, funcNode);
     addFunctionMap(func, svfFunc);
+
 
     for (const Argument& arg : func->args())
     {
@@ -337,7 +333,7 @@ void LLVMModuleSet::initSVFFunction()
             SVFFunction* svffun = getSVFFunction(&f);
             initSVFBasicBlock(&f);
 
-            if (!SVFUtil::isExtCall(svffun))
+            if (!SVFUtil::isExtCall(svffun->getCallGraphNode()))
             {
                 initDomTree(svffun, &f);
             }
@@ -1292,10 +1288,10 @@ void LLVMModuleSet::dumpSymTable()
     SVFUtil::outs() << "}\n";
 }
 
-void LLVMModuleSet::addFunctionMap(const Function* func, CallGraphNode* svfFunc)
+void LLVMModuleSet::addFunctionMap(const Function* func, CallGraphNode* node)
 {
-    LLVMFunc2CallGraphNode[func] = svfFunc;
-    addToSVFVar2LLVMValueMap(func, svfFunc);
+    LLVMFunc2CallGraphNode[func] = node;
+    addToSVFVar2LLVMValueMap(func, node);
 }
 
 void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)

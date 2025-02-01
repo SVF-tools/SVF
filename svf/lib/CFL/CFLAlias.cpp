@@ -69,7 +69,7 @@ void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const CallGrap
     const CallICFGNode* callBlockNode = cs;
     const RetICFGNode* retBlockNode = cs->getRetICFGNode();
 
-    if(SVFUtil::isHeapAllocExtFunViaRet(F->getFunction()) && svfir->callsiteHasRet(retBlockNode))
+    if(SVFUtil::isHeapAllocExtFunViaRet(F) && svfir->callsiteHasRet(retBlockNode))
     {
         heapAllocatorViaIndCall(cs);
     }

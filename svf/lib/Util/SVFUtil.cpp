@@ -338,7 +338,7 @@ bool SVFUtil::isExtCall(const CallICFGNode* cs)
 bool SVFUtil::isHeapAllocExtCallViaArg(const CallICFGNode* cs)
 {
     if (cs->getCalledFunction())
-        return isHeapAllocExtFunViaArg(cs->getCalledFunction()->getFunction());
+        return isHeapAllocExtFunViaArg(cs->getCalledFunction());
     else
         return false;
 }
@@ -346,7 +346,7 @@ bool SVFUtil::isHeapAllocExtCallViaArg(const CallICFGNode* cs)
 
 u32_t SVFUtil::getHeapAllocHoldingArgPosition(const CallICFGNode* cs)
 {
-    return getHeapAllocHoldingArgPosition(cs->getCalledFunction()->getFunction());
+    return getHeapAllocHoldingArgPosition(cs->getCalledFunction());
 }
 
 
@@ -366,13 +366,13 @@ bool SVFUtil::isHeapAllocExtCallViaRet(const CallICFGNode* cs)
 {
     bool isPtrTy = cs->getType()->isPointerTy();
     const CallGraphNode* fun = cs->getCalledFunction();
-    return fun && isPtrTy && isHeapAllocExtFunViaRet(fun->getFunction());
+    return fun && isPtrTy && isHeapAllocExtFunViaRet(fun);
 }
 
 bool SVFUtil::isReallocExtCall(const CallICFGNode* cs)
 {
     bool isPtrTy = cs->getType()->isPointerTy();
-    return isPtrTy && isReallocExtFun(cs->getCalledFunction()->getFunction());
+    return isPtrTy && isReallocExtFun(cs->getCalledFunction());
 }
 
 
@@ -387,6 +387,12 @@ bool SVFUtil::isRetInstNode(const ICFGNode* node)
 bool SVFUtil::isProgExitCall(const CallICFGNode* cs)
 {
     return isProgExitFunction(cs->getCalledFunction());
+}
+
+/// Return true if this is a program entry function (e.g. main)
+bool SVFUtil::isProgEntryFunction(const CallGraphNode* fun)
+{
+    return fun && fun->getName() == "main";
 }
 
 /// Get program entry function from module.
@@ -409,7 +415,7 @@ const CallGraphNode* SVFUtil::getProgEntryFunction()
     for (const auto& item: *svfirCallGraph)
     {
         const CallGraphNode*fun = item.second;
-        if (isProgEntryFunction(fun->getFunction()))
+        if (isProgEntryFunction(fun))
             return fun;
     }
     return nullptr;
@@ -432,7 +438,7 @@ const ObjVar* SVFUtil::getObjVarOfValVar(const SVF::ValVar* valVar)
 
 bool SVFUtil::isExtCall(const CallGraphNode* fun)
 {
-    return fun && ExtAPI::getExtAPI()->is_ext(fun->getFunction());
+    return fun && ExtAPI::getExtAPI()->is_ext(fun);
 }
 
 bool SVFUtil::isProgExitFunction (const CallGraphNode * fun)

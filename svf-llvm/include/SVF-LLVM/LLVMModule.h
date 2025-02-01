@@ -218,7 +218,7 @@ public:
         setValueAttr(func,svfFunc);
     }
 
-    void addFunctionMap(const Function* func, CallGraphNode* svfFunc);
+    void addFunctionMap(const Function* func, CallGraphNode* node);
 
     // create a SVFBasicBlock according to LLVM BasicBlock, then add it to SVFFunction's BasicBlockGraph
     inline void addBasicBlock(SVFFunction* fun, const BasicBlock* bb)
@@ -361,6 +361,22 @@ public:
             if (fun)
             {
                 return llvmModuleSet->getSVFFunction(fun);
+            }
+        }
+        return nullptr;
+    }
+
+    inline const CallGraphNode* getFunctionNode(const std::string& name)
+    {
+        Function* fun = nullptr;
+
+        for (u32_t i = 0; i < llvmModuleSet->getModuleNum(); ++i)
+        {
+            Module* mod = llvmModuleSet->getModule(i);
+            fun = mod->getFunction(name);
+            if (fun)
+            {
+                return llvmModuleSet->getCallGraphNode(fun);
             }
         }
         return nullptr;

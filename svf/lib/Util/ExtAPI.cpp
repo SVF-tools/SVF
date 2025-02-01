@@ -161,15 +161,15 @@ std::string ExtAPI::getExtBcPath()
     abort();
 }
 
-void ExtAPI::setExtFuncAnnotations(const SVFFunction* fun, const std::vector<std::string>& funcAnnotations)
+void ExtAPI::setExtFuncAnnotations(const CallGraphNode* fun, const std::vector<std::string>& funcAnnotations)
 {
-    assert(fun && "Null SVFFunction* pointer");
+    assert(fun && "Null CallGraphNode* pointer");
     func2Annotations[fun] = funcAnnotations;
 }
 
-bool ExtAPI::hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation)
+bool ExtAPI::hasExtFuncAnnotation(const CallGraphNode* fun, const std::string& funcAnnotation)
 {
-    assert(fun && "Null SVFFunction* pointer");
+    assert(fun && "Null CallGraphNode* pointer");
     auto it = func2Annotations.find(fun);
     if (it != func2Annotations.end())
     {
@@ -180,9 +180,9 @@ bool ExtAPI::hasExtFuncAnnotation(const SVFFunction* fun, const std::string& fun
     return false;
 }
 
-std::string ExtAPI::getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation)
+std::string ExtAPI::getExtFuncAnnotation(const CallGraphNode* fun, const std::string& funcAnnotation)
 {
-    assert(fun && "Null SVFFunction* pointer");
+    assert(fun && "Null CallGraphNode* pointer");
     auto it = func2Annotations.find(fun);
     if (it != func2Annotations.end())
     {
@@ -193,45 +193,45 @@ std::string ExtAPI::getExtFuncAnnotation(const SVFFunction* fun, const std::stri
     return "";
 }
 
-const std::vector<std::string>& ExtAPI::getExtFuncAnnotations(const SVFFunction* fun)
+const std::vector<std::string>& ExtAPI::getExtFuncAnnotations(const CallGraphNode* fun)
 {
-    assert(fun && "Null SVFFunction* pointer");
+    assert(fun && "Null CallGraphNode* pointer");
     auto it = func2Annotations.find(fun);
     if (it != func2Annotations.end())
         return it->second;
     return func2Annotations[fun];
 }
 
-bool ExtAPI::is_memcpy(const SVFFunction *F)
+bool ExtAPI::is_memcpy(const CallGraphNode *F)
 {
     return F &&
            (hasExtFuncAnnotation(F, "MEMCPY") ||  hasExtFuncAnnotation(F, "STRCPY")
             || hasExtFuncAnnotation(F, "STRCAT"));
 }
 
-bool ExtAPI::is_memset(const SVFFunction *F)
+bool ExtAPI::is_memset(const CallGraphNode *F)
 {
     return F && hasExtFuncAnnotation(F, "MEMSET");
 }
 
-bool ExtAPI::is_alloc(const SVFFunction* F)
+bool ExtAPI::is_alloc(const CallGraphNode* F)
 {
     return F && hasExtFuncAnnotation(F, "ALLOC_HEAP_RET");
 }
 
 // Does (F) allocate a new object and assign it to one of its arguments?
-bool ExtAPI::is_arg_alloc(const SVFFunction* F)
+bool ExtAPI::is_arg_alloc(const CallGraphNode* F)
 {
     return F && hasExtFuncAnnotation(F, "ALLOC_HEAP_ARG");
 }
 
-bool ExtAPI::is_alloc_stack_ret(const SVFFunction* F)
+bool ExtAPI::is_alloc_stack_ret(const CallGraphNode* F)
 {
     return F && hasExtFuncAnnotation(F, "ALLOC_STACK_RET");
 }
 
 // Get the position of argument which holds the new object
-s32_t ExtAPI::get_alloc_arg_pos(const SVFFunction* F)
+s32_t ExtAPI::get_alloc_arg_pos(const CallGraphNode* F)
 {
     std::string allocArg = getExtFuncAnnotation(F, "ALLOC_HEAP_ARG");
     assert(!allocArg.empty() && "Not an alloc call via argument or incorrect extern function annotation!");
@@ -247,7 +247,7 @@ s32_t ExtAPI::get_alloc_arg_pos(const SVFFunction* F)
 }
 
 // Does (F) reallocate a new object?
-bool ExtAPI::is_realloc(const SVFFunction* F)
+bool ExtAPI::is_realloc(const CallGraphNode* F)
 {
     return F && hasExtFuncAnnotation(F, "REALLOC_HEAP_RET");
 }
@@ -255,9 +255,9 @@ bool ExtAPI::is_realloc(const SVFFunction* F)
 
 // Should (F) be considered "external" (either not defined in the program
 //   or a user-defined version of a known alloc or no-op)?
-bool ExtAPI::is_ext(const SVFFunction* F)
+bool ExtAPI::is_ext(const CallGraphNode* F)
 {
-    assert(F && "Null SVFFunction* pointer");
+    assert(F && "Null CallGraphNode* pointer");
     if (F->isDeclaration() || F->isIntrinsic())
         return true;
     else if (hasExtFuncAnnotation(F, "OVERWRITE") && getExtFuncAnnotations(F).size() == 1)

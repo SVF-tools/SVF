@@ -124,7 +124,7 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
                 continue;
             if(!mhp->isConnectedfromMain(fun))
                 continue;
-            for (SVFFunction::const_iterator bit =  fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
+            for (CallGraphNode::const_bb_iterator bit =  fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
             {
                 const SVFBasicBlock* bb = bit->second;
                 for (const auto& icfgNode : bb->getICFGNodeList())

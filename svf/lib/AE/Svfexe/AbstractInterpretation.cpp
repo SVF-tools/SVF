@@ -566,7 +566,7 @@ void AbstractInterpretation::handleCallSite(const ICFGNode* node)
 bool AbstractInterpretation::isExtCall(const SVF::CallICFGNode *callNode)
 {
     if (callNode->getCalledFunction())
-        return SVFUtil::isExtCall(callNode->getCalledFunction()->getFunction());
+        return SVFUtil::isExtCall(callNode->getCalledFunction());
     else
         return false;
 }

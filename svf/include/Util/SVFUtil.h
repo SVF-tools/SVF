@@ -266,19 +266,15 @@ void stopAnalysisLimitTimer(bool limitTimerSet);
 /// Return true if the call is an external call (external library in function summary table)
 /// If the library function is redefined in the application code (e.g., memcpy), it will return false and will not be treated as an external call.
 //@{
-inline bool isExtCall(const SVFFunction* fun)
-{
-    return fun && ExtAPI::getExtAPI()->is_ext(fun);
-}
 
 bool isExtCall(const CallGraphNode* fun);
 
-inline bool isMemcpyExtFun(const SVFFunction* fun)
+inline bool isMemcpyExtFun(const CallGraphNode* fun)
 {
     return fun && ExtAPI::getExtAPI()->is_memcpy(fun);
 }
 
-inline bool isMemsetExtFun(const SVFFunction* fun)
+inline bool isMemsetExtFun(const CallGraphNode* fun)
 {
     return fun && ExtAPI::getExtAPI()->is_memset(fun);
 }
@@ -286,20 +282,20 @@ inline bool isMemsetExtFun(const SVFFunction* fun)
 /// Return true if the call is a heap allocator/reallocator
 //@{
 /// note that these two functions are not suppose to be used externally
-inline bool isHeapAllocExtFunViaRet(const SVFFunction* fun)
+inline bool isHeapAllocExtFunViaRet(const CallGraphNode* fun)
 {
     return fun && (ExtAPI::getExtAPI()->is_alloc(fun)
                    || ExtAPI::getExtAPI()->is_realloc(fun));
 }
 
-inline bool isHeapAllocExtFunViaArg(const SVFFunction* fun)
+inline bool isHeapAllocExtFunViaArg(const CallGraphNode* fun)
 {
     return fun && ExtAPI::getExtAPI()->is_arg_alloc(fun);
 }
 
 /// Get the position of argument that holds an allocated heap object.
 //@{
-inline u32_t getHeapAllocHoldingArgPosition(const SVFFunction* fun)
+inline u32_t getHeapAllocHoldingArgPosition(const CallGraphNode* fun)
 {
     return ExtAPI::getExtAPI()->get_alloc_arg_pos(fun);
 }
@@ -307,7 +303,7 @@ inline u32_t getHeapAllocHoldingArgPosition(const SVFFunction* fun)
 /// Return true if the call is a heap reallocator
 //@{
 /// note that this function is not suppose to be used externally
-inline bool isReallocExtFun(const SVFFunction* fun)
+inline bool isReallocExtFun(const CallGraphNode* fun)
 {
     return fun && (ExtAPI::getExtAPI()->is_realloc(fun));
 }
@@ -315,10 +311,7 @@ inline bool isReallocExtFun(const SVFFunction* fun)
 /// Program entry function e.g. main
 //@{
 /// Return true if this is a program entry function (e.g. main)
-inline bool isProgEntryFunction(const SVFFunction* fun)
-{
-    return fun && fun->getName() == "main";
-}
+bool isProgEntryFunction(const CallGraphNode* fun);
 
 /// Get program entry function from function name.
 const CallGraphNode* getProgFunction(const std::string& funName);

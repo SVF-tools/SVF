@@ -91,7 +91,7 @@ bool PTACallGraphNode::isReachableFromProgEntry() const
         PTACallGraphNode* node = const_cast<PTACallGraphNode*>(nodeStack.top());
         nodeStack.pop();
 
-        if (SVFUtil::isProgEntryFunction(node->getCallNode()->getFunction()))
+        if (SVFUtil::isProgEntryFunction(node->getCallNode()))
             return true;
 
         for (const_iterator it = node->InEdgeBegin(), eit = node->InEdgeEnd(); it != eit; ++it)
@@ -369,7 +369,7 @@ struct DOTGraphTraits<PTACallGraph*> : public DefaultDOTGraphTraits
 
     static std::string getNodeAttributes(PTACallGraphNode*node, PTACallGraph*)
     {
-        const SVFFunction* fun = node->getCallNode()->getFunction();
+        const CallGraphNode* fun = node->getCallNode();
         if (!SVFUtil::isExtCall(fun))
         {
             return "shape=box";

@@ -283,8 +283,8 @@ void ICFGBuilder::addICFGInterEdges(const Instruction* cs, const Function* calle
     /// direct call
     if(callee)
     {
-        SVFFunction* svfFun =
-            llvmModuleSet()->getSVFFunction(callee);
+        CallGraphNode* svfFun =
+            llvmModuleSet()->getCallGraphNode(callee);
         /// if this is an external function (no function body)
         if (SVFUtil::isExtCall(svfFun))
         {

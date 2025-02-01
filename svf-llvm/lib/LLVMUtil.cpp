@@ -73,7 +73,7 @@ bool LLVMUtil::isObject(const Value*  ref)
  */
 void LLVMUtil::getFunReachableBBs (const Function* fun, std::vector<const SVFBasicBlock*> &reachableBBs)
 {
-    assert(!SVFUtil::isExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun)) && "The calling function cannot be an external function.");
+    assert(!SVFUtil::isExtCall(LLVMModuleSet::getLLVMModuleSet()->getCallGraphNode(fun)) && "The calling function cannot be an external function.");
     //initial DominatorTree
     DominatorTree& dt = LLVMModuleSet::getLLVMModuleSet()->getDomTree(fun);
 
@@ -121,8 +121,8 @@ bool LLVMUtil::basicBlockHasRetInst(const BasicBlock* bb)
  */
 bool LLVMUtil::functionDoesNotRet(const Function*  fun)
 {
-    const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
-    if (SVFUtil::isExtCall(svffun))
+    const CallGraphNode* cgn = LLVMModuleSet::getLLVMModuleSet()->getCallGraphNode(fun);
+    if (SVFUtil::isExtCall(cgn))
     {
         return fun->getReturnType()->isVoidTy();
     }
@@ -623,8 +623,8 @@ bool LLVMUtil::isHeapAllocExtCallViaRet(const Instruction* inst)
     {
         const Function* fun = call->getCalledFunction();
         return fun && isPtrTy &&
-               (extApi->is_alloc(pSet->getSVFFunction(fun)) ||
-                extApi->is_realloc(pSet->getSVFFunction(fun)));
+               (extApi->is_alloc(pSet->getCallGraphNode(fun)) ||
+                extApi->is_realloc(pSet->getCallGraphNode(fun)));
     }
     else
         return false;
@@ -637,7 +637,7 @@ bool LLVMUtil::isHeapAllocExtCallViaArg(const Instruction* inst)
         const Function* fun = call->getCalledFunction();
         return fun &&
                ExtAPI::getExtAPI()->is_arg_alloc(
-                   LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun));
+                   LLVMModuleSet::getLLVMModuleSet()->getCallGraphNode(fun));
     }
     else
     {
@@ -654,7 +654,7 @@ bool LLVMUtil::isStackAllocExtCallViaRet(const Instruction *inst)
     {
         const Function* fun = call->getCalledFunction();
         return fun && isPtrTy &&
-               extApi->is_alloc_stack_ret(pSet->getSVFFunction(fun));
+               extApi->is_alloc_stack_ret(pSet->getCallGraphNode(fun));
     }
     else
         return false;

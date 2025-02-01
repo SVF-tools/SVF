@@ -126,7 +126,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     }
 }
 
-void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCallee)
+void SVFIRBuilder::handleExtCall(const CallBase* cs, const CallGraphNode* svfCallee)
 {
     const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
     const SVFCallInst* svfCall = SVFUtil::cast<SVFCallInst>(svfInst);
