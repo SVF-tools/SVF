@@ -90,6 +90,11 @@ LLVMModuleSet::~LLVMModuleSet()
         delete item.second;
         item.second = nullptr;
     }
+
+    for (auto& item : CallGraphNode2SVFFunMap){
+        delete item.second;
+    }
+    
     delete typeInference;
     typeInference = nullptr;
 }
