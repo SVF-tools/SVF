@@ -135,10 +135,10 @@ private:
     bool varArg;    /// return true if this function supports variable arguments
     const SVFFunctionType* funcType; /// FunctionType, which is different from the type (PointerType) of this SVFFunction
     SVFLoopAndDomInfo* loopAndDom;  /// the loop and dominate information
-    const SVFFunction* realDefFun;  /// the definition of a function across multiple modules
+    const CallGraphNode * realDefFun{nullptr};  /// the definition of a function across multiple modules
     BasicBlockGraph* bbGraph; /// the basic block graph of this function
     std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
-    const SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
+    const SVFBasicBlock *exitBlock{nullptr};             /// a 'single' basic block having no successors and containing return instruction in a function
 
 public:
     /// Constructor
@@ -252,10 +252,10 @@ public:
         return loopAndDom->postDominate(bbKey,bbValue);
     }
 
-    inline const SVFFunction* getDefFunForMultipleModule() const
+    inline const CallGraphNode* getDefFunForMultipleModule() const
     {
         if(realDefFun==nullptr)
-            return this->fun;
+            return this;
         return realDefFun;
     }
 

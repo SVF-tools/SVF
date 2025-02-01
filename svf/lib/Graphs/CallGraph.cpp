@@ -79,7 +79,7 @@ void CallGraphNode::init()
     varArg = fun->isVarArg();
     funcType = fun->getFunctionType();
     loopAndDom = fun->getLoopAndDomInfo();
-    realDefFun = fun->getDefFunForMultipleModule();
+    realDefFun = fun->getDefFunForMultipleModule()->getCallGraphNode();
     bbGraph = const_cast<SVF::BasicBlockGraph*>(fun->getBasicBlockGraph());
     allArgs = fun->getArgsList();
     if (fun->hasBasicBlock())
