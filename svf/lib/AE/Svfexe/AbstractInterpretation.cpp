@@ -92,7 +92,7 @@ void AbstractInterpretation::initWTO()
         // Check if the current function is part of a cycle
         if (callGraphScc->isInCycle(it->second->getId()))
             recursiveFuns.insert(it->second); // Mark the function as recursive
-        if (it->second->getFunction()->isDeclaration())
+        if (it->second->isDeclaration())
             continue;
         auto* wto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(it->second));
         wto->init();

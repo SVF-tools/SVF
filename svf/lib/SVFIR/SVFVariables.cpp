@@ -134,7 +134,7 @@ const CallGraphNode* ArgValVar::getParent() const
 
 bool ArgValVar::isPointer() const
 {
-    return cgNode->getFunction()->getArg(argNo)->getType()->isPointerTy();
+    return cgNode->getArg(argNo)->getType()->isPointerTy();
 }
 
 const std::string ArgValVar::toString() const
@@ -446,7 +446,7 @@ bool FunObjVar::isPointer() const
 
 bool FunObjVar::isIsolatedNode() const
 {
-    return callGraphNode->getFunction()->isIntrinsic();
+    return callGraphNode->isIntrinsic();
 }
 
 const CallGraphNode* FunObjVar::getFunction() const

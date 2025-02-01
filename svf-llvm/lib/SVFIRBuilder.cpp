@@ -290,7 +290,7 @@ void SVFIRBuilder::initialiseNodes()
         // Check if the value is a function and add a function object node
         if (const Function* func = SVFUtil::dyn_cast<Function>(llvmValue))
         {
-            NodeID id = llvmModuleSet()->getObjectNode(llvmModuleSet()->getCallGraphNode(func)->getFunction());
+            NodeID id = llvmModuleSet()->getObjectNode(llvmModuleSet()->getSVFValue(func));
             pag->addFunObjNode(iter->second, pag->getObjTypeInfo(id),  llvmModuleSet()->getCallGraphNode(func), iter->first->getType(), icfgNode);
         }
         // Check if the value is a heap object and add a heap object node

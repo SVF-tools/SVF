@@ -92,7 +92,7 @@ const std::string CallGraphNode::toString() const
 {
     std::string str;
     std::stringstream  rawstr(str);
-    rawstr << "CallGraphNode ID: " << getId() << " {fun: " << fun->getName() << "}";
+    rawstr << "CallGraphNode ID: " << getId() << " {fun: " << getName() << "}";
     return rawstr.str();
 }
 

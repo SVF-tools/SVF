@@ -56,7 +56,7 @@ void CallGraphBuilder::connectSVFIRCallGraphEdge(CallGraph* callgraph)
 {
     for (const auto& item : *callgraph)
     {
-        for (auto it : *(item.second)->getFunction())
+        for (auto it : *(item.second))
         {
             const SVFBasicBlock* svfbb = it.second;
             for (const ICFGNode* inst : svfbb->getICFGNodeList())
@@ -90,7 +90,7 @@ ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
     ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();
     for (const auto& item: *svfirCallGraph)
     {
-        for (auto it : *(item.second)->getFunction())
+        for (auto it : *(item.second))
         {
             const SVFBasicBlock* svfbb = it.second;
             for (const ICFGNode* inst : svfbb->getICFGNodeList())
@@ -116,7 +116,7 @@ ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
     // record join sites
     for (const auto& item: *svfirCallGraph)
     {
-        for (auto it : *(item.second)->getFunction())
+        for (auto it : *(item.second))
         {
             const SVFBasicBlock* svfbb = it.second;
             for (const ICFGNode* node : svfbb->getICFGNodeList())

@@ -264,7 +264,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const CallGraphNode* svfCal
         const ValVar* valVar = getForkedFun(callICFGNode);
         if (const FunValVar* funcValVar = SVFUtil::dyn_cast<FunValVar>(valVar))
         {
-            const SVFFunction* forkedFun = funcValVar->getCallGraphNode()->getFunction()
+            const CallGraphNode* forkedFun = funcValVar->getCallGraphNode()
                                            ->getDefFunForMultipleModule();
             const SVFVar* actualParm = getActualParmAtForkSite(callICFGNode);
             /// pthread_create has 1 arg.
@@ -276,7 +276,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const CallGraphNode* svfCal
                 /// Connect actual parameter to formal parameter of the start routine
                 if (actualParm->isPointer() && formalParm->getType()->isPointerTy())
                 {
-                    FunEntryICFGNode *entry = pag->getICFG()->getFunEntryICFGNode(forkedFun->getCallGraphNode());
+                    FunEntryICFGNode *entry = pag->getICFG()->getFunEntryICFGNode(forkedFun);
                     addThreadForkEdge(actualParm->getId(), llvmModuleSet()->getValueNode(formalParm), callICFGNode, entry);
                 }
             }
