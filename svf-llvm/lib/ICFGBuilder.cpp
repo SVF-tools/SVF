@@ -247,12 +247,6 @@ InterICFGNode* ICFGBuilder::addInterBlockICFGNode(const Instruction* inst)
     {
         calledFunc = llvmModuleSet()->getCallGraphNode(called_llvmfunc);
     }
-//    else
-//    {
-//        const SVFFunction* func = SVFUtil::dyn_cast<SVFFunction>(
-//            llvmModuleSet()->getSVFValue(called_llvmval));
-//        calledFunc = func?func->getCallGraphNode(): nullptr ;
-//    }
 
     SVFBasicBlock* bb = llvmModuleSet()->getSVFBasicBlock(inst->getParent());
 
