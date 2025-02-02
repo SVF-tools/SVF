@@ -58,8 +58,8 @@ public:
     typedef ICFGNodeIDToNodeMapTy::iterator iterator;
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;
 
-    typedef Map<const SVFFunction*, FunEntryICFGNode *> FunToFunEntryNodeMapTy;
-    typedef Map<const SVFFunction*, FunExitICFGNode *> FunToFunExitNodeMapTy;
+    typedef Map<const CallGraphNode*, FunEntryICFGNode *> FunToFunEntryNodeMapTy;
+    typedef Map<const CallGraphNode*, FunExitICFGNode *> FunToFunExitNodeMapTy;
     typedef std::vector<const SVFLoop *> SVFLoopVec;
     typedef Map<const ICFGNode *, SVFLoopVec> ICFGNodeToSVFLoopVec;
 
@@ -164,8 +164,8 @@ protected:
     /// sanitize Intra edges, verify that both nodes belong to the same function.
     inline void checkIntraEdgeParents(const ICFGNode *srcNode, const ICFGNode *dstNode)
     {
-        const SVFFunction* srcfun = srcNode->getFun();
-        const SVFFunction* dstfun = dstNode->getFun();
+        const CallGraphNode* srcfun = srcNode->getFun();
+        const CallGraphNode* dstfun = dstNode->getFun();
         if(srcfun != nullptr && dstfun != nullptr)
         {
             assert((srcfun == dstfun) && "src and dst nodes of an intra edge should in the same function!" );
@@ -182,7 +182,7 @@ protected:
 
     virtual inline CallICFGNode* addCallICFGNode(
         const SVFBasicBlock* bb, const SVFType* ty,
-        const SVFFunction* calledFunc, bool isVararg, bool isvcall,
+        const CallGraphNode* calledFunc, bool isVararg, bool isvcall,
         s32_t vcallIdx, const std::string& funNameOfVcall)
     {
 
@@ -201,18 +201,18 @@ protected:
         return retICFGNode;
     }
 
-    virtual inline FunEntryICFGNode* addFunEntryICFGNode(const SVFFunction* svfFunc)
+    virtual inline FunEntryICFGNode* addFunEntryICFGNode(const CallGraphNode* cgn)
     {
-        FunEntryICFGNode* sNode = new FunEntryICFGNode(totalICFGNode++,svfFunc);
+        FunEntryICFGNode* sNode = new FunEntryICFGNode(totalICFGNode++, cgn);
         addICFGNode(sNode);
-        return FunToFunEntryNodeMap[svfFunc] = sNode;
+        return FunToFunEntryNodeMap[cgn] = sNode;
     }
 
-    virtual inline FunExitICFGNode* addFunExitICFGNode(const SVFFunction* svfFunc)
+    virtual inline FunExitICFGNode* addFunExitICFGNode(const CallGraphNode* cgn)
     {
-        FunExitICFGNode* sNode = new FunExitICFGNode(totalICFGNode++, svfFunc);
+        FunExitICFGNode* sNode = new FunExitICFGNode(totalICFGNode++, cgn);
         addICFGNode(sNode);
-        return FunToFunExitNodeMap[svfFunc] = sNode;
+        return FunToFunExitNodeMap[cgn] = sNode;
     }
 
     /// Add a ICFG node
@@ -229,9 +229,9 @@ public:
     //@{
 
 
-    FunEntryICFGNode* getFunEntryICFGNode(const SVFFunction*  fun);
+    FunEntryICFGNode* getFunEntryICFGNode(const CallGraphNode*  fun);
 
-    FunExitICFGNode* getFunExitICFGNode(const SVFFunction*  fun);
+    FunExitICFGNode* getFunExitICFGNode(const CallGraphNode*  fun);
 
     inline GlobalICFGNode* getGlobalICFGNode() const
     {
@@ -284,7 +284,7 @@ private:
     }
 
     /// Get/Add a function entry node
-    inline FunEntryICFGNode* getFunEntryBlock(const SVFFunction* fun)
+    inline FunEntryICFGNode* getFunEntryBlock(const CallGraphNode* fun)
     {
         FunToFunEntryNodeMapTy::const_iterator it = FunToFunEntryNodeMap.find(fun);
         if (it == FunToFunEntryNodeMap.end())
@@ -293,7 +293,7 @@ private:
     }
 
     /// Get/Add a function exit node
-    inline FunExitICFGNode* getFunExitBlock(const SVFFunction* fun)
+    inline FunExitICFGNode* getFunExitBlock(const CallGraphNode* fun)
     {
         FunToFunExitNodeMapTy::const_iterator it = FunToFunExitNodeMap.find(fun);
         if (it == FunToFunExitNodeMap.end())

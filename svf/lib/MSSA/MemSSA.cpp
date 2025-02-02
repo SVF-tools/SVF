@@ -77,7 +77,7 @@ SVFIR* MemSSA::getPAG()
 /*!
  * Start building memory SSA
  */
-void MemSSA::buildMemSSA(const SVFFunction& fun)
+void MemSSA::buildMemSSA(const CallGraphNode& fun)
 {
 
     assert(!isExtCall(&fun) && "we do not build memory ssa for external functions");
@@ -112,7 +112,7 @@ void MemSSA::buildMemSSA(const SVFFunction& fun)
  * Create mu/chi according to memory regions
  * collect used mrs in usedRegs and construction map from region to BB for prune SSA phi insertion
  */
-void MemSSA::createMUCHI(const SVFFunction& fun)
+void MemSSA::createMUCHI(const CallGraphNode& fun)
 {
 
 
@@ -198,7 +198,7 @@ void MemSSA::createMUCHI(const SVFFunction& fun)
 /*
  * Insert phi node
  */
-void MemSSA::insertPHI(const SVFFunction& fun)
+void MemSSA::insertPHI(const CallGraphNode& fun)
 {
 
     DBOUT(DMSSA,
@@ -246,7 +246,7 @@ void MemSSA::insertPHI(const SVFFunction& fun)
 /*!
  * SSA construction algorithm
  */
-void MemSSA::SSARename(const SVFFunction& fun)
+void MemSSA::SSARename(const CallGraphNode& fun)
 {
 
     DBOUT(DMSSA,
@@ -307,7 +307,7 @@ void MemSSA::SSARenameBB(const SVFBasicBlock& bb)
         }
         else if(isRetInstNode(pNode))
         {
-            const SVFFunction* fun = bb.getParent();
+            const CallGraphNode* fun = bb.getParent();
             RenameMuSet(getReturnMuSet(fun));
         }
     }
@@ -322,7 +322,7 @@ void MemSSA::SSARenameBB(const SVFBasicBlock& bb)
     }
 
     // for succ basic block in dominator tree
-    const SVFFunction* fun = bb.getParent();
+    const CallGraphNode* fun = bb.getParent();
     const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& dtBBsMap = fun->getDomTreeMap();
     Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>::const_iterator mapIter = dtBBsMap.find(&bb);
     if (mapIter != dtBBsMap.end())
@@ -579,7 +579,7 @@ void MemSSA::dumpMSSA(OutStream& Out)
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
-        const SVFFunction* fun = item.second->getFunction();
+        const CallGraphNode* fun = item.second;
         if(Options::MSSAFun()!="" && Options::MSSAFun()!=fun->getName())
             continue;
 
@@ -594,7 +594,7 @@ void MemSSA::dumpMSSA(OutStream& Out)
             }
         }
 
-        for (SVFFunction::const_iterator bit = fun->begin(), ebit = fun->end();
+        for (CallGraphNode::const_bb_iterator bit = fun->begin(), ebit = fun->end();
                 bit != ebit; ++bit)
         {
             const SVFBasicBlock* bb = bit->second;

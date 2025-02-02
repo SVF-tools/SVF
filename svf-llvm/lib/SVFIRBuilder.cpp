@@ -96,7 +96,7 @@ SVFIR* SVFIRBuilder::build()
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
             const Function& fun = *F;
-            const SVFFunction* svffun = llvmModuleSet()->getSVFFunction(&fun);
+            const CallGraphNode* cgn = llvmModuleSet()->getCallGraphNode(&fun);
             /// collect return node of function fun
             if(!fun.isDeclaration())
             {
@@ -108,8 +108,8 @@ SVFIR* SVFIRBuilder::build()
                 if (fun.doesNotReturn() == false &&
                         fun.getReturnType()->isVoidTy() == false)
                 {
-                    pag->addFunRet(svffun,
-                                   pag->getGNode(pag->getReturnNode(svffun)));
+                    pag->addFunRet(cgn,
+                                   pag->getGNode(pag->getReturnNode(cgn)));
                 }
 
                 /// To be noted, we do not record arguments which are in declared function without body
@@ -126,7 +126,7 @@ SVFIR* SVFIRBuilder::build()
                     //    if(I->getType()->isPointerTy())
                     //        addBlackHoleAddrEdge(argValNodeId);
                     //}
-                    pag->addFunArgs(svffun,pag->getGNode(argValNodeId));
+                    pag->addFunArgs(cgn,pag->getGNode(argValNodeId));
                 }
             }
             for (Function::const_iterator bit = fun.begin(), ebit = fun.end();
@@ -291,7 +291,7 @@ void SVFIRBuilder::initialiseNodes()
         // Check if the value is a function and add a function object node
         if (const Function* func = SVFUtil::dyn_cast<Function>(llvmValue))
         {
-            NodeID id = llvmModuleSet()->getObjectNode(llvmModuleSet()->getCallGraphNode(func)->getFunction());
+            NodeID id = llvmModuleSet()->getObjectNode(llvmModuleSet()->getSVFValue(func));
             pag->addFunObjNode(iter->second, pag->getObjTypeInfo(id),  llvmModuleSet()->getCallGraphNode(func), iter->first->getType(), icfgNode);
         }
         // Check if the value is a heap object and add a heap object node
@@ -410,7 +410,7 @@ void SVFIRBuilder::initialiseNodes()
         const Function* llvmFun = SVFUtil::cast<Function>(llvmModuleSet()->getLLVMValue(fun));
         for (const Argument& arg : llvmFun->args())
         {
-            const_cast<SVFFunction *>(fun)->addArgument(
+            fun->addArgument(
                 SVFUtil::cast<ArgValVar>(
                     pag->getGNode(llvmModuleSet()->getValueNode(llvmModuleSet()->getSVFArgument(&arg)))));
         }
@@ -1023,10 +1023,10 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
     }
     if (const Function *callee = LLVMUtil::getCallee(cs))
     {
-        const SVFFunction* svfcallee = llvmModuleSet()->getSVFFunction(callee);
-        if (isExtCall(svfcallee))
+        const CallGraphNode* calleeNode = llvmModuleSet()->getCallGraphNode(callee);
+        if (isExtCall(calleeNode))
         {
-            handleExtCall(cs, svfcallee);
+            handleExtCall(cs, calleeNode);
         }
         else
         {
@@ -1053,7 +1053,7 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
 
     if(Value* src = inst.getReturnValue())
     {
-        const SVFFunction *F = llvmModuleSet()->getSVFFunction(inst.getParent()->getParent());
+        const CallGraphNode *F = llvmModuleSet()->getCallGraphNode(inst.getParent()->getParent());
 
         NodeID rnF = getReturnNode(F);
         NodeID vnS = getValueNode(src);
@@ -1246,7 +1246,7 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
 
     assert(F);
     CallICFGNode* callICFGNode = llvmModuleSet()->getCallICFGNode(cs);
-    const SVFFunction* svffun = llvmModuleSet()->getSVFFunction(F);
+    const CallGraphNode* cgn = llvmModuleSet()->getCallGraphNode(F);
     DBOUT(DPAGBuild,
           outs() << "handle direct call " << LLVMUtil::dumpValue(cs) << " callee " << F->getName().str() << "\n");
 
@@ -1255,8 +1255,8 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
     //Does it actually return a ptr?
     if (!cs->getType()->isVoidTy())
     {
-        NodeID srcret = getReturnNode(svffun);
-        FunExitICFGNode* exitICFGNode = pag->getICFG()->getFunExitICFGNode(svffun);
+        NodeID srcret = getReturnNode(cgn);
+        FunExitICFGNode* exitICFGNode = pag->getICFG()->getFunExitICFGNode(cgn);
         addRetEdge(srcret, dstrec,callICFGNode, exitICFGNode);
     }
     //Iterators for the actual and formal parameters
@@ -1278,19 +1278,19 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
 
         NodeID dstFA = getValueNode(FA);
         NodeID srcAA = getValueNode(AA);
-        FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svffun);
+        FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(cgn);
         addCallEdge(srcAA, dstFA, callICFGNode, entry);
     }
     //Any remaining actual args must be varargs.
     if (F->isVarArg())
     {
-        NodeID vaF = getVarargNode(svffun);
+        NodeID vaF = getVarargNode(cgn);
         DBOUT(DPAGBuild, outs() << "\n      varargs:");
         for (; itA != ieA; ++itA)
         {
             const Value* AA = cs->getArgOperand(itA);
             NodeID vnAA = getValueNode(AA);
-            FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svffun);
+            FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(cgn);
             addCallEdge(vnAA,vaF, callICFGNode,entry);
         }
     }
@@ -1350,7 +1350,7 @@ void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph)
             if (isExtCall(*func_iter))
             {
                 setCurrentLocation(callee, callee->empty() ? nullptr : &callee->getEntryBlock());
-                const SVFFunction* svfcallee = llvmModuleSet()->getSVFFunction(callee);
+                const CallGraphNode* svfcallee = llvmModuleSet()->getCallGraphNode(callee);
                 handleExtCall(callbase, svfcallee);
             }
             else
@@ -1461,8 +1461,8 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     LLVMModuleSet* llvmMS = llvmModuleSet();
     if (const SVFInstruction* curInst = SVFUtil::dyn_cast<SVFInstruction>(curVal))
     {
-        const SVFFunction* srcFun = edge->getSrcNode()->getFunction();
-        const SVFFunction* dstFun = edge->getDstNode()->getFunction();
+        const CallGraphNode* srcFun = edge->getSrcNode()->getFunction();
+        const CallGraphNode* dstFun = edge->getDstNode()->getFunction();
         if(srcFun!=nullptr && !SVFUtil::isa<RetPE>(edge) && !SVFUtil::isa<FunValVar>(edge->getSrcNode()) && !SVFUtil::isa<FunObjVar>(edge->getSrcNode()))
         {
             assert(srcFun==curInst->getFunction() && "SrcNode of the PAGEdge not in the same function?");
@@ -1492,7 +1492,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     else if (const SVFArgument* arg = SVFUtil::dyn_cast<SVFArgument>(curVal))
     {
         assert(curBB && (curBB->getParent()->getEntryBlock() == curBB));
-        icfgNode = pag->getICFG()->getFunEntryICFGNode(arg->getParent());
+        icfgNode = pag->getICFG()->getFunEntryICFGNode(arg->getParent()->getCallGraphNode());
     }
     else if (SVFUtil::isa<SVFConstant>(curVal) ||
              SVFUtil::isa<SVFFunction>(curVal) ||

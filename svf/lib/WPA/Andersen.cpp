@@ -33,6 +33,7 @@
 #include "MemoryModel/PointsTo.h"
 #include "WPA/Andersen.h"
 #include "WPA/Steensgaard.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -241,19 +242,19 @@ bool AndersenBase::updateThreadCallGraph(const CallSiteToFunPtrMap& callsites,
 /*!
  * Connect formal and actual parameters for indirect forksites
  */
-void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const SVFFunction* F,
+void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const CallGraphNode* cgNode,
         NodePairSet& cpySrcNodes)
 {
-    assert(F);
+    assert(cgNode);
 
     DBOUT(DAndersen, outs() << "connect parameters from indirect forksite "
           << cs->valueOnlyToString() << " to forked function "
-          << *F << "\n");
+          << *cgNode << "\n");
 
     ThreadCallGraph *tdCallGraph = SVFUtil::dyn_cast<ThreadCallGraph>(callgraph);
 
     const PAGNode *cs_arg = tdCallGraph->getThreadAPI()->getActualParmAtForkSite(cs);
-    const PAGNode *fun_arg = tdCallGraph->getThreadAPI()->getFormalParmOfForkedFun(F);
+    const PAGNode *fun_arg = tdCallGraph->getThreadAPI()->getFormalParmOfForkedFun(cgNode);
 
     if(cs_arg->isPointer() && fun_arg->isPointer())
     {
@@ -272,7 +273,7 @@ void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const S
 // * Connect formal and actual parameters for indirect callsites
 // */
 void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs,
-        const SVFFunction* F, NodePairSet &cpySrcNodes)
+        const CallGraphNode* F, NodePairSet &cpySrcNodes)
 {
     assert(F);
 

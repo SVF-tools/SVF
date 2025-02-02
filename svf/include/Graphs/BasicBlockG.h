@@ -39,7 +39,7 @@ namespace SVF
 class SVFBasicBlock;
 class BasicBlockEdge;
 class ICFGNode;
-class SVFFunction;
+class CallGraphNode;
 typedef GenericEdge<SVFBasicBlock> GenericBasicBlockEdgeTy;
 class BasicBlockEdge: public GenericBasicBlockEdgeTy
 {
@@ -75,7 +75,6 @@ class SVFBasicBlock : public GenericBasicBlockNodeTy
     friend class SVFIRWriter;
     friend class SVFIRReader;
     friend class SVFIRBuilder;
-    friend class SVFFunction;
     friend class ICFGBuilder;
     friend class ICFG;
 
@@ -86,7 +85,7 @@ public:
 
 private:
     std::vector<const ICFGNode*> allICFGNodes;    ///< all ICFGNodes in this BasicBlock
-    const SVFFunction* fun;                 /// Function where this BasicBlock is
+    const CallGraphNode* fun;                 /// Function where this BasicBlock is
 
 
 
@@ -104,7 +103,7 @@ protected:
 
 public:
     /// Constructor without name
-    SVFBasicBlock(NodeID id, const SVFFunction* f): GenericBasicBlockNodeTy(id, BasicBlockKd), fun(f)
+    SVFBasicBlock(NodeID id, const CallGraphNode* f): GenericBasicBlockNodeTy(id, BasicBlockKd), fun(f)
     {
 
     }
@@ -181,12 +180,12 @@ public:
         pred->succBBs.push_back(this);
     }
 
-    inline const SVFFunction* getParent() const
+    inline const CallGraphNode* getParent() const
     {
         return fun;
     }
 
-    inline const SVFFunction* getFunction() const
+    inline const CallGraphNode* getFunction() const
     {
         return fun;
     }
@@ -287,10 +286,10 @@ class BasicBlockGraph: public GenericBasicBlockGraphTy
 {
 private:
     NodeID id{0};
-    const SVFFunction* fun;
+    const CallGraphNode* fun;
 public:
     /// Constructor
-    BasicBlockGraph(const SVFFunction* f): fun(f)
+    BasicBlockGraph(const CallGraphNode* f): fun(f)
     {
 
     }

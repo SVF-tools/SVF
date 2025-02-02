@@ -118,13 +118,13 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
         Set<const ICFGNode*> instSet1;
         Set<const ICFGNode*> instSet2;
         SVFModule* mod = mhp->getTCT()->getSVFModule();
-        for (const SVFFunction* fun : mod->getFunctionSet())
+        for (const CallGraphNode* fun : mod->getFunctionSet())
         {
             if(SVFUtil::isExtCall(fun))
                 continue;
             if(!mhp->isConnectedfromMain(fun))
                 continue;
-            for (SVFFunction::const_iterator bit =  fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
+            for (CallGraphNode::const_bb_iterator bit =  fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
             {
                 const SVFBasicBlock* bb = bit->second;
                 for (const auto& icfgNode : bb->getICFGNodeList())

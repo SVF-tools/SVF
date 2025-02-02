@@ -102,13 +102,13 @@ public:
     }
 
     /// getReturnNode - Return the node representing the unique return value of a function.
-    inline NodeID getReturnNode(const SVFFunction *func)
+    inline NodeID getReturnNode(const CallGraphNode *func)
     {
         return pag->getReturnNode(func);
     }
 
     /// getVarargNode - Return the node representing the unique variadic argument of a function.
-    inline NodeID getVarargNode(const SVFFunction *func)
+    inline NodeID getVarargNode(const CallGraphNode *func)
     {
         return pag->getVarargNode(func);
     }
@@ -234,7 +234,7 @@ protected:
     //@{
     virtual const Type *getBaseTypeAndFlattenedFields(const Value *V, std::vector<AccessPath> &fields, const Value* szValue);
     virtual void addComplexConsForExt(Value *D, Value *S, const Value* sz);
-    virtual void handleExtCall(const CallBase* cs, const SVFFunction* svfCallee);
+    virtual void handleExtCall(const CallBase* cs, const CallGraphNode* svfCallee);
     //@}
 
     /// Set current basic block in order to keep track of control flow information

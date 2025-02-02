@@ -73,8 +73,8 @@ public:
         std::stringstream rawstr(str);
         rawstr << "ThreadForkEdge ";
         rawstr << "CallSiteID: " << getCallSiteID();
-        rawstr << " srcNodeID " << getSrcID() << " (fun: " << getSrcNode()->getFunction()->getName() << ")";
-        rawstr << " dstNodeID " << getDstID() << " (fun: " << getDstNode()->getFunction()->getName() << ")";
+        rawstr << " srcNodeID " << getSrcID() << " (fun: " << getSrcNode()->getCallGraphNode()->getName() << ")";
+        rawstr << " dstNodeID " << getDstID() << " (fun: " << getDstNode()->getCallGraphNode()->getName() << ")";
         return rawstr.str();
     }
 
@@ -113,8 +113,8 @@ public:
         std::stringstream rawstr(str);
         rawstr << "ThreadJoinEdge ";
         rawstr << "CallSiteID: " << getCallSiteID();
-        rawstr << " srcNodeID " << getSrcID() << " (fun: " << getSrcNode()->getFunction()->getName() << ")";
-        rawstr << " dstNodeID " << getDstID() << " (fun: " << getDstNode()->getFunction()->getName() << ")";
+        rawstr << " srcNodeID " << getSrcID() << " (fun: " << getSrcNode()->getCallGraphNode()->getName() << ")";
+        rawstr << " dstNodeID " << getDstID() << " (fun: " << getDstNode()->getCallGraphNode()->getName() << ")";
         return rawstr.str();
     }
 
@@ -350,7 +350,7 @@ public:
     /// Add direct/indirect thread fork edges
     //@{
     bool addDirectForkEdge(const CallICFGNode* cs);
-    bool addIndirectForkEdge(const CallICFGNode* cs, const SVFFunction* callee);
+    bool addIndirectForkEdge(const CallICFGNode* cs, const CallGraphNode* callee);
     //@}
 
     /// Add thread join edges

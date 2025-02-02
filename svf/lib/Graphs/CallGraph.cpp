@@ -57,11 +57,39 @@ const std::string CallGraphEdge::toString() const
     return rawstr.str();
 }
 
+
+void CallGraphNode::init(const SVFFunctionType* ft, bool uncalled, bool notRet, bool declare, bool intr, bool adt,
+                         bool varg, SVFLoopAndDomInfo* ld, CallGraphNode* cgn, BasicBlockGraph* bbG, std::vector<const ArgValVar*> allArg, SVFBasicBlock* eBb)
+{
+    this->isUncalled = uncalled;
+    this->isNotRet = notRet;
+    this->isDecl =  declare;
+    this->intrinsic = intr;
+    this->addrTaken =adt;
+    this->varArg = varg;
+    this->funcType = ft;
+    this->loopAndDom = ld;
+    this->realDefFun = cgn;
+    this->bbGraph = bbG;
+    this->allArgs = allArg;
+    this->exitBlock = eBb;
+}
+
+CallGraphNode::CallGraphNode(NodeID i,
+                             const SVFType* ty, const SVFFunctionType* ft,
+                             bool declare, bool intrinsic, bool adt,
+                             bool varg, SVFLoopAndDomInfo* ld)
+    : GenericNode(i,CallNodeKd,ty),isDecl(declare), intrinsic(intrinsic),
+      addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg),
+      funcType(ft), loopAndDom(ld), realDefFun(nullptr), exitBlock(nullptr)
+{
+}
+
 const std::string CallGraphNode::toString() const
 {
     std::string str;
     std::stringstream  rawstr(str);
-    rawstr << "CallGraphNode ID: " << getId() << " {fun: " << fun->getName() << "}";
+    rawstr << "CallGraphNode ID: " << getId() << " {fun: " << getName() << "}";
     return rawstr.str();
 }
 
@@ -83,13 +111,15 @@ void CallGraph::destroy()
 /*!
  * Add call graph node
  */
-void CallGraph::addCallGraphNode(const SVFFunction* fun)
+CallGraphNode* CallGraph::addCallGraphNode(const SVFType* ty, const SVFFunctionType* ft,
+                             bool declare, bool intrinsic, bool adt,
+                             bool varg, SVFLoopAndDomInfo* ld)
 {
     NodeID id  = callGraphNodeNum;
-    CallGraphNode*callGraphNode = new CallGraphNode(id, fun);
+    CallGraphNode *callGraphNode = new CallGraphNode(id, ty, ft, declare, intrinsic, adt, varg, ld);
     addGNode(id, callGraphNode);
-    funToCallGraphNodeMap[callGraphNode->getFunction()] = callGraphNode;
     callGraphNodeNum++;
+    return callGraphNode;
 }
 
 /*!
@@ -114,13 +144,8 @@ CallGraphEdge* CallGraph::hasGraphEdge(CallGraphNode* src,
 /*!
  * Add direct call edges
  */
-void CallGraph::addDirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun)
+void CallGraph::addDirectCallGraphEdge(const CallICFGNode* cs, CallGraphNode* caller, CallGraphNode* callee)
 {
-
-    CallGraphNode* caller = getCallGraphNode(callerFun);
-    CallGraphNode* callee = getCallGraphNode(calleeFun);
-
-
     if(!hasGraphEdge(caller,callee, cs))
     {
         CallGraphEdge* edge = new CallGraphEdge(caller,callee, cs);
@@ -183,8 +208,7 @@ struct DOTGraphTraits<CallGraph*> : public DefaultDOTGraphTraits
 
     static std::string getNodeAttributes(CallGraphNode*node, CallGraph*)
     {
-        const SVFFunction* fun = node->getFunction();
-        if (!SVFUtil::isExtCall(fun))
+        if (!SVFUtil::isExtCall(node))
         {
             return "shape=box";
         }

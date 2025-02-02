@@ -137,9 +137,9 @@ bool PointerAnalysis::isLocalVarInRecursiveFun(NodeID id) const
     assert(baseObjVar && "base object not found!!");
     if(SVFUtil::isa<StackObjVar>(baseObjVar))
     {
-        if(const SVFFunction* svffun = pag->getGNode(id)->getFunction())
+        if(const CallGraphNode* svffun = pag->getGNode(id)->getFunction())
         {
-            return callGraphSCC->isInCycle(getCallGraph()->getCallGraphNode(svffun)->getId());
+            return callGraphSCC->isInCycle(svffun->getId());
         }
     }
     return false;
@@ -323,7 +323,7 @@ void PointerAnalysis::printIndCSTargets(const CallICFGNode* cs, const FunctionSe
         FunctionSet::const_iterator feit = targets.end();
         for (; fit != feit; ++fit)
         {
-            const SVFFunction* callee = *fit;
+            const CallGraphNode* callee = *fit;
             outs() << "\n\t" << callee->getName();
         }
     }
@@ -394,8 +394,8 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
 
             if(obj->isFunction())
             {
-                const SVFFunction* calleefun = SVFUtil::cast<FunObjVar>(obj)->getFunction();
-                const SVFFunction* callee = calleefun->getDefFunForMultipleModule();
+                const CallGraphNode* calleefun = SVFUtil::cast<FunObjVar>(obj)->getFunction();
+                const CallGraphNode* callee = calleefun->getDefFunForMultipleModule();
 
                 if(SVFUtil::matchArgs(cs, callee) == false)
                     continue;
@@ -469,7 +469,7 @@ void PointerAnalysis::connectVCallToVFns(const CallICFGNode* cs, const VFunSet &
     for (VFunSet::const_iterator fit = vfns.begin(),
             feit = vfns.end(); fit != feit; ++fit)
     {
-        const SVFFunction* callee = *fit;
+        const CallGraphNode* callee = *fit;
         callee = callee->getDefFunForMultipleModule();
         if (getIndCallMap()[cs].count(callee) > 0)
             continue;
@@ -504,7 +504,7 @@ void PointerAnalysis::resolveCPPIndCalls(const CallICFGNode* cs, const PointsTo&
 void PointerAnalysis::validateSuccessTests(std::string fun)
 {
     // check for must alias cases, whether our alias analysis produce the correct results
-    if (const SVFFunction* checkFun = svfMod->getSVFFunction(fun))
+    if (const CallGraphNode* checkFun = pag->getCallGraph()->getCallGraphNode(fun))
     {
         if(!checkFun->isUncalledFunction())
             outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
@@ -569,7 +569,7 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
 void PointerAnalysis::validateExpectedFailureTests(std::string fun)
 {
 
-    if (const SVFFunction* checkFun = svfMod->getSVFFunction(fun))
+    if (const CallGraphNode* checkFun = pag->getCallGraph()->getCallGraphNode(fun))
     {
         if(!checkFun->isUncalledFunction())
             outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";

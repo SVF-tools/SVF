@@ -50,10 +50,9 @@ class LLVMModuleSet
 public:
 
     typedef std::vector<const Function*> FunctionSetType;
-    typedef Map<const Function*, const Function*> FunDeclToDefMapTy;
-    typedef Map<const Function*, FunctionSetType> FunDefToDeclsMapTy;
     typedef Map<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
 
+    typedef Map<const CallGraphNode*, SVFFunction*> CGN2SVFFunMap;
     typedef Map<const Function*, SVFFunction*> LLVMFun2SVFFunMap;
     typedef Map<const Function*, CallGraphNode*> LLVMFun2CallGraphNodeMap;
     typedef Map<const BasicBlock*, SVFBasicBlock*> LLVMBB2SVFBBMap;
@@ -113,6 +112,7 @@ private:
     FunToFunEntryNodeMapTy FunToFunEntryNodeMap; ///< map a function to its FunExitICFGNode
     FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryICFGNode
     CallGraph* callgraph;
+    CGN2SVFFunMap CallGraphNode2SVFFunMap;
 
     Map<const Function*, DominatorTree> FunToDominatorTree;
 
@@ -218,7 +218,7 @@ public:
         setValueAttr(func,svfFunc);
     }
 
-    void addFunctionMap(const Function* func, CallGraphNode* svfFunc);
+    void addFunctionMap(const Function* func, CallGraphNode* node);
 
     // create a SVFBasicBlock according to LLVM BasicBlock, then add it to SVFFunction's BasicBlockGraph
     inline void addBasicBlock(SVFFunction* fun, const BasicBlock* bb)
@@ -361,6 +361,22 @@ public:
             if (fun)
             {
                 return llvmModuleSet->getSVFFunction(fun);
+            }
+        }
+        return nullptr;
+    }
+
+    inline const CallGraphNode* getFunctionNode(const std::string& name)
+    {
+        Function* fun = nullptr;
+
+        for (u32_t i = 0; i < llvmModuleSet->getModuleNum(); ++i)
+        {
+            Module* mod = llvmModuleSet->getModule(i);
+            fun = mod->getFunction(name);
+            if (fun)
+            {
+                return llvmModuleSet->getCallGraphNode(fun);
             }
         }
         return nullptr;

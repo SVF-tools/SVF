@@ -241,16 +241,11 @@ InterICFGNode* ICFGBuilder::addInterBlockICFGNode(const Instruction* inst)
     assert(llvmModuleSet()->getCallBlock(inst)==nullptr && "duplicate CallICFGNode");
     const CallBase* cb = SVFUtil::dyn_cast<CallBase>(inst);
     bool isvcall = cppUtil::isVirtualCallSite(cb);
-    SVFFunction* calledFunc = nullptr;
+    const CallGraphNode* calledFunc = nullptr;
     auto called_llvmval = cb->getCalledOperand()->stripPointerCasts();
     if (const Function* called_llvmfunc = SVFUtil::dyn_cast<Function>(called_llvmval))
     {
-        calledFunc = llvmModuleSet()->getSVFFunction(called_llvmfunc);
-    }
-    else
-    {
-        calledFunc = SVFUtil::dyn_cast<SVFFunction>(
-                         llvmModuleSet()->getSVFValue(called_llvmval));
+        calledFunc = llvmModuleSet()->getCallGraphNode(called_llvmfunc);
     }
 
     SVFBasicBlock* bb = llvmModuleSet()->getSVFBasicBlock(inst->getParent());
@@ -282,8 +277,8 @@ void ICFGBuilder::addICFGInterEdges(const Instruction* cs, const Function* calle
     /// direct call
     if(callee)
     {
-        SVFFunction* svfFun =
-            llvmModuleSet()->getSVFFunction(callee);
+        CallGraphNode* svfFun =
+            llvmModuleSet()->getCallGraphNode(callee);
         /// if this is an external function (no function body)
         if (SVFUtil::isExtCall(svfFun))
         {
@@ -352,11 +347,11 @@ IntraICFGNode* ICFGBuilder::addIntraBlockICFGNode(const Instruction* inst)
 FunEntryICFGNode* ICFGBuilder::addFunEntryBlock(const Function* fun)
 {
     return llvmModuleSet()->FunToFunEntryNodeMap[fun] =
-               icfg->addFunEntryICFGNode(llvmModuleSet()->getSVFFunction(fun));
+               icfg->addFunEntryICFGNode(llvmModuleSet()->getCallGraphNode(fun));
 }
 
 inline FunExitICFGNode* ICFGBuilder::addFunExitBlock(const Function* fun)
 {
     return llvmModuleSet()->FunToFunExitNodeMap[fun] =
-               icfg->addFunExitICFGNode(llvmModuleSet()->getSVFFunction(fun));
+               icfg->addFunExitICFGNode(llvmModuleSet()->getCallGraphNode(fun));
 }

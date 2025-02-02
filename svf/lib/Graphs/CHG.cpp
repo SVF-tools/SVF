@@ -31,6 +31,7 @@
 #include "Util/SVFUtil.h"
 #include "Graphs/ICFG.h"
 #include "SVFIR/SVFIR.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -50,7 +51,7 @@ static bool hasEdge(const CHNode *src, const CHNode *dst,
     return false;
 }
 
-static bool checkArgTypes(const CallICFGNode* cs, const SVFFunction* fn)
+static bool checkArgTypes(const CallICFGNode* cs, const CallGraphNode* fn)
 {
 
     // here we skip the first argument (i.e., this pointer)
@@ -137,7 +138,7 @@ void CHGraph::getVFnsFromVtbls(const CallICFGNode* callsite, const VTableSet &vt
         for (CHNode::FuncVector::const_iterator fit = vfns.begin(),
                 feit = vfns.end(); fit != feit; ++fit)
         {
-            const SVFFunction* callee = *fit;
+            const CallGraphNode* callee = *fit;
             if (callsite->arg_size() == callee->arg_size() ||
                     (callsite->isVarArg() && callee->isVarArg()))
             {

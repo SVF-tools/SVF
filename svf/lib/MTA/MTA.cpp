@@ -136,7 +136,7 @@ void MTA::detect(SVFModule* module)
     PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
 
     // Add symbols for all of the functions and the instructions in them.
-    for (const SVFFunction* F : module->getFunctionSet())
+    for (const CallGraphNode* F : module->getFunctionSet())
     {
         // collect and create symbols inside the function body
         for (auto it : *F)

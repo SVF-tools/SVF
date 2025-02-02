@@ -45,7 +45,7 @@ class CHNode;
 class GlobalObjVar;
 
 typedef Set<const GlobalObjVar*> VTableSet;
-typedef Set<const SVFFunction*> VFunSet;
+typedef Set<const CallGraphNode*> VFunSet;
 
 /// Common base for class hierarchy graph. Only implements what PointerAnalysis needs.
 class CommonCHGraph
@@ -119,7 +119,7 @@ public:
         TEMPLATE = 0x04 // template class
     } CLASSATTR;
 
-    typedef std::vector<const SVFFunction*> FuncVector;
+    typedef std::vector<const CallGraphNode*> FuncVector;
 
     CHNode (const std::string& name, NodeID i = 0, GNodeK k = CHNodeKd):
         GenericCHNodeTy(i, k), vtable(nullptr), className(name), flags(0)
@@ -267,18 +267,18 @@ public:
     void view();
     void printCH();
 
-    inline u32_t getVirtualFunctionID(const SVFFunction* vfn) const
+    inline u32_t getVirtualFunctionID(const CallGraphNode* vfn) const
     {
-        Map<const SVFFunction*, u32_t>::const_iterator it =
+        Map<const CallGraphNode*, u32_t>::const_iterator it =
             virtualFunctionToIDMap.find(vfn);
         if (it != virtualFunctionToIDMap.end())
             return it->second;
         else
             return -1;
     }
-    inline const SVFFunction* getVirtualFunctionBasedonID(u32_t id) const
+    inline const CallGraphNode* getVirtualFunctionBasedonID(u32_t id) const
     {
-        Map<const SVFFunction*, u32_t>::const_iterator it, eit;
+        Map<const CallGraphNode*, u32_t>::const_iterator it, eit;
         for (it = virtualFunctionToIDMap.begin(), eit =
                     virtualFunctionToIDMap.end(); it != eit; ++it)
         {
@@ -329,7 +329,7 @@ private:
     NameToCHNodesMap templateNameToInstancesMap;
     CallNodeToCHNodesMap callNodeToClassesMap;
 
-    Map<const SVFFunction*, u32_t> virtualFunctionToIDMap;
+    Map<const CallGraphNode*, u32_t> virtualFunctionToIDMap;
 
     CallNodeToVTableSetMap callNodeToCHAVtblsMap;
     CallNodeToVFunSetMap callNodeToCHAVFnsMap;

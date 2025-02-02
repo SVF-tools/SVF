@@ -75,7 +75,7 @@ public:
     typedef OrderedMap<NodeID, ObjTypeInfo*> IDToTypeInfoMapTy;
 
     /// function to sym id map
-    typedef OrderedMap<const SVFFunction*, NodeID> FunToIDMapTy;
+    typedef OrderedMap<const CallGraphNode*, NodeID> FunToIDMapTy;
     /// struct type to struct info map
     typedef Set<const SVFType*> SVFTypeSet;
     //@}
@@ -237,10 +237,10 @@ public:
     }
 
     /// GetReturnNode - Return the unique node representing the return value of a function
-    NodeID getReturnNode(const SVFFunction* func) const;
+    NodeID getReturnNode(const CallGraphNode* func) const;
 
     /// getVarargNode - Return the unique node representing the variadic argument of a variadic function.
-    NodeID getVarargNode(const SVFFunction* func) const;
+    NodeID getVarargNode(const CallGraphNode* func) const;
 
     inline NodeID getBlackHoleNode() const
     {

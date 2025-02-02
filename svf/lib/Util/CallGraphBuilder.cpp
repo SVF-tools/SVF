@@ -38,17 +38,15 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-CallGraph* CallGraphBuilder::buildSVFIRCallGraph(SVFModule* svfModule)
+CallGraph* CallGraphBuilder::createSVFIRCallGraph()
 {
-    CallGraph* callgraph = new CallGraph();
-    for (const SVFFunction* svfFunc: svfModule->getFunctionSet())
-    {
-        callgraph->addCallGraphNode(svfFunc);
-    }
+    return new CallGraph();
+}
 
+void CallGraphBuilder::addSVFIRCallGraphEdges(SVF::CallGraph* callgraph){
     for (const auto& item : *callgraph)
     {
-        for (auto it : *(item.second)->getFunction())
+        for (auto it : *(item.second))
         {
             const SVFBasicBlock* svfbb = it.second;
             for (const ICFGNode* inst : svfbb->getICFGNodeList())
@@ -56,16 +54,17 @@ CallGraph* CallGraphBuilder::buildSVFIRCallGraph(SVFModule* svfModule)
                 if (SVFUtil::isNonInstricCallSite(inst))
                 {
                     const CallICFGNode* callBlockNode = cast<CallICFGNode>(inst);
-                    if(const SVFFunction* callee = callBlockNode->getCalledFunction())
+                    if(const CallGraphNode* callee = callBlockNode->getCalledFunction())
                     {
-                        callgraph->addDirectCallGraphEdge(callBlockNode,(item.second)->getFunction(),callee);
+                        callgraph->addDirectCallGraphEdge(callBlockNode,item.second,
+                            const_cast<CallGraphNode*>(callee));
                     }
                 }
             }
         }
     }
-    return callgraph;
 }
+
 
 PTACallGraph* CallGraphBuilder::buildPTACallGraph()
 {
@@ -81,7 +80,7 @@ ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
     ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();
     for (const auto& item: *svfirCallGraph)
     {
-        for (auto it : *(item.second)->getFunction())
+        for (auto it : *(item.second))
         {
             const SVFBasicBlock* svfbb = it.second;
             for (const ICFGNode* inst : svfbb->getICFGNodeList())
@@ -107,7 +106,7 @@ ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
     // record join sites
     for (const auto& item: *svfirCallGraph)
     {
-        for (auto it : *(item.second)->getFunction())
+        for (auto it : *(item.second))
         {
             const SVFBasicBlock* svfbb = it.second;
             for (const ICFGNode* node : svfbb->getICFGNodeList())

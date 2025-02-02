@@ -177,8 +177,8 @@ bool DDAPass::edgeInSVFGSCC(const SVFGSCC* svfgSCC,const SVFGEdge* edge)
  */
 bool DDAPass::edgeInCallGraphSCC(PointerAnalysis* pta,const SVFGEdge* edge)
 {
-    const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
-    const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
+    const CallGraphNode* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
+    const CallGraphNode* dstFun = edge->getDstNode()->getICFGNode()->getFun();
 
     if(srcFun && dstFun)
     {
@@ -234,13 +234,17 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
                 if(this->edgeInSVFGSCC(svfgSCC,edge))
                 {
 
-                    const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
-                    const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
+                    const CallGraphNode* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
+                    const CallGraphNode* dstFun = edge->getDstNode()->getICFGNode()->getFun();
 
                     if(srcFun && dstFun)
                     {
-                        NodeID src = pta->getCallGraph()->getCallGraphNode(srcFun)->getId();
-                        NodeID dst = pta->getCallGraph()->getCallGraphNode(dstFun)->getId();
+                        NodeID src = pta->getCallGraph()
+                                         ->getPTACallGraphNode(
+                                             srcFun)->getId();
+                        NodeID dst = pta->getCallGraph()
+                                         ->getPTACallGraphNode(
+                                             dstFun)->getId();
                         insensitvefunPairs.insert(std::make_pair(src,dst));
                         insensitvefunPairs.insert(std::make_pair(dst,src));
                     }
@@ -261,13 +265,13 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
 
             if(edge->isCallVFGEdge() || edge->isRetVFGEdge())
             {
-                const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
-                const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
+                const CallGraphNode* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
+                const CallGraphNode* dstFun = edge->getDstNode()->getICFGNode()->getFun();
 
                 if(srcFun && dstFun)
                 {
-                    NodeID src = pta->getCallGraph()->getCallGraphNode(srcFun)->getId();
-                    NodeID dst = pta->getCallGraph()->getCallGraphNode(dstFun)->getId();
+                    NodeID src = srcFun->getId();
+                    NodeID dst = dstFun->getId();
                     if(insensitvefunPairs.find(std::make_pair(src,dst))!=insensitvefunPairs.end())
                         insensitveEdges.insert(edge);
                     else if(insensitvefunPairs.find(std::make_pair(dst,src))!=insensitvefunPairs.end())

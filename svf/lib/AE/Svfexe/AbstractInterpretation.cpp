@@ -92,9 +92,9 @@ void AbstractInterpretation::initWTO()
         // Check if the current function is part of a cycle
         if (callGraphScc->isInCycle(it->second->getId()))
             recursiveFuns.insert(it->second); // Mark the function as recursive
-        if (it->second->getFunction()->isDeclaration())
+        if (it->second->isDeclaration())
             continue;
-        auto* wto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(it->second->getFunction()));
+        auto* wto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(it->second));
         wto->init();
         funcToWTO[it->second] = wto;
     }
@@ -565,7 +565,10 @@ void AbstractInterpretation::handleCallSite(const ICFGNode* node)
 
 bool AbstractInterpretation::isExtCall(const SVF::CallICFGNode *callNode)
 {
-    return SVFUtil::isExtCall(callNode->getCalledFunction());
+    if (callNode->getCalledFunction())
+        return SVFUtil::isExtCall(callNode->getCalledFunction());
+    else
+        return false;
 }
 
 void AbstractInterpretation::extCallPass(const SVF::CallICFGNode *callNode)
@@ -581,11 +584,8 @@ void AbstractInterpretation::extCallPass(const SVF::CallICFGNode *callNode)
 
 bool AbstractInterpretation::isRecursiveCall(const SVF::CallICFGNode *callNode)
 {
-    const SVFFunction *callfun = callNode->getCalledFunction();
-    if (!callfun)
-        return false;
-    else
-        return recursiveFuns.find(callfun->getCallGraphNode()) != recursiveFuns.end();
+    const CallGraphNode *callfun = callNode->getCalledFunction();
+    return callfun && recursiveFuns.find(callfun) != recursiveFuns.end();
 }
 
 void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode)
@@ -609,11 +609,8 @@ void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode
 
 bool AbstractInterpretation::isDirectCall(const SVF::CallICFGNode *callNode)
 {
-    const SVFFunction *callfun =callNode->getCalledFunction();
-    if (!callfun)
-        return false;
-    else
-        return funcToWTO.find(callfun->getCallGraphNode()) != funcToWTO.end();
+    const CallGraphNode *callfun =callNode->getCalledFunction();
+    return callfun && funcToWTO.find(callfun) != funcToWTO.end();
 }
 void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode)
 {
@@ -622,8 +619,8 @@ void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode
 
     abstractTrace[callNode] = as;
 
-    const SVFFunction *callfun =callNode->getCalledFunction();
-    ICFGWTO* wto = funcToWTO[callfun->getCallGraphNode()];
+    const CallGraphNode *callfun =callNode->getCalledFunction();
+    ICFGWTO* wto = funcToWTO[callfun];
     handleWTOComponents(wto->getWTOComponents());
 
     callSiteStack.pop_back();
@@ -854,7 +851,7 @@ void AEStat::finializeStat()
     generalNumMap["ICFG_Node_Num"] = _ae->svfir->getICFG()->nodeNum;
     u32_t callSiteNum = 0;
     u32_t extCallSiteNum = 0;
-    Set<const SVFFunction *> funs;
+    Set<const CallGraphNode *> funs;
     for (const auto &it: *_ae->svfir->getICFG())
     {
         if (it.second->getFun())
@@ -928,7 +925,7 @@ void AbstractInterpretation::collectCheckPoint()
         const ICFGNode* node = it->second;
         if (const CallICFGNode *call = SVFUtil::dyn_cast<CallICFGNode>(node))
         {
-            if (const SVFFunction *fun = call->getCalledFunction())
+            if (const CallGraphNode *fun = call->getCalledFunction())
             {
                 if (ae_checkpoint_names.find(fun->getName()) !=
                         ae_checkpoint_names.end())

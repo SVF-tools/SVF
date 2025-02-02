@@ -427,7 +427,9 @@ void SVFG::connectIndirectSVFGEdges()
  */
 void SVFG::connectFromGlobalToProgEntry()
 {
-    const SVFFunction* mainFunc = SVFUtil::getProgEntryFunction();
+    const CallGraphNode* mainFunc = SVFUtil::getProgEntryFunction();
+    if (!mainFunc)
+        return;
     FormalINSVFGNodeSet& formalIns = getFormalINSVFGNodes(mainFunc);
     if (formalIns.empty())
         return;
@@ -581,7 +583,7 @@ void SVFG::dump(const std::string& file, bool simple)
 /**
  * Get all inter value flow edges at this indirect call site, including call and return edges.
  */
-void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, const SVFFunction* callee, SVFGEdgeSetTy& edges)
+void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, const CallGraphNode* callee, SVFGEdgeSetTy& edges)
 {
     CallSiteID csId = getCallSiteID(callICFGNode, callee);
     const RetICFGNode* retICFGNode = callICFGNode->getRetICFGNode();
@@ -655,7 +657,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
  * Connect actual params/return to formal params/return for top-level variables.
  * Also connect indirect actual in/out and formal in/out.
  */
-void SVFG::connectCallerAndCallee(const CallICFGNode* cs, const SVFFunction* callee, SVFGEdgeSetTy& edges)
+void SVFG::connectCallerAndCallee(const CallICFGNode* cs, const CallGraphNode* callee, SVFGEdgeSetTy& edges)
 {
     VFG::connectCallerAndCallee(cs,callee,edges);
 
@@ -703,7 +705,7 @@ void SVFG::connectCallerAndCallee(const CallICFGNode* cs, const SVFFunction* cal
 /*!
  * Whether this is an function entry SVFGNode (formal parameter, formal In)
  */
-const SVFFunction* SVFG::isFunEntrySVFGNode(const SVFGNode* node) const
+const CallGraphNode* SVFG::isFunEntrySVFGNode(const SVFGNode* node) const
 {
     if(const FormalParmSVFGNode* fp = SVFUtil::dyn_cast<FormalParmSVFGNode>(node))
     {

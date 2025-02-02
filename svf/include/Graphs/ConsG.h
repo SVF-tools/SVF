@@ -76,12 +76,12 @@ protected:
 
     /// Wrappers used internally, not expose to Andersen Pass
     //@{
-    inline NodeID getReturnNode(const SVFFunction* value) const
+    inline NodeID getReturnNode(const CallGraphNode* value) const
     {
         return pag->getReturnNode(value);
     }
 
-    inline NodeID getVarargNode(const SVFFunction* value) const
+    inline NodeID getVarargNode(const CallGraphNode* value) const
     {
         return pag->getVarargNode(value);
     }

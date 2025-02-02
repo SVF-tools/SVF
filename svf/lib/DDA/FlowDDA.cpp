@@ -78,7 +78,7 @@ void FlowDDA::handleOutOfBudgetDpm(const LocDPItem& dpm)
     addOutOfBudgetDpm(dpm);
 }
 
-bool FlowDDA::testIndCallReachability(LocDPItem&, const SVFFunction* callee, CallSiteID csId)
+bool FlowDDA::testIndCallReachability(LocDPItem&, const CallGraphNode* callee, CallSiteID csId)
 {
 
     const CallICFGNode* cbn = getSVFG()->getCallSite(csId);
@@ -102,36 +102,6 @@ bool FlowDDA::testIndCallReachability(LocDPItem&, const SVFFunction* callee, Cal
 bool FlowDDA::handleBKCondition(LocDPItem& dpm, const SVFGEdge* edge)
 {
     _client->handleStatement(edge->getSrcNode(), dpm.getCurNodeID());
-//    CallSiteID csId = 0;
-//
-//    if (edge->isCallVFGEdge()) {
-//        /// we don't handle context in recursions, they treated as assignments
-//        if (const CallDirSVFGEdge* callEdge = SVFUtil::dyn_cast<CallDirSVFGEdge>(edge))
-//            csId = callEdge->getCallSiteId();
-//        else
-//            csId = SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId();
-//
-//        const SVFFunction* callee = edge->getDstNode()->getBB()->getParent();
-//        if(testIndCallReachability(dpm,callee,csId)==false){
-//            return false;
-//        }
-//
-//    }
-//
-//    else if (edge->isRetVFGEdge()) {
-//        /// we don't handle context in recursions, they treated as assignments
-//        if (const RetDirSVFGEdge* retEdge = SVFUtil::dyn_cast<RetDirSVFGEdge>(edge))
-//            csId = retEdge->getCallSiteId();
-//        else
-//            csId = SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId();
-//
-//        const SVFFunction* callee = edge->getSrcNode()->getBB()->getParent();
-//        if(testIndCallReachability(dpm,callee,csId)==false){
-//            return false;
-//        }
-//
-//    }
-
     return true;
 }
 
@@ -179,18 +149,6 @@ bool FlowDDA::isHeapCondMemObj(const NodeID& var, const StoreSVFGNode*)
     const BaseObjVar* pVar = _pag->getBaseObject(getPtrNodeID(var));
     if(pVar && SVFUtil::isa<HeapObjVar, DummyObjVar>(pVar))
     {
-//        if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getValue())) {
-//            const SVFFunction* fun = mallocSite->getParent()->getParent();
-//            const SVFFunction* curFun = store->getBB() ? store->getBB()->getParent() : nullptr;
-//            if(fun!=curFun)
-//                return true;
-//            if(_callGraphSCC->isInCycle(_callGraph->getCallGraphNode(fun)->getId()))
-//                return true;
-//            if(_pag->getICFG()->isInLoop(mallocSite))
-//                return true;
-//
-//            return false;
-//        }
         return true;
     }
     return false;

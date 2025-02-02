@@ -126,7 +126,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     }
 }
 
-void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCallee)
+void SVFIRBuilder::handleExtCall(const CallBase* cs, const CallGraphNode* svfCallee)
 {
     const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
     const SVFCallInst* svfCall = SVFUtil::cast<SVFCallInst>(svfInst);
@@ -264,7 +264,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         const ValVar* valVar = getForkedFun(callICFGNode);
         if (const FunValVar* funcValVar = SVFUtil::dyn_cast<FunValVar>(valVar))
         {
-            const SVFFunction* forkedFun = funcValVar->getCallGraphNode()->getFunction()
+            const CallGraphNode* forkedFun = funcValVar->getCallGraphNode()
                                            ->getDefFunForMultipleModule();
             const SVFVar* actualParm = getActualParmAtForkSite(callICFGNode);
             /// pthread_create has 1 arg.

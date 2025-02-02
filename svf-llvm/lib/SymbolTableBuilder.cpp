@@ -352,8 +352,8 @@ void SymbolTableBuilder::collectObj(const Value* val)
  */
 void SymbolTableBuilder::collectRet(const Function* val)
 {
-    const SVFFunction* svffun =
-        llvmModuleSet()->getSVFFunction(val);
+    const CallGraphNode* svffun =
+        llvmModuleSet()->getCallGraphNode(val);
     IRGraph::FunToIDMapTy::iterator iter =
         svfir->returnSymMap.find(svffun);
     if (iter == svfir->returnSymMap.end())
@@ -369,8 +369,8 @@ void SymbolTableBuilder::collectRet(const Function* val)
  */
 void SymbolTableBuilder::collectVararg(const Function* val)
 {
-    const SVFFunction* svffun =
-        llvmModuleSet()->getSVFFunction(val);
+    const CallGraphNode* svffun =
+        llvmModuleSet()->getCallGraphNode(val);
     IRGraph::FunToIDMapTy::iterator iter =
         svfir->varargSymMap.find(svffun);
     if (iter == svfir->varargSymMap.end())
@@ -607,7 +607,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
     else if(LLVMUtil::isHeapAllocExtCallViaArg(inst))
     {
         const CallBase* cs = LLVMUtil::getLLVMCallSite(inst);
-        u32_t arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::cast<SVFCallInst>(svfinst)->getCalledFunction());
+        u32_t arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::cast<SVFCallInst>(svfinst)->getCalledFunction()->getCallGraphNode());
         const Value* arg = cs->getArgOperand(arg_pos);
         originalPType = SVFUtil::dyn_cast<PointerType>(arg->getType());
         inferedType = inferObjType(startValue = arg);
@@ -747,7 +747,7 @@ u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val)
                     calledFunction);
             std::vector<const Value*> args;
             // Heap alloc functions have annoation like "AllocSize:Arg1"
-            for (std::string annotation : ExtAPI::getExtAPI()->getExtFuncAnnotations(svfFunction))
+            for (std::string annotation : ExtAPI::getExtAPI()->getExtFuncAnnotations(svfFunction->getCallGraphNode()))
             {
                 if (annotation.find("AllocSize:") != std::string::npos)
                 {

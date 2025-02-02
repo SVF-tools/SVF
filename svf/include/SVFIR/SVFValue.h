@@ -324,7 +324,7 @@ private:
     BasicBlockGraph* bbGraph; /// the basic block graph of this function
 
 protected:
-    inline void setCallGraphNode(CallGraphNode *cgn)
+    inline void setCallGraphNode(const CallGraphNode *cgn)
     {
         callGraphNode = cgn;
     }
@@ -365,7 +365,7 @@ public:
         return node->getKind() == SVFFunc;
     }
 
-    inline SVFLoopAndDomInfo* getLoopAndDomInfo()
+    inline SVFLoopAndDomInfo* getLoopAndDomInfo() const
     {
         return loopAndDom;
     }
@@ -421,6 +421,10 @@ public:
     u32_t arg_size() const;
     const ArgValVar* getArg(u32_t idx) const;
     bool isVarArg() const;
+    inline const std::vector<const ArgValVar*> getArgsList() const
+    {
+        return allArgs;
+    }
 
     inline bool hasBasicBlock() const
     {
@@ -561,7 +565,7 @@ public:
         return bb;
     }
 
-    inline const SVFFunction* getFunction() const
+    inline const CallGraphNode* getFunction() const
     {
         return bb->getParent();
     }
@@ -640,7 +644,7 @@ public:
     {
         return SVFUtil::dyn_cast<SVFFunction>(calledVal);
     }
-    inline  const SVFFunction* getCaller() const
+    inline  const CallGraphNode* getCaller() const
     {
         return getFunction();
     }

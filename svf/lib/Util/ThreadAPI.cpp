@@ -130,6 +130,18 @@ void ThreadAPI::init()
     }
 }
 
+/// Get the function type if it is a threadAPI function
+ThreadAPI::TD_TYPE ThreadAPI::getType(const CallGraphNode* F) const
+{
+    if(F)
+    {
+        TDAPIMap::const_iterator it= tdAPIMap.find(F->getName());
+        if(it != tdAPIMap.end())
+            return it->second;
+    }
+    return TD_DUMMY;
+}
+
 bool ThreadAPI::isTDFork(const CallICFGNode *inst) const
 {
     return getType(inst->getCalledFunction()) == TD_FORK;
@@ -181,10 +193,10 @@ const ValVar* ThreadAPI::getActualParmAtForkSite(const CallICFGNode *inst) const
     return inst->getArgument(3);
 }
 
-const SVFVar* ThreadAPI::getFormalParmOfForkedFun(const SVFFunction* F) const
+const SVFVar* ThreadAPI::getFormalParmOfForkedFun(const CallGraphNode* cgNode) const
 {
-    assert(PAG::getPAG()->hasFunArgsList(F) && "forked function has no args list!");
-    const SVFIR::SVFVarList& funArgList = PAG::getPAG()->getFunArgsList(F);
+    assert(PAG::getPAG()->hasFunArgsList(cgNode) && "forked function has no args list!");
+    const SVFIR::SVFVarList& funArgList = PAG::getPAG()->getFunArgsList(cgNode);
     // in pthread, forked functions are of type void *()(void *args)
     assert(funArgList.size() == 1 && "num of pthread forked function args is not 1!");
     return funArgList[0];
@@ -273,7 +285,7 @@ void ThreadAPI::performAPIStat(SVFModule* module)
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
-        for (SVFFunction::const_iterator bit = (item.second)->getFunction()->begin(), ebit = (item.second)->getFunction()->end(); bit != ebit; ++bit)
+        for (CallGraphNode::const_bb_iterator bit = (item.second)->begin(), ebit = (item.second)->end(); bit != ebit; ++bit)
         {
             const SVFBasicBlock* bb = bit->second;
             for (const auto& svfInst: bb->getICFGNodeList())
@@ -281,7 +293,7 @@ void ThreadAPI::performAPIStat(SVFModule* module)
                 if (!SVFUtil::isCallSite(svfInst))
                     continue;
 
-                const SVFFunction* fun = SVFUtil::cast<CallICFGNode>(svfInst)->getCalledFunction();
+                const CallGraphNode* fun = SVFUtil::cast<CallICFGNode>(svfInst)->getCalledFunction();
                 TD_TYPE type = getType(fun);
                 switch (type)
                 {

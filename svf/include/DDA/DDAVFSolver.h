@@ -475,9 +475,10 @@ protected:
         assert(baseObj && "base object is null??");
         if(SVFUtil::isa<StackObjVar>(baseObj))
         {
-            if(const SVFFunction* svffun = _pag->getGNode(id)->getFunction())
+            if(const CallGraphNode* svffun = _pag->getGNode(id)->getFunction())
             {
-                return _callGraphSCC->isInCycle(_callGraph->getCallGraphNode(svffun)->getId());
+                return _callGraphSCC->isInCycle(
+                    svffun->getId());
             }
         }
         return false;
@@ -501,7 +502,7 @@ protected:
                 findPT(funPtrDpm);
             }
         }
-        else if(const SVFFunction* fun = getSVFG()->isFunEntrySVFGNode(dpm.getLoc()))
+        else if(const CallGraphNode* fun = getSVFG()->isFunEntrySVFGNode(dpm.getLoc()))
         {
             CallInstSet csSet;
             /// use pre-analysis call graph to approximate all potential callsites

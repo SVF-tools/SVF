@@ -113,24 +113,238 @@ public:
 typedef GenericNode<CallGraphNode, CallGraphEdge> GenericCallGraphNodeTy;
 class CallGraphNode : public GenericCallGraphNodeTy
 {
+
+public:
+    typedef CallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
+    typedef CallGraphEdge::CallGraphEdgeSet::iterator iterator;
+    typedef CallGraphEdge::CallGraphEdgeSet::const_iterator const_iterator;
+    typedef SVFLoopAndDomInfo::BBSet BBSet;
+    typedef SVFLoopAndDomInfo::BBList BBList;
+    typedef SVFLoopAndDomInfo::LoopBBs LoopBBs;
+
+    typedef BasicBlockGraph::IDToNodeMapTy::const_iterator const_bb_iterator;
+
+
 private:
-    const SVFFunction* fun;
+    bool isDecl;   /// return true if this function does not have a body
+    bool intrinsic; /// return true if this function is an intrinsic function (e.g., llvm.dbg), which does not reside in the application code
+    bool addrTaken; /// return true if this function is address-taken (for indirect call purposes)
+    bool isUncalled;    /// return true if this function is never called
+    bool isNotRet;   /// return true if this function never returns
+    bool varArg;    /// return true if this function supports variable arguments
+    const SVFFunctionType* funcType; /// FunctionType, which is different from the type (PointerType) of this SVF Function
+    SVFLoopAndDomInfo* loopAndDom;  /// the loop and dominate information
+    const CallGraphNode * realDefFun{nullptr};  /// the definition of a function across multiple modules
+    BasicBlockGraph* bbGraph; /// the basic block graph of this function
+    std::vector<const ArgValVar*> allArgs;    /// all formal arguments of this function
+    SVFBasicBlock *exitBlock{nullptr};             /// a 'single' basic block having no successors and containing return instruction in a function
 
 public:
     /// Constructor
-    CallGraphNode(NodeID i, const SVFFunction* f) : GenericCallGraphNodeTy(i,CallNodeKd), fun(f)
+    CallGraphNode(NodeID i, const SVFType* ty,
+                  const SVFFunctionType* ft, bool declare, bool intrinsic,
+                  bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
+
+    ~CallGraphNode(){
+    }
+
+    void init(const SVFFunctionType* ft, bool uncalled, bool notRet, bool declare, bool intr, bool adt,
+                             bool varg, SVFLoopAndDomInfo* ld, CallGraphNode* cgn, BasicBlockGraph* bbG,
+              std::vector<const ArgValVar*> allArg, SVFBasicBlock* eBb);
+
+    inline void addArgument(const ArgValVar* arg)
     {
+        allArgs.push_back(arg);
+    }
+
+    inline bool isDeclaration() const
+    {
+        return isDecl;
+    }
+
+    inline bool isIntrinsic() const
+    {
+        return intrinsic;
+    }
+
+    inline bool hasAddressTaken() const
+    {
+        return addrTaken;
+    }
+    
+    inline bool isVarArg() const
+    {
+        return varArg;
+    }
+
+    inline bool isUncalledFunction() const
+    {
+        return isUncalled;
+    }
+
+    inline bool hasReturn() const
+    {
+        return  !isNotRet;
+    }
+
+    /// Returns the FunctionType
+    inline const SVFFunctionType* getFunctionType() const
+    {
+        return funcType;
+    }
+
+    /// Returns the FunctionType
+    inline const SVFType* getReturnType() const
+    {
+        return funcType->getReturnType();
+    }
+
+    inline SVFLoopAndDomInfo* getLoopAndDomInfo()
+    {
+        return loopAndDom;
+    }
+
+    inline const std::vector<const SVFBasicBlock*>& getReachableBBs() const
+    {
+        return loopAndDom->getReachableBBs();
+    }
+
+    inline void getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exitbbs) const
+    {
+        return loopAndDom->getExitBlocksOfLoop(bb,exitbbs);
+    }
+
+    inline bool hasLoopInfo(const SVFBasicBlock* bb) const
+    {
+        return loopAndDom->hasLoopInfo(bb);
+    }
+
+    const LoopBBs& getLoopInfo(const SVFBasicBlock* bb) const
+    {
+        return loopAndDom->getLoopInfo(bb);
+    }
+
+    inline const SVFBasicBlock* getLoopHeader(const BBList& lp) const
+    {
+        return loopAndDom->getLoopHeader(lp);
+    }
+
+    inline bool loopContainsBB(const BBList& lp, const SVFBasicBlock* bb) const
+    {
+        return loopAndDom->loopContainsBB(lp,bb);
+    }
+
+    inline const Map<const SVFBasicBlock*,BBSet>& getDomTreeMap() const
+    {
+        return loopAndDom->getDomTreeMap();
+    }
+
+    inline const Map<const SVFBasicBlock*,BBSet>& getDomFrontierMap() const
+    {
+        return loopAndDom->getDomFrontierMap();
+    }
+
+    inline bool isLoopHeader(const SVFBasicBlock* bb) const
+    {
+        return loopAndDom->isLoopHeader(bb);
+    }
+
+    inline bool dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
+    {
+        return loopAndDom->dominate(bbKey,bbValue);
+    }
+
+    inline bool postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
+    {
+        return loopAndDom->postDominate(bbKey,bbValue);
+    }
+
+    inline const CallGraphNode* getDefFunForMultipleModule() const
+    {
+        if(realDefFun==nullptr)
+            return this;
+        return realDefFun;
+    }
+
+    void setBasicBlockGraph(BasicBlockGraph* graph)
+    {
+        this->bbGraph = graph;
+    }
+
+    BasicBlockGraph* getBasicBlockGraph()
+    {
+        return bbGraph;
+    }
+
+    const BasicBlockGraph* getBasicBlockGraph() const
+    {
+        return bbGraph;
+    }
+
+    inline bool hasBasicBlock() const
+    {
+        return bbGraph && bbGraph->begin() != bbGraph->end();
+    }
+
+    inline const SVFBasicBlock* getEntryBlock() const
+    {
+        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
+        assert(bbGraph->begin()->second->getInEdges().size() == 0 && "the first basic block is not entry block");
+        return bbGraph->begin()->second;
+    }
+
+    inline const SVFBasicBlock* getExitBB() const
+    {
+        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
+        assert(exitBlock && "must have an exitBlock");
+        return exitBlock;
+    }
+
+    inline void setExitBlock(SVFBasicBlock *bb)
+    {
+        assert(!exitBlock && "have already set exit Basicblock!");
+        exitBlock = bb;
+    }
+
+
+    u32_t inline arg_size() const
+    {
+        return allArgs.size();
+    }
+
+    inline const ArgValVar*  getArg(u32_t idx) const
+    {
+        assert (idx < allArgs.size() && "getArg() out of range!");
+        return allArgs[idx];
+    }
+
+    inline const SVFBasicBlock* front() const
+    {
+        return getEntryBlock();
+    }
+
+    inline const SVFBasicBlock* back() const
+    {
+        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
+        /// Carefully! 'back' is just the last basic block of function,
+        /// but not necessarily a exit basic block
+        /// more refer to: https://github.com/SVF-tools/SVF/pull/1262
+        return std::prev(bbGraph->end())->second;
+    }
+
+    inline const_bb_iterator begin() const
+    {
+        return bbGraph->begin();
+    }
+
+    inline const_bb_iterator end() const
+    {
+        return bbGraph->end();
     }
 
     inline const std::string &getName() const
     {
-        return fun->getName();
-    }
-
-    /// Get function of this call node
-    inline const SVFFunction* getFunction() const
-    {
-        return fun;
+        return name;
     }
 
 
@@ -174,13 +388,8 @@ class CallGraph : public GenericCallGraphTy
 
 public:
     typedef CallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
-    typedef Map<const SVFFunction*, CallGraphNode*> FunToCallGraphNodeMap;
     typedef Map<const CallICFGNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
-    typedef Set<const SVFFunction*> FunctionSet;
-    typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
-
 protected:
-    FunToCallGraphNodeMap funToCallGraphNodeMap; ///< Call Graph node map
     CallInstToCallGraphEdgesMap callinstToCallGraphEdgesMap; ///< Map a call instruction to its corresponding call edges
 
     NodeID callGraphNodeNum;
@@ -200,7 +409,9 @@ public:
     /// Constructor
     CallGraph();
 
-    void addCallGraphNode(const SVFFunction* fun);
+    CallGraphNode* addCallGraphNode( const SVFType* ty,
+                  const SVFFunctionType* ft, bool declare, bool intrinsic,
+                  bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
 
     const CallGraphNode* getCallGraphNode(const std::string& name);
 
@@ -216,13 +427,6 @@ public:
     {
         return getGNode(id);
     }
-    inline CallGraphNode* getCallGraphNode(const SVFFunction* fun) const
-    {
-        FunToCallGraphNodeMap::const_iterator it = funToCallGraphNodeMap.find(fun);
-        assert(it!=funToCallGraphNodeMap.end() && "call graph node not found!!");
-        return it->second;
-    }
-
     //@}
 
     /// Whether we have already created this call graph edge
@@ -230,7 +434,7 @@ public:
                                 const CallICFGNode* callIcfgNode) const;
 
     /// Add direct call edges
-    void addDirectCallGraphEdge(const CallICFGNode* call, const SVFFunction* callerFun, const SVFFunction* calleeFun);
+    void addDirectCallGraphEdge(const CallICFGNode* call, CallGraphNode* callerFun,  CallGraphNode* calleeFun);
     /// Dump the graph
     void dump(const std::string& filename);
 
