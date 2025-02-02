@@ -270,12 +270,8 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
 
                 if(srcFun && dstFun)
                 {
-                    NodeID src =
-                        pta->getCallGraph()
-                            ->getPTACallGraphNode(srcFun)->getId();
-                    NodeID dst =
-                        pta->getCallGraph()
-                            ->getPTACallGraphNode(dstFun)->getId();
+                    NodeID src = srcFun->getId();
+                    NodeID dst = dstFun->getId();
                     if(insensitvefunPairs.find(std::make_pair(src,dst))!=insensitvefunPairs.end())
                         insensitveEdges.insert(edge);
                     else if(insensitvefunPairs.find(std::make_pair(dst,src))!=insensitvefunPairs.end())

@@ -577,8 +577,7 @@ bool MRGenerator::isNonLocalObject(NodeID id, const CallGraphNode* curFun) const
             if(svffun!=curFun)
                 return true;
             else
-                return callGraphSCC->isInCycle(
-                    callGraph->getPTACallGraphNode(svffun)->getId());
+                return callGraphSCC->isInCycle(svffun->getId());
         }
     }
 
