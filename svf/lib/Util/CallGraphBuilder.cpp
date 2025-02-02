@@ -38,7 +38,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-CallGraph* CallGraphBuilder::createSVFIRCallGraph(SVFModule* svfModule)
+CallGraph* CallGraphBuilder::createSVFIRCallGraph()
 {
     return new CallGraph();
 }

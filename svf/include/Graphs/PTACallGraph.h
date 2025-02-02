@@ -191,7 +191,7 @@ public:
     }
 
     /// Get function of this call node
-    inline const CallGraphNode* getCallNode() const
+    inline const CallGraphNode* getCallGraphNode() const
     {
         return fun;
     }
@@ -418,7 +418,7 @@ public:
             for (CallGraphEdgeSet::const_iterator it = getCallEdgeBegin(cs), eit =
                         getCallEdgeEnd(cs); it != eit; ++it)
             {
-                callees.insert((*it)->getDstNode()->getCallNode());
+                callees.insert((*it)->getDstNode()->getCallGraphNode());
             }
         }
     }

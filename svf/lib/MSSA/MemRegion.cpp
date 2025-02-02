@@ -634,7 +634,7 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
         {
             NodeBS mod, ref;
             const CallICFGNode* cs = (*cit);
-            bool modrefchanged = handleCallsiteModRef(mod, ref, cs, callGraphNode->getCallNode());
+            bool modrefchanged = handleCallsiteModRef(mod, ref, cs, callGraphNode->getCallGraphNode());
             if(modrefchanged)
                 worklist.push(edge->getSrcID());
         }
@@ -644,7 +644,7 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
         {
             NodeBS mod, ref;
             const CallICFGNode* cs = (*cit);
-            bool modrefchanged = handleCallsiteModRef(mod, ref, cs, callGraphNode->getCallNode());
+            bool modrefchanged = handleCallsiteModRef(mod, ref, cs, callGraphNode->getCallGraphNode());
             if(modrefchanged)
                 worklist.push(edge->getSrcID());
         }

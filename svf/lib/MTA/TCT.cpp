@@ -143,7 +143,7 @@ void TCT::markRelProcs()
         for(ThreadCallGraph::ForkEdgeSet::const_iterator nit = tcg->getForkEdgeBegin(*it), neit = tcg->getForkEdgeEnd(*it); nit!=neit; nit++)
         {
             const PTACallGraphNode* forkeeNode = (*nit)->getDstNode();
-            candidateFuncSet.insert(forkeeNode->getCallNode());
+            candidateFuncSet.insert(forkeeNode->getCallGraphNode());
         }
 
     }
@@ -172,7 +172,7 @@ void TCT::markRelProcs(const CallGraphNode* cgFun)
     while(!worklist.empty())
     {
         const PTACallGraphNode* node = worklist.pop();
-        candidateFuncSet.insert(node->getCallNode());
+        candidateFuncSet.insert(node->getCallGraphNode());
         for(PTACallGraphNode::const_iterator nit = node->InEdgeBegin(), neit = node->InEdgeEnd(); nit!=neit; nit++)
         {
             const PTACallGraphNode* srcNode = (*nit)->getSrcNode();
@@ -413,7 +413,7 @@ void TCT::build()
         CxtThreadProc ctp = popFromCTPWorkList();
         PTACallGraphNode* cgNode =
             tcg->getPTACallGraphNode(ctp.getProc());
-        if(isCandidateFun(cgNode->getCallNode()) == false)
+        if(isCandidateFun(cgNode->getCallGraphNode()) == false)
             continue;
 
         for(PTACallGraphNode::const_iterator nit = cgNode->OutEdgeBegin(), neit = cgNode->OutEdgeEnd(); nit!=neit; nit++)

@@ -133,11 +133,11 @@ bool ThreadCallGraph::addDirectForkEdge(const CallICFGNode* cs)
     assert(forkee && "callee does not exist");
     PTACallGraphNode* callee = getPTACallGraphNode(
         forkee->getDefFunForMultipleModule());
-    CallSiteID csId = addCallSite(cs, callee->getCallNode());
+    CallSiteID csId = addCallSite(cs, callee->getCallGraphNode());
 
     if (!hasGraphEdge(caller, callee, PTACallGraphEdge::TDForkEdge, csId))
     {
-        assert(cs->getCaller() == caller->getCallNode() && "callee instruction not inside caller??");
+        assert(cs->getCaller() == caller->getCallGraphNode() && "callee instruction not inside caller??");
 
         ThreadForkEdge* edge = new ThreadForkEdge(caller, callee, csId);
         edge->addDirectCallSite(cs);
@@ -160,11 +160,11 @@ bool ThreadCallGraph::addIndirectForkEdge(const CallICFGNode* cs, const CallGrap
     PTACallGraphNode* callee =
         getPTACallGraphNode(calleefun);
 
-    CallSiteID csId = addCallSite(cs, callee->getCallNode());
+    CallSiteID csId = addCallSite(cs, callee->getCallGraphNode());
 
     if (!hasGraphEdge(caller, callee, PTACallGraphEdge::TDForkEdge, csId))
     {
-        assert(cs->getCaller() == caller->getCallNode() && "callee instruction not inside caller??");
+        assert(cs->getCaller() == caller->getCallGraphNode() && "callee instruction not inside caller??");
 
         ThreadForkEdge* edge = new ThreadForkEdge(caller, callee, csId);
         edge->addInDirectCallSite(cs);
@@ -202,7 +202,7 @@ void ThreadCallGraph::addDirectJoinEdge(const CallICFGNode* cs,const CallSiteSet
 
         if (!hasThreadJoinEdge(cs,joinFunNode,threadRoutineFunNode, csId))
         {
-            assert(cs->getCaller() == joinFunNode->getCallNode() && "callee instruction not inside caller??");
+            assert(cs->getCaller() == joinFunNode->getCallGraphNode() && "callee instruction not inside caller??");
             ThreadJoinEdge* edge = new ThreadJoinEdge(joinFunNode,threadRoutineFunNode,csId);
             edge->addDirectCallSite(cs);
 

@@ -126,7 +126,7 @@ void LockAnalysis::buildCandidateFuncSetforLock()
     while (!worklist.empty())
     {
         const PTACallGraphNode* node = worklist.pop();
-        lockcandidateFuncSet.insert(node->getCallNode());
+        lockcandidateFuncSet.insert(node->getCallGraphNode());
         for (PTACallGraphNode::const_iterator nit = node->InEdgeBegin(), neit = node->InEdgeEnd(); nit != neit; nit++)
         {
             const PTACallGraphNode* srcNode = (*nit)->getSrcNode();
@@ -277,7 +277,7 @@ void LockAnalysis::collectCxtLock()
         PTACallGraphNode* cgNode =
             getTCG()->getPTACallGraphNode(clp.getProc());
         // lzh TODO.
-        if (!isLockCandidateFun(cgNode->getCallNode()))
+        if (!isLockCandidateFun(cgNode->getCallGraphNode()))
             continue;
 
         for (PTACallGraphNode::const_iterator nit = cgNode->OutEdgeBegin(), neit = cgNode->OutEdgeEnd(); nit != neit; nit++)
@@ -319,7 +319,7 @@ void LockAnalysis::handleCallRelation(CxtLockProc& clp, const PTACallGraphEdge* 
         addCxtLock(cxt,curNode);
         return;
     }
-    const CallGraphNode* svfcallee = cgEdge->getDstNode()->getCallNode();
+    const CallGraphNode* svfcallee = cgEdge->getDstNode()->getCallGraphNode();
     pushCxt(cxt, SVFUtil::cast<CallICFGNode>(curNode), svfcallee);
 
     CxtLockProc newclp(cxt, svfcallee);
@@ -417,7 +417,8 @@ void LockAnalysis::handleFork(const CxtStmt& cts)
         for (ThreadCallGraph::ForkEdgeSet::const_iterator cgIt = getTCG()->getForkEdgeBegin(call),
                 ecgIt = getTCG()->getForkEdgeEnd(call); cgIt != ecgIt; ++cgIt)
         {
-            const CallGraphNode* svfcallee = (*cgIt)->getDstNode()->getCallNode();
+            const CallGraphNode* svfcallee =
+                (*cgIt)->getDstNode()->getCallGraphNode();
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt,call,svfcallee);
             const ICFGNode* svfInst = svfcallee->getEntryBlock()->front();
@@ -439,7 +440,8 @@ void LockAnalysis::handleCall(const CxtStmt& cts)
         for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = getTCG()->getCallEdgeBegin(call), ecgIt = getTCG()->getCallEdgeEnd(call);
                 cgIt != ecgIt; ++cgIt)
         {
-            const CallGraphNode* svfcallee = (*cgIt)->getDstNode()->getCallNode();
+            const CallGraphNode* svfcallee =
+                (*cgIt)->getDstNode()->getCallGraphNode();
             if (SVFUtil::isExtCall(svfcallee))
                 continue;
             CallStrCxt newCxt = curCxt;
@@ -472,7 +474,7 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
             CallStrCxt newCxt = curCxt;
             const ICFGNode* inst = *cit;
             if (matchCxt(newCxt, SVFUtil::cast<CallICFGNode>(inst),
-                         curFunNode->getCallNode()))
+                         curFunNode->getCallGraphNode()))
             {
                 for(const ICFGEdge* outEdge : curInst->getOutEdges())
                 {
@@ -490,7 +492,7 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
             CallStrCxt newCxt = curCxt;
             const ICFGNode* inst = *cit;
             if (matchCxt(newCxt, SVFUtil::cast<CallICFGNode>(inst),
-                         curFunNode->getCallNode()))
+                         curFunNode->getCallGraphNode()))
             {
                 for(const ICFGEdge* outEdge : curInst->getOutEdges())
                 {
