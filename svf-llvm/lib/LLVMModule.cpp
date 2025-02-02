@@ -188,12 +188,11 @@ void LLVMModuleSet::build()
         addSVFMain();
 
     CallGraphBuilder callGraphBuilder;
-    callgraph = callGraphBuilder.createSVFIRCallGraph(svfModule);
+    callgraph = callGraphBuilder.createSVFIRCallGraph();
 
     createSVFDataStructure();
     initSVFFunction();
 
-    // iterate over CallGraphNode2SVFFunMap
     for (auto& item : CallGraphNode2SVFFunMap)
     {
         CallGraphNode* callNode = const_cast<CallGraphNode*>(item.first);
@@ -218,7 +217,7 @@ void LLVMModuleSet::build()
 
 
 
-    callGraphBuilder.connectSVFIRCallGraphEdge(callgraph);
+    callGraphBuilder.addSVFIRCallGraphEdges(callgraph);
 
 
 }

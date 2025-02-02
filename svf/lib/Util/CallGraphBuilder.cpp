@@ -43,8 +43,7 @@ CallGraph* CallGraphBuilder::createSVFIRCallGraph()
     return new CallGraph();
 }
 
-void CallGraphBuilder::connectSVFIRCallGraphEdge(CallGraph* callgraph)
-{
+void CallGraphBuilder::addSVFIRCallGraphEdges(SVF::CallGraph* callgraph){
     for (const auto& item : *callgraph)
     {
         for (auto it : *(item.second))

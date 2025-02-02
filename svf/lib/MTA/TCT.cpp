@@ -249,7 +249,7 @@ void TCT::collectMultiForkedThreads()
  */
 void TCT::handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge, const CallICFGNode* cs)
 {
-    const CallGraphNode* callee = cgEdge->getDstNode()->getCallNode();
+    const CallGraphNode* callee = cgEdge->getDstNode()->getCallGraphNode();
 
     CallStrCxt cxt(ctp.getContext());
     CallStrCxt oldCxt = cxt;
