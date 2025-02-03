@@ -320,14 +320,9 @@ private:
     const SVFFunction* realDefFun;  /// the definition of a function across multiple modules
     std::vector<const ArgValVar*> allArgs;    /// all formal arguments of this function
     SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
-    const CallGraphNode *callGraphNode;          /// call graph node for this function
     BasicBlockGraph* bbGraph; /// the basic block graph of this function
 
 protected:
-    inline void setCallGraphNode(CallGraphNode *cgn)
-    {
-        callGraphNode = cgn;
-    }
 
     inline void addArgument(const ArgValVar* arg)
     {
@@ -354,11 +349,6 @@ public:
     SVFFunction(const SVFType* ty,const SVFFunctionType* ft, bool declare, bool intrinsic, bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
-
-    inline const CallGraphNode* getCallGraphNode() const
-    {
-        return callGraphNode;
-    }
 
     static inline bool classof(const SVFValue *node)
     {

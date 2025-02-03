@@ -33,7 +33,7 @@
 #include "MTA/MHP.h"
 #include "MTA/LockAnalysis.h"
 #include "Graphs/ThreadCallGraph.h"
-#include "Graphs/CallGraph.h"
+#include "Graphs/PTACallGraph.h"
 
 using namespace SVF;
 

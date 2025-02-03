@@ -30,7 +30,7 @@
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 #include "MemoryModel/PointsTo.h"
-#include "Graphs/CallGraph.h"
+#include "Graphs/PTACallGraph.h"
 
 #include <sys/resource.h>		/// increase stack size
 
@@ -388,10 +388,10 @@ bool SVFUtil::isProgExitCall(const CallICFGNode* cs)
 /// Get program entry function from module.
 const SVFFunction* SVFUtil::getProgFunction(const std::string& funName)
 {
-    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    PTACallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
-        const CallGraphNode*fun = item.second;
+        const PTACallGraphNode*fun = item.second;
         if (fun->getName()==funName)
             return fun->getFunction();
     }
@@ -401,10 +401,10 @@ const SVFFunction* SVFUtil::getProgFunction(const std::string& funName)
 /// Get program entry function from module.
 const SVFFunction* SVFUtil::getProgEntryFunction()
 {
-    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    PTACallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
-        const CallGraphNode*fun = item.second;
+        const PTACallGraphNode*fun = item.second;
         if (isProgEntryFunction(fun->getFunction()))
             return (fun->getFunction());
     }

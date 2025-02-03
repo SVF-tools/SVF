@@ -55,7 +55,6 @@ public:
     typedef Map<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
 
     typedef Map<const Function*, SVFFunction*> LLVMFun2SVFFunMap;
-    typedef Map<const Function*, CallGraphNode*> LLVMFun2CallGraphNodeMap;
     typedef Map<const BasicBlock*, SVFBasicBlock*> LLVMBB2SVFBBMap;
     typedef Map<const Instruction*, SVFInstruction*> LLVMInst2SVFInstMap;
     typedef Map<const Argument*, SVFArgument*> LLVMArgument2SVFArgumentMap;
@@ -95,7 +94,6 @@ private:
     GlobalDefToRepMapTy GlobalDefToRepMap;
 
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
-    LLVMFun2CallGraphNodeMap LLVMFunc2CallGraphNode; ///< Map an LLVM Function to an CallGraph Node
     LLVMBB2SVFBBMap LLVMBB2SVFBB;
     LLVMInst2SVFInstMap LLVMInst2SVFInst;
     LLVMArgument2SVFArgumentMap LLVMArgument2SVFArgument;
@@ -112,7 +110,7 @@ private:
     InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
     FunToFunEntryNodeMapTy FunToFunEntryNodeMap; ///< map a function to its FunExitICFGNode
     FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryICFGNode
-    CallGraph* callgraph;
+    PTACallGraph* callgraph;
 
     Map<const Function*, DominatorTree> FunToDominatorTree;
 
@@ -218,8 +216,6 @@ public:
         setValueAttr(func,svfFunc);
     }
 
-    void addFunctionMap(const Function* func, CallGraphNode* svfFunc);
-
     // create a SVFBasicBlock according to LLVM BasicBlock, then add it to SVFFunction's BasicBlockGraph
     inline void addBasicBlock(SVFFunction* fun, const BasicBlock* bb)
     {
@@ -293,13 +289,6 @@ public:
     {
         SVFBaseNode2LLVMValueMap ::const_iterator it = SVFBaseNode2LLVMValue.find(value);
         assert(it != SVFBaseNode2LLVMValue.end() && "can't find corresponding llvm value!");
-        return it->second;
-    }
-
-    inline CallGraphNode* getCallGraphNode(const Function* fun) const
-    {
-        LLVMFun2CallGraphNodeMap::const_iterator it = LLVMFunc2CallGraphNode.find(fun);
-        assert(it!=LLVMFunc2CallGraphNode.end() && "SVF Function not found!");
         return it->second;
     }
 

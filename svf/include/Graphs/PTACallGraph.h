@@ -302,7 +302,7 @@ public:
     PTACallGraph(CGEK k = NormCallGraph);
 
     /// Copy constructor
-    PTACallGraph(const CallGraph& other);
+    PTACallGraph(const PTACallGraph& other);
 
     /// Destructor
     virtual ~PTACallGraph()
@@ -351,8 +351,16 @@ public:
     /// Issue a warning if the function which has indirect call sites can not be reached from program entry.
     void verifyCallGraph();
 
+    /// Add direct call edges
+    void addDirectCallGraphEdge(const CallICFGNode* call, const SVFFunction* callerFun, const SVFFunction* calleeFun);
+
+    void addCallGraphNode(const SVFFunction* fun);
+
     /// Get call graph node
     //@{
+
+    const PTACallGraphNode* getCallGraphNode(const std::string& name);
+
     inline PTACallGraphNode* getCallGraphNode(NodeID id) const
     {
         return getGNode(id);

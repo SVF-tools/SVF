@@ -366,7 +366,7 @@ class ArgValVar: public ValVar
     friend class SVFIRReader;
 
 private:
-    const CallGraphNode* cgNode;
+    const SVFFunction* cgNode;
     u32_t argNo;
 
 protected:
@@ -399,7 +399,7 @@ public:
     //@}
 
     /// Constructor
-    ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn, const CallGraphNode* callGraphNode,
+    ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn, const SVFFunction* callGraphNode,
               const SVFType* svfType);
 
     /// Return name of a LLVM value
@@ -968,7 +968,7 @@ class FunValVar : public ValVar
     friend class SVFIRWriter;
     friend class SVFIRReader;
 private:
-    const CallGraphNode* callGraphNode;
+    const SVFFunction* callGraphNode;
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -995,13 +995,13 @@ public:
     }
     //@}
 
-    inline const CallGraphNode* getCallGraphNode() const
+    inline virtual const SVFFunction* getFunction() const
     {
         return callGraphNode;
     }
 
     /// Constructor
-    FunValVar(NodeID i, const ICFGNode* icn, const CallGraphNode* cgn, const SVFType* svfType);
+    FunValVar(NodeID i, const ICFGNode* icn, const SVFFunction* cgn, const SVFType* svfType);
 
 
     virtual bool isPointer() const
@@ -1018,7 +1018,7 @@ class FunObjVar : public BaseObjVar
     friend class SVFIRReader;
 
 private:
-    const CallGraphNode* callGraphNode;
+    const SVFFunction* callGraphNode;
 
 private:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
@@ -1054,9 +1054,9 @@ public:
     //@}
 
     /// Constructor
-    FunObjVar(NodeID i, ObjTypeInfo* ti, const CallGraphNode* cgNode, const SVFType* svfType, const ICFGNode* node);
+    FunObjVar(NodeID i, ObjTypeInfo* ti, const SVFFunction* cgNode, const SVFType* svfType, const ICFGNode* node);
 
-    inline const CallGraphNode* getCallGraphNode() const
+    inline const SVFFunction* getCallGraphNode() const
     {
         return callGraphNode;
     }
@@ -1782,7 +1782,7 @@ class RetValPN : public ValVar
     friend class SVFIRReader;
 
 private:
-    const CallGraphNode* callGraphNode;
+    const SVFFunction* callGraphNode;
 private:
     /// Constructor to create empty RetValPN (for SVFIRReader/deserialization)
     RetValPN(NodeID i) : ValVar(i, RetValNode) {}
@@ -1813,9 +1813,9 @@ public:
 
 
     /// Constructor
-    RetValPN(NodeID i, const CallGraphNode* node, const SVFType* svfType, const ICFGNode* icn);
+    RetValPN(NodeID i, const SVFFunction* node, const SVFType* svfType, const ICFGNode* icn);
 
-    inline const CallGraphNode* getCallGraphNode() const
+    inline const SVFFunction* getCallGraphNode() const
     {
         return callGraphNode;
     }
@@ -1838,7 +1838,7 @@ class VarArgValPN : public ValVar
     friend class SVFIRWriter;
     friend class SVFIRReader;
 private:
-    const CallGraphNode* callGraphNode;
+    const SVFFunction* callGraphNode;
 
 private:
     /// Constructor to create empty VarArgValPN (for SVFIRReader/deserialization)
@@ -1869,7 +1869,7 @@ public:
     //@}
 
     /// Constructor
-    VarArgValPN(NodeID i, const CallGraphNode* node, const SVFType* svfType, const ICFGNode* icn)
+    VarArgValPN(NodeID i, const SVFFunction* node, const SVFType* svfType, const ICFGNode* icn)
         : ValVar(i, svfType, icn, VarargValNode), callGraphNode(node)
     {
     }

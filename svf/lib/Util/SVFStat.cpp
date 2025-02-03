@@ -29,7 +29,7 @@
 
 #include "Util/Options.h"
 #include "Util/SVFStat.h"
-#include "Graphs/CallGraph.h"
+#include "Graphs/PTACallGraph.h"
 
 using namespace SVF;
 using namespace std;
@@ -223,7 +223,7 @@ void SVFStat::branchStat()
 {
     u32_t numOfBB_2Succ = 0;
     u32_t numOfBB_3Succ = 0;
-    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    PTACallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
         const SVFFunction* func = item.second->getFunction();
