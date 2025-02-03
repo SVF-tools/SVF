@@ -47,10 +47,10 @@ public:
     CallGraphBuilder()=default;
 
     /// Buidl SVFIR callgraoh
-    PTACallGraph* buildSVFIRCallGraph(SVFModule* svfModule);
+    CallGraph* buildSVFIRCallGraph(SVFModule* svfModule);
 
     /// Buidl PTA callgraoh
-    PTACallGraph* buildPTACallGraph();
+    CallGraph* buildPTACallGraph();
 
     /// Build thread-aware callgraph
     ThreadCallGraph* buildThreadCallGraph();

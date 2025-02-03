@@ -28,7 +28,7 @@
  */
 
 #include "Graphs/ICFG.h"
-#include "Graphs/PTACallGraph.h"
+#include "Graphs/CallGraph.h"
 #include "SVFIR/SVFIR.h"
 #include "SVFIR/SVFModule.h"
 #include <Util/Options.h>
@@ -416,16 +416,16 @@ void ICFG::view()
 /*!
  * Update ICFG for indirect calls
  */
-void ICFG::updateCallGraph(PTACallGraph* callgraph)
+void ICFG::updateCallGraph(CallGraph* callgraph)
 {
-    PTACallGraph::CallEdgeMap::const_iterator iter = callgraph->getIndCallMap().begin();
-    PTACallGraph::CallEdgeMap::const_iterator eiter = callgraph->getIndCallMap().end();
+    CallGraph::CallEdgeMap::const_iterator iter = callgraph->getIndCallMap().begin();
+    CallGraph::CallEdgeMap::const_iterator eiter = callgraph->getIndCallMap().end();
     for (; iter != eiter; iter++)
     {
         CallICFGNode* callBlockNode = const_cast<CallICFGNode*>(iter->first);
         assert(callBlockNode->isIndirectCall() && "this is not an indirect call?");
-        const PTACallGraph::FunctionSet & functions = iter->second;
-        for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
+        const CallGraph::FunctionSet & functions = iter->second;
+        for (CallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
             const SVFFunction*  callee = *func_iter;
             RetICFGNode* retBlockNode = const_cast<RetICFGNode*>(callBlockNode->getRetICFGNode());

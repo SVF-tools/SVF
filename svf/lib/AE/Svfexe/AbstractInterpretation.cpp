@@ -30,7 +30,7 @@
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
 #include "Util/WorkList.h"
-#include "Graphs/PTACallGraph.h"
+#include "Graphs/CallGraph.h"
 #include <cmath>
 
 using namespace SVF;
@@ -84,7 +84,7 @@ void AbstractInterpretation::initWTO()
     // Detect if the call graph has cycles by finding its strongly connected components (SCC)
     Andersen::CallGraphSCC* callGraphScc = ander->getCallGraphSCC();
     callGraphScc->find();
-    PTACallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
 
     // Iterate through the call graph
     for (auto it = svfirCallGraph->begin(); it != svfirCallGraph->end(); it++)
@@ -107,7 +107,7 @@ void AbstractInterpretation::analyse()
     handleGlobalNode();
     getAbsStateFromTrace(
         icfg->getGlobalICFGNode())[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
-    if (const PTACallGraphNode* cgn = svfir->getCallGraph()->getCallGraphNode("main"))
+    if (const CallGraphNode* cgn = svfir->getCallGraph()->getCallGraphNode("main"))
     {
         ICFGWTO* wto = funcToWTO[cgn->getFunction()];
         handleWTOComponents(wto->getWTOComponents());

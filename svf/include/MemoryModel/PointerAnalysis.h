@@ -103,7 +103,7 @@ public:
     typedef SVFIR::CallSiteToFunPtrMap CallSiteToFunPtrMap;
     typedef Set<const SVFFunction*> FunctionSet;
     typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
-    typedef SCCDetection<PTACallGraph*> CallGraphSCC;
+    typedef SCCDetection<CallGraph*> CallGraphSCC;
     typedef Set<const GlobalObjVar*> VTableSet;
     typedef Set<const SVFFunction*> VFunSet;
     //@}
@@ -148,7 +148,7 @@ protected:
     /// Statistics
     PTAStat* stat;
     /// Call graph used for pointer analysis
-    PTACallGraph* callgraph;
+    CallGraph* callgraph;
     /// SCC for PTACallGraph
     CallGraphSCC* callGraphSCC;
     /// Interprocedural control-flow graph
@@ -168,7 +168,7 @@ public:
         return getCallGraph()->getNumOfResolvedIndCallEdge();
     }
     /// Return call graph
-    inline PTACallGraph* getCallGraph() const
+    inline CallGraph* getCallGraph() const
     {
         return callgraph;
     }
@@ -398,8 +398,8 @@ public:
     /// Return TRUE if this edge is inside a PTACallGraph SCC, i.e., src node and dst node are in the same SCC on the SVFG.
     inline bool inSameCallGraphSCC(const SVFFunction* fun1,const SVFFunction* fun2)
     {
-        const PTACallGraphNode* src = callgraph->getCallGraphNode(fun1);
-        const PTACallGraphNode* dst = callgraph->getCallGraphNode(fun2);
+        const CallGraphNode* src = callgraph->getCallGraphNode(fun1);
+        const CallGraphNode* dst = callgraph->getCallGraphNode(fun2);
         return (getCallGraphSCCRepNode(src->getId()) == getCallGraphSCCRepNode(dst->getId()));
     }
     inline bool isInRecursion(const SVFFunction* fun) const

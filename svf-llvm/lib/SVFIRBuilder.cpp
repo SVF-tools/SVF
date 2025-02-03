@@ -38,7 +38,7 @@
 #include "SVFIR/SVFModule.h"
 #include "SVFIR/SVFValue.h"
 #include "Util/CallGraphBuilder.h"
-#include "Graphs/PTACallGraph.h"
+#include "Graphs/CallGraph.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 
@@ -1333,17 +1333,17 @@ void SVFIRBuilder::handleIndCall(CallBase* cs)
     pag->addIndirectCallsites(cbn,llvmModuleSet()->getValueNode(svfcalledval));
 }
 
-void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph)
+void SVFIRBuilder::updateCallGraph(CallGraph* callgraph)
 {
-    PTACallGraph::CallEdgeMap::const_iterator iter = callgraph->getIndCallMap().begin();
-    PTACallGraph::CallEdgeMap::const_iterator eiter = callgraph->getIndCallMap().end();
+    CallGraph::CallEdgeMap::const_iterator iter = callgraph->getIndCallMap().begin();
+    CallGraph::CallEdgeMap::const_iterator eiter = callgraph->getIndCallMap().end();
     for (; iter != eiter; iter++)
     {
         const CallICFGNode* callBlock = iter->first;
         const CallBase* callbase = SVFUtil::cast<CallBase>(llvmModuleSet()->getLLVMValue(callBlock));
         assert(callBlock->isIndirectCall() && "this is not an indirect call?");
-        const PTACallGraph::FunctionSet& functions = iter->second;
-        for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
+        const CallGraph::FunctionSet& functions = iter->second;
+        for (CallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
             const Function* callee = SVFUtil::cast<Function>(llvmModuleSet()->getLLVMValue(*func_iter));
 

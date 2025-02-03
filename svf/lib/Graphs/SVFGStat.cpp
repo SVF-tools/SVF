@@ -29,7 +29,7 @@
 
 #include "Graphs/SVFG.h"
 #include "Graphs/SVFGStat.h"
-#include "Graphs/PTACallGraph.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace std;

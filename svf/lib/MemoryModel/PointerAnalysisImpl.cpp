@@ -34,7 +34,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "Graphs/PTACallGraph.h"
+#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
