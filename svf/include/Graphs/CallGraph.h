@@ -410,10 +410,10 @@ public:
     //@}
     /// Whether we have already created this call graph edge
     CallGraphEdge* hasGraphEdge(CallGraphNode* src, CallGraphNode* dst,
-                                   CallGraphEdge::CEDGEK kind, CallSiteID csId) const;
+                                CallGraphEdge::CEDGEK kind, CallSiteID csId) const;
     /// Get call graph edge via nodes
     CallGraphEdge* getGraphEdge(CallGraphNode* src, CallGraphNode* dst,
-                                   CallGraphEdge::CEDGEK kind, CallSiteID csId);
+                                CallGraphEdge::CEDGEK kind, CallSiteID csId);
 
     /// Get all callees for a callsite
     inline void getCallees(const CallICFGNode* cs, FunctionSet& callees)

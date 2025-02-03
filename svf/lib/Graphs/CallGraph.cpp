@@ -159,8 +159,8 @@ void CallGraph::destroy()
  *  Whether we have already created this call graph edge
  */
 CallGraphEdge* CallGraph::hasGraphEdge(CallGraphNode* src,
-        CallGraphNode* dst,
-        CallGraphEdge::CEDGEK kind, CallSiteID csId) const
+                                       CallGraphNode* dst,
+                                       CallGraphEdge::CEDGEK kind, CallSiteID csId) const
 {
     CallGraphEdge edge(src,dst,kind,csId);
     CallGraphEdge* outEdge = src->hasOutgoingEdge(&edge);
@@ -178,8 +178,8 @@ CallGraphEdge* CallGraph::hasGraphEdge(CallGraphNode* src,
  * get PTACallGraph edge via nodes
  */
 CallGraphEdge* CallGraph::getGraphEdge(CallGraphNode* src,
-        CallGraphNode* dst,
-        CallGraphEdge::CEDGEK kind, CallSiteID)
+                                       CallGraphNode* dst,
+                                       CallGraphEdge::CEDGEK kind, CallSiteID)
 {
     for (CallGraphEdge::CallGraphEdgeSet::iterator iter = src->OutEdgeBegin();
             iter != src->OutEdgeEnd(); ++iter)
