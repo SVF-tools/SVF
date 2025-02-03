@@ -38,7 +38,7 @@
 #include "SVFIR/SVFModule.h"
 #include "SVFIR/SVFValue.h"
 #include "Util/CallGraphBuilder.h"
-#include "Graphs/CallGraph.h"
+#include "Graphs/PTACallGraph.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 
@@ -220,7 +220,7 @@ void SVFIRBuilder::initialiseNodes()
         if (const Function* func =
                     SVFUtil::dyn_cast<Function>(llvmValue))
         {
-            const CallGraphNode* cgn = llvmModuleSet()->getCallGraphNode(func);
+            const SVFFunction* cgn = llvmModuleSet()->getSVFFunction(func);
             // add value node representing the function
             pag->addFunValNode(iter->second, icfgNode, cgn, iter->first->getType());
         }
@@ -228,7 +228,7 @@ void SVFIRBuilder::initialiseNodes()
         {
             pag->addArgValNode(
                 iter->second, argval->getArgNo(), icfgNode,
-                llvmModuleSet()->getCallGraphNode(argval->getParent()),iter->first->getType());
+                llvmModuleSet()->getSVFFunction(argval->getParent()),iter->first->getType());
             if (!argval->hasName())
                 pag->getGNode(iter->second)->setName("arg_" + std::to_string(argval->getArgNo()));
         }
@@ -291,8 +291,8 @@ void SVFIRBuilder::initialiseNodes()
         // Check if the value is a function and add a function object node
         if (const Function* func = SVFUtil::dyn_cast<Function>(llvmValue))
         {
-            NodeID id = llvmModuleSet()->getObjectNode(llvmModuleSet()->getCallGraphNode(func)->getFunction());
-            pag->addFunObjNode(iter->second, pag->getObjTypeInfo(id),  llvmModuleSet()->getCallGraphNode(func), iter->first->getType(), icfgNode);
+            NodeID id = llvmModuleSet()->getObjectNode(llvmModuleSet()->getSVFFunction(func));
+            pag->addFunObjNode(iter->second, pag->getObjTypeInfo(id),  llvmModuleSet()->getSVFFunction(func), iter->first->getType(), icfgNode);
         }
         // Check if the value is a heap object and add a heap object node
         else if (LLVMUtil::isHeapObj(llvmValue))
@@ -361,7 +361,7 @@ void SVFIRBuilder::initialiseNodes()
         }
         DBOUT(DPAGBuild, outs() << "add ret node " << iter->second << "\n");
         pag->addRetNode(iter->second,
-                        llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(llvmValue)), iter->first->getType(), icfgNode);
+                        llvmModuleSet()->getSVFFunction(SVFUtil::cast<Function>(llvmValue)), iter->first->getType(), icfgNode);
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
     }
 
@@ -379,7 +379,7 @@ void SVFIRBuilder::initialiseNodes()
         }
         DBOUT(DPAGBuild, outs() << "add vararg node " << iter->second << "\n");
         pag->addVarargNode(iter->second,
-                           llvmModuleSet()->getCallGraphNode(SVFUtil::cast<Function>(llvmValue)), iter->first->getType(), icfgNode);
+                           llvmModuleSet()->getSVFFunction(SVFUtil::cast<Function>(llvmValue)), iter->first->getType(), icfgNode);
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
 
     }

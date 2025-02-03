@@ -35,7 +35,6 @@
 namespace SVF
 {
 class CommonCHGraph;
-class CallGraph;
 /*!
  * SVF Intermediate representation, representing variables and statements as a Program Assignment Graph (PAG)
  * Variables as nodes and statements as edges.
@@ -62,7 +61,7 @@ public:
     typedef Map<const CallICFGNode*,SVFVarList> CSToArgsListMap;
     typedef Map<const RetICFGNode*,const SVFVar*> CSToRetMap;
     typedef Map<const SVFFunction*,const SVFVar*> FunToRetMap;
-    typedef Map<const CallGraphNode*,const FunObjVar *> FunToFunObjVarMap;
+    typedef Map<const SVFFunction*,const FunObjVar *> FunToFunObjVarMap;
     typedef Map<const SVFFunction*,SVFStmtSet> FunToPAGEdgeSetMap;
     typedef Map<const ICFGNode*,SVFStmtList> ICFGNode2SVFStmtsMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
@@ -100,7 +99,7 @@ private:
     ICFG* icfg; // ICFG
     CommonCHGraph* chgraph; // class hierarchy graph
     CallSiteSet callSiteSet; /// all the callsites of a program
-    CallGraph* callGraph; /// call graph
+    PTACallGraph* callGraph; /// call graph
 
     static std::unique_ptr<SVFIR> pag;	///< Singleton pattern here to enable instance of SVFIR can only be created once.
 
@@ -187,11 +186,11 @@ public:
     }
 
     /// Set/Get CG
-    inline void setCallGraph(CallGraph* c)
+    inline void setCallGraph(PTACallGraph* c)
     {
         callGraph = c;
     }
-    inline CallGraph* getCallGraph()
+    inline PTACallGraph* getCallGraph()
     {
         assert(callGraph && "empty CallGraph! Build SVF IR first!");
         return callGraph;
@@ -331,7 +330,7 @@ public:
     }
     //@}
 
-    inline const FunObjVar* getFunObjVar(const CallGraphNode*  node) const
+    inline const FunObjVar* getFunObjVar(const SVFFunction*  node) const
     {
         FunToFunObjVarMap::const_iterator it = funToFunObjvarMap.find(node);
         assert(it != funToFunObjvarMap.end() && "this function doesn't have funobjvar");
@@ -547,13 +546,13 @@ private:
         return addValNode(node);
     }
 
-    NodeID addFunValNode(NodeID i, const ICFGNode* icfgNode, const CallGraphNode* callGraphNode, const SVFType* type)
+    NodeID addFunValNode(NodeID i, const ICFGNode* icfgNode, const SVFFunction* callGraphNode, const SVFType* type)
     {
         FunValVar* node = new FunValVar(i, icfgNode, callGraphNode, type);
         return addValNode(node);
     }
 
-    NodeID addArgValNode(NodeID i, u32_t argNo, const ICFGNode* icfgNode, const CallGraphNode* callGraphNode, const SVFType* type)
+    NodeID addArgValNode(NodeID i, u32_t argNo, const ICFGNode* icfgNode, const SVFFunction* callGraphNode, const SVFType* type)
     {
         ArgValVar* node =
             new ArgValVar(i, argNo, icfgNode, callGraphNode, type);
@@ -625,7 +624,7 @@ private:
         return addObjNode(stackObj);
     }
 
-    NodeID addFunObjNode(NodeID id,  ObjTypeInfo* ti, const CallGraphNode* callGraphNode, const SVFType* type, const ICFGNode* node)
+    NodeID addFunObjNode(NodeID id,  ObjTypeInfo* ti, const SVFFunction* callGraphNode, const SVFType* type, const ICFGNode* node)
     {
         memToFieldsMap[id].set(id);
         FunObjVar* funObj = new FunObjVar(id, ti, callGraphNode, type, node);
@@ -678,13 +677,13 @@ private:
     }
 
     /// Add a unique return node for a procedure
-    inline NodeID addRetNode(NodeID i, const CallGraphNode* callGraphNode, const SVFType* type, const ICFGNode* icn)
+    inline NodeID addRetNode(NodeID i, const SVFFunction* callGraphNode, const SVFType* type, const ICFGNode* icn)
     {
         SVFVar *node = new RetValPN(i, callGraphNode, type, icn);
         return addRetNode(callGraphNode, node);
     }
     /// Add a unique vararg node for a procedure
-    inline NodeID addVarargNode(NodeID i, const CallGraphNode* val, const SVFType* type, const ICFGNode* n)
+    inline NodeID addVarargNode(NodeID i, const SVFFunction* val, const SVFType* type, const ICFGNode* n)
     {
         SVFVar *node = new VarArgValPN(i, val, type, n);
         return addNode(node);
@@ -758,7 +757,7 @@ private:
         return addNode(node);
     }
     /// Add a unique return node for a procedure
-    inline NodeID addRetNode(const CallGraphNode*, SVFVar *node)
+    inline NodeID addRetNode(const SVFFunction*, SVFVar *node)
     {
         return addNode(node);
     }

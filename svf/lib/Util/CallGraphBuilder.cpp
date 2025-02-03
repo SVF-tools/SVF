@@ -32,15 +32,15 @@
 #include "Util/CallGraphBuilder.h"
 #include "Graphs/ICFG.h"
 #include "SVFIR/SVFIR.h"
-#include "Graphs/CallGraph.h"
+#include "Graphs/PTACallGraph.h"
 #include "Graphs/ThreadCallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
 
-CallGraph* CallGraphBuilder::buildSVFIRCallGraph(SVFModule* svfModule)
+PTACallGraph* CallGraphBuilder::buildSVFIRCallGraph(SVFModule* svfModule)
 {
-    CallGraph* callgraph = new CallGraph();
+    PTACallGraph* callgraph = new PTACallGraph();
     for (const SVFFunction* svfFunc: svfModule->getFunctionSet())
     {
         callgraph->addCallGraphNode(svfFunc);
@@ -69,13 +69,13 @@ CallGraph* CallGraphBuilder::buildSVFIRCallGraph(SVFModule* svfModule)
 
 PTACallGraph* CallGraphBuilder::buildPTACallGraph()
 {
-    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    PTACallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     return new PTACallGraph(*svfirCallGraph);
 }
 
 ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
 {
-    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    PTACallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     ThreadCallGraph* cg = new ThreadCallGraph(*svfirCallGraph);
 
     ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();

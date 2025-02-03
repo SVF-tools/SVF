@@ -29,7 +29,7 @@
  */
 
 #include "Graphs/PTACallGraph.h"
-#include "Graphs/CallGraph.h"
+#include "Graphs/PTACallGraph.h"
 #include "SVFIR/SVFIR.h"
 #include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
@@ -114,7 +114,7 @@ PTACallGraph::PTACallGraph(CGEK k): kind(k)
 }
 
 /// Copy constructor
-PTACallGraph::PTACallGraph(const CallGraph& other)
+PTACallGraph::PTACallGraph(const PTACallGraph& other)
 {
     callGraphNodeNum = other.getTotalNodeNum();
     numOfResolvedIndCallEdge = 0;
@@ -123,7 +123,7 @@ PTACallGraph::PTACallGraph(const CallGraph& other)
     /// copy call graph nodes
     for (const auto& item : other)
     {
-        const CallGraphNode* cgn = item.second;
+        const PTACallGraphNode* cgn = item.second;
         PTACallGraphNode* callGraphNode = new PTACallGraphNode(cgn->getId(), cgn->getFunction());
         addGNode(cgn->getId(),callGraphNode);
         funToCallGraphNodeMap[cgn->getFunction()] = callGraphNode;
@@ -133,7 +133,7 @@ PTACallGraph::PTACallGraph(const CallGraph& other)
     for (const auto& item : other.callinstToCallGraphEdgesMap)
     {
         const CallICFGNode* cs = item.first;
-        for (const CallGraphEdge* edge : item.second)
+        for (const PTACallGraphEdge* edge : item.second)
         {
             PTACallGraphNode* src = getCallGraphNode(edge->getSrcID());
             PTACallGraphNode* dst = getCallGraphNode(edge->getDstID());
@@ -332,6 +332,48 @@ void PTACallGraph::dump(const std::string& filename)
 void PTACallGraph::view()
 {
     SVF::ViewGraph(this, "Call Graph");
+}
+
+
+/*!
+ * Add call graph node
+ */
+void PTACallGraph::addCallGraphNode(const SVFFunction* fun)
+{
+    NodeID id  = callGraphNodeNum;
+    PTACallGraphNode*callGraphNode = new PTACallGraphNode(id, fun);
+    addGNode(id, callGraphNode);
+    funToCallGraphNodeMap[callGraphNode->getFunction()] = callGraphNode;
+    callGraphNodeNum++;
+}
+
+const PTACallGraphNode* PTACallGraph::getCallGraphNode(const std::string& name)
+{
+    for (const auto& item : *this)
+    {
+        if (item.second->getName() == name)
+            return item.second;
+    }
+    return nullptr;
+}
+
+/*!
+ * Add direct call edges
+ */
+void PTACallGraph::addDirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun)
+{
+
+    PTACallGraphNode* caller = getCallGraphNode(callerFun);
+    PTACallGraphNode* callee = getCallGraphNode(calleeFun);
+    CallSiteID csId = addCallSite(cs, calleeFun);
+
+    if(!hasGraphEdge(caller,callee, PTACallGraphEdge::CallRetEdge, csId))
+    {
+        PTACallGraphEdge* edge = new PTACallGraphEdge(caller,callee, PTACallGraphEdge::CallRetEdge, csId);
+        edge->addDirectCallSite(cs);
+        addEdge(edge);
+        callinstToCallGraphEdgesMap[cs].insert(edge);
+    }
 }
 
 namespace SVF

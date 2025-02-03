@@ -41,7 +41,7 @@
 #include "SVF-LLVM/ObjTypeInference.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 #include "SVF-LLVM/ICFGBuilder.h"
-#include "Graphs/CallGraph.h"
+#include "Graphs/PTACallGraph.h"
 #include "Util/CallGraphBuilder.h"
 
 using namespace std;
@@ -191,18 +191,6 @@ void LLVMModuleSet::build()
 
     CallGraphBuilder callGraphBuilder;
     callgraph = callGraphBuilder.buildSVFIRCallGraph(svfModule);
-    for (const auto& func : svfModule->getFunctionSet())
-    {
-        SVFFunction* svffunc = const_cast<SVFFunction*>(func);
-        svffunc->setCallGraphNode(callgraph->getCallGraphNode(func));
-    }
-
-    for (const auto& it : *callgraph)
-    {
-        addFunctionMap(
-            SVFUtil::cast<Function>(getLLVMValue(it.second->getFunction())),
-            it.second);
-    }
 }
 
 void LLVMModuleSet::createSVFDataStructure()
@@ -1292,12 +1280,6 @@ void LLVMModuleSet::dumpSymTable()
         SVFUtil::outs() << iter.first << " " << iter.second->toString() << "\n";
     }
     SVFUtil::outs() << "}\n";
-}
-
-void LLVMModuleSet::addFunctionMap(const Function* func, CallGraphNode* svfFunc)
-{
-    LLVMFunc2CallGraphNode[func] = svfFunc;
-    addToSVFVar2LLVMValueMap(func, svfFunc);
 }
 
 void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)

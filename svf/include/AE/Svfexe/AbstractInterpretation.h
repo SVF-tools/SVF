@@ -251,8 +251,8 @@ private:
     AEStat* stat;
 
     std::vector<const CallICFGNode*> callSiteStack;
-    Map<const CallGraphNode*, ICFGWTO*> funcToWTO;
-    Set<const CallGraphNode*> recursiveFuns;
+    Map<const SVFFunction*, ICFGWTO*> funcToWTO;
+    Set<const SVFFunction*> recursiveFuns;
 
 
     AbstractState& getAbsStateFromTrace(const ICFGNode* node)
