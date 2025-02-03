@@ -31,7 +31,7 @@
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
 #include "SVF-LLVM/ObjTypeInference.h"
-#include "Graphs/PTACallGraph.h"
+#include "Graphs/CallGraph.h"
 
 using namespace std;
 using namespace SVF;

@@ -106,7 +106,7 @@ class AbstractInterpretation
     friend class BufOverflowDetector;
 
 public:
-    typedef SCCDetection<PTACallGraph*> CallGraphSCC;
+    typedef SCCDetection<CallGraph*> CallGraphSCC;
     /// Constructor
     AbstractInterpretation();
 

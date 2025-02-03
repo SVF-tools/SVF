@@ -483,7 +483,7 @@ void VersionedFlowSensitive::buildDeltaMaps(void)
         bool isDelta = false;
         if (const SVFFunction *fn = svfg->isFunEntrySVFGNode(s))
         {
-            PTACallGraphEdge::CallInstSet callsites;
+            CallGraphEdge::CallInstSet callsites;
             /// use pre-analysis call graph to approximate all potential callsites
             ander->getCallGraph()->getIndCallSitesInvokingCallee(fn, callsites);
             isDelta = !callsites.empty();
