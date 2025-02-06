@@ -177,8 +177,8 @@ bool DDAPass::edgeInSVFGSCC(const SVFGSCC* svfgSCC,const SVFGEdge* edge)
  */
 bool DDAPass::edgeInCallGraphSCC(PointerAnalysis* pta,const SVFGEdge* edge)
 {
-    const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
-    const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
+    const FunObjVar* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
+    const FunObjVar* dstFun = edge->getDstNode()->getICFGNode()->getFun();
 
     if(srcFun && dstFun)
     {
@@ -234,8 +234,8 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
                 if(this->edgeInSVFGSCC(svfgSCC,edge))
                 {
 
-                    const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
-                    const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
+                    const FunObjVar* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
+                    const FunObjVar* dstFun = edge->getDstNode()->getICFGNode()->getFun();
 
                     if(srcFun && dstFun)
                     {
@@ -261,8 +261,8 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
 
             if(edge->isCallVFGEdge() || edge->isRetVFGEdge())
             {
-                const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
-                const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
+                const FunObjVar* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
+                const FunObjVar* dstFun = edge->getDstNode()->getICFGNode()->getFun();
 
                 if(srcFun && dstFun)
                 {

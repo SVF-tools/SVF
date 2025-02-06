@@ -67,7 +67,7 @@ void MRGenerator::destroy()
 /*!
  * Generate a memory region and put in into functions which use it
  */
-void MRGenerator::createMR(const SVFFunction* fun, const NodeBS& cpts)
+void MRGenerator::createMR(const FunObjVar* fun, const NodeBS& cpts)
 {
     const NodeBS& repCPts = getRepPointsTo(cpts);
     MemRegion mr(repCPts);
@@ -177,13 +177,13 @@ void MRGenerator::collectModRefForLoadStore()
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
-        const SVFFunction& fun = *item.second->getFunction();
+        const FunObjVar& fun = *item.second->getFunction();
 
         /// if this function does not have any caller, then we do not care its MSSA
         if (Options::IgnoreDeadFun() && fun.isUncalledFunction())
             continue;
 
-        for (SVFFunction::const_iterator iter = fun.begin(), eiter = fun.end();
+        for (FunObjVar::const_bb_iterator iter = fun.begin(), eiter = fun.end();
                 iter != eiter; ++iter)
         {
             const SVFBasicBlock* bb = iter->second;
@@ -331,7 +331,7 @@ void MRGenerator::partitionMRs()
     for(FunToPointsTosMap::iterator it = getFunToPointsToList().begin(), eit = getFunToPointsToList().end();
             it!=eit; ++it)
     {
-        const SVFFunction* fun = it->first;
+        const FunObjVar* fun = it->first;
         for(PointsToList::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
         {
             createMR(fun,*cit);
@@ -350,7 +350,7 @@ void MRGenerator::updateAliasMRs()
     for(StoresToPointsToMap::const_iterator it = storesToPointsToMap.begin(), eit = storesToPointsToMap.end(); it!=eit; ++it)
     {
         MRSet aliasMRs;
-        const SVFFunction* fun = getFunction(it->first);
+        const FunObjVar* fun = getFunction(it->first);
         const NodeBS& storeCPts = it->second;
         getAliasMemRegions(aliasMRs,storeCPts,fun);
         for(MRSet::iterator ait = aliasMRs.begin(), eait = aliasMRs.end(); ait!=eait; ++ait)
@@ -362,7 +362,7 @@ void MRGenerator::updateAliasMRs()
     for(LoadsToPointsToMap::const_iterator it = loadsToPointsToMap.begin(), eit = loadsToPointsToMap.end(); it!=eit; ++it)
     {
         MRSet aliasMRs;
-        const SVFFunction* fun = getFunction(it->first);
+        const FunObjVar* fun = getFunction(it->first);
         const NodeBS& loadCPts = it->second;
         getMRsForLoad(aliasMRs, loadCPts, fun);
         for(MRSet::iterator ait = aliasMRs.begin(), eait = aliasMRs.end(); ait!=eait; ++ait)
@@ -375,7 +375,7 @@ void MRGenerator::updateAliasMRs()
     for(CallSiteToPointsToMap::const_iterator it =  callsiteToModPointsToMap.begin(),
             eit = callsiteToModPointsToMap.end(); it!=eit; ++it)
     {
-        const SVFFunction* fun = it->first->getCaller();
+        const FunObjVar* fun = it->first->getCaller();
         MRSet aliasMRs;
         const NodeBS& callsiteModCPts = it->second;
         getAliasMemRegions(aliasMRs,callsiteModCPts,fun);
@@ -387,7 +387,7 @@ void MRGenerator::updateAliasMRs()
     for(CallSiteToPointsToMap::const_iterator it =  callsiteToRefPointsToMap.begin(),
             eit = callsiteToRefPointsToMap.end(); it!=eit; ++it)
     {
-        const SVFFunction* fun = it->first->getCaller();
+        const FunObjVar* fun = it->first->getCaller();
         MRSet aliasMRs;
         const NodeBS& callsiteRefCPts = it->second;
         getMRsForCallSiteRef(aliasMRs, callsiteRefCPts, fun);
@@ -402,7 +402,7 @@ void MRGenerator::updateAliasMRs()
 /*!
  * Add indirect uses an memory object in the function
  */
-void MRGenerator::addRefSideEffectOfFunction(const SVFFunction* fun, const NodeBS& refs)
+void MRGenerator::addRefSideEffectOfFunction(const FunObjVar* fun, const NodeBS& refs)
 {
     for(NodeBS::iterator it = refs.begin(), eit = refs.end(); it!=eit; ++it)
     {
@@ -414,7 +414,7 @@ void MRGenerator::addRefSideEffectOfFunction(const SVFFunction* fun, const NodeB
 /*!
  * Add indirect def an memory object in the function
  */
-void MRGenerator::addModSideEffectOfFunction(const SVFFunction* fun, const NodeBS& mods)
+void MRGenerator::addModSideEffectOfFunction(const FunObjVar* fun, const NodeBS& mods)
 {
     for(NodeBS::iterator it = mods.begin(), eit = mods.end(); it!=eit; ++it)
     {
@@ -558,7 +558,7 @@ void MRGenerator::getEscapObjviaGlobals(NodeBS& globs, const NodeBS& calleeModRe
  * Whether the object node is a non-local object
  * including global, heap, and stack variable in recursions
  */
-bool MRGenerator::isNonLocalObject(NodeID id, const SVFFunction* curFun) const
+bool MRGenerator::isNonLocalObject(NodeID id, const FunObjVar* curFun) const
 {
     //ABTest
     const BaseObjVar* obj = pta->getPAG()->getBaseObject(id);
@@ -572,7 +572,7 @@ bool MRGenerator::isNonLocalObject(NodeID id, const SVFFunction* curFun) const
     /// or a local variable is in function recursion cycles
     else if(SVFUtil::isa<StackObjVar>(pVar))
     {
-        if(const SVFFunction* svffun = pVar->getFunction())
+        if(const FunObjVar* svffun = pVar->getFunction())
         {
             if(svffun!=curFun)
                 return true;
@@ -587,7 +587,7 @@ bool MRGenerator::isNonLocalObject(NodeID id, const SVFFunction* curFun) const
 /*!
  * Get Mod-Ref of a callee function
  */
-bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGNode* cs, const SVFFunction* callee)
+bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGNode* cs, const FunObjVar* callee)
 {
     /// if a callee is a heap allocator function, then its mod set of this callsite is the heap object.
     if(isHeapAllocExtCall(cs))

@@ -522,6 +522,7 @@ public:
 };
 
 class ICFGNode;
+class FunObjVar;
 
 class SVFInstruction : public SVFValue
 {
@@ -551,7 +552,7 @@ public:
         return bb;
     }
 
-    inline const SVFFunction* getFunction() const
+    inline const FunObjVar* getFunction() const
     {
         return bb->getParent();
     }
@@ -630,7 +631,7 @@ public:
     {
         return SVFUtil::dyn_cast<SVFFunction>(calledVal);
     }
-    inline  const SVFFunction* getCaller() const
+    inline  const FunObjVar* getCaller() const
     {
         return getFunction();
     }

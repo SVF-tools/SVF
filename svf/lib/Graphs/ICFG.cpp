@@ -37,7 +37,7 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-FunEntryICFGNode::FunEntryICFGNode(NodeID id, const SVFFunction* f) : InterICFGNode(id, FunEntryBlock)
+FunEntryICFGNode::FunEntryICFGNode(NodeID id, const FunObjVar* f) : InterICFGNode(id, FunEntryBlock)
 {
     fun = f;
     // if function is implemented
@@ -47,7 +47,7 @@ FunEntryICFGNode::FunEntryICFGNode(NodeID id, const SVFFunction* f) : InterICFGN
     }
 }
 
-FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f)
+FunExitICFGNode::FunExitICFGNode(NodeID id, const FunObjVar* f)
     : InterICFGNode(id, FunExitBlock), formalRet(nullptr)
 {
     fun = f;
@@ -110,9 +110,14 @@ const std::string FunEntryICFGNode::toString() const
     return rawstr.str();
 }
 
+const std::string FunEntryICFGNode::getSourceLoc() const
+{
+    return "function entry: " + fun->getSourceLoc();
+}
+
 const std::string FunExitICFGNode::toString() const
 {
-    const SVFFunction *fun = getFun();
+    const FunObjVar *fun = getFun();
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "FunExitICFGNode" << getId();
@@ -127,6 +132,9 @@ const std::string FunExitICFGNode::toString() const
     return rawstr.str();
 }
 
+const std::string FunExitICFGNode::getSourceLoc() const {
+    return "function ret: " + fun->getSourceLoc();
+}
 
 const std::string CallICFGNode::toString() const
 {
@@ -231,14 +239,14 @@ ICFG::~ICFG()
 
 
 /// Add a function entry node
-FunEntryICFGNode* ICFG::getFunEntryICFGNode(const SVFFunction*  fun)
+FunEntryICFGNode* ICFG::getFunEntryICFGNode(const FunObjVar*  fun)
 {
     FunEntryICFGNode* entry = getFunEntryBlock(fun);
     assert (entry && "fun entry not created in ICFGBuilder?");
     return entry;
 }
 /// Add a function exit node
-FunExitICFGNode* ICFG::getFunExitICFGNode(const SVFFunction*  fun)
+FunExitICFGNode* ICFG::getFunExitICFGNode(const FunObjVar*  fun)
 {
     FunExitICFGNode* exit = getFunExitBlock(fun);
     assert (exit && "fun exit not created in ICFGBuilder?");
@@ -427,7 +435,7 @@ void ICFG::updateCallGraph(CallGraph* callgraph)
         const CallGraph::FunctionSet & functions = iter->second;
         for (CallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
-            const SVFFunction*  callee = *func_iter;
+            const FunObjVar*  callee = *func_iter;
             RetICFGNode* retBlockNode = const_cast<RetICFGNode*>(callBlockNode->getRetICFGNode());
             /// if this is an external function (no function body), connect calleeEntryNode to calleeExitNode
             if (isExtCall(callee))

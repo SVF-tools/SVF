@@ -67,7 +67,7 @@ private:
 
     /// extract basic block edges to be processed
     static void
-    extractBBS(const SVFFunction *func,
+    extractBBS(const FunObjVar *func,
                Map<const SVFBasicBlock *, std::vector<const SVFBasicBlock *>> &res);
 
     /// extract nodes between two nodes in pdom tree

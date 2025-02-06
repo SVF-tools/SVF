@@ -57,12 +57,11 @@ public:
     typedef std::vector<const SVFStmt*> SVFStmtList;
     typedef std::vector<const SVFVar*> SVFVarList;
     typedef Map<const SVFVar*,PhiStmt*> PHINodeMap;
-    typedef Map<const SVFFunction*,SVFVarList> FunToArgsListMap;
+    typedef Map<const FunObjVar*,SVFVarList> FunToArgsListMap;
     typedef Map<const CallICFGNode*,SVFVarList> CSToArgsListMap;
     typedef Map<const RetICFGNode*,const SVFVar*> CSToRetMap;
-    typedef Map<const SVFFunction*,const SVFVar*> FunToRetMap;
-    typedef Map<const SVFFunction*,const FunObjVar *> FunToFunObjVarMap;
-    typedef Map<const SVFFunction*,SVFStmtSet> FunToPAGEdgeSetMap;
+    typedef Map<const FunObjVar*,const SVFVar*> FunToRetMap;
+    typedef Map<const FunObjVar*,SVFStmtSet> FunToPAGEdgeSetMap;
     typedef Map<const ICFGNode*,SVFStmtList> ICFGNode2SVFStmtsMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
     typedef std::pair<NodeID, APOffset> NodeOffset;
@@ -89,7 +88,6 @@ private:
     CSToArgsListMap callSiteArgsListMap;	///< Map a callsite to a list of all its actual parameters
     CSToRetMap callSiteRetMap;	///< Map a callsite to its callsite returns PAGNodes
     FunToRetMap funRetMap;	///< Map a function to its unique function return PAGNodes
-    FunToFunObjVarMap funToFunObjvarMap;    ///< Map a function to its unique function object PAGNodes
     CallSiteToFunPtrMap indCallSiteToFunPtrMap; ///< Map an indirect callsite to its function pointer
     FunPtrToCallSitesMap funPtrToCallSitesMap;	///< Map a function pointer to the callsites where it is used
     /// Valid pointers for pointer analysis resolution connected by SVFIR edges (constraints)
@@ -196,6 +194,8 @@ public:
         return callGraph;
     }
 
+    const FunObjVar* getFunObjVar(const std::string& name);
+
     /// Get/set methods to get SVFStmts based on their kinds and ICFGNodes
     //@{
     /// Get edges set according to its kind
@@ -263,7 +263,7 @@ public:
     }
 
     /// Function has arguments list
-    inline bool hasFunArgsList(const SVFFunction* func) const
+    inline bool hasFunArgsList(const FunObjVar* func) const
     {
         return (funArgsListMap.find(func) != funArgsListMap.end());
     }
@@ -273,7 +273,7 @@ public:
         return funArgsListMap;
     }
     /// Get function arguments list
-    inline const SVFVarList& getFunArgsList(const SVFFunction*  func) const
+    inline const SVFVarList& getFunArgsList(const FunObjVar*  func) const
     {
         FunToArgsListMap::const_iterator it = funArgsListMap.find(func);
         assert(it != funArgsListMap.end() && "this function doesn't have arguments");
@@ -318,24 +318,18 @@ public:
         return funRetMap;
     }
     /// Get function return list
-    inline const SVFVar* getFunRet(const SVFFunction*  func) const
+    inline const SVFVar* getFunRet(const FunObjVar*  func) const
     {
         FunToRetMap::const_iterator it = funRetMap.find(func);
         assert(it != funRetMap.end() && "this function doesn't have return");
         return it->second;
     }
-    inline bool funHasRet(const SVFFunction* func) const
+    inline bool funHasRet(const FunObjVar* func) const
     {
         return funRetMap.find(func) != funRetMap.end();
     }
     //@}
 
-    inline const FunObjVar* getFunObjVar(const SVFFunction*  node) const
-    {
-        FunToFunObjVarMap::const_iterator it = funToFunObjvarMap.find(node);
-        assert(it != funToFunObjvarMap.end() && "this function doesn't have funobjvar");
-        return it->second;
-    }
     /// Node and edge statistics
     //@{
     inline u32_t getFieldValNodeNum() const
@@ -503,14 +497,14 @@ private:
     /// Get/set method for function/callsite arguments and returns
     //@{
     /// Add function arguments
-    inline void addFunArgs(const SVFFunction* fun, const SVFVar* arg)
+    inline void addFunArgs(const FunObjVar* fun, const SVFVar* arg)
     {
         FunEntryICFGNode* funEntryBlockNode = icfg->getFunEntryICFGNode(fun);
         funEntryBlockNode->addFormalParms(arg);
         funArgsListMap[fun].push_back(arg);
     }
     /// Add function returns
-    inline void addFunRet(const SVFFunction* fun, const SVFVar* ret)
+    inline void addFunRet(const FunObjVar* fun, const SVFVar* ret)
     {
         FunExitICFGNode* funExitBlockNode = icfg->getFunExitICFGNode(fun);
         funExitBlockNode->addFormalRet(ret);
@@ -546,13 +540,13 @@ private:
         return addValNode(node);
     }
 
-    NodeID addFunValNode(NodeID i, const ICFGNode* icfgNode, const SVFFunction* callGraphNode, const SVFType* type)
+    NodeID addFunValNode(NodeID i, const ICFGNode* icfgNode, const FunObjVar* funObjVar, const SVFType* type)
     {
-        FunValVar* node = new FunValVar(i, icfgNode, callGraphNode, type);
+        FunValVar* node = new FunValVar(i, icfgNode, funObjVar, type);
         return addValNode(node);
     }
 
-    NodeID addArgValNode(NodeID i, u32_t argNo, const ICFGNode* icfgNode, const SVFFunction* callGraphNode, const SVFType* type)
+    NodeID addArgValNode(NodeID i, u32_t argNo, const ICFGNode* icfgNode, const FunObjVar* callGraphNode, const SVFType* type)
     {
         ArgValVar* node =
             new ArgValVar(i, argNo, icfgNode, callGraphNode, type);
@@ -624,11 +618,10 @@ private:
         return addObjNode(stackObj);
     }
 
-    NodeID addFunObjNode(NodeID id,  ObjTypeInfo* ti, const SVFFunction* callGraphNode, const SVFType* type, const ICFGNode* node)
+    NodeID addFunObjNode(NodeID id,  ObjTypeInfo* ti, const SVFType* type, const ICFGNode* node)
     {
         memToFieldsMap[id].set(id);
-        FunObjVar* funObj = new FunObjVar(id, ti, callGraphNode, type, node);
-        funToFunObjvarMap[callGraphNode] = funObj;
+        FunObjVar* funObj = new FunObjVar(id, ti, type, node);
         return addObjNode(funObj);
     }
 
@@ -677,13 +670,13 @@ private:
     }
 
     /// Add a unique return node for a procedure
-    inline NodeID addRetNode(NodeID i, const SVFFunction* callGraphNode, const SVFType* type, const ICFGNode* icn)
+    inline NodeID addRetNode(NodeID i, const FunObjVar* callGraphNode, const SVFType* type, const ICFGNode* icn)
     {
         SVFVar *node = new RetValPN(i, callGraphNode, type, icn);
         return addRetNode(callGraphNode, node);
     }
     /// Add a unique vararg node for a procedure
-    inline NodeID addVarargNode(NodeID i, const SVFFunction* val, const SVFType* type, const ICFGNode* n)
+    inline NodeID addVarargNode(NodeID i, const FunObjVar* val, const SVFType* type, const ICFGNode* n)
     {
         SVFVar *node = new VarArgValPN(i, val, type, n);
         return addNode(node);
@@ -757,12 +750,12 @@ private:
         return addNode(node);
     }
     /// Add a unique return node for a procedure
-    inline NodeID addRetNode(const SVFFunction*, SVFVar *node)
+    inline NodeID addRetNode(const FunObjVar*, SVFVar *node)
     {
         return addNode(node);
     }
     /// Add a unique vararg node for a procedure
-    inline NodeID addVarargNode(const SVFFunction*, SVFVar *node)
+    inline NodeID addVarargNode(const FunObjVar*, SVFVar *node)
     {
         return addNode(node);
     }

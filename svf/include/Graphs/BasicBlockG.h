@@ -39,7 +39,8 @@ namespace SVF
 class SVFBasicBlock;
 class BasicBlockEdge;
 class ICFGNode;
-class SVFFunction;
+class FunObjVar;
+
 typedef GenericEdge<SVFBasicBlock> GenericBasicBlockEdgeTy;
 class BasicBlockEdge: public GenericBasicBlockEdgeTy
 {
@@ -75,7 +76,7 @@ class SVFBasicBlock : public GenericBasicBlockNodeTy
     friend class SVFIRWriter;
     friend class SVFIRReader;
     friend class SVFIRBuilder;
-    friend class SVFFunction;
+    friend class FunObjVar;
     friend class ICFGBuilder;
     friend class ICFG;
 
@@ -86,7 +87,7 @@ public:
 
 private:
     std::vector<const ICFGNode*> allICFGNodes;    ///< all ICFGNodes in this BasicBlock
-    const SVFFunction* fun;                 /// Function where this BasicBlock is
+    const FunObjVar* fun;                 /// Function where this BasicBlock is
 
 
 
@@ -104,7 +105,7 @@ protected:
 
 public:
     /// Constructor without name
-    SVFBasicBlock(NodeID id, const SVFFunction* f): GenericBasicBlockNodeTy(id, BasicBlockKd), fun(f)
+    SVFBasicBlock(NodeID id, const FunObjVar* f): GenericBasicBlockNodeTy(id, BasicBlockKd), fun(f)
     {
 
     }
@@ -148,6 +149,11 @@ public:
         return allICFGNodes.end();
     }
 
+
+    inline void setFun(const FunObjVar* f) {
+        fun = f;
+    }
+
     inline void addSuccBasicBlock(const SVFBasicBlock* succ2)
     {
         // check if the edge already exists
@@ -181,13 +187,15 @@ public:
         pred->succBBs.push_back(this);
     }
 
-    inline const SVFFunction* getParent() const
+    inline const FunObjVar* getParent() const
     {
+        assert(fun && "Function is null?");
         return fun;
     }
 
-    inline const SVFFunction* getFunction() const
+    inline const FunObjVar* getFunction() const
     {
+        assert(fun && "Function is null?");
         return fun;
     }
 
@@ -287,10 +295,9 @@ class BasicBlockGraph: public GenericBasicBlockGraphTy
 {
 private:
     NodeID id{0};
-    const SVFFunction* fun;
 public:
     /// Constructor
-    BasicBlockGraph(const SVFFunction* f): fun(f)
+    BasicBlockGraph()
     {
 
     }
@@ -298,7 +305,7 @@ public:
     SVFBasicBlock* addBasicBlock(const std::string& bbname)
     {
         id++;
-        SVFBasicBlock* bb = new SVFBasicBlock(id, fun);
+        SVFBasicBlock* bb = new SVFBasicBlock(id, nullptr);
         addGNode(id, bb);
         bb->setName(bbname);
         return bb;

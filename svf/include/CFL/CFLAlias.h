@@ -135,7 +135,7 @@ public:
     virtual void onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges);
 
     /// Connect formal and actual parameters for indirect callsites
-    void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F);
+    void connectCaller2CalleeParams(const CallICFGNode* cs, const FunObjVar* F);
 
     void heapAllocatorViaIndCall(const CallICFGNode* cs);
 

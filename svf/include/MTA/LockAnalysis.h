@@ -61,7 +61,7 @@ public:
     typedef Set<const ICFGNode*> InstSet;
     typedef InstSet CISpan;
     typedef Map<const ICFGNode*, CISpan>CILockToSpan;
-    typedef Set<const SVFFunction*> FunSet;
+    typedef Set<const FunObjVar*> FunSet;
     typedef Map<const ICFGNode*, InstSet> InstToInstSetMap;
     typedef Map<CxtStmt, ValDomain> CxtStmtToLockFlagMap;
     typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
@@ -192,7 +192,7 @@ public:
     //@}
 
     /// Return true if it is a candidate function
-    inline bool isLockCandidateFun(const SVFFunction* fun) const
+    inline bool isLockCandidateFun(const FunObjVar* fun) const
     {
         return lockcandidateFuncSet.find(fun)!=lockcandidateFuncSet.end();
     }
@@ -430,9 +430,9 @@ private:
     //@}
 
     /// Push calling context
-    void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee);
+    void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee);
     /// Match context
-    bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee);
+    bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee);
 
     /// Whether it is a lock site
     inline bool isTDFork(const ICFGNode* call)

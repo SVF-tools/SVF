@@ -157,13 +157,13 @@ public:
     typedef SVFLoopAndDomInfo::LoopBBs LoopBBs;
     typedef TCTEdge::ThreadCreateEdgeSet ThreadCreateEdgeSet;
     typedef ThreadCreateEdgeSet::iterator TCTNodeIter;
-    typedef Set<const SVFFunction*> FunSet;
+    typedef Set<const FunObjVar*> FunSet;
     typedef std::vector<const ICFGNode*> InstVec;
     typedef Set<const ICFGNode*> InstSet;
     typedef Set<const CallGraphNode*> PTACGNodeSet;
     typedef Map<CxtThread,TCTNode*> CxtThreadToNodeMap;
     typedef Map<CxtThread,CallStrCxt> CxtThreadToForkCxt;
-    typedef Map<CxtThread,const SVFFunction*> CxtThreadToFun;
+    typedef Map<CxtThread,const FunObjVar*> CxtThreadToFun;
     typedef Map<const ICFGNode*, LoopBBs> InstToLoopMap;
     typedef FIFOWorkList<CxtThreadProc> CxtThreadProcVec;
     typedef Set<CxtThreadProc> CxtThreadProcSet;
@@ -298,7 +298,7 @@ public:
         }
         return false;
     }
-    inline bool isCandidateFun(const SVFFunction* fun) const
+    inline bool isCandidateFun(const FunObjVar* fun) const
     {
         return candidateFuncSet.find(fun)!=candidateFuncSet.end();
     }
@@ -374,7 +374,7 @@ public:
     }
 
     /// get the start routine function of a thread
-    const SVFFunction* getStartRoutineOfCxtThread(const CxtThread& ct) const
+    const FunObjVar* getStartRoutineOfCxtThread(const CxtThread& ct) const
     {
         CxtThreadToFun::const_iterator it = ctToRoutineFunMap.find(ct);
         assert(it!=ctToRoutineFunMap.end() && "Cxt Thread not found!!");
@@ -399,7 +399,7 @@ public:
 
     bool hasLoop(const SVFBasicBlock* bb) const
     {
-        const SVFFunction* fun = bb->getFunction();
+        const FunObjVar* fun = bb->getFunction();
         return fun->hasLoopInfo(bb);
     }
     bool hasLoop(const ICFGNode* inst) const
@@ -414,9 +414,9 @@ public:
     const LoopBBs& getLoop(const SVFBasicBlock* bb);
 
     /// Push calling context
-    void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee);
+    void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee);
     /// Match context
-    bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee);
+    bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee);
 
     inline void pushCxt(CallStrCxt& cxt, CallSiteID csId)
     {
@@ -477,7 +477,7 @@ private:
     /// Mark relevant procedures that are backward reachable from any fork/join site
     //@{
     void markRelProcs();
-    void markRelProcs(const SVFFunction* fun);
+    void markRelProcs(const FunObjVar* fun);
     //@}
 
     /// Get entry functions that are neither called by other functions nor extern functions
@@ -510,7 +510,7 @@ private:
 
     /// Get or create a tct node based on CxtThread
     //@{
-    inline TCTNode* getOrCreateTCTNode(const CallStrCxt& cxt, const ICFGNode* fork,const CallStrCxt& oldCxt, const SVFFunction* routine)
+    inline TCTNode* getOrCreateTCTNode(const CallStrCxt& cxt, const ICFGNode* fork,const CallStrCxt& oldCxt, const FunObjVar* routine)
     {
         CxtThread ct(cxt,fork);
         CxtThreadToNodeMap::const_iterator it = ctpToNodeMap.find(ct);
@@ -551,7 +551,7 @@ private:
         ctToForkCxtMap[ct] = cxt;
     }
     /// Add start routine function of a cxt thread
-    void addStartRoutineOfCxtThread(const SVFFunction* fun, const CxtThread& ct)
+    void addStartRoutineOfCxtThread(const FunObjVar* fun, const CxtThread& ct)
     {
         ctToRoutineFunMap[ct] = fun;
     }

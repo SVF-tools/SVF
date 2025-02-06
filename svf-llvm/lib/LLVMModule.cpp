@@ -185,12 +185,6 @@ void LLVMModuleSet::build()
     createSVFDataStructure();
     initSVFFunction();
 
-
-    ICFGBuilder icfgbuilder;
-    icfg = icfgbuilder.build();
-
-    CallGraphBuilder callGraphBuilder;
-    callgraph = callGraphBuilder.buildSVFIRCallGraph(svfModule);
 }
 
 void LLVMModuleSet::createSVFDataStructure()
@@ -231,7 +225,7 @@ void LLVMModuleSet::createSVFDataStructure()
     for (const auto& pair : ExtFun2Annotations)
     {
         const SVFFunction* svffun = getSVFFunction(pair.first);
-        ExtAPI::getExtAPI()->setExtFuncAnnotations(svffun, pair.second);
+        setExtFuncAnnotations(svffun, pair.second);
     }
 
     /// then traverse candidate sets
@@ -274,7 +268,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             getSVFType(func->getFunctionType())),
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
         func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
-    BasicBlockGraph* bbGraph = new BasicBlockGraph(svfFunc);
+    BasicBlockGraph* bbGraph = new BasicBlockGraph();
     svfFunc->setBasicBlockGraph(bbGraph);
     svfModule->addFunctionSet(svfFunc);
     addFunctionMap(func, svfFunc);
@@ -327,7 +321,7 @@ void LLVMModuleSet::initSVFFunction()
             SVFFunction* svffun = getSVFFunction(&f);
             initSVFBasicBlock(&f);
 
-            if (!SVFUtil::isExtCall(svffun))
+            if (!LLVMUtil::isExtCall(svffun))
             {
                 initDomTree(svffun, &f);
             }
@@ -1260,14 +1254,14 @@ void LLVMModuleSet::dumpSymTable()
         SVFValue* val = (SVFValue*) iter->first;
         idmap[i] = val;
     }
-    for (SVFIR::FunToIDMapTy::iterator iter = svfir->retSyms().begin(); iter != svfir->retSyms().end();
+    for (FunToIDMapTy::iterator iter = retSyms().begin(); iter != retSyms().end();
             ++iter)
     {
         const NodeID i = iter->second;
         SVFValue* val = (SVFValue*) iter->first;
         idmap[i] = val;
     }
-    for (SVFIR::FunToIDMapTy::iterator iter = svfir->varargSyms().begin(); iter != svfir->varargSyms().end();
+    for (FunToIDMapTy::iterator iter = varargSyms().begin(); iter != varargSyms().end();
             ++iter)
     {
         const NodeID i = iter->second;
@@ -1416,6 +1410,22 @@ SVFOtherValue* LLVMModuleSet::getSVFOtherValue(const Value* ov)
         addOtherValueMap(ov,svfov);
         return svfov;
     }
+}
+
+const FunObjVar* LLVMModuleSet::getFunObjVar(const std::string& name)
+{
+    Function* fun = nullptr;
+
+    for (u32_t i = 0; i < llvmModuleSet->getModuleNum(); ++i)
+    {
+        Module* mod = llvmModuleSet->getModule(i);
+        fun = mod->getFunction(name);
+        if (fun)
+        {
+            return llvmModuleSet->getFunObjVar(fun);
+        }
+    }
+    return nullptr;
 }
 
 SVFValue* LLVMModuleSet::getSVFValue(const Value* value)
@@ -1746,4 +1756,109 @@ StInfo* LLVMModuleSet::collectSimpleTypeInfo(const Type* ty)
     stInfo->setNumOfFieldsAndElems(1,1);
 
     return stInfo;
+}
+
+void LLVMModuleSet::setExtFuncAnnotations(const SVFFunction* fun, const std::vector<std::string>& funcAnnotations)
+{
+    assert(fun && "Null SVFFunction* pointer");
+    func2Annotations[fun] = funcAnnotations;
+}
+
+bool LLVMModuleSet::hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation)
+{
+    assert(fun && "Null SVFFunction* pointer");
+    auto it = func2Annotations.find(fun);
+    if (it != func2Annotations.end())
+    {
+        for (const std::string& annotation : it->second)
+            if (annotation.find(funcAnnotation) != std::string::npos)
+                return true;
+    }
+    return false;
+}
+
+std::string LLVMModuleSet::getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation)
+{
+    assert(fun && "Null SVFFunction* pointer");
+    auto it = func2Annotations.find(fun);
+    if (it != func2Annotations.end())
+    {
+        for (const std::string& annotation : it->second)
+            if (annotation.find(funcAnnotation) != std::string::npos)
+                return annotation;
+    }
+    return "";
+}
+
+const std::vector<std::string>& LLVMModuleSet::getExtFuncAnnotations(const SVFFunction* fun)
+{
+    assert(fun && "Null SVFFunction* pointer");
+    auto it = func2Annotations.find(fun);
+    if (it != func2Annotations.end())
+        return it->second;
+    return func2Annotations[fun];
+}
+
+bool LLVMModuleSet::is_memcpy(const SVFFunction *F)
+{
+    return F &&
+           (hasExtFuncAnnotation(F, "MEMCPY") ||  hasExtFuncAnnotation(F, "STRCPY")
+            || hasExtFuncAnnotation(F, "STRCAT"));
+}
+
+bool LLVMModuleSet::is_memset(const SVFFunction *F)
+{
+    return F && hasExtFuncAnnotation(F, "MEMSET");
+}
+
+bool LLVMModuleSet::is_alloc(const SVFFunction* F)
+{
+    return F && hasExtFuncAnnotation(F, "ALLOC_HEAP_RET");
+}
+
+// Does (F) allocate a new object and assign it to one of its arguments?
+bool LLVMModuleSet::is_arg_alloc(const SVFFunction* F)
+{
+    return F && hasExtFuncAnnotation(F, "ALLOC_HEAP_ARG");
+}
+
+bool LLVMModuleSet::is_alloc_stack_ret(const SVFFunction* F)
+{
+    return F && hasExtFuncAnnotation(F, "ALLOC_STACK_RET");
+}
+
+// Get the position of argument which holds the new object
+s32_t LLVMModuleSet::get_alloc_arg_pos(const SVFFunction* F)
+{
+    std::string allocArg = getExtFuncAnnotation(F, "ALLOC_HEAP_ARG");
+    assert(!allocArg.empty() && "Not an alloc call via argument or incorrect extern function annotation!");
+
+    std::string number;
+    for (char c : allocArg)
+    {
+        if (isdigit(c))
+            number.push_back(c);
+    }
+    assert(!number.empty() && "Incorrect naming convention for svf external functions(ALLOC_HEAP_ARG + number)?");
+    return std::stoi(number);
+}
+
+// Does (F) reallocate a new object?
+bool LLVMModuleSet::is_realloc(const SVFFunction* F)
+{
+    return F && hasExtFuncAnnotation(F, "REALLOC_HEAP_RET");
+}
+
+
+// Should (F) be considered "external" (either not defined in the program
+//   or a user-defined version of a known alloc or no-op)?
+bool LLVMModuleSet::is_ext(const SVFFunction* F)
+{
+    assert(F && "Null SVFFunction* pointer");
+    if (F->isDeclaration() || F->isIntrinsic())
+        return true;
+    else if (hasExtFuncAnnotation(F, "OVERWRITE") && getExtFuncAnnotations(F).size() == 1)
+        return false;
+    else
+        return !getExtFuncAnnotations(F).empty();
 }

@@ -41,15 +41,19 @@
 namespace SVF
 {
 
+class FunObjVar;
+
 class ExtAPI
 {
     friend class LLVMModuleSet;
+    friend class SVFIRBuilder;
+
 private:
 
     static ExtAPI *extOp;
 
     // Map SVFFunction to its annotations
-    Map<const SVFFunction*, std::vector<std::string>> func2Annotations;
+    Map<const FunObjVar*, std::vector<std::string>> funObjVar2Annotations;
 
     // extapi.bc file path
     static std::string extBcPath;
@@ -69,44 +73,44 @@ public:
     std::string getExtBcPath();
 
     // Get the annotation of (F)
-    std::string getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation);
+    std::string getExtFuncAnnotation(const FunObjVar* fun, const std::string&funcAnnotation);
 
-    const std::vector<std::string>& getExtFuncAnnotations(const SVFFunction* fun);
+    const std::vector<std::string>& getExtFuncAnnotations(const FunObjVar*fun);
 
     // Does (F) have some annotation?
-    bool hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation);
+    bool hasExtFuncAnnotation(const FunObjVar* fun, const std::string&funcAnnotation);
+
+public:
 
     // Does (F) have a static var X (unavailable to us) that its return points to?
-    bool has_static(const SVFFunction *F);
+    bool has_static(const FunObjVar *F);
 
     // Does (F) have a memcpy_like operation?
-    bool is_memcpy(const SVFFunction *F);
+    bool is_memcpy(const FunObjVar *F);
 
     // Does (F) have a memset_like operation?
-    bool is_memset(const SVFFunction *F);
+    bool is_memset(const FunObjVar *F);
 
     // Does (F) allocate a new object and return it?
-    bool is_alloc(const SVFFunction *F);
+    bool is_alloc(const FunObjVar *F);
 
     // Does (F) allocate a new object and assign it to one of its arguments?
-    bool is_arg_alloc(const SVFFunction *F);
+    bool is_arg_alloc(const FunObjVar *F);
 
     // Does (F) allocate a new stack object and return it?
-    bool is_alloc_stack_ret(const SVFFunction *F);
+    bool is_alloc_stack_ret(const FunObjVar *F);
 
     // Get the position of argument which holds the new object
-    s32_t get_alloc_arg_pos(const SVFFunction *F);
+    s32_t get_alloc_arg_pos(const FunObjVar *F);
 
     // Does (F) reallocate a new object?
-    bool is_realloc(const SVFFunction *F);
+    bool is_realloc(const FunObjVar *F);
 
-    // Should (F) be considered "external" (either not defined in the program
-    //   or a user-defined version of a known alloc or no-op)?
-    bool is_ext(const SVFFunction *F);
+    bool is_ext(const FunObjVar* funObjVar);
 
 private:
     // Set the annotation of (F)
-    void setExtFuncAnnotations(const SVFFunction* fun, const std::vector<std::string>& funcAnnotations);
+    void setExtFuncAnnotations(const FunObjVar* fun, const std::vector<std::string>&funcAnnotations);
 };
 } // End namespace SVF
 

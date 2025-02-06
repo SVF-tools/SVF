@@ -67,16 +67,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const
-    {
-        std::string str;
-        std::stringstream rawstr(str);
-        rawstr << "ThreadForkEdge ";
-        rawstr << "CallSiteID: " << getCallSiteID();
-        rawstr << " srcNodeID " << getSrcID() << " (fun: " << getSrcNode()->getFunction()->getName() << ")";
-        rawstr << " dstNodeID " << getDstID() << " (fun: " << getDstNode()->getFunction()->getName() << ")";
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 
     typedef GenericNode<CallGraphNode, ThreadForkEdge>::GEdgeSetTy ForkEdgeSet;
 };
@@ -107,16 +98,7 @@ public:
         return edge->getEdgeKind() == CallGraphEdge::TDJoinEdge;
     }
 
-    virtual const std::string toString() const
-    {
-        std::string str;
-        std::stringstream rawstr(str);
-        rawstr << "ThreadJoinEdge ";
-        rawstr << "CallSiteID: " << getCallSiteID();
-        rawstr << " srcNodeID " << getSrcID() << " (fun: " << getSrcNode()->getFunction()->getName() << ")";
-        rawstr << " dstNodeID " << getDstID() << " (fun: " << getDstNode()->getFunction()->getName() << ")";
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 
     typedef GenericNode<CallGraphNode, ThreadJoinEdge>::GEdgeSetTy JoinEdgeSet;
 };
@@ -350,7 +332,7 @@ public:
     /// Add direct/indirect thread fork edges
     //@{
     bool addDirectForkEdge(const CallICFGNode* cs);
-    bool addIndirectForkEdge(const CallICFGNode* cs, const SVFFunction* callee);
+    bool addIndirectForkEdge(const CallICFGNode* cs, const FunObjVar* callee);
     //@}
 
     /// Add thread join edges

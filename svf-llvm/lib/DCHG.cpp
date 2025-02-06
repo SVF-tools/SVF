@@ -640,7 +640,7 @@ void DCHGraph::getVFnsFromVtbls(const CallICFGNode* callsite, const VTableSet &v
                  */
                 if (funName.size() == 0)
                 {
-                    virtualFunctions.insert(LLVMUtil::getFunction(callee->getName().str()));
+                    virtualFunctions.insert(LLVMUtil::getFunObjVar(callee->getName().str()));
                 }
                 else if (funName[0] == '~')
                 {
@@ -656,7 +656,7 @@ void DCHGraph::getVFnsFromVtbls(const CallICFGNode* callsite, const VTableSet &v
                      */
                     if (calleeName[0] == '~')
                     {
-                        virtualFunctions.insert(LLVMUtil::getFunction(callee->getName().str()));
+                        virtualFunctions.insert(LLVMUtil::getFunObjVar(callee->getName().str()));
                     }
                 }
                 else
@@ -667,7 +667,7 @@ void DCHGraph::getVFnsFromVtbls(const CallICFGNode* callsite, const VTableSet &v
                      */
                     if (funName.compare(calleeName) == 0)
                     {
-                        virtualFunctions.insert(LLVMUtil::getFunction(callee->getName().str()));
+                        virtualFunctions.insert(LLVMUtil::getFunObjVar(callee->getName().str()));
                     }
                 }
             }

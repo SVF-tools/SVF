@@ -354,12 +354,12 @@ void SymbolTableBuilder::collectRet(const Function* val)
 {
     const SVFFunction* svffun =
         llvmModuleSet()->getSVFFunction(val);
-    IRGraph::FunToIDMapTy::iterator iter =
-        svfir->returnSymMap.find(svffun);
-    if (iter == svfir->returnSymMap.end())
+    LLVMModuleSet::FunToIDMapTy::iterator iter =
+        llvmModuleSet()->returnSymMap.find(svffun);
+    if (iter == llvmModuleSet()->returnSymMap.end())
     {
         NodeID id = NodeIDAllocator::get()->allocateValueId();
-        svfir->returnSymMap.insert(std::make_pair(svffun, id));
+        llvmModuleSet()->returnSymMap.insert(std::make_pair(svffun, id));
         DBOUT(DMemModel, outs() << "create a return sym " << id << "\n");
     }
 }
@@ -371,12 +371,12 @@ void SymbolTableBuilder::collectVararg(const Function* val)
 {
     const SVFFunction* svffun =
         llvmModuleSet()->getSVFFunction(val);
-    IRGraph::FunToIDMapTy::iterator iter =
-        svfir->varargSymMap.find(svffun);
-    if (iter == svfir->varargSymMap.end())
+    LLVMModuleSet::FunToIDMapTy::iterator iter =
+        llvmModuleSet()->varargSymMap.find(svffun);
+    if (iter == llvmModuleSet()->varargSymMap.end())
     {
         NodeID id = NodeIDAllocator::get()->allocateValueId();
-        svfir->varargSymMap.insert(std::make_pair(svffun, id));
+        llvmModuleSet()->varargSymMap.insert(std::make_pair(svffun, id));
         DBOUT(DMemModel, outs() << "create a vararg sym " << id << "\n");
     }
 }
@@ -607,7 +607,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
     else if(LLVMUtil::isHeapAllocExtCallViaArg(inst))
     {
         const CallBase* cs = LLVMUtil::getLLVMCallSite(inst);
-        u32_t arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::cast<SVFCallInst>(svfinst)->getCalledFunction());
+        u32_t arg_pos = LLVMUtil::getHeapAllocHoldingArgPosition(SVFUtil::cast<SVFCallInst>(svfinst)->getCalledFunction());
         const Value* arg = cs->getArgOperand(arg_pos);
         originalPType = SVFUtil::dyn_cast<PointerType>(arg->getType());
         inferedType = inferObjType(startValue = arg);
@@ -747,7 +747,7 @@ u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val)
                     calledFunction);
             std::vector<const Value*> args;
             // Heap alloc functions have annoation like "AllocSize:Arg1"
-            for (std::string annotation : ExtAPI::getExtAPI()->getExtFuncAnnotations(svfFunction))
+            for (std::string annotation : llvmModuleSet()->getExtFuncAnnotations(svfFunction))
             {
                 if (annotation.find("AllocSize:") != std::string::npos)
                 {

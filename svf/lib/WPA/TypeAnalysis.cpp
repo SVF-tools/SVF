@@ -127,7 +127,7 @@ void TypeAnalysis::dumpCHAStats()
           vfunc_total = 0,
           vtbl_max = 0,
           pure_abstract = 0;
-    set<const SVFFunction*> allVirtualFunctions;
+    set<const FunObjVar*> allVirtualFunctions;
     for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
             it != eit; ++it)
     {
@@ -141,10 +141,10 @@ void TypeAnalysis::dumpCHAStats()
                 veit = vecs.end(); vit != veit; ++vit)
         {
             vfuncs_size += (*vit).size();
-            for (vector<const SVFFunction*>::const_iterator fit = (*vit).begin(),
+            for (vector<const FunObjVar*>::const_iterator fit = (*vit).begin(),
                     feit = (*vit).end(); fit != feit; ++fit)
             {
-                const SVFFunction* func = *fit;
+                const FunObjVar* func = *fit;
                 allVirtualFunctions.insert(func);
             }
         }

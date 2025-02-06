@@ -59,7 +59,7 @@ void CFLAlias::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, Call
  * Connect formal and actual parameters for indirect callsites
  */
 
-void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F)
+void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const FunObjVar* F)
 {
     assert(F);
 

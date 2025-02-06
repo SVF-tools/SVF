@@ -226,8 +226,8 @@ void SVFStat::branchStat()
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
-        const SVFFunction* func = item.second->getFunction();
-        for (SVFFunction::const_iterator bbIt = func->begin(), bbEit = func->end();
+        const FunObjVar* func = item.second->getFunction();
+        for (FunObjVar::const_bb_iterator bbIt = func->begin(), bbEit = func->end();
                 bbIt != bbEit; ++bbIt)
         {
             const SVFBasicBlock* bb = bbIt->second;
