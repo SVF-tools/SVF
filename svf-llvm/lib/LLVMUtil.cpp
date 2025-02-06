@@ -73,7 +73,7 @@ bool LLVMUtil::isObject(const Value*  ref)
  */
 void LLVMUtil::getFunReachableBBs (const Function* fun, std::vector<const SVFBasicBlock*> &reachableBBs)
 {
-    assert(!SVFUtil::isExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun)) && "The calling function cannot be an external function.");
+    assert(!LLVMUtil::isExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun)) && "The calling function cannot be an external function.");
     //initial DominatorTree
     DominatorTree& dt = LLVMModuleSet::getLLVMModuleSet()->getDomTree(fun);
 
@@ -122,7 +122,7 @@ bool LLVMUtil::basicBlockHasRetInst(const BasicBlock* bb)
 bool LLVMUtil::functionDoesNotRet(const Function*  fun)
 {
     const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
-    if (SVFUtil::isExtCall(svffun))
+    if (LLVMUtil::isExtCall(svffun))
     {
         return fun->getReturnType()->isVoidTy();
     }
@@ -380,6 +380,28 @@ std::vector<const Function *> LLVMUtil::getCalledFunctions(const Function *F)
     return calledFunctions;
 }
 
+
+bool LLVMUtil::isExtCall(const SVFFunction* fun)
+{
+    return fun && LLVMModuleSet::getLLVMModuleSet()->is_ext(fun);
+}
+
+bool LLVMUtil::isMemcpyExtFun(const SVFFunction *fun) {
+    return fun && LLVMModuleSet::getLLVMModuleSet()->is_memcpy(fun);
+}
+
+
+bool LLVMUtil::isMemsetExtFun(const SVFFunction* fun)
+{
+    return fun && LLVMModuleSet::getLLVMModuleSet()->is_memset(fun);
+}
+
+
+u32_t LLVMUtil::getHeapAllocHoldingArgPosition(const SVFFunction* fun) {
+    return LLVMModuleSet::getLLVMModuleSet()->get_alloc_arg_pos(fun);
+}
+
+
 std::string LLVMUtil::restoreFuncName(std::string funcName)
 {
     assert(!funcName.empty() && "Empty function name");
@@ -412,7 +434,10 @@ const SVFFunction* LLVMUtil::getFunction(const std::string& name)
 {
     return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(name);
 }
-
+const FunObjVar* LLVMUtil::getFunObjVar(const std::string& name)
+{
+    return LLVMModuleSet::getLLVMModuleSet()->getFunObjVar(name);
+}
 const Value* LLVMUtil::getGlobalRep(const Value* val)
 {
     if (const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
@@ -617,14 +642,13 @@ std::string LLVMUtil::dumpValueAndDbgInfo(const Value *val)
 bool LLVMUtil::isHeapAllocExtCallViaRet(const Instruction* inst)
 {
     LLVMModuleSet* pSet = LLVMModuleSet::getLLVMModuleSet();
-    ExtAPI* extApi = ExtAPI::getExtAPI();
     bool isPtrTy = inst->getType()->isPointerTy();
     if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
     {
         const Function* fun = call->getCalledFunction();
         return fun && isPtrTy &&
-               (extApi->is_alloc(pSet->getSVFFunction(fun)) ||
-                extApi->is_realloc(pSet->getSVFFunction(fun)));
+               (pSet->is_alloc(pSet->getSVFFunction(fun)) ||
+                pSet->is_realloc(pSet->getSVFFunction(fun)));
     }
     else
         return false;
@@ -636,7 +660,7 @@ bool LLVMUtil::isHeapAllocExtCallViaArg(const Instruction* inst)
     {
         const Function* fun = call->getCalledFunction();
         return fun &&
-               ExtAPI::getExtAPI()->is_arg_alloc(
+               LLVMModuleSet::getLLVMModuleSet()->is_arg_alloc(
                    LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun));
     }
     else
@@ -648,13 +672,12 @@ bool LLVMUtil::isHeapAllocExtCallViaArg(const Instruction* inst)
 bool LLVMUtil::isStackAllocExtCallViaRet(const Instruction *inst)
 {
     LLVMModuleSet* pSet = LLVMModuleSet::getLLVMModuleSet();
-    ExtAPI* extApi = ExtAPI::getExtAPI();
     bool isPtrTy = inst->getType()->isPointerTy();
     if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
     {
         const Function* fun = call->getCalledFunction();
         return fun && isPtrTy &&
-               extApi->is_alloc_stack_ret(pSet->getSVFFunction(fun));
+               pSet->is_alloc_stack_ret(pSet->getSVFFunction(fun));
     }
     else
         return false;

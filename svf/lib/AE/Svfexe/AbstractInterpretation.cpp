@@ -581,7 +581,7 @@ void AbstractInterpretation::extCallPass(const SVF::CallICFGNode *callNode)
 
 bool AbstractInterpretation::isRecursiveCall(const SVF::CallICFGNode *callNode)
 {
-    const SVFFunction *callfun = callNode->getCalledFunction();
+    const FunObjVar *callfun = callNode->getCalledFunction();
     if (!callfun)
         return false;
     else
@@ -609,7 +609,7 @@ void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode
 
 bool AbstractInterpretation::isDirectCall(const SVF::CallICFGNode *callNode)
 {
-    const SVFFunction *callfun =callNode->getCalledFunction();
+    const FunObjVar *callfun =callNode->getCalledFunction();
     if (!callfun)
         return false;
     else
@@ -622,7 +622,7 @@ void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode
 
     abstractTrace[callNode] = as;
 
-    const SVFFunction *callfun =callNode->getCalledFunction();
+    const FunObjVar *callfun =callNode->getCalledFunction();
     ICFGWTO* wto = funcToWTO[callfun];
     handleWTOComponents(wto->getWTOComponents());
 
@@ -653,7 +653,7 @@ void AbstractInterpretation::indirectCallFunPass(const SVF::CallICFGNode *callNo
     SVFVar *func_var = svfir->getGNode(AbstractState::getInternalID(addr));
     if(const FunObjVar*funObjVar = SVFUtil::dyn_cast<FunObjVar>(func_var))
     {
-        const SVFFunction* callfun = funObjVar->getFunction();
+        const FunObjVar* callfun = funObjVar->getFunction();
         callSiteStack.push_back(callNode);
         abstractTrace[callNode] = as;
 
@@ -854,7 +854,7 @@ void AEStat::finializeStat()
     generalNumMap["ICFG_Node_Num"] = _ae->svfir->getICFG()->nodeNum;
     u32_t callSiteNum = 0;
     u32_t extCallSiteNum = 0;
-    Set<const SVFFunction *> funs;
+    Set<const FunObjVar *> funs;
     for (const auto &it: *_ae->svfir->getICFG())
     {
         if (it.second->getFun())
@@ -928,7 +928,7 @@ void AbstractInterpretation::collectCheckPoint()
         const ICFGNode* node = it->second;
         if (const CallICFGNode *call = SVFUtil::dyn_cast<CallICFGNode>(node))
         {
-            if (const SVFFunction *fun = call->getCalledFunction())
+            if (const FunObjVar *fun = call->getCalledFunction())
             {
                 if (ae_checkpoint_names.find(fun->getName()) !=
                         ae_checkpoint_names.end())

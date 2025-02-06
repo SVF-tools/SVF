@@ -277,11 +277,11 @@ template<class Cond>
 class RetMU : public MSSAMU<Cond>
 {
 private:
-    const SVFFunction* fun;
+    const FunObjVar* fun;
 public:
     /// Constructor/Destructor for MU
     //@{
-    RetMU(const SVFFunction* f, const MemRegion* m, Cond c = true) :
+    RetMU(const FunObjVar* f, const MemRegion* m, Cond c = true) :
         MSSAMU<Cond>(MSSAMU<Cond>::RetMSSAMU,m,c), fun(f)
     {
     }
@@ -289,7 +289,7 @@ public:
     //@}
 
     /// Return function
-    inline const SVFFunction* getFunction() const
+    inline const FunObjVar* getFunction() const
     {
         return fun;
     }
@@ -578,11 +578,11 @@ template<class Cond>
 class EntryCHI : public MSSACHI<Cond>
 {
 private:
-    const SVFFunction* fun;
+    const FunObjVar* fun;
 public:
     /// Constructors for EntryCHI
     //@{
-    EntryCHI(const SVFFunction* f, const MemRegion* m, Cond c = true) :
+    EntryCHI(const FunObjVar* f, const MemRegion* m, Cond c = true) :
         MSSACHI<Cond>(MSSADEF::EntryMSSACHI,m,c),fun(f)
     {
     }
@@ -592,7 +592,7 @@ public:
     //@}
 
     /// Return function
-    inline const SVFFunction* getFunction() const
+    inline const FunObjVar* getFunction() const
     {
         return fun;
     }

@@ -78,12 +78,12 @@ public:
     virtual void initSrcs() override;
     virtual void initSnks() override;
     /// Whether the function is a heap allocator/reallocator (allocate memory)
-    virtual inline bool isSourceLikeFun(const SVFFunction* fun) override
+    virtual inline bool isSourceLikeFun(const FunObjVar* fun) override
     {
         return SaberCheckerAPI::getCheckerAPI()->isMemAlloc(fun);
     }
     /// Whether the function is a heap deallocator (free/release memory)
-    virtual inline bool isSinkLikeFun(const SVFFunction* fun) override
+    virtual inline bool isSinkLikeFun(const FunObjVar* fun) override
     {
         return SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun);
     }
@@ -97,8 +97,8 @@ protected:
 
     /// Validate test cases for regression test purpose
     void testsValidation(const ProgSlice* slice);
-    void validateSuccessTests(const SVFGNode* source, const SVFFunction* fun);
-    void validateExpectedFailureTests(const SVFGNode* source, const SVFFunction* fun);
+    void validateSuccessTests(const SVFGNode* source, const FunObjVar* fun);
+    void validateExpectedFailureTests(const SVFGNode* source, const FunObjVar* fun);
 
     /// Record a source to its callsite
     //@{

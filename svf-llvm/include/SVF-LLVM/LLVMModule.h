@@ -55,6 +55,7 @@ public:
     typedef Map<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
 
     typedef Map<const Function*, SVFFunction*> LLVMFun2SVFFunMap;
+    typedef Map<const Function*, FunObjVar*> LLVMFun2FunObjVarMap;
     typedef Map<const BasicBlock*, SVFBasicBlock*> LLVMBB2SVFBBMap;
     typedef Map<const Instruction*, SVFInstruction*> LLVMInst2SVFInstMap;
     typedef Map<const Argument*, SVFArgument*> LLVMArgument2SVFArgumentMap;
@@ -76,12 +77,14 @@ public:
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
     typedef OrderedMap<const SVFValue*, NodeID> ValueToIDMapTy;
 
+    typedef OrderedMap<const SVFFunction*, NodeID> FunToIDMapTy;
+
+
 private:
     static LLVMModuleSet* llvmModuleSet;
     static bool preProcessed;
     SVFIR* svfir;
     SVFModule* svfModule; ///< Borrowed from singleton SVFModule::svfModule
-    ICFG* icfg;
     std::unique_ptr<LLVMContext> owned_ctx;
     std::vector<std::unique_ptr<Module>> owned_modules;
     std::vector<std::reference_wrapper<Module>> modules;
@@ -90,10 +93,15 @@ private:
     FunctionSetType ExtFuncsVec;
     /// Record annotations of function in extapi.bc
     Fun2AnnoMap ExtFun2Annotations;
+
+    // Map SVFFunction to its annotations
+    Map<const SVFFunction*, std::vector<std::string>> func2Annotations;
+
     /// Global definition to a rep definition map
     GlobalDefToRepMapTy GlobalDefToRepMap;
 
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
+    LLVMFun2FunObjVarMap LLVMFun2FunObjVar; ///< Map an LLVM Function to an SVF Funobjvar
     LLVMBB2SVFBBMap LLVMBB2SVFBB;
     LLVMInst2SVFInstMap LLVMInst2SVFInst;
     LLVMArgument2SVFArgumentMap LLVMArgument2SVFArgument;
@@ -110,12 +118,13 @@ private:
     InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
     FunToFunEntryNodeMapTy FunToFunEntryNodeMap; ///< map a function to its FunExitICFGNode
     FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryICFGNode
-    CallGraph* callgraph;
 
     Map<const Function*, DominatorTree> FunToDominatorTree;
 
     ValueToIDMapTy valSymMap;  ///< map a value to its sym id
     ValueToIDMapTy objSymMap;  ///< map a obj reference to its sym id
+    FunToIDMapTy returnSymMap; ///< return map
+    FunToIDMapTy varargSymMap; ///< vararg map
 
     /// Constructor
     LLVMModuleSet();
@@ -299,6 +308,37 @@ public:
         return it->second;
     }
 
+    inline const FunObjVar* getFunObjVar(const Function* fun) const
+    {
+        LLVMFun2FunObjVarMap::const_iterator it = LLVMFun2FunObjVar.find(fun);
+        assert(it!=LLVMFun2FunObjVar.end() && "SVF Function not found!");
+        return it->second;
+    }
+
+    inline FunToIDMapTy& retSyms()
+    {
+        return returnSymMap;
+    }
+
+    inline FunToIDMapTy& varargSyms()
+    {
+        return varargSymMap;
+    }
+
+    NodeID getReturnNode(const SVFFunction *func) const
+    {
+        FunToIDMapTy::const_iterator iter =  returnSymMap.find(func);
+        assert(iter!=returnSymMap.end() && "ret sym not found");
+        return iter->second;
+    }
+
+    NodeID getVarargNode(const SVFFunction *func) const
+    {
+        FunToIDMapTy::const_iterator iter =  varargSymMap.find(func);
+        assert(iter!=varargSymMap.end() && "vararg sym not found");
+        return iter->second;
+    }
+
     SVFBasicBlock* getSVFBasicBlock(const BasicBlock* bb)
     {
         LLVMBB2SVFBBMap::const_iterator it = LLVMBB2SVFBB.find(bb);
@@ -354,6 +394,9 @@ public:
         }
         return nullptr;
     }
+
+    /// Get the corresponding Function based on its name
+    const FunObjVar* getFunObjVar(const std::string& name);
 
     ICFGNode* getICFGNode(const Instruction* inst);
 
@@ -429,12 +472,45 @@ public:
 
     ObjTypeInference* getTypeInference();
 
-    inline ICFG* getICFG()
-    {
-        return icfg;
-    }
-
     DominatorTree& getDomTree(const Function* fun);
+
+    std::string getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation);
+
+    const std::vector<std::string>& getExtFuncAnnotations(const SVFFunction* fun);
+
+    // Does (F) have some annotation?
+    bool hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation);
+
+    // Does (F) have a static var X (unavailable to us) that its return points to?
+    bool has_static(const SVFFunction *F);
+
+    // Does (F) have a memcpy_like operation?
+    bool is_memcpy(const SVFFunction *F);
+
+    // Does (F) have a memset_like operation?
+    bool is_memset(const SVFFunction *F);
+
+    // Does (F) allocate a new object and return it?
+    bool is_alloc(const SVFFunction *F);
+
+    // Does (F) allocate a new object and assign it to one of its arguments?
+    bool is_arg_alloc(const SVFFunction *F);
+
+    // Does (F) allocate a new stack object and return it?
+    bool is_alloc_stack_ret(const SVFFunction *F);
+
+    // Get the position of argument which holds the new object
+    s32_t get_alloc_arg_pos(const SVFFunction *F);
+
+    // Does (F) reallocate a new object?
+    bool is_realloc(const SVFFunction *F);
+
+    // Should (F) be considered "external" (either not defined in the program
+    //   or a user-defined version of a known alloc or no-op)?
+    bool is_ext(const SVFFunction *F);
+
+    // Set the annotation of (F)
+    void setExtFuncAnnotations(const SVFFunction* fun, const std::vector<std::string>& funcAnnotations);
 
 private:
     /// Create SVFTypes

@@ -80,7 +80,7 @@ public:
     virtual bool handleBKCondition(LocDPItem& dpm, const SVFGEdge* edge) override;
 
     /// refine indirect call edge
-    bool testIndCallReachability(LocDPItem& dpm, const SVFFunction* callee, CallSiteID csId);
+    bool testIndCallReachability(LocDPItem& dpm, const FunObjVar* callee, CallSiteID csId);
 
     /// Initialization of the analysis
     inline virtual void initialize() override
@@ -142,7 +142,7 @@ public:
             const FunctionSet & functions = iter->second;
             for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
             {
-                const SVFFunction* func = *func_iter;
+                const FunObjVar* func = *func_iter;
                 getSVFG()->connectCallerAndCallee(newcs, func, svfgEdges);
             }
         }

@@ -73,7 +73,7 @@ public:
     }
 
     /// Return the function of this ICFGNode
-    virtual const SVFFunction* getFun() const
+    virtual const FunObjVar* getFun() const
     {
         return fun;
     }
@@ -145,7 +145,7 @@ public:
 
 
 protected:
-    const SVFFunction* fun;
+    const FunObjVar* fun;
     const SVFBasicBlock* bb;
     VFGNodeList VFGNodes; //< a list of VFGNodes
     SVFStmtList pagEdges; //< a list of PAGEdges
@@ -289,10 +289,10 @@ private:
     FunEntryICFGNode(NodeID id) : InterICFGNode(id, FunEntryBlock) {}
 
 public:
-    FunEntryICFGNode(NodeID id, const SVFFunction* f);
+    FunEntryICFGNode(NodeID id, const FunObjVar* f);
 
     /// Return function
-    inline const SVFFunction* getFun() const override
+    inline const FunObjVar* getFun() const override
     {
         return fun;
     }
@@ -339,10 +339,7 @@ public:
 
     const std::string toString() const override;
 
-    const std::string getSourceLoc() const override
-    {
-        return "function entry: " + fun->getSourceLoc();
-    }
+    const std::string getSourceLoc() const override;
 };
 
 /*!
@@ -360,10 +357,10 @@ private:
     FunExitICFGNode(NodeID id) : InterICFGNode(id, FunExitBlock), formalRet{} {}
 
 public:
-    FunExitICFGNode(NodeID id, const SVFFunction* f);
+    FunExitICFGNode(NodeID id, const FunObjVar* f);
 
     /// Return function
-    inline const SVFFunction* getFun() const override
+    inline const FunObjVar* getFun() const override
     {
         return fun;
     }
@@ -410,10 +407,7 @@ public:
 
     const std::string toString() const override;
 
-    const std::string getSourceLoc() const override
-    {
-        return "function ret: " + fun->getSourceLoc();
-    }
+    const std::string getSourceLoc() const override;
 };
 
 /*!
@@ -430,7 +424,7 @@ public:
 protected:
     const RetICFGNode* ret;
     ActualParmNodeVec APNodes;      /// arguments
-    const SVFFunction* calledFunc;  /// called function
+    const FunObjVar* calledFunc;  /// called function
     bool isvararg;                  /// is variable argument
     bool isVirCallInst;             /// is virtual call inst
     SVFVar* vtabPtr;                /// virtual table pointer
@@ -442,7 +436,7 @@ protected:
 
 public:
     CallICFGNode(NodeID id, const SVFBasicBlock* b, const SVFType* ty,
-                 const SVFFunction* cf, bool iv, bool ivc, s32_t vfi,
+                 const FunObjVar* cf, bool iv, bool ivc, s32_t vfi,
                  const std::string& fnv)
         : InterICFGNode(id, FunCallBlock), ret(nullptr), calledFunc(cf),
           isvararg(iv), isVirCallInst(ivc), vtabPtr(nullptr),
@@ -467,7 +461,7 @@ public:
     }
 
     /// Return callsite
-    inline const SVFFunction* getCaller() const
+    inline const FunObjVar* getCaller() const
     {
         return getFun();
     }
@@ -515,7 +509,7 @@ public:
     {
         return arg_size();
     }
-    inline const SVFFunction* getCalledFunction() const
+    inline const FunObjVar* getCalledFunction() const
     {
         return calledFunc;
     }

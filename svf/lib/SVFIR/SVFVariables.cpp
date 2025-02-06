@@ -44,6 +44,18 @@ SVFVar::SVFVar(NodeID i, const SVFType* svfType, PNODEK k) :
 {
 }
 
+bool SVFVar::ptrInUncalledFunction() const
+{
+    if (const FunObjVar* fun = getFunction())
+    {
+        return fun->isUncalledFunction();
+    }
+    else
+    {
+        return false;
+    }
+}
+
 bool SVFVar::isIsolatedNode() const
 {
     if (getInEdges().empty() && getOutEdges().empty())
@@ -68,7 +80,7 @@ void SVFVar::dump() const
     outs() << this->toString() << "\n";
 }
 
-const SVFFunction* ValVar::getFunction() const
+const FunObjVar* ValVar::getFunction() const
 {
     if(icfgNode)
         return icfgNode->getFun();
@@ -102,21 +114,26 @@ const std::string ObjVar::toString() const
 }
 
 ArgValVar::ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn,
-                     const SVF::SVFFunction* callGraphNode, const SVFType* svfType)
+                     const SVF::FunObjVar* callGraphNode, const SVFType* svfType)
     : ValVar(i, svfType, icn, ArgValNode),
       cgNode(callGraphNode), argNo(argNo)
 {
 
 }
 
-const SVFFunction* ArgValVar::getFunction() const
+const FunObjVar* ArgValVar::getFunction() const
 {
     return getParent();
 }
 
-const SVFFunction* ArgValVar::getParent() const
+const FunObjVar* ArgValVar::getParent() const
 {
     return cgNode;
+}
+
+bool ArgValVar::isArgOfUncalledFunction() const
+{
+    return getFunction()->isUncalledFunction();
 }
 
 bool ArgValVar::isPointer() const
@@ -157,12 +174,12 @@ const std::string GepValVar::toString() const
     return rawstr.str();
 }
 
-RetValPN::RetValPN(NodeID i, const SVFFunction* node, const SVFType* svfType, const ICFGNode* icn)
+RetValPN::RetValPN(NodeID i, const FunObjVar* node, const SVFType* svfType, const ICFGNode* icn)
     : ValVar(i, svfType, icn, RetValNode), callGraphNode(node)
 {
 }
 
-const SVFFunction* RetValPN::getFunction() const
+const FunObjVar* RetValPN::getFunction() const
 {
     return callGraphNode;
 }
@@ -202,7 +219,7 @@ bool BaseObjVar::isBlackHoleObj() const
 }
 
 
-const SVFFunction* BaseObjVar::getFunction() const
+const FunObjVar* BaseObjVar::getFunction() const
 {
     if(icfgNode)
         return icfgNode->getFun();
@@ -250,8 +267,8 @@ const std::string StackObjVar::toString() const
 
 
 
-FunValVar::FunValVar(NodeID i, const ICFGNode* icn, const SVFFunction* cgn, const SVFType* svfType)
-    : ValVar(i, svfType, icn, FunValNode), callGraphNode(cgn)
+FunValVar::FunValVar(NodeID i, const ICFGNode* icn, const FunObjVar* cgn, const SVFType* svfType)
+    : ValVar(i, svfType, icn, FunValNode), funObjVar(cgn)
 {
 }
 
@@ -263,7 +280,7 @@ const std::string FunValVar::toString() const
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
-        rawstr << callGraphNode->getName();
+        rawstr << funObjVar->getFunction()->getName();
     }
     return rawstr.str();
 }
@@ -421,24 +438,37 @@ const std::string ConstNullPtrObjVar::toString() const
     return rawstr.str();
 }
 
-FunObjVar::FunObjVar(NodeID i, ObjTypeInfo* ti, const SVFFunction* cgNode, const SVFType* svfType, const ICFGNode* node)
-    : BaseObjVar(i, ti, svfType, node, FunObjNode), callGraphNode(cgNode)
+FunObjVar::FunObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node)
+    : BaseObjVar(i, ti, svfType, node, FunObjNode)
 {
 }
 
-bool FunObjVar::isPointer() const
-{
-    return getFunction()->getType()->isPointerTy();
+void FunObjVar::initFunObjVar(bool decl, bool intrinc, bool addr, bool uncalled, bool notret, bool vararg,
+                              const SVFFunctionType *ft, SVFLoopAndDomInfo *ld, const FunObjVar *real, BasicBlockGraph *bbg,
+                              const std::vector<const ArgValVar *> &allarg, SVFBasicBlock *exit) {
+    isDecl = decl;
+    intrinsic = intrinc;
+    isAddrTaken = addr;
+    isUncalled = uncalled;
+    isNotRet = notret;
+    supVarArg = vararg;
+    funcType = ft;
+    loopAndDom = ld;
+    realDefFun = real;
+    bbGraph = bbg;
+    allArgs = allarg;
+    exitBlock = exit;
 }
+
 
 bool FunObjVar::isIsolatedNode() const
 {
-    return callGraphNode->isIntrinsic();
+    return isIntrinsic();
 }
 
-const SVFFunction* FunObjVar::getFunction() const
+const FunObjVar* FunObjVar::getFunction() const
 {
-    return callGraphNode;
+    return this;
 }
 
 const std::string FunObjVar::toString() const
@@ -449,7 +479,7 @@ const std::string FunObjVar::toString() const
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
-        rawstr << callGraphNode->getName();
+        rawstr << getName();
     }
     return rawstr.str();
 }
@@ -462,7 +492,7 @@ const std::string RetValPN::toString() const
     return rawstr.str();
 }
 
-const SVFFunction* VarArgValPN::getFunction() const
+const FunObjVar* VarArgValPN::getFunction() const
 {
     return callGraphNode;
 }

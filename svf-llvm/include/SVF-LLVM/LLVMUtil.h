@@ -355,8 +355,16 @@ std::vector<const Function *> getCalledFunctions(const Function *F);
 // Converts a mangled name to C naming style to match functions in extapi.c.
 std::string restoreFuncName(std::string funcName);
 
-/// Get the corresponding Function based on its name
+bool isExtCall(const SVFFunction* fun);
+
+bool isMemcpyExtFun(const SVFFunction *fun);
+
+bool isMemsetExtFun(const SVFFunction* fun);
+
+u32_t getHeapAllocHoldingArgPosition(const SVFFunction* fun);
+
 const SVFFunction* getFunction(const std::string& name);
+const FunObjVar* getFunObjVar(const std::string&name);
 
 /// Return true if the value refers to constant data, e.g., i32 0
 inline bool isConstDataOrAggData(const Value* val)

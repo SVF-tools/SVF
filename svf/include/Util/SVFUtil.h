@@ -187,7 +187,7 @@ inline bool isNonInstricCallSite(const ICFGNode* inst)
 /// Match arguments for callsite at caller and callee
 /// if the arg size does not match then we do not need to connect this parameter
 /// unless the callee is a variadic function (the first parameter of variadic function is its parameter number)
-bool matchArgs(const CallICFGNode* cs, const SVFFunction* callee);
+bool matchArgs(const CallICFGNode* cs, const FunObjVar* callee);
 
 
 /// Split into two substrings around the first occurrence of a separator string.
@@ -266,72 +266,57 @@ void stopAnalysisLimitTimer(bool limitTimerSet);
 /// Return true if the call is an external call (external library in function summary table)
 /// If the library function is redefined in the application code (e.g., memcpy), it will return false and will not be treated as an external call.
 //@{
-inline bool isExtCall(const SVFFunction* fun)
-{
-    return fun && ExtAPI::getExtAPI()->is_ext(fun);
-}
 
-inline bool isMemcpyExtFun(const SVFFunction* fun)
-{
-    return fun && ExtAPI::getExtAPI()->is_memcpy(fun);
-}
+bool isExtCall(const FunObjVar* fun);
 
-inline bool isMemsetExtFun(const SVFFunction* fun)
-{
-    return fun && ExtAPI::getExtAPI()->is_memset(fun);
-}
 
 /// Return true if the call is a heap allocator/reallocator
 //@{
 /// note that these two functions are not suppose to be used externally
-inline bool isHeapAllocExtFunViaRet(const SVFFunction* fun)
+
+inline bool isHeapAllocExtFunViaRet(const FunObjVar* fun)
 {
     return fun && (ExtAPI::getExtAPI()->is_alloc(fun)
                    || ExtAPI::getExtAPI()->is_realloc(fun));
 }
 
-inline bool isHeapAllocExtFunViaArg(const SVFFunction* fun)
+inline bool isHeapAllocExtFunViaArg(const FunObjVar* fun)
 {
-    return fun && ExtAPI::getExtAPI()->is_arg_alloc(fun);
+return fun && ExtAPI::getExtAPI()->is_arg_alloc(fun);
 }
 
 /// Get the position of argument that holds an allocated heap object.
 //@{
-inline u32_t getHeapAllocHoldingArgPosition(const SVFFunction* fun)
+
+inline u32_t getHeapAllocHoldingArgPosition(const FunObjVar* fun)
 {
     return ExtAPI::getExtAPI()->get_alloc_arg_pos(fun);
 }
-
 /// Return true if the call is a heap reallocator
 //@{
 /// note that this function is not suppose to be used externally
-inline bool isReallocExtFun(const SVFFunction* fun)
-{
+
+inline bool isReallocExtFun(const FunObjVar* fun) {
     return fun && (ExtAPI::getExtAPI()->is_realloc(fun));
 }
 
 /// Program entry function e.g. main
 //@{
 /// Return true if this is a program entry function (e.g. main)
-inline bool isProgEntryFunction(const SVFFunction* fun)
-{
-    return fun && fun->getName() == "main";
-}
+
+bool isProgEntryFunction(const FunObjVar*);
 
 /// Get program entry function from function name.
-const SVFFunction* getProgFunction(const std::string& funName);
+const FunObjVar* getProgFunction(const std::string& funName);
 
 /// Get program entry function.
-const SVFFunction* getProgEntryFunction();
+const FunObjVar*getProgEntryFunction();
+
 
 /// Return true if this is a program exit function call
 //@{
-inline bool isProgExitFunction (const SVFFunction * fun)
-{
-    return fun && (fun->getName() == "exit" ||
-                   fun->getName() == "__assert_rtn" ||
-                   fun->getName() == "__assert_fail" );
-}
+bool isProgExitFunction(const FunObjVar *fun);
+
 
 
 bool isArgOfUncalledFunction(const SVFVar* svfvar);

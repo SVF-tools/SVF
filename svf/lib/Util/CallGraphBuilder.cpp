@@ -38,10 +38,10 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-CallGraph* CallGraphBuilder::buildSVFIRCallGraph(SVFModule* svfModule)
+CallGraph* CallGraphBuilder::buildSVFIRCallGraph(const std::vector<const FunObjVar*>& funset)
 {
     CallGraph* callgraph = new CallGraph();
-    for (const SVFFunction* svfFunc: svfModule->getFunctionSet())
+    for (const FunObjVar* svfFunc: funset)
     {
         callgraph->addCallGraphNode(svfFunc);
     }
@@ -56,7 +56,7 @@ CallGraph* CallGraphBuilder::buildSVFIRCallGraph(SVFModule* svfModule)
                 if (SVFUtil::isNonInstricCallSite(inst))
                 {
                     const CallICFGNode* callBlockNode = cast<CallICFGNode>(inst);
-                    if(const SVFFunction* callee = callBlockNode->getCalledFunction())
+                    if(const FunObjVar* callee = callBlockNode->getCalledFunction())
                     {
                         callgraph->addDirectCallGraphEdge(callBlockNode,(item.second)->getFunction(),callee);
                     }

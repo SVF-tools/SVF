@@ -107,7 +107,7 @@ std::unique_ptr<MemSSA> SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyM
     for (const auto& item: *svfirCallGraph)
     {
 
-        const SVFFunction *fun = item.second->getFunction();
+        const FunObjVar *fun = item.second->getFunction();
         if (isExtCall(fun))
             continue;
 

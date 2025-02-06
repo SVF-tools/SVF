@@ -219,7 +219,7 @@ void BufOverflowDetector::initExtAPIBufOverflowCheckRules()
 void BufOverflowDetector::detectExtAPI(AbstractState& as,
                                        const CallICFGNode* call)
 {
-    assert(call->getCalledFunction() && "SVFFunction* is nullptr");
+    assert(call->getCalledFunction() && "FunObjVar* is nullptr");
 
     AbsExtAPI::ExtAPIType extType = AbsExtAPI::UNCLASSIFIED;
 

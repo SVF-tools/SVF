@@ -140,7 +140,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
     }
     else if (isHeapAllocExtCallViaArg(callICFGNode))
     {
-        u32_t arg_pos = getHeapAllocHoldingArgPosition(svfCallee);
+        u32_t arg_pos = LLVMUtil::getHeapAllocHoldingArgPosition(svfCallee);
         const SVFValue* arg = svfCall->getArgOperand(arg_pos);
         if (arg->getType()->isPointerTy())
         {
@@ -158,7 +158,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
             writeWrnMsg("Arg receiving new object must be pointer type");
         }
     }
-    else if (isMemcpyExtFun(svfCallee))
+    else if (LLVMUtil::isMemcpyExtFun(svfCallee))
     {
         // Side-effects similar to void *memcpy(void *dest, const void * src, size_t n)
         // which  copies n characters from memory area 'src' to memory area 'dest'.
@@ -173,7 +173,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         if(SVFUtil::isa<PointerType>(cs->getType()))
             addCopyEdge(getValueNode(cs->getArgOperand(0)), getValueNode(cs), CopyStmt::COPYVAL);
     }
-    else if(isMemsetExtFun(svfCallee))
+    else if(LLVMUtil::isMemsetExtFun(svfCallee))
     {
         // Side-effects similar to memset(void *str, int c, size_t n)
         // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
@@ -264,7 +264,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         const ValVar* valVar = getForkedFun(callICFGNode);
         if (const FunValVar* funcValVar = SVFUtil::dyn_cast<FunValVar>(valVar))
         {
-            const SVFFunction* forkedFun = funcValVar->getFunction()->getDefFunForMultipleModule();
+            const FunObjVar* forkedFun = funcValVar->getFunction()->getDefFunForMultipleModule();
             const SVFVar* actualParm = getActualParmAtForkSite(callICFGNode);
             /// pthread_create has 1 arg.
             /// apr_thread_create has 2 arg.

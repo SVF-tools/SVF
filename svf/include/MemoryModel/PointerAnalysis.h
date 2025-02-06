@@ -101,11 +101,11 @@ public:
     //@{
     typedef Set<const CallICFGNode*> CallSiteSet;
     typedef SVFIR::CallSiteToFunPtrMap CallSiteToFunPtrMap;
-    typedef Set<const SVFFunction*> FunctionSet;
+    typedef Set<const FunObjVar*> FunctionSet;
     typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
     typedef SCCDetection<CallGraph*> CallGraphSCC;
     typedef Set<const GlobalObjVar*> VTableSet;
-    typedef Set<const SVFFunction*> VFunSet;
+    typedef Set<const FunObjVar*> VFunSet;
     //@}
 
     static const std::string aliasTestMayAlias;
@@ -396,13 +396,13 @@ public:
         return callGraphSCC->repNode(id);
     }
     /// Return TRUE if this edge is inside a PTACallGraph SCC, i.e., src node and dst node are in the same SCC on the SVFG.
-    inline bool inSameCallGraphSCC(const SVFFunction* fun1,const SVFFunction* fun2)
+    inline bool inSameCallGraphSCC(const FunObjVar* fun1,const FunObjVar* fun2)
     {
         const CallGraphNode* src = callgraph->getCallGraphNode(fun1);
         const CallGraphNode* dst = callgraph->getCallGraphNode(fun2);
         return (getCallGraphSCCRepNode(src->getId()) == getCallGraphSCCRepNode(dst->getId()));
     }
-    inline bool isInRecursion(const SVFFunction* fun) const
+    inline bool isInRecursion(const FunObjVar* fun) const
     {
         return callGraphSCC->isInCycle(callgraph->getCallGraphNode(fun)->getId());
     }

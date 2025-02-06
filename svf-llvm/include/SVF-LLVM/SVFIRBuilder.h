@@ -74,6 +74,9 @@ public:
     /// Initialize nodes and edges
     //@{
     void initialiseNodes();
+    void initialiseBaseObjVars();
+    void initialiseValVars();
+    void initialiseFunObjVars();
     void addEdge(NodeID src, NodeID dst, SVFStmt::PEDGEK kind,
                  APOffset offset = 0, Instruction* cs = nullptr);
     // @}
@@ -102,13 +105,13 @@ public:
     }
 
     /// getReturnNode - Return the node representing the unique return value of a function.
-    inline NodeID getReturnNode(const SVFFunction *func)
+    inline NodeID getReturnNode(const FunObjVar *func)
     {
         return pag->getReturnNode(func);
     }
 
     /// getVarargNode - Return the node representing the unique variadic argument of a function.
-    inline NodeID getVarargNode(const SVFFunction *func)
+    inline NodeID getVarargNode(const FunObjVar *func)
     {
         return pag->getVarargNode(func);
     }

@@ -408,7 +408,7 @@ public:
         return (fun==nullptr) && (callInst != nullptr);
     }
 
-    inline const SVFFunction* getFun() const
+    inline const FunObjVar* getFun() const
     {
         assert(isFormalINPHI() && "expect a formal parameter phi");
         return fun;
@@ -447,7 +447,7 @@ public:
     virtual const std::string toString() const;
 
 private:
-    const SVFFunction* fun;
+    const FunObjVar* fun;
     const CallICFGNode* callInst;
 };
 

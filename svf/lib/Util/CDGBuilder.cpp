@@ -67,7 +67,7 @@ CDGBuilder::extractNodesBetweenPdomNodes(const SVFBasicBlock *succ, const SVFBas
 {
     if (succ == LCA) return;
     std::vector<const SVFBasicBlock *> path;
-    SVFLoopAndDomInfo *ld = const_cast<SVFFunction *>(LCA->getFunction())->getLoopAndDomInfo();
+    SVFLoopAndDomInfo *ld = const_cast<FunObjVar *>(LCA->getFunction())->getLoopAndDomInfo();
     dfsNodesBetweenPdomNodes(LCA, succ, path, tgtNodes, ld);
 }
 
@@ -126,7 +126,7 @@ void CDGBuilder::buildControlDependence(const SVFModule *svfgModule)
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
-        const SVFFunction *svfFun = (item.second)->getFunction();
+        const FunObjVar *svfFun = (item.second)->getFunction();
         if (SVFUtil::isExtCall(svfFun)) continue;
         // extract basic block edges to be processed
         Map<const SVFBasicBlock *, std::vector<const SVFBasicBlock *>> BBS;
@@ -138,7 +138,7 @@ void CDGBuilder::buildControlDependence(const SVFModule *svfgModule)
             // for each bb pair
             for (const SVFBasicBlock *succ: item.second)
             {
-                const SVFBasicBlock *SVFLCA = const_cast<SVFFunction *>(svfFun)->
+                const SVFBasicBlock *SVFLCA = const_cast<FunObjVar *>(svfFun)->
                                               getLoopAndDomInfo()->findNearestCommonPDominator(pred, succ);
                 std::vector<const SVFBasicBlock *> tgtNodes;
                 // no common ancestor, may be exit()
@@ -168,7 +168,7 @@ void CDGBuilder::buildControlDependence(const SVFModule *svfgModule)
  * @param func
  * @param res
  */
-void CDGBuilder::extractBBS(const SVF::SVFFunction *func,
+void CDGBuilder::extractBBS(const SVF::FunObjVar *func,
                             Map<const SVF::SVFBasicBlock *, std::vector<const SVFBasicBlock *>> &res)
 {
     for (const auto &it: *func)

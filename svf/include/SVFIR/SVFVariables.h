@@ -101,7 +101,7 @@ public:
     virtual const std::string getValueName() const = 0;
 
     /// Get containing function, or null for globals/constants
-    virtual inline const SVFFunction* getFunction() const
+    virtual inline const FunObjVar* getFunction() const
     {
         return nullptr;
     }
@@ -183,17 +183,7 @@ public:
     }
 
     /// Check if this pointer is in an uncalled function
-    inline virtual bool ptrInUncalledFunction() const
-    {
-        if (const SVFFunction* fun = getFunction())
-        {
-            return fun->isUncalledFunction();
-        }
-        else
-        {
-            return false;
-        }
-    }
+    virtual bool ptrInUncalledFunction() const;
 
     /// Check if this variable represents constant/aggregate data
     virtual bool isConstDataOrAggData() const
@@ -302,7 +292,7 @@ public:
         return icfgNode;
     }
 
-    virtual const SVFFunction* getFunction() const;
+    virtual const FunObjVar* getFunction() const;
 
     virtual const std::string toString() const;
 };
@@ -366,7 +356,7 @@ class ArgValVar: public ValVar
     friend class SVFIRReader;
 
 private:
-    const SVFFunction* cgNode;
+    const FunObjVar* cgNode;
     u32_t argNo;
 
 protected:
@@ -399,7 +389,7 @@ public:
     //@}
 
     /// Constructor
-    ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn, const SVFFunction* callGraphNode,
+    ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn, const FunObjVar* callGraphNode,
               const SVFType* svfType);
 
     /// Return name of a LLVM value
@@ -408,9 +398,9 @@ public:
         return getName() + " (argument valvar)";
     }
 
-    virtual const SVFFunction* getFunction() const;
+    virtual const FunObjVar* getFunction() const;
 
-    const SVFFunction* getParent() const;
+    const FunObjVar* getParent() const;
 
     ///  Return the index of this formal argument in its containing function.
     /// For example in "void foo(int a, float b)" a is 0 and b is 1.
@@ -419,10 +409,7 @@ public:
         return argNo;
     }
 
-    inline bool isArgOfUncalledFunction() const
-    {
-        return getFunction()->isUncalledFunction();
-    }
+    bool isArgOfUncalledFunction() const;
 
     virtual bool isPointer() const;
 
@@ -506,7 +493,7 @@ public:
         return gepValType;
     }
 
-    virtual const SVFFunction* getFunction() const
+    virtual const FunObjVar* getFunction() const
     {
         return base->getFunction();
     }
@@ -725,7 +712,7 @@ public:
         typeInfo = nullptr;
     }
 
-    virtual const SVFFunction* getFunction() const;
+    virtual const FunObjVar* getFunction() const;
 
 };
 
@@ -807,7 +794,7 @@ public:
         return getName() + "_" + std::to_string(apOffset);
     }
 
-    virtual const SVFFunction* getFunction() const
+    virtual const FunObjVar* getFunction() const
     {
         return base->getFunction();
     }
@@ -963,62 +950,34 @@ public:
 
 class CallGraphNode;
 
-class FunValVar : public ValVar
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-private:
-    const SVFFunction* callGraphNode;
-
-public:
-    ///  Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const FunValVar*)
-    {
-        return true;
-    }
-    static inline bool classof(const ValVar* node)
-    {
-        return node->getNodeKind() == FunValNode;
-    }
-    static inline bool classof(const SVFVar* node)
-    {
-        return node->getNodeKind() == FunValNode;
-    }
-    static inline bool classof(const GenericPAGNodeTy* node)
-    {
-        return node->getNodeKind() == FunValNode;
-    }
-    static inline bool classof(const SVFBaseNode* node)
-    {
-        return node->getNodeKind() == FunValNode;
-    }
-    //@}
-
-    inline virtual const SVFFunction* getFunction() const
-    {
-        return callGraphNode;
-    }
-
-    /// Constructor
-    FunValVar(NodeID i, const ICFGNode* icn, const SVFFunction* cgn, const SVFType* svfType);
-
-
-    virtual bool isPointer() const
-    {
-        return true;
-    }
-
-    virtual const std::string toString() const;
-};
-
 class FunObjVar : public BaseObjVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class SVFIRBuilder;
+
+public:
+    typedef SVFLoopAndDomInfo::BBSet BBSet;
+    typedef SVFLoopAndDomInfo::BBList BBList;
+    typedef SVFLoopAndDomInfo::LoopBBs LoopBBs;
+
+    typedef BasicBlockGraph::IDToNodeMapTy::const_iterator const_bb_iterator;
+
 
 private:
-    const SVFFunction* callGraphNode;
+    bool isDecl;   /// return true if this function does not have a body
+    bool intrinsic; /// return true if this function is an intrinsic function (e.g., llvm.dbg), which does not reside in the application code
+    bool isAddrTaken; /// return true if this function is address-taken (for indirect call purposes)
+    bool isUncalled;    /// return true if this function is never called
+    bool isNotRet;   /// return true if this function never returns
+    bool supVarArg;    /// return true if this function supports variable arguments
+    const SVFFunctionType* funcType; /// FunctionType, which is different from the type (PointerType) of this SVF Function
+    SVFLoopAndDomInfo* loopAndDom;  /// the loop and dominate information
+    const FunObjVar * realDefFun;  /// the definition of a function across multiple modules
+    BasicBlockGraph* bbGraph; /// the basic block graph of this function
+    std::vector<const ArgValVar*> allArgs;    /// all formal arguments of this function
+    SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
+
 
 private:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
@@ -1054,21 +1013,257 @@ public:
     //@}
 
     /// Constructor
-    FunObjVar(NodeID i, ObjTypeInfo* ti, const SVFFunction* cgNode, const SVFType* svfType, const ICFGNode* node);
+    FunObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node);
 
-    inline const SVFFunction* getCallGraphNode() const
+    void initFunObjVar(bool decl, bool intrinc, bool addr, bool uncalled, bool notret, bool vararg, const SVFFunctionType *ft,
+                       SVFLoopAndDomInfo *ld, const FunObjVar *real, BasicBlockGraph *bbg,
+                       const std::vector<const ArgValVar *> &allarg, SVFBasicBlock *exit);
+
+    void setRelDefFun(const FunObjVar *real)
     {
-        return callGraphNode;
+        realDefFun = real;
     }
 
-    virtual const SVFFunction* getFunction() const;
+    virtual const FunObjVar*getFunction() const;
 
-    virtual bool isPointer() const;
+    inline void addArgument(const ArgValVar *arg) {
+        allArgs.push_back(arg);
+    }
+    inline bool isDeclaration() const
+    {
+        return isDecl;
+    }
+
+    inline bool isIntrinsic() const
+    {
+        return intrinsic;
+    }
+
+    inline bool hasAddressTaken() const {
+        return isAddrTaken;
+    }
+
+    inline bool isVarArg() const
+    {
+        return supVarArg;
+    }
+
+    inline bool isUncalledFunction() const
+    {
+        return isUncalled;
+    }
+
+    inline bool hasReturn() const
+    {
+        return  !isNotRet;
+    }
+
+    /// Returns the FunctionType
+    inline const SVFFunctionType* getFunctionType() const
+    {
+        return funcType;
+    }
+
+    /// Returns the FunctionType
+    inline const SVFType* getReturnType() const
+    {
+        return funcType->getReturnType();
+    }
+
+    inline SVFLoopAndDomInfo* getLoopAndDomInfo() {
+        return loopAndDom;
+    }
+
+    inline const std::vector<const SVFBasicBlock*>& getReachableBBs() const
+    {
+        return loopAndDom->getReachableBBs();
+    }
+
+    inline void getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exitbbs) const
+    {
+        return loopAndDom->getExitBlocksOfLoop(bb,exitbbs);
+    }
+
+    inline bool hasLoopInfo(const SVFBasicBlock* bb) const
+    {
+        return loopAndDom->hasLoopInfo(bb);
+    }
+
+    const LoopBBs& getLoopInfo(const SVFBasicBlock* bb) const
+    {
+        return loopAndDom->getLoopInfo(bb);
+    }
+
+    inline const SVFBasicBlock* getLoopHeader(const BBList& lp) const
+    {
+        return loopAndDom->getLoopHeader(lp);
+    }
+
+    inline bool loopContainsBB(const BBList& lp, const SVFBasicBlock* bb) const
+    {
+        return loopAndDom->loopContainsBB(lp,bb);
+    }
+
+    inline const Map<const SVFBasicBlock*,BBSet>& getDomTreeMap() const
+    {
+        return loopAndDom->getDomTreeMap();
+    }
+
+    inline const Map<const SVFBasicBlock*,BBSet>& getDomFrontierMap() const
+    {
+        return loopAndDom->getDomFrontierMap();
+    }
+
+    inline bool isLoopHeader(const SVFBasicBlock* bb) const
+    {
+        return loopAndDom->isLoopHeader(bb);
+    }
+
+    inline bool dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
+    {
+        return loopAndDom->dominate(bbKey,bbValue);
+    }
+
+    inline bool postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
+    {
+        return loopAndDom->postDominate(bbKey,bbValue);
+    }
+
+    inline const FunObjVar* getDefFunForMultipleModule() const {
+        if(realDefFun==nullptr)
+            return this;
+        return realDefFun;
+    }
+
+    void setBasicBlockGraph(BasicBlockGraph* graph)
+    {
+        this->bbGraph = graph;
+    }
+
+    BasicBlockGraph* getBasicBlockGraph()
+    {
+        return bbGraph;
+    }
+
+    const BasicBlockGraph* getBasicBlockGraph() const
+    {
+        return bbGraph;
+    }
+
+    inline bool hasBasicBlock() const
+    {
+        return bbGraph && bbGraph->begin() != bbGraph->end();
+    }
+
+    inline const SVFBasicBlock* getEntryBlock() const {
+        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
+        assert(bbGraph->begin()->second->getInEdges().size() == 0 && "the first basic block is not entry block");
+        return bbGraph->begin()->second;
+    }
+
+    inline const SVFBasicBlock* getExitBB() const
+    {
+        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
+        assert(exitBlock && "must have an exitBlock");
+        return exitBlock;
+    }
+
+    inline void setExitBlock(SVFBasicBlock *bb)
+    {
+        assert(!exitBlock && "have already set exit Basicblock!");
+        exitBlock = bb;
+    }
+
+
+    u32_t inline arg_size() const
+    {
+        return allArgs.size();
+    }
+
+    inline const ArgValVar*  getArg(u32_t idx) const
+    {
+        assert (idx < allArgs.size() && "getArg() out of range!");
+        return allArgs[idx];
+    }
+
+    inline const SVFBasicBlock* front() const
+    {
+        return getEntryBlock();
+    }
+
+    inline const SVFBasicBlock* back() const
+    {
+        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
+        /// Carefully! 'back' is just the last basic block of function,
+        /// but not necessarily a exit basic block
+        /// more refer to: https://github.com/SVF-tools/SVF/pull/1262
+        return std::prev(bbGraph->end())->second;
+    }
+
+    inline const_bb_iterator begin() const
+    {
+        return bbGraph->begin();
+    }
+
+    inline const_bb_iterator end() const
+    {
+        return bbGraph->end();
+    }
 
     virtual bool isIsolatedNode() const;
 
     virtual const std::string toString() const;
 };
+class FunValVar : public ValVar
+{
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+private:
+    const FunObjVar* funObjVar;
+
+public:
+    ///  Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const FunValVar*)
+    {
+        return true;
+    }
+    static inline bool classof(const ValVar* node)
+    {
+        return node->getNodeKind() == FunValNode;
+    }
+    static inline bool classof(const SVFVar* node)
+    {
+        return node->getNodeKind() == FunValNode;
+    }
+    static inline bool classof(const GenericPAGNodeTy* node)
+    {
+        return node->getNodeKind() == FunValNode;
+    }
+    static inline bool classof(const SVFBaseNode* node)
+    {
+        return node->getNodeKind() == FunValNode;
+    }
+    //@}
+
+    inline virtual const FunObjVar* getFunction() const
+    {
+        return funObjVar->getFunction();
+    }
+
+    /// Constructor
+    FunValVar(NodeID i, const ICFGNode* icn, const FunObjVar* cgn, const SVFType* svfType);
+
+
+    virtual bool isPointer() const
+    {
+        return true;
+    }
+
+    virtual const std::string toString() const;
+};
+
+
 
 class GlobalValVar : public ValVar
 {
@@ -1782,7 +1977,7 @@ class RetValPN : public ValVar
     friend class SVFIRReader;
 
 private:
-    const SVFFunction* callGraphNode;
+    const FunObjVar* callGraphNode;
 private:
     /// Constructor to create empty RetValPN (for SVFIRReader/deserialization)
     RetValPN(NodeID i) : ValVar(i, RetValNode) {}
@@ -1813,14 +2008,14 @@ public:
 
 
     /// Constructor
-    RetValPN(NodeID i, const SVFFunction* node, const SVFType* svfType, const ICFGNode* icn);
+    RetValPN(NodeID i, const FunObjVar* node, const SVFType* svfType, const ICFGNode* icn);
 
-    inline const SVFFunction* getCallGraphNode() const
+    inline const FunObjVar* getCallGraphNode() const
     {
         return callGraphNode;
     }
 
-    virtual const SVFFunction* getFunction() const;
+    virtual const FunObjVar* getFunction() const;
 
     virtual bool isPointer() const;
 
@@ -1838,7 +2033,7 @@ class VarArgValPN : public ValVar
     friend class SVFIRWriter;
     friend class SVFIRReader;
 private:
-    const SVFFunction* callGraphNode;
+    const FunObjVar* callGraphNode;
 
 private:
     /// Constructor to create empty VarArgValPN (for SVFIRReader/deserialization)
@@ -1869,12 +2064,12 @@ public:
     //@}
 
     /// Constructor
-    VarArgValPN(NodeID i, const SVFFunction* node, const SVFType* svfType, const ICFGNode* icn)
+    VarArgValPN(NodeID i, const FunObjVar* node, const SVFType* svfType, const ICFGNode* icn)
         : ValVar(i, svfType, icn, VarargValNode), callGraphNode(node)
     {
     }
 
-    virtual const SVFFunction* getFunction() const;
+    virtual const FunObjVar* getFunction() const;
 
     /// Return name of a LLVM value
     const std::string getValueName() const;

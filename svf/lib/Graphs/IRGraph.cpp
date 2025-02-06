@@ -56,20 +56,20 @@ IRGraph::~IRGraph()
     destorySymTable();
 }
 
-NodeID IRGraph::getReturnNode(const SVFFunction *func) const
+
+NodeID IRGraph::getReturnNode(const FunObjVar *func) const
 {
-    FunToIDMapTy::const_iterator iter =  returnSymMap.find(func);
-    assert(iter!=returnSymMap.end() && "ret sym not found");
+    FunObjVarToIDMapTy::const_iterator iter =  returnFunObjSymMap.find(func);
+    assert(iter!=returnFunObjSymMap.end() && "ret sym not found");
     return iter->second;
 }
 
-NodeID IRGraph::getVarargNode(const SVFFunction *func) const
+NodeID IRGraph::getVarargNode(const FunObjVar *func) const
 {
-    FunToIDMapTy::const_iterator iter =  varargSymMap.find(func);
-    assert(iter!=varargSymMap.end() && "vararg sym not found");
+    FunObjVarToIDMapTy::const_iterator iter =  varargFunObjSymMap.find(func);
+    assert(iter!=varargFunObjSymMap.end() && "vararg sym not found");
     return iter->second;
 }
-
 void IRGraph::printFlattenFields(const SVFType *type)
 {
     if (const SVFArrayType* at = SVFUtil::dyn_cast<SVFArrayType>(type))

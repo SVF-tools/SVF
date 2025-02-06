@@ -713,7 +713,7 @@ bool FlowSensitive::updateCallGraph(const CallSiteToFunPtrMap& callsites)
         for (FunctionSet::iterator potentialFunctionIt = potentialFunctionSet.begin();
                 potentialFunctionIt != potentialFunctionSet.end(); )
         {
-            const SVFFunction *potentialFunction = *potentialFunctionIt;
+            const FunObjVar *potentialFunction = *potentialFunctionIt;
             if (andersFunctionSet.find(potentialFunction) == andersFunctionSet.end())
             {
                 // potentialFunction is not in the Andersen's call graph -- remove it.
@@ -750,7 +750,7 @@ void FlowSensitive::connectCallerAndCallee(const CallEdgeMap& newEdges, SVFGEdge
         const FunctionSet & functions = iter->second;
         for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
-            const SVFFunction*  func = *func_iter;
+            const FunObjVar*  func = *func_iter;
             svfg->connectCallerAndCallee(cs, func, edges);
         }
     }

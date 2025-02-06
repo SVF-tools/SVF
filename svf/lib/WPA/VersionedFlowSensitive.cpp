@@ -481,7 +481,7 @@ void VersionedFlowSensitive::buildDeltaMaps(void)
         //  * Callsite returns: can get new incoming indirect edges if the callsite is indirect.
         //  * Otherwise: static.
         bool isDelta = false;
-        if (const SVFFunction *fn = svfg->isFunEntrySVFGNode(s))
+        if (const FunObjVar *fn = svfg->isFunEntrySVFGNode(s))
         {
             CallGraphEdge::CallInstSet callsites;
             /// use pre-analysis call graph to approximate all potential callsites

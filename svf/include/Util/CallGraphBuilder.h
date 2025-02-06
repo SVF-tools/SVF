@@ -47,7 +47,7 @@ public:
     CallGraphBuilder()=default;
 
     /// Buidl SVFIR callgraoh
-    CallGraph* buildSVFIRCallGraph(SVFModule* svfModule);
+    CallGraph* buildSVFIRCallGraph(const std::vector<const FunObjVar*>& funset);
 
     /// Buidl PTA callgraoh
     CallGraph* buildPTACallGraph();

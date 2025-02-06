@@ -174,12 +174,12 @@ public:
     ///@{
     virtual void initSrcs() = 0;
     virtual void initSnks() = 0;
-    virtual bool isSourceLikeFun(const SVFFunction* fun)
+    virtual bool isSourceLikeFun(const FunObjVar* fun)
     {
         return false;
     }
 
-    virtual bool isSinkLikeFun(const SVFFunction* fun)
+    virtual bool isSinkLikeFun(const FunObjVar* fun)
     {
         return false;
     }

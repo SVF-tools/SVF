@@ -52,6 +52,7 @@ class IRGraph : public GenericGraph<SVFVar, SVFStmt>
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class SVFIRBuilder;
     friend class SymbolTableBuilder;
 
 public:
@@ -75,14 +76,15 @@ public:
     typedef OrderedMap<NodeID, ObjTypeInfo*> IDToTypeInfoMapTy;
 
     /// function to sym id map
-    typedef OrderedMap<const SVFFunction*, NodeID> FunToIDMapTy;
+    typedef OrderedMap<const FunObjVar*, NodeID> FunObjVarToIDMapTy;
+
     /// struct type to struct info map
     typedef Set<const SVFType*> SVFTypeSet;
     //@}
 
 private:
-    FunToIDMapTy returnSymMap; ///< return map
-    FunToIDMapTy varargSymMap; ///< vararg map
+    FunObjVarToIDMapTy returnFunObjSymMap; ///< return map
+    FunObjVarToIDMapTy varargFunObjSymMap; ///< vararg map
     IDToTypeInfoMapTy objTypeInfoMap;       ///< map a memory sym id to its obj
 
     /// (owned) All SVF Types
@@ -217,14 +219,14 @@ public:
         return objTypeInfoMap;
     }
 
-    inline FunToIDMapTy& retSyms()
+    inline FunObjVarToIDMapTy& retFunObjSyms()
     {
-        return returnSymMap;
+        return returnFunObjSymMap;
     }
 
-    inline FunToIDMapTy& varargSyms()
+    inline FunObjVarToIDMapTy& varargFunObjSyms()
     {
-        return varargSymMap;
+        return varargFunObjSymMap;
     }
 
     //@}
@@ -237,10 +239,10 @@ public:
     }
 
     /// GetReturnNode - Return the unique node representing the return value of a function
-    NodeID getReturnNode(const SVFFunction* func) const;
+    NodeID getReturnNode(const FunObjVar*func) const;
 
     /// getVarargNode - Return the unique node representing the variadic argument of a variadic function.
-    NodeID getVarargNode(const SVFFunction* func) const;
+    NodeID getVarargNode(const FunObjVar*func) const;
 
     inline NodeID getBlackHoleNode() const
     {

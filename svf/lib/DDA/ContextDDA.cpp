@@ -186,7 +186,7 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
     return tmpDstPts;
 }
 
-bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* callee, const CallICFGNode* cs)
+bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const FunObjVar* callee, const CallICFGNode* cs)
 {
     if(getPAG()->isIndirectCallSites(cs))
     {
@@ -195,7 +195,7 @@ bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* c
         CxtVar funptrVar(dpm.getCondVar().get_cond(), id);
         CxtLocDPItem funptrDpm = getDPIm(funptrVar,getDefSVFGNode(node));
         PointsTo pts = getBVPointsTo(findPT(funptrDpm));
-        if(pts.test(getPAG()->getFunObjVar(callee)->getId()))
+        if(pts.test(callee->getId()))
             return true;
         else
             return false;
@@ -217,7 +217,7 @@ CallSiteID ContextDDA::getCSIDAtCall(CxtLocDPItem&, const SVFGEdge* edge)
         svfg_csId = SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId();
 
     const CallICFGNode* cbn = getSVFG()->getCallSite(svfg_csId);
-    const SVFFunction* callee = edge->getDstNode()->getFun();
+    const FunObjVar* callee = edge->getDstNode()->getFun();
 
     if(getCallGraph()->hasCallSiteID(cbn,callee))
     {
@@ -241,7 +241,7 @@ CallSiteID ContextDDA::getCSIDAtRet(CxtLocDPItem&, const SVFGEdge* edge)
         svfg_csId = SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId();
 
     const CallICFGNode* cbn = getSVFG()->getCallSite(svfg_csId);
-    const SVFFunction* callee = edge->getSrcNode()->getFun();
+    const FunObjVar* callee = edge->getSrcNode()->getFun();
 
     if(getCallGraph()->hasCallSiteID(cbn,callee))
     {
@@ -358,7 +358,7 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
         }
         else if(const ICFGNode* node = obj->getICFGNode())
         {
-            const SVFFunction* svfFun = node->getFun();
+            const FunObjVar* svfFun = node->getFun();
             if(_ander->isInRecursion(svfFun))
                 return true;
             if(var.get_cond().isConcreteCxt() == false)
