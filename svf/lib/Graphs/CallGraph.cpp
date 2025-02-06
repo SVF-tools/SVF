@@ -41,7 +41,8 @@ CallGraph::IdToCallSiteMap CallGraph::idToCSMap;
 CallSiteID CallGraph::totalCallSiteNum=1;
 
 
-const std::string &CallGraphNode::getName() const {
+const std::string &CallGraphNode::getName() const
+{
     return fun->getName();
 }
 
@@ -83,7 +84,8 @@ const std::string CallGraphNode::toString() const
     return rawstr.str();
 }
 
-const FunObjVar *CallGraph::getCallerOfCallSite(CallSiteID id) const {
+const FunObjVar *CallGraph::getCallerOfCallSite(CallSiteID id) const
+{
     return getCallSite(id)->getCaller();
 }
 
@@ -167,8 +169,8 @@ void CallGraph::destroy()
  *  Whether we have already created this call graph edge
  */
 CallGraphEdge* CallGraph::hasGraphEdge(CallGraphNode* src,
-        CallGraphNode* dst,
-        CallGraphEdge::CEDGEK kind, CallSiteID csId) const
+                                       CallGraphNode* dst,
+                                       CallGraphEdge::CEDGEK kind, CallSiteID csId) const
 {
     CallGraphEdge edge(src,dst,kind,csId);
     CallGraphEdge* outEdge = src->hasOutgoingEdge(&edge);
@@ -186,8 +188,8 @@ CallGraphEdge* CallGraph::hasGraphEdge(CallGraphNode* src,
  * get PTACallGraph edge via nodes
  */
 CallGraphEdge* CallGraph::getGraphEdge(CallGraphNode* src,
-        CallGraphNode* dst,
-        CallGraphEdge::CEDGEK kind, CallSiteID)
+                                       CallGraphNode* dst,
+                                       CallGraphEdge::CEDGEK kind, CallSiteID)
 {
     for (CallGraphEdge::CallGraphEdgeSet::iterator iter = src->OutEdgeBegin();
             iter != src->OutEdgeEnd(); ++iter)

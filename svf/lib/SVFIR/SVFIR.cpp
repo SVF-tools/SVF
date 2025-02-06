@@ -42,9 +42,12 @@ SVFIR::SVFIR(bool buildFromFile) : IRGraph(buildFromFile), svfModule(nullptr), i
 }
 
 
-const FunObjVar *SVFIR::getFunObjVar(const std::string &name) {
-    for (const auto &item: *callGraph) {
-        if (item.second->getName() == name) {
+const FunObjVar *SVFIR::getFunObjVar(const std::string &name)
+{
+    for (const auto &item: *callGraph)
+    {
+        if (item.second->getName() == name)
+        {
             return item.second->getFunction();
         }
     }

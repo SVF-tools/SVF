@@ -150,7 +150,8 @@ public:
     }
 
 
-    inline void setFun(const FunObjVar* f) {
+    inline void setFun(const FunObjVar* f)
+    {
         fun = f;
     }
 

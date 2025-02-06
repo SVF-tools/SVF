@@ -381,7 +381,8 @@ bool SVFUtil::isRetInstNode(const ICFGNode* node)
         return false;
 }
 
-bool SVFUtil::isProgExitFunction(const FunObjVar *fun) {
+bool SVFUtil::isProgExitFunction(const FunObjVar *fun)
+{
     return fun && (fun->getName() == "exit" ||
                    fun->getName() == "__assert_rtn" ||
                    fun->getName() == "__assert_fail");
@@ -438,6 +439,7 @@ bool SVFUtil::isExtCall(const FunObjVar* fun)
     return fun && ExtAPI::getExtAPI()->is_ext(fun);
 }
 
-bool SVFUtil::isProgEntryFunction(const FunObjVar* funObjVar) {
+bool SVFUtil::isProgEntryFunction(const FunObjVar* funObjVar)
+{
     return funObjVar && funObjVar->getName() == "main";
 }

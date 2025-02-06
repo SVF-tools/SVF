@@ -132,7 +132,8 @@ const std::string FunExitICFGNode::toString() const
     return rawstr.str();
 }
 
-const std::string FunExitICFGNode::getSourceLoc() const {
+const std::string FunExitICFGNode::getSourceLoc() const
+{
     return "function ret: " + fun->getSourceLoc();
 }
 

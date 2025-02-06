@@ -1026,7 +1026,8 @@ public:
 
     virtual const FunObjVar*getFunction() const;
 
-    inline void addArgument(const ArgValVar *arg) {
+    inline void addArgument(const ArgValVar *arg)
+    {
         allArgs.push_back(arg);
     }
     inline bool isDeclaration() const
@@ -1039,7 +1040,8 @@ public:
         return intrinsic;
     }
 
-    inline bool hasAddressTaken() const {
+    inline bool hasAddressTaken() const
+    {
         return isAddrTaken;
     }
 
@@ -1070,7 +1072,8 @@ public:
         return funcType->getReturnType();
     }
 
-    inline SVFLoopAndDomInfo* getLoopAndDomInfo() {
+    inline SVFLoopAndDomInfo* getLoopAndDomInfo()
+    {
         return loopAndDom;
     }
 
@@ -1129,7 +1132,8 @@ public:
         return loopAndDom->postDominate(bbKey,bbValue);
     }
 
-    inline const FunObjVar* getDefFunForMultipleModule() const {
+    inline const FunObjVar* getDefFunForMultipleModule() const
+    {
         if(realDefFun==nullptr)
             return this;
         return realDefFun;
@@ -1155,7 +1159,8 @@ public:
         return bbGraph && bbGraph->begin() != bbGraph->end();
     }
 
-    inline const SVFBasicBlock* getEntryBlock() const {
+    inline const SVFBasicBlock* getEntryBlock() const
+    {
         assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
         assert(bbGraph->begin()->second->getInEdges().size() == 0 && "the first basic block is not entry block");
         return bbGraph->begin()->second;

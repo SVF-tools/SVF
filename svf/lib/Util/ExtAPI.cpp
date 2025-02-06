@@ -169,7 +169,8 @@ void ExtAPI::setExtFuncAnnotations(const FunObjVar* fun, const std::vector<std::
     funObjVar2Annotations[fun] = funcAnnotations;
 }
 
-bool ExtAPI::hasExtFuncAnnotation(const FunObjVar *fun, const std::string &funcAnnotation) {
+bool ExtAPI::hasExtFuncAnnotation(const FunObjVar *fun, const std::string &funcAnnotation)
+{
     assert(fun && "Null FunObjVar* pointer");
     auto it = funObjVar2Annotations.find(fun);
     if (it != funObjVar2Annotations.end())
@@ -253,7 +254,8 @@ bool ExtAPI::is_realloc(const FunObjVar* F)
 {
     return F && hasExtFuncAnnotation(F, "REALLOC_HEAP_RET");
 }
-bool ExtAPI::is_ext(const FunObjVar *F) {
+bool ExtAPI::is_ext(const FunObjVar *F)
+{
     assert(F && "Null FunObjVar* pointer");
     if (F->isDeclaration() || F->isIntrinsic())
         return true;

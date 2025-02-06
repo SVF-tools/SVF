@@ -91,7 +91,8 @@ SVFIR* SVFIRBuilder::build()
     /// build callgraph
     CallGraphBuilder callGraphBuilder;
     std::vector<const FunObjVar*> funset;
-    for (const auto& item: svfModule->getFunctionSet()) {
+    for (const auto& item: svfModule->getFunctionSet())
+    {
         const Function* llvmFun = SVFUtil::cast<Function>(llvmModuleSet()->getLLVMValue(item));
 
         funset.push_back(llvmModuleSet()->getFunObjVar(llvmFun));
@@ -193,7 +194,8 @@ SVFIR* SVFIRBuilder::build()
     return pag;
 }
 
-void SVFIRBuilder::initialiseFunObjVars() {
+void SVFIRBuilder::initialiseFunObjVars()
+{
     std::vector<FunObjVar*> funset;
     // Iterate over all object symbols in the symbol table
     for (const auto* fun: svfModule->getFunctionSet())
@@ -224,7 +226,8 @@ void SVFIRBuilder::initialiseFunObjVars() {
                                      svffunc->loopAndDom, nullptr, svffunc->bbGraph,
                                      svffunc->allArgs, svffunc->exitBlock);
             /// set fun in bb
-            for (auto& bb: *funObjVar->bbGraph) {
+            for (auto& bb: *funObjVar->bbGraph)
+            {
                 bb.second->setFun(funObjVar);
             }
             llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(id));
@@ -232,9 +235,10 @@ void SVFIRBuilder::initialiseFunObjVars() {
     }
 
     /// set realDefFun for all functions
-    for (auto& fun: funset) {
+    for (auto& fun: funset)
+    {
         const SVFFunction *svffunc = SVFUtil::cast<SVFFunction>(
-            llvmModuleSet()->getSVFFunction(SVFUtil::cast<Function>(llvmModuleSet()->getLLVMValue(fun))));
+                                         llvmModuleSet()->getSVFFunction(SVFUtil::cast<Function>(llvmModuleSet()->getLLVMValue(fun))));
         const Function *realfun = SVFUtil::cast<Function>(llvmModuleSet()->getLLVMValue(svffunc->realDefFun));
         fun->setRelDefFun(llvmModuleSet()->getFunObjVar(realfun));
     }
@@ -246,7 +250,8 @@ void SVFIRBuilder::initialiseFunObjVars() {
     }
 }
 
-void SVFIRBuilder::initialiseBaseObjVars() {
+void SVFIRBuilder::initialiseBaseObjVars()
+{
     // Iterate over all object symbols in the symbol table
     for (LLVMModuleSet::ValueToIDMapTy::iterator iter =
                 llvmModuleSet()->objSyms().begin(); iter != llvmModuleSet()->objSyms().end();
@@ -272,7 +277,7 @@ void SVFIRBuilder::initialiseBaseObjVars() {
         // Check if the value is a function and add a function object node
         if (SVFUtil::dyn_cast<Function>(llvmValue))
         {
-           // already one
+            // already one
         }
         // Check if the value is a heap object and add a heap object node
         else if (LLVMUtil::isHeapObj(llvmValue))
@@ -330,8 +335,9 @@ void SVFIRBuilder::initialiseBaseObjVars() {
 
 }
 
-void SVFIRBuilder::initialiseValVars() {
-     // Iterate over all value symbols in the symbol table
+void SVFIRBuilder::initialiseValVars()
+{
+    // Iterate over all value symbols in the symbol table
     for (LLVMModuleSet::ValueToIDMapTy::iterator iter =
                 llvmModuleSet()->valSyms().begin(); iter != llvmModuleSet()->valSyms().end();
             ++iter)
@@ -489,7 +495,7 @@ void SVFIRBuilder::initialiseNodes()
                 SVFUtil::cast<ArgValVar>(
                     pag->getGNode(llvmModuleSet()->getValueNode(llvmModuleSet()->getSVFArgument(&arg)))));
             const_cast<FunObjVar*>(llvmModuleSet()->getFunObjVar(llvmFun))->addArgument(SVFUtil::cast<ArgValVar>(
-                    pag->getGNode(llvmModuleSet()->getValueNode(llvmModuleSet()->getSVFArgument(&arg)))));
+                        pag->getGNode(llvmModuleSet()->getValueNode(llvmModuleSet()->getSVFArgument(&arg)))));
         }
     }
 
@@ -1570,7 +1576,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     {
         assert(curBB && (curBB->getParent()->getEntryBlock() == curBB));
         icfgNode = pag->getICFG()->getFunEntryICFGNode(
-            llvmModuleSet()->getFunObjVar(SVFUtil::cast<Function>(llvmModuleSet()->getLLVMValue(arg->getParent()))));
+                       llvmModuleSet()->getFunObjVar(SVFUtil::cast<Function>(llvmModuleSet()->getLLVMValue(arg->getParent()))));
     }
     else if (SVFUtil::isa<SVFConstant>(curVal) ||
              SVFUtil::isa<SVFFunction>(curVal) ||

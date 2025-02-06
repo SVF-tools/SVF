@@ -386,7 +386,8 @@ bool LLVMUtil::isExtCall(const SVFFunction* fun)
     return fun && LLVMModuleSet::getLLVMModuleSet()->is_ext(fun);
 }
 
-bool LLVMUtil::isMemcpyExtFun(const SVFFunction *fun) {
+bool LLVMUtil::isMemcpyExtFun(const SVFFunction *fun)
+{
     return fun && LLVMModuleSet::getLLVMModuleSet()->is_memcpy(fun);
 }
 
@@ -397,7 +398,8 @@ bool LLVMUtil::isMemsetExtFun(const SVFFunction* fun)
 }
 
 
-u32_t LLVMUtil::getHeapAllocHoldingArgPosition(const SVFFunction* fun) {
+u32_t LLVMUtil::getHeapAllocHoldingArgPosition(const SVFFunction* fun)
+{
     return LLVMModuleSet::getLLVMModuleSet()->get_alloc_arg_pos(fun);
 }
 

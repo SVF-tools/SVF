@@ -282,7 +282,7 @@ inline bool isHeapAllocExtFunViaRet(const FunObjVar* fun)
 
 inline bool isHeapAllocExtFunViaArg(const FunObjVar* fun)
 {
-return fun && ExtAPI::getExtAPI()->is_arg_alloc(fun);
+    return fun && ExtAPI::getExtAPI()->is_arg_alloc(fun);
 }
 
 /// Get the position of argument that holds an allocated heap object.
@@ -296,7 +296,8 @@ inline u32_t getHeapAllocHoldingArgPosition(const FunObjVar* fun)
 //@{
 /// note that this function is not suppose to be used externally
 
-inline bool isReallocExtFun(const FunObjVar* fun) {
+inline bool isReallocExtFun(const FunObjVar* fun)
+{
     return fun && (ExtAPI::getExtAPI()->is_realloc(fun));
 }
 
