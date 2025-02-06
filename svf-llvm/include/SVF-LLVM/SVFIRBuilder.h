@@ -74,6 +74,8 @@ public:
     /// Initialize nodes and edges
     //@{
     void initialiseNodes();
+    void initialiseBaseObjVars();
+    void initialiseValVars();
     void initialiseFunObjVars();
     void addEdge(NodeID src, NodeID dst, SVFStmt::PEDGEK kind,
                  APOffset offset = 0, Instruction* cs = nullptr);
