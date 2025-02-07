@@ -96,7 +96,7 @@ public:
 
     virtual inline void performStat(PointerAnalysis*) {}
 
-    virtual inline void collectWPANum(SVFModule*) {}
+    virtual inline void collectWPANum() {}
 protected:
     void addCandidate(NodeID id)
     {

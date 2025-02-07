@@ -68,7 +68,7 @@ public:
     virtual bool runOnModule(SVFIR* pag)
     {
         /// start analysis
-        analyze(pag->getModule());
+        analyze();
         return false;
     }
 

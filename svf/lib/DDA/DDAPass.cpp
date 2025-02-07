@@ -131,7 +131,7 @@ void DDAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
 
     if(Options::WPANum())
     {
-        _client->collectWPANum(pag->getModule());
+        _client->collectWPANum();
     }
     else
     {

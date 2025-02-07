@@ -38,7 +38,7 @@ using namespace SVF;
 using namespace SVFUtil;
 
 /// Initialize analysis
-void SrcSnkDDA::initialize(SVFModule* module)
+void SrcSnkDDA::initialize()
 {
     SVFIR* pag = PAG::getPAG();
 
@@ -58,10 +58,10 @@ void SrcSnkDDA::initialize(SVFModule* module)
     initSnks();
 }
 
-void SrcSnkDDA::analyze(SVFModule* module)
+void SrcSnkDDA::analyze()
 {
 
-    initialize(module);
+    initialize();
 
     ContextCond::setMaxCxtLen(Options::CxtLimit());
 
