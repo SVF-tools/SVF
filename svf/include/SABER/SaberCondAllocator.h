@@ -30,7 +30,6 @@
 #ifndef PATHALLOCATOR_H_
 #define PATHALLOCATOR_H_
 
-#include "SVFIR/SVFModule.h"
 #include "SVFIR/SVFValue.h"
 #include "Util/WorkList.h"
 #include "Graphs/SVFG.h"

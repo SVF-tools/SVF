@@ -27,7 +27,6 @@
  *      Author: Yulei Sui, Peng Di, Ding Ye
  */
 
-#include "SVFIR/SVFModule.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Util/ThreadAPI.h"
 #include "SVFIR/SVFIR.h"

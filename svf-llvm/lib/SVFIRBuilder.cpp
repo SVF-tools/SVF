@@ -35,7 +35,7 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
 #include "SVFIR/PAGBuilderFromFile.h"
-#include "SVFIR/SVFModule.h"
+#include "SVF-LLVM/SVFModule.h"
 #include "SVFIR/SVFValue.h"
 #include "Util/CallGraphBuilder.h"
 #include "Graphs/CallGraph.h"

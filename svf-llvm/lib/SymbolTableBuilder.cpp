@@ -34,7 +34,7 @@
 #include "SVF-LLVM/GEPTypeBridgeIterator.h" // include bridge_gep_iterator
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
-#include "SVFIR/SVFModule.h"
+#include "SVF-LLVM/SVFModule.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"

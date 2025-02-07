@@ -33,7 +33,7 @@
 #ifndef CHA_H_
 #define CHA_H_
 
-#include "SVFIR/SVFModule.h"
+#include "Util/ThreadAPI.h"
 #include "Graphs/GenericGraph.h"
 #include "Util/WorkList.h"
 

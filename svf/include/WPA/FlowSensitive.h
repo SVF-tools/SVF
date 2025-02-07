@@ -93,7 +93,7 @@ public:
     }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule*)
+    virtual bool runOnModule()
     {
         return false;
     }

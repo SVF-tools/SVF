@@ -42,7 +42,7 @@
 #include "SVFIR/ObjTypeInfo.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/LLVMUtil.h"
-#include "SVFIR/SVFModule.h"
+#include "SVF-LLVM/SVFModule.h"
 #include "Util/PTAStat.h"
 #include "SVF-LLVM/LLVMModule.h"
 #include "SVF-LLVM/ObjTypeInference.h"

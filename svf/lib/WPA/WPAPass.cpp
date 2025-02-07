@@ -34,7 +34,6 @@
 
 
 #include "Util/Options.h"
-#include "SVFIR/SVFModule.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "WPA/WPAPass.h"
 #include "WPA/Andersen.h"

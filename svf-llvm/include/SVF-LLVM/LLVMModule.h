@@ -32,7 +32,7 @@
 
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVFIR/SVFValue.h"
-#include "SVFIR/SVFModule.h"
+#include "SVF-LLVM/SVFModule.h"
 #include "Util/Options.h"
 #include "Graphs/BasicBlockG.h"
 

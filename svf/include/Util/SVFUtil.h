@@ -32,10 +32,11 @@
 
 #include "FastCluster/fastcluster.h"
 #include "SVFIR/SVFValue.h"
-#include "SVFIR/SVFModule.h"
 #include "Util/ExtAPI.h"
 #include "MemoryModel/PointsTo.h"
 #include <time.h>
+#include "Util/NodeIDAllocator.h"
+#include "Util/ThreadAPI.h"
 
 namespace SVF
 {

@@ -17,7 +17,7 @@
 #include "Graphs/GenericGraph.h"
 #include "Graphs/CHG.h"
 #include "SVF-LLVM/BasicTypes.h"
-#include "SVFIR/SVFModule.h"
+#include "SVF-LLVM/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "Util/WorkList.h"
 

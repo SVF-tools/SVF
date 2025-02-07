@@ -30,7 +30,6 @@
 #include "Graphs/ICFG.h"
 #include "Graphs/CallGraph.h"
 #include "SVFIR/SVFIR.h"
-#include "SVFIR/SVFModule.h"
 #include <Util/Options.h>
 
 using namespace SVF;

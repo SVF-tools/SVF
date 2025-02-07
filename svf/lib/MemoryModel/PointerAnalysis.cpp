@@ -28,7 +28,6 @@
  */
 
 #include "Util/Options.h"
-#include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
 
 #include "MemoryModel/PointerAnalysisImpl.h"

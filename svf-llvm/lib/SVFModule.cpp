@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 
-#include "SVFIR/SVFModule.h"
+#include "SVF-LLVM/SVFModule.h"
 #include "SVFIR/ObjTypeInfo.h"
 #include "Util/SVFUtil.h"
 #include "Util/SVFStat.h"

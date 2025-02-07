@@ -27,7 +27,6 @@
  *      Author: Jeffrey Ma
  */
 
-#include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "Graphs/SVFG.h"
 #include "Graphs/SVFGStat.h"
