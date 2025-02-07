@@ -275,7 +275,7 @@ void ThreadAPI::statInit(Map<std::string, u32_t>& tdAPIStatMap)
     tdAPIStatMap["hare_parallel_for"] = 0;
 }
 
-void ThreadAPI::performAPIStat(SVFModule* module)
+void ThreadAPI::performAPIStat()
 {
 
     Map<std::string, u32_t> tdAPIStatMap;
@@ -397,7 +397,7 @@ void ThreadAPI::performAPIStat(SVFModule* module)
 
     }
 
-    std::string name(module->getModuleIdentifier());
+    std::string name(PAG::getPAG()->getModuleIdentifier());
     std::vector<std::string> fullNames = SVFUtil::split(name,'/');
     if (fullNames.size() > 1)
     {

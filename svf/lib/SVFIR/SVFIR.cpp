@@ -37,7 +37,9 @@ using namespace SVFUtil;
 
 std::unique_ptr<SVFIR> SVFIR::pag;
 
-SVFIR::SVFIR(bool buildFromFile) : IRGraph(buildFromFile), svfModule(nullptr), icfg(nullptr), chgraph(nullptr)
+std::string SVFIR::pagReadFromTxt = "";
+
+SVFIR::SVFIR(bool buildFromFile) : IRGraph(buildFromFile), icfg(nullptr), chgraph(nullptr)
 {
 }
 
@@ -546,7 +548,6 @@ void SVFIR::destroy()
     delete chgraph;
     chgraph = nullptr;
     SVFModule::releaseSVFModule();
-    svfModule = nullptr;
     delete callGraph;
     callGraph = nullptr;
 }

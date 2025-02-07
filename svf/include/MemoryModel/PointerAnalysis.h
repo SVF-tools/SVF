@@ -139,8 +139,6 @@ protected:
 
     /// SVFIR
     static SVFIR* pag;
-    /// Module
-    SVFModule* svfMod;
     /// Pointer analysis Type
     PTATY ptaTy;
     /// PTA implementation type.
@@ -206,11 +204,7 @@ public:
     {
         return stat;
     }
-    /// Module
-    inline SVFModule* getModule() const
-    {
-        return svfMod;
-    }
+
     /// Get all Valid Pointers for resolution
     inline OrderedNodeSet& getAllValidPtrs()
     {

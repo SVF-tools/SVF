@@ -55,7 +55,7 @@ public:
     void build();
 
     /// build control dependence for each function
-    void buildControlDependence(const SVFModule *svfgModule);
+    void buildControlDependence();
 
     /// build map at icfg node level
     void buildICFGNodeControlMap();

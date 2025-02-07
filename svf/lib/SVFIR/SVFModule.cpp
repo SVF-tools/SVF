@@ -29,7 +29,6 @@
 
 using namespace SVF;
 
-std::string SVFModule::pagReadFromTxt = "";
 SVFModule* SVFModule::svfModule = nullptr;
 
 SVFModule::~SVFModule()

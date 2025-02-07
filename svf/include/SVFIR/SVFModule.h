@@ -63,8 +63,6 @@ public:
 
 private:
     static SVFModule* svfModule;
-    static std::string pagReadFromTxt;
-    std::string moduleIdentifier;
     FunctionSetType FunctionSet;  ///< The Functions in the module
     GlobalSetType GlobalSet;      ///< The Global Variables in the module
     AliasSetType AliasSet;        ///< The Aliases in the module
@@ -80,25 +78,6 @@ public:
 
     ~SVFModule();
 
-    static inline void setPagFromTXT(const std::string& txt)
-    {
-        pagReadFromTxt = txt;
-    }
-
-    inline void setModuleIdentifier(const std::string& moduleIdentifier)
-    {
-        this->moduleIdentifier = moduleIdentifier;
-    }
-
-    static inline std::string pagFileName()
-    {
-        return pagReadFromTxt;
-    }
-
-    static inline bool pagReadFromTXT()
-    {
-        return !pagReadFromTxt.empty();
-    }
 
     const SVFFunction* getSVFFunction(const std::string& name);
 
@@ -181,20 +160,6 @@ public:
         return ConstantSet.end();
     }
     ///@}
-
-    const std::string& getModuleIdentifier() const
-    {
-        if (pagReadFromTxt.empty())
-        {
-            assert(!moduleIdentifier.empty() &&
-                   "No module found! Reading from a file other than LLVM-IR?");
-            return moduleIdentifier;
-        }
-        else
-        {
-            return pagReadFromTxt;
-        }
-    }
 
     inline const FunctionSetType& getFunctionSet() const
     {

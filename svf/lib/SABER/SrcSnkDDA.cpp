@@ -52,7 +52,7 @@ void SrcSnkDDA::initialize()
     callgraph = ander->getCallGraph();
     //AndersenWaveDiff::releaseAndersenWaveDiff();
     /// allocate control-flow graph branch conditions
-    getSaberCondAllocator()->allocate(getPAG()->getModule());
+    getSaberCondAllocator()->allocate();
 
     initSrcs();
     initSnks();

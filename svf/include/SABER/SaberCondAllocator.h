@@ -121,7 +121,7 @@ public:
     Condition newCond(const ICFGNode* inst);
 
     /// Perform path allocation
-    void allocate(const SVFModule* module);
+    void allocate();
 
     /// Get/Set instruction based on Z3 expression id
     //{@

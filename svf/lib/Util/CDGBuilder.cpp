@@ -78,8 +78,7 @@ void CDGBuilder::build()
 {
     if (_controlDG->getTotalNodeNum() > 0)
         return;
-    PAG *pag = PAG::getPAG();
-    buildControlDependence(pag->getModule());
+    buildControlDependence();
     buildICFGNodeControlMap();
 }
 
@@ -121,7 +120,7 @@ s64_t CDGBuilder::getBBSuccessorBranchID(const SVFBasicBlock *BB, const SVFBasic
  *     including LCA if LCA is pred, excluding LCA if LCA is not pred
  * @param svfgModule
  */
-void CDGBuilder::buildControlDependence(const SVFModule *svfgModule)
+void CDGBuilder::buildControlDependence()
 {
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
