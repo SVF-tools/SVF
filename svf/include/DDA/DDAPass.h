@@ -69,7 +69,7 @@ public:
     virtual void runOnModule(SVFIR* module);
 
     /// Select a client
-    virtual void selectClient(SVFModule* module);
+    virtual void selectClient();
 
     /// Pass name
     virtual inline std::string getPassName() const
