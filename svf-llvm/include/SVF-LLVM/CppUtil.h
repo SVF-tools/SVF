@@ -30,7 +30,7 @@
 #ifndef CPPUtil_H_
 #define CPPUtil_H_
 
-#include "SVFIR/SVFValue.h"
+#include "SVF-LLVM/SVFValue.h"
 #include "SVF-LLVM/BasicTypes.h"
 
 namespace SVF

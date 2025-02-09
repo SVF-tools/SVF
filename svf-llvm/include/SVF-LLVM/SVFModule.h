@@ -30,7 +30,7 @@
 #ifndef INCLUDE_SVFMODULE_H_
 #define INCLUDE_SVFMODULE_H_
 
-#include "SVFIR/SVFValue.h"
+#include "SVF-LLVM/SVFValue.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/ThreadAPI.h"
 

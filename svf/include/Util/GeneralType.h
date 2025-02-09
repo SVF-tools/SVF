@@ -38,6 +38,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <memory>
 #include "Util/SparseBitVector.h"
 
 namespace SVF

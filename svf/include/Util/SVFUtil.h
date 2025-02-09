@@ -32,6 +32,7 @@
 
 #include "FastCluster/fastcluster.h"
 #include "SVFIR/SVFValue.h"
+#include "Util/SVFLoopAndDomInfo.h"
 #include "Util/ExtAPI.h"
 #include "MemoryModel/PointsTo.h"
 #include <time.h>

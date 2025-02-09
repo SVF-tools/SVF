@@ -41,6 +41,7 @@ class CallICFGNode;
 class SVFVar;
 class ValVar;
 class ObjVar;
+class FunObjVar;
 
 /*
  * ThreadAPI class contains interfaces for pthread programs

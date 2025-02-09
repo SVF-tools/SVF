@@ -43,6 +43,7 @@ class IntraICFGNode;
 class CallICFGNode;
 class FunEntryICFGNode;
 class FunExitICFGNode;
+class SVFBasicBlock;
 
 /*
  * SVFIR program statements (PAGEdges)
