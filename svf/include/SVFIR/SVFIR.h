@@ -189,7 +189,8 @@ public:
 
     const FunObjVar* getFunObjVar(const std::string& name);
 
-    inline const std::string& getModuleIdentifier() const {
+    inline const std::string& getModuleIdentifier() const
+    {
         if (pagReadFromTxt.empty())
         {
             assert(!moduleIdentifier.empty() &&

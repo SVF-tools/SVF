@@ -36,7 +36,8 @@
 #include "Util/Casting.h"
 #include "Graphs/BasicBlockG.h"
 
-namespace SVF {
+namespace SVF
+{
 class SVFLoopAndDomInfo
 {
     friend class SVFIRWriter;

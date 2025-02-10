@@ -531,7 +531,8 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
         //assert(!moduleNameVec.empty() && "no LLVM bc file is found!");
     }
     // We read SVFIR from a user-defined txt instead of parsing SVFIR from LLVM IR
-    else {
+    else
+    {
         SVFIR::setPagFromTXT(Options::Graphtxt());
     }
     //

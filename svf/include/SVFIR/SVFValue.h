@@ -34,7 +34,8 @@
 #include "Graphs/GraphPrinter.h"
 
 
-namespace SVF {
+namespace SVF
+{
 
 
 class SVFBaseNode

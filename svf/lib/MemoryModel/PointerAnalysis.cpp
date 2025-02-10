@@ -66,8 +66,8 @@ const std::string PointerAnalysis::aliasTestFailNoAliasMangled  = "_Z20EXPECTEDF
  * Constructor
  */
 PointerAnalysis::PointerAnalysis(SVFIR *p, PTATY ty, bool alias_check) : ptaTy(ty), stat(nullptr), callgraph(nullptr),
-                                                                         callGraphSCC(nullptr), icfg(nullptr),
-                                                                         chgraph(nullptr)
+    callGraphSCC(nullptr), icfg(nullptr),
+    chgraph(nullptr)
 {
     pag = p;
     OnTheFlyIterBudgetForStat = Options::StatBudget();
