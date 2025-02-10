@@ -1398,7 +1398,29 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
         }
         if(totalidx == 0 && !SVFUtil::isa<StructType>(value->getType()))
             value = gep->getPointerOperand();
+    } else if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(value)) {
+        // https://github.com/SVF-tools/SVF/issues/1650
+        const Value* loadP = load->getPointerOperand();
+        if (const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(loadP)) {
+            APOffset totalidx = 0;
+            for (bridge_gep_iterator gi = bridge_gep_begin(gep), ge = bridge_gep_end(gep); gi != ge; ++gi)
+            {
+                if(const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
+                    totalidx += LLVMUtil::getIntegerValue(op).first;
+            }
+            const Value * pointer_operand = gep->getPointerOperand();
+            if (auto *glob = SVFUtil::dyn_cast<GlobalVariable>(pointer_operand)) {
+                if (auto *initializer = llvm::dyn_cast<
+                    ConstantStruct>(glob->getInitializer())) {
+                    auto *ptrField = initializer->getOperand(totalidx);
+                    if (auto *ptrValue = llvm::dyn_cast<llvm::GlobalVariable>(ptrField)) {
+                        return ptrValue;
+                    }
+                }
+            }
+        }
     }
+
     return value;
 }
 
