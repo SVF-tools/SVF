@@ -30,7 +30,6 @@
 #ifndef PATHALLOCATOR_H_
 #define PATHALLOCATOR_H_
 
-#include "SVFIR/SVFModule.h"
 #include "SVFIR/SVFValue.h"
 #include "Util/WorkList.h"
 #include "Graphs/SVFG.h"
@@ -121,7 +120,7 @@ public:
     Condition newCond(const ICFGNode* inst);
 
     /// Perform path allocation
-    void allocate(const SVFModule* module);
+    void allocate();
 
     /// Get/Set instruction based on Z3 expression id
     //{@

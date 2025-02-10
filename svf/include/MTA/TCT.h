@@ -186,12 +186,6 @@ public:
         destroy();
     }
 
-    /// Get SVFFModule
-    SVFModule* getSVFModule() const
-    {
-        return pta->getModule();
-    }
-
     /// Get TCG
     inline ThreadCallGraph* getThreadCallGraph() const
     {

@@ -57,7 +57,7 @@ void DDAPass::runOnModule(SVFIR* pag)
     /// initialization for llvm alias analyzer
     //InitializeAliasAnalysis(this, getDataLayout(&module));
 
-    selectClient(pag->getModule());
+    selectClient();
 
     for (u32_t i = PointerAnalysis::FlowS_DDA;
             i < PointerAnalysis::Default_PTA; i++)
@@ -69,7 +69,7 @@ void DDAPass::runOnModule(SVFIR* pag)
 }
 
 /// select a client to initialize queries
-void DDAPass::selectClient(SVFModule* module)
+void DDAPass::selectClient()
 {
 
     if (!Options::UserInputQuery().empty())
@@ -77,16 +77,16 @@ void DDAPass::selectClient(SVFModule* module)
         /// solve function pointer
         if (Options::UserInputQuery() == "funptr")
         {
-            _client = new FunptrDDAClient(module);
+            _client = new FunptrDDAClient();
         }
         else if (Options::UserInputQuery() == "alias")
         {
-            _client = new AliasDDAClient(module);
+            _client = new AliasDDAClient();
         }
         /// allow user specify queries
         else
         {
-            _client = new DDAClient(module);
+            _client = new DDAClient();
             if (Options::UserInputQuery() != "all")
             {
                 u32_t buf; // Have a buffer
@@ -101,7 +101,7 @@ void DDAPass::selectClient(SVFModule* module)
         assert(false && "Please specify query options!");
     }
 
-    _client->initialise(module);
+    _client->initialise();
 }
 
 /// Create pointer analysis according to specified kind and analyze the module.
@@ -131,7 +131,7 @@ void DDAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
 
     if(Options::WPANum())
     {
-        _client->collectWPANum(pag->getModule());
+        _client->collectWPANum();
     }
     else
     {

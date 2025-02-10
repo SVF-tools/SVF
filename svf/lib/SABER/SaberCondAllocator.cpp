@@ -56,7 +56,7 @@ SaberCondAllocator::SaberCondAllocator()
 /*!
  * Allocate path condition for each branch
  */
-void SaberCondAllocator::allocate(const SVFModule *M)
+void SaberCondAllocator::allocate()
 {
     DBOUT(DGENERAL, outs() << pasMsg("path condition allocation starts\n"));
 

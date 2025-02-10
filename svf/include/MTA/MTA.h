@@ -67,11 +67,11 @@ public:
     /// We start the pass here
     virtual bool runOnModule(SVFIR* module);
     /// Compute MHP
-    virtual MHP* computeMHP(SVFModule* module);
+    virtual MHP* computeMHP();
     /// Compute locksets
     virtual LockAnalysis* computeLocksets(TCT* tct);
     /// Perform detection
-    virtual void detect(SVFModule* module);
+    virtual void detect();
 
     // Not implemented for now
     // void dump(Module &module, MHP *mhp, LockAnalysis *lsa);

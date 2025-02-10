@@ -41,6 +41,7 @@ class CallICFGNode;
 class SVFVar;
 class ValVar;
 class ObjVar;
+class FunObjVar;
 
 /*
  * ThreadAPI class contains interfaces for pthread programs
@@ -179,7 +180,7 @@ public:
     bool isTDBarWait(const CallICFGNode *inst) const;
     //@}
 
-    void performAPIStat(SVFModule* m);
+    void performAPIStat();
     void statInit(Map<std::string, u32_t>& tdAPIStatMap);
 };
 

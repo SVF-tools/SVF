@@ -32,7 +32,7 @@
 
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
-#include "SVFIR/SVFValue.h"
+#include "SVF-LLVM/SVFValue.h"
 #include "Util/ThreadAPI.h"
 
 namespace SVF

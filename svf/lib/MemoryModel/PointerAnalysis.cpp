@@ -28,7 +28,6 @@
  */
 
 #include "Util/Options.h"
-#include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
 
 #include "MemoryModel/PointerAnalysisImpl.h"
@@ -66,8 +65,9 @@ const std::string PointerAnalysis::aliasTestFailNoAliasMangled  = "_Z20EXPECTEDF
 /*!
  * Constructor
  */
-PointerAnalysis::PointerAnalysis(SVFIR* p, PTATY ty, bool alias_check) :
-    svfMod(nullptr),ptaTy(ty),stat(nullptr),callgraph(nullptr),callGraphSCC(nullptr),icfg(nullptr),chgraph(nullptr)
+PointerAnalysis::PointerAnalysis(SVFIR *p, PTATY ty, bool alias_check) : ptaTy(ty), stat(nullptr), callgraph(nullptr),
+                                                                         callGraphSCC(nullptr), icfg(nullptr),
+                                                                         chgraph(nullptr)
 {
     pag = p;
     OnTheFlyIterBudgetForStat = Options::StatBudget();
@@ -106,7 +106,6 @@ void PointerAnalysis::initialize()
 {
     assert(pag && "SVFIR has not been built!");
 
-    svfMod = pag->getModule();
     chgraph = pag->getCHG();
 
     /// initialise pta call graph for every pointer analysis instance
@@ -260,7 +259,7 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
     {
         outs() << "##<Dummy Obj > id:" << node->getId();
     }
-    else if (!SVFUtil::isa<DummyValVar>(node) && !SVFModule::pagReadFromTXT())
+    else if (!SVFUtil::isa<DummyValVar>(node) && !SVFIR::pagReadFromTXT())
     {
         outs() << "##<" << node->getName() << "> ";
         outs() << "Source Loc: " << node->getSourceLoc();
@@ -296,7 +295,7 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
             outs() << "Dummy Obj id: " << node->getId() << "]\n";
         else
         {
-            if (!SVFModule::pagReadFromTXT())
+            if (!SVFIR::pagReadFromTXT())
             {
                 outs() << "<" << pagNode->getName() << "> ";
                 outs() << "Source Loc: "

@@ -46,7 +46,7 @@ using namespace SVFUtil;
  * @param mod SVF module
  * @param llvmLoops output llvm loops
  */
-void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, ICFG* icfg)
+void LLVMLoopAnalysis::buildLLVMLoops(ICFG* icfg)
 {
     std::vector<const Loop *> loop_stack;
     for (Module& M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
@@ -89,7 +89,7 @@ void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, ICFG* icfg)
 void LLVMLoopAnalysis::build(ICFG *icfg)
 {
     std::vector<const Loop *> llvmLoops;
-    buildLLVMLoops(PAG::getPAG()->getModule(), icfg);
+    buildLLVMLoops(icfg);
 }
 
 /*!

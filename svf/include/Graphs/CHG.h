@@ -33,7 +33,7 @@
 #ifndef CHA_H_
 #define CHA_H_
 
-#include "SVFIR/SVFModule.h"
+#include "Util/ThreadAPI.h"
 #include "Graphs/GenericGraph.h"
 #include "Util/WorkList.h"
 
@@ -252,7 +252,7 @@ public:
         DESTRUCTOR = 0x2 // connect node based on destructor
     } RELATIONTYPE;
 
-    CHGraph(SVFModule* svfModule): svfMod(svfModule), classNum(0), vfID(0), buildingCHGTime(0)
+    CHGraph(): classNum(0), vfID(0), buildingCHGTime(0)
     {
         this->kind = Standard;
     }
@@ -318,7 +318,6 @@ public:
 
 
 private:
-    SVFModule* svfMod;
     u32_t classNum;
     u32_t vfID;
     double buildingCHGTime;

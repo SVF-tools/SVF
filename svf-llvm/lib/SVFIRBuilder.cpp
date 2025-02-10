@@ -35,8 +35,8 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
 #include "SVFIR/PAGBuilderFromFile.h"
-#include "SVFIR/SVFModule.h"
-#include "SVFIR/SVFValue.h"
+#include "SVF-LLVM/SVFModule.h"
+#include "SVF-LLVM/SVFValue.h"
 #include "Util/CallGraphBuilder.h"
 #include "Graphs/CallGraph.h"
 #include "Util/Options.h"
@@ -57,13 +57,10 @@ SVFIR* SVFIRBuilder::build()
 
     DBOUT(DGENERAL, outs() << pasMsg("\t Building SVFIR ...\n"));
 
-    // Set SVFModule from SVFIRBuilder
-    pag->setModule(svfModule);
-
     // We read SVFIR from a user-defined txt instead of parsing SVFIR from LLVM IR
-    if (SVFModule::pagReadFromTXT())
+    if (SVFIR::pagReadFromTXT())
     {
-        PAGBuilderFromFile fileBuilder(SVFModule::pagFileName());
+        PAGBuilderFromFile fileBuilder(SVFIR::pagFileName());
         return fileBuilder.build();
     }
 
@@ -99,7 +96,7 @@ SVFIR* SVFIRBuilder::build()
     }
     pag->callGraph = callGraphBuilder.buildSVFIRCallGraph(funset);
 
-    CHGraph* chg = new CHGraph(pag->getModule());
+    CHGraph* chg = new CHGraph();
     CHGBuilder chgbuilder(chg);
     chgbuilder.buildCHG();
     pag->setCHG(chg);
@@ -1534,7 +1531,7 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const 
  */
 void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
 {
-    if (SVFModule::pagReadFromTXT())
+    if (SVFIR::pagReadFromTXT())
         return;
 
     assert(curVal && "current Val is nullptr?");

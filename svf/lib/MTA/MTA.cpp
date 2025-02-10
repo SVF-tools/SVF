@@ -60,11 +60,11 @@ MTA::~MTA()
  */
 bool MTA::runOnModule(SVFIR* pag)
 {
-    mhp = computeMHP(pag->getModule());
+    mhp = computeMHP();
     lsa = computeLocksets(mhp->getTCT());
 
     if(Options::RaceCheck())
-        detect(pag->getModule());
+        detect();
 
     return false;
 }
@@ -79,7 +79,7 @@ LockAnalysis* MTA::computeLocksets(TCT* tct)
     return lsa;
 }
 
-MHP* MTA::computeMHP(SVFModule* module)
+MHP* MTA::computeMHP()
 {
 
     DBOUT(DGENERAL, outs() << pasMsg("MTA analysis\n"));
@@ -125,7 +125,7 @@ MHP* MTA::computeMHP(SVFModule* module)
 // * when two memory access may-happen in parallel and are not protected by the same lock
 // * (excluding global constraints because they are initialized before running the main function)
 // */
-void MTA::detect(SVFModule* module)
+void MTA::detect()
 {
 
     DBOUT(DGENERAL, outs() << pasMsg("Starting Race Detection\n"));

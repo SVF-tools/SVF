@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 
-#include "SVFIR/SVFModule.h"
+#include "SVF-LLVM/SVFModule.h"
 #include "SVFIR/ObjTypeInfo.h"
 #include "Util/SVFUtil.h"
 #include "Util/SVFStat.h"
@@ -29,7 +29,6 @@
 
 using namespace SVF;
 
-std::string SVFModule::pagReadFromTxt = "";
 SVFModule* SVFModule::svfModule = nullptr;
 
 SVFModule::~SVFModule()

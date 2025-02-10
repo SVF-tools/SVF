@@ -93,13 +93,15 @@ private:
     /// Valid pointers for pointer analysis resolution connected by SVFIR edges (constraints)
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
     OrderedNodeSet candidatePointers;
-    SVFModule* svfModule; /// SVF Module
     ICFG* icfg; // ICFG
     CommonCHGraph* chgraph; // class hierarchy graph
     CallSiteSet callSiteSet; /// all the callsites of a program
     CallGraph* callGraph; /// call graph
 
     static std::unique_ptr<SVFIR> pag;	///< Singleton pattern here to enable instance of SVFIR can only be created once.
+    static std::string pagReadFromTxt;
+
+    std::string moduleIdentifier;
 
     /// Constructor
     SVFIR(bool buildFromFile);
@@ -152,16 +154,7 @@ public:
     /// Whether to handle blackhole edge
     static void handleBlackHole(bool b);
     //@}
-    /// Set/Get LLVM Module
-    inline void setModule(SVFModule* mod)
-    {
-        svfModule = mod;
-    }
-    inline SVFModule* getModule()
-    {
-        assert(svfModule && "empty SVFModule! Build SVF IR first!");
-        return svfModule;
-    }
+
     /// Set/Get ICFG
     inline void setICFG(ICFG* i)
     {
@@ -195,6 +188,39 @@ public:
     }
 
     const FunObjVar* getFunObjVar(const std::string& name);
+
+    inline const std::string& getModuleIdentifier() const {
+        if (pagReadFromTxt.empty())
+        {
+            assert(!moduleIdentifier.empty() &&
+                   "No module found! Reading from a file other than LLVM-IR?");
+            return moduleIdentifier;
+        }
+        else
+        {
+            return pagReadFromTxt;
+        }
+    }
+
+    static inline std::string pagFileName()
+    {
+        return pagReadFromTxt;
+    }
+
+    static inline bool pagReadFromTXT()
+    {
+        return !pagReadFromTxt.empty();
+    }
+
+    static inline void setPagFromTXT(const std::string& txt)
+    {
+        pagReadFromTxt = txt;
+    }
+
+    inline void setModuleIdentifier(const std::string& moduleIdentifier)
+    {
+        this->moduleIdentifier = moduleIdentifier;
+    }
 
     /// Get/set methods to get SVFStmts based on their kinds and ICFGNodes
     //@{

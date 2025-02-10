@@ -105,10 +105,10 @@ public:
     }
 
     /// Start analysis here
-    virtual void analyze(SVFModule* module);
+    virtual void analyze();
 
     /// Initialize analysis
-    virtual void initialize(SVFModule* module);
+    virtual void initialize();
 
     /// Finalize analysis
     virtual void finalize()

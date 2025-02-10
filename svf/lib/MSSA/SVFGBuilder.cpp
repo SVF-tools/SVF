@@ -27,7 +27,6 @@
  *      Author: Yulei Sui
  */
 #include "Util/Options.h"
-#include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "MSSA/MemSSA.h"
 #include "Graphs/SVFG.h"
