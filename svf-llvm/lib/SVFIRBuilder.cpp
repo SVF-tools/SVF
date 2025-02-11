@@ -1384,6 +1384,21 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
     }
 }
 
+/*!
+    Example 1:
+        p = q->f_1 (f_1 is the first field)
+        extapi(p)
+        the base value for ext arg p is q
+    Example 2:
+        https://github.com/SVF-tools/SVF/issues/1650
+
+        g_n =  { } (some struct)
+        g_0 = { g_1, ..., g_n }
+        q = g_0->f_n (g_0 is a global struct, f_n is the n-th field)
+        p = *q
+        extapi(p)
+        the base value for p is g_n. load -> gep (collect the gep index) based on g_0 (a global struct) -> g_n
+*/
 const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
 {
     const Value*  value = stripAllCasts(V);
@@ -1399,15 +1414,6 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
         if(totalidx == 0 && !SVFUtil::isa<StructType>(value->getType()))
             value = gep->getPointerOperand();
     } else if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(value)) {
-        // https://github.com/SVF-tools/SVF/issues/1650
-        /*!
-            @i1 = dso_local global %struct.interesting { i32 0, ptr @f1, ptr @f2 }
-            @n1 = dso_local global %struct.nested_ptr { i32 0, ptr @i1 }
-
-            %0 = load ptr, ptr getelementptr inbounds (%struct.nested_ptr, ptr @n1, i32 0, i32 1)
-            call void @llvm.memcpy.p0.p0.i64(ptr align 8 %interesting_stub, ptr align 8 %0, i64 24, i1 false)
-            the base value for %0 is @i1. load -> gep -> global
-        */
         const Value* loadP = load->getPointerOperand();
         if (const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(loadP)) {
             APOffset totalidx = 0;
@@ -1418,11 +1424,13 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
             }
             const Value * pointer_operand = gep->getPointerOperand();
             if (auto *glob = SVFUtil::dyn_cast<GlobalVariable>(pointer_operand)) {
-                if (auto *initializer = llvm::dyn_cast<
-                    ConstantStruct>(glob->getInitializer())) {
-                    auto *ptrField = initializer->getOperand(totalidx);
-                    if (auto *ptrValue = llvm::dyn_cast<llvm::GlobalVariable>(ptrField)) {
-                        return ptrValue;
+                if (glob->hasInitializer()) {
+                    if (auto *initializer = SVFUtil::dyn_cast<
+                        ConstantStruct>(glob->getInitializer())) {
+                        auto *ptrField = initializer->getOperand(totalidx);
+                        if (auto *ptrValue = SVFUtil::dyn_cast<llvm::GlobalVariable>(ptrField)) {
+                            return ptrValue;
+                        }
                     }
                 }
             }
