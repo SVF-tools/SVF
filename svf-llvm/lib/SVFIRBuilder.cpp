@@ -1400,6 +1400,14 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
             value = gep->getPointerOperand();
     } else if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(value)) {
         // https://github.com/SVF-tools/SVF/issues/1650
+        /*!
+            @i1 = dso_local global %struct.interesting { i32 0, ptr @f1, ptr @f2 }
+            @n1 = dso_local global %struct.nested_ptr { i32 0, ptr @i1 }
+
+            %0 = load ptr, ptr getelementptr inbounds (%struct.nested_ptr, ptr @n1, i32 0, i32 1)
+            call void @llvm.memcpy.p0.p0.i64(ptr align 8 %interesting_stub, ptr align 8 %0, i64 24, i1 false)
+            the base value for %0 is @i1. load -> gep -> global
+        */
         const Value* loadP = load->getPointerOperand();
         if (const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(loadP)) {
             APOffset totalidx = 0;
