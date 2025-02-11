@@ -60,7 +60,7 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
         AccessPath ls(ei);
         // make a ConstantInt and create char for the content type due to byte-wise copy
         const ConstantInt* offset = ConstantInt::get(context, llvm::APInt(32, ei));
-        const SVFValue* svfOffset = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offset);
+        const SVFLLVMValue* svfOffset = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offset);
         if (!llvmModuleSet()->hasValueNode(svfOffset))
         {
             SymbolTableBuilder builder(pag);
@@ -141,7 +141,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
     else if (isHeapAllocExtCallViaArg(callICFGNode))
     {
         u32_t arg_pos = LLVMUtil::getHeapAllocHoldingArgPosition(svfCallee);
-        const SVFValue* arg = svfCall->getArgOperand(arg_pos);
+        const SVFLLVMValue* arg = svfCall->getArgOperand(arg_pos);
         if (arg->getType()->isPointerTy())
         {
             NodeID vnArg = llvmModuleSet()->getValueNode(arg);

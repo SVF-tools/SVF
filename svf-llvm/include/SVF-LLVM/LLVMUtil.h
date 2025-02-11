@@ -32,7 +32,7 @@
 
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
-#include "SVF-LLVM/SVFValue.h"
+#include "SVF-LLVM/SVFLLVMValue.h"
 #include "Util/ThreadAPI.h"
 
 namespace SVF
@@ -377,7 +377,7 @@ inline bool isConstDataOrAggData(const Value* val)
 const Value* getGlobalRep(const Value* val);
 
 /// Check whether this value points-to a constant object
-bool isConstantObjSym(const SVFValue* val);
+bool isConstantObjSym(const SVFLLVMValue* val);
 
 /// Check whether this value points-to a constant object
 bool isConstantObjSym(const Value* val);

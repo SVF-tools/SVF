@@ -381,7 +381,7 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
                 }
                 for(u32_t i = 0; i < call->arg_size(); i++)
                 {
-                    SVFValue* svfval = getSVFValue(call->getArgOperand(i));
+                    SVFLLVMValue* svfval = getSVFValue(call->getArgOperand(i));
                     svfcall->addArgument(svfval);
                 }
             }
@@ -1209,7 +1209,7 @@ void LLVMModuleSet::dumpModulesToFile(const std::string& suffix)
     }
 }
 
-NodeID LLVMModuleSet::getValueNode(const SVFValue *val)
+NodeID LLVMModuleSet::getValueNode(const SVFLLVMValue *val)
 {
     if (val->isNullPtr())
         return svfir->nullPtrSymID();
@@ -1222,7 +1222,7 @@ NodeID LLVMModuleSet::getValueNode(const SVFValue *val)
         return iter->second;
     }
 }
-bool LLVMModuleSet::hasValueNode(const SVFValue *val)
+bool LLVMModuleSet::hasValueNode(const SVFLLVMValue *val)
 {
     if (val->isNullPtr() || val->isblackHole())
         return true;
@@ -1230,9 +1230,9 @@ bool LLVMModuleSet::hasValueNode(const SVFValue *val)
         return (valSymMap.find(val) != valSymMap.end());
 }
 
-NodeID LLVMModuleSet::getObjectNode(const SVFValue *val)
+NodeID LLVMModuleSet::getObjectNode(const SVFLLVMValue *val)
 {
-    const SVFValue *svfVal = val;
+    const SVFLLVMValue *svfVal = val;
     if (const SVFGlobalValue *g = SVFUtil::dyn_cast<SVFGlobalValue>(val))
         svfVal = g->getDefGlobalForMultipleModule();
     ValueToIDMapTy::const_iterator iter = objSymMap.find(svfVal);
@@ -1243,33 +1243,33 @@ NodeID LLVMModuleSet::getObjectNode(const SVFValue *val)
 
 void LLVMModuleSet::dumpSymTable()
 {
-    OrderedMap<NodeID, SVFValue*> idmap;
+    OrderedMap<NodeID, SVFLLVMValue*> idmap;
     for (ValueToIDMapTy::iterator iter = valSymMap.begin(); iter != valSymMap.end();
             ++iter)
     {
         const NodeID i = iter->second;
-        SVFValue* val = (SVFValue*) iter->first;
+        SVFLLVMValue* val = (SVFLLVMValue*) iter->first;
         idmap[i] = val;
     }
     for (ValueToIDMapTy::iterator iter = objSymMap.begin(); iter != objSymMap.end();
             ++iter)
     {
         const NodeID i = iter->second;
-        SVFValue* val = (SVFValue*) iter->first;
+        SVFLLVMValue* val = (SVFLLVMValue*) iter->first;
         idmap[i] = val;
     }
     for (FunToIDMapTy::iterator iter = retSyms().begin(); iter != retSyms().end();
             ++iter)
     {
         const NodeID i = iter->second;
-        SVFValue* val = (SVFValue*) iter->first;
+        SVFLLVMValue* val = (SVFLLVMValue*) iter->first;
         idmap[i] = val;
     }
     for (FunToIDMapTy::iterator iter = varargSyms().begin(); iter != varargSyms().end();
             ++iter)
     {
         const NodeID i = iter->second;
-        SVFValue* val = (SVFValue*) iter->first;
+        SVFLLVMValue* val = (SVFLLVMValue*) iter->first;
         idmap[i] = val;
     }
     SVFUtil::outs() << "{SymbolTableInfo \n";
@@ -1280,7 +1280,7 @@ void LLVMModuleSet::dumpSymTable()
     SVFUtil::outs() << "}\n";
 }
 
-void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
+void LLVMModuleSet::setValueAttr(const Value* val, SVFLLVMValue* svfvalue)
 {
     SVFValue2LLVMValue[svfvalue] = val;
 
@@ -1432,7 +1432,7 @@ const FunObjVar* LLVMModuleSet::getFunObjVar(const std::string& name)
     return nullptr;
 }
 
-SVFValue* LLVMModuleSet::getSVFValue(const Value* value)
+SVFLLVMValue* LLVMModuleSet::getSVFValue(const Value* value)
 {
     if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
         return getSVFFunction(fun);

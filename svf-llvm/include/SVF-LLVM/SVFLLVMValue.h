@@ -50,7 +50,7 @@ class SVFArgument;
 class SVFFunction;
 class SVFType;
 
-class SVFValue
+class SVFLLVMValue
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -89,7 +89,7 @@ protected:
     std::string name;       ///< Short name of value for printing & debugging
     std::string sourceLoc;  ///< Source code information of this value
     /// Constructor without name
-    SVFValue(const SVFType* ty, SVFValKind k)
+    SVFLLVMValue(const SVFType* ty, SVFValKind k)
         : kind(k), ptrInUncalledFun(false),
           constDataOrAggData(SVFConstData == k), type(ty), sourceLoc("NoLoc")
     {
@@ -107,8 +107,8 @@ protected:
     }
     ///@}
 public:
-    SVFValue() = delete;
-    virtual ~SVFValue() = default;
+    SVFLLVMValue() = delete;
+    virtual ~SVFLLVMValue() = default;
 
     /// Get the type of this SVFValue
     inline GNodeK getKind() const
@@ -160,7 +160,7 @@ public:
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend OutStream& operator<<(OutStream &os, const SVFValue &value)
+    friend OutStream& operator<<(OutStream &os, const SVFLLVMValue &value)
     {
         return os << value.toString();
     }
@@ -169,7 +169,7 @@ public:
 
 class ArgValVar;
 
-class SVFFunction : public SVFValue
+class SVFFunction : public SVFLLVMValue
 {
     friend class LLVMModuleSet;
     friend class SVFIRWriter;
@@ -225,7 +225,7 @@ public:
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
 
-    static inline bool classof(const SVFValue *node)
+    static inline bool classof(const SVFLLVMValue *node)
     {
         return node->getKind() == SVFFunc;
     }
@@ -399,7 +399,7 @@ public:
 class ICFGNode;
 class FunObjVar;
 
-class SVFInstruction : public SVFValue
+class SVFInstruction : public SVFLLVMValue
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -415,7 +415,7 @@ public:
                    bool isRet, SVFValKind k = SVFInst);
     SVFInstruction(void) = delete;
 
-    static inline bool classof(const SVFValue *node)
+    static inline bool classof(const SVFLLVMValue *node)
     {
         return node->getKind() == SVFInst ||
                node->getKind() == SVFCall ||
@@ -446,17 +446,17 @@ class SVFCallInst : public SVFInstruction
     friend class SVFIRBuilder;
 
 private:
-    std::vector<const SVFValue*> args;
+    std::vector<const SVFLLVMValue*> args;
     bool varArg;
-    const SVFValue* calledVal;
+    const SVFLLVMValue* calledVal;
 
 protected:
     ///@{ attributes to be set only through Module builders e.g., LLVMModule
-    inline void addArgument(const SVFValue* a)
+    inline void addArgument(const SVFLLVMValue* a)
     {
         args.push_back(a);
     }
-    inline void setCalledOperand(const SVFValue* v)
+    inline void setCalledOperand(const SVFLLVMValue* v)
     {
         calledVal = v;
     }
@@ -469,7 +469,7 @@ public:
     }
     SVFCallInst(void) = delete;
 
-    static inline bool classof(const SVFValue *node)
+    static inline bool classof(const SVFLLVMValue *node)
     {
         return node->getKind() == SVFCall || node->getKind() == SVFVCall;
     }
@@ -485,7 +485,7 @@ public:
     {
         return args.empty();
     }
-    inline const SVFValue* getArgOperand(u32_t i) const
+    inline const SVFLLVMValue* getArgOperand(u32_t i) const
     {
         assert(i < arg_size() && "out of bound access of the argument");
         return args[i];
@@ -494,7 +494,7 @@ public:
     {
         return arg_size();
     }
-    inline const SVFValue* getCalledOperand() const
+    inline const SVFLLVMValue* getCalledOperand() const
     {
         return calledVal;
     }
@@ -512,17 +512,17 @@ public:
     }
 };
 
-class SVFConstant : public SVFValue
+class SVFConstant : public SVFLLVMValue
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 public:
-    SVFConstant(const SVFType* ty, SVFValKind k = SVFConst): SVFValue(ty, k)
+    SVFConstant(const SVFType* ty, SVFValKind k = SVFConst): SVFLLVMValue(ty, k)
     {
     }
     SVFConstant() = delete;
 
-    static inline bool classof(const SVFValue *node)
+    static inline bool classof(const SVFLLVMValue *node)
     {
         return node->getKind() == SVFConst ||
                node->getKind() == SVFGlob ||
@@ -542,16 +542,16 @@ class SVFGlobalValue : public SVFConstant
     friend class LLVMModuleSet;
 
 private:
-    const SVFValue* realDefGlobal;  /// the definition of a function across multiple modules
+    const SVFLLVMValue* realDefGlobal;  /// the definition of a function across multiple modules
 
 protected:
-    inline void setDefGlobalForMultipleModule(const SVFValue* defg)
+    inline void setDefGlobalForMultipleModule(const SVFLLVMValue* defg)
     {
         realDefGlobal = defg;
     }
 
 public:
-    SVFGlobalValue(const SVFType* ty): SVFConstant(ty, SVFValue::SVFGlob), realDefGlobal(nullptr)
+    SVFGlobalValue(const SVFType* ty): SVFConstant(ty, SVFLLVMValue::SVFGlob), realDefGlobal(nullptr)
     {
     }
     SVFGlobalValue(std::string&& name, const SVFType* ty) : SVFGlobalValue(ty)
@@ -560,13 +560,13 @@ public:
     }
     SVFGlobalValue() = delete;
 
-    inline const SVFValue* getDefGlobalForMultipleModule() const
+    inline const SVFLLVMValue* getDefGlobalForMultipleModule() const
     {
         if(realDefGlobal==nullptr)
             return this;
         return realDefGlobal;
     }
-    static inline bool classof(const SVFValue *node)
+    static inline bool classof(const SVFLLVMValue *node)
     {
         return node->getKind() == SVFGlob;
     }
@@ -576,7 +576,7 @@ public:
     }
 };
 
-class SVFArgument : public SVFValue
+class SVFArgument : public SVFLLVMValue
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -587,7 +587,7 @@ private:
 public:
     SVFArgument(const SVFType* ty, const SVFFunction* fun, u32_t argNo,
                 bool uncalled)
-        : SVFValue(ty, SVFValue::SVFArg), fun(fun), argNo(argNo),
+        : SVFLLVMValue(ty, SVFLLVMValue::SVFArg), fun(fun), argNo(argNo),
           uncalled(uncalled)
     {
     }
@@ -610,7 +610,7 @@ public:
         return uncalled;
     }
 
-    static inline bool classof(const SVFValue *node)
+    static inline bool classof(const SVFLLVMValue *node)
     {
         return node->getKind() == SVFArg;
     }
@@ -627,7 +627,7 @@ public:
     }
     SVFConstantData() = delete;
 
-    static inline bool classof(const SVFValue *node)
+    static inline bool classof(const SVFLLVMValue *node)
     {
         return node->getKind() == SVFConstData ||
                node->getKind() == SVFConstInt ||
@@ -654,12 +654,12 @@ private:
     s64_t sval;
 public:
     SVFConstantInt(const SVFType* ty, u64_t z, s64_t s)
-        : SVFConstantData(ty, SVFValue::SVFConstInt), zval(z), sval(s)
+        : SVFConstantData(ty, SVFLLVMValue::SVFConstInt), zval(z), sval(s)
     {
     }
     SVFConstantInt() = delete;
 
-    static inline bool classof(const SVFValue *node)
+    static inline bool classof(const SVFLLVMValue *node)
     {
         return node->getKind() == SVFConstInt;
     }
@@ -687,7 +687,7 @@ private:
     float dval;
 public:
     SVFConstantFP(const SVFType* ty, double d)
-        : SVFConstantData(ty, SVFValue::SVFConstFP), dval(d)
+        : SVFConstantData(ty, SVFLLVMValue::SVFConstFP), dval(d)
     {
     }
     SVFConstantFP() = delete;
@@ -696,7 +696,7 @@ public:
     {
         return dval;
     }
-    static inline bool classof(const SVFValue *node)
+    static inline bool classof(const SVFLLVMValue *node)
     {
         return node->getKind() == SVFConstFP;
     }
@@ -713,12 +713,12 @@ class SVFConstantNullPtr : public SVFConstantData
 
 public:
     SVFConstantNullPtr(const SVFType* ty)
-        : SVFConstantData(ty, SVFValue::SVFNullPtr)
+        : SVFConstantData(ty, SVFLLVMValue::SVFNullPtr)
     {
     }
     SVFConstantNullPtr() = delete;
 
-    static inline bool classof(const SVFValue *node)
+    static inline bool classof(const SVFLLVMValue *node)
     {
         return node->getKind() == SVFNullPtr;
     }
@@ -735,12 +735,12 @@ class SVFBlackHoleValue : public SVFConstantData
 
 public:
     SVFBlackHoleValue(const SVFType* ty)
-        : SVFConstantData(ty, SVFValue::SVFBlackHole)
+        : SVFConstantData(ty, SVFLLVMValue::SVFBlackHole)
     {
     }
     SVFBlackHoleValue() = delete;
 
-    static inline bool classof(const SVFValue *node)
+    static inline bool classof(const SVFLLVMValue *node)
     {
         return node->getKind() == SVFBlackHole;
     }
@@ -750,18 +750,18 @@ public:
     }
 };
 
-class SVFOtherValue : public SVFValue
+class SVFOtherValue : public SVFLLVMValue
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 public:
-    SVFOtherValue(const SVFType* ty, SVFValKind k = SVFValue::SVFOther)
-        : SVFValue(ty, k)
+    SVFOtherValue(const SVFType* ty, SVFValKind k = SVFLLVMValue::SVFOther)
+        : SVFLLVMValue(ty, k)
     {
     }
     SVFOtherValue() = delete;
 
-    static inline bool classof(const SVFValue *node)
+    static inline bool classof(const SVFLLVMValue *node)
     {
         return node->getKind() == SVFOther || node->getKind() == SVFMetaAsValue;
     }
@@ -776,12 +776,12 @@ class SVFMetadataAsValue : public SVFOtherValue
     friend class SVFIRReader;
 public:
     SVFMetadataAsValue(const SVFType* ty)
-        : SVFOtherValue(ty, SVFValue::SVFMetaAsValue)
+        : SVFOtherValue(ty, SVFLLVMValue::SVFMetaAsValue)
     {
     }
     SVFMetadataAsValue() = delete;
 
-    static inline bool classof(const SVFValue *node)
+    static inline bool classof(const SVFLLVMValue *node)
     {
         return node->getKind() == SVFMetaAsValue;
     }
@@ -796,7 +796,7 @@ public:
 /// Converts an SVFValue to corresponding LLVM::Value, then get the string
 /// representation of it. Use it only when you are debugging. Don't use
 /// it in any SVF algorithm because it relies on information stored in LLVM bc.
-std::string dumpLLVMValue(const SVFValue* svfValue);
+std::string dumpLLVMValue(const SVFLLVMValue* svfValue);
 
 
 

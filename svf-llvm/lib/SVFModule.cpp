@@ -37,7 +37,7 @@ SVFModule::~SVFModule()
         delete f;
     for (const SVFConstant* c : ConstantSet)
         delete c;
-    for (const SVFValue* o : OtherValueSet)
+    for (const SVFLLVMValue* o : OtherValueSet)
         delete o;
     NodeIDAllocator::unset();
     ThreadAPI::destroy();
