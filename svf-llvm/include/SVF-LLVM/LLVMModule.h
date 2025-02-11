@@ -62,7 +62,7 @@ public:
     typedef Map<const Constant*, SVFConstant*> LLVMConst2SVFConstMap;
     typedef Map<const Value*, SVFOtherValue*> LLVMValue2SVFOtherValueMap;
     typedef Map<const SVFLLVMValue*, const Value*> SVFValue2LLVMValueMap;
-    typedef Map<const SVFBaseNode*, const Value*> SVFBaseNode2LLVMValueMap;
+    typedef Map<const SVFValue*, const Value*> SVFBaseNode2LLVMValueMap;
     typedef Map<const Type*, SVFType*> LLVMType2SVFTypeMap;
     typedef Map<const Type*, StInfo*> Type2TypeInfoMap;
     typedef Map<std::string, std::vector<std::string>> Fun2AnnoMap;
@@ -294,7 +294,7 @@ public:
         return it->second;
     }
 
-    const Value* getLLVMValue(const SVFBaseNode* value) const
+    const Value* getLLVMValue(const SVFValue* value) const
     {
         SVFBaseNode2LLVMValueMap ::const_iterator it = SVFBaseNode2LLVMValue.find(value);
         assert(it != SVFBaseNode2LLVMValue.end() && "can't find corresponding llvm value!");
@@ -537,7 +537,7 @@ private:
     void initSVFBasicBlock(const Function* func);
     void initDomTree(SVFFunction* func, const Function* f);
     void setValueAttr(const Value* val, SVFLLVMValue* value);
-    void addToSVFVar2LLVMValueMap(const Value* val, SVFBaseNode* svfBaseNode);
+    void addToSVFVar2LLVMValueMap(const Value* val, SVFValue* svfBaseNode);
     void buildFunToFunMap();
     void buildGlobalDefToRepMap();
     /// Invoke llvm passes to modify module

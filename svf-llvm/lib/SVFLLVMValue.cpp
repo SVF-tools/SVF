@@ -64,7 +64,7 @@ std::string SVFLLVMValue::toString() const
 }
 
 __attribute__((weak))
-const std::string SVFBaseNode::valueOnlyToString() const
+const std::string SVFValue::valueOnlyToString() const
 {
     assert("SVFBaseNode::valueOnlyToString should be implemented or supported by fronted" && false);
     abort();

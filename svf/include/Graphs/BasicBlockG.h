@@ -115,9 +115,9 @@ public:
 
     }
 
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
-        return node->getNodeKind() == SVFBaseNode::BasicBlockKd;
+        return node->getNodeKind() == SVFValue::BasicBlockKd;
     }
 
     static inline bool classof(const SVFBasicBlock* node)
