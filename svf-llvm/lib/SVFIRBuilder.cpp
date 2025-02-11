@@ -1385,20 +1385,23 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
 }
 
 /*!
-    Example 1:
-        p = q->f_1 (f_1 is the first field)
-        extapi(p)
-        the base value for ext arg p is q
-    Example 2:
-        https://github.com/SVF-tools/SVF/issues/1650
-
-        g_n =  { } (some struct)
-        g_0 = { g_1, ..., g_n }
-        q = g_0->f_n (g_0 is a global struct, f_n is the n-th field)
-        p = *q
-        extapi(p)
-        the base value for p is g_n. load -> gep (collect the gep index) based on g_0 (a global struct) -> g_n
-*/
+/*!
+ * Example 1:
+ *     p = q->f_0 (f_0 is the 0-th field)
+ *     extapi(p)
+ *     The base value for the external argument p is q.
+ *     Note: We only handle the field index 0 for now.
+ *
+ * Example 2:
+ *     https://github.com/SVF-tools/SVF/issues/1650
+ *
+ *     g_n =  { } (some struct)
+ *     g = { g_0, ..., g_n }
+ *     q = g->g_n (g is a global struct, g_n is the n-th field)
+ *     p = *q
+ *     extapi(p)
+ *     The base value for p is g_n. Load -> GEP (collect the GEP index) based on g (a global struct) -> g_n.
+ */
 const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
 {
     const Value*  value = stripAllCasts(V);
