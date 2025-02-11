@@ -38,7 +38,7 @@ namespace SVF
 {
 
 
-class SVFBaseNode
+class SVFValue
 {
 
 public:
@@ -149,7 +149,7 @@ public:
     };
 
 
-    SVFBaseNode(NodeID i, GNodeK k, const SVFType* ty = nullptr): id(i),nodeKind(k), type(ty)
+    SVFValue(NodeID i, GNodeK k, const SVFType* ty = nullptr): id(i),nodeKind(k), type(ty)
     {
 
     }

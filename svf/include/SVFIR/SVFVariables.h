@@ -177,7 +177,7 @@ public:
         return isSVFVarKind(node->getNodeKind());
     }
 
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return isSVFVarKind(node->getNodeKind());
     }
@@ -270,7 +270,7 @@ public:
     {
         return isValVarKinds(node->getNodeKind());
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return isValVarKinds(node->getNodeKind());
     }
@@ -328,7 +328,7 @@ public:
     {
         return isObjVarKinds(node->getNodeKind());
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return isObjVarKinds(node->getNodeKind());
     }
@@ -382,7 +382,7 @@ public:
     {
         return node->getNodeKind() == ArgValNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == ArgValNode;
     }
@@ -454,7 +454,7 @@ public:
     {
         return node->getNodeKind() == SVFVar::GepValNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == SVFVar::GepValNode;
     }
@@ -551,7 +551,7 @@ public:
     {
         return isBaseObjVarKinds(node->getNodeKind());
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return isBaseObjVarKinds(node->getNodeKind());
     }
@@ -754,7 +754,7 @@ public:
     {
         return node->getNodeKind() == SVFVar::GepObjNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == SVFVar::GepObjNode;
     }
@@ -863,7 +863,7 @@ public:
     {
         return node->getNodeKind() == HeapObjNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == HeapObjNode;
     }
@@ -926,7 +926,7 @@ public:
     {
         return node->getNodeKind() == StackObjNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == StackObjNode;
     }
@@ -1006,7 +1006,7 @@ public:
     {
         return node->getNodeKind() == FunObjNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == FunObjNode;
     }
@@ -1245,7 +1245,7 @@ public:
     {
         return node->getNodeKind() == FunValNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == FunValNode;
     }
@@ -1294,7 +1294,7 @@ public:
     {
         return node->getNodeKind() == GlobalValNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == GlobalValNode;
     }
@@ -1335,7 +1335,7 @@ public:
     {
         return node->getNodeKind() == ConstAggValNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == ConstAggValNode;
     }
@@ -1387,7 +1387,7 @@ public:
     {
         return isConstantDataValVar(node->getNodeKind());
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return isConstantDataValVar(node->getNodeKind());
     }
@@ -1442,7 +1442,7 @@ public:
     {
         return node->getNodeKind() == BlackHoleValNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == BlackHoleValNode;
     }
@@ -1496,7 +1496,7 @@ public:
     {
         return node->getNodeKind() == ConstFPValNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == ConstFPValNode;
     }
@@ -1548,7 +1548,7 @@ public:
     {
         return node->getNodeKind() == ConstIntValNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == ConstIntValNode;
     }
@@ -1602,7 +1602,7 @@ public:
     {
         return node->getNodeKind() == ConstNullptrValNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == ConstNullptrValNode;
     }
@@ -1655,7 +1655,7 @@ public:
     {
         return node->getNodeKind() == GlobalObjNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == GlobalObjNode;
     }
@@ -1701,7 +1701,7 @@ public:
     {
         return node->getNodeKind() == ConstAggObjNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == ConstAggObjNode;
     }
@@ -1759,7 +1759,7 @@ public:
         return isConstantDataObjVarKinds(node->getNodeKind());
     }
 
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return isConstantDataObjVarKinds(node->getNodeKind());
     }
@@ -1826,7 +1826,7 @@ public:
         return node->getNodeKind() == SVFVar::ConstFPObjNode;
     }
 
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == SVFVar::ConstFPObjNode;
     }
@@ -1890,7 +1890,7 @@ public:
         return node->getNodeKind() == SVFVar::ConstIntObjNode;
     }
 
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == SVFVar::ConstIntObjNode;
     }
@@ -1956,7 +1956,7 @@ public:
         return node->getNodeKind() == SVFVar::ConstNullptrObjNode;
     }
 
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == SVFVar::ConstNullptrObjNode;
     }
@@ -2005,7 +2005,7 @@ public:
     {
         return node->getNodeKind() == SVFVar::RetValNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == SVFVar::RetValNode;
     }
@@ -2062,7 +2062,7 @@ public:
     {
         return node->getNodeKind() == SVFVar::VarargValNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == SVFVar::VarargValNode;
     }
@@ -2112,7 +2112,7 @@ public:
     {
         return node->getNodeKind() == SVFVar::DummyValNode;
     }
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == SVFVar::DummyValNode;
     }
@@ -2173,7 +2173,7 @@ public:
         return node->getNodeKind() == SVFVar::DummyObjNode;
     }
 
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == SVFVar::DummyObjNode;
     }

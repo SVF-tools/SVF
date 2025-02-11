@@ -50,7 +50,7 @@ private:
     SVFIR* pag;
     SVFModule* svfModule;
     const SVFBasicBlock* curBB;	///< Current basic block during SVFIR construction when visiting the module
-    const SVFValue* curVal;	///< Current Value during SVFIR construction when visiting the module
+    const SVFLLVMValue* curVal;	///< Current Value during SVFIR construction when visiting the module
 
 public:
     /// Constructor
@@ -93,14 +93,14 @@ public:
         processCE(V);
 
         // strip off the constant cast and return the value node
-        SVFValue* svfVal = llvmModuleSet()->getSVFValue(V);
+        SVFLLVMValue* svfVal = llvmModuleSet()->getSVFValue(V);
         return llvmModuleSet()->getValueNode(svfVal);
     }
 
     /// GetObject - Return the object node (stack/global/heap/function) according to a LLVM Value
     inline NodeID getObjectNode(const Value* V)
     {
-        SVFValue* svfVal = llvmModuleSet()->getSVFValue(V);
+        SVFLLVMValue* svfVal = llvmModuleSet()->getSVFValue(V);
         return llvmModuleSet()->getObjectNode(svfVal);
     }
 
@@ -246,12 +246,12 @@ protected:
         curBB = (bb == nullptr? nullptr : llvmModuleSet()->getSVFBasicBlock(bb));
         curVal = (val == nullptr ? nullptr: llvmModuleSet()->getSVFValue(val));
     }
-    inline void setCurrentLocation(const SVFValue* val, const SVFBasicBlock* bb)
+    inline void setCurrentLocation(const SVFLLVMValue* val, const SVFBasicBlock* bb)
     {
         curBB = bb;
         curVal = val;
     }
-    inline const SVFValue* getCurrentValue() const
+    inline const SVFLLVMValue* getCurrentValue() const
     {
         return curVal;
     }
@@ -263,7 +263,7 @@ protected:
     /// Add global black hole Address edge
     void addGlobalBlackHoleAddrEdge(NodeID node, const ConstantExpr *int2Ptrce)
     {
-        const SVFValue* cval = getCurrentValue();
+        const SVFLLVMValue* cval = getCurrentValue();
         const SVFBasicBlock* cbb = getCurrentBB();
         setCurrentLocation(int2Ptrce,nullptr);
         addBlackHoleAddrEdge(node);

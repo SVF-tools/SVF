@@ -1,4 +1,4 @@
-#include "SVF-LLVM/SVFValue.h"
+#include "SVF-LLVM/SVFLLVMValue.h"
 #include "Util/SVFUtil.h"
 #include "Graphs/GenericGraph.h"
 
@@ -8,7 +8,7 @@ using namespace SVFUtil;
 SVFFunction::SVFFunction(const SVFType* ty, const SVFFunctionType* ft,
                          bool declare, bool intrinsic, bool adt, bool varg,
                          SVFLoopAndDomInfo* ld)
-    : SVFValue(ty, SVFValue::SVFFunc), isDecl(declare), intrinsic(intrinsic),
+    : SVFLLVMValue(ty, SVFLLVMValue::SVFFunc), isDecl(declare), intrinsic(intrinsic),
       addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg),
       funcType(ft), loopAndDom(ld), realDefFun(nullptr), exitBlock(nullptr)
 {
@@ -52,19 +52,19 @@ void SVFFunction::setExitBlock(SVFBasicBlock *bb)
 
 SVFInstruction::SVFInstruction(const SVFType* ty, const SVFBasicBlock* b,
                                bool tm, bool isRet, SVFValKind k)
-    : SVFValue(ty, k), bb(b), terminator(tm), ret(isRet)
+    : SVFLLVMValue(ty, k), bb(b), terminator(tm), ret(isRet)
 {
 }
 
 __attribute__((weak))
-std::string SVFValue::toString() const
+std::string SVFLLVMValue::toString() const
 {
     assert("SVFValue::toString should be implemented or supported by fronted" && false);
     abort();
 }
 
 __attribute__((weak))
-const std::string SVFBaseNode::valueOnlyToString() const
+const std::string SVFValue::valueOnlyToString() const
 {
     assert("SVFBaseNode::valueOnlyToString should be implemented or supported by fronted" && false);
     abort();

@@ -140,7 +140,7 @@ protected:
  * Generic node on the graph as base class
  */
 template<class NodeTy,class EdgeTy>
-class GenericNode: public SVFBaseNode
+class GenericNode: public SVFValue
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
@@ -163,7 +163,7 @@ private:
 
 public:
     /// Constructor
-    GenericNode(NodeID i, GNodeK k, const SVFType* svfType = nullptr): SVFBaseNode(i, k, svfType)
+    GenericNode(NodeID i, GNodeK k, const SVFType* svfType = nullptr): SVFValue(i, k, svfType)
     {
 
     }
@@ -327,7 +327,7 @@ public:
         return true;
     }
 
-    static inline bool classof(const SVFBaseNode*)
+    static inline bool classof(const SVFValue*)
     {
         return true;
     }

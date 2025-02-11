@@ -300,7 +300,7 @@ void SymbolTableBuilder::collectVal(const Value* val)
     if (iter == llvmModuleSet()->valSymMap.end())
     {
         // create val sym and sym type
-        SVFValue* svfVal = llvmModuleSet()->getSVFValue(val);
+        SVFLLVMValue* svfVal = llvmModuleSet()->getSVFValue(val);
         NodeID id = NodeIDAllocator::get()->allocateValueId();
         llvmModuleSet()->valSymMap.insert(std::make_pair(svfVal, id));
         DBOUT(DMemModel,
@@ -323,7 +323,7 @@ void SymbolTableBuilder::collectObj(const Value* val)
     LLVMModuleSet::ValueToIDMapTy::iterator iter = llvmModuleSet()->objSymMap.find(llvmModuleSet()->getSVFValue(val));
     if (iter == llvmModuleSet()->objSymMap.end())
     {
-        SVFValue* svfVal = llvmModuleSet()->getSVFValue(val);
+        SVFLLVMValue* svfVal = llvmModuleSet()->getSVFValue(val);
         // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
         // then we treat them as one ConstantObj
         if (isConstantObjSym(val) && !Options::ModelConsts())

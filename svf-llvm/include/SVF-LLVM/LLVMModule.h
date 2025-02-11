@@ -31,7 +31,7 @@
 #define INCLUDE_SVF_FE_LLVMMODULE_H_
 
 #include "SVF-LLVM/BasicTypes.h"
-#include "SVF-LLVM/SVFValue.h"
+#include "SVF-LLVM/SVFLLVMValue.h"
 #include "SVF-LLVM/SVFModule.h"
 #include "Util/Options.h"
 #include "Graphs/BasicBlockG.h"
@@ -61,8 +61,8 @@ public:
     typedef Map<const Argument*, SVFArgument*> LLVMArgument2SVFArgumentMap;
     typedef Map<const Constant*, SVFConstant*> LLVMConst2SVFConstMap;
     typedef Map<const Value*, SVFOtherValue*> LLVMValue2SVFOtherValueMap;
-    typedef Map<const SVFValue*, const Value*> SVFValue2LLVMValueMap;
-    typedef Map<const SVFBaseNode*, const Value*> SVFBaseNode2LLVMValueMap;
+    typedef Map<const SVFLLVMValue*, const Value*> SVFValue2LLVMValueMap;
+    typedef Map<const SVFValue*, const Value*> SVFBaseNode2LLVMValueMap;
     typedef Map<const Type*, SVFType*> LLVMType2SVFTypeMap;
     typedef Map<const Type*, StInfo*> Type2TypeInfoMap;
     typedef Map<std::string, std::vector<std::string>> Fun2AnnoMap;
@@ -75,7 +75,7 @@ public:
 
     /// llvm value to sym id map
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
-    typedef OrderedMap<const SVFValue*, NodeID> ValueToIDMapTy;
+    typedef OrderedMap<const SVFLLVMValue*, NodeID> ValueToIDMapTy;
 
     typedef OrderedMap<const SVFFunction*, NodeID> FunToIDMapTy;
 
@@ -208,13 +208,13 @@ public:
 
     /// Get SVFIR Node according to LLVM value
     ///getNode - Return the node corresponding to the specified pointer.
-    NodeID getValueNode(const SVFValue* V);
+    NodeID getValueNode(const SVFLLVMValue* V);
 
-    bool hasValueNode(const SVFValue* V);
+    bool hasValueNode(const SVFLLVMValue* V);
 
     /// getObject - Return the obj node id refer to the memory object for the
     /// specified global, heap or alloca instruction according to llvm value.
-    NodeID getObjectNode(const SVFValue* V);
+    NodeID getObjectNode(const SVFLLVMValue* V);
 
     void dumpSymTable();
 
@@ -285,16 +285,16 @@ public:
         setValueAttr(ov,svfov);
     }
 
-    SVFValue* getSVFValue(const Value* value);
+    SVFLLVMValue* getSVFValue(const Value* value);
 
-    const Value* getLLVMValue(const SVFValue* value) const
+    const Value* getLLVMValue(const SVFLLVMValue* value) const
     {
         SVFValue2LLVMValueMap::const_iterator it = SVFValue2LLVMValue.find(value);
         assert(it!=SVFValue2LLVMValue.end() && "can't find corresponding llvm value!");
         return it->second;
     }
 
-    const Value* getLLVMValue(const SVFBaseNode* value) const
+    const Value* getLLVMValue(const SVFValue* value) const
     {
         SVFBaseNode2LLVMValueMap ::const_iterator it = SVFBaseNode2LLVMValue.find(value);
         assert(it != SVFBaseNode2LLVMValue.end() && "can't find corresponding llvm value!");
@@ -536,8 +536,8 @@ private:
     void initSVFFunction();
     void initSVFBasicBlock(const Function* func);
     void initDomTree(SVFFunction* func, const Function* f);
-    void setValueAttr(const Value* val, SVFValue* value);
-    void addToSVFVar2LLVMValueMap(const Value* val, SVFBaseNode* svfBaseNode);
+    void setValueAttr(const Value* val, SVFLLVMValue* value);
+    void addToSVFVar2LLVMValueMap(const Value* val, SVFValue* svfBaseNode);
     void buildFunToFunMap();
     void buildGlobalDefToRepMap();
     /// Invoke llvm passes to modify module
