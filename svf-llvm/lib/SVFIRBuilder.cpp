@@ -1385,7 +1385,6 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
 }
 
 /*!
-/*!
  * Example 1:
  *     p = q->f_0 (f_0 is the 0-th field)
  *     extapi(p)
