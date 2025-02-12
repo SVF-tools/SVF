@@ -1326,55 +1326,7 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
     }
     else
     {
-        SVFConstantData* svfcd = nullptr;
-        if(const ConstantInt* cint = SVFUtil::dyn_cast<ConstantInt>(cd))
-        {
-            /// bitwidth == 1 : cint has value from getZExtValue() because `bool true` will be translated to -1 using sign extension (i.e., getSExtValue).
-            /// bitwidth <=64 1 : cint has value from getSExtValue()
-            /// bitwidth >64 1 : cint has value 0 because it represents an invalid int
-            if(cint->getBitWidth() == 1)
-                svfcd = new SVFConstantInt(getSVFType(cint->getType()), cint->getZExtValue(), cint->getZExtValue());
-            else if(cint->getBitWidth() <= 64 && cint->getBitWidth() > 1)
-                svfcd = new SVFConstantInt(getSVFType(cint->getType()), cint->getZExtValue(), cint->getSExtValue());
-            else
-                svfcd = new SVFConstantInt(getSVFType(cint->getType()), 0, 0);
-        }
-        else if(const ConstantFP* cfp = SVFUtil::dyn_cast<ConstantFP>(cd))
-        {
-            double dval = 0;
-            // TODO: Why only double is considered? What about float?
-            if (cfp->isNormalFP())
-            {
-                const llvm::fltSemantics& semantics = cfp->getValueAPF().getSemantics();
-                if (&semantics == &llvm::APFloat::IEEEhalf() ||
-                        &semantics == &llvm::APFloat::IEEEsingle() ||
-                        &semantics == &llvm::APFloat::IEEEdouble() ||
-                        &semantics == &llvm::APFloat::IEEEquad() ||
-                        &semantics == &llvm::APFloat::x87DoubleExtended())
-                {
-                    dval = cfp->getValueAPF().convertToDouble();
-                }
-                else
-                {
-                    assert (false && "Unsupported floating point type");
-                    abort();
-                }
-            }
-            else
-            {
-                // other cfp type, like isZero(), isInfinity(), isNegative(), etc.
-                // do nothing
-            }
-            svfcd = new SVFConstantFP(getSVFType(cd->getType()), dval);
-        }
-        else if(SVFUtil::isa<ConstantPointerNull>(cd))
-            svfcd = new SVFConstantNullPtr(getSVFType(cd->getType()));
-        else if (SVFUtil::isa<UndefValue>(cd))
-            svfcd = new SVFBlackHoleValue(getSVFType(cd->getType()));
-        else
-            svfcd = new SVFConstantData(getSVFType(cd->getType()));
-
-
+        SVFConstantData* svfcd = new SVFConstantData(getSVFType(cd->getType()));
         svfModule->addConstant(svfcd);
         addConstantDataMap(cd,svfcd);
         return svfcd;
