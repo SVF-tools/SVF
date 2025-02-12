@@ -1211,9 +1211,10 @@ void LLVMModuleSet::dumpModulesToFile(const std::string& suffix)
 
 NodeID LLVMModuleSet::getValueNode(const SVFLLVMValue *val)
 {
-    if (val->isNullPtr())
+    auto llvm_value = llvmModuleSet->getLLVMValue(val);
+    if (SVFUtil::isa<ConstantPointerNull>(llvm_value))
         return svfir->nullPtrSymID();
-    else if (val->isblackHole())
+    else if (SVFUtil::isa<UndefValue>(llvm_value))
         return svfir->blkPtrSymID();
     else
     {
@@ -1224,7 +1225,7 @@ NodeID LLVMModuleSet::getValueNode(const SVFLLVMValue *val)
 }
 bool LLVMModuleSet::hasValueNode(const SVFLLVMValue *val)
 {
-    if (val->isNullPtr() || val->isblackHole())
+    if (SVFUtil::isa<ConstantPointerNull, UndefValue>(llvmModuleSet->getLLVMValue(val)))
         return true;
     else
         return (valSymMap.find(val) != valSymMap.end());

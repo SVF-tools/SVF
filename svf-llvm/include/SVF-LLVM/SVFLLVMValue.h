@@ -71,10 +71,6 @@ public:
         SVFArg,
         SVFConst,
         SVFConstData,
-        SVFConstInt,
-        SVFConstFP,
-        SVFNullPtr,
-        SVFBlackHole,
         SVFMetaAsValue,
         SVFOther
     };
@@ -137,14 +133,6 @@ public:
     inline bool ptrInUncalledFunction() const
     {
         return ptrInUncalledFun;
-    }
-    inline bool isblackHole() const
-    {
-        return getKind() == SVFBlackHole;;
-    }
-    inline bool isNullPtr() const
-    {
-        return getKind() == SVFNullPtr;
     }
     inline virtual void setSourceLoc(const std::string& sourceCodeInfo)
     {
@@ -526,11 +514,7 @@ public:
     {
         return node->getKind() == SVFConst ||
                node->getKind() == SVFGlob ||
-               node->getKind() == SVFConstData ||
-               node->getKind() == SVFConstInt ||
-               node->getKind() == SVFConstFP ||
-               node->getKind() == SVFNullPtr ||
-               node->getKind() == SVFBlackHole;
+               node->getKind() == SVFConstData;
     }
 
 };
@@ -629,19 +613,11 @@ public:
 
     static inline bool classof(const SVFLLVMValue *node)
     {
-        return node->getKind() == SVFConstData ||
-               node->getKind() == SVFConstInt ||
-               node->getKind() == SVFConstFP ||
-               node->getKind() == SVFNullPtr ||
-               node->getKind() == SVFBlackHole;
+        return node->getKind() == SVFConstData;
     }
     static inline bool classof(const SVFConstantData *node)
     {
-        return node->getKind() == SVFConstData ||
-               node->getKind() == SVFConstInt ||
-               node->getKind() == SVFConstFP ||
-               node->getKind() == SVFNullPtr ||
-               node->getKind() == SVFBlackHole;
+        return node->getKind() == SVFConstData;
     }
 };
 
