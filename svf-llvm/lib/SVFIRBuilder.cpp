@@ -1384,6 +1384,23 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
     }
 }
 
+/*!
+ * Example 1:
+ *     p = q->f_0 (f_0 is the 0-th field)
+ *     extapi(p)
+ *     The base value for the external argument p is q.
+ *     Note: We only handle the field index 0 for now.
+ *
+ * Example 2:
+ *     https://github.com/SVF-tools/SVF/issues/1650
+ *
+ *     g_n =  { } (some struct)
+ *     g = { g_0, ..., g_n }
+ *     q = g->g_n (g is a global struct, g_n is the n-th field)
+ *     p = *q
+ *     extapi(p)
+ *     The base value for p is g_n. Load -> GEP (collect the GEP index) based on g (a global struct) -> g_n.
+ */
 const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
 {
     const Value*  value = stripAllCasts(V);
@@ -1398,7 +1415,30 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
         }
         if(totalidx == 0 && !SVFUtil::isa<StructType>(value->getType()))
             value = gep->getPointerOperand();
+    } else if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(value)) {
+        const Value* loadP = load->getPointerOperand();
+        if (const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(loadP)) {
+            APOffset totalidx = 0;
+            for (bridge_gep_iterator gi = bridge_gep_begin(gep), ge = bridge_gep_end(gep); gi != ge; ++gi)
+            {
+                if(const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
+                    totalidx += LLVMUtil::getIntegerValue(op).first;
+            }
+            const Value * pointer_operand = gep->getPointerOperand();
+            if (auto *glob = SVFUtil::dyn_cast<GlobalVariable>(pointer_operand)) {
+                if (glob->hasInitializer()) {
+                    if (auto *initializer = SVFUtil::dyn_cast<
+                        ConstantStruct>(glob->getInitializer())) {
+                        auto *ptrField = initializer->getOperand(totalidx);
+                        if (auto *ptrValue = SVFUtil::dyn_cast<llvm::GlobalVariable>(ptrField)) {
+                            return ptrValue;
+                        }
+                    }
+                }
+            }
+        }
     }
+
     return value;
 }
 
