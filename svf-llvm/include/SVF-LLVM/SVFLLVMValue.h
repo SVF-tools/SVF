@@ -71,10 +71,6 @@ public:
         SVFArg,
         SVFConst,
         SVFConstData,
-        SVFConstInt,
-        SVFConstFP,
-        SVFNullPtr,
-        SVFBlackHole,
         SVFMetaAsValue,
         SVFOther
     };
@@ -137,14 +133,6 @@ public:
     inline bool ptrInUncalledFunction() const
     {
         return ptrInUncalledFun;
-    }
-    inline bool isblackHole() const
-    {
-        return getKind() == SVFBlackHole;;
-    }
-    inline bool isNullPtr() const
-    {
-        return getKind() == SVFNullPtr;
     }
     inline virtual void setSourceLoc(const std::string& sourceCodeInfo)
     {
@@ -526,11 +514,7 @@ public:
     {
         return node->getKind() == SVFConst ||
                node->getKind() == SVFGlob ||
-               node->getKind() == SVFConstData ||
-               node->getKind() == SVFConstInt ||
-               node->getKind() == SVFConstFP ||
-               node->getKind() == SVFNullPtr ||
-               node->getKind() == SVFBlackHole;
+               node->getKind() == SVFConstData;
     }
 
 };
@@ -629,124 +613,11 @@ public:
 
     static inline bool classof(const SVFLLVMValue *node)
     {
-        return node->getKind() == SVFConstData ||
-               node->getKind() == SVFConstInt ||
-               node->getKind() == SVFConstFP ||
-               node->getKind() == SVFNullPtr ||
-               node->getKind() == SVFBlackHole;
+        return node->getKind() == SVFConstData;
     }
     static inline bool classof(const SVFConstantData *node)
     {
-        return node->getKind() == SVFConstData ||
-               node->getKind() == SVFConstInt ||
-               node->getKind() == SVFConstFP ||
-               node->getKind() == SVFNullPtr ||
-               node->getKind() == SVFBlackHole;
-    }
-};
-
-class SVFConstantInt : public SVFConstantData
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-private:
-    u64_t zval;
-    s64_t sval;
-public:
-    SVFConstantInt(const SVFType* ty, u64_t z, s64_t s)
-        : SVFConstantData(ty, SVFLLVMValue::SVFConstInt), zval(z), sval(s)
-    {
-    }
-    SVFConstantInt() = delete;
-
-    static inline bool classof(const SVFLLVMValue *node)
-    {
-        return node->getKind() == SVFConstInt;
-    }
-    static inline bool classof(const SVFConstantData *node)
-    {
-        return node->getKind() == SVFConstInt;
-    }
-    //  Return the constant as a 64-bit unsigned integer value after it has been zero extended as appropriate for the type of this constant.
-    inline u64_t getZExtValue () const
-    {
-        return zval;
-    }
-    // Return the constant as a 64-bit integer value after it has been sign extended as appropriate for the type of this constant
-    inline s64_t getSExtValue () const
-    {
-        return sval;
-    }
-};
-
-class SVFConstantFP : public SVFConstantData
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-private:
-    float dval;
-public:
-    SVFConstantFP(const SVFType* ty, double d)
-        : SVFConstantData(ty, SVFLLVMValue::SVFConstFP), dval(d)
-    {
-    }
-    SVFConstantFP() = delete;
-
-    inline double getFPValue () const
-    {
-        return dval;
-    }
-    static inline bool classof(const SVFLLVMValue *node)
-    {
-        return node->getKind() == SVFConstFP;
-    }
-    static inline bool classof(const SVFConstantData *node)
-    {
-        return node->getKind() == SVFConstFP;
-    }
-};
-
-class SVFConstantNullPtr : public SVFConstantData
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
-public:
-    SVFConstantNullPtr(const SVFType* ty)
-        : SVFConstantData(ty, SVFLLVMValue::SVFNullPtr)
-    {
-    }
-    SVFConstantNullPtr() = delete;
-
-    static inline bool classof(const SVFLLVMValue *node)
-    {
-        return node->getKind() == SVFNullPtr;
-    }
-    static inline bool classof(const SVFConstantData *node)
-    {
-        return node->getKind() == SVFNullPtr;
-    }
-};
-
-class SVFBlackHoleValue : public SVFConstantData
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
-public:
-    SVFBlackHoleValue(const SVFType* ty)
-        : SVFConstantData(ty, SVFLLVMValue::SVFBlackHole)
-    {
-    }
-    SVFBlackHoleValue() = delete;
-
-    static inline bool classof(const SVFLLVMValue *node)
-    {
-        return node->getKind() == SVFBlackHole;
-    }
-    static inline bool classof(const SVFConstantData *node)
-    {
-        return node->getKind() == SVFBlackHole;
+        return node->getKind() == SVFConstData;
     }
 };
 
