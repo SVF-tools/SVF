@@ -41,6 +41,7 @@ class CallICFGNode;
 class SVFVar;
 class ValVar;
 class ObjVar;
+class FunObjVar;
 
 /*
  * ThreadAPI class contains interfaces for pthread programs
@@ -91,16 +92,7 @@ private:
     static ThreadAPI* tdAPI;
 
     /// Get the function type if it is a threadAPI function
-    inline TD_TYPE getType(const SVFFunction* F) const
-    {
-        if(F)
-        {
-            TDAPIMap::const_iterator it= tdAPIMap.find(F->getName());
-            if(it != tdAPIMap.end())
-                return it->second;
-        }
-        return TD_DUMMY;
-    }
+    TD_TYPE getType(const FunObjVar* F) const;
 
 public:
     /// Return a static reference
@@ -136,7 +128,7 @@ public:
     const ValVar* getActualParmAtForkSite(const CallICFGNode *inst) const;
 
     /// Return the formal parm of forked function (the first arg in pthread)
-    const SVFVar* getFormalParmOfForkedFun(const SVFFunction* F) const;
+    const SVFVar* getFormalParmOfForkedFun(const FunObjVar* F) const;
     //@}
 
 
@@ -188,7 +180,7 @@ public:
     bool isTDBarWait(const CallICFGNode *inst) const;
     //@}
 
-    void performAPIStat(SVFModule* m);
+    void performAPIStat();
     void statInit(Map<std::string, u32_t>& tdAPIStatMap);
 };
 

@@ -186,7 +186,7 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
     return tmpDstPts;
 }
 
-bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* callee, const CallICFGNode* cs)
+bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const FunObjVar* callee, const CallICFGNode* cs)
 {
     if(getPAG()->isIndirectCallSites(cs))
     {
@@ -195,7 +195,7 @@ bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* c
         CxtVar funptrVar(dpm.getCondVar().get_cond(), id);
         CxtLocDPItem funptrDpm = getDPIm(funptrVar,getDefSVFGNode(node));
         PointsTo pts = getBVPointsTo(findPT(funptrDpm));
-        if(pts.test(getPAG()->getObjectNode(callee)))
+        if(pts.test(callee->getId()))
             return true;
         else
             return false;
@@ -217,7 +217,7 @@ CallSiteID ContextDDA::getCSIDAtCall(CxtLocDPItem&, const SVFGEdge* edge)
         svfg_csId = SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId();
 
     const CallICFGNode* cbn = getSVFG()->getCallSite(svfg_csId);
-    const SVFFunction* callee = edge->getDstNode()->getFun();
+    const FunObjVar* callee = edge->getDstNode()->getFun();
 
     if(getCallGraph()->hasCallSiteID(cbn,callee))
     {
@@ -241,7 +241,7 @@ CallSiteID ContextDDA::getCSIDAtRet(CxtLocDPItem&, const SVFGEdge* edge)
         svfg_csId = SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId();
 
     const CallICFGNode* cbn = getSVFG()->getCallSite(svfg_csId);
-    const SVFFunction* callee = edge->getSrcNode()->getFun();
+    const FunObjVar* callee = edge->getSrcNode()->getFun();
 
     if(getCallGraph()->hasCallSiteID(cbn,callee))
     {
@@ -334,13 +334,13 @@ bool ContextDDA::handleBKCondition(CxtLocDPItem& dpm, const SVFGEdge* edge)
 /// (2) not inside loop
 bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
 {
-    const MemObj* mem = _pag->getObject(getPtrNodeID(var));
-    assert(mem && "memory object is null??");
+    const BaseObjVar* obj = _pag->getBaseObject(getPtrNodeID(var));
+    assert(obj && "base object is null??");
     const BaseObjVar* baseVar = _pag->getBaseObject(getPtrNodeID(var));
     assert(baseVar && "base object is null??");
     if (SVFUtil::isa<HeapObjVar, DummyObjVar>(baseVar))
     {
-        if (!mem->getValue())
+        if (!isa<DummyObjVar>(baseVar))
         {
             PAGNode *pnode = _pag->getGNode(getPtrNodeID(var));
             GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(pnode);
@@ -356,19 +356,15 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
             }
             return true;
         }
-        else if(const SVFBaseNode* gNode = mem->getGNode())
+        else if(const ICFGNode* node = obj->getICFGNode())
         {
-            if (const auto& node =
-                        SVFUtil::dyn_cast<ICFGNode>(gNode))
-            {
-                const SVFFunction* svfFun = node->getFun();
-                if(_ander->isInRecursion(svfFun))
-                    return true;
-                if(var.get_cond().isConcreteCxt() == false)
-                    return true;
-                if(_pag->getICFG()->isInLoop(node))
-                    return true;
-            }
+            const FunObjVar* svfFun = node->getFun();
+            if(_ander->isInRecursion(svfFun))
+                return true;
+            if(var.get_cond().isConcreteCxt() == false)
+                return true;
+            if(_pag->getICFG()->isInLoop(node))
+                return true;
         }
     }
     return false;

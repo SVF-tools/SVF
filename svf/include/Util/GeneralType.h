@@ -38,6 +38,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <memory>
 #include "Util/SparseBitVector.h"
 
 namespace SVF
@@ -54,7 +55,6 @@ typedef signed short s16_t;
 
 typedef u32_t NodeID;
 typedef u32_t EdgeID;
-typedef unsigned SymID;
 typedef unsigned CallSiteID;
 typedef unsigned ThreadID;
 typedef s64_t APOffset;

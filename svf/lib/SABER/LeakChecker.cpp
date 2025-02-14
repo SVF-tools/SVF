@@ -51,11 +51,11 @@ void LeakChecker::initSrcs()
         if(cs->getFun()->isUncalledFunction() || !cs->getType()->isPointerTy())
             continue;
 
-        PTACallGraph::FunctionSet callees;
+        CallGraph::FunctionSet callees;
         getCallgraph()->getCallees(cs->getCallICFGNode(),callees);
-        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
+        for(CallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
         {
-            const SVFFunction* fun = *cit;
+            const FunObjVar* fun = *cit;
             if (isSourceLikeFun(fun))
             {
                 CSWorkList worklist;
@@ -111,11 +111,11 @@ void LeakChecker::initSnks()
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it)
     {
 
-        PTACallGraph::FunctionSet callees;
+        CallGraph::FunctionSet callees;
         getCallgraph()->getCallees(it->first,callees);
-        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
+        for(CallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
         {
-            const SVFFunction* fun = *cit;
+            const FunObjVar* fun = *cit;
             if (isSinkLikeFun(fun))
             {
                 SVFIR::SVFVarList &arglist = it->second;
@@ -179,7 +179,7 @@ void LeakChecker::testsValidation(const ProgSlice* slice)
 {
     const SVFGNode* source = slice->getSource();
     const CallICFGNode* cs = getSrcCSID(source);
-    const SVFFunction* fun = cs->getCalledFunction();
+    const FunObjVar* fun = cs->getCalledFunction();
     if(fun==nullptr)
         return;
 
@@ -188,7 +188,7 @@ void LeakChecker::testsValidation(const ProgSlice* slice)
 }
 
 
-void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction* fun)
+void LeakChecker::validateSuccessTests(const SVFGNode* source, const FunObjVar* fun)
 {
 
     const CallICFGNode* cs = getSrcCSID(source);
@@ -243,7 +243,7 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction
     }
 }
 
-void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVFFunction* fun)
+void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const FunObjVar* fun)
 {
 
     const CallICFGNode* cs = getSrcCSID(source);

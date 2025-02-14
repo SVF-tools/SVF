@@ -49,8 +49,8 @@ class DDAVFSolver
     friend class DDAStat;
 public:
     typedef SCCDetection<SVFG*> SVFGSCC;
-    typedef SCCDetection<PTACallGraph*> CallGraphSCC;
-    typedef PTACallGraphEdge::CallInstSet CallInstSet;
+    typedef SCCDetection<CallGraph*> CallGraphSCC;
+    typedef CallGraphEdge::CallInstSet CallInstSet;
     typedef SVFIR::CallSiteSet CallSiteSet;
     typedef OrderedSet<DPIm> DPTItemSet;
     typedef OrderedMap<DPIm, CPtSet> DPImToCPtSetMap;
@@ -473,11 +473,9 @@ protected:
         NodeID id = getPtrNodeID(var);
         const BaseObjVar* baseObj = _pag->getBaseObject(id);
         assert(baseObj && "base object is null??");
-        const MemObj* obj = _pag->getObject(id);
-        assert(obj && "object not found!!");
         if(SVFUtil::isa<StackObjVar>(baseObj))
         {
-            if(const SVFFunction* svffun = _pag->getGNode(id)->getFunction())
+            if(const FunObjVar* svffun = _pag->getGNode(id)->getFunction())
             {
                 return _callGraphSCC->isInCycle(_callGraph->getCallGraphNode(svffun)->getId());
             }
@@ -503,7 +501,7 @@ protected:
                 findPT(funPtrDpm);
             }
         }
-        else if(const SVFFunction* fun = getSVFG()->isFunEntrySVFGNode(dpm.getLoc()))
+        else if(const FunObjVar* fun = getSVFG()->isFunEntrySVFGNode(dpm.getLoc()))
         {
             CallInstSet csSet;
             /// use pre-analysis call graph to approximate all potential callsites
@@ -626,7 +624,7 @@ protected:
         return (getSVFGSCCRepNode(edge->getSrcID()) == getSVFGSCCRepNode(edge->getDstID()));
     }
     /// Set callgraph
-    inline void setCallGraph (PTACallGraph* cg)
+    inline void setCallGraph (CallGraph* cg)
     {
         _callGraph = cg;
     }
@@ -645,14 +643,14 @@ protected:
 
     inline bool isArrayCondMemObj(const CVar& var) const
     {
-        const MemObj* mem = _pag->getObject(getPtrNodeID(var));
-        assert(mem && "memory object is null??");
-        return mem->isArray();
+        const BaseObjVar* obj = _pag->getBaseObject(getPtrNodeID(var));
+        assert(obj && "base object is null??");
+        return obj->isArray();
     }
     inline bool isFieldInsenCondMemObj(const CVar& var) const
     {
-        const MemObj* mem =  _pag->getBaseObj(getPtrNodeID(var));
-        return mem->isFieldInsensitive();
+        const BaseObjVar* baseObj = _pag->getBaseObject(getPtrNodeID(var));
+        return baseObj->isFieldInsensitive();
     }
     //@}
 private:
@@ -776,7 +774,7 @@ protected:
     SVFG* _svfg;					///< SVFG
     AndersenWaveDiff* _ander;		///< Andersen's analysis
     NodeBS candidateQueries;		///< candidate pointers;
-    PTACallGraph* _callGraph;		///< PTACallGraph
+    CallGraph* _callGraph;		///< PTACallGraph
     CallGraphSCC* _callGraphSCC;	///< SCC for PTACallGraph
     SVFGSCC* _svfgSCC;				///< SCC for SVFG
     DPTItemSet backwardVisited;		///< visited map during backward traversing

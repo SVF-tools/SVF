@@ -48,18 +48,18 @@ void VersionedFlowSensitiveStat::performStat()
 
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
-    Set<SymID> nodeSet;
+    Set<NodeID> nodeSet;
     for (SVFIR::const_iterator it = pag->begin(); it != pag->end(); ++it)
     {
         NodeID nodeId = it->first;
         PAGNode* pagNode = it->second;
         if (SVFUtil::isa<ObjVar>(pagNode))
         {
-            const MemObj *memObj = pag->getBaseObj(nodeId);
-            SymID baseId = memObj->getId();
+            const BaseObjVar* baseObj = pag->getBaseObject(nodeId);
+            NodeID baseId = baseObj->getId();
             if (nodeSet.insert(baseId).second)
             {
-                if (memObj->isFieldInsensitive()) fiObjNumber++;
+                if (baseObj->isFieldInsensitive()) fiObjNumber++;
                 else fsObjNumber++;
             }
         }
@@ -98,8 +98,8 @@ void VersionedFlowSensitiveStat::performStat()
     timeStatMap["PrelabelingTime"]    = vfspta->prelabelingTime;
     timeStatMap["VersionPropTime"]    = vfspta->versionPropTime;
 
-    PTNumStatMap["TotalPointers"]  = pag->getValueNodeNum() + pag->getFieldValNodeNum();
-    PTNumStatMap["TotalObjects"]   = pag->getObjectNodeNum() + pag->getFieldObjNodeNum();
+    PTNumStatMap["TotalPointers"]  = pag->getValueNodeNum();
+    PTNumStatMap["TotalObjects"]   = pag->getObjectNodeNum();
 
     PTNumStatMap["Pointers"]         = pag->getValueNodeNum();
     PTNumStatMap["MemObjects"]       = pag->getObjectNodeNum();

@@ -130,6 +130,18 @@ void ThreadAPI::init()
     }
 }
 
+/// Get the function type if it is a threadAPI function
+ThreadAPI::TD_TYPE ThreadAPI::getType(const FunObjVar* F) const
+{
+    if(F)
+    {
+        TDAPIMap::const_iterator it= tdAPIMap.find(F->getName());
+        if(it != tdAPIMap.end())
+            return it->second;
+    }
+    return TD_DUMMY;
+}
+
 bool ThreadAPI::isTDFork(const CallICFGNode *inst) const
 {
     return getType(inst->getCalledFunction()) == TD_FORK;
@@ -181,7 +193,7 @@ const ValVar* ThreadAPI::getActualParmAtForkSite(const CallICFGNode *inst) const
     return inst->getArgument(3);
 }
 
-const SVFVar* ThreadAPI::getFormalParmOfForkedFun(const SVFFunction* F) const
+const SVFVar* ThreadAPI::getFormalParmOfForkedFun(const FunObjVar* F) const
 {
     assert(PAG::getPAG()->hasFunArgsList(F) && "forked function has no args list!");
     const SVFIR::SVFVarList& funArgList = PAG::getPAG()->getFunArgsList(F);
@@ -263,7 +275,7 @@ void ThreadAPI::statInit(Map<std::string, u32_t>& tdAPIStatMap)
     tdAPIStatMap["hare_parallel_for"] = 0;
 }
 
-void ThreadAPI::performAPIStat(SVFModule* module)
+void ThreadAPI::performAPIStat()
 {
 
     Map<std::string, u32_t> tdAPIStatMap;
@@ -273,15 +285,15 @@ void ThreadAPI::performAPIStat(SVFModule* module)
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
-        for (SVFFunction::const_iterator bit = (item.second)->getFunction()->begin(), ebit = (item.second)->getFunction()->end(); bit != ebit; ++bit)
+        for (FunObjVar::const_bb_iterator bit = (item.second)->getFunction()->begin(), ebit = (item.second)->getFunction()->end(); bit != ebit; ++bit)
         {
-            const SVFBasicBlock* bb = *bit;
+            const SVFBasicBlock* bb = bit->second;
             for (const auto& svfInst: bb->getICFGNodeList())
             {
                 if (!SVFUtil::isCallSite(svfInst))
                     continue;
 
-                const SVFFunction* fun = SVFUtil::cast<CallICFGNode>(svfInst)->getCalledFunction();
+                const FunObjVar* fun = SVFUtil::cast<CallICFGNode>(svfInst)->getCalledFunction();
                 TD_TYPE type = getType(fun);
                 switch (type)
                 {
@@ -385,7 +397,7 @@ void ThreadAPI::performAPIStat(SVFModule* module)
 
     }
 
-    std::string name(module->getModuleIdentifier());
+    std::string name(PAG::getPAG()->getModuleIdentifier());
     std::vector<std::string> fullNames = SVFUtil::split(name,'/');
     if (fullNames.size() > 1)
     {

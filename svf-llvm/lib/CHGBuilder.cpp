@@ -39,10 +39,10 @@
 #include "SVF-LLVM/CHGBuilder.h"
 #include "Util/Options.h"
 #include "SVF-LLVM/CppUtil.h"
-#include "SVFIR/SymbolTableInfo.h"
+#include "SVFIR/ObjTypeInfo.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/LLVMUtil.h"
-#include "SVFIR/SVFModule.h"
+#include "SVF-LLVM/SVFModule.h"
 #include "Util/PTAStat.h"
 #include "SVF-LLVM/LLVMModule.h"
 #include "SVF-LLVM/ObjTypeInference.h"
@@ -377,12 +377,11 @@ void CHGBuilder::analyzeVTables(const Module &M)
             string vtblClassName = getClassNameFromVtblObj(globalvalue->getName().str());
             CHNode *node = chg->getNode(vtblClassName);
             assert(node && "node not found?");
-
-            SVFGlobalValue* pValue =
-                llvmModuleSet()->getSVFGlobalValue(
-                    globalvalue);
-            pValue->setName(vtblClassName);
-            node->setVTable(pValue);
+            NodeID i = llvmModuleSet()->getObjectNode(llvmModuleSet()->getSVFGlobalValue(globalvalue));
+            SVFVar* pVar = PAG::getPAG()->getGNode(i);
+            GlobalObjVar* globalObjVar = SVFUtil::cast<GlobalObjVar>(pVar);
+            globalObjVar->setName(vtblClassName);
+            node->setVTable(globalObjVar);
 
             for (unsigned int ei = 0; ei < vtblStruct->getNumOperands(); ++ei)
             {
@@ -540,7 +539,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                     {
                         for (int i = 0; i < null_ptr_num; ++i)
                         {
-                            const SVFFunction* fun = virtualFunctions[i];
+                            const FunObjVar* fun = virtualFunctions[i];
                             virtualFunctions.insert(virtualFunctions.begin(), fun);
                         }
                     }
@@ -608,7 +607,7 @@ void CHGBuilder::buildVirtualFunctionToIDMap()
         /*
          * get all virtual functions in a specific group
          */
-        set<const SVFFunction*> virtualFunctions;
+        set<const FunObjVar*> virtualFunctions;
         for (CHGraph::CHNodeSetTy::iterator it = group.begin(),
                 eit = group.end(); it != eit; ++it)
         {
@@ -616,7 +615,7 @@ void CHGBuilder::buildVirtualFunctionToIDMap()
             for (vector<CHNode::FuncVector>::const_iterator vit = vecs.begin(),
                     veit = vecs.end(); vit != veit; ++vit)
             {
-                for (vector<const SVFFunction*>::const_iterator fit = (*vit).begin(),
+                for (vector<const FunObjVar*>::const_iterator fit = (*vit).begin(),
                         feit = (*vit).end(); fit != feit; ++fit)
                 {
                     virtualFunctions.insert(*fit);
@@ -639,15 +638,15 @@ void CHGBuilder::buildVirtualFunctionToIDMap()
          * <~C, C::~C>
          * ...
          */
-        set<pair<string, const SVFFunction*> > fNameSet;
-        for (set<const SVFFunction*>::iterator fit = virtualFunctions.begin(),
+        set<pair<string, const FunObjVar*> > fNameSet;
+        for (set<const FunObjVar*>::iterator fit = virtualFunctions.begin(),
                 feit = virtualFunctions.end(); fit != feit; ++fit)
         {
-            const SVFFunction* f = *fit;
+            const FunObjVar* f = *fit;
             struct DemangledName dname = demangle(f->getName());
-            fNameSet.insert(pair<string, const SVFFunction*>(dname.funcName, f));
+            fNameSet.insert(pair<string, const FunObjVar*>(dname.funcName, f));
         }
-        for (set<pair<string, const SVFFunction*>>::iterator it = fNameSet.begin(),
+        for (set<pair<string, const FunObjVar*>>::iterator it = fNameSet.begin(),
                 eit = fNameSet.end(); it != eit; ++it)
         {
             chg->virtualFunctionToIDMap[it->second] = chg->vfID++;
@@ -675,7 +674,7 @@ void CHGBuilder::buildCSToCHAVtblsAndVfnsMap()
                     for (CHNodeSetTy::const_iterator it = chClasses.begin(), eit = chClasses.end(); it != eit; ++it)
                     {
                         const CHNode *child = *it;
-                        const SVFGlobalValue *vtbl = child->getVTable();
+                        const GlobalObjVar *vtbl = child->getVTable();
                         if (vtbl != nullptr)
                         {
                             vtbls.insert(vtbl);
@@ -743,15 +742,15 @@ void CHGBuilder::addFuncToFuncVector(CHNode::FuncVector &v, const Function *lf)
     {
         if (const auto* tf = cppUtil::getThunkTarget(lf))
         {
-            SVFFunction* pFunction =
-                llvmModuleSet()->getSVFFunction(tf);
+            const FunObjVar* pFunction =
+                llvmModuleSet()->getFunObjVar(tf);
             v.push_back(pFunction);
         }
     }
     else
     {
-        SVFFunction* pFunction =
-            llvmModuleSet()->getSVFFunction(lf);
+        const FunObjVar* pFunction =
+            llvmModuleSet()->getFunObjVar(lf);
         v.push_back(pFunction);
     }
 }

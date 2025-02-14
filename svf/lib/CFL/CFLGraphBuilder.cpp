@@ -354,7 +354,6 @@ CFLGraph* AliasCFLGraphBuilder::buildBiPEGgraph(ConstraintGraph *graph, Kind sta
                 }
                 if (DerefNode == nullptr)
                 {
-
                     NodeID refId = pag->addDummyValNode();
                     CFLDerefNode = new CFLNode(refId);
                     cflGraph->addCFLNode(refId, CFLDerefNode);
@@ -446,8 +445,8 @@ void AliasCFLGraphBuilder::AliasCFLGraphBuilder::connectVGep(CFLGraph *cflGraph,
     level -= 1;
     for (auto eit = src->getAddrInEdges().begin(); eit != src->getAddrInEdges().end(); eit++)
     {
-        const MemObj* mem = pag->getBaseObj((*eit)->getSrcID());
-        for (u32_t maxField = 0 ; maxField < mem->getNumOfElements(); maxField++)
+        const BaseObjVar* baseObj = pag->getBaseObject((*eit)->getSrcID());
+        for (u32_t maxField = 0 ; maxField < baseObj->getNumOfElements(); maxField++)
         {
             addBiGepCFLEdge(cflGraph, (*eit)->getDstNode(), dst, maxField);
         }

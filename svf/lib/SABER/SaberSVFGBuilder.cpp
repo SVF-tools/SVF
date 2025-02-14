@@ -133,7 +133,7 @@ PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta, NodeID id, NodeT
         // base object
         if (!Options::CollectExtRetGlobals())
         {
-            if(pta->isFIObjNode(baseId) && pag->getGNode(baseId)->hasValue())
+            if(pta->isFIObjNode(baseId))
             {
                 ValVar* valVar = SVFUtil::dyn_cast<ValVar>(pag->getGNode(baseId));
                 if(valVar && valVar->getICFGNode() && SVFUtil::isExtCall(valVar->getICFGNode()))
@@ -232,11 +232,13 @@ bool SaberSVFGBuilder::isStrongUpdate(const SVFGNode* node, NodeID& singleton, B
             singleton = *it;
 
             // Strong update can be made if this points-to target is not heap, array or field-insensitive.
-            if (!pta->isHeapMemObj(singleton) && !pta->isArrayMemObj(singleton)
-                    && SVFIR::getPAG()->getBaseObj(singleton)->isFieldInsensitive() == false
-                    && !pta->isLocalVarInRecursiveFun(singleton))
+            if (!pta->isHeapMemObj(singleton) && !pta->isArrayMemObj(singleton))
             {
-                isSU = true;
+                if (SVFIR::getPAG()->getBaseObject(singleton)->isFieldInsensitive() == false
+                        && !pta->isLocalVarInRecursiveFun(singleton))
+                {
+                    isSU = true;
+                }
             }
         }
     }
@@ -289,19 +291,19 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
 
 
 /// Add actual parameter SVFGNode for 1st argument of a deallocation like external function
-void SaberSVFGBuilder::AddExtActualParmSVFGNodes(PTACallGraph* callgraph)
+void SaberSVFGBuilder::AddExtActualParmSVFGNodes(CallGraph* callgraph)
 {
     SVFIR* pag = SVFIR::getPAG();
     for(SVFIR::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it)
     {
-        PTACallGraph::FunctionSet callees;
+        CallGraph::FunctionSet callees;
         callgraph->getCallees(it->first, callees);
-        for (PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
+        for (CallGraph::FunctionSet::const_iterator cit = callees.begin(),
                 ecit = callees.end(); cit != ecit; cit++)
         {
 
-            const SVFFunction* fun = *cit;
+            const FunObjVar* fun = *cit;
             if (SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun)
                     || SaberCheckerAPI::getCheckerAPI()->isFClose(fun))
             {

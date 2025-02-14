@@ -76,17 +76,12 @@ protected:
 
     /// Wrappers used internally, not expose to Andersen Pass
     //@{
-    inline NodeID getValueNode(const SVFValue* value) const
-    {
-        return sccRepNode(pag->getValueNode(value));
-    }
-
-    inline NodeID getReturnNode(const SVFFunction* value) const
+    inline NodeID getReturnNode(const FunObjVar* value) const
     {
         return pag->getReturnNode(value);
     }
 
-    inline NodeID getVarargNode(const SVFFunction* value) const
+    inline NodeID getVarargNode(const FunObjVar* value) const
     {
         return pag->getVarargNode(value);
     }
@@ -323,8 +318,8 @@ public:
     }
     inline bool isSingleFieldObj(NodeID id) const
     {
-        const MemObj* mem = pag->getBaseObj(id);
-        return (mem->getMaxFieldOffsetLimit() == 1);
+        const BaseObjVar* baseObj = pag->getBaseObject(id);
+        return (baseObj->getMaxFieldOffsetLimit() == 1);
     }
     /// Get a field of a memory object
     inline NodeID getGepObjVar(NodeID id, const APOffset& apOffset)

@@ -46,7 +46,7 @@ class MHP
 {
 
 public:
-    typedef Set<const SVFFunction*> FunSet;
+    typedef Set<const FunObjVar*> FunSet;
     typedef FIFOWorkList<CxtThreadStmt> CxtThreadStmtWorkList;
     typedef Set<CxtThreadStmt> CxtThreadStmtSet;
     typedef Map<CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
@@ -55,7 +55,7 @@ public:
 
     typedef Set<CxtStmt> LockSpan;
 
-    typedef std::pair<const SVFFunction*,const SVFFunction*> FuncPair;
+    typedef std::pair<const FunObjVar*,const FunObjVar*> FuncPair;
     typedef Map<FuncPair, bool> FuncPairToBool;
 
     /// Constructor
@@ -83,7 +83,7 @@ public:
     }
 
     /// Whether the function is connected from main function in thread call graph
-    bool isConnectedfromMain(const SVFFunction* fun);
+    bool isConnectedfromMain(const FunObjVar* fun);
 
 //    LockSpan getSpanfromCxtLock(NodeID l);
     /// Interface to query whether two instructions may happen-in-parallel
@@ -123,7 +123,7 @@ public:
 
 private:
 
-    inline const PTACallGraph::FunctionSet& getCallee(const CallICFGNode* inst, PTACallGraph::FunctionSet& callees)
+    inline const CallGraph::FunctionSet& getCallee(const CallICFGNode* inst, CallGraph::FunctionSet& callees)
     {
         tcg->getCallees(inst, callees);
         return callees;
@@ -202,12 +202,12 @@ private:
         return tct->getTCTNode(curTid)->isMultiforked();
     }
     /// Push calling context
-    inline void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
+    inline void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
     {
         tct->pushCxt(cxt,call,callee);
     }
     /// Match context
-    inline bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
+    inline bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
     {
         return tct->matchCxt(cxt,call,callee);
     }
@@ -342,7 +342,7 @@ public:
     {
         NodeID parentTid = tct->getParentThread(tid);
         const CxtThread& parentct = tct->getTCTNode(parentTid)->getCxtThread();
-        const SVFFunction* parentRoutine = tct->getStartRoutineOfCxtThread(parentct);
+        const FunObjVar* parentRoutine = tct->getStartRoutineOfCxtThread(parentct);
         return parentRoutine->getExitBB()->back();
     }
 
@@ -450,12 +450,12 @@ private:
     //@}
 
     /// Push calling context
-    inline void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
+    inline void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
     {
         tct->pushCxt(cxt,call,callee);
     }
     /// Match context
-    inline bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
+    inline bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
     {
         return tct->matchCxt(cxt,call,callee);
     }
@@ -482,7 +482,7 @@ private:
     {
         return getTCG()->getThreadAPI()->getJoinedThread(call);
     }
-    inline const PTACallGraph::FunctionSet& getCallee(const ICFGNode* inst, PTACallGraph::FunctionSet& callees)
+    inline const CallGraph::FunctionSet& getCallee(const ICFGNode* inst, CallGraph::FunctionSet& callees)
     {
         getTCG()->getCallees(SVFUtil::cast<CallICFGNode>(inst), callees);
         return callees;

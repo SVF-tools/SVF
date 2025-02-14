@@ -69,29 +69,21 @@ protected:
         /// SCC detection
         this->getSCCDetector()->find();
 
+        assert(nodeStack.empty() && "node stack is not empty, some nodes are not popped properly.");
+
         /// Both rep and sub nodes need to be processed later.
         /// Collect sub nodes from SCCDetector.
-        NodeStack revTopoStack;
-        NodeStack& topoStack = this->getSCCDetector()->topoNodeStack();
-        while (!topoStack.empty())
+        FIFOWorkList<NodeID> revTopoStack = this->getSCCDetector()->revTopoNodeStack();
+        while (!revTopoStack.empty())
         {
-            NodeID nodeId = topoStack.top();
-            topoStack.pop();
+            NodeID nodeId = revTopoStack.front();
+            revTopoStack.pop();
             const NodeBS& subNodes = this->getSCCDetector()->subNodes(nodeId);
             for (NodeBS::iterator it = subNodes.begin(), eit = subNodes.end(); it != eit; ++it)
             {
-                revTopoStack.push(*it);
+                /// restore the topological order.
+                nodeStack.push(*it);
             }
-        }
-
-        assert(nodeStack.empty() && "node stack is not empty, some nodes are not popped properly.");
-
-        /// restore the topological order.
-        while (!revTopoStack.empty())
-        {
-            NodeID nodeId = revTopoStack.top();
-            revTopoStack.pop();
-            nodeStack.push(nodeId);
         }
 
         return nodeStack;

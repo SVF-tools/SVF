@@ -27,7 +27,6 @@
  *      Author: Yulei Sui
  */
 #include "Util/Options.h"
-#include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "MSSA/MemSSA.h"
 #include "Graphs/SVFG.h"
@@ -107,7 +106,7 @@ std::unique_ptr<MemSSA> SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyM
     for (const auto& item: *svfirCallGraph)
     {
 
-        const SVFFunction *fun = item.second->getFunction();
+        const FunObjVar *fun = item.second->getFunction();
         if (isExtCall(fun))
             continue;
 

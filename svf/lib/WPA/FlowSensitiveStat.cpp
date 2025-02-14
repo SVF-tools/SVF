@@ -101,18 +101,18 @@ void FlowSensitiveStat::performStat()
 
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
-    Set<SymID> nodeSet;
+    Set<NodeID> nodeSet;
     for (SVFIR::const_iterator nodeIt = pag->begin(), nodeEit = pag->end(); nodeIt != nodeEit; nodeIt++)
     {
         NodeID nodeId = nodeIt->first;
         PAGNode* pagNode = nodeIt->second;
         if(SVFUtil::isa<ObjVar>(pagNode))
         {
-            const MemObj * memObj = pag->getBaseObj(nodeId);
-            SymID baseId = memObj->getId();
+            const BaseObjVar* baseObj = pag->getBaseObject(nodeId);
+            NodeID baseId = baseObj->getId();
             if (nodeSet.insert(baseId).second)
             {
-                if (memObj->isFieldInsensitive())
+                if (baseObj->isFieldInsensitive())
                     fiObjNumber++;
                 else
                     fsObjNumber++;
@@ -154,8 +154,8 @@ void FlowSensitiveStat::performStat()
     timeStatMap["UpdateCGTime"] = fspta->updateCallGraphTime;
     timeStatMap["PhiTime"] = fspta->phiTime;
 
-    PTNumStatMap["TotalPointers"] = pag->getValueNodeNum() + pag->getFieldValNodeNum();
-    PTNumStatMap["TotalObjects"] = pag->getObjectNodeNum() + pag->getFieldObjNodeNum();
+    PTNumStatMap["TotalPointers"] = pag->getValueNodeNum();
+    PTNumStatMap["TotalObjects"] = pag->getObjectNodeNum();
 
     PTNumStatMap["Pointers"] = pag->getValueNodeNum();
     PTNumStatMap["MemObjects"] = pag->getObjectNodeNum();
@@ -296,11 +296,11 @@ void FlowSensitiveStat::statNullPtr()
                 if (!SVFUtil::isa<DummyValVar>(pagNode) && !SVFUtil::isa<DummyObjVar>(pagNode))
                 {
                     // if a pointer is in dead function, we do not care
-                    if(pagNode->getValue()->ptrInUncalledFunction() == false)
+                    if(pagNode->ptrInUncalledFunction() == false)
                     {
                         _NumOfNullPtr++;
                         rawstr << "##Null Pointer : (NodeID " << pagNode->getId()
-                               << ") PtrName:" << pagNode->getValue()->getName();
+                               << ") PtrName:" << pagNode->getName();
                         writeWrnMsg(rawstr.str());
                     }
                 }

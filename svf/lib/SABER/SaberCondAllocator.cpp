@@ -56,21 +56,21 @@ SaberCondAllocator::SaberCondAllocator()
 /*!
  * Allocate path condition for each branch
  */
-void SaberCondAllocator::allocate(const SVFModule *M)
+void SaberCondAllocator::allocate()
 {
     DBOUT(DGENERAL, outs() << pasMsg("path condition allocation starts\n"));
 
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
-        const SVFFunction *func = (item.second)->getFunction();
+        const FunObjVar *func = (item.second)->getFunction();
         if (!SVFUtil::isExtCall(func))
         {
             // Allocate conditions for a program.
-            for (SVFFunction::const_iterator bit = func->begin(), ebit = func->end();
+            for (FunObjVar::const_bb_iterator bit = func->begin(), ebit = func->end();
                     bit != ebit; ++bit)
             {
-                const SVFBasicBlock* bb = *bit;
+                const SVFBasicBlock* bb = bit->second;
                 collectBBCallingProgExit(*bb);
                 allocateForBB(*bb);
             }
@@ -265,7 +265,7 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateProgExit(const BranchS
  */
 SaberCondAllocator::Condition SaberCondAllocator::evaluateLoopExitBranch(const SVFBasicBlock* bb, const SVFBasicBlock* dst)
 {
-    const SVFFunction* svffun = bb->getParent();
+    const FunObjVar* svffun = bb->getParent();
     assert(svffun == dst->getParent() && "two basic blocks should be in the same function");
 
     if (svffun->isLoopHeader(bb))
@@ -402,7 +402,7 @@ bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt *cmp) const
     // must be val var?
     const SVFVar* op0 = cmp->getOpVar(0);
     const SVFVar* op1 = cmp->getOpVar(1);
-    if (SVFUtil::isa<ConstantNullPtrValVar>(op1))
+    if (SVFUtil::isa<ConstNullPtrValVar>(op1))
     {
         Set<const SVFVar* > inDirVal;
         inDirVal.insert(getCurEvalSVFGNode()->getValue());
@@ -412,7 +412,7 @@ bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt *cmp) const
         }
         return inDirVal.find(op0) != inDirVal.end();
     }
-    else if (SVFUtil::isa<ConstantNullPtrValVar>(op0))
+    else if (SVFUtil::isa<ConstNullPtrValVar>(op0))
     {
         Set<const SVFVar* > inDirVal;
         inDirVal.insert(getCurEvalSVFGNode()->getValue());
@@ -436,7 +436,7 @@ void SaberCondAllocator::collectBBCallingProgExit(const SVFBasicBlock &bb)
         if (const CallICFGNode* cs = SVFUtil::dyn_cast<CallICFGNode>(icfgNode))
             if (SVFUtil::isProgExitCall(cs))
             {
-                const SVFFunction* svfun = bb.getParent();
+                const FunObjVar* svfun = bb.getParent();
                 funToExitBBsMap[svfun].insert(&bb);
             }
     }
@@ -447,7 +447,7 @@ void SaberCondAllocator::collectBBCallingProgExit(const SVFBasicBlock &bb)
  */
 bool SaberCondAllocator::isBBCallsProgExit(const SVFBasicBlock* bb)
 {
-    const SVFFunction* svfun = bb->getParent();
+    const FunObjVar* svfun = bb->getParent();
     FunToExitBBsMap::const_iterator it = funToExitBBsMap.find(svfun);
     if (it != funToExitBBsMap.end())
     {
@@ -506,7 +506,7 @@ SaberCondAllocator::ComputeInterCallVFGGuard(const SVFBasicBlock* srcBB, const S
 SaberCondAllocator::Condition
 SaberCondAllocator::ComputeInterRetVFGGuard(const SVFBasicBlock* srcBB, const SVFBasicBlock* dstBB, const SVFBasicBlock* retBB)
 {
-    const SVFFunction* parent = srcBB->getParent();
+    const FunObjVar* parent = srcBB->getParent();
     const SVFBasicBlock* funExitBB = parent->getExitBB();
 
     Condition c1 = ComputeIntraVFGGuard(srcBB, funExitBB);

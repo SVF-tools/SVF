@@ -278,13 +278,13 @@ void AbsExtAPI::initExtFunMap()
         for (const auto& addr : as[value_id].getAddrs())
         {
             NodeID objId = AbstractState::getInternalID(addr);
-            if (svfir->getBaseObj(objId)->isConstantByteSize())
+            if (svfir->getBaseObject(objId)->isConstantByteSize())
             {
-                dst_size = svfir->getBaseObj(objId)->getByteSizeOfObj();
+                dst_size = svfir->getBaseObject(objId)->getByteSizeOfObj();
             }
             else
             {
-                const ICFGNode* addrNode = SVFUtil::cast<ICFGNode>(svfir->getBaseObj(objId)->getGNode());
+                const ICFGNode* addrNode = svfir->getBaseObject(objId)->getICFGNode();
                 for (const SVFStmt* stmt2: addrNode->getSVFStmts())
                 {
                     if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
@@ -386,8 +386,8 @@ std::string AbsExtAPI::strRead(AbstractState& as, const SVFVar* rhs)
 void AbsExtAPI::handleExtAPI(const CallICFGNode *call)
 {
     AbstractState& as = getAbsStateFromTrace(call);
-    const SVFFunction *fun = call->getCalledFunction();
-    assert(fun && "SVFFunction* is nullptr");
+    const FunObjVar *fun = call->getCalledFunction();
+    assert(fun && "FunObjVar* is nullptr");
     ExtAPIType extType = UNCLASSIFIED;
     // get type of mem api
     for (const std::string &annotation: ExtAPI::getExtAPI()->getExtFuncAnnotations(fun))
@@ -472,13 +472,13 @@ IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValu
     for (const auto& addr : as[value_id].getAddrs())
     {
         NodeID objId = AbstractState::getInternalID(addr);
-        if (svfir->getBaseObj(objId)->isConstantByteSize())
+        if (svfir->getBaseObject(objId)->isConstantByteSize())
         {
-            dst_size = svfir->getBaseObj(objId)->getByteSizeOfObj();
+            dst_size = svfir->getBaseObject(objId)->getByteSizeOfObj();
         }
         else
         {
-            const ICFGNode* icfgNode = SVFUtil::cast<ICFGNode>( svfir->getBaseObj(objId)->getGNode());
+            const ICFGNode* icfgNode = svfir->getBaseObject(objId)->getICFGNode();
             for (const SVFStmt* stmt2: icfgNode->getSVFStmts())
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
@@ -546,7 +546,7 @@ void AbsExtAPI::handleStrcat(const SVF::CallICFGNode *call)
     // __strcat_chk, strcat, __wcscat_chk, wcscat, __strncat_chk, strncat, __wcsncat_chk, wcsncat
     // to check it is  strcat group or strncat group
     AbstractState& as = getAbsStateFromTrace(call);
-    const SVFFunction *fun = call->getCalledFunction();
+    const FunObjVar *fun = call->getCalledFunction();
     const std::vector<std::string> strcatGroup = {"__strcat_chk", "strcat", "__wcscat_chk", "wcscat"};
     const std::vector<std::string> strncatGroup = {"__strncat_chk", "strncat", "__wcsncat_chk", "wcsncat"};
     if (std::find(strcatGroup.begin(), strcatGroup.end(), fun->getName()) != strcatGroup.end())
@@ -757,10 +757,4 @@ IntervalValue AbsExtAPI::getRangeLimitFromType(const SVFType* type)
         return IntervalValue::top();
         // other types, return top interval
     }
-}
-
-const SVFVar* AbsExtAPI::getSVFVar(const SVF::SVFValue* val)
-{
-    assert(svfir->hasGNode(svfir->getValueNode(val)));
-    return svfir->getGNode(svfir->getValueNode(val));
 }

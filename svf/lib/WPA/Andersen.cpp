@@ -241,7 +241,7 @@ bool AndersenBase::updateThreadCallGraph(const CallSiteToFunPtrMap& callsites,
 /*!
  * Connect formal and actual parameters for indirect forksites
  */
-void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const SVFFunction* F,
+void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const FunObjVar* F,
         NodePairSet& cpySrcNodes)
 {
     assert(F);
@@ -272,7 +272,7 @@ void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const S
 // * Connect formal and actual parameters for indirect callsites
 // */
 void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs,
-        const SVFFunction* F, NodePairSet &cpySrcNodes)
+        const FunObjVar* F, NodePairSet &cpySrcNodes)
 {
     assert(F);
 
@@ -709,24 +709,15 @@ inline void Andersen::collapseFields()
  */
 void Andersen::mergeSccCycle()
 {
-    NodeStack revTopoOrder;
-    NodeStack & topoOrder = getSCCDetector()->topoNodeStack();
+    NodeStack topoOrder = getSCCDetector()->topoNodeStack();
+
     while (!topoOrder.empty())
     {
         NodeID repNodeId = topoOrder.top();
         topoOrder.pop();
-        revTopoOrder.push(repNodeId);
         const NodeBS& subNodes = getSCCDetector()->subNodes(repNodeId);
         // merge sub nodes to rep node
         mergeSccNodes(repNodeId, subNodes);
-    }
-
-    // restore the topological order for later solving.
-    while (!revTopoOrder.empty())
-    {
-        NodeID nodeId = revTopoOrder.top();
-        revTopoOrder.pop();
-        topoOrder.push(nodeId);
     }
 }
 

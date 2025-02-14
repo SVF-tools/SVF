@@ -91,12 +91,12 @@ void AbstractInterpretation::initWTO()
     {
         // Check if the current function is part of a cycle
         if (callGraphScc->isInCycle(it->second->getId()))
-            recursiveFuns.insert(it->second); // Mark the function as recursive
+            recursiveFuns.insert(it->second->getFunction()); // Mark the function as recursive
         if (it->second->getFunction()->isDeclaration())
             continue;
         auto* wto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(it->second->getFunction()));
         wto->init();
-        funcToWTO[it->second] = wto;
+        funcToWTO[it->second->getFunction()] = wto;
     }
 }
 /// Program entry
@@ -109,7 +109,7 @@ void AbstractInterpretation::analyse()
         icfg->getGlobalICFGNode())[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
     if (const CallGraphNode* cgn = svfir->getCallGraph()->getCallGraphNode("main"))
     {
-        ICFGWTO* wto = funcToWTO[cgn];
+        ICFGWTO* wto = funcToWTO[cgn->getFunction()];
         handleWTOComponents(wto->getWTOComponents());
     }
 }
@@ -119,7 +119,7 @@ void AbstractInterpretation::handleGlobalNode()
 {
     const ICFGNode* node = icfg->getGlobalICFGNode();
     abstractTrace[node] = AbstractState();
-    abstractTrace[node][SymbolTableInfo::NullPtr] = AddressValue();
+    abstractTrace[node][IRGraph::NullPtr] = AddressValue();
     // Global Node, we just need to handle addr, load, store, copy and gep
     for (const SVFStmt *stmt: node->getSVFStmts())
     {
@@ -581,11 +581,11 @@ void AbstractInterpretation::extCallPass(const SVF::CallICFGNode *callNode)
 
 bool AbstractInterpretation::isRecursiveCall(const SVF::CallICFGNode *callNode)
 {
-    const SVFFunction *callfun = callNode->getCalledFunction();
+    const FunObjVar *callfun = callNode->getCalledFunction();
     if (!callfun)
         return false;
     else
-        return recursiveFuns.find(callfun->getCallGraphNode()) != recursiveFuns.end();
+        return recursiveFuns.find(callfun) != recursiveFuns.end();
 }
 
 void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode)
@@ -609,11 +609,11 @@ void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode
 
 bool AbstractInterpretation::isDirectCall(const SVF::CallICFGNode *callNode)
 {
-    const SVFFunction *callfun =callNode->getCalledFunction();
+    const FunObjVar *callfun =callNode->getCalledFunction();
     if (!callfun)
         return false;
     else
-        return funcToWTO.find(callfun->getCallGraphNode()) != funcToWTO.end();
+        return funcToWTO.find(callfun) != funcToWTO.end();
 }
 void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode)
 {
@@ -622,8 +622,8 @@ void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode
 
     abstractTrace[callNode] = as;
 
-    const SVFFunction *callfun =callNode->getCalledFunction();
-    ICFGWTO* wto = funcToWTO[callfun->getCallGraphNode()];
+    const FunObjVar *callfun =callNode->getCalledFunction();
+    ICFGWTO* wto = funcToWTO[callfun];
     handleWTOComponents(wto->getWTOComponents());
 
     callSiteStack.pop_back();
@@ -653,7 +653,7 @@ void AbstractInterpretation::indirectCallFunPass(const SVF::CallICFGNode *callNo
     SVFVar *func_var = svfir->getGNode(AbstractState::getInternalID(addr));
     if(const FunObjVar*funObjVar = SVFUtil::dyn_cast<FunObjVar>(func_var))
     {
-        const CallGraphNode* callfun = funObjVar->getCallGraphNode();
+        const FunObjVar* callfun = funObjVar->getFunction();
         callSiteStack.push_back(callNode);
         abstractTrace[callNode] = as;
 
@@ -854,7 +854,7 @@ void AEStat::finializeStat()
     generalNumMap["ICFG_Node_Num"] = _ae->svfir->getICFG()->nodeNum;
     u32_t callSiteNum = 0;
     u32_t extCallSiteNum = 0;
-    Set<const SVFFunction *> funs;
+    Set<const FunObjVar *> funs;
     for (const auto &it: *_ae->svfir->getICFG())
     {
         if (it.second->getFun())
@@ -928,7 +928,7 @@ void AbstractInterpretation::collectCheckPoint()
         const ICFGNode* node = it->second;
         if (const CallICFGNode *call = SVFUtil::dyn_cast<CallICFGNode>(node))
         {
-            if (const SVFFunction *fun = call->getCalledFunction())
+            if (const FunObjVar *fun = call->getCalledFunction())
             {
                 if (ae_checkpoint_names.find(fun->getName()) !=
                         ae_checkpoint_names.end())

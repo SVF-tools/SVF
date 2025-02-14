@@ -50,7 +50,7 @@ bool AccessPath::isConstantOffset() const
 {
     for(auto it : idxOperandPairs)
     {
-        if(SVFUtil::isa<ConstantIntValVar>(it.first) == false)
+        if(SVFUtil::isa<ConstIntValVar>(it.first) == false)
             return false;
     }
     return true;
@@ -64,7 +64,7 @@ u32_t AccessPath::getElementNum(const SVFType* type) const
 {
     if (SVFUtil::isa<SVFArrayType, SVFStructType>(type))
     {
-        return SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(type);
+        return PAG::getPAG()->getNumOfFlattenElements(type);
     }
     else if (type->isPointerTy())
     {
@@ -98,7 +98,7 @@ u32_t AccessPath::getElementNum(const SVFType* type) const
 u32_t AccessPath::getStructFieldOffset(const SVFVar* idxOperandVar, const SVFStructType* idxOperandType) const
 {
     u32_t structByteOffset = 0;
-    if (const ConstantIntValVar *op = SVFUtil::dyn_cast<ConstantIntValVar>(idxOperandVar))
+    if (const ConstIntValVar*op = SVFUtil::dyn_cast<ConstIntValVar>(idxOperandVar))
     {
         for (u32_t structField = 0; structField < (u32_t) op->getSExtValue(); ++structField)
         {
@@ -156,7 +156,7 @@ APOffset AccessPath::computeConstantByteOffset() const
             type2 = gepSrcPointeeType();
         }
 
-        const ConstantIntValVar* op = SVFUtil::dyn_cast<ConstantIntValVar>(var);
+        const ConstIntValVar* op = SVFUtil::dyn_cast<ConstIntValVar>(var);
         if (const SVFStructType* structType = SVFUtil::dyn_cast<SVFStructType>(type))
         {
             /// for (1) structType: %struct.DEST
@@ -224,8 +224,8 @@ APOffset AccessPath::computeConstantOffset() const
     {
         const SVFVar* var = idxOperandPairs[i].first;
         const SVFType* type = idxOperandPairs[i].second;
-        assert(SVFUtil::isa<ConstantIntValVar>(var) && "not a constant offset?");
-        s64_t constOffset = SVFUtil::dyn_cast<ConstantIntValVar>(var)->getSExtValue();
+        assert(SVFUtil::isa<ConstIntValVar>(var) && "not a constant offset?");
+        s64_t constOffset = SVFUtil::dyn_cast<ConstIntValVar>(var)->getSExtValue();
 
         if(type==nullptr)
         {
@@ -240,7 +240,7 @@ APOffset AccessPath::computeConstantOffset() const
             APOffset offset = constOffset;
             if (offset >= 0)
             {
-                const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()->getTypeInfo(type)->getFlattenedElemIdxVec();
+                const std::vector<u32_t>& so = PAG::getPAG()->getTypeInfo(type)->getFlattenedElemIdxVec();
                 // if offset is larger than the size of getFlattenedElemIdxVec (overflow)
                 // set offset the last index of getFlattenedElemIdxVec to avoid assertion
                 if (offset >= (APOffset)so.size())
@@ -254,8 +254,8 @@ APOffset AccessPath::computeConstantOffset() const
                 }
 
                 u32_t flattenOffset =
-                    SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type,
-                            offset);
+                    PAG::getPAG()->getFlattenedElemIdx(type,
+                                                       offset);
                 totalConstOffset += flattenOffset;
             }
         }

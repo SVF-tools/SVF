@@ -57,7 +57,7 @@ void DDAPass::runOnModule(SVFIR* pag)
     /// initialization for llvm alias analyzer
     //InitializeAliasAnalysis(this, getDataLayout(&module));
 
-    selectClient(pag->getModule());
+    selectClient();
 
     for (u32_t i = PointerAnalysis::FlowS_DDA;
             i < PointerAnalysis::Default_PTA; i++)
@@ -69,7 +69,7 @@ void DDAPass::runOnModule(SVFIR* pag)
 }
 
 /// select a client to initialize queries
-void DDAPass::selectClient(SVFModule* module)
+void DDAPass::selectClient()
 {
 
     if (!Options::UserInputQuery().empty())
@@ -77,16 +77,16 @@ void DDAPass::selectClient(SVFModule* module)
         /// solve function pointer
         if (Options::UserInputQuery() == "funptr")
         {
-            _client = new FunptrDDAClient(module);
+            _client = new FunptrDDAClient();
         }
         else if (Options::UserInputQuery() == "alias")
         {
-            _client = new AliasDDAClient(module);
+            _client = new AliasDDAClient();
         }
         /// allow user specify queries
         else
         {
-            _client = new DDAClient(module);
+            _client = new DDAClient();
             if (Options::UserInputQuery() != "all")
             {
                 u32_t buf; // Have a buffer
@@ -101,7 +101,7 @@ void DDAPass::selectClient(SVFModule* module)
         assert(false && "Please specify query options!");
     }
 
-    _client->initialise(module);
+    _client->initialise();
 }
 
 /// Create pointer analysis according to specified kind and analyze the module.
@@ -131,7 +131,7 @@ void DDAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
 
     if(Options::WPANum())
     {
-        _client->collectWPANum(pag->getModule());
+        _client->collectWPANum();
     }
     else
     {
@@ -177,8 +177,8 @@ bool DDAPass::edgeInSVFGSCC(const SVFGSCC* svfgSCC,const SVFGEdge* edge)
  */
 bool DDAPass::edgeInCallGraphSCC(PointerAnalysis* pta,const SVFGEdge* edge)
 {
-    const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
-    const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
+    const FunObjVar* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
+    const FunObjVar* dstFun = edge->getDstNode()->getICFGNode()->getFun();
 
     if(srcFun && dstFun)
     {
@@ -234,8 +234,8 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
                 if(this->edgeInSVFGSCC(svfgSCC,edge))
                 {
 
-                    const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
-                    const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
+                    const FunObjVar* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
+                    const FunObjVar* dstFun = edge->getDstNode()->getICFGNode()->getFun();
 
                     if(srcFun && dstFun)
                     {
@@ -261,8 +261,8 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
 
             if(edge->isCallVFGEdge() || edge->isRetVFGEdge())
             {
-                const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
-                const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
+                const FunObjVar* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
+                const FunObjVar* dstFun = edge->getDstNode()->getICFGNode()->getFun();
 
                 if(srcFun && dstFun)
                 {
@@ -290,34 +290,7 @@ AliasResult DDAPass::alias(NodeID node1, NodeID node2)
 
     return _pta->alias(node1,node2);
 }
-/*!
- * Return alias results based on our points-to/alias analysis
- * TODO: Need to handle PartialAlias and MustAlias here.
- */
-AliasResult DDAPass::alias(const SVFValue* V1, const SVFValue* V2)
-{
-    SVFIR* pag = _pta->getPAG();
 
-    /// TODO: When this method is invoked during compiler optimizations, the IR
-    ///       used for pointer analysis may been changed, so some Values may not
-    ///       find corresponding SVFIR node. In this case, we only check alias
-    ///       between two Values if they both have SVFIR nodes. Otherwise, MayAlias
-    ///       will be returned.
-    if (pag->hasValueNode(V1) && pag->hasValueNode(V2))
-    {
-        PAGNode* node1 = pag->getGNode(pag->getValueNode(V1));
-        if(pag->isValidTopLevelPtr(node1))
-            _pta->computeDDAPts(node1->getId());
-
-        PAGNode* node2 = pag->getGNode(pag->getValueNode(V2));
-        if(pag->isValidTopLevelPtr(node2))
-            _pta->computeDDAPts(node2->getId());
-
-        return _pta->alias(V1,V2);
-    }
-
-    return AliasResult::MayAlias;
-}
 
 /*!
  * Print queries' pts

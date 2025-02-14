@@ -93,11 +93,11 @@ public:
     virtual bool updateThreadCallGraph(const CallSiteToFunPtrMap&, NodePairSet&);
 
     /// Connect formal and actual parameters for indirect forksites
-    virtual void connectCaller2ForkedFunParams(const CallICFGNode* cs, const SVFFunction* F,
+    virtual void connectCaller2ForkedFunParams(const CallICFGNode* cs, const FunObjVar* F,
             NodePairSet& cpySrcNodes);
 
     /// Connect formal and actual parameters for indirect callsites
-    virtual void connectCaller2CalleeParams(const CallICFGNode* cs, const SVFFunction* F,
+    virtual void connectCaller2CalleeParams(const CallICFGNode* cs, const FunObjVar* F,
                                             NodePairSet& cpySrcNodes);
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:

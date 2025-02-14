@@ -76,7 +76,7 @@ public:
     }
 
     /// Get the function of this SVFGNode
-    virtual const SVFFunction* getFun() const
+    virtual const FunObjVar* getFun() const
     {
         return icfgNode->getFun();
     }
@@ -112,7 +112,7 @@ public:
     }
 
 
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return isVFGNodeKinds(node->getNodeKind());
     }
@@ -184,7 +184,7 @@ public:
     {
         return isStmtVFGNodeKinds(node->getNodeKind());
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return isStmtVFGNodeKinds(node->getNodeKind());
     }
@@ -228,7 +228,7 @@ public:
     {
         return node->getNodeKind() == Load;
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return node->getNodeKind() == Load;
     }
@@ -273,7 +273,7 @@ public:
     {
         return node->getNodeKind() == Store;
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return node->getNodeKind() == Store;
     }
@@ -318,7 +318,7 @@ public:
     {
         return node->getNodeKind() == Copy;
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return node->getNodeKind() == Copy;
     }
@@ -364,7 +364,7 @@ public:
     {
         return node->getNodeKind() == Cmp;
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return node->getNodeKind() == Cmp;
     }
@@ -441,7 +441,7 @@ public:
     {
         return node->getNodeKind() == BinaryOp;
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return node->getNodeKind() == BinaryOp;
     }
@@ -515,7 +515,7 @@ public:
     {
         return node->getNodeKind() == UnaryOp;
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return node->getNodeKind() == UnaryOp;
     }
@@ -587,7 +587,7 @@ public:
     {
         return node->getNodeKind() == Branch;
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return node->getNodeKind() == Branch;
     }
@@ -653,7 +653,7 @@ public:
     {
         return node->getNodeKind() == Gep;
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return node->getNodeKind() == Gep;
     }
@@ -730,7 +730,7 @@ public:
     {
         return isPHIVFGNodeKinds(node->getNodeKind());
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return isPHIVFGNodeKinds(node->getNodeKind());
     }
@@ -790,7 +790,7 @@ public:
     {
         return node->getNodeKind() == TIntraPhi;
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return node->getNodeKind() == TIntraPhi;
     }
@@ -831,7 +831,7 @@ public:
     {
         return node->getNodeKind() == Addr;
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return node->getNodeKind() == Addr;
     }
@@ -875,7 +875,7 @@ public:
     {
         return isArgumentVFGNodeKinds(node->getNodeKind());
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return isArgumentVFGNodeKinds(node->getNodeKind());
     }
@@ -929,7 +929,7 @@ public:
     {
         return node->getNodeKind() == AParm;
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return node->getNodeKind() == AParm;
     }
@@ -947,12 +947,12 @@ public:
 class FormalParmVFGNode : public ArgumentVFGNode
 {
 private:
-    const SVFFunction* fun;
+    const FunObjVar* fun;
     CallPESet callPEs;
 
 public:
     /// Constructor
-    FormalParmVFGNode(NodeID id, const PAGNode* n, const SVFFunction* f):
+    FormalParmVFGNode(NodeID id, const PAGNode* n, const FunObjVar* f):
         ArgumentVFGNode(id, n, FParm),  fun(f)
     {
     }
@@ -964,7 +964,7 @@ public:
     }
 
     /// Return function
-    inline const SVFFunction* getFun() const override
+    inline const FunObjVar* getFun() const override
     {
         return fun;
     }
@@ -1003,7 +1003,7 @@ public:
     {
         return node->getNodeKind() == FParm;
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return node->getNodeKind() == FParm;
     }
@@ -1038,7 +1038,7 @@ public:
         return cs;
     }
     /// Receive parameter at callsite
-    inline const SVFFunction* getCaller() const
+    inline const FunObjVar* getCaller() const
     {
         return cs->getCaller();
     }
@@ -1065,7 +1065,7 @@ public:
     {
         return node->getNodeKind() == ARet;
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return node->getNodeKind() == ARet;
     }
@@ -1082,7 +1082,7 @@ public:
 class FormalRetVFGNode: public ArgumentVFGNode
 {
 private:
-    const SVFFunction* fun;
+    const FunObjVar* fun;
     RetPESet retPEs;
 
     FormalRetVFGNode();                      ///< place holder
@@ -1091,7 +1091,7 @@ private:
 
 public:
     /// Constructor
-    FormalRetVFGNode(NodeID id, const PAGNode* n, const SVFFunction* f);
+    FormalRetVFGNode(NodeID id, const PAGNode* n, const FunObjVar* f);
 
     /// Return value at callee
     inline const PAGNode* getRet() const
@@ -1099,7 +1099,7 @@ public:
         return param;
     }
     /// Function
-    inline const SVFFunction* getFun() const override
+    inline const FunObjVar* getFun() const override
     {
         return fun;
     }
@@ -1135,7 +1135,7 @@ public:
     {
         return node->getNodeKind() == FRet;
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return node->getNodeKind() == FRet;
     }
@@ -1168,7 +1168,7 @@ public:
         return (fun!=nullptr) && (callInst != nullptr);
     }
 
-    inline const SVFFunction* getFun() const override
+    inline const FunObjVar* getFun() const override
     {
         assert((isFormalParmPHI() || isActualRetPHI())  && "expect a formal parameter phi");
         return fun;
@@ -1198,7 +1198,7 @@ public:
     {
         return node->getNodeKind() == TInterPhi;
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return node->getNodeKind() == TInterPhi;
     }
@@ -1207,7 +1207,7 @@ public:
     const std::string toString() const override;
 
 private:
-    const SVFFunction* fun;
+    const FunObjVar* fun;
     const CallICFGNode* callInst;
 };
 
@@ -1250,7 +1250,7 @@ public:
     {
         return node->getNodeKind() == NPtr;
     }
-    static inline bool classof(const SVFBaseNode*node)
+    static inline bool classof(const SVFValue*node)
     {
         return node->getNodeKind() == NPtr;
     }

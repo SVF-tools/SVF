@@ -50,7 +50,7 @@ static bool hasEdge(const CHNode *src, const CHNode *dst,
     return false;
 }
 
-static bool checkArgTypes(const CallICFGNode* cs, const SVFFunction* fn)
+static bool checkArgTypes(const CallICFGNode* cs, const FunObjVar* fn)
 {
 
     // here we skip the first argument (i.e., this pointer)
@@ -127,7 +127,7 @@ void CHGraph::getVFnsFromVtbls(const CallICFGNode* callsite, const VTableSet &vt
     size_t idx = callsite->getFunIdxInVtable();
     /// get the function name of the virtual callsite
     string funName = callsite->getFunNameOfVirtualCall();
-    for (const SVFGlobalValue *vt : vtbls)
+    for (const GlobalObjVar *vt : vtbls)
     {
         const CHNode *child = getNode(vt->getName());
         if (child == nullptr)
@@ -137,7 +137,7 @@ void CHGraph::getVFnsFromVtbls(const CallICFGNode* callsite, const VTableSet &vt
         for (CHNode::FuncVector::const_iterator fit = vfns.begin(),
                 feit = vfns.end(); fit != feit; ++fit)
         {
-            const SVFFunction* callee = *fit;
+            const FunObjVar* callee = *fit;
             if (callsite->arg_size() == callee->arg_size() ||
                     (callsite->isVarArg() && callee->isVarArg()))
             {

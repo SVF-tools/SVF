@@ -21,15 +21,14 @@
 //===----------------------------------------------------------------------===//
 
 
-#include "SVFIR/SVFModule.h"
-#include "SVFIR/SymbolTableInfo.h"
+#include "SVF-LLVM/SVFModule.h"
+#include "SVFIR/ObjTypeInfo.h"
 #include "Util/SVFUtil.h"
 #include "Util/SVFStat.h"
 #include "Util/Options.h"
 
 using namespace SVF;
 
-std::string SVFModule::pagReadFromTxt = "";
 SVFModule* SVFModule::svfModule = nullptr;
 
 SVFModule::~SVFModule()
@@ -38,7 +37,7 @@ SVFModule::~SVFModule()
         delete f;
     for (const SVFConstant* c : ConstantSet)
         delete c;
-    for (const SVFValue* o : OtherValueSet)
+    for (const SVFLLVMValue* o : OtherValueSet)
         delete o;
     NodeIDAllocator::unset();
     ThreadAPI::destroy();

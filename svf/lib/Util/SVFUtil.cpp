@@ -31,6 +31,7 @@
 #include "Util/SVFUtil.h"
 #include "MemoryModel/PointsTo.h"
 #include "Graphs/CallGraph.h"
+#include "SVFIR/SVFVariables.h"
 
 #include <sys/resource.h>		/// increase stack size
 
@@ -242,21 +243,7 @@ void SVFUtil::increaseStackSize()
     }
 }
 
-/*!
- * Return true if it is an llvm intrinsic instruction
-*/
-bool SVFUtil::isIntrinsicInst(const SVFInstruction* inst)
-{
-    if (const SVFCallInst* call = SVFUtil::dyn_cast<SVFCallInst>(inst))
-    {
-        const SVFFunction* func = call->getCalledFunction();
-        if (func && func->isIntrinsic())
-        {
-            return true;
-        }
-    }
-    return false;
-}
+
 
 std::string SVFUtil::hclustMethodToString(hclust_fast_methods method)
 {
@@ -318,7 +305,7 @@ void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
 /// unless the callee is a variadic function (the first parameter of variadic function is its parameter number)
 /// e.g., void variadicFoo(int num, ...); variadicFoo(5, 1,2,3,4,5)
 /// for variadic function, callsite arg size must be greater than or equal to callee arg size
-bool SVFUtil::matchArgs(const CallICFGNode* call, const SVFFunction* callee)
+bool SVFUtil::matchArgs(const CallICFGNode* call, const FunObjVar* callee)
 {
     if (callee->isVarArg() || ThreadAPI::getThreadAPI()->isTDFork(call))
         return call->arg_size() >= callee->arg_size();
@@ -335,7 +322,7 @@ bool SVFUtil::isIntrinsicInst(const ICFGNode* inst)
 {
     if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst))
     {
-        const SVFFunction* func = call->getCalledFunction();
+        const FunObjVar* func = call->getCalledFunction();
         if (func && func->isIntrinsic())
         {
             return true;
@@ -394,13 +381,20 @@ bool SVFUtil::isRetInstNode(const ICFGNode* node)
         return false;
 }
 
+bool SVFUtil::isProgExitFunction(const FunObjVar *fun)
+{
+    return fun && (fun->getName() == "exit" ||
+                   fun->getName() == "__assert_rtn" ||
+                   fun->getName() == "__assert_fail");
+}
+
 bool SVFUtil::isProgExitCall(const CallICFGNode* cs)
 {
     return isProgExitFunction(cs->getCalledFunction());
 }
 
 /// Get program entry function from module.
-const SVFFunction* SVFUtil::getProgFunction(const std::string& funName)
+const FunObjVar* SVFUtil::getProgFunction(const std::string& funName)
 {
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
@@ -413,7 +407,7 @@ const SVFFunction* SVFUtil::getProgFunction(const std::string& funName)
 }
 
 /// Get program entry function from module.
-const SVFFunction* SVFUtil::getProgEntryFunction()
+const FunObjVar* SVFUtil::getProgEntryFunction()
 {
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
@@ -438,4 +432,14 @@ const ObjVar* SVFUtil::getObjVarOfValVar(const SVF::ValVar* valVar)
 {
     assert(valVar->getInEdges().size() == 1);
     return SVFUtil::dyn_cast<ObjVar>((*valVar->getInEdges().begin())->getSrcNode());
+}
+
+bool SVFUtil::isExtCall(const FunObjVar* fun)
+{
+    return fun && ExtAPI::getExtAPI()->is_ext(fun);
+}
+
+bool SVFUtil::isProgEntryFunction(const FunObjVar* funObjVar)
+{
+    return funObjVar && funObjVar->getName() == "main";
 }

@@ -190,7 +190,7 @@ AddrCGEdge::AddrCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id)
     // Retarget addr edges may lead s to be a dummy node
     PAGNode* node = SVFIR::getPAG()->getGNode(s->getId());
     (void)node; // Suppress warning of unused variable under release build
-    if (!SVFModule::pagReadFromTXT())
+    if (!SVFIR::pagReadFromTXT())
     {
         assert(!SVFUtil::isa<DummyValVar>(node) && "a dummy node??");
     }
@@ -775,7 +775,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
             if (SVFUtil::isa<ValVar>(node))
             {
                 if (nameDisplay)
-                    rawstr << node->getId() << ":" << node->getValueName();
+                    rawstr << node->getId() << ":" << node->getName();
                 else
                     rawstr << node->getId();
             }
@@ -818,11 +818,11 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
             else
                 return "shape=component";
         }
-        else if (SVFUtil::isa<RetPN>(node))
+        else if (SVFUtil::isa<RetValPN>(node))
         {
             return "shape=Mrecord";
         }
-        else if (SVFUtil::isa<VarArgPN>(node))
+        else if (SVFUtil::isa<VarArgValPN>(node))
         {
             return "shape=octagon";
         }

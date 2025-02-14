@@ -51,7 +51,6 @@ class SVFVar;
 */
 class AccessPath
 {
-    friend class SymbolTableInfo;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 

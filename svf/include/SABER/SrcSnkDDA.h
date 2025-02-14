@@ -76,7 +76,7 @@ private:
 protected:
     SaberSVFGBuilder memSSA;
     SVFG* svfg;
-    PTACallGraph* callgraph;
+    CallGraph* callgraph;
     SVFBugReport report; /// Bug Reporter
 
 public:
@@ -105,10 +105,10 @@ public:
     }
 
     /// Start analysis here
-    virtual void analyze(SVFModule* module);
+    virtual void analyze();
 
     /// Initialize analysis
-    virtual void initialize(SVFModule* module);
+    virtual void initialize();
 
     /// Finalize analysis
     virtual void finalize()
@@ -129,7 +129,7 @@ public:
     }
 
     /// Get Callgraph
-    inline PTACallGraph* getCallgraph() const
+    inline CallGraph* getCallgraph() const
     {
         return callgraph;
     }
@@ -174,12 +174,12 @@ public:
     ///@{
     virtual void initSrcs() = 0;
     virtual void initSnks() = 0;
-    virtual bool isSourceLikeFun(const SVFFunction* fun)
+    virtual bool isSourceLikeFun(const FunObjVar* fun)
     {
         return false;
     }
 
-    virtual bool isSinkLikeFun(const SVFFunction* fun)
+    virtual bool isSinkLikeFun(const FunObjVar* fun)
     {
         return false;
     }

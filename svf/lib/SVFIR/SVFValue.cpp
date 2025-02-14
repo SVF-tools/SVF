@@ -1,6 +1,8 @@
 #include "SVFIR/SVFValue.h"
 #include "Util/SVFUtil.h"
 #include "Graphs/GenericGraph.h"
+#include "Util/SVFLoopAndDomInfo.h"
+
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -149,135 +151,8 @@ bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
     return false;
 }
 
-SVFFunction::SVFFunction(const SVFType* ty, const SVFFunctionType* ft,
-                         bool declare, bool intrinsic, bool adt, bool varg,
-                         SVFLoopAndDomInfo* ld)
-    : SVFValue(ty, SVFValue::SVFFunc), isDecl(declare), intrinsic(intrinsic),
-      addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg),
-      funcType(ft), loopAndDom(ld), realDefFun(nullptr), exitBlock(nullptr)
-{
-}
-
-SVFFunction::~SVFFunction()
-{
-    for(const SVFBasicBlock* bb : allBBs)
-        delete bb;
-    for(const SVFArgument* arg : allArgs)
-        delete arg;
-    delete loopAndDom;
-}
-
-u32_t SVFFunction::arg_size() const
-{
-    return allArgs.size();
-}
-
-const SVFArgument* SVFFunction::getArg(u32_t idx) const
-{
-    assert (idx < allArgs.size() && "getArg() out of range!");
-    return allArgs[idx];
-}
-
-bool SVFFunction::isVarArg() const
-{
-    return varArg;
-}
-
-const SVFBasicBlock *SVFFunction::getExitBB() const
-{
-    assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
-    assert(exitBlock && "must have an exitBlock");
-    return exitBlock;
-}
-
-void SVFFunction::setExitBlock(SVFBasicBlock *bb)
-{
-    assert(!exitBlock && "have already set exit Basicblock!");
-    exitBlock = bb;
-}
-
-SVFBasicBlock::SVFBasicBlock(const SVFType* ty, const SVFFunction* f)
-    : SVFValue(ty, SVFValue::SVFBB), fun(f)
-{
-}
-
-SVFBasicBlock::~SVFBasicBlock()
-{
-
-}
-
-/*!
- * Get position of a successor basic block
- */
-u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ)
-{
-    u32_t i = 0;
-    for (const SVFBasicBlock* SuccBB: succBBs)
-    {
-        if (SuccBB == Succ)
-            return i;
-        i++;
-    }
-    assert(false && "Didn't find successor edge?");
-    return 0;
-}
-
-u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ) const
-{
-    u32_t i = 0;
-    for (const SVFBasicBlock* SuccBB: succBBs)
-    {
-        if (SuccBB == Succ)
-            return i;
-        i++;
-    }
-    assert(false && "Didn't find successor edge?");
-    return 0;
-}
-
-/*!
- * Return a position index from current bb to it successor bb
- */
-u32_t SVFBasicBlock::getBBPredecessorPos(const SVFBasicBlock* succbb)
-{
-    u32_t pos = 0;
-    for (const SVFBasicBlock* PredBB : succbb->getPredecessors())
-    {
-        if(PredBB == this)
-            return pos;
-        ++pos;
-    }
-    assert(false && "Didn't find predecessor edge?");
-    return pos;
-}
-u32_t SVFBasicBlock::getBBPredecessorPos(const SVFBasicBlock* succbb) const
-{
-    u32_t pos = 0;
-    for (const SVFBasicBlock* PredBB : succbb->getPredecessors())
-    {
-        if(PredBB == this)
-            return pos;
-        ++pos;
-    }
-    assert(false && "Didn't find predecessor edge?");
-    return pos;
-}
-
-SVFInstruction::SVFInstruction(const SVFType* ty, const SVFBasicBlock* b,
-                               bool tm, bool isRet, SVFValKind k)
-    : SVFValue(ty, k), bb(b), terminator(tm), ret(isRet)
-{
-}
-
 __attribute__((weak))
-std::string SVFValue::toString() const
-{
-    assert("SVFValue::toString should be implemented or supported by fronted" && false);
-    abort();
-}
-
-__attribute__((weak))
-const std::string SVFBaseNode::valueOnlyToString() const
+const std::string SVFValue::valueOnlyToString() const
 {
     assert("SVFBaseNode::valueOnlyToString should be implemented or supported by fronted" && false);
     abort();

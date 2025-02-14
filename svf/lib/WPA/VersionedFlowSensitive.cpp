@@ -481,9 +481,9 @@ void VersionedFlowSensitive::buildDeltaMaps(void)
         //  * Callsite returns: can get new incoming indirect edges if the callsite is indirect.
         //  * Otherwise: static.
         bool isDelta = false;
-        if (const SVFFunction *fn = svfg->isFunEntrySVFGNode(s))
+        if (const FunObjVar *fn = svfg->isFunEntrySVFGNode(s))
         {
-            PTACallGraphEdge::CallInstSet callsites;
+            CallGraphEdge::CallInstSet callsites;
             /// use pre-analysis call graph to approximate all potential callsites
             ander->getCallGraph()->getIndCallSitesInvokingCallee(fn, callsites);
             isDelta = !callsites.empty();
@@ -783,8 +783,9 @@ void VersionedFlowSensitive::cluster(void)
     for (SVFIR::iterator pit = pag->begin(); pit != pag->end(); ++pit)
     {
         unsigned occ = 1;
+        //ABTest
         unsigned v = pit->first;
-        if (Options::PredictPtOcc() && pag->getObject(v) != nullptr) occ = stmtReliance[v].size() + 1;
+        if (Options::PredictPtOcc() && pag->getBaseObject(v) != nullptr) occ = stmtReliance[v].size() + 1;
         assert(occ != 0);
         keys.push_back(std::make_pair(v, occ));
     }

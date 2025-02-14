@@ -33,7 +33,7 @@
 #ifndef CHA_H_
 #define CHA_H_
 
-#include "SVFIR/SVFModule.h"
+#include "Util/ThreadAPI.h"
 #include "Graphs/GenericGraph.h"
 #include "Util/WorkList.h"
 
@@ -42,9 +42,10 @@ namespace SVF
 
 class SVFModule;
 class CHNode;
+class GlobalObjVar;
 
-typedef Set<const SVFGlobalValue*> VTableSet;
-typedef Set<const SVFFunction*> VFunSet;
+typedef Set<const GlobalObjVar*> VTableSet;
+typedef Set<const FunObjVar*> VFunSet;
 
 /// Common base for class hierarchy graph. Only implements what PointerAnalysis needs.
 class CommonCHGraph
@@ -118,7 +119,7 @@ public:
         TEMPLATE = 0x04 // template class
     } CLASSATTR;
 
-    typedef std::vector<const SVFFunction*> FuncVector;
+    typedef std::vector<const FunObjVar*> FuncVector;
 
     CHNode (const std::string& name, NodeID i = 0, GNodeK k = CHNodeKd):
         GenericCHNodeTy(i, k), vtable(nullptr), className(name), flags(0)
@@ -127,7 +128,7 @@ public:
     ~CHNode()
     {
     }
-    std::string getName() const
+    virtual const std::string& getName() const
     {
         return className;
     }
@@ -181,12 +182,12 @@ public:
     }
     void getVirtualFunctions(u32_t idx, FuncVector &virtualFunctions) const;
 
-    const SVFGlobalValue *getVTable() const
+    const GlobalObjVar *getVTable() const
     {
         return vtable;
     }
 
-    void setVTable(const SVFGlobalValue *vtbl)
+    void setVTable(const GlobalObjVar *vtbl)
     {
         vtable = vtbl;
     }
@@ -203,14 +204,14 @@ public:
         return node->getNodeKind() == CHNodeKd;
     }
 
-    static inline bool classof(const SVFBaseNode* node)
+    static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == CHNodeKd;
     }
     //@}
 
 private:
-    const SVFGlobalValue* vtable;
+    const GlobalObjVar* vtable;
     std::string className;
     size_t flags;
     /*
@@ -251,7 +252,7 @@ public:
         DESTRUCTOR = 0x2 // connect node based on destructor
     } RELATIONTYPE;
 
-    CHGraph(SVFModule* svfModule): svfMod(svfModule), classNum(0), vfID(0), buildingCHGTime(0)
+    CHGraph(): classNum(0), vfID(0), buildingCHGTime(0)
     {
         this->kind = Standard;
     }
@@ -266,18 +267,18 @@ public:
     void view();
     void printCH();
 
-    inline u32_t getVirtualFunctionID(const SVFFunction* vfn) const
+    inline u32_t getVirtualFunctionID(const FunObjVar* vfn) const
     {
-        Map<const SVFFunction*, u32_t>::const_iterator it =
+        Map<const FunObjVar*, u32_t>::const_iterator it =
             virtualFunctionToIDMap.find(vfn);
         if (it != virtualFunctionToIDMap.end())
             return it->second;
         else
             return -1;
     }
-    inline const SVFFunction* getVirtualFunctionBasedonID(u32_t id) const
+    inline const FunObjVar* getVirtualFunctionBasedonID(u32_t id) const
     {
-        Map<const SVFFunction*, u32_t>::const_iterator it, eit;
+        Map<const FunObjVar*, u32_t>::const_iterator it, eit;
         for (it = virtualFunctionToIDMap.begin(), eit =
                     virtualFunctionToIDMap.end(); it != eit; ++it)
         {
@@ -317,7 +318,6 @@ public:
 
 
 private:
-    SVFModule* svfMod;
     u32_t classNum;
     u32_t vfID;
     double buildingCHGTime;
@@ -328,7 +328,7 @@ private:
     NameToCHNodesMap templateNameToInstancesMap;
     CallNodeToCHNodesMap callNodeToClassesMap;
 
-    Map<const SVFFunction*, u32_t> virtualFunctionToIDMap;
+    Map<const FunObjVar*, u32_t> virtualFunctionToIDMap;
 
     CallNodeToVTableSetMap callNodeToCHAVtblsMap;
     CallNodeToVFunSetMap callNodeToCHAVFnsMap;

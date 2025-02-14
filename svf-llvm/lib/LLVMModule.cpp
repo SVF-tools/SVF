@@ -29,7 +29,7 @@
 
 #include <queue>
 #include <algorithm>
-#include "SVFIR/SVFModule.h"
+#include "SVF-LLVM/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/LLVMUtil.h"
@@ -78,7 +78,7 @@ LLVMModuleSet* LLVMModuleSet::llvmModuleSet = nullptr;
 bool LLVMModuleSet::preProcessed = false;
 
 LLVMModuleSet::LLVMModuleSet()
-    : symInfo(SymbolTableInfo::SymbolInfo()),
+    : svfir(PAG::getPAG()),
       svfModule(SVFModule::getSVFModule()), typeInference(new ObjTypeInference())
 {
 }
@@ -90,8 +90,17 @@ LLVMModuleSet::~LLVMModuleSet()
         delete item.second;
         item.second = nullptr;
     }
+
+    for (auto& item: LLVMArgument2SVFArgument)
+    {
+        delete item.second;
+        item.second = nullptr;
+    }
     delete typeInference;
     typeInference = nullptr;
+
+    SVFModule::releaseSVFModule();
+    svfModule = nullptr;
 }
 
 ObjTypeInference* LLVMModuleSet::getTypeInference()
@@ -113,7 +122,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
     LLVMModuleSet* mset = getLLVMModuleSet();
 
     double startSVFModuleTime = SVFStat::getClk(true);
-    SVFModule::getSVFModule()->setModuleIdentifier(mod.getModuleIdentifier());
+    PAG::getPAG()->setModuleIdentifier(mod.getModuleIdentifier());
     mset->modules.emplace_back(mod);    // Populates `modules`; can get context via `this->getContext()`
     mset->loadExtAPIModules();          // Uses context from module through `this->getContext()`
     mset->build();
@@ -136,7 +145,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
 
     if (!moduleNameVec.empty())
     {
-        SVFModule::getSVFModule()->setModuleIdentifier(moduleNameVec.front());
+        PAG::getPAG()->setModuleIdentifier(moduleNameVec.front());
     }
 
     mset->build();
@@ -153,11 +162,11 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
 void LLVMModuleSet::buildSymbolTable() const
 {
     double startSymInfoTime = SVFStat::getClk(true);
-    if (!SVFModule::pagReadFromTXT())
+    if (!SVFIR::pagReadFromTXT())
     {
         /// building symbol table
         DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
-        SymbolTableBuilder builder(symInfo);
+        SymbolTableBuilder builder(svfir);
         builder.buildMemModel(svfModule);
     }
     double endSymInfoTime = SVFStat::getClk(true);
@@ -179,24 +188,6 @@ void LLVMModuleSet::build()
     createSVFDataStructure();
     initSVFFunction();
 
-
-    ICFGBuilder icfgbuilder;
-    icfg = icfgbuilder.build();
-
-    CallGraphBuilder callGraphBuilder;
-    callgraph = callGraphBuilder.buildSVFIRCallGraph(svfModule);
-    for (const auto& func : svfModule->getFunctionSet())
-    {
-        SVFFunction* svffunc = const_cast<SVFFunction*>(func);
-        svffunc->setCallGraphNode(callgraph->getCallGraphNode(func));
-    }
-
-    for (const auto& it : *callgraph)
-    {
-        addFunctionMap(
-            SVFUtil::cast<Function>(getLLVMValue(it.second->getFunction())),
-            it.second);
-    }
 }
 
 void LLVMModuleSet::createSVFDataStructure()
@@ -237,7 +228,7 @@ void LLVMModuleSet::createSVFDataStructure()
     for (const auto& pair : ExtFun2Annotations)
     {
         const SVFFunction* svffun = getSVFFunction(pair.first);
-        ExtAPI::getExtAPI()->setExtFuncAnnotations(svffun, pair.second);
+        setExtFuncAnnotations(svffun, pair.second);
     }
 
     /// then traverse candidate sets
@@ -280,6 +271,8 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             getSVFType(func->getFunctionType())),
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
         func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
+    BasicBlockGraph* bbGraph = new BasicBlockGraph();
+    svfFunc->setBasicBlockGraph(bbGraph);
     svfModule->addFunctionSet(svfFunc);
     addFunctionMap(func, svfFunc);
 
@@ -292,23 +285,19 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
         if (!arg.hasName())
             svfarg->setName(std::to_string(arg.getArgNo()));
 
-        svfFunc->addArgument(svfarg);
         addArgumentMap(&arg, svfarg);
     }
 
     for (const BasicBlock& bb : *func)
     {
-        SVFBasicBlock* svfBB =
-            new SVFBasicBlock(getSVFType(bb.getType()), svfFunc);
-        svfFunc->addBasicBlock(svfBB);
-        addBasicBlockMap(&bb, svfBB);
+        addBasicBlock(svfFunc, &bb);
         for (const Instruction& inst : bb)
         {
             SVFInstruction* svfInst = nullptr;
             if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(&inst))
             {
                 svfInst = new SVFCallInst(
-                    getSVFType(call->getType()), svfBB,
+                    getSVFType(call->getType()), getSVFBasicBlock(&bb),
                     call->getFunctionType()->isVarArg(),
                     inst.isTerminator());
             }
@@ -316,7 +305,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             {
                 svfInst =
                     new SVFInstruction(getSVFType(inst.getType()),
-                                       svfBB, inst.isTerminator(),
+                                       getSVFBasicBlock(&bb), inst.isTerminator(),
                                        SVFUtil::isa<ReturnInst>(inst));
             }
 
@@ -335,7 +324,7 @@ void LLVMModuleSet::initSVFFunction()
             SVFFunction* svffun = getSVFFunction(&f);
             initSVFBasicBlock(&f);
 
-            if (!SVFUtil::isExtCall(svffun))
+            if (!LLVMUtil::isExtCall(svffun))
             {
                 initDomTree(svffun, &f);
             }
@@ -392,7 +381,7 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
                 }
                 for(u32_t i = 0; i < call->arg_size(); i++)
                 {
-                    SVFValue* svfval = getSVFValue(call->getArgOperand(i));
+                    SVFLLVMValue* svfval = getSVFValue(call->getArgOperand(i));
                     svfcall->addArgument(svfval);
                 }
             }
@@ -543,8 +532,9 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     }
     // We read SVFIR from a user-defined txt instead of parsing SVFIR from LLVM IR
     else
-        SVFModule::setPagFromTXT(Options::Graphtxt());
-
+    {
+        SVFIR::setPagFromTXT(Options::Graphtxt());
+    }
     //
     // LLVMContext objects separate global LLVM settings (from which e.g. types are
     // derived); multiple LLVMContext objects can coexist and each context can "own"
@@ -1219,13 +1209,79 @@ void LLVMModuleSet::dumpModulesToFile(const std::string& suffix)
     }
 }
 
-void LLVMModuleSet::addFunctionMap(const Function* func, CallGraphNode* svfFunc)
+NodeID LLVMModuleSet::getValueNode(const SVFLLVMValue *val)
 {
-    LLVMFunc2CallGraphNode[func] = svfFunc;
-    addToLLVMVal2SVFVarMap(func, svfFunc);
+    auto llvm_value = llvmModuleSet->getLLVMValue(val);
+    if (SVFUtil::isa<ConstantPointerNull>(llvm_value))
+        return svfir->nullPtrSymID();
+    else if (SVFUtil::isa<UndefValue>(llvm_value))
+        return svfir->blkPtrSymID();
+    else
+    {
+        ValueToIDMapTy::const_iterator iter = valSymMap.find(val);
+        assert(iter!=valSymMap.end() &&"value sym not found");
+        return iter->second;
+    }
+}
+bool LLVMModuleSet::hasValueNode(const SVFLLVMValue *val)
+{
+    if (SVFUtil::isa<ConstantPointerNull, UndefValue>(llvmModuleSet->getLLVMValue(val)))
+        return true;
+    else
+        return (valSymMap.find(val) != valSymMap.end());
 }
 
-void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
+NodeID LLVMModuleSet::getObjectNode(const SVFLLVMValue *val)
+{
+    const SVFLLVMValue *svfVal = val;
+    if (const SVFGlobalValue *g = SVFUtil::dyn_cast<SVFGlobalValue>(val))
+        svfVal = g->getDefGlobalForMultipleModule();
+    ValueToIDMapTy::const_iterator iter = objSymMap.find(svfVal);
+    assert(iter!=objSymMap.end() && "obj sym not found");
+    return iter->second;
+}
+
+
+void LLVMModuleSet::dumpSymTable()
+{
+    OrderedMap<NodeID, SVFLLVMValue*> idmap;
+    for (ValueToIDMapTy::iterator iter = valSymMap.begin(); iter != valSymMap.end();
+            ++iter)
+    {
+        const NodeID i = iter->second;
+        SVFLLVMValue* val = (SVFLLVMValue*) iter->first;
+        idmap[i] = val;
+    }
+    for (ValueToIDMapTy::iterator iter = objSymMap.begin(); iter != objSymMap.end();
+            ++iter)
+    {
+        const NodeID i = iter->second;
+        SVFLLVMValue* val = (SVFLLVMValue*) iter->first;
+        idmap[i] = val;
+    }
+    for (FunToIDMapTy::iterator iter = retSyms().begin(); iter != retSyms().end();
+            ++iter)
+    {
+        const NodeID i = iter->second;
+        SVFLLVMValue* val = (SVFLLVMValue*) iter->first;
+        idmap[i] = val;
+    }
+    for (FunToIDMapTy::iterator iter = varargSyms().begin(); iter != varargSyms().end();
+            ++iter)
+    {
+        const NodeID i = iter->second;
+        SVFLLVMValue* val = (SVFLLVMValue*) iter->first;
+        idmap[i] = val;
+    }
+    SVFUtil::outs() << "{SymbolTableInfo \n";
+    for (auto iter : idmap)
+    {
+        SVFUtil::outs() << iter.first << " " << iter.second->toString() << "\n";
+    }
+    SVFUtil::outs() << "}\n";
+}
+
+void LLVMModuleSet::setValueAttr(const Value* val, SVFLLVMValue* svfvalue)
 {
     SVFValue2LLVMValue[svfvalue] = val;
 
@@ -1253,11 +1309,12 @@ void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
     svfvalue->setSourceLoc(LLVMUtil::getSourceLoc(val));
 }
 
-void LLVMModuleSet::addToLLVMVal2SVFVarMap(const Value* val,
-        SVFBaseNode* svfBaseNode)
+void LLVMModuleSet::addToSVFVar2LLVMValueMap(const Value* val,
+        SVFValue* svfBaseNode)
 {
     SVFBaseNode2LLVMValue[svfBaseNode] = val;
     svfBaseNode->setSourceLoc(LLVMUtil::getSourceLoc(val));
+    svfBaseNode->setName(val->getName().str());
 }
 
 SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
@@ -1270,55 +1327,7 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
     }
     else
     {
-        SVFConstantData* svfcd = nullptr;
-        if(const ConstantInt* cint = SVFUtil::dyn_cast<ConstantInt>(cd))
-        {
-            /// bitwidth == 1 : cint has value from getZExtValue() because `bool true` will be translated to -1 using sign extension (i.e., getSExtValue).
-            /// bitwidth <=64 1 : cint has value from getSExtValue()
-            /// bitwidth >64 1 : cint has value 0 because it represents an invalid int
-            if(cint->getBitWidth() == 1)
-                svfcd = new SVFConstantInt(getSVFType(cint->getType()), cint->getZExtValue(), cint->getZExtValue());
-            else if(cint->getBitWidth() <= 64 && cint->getBitWidth() > 1)
-                svfcd = new SVFConstantInt(getSVFType(cint->getType()), cint->getZExtValue(), cint->getSExtValue());
-            else
-                svfcd = new SVFConstantInt(getSVFType(cint->getType()), 0, 0);
-        }
-        else if(const ConstantFP* cfp = SVFUtil::dyn_cast<ConstantFP>(cd))
-        {
-            double dval = 0;
-            // TODO: Why only double is considered? What about float?
-            if (cfp->isNormalFP())
-            {
-                const llvm::fltSemantics& semantics = cfp->getValueAPF().getSemantics();
-                if (&semantics == &llvm::APFloat::IEEEhalf() ||
-                        &semantics == &llvm::APFloat::IEEEsingle() ||
-                        &semantics == &llvm::APFloat::IEEEdouble() ||
-                        &semantics == &llvm::APFloat::IEEEquad() ||
-                        &semantics == &llvm::APFloat::x87DoubleExtended())
-                {
-                    dval = cfp->getValueAPF().convertToDouble();
-                }
-                else
-                {
-                    assert (false && "Unsupported floating point type");
-                    abort();
-                }
-            }
-            else
-            {
-                // other cfp type, like isZero(), isInfinity(), isNegative(), etc.
-                // do nothing
-            }
-            svfcd = new SVFConstantFP(getSVFType(cd->getType()), dval);
-        }
-        else if(SVFUtil::isa<ConstantPointerNull>(cd))
-            svfcd = new SVFConstantNullPtr(getSVFType(cd->getType()));
-        else if (SVFUtil::isa<UndefValue>(cd))
-            svfcd = new SVFBlackHoleValue(getSVFType(cd->getType()));
-        else
-            svfcd = new SVFConstantData(getSVFType(cd->getType()));
-
-
+        SVFConstantData* svfcd = new SVFConstantData(getSVFType(cd->getType()));
         svfModule->addConstant(svfcd);
         addConstantDataMap(cd,svfcd);
         return svfcd;
@@ -1360,12 +1369,26 @@ SVFOtherValue* LLVMModuleSet::getSVFOtherValue(const Value* ov)
     }
 }
 
-SVFValue* LLVMModuleSet::getSVFValue(const Value* value)
+const FunObjVar* LLVMModuleSet::getFunObjVar(const std::string& name)
+{
+    Function* fun = nullptr;
+
+    for (u32_t i = 0; i < llvmModuleSet->getModuleNum(); ++i)
+    {
+        Module* mod = llvmModuleSet->getModule(i);
+        fun = mod->getFunction(name);
+        if (fun)
+        {
+            return llvmModuleSet->getFunObjVar(fun);
+        }
+    }
+    return nullptr;
+}
+
+SVFLLVMValue* LLVMModuleSet::getSVFValue(const Value* value)
 {
     if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
         return getSVFFunction(fun);
-    else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(value))
-        return getSVFBasicBlock(bb);
     else if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
         return getSVFInstruction(inst);
     else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
@@ -1481,10 +1504,10 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
     {
         u32_t nf;
         stInfo = collectStructInfo(sty, nf);
-        if (nf > symInfo->maxStSize)
+        if (nf > svfir->maxStSize)
         {
-            symInfo->maxStruct = getSVFType(sty);
-            symInfo->maxStSize = nf;
+            svfir->maxStruct = getSVFType(sty);
+            svfir->maxStSize = nf;
         }
     }
     else
@@ -1492,7 +1515,7 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
         stInfo = collectSimpleTypeInfo(T);
     }
     Type2TypeInfo.emplace(T, stInfo);
-    symInfo->addStInfo(stInfo);
+    svfir->addStInfo(stInfo);
     return stInfo;
 }
 
@@ -1549,7 +1572,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         svftype = ot;
     }
 
-    symInfo->addTypeInfo(svftype);
+    svfir->addTypeInfo(svftype);
     LLVMType2SVFType[T] = svftype;
 
     return svftype;
@@ -1690,4 +1713,109 @@ StInfo* LLVMModuleSet::collectSimpleTypeInfo(const Type* ty)
     stInfo->setNumOfFieldsAndElems(1,1);
 
     return stInfo;
+}
+
+void LLVMModuleSet::setExtFuncAnnotations(const SVFFunction* fun, const std::vector<std::string>& funcAnnotations)
+{
+    assert(fun && "Null SVFFunction* pointer");
+    func2Annotations[fun] = funcAnnotations;
+}
+
+bool LLVMModuleSet::hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation)
+{
+    assert(fun && "Null SVFFunction* pointer");
+    auto it = func2Annotations.find(fun);
+    if (it != func2Annotations.end())
+    {
+        for (const std::string& annotation : it->second)
+            if (annotation.find(funcAnnotation) != std::string::npos)
+                return true;
+    }
+    return false;
+}
+
+std::string LLVMModuleSet::getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation)
+{
+    assert(fun && "Null SVFFunction* pointer");
+    auto it = func2Annotations.find(fun);
+    if (it != func2Annotations.end())
+    {
+        for (const std::string& annotation : it->second)
+            if (annotation.find(funcAnnotation) != std::string::npos)
+                return annotation;
+    }
+    return "";
+}
+
+const std::vector<std::string>& LLVMModuleSet::getExtFuncAnnotations(const SVFFunction* fun)
+{
+    assert(fun && "Null SVFFunction* pointer");
+    auto it = func2Annotations.find(fun);
+    if (it != func2Annotations.end())
+        return it->second;
+    return func2Annotations[fun];
+}
+
+bool LLVMModuleSet::is_memcpy(const SVFFunction *F)
+{
+    return F &&
+           (hasExtFuncAnnotation(F, "MEMCPY") ||  hasExtFuncAnnotation(F, "STRCPY")
+            || hasExtFuncAnnotation(F, "STRCAT"));
+}
+
+bool LLVMModuleSet::is_memset(const SVFFunction *F)
+{
+    return F && hasExtFuncAnnotation(F, "MEMSET");
+}
+
+bool LLVMModuleSet::is_alloc(const SVFFunction* F)
+{
+    return F && hasExtFuncAnnotation(F, "ALLOC_HEAP_RET");
+}
+
+// Does (F) allocate a new object and assign it to one of its arguments?
+bool LLVMModuleSet::is_arg_alloc(const SVFFunction* F)
+{
+    return F && hasExtFuncAnnotation(F, "ALLOC_HEAP_ARG");
+}
+
+bool LLVMModuleSet::is_alloc_stack_ret(const SVFFunction* F)
+{
+    return F && hasExtFuncAnnotation(F, "ALLOC_STACK_RET");
+}
+
+// Get the position of argument which holds the new object
+s32_t LLVMModuleSet::get_alloc_arg_pos(const SVFFunction* F)
+{
+    std::string allocArg = getExtFuncAnnotation(F, "ALLOC_HEAP_ARG");
+    assert(!allocArg.empty() && "Not an alloc call via argument or incorrect extern function annotation!");
+
+    std::string number;
+    for (char c : allocArg)
+    {
+        if (isdigit(c))
+            number.push_back(c);
+    }
+    assert(!number.empty() && "Incorrect naming convention for svf external functions(ALLOC_HEAP_ARG + number)?");
+    return std::stoi(number);
+}
+
+// Does (F) reallocate a new object?
+bool LLVMModuleSet::is_realloc(const SVFFunction* F)
+{
+    return F && hasExtFuncAnnotation(F, "REALLOC_HEAP_RET");
+}
+
+
+// Should (F) be considered "external" (either not defined in the program
+//   or a user-defined version of a known alloc or no-op)?
+bool LLVMModuleSet::is_ext(const SVFFunction* F)
+{
+    assert(F && "Null SVFFunction* pointer");
+    if (F->isDeclaration() || F->isIntrinsic())
+        return true;
+    else if (hasExtFuncAnnotation(F, "OVERWRITE") && getExtFuncAnnotations(F).size() == 1)
+        return false;
+    else
+        return !getExtFuncAnnotations(F).empty();
 }

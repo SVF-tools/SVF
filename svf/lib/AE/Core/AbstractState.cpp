@@ -182,21 +182,21 @@ void AbstractState::initObjVar(ObjVar* objVar)
 
     // Check if the object variable has an associated value
 
-    const MemObj* obj = objVar->getMemObj();
+    const BaseObjVar* obj = PAG::getPAG()->getBaseObject(objVar->getId());
 
     // Handle constant data, arrays, and structures
     if (obj->isConstDataOrConstGlobal() || obj->isConstantArray() || obj->isConstantStruct())
     {
-        if (const ConstantIntObjVar* consInt = SVFUtil::dyn_cast<ConstantIntObjVar>(objVar))
+        if (const ConstIntObjVar* consInt = SVFUtil::dyn_cast<ConstIntObjVar>(objVar))
         {
             s64_t numeral = consInt->getSExtValue();
             (*this)[varId] = IntervalValue(numeral, numeral);
         }
-        else if (const ConstantFPObjVar* consFP = SVFUtil::dyn_cast<ConstantFPObjVar>(objVar))
+        else if (const ConstFPObjVar* consFP = SVFUtil::dyn_cast<ConstFPObjVar>(objVar))
         {
             (*this)[varId] = IntervalValue(consFP->getFPValue(), consFP->getFPValue());
         }
-        else if (SVFUtil::isa<ConstantNullPtrObjVar>(objVar))
+        else if (SVFUtil::isa<ConstNullPtrObjVar>(objVar))
         {
             (*this)[varId] = IntervalValue(0, 0);
         }
@@ -241,7 +241,7 @@ IntervalValue AbstractState::getElementIndex(const GepStmt* gep)
         s64_t idxUb;
 
         // Determine the lower and upper bounds based on whether the value is a constant
-        if (const ConstantIntValVar* constInt = SVFUtil::dyn_cast<ConstantIntValVar>(var))
+        if (const ConstIntValVar* constInt = SVFUtil::dyn_cast<ConstIntValVar>(var))
             idxLb = idxUb = constInt->getSExtValue();
         else
         {
@@ -267,15 +267,15 @@ IntervalValue AbstractState::getElementIndex(const GepStmt* gep)
         {
             if (Options::ModelArrays())
             {
-                const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()->getTypeInfo(type)->getFlattenedElemIdxVec();
+                const std::vector<u32_t>& so = PAG::getPAG()->getTypeInfo(type)->getFlattenedElemIdxVec();
                 if (so.empty() || idxUb >= (APOffset)so.size() || idxLb < 0)
                 {
                     idxLb = idxUb = 0;
                 }
                 else
                 {
-                    idxLb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, idxLb);
-                    idxUb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, idxUb);
+                    idxLb = PAG::getPAG()->getFlattenedElemIdx(type, idxLb);
+                    idxUb = PAG::getPAG()->getFlattenedElemIdx(type, idxUb);
                 }
             }
             else
@@ -320,7 +320,7 @@ IntervalValue AbstractState::getByteOffset(const GepStmt* gep)
             else
                 assert(false && "idxOperandType must be ArrType or PtrType");
 
-            if (const ConstantIntValVar* op = SVFUtil::dyn_cast<ConstantIntValVar>(idxOperandVar))
+            if (const ConstIntValVar* op = SVFUtil::dyn_cast<ConstIntValVar>(idxOperandVar))
             {
                 // Calculate the lower bound (lb) of the interval value
                 s64_t lb = (double)Options::MaxFieldLimit() / elemByteSize >= op->getSExtValue()
@@ -471,9 +471,9 @@ const SVFType* AbstractState::getPointeeElement(NodeID id)
         for (auto addr: addrs.getAddrs())
         {
             NodeID addr_id = AbstractState::getInternalID(addr);
-            if (addr_id == 0) // nullptr has no memobj, skip
+            if (addr_id == 0) // nullptr skip
                 continue;
-            return SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(addr_id))->getMemObj()->getType();
+            return svfir->getBaseObject(addr_id)->getType();
         }
     }
     else
@@ -487,10 +487,9 @@ u32_t AbstractState::getAllocaInstByteSize(const AddrStmt *addr)
 {
     if (const ObjVar* objvar = SVFUtil::dyn_cast<ObjVar>(addr->getRHSVar()))
     {
-        objvar->getType();
-        if (objvar->getMemObj()->isConstantByteSize())
+        if (PAG::getPAG()->getBaseObject(objvar->getId())->isConstantByteSize())
         {
-            u32_t sz = objvar->getMemObj()->getByteSizeOfObj();
+            u32_t sz = PAG::getPAG()->getBaseObject(objvar->getId())->getByteSizeOfObj();
             return sz;
         }
 

@@ -28,7 +28,7 @@
  */
 
 #include "SVF-LLVM/LLVMUtil.h"
-#include "SVFIR/SymbolTableInfo.h"
+#include "SVFIR/ObjTypeInfo.h"
 #include <sstream>
 #include <llvm/Support/raw_ostream.h>
 #include "SVF-LLVM/LLVMModule.h"
@@ -73,7 +73,7 @@ bool LLVMUtil::isObject(const Value*  ref)
  */
 void LLVMUtil::getFunReachableBBs (const Function* fun, std::vector<const SVFBasicBlock*> &reachableBBs)
 {
-    assert(!SVFUtil::isExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun)) && "The calling function cannot be an external function.");
+    assert(!LLVMUtil::isExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun)) && "The calling function cannot be an external function.");
     //initial DominatorTree
     DominatorTree& dt = LLVMModuleSet::getLLVMModuleSet()->getDomTree(fun);
 
@@ -122,7 +122,7 @@ bool LLVMUtil::basicBlockHasRetInst(const BasicBlock* bb)
 bool LLVMUtil::functionDoesNotRet(const Function*  fun)
 {
     const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
-    if (SVFUtil::isExtCall(svffun))
+    if (LLVMUtil::isExtCall(svffun))
     {
         return fun->getReturnType()->isVoidTy();
     }
@@ -380,6 +380,30 @@ std::vector<const Function *> LLVMUtil::getCalledFunctions(const Function *F)
     return calledFunctions;
 }
 
+
+bool LLVMUtil::isExtCall(const SVFFunction* fun)
+{
+    return fun && LLVMModuleSet::getLLVMModuleSet()->is_ext(fun);
+}
+
+bool LLVMUtil::isMemcpyExtFun(const SVFFunction *fun)
+{
+    return fun && LLVMModuleSet::getLLVMModuleSet()->is_memcpy(fun);
+}
+
+
+bool LLVMUtil::isMemsetExtFun(const SVFFunction* fun)
+{
+    return fun && LLVMModuleSet::getLLVMModuleSet()->is_memset(fun);
+}
+
+
+u32_t LLVMUtil::getHeapAllocHoldingArgPosition(const SVFFunction* fun)
+{
+    return LLVMModuleSet::getLLVMModuleSet()->get_alloc_arg_pos(fun);
+}
+
+
 std::string LLVMUtil::restoreFuncName(std::string funcName)
 {
     assert(!funcName.empty() && "Empty function name");
@@ -412,7 +436,10 @@ const SVFFunction* LLVMUtil::getFunction(const std::string& name)
 {
     return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(name);
 }
-
+const FunObjVar* LLVMUtil::getFunObjVar(const std::string& name)
+{
+    return LLVMModuleSet::getLLVMModuleSet()->getFunObjVar(name);
+}
 const Value* LLVMUtil::getGlobalRep(const Value* val)
 {
     if (const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
@@ -575,7 +602,7 @@ void LLVMUtil::getNextInsts(const Instruction* curInst, std::vector<const Instru
 
 
 /// Check whether this value points-to a constant object
-bool LLVMUtil::isConstantObjSym(const SVFValue* val)
+bool LLVMUtil::isConstantObjSym(const SVFLLVMValue* val)
 {
     return isConstantObjSym(LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(val));
 }
@@ -617,14 +644,13 @@ std::string LLVMUtil::dumpValueAndDbgInfo(const Value *val)
 bool LLVMUtil::isHeapAllocExtCallViaRet(const Instruction* inst)
 {
     LLVMModuleSet* pSet = LLVMModuleSet::getLLVMModuleSet();
-    ExtAPI* extApi = ExtAPI::getExtAPI();
     bool isPtrTy = inst->getType()->isPointerTy();
     if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
     {
         const Function* fun = call->getCalledFunction();
         return fun && isPtrTy &&
-               (extApi->is_alloc(pSet->getSVFFunction(fun)) ||
-                extApi->is_realloc(pSet->getSVFFunction(fun)));
+               (pSet->is_alloc(pSet->getSVFFunction(fun)) ||
+                pSet->is_realloc(pSet->getSVFFunction(fun)));
     }
     else
         return false;
@@ -636,7 +662,7 @@ bool LLVMUtil::isHeapAllocExtCallViaArg(const Instruction* inst)
     {
         const Function* fun = call->getCalledFunction();
         return fun &&
-               ExtAPI::getExtAPI()->is_arg_alloc(
+               LLVMModuleSet::getLLVMModuleSet()->is_arg_alloc(
                    LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun));
     }
     else
@@ -648,13 +674,12 @@ bool LLVMUtil::isHeapAllocExtCallViaArg(const Instruction* inst)
 bool LLVMUtil::isStackAllocExtCallViaRet(const Instruction *inst)
 {
     LLVMModuleSet* pSet = LLVMModuleSet::getLLVMModuleSet();
-    ExtAPI* extApi = ExtAPI::getExtAPI();
     bool isPtrTy = inst->getType()->isPointerTy();
     if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
     {
         const Function* fun = call->getCalledFunction();
         return fun && isPtrTy &&
-               extApi->is_alloc_stack_ret(pSet->getSVFFunction(fun));
+               pSet->is_alloc_stack_ret(pSet->getSVFFunction(fun));
     }
     else
         return false;
@@ -718,17 +743,13 @@ bool LLVMUtil::isNonInstricCallSite(const Instruction* inst)
 namespace SVF
 {
 
-std::string SVFValue::toString() const
+std::string SVFLLVMValue::toString() const
 {
     std::string str;
     llvm::raw_string_ostream rawstr(str);
     if (const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(this))
     {
         rawstr << "Function: " << fun->getName() << " ";
-    }
-    else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(this))
-    {
-        rawstr << "BasicBlock: " << bb->getName() << " ";
     }
     else
     {
@@ -742,22 +763,49 @@ std::string SVFValue::toString() const
     return rawstr.str();
 }
 
-
-const std::string SVFBaseNode::valueOnlyToString() const
+const std::string SVFBasicBlock::toString() const
 {
     std::string str;
     llvm::raw_string_ostream rawstr(str);
-    if (const SVF::PTACallGraphNode* fun = SVFUtil::dyn_cast<PTACallGraphNode>(this))
+    auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
+    if (llvmVal)
+        rawstr << " " << *llvmVal << " ";
+    else
+        rawstr << " No llvmVal found";
+    rawstr << this->getSourceLoc();
+    return rawstr.str();
+}
+
+const std::string SVFValue::valueOnlyToString() const
+{
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    if (const SVF::CallGraphNode* fun = SVFUtil::dyn_cast<CallGraphNode>(this))
     {
         rawstr << "Function: " << fun->getFunction()->getName() << " ";
     }
     else
     {
-        auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
-        if (llvmVal)
-            rawstr << " " << *llvmVal << " ";
+        const SVFValue* baseNode = this;
+        if (const GepValVar* valVar = SVFUtil::dyn_cast<GepValVar>(this))
+        {
+            baseNode = valVar->getBaseNode();
+        }
+        else if (const GepObjVar* objVar = SVFUtil::dyn_cast<GepObjVar>(this))
+        {
+            baseNode = objVar->getBaseObj();
+        }
+        if (SVFUtil::isa<DummyObjVar, DummyValVar, BlackHoleValVar>(baseNode))
+            rawstr << "";
         else
-            rawstr << " No llvmVal found";
+        {
+            auto llvmVal =
+                LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(baseNode);
+            if (llvmVal)
+                rawstr << " " << *llvmVal << " ";
+            else
+                rawstr << "";
+        }
     }
     rawstr << getSourceLoc();
     return rawstr.str();

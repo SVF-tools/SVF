@@ -38,24 +38,25 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-CallGraph* CallGraphBuilder::buildSVFIRCallGraph(SVFModule* svfModule)
+CallGraph* CallGraphBuilder::buildSVFIRCallGraph(const std::vector<const FunObjVar*>& funset)
 {
     CallGraph* callgraph = new CallGraph();
-    for (const SVFFunction* svfFunc: svfModule->getFunctionSet())
+    for (const FunObjVar* svfFunc: funset)
     {
         callgraph->addCallGraphNode(svfFunc);
     }
 
     for (const auto& item : *callgraph)
     {
-        for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())
+        for (auto it : *(item.second)->getFunction())
         {
+            const SVFBasicBlock* svfbb = it.second;
             for (const ICFGNode* inst : svfbb->getICFGNodeList())
             {
                 if (SVFUtil::isNonInstricCallSite(inst))
                 {
                     const CallICFGNode* callBlockNode = cast<CallICFGNode>(inst);
-                    if(const SVFFunction* callee = callBlockNode->getCalledFunction())
+                    if(const FunObjVar* callee = callBlockNode->getCalledFunction())
                     {
                         callgraph->addDirectCallGraphEdge(callBlockNode,(item.second)->getFunction(),callee);
                     }
@@ -66,10 +67,10 @@ CallGraph* CallGraphBuilder::buildSVFIRCallGraph(SVFModule* svfModule)
     return callgraph;
 }
 
-PTACallGraph* CallGraphBuilder::buildPTACallGraph()
+CallGraph* CallGraphBuilder::buildPTACallGraph()
 {
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
-    return new PTACallGraph(*svfirCallGraph);
+    return new CallGraph(*svfirCallGraph);
 }
 
 ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
@@ -80,8 +81,9 @@ ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
     ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();
     for (const auto& item: *svfirCallGraph)
     {
-        for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())
+        for (auto it : *(item.second)->getFunction())
         {
+            const SVFBasicBlock* svfbb = it.second;
             for (const ICFGNode* inst : svfbb->getICFGNodeList())
             {
                 if (SVFUtil::isa<CallICFGNode>(inst) && tdAPI->isTDFork(SVFUtil::cast<CallICFGNode>(inst)))
@@ -105,8 +107,9 @@ ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
     // record join sites
     for (const auto& item: *svfirCallGraph)
     {
-        for (const SVFBasicBlock* svfbb : (item.second)->getFunction()->getBasicBlockList())
+        for (auto it : *(item.second)->getFunction())
         {
+            const SVFBasicBlock* svfbb = it.second;
             for (const ICFGNode* node : svfbb->getICFGNodeList())
             {
                 if (SVFUtil::isa<CallICFGNode>(node) && tdAPI->isTDJoin(SVFUtil::cast<CallICFGNode>(node)))

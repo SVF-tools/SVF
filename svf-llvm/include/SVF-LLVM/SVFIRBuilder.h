@@ -50,7 +50,7 @@ private:
     SVFIR* pag;
     SVFModule* svfModule;
     const SVFBasicBlock* curBB;	///< Current basic block during SVFIR construction when visiting the module
-    const SVFValue* curVal;	///< Current Value during SVFIR construction when visiting the module
+    const SVFLLVMValue* curVal;	///< Current Value during SVFIR construction when visiting the module
 
 public:
     /// Constructor
@@ -74,6 +74,9 @@ public:
     /// Initialize nodes and edges
     //@{
     void initialiseNodes();
+    void initialiseBaseObjVars();
+    void initialiseValVars();
+    void initialiseFunObjVars();
     void addEdge(NodeID src, NodeID dst, SVFStmt::PEDGEK kind,
                  APOffset offset = 0, Instruction* cs = nullptr);
     // @}
@@ -90,25 +93,25 @@ public:
         processCE(V);
 
         // strip off the constant cast and return the value node
-        SVFValue* svfVal = llvmModuleSet()->getSVFValue(V);
-        return pag->getValueNode(svfVal);
+        SVFLLVMValue* svfVal = llvmModuleSet()->getSVFValue(V);
+        return llvmModuleSet()->getValueNode(svfVal);
     }
 
     /// GetObject - Return the object node (stack/global/heap/function) according to a LLVM Value
     inline NodeID getObjectNode(const Value* V)
     {
-        SVFValue* svfVal = llvmModuleSet()->getSVFValue(V);
-        return pag->getObjectNode(svfVal);
+        SVFLLVMValue* svfVal = llvmModuleSet()->getSVFValue(V);
+        return llvmModuleSet()->getObjectNode(svfVal);
     }
 
     /// getReturnNode - Return the node representing the unique return value of a function.
-    inline NodeID getReturnNode(const SVFFunction *func)
+    inline NodeID getReturnNode(const FunObjVar *func)
     {
         return pag->getReturnNode(func);
     }
 
     /// getVarargNode - Return the node representing the unique variadic argument of a function.
-    inline NodeID getVarargNode(const SVFFunction *func)
+    inline NodeID getVarargNode(const FunObjVar *func)
     {
         return pag->getVarargNode(func);
     }
@@ -201,7 +204,7 @@ public:
     //}@
 
     /// connect PAG edges based on callgraph
-    void updateCallGraph(PTACallGraph* callgraph);
+    void updateCallGraph(CallGraph* callgraph);
 
 protected:
     /// Handle globals including (global variable and functions)
@@ -243,12 +246,12 @@ protected:
         curBB = (bb == nullptr? nullptr : llvmModuleSet()->getSVFBasicBlock(bb));
         curVal = (val == nullptr ? nullptr: llvmModuleSet()->getSVFValue(val));
     }
-    inline void setCurrentLocation(const SVFValue* val, const SVFBasicBlock* bb)
+    inline void setCurrentLocation(const SVFLLVMValue* val, const SVFBasicBlock* bb)
     {
         curBB = bb;
         curVal = val;
     }
-    inline const SVFValue* getCurrentValue() const
+    inline const SVFLLVMValue* getCurrentValue() const
     {
         return curVal;
     }
@@ -260,7 +263,7 @@ protected:
     /// Add global black hole Address edge
     void addGlobalBlackHoleAddrEdge(NodeID node, const ConstantExpr *int2Ptrce)
     {
-        const SVFValue* cval = getCurrentValue();
+        const SVFLLVMValue* cval = getCurrentValue();
         const SVFBasicBlock* cbb = getCurrentBB();
         setCurrentLocation(int2Ptrce,nullptr);
         addBlackHoleAddrEdge(node);
@@ -272,9 +275,8 @@ protected:
     {
         LLVMContext& cxt = llvmModuleSet()->getContext();
         ConstantPointerNull* constNull = ConstantPointerNull::get(PointerType::getUnqual(cxt));
-        NodeID nullPtr = pag->addConstantNullPtrValNode(llvmModuleSet()->getSVFValue(constNull),pag->getNullPtr(), nullptr);
-        llvmModuleSet()->addToLLVMVal2SVFVarMap(
-            constNull, pag->getGNode(pag->getNullPtr()));
+        NodeID nullPtr = pag->addConstantNullPtrValNode(pag->getNullPtr(), nullptr, llvmModuleSet()->getSVFType(constNull->getType()));
+        llvmModuleSet()->addToSVFVar2LLVMValueMap(constNull, pag->getGNode(pag->getNullPtr()));
         setCurrentLocation(constNull, nullptr);
         addBlackHoleAddrEdge(pag->getBlkPtr());
         return nullPtr;

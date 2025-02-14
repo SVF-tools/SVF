@@ -32,6 +32,7 @@
 
 #include "Util/SVFUtil.h"
 #include "Graphs/ICFGNode.h"
+#include "SVFIR/SVFVariables.h" // add header
 
 namespace SVF
 {
@@ -73,7 +74,7 @@ private:
     static SaberCheckerAPI* ckAPI;
 
     /// Get the function type of a function
-    inline CHECKER_TYPE getType(const SVFFunction* F) const
+    inline CHECKER_TYPE getType(const FunObjVar* F) const
     {
         if(F)
         {
@@ -97,7 +98,7 @@ public:
 
     /// Return true if this call is a memory allocation
     //@{
-    inline bool isMemAlloc(const SVFFunction* fun) const
+    inline bool isMemAlloc(const FunObjVar* fun) const
     {
         return getType(fun) == CK_ALLOC;
     }
@@ -109,7 +110,7 @@ public:
 
     /// Return true if this call is a memory deallocation
     //@{
-    inline bool isMemDealloc(const SVFFunction* fun) const
+    inline bool isMemDealloc(const FunObjVar* fun) const
     {
         return getType(fun) == CK_FREE;
     }
@@ -121,7 +122,7 @@ public:
 
     /// Return true if this call is a file open
     //@{
-    inline bool isFOpen(const SVFFunction* fun) const
+    inline bool isFOpen(const FunObjVar* fun) const
     {
         return getType(fun) == CK_FOPEN;
     }
@@ -133,7 +134,7 @@ public:
 
     /// Return true if this call is a file close
     //@{
-    inline bool isFClose(const SVFFunction* fun) const
+    inline bool isFClose(const FunObjVar* fun) const
     {
         return getType(fun) == CK_FCLOSE;
     }

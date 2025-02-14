@@ -46,7 +46,7 @@ using namespace SVFUtil;
  * @param mod SVF module
  * @param llvmLoops output llvm loops
  */
-void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, ICFG* icfg)
+void LLVMLoopAnalysis::buildLLVMLoops(ICFG* icfg)
 {
     std::vector<const Loop *> loop_stack;
     for (Module& M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
@@ -54,7 +54,7 @@ void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, ICFG* icfg)
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
             const Function* func = &*F;
-            const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(func);
+            const FunObjVar* svffun = LLVMModuleSet::getLLVMModuleSet()->getFunObjVar(func);
             if (func->isDeclaration()) continue;
             // do not analyze external call
             if (SVFUtil::isExtCall(svffun)) continue;
@@ -89,7 +89,7 @@ void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, ICFG* icfg)
 void LLVMLoopAnalysis::build(ICFG *icfg)
 {
     std::vector<const Loop *> llvmLoops;
-    buildLLVMLoops(PAG::getPAG()->getModule(), icfg);
+    buildLLVMLoops(icfg);
 }
 
 /*!

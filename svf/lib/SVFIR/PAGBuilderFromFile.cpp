@@ -90,11 +90,10 @@ SVFIR* PAGBuilderFromFile::build()
                 ss >> nodetype;
                 outs() << "reading node :" << nodeId << "\n";
                 if (nodetype == "v")
-                    pag->addDummyValNode(nodeId);
+                    pag->addDummyValNode(nodeId, nullptr);
                 else if (nodetype == "o")
                 {
-                    const MemObj* mem = pag->addDummyMemObj(nodeId, nullptr);
-                    pag->addFIObjNode(mem);
+                    pag->addFIObjNode(nodeId, pag->createObjTypeInfo(nullptr), SVFType::getSVFPtrType(), nullptr);
                 }
                 else
                     assert(false && "format not support, pls specify node type");

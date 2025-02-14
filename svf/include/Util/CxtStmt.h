@@ -310,7 +310,7 @@ class CxtProc
 {
 public:
     /// Constructor
-    CxtProc(const CallStrCxt& c, const SVFFunction* f) :
+    CxtProc(const CallStrCxt& c, const FunObjVar* f) :
         cxt(c), fun(f)
     {
     }
@@ -324,7 +324,7 @@ public:
     {
     }
     /// Return current procedure
-    inline const SVFFunction* getProc() const
+    inline const FunObjVar* getProc() const
     {
         return fun;
     }
@@ -383,7 +383,7 @@ public:
 
 protected:
     CallStrCxt cxt;
-    const SVFFunction* fun;
+    const FunObjVar* fun;
 };
 
 
@@ -397,7 +397,7 @@ class CxtThreadProc : public CxtProc
 {
 public:
     /// Constructor
-    CxtThreadProc(NodeID t, const CallStrCxt& c, const SVFFunction* f) :CxtProc(c,f),tid(t)
+    CxtThreadProc(NodeID t, const CallStrCxt& c, const FunObjVar* f) :CxtProc(c,f),tid(t)
     {
     }
     /// Copy constructor
@@ -494,8 +494,8 @@ template <> struct std::hash<SVF::CxtProc>
 {
     size_t operator()(const SVF::CxtProc& cs) const
     {
-        std::hash<SVF::SVFFunction*> h;
-        SVF::SVFFunction* fun = const_cast<SVF::SVFFunction*> (cs.getProc());
+        std::hash<SVF::FunObjVar*> h;
+        SVF::FunObjVar* fun = const_cast<SVF::FunObjVar*> (cs.getProc());
         return h(fun);
     }
 };

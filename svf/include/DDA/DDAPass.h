@@ -57,7 +57,10 @@ public:
     ~DDAPass();
 
     /// Interface expose to users of our pointer analysis, given Value infos
-    virtual AliasResult alias(const SVFValue* V1,	const SVFValue* V2);
+    virtual AliasResult alias(const SVFVar* V1,	const SVFVar* V2)
+    {
+        return alias(V1->getId(), V2->getId());
+    }
 
     /// Interface expose to users of our pointer analysis, given PAGNodes
     virtual AliasResult alias(NodeID V1, NodeID V2);
@@ -66,7 +69,7 @@ public:
     virtual void runOnModule(SVFIR* module);
 
     /// Select a client
-    virtual void selectClient(SVFModule* module);
+    virtual void selectClient();
 
     /// Pass name
     virtual inline std::string getPassName() const

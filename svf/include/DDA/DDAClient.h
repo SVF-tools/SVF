@@ -48,11 +48,11 @@ namespace SVF
 class DDAClient
 {
 public:
-    DDAClient(SVFModule* mod) : pag(nullptr), module(mod), curPtr(0), solveAll(true) {}
+    DDAClient() : pag(nullptr), curPtr(0), solveAll(true) {}
 
     virtual ~DDAClient() {}
 
-    virtual inline void initialise(SVFModule*) {}
+    virtual inline void initialise() {}
 
     /// Collect candidate pointers for query.
     virtual inline OrderedNodeSet& collectCandidateQueries(SVFIR* p)
@@ -91,16 +91,12 @@ public:
         userInput.insert(ptr);
         solveAll = false;
     }
-    /// Get LLVM module
-    inline SVFModule* getModule() const
-    {
-        return module;
-    }
+
     virtual void answerQueries(PointerAnalysis* pta);
 
     virtual inline void performStat(PointerAnalysis*) {}
 
-    virtual inline void collectWPANum(SVFModule*) {}
+    virtual inline void collectWPANum() {}
 protected:
     void addCandidate(NodeID id)
     {
@@ -109,7 +105,6 @@ protected:
     }
 
     SVFIR*   pag;					///< SVFIR graph used by current DDA analysis
-    SVFModule* module;		///< LLVM module
     NodeID curPtr;				///< current pointer being queried
     OrderedNodeSet candidateQueries;	///< store all candidate pointers to be queried
 
@@ -128,7 +123,7 @@ private:
     typedef OrderedMap<NodeID,const CallICFGNode*> VTablePtrToCallSiteMap;
     VTablePtrToCallSiteMap vtableToCallSiteMap;
 public:
-    FunptrDDAClient(SVFModule* module) : DDAClient(module) {}
+    FunptrDDAClient() : DDAClient() {}
     ~FunptrDDAClient() {}
 
     /// Only collect function pointers as query candidates.
@@ -147,7 +142,7 @@ class AliasDDAClient : public DDAClient
 public:
     typedef OrderedSet<const PAGNode*> PAGNodeSet;
 
-    AliasDDAClient(SVFModule* module) : DDAClient(module) {}
+    AliasDDAClient() : DDAClient() {}
     ~AliasDDAClient() {}
 
     /// Only collect function pointers as query candidates.

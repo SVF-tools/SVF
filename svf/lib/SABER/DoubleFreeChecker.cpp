@@ -55,14 +55,14 @@ void DoubleFreeChecker::testsValidation(ProgSlice *slice)
 {
     const SVFGNode* source = slice->getSource();
     const CallICFGNode* cs = getSrcCSID(source);
-    const SVFFunction* fun = cs->getCalledFunction();
+    const FunObjVar* fun = cs->getCalledFunction();
     if(fun==nullptr)
         return;
     validateSuccessTests(slice,fun);
     validateExpectedFailureTests(slice,fun);
 }
 
-void DoubleFreeChecker::validateSuccessTests(ProgSlice *slice, const SVFFunction *fun)
+void DoubleFreeChecker::validateSuccessTests(ProgSlice *slice, const FunObjVar *fun)
 {
     const SVFGNode* source = slice->getSource();
     const CallICFGNode* cs = getSrcCSID(source);
@@ -108,7 +108,7 @@ void DoubleFreeChecker::validateSuccessTests(ProgSlice *slice, const SVFFunction
     }
 }
 
-void DoubleFreeChecker::validateExpectedFailureTests(ProgSlice *slice, const SVFFunction *fun)
+void DoubleFreeChecker::validateExpectedFailureTests(ProgSlice *slice, const FunObjVar *fun)
 {
     const SVFGNode* source = slice->getSource();
     const CallICFGNode* cs = getSrcCSID(source);
