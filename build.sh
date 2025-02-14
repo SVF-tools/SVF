@@ -176,6 +176,18 @@ fi
 ########
 if [[ $sysOS == "Darwin" ]]; then
     echo "Running on macOS, using Homebrew LLVM."
+    echo "Installing LLVM binary for $OSDisplayName"
+    brew install llvm@${MajorLLVMVer}
+    # check whether llvm is installed
+    if [ $? -eq 0 ]; then
+        echo "LLVM binary installation completed."
+    else
+        echo "LLVM binary installation failed."
+        exit 1
+    fi
+    mkdir -p $SVFHOME/$LLVMHome
+    ln -s $(brew --prefix llvm@${MajorLLVMVer})/* $SVFHOME/$LLVMHome
+    export LLVM_DIR="$SVFHOME/$LLVMHome"
 elif [[ $BUILD_SHARED == 'ON' ]]; then
     build_llvm_from_source
 else
@@ -247,4 +259,3 @@ cmake --build "${BUILD_DIR}" -j ${jobs}
 # Set up environment variables
 ########
 source ${SVFHOME}/setup.sh ${BUILD_TYPE}
-
