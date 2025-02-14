@@ -125,6 +125,52 @@ function build_llvm_from_source {
     rm -rf llvm-source llvm-build llvm.zip
 }
 
+function check_and_install_brew {
+    if command -v brew >/dev/null 2>&1; then
+        echo "Homebrew is already installed."
+    else
+        echo "Homebrew not found. Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        if [ $? -eq 0 ]; then
+            echo "Homebrew installation completed."
+        else
+            echo "Homebrew installation failed."
+            exit 1
+        fi
+    fi
+}
+
+# OS-specific values.
+urlLLVM=""
+urlZ3=""
+OSDisplayName=""
+
+########
+# Set OS-specific values, mainly URLs to download binaries from.
+# M1 Macs give back arm64, some Linuxes can give aarch64 for arm architecture
+#######
+if [[ $sysOS == "Darwin" ]]; then
+    check_and_install_brew
+    if [[ "$arch" == "arm64" ]]; then
+        OSDisplayName="macOS arm64"
+    else
+        OSDisplayName="macOS x86"
+    fi
+elif [[ $sysOS == "Linux" ]]; then
+    if [[ "$arch" == "aarch64" ]]; then
+        urlLLVM="$UbuntuArmLLVM"
+        urlZ3="$UbuntuZ3Arm"
+        OSDisplayName="Ubuntu arm64"
+    else
+        urlLLVM="$UbuntuLLVM"
+        urlZ3="$UbuntuZ3"
+        OSDisplayName="Ubuntu x86"
+    fi
+else
+    echo "Builds outside Ubuntu and macOS are not supported."
+fi
+
+
 ########
 # Handle LLVM installation
 ########
