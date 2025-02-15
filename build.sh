@@ -190,6 +190,7 @@ if [[ $sysOS == "Darwin" ]]; then
     export LLVM_DIR="$SVFHOME/$LLVMHome"
 elif [[ $BUILD_SHARED == 'ON' ]]; then
     build_llvm_from_source
+    export LLVM_DIR="$SVFHOME/$LLVMHome"
 else
     if [[ ! -d "$LLVM_DIR" ]]; then
         if [[ ! -d "$LLVMHome" ]]; then
