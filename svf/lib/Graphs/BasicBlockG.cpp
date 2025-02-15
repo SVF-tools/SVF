@@ -8,3 +8,10 @@ const std::string BasicBlockEdge::toString() const
     rawstr << "BasicBlockEdge: " << getSrcNode()->toString() << " -> " << getDstNode()->getName();
     return rawstr.str();
 }
+
+__attribute__((weak))
+const std::string SVFBasicBlock::toString() const
+{
+    assert("SVFBasicBlock::toString should be implemented or supported by fronted" && false);
+    abort();
+}
