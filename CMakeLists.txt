@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.23)
+  cmake_minimum_required(VERSION 3.23)
 
 # =================================================================================
 # SVF project definition
@@ -278,10 +278,8 @@ if(EXISTS "${SVF_SOURCE_DIR}/Test-Suite")
   add_subdirectory(Test-Suite)
 endif()
 
-# =================================================================================
-# SVF core definitions
-# =================================================================================
-
+# Add the tugraph rpc library to all targets of SVF
+find_library(LGRAPH_CPP_CLIENT_LIBRARIES lgraph_client_cpp_rpc REQUIRED PATHS /usr/local/lib)
 add_subdirectory(svf)
 add_subdirectory(svf-llvm)
 

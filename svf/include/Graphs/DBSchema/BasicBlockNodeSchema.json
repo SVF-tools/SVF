@@ -1,0 +1,41 @@
+{
+    "schema": [
+        {
+            "label" : "SVFBasicBlock",
+            "type" : "VERTEX",
+            "primary" : "id",
+            "properties" : [
+                {
+                    "name" : "id", 
+                    "type":"STRING",
+                    "optional":false,
+                    "index":true
+                },
+                {
+                    "name":"fun_obj_var_id",
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"sscc_bb_ids",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"pred_bb_ids",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"all_icfg_nodes_ids",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
+                }
+            ]
+        }
+    ]
+}

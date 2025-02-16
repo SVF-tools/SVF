@@ -360,6 +360,7 @@ public:
 
     inline void addStInfo(StInfo* stInfo)
     {
+        stInfo->setStinfoId(stInfos.size());
         stInfos.insert(stInfo);
     }
 

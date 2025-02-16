@@ -1,0 +1,65 @@
+{
+    "schema": [
+        {
+            "label" : "IntraCFGEdge",
+            "type" : "EDGE",
+            "properties" : [
+                {
+                    "name" : "kind", 
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name" : "condition_var_id",
+                    "type":"INT32",
+                    "optional":true,
+                    "index":false
+                },
+                {
+                    "name" : "branch_condition_val",
+                    "type":"INT64",
+                    "optional":true,
+                    "index":false
+                }
+            ]
+        },
+        {
+            "label" : "CallCFGEdge",
+            "type" : "EDGE",
+            "properties" : [
+                {
+                    "name" : "kind", 
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"call_pe_ids",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
+                }
+            ]
+        },
+        {
+            "label" : "RetCFGEdge",
+            "type" : "EDGE",
+            "properties" : [
+                {
+                    "name" : "kind", 
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"ret_pe_id",
+                    "type":"INT32",
+                    "optional":true,
+                    "index":false
+                }
+            ]
+        }
+    ]
+}
+  
