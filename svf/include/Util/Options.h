@@ -212,6 +212,8 @@ public:
     static const Option<bool> DiffPts;
     static Option<bool> DetectPWC;
     static const Option<bool> VtableInSVFIR;
+    static const Option<bool> Write2DB;
+    static const Option<bool> ReadFromDB;
 
     // WPAPass.cpp
     static const Option<std::string> ExtAPIPath;

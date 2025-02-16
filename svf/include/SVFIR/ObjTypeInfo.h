@@ -150,6 +150,10 @@ public:
     {
         flags |= mask;
     }
+    inline u32_t getFlag() const
+    {
+        return flags;
+    }
     inline bool hasFlag(MEMTYPE mask)
     {
         return (flags & mask) == mask;

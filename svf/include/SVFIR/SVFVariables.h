@@ -108,6 +108,16 @@ public:
         return nullptr;
     }
 
+    inline const SVFStmt::KindToSVFStmtMapTy& getInEdgeKindToSetMap() const
+    {
+        return InEdgeKindToSetMap;
+    }
+
+    inline const SVFStmt::KindToSVFStmtMapTy& getOutEdgeKindToSetMap() const
+    {
+        return OutEdgeKindToSetMap;
+    }
+
     /// Edge accessors and checkers
     //@{
     inline SVFStmt::SVFStmtSetTy& getIncomingEdges(SVFStmt::PEDGEK kind)
@@ -460,6 +470,11 @@ public:
     {
         return node->getNodeKind() == SVFVar::GepValNode;
     }
+
+    inline const AccessPath& getAccessPath() const
+    {
+        return ap;
+    }
     //@}
 
     /// Constructor
@@ -569,6 +584,11 @@ public:
     virtual const BaseObjVar* getBaseMemObj() const
     {
         return this;
+    }
+
+    inline const ObjTypeInfo* getTypeInfo() const
+    {
+        return typeInfo;
     }
 
     /// Get the ICFGNode related to the creation of this object
@@ -1199,6 +1219,11 @@ public:
     {
         assert (idx < allArgs.size() && "getArg() out of range!");
         return allArgs[idx];
+    }
+
+    inline const std::vector<const ArgValVar*> &getArgs() const
+    {
+        return allArgs;
     }
 
     inline const SVFBasicBlock* front() const

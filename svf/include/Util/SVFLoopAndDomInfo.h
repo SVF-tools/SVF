@@ -73,6 +73,11 @@ public:
         return dfBBsMap;
     }
 
+    inline const Map<const SVFBasicBlock*, LoopBBs>& getBB2LoopMap() const
+    {
+        return bb2LoopMap;
+    }
+    
     inline bool hasLoopInfo(const SVFBasicBlock* bb) const
     {
         return bb2LoopMap.find(bb) != bb2LoopMap.end();

@@ -92,7 +92,7 @@ protected:
     }
 
 public:
-    static u32_t totalEdgeNum; ///< Total edge number
+    // static u32_t totalEdgeNum; ///< Total edge number
 
     /// Constructor
     SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, bool real = true);
@@ -224,6 +224,33 @@ private:
     static u64_t callEdgeLabelCounter;  ///< Call site Instruction counter
     static u64_t storeEdgeLabelCounter;  ///< Store Instruction counter
     static u64_t multiOpndLabelCounter;  ///< MultiOpndStmt counter
+
+public:
+    static inline const Inst2LabelMap* getInst2LabelMap()
+    {
+        return &inst2LabelMap;
+    }
+
+    static inline const Var2LabelMap* getVar2LabelMap()
+    {
+        return &var2LabelMap;
+    }
+
+    static inline const u64_t* getCallEdgeLabelCounter()
+    {
+        return &callEdgeLabelCounter;
+    }
+
+    static inline const u64_t* getStoreEdgeLabelCounter()
+    {
+        return &storeEdgeLabelCounter;
+    }
+
+    static inline const u64_t* getMultiOpndLabelCounter()
+    {
+        return &multiOpndLabelCounter;
+    }
+
 };
 
 /*
@@ -858,6 +885,11 @@ public:
         opICFGNodes.push_back(inode);
         assert(opVars.size() == opICFGNodes.size() &&
                "Numbers of operands and their ICFGNodes are not consistent?");
+    }
+
+    inline const OpICFGNodeVec* getOpICFGNodeVec() const
+    {
+        return &opICFGNodes;
     }
 
     /// Return the corresponding ICFGNode of this operand

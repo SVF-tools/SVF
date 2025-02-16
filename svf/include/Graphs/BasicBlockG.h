@@ -287,6 +287,16 @@ public:
 
     const std::string toString() const;
 
+    const std::vector<const SVFBasicBlock*> getSuccBBs() const
+    {
+        return succBBs;
+    }
+
+    const std::vector<const SVFBasicBlock*> getPredBBs() const
+    {
+        return predBBs;
+    }
+
 };
 
 
@@ -298,10 +308,11 @@ private:
     NodeID id{0};
 public:
     /// Constructor
-    BasicBlockGraph()
+    BasicBlockGraph(): GenericBasicBlockGraphTy()
     {
 
     }
+
 
     SVFBasicBlock* addBasicBlock(const std::string& bbname)
     {
