@@ -47,6 +47,7 @@ class StInfo
 {
 
 private:
+    u32_t StInfoId;
     /// flattened field indices of a struct (ignoring arrays)
     std::vector<u32_t> fldIdxVec;
     /// flattened element indices including structs and arrays by considering
@@ -121,6 +122,15 @@ public:
     {
         return finfo;
     }
+    inline const u32_t getStinfoId() const
+    {
+        return StInfoId;
+    }
+
+    inline const Map<u32_t, const SVFType*>& getFldIdx2TypeMap() const
+    {
+        return fldIdx2TypeMap;
+    }
     //@}
 
     /// Add field index and element index and their corresponding type
@@ -131,6 +141,11 @@ public:
     {
         numOfFlattenFields = nf;
         numOfFlattenElements = ne;
+    }
+
+    inline void setStinfoId(u32_t id)
+    {
+        StInfoId = id;
     }
 
     /// Return number of elements after flattening (including array elements)
@@ -308,6 +323,11 @@ public:
         signAndWidth = sw;
     }
 
+    short getSignAndWidth() const
+    {
+        return signAndWidth;
+    }
+
     bool isSigned() const
     {
         return signAndWidth < 0;
@@ -376,6 +396,12 @@ public:
     {
         return name;
     }
+
+    const std::string& getName() const
+    {
+        return name;
+    }
+
     void setName(const std::string& structName)
     {
         name = structName;
@@ -426,6 +452,11 @@ public:
         numOfElement = elemNum;
     }
 
+    const unsigned getNumOfElement() const
+    {
+        return numOfElement;
+    }
+
 
 };
 
@@ -444,6 +475,10 @@ public:
     }
 
     const std::string& getRepr()
+    {
+        return repr;
+    }
+    const std::string& getRepr() const
     {
         return repr;
     }

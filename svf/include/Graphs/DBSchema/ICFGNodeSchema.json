@@ -1,0 +1,246 @@
+{
+    "schema": [
+        {
+            "label" : "GlobalICFGNode",
+            "type" : "VERTEX",
+            "primary" : "id",
+            "properties" : [
+                {
+                    "name" : "id", 
+                    "type":"INT32",
+                    "optional":false,
+                    "index":true
+                },
+                {
+                    "name":"kind",
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                }
+            ]
+        },
+        {
+            "label" : "IntraICFGNode",
+            "type" : "VERTEX",
+            "primary" : "id",
+            "properties" : [
+                {
+                    "name" : "id", 
+                    "type":"INT32",
+                    "optional":false,
+                    "index":true
+                },
+                {
+                    "name":"kind",
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"is_return",
+                    "type":"BOOL",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"bb_id",
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                }
+            ]
+        },
+        {
+            "label" : "InterICFGNode",
+            "type" : "VERTEX",
+            "primary" : "id",
+            "properties" : [
+                {
+                    "name" : "id", 
+                    "type":"INT32",
+                    "optional":false,
+                    "index":true
+                },
+                {
+                    "name":"kind",
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                }
+            ]
+        },
+        {
+            "label" : "FunEntryICFGNode",
+            "type" : "VERTEX",
+            "primary" : "id",
+            "properties" : [
+                {
+                    "name" : "id", 
+                    "type":"INT32",
+                    "optional":false,
+                    "index":true
+                },
+                {
+                    "name":"kind",
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"fp_nodes",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"fun_obj_var_id",
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                }
+            ]
+        },
+        {
+            "label" : "FunExitICFGNode",
+            "type" : "VERTEX",
+            "primary" : "id",
+            "properties" : [
+                {
+                    "name" : "id", 
+                    "type":"INT32",
+                    "optional":false,
+                    "index":true
+                },
+                {
+                    "name":"kind",
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"formal_ret_node_id",
+                    "type":"INT32",
+                    "optional":true,
+                    "index":false
+                },
+                {
+                    "name":"fun_obj_var_id",
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                }
+            ]
+        },
+        {
+            "label" : "CallICFGNode",
+            "type" : "VERTEX",
+            "primary" : "id",
+            "properties" : [
+                {
+                    "name" : "id", 
+                    "type":"INT32",
+                    "optional":false,
+                    "index":true
+                },
+                {
+                    "name":"kind",
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"ret_icfg_node_id",
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"bb_id",
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"svf_type",
+                    "type":"STRING",
+                    "index":false,
+                    "optional":false
+                },
+                {
+                    "name":"ap_nodes",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"called_fun_obj_var_id",
+                    "type":"INT32",
+                    "optional":true,
+                    "index":false
+                },
+                {
+                    "name":"is_vararg",
+                    "type":"BOOL",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"is_vir_call_inst",
+                    "type":"BOOL",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"vtab_ptr_node_id", 
+                    "type":"INT32",
+                    "optional":true,
+                    "index":false
+                },
+                {
+                    "name":"virtual_fun_idx",
+                    "type":"INT32",
+                    "optional":true,
+                    "index":false
+                },
+                {
+                    "name":"fun_name_of_v_call",
+                    "type":"STRING",
+                    "optional":true,
+                    "index":false
+                }
+            ]
+        },
+        {
+            "label" : "RetICFGNode",
+            "type" : "VERTEX",
+            "primary" : "id",
+            "properties" : [
+                {
+                    "name" : "id", 
+                    "type":"INT32",
+                    "optional":false,
+                    "index":true
+                },
+                {
+                    "name":"kind",
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"actual_ret_node_id",
+                    "type":"INT32",
+                    "optional":true,
+                    "index":false
+                },
+                {
+                    "name":"call_block_node_id",
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                }
+            ]
+        }
+    ]
+}
+  

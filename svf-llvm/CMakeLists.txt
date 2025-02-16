@@ -125,7 +125,7 @@ endif()
 add_dependencies(SvfLLVM gen_extapi_ir)
 
 # Link the SVF LLVM library to the core library, the build/link flags, and the LLVM libraries
-target_link_libraries(SvfLLVM PUBLIC SvfFlags SvfCore ${LLVM_LIBRARIES})
+target_link_libraries(SvfLLVM PUBLIC SvfFlags ${LGRAPH_CPP_CLIENT_LIBRARIES} SvfCore ${LLVM_LIBRARIES})
 
 # Gather & set all of the core library's source files by globbing all .h and .cpp files (recursively)
 file(GLOB_RECURSE SVF_LLVM_HEADERS ${CMAKE_CURRENT_LIST_DIR}/include/*.h)

@@ -1,0 +1,35 @@
+{
+    "schema": [
+        {
+            "label":"CallGraphEdge",
+            "type":"EDGE",
+            "properties" : [
+                {
+                    "name" : "csid", 
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"kind",
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"direct_call_set",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"indirect_call_set",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
+                }
+            ]
+        }
+    ]
+}
+  

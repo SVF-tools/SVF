@@ -1,0 +1,10 @@
+{
+    "schema": [
+        {
+            "label":"BasicBlockEdge",
+            "type":"EDGE",
+            "properties" : []
+        }
+    ]
+}
+  
