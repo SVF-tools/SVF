@@ -34,7 +34,6 @@ Z3Home="z3.obj"
 # Parse arguments
 BUILD_TYPE='Release'
 BUILD_SHARED='OFF'
-RTTI='OFF'
 for arg in "$@"; do
     if [[ $arg =~ ^[Dd]ebug$ ]]; then
         BUILD_TYPE='Debug'

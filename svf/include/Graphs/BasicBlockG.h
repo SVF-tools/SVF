@@ -285,6 +285,10 @@ public:
         return pos;
     }
 
+    const std::string toString() const {
+        return SVFValue::valueOnlyToString();
+    }
+
 };
 
 
