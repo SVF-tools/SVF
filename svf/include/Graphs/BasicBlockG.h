@@ -286,7 +286,7 @@ public:
     }
 
     const std::string toString() const {
-        return SVFValue::valueOnlyToString();
+        return getName();
     }
 
 };
