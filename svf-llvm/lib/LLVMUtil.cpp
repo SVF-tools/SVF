@@ -768,9 +768,10 @@ const std::string SVFValue::valueOnlyToString() const
     std::string str;
     llvm::raw_string_ostream rawstr(str);
     assert(
-        !SVFUtil::isa<GepObjVar>(this) && !SVFUtil::isa<GepValVar>(this) && !SVFUtil::isa<DummyObjVar>(this) &&!SVFUtil
-        ::isa<DummyValVar>(this) && !SVFUtil::isa<BlackHoleValVar>(this) &&
-        "invalid value");
+        !SVFUtil::isa<GepObjVar>(this) && !SVFUtil::isa<GepValVar>(this) &&
+        !SVFUtil::isa<DummyObjVar>(this) &&!SVFUtil::isa<DummyValVar>(this) &&
+        !SVFUtil::isa<BlackHoleValVar>(this) &&
+        "invalid value, refer to their toString method");
     auto llvmVal =
             LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
     if (llvmVal)
