@@ -285,9 +285,7 @@ public:
         return pos;
     }
 
-    const std::string toString() const {
-        return getName();
-    }
+    const std::string toString() const;
 
 };
 
