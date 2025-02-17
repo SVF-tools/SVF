@@ -285,8 +285,6 @@ public:
         return pos;
     }
 
-    const std::string toString() const;
-
 };
 
 

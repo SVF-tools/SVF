@@ -763,19 +763,6 @@ std::string SVFLLVMValue::toString() const
     return rawstr.str();
 }
 
-const std::string SVFBasicBlock::toString() const
-{
-    std::string str;
-    llvm::raw_string_ostream rawstr(str);
-    auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
-    if (llvmVal)
-        rawstr << " " << *llvmVal << " ";
-    else
-        rawstr << " No llvmVal found";
-    rawstr << this->getSourceLoc();
-    return rawstr.str();
-}
-
 const std::string SVFValue::valueOnlyToString() const
 {
     std::string str;
