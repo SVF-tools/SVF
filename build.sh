@@ -2,6 +2,7 @@
 # type './build.sh'       for release build
 # type './build.sh debug' for debug build
 # type './build.sh shared' for building LLVM from source with shared libs and RTTI enabled
+# type './build.sh debug shared' for debug build with shared libs and RTTI enabled
 # If the LLVM_DIR variable is not set, LLVM will be downloaded or built from source.
 #
 # Dependencies include: build-essential libncurses5 libncurses-dev cmake zlib1g-dev
