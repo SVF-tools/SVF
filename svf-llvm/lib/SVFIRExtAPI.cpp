@@ -129,7 +129,6 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
 void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCallee)
 {
     const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
-    const SVFCallInst* svfCall = SVFUtil::cast<SVFCallInst>(svfInst);
     const CallICFGNode *callICFGNode = llvmModuleSet()->getCallICFGNode(cs);
 
     if (isHeapAllocExtCallViaRet(callICFGNode))
@@ -141,7 +140,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
     else if (isHeapAllocExtCallViaArg(callICFGNode))
     {
         u32_t arg_pos = LLVMUtil::getHeapAllocHoldingArgPosition(svfCallee);
-        const SVFLLVMValue* arg = svfCall->getArgOperand(arg_pos);
+        const SVFLLVMValue* arg = llvmModuleSet()->getSVFValue(cs->getArgOperand(arg_pos));
         if (arg->getType()->isPointerTy())
         {
             NodeID vnArg = llvmModuleSet()->getValueNode(arg);
@@ -166,7 +165,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
             addComplexConsForExt(cs->getArgOperand(3), cs->getArgOperand(1), nullptr);
         else if(svfCallee->getName().find("bcopy") != std::string::npos)
             addComplexConsForExt(cs->getArgOperand(1), cs->getArgOperand(0), cs->getArgOperand(2));
-        if(svfCall->arg_size() == 3)
+        if(cs->arg_size() == 3)
             addComplexConsForExt(cs->getArgOperand(0), cs->getArgOperand(1), cs->getArgOperand(2));
         else
             addComplexConsForExt(cs->getArgOperand(0), cs->getArgOperand(1), nullptr);
@@ -233,11 +232,11 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
     else if(svfCallee->getName().find("_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_") != std::string::npos)
     {
         // The purpose of this function is to insert a new node into the red-black tree and then rebalance the tree to ensure that the red-black tree properties are maintained.
-        assert(svfCall->arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
+        assert(cs->arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
 
         // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
         // Now we calculate the offset from base to vArg3
-        NodeID vnArg3 = llvmModuleSet()->getValueNode(svfCall->getArgOperand(3));
+        NodeID vnArg3 = llvmModuleSet()->getValueNode(llvmModuleSet()->getSVFValue(cs->getArgOperand(3)));
         APOffset offset =
             getAccessPathFromBaseNode(vnArg3).getConstantStructFldIdx();
 
@@ -253,7 +252,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
             const SVFType* elementType = pag->getFlatternedElemType(pag->getTypeLocSetsMap(vnArg3).first,
                                          fields[i].getConstantStructFldIdx());
             NodeID vnD = getGepValVar(cs->getArgOperand(3), fields[i], elementType);
-            NodeID vnS = llvmModuleSet()->getValueNode(svfCall->getArgOperand(1));
+            NodeID vnS = llvmModuleSet()->getValueNode(llvmModuleSet()->getSVFValue(cs->getArgOperand(1)));
             if(vnD && vnS)
                 addStoreEdge(vnS,vnD);
         }

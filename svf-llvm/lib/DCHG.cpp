@@ -177,7 +177,7 @@ void DCHGraph::buildVTables(const SVFModule &module)
                 DIType *type = SVFUtil::dyn_cast<DIType>(gv->getMetadata(cppUtil::ctir::vtMDName));
                 assert(type && "DCHG::buildVTables: bad metadata for ctir.vt");
                 DCHNode *node = getOrCreateNode(type);
-                const SVFGlobalValue* svfgv = LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(gv);
+                const SVFLLVMValue* svfgv = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(gv);
                 NodeID i = LLVMModuleSet::getLLVMModuleSet()->getObjectNode(svfgv);
                 GlobalObjVar* globalObjVar =
                     SVFUtil::cast<GlobalObjVar>(PAG::getPAG()->getGNode(i));

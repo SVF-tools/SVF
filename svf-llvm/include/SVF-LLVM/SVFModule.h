@@ -44,10 +44,10 @@ class SVFModule
 
 public:
     typedef std::vector<const SVFFunction*> FunctionSetType;
-    typedef std::vector<SVFGlobalValue*> GlobalSetType;
-    typedef std::vector<SVFGlobalValue*> AliasSetType;
-    typedef std::vector<SVFConstant*> ConstantType;
-    typedef std::vector<SVFOtherValue*> OtherValueType;
+    typedef std::vector<SVFLLVMValue*> GlobalSetType;
+    typedef std::vector<SVFLLVMValue*> AliasSetType;
+    typedef std::vector<SVFLLVMValue*> ConstantType;
+    typedef std::vector<SVFLLVMValue*> OtherValueType;
 
     /// Iterators type def
     typedef FunctionSetType::iterator iterator;
@@ -86,21 +86,19 @@ public:
     {
         FunctionSet.push_back(svfFunc);
     }
-    inline void addGlobalSet(SVFGlobalValue* glob)
+    inline void addGlobalSet(SVFLLVMValue* glob)
     {
         GlobalSet.push_back(glob);
-        addConstant(glob);
     }
-    inline void addAliasSet(SVFGlobalValue* alias)
+    inline void addAliasSet(SVFLLVMValue* alias)
     {
         AliasSet.push_back(alias);
-        addConstant(alias);
     }
-    inline void addConstant(SVFConstant* cd)
+    inline void addConstant(SVFLLVMValue* cd)
     {
         ConstantSet.push_back(cd);
     }
-    inline void addOtherValue(SVFOtherValue* ov)
+    inline void addOtherValue(SVFLLVMValue* ov)
     {
         OtherValueSet.push_back(ov);
     }
