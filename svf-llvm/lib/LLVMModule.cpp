@@ -278,12 +278,8 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
 
     for (const Argument& arg : func->args())
     {
-        SVFArgument* svfarg = new SVFArgument(
-            getSVFType(arg.getType()), svfFunc, arg.getArgNo(),
-            LLVMUtil::isArgOfUncalledFunction(&arg));
-        // Setting up arg name
-        if (!arg.hasName())
-            svfarg->setName(std::to_string(arg.getArgNo()));
+        SVFLLVMValue* svfarg = new SVFLLVMValue(
+            getSVFType(arg.getType()));
 
         addArgumentMap(&arg, svfarg);
     }
@@ -293,21 +289,9 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
         addBasicBlock(svfFunc, &bb);
         for (const Instruction& inst : bb)
         {
-            SVFInstruction* svfInst = nullptr;
-            if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(&inst))
-            {
-                svfInst = new SVFCallInst(
-                    getSVFType(call->getType()), getSVFBasicBlock(&bb),
-                    call->getFunctionType()->isVarArg(),
-                    inst.isTerminator());
-            }
-            else
-            {
-                svfInst =
-                    new SVFInstruction(getSVFType(inst.getType()),
+            SVFInstruction* svfInst = new SVFInstruction(getSVFType(inst.getType()),
                                        getSVFBasicBlock(&bb), inst.isTerminator(),
                                        SVFUtil::isa<ReturnInst>(inst));
-            }
 
             addInstructionMap(&inst, svfInst);
         }
@@ -359,31 +343,6 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
                         SVFUtil::isa<ReturnInst>(bb->back())) &&
                        "last inst must be return inst");
                 svfFun->setExitBlock(svfbb);
-            }
-        }
-
-        for (BasicBlock::const_iterator iit = bb->begin(), eiit = bb->end(); iit != eiit; ++iit)
-        {
-            const Instruction* inst = &*iit;
-            if(const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
-            {
-                SVFInstruction* svfinst = getSVFInstruction(call);
-                SVFCallInst* svfcall = SVFUtil::cast<SVFCallInst>(svfinst);
-                auto called_llvmval = call->getCalledOperand()->stripPointerCasts();
-                if (const Function* called_llvmfunc = SVFUtil::dyn_cast<Function>(called_llvmval))
-                {
-                    SVFFunction* callee = getSVFFunction(called_llvmfunc);
-                    svfcall->setCalledOperand(callee);
-                }
-                else
-                {
-                    svfcall->setCalledOperand(getSVFValue(called_llvmval));
-                }
-                for(u32_t i = 0; i < call->arg_size(); i++)
-                {
-                    SVFLLVMValue* svfval = getSVFValue(call->getArgOperand(i));
-                    svfcall->addArgument(svfval);
-                }
             }
         }
     }
@@ -1317,17 +1276,17 @@ void LLVMModuleSet::addToSVFVar2LLVMValueMap(const Value* val,
     svfBaseNode->setName(val->getName().str());
 }
 
-SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
+SVFLLVMValue* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
 {
     LLVMConst2SVFConstMap::const_iterator it = LLVMConst2SVFConst.find(cd);
     if(it!=LLVMConst2SVFConst.end())
     {
-        assert(SVFUtil::isa<SVFConstantData>(it->second) && "not a SVFConstantData type!");
-        return SVFUtil::cast<SVFConstantData>(it->second);
+        assert(SVFUtil::isa<SVFConstant>(it->second) && "not a SVFConstantData type!");
+        return it->second;
     }
     else
     {
-        SVFConstantData* svfcd = new SVFConstantData(getSVFType(cd->getType()));
+        SVFConstant* svfcd = new SVFConstant(getSVFType(cd->getType()));
         svfModule->addConstant(svfcd);
         addConstantDataMap(cd,svfcd);
         return svfcd;
@@ -1339,7 +1298,7 @@ SVFConstant* LLVMModuleSet::getOtherSVFConstant(const Constant* oc)
     LLVMConst2SVFConstMap::const_iterator it = LLVMConst2SVFConst.find(oc);
     if(it!=LLVMConst2SVFConst.end())
     {
-        return it->second;
+        return SVFUtil::cast<SVFConstant>(it->second);
     }
     else
     {
@@ -1350,7 +1309,7 @@ SVFConstant* LLVMModuleSet::getOtherSVFConstant(const Constant* oc)
     }
 }
 
-SVFOtherValue* LLVMModuleSet::getSVFOtherValue(const Value* ov)
+SVFLLVMValue* LLVMModuleSet::getSVFOtherValue(const Value* ov)
 {
     LLVMValue2SVFOtherValueMap::const_iterator it = LLVMValue2SVFOtherValue.find(ov);
     if(it!=LLVMValue2SVFOtherValue.end())
@@ -1359,10 +1318,7 @@ SVFOtherValue* LLVMModuleSet::getSVFOtherValue(const Value* ov)
     }
     else
     {
-        SVFOtherValue* svfov =
-            SVFUtil::isa<MetadataAsValue>(ov)
-            ? new SVFMetadataAsValue(getSVFType(ov->getType()))
-            : new SVFOtherValue(getSVFType(ov->getType()));
+        SVFLLVMValue* svfov = new SVFLLVMValue(getSVFType(ov->getType()));
         svfModule->addOtherValue(svfov);
         addOtherValueMap(ov,svfov);
         return svfov;

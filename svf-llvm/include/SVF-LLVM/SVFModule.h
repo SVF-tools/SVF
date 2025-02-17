@@ -47,7 +47,7 @@ public:
     typedef std::vector<SVFGlobalValue*> GlobalSetType;
     typedef std::vector<SVFGlobalValue*> AliasSetType;
     typedef std::vector<SVFConstant*> ConstantType;
-    typedef std::vector<SVFOtherValue*> OtherValueType;
+    typedef std::vector<SVFLLVMValue*> OtherValueType;
 
     /// Iterators type def
     typedef FunctionSetType::iterator iterator;
@@ -100,7 +100,7 @@ public:
     {
         ConstantSet.push_back(cd);
     }
-    inline void addOtherValue(SVFOtherValue* ov)
+    inline void addOtherValue(SVFLLVMValue* ov)
     {
         OtherValueSet.push_back(ov);
     }

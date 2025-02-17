@@ -592,7 +592,6 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
     const PointerType *originalPType = SVFUtil::dyn_cast<PointerType>(inst->getType());
     const Type* inferedType = nullptr;
     assert(originalPType && "empty type?");
-    const SVFInstruction* svfinst = llvmModuleSet()->getSVFInstruction(inst);
     if(LLVMUtil::isHeapAllocExtCallViaRet(inst))
     {
         if(const Value* v = getFirstUseViaCastInst(inst))
@@ -607,7 +606,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
     else if(LLVMUtil::isHeapAllocExtCallViaArg(inst))
     {
         const CallBase* cs = LLVMUtil::getLLVMCallSite(inst);
-        u32_t arg_pos = LLVMUtil::getHeapAllocHoldingArgPosition(SVFUtil::cast<SVFCallInst>(svfinst)->getCalledFunction());
+        u32_t arg_pos = LLVMUtil::getHeapAllocHoldingArgPosition(llvmModuleSet()->getSVFFunction(cs->getCalledFunction()));
         const Value* arg = cs->getArgOperand(arg_pos);
         originalPType = SVFUtil::dyn_cast<PointerType>(arg->getType());
         inferedType = inferObjType(startValue = arg);

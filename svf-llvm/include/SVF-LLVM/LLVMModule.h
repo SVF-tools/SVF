@@ -58,9 +58,9 @@ public:
     typedef Map<const Function*, FunObjVar*> LLVMFun2FunObjVarMap;
     typedef Map<const BasicBlock*, SVFBasicBlock*> LLVMBB2SVFBBMap;
     typedef Map<const Instruction*, SVFInstruction*> LLVMInst2SVFInstMap;
-    typedef Map<const Argument*, SVFArgument*> LLVMArgument2SVFArgumentMap;
-    typedef Map<const Constant*, SVFConstant*> LLVMConst2SVFConstMap;
-    typedef Map<const Value*, SVFOtherValue*> LLVMValue2SVFOtherValueMap;
+    typedef Map<const Argument*, SVFLLVMValue*> LLVMArgument2SVFArgumentMap;
+    typedef Map<const Constant*, SVFLLVMValue*> LLVMConst2SVFConstMap;
+    typedef Map<const Value*, SVFLLVMValue*> LLVMValue2SVFOtherValueMap;
     typedef Map<const SVFLLVMValue*, const Value*> SVFValue2LLVMValueMap;
     typedef Map<const SVFValue*, const Value*> SVFBaseNode2LLVMValueMap;
     typedef Map<const Type*, SVFType*> LLVMType2SVFTypeMap;
@@ -254,7 +254,7 @@ public:
         addToSVFVar2LLVMValueMap(inst, svfInst);
     }
 
-    inline void addArgumentMap(const Argument* arg, SVFArgument* svfArg)
+    inline void addArgumentMap(const Argument* arg, SVFLLVMValue* svfArg)
     {
         LLVMArgument2SVFArgument[arg] = svfArg;
         setValueAttr(arg,svfArg);
@@ -269,7 +269,7 @@ public:
         LLVMConst2SVFConst[glob] = svfglob;
         setValueAttr(glob,svfglob);
     }
-    inline void addConstantDataMap(const ConstantData* cd, SVFConstantData* svfcd)
+    inline void addConstantDataMap(const ConstantData* cd, SVFLLVMValue* svfcd)
     {
         LLVMConst2SVFConst[cd] = svfcd;
         setValueAttr(cd,svfcd);
@@ -279,7 +279,7 @@ public:
         LLVMConst2SVFConst[cons] = svfcons;
         setValueAttr(cons,svfcons);
     }
-    inline void addOtherValueMap(const Value* ov, SVFOtherValue* svfov)
+    inline void addOtherValueMap(const Value* ov, SVFLLVMValue* svfov)
     {
         LLVMValue2SVFOtherValue[ov] = svfov;
         setValueAttr(ov,svfov);
@@ -353,7 +353,7 @@ public:
         return it->second;
     }
 
-    inline SVFArgument* getSVFArgument(const Argument* arg) const
+    inline SVFLLVMValue* getSVFArgument(const Argument* arg) const
     {
         LLVMArgument2SVFArgumentMap::const_iterator it = LLVMArgument2SVFArgument.find(arg);
         assert(it!=LLVMArgument2SVFArgument.end() && "SVF Argument not found!");
@@ -373,10 +373,10 @@ public:
         return SVFUtil::cast<SVFGlobalValue>(it->second);
     }
 
-    SVFConstantData* getSVFConstantData(const ConstantData* cd);
+    SVFLLVMValue* getSVFConstantData(const ConstantData* cd);
     SVFConstant* getOtherSVFConstant(const Constant* oc);
 
-    SVFOtherValue* getSVFOtherValue(const Value* ov);
+    SVFLLVMValue* getSVFOtherValue(const Value* ov);
 
     /// Get the corresponding Function based on its name
     inline const SVFFunction* getSVFFunction(const std::string& name)
