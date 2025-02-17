@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # type './build.sh'       for release build
 # type './build.sh debug' for debug build
-# if the LLVM_DIR variable is not set, LLVM will be downloaded.
+# type './build.sh shared' for building LLVM from source with shared libs and RTTI enabled
+# type './build.sh debug shared' for debug build with shared libs and RTTI enabled
+# If the LLVM_DIR variable is not set, LLVM will be downloaded or built from source.
 #
 # Dependencies include: build-essential libncurses5 libncurses-dev cmake zlib1g-dev
 set -e # exit on first error
@@ -9,7 +11,7 @@ set -e # exit on first error
 jobs=8
 
 #########
-# VARs and Links
+# Variables and Paths
 ########
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 SVFHOME="${SCRIPT_DIR}"
@@ -28,6 +30,20 @@ SourceZ3="https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.8.zip"
 # keep the version consistent with LLVM_DIR in setup.sh and llvm_version in Dockerfile
 LLVMHome="llvm-${MajorLLVMVer}.0.0.obj"
 Z3Home="z3.obj"
+
+
+# Parse arguments
+BUILD_TYPE='Release'
+BUILD_SHARED='OFF'
+for arg in "$@"; do
+    if [[ $arg =~ ^[Dd]ebug$ ]]; then
+        BUILD_TYPE='Debug'
+    fi
+    if [[ $arg =~ ^[Ss]hared$ ]]; then
+        BUILD_SHARED='ON'
+    fi
+done
+
 
 
 # Downloads $1 (URL) to $2 (target destination) using wget or curl,
@@ -114,8 +130,12 @@ function build_llvm_from_source {
     echo "Building LLVM..."
     mkdir llvm-build
     cd llvm-build
-    # /*/ is a dirty hack to get llvm-project-llvmorg-version...
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SVFHOME/$LLVMHome" -DLLVM_ENABLE_PROJECTS=clang ../llvm-source/*/llvm
+    cmake -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX="$SVFHOME/$LLVMHome" \
+          -DLLVM_ENABLE_PROJECTS="clang" \
+          -DLLVM_ENABLE_RTTI=ON \
+          -DBUILD_SHARED_LIBS=ON \
+          ../llvm-source/*/llvm
     cmake --build . -j ${jobs}
     cmake --install .
 
@@ -186,13 +206,18 @@ if [[ ! -d "$LLVM_DIR" ]]; then
             mkdir -p $SVFHOME/$LLVMHome
             ln -s $(brew --prefix llvm@${MajorLLVMVer})/* $SVFHOME/$LLVMHome
         else
+            # Ubuntu if build_shared in ON,
+            if [[ "$BUILD_SHARED" == "ON" ]]; then
+                build_llvm_from_source
+            else
             # everything else downloads pre-built lib includ osx "arm64"
-            echo "Downloading LLVM binary for $OSDisplayName"
-            generic_download_file "$urlLLVM" llvm.tar.xz
-            check_xz
-            echo "Unzipping llvm package..."
-            mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
-            rm llvm.tar.xz
+              echo "Downloading LLVM binary for $OSDisplayName"
+              generic_download_file "$urlLLVM" llvm.tar.xz
+              check_xz
+              echo "Unzipping llvm package..."
+              mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
+              rm llvm.tar.xz
+            fi
         fi
     fi
     export LLVM_DIR="$SVFHOME/$LLVMHome"
@@ -253,7 +278,7 @@ mkdir "${BUILD_DIR}"
 cmake -D CMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}"   \
     -DSVF_ENABLE_ASSERTIONS:BOOL=true              \
     -DSVF_SANITIZE="${SVF_SANITIZER}"              \
-    -DBUILD_SHARED_LIBS=off                        \
+    -DBUILD_SHARED_LIBS=${BUILD_SHARED}            \
     -S "${SVFHOME}" -B "${BUILD_DIR}"
 cmake --build "${BUILD_DIR}" -j ${jobs}
 
