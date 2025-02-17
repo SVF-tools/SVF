@@ -64,9 +64,6 @@ public:
         SVFVal,
         SVFFunc,
         SVFInst,
-        SVFGlob,
-        SVFConst,
-        SVFConstData
     };
 
 private:
@@ -81,7 +78,7 @@ protected:
     /// Constructor without name
     SVFLLVMValue(const SVFType* ty, SVFValKind k = SVFVal)
         : kind(k), ptrInUncalledFun(false),
-          constDataOrAggData(SVFConstData == k), type(ty), sourceLoc("NoLoc")
+          constDataOrAggData(false), type(ty), sourceLoc("NoLoc")
     {
     }
 
@@ -415,66 +412,6 @@ public:
     inline bool isRetInst() const
     {
         return ret;
-    }
-};
-
-class SVFConstant : public SVFLLVMValue
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-public:
-    SVFConstant(const SVFType* ty, SVFValKind k = SVFConst): SVFLLVMValue(ty, k)
-    {
-    }
-    SVFConstant() = delete;
-
-    static inline bool classof(const SVFLLVMValue *node)
-    {
-        return node->getKind() == SVFConst ||
-               node->getKind() == SVFGlob ||
-               node->getKind() == SVFConstData;
-    }
-
-};
-
-class SVFGlobalValue : public SVFConstant
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-    friend class LLVMModuleSet;
-
-private:
-    const SVFLLVMValue* realDefGlobal;  /// the definition of a function across multiple modules
-
-protected:
-    inline void setDefGlobalForMultipleModule(const SVFLLVMValue* defg)
-    {
-        realDefGlobal = defg;
-    }
-
-public:
-    SVFGlobalValue(const SVFType* ty): SVFConstant(ty, SVFLLVMValue::SVFGlob), realDefGlobal(nullptr)
-    {
-    }
-    SVFGlobalValue(std::string&& name, const SVFType* ty) : SVFGlobalValue(ty)
-    {
-        setName(std::move(name));
-    }
-    SVFGlobalValue() = delete;
-
-    inline const SVFLLVMValue* getDefGlobalForMultipleModule() const
-    {
-        if(realDefGlobal==nullptr)
-            return this;
-        return realDefGlobal;
-    }
-    static inline bool classof(const SVFLLVMValue *node)
-    {
-        return node->getKind() == SVFGlob;
-    }
-    static inline bool classof(const SVFConstant *node)
-    {
-        return node->getKind() == SVFGlob;
     }
 };
 

@@ -237,8 +237,7 @@ void LLVMModuleSet::createSVFDataStructure()
         /// GlobalVariable
         for (const GlobalVariable& global :  mod.globals())
         {
-            SVFGlobalValue* svfglobal = new SVFGlobalValue(
-                global.getName().str(), getSVFType(global.getType()));
+            SVFLLVMValue* svfglobal = new SVFLLVMValue(getSVFType(global.getType()));
             svfModule->addGlobalSet(svfglobal);
             addGlobalValueMap(&global, svfglobal);
         }
@@ -246,8 +245,8 @@ void LLVMModuleSet::createSVFDataStructure()
         /// GlobalAlias
         for (const GlobalAlias& alias : mod.aliases())
         {
-            SVFGlobalValue* svfalias = new SVFGlobalValue(
-                alias.getName().str(), getSVFType(alias.getType()));
+            SVFLLVMValue* svfalias = new SVFLLVMValue(
+                 getSVFType(alias.getType()));
             svfModule->addAliasSet(svfalias);
             addGlobalValueMap(&alias, svfalias);
         }
@@ -255,8 +254,8 @@ void LLVMModuleSet::createSVFDataStructure()
         /// GlobalIFunc
         for (const GlobalIFunc& ifunc : mod.ifuncs())
         {
-            SVFGlobalValue* svfifunc = new SVFGlobalValue(
-                ifunc.getName().str(), getSVFType(ifunc.getType()));
+            SVFLLVMValue* svfifunc = new SVFLLVMValue(
+                 getSVFType(ifunc.getType()));
             svfModule->addAliasSet(svfifunc);
             addGlobalValueMap(&ifunc, svfifunc);
         }
@@ -1193,8 +1192,9 @@ bool LLVMModuleSet::hasValueNode(const SVFLLVMValue *val)
 NodeID LLVMModuleSet::getObjectNode(const SVFLLVMValue *val)
 {
     const SVFLLVMValue *svfVal = val;
-    if (const SVFGlobalValue *g = SVFUtil::dyn_cast<SVFGlobalValue>(val))
-        svfVal = g->getDefGlobalForMultipleModule();
+    auto llvm_value = llvmModuleSet->getLLVMValue(svfVal);
+    if (const GlobalVariable* glob = SVFUtil::dyn_cast<GlobalVariable>(llvm_value))
+        svfVal = llvmModuleSet->getSVFValue(LLVMUtil::getGlobalRep(glob));
     ValueToIDMapTy::const_iterator iter = objSymMap.find(svfVal);
     assert(iter!=objSymMap.end() && "obj sym not found");
     return iter->second;
@@ -1251,12 +1251,6 @@ void LLVMModuleSet::setValueAttr(const Value* val, SVFLLVMValue* svfvalue)
     if (LLVMUtil::isConstDataOrAggData(val))
         svfvalue->setConstDataOrAggData();
 
-    if (SVFGlobalValue* glob = SVFUtil::dyn_cast<SVFGlobalValue>(svfvalue))
-    {
-        const Value* llvmVal = LLVMUtil::getGlobalRep(val);
-        assert(SVFUtil::isa<GlobalValue>(llvmVal) && "not a GlobalValue?");
-        glob->setDefGlobalForMultipleModule(getSVFGlobalValue(SVFUtil::cast<GlobalValue>(llvmVal)));
-    }
     if (SVFFunction* svffun = SVFUtil::dyn_cast<SVFFunction>(svfvalue))
     {
         const Function* func = SVFUtil::cast<Function>(val);
@@ -1281,28 +1275,27 @@ SVFLLVMValue* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
     LLVMConst2SVFConstMap::const_iterator it = LLVMConst2SVFConst.find(cd);
     if(it!=LLVMConst2SVFConst.end())
     {
-        assert(SVFUtil::isa<SVFConstant>(it->second) && "not a SVFConstantData type!");
         return it->second;
     }
     else
     {
-        SVFConstant* svfcd = new SVFConstant(getSVFType(cd->getType()));
+        SVFLLVMValue* svfcd = new SVFLLVMValue(getSVFType(cd->getType()));
         svfModule->addConstant(svfcd);
         addConstantDataMap(cd,svfcd);
         return svfcd;
     }
 }
 
-SVFConstant* LLVMModuleSet::getOtherSVFConstant(const Constant* oc)
+SVFLLVMValue* LLVMModuleSet::getOtherSVFConstant(const Constant* oc)
 {
     LLVMConst2SVFConstMap::const_iterator it = LLVMConst2SVFConst.find(oc);
     if(it!=LLVMConst2SVFConst.end())
     {
-        return SVFUtil::cast<SVFConstant>(it->second);
+        return it->second;
     }
     else
     {
-        SVFConstant* svfoc = new SVFConstant(getSVFType(oc->getType()));
+        SVFLLVMValue* svfoc = new SVFLLVMValue(getSVFType(oc->getType()));
         svfModule->addConstant(svfoc);
         addOtherConstantMap(oc,svfoc);
         return svfoc;

@@ -259,7 +259,7 @@ public:
         LLVMArgument2SVFArgument[arg] = svfArg;
         setValueAttr(arg,svfArg);
     }
-    inline void addGlobalValueMap(const GlobalValue* glob, SVFGlobalValue* svfglob)
+    inline void addGlobalValueMap(const GlobalValue* glob, SVFLLVMValue* svfglob)
     {
         if (auto glob_var = llvm::dyn_cast<llvm::GlobalVariable>(glob);
                 hasGlobalRep(glob_var))
@@ -274,7 +274,7 @@ public:
         LLVMConst2SVFConst[cd] = svfcd;
         setValueAttr(cd,svfcd);
     }
-    inline void addOtherConstantMap(const Constant* cons, SVFConstant* svfcons)
+    inline void addOtherConstantMap(const Constant* cons, SVFLLVMValue* svfcons)
     {
         LLVMConst2SVFConst[cons] = svfcons;
         setValueAttr(cons,svfcons);
@@ -360,7 +360,7 @@ public:
         return it->second;
     }
 
-    inline SVFGlobalValue* getSVFGlobalValue(const GlobalValue* g) const
+    inline SVFLLVMValue* getSVFGlobalValue(const GlobalValue* g) const
     {
         if (auto glob_var = llvm::dyn_cast<llvm::GlobalVariable>(g);
                 hasGlobalRep(glob_var))
@@ -369,12 +369,11 @@ public:
         }
         LLVMConst2SVFConstMap::const_iterator it = LLVMConst2SVFConst.find(g);
         assert(it!=LLVMConst2SVFConst.end() && "SVF Global not found!");
-        assert(SVFUtil::isa<SVFGlobalValue>(it->second) && "not a SVFGlobal type!");
-        return SVFUtil::cast<SVFGlobalValue>(it->second);
+        return it->second;
     }
 
     SVFLLVMValue* getSVFConstantData(const ConstantData* cd);
-    SVFConstant* getOtherSVFConstant(const Constant* oc);
+    SVFLLVMValue* getOtherSVFConstant(const Constant* oc);
 
     SVFLLVMValue* getSVFOtherValue(const Value* ov);
 
