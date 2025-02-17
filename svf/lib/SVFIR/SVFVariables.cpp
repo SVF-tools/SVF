@@ -169,7 +169,7 @@ const std::string GepValVar::toString() const
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
-        rawstr << valueOnlyToString();
+        rawstr << getBaseNode()->valueOnlyToString();
     }
     return rawstr.str();
 }
@@ -203,7 +203,7 @@ const std::string GepObjVar::toString() const
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
-        rawstr << valueOnlyToString();
+        rawstr << getBaseObj()->valueOnlyToString();
     }
     return rawstr.str();
 }

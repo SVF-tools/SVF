@@ -767,33 +767,16 @@ const std::string SVFValue::valueOnlyToString() const
 {
     std::string str;
     llvm::raw_string_ostream rawstr(str);
-    if (const SVF::CallGraphNode* fun = SVFUtil::dyn_cast<CallGraphNode>(this))
-    {
-        rawstr << "Function: " << fun->getFunction()->getName() << " ";
-    }
+    assert(
+        !SVFUtil::isa<GepObjVar>(this) && !SVFUtil::isa<GepValVar>(this) && !SVFUtil::isa<DummyObjVar>(this) &&!SVFUtil
+        ::isa<DummyValVar>(this) && !SVFUtil::isa<BlackHoleValVar>(this) &&
+        "invalid value");
+    auto llvmVal =
+            LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
+    if (llvmVal)
+        rawstr << " " << *llvmVal << " ";
     else
-    {
-        const SVFValue* baseNode = this;
-        if (const GepValVar* valVar = SVFUtil::dyn_cast<GepValVar>(this))
-        {
-            baseNode = valVar->getBaseNode();
-        }
-        else if (const GepObjVar* objVar = SVFUtil::dyn_cast<GepObjVar>(this))
-        {
-            baseNode = objVar->getBaseObj();
-        }
-        if (SVFUtil::isa<DummyObjVar, DummyValVar, BlackHoleValVar>(baseNode))
-            rawstr << "";
-        else
-        {
-            auto llvmVal =
-                LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(baseNode);
-            if (llvmVal)
-                rawstr << " " << *llvmVal << " ";
-            else
-                rawstr << "";
-        }
-    }
+        rawstr << "";
     rawstr << getSourceLoc();
     return rawstr.str();
 }
