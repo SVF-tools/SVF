@@ -1389,7 +1389,7 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
 
     %0 = getelementptr inbounds %struct.outer, %struct.inner %base, i32 0, i32 0
     call void @llvm.memcpy(ptr %inner, ptr %0, i64 24, i1 false)
-    The base value for the external argument inner is %base.
+    The base value for %0 is %base.
     Note: We only handle the field index 0 for now.
 
  * Example 2:
