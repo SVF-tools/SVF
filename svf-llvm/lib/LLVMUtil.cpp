@@ -773,7 +773,7 @@ const std::string SVFValue::valueOnlyToString() const
         !SVFUtil::isa<BlackHoleValVar>(this) &&
         "invalid value, refer to their toString method");
     auto llvmVal =
-            LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
+        LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
     if (llvmVal)
         rawstr << " " << *llvmVal << " ";
     else
