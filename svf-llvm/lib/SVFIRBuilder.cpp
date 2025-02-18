@@ -1386,20 +1386,23 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
 
 /*!
  * Example 1:
- *     p = q->f_0 (f_0 is the 0-th field)
- *     extapi(p)
- *     The base value for the external argument p is q.
- *     Note: We only handle the field index 0 for now.
- *
+
+    %0 = getelementptr inbounds %struct.outer, %struct.inner %base, i32 0, i32 0
+    call void @llvm.memcpy(ptr %inner, ptr %0, i64 24, i1 false)
+    The base value for the external argument inner is %base.
+    Note: We only handle the field index 0 for now.
+
  * Example 2:
  *     https://github.com/SVF-tools/SVF/issues/1650
  *
- *     g_n =  { } (some struct)
- *     g = { g_0, ..., g_n }
- *     q = g->g_n (g is a global struct, g_n is the n-th field)
- *     p = *q
- *     extapi(p)
- *     The base value for p is g_n. Load -> GEP (collect the GEP index) based on g (a global struct) -> g_n.
+    @i1 = dso_local global %struct.inner { i32 0, ptr @f1, ptr @f2 }
+    @n1 = dso_local global %struct.outer { i32 0, ptr @i1 }
+
+    %inner = alloca %struct.inner
+    %0 = load ptr, ptr getelementptr inbounds (%struct.outer, ptr @n1, i32 0, i32 1)
+    call void @llvm.memcpy(ptr %inner, ptr %0, i64 24, i1 false)
+
+    The base value for %0 is @i1
  */
 const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
 {
