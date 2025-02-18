@@ -135,6 +135,31 @@ LLVMContext &ObjTypeInference::getLLVMCtx()
  */
 const Type *ObjTypeInference::inferObjType(const Value *var)
 {
+    const Type* res = inferSingleObjType(var);
+    // infer type by leveraging the type alignment of src and dst in memcpy
+    if (res == defaultType(var)) {
+        for (const auto& use: var->users()) {
+            if (const CallBase* cs = SVFUtil::dyn_cast<CallBase>(use)) {
+                if (const Function* calledFun = cs->getCalledFunction())
+                if (LLVMUtil::isMemcpyExtFun(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(calledFun))) {
+                    const Value* dst = cs->getArgOperand(0);
+                    const Value* src = cs->getArgOperand(1);
+                    const auto name = cs->getName();
+                    assert(name == name);
+                    if(calledFun->getName().find("iconv") != std::string::npos)
+                        dst = cs->getArgOperand(3), src = cs->getArgOperand(1);
+
+                    if (var == dst) return inferSingleObjType(src);
+                    else if (var == src) return inferSingleObjType(dst);
+                    else ABORT_MSG("invalid memcpy call");
+                }
+            }
+        }
+    }
+    return res;
+}
+
+const Type *ObjTypeInference::inferSingleObjType(const Value *var) {
     if (isAlloc(var)) return fwInferObjType(var);
     Set<const Value *> &sources = bwfindAllocOfVar(var);
     Set<const Type *> types;
