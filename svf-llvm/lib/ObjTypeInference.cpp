@@ -135,22 +135,25 @@ LLVMContext &ObjTypeInference::getLLVMCtx()
  */
 const Type *ObjTypeInference::inferObjType(const Value *var)
 {
-    const Type* res = inferSingleObjType(var);
+    const Type* res = inferPointsToType(var);
     // infer type by leveraging the type alignment of src and dst in memcpy
+    // for example, we can infer the obj type of %0 based on that of %inner_v:
+    //
+    // %inner_v = alloca %struct.inner, align 8
+    // call void @llvm.memcpy.p0.p0.i64(ptr align 8 %inner_v, ptr align 8 %0, i64 24, i1 false), !dbg !39
     if (res == defaultType(var)) {
         for (const auto& use: var->users()) {
             if (const CallBase* cs = SVFUtil::dyn_cast<CallBase>(use)) {
                 if (const Function* calledFun = cs->getCalledFunction())
                 if (LLVMUtil::isMemcpyExtFun(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(calledFun))) {
+                    assert(cs->getNumOperands() > 1 && "arguments should be greater than 1");
                     const Value* dst = cs->getArgOperand(0);
                     const Value* src = cs->getArgOperand(1);
-                    const auto name = cs->getName();
-                    assert(name == name);
                     if(calledFun->getName().find("iconv") != std::string::npos)
                         dst = cs->getArgOperand(3), src = cs->getArgOperand(1);
 
-                    if (var == dst) return inferSingleObjType(src);
-                    else if (var == src) return inferSingleObjType(dst);
+                    if (var == dst) return inferPointsToType(src);
+                    else if (var == src) return inferPointsToType(dst);
                     else ABORT_MSG("invalid memcpy call");
                 }
             }
@@ -159,7 +162,7 @@ const Type *ObjTypeInference::inferObjType(const Value *var)
     return res;
 }
 
-const Type *ObjTypeInference::inferSingleObjType(const Value *var) {
+const Type *ObjTypeInference::inferPointsToType(const Value *var) {
     if (isAlloc(var)) return fwInferObjType(var);
     Set<const Value *> &sources = bwfindAllocOfVar(var);
     Set<const Type *> types;
