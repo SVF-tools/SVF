@@ -137,10 +137,16 @@ const Type *ObjTypeInference::inferObjType(const Value *var)
 {
     const Type* res = inferPointsToType(var);
     // infer type by leveraging the type alignment of src and dst in memcpy
-    // for example, we can infer the obj type of %0 based on that of %inner_v:
+    // for example,
     //
-    // %inner_v = alloca %struct.inner, align 8
-    // call void @llvm.memcpy.p0.p0.i64(ptr align 8 %inner_v, ptr align 8 %0, i64 24, i1 false), !dbg !39
+    // %tmp = alloca %struct.outer
+    // %inner_v = alloca %struct.inner
+    // %ptr = getelementptr inbounds %struct.outer, ptr %tmp, i32 0, i32 1, !dbg !38
+    // %0 = load ptr, ptr %ptr, align 8, !dbg !38
+    // call void @llvm.memcpy.p0.p0.i64(ptr %inner_v, ptr %0, i64 24, i1 false)
+    //
+    //  It is difficult to infer the type of %0 without deep alias analysis,
+    //  but we can infer the obj type of %0 based on that of %inner_v.
     if (res == defaultType(var)) {
         for (const auto& use: var->users()) {
             if (const CallBase* cs = SVFUtil::dyn_cast<CallBase>(use)) {
