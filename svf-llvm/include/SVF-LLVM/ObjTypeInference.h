@@ -70,6 +70,8 @@ public:
     /// get or infer the type of the object pointed by the value
     const Type *inferObjType(const Value *var);
 
+    const Type *inferPointsToType(const Value *var);
+
     /// validate type inference
     void validateTypeCheck(const CallBase *cs);
 
