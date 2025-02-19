@@ -1390,11 +1390,12 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
     %0 = getelementptr inbounds %struct.outer, %struct.inner %base, i32 0, i32 0
     call void @llvm.memcpy(ptr %inner, ptr %0, i64 24, i1 false)
     The base value for %0 is %base.
-    Note: We only handle the field index 0 for now.
+    Note: the %base is recognized as the base value if the offset (field index) is 0
 
  * Example 2:
  *     https://github.com/SVF-tools/SVF/issues/1650
- *
+       https://github.com/SVF-tools/SVF/pull/1652
+
     @i1 = dso_local global %struct.inner { i32 0, ptr @f1, ptr @f2 }
     @n1 = dso_local global %struct.outer { i32 0, ptr @i1 }
 
