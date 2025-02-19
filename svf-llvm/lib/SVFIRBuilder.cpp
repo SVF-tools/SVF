@@ -1419,9 +1419,12 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
         }
         if(totalidx == 0 && !SVFUtil::isa<StructType>(value->getType()))
             value = gep->getPointerOperand();
-    } else if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(value)) {
+    }
+    else if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(value))
+    {
         const Value* loadP = load->getPointerOperand();
-        if (const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(loadP)) {
+        if (const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(loadP))
+        {
             APOffset totalidx = 0;
             for (bridge_gep_iterator gi = bridge_gep_begin(gep), ge = bridge_gep_end(gep); gi != ge; ++gi)
             {
@@ -1429,12 +1432,16 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
                     totalidx += LLVMUtil::getIntegerValue(op).first;
             }
             const Value * pointer_operand = gep->getPointerOperand();
-            if (auto *glob = SVFUtil::dyn_cast<GlobalVariable>(pointer_operand)) {
-                if (glob->hasInitializer()) {
+            if (auto *glob = SVFUtil::dyn_cast<GlobalVariable>(pointer_operand))
+            {
+                if (glob->hasInitializer())
+                {
                     if (auto *initializer = SVFUtil::dyn_cast<
-                        ConstantStruct>(glob->getInitializer())) {
+                                            ConstantStruct>(glob->getInitializer()))
+                    {
                         auto *ptrField = initializer->getOperand(totalidx);
-                        if (auto *ptrValue = SVFUtil::dyn_cast<llvm::GlobalVariable>(ptrField)) {
+                        if (auto *ptrValue = SVFUtil::dyn_cast<llvm::GlobalVariable>(ptrField))
+                        {
                             return ptrValue;
                         }
                     }

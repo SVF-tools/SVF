@@ -147,28 +147,33 @@ const Type *ObjTypeInference::inferObjType(const Value *var)
     //
     //  It is difficult to infer the type of %0 without deep alias analysis,
     //  but we can infer the obj type of %0 based on that of %inner_v.
-    if (res == defaultType(var)) {
-        for (const auto& use: var->users()) {
-            if (const CallBase* cs = SVFUtil::dyn_cast<CallBase>(use)) {
+    if (res == defaultType(var))
+    {
+        for (const auto& use: var->users())
+        {
+            if (const CallBase* cs = SVFUtil::dyn_cast<CallBase>(use))
+            {
                 if (const Function* calledFun = cs->getCalledFunction())
-                if (LLVMUtil::isMemcpyExtFun(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(calledFun))) {
-                    assert(cs->getNumOperands() > 1 && "arguments should be greater than 1");
-                    const Value* dst = cs->getArgOperand(0);
-                    const Value* src = cs->getArgOperand(1);
-                    if(calledFun->getName().find("iconv") != std::string::npos)
-                        dst = cs->getArgOperand(3), src = cs->getArgOperand(1);
+                    if (LLVMUtil::isMemcpyExtFun(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(calledFun)))
+                    {
+                        assert(cs->getNumOperands() > 1 && "arguments should be greater than 1");
+                        const Value* dst = cs->getArgOperand(0);
+                        const Value* src = cs->getArgOperand(1);
+                        if(calledFun->getName().find("iconv") != std::string::npos)
+                            dst = cs->getArgOperand(3), src = cs->getArgOperand(1);
 
-                    if (var == dst) return inferPointsToType(src);
-                    else if (var == src) return inferPointsToType(dst);
-                    else ABORT_MSG("invalid memcpy call");
-                }
+                        if (var == dst) return inferPointsToType(src);
+                        else if (var == src) return inferPointsToType(dst);
+                        else ABORT_MSG("invalid memcpy call");
+                    }
             }
         }
     }
     return res;
 }
 
-const Type *ObjTypeInference::inferPointsToType(const Value *var) {
+const Type *ObjTypeInference::inferPointsToType(const Value *var)
+{
     if (isAlloc(var)) return fwInferObjType(var);
     Set<const Value *> &sources = bwfindAllocOfVar(var);
     Set<const Type *> types;
