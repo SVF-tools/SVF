@@ -20,7 +20,7 @@ arch=$(uname -m)
 MajorLLVMVer=16
 LLVMVer=${MajorLLVMVer}.0.4
 UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-aarch64-linux-gnu.tar.xz"
-UbuntuLLVM_RTTI="https://github.com/bjjwwang/SVF-LLVM/releases/tag/${MajorLLVMVer}.0.0#:~:text=llvm%2D${MajorLLVMVer}.0.0%2Dubuntu24%2Drtti%2Damd64.tar.gz"
+UbuntuLLVM_RTTI="https://github.com/bjjwwang/SVF-LLVM/releases/download/${MajorLLVMVer}.0.0/llvm-${MajorLLVMVer}.0.0-ubuntu24-rtti-amd64.tar.gz"
 UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-linux-gnu-ubuntu-22.04.tar.xz"
 SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-${LLVMVer}.zip"
 UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-ubuntu-16.04.zip"
