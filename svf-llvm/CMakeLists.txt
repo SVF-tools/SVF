@@ -56,6 +56,7 @@ else()
     support
     target
     transformutils
+    demangle
   )
 endif()
 
