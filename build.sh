@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
-# type './build.sh'       for release build
-# type './build.sh debug' for debug build
-# type './build.sh shared' for building LLVM from source with shared libs and RTTI enabled
-# type './build.sh debug shared' for debug build with shared libs and RTTI enabled
+# type './build.sh'       for release build with dynamic libs, SVF and LLVM RTTI on
+# type './build.sh debug' for debug build with dynamic libs, SVF and LLVM RTTI on
+# type './build.sh dyn_lib' for release build with dynamic libs, SVF and LLVM RTTI on
+# type './build.sh debug dyn_lib' for debug build with dynamic libs, SVF and LLVM RTTI on
+
+# type './build.sh sta_lib' for release build with static libs, SVF and LLVM RTTI on
+# type './build.sh debug sta_lib' for debug build with static libs, SVF and LLVM RTTI on
+# type './build.sh sta_lib nortti' for release build with static libs, SVF and LLVM RTTI off
+# type './build.sh debug sta_lib nortti' for debug build with static libs, SVF and LLVM RTTI off
+
 # If the LLVM_DIR variable is not set, LLVM will be downloaded or built from source.
 #
 # Dependencies include: build-essential libncurses5 libncurses-dev cmake zlib1g-dev
@@ -20,6 +26,7 @@ arch=$(uname -m)
 MajorLLVMVer=16
 LLVMVer=${MajorLLVMVer}.0.4
 UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-aarch64-linux-gnu.tar.xz"
+UbuntuLLVM_RTTI="https://github.com/bjjwwang/SVF-LLVM/releases/download/${MajorLLVMVer}.0.0/llvm-${MajorLLVMVer}.0.0-ubuntu24-rtti-amd64.tar.gz"
 UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-linux-gnu-ubuntu-22.04.tar.xz"
 SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-${LLVMVer}.zip"
 UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-ubuntu-16.04.zip"
@@ -34,16 +41,27 @@ Z3Home="z3.obj"
 
 # Parse arguments
 BUILD_TYPE='Release'
-BUILD_SHARED='OFF'
+BUILD_DYN_LIB='ON'
+RTTI='ON'
 for arg in "$@"; do
     if [[ $arg =~ ^[Dd]ebug$ ]]; then
         BUILD_TYPE='Debug'
     fi
-    if [[ $arg =~ ^[Ss]hared$ ]]; then
-        BUILD_SHARED='ON'
+    if [[ $arg =~ ^[Ss]ta_lib$ ]]; then
+        BUILD_DYN_LIB='OFF'
+    fi
+    if [[ $arg =~ ^[Dd]yn_lib$ ]]; then
+        BUILD_DYN_LIB='ON'
+    fi
+    if [[ $arg =~ ^[Nn]ortti$ ]]; then
+        RTTI='OFF'
     fi
 done
-
+# if static is off (shared lib), rtti is always on, but print a warning if rtti is off
+if [[ "$BUILD_SHARED" == "ON" && "$RTTI" == "OFF" ]]; then
+    echo "Warning: LLVM RTTI is always on when building shared libraries."
+    RTTI='ON'
+fi
 
 
 # Downloads $1 (URL) to $2 (target destination) using wget or curl,
@@ -180,7 +198,16 @@ elif [[ $sysOS == "Linux" ]]; then
         urlZ3="$UbuntuZ3Arm"
         OSDisplayName="Ubuntu arm64"
     else
-        urlLLVM="$UbuntuLLVM"
+      if [[ "$BUILD_SHARED" == "ON" ]]; then
+        urlLLVM="$UbuntuLLVM_RTTI"
+      else
+        # if RTTI is on
+        if [[ "$RTTI" == "ON" ]]; then
+          urlLLVM="$UbuntuLLVM_RTTI"
+        else
+          urlLLVM="$UbuntuLLVM"
+        fi
+      fi
         urlZ3="$UbuntuZ3"
         OSDisplayName="Ubuntu x86"
     fi
@@ -206,18 +233,13 @@ if [[ ! -d "$LLVM_DIR" ]]; then
             mkdir -p $SVFHOME/$LLVMHome
             ln -s $(brew --prefix llvm@${MajorLLVMVer})/* $SVFHOME/$LLVMHome
         else
-            # Ubuntu if build_shared in ON,
-            if [[ "$BUILD_SHARED" == "ON" ]]; then
-                build_llvm_from_source
-            else
             # everything else downloads pre-built lib includ osx "arm64"
-              echo "Downloading LLVM binary for $OSDisplayName"
-              generic_download_file "$urlLLVM" llvm.tar.xz
-              check_xz
-              echo "Unzipping llvm package..."
-              mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
-              rm llvm.tar.xz
-            fi
+            echo "Downloading LLVM binary for $OSDisplayName"
+            generic_download_file "$urlLLVM" llvm.tar.xz
+            check_xz
+            echo "Unzipping llvm package..."
+            mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
+            rm llvm.tar.xz
         fi
     fi
     export LLVM_DIR="$SVFHOME/$LLVMHome"
@@ -278,7 +300,7 @@ mkdir "${BUILD_DIR}"
 cmake -D CMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}"   \
     -DSVF_ENABLE_ASSERTIONS:BOOL=true              \
     -DSVF_SANITIZE="${SVF_SANITIZER}"              \
-    -DBUILD_SHARED_LIBS=${BUILD_SHARED}            \
+    -DBUILD_SHARED_LIBS=${BUILD_DYN_LIB}            \
     -S "${SVFHOME}" -B "${BUILD_DIR}"
 cmake --build "${BUILD_DIR}" -j ${jobs}
 
