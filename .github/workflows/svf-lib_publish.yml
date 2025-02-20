@@ -59,7 +59,7 @@ jobs:
           astyle --style=allman -n -r "*.h" "*.cpp"
           if [ ! -z $FILES_CHANGED ]; then clang-format -i $FILES_CHANGED; fi
           git clone "https://github.com/SVF-tools/Test-Suite.git";
-          source ${{github.workspace}}/build.sh shared
+          source ${{github.workspace}}/build.sh dyn_lib
 
       # update formatting code and doxygen
       - name: update-formatting-code-and-doxygen
