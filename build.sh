@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# type './build.sh'       for release build with shared libs, LLVM RTTI on
-# type './build.sh debug' for debug build with shared libs, LLVM RTTI on
-# type './build.sh static' for release build with static libs, LLVM RTTI on
-# type './build.sh debug static' for debug build with static libs, LLVM RTTI on
-# type './build.sh static nortti' for release build with static libs, LLVM RTTI off
-# type './build.sh debug static nortti' for debug build with static libs, LLVM RTTI off
+# type './build.sh'       for release build with dynamic libs, LLVM RTTI on
+# type './build.sh debug' for debug build with dynamic libs, LLVM RTTI on
+# type './build.sh dyn_lib' for release build with dynamic libs, LLVM RTTI on
+# type './build.sh debug dyn_lib' for debug build with dynamic libs, LLVM RTTI on
+
+# type './build.sh sta_lib' for release build with static libs, LLVM RTTI on
+# type './build.sh debug sta_lib' for debug build with static libs, LLVM RTTI on
+# type './build.sh sta_lib nortti' for release build with static libs, LLVM RTTI off
+# type './build.sh debug sta_lib nortti' for debug build with static libs, LLVM RTTI off
 
 # If the LLVM_DIR variable is not set, LLVM will be downloaded or built from source.
 #
@@ -44,8 +47,11 @@ for arg in "$@"; do
     if [[ $arg =~ ^[Dd]ebug$ ]]; then
         BUILD_TYPE='Debug'
     fi
-    if [[ $arg =~ ^[Ss]tatic$ ]]; then
+    if [[ $arg =~ ^[Ss]ta_lib$ ]]; then
         BUILD_SHARED='OFF'
+    fi
+    if [[ $arg =~ ^[Dd]yn_lib$ ]]; then
+        BUILD_SHARED='ON'
     fi
     if [[ $arg =~ ^[Nn]ortti$ ]]; then
         RTTI='OFF'
