@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# type './build.sh'       for release build with dynamic libs, LLVM RTTI on
-# type './build.sh debug' for debug build with dynamic libs, LLVM RTTI on
-# type './build.sh dyn_lib' for release build with dynamic libs, LLVM RTTI on
-# type './build.sh debug dyn_lib' for debug build with dynamic libs, LLVM RTTI on
+# type './build.sh'       for release build with dynamic libs, SVF and LLVM RTTI on
+# type './build.sh debug' for debug build with dynamic libs, SVF and LLVM RTTI on
+# type './build.sh dyn_lib' for release build with dynamic libs, SVF and LLVM RTTI on
+# type './build.sh debug dyn_lib' for debug build with dynamic libs, SVF and LLVM RTTI on
 
-# type './build.sh sta_lib' for release build with static libs, LLVM RTTI on
-# type './build.sh debug sta_lib' for debug build with static libs, LLVM RTTI on
-# type './build.sh sta_lib nortti' for release build with static libs, LLVM RTTI off
-# type './build.sh debug sta_lib nortti' for debug build with static libs, LLVM RTTI off
+# type './build.sh sta_lib' for release build with static libs, SVF and LLVM RTTI on
+# type './build.sh debug sta_lib' for debug build with static libs, SVF and LLVM RTTI on
+# type './build.sh sta_lib nortti' for release build with static libs, SVF and LLVM RTTI off
+# type './build.sh debug sta_lib nortti' for debug build with static libs, SVF and LLVM RTTI off
 
 # If the LLVM_DIR variable is not set, LLVM will be downloaded or built from source.
 #
@@ -41,17 +41,17 @@ Z3Home="z3.obj"
 
 # Parse arguments
 BUILD_TYPE='Release'
-BUILD_SHARED='ON'
+BUILD_DYN_LIB='ON'
 RTTI='ON'
 for arg in "$@"; do
     if [[ $arg =~ ^[Dd]ebug$ ]]; then
         BUILD_TYPE='Debug'
     fi
     if [[ $arg =~ ^[Ss]ta_lib$ ]]; then
-        BUILD_SHARED='OFF'
+        BUILD_DYN_LIB='OFF'
     fi
     if [[ $arg =~ ^[Dd]yn_lib$ ]]; then
-        BUILD_SHARED='ON'
+        BUILD_DYN_LIB='ON'
     fi
     if [[ $arg =~ ^[Nn]ortti$ ]]; then
         RTTI='OFF'
@@ -300,7 +300,7 @@ mkdir "${BUILD_DIR}"
 cmake -D CMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}"   \
     -DSVF_ENABLE_ASSERTIONS:BOOL=true              \
     -DSVF_SANITIZE="${SVF_SANITIZER}"              \
-    -DBUILD_SHARED_LIBS=${BUILD_SHARED}            \
+    -DBUILD_SHARED_LIBS=${BUILD_DYN_LIB}            \
     -S "${SVFHOME}" -B "${BUILD_DIR}"
 cmake --build "${BUILD_DIR}" -j ${jobs}
 
