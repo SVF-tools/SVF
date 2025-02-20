@@ -20,6 +20,7 @@ arch=$(uname -m)
 MajorLLVMVer=16
 LLVMVer=${MajorLLVMVer}.0.4
 UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-aarch64-linux-gnu.tar.xz"
+UbuntuLLVM_RTTI="https://github.com/bjjwwang/SVF-LLVM/releases/tag/${MajorLLVMVer}.0.0#:~:text=llvm%2D${MajorLLVMVer}.0.0%2Dubuntu24%2Drtti%2Damd64.tar.gz"
 UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-linux-gnu-ubuntu-22.04.tar.xz"
 SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-${LLVMVer}.zip"
 UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-ubuntu-16.04.zip"
@@ -180,7 +181,11 @@ elif [[ $sysOS == "Linux" ]]; then
         urlZ3="$UbuntuZ3Arm"
         OSDisplayName="Ubuntu arm64"
     else
+      if [[ "$BUILD_SHARED" == "ON" ]]; then
+        urlLLVM="$UbuntuLLVM_RTTI"
+      else
         urlLLVM="$UbuntuLLVM"
+      fi
         urlZ3="$UbuntuZ3"
         OSDisplayName="Ubuntu x86"
     fi
@@ -206,18 +211,13 @@ if [[ ! -d "$LLVM_DIR" ]]; then
             mkdir -p $SVFHOME/$LLVMHome
             ln -s $(brew --prefix llvm@${MajorLLVMVer})/* $SVFHOME/$LLVMHome
         else
-            # Ubuntu if build_shared in ON,
-            if [[ "$BUILD_SHARED" == "ON" ]]; then
-                build_llvm_from_source
-            else
             # everything else downloads pre-built lib includ osx "arm64"
-              echo "Downloading LLVM binary for $OSDisplayName"
-              generic_download_file "$urlLLVM" llvm.tar.xz
-              check_xz
-              echo "Unzipping llvm package..."
-              mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
-              rm llvm.tar.xz
-            fi
+            echo "Downloading LLVM binary for $OSDisplayName"
+            generic_download_file "$urlLLVM" llvm.tar.xz
+            check_xz
+            echo "Unzipping llvm package..."
+            mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
+            rm llvm.tar.xz
         fi
     fi
     export LLVM_DIR="$SVFHOME/$LLVMHome"
