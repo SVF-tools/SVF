@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# type './build.sh'       for release build
-# type './build.sh debug' for debug build
-# type './build.sh shared' for building LLVM from source with shared libs and RTTI enabled
-# type './build.sh debug shared' for debug build with shared libs and RTTI enabled
+# type './build.sh'       for release build with shared libs, LLVM RTTI on
+# type './build.sh debug' for debug build with shared libs, LLVM RTTI on
+# type './build.sh static' for release build with static libs, LLVM RTTI on
+# type './build.sh debug static' for debug build with static libs, LLVM RTTI on
+# type './build.sh static nortti' for release build with static libs, LLVM RTTI off
+# type './build.sh debug static nortti' for debug build with static libs, LLVM RTTI off
+
 # If the LLVM_DIR variable is not set, LLVM will be downloaded or built from source.
 #
 # Dependencies include: build-essential libncurses5 libncurses-dev cmake zlib1g-dev
@@ -35,16 +38,24 @@ Z3Home="z3.obj"
 
 # Parse arguments
 BUILD_TYPE='Release'
-BUILD_SHARED='OFF'
+BUILD_SHARED='ON'
+RTTI='ON'
 for arg in "$@"; do
     if [[ $arg =~ ^[Dd]ebug$ ]]; then
         BUILD_TYPE='Debug'
     fi
-    if [[ $arg =~ ^[Ss]hared$ ]]; then
-        BUILD_SHARED='ON'
+    if [[ $arg =~ ^[Ss]tatic$ ]]; then
+        BUILD_SHARED='OFF'
+    fi
+    if [[ $arg =~ ^[Nn]ortti$ ]]; then
+        RTTI='OFF'
     fi
 done
-
+# if static is off (shared lib), rtti is always on, but print a warning if rtti is off
+if [[ "$BUILD_SHARED" == "ON" && "$RTTI" == "OFF" ]]; then
+    echo "Warning: LLVM RTTI is always on when building shared libraries."
+    RTTI='ON'
+fi
 
 
 # Downloads $1 (URL) to $2 (target destination) using wget or curl,
@@ -184,7 +195,12 @@ elif [[ $sysOS == "Linux" ]]; then
       if [[ "$BUILD_SHARED" == "ON" ]]; then
         urlLLVM="$UbuntuLLVM_RTTI"
       else
-        urlLLVM="$UbuntuLLVM"
+        # if RTTI is on
+        if [[ "$RTTI" == "ON" ]]; then
+          urlLLVM="$UbuntuLLVM_RTTI"
+        else
+          urlLLVM="$UbuntuLLVM"
+        fi
       fi
         urlZ3="$UbuntuZ3"
         OSDisplayName="Ubuntu x86"
