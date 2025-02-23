@@ -246,7 +246,7 @@ void LLVMModuleSet::createSVFDataStructure()
         for (const GlobalAlias& alias : mod.aliases())
         {
             SVFLLVMValue* svfalias = new SVFLLVMValue(
-                getSVFType(alias.getType()));
+                 getSVFType(alias.getType()));
             svfModule->addAliasSet(svfalias);
             addGlobalValueMap(&alias, svfalias);
         }
@@ -255,7 +255,7 @@ void LLVMModuleSet::createSVFDataStructure()
         for (const GlobalIFunc& ifunc : mod.ifuncs())
         {
             SVFLLVMValue* svfifunc = new SVFLLVMValue(
-                getSVFType(ifunc.getType()));
+                 getSVFType(ifunc.getType()));
             svfModule->addAliasSet(svfifunc);
             addGlobalValueMap(&ifunc, svfifunc);
         }
@@ -288,9 +288,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
         addBasicBlock(svfFunc, &bb);
         for (const Instruction& inst : bb)
         {
-            SVFInstruction* svfInst = new SVFInstruction(getSVFType(inst.getType()),
-                    getSVFBasicBlock(&bb), inst.isTerminator(),
-                    SVFUtil::isa<ReturnInst>(inst));
+            SVFLLVMValue* svfInst = new SVFLLVMValue(getSVFType(inst.getType()));
 
             addInstructionMap(&inst, svfInst);
         }

@@ -50,11 +50,6 @@ void SVFFunction::setExitBlock(SVFBasicBlock *bb)
 }
 
 
-SVFInstruction::SVFInstruction(const SVFType* ty, const SVFBasicBlock* b,
-                               bool tm, bool isRet, SVFValKind k)
-    : SVFLLVMValue(ty, k), bb(b), terminator(tm), ret(isRet)
-{
-}
 
 __attribute__((weak))
 std::string SVFLLVMValue::toString() const

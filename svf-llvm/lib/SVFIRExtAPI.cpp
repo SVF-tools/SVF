@@ -128,7 +128,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
 
 void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCallee)
 {
-    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
+    const SVFLLVMValue* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
     const CallICFGNode *callICFGNode = llvmModuleSet()->getCallICFGNode(cs);
 
     if (isHeapAllocExtCallViaRet(callICFGNode))
