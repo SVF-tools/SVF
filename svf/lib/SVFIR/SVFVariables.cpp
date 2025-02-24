@@ -289,7 +289,7 @@ const std::string ConstAggValVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ConstAggValNode ID: " << getId();
+    rawstr << "ConstAggValVar ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -301,7 +301,7 @@ const std::string ConstDataValVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ConstDataValNode ID: " << getId();
+    rawstr << "ConstDataValVar ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -327,7 +327,7 @@ const std::string ConstFPValVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ConstFPValNode ID: " << getId();
+    rawstr << "ConstFPValVar ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -340,7 +340,7 @@ const std::string ConstIntValVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ConstIntValNode ID: " << getId();
+    rawstr << "ConstIntValVar ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -366,7 +366,7 @@ const std::string GlobalObjVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "GlobalObjNode ID: " << getId();
+    rawstr << "GlobalObjVar ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
