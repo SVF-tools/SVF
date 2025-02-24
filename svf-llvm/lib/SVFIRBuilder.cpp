@@ -1541,7 +1541,9 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const 
          * 1. Instruction
          * 2. GlobalVariable
          */
-        assert((SVFUtil::isa<SVFInstruction>(curVal) || SVFUtil::isa<GlobalVariable>(llvmModuleSet()->getLLVMValue(curVal))) && "curVal not an instruction or a globalvariable?");
+        assert(
+            (SVFUtil::isa<Instruction>(llvmModuleSet()->getLLVMValue(curVal)) || SVFUtil::isa<GlobalVariable>(
+                llvmModuleSet()->getLLVMValue(curVal))) && "curVal not an instruction or a globalvariable?");
 
         // We assume every GepValNode and its GepEdge to the baseNode are unique across the whole program
         // We preserve the current BB information to restore it after creating the gepNode
@@ -1590,17 +1592,17 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     edge->setValue(pag->getGNode(llvmModuleSet()->getValueNode(curVal)));
     ICFGNode* icfgNode = pag->getICFG()->getGlobalICFGNode();
     LLVMModuleSet* llvmMS = llvmModuleSet();
-    if (const SVFInstruction* curInst = SVFUtil::dyn_cast<SVFInstruction>(curVal))
+    if (const Instruction* curInst = SVFUtil::dyn_cast<Instruction>(llvmMS->getLLVMValue(curVal)))
     {
         const FunObjVar* srcFun = edge->getSrcNode()->getFunction();
         const FunObjVar* dstFun = edge->getDstNode()->getFunction();
         if(srcFun!=nullptr && !SVFUtil::isa<RetPE>(edge) && !SVFUtil::isa<FunValVar>(edge->getSrcNode()) && !SVFUtil::isa<FunObjVar>(edge->getSrcNode()))
         {
-            assert(srcFun==curInst->getFunction() && "SrcNode of the PAGEdge not in the same function?");
+            assert(srcFun==llvmMS->getFunObjVar(curInst->getFunction()) && "SrcNode of the PAGEdge not in the same function?");
         }
         if(dstFun!=nullptr && !SVFUtil::isa<CallPE>(edge) && !SVFUtil::isa<RetValPN>(edge->getDstNode()))
         {
-            assert(dstFun==curInst->getFunction() && "DstNode of the PAGEdge not in the same function?");
+            assert(dstFun==llvmMS->getFunObjVar(curInst->getFunction()) && "DstNode of the PAGEdge not in the same function?");
         }
 
         /// We assume every GepValVar and its GepStmt are unique across whole program
@@ -1608,16 +1610,16 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
             assert(curBB && "instruction does not have a basic block??");
 
         /// We will have one unique function exit ICFGNode for all returns
-        if(curInst->isRetInst())
+        if(SVFUtil::isa<ReturnInst>(curInst))
         {
-            icfgNode = pag->getICFG()->getFunExitICFGNode(curInst->getFunction());
+            icfgNode = pag->getICFG()->getFunExitICFGNode(llvmMS->getFunObjVar(curInst->getFunction()));
         }
         else
         {
             if(SVFUtil::isa<RetPE>(edge))
-                icfgNode = llvmMS->getRetICFGNode(SVFUtil::cast<Instruction>(llvmMS->getLLVMValue(curInst)));
+                icfgNode = llvmMS->getRetICFGNode(SVFUtil::cast<Instruction>(curInst));
             else
-                icfgNode = llvmMS->getICFGNode(SVFUtil::cast<Instruction>(llvmMS->getLLVMValue(curInst)));
+                icfgNode = llvmMS->getICFGNode(SVFUtil::cast<Instruction>(curInst));
         }
     }
     else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(llvmModuleSet()->getLLVMValue(curVal)))

@@ -63,7 +63,6 @@ public:
     {
         SVFVal,
         SVFFunc,
-        SVFInst,
     };
 
 private:
@@ -374,47 +373,6 @@ public:
         return loopAndDom->postDominate(bbKey,bbValue);
     }
 };
-
-class ICFGNode;
-class FunObjVar;
-
-class SVFInstruction : public SVFLLVMValue
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
-private:
-    const SVFBasicBlock* bb;    /// The BasicBlock where this Instruction resides
-    bool terminator;    /// return true if this is a terminator instruction
-    bool ret;           /// return true if this is an return instruction of a function
-
-public:
-    /// Constructor without name, set name with setName()
-    SVFInstruction(const SVFType* ty, const SVFBasicBlock* b, bool tm,
-                   bool isRet, SVFValKind k = SVFInst);
-    SVFInstruction(void) = delete;
-
-    static inline bool classof(const SVFLLVMValue *node)
-    {
-        return node->getKind() == SVFInst;
-    }
-
-    inline const SVFBasicBlock* getParent() const
-    {
-        return bb;
-    }
-
-    inline const FunObjVar* getFunction() const
-    {
-        return bb->getParent();
-    }
-
-    inline bool isRetInst() const
-    {
-        return ret;
-    }
-};
-
 
 /// [FOR DEBUG ONLY, DON'T USE IT UNSIDE `svf`!]
 /// Converts an SVFValue to corresponding LLVM::Value, then get the string
