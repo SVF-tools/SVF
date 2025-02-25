@@ -95,7 +95,7 @@ private:
     Fun2AnnoMap ExtFun2Annotations;
 
     // Map SVFFunction to its annotations
-    Map<const SVFFunction*, std::vector<std::string>> func2Annotations;
+    Map<const Function*, std::vector<std::string>> func2Annotations;
 
     /// Global definition to a rep definition map
     GlobalDefToRepMapTy GlobalDefToRepMap;
@@ -378,7 +378,7 @@ public:
     SVFLLVMValue* getSVFOtherValue(const Value* ov);
 
     /// Get the corresponding Function based on its name
-    inline const SVFFunction* getSVFFunction(const std::string& name)
+    inline const Function* getFunction(const std::string& name)
     {
         Function* fun = nullptr;
 
@@ -388,7 +388,7 @@ public:
             fun = mod->getFunction(name);
             if (fun)
             {
-                return llvmModuleSet->getSVFFunction(fun);
+                return fun;
             }
         }
         return nullptr;
@@ -473,43 +473,43 @@ public:
 
     DominatorTree& getDomTree(const Function* fun);
 
-    std::string getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation);
+    std::string getExtFuncAnnotation(const Function* fun, const std::string& funcAnnotation);
 
-    const std::vector<std::string>& getExtFuncAnnotations(const SVFFunction* fun);
+    const std::vector<std::string>& getExtFuncAnnotations(const Function* fun);
 
     // Does (F) have some annotation?
-    bool hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation);
+    bool hasExtFuncAnnotation(const Function* fun, const std::string& funcAnnotation);
 
     // Does (F) have a static var X (unavailable to us) that its return points to?
-    bool has_static(const SVFFunction *F);
+    bool has_static(const Function *F);
 
     // Does (F) have a memcpy_like operation?
-    bool is_memcpy(const SVFFunction *F);
+    bool is_memcpy(const Function *F);
 
     // Does (F) have a memset_like operation?
-    bool is_memset(const SVFFunction *F);
+    bool is_memset(const Function *F);
 
     // Does (F) allocate a new object and return it?
-    bool is_alloc(const SVFFunction *F);
+    bool is_alloc(const Function *F);
 
     // Does (F) allocate a new object and assign it to one of its arguments?
-    bool is_arg_alloc(const SVFFunction *F);
+    bool is_arg_alloc(const Function *F);
 
     // Does (F) allocate a new stack object and return it?
-    bool is_alloc_stack_ret(const SVFFunction *F);
+    bool is_alloc_stack_ret(const Function *F);
 
     // Get the position of argument which holds the new object
-    s32_t get_alloc_arg_pos(const SVFFunction *F);
+    s32_t get_alloc_arg_pos(const Function *F);
 
     // Does (F) reallocate a new object?
-    bool is_realloc(const SVFFunction *F);
+    bool is_realloc(const Function *F);
 
     // Should (F) be considered "external" (either not defined in the program
     //   or a user-defined version of a known alloc or no-op)?
-    bool is_ext(const SVFFunction *F);
+    bool is_ext(const Function *F);
 
     // Set the annotation of (F)
-    void setExtFuncAnnotations(const SVFFunction* fun, const std::vector<std::string>& funcAnnotations);
+    void setExtFuncAnnotations(const Function* fun, const std::vector<std::string>& funcAnnotations);
 
 private:
     /// Create SVFTypes

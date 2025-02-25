@@ -126,7 +126,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     }
 }
 
-void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCallee)
+void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
 {
     const SVFLLVMValue* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
     const CallICFGNode *callICFGNode = llvmModuleSet()->getCallICFGNode(cs);
@@ -139,7 +139,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
     }
     else if (isHeapAllocExtCallViaArg(callICFGNode))
     {
-        u32_t arg_pos = LLVMUtil::getHeapAllocHoldingArgPosition(svfCallee);
+        u32_t arg_pos = LLVMUtil::getHeapAllocHoldingArgPosition(callee);
         const SVFLLVMValue* arg = llvmModuleSet()->getSVFValue(cs->getArgOperand(arg_pos));
         if (arg->getType()->isPointerTy())
         {
@@ -157,13 +157,13 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
             writeWrnMsg("Arg receiving new object must be pointer type");
         }
     }
-    else if (LLVMUtil::isMemcpyExtFun(svfCallee))
+    else if (LLVMUtil::isMemcpyExtFun(callee))
     {
         // Side-effects similar to void *memcpy(void *dest, const void * src, size_t n)
         // which  copies n characters from memory area 'src' to memory area 'dest'.
-        if(svfCallee->getName().find("iconv") != std::string::npos)
+        if(callee->getName().find("iconv") != std::string::npos)
             addComplexConsForExt(cs->getArgOperand(3), cs->getArgOperand(1), nullptr);
-        else if(svfCallee->getName().find("bcopy") != std::string::npos)
+        else if(callee->getName().find("bcopy") != std::string::npos)
             addComplexConsForExt(cs->getArgOperand(1), cs->getArgOperand(0), cs->getArgOperand(2));
         if(cs->arg_size() == 3)
             addComplexConsForExt(cs->getArgOperand(0), cs->getArgOperand(1), cs->getArgOperand(2));
@@ -172,7 +172,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         if(SVFUtil::isa<PointerType>(cs->getType()))
             addCopyEdge(getValueNode(cs->getArgOperand(0)), getValueNode(cs), CopyStmt::COPYVAL);
     }
-    else if(LLVMUtil::isMemsetExtFun(svfCallee))
+    else if(LLVMUtil::isMemsetExtFun(callee))
     {
         // Side-effects similar to memset(void *str, int c, size_t n)
         // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
@@ -191,7 +191,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         if(SVFUtil::isa<PointerType>(cs->getType()))
             addCopyEdge(getValueNode(cs->getArgOperand(0)), getValueNode(cs), CopyStmt::COPYVAL);
     }
-    else if(svfCallee->getName().compare("dlsym") == 0)
+    else if(callee->getName().compare("dlsym") == 0)
     {
         /*
         Side-effects of void* dlsym( void* handle, const char* funName),
@@ -229,7 +229,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
             addCopyEdge(srcNode,  getValueNode(cs), CopyStmt::COPYVAL);
         }
     }
-    else if(svfCallee->getName().find("_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_") != std::string::npos)
+    else if(callee->getName().find("_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_") != std::string::npos)
     {
         // The purpose of this function is to insert a new node into the red-black tree and then rebalance the tree to ensure that the red-black tree properties are maintained.
         assert(cs->arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");

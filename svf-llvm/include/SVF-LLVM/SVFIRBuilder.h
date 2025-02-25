@@ -237,7 +237,7 @@ protected:
     //@{
     virtual const Type *getBaseTypeAndFlattenedFields(const Value *V, std::vector<AccessPath> &fields, const Value* szValue);
     virtual void addComplexConsForExt(Value *D, Value *S, const Value* sz);
-    virtual void handleExtCall(const CallBase* cs, const SVFFunction* svfCallee);
+    virtual void handleExtCall(const CallBase* cs, const Function* callee);
     //@}
 
     /// Set current basic block in order to keep track of control flow information
