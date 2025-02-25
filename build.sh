@@ -25,8 +25,9 @@ sysOS=$(uname -s)
 arch=$(uname -m)
 MajorLLVMVer=16
 LLVMVer=${MajorLLVMVer}.0.4
+UbuntuArmLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.0/llvm-${MajorLLVMVer}.0.0-ubuntu24-rtti-aarch64.tar.gz"
 UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-aarch64-linux-gnu.tar.xz"
-UbuntuLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.0/llvm-${MajorLLVMVer}.0.0-ubuntu24-rtti-amd64.tar.gz"
+UbuntuLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.0/llvm-${MajorLLVMVer}.0.0-ubuntu24-rtti-x86-64.tar.gz"
 UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-linux-gnu-ubuntu-22.04.tar.xz"
 SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-${LLVMVer}.zip"
 UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-ubuntu-16.04.zip"
@@ -58,7 +59,7 @@ for arg in "$@"; do
     fi
 done
 # if static is off (shared lib), rtti is always on, but print a warning if rtti is off
-if [[ "$BUILD_SHARED" == "ON" && "$RTTI" == "OFF" ]]; then
+if [[ "$BUILD_DYN_LIB" == "ON" && "$RTTI" == "OFF" ]]; then
     echo "Warning: LLVM RTTI is always on when building shared libraries."
     RTTI='ON'
 fi
@@ -179,7 +180,6 @@ function check_and_install_brew {
 # OS-specific values.
 urlLLVM=""
 urlZ3=""
-OSDisplayName=""
 
 ########
 # Set OS-specific values, mainly URLs to download binaries from.
@@ -187,18 +187,16 @@ OSDisplayName=""
 #######
 if [[ $sysOS == "Darwin" ]]; then
     check_and_install_brew
-    if [[ "$arch" == "arm64" ]]; then
-        OSDisplayName="macOS arm64"
-    else
-        OSDisplayName="macOS x86"
-    fi
 elif [[ $sysOS == "Linux" ]]; then
     if [[ "$arch" == "aarch64" ]]; then
+      if [[ "$BUILD_DYN_LIB" == "ON" ]]; then
+        urlLLVM="$UbuntuArmLLVM_RTTI"
+      else
         urlLLVM="$UbuntuArmLLVM"
-        urlZ3="$UbuntuZ3Arm"
-        OSDisplayName="Ubuntu arm64"
+      fi
+      urlZ3="$UbuntuZ3Arm"
     else
-      if [[ "$BUILD_SHARED" == "ON" ]]; then
+      if [[ "$BUILD_DYN_LIB" == "ON" ]]; then
         urlLLVM="$UbuntuLLVM_RTTI"
       else
         # if RTTI is on
@@ -208,8 +206,7 @@ elif [[ $sysOS == "Linux" ]]; then
           urlLLVM="$UbuntuLLVM"
         fi
       fi
-        urlZ3="$UbuntuZ3"
-        OSDisplayName="Ubuntu x86"
+      urlZ3="$UbuntuZ3"
     fi
 else
     echo "Builds outside Ubuntu and macOS are not supported."
