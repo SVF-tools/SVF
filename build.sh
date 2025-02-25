@@ -180,7 +180,6 @@ function check_and_install_brew {
 # OS-specific values.
 urlLLVM=""
 urlZ3=""
-OSDisplayName=""
 
 ########
 # Set OS-specific values, mainly URLs to download binaries from.
@@ -188,11 +187,6 @@ OSDisplayName=""
 #######
 if [[ $sysOS == "Darwin" ]]; then
     check_and_install_brew
-    if [[ "$arch" == "arm64" ]]; then
-        OSDisplayName="macOS arm64"
-    else
-        OSDisplayName="macOS x86"
-    fi
 elif [[ $sysOS == "Linux" ]]; then
     if [[ "$arch" == "aarch64" ]]; then
       if [[ "$BUILD_DYN_LIB" == "ON" ]]; then
@@ -201,7 +195,6 @@ elif [[ $sysOS == "Linux" ]]; then
         urlLLVM="$UbuntuArmLLVM"
       fi
       urlZ3="$UbuntuZ3Arm"
-      OSDisplayName="Ubuntu arm64"
     else
       if [[ "$BUILD_DYN_LIB" == "ON" ]]; then
         urlLLVM="$UbuntuLLVM_RTTI"
@@ -214,7 +207,6 @@ elif [[ $sysOS == "Linux" ]]; then
         fi
       fi
       urlZ3="$UbuntuZ3"
-      OSDisplayName="Ubuntu x86"
     fi
 else
     echo "Builds outside Ubuntu and macOS are not supported."
