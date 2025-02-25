@@ -13,13 +13,14 @@ env:
 
 jobs:
   publish:
-    if: github.repository == 'SVF-tools/SVF'
+    if: github.repository == 'bjjwwang/SVF'
     runs-on: ${{ matrix.os }}
     env:
       XCODE_VERSION: '15.3.0'  # Define Xcode version here to reuse it
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, ubuntu-24.04-arm]
+
     steps:
       # checkout the repo
       - uses: actions/checkout@v2
@@ -34,15 +35,16 @@ jobs:
         run: |
           ln -sfn /Applications/Xcode_${{ env.XCODE_VERSION }}.app /Applications/Xcode.app
           brew install astyle
+
+      # Ubuntu settings
       - name: ubuntu-setup
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz libncurses5-dev libtinfo6 libzstd-dev
-          sudo apt-get update
-          sudo apt-get install -y astyle
+          sudo apt-get install -y cmake gcc g++ nodejs doxygen graphviz libncurses5-dev libtinfo6 libzstd-dev astyle
+
       - name: env-setup
         if: github.event_name == 'push' && github.repository == 'SVF-tools/SVF'
         run: |
