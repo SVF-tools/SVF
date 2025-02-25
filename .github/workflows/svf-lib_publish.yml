@@ -13,7 +13,7 @@ env:
 
 jobs:
   publish:
-    if: github.repository == 'bjjwwang/SVF'
+    if: github.repository == 'SVF-tools/SVF'
     runs-on: ${{ matrix.os }}
     env:
       XCODE_VERSION: '15.3.0'  # Define Xcode version here to reuse it
@@ -112,8 +112,8 @@ jobs:
         run: |
             cd $GITHUB_WORKSPACE/..
             git clone https://github.com/SVF-tools/SVF-npm.git
-            if [ "$RUNNER_OS" == "Linux" ]; then export osVersion="linux"; fi
-            if [ "$RUNNER_OS" == "macOS" ]; then export osVersion="osx"; fi
+          if [ "$RUNNER_OS" == "Linux" ]; then export osVersion="linux-$(uname -m | sed 's/x86_64/x86/;s/aarch64/arm/')"; fi          
+          if [ "$RUNNER_OS" == "macOS" ]; then export osVersion="osx"; fi
             echo $osVersion
             cd ./SVF-npm
             git fetch origin
