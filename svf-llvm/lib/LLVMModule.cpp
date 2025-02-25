@@ -227,8 +227,8 @@ void LLVMModuleSet::createSVFDataStructure()
     // Store annotations of functions in extapi.bc
     for (const auto& pair : ExtFun2Annotations)
     {
-        const SVFFunction* svffun = getSVFFunction(pair.first);
-        setExtFuncAnnotations(svffun, pair.second);
+        const Function* fun = getFunction(pair.first);
+        setExtFuncAnnotations(fun, pair.second);
     }
 
     /// then traverse candidate sets
@@ -305,7 +305,7 @@ void LLVMModuleSet::initSVFFunction()
             SVFFunction* svffun = getSVFFunction(&f);
             initSVFBasicBlock(&f);
 
-            if (!LLVMUtil::isExtCall(svffun))
+            if (!LLVMUtil::isExtCall(&f))
             {
                 initDomTree(svffun, &f);
             }
@@ -1662,13 +1662,13 @@ StInfo* LLVMModuleSet::collectSimpleTypeInfo(const Type* ty)
     return stInfo;
 }
 
-void LLVMModuleSet::setExtFuncAnnotations(const SVFFunction* fun, const std::vector<std::string>& funcAnnotations)
+void LLVMModuleSet::setExtFuncAnnotations(const Function* fun, const std::vector<std::string>& funcAnnotations)
 {
     assert(fun && "Null SVFFunction* pointer");
     func2Annotations[fun] = funcAnnotations;
 }
 
-bool LLVMModuleSet::hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation)
+bool LLVMModuleSet::hasExtFuncAnnotation(const Function* fun, const std::string& funcAnnotation)
 {
     assert(fun && "Null SVFFunction* pointer");
     auto it = func2Annotations.find(fun);
@@ -1681,9 +1681,9 @@ bool LLVMModuleSet::hasExtFuncAnnotation(const SVFFunction* fun, const std::stri
     return false;
 }
 
-std::string LLVMModuleSet::getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation)
+std::string LLVMModuleSet::getExtFuncAnnotation(const Function* fun, const std::string& funcAnnotation)
 {
-    assert(fun && "Null SVFFunction* pointer");
+    assert(fun && "Null Function* pointer");
     auto it = func2Annotations.find(fun);
     if (it != func2Annotations.end())
     {
@@ -1694,45 +1694,45 @@ std::string LLVMModuleSet::getExtFuncAnnotation(const SVFFunction* fun, const st
     return "";
 }
 
-const std::vector<std::string>& LLVMModuleSet::getExtFuncAnnotations(const SVFFunction* fun)
+const std::vector<std::string>& LLVMModuleSet::getExtFuncAnnotations(const Function* fun)
 {
-    assert(fun && "Null SVFFunction* pointer");
+    assert(fun && "Null Function* pointer");
     auto it = func2Annotations.find(fun);
     if (it != func2Annotations.end())
         return it->second;
     return func2Annotations[fun];
 }
 
-bool LLVMModuleSet::is_memcpy(const SVFFunction *F)
+bool LLVMModuleSet::is_memcpy(const Function *F)
 {
     return F &&
            (hasExtFuncAnnotation(F, "MEMCPY") ||  hasExtFuncAnnotation(F, "STRCPY")
             || hasExtFuncAnnotation(F, "STRCAT"));
 }
 
-bool LLVMModuleSet::is_memset(const SVFFunction *F)
+bool LLVMModuleSet::is_memset(const Function *F)
 {
     return F && hasExtFuncAnnotation(F, "MEMSET");
 }
 
-bool LLVMModuleSet::is_alloc(const SVFFunction* F)
+bool LLVMModuleSet::is_alloc(const Function* F)
 {
     return F && hasExtFuncAnnotation(F, "ALLOC_HEAP_RET");
 }
 
 // Does (F) allocate a new object and assign it to one of its arguments?
-bool LLVMModuleSet::is_arg_alloc(const SVFFunction* F)
+bool LLVMModuleSet::is_arg_alloc(const Function* F)
 {
     return F && hasExtFuncAnnotation(F, "ALLOC_HEAP_ARG");
 }
 
-bool LLVMModuleSet::is_alloc_stack_ret(const SVFFunction* F)
+bool LLVMModuleSet::is_alloc_stack_ret(const Function* F)
 {
     return F && hasExtFuncAnnotation(F, "ALLOC_STACK_RET");
 }
 
 // Get the position of argument which holds the new object
-s32_t LLVMModuleSet::get_alloc_arg_pos(const SVFFunction* F)
+s32_t LLVMModuleSet::get_alloc_arg_pos(const Function* F)
 {
     std::string allocArg = getExtFuncAnnotation(F, "ALLOC_HEAP_ARG");
     assert(!allocArg.empty() && "Not an alloc call via argument or incorrect extern function annotation!");
@@ -1748,7 +1748,7 @@ s32_t LLVMModuleSet::get_alloc_arg_pos(const SVFFunction* F)
 }
 
 // Does (F) reallocate a new object?
-bool LLVMModuleSet::is_realloc(const SVFFunction* F)
+bool LLVMModuleSet::is_realloc(const Function* F)
 {
     return F && hasExtFuncAnnotation(F, "REALLOC_HEAP_RET");
 }
@@ -1756,7 +1756,7 @@ bool LLVMModuleSet::is_realloc(const SVFFunction* F)
 
 // Should (F) be considered "external" (either not defined in the program
 //   or a user-defined version of a known alloc or no-op)?
-bool LLVMModuleSet::is_ext(const SVFFunction* F)
+bool LLVMModuleSet::is_ext(const Function* F)
 {
     assert(F && "Null SVFFunction* pointer");
     if (F->isDeclaration() || F->isIntrinsic())
