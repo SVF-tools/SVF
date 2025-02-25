@@ -19,7 +19,7 @@ jobs:
       XCODE_VERSION: '15.3.0'  # Define Xcode version here to reuse it
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, ubuntu-24.04-arm]
+        os: [ubuntu-24.04, macos-14, ubuntu-24.04-arm]
 
     steps:
       # checkout the repo
@@ -112,7 +112,7 @@ jobs:
         run: |
             cd $GITHUB_WORKSPACE/..
             git clone https://github.com/SVF-tools/SVF-npm.git
-          if [ "$RUNNER_OS" == "Linux" ]; then export osVersion="linux-$(uname -m | sed 's/x86_64/x86/;s/aarch64/arm/')"; fi          
+          if [ "$RUNNER_OS" == "Linux" ]; then export osVersion="linux-$(uname -m)"; fi          
           if [ "$RUNNER_OS" == "macOS" ]; then export osVersion="osx"; fi
             echo $osVersion
             cd ./SVF-npm
