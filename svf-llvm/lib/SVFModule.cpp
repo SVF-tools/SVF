@@ -33,7 +33,7 @@ SVFModule* SVFModule::svfModule = nullptr;
 
 SVFModule::~SVFModule()
 {
-    for (const SVFFunction* f : FunctionSet)
+    for (const SVFLLVMValue* f : FunctionSet)
         delete f;
     for (const SVFLLVMValue* v: GlobalSet)
         delete v;
@@ -48,17 +48,6 @@ SVFModule::~SVFModule()
     ExtAPI::destory();
 }
 
-const SVFFunction* SVFModule::getSVFFunction(const std::string& name)
-{
-    for (const SVFFunction* fun : getFunctionSet())
-    {
-        if (fun->getName() == name)
-        {
-            return fun;
-        }
-    }
-    return nullptr;
-}
 
 SVFModule* SVFModule::getSVFModule()
 {
