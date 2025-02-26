@@ -77,6 +77,11 @@ public:
     void initialiseBaseObjVars();
     void initialiseValVars();
     void initialiseFunObjVars();
+    void initFunObjVar();
+    void initSVFBasicBlock(const Function* func);
+
+    void initDomTree(FunObjVar* func, const Function* f);
+
     void addEdge(NodeID src, NodeID dst, SVFStmt::PEDGEK kind,
                  APOffset offset = 0, Instruction* cs = nullptr);
     // @}

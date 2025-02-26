@@ -189,6 +189,147 @@ SVFIR* SVFIRBuilder::build()
     return pag;
 }
 
+void SVFIRBuilder::initFunObjVar()
+{
+    for (Module& mod : llvmModuleSet()->getLLVMModules())
+    {
+        /// Function
+        for (const Function& f : mod.functions())
+        {
+            FunObjVar* svffun = const_cast<FunObjVar*>(llvmModuleSet()->getFunObjVar(&f));
+            initSVFBasicBlock(&f);
+
+            if (!LLVMUtil::isExtCall(&f))
+            {
+                initDomTree(svffun, &f);
+            }
+            /// set realDefFun for all functions
+            const Function *realfun = llvmModuleSet()->getRealDefFun(&f);
+            svffun->setRelDefFun(realfun == nullptr ? nullptr : llvmModuleSet()->getFunObjVar(realfun));
+        }
+    }
+
+    // Store annotations of functions in extapi.bc
+    for (const auto& pair : llvmModuleSet()->ExtFun2Annotations)
+    {
+        ExtAPI::getExtAPI()->setExtFuncAnnotations(llvmModuleSet()->getFunObjVar(pair.first), pair.second);
+    }
+
+}
+
+void SVFIRBuilder::initSVFBasicBlock(const Function* func)
+{
+    FunObjVar *svfFun = const_cast<FunObjVar *>(llvmModuleSet()->getFunObjVar(func));
+    for (Function::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
+    {
+        const BasicBlock* bb = &*bit;
+        SVFBasicBlock* svfbb = llvmModuleSet()->getSVFBasicBlock(bb);
+        for (succ_const_iterator succ_it = succ_begin(bb); succ_it != succ_end(bb); succ_it++)
+        {
+            const SVFBasicBlock* svf_scc_bb = llvmModuleSet()->getSVFBasicBlock(*succ_it);
+            svfbb->addSuccBasicBlock(svf_scc_bb);
+        }
+        for (const_pred_iterator pred_it = pred_begin(bb); pred_it != pred_end(bb); pred_it++)
+        {
+            const SVFBasicBlock* svf_pred_bb = llvmModuleSet()->getSVFBasicBlock(*pred_it);
+            svfbb->addPredBasicBlock(svf_pred_bb);
+        }
+
+        /// set exit block: exit basic block must have no successors and have a return instruction
+        if (svfbb->getSuccessors().empty())
+        {
+            if (LLVMUtil::basicBlockHasRetInst(bb))
+            {
+                assert((LLVMUtil::functionDoesNotRet(func) ||
+                        SVFUtil::isa<ReturnInst>(bb->back())) &&
+                       "last inst must be return inst");
+                svfFun->setExitBlock(svfbb);
+                llvmModuleSet()->setFunExitBB(func, svfbb);
+            }
+        }
+    }
+    // For no return functions, we set the last block as exit BB
+    // This ensures that each function that has definition must have an exit BB
+    if (svfFun->hasBasicBlock() && svfFun->exitBlock == nullptr)
+    {
+        SVFBasicBlock* retBB = const_cast<SVFBasicBlock*>(svfFun->back());
+        assert((LLVMUtil::functionDoesNotRet(func) ||
+                SVFUtil::isa<ReturnInst>(&func->back().back())) &&
+               "last inst must be return inst");
+        svfFun->setExitBlock(retBB);
+        llvmModuleSet()->setFunExitBB(func, retBB);
+    }
+}
+
+
+void SVFIRBuilder::initDomTree(FunObjVar* svffun, const Function* fun)
+{
+    if (fun->isDeclaration())
+        return;
+    //process and stored dt & df
+    DominanceFrontier df;
+    DominatorTree& dt = llvmModuleSet()->getDomTree(fun);
+    df.analyze(dt);
+    LoopInfo loopInfo = LoopInfo(dt);
+    PostDominatorTree pdt = PostDominatorTree(const_cast<Function&>(*fun));
+    SVFLoopAndDomInfo* ld = svffun->getLoopAndDomInfo();
+
+    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>> & dfBBsMap = ld->getDomFrontierMap();
+    for (DominanceFrontierBase::const_iterator dfIter = df.begin(), eDfIter = df.end(); dfIter != eDfIter; dfIter++)
+    {
+        const BasicBlock* keyBB = dfIter->first;
+        const std::set<BasicBlock* >& domSet = dfIter->second;
+        Set<const SVFBasicBlock*>& valueBasicBlocks = dfBBsMap[llvmModuleSet()->getSVFBasicBlock(keyBB)];
+        for (const BasicBlock* bbValue:domSet)
+        {
+            valueBasicBlocks.insert(llvmModuleSet()->getSVFBasicBlock(bbValue));
+        }
+    }
+    std::vector<const SVFBasicBlock*> reachableBBs;
+    LLVMUtil::getFunReachableBBs(fun, reachableBBs);
+    ld->setReachableBBs(reachableBBs);
+
+    for (Function::const_iterator bit = fun->begin(), beit = fun->end(); bit!=beit; ++bit)
+    {
+        const BasicBlock &bb = *bit;
+        SVFBasicBlock* svfBB = llvmModuleSet()->getSVFBasicBlock(&bb);
+        if (DomTreeNode* dtNode = dt.getNode(&bb))
+        {
+            SVFLoopAndDomInfo::BBSet& bbSet = ld->getDomTreeMap()[svfBB];
+            for (const auto domBB : *dtNode)
+            {
+                const auto* domSVFBB = llvmModuleSet()->getSVFBasicBlock(domBB->getBlock());
+                bbSet.insert(domSVFBB);
+            }
+        }
+
+        if (DomTreeNode* pdtNode = pdt.getNode(&bb))
+        {
+            u32_t level = pdtNode->getLevel();
+            ld->getBBPDomLevel()[svfBB] = level;
+            BasicBlock* idomBB = pdtNode->getIDom()->getBlock();
+            const SVFBasicBlock* idom = idomBB == NULL ? NULL: llvmModuleSet()->getSVFBasicBlock(idomBB);
+            ld->getBB2PIdom()[svfBB] = idom;
+
+            SVFLoopAndDomInfo::BBSet& bbSet = ld->getPostDomTreeMap()[svfBB];
+            for (const auto domBB : *pdtNode)
+            {
+                const auto* domSVFBB = llvmModuleSet()->getSVFBasicBlock(domBB->getBlock());
+                bbSet.insert(domSVFBB);
+            }
+        }
+
+        if (const Loop* loop = loopInfo.getLoopFor(&bb))
+        {
+            for (const BasicBlock* loopBlock : loop->getBlocks())
+            {
+                const SVFBasicBlock* loopbb = llvmModuleSet()->getSVFBasicBlock(loopBlock);
+                ld->addToBB2LoopMap(svfBB, loopbb);
+            }
+        }
+    }
+}
+
 void SVFIRBuilder::initialiseFunObjVars()
 {
     std::vector<FunObjVar*> funset;
@@ -198,9 +339,6 @@ void SVFIRBuilder::initialiseFunObjVars()
         u32_t id = llvmModuleSet()->objSyms()[llvmModuleSet()->getSVFFunction(fun)];
         // Debug output for adding object node
         DBOUT(DPAGBuild, outs() << "add obj node " << id << "\n");
-        // Skip blackhole and constant symbols
-        if(id == pag->blackholeSymID() || id == pag->constantSymID())
-            continue;
 
         // Check if the value is a function and add a function object node
         pag->addFunObjNode(id, pag->getObjTypeInfo(id), llvmModuleSet()->getSVFType(fun->getType()), nullptr);
@@ -230,21 +368,8 @@ void SVFIRBuilder::initialiseFunObjVars()
         }
         llvmModuleSet()->addToSVFVar2LLVMValueMap(fun, pag->getGNode(id));
     }
-    llvmModuleSet()->initSVFFunction();
-    /// set realDefFun for all functions
-    for (auto& fun: funset)
-    {
-        const SVFFunction *svffunc = SVFUtil::cast<SVFFunction>(
-                                         llvmModuleSet()->getSVFFunction(SVFUtil::cast<Function>(llvmModuleSet()->getLLVMValue(fun))));
-        const Function *realfun = SVFUtil::cast<Function>(llvmModuleSet()->getLLVMValue(svffunc->realDefFun));
-        fun->setRelDefFun(llvmModuleSet()->getFunObjVar(realfun));
-    }
 
-    // Store annotations of functions in extapi.bc
-    for (const auto& pair : llvmModuleSet()->ExtFun2Annotations)
-    {
-        ExtAPI::getExtAPI()->setExtFuncAnnotations(llvmModuleSet()->getFunObjVar(pair.first), pair.second);
-    }
+    initFunObjVar();
 }
 
 void SVFIRBuilder::initialiseBaseObjVars()
@@ -1625,7 +1750,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
                        llvmModuleSet()->getFunObjVar(SVFUtil::cast<Function>(arg->getParent())));
     }
     else if (SVFUtil::isa<Constant>(llvmModuleSet()->getLLVMValue(curVal)) ||
-             SVFUtil::isa<SVFFunction>(curVal) ||
+             SVFUtil::isa<Function>(llvmModuleSet()->getLLVMValue(curVal)) ||
              SVFUtil::isa<MetadataAsValue>(llvmModuleSet()->getLLVMValue(curVal)))
     {
         if (!curBB)

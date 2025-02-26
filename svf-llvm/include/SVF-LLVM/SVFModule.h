@@ -43,7 +43,7 @@ class SVFModule
     friend class SVFIRReader;
 
 public:
-    typedef std::vector<const SVFFunction*> FunctionSetType;
+    typedef std::vector<const SVFLLVMValue*> FunctionSetType;
     typedef std::vector<SVFLLVMValue*> GlobalSetType;
     typedef std::vector<SVFLLVMValue*> AliasSetType;
     typedef std::vector<SVFLLVMValue*> ConstantType;
@@ -79,7 +79,7 @@ public:
     ~SVFModule();
 
     ///@{
-    inline void addFunctionSet(SVFFunction* svfFunc)
+    inline void addFunctionSet(SVFLLVMValue* svfFunc)
     {
         FunctionSet.push_back(svfFunc);
     }
