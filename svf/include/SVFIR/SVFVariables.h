@@ -955,6 +955,7 @@ class FunObjVar : public BaseObjVar
     friend class SVFIRWriter;
     friend class SVFIRReader;
     friend class SVFIRBuilder;
+    friend class LLVMModuleSet;
 
 public:
     typedef SVFLoopAndDomInfo::BBSet BBSet;
@@ -976,7 +977,7 @@ private:
     const FunObjVar * realDefFun;  /// the definition of a function across multiple modules
     BasicBlockGraph* bbGraph; /// the basic block graph of this function
     std::vector<const ArgValVar*> allArgs;    /// all formal arguments of this function
-    SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
+    const SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
 
 
 private:
@@ -1015,9 +1016,15 @@ public:
     /// Constructor
     FunObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node);
 
+
+    virtual ~FunObjVar() {
+        delete loopAndDom;
+        delete bbGraph;
+    }
+
     void initFunObjVar(bool decl, bool intrinc, bool addr, bool uncalled, bool notret, bool vararg, const SVFFunctionType *ft,
                        SVFLoopAndDomInfo *ld, const FunObjVar *real, BasicBlockGraph *bbg,
-                       const std::vector<const ArgValVar *> &allarg, SVFBasicBlock *exit);
+                       const std::vector<const ArgValVar *> &allarg, const SVFBasicBlock *exit);
 
     void setRelDefFun(const FunObjVar *real)
     {

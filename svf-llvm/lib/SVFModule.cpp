@@ -48,17 +48,6 @@ SVFModule::~SVFModule()
     ExtAPI::destory();
 }
 
-const SVFFunction* SVFModule::getSVFFunction(const std::string& name)
-{
-    for (const SVFFunction* fun : getFunctionSet())
-    {
-        if (fun->getName() == name)
-        {
-            return fun;
-        }
-    }
-    return nullptr;
-}
 
 SVFModule* SVFModule::getSVFModule()
 {

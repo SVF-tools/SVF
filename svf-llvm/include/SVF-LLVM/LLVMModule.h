@@ -77,8 +77,10 @@ public:
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
     typedef OrderedMap<const SVFLLVMValue*, NodeID> ValueToIDMapTy;
 
-    typedef OrderedMap<const SVFFunction*, NodeID> FunToIDMapTy;
+    typedef OrderedMap<const Function*, NodeID> FunToIDMapTy;
 
+    typedef std::vector<const Function*> FunctionSet;
+    typedef Map<const Function*, const SVFBasicBlock*> FunToExitBBMap;
 
 private:
     static LLVMModuleSet* llvmModuleSet;
@@ -125,6 +127,9 @@ private:
     ValueToIDMapTy objSymMap;  ///< map a obj reference to its sym id
     FunToIDMapTy returnSymMap; ///< return map
     FunToIDMapTy varargSymMap; ///< vararg map
+
+    FunctionSet funSet;
+    FunToExitBBMap funToExitBB;
 
     /// Constructor
     LLVMModuleSet();
@@ -186,6 +191,17 @@ public:
 
 public:
 
+    inline const SVFBasicBlock* getFunExitBB(const Function* fun) const {
+        auto it = funToExitBB.find(fun);
+        if (it == funToExitBB.end()) return nullptr;
+        else return it->second;
+    }
+
+    inline const FunctionSet& getFunctionSet() const
+    {
+        return funSet;
+    }
+
     inline u32_t getValueNodeNum() const
     {
         return valSymMap.size();
@@ -232,7 +248,13 @@ public:
         LLVMBB2SVFBB[bb] = svfBB;
         SVFBaseNode2LLVMValue[svfBB] = bb;
     }
-
+    // create a SVFBasicBlock according to LLVM BasicBlock, then add it to SVFFunction's BasicBlockGraph
+    inline void addBasicBlock(FunObjVar* fun, const BasicBlock* bb)
+    {
+        SVFBasicBlock* svfBB = fun->getBasicBlockGraph()->addBasicBlock(bb->getName().str());
+        LLVMBB2SVFBB[bb] = svfBB;
+        SVFBaseNode2LLVMValue[svfBB] = bb;
+    }
     inline void addInstructionMap(const Instruction* inst, SVFLLVMValue* svfInst)
     {
         LLVMInst2SVFInst[inst] = svfInst;
@@ -325,14 +347,14 @@ public:
         return varargSymMap;
     }
 
-    NodeID getReturnNode(const SVFFunction *func) const
+    NodeID getReturnNode(const Function *func) const
     {
         FunToIDMapTy::const_iterator iter =  returnSymMap.find(func);
         assert(iter!=returnSymMap.end() && "ret sym not found");
         return iter->second;
     }
 
-    NodeID getVarargNode(const SVFFunction *func) const
+    NodeID getVarargNode(const Function *func) const
     {
         FunToIDMapTy::const_iterator iter =  varargSymMap.find(func);
         assert(iter!=varargSymMap.end() && "vararg sym not found");
@@ -512,6 +534,15 @@ public:
     void setExtFuncAnnotations(const Function* fun, const std::vector<std::string>& funcAnnotations);
 
 private:
+    inline void addFunctionSet(const Function* svfFunc)
+    {
+        funSet.push_back(svfFunc);
+    }
+
+    inline void setFunExitBB(const Function* fun, const SVFBasicBlock* bb) {
+        funToExitBB[fun] = bb;
+    }
+
     /// Create SVFTypes
     SVFType* addSVFTypeInfo(const Type* t);
     /// Collect a type info
@@ -535,6 +566,8 @@ private:
     void initSVFFunction();
     void initSVFBasicBlock(const Function* func);
     void initDomTree(SVFFunction* func, const Function* f);
+
+    void initDomTree(FunObjVar* func, const Function* f);
     void setValueAttr(const Value* val, SVFLLVMValue* value);
     void addToSVFVar2LLVMValueMap(const Value* val, SVFValue* svfBaseNode);
     void buildFunToFunMap();

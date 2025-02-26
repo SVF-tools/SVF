@@ -78,9 +78,6 @@ public:
 
     ~SVFModule();
 
-
-    const SVFFunction* getSVFFunction(const std::string& name);
-
     ///@{
     inline void addFunctionSet(SVFFunction* svfFunc)
     {
@@ -159,10 +156,6 @@ public:
     }
     ///@}
 
-    inline const FunctionSetType& getFunctionSet() const
-    {
-        return FunctionSet;
-    }
     inline const ConstantType& getConstantSet() const
     {
         return ConstantSet;
