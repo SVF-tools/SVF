@@ -249,8 +249,7 @@ InterICFGNode* ICFGBuilder::addInterBlockICFGNode(const Instruction* inst)
     }
     else
     {
-        assert(SVFUtil::dyn_cast<SVFFunction>(
-                   llvmModuleSet()->getSVFValue(called_llvmval)) == nullptr && "must be nullptr");
+        assert(SVFUtil::dyn_cast<Function>(called_llvmval) == nullptr && "must be nullptr");
     }
 
     SVFBasicBlock* bb = llvmModuleSet()->getSVFBasicBlock(inst->getParent());

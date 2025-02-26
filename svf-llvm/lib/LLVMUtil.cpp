@@ -742,18 +742,11 @@ std::string SVFLLVMValue::toString() const
 {
     std::string str;
     llvm::raw_string_ostream rawstr(str);
-    if (const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(this))
-    {
-        rawstr << "Function: " << fun->getName() << " ";
-    }
+    auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
+    if (llvmVal)
+        rawstr << " " << *llvmVal << " ";
     else
-    {
-        auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
-        if (llvmVal)
-            rawstr << " " << *llvmVal << " ";
-        else
-            rawstr << " No llvmVal found";
-    }
+        rawstr << " No llvmVal found";
     rawstr << this->getSourceLoc();
     return rawstr.str();
 }

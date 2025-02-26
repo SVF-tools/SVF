@@ -445,7 +445,7 @@ FunObjVar::FunObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const IC
 
 void FunObjVar::initFunObjVar(bool decl, bool intrinc, bool addr, bool uncalled, bool notret, bool vararg,
                               const SVFFunctionType *ft, SVFLoopAndDomInfo *ld, const FunObjVar *real, BasicBlockGraph *bbg,
-                              const std::vector<const ArgValVar *> &allarg, SVFBasicBlock *exit)
+                              const std::vector<const ArgValVar *> &allarg, const SVFBasicBlock *exit)
 {
     isDecl = decl;
     intrinsic = intrinc;
