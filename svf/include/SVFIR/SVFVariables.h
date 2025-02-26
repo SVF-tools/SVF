@@ -1079,7 +1079,7 @@ public:
         return funcType->getReturnType();
     }
 
-    inline SVFLoopAndDomInfo* getLoopAndDomInfo()
+    inline SVFLoopAndDomInfo* getLoopAndDomInfo() const
     {
         return loopAndDom;
     }

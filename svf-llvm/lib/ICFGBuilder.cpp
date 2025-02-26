@@ -127,7 +127,7 @@ void ICFGBuilder::processFunEntry(const Function*  fun, WorkList& worklist)
 void ICFGBuilder::processUnreachableFromEntry(const Function* fun, WorkList& worklist)
 {
     SVFLoopAndDomInfo* pInfo =
-        llvmModuleSet()->getSVFFunction(fun)->getLoopAndDomInfo();
+        llvmModuleSet()->getFunObjVar(fun)->getLoopAndDomInfo();
     for (const auto& bb : *fun)
     {
         if (pInfo->isUnreachable(llvmModuleSet()->getSVFBasicBlock(&bb)) &&

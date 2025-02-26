@@ -54,7 +54,7 @@ public:
     typedef Map<const Function*, FunctionSetType> FunDefToDeclsMapTy;
     typedef Map<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
 
-    typedef Map<const Function*, SVFFunction*> LLVMFun2SVFFunMap;
+    typedef Map<const Function*, SVFLLVMValue*> LLVMFun2SVFFunMap;
     typedef Map<const Function*, FunObjVar*> LLVMFun2FunObjVarMap;
     typedef Map<const BasicBlock*, SVFBasicBlock*> LLVMBB2SVFBBMap;
     typedef Map<const Instruction*, SVFLLVMValue*> LLVMInst2SVFInstMap;
@@ -81,6 +81,7 @@ public:
 
     typedef std::vector<const Function*> FunctionSet;
     typedef Map<const Function*, const SVFBasicBlock*> FunToExitBBMap;
+    typedef Map<const Function*, const Function *> FunToRealDefFunMap;
 
 private:
     static LLVMModuleSet* llvmModuleSet;
@@ -130,6 +131,7 @@ private:
 
     FunctionSet funSet;
     FunToExitBBMap funToExitBB;
+    FunToRealDefFunMap funToRealDefFun;
 
     /// Constructor
     LLVMModuleSet();
@@ -197,6 +199,12 @@ public:
         else return it->second;
     }
 
+    inline const Function* getRealDefFun(const Function* fun) const {
+        auto it = funToRealDefFun.find(fun);
+        if (it == funToRealDefFun.end()) return nullptr;
+        else return it->second;
+    }
+
     inline const FunctionSet& getFunctionSet() const
     {
         return funSet;
@@ -235,19 +243,13 @@ public:
     void dumpSymTable();
 
 public:
-    inline void addFunctionMap(const Function* func, SVFFunction* svfFunc)
+    inline void addFunctionMap(const Function* func, SVFLLVMValue* svfFunc)
     {
         LLVMFunc2SVFFunc[func] = svfFunc;
         setValueAttr(func,svfFunc);
     }
 
-    // create a SVFBasicBlock according to LLVM BasicBlock, then add it to SVFFunction's BasicBlockGraph
-    inline void addBasicBlock(SVFFunction* fun, const BasicBlock* bb)
-    {
-        SVFBasicBlock* svfBB = fun->getBasicBlockGraph()->addBasicBlock(bb->getName().str());
-        LLVMBB2SVFBB[bb] = svfBB;
-        SVFBaseNode2LLVMValue[svfBB] = bb;
-    }
+
     // create a SVFBasicBlock according to LLVM BasicBlock, then add it to SVFFunction's BasicBlockGraph
     inline void addBasicBlock(FunObjVar* fun, const BasicBlock* bb)
     {
@@ -323,7 +325,7 @@ public:
         return it->second;
     }
 
-    inline SVFFunction* getSVFFunction(const Function* fun) const
+    inline SVFLLVMValue* getSVFFunction(const Function* fun) const
     {
         LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
         assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
@@ -543,6 +545,9 @@ private:
         funToExitBB[fun] = bb;
     }
 
+    inline void setFunRealDefFun(const Function* fun, const Function* realDefFun) {
+        funToRealDefFun[fun] = realDefFun;
+    }
     /// Create SVFTypes
     SVFType* addSVFTypeInfo(const Type* t);
     /// Collect a type info
@@ -563,11 +568,7 @@ private:
 
     void createSVFDataStructure();
     void createSVFFunction(const Function* func);
-    void initSVFFunction();
-    void initSVFBasicBlock(const Function* func);
-    void initDomTree(SVFFunction* func, const Function* f);
 
-    void initDomTree(FunObjVar* func, const Function* f);
     void setValueAttr(const Value* val, SVFLLVMValue* value);
     void addToSVFVar2LLVMValueMap(const Value* val, SVFValue* svfBaseNode);
     void buildFunToFunMap();

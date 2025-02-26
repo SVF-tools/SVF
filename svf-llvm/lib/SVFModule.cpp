@@ -33,7 +33,7 @@ SVFModule* SVFModule::svfModule = nullptr;
 
 SVFModule::~SVFModule()
 {
-    for (const SVFFunction* f : FunctionSet)
+    for (const SVFLLVMValue* f : FunctionSet)
         delete f;
     for (const SVFLLVMValue* v: GlobalSet)
         delete v;
