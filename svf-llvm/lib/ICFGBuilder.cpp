@@ -127,7 +127,7 @@ void ICFGBuilder::processFunEntry(const Function*  fun, WorkList& worklist)
 void ICFGBuilder::processUnreachableFromEntry(const Function* fun, WorkList& worklist)
 {
     SVFLoopAndDomInfo* pInfo =
-        llvmModuleSet()->getSVFFunction(fun)->getLoopAndDomInfo();
+        llvmModuleSet()->getFunObjVar(fun)->getLoopAndDomInfo();
     for (const auto& bb : *fun)
     {
         if (pInfo->isUnreachable(llvmModuleSet()->getSVFBasicBlock(&bb)) &&
@@ -249,8 +249,7 @@ InterICFGNode* ICFGBuilder::addInterBlockICFGNode(const Instruction* inst)
     }
     else
     {
-        assert(SVFUtil::dyn_cast<SVFFunction>(
-                   llvmModuleSet()->getSVFValue(called_llvmval)) == nullptr && "must be nullptr");
+        assert(SVFUtil::dyn_cast<Function>(called_llvmval) == nullptr && "must be nullptr");
     }
 
     SVFBasicBlock* bb = llvmModuleSet()->getSVFBasicBlock(inst->getParent());
