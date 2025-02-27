@@ -153,6 +153,8 @@ function build_llvm_from_source {
           -DCMAKE_INSTALL_PREFIX="$SVFHOME/$LLVMHome" \
           -DLLVM_ENABLE_PROJECTS="clang" \
           -DLLVM_ENABLE_RTTI=ON \
+          -DLLVM_BUILD_LLVM_DYLIB=ON \
+          -DLLVM_LINK_LLVM_DYLIB=ON \
           -DBUILD_SHARED_LIBS=ON \
           ../llvm-source/*/llvm
     cmake --build . -j ${jobs}
