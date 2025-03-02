@@ -57,10 +57,10 @@ int main(int argc, char** argv)
             LLVMModuleSet::preProcessBCs(moduleNameVec);
         }
 
-        SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
+        LLVMModuleSet::buildSVFModule(moduleNameVec);
 
         /// Build SVFIR
-        SVFIRBuilder builder(svfModule);
+        SVFIRBuilder builder;
         pag = builder.build();
 
     }

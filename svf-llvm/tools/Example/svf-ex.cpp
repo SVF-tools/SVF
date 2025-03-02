@@ -152,10 +152,10 @@ int main(int argc, char ** argv)
         LLVMModuleSet::preProcessBCs(moduleNameVec);
     }
 
-    SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
+    LLVMModuleSet::buildSVFModule(moduleNameVec);
 
     /// Build Program Assignment Graph (SVFIR)
-    SVFIRBuilder builder(svfModule);
+    SVFIRBuilder builder;
     SVFIR* pag = builder.build();
 
     /// Create Andersen's pointer analysis

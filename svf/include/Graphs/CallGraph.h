@@ -39,7 +39,6 @@ namespace SVF
 {
 
 class CallGraphNode;
-class SVFModule;
 class CallGraph;
 
 

@@ -57,8 +57,8 @@ int main(int argc, char ** argv)
         LLVMModuleSet::preProcessBCs(moduleNameVec);
     }
 
-    SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
-    SVFIRBuilder builder(svfModule);
+    LLVMModuleSet::buildSVFModule(moduleNameVec);
+    SVFIRBuilder builder;
     SVFIR* pag = builder.build();
 
     DDAPass dda;

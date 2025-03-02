@@ -42,7 +42,6 @@
 namespace SVF
 {
 
-class SVFModule;
 class SVFG;
 
 /*!

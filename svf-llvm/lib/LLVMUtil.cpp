@@ -597,13 +597,6 @@ void LLVMUtil::getNextInsts(const Instruction* curInst, std::vector<const Instru
 
 
 
-/// Check whether this value points-to a constant object
-bool LLVMUtil::isConstantObjSym(const SVFLLVMValue* val)
-{
-    return isConstantObjSym(LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(val));
-}
-
-
 std::string LLVMUtil::dumpValue(const Value* val)
 {
     std::string str;
@@ -738,18 +731,6 @@ bool LLVMUtil::isNonInstricCallSite(const Instruction* inst)
 namespace SVF
 {
 
-std::string SVFLLVMValue::toString() const
-{
-    std::string str;
-    llvm::raw_string_ostream rawstr(str);
-    auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
-    if (llvmVal)
-        rawstr << " " << *llvmVal << " ";
-    else
-        rawstr << " No llvmVal found";
-    rawstr << this->getSourceLoc();
-    return rawstr.str();
-}
 
 const std::string SVFValue::valueOnlyToString() const
 {

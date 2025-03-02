@@ -7,6 +7,15 @@
 using namespace SVF;
 using namespace SVFUtil;
 
+
+__attribute__((weak))
+const std::string SVFValue::valueOnlyToString() const
+{
+    assert("SVFBaseNode::valueOnlyToString should be implemented or supported by fronted" && false);
+    abort();
+}
+
+
 /// Add field (index and offset) with its corresponding type
 void StInfo::addFldWithType(u32_t fldIdx, const SVFType* type, u32_t elemIdx)
 {
@@ -149,11 +158,4 @@ bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
         return blocks.front() == bb;
     }
     return false;
-}
-
-__attribute__((weak))
-const std::string SVFValue::valueOnlyToString() const
-{
-    assert("SVFBaseNode::valueOnlyToString should be implemented or supported by fronted" && false);
-    abort();
 }

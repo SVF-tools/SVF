@@ -34,7 +34,6 @@
 #include "SVF-LLVM/GEPTypeBridgeIterator.h" // include bridge_gep_iterator
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
-#include "SVF-LLVM/SVFModule.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
@@ -76,7 +75,7 @@ ObjTypeInfo* SymbolTableBuilder::createConstantObjTypeInfo(NodeID symId)
 /*!
  *  This method identify which is value sym and which is object sym
  */
-void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
+void SymbolTableBuilder::buildMemModel()
 {
     SVFUtil::increaseStackSize();
 
@@ -295,14 +294,12 @@ void SymbolTableBuilder::collectVal(const Value* val)
     {
         return;
     }
-    LLVMModuleSet::ValueToIDMapTy::iterator iter = llvmModuleSet()->valSymMap.find(
-                llvmModuleSet()->getSVFValue(val));
+    LLVMModuleSet::ValueToIDMapTy::iterator iter = llvmModuleSet()->valSymMap.find(val);
     if (iter == llvmModuleSet()->valSymMap.end())
     {
         // create val sym and sym type
-        SVFLLVMValue* svfVal = llvmModuleSet()->getSVFValue(val);
         NodeID id = NodeIDAllocator::get()->allocateValueId();
-        llvmModuleSet()->valSymMap.insert(std::make_pair(svfVal, id));
+        llvmModuleSet()->valSymMap.insert(std::make_pair(val, id));
         DBOUT(DMemModel,
               outs() << "create a new value sym " << id << "\n");
         ///  handle global constant expression here
@@ -320,22 +317,21 @@ void SymbolTableBuilder::collectVal(const Value* val)
 void SymbolTableBuilder::collectObj(const Value* val)
 {
     val = LLVMUtil::getGlobalRep(val);
-    LLVMModuleSet::ValueToIDMapTy::iterator iter = llvmModuleSet()->objSymMap.find(llvmModuleSet()->getSVFValue(val));
+    LLVMModuleSet::ValueToIDMapTy::iterator iter = llvmModuleSet()->objSymMap.find(val);
     if (iter == llvmModuleSet()->objSymMap.end())
     {
-        SVFLLVMValue* svfVal = llvmModuleSet()->getSVFValue(val);
         // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
         // then we treat them as one ConstantObj
         if (isConstantObjSym(val) && !Options::ModelConsts())
         {
-            llvmModuleSet()->objSymMap.insert(std::make_pair(svfVal, svfir->constantSymID()));
+            llvmModuleSet()->objSymMap.insert(std::make_pair(val, svfir->constantSymID()));
         }
         // otherwise, we will create an object for each abstract memory location
         else
         {
             // create obj sym and sym type
             NodeID id = NodeIDAllocator::get()->allocateObjectId();
-            llvmModuleSet()->objSymMap.insert(std::make_pair(svfVal, id));
+            llvmModuleSet()->objSymMap.insert(std::make_pair(val, id));
             DBOUT(DMemModel,
                   outs() << "create a new obj sym " << id << "\n");
 
@@ -670,7 +666,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
     {
         writeWrnMsg("try to create an object with a non-pointer type.");
         writeWrnMsg(val->getName().str());
-        writeWrnMsg("(" + llvmModuleSet()->getSVFValue(val)->getSourceLoc() + ")");
+        writeWrnMsg("(" + getSourceLoc(val) + ")");
         if (isConstantObjSym(val))
         {
             ObjTypeInfo* typeInfo = new ObjTypeInfo(

@@ -48,7 +48,6 @@ class MTAStat;
 class TCT;
 class MHP;
 class LockAnalysis;
-class SVFModule;
 
 /*!
  * Base data race detector

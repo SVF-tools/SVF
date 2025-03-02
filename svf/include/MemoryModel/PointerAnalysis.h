@@ -48,7 +48,6 @@ namespace SVF
 
 class CommonCHGraph;
 
-class SVFModule;
 class ICFG;
 class PTAStat;
 /*

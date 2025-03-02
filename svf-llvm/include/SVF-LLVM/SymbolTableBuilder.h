@@ -54,7 +54,7 @@ public:
     }
 
     /// Start building memory model
-    void buildMemModel(SVFModule* svfModule);
+    void buildMemModel();
 
     /// Return size of this object based on LLVM value
     u32_t getNumOfElements(const Type* ety);
