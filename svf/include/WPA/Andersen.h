@@ -45,7 +45,6 @@
 namespace SVF
 {
 
-class SVFModule;
 
 class ThreadCallGraph;
 

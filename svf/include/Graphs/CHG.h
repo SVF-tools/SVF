@@ -40,7 +40,6 @@
 namespace SVF
 {
 
-class SVFModule;
 class CHNode;
 class GlobalObjVar;
 

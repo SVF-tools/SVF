@@ -51,6 +51,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/BreakConstantExpr.h"
+#include "Util/GeneralType.h"
+#include "Util/SVFUtil.h"
 
 #include <iostream>
 #include <map>

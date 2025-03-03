@@ -39,7 +39,6 @@
 namespace SVF
 {
 
-class SVFModule;
 /*!
  *  SVFIR Builder to create SVF variables and statements and PAG
  */
@@ -48,13 +47,12 @@ class SVFIRBuilder: public llvm::InstVisitor<SVFIRBuilder>
 
 private:
     SVFIR* pag;
-    SVFModule* svfModule;
     const SVFBasicBlock* curBB;	///< Current basic block during SVFIR construction when visiting the module
-    const SVFLLVMValue* curVal;	///< Current Value during SVFIR construction when visiting the module
+    const Value* curVal;	///< Current Value during SVFIR construction when visiting the module
 
 public:
     /// Constructor
-    SVFIRBuilder(SVFModule* mod): pag(SVFIR::getPAG()), svfModule(mod), curBB(nullptr),curVal(nullptr)
+    SVFIRBuilder(): pag(SVFIR::getPAG()), curBB(nullptr),curVal(nullptr)
     {
     }
     /// Destructor
@@ -71,12 +69,19 @@ public:
         return pag;
     }
 
+    void createFunObjVars();
+    void initFunObjVar();
+
     /// Initialize nodes and edges
     //@{
     void initialiseNodes();
     void initialiseBaseObjVars();
     void initialiseValVars();
-    void initialiseFunObjVars();
+
+    void initSVFBasicBlock(const Function* func);
+
+    void initDomTree(FunObjVar* func, const Function* f);
+
     void addEdge(NodeID src, NodeID dst, SVFStmt::PEDGEK kind,
                  APOffset offset = 0, Instruction* cs = nullptr);
     // @}
@@ -93,15 +98,13 @@ public:
         processCE(V);
 
         // strip off the constant cast and return the value node
-        SVFLLVMValue* svfVal = llvmModuleSet()->getSVFValue(V);
-        return llvmModuleSet()->getValueNode(svfVal);
+        return llvmModuleSet()->getValueNode(V);
     }
 
     /// GetObject - Return the object node (stack/global/heap/function) according to a LLVM Value
     inline NodeID getObjectNode(const Value* V)
     {
-        SVFLLVMValue* svfVal = llvmModuleSet()->getSVFValue(V);
-        return llvmModuleSet()->getObjectNode(svfVal);
+        return llvmModuleSet()->getObjectNode(V);
     }
 
     /// getReturnNode - Return the node representing the unique return value of a function.
@@ -209,7 +212,7 @@ public:
 protected:
     /// Handle globals including (global variable and functions)
     //@{
-    void visitGlobal(SVFModule* svfModule);
+    void visitGlobal();
     void InitialGlobal(const GlobalVariable *gvar, Constant *C,
                        u32_t offset);
     NodeID getGlobalVarField(const GlobalVariable *gvar, u32_t offset, SVFType* tpy);
@@ -237,21 +240,21 @@ protected:
     //@{
     virtual const Type *getBaseTypeAndFlattenedFields(const Value *V, std::vector<AccessPath> &fields, const Value* szValue);
     virtual void addComplexConsForExt(Value *D, Value *S, const Value* sz);
-    virtual void handleExtCall(const CallBase* cs, const SVFFunction* svfCallee);
+    virtual void handleExtCall(const CallBase* cs, const Function* callee);
     //@}
 
     /// Set current basic block in order to keep track of control flow information
     inline void setCurrentLocation(const Value* val, const BasicBlock* bb)
     {
         curBB = (bb == nullptr? nullptr : llvmModuleSet()->getSVFBasicBlock(bb));
-        curVal = (val == nullptr ? nullptr: llvmModuleSet()->getSVFValue(val));
+        curVal = (val == nullptr ? nullptr: val);
     }
-    inline void setCurrentLocation(const SVFLLVMValue* val, const SVFBasicBlock* bb)
+    inline void setCurrentLocation(const Value* val, const SVFBasicBlock* bb)
     {
         curBB = bb;
         curVal = val;
     }
-    inline const SVFLLVMValue* getCurrentValue() const
+    inline const Value* getCurrentValue() const
     {
         return curVal;
     }
@@ -263,9 +266,9 @@ protected:
     /// Add global black hole Address edge
     void addGlobalBlackHoleAddrEdge(NodeID node, const ConstantExpr *int2Ptrce)
     {
-        const SVFLLVMValue* cval = getCurrentValue();
+        const Value* cval = getCurrentValue();
         const SVFBasicBlock* cbb = getCurrentBB();
-        setCurrentLocation(int2Ptrce,nullptr);
+        setCurrentLocation(int2Ptrce,(SVFBasicBlock*) nullptr);
         addBlackHoleAddrEdge(node);
         setCurrentLocation(cval,cbb);
     }
@@ -277,7 +280,7 @@ protected:
         ConstantPointerNull* constNull = ConstantPointerNull::get(PointerType::getUnqual(cxt));
         NodeID nullPtr = pag->addConstantNullPtrValNode(pag->getNullPtr(), nullptr, llvmModuleSet()->getSVFType(constNull->getType()));
         llvmModuleSet()->addToSVFVar2LLVMValueMap(constNull, pag->getGNode(pag->getNullPtr()));
-        setCurrentLocation(constNull, nullptr);
+        setCurrentLocation(constNull, (SVFBasicBlock*) nullptr);
         addBlackHoleAddrEdge(pag->getBlkPtr());
         return nullPtr;
     }
@@ -454,7 +457,7 @@ protected:
     inline void addStoreEdge(NodeID src, NodeID dst)
     {
         ICFGNode* node;
-        if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(llvmModuleSet()->getLLVMValue(curVal)))
+        if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(curVal))
             node = llvmModuleSet()->getICFGNode(
                        SVFUtil::cast<Instruction>(inst));
         else

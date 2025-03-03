@@ -37,7 +37,6 @@ namespace SVF
 {
 
 class ICFG;
-class SVFModule;
 class CallGraph;
 class ThreadCallGraph;
 

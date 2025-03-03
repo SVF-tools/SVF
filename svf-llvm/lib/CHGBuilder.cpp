@@ -42,7 +42,6 @@
 #include "SVFIR/ObjTypeInfo.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/LLVMUtil.h"
-#include "SVF-LLVM/SVFModule.h"
 #include "Util/PTAStat.h"
 #include "SVF-LLVM/LLVMModule.h"
 #include "SVF-LLVM/ObjTypeInference.h"
@@ -377,7 +376,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
             string vtblClassName = getClassNameFromVtblObj(globalvalue->getName().str());
             CHNode *node = chg->getNode(vtblClassName);
             assert(node && "node not found?");
-            NodeID i = llvmModuleSet()->getObjectNode(llvmModuleSet()->getSVFGlobalValue(globalvalue));
+            NodeID i = llvmModuleSet()->getObjectNode(globalvalue);
             SVFVar* pVar = PAG::getPAG()->getGNode(i);
             GlobalObjVar* globalObjVar = SVFUtil::cast<GlobalObjVar>(pVar);
             globalObjVar->setName(vtblClassName);

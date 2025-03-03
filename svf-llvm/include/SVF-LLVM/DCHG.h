@@ -17,14 +17,12 @@
 #include "Graphs/GenericGraph.h"
 #include "Graphs/CHG.h"
 #include "SVF-LLVM/BasicTypes.h"
-#include "SVF-LLVM/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "Util/WorkList.h"
 
 namespace SVF
 {
 
-class SVFModule;
 class DCHNode;
 
 class DCHEdge : public GenericEdge<DCHNode>
@@ -230,8 +228,8 @@ public:
     static bool isAgg(const DIType* t);
 
 public:
-    DCHGraph(const SVFModule *svfMod)
-        : svfModule(svfMod), numTypes(0)   // vfID(0), buildingCHGTime(0) {
+    DCHGraph()
+        :numTypes(0)   // vfID(0), buildingCHGTime(0) {
     {
         this->kind = DI;
     }
@@ -358,8 +356,6 @@ public:
     bool isFirstField(const DIType* f, const DIType* b);
 
 protected:
-    /// SVF Module this CHG is built from.
-    const SVFModule* svfModule;
     /// Whether this CHG is an extended CHG (first-field). Set by buildCHG.
     bool extended = false;
     /// Maps DITypes to their nodes.
@@ -394,7 +390,7 @@ private:
     void handleDISubroutineType(const DISubroutineType* subroutineType);
 
     /// Finds all defined virtual functions and attaches them to nodes.
-    void buildVTables(const SVFModule& module);
+    void buildVTables();
 
     /// Returns a set of all children of type (CHA). Also gradually builds chaMap.
     const NodeBS& cha(const DIType* type, bool firstField);

@@ -59,8 +59,8 @@ int main(int argc, char ** argv)
     // If no CFLGraph option is specified, the SVFIR is built from the .bc (bytecode) files of the modules
     if (Options::CFLGraph().empty())
     {
-        SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
-        SVFIRBuilder builder(svfModule);
+        LLVMModuleSet::buildSVFModule(moduleNameVec);
+        SVFIRBuilder builder;
         svfir = builder.build();
     }  // if no dot form CFLGraph is specified, we use svfir from .bc.
 

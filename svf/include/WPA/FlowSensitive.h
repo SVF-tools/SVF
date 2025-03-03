@@ -40,7 +40,6 @@ namespace SVF
 {
 
 class AndersenWaveDiff;
-class SVFModule;
 
 /*!
  * Flow sensitive whole program pointer analysis

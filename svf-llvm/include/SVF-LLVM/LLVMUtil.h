@@ -32,7 +32,6 @@
 
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
-#include "SVF-LLVM/SVFLLVMValue.h"
 #include "Util/ThreadAPI.h"
 
 namespace SVF
@@ -355,15 +354,14 @@ std::vector<const Function *> getCalledFunctions(const Function *F);
 // Converts a mangled name to C naming style to match functions in extapi.c.
 std::string restoreFuncName(std::string funcName);
 
-bool isExtCall(const SVFFunction* fun);
+bool isExtCall(const Function* fun);
 
-bool isMemcpyExtFun(const SVFFunction *fun);
+bool isMemcpyExtFun(const Function *fun);
 
-bool isMemsetExtFun(const SVFFunction* fun);
+bool isMemsetExtFun(const Function* fun);
 
-u32_t getHeapAllocHoldingArgPosition(const SVFFunction* fun);
+u32_t getHeapAllocHoldingArgPosition(const Function* fun);
 
-const SVFFunction* getFunction(const std::string& name);
 const FunObjVar* getFunObjVar(const std::string&name);
 
 /// Return true if the value refers to constant data, e.g., i32 0
@@ -375,9 +373,6 @@ inline bool isConstDataOrAggData(const Value* val)
 
 /// find the unique defined global across multiple modules
 const Value* getGlobalRep(const Value* val);
-
-/// Check whether this value points-to a constant object
-bool isConstantObjSym(const SVFLLVMValue* val);
 
 /// Check whether this value points-to a constant object
 bool isConstantObjSym(const Value* val);

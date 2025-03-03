@@ -35,7 +35,6 @@
 namespace SVF
 {
 
-class SVFModule;
 class ThreadAPI;
 class PointerAnalysis;
 /*!

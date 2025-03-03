@@ -163,7 +163,7 @@ void DCHGraph::handleTypedef(const DIType *typedefType)
     }
 }
 
-void DCHGraph::buildVTables(const SVFModule &module)
+void DCHGraph::buildVTables()
 {
     for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
@@ -177,8 +177,7 @@ void DCHGraph::buildVTables(const SVFModule &module)
                 DIType *type = SVFUtil::dyn_cast<DIType>(gv->getMetadata(cppUtil::ctir::vtMDName));
                 assert(type && "DCHG::buildVTables: bad metadata for ctir.vt");
                 DCHNode *node = getOrCreateNode(type);
-                const SVFLLVMValue* svfgv = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(gv);
-                NodeID i = LLVMModuleSet::getLLVMModuleSet()->getObjectNode(svfgv);
+                NodeID i = LLVMModuleSet::getLLVMModuleSet()->getObjectNode(gv);
                 GlobalObjVar* globalObjVar =
                     SVFUtil::cast<GlobalObjVar>(PAG::getPAG()->getGNode(i));
                 node->setVTable(globalObjVar);
@@ -522,7 +521,7 @@ void DCHGraph::buildCHG(bool extend)
         }
     }
 
-    buildVTables(*(LLVMModuleSet::getLLVMModuleSet()->getSVFModule()));
+    buildVTables();
 
     // Build the void/char/everything else relation.
     if (extended && charType != nullptr)

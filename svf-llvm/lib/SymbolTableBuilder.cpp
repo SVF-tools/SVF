@@ -34,7 +34,6 @@
 #include "SVF-LLVM/GEPTypeBridgeIterator.h" // include bridge_gep_iterator
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
-#include "SVF-LLVM/SVFModule.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
@@ -76,7 +75,7 @@ ObjTypeInfo* SymbolTableBuilder::createConstantObjTypeInfo(NodeID symId)
 /*!
  *  This method identify which is value sym and which is object sym
  */
-void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
+void SymbolTableBuilder::buildMemModel()
 {
     SVFUtil::increaseStackSize();
 
@@ -295,14 +294,12 @@ void SymbolTableBuilder::collectVal(const Value* val)
     {
         return;
     }
-    LLVMModuleSet::ValueToIDMapTy::iterator iter = llvmModuleSet()->valSymMap.find(
-                llvmModuleSet()->getSVFValue(val));
+    LLVMModuleSet::ValueToIDMapTy::iterator iter = llvmModuleSet()->valSymMap.find(val);
     if (iter == llvmModuleSet()->valSymMap.end())
     {
         // create val sym and sym type
-        SVFLLVMValue* svfVal = llvmModuleSet()->getSVFValue(val);
         NodeID id = NodeIDAllocator::get()->allocateValueId();
-        llvmModuleSet()->valSymMap.insert(std::make_pair(svfVal, id));
+        llvmModuleSet()->valSymMap.insert(std::make_pair(val, id));
         DBOUT(DMemModel,
               outs() << "create a new value sym " << id << "\n");
         ///  handle global constant expression here
@@ -320,22 +317,21 @@ void SymbolTableBuilder::collectVal(const Value* val)
 void SymbolTableBuilder::collectObj(const Value* val)
 {
     val = LLVMUtil::getGlobalRep(val);
-    LLVMModuleSet::ValueToIDMapTy::iterator iter = llvmModuleSet()->objSymMap.find(llvmModuleSet()->getSVFValue(val));
+    LLVMModuleSet::ValueToIDMapTy::iterator iter = llvmModuleSet()->objSymMap.find(val);
     if (iter == llvmModuleSet()->objSymMap.end())
     {
-        SVFLLVMValue* svfVal = llvmModuleSet()->getSVFValue(val);
         // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
         // then we treat them as one ConstantObj
         if (isConstantObjSym(val) && !Options::ModelConsts())
         {
-            llvmModuleSet()->objSymMap.insert(std::make_pair(svfVal, svfir->constantSymID()));
+            llvmModuleSet()->objSymMap.insert(std::make_pair(val, svfir->constantSymID()));
         }
         // otherwise, we will create an object for each abstract memory location
         else
         {
             // create obj sym and sym type
             NodeID id = NodeIDAllocator::get()->allocateObjectId();
-            llvmModuleSet()->objSymMap.insert(std::make_pair(svfVal, id));
+            llvmModuleSet()->objSymMap.insert(std::make_pair(val, id));
             DBOUT(DMemModel,
                   outs() << "create a new obj sym " << id << "\n");
 
@@ -352,14 +348,13 @@ void SymbolTableBuilder::collectObj(const Value* val)
  */
 void SymbolTableBuilder::collectRet(const Function* val)
 {
-    const SVFFunction* svffun =
-        llvmModuleSet()->getSVFFunction(val);
+
     LLVMModuleSet::FunToIDMapTy::iterator iter =
-        llvmModuleSet()->returnSymMap.find(svffun);
+        llvmModuleSet()->returnSymMap.find(val);
     if (iter == llvmModuleSet()->returnSymMap.end())
     {
         NodeID id = NodeIDAllocator::get()->allocateValueId();
-        llvmModuleSet()->returnSymMap.insert(std::make_pair(svffun, id));
+        llvmModuleSet()->returnSymMap.insert(std::make_pair(val, id));
         DBOUT(DMemModel, outs() << "create a return sym " << id << "\n");
     }
 }
@@ -369,14 +364,12 @@ void SymbolTableBuilder::collectRet(const Function* val)
  */
 void SymbolTableBuilder::collectVararg(const Function* val)
 {
-    const SVFFunction* svffun =
-        llvmModuleSet()->getSVFFunction(val);
     LLVMModuleSet::FunToIDMapTy::iterator iter =
-        llvmModuleSet()->varargSymMap.find(svffun);
+        llvmModuleSet()->varargSymMap.find(val);
     if (iter == llvmModuleSet()->varargSymMap.end())
     {
         NodeID id = NodeIDAllocator::get()->allocateValueId();
-        llvmModuleSet()->varargSymMap.insert(std::make_pair(svffun, id));
+        llvmModuleSet()->varargSymMap.insert(std::make_pair(val, id));
         DBOUT(DMemModel, outs() << "create a vararg sym " << id << "\n");
     }
 }
@@ -606,7 +599,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
     else if(LLVMUtil::isHeapAllocExtCallViaArg(inst))
     {
         const CallBase* cs = LLVMUtil::getLLVMCallSite(inst);
-        u32_t arg_pos = LLVMUtil::getHeapAllocHoldingArgPosition(llvmModuleSet()->getSVFFunction(cs->getCalledFunction()));
+        u32_t arg_pos = LLVMUtil::getHeapAllocHoldingArgPosition(cs->getCalledFunction());
         const Value* arg = cs->getArgOperand(arg_pos);
         originalPType = SVFUtil::dyn_cast<PointerType>(arg->getType());
         inferedType = inferObjType(startValue = arg);
@@ -673,7 +666,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
     {
         writeWrnMsg("try to create an object with a non-pointer type.");
         writeWrnMsg(val->getName().str());
-        writeWrnMsg("(" + llvmModuleSet()->getSVFValue(val)->getSourceLoc() + ")");
+        writeWrnMsg("(" + getSourceLoc(val) + ")");
         if (isConstantObjSym(val))
         {
             ObjTypeInfo* typeInfo = new ObjTypeInfo(
@@ -741,12 +734,9 @@ u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val)
         if (const llvm::Function* calledFunction =
                     callInst->getCalledFunction())
         {
-            const SVFFunction* svfFunction =
-                llvmModuleSet()->getSVFFunction(
-                    calledFunction);
             std::vector<const Value*> args;
             // Heap alloc functions have annoation like "AllocSize:Arg1"
-            for (std::string annotation : llvmModuleSet()->getExtFuncAnnotations(svfFunction))
+            for (std::string annotation : llvmModuleSet()->getExtFuncAnnotations(calledFunction))
             {
                 if (annotation.find("AllocSize:") != std::string::npos)
                 {
