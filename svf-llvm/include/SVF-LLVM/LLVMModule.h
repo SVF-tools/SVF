@@ -173,13 +173,15 @@ public:
 
 public:
 
-    inline const SVFBasicBlock* getFunExitBB(const Function* fun) const {
+    inline const SVFBasicBlock* getFunExitBB(const Function* fun) const
+    {
         auto it = funToExitBB.find(fun);
         if (it == funToExitBB.end()) return nullptr;
         else return it->second;
     }
 
-    inline const Function* getRealDefFun(const Function* fun) const {
+    inline const Function* getRealDefFun(const Function* fun) const
+    {
         auto it = funToRealDefFun.find(fun);
         if (it == funToRealDefFun.end()) return nullptr;
         else return it->second;
@@ -433,11 +435,13 @@ private:
         funSet.push_back(svfFunc);
     }
 
-    inline void setFunExitBB(const Function* fun, const SVFBasicBlock* bb) {
+    inline void setFunExitBB(const Function* fun, const SVFBasicBlock* bb)
+    {
         funToExitBB[fun] = bb;
     }
 
-    inline void setFunRealDefFun(const Function* fun, const Function* realDefFun) {
+    inline void setFunRealDefFun(const Function* fun, const Function* realDefFun)
+    {
         funToRealDefFun[fun] = realDefFun;
     }
     /// Create SVFTypes

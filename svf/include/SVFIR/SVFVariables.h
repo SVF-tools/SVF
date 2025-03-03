@@ -1017,7 +1017,8 @@ public:
     FunObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node);
 
 
-    virtual ~FunObjVar() {
+    virtual ~FunObjVar()
+    {
         delete loopAndDom;
         delete bbGraph;
     }
