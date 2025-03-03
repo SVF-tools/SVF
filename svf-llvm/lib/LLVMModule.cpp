@@ -1198,8 +1198,13 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         svfIntT->setSignAndWidth(intT->getSignBit() ? -signWidth : signWidth);
         svftype = svfIntT;
     }
-    else if (const FunctionType* ft = SVFUtil::dyn_cast<FunctionType>(T))
-        svftype = new SVFFunctionType(getSVFType(ft->getReturnType()));
+    else if (const FunctionType* ft = SVFUtil::dyn_cast<FunctionType>(T)) {
+        SVFFunctionType* svfFunType = new SVFFunctionType(getSVFType(ft->getReturnType()));
+        for (const auto& t: ft->params()) {
+            svfFunType->addParamType(getSVFType(t));
+        }
+        svftype = svfFunType;
+    }
     else if (const StructType* st = SVFUtil::dyn_cast<StructType>(T))
     {
         auto svfst = new SVFStructType(byteSize);

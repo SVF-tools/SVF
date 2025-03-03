@@ -323,12 +323,18 @@ class SVFFunctionType : public SVFType
 
 private:
     const SVFType* retTy;
+    std::vector<const SVFType*> params;
 
 public:
     SVFFunctionType(const SVFType* rt)
         : SVFType(false, SVFFunctionTy, 1), retTy(rt)
     {
     }
+
+    void addParamType(const SVFType* t) {
+        params.push_back(t);
+    }
+
     static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFFunctionTy;
@@ -336,6 +342,10 @@ public:
     const SVFType* getReturnType() const
     {
         return retTy;
+    }
+
+    const std::vector<const SVFType*>& getParamTypes() const {
+        return params;
     }
 
     void print(std::ostream& os) const override;
