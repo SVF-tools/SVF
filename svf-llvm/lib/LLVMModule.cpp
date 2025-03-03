@@ -1199,11 +1199,11 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         svftype = svfIntT;
     }
     else if (const FunctionType* ft = SVFUtil::dyn_cast<FunctionType>(T)) {
-        SVFFunctionType* svfFunType = new SVFFunctionType(getSVFType(ft->getReturnType()));
+        std::vector<const SVFType*> paramTypes;
         for (const auto& t: ft->params()) {
-            svfFunType->addParamType(getSVFType(t));
+            paramTypes.push_back(getSVFType(t));
         }
-        svftype = svfFunType;
+        svftype = new SVFFunctionType(getSVFType(ft->getReturnType()), paramTypes);
     }
     else if (const StructType* st = SVFUtil::dyn_cast<StructType>(T))
     {

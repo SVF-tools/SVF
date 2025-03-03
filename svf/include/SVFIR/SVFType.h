@@ -326,13 +326,9 @@ private:
     std::vector<const SVFType*> params;
 
 public:
-    SVFFunctionType(const SVFType* rt)
-        : SVFType(false, SVFFunctionTy, 1), retTy(rt)
+    SVFFunctionType(const SVFType* rt, const std::vector<const SVFType*>& p)
+        : SVFType(false, SVFFunctionTy, 1), retTy(rt), params(p)
     {
-    }
-
-    void addParamType(const SVFType* t) {
-        params.push_back(t);
     }
 
     static inline bool classof(const SVFType* node)
