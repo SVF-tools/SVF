@@ -30,6 +30,7 @@
 
 #include "Graphs/CallGraph.h"
 #include "SVFIR/SVFIR.h"
+#include "Util/Options.h"
 #include "Util/SVFUtil.h"
 #include <sstream>
 
@@ -285,6 +286,8 @@ void CallGraph::getIndCallSitesInvokingCallee(const FunObjVar* callee, CallGraph
  */
 void CallGraph::verifyCallGraph()
 {
+    if (Options::DisableWarn())
+        return;
     CallEdgeMap::const_iterator it = indirectCallMap.begin();
     CallEdgeMap::const_iterator eit = indirectCallMap.end();
     for (; it != eit; ++it)
