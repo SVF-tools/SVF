@@ -72,7 +72,7 @@ public:
     typedef OrderedMap<const Function*, NodeID> FunToIDMapTy;
 
     typedef std::vector<const Function*> FunctionSet;
-    typedef Map<const Function*, const SVFBasicBlock*> FunToExitBBMap;
+    typedef Map<const Function*, const BasicBlock*> FunToExitBBMap;
     typedef Map<const Function*, const Function *> FunToRealDefFunMap;
 
 private:
@@ -173,7 +173,7 @@ public:
 
 public:
 
-    inline const SVFBasicBlock* getFunExitBB(const Function* fun) const
+    inline const BasicBlock* getFunExitBB(const Function* fun) const
     {
         auto it = funToExitBB.find(fun);
         if (it == funToExitBB.end()) return nullptr;
@@ -435,7 +435,7 @@ private:
         funSet.push_back(svfFunc);
     }
 
-    inline void setFunExitBB(const Function* fun, const SVFBasicBlock* bb)
+    inline void setFunExitBB(const Function* fun, const BasicBlock* bb)
     {
         funToExitBB[fun] = bb;
     }

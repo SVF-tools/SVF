@@ -242,7 +242,6 @@ void SVFIRBuilder::initSVFBasicBlock(const Function* func)
                         SVFUtil::isa<ReturnInst>(bb->back())) &&
                        "last inst must be return inst");
                 svfFun->setExitBlock(svfbb);
-                llvmModuleSet()->setFunExitBB(func, svfbb);
             }
         }
     }
@@ -255,7 +254,6 @@ void SVFIRBuilder::initSVFBasicBlock(const Function* func)
                 SVFUtil::isa<ReturnInst>(&func->back().back())) &&
                "last inst must be return inst");
         svfFun->setExitBlock(retBB);
-        llvmModuleSet()->setFunExitBB(func, retBB);
     }
 }
 
