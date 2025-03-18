@@ -205,6 +205,34 @@ void LLVMModuleSet::createSVFDataStructure()
         addFunctionSet(func);
     }
 
+    // set function exit block
+    for (const auto& func: funSet) {
+        for (Function::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
+        {
+            const BasicBlock* bb = &*bit;
+            /// set exit block: exit basic block must have no successors and have a return instruction
+            if (succ_size(bb) == 0)
+            {
+                if (LLVMUtil::basicBlockHasRetInst(bb))
+                {
+                    assert((LLVMUtil::functionDoesNotRet(func) ||
+                            SVFUtil::isa<ReturnInst>(bb->back())) &&
+                           "last inst must be return inst");
+                    setFunExitBB(func, bb);
+                }
+            }
+        }
+        // For no return functions, we set the last block as exit BB
+        // This ensures that each function that has definition must have an exit BB
+        if (func->size() != 0 && !getFunExitBB(func))
+        {
+            assert((LLVMUtil::functionDoesNotRet(func) ||
+                    SVFUtil::isa<ReturnInst>(&func->back().back())) &&
+                   "last inst must be return inst");
+            setFunExitBB(func, &func->back());
+        }
+    }
+
     // Store annotations of functions in extapi.bc
     for (const auto& pair : ExtFun2Annotations)
     {
