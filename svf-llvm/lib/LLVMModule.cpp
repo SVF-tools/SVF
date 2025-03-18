@@ -206,7 +206,8 @@ void LLVMModuleSet::createSVFDataStructure()
     }
 
     // set function exit block
-    for (const auto& func: funSet) {
+    for (const auto& func: funSet)
+    {
         for (Function::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
         {
             const BasicBlock* bb = &*bit;
