@@ -126,7 +126,7 @@ public:
     static const Option<bool> CallGraphDotGraph;
     static const Option<bool> PAGPrint;
     static const Option<u32_t> IndirectCallLimit;
-    static const Option<bool> UsePreCompFieldSensitive;
+    static Option<bool> UsePreCompFieldSensitive;
     static const Option<bool> EnableAliasCheck;
     static const Option<bool> EnableTypeCheck;
     static const Option<bool> EnableThreadCallGraph;
@@ -184,8 +184,8 @@ public:
 
     // SymbolTableInfo.cpp
     static const Option<bool> LocMemModel;
-    static const Option<bool> ModelConsts;
-    static const Option<bool> ModelArrays;
+    static Option<bool> ModelConsts;
+    static Option<bool> ModelArrays;
     static const Option<bool> CyclicFldIdx;
     static const Option<bool> SymTabPrint;
 

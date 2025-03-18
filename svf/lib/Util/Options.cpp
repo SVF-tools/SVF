@@ -289,7 +289,7 @@ const Option<u32_t> Options::IndirectCallLimit(
     50000
 );
 
-const Option<bool> Options::UsePreCompFieldSensitive(
+Option<bool> Options::UsePreCompFieldSensitive(
     "pre-field-sensitive",
     "Use pre-computed field-sensitivity for later analysis",
     true
@@ -542,13 +542,13 @@ const Option<bool> Options::SVFMain(
     false
 );
 
-const Option<bool> Options::ModelConsts(
+Option<bool> Options::ModelConsts(
     "model-consts",
     "Modeling individual constant objects",
     false
 );
 
-const Option<bool> Options::ModelArrays(
+Option<bool> Options::ModelArrays(
     "model-arrays",
     "Modeling Gep offsets for array accesses",
     false
