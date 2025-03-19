@@ -194,7 +194,7 @@ public:
     }
 
     /// Return TRUE if this function can be reached from main.
-    bool isReachableFromProgEntry() const;
+    bool isReachableFromProgEntry(Map<NodeID, bool> &reachableFromEntry, NodeBS &visitedNodes) const;
 
 
     /// Overloading operator << for dumping ICFG node ID

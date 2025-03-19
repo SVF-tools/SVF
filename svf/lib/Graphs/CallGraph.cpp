@@ -30,6 +30,7 @@
 
 #include "Graphs/CallGraph.h"
 #include "SVFIR/SVFIR.h"
+#include "Util/Options.h"
 #include "Util/SVFUtil.h"
 #include <sstream>
 
@@ -89,30 +90,29 @@ const FunObjVar *CallGraph::getCallerOfCallSite(CallSiteID id) const
     return getCallSite(id)->getCaller();
 }
 
-bool CallGraphNode::isReachableFromProgEntry() const
+bool CallGraphNode::isReachableFromProgEntry(Map<NodeID, bool> &reachableFromEntry, NodeBS &visitedNodes) const
 {
-    std::stack<const CallGraphNode*> nodeStack;
-    NodeBS visitedNodes;
-    nodeStack.push(this);
-    visitedNodes.set(getId());
+    std::function<bool(const CallGraphNode*)> dfs =
+            [&reachableFromEntry, &visitedNodes, &dfs](const CallGraphNode *v) {
+        NodeID id = v->getId();
+        if (!visitedNodes.test_and_set(id))
+            return reachableFromEntry[id];
 
-    while (nodeStack.empty() == false)
-    {
-        CallGraphNode* node = const_cast<CallGraphNode*>(nodeStack.top());
-        nodeStack.pop();
+        if (SVFUtil::isProgEntryFunction(v->getFunction()))
+            return reachableFromEntry[id] = true;
 
-        if (SVFUtil::isProgEntryFunction(node->getFunction()))
-            return true;
-
-        for (const_iterator it = node->InEdgeBegin(), eit = node->InEdgeEnd(); it != eit; ++it)
+        bool result = false;
+        for (const_iterator it = v->InEdgeBegin(), eit = v->InEdgeEnd(); it != eit; ++it)
         {
             CallGraphEdge* edge = *it;
-            if (visitedNodes.test_and_set(edge->getSrcID()))
-                nodeStack.push(edge->getSrcNode());
+            result |= dfs(edge->getSrcNode());
+            if (result)
+                break;
         }
-    }
+        return reachableFromEntry[id] = result;
+    };
 
-    return false;
+    return dfs(this);
 }
 
 
@@ -285,6 +285,11 @@ void CallGraph::getIndCallSitesInvokingCallee(const FunObjVar* callee, CallGraph
  */
 void CallGraph::verifyCallGraph()
 {
+    if (Options::DisableWarn())
+        return;
+
+    Map<NodeID, bool> reachableFromEntry;
+    NodeBS visitedNodes;
     CallEdgeMap::const_iterator it = indirectCallMap.begin();
     CallEdgeMap::const_iterator eit = indirectCallMap.end();
     for (; it != eit; ++it)
@@ -294,7 +299,8 @@ void CallGraph::verifyCallGraph()
         {
             const CallICFGNode* cs = it->first;
             const FunObjVar* func = cs->getCaller();
-            if (getCallGraphNode(func)->isReachableFromProgEntry() == false)
+            if (getCallGraphNode(func)->
+                isReachableFromProgEntry(reachableFromEntry, visitedNodes) == false)
                 writeWrnMsg(func->getName() + " has indirect call site but not reachable from main");
         }
     }
