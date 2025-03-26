@@ -93,7 +93,8 @@ const FunObjVar *CallGraph::getCallerOfCallSite(CallSiteID id) const
 bool CallGraphNode::isReachableFromProgEntry(Map<NodeID, bool> &reachableFromEntry, NodeBS &visitedNodes) const
 {
     std::function<bool(const CallGraphNode*)> dfs =
-            [&reachableFromEntry, &visitedNodes, &dfs](const CallGraphNode *v) {
+        [&reachableFromEntry, &visitedNodes, &dfs](const CallGraphNode *v)
+    {
         NodeID id = v->getId();
         if (!visitedNodes.test_and_set(id))
             return reachableFromEntry[id];
@@ -300,7 +301,7 @@ void CallGraph::verifyCallGraph()
             const CallICFGNode* cs = it->first;
             const FunObjVar* func = cs->getCaller();
             if (getCallGraphNode(func)->
-                isReachableFromProgEntry(reachableFromEntry, visitedNodes) == false)
+                    isReachableFromProgEntry(reachableFromEntry, visitedNodes) == false)
                 writeWrnMsg(func->getName() + " has indirect call site but not reachable from main");
         }
     }
