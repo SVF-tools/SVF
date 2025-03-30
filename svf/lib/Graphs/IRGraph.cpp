@@ -304,6 +304,17 @@ SVFStmt* IRGraph::hasLabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind,
     return nullptr;
 }
 
+SVFStmt* IRGraph::hasEdge(SVFStmt* edge, SVFStmt::PEDGEK kind)
+{
+    SVFStmt::SVFStmtSetTy::iterator it = KindToSVFStmtSetMap[kind].find(edge);
+    if (it != KindToSVFStmtSetMap[kind].end())
+    {
+        return *it;
+    }
+    return nullptr;
+}
+
+
 /*!
  * Dump this IRGraph
  */

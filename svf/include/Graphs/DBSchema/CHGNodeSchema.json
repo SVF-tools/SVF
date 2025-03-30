@@ -1,42 +1,30 @@
 {
     "schema": [
         {
-            "label" : "SVFBasicBlock",
+            "label" : "CHNode",
             "type" : "VERTEX",
-            "primary" : "id",
+            "primary" : "class_name",
             "properties" : [
                 {
-                    "name" : "id", 
+                    "name" : "class_name", 
                     "type":"STRING",
                     "optional":false,
                     "index":true
                 },
                 {
-                    "name":"fun_obj_var_id",
+                    "name" : "vtable_id", 
                     "type":"INT32",
                     "optional":false,
                     "index":false
                 },
                 {
-                    "name" : "bb_name", 
+                    "name" : "flags", 
                     "type":"STRING",
                     "optional":false,
                     "index":false
                 },
                 {
-                    "name":"sscc_bb_ids",
-                    "type":"STRING",
-                    "optional":false,
-                    "index":false
-                },
-                {
-                    "name":"pred_bb_ids",
-                    "type":"STRING",
-                    "optional":false,
-                    "index":false
-                },
-                {
-                    "name":"all_icfg_nodes_ids",
+                    "name" : "virtual_function_vectors", 
                     "type":"STRING",
                     "optional":false,
                     "index":false

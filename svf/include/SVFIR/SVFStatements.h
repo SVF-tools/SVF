@@ -51,6 +51,11 @@ class SVFBasicBlock;
 typedef GenericEdge<SVFVar> GenericPAGEdgeTy;
 class SVFStmt : public GenericPAGEdgeTy
 {
+    friend class AssignStmt;
+    friend class MultiOpndStmt;
+    friend class UnaryOPStmt;
+    friend class BranchStmt;
+    friend class GraphDBClient;
 
 public:
     /// Types of SVFIR statements
@@ -87,6 +92,38 @@ protected:
     SVFStmt(GEdgeFlag k)
         : GenericPAGEdgeTy({}, {}, k), value{}, basicBlock{}, icfgNode{}
     {
+    }
+
+    SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, bool real = true);
+
+    inline void setBasicBlock(const SVFBasicBlock* bb)
+    {
+        basicBlock = bb;
+    }
+
+    inline void setCallEdgeLabelCounter(u64_t counter)
+    {
+        callEdgeLabelCounter = counter;
+    }
+
+    inline void setStoreEdgeLabelCounter(u64_t counter)
+    {
+        storeEdgeLabelCounter = counter;
+    }
+
+    inline void setMultiOpndLabelCounter(u64_t counter)
+    {
+        multiOpndLabelCounter = counter;
+    }
+
+    static inline void addInst2Labeled(const ICFGNode* cs, u32_t label)
+    {
+        inst2LabelMap.emplace(cs, label);
+    }
+
+    static inline void addVar2Labeled(const SVFVar* var, u32_t label)
+    {
+        var2LabelMap.emplace(var, label);
     }
 
 public:
@@ -258,6 +295,14 @@ public:
 */
 class AssignStmt : public SVFStmt
 {
+    friend class GraphDBClient;
+    friend class AddrStmt;
+    friend class CopyStmt;
+    friend class StoreStmt;
+    friend class LoadStmt;
+    friend class GepStmt;
+    friend class CallPE;
+    friend class RetPE;
 
 private:
     AssignStmt();                      ///< place holder
@@ -271,6 +316,7 @@ private:
 protected:
     /// constructor
     AssignStmt(SVFVar* s, SVFVar* d, GEdgeFlag k) : SVFStmt(s, d, k) {}
+    AssignStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode) : SVFStmt(s, d, k, eid, value, icfgNode) {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -330,6 +376,10 @@ public:
  */
 class AddrStmt: public AssignStmt
 {
+    friend class GraphDBClient;
+
+protected:
+    AddrStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode): AssignStmt(s, d, k, eid, value, icfgNode) {}
 
 private:
     AddrStmt(const AddrStmt&);       ///< place holder
@@ -381,6 +431,11 @@ public:
  */
 class CopyStmt: public AssignStmt
 {
+
+    friend class GraphDBClient;
+
+protected:
+    CopyStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, u32_t copyKind, ICFGNode* icfgNode): AssignStmt(s, d, k, eid, value, icfgNode), copyKind(copyKind) {}
 
 private:
     CopyStmt(const CopyStmt&);       ///< place holder
@@ -466,6 +521,10 @@ private:
  */
 class StoreStmt: public AssignStmt
 {
+    friend class GraphDBClient;
+
+protected:
+    StoreStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode);
 
 private:
     StoreStmt(const StoreStmt&);      ///< place holder
@@ -499,6 +558,10 @@ public:
  */
 class LoadStmt: public AssignStmt
 {
+    friend class GraphDBClient;
+
+protected:
+    LoadStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode): AssignStmt(s, d, k, eid, value, icfgNode) {}
 
 private:
     LoadStmt(const LoadStmt&);       ///< place holder
@@ -532,6 +595,12 @@ public:
  */
 class GepStmt: public AssignStmt
 {
+    friend class GraphDBClient;
+
+protected:
+    GepStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const AccessPath& ap, bool varfld = false)
+    : AssignStmt(s, d, k, eid, value, icfgNode), ap(ap), variantField(varfld){}
+
 
 private:
     GepStmt(const GepStmt &);  ///< place holder
@@ -613,6 +682,13 @@ public:
  */
 class CallPE: public AssignStmt
 {
+    friend class GraphDBClient;
+    friend class TDForkPE;
+
+protected:
+    CallPE(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const CallICFGNode* call,
+        const FunEntryICFGNode* entry);
+
 
 private:
     CallPE(const CallPE&);         ///< place holder
@@ -668,6 +744,13 @@ public:
  */
 class RetPE: public AssignStmt
 {
+    friend class GraphDBClient;
+    friend class TDJoinPE;
+
+protected:
+    RetPE(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const CallICFGNode* call,
+        const FunExitICFGNode* exit);
+
 
 private:
     RetPE(const RetPE&);          ///< place holder
@@ -723,6 +806,13 @@ public:
 */
 class MultiOpndStmt : public SVFStmt
 {
+    friend class GraphDBClient;
+    friend class PhiStmt;
+    friend class SelectStmt;
+    friend class CmpStmt;
+    friend class BinaryOPStmt;
+    
+
 
 public:
     typedef std::vector<SVFVar*> OPVars;
@@ -740,6 +830,8 @@ protected:
     OPVars opVars;
     /// Constructor, only used by subclasses but not external users
     MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k);
+    MultiOpndStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const OPVars& opnds)
+    : SVFStmt(s, d, k, eid, value, icfgNode), opVars(opnds) {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -801,6 +893,11 @@ public:
  */
 class PhiStmt: public MultiOpndStmt
 {
+    friend class GraphDBClient;
+
+protected:
+    PhiStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const OPVars& opnds)
+    : MultiOpndStmt(s, d, k, eid, value, icfgNode, opnds) {}
 
 public:
     typedef std::vector<const ICFGNode*> OpICFGNodeVec;
@@ -847,6 +944,13 @@ public:
                "Numbers of operands and their ICFGNodes are not consistent?");
     }
 
+    void setOpICFGNodeVec(OpICFGNodeVec& icfgNodes)
+    {
+        assert(opVars.size() == icfgNodes.size() &&
+               "Numbers of operands and their ICFGNodes are not consistent?");
+        opICFGNodes = icfgNodes;
+    }
+
     inline const OpICFGNodeVec* getOpICFGNodeVec() const
     {
         return &opICFGNodes;
@@ -870,6 +974,11 @@ public:
  */
 class SelectStmt: public MultiOpndStmt
 {
+    friend class GraphDBClient;
+
+protected:
+    SelectStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, SVFVar* condition, ICFGNode* icfgNode, const OPVars& opnds);
+    
 
 private:
     SelectStmt(const SelectStmt&);     ///< place holder
@@ -921,6 +1030,10 @@ public:
  */
 class CmpStmt: public MultiOpndStmt
 {
+    friend class GraphDBClient;
+
+protected:
+    CmpStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, u32_t predicate, ICFGNode* icfgNode, const OPVars& opnds);
 
 private:
     CmpStmt(const CmpStmt&);        ///< place holder
@@ -1003,6 +1116,10 @@ public:
  */
 class BinaryOPStmt: public MultiOpndStmt
 {
+    friend class GraphDBClient;
+
+protected:
+    BinaryOPStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, u32_t opcode, ICFGNode* icfgNode, const OPVars& opnds);
 
 private:
     BinaryOPStmt(const BinaryOPStmt&);   ///< place holder
@@ -1069,6 +1186,11 @@ public:
  */
 class UnaryOPStmt: public SVFStmt
 {
+    friend class GraphDBClient;
+
+protected:
+    UnaryOPStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, u32_t opcode, ICFGNode* icfgNode)
+    : SVFStmt(s, d, k, eid, value, icfgNode), opcode(opcode) {}
 
 private:
     UnaryOPStmt(const UnaryOPStmt&);    ///< place holder
@@ -1132,6 +1254,7 @@ public:
  */
 class BranchStmt: public SVFStmt
 {
+    friend class GraphDBClient;
 
 public:
     typedef std::vector<std::pair<const ICFGNode*, s32_t>> SuccAndCondPairVec;
@@ -1147,6 +1270,10 @@ private:
     SuccAndCondPairVec successors;
     const SVFVar* cond;
     const SVFVar* brInst;
+
+protected:
+BranchStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, SuccAndCondPairVec& successors, const SVFVar* cond,const SVFVar* brInst, ICFGNode* icfgNode)
+    : SVFStmt(s, d, k, eid, value, icfgNode), successors(successors), cond(cond), brInst(brInst){}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1218,6 +1345,11 @@ public:
  */
 class TDForkPE: public CallPE
 {
+    friend class GraphDBClient;
+
+protected:
+    TDForkPE(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const CallICFGNode* call,
+        const FunEntryICFGNode* entry): CallPE(s, d, k, eid, value, icfgNode, call, entry) {}
 
 private:
     TDForkPE(const TDForkPE&);       ///< place holder
@@ -1255,6 +1387,12 @@ public:
  */
 class TDJoinPE: public RetPE
 {
+    friend class GraphDBClient;
+
+protected:
+    TDJoinPE(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const CallICFGNode* call,
+        const FunExitICFGNode* exit): RetPE(s, d, k, eid, value, icfgNode, call, exit) {}
+
 
 private:
     TDJoinPE(const TDJoinPE&);       ///< place holder

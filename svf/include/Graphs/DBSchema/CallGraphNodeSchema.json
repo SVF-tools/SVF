@@ -16,12 +16,6 @@
                     "type":"INT32",
                     "optional":false,
                     "index":false
-                },
-                {
-                    "name":"is_reachable_from_prog_entry",
-                    "type":"BOOL",
-                    "optional":false,
-                    "index":false
                 }
             ]
         }

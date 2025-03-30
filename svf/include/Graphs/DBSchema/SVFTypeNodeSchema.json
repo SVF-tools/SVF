@@ -1,7 +1,7 @@
 {
     "schema": [
         {
-            "label" : "SVFPointerTypeNode",
+            "label" : "SVFPointerType",
             "type" : "VERTEX",
             "primary" : "type_name",
             "properties" : [
@@ -44,7 +44,7 @@
             ]
         },
         {
-            "label" : "SVFIntegerTypeNode",
+            "label" : "SVFIntegerType",
             "type" : "VERTEX",
             "primary" : "type_name",
             "properties" : [
@@ -93,7 +93,7 @@
             ]
         },
         {
-            "label" : "SVFFunctionTypeNode",
+            "label" : "SVFFunctionType",
             "type" : "VERTEX",
             "primary" : "type_name",
             "properties" : [
@@ -148,7 +148,7 @@
             ]
         },
         {
-            "label" : "SVFStructTypeNode",
+            "label" : "SVFStructType",
             "type" : "VERTEX",
             "primary" : "type_name",
             "properties" : [
@@ -203,7 +203,7 @@
             ]
         },
         {
-            "label" : "SVFArrayTypeNode",
+            "label" : "SVFArrayType",
             "type" : "VERTEX",
             "primary" : "type_name",
             "properties" : [
@@ -264,7 +264,7 @@
             ]
         },
         {
-            "label" : "SVFOtherTypeNode",
+            "label" : "SVFOtherType",
             "type" : "VERTEX",
             "primary" : "type_name",
             "properties" : [
@@ -313,7 +313,7 @@
             ]
         },
         {
-            "label" : "StInfoNode",
+            "label" : "StInfo",
             "type" : "VERTEX",
             "primary" : "id",
             "properties" : [

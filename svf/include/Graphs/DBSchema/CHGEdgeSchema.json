@@ -1,0 +1,17 @@
+{
+    "schema": [
+        {
+            "label":"CHEdge",
+            "type":"EDGE",
+            "properties" : [
+                {
+                    "name" : "edge_type", 
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                }
+            ]
+        }
+    ]
+}
+  
