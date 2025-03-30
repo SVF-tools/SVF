@@ -42,6 +42,9 @@ class SVFLoopAndDomInfo
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+
+
 public:
     typedef Set<const SVFBasicBlock*> BBSet;
     typedef std::vector<const SVFBasicBlock*> BBList;
@@ -55,6 +58,37 @@ private:
     Map<const SVFBasicBlock*, LoopBBs> bb2LoopMap;  ///< map a BasicBlock (if it is in a loop) to all the BasicBlocks in this loop
     Map<const SVFBasicBlock*, u32_t> bb2PdomLevel;  ///< map a BasicBlock to its level in pdom tree, used in findNearestCommonPDominator
     Map<const SVFBasicBlock*, const SVFBasicBlock*> bb2PIdom;  ///< map a BasicBlock to its immediate dominator in pdom tree, used in findNearestCommonPDominator
+    
+protected:
+inline void setDomTreeMap(Map<const SVFBasicBlock*,BBSet>& dtMap)
+{
+    dtBBsMap = dtMap;
+}
+
+inline void setPostDomTreeMap(Map<const SVFBasicBlock*,BBSet>& pdtMap)
+{
+    pdtBBsMap = pdtMap;
+}
+
+inline void setDomFrontierMap(Map<const SVFBasicBlock*,BBSet>& dfMap)
+{
+    dfBBsMap = dfMap;
+}
+
+inline void setBB2LoopMap(Map<const SVFBasicBlock*, LoopBBs>& bb2Loop)
+{
+    bb2LoopMap = bb2Loop;
+}
+
+inline void setBB2PdomLevel(Map<const SVFBasicBlock*, u32_t>& bb2Pdom)
+{
+    bb2PdomLevel = bb2Pdom;
+}
+
+inline void setBB2PIdom(Map<const SVFBasicBlock*, const SVFBasicBlock*>& bb2PIdomMap)
+{
+    bb2PIdom = bb2PIdomMap;
+}
 
 public:
     SVFLoopAndDomInfo()

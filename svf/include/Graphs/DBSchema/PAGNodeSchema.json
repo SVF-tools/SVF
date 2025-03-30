@@ -75,7 +75,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 }
             ]
@@ -155,7 +155,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -210,7 +210,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -283,7 +283,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -405,7 +405,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -478,7 +478,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -551,7 +551,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -635,7 +635,7 @@
                 {
                     "name":"exit_bb_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -687,7 +687,8 @@
                     "index":false
                 }
             ]
-        },        {
+        },        
+        {
             "label" : "FunValVar",
             "type" : "VERTEX",
             "primary" : "id",
@@ -725,7 +726,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -774,7 +775,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 }
             ]
@@ -817,7 +818,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 }
             ]
@@ -860,7 +861,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 }
             ]
@@ -903,7 +904,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 }
             ]
@@ -946,7 +947,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -995,7 +996,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -1050,7 +1051,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 }
             ]
@@ -1093,7 +1094,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -1166,7 +1167,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -1239,7 +1240,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -1312,7 +1313,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -1391,7 +1392,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -1476,7 +1477,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -1549,7 +1550,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -1598,7 +1599,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -1647,7 +1648,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 }
             ]
@@ -1690,7 +1691,7 @@
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {

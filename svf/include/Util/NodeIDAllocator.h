@@ -91,6 +91,17 @@ public:
         ++numNodes;
     }
 
+    inline void increaseNumOfValues()
+    {
+        ++numValues;
+        ++numNodes;
+    }
+
+    inline int getNumOfNodes()
+    {
+        return numNodes;
+    }
+
 private:
     /// Builds a node ID allocator with the strategy specified on the command line.
     NodeIDAllocator(void);

@@ -53,6 +53,11 @@ class SVFStmt : public GenericPAGEdgeTy
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class AssignStmt;
+    friend class MultiOpndStmt;
+    friend class UnaryOPStmt;
+    friend class BranchStmt;
+    friend class GraphDBClient;
 
 public:
     /// Types of SVFIR statements
@@ -89,6 +94,38 @@ protected:
     SVFStmt(GEdgeFlag k)
         : GenericPAGEdgeTy({}, {}, k), value{}, basicBlock{}, icfgNode{}
     {
+    }
+
+    SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, bool real = true);
+
+    inline void setBasicBlock(const SVFBasicBlock* bb)
+    {
+        basicBlock = bb;
+    }
+
+    inline void setCallEdgeLabelCounter(u64_t counter)
+    {
+        callEdgeLabelCounter = counter;
+    }
+
+    inline void setStoreEdgeLabelCounter(u64_t counter)
+    {
+        storeEdgeLabelCounter = counter;
+    }
+
+    inline void setMultiOpndLabelCounter(u64_t counter)
+    {
+        multiOpndLabelCounter = counter;
+    }
+
+    static inline void addInst2Labeled(const ICFGNode* cs, u32_t label)
+    {
+        inst2LabelMap.emplace(cs, label);
+    }
+
+    static inline void addVar2Labeled(const SVFVar* var, u32_t label)
+    {
+        var2LabelMap.emplace(var, label);
     }
 
 public:
@@ -262,6 +299,14 @@ class AssignStmt : public SVFStmt
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+    friend class AddrStmt;
+    friend class CopyStmt;
+    friend class StoreStmt;
+    friend class LoadStmt;
+    friend class GepStmt;
+    friend class CallPE;
+    friend class RetPE;
 
 private:
     AssignStmt();                      ///< place holder
@@ -277,6 +322,7 @@ protected:
     AssignStmt(SVFVar* s, SVFVar* d, GEdgeFlag k) : SVFStmt(s, d, k) {}
     /// Constructor to create empty AssignStmt (for SVFIRReader/serialization)
     AssignStmt(GEdgeFlag k) : SVFStmt(k) {}
+    AssignStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode) : SVFStmt(s, d, k, eid, value, icfgNode) {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -338,6 +384,10 @@ class AddrStmt: public AssignStmt
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+
+protected:
+    AddrStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode): AssignStmt(s, d, k, eid, value, icfgNode) {}
 
 private:
     /// Constructs empty AddrStmt (for SVFIRReader/serialization)
@@ -389,6 +439,11 @@ class CopyStmt: public AssignStmt
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+
+protected:
+    CopyStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, u32_t copyKind, ICFGNode* icfgNode): AssignStmt(s, d, k, eid, value, icfgNode), copyKind(copyKind) {}
+
 private:
     /// Constructs empty CopyStmt (for SVFIRReader/serialization)
     CopyStmt() : AssignStmt(SVFStmt::Copy) {}
@@ -477,6 +532,10 @@ class StoreStmt: public AssignStmt
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+
+protected:
+    StoreStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode);
 
 private:
     /// Constructs empty StoreStmt (for SVFIRReader/serialization)
@@ -514,6 +573,10 @@ class LoadStmt: public AssignStmt
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+
+protected:
+    LoadStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode): AssignStmt(s, d, k, eid, value, icfgNode) {}
 
 private:
     /// Constructs empty LoadStmt (for SVFIRReader/serialization)
@@ -551,6 +614,12 @@ class GepStmt: public AssignStmt
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+
+protected:
+    GepStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const AccessPath& ap, bool varfld = false)
+    : AssignStmt(s, d, k, eid, value, icfgNode), ap(ap), variantField(varfld){}
+
 
 private:
     /// Constructs empty GepStmt (for SVFIRReader/serialization)
@@ -636,6 +705,13 @@ class CallPE: public AssignStmt
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+    friend class TDForkPE;
+
+protected:
+    CallPE(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const CallICFGNode* call,
+        const FunEntryICFGNode* entry);
+
 
 private:
     CallPE(const CallPE&);         ///< place holder
@@ -696,6 +772,13 @@ class RetPE: public AssignStmt
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+    friend class TDJoinPE;
+
+protected:
+    RetPE(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const CallICFGNode* call,
+        const FunExitICFGNode* exit);
+
 
 private:
     RetPE(const RetPE&);          ///< place holder
@@ -757,6 +840,13 @@ class MultiOpndStmt : public SVFStmt
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+    friend class PhiStmt;
+    friend class SelectStmt;
+    friend class CmpStmt;
+    friend class BinaryOPStmt;
+    
+
 
 public:
     typedef std::vector<SVFVar*> OPVars;
@@ -776,6 +866,8 @@ protected:
     MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k);
     /// Constructs empty MultiOpndStmt (for SVFIRReader/serialization)
     MultiOpndStmt(GEdgeFlag k) : SVFStmt(k) {}
+    MultiOpndStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const OPVars& opnds)
+    : SVFStmt(s, d, k, eid, value, icfgNode), opVars(opnds) {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -839,6 +931,11 @@ class PhiStmt: public MultiOpndStmt
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+
+protected:
+    PhiStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const OPVars& opnds)
+    : MultiOpndStmt(s, d, k, eid, value, icfgNode, opnds) {}
 
 public:
     typedef std::vector<const ICFGNode*> OpICFGNodeVec;
@@ -887,6 +984,13 @@ public:
                "Numbers of operands and their ICFGNodes are not consistent?");
     }
 
+    void setOpICFGNodeVec(OpICFGNodeVec& icfgNodes)
+    {
+        assert(opVars.size() == icfgNodes.size() &&
+               "Numbers of operands and their ICFGNodes are not consistent?");
+        opICFGNodes = icfgNodes;
+    }
+
     inline const OpICFGNodeVec* getOpICFGNodeVec() const
     {
         return &opICFGNodes;
@@ -912,6 +1016,11 @@ class SelectStmt: public MultiOpndStmt
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+
+protected:
+    SelectStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, SVFVar* condition, ICFGNode* icfgNode, const OPVars& opnds);
+    
 
 private:
     /// Constructs empty SelectStmt (for SVFIRReader/serialization)
@@ -967,6 +1076,10 @@ class CmpStmt: public MultiOpndStmt
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+
+protected:
+    CmpStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, u32_t predicate, ICFGNode* icfgNode, const OPVars& opnds);
 
 private:
     /// Constructs empty CmpStmt (for SVFIRReader/serialization)
@@ -1053,6 +1166,10 @@ class BinaryOPStmt: public MultiOpndStmt
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+
+protected:
+    BinaryOPStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, u32_t opcode, ICFGNode* icfgNode, const OPVars& opnds);
 
 private:
     /// Constructs empty BinaryOPStmt (for SVFIRReader/serialization)
@@ -1123,6 +1240,11 @@ class UnaryOPStmt: public SVFStmt
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+
+protected:
+    UnaryOPStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, u32_t opcode, ICFGNode* icfgNode)
+    : SVFStmt(s, d, k, eid, value, icfgNode), opcode(opcode) {}
 
 private:
     /// Constructs empty UnaryOPStmt (for SVFIRReader/serialization)
@@ -1190,6 +1312,7 @@ class BranchStmt: public SVFStmt
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
 
 public:
     typedef std::vector<std::pair<const ICFGNode*, s32_t>> SuccAndCondPairVec;
@@ -1207,6 +1330,10 @@ private:
     SuccAndCondPairVec successors;
     const SVFVar* cond;
     const SVFVar* brInst;
+
+protected:
+BranchStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, SuccAndCondPairVec& successors, const SVFVar* cond,const SVFVar* brInst, ICFGNode* icfgNode)
+    : SVFStmt(s, d, k, eid, value, icfgNode), successors(successors), cond(cond), brInst(brInst){}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1280,6 +1407,11 @@ class TDForkPE: public CallPE
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+
+protected:
+    TDForkPE(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const CallICFGNode* call,
+        const FunEntryICFGNode* entry): CallPE(s, d, k, eid, value, icfgNode, call, entry) {}
 
 private:
     /// Constructs empty TDForkPE (for SVFIRReader/serialization)
@@ -1321,6 +1453,12 @@ class TDJoinPE: public RetPE
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class GraphDBClient;
+
+protected:
+    TDJoinPE(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const CallICFGNode* call,
+        const FunExitICFGNode* exit): RetPE(s, d, k, eid, value, icfgNode, call, exit) {}
+
 
 private:
     /// Constructs empty TDJoinPE (for SVFIRReader/serialization)

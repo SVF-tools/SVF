@@ -163,6 +163,11 @@ public:
     /// Dump location set
     std::string dump() const;
 
+    inline void addIdxOperandPair(std::pair<const SVFVar*, const SVFType*> pair)
+    {
+        idxOperandPairs.push_back(pair);
+    }
+
 private:
 
     /// Check relations of two location sets

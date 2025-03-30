@@ -32,6 +32,7 @@
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
+#include "SVFIR/GraphDBClient.h"
 #include <sstream>
 
 using namespace SVF;
@@ -63,6 +64,40 @@ void CallGraphEdge::addInDirectCallSite(const CallICFGNode* call)
     indirectCalls.insert(call);
 }
 //@}
+
+std::string CallGraphEdge::toDBString() const
+{
+    std::string indirectCallIds = "";
+    Set<const CallICFGNode*> indirectCall = getIndirectCalls();
+    if (indirectCall.size() > 0)
+    {
+        indirectCallIds = GraphDBClient::getInstance().extractNodesIds(indirectCall);
+    }
+
+    std::string directCallIds = "";
+    Set<const CallICFGNode*> directCall = getDirectCalls();
+    if (directCall.size() > 0)
+    {
+        directCallIds = GraphDBClient::getInstance().extractNodesIds(directCall);
+    }
+
+    const std::string queryStatement =
+        "MATCH (n:CallGraphNode{id:"+std::to_string(getSrcNode()->getId())+"}), (m:CallGraphNode{id:"+std::to_string(getDstNode()->getId()) + "}) WHERE n.id = " +
+        std::to_string(getSrcNode()->getId()) +
+        " AND m.id = " + std::to_string(getDstNode()->getId()) +
+        " CREATE (n)-[r:CallGraphEdge{csid:" + std::to_string(getCallSiteID()) +
+        ", kind:" + std::to_string(getEdgeKind()) +
+        ", direct_call_set:'" + directCallIds + "', indirect_call_set:'" +
+        indirectCallIds + "'}]->(m)";
+    return queryStatement;
+}
+
+std::string CallGraphNode::toDBString() const
+{
+    const std::string queryStatement ="CREATE (n:CallGraphNode {id: " + std::to_string(getId()) +
+                             ", fun_obj_var_id: " + std::to_string(getFunction()->getId()) + sourceLocToDBString() + "})";
+    return queryStatement;
+}
 
 const std::string CallGraphEdge::toString() const
 {
@@ -185,6 +220,19 @@ CallGraphEdge* CallGraph::hasGraphEdge(CallGraphNode* src,
         return nullptr;
 }
 
+CallGraphEdge* CallGraph::hasGraphEdge(CallGraphEdge* cgEdge)
+{
+    CallGraphEdge* outEdge = cgEdge->getSrcNode()->hasOutgoingEdge(cgEdge);
+    CallGraphEdge* inEdge = cgEdge->getDstNode()->hasIncomingEdge(cgEdge);
+    if (outEdge && inEdge)
+    {
+        assert(outEdge == inEdge && "edges not match");
+        return outEdge;
+    }
+    else
+        return nullptr;
+}
+
 /*!
  * get PTACallGraph edge via nodes
  */
@@ -222,6 +270,14 @@ void CallGraph::addIndirectCallGraphEdge(const CallICFGNode* cs,const FunObjVar*
         edge->addInDirectCallSite(cs);
         addEdge(edge);
         callinstToCallGraphEdgesMap[cs].insert(edge);
+    }
+}
+
+void CallGraph::addIndirectCallGraphEdgeFromDB(CallGraphEdge* cgEdge)
+{
+    if (!hasGraphEdge(cgEdge))
+    {
+        addEdge(cgEdge);
     }
 }
 
@@ -364,6 +420,13 @@ void CallGraph::addCallGraphNode(const FunObjVar* fun)
     callGraphNodeNum++;
 }
 
+void CallGraph::addCallGraphNodeFromDB(CallGraphNode* cgNode)
+{
+    addGNode(cgNode->getId(), cgNode);
+    funToCallGraphNodeMap[cgNode->getFunction()] = cgNode;
+    callGraphNodeNum++;
+}
+
 const CallGraphNode* CallGraph::getCallGraphNode(const std::string& name) const
 {
     for (const auto& item : *this)
@@ -391,6 +454,14 @@ void CallGraph::addDirectCallGraphEdge(const CallICFGNode* cs,const FunObjVar* c
         addEdge(edge);
         callinstToCallGraphEdgesMap[cs].insert(edge);
     }
+}
+
+void CallGraph::addDirectCallGraphEdgeFromDB(CallGraphEdge* cgEdge)
+{
+    if (!hasGraphEdge(cgEdge))
+    {
+        addEdge(cgEdge);
+    }   
 }
 
 namespace SVF

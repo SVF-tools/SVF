@@ -74,6 +74,14 @@ AddrStmt* SVFIR::addAddrStmt(NodeID src, NodeID dst)
         return addrPE;
     }
 }
+void SVFIR::addAddrStmt(AddrStmt* edge)
+{
+    if(!hasEdge(edge, SVFStmt::Addr))
+    {
+        addToStmt2TypeMap(edge);
+        addEdge(edge->getRHSVar(),edge->getLHSVar(), edge);
+    }
+}
 
 /*!
  * Add Copy edge
@@ -90,6 +98,15 @@ CopyStmt* SVFIR::addCopyStmt(NodeID src, NodeID dst, CopyStmt::CopyKind type)
         addToStmt2TypeMap(copyPE);
         addEdge(srcNode,dstNode, copyPE);
         return copyPE;
+    }
+}
+
+void SVFIR::addCopyStmt(CopyStmt* edge)
+{
+    if(!hasEdge(edge, SVFStmt::Copy))
+    {
+        addToStmt2TypeMap(edge);
+        addEdge(edge->getRHSVar(),edge->getLHSVar(), edge);
     }
 }
 
@@ -117,6 +134,19 @@ PhiStmt* SVFIR::addPhiStmt(NodeID res, NodeID opnd, const ICFGNode* pred)
     }
 }
 
+void SVFIR::addPhiStmt(PhiStmt* edge, SVFVar* src, SVFVar* dst)
+{
+    SVFVar* opNode = src;
+    SVFVar* resNode = dst;
+    PHINodeMap::iterator it = phiNodeMap.find(resNode);
+    if (it == phiNodeMap.end())
+    {
+        addToStmt2TypeMap(edge);
+        addEdge(opNode, resNode, edge);
+        phiNodeMap[resNode] = edge;
+    }
+}
+
 /*!
  * Add Phi statement
  */
@@ -138,6 +168,15 @@ SelectStmt* SVFIR::addSelectStmt(NodeID res, NodeID op1, NodeID op2, NodeID cond
     }
 }
 
+void SVFIR::addSelectStmt(SelectStmt* edge, SVFVar* src, SVFVar* dst)
+{
+    if (!hasEdge(edge, SVFStmt::Select))
+    {
+        addToStmt2TypeMap(edge);
+        addEdge(src, dst, edge);
+    }
+}
+
 /*!
  * Add Compare edge
  */
@@ -155,6 +194,15 @@ CmpStmt* SVFIR::addCmpStmt(NodeID op1, NodeID op2, NodeID dst, u32_t predicate)
         addToStmt2TypeMap(cmp);
         addEdge(op1Node, dstNode, cmp);
         return cmp;
+    }
+}
+
+void SVFIR::addCmpStmt(CmpStmt* edge, SVFVar* src, SVFVar* dst)
+{
+    if (!hasEdge(edge,SVFStmt::Cmp))
+    {
+        addToStmt2TypeMap(edge);
+        addEdge(src, dst, edge);
     }
 }
 
@@ -179,6 +227,14 @@ BinaryOPStmt* SVFIR::addBinaryOPStmt(NodeID op1, NodeID op2, NodeID dst, u32_t o
     }
 }
 
+void SVFIR::addBinaryOPStmt(BinaryOPStmt* edge, SVFVar* src, SVFVar* dst)
+{
+    if (!hasEdge(edge, SVFStmt::BinaryOp))
+    {
+        addToStmt2TypeMap(edge);
+        addEdge(src, dst, edge);
+    }
+}
 /*!
  * Add Unary edge
  */
@@ -194,6 +250,15 @@ UnaryOPStmt* SVFIR::addUnaryOPStmt(NodeID src, NodeID dst, u32_t opcode)
         addToStmt2TypeMap(unaryOP);
         addEdge(srcNode,dstNode, unaryOP);
         return unaryOP;
+    }
+}
+
+void SVFIR::addUnaryOPStmt(UnaryOPStmt* edge, SVFVar* src, SVFVar* dst)
+{
+    if(!hasEdge(edge, SVFStmt::UnaryOp))
+    {
+        addToStmt2TypeMap(edge);
+        addEdge(src, dst, edge);
     }
 }
 
@@ -215,6 +280,15 @@ BranchStmt* SVFIR::addBranchStmt(NodeID br, NodeID cond, const BranchStmt::SuccA
     }
 }
 
+void SVFIR::addBranchStmt(BranchStmt* edge, SVFVar* src, SVFVar* dst)
+{
+    if(!hasEdge(edge, SVFStmt::Branch))
+    {
+        addToStmt2TypeMap(edge);
+        addEdge(src, dst, edge);
+    }
+}
+
 /*!
  * Add Load edge
  */
@@ -230,6 +304,15 @@ LoadStmt* SVFIR::addLoadStmt(NodeID src, NodeID dst)
         addToStmt2TypeMap(loadPE);
         addEdge(srcNode,dstNode, loadPE);
         return loadPE;
+    }
+}
+
+void SVFIR::addLoadStmt(LoadStmt* edge)
+{
+    if(!hasEdge(edge, SVFStmt::Load))
+    {
+        addToStmt2TypeMap(edge);
+        addEdge(edge->getRHSVar(),edge->getLHSVar(), edge);
     }
 }
 
@@ -252,6 +335,15 @@ StoreStmt* SVFIR::addStoreStmt(NodeID src, NodeID dst, const ICFGNode* curVal)
     }
 }
 
+void SVFIR::addStoreStmt(StoreStmt* edge, SVFVar* src, SVFVar* dst)
+{
+    if(!hasEdge(edge,SVFStmt::Store))
+    {
+        addToStmt2TypeMap(edge);
+        addEdge(src,dst, edge);
+    }
+}
+
 /*!
  * Add Call edge
  */
@@ -270,6 +362,15 @@ CallPE* SVFIR::addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs, const F
     }
 }
 
+void SVFIR::addCallPE(CallPE* edge, SVFVar* src, SVFVar* dst)
+{
+    if(!hasEdge(edge, SVFStmt::Call))
+    {
+        addToStmt2TypeMap(edge);
+        addEdge(src,dst, edge);
+    }
+}
+
 /*!
  * Add Return edge
  */
@@ -285,6 +386,15 @@ RetPE* SVFIR::addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs, const Fun
         addToStmt2TypeMap(retPE);
         addEdge(srcNode,dstNode, retPE);
         return retPE;
+    }
+}
+
+void SVFIR::addRetPE(RetPE* edge,  SVFVar* src, SVFVar* dst)
+{
+    if(!hasEdge(edge, SVFStmt::Ret))
+    {
+        addToStmt2TypeMap(edge);
+        addEdge(src, dst, edge);
     }
 }
 
@@ -375,6 +485,17 @@ GepStmt* SVFIR::addNormalGepStmt(NodeID src, NodeID dst, const AccessPath& ap)
     }
 }
 
+void SVFIR::addGepStmt(GepStmt* gepPE)
+{
+    SVFVar* baseNode = gepPE->getRHSVar();
+    SVFVar* dstNode = gepPE->getLHSVar();
+    if (!hasEdge(gepPE, SVFStmt::Gep))
+    {
+        addToStmt2TypeMap(gepPE);
+        addEdge(baseNode, dstNode, gepPE);
+    }
+}
+
 /*!
  * Add variant(Gep) edge
  * Find the base node id of src and connect base node to dst node
@@ -458,6 +579,17 @@ NodeID SVFIR::getGepObjVar(const BaseObjVar* baseObj, const APOffset& apOffset)
     else
         return iter->second;
 
+}
+
+void SVFIR::addGepObjNode(GepObjVar* gepObj)
+{
+    NodeID base = gepObj->getBaseNode();
+    APOffset apOffset = gepObj->getConstantFieldIdx();
+    assert(0==GepObjVarMap.count(std::make_pair(base, apOffset))
+           && "this node should not be created before");
+    GepObjVarMap[std::make_pair(base, apOffset)] = gepObj->getId();
+    memToFieldsMap[base].set(gepObj->getId());
+    addObjNode(gepObj);
 }
 
 /*!

@@ -50,6 +50,12 @@ int main(int argc, char** argv)
     {
         assert(false && "please implement SVFIRReader::read");
     }
+    else if (Options::ReadFromDB())
+    {
+        SVFIRBuilder builder;
+        pag = builder.build();
+        pag->setPagFromTXT("ReadFromDB");
+    }
     else
     {
         if (Options::WriteAnder() == "ir_annotator")

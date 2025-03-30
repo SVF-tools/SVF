@@ -233,6 +233,8 @@ public:
 typedef GenericGraph<CallGraphNode, CallGraphEdge> GenericPTACallGraphTy;
 class CallGraph : public GenericPTACallGraphTy
 {
+    friend class GraphDBClient;
+
 
 public:
     typedef CallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
@@ -286,6 +288,19 @@ protected:
             return id;
         }
         return it->second;
+    }
+
+    inline void addCallSite(const CallICFGNode* cs, const FunObjVar* callee, const CallSiteID csid)
+    {
+        std::pair<const CallICFGNode*, const FunObjVar*> newCS(std::make_pair(cs, callee));
+        CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
+        if(it == csToIdMap.end())
+        {
+            CallSiteID id = csid;
+            totalCallSiteNum++;
+            csToIdMap.insert(std::make_pair(newCS, id));
+            idToCSMap.insert(std::make_pair(id, newCS));
+        }
     }
 
     /// Add call graph edge
@@ -351,8 +366,11 @@ public:
 
     /// Add direct call edges
     void addDirectCallGraphEdge(const CallICFGNode* call, const FunObjVar* callerFun, const FunObjVar* calleeFun);
+    void addDirectCallGraphEdge(CallGraphEdge* cgEdge);
 
     void addCallGraphNode(const FunObjVar* fun);
+
+    void addCallGraphNodeFromDB(CallGraphNode* cgNode);
 
     /// Get call graph node
     //@{
@@ -406,6 +424,8 @@ public:
     /// Whether we have already created this call graph edge
     CallGraphEdge* hasGraphEdge(CallGraphNode* src, CallGraphNode* dst,
                                 CallGraphEdge::CEDGEK kind, CallSiteID csId) const;
+
+    CallGraphEdge* hasGraphEdge(CallGraphEdge* cgEdge);
     /// Get call graph edge via nodes
     CallGraphEdge* getGraphEdge(CallGraphNode* src, CallGraphNode* dst,
                                 CallGraphEdge::CEDGEK kind, CallSiteID csId);
@@ -450,6 +470,7 @@ public:
     /// Add indirect call edges
     //@{
     void addIndirectCallGraphEdge(const CallICFGNode* cs,const FunObjVar* callerFun, const FunObjVar* calleeFun);
+    void addIndirectCallGraphEdge(CallGraphEdge* cgEdge);
     //@}
 
     /// Get callsites invoking the callee

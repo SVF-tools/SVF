@@ -79,6 +79,7 @@ class SVFBasicBlock : public GenericBasicBlockNodeTy
     friend class FunObjVar;
     friend class ICFGBuilder;
     friend class ICFG;
+    friend class GraphDBClient;
 
 public:
     typedef std::vector<const ICFGNode*>::const_iterator const_iterator;
@@ -321,6 +322,12 @@ public:
         addGNode(id, bb);
         bb->setName(bbname);
         return bb;
+    }
+
+    void addBasicBlock(SVFBasicBlock* bb)
+    {
+        id++;
+        addGNode(bb->getId(), bb);
     }
 
 };
