@@ -105,6 +105,7 @@ private:
 typedef GenericNode<CHNode, CHEdge> GenericCHNodeTy;
 class CHNode: public GenericCHNodeTy
 {
+    friend class GraphDBClient;
 
 public:
     typedef enum
@@ -222,6 +223,16 @@ private:
      * virtualFunctionVectors = {{Af1, Af2, ...}, {Bg1, Bg2, ...}}
      */
     std::vector<FuncVector> virtualFunctionVectors;
+
+protected:
+    inline size_t getFlags() const
+    {
+        return flags;
+    }
+    inline void setFlags(size_t f)
+    {
+        flags = f;
+    }
 };
 
 /// class hierarchy graph

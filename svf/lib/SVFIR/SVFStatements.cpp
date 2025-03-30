@@ -55,6 +55,16 @@ SVFStmt::SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, bool real) :
     }
 }
 
+SVFStmt::SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, bool real) :
+GenericPAGEdgeTy(s,d,k),value(value),basicBlock(nullptr),icfgNode(icfgNode),edgeId(eid)
+{
+    if(real)
+    {
+        edgeId = eid;
+        SVFIR::getPAG()->incEdgeNum();
+    }
+}
+
 /*!
  * Whether src and dst nodes are both pointer type
  */
@@ -329,6 +339,8 @@ StoreStmt::StoreStmt(SVFVar* s, SVFVar* d, const ICFGNode* st)
     : AssignStmt(s, d, makeEdgeFlagWithStoreInst(SVFStmt::Store, st))
 {
 }
+StoreStmt::StoreStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode)
+: AssignStmt(s, d, k, eid, value, icfgNode) {}
 
 CallPE::CallPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
                const FunEntryICFGNode* e, GEdgeKind k)
@@ -336,11 +348,20 @@ CallPE::CallPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
 {
 }
 
+CallPE::CallPE(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const CallICFGNode* call,
+    const FunEntryICFGNode* entry): AssignStmt(s, d, k, eid, value, icfgNode), call(call), entry(entry) 
+{
+
+}
+
 RetPE::RetPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
              const FunExitICFGNode* e, GEdgeKind k)
     : AssignStmt(s, d, makeEdgeFlagWithCallInst(k, i)), call(i), exit(e)
 {
 }
+
+RetPE::RetPE(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const CallICFGNode* call,
+    const FunExitICFGNode* exit): AssignStmt(s, d, k, eid, value, icfgNode), call(call), exit(exit) {}
 
 MultiOpndStmt::MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k)
     : SVFStmt(opnds.at(0), r, k), opVars(opnds)
@@ -355,10 +376,22 @@ CmpStmt::CmpStmt(SVFVar* s, const OPVars& opnds, u32_t pre)
     assert(opnds.size() == 2 && "CmpStmt can only have two operands!");
 }
 
+CmpStmt::CmpStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, u32_t predicate, ICFGNode* icfgNode, const OPVars& opnds)
+: MultiOpndStmt(s, d, k, eid, value, icfgNode, opnds), predicate(predicate) 
+{
+    assert(opnds.size() == 2 && "CmpStmt can only have two operands!");
+}
+
 SelectStmt::SelectStmt(SVFVar* s, const OPVars& opnds, const SVFVar* cond)
     : MultiOpndStmt(s, opnds,
                     makeEdgeFlagWithAddionalOpnd(SVFStmt::Select, opnds.at(1))),
       condition(cond)
+{
+    assert(opnds.size() == 2 && "SelectStmt can only have two operands!");
+}
+
+SelectStmt::SelectStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, SVFVar* condition, ICFGNode* icfgNode, const OPVars& opnds)
+    : MultiOpndStmt(s, d, k, eid, value, icfgNode, opnds), condition(condition) 
 {
     assert(opnds.size() == 2 && "SelectStmt can only have two operands!");
 }
@@ -368,6 +401,12 @@ BinaryOPStmt::BinaryOPStmt(SVFVar* s, const OPVars& opnds, u32_t oc)
           s, opnds,
           makeEdgeFlagWithAddionalOpnd(SVFStmt::BinaryOp, opnds.at(1))),
       opcode(oc)
+{
+    assert(opnds.size() == 2 && "BinaryOPStmt can only have two operands!");
+}
+
+BinaryOPStmt::BinaryOPStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, u32_t opcode, ICFGNode* icfgNode, const OPVars& opnds)
+    : MultiOpndStmt(s, d, k, eid, value, icfgNode, opnds), opcode(opcode) 
 {
     assert(opnds.size() == 2 && "BinaryOPStmt can only have two operands!");
 }

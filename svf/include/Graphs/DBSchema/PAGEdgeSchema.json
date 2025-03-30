@@ -17,21 +17,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -83,21 +89,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -149,21 +161,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -186,12 +204,6 @@
                 },
                 {
                     "name":"store_edge_label_counter",
-                    "type":"INT64",
-                    "optional":false,
-                    "index":false
-                },
-                {
-                    "name":"multi_opnd_label_counter",
                     "type":"INT64",
                     "optional":false,
                     "index":false
@@ -227,21 +239,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -299,21 +317,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -365,21 +389,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -431,21 +461,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -487,7 +523,7 @@
                 {
                     "name":"ap_fld_idx",
                     "type":"INT64",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -521,21 +557,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -571,13 +613,13 @@
                 {
                     "name":"call_icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"fun_entry_icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 }
             ]
@@ -599,21 +641,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -677,21 +725,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -749,21 +803,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -827,21 +887,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -905,21 +971,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -983,21 +1055,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -1061,21 +1139,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -1133,21 +1217,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -1217,21 +1307,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
@@ -1295,21 +1391,27 @@
                     "index":false
                 },
                 {
+                    "name" : "edge_flag", 
+                    "type":"INT64",
+                    "optional":false,
+                    "index":false
+                },
+                {
                     "name" : "svf_var_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"bb_id",
-                    "type":"INT32",
-                    "optional":true,
+                    "type":"STRING",
+                    "optional":false,
                     "index":false
                 },
                 {
                     "name":"icfg_node_id",
                     "type":"INT32",
-                    "optional":true,
+                    "optional":false,
                     "index":false
                 },
                 {

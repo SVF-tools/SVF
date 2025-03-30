@@ -78,6 +78,14 @@ public:
         : stride(s), numOfFlattenElements(s), numOfFlattenFields(s)
     {
     }
+
+    StInfo (u32_t id, std::vector<u32_t> fldIdxVec, std::vector<u32_t> elemIdxVec, Map<u32_t, const SVFType*> fldIdx2TypeMap,
+        std::vector<const SVFType*> finfo,u32_t stride,u32_t numOfFlattenElements,u32_t numOfFlattenFields, std::vector<const SVFType*> flattenElementTypes )
+        :StInfoId(id), fldIdxVec(fldIdxVec), elemIdxVec(elemIdxVec), fldIdx2TypeMap(fldIdx2TypeMap), finfo(finfo), stride(stride), 
+        numOfFlattenElements(numOfFlattenElements), numOfFlattenFields(numOfFlattenFields), flattenElementTypes(flattenElementTypes)
+    {
+
+    }
     /// Destructor
     ~StInfo() = default;
 
@@ -164,6 +172,8 @@ public:
     {
         return stride;
     }
+
+    std::string toDBString() const;
 };
 
 class SVFType
@@ -193,10 +203,20 @@ public:
         return svfPtrTy;
     }
 
+    inline static void setSVFPtrType(SVFType* ptrTy)
+    {
+        svfPtrTy = ptrTy;
+    }
+
     inline static SVFType* getSVFInt8Type()
     {
         assert(svfI8Ty && "int8 type not set?");
         return svfI8Ty;
+    }
+
+    inline static void setSVFInt8Type(SVFType* i8Ty)
+    {
+        svfI8Ty = i8Ty;
     }
 
 private:
@@ -295,12 +315,30 @@ public:
     {
     }
 
+    SVFPointerType(u32_t id, u32_t byteSize, bool isSingleValTy)
+        : SVFType(isSingleValTy, SVFPointerTy, id, byteSize)
+    {
+        
+    }
+
     static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFPointerTy;
     }
 
     void print(std::ostream& os) const override;
+
+    std::string toDBString() const
+    {
+        std::string is_single_val_ty = isSingleValueType() ? "true" : "false";
+        const std::string queryStatement ="CREATE (n:SVFPointerType {id:" + std::to_string(getId()) +
+        ", svf_i8_type_id:" + std::to_string(getSVFInt8Type()->getId()) +
+        ", svf_ptr_type_id:" + std::to_string(getSVFPtrType()->getId()) + 
+        ", kind:" + std::to_string(getKind()) + 
+        ", is_single_val_ty:" + is_single_val_ty + 
+        ", byte_size:" + std::to_string(getByteSize()) + "})";
+        return queryStatement;
+    }
 };
 
 class SVFIntegerType : public SVFType
@@ -311,6 +349,11 @@ private:
 
 public:
     SVFIntegerType(u32_t i, u32_t byteSize = 1) : SVFType(true, SVFIntegerTy, i, byteSize) {}
+    SVFIntegerType(u32_t i, u32_t byteSize, bool isSingleValTy,short signAndWidth)
+        : SVFType(isSingleValTy, SVFIntegerTy, i, byteSize)
+    {
+        this->signAndWidth = signAndWidth;
+    }
     static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFIntegerTy;
@@ -332,6 +375,19 @@ public:
     {
         return signAndWidth < 0;
     }
+
+    std::string toDBString() const
+    {
+        std::string is_single_val_ty = isSingleValueType() ? "true" : "false";
+        const std::string queryStatement ="CREATE (n:SVFIntegerType {id:" + std::to_string(getId()) +
+        ", svf_i8_type_id:" + std::to_string(getSVFInt8Type()->getId()) +
+        ", svf_ptr_type_id:" + std::to_string(getSVFPtrType()->getId()) + 
+        ", kind:" + std::to_string(getKind()) + 
+        ", is_single_val_ty:" + is_single_val_ty + 
+        ", byte_size:" + std::to_string(getByteSize()) +
+        ", single_and_width:" + std::to_string(getSignAndWidth()) + "})";
+        return queryStatement;
+    }
 };
 
 class SVFFunctionType : public SVFType
@@ -348,6 +404,11 @@ public:
     {
     }
 
+    SVFFunctionType(u32_t id, bool svt, u32_t byteSize)
+        : SVFType(svt, SVFFunctionTy, id, byteSize)
+    {
+    }
+
     static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFFunctionTy;
@@ -357,18 +418,29 @@ public:
         return retTy;
     }
 
+    const void setReturnType(const SVFType* rt)
+    {
+        retTy = rt;
+    }
+
     const std::vector<const SVFType*>& getParamTypes() const
     {
         return params;
     }
-
 
     bool isVarArg() const
     {
         return varArg;
     }
 
+    void addParamType(const SVFType* type) 
+    {
+        params.push_back(type);
+    }
+
     void print(std::ostream& os) const override;
+
+    std::string toDBString() const;
 };
 
 class SVFStructType : public SVFType
@@ -384,6 +456,8 @@ public:
         SVFType(false, SVFStructTy, i, byteSize), fields(f)
     {
     }
+
+    SVFStructType(u32_t i, bool svt, u32_t byteSize, std::string name) : SVFType(svt, SVFStructTy, i, byteSize),name(name) {}
 
     static inline bool classof(const SVFType* node)
     {
@@ -415,6 +489,13 @@ public:
     {
         return fields;
     }
+
+    void addFieldsType(const SVFType* type) 
+    {
+        fields.push_back(type);
+    }
+
+    std::string toDBString() const;
 };
 
 class SVFArrayType : public SVFType
@@ -428,6 +509,11 @@ public:
     SVFArrayType(u32_t i, u32_t byteSize = 1)
         : SVFType(false, SVFArrayTy, i, byteSize), numOfElement(0), typeOfElement(nullptr)
     {
+    }
+    SVFArrayType(u32_t id, bool svt, u32_t byteSize, unsigned elemNum)
+        : SVFType(svt, SVFArrayTy, id, byteSize), numOfElement(elemNum), typeOfElement(nullptr)
+    {
+        
     }
 
     static inline bool classof(const SVFType* node)
@@ -457,6 +543,21 @@ public:
         return numOfElement;
     }
 
+    std::string toDBString() const
+    {
+        std::string is_single_val_ty = isSingleValueType() ? "true" : "false";
+        const std::string queryStatement ="CREATE (n:SVFArrayType {id:" +std::to_string(getId()) +
+        ", svf_i8_type_id:" + std::to_string(getSVFInt8Type()->getId()) +
+        ", svf_ptr_type_id:" + std::to_string(getSVFPtrType()->getId()) + 
+        ", kind:" + std::to_string(getKind()) + 
+        ", stinfo_node_id:" + std::to_string(getTypeInfo()->getStinfoId()) +
+        ", is_single_val_ty:" + is_single_val_ty + 
+        ", byte_size:" + std::to_string(getByteSize()) +
+        ", num_of_element:" + std::to_string(getNumOfElement()) + 
+        ", type_of_element_node_type_id:" + std::to_string(getTypeOfElement()->getId()) + "})";
+        return queryStatement;
+    }
+
 
 };
 
@@ -468,6 +569,7 @@ private:
 
 public:
     SVFOtherType(u32_t i, bool isSingleValueTy, u32_t byteSize = 1) : SVFType(isSingleValueTy, SVFOtherTy, i, byteSize) {}
+    SVFOtherType(u32_t i, bool isSingleValueTy, u32_t byteSize, std::string repr) : SVFType(isSingleValueTy, SVFOtherTy, i, byteSize),repr(repr) {}
 
     static inline bool classof(const SVFType* node)
     {
@@ -494,6 +596,19 @@ public:
     }
 
     void print(std::ostream& os) const override;
+
+    std::string toDBString() const
+    {
+        std::string is_single_val_ty = isSingleValueType() ? "true" : "false";
+        const std::string queryStatement ="CREATE (n:SVFOtherType {id:" + std::to_string(getId()) +
+        ", svf_i8_type_id:" + std::to_string(getSVFInt8Type()->getId()) +
+        ", svf_ptr_type_id:" + std::to_string(getSVFPtrType()->getId()) + 
+        ", kind:" + std::to_string(getKind()) + 
+        ", is_single_val_ty:" + is_single_val_ty + 
+        ", byte_size:" + std::to_string(getByteSize()) +
+        ", repr:'" + getRepr() + "'})";
+        return queryStatement;
+    }
 };
 
 // TODO: be explicit that this is a pair of 32-bit unsigneds?
