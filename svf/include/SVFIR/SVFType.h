@@ -324,10 +324,11 @@ class SVFFunctionType : public SVFType
 private:
     const SVFType* retTy;
     std::vector<const SVFType*> params;
+    bool varArg;
 
 public:
-    SVFFunctionType(const SVFType* rt, const std::vector<const SVFType*>& p)
-        : SVFType(false, SVFFunctionTy, 1), retTy(rt), params(p)
+    SVFFunctionType(const SVFType* rt, const std::vector<const SVFType*>& p, bool isvararg)
+        : SVFType(false, SVFFunctionTy, 1), retTy(rt), params(p), varArg(isvararg)
     {
     }
 
@@ -343,6 +344,11 @@ public:
     const std::vector<const SVFType*>& getParamTypes() const
     {
         return params;
+    }
+
+
+    bool isVarArg() const {
+        return varArg;
     }
 
     void print(std::ostream& os) const override;
