@@ -347,7 +347,8 @@ public:
     }
 
 
-    bool isVarArg() const {
+    bool isVarArg() const
+    {
         return varArg;
     }
 
