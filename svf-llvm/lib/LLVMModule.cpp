@@ -1234,7 +1234,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         {
             paramTypes.push_back(getSVFType(t));
         }
-        svftype = new SVFFunctionType(getSVFType(ft->getReturnType()), paramTypes);
+        svftype = new SVFFunctionType(getSVFType(ft->getReturnType()), paramTypes, ft->isVarArg());
     }
     else if (const StructType* st = SVFUtil::dyn_cast<StructType>(T))
     {
