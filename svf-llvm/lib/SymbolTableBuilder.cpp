@@ -206,6 +206,15 @@ void SymbolTableBuilder::buildMemModel()
                 {
                     collectSym(sw->getCondition());
                 }
+                else if (const FreezeInst* fz = SVFUtil::dyn_cast<FreezeInst>(&inst))
+                {
+
+                    for (u32_t i = 0; i < fz->getNumOperands(); i++)
+                    {
+                        Value* opnd = inst.getOperand(i);
+                        collectSym(opnd);
+                    }
+                }
                 else if (isNonInstricCallSite(&inst))
                 {
 
