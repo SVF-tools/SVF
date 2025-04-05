@@ -243,6 +243,7 @@ if [[ ! -d "$LLVM_DIR" ]]; then
     if [[ ! -d "$LLVMHome" ]]; then
         if [[ "$sysOS" = "Darwin" ]]; then
             echo "Installing LLVM binary for $OSDisplayName"
+            brew update
             brew install llvm@${MajorLLVMVer}
             # check whether llvm is installed
             if [ $? -eq 0 ]; then

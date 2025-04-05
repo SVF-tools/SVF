@@ -38,7 +38,6 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           MajorLLVMVer=20
-          LLVMVer=${MajorLLVMVer}.1.0
           CODENAME=$(source /etc/os-release && echo "$VERSION_CODENAME")
           sudo apt-get update
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
