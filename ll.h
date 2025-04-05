@@ -15,10 +15,7 @@
 #ifndef BREAKCONSTANTGEPS_H
 #define BREAKCONSTANTGEPS_H
 
-#if LLVM_VERSION_MAJOR > 16
-#include <llvm/Passes/PassBuilder.h>  // For NPM infrastructure
-#include <llvm/Transforms/Utils.h>    // For UnifyFunctionExitNodesPass
-#endif
+#include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h> // Added for LLVM 20
 
 namespace SVF
 {
@@ -81,34 +78,17 @@ public:
             const Function& fun = *iter;
             if(fun.isDeclaration())
                 continue;
-#if LLVM_VERSION_MAJOR >= 12 && LLVM_VERSION_MAJOR <= 16
-            getUnifyExit(fun)->runOnFunction(const_cast<Function&>(fun));
-#else
-            // New Pass Manager (LLVM 20+)
-            llvm::PassBuilder PB;
-            llvm::FunctionPassManager FPM;
-            FPM.addPass(llvm::UnifyFunctionExitNodesPass());
-            llvm::LoopAnalysisManager LAM;
-            llvm::FunctionAnalysisManager FAM;
-            llvm::CGSCCAnalysisManager CGAM;
-            llvm::ModuleAnalysisManager MAM;
-            PB.registerModuleAnalyses(MAM);
-            PB.registerCGSCCAnalyses(CGAM);
-            PB.registerFunctionAnalyses(FAM);
-            PB.registerLoopAnalyses(LAM);
-            PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
-            FPM.run(const_cast<llvm::Function&>(fun), FAM);
-#endif
+            // Updated to use unique_ptr and new pass instance
+            std::unique_ptr<llvm::UnifyFunctionExitNodesPass> pass(getUnifyExit(fun));
+            pass->runOnFunction(const_cast<Function&>(fun));
         }
     }
-#if LLVM_VERSION_MAJOR >= 12 && LLVM_VERSION_MAJOR <= 16
     /// Get Unified Exit basic block node
-    inline UnifyFunctionExitNodes* getUnifyExit(const Function& fn)
+    inline llvm::UnifyFunctionExitNodesPass* getUnifyExit(const Function& /*fn*/)
     {
-        assert(!fn.isDeclaration() && "external function does not have DF");
-        return &getAnalysis<UnifyFunctionExitNodes>(const_cast<Function&>(fn));
+        // Updated to return new pass instance for LLVM 20
+        return new llvm::UnifyFunctionExitNodesPass();
     }
-#endif
 };
 
 } // End namespace SVF

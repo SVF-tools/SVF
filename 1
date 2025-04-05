@@ -476,7 +476,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
                 }
             }
 #else
-            // for LLVM 20+
+            // for LLVM 20+ using findDbgDeclares
             for (llvm::DbgDeclareInst *DDI : llvm::findDbgDeclares(const_cast<Instruction*>(inst)))
             {
                 llvm::DIVariable *DIVar = SVFUtil::cast<llvm::DIVariable>(DDI->getVariable());
@@ -530,12 +530,10 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
                 for (llvm::DIGlobalVariableExpression *GV : CUNode->getGlobalVariables())
                 {
                     llvm::DIGlobalVariable * DGV = GV->getVariable();
-
                     if(DGV->getName() == gvar->getName())
                     {
                         rawstr << "\"ln\": " << DGV->getLine() << ", \"fl\": \"" << DGV->getFilename().str() << "\"";
                     }
-
                 }
             }
         }
@@ -562,7 +560,6 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
         return "";
     return rawstr.str();
 }
-
 
 /*!
  * Get source code line number of a function according to debug info
