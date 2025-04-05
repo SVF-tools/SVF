@@ -40,7 +40,19 @@ jobs:
           sudo apt-get update
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev
+          sudo apt-get install -y cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev curl gnupg xz-utils
+
+          # Install Clang 20.1.0 from LLVM's official repository
+          sudo mkdir -p /etc/apt/keyrings
+          curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/llvm.gpg > /dev/null
+          # Note: As of now, Ubuntu 24.04 support might not be published yet by LLVM, but LLVM 20 packages for Ubuntu 22.04 (jammy) work fine on 24.04. You can switch to noble once it's officially supported.
+          echo "deb [signed-by=/etc/apt/keyrings/llvm.gpg] https://apt.llvm.org/jammy/ llvm-toolchain-jammy-20 main" | sudo tee /etc/apt/sources.list.d/llvm.list
+          sudo apt-get update
+          sudo apt-get install -y clang-20 lldb-20 lld-20
+
+          # Optionally set Clang 20 as default
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-20 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-20 100
 
       # build-svf
       - name: build-svf
