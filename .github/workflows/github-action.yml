@@ -37,12 +37,17 @@ jobs:
       - name: ubuntu-setup
         if: runner.os == 'Linux'
         run: |
+          export DEBIAN_FRONTEND=noninteractive
           MajorLLVMVer=20
           CODENAME=$(source /etc/os-release && echo "$VERSION_CODENAME")
           sudo apt-get update
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install -y cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev curl gnupg xz-utils
+          sudo apt-get install -y gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev curl gnupg xz-utils software-properties-common
+          curl -fsSL https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $CODENAME main" | sudo tee /etc/apt/sources.list.d/kitware.list > /dev/null
+          sudo apt-get update -y
+          sudo apt-get install cmake -y
 
           # Install Clang latest (20.1.0+) from LLVM's official repository
           sudo mkdir -p /etc/apt/keyrings

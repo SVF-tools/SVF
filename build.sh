@@ -12,7 +12,7 @@
 # If the LLVM_DIR variable is not set, LLVM will be downloaded or built from source.
 #
 # Dependencies include: build-essential libncurses5 libncurses-dev cmake zlib1g-dev
-set -e # exit on first error
+set -euo pipefail #exit on first error and strict checks
 
 jobs=8
 
@@ -39,6 +39,17 @@ SourceZ3="https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.8.zip"
 LLVMHome="llvm-${MajorLLVMVer}.0.0.obj"
 Z3Home="z3.obj"
 
+Z3_BIN="$Z3Home/bin"
+# Detect OS and set a display name
+sysOS="$(uname)"
+if [[ "$sysOS" == "Darwin" ]]; then
+    OSDisplayName="macOS"
+elif [[ "$sysOS" == "Linux" ]]; then
+    OSDisplayName="Ubuntu"
+else
+    echo "Unsupported OS: $sysOS"
+    exit 1
+fi
 
 # Parse arguments
 BUILD_TYPE='Release'
@@ -142,7 +153,9 @@ function build_z3_from_source {
 function build_llvm_from_source {
     mkdir "$LLVMHome"
     echo "Downloading LLVM source..."
-    generic_download_file "$SourceLLVM" llvm.zip
+    if ! generic_download_file "$SourceLLVM" llvm.zip; then
+        exit 1
+    fi
     check_unzip
     echo "Unzipping LLVM source..."
     mkdir llvm-source
@@ -239,7 +252,7 @@ function download_llvm_from_apt_repo() {
 ########
 # Download LLVM if need be.
 #######
-if [[ ! -d "$LLVM_DIR" ]]; then
+if [[ -z "${LLVM_DIR:-}" || ! -d "$LLVM_DIR" ]]; then
     if [[ ! -d "$LLVMHome" ]]; then
         if [[ "$sysOS" = "Darwin" ]]; then
             echo "Installing LLVM binary for $OSDisplayName"
@@ -259,12 +272,12 @@ if [[ ! -d "$LLVM_DIR" ]]; then
             echo "Downloading LLVM binary for $OSDisplayName"
             if ! generic_download_file "$urlLLVM" llvm.tar.xz; then
                 download_llvm_from_apt_repo
-                return
+            else
+                check_xz
+                echo "Unzipping llvm package..."
+                mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
+                rm llvm.tar.xz
             fi
-            check_xz
-            echo "Unzipping llvm package..."
-            mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
-            rm llvm.tar.xz
         fi
     fi
     export LLVM_DIR="$SVFHOME/$LLVMHome"
@@ -274,18 +287,19 @@ fi
 ########
 # Download Z3 if need be.
 #######
-if [[ ! -d "$Z3_DIR" ]]; then
+if [[ -z "${Z3_DIR:-}" || ! -d "$Z3_DIR" ]]; then
     if [[ ! -d "$Z3Home" ]]; then
         # M1 Macs give back arm64, some Linuxes can give aarch64.
         if [[ "$sysOS" = "Darwin" ]]; then
             echo "Downloading Z3 binary for $OSDisplayName"
+            brew update
             brew install z3
             if [ $? -eq 0 ]; then
-		      echo "z3 binary installation completed."
-	        else
-		      echo "z3 binary installation failed."
-		      exit 1
-	        fi
+                echo "z3 binary installation completed."
+            else
+                echo "z3 binary installation failed."
+                exit 1
+            fi
             mkdir -p $SVFHOME/$Z3Home
             ln -s $(brew --prefix z3)/* $SVFHOME/$Z3Home
         else
@@ -306,7 +320,7 @@ fi
 
 # Add LLVM & Z3 to $PATH and $LD_LIBRARY_PATH (prepend so that selected instances will be used first)
 PATH=$LLVM_DIR/bin:$Z3_DIR/bin:$PATH
-LD_LIBRARY_PATH=$LLVM_DIR/lib:$Z3_BIN/lib:$LD_LIBRARY_PATH
+LD_LIBRARY_PATH=$LLVM_DIR/lib:$Z3_BIN/lib:${LD_LIBRARY_PATH:-}
 
 echo "LLVM_DIR=$LLVM_DIR"
 echo "Z3_DIR=$Z3_DIR"
@@ -314,19 +328,15 @@ echo "Z3_DIR=$Z3_DIR"
 ########
 # Build SVF
 ########
-if [[ $1 =~ ^[Dd]ebug$ ]]; then
-    BUILD_TYPE='Debug'
-else
-    BUILD_TYPE='Release'
-fi
-BUILD_DIR="./${BUILD_TYPE}-build"
+# Always use $SVFHOME for deterministic path
+BUILD_DIR="${SVFHOME}/${BUILD_TYPE}-build"
 
 rm -rf "${BUILD_DIR}"
 mkdir "${BUILD_DIR}"
 # If you need shared libs, turn BUILD_SHARED_LIBS on
 cmake -D CMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}"   \
     -DSVF_ENABLE_ASSERTIONS:BOOL=true              \
-    -DSVF_SANITIZE="${SVF_SANITIZER}"              \
+    -DSVF_SANITIZE="${SVF_SANITIZER:-}"              \
     -DBUILD_SHARED_LIBS=${BUILD_DYN_LIB}            \
     -S "${SVFHOME}" -B "${BUILD_DIR}"
 cmake --build "${BUILD_DIR}" -j ${jobs}
