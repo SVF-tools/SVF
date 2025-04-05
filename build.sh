@@ -25,10 +25,10 @@ sysOS=$(uname -s)
 arch=$(uname -m)
 MajorLLVMVer=20
 LLVMVer=${MajorLLVMVer}.1.0
-UbuntuArmLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.0/llvm-${MajorLLVMVer}.0.0-ubuntu24-rtti-aarch64.tar.gz"
+UbuntuArmLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.0/llvm-${MajorLLVMVer}.1.0-ubuntu24-rtti-aarch64.tar.gz"
 UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-aarch64-linux-gnu.tar.xz"
-UbuntuLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.0/llvm-${MajorLLVMVer}.0.0-ubuntu24-rtti-x86-64.tar.gz"
-UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-linux-gnu-ubuntu-22.04.tar.xz"
+UbuntuLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.0/llvm-${MajorLLVMVer}.1.0-ubuntu24-rtti-x86-64.tar.gz"
+UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-linux-gnu-ubuntu-24.04.tar.xz"
 SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-${LLVMVer}.zip"
 UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-ubuntu-16.04.zip"
 UbuntuZ3Arm="https://github.com/SVF-tools/SVF-npm/raw/prebuilt-libs/z3-4.8.7-aarch64-ubuntu.zip"
@@ -71,7 +71,7 @@ fi
 function generic_download_file {
     if [[ $# -ne 2 ]]; then
         echo "$0: bad args to generic_download_file!"
-        exit 1
+        return 1
     fi
 
     if [[ -f "$2" ]]; then
@@ -81,7 +81,7 @@ function generic_download_file {
 
     local download_failed=false
     if type curl &> /dev/null; then
-        if ! curl -L "$1" -o "$2"; then
+        if ! curl -L --fail "$1" -o "$2"; then
             download_failed=true
         fi
     elif type wget &> /dev/null; then
@@ -90,13 +90,13 @@ function generic_download_file {
         fi
     else
         echo "Cannot find download tool. Please install curl or wget."
-        exit 1
+        return 1
     fi
 
     if $download_failed; then
         echo "Failed to download $1"
         rm -f "$2"
-        exit 1
+        return 1
     fi
 }
 
@@ -119,7 +119,9 @@ function check_xz {
 function build_z3_from_source {
     mkdir "$Z3Home"
     echo "Downloading Z3 source..."
-    generic_download_file "$SourceZ3" z3.zip
+    if ! generic_download_file "$SourceZ3" z3.zip; then
+	exit 1
+    fi
     check_unzip
     echo "Unzipping Z3 source..."
     mkdir z3-source
@@ -215,6 +217,28 @@ else
 fi
 
 ########
+# install LLVM from APT repository
+#######
+function download_llvm_from_apt_repo() {
+    echo "LLVM binary download failed. Falling back to APT install of Clang 20.1.0."
+
+    CODENAME=$(source /etc/os-release && echo "$VERSION_CODENAME")
+    sudo mkdir -p /etc/apt/keyrings
+    curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/llvm.gpg > /dev/null
+
+    echo "deb [signed-by=/etc/apt/keyrings/llvm.gpg] https://apt.llvm.org/"${CODENAME}"/ llvm-toolchain-"${CODENAME}"-"$MajorLLVMVer" main" | sudo tee /etc/apt/sources.list.d/llvm.list
+
+    sudo apt-get update -y
+    sudo apt-get install -y clang-"$MajorLLVMVer" lldb-"$MajorLLVMVer" lld-"$MajorLLVMVer" llvm-"$MajorLLVMVer" llvm-config-"$MajorLLVMVer" llvm-"$MajorLLVMVer"-dev
+
+    # Optionally set Clang 20 as default
+    sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-"$MajorLLVMVer" 100
+    sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-"$MajorLLVMVer" 100
+
+    echo "Clang "$LLVMVer" installed via APT repository fallback."
+}
+
+########
 # Download LLVM if need be.
 #######
 if [[ ! -d "$LLVM_DIR" ]]; then
@@ -234,7 +258,10 @@ if [[ ! -d "$LLVM_DIR" ]]; then
         else
             # everything else downloads pre-built lib includ osx "arm64"
             echo "Downloading LLVM binary for $OSDisplayName"
-            generic_download_file "$urlLLVM" llvm.tar.xz
+            if ! generic_download_file "$urlLLVM" llvm.tar.xz; then
+                download_llvm_from_apt_repo
+                return
+            fi
             check_xz
             echo "Unzipping llvm package..."
             mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
@@ -265,7 +292,9 @@ if [[ ! -d "$Z3_DIR" ]]; then
         else
             # everything else downloads pre-built lib
             echo "Downloading Z3 binary for $OSDisplayName"
-            generic_download_file "$urlZ3" z3.zip
+            if ! generic_download_file "$urlZ3" z3.zip; then
+                exit 1
+	    fi
             check_unzip
             echo "Unzipping z3 package..."
             unzip -q "z3.zip" && mv ./z3-* ./$Z3Home
