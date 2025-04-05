@@ -227,7 +227,7 @@ function download_llvm_from_apt_repo() {
     curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/llvm.gpg > /dev/null
     echo "deb [signed-by=/etc/apt/keyrings/llvm.gpg] https://apt.llvm.org/${CODENAME}/ llvm-toolchain-${CODENAME}-${MajorLLVMVer} main" | sudo tee /etc/apt/sources.list.d/llvm.list > /dev/null
     sudo apt-get update -y
-    sudo apt-get install -y clang-"$MajorLLVMVer" lldb-"$MajorLLVMVer" lld-"$MajorLLVMVer" llvm-"$MajorLLVMVer" llvm-config-"$MajorLLVMVer" llvm-"$MajorLLVMVer"-dev
+    sudo apt-get install -y clang-"$MajorLLVMVer" llvm-"$MajorLLVMVer" llvm-"$MajorLLVMVer"-dev
 
     # set Clang latest (20+) as default
     sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-"$MajorLLVMVer" 100
