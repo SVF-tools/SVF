@@ -1521,6 +1521,16 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
     call void @llvm.memcpy(ptr %inner, ptr %0, i64 24, i1 false)
 
     The base value for %0 is @i1
+
+  * Example 3:
+  *
+    @conststruct = internal global <{ [40 x i8], [4 x i8], [4 x i8], [2512 x i8] }>
+        <{ [40 x i8] undef, [4 x i8] zeroinitializer, [4 x i8] undef, [2512 x i8] zeroinitializer }>, align 8
+
+    %0 = load ptr, ptr getelementptr inbounds (<{ [40 x i8], [4 x i8], [4 x i8], [2512 x i8] }>,
+         ptr @conststruct, i64 0, i32 0, i64 16)
+
+    The base value for %0 is still %0
  */
 const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
 {
@@ -1556,9 +1566,17 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
                     if (auto *initializer = SVFUtil::dyn_cast<
                                             ConstantStruct>(glob->getInitializer()))
                     {
+                        /*
+                            *@conststruct = internal global <{ [40 x i8], [4 x i8], [4 x i8], [2512 x i8] }>
+                                <{ [40 x i8] undef, [4 x i8] zeroinitializer, [4 x i8] undef, [2512 x i8] zeroinitializer }>, align 8
+
+                            %0 = load ptr, ptr getelementptr inbounds (<{ [40 x i8], [4 x i8], [4 x i8], [2512 x i8] }>,
+                                    ptr @conststruct, i64 0, i32 0, i64 16)
+                            in this case, totalidx is 16 while initializer->getNumOperands() is 4, so we return value as the base
+                         */
+                        if (totalidx >= initializer->getNumOperands()) return value;
                         auto *ptrField = initializer->getOperand(totalidx);
-                        if (auto *ptrValue = SVFUtil::dyn_cast<llvm::GlobalVariable>(ptrField))
-                        {
+                        if (auto *ptrValue = SVFUtil::dyn_cast<llvm::GlobalVariable>(ptrField)) {
                             return ptrValue;
                         }
                     }
