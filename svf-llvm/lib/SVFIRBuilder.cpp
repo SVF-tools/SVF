@@ -1576,7 +1576,8 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
                          */
                         if (totalidx >= initializer->getNumOperands()) return value;
                         auto *ptrField = initializer->getOperand(totalidx);
-                        if (auto *ptrValue = SVFUtil::dyn_cast<llvm::GlobalVariable>(ptrField)) {
+                        if (auto *ptrValue = SVFUtil::dyn_cast<llvm::GlobalVariable>(ptrField))
+                        {
                             return ptrValue;
                         }
                     }
