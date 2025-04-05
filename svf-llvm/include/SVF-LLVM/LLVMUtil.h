@@ -312,10 +312,16 @@ inline const ConstantExpr* isUnaryConstantExpr(const Value* val)
 
 inline static DataLayout* getDataLayout(Module* mod)
 {
+#if LLVM_VERSION_MAJOR >= 12 && LLVM_VERSION_MAJOR <= 16
     static DataLayout *dl = nullptr;
     if (dl == nullptr)
         dl = new DataLayout(mod);
     return dl;
+#else
+    if (mod)
+        return new DataLayout(mod->getDataLayout());
+    return nullptr;
+#endif
 }
 
 /// Get the next instructions following control flow

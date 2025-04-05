@@ -43,6 +43,11 @@
 #include "Graphs/CallGraph.h"
 #include "Util/CallGraphBuilder.h"
 
+#if LLVM_VERSION_MAJOR > 16
+#include <llvm/Passes/PassBuilder.h>
+#include <llvm/Transforms/Utils.h>
+#endif
+
 using namespace std;
 using namespace SVF;
 
@@ -265,7 +270,23 @@ void LLVMModuleSet::prePassSchedule()
             Function &fun = *F;
             if (fun.isDeclaration())
                 continue;
+#if LLVM_VERSION_MAJOR <= 16
             p2->runOnFunction(fun);
+#else
+        llvm::PassBuilder PB;
+        llvm::FunctionPassManager FPM;
+        FPM.addPass(llvm::UnifyFunctionExitNodesPass());
+        llvm::LoopAnalysisManager LAM;
+        llvm::FunctionAnalysisManager FAM;
+        llvm::CGSCCAnalysisManager CGAM;
+        llvm::ModuleAnalysisManager MAM;
+        PB.registerModuleAnalyses(MAM);
+        PB.registerCGSCCAnalyses(CGAM);
+        PB.registerFunctionAnalyses(FAM);
+        PB.registerLoopAnalyses(LAM);
+        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+        FPM.run(fun, FAM);
+#endif
         }
     }
 }
@@ -496,11 +517,19 @@ void LLVMModuleSet::addSVFMain()
         // Collect ctor and dtor functions
         for (const GlobalVariable& global : mod.globals())
         {
+#if LLVM_VERSION_MAJOR >= 12 && LLVM_VERSION_MAJOR <= 16
             if (global.getName().equals(SVF_GLOBAL_CTORS) && global.hasInitializer())
+#else
+            if ((global.getName() == SVF_GLOBAL_CTORS) && global.hasInitializer())
+#endif
             {
                 ctor_funcs = getLLVMGlobalFunctions(&global);
             }
+#if LLVM_VERSION_MAJOR >= 12 && LLVM_VERSION_MAJOR <= 16
             else if (global.getName().equals(SVF_GLOBAL_DTORS) && global.hasInitializer())
+#else
+            else if ((global.getName() == SVF_GLOBAL_DTORS) && global.hasInitializer())
+#endif
             {
                 dtor_funcs = getLLVMGlobalFunctions(&global);
             }
@@ -511,9 +540,17 @@ void LLVMModuleSet::addSVFMain()
         {
             auto funName = func.getName();
 
+#if LLVM_VERSION_MAJOR >= 12 && LLVM_VERSION_MAJOR <= 16
             assert(!funName.equals(SVF_MAIN_FUNC_NAME) && SVF_MAIN_FUNC_NAME " already defined");
+#else
+            assert(!(funName == SVF_MAIN_FUNC_NAME) && SVF_MAIN_FUNC_NAME " already defined");
+#endif
 
+#if LLVM_VERSION_MAJOR >= 12 && LLVM_VERSION_MAJOR <= 16
             if (funName.equals("main"))
+#else
+            if (funName == "main")
+#endif
             {
                 orgMain = &func;
                 mainMod = &mod;
