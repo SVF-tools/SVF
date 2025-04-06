@@ -40,12 +40,54 @@ LLVMHome="llvm-${MajorLLVMVer}.0.0.obj"
 Z3Home="z3.obj"
 
 Z3_BIN="$Z3Home/bin"
+
+function installing_dependencies() {
+    local OSDisplayName="$1"
+
+    if [ -z "$OSDisplayName" ]; then
+        echo "Error: OSDisplayName argument is required"
+        return 1
+    fi
+
+    if [ "$OSDisplayName" = "Ubuntu" ]; then
+        echo "Installing dependencies for Ubuntu..."
+        # Update package list
+        sudo apt-get update
+        sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+
+        # Install basic development dependencies
+        sudo apt-get install -y build-essential libncurses5 libncurses-dev zlib1g-dev gcc g++ nodejs doxygen graphviz lcov libtinfo6 libzstd-dev curl gnupg xz-utils software-properties-common
+
+        # Get Ubuntu codename for cmake installation
+        CODENAME=$(source /etc/os-release && echo "$VERSION_CODENAME")
+
+        # Install cmake
+        echo "Installing cmake..."
+        curl -fsSL https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg > /dev/null
+        echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $CODENAME main" | sudo tee /etc/apt/sources.list.d/kitware.list > /dev/null
+        sudo apt-get update
+        sudo apt-get install -y cmake
+
+        echo "Dependencies installed successfully for Ubuntu"
+
+    else
+        if [ "$OSDisplayName" = "Darwin" ]; then
+            echo "Detected macOS system. Installing dependencies using Homebrew..."
+            # Install dependencies
+            brew install ncurses zlib cmake
+            echo "Dependencies installed successfully for macOS"
+        fi
+    fi
+}
+
 # Detect OS and set a display name
 sysOS="$(uname)"
 if [[ "$sysOS" == "Darwin" ]]; then
     OSDisplayName="macOS"
+    installing_dependencies "$OSDisplayName"
 elif [[ "$sysOS" == "Linux" ]]; then
     OSDisplayName="Ubuntu"
+    installing_dependencies "$OSDisplayName"
 else
     echo "Unsupported OS: $sysOS"
     exit 1
@@ -245,6 +287,7 @@ function download_llvm_from_apt_repo() {
     # set Clang latest (20+) as default
     sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-"$MajorLLVMVer" 100
     sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-"$MajorLLVMVer" 100
+    sudo update-alternatives --install /usr/bin/opt opt /usr/bin/opt-"$MajorLLVMVer" 100
 
     echo "Clang "$LLVMVer" installed via APT repository fallback."
 }
