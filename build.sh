@@ -53,10 +53,11 @@ function installing_dependencies() {
         echo "Installing dependencies for Ubuntu..."
         # Update package list
         sudo apt-get update
+        sudo apt-get install -y software-properties-common
         sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 
         # Install basic development dependencies
-        sudo apt-get install -y build-essential libncurses5 libncurses-dev zlib1g-dev gcc g++ nodejs doxygen graphviz lcov libtinfo6 libzstd-dev curl gnupg xz-utils software-properties-common
+        sudo apt-get install -y build-essential libncurses6 libncurses-dev zlib1g-dev gcc g++ nodejs doxygen graphviz lcov libtinfo6 libzstd-dev curl gnupg xz-utils
 
         # Get Ubuntu codename for cmake installation
         CODENAME=$(source /etc/os-release && echo "$VERSION_CODENAME")
