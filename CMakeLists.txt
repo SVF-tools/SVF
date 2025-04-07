@@ -6,6 +6,8 @@ project(SVF
   HOMEPAGE_URL "https://github.com/SVF-tools/SVF"
   LANGUAGES C CXX
 )
+# Export version info to parent
+set(SVF_VERSION "${PROJECT_VERSION}" PARENT_SCOPE)
 
 # Ensure installation directories like ${CMAKE_INSTALL_LIBDIR} are available
 include(GNUInstallDirs)
