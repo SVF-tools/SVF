@@ -69,16 +69,22 @@ AbstractInterpretation::~AbstractInterpretation()
     for (auto it: funcToWTO)
         delete it.second;
 
+    for (auto it: funcToIWTO)
+        delete it.second;
 }
 
+
+//Added for IWTO
 /**
- * @brief Mark recursive functions in the call graph
+ * @brief Compute IWTO for each function partition entry
  *
- * This function identifies and marks recursive functions in the call graph.
- * It does this by detecting cycles in the call graph's strongly connected components (SCC).
- * Any function found to be part of a cycle is marked as recursive.
+ * This function first identifies function partition entries (pair: <entry, function set>),
+ * and then compute the IWTO for each pair.
+ * It does this by detecting call graph's strongly connected components (SCC).
+ * Each SCC forms a function partition, and any function that is invoked from outside its SCC
+ * is identified as an entry of the function partition.
  */
-void AbstractInterpretation::initWTO()
+void AbstractInterpretation::initIWTO()
 {
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfir);
     // Detect if the call graph has cycles by finding its strongly connected components (SCC)
@@ -86,31 +92,62 @@ void AbstractInterpretation::initWTO()
     callGraphScc->find();
     CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
 
-    // Iterate through the call graph
     for (auto it = svfirCallGraph->begin(); it != svfirCallGraph->end(); it++)
     {
-        // Check if the current function is part of a cycle
-        if (callGraphScc->isInCycle(it->second->getId()))
-            recursiveFuns.insert(it->second->getFunction()); // Mark the function as recursive
-        if (it->second->getFunction()->isDeclaration())
+        const FunObjVar *fun = it->second->getFunction();
+        if (fun->isDeclaration())
             continue;
-        auto* wto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(it->second->getFunction()));
-        wto->init();
-        funcToWTO[it->second->getFunction()] = wto;
+
+        NodeID repNodeId = callGraphScc->repNode(it->second->getId());
+        auto cgSCCNodes = callGraphScc->subNodes(repNodeId);
+
+        // Identify if this node is an SCC entry (nodes who have incoming edges
+        // from nodes outside the SCC). Also identify non-recursive callsites.
+        bool isEntry = false;
+        if (it->second->getName() == "main")
+            isEntry = true;
+        for (auto inEdge: it->second->getInEdges())
+        {
+            NodeID srcNodeId = inEdge->getSrcID();
+            if (!cgSCCNodes.test(srcNodeId))
+            {
+                isEntry = true;
+                const CallICFGNode *callSite = nullptr;
+                if (inEdge->isDirectCallEdge())
+                    callSite = *(inEdge->getDirectCalls().begin());
+                else if (inEdge->isIndirectCallEdge())
+                    callSite = *(inEdge->getIndirectCalls().begin());
+                else
+                    assert(false && "A CallGraphEdge should "
+                                    "be either direct OR indirect!");
+                nonRecursiveCallSites.insert(
+                    {callSite, inEdge->getDstNode()->getFunction()->getId()});
+            }
+        }
+
+        // Compute IWTO for the function partition entered from each partition entry
+        if (isEntry)
+        {
+            ICFGIWTO* iwto = new ICFGIWTO(icfg, icfg->getFunEntryICFGNode(fun),
+                                          cgSCCNodes, svfirCallGraph);
+            iwto->init();
+            funcToIWTO[it->second->getFunction()] = iwto;
+        }
     }
 }
+
 /// Program entry
 void AbstractInterpretation::analyse()
 {
-    initWTO();
+    initIWTO();
     // handle Global ICFGNode of SVFModule
     handleGlobalNode();
     getAbsStateFromTrace(
         icfg->getGlobalICFGNode())[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
     if (const CallGraphNode* cgn = svfir->getCallGraph()->getCallGraphNode("main"))
     {
-        ICFGWTO* wto = funcToWTO[cgn->getFunction()];
-        handleWTOComponents(wto->getWTOComponents());
+        ICFGIWTO* iwto = funcToIWTO[cgn->getFunction()];
+        handleWTOComponents(iwto->getWTOComponents());
     }
 }
 
@@ -138,23 +175,57 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNo
     {
         if (abstractTrace.find(edge->getSrcNode()) != abstractTrace.end())
         {
-            const IntraCFGEdge *intraCfgEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge);
-            if (intraCfgEdge && intraCfgEdge->getCondition())
+
+            if (const IntraCFGEdge *intraCfgEdge =
+                    SVFUtil::dyn_cast<IntraCFGEdge>(edge))
             {
                 AbstractState tmpEs = abstractTrace[edge->getSrcNode()];
-                if (isBranchFeasible(intraCfgEdge, tmpEs))
+                if (intraCfgEdge->getCondition())
                 {
-                    workList.push_back(tmpEs);
+                    if (isBranchFeasible(intraCfgEdge, tmpEs))
+                    {
+                        workList.push_back(tmpEs);
+                    }
+                    else
+                    {
+                        // do nothing
+                    }
                 }
                 else
                 {
-                    // do nothing
+                    workList.push_back(tmpEs);
                 }
             }
-            else
+            else if (const CallCFGEdge *callCfgEdge =
+                         SVFUtil::dyn_cast<CallCFGEdge>(edge))
             {
-                workList.push_back(abstractTrace[edge->getSrcNode()]);
+                const CallICFGNode *callSite = callCfgEdge->getCallSite();
+                const FunObjVar *callee = icfgNode->getFun();
+                if (isRecursiveCall(callSite, callee))
+                {
+                    workList.push_back(
+                        abstractTrace[callCfgEdge->getSrcNode()]);
+                }
+                else
+                {
+                    if (callSite == callSiteStack.back())
+                    {
+                        workList.push_back(
+                            abstractTrace[callCfgEdge->getSrcNode()]);
+                    }
+                    else
+                    {
+                        // do nothing
+                    }
+                }
             }
+            else if (const RetCFGEdge *retCfgEdge =
+                         SVFUtil::dyn_cast<RetCFGEdge>(edge))
+            {
+                workList.push_back(abstractTrace[retCfgEdge->getSrcNode()]);
+            }
+            else
+                assert(false && "Unknown ICFGEdge type!");
         }
         else
         {
@@ -502,7 +573,7 @@ void AbstractInterpretation::handleSingletonWTO(const ICFGSingletonWTO *icfgSing
 }
 
 /**
- * @brief Hanlde two types of WTO components (singleton and cycle)
+ * @brief Handle two types of WTO components (singleton and cycle)
  */
 void AbstractInterpretation::handleWTOComponents(const std::list<const ICFGWTOComp*>& wtoComps)
 {
@@ -540,10 +611,10 @@ void AbstractInterpretation::handleCallSite(const ICFGNode* node)
         {
             extCallPass(callNode);
         }
-        else if (isRecursiveCall(callNode))
-        {
-            recursiveCallPass(callNode);
-        }
+//        else if (isRecursiveCall(callNode))
+//        {
+//            recursiveCallPass(callNode);
+//        }
         else if (isDirectCall(callNode))
         {
             directCallFunPass(callNode);
@@ -579,32 +650,14 @@ void AbstractInterpretation::extCallPass(const SVF::CallICFGNode *callNode)
     callSiteStack.pop_back();
 }
 
-bool AbstractInterpretation::isRecursiveCall(const SVF::CallICFGNode *callNode)
+bool AbstractInterpretation::isRecursiveCall(const SVF::CallICFGNode* callNode,
+                                                const FunObjVar* callee)
 {
-    const FunObjVar *callfun = callNode->getCalledFunction();
-    if (!callfun)
-        return false;
+    if (nonRecursiveCallSites.find({callNode, callee->getId()}) ==
+        nonRecursiveCallSites.end())
+        return true;
     else
-        return recursiveFuns.find(callfun) != recursiveFuns.end();
-}
-
-void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode)
-{
-    AbstractState& as = getAbsStateFromTrace(callNode);
-    SkipRecursiveCall(callNode);
-    const RetICFGNode *retNode = callNode->getRetICFGNode();
-    if (retNode->getSVFStmts().size() > 0)
-    {
-        if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(*retNode->getSVFStmts().begin()))
-        {
-            if (!retPE->getLHSVar()->isPointer() &&
-                    !retPE->getLHSVar()->isConstDataOrAggDataButNotNullPtr())
-            {
-                as[retPE->getLHSVarID()] = IntervalValue::top();
-            }
-        }
-    }
-    abstractTrace[retNode] = as;
+        return false;
 }
 
 bool AbstractInterpretation::isDirectCall(const SVF::CallICFGNode *callNode)
@@ -613,7 +666,7 @@ bool AbstractInterpretation::isDirectCall(const SVF::CallICFGNode *callNode)
     if (!callfun)
         return false;
     else
-        return funcToWTO.find(callfun) != funcToWTO.end();
+        return funcToIWTO.find(callfun) != funcToIWTO.end();
 }
 void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode)
 {
@@ -622,8 +675,12 @@ void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode
 
     abstractTrace[callNode] = as;
 
-    const FunObjVar *callfun =callNode->getCalledFunction();
-    ICFGWTO* wto = funcToWTO[callfun];
+    const FunObjVar *callFun =callNode->getCalledFunction();
+
+    if (isRecursiveCall(callNode, callFun))
+        return;
+
+    ICFGIWTO* wto = funcToIWTO[callFun];
     handleWTOComponents(wto->getWTOComponents());
 
     callSiteStack.pop_back();
@@ -651,13 +708,17 @@ void AbstractInterpretation::indirectCallFunPass(const SVF::CallICFGNode *callNo
     AbstractValue Addrs = as[call_id];
     NodeID addr = *Addrs.getAddrs().begin();
     SVFVar *func_var = svfir->getGNode(AbstractState::getInternalID(addr));
-    if(const FunObjVar*funObjVar = SVFUtil::dyn_cast<FunObjVar>(func_var))
+
+    if(const FunObjVar* funObjVar = SVFUtil::dyn_cast<FunObjVar>(func_var))
     {
+        if (isRecursiveCall(callNode, funObjVar))
+            return;
+
         const FunObjVar* callfun = funObjVar->getFunction();
         callSiteStack.push_back(callNode);
         abstractTrace[callNode] = as;
 
-        ICFGWTO* wto = funcToWTO[callfun];
+        ICFGIWTO* wto = funcToIWTO[callfun];
         handleWTOComponents(wto->getWTOComponents());
         callSiteStack.pop_back();
         // handle Ret node
@@ -771,60 +832,6 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
     }
     else
         assert(false && "implement this part");
-}
-
-
-void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
-{
-    AbstractState& as = getAbsStateFromTrace(callNode);
-    const RetICFGNode *retNode = callNode->getRetICFGNode();
-    if (retNode->getSVFStmts().size() > 0)
-    {
-        if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(*retNode->getSVFStmts().begin()))
-        {
-            AbstractState as;
-            if (!retPE->getLHSVar()->isPointer() && !retPE->getLHSVar()->isConstDataOrAggDataButNotNullPtr())
-                as[retPE->getLHSVarID()] = IntervalValue::top();
-        }
-    }
-    if (!retNode->getOutEdges().empty())
-    {
-        if (retNode->getOutEdges().size() == 1)
-        {
-
-        }
-        else
-        {
-            return;
-        }
-    }
-    FIFOWorkList<const SVFBasicBlock *> blkWorkList;
-    FIFOWorkList<const ICFGNode *> instWorklist;
-    for (const SVFBasicBlock * bb: callNode->getCalledFunction()->getReachableBBs())
-    {
-        for (const ICFGNode* node: bb->getICFGNodeList())
-        {
-            for (const SVFStmt *stmt: node->getSVFStmts())
-            {
-                if (const StoreStmt *store = SVFUtil::dyn_cast<StoreStmt>(stmt))
-                {
-                    const SVFVar *rhsVar = store->getRHSVar();
-                    u32_t lhs = store->getLHSVarID();
-                    if (as.inVarToAddrsTable(lhs))
-                    {
-                        if (!rhsVar->isPointer() && !rhsVar->isConstDataOrAggDataButNotNullPtr())
-                        {
-                            const AbstractValue &addrs = as[lhs];
-                            for (const auto &addr: addrs.getAddrs())
-                            {
-                                as.store(addr, IntervalValue::top());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
 // count the size of memory map

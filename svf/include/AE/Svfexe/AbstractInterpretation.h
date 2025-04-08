@@ -34,7 +34,6 @@
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "Util/SVFBugReport.h"
 #include "WPA/Andersen.h"
-
 namespace SVF
 {
 class AbstractInterpretation;
@@ -135,8 +134,8 @@ private:
     /// Global ICFGNode is handled at the entry of the program,
     virtual void handleGlobalNode();
 
-    /// Mark recursive functions in the call graph
-    void initWTO();
+    /// Compute IWTO for each function partition entry
+    void initIWTO();
 
     /**
      * Check if execution state exist by merging states of predecessor nodes
@@ -186,13 +185,6 @@ private:
      * @param stmt SVFStatement which is a value flow of instruction
      */
     virtual void handleSVFStatement(const SVFStmt* stmt);
-
-    /**
-     * Check if this callnode is recursive call and skip it.
-     *
-     * @param callnode CallICFGNode which calls a recursive function
-     */
-    virtual void SkipRecursiveCall(const CallICFGNode* callnode);
 
 
     /**
@@ -252,6 +244,8 @@ private:
 
     std::vector<const CallICFGNode*> callSiteStack;
     Map<const FunObjVar*, ICFGWTO*> funcToWTO;
+    Map<const FunObjVar*, ICFGIWTO*> funcToIWTO;
+    Set<std::pair<const CallICFGNode*, NodeID>> nonRecursiveCallSites;
     Set<const FunObjVar*> recursiveFuns;
 
 
@@ -282,8 +276,7 @@ private:
     // helper functions in handleCallSite
     virtual bool isExtCall(const CallICFGNode* callNode);
     virtual void extCallPass(const CallICFGNode* callNode);
-    virtual bool isRecursiveCall(const CallICFGNode* callNode);
-    virtual void recursiveCallPass(const CallICFGNode* callNode);
+    virtual bool isRecursiveCall(const CallICFGNode* callNode, const FunObjVar *);
     virtual bool isDirectCall(const CallICFGNode* callNode);
     virtual void directCallFunPass(const CallICFGNode* callNode);
     virtual bool isIndirectCall(const CallICFGNode* callNode);
