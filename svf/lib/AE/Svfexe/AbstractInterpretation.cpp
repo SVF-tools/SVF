@@ -112,6 +112,8 @@ void AbstractInterpretation::analyse()
         ICFGWTO* wto = funcToWTO[cgn->getFunction()];
         handleWTOComponents(wto->getWTOComponents());
     }
+    // Dump the entire graph with filename and detailed information
+    svfir->dump("svfir_graph.dot");
 }
 
 /// handle global node
@@ -922,6 +924,7 @@ void AbstractInterpretation::collectCheckPoint()
     // traverse every ICFGNode
     Set<std::string> ae_checkpoint_names = {"svf_assert"};
     Set<std::string> buf_checkpoint_names = {"UNSAFE_BUFACCESS", "SAFE_BUFACCESS"};
+    Set<std::string> nullptr_checkpoint_names = {"UNSAFE_LOAD", "SAFE_LOAD"};
 
     for (auto it = svfir->getICFG()->begin(); it != svfir->getICFG()->end(); ++it)
     {
@@ -939,6 +942,14 @@ void AbstractInterpretation::collectCheckPoint()
                 {
                     if (buf_checkpoint_names.find(fun->getName()) !=
                             buf_checkpoint_names.end())
+                    {
+                        checkpoints.insert(call);
+                    }
+                }
+                if (Options::NullptrDerefCheck())
+                {
+                    if (nullptr_checkpoint_names.find(fun->getName()) !=
+                            nullptr_checkpoint_names.end())
                     {
                         checkpoints.insert(call);
                     }
@@ -1352,6 +1363,7 @@ void AbstractInterpretation::updateStateOnStore(const StoreStmt *store)
     u32_t rhs = store->getRHSVarID();
     u32_t lhs = store->getLHSVarID();
     as.storeValue(lhs, as[rhs]);
+
 }
 
 void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)

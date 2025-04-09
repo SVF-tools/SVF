@@ -312,6 +312,25 @@ public:
 
     }
 
+    inline void allocate(NodeID id)
+    {
+        AddressValue::Allocate(id);
+    }
+
+    inline void free(NodeID id)
+    {
+        
+        for (auto addr : (*this)[id].getAddrs())
+        {
+            AbstractValue  val = load(addr);
+            NodeID addrId = getInternalID(addr);
+            if(AddressValue::isAllocated(addrId))
+            {
+                AddressValue::Free(addrId);
+            }   
+        }
+    }
+
 
     void printAbstractState() const;
 

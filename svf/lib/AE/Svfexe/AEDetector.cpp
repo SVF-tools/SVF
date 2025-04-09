@@ -28,8 +28,14 @@
 #include <AE/Svfexe/AEDetector.h>
 #include <AE/Svfexe/AbsExtAPI.h>
 #include <AE/Svfexe/AbstractInterpretation.h>
+#include "AE/Core/AddressValue.h"
 
 using namespace SVF;
+
+namespace SVF
+{
+std::map<NodeID, bool> AddressValue::_NodeAllocationStatus;
+}
 
 /**
  * @brief Detects buffer overflow issues within a given ICFG node.
@@ -52,6 +58,7 @@ void BufOverflowDetector::detect(AbstractState& as, const ICFGNode* node)
             {
                 SVFIR* svfir = PAG::getPAG();
                 NodeID lhs = gep->getLHSVarID();
+         
                 NodeID rhs = gep->getRHSVarID();
 
                 // Update the GEP object offset from its base
@@ -497,6 +504,234 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
         {
             return false;
         }
+    }
+    return true;
+}
+
+void NullptrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
+    if (!SVFUtil::isa<CallICFGNode>(node)){
+        for (const auto& stmt: node->getSVFStmts()) {
+            if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt)) {
+                SVFVar* lhs = gep->getLHSVar();
+                SVFVar* rhs = gep->getRHSVar();
+                if ( !canSafelyDerefPtr(as, lhs) || !canSafelyDerefPtr(as, rhs)) {
+                    AEException bug(stmt->toString());
+                    addBugToReporter(bug, stmt->getICFGNode());
+                }
+            }
+            else if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt)) {
+                SVFVar* rhs = load->getRHSVar();
+                if ( !canSafelyDerefPtr(as, rhs)) {
+                    AEException bug(stmt->toString());
+                    addBugToReporter(bug, stmt->getICFGNode());
+                }
+            }
+            else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt)) {
+                SVFVar* lhs = store->getLHSVar();
+                if ( !canSafelyDerefPtr(as, lhs)) {
+                    AEException bug(stmt->toString());
+                    addBugToReporter(bug, stmt->getICFGNode());
+                }
+            }
+        }
+    }
+    else {
+        detectExtAPI(as, SVFUtil::cast<CallICFGNode>(node));
+    }
+
+}
+
+
+void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode){
+// get function name
+     std::string funcName = callNode->getCalledFunction()->getName();
+     if (funcName == "UNSAFE_LOAD")
+     {
+         // void UNSAFE_LOAD(void* ptr);
+         AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
+         if (callNode->arg_size() < 1)
+             return;
+         AbstractState& as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
+         
+         const SVFVar* arg0Val = callNode->getArgument(0);
+         bool isSafe = canSafelyDerefPtr(as, arg0Val);
+         if (!isSafe) {
+            std::cout << "detect null pointer deference success: " << callNode->toString() << std::endl;
+            return;
+         }
+         else
+         {
+            std::string err_msg = "this UNSAFE_LOAD should be a null pointer dereference but not detected. Pos: ";
+            err_msg += callNode->getSourceLoc();
+            std::cerr << err_msg << std::endl;
+            assert(false);
+         }
+     }
+     else if (funcName == "SAFE_LOAD")
+     {
+         // void SAFE_LOAD(void* ptr);
+         AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
+         if (callNode->arg_size() < 1) return;
+         AbstractState&as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
+         const SVFVar* arg0Val = callNode->getArgument(0);
+         bool isSafe = canSafelyDerefPtr(as, arg0Val);
+         if (isSafe) {
+             std::cout << "safe load pointer success: " << callNode->toString() << std::endl;
+             return;
+         }
+         else
+         {
+             std::string err_msg = "this SAFE_LOAD should be a safe but a null pointer dereference detected. Pos: ";
+             err_msg += callNode->getSourceLoc();
+             std::cerr << err_msg << std::endl;
+             assert(false);
+         }
+     }
+}
+
+
+void NullptrDerefDetector::initExtAPINullptrDerefCheckRules(){
+    // String manipulation functions
+    // Check for potential null pointer dereference in string operations
+    extAPINullptrDerefCheckRules["strlen"] = {{0}};        // First argument could be null
+    extAPINullptrDerefCheckRules["strcpy"] = {{0}, {1}};   // Both dest and src could be null
+    extAPINullptrDerefCheckRules["strncpy"] = {{0}, {1}};  // Both dest and src could be null
+    extAPINullptrDerefCheckRules["strcat"] = {{0}, {1}};   // Both dest and src could be null
+    extAPINullptrDerefCheckRules["strncat"] = {{0}, {1}};  // Both dest and src could be null
+    extAPINullptrDerefCheckRules["strcmp"] = {{0}, {1}};   // Both strings could be null
+    extAPINullptrDerefCheckRules["strncmp"] = {{0}, {1}};  // Both strings could be null
+    extAPINullptrDerefCheckRules["strchr"] = {{0}};        // String argument could be null
+    extAPINullptrDerefCheckRules["strrchr"] = {{0}};       // String argument could be null
+    extAPINullptrDerefCheckRules["strstr"] = {{0}, {1}};   // Both haystack and needle could be null
+
+    // Memory manipulation functions
+    // Check for potential null pointer dereference in memory operations
+    extAPINullptrDerefCheckRules["memcpy"] = {{0}, {1}};   // Both dest and src could be null
+    extAPINullptrDerefCheckRules["memmove"] = {{0}, {1}};  // Both dest and src could be null
+    extAPINullptrDerefCheckRules["memset"] = {{0}};        // Destination could be null
+    extAPINullptrDerefCheckRules["memcmp"] = {{0}, {1}};   // Both buffers could be null
+
+    // File I/O operations
+    // Check for potential null pointer dereference in file operations
+    extAPINullptrDerefCheckRules["fgets"] = {{0}};         // Buffer could be null
+    extAPINullptrDerefCheckRules["fputs"] = {{0}};         // String could be null
+    extAPINullptrDerefCheckRules["fread"] = {{0}};         // Buffer could be null
+    extAPINullptrDerefCheckRules["fwrite"] = {{0}};        // Buffer could be null
+
+    // Formatted I/O functions
+    // Check for potential null pointer dereference in formatting operations
+    extAPINullptrDerefCheckRules["sprintf"] = {{0}};       // Buffer could be null
+    extAPINullptrDerefCheckRules["snprintf"] = {{0}};      // Buffer could be null
+    extAPINullptrDerefCheckRules["sscanf"] = {{0}};        // Input string could be null
+
+    // LLVM specific memory operations
+    // Check for potential null pointer dereference in LLVM intrinsic functions
+    extAPINullptrDerefCheckRules["llvm.memcpy.p0i8.p0i8.i64"] = {{0}, {1}};    // Both pointers could be null
+    extAPINullptrDerefCheckRules["llvm.memmove.p0i8.p0i8.i64"] = {{0}, {1}};   // Both pointers could be null
+    extAPINullptrDerefCheckRules["llvm.memset.p0i8.i64"] = {{0}};              // Destination could be null
+
+    // Fortified versions of standard library functions
+    // Check for potential null pointer dereference in security-enhanced functions
+    extAPINullptrDerefCheckRules["__strcpy_chk"] = {{0}, {1}};     // Both dest and src could be null
+    extAPINullptrDerefCheckRules["__strncpy_chk"] = {{0}, {1}};    // Both dest and src could be null
+    extAPINullptrDerefCheckRules["__strcat_chk"] = {{0}, {1}};     // Both dest and src could be null
+    extAPINullptrDerefCheckRules["__memcpy_chk"] = {{0}, {1}};     // Both dest and src could be null
+    extAPINullptrDerefCheckRules["__memmove_chk"] = {{0}, {1}};    // Both dest and src could be null
+    extAPINullptrDerefCheckRules["__memset_chk"] = {{0}};          // Destination could be null
+
+    // Wide character string operations
+    // Check for potential null pointer dereference in wide string operations
+    extAPINullptrDerefCheckRules["wcslen"] = {{0}};        // Wide string could be null
+    extAPINullptrDerefCheckRules["wcscpy"] = {{0}, {1}};   // Both dest and src could be null
+    extAPINullptrDerefCheckRules["wcsncpy"] = {{0}, {1}};  // Both dest and src could be null
+    extAPINullptrDerefCheckRules["wcscat"] = {{0}, {1}};   // Both dest and src could be null
+    extAPINullptrDerefCheckRules["wcsncat"] = {{0}, {1}};  // Both dest and src could be null
+
+}
+
+
+void NullptrDerefDetector::detectExtAPI(AbstractState& as, const CallICFGNode* call) {
+    assert(call->getCalledFunction() && "FunObjVar* is nullptr");
+    AbsExtAPI::ExtAPIType extType = AbsExtAPI::UNCLASSIFIED;
+    for (const std::string &annotation: ExtAPI::getExtAPI()->getExtFuncAnnotations(call->getCalledFunction())){
+        if (annotation.find("MEMCPY") != std::string::npos) 
+            extType = AbsExtAPI::MEMCPY;
+        else if (annotation.find("MEMSET") != std::string::npos)
+            extType = AbsExtAPI::MEMSET;
+        else if (annotation.find("STRCPY") != std::string::npos)
+            extType = AbsExtAPI::STRCPY;
+        else if (annotation.find("STRCAT") != std::string::npos)
+            extType = AbsExtAPI::STRCAT;
+    }
+    if (extType == AbsExtAPI::MEMCPY)
+    {
+        if(extAPINullptrDerefCheckRules.count(call->getCalledFunction()->getName()) == 0) {
+            SVFUtil::errs() << "No null pointer dereference check rules for " << call->getCalledFunction()->getName() << "\n";
+            return;
+        }
+        std::vector<u32_t> args = extAPINullptrDerefCheckRules.at(call->getCalledFunction()->getName());
+        for (const auto &arg: args) {
+            const SVFVar* argVal = call->getArgument(arg);
+            if (!canSafelyDerefPtr(as, argVal)) {
+                AEException bug(call->toString());
+                addBugToReporter(bug, call);
+            }
+        }
+    }
+    else if (extType == AbsExtAPI::MEMSET) {
+        if (extAPINullptrDerefCheckRules.count(call->getCalledFunction()->getName()) == 0) {
+            SVFUtil::errs() << "No null pointer dereference check rules for " << call->getCalledFunction()->getName() << "\n";
+            return;
+        }
+        std::vector<u32_t> args = extAPINullptrDerefCheckRules.at(call->getCalledFunction()->getName());
+        for (const auto &arg: args) {
+            const SVFVar* argVal = call->getArgument(arg);
+            if (!canSafelyDerefPtr(as, argVal)) {
+                AEException bug(call->toString());
+                addBugToReporter(bug, call);
+            }
+        }
+    }
+    else if (extType == AbsExtAPI::STRCPY) {
+        if (extAPINullptrDerefCheckRules.count(call->getCalledFunction()->getName()) == 0) {
+            SVFUtil::errs() << "No null pointer dereference check rules for " << call->getCalledFunction()->getName() << "\n";
+            return;
+        }
+        std::vector<u32_t> args = extAPINullptrDerefCheckRules.at(call->getCalledFunction()->getName());
+        for (const auto &arg: args) {
+            const SVFVar* argVal = call->getArgument(arg);
+            if (!canSafelyDerefPtr(as, argVal)) {
+                AEException bug(call->toString());
+                addBugToReporter(bug, call);
+            }
+        }
+    }
+    else if (extType == AbsExtAPI::STRCAT) {
+        if (extAPINullptrDerefCheckRules.count(call->getCalledFunction()->getName()) == 0) {
+            SVFUtil::errs() << "No null pointer dereference check rules for " << call->getCalledFunction()->getName() << "\n";
+            return;
+        }
+        std::vector<u32_t> args = extAPINullptrDerefCheckRules.at(call->getCalledFunction()->getName());
+        for (const auto &arg: args) {
+            const SVFVar* argVal = call->getArgument(arg);
+            if (!canSafelyDerefPtr(as, argVal)) {
+                AEException bug(call->toString());
+                addBugToReporter(bug, call);
+            }
+        }
+    }
+}
+
+
+bool NullptrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVFVar* value)
+{
+    NodeID value_id = value->getId();
+    AbstractValue& AbsVal = as[value_id];
+    if (isUninit(AbsVal)) return false;
+    if (!AbsVal.isAddr()) return true;    // Loading an Interval Value
+    for (const auto &addr: AbsVal.getAddrs()) {
+        NodeID addrId = AbstractState::getInternalID(addr);
+        if(isDangling(addrId)) return false;
     }
     return true;
 }
