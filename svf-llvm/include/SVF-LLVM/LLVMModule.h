@@ -413,7 +413,7 @@ public:
     // Does (F) allocate a new object and assign it to one of its arguments?
     bool is_arg_alloc(const Function *F);
 
-    // Does (F) allocate a new stack object and return it?
+    // Does (F) return a pointer to an unknown object with static lifetime?
     bool is_static_ret(const Function *F);
 
     // Get the position of argument which holds the new object
