@@ -9,7 +9,7 @@
 
         ALLOC_HEAP_RET,    // returns a pointer to a newly allocated heap object
         ALLOC_HEAP_ARGi    // stores a pointer to an allocated object in *argi
-        ALLOC_STACK_RET,   // returns a pointer to a newly allocated stack object
+        STATIC_RET,        // returns a pointer to an external object with static lifetime
         REALLOC_HEAP_RET,  
         MEMSET,            // memcpy() operations
         MEMCPY,            // memset() operations
@@ -1045,241 +1045,241 @@ void _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcRKS3_(void **arg
     *arg0 = arg1;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 const unsigned short **__ctype_b_loc(void)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 int **__ctype_tolower_loc(void)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 int **__ctype_toupper_loc(void)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 int *__errno_location(void)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 int * __h_errno_location(void)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 void* __res_state(void)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 char *asctime(const void *timeptr)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 char * bindtextdomain(const char * domainname, const char * dirname)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 char * bind_textdomain_codeset(const char * domainname, const char * codeset)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 char *ctermid(char *s)
 {
     return s;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 char * dcgettext(const char * domainname, const char * msgid, int category)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 char * dgettext(const char * domainname, const char * msgid)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 char * dngettext(const char * domainname, const char * msgid, const char * msgid_plural, unsigned long int n)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct group *getgrgid(unsigned int gid)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct group *getgrnam(const char *name)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct hostent *gethostbyaddr(const void *addr, unsigned int len, int type)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct hostent *gethostbyname(const char *name)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct hostent *gethostbyname2(const char *name, int af)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct mntent *getmntent(void *stream)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct protoent *getprotobyname(const char *name)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct protoent *getprotobynumber(int proto)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct passwd *getpwent(void)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct passwd *getpwnam(const char *name)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct passwd *getpwuid(unsigned int uid)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct servent *getservbyname(const char *name, const char *proto)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct servent *getservbyport(int port, const char *proto)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct spwd *getspnam(const char *name)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 char * gettext(const char * msgid)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct tm *gmtime(const void *timer)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 const char *gnu_get_libc_version(void)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 const char * gnutls_check_version(const char * req_version)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct lconv *localeconv(void)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 struct tm *localtime(const void *timer)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 char * ngettext(const char * msgid, const char * msgid_plural, unsigned long int n)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 void *pango_cairo_font_map_get_default(void)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 char *re_comp(const char *regex)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 char *setlocale(int category, const char *locale)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 char *tgoto(const char *cap, int col, int row)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 char *tparm(char *str, ...)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+__attribute__((annotate("STATIC_RET")))
 const char *zError(int a)
 {
     return NULL;

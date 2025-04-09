@@ -228,9 +228,9 @@ bool ExtAPI::is_arg_alloc(const FunObjVar* F)
     return F && hasExtFuncAnnotation(F, "ALLOC_HEAP_ARG");
 }
 
-bool ExtAPI::is_alloc_stack_ret(const FunObjVar* F)
+bool ExtAPI::is_static_ret(const FunObjVar* F)
 {
-    return F && hasExtFuncAnnotation(F, "ALLOC_STACK_RET");
+    return F && hasExtFuncAnnotation(F, "STATIC_RET");
 }
 
 // Get the position of argument which holds the new object

@@ -1466,9 +1466,9 @@ bool LLVMModuleSet::is_arg_alloc(const Function* F)
     return F && hasExtFuncAnnotation(F, "ALLOC_HEAP_ARG");
 }
 
-bool LLVMModuleSet::is_alloc_stack_ret(const Function* F)
+bool LLVMModuleSet::is_static_ret(const Function* F)
 {
-    return F && hasExtFuncAnnotation(F, "ALLOC_STACK_RET");
+    return F && hasExtFuncAnnotation(F, "STATIC_RET");
 }
 
 // Get the position of argument which holds the new object
