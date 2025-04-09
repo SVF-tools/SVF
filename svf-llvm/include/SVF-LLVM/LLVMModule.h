@@ -414,7 +414,7 @@ public:
     bool is_arg_alloc(const Function *F);
 
     // Does (F) allocate a new stack object and return it?
-    bool is_alloc_stack_ret(const Function *F);
+    bool is_static_ret(const Function *F);
 
     // Get the position of argument which holds the new object
     s32_t get_alloc_arg_pos(const Function *F);
