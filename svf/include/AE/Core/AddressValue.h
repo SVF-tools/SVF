@@ -35,14 +35,10 @@
 // the address of the black hole, getVirtualMemAddress(2);
 #define BlackHoleAddr (0x7f000000 + 2)
 
-// // the address reserved for allocated address.
-//  #define AllocAddr (0x7f000000 + 3)
-//  // the address reserved for the dangling pointer.
-//  #define FreeAddr (0x7f000000 + 4)
 
 #include "Util/GeneralType.h"
 #include <sstream>
-#include <map>
+
 namespace SVF
 {
 class AddressValue
@@ -51,7 +47,7 @@ public:
     typedef Set<u32_t> AddrSet;
 private:
     AddrSet _addrs;
-    static std::map<NodeID, bool> _NodeAllocationStatus;
+    static Map<NodeID, bool> _NodeAllocationStatusMap;
 public:
     /// Default constructor
     AddressValue() {}
@@ -183,36 +179,31 @@ public:
     {
         return empty();
     }
+
     static void Allocate (NodeID id)
     {
         
-        _NodeAllocationStatus[id] = true;
+        _NodeAllocationStatusMap[id] = true;
  
     }
+
     static void Free (NodeID id)
     {
         
-        _NodeAllocationStatus[id] = false;
+        _NodeAllocationStatusMap[id] = false;
 
     }
+
     static bool isAllocated(NodeID id) 
     {
-        return _NodeAllocationStatus.find(id) != _NodeAllocationStatus.end() && _NodeAllocationStatus[id];
+        return _NodeAllocationStatusMap.find(id) != _NodeAllocationStatusMap.end() && _NodeAllocationStatusMap[id];
     }
+
     static bool isFree(NodeID id) 
     {
-        return _NodeAllocationStatus.find(id) != _NodeAllocationStatus.end() && !_NodeAllocationStatus[id];
+        return _NodeAllocationStatusMap.find(id) != _NodeAllocationStatusMap.end() && !_NodeAllocationStatusMap[id];
     }
-    //  inline bool isAllocated() const
-    //  {
-    //      return _addrs.find(AllocAddr) != _addrs.end() && !isFree();
-    //  }
- 
-    //  inline bool isFree() const
-    //  {
-    //      return _addrs.find(FreeAddr) != _addrs.end();
-    //  }
-
+    
     inline void setTop()
     {
         *this = AddressValue(BlackHoleAddr);

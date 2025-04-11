@@ -329,28 +329,44 @@ public:
         kind = NULLPTR_DEREF;
         initExtAPINullptrDerefCheckRules();
     }
+
     ~NullptrDerefDetector() = default;
 
     static bool classof(const AEDetector* detector)
     {
         return detector->getKind() == AEDetector::NULLPTR_DEREF;
     }
+
     /**
      * @brief Initializes external API nullptr dereference check rules.
      */
     void initExtAPINullptrDerefCheckRules();
+
     /**
      * @brief Detects nullptr dereferences issues within a node.
      * @param as Reference to the abstract state.
      * @param node Pointer to the ICFG node.
      */
     void detect(AbstractState& as, const ICFGNode* node);
+
     /**
      * @brief Handles external API calls related to nullptr dereferences.
      * @param call Pointer to the call ICFG node.
      */
     void handleStubFunctions(const CallICFGNode* call);
+
     /**
+     * @brief Checks if an Abstract Value is uninitialized.
+     * @param v The Abstract Value to check.
+     * @return True if the value is uninitialized, false otherwise.
+     */
+    bool isUninit(AbstractValue v) 
+    {
+        bool is = (v.getAddrs().isBottom()) && (v.getInterval().isBottom());
+        return is;
+    }
+
+     /**
      * @brief Adds a bug to the reporter based on an exception.
      * @param e The exception that was thrown.
      * @param node Pointer to the ICFG node where the bug was detected.
@@ -379,27 +395,6 @@ public:
         recoder.addAbsExecBug(GenericBug::FULLNULLPTRDEREFERENCE, eventStack, 0, 0, 0, 0);
         nodeToBugInfo[node] = e.what(); // Record the exception information for the node
     }
-
-    /**
-     * @brief Checks if an Abstract Value is uninitialized.
-     * @param v The Abstract Value to check.
-     * @return True if the value is uninitialized, false otherwise.
-     */
-    bool isUninit(AbstractValue v) {
-        bool is = (v.getAddrs().isBottom()) && (v.getInterval().isBottom());
-        return is;
-    }
-
-    /**
-     * @brief Checks if an Abstract Value is NULL (or uninitialized).
-     * @param v The Abstract Value to check.
-     * @return True if the value is NULL or uninitialized, false otherwise.
-     */
-    bool isNull(AbstractValue v) {
-        bool is1 = isUninit(v);
-        bool is2 = v.getAddrs().contains(BlackHoleAddr);
-        return is1 || is2;
-    }
     
     /**
      * @brief Reports all detected nullptr dereference bugs.
@@ -425,23 +420,28 @@ public:
      */
     void detectExtAPI(AbstractState& as, const CallICFGNode* call);
 
-       /**
-      * @brief Check if an Abstract Value is NULL (or uninitialized).
-      *
-      * @param v An Abstract Value of loaded from an address in an Abstract State.
-      */
-     bool isDangling(NodeID id) {
-         bool is = AddressValue::isFree(id);
-         return is;
-     }
+    /**
+     * @brief Check if an Abstract Value is NULL (or uninitialized).
+     *
+     * @param v An Abstract Value of loaded from an address in an Abstract State.
+     */
+    bool isDangling(NodeID id) 
+    {
+        bool is = AddressValue::isFree(id);
+        return is;
+    }
  
-     /**
-      * @brief Check if an Abstract Value is NULL (or uninitialized).
-      *
-      * @param v An Abstract Value of loaded from an address in an Abstract State.
-      */
+    /**
+     * @brief Check if an Abstract Value is NULL (or uninitialized).
+     *
+     * @param v An Abstract Value of loaded from an address in an Abstract State.
+     */
+    bool isNull(AbstractValue v) 
+    {
+    return isUninit(v) || v.getAddrs().contains(BlackHoleAddr);
+    }
 
-     bool canSafelyDerefPtr(AbstractState& as, const SVFVar* ptr);
+    bool canSafelyDerefPtr(AbstractState& as, const SVFVar* ptr);
  
 private:
     Map<std::string, std::vector<u32_t>> extAPINullptrDerefCheckRules; ///< Rules for checking nullptr dereferences in external APIs.

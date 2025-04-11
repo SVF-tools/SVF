@@ -34,7 +34,7 @@ using namespace SVF;
 
 namespace SVF
 {
-std::map<NodeID, bool> AddressValue::_NodeAllocationStatus;
+Map<NodeID, bool> AddressValue::_NodeAllocationStatusMap;
 }
 
 /**
@@ -58,7 +58,6 @@ void BufOverflowDetector::detect(AbstractState& as, const ICFGNode* node)
             {
                 SVFIR* svfir = PAG::getPAG();
                 NodeID lhs = gep->getLHSVarID();
-         
                 NodeID rhs = gep->getRHSVarID();
 
                 // Update the GEP object offset from its base
@@ -512,9 +511,8 @@ void NullptrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
     if (!SVFUtil::isa<CallICFGNode>(node)){
         for (const auto& stmt: node->getSVFStmts()) {
             if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt)) {
-                SVFVar* lhs = gep->getLHSVar();
                 SVFVar* rhs = gep->getRHSVar();
-                if ( !canSafelyDerefPtr(as, lhs) || !canSafelyDerefPtr(as, rhs)) {
+                if (!canSafelyDerefPtr(as, rhs)) {
                     AEException bug(stmt->toString());
                     addBugToReporter(bug, stmt->getICFGNode());
                 }
@@ -527,8 +525,8 @@ void NullptrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
                 }
             }
             else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt)) {
-                SVFVar* lhs = store->getLHSVar();
-                if ( !canSafelyDerefPtr(as, lhs)) {
+                SVFVar* rhs = store->getRHSVar();
+                if ( !canSafelyDerefPtr(as, rhs)) {
                     AEException bug(stmt->toString());
                     addBugToReporter(bug, stmt->getICFGNode());
                 }
@@ -543,7 +541,6 @@ void NullptrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
 
 
 void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode){
-// get function name
      std::string funcName = callNode->getCalledFunction()->getName();
      if (funcName == "UNSAFE_LOAD")
      {
@@ -728,9 +725,11 @@ bool NullptrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVFVar* va
     NodeID value_id = value->getId();
     AbstractValue& AbsVal = as[value_id];
     if (isUninit(AbsVal)) return false;
-    if (!AbsVal.isAddr()) return true;    // Loading an Interval Value
+    if (!AbsVal.isAddr()) return true;    
     for (const auto &addr: AbsVal.getAddrs()) {
         NodeID addrId = AbstractState::getInternalID(addr);
+        AbstractValue addrVal = as[addrId];
+        if(isNull(addrVal)) return false;
         if(isDangling(addrId)) return false;
     }
     return true;
