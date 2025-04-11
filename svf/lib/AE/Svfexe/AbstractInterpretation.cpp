@@ -922,6 +922,7 @@ void AbstractInterpretation::collectCheckPoint()
     // traverse every ICFGNode
     Set<std::string> ae_checkpoint_names = {"svf_assert"};
     Set<std::string> buf_checkpoint_names = {"UNSAFE_BUFACCESS", "SAFE_BUFACCESS"};
+    Set<std::string> nullptr_checkpoint_names = {"UNSAFE_LOAD", "SAFE_LOAD"};
 
     for (auto it = svfir->getICFG()->begin(); it != svfir->getICFG()->end(); ++it)
     {
@@ -939,6 +940,14 @@ void AbstractInterpretation::collectCheckPoint()
                 {
                     if (buf_checkpoint_names.find(fun->getName()) !=
                             buf_checkpoint_names.end())
+                    {
+                        checkpoints.insert(call);
+                    }
+                }
+                if (Options::NullptrDerefCheck())
+                {
+                    if (nullptr_checkpoint_names.find(fun->getName()) !=
+                            nullptr_checkpoint_names.end())
                     {
                         checkpoints.insert(call);
                     }

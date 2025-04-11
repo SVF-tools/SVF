@@ -312,6 +312,31 @@ public:
 
     }
 
+    inline void allocate(NodeID id)
+    {
+        u32_t VirtualAddr = AddressValue::getVirtualMemAddress(id);
+        store(VirtualAddr,AbstractValue(AddressValue(VirtualAddr)));
+        AddressValue::Allocate(id);
+    }
+
+    inline void free(NodeID id)
+    {
+        
+        for (auto addr : (*this)[id].getAddrs())
+        {
+            AbstractValue  val = load(addr);
+            NodeID addrId = getInternalID(addr);
+            if(AddressValue::isAllocated(addrId))
+            {
+                AddressValue::Free(addrId);
+            }   
+            else
+            {
+                //If you want to detect "FREE" before "ALLOCATE" and do something, you can implement it here
+            }
+        }
+    }
+
 
     void printAbstractState() const;
 

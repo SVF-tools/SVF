@@ -33,7 +33,8 @@
 #define AddressMask 0x7f000000
 #define FlippedAddressMask (AddressMask^0xffffffff)
 // the address of the black hole, getVirtualMemAddress(2);
-#define BlackHoleAddr 0x7f000000 + 2
+#define BlackHoleAddr (0x7f000000 + 2)
+
 
 #include "Util/GeneralType.h"
 #include <sstream>
@@ -46,6 +47,7 @@ public:
     typedef Set<u32_t> AddrSet;
 private:
     AddrSet _addrs;
+    static Map<NodeID, bool> _NodeAllocationStatusMap;
 public:
     /// Default constructor
     AddressValue() {}
@@ -178,6 +180,30 @@ public:
         return empty();
     }
 
+    static void Allocate (NodeID id)
+    {
+        
+        _NodeAllocationStatusMap[id] = true;
+ 
+    }
+
+    static void Free (NodeID id)
+    {
+        
+        _NodeAllocationStatusMap[id] = false;
+
+    }
+
+    static bool isAllocated(NodeID id) 
+    {
+        return _NodeAllocationStatusMap.find(id) != _NodeAllocationStatusMap.end() && _NodeAllocationStatusMap[id];
+    }
+
+    static bool isFree(NodeID id) 
+    {
+        return _NodeAllocationStatusMap.find(id) != _NodeAllocationStatusMap.end() && !_NodeAllocationStatusMap[id];
+    }
+    
     inline void setTop()
     {
         *this = AddressValue(BlackHoleAddr);
