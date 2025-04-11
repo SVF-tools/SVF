@@ -112,8 +112,6 @@ void AbstractInterpretation::analyse()
         ICFGWTO* wto = funcToWTO[cgn->getFunction()];
         handleWTOComponents(wto->getWTOComponents());
     }
-    // Dump the entire graph with filename and detailed information
-    svfir->dump("svfir_graph.dot");
 }
 
 /// handle global node
@@ -1363,7 +1361,6 @@ void AbstractInterpretation::updateStateOnStore(const StoreStmt *store)
     u32_t rhs = store->getRHSVarID();
     u32_t lhs = store->getLHSVarID();
     as.storeValue(lhs, as[rhs]);
-
 }
 
 void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
