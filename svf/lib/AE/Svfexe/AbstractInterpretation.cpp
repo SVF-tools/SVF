@@ -118,8 +118,8 @@ void AbstractInterpretation::initIWTO()
                 else if (inEdge->isIndirectCallEdge())
                     callSite = *(inEdge->getIndirectCalls().begin());
                 else
-                    assert(false && "A CallGraphEdge should "
-                                    "be either direct OR indirect!");
+                    assert(false && "CallGraphEdge must "
+                                    "be either direct or indirect!");
                 nonRecursiveCallSites.insert(
                     {callSite, inEdge->getDstNode()->getFunction()->getId()});
             }
@@ -132,6 +132,8 @@ void AbstractInterpretation::initIWTO()
                                           cgSCCNodes, svfirCallGraph);
             iwto->init();
             funcToIWTO[it->second->getFunction()] = iwto;
+
+            std::cout << it->second->getFunction()->getName() << ": " << iwto->toString() << std::endl;
         }
     }
 }
@@ -169,6 +171,7 @@ void AbstractInterpretation::handleGlobalNode()
 /// Scenario 2: preblock -----(callEdge)----> block
 bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNode)
 {
+    // TODO: Use `getAbsStateFromTrace` instead of abstractTrace[edge->getSrcNode()]?
     std::vector<AbstractState> workList;
     AbstractState preAs;
     for (auto& edge: icfgNode->getInEdges())
@@ -222,10 +225,13 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNo
             else if (const RetCFGEdge *retCfgEdge =
                          SVFUtil::dyn_cast<RetCFGEdge>(edge))
             {
-                workList.push_back(abstractTrace[retCfgEdge->getSrcNode()]);
+                const RetICFGNode* returnSite = SVFUtil::dyn_cast<RetICFGNode>(icfgNode);
+                const CallICFGNode* callSite = returnSite->getCallICFGNode();
+                if (hasAbsStateFromTrace(callSite))
+                    workList.push_back(abstractTrace[retCfgEdge->getSrcNode()]);
             }
             else
-                assert(false && "Unknown ICFGEdge type!");
+                assert(false && "Unhandled ICFGEdge type encountered!");
         }
         else
         {
@@ -598,9 +604,7 @@ void AbstractInterpretation::handleWTOComponent(const SVF::ICFGWTOComp* wtoNode)
     }
     // Assert false for unknown WTO types
     else
-    {
         assert(false && "unknown WTO type!");
-    }
 }
 
 void AbstractInterpretation::handleCallSite(const ICFGNode* node)
@@ -611,10 +615,6 @@ void AbstractInterpretation::handleCallSite(const ICFGNode* node)
         {
             extCallPass(callNode);
         }
-//        else if (isRecursiveCall(callNode))
-//        {
-//            recursiveCallPass(callNode);
-//        }
         else if (isDirectCall(callNode))
         {
             directCallFunPass(callNode);
@@ -624,14 +624,10 @@ void AbstractInterpretation::handleCallSite(const ICFGNode* node)
             indirectCallFunPass(callNode);
         }
         else
-        {
             assert(false && "implement this part");
-        }
     }
     else
-    {
         assert (false && "it is not call node");
-    }
 }
 
 bool AbstractInterpretation::isExtCall(const SVF::CallICFGNode *callNode)
@@ -653,11 +649,8 @@ void AbstractInterpretation::extCallPass(const SVF::CallICFGNode *callNode)
 bool AbstractInterpretation::isRecursiveCall(const SVF::CallICFGNode* callNode,
                                                 const FunObjVar* callee)
 {
-    if (nonRecursiveCallSites.find({callNode, callee->getId()}) ==
-        nonRecursiveCallSites.end())
-        return true;
-    else
-        return false;
+    return nonRecursiveCallSites.find({callNode, callee->getId()}) ==
+            nonRecursiveCallSites.end();
 }
 
 bool AbstractInterpretation::isDirectCall(const SVF::CallICFGNode *callNode)
@@ -666,19 +659,19 @@ bool AbstractInterpretation::isDirectCall(const SVF::CallICFGNode *callNode)
     if (!callfun)
         return false;
     else
-        return funcToIWTO.find(callfun) != funcToIWTO.end();
+        return !callfun->isDeclaration();
 }
 void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
-    callSiteStack.push_back(callNode);
 
     abstractTrace[callNode] = as;
 
     const FunObjVar *callFun =callNode->getCalledFunction();
-
     if (isRecursiveCall(callNode, callFun))
         return;
+
+    callSiteStack.push_back(callNode);
 
     ICFGIWTO* wto = funcToIWTO[callFun];
     handleWTOComponents(wto->getWTOComponents());
@@ -769,15 +762,14 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
         else
         {
             // Handle the cycle head
-            handleSingletonWTO(cycle->head());
+            handleWTOComponent(cycle->head());
         }
         // Handle the cycle body
         handleWTOComponents(cycle->getWTOComponents());
     }
 }
 
-void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
-{
+void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt) {
     if (const AddrStmt *addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
     {
         updateStateOnAddr(addr);
@@ -1219,9 +1211,7 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                     resVal = IntervalValue(1, 1);
                     break;
                 default:
-                {
                     assert(false && "undefined compare: ");
-                }
                 }
                 as[res] = resVal;
             }
@@ -1335,9 +1325,7 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                     resVal = IntervalValue(1, 1);
                     break;
                 default:
-                {
                     assert(false && "undefined compare: ");
-                }
                 }
                 as[res] = resVal;
             }
@@ -1396,9 +1384,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
                     // we only support i64 at most
                 }
                 else
-                {
                     assert(false && "cannot support int type other than u8/16/32/64");
-                }
             }
             else
             {
@@ -1455,9 +1441,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
             return IntervalValue(s32_lb, s32_ub);
         }
         else
-        {
             assert(false && "cannot support dst int type other than u8/16/32");
-        }
     };
 
     AbstractState& as = getAbsStateFromTrace(copy->getICFGNode());
@@ -1520,10 +1504,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
         }
     }
     else
-    {
         assert(false && "undefined copy kind");
-        abort();
-    }
 }
 
 
