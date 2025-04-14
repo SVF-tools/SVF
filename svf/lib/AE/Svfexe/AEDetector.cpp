@@ -603,47 +603,46 @@ void NullptrDerefDetector::initExtAPINullptrDerefCheckRules(){
 
     // Memory manipulation functions
     // Check for potential null pointer dereference in memory operations
-    extAPINullptrDerefCheckRules["memcpy"] = {{0}, {1}};   // Both dest and src could be null
-    extAPINullptrDerefCheckRules["memmove"] = {{0}, {1}};  // Both dest and src could be null
-    extAPINullptrDerefCheckRules["memset"] = {{0}};        // Destination could be null
-    extAPINullptrDerefCheckRules["memcmp"] = {{0}, {1}};   // Both buffers could be null
+    extAPINullptrDerefCheckRules["memcpy"] = {0, 1};   // Both dest and src could be null
+    extAPINullptrDerefCheckRules["memmove"] = {0, 1};  // Both dest and src could be null
+    extAPINullptrDerefCheckRules["memset"] = {0};        // Destination could be null
+    extAPINullptrDerefCheckRules["memcmp"] = {0, 1};   // Both buffers could be null
 
     // File I/O operations
     // Check for potential null pointer dereference in file operations
-    extAPINullptrDerefCheckRules["fgets"] = {{0}};         // Buffer could be null
-    extAPINullptrDerefCheckRules["fputs"] = {{0}};         // String could be null
-    extAPINullptrDerefCheckRules["fread"] = {{0}};         // Buffer could be null
-    extAPINullptrDerefCheckRules["fwrite"] = {{0}};        // Buffer could be null
+    extAPINullptrDerefCheckRules["fgets"] = {0};         // Buffer could be null
+    extAPINullptrDerefCheckRules["fputs"] = {0};         // String could be null
+    extAPINullptrDerefCheckRules["fread"] = {0};         // Buffer could be null
+    extAPINullptrDerefCheckRules["fwrite"] = {0};        // Buffer could be null
 
     // Formatted I/O functions
     // Check for potential null pointer dereference in formatting operations
-    extAPINullptrDerefCheckRules["sprintf"] = {{0}};       // Buffer could be null
-    extAPINullptrDerefCheckRules["snprintf"] = {{0}};      // Buffer could be null
-    extAPINullptrDerefCheckRules["sscanf"] = {{0}};        // Input string could be null
+    extAPINullptrDerefCheckRules["sprintf"] = {0};       // Buffer could be null
+    extAPINullptrDerefCheckRules["snprintf"] = {0};      // Buffer could be null
+    extAPINullptrDerefCheckRules["sscanf"] = {0};        // Input string could be null
 
     // LLVM specific memory operations
     // Check for potential null pointer dereference in LLVM intrinsic functions
-    extAPINullptrDerefCheckRules["llvm.memcpy.p0i8.p0i8.i64"] = {{0}, {1}};    // Both pointers could be null
-    extAPINullptrDerefCheckRules["llvm.memmove.p0i8.p0i8.i64"] = {{0}, {1}};   // Both pointers could be null
-    extAPINullptrDerefCheckRules["llvm.memset.p0i8.i64"] = {{0}};              // Destination could be null
+    extAPINullptrDerefCheckRules["llvm.memcpy.p0i8.p0i8.i64"] = {0, 1};    // Both pointers could be null
+    extAPINullptrDerefCheckRules["llvm.memmove.p0i8.p0i8.i64"] = {0, 1};   // Both pointers could be null
+    extAPINullptrDerefCheckRules["llvm.memset.p0i8.i64"] = {0};              // Destination could be null
 
     // Fortified versions of standard library functions
     // Check for potential null pointer dereference in security-enhanced functions
-    extAPINullptrDerefCheckRules["__strcpy_chk"] = {{0}, {1}};     // Both dest and src could be null
-    extAPINullptrDerefCheckRules["__strncpy_chk"] = {{0}, {1}};    // Both dest and src could be null
-    extAPINullptrDerefCheckRules["__strcat_chk"] = {{0}, {1}};     // Both dest and src could be null
-    extAPINullptrDerefCheckRules["__memcpy_chk"] = {{0}, {1}};     // Both dest and src could be null
-    extAPINullptrDerefCheckRules["__memmove_chk"] = {{0}, {1}};    // Both dest and src could be null
-    extAPINullptrDerefCheckRules["__memset_chk"] = {{0}};          // Destination could be null
+    extAPINullptrDerefCheckRules["__strcpy_chk"] = {0, 1};     // Both dest and src could be null
+    extAPINullptrDerefCheckRules["__strncpy_chk"] = {0, 1};    // Both dest and src could be null
+    extAPINullptrDerefCheckRules["__strcat_chk"] = {0, 1};     // Both dest and src could be null
+    extAPINullptrDerefCheckRules["__memcpy_chk"] = {0, 1};     // Both dest and src could be null
+    extAPINullptrDerefCheckRules["__memmove_chk"] = {0, 1};    // Both dest and src could be null
+    extAPINullptrDerefCheckRules["__memset_chk"] = {0};          // Destination could be null
 
     // Wide character string operations
     // Check for potential null pointer dereference in wide string operations
-    extAPINullptrDerefCheckRules["wcslen"] = {{0}};        // Wide string could be null
-    extAPINullptrDerefCheckRules["wcscpy"] = {{0}, {1}};   // Both dest and src could be null
-    extAPINullptrDerefCheckRules["wcsncpy"] = {{0}, {1}};  // Both dest and src could be null
-    extAPINullptrDerefCheckRules["wcscat"] = {{0}, {1}};   // Both dest and src could be null
-    extAPINullptrDerefCheckRules["wcsncat"] = {{0}, {1}};  // Both dest and src could be null
-
+    extAPINullptrDerefCheckRules["wcslen"] = {0};        // Wide string could be null
+    extAPINullptrDerefCheckRules["wcscpy"] = {0, 1};   // Both dest and src could be null
+    extAPINullptrDerefCheckRules["wcsncpy"] = {0, 1};  // Both dest and src could be null
+    extAPINullptrDerefCheckRules["wcscat"] = {0, 1};   // Both dest and src could be null
+    extAPINullptrDerefCheckRules["wcsncat"] = {0, 1};  // Both dest and src could be null
 }
 
 
