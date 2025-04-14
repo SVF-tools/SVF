@@ -590,16 +590,16 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode){
 void NullptrDerefDetector::initExtAPINullptrDerefCheckRules(){
     // String manipulation functions
     // Check for potential null pointer dereference in string operations
-    extAPINullptrDerefCheckRules["strlen"] = {{0}};        // First argument could be null
-    extAPINullptrDerefCheckRules["strcpy"] = {{0}, {1}};   // Both dest and src could be null
-    extAPINullptrDerefCheckRules["strncpy"] = {{0}, {1}};  // Both dest and src could be null
-    extAPINullptrDerefCheckRules["strcat"] = {{0}, {1}};   // Both dest and src could be null
-    extAPINullptrDerefCheckRules["strncat"] = {{0}, {1}};  // Both dest and src could be null
-    extAPINullptrDerefCheckRules["strcmp"] = {{0}, {1}};   // Both strings could be null
-    extAPINullptrDerefCheckRules["strncmp"] = {{0}, {1}};  // Both strings could be null
-    extAPINullptrDerefCheckRules["strchr"] = {{0}};        // String argument could be null
-    extAPINullptrDerefCheckRules["strrchr"] = {{0}};       // String argument could be null
-    extAPINullptrDerefCheckRules["strstr"] = {{0}, {1}};   // Both haystack and needle could be null
+    extAPINullptrDerefCheckRules["strlen"] = {0};        // First argument could be null
+    extAPINullptrDerefCheckRules["strcpy"] = {0, 1};     // Both dest and src could be null
+    extAPINullptrDerefCheckRules["strncpy"] = {0, 1};    // Both dest and src could be null
+    extAPINullptrDerefCheckRules["strcat"] = {0, 1};     // Both dest and src could be null
+    extAPINullptrDerefCheckRules["strncat"] = {0, 1};    // Both dest and src could be null
+    extAPINullptrDerefCheckRules["strcmp"] = {0, 1};     // Both strings could be null
+    extAPINullptrDerefCheckRules["strncmp"] = {0, 1};    // Both strings could be null
+    extAPINullptrDerefCheckRules["strchr"] = {0};        // String argument could be null
+    extAPINullptrDerefCheckRules["strrchr"] = {0};       // String argument could be null
+    extAPINullptrDerefCheckRules["strstr"] = {0, 1};     // Both haystack and needle could be null
 
     // Memory manipulation functions
     // Check for potential null pointer dereference in memory operations
