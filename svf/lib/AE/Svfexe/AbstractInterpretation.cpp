@@ -132,8 +132,6 @@ void AbstractInterpretation::initIWTO()
                                           cgSCCNodes, svfirCallGraph);
             iwto->init();
             funcToIWTO[it->second->getFunction()] = iwto;
-
-            std::cout << it->second->getFunction()->getName() << ": " << iwto->toString() << std::endl;
         }
     }
 }
