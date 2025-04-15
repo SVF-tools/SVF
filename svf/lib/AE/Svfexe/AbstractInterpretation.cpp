@@ -90,9 +90,9 @@ void AbstractInterpretation::initIWTO()
     // Detect if the call graph has cycles by finding its strongly connected components (SCC)
     Andersen::CallGraphSCC* callGraphScc = ander->getCallGraphSCC();
     callGraphScc->find();
-    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    CallGraph* callGraph = ander->getCallGraph();
 
-    for (auto it = svfirCallGraph->begin(); it != svfirCallGraph->end(); it++)
+    for (auto it = callGraph->begin(); it != callGraph->end(); it++)
     {
         const FunObjVar *fun = it->second->getFunction();
         if (fun->isDeclaration())
@@ -104,7 +104,7 @@ void AbstractInterpretation::initIWTO()
         // Identify if this node is an SCC entry (nodes who have incoming edges
         // from nodes outside the SCC). Also identify non-recursive callsites.
         bool isEntry = false;
-        if (it->second->getName() == "main")
+        if (it->second->getInEdges().empty())
             isEntry = true;
         for (auto inEdge: it->second->getInEdges())
         {
@@ -120,6 +120,7 @@ void AbstractInterpretation::initIWTO()
                 else
                     assert(false && "CallGraphEdge must "
                                     "be either direct or indirect!");
+
                 nonRecursiveCallSites.insert(
                     {callSite, inEdge->getDstNode()->getFunction()->getId()});
             }
@@ -129,7 +130,7 @@ void AbstractInterpretation::initIWTO()
         if (isEntry)
         {
             ICFGIWTO* iwto = new ICFGIWTO(icfg, icfg->getFunEntryICFGNode(fun),
-                                          cgSCCNodes, svfirCallGraph);
+                                          cgSCCNodes, callGraph);
             iwto->init();
             funcToIWTO[it->second->getFunction()] = iwto;
         }
@@ -200,25 +201,27 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNo
             else if (const CallCFGEdge *callCfgEdge =
                          SVFUtil::dyn_cast<CallCFGEdge>(edge))
             {
-                const CallICFGNode *callSite = callCfgEdge->getCallSite();
-                const FunObjVar *callee = icfgNode->getFun();
-                if (isRecursiveCall(callSite, callee))
-                {
-                    workList.push_back(
+                // const CallICFGNode *callSite = callCfgEdge->getCallSite();
+                // const FunObjVar *callee = icfgNode->getFun();
+                // if (isRecursiveCall(callSite, callee))
+                // {
+                //     workList.push_back(
+                //         abstractTrace[callCfgEdge->getSrcNode()]);
+                // }
+                // else
+                // {
+                //     if (callSite == callSiteStack.back())
+                //     {
+                //         workList.push_back(
+                //             abstractTrace[callCfgEdge->getSrcNode()]);
+                //     }
+                //     else
+                //     {
+                //         // do nothing
+                //     }
+                // }
+                workList.push_back(
                         abstractTrace[callCfgEdge->getSrcNode()]);
-                }
-                else
-                {
-                    if (callSite == callSiteStack.back())
-                    {
-                        workList.push_back(
-                            abstractTrace[callCfgEdge->getSrcNode()]);
-                    }
-                    else
-                    {
-                        // do nothing
-                    }
-                }
             }
             else if (const RetCFGEdge *retCfgEdge =
                          SVFUtil::dyn_cast<RetCFGEdge>(edge))
