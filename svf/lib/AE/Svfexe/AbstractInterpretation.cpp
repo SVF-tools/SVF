@@ -69,9 +69,6 @@ AbstractInterpretation::~AbstractInterpretation()
     delete stat;
     for (auto it: funcToWTO)
         delete it.second;
-
-    for (auto it: funcToWTO)
-        delete it.second;
 }
 
 //TODO: Modify description
