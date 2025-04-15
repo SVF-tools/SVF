@@ -33,7 +33,9 @@
 #include "AE/Svfexe/AEDetector.h"
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "Util/SVFBugReport.h"
-#include "WPA/Andersen.h"
+#include "Util/SVFStat.h"
+#include "Graphs/SCC.h"
+
 namespace SVF
 {
 class AbstractInterpretation;
@@ -106,6 +108,14 @@ class AbstractInterpretation
 
 public:
     typedef SCCDetection<CallGraph*> CallGraphSCC;
+
+    enum RecurMode
+    {
+        TOP,
+        WIDEN_TOP,
+        WIDEN_NARROW
+    };
+
     /// Constructor
     AbstractInterpretation();
 
@@ -135,7 +145,7 @@ private:
     virtual void handleGlobalNode();
 
     /// Compute IWTO for each function partition entry
-    void initIWTO();
+    void initWTO();
 
     /**
      * Check if execution state exist by merging states of predecessor nodes
@@ -185,6 +195,13 @@ private:
      * @param stmt SVFStatement which is a value flow of instruction
      */
     virtual void handleSVFStatement(const SVFStmt* stmt);
+
+    /**
+     * Check if this callnode is recursive call and skip it.
+     *
+     * @param callnode CallICFGNode which calls a recursive function
+     */
+    virtual void SkipRecursiveCall(const CallICFGNode* callnode);
 
 
     /**
@@ -243,8 +260,7 @@ private:
     AEStat* stat;
 
     std::vector<const CallICFGNode*> callSiteStack;
-    Map<const FunObjVar*, ICFGWTO*> funcToWTO;
-    Map<const FunObjVar*, ICFGIWTO*> funcToIWTO;
+    Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
     Set<std::pair<const CallICFGNode*, NodeID>> nonRecursiveCallSites;
     Set<const FunObjVar*> recursiveFuns;
 
@@ -276,7 +292,9 @@ private:
     // helper functions in handleCallSite
     virtual bool isExtCall(const CallICFGNode* callNode);
     virtual void extCallPass(const CallICFGNode* callNode);
-    virtual bool isRecursiveCall(const CallICFGNode* callNode, const FunObjVar *);
+    virtual bool isRecursiveCall(const CallICFGNode* callNode);
+    virtual void recursiveCallPass(const CallICFGNode *callNode);
+    virtual bool isRecursiveCallSite(const CallICFGNode* callNode, const FunObjVar *);
     virtual bool isDirectCall(const CallICFGNode* callNode);
     virtual void directCallFunPass(const CallICFGNode* callNode);
     virtual bool isIndirectCall(const CallICFGNode* callNode);

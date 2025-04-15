@@ -779,6 +779,16 @@ const Option<u32_t> Options::LoopBound(
 
 const Option<u32_t> Options::WidenDelay(
     "widen-delay", "Loop Widen Delay", 3);
+const OptionMap<AbstractInterpretation::RecurMode> Options::RecurMode(
+    "recur-mode",
+    "Recursion handling mode in abstract execution",
+    AbstractInterpretation::RecurMode::TOP,
+    {
+        {AbstractInterpretation::RecurMode::TOP, "top", "set abstract state in recursion to top"},
+        {AbstractInterpretation::RecurMode::WIDEN_TOP, "widen-top", "only set abstract state in recursion to top during widening"},
+        {AbstractInterpretation::RecurMode::WIDEN_NARROW, "widen-narrow", "perform normal widening and narrowing"}
+    }
+);
 const Option<u32_t> Options::Timeout(
     "timeout", "time out (seconds), set -1 (no timeout), default 14400s",14400);
 const Option<std::string> Options::OutputName(

@@ -80,10 +80,10 @@ public:
 };
 
 // Added for IWTO
-class ICFGIWTO : public WTO<ICFG>
+class ICFGIWTO : public ICFGWTO
 {
 public:
-    typedef WTO<ICFG> Base;
+    typedef ICFGWTO Base;
     typedef WTOComponentVisitor<ICFG>::WTONodeT ICFGWTONode;
     NodeBS &funcPar;
     CallGraph *cg;
@@ -106,7 +106,7 @@ public:
             {
                 ICFGNode *calleeEntryICFGNode = e->getDstNode();
                 CallGraphNode * calleeCGNode = cg->getCallGraphNode(calleeEntryICFGNode->getFun());
-                
+
                 const ICFGNode* succ = nullptr;
                 if (funcPar.test(calleeCGNode->getId()))
                     succ = calleeEntryICFGNode;
