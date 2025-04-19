@@ -316,15 +316,17 @@ if [[ -z "${LLVM_DIR:-}" || ! -d "$LLVM_DIR" ]]; then
             echo "Downloading LLVM binary for $OSDisplayName"
             if ! generic_download_file "$urlLLVM" llvm.tar.xz; then
                 download_llvm_from_apt_repo
+    		export LLVM_DIR="/usr/lib/llvm-$MajorLLVMVer/bin"
             else
                 check_xz
                 echo "Unzipping llvm package..."
                 mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
                 rm llvm.tar.xz
+    		export LLVM_DIR="$SVFHOME/$LLVMHome"
             fi
         fi
     fi
-    export LLVM_DIR="$SVFHOME/$LLVMHome"
+    export CC=clang CXX=clang++
 fi
 
 
