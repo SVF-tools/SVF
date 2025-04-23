@@ -292,6 +292,7 @@ private:
     // helper functions in handleCallSite
     virtual bool isExtCall(const CallICFGNode* callNode);
     virtual void extCallPass(const CallICFGNode* callNode);
+    virtual bool isRecursiveFun(const FunObjVar* fun);
     virtual bool isRecursiveCall(const CallICFGNode* callNode);
     virtual void recursiveCallPass(const CallICFGNode *callNode);
     virtual bool isRecursiveCallSite(const CallICFGNode* callNode, const FunObjVar *);

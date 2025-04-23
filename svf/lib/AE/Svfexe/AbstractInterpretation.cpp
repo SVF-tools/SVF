@@ -92,68 +92,66 @@ void AbstractInterpretation::initWTO()
     // Iterate through the call graph
     for (auto it = callGraph->begin(); it != callGraph->end(); it++)
     {
-        switch (Options::RecurMode())
+        // Check if the current function is part of a cycle
+        if (callGraphScc->isInCycle(it->second->getId()))
+            recursiveFuns.insert(it->second->getFunction()); // Mark the function as recursive
+
+        // In TOP mode, calculate the WTO
+        if (Options::RecurMode() == TOP)
         {
-            case TOP:
-            {
-                // Check if the current function is part of a cycle
-                if (callGraphScc->isInCycle(it->second->getId()))
-                    recursiveFuns.insert(it->second->getFunction()); // Mark the function as recursive
-                if (it->second->getFunction()->isDeclaration())
-                    continue;
-                auto* wto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(it->second->getFunction()));
-                wto->init();
-                funcToWTO[it->second->getFunction()] = wto;
-                break;
-            }
-            case WIDEN_TOP:
-            case WIDEN_NARROW:
-            {
-                const FunObjVar *fun = it->second->getFunction();
-                if (fun->isDeclaration())
-                    continue;
-
-                NodeID repNodeId = callGraphScc->repNode(it->second->getId());
-                auto cgSCCNodes = callGraphScc->subNodes(repNodeId);
-
-                // Identify if this node is an SCC entry (nodes who have incoming edges
-                // from nodes outside the SCC). Also identify non-recursive callsites.
-                bool isEntry = false;
-                if (it->second->getInEdges().empty())
-                    isEntry = true;
-                for (auto inEdge: it->second->getInEdges())
-                {
-                    NodeID srcNodeId = inEdge->getSrcID();
-                    if (!cgSCCNodes.test(srcNodeId))
-                    {
-                        isEntry = true;
-                        const CallICFGNode *callSite = nullptr;
-                        if (inEdge->isDirectCallEdge())
-                            callSite = *(inEdge->getDirectCalls().begin());
-                        else if (inEdge->isIndirectCallEdge())
-                            callSite = *(inEdge->getIndirectCalls().begin());
-                        else
-                            assert(false && "CallGraphEdge must "
-                                            "be either direct or indirect!");
-
-                        nonRecursiveCallSites.insert(
-                            {callSite, inEdge->getDstNode()->getFunction()->getId()});
-                    }
-                }
-
-                // Compute IWTO for the function partition entered from each partition entry
-                if (isEntry)
-                {
-                    ICFGIWTO* iwto = new ICFGIWTO(icfg, icfg->getFunEntryICFGNode(fun),
-                                                  cgSCCNodes, callGraph);
-                    iwto->init();
-                    funcToWTO[it->second->getFunction()] = iwto;
-                }
-                break;
-            }
-            default:
-                assert(false && "Invalid recursion mode specified!");
+            if (it->second->getFunction()->isDeclaration())
+                continue;
+            auto* wto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(it->second->getFunction()));
+            wto->init();
+            funcToWTO[it->second->getFunction()] = wto;
         }
+        // In WIDEN_TOP or WIDEN_NARROW mode, calculate the IWTO
+        else if (Options::RecurMode() == WIDEN_TOP ||
+            Options::RecurMode() == WIDEN_NARROW)
+        {
+            const FunObjVar *fun = it->second->getFunction();
+            if (fun->isDeclaration())
+                continue;
+
+            NodeID repNodeId = callGraphScc->repNode(it->second->getId());
+            auto cgSCCNodes = callGraphScc->subNodes(repNodeId);
+
+            // Identify if this node is an SCC entry (nodes who have incoming edges
+            // from nodes outside the SCC). Also identify non-recursive callsites.
+            bool isEntry = false;
+            if (it->second->getInEdges().empty())
+                isEntry = true;
+            for (auto inEdge: it->second->getInEdges())
+            {
+                NodeID srcNodeId = inEdge->getSrcID();
+                if (!cgSCCNodes.test(srcNodeId))
+                {
+                    isEntry = true;
+                    const CallICFGNode *callSite = nullptr;
+                    if (inEdge->isDirectCallEdge())
+                        callSite = *(inEdge->getDirectCalls().begin());
+                    else if (inEdge->isIndirectCallEdge())
+                        callSite = *(inEdge->getIndirectCalls().begin());
+                    else
+                        assert(false && "CallGraphEdge must "
+                                        "be either direct or indirect!");
+
+                    nonRecursiveCallSites.insert(
+                        {callSite, inEdge->getDstNode()->getFunction()->getId()});
+                }
+            }
+
+            // Compute IWTO for the function partition entered from each partition entry
+            if (isEntry)
+            {
+                ICFGIWTO* iwto = new ICFGIWTO(icfg, icfg->getFunEntryICFGNode(fun),
+                                              cgSCCNodes, callGraph);
+                iwto->init();
+                funcToWTO[it->second->getFunction()] = iwto;
+            }
+        }
+        else
+            assert(false && "Invalid recursion mode specified!");
     }
 }
 
@@ -682,13 +680,18 @@ void AbstractInterpretation::extCallPass(const CallICFGNode *callNode)
     callSiteStack.pop_back();
 }
 
+bool AbstractInterpretation::isRecursiveFun(const FunObjVar* fun)
+{
+    return recursiveFuns.find(fun) != recursiveFuns.end();
+}
+
 bool AbstractInterpretation::isRecursiveCall(const CallICFGNode *callNode)
 {
     const FunObjVar *callfun = callNode->getCalledFunction();
     if (!callfun)
         return false;
     else
-        return recursiveFuns.find(callfun) != recursiveFuns.end();
+        return isRecursiveFun(callfun);
 }
 
 void AbstractInterpretation::recursiveCallPass(const CallICFGNode *callNode)
@@ -790,8 +793,6 @@ void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
     }
 }
 
-
-
 /// handle wto cycle (loop)
 void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
 {
@@ -810,8 +811,33 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
             AbstractState cur_head_state = abstractTrace[cycle_head];
             if (increasing)
             {
-                // Widening phase
-                abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
+                // Widening, use different modes for nodes within recursions
+                if (isRecursiveFun(cycle->head()->getICFGNode()->getFun()))
+                {
+                    // For nodes in recursions, widen to top in WIDEN_TOP mode
+                    if (Options::RecurMode() == WIDEN_TOP)
+                    {
+                        // TODO: Change?
+                        abstractTrace[cycle_head] = abstractTrace[cycle_head].top();
+                    }
+                    // Perform normal widening in WIDEN_NARROW mode
+                    else if (Options::RecurMode() == WIDEN_NARROW)
+                    {
+                        abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
+                    }
+                    // In TOP mode, skipRecursiveCall will handle recursions,
+                    // thus should not reach this branch
+                    else
+                    {
+                        assert(false && "Recursion mode TOP should not reach here!");
+                    }
+                }
+                // For nodes outside recursions, perform normal widening
+                else
+                {
+                    abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
+                }
+
                 if (abstractTrace[cycle_head] == prev_head_state)
                 {
                     increasing = false;
@@ -820,12 +846,42 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
             }
             else
             {
-                // Widening's fixpoint reached in the widening phase, switch to narrowing
-                abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
-                if (abstractTrace[cycle_head] == prev_head_state)
+                // Narrowing, use different modes for nodes within recursions
+                if (isRecursiveFun(cycle->head()->getICFGNode()->getFun()))
                 {
-                    // Narrowing's fixpoint reached in the narrowing phase, exit loop
-                    break;
+                    // For nodes in recursions, skip narrowing in WIDEN_TOP mode
+                    if (Options::RecurMode() == WIDEN_TOP)
+                    {
+                        break;
+                    }
+                    // Perform normal narrowing in WIDEN_NARROW mode
+                    else if (Options::RecurMode() == WIDEN_NARROW)
+                    {
+                        // Widening's fixpoint reached in the widening phase, switch to narrowing
+                        abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
+                        if (abstractTrace[cycle_head] == prev_head_state)
+                        {
+                            // Narrowing's fixpoint reached in the narrowing phase, exit loop
+                            break;
+                        }
+                    }
+                    // In TOP mode, skipRecursiveCall will handle recursions,
+                    // thus should not reach this branch
+                    else
+                    {
+                        assert(false && "Recursion mode TOP should not reach here");
+                    }
+                }
+                // For nodes outside recursions, perform normal narrowing
+                else
+                {
+                    // Widening's fixpoint reached in the widening phase, switch to narrowing
+                    abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
+                    if (abstractTrace[cycle_head] == prev_head_state)
+                    {
+                        // Narrowing's fixpoint reached in the narrowing phase, exit loop
+                        break;
+                    }
                 }
             }
         }
