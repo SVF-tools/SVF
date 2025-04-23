@@ -47,7 +47,7 @@ jobs:
           if [ "${{matrix.sanitizer}}" != "" ]; then export SVF_SANITIZER="${{matrix.sanitizer}}"; fi
           if [ "$RUNNER_OS" == "Linux" ] && [ "${{matrix.sanitizer}}" == "" ]; then export SVF_COVERAGE=1; fi
           git clone "https://github.com/SVF-tools/Test-Suite.git";
-          bash ${{github.workspace}}/build.sh
+          source ${{github.workspace}}/build.sh
 
       - name: ctest objtype inference
         working-directory: ${{github.workspace}}/Release-build

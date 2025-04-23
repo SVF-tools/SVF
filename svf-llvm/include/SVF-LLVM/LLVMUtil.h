@@ -310,19 +310,22 @@ inline const ConstantExpr* isUnaryConstantExpr(const Value* val)
 }
 //@}
 
+#if LLVM_VERSION_MAJOR >= 12 && LLVM_VERSION_MAJOR <= 16
 inline static DataLayout* getDataLayout(Module* mod)
 {
-#if LLVM_VERSION_MAJOR >= 12 && LLVM_VERSION_MAJOR <= 16
     static DataLayout *dl = nullptr;
     if (dl == nullptr)
         dl = new DataLayout(mod);
     return dl;
-#else
-    if (mod)
-        return new DataLayout(mod->getDataLayout());
-    return nullptr;
-#endif
 }
+#else
+inline static std::unique_ptr<SVF::DataLayout> getDataLayout(Module* mod)
+{
+    if (mod)
+        return std::make_unique<SVF::DataLayout>(mod->getDataLayout());
+    return nullptr;
+}
+#endif
 
 /// Get the next instructions following control flow
 void getNextInsts(const Instruction* curInst,

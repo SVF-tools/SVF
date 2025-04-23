@@ -650,7 +650,11 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
     assert(V);
 
     const llvm::GEPOperator *gepOp = SVFUtil::dyn_cast<const llvm::GEPOperator>(V);
+#if LLVM_VERSION_MAJOR <= 16
     DataLayout * dataLayout = getDataLayout(llvmModuleSet()->getMainLLVMModule());
+#else
+    std::unique_ptr<SVF::DataLayout> dataLayout = getDataLayout(llvmModuleSet()->getMainLLVMModule());
+#endif
     llvm::APInt byteOffset(dataLayout->getIndexSizeInBits(gepOp->getPointerAddressSpace()),0,true);
     if(gepOp && dataLayout && gepOp->accumulateConstantOffset(*dataLayout,byteOffset))
     {

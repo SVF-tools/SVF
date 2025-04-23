@@ -36,7 +36,7 @@ SourceZ3="https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.8.zip"
 
 # Keep LLVM version suffix for version checking and better debugging
 # keep the version consistent with LLVM_DIR in setup.sh and llvm_version in Dockerfile
-LLVMHome="llvm-${MajorLLVMVer}.0.0.obj"
+LLVMHome="llvm-${LLVMVer}.obj"
 Z3Home="z3.obj"
 
 Z3_BIN="$Z3Home/bin"
@@ -57,7 +57,7 @@ function installing_dependencies() {
         sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 
         # Install basic development dependencies
-        sudo apt-get install -y build-essential libncurses6 libncurses-dev zlib1g-dev gcc g++ nodejs doxygen graphviz lcov libtinfo6 libzstd-dev curl gnupg xz-utils
+        sudo apt-get install -y unzip build-essential libncurses6 libncurses-dev zlib1g-dev gcc g++ nodejs doxygen graphviz lcov libtinfo6 libzstd-dev curl gnupg xz-utils
 
         # Get Ubuntu codename for cmake installation
         CODENAME=$(source /etc/os-release && echo "$VERSION_CODENAME")
@@ -290,6 +290,10 @@ function download_llvm_from_apt_repo() {
     sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-"$MajorLLVMVer" 100
     sudo update-alternatives --install /usr/bin/opt opt /usr/bin/opt-"$MajorLLVMVer" 100
 
+    # Set the specified version as default without user prompt
+    sudo update-alternatives --set clang /usr/bin/clang-"$MajorLLVMVer"
+    sudo update-alternatives --set clang++ /usr/bin/clang++-"$MajorLLVMVer"
+    sudo update-alternatives --set opt /usr/bin/opt-"$MajorLLVMVer"
     echo "Clang "$LLVMVer" installed via APT repository fallback."
 }
 
@@ -305,6 +309,7 @@ if [[ -z "${LLVM_DIR:-}" || ! -d "$LLVM_DIR" ]]; then
             # check whether llvm is installed
             if [ $? -eq 0 ]; then
                 echo "LLVM binary installation completed."
+		export LLVM_DIR="$(brew --prefix llvm)/@${MajorLLVMVer}/bin"
             else
                 echo "LLVM binary installation failed."
                 exit 1
@@ -326,7 +331,6 @@ if [[ -z "${LLVM_DIR:-}" || ! -d "$LLVM_DIR" ]]; then
             fi
         fi
     fi
-    export CC=clang CXX=clang++
 fi
 
 
