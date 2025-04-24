@@ -42,22 +42,30 @@ if(LLVM_LINK_LLVM_DYLIB)
   endif()
 else()
   message(STATUS "Linking to separate LLVM static libraries")
-  llvm_map_components_to_libnames(
-    llvm_libs
-    analysis
-    bitwriter
-    core
-    instcombine
-    instrumentation
-    ipo
-    irreader
-    linker
-    scalaropts
-    support
-    target
-    transformutils
-    demangle
+  # Define base LLVM components
+  set(llvm_components
+      analysis
+      bitwriter
+      core
+      instcombine
+      instrumentation
+      ipo
+      irreader
+      linker
+      scalaropts
+      support
+      target
+      transformutils
+      demangle
   )
+
+  # Conditionally add 'passes' for macOS
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+      list(APPEND llvm_components passes)
+  endif()
+
+  # Map components to library names
+  llvm_map_components_to_libnames(llvm_libs ${llvm_components})
 endif()
 
 # Make the "add_llvm_library()" command available and configure LLVM/CMake

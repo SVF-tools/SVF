@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 echo "Setting up environment for SVF"
-
+MajorLLVMVer=20
+LLVMVer=${MajorLLVMVer}.1.0
 
 #########
 # export SVF_DIR, LLVM_DIR and Z3_DIR
@@ -9,7 +10,7 @@ echo "Setting up environment for SVF"
 ########
 
 # in a local installation $SVF_DIR is the directory containing setup.sh
-SVF_DIR="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1; pwd -P)"
+SVF_DIR="$(cd -- "$(dirname "$0")" >/dev/null 2>&1; pwd -P)"
 export SVF_DIR
 echo "SVF_DIR=$SVF_DIR"
 
@@ -18,7 +19,7 @@ function set_llvm {
     [[ -n "$LLVM_DIR" ]] && return 0
 
     # use local download directory
-    LLVM_DIR="$SVF_DIR/llvm-20.0.0.obj"
+    LLVM_DIR="$SVF_DIR/$LLVMVer.obj"
     [[ -d "$LLVM_DIR" ]] && return 0
 
     # ... otherwise don't set LLVM_DIR

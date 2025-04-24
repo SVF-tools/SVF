@@ -19,7 +19,7 @@ jobs=8
 #########
 # Variables and Paths
 ########
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+SCRIPT_DIR=$( cd -- "$( dirname -- "$0" )" &> /dev/null && pwd )
 SVFHOME="${SCRIPT_DIR}"
 sysOS=$(uname -s)
 arch=$(uname -m)
@@ -174,7 +174,7 @@ function build_z3_from_source {
     mkdir "$Z3Home"
     echo "Downloading Z3 source..."
     if ! generic_download_file "$SourceZ3" z3.zip; then
-	exit 1
+        exit 1
     fi
     check_unzip
     echo "Unzipping Z3 source..."
@@ -309,7 +309,7 @@ if [[ -z "${LLVM_DIR:-}" || ! -d "$LLVM_DIR" ]]; then
             # check whether llvm is installed
             if [ $? -eq 0 ]; then
                 echo "LLVM binary installation completed."
-		export LLVM_DIR="$(brew --prefix llvm)/@${MajorLLVMVer}/bin"
+                export LLVM_DIR="$(brew --prefix llvm)@${MajorLLVMVer}/lib/cmake/llvm"
             else
                 echo "LLVM binary installation failed."
                 exit 1
@@ -321,13 +321,13 @@ if [[ -z "${LLVM_DIR:-}" || ! -d "$LLVM_DIR" ]]; then
             echo "Downloading LLVM binary for $OSDisplayName"
             if ! generic_download_file "$urlLLVM" llvm.tar.xz; then
                 download_llvm_from_apt_repo
-    		export LLVM_DIR="/usr/lib/llvm-$MajorLLVMVer/bin"
+                export LLVM_DIR="/usr/lib/llvm-$MajorLLVMVer/bin"
             else
                 check_xz
                 echo "Unzipping llvm package..."
                 mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
                 rm llvm.tar.xz
-    		export LLVM_DIR="$SVFHOME/$LLVMHome"
+                export LLVM_DIR="$SVFHOME/$LLVMHome"
             fi
         fi
     fi
@@ -343,9 +343,10 @@ if [[ -z "${Z3_DIR:-}" || ! -d "$Z3_DIR" ]]; then
         if [[ "$sysOS" = "Darwin" ]]; then
             echo "Downloading Z3 binary for $OSDisplayName"
             brew update
-            brew install z3
+            brew install z3 #already installed as a part of llvm dependency on macOS
             if [ $? -eq 0 ]; then
                 echo "z3 binary installation completed."
+                export Z3_DIR="$(brew --prefix z3)"
             else
                 echo "z3 binary installation failed."
                 exit 1
@@ -357,15 +358,14 @@ if [[ -z "${Z3_DIR:-}" || ! -d "$Z3_DIR" ]]; then
             echo "Downloading Z3 binary for $OSDisplayName"
             if ! generic_download_file "$urlZ3" z3.zip; then
                 exit 1
-	    fi
+            fi
             check_unzip
             echo "Unzipping z3 package..."
             unzip -q "z3.zip" && mv ./z3-* ./$Z3Home
             rm z3.zip
+            export Z3_DIR="$SVFHOME/$Z3Home"
         fi
     fi
-
-    export Z3_DIR="$SVFHOME/$Z3Home"
 fi
 
 # Add LLVM & Z3 to $PATH and $LD_LIBRARY_PATH (prepend so that selected instances will be used first)
