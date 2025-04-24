@@ -22,7 +22,7 @@ jobs:
             sanitizer: address
     steps:
       # checkout the repo
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       # setup the environment
       - name: mac-setup
         if: runner.os == 'macOS'
@@ -43,7 +43,9 @@ jobs:
       - name: build-svf
         run: |
           cd $GITHUB_WORKSPACE
-          echo $(pwd)
+          echo "Current directory: $(pwd)"
+          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+          echo "Location of build.sh: $(find . -name build.sh)"
           if [ "${{matrix.sanitizer}}" != "" ]; then export SVF_SANITIZER="${{matrix.sanitizer}}"; fi
           if [ "$RUNNER_OS" == "Linux" ] && [ "${{matrix.sanitizer}}" == "" ]; then export SVF_COVERAGE=1; fi
           git clone "https://github.com/SVF-tools/Test-Suite.git";

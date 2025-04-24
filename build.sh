@@ -20,7 +20,7 @@ jobs=8
 # Variables and Paths
 ########
 SCRIPT_DIR=$( cd -- "$( dirname -- "$0" )" &> /dev/null && pwd )
-SVFHOME="${SCRIPT_DIR}"
+SVFHOME="${GITHUB_WORKSPACE:-$SCRIPT_DIR}"
 sysOS=$(uname -s)
 arch=$(uname -m)
 MajorLLVMVer=20
@@ -40,6 +40,12 @@ LLVMHome="llvm-${LLVMVer}.obj"
 Z3Home="z3.obj"
 
 Z3_BIN="$Z3Home/bin"
+
+# Verify SVFHOME contains CMakeLists.txt
+if [ ! -f "${SVFHOME}/CMakeLists.txt" ]; then
+    echo "Error: CMakeLists.txt not found in SVFHOME (${SVFHOME})"
+    exit 1
+fi
 
 function installing_dependencies() {
     local OSDisplayName="$1"
