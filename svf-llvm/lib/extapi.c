@@ -1045,242 +1045,242 @@ void _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcRKS3_(void **arg
     *arg0 = arg1;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+const unsigned short *ctype_b_loc_global;
 const unsigned short **__ctype_b_loc(void)
 {
-    return NULL;
+    return (const unsigned short **)&ctype_b_loc_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+int *ctype_tolower_loc_global;
 int **__ctype_tolower_loc(void)
 {
-    return NULL;
+    return &ctype_tolower_loc_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+int *ctype_toupper_loc_global;
 int **__ctype_toupper_loc(void)
 {
-    return NULL;
+    return &ctype_toupper_loc_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+int *error_global;
 int *__errno_location(void)
 {
-    return NULL;
+    return error_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+int *h_error_global;
 int * __h_errno_location(void)
 {
-    return NULL;
+    return h_error_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+int *res_state_global;
 void* __res_state(void)
 {
-    return NULL;
+    return res_state_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *asctime_global;
 char *asctime(const void *timeptr)
 {
-    return NULL;
+    return asctime_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *bindtextdomain_global;
 char * bindtextdomain(const char * domainname, const char * dirname)
 {
-    return NULL;
+    return bindtextdomain_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *bind_textdomain_codeset_global;
 char * bind_textdomain_codeset(const char * domainname, const char * codeset)
 {
-    return NULL;
+    return bind_textdomain_codeset_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *ctermid_global;
 char *ctermid(char *s)
 {
-    return s;
+    return s ? s : ctermid_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *dcgettext_global;
 char * dcgettext(const char * domainname, const char * msgid, int category)
 {
-    return NULL;
+    return dcgettext_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *dgettext_global;
 char * dgettext(const char * domainname, const char * msgid)
 {
-    return NULL;
+    return dgettext_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *dngettext_global;
 char * dngettext(const char * domainname, const char * msgid, const char * msgid_plural, unsigned long int n)
 {
-    return NULL;
+    return dngettext_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct group *getgrgid_global;
 struct group *getgrgid(unsigned int gid)
 {
-    return NULL;
+    return getgrgid_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct group *getgrnam_global;
 struct group *getgrnam(const char *name)
 {
-    return NULL;
+    return getgrnam_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct hostent *gethostbyaddr_global;
 struct hostent *gethostbyaddr(const void *addr, unsigned int len, int type)
 {
-    return NULL;
+    return gethostbyaddr_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct hostent *gethostbyname_global;
 struct hostent *gethostbyname(const char *name)
 {
-    return NULL;
+    return gethostbyname_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct hostent *gethostbyname2_global;
 struct hostent *gethostbyname2(const char *name, int af)
 {
-    return NULL;
+    return gethostbyname2_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct mntent *getmntent_global;
 struct mntent *getmntent(void *stream)
 {
-    return NULL;
+    return getmntent_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct protoent *getprotobyname_global;
 struct protoent *getprotobyname(const char *name)
 {
-    return NULL;
+    return getprotobyname_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct protoent *getprotobynumber_global;
 struct protoent *getprotobynumber(int proto)
 {
-    return NULL;
+    return getprotobynumber_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct passwd *getpwent_global;
 struct passwd *getpwent(void)
 {
-    return NULL;
+    return getpwent_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct passwd *getpwnam_global;
 struct passwd *getpwnam(const char *name)
 {
-    return NULL;
+    return getpwnam_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct passwd *getpwuid_global;
 struct passwd *getpwuid(unsigned int uid)
 {
-    return NULL;
+    return getpwuid_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct servent *getservbyname_global;
 struct servent *getservbyname(const char *name, const char *proto)
 {
-    return NULL;
+    return getservbyname_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct servent *getservbyport_global;
 struct servent *getservbyport(int port, const char *proto)
 {
-    return NULL;
+    return getservbyport_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct spwd *getspnam_global;
 struct spwd *getspnam(const char *name)
 {
-    return NULL;
+    return getspnam_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *gettext_global;
 char * gettext(const char * msgid)
 {
-    return NULL;
+    return gettext_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct tm *gmtime_global;
 struct tm *gmtime(const void *timer)
 {
-    return NULL;
+    return gmtime_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *gnu_get_libc_version_global;
 const char *gnu_get_libc_version(void)
 {
-    return NULL;
+    return gnu_get_libc_version_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *gnutls_check_version_global;
 const char * gnutls_check_version(const char * req_version)
 {
-    return NULL;
+    return gnutls_check_version_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct lconv *localeconv_global;
 struct lconv *localeconv(void)
 {
-    return NULL;
+    return localeconv_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+struct tm *localtime_global;
 struct tm *localtime(const void *timer)
 {
-    return NULL;
+    return localtime_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *ngettext_global;
 char * ngettext(const char * msgid, const char * msgid_plural, unsigned long int n)
 {
-    return NULL;
+    return ngettext_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+void *pango_cairo_font_map_global;
 void *pango_cairo_font_map_get_default(void)
 {
-    return NULL;
+    return pango_cairo_font_map_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *re_comp_global;
 char *re_comp(const char *regex)
 {
-    return NULL;
+    return re_comp_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *setlocale_global;
 char *setlocale(int category, const char *locale)
 {
-    return NULL;
+    return setlocale_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *tgoto_global;
 char *tgoto(const char *cap, int col, int row)
 {
-    return NULL;
+    return tgoto_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *tparm_global;
 char *tparm(char *str, ...)
 {
-    return NULL;
+    return tparm_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *zError_global;
 const char *zError(int a)
 {
-    return NULL;
+    return zError_global;
 }
