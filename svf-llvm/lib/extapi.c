@@ -1045,10 +1045,10 @@ void _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcRKS3_(void **arg
     *arg0 = arg1;
 }
 
-const unsigned short *ctype_b_loc_global;
+__attribute__((annotate("ALLOC_STACK_RET")))
 const unsigned short **__ctype_b_loc(void)
 {
-    return (const unsigned short **)&ctype_b_loc_global;
+    return NULL;
 }
 
 int *ctype_tolower_loc_global;
@@ -1063,10 +1063,10 @@ int **__ctype_toupper_loc(void)
     return &ctype_toupper_loc_global;
 }
 
-int *error_global;
+__attribute__((annotate("ALLOC_STACK_RET")))
 int *__errno_location(void)
 {
-    return error_global;
+    return NULL;
 }
 
 int *h_error_global;
@@ -1177,16 +1177,16 @@ struct passwd *getpwent(void)
     return getpwent_global;
 }
 
-struct passwd *getpwnam_global;
+__attribute__((annotate("ALLOC_STACK_RET")))
 struct passwd *getpwnam(const char *name)
 {
-    return getpwnam_global;
+    return NULL;
 }
 
-struct passwd *getpwuid_global;
+__attribute__((annotate("ALLOC_STACK_RET")))
 struct passwd *getpwuid(unsigned int uid)
 {
-    return getpwuid_global;
+    return NULL;
 }
 
 struct servent *getservbyname_global;
@@ -1231,17 +1231,19 @@ const char * gnutls_check_version(const char * req_version)
     return gnutls_check_version_global;
 }
 
-struct lconv *localeconv_global;
+__attribute__((annotate("ALLOC_STACK_RET")))
 struct lconv *localeconv(void)
 {
-    return localeconv_global;
+    return NULL;
 }
 
-struct tm *localtime_global;
+
+__attribute__((annotate("ALLOC_STACK_RET")))
 struct tm *localtime(const void *timer)
 {
-    return localtime_global;
+    return NULL;
 }
+
 
 char *ngettext_global;
 char * ngettext(const char * msgid, const char * msgid_plural, unsigned long int n)
@@ -1261,10 +1263,10 @@ char *re_comp(const char *regex)
     return re_comp_global;
 }
 
-char *setlocale_global;
+__attribute__((annotate("ALLOC_STACK_RET")))
 char *setlocale(int category, const char *locale)
 {
-    return setlocale_global;
+    return NULL;
 }
 
 char *tgoto_global;
