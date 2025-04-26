@@ -727,7 +727,63 @@ void LLVMModuleSet::buildFunToFunMap()
         }
         if (cloneBody)
         {
-            // Clone the body of extFunToClone into clonedFunction
+            // Collect global variables referenced by extFunToClone
+            std::set<GlobalVariable*> referencedGlobals;
+            for (const BasicBlock& BB : *extFunToClone)
+            {
+                for (const Instruction& I : BB)
+                {
+                    for (const Value* operand : I.operands())
+                    {
+                        if (const GlobalVariable* GV = SVFUtil::dyn_cast<GlobalVariable>(operand))
+                        {
+                            referencedGlobals.insert(const_cast<GlobalVariable*>(GV));
+                        }
+                    }
+                }
+            }
+
+            // Copy global variables to target module and update valueMap
+            for (GlobalVariable* GV : referencedGlobals)
+            {
+                GlobalVariable* existingGV = appModule->getGlobalVariable(GV->getName());
+                if (existingGV)
+                {
+                    // Ensure type consistency
+                    assert(existingGV->getType() == GV->getType() && "Global variable type mismatch in client module!");
+                    valueMap[GV] = existingGV; // Map to existing global variable
+                }
+                else
+                {
+                    // Create a new global variable in appModule
+                    GlobalVariable* newGV = new GlobalVariable(
+                        *appModule,
+                        GV->getValueType(),           // Value type
+                        GV->isConstant(),            // Constant flag
+                        GV->getLinkage(),            // Linkage type (e.g., InternalLinkage for static variables)
+                        nullptr,                     // Initializer set later
+                        GV->getName(),
+                        nullptr,
+                        GV->getThreadLocalMode(),    // Thread-local storage mode
+                        GV->getAddressSpace()        // Address space
+                    );
+
+                    // Copy initializer if present
+                    if (GV->hasInitializer())
+                    {
+                        Constant* init = GV->getInitializer();
+                        newGV->setInitializer(init); // Simple case: direct copy
+                    }
+
+                    // Copy attributes (e.g., alignment)
+                    newGV->copyAttributesFrom(GV);
+
+                    // Map original global variable to new global variable
+                    valueMap[GV] = newGV;
+                }
+            }
+
+            // Clone function body with updated valueMap
             llvm::SmallVector<ReturnInst*, 8> ignoredReturns;
             CloneFunctionInto(clonedFunction, extFunToClone, valueMap, llvm::CloneFunctionChangeType::LocalChangesOnly, ignoredReturns, "", nullptr);
         }
