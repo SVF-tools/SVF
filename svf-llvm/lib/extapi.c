@@ -256,12 +256,6 @@ char *crypt(const char *key, const char *salt)
 }
 
 __attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:UNKNOWN")))
-char *ctime(const void *timer)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:UNKNOWN")))
 char *dlerror(void)
 {
     return NULL;
@@ -287,12 +281,6 @@ const char *gcry_cipher_algo_name(int errcode)
 
 __attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:UNKNOWN")))
 const char *svfgcry_md_algo_name_(int errcode)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:UNKNOWN")))
-char *getenv(const char *name)
 {
     return NULL;
 }
@@ -1045,243 +1033,240 @@ void _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcRKS3_(void **arg
     *arg0 = arg1;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
-const unsigned short **__ctype_b_loc(void)
+char getenv_global[10];
+char *getenv(const char *name)
 {
-    return NULL;
+    return getenv_global;
 }
 
-int *ctype_tolower_loc_global;
+unsigned short ctype_b_loc_global[10];
+const unsigned short **__ctype_b_loc(void)
+{
+    return (const unsigned short **)&ctype_b_loc_global;
+}
+
+int ctype_tolower_loc_global[10];
 int **__ctype_tolower_loc(void)
 {
     return &ctype_tolower_loc_global;
 }
 
-int *ctype_toupper_loc_global;
+int ctype_toupper_loc_global[10];
 int **__ctype_toupper_loc(void)
 {
     return &ctype_toupper_loc_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+int error_global[10];
 int *__errno_location(void)
 {
-    return NULL;
+    return error_global;
 }
 
-int *h_error_global;
+int h_error_global[10];
 int * __h_errno_location(void)
 {
     return h_error_global;
 }
 
-int *res_state_global;
+int res_state_global[10];
 void* __res_state(void)
 {
     return res_state_global;
 }
 
-char *asctime_global;
+void *time_global[10];
 char *asctime(const void *timeptr)
 {
-    return asctime_global;
+    return time_global;
 }
 
-char *bindtextdomain_global;
+char *ctime(const void *timer)
+{
+    return time_global;
+}
+
+void *gmtime(const void *timer)
+{
+    return time_global;
+}
+
+void *localtime(const void *timer)
+{
+    return time_global;
+}
+
+char bindtextdomain_global[10];
 char * bindtextdomain(const char * domainname, const char * dirname)
 {
     return bindtextdomain_global;
 }
 
-char *bind_textdomain_codeset_global;
+char bind_textdomain_codeset_global[10];
 char * bind_textdomain_codeset(const char * domainname, const char * codeset)
 {
     return bind_textdomain_codeset_global;
 }
 
-char *ctermid_global;
+char ctermid_global[10];
 char *ctermid(char *s)
 {
     return s ? s : ctermid_global;
 }
 
-char *dcgettext_global;
+char gettext_global[10];
 char * dcgettext(const char * domainname, const char * msgid, int category)
 {
-    return dcgettext_global;
+    return gettext_global;
 }
 
-char *dgettext_global;
 char * dgettext(const char * domainname, const char * msgid)
 {
-    return dgettext_global;
+    return gettext_global;
 }
 
-char *dngettext_global;
 char * dngettext(const char * domainname, const char * msgid, const char * msgid_plural, unsigned long int n)
 {
-    return dngettext_global;
+    return gettext_global;
 }
 
-struct group *getgrgid_global;
-struct group *getgrgid(unsigned int gid)
-{
-    return getgrgid_global;
-}
-
-struct group *getgrnam_global;
-struct group *getgrnam(const char *name)
-{
-    return getgrnam_global;
-}
-
-struct hostent *gethostbyaddr_global;
-struct hostent *gethostbyaddr(const void *addr, unsigned int len, int type)
-{
-    return gethostbyaddr_global;
-}
-
-struct hostent *gethostbyname_global;
-struct hostent *gethostbyname(const char *name)
-{
-    return gethostbyname_global;
-}
-
-struct hostent *gethostbyname2_global;
-struct hostent *gethostbyname2(const char *name, int af)
-{
-    return gethostbyname2_global;
-}
-
-struct mntent *getmntent_global;
-struct mntent *getmntent(void *stream)
-{
-    return getmntent_global;
-}
-
-struct protoent *getprotobyname_global;
-struct protoent *getprotobyname(const char *name)
-{
-    return getprotobyname_global;
-}
-
-struct protoent *getprotobynumber_global;
-struct protoent *getprotobynumber(int proto)
-{
-    return getprotobynumber_global;
-}
-
-struct passwd *getpwent_global;
-struct passwd *getpwent(void)
-{
-    return getpwent_global;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct passwd *getpwnam(const char *name)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct passwd *getpwuid(unsigned int uid)
-{
-    return NULL;
-}
-
-struct servent *getservbyname_global;
-struct servent *getservbyname(const char *name, const char *proto)
-{
-    return getservbyname_global;
-}
-
-struct servent *getservbyport_global;
-struct servent *getservbyport(int port, const char *proto)
-{
-    return getservbyport_global;
-}
-
-struct spwd *getspnam_global;
-struct spwd *getspnam(const char *name)
-{
-    return getspnam_global;
-}
-
-char *gettext_global;
 char * gettext(const char * msgid)
 {
     return gettext_global;
 }
 
-struct tm *gmtime_global;
-struct tm *gmtime(const void *timer)
+char * ngettext(const char * msgid, const char * msgid_plural, unsigned long int n)
 {
-    return gmtime_global;
+    return gettext_global;
 }
 
-char *gnu_get_libc_version_global;
+void *getgrgid_global[10];
+void *getgrgid(unsigned int gid)
+{
+    return getgrgid_global;
+}
+
+void *getgrnam_global[10];
+void *getgrnam(const char *name)
+{
+    return getgrnam_global;
+}
+
+void *gethostby_global[10];
+void *gethostbyaddr(const void *addr, unsigned int len, int type)
+{
+    return gethostby_global;
+}
+
+void *gethostbyname(const char *name)
+{
+    return gethostby_global;
+}
+
+void *gethostbyname2(const char *name, int af)
+{
+    return gethostby_global;
+}
+
+void *getmntent_global[10];
+void *getmntent(void *stream)
+{
+    return getmntent_global;
+}
+
+void *getproto_global[10];
+void *getprotobyname(const char *name)
+{
+    return getproto_global;
+}
+
+void *getprotobynumber(int proto)
+{
+    return getproto_global;
+}
+
+void *getpw_global[10];
+void *getpwent(void)
+{
+    return getpw_global;
+}
+
+void *getpwnam(const char *name)
+{
+    return getpw_global;
+}
+
+void *getpwuid(unsigned int uid)
+{
+    return getpw_global;
+}
+
+void *getserv_global[10];
+void *getservbyname(const char *name, const char *proto)
+{
+    return getserv_global;
+}
+
+void *getservbyport(int port, const char *proto)
+{
+    return getserv_global;
+}
+
+void *getspnam_global[10];
+void *getspnam(const char *name)
+{
+    return getspnam_global;
+}
+
+char gnu_get_libc_version_global[10];
 const char *gnu_get_libc_version(void)
 {
     return gnu_get_libc_version_global;
 }
 
-char *gnutls_check_version_global;
+char gnutls_check_version_global[10];
 const char * gnutls_check_version(const char * req_version)
 {
     return gnutls_check_version_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct lconv *localeconv(void)
+void *localeconv_global[10];
+void *localeconv(void)
 {
-    return NULL;
+    return localeconv_global;
 }
 
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct tm *localtime(const void *timer)
-{
-    return NULL;
-}
-
-
-char *ngettext_global;
-char * ngettext(const char * msgid, const char * msgid_plural, unsigned long int n)
-{
-    return ngettext_global;
-}
-
-void *pango_cairo_font_map_global;
+void *pango_cairo_font_map_global[10];
 void *pango_cairo_font_map_get_default(void)
 {
     return pango_cairo_font_map_global;
 }
 
-char *re_comp_global;
+char re_comp_global[10];
 char *re_comp(const char *regex)
 {
     return re_comp_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char setlocale_global[10];
 char *setlocale(int category, const char *locale)
 {
-    return NULL;
+    return setlocale_global;
 }
 
-char *tgoto_global;
+char tgoto_global[10];
 char *tgoto(const char *cap, int col, int row)
 {
     return tgoto_global;
 }
 
-char *tparm_global;
+char tparm_global[10];
 char *tparm(char *str, ...)
 {
     return tparm_global;
 }
 
-char *zError_global;
+char zError_global[10];
 const char *zError(int a)
 {
     return zError_global;
