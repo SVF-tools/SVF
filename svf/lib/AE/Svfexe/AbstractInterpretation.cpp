@@ -71,7 +71,6 @@ AbstractInterpretation::~AbstractInterpretation()
         delete it.second;
 }
 
-//TODO: Modify description
 /**
  * @brief Compute WTO for each function partition entry
  *
@@ -188,7 +187,6 @@ void AbstractInterpretation::handleGlobalNode()
 /// Scenario 2: preblock -----(callEdge)----> block
 bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNode)
 {
-    // TODO: Use `getAbsStateFromTrace` instead of abstractTrace[edge->getSrcNode()]?
     std::vector<AbstractState> workList;
     AbstractState preAs;
     for (auto& edge: icfgNode->getInEdges())
