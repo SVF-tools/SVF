@@ -109,6 +109,21 @@ class AbstractInterpretation
 public:
     typedef SCCDetection<CallGraph*> CallGraphSCC;
 
+    /*
+     * For recursive test case
+     * int demo(int a) {
+        if (a >= 10000)
+            return a;
+            demo(a+1);
+        }
+
+        int main() {
+            int result = demo(0);
+        }
+     * if set TOP, result = [-oo, +oo] since when encountering a recursive function call, the return value of the function is set to the top element. In addition, any pointers stored inside the recursive function are also set to the top element.
+     * if set WIDEN_ONLY, result = [10000, +oo] since for the cycle formed by ICFG nodes inside a recursive function, apply a widening operation on the abstract state at the cycle head. No narrowing operation is performed.
+     * if set WIDEN_NARROW, result = [10000, 10000] since for the cycle formed by ICFG nodes inside a recursive function, apply both widening and narrowing operations on the abstract state at the cycle head.
+     * */
     enum RecurMode
     {
         TOP,

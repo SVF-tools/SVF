@@ -797,8 +797,7 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
                     // For nodes in recursions, widen to top in WIDEN_TOP mode
                     if (Options::RecurMode() == WIDEN_ONLY)
                     {
-                        // TODO: Change?
-                        abstractTrace[cycle_head] = abstractTrace[cycle_head].top();
+                        abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
                     }
                     // Perform normal widening in WIDEN_NARROW mode
                     else if (Options::RecurMode() == WIDEN_NARROW)

@@ -785,11 +785,11 @@ const OptionMap<AbstractInterpretation::RecurMode> Options::RecurMode(
     AbstractInterpretation::RecurMode::TOP,
     {
         {AbstractInterpretation::RecurMode::TOP, "top",
-         "Set all parameters and return values to TOP in recursive functions"},
-        {AbstractInterpretation::RecurMode::WIDEN_ONLY, "widen-top",
-         "Set all variables in the WTO Cycle to TOP in recursive functions"},
+         "When encountering a recursive function call, the return value of the function is set to the top element. In addition, any pointers stored inside the recursive function are also set to the top element."},
+        {AbstractInterpretation::RecurMode::WIDEN_ONLY, "widen-only",
+         "For the cycle formed by ICFG nodes inside a recursive function, apply a widening operation on the abstract state at the cycle head. No narrowing operation is performed."},
         {AbstractInterpretation::RecurMode::WIDEN_NARROW, "widen-narrow",
-         "Perform both Widen and Narrow operations on all WTO Cycle variables in recursive functions"}
+         "For the cycle formed by ICFG nodes inside a recursive function, apply both widening and narrowing operations on the abstract state at the cycle head."}
     }
 );
 const Option<u32_t> Options::Timeout(
