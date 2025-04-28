@@ -246,7 +246,7 @@ public:
     // Abstract Execution
     static const Option<u32_t> WidenDelay;
     /// recursion handling mode, Default: TOP
-    static const OptionMap<AbstractInterpretation::RecurMode> RecurMode;
+    static const OptionMap<AbstractInterpretation::RecurHandle> RecurHandle;
     /// the max time consumptions (seconds). Default: 4 hours 14400s
     static const Option<u32_t> Timeout;
     /// bug info output file, Default: output.db

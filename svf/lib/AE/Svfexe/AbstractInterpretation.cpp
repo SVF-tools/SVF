@@ -97,7 +97,7 @@ void AbstractInterpretation::initWTO()
             recursiveFuns.insert(it->second->getFunction()); // Mark the function as recursive
 
         // In TOP mode, calculate the WTO
-        if (Options::RecurMode() == TOP)
+        if (Options::RecurHandle() == TOP)
         {
             if (it->second->getFunction()->isDeclaration())
                 continue;
@@ -106,8 +106,8 @@ void AbstractInterpretation::initWTO()
             funcToWTO[it->second->getFunction()] = wto;
         }
         // In WIDEN_TOP or WIDEN_NARROW mode, calculate the IWTO
-        else if (Options::RecurMode() == WIDEN_ONLY ||
-            Options::RecurMode() == WIDEN_NARROW)
+        else if (Options::RecurHandle() == WIDEN_ONLY ||
+            Options::RecurHandle() == WIDEN_NARROW)
         {
             const FunObjVar *fun = it->second->getFunction();
             if (fun->isDeclaration())
@@ -227,7 +227,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNo
             else if (const RetCFGEdge *retCfgEdge =
                          SVFUtil::dyn_cast<RetCFGEdge>(edge))
             {
-                switch (Options::RecurMode())
+                switch (Options::RecurHandle())
                 {
                     case TOP:
                     {
@@ -625,7 +625,7 @@ void AbstractInterpretation::handleCallSite(const ICFGNode* node)
         {
             extCallPass(callNode);
         }
-        else if (isRecursiveCall(callNode) && Options::RecurMode() == TOP)
+        else if (isRecursiveCall(callNode) && Options::RecurHandle() == TOP)
         {
             recursiveCallPass(callNode);
         }
@@ -715,7 +715,7 @@ void AbstractInterpretation::directCallFunPass(const CallICFGNode *callNode)
     abstractTrace[callNode] = as;
 
     const FunObjVar *calleeFun =callNode->getCalledFunction();
-    if (Options::RecurMode() == WIDEN_ONLY || Options::RecurMode() == WIDEN_NARROW)
+    if (Options::RecurHandle() == WIDEN_ONLY || Options::RecurHandle() == WIDEN_NARROW)
     {
         if (isRecursiveCallSite(callNode, calleeFun))
             return;
@@ -754,7 +754,7 @@ void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
 
     if(const FunObjVar* funObjVar = SVFUtil::dyn_cast<FunObjVar>(func_var))
     {
-        if (Options::RecurMode() == WIDEN_ONLY || Options::RecurMode() == WIDEN_NARROW)
+        if (Options::RecurHandle() == WIDEN_ONLY || Options::RecurHandle() == WIDEN_NARROW)
         {
             if (isRecursiveCallSite(callNode, funObjVar))
                 return;
@@ -795,12 +795,12 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
                 if (isRecursiveFun(cycle->head()->getICFGNode()->getFun()))
                 {
                     // For nodes in recursions, widen to top in WIDEN_TOP mode
-                    if (Options::RecurMode() == WIDEN_ONLY)
+                    if (Options::RecurHandle() == WIDEN_ONLY)
                     {
                         abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
                     }
                     // Perform normal widening in WIDEN_NARROW mode
-                    else if (Options::RecurMode() == WIDEN_NARROW)
+                    else if (Options::RecurHandle() == WIDEN_NARROW)
                     {
                         abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
                     }
@@ -829,12 +829,12 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
                 if (isRecursiveFun(cycle->head()->getICFGNode()->getFun()))
                 {
                     // For nodes in recursions, skip narrowing in WIDEN_TOP mode
-                    if (Options::RecurMode() == WIDEN_ONLY)
+                    if (Options::RecurHandle() == WIDEN_ONLY)
                     {
                         break;
                     }
                     // Perform normal narrowing in WIDEN_NARROW mode
-                    else if (Options::RecurMode() == WIDEN_NARROW)
+                    else if (Options::RecurHandle() == WIDEN_NARROW)
                     {
                         // Widening's fixpoint reached in the widening phase, switch to narrowing
                         abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);

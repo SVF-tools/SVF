@@ -124,7 +124,7 @@ public:
      * if set WIDEN_ONLY, result = [10000, +oo] since for the cycle formed by ICFG nodes inside a recursive function, apply a widening operation on the abstract state at the cycle head. No narrowing operation is performed.
      * if set WIDEN_NARROW, result = [10000, 10000] since for the cycle formed by ICFG nodes inside a recursive function, apply both widening and narrowing operations on the abstract state at the cycle head.
      * */
-    enum RecurMode
+    enum RecurHandle
     {
         TOP,
         WIDEN_ONLY,
