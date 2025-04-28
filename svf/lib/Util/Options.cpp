@@ -779,17 +779,17 @@ const Option<u32_t> Options::LoopBound(
 
 const Option<u32_t> Options::WidenDelay(
     "widen-delay", "Loop Widen Delay", 3);
-const OptionMap<AbstractInterpretation::RecurHandle> Options::RecurHandle(
-    "recur-handle",
+const OptionMap<AbstractInterpretation::HandleRecur> Options::HandleRecur(
+    "handle-recur",
     "Recursion handling mode in abstract execution",
-    AbstractInterpretation::RecurHandle::TOP,
+    AbstractInterpretation::HandleRecur::TOP,
     {
-        {AbstractInterpretation::RecurHandle::TOP, "top",
-         "When encountering a recursive function call, the return value of the function is set to the top element. In addition, any pointers stored inside the recursive function are also set to the top element."},
-        {AbstractInterpretation::RecurHandle::WIDEN_ONLY, "widen-only",
-         "For the cycle formed by ICFG nodes inside a recursive function, apply a widening operation on the abstract state at the cycle head. No narrowing operation is performed."},
-        {AbstractInterpretation::RecurHandle::WIDEN_NARROW, "widen-narrow",
-         "For the cycle formed by ICFG nodes inside a recursive function, apply both widening and narrowing operations on the abstract state at the cycle head."}
+        {AbstractInterpretation::HandleRecur::TOP, "top",
+         "Set the return value and stored pointers in recursive functions to the top value."},
+        {AbstractInterpretation::HandleRecur::WIDEN_ONLY, "widen-only",
+         "Apply widening only at the cycle head of recursive functions."},
+        {AbstractInterpretation::HandleRecur::WIDEN_NARROW, "widen-narrow",
+         "Apply both widening and narrowing at the cycle head of recursive functions."}
     }
 );
 const Option<u32_t> Options::Timeout(
