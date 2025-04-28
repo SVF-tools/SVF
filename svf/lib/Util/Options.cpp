@@ -782,9 +782,15 @@ const Option<u32_t> Options::WidenDelay(
 const OptionMap<AbstractInterpretation::RecurMode> Options::RecurMode(
     "recur-mode",
     "Recursion handling mode in abstract execution",
-    {AbstractInterpretation::RecurMode::TOP, "top", "Set all parameters and return values to TOP in recursive functions"},
-    {AbstractInterpretation::RecurMode::WIDEN_ONLY, "widen-top", "Set all variables in the WTO Cycle to TOP in recursive functions"},
-    {AbstractInterpretation::RecurMode::WIDEN_NARROW, "widen-narrow", "Perform both Widen and Narrow operations on all WTO Cycle variables in recursive functions"}
+    AbstractInterpretation::RecurMode::TOP,
+    {
+        {AbstractInterpretation::RecurMode::TOP, "top",
+         "Set all parameters and return values to TOP in recursive functions"},
+        {AbstractInterpretation::RecurMode::WIDEN_ONLY, "widen-top",
+         "Set all variables in the WTO Cycle to TOP in recursive functions"},
+        {AbstractInterpretation::RecurMode::WIDEN_NARROW, "widen-narrow",
+         "Perform both Widen and Narrow operations on all WTO Cycle variables in recursive functions"}
+    }
 );
 const Option<u32_t> Options::Timeout(
     "timeout", "time out (seconds), set -1 (no timeout), default 14400s",14400);
