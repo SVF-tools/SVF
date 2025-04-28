@@ -219,26 +219,6 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNo
             else if (const CallCFGEdge *callCfgEdge =
                          SVFUtil::dyn_cast<CallCFGEdge>(edge))
             {
-                // context sensitive implementation
-                // const CallICFGNode *callSite = callCfgEdge->getCallSite();
-                // const FunObjVar *callee = icfgNode->getFun();
-                // if (isRecursiveCall(callSite, callee))
-                // {
-                //     workList.push_back(
-                //         abstractTrace[callCfgEdge->getSrcNode()]);
-                // }
-                // else
-                // {
-                //     if (callSite == callSiteStack.back())
-                //     {
-                //         workList.push_back(
-                //             abstractTrace[callCfgEdge->getSrcNode()]);
-                //     }
-                //     else
-                //     {
-                //         // do nothing
-                //     }
-                // }
 
                 // context insensitive implementation
                 workList.push_back(
