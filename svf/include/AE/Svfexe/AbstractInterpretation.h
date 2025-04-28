@@ -120,9 +120,9 @@ public:
         int main() {
             int result = demo(0);
         }
-     * if set TOP, result = [-oo, +oo] since when encountering a recursive function call, the return value of the function is set to the top element. In addition, any pointers stored inside the recursive function are also set to the top element.
-     * if set WIDEN_ONLY, result = [10000, +oo] since for the cycle formed by ICFG nodes inside a recursive function, apply a widening operation on the abstract state at the cycle head. No narrowing operation is performed.
-     * if set WIDEN_NARROW, result = [10000, 10000] since for the cycle formed by ICFG nodes inside a recursive function, apply both widening and narrowing operations on the abstract state at the cycle head.
+     * if set TOP, result = [-oo, +oo] since the return value, and any stored object pointed by q at *q = p in recursive functions will be set to the top value.
+     * if set WIDEN_ONLY, result = [10000, +oo] since only widening is applied at the cycle head of recursive functions without narrowing.
+     * if set WIDEN_NARROW, result = [10000, 10000] since both widening and narrowing are applied at the cycle head of recursive functions.
      * */
     enum HandleRecur
     {

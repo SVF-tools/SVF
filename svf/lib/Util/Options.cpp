@@ -785,9 +785,9 @@ const OptionMap<AbstractInterpretation::HandleRecur> Options::HandleRecur(
     AbstractInterpretation::HandleRecur::WIDEN_NARROW,
     {
         {AbstractInterpretation::HandleRecur::TOP, "top",
-         "Set the return value and any stored object (*q = p), which is any obj pointed by q in recursive functions to the top value."},
+         "The return value, and any stored object pointed by q at *q = p in recursive functions will be set to the top value."},
         {AbstractInterpretation::HandleRecur::WIDEN_ONLY, "widen-only",
-         "Apply widening only at the cycle head of recursive functions."},
+         "Only apply widening at the cycle head of recursive functions."},
         {AbstractInterpretation::HandleRecur::WIDEN_NARROW, "widen-narrow",
          "Apply both widening and narrowing at the cycle head of recursive functions."}
     }
