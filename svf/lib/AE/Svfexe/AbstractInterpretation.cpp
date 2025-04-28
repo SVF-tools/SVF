@@ -106,7 +106,7 @@ void AbstractInterpretation::initWTO()
             funcToWTO[it->second->getFunction()] = wto;
         }
         // In WIDEN_TOP or WIDEN_NARROW mode, calculate the IWTO
-        else if (Options::RecurMode() == WIDEN_TOP ||
+        else if (Options::RecurMode() == WIDEN_ONLY ||
             Options::RecurMode() == WIDEN_NARROW)
         {
             const FunObjVar *fun = it->second->getFunction();
@@ -234,7 +234,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNo
                         workList.push_back(abstractTrace[retCfgEdge->getSrcNode()]);
                         break;
                     }
-                    case WIDEN_TOP:
+                    case WIDEN_ONLY:
                     case WIDEN_NARROW:
                     {
                         const RetICFGNode* returnSite = SVFUtil::dyn_cast<RetICFGNode>(icfgNode);
@@ -715,7 +715,7 @@ void AbstractInterpretation::directCallFunPass(const CallICFGNode *callNode)
     abstractTrace[callNode] = as;
 
     const FunObjVar *calleeFun =callNode->getCalledFunction();
-    if (Options::RecurMode() == WIDEN_TOP || Options::RecurMode() == WIDEN_NARROW)
+    if (Options::RecurMode() == WIDEN_ONLY || Options::RecurMode() == WIDEN_NARROW)
     {
         if (isRecursiveCallSite(callNode, calleeFun))
             return;
@@ -754,7 +754,7 @@ void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
 
     if(const FunObjVar* funObjVar = SVFUtil::dyn_cast<FunObjVar>(func_var))
     {
-        if (Options::RecurMode() == WIDEN_TOP || Options::RecurMode() == WIDEN_NARROW)
+        if (Options::RecurMode() == WIDEN_ONLY || Options::RecurMode() == WIDEN_NARROW)
         {
             if (isRecursiveCallSite(callNode, funObjVar))
                 return;
@@ -795,7 +795,7 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
                 if (isRecursiveFun(cycle->head()->getICFGNode()->getFun()))
                 {
                     // For nodes in recursions, widen to top in WIDEN_TOP mode
-                    if (Options::RecurMode() == WIDEN_TOP)
+                    if (Options::RecurMode() == WIDEN_ONLY)
                     {
                         // TODO: Change?
                         abstractTrace[cycle_head] = abstractTrace[cycle_head].top();
@@ -830,7 +830,7 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
                 if (isRecursiveFun(cycle->head()->getICFGNode()->getFun()))
                 {
                     // For nodes in recursions, skip narrowing in WIDEN_TOP mode
-                    if (Options::RecurMode() == WIDEN_TOP)
+                    if (Options::RecurMode() == WIDEN_ONLY)
                     {
                         break;
                     }

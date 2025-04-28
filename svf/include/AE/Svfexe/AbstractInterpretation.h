@@ -112,7 +112,7 @@ public:
     enum RecurMode
     {
         TOP,
-        WIDEN_TOP,
+        WIDEN_ONLY,
         WIDEN_NARROW
     };
 

@@ -107,6 +107,11 @@ jobs:
         run:
           ctest -R ae_overflow_test -VV
 
+      - name: ctest ae_recursion
+        working-directory: ${{github.workspace}}/Release-build
+        run:
+          ctest -R ae_recursion_tests -VV
+
       - name: ctest cfl_tests
         working-directory: ${{github.workspace}}/Release-build
         run:
