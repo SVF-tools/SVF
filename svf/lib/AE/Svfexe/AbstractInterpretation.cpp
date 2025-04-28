@@ -106,7 +106,7 @@ void AbstractInterpretation::initWTO()
         }
         // In WIDEN_TOP or WIDEN_NARROW mode, calculate the IWTO
         else if (Options::HandleRecur() == WIDEN_ONLY ||
-            Options::HandleRecur() == WIDEN_NARROW)
+                 Options::HandleRecur() == WIDEN_NARROW)
         {
             const FunObjVar *fun = it->second->getFunction();
             if (fun->isDeclaration())
@@ -133,10 +133,10 @@ void AbstractInterpretation::initWTO()
                         callSite = *(inEdge->getIndirectCalls().begin());
                     else
                         assert(false && "CallGraphEdge must "
-                                        "be either direct or indirect!");
+                               "be either direct or indirect!");
 
                     nonRecursiveCallSites.insert(
-                        {callSite, inEdge->getDstNode()->getFunction()->getId()});
+                    {callSite, inEdge->getDstNode()->getFunction()->getId()});
                 }
             }
 
@@ -195,7 +195,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNo
         {
 
             if (const IntraCFGEdge *intraCfgEdge =
-                    SVFUtil::dyn_cast<IntraCFGEdge>(edge))
+                        SVFUtil::dyn_cast<IntraCFGEdge>(edge))
             {
                 AbstractState tmpEs = abstractTrace[edge->getSrcNode()];
                 if (intraCfgEdge->getCondition())
@@ -220,26 +220,26 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNo
 
                 // context insensitive implementation
                 workList.push_back(
-                        abstractTrace[callCfgEdge->getSrcNode()]);
+                    abstractTrace[callCfgEdge->getSrcNode()]);
             }
             else if (const RetCFGEdge *retCfgEdge =
                          SVFUtil::dyn_cast<RetCFGEdge>(edge))
             {
                 switch (Options::HandleRecur())
                 {
-                    case TOP:
-                    {
+                case TOP:
+                {
+                    workList.push_back(abstractTrace[retCfgEdge->getSrcNode()]);
+                    break;
+                }
+                case WIDEN_ONLY:
+                case WIDEN_NARROW:
+                {
+                    const RetICFGNode* returnSite = SVFUtil::dyn_cast<RetICFGNode>(icfgNode);
+                    const CallICFGNode* callSite = returnSite->getCallICFGNode();
+                    if (hasAbsStateFromTrace(callSite))
                         workList.push_back(abstractTrace[retCfgEdge->getSrcNode()]);
-                        break;
-                    }
-                    case WIDEN_ONLY:
-                    case WIDEN_NARROW:
-                    {
-                        const RetICFGNode* returnSite = SVFUtil::dyn_cast<RetICFGNode>(icfgNode);
-                        const CallICFGNode* callSite = returnSite->getCallICFGNode();
-                        if (hasAbsStateFromTrace(callSite))
-                            workList.push_back(abstractTrace[retCfgEdge->getSrcNode()]);
-                    }
+                }
                 }
             }
             else
@@ -692,10 +692,10 @@ void AbstractInterpretation::recursiveCallPass(const CallICFGNode *callNode)
 }
 
 bool AbstractInterpretation::isRecursiveCallSite(const CallICFGNode* callNode,
-                                                const FunObjVar* callee)
+        const FunObjVar* callee)
 {
     return nonRecursiveCallSites.find({callNode, callee->getId()}) ==
-            nonRecursiveCallSites.end();
+           nonRecursiveCallSites.end();
 }
 
 bool AbstractInterpretation::isDirectCall(const CallICFGNode *callNode)

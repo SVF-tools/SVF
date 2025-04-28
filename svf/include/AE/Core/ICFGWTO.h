@@ -89,7 +89,7 @@ public:
     CallGraph *cg;
 
     explicit ICFGIWTO(ICFG* graph, const ICFGNode* node, NodeBS & funcPar, CallGraph* cg) :
-          Base(graph, node), funcPar(funcPar), cg(cg) {}
+        Base(graph, node), funcPar(funcPar), cg(cg) {}
 
     virtual ~ICFGIWTO()
     {
