@@ -781,8 +781,8 @@ const Option<u32_t> Options::WidenDelay(
     "widen-delay", "Loop Widen Delay", 3);
 const OptionMap<AbstractInterpretation::HandleRecur> Options::HandleRecur(
     "handle-recur",
-    "Recursion handling mode in abstract execution",
-    AbstractInterpretation::HandleRecur::TOP,
+    "Recursion handling mode in abstract execution (Default -widen-narrow)",
+    AbstractInterpretation::HandleRecur::WIDEN_NARROW,
     {
         {AbstractInterpretation::HandleRecur::TOP, "top",
          "Set the return value and stored pointers in recursive functions to the top value."},
