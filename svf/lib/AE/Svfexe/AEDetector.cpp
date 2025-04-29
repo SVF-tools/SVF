@@ -649,6 +649,9 @@ void NullptrDerefDetector::initExtAPINullptrDerefCheckRules(){
 void NullptrDerefDetector::detectExtAPI(AbstractState& as, const CallICFGNode* call) {
     assert(call->getCalledFunction() && "FunObjVar* is nullptr");
     AbsExtAPI::ExtAPIType extType = AbsExtAPI::UNCLASSIFIED;
+    // get ext type
+    // get argument index which are nullptr deref checkpoints for extapi
+    std::vector<u32_t> tmp_args;
     for (const std::string &annotation: ExtAPI::getExtAPI()->getExtFuncAnnotations(call->getCalledFunction())){
         if (annotation.find("MEMCPY") != std::string::npos) 
             extType = AbsExtAPI::MEMCPY;
@@ -658,7 +661,24 @@ void NullptrDerefDetector::detectExtAPI(AbstractState& as, const CallICFGNode* c
             extType = AbsExtAPI::STRCPY;
         else if (annotation.find("STRCAT") != std::string::npos)
             extType = AbsExtAPI::STRCAT;
+        //annotate("NULL_DEREF:0,1"), get index 0 and 1 push to tmp_args
+        // Parse "NULL_DEREF" annotations
+        size_t pos = annotation.find("NULL_DEREF:");
+        if (pos != std::string::npos) {
+            std::string indices = annotation.substr(pos + 11); // Extract substring after "NULL_DEREF:"
+            std::stringstream ss(indices);
+            std::string index;
+            while (std::getline(ss, index, ',')) { // Split by comma
+                tmp_args.push_back(static_cast<u32_t>(std::stoi(index))); // Convert to integer and push
+            }
+            for (u32_t idx: tmp_args) {
+                std::cout << "NULLPTR CHECK IDX: " << idx << std::endl;
+            }
+        }
     }
+
+
+
     if (extType == AbsExtAPI::MEMCPY)
     {
         if(extAPINullptrDerefCheckRules.count(call->getCalledFunction()->getName()) == 0) {

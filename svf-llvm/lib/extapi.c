@@ -637,7 +637,7 @@ char *wmemset(wchar_t * dst, wchar_t elem, int sz, int flag) {
 }
 
 
-__attribute__((annotate("STRCPY")))
+__attribute__((annotate("STRCPY"), annotate("NULL_DEREF:0,1")))
 char * __strcpy_chk(char * dest, const char * src, unsigned long destlen)
 {
     return NULL;
