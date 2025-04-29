@@ -889,6 +889,7 @@ int main(int argc, char** argv)
         ae.addDetector(std::make_unique<NullptrDerefDetector>());
     ae.runOnModule(pag->getICFG());
 
+    AndersenWaveDiff::releaseAndersenWaveDiff();
     LLVMModuleSet::releaseLLVMModuleSet();
 
     return 0;
