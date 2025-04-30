@@ -404,7 +404,7 @@ void SVFIRBuilder::initialiseBaseObjVars()
             pag->addHeapObjNode(iter->second, pag->getObjTypeInfo(id), llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
         }
         // Check if the value is an alloca instruction and add a stack object node
-        else if (LLVMUtil::isStackObj(llvmValue))
+        else if (SVFUtil::isa<AllocaInst>(llvmValue))
         {
             NodeID id = llvmModuleSet()->getObjectNode(iter->first);
             pag->addStackObjNode(iter->second, pag->getObjTypeInfo(id), llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
