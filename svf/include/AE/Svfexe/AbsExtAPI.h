@@ -28,9 +28,7 @@
 #include "AE/Core/AbstractState.h"
 #include "AE/Core/ICFGWTO.h"
 #include "AE/Svfexe/AEDetector.h"
-#include "AE/Svfexe/AbsExtAPI.h"
 #include "Util/SVFBugReport.h"
-#include "WPA/Andersen.h"
 
 namespace SVF
 {

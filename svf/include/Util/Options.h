@@ -11,6 +11,7 @@
 #include "Util/NodeIDAllocator.h"
 #include "MSSA/MemSSA.h"
 #include "WPA/WPAPass.h"
+#include "AE/Svfexe/AbstractInterpretation.h"
 
 namespace SVF
 {
@@ -244,6 +245,8 @@ public:
 
     // Abstract Execution
     static const Option<u32_t> WidenDelay;
+    /// recursion handling mode, Default: TOP
+    static const OptionMap<AbstractInterpretation::HandleRecur> HandleRecur;
     /// the max time consumptions (seconds). Default: 4 hours 14400s
     static const Option<u32_t> Timeout;
     /// bug info output file, Default: output.db

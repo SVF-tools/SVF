@@ -36,6 +36,7 @@
 
 #include "Graphs/ICFG.h"
 #include "Graphs/WTO.h"
+#include "Graphs/CallGraph.h"
 
 namespace SVF
 {
@@ -77,6 +78,58 @@ public:
         }
     }
 };
+
+// Added for IWTO
+class ICFGIWTO : public ICFGWTO
+{
+public:
+    typedef ICFGWTO Base;
+    typedef WTOComponentVisitor<ICFG>::WTONodeT ICFGWTONode;
+    NodeBS &funcPar;
+    CallGraph *cg;
+
+    explicit ICFGIWTO(ICFG* graph, const ICFGNode* node, NodeBS & funcPar, CallGraph* cg) :
+        Base(graph, node), funcPar(funcPar), cg(cg) {}
+
+    virtual ~ICFGIWTO()
+    {
+    }
+
+    inline void forEachSuccessor(
+        const ICFGNode* node,
+        std::function<void(const ICFGNode*)> func) const override
+    {
+        if (const auto* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
+        {
+
+            for (const auto &e : callNode->getOutEdges())
+            {
+                ICFGNode *calleeEntryICFGNode = e->getDstNode();
+                CallGraphNode * calleeCGNode = cg->getCallGraphNode(calleeEntryICFGNode->getFun());
+
+                const ICFGNode* succ = nullptr;
+                if (funcPar.test(calleeCGNode->getId()))
+                    succ = calleeEntryICFGNode;
+                else
+                    succ = callNode->getRetICFGNode();
+
+                func(succ);
+            }
+        }
+        else
+        {
+            for (const auto& e : node->getOutEdges())
+            {
+                ICFGNode *succ = e->getDstNode();
+                CallGraphNode *succCGNode = cg->getCallGraphNode(succ->getFun());
+                if (!funcPar.test(succCGNode->getId()))
+                    continue;
+                func(succ);
+            }
+        }
+    }
+};
+
 } // namespace SVF
 
 #endif // SVF_ICFGWTO_H
