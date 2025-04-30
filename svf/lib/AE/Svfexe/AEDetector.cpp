@@ -534,7 +534,11 @@ void NullptrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
         }
     }
     else {
-        detectExtAPI(as, SVFUtil::cast<CallICFGNode>(node));
+        const CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(node);
+        if (SVFUtil::isExtCall(callNode->getCalledFunction()))
+        {
+            detectExtAPI(as, callNode);
+        }
     }
 
 }
