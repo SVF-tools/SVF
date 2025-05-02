@@ -932,7 +932,9 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
     }
     else
         assert(false && "implement this part");
-    assert(!getAbsStateFromTrace(stmt->getICFGNode())[0].isInterval()) ;
+    // NullPtr is index 0, it should not be changed
+    assert(!getAbsStateFromTrace(stmt->getICFGNode())[0].isInterval() &&
+           !getAbsStateFromTrace(stmt->getICFGNode())[0].isAddr());
 }
 
 void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
@@ -1322,6 +1324,7 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
         }
         as[res] = resVal;
     }
+    // if op0 or op1 is nullptr, compare abstractValue instead of touching addr or interval
     else if (op0 == 0 || op1 == 0) {
         u32_t res = cmp->getResID();
         IntervalValue resVal = (as[op0].equals(as[op1])) ? IntervalValue(1, 1) : IntervalValue(0, 0);
