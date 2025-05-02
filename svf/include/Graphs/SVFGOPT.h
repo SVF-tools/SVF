@@ -81,8 +81,17 @@ public:
         keepContextSelfCycle = true;
     }
 
+    /// Optimised SVFG's aren't written in their optimised form; read full SVFG and optimise it
+    void readAndOptSVFG(const std::string &filename);
+
+    /// Optimised SVFG's shouldn't be written in their optimised form; writes the full SVFG to file before optimising
+    void buildAndWriteSVFG(const std::string &filename);
+
 protected:
     void buildSVFG() override;
+
+    /// Separate optimisation function to avoid duplicate code
+    void optimiseSVFG();
 
     /// Connect SVFG nodes between caller and callee for indirect call sites
     //@{
