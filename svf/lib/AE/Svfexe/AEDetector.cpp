@@ -551,7 +551,8 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode){
          AbstractState& as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
          
          const SVFVar* arg0Val = callNode->getArgument(0);
-         bool isSafe = canSafelyDerefPtr(as, arg0Val);
+         // opt may directly dereference a null pointer and call UNSAFE_LOAD(null)
+         bool isSafe = canSafelyDerefPtr(as, arg0Val) && arg0Val->getId() != 0;
          if (!isSafe) {
             std::cout << "detect null pointer deference success: " << callNode->toString() << std::endl;
             return;
@@ -571,7 +572,8 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode){
          if (callNode->arg_size() < 1) return;
          AbstractState&as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
          const SVFVar* arg0Val = callNode->getArgument(0);
-         bool isSafe = canSafelyDerefPtr(as, arg0Val);
+         // opt may directly dereference a null pointer and call UNSAFE_LOAD(null)ols
+         bool isSafe = canSafelyDerefPtr(as, arg0Val) && arg0Val->getId() != 0;
          if (isSafe) {
              std::cout << "safe load pointer success: " << callNode->toString() << std::endl;
              return;

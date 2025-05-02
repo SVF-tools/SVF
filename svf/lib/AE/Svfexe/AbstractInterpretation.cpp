@@ -275,6 +275,10 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
     NodeID res_id = cmpStmt->getResID();
     s32_t predicate = cmpStmt->getPredicate();
 
+    if (op0 == 0 || op1 == 0) {
+        as = new_es;
+        return true;
+    }
     // if op0 or op1 is undefined, return;
     // skip address compare
     if (new_es.inVarToAddrsTable(op0) || new_es.inVarToAddrsTable(op1))
@@ -928,6 +932,7 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
     }
     else
         assert(false && "implement this part");
+    assert(!getAbsStateFromTrace(stmt->getICFGNode())[0].isInterval()) ;
 }
 
 void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
@@ -1315,6 +1320,11 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
         {
             resVal = IntervalValue(0, 0);
         }
+        as[res] = resVal;
+    }
+    else if (op0 == 0 || op1 == 0) {
+        u32_t res = cmp->getResID();
+        IntervalValue resVal = (as[op0].equals(as[op1])) ? IntervalValue(1, 1) : IntervalValue(0, 0);
         as[res] = resVal;
     }
     else
