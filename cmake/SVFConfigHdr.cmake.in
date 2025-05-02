@@ -1,0 +1,40 @@
+#ifndef SVF_CONFIG_H_IN
+#define SVF_CONFIG_H_IN
+
+// The SVF version of this installation
+#define SVF_VERSION "@SVF_VERSION@"
+
+// Expose the settings of this SVF instance's build configuration (build tree)
+#cmakedefine SVF_SANITIZE "@SVF_SANITIZE@" // Empty or "address"/"thread"
+#cmakedefine01 SVF_ENABLE_ASSERTIONS
+#cmakedefine01 SVF_EXPORT_DYNAMIC
+#cmakedefine01 SVF_WARN_AS_ERROR
+#cmakedefine01 SVF_DEBUG_INFO
+#cmakedefine01 SVF_COVERAGE
+#cmakedefine01 SVF_USE_LLD
+#cmakedefine01 SVF_USE_LTO
+#cmakedefine01 SVF_USE_PIC
+
+// Also expose some compilation settings and configurations
+#define SVF_CXX_STANDARD @CMAKE_CXX_STANDARD@
+#define SVF_BUILD_TYPE "@CMAKE_BUILD_TYPE@"
+#cmakedefine01 SVF_SHARED_LIBS
+
+// Expose this SVF's build config
+#define SVF_ROOT_DIR "@SVF_SOURCE_DIR@"
+#define SVF_BUILD_DIR "@SVF_BINARY_DIR@"
+#define SVF_BUILD_EXTAPI_BC "@SVF_BINARY_DIR@/lib/extapi.bc"
+
+// Expose the original installation prefix (set during CMake configuration; non-relocatable)
+#ifndef SVF_INSTALL_PREFIX
+#  define SVF_INSTALL_PREFIX "@CMAKE_INSTALL_PREFIX@"
+#endif
+
+// Expose a fallback (hardcoded) location of the installed extapi.bc file
+// NOTE: This should be overwritten automatically (and relocatable) when linking
+//       against an SVF instance installed by CMake (and found with find_package(SVF ...))
+#ifndef SVF_INSTALL_EXTAPI_BC
+#  define SVF_INSTALL_EXTAPI_BC SVF_INSTALL_PREFIX "/@SVF_INSTALL_EXTAPIDIR@/extapi.bc"
+#endif
+
+#endif // SVF_CONFIG_H_IN

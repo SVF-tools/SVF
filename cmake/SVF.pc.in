@@ -1,0 +1,13 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+bindir=${exec_prefix}/@SVF_INSTALL_BINDIR@
+libdir=${exec_prefix}/@SVF_INSTALL_LIBDIR@
+includedir=${prefix}/@SVF_INSTALL_INCLUDEDIR@
+
+Name: SVF
+Description: SVF Points to Analysis Framework
+Version: @SVF_VERSION@
+Requires: z3 LLVM
+
+Cflags: -I${includedir}
+Libs: -L${libdir} -lSvfCore -lSvfLLVM -lLLVM
