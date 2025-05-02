@@ -356,7 +356,7 @@ public:
      */
     bool isUninit(AbstractValue v) 
     {
-        bool is = (v.getAddrs().isBottom()) && (v.getInterval().isBottom() || v.getInterval().isTop());
+        bool is = v.getAddrs().isBottom() && v.getInterval().isBottom();
         return is;
     }
 
