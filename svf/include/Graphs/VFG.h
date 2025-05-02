@@ -191,8 +191,69 @@ public:
         return getVFGNode(getDef(pagNode));
     }
 
+    // Given an VFG node, return true if it has a left hand side top level pointer (PAGnode)
+    inline bool hasLHSTopLevPtr(const VFGNode* node) const {
+        return node && SVFUtil::isa<AddrVFGNode,
+                                    CopyVFGNode,
+                                    GepVFGNode,
+                                    LoadVFGNode,
+                                    PHIVFGNode,
+                                    CmpVFGNode,
+                                    BinaryOPVFGNode,
+                                    UnaryOPVFGNode,
+                                    ActualParmVFGNode,
+                                    FormalParmVFGNode,
+                                    ActualRetVFGNode,
+                                    FormalRetVFGNode,
+                                    NullPtrVFGNode>(node);
+    }
+
     // Given an VFG node, return its left hand side top level pointer (PAGnode)
     const PAGNode* getLHSTopLevPtr(const VFGNode* node) const;
+
+    /// Existence checks for VFGNodes
+    //@{
+    inline bool hasStmtVFGNode(const PAGEdge* pagEdge) const
+    {
+        return PAGEdgeToStmtVFGNodeMap.find(pagEdge) != PAGEdgeToStmtVFGNodeMap.end();
+    }
+    inline bool hasIntraPHIVFGNode(const PAGNode* pagNode) const
+    {
+        return PAGNodeToIntraPHIVFGNodeMap.find(pagNode) != PAGNodeToIntraPHIVFGNodeMap.end();
+    }
+    inline bool hasBinaryOPVFGNode(const PAGNode* pagNode) const
+    {
+        return PAGNodeToBinaryOPVFGNodeMap.find(pagNode) != PAGNodeToBinaryOPVFGNodeMap.end();
+    }
+    inline bool hasUnaryOPVFGNode(const PAGNode* pagNode) const
+    {
+        return PAGNodeToUnaryOPVFGNodeMap.find(pagNode) != PAGNodeToUnaryOPVFGNodeMap.end();
+    }
+    inline bool hasBranchVFGNode(const PAGNode* pagNode) const
+    {
+        return PAGNodeToBranchVFGNodeMap.find(pagNode) != PAGNodeToBranchVFGNodeMap.end();
+    }
+    inline bool hasCmpVFGNode(const PAGNode* pagNode) const
+    {
+        return PAGNodeToCmpVFGNodeMap.find(pagNode) != PAGNodeToCmpVFGNodeMap.end();
+    }
+    inline bool hasActualParmVFGNode(const PAGNode* aparm,const CallICFGNode* cs) const
+    {
+        return PAGNodeToActualParmMap.find(std::make_pair(aparm->getId(),cs)) != PAGNodeToActualParmMap.end();
+    }
+    inline bool hasActualRetVFGNode(const PAGNode* aret) const
+    {
+        return PAGNodeToActualRetMap.find(aret) != PAGNodeToActualRetMap.end();
+    }
+    inline bool hasFormalParmVFGNode(const PAGNode* fparm) const
+    {
+        return PAGNodeToFormalParmMap.find(fparm) != PAGNodeToFormalParmMap.end();
+    }
+    inline bool hasFormalRetVFGNode(const PAGNode* fret) const
+    {
+        return PAGNodeToFormalRetMap.find(fret) != PAGNodeToFormalRetMap.end();
+    }
+    //@}
 
     /// Get an VFGNode
     //@{
