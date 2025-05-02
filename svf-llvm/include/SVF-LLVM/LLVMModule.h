@@ -250,6 +250,11 @@ public:
         addToSVFVar2LLVMValueMap(inst, svfInst);
     }
 
+    inline bool hasLLVMValue(const SVFValue* value) const
+    {
+        return SVFBaseNode2LLVMValue.find(value) != SVFBaseNode2LLVMValue.end();
+    }
+
     const Value* getLLVMValue(const SVFValue* value) const
     {
         SVFBaseNode2LLVMValueMap ::const_iterator it = SVFBaseNode2LLVMValue.find(value);
