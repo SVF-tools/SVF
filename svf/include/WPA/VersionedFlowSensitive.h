@@ -110,45 +110,12 @@ protected:
     /// Override since we want to assign different weights based on versioning.
     virtual void cluster(void) override;
 
-private:
-    /// Prelabel the SVFG: set y(o) for stores and c(o) for delta nodes to a new version.
-    void prelabel(void);
-    /// Meld label the prelabeled SVFG.
-    void meldLabel(void);
-    /// Melds v2 into v1 (in place), returns whether a change occurred.
-    static bool meld(MeldVersion &mv1, const MeldVersion &mv2);
-
-    /// Removes all indirect edges in the SVFG.
-    void removeAllIndirectSVFGEdges(void);
-
-    /// Propagates version v of o to any version of o which relies on v when o/v is changed.
-    /// Recursively applies to reliant versions till no new changes are made.
-    /// Adds any statements which rely on any changes made to the worklist.
-    void propagateVersion(NodeID o, Version v);
-
-    /// Propagates version v of o to version vp of o. time indicates whether it should record time
-    /// taken itself.
-    void propagateVersion(const NodeID o, const Version v, const Version vp, bool time=true);
-
-    /// Fills in isStoreMap and isLoadMap.
-    virtual void buildIsStoreLoadMaps(void);
-
+public:
     /// Returns true if l is a store node.
     virtual bool isStore(const NodeID l) const;
 
     /// Returns true if l is a load node.
     virtual bool isLoad(const NodeID l) const;
-
-    /// Fills in deltaMap and deltaSourceMap for the SVFG.
-    virtual void buildDeltaMaps(void);
-
-    /// Returns true if l is a delta node, i.e., may get a new incoming indirect
-    /// edge due to on-the-fly callgraph construction.
-    virtual bool delta(const NodeID l) const;
-
-    /// Returns true if l is a delta-source node, i.e., may get a new outgoing indirect
-    /// edge to a delta node due to on-the-fly callgraph construction.
-    virtual bool deltaSource(const NodeID l) const;
 
     /// Shared code for getConsume and getYield. They wrap this function.
     Version getVersion(const NodeID l, const NodeID o, const LocVersionMap &lvm) const;
@@ -158,15 +125,6 @@ private:
 
     /// Returns the yielded version of o at l. If no such version exists, returns invalidVersion.
     Version getYield(const NodeID l, const NodeID o) const;
-
-    /// Shared code for setConsume and setYield. They wrap this function.
-    void setVersion(const NodeID l, const NodeID o, const Version v, LocVersionMap &lvm);
-
-    /// Sets the consumed version of o at l to v.
-    void setConsume(const NodeID l, const NodeID o, const Version v);
-
-    /// Sets the yielded version of o at l to v.
-    void setYield(const NodeID l, const NodeID o, const Version v);
 
     /// Returns the versions of o which rely on o:v.
     std::vector<Version> &getReliantVersions(const NodeID o, const Version v);
@@ -190,6 +148,49 @@ private:
 
     /// Dumps a MeldVersion to stdout.
     static void dumpMeldVersion(MeldVersion &v);
+
+private:
+    /// Prelabel the SVFG: set y(o) for stores and c(o) for delta nodes to a new version.
+    void prelabel(void);
+    /// Meld label the prelabeled SVFG.
+    void meldLabel(void);
+    /// Melds v2 into v1 (in place), returns whether a change occurred.
+    static bool meld(MeldVersion &mv1, const MeldVersion &mv2);
+
+    /// Removes all indirect edges in the SVFG.
+    void removeAllIndirectSVFGEdges(void);
+
+    /// Propagates version v of o to any version of o which relies on v when o/v is changed.
+    /// Recursively applies to reliant versions till no new changes are made.
+    /// Adds any statements which rely on any changes made to the worklist.
+    void propagateVersion(NodeID o, Version v);
+
+    /// Propagates version v of o to version vp of o. time indicates whether it should record time
+    /// taken itself.
+    void propagateVersion(const NodeID o, const Version v, const Version vp, bool time=true);
+
+    /// Fills in isStoreMap and isLoadMap.
+    virtual void buildIsStoreLoadMaps(void);
+
+    /// Fills in deltaMap and deltaSourceMap for the SVFG.
+    virtual void buildDeltaMaps(void);
+
+    /// Returns true if l is a delta node, i.e., may get a new incoming indirect
+    /// edge due to on-the-fly callgraph construction.
+    virtual bool delta(const NodeID l) const;
+
+    /// Returns true if l is a delta-source node, i.e., may get a new outgoing indirect
+    /// edge to a delta node due to on-the-fly callgraph construction.
+    virtual bool deltaSource(const NodeID l) const;
+
+    /// Shared code for setConsume and setYield. They wrap this function.
+    void setVersion(const NodeID l, const NodeID o, const Version v, LocVersionMap &lvm);
+
+    /// Sets the consumed version of o at l to v.
+    void setConsume(const NodeID l, const NodeID o, const Version v);
+
+    /// Sets the yielded version of o at l to v.
+    void setYield(const NodeID l, const NodeID o, const Version v);
 
     /// Maps locations to objects to a version. The object version is what is
     /// consumed at that location.
