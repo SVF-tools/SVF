@@ -559,79 +559,79 @@ int XmbTextPropertyToTextList(void *a, void *b, char ***c, int *d)
     return 0;
 }
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
 void llvm_memcpy_p0i8_p0i8_i64(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
 void llvm_memcpy_p0_p0_i64(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
 void llvm_memcpy_p0i8_p0i8_i32(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
 void llvm_memcpy_p0_p0_i32(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
 void llvm_memcpy(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
 void llvm_memmove(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
 void llvm_memmove_p0i8_p0i8_i64(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
 void llvm_memmove_p0_p0_i64(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
 void llvm_memmove_p0i8_p0i8_i32(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
 void llvm_memmove_p0_p0_i32(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
 void __memcpy_chk(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
 void *memmove(void *str1, const void *str2, unsigned long n)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
 void bcopy(const void *s1, void *s2, unsigned long n){}
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
 void *memccpy( void * restrict dest, const void * restrict src, int c, unsigned long count)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
 void __memmove_chk(char* dst, char* src, int sz){}
 
-__attribute__((annotate("MEMSET")))
+__attribute__((annotate("MEMSET"), annotate("NULL_DEREF:0")))
 void llvm_memset(char* dst, char elem, int sz, int flag){}
 
-__attribute__((annotate("MEMSET")))
+__attribute__((annotate("MEMSET"), annotate("NULL_DEREF:0")))
 void llvm_memset_p0i8_i32(char* dst, char elem, int sz, int flag){}
 
-__attribute__((annotate("MEMSET")))
+__attribute__((annotate("MEMSET"), annotate("NULL_DEREF:0")))
 void llvm_memset_p0_i32(char* dst, char elem, int sz, int flag){}
 
-__attribute__((annotate("MEMSET")))
+__attribute__((annotate("MEMSET"), annotate("NULL_DEREF:0")))
 void llvm_memset_p0i8_i64(char* dst, char elem, int sz, int flag){}
 
-__attribute__((annotate("MEMSET")))
+__attribute__((annotate("MEMSET"), annotate("NULL_DEREF:0")))
 void llvm_memset_p0_i64(char* dst, char elem, int sz, int flag){}
 
-__attribute__((annotate("MEMSET")))
+__attribute__((annotate("MEMSET"), annotate("NULL_DEREF:0")))
 char *__memset_chk(char * dest, int c, unsigned long destlen, int flag)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMSET")))
+__attribute__((annotate("MEMSET"), annotate("NULL_DEREF:0")))
 char *wmemset(wchar_t * dst, wchar_t elem, int sz, int flag) {
     return NULL;
 }
@@ -643,77 +643,77 @@ char * __strcpy_chk(char * dest, const char * src, unsigned long destlen)
     return NULL;
 }
 
-__attribute__((annotate("STRCAT")))
+__attribute__((annotate("STRCAT"), annotate("NULL_DEREF:0,1")))
 char *__strcat_chk(char * dest, const char * src, unsigned long destlen)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCAT")))
+__attribute__((annotate("STRCAT"), annotate("NULL_DEREF:0,1")))
 wchar_t* __wcscat_chk(wchar_t * dest, const wchar_t * src)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCPY")))
+__attribute__((annotate("STRCPY"), annotate("NULL_DEREF:0,1")))
 char *stpcpy(char *restrict dst, const char *restrict src)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCAT")))
+__attribute__((annotate("STRCAT"), annotate("NULL_DEREF:0,1")))
 char *strcat(char *dest, const char *src)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCAT")))
+__attribute__((annotate("STRCAT"), annotate("NULL_DEREF:0,1")))
 char *wcscat(char *dest, const char *src)
 {
     return NULL;
 }
 
 
-__attribute__((annotate("STRCPY")))
+__attribute__((annotate("STRCPY"), annotate("NULL_DEREF:0,1")))
 char *strcpy(char *dest, const char *src)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCAT")))
+__attribute__((annotate("STRCAT"), annotate("NULL_DEREF:0,1")))
 char *strncat(char *dest, const char *src, unsigned long n)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCAT")))
+__attribute__((annotate("STRCAT"), annotate("NULL_DEREF:0,1")))
 wchar_t* wcsncat(wchar_t * dest, const wchar_t * src, int n) {
     return NULL;
 }
 
-__attribute__((annotate("STRCAT")))
+__attribute__((annotate("STRCAT"), annotate("NULL_DEREF:0,1")))
 char *__strncat_chk(char *dest, const char *src, unsigned long n)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCAT")))
+__attribute__((annotate("STRCAT"), annotate("NULL_DEREF:0,1")))
 wchar_t* __wcsncat_chk(wchar_t * dest, const wchar_t * src, int n) {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
 char *strncpy(char *dest, const char *src, unsigned long n)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCPY")))
+__attribute__((annotate("STRCPY"), annotate("NULL_DEREF:0,1")))
 char *wcscpy(wchar_t* dest, const wchar_t* src) {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:1,2,3,4")))
 unsigned long iconv(void* cd, char **restrict inbuf, unsigned long *restrict inbytesleft, char **restrict outbuf, unsigned long *restrict outbytesleft)
 {
     return 0;

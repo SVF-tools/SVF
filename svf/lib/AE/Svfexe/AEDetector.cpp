@@ -534,7 +534,11 @@ void NullptrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
         }
     }
     else {
-        detectExtAPI(as, SVFUtil::cast<CallICFGNode>(node));
+        const CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(node);
+        if (SVFUtil::isExtCall(callNode->getCalledFunction()))
+        {
+            detectExtAPI(as, callNode);
+        }
     }
 
 }
@@ -589,63 +593,7 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode){
 }
 
 
-void NullptrDerefDetector::initExtAPINullptrDerefCheckRules(){
-    // String manipulation functions
-    // Check for potential null pointer dereference in string operations
-    extAPINullptrDerefCheckRules["strlen"] = {0};        // First argument could be null
-    extAPINullptrDerefCheckRules["strcpy"] = {0, 1};     // Both dest and src could be null
-    extAPINullptrDerefCheckRules["strncpy"] = {0, 1};    // Both dest and src could be null
-    extAPINullptrDerefCheckRules["strcat"] = {0, 1};     // Both dest and src could be null
-    extAPINullptrDerefCheckRules["strncat"] = {0, 1};    // Both dest and src could be null
-    extAPINullptrDerefCheckRules["strcmp"] = {0, 1};     // Both strings could be null
-    extAPINullptrDerefCheckRules["strncmp"] = {0, 1};    // Both strings could be null
-    extAPINullptrDerefCheckRules["strchr"] = {0};        // String argument could be null
-    extAPINullptrDerefCheckRules["strrchr"] = {0};       // String argument could be null
-    extAPINullptrDerefCheckRules["strstr"] = {0, 1};     // Both haystack and needle could be null
 
-    // Memory manipulation functions
-    // Check for potential null pointer dereference in memory operations
-    extAPINullptrDerefCheckRules["memcpy"] = {0, 1};   // Both dest and src could be null
-    extAPINullptrDerefCheckRules["memmove"] = {0, 1};  // Both dest and src could be null
-    extAPINullptrDerefCheckRules["memset"] = {0};        // Destination could be null
-    extAPINullptrDerefCheckRules["memcmp"] = {0, 1};   // Both buffers could be null
-
-    // File I/O operations
-    // Check for potential null pointer dereference in file operations
-    extAPINullptrDerefCheckRules["fgets"] = {0};         // Buffer could be null
-    extAPINullptrDerefCheckRules["fputs"] = {0};         // String could be null
-    extAPINullptrDerefCheckRules["fread"] = {0};         // Buffer could be null
-    extAPINullptrDerefCheckRules["fwrite"] = {0};        // Buffer could be null
-
-    // Formatted I/O functions
-    // Check for potential null pointer dereference in formatting operations
-    extAPINullptrDerefCheckRules["sprintf"] = {0};       // Buffer could be null
-    extAPINullptrDerefCheckRules["snprintf"] = {0};      // Buffer could be null
-    extAPINullptrDerefCheckRules["sscanf"] = {0};        // Input string could be null
-
-    // LLVM specific memory operations
-    // Check for potential null pointer dereference in LLVM intrinsic functions
-    extAPINullptrDerefCheckRules["llvm.memcpy.p0i8.p0i8.i64"] = {0, 1};    // Both pointers could be null
-    extAPINullptrDerefCheckRules["llvm.memmove.p0i8.p0i8.i64"] = {0, 1};   // Both pointers could be null
-    extAPINullptrDerefCheckRules["llvm.memset.p0i8.i64"] = {0};              // Destination could be null
-
-    // Fortified versions of standard library functions
-    // Check for potential null pointer dereference in security-enhanced functions
-    extAPINullptrDerefCheckRules["__strcpy_chk"] = {0, 1};     // Both dest and src could be null
-    extAPINullptrDerefCheckRules["__strncpy_chk"] = {0, 1};    // Both dest and src could be null
-    extAPINullptrDerefCheckRules["__strcat_chk"] = {0, 1};     // Both dest and src could be null
-    extAPINullptrDerefCheckRules["__memcpy_chk"] = {0, 1};     // Both dest and src could be null
-    extAPINullptrDerefCheckRules["__memmove_chk"] = {0, 1};    // Both dest and src could be null
-    extAPINullptrDerefCheckRules["__memset_chk"] = {0};          // Destination could be null
-
-    // Wide character string operations
-    // Check for potential null pointer dereference in wide string operations
-    extAPINullptrDerefCheckRules["wcslen"] = {0};        // Wide string could be null
-    extAPINullptrDerefCheckRules["wcscpy"] = {0, 1};   // Both dest and src could be null
-    extAPINullptrDerefCheckRules["wcsncpy"] = {0, 1};  // Both dest and src could be null
-    extAPINullptrDerefCheckRules["wcscat"] = {0, 1};   // Both dest and src could be null
-    extAPINullptrDerefCheckRules["wcsncat"] = {0, 1};  // Both dest and src could be null
-}
 
 
 void NullptrDerefDetector::detectExtAPI(AbstractState& as, const CallICFGNode* call) {
@@ -683,12 +631,7 @@ void NullptrDerefDetector::detectExtAPI(AbstractState& as, const CallICFGNode* c
 
     if (extType == AbsExtAPI::MEMCPY)
     {
-        if(extAPINullptrDerefCheckRules.count(call->getCalledFunction()->getName()) == 0) {
-            SVFUtil::errs() << "No null pointer dereference check rules for " << call->getCalledFunction()->getName() << "\n";
-            return;
-        }
-        std::vector<u32_t> args = extAPINullptrDerefCheckRules.at(call->getCalledFunction()->getName());
-        for (const auto &arg: args) {
+        for (const auto &arg: tmp_args) {
             const SVFVar* argVal = call->getArgument(arg);
             if (!canSafelyDerefPtr(as, argVal)) {
                 AEException bug(call->toString());
@@ -697,12 +640,7 @@ void NullptrDerefDetector::detectExtAPI(AbstractState& as, const CallICFGNode* c
         }
     }
     else if (extType == AbsExtAPI::MEMSET) {
-        if (extAPINullptrDerefCheckRules.count(call->getCalledFunction()->getName()) == 0) {
-            SVFUtil::errs() << "No null pointer dereference check rules for " << call->getCalledFunction()->getName() << "\n";
-            return;
-        }
-        std::vector<u32_t> args = extAPINullptrDerefCheckRules.at(call->getCalledFunction()->getName());
-        for (const auto &arg: args) {
+        for (const auto &arg: tmp_args) {
             const SVFVar* argVal = call->getArgument(arg);
             if (!canSafelyDerefPtr(as, argVal)) {
                 AEException bug(call->toString());
@@ -711,12 +649,7 @@ void NullptrDerefDetector::detectExtAPI(AbstractState& as, const CallICFGNode* c
         }
     }
     else if (extType == AbsExtAPI::STRCPY) {
-        if (extAPINullptrDerefCheckRules.count(call->getCalledFunction()->getName()) == 0) {
-            SVFUtil::errs() << "No null pointer dereference check rules for " << call->getCalledFunction()->getName() << "\n";
-            return;
-        }
-        std::vector<u32_t> args = extAPINullptrDerefCheckRules.at(call->getCalledFunction()->getName());
-        for (const auto &arg: args) {
+        for (const auto &arg: tmp_args) {
             const SVFVar* argVal = call->getArgument(arg);
             if (!canSafelyDerefPtr(as, argVal)) {
                 AEException bug(call->toString());
@@ -725,12 +658,7 @@ void NullptrDerefDetector::detectExtAPI(AbstractState& as, const CallICFGNode* c
         }
     }
     else if (extType == AbsExtAPI::STRCAT) {
-        if (extAPINullptrDerefCheckRules.count(call->getCalledFunction()->getName()) == 0) {
-            SVFUtil::errs() << "No null pointer dereference check rules for " << call->getCalledFunction()->getName() << "\n";
-            return;
-        }
-        std::vector<u32_t> args = extAPINullptrDerefCheckRules.at(call->getCalledFunction()->getName());
-        for (const auto &arg: args) {
+        for (const auto &arg: tmp_args) {
             const SVFVar* argVal = call->getArgument(arg);
             if (!canSafelyDerefPtr(as, argVal)) {
                 AEException bug(call->toString());

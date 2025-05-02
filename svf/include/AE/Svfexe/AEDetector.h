@@ -327,7 +327,6 @@ public:
     NullptrDerefDetector()
     {
         kind = NULLPTR_DEREF;
-        initExtAPINullptrDerefCheckRules();
     }
 
     ~NullptrDerefDetector() = default;
@@ -336,11 +335,6 @@ public:
     {
         return detector->getKind() == AEDetector::NULLPTR_DEREF;
     }
-
-    /**
-     * @brief Initializes external API nullptr dereference check rules.
-     */
-    void initExtAPINullptrDerefCheckRules();
 
     /**
      * @brief Detects nullptr dereferences issues within a node.
@@ -362,7 +356,7 @@ public:
      */
     bool isUninit(AbstractValue v) 
     {
-        bool is = (v.getAddrs().isBottom()) && (v.getInterval().isBottom());
+        bool is = (v.getAddrs().isBottom()) && (v.getInterval().isBottom() || v.getInterval().isTop());
         return is;
     }
 
@@ -444,7 +438,6 @@ public:
     bool canSafelyDerefPtr(AbstractState& as, const SVFVar* ptr);
  
 private:
-    Map<std::string, std::vector<u32_t>> extAPINullptrDerefCheckRules; ///< Rules for checking nullptr dereferences in external APIs.
     Set<std::string> bugLoc; ///< Set of locations where bugs have been reported.
     SVFBugReport recoder; ///< Recorder for abstract execution bugs.
     Map<const ICFGNode*, std::string> nodeToBugInfo; ///< Maps ICFG nodes to bug information.
