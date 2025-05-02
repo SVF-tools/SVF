@@ -49,7 +49,10 @@ public:
     typedef SVFG::SVFGEdgeSetTy SVFGEdgeSet;
 
     /// Constructor
-    explicit SVFGBuilder(bool _SVFGWithIndCall = false): svfg(nullptr), SVFGWithIndCall(_SVFGWithIndCall) {}
+    explicit SVFGBuilder(bool _SVFGWithIndCall = false, bool _OptimiseSVFG = false) :
+        svfg(nullptr), SVFGWithIndCall(_SVFGWithIndCall), OptimiseSVFG(_OptimiseSVFG)
+    {
+    }
 
     /// Destructor
     virtual ~SVFGBuilder() = default;
@@ -91,6 +94,8 @@ protected:
     std::unique_ptr<SVFG> svfg;
     /// SVFG with precomputed indirect call edges
     bool SVFGWithIndCall;
+    /// Build optimised version of SVFG
+    bool OptimiseSVFG;
 };
 
 } // End namespace SVF
