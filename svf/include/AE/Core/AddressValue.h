@@ -33,7 +33,7 @@
 #define AddressMask 0x7f000000
 #define FlippedAddressMask (AddressMask^0xffffffff)
 // the address of the black hole, getVirtualMemAddress(2);
-#define BlackHoleAddr (0x7f000000 + 2)
+#define DanglingPtrVal (0x7f000000 + 2)
 
 
 #include "Util/GeneralType.h"
@@ -172,46 +172,12 @@ public:
 
     inline bool isTop() const
     {
-        return *this->begin() == BlackHoleAddr;
+        return *this->begin() == DanglingPtrVal;
     }
 
     inline bool isBottom() const
     {
         return empty();
-    }
-
-    static void Allocate (NodeID id)
-    {
-        
-        _NodeAllocationStatusMap[id] = true;
- 
-    }
-
-    static void Free (NodeID id)
-    {
-        
-        _NodeAllocationStatusMap[id] = false;
-
-    }
-
-    static bool isAllocated(NodeID id) 
-    {
-        return _NodeAllocationStatusMap.find(id) != _NodeAllocationStatusMap.end() && _NodeAllocationStatusMap[id];
-    }
-
-    static bool isFree(NodeID id) 
-    {
-        return _NodeAllocationStatusMap.find(id) != _NodeAllocationStatusMap.end() && !_NodeAllocationStatusMap[id];
-    }
-    
-    inline void setTop()
-    {
-        *this = AddressValue(BlackHoleAddr);
-    }
-
-    inline void setBottom()
-    {
-        _addrs.clear();
     }
 
     const std::string toString() const

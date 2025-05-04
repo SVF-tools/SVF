@@ -274,8 +274,8 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
     NodeID op1 = cmpStmt->getOpVarID(1);
     NodeID res_id = cmpStmt->getResID();
     s32_t predicate = cmpStmt->getPredicate();
-
-    if (op0 == 0 || op1 == 0) {
+    // if op0 or op1 is nullptr, no need to change value, just copy the state
+    if (op0 == IRGraph::NullPtr || op1 == IRGraph::NullPtr) {
         as = new_es;
         return true;
     }
@@ -933,8 +933,8 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
     else
         assert(false && "implement this part");
     // NullPtr is index 0, it should not be changed
-    assert(!getAbsStateFromTrace(stmt->getICFGNode())[0].isInterval() &&
-           !getAbsStateFromTrace(stmt->getICFGNode())[0].isAddr());
+    assert(!getAbsStateFromTrace(stmt->getICFGNode())[IRGraph::NullPtr].isInterval() &&
+           !getAbsStateFromTrace(stmt->getICFGNode())[IRGraph::NullPtr].isAddr());
 }
 
 void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
@@ -1325,7 +1325,7 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
         as[res] = resVal;
     }
     // if op0 or op1 is nullptr, compare abstractValue instead of touching addr or interval
-    else if (op0 == 0 || op1 == 0) {
+    else if (op0 == IRGraph::NullPtr || op1 == IRGraph::NullPtr) {
         u32_t res = cmp->getResID();
         IntervalValue resVal = (as[op0].equals(as[op1])) ? IntervalValue(1, 1) : IntervalValue(0, 0);
         as[res] = resVal;

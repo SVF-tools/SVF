@@ -419,10 +419,16 @@ public:
      *
      * @param v An Abstract Value of loaded from an address in an Abstract State.
      */
-    bool isDangling(NodeID id) 
+    bool isDangling(AbstractState& as, NodeID id)
     {
-        bool is = AddressValue::isFree(id);
-        return is;
+        if (as[id].isAddr()) {
+            for (auto addr: as[id].getAddrs()) {
+                if (addr == DanglingPtrVal) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
  
     /**
@@ -430,9 +436,9 @@ public:
      *
      * @param v An Abstract Value of loaded from an address in an Abstract State.
      */
-    bool isNull(AbstractValue v) 
+    bool isNull(AbstractValue v)
     {
-    return isUninit(v) || v.getAddrs().contains(BlackHoleAddr);
+        return !v.isAddr() && !v.isInterval();
     }
 
     bool canSafelyDerefPtr(AbstractState& as, const SVFVar* ptr);

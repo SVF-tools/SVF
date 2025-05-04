@@ -256,12 +256,6 @@ char *crypt(const char *key, const char *salt)
 }
 
 __attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:UNKNOWN")))
-char *ctime(const void *timer)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:UNKNOWN")))
 char *dlerror(void)
 {
     return NULL;
@@ -287,12 +281,6 @@ const char *gcry_cipher_algo_name(int errcode)
 
 __attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:UNKNOWN")))
 const char *svfgcry_md_algo_name_(int errcode)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:UNKNOWN")))
-char *getenv(const char *name)
 {
     return NULL;
 }
@@ -559,161 +547,161 @@ int XmbTextPropertyToTextList(void *a, void *b, char ***c, int *d)
     return 0;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("MEMCPY")))
 void llvm_memcpy_p0i8_p0i8_i64(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("MEMCPY")))
 void llvm_memcpy_p0_p0_i64(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("MEMCPY")))
 void llvm_memcpy_p0i8_p0i8_i32(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("MEMCPY")))
 void llvm_memcpy_p0_p0_i32(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("MEMCPY")))
 void llvm_memcpy(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("MEMCPY")))
 void llvm_memmove(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("MEMCPY")))
 void llvm_memmove_p0i8_p0i8_i64(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("MEMCPY")))
 void llvm_memmove_p0_p0_i64(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("MEMCPY")))
 void llvm_memmove_p0i8_p0i8_i32(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("MEMCPY")))
 void llvm_memmove_p0_p0_i32(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("MEMCPY")))
 void __memcpy_chk(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("MEMCPY")))
 void *memmove(void *str1, const void *str2, unsigned long n)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("MEMCPY")))
 void bcopy(const void *s1, void *s2, unsigned long n){}
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("MEMCPY")))
 void *memccpy( void * restrict dest, const void * restrict src, int c, unsigned long count)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("MEMCPY")))
 void __memmove_chk(char* dst, char* src, int sz){}
 
-__attribute__((annotate("MEMSET"), annotate("NULL_DEREF:0")))
+__attribute__((annotate("MEMSET")))
 void llvm_memset(char* dst, char elem, int sz, int flag){}
 
-__attribute__((annotate("MEMSET"), annotate("NULL_DEREF:0")))
+__attribute__((annotate("MEMSET")))
 void llvm_memset_p0i8_i32(char* dst, char elem, int sz, int flag){}
 
-__attribute__((annotate("MEMSET"), annotate("NULL_DEREF:0")))
+__attribute__((annotate("MEMSET")))
 void llvm_memset_p0_i32(char* dst, char elem, int sz, int flag){}
 
-__attribute__((annotate("MEMSET"), annotate("NULL_DEREF:0")))
+__attribute__((annotate("MEMSET")))
 void llvm_memset_p0i8_i64(char* dst, char elem, int sz, int flag){}
 
-__attribute__((annotate("MEMSET"), annotate("NULL_DEREF:0")))
+__attribute__((annotate("MEMSET")))
 void llvm_memset_p0_i64(char* dst, char elem, int sz, int flag){}
 
-__attribute__((annotate("MEMSET"), annotate("NULL_DEREF:0")))
+__attribute__((annotate("MEMSET")))
 char *__memset_chk(char * dest, int c, unsigned long destlen, int flag)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMSET"), annotate("NULL_DEREF:0")))
+__attribute__((annotate("MEMSET")))
 char *wmemset(wchar_t * dst, wchar_t elem, int sz, int flag) {
     return NULL;
 }
 
 
-__attribute__((annotate("STRCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("STRCPY")))
 char * __strcpy_chk(char * dest, const char * src, unsigned long destlen)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCAT"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("STRCAT")))
 char *__strcat_chk(char * dest, const char * src, unsigned long destlen)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCAT"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("STRCAT")))
 wchar_t* __wcscat_chk(wchar_t * dest, const wchar_t * src)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("STRCPY")))
 char *stpcpy(char *restrict dst, const char *restrict src)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCAT"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("STRCAT")))
 char *strcat(char *dest, const char *src)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCAT"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("STRCAT")))
 char *wcscat(char *dest, const char *src)
 {
     return NULL;
 }
 
 
-__attribute__((annotate("STRCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("STRCPY")))
 char *strcpy(char *dest, const char *src)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCAT"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("STRCAT")))
 char *strncat(char *dest, const char *src, unsigned long n)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCAT"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("STRCAT")))
 wchar_t* wcsncat(wchar_t * dest, const wchar_t * src, int n) {
     return NULL;
 }
 
-__attribute__((annotate("STRCAT"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("STRCAT")))
 char *__strncat_chk(char *dest, const char *src, unsigned long n)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCAT"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("STRCAT")))
 wchar_t* __wcsncat_chk(wchar_t * dest, const wchar_t * src, int n) {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("MEMCPY")))
 char *strncpy(char *dest, const char *src, unsigned long n)
 {
     return NULL;
 }
 
-__attribute__((annotate("STRCPY"), annotate("NULL_DEREF:0,1")))
+__attribute__((annotate("STRCPY")))
 char *wcscpy(wchar_t* dest, const wchar_t* src) {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("NULL_DEREF:1,2,3,4")))
+__attribute__((annotate("MEMCPY")))
 unsigned long iconv(void* cd, char **restrict inbuf, unsigned long *restrict inbytesleft, char **restrict outbuf, unsigned long *restrict outbytesleft)
 {
     return 0;
@@ -1009,7 +997,7 @@ char* ctime_r(const char *timer, char *buf)
 
 int readdir_r(void *__restrict__dir, void *__restrict__entry, void **__restrict__result)
 {
-    __restrict__entry = *__restrict__result;   
+    __restrict__entry = *__restrict__result;
     return 0;
 }
 
@@ -1045,242 +1033,241 @@ void _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcRKS3_(void **arg
     *arg0 = arg1;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char getenv_global[10];
+char *getenv(const char *name)
+{
+    return getenv_global;
+}
+
+unsigned short ctype_b_loc_global[10];
 const unsigned short **__ctype_b_loc(void)
 {
-    return NULL;
+    return (const unsigned short **)&ctype_b_loc_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+int ctype_tolower_loc_global[10];
 int **__ctype_tolower_loc(void)
 {
-    return NULL;
+    return &ctype_tolower_loc_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+int ctype_toupper_loc_global[10];
 int **__ctype_toupper_loc(void)
 {
-    return NULL;
+    return &ctype_toupper_loc_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+int error_global[10];
 int *__errno_location(void)
 {
-    return NULL;
+    return error_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+int h_error_global[10];
 int * __h_errno_location(void)
 {
-    return NULL;
+    return h_error_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+int res_state_global[10];
 void* __res_state(void)
 {
-    return NULL;
+    return res_state_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+void *time_global[10];
 char *asctime(const void *timeptr)
 {
-    return NULL;
+    return time_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char *ctime(const void *timer)
+{
+    return time_global;
+}
+
+void *gmtime(const void *timer)
+{
+    return time_global;
+}
+
+void *localtime(const void *timer)
+{
+    return time_global;
+}
+
+char bindtextdomain_global[10];
 char * bindtextdomain(const char * domainname, const char * dirname)
 {
-    return NULL;
+    return bindtextdomain_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char bind_textdomain_codeset_global[10];
 char * bind_textdomain_codeset(const char * domainname, const char * codeset)
 {
-    return NULL;
+    return bind_textdomain_codeset_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char ctermid_global[10];
 char *ctermid(char *s)
 {
-    return s;
+    return s ? s : ctermid_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char gettext_global[10];
 char * dcgettext(const char * domainname, const char * msgid, int category)
 {
-    return NULL;
+    return gettext_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
 char * dgettext(const char * domainname, const char * msgid)
 {
-    return NULL;
+    return gettext_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
 char * dngettext(const char * domainname, const char * msgid, const char * msgid_plural, unsigned long int n)
 {
-    return NULL;
+    return gettext_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct group *getgrgid(unsigned int gid)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct group *getgrnam(const char *name)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct hostent *gethostbyaddr(const void *addr, unsigned int len, int type)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct hostent *gethostbyname(const char *name)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct hostent *gethostbyname2(const char *name, int af)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct mntent *getmntent(void *stream)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct protoent *getprotobyname(const char *name)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct protoent *getprotobynumber(int proto)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct passwd *getpwent(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct passwd *getpwnam(const char *name)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct passwd *getpwuid(unsigned int uid)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct servent *getservbyname(const char *name, const char *proto)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct servent *getservbyport(int port, const char *proto)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct spwd *getspnam(const char *name)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
 char * gettext(const char * msgid)
 {
-    return NULL;
+    return gettext_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct tm *gmtime(const void *timer)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-const char *gnu_get_libc_version(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-const char * gnutls_check_version(const char * req_version)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct lconv *localeconv(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
-struct tm *localtime(const void *timer)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_STACK_RET")))
 char * ngettext(const char * msgid, const char * msgid_plural, unsigned long int n)
 {
-    return NULL;
+    return gettext_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+void *getgrgid_global[10];
+void *getgrgid(unsigned int gid)
+{
+    return getgrgid_global;
+}
+
+void *getgrnam_global[10];
+void *getgrnam(const char *name)
+{
+    return getgrnam_global;
+}
+
+void *gethostby_global[10];
+void *gethostbyaddr(const void *addr, unsigned int len, int type)
+{
+    return gethostby_global;
+}
+
+void *gethostbyname(const char *name)
+{
+    return gethostby_global;
+}
+
+void *gethostbyname2(const char *name, int af)
+{
+    return gethostby_global;
+}
+
+void *getmntent_global[10];
+void *getmntent(void *stream)
+{
+    return getmntent_global;
+}
+
+void *getproto_global[10];
+void *getprotobyname(const char *name)
+{
+    return getproto_global;
+}
+
+void *getprotobynumber(int proto)
+{
+    return getproto_global;
+}
+
+void *getpw_global[10];
+void *getpwent(void)
+{
+    return getpw_global;
+}
+
+void *getpwnam(const char *name)
+{
+    return getpw_global;
+}
+
+void *getpwuid(unsigned int uid)
+{
+    return getpw_global;
+}
+
+void *getserv_global[10];
+void *getservbyname(const char *name, const char *proto)
+{
+    return getserv_global;
+}
+
+void *getservbyport(int port, const char *proto)
+{
+    return getserv_global;
+}
+
+void *getspnam_global[10];
+void *getspnam(const char *name)
+{
+    return getspnam_global;
+}
+
+char gnu_get_libc_version_global[10];
+const char *gnu_get_libc_version(void)
+{
+    return gnu_get_libc_version_global;
+}
+
+char gnutls_check_version_global[10];
+const char * gnutls_check_version(const char * req_version)
+{
+    return gnutls_check_version_global;
+}
+
+void *localeconv_global[10];
+void *localeconv(void)
+{
+    return localeconv_global;
+}
+
+void *pango_cairo_font_map_global[10];
 void *pango_cairo_font_map_get_default(void)
 {
-    return NULL;
+    return pango_cairo_font_map_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char re_comp_global[10];
 char *re_comp(const char *regex)
 {
-    return NULL;
+    return re_comp_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char setlocale_global[10];
 char *setlocale(int category, const char *locale)
 {
-    return NULL;
+    return setlocale_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char tgoto_global[10];
 char *tgoto(const char *cap, int col, int row)
 {
-    return NULL;
+    return tgoto_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char tparm_global[10];
 char *tparm(char *str, ...)
 {
-    return NULL;
+    return tparm_global;
 }
 
-__attribute__((annotate("ALLOC_STACK_RET")))
+char zError_global[10];
 const char *zError(int a)
 {
-    return NULL;
+    return zError_global;
 }

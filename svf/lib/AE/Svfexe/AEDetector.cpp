@@ -592,78 +592,52 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode){
      }
 }
 
-
-
-
-
 void NullptrDerefDetector::detectExtAPI(AbstractState& as, const CallICFGNode* call) {
     assert(call->getCalledFunction() && "FunObjVar* is nullptr");
-    AbsExtAPI::ExtAPIType extType = AbsExtAPI::UNCLASSIFIED;
     // get ext type
     // get argument index which are nullptr deref checkpoints for extapi
     std::vector<u32_t> tmp_args;
     for (const std::string &annotation: ExtAPI::getExtAPI()->getExtFuncAnnotations(call->getCalledFunction())){
-        if (annotation.find("MEMCPY") != std::string::npos) 
-            extType = AbsExtAPI::MEMCPY;
+        if (annotation.find("MEMCPY") != std::string::npos)
+        {
+            if (call->arg_size() < 4) {
+                // for memcpy(void* dest, const void* src, size_t n)
+                tmp_args.push_back(0);
+                tmp_args.push_back(1);
+            }
+            else {
+                // for unsigned long iconv(void* cd, char **restrict inbuf, unsigned long *restrict inbytesleft, char **restrict outbuf, unsigned long *restrict outbytesleft)
+                tmp_args.push_back(1);
+                tmp_args.push_back(2);
+                tmp_args.push_back(3);
+                tmp_args.push_back(4);
+            }
+        }
         else if (annotation.find("MEMSET") != std::string::npos)
-            extType = AbsExtAPI::MEMSET;
+        {
+            // for memset(void* dest, elem, sz)
+            tmp_args.push_back(0);
+        }
         else if (annotation.find("STRCPY") != std::string::npos)
-            extType = AbsExtAPI::STRCPY;
+        {
+            // for strcpy(void* dest, void* src)
+            tmp_args.push_back(0);
+            tmp_args.push_back(1);
+        }
         else if (annotation.find("STRCAT") != std::string::npos)
-            extType = AbsExtAPI::STRCAT;
-        //annotate("NULL_DEREF:0,1"), get index 0 and 1 push to tmp_args
-        // Parse "NULL_DEREF" annotations
-        size_t pos = annotation.find("NULL_DEREF:");
-        if (pos != std::string::npos) {
-            std::string indices = annotation.substr(pos + 11); // Extract substring after "NULL_DEREF:"
-            std::stringstream ss(indices);
-            std::string index;
-            while (std::getline(ss, index, ',')) { // Split by comma
-                tmp_args.push_back(static_cast<u32_t>(std::stoi(index))); // Convert to integer and push
-            }
-            for (u32_t idx: tmp_args) {
-                std::cout << "NULLPTR CHECK IDX: " << idx << std::endl;
-            }
+        {
+            // for strcat(void* dest, const void* src)
+            // for strncat(void* dest, const void* src, size_t n)
+            tmp_args.push_back(0);
+            tmp_args.push_back(1);
         }
     }
 
-
-
-    if (extType == AbsExtAPI::MEMCPY)
-    {
-        for (const auto &arg: tmp_args) {
-            const SVFVar* argVal = call->getArgument(arg);
-            if (!canSafelyDerefPtr(as, argVal)) {
-                AEException bug(call->toString());
-                addBugToReporter(bug, call);
-            }
-        }
-    }
-    else if (extType == AbsExtAPI::MEMSET) {
-        for (const auto &arg: tmp_args) {
-            const SVFVar* argVal = call->getArgument(arg);
-            if (!canSafelyDerefPtr(as, argVal)) {
-                AEException bug(call->toString());
-                addBugToReporter(bug, call);
-            }
-        }
-    }
-    else if (extType == AbsExtAPI::STRCPY) {
-        for (const auto &arg: tmp_args) {
-            const SVFVar* argVal = call->getArgument(arg);
-            if (!canSafelyDerefPtr(as, argVal)) {
-                AEException bug(call->toString());
-                addBugToReporter(bug, call);
-            }
-        }
-    }
-    else if (extType == AbsExtAPI::STRCAT) {
-        for (const auto &arg: tmp_args) {
-            const SVFVar* argVal = call->getArgument(arg);
-            if (!canSafelyDerefPtr(as, argVal)) {
-                AEException bug(call->toString());
-                addBugToReporter(bug, call);
-            }
+    for (const auto &arg: tmp_args) {
+        const SVFVar* argVal = call->getArgument(arg);
+        if (!canSafelyDerefPtr(as, argVal)) {
+            AEException bug(call->toString());
+            addBugToReporter(bug, call);
         }
     }
 }
@@ -679,7 +653,7 @@ bool NullptrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVFVar* va
         NodeID addrId = AbstractState::getInternalID(addr);
         AbstractValue addrVal = as[addrId];
         if(isNull(addrVal)) return false;
-        if(isDangling(addrId)) return false;
+        if(isDangling(as, addrId)) return false;
     }
     return true;
 }
