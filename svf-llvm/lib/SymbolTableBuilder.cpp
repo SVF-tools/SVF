@@ -51,6 +51,7 @@ ObjTypeInfo* SymbolTableBuilder::createBlkObjTypeInfo(NodeID symId)
     {
         ObjTypeInfo* ti =svfir->createObjTypeInfo(llvmset->getSVFType(
                              IntegerType::get(llvmset->getContext(), 32)));
+        ti->setMaxFieldOffsetLimit(0);
         svfir->objTypeInfoMap[symId] = ti;
     }
     ObjTypeInfo* ti = svfir->objTypeInfoMap[symId];
@@ -65,6 +66,7 @@ ObjTypeInfo* SymbolTableBuilder::createConstantObjTypeInfo(NodeID symId)
     {
         ObjTypeInfo* ti = svfir->createObjTypeInfo(
                               llvmset->getSVFType(IntegerType::get(llvmset->getContext(), 32)));
+        ti->setMaxFieldOffsetLimit(0);
         svfir->objTypeInfoMap[symId] = ti;
     }
     ObjTypeInfo* ti = svfir->objTypeInfoMap[symId];
