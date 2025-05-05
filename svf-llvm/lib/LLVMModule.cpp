@@ -727,7 +727,68 @@ void LLVMModuleSet::buildFunToFunMap()
         }
         if (cloneBody)
         {
-            // Clone the body of extFunToClone into clonedFunction
+            // Collect global variables referenced by extFunToClone
+            // This step identifies all global variables used within the function to be cloned
+            std::set<GlobalVariable*> referencedGlobals;
+            for (const BasicBlock& BB : *extFunToClone)
+            {
+                for (const Instruction& I : BB)
+                {
+                    for (const Value* operand : I.operands())
+                    {
+                        // Check if the operand is a global variable
+                        if (const GlobalVariable* GV = SVFUtil::dyn_cast<GlobalVariable>(operand))
+                        {
+                            referencedGlobals.insert(const_cast<GlobalVariable*>(GV));
+                        }
+                    }
+                }
+            }
+
+            // Copy global variables to target module and update valueMap
+            // When cloning a function, we need to ensure all global variables it references are available in the target module
+            for (GlobalVariable* GV : referencedGlobals)
+            {
+                // Check if the global variable already exists in the target module
+                GlobalVariable* existingGV = appModule->getGlobalVariable(GV->getName());
+                if (existingGV)
+                {
+                    // If the global variable already exists, ensure type consistency
+                    assert(existingGV->getType() == GV->getType() && "Global variable type mismatch in client module!");
+                    // Map the original global to the existing one in the target module
+                    valueMap[GV] = existingGV; // Map to existing global variable
+                }
+                else
+                {
+                    // If the global variable doesn't exist in the target module, create a new one with the same properties
+                    GlobalVariable* newGV = new GlobalVariable(
+                        *appModule,                   // Target module
+                        GV->getValueType(),           // Type of the global variable
+                        GV->isConstant(),             // Whether it's constant
+                        GV->getLinkage(),             // Linkage type
+                        nullptr,                      // No initializer yet
+                        GV->getName(),                // Same name
+                        nullptr,                      // No insert before instruction
+                        GV->getThreadLocalMode(),     // Thread local mode
+                        GV->getAddressSpace()         // Address space
+                    );
+
+                    // Copy initializer if present to maintain the global's value
+                    if (GV->hasInitializer())
+                    {
+                        Constant* init = GV->getInitializer();
+                        newGV->setInitializer(init); // Simple case: direct copy
+                    }
+
+                    // Copy other attributes like alignment to ensure identical behavior
+                    newGV->copyAttributesFrom(GV);
+
+                    // Add mapping from original global to the new one for use during function cloning
+                    valueMap[GV] = newGV;
+                }
+            }
+
+            // Clone function body with updated valueMap
             llvm::SmallVector<ReturnInst*, 8> ignoredReturns;
             CloneFunctionInto(clonedFunction, extFunToClone, valueMap, llvm::CloneFunctionChangeType::LocalChangesOnly, ignoredReturns, "", nullptr);
         }
