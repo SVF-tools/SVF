@@ -414,22 +414,6 @@ public:
      */
     void detectExtAPI(AbstractState& as, const CallICFGNode* call);
 
-    /**
-     * @brief Check if an Abstract Value is NULL (or uninitialized).
-     *
-     * @param v An Abstract Value of loaded from an address in an Abstract State.
-     */
-    bool isDangling(AbstractState& as, NodeID id)
-    {
-        if (as[id].isAddr()) {
-            for (auto addr: as[id].getAddrs()) {
-                if (addr == DanglingPtrVal) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
  
     /**
      * @brief Check if an Abstract Value is NULL (or uninitialized).

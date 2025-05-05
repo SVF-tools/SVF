@@ -31,12 +31,6 @@
 #include "AE/Core/AddressValue.h"
 
 using namespace SVF;
-
-namespace SVF
-{
-Map<NodeID, bool> AddressValue::_NodeAllocationStatusMap;
-}
-
 /**
  * @brief Detects buffer overflow issues within a given ICFG node.
  *
@@ -67,7 +61,7 @@ void BufOverflowDetector::detect(AbstractState& as, const ICFGNode* node)
                 AddressValue objAddrs = as[gep->getRHSVarID()].getAddrs();
                 for (const auto& addr : objAddrs)
                 {
-                    NodeID objId = AbstractState::getInternalID(addr);
+                    NodeID objId = AddressValue::getInternalID(addr);
                     u32_t size = 0;
 
                     if (svfir->getBaseObject(objId)->isConstantByteSize())
@@ -354,14 +348,14 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(SVF::AddressValue gepAddrs,
 
     for (const auto& objAddr : objAddrs)
     {
-        NodeID objId = AbstractState::getInternalID(objAddr);
+        NodeID objId = AddressValue::getInternalID(objAddr);
         auto obj = svfir->getGNode(objId);
         // if the object is a BaseObjVar, add the offset directly
         if (SVFUtil::isa<BaseObjVar>(obj))
         {
             for (const auto& gepAddr : gepAddrs)
             {
-                NodeID gepObj = AbstractState::getInternalID(gepAddr);
+                NodeID gepObj = AddressValue::getInternalID(gepAddr);
                 const GepObjVar* gepObjVar = SVFUtil::cast<GepObjVar>(svfir->getGNode(gepObj));
                 addToGepObjOffsetFromBase(gepObjVar, offset);
             }
@@ -372,7 +366,7 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(SVF::AddressValue gepAddrs,
             const GepObjVar* objVar = SVFUtil::cast<GepObjVar>(obj);
             for (const auto& gepAddr : gepAddrs)
             {
-                NodeID gepObj = AbstractState::getInternalID(gepAddr);
+                NodeID gepObj = AddressValue::getInternalID(gepAddr);
                 const GepObjVar* gepObjVar = SVFUtil::cast<GepObjVar>(svfir->getGNode(gepObj));
                 if (hasGepObjOffsetFromBase(objVar))
                 {
@@ -466,7 +460,7 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
     assert(as[value_id].isAddr());
     for (const auto& addr : as[value_id].getAddrs())
     {
-        NodeID objId = AbstractState::getInternalID(addr);
+        NodeID objId = AddressValue::getInternalID(addr);
         u32_t size = 0;
 
         // if the object is a constant size object, get the size directly
@@ -518,8 +512,8 @@ void NullptrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
                 }
             }
             else if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt)) {
-                SVFVar* rhs = load->getRHSVar();
-                if ( !canSafelyDerefPtr(as, rhs)) {
+                SVFVar* lhs = load->getLHSVar();
+                if ( !canSafelyDerefPtr(as, lhs)) {
                     AEException bug(stmt->toString());
                     addBugToReporter(bug, stmt->getICFGNode());
                 }
@@ -646,14 +640,20 @@ void NullptrDerefDetector::detectExtAPI(AbstractState& as, const CallICFGNode* c
 bool NullptrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVFVar* value)
 {
     NodeID value_id = value->getId();
-    AbstractValue& AbsVal = as[value_id];
+    AbstractValue AbsVal = as[value_id];
     if (isUninit(AbsVal)) return false;
-    if (!AbsVal.isAddr()) return true;    
+    if (!AbsVal.isAddr()) return true;
     for (const auto &addr: AbsVal.getAddrs()) {
-        NodeID addrId = AbstractState::getInternalID(addr);
-        AbstractValue addrVal = as[addrId];
-        if(isNull(addrVal)) return false;
-        if(isDangling(as, addrId)) return false;
+        NodeID addrId = as.getInternalID(addr);
+        if (addrId == InvalidMemVal) {
+            return false;
+        }
+        else if (addrId == NullMemVal)
+            return false;
+        else if (as.isMemFreed(addr))
+            return false;
     }
+
+
     return true;
 }

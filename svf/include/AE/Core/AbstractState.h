@@ -61,8 +61,9 @@ class AbstractState
     friend class RelationSolver;
 public:
     typedef Map<u32_t, AbstractValue> VarToAbsValMap;
-
     typedef VarToAbsValMap AddrToAbsValMap;
+    Set<NodeID> _nodeFreed;
+
 
 public:
     /// default constructor
@@ -73,7 +74,7 @@ public:
     AbstractState(VarToAbsValMap&_varToValMap, AddrToAbsValMap&_locToValMap) : _varToAbsVal(_varToValMap), _addrToAbsVal(_locToValMap) {}
 
     /// copy constructor
-    AbstractState(const AbstractState&rhs) : _varToAbsVal(rhs.getVarToVal()), _addrToAbsVal(rhs.getLocToVal())
+    AbstractState(const AbstractState&rhs) :  _nodeFreed(rhs._nodeFreed), _varToAbsVal(rhs.getVarToVal()), _addrToAbsVal(rhs.getLocToVal())
     {
 
     }
@@ -111,14 +112,9 @@ public:
     }
 
     /// Return the internal index if idx is an address otherwise return the value of idx
-    static inline u32_t getInternalID(u32_t idx)
+    inline u32_t getInternalID(u32_t idx)
     {
-        return AddressValue::getInternalID(idx);
-    }
-
-    static inline bool isNullPtr(u32_t addr)
-    {
-        return getInternalID(addr) == 0;
+        return _nodeFreed.count(idx) ? InvalidMemVal & FlippedAddressMask : AddressValue::getInternalID(idx);
     }
 
     AbstractState&operator=(const AbstractState&rhs)
@@ -127,6 +123,7 @@ public:
         {
             _varToAbsVal = rhs._varToAbsVal;
             _addrToAbsVal = rhs._addrToAbsVal;
+            _nodeFreed = rhs._nodeFreed;
         }
         return *this;
     }
@@ -145,6 +142,7 @@ public:
         {
             _varToAbsVal = std::move(rhs._varToAbsVal);
             _addrToAbsVal = std::move(rhs._addrToAbsVal);
+            _nodeFreed = std::move(rhs._nodeFreed);
         }
         return *this;
     }
@@ -279,9 +277,23 @@ public:
     /// domain join with other, important! other widen this.
     void joinWith(const AbstractState&other);
 
-
     /// domain meet with other, important! other widen this.
     void meetWith(const AbstractState&other);
+
+    void free(NodeID addr) {
+        _nodeFreed.insert(addr);
+    }
+
+    bool isMemValid(u32_t addr) const
+    {
+        return _nodeFreed.find(addr) == _nodeFreed.end();
+    }
+
+    bool isMemFreed(u32_t addr) const
+    {
+        return _nodeFreed.find(addr) != _nodeFreed.end();
+    }
+
 
     /**
     * if this NodeID in SVFIR is a pointer, get the pointee type
@@ -299,8 +311,8 @@ public:
     inline void store(u32_t addr, const AbstractValue &val)
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
-        if (isNullPtr(addr)) return;
         u32_t objId = getInternalID(addr);
+        if (objId == NullMemVal) return;
         _addrToAbsVal[objId] = val;
     }
 
@@ -395,6 +407,7 @@ public:
     {
         _addrToAbsVal.clear();
         _varToAbsVal.clear();
+        _nodeFreed.clear();
     }
 
 };

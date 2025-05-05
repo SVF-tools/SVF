@@ -33,7 +33,8 @@
 #define AddressMask 0x7f000000
 #define FlippedAddressMask (AddressMask^0xffffffff)
 // the address of the black hole, getVirtualMemAddress(2);
-#define DanglingPtrVal (0x7f000000 + 2)
+#define InvalidMemVal (0x7f000000 + 2)
+#define NullMemVal AddressMask
 
 
 #include "Util/GeneralType.h"
@@ -47,7 +48,6 @@ public:
     typedef Set<u32_t> AddrSet;
 private:
     AddrSet _addrs;
-    static Map<NodeID, bool> _NodeAllocationStatusMap;
 public:
     /// Default constructor
     AddressValue() {}
@@ -168,11 +168,6 @@ public:
         AddressValue v = *this;
         v.meet_with(other);
         return !v.empty();
-    }
-
-    inline bool isTop() const
-    {
-        return *this->begin() == DanglingPtrVal;
     }
 
     inline bool isBottom() const

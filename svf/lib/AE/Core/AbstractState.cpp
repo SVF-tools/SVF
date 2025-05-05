@@ -127,6 +127,7 @@ void AbstractState::joinWith(const AbstractState& other)
             _addrToAbsVal.emplace(key, it->second);
         }
     }
+    _nodeFreed.insert(other._nodeFreed.begin(), other._nodeFreed.end());
 }
 
 /// domain meet with other, important! other widen this.
@@ -150,6 +151,11 @@ void AbstractState::meetWith(const AbstractState& other)
             oit->second.meet_with(it->second);
         }
     }
+    Set<NodeID> intersection;
+    std::set_intersection(_nodeFreed.begin(), _nodeFreed.end(),
+                          other._nodeFreed.begin(), other._nodeFreed.end(),
+                          std::inserter(intersection, intersection.begin()));
+    _nodeFreed = std::move(intersection);
 }
 
 // getGepObjAddrs
