@@ -997,7 +997,7 @@ char* ctime_r(const char *timer, char *buf)
 
 int readdir_r(void *__restrict__dir, void *__restrict__entry, void **__restrict__result)
 {
-    __restrict__entry = *__restrict__result;  
+    __restrict__entry = *__restrict__result;   
     return 0;
 }
 
