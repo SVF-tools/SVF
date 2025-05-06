@@ -133,15 +133,14 @@ void BufOverflowDetector::handleStubFunctions(const SVF::CallICFGNode* callNode)
         bool isSafe = canSafelyAccessMemory(as, arg0Val, val);
         if (isSafe)
         {
-            std::cout << "safe buffer access success: " << callNode->toString()
-                      << std::endl;
+            SVFUtil::outs() << SVFUtil::sucMsg("success: expected safe buffer access at SAFE_BUFACCESS")
+                            << " — " << callNode->toString() << "\n";
             return;
         }
         else
         {
-            std::string err_msg = "this SAFE_BUFACCESS should be a safe access but detected buffer overflow. Pos: ";
-            err_msg += callNode->getSourceLoc();
-            std::cerr << err_msg << std::endl;
+            SVFUtil::outs() << SVFUtil::errMsg("failure: unexpected buffer overflow at SAFE_BUFACCESS")
+                            << " — Position: " << callNode->getSourceLoc() << "\n";
             assert(false);
         }
     }
@@ -162,14 +161,14 @@ void BufOverflowDetector::handleStubFunctions(const SVF::CallICFGNode* callNode)
         bool isSafe = canSafelyAccessMemory(as, arg0Val, val);
         if (!isSafe)
         {
-            std::cout << "detect buffer overflow success: " << callNode->toString() << std::endl;
+            SVFUtil::outs() << SVFUtil::sucMsg("success: expected buffer overflow at UNSAFE_BUFACCESS")
+                            << " — " << callNode->toString() << "\n";
             return;
         }
         else
         {
-            std::string err_msg = "this UNSAFE_BUFACCESS should be a buffer overflow but not detected. Pos: ";
-            err_msg += callNode->getSourceLoc();
-            std::cerr << err_msg << std::endl;
+            SVFUtil::outs() << SVFUtil::errMsg("failure: buffer overflow expected at UNSAFE_BUFACCESS, but none detected")
+                            << " — Position: " << callNode->getSourceLoc() << "\n";
             assert(false);
         }
     }
@@ -568,14 +567,14 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode)
         bool isSafe = canSafelyDerefPtr(as, arg0Val) && arg0Val->getId() != 0;
         if (!isSafe)
         {
-            std::cout << "UNSAFE_LOAD: null pointer dereference correctly detected — " << callNode->toString() << std::endl;
+            SVFUtil::outs() << SVFUtil::sucMsg("success: expected null dereference at UNSAFE_LOAD")
+                            << " — " << callNode->toString() << "\n";
             return;
         }
         else
         {
-            std::string err_msg = "UNSAFE_LOAD: expected null pointer dereference, but none was detected. Position: ";
-            err_msg += callNode->getSourceLoc();
-            std::cerr << err_msg << std::endl;
+            SVFUtil::outs() << SVFUtil::errMsg("failure: null dereference expected at UNSAFE_LOAD, but none detected")
+                            << " — Position: " << callNode->getSourceLoc() << "\n";
             assert(false);
         }
     }
@@ -590,14 +589,14 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode)
         bool isSafe = canSafelyDerefPtr(as, arg0Val) && arg0Val->getId() != 0;
         if (isSafe)
         {
-            std::cout << "SAFE_LOAD: pointer validated as safe for dereference — " << callNode->toString() << std::endl;
+            SVFUtil::outs() << SVFUtil::sucMsg("success: expected safe dereference at SAFE_LOAD")
+                            << " — " << callNode->toString() << "\n";
             return;
         }
         else
         {
-            std::string err_msg = "SAFE_LOAD: expected a valid pointer, but null dereference was detected. Position: ";
-            err_msg += callNode->getSourceLoc();
-            std::cerr << err_msg << std::endl;
+            SVFUtil::outs() << SVFUtil::errMsg("failure: unexpected null dereference at SAFE_LOAD")
+                            << " — Position: " << callNode->getSourceLoc() << "\n";
             assert(false);
         }
     }
