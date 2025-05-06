@@ -568,11 +568,12 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode)
         bool isSafe = canSafelyDerefPtr(as, arg0Val) && arg0Val->getId() != 0;
         if (!isSafe)
         {
-            std::cout << "Null pointer dereference correctly detected at UNSAFE_LOAD: "
-                      << callNode->toString() << std::endl;
+            std::cout << "UNSAFE_LOAD: null pointer dereference correctly detected — " << callNode->toString() << std::endl;
             return;
-        } else {
-            std::string err_msg = "Expected null pointer dereference at UNSAFE_LOAD site, but none was detected. Position: ";
+        }
+        else
+        {
+            std::string err_msg = "UNSAFE_LOAD: expected null pointer dereference, but none was detected. Position: ";
             err_msg += callNode->getSourceLoc();
             std::cerr << err_msg << std::endl;
             assert(false);
@@ -589,12 +590,12 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode)
         bool isSafe = canSafelyDerefPtr(as, arg0Val) && arg0Val->getId() != 0;
         if (isSafe)
         {
-            std::cout << "Successfully verified that the load address is safe: " << callNode->toString() << std::endl;
+            std::cout << "SAFE_LOAD: pointer validated as safe for dereference — " << callNode->toString() << std::endl;
             return;
         }
         else
         {
-            std::string err_msg = "SAFE_LOAD expected a valid pointer, but null dereference detected. Position: ";
+            std::string err_msg = "SAFE_LOAD: expected a valid pointer, but null dereference was detected. Position: ";
             err_msg += callNode->getSourceLoc();
             std::cerr << err_msg << std::endl;
             assert(false);
