@@ -111,10 +111,11 @@ public:
         return AddressValue::isVirtualMemAddress(val);
     }
 
-    /// Return the internal index if idx is an address otherwise return the value of idx
-    inline u32_t getInternalID(u32_t idx)
+    /// Return the internal index if addr is an address otherwise return the value of idx
+    inline u32_t getIDFromAddr(u32_t addr)
     {
-        return _nodeFreed.count(idx) ? InvalidMemVal & FlippedAddressMask : AddressValue::getInternalID(idx);
+        // if mem freed, return BlackHoleVarID = 2
+        return _nodeFreed.count(addr) ? 2 : AddressValue::getInternalID(addr);
     }
 
     AbstractState&operator=(const AbstractState&rhs)
@@ -181,6 +182,17 @@ public:
         }
         return inv;
     }
+
+    static inline bool isNullMem(u32_t addr)
+    {
+        return AddressValue::getInternalID(addr) == NullMemAddr;
+    }
+
+    static inline bool isInvalidMem(u32_t addr)
+    {
+        return AddressValue::getInternalID(addr) == InvalidMemAddr;
+    }
+
 
 protected:
     VarToAbsValMap _varToAbsVal; ///< Map a variable (symbol) to its abstract value
@@ -280,16 +292,11 @@ public:
     /// domain meet with other, important! other widen this.
     void meetWith(const AbstractState&other);
 
-    void free(NodeID addr) {
+    void addToFreedAddrs(NodeID addr) {
         _nodeFreed.insert(addr);
     }
 
-    bool isMemValid(u32_t addr) const
-    {
-        return _nodeFreed.find(addr) == _nodeFreed.end();
-    }
-
-    bool isMemFreed(u32_t addr) const
+    bool isFreedMem(u32_t addr) const
     {
         return _nodeFreed.find(addr) != _nodeFreed.end();
     }
@@ -311,15 +318,15 @@ public:
     inline void store(u32_t addr, const AbstractValue &val)
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
-        u32_t objId = getInternalID(addr);
-        if (objId == NullMemVal) return;
+        u32_t objId = getIDFromAddr(addr);
+        if (isNullMem(addr)) return;
         _addrToAbsVal[objId] = val;
     }
 
     inline virtual AbstractValue &load(u32_t addr)
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
-        u32_t objId = getInternalID(addr);
+        u32_t objId = getIDFromAddr(addr);
         return _addrToAbsVal[objId];
 
     }

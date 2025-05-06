@@ -391,7 +391,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         // if lhs is register value, we should also change its mem obj
         for (const auto &addr: addrs)
         {
-            NodeID objId = new_es.getInternalID(addr);
+            NodeID objId = new_es.getIDFromAddr(addr);
             if (new_es.inAddrToValTable(objId))
             {
                 new_es.load(addr).meet_with(rhs);
@@ -413,7 +413,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         // if lhs is register value, we should also change its mem obj
         for (const auto &addr: addrs)
         {
-            NodeID objId = new_es.getInternalID(addr);
+            NodeID objId = new_es.getIDFromAddr(addr);
             if (new_es.inAddrToValTable(objId))
             {
                 new_es.load(addr).meet_with(
@@ -431,7 +431,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         // if lhs is register value, we should also change its mem obj
         for (const auto &addr: addrs)
         {
-            NodeID objId = new_es.getInternalID(addr);
+            NodeID objId = new_es.getIDFromAddr(addr);
             if (new_es.inAddrToValTable(objId))
             {
                 new_es.load(addr).meet_with(
@@ -450,7 +450,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         // if lhs is register value, we should also change its mem obj
         for (const auto &addr: addrs)
         {
-            NodeID objId = new_es.getInternalID(addr);
+            NodeID objId = new_es.getIDFromAddr(addr);
             if (new_es.inAddrToValTable(objId))
             {
                 new_es.load(addr).meet_with(
@@ -469,7 +469,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         // if lhs is register value, we should also change its mem obj
         for (const auto &addr: addrs)
         {
-            NodeID objId = new_es.getInternalID(addr);
+            NodeID objId = new_es.getIDFromAddr(addr);
             if (new_es.inAddrToValTable(objId))
             {
                 new_es.load(addr).meet_with(
@@ -521,7 +521,7 @@ bool AbstractInterpretation::isSwitchBranchFeasible(const SVFVar* var, s64_t suc
                 AddressValue &addrs = new_es[load->getRHSVarID()].getAddrs();
                 for (const auto &addr: addrs)
                 {
-                    NodeID objId = new_es.getInternalID(addr);
+                    NodeID objId = new_es.getIDFromAddr(addr);
                     if (new_es.inAddrToValTable(objId))
                     {
                         new_es.load(addr).meet_with(switch_cond);
@@ -752,7 +752,7 @@ void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
     }
     AbstractValue Addrs = as[call_id];
     NodeID addr = *Addrs.getAddrs().begin();
-    SVFVar *func_var = svfir->getGNode(as.getInternalID(addr));
+    SVFVar *func_var = svfir->getGNode(as.getIDFromAddr(addr));
 
     if(const FunObjVar* funObjVar = SVFUtil::dyn_cast<FunObjVar>(func_var))
     {

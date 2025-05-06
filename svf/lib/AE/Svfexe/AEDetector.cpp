@@ -55,15 +55,14 @@ void BufOverflowDetector::detect(AbstractState& as, const ICFGNode* node)
                 NodeID rhs = gep->getRHSVarID();
 
                 // Update the GEP object offset from its base
-                updateGepObjOffsetFromBase(as[lhs].getAddrs(), as[rhs].getAddrs(), as.getByteOffset(gep));
+                updateGepObjOffsetFromBase(as, as[lhs].getAddrs(), as[rhs].getAddrs(), as.getByteOffset(gep));
 
                 IntervalValue baseObjSize = IntervalValue::bottom();
                 AddressValue objAddrs = as[gep->getRHSVarID()].getAddrs();
                 for (const auto& addr : objAddrs)
                 {
-                    NodeID objId = AddressValue::getInternalID(addr);
+                    NodeID objId = as.getIDFromAddr(addr);
                     u32_t size = 0;
-
                     if (svfir->getBaseObject(objId)->isConstantByteSize())
                     {
                         size = svfir->getBaseObject(objId)->getByteSizeOfObj();
@@ -342,22 +341,27 @@ IntervalValue BufOverflowDetector::getAccessOffset(SVF::AbstractState& as, SVF::
  * @param objAddrs The addresses of the base objects.
  * @param offset The interval value of the offset.
  */
-void BufOverflowDetector::updateGepObjOffsetFromBase(SVF::AddressValue gepAddrs, SVF::AddressValue objAddrs, SVF::IntervalValue offset)
+void BufOverflowDetector::updateGepObjOffsetFromBase(AbstractState& as, SVF::AddressValue gepAddrs, SVF::AddressValue objAddrs, SVF::IntervalValue offset)
 {
     SVFIR* svfir = PAG::getPAG();
 
     for (const auto& objAddr : objAddrs)
     {
-        NodeID objId = AddressValue::getInternalID(objAddr);
+        NodeID objId = as.getIDFromAddr(objAddr);
         auto obj = svfir->getGNode(objId);
         // if the object is a BaseObjVar, add the offset directly
         if (SVFUtil::isa<BaseObjVar>(obj))
         {
             for (const auto& gepAddr : gepAddrs)
             {
-                NodeID gepObj = AddressValue::getInternalID(gepAddr);
-                const GepObjVar* gepObjVar = SVFUtil::cast<GepObjVar>(svfir->getGNode(gepObj));
-                addToGepObjOffsetFromBase(gepObjVar, offset);
+                NodeID gepObj = as.getIDFromAddr(gepAddr);
+                if (const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(svfir->getGNode(gepObj)))
+                {
+                    addToGepObjOffsetFromBase(gepObjVar, offset);
+                }
+                else {
+                    assert(AbstractState::isInvalidMem(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
+                }
             }
         }
         else if (SVFUtil::isa<GepObjVar>(obj))
@@ -366,17 +370,25 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(SVF::AddressValue gepAddrs,
             const GepObjVar* objVar = SVFUtil::cast<GepObjVar>(obj);
             for (const auto& gepAddr : gepAddrs)
             {
-                NodeID gepObj = AddressValue::getInternalID(gepAddr);
-                const GepObjVar* gepObjVar = SVFUtil::cast<GepObjVar>(svfir->getGNode(gepObj));
-                if (hasGepObjOffsetFromBase(objVar))
+                NodeID gepObj = as.getIDFromAddr(gepAddr);
+                if (const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(svfir->getGNode(gepObj)))
                 {
-                    IntervalValue objOffsetFromBase = getGepObjOffsetFromBase(objVar);
-                    if (!hasGepObjOffsetFromBase(gepObjVar))
-                        addToGepObjOffsetFromBase(gepObjVar, objOffsetFromBase + offset);
+                    if (hasGepObjOffsetFromBase(objVar))
+                    {
+                        IntervalValue objOffsetFromBase =
+                            getGepObjOffsetFromBase(objVar);
+                        if (!hasGepObjOffsetFromBase(gepObjVar))
+                            addToGepObjOffsetFromBase(
+                                gepObjVar, objOffsetFromBase + offset);
+                    }
+                    else
+                    {
+                        assert(false &&
+                               "GEP RHS object has no offset from base");
+                    }
                 }
-                else
-                {
-                    assert(false && "GEP RHS object has no offset from base");
+                else {
+                    assert(AbstractState::isInvalidMem(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
                 }
             }
         }
@@ -460,9 +472,8 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
     assert(as[value_id].isAddr());
     for (const auto& addr : as[value_id].getAddrs())
     {
-        NodeID objId = AddressValue::getInternalID(addr);
+        NodeID objId = as.getIDFromAddr(addr);
         u32_t size = 0;
-
         // if the object is a constant size object, get the size directly
         if (svfir->getBaseObject(objId)->isConstantByteSize())
         {
@@ -471,10 +482,12 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
         else
         {
             // if the object is not a constant size object, get the size from the addrStmt
-            const ICFGNode* addrNode = svfir->getBaseObject(objId)->getICFGNode();
+            const ICFGNode* addrNode =
+                svfir->getBaseObject(objId)->getICFGNode();
             for (const SVFStmt* stmt2 : addrNode->getSVFStmts())
             {
-                if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
+                if (const AddrStmt* addrStmt =
+                        SVFUtil::dyn_cast<AddrStmt>(stmt2))
                 {
                     size = as.getAllocaInstByteSize(addrStmt);
                 }
@@ -487,11 +500,12 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
         {
             offset = getGepObjOffsetFromBase(SVFUtil::cast<GepObjVar>(svfir->getGNode(objId))) + len;
         }
-        else
+        else if (SVFUtil::isa<BaseObjVar>(svfir->getGNode(objId)))
         {
             // if the object is a BaseObjVar, get the offset directly
             offset = len;
         }
+
         // if the offset is greater than the size, return false
         if (offset.ub().getIntNumeral() >= size)
         {
@@ -502,7 +516,14 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
 }
 
 void NullptrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
-    if (!SVFUtil::isa<CallICFGNode>(node)){
+    if (SVFUtil::isa<CallICFGNode>(node)){
+        const CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(node);
+        if (SVFUtil::isExtCall(callNode->getCalledFunction()))
+        {
+            detectExtAPI(as, callNode);
+        }
+    }
+    else {
         for (const auto& stmt: node->getSVFStmts()) {
             if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt)) {
                 SVFVar* rhs = gep->getRHSVar();
@@ -518,23 +539,8 @@ void NullptrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
                     addBugToReporter(bug, stmt->getICFGNode());
                 }
             }
-            else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt)) {
-                SVFVar* rhs = store->getRHSVar();
-                if ( !canSafelyDerefPtr(as, rhs)) {
-                    AEException bug(stmt->toString());
-                    addBugToReporter(bug, stmt->getICFGNode());
-                }
-            }
         }
     }
-    else {
-        const CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(node);
-        if (SVFUtil::isExtCall(callNode->getCalledFunction()))
-        {
-            detectExtAPI(as, callNode);
-        }
-    }
-
 }
 
 
@@ -628,8 +634,10 @@ void NullptrDerefDetector::detectExtAPI(AbstractState& as, const CallICFGNode* c
     }
 
     for (const auto &arg: tmp_args) {
+        if (call->arg_size() <= arg)
+            continue;
         const SVFVar* argVal = call->getArgument(arg);
-        if (!canSafelyDerefPtr(as, argVal)) {
+        if (argVal && !canSafelyDerefPtr(as, argVal)) {
             AEException bug(call->toString());
             addBugToReporter(bug, call);
         }
@@ -644,13 +652,12 @@ bool NullptrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVFVar* va
     if (isUninit(AbsVal)) return false;
     if (!AbsVal.isAddr()) return true;
     for (const auto &addr: AbsVal.getAddrs()) {
-        NodeID addrId = as.getInternalID(addr);
-        if (addrId == InvalidMemVal) {
+        if (AbstractState::isInvalidMem(addr)) {
             return false;
         }
-        else if (addrId == NullMemVal)
+        else if (AbstractState::isNullMem(addr))
             return false;
-        else if (as.isMemFreed(addr))
+        else if (as.isFreedMem(addr))
             return false;
     }
 

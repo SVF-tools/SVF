@@ -165,7 +165,8 @@ public:
      * @param objAddrs Address value for the object.
      * @param offset The interval value of the offset.
      */
-    void updateGepObjOffsetFromBase(AddressValue gepAddrs,
+    void updateGepObjOffsetFromBase(AbstractState& as,
+                                    AddressValue gepAddrs,
                                     AddressValue objAddrs,
                                     IntervalValue offset);
 

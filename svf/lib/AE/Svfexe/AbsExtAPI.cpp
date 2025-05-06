@@ -162,7 +162,7 @@ void AbsExtAPI::initExtFunMap()
             AbstractValue Addrs = as[dst_id];
             for (auto vaddr: Addrs.getAddrs())
             {
-                u32_t objId = AddressValue::getInternalID(vaddr);
+                u32_t objId = as.getIDFromAddr(vaddr);
                 AbstractValue range = getRangeLimitFromType(svfir->getGNode(objId)->getType());
                 as.store(vaddr, range);
             }
@@ -182,7 +182,7 @@ void AbsExtAPI::initExtFunMap()
             AbstractValue Addrs = as[dst_id];
             for (auto vaddr: Addrs.getAddrs())
             {
-                u32_t objId = AddressValue::getInternalID(vaddr);
+                u32_t objId = as.getIDFromAddr(vaddr);
                 AbstractValue range = getRangeLimitFromType(svfir->getGNode(objId)->getType());
                 as.store(vaddr, range);
             }
@@ -279,17 +279,19 @@ void AbsExtAPI::initExtFunMap()
         u32_t dst_size = 0;
         for (const auto& addr : as[value_id].getAddrs())
         {
-            NodeID objId = AddressValue::getInternalID(addr);
+            NodeID objId = as.getIDFromAddr(addr);
             if (svfir->getBaseObject(objId)->isConstantByteSize())
             {
                 dst_size = svfir->getBaseObject(objId)->getByteSizeOfObj();
             }
             else
             {
-                const ICFGNode* addrNode = svfir->getBaseObject(objId)->getICFGNode();
-                for (const SVFStmt* stmt2: addrNode->getSVFStmts())
+                const ICFGNode* addrNode =
+                    svfir->getBaseObject(objId)->getICFGNode();
+                for (const SVFStmt* stmt2 : addrNode->getSVFStmts())
                 {
-                    if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
+                    if (const AddrStmt* addrStmt =
+                            SVFUtil::dyn_cast<AddrStmt>(stmt2))
                     {
                         dst_size = as.getAllocaInstByteSize(addrStmt);
                     }
@@ -347,12 +349,11 @@ void AbsExtAPI::initExtFunMap()
          AbstractState& as = getAbsStateFromTrace(callNode);
          const u32_t freePtr = callNode->getArgument(0)->getId();
          for (auto addr: as[freePtr].getAddrs()) {
-             const NodeID addrId = as.getInternalID(addr);
-             if (addrId == InvalidMemVal) {
+             if (AbstractState::isInvalidMem(addr)) {
                  // double free here.
              } else
              {
-                 as.free(addr);
+                 as.addToFreedAddrs(addr);
              }
          }
      };
@@ -500,17 +501,19 @@ IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValu
     u32_t dst_size = 0;
     for (const auto& addr : as[value_id].getAddrs())
     {
-        NodeID objId = AddressValue::getInternalID(addr);
+        NodeID objId = as.getIDFromAddr(addr);
         if (svfir->getBaseObject(objId)->isConstantByteSize())
         {
             dst_size = svfir->getBaseObject(objId)->getByteSizeOfObj();
         }
         else
         {
-            const ICFGNode* icfgNode = svfir->getBaseObject(objId)->getICFGNode();
-            for (const SVFStmt* stmt2: icfgNode->getSVFStmts())
+            const ICFGNode* icfgNode =
+                svfir->getBaseObject(objId)->getICFGNode();
+            for (const SVFStmt* stmt2 : icfgNode->getSVFStmts())
             {
-                if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
+                if (const AddrStmt* addrStmt =
+                        SVFUtil::dyn_cast<AddrStmt>(stmt2))
                 {
                     dst_size = as.getAllocaInstByteSize(addrStmt);
                 }
@@ -648,7 +651,7 @@ void AbsExtAPI::handleMemcpy(AbstractState& as, const SVF::SVFVar *dst, const SV
             {
                 for (const auto &src: expr_src.getAddrs())
                 {
-                    u32_t objId = AddressValue::getInternalID(src);
+                    u32_t objId = as.getIDFromAddr(src);
                     if (as.inAddrToValTable(objId))
                     {
                         as.store(dst, as.load(src));
@@ -697,7 +700,7 @@ void AbsExtAPI::handleMemset(AbstractState& as, const SVF::SVFVar *dst, Interval
             AbstractValue lhs_gep = as.getGepObjAddrs(dstId, IntervalValue(index));
             for (const auto &addr: lhs_gep.getAddrs())
             {
-                u32_t objId = AddressValue::getInternalID(addr);
+                u32_t objId = as.getIDFromAddr(addr);
                 if (as.inAddrToValTable(objId))
                 {
                     AbstractValue tmp = as.load(addr);
