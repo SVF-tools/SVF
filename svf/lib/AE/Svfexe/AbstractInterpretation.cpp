@@ -1107,7 +1107,7 @@ void AbstractInterpretation::collectCheckPoint()
                         checkpoints.insert(call);
                     }
                 }
-                if (Options::NullptrDerefCheck())
+                if (Options::NullDerefCheck())
                 {
                     if (nullptr_checkpoint_names.find(fun->getName()) !=
                             nullptr_checkpoint_names.end())
