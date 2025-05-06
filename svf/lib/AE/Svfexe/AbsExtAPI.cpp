@@ -350,7 +350,8 @@ void AbsExtAPI::initExtFunMap()
         {
             if (AbstractState::isInvalidMem(addr))
             {
-                // double free here.
+                // Detected a double free — the address has already been freed.
+                // No action is taken at this point.
             }
             else
             {
