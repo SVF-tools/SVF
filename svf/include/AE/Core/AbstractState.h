@@ -114,8 +114,7 @@ public:
     /// Return the internal index if addr is an address otherwise return the value of idx
     inline u32_t getIDFromAddr(u32_t addr)
     {
-        // if mem freed, return BlackHoleVarID = 2
-        return _nodeFreed.count(addr) ? 2 : AddressValue::getInternalID(addr);
+        return _nodeFreed.count(addr) ?  InvalidMemAddr: AddressValue::getInternalID(addr);
     }
 
     AbstractState&operator=(const AbstractState&rhs)
