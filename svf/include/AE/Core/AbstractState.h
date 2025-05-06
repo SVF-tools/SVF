@@ -291,7 +291,8 @@ public:
     /// domain meet with other, important! other widen this.
     void meetWith(const AbstractState&other);
 
-    void addToFreedAddrs(NodeID addr) {
+    void addToFreedAddrs(NodeID addr)
+    {
         _freedAddrs.insert(addr);
     }
 

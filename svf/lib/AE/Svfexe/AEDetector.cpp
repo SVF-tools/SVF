@@ -359,7 +359,8 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(AbstractState& as, SVF::Add
                 {
                     addToGepObjOffsetFromBase(gepObjVar, offset);
                 }
-                else {
+                else
+                {
                     assert(AbstractState::isInvalidMem(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
                 }
             }
@@ -387,7 +388,8 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(AbstractState& as, SVF::Add
                                "GEP RHS object has no offset from base");
                     }
                 }
-                else {
+                else
+                {
                     assert(AbstractState::isInvalidMem(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
                 }
             }
@@ -513,26 +515,34 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
     return true;
 }
 
-void NullptrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
-    if (SVFUtil::isa<CallICFGNode>(node)){
+void NullptrDerefDetector::detect(AbstractState& as, const ICFGNode* node)
+{
+    if (SVFUtil::isa<CallICFGNode>(node))
+    {
         const CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(node);
         if (SVFUtil::isExtCall(callNode->getCalledFunction()))
         {
             detectExtAPI(as, callNode);
         }
     }
-    else {
-        for (const auto& stmt: node->getSVFStmts()) {
-            if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt)) {
+    else
+    {
+        for (const auto& stmt: node->getSVFStmts())
+        {
+            if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt))
+            {
                 SVFVar* rhs = gep->getRHSVar();
-                if (!canSafelyDerefPtr(as, rhs)) {
+                if (!canSafelyDerefPtr(as, rhs))
+                {
                     AEException bug(stmt->toString());
                     addBugToReporter(bug, stmt->getICFGNode());
                 }
             }
-            else if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt)) {
+            else if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+            {
                 SVFVar* lhs = load->getLHSVar();
-                if ( !canSafelyDerefPtr(as, lhs)) {
+                if ( !canSafelyDerefPtr(as, lhs))
+                {
                     AEException bug(stmt->toString());
                     addBugToReporter(bug, stmt->getICFGNode());
                 }
@@ -542,68 +552,75 @@ void NullptrDerefDetector::detect(AbstractState& as, const ICFGNode* node) {
 }
 
 
-void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode){
-     std::string funcName = callNode->getCalledFunction()->getName();
-     if (funcName == "UNSAFE_LOAD")
-     {
-         // void UNSAFE_LOAD(void* ptr);
-         AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
-         if (callNode->arg_size() < 1)
-             return;
-         AbstractState& as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
-         
-         const SVFVar* arg0Val = callNode->getArgument(0);
-         // opt may directly dereference a null pointer and call UNSAFE_LOAD(null)
-         bool isSafe = canSafelyDerefPtr(as, arg0Val) && arg0Val->getId() != 0;
-         if (!isSafe) {
+void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode)
+{
+    std::string funcName = callNode->getCalledFunction()->getName();
+    if (funcName == "UNSAFE_LOAD")
+    {
+        // void UNSAFE_LOAD(void* ptr);
+        AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
+        if (callNode->arg_size() < 1)
+            return;
+        AbstractState& as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
+
+        const SVFVar* arg0Val = callNode->getArgument(0);
+        // opt may directly dereference a null pointer and call UNSAFE_LOAD(null)
+        bool isSafe = canSafelyDerefPtr(as, arg0Val) && arg0Val->getId() != 0;
+        if (!isSafe)
+        {
             std::cout << "detect null pointer deference success: " << callNode->toString() << std::endl;
             return;
-         }
-         else
-         {
+        }
+        else
+        {
             std::string err_msg = "this UNSAFE_LOAD should be a null pointer dereference but not detected. Pos: ";
             err_msg += callNode->getSourceLoc();
             std::cerr << err_msg << std::endl;
             assert(false);
-         }
-     }
-     else if (funcName == "SAFE_LOAD")
-     {
-         // void SAFE_LOAD(void* ptr);
-         AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
-         if (callNode->arg_size() < 1) return;
-         AbstractState&as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
-         const SVFVar* arg0Val = callNode->getArgument(0);
-         // opt may directly dereference a null pointer and call UNSAFE_LOAD(null)ols
-         bool isSafe = canSafelyDerefPtr(as, arg0Val) && arg0Val->getId() != 0;
-         if (isSafe) {
-             std::cout << "safe load pointer success: " << callNode->toString() << std::endl;
-             return;
-         }
-         else
-         {
-             std::string err_msg = "this SAFE_LOAD should be a safe but a null pointer dereference detected. Pos: ";
-             err_msg += callNode->getSourceLoc();
-             std::cerr << err_msg << std::endl;
-             assert(false);
-         }
-     }
+        }
+    }
+    else if (funcName == "SAFE_LOAD")
+    {
+        // void SAFE_LOAD(void* ptr);
+        AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
+        if (callNode->arg_size() < 1) return;
+        AbstractState&as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
+        const SVFVar* arg0Val = callNode->getArgument(0);
+        // opt may directly dereference a null pointer and call UNSAFE_LOAD(null)ols
+        bool isSafe = canSafelyDerefPtr(as, arg0Val) && arg0Val->getId() != 0;
+        if (isSafe)
+        {
+            std::cout << "safe load pointer success: " << callNode->toString() << std::endl;
+            return;
+        }
+        else
+        {
+            std::string err_msg = "this SAFE_LOAD should be a safe but a null pointer dereference detected. Pos: ";
+            err_msg += callNode->getSourceLoc();
+            std::cerr << err_msg << std::endl;
+            assert(false);
+        }
+    }
 }
 
-void NullptrDerefDetector::detectExtAPI(AbstractState& as, const CallICFGNode* call) {
+void NullptrDerefDetector::detectExtAPI(AbstractState& as, const CallICFGNode* call)
+{
     assert(call->getCalledFunction() && "FunObjVar* is nullptr");
     // get ext type
     // get argument index which are nullptr deref checkpoints for extapi
     std::vector<u32_t> tmp_args;
-    for (const std::string &annotation: ExtAPI::getExtAPI()->getExtFuncAnnotations(call->getCalledFunction())){
+    for (const std::string &annotation: ExtAPI::getExtAPI()->getExtFuncAnnotations(call->getCalledFunction()))
+    {
         if (annotation.find("MEMCPY") != std::string::npos)
         {
-            if (call->arg_size() < 4) {
+            if (call->arg_size() < 4)
+            {
                 // for memcpy(void* dest, const void* src, size_t n)
                 tmp_args.push_back(0);
                 tmp_args.push_back(1);
             }
-            else {
+            else
+            {
                 // for unsigned long iconv(void* cd, char **restrict inbuf, unsigned long *restrict inbytesleft, char **restrict outbuf, unsigned long *restrict outbytesleft)
                 tmp_args.push_back(1);
                 tmp_args.push_back(2);
@@ -631,11 +648,13 @@ void NullptrDerefDetector::detectExtAPI(AbstractState& as, const CallICFGNode* c
         }
     }
 
-    for (const auto &arg: tmp_args) {
+    for (const auto &arg: tmp_args)
+    {
         if (call->arg_size() <= arg)
             continue;
         const SVFVar* argVal = call->getArgument(arg);
-        if (argVal && !canSafelyDerefPtr(as, argVal)) {
+        if (argVal && !canSafelyDerefPtr(as, argVal))
+        {
             AEException bug(call->toString());
             addBugToReporter(bug, call);
         }
@@ -649,8 +668,10 @@ bool NullptrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVFVar* va
     AbstractValue AbsVal = as[value_id];
     if (isUninit(AbsVal)) return false;
     if (!AbsVal.isAddr()) return true;
-    for (const auto &addr: AbsVal.getAddrs()) {
-        if (AbstractState::isInvalidMem(addr)) {
+    for (const auto &addr: AbsVal.getAddrs())
+    {
+        if (AbstractState::isInvalidMem(addr))
+        {
             return false;
         }
         else if (AbstractState::isNullMem(addr))

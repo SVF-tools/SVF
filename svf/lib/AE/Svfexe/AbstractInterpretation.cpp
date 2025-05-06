@@ -275,7 +275,8 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
     NodeID res_id = cmpStmt->getResID();
     s32_t predicate = cmpStmt->getPredicate();
     // if op0 or op1 is nullptr, no need to change value, just copy the state
-    if (op0 == IRGraph::NullPtr || op1 == IRGraph::NullPtr) {
+    if (op0 == IRGraph::NullPtr || op1 == IRGraph::NullPtr)
+    {
         as = new_es;
         return true;
     }
@@ -1325,7 +1326,8 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
         as[res] = resVal;
     }
     // if op0 or op1 is nullptr, compare abstractValue instead of touching addr or interval
-    else if (op0 == IRGraph::NullPtr || op1 == IRGraph::NullPtr) {
+    else if (op0 == IRGraph::NullPtr || op1 == IRGraph::NullPtr)
+    {
         u32_t res = cmp->getResID();
         IntervalValue resVal = (as[op0].equals(as[op1])) ? IntervalValue(1, 1) : IntervalValue(0, 0);
         as[res] = resVal;

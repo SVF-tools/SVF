@@ -322,7 +322,8 @@ private:
     SVFBugReport recoder; ///< Recorder for abstract execution bugs.
     Map<const ICFGNode*, std::string> nodeToBugInfo; ///< Maps ICFG nodes to bug information.
 };
-class NullptrDerefDetector : public AEDetector{
+class NullptrDerefDetector : public AEDetector
+{
     friend class AbstractInterpretation;
 public:
     NullptrDerefDetector()
@@ -355,17 +356,17 @@ public:
      * @param v The Abstract Value to check.
      * @return True if the value is uninitialized, false otherwise.
      */
-    bool isUninit(AbstractValue v) 
+    bool isUninit(AbstractValue v)
     {
         bool is = v.getAddrs().isBottom() && v.getInterval().isBottom();
         return is;
     }
 
-     /**
-     * @brief Adds a bug to the reporter based on an exception.
-     * @param e The exception that was thrown.
-     * @param node Pointer to the ICFG node where the bug was detected.
-     */
+    /**
+    * @brief Adds a bug to the reporter based on an exception.
+    * @param e The exception that was thrown.
+    * @param node Pointer to the ICFG node where the bug was detected.
+    */
     void addBugToReporter(const AEException& e, const ICFGNode* node)
     {
         GenericBug::EventStack eventStack;
@@ -390,7 +391,7 @@ public:
         recoder.addAbsExecBug(GenericBug::FULLNULLPTRDEREFERENCE, eventStack, 0, 0, 0, 0);
         nodeToBugInfo[node] = e.what(); // Record the exception information for the node
     }
-    
+
     /**
      * @brief Reports all detected nullptr dereference bugs.
      */
@@ -415,7 +416,7 @@ public:
      */
     void detectExtAPI(AbstractState& as, const CallICFGNode* call);
 
- 
+
     /**
      * @brief Check if an Abstract Value is NULL (or uninitialized).
      *
@@ -427,7 +428,7 @@ public:
     }
 
     bool canSafelyDerefPtr(AbstractState& as, const SVFVar* ptr);
- 
+
 private:
     Set<std::string> bugLoc; ///< Set of locations where bugs have been reported.
     SVFBugReport recoder; ///< Recorder for abstract execution bugs.
