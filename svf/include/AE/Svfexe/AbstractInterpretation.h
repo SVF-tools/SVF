@@ -167,7 +167,7 @@ public:
         const ICFGNode* repNode = icfg->getRepNode(node);
         if (abstractTrace.count(repNode) == 0)
         {
-            assert(0 && "No preAbsTrace for this node");
+            assert(false && "No preAbsTrace for this node");
         }
         else
         {

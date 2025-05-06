@@ -62,7 +62,7 @@ class AbstractState
 public:
     typedef Map<u32_t, AbstractValue> VarToAbsValMap;
     typedef VarToAbsValMap AddrToAbsValMap;
-    Set<NodeID> _nodeFreed;
+    Set<NodeID> _freedAddrs;
 
 
 public:
@@ -74,7 +74,7 @@ public:
     AbstractState(VarToAbsValMap&_varToValMap, AddrToAbsValMap&_locToValMap) : _varToAbsVal(_varToValMap), _addrToAbsVal(_locToValMap) {}
 
     /// copy constructor
-    AbstractState(const AbstractState&rhs) :  _nodeFreed(rhs._nodeFreed), _varToAbsVal(rhs.getVarToVal()), _addrToAbsVal(rhs.getLocToVal())
+    AbstractState(const AbstractState&rhs) : _freedAddrs(rhs._freedAddrs), _varToAbsVal(rhs.getVarToVal()), _addrToAbsVal(rhs.getLocToVal())
     {
 
     }
@@ -114,7 +114,7 @@ public:
     /// Return the internal index if addr is an address otherwise return the value of idx
     inline u32_t getIDFromAddr(u32_t addr)
     {
-        return _nodeFreed.count(addr) ?  AddressValue::getInternalID(InvalidMemAddr) : AddressValue::getInternalID(addr);
+        return _freedAddrs.count(addr) ?  AddressValue::getInternalID(InvalidMemAddr) : AddressValue::getInternalID(addr);
     }
 
     AbstractState&operator=(const AbstractState&rhs)
@@ -123,7 +123,7 @@ public:
         {
             _varToAbsVal = rhs._varToAbsVal;
             _addrToAbsVal = rhs._addrToAbsVal;
-            _nodeFreed = rhs._nodeFreed;
+            _freedAddrs = rhs._freedAddrs;
         }
         return *this;
     }
@@ -142,7 +142,7 @@ public:
         {
             _varToAbsVal = std::move(rhs._varToAbsVal);
             _addrToAbsVal = std::move(rhs._addrToAbsVal);
-            _nodeFreed = std::move(rhs._nodeFreed);
+            _freedAddrs = std::move(rhs._freedAddrs);
         }
         return *this;
     }
@@ -292,12 +292,12 @@ public:
     void meetWith(const AbstractState&other);
 
     void addToFreedAddrs(NodeID addr) {
-        _nodeFreed.insert(addr);
+        _freedAddrs.insert(addr);
     }
 
     bool isFreedMem(u32_t addr) const
     {
-        return _nodeFreed.find(addr) != _nodeFreed.end();
+        return _freedAddrs.find(addr) != _freedAddrs.end();
     }
 
 
@@ -413,7 +413,7 @@ public:
     {
         _addrToAbsVal.clear();
         _varToAbsVal.clear();
-        _nodeFreed.clear();
+        _freedAddrs.clear();
     }
 
 };

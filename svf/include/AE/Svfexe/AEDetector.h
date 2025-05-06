@@ -45,7 +45,7 @@ public:
     enum DetectorKind
     {
         BUF_OVERFLOW,   ///< Detector for buffer overflow issues.
-        NULLPTR_DEREF,  ///< Detector for nullptr dereference issues.
+        NULL_DEREF,  ///< Detector for nullptr dereference issues.
         UNKNOWN,    ///< Default type if the kind is not specified.
     };
 
@@ -327,14 +327,14 @@ class NullptrDerefDetector : public AEDetector{
 public:
     NullptrDerefDetector()
     {
-        kind = NULLPTR_DEREF;
+        kind = NULL_DEREF;
     }
 
     ~NullptrDerefDetector() = default;
 
     static bool classof(const AEDetector* detector)
     {
-        return detector->getKind() == AEDetector::NULLPTR_DEREF;
+        return detector->getKind() == AEDetector::NULL_DEREF;
     }
 
     /**
