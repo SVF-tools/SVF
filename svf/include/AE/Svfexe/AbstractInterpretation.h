@@ -105,6 +105,7 @@ class AbstractInterpretation
     friend class AEStat;
     friend class AEAPI;
     friend class BufOverflowDetector;
+    friend class NullptrDerefDetector;
 
 public:
     typedef SCCDetection<CallGraph*> CallGraphSCC;
@@ -154,6 +155,25 @@ public:
     }
 
     Set<const CallICFGNode*> checkpoints; // for CI check
+
+    /**
+     * @brief Retrieves the abstract state from the trace for a given ICFG node.
+     * @param node Pointer to the ICFG node.
+     * @return Reference to the abstract state.
+     * @throws Assertion if no trace exists for the node.
+     */
+    AbstractState& getAbsStateFromTrace(const ICFGNode* node)
+    {
+        const ICFGNode* repNode = icfg->getRepNode(node);
+        if (abstractTrace.count(repNode) == 0)
+        {
+            assert(false && "No preAbsTrace for this node");
+        }
+        else
+        {
+            return abstractTrace[repNode];
+        }
+    }
 
 private:
     /// Global ICFGNode is handled at the entry of the program,
@@ -279,19 +299,6 @@ private:
     Set<std::pair<const CallICFGNode*, NodeID>> nonRecursiveCallSites;
     Set<const FunObjVar*> recursiveFuns;
 
-
-    AbstractState& getAbsStateFromTrace(const ICFGNode* node)
-    {
-        const ICFGNode* repNode = icfg->getRepNode(node);
-        if (abstractTrace.count(repNode) == 0)
-        {
-            assert(0 && "No preAbsTrace for this node");
-        }
-        else
-        {
-            return abstractTrace[repNode];
-        }
-    }
 
     bool hasAbsStateFromTrace(const ICFGNode* node)
     {

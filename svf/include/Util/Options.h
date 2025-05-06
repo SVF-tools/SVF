@@ -253,6 +253,8 @@ public:
     static const Option<std::string> OutputName;
     /// buffer overflow checker, Default: false
     static const Option<bool> BufferOverflowCheck;
+    /// nullptr dereference checker, Default: false
+    static const Option<bool> NullDerefCheck;
     /// memory leak check, Default: false
     static const Option<bool> MemoryLeakCheck;
     /// file open close checker, Default: false

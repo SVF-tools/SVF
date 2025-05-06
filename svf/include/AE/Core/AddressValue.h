@@ -32,8 +32,12 @@
 
 #define AddressMask 0x7f000000
 #define FlippedAddressMask (AddressMask^0xffffffff)
-// the address of the black hole, getVirtualMemAddress(2);
-#define BlackHoleAddr 0x7f000000 + 2
+// the address of InvalidMem(the black hole), getVirtualMemAddress(2);
+#define InvalidMemAddr 0x7f000000 + 2
+// the address of NullMem, getVirtualMemAddress(0);
+#define NullMemAddr 0x7f000000
+
+
 
 #include "Util/GeneralType.h"
 #include <sstream>
@@ -42,10 +46,19 @@ namespace SVF
 {
 class AddressValue
 {
+    friend class AbstractState;
+    friend class RelExeState;
 public:
     typedef Set<u32_t> AddrSet;
 private:
     AddrSet _addrs;
+
+    /// Return the internal index if idx is an address otherwise return the value of idx
+    static inline u32_t getInternalID(u32_t idx)
+    {
+        return (idx & FlippedAddressMask);
+    }
+
 public:
     /// Default constructor
     AddressValue() {}
@@ -168,24 +181,9 @@ public:
         return !v.empty();
     }
 
-    inline bool isTop() const
-    {
-        return *this->begin() == BlackHoleAddr;
-    }
-
     inline bool isBottom() const
     {
         return empty();
-    }
-
-    inline void setTop()
-    {
-        *this = AddressValue(BlackHoleAddr);
-    }
-
-    inline void setBottom()
-    {
-        _addrs.clear();
     }
 
     const std::string toString() const
@@ -222,11 +220,6 @@ public:
         return (val & 0xff000000) == AddressMask && val != AddressMask + 0;
     }
 
-    /// Return the internal index if idx is an address otherwise return the value of idx
-    static inline u32_t getInternalID(u32_t idx)
-    {
-        return (idx & FlippedAddressMask);
-    }
 };
 } // end namespace SVF
 #endif //Z3_EXAMPLE_ADDRESSVALUE_H

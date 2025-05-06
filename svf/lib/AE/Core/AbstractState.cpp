@@ -127,6 +127,7 @@ void AbstractState::joinWith(const AbstractState& other)
             _addrToAbsVal.emplace(key, it->second);
         }
     }
+    _freedAddrs.insert(other._freedAddrs.begin(), other._freedAddrs.end());
 }
 
 /// domain meet with other, important! other widen this.
@@ -150,6 +151,11 @@ void AbstractState::meetWith(const AbstractState& other)
             oit->second.meet_with(it->second);
         }
     }
+    Set<NodeID> intersection;
+    std::set_intersection(_freedAddrs.begin(), _freedAddrs.end(),
+                          other._freedAddrs.begin(), other._freedAddrs.end(),
+                          std::inserter(intersection, intersection.begin()));
+    _freedAddrs = std::move(intersection);
 }
 
 // getGepObjAddrs
@@ -165,7 +171,7 @@ AddressValue AbstractState::getGepObjAddrs(u32_t pointer, IntervalValue offset)
         AbstractValue addrs = (*this)[pointer];
         for (const auto& addr : addrs.getAddrs())
         {
-            s64_t baseObj = AbstractState::getInternalID(addr);
+            s64_t baseObj = getIDFromAddr(addr);
             assert(SVFUtil::isa<ObjVar>(PAG::getPAG()->getGNode(baseObj)) && "Fail to get the base object address!");
             NodeID gepObj = PAG::getPAG()->getGepObjVar(baseObj, i);
             (*this)[gepObj] = AddressValue(AbstractState::getVirtualMemAddress(gepObj));
@@ -470,7 +476,7 @@ const SVFType* AbstractState::getPointeeElement(NodeID id)
         const AbstractValue& addrs = (*this)[id];
         for (auto addr: addrs.getAddrs())
         {
-            NodeID addr_id = AbstractState::getInternalID(addr);
+            NodeID addr_id = getIDFromAddr(addr);
             if (addr_id == 0) // nullptr skip
                 continue;
             return svfir->getBaseObject(addr_id)->getType();

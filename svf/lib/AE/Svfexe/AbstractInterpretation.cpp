@@ -274,7 +274,11 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
     NodeID op1 = cmpStmt->getOpVarID(1);
     NodeID res_id = cmpStmt->getResID();
     s32_t predicate = cmpStmt->getPredicate();
-
+    // if op0 or op1 is nullptr, no need to change value, just copy the state
+    if (op0 == IRGraph::NullPtr || op1 == IRGraph::NullPtr) {
+        as = new_es;
+        return true;
+    }
     // if op0 or op1 is undefined, return;
     // skip address compare
     if (new_es.inVarToAddrsTable(op0) || new_es.inVarToAddrsTable(op1))
@@ -387,7 +391,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         // if lhs is register value, we should also change its mem obj
         for (const auto &addr: addrs)
         {
-            NodeID objId = new_es.getInternalID(addr);
+            NodeID objId = new_es.getIDFromAddr(addr);
             if (new_es.inAddrToValTable(objId))
             {
                 new_es.load(addr).meet_with(rhs);
@@ -409,7 +413,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         // if lhs is register value, we should also change its mem obj
         for (const auto &addr: addrs)
         {
-            NodeID objId = new_es.getInternalID(addr);
+            NodeID objId = new_es.getIDFromAddr(addr);
             if (new_es.inAddrToValTable(objId))
             {
                 new_es.load(addr).meet_with(
@@ -427,7 +431,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         // if lhs is register value, we should also change its mem obj
         for (const auto &addr: addrs)
         {
-            NodeID objId = new_es.getInternalID(addr);
+            NodeID objId = new_es.getIDFromAddr(addr);
             if (new_es.inAddrToValTable(objId))
             {
                 new_es.load(addr).meet_with(
@@ -446,7 +450,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         // if lhs is register value, we should also change its mem obj
         for (const auto &addr: addrs)
         {
-            NodeID objId = new_es.getInternalID(addr);
+            NodeID objId = new_es.getIDFromAddr(addr);
             if (new_es.inAddrToValTable(objId))
             {
                 new_es.load(addr).meet_with(
@@ -465,7 +469,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         // if lhs is register value, we should also change its mem obj
         for (const auto &addr: addrs)
         {
-            NodeID objId = new_es.getInternalID(addr);
+            NodeID objId = new_es.getIDFromAddr(addr);
             if (new_es.inAddrToValTable(objId))
             {
                 new_es.load(addr).meet_with(
@@ -517,7 +521,7 @@ bool AbstractInterpretation::isSwitchBranchFeasible(const SVFVar* var, s64_t suc
                 AddressValue &addrs = new_es[load->getRHSVarID()].getAddrs();
                 for (const auto &addr: addrs)
                 {
-                    NodeID objId = new_es.getInternalID(addr);
+                    NodeID objId = new_es.getIDFromAddr(addr);
                     if (new_es.inAddrToValTable(objId))
                     {
                         new_es.load(addr).meet_with(switch_cond);
@@ -748,7 +752,7 @@ void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
     }
     AbstractValue Addrs = as[call_id];
     NodeID addr = *Addrs.getAddrs().begin();
-    SVFVar *func_var = svfir->getGNode(AbstractState::getInternalID(addr));
+    SVFVar *func_var = svfir->getGNode(as.getIDFromAddr(addr));
 
     if(const FunObjVar* funObjVar = SVFUtil::dyn_cast<FunObjVar>(func_var))
     {
@@ -928,6 +932,9 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
     }
     else
         assert(false && "implement this part");
+    // NullPtr is index 0, it should not be changed
+    assert(!getAbsStateFromTrace(stmt->getICFGNode())[IRGraph::NullPtr].isInterval() &&
+           !getAbsStateFromTrace(stmt->getICFGNode())[IRGraph::NullPtr].isAddr());
 }
 
 void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
@@ -1078,6 +1085,7 @@ void AbstractInterpretation::collectCheckPoint()
     // traverse every ICFGNode
     Set<std::string> ae_checkpoint_names = {"svf_assert"};
     Set<std::string> buf_checkpoint_names = {"UNSAFE_BUFACCESS", "SAFE_BUFACCESS"};
+    Set<std::string> nullptr_checkpoint_names = {"UNSAFE_LOAD", "SAFE_LOAD"};
 
     for (auto it = svfir->getICFG()->begin(); it != svfir->getICFG()->end(); ++it)
     {
@@ -1095,6 +1103,14 @@ void AbstractInterpretation::collectCheckPoint()
                 {
                     if (buf_checkpoint_names.find(fun->getName()) !=
                             buf_checkpoint_names.end())
+                    {
+                        checkpoints.insert(call);
+                    }
+                }
+                if (Options::NullDerefCheck())
+                {
+                    if (nullptr_checkpoint_names.find(fun->getName()) !=
+                            nullptr_checkpoint_names.end())
                     {
                         checkpoints.insert(call);
                     }
@@ -1306,6 +1322,12 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
         {
             resVal = IntervalValue(0, 0);
         }
+        as[res] = resVal;
+    }
+    // if op0 or op1 is nullptr, compare abstractValue instead of touching addr or interval
+    else if (op0 == IRGraph::NullPtr || op1 == IRGraph::NullPtr) {
+        u32_t res = cmp->getResID();
+        IntervalValue resVal = (as[op0].equals(as[op1])) ? IntervalValue(1, 1) : IntervalValue(0, 0);
         as[res] = resVal;
     }
     else

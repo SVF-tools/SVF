@@ -45,6 +45,7 @@ public:
     enum DetectorKind
     {
         BUF_OVERFLOW,   ///< Detector for buffer overflow issues.
+        NULL_DEREF,  ///< Detector for nullptr dereference issues.
         UNKNOWN,    ///< Default type if the kind is not specified.
     };
 
@@ -164,7 +165,8 @@ public:
      * @param objAddrs Address value for the object.
      * @param offset The interval value of the offset.
      */
-    void updateGepObjOffsetFromBase(AddressValue gepAddrs,
+    void updateGepObjOffsetFromBase(AbstractState& as,
+                                    AddressValue gepAddrs,
                                     AddressValue objAddrs,
                                     IntervalValue offset);
 
@@ -316,6 +318,117 @@ private:
 private:
     Map<const GepObjVar*, IntervalValue> gepObjOffsetFromBase; ///< Maps GEP objects to their offsets from the base.
     Map<std::string, std::vector<std::pair<u32_t, u32_t>>> extAPIBufOverflowCheckRules; ///< Rules for checking buffer overflows in external APIs.
+    Set<std::string> bugLoc; ///< Set of locations where bugs have been reported.
+    SVFBugReport recoder; ///< Recorder for abstract execution bugs.
+    Map<const ICFGNode*, std::string> nodeToBugInfo; ///< Maps ICFG nodes to bug information.
+};
+class NullptrDerefDetector : public AEDetector{
+    friend class AbstractInterpretation;
+public:
+    NullptrDerefDetector()
+    {
+        kind = NULL_DEREF;
+    }
+
+    ~NullptrDerefDetector() = default;
+
+    static bool classof(const AEDetector* detector)
+    {
+        return detector->getKind() == AEDetector::NULL_DEREF;
+    }
+
+    /**
+     * @brief Detects nullptr dereferences issues within a node.
+     * @param as Reference to the abstract state.
+     * @param node Pointer to the ICFG node.
+     */
+    void detect(AbstractState& as, const ICFGNode* node);
+
+    /**
+     * @brief Handles external API calls related to nullptr dereferences.
+     * @param call Pointer to the call ICFG node.
+     */
+    void handleStubFunctions(const CallICFGNode* call);
+
+    /**
+     * @brief Checks if an Abstract Value is uninitialized.
+     * @param v The Abstract Value to check.
+     * @return True if the value is uninitialized, false otherwise.
+     */
+    bool isUninit(AbstractValue v) 
+    {
+        bool is = v.getAddrs().isBottom() && v.getInterval().isBottom();
+        return is;
+    }
+
+     /**
+     * @brief Adds a bug to the reporter based on an exception.
+     * @param e The exception that was thrown.
+     * @param node Pointer to the ICFG node where the bug was detected.
+     */
+    void addBugToReporter(const AEException& e, const ICFGNode* node)
+    {
+        GenericBug::EventStack eventStack;
+        SVFBugEvent sourceInstEvent(SVFBugEvent::EventType::SourceInst, node);
+        eventStack.push_back(sourceInstEvent); // Add the source instruction event to the event stack
+
+        if (eventStack.empty())
+        {
+            return; // If the event stack is empty, return early
+        }
+        std::string loc = eventStack.back().getEventLoc(); // Get the location of the last event in the stack
+
+        // Check if the bug at this location has already been reported
+        if (bugLoc.find(loc) != bugLoc.end())
+        {
+            return; // If the bug location is already reported, return early
+        }
+        else
+        {
+            bugLoc.insert(loc); // Otherwise, mark this location as reported
+        }
+        recoder.addAbsExecBug(GenericBug::FULLNULLPTRDEREFERENCE, eventStack, 0, 0, 0, 0);
+        nodeToBugInfo[node] = e.what(); // Record the exception information for the node
+    }
+    
+    /**
+     * @brief Reports all detected nullptr dereference bugs.
+     */
+    void reportBug()
+    {
+        if (!nodeToBugInfo.empty())
+        {
+            std::cerr << "###################### Nullptr Dereference (" + std::to_string(nodeToBugInfo.size())
+                      + " found)######################\n";
+            std::cerr << "---------------------------------------------\n";
+            for (const auto& it : nodeToBugInfo)
+            {
+                std::cerr << it.second << "\n---------------------------------------------\n";
+            }
+        }
+    }
+
+    /**
+     * @brief Handle external API calls related to nullptr dereferences.
+     * @param as Reference to the abstract state.
+     * @param call Pointer to the call ICFG node.
+     */
+    void detectExtAPI(AbstractState& as, const CallICFGNode* call);
+
+ 
+    /**
+     * @brief Check if an Abstract Value is NULL (or uninitialized).
+     *
+     * @param v An Abstract Value of loaded from an address in an Abstract State.
+     */
+    bool isNull(AbstractValue v)
+    {
+        return !v.isAddr() && !v.isInterval();
+    }
+
+    bool canSafelyDerefPtr(AbstractState& as, const SVFVar* ptr);
+ 
+private:
     Set<std::string> bugLoc; ///< Set of locations where bugs have been reported.
     SVFBugReport recoder; ///< Recorder for abstract execution bugs.
     Map<const ICFGNode*, std::string> nodeToBugInfo; ///< Maps ICFG nodes to bug information.

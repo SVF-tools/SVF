@@ -885,6 +885,8 @@ int main(int argc, char** argv)
     AbstractInterpretation& ae = AbstractInterpretation::getAEInstance();
     if (Options::BufferOverflowCheck())
         ae.addDetector(std::make_unique<BufOverflowDetector>());
+    if (Options::NullDerefCheck())
+        ae.addDetector(std::make_unique<NullptrDerefDetector>());
     ae.runOnModule(pag->getICFG());
 
     AndersenWaveDiff::releaseAndersenWaveDiff();
