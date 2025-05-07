@@ -161,6 +161,7 @@ public:
 
     /**
      * @brief Updates the offset of a GEP object from its base.
+     * @param as Reference to the abstract state.
      * @param gepAddrs Address value for GEP.
      * @param objAddrs Address value for the object.
      * @param offset The interval value of the offset.
@@ -358,6 +359,7 @@ public:
      */
     bool isUninit(AbstractValue v)
     {
+        // uninitialized value has neither interval value nor address value
         bool is = v.getAddrs().isBottom() && v.getInterval().isBottom();
         return is;
     }
