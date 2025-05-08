@@ -1,5 +1,9 @@
 #include <stddef.h>
-#define NULL ((void *)0)
+
+// Ensure NULL is always defined (but don't redefine)
+#ifndef NULL
+#  define NULL ((void *)0)
+#endif
 
 /*
     Functions with __attribute__((annotate("XXX"))) will be handle by SVF specifcially.
@@ -190,24 +194,6 @@ void* xmalloc(unsigned long size)
 }
 
 __attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
-void *_Znam(unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
-void *_Znaj(unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
-void *_Znwj(unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
 void *__cxa_allocate_exception(unsigned long size)
 {
     return NULL;
@@ -227,6 +213,12 @@ void* memalign(unsigned long size1, unsigned long size2)
 
 __attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
 void *valloc(unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
+void *pvalloc(unsigned long size)
 {
     return NULL;
 }
@@ -370,6 +362,12 @@ char *strdup(const char *s)
 }
 
 __attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:UNKNOWN")))
+char *strndup(const char *s, unsigned long n)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:UNKNOWN")))
 char *strerror(int errnum)
 {
     return NULL;
@@ -429,6 +427,12 @@ char *realloc(void *ptr, unsigned long size)
     return NULL;
 }
 
+__attribute__((annotate("REALLOC_HEAP_RET"), annotate("AllocSize:Arg1*Arg2")))
+char *reallocarray(void *ptr, unsigned long elems, unsigned long size)
+{
+    return NULL;
+}
+
 __attribute__((annotate("REALLOC_HEAP_RET"), annotate("AllocSize:Arg1")))
 void* safe_realloc(void *p, unsigned long n)
 {
@@ -469,26 +473,120 @@ void *xrealloc(void *ptr, unsigned long bytes)
     return NULL;
 }
 
+// ::operator new (size (unsigned int))
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
+void *_Znwj(unsigned int size)
+{
+    return NULL;
+}
+
+// ::operator new (size (unsigned int), nothrow)
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
+void *_ZnwjRKSt9nothrow_t(unsigned int size, void *)
+{
+    return NULL;
+}
+
+// ::operator new (size (unsigned int), aligned)
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
+void *_ZnwjSt11align_val_t(unsigned int size, unsigned long)
+{
+    return NULL;
+}
+
+// ::operator new (size (unsigned int), aligned, nothrow)
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
+void *_ZnwjSt11align_val_tRKSt9nothrow_t(unsigned int size, unsigned long, void *)
+{
+    return NULL;
+}
+
+// ::operator new[] (size (unsigned int))
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
+void *_Znaj(unsigned int size)
+{
+    return NULL;
+}
+
+// ::operator new[] (size (unsigned int), nothrow)
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
+void *_ZnajRKSt9nothrow_t(unsigned int size, void *)
+{
+    return NULL;
+}
+
+// ::operator new[] (size (unsigned int), aligned)
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
+void *_ZnajSt11align_val_t(unsigned int size, unsigned long)
+{
+    return NULL;
+}
+
+// ::operator new[] (size (unsigned int), aligned, nothrow)
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
+void *_ZnajSt11align_val_tRKSt9nothrow_t(unsigned int size, unsigned long, void *)
+{
+    return NULL;
+}
+
+// ::operator new (size (size_t))
 __attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
 void *_Znwm(unsigned long size)
 {
     return NULL;
 }
 
+// ::operator new (size (size_t), nothrow)
 __attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
 void *_ZnwmRKSt9nothrow_t(unsigned long size, void *)
 {
     return NULL;
 }
 
+// ::operator new (size (size_t), aligned)
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
+void *_ZnwmSt11align_val_t(unsigned long size, unsigned long)
+{
+    return NULL;
+}
+
+// ::operator new (size (size_t), aligned, nothrow)
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
+void *_ZnwmSt11align_val_tRKSt9nothrow_t(unsigned long size, unsigned long, void *)
+{
+    return NULL;
+}
+
+// ::operator new[]
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
+void *_Znam(unsigned long size)
+{
+    return NULL;
+}
+
+// ::operator new[] (nothrow)
 __attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
 void *_ZnamRKSt9nothrow_t(unsigned long size, void *)
 {
     return NULL;
 }
 
+// ::operator new[] (aligned)
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
+void *_ZnamSt11align_val_t(unsigned long size, unsigned long)
+{
+    return NULL;
+}
+
+// ::operator new[] (aligned, nothrow)
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
+void *_ZnamSt11align_val_tRKSt9nothrow_t(unsigned long size, unsigned long, void *)
+{
+    return NULL;
+}
+
 __attribute__((annotate("ALLOC_HEAP_ARG0"), annotate("AllocSize:UNKNOWN")))
-int asprintf(char **restrict strp, const char *restrict fmt, ...)
+int asprintf(char **__restrict strp, const char *__restrict fmt, ...)
 {
     return 0;
 }
@@ -536,7 +634,7 @@ int posix_memalign(void **a, unsigned long b, unsigned long c)
 }
 
 __attribute__((annotate("ALLOC_HEAP_ARG1"), annotate("AllocSize:UNKNOWN")))
-int scandir(const char *restrict dirp, struct dirent ***restrict namelist, int (*filter)(const struct dirent *), int (*compar)(const struct dirent **, const struct dirent **))
+int scandir(const char *__restrict dirp, struct dirent ***__restrict namelist, int (*filter)(const struct dirent *), int (*compar)(const struct dirent **, const struct dirent **))
 {
     return 0;
 }
@@ -590,7 +688,7 @@ __attribute__((annotate("MEMCPY")))
 void bcopy(const void *s1, void *s2, unsigned long n){}
 
 __attribute__((annotate("MEMCPY")))
-void *memccpy( void * restrict dest, const void * restrict src, int c, unsigned long count)
+void *memccpy( void *__restrict dest, const void *__restrict src, int c, unsigned long count)
 {
     return NULL;
 }
@@ -644,7 +742,7 @@ wchar_t* __wcscat_chk(wchar_t * dest, const wchar_t * src)
 }
 
 __attribute__((annotate("STRCPY")))
-char *stpcpy(char *restrict dst, const char *restrict src)
+char *stpcpy(char *__restrict dst, const char *__restrict src)
 {
     return NULL;
 }
@@ -702,7 +800,7 @@ char *wcscpy(wchar_t* dest, const wchar_t* src) {
 }
 
 __attribute__((annotate("MEMCPY")))
-unsigned long iconv(void* cd, char **restrict inbuf, unsigned long *restrict inbytesleft, char **restrict outbuf, unsigned long *restrict outbytesleft)
+unsigned long iconv(void* cd, char **__restrict inbuf, unsigned long *__restrict inbytesleft, char **__restrict outbuf, unsigned long *__restrict outbytesleft)
 {
     return 0;
 }
@@ -906,7 +1004,7 @@ struct tm *localtime_r(const void *timep, struct tm *result)
     return result;
 }
 
-char *realpath(const char *restrict path, char *restrict resolved_path)
+char *realpath(const char *__restrict path, char *__restrict resolved_path)
 {
     return resolved_path;
 }
@@ -921,7 +1019,7 @@ void* freopen(const char* voidname, const char* mode, void* fp)
     return fp;
 }
 
-const char *inet_ntop(int af, const void *restrict src,  char *restrict dst, unsigned int size)
+const char *inet_ntop(int af, const void *__restrict src,  char *__restrict dst, unsigned int size)
 {
     return dst;
 }
@@ -995,9 +1093,9 @@ char* ctime_r(const char *timer, char *buf)
     return buf;
 }
 
-int readdir_r(void *__restrict__dir, void *__restrict__entry, void **__restrict__result)
+int readdir_r(void *__restrict dir, void *__restrict entry, void **__restrict result)
 {
-    __restrict__entry = *__restrict__result;   
+    entry = *result;
     return 0;
 }
 
@@ -1048,13 +1146,13 @@ const unsigned short **__ctype_b_loc(void)
 int ctype_tolower_loc_global[10];
 int **__ctype_tolower_loc(void)
 {
-    return &ctype_tolower_loc_global;
+    return (int **)&ctype_tolower_loc_global;
 }
 
 int ctype_toupper_loc_global[10];
 int **__ctype_toupper_loc(void)
 {
-    return &ctype_toupper_loc_global;
+    return (int **)&ctype_toupper_loc_global;
 }
 
 int error_global[10];
@@ -1075,7 +1173,7 @@ void* __res_state(void)
     return res_state_global;
 }
 
-void *time_global[10];
+char time_global[10];
 char *asctime(const void *timeptr)
 {
     return time_global;
