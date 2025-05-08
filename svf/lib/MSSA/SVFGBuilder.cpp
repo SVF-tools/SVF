@@ -40,13 +40,13 @@ using namespace SVFUtil;
 SVFG* SVFGBuilder::buildPTROnlySVFG(BVDataPTAImpl* pta)
 {
     return this->SVFGWithPostOpts ? build(pta, VFG::PTRONLYSVFG_OPT)
-                                  : build(pta, VFG::PTRONLYSVFG);
+           : build(pta, VFG::PTRONLYSVFG);
 }
 
 SVFG* SVFGBuilder::buildFullSVFG(BVDataPTAImpl* pta)
 {
     return this->SVFGWithPostOpts ? build(pta, VFG::FULLSVFG_OPT)
-                                  : build(pta, VFG::FULLSVFG);
+           : build(pta, VFG::FULLSVFG);
 }
 
 /*!
@@ -62,7 +62,7 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind)
 {
 
     auto mssa = buildMSSA(
-        pta, (VFG::PTRONLYSVFG == kind || VFG::PTRONLYSVFG_OPT == kind));
+                    pta, (VFG::PTRONLYSVFG == kind || VFG::PTRONLYSVFG_OPT == kind));
 
     DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
     if (kind == VFG::FULLSVFG_OPT || kind == VFG::PTRONLYSVFG_OPT)
@@ -93,7 +93,7 @@ void SVFGBuilder::releaseMemory()
 }
 
 std::unique_ptr<MemSSA> SVFGBuilder::buildMSSA(BVDataPTAImpl* pta,
-                                               bool ptrOnlyMSSA)
+        bool ptrOnlyMSSA)
 {
 
     DBOUT(DGENERAL, outs() << pasMsg("Build Memory SSA \n"));

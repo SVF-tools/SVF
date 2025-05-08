@@ -192,20 +192,21 @@ public:
     }
 
     // Given an VFG node, return true if it has a left hand side top level pointer (PAGnode)
-    inline bool hasLHSTopLevPtr(const VFGNode* node) const {
+    inline bool hasLHSTopLevPtr(const VFGNode* node) const
+    {
         return node && SVFUtil::isa<AddrVFGNode,
-                                    CopyVFGNode,
-                                    GepVFGNode,
-                                    LoadVFGNode,
-                                    PHIVFGNode,
-                                    CmpVFGNode,
-                                    BinaryOPVFGNode,
-                                    UnaryOPVFGNode,
-                                    ActualParmVFGNode,
-                                    FormalParmVFGNode,
-                                    ActualRetVFGNode,
-                                    FormalRetVFGNode,
-                                    NullPtrVFGNode>(node);
+               CopyVFGNode,
+               GepVFGNode,
+               LoadVFGNode,
+               PHIVFGNode,
+               CmpVFGNode,
+               BinaryOPVFGNode,
+               UnaryOPVFGNode,
+               ActualParmVFGNode,
+               FormalParmVFGNode,
+               ActualRetVFGNode,
+               FormalRetVFGNode,
+               NullPtrVFGNode>(node);
     }
 
     // Given an VFG node, return its left hand side top level pointer (PAGnode)

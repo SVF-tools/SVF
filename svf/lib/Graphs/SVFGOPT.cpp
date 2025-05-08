@@ -65,7 +65,8 @@ void SVFGOPT::buildSVFG()
 }
 
 /// Separate function to optimise the SVFG to avoid duplicate code
-void SVFGOPT::optimiseSVFG() {
+void SVFGOPT::optimiseSVFG()
+{
     if(Options::DumpVFG())
         dump("SVFG_before_opt");
 
