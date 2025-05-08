@@ -32,6 +32,7 @@
 
 #include "MemoryModel/PointerAnalysis.h"
 #include "Graphs/SVFGOPT.h"
+#include "Util/Options.h"
 
 namespace SVF
 {
@@ -49,7 +50,10 @@ public:
     typedef SVFG::SVFGEdgeSetTy SVFGEdgeSet;
 
     /// Constructor
-    explicit SVFGBuilder(bool _SVFGWithIndCall = false): svfg(nullptr), SVFGWithIndCall(_SVFGWithIndCall) {}
+    explicit SVFGBuilder(bool _SVFGWithIndCall = Options::SVFGWithIndirectCall(), bool _SVFGWithPostOpts = Options::OPTSVFG())
+        : svfg(nullptr), SVFGWithIndCall(_SVFGWithIndCall), SVFGWithPostOpts(_SVFGWithPostOpts)
+    {
+    }
 
     /// Destructor
     virtual ~SVFGBuilder() = default;
@@ -91,6 +95,8 @@ protected:
     std::unique_ptr<SVFG> svfg;
     /// SVFG with precomputed indirect call edges
     bool SVFGWithIndCall;
+    /// Build optimised version of SVFG
+    bool SVFGWithPostOpts;
 };
 
 } // End namespace SVF

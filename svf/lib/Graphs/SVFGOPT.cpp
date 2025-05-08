@@ -43,11 +43,29 @@ static std::string KeepAllSelfCycle = "all";
 static std::string KeepContextSelfCycle = "context";
 static std::string KeepNoneSelfCycle = "none";
 
+/// Optimised SVFGs aren't written to file; reads the full SVFG and optimises it
+void SVFGOPT::readAndOptSVFG(const std::string &filename)
+{
+    SVFG::readFile(filename);
+    optimiseSVFG();
+}
+
+/// Shouldn't write optimised SVFG to file; writes the built SVFG to file before optimisation
+void SVFGOPT::buildAndWriteSVFG(const std::string &filename)
+{
+    SVFG::buildSVFG();
+    SVFG::writeToFile(filename);
+    optimiseSVFG();
+}
 
 void SVFGOPT::buildSVFG()
 {
     SVFG::buildSVFG();
+    optimiseSVFG();
+}
 
+/// Separate function to optimise the SVFG to avoid duplicate code
+void SVFGOPT::optimiseSVFG() {
     if(Options::DumpVFG())
         dump("SVFG_before_opt");
 
@@ -62,6 +80,7 @@ void SVFGOPT::buildSVFG()
     stat->sfvgOptEnd();
 
 }
+
 /*!
  *
  */

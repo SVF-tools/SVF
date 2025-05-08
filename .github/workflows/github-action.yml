@@ -139,11 +139,11 @@ jobs:
         if: runner.os == 'Linux' && matrix.sanitizer == ''
         run: |
           lcov --capture --directory ./ --output-file coverage.info
-          lcov --remove coverage.info '/usr/*' --output-file coverage.info
-          lcov --remove coverage.info '${{github.workspace}}/z3.obj/*' --output-file coverage.info
-          lcov --remove coverage.info '${{github.workspace}}/llvm-*.obj/*' --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' --output-file coverage.info --ignore-errors unused
+          lcov --remove coverage.info '${{github.workspace}}/z3.obj/*' --output-file coverage.info --ignore-errors unused
+          lcov --remove coverage.info '${{github.workspace}}/llvm-*.obj/*' --output-file coverage.info --ignore-errors unused
           lcov --remove coverage.info '${{github.workspace}}/svf/include/FastCluster/*' --output-file coverage.info --ignore-errors unused
-          lcov --remove coverage.info '${{github.workspace}}/svf/lib/FastCluster/*' --output-file coverage.info
+          lcov --remove coverage.info '${{github.workspace}}/svf/lib/FastCluster/*' --output-file coverage.info --ignore-errors unused
 
       - name: upload-coverage
         if: runner.os == 'Linux'
