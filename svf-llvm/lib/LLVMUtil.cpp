@@ -33,6 +33,10 @@
 #include <llvm/Support/raw_ostream.h>
 #include "SVF-LLVM/LLVMModule.h"
 
+#if LLVM_VERSION_MAJOR > 16
+#include <llvm/Passes/PassBuilder.h>
+#include <llvm/Transforms/Utils.h>
+#endif
 
 using namespace SVF;
 
@@ -461,6 +465,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
     {
         if (SVFUtil::isa<AllocaInst>(inst))
         {
+#if LLVM_VERSION_MAJOR >= 12 && LLVM_VERSION_MAJOR <= 16
             for (llvm::DbgInfoIntrinsic *DII : FindDbgDeclareUses(const_cast<Instruction*>(inst)))
             {
                 if (llvm::DbgDeclareInst *DDI = SVFUtil::dyn_cast<llvm::DbgDeclareInst>(DII))
@@ -470,6 +475,15 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
                     break;
                 }
             }
+#else
+            // for LLVM 20+
+            for (llvm::DbgDeclareInst *DDI : llvm::findDbgDeclares(const_cast<Instruction*>(inst)))
+            {
+                llvm::DIVariable *DIVar = SVFUtil::cast<llvm::DIVariable>(DDI->getVariable());
+                rawstr << "\"ln\": " << DIVar->getLine() << ", \"fl\": \"" << DIVar->getFilename().str() << "\"";
+                break;
+            }
+#endif
         }
         else if (MDNode *N = inst->getMetadata("dbg"))   // Here I is an LLVM instruction
         {

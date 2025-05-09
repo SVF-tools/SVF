@@ -12,23 +12,23 @@
 # If the LLVM_DIR variable is not set, LLVM will be downloaded or built from source.
 #
 # Dependencies include: build-essential libncurses5 libncurses-dev cmake zlib1g-dev
-set -e # exit on first error
+set -euo pipefail #exit on first error and strict checks
 
 jobs=8
 
 #########
 # Variables and Paths
 ########
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-SVFHOME="${SCRIPT_DIR}"
+SCRIPT_DIR=$( cd -- "$( dirname -- "$0" )" &> /dev/null && pwd )
+SVFHOME="${GITHUB_WORKSPACE:-$SCRIPT_DIR}"
 sysOS=$(uname -s)
 arch=$(uname -m)
-MajorLLVMVer=16
-LLVMVer=${MajorLLVMVer}.0.4
-UbuntuArmLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.0/llvm-${MajorLLVMVer}.0.0-ubuntu24-rtti-aarch64.tar.gz"
+MajorLLVMVer=20
+LLVMVer=${MajorLLVMVer}.1.0
+UbuntuArmLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.0/llvm-${MajorLLVMVer}.1.0-ubuntu24-rtti-aarch64.tar.gz"
 UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-aarch64-linux-gnu.tar.xz"
-UbuntuLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.0/llvm-${MajorLLVMVer}.0.0-ubuntu24-rtti-x86-64.tar.gz"
-UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-linux-gnu-ubuntu-22.04.tar.xz"
+UbuntuLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.0/llvm-${MajorLLVMVer}.1.0-ubuntu24-rtti-x86-64.tar.gz"
+UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-linux-gnu-ubuntu-24.04.tar.xz"
 SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-${LLVMVer}.zip"
 UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-ubuntu-16.04.zip"
 UbuntuZ3Arm="https://github.com/SVF-tools/SVF-npm/raw/prebuilt-libs/z3-4.8.7-aarch64-ubuntu.zip"
@@ -36,9 +36,69 @@ SourceZ3="https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.8.zip"
 
 # Keep LLVM version suffix for version checking and better debugging
 # keep the version consistent with LLVM_DIR in setup.sh and llvm_version in Dockerfile
-LLVMHome="llvm-${MajorLLVMVer}.0.0.obj"
+LLVMHome="llvm-${LLVMVer}.obj"
 Z3Home="z3.obj"
 
+Z3_BIN="$Z3Home/bin"
+
+# Verify SVFHOME contains CMakeLists.txt
+if [ ! -f "${SVFHOME}/CMakeLists.txt" ]; then
+    echo "Error: CMakeLists.txt not found in SVFHOME (${SVFHOME})"
+    exit 1
+fi
+
+function installing_dependencies() {
+    local OSDisplayName="$1"
+
+    if [ -z "$OSDisplayName" ]; then
+        echo "Error: OSDisplayName argument is required"
+        return 1
+    fi
+
+    if [ "$OSDisplayName" = "Ubuntu" ]; then
+        echo "Installing dependencies for Ubuntu..."
+        # Update package list
+        sudo apt-get update
+        sudo apt-get install -y software-properties-common
+        sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+
+        # Install basic development dependencies
+        sudo apt-get install -y unzip build-essential libncurses6 libncurses-dev zlib1g-dev gcc g++ nodejs doxygen graphviz lcov libtinfo6 libzstd-dev curl gnupg xz-utils
+
+        # Get Ubuntu codename for cmake installation
+        CODENAME=$(source /etc/os-release && echo "$VERSION_CODENAME")
+
+        # Install cmake
+        echo "Installing cmake..."
+        curl -fsSL https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg > /dev/null
+        echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $CODENAME main" | sudo tee /etc/apt/sources.list.d/kitware.list > /dev/null
+        sudo apt-get update
+        sudo apt-get install -y cmake
+
+        echo "Dependencies installed successfully for Ubuntu"
+
+    else
+        if [ "$OSDisplayName" = "Darwin" ]; then
+            echo "Detected macOS system. Installing dependencies using Homebrew..."
+            # Install dependencies
+            brew install ncurses zlib cmake
+            echo "Dependencies installed successfully for macOS"
+        fi
+    fi
+}
+
+# Detect OS and set a display name
+sysOS="$(uname)"
+if [[ "$sysOS" == "Darwin" ]]; then
+    OSDisplayName="macOS"
+    installing_dependencies "$OSDisplayName"
+elif [[ "$sysOS" == "Linux" ]]; then
+    OSDisplayName="Ubuntu"
+    installing_dependencies "$OSDisplayName"
+else
+    echo "Unsupported OS: $sysOS"
+    exit 1
+fi
 
 # Parse arguments
 BUILD_TYPE='Release'
@@ -71,7 +131,7 @@ fi
 function generic_download_file {
     if [[ $# -ne 2 ]]; then
         echo "$0: bad args to generic_download_file!"
-        exit 1
+        return 1
     fi
 
     if [[ -f "$2" ]]; then
@@ -81,7 +141,7 @@ function generic_download_file {
 
     local download_failed=false
     if type curl &> /dev/null; then
-        if ! curl -L "$1" -o "$2"; then
+        if ! curl -L --fail "$1" -o "$2"; then
             download_failed=true
         fi
     elif type wget &> /dev/null; then
@@ -90,13 +150,13 @@ function generic_download_file {
         fi
     else
         echo "Cannot find download tool. Please install curl or wget."
-        exit 1
+        return 1
     fi
 
     if $download_failed; then
         echo "Failed to download $1"
         rm -f "$2"
-        exit 1
+        return 1
     fi
 }
 
@@ -119,7 +179,9 @@ function check_xz {
 function build_z3_from_source {
     mkdir "$Z3Home"
     echo "Downloading Z3 source..."
-    generic_download_file "$SourceZ3" z3.zip
+    if ! generic_download_file "$SourceZ3" z3.zip; then
+        exit 1
+    fi
     check_unzip
     echo "Unzipping Z3 source..."
     mkdir z3-source
@@ -140,7 +202,9 @@ function build_z3_from_source {
 function build_llvm_from_source {
     mkdir "$LLVMHome"
     echo "Downloading LLVM source..."
-    generic_download_file "$SourceLLVM" llvm.zip
+    if ! generic_download_file "$SourceLLVM" llvm.zip; then
+        exit 1
+    fi
     check_unzip
     echo "Unzipping LLVM source..."
     mkdir llvm-source
@@ -215,16 +279,43 @@ else
 fi
 
 ########
+# install LLVM from APT repository
+#######
+function download_llvm_from_apt_repo() {
+    echo "LLVM binary download failed. Falling back to APT install of Clang 20.1.0."
+
+    CODENAME=$(source /etc/os-release && echo "$VERSION_CODENAME")
+    sudo mkdir -p /etc/apt/keyrings
+    curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/llvm.gpg > /dev/null
+    echo "deb [signed-by=/etc/apt/keyrings/llvm.gpg] https://apt.llvm.org/${CODENAME}/ llvm-toolchain-${CODENAME}-${MajorLLVMVer} main" | sudo tee /etc/apt/sources.list.d/llvm.list > /dev/null
+    sudo apt-get update -y
+    sudo apt-get install -y clang-"$MajorLLVMVer" llvm-"$MajorLLVMVer" llvm-"$MajorLLVMVer"-dev
+
+    # set Clang latest (20+) as default
+    sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-"$MajorLLVMVer" 100
+    sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-"$MajorLLVMVer" 100
+    sudo update-alternatives --install /usr/bin/opt opt /usr/bin/opt-"$MajorLLVMVer" 100
+
+    # Set the specified version as default without user prompt
+    sudo update-alternatives --set clang /usr/bin/clang-"$MajorLLVMVer"
+    sudo update-alternatives --set clang++ /usr/bin/clang++-"$MajorLLVMVer"
+    sudo update-alternatives --set opt /usr/bin/opt-"$MajorLLVMVer"
+    echo "Clang "$LLVMVer" installed via APT repository fallback."
+}
+
+########
 # Download LLVM if need be.
 #######
-if [[ ! -d "$LLVM_DIR" ]]; then
+if [[ -z "${LLVM_DIR:-}" || ! -d "$LLVM_DIR" ]]; then
     if [[ ! -d "$LLVMHome" ]]; then
         if [[ "$sysOS" = "Darwin" ]]; then
             echo "Installing LLVM binary for $OSDisplayName"
+            brew update
             brew install llvm@${MajorLLVMVer}
             # check whether llvm is installed
             if [ $? -eq 0 ]; then
                 echo "LLVM binary installation completed."
+                export LLVM_DIR="$(brew --prefix llvm)@${MajorLLVMVer}/lib/cmake/llvm"
             else
                 echo "LLVM binary installation failed."
                 exit 1
@@ -234,51 +325,58 @@ if [[ ! -d "$LLVM_DIR" ]]; then
         else
             # everything else downloads pre-built lib includ osx "arm64"
             echo "Downloading LLVM binary for $OSDisplayName"
-            generic_download_file "$urlLLVM" llvm.tar.xz
-            check_xz
-            echo "Unzipping llvm package..."
-            mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
-            rm llvm.tar.xz
+            if ! generic_download_file "$urlLLVM" llvm.tar.xz; then
+                download_llvm_from_apt_repo
+                export LLVM_DIR="/usr/lib/llvm-$MajorLLVMVer/bin"
+            else
+                check_xz
+                echo "Unzipping llvm package..."
+                mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
+                rm llvm.tar.xz
+                export LLVM_DIR="$SVFHOME/$LLVMHome"
+            fi
         fi
     fi
-    export LLVM_DIR="$SVFHOME/$LLVMHome"
 fi
 
 
 ########
 # Download Z3 if need be.
 #######
-if [[ ! -d "$Z3_DIR" ]]; then
+if [[ -z "${Z3_DIR:-}" || ! -d "$Z3_DIR" ]]; then
     if [[ ! -d "$Z3Home" ]]; then
         # M1 Macs give back arm64, some Linuxes can give aarch64.
         if [[ "$sysOS" = "Darwin" ]]; then
             echo "Downloading Z3 binary for $OSDisplayName"
-            brew install z3
+            brew update
+            brew install z3 #already installed as a part of llvm dependency on macOS
             if [ $? -eq 0 ]; then
-		      echo "z3 binary installation completed."
-	        else
-		      echo "z3 binary installation failed."
-		      exit 1
-	        fi
+                echo "z3 binary installation completed."
+                export Z3_DIR="$(brew --prefix z3)"
+            else
+                echo "z3 binary installation failed."
+                exit 1
+            fi
             mkdir -p $SVFHOME/$Z3Home
             ln -s $(brew --prefix z3)/* $SVFHOME/$Z3Home
         else
             # everything else downloads pre-built lib
             echo "Downloading Z3 binary for $OSDisplayName"
-            generic_download_file "$urlZ3" z3.zip
+            if ! generic_download_file "$urlZ3" z3.zip; then
+                exit 1
+            fi
             check_unzip
             echo "Unzipping z3 package..."
             unzip -q "z3.zip" && mv ./z3-* ./$Z3Home
             rm z3.zip
+            export Z3_DIR="$SVFHOME/$Z3Home"
         fi
     fi
-
-    export Z3_DIR="$SVFHOME/$Z3Home"
 fi
 
 # Add LLVM & Z3 to $PATH and $LD_LIBRARY_PATH (prepend so that selected instances will be used first)
 PATH=$LLVM_DIR/bin:$Z3_DIR/bin:$PATH
-LD_LIBRARY_PATH=$LLVM_DIR/lib:$Z3_BIN/lib:$LD_LIBRARY_PATH
+LD_LIBRARY_PATH=$LLVM_DIR/lib:$Z3_BIN/lib:${LD_LIBRARY_PATH:-}
 
 echo "LLVM_DIR=$LLVM_DIR"
 echo "Z3_DIR=$Z3_DIR"
@@ -286,19 +384,15 @@ echo "Z3_DIR=$Z3_DIR"
 ########
 # Build SVF
 ########
-if [[ $1 =~ ^[Dd]ebug$ ]]; then
-    BUILD_TYPE='Debug'
-else
-    BUILD_TYPE='Release'
-fi
-BUILD_DIR="./${BUILD_TYPE}-build"
+# Always use $SVFHOME for deterministic path
+BUILD_DIR="${SVFHOME}/${BUILD_TYPE}-build"
 
 rm -rf "${BUILD_DIR}"
 mkdir "${BUILD_DIR}"
 # If you need shared libs, turn BUILD_SHARED_LIBS on
 cmake -D CMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}"   \
     -DSVF_ENABLE_ASSERTIONS:BOOL=true              \
-    -DSVF_SANITIZE="${SVF_SANITIZER}"              \
+    -DSVF_SANITIZE="${SVF_SANITIZER:-}"              \
     -DBUILD_SHARED_LIBS=${BUILD_DYN_LIB}            \
     -S "${SVFHOME}" -B "${BUILD_DIR}"
 cmake --build "${BUILD_DIR}" -j ${jobs}

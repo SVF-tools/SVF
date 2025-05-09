@@ -40,6 +40,10 @@
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 
+#if LLVM_VERSION_MAJOR > 16
+#include <llvm/ADT/SetVector.h>
+#endif
+
 using namespace std;
 using namespace SVF;
 using namespace SVFUtil;
@@ -274,7 +278,11 @@ void SVFIRBuilder::initDomTree(FunObjVar* svffun, const Function* fun)
     for (DominanceFrontierBase::const_iterator dfIter = df.begin(), eDfIter = df.end(); dfIter != eDfIter; dfIter++)
     {
         const BasicBlock* keyBB = dfIter->first;
+#if LLVM_VERSION_MAJOR > 16
+	const llvm::SetVector<llvm::BasicBlock*>& domSet = dfIter->second;
+#else
         const std::set<BasicBlock* >& domSet = dfIter->second;
+#endif
         Set<const SVFBasicBlock*>& valueBasicBlocks = dfBBsMap[llvmModuleSet()->getSVFBasicBlock(keyBB)];
         for (const BasicBlock* bbValue:domSet)
         {
@@ -642,7 +650,11 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
     assert(V);
 
     const llvm::GEPOperator *gepOp = SVFUtil::dyn_cast<const llvm::GEPOperator>(V);
+#if LLVM_VERSION_MAJOR <= 16
     DataLayout * dataLayout = getDataLayout(llvmModuleSet()->getMainLLVMModule());
+#else
+    std::unique_ptr<SVF::DataLayout> dataLayout = getDataLayout(llvmModuleSet()->getMainLLVMModule());
+#endif
     llvm::APInt byteOffset(dataLayout->getIndexSizeInBits(gepOp->getPointerAddressSpace()),0,true);
     if(gepOp && dataLayout && gepOp->accumulateConstantOffset(*dataLayout,byteOffset))
     {
