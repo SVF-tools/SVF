@@ -5,6 +5,41 @@ with section("parse"):  # type: ignore
 
     # Specify structure for custom cmake functions
     additional_commands = {
+        "target_include_directories": {
+            "pargs": 1,
+            "flags": [
+                "BEFORE",
+                "SYSTEM",
+            ],
+            "kwargs": {
+                "PUBLIC": "+",
+                "PRIVATE": "+",
+                "INTERFACE": "+",
+            },
+        },
+        "target_link_directories": {
+            "pargs": 1,
+            "flags": [
+                "AFTER",
+                "BEFORE",
+            ],
+            "kwargs": {
+                "PUBLIC": "+",
+                "PRIVATE": "+",
+                "INTERFACE": "+",
+            },
+        },
+        "target_compile_options": {
+            "pargs": 1,
+            "flags": [
+                "BEFORE",
+            ],
+            "kwargs": {
+                "PUBLIC": "+",
+                "PRIVATE": "+",
+                "INTERFACE": "+",
+            },
+        },
         "target_link_options": {
             "pargs": 1,
             "flags": [
@@ -117,7 +152,10 @@ with section("parse"):  # type: ignore
                 "INSTALL_PREFIX": "1",
                 "INSTALL_DESTINATION": "1",
             },
-            "flags": ["NO_SET_AND_CHECK_MACRO", "NO_CHECK_REQUIRED_COMPONENTS_MACRO"],
+            "flags": [
+                "NO_SET_AND_CHECK_MACRO",
+                "NO_CHECK_REQUIRED_COMPONENTS_MACRO",
+            ],
         },
     }
 
@@ -142,7 +180,7 @@ with section("format"):  # type: ignore
     line_width = 120
 
     # How many spaces to tab for indent
-    tab_size = 4
+    tab_size = 2
 
     # If true, lines are indented using tab characters (utf-8 0x09) instead of
     # <tab_size> space characters (utf-8 0x20). In cases where the layout would
@@ -163,7 +201,7 @@ with section("format"):  # type: ignore
 
     # If a positional argument group contains more than this many arguments, then
     # force it to a vertical layout.
-    max_pargs_hwrap = 5
+    max_pargs_hwrap = 6
 
     # If a cmdline positional group consumes more than this many lines without
     # nesting, then invalidate the layout (and nest)
@@ -177,13 +215,13 @@ with section("format"):  # type: ignore
 
     # If a statement is wrapped to more than one line, than dangle the closing
     # parenthesis on its own line.
-    dangle_parens = True  # Default: False
+    dangle_parens = True
 
     # If the trailing parenthesis must be 'dangled' on its on line, then align it
     # to this reference: `prefix`: the start of the statement,  `prefix-indent`:
     # the start of the statement, plus one indentation  level, `child`: align to
     # the column of the arguments
-    dangle_align = "prefix-indent"  # Default: prefix
+    dangle_align = "prefix"
 
     # If the statement spelling length (including space and parenthesis) is
     # smaller than this amount, then force reject nested layouts.
@@ -192,20 +230,20 @@ with section("format"):  # type: ignore
     # If the statement spelling length (including space and parenthesis) is larger
     # than the tab width by more than this amount, then force reject un-nested
     # layouts.
-    max_prefix_chars = 20  # Default: 10
+    max_prefix_chars = 10
 
     # If a candidate layout is wrapped horizontally but it exceeds this many
     # lines, then reject the layout.
-    max_lines_hwrap = 3  # Default: 2
+    max_lines_hwrap = 2
 
     # What style line endings to use in the output.
     line_ending = "unix"
 
     # Format command names consistently as 'lower' or 'upper' case
-    command_case = "lower"  # Default: canonical
+    command_case = "lower"
 
     # Format keywords consistently as 'lower' or 'upper' case
-    keyword_case = "upper"  # Default: unchanged
+    keyword_case = "upper"
 
     # A list of command names which should always be wrapped
     always_wrap = []
@@ -216,7 +254,7 @@ with section("format"):  # type: ignore
 
     # If true, the parsers may infer whether or not an argument list is sortable
     # (without annotation).
-    autosort = True  # Default: False
+    autosort = True
 
     # By default, if cmake-format cannot successfully fit everything into the
     # desired linewidth it will apply the last, most aggressive attempt that it
