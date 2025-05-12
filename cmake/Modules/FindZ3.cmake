@@ -3,7 +3,7 @@
 #
 
 # Try upstream/system CONFIG package first; use it if found (sets required variables):
-find_package(Z3 CONFIG QUIET HINTS ${Z3_DIR} $ENV{Z3_DIR})
+find_package(Z3 CONFIG QUIET HINTS ${Z3_HOME} $ENV{Z3_HOME} ${Z3_DIR} $ENV{Z3_DIR})
 if(Z3_FOUND)
   if(NOT Z3_FIND_QUIETLY)
     message(STATUS "Found upstream/system Z3 package (Z3Config.cmake)")
@@ -14,8 +14,16 @@ else()
   endif()
 
   # Fall back to explicit manual header + lib search (prioritise searching $Z3_DIR)
-  find_library(Z3_LIBRARY_DIR NAMES z3 libz3 HINTS ${Z3_DIR} $ENV{Z3_DIR})
-  find_path(Z3_INCLUDE_DIR NAMES z3++.h HINTS ${Z3_DIR} $ENV{Z3_DIR})
+  find_library(
+    Z3_LIBRARY_DIR
+    NAMES z3 libz3
+    HINTS ${Z3_HOME} $ENV{Z3_HOME} ${Z3_DIR} $ENV{Z3_DIR}
+  )
+  find_path(
+    Z3_INCLUDE_DIR
+    NAMES z3++.h
+    HINTS ${Z3_HOME} $ENV{Z3_HOME} ${Z3_DIR} $ENV{Z3_DIR}
+  )
 
   # If the headers were found, find & extract the Z3 version number
   set(_ver_h "${Z3_INCLUDE_DIR}/z3_version.h")
@@ -45,7 +53,11 @@ else()
 
   # Validate that both the public headers & the library files were found
   include(FindPackageHandleStandardArgs)
-  find_package_handle_standard_args(Z3 REQUIRED_VARS Z3_INCLUDE_DIR Z3_LIBRARY_DIR VERSION_VAR Z3_VERSION_STRING)
+  find_package_handle_standard_args(
+    Z3
+    REQUIRED_VARS Z3_INCLUDE_DIR Z3_LIBRARY_DIR
+    VERSION_VAR Z3_VERSION_STRING
+  )
 
   # Create an imported target if all required variables were found
   if(Z3_FOUND)

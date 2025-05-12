@@ -3,7 +3,7 @@
 # =================================================================================
 
 # Find the LLVM instance to build & link SvfLLVM against (prioritise $LLVM_DIR)
-find_package(LLVM CONFIG REQUIRED HINTS ${LLVM_DIR} $ENV{LLVM_DIR})
+find_package(LLVM CONFIG REQUIRED HINTS ${LLVM_HOME} $ENV{LLVM_HOME} ${LLVM_DIR} $ENV{LLVM_DIR})
 
 # Import certain utilities (e.g. to make add_llvm_library() available)
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
