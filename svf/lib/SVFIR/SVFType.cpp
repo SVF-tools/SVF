@@ -36,7 +36,26 @@ void SVFIntegerType::print(std::ostream& os) const
 
 void SVFFunctionType::print(std::ostream& os) const
 {
-    os << *getReturnType() << "()";
+    os << *getReturnType() << "(";
+
+    // Print parameters
+    for (size_t i = 0; i < params.size(); ++i) {
+        os << *params[i];
+        // Add comma after all params except the last one
+        if (i != params.size() - 1) {
+            os << ", ";
+        }
+    }
+
+    // Add varargs indicator if needed
+    if (isVarArg()) {
+        if (!params.empty()) {
+            os << ", ";
+        }
+        os << "...";
+    }
+
+    os << ")";
 }
 
 void SVFStructType::print(std::ostream& os) const
