@@ -290,7 +290,7 @@ protected:
         return it->second;
     }
 
-    inline void addCallSite(const CallICFGNode* cs, const FunObjVar* callee, const CallSiteID csid)
+    inline void addCallSiteFromDB(const CallICFGNode* cs, const FunObjVar* callee, const CallSiteID csid)
     {
         std::pair<const CallICFGNode*, const FunObjVar*> newCS(std::make_pair(cs, callee));
         CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
@@ -366,7 +366,7 @@ public:
 
     /// Add direct call edges
     void addDirectCallGraphEdge(const CallICFGNode* call, const FunObjVar* callerFun, const FunObjVar* calleeFun);
-    void addDirectCallGraphEdge(CallGraphEdge* cgEdge);
+    void addDirectCallGraphEdgeFromDB(CallGraphEdge* cgEdge);
 
     void addCallGraphNode(const FunObjVar* fun);
 
@@ -470,7 +470,7 @@ public:
     /// Add indirect call edges
     //@{
     void addIndirectCallGraphEdge(const CallICFGNode* cs,const FunObjVar* callerFun, const FunObjVar* calleeFun);
-    void addIndirectCallGraphEdge(CallGraphEdge* cgEdge);
+    void addIndirectCallGraphEdgeFromDB(CallGraphEdge* cgEdge);
     //@}
 
     /// Get callsites invoking the callee
