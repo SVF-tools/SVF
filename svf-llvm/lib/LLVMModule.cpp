@@ -1299,7 +1299,12 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     }
     else if (const StructType* st = SVFUtil::dyn_cast<StructType>(T))
     {
-        auto svfst = new SVFStructType(byteSize);
+        std::vector<const SVFType*> fieldTypes;
+
+        for (const auto& t: st->elements()) {
+            fieldTypes.push_back(getSVFType(t));
+        }
+        auto svfst = new SVFStructType(fieldTypes, byteSize);
         if (st->hasName())
             svfst->setName(st->getName().str());
         svftype = svfst;
