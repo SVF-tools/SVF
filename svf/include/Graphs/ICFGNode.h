@@ -185,6 +185,8 @@ public:
     {
         return "Global ICFGNode";
     }
+
+    std::string toDBString() const;
 };
 
 /*!
@@ -236,6 +238,8 @@ public:
     {
         return isRet;
     }
+
+    std::string toDBString() const;
 };
 
 class InterICFGNode : public ICFGNode
@@ -268,6 +272,8 @@ public:
     {
         return isInterICFGNodeKind(node->getNodeKind());
     }
+
+    std::string toDBString() const;
 
     //@}
 };
@@ -347,6 +353,8 @@ public:
     const std::string toString() const override;
 
     const std::string getSourceLoc() const override;
+
+    std::string toDBString() const;
 };
 
 /*!
@@ -419,6 +427,8 @@ public:
     const std::string toString() const override;
 
     const std::string getSourceLoc() const override;
+
+    std::string toDBString() const;
 };
 
 /*!
@@ -606,6 +616,8 @@ public:
     {
         return "CallICFGNode: " + ICFGNode::getSourceLoc();
     }
+
+    std::string toDBString() const;
 };
 
 
@@ -654,7 +666,7 @@ public:
         actualRet = ar;
     }
 
-    inline void addCallBlockNode(const CallICFGNode* cb)
+    inline void addCallBlockNodeFromDB(const CallICFGNode* cb)
     {
         callBlockNode = cb;
     }
@@ -692,6 +704,8 @@ public:
     {
         return "RetICFGNode: " + ICFGNode::getSourceLoc();
     }
+
+    std::string toDBString() const;
 };
 
 } // End namespace SVF

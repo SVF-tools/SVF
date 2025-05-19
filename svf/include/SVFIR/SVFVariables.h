@@ -248,6 +248,8 @@ public:
         o << node.toString();
         return o;
     }
+
+    std::string getSVFVarNodeFieldsStmt() const;
 };
 
 
@@ -274,12 +276,12 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    inline void updateSVFValVar(const SVFType* type, const ICFGNode* icfgNode)
+    inline void updateSVFValVarFromDB(const SVFType* type, const ICFGNode* icfgNode)
     {
         this->type = type;
         this->icfgNode = icfgNode;
     }
-    inline void updateSVFValVar(const ICFGNode* icfgNode)
+    inline void updateSVFValVarFromDB(const ICFGNode* icfgNode)
     {
         this->icfgNode = icfgNode;
     }
@@ -320,6 +322,10 @@ public:
     virtual const FunObjVar* getFunction() const;
 
     virtual const std::string toString() const;
+
+    std::string getValVarNodeFieldsStmt() const;
+
+    std::string toDBString() const;
 };
 
 /*
@@ -338,7 +344,7 @@ protected:
     {
     }
 public:
-    void updateObjVar(const SVFType* type)
+    void updateObjVarFromDB(const SVFType* type)
     {
         this->type = type;
     }
@@ -369,6 +375,10 @@ public:
     }
 
     virtual const std::string toString() const;
+
+    std::string getObjVarNodeFieldsStmt() const;
+
+    std::string toDBString() const;
 };
 
 
@@ -426,7 +436,7 @@ public:
         return getName() + " (argument valvar)";
     }
 
-    inline void addCGNode(const FunObjVar* cgNode)
+    inline void addCGNodeFromDB(const FunObjVar* cgNode)
     {
         this->cgNode = cgNode;
     }
@@ -447,6 +457,8 @@ public:
     virtual bool isPointer() const;
 
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 
 
@@ -559,6 +571,8 @@ public:
     {
         return base->isConstDataOrAggData();
     }
+
+    std::string toDBString() const;
 };
 
 /*
@@ -782,6 +796,10 @@ public:
 
     virtual const FunObjVar* getFunction() const;
 
+    std::string getBaseObjVarNodeFieldsStmt() const;
+
+    std::string toDBString() const;
+
 };
 
 
@@ -887,6 +905,8 @@ public:
     {
         return base->isPointer();
     }
+
+    std::string toDBString() const;
 };
 
 
@@ -949,6 +969,8 @@ public:
     }
 
     virtual const std::string toString() const;
+    
+    std::string toDBString() const;
 };
 
 
@@ -1013,6 +1035,8 @@ public:
     }
 
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 
 
@@ -1312,6 +1336,8 @@ public:
     virtual bool isIsolatedNode() const;
 
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 class FunValVar : public ValVar
 {
@@ -1369,6 +1395,8 @@ public:
         funObjVar = cgn;
     }
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 
 
@@ -1415,6 +1443,8 @@ public:
 
 
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 
 class ConstAggValVar: public ValVar
@@ -1469,6 +1499,8 @@ public:
     }
 
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 
 
@@ -1531,6 +1563,9 @@ public:
     }
 
     virtual const std::string toString() const;
+
+    std::string getConstDataValVarNodeFieldsStmt() const;
+    std::string toDBString() const;
 };
 
 class BlackHoleValVar : public ConstDataValVar
@@ -1581,6 +1616,8 @@ public:
     {
         return "BlackHoleValVar";
     }
+
+    std::string toDBString() const;
 };
 
 class ConstFPValVar : public ConstDataValVar
@@ -1639,6 +1676,8 @@ public:
     }
 
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 
 class ConstIntValVar : public ConstDataValVar
@@ -1705,6 +1744,8 @@ public:
 
     }
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 
 class ConstNullPtrValVar : public ConstDataValVar
@@ -1759,6 +1800,8 @@ public:
     }
 
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 
 class GlobalObjVar : public BaseObjVar
@@ -1814,6 +1857,8 @@ public:
 
 
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 
 class ConstAggObjVar : public BaseObjVar
@@ -1874,6 +1919,7 @@ public:
     }
 
     virtual const std::string toString() const;
+    std::string toDBString() const;
 };
 
 class ConstDataObjVar : public BaseObjVar
@@ -1937,6 +1983,9 @@ public:
     }
 
     virtual const std::string toString() const;
+
+    std::string getConstDataObjVarNodeFieldsStmt() const;
+    std::string toDBString() const;
 };
 
 class ConstFPObjVar : public ConstDataObjVar
@@ -2007,6 +2056,7 @@ public:
 
 
     virtual const std::string toString() const;
+    std::string toDBString() const;
 };
 
 class ConstIntObjVar : public ConstDataObjVar
@@ -2083,6 +2133,7 @@ public:
 
 
     virtual const std::string toString() const;
+    std::string toDBString() const;
 };
 
 class ConstNullPtrObjVar : public ConstDataObjVar
@@ -2143,6 +2194,8 @@ public:
         return false;
     }
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 /*
  * Unique Return node of a procedure
@@ -2204,6 +2257,8 @@ public:
     const std::string getValueName() const;
 
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 
 /*
@@ -2265,6 +2320,8 @@ public:
         return true;
     }
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 
 /*
@@ -2320,6 +2377,8 @@ public:
     }
 
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 
 /*
@@ -2385,6 +2444,8 @@ public:
     }
 
     virtual const std::string toString() const;
+    
+    std::string toDBString() const;
 };
 
 } // End namespace SVF

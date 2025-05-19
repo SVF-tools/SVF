@@ -16,6 +16,12 @@
                     "type":"INT32",
                     "optional":false,
                     "index":false
+                },
+                {
+                    "name":"pag_edge_ids",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
                 }
             ]
         },
@@ -53,6 +59,12 @@
                     "type":"INT32",
                     "optional":false,
                     "index":false
+                },
+                {
+                    "name":"pag_edge_ids",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
                 }
             ]
         },
@@ -70,6 +82,12 @@
                 {
                     "name":"kind",
                     "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"pag_edge_ids",
+                    "type":"STRING",
                     "optional":false,
                     "index":false
                 }
@@ -109,6 +127,12 @@
                     "type":"INT32",
                     "optional":false,
                     "index":false
+                },
+                {
+                    "name":"pag_edge_ids",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
                 }
             ]
         },
@@ -144,6 +168,12 @@
                 {
                     "name":"bb_id",
                     "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"pag_edge_ids",
+                    "type":"STRING",
                     "optional":false,
                     "index":false
                 }
@@ -231,6 +261,12 @@
                     "type":"STRING",
                     "optional":true,
                     "index":false
+                },
+                {
+                    "name":"pag_edge_ids",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
                 }
             ]
         },
@@ -278,6 +314,12 @@
                 {
                     "name":"fun_obj_var_id",
                     "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"pag_edge_ids",
+                    "type":"STRING",
                     "optional":false,
                     "index":false
                 }

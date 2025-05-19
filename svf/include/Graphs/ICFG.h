@@ -175,7 +175,7 @@ protected:
         return intraIcfgNode;
     }
 
-    virtual inline void addIntraICFGNode(IntraICFGNode* intraICFGNode)
+    virtual inline void addIntraICFGNodeFromDB(IntraICFGNode* intraICFGNode)
     {
         totalICFGNode++;
         addICFGNode(intraICFGNode);
@@ -194,7 +194,7 @@ protected:
         return callICFGNode;
     }
 
-    virtual inline void addCallICFGNode(CallICFGNode* callICFGNode)
+    virtual inline void addCallICFGNodeFromDB(CallICFGNode* callICFGNode)
     {
         totalICFGNode++;
         addICFGNode(callICFGNode);
@@ -207,7 +207,7 @@ protected:
         addICFGNode(retICFGNode);
         return retICFGNode;
     }
-    virtual inline void addRetICFGNode(RetICFGNode* retICFGNode)
+    virtual inline void addRetICFGNodeFromDB(RetICFGNode* retICFGNode)
     {
         totalICFGNode++;
         addICFGNode(retICFGNode);
@@ -220,14 +220,14 @@ protected:
         return FunToFunEntryNodeMap[svfFunc] = sNode;
     }
 
-    virtual inline void addFunEntryICFGNode(FunEntryICFGNode* funEntryICFGNode)
+    virtual inline void addFunEntryICFGNodeFromDB(FunEntryICFGNode* funEntryICFGNode)
     {
         totalICFGNode++;
         addICFGNode(funEntryICFGNode);
         FunToFunEntryNodeMap[funEntryICFGNode->getFun()] = funEntryICFGNode;
     }
 
-    virtual inline void addGlobalICFGNode(GlobalICFGNode* globalICFGNode)
+    virtual inline void addGlobalICFGNodeFromDB(GlobalICFGNode* globalICFGNode)
     {
         totalICFGNode++;
         this->globalBlockNode = globalICFGNode;
@@ -241,7 +241,7 @@ protected:
         return FunToFunExitNodeMap[svfFunc] = sNode;
     }
 
-    virtual inline void addFunExitICFGNode(FunExitICFGNode* funExitICFGNode)
+    virtual inline void addFunExitICFGNodeFromDB(FunExitICFGNode* funExitICFGNode)
     {
         totalICFGNode++;
         addICFGNode(funExitICFGNode);

@@ -171,6 +171,8 @@ private:
     {
         branchCondVal = bVal;
     }
+
+    std::string toDBString() const;
 };
 
 /*!
@@ -220,6 +222,8 @@ public:
     }
     //@}
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 
 /*!
@@ -267,6 +271,8 @@ public:
     }
     //@}
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 
 } // End namespace SVF
