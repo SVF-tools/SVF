@@ -288,6 +288,10 @@ public:
         return &multiOpndLabelCounter;
     }
 
+    std::string generateSVFStmtEdgeFieldsStmt() const;
+
+    std::string toDBString() const;
+
 };
 
 /*
@@ -375,6 +379,13 @@ public:
     }
 
     virtual const std::string toString() const = 0;
+
+    std::string generateAssignStmtFieldsStmt() const
+    {
+        return generateSVFStmtEdgeFieldsStmt();
+    }
+
+    std::string toDBString() const;
 };
 
 /*!
@@ -429,6 +440,8 @@ public:
     {
         return arrSize;
     }
+
+    std::string toDBString() const;
 
 };
 
@@ -521,6 +534,8 @@ public:
     CopyStmt(SVFVar* s, SVFVar* d, CopyKind k) : AssignStmt(s, d, SVFStmt::Copy), copyKind(k) {}
 
     virtual const std::string toString() const override;
+
+    std::string toDBString() const;
 private:
     u32_t copyKind;
 };
@@ -564,6 +579,8 @@ public:
     StoreStmt(SVFVar* s, SVFVar* d, const ICFGNode* st);
 
     virtual const std::string toString() const override;
+
+    std::string toDBString() const;
 };
 
 /*!
@@ -605,6 +622,8 @@ public:
     LoadStmt(SVFVar* s, SVFVar* d) : AssignStmt(s, d, SVFStmt::Load) {}
 
     virtual const std::string toString() const override;
+
+    std::string toDBString() const;
 };
 
 /*!
@@ -695,6 +714,8 @@ public:
 
     virtual const std::string toString() const;
 
+    std::string toDBString() const;
+
 };
 
 
@@ -763,6 +784,7 @@ public:
     //@}
 
     virtual const std::string toString() const override;
+    std::string toDBString() const;
 };
 
 /*!
@@ -831,6 +853,8 @@ public:
     //@}
 
     virtual const std::string toString() const override;
+
+    std::string toDBString() const;
 };
 
 /*
@@ -920,6 +944,10 @@ public:
     {
         return opVars.end();
     }
+
+    std::string generateMultiOpndStmtEdgeFieldsStmt() const;
+
+    std::string toDBString() const;
     //@}
 };
 
@@ -1007,6 +1035,8 @@ public:
     bool isFunctionRetPhi() const;
 
     virtual const std::string toString() const override;
+
+    std::string toDBString() const;
 };
 
 /*!
@@ -1067,6 +1097,8 @@ public:
     {
         return getOpVar(1);
     }
+
+    std::string toDBString() const;
 };
 
 /*!
@@ -1157,6 +1189,8 @@ public:
     }
 
     virtual const std::string toString() const override;
+
+    std::string toDBString() const;
 };
 
 /*!
@@ -1231,6 +1265,8 @@ public:
     }
 
     virtual const std::string toString() const override;
+
+    std::string toDBString() const;
 };
 
 /*!
@@ -1303,6 +1339,8 @@ public:
     NodeID getResID() const;
 
     virtual const std::string toString() const override;
+
+    std::string toDBString() const;
 };
 
 /*!
@@ -1398,6 +1436,8 @@ public:
     }
     //@}
     virtual const std::string toString() const override;
+
+    std::string toDBString() const;
 };
 
 /*!
@@ -1444,6 +1484,8 @@ public:
     }
 
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 
 /*!
@@ -1491,6 +1533,8 @@ public:
     }
 
     virtual const std::string toString() const;
+
+    std::string toDBString() const;
 };
 
 } // End namespace SVF

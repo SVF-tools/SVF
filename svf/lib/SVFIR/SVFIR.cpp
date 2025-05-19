@@ -74,7 +74,7 @@ AddrStmt* SVFIR::addAddrStmt(NodeID src, NodeID dst)
         return addrPE;
     }
 }
-void SVFIR::addAddrStmt(AddrStmt* edge)
+void SVFIR::addAddrStmtFromDB(AddrStmt* edge)
 {
     if(!hasEdge(edge, SVFStmt::Addr))
     {
@@ -101,7 +101,7 @@ CopyStmt* SVFIR::addCopyStmt(NodeID src, NodeID dst, CopyStmt::CopyKind type)
     }
 }
 
-void SVFIR::addCopyStmt(CopyStmt* edge)
+void SVFIR::addCopyStmtFromDB(CopyStmt* edge)
 {
     if(!hasEdge(edge, SVFStmt::Copy))
     {
@@ -134,7 +134,7 @@ PhiStmt* SVFIR::addPhiStmt(NodeID res, NodeID opnd, const ICFGNode* pred)
     }
 }
 
-void SVFIR::addPhiStmt(PhiStmt* edge, SVFVar* src, SVFVar* dst)
+void SVFIR::addPhiStmtFromDB(PhiStmt* edge, SVFVar* src, SVFVar* dst)
 {
     SVFVar* opNode = src;
     SVFVar* resNode = dst;
@@ -168,7 +168,7 @@ SelectStmt* SVFIR::addSelectStmt(NodeID res, NodeID op1, NodeID op2, NodeID cond
     }
 }
 
-void SVFIR::addSelectStmt(SelectStmt* edge, SVFVar* src, SVFVar* dst)
+void SVFIR::addSelectStmtFromDB(SelectStmt* edge, SVFVar* src, SVFVar* dst)
 {
     if (!hasEdge(edge, SVFStmt::Select))
     {
@@ -197,7 +197,7 @@ CmpStmt* SVFIR::addCmpStmt(NodeID op1, NodeID op2, NodeID dst, u32_t predicate)
     }
 }
 
-void SVFIR::addCmpStmt(CmpStmt* edge, SVFVar* src, SVFVar* dst)
+void SVFIR::addCmpStmtFromDB(CmpStmt* edge, SVFVar* src, SVFVar* dst)
 {
     if (!hasEdge(edge,SVFStmt::Cmp))
     {
@@ -227,7 +227,7 @@ BinaryOPStmt* SVFIR::addBinaryOPStmt(NodeID op1, NodeID op2, NodeID dst, u32_t o
     }
 }
 
-void SVFIR::addBinaryOPStmt(BinaryOPStmt* edge, SVFVar* src, SVFVar* dst)
+void SVFIR::addBinaryOPStmtFromDB(BinaryOPStmt* edge, SVFVar* src, SVFVar* dst)
 {
     if (!hasEdge(edge, SVFStmt::BinaryOp))
     {
@@ -253,7 +253,7 @@ UnaryOPStmt* SVFIR::addUnaryOPStmt(NodeID src, NodeID dst, u32_t opcode)
     }
 }
 
-void SVFIR::addUnaryOPStmt(UnaryOPStmt* edge, SVFVar* src, SVFVar* dst)
+void SVFIR::addUnaryOPStmtFromDB(UnaryOPStmt* edge, SVFVar* src, SVFVar* dst)
 {
     if(!hasEdge(edge, SVFStmt::UnaryOp))
     {
@@ -280,7 +280,7 @@ BranchStmt* SVFIR::addBranchStmt(NodeID br, NodeID cond, const BranchStmt::SuccA
     }
 }
 
-void SVFIR::addBranchStmt(BranchStmt* edge, SVFVar* src, SVFVar* dst)
+void SVFIR::addBranchStmtFromDB(BranchStmt* edge, SVFVar* src, SVFVar* dst)
 {
     if(!hasEdge(edge, SVFStmt::Branch))
     {
@@ -307,7 +307,7 @@ LoadStmt* SVFIR::addLoadStmt(NodeID src, NodeID dst)
     }
 }
 
-void SVFIR::addLoadStmt(LoadStmt* edge)
+void SVFIR::addLoadStmtFromDB(LoadStmt* edge)
 {
     if(!hasEdge(edge, SVFStmt::Load))
     {
@@ -335,7 +335,7 @@ StoreStmt* SVFIR::addStoreStmt(NodeID src, NodeID dst, const ICFGNode* curVal)
     }
 }
 
-void SVFIR::addStoreStmt(StoreStmt* edge, SVFVar* src, SVFVar* dst)
+void SVFIR::addStoreStmtFromDB(StoreStmt* edge, SVFVar* src, SVFVar* dst)
 {
     if(!hasEdge(edge,SVFStmt::Store))
     {
@@ -362,7 +362,7 @@ CallPE* SVFIR::addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs, const F
     }
 }
 
-void SVFIR::addCallPE(CallPE* edge, SVFVar* src, SVFVar* dst)
+void SVFIR::addCallPEFromDB(CallPE* edge, SVFVar* src, SVFVar* dst)
 {
     if(!hasEdge(edge, SVFStmt::Call))
     {
@@ -389,7 +389,7 @@ RetPE* SVFIR::addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs, const Fun
     }
 }
 
-void SVFIR::addRetPE(RetPE* edge,  SVFVar* src, SVFVar* dst)
+void SVFIR::addRetPEFromDB(RetPE* edge,  SVFVar* src, SVFVar* dst)
 {
     if(!hasEdge(edge, SVFStmt::Ret))
     {
@@ -485,7 +485,7 @@ GepStmt* SVFIR::addNormalGepStmt(NodeID src, NodeID dst, const AccessPath& ap)
     }
 }
 
-void SVFIR::addGepStmt(GepStmt* gepPE)
+void SVFIR::addGepStmtFromDB(GepStmt* gepPE)
 {
     SVFVar* baseNode = gepPE->getRHSVar();
     SVFVar* dstNode = gepPE->getLHSVar();
@@ -581,7 +581,7 @@ NodeID SVFIR::getGepObjVar(const BaseObjVar* baseObj, const APOffset& apOffset)
 
 }
 
-void SVFIR::addGepObjNode(GepObjVar* gepObj)
+void SVFIR::addGepObjNodeFromDB(GepObjVar* gepObj)
 {
     NodeID base = gepObj->getBaseNode();
     APOffset apOffset = gepObj->getConstantFieldIdx();

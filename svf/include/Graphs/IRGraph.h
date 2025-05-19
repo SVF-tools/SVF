@@ -54,6 +54,7 @@ class IRGraph : public GenericGraph<SVFVar, SVFStmt>
     friend class SVFIRReader;
     friend class SVFIRBuilder;
     friend class SymbolTableBuilder;
+    friend class GraphDBClient;
 
 public:
 
