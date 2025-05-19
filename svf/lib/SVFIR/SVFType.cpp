@@ -60,7 +60,17 @@ void SVFFunctionType::print(std::ostream& os) const
 
 void SVFStructType::print(std::ostream& os) const
 {
-    os << "S." << name;
+    os << "S." << name << " {";
+
+    // Print fields
+    for (size_t i = 0; i < fields.size(); ++i) {
+        os << *fields[i];
+        // Add comma after all fields except the last one
+        if (i != fields.size() - 1) {
+            os << ", ";
+        }
+    }
+    os << "}";
 }
 
 void SVFArrayType::print(std::ostream& os) const

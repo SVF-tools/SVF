@@ -363,9 +363,12 @@ class SVFStructType : public SVFType
 private:
     /// @brief Field for printing & debugging
     std::string name;
+    std::vector<const SVFType*> fields;
 
 public:
-    SVFStructType(u32_t byteSize = 1) : SVFType(false, SVFStructTy, byteSize) {}
+    SVFStructType(std::vector<const SVFType *> &f, u32_t byteSize = 1) :
+        SVFType(false, SVFStructTy, byteSize), fields(f) {
+    }
 
     static inline bool classof(const SVFType* node)
     {
@@ -385,6 +388,11 @@ public:
     void setName(std::string&& structName)
     {
         name = std::move(structName);
+    }
+
+    const std::vector<const SVFType*>& getFieldTypes() const
+    {
+        return fields;
     }
 };
 
