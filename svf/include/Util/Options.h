@@ -4,14 +4,10 @@
 #define OPTIONS_H_
 
 #include <sstream>
-#include "FastCluster/fastcluster.h"
 #include "Util/CommandLine.h"
 #include "Util/PTAStat.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/NodeIDAllocator.h"
-#include "MSSA/MemSSA.h"
-#include "WPA/WPAPass.h"
-#include "AE/Svfexe/AbstractInterpretation.h"
 
 namespace SVF
 {
@@ -54,7 +50,7 @@ public:
     /// TODO: we can separate it into two options, and make Clusterer::cluster take in a method
     ///       argument rather than plugging Options::ClusterMethod *inside* Clusterer::cluster
     ///       directly, but it seems we will always want single anyway, and this is for testing.
-    static const OptionMap<enum hclust_fast_methods> ClusterMethod;
+    static const OptionMap<u32_t> ClusterMethod;
 
     /// Cluster partitions separately.
     static const Option<bool> RegionedClustering;
@@ -143,7 +139,7 @@ public:
     static const Option<bool> DumpMSSA;
     static const Option<std::string> MSSAFun;
     // static const llvm::cl::opt<string> MSSAFun;
-    static const OptionMap<MemSSA::MemPartition> MemPar;
+    static const OptionMap<u32_t> MemPar;
 
     // SVFG builder (SVFGBuilder.cpp)
     static const Option<bool> SVFGWithIndirectCall;
@@ -223,7 +219,7 @@ public:
     static const Option<bool> SABERFULLSVFG;
     static const Option<bool> PrintAliases;
     static OptionMultiple<PointerAnalysis::PTATY> PASelected;
-    static OptionMultiple<WPAPass::AliasCheckRule> AliasRule;
+    static OptionMultiple<u32_t> AliasRule;
 
     // DOTGraphTraits
     static const Option<bool> ShowHiddenNode;
@@ -246,7 +242,7 @@ public:
     // Abstract Execution
     static const Option<u32_t> WidenDelay;
     /// recursion handling mode, Default: TOP
-    static const OptionMap<AbstractInterpretation::HandleRecur> HandleRecur;
+    static const OptionMap<u32_t> HandleRecur;
     /// the max time consumptions (seconds). Default: 4 hours 14400s
     static const Option<u32_t> Timeout;
     /// bug info output file, Default: output.db
