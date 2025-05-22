@@ -83,8 +83,6 @@ if(SVF_SANITIZE AND NOT (SVF_SANITIZE STREQUAL "thread" OR SVF_SANITIZE STREQUAL
 endif()
 
 # Configurable (boolean) options for building SVF
-option(SVF_NO_EH "Disable exception handling (-fno-exceptions)")
-option(SVF_NO_RTTI "Disable runtime type information (-fno-rtti)")
 option(SVF_USE_PIC "Compile with position-independent code (-fPIC)" ON)
 option(SVF_USE_LTO "Compile with link-time optimisations enabled (-flto)")
 option(SVF_USE_LLD "Use LLVM's ld.lld linker instead of the default linker")
@@ -93,13 +91,19 @@ option(SVF_DEBUG_INFO "Enable & explicitly preserve debug info (-g3); also in re
 option(SVF_WARN_AS_ERROR "Treat all compiler warnings as errors when building SVF (default: on)" ON)
 option(SVF_EXPORT_DYNAMIC "Export all (not only the actually used) symbols to dynamic symbol table" OFF)
 option(SVF_ENABLE_ASSERTIONS "Always enable debugging assertions, also if the build type is a release build")
+option(SVF_ENABLE_RTTI "Disables runtime type information generation by adding the -fno-rtti build flag" ON)
+option(SVF_ENABLE_EH "Disables handling of thrown exceptions by adding the -fno-exceptions build flag" ON)
+
+# For convenience, also declare SVF_ENABLE_EXCEPTIONS as a local variable (for config)
+set(SVF_ENABLE_EXCEPTIONS ${SVF_ENABLE_EH})
 
 # If building dynamic libraries, always enable PIC
-if(SVF_SHARED_LIBS)
-  if(NOT SVF_USE_PIC)
-    message(FATAL_ERROR "Cannot disable PIC when compiling dynamic shared libraries!")
-  endif()
-  set(SVF_USE_PIC ON)
+if(SVF_SHARED_LIBS AND NOT SVF_USE_PIC)
+  message(WARNING "PIC must be enabled while compiling shared libraries; forcing SVF_USE_PIC to ON!")
+  set(SVF_USE_PIC
+      ON
+      CACHE BOOL "" FORCE
+  )
 endif()
 
 # Ensure the compiler supports LTO if building with LTO enabled
@@ -124,7 +128,7 @@ set(SVF_INSTALL_EXTAPIDIR
     CACHE PATH "Set extapi.bc install dir"
 )
 set(SVF_INSTALL_INCLUDEDIR
-    ${CMAKE_INSTALL_INCLUDEDIR}
+    ${CMAKE_INSTALL_INCLUDEDIR}/SVF
     CACHE PATH "Set public headers install dir"
 )
 set(SVF_INSTALL_PKGCONFDIR
@@ -180,8 +184,8 @@ message(
 
   SVF option - Build type:                          ${SVF_BUILD_TYPE}
   SVF option - Building shared libs:                ${SVF_SHARED_LIBS}
-  SVF option - Disabling exception handling:        ${SVF_NO_EH}
-  SVF option - Disabling runtime type information:  ${SVF_NO_RTTI}
+  SVF option - Enabled exception handling:          ${SVF_ENABLE_EH}
+  SVF option - Enabled runtime type information:    ${SVF_ENABLE_RTTI}
   SVF option - Enabling position-independent code:  ${SVF_USE_PIC}
   SVF option - Enabling link-time optimisations:    ${SVF_USE_LTO}
   SVF option - Using ld.lld as default linker:      ${SVF_USE_LLD}
@@ -229,7 +233,6 @@ message(
 
 # Define an interface library which contains publically exposed properties/flags/defs
 add_library(SvfFlags INTERFACE)
-add_library(SVF::Flags ALIAS SvfFlags)
 
 # Set the C++ standard as a public required feature
 target_compile_features(SvfFlags INTERFACE c_std_11 cxx_std_17)
@@ -247,7 +250,7 @@ target_include_directories(
   SvfFlags
   SYSTEM
   INTERFACE $<INSTALL_INTERFACE:${SVF_INSTALL_INCLUDEDIR}>
-  INTERFACE $<INSTALL_INTERFACE:${SVF_INSTALL_INCLUDEDIR}/SVF>
+  INTERFACE $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 # Expose build-tree compiled artifacts only to in-tree users; expose install tree publicly
@@ -260,36 +263,6 @@ target_link_directories(
 
 # Expose build-tree extapi.bc to in-tree users of SVF (i.e. building SVF as subproject)
 target_compile_definitions(SvfFlags INTERFACE $<BUILD_INTERFACE:SVF_INSTALL_EXTAPI_BC="${SVF_BUILD_EXTAPI_BC}">)
-
-# Expose required ABI flags publicly; expose other build flags only to in-tree users of SVF
-target_compile_options(
-  SvfFlags
-  INTERFACE $<$<BOOL:${SVF_NO_RTTI}>:-fno-rtti>
-  INTERFACE $<$<BOOL:${SVF_NO_EH}>:-fno-exceptions>
-  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_DEBUG_INFO}>:-g3>>
-  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wall>>
-  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Werror>>
-  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_ENABLE_ASSERTIONS}>:-UNDEBUG>>
-  INTERFACE $<BUILD_INTERFACE:$<$<STREQUAL:${SVF_SANITIZE},thread>:-fsanitize=thread>>
-  INTERFACE $<BUILD_INTERFACE:$<$<STREQUAL:${SVF_SANITIZE},address>:-fsanitize=address>>
-  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wno-deprecated-declarations>>
-  INTERFACE $<BUILD_INTERFACE:$<$<STREQUAL:${SVF_SANITIZE},address>:-fno-omit-frame-pointer>>
-  INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-fprofile-arcs>>
-  INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-ftest-coverage>>
-)
-target_link_options(
-  SvfFlags
-  INTERFACE $<$<BOOL:${SVF_NO_RTTI}>:-fno-rtti>
-  INTERFACE $<$<BOOL:${SVF_NO_EH}>:-fno-exceptions>
-  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_DEBUG_INFO}>:-g3>>
-  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_USE_LLD}>:-fuse-ld=lld>>
-  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-rdynamic>>
-  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-Wl,--export-dynamic>>
-  INTERFACE $<BUILD_INTERFACE:$<$<STREQUAL:${SVF_SANITIZE},thread>:-fsanitize=thread>>
-  INTERFACE $<BUILD_INTERFACE:$<$<STREQUAL:${SVF_SANITIZE},address>:-fsanitize=address>>
-  INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-fprofile-arcs>>
-  INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-ftest-coverage>>
-)
 
 # Add Z3 as a public dependency on the interface to ensure any users inherit the dependency
 target_link_libraries(SvfFlags INTERFACE ${Z3_LIBRARIES})
@@ -316,12 +289,52 @@ add_subdirectory(svf)
 add_subdirectory(svf-llvm)
 
 # =================================================================================
+# SVF build configuration handling (post linking LLVM)
+# =================================================================================
+
+# Expose the required ABI flags (e.g., whether RTTI was disabled) in the build & install trees
+target_compile_options(SvfFlags INTERFACE $<$<NOT:$<BOOL:${SVF_ENABLE_RTTI}>>:-fno-rtti>)
+target_link_options(SvfFlags INTERFACE $<$<NOT:$<BOOL:${SVF_ENABLE_RTTI}>>:-fno-rtti>)
+
+# Expose build/link flags not required for users of SVF only in the build tree
+target_compile_options(
+  SvfFlags
+  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_DEBUG_INFO}>:-g3>>
+  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wall>>
+  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Werror>>
+  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wno-deprecated-declarations>>
+  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_ENABLE_ASSERTIONS}>:-UNDEBUG>>
+  INTERFACE $<BUILD_INTERFACE:$<$<NOT:$<BOOL:${SVF_ENABLE_EH}>>:-fno-exceptions>>
+  INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-fprofile-arcs>>
+  INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-ftest-coverage>>
+  INTERFACE $<BUILD_INTERFACE:$<$<STREQUAL:${SVF_SANITIZE},thread>:-fsanitize=thread>>
+  INTERFACE $<BUILD_INTERFACE:$<$<STREQUAL:${SVF_SANITIZE},address>:-fsanitize=address>>
+  INTERFACE $<BUILD_INTERFACE:$<$<STREQUAL:${SVF_SANITIZE},address>:-fno-omit-frame-pointer>>
+)
+target_link_options(
+  SvfFlags
+  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_DEBUG_INFO}>:-g3>>
+  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wall>>
+  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Werror>>
+  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wno-deprecated-declarations>>
+  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_USE_LLD}>:-fuse-ld=lld>>
+  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-rdynamic>>
+  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-Wl,--export-dynamic>>
+  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_ENABLE_ASSERTIONS}>:-UNDEBUG>>
+  INTERFACE $<BUILD_INTERFACE:$<$<NOT:$<BOOL:${SVF_ENABLE_EH}>>:-fno-exceptions>>
+  INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-fprofile-arcs>>
+  INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-ftest-coverage>>
+  INTERFACE $<BUILD_INTERFACE:$<$<STREQUAL:${SVF_SANITIZE},thread>:-fsanitize=thread>>
+  INTERFACE $<BUILD_INTERFACE:$<$<STREQUAL:${SVF_SANITIZE},address>:-fsanitize=address>>
+)
+
+# =================================================================================
 # SVF configuration header
 # =================================================================================
 
 # (1) Generate config.h into <build_tree>/include/SVF/Util; (2) Install it under <install_prefix>/include/SVF/Util
 configure_file(${SVF_SOURCE_DIR}/cmake/SVFConfigHdr.cmake.in ${SVF_BINARY_DIR}/include/SVF/Util/config.h @ONLY)
-install(FILES ${SVF_BINARY_DIR}/include/SVF/Util/config.h DESTINATION ${SVF_INSTALL_INCLUDEDIR}/SVF/Util)
+install(FILES ${SVF_BINARY_DIR}/include/SVF/Util/config.h DESTINATION ${SVF_INSTALL_INCLUDEDIR}/Util)
 
 # =================================================================================
 # SVF pkgconf package configuration

@@ -1,9 +1,8 @@
-# Define the core library & create alias SVF::SvfCore (for scoping when linking against SVF)
+# Define the core library
 add_library(SvfCore)
-add_library(SVF::Core ALIAS SvfCore)
 
 # Inherit compiler & linker options by publically linking against the interface library
-target_link_libraries(SvfCore PUBLIC SVF::Flags)
+target_link_libraries(SvfCore PUBLIC SvfFlags)
 
 # Gather & set all of the core library's source files by globbing all .h and .cpp files (recursively)
 file(GLOB_RECURSE SVF_CORE_HEADERS ${CMAKE_CURRENT_LIST_DIR}/include/*.h)
@@ -30,5 +29,5 @@ install(
   LIBRARY DESTINATION ${SVF_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${SVF_INSTALL_LIBDIR}
           FILE_SET HEADERS
-          DESTINATION ${SVF_INSTALL_INCLUDEDIR}/SVF
+          DESTINATION ${SVF_INSTALL_INCLUDEDIR}
 )

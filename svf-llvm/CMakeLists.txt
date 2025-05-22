@@ -9,16 +9,34 @@ find_package(LLVM CONFIG REQUIRED HINTS ${LLVM_HOME} $ENV{LLVM_HOME} ${LLVM_DIR}
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 include(AddLLVM)
 
-# Do some sanity checks versus the given SVF configuration
-if(LLVM_ENABLE_EH AND SVF_NO_EH)
-  message(FATAL_ERROR "Exception handling disabled but LLVM instance could throw exceptions!")
+# If exceptions are disabled, verify the LLVM instance could never raise them
+if(LLVM_ENABLE_EH AND NOT SVF_ENABLE_EH)
+  message(WARNING "LLVM could throw exceptions but SVF configured to disable exception handling; "
+                  "forcing $SVF_ENABLE_EH to ON!"
+  )
+  set(SVF_ENABLE_EH
+      ON
+      CACHE BOOL "" FORCE
+  )
 endif()
-if(NOT LLVM_ENABLE_RTTI)
-  if(NOT SVF_NO_RTTI)
-    message(WARNING "LLVM built without RTTI but not explicitly disabled; disabling RTTI...")
-  endif()
-  target_compile_options(SvfFlags INTERFACE -fno-rtti)
-  target_link_options(SvfFlags INTERFACE -fno-rtti)
+
+# If RTTI is disabled in LLVM, it must be for SVF as well (and vice versa)
+if(LLVM_ENABLE_RTTI AND NOT SVF_ENABLE_RTTI)
+  message(WARNING "LLVM is built with RTTI support but SVF is configured to disable RTTI support; "
+                  "forcing $SVF_ENABLE_RTTI to ON!"
+  )
+  set(SVF_ENABLE_RTTI
+      ON
+      CACHE BOOL "" FORCE
+  )
+elseif(NOT LLVM_ENABLE_RTTI AND SVF_ENABLE_RTTI)
+  message(WARNING "LLVM is built without RTTI support but SVF configured to enable RTTI support; "
+                  "forcing $SVF_ENABLE_RTTI to OFF!"
+  )
+  set(SVF_ENABLE_RTTI
+      OFF
+      CACHE BOOL "" FORCE
+  )
 endif()
 
 # Make the include/link directories & definitions available globally
@@ -95,9 +113,8 @@ install(
 # Main SVF LLVM library definition
 # =================================================================================
 
-# Define library
+# Define SVF's LLVM library
 add_library(SvfLLVM)
-add_library(SVF::LLVM ALIAS SvfLLVM)
 
 # If SVF is built as part of the LLVM source tree, explicitly add a dependency on the intrinsics_gen target
 if(TARGET intrinsics_gen)
@@ -108,7 +125,7 @@ endif()
 add_dependencies(SvfLLVM gen_extapi_ir)
 
 # Link the SVF LLVM library to the core library, the build/link flags, and the LLVM libraries
-target_link_libraries(SvfLLVM PUBLIC SVF::Flags SVF::Core ${LLVM_LIBRARIES})
+target_link_libraries(SvfLLVM PUBLIC SvfFlags SvfCore ${LLVM_LIBRARIES})
 
 # Gather & set all of the core library's source files by globbing all .h and .cpp files (recursively)
 file(GLOB_RECURSE SVF_LLVM_HEADERS ${CMAKE_CURRENT_LIST_DIR}/include/*.h)
@@ -135,7 +152,7 @@ install(
   LIBRARY DESTINATION ${SVF_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${SVF_INSTALL_LIBDIR}
           FILE_SET HEADERS
-          DESTINATION ${SVF_INSTALL_INCLUDEDIR}/SVF
+          DESTINATION ${SVF_INSTALL_INCLUDEDIR}
 )
 
 # =================================================================================

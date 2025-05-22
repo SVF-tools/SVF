@@ -2,6 +2,8 @@
 #  FindZ3.cmake - Locate Z3 either via a packaged config or by header+lib
 #
 
+include(GNUInstallDirs)
+
 # Try upstream/system CONFIG package first; use it if found (sets required variables):
 find_package(Z3 CONFIG QUIET HINTS ${Z3_HOME} $ENV{Z3_HOME} ${Z3_DIR} $ENV{Z3_DIR})
 if(Z3_FOUND)
@@ -18,11 +20,13 @@ else()
     Z3_LIBRARY_DIR
     NAMES z3 libz3
     HINTS ${Z3_HOME} $ENV{Z3_HOME} ${Z3_DIR} $ENV{Z3_DIR}
+    PATH_SUFFIXES bin lib ${CMAKE_INSTALL_BINDIR} ${CMAKE_INSTALL_LIBDIR}
   )
   find_path(
     Z3_INCLUDE_DIR
     NAMES z3++.h
     HINTS ${Z3_HOME} $ENV{Z3_HOME} ${Z3_DIR} $ENV{Z3_DIR}
+    PATH_SUFFIXES include ${CMAKE_INSTALL_INCLUDEDIR}
   )
 
   # If the headers were found, find & extract the Z3 version number
