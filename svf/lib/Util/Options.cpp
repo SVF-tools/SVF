@@ -3,6 +3,9 @@
 #include "Util/Options.h"
 #include "Util/CommandLine.h"
 #include "Util/ExtAPI.h"
+#include "MSSA/MemSSA.h"
+#include "WPA/WPAPass.h"
+#include "AE/Svfexe/AbstractInterpretation.h"
 
 namespace SVF
 {
@@ -408,7 +411,7 @@ const Option<std::string> Options::MSSAFun(
     ""
 );
 
-const OptionMap<MemSSA::MemPartition> Options::MemPar(
+const OptionMap<u32_t> Options::MemPar(
     "mem-par",
     "Memory region partition strategies (e.g., for SVFG construction)",
     MemSSA::MemPartition::IntraDisjoint,
@@ -697,7 +700,7 @@ OptionMultiple<PointerAnalysis::PTATY> Options::PASelected(
 );
 
 
-OptionMultiple<WPAPass::AliasCheckRule> Options::AliasRule(
+OptionMultiple<u32_t> Options::AliasRule(
     "Select alias check rule",
 {
     {WPAPass::Conservative, "conservative", "return MayAlias if any pta says alias"},
@@ -779,7 +782,7 @@ const Option<u32_t> Options::LoopBound(
 
 const Option<u32_t> Options::WidenDelay(
     "widen-delay", "Loop Widen Delay", 3);
-const OptionMap<AbstractInterpretation::HandleRecur> Options::HandleRecur(
+const OptionMap<u32_t> Options::HandleRecur(
     "handle-recur",
     "Recursion handling mode in abstract execution (Default -widen-narrow)",
     AbstractInterpretation::HandleRecur::WIDEN_NARROW,

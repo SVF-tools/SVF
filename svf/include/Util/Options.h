@@ -9,9 +9,6 @@
 #include "Util/PTAStat.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/NodeIDAllocator.h"
-#include "MSSA/MemSSA.h"
-#include "WPA/WPAPass.h"
-#include "AE/Svfexe/AbstractInterpretation.h"
 
 namespace SVF
 {
@@ -143,7 +140,7 @@ public:
     static const Option<bool> DumpMSSA;
     static const Option<std::string> MSSAFun;
     // static const llvm::cl::opt<string> MSSAFun;
-    static const OptionMap<MemSSA::MemPartition> MemPar;
+    static const OptionMap<u32_t> MemPar;
 
     // SVFG builder (SVFGBuilder.cpp)
     static const Option<bool> SVFGWithIndirectCall;
@@ -223,7 +220,7 @@ public:
     static const Option<bool> SABERFULLSVFG;
     static const Option<bool> PrintAliases;
     static OptionMultiple<PointerAnalysis::PTATY> PASelected;
-    static OptionMultiple<WPAPass::AliasCheckRule> AliasRule;
+    static OptionMultiple<u32_t> AliasRule;
 
     // DOTGraphTraits
     static const Option<bool> ShowHiddenNode;
@@ -246,7 +243,7 @@ public:
     // Abstract Execution
     static const Option<u32_t> WidenDelay;
     /// recursion handling mode, Default: TOP
-    static const OptionMap<AbstractInterpretation::HandleRecur> HandleRecur;
+    static const OptionMap<u32_t> HandleRecur;
     /// the max time consumptions (seconds). Default: 4 hours 14400s
     static const Option<u32_t> Timeout;
     /// bug info output file, Default: output.db
