@@ -32,27 +32,38 @@ else()
   # If the headers were found, find & extract the Z3 version number
   set(_ver_h "${Z3_INCLUDE_DIR}/z3_version.h")
   if(EXISTS "${_ver_h}")
-    message(STATUS "Found Z3 version header file: ${_ver_h}")
     file(READ "${_ver_h}" _z3_ver_h)
+    message(STATUS "Extracted Z3 version information from ${_ver_h}")
 
-    # Grab the full-version string
-    string(REGEX MATCH "#define Z3_FULL_VERSION[ \t]+\"([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)\"" _ ${_z3_ver_h})
-    set(Z3_VERSION_STRING "${CMAKE_MATCH_1}")
+    # Match each component explicitly
+    string(REGEX MATCH "#define Z3_MAJOR_VERSION[ \t]+([0-9]+)" _major "${_z3_ver_h}")
+    set(Z3_VERSION_MAJOR "${CMAKE_MATCH_1}")
 
-    # Split the full Z3 version string from the public header into its numeric components
-    message(STATUS "Found Z3 headers for version ${Z3_VERSION_STRING}")
-    string(REGEX MATCHALL "[0-9]+" _components "${Z3_VERSION_STRING}")
-    list(GET _components 0 Z3_VERSION_MAJOR)
-    list(GET _components 1 Z3_VERSION_MINOR)
-    list(GET _components 2 Z3_VERSION_PATCH)
-    list(GET _components 3 Z3_VERSION_TWEAK)
+    string(REGEX MATCH "#define Z3_MINOR_VERSION[ \t]+([0-9]+)" _minor "${_z3_ver_h}")
+    set(Z3_VERSION_MINOR "${CMAKE_MATCH_1}")
+
+    string(REGEX MATCH "#define Z3_BUILD_NUMBER[ \t]+([0-9]+)" _patch "${_z3_ver_h}")
+    set(Z3_VERSION_PATCH "${CMAKE_MATCH_1}")
+
+    string(REGEX MATCH "#define Z3_REVISION_NUMBER[ \t]+([0-9]+)" _tweak "${_z3_ver_h}")
+    set(Z3_VERSION_TWEAK "${CMAKE_MATCH_1}")
+
+    # Fallback if any of the components are unset
+    foreach(_part MAJOR MINOR PATCH TWEAK)
+      if(NOT Z3_VERSION_${_part})
+        set(Z3_VERSION_${_part} 0)
+      endif()
+    endforeach()
+
+    set(Z3_VERSION_STRING "${Z3_VERSION_MAJOR}.${Z3_VERSION_MINOR}.${Z3_VERSION_PATCH}.${Z3_VERSION_TWEAK}")
+    message(STATUS "Parsed Z3 version: ${Z3_VERSION_STRING}")
   else()
-    message(WARNING "Failed to find z3_version.h; cannot extract Z3 version!")
+    message(WARNING "Z3 version header not found: ${_ver_h}")
     set(Z3_VERSION_MAJOR 0)
     set(Z3_VERSION_MINOR 0)
     set(Z3_VERSION_PATCH 0)
     set(Z3_VERSION_TWEAK 0)
-    set(Z3_VERSION_STRING "${Z3_VERISON_MAJOR}.${Z3_VERSION_MINOR}.${Z3_VERSION_PATCH}.${Z3_VERSION_TWEAK}")
+    set(Z3_VERSION_STRING "0.0.0.0")
   endif()
 
   # Validate that both the public headers & the library files were found
