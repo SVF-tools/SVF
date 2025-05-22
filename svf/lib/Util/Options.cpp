@@ -2,6 +2,7 @@
 
 #include "Util/Options.h"
 #include "Util/CommandLine.h"
+#include "FastCluster/fastcluster.h"
 #include "Util/ExtAPI.h"
 #include "MSSA/MemSSA.h"
 #include "WPA/WPAPass.h"
@@ -359,7 +360,7 @@ const OptionMap<PointsTo::Type> Options::PtType(
 }
 );
 
-const OptionMap<enum hclust_fast_methods> Options::ClusterMethod(
+const OptionMap<u32_t> Options::ClusterMethod(
     "cluster-method",
     "hierarchical clustering method for objects",
     HCLUST_METHOD_SVF_BEST,

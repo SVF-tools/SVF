@@ -306,7 +306,7 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, cons
     overallStats[NumRegions] = std::to_string(numRegions);
 
     std::vector<hclust_fast_methods> methods;
-    if (Options::ClusterMethod() == HCLUST_METHOD_SVF_BEST)
+    if ((enum hclust_fast_methods)Options::ClusterMethod() == HCLUST_METHOD_SVF_BEST)
     {
         methods.push_back(HCLUST_METHOD_SINGLE);
         methods.push_back(HCLUST_METHOD_COMPLETE);
@@ -314,7 +314,7 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, cons
     }
     else
     {
-        methods.push_back(Options::ClusterMethod());
+        methods.push_back((enum hclust_fast_methods)Options::ClusterMethod());
     }
 
     for (const hclust_fast_methods method : methods)
@@ -655,7 +655,7 @@ std::pair<hclust_fast_methods, std::vector<NodeID>> NodeIDAllocator::Clusterer::
     std::pair<hclust_fast_methods, std::vector<NodeID>> bestMapping = candidates[0];
     // Number of bits required for the best candidate.
     size_t bestWords = std::numeric_limits<size_t>::max();
-    if (evalSubtitle != "" || Options::ClusterMethod() == HCLUST_METHOD_SVF_BEST)
+    if (evalSubtitle != "" || (enum hclust_fast_methods)Options::ClusterMethod() == HCLUST_METHOD_SVF_BEST)
     {
         for (const std::pair<hclust_fast_methods, std::vector<NodeID>> &candidate : candidates)
         {
