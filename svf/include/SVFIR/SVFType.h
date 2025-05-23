@@ -197,13 +197,18 @@ private:
     StInfo* typeinfo;   ///< SVF's TypeInfo
     bool isSingleValTy; ///< The type represents a single value, not struct or
     u32_t byteSize; ///< LLVM Byte Size
+    u32_t id;
     ///< array
 
 protected:
     SVFType(bool svt, SVFTyKind k, u32_t Sz = 1)
         : kind(k), typeinfo(nullptr),
-          isSingleValTy(svt), byteSize(Sz)
+          isSingleValTy(svt), byteSize(Sz), id(0)
     {
+    }
+
+    void setId(u32_t i) {
+        id = i;
     }
 
 public:
@@ -221,6 +226,10 @@ public:
 
     virtual void print(std::ostream& os) const = 0;
 
+
+    u32_t getId() const {
+        return id;
+    }
 
     inline void setTypeInfo(StInfo* ti)
     {

@@ -1326,6 +1326,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     }
 
     svfir->addTypeInfo(svftype);
+    svftype->setId(svfir->getSVFTypes().size());
     LLVMType2SVFType[T] = svftype;
 
     return svftype;
