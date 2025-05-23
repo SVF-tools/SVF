@@ -1303,7 +1303,8 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     {
         std::vector<const SVFType*> fieldTypes;
 
-        for (const auto& t: st->elements()) {
+        for (const auto& t: st->elements())
+        {
             fieldTypes.push_back(getSVFType(t));
         }
         auto svfst = new SVFStructType(id, fieldTypes, byteSize);

@@ -222,7 +222,8 @@ public:
     virtual void print(std::ostream& os) const = 0;
 
 
-    u32_t getId() const {
+    u32_t getId() const
+    {
         return id;
     }
 
@@ -371,7 +372,8 @@ private:
 
 public:
     SVFStructType(u32_t i, std::vector<const SVFType *> &f, u32_t byteSize = 1) :
-        SVFType(false, SVFStructTy, i, byteSize), fields(f) {
+        SVFType(false, SVFStructTy, i, byteSize), fields(f)
+    {
     }
 
     static inline bool classof(const SVFType* node)
