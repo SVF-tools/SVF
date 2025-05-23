@@ -1,39 +1,33 @@
 # Define the core library
 add_library(SvfCore)
 
-# Add the public headers as an include directory
-target_include_directories(SvfCore
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${SVF_INSTALL_INCLUDE_DIR}>
+# Inherit compiler & linker options by publically linking against the interface library
+target_link_libraries(SvfCore PUBLIC SvfFlags)
+
+# Gather & set all of the core library's source files by globbing all .h and .cpp files (recursively)
+file(GLOB_RECURSE SVF_CORE_HEADERS ${CMAKE_CURRENT_LIST_DIR}/include/*.h)
+file(GLOB_RECURSE SVF_CORE_SOURCES ${CMAKE_CURRENT_LIST_DIR}/lib/*.cpp)
+target_sources(
+  SvfCore
+  PUBLIC FILE_SET HEADERS
+                  BASE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include
+                  FILES ${SVF_CORE_HEADERS}
+  PRIVATE ${SVF_CORE_SOURCES}
 )
 
-set_target_properties(SvfCore PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-)
+# Only expose the headers in the source tree to in-tree users of SVF
+target_include_directories(SvfCore PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)
 
-# Get the source files (i.e. all *.c/*.cpp files) for SVF's subprojects and add them to SvfCore
-file(GLOB_RECURSE SVF_CORE_SOURCES lib/*.cpp)
-target_sources(SvfCore PRIVATE ${SVF_CORE_SOURCES})
+# Set the library & .so version of the core library
+set_target_properties(SvfCore PROPERTIES VERSION ${SVF_VERSION} SOVERSION ${SVF_VERSION_MAJOR})
 
-# Get all of the public header files (i.e. all *.h/*.hpp files) for SVF's subprojects and add them
-file(GLOB_RECURSE SVF_CORE_HEADERS include/*.h include/*.hpp)
-
-target_sources(SvfCore
-  PUBLIC
-    FILE_SET HEADERS
-    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
-    FILES ${SVF_CORE_HEADERS}
-)
-
-# Install the headers and compiled libraries (associate SvfCore with the SVF package's targets)
+# Install the core library's files to the regular/configured install tree
 install(
   TARGETS SvfCore
   EXPORT SVFTargets
-  RUNTIME DESTINATION ${SVF_INSTALL_BIN_DIR}
-  LIBRARY DESTINATION ${SVF_INSTALL_LIB_DIR}
-  ARCHIVE DESTINATION ${SVF_INSTALL_LIB_DIR}
-  FILE_SET HEADERS DESTINATION ${SVF_INSTALL_INCLUDE_DIR}
+  RUNTIME DESTINATION ${SVF_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${SVF_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${SVF_INSTALL_LIBDIR}
+          FILE_SET HEADERS
+          DESTINATION ${SVF_INSTALL_INCLUDEDIR}
 )

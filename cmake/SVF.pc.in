@@ -1,0 +1,12 @@
+prefix=${pcfiledir}/../..
+exec_prefix=${prefix}
+bindir=${exec_prefix}/@SVF_INSTALL_BINDIR@
+libdir=${exec_prefix}/@SVF_INSTALL_LIBDIR@
+includedir=${exec_prefix}/@SVF_INSTALL_INCLUDEDIR@
+
+Name: SVF
+Description: SVF Points to Analysis Framework
+Version: @SVF_VERSION@
+Requires: z3
+Libs: -L${libdir} -lSvfCore -lSvfLLVM
+Cflags: -I${includedir}

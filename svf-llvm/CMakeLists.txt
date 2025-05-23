@@ -1,151 +1,161 @@
-# Find the LLVM instance to use for building SvfLLVM
-find_package(LLVM REQUIRED CONFIG HINTS ${LLVM_DIR} $ENV{LLVM_DIR})
-message(STATUS "LLVM STATUS:
-  Version       ${LLVM_VERSION}
-  Definitions   ${LLVM_DEFINITIONS}
-  Includes      ${LLVM_INCLUDE_DIRS}
-  Libraries     ${LLVM_LIBRARY_DIRS}
-  Targets       ${LLVM_TARGETS_TO_BUILD}
-  Build type    ${LLVM_BUILD_TYPE}
-  Exceptions    ${LLVM_ENABLE_EH}
-  RTTI          ${LLVM_ENABLE_RTTI}
-  Dynamic lib   ${LLVM_LINK_LLVM_DYLIB}"
-)
+# =================================================================================
+# LLVM package definition and configuration
+# =================================================================================
 
-# Though not necessary, check if SVF is being built in debug mode & if that matches LLVM
-if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT ${LLVM_BUILD_TYPE} STREQUAL "Debug")
-  message(NOTICE  "Building SVF in debug-mode but LLVM was not built in debug-mode; "
-                  "debug information could be incomplete when using SVF from LLVM")
-endif()
+# Find the LLVM instance to build & link SvfLLVM against (prioritise $LLVM_DIR)
+find_package(LLVM CONFIG REQUIRED HINTS ${LLVM_HOME} $ENV{LLVM_HOME} ${LLVM_DIR} $ENV{LLVM_DIR})
 
-# Add LLVM's include directories and link directory for all targets defined hereafter
-include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
-link_directories(${LLVM_LIBRARY_DIRS})
-add_definitions(${LLVM_DEFINITIONS})
-
-# Ensure SVF is built with RTTI/exception handling if the used LLVM instance has them enabled
-set(SVF_ENABLE_RTTI ${LLVM_ENABLE_RTTI} PARENT_SCOPE)
-set(SVF_ENABLE_EXCEPTIONS ${LLVM_ENABLE_EH} PARENT_SCOPE)
-
-# Check if LLVM was built generating the single libLLVM.so shared library file or as separate static libraries
-if(LLVM_LINK_LLVM_DYLIB)
-  message(STATUS "Linking to LLVM dynamic shared library object")
-  set(llvm_libs LLVM)
-
-  # Set which components to include in the dynamic library to include the new SvfLLVM
-  if (LLVM_DYLIB_COMPONENTS)
-    message(STATUS "Appending SvfLLVM to LLVM dynamic library components")
-    list(APPEND LLVM_DYLIB_COMPONENTS SvfLLVM)
-  else()
-    message(STATUS "Adding all;SvfLLVM to LLVM dynamic library components (was unset)")
-    set(LLVM_DYLIB_COMPONENTS all;SvfLLVM)
-  endif()
-else()
-  message(STATUS "Linking to separate LLVM static libraries")
-  llvm_map_components_to_libnames(
-    llvm_libs
-    analysis
-    bitwriter
-    core
-    instcombine
-    instrumentation
-    ipo
-    irreader
-    linker
-    scalaropts
-    support
-    target
-    transformutils
-    demangle
-  )
-endif()
-
-# Make the "add_llvm_library()" command available and configure LLVM/CMake
+# Import certain utilities (e.g. to make add_llvm_library() available)
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 include(AddLLVM)
 
-# Define the actual SvfLLVM library (use LLVM's functions to automatically link stuff)
-add_llvm_library(SvfLLVM ${SVFLLVM_SOURCES})
+# If exceptions are disabled, verify the LLVM instance could never raise them
+if(LLVM_ENABLE_EH AND NOT SVF_ENABLE_EH)
+  message(WARNING "LLVM could throw exceptions but SVF configured to disable exception handling; "
+                  "forcing $SVF_ENABLE_EH to ON!"
+  )
+  set(SVF_ENABLE_EH
+      ON
+      CACHE BOOL "" FORCE
+  )
+endif()
 
-# Add the public headers as an include directory
-target_include_directories(SvfLLVM
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${SVF_INSTALL_INCLUDE_DIR}>
+# If RTTI is disabled in LLVM, it must be for SVF as well (and vice versa)
+if(LLVM_ENABLE_RTTI AND NOT SVF_ENABLE_RTTI)
+  message(WARNING "LLVM is built with RTTI support but SVF is configured to disable RTTI support; "
+                  "forcing $SVF_ENABLE_RTTI to ON!"
+  )
+  set(SVF_ENABLE_RTTI
+      ON
+      CACHE BOOL "" FORCE
+  )
+elseif(NOT LLVM_ENABLE_RTTI AND SVF_ENABLE_RTTI)
+  message(WARNING "LLVM is built without RTTI support but SVF configured to enable RTTI support; "
+                  "forcing $SVF_ENABLE_RTTI to OFF!"
+  )
+  set(SVF_ENABLE_RTTI
+      OFF
+      CACHE BOOL "" FORCE
+  )
+endif()
+
+# Make the include/link directories & definitions available globally
+separate_arguments(_LLVM_DEFINITIONS NATIVE_COMMAND ${LLVM_DEFINITIONS})
+include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
+link_directories(${LLVM_LIBRARY_DIRS})
+add_definitions(${_LLVM_DEFINITIONS})
+
+# Use all components as link targets (picks dynamic/static libs); store in $LLVM_LIBRARIES
+if(LLVM_LINK_LLVM_DYLIB)
+  set(LLVM_LIBRARIES LLVM)
+else()
+  llvm_map_components_to_libnames(LLVM_LIBRARIES all)
+endif()
+
+# Search in the executables dir for this LLVM's clang instance
+find_program(LLVM_CLANG clang ${LLVM_BINARY_DIR} ${LLVM_TOOLS_BINARY_DIR})
+if(NOT LLVM_CLANG)
+  message(FATAL_ERROR "Failed to find 'clang' in LLVM package!")
+endif()
+
+message(
+  STATUS
+    "Using LLVM package:
+  LLVM major version:         ${LLVM_VERSION_MAJOR}
+  LLVM minor version:         ${LLVM_VERSION_MINOR}
+  LLVM patch version:         ${LLVM_VERSION_PATCH}
+  LLVM version string:        ${LLVM_PACKAGE_VERSION}
+  LLVM host triple:           ${LLVM_HOST_TRIPLE}
+  LLVM target triple:         ${LLVM_TARGET_TRIPLE}
+  LLVM build type:            ${LLVM_BUILD_TYPE}
+  LLVM link dynamic lib:      ${LLVM_LINK_LLVM_DYLIB}
+  LLVM enable RTTI:           ${LLVM_ENABLE_RTTI}
+  LLVM enable exceptions:     ${LLVM_ENABLE_EH}
+  LLVM compiler definitions:  ${LLVM_DEFINITIONS}
+  LLVM libraries:             ${LLVM_LIBRARIES}
+  LLVM includes dir:          ${LLVM_INCLUDE_DIRS}
+  LLVM libraries dir:         ${LLVM_LIBRARY_DIRS}
+  LLVM executables dir:       ${LLVM_BINARY_DIR}
+  LLVM executable tools dir:  ${LLVM_TOOLS_BINARY_DIR}"
 )
 
-set_target_properties(SvfLLVM PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+# =================================================================================
+# ExtAPI.bc generation & target definition
+# =================================================================================
+set(EXTAPI_SRC ${CMAKE_CURRENT_LIST_DIR}/lib/extapi.c)
+
+if(EXISTS "${EXTAPI_SRC}")
+  message(STATUS "Found extapi.c input file at: ${EXTAPI_SRC}")
+else()
+  message(FATAL_ERROR "Failed to find extapi.c input file: ${EXTAPI_SRC}")
+endif()
+
+# Add a custom command to compile the extapi.bc bitcode file from extapi.c
+add_custom_command(
+  OUTPUT ${SVF_BUILD_EXTAPI_BC}
+  COMMAND ${LLVM_CLANG} -w -S -c -fPIC -std=gnu11 -emit-llvm -o ${SVF_BUILD_EXTAPI_BC} ${EXTAPI_SRC}
+  COMMENT "Generating extapi.bc LLVM bitcode file..."
+  MAIN_DEPENDENCY ${EXTAPI_SRC}
+  DEPENDS ${EXTAPI_SRC}
 )
 
-# Link LLVM's libraries to SvfLLVM, as well as the SVF core library
-target_link_libraries(SvfLLVM PUBLIC ${llvm_libs} SvfCore)
+# Add a custom target that has the custom command as its creation command
+add_custom_target(gen_extapi_ir ALL DEPENDS ${SVF_BUILD_EXTAPI_BC})
 
-# Get the source files (i.e. all *.c/*.cpp files) for SVF's subprojects and add them to SvfLLVM
-file(GLOB_RECURSE SVF_LLVM_SOURCES lib/*.cpp)
-target_sources(SvfLLVM PRIVATE ${SVF_LLVM_SOURCES})
-
-# Get all of the public header files (i.e. all *.h/*.hpp files) for SVF's subprojects and add them
-file(GLOB_RECURSE SVF_LLVM_HEADERS include/*.h include/*.hpp)
-
-target_sources(SvfLLVM
-  PUBLIC
-    FILE_SET HEADERS
-    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
-    FILES ${SVF_LLVM_HEADERS}
+# Install the bitcode file as well; install it to (default) <prefix>/include/SVF/extapi.bc
+install(
+  FILES ${SVF_BUILD_EXTAPI_BC}
+  DESTINATION ${SVF_INSTALL_EXTAPIDIR}
+  RENAME ${SVF_EXTAPI_BC_NAME}
 )
 
-# Add intrinsics_gen target if we're building as part of LLVM source build
+# =================================================================================
+# Main SVF LLVM library definition
+# =================================================================================
+
+# Define SVF's LLVM library
+add_library(SvfLLVM)
+
+# If SVF is built as part of the LLVM source tree, explicitly add a dependency on the intrinsics_gen target
 if(TARGET intrinsics_gen)
   add_dependencies(SvfLLVM intrinsics_gen)
 endif()
 
-# Ensure extapi.bc built before libSvfLLVM such that
-# we don't have to build all when building individual tools (e.g., wpa)
+# Add a dependency from the SvfLLVM library to the extapi.bc target (so it's generated when SvfLLVM is built)
 add_dependencies(SvfLLVM gen_extapi_ir)
 
-# Add the targets for compiling the SvfLLVM tool binaries
-add_subdirectory(tools)
+# Link the SVF LLVM library to the core library, the build/link flags, and the LLVM libraries
+target_link_libraries(SvfLLVM PUBLIC SvfFlags SvfCore ${LLVM_LIBRARIES})
 
-# Find clang from the LLVM instance found earlier
-find_program(LLVM_CLANG
-  NAMES clang
-  HINTS ${LLVM_BINARY_DIR}
-  PATH_SUFFIXES bin
-  REQUIRED
+# Gather & set all of the core library's source files by globbing all .h and .cpp files (recursively)
+file(GLOB_RECURSE SVF_LLVM_HEADERS ${CMAKE_CURRENT_LIST_DIR}/include/*.h)
+file(GLOB_RECURSE SVF_LLVM_SOURCES ${CMAKE_CURRENT_LIST_DIR}/lib/*.cpp)
+target_sources(
+  SvfLLVM
+  PUBLIC FILE_SET HEADERS
+                  BASE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include
+                  FILES ${SVF_LLVM_HEADERS}
+  PRIVATE ${SVF_LLVM_SOURCES}
 )
 
-# Define a custom command which generates the "extapi.bc" LLVM bytecode file
-add_custom_command(
-  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc
-  COMMAND ${LLVM_CLANG} -w
-                        -S
-                        -c
-                        -emit-llvm
-                        -fno-discard-value-names
-                        -Xclang -disable-O0-optnone
-                        -o ${CMAKE_BINARY_DIR}/lib/extapi.bc
-                        ${CMAKE_CURRENT_LIST_DIR}/lib/extapi.c
-  DEPENDS ${CMAKE_CURRENT_LIST_DIR}/lib/extapi.c
-)
+# Only expose the headers in the source tree to in-tree users of SVF
+target_include_directories(SvfLLVM PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)
 
-# Add a custom target for generating the LLVM bytecode file (and add it to the default build targets)
-add_custom_target(gen_extapi_ir ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc)
+# Set the library & .so version of the LLVM library
+set_target_properties(SvfLLVM PROPERTIES VERSION ${SVF_VERSION} SOVERSION ${SVF_VERSION_MAJOR})
 
-# Install the SvfLLVM shared library and public headers (public headers go in include/SVF-LLVM)
+# Install the LLVM library's files to the regular/configured install tree
 install(
   TARGETS SvfLLVM
   EXPORT SVFTargets
-  RUNTIME DESTINATION ${SVF_INSTALL_BIN_DIR}
-  LIBRARY DESTINATION ${SVF_INSTALL_LIB_DIR}
-  ARCHIVE DESTINATION ${SVF_INSTALL_LIB_DIR}
-  FILE_SET HEADERS DESTINATION ${SVF_INSTALL_INCLUDE_DIR}
+  RUNTIME DESTINATION ${SVF_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${SVF_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${SVF_INSTALL_LIBDIR}
+          FILE_SET HEADERS
+          DESTINATION ${SVF_INSTALL_INCLUDEDIR}
 )
 
-# Install the generated extapi.bc bytecode file
-install(
-  FILES ${CMAKE_BINARY_DIR}/lib/extapi.bc
-  DESTINATION ${SVF_INSTALL_EXTAPI_DIR}
-)
+# =================================================================================
+# Tools
+# =================================================================================
+add_subdirectory(tools)
