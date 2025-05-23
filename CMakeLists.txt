@@ -96,6 +96,7 @@ option(SVF_ENABLE_EH "Disables handling of thrown exceptions by adding the -fno-
 
 # For convenience, also declare SVF_ENABLE_EXCEPTIONS as a local variable (for config)
 set(SVF_ENABLE_EXCEPTIONS ${SVF_ENABLE_EH})
+set(LLVM_ENABLE_EH ${SVF_ENABLE_EH})
 
 # If building dynamic libraries, always enable PIC
 if(SVF_SHARED_LIBS AND NOT SVF_USE_PIC)
