@@ -83,7 +83,7 @@ void AbsExtAPI::initExtFunMap()
         }
         else
         {
-            SVFUtil::errs() <<"svf_assert Fail. " << callNode->toString() << "\n";
+            SVFUtil::errs() << SVFUtil::errMsg("Assertion failure, this svf_assert cannot be verified!!\n") << callNode->toString() << "\n";
             assert(false);
         }
         return;
