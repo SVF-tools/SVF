@@ -138,7 +138,7 @@ std::string ExtAPI::getExtBcPath()
     //  3.  Get the location of `extapi.bc` from the CMake configuration step; set when linking against SVF
     if (setExtBcPath(SVF_INSTALL_EXTAPI_BC))
         return extBcPath;
-    
+
     //  4.  Get the location directly from `config.h`; note that this is the build-tree file (not installed)
     if (setExtBcPath(SVF_BUILD_EXTAPI_BC))
         return extBcPath;
