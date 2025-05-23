@@ -102,7 +102,7 @@ add_custom_command(
 # Add a custom target that has the custom command as its creation command
 add_custom_target(gen_extapi_ir ALL DEPENDS ${SVF_BUILD_EXTAPI_BC})
 
-# Install the bitcode file as well; install it to (default) <prefix>/include/SVF/extapi.bc
+# Install the bitcode file as well; install it to (default) <prefix>/lib/extapi.bc
 install(
   FILES ${SVF_BUILD_EXTAPI_BC}
   DESTINATION ${SVF_INSTALL_EXTAPIDIR}

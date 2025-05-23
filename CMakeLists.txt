@@ -124,11 +124,11 @@ set(SVF_INSTALL_LIBDIR
     CACHE PATH "Set libraries install dir"
 )
 set(SVF_INSTALL_EXTAPIDIR
-    ${CMAKE_INSTALL_INCLUDEDIR}/SVF
+    ${CMAKE_INSTALL_LIBDIR}
     CACHE PATH "Set extapi.bc install dir"
 )
 set(SVF_INSTALL_INCLUDEDIR
-    ${CMAKE_INSTALL_INCLUDEDIR}/SVF
+    ${CMAKE_INSTALL_INCLUDEDIR}
     CACHE PATH "Set public headers install dir"
 )
 set(SVF_INSTALL_PKGCONFDIR
@@ -333,8 +333,8 @@ target_link_options(
 # =================================================================================
 
 # (1) Generate config.h into <build_tree>/include/SVF/Util; (2) Install it under <install_prefix>/include/SVF/Util
-configure_file(${SVF_SOURCE_DIR}/cmake/SVFConfigHdr.cmake.in ${SVF_BINARY_DIR}/include/SVF/Util/config.h @ONLY)
-install(FILES ${SVF_BINARY_DIR}/include/SVF/Util/config.h DESTINATION ${SVF_INSTALL_INCLUDEDIR}/Util)
+configure_file(${SVF_SOURCE_DIR}/cmake/SVFConfigHdr.cmake.in ${SVF_BINARY_DIR}/include/Util/config.h @ONLY)
+install(FILES ${SVF_BINARY_DIR}/include/Util/config.h DESTINATION ${SVF_INSTALL_INCLUDEDIR}/Util)
 
 # =================================================================================
 # SVF pkgconf package configuration
