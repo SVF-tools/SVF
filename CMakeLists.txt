@@ -117,27 +117,27 @@ endif()
 # Configure top-level SVF variables (used by CMake for configuring installed SVF package)
 set(SVF_INSTALL_BINDIR
     ${CMAKE_INSTALL_BINDIR}
-    CACHE PATH "Set binaries install dir"
+    CACHE STRING "Set binaries install dir"
 )
 set(SVF_INSTALL_LIBDIR
     ${CMAKE_INSTALL_LIBDIR}
-    CACHE PATH "Set libraries install dir"
+    CACHE STRING "Set libraries install dir"
 )
 set(SVF_INSTALL_EXTAPIDIR
     ${CMAKE_INSTALL_LIBDIR}
-    CACHE PATH "Set extapi.bc install dir"
+    CACHE STRING "Set extapi.bc install dir"
 )
 set(SVF_INSTALL_INCLUDEDIR
     ${CMAKE_INSTALL_INCLUDEDIR}
-    CACHE PATH "Set public headers install dir"
+    CACHE STRING "Set public headers install dir"
 )
 set(SVF_INSTALL_PKGCONFDIR
     ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-    CACHE PATH "Override pkgconfig install dir"
+    CACHE STRING "Override pkgconfig install dir"
 )
 set(SVF_INSTALL_CMAKECONFIGDIR
     ${CMAKE_INSTALL_LIBDIR}/cmake/SVF
-    CACHE PATH "Set CMake package install dir"
+    CACHE STRING "Set CMake package install dir"
 )
 
 # Set location of extapi.bc (installed)
