@@ -1276,13 +1276,15 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     }
 
     SVFType* svftype;
+
+    u32_t id = svfir->getSVFTypes().size();
     if (SVFUtil::isa<PointerType>(T))
     {
-        svftype = new SVFPointerType(byteSize);
+        svftype = new SVFPointerType(id, byteSize);
     }
     else if (const IntegerType* intT = SVFUtil::dyn_cast<IntegerType>(T))
     {
-        auto svfIntT = new SVFIntegerType(byteSize);
+        auto svfIntT = new SVFIntegerType(id, byteSize);
         unsigned signWidth = intT->getBitWidth();
         assert(signWidth < INT16_MAX && "Integer width too big");
         svfIntT->setSignAndWidth(intT->getSignBit() ? -signWidth : signWidth);
@@ -1295,18 +1297,23 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         {
             paramTypes.push_back(getSVFType(t));
         }
-        svftype = new SVFFunctionType(getSVFType(ft->getReturnType()), paramTypes, ft->isVarArg());
+        svftype = new SVFFunctionType(id, getSVFType(ft->getReturnType()), paramTypes, ft->isVarArg());
     }
     else if (const StructType* st = SVFUtil::dyn_cast<StructType>(T))
     {
-        auto svfst = new SVFStructType(byteSize);
+        std::vector<const SVFType*> fieldTypes;
+
+        for (const auto& t: st->elements()) {
+            fieldTypes.push_back(getSVFType(t));
+        }
+        auto svfst = new SVFStructType(id, fieldTypes, byteSize);
         if (st->hasName())
             svfst->setName(st->getName().str());
         svftype = svfst;
     }
     else if (const auto at = SVFUtil::dyn_cast<ArrayType>(T))
     {
-        auto svfat = new SVFArrayType(byteSize);
+        auto svfat = new SVFArrayType(id, byteSize);
         svfat->setNumOfElement(at->getNumElements());
         svfat->setTypeOfElement(getSVFType(at->getElementType()));
         svftype = svfat;
@@ -1314,7 +1321,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     else
     {
         std::string buffer;
-        auto ot = new SVFOtherType(T->isSingleValueType(), byteSize);
+        auto ot = new SVFOtherType(id, T->isSingleValueType(), byteSize);
         llvm::raw_string_ostream(buffer) << *T;
         ot->setRepr(std::move(buffer));
         svftype = ot;

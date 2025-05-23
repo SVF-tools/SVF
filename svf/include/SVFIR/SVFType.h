@@ -197,15 +197,15 @@ private:
     StInfo* typeinfo;   ///< SVF's TypeInfo
     bool isSingleValTy; ///< The type represents a single value, not struct or
     u32_t byteSize; ///< LLVM Byte Size
+    u32_t id;
     ///< array
 
 protected:
-    SVFType(bool svt, SVFTyKind k, u32_t Sz = 1)
+    SVFType(bool svt, SVFTyKind k, u32_t i = 0, u32_t Sz = 1)
         : kind(k), typeinfo(nullptr),
-          isSingleValTy(svt), byteSize(Sz)
+          isSingleValTy(svt), byteSize(Sz), id(i)
     {
     }
-
 public:
     SVFType(void) = delete;
     virtual ~SVFType() {}
@@ -221,6 +221,10 @@ public:
 
     virtual void print(std::ostream& os) const = 0;
 
+
+    u32_t getId() const {
+        return id;
+    }
 
     inline void setTypeInfo(StInfo* ti)
     {
@@ -275,8 +279,8 @@ class SVFPointerType : public SVFType
     friend class SVFIRReader;
 
 public:
-    SVFPointerType(u32_t byteSize = 1)
-        : SVFType(true, SVFPointerTy, byteSize)
+    SVFPointerType(u32_t i, u32_t byteSize = 1)
+        : SVFType(true, SVFPointerTy, i, byteSize)
     {
     }
 
@@ -297,7 +301,7 @@ private:
     short signAndWidth; ///< For printing
 
 public:
-    SVFIntegerType(u32_t byteSize = 1) : SVFType(true, SVFIntegerTy, byteSize) {}
+    SVFIntegerType(u32_t i, u32_t byteSize = 1) : SVFType(true, SVFIntegerTy, i, byteSize) {}
     static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFIntegerTy;
@@ -327,8 +331,8 @@ private:
     bool varArg;
 
 public:
-    SVFFunctionType(const SVFType* rt, const std::vector<const SVFType*>& p, bool isvararg)
-        : SVFType(false, SVFFunctionTy, 1), retTy(rt), params(p), varArg(isvararg)
+    SVFFunctionType(u32_t i, const SVFType* rt, const std::vector<const SVFType*>& p, bool isvararg)
+        : SVFType(false, SVFFunctionTy,  i, 1), retTy(rt), params(p), varArg(isvararg)
     {
     }
 
@@ -363,9 +367,12 @@ class SVFStructType : public SVFType
 private:
     /// @brief Field for printing & debugging
     std::string name;
+    std::vector<const SVFType*> fields;
 
 public:
-    SVFStructType(u32_t byteSize = 1) : SVFType(false, SVFStructTy, byteSize) {}
+    SVFStructType(u32_t i, std::vector<const SVFType *> &f, u32_t byteSize = 1) :
+        SVFType(false, SVFStructTy, i, byteSize), fields(f) {
+    }
 
     static inline bool classof(const SVFType* node)
     {
@@ -386,6 +393,11 @@ public:
     {
         name = std::move(structName);
     }
+
+    const std::vector<const SVFType*>& getFieldTypes() const
+    {
+        return fields;
+    }
 };
 
 class SVFArrayType : public SVFType
@@ -398,8 +410,8 @@ private:
     const SVFType* typeOfElement; /// For printing & debugging
 
 public:
-    SVFArrayType(u32_t byteSize = 1)
-        : SVFType(false, SVFArrayTy, byteSize), numOfElement(0), typeOfElement(nullptr)
+    SVFArrayType(u32_t i, u32_t byteSize = 1)
+        : SVFType(false, SVFArrayTy, i, byteSize), numOfElement(0), typeOfElement(nullptr)
     {
     }
 
@@ -437,7 +449,7 @@ private:
     std::string repr; /// Field representation for printing
 
 public:
-    SVFOtherType(bool isSingleValueTy, u32_t byteSize = 1) : SVFType(isSingleValueTy, SVFOtherTy, byteSize) {}
+    SVFOtherType(u32_t i, bool isSingleValueTy, u32_t byteSize = 1) : SVFType(isSingleValueTy, SVFOtherTy, i, byteSize) {}
 
     static inline bool classof(const SVFType* node)
     {
