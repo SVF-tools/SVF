@@ -91,8 +91,8 @@ option(SVF_DEBUG_INFO "Enable & explicitly preserve debug info (-g3); also in re
 option(SVF_WARN_AS_ERROR "Treat all compiler warnings as errors when building SVF (default: on)" ON)
 option(SVF_EXPORT_DYNAMIC "Export all (not only the actually used) symbols to dynamic symbol table" OFF)
 option(SVF_ENABLE_ASSERTIONS "Always enable debugging assertions, also if the build type is a release build")
-option(SVF_ENABLE_RTTI "Disables runtime type information generation by adding the -fno-rtti build flag" ON)
-option(SVF_ENABLE_EH "Disables handling of thrown exceptions by adding the -fno-exceptions build flag" ON)
+option(SVF_ENABLE_RTTI "Disables runtime type information generation by adding the -fno-rtti build flag" OFF)
+option(SVF_ENABLE_EH "Disables handling of thrown exceptions by adding the -fno-exceptions build flag" OFF)
 
 # For convenience, also declare SVF_ENABLE_EXCEPTIONS as a local variable (for config)
 set(SVF_ENABLE_EXCEPTIONS ${SVF_ENABLE_EH})
@@ -341,8 +341,8 @@ install(FILES ${SVF_BINARY_DIR}/include/Util/config.h DESTINATION ${SVF_INSTALL_
 # SVF pkgconf package configuration
 # =================================================================================
 
-configure_file(cmake/SVF.pc.in ${SVF_BINARY_DIR}/SVF.pc @ONLY)
-install(FILES ${SVF_BINARY_DIR}/SVF.pc DESTINATION ${SVF_INSTALL_PKGCONFDIR})
+configure_file(cmake/SVF.pc.in ${SVF_BINARY_DIR}/lib/pkgconfig/SVF.pc @ONLY)
+install(FILES ${SVF_BINARY_DIR}/lib/pkgconfig/SVF.pc DESTINATION ${SVF_INSTALL_PKGCONFDIR})
 
 # =================================================================================
 # SVF CMake package configuration
@@ -352,7 +352,7 @@ install(FILES ${SVF_BINARY_DIR}/SVF.pc DESTINATION ${SVF_INSTALL_PKGCONFDIR})
 export(
   EXPORT SVFTargets
   NAMESPACE SVF::
-  FILE ${SVF_BINARY_DIR}/SVFTargets.cmake
+  FILE ${SVF_BINARY_DIR}/lib/cmake/SVF/SVFTargets.cmake
 )
 
 # Install the SVFTargets.cmake file along with the package
@@ -364,7 +364,7 @@ install(
 
 # Create the CMake configuration file (to find SVF with find_package(SVF))
 configure_package_config_file(
-  cmake/SVFConfig.cmake.in ${SVF_BINARY_DIR}/SVFConfig.cmake
+  cmake/SVFConfig.cmake.in ${SVF_BINARY_DIR}/lib/cmake/SVF/SVFConfig.cmake
   INSTALL_DESTINATION ${SVF_INSTALL_CMAKECONFIGDIR}
   PATH_VARS SVF_INSTALL_BINDIR
             SVF_INSTALL_LIBDIR
@@ -377,16 +377,17 @@ configure_package_config_file(
 
 # Create the CMake version configuration package (to support finding specific SVF versions)
 write_basic_package_version_file(
-  ${SVF_BINARY_DIR}/SVFConfigVersion.cmake
+  ${SVF_BINARY_DIR}/lib/cmake/SVF/SVFConfigVersion.cmake
   VERSION ${SVF_VERSION}
   COMPATIBILITY AnyNewerVersion
 )
 
 # Install the generated configuration files
-install(FILES ${SVF_BINARY_DIR}/SVFConfig.cmake DESTINATION ${SVF_INSTALL_CMAKECONFIGDIR})
-install(FILES ${SVF_BINARY_DIR}/SVFConfigVersion.cmake DESTINATION ${SVF_INSTALL_CMAKECONFIGDIR})
+install(FILES ${SVF_BINARY_DIR}/lib/cmake/SVF/SVFConfig.cmake DESTINATION ${SVF_INSTALL_CMAKECONFIGDIR})
+install(FILES ${SVF_BINARY_DIR}/lib/cmake/SVF/SVFConfigVersion.cmake DESTINATION ${SVF_INSTALL_CMAKECONFIGDIR})
 
 # Also install the extra module finding package definitions (e.g., FindZ3.cmake)
+configure_file(cmake/Modules/FindZ3.cmake ${SVF_BINARY_DIR}/lib/cmake/SVF/FindZ3.cmake @ONLY)
 install(
   DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules"
   DESTINATION "${SVF_INSTALL_CMAKECONFIGDIR}"
