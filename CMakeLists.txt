@@ -91,8 +91,8 @@ option(SVF_DEBUG_INFO "Enable & explicitly preserve debug info (-g3); also in re
 option(SVF_WARN_AS_ERROR "Treat all compiler warnings as errors when building SVF (default: on)" ON)
 option(SVF_EXPORT_DYNAMIC "Export all (not only the actually used) symbols to dynamic symbol table" OFF)
 option(SVF_ENABLE_ASSERTIONS "Always enable debugging assertions, also if the build type is a release build")
-option(SVF_ENABLE_RTTI Adds -fno-rtti to disable runtime type information (RTTI)" OFF)
-option(SVF_ENABLE_EXCEPTIONS Adds -fno-exceptions to disable exception handling" OFF)
+option(SVF_ENABLE_RTTI "Adds -fno-rtti to disable runtime type information (RTTI)" OFF)
+option(SVF_ENABLE_EXCEPTIONS "Adds -fno-exceptions to disable exception handling" OFF)
 
 # If building dynamic libraries, always enable PIC
 if(SVF_SHARED_LIBS AND NOT SVF_USE_PIC)
