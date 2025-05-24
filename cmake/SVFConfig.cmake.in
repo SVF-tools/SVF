@@ -40,6 +40,9 @@ set_and_check(SVF_INSTALL_INCLUDEDIR "@PACKAGE_SVF_INSTALL_INCLUDEDIR@")
 set_and_check(SVF_INSTALL_PKGCONFDIR "@PACKAGE_SVF_INSTALL_PKGCONFDIR@")
 set_and_check(SVF_INSTALL_CMAKECONFIGDIR "@PACKAGE_SVF_INSTALL_CMAKECONFIGDIR@")
 
+# If SVF is used directly from a build-from-scratch directory (not installed),
+# append the source include paths (SVF_INCLUDE_PATH and SVF_LLVM_INCLUDE_PATH)
+# to SVF_INSTALL_INCLUDEDIR. This allows users to debug with in-tree headers.
 set(SVF_INCLUDE_PATH "@PACKAGE_SVF_INSTALL_INCLUDEDIR@/../../svf/include")
 set(SVF_LLVM_INCLUDE_PATH "@PACKAGE_SVF_INSTALL_INCLUDEDIR@/../../svf-llvm/include")
 if(EXISTS ${SVF_INCLUDE_PATH} AND EXISTS ${SVF_LLVM_INCLUDE_PATH})
