@@ -91,11 +91,8 @@ option(SVF_DEBUG_INFO "Enable & explicitly preserve debug info (-g3); also in re
 option(SVF_WARN_AS_ERROR "Treat all compiler warnings as errors when building SVF (default: on)" ON)
 option(SVF_EXPORT_DYNAMIC "Export all (not only the actually used) symbols to dynamic symbol table" OFF)
 option(SVF_ENABLE_ASSERTIONS "Always enable debugging assertions, also if the build type is a release build")
-option(SVF_ENABLE_RTTI "Disables runtime type information generation by adding the -fno-rtti build flag" ON)
-option(SVF_ENABLE_EH "Disables handling of thrown exceptions by adding the -fno-exceptions build flag" ON)
-
-# For convenience, also declare SVF_ENABLE_EXCEPTIONS as a local variable (for config)
-set(SVF_ENABLE_EXCEPTIONS ${SVF_ENABLE_EH})
+option(SVF_ENABLE_RTTI "Adds -fno-rtti to disable runtime type information (RTTI)" OFF)
+option(SVF_ENABLE_EXCEPTIONS "Adds -fno-exceptions to disable exception handling" OFF)
 
 # If building dynamic libraries, always enable PIC
 if(SVF_SHARED_LIBS AND NOT SVF_USE_PIC)
@@ -184,7 +181,7 @@ message(
 
   SVF option - Build type:                          ${SVF_BUILD_TYPE}
   SVF option - Building shared libs:                ${SVF_SHARED_LIBS}
-  SVF option - Enabled exception handling:          ${SVF_ENABLE_EH}
+  SVF option - Enabled exception handling:          ${SVF_ENABLE_EXCEPTIONS}
   SVF option - Enabled runtime type information:    ${SVF_ENABLE_RTTI}
   SVF option - Enabling position-independent code:  ${SVF_USE_PIC}
   SVF option - Enabling link-time optimisations:    ${SVF_USE_LTO}
@@ -304,7 +301,7 @@ target_compile_options(
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Werror>>
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wno-deprecated-declarations>>
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_ENABLE_ASSERTIONS}>:-UNDEBUG>>
-  INTERFACE $<BUILD_INTERFACE:$<$<NOT:$<BOOL:${SVF_ENABLE_EH}>>:-fno-exceptions>>
+  INTERFACE $<BUILD_INTERFACE:$<$<NOT:$<BOOL:${SVF_ENABLE_EXCEPTIONS}>>:-fno-exceptions>>
   INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-fprofile-arcs>>
   INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-ftest-coverage>>
   INTERFACE $<BUILD_INTERFACE:$<$<STREQUAL:${SVF_SANITIZE},thread>:-fsanitize=thread>>
@@ -321,7 +318,7 @@ target_link_options(
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-rdynamic>>
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-Wl,--export-dynamic>>
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_ENABLE_ASSERTIONS}>:-UNDEBUG>>
-  INTERFACE $<BUILD_INTERFACE:$<$<NOT:$<BOOL:${SVF_ENABLE_EH}>>:-fno-exceptions>>
+  INTERFACE $<BUILD_INTERFACE:$<$<NOT:$<BOOL:${SVF_ENABLE_EXCEPTIONS}>>:-fno-exceptions>>
   INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-fprofile-arcs>>
   INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-ftest-coverage>>
   INTERFACE $<BUILD_INTERFACE:$<$<STREQUAL:${SVF_SANITIZE},thread>:-fsanitize=thread>>
@@ -340,8 +337,8 @@ install(FILES ${SVF_BINARY_DIR}/include/Util/config.h DESTINATION ${SVF_INSTALL_
 # SVF pkgconf package configuration
 # =================================================================================
 
-configure_file(cmake/SVF.pc.in ${SVF_BINARY_DIR}/SVF.pc @ONLY)
-install(FILES ${SVF_BINARY_DIR}/SVF.pc DESTINATION ${SVF_INSTALL_PKGCONFDIR})
+configure_file(cmake/SVF.pc.in ${SVF_BINARY_DIR}/lib/pkgconfig/SVF.pc @ONLY)
+install(FILES ${SVF_BINARY_DIR}/lib/pkgconfig/SVF.pc DESTINATION ${SVF_INSTALL_PKGCONFDIR})
 
 # =================================================================================
 # SVF CMake package configuration
@@ -351,7 +348,7 @@ install(FILES ${SVF_BINARY_DIR}/SVF.pc DESTINATION ${SVF_INSTALL_PKGCONFDIR})
 export(
   EXPORT SVFTargets
   NAMESPACE SVF::
-  FILE ${SVF_BINARY_DIR}/SVFTargets.cmake
+  FILE ${SVF_BINARY_DIR}/lib/cmake/SVF/SVFTargets.cmake
 )
 
 # Install the SVFTargets.cmake file along with the package
@@ -363,7 +360,7 @@ install(
 
 # Create the CMake configuration file (to find SVF with find_package(SVF))
 configure_package_config_file(
-  cmake/SVFConfig.cmake.in ${SVF_BINARY_DIR}/SVFConfig.cmake
+  cmake/SVFConfig.cmake.in ${SVF_BINARY_DIR}/lib/cmake/SVF/SVFConfig.cmake
   INSTALL_DESTINATION ${SVF_INSTALL_CMAKECONFIGDIR}
   PATH_VARS SVF_INSTALL_BINDIR
             SVF_INSTALL_LIBDIR
@@ -376,16 +373,17 @@ configure_package_config_file(
 
 # Create the CMake version configuration package (to support finding specific SVF versions)
 write_basic_package_version_file(
-  ${SVF_BINARY_DIR}/SVFConfigVersion.cmake
+  ${SVF_BINARY_DIR}/lib/cmake/SVF/SVFConfigVersion.cmake
   VERSION ${SVF_VERSION}
   COMPATIBILITY AnyNewerVersion
 )
 
 # Install the generated configuration files
-install(FILES ${SVF_BINARY_DIR}/SVFConfig.cmake DESTINATION ${SVF_INSTALL_CMAKECONFIGDIR})
-install(FILES ${SVF_BINARY_DIR}/SVFConfigVersion.cmake DESTINATION ${SVF_INSTALL_CMAKECONFIGDIR})
+install(FILES ${SVF_BINARY_DIR}/lib/cmake/SVF/SVFConfig.cmake DESTINATION ${SVF_INSTALL_CMAKECONFIGDIR})
+install(FILES ${SVF_BINARY_DIR}/lib/cmake/SVF/SVFConfigVersion.cmake DESTINATION ${SVF_INSTALL_CMAKECONFIGDIR})
 
 # Also install the extra module finding package definitions (e.g., FindZ3.cmake)
+configure_file(cmake/Modules/FindZ3.cmake ${SVF_BINARY_DIR}/lib/cmake/SVF/FindZ3.cmake @ONLY)
 install(
   DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules"
   DESTINATION "${SVF_INSTALL_CMAKECONFIGDIR}"
