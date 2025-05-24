@@ -10,11 +10,11 @@ list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 include(AddLLVM)
 
 # If exceptions are disabled, verify the LLVM instance could never raise them
-if(LLVM_ENABLE_EH AND NOT SVF_ENABLE_EH)
+if(LLVM_ENABLE_EH AND NOT SVF_ENABLE_EXCEPTIONS)
   message(WARNING "LLVM could throw exceptions but SVF configured to disable exception handling; "
-                  "forcing $SVF_ENABLE_EH to ON!"
+                  "forcing $SVF_ENABLE_EXCEPTIONS to ON!"
   )
-  set(SVF_ENABLE_EH
+  set(SVF_ENABLE_EXCEPTIONS
       ON
       CACHE BOOL "" FORCE
   )

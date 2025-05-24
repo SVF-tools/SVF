@@ -91,12 +91,8 @@ option(SVF_DEBUG_INFO "Enable & explicitly preserve debug info (-g3); also in re
 option(SVF_WARN_AS_ERROR "Treat all compiler warnings as errors when building SVF (default: on)" ON)
 option(SVF_EXPORT_DYNAMIC "Export all (not only the actually used) symbols to dynamic symbol table" OFF)
 option(SVF_ENABLE_ASSERTIONS "Always enable debugging assertions, also if the build type is a release build")
-option(SVF_ENABLE_RTTI "Enable runtime type information (RTTI); if OFF, adds -fno-rtti to disable RTTI" OFF)
-option(SVF_ENABLE_EH "Enable exception handling; if OFF, adds -fno-exceptions to disable exception handling" OFF)
-
-# For convenience, also declare SVF_ENABLE_EXCEPTIONS as a local variable (for config)
-set(SVF_ENABLE_EXCEPTIONS ${SVF_ENABLE_EH})
-set(LLVM_ENABLE_EH ${SVF_ENABLE_EH})
+option(SVF_ENABLE_RTTI Adds -fno-rtti to disable runtime type information (RTTI)" OFF)
+option(SVF_ENABLE_EXCEPTIONS Adds -fno-exceptions to disable exception handling" OFF)
 
 # If building dynamic libraries, always enable PIC
 if(SVF_SHARED_LIBS AND NOT SVF_USE_PIC)
@@ -185,7 +181,7 @@ message(
 
   SVF option - Build type:                          ${SVF_BUILD_TYPE}
   SVF option - Building shared libs:                ${SVF_SHARED_LIBS}
-  SVF option - Enabled exception handling:          ${SVF_ENABLE_EH}
+  SVF option - Enabled exception handling:          ${SVF_ENABLE_EXCEPTIONS}
   SVF option - Enabled runtime type information:    ${SVF_ENABLE_RTTI}
   SVF option - Enabling position-independent code:  ${SVF_USE_PIC}
   SVF option - Enabling link-time optimisations:    ${SVF_USE_LTO}
@@ -305,7 +301,7 @@ target_compile_options(
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Werror>>
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wno-deprecated-declarations>>
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_ENABLE_ASSERTIONS}>:-UNDEBUG>>
-  INTERFACE $<BUILD_INTERFACE:$<$<NOT:$<BOOL:${SVF_ENABLE_EH}>>:-fno-exceptions>>
+  INTERFACE $<BUILD_INTERFACE:$<$<NOT:$<BOOL:${SVF_ENABLE_EXCEPTIONS}>>:-fno-exceptions>>
   INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-fprofile-arcs>>
   INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-ftest-coverage>>
   INTERFACE $<BUILD_INTERFACE:$<$<STREQUAL:${SVF_SANITIZE},thread>:-fsanitize=thread>>
@@ -322,7 +318,7 @@ target_link_options(
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-rdynamic>>
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-Wl,--export-dynamic>>
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_ENABLE_ASSERTIONS}>:-UNDEBUG>>
-  INTERFACE $<BUILD_INTERFACE:$<$<NOT:$<BOOL:${SVF_ENABLE_EH}>>:-fno-exceptions>>
+  INTERFACE $<BUILD_INTERFACE:$<$<NOT:$<BOOL:${SVF_ENABLE_EXCEPTIONS}>>:-fno-exceptions>>
   INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-fprofile-arcs>>
   INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-ftest-coverage>>
   INTERFACE $<BUILD_INTERFACE:$<$<STREQUAL:${SVF_SANITIZE},thread>:-fsanitize=thread>>
