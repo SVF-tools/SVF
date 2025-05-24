@@ -9,10 +9,18 @@ find_package(LLVM CONFIG REQUIRED HINTS ${LLVM_HOME} $ENV{LLVM_HOME} ${LLVM_DIR}
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 include(AddLLVM)
 
-# For exception handler, LLVM should sync with SVF
-set(LLVM_ENABLE_EH ${SVF_ENABLE_EH})
+# If exceptions are disabled, verify the LLVM instance could never raise them
+if(LLVM_ENABLE_EH AND NOT SVF_ENABLE_EH)
+  message(WARNING "LLVM could throw exceptions but SVF configured to disable exception handling; "
+                  "forcing $SVF_ENABLE_EH to ON!"
+  )
+  set(SVF_ENABLE_EH
+      ON
+      CACHE BOOL "" FORCE
+  )
+endif()
 
-# If RTTI is disabled in LLVM, it must be for SVF as well (and vice versa) 
+# If RTTI is disabled in LLVM, it must be for SVF as well (and vice versa)
 if(LLVM_ENABLE_RTTI AND NOT SVF_ENABLE_RTTI)
   message(WARNING "LLVM is built with RTTI support but SVF is configured to disable RTTI support; "
                   "forcing $SVF_ENABLE_RTTI to ON!"
