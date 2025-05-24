@@ -91,8 +91,8 @@ option(SVF_DEBUG_INFO "Enable & explicitly preserve debug info (-g3); also in re
 option(SVF_WARN_AS_ERROR "Treat all compiler warnings as errors when building SVF (default: on)" ON)
 option(SVF_EXPORT_DYNAMIC "Export all (not only the actually used) symbols to dynamic symbol table" OFF)
 option(SVF_ENABLE_ASSERTIONS "Always enable debugging assertions, also if the build type is a release build")
-option(SVF_ENABLE_RTTI "Disables runtime type information generation by adding the -fno-rtti build flag" OFF)
-option(SVF_ENABLE_EH "Disables handling of thrown exceptions by adding the -fno-exceptions build flag" OFF)
+option(SVF_ENABLE_RTTI "Enable runtime type information (RTTI); if OFF, adds -fno-rtti to disable RTTI" OFF)
+option(SVF_ENABLE_EH "Enable exception handling; if OFF, adds -fno-exceptions to disable exception handling" OFF)
 
 # For convenience, also declare SVF_ENABLE_EXCEPTIONS as a local variable (for config)
 set(SVF_ENABLE_EXCEPTIONS ${SVF_ENABLE_EH})
