@@ -110,7 +110,9 @@ static std::string getFilePath(const std::string& path)
     else if (path.compare("npm root") == 0)
     {
         bcFilePath = GetStdoutFromCommand(path);
-        bcFilePath.append("/SVF/lib/extapi.bc");
+        if (!bcFilePath.empty() && bcFilePath.back() != '/')
+            bcFilePath.push_back('/');
+        bcFilePath.append("SVF/lib/extapi.bc");
     }
     return bcFilePath;
 }
