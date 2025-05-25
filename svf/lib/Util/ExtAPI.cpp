@@ -103,16 +103,15 @@ static std::string getFilePath(const std::string& path)
         char const* svfdir = getenv("SVF_DIR");
         if (svfdir)
             bcFilePath = svfdir;
+        if (!bcFilePath.empty() && bcFilePath.back() != '/')
+            bcFilePath.push_back('/');
+        bcFilePath.append(SVF_BUILD_TYPE "-build").append("/lib/extapi.bc");
     }
     else if (path.compare("npm root") == 0)
     {
         bcFilePath = GetStdoutFromCommand(path);
-        bcFilePath.append("/SVF");
+        bcFilePath.append("/SVF/lib/extapi.bc");
     }
-
-    if (!bcFilePath.empty() && bcFilePath.back() != '/')
-        bcFilePath.push_back('/');
-    bcFilePath.append(SVF_BUILD_TYPE "-build").append("/lib/extapi.bc");
     return bcFilePath;
 }
 
