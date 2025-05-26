@@ -34,6 +34,7 @@
 #include <ostream>
 #include <sys/stat.h>
 #include "SVFIR/SVFVariables.h"
+#include <dlfcn.h>
 
 using namespace SVF;
 
@@ -117,43 +118,80 @@ static std::string getFilePath(const std::string& path)
     return bcFilePath;
 }
 
+// This function returns the absolute path of the current module:
+// - If SVF is built and loaded as a dynamic library (e.g., libSVFCore.so or .dylib), it returns the path to that shared object file.
+// - If SVF is linked as a static library, it returns the path to the main executable.
+// This is useful for locating resource files (such as extapi.bc) relative to the module at runtime.
+std::string getCurrentSOPath() {
+    Dl_info info;
+    if (dladdr((void*)&getCurrentSOPath, &info) && info.dli_fname) {
+        return std::string(info.dli_fname);
+    }
+    return "";
+}
+
 // Get extapi.bc path
 std::string ExtAPI::getExtBcPath()
 {
-    // Default ways of retrieving extapi.bc (in order of precedence):
-    //  1.  Set `path/to/extapi.bc` through `setExtBcPath()`
-    //  2.  Set `path/to/extapi.bc` through the command line argument `-extapi=path/to/extapi.bc`
-    //  3.  Get the location of `extapi.bc` from the CMake configuration step; set when linking against SVF
-    //  4.  Get the location directly from `config.h`; note that this is the build-tree file (not installed)
-    //  5.  Get location based on environment variable $ENV{SVF_DIR}
-    //  6.  Search for `extapi.bc` from root directory for npm installation (iff SVF installed through npm)
+    // Try to locate extapi.bc in the following order:
+    // 1. If setExtBcPath() has been called, use that path.
+    // 2. If the command line argument -extapi=path/to/extapi.bc is provided, use that path.
+    // 3. If SVF is being developed and used directly from a build directory, try the build dir (SVF_BUILD_DIR).
+    // 4. If the SVF_DIR environment variable is set, try $SVF_DIR with the standard relative path.
+    // 5. If installed via npm, use `npm root` and append the standard relative path.
+    // 6. As a last resort, use the directory of the loaded libSVFCore.so (or .dylib) and append extapi.bc.
 
-    //  1.  Set `path/to/extapi.bc` through `setExtBcPath()`
+    std::vector<std::string> candidatePaths;
+
+    // 1. Use path set by setExtBcPath()
     if (!extBcPath.empty())
         return extBcPath;
 
-    //  2.  Set `path/to/extapi.bc` through the command line argument `-extapi=path/to/extapi.bc`
-    if (setExtBcPath(Options::ExtAPIPath()))
+    // 2. Use command line argument -extapi=...
+    if (setExtBcPath(Options::ExtAPIPath())) {
         return extBcPath;
+    } else {
+        candidatePaths.push_back(Options::ExtAPIPath());
+    }
 
-    //  3.  Get the location of `extapi.bc` from the CMake configuration step; set when linking against SVF
-    if (setExtBcPath(SVF_INSTALL_EXTAPI_BC))
+    // 3. SVF developer: try build directory (SVF_BUILD_DIR)
+    if (setExtBcPath(SVF_BUILD_DIR "/lib/extapi.bc")) {
         return extBcPath;
+    } else {
+        candidatePaths.push_back(SVF_BUILD_DIR "/lib/extapi.bc");
+    }
 
-    //  4.  Get the location directly from `config.h`; note that this is the build-tree file (not installed)
-    if (setExtBcPath(SVF_BUILD_EXTAPI_BC))
+    // 4. Use $SVF_DIR environment variable + standard relative path
+    if (setExtBcPath(getFilePath("SVF_DIR"))) {
         return extBcPath;
-    if (setExtBcPath(SVF_BUILD_DIR "/lib/extapi.bc"))
-        return extBcPath;
+    } else {
+        candidatePaths.push_back(getFilePath("SVF_DIR"));
+    }
 
-    //  5.  Get location based on environment variable $ENV{SVF_DIR}
-    if (setExtBcPath(getFilePath("SVF_DIR")))
+    // 5. Use npm root + standard relative path (for npm installations)
+    if (setExtBcPath(getFilePath("npm root"))) {
         return extBcPath;
+    } else {
+        candidatePaths.push_back(getFilePath("npm root"));
+    }
 
-    //  6.  Search for `extapi.bc` from root directory for npm installation (iff SVF installed through npm)
-    if (setExtBcPath(getFilePath("npm root")))
-        return extBcPath;
+    // 6. Use the directory of the loaded libSVFCore.so/.dylib + extapi.bc
+    std::string soPath = getCurrentSOPath();
+    if (!soPath.empty()) {
+        std::string dir = soPath.substr(0, soPath.find_last_of('/'));
+        std::string candidate = dir + "/extapi.bc";
+        if (setExtBcPath(candidate)) {
+            return extBcPath;
+        } else {
+            candidatePaths.push_back(candidate);
+        }
+    }
 
+    // If all candidate paths failed, print error and suggestions
+    SVFUtil::errs() << "ERROR: Failed to locate \"extapi.bc\". Tried the following candidate paths:" << std::endl;
+    for (const auto& path : candidatePaths) {
+        SVFUtil::errs() << "    " << path << std::endl;
+    }
     SVFUtil::errs() << "To override the default locations for \"extapi.bc\", you can:" << std::endl
                     << "\t1. Use the command line argument \"-extapi=path/to/extapi.bc\"" << std::endl
                     << "\t2. Use the \"setExtBcPath()\" function *BEFORE* calling \"buildSVFModule()\"" << std::endl
