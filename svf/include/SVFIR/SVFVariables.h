@@ -1172,6 +1172,11 @@ public:
         return  !isNotRet;
     }
 
+    inline bool getIsNotRet() const
+    {
+        return isNotRet;
+    }
+
     /// Returns the FunctionType
     inline const SVFFunctionType* getFunctionType() const
     {

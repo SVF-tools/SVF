@@ -10,6 +10,8 @@ Map<int, CallPE*> id2CallPEMap;
 Map<int, RetPE*> id2RetPEMap;
 Map<CallCFGEdge*, std::string> callCFGEdge2CallPEStrMap;
 Map<RetCFGEdge*, int> retCFGEdge2RetPEStrMap;
+Map<ICFGNode*, std::string> icfgNode2StmtsStrMap;
+Map<int, SVFStmt*> edgeId2SVFStmtMap;
 
 bool GraphDBClient::loadSchema(lgraph::RpcClient* connection,
                                const std::string& filepath,
@@ -1788,6 +1790,7 @@ void GraphDBClient::readPAGEdgesFromDB(lgraph::RpcClient* connection, const std:
                     }
                 }
                 skip += 1;
+                edgeId2SVFStmtMap[stmt->getEdgeID()] = stmt;
             }
             cJSON_Delete(root);
         }
@@ -2740,7 +2743,7 @@ void GraphDBClient::readPAGNodesFromDB(lgraph::RpcClient* connection, const std:
                     bool intrinsic = cJSON_IsTrue(cJSON_GetObjectItem(properties, "intrinsic"));
                     bool is_addr_taken = cJSON_IsTrue(cJSON_GetObjectItem(properties, "is_addr_taken"));
                     bool is_uncalled = cJSON_IsTrue(cJSON_GetObjectItem(properties, "is_uncalled"));
-                    bool is_not_return = cJSON_IsTrue(cJSON_GetObjectItem(properties, "is_not_return"));
+                    bool is_not_return = cJSON_IsTrue(cJSON_GetObjectItem(properties, "is_not_ret"));
                     bool sup_var_arg = cJSON_IsTrue(cJSON_GetObjectItem(properties, "sup_var_arg"));
                     std::string fun_type_name = cJSON_GetObjectItem(properties, "fun_type_name")->valuestring;
                     const SVFFunctionType* funcType = SVFUtil::dyn_cast<SVFFunctionType>(pag->getSVFType(fun_type_name));
@@ -3054,6 +3057,35 @@ void GraphDBClient::readICFGNodesFromDB(lgraph::RpcClient* connection, const std
     }
 }
 
+void GraphDBClient::parseSVFStmtsForICFGNodeFromDBResult(SVFIR* pag)
+{
+    if (!icfgNode2StmtsStrMap.empty())
+    {
+        for (auto& pair : icfgNode2StmtsStrMap)
+        {
+            ICFGNode* icfgNode = pair.first;
+            std::string svfStmtIds = pair.second;
+            if (!svfStmtIds.empty())
+            {
+                std::list<int> svfStmtIdsVec = parseElements2Container<std::list<int>>(svfStmtIds);
+                for (int stmtId : svfStmtIdsVec)
+                {
+                    SVFStmt* stmt = edgeId2SVFStmtMap[stmtId];
+                    if (stmt != nullptr)
+                    {
+                        pag->addToSVFStmtList(icfgNode,stmt);
+                        icfgNode->addSVFStmt(stmt);
+                    }
+                    else
+                    {
+                        SVFUtil::outs() << "Warning: [parseSVFStmtsForICFGNodeFromDBResult] No matching SVFStmt found for id: " << stmtId << "\n";
+                    }
+                }
+            }
+        }
+    }
+}
+
 ICFGNode* GraphDBClient::parseGlobalICFGNodeFromDBResult(const cJSON* node)
 {
     cJSON* data = cJSON_GetObjectItem(node, "node");
@@ -3068,6 +3100,11 @@ ICFGNode* GraphDBClient::parseGlobalICFGNodeFromDBResult(const cJSON* node)
     int id = cJSON_GetObjectItem(properties,"id")->valueint;
 
     icfgNode = new GlobalICFGNode(id);
+    std::string svfStmtIds = cJSON_GetObjectItem(properties, "pag_edge_ids")->valuestring;
+    if (!svfStmtIds.empty())
+    {
+        icfgNode2StmtsStrMap[icfgNode] = svfStmtIds;
+    }
     return icfgNode;
 }
 
@@ -3123,7 +3160,11 @@ ICFGNode* GraphDBClient::parseFunEntryICFGNodeFromDBResult(const cJSON* node, SV
     {
         SVFUtil::outs() << "Warning: [parseFunEntryICFGNodeFromDBResult] No matching BasicBlock found for id: " << bb_id << "\n";
     }
-
+    std::string svfStmtIds = cJSON_GetObjectItem(properties, "pag_edge_ids")->valuestring;
+    if (!svfStmtIds.empty())
+    {
+        icfgNode2StmtsStrMap[icfgNode] = svfStmtIds;
+    }
 
     return icfgNode;
 }
@@ -3181,6 +3222,11 @@ ICFGNode* GraphDBClient::parseFunExitICFGNodeFromDBResult(const cJSON* node, SVF
         SVFUtil::outs() << "Warning: [parseFunExitICFGNodeFromDBResult] No matching BasicBlock found for id: " << bb_id << "\n";
     }
 
+    std::string svfStmtIds = cJSON_GetObjectItem(properties, "pag_edge_ids")->valuestring;
+    if (!svfStmtIds.empty())
+    {
+        icfgNode2StmtsStrMap[icfgNode] = svfStmtIds;
+    }
     return icfgNode;
 }
 
@@ -3227,6 +3273,12 @@ ICFGNode* GraphDBClient::parseIntraICFGNodeFromDBResult(const cJSON* node, SVFIR
     else
     {
         SVFUtil::outs() << "Warning: [parseIntraICFGNodeFromDBResult] No matching BasicBlock found for id: " << bb_id << "\n";
+    }
+    
+    std::string svfStmtIds = cJSON_GetObjectItem(properties, "pag_edge_ids")->valuestring;
+    if (!svfStmtIds.empty())
+    {
+        icfgNode2StmtsStrMap[icfgNode] = svfStmtIds;
     }
     return icfgNode;
 }
@@ -3296,6 +3348,12 @@ ICFGNode* GraphDBClient::parseRetICFGNodeFromDBResult(const cJSON* node, SVFIR* 
     else
     {
         SVFUtil::outs() << "Warning: [parseRetICFGNodeFromDBResult] No matching BasicBlock found for id: " << bb_id << "\n";
+    }
+
+    std::string svfStmtIds = cJSON_GetObjectItem(properties, "pag_edge_ids")->valuestring;
+    if (!svfStmtIds.empty())
+    {
+        icfgNode2StmtsStrMap[icfgNode] = svfStmtIds;
     }
     return icfgNode;
 }
@@ -3428,6 +3486,11 @@ ICFGNode* GraphDBClient::parseCallICFGNodeFromDBResult(const cJSON* node, SVFIR*
         SVFUtil::outs() << "Warning: [parseCallICFGNodeFromDBResult] No matching BasicBlock found for id: " << bb_id << "\n";
     }
     
+    std::string svfStmtIds = cJSON_GetObjectItem(properties, "pag_edge_ids")->valuestring;
+    if (!svfStmtIds.empty())
+    {
+        icfgNode2StmtsStrMap[icfgNode] = svfStmtIds;
+    }
     return icfgNode;
 }
 

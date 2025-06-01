@@ -136,6 +136,7 @@ public:
     ICFGNode* parseRetICFGNodeFromDBResult(const cJSON* node, SVFIR* pag);
     ICFGNode* parseIntraICFGNodeFromDBResult(const cJSON* node, SVFIR* pag);
     ICFGNode* parseCallICFGNodeFromDBResult(const cJSON* node, SVFIR* pag);
+    void parseSVFStmtsForICFGNodeFromDBResult(SVFIR* pag);
     void updateRetPE4RetCFGEdge();
     void updateCallPEs4CallCFGEdge();
     
@@ -256,7 +257,8 @@ public:
             if constexpr (std::is_same<typename Container::value_type,
                                        int>::value)
             {
-                if constexpr (std::is_same<Container, std::vector<int>>::value)
+                if constexpr (std::is_same<Container, std::vector<int>>::value ||
+                          std::is_same<Container, std::list<int>>::value)
                     idxVec.push_back(std::stoi(token));
                 else
                     idxVec.insert(std::stoi(token));
@@ -264,14 +266,16 @@ public:
             else if constexpr (std::is_same<typename Container::value_type,
                                             uint32_t>::value)
             {
-                if constexpr (std::is_same<Container, std::vector<uint32_t>>::value)
+                if constexpr (std::is_same<Container, std::vector<uint32_t>>::value || 
+                    std::is_same<Container, std::list<uint32_t>>::value)
                     idxVec.push_back(static_cast<uint32_t>(std::stoul(token)));
                 else
                     idxVec.insert(static_cast<uint32_t>(std::stoul(token)));
             }
             else
             {
-                if constexpr (std::is_same<Container, std::vector<float>>::value)
+                if constexpr (std::is_same<Container, std::vector<float>>::value ||
+                          std::is_same<Container, std::list<float>>::value)
                     idxVec.push_back(std::stof(token));
                  else
                     idxVec.insert(std::stof(token));
