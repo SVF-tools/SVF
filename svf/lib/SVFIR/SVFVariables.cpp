@@ -877,7 +877,7 @@ std::string FunObjVar::toDBString() const
     + ", intrinsic:" + (isIntrinsic()? "true" : "false")
     + ", is_addr_taken:" + (hasAddressTaken()? "true" : "false")
     + ", is_uncalled:" + (isUncalledFunction()? "true" : "false")
-    + ", is_not_ret:" + (hasReturn()? "true" : "false")
+    + ", is_not_ret:" + (getIsNotRet()? "true" : "false")
     + ", sup_var_arg:" + (isVarArg()? "true" : "false")
     + ", fun_type_name:'" + getFunctionType()->toString() + "'"
     + ", real_def_fun_node_id:" + std::to_string(getDefFunForMultipleModule()->getId())
