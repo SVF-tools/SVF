@@ -215,7 +215,10 @@ public:
         if (hasGepObjOffsetFromBase(obj))
             return gepObjOffsetFromBase.at(obj);
         else
+        {
             assert(false && "GepObjVar not found in gepObjOffsetFromBase");
+            abort();
+        }
     }
 
     /**

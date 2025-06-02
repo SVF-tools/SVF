@@ -49,7 +49,7 @@ void FlowSensitiveStat::clearStat()
     _MaxAddrTakenVarPts = 0;
     _TotalPtsSize = 0;
 
-    for (int i=IN; i<=OUT; i++)
+    for (int i= IN_SET; i<= OUT_SET; i++)
     {
         /// SVFG nodes
         _NumOfSVFGNodesHaveInOut[i] = 0;
@@ -176,66 +176,66 @@ void FlowSensitiveStat::performStat()
     PTNumStatMap["StrongUpdates"] = fspta->svfgHasSU.count();
 
     /// SVFG nodes.
-    PTNumStatMap["SNodesHaveIN"] = _NumOfSVFGNodesHaveInOut[IN];
-    PTNumStatMap["SNodesHaveOUT"] = _NumOfSVFGNodesHaveInOut[OUT];
+    PTNumStatMap["SNodesHaveIN"] = _NumOfSVFGNodesHaveInOut[IN_SET];
+    PTNumStatMap["SNodesHaveOUT"] = _NumOfSVFGNodesHaveInOut[OUT_SET];
 
-    PTNumStatMap["FI_SNodesHaveIN"] = _NumOfFormalInSVFGNodesHaveInOut[IN];
-    PTNumStatMap["FI_SNodesHaveOUT"] = _NumOfFormalInSVFGNodesHaveInOut[OUT];
+    PTNumStatMap["FI_SNodesHaveIN"] = _NumOfFormalInSVFGNodesHaveInOut[IN_SET];
+    PTNumStatMap["FI_SNodesHaveOUT"] = _NumOfFormalInSVFGNodesHaveInOut[OUT_SET];
 
-    PTNumStatMap["FO_SNodesHaveIN"] = _NumOfFormalOutSVFGNodesHaveInOut[IN];
-    PTNumStatMap["FO_SNodesHaveOUT"] = _NumOfFormalOutSVFGNodesHaveInOut[OUT];
+    PTNumStatMap["FO_SNodesHaveIN"] = _NumOfFormalOutSVFGNodesHaveInOut[IN_SET];
+    PTNumStatMap["FO_SNodesHaveOUT"] = _NumOfFormalOutSVFGNodesHaveInOut[OUT_SET];
 
-    PTNumStatMap["AI_SNodesHaveIN"] = _NumOfActualInSVFGNodesHaveInOut[IN];
-    PTNumStatMap["AI_SNodesHaveOUT"] = _NumOfActualInSVFGNodesHaveInOut[OUT];
+    PTNumStatMap["AI_SNodesHaveIN"] = _NumOfActualInSVFGNodesHaveInOut[IN_SET];
+    PTNumStatMap["AI_SNodesHaveOUT"] = _NumOfActualInSVFGNodesHaveInOut[OUT_SET];
 
-    PTNumStatMap["AO_SNodesHaveIN"] = _NumOfActualOutSVFGNodesHaveInOut[IN];
-    PTNumStatMap["AO_SNodesHaveOUT"] = _NumOfActualOutSVFGNodesHaveInOut[OUT];
+    PTNumStatMap["AO_SNodesHaveIN"] = _NumOfActualOutSVFGNodesHaveInOut[IN_SET];
+    PTNumStatMap["AO_SNodesHaveOUT"] = _NumOfActualOutSVFGNodesHaveInOut[OUT_SET];
 
-    PTNumStatMap["LD_SNodesHaveIN"] = _NumOfLoadSVFGNodesHaveInOut[IN];
-    PTNumStatMap["LD_SNodesHaveOUT"] = _NumOfLoadSVFGNodesHaveInOut[OUT];
+    PTNumStatMap["LD_SNodesHaveIN"] = _NumOfLoadSVFGNodesHaveInOut[IN_SET];
+    PTNumStatMap["LD_SNodesHaveOUT"] = _NumOfLoadSVFGNodesHaveInOut[OUT_SET];
 
-    PTNumStatMap["ST_SNodesHaveIN"] = _NumOfStoreSVFGNodesHaveInOut[IN];
-    PTNumStatMap["ST_SNodesHaveOUT"] = _NumOfStoreSVFGNodesHaveInOut[OUT];
+    PTNumStatMap["ST_SNodesHaveIN"] = _NumOfStoreSVFGNodesHaveInOut[IN_SET];
+    PTNumStatMap["ST_SNodesHaveOUT"] = _NumOfStoreSVFGNodesHaveInOut[OUT_SET];
 
-    PTNumStatMap["PHI_SNodesHaveIN"] = _NumOfMSSAPhiSVFGNodesHaveInOut[IN];
-    PTNumStatMap["PHI_SNodesHaveOUT"] = _NumOfMSSAPhiSVFGNodesHaveInOut[OUT];
+    PTNumStatMap["PHI_SNodesHaveIN"] = _NumOfMSSAPhiSVFGNodesHaveInOut[IN_SET];
+    PTNumStatMap["PHI_SNodesHaveOUT"] = _NumOfMSSAPhiSVFGNodesHaveInOut[OUT_SET];
 
     /*-----------------------------------------------------*/
     // SVFIR nodes.
-    PTNumStatMap["VarHaveIN"] = _NumOfVarHaveINOUTPts[IN];
-    PTNumStatMap["VarHaveOUT"] = _NumOfVarHaveINOUTPts[OUT];
+    PTNumStatMap["VarHaveIN"] = _NumOfVarHaveINOUTPts[IN_SET];
+    PTNumStatMap["VarHaveOUT"] = _NumOfVarHaveINOUTPts[OUT_SET];
 
-    PTNumStatMap["PotentialVarHaveIN"] = _PotentialNumOfVarHaveINOUTPts[IN];
-    PTNumStatMap["PotentialVarHaveOUT"] = _PotentialNumOfVarHaveINOUTPts[OUT];
+    PTNumStatMap["PotentialVarHaveIN"] = _PotentialNumOfVarHaveINOUTPts[IN_SET];
+    PTNumStatMap["PotentialVarHaveOUT"] = _PotentialNumOfVarHaveINOUTPts[OUT_SET];
 
-    PTNumStatMap["VarHaveEmptyIN"] = _NumOfVarHaveEmptyINOUTPts[IN];
-    PTNumStatMap["VarHaveEmptyOUT"] = _NumOfVarHaveEmptyINOUTPts[OUT];
+    PTNumStatMap["VarHaveEmptyIN"] = _NumOfVarHaveEmptyINOUTPts[IN_SET];
+    PTNumStatMap["VarHaveEmptyOUT"] = _NumOfVarHaveEmptyINOUTPts[OUT_SET];
 
-    PTNumStatMap["VarHaveIN_FI"] = _NumOfVarHaveINOUTPtsInFormalIn[IN];
-    PTNumStatMap["VarHaveOUT_FI"] = _NumOfVarHaveINOUTPtsInFormalIn[OUT];
+    PTNumStatMap["VarHaveIN_FI"] = _NumOfVarHaveINOUTPtsInFormalIn[IN_SET];
+    PTNumStatMap["VarHaveOUT_FI"] = _NumOfVarHaveINOUTPtsInFormalIn[OUT_SET];
 
-    PTNumStatMap["VarHaveIN_FO"] = _NumOfVarHaveINOUTPtsInFormalOut[IN];
-    PTNumStatMap["VarHaveOUT_FO"] = _NumOfVarHaveINOUTPtsInFormalOut[OUT];
+    PTNumStatMap["VarHaveIN_FO"] = _NumOfVarHaveINOUTPtsInFormalOut[IN_SET];
+    PTNumStatMap["VarHaveOUT_FO"] = _NumOfVarHaveINOUTPtsInFormalOut[OUT_SET];
 
-    PTNumStatMap["VarHaveIN_AI"] = _NumOfVarHaveINOUTPtsInActualIn[IN];
-    PTNumStatMap["VarHaveOUT_AI"] = _NumOfVarHaveINOUTPtsInActualIn[OUT];
+    PTNumStatMap["VarHaveIN_AI"] = _NumOfVarHaveINOUTPtsInActualIn[IN_SET];
+    PTNumStatMap["VarHaveOUT_AI"] = _NumOfVarHaveINOUTPtsInActualIn[OUT_SET];
 
-    PTNumStatMap["VarHaveIN_AO"] = _NumOfVarHaveINOUTPtsInActualOut[IN];
-    PTNumStatMap["VarHaveOUT_AO"] = _NumOfVarHaveINOUTPtsInActualOut[OUT];
+    PTNumStatMap["VarHaveIN_AO"] = _NumOfVarHaveINOUTPtsInActualOut[IN_SET];
+    PTNumStatMap["VarHaveOUT_AO"] = _NumOfVarHaveINOUTPtsInActualOut[OUT_SET];
 
-    PTNumStatMap["VarHaveIN_LD"] = _NumOfVarHaveINOUTPtsInLoad[IN];
-    PTNumStatMap["VarHaveOUT_LD"] = _NumOfVarHaveINOUTPtsInLoad[OUT];
+    PTNumStatMap["VarHaveIN_LD"] = _NumOfVarHaveINOUTPtsInLoad[IN_SET];
+    PTNumStatMap["VarHaveOUT_LD"] = _NumOfVarHaveINOUTPtsInLoad[OUT_SET];
 
-    PTNumStatMap["VarHaveIN_ST"] = _NumOfVarHaveINOUTPtsInStore[IN];
-    PTNumStatMap["VarHaveOUT_ST"] = _NumOfVarHaveINOUTPtsInStore[OUT];
+    PTNumStatMap["VarHaveIN_ST"] = _NumOfVarHaveINOUTPtsInStore[IN_SET];
+    PTNumStatMap["VarHaveOUT_ST"] = _NumOfVarHaveINOUTPtsInStore[OUT_SET];
 
-    PTNumStatMap["VarHaveIN_PHI"] = _NumOfVarHaveINOUTPtsInMSSAPhi[IN];
-    PTNumStatMap["VarHaveOUT_PHI"] = _NumOfVarHaveINOUTPtsInMSSAPhi[OUT];
+    PTNumStatMap["VarHaveIN_PHI"] = _NumOfVarHaveINOUTPtsInMSSAPhi[IN_SET];
+    PTNumStatMap["VarHaveOUT_PHI"] = _NumOfVarHaveINOUTPtsInMSSAPhi[OUT_SET];
 
     PTNumStatMap["MaxPtsSize"] = _MaxPtsSize;
     PTNumStatMap["MaxTopLvlPtsSize"] = _MaxTopLvlPtsSize;
-    PTNumStatMap["MaxINPtsSize"] = _MaxInOutPtsSize[IN];
-    PTNumStatMap["MaxOUTPtsSize"] = _MaxInOutPtsSize[OUT];
+    PTNumStatMap["MaxINPtsSize"] = _MaxInOutPtsSize[IN_SET];
+    PTNumStatMap["MaxOUTPtsSize"] = _MaxInOutPtsSize[OUT_SET];
 
     timeStatMap["AvgPtsSize"] = _AvgPtsSize;
     timeStatMap["AvgTopLvlPtsSize"] = _AvgTopLvlPtsSize;
@@ -245,8 +245,8 @@ void FlowSensitiveStat::performStat()
                                         0 : ((double)_AvgAddrTakenVarPtsSize / _NumOfAddrTakeVar);
     PTNumStatMap["MaxAddrTakenVarPts"] = _MaxAddrTakenVarPts;
 
-    timeStatMap["AvgINPtsSize"] = _AvgInOutPtsSize[IN];
-    timeStatMap["AvgOUTPtsSize"] = _AvgInOutPtsSize[OUT];
+    timeStatMap["AvgINPtsSize"] = _AvgInOutPtsSize[IN_SET];
+    timeStatMap["AvgOUTPtsSize"] = _AvgInOutPtsSize[OUT_SET];
 
     PTNumStatMap["ProcessedAddr"] = fspta->numOfProcessedAddr;
     PTNumStatMap["ProcessedCopy"] = fspta->numOfProcessedCopy;
@@ -324,9 +324,9 @@ void FlowSensitiveStat::statPtsSize()
     if (SVFUtil::isa<FlowSensitive::MutDFPTDataTy>(fspta->getPTDataTy()))
     {
         // stat of IN set
-        statInOutPtsSize(fspta->getDFInputMap(), IN);
+        statInOutPtsSize(fspta->getDFInputMap(), IN_SET);
         // stat of OUT set
-        statInOutPtsSize(fspta->getDFOutputMap(), OUT);
+        statInOutPtsSize(fspta->getDFOutputMap(), OUT_SET);
     }
 
     /// get points-to set size information for top-level pointers.
@@ -352,7 +352,7 @@ void FlowSensitiveStat::statPtsSize()
         _AvgTopLvlPtsSize = (double)topTopLvlPtsSize/totalValidTopLvlPointers;
 
     _TotalPtsSize += topTopLvlPtsSize;
-    u32_t totalPointer = totalValidTopLvlPointers + _NumOfVarHaveINOUTPts[IN] + _NumOfVarHaveINOUTPts[OUT];
+    u32_t totalPointer = totalValidTopLvlPointers + _NumOfVarHaveINOUTPts[IN_SET] + _NumOfVarHaveINOUTPts[OUT_SET];
     if (totalPointer != 0)
         _AvgPtsSize = (double) _TotalPtsSize / totalPointer;
 }
@@ -437,9 +437,9 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
 
     _TotalPtsSize += inOutPtsSize;
 
-    // How many IN/OUT PTSs could we have *potentially* had?
-    // l'-o->l, l''-o->l, ..., means there is a possibility of 1 IN PTS.
-    // *p = q && { o } in pts_ander(p) means there is a possibility of 1 OUT PTS.
+    // How many IN_SET/OUT_SET PTSs could we have *potentially* had?
+    // l'-o->l, l''-o->l, ..., means there is a possibility of 1 IN_SET PTS.
+    // *p = q && { o } in pts_ander(p) means there is a possibility of 1 OUT_SET PTS.
     // For OUTs at stores, we must also account for WU/SUs.
     const SVFG *svfg = fspta->svfg;
     for (SVFG::const_iterator it = svfg->begin(); it != svfg->end(); ++it)
@@ -455,7 +455,7 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
             for (NodeID o : ie->getPointsTo()) incomingObjects.set(o);
         }
 
-        _PotentialNumOfVarHaveINOUTPts[IN] += incomingObjects.count();
+        _PotentialNumOfVarHaveINOUTPts[IN_SET] += incomingObjects.count();
 
         if (const StoreSVFGNode *store = SVFUtil::dyn_cast<StoreSVFGNode>(sn))
         {
@@ -464,7 +464,7 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
             // as a WU/SU, and what's not (first defined at the store), will be added.
             for (NodeID o : fspta->ander->getPts(p)) incomingObjects.set(o);
 
-            _PotentialNumOfVarHaveINOUTPts[OUT] += incomingObjects.count();
+            _PotentialNumOfVarHaveINOUTPts[OUT_SET] += incomingObjects.count();
         }
     }
 }
