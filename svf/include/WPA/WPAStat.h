@@ -104,8 +104,8 @@ public:
 private:
     enum ENUM_INOUT
     {
-        IN,
-        OUT
+        IN_SET,
+        OUT_SET
     };
 
     void clearStat();

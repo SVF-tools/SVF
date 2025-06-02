@@ -1622,7 +1622,10 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
             return IntervalValue(s32_lb, s32_ub);
         }
         else
+        {
             assert(false && "cannot support dst int type other than u8/16/32");
+            abort();
+        }
     };
 
     AbstractState& as = getAbsStateFromTrace(copy->getICFGNode());

@@ -168,6 +168,7 @@ public:
         if (abstractTrace.count(repNode) == 0)
         {
             assert(false && "No preAbsTrace for this node");
+            abort();
         }
         else
         {

@@ -380,6 +380,7 @@ AbstractState& AbsExtAPI::getAbsStateFromTrace(const SVF::ICFGNode* node)
     if (abstractTrace.count(repNode) == 0)
     {
         assert(0 && "No preAbsTrace for this node");
+        abort();
     }
     else
     {
@@ -773,8 +774,8 @@ IntervalValue AbsExtAPI::getRangeLimitFromType(const SVFType* type)
             }
             else
             {
-                ub = static_cast<s64_t>(std::numeric_limits<u_int8_t>::max());
-                lb = static_cast<s64_t>(std::numeric_limits<u_int8_t>::min());
+                ub = static_cast<s64_t>(std::numeric_limits<uint8_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<uint8_t>::min());
             }
         }
         return IntervalValue(lb, ub);
