@@ -45,53 +45,19 @@ typedef WTOComponent<ICFG> ICFGWTOComp;
 typedef WTONode<ICFG> ICFGSingletonWTO;
 typedef WTOCycle<ICFG> ICFGCycleWTO;
 
-class ICFGWTO : public WTO<ICFG>
+// Added for IWTO
+class WTORegion : public WTO<ICFG>
 {
 public:
     typedef WTO<ICFG> Base;
     typedef WTOComponentVisitor<ICFG>::WTONodeT ICFGWTONode;
-
-    explicit ICFGWTO(ICFG* graph, const ICFGNode* node) : Base(graph, node) {}
-
-    virtual ~ICFGWTO()
-    {
-    }
-
-    inline void forEachSuccessor(
-        const ICFGNode* node,
-        std::function<void(const ICFGNode*)> func) const override
-    {
-        if (const auto* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
-        {
-            const ICFGNode* succ = callNode->getRetICFGNode();
-            func(succ);
-        }
-        else
-        {
-            for (const auto& e : node->getOutEdges())
-            {
-                if (!e->isIntraCFGEdge() ||
-                        node->getFun() != e->getDstNode()->getFun())
-                    continue;
-                func(e->getDstNode());
-            }
-        }
-    }
-};
-
-// Added for IWTO
-class ICFGIWTO : public ICFGWTO
-{
-public:
-    typedef ICFGWTO Base;
-    typedef WTOComponentVisitor<ICFG>::WTONodeT ICFGWTONode;
     NodeBS &funcPar;
     CallGraph *cg;
 
-    explicit ICFGIWTO(ICFG* graph, const ICFGNode* node, NodeBS & funcPar, CallGraph* cg) :
+    explicit WTORegion(ICFG* graph, const ICFGNode* node, NodeBS & funcPar, CallGraph* cg) :
         Base(graph, node), funcPar(funcPar), cg(cg) {}
 
-    virtual ~ICFGIWTO()
+    virtual ~WTORegion()
     {
     }
 

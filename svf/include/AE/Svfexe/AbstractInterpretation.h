@@ -296,7 +296,7 @@ private:
     AEStat* stat;
 
     std::vector<const CallICFGNode*> callSiteStack;
-    Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
+    Map<const FunObjVar*, const WTORegion*> funcToWTO;
     Set<std::pair<const CallICFGNode*, NodeID>> nonRecursiveCallSites;
     Set<const FunObjVar*> recursiveFuns;
 

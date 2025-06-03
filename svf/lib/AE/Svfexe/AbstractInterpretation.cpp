@@ -95,62 +95,47 @@ void AbstractInterpretation::initWTO()
         if (callGraphScc->isInCycle(it->second->getId()))
             recursiveFuns.insert(it->second->getFunction()); // Mark the function as recursive
 
-        // In TOP mode, calculate the WTO
-        if (Options::HandleRecur() == TOP)
-        {
-            if (it->second->getFunction()->isDeclaration())
-                continue;
-            auto* wto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(it->second->getFunction()));
-            wto->init();
-            funcToWTO[it->second->getFunction()] = wto;
-        }
-        // In WIDEN_TOP or WIDEN_NARROW mode, calculate the IWTO
-        else if (Options::HandleRecur() == WIDEN_ONLY ||
-                 Options::HandleRecur() == WIDEN_NARROW)
-        {
-            const FunObjVar *fun = it->second->getFunction();
-            if (fun->isDeclaration())
-                continue;
+        // Calculate WTORegion for each function/recursion
+        const FunObjVar *fun = it->second->getFunction();
+        if (fun->isDeclaration())
+            continue;
 
-            NodeID repNodeId = callGraphScc->repNode(it->second->getId());
-            auto cgSCCNodes = callGraphScc->subNodes(repNodeId);
+        NodeID repNodeId = callGraphScc->repNode(it->second->getId());
+        auto cgSCCNodes = callGraphScc->subNodes(repNodeId);
 
-            // Identify if this node is an SCC entry (nodes who have incoming edges
-            // from nodes outside the SCC). Also identify non-recursive callsites.
-            bool isEntry = false;
-            if (it->second->getInEdges().empty())
+        // Identify if this node is an SCC entry (nodes who have incoming edges
+        // from nodes outside the SCC). Also identify non-recursive callsites.
+        bool isEntry = false;
+        if (it->second->getInEdges().empty())
+            isEntry = true;
+        for (auto inEdge: it->second->getInEdges())
+        {
+            NodeID srcNodeId = inEdge->getSrcID();
+            if (!cgSCCNodes.test(srcNodeId))
+            {
                 isEntry = true;
-            for (auto inEdge: it->second->getInEdges())
-            {
-                NodeID srcNodeId = inEdge->getSrcID();
-                if (!cgSCCNodes.test(srcNodeId))
-                {
-                    isEntry = true;
-                    const CallICFGNode *callSite = nullptr;
-                    if (inEdge->isDirectCallEdge())
-                        callSite = *(inEdge->getDirectCalls().begin());
-                    else if (inEdge->isIndirectCallEdge())
-                        callSite = *(inEdge->getIndirectCalls().begin());
-                    else
-                        assert(false && "CallGraphEdge must "
-                               "be either direct or indirect!");
+                const CallICFGNode *callSite = nullptr;
+                if (inEdge->isDirectCallEdge())
+                    callSite = *(inEdge->getDirectCalls().begin());
+                else if (inEdge->isIndirectCallEdge())
+                    callSite = *(inEdge->getIndirectCalls().begin());
+                else
+                    assert(false && "CallGraphEdge must "
+                           "be either direct or indirect!");
 
-                    nonRecursiveCallSites.insert(
-                    {callSite, inEdge->getDstNode()->getFunction()->getId()});
-                }
-            }
-
-            // Compute IWTO for the function partition entered from each partition entry
-            if (isEntry)
-            {
-                ICFGIWTO* iwto = new ICFGIWTO(icfg, icfg->getFunEntryICFGNode(fun),
-                                              cgSCCNodes, callGraph);
-                iwto->init();
-                funcToWTO[it->second->getFunction()] = iwto;
+                nonRecursiveCallSites.insert(
+                {callSite, inEdge->getDstNode()->getFunction()->getId()});
             }
         }
-        else
-            assert(false && "Invalid recursion mode specified!");
+
+        // Compute IWTO for the function partition entered from each partition entry
+        if (isEntry)
+        {
+            WTORegion* iwto = new WTORegion(icfg, icfg->getFunEntryICFGNode(fun),
+                                          cgSCCNodes, callGraph);
+            iwto->init();
+            funcToWTO[it->second->getFunction()] = iwto;
+        }
     }
 }
 
@@ -164,7 +149,7 @@ void AbstractInterpretation::analyse()
         icfg->getGlobalICFGNode())[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
     if (const CallGraphNode* cgn = svfir->getCallGraph()->getCallGraphNode("main"))
     {
-        const ICFGWTO* wto = funcToWTO[cgn->getFunction()];
+        const WTORegion* wto = funcToWTO[cgn->getFunction()];
         handleWTOComponents(wto->getWTOComponents());
     }
 }
@@ -736,7 +721,7 @@ void AbstractInterpretation::directCallFunPass(const CallICFGNode *callNode)
 
     callSiteStack.push_back(callNode);
 
-    const ICFGWTO* wto = funcToWTO[calleeFun];
+    const WTORegion* wto = funcToWTO[calleeFun];
     handleWTOComponents(wto->getWTOComponents());
 
     callSiteStack.pop_back();
@@ -777,7 +762,7 @@ void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
         callSiteStack.push_back(callNode);
         abstractTrace[callNode] = as;
 
-        const ICFGWTO* wto = funcToWTO[callfun];
+        const WTORegion* wto = funcToWTO[callfun];
         handleWTOComponents(wto->getWTOComponents());
         callSiteStack.pop_back();
         // handle Ret node
