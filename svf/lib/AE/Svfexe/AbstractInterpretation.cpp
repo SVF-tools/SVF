@@ -720,8 +720,18 @@ void AbstractInterpretation::directCallFunPass(const CallICFGNode *callNode)
     const FunObjVar *calleeFun =callNode->getCalledFunction();
     if (Options::HandleRecur() == WIDEN_ONLY || Options::HandleRecur() == WIDEN_NARROW)
     {
+        // If this CallICFGNode is a recursive callsite (i.e. this Node
+        // resides in a recursive function 'fun' and its callee function is
+        // in the same SCC with the fun), then skip it. Since the callee
+        // function is handled during the handling of WTO of the whole recursion.
         if (isRecursiveCallSite(callNode, calleeFun))
             return;
+    }
+    else
+    {
+        // When Options::HandleRecur() == TOP, skipRecursiveCall will handle recursions,
+        // thus should not reach this branch
+        assert(false && "Recursion mode TOP should not reach here!");
     }
 
     callSiteStack.push_back(callNode);
@@ -794,31 +804,18 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
             AbstractState cur_head_state = abstractTrace[cycle_head];
             if (increasing)
             {
-                // Widening, use different modes for nodes within recursions
-                if (isRecursiveFun(cycle->head()->getICFGNode()->getFun()))
+
+                if (isRecursiveFun(cycle->head()->getICFGNode()->getFun()) &&
+                    !(Options::HandleRecur() == WIDEN_ONLY ||
+                        Options::HandleRecur() == WIDEN_NARROW))
                 {
-                    // For nodes in recursions, widen to top in WIDEN_TOP mode
-                    if (Options::HandleRecur() == WIDEN_ONLY)
-                    {
-                        abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
-                    }
-                    // Perform normal widening in WIDEN_NARROW mode
-                    else if (Options::HandleRecur() == WIDEN_NARROW)
-                    {
-                        abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
-                    }
-                    // In TOP mode, skipRecursiveCall will handle recursions,
+                    // When Options::HandleRecur() == TOP, skipRecursiveCall will handle recursions,
                     // thus should not reach this branch
-                    else
-                    {
-                        assert(false && "Recursion mode TOP should not reach here!");
-                    }
+                    assert(false && "Recursion mode TOP should not reach here!");
                 }
-                // For nodes outside recursions, perform normal widening
-                else
-                {
-                    abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
-                }
+
+                // Widening
+                abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
 
                 if (abstractTrace[cycle_head] == prev_head_state)
                 {
@@ -847,7 +844,7 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
                             break;
                         }
                     }
-                    // In TOP mode, skipRecursiveCall will handle recursions,
+                    // When Options::HandleRecur() == TOP, skipRecursiveCall will handle recursions,
                     // thus should not reach this branch
                     else
                     {
