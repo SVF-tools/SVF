@@ -9,7 +9,7 @@ project(
   VERSION 3.2
   DESCRIPTION "SVF is a static value-flow analysis framework for source code"
   HOMEPAGE_URL "https://github.com/SVF-tools/SVF"
-  LANGUAGES C CXX Python LLVM
+  LANGUAGES C CXX
 )
 
 # Export compile commands for clangd & IDE support
