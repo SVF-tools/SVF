@@ -376,15 +376,14 @@ void AbsExtAPI::initExtFunMap()
 
 AbstractState& AbsExtAPI::getAbsStateFromTrace(const SVF::ICFGNode* node)
 {
-    const ICFGNode* repNode = icfg->getRepNode(node);
-    if (abstractTrace.count(repNode) == 0)
+    if (abstractTrace.count(node) == 0)
     {
         assert(0 && "No preAbsTrace for this node");
         abort();
     }
     else
     {
-        return abstractTrace[repNode];
+        return abstractTrace[node];
     }
 }
 
