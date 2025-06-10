@@ -164,15 +164,14 @@ public:
      */
     AbstractState& getAbsStateFromTrace(const ICFGNode* node)
     {
-        const ICFGNode* repNode = icfg->getRepNode(node);
-        if (abstractTrace.count(repNode) == 0)
+        if (abstractTrace.count(node) == 0)
         {
             assert(false && "No preAbsTrace for this node");
             abort();
         }
         else
         {
-            return abstractTrace[repNode];
+            return abstractTrace[node];
         }
     }
 
@@ -303,8 +302,7 @@ private:
 
     bool hasAbsStateFromTrace(const ICFGNode* node)
     {
-        const ICFGNode* repNode = icfg->getRepNode(node);
-        return abstractTrace.count(repNode) != 0;
+        return abstractTrace.count(node) != 0;
     }
 
     AbsExtAPI* getUtils()
