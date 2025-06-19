@@ -870,6 +870,13 @@ std::string FunObjVar::toDBString() const
     {
         exitBBStr << ", exit_bb_id:-1";
     }
+    std::string annotationsStr = "";
+    std::vector<std::string> annotationsVector;
+    annotationsVector = ExtAPI::getExtAPI()->getExtFuncAnnotations(this);
+    if (annotationsVector.size() > 0)
+    {
+        annotationsStr = GraphDBClient::getInstance().serializeAnnotations(annotationsVector);
+    }
     const std::string queryStatement ="CREATE (n:FunObjVar {"+
     getBaseObjVarNodeFieldsStmt() 
     + ", kind:" + std::to_string(getNodeKind())
@@ -891,6 +898,7 @@ std::string FunObjVar::toDBString() const
     + ", bb2_loop_map:'" + GraphDBClient::getInstance().extractBBsMapWithSet2String(&(getLoopAndDomInfo()->getBB2LoopMap())) + "'"
     + ", bb2_p_dom_level:'" + GraphDBClient::getInstance().extractLabelMap2String(&(getLoopAndDomInfo()->getBBPDomLevel())) + "'"
     + ", bb2_pi_dom:'" + GraphDBClient::getInstance().extractBBsMap2String(&(getLoopAndDomInfo()->getBB2PIdom())) + "'"
+    + ", func_annotation:'" + annotationsStr + "'"
     + "})";
     return queryStatement;
 }

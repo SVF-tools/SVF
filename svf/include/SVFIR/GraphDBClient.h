@@ -779,6 +779,33 @@ public:
         int bbId = std::stoi(idStr.substr(colonPos + 1));
         return std::make_pair(functionId, bbId);
     }
+
+    std::string serializeAnnotations(const std::vector<std::string>& annotations)
+    {
+        std::string result;
+        for (size_t i = 0; i < annotations.size(); ++i)
+        {
+            result += annotations[i].c_str();
+            if (i < annotations.size() - 1)
+                result += ", ";
+        }
+        return result;
+    }
+
+    std::vector<std::string> deserializeAnnotations(const std::string& annotationsStr)
+    {
+        std::vector<std::string> result;
+        std::istringstream iss(annotationsStr);
+        std::string token;
+        while (std::getline(iss, token, ','))
+        {
+            token.erase(0, token.find_first_not_of(" \t"));
+            token.erase(token.find_last_not_of(" \t") + 1);
+            if (!token.empty())
+                result.push_back(token);
+        }
+        return result;
+    }
 };
 
 } // namespace SVF
