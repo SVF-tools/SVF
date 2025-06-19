@@ -685,6 +685,12 @@
                     "type":"STRING",
                     "optional":false,
                     "index":false
+                },
+                {
+                    "name":"func_annotation",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
                 }
             ]
         },        
