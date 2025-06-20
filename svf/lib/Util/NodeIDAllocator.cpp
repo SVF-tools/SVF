@@ -84,7 +84,8 @@ NodeID NodeIDAllocator::allocateObjectId(void)
 }
 
 
-NodeID NodeIDAllocator::allocateTypeId() {
+NodeID NodeIDAllocator::allocateTypeId()
+{
     return numType++;
 }
 
