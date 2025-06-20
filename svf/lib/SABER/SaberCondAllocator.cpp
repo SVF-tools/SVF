@@ -60,7 +60,7 @@ void SaberCondAllocator::allocate()
 {
     DBOUT(DGENERAL, outs() << pasMsg("path condition allocation starts\n"));
 
-    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
         const FunObjVar *func = (item.second)->getFunction();

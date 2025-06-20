@@ -577,7 +577,7 @@ u32_t MemSSA::getBBPhiNum() const
 void MemSSA::dumpMSSA(OutStream& Out)
 {
 
-    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
         const FunObjVar* fun = item.second->getFunction();

@@ -357,7 +357,7 @@ public:
     /// Get call graph node
     //@{
 
-    const CallGraphNode* getCallGraphNode(const std::string& name);
+    const CallGraphNode* getCallGraphNode(const std::string& name) const;
 
     inline CallGraphNode* getCallGraphNode(NodeID id) const
     {

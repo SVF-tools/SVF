@@ -122,7 +122,7 @@ s64_t CDGBuilder::getBBSuccessorBranchID(const SVFBasicBlock *BB, const SVFBasic
  */
 void CDGBuilder::buildControlDependence()
 {
-    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
         const FunObjVar *svfFun = (item.second)->getFunction();

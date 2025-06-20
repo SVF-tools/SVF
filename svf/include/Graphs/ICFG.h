@@ -71,10 +71,6 @@ private:
     GlobalICFGNode* globalBlockNode; ///< unique basic block for all globals
     ICFGNodeToSVFLoopVec icfgNodeToSVFLoopVec; ///< map ICFG node to the SVF loops where it resides
 
-    Map<const ICFGNode*, std::vector<const ICFGNode*>> _subNodes; ///<map a node(1st node of basicblock) to its subnodes
-    Map<const ICFGNode*, const ICFGNode*> _repNode; ///<map a subnode to its representative node(1st node of basicblock)
-
-
 public:
     /// Constructor
     ICFG();
@@ -219,8 +215,6 @@ protected:
     virtual inline void addICFGNode(ICFGNode* node)
     {
         addGNode(node->getId(),node);
-        _repNode[node] = node;
-        _subNodes[node].push_back(node);
     }
 
 public:
@@ -237,42 +231,9 @@ public:
     {
         return globalBlockNode;
     }
-
-    const std::vector<const ICFGNode*>& getSubNodes(const ICFGNode* node) const
-    {
-        return _subNodes.at(node);
-    }
-
-    const ICFGNode* getRepNode(const ICFGNode* node) const
-    {
-        return _repNode.at(node);
-    }
-
-
-    void updateSubAndRep(const ICFGNode* rep, const ICFGNode* sub)
-    {
-        addSubNode(rep, sub);
-        updateRepNode(rep, sub);
-    }
     //@}
 
 private:
-    /// when ICFG is simplified, SubNode would merge repNode, then update the map
-    void addSubNode(const ICFGNode* rep, const ICFGNode* sub)
-    {
-        std::vector<const ICFGNode*>& subNodes = _subNodes[sub];
-        if(std::find(subNodes.begin(), subNodes.end(), rep) == subNodes.end())
-        {
-            subNodes.push_back(rep);
-        }
-    }
-
-    /// when ICFG is simplified, some node would be removed, this map records the removed node to its rep node
-    void updateRepNode(const ICFGNode* rep, const ICFGNode* sub)
-    {
-        _repNode[rep] = sub;
-    }
-
     /// Add ICFG edge, only used by addIntraEdge, addCallEdge, addRetEdge etc.
     inline bool addICFGEdge(ICFGEdge* edge)
     {
