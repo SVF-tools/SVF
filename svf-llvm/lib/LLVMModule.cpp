@@ -1277,7 +1277,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
 
     SVFType* svftype;
 
-    u32_t id = svfir->getSVFTypes().size();
+    u32_t id = NodeIDAllocator::get()->allocateTypeId();
     if (SVFUtil::isa<PointerType>(T))
     {
         svftype = new SVFPointerType(id, byteSize);

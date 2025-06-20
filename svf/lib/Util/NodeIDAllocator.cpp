@@ -44,7 +44,7 @@ void NodeIDAllocator::unset(void)
 
 // Initialise counts to 4 because that's how many special nodes we have.
 NodeIDAllocator::NodeIDAllocator(void)
-    : numObjects(4), numValues(4), numSymbols(4), numNodes(4), strategy(Options::NodeAllocStrat())
+    : numObjects(4), numValues(4), numSymbols(4), numNodes(4), numType(0), strategy(Options::NodeAllocStrat())
 { }
 
 NodeID NodeIDAllocator::allocateObjectId(void)
@@ -81,6 +81,11 @@ NodeID NodeIDAllocator::allocateObjectId(void)
 
     assert(id != 0 && "NodeIDAllocator::allocateObjectId: ID not allocated");
     return id;
+}
+
+
+NodeID NodeIDAllocator::allocateTypeId() {
+    return numType++;
 }
 
 NodeID NodeIDAllocator::allocateGepObjectId(NodeID base, u32_t offset, u32_t maxFieldLimit)
