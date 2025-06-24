@@ -81,6 +81,9 @@ void SymbolTableBuilder::buildMemModel()
 {
     SVFUtil::increaseStackSize();
 
+    // already built, skip duplicate
+    if (svfir->totalSymNum != 0) return;
+
     // Pointer #0 always represents the null pointer.
     assert(svfir->totalSymNum++ == IRGraph::NullPtr && "Something changed!");
 
