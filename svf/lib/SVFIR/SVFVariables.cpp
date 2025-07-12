@@ -25,6 +25,8 @@
  *
  *  Created on: Oct 11, 2013
  *      Author: Yulei Sui
+*   Refactored on: Nov 30, 2024
+ *      Author: Xiao Cheng, Yulei Sui
  */
 
 #include "SVFIR/SVFVariables.h"

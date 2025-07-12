@@ -21,10 +21,12 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * SVFModule.cpp
+ * LLVMModule.cpp
  *
  *  Created on: Aug 4, 2017
- *      Author: Xiaokang Fan
+ *      Author: Yulei Sui
+ *  Refactored on: Jan 25, 2024
+ *      Author: Xiao Cheng, Yulei Sui
  */
 
 #include <queue>

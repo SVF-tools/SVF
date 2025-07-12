@@ -1,4 +1,4 @@
-//===- BasicTypes.h -- Basic types used in SVF-------------------------------//
+//===- SVFValue.h -- Basic types used in SVF-------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,10 +21,12 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * BasicTypes.h
+ * SVFValue.h
  *
  *  Created on: Apr 1, 2014
  *      Author: Yulei Sui
+ *  Refactored on: Feb 10, 2025
+ *      Author: Xiao Cheng, Yulei Sui
  */
 
 #ifndef INCLUDE_SVFIR_SVFVALUE_H_
