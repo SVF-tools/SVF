@@ -1,4 +1,4 @@
-//===- SVFValue.h -- Basic types used in SVF-------------------------------//
+//===- SVFValue.cpp -- Basic types used in SVF-------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * SVFValue.h
+ * SVFValue.cpp
  *
  *  Created on: Apr 1, 2014
  *      Author: Yulei Sui
