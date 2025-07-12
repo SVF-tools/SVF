@@ -22,7 +22,8 @@
 
 
 //
-// Created by Jiawei Wang on 2024/1/10.
+//  Created on: Jan 10, 2024
+//      Author: Xiao Cheng, Jiawei Wang
 // The implementation is based on
 // Xiao Cheng, Jiawei Wang and Yulei Sui. Precise Sparse Abstract Execution via Cross-Domain Interaction.
 // 46th International Conference on Software Engineering. (ICSE24)
