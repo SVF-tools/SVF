@@ -1,4 +1,4 @@
-//===- SVFSymbols.h -- SVF Variables------------------------//
+//===- SVFVariables.h -- SVF Variables------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -25,6 +25,8 @@
  *
  *  Created on: Nov 11, 2013
  *      Author: Yulei Sui
+ *  Refactored on: Nov 30, 2024
+ *      Author: Xiao Cheng, Yulei Sui
  */
 
 #ifndef INCLUDE_SVFIR_SVFVARIABLE_H_

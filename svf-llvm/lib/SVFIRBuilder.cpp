@@ -25,6 +25,8 @@
  *
  *  Created on: Nov 1, 2013
  *      Author: Yulei Sui
+ *  Refactored on: Jan 25, 2024
+ *      Author: Xiao Cheng, Yulei Sui
  */
 
 #include "SVF-LLVM/SVFIRBuilder.h"
