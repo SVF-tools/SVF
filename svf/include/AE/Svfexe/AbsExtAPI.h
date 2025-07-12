@@ -21,8 +21,8 @@
 //===----------------------------------------------------------------------===//
 
 
-//
-// Created by Jiawei Wang on 2024/9/9.
+//  Created on: Sep 9, 2024
+//      Author: Xiao Cheng, Jiawei Wang
 //
 #pragma once
 #include "AE/Core/AbstractState.h"

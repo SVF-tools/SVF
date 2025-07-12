@@ -22,7 +22,9 @@
 
 
 //
-// Created by Jiawei Wang on 2024/9/9.
+//  Created on: Sep 9, 2024
+//      Author: Xiao Cheng, Jiawei Wang
+//
 //
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "AE/Svfexe/AbstractInterpretation.h"
