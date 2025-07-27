@@ -22,6 +22,12 @@
                     "type":"STRING",
                     "optional":false,
                     "index":false
+                },
+                {
+                    "name":"source_loc",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
                 }
             ]
         },
@@ -65,6 +71,12 @@
                     "type":"STRING",
                     "optional":false,
                     "index":false
+                },
+                {
+                    "name":"source_loc",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
                 }
             ]
         },
@@ -87,6 +99,12 @@
                 },
                 {
                     "name":"pag_edge_ids",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"source_loc",
                     "type":"STRING",
                     "optional":false,
                     "index":false
@@ -133,6 +151,12 @@
                     "type":"STRING",
                     "optional":false,
                     "index":false
+                },
+                {
+                    "name":"source_loc",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
                 }
             ]
         },
@@ -176,6 +200,12 @@
                     "type":"STRING",
                     "optional":false,
                     "index":false
+                },
+                {
+                    "name":"source_loc",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
                 }
             ]
         },
@@ -215,8 +245,8 @@
                     "index":false
                 },
                 {
-                    "name":"svf_type",
-                    "type":"STRING",
+                    "name":"svf_type_id",
+                    "type":"INT32",
                     "index":false,
                     "optional":false
                 },
@@ -267,6 +297,18 @@
                     "type":"STRING",
                     "optional":false,
                     "index":false
+                },
+                {
+                    "name":"ind_fun_ptr_var_id",
+                    "type":"INT32",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"source_loc",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
                 }
             ]
         },
@@ -300,8 +342,8 @@
                     "index":false
                 },
                 {
-                    "name":"svf_type",
-                    "type":"STRING",
+                    "name":"svf_type_id",
+                    "type":"INT32",
                     "index":false,
                     "optional":false
                 },
@@ -319,6 +361,12 @@
                 },
                 {
                     "name":"pag_edge_ids",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
+                },
+                {
+                    "name":"source_loc",
                     "type":"STRING",
                     "optional":false,
                     "index":false

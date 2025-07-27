@@ -165,6 +165,7 @@ public:
 
     typedef GenericNode<CallGraphNode, CallGraphEdge>::GEdgeSetTy CallGraphEdgeSet;
 
+    std::string toDBString() const;
 };
 
 class FunObjVar;
@@ -223,6 +224,23 @@ public:
     static inline bool classof(const SVFValue* node)
     {
         return node->getNodeKind() == CallNodeKd;
+    }
+
+    std::string toDBString() const;
+
+
+    std::string sourceLocToDBString() const
+    {
+        std::string sourceLoc = "";
+        if (getSourceLoc().empty() == false)
+        {
+            sourceLoc = ", source_loc: '" + getSourceLoc() + "'";
+        }
+        else
+        {
+            sourceLoc = ", source_loc: ''";
+        }
+        return sourceLoc;
     }
     //@}
 };

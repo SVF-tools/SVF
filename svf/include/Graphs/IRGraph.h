@@ -274,11 +274,11 @@ public:
         return svfTypes;
     }
 
-    inline const SVFType* getSVFType(const std::string& name) const
+    inline const SVFType* getSVFType(u32_t id) const
     {
         for(const SVFType* type : svfTypes)
         {
-            if(type->toString() == name)
+            if(type->getId() == id)
                 return type;
         }
         return nullptr;

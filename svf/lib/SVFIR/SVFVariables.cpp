@@ -534,10 +534,10 @@ std::string SVFVar::getSVFVarNodeFieldsStmt() const
 {
     std::string fieldsStr = "";
     fieldsStr += "id: " + std::to_string(getId()) + 
-    ", svf_type_name:'"+getType()->toString() +
-    "', in_edge_kind_to_set_map:'" + GraphDBClient::getInstance().pagEdgeToSetMapTyToString(getInEdgeKindToSetMap()) +
+    ", svf_type_id:"+ std::to_string(getType()->getId()) +
+    ", in_edge_kind_to_set_map:'" + GraphDBClient::getInstance().pagEdgeToSetMapTyToString(getInEdgeKindToSetMap()) +
     "', out_edge_kind_to_set_map:'" + GraphDBClient::getInstance().pagEdgeToSetMapTyToString(getOutEdgeKindToSetMap()) +
-    "'";
+    "'" + sourceLocToDBString();
     return fieldsStr;
 }
 
@@ -681,7 +681,11 @@ std::string GepValVar::toDBString()const
 
     if (nullptr != getAccessPath().gepSrcPointeeType())
     {
-        accessPathFieldsStr << ", ap_gep_pointee_type_name:'"<<getAccessPath().gepSrcPointeeType()->toString()<<"'";
+        accessPathFieldsStr << ", ap_gep_pointee_type_id:"<<getAccessPath().gepSrcPointeeType()->getId();
+    }
+    else 
+    {
+        accessPathFieldsStr << ", ap_gep_pointee_type_id:-1";
     }
     if (!getAccessPath().getIdxOperandPairVec().empty())
     {
@@ -691,8 +695,9 @@ std::string GepValVar::toDBString()const
     getValVarNodeFieldsStmt() 
     + ", kind:" + std::to_string(getNodeKind())
     + ", base_val_id:" + std::to_string(getBaseNode()->getId())
-    + ", gep_val_svf_type_name:'"+getType()->toString()+"'"
+    + ", gep_val_svf_type_id:"+std::to_string(getType()->getId()) 
     + ", ap_fld_idx:"+std::to_string(getConstantFieldIdx())
+    + ", llvm_var_inst_id:" + std::to_string(getLLVMVarInstID()) 
     + accessPathFieldsStr.str()
     + "})";
     return queryStatement;
@@ -742,7 +747,7 @@ std::string BaseObjVar::getBaseObjVarNodeFieldsStmt() const
     }
     fieldsStr += getObjVarNodeFieldsStmt() +
     icfgIDstr + 
-    ", obj_type_info_type_name:'" + getTypeInfo()->getType()->toString() + "'" + 
+    ", obj_type_info_type_id:" + std::to_string(getTypeInfo()->getType()->getId()) + 
     ", obj_type_info_flags:" + std::to_string(getTypeInfo()->getFlag()) +
     ", obj_type_info_max_offset_limit:" + std::to_string(getMaxFieldOffsetLimit()) + 
     ", obj_type_info_elem_num:" + std::to_string(getNumOfElements()) +
@@ -877,6 +882,15 @@ std::string FunObjVar::toDBString() const
     {
         annotationsStr = GraphDBClient::getInstance().serializeAnnotations(annotationsVector);
     }
+    std::ostringstream valNameStr;
+    if (getName().empty())
+    {
+        valNameStr << ",val_name:''";
+    }
+    else 
+    {
+        valNameStr << ",val_name:'"<<getName()<<"'";
+    }
     const std::string queryStatement ="CREATE (n:FunObjVar {"+
     getBaseObjVarNodeFieldsStmt() 
     + ", kind:" + std::to_string(getNodeKind())
@@ -886,7 +900,7 @@ std::string FunObjVar::toDBString() const
     + ", is_uncalled:" + (isUncalledFunction()? "true" : "false")
     + ", is_not_ret:" + (getIsNotRet()? "true" : "false")
     + ", sup_var_arg:" + (isVarArg()? "true" : "false")
-    + ", fun_type_name:'" + getFunctionType()->toString() + "'"
+    + ", fun_type_id:" + std::to_string(getFunctionType()->getId())
     + ", real_def_fun_node_id:" + std::to_string(getDefFunForMultipleModule()->getId())
     // + ", bb_graph_id:" + std::to_string(node->getBasicBlockGraph()->getFunObjVarId())
     + exitBBStr.str()
@@ -899,7 +913,7 @@ std::string FunObjVar::toDBString() const
     + ", bb2_p_dom_level:'" + GraphDBClient::getInstance().extractLabelMap2String(&(getLoopAndDomInfo()->getBBPDomLevel())) + "'"
     + ", bb2_pi_dom:'" + GraphDBClient::getInstance().extractBBsMap2String(&(getLoopAndDomInfo()->getBB2PIdom())) + "'"
     + ", func_annotation:'" + annotationsStr + "'"
+    + valNameStr.str()
     + "})";
     return queryStatement;
 }
-

@@ -203,6 +203,20 @@ public:
         return false;
     }
 
+    std::string sourceLocToDBString() const
+    {
+        std::string sourceLoc = "";
+        if (getSourceLoc().empty() == false)
+        {
+            sourceLoc = ", source_loc: '" + getSourceLoc() + "'";
+        }
+        else
+        {
+            sourceLoc = ", source_loc: ''";
+        }
+        return sourceLoc;
+    }
+
 
 private:
     /// Edge management methods
@@ -488,6 +502,7 @@ private:
     AccessPath ap;	// AccessPath
     const ValVar* base;	// base node
     const SVFType* gepValType;
+    NodeID llvmVarID;
 
     /// Constructor to create empty GeValVar (for SVFIRReader/deserialization)
     GepValVar(NodeID i) : ValVar(i, GepValNode), gepValType{} {}
@@ -590,6 +605,17 @@ public:
     }
 
     std::string toDBString() const;
+    /// Get the LLVM variable ID associated with this GepValVar
+    inline NodeID getLLVMVarInstID() const
+    {
+        return llvmVarID;   
+    }
+
+    /// Set the LLVM variable ID associated with this GepValVar
+    inline void setLLVMVarInstID(NodeID id)
+    {
+        llvmVarID = id;
+    }
 };
 
 /*
