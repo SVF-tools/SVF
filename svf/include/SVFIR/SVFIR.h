@@ -855,7 +855,18 @@ private:
     /// Add callsites
     inline void addCallSite(const CallICFGNode* call)
     {
-        callSiteSet.insert(call);
+        // if (call->getId() == 9889 ||call->getId() == 9914 ||call->getId() == 9922 ||call->getId() == 9944 ||call->getId() == 10733 ||call->getId() == 10741 ||call->getId() == 10762 ||call->getId() == 10770 )
+        // {
+
+        // } else {
+            callSiteSet.insert(call);
+        //     SVFUtil::outs()<< "Adding callsite: " << call->getId() << "\n";
+        // }
+    }
+
+    inline void addGepValObjFromDB(NodeID curInstID, const GepValVar* gepValvar)
+    {
+        GepValObjMap[curInstID][std::make_pair(gepValvar->getBaseNode()->getId(), gepValvar->getAccessPath())] = gepValvar->getId();
     }
     /// Add an edge into SVFIR
     //@{

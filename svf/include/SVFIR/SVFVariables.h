@@ -202,6 +202,20 @@ public:
         return false;
     }
 
+    std::string sourceLocToDBString() const
+    {
+        std::string sourceLoc = "";
+        if (getSourceLoc().empty() == false)
+        {
+            sourceLoc = ", source_loc: '" + getSourceLoc() + "'";
+        }
+        else
+        {
+            sourceLoc = ", source_loc: ''";
+        }
+        return sourceLoc;
+    }
+
 
 private:
     /// Edge management methods
@@ -474,6 +488,7 @@ private:
     AccessPath ap;	// AccessPath
     const ValVar* base;	// base node
     const SVFType* gepValType;
+    NodeID llvmVarID;
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -573,6 +588,17 @@ public:
     }
 
     std::string toDBString() const;
+    /// Get the LLVM variable ID associated with this GepValVar
+    inline NodeID getLLVMVarInstID() const
+    {
+        return llvmVarID;   
+    }
+
+    /// Set the LLVM variable ID associated with this GepValVar
+    inline void setLLVMVarInstID(NodeID id)
+    {
+        llvmVarID = id;
+    }
 };
 
 /*
