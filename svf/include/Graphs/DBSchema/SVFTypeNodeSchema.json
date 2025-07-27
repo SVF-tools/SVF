@@ -3,23 +3,23 @@
         {
             "label" : "SVFPointerType",
             "type" : "VERTEX",
-            "primary" : "type_name",
+            "primary" : "id",
             "properties" : [
                 {
-                    "name" : "type_name", 
-                    "type":"STRING",
+                    "name" : "id", 
+                    "type":"INT32",
                     "optional":false,
                     "index":true
                 },
                 {
-                    "name":"svf_i8_type_name",
-                    "type":"STRING",
+                    "name":"svf_i8_type_id",
+                    "type":"INT32",
                     "optional":false,
                     "index":false
                 },
                 {
-                    "name":"svf_ptr_type_name",
-                    "type":"STRING",
+                    "name":"svf_ptr_type_id",
+                    "type":"INT32",
                     "optional":false,
                     "index":false
                 },
@@ -46,23 +46,23 @@
         {
             "label" : "SVFIntegerType",
             "type" : "VERTEX",
-            "primary" : "type_name",
+            "primary" : "id",
             "properties" : [
                 {
-                    "name" : "type_name", 
-                    "type":"STRING",
+                    "name" : "id", 
+                    "type":"INT32",
                     "optional":false,
                     "index":true
                 },
                 {
-                    "name":"svf_i8_type_name",
-                    "type":"STRING",
+                    "name":"svf_i8_type_id",
+                    "type":"INT32",
                     "optional":false,
                     "index":false
                 },
                 {
-                    "name":"svf_ptr_type_name",
-                    "type":"STRING",
+                    "name":"svf_ptr_type_id",
+                    "type":"INT32",
                     "optional":false,
                     "index":false
                 },
@@ -95,23 +95,23 @@
         {
             "label" : "SVFFunctionType",
             "type" : "VERTEX",
-            "primary" : "type_name",
+            "primary" : "id",
             "properties" : [
                 {
-                    "name" : "type_name", 
-                    "type":"STRING",
+                    "name" : "id", 
+                    "type":"INT32",
                     "optional":false,
                     "index":true
                 },
                 {
-                    "name":"svf_i8_type_name",
-                    "type":"STRING",
+                    "name":"svf_i8_type_id",
+                    "type":"INT32",
                     "optional":false,
                     "index":false
                 },
                 {
-                    "name":"svf_ptr_type_name",
-                    "type":"STRING",
+                    "name":"svf_ptr_type_id",
+                    "type":"INT32",
                     "optional":false,
                     "index":false
                 },
@@ -134,8 +134,8 @@
                     "index":false
                 },
                 {
-                    "name":"ret_ty_node_name",
-                    "type":"STRING",
+                    "name":"ret_ty_node_id",
+                    "type":"INT32",
                     "optional":false,
                     "index":false
                 }, 
@@ -150,23 +150,23 @@
         {
             "label" : "SVFStructType",
             "type" : "VERTEX",
-            "primary" : "type_name",
+            "primary" : "id",
             "properties" : [
                 {
-                    "name" : "type_name", 
-                    "type":"STRING",
+                    "name" : "id", 
+                    "type":"INT32",
                     "optional":false,
                     "index":true
                 },
                 {
-                    "name":"svf_i8_type_name",
-                    "type":"STRING",
+                    "name":"svf_i8_type_id",
+                    "type":"INT32",
                     "optional":false,
                     "index":false
                 },
                 {
-                    "name":"svf_ptr_type_name",
-                    "type":"STRING",
+                    "name":"svf_ptr_type_id",
+                    "type":"INT32",
                     "optional":false,
                     "index":false
                 },
@@ -199,29 +199,35 @@
                     "type":"STRING",
                     "optional":false,
                     "index":false
+                },
+                {
+                    "name":"fields_id_vec",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
                 }
             ]
         },
         {
             "label" : "SVFArrayType",
             "type" : "VERTEX",
-            "primary" : "type_name",
+            "primary" : "id",
             "properties" : [
                 {
-                    "name" : "type_name", 
-                    "type":"STRING",
+                    "name" : "id", 
+                    "type":"INT32",
                     "optional":false,
                     "index":true
                 },
                 {
-                    "name":"svf_i8_type_name",
-                    "type":"STRING",
+                    "name":"svf_i8_type_id",
+                    "type":"INT32",
                     "optional":false,
                     "index":false
                 },
                 {
-                    "name":"svf_ptr_type_name",
-                    "type":"STRING",
+                    "name":"svf_ptr_type_id",
+                    "type":"INT32",
                     "optional":false,
                     "index":false
                 },
@@ -256,8 +262,8 @@
                     "index":false
                 },
                 {
-                    "name":"type_of_element_node_type_name",
-                    "type":"STRING",
+                    "name":"type_of_element_node_type_id",
+                    "type":"INT32",
                     "optional":false,
                     "index":false
                 }
@@ -266,23 +272,23 @@
         {
             "label" : "SVFOtherType",
             "type" : "VERTEX",
-            "primary" : "type_name",
+            "primary" : "id",
             "properties" : [
                 {
-                    "name" : "type_name", 
-                    "type":"STRING",
+                    "name" : "id", 
+                    "type":"INT32",
                     "optional":false,
                     "index":true
                 },
                 {
-                    "name":"svf_i8_type_name",
-                    "type":"STRING",
+                    "name":"svf_i8_type_id",
+                    "type":"INT32",
                     "optional":false,
                     "index":false
                 },
                 {
-                    "name":"svf_ptr_type_name",
-                    "type":"STRING",
+                    "name":"svf_ptr_type_id",
+                    "type":"INT32",
                     "optional":false,
                     "index":false
                 },
@@ -315,10 +321,10 @@
         {
             "label" : "StInfo",
             "type" : "VERTEX",
-            "primary" : "id",
+            "primary" : "st_info_id",
             "properties" : [
                 {
-                    "name" : "id", 
+                    "name" : "st_info_id", 
                     "type":"INT32",
                     "optional":false,
                     "index":true

@@ -529,6 +529,7 @@ NodeID SVFIR::addGepValNode(NodeID curInst,const ValVar* baseVar, const AccessPa
            && "this node should not be created before");
     GepValObjMap[curInst][std::make_pair(base, ap)] = i;
     GepValVar *node = new GepValVar(baseVar, i, ap, type, icn);
+    node->setLLVMVarInstID(curInst);
     return addValNode(node);
 }
 

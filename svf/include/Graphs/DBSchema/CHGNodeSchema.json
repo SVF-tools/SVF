@@ -28,6 +28,12 @@
                     "type":"STRING",
                     "optional":false,
                     "index":false
+                },
+                {
+                    "name":"source_loc",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
                 }
             ]
         }

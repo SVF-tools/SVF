@@ -563,9 +563,11 @@ std::string GepStmt::toDBString() const
 
     if (nullptr != getAccessPath().gepSrcPointeeType())
     {
-        accessPathStr << ", ap_gep_pointee_type_name:'"
-                      << getAccessPath().gepSrcPointeeType()->toString()
-                      << "'";
+        accessPathStr << ", ap_gep_pointee_type_id:"<< getAccessPath().gepSrcPointeeType()->getId();
+    }
+    else 
+    {
+        accessPathStr << ", ap_gep_pointee_type_id:-1";
     }
     if (!getAccessPath().getIdxOperandPairVec().empty())
     {
