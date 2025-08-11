@@ -22,7 +22,8 @@
 
 
 //
-// Created by Jiawei Wang on 2024/1/10.
+//  Created on: Jan 10, 2024
+//      Author: Xiao Cheng, Jiawei Wang
 // The implementation is based on
 // Xiao Cheng, Jiawei Wang and Yulei Sui. Precise Sparse Abstract Execution via Cross-Domain Interaction.
 // 46th International Conference on Software Engineering. (ICSE24)
@@ -164,15 +165,14 @@ public:
      */
     AbstractState& getAbsStateFromTrace(const ICFGNode* node)
     {
-        const ICFGNode* repNode = icfg->getRepNode(node);
-        if (abstractTrace.count(repNode) == 0)
+        if (abstractTrace.count(node) == 0)
         {
             assert(false && "No preAbsTrace for this node");
             abort();
         }
         else
         {
-            return abstractTrace[repNode];
+            return abstractTrace[node];
         }
     }
 
@@ -303,8 +303,7 @@ private:
 
     bool hasAbsStateFromTrace(const ICFGNode* node)
     {
-        const ICFGNode* repNode = icfg->getRepNode(node);
-        return abstractTrace.count(repNode) != 0;
+        return abstractTrace.count(node) != 0;
     }
 
     AbsExtAPI* getUtils()

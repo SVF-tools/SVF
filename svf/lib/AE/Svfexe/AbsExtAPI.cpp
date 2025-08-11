@@ -22,7 +22,9 @@
 
 
 //
-// Created by Jiawei Wang on 2024/9/9.
+//  Created on: Sep 9, 2024
+//      Author: Xiao Cheng, Jiawei Wang
+//
 //
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "AE/Svfexe/AbstractInterpretation.h"
@@ -376,15 +378,14 @@ void AbsExtAPI::initExtFunMap()
 
 AbstractState& AbsExtAPI::getAbsStateFromTrace(const SVF::ICFGNode* node)
 {
-    const ICFGNode* repNode = icfg->getRepNode(node);
-    if (abstractTrace.count(repNode) == 0)
+    if (abstractTrace.count(node) == 0)
     {
         assert(0 && "No preAbsTrace for this node");
         abort();
     }
     else
     {
-        return abstractTrace[repNode];
+        return abstractTrace[node];
     }
 }
 

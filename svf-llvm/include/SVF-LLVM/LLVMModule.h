@@ -25,6 +25,8 @@
  *
  *  Created on: 23 Mar.2020
  *      Author: Yulei Sui
+ *  Refactored on: Jan 25, 2024
+ *      Author: Xiao Cheng, Yulei Sui
  */
 
 #ifndef INCLUDE_SVF_FE_LLVMMODULE_H_

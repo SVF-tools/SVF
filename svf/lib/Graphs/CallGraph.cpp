@@ -81,7 +81,7 @@ const std::string CallGraphNode::toString() const
 {
     std::string str;
     std::stringstream  rawstr(str);
-    rawstr << "PTACallGraphNode ID: " << getId() << " {fun: " << fun->getName() << "}";
+    rawstr << "CallGraphNode ID: " << getId() << " {fun: " << fun->getName() << "}";
     return rawstr.str();
 }
 
@@ -364,7 +364,7 @@ void CallGraph::addCallGraphNode(const FunObjVar* fun)
     callGraphNodeNum++;
 }
 
-const CallGraphNode* CallGraph::getCallGraphNode(const std::string& name)
+const CallGraphNode* CallGraph::getCallGraphNode(const std::string& name) const
 {
     for (const auto& item : *this)
     {

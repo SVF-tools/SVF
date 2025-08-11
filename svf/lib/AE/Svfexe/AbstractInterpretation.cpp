@@ -22,7 +22,8 @@
 
 
 //
-// Created by Jiawei Wang on 2024/1/10.
+//  Created on: Jan 10, 2024
+//      Author: Xiao Cheng, Jiawei Wang
 //
 
 #include "AE/Svfexe/AbstractInterpretation.h"
@@ -555,25 +556,20 @@ void AbstractInterpretation::handleSingletonWTO(const ICFGSingletonWTO *icfgSing
 
     std::deque<const ICFGNode*> worklist;
 
-    const std::vector<const ICFGNode*>& worklist_vec = icfg->getSubNodes(node);
-    for (auto it = worklist_vec.begin(); it != worklist_vec.end(); ++it)
+    stat->getICFGNodeTrace()++;
+    // handle SVF Stmt
+    for (const SVFStmt *stmt: node->getSVFStmts())
     {
-        const ICFGNode* curNode = *it;
-        stat->getICFGNodeTrace()++;
-        // handle SVF Stmt
-        for (const SVFStmt *stmt: curNode->getSVFStmts())
-        {
-            handleSVFStatement(stmt);
-        }
-        // inlining the callee by calling handleFunc for the callee function
-        if (const CallICFGNode* callnode = SVFUtil::dyn_cast<CallICFGNode>(curNode))
-        {
-            handleCallSite(callnode);
-        }
-        for (auto& detector: detectors)
-            detector->detect(getAbsStateFromTrace(node), node);
-        stat->countStateSize();
+        handleSVFStatement(stmt);
     }
+    // inlining the callee by calling handleFunc for the callee function
+    if (const CallICFGNode* callnode = SVFUtil::dyn_cast<CallICFGNode>(node))
+    {
+        handleCallSite(callnode);
+    }
+    for (auto& detector: detectors)
+        detector->detect(getAbsStateFromTrace(node), node);
+    stat->countStateSize();
 }
 
 /**

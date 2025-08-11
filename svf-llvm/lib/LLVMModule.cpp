@@ -21,10 +21,12 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * SVFModule.cpp
+ * LLVMModule.cpp
  *
  *  Created on: Aug 4, 2017
- *      Author: Xiaokang Fan
+ *      Author: Yulei Sui
+ *  Refactored on: Jan 25, 2024
+ *      Author: Xiao Cheng, Yulei Sui
  */
 
 #include <queue>
@@ -1277,7 +1279,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
 
     SVFType* svftype;
 
-    u32_t id = svfir->getSVFTypes().size();
+    u32_t id = NodeIDAllocator::get()->allocateTypeId();
     if (SVFUtil::isa<PointerType>(T))
     {
         svftype = new SVFPointerType(id, byteSize);

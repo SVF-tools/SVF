@@ -282,7 +282,7 @@ void ThreadAPI::performAPIStat()
 
     statInit(tdAPIStatMap);
 
-    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item: *svfirCallGraph)
     {
         for (FunObjVar::const_bb_iterator bit = (item.second)->getFunction()->begin(), ebit = (item.second)->getFunction()->end(); bit != ebit; ++bit)

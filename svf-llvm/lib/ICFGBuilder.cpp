@@ -26,6 +26,8 @@
  *
  *  Created on:
  *      Author: yulei
+ *  Refactored on:
+ *      Author: Xiao Cheng, Yulei Sui
  */
 
 #include "SVF-LLVM/ICFGBuilder.h"

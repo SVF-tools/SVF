@@ -69,13 +69,13 @@ CallGraph* CallGraphBuilder::buildSVFIRCallGraph(const std::vector<const FunObjV
 
 CallGraph* CallGraphBuilder::buildPTACallGraph()
 {
-    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     return new CallGraph(*svfirCallGraph);
 }
 
 ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
 {
-    CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
+    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     ThreadCallGraph* cg = new ThreadCallGraph(*svfirCallGraph);
 
     ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();
