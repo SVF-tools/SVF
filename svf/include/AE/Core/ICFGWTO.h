@@ -46,7 +46,7 @@ typedef WTONode<ICFG> ICFGSingletonWTO;
 typedef WTOCycle<ICFG> ICFGCycleWTO;
 
 // Added for IWTO
-class WTORegion : public WTO<ICFG>
+class ICFGWTO : public WTO<ICFG>
 {
 public:
     typedef WTO<ICFG> Base;
@@ -54,10 +54,10 @@ public:
     NodeBS &funcPar;
     CallGraph *cg;
 
-    explicit WTORegion(ICFG* graph, const ICFGNode* node, NodeBS & funcPar, CallGraph* cg) :
+    explicit ICFGWTO(ICFG* graph, const ICFGNode* node, NodeBS & funcPar, CallGraph* cg) :
         Base(graph, node), funcPar(funcPar), cg(cg) {}
 
-    virtual ~WTORegion()
+    virtual ~ICFGWTO()
     {
     }
 

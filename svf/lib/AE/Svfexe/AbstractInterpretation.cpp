@@ -95,7 +95,7 @@ void AbstractInterpretation::initWTO()
         if (callGraphScc->isInCycle(it->second->getId()))
             recursiveFuns.insert(it->second->getFunction()); // Mark the function as recursive
 
-        // Calculate WTORegion for each function/recursion
+        // Calculate ICFGWTO for each function/recursion
         const FunObjVar *fun = it->second->getFunction();
         if (fun->isDeclaration())
             continue;
@@ -131,7 +131,7 @@ void AbstractInterpretation::initWTO()
         // Compute IWTO for the function partition entered from each partition entry
         if (isEntry)
         {
-            WTORegion* iwto = new WTORegion(icfg, icfg->getFunEntryICFGNode(fun),
+            ICFGWTO* iwto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(fun),
                                           cgSCCNodes, callGraph);
             iwto->init();
             funcToWTO[it->second->getFunction()] = iwto;
@@ -149,7 +149,7 @@ void AbstractInterpretation::analyse()
         icfg->getGlobalICFGNode())[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
     if (const CallGraphNode* cgn = svfir->getCallGraph()->getCallGraphNode("main"))
     {
-        const WTORegion* wto = funcToWTO[cgn->getFunction()];
+        const ICFGWTO* wto = funcToWTO[cgn->getFunction()];
         handleWTOComponents(wto->getWTOComponents());
     }
 }
@@ -721,7 +721,7 @@ void AbstractInterpretation::directCallFunPass(const CallICFGNode *callNode)
 
     callSiteStack.push_back(callNode);
 
-    const WTORegion* wto = funcToWTO[calleeFun];
+    const ICFGWTO* wto = funcToWTO[calleeFun];
     handleWTOComponents(wto->getWTOComponents());
 
     callSiteStack.pop_back();
@@ -762,7 +762,7 @@ void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
         callSiteStack.push_back(callNode);
         abstractTrace[callNode] = as;
 
-        const WTORegion* wto = funcToWTO[callfun];
+        const ICFGWTO* wto = funcToWTO[callfun];
         handleWTOComponents(wto->getWTOComponents());
         callSiteStack.pop_back();
         // handle Ret node
