@@ -51,11 +51,13 @@ class ICFGWTO : public WTO<ICFG>
 public:
     typedef WTO<ICFG> Base;
     typedef WTOComponentVisitor<ICFG>::WTONodeT ICFGWTONode;
-    NodeBS &funcPar;
-    CallGraph *cg;
+    Set<const FunObjVar*> scc;
 
-    explicit ICFGWTO(ICFG* graph, const ICFGNode* node, NodeBS & funcPar, CallGraph* cg) :
-        Base(graph, node), funcPar(funcPar), cg(cg) {}
+    explicit ICFGWTO(ICFG* graph,const ICFGNode* node, Set<const FunObjVar*> funcScc = {}) :
+        Base(graph, node), scc(funcScc){
+            if (scc.empty()) // if empty funcScc, default use the function of the node
+                scc.insert(node->getFun());
+        } 
 
     virtual ~ICFGWTO()
     {
@@ -70,14 +72,13 @@ public:
 
             for (const auto &e : callNode->getOutEdges())
             {
-                ICFGNode *calleeEntryICFGNode = e->getDstNode();
-                CallGraphNode * calleeCGNode = cg->getCallGraphNode(calleeEntryICFGNode->getFun());
+                ICFGNode *calleeEntryICFGNode = e->getDstNode(); 
+                const ICFGNode *succ = nullptr;
 
-                const ICFGNode* succ = nullptr;
-                if (funcPar.test(calleeCGNode->getId()))
+                if (scc.find(calleeEntryICFGNode->getFun()) != scc.end()) // caller & callee in the same SCC
                     succ = calleeEntryICFGNode;
                 else
-                    succ = callNode->getRetICFGNode();
+                    succ = callNode->getRetICFGNode(); // caller & callee in different SCC
 
                 func(succ);
             }
@@ -87,8 +88,7 @@ public:
             for (const auto& e : node->getOutEdges())
             {
                 ICFGNode *succ = e->getDstNode();
-                CallGraphNode *succCGNode = cg->getCallGraphNode(succ->getFun());
-                if (!funcPar.test(succCGNode->getId()))
+                if (scc.find(succ->getFun()) == scc.end()) // if not in the same SCC, skip
                     continue;
                 func(succ);
             }

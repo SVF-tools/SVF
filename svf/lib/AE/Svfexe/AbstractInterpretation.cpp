@@ -132,8 +132,11 @@ void AbstractInterpretation::initWTO()
         // Compute IWTO for the function partition entered from each partition entry
         if (isEntry)
         {
-            ICFGWTO* iwto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(fun),
-                                          cgSCCNodes, callGraph);
+            Set<const FunObjVar*> funcScc;
+            for (const auto& node: cgSCCNodes) {
+                funcScc.insert(callGraph->getGNode(node)->getFunction());
+            }
+            ICFGWTO* iwto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(fun), funcScc);
             iwto->init();
             funcToWTO[it->second->getFunction()] = iwto;
         }
