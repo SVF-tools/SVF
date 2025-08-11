@@ -63,16 +63,16 @@ public:
     {
     }
 
-    inline void forEachSuccessor(
-        const ICFGNode* node,
-        std::function<void(const ICFGNode*)> func) const override
+    inline virtual std::vector<const ICFGNode*> getSuccessors(const ICFGNode* node) override
     {
+        std::vector<const ICFGNode*> successors;
+
         if (const auto* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
         {
 
             for (const auto &e : callNode->getOutEdges())
             {
-                ICFGNode *calleeEntryICFGNode = e->getDstNode(); 
+                ICFGNode *calleeEntryICFGNode = e->getDstNode();
                 const ICFGNode *succ = nullptr;
 
                 if (scc.find(calleeEntryICFGNode->getFun()) != scc.end()) // caller & callee in the same SCC
@@ -80,7 +80,7 @@ public:
                 else
                     succ = callNode->getRetICFGNode(); // caller & callee in different SCC
 
-                func(succ);
+                successors.push_back(succ);
             }
         }
         else
@@ -90,9 +90,11 @@ public:
                 ICFGNode *succ = e->getDstNode();
                 if (scc.find(succ->getFun()) == scc.end()) // if not in the same SCC, skip
                     continue;
-                func(succ);
+                successors.push_back(succ);
             }
         }
+
+        return successors;
     }
 };
 
