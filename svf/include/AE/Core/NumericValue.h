@@ -864,37 +864,37 @@ public:
     /// Reload operator
     //{%
     friend bool operator==(const BoundedDouble& lhs,
-                                    const BoundedDouble& rhs)
+                           const BoundedDouble& rhs)
     {
         return lhs.equal(rhs);
     }
 
     friend bool operator!=(const BoundedDouble& lhs,
-                                    const BoundedDouble& rhs)
+                           const BoundedDouble& rhs)
     {
         return !lhs.equal(rhs);
     }
 
     friend bool operator>(const BoundedDouble& lhs,
-                                   const BoundedDouble& rhs)
+                          const BoundedDouble& rhs)
     {
         return !lhs.leq(rhs);
     }
 
     friend bool operator<(const BoundedDouble& lhs,
-                                   const BoundedDouble& rhs)
+                          const BoundedDouble& rhs)
     {
         return !lhs.geq(rhs);
     }
 
     friend bool operator<=(const BoundedDouble& lhs,
-                                    const BoundedDouble& rhs)
+                           const BoundedDouble& rhs)
     {
         return lhs.leq(rhs);
     }
 
     friend bool operator>=(const BoundedDouble& lhs,
-                                    const BoundedDouble& rhs)
+                           const BoundedDouble& rhs)
     {
         return lhs.geq(rhs);
     }
