@@ -216,39 +216,39 @@ public:
     /// Reload operator
     //{%
     // Overloads the equality operator to compare two BoundedInt objects.
-    friend BoundedInt operator==(const BoundedInt& lhs, const BoundedInt& rhs)
+    friend bool operator==(const BoundedInt& lhs, const BoundedInt& rhs)
     {
         return lhs.equal(rhs);
     }
 
     // Overloads the inequality operator to compare two BoundedInt objects.
-    friend BoundedInt operator!=(const BoundedInt& lhs, const BoundedInt& rhs)
+    friend bool operator!=(const BoundedInt& lhs, const BoundedInt& rhs)
     {
         return !lhs.equal(rhs);
     }
 
     // Overloads the greater than operator to compare two BoundedInt objects.
-    friend BoundedInt operator>(const BoundedInt& lhs, const BoundedInt& rhs)
+    friend bool operator>(const BoundedInt& lhs, const BoundedInt& rhs)
     {
         return !lhs.leq(rhs);
     }
 
     // Overloads the less than operator to compare two BoundedInt objects.
-    friend BoundedInt operator<(const BoundedInt& lhs, const BoundedInt& rhs)
+    friend bool operator<(const BoundedInt& lhs, const BoundedInt& rhs)
     {
         return !lhs.geq(rhs);
     }
 
     // Overloads the less than or equal to operator to compare two BoundedInt
     // objects.
-    friend BoundedInt operator<=(const BoundedInt& lhs, const BoundedInt& rhs)
+    friend bool operator<=(const BoundedInt& lhs, const BoundedInt& rhs)
     {
         return lhs.leq(rhs);
     }
 
     // Overloads the greater than or equal to operator to compare two BoundedInt
     // objects.
-    friend BoundedInt operator>=(const BoundedInt& lhs, const BoundedInt& rhs)
+    friend bool operator>=(const BoundedInt& lhs, const BoundedInt& rhs)
     {
         return lhs.geq(rhs);
     }
