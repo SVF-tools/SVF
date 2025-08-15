@@ -184,12 +184,12 @@ public:
 
     static inline bool isNullMem(u32_t addr)
     {
-        return AddressValue::getInternalID(addr) == NullMemAddr;
+        return addr == NullMemAddr;
     }
 
     static inline bool isInvalidMem(u32_t addr)
     {
-        return AddressValue::getInternalID(addr) == InvalidMemAddr;
+        return addr == InvalidMemAddr;
     }
 
 
