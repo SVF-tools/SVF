@@ -217,7 +217,7 @@ public:
     /// Check bit value of val start with 0x7F000000, filter by 0xFF000000
     static inline bool isVirtualMemAddress(u32_t val)
     {
-        return (val & 0xff000000) == AddressMask && val != AddressMask + 0;
+        return (val & 0xff000000) == AddressMask;
     }
 
 };
