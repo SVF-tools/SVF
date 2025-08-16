@@ -720,13 +720,15 @@ protected:
     }; // end class WTOCycleDepthBuilder
 
 protected:
-
-    inline virtual void forEachSuccessor(const NodeT* node, std::function<void(const NodeT*)> func) const
+    /// Return the successors of node
+    inline virtual std::vector<const NodeT *> getSuccessors(const NodeT* node)
     {
+        std::vector<const NodeT *> succssors;
         for (const auto& e : node->getOutEdges())
         {
-            func(e->getDstNode());
+            succssors.push_back(e->getDstNode());
         }
+        return succssors;
     }
 
 protected:
@@ -788,13 +790,14 @@ protected:
     virtual const WTOCycleT* component(const NodeT* node)
     {
         WTOComponentRefList partition;
-        forEachSuccessor(node, [&](const NodeT* succ)
+
+        for (auto succ: getSuccessors(node))
         {
             if (getCDN(succ) == 0)
             {
                 visit(succ, partition);
             }
-        });
+        }
         const WTONodeT* head = newNode(node);
         const WTOCycleT* ptr = newCycle(head, partition);
         headRefToCycle.emplace(node, ptr);
@@ -816,7 +819,8 @@ protected:
         head = _num;
         setCDN(node, head);
         loop = false;
-        forEachSuccessor(node, [&](const NodeT* succ)
+
+        for (auto succ: getSuccessors(node))
         {
             CycleDepthNumber succ_dfn = getCDN(succ);
             if (succ_dfn == CycleDepthNumber(0))
@@ -832,7 +836,7 @@ protected:
                 head = min;
                 loop = true;
             }
-        });
+        }
 
         if (head == getCDN(node))
         {
