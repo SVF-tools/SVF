@@ -887,7 +887,6 @@ inline IntervalValue operator<=(const IntervalValue &lhs, const IntervalValue &r
 /// Left binary shift of IntervalValues
 inline IntervalValue operator<<(const IntervalValue &lhs, const IntervalValue &rhs)
 {
-    //TODO: implement <<
     if (lhs.isBottom() || rhs.isBottom())
         return IntervalValue::bottom();
     if (lhs.isTop() && rhs.isTop())
@@ -925,7 +924,6 @@ inline IntervalValue operator<<(const IntervalValue &lhs, const IntervalValue &r
 /// Left binary shift of IntervalValues
 inline IntervalValue operator>>(const IntervalValue &lhs, const IntervalValue &rhs)
 {
-    //TODO: implement >>
     if (lhs.isBottom() || rhs.isBottom())
         return IntervalValue::bottom();
     else if (lhs.isTop() && rhs.isTop())
