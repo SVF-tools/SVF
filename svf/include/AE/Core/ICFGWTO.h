@@ -45,75 +45,42 @@ typedef WTOComponent<ICFG> ICFGWTOComp;
 typedef WTONode<ICFG> ICFGSingletonWTO;
 typedef WTOCycle<ICFG> ICFGCycleWTO;
 
+// Added for IWTO
 class ICFGWTO : public WTO<ICFG>
 {
 public:
     typedef WTO<ICFG> Base;
     typedef WTOComponentVisitor<ICFG>::WTONodeT ICFGWTONode;
+    Set<const FunObjVar*> scc;
 
-    explicit ICFGWTO(ICFG* graph, const ICFGNode* node) : Base(graph, node) {}
+    explicit ICFGWTO(ICFG* graph,const ICFGNode* node, Set<const FunObjVar*> funcScc = {}) :
+        Base(graph, node), scc(funcScc){
+            if (scc.empty()) // if empty funcScc, default use the function of the node
+                scc.insert(node->getFun());
+        } 
 
     virtual ~ICFGWTO()
     {
     }
 
-    inline void forEachSuccessor(
-        const ICFGNode* node,
-        std::function<void(const ICFGNode*)> func) const override
+    inline virtual std::vector<const ICFGNode*> getSuccessors(const ICFGNode* node) override
     {
-        if (const auto* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
-        {
-            const ICFGNode* succ = callNode->getRetICFGNode();
-            func(succ);
-        }
-        else
-        {
-            for (const auto& e : node->getOutEdges())
-            {
-                if (!e->isIntraCFGEdge() ||
-                        node->getFun() != e->getDstNode()->getFun())
-                    continue;
-                func(e->getDstNode());
-            }
-        }
-    }
-};
+        std::vector<const ICFGNode*> successors;
 
-// Added for IWTO
-class ICFGIWTO : public ICFGWTO
-{
-public:
-    typedef ICFGWTO Base;
-    typedef WTOComponentVisitor<ICFG>::WTONodeT ICFGWTONode;
-    NodeBS &funcPar;
-    CallGraph *cg;
-
-    explicit ICFGIWTO(ICFG* graph, const ICFGNode* node, NodeBS & funcPar, CallGraph* cg) :
-        Base(graph, node), funcPar(funcPar), cg(cg) {}
-
-    virtual ~ICFGIWTO()
-    {
-    }
-
-    inline void forEachSuccessor(
-        const ICFGNode* node,
-        std::function<void(const ICFGNode*)> func) const override
-    {
         if (const auto* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
         {
 
             for (const auto &e : callNode->getOutEdges())
             {
                 ICFGNode *calleeEntryICFGNode = e->getDstNode();
-                CallGraphNode * calleeCGNode = cg->getCallGraphNode(calleeEntryICFGNode->getFun());
+                const ICFGNode *succ = nullptr;
 
-                const ICFGNode* succ = nullptr;
-                if (funcPar.test(calleeCGNode->getId()))
+                if (scc.find(calleeEntryICFGNode->getFun()) != scc.end()) // caller & callee in the same SCC
                     succ = calleeEntryICFGNode;
                 else
-                    succ = callNode->getRetICFGNode();
+                    succ = callNode->getRetICFGNode(); // caller & callee in different SCC
 
-                func(succ);
+                successors.push_back(succ);
             }
         }
         else
@@ -121,12 +88,13 @@ public:
             for (const auto& e : node->getOutEdges())
             {
                 ICFGNode *succ = e->getDstNode();
-                CallGraphNode *succCGNode = cg->getCallGraphNode(succ->getFun());
-                if (!funcPar.test(succCGNode->getId()))
+                if (scc.find(succ->getFun()) == scc.end()) // if not in the same SCC, skip
                     continue;
-                func(succ);
+                successors.push_back(succ);
             }
         }
+
+        return successors;
     }
 };
 
