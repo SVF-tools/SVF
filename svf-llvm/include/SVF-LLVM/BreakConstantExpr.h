@@ -12,6 +12,14 @@
 //
 //===----------------------------------------------------------------------===//
 
+// Support for LLVM > 16
+#if LLVM_VERSION_MAJOR > 16
+#include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/Analysis/BasicAliasAnalysis.h"
+#include "llvm/IR/PassManager.h"
+#include "llvm/Passes/PassBuilder.h"
+#endif
+
 #ifndef BREAKCONSTANTGEPS_H
 #define BREAKCONSTANTGEPS_H
 
@@ -71,21 +79,36 @@ public:
     }
     inline void UnifyFunctionExit(Module& module)
     {
-        for (Module::const_iterator iter = module.begin(), eiter = module.end();
-                iter != eiter; ++iter)
-        {
-            const Function& fun = *iter;
-            if(fun.isDeclaration())
-                continue;
-            getUnifyExit(fun)->runOnFunction(const_cast<Function&>(fun));
-        }
+    #if LLVM_VERSION_MAJOR > 16
+            llvm::FunctionAnalysisManager FAM;
+            llvm::PassBuilder PB;
+            PB.registerFunctionAnalyses(FAM);
+            llvm::UnifyFunctionExitNodesPass pass;
+            for (Function &fun : module)
+            {
+                if(fun.isDeclaration())
+                    continue;
+                pass.run(fun, FAM);
+            }
+        #else
+            for (Module::const_iterator iter = module.begin(), eiter = module.end();
+                    iter != eiter; ++iter)
+            {
+                const Function& fun = *iter;
+                if(fun.isDeclaration())
+                    continue;
+                getUnifyExit(fun)->runOnFunction(const_cast<Function&>(fun));
+            }
+    #endif
     }
+#if LLVM_VERSION_MAJOR <= 16
     /// Get Unified Exit basic block node
     inline UnifyFunctionExitNodes* getUnifyExit(const Function& fn)
     {
         assert(!fn.isDeclaration() && "external function does not have DF");
         return &getAnalysis<UnifyFunctionExitNodes>(const_cast<Function&>(fn));
     }
+#endif
 };
 
 } // End namespace SVF

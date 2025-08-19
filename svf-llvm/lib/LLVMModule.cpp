@@ -29,6 +29,15 @@
  *      Author: Xiao Cheng, Yulei Sui
  */
 
+// Support for LLVM > 16 
+#if LLVM_VERSION_MAJOR > 16
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/Analysis/BasicAliasAnalysis.h"
+#include "llvm/IR/PassManager.h"
+#endif
+
+// Previous includes
 #include <queue>
 #include <algorithm>
 #include "Util/SVFUtil.h"
@@ -258,18 +267,35 @@ void LLVMModuleSet::prePassSchedule()
     }
 
     /// MergeFunctionRets Pass
-    std::unique_ptr<UnifyFunctionExitNodes> p2 =
-        std::make_unique<UnifyFunctionExitNodes>();
-    for (Module &M : getLLVMModules())
-    {
-        for (auto F = M.begin(), E = M.end(); F != E; ++F)
+    #if LLVM_VERSION_MAJOR > 16
+        llvm::FunctionAnalysisManager FAM;
+        llvm::PassBuilder PB;
+        PB.registerFunctionAnalyses(FAM);
+        llvm::UnifyFunctionExitNodesPass pass;
+        for (Module &M : getLLVMModules())
         {
-            Function &fun = *F;
-            if (fun.isDeclaration())
-                continue;
-            p2->runOnFunction(fun);
+            for (auto F = M.begin(), E = M.end(); F != E; ++F)
+            {
+                Function &fun = *F;
+                if (fun.isDeclaration())
+                    continue;
+                pass.run(fun, FAM);
+            }
         }
-    }
+    #else
+        std::unique_ptr<UnifyFunctionExitNodes> p2 =
+            std::make_unique<UnifyFunctionExitNodes>();
+        for (Module &M : getLLVMModules())
+        {
+            for (auto F = M.begin(), E = M.end(); F != E; ++F)
+            {
+                Function &fun = *F;
+                if (fun.isDeclaration())
+                    continue;
+                p2->runOnFunction(fun);
+            }
+        }
+    #endif
 }
 
 void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
