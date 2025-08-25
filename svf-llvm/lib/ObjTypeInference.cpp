@@ -160,7 +160,11 @@ const Type *ObjTypeInference::inferObjType(const Value *var)
                         const Value* dst = cs->getArgOperand(0);
                         const Value* src = cs->getArgOperand(1);
                         if(calledFun->getName().find("iconv") != std::string::npos)
+                        {
+                            if(var == cs->getArgOperand(0))
+                                return res;
                             dst = cs->getArgOperand(3), src = cs->getArgOperand(1);
+                        }
 
                         if (var == dst) return inferPointsToType(src);
                         else if (var == src) return inferPointsToType(dst);
