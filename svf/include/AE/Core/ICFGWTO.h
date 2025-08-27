@@ -45,7 +45,8 @@ typedef WTOComponent<ICFG> ICFGWTOComp;
 typedef WTONode<ICFG> ICFGSingletonWTO;
 typedef WTOCycle<ICFG> ICFGCycleWTO;
 
-// Added for IWTO
+/// Interprocedural Weak Topological Order
+/// Each IWTO has an entry ICFGNode within an function-level SCC boundary. Here scc is one or more functions.
 class ICFGWTO : public WTO<ICFG>
 {
 public:
@@ -53,10 +54,11 @@ public:
     typedef WTOComponentVisitor<ICFG>::WTONodeT ICFGWTONode;
     Set<const FunObjVar*> scc;
 
-    explicit ICFGWTO(ICFG* graph,const ICFGNode* node, Set<const FunObjVar*> funcScc = {}) :
-        Base(graph, node), scc(funcScc)
+    // 1st argument is the SCC's entry ICFGNode and 2nd argument is the function(s) in this SCC.
+    explicit ICFGWTO(const ICFGNode* node, Set<const FunObjVar*> funcScc = {}) :
+        Base(node), scc(funcScc)
     {
-        if (scc.empty()) // if empty funcScc, default use the function of the node
+        if (scc.empty()) // if funcScc is empty, the scc is the function itself
             scc.insert(node->getFun());
     }
 

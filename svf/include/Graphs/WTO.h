@@ -554,13 +554,12 @@ protected:
     NodeRefToCycleDepthNumber _nodeToCDN;
     CycleDepthNumber _num;
     Stack _stack;
-    GraphT* _graph;
     const NodeT* _entry;
 
 public:
 
     /// Compute the weak topological order of the given graph
-    explicit WTO(GraphT* graph, const NodeT* entry) : _num(0), _graph(graph), _entry(entry)
+    explicit WTO(const NodeT* entry) : _num(0), _entry(entry)
     {
     }
 

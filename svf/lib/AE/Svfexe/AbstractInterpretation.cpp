@@ -137,7 +137,7 @@ void AbstractInterpretation::initWTO()
             {
                 funcScc.insert(callGraph->getGNode(node)->getFunction());
             }
-            ICFGWTO* iwto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(fun), funcScc);
+            ICFGWTO* iwto = new ICFGWTO(icfg->getFunEntryICFGNode(fun), funcScc);
             iwto->init();
             funcToWTO[it->second->getFunction()] = iwto;
         }
