@@ -54,10 +54,11 @@ public:
     Set<const FunObjVar*> scc;
 
     explicit ICFGWTO(ICFG* graph,const ICFGNode* node, Set<const FunObjVar*> funcScc = {}) :
-        Base(graph, node), scc(funcScc){
-            if (scc.empty()) // if empty funcScc, default use the function of the node
-                scc.insert(node->getFun());
-        } 
+        Base(graph, node), scc(funcScc)
+    {
+        if (scc.empty()) // if empty funcScc, default use the function of the node
+            scc.insert(node->getFun());
+    }
 
     virtual ~ICFGWTO()
     {

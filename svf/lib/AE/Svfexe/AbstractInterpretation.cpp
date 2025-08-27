@@ -133,7 +133,8 @@ void AbstractInterpretation::initWTO()
         if (isEntry)
         {
             Set<const FunObjVar*> funcScc;
-            for (const auto& node: cgSCCNodes) {
+            for (const auto& node: cgSCCNodes)
+            {
                 funcScc.insert(callGraph->getGNode(node)->getFunction());
             }
             ICFGWTO* iwto = new ICFGWTO(icfg, icfg->getFunEntryICFGNode(fun), funcScc);
@@ -790,8 +791,8 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
             {
 
                 if (isRecursiveFun(cycle->head()->getICFGNode()->getFun()) &&
-                    !(Options::HandleRecur() == WIDEN_ONLY ||
-                        Options::HandleRecur() == WIDEN_NARROW))
+                        !(Options::HandleRecur() == WIDEN_ONLY ||
+                          Options::HandleRecur() == WIDEN_NARROW))
                 {
                     // When Options::HandleRecur() == TOP, skipRecursiveCall will handle recursions,
                     // thus should not reach this branch
