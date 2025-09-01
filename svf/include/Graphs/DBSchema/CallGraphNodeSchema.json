@@ -22,6 +22,12 @@
                     "type":"STRING",
                     "optional":false,
                     "index":false
+                },
+                {
+                    "name":"fun_name",
+                    "type":"STRING",
+                    "optional":false,
+                    "index":false
                 }
             ]
         }

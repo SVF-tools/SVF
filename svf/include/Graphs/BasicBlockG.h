@@ -64,7 +64,6 @@ public:
 
     virtual const std::string toString() const;
 
-    std::string toDBString() const;
 };
 
 
@@ -294,8 +293,6 @@ public:
     {
         return predBBs;
     }
-
-    std::string toDBString() const;
 
 };
 

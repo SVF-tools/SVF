@@ -47,18 +47,6 @@ FunEntryICFGNode::FunEntryICFGNode(NodeID id, const FunObjVar* f) : InterICFGNod
     }
 }
 
-std::string FunEntryICFGNode::toDBString() const
-{
-    const std::string queryStatement ="CREATE (n:FunEntryICFGNode {id: " + std::to_string(getId()) +
-    ", kind: " + std::to_string(getNodeKind()) +
-    ", fun_obj_var_id:" + std::to_string(getFun()->getId()) + 
-    ", pag_edge_ids:'" + GraphDBClient::getInstance().extractEdgesIds(getSVFStmts()) +"'" +
-    ", bb_id:" + std::to_string(getBB()->getId()) +
-    ", fp_nodes:'" + GraphDBClient::getInstance().extractNodesIds(getFormalParms()) +"'"+
-    sourceLocToDBString() + "})";
-    return queryStatement;
-}
-
 FunExitICFGNode::FunExitICFGNode(NodeID id, const FunObjVar* f)
     : InterICFGNode(id, FunExitBlock), formalRet(nullptr)
 {
@@ -68,24 +56,6 @@ FunExitICFGNode::FunExitICFGNode(NodeID id, const FunObjVar* f)
     {
         bb = f->getExitBB();
     }
-}
-
-std::string FunExitICFGNode::toDBString() const
-{
-    std::string formalRetId = "";
-    if (nullptr == getFormalRet())
-    {
-        formalRetId = ",formal_ret_node_id:-1";
-    } else {
-        formalRetId = ",formal_ret_node_id:" + std::to_string(getFormalRet()->getId());
-    }
-    const std::string queryStatement ="CREATE (n:FunExitICFGNode {id: " + std::to_string(getId()) +
-    ", kind: " + std::to_string(getNodeKind()) +
-    ", fun_obj_var_id:" + std::to_string(getFun()->getId()) + 
-    ", pag_edge_ids:'" + GraphDBClient::getInstance().extractEdgesIds(getSVFStmts()) +"'" +
-    ", bb_id:" + std::to_string(getBB()->getId()) +
-    formalRetId + sourceLocToDBString() + "})";
-    return queryStatement;
 }
 
 const std::string ICFGNode::toString() const
@@ -180,64 +150,6 @@ const std::string CallICFGNode::toString() const
     return rawstr.str();
 }
 
-std::string CallICFGNode::toDBString() const
-{
-    std::string fun_name_of_v_call = "";
-    std::string vtab_ptr_node_id = "";
-    std::string virtual_fun_idx = "";
-    std::string is_vir_call_inst = isVirtualCall() ? "true" : "false";
-    std::string virtualFunAppendix = "";
-    int indFunPtrId = -1;
-    if (isIndirectCall())
-    {
-        indFunPtrId = getIndFunPtr()->getId();
-    }
-    if (isVirtualCall())
-    {
-        fun_name_of_v_call = ", fun_name_of_v_call: '"+getFunNameOfVirtualCall()+"'";
-        vtab_ptr_node_id = ", vtab_ptr_node_id:" + std::to_string(getVtablePtr()->getId());
-        virtual_fun_idx = ", virtual_fun_idx:" + std::to_string(getFunIdxInVtable());
-        virtualFunAppendix = vtab_ptr_node_id+virtual_fun_idx+fun_name_of_v_call;
-    }
-    else 
-    {
-        vtab_ptr_node_id = ", vtab_ptr_node_id:-1";
-        virtual_fun_idx = ", virtual_fun_idx:-1";
-        virtualFunAppendix = vtab_ptr_node_id+virtual_fun_idx;
-    }
-    std::string called_fun_obj_var_id = "";
-    if (getCalledFunction() != nullptr)
-    {
-        called_fun_obj_var_id = ", called_fun_obj_var_id:" + std::to_string(getCalledFunction()->getId());
-    }
-    else 
-    {
-        called_fun_obj_var_id = ", called_fun_obj_var_id: -1";
-    }
-    std::string ret_icfg_node_id = "";
-    if (getRetICFGNode() != nullptr)
-    {
-        ret_icfg_node_id = ", ret_icfg_node_id: " + std::to_string(getRetICFGNode()->getId());
-    }
-    else 
-    {
-        ret_icfg_node_id = ", ret_icfg_node_id: -1";
-    }
-    const std::string queryStatement ="CREATE (n:CallICFGNode {id: " + std::to_string(getId()) +
-    ", kind: " + std::to_string(getNodeKind()) +
-    ret_icfg_node_id +
-    ", bb_id: " + std::to_string(getBB()->getId()) +
-    ", fun_obj_var_id: " + std::to_string(getFun()->getId()) +
-    ", pag_edge_ids:'" + GraphDBClient::getInstance().extractEdgesIds(getSVFStmts()) +"'" +
-    ", svf_type_id:" + std::to_string(getType()->getId()) + 
-    ", ap_nodes:'" + GraphDBClient::getInstance().extractNodesIds(getActualParms()) +"'" +
-    called_fun_obj_var_id +
-    ", is_vararg: " + (isVarArg() ? "true" : "false") +
-    ", is_vir_call_inst: " + (isVirtualCall() ? "true" : "false") +
-    ", ind_fun_ptr_var_id:" + std::to_string(indFunPtrId) +
-    virtualFunAppendix+ sourceLocToDBString() +"})";
-    return queryStatement;
-}
 
 const std::string RetICFGNode::toString() const
 {
@@ -250,26 +162,6 @@ const std::string RetICFGNode::toString() const
     if(getSVFStmts().empty())
         rawstr << "\n" << valueOnlyToString();
     return rawstr.str();
-}
-
-std::string RetICFGNode::toDBString() const
-{
-    std::string actual_ret_node_id="";
-    if (getActualRet() != nullptr)
-    {
-        actual_ret_node_id = ", actual_ret_node_id: " + std::to_string(getActualRet()->getId()) ;
-    } else {
-        actual_ret_node_id = ", actual_ret_node_id: -1";
-    }
-    const std::string queryStatement ="CREATE (n:RetICFGNode {id: " + std::to_string(getId()) +
-    ", kind: " + std::to_string(getNodeKind()) +
-    actual_ret_node_id+
-    ", call_block_node_id: " + std::to_string(getCallICFGNode()->getId()) +
-    ", bb_id: " + std::to_string(getBB()->getId()) +
-    ", fun_obj_var_id: " + std::to_string(getFun()->getId()) +
-    ", pag_edge_ids:'" + GraphDBClient::getInstance().extractEdgesIds(getSVFStmts()) +"'" +
-    ", svf_type_id:" + std::to_string(getType()->getId()) + sourceLocToDBString() + "})";
-    return queryStatement;
 }
 
 const std::string ICFGEdge::toString() const
@@ -292,30 +184,6 @@ const std::string IntraCFGEdge::toString() const
     return rawstr.str();
 }
 
-std::string IntraCFGEdge::toDBString() const
-{
-    std::string srcKind = GraphDBClient::getInstance().getICFGNodeKindString(getSrcNode());
-    std::string dstKind = GraphDBClient::getInstance().getICFGNodeKindString(getDstNode());
-    std::string condition = "";
-    if (getCondition() != nullptr)
-    {
-        condition =
-            ", condition_var_id:" + std::to_string(getCondition()->getId()) +
-            ", branch_cond_val:" + std::to_string(getSuccessorCondValue());
-    }
-    else
-    {
-        condition = ", condition_var_id:-1, branch_cond_val:-1";
-    }
-    const std::string queryStatement =
-        "MATCH (n:" + srcKind + "{id:" + std::to_string(getSrcNode()->getId()) +
-        "}), (m:" + dstKind + "{id:" + std::to_string(getDstNode()->getId()) +
-        "}) WHERE n.id = " + std::to_string(getSrcNode()->getId()) +
-        " AND m.id = " + std::to_string(getDstNode()->getId()) +
-        " CREATE (n)-[r:IntraCFGEdge{kind:" + std::to_string(getEdgeKind()) +
-        condition + "}]->(m)";
-    return queryStatement;
-}
 
 const std::string CallCFGEdge::toString() const
 {
@@ -324,20 +192,6 @@ const std::string CallCFGEdge::toString() const
     rawstr << "CallCFGEdge " << " [ICFGNode";
     rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << getSrcNode()->toString() << "\t";
     return rawstr.str();
-}
-
-std::string CallCFGEdge::toDBString() const
-{
-    std::string srcKind = GraphDBClient::getInstance().getICFGNodeKindString(getSrcNode());
-    std::string dstKind = GraphDBClient::getInstance().getICFGNodeKindString(getDstNode());
-    const std::string queryStatement =
-        "MATCH (n:" + srcKind + "{id:" + std::to_string(getSrcNode()->getId()) +
-        "}), (m:" + dstKind + "{id:" + std::to_string(getDstNode()->getId()) +
-        "}) WHERE n.id = " + std::to_string(getSrcNode()->getId()) +
-        " AND m.id = " + std::to_string(getDstNode()->getId()) +
-        " CREATE (n)-[r:CallCFGEdge{kind:" + std::to_string(getEdgeKind()) +
-        ", call_pe_ids:'" + GraphDBClient::getInstance().extractEdgesIds(getCallPEs()) + "'}]->(m)";
-    return queryStatement;
 }
 
 const std::string RetCFGEdge::toString() const
@@ -349,28 +203,6 @@ const std::string RetCFGEdge::toString() const
     return rawstr.str();
 }
 
-std::string RetCFGEdge::toDBString() const
-{
-    std::string srcKind = GraphDBClient::getInstance().getICFGNodeKindString(getSrcNode());
-    std::string dstKind = GraphDBClient::getInstance().getICFGNodeKindString(getDstNode());
-    std::string ret_pe_id = "";
-    if (getRetPE() != nullptr)
-    {
-        ret_pe_id = ", ret_pe_id:" + std::to_string(getRetPE()->getEdgeID());
-    }
-    else
-    {
-        ret_pe_id = ", ret_pe_id:-1";
-    }
-    const std::string queryStatement =
-        "MATCH (n:" + srcKind + "{id:" + std::to_string(getSrcNode()->getId()) +
-        "}), (m:" + dstKind + "{id:" + std::to_string(getDstNode()->getId()) +
-        "}) WHERE n.id = " + std::to_string(getSrcNode()->getId()) +
-        " AND m.id = " + std::to_string(getDstNode()->getId()) +
-        " CREATE (n)-[r:RetCFGEdge{kind:" + std::to_string(getEdgeKind()) +
-        ret_pe_id + "}]->(m)";
-    return queryStatement;
-}
 
 /// Return call ICFGNode at the callsite
 const CallICFGNode* RetCFGEdge::getCallSite() const
@@ -653,34 +485,6 @@ void ICFG::updateCallGraph(CallGraph* callgraph)
     }
 }
 
-std::string IntraICFGNode::toDBString() const
-{
-    const std::string queryStatement ="CREATE (n:IntraICFGNode {id: " + std::to_string(getId()) +
-    ", kind: " + std::to_string(getNodeKind()) +
-    ", is_return: " + (isRetInst() ? "true" : "false") +
-    ", fun_obj_var_id:" + std::to_string(getFun()->getId()) +
-    ", pag_edge_ids:'" + GraphDBClient::getInstance().extractEdgesIds(getSVFStmts()) +"'" +
-    ", bb_id:" + std::to_string(getBB()->getId()) + 
-    sourceLocToDBString() + "})";
-    return queryStatement;
-}
-
-std::string InterICFGNode::toDBString() const{
-    const std::string queryStatement ="CREATE (n:InterICFGNode {id: " + std::to_string(getId()) +
-    ", kind: " + std::to_string(getNodeKind()) + 
-    ", pag_edge_ids:'" + GraphDBClient::getInstance().extractEdgesIds(getSVFStmts()) +"'"+
-    sourceLocToDBString() + "})";
-    return queryStatement;
-}
-
-std::string GlobalICFGNode::toDBString() const
-{
-    const std::string queryStatement ="CREATE (n:GlobalICFGNode {id: " + std::to_string(getId()) +
-    ", kind: " + std::to_string(getNodeKind()) + 
-    ", pag_edge_ids:'" + GraphDBClient::getInstance().extractEdgesIds(getSVFStmts())  +"'"+
-    sourceLocToDBString() + "})";
-    return queryStatement;
-}
 /*!
  * GraphTraits specialization
  */
