@@ -167,6 +167,172 @@ public:
     void readPAGEdgesFromDB(lgraph::RpcClient* connection, const std::string& dbname, std::string edgeType, SVFIR* pag);
     void parseAPIdxOperandPairsString(const std::string& ap_idx_operand_pairs, SVFIR* pag, AccessPath* ap);
     void parseOpVarString(std::string& op_var_node_ids, SVFIR* pag, std::vector<SVFVar*>& opVarNodes);
+
+    /// BasicBlockGraph toDBString()
+    const std::string bb2DBString(const SVFBasicBlock* bb);
+    const std::string bbEdge2DBString(const BasicBlockEdge* edge);
+
+    /// CallGraph toDBString()
+    const std::string callGraphNode2DBString(const CallGraphNode* node);
+    const std::string callGraphEdge2DBString(const CallGraphEdge* edge);
+
+
+    /// ICFG toDBString()
+    const std::string intraCFGEdge2DBString(const IntraCFGEdge* edge);
+    const std::string callCFGEdge2DBString(const CallCFGEdge* edge);
+    const std::string retCFGEdge2DBString(const RetCFGEdge* edge);
+    const std::string globalICFGNode2DBString(const GlobalICFGNode* node);
+    const std::string intraICFGNode2DBString(const IntraICFGNode* node);
+    const std::string interICFGNode2DBString(const InterICFGNode* node);
+    const std::string funEntryICFGNode2DBString(const FunEntryICFGNode* node);
+    const std::string funExitICFGNode2DBString(const FunExitICFGNode* node);
+    const std::string retICFGNode2DBString(const RetICFGNode* node);
+    const std::string callICFGNode2DBString(const CallICFGNode* node);
+
+    /// SVFType toDBString()
+    const std::string stInfo2DBString(const StInfo* stinfo);
+    const std::string SVFPointerType2DBString(const SVFPointerType* type);
+    const std::string SVFArrayType2DBString(const SVFArrayType* type);
+    const std::string SVFIntegerType2DBString(const SVFIntegerType* type);
+    const std::string SVFFunctionType2DBString(const SVFFunctionType* type);
+    const std::string SVFStructType2DBString(const SVFStructType* type);
+    const std::string SVFOtherType2DBString(const SVFOtherType* type);
+
+    /// PAG toDBString()
+    const std::string generateSVFStmtEdgeFieldsStmt(const SVFStmt* stmt);
+    const std::string SVFStmt2DBString(const SVFStmt* stmt);
+    const std::string AssignStmt2DBString(const AssignStmt* stmt);
+    const std::string AddrStmt2DBString(const AddrStmt* stmt);
+    const std::string CopyStmt2DBString(const CopyStmt* stmt);
+    const std::string StoreStmt2DBString(const StoreStmt* stmt);
+    const std::string LoadStmt2DBString(const LoadStmt* stmt);
+    const std::string GepStmt2DBString(const GepStmt* stmt);
+    const std::string CallPE2DBString(const CallPE* stmt);
+    const std::string RetPE2DBString(const RetPE* stmt);
+    const std::string MultiOpndStmt2DBString(const MultiOpndStmt* stmt);
+    const std::string PhiStmt2DBString(const PhiStmt* stmt);
+    const std::string SelectStmt2DBString(const SelectStmt* stmt);
+    const std::string CmpStmt2DBString(const CmpStmt* stmt);
+    const std::string BinaryOPStmt2DBString(const BinaryOPStmt* stmt);
+    const std::string UnaryOPStmt2DBString(const UnaryOPStmt* stmt);
+    const std::string BranchStmt2DBString(const BranchStmt* stmt);
+    const std::string TDForkPE2DBString(const TDForkPE* stmt);
+    const std::string TDJoinPE2DBString(const TDJoinPE* stmt);
+    const std::string generateAssignStmtFieldsStmt(const AssignStmt* stmt)
+    {
+        return generateSVFStmtEdgeFieldsStmt(stmt);
+    }
+    const std::string generateMultiOpndStmtEdgeFieldsStmt(const MultiOpndStmt* stmt)
+    {
+        std::string stmtStr = generateSVFStmtEdgeFieldsStmt(stmt);
+        if (!stmt->getOpndVars().empty())
+        {
+            stmtStr += ", op_var_node_ids:'" + extractNodesIds(stmt->getOpndVars())+"'";
+        }
+        else 
+        {
+            stmtStr += ", op_var_node_ids:''";
+        }
+        return stmtStr;
+    }
+
+    const std::string valVar2DBString(const ValVar* var);
+    const std::string objVar2DBString(const ObjVar* var);
+    const std::string argValVar2DBString(const ArgValVar* var);
+    const std::string gepValVar2DBString(const GepValVar* var);
+    const std::string baseObjVar2DBString(const BaseObjVar* var);
+    const std::string gepObjVar2DBString(const GepObjVar* var);
+    const std::string heapObjVar2DBString(const HeapObjVar* var);
+    const std::string stackObjVar2DBString(const StackObjVar* var);
+    const std::string funObjVar2DBString(const FunObjVar* var);
+    const std::string funValVar2DBString(const FunValVar* var);
+    const std::string globalValVar2DBString(const GlobalValVar* var);
+    const std::string constAggValVar2DBString(const ConstAggValVar* var);
+    const std::string constDataValVar2DBString(const ConstDataValVar* var);
+    const std::string blackHoleValVar2DBString(const BlackHoleValVar* var);
+    const std::string constFPValVar2DBString(const ConstFPValVar* var);
+    const std::string constIntValVar2DBString(const ConstIntValVar* var);
+    const std::string constNullPtrValVar2DBString(const ConstNullPtrValVar* var);
+    const std::string globalObjVar2DBString(const GlobalObjVar* var);
+    const std::string constAggObjVar2DBString(const ConstAggObjVar* var);
+    const std::string constDataObjVar2DBString(const ConstDataObjVar* var);
+    const std::string constFPObjVar2DBString(const ConstFPObjVar* var);
+    const std::string constIntObjVar2DBString(const ConstIntObjVar* var);
+    const std::string constNullPtrObjVar2DBString(const ConstNullPtrObjVar* var);
+    const std::string retValPN2DBString(const RetValPN* var);
+    const std::string varArgValPN2DBString(const VarArgValPN* var);
+    const std::string dummyValVar2DBString(const DummyValVar* var);
+    const std::string dummyObjVar2DBString(const DummyObjVar* var);
+    const std::string getSVFVarNodeFieldsStmt(const SVFVar* var)
+    {
+        std::string fieldsStr = "";
+        fieldsStr += "id: " + std::to_string(var->getId()) + 
+        ", svf_type_id:"+ std::to_string(var->getType()->getId()) +
+        ", in_edge_kind_to_set_map:'" + pagEdgeToSetMapTyToString(var->getInEdgeKindToSetMap()) +
+        "', out_edge_kind_to_set_map:'" + pagEdgeToSetMapTyToString(var->getOutEdgeKindToSetMap()) +
+        "'" + var->sourceLocToDBString();
+        return fieldsStr;
+    }
+
+    const std::string getValVarNodeFieldsStmt(const ValVar* var)
+    {
+        std::string fieldsStr = getSVFVarNodeFieldsStmt(var);
+        if ( nullptr != var->getICFGNode())
+        {
+            fieldsStr += ", icfg_node_id:" + std::to_string(var->getICFGNode()->getId());
+        }
+        else
+        {
+            fieldsStr += ", icfg_node_id:-1";
+        }
+        return fieldsStr;
+    }
+
+    const std::string getObjVarNodeFieldsStmt(const ObjVar* var) 
+    {
+        return getSVFVarNodeFieldsStmt(var);
+    }
+
+    const std::string getBaseObjVarNodeFieldsStmt(const BaseObjVar* var)
+    {
+        std::string fieldsStr;
+        std::string icfgIDstr = "";
+        if (nullptr != var->getICFGNode())
+        {
+            icfgIDstr =
+                ", icfg_node_id:" + std::to_string(var->getICFGNode()->getId());
+        }
+        else
+        {
+            icfgIDstr = ", icfg_node_id:-1";
+        }
+        std::string objTypeInfo_byteSize_str = "";
+        if (var->isConstantByteSize())
+        {
+            objTypeInfo_byteSize_str += ", obj_type_info_byte_size:" +
+                                        std::to_string(var->getByteSizeOfObj());
+        }
+        fieldsStr += getObjVarNodeFieldsStmt(var) + icfgIDstr + ", obj_type_info_type_id:" +
+            std::to_string(var->getTypeInfo()->getType()->getId()) +
+            ", obj_type_info_flags:" +
+            std::to_string(var->getTypeInfo()->getFlag()) +
+            ", obj_type_info_max_offset_limit:" +
+            std::to_string(var->getMaxFieldOffsetLimit()) +
+            ", obj_type_info_elem_num:" + std::to_string(var->getNumOfElements()) +
+            objTypeInfo_byteSize_str;
+        return fieldsStr;
+    }
+
+    const std::string getConstDataObjVarNodeFieldsStmt(const ConstDataObjVar* var)
+    {
+        return getBaseObjVarNodeFieldsStmt(var);
+    }
+
+    const std::string getConstDataValVarNodeFieldsStmt(const ConstDataValVar* var)
+    {
+        return getValVarNodeFieldsStmt(var);
+    }
+
     std::string parseNodeSourceLocation(cJSON* node) const
     {
         cJSON* data = cJSON_GetObjectItem(node, "node");

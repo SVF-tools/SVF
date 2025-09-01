@@ -198,7 +198,6 @@ public:
         return "Global ICFGNode";
     }
 
-    std::string toDBString() const;
 };
 
 /*!
@@ -251,7 +250,6 @@ public:
         return isRet;
     }
 
-    std::string toDBString() const;
 };
 
 class InterICFGNode : public ICFGNode
@@ -285,7 +283,6 @@ public:
         return isInterICFGNodeKind(node->getNodeKind());
     }
 
-    std::string toDBString() const;
 
     //@}
 };
@@ -366,7 +363,6 @@ public:
 
     const std::string getSourceLoc() const override;
 
-    std::string toDBString() const;
 };
 
 /*!
@@ -440,7 +436,6 @@ public:
 
     const std::string getSourceLoc() const override;
 
-    std::string toDBString() const;
 };
 
 /*!
@@ -630,7 +625,6 @@ public:
         return "CallICFGNode: " + ICFGNode::getSourceLoc();
     }
 
-    std::string toDBString() const;
 
     inline void setIndFunPtr(const SVFVar* indFun)
     {
@@ -730,7 +724,6 @@ public:
         return "RetICFGNode: " + ICFGNode::getSourceLoc();
     }
 
-    std::string toDBString() const;
 };
 
 } // End namespace SVF
