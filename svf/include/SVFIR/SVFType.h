@@ -175,7 +175,6 @@ public:
         return stride;
     }
 
-    std::string toDBString() const;
 };
 
 class SVFType
@@ -333,17 +332,6 @@ public:
 
     void print(std::ostream& os) const override;
 
-    std::string toDBString() const
-    {
-        std::string is_single_val_ty = isSingleValueType() ? "true" : "false";
-        const std::string queryStatement ="CREATE (n:SVFPointerType {id:" + std::to_string(getId()) +
-        ", svf_i8_type_id:" + std::to_string(getSVFInt8Type()->getId()) +
-        ", svf_ptr_type_id:" + std::to_string(getSVFPtrType()->getId()) + 
-        ", kind:" + std::to_string(getKind()) + 
-        ", is_single_val_ty:" + is_single_val_ty + 
-        ", byte_size:" + std::to_string(getByteSize()) + "})";
-        return queryStatement;
-    }
 };
 
 class SVFIntegerType : public SVFType
@@ -381,19 +369,6 @@ public:
     bool isSigned() const
     {
         return signAndWidth < 0;
-    }
-
-    std::string toDBString() const
-    {
-        std::string is_single_val_ty = isSingleValueType() ? "true" : "false";
-        const std::string queryStatement ="CREATE (n:SVFIntegerType {id:" + std::to_string(getId()) +
-        ", svf_i8_type_id:" + std::to_string(getSVFInt8Type()->getId()) +
-        ", svf_ptr_type_id:" + std::to_string(getSVFPtrType()->getId()) + 
-        ", kind:" + std::to_string(getKind()) + 
-        ", is_single_val_ty:" + is_single_val_ty + 
-        ", byte_size:" + std::to_string(getByteSize()) +
-        ", single_and_width:" + std::to_string(getSignAndWidth()) + "})";
-        return queryStatement;
     }
 };
 
@@ -449,7 +424,6 @@ public:
 
     void print(std::ostream& os) const override;
 
-    std::string toDBString() const;
 };
 
 class SVFStructType : public SVFType
@@ -506,7 +480,6 @@ public:
         fields.push_back(type);
     }
 
-    std::string toDBString() const;
 };
 
 class SVFArrayType : public SVFType
@@ -556,21 +529,6 @@ public:
         return numOfElement;
     }
 
-    std::string toDBString() const
-    {
-        std::string is_single_val_ty = isSingleValueType() ? "true" : "false";
-        const std::string queryStatement ="CREATE (n:SVFArrayType {id:" +std::to_string(getId()) +
-        ", svf_i8_type_id:" + std::to_string(getSVFInt8Type()->getId()) +
-        ", svf_ptr_type_id:" + std::to_string(getSVFPtrType()->getId()) + 
-        ", kind:" + std::to_string(getKind()) + 
-        ", stinfo_node_id:" + std::to_string(getTypeInfo()->getStinfoId()) +
-        ", is_single_val_ty:" + is_single_val_ty + 
-        ", byte_size:" + std::to_string(getByteSize()) +
-        ", num_of_element:" + std::to_string(getNumOfElement()) + 
-        ", type_of_element_node_type_id:" + std::to_string(getTypeOfElement()->getId()) + "})";
-        return queryStatement;
-    }
-
 
 };
 
@@ -611,19 +569,6 @@ public:
     }
 
     void print(std::ostream& os) const override;
-
-    std::string toDBString() const
-    {
-        std::string is_single_val_ty = isSingleValueType() ? "true" : "false";
-        const std::string queryStatement ="CREATE (n:SVFOtherType {id:" + std::to_string(getId()) +
-        ", svf_i8_type_id:" + std::to_string(getSVFInt8Type()->getId()) +
-        ", svf_ptr_type_id:" + std::to_string(getSVFPtrType()->getId()) + 
-        ", kind:" + std::to_string(getKind()) + 
-        ", is_single_val_ty:" + is_single_val_ty + 
-        ", byte_size:" + std::to_string(getByteSize()) +
-        ", repr:'" + getRepr() + "'})";
-        return queryStatement;
-    }
 };
 
 // TODO: be explicit that this is a pair of 32-bit unsigneds?

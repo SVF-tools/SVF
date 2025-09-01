@@ -65,40 +65,6 @@ void CallGraphEdge::addInDirectCallSite(const CallICFGNode* call)
 }
 //@}
 
-std::string CallGraphEdge::toDBString() const
-{
-    std::string indirectCallIds = "";
-    Set<const CallICFGNode*> indirectCall = getIndirectCalls();
-    if (indirectCall.size() > 0)
-    {
-        indirectCallIds = GraphDBClient::getInstance().extractNodesIds(indirectCall);
-    }
-
-    std::string directCallIds = "";
-    Set<const CallICFGNode*> directCall = getDirectCalls();
-    if (directCall.size() > 0)
-    {
-        directCallIds = GraphDBClient::getInstance().extractNodesIds(directCall);
-    }
-
-    const std::string queryStatement =
-        "MATCH (n:CallGraphNode{id:"+std::to_string(getSrcNode()->getId())+"}), (m:CallGraphNode{id:"+std::to_string(getDstNode()->getId()) + "}) WHERE n.id = " +
-        std::to_string(getSrcNode()->getId()) +
-        " AND m.id = " + std::to_string(getDstNode()->getId()) +
-        " CREATE (n)-[r:CallGraphEdge{csid:" + std::to_string(getCallSiteID()) +
-        ", kind:" + std::to_string(getEdgeKind()) +
-        ", direct_call_set:'" + directCallIds + "', indirect_call_set:'" +
-        indirectCallIds + "'}]->(m)";
-    return queryStatement;
-}
-
-std::string CallGraphNode::toDBString() const
-{
-    const std::string queryStatement ="CREATE (n:CallGraphNode {id: " + std::to_string(getId()) +
-                             ", fun_obj_var_id: " + std::to_string(getFunction()->getId()) + sourceLocToDBString() + "})";
-    return queryStatement;
-}
-
 const std::string CallGraphEdge::toString() const
 {
     std::string str;

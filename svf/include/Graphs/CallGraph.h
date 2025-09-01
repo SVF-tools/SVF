@@ -165,7 +165,6 @@ public:
 
     typedef GenericNode<CallGraphNode, CallGraphEdge>::GEdgeSetTy CallGraphEdgeSet;
 
-    std::string toDBString() const;
 };
 
 class FunObjVar;
@@ -226,13 +225,10 @@ public:
         return node->getNodeKind() == CallNodeKd;
     }
 
-    std::string toDBString() const;
-
-
     std::string sourceLocToDBString() const
     {
         std::string sourceLoc = "";
-        if (getSourceLoc().empty() == false)
+        if (!getSourceLoc().empty())
         {
             sourceLoc = ", source_loc: '" + getSourceLoc() + "'";
         }
@@ -328,6 +324,8 @@ protected:
         edge->getSrcNode()->addOutgoingEdge(edge);
     }
 
+    /// add direct call graph edge from database [only used this function when loading cgEdges from db results]
+    void addDirectCallGraphEdgeFromDB(CallGraphEdge* cgEdge);
 public:
     /// Constructor
     CallGraph(CGEK k = NormCallGraph);
@@ -384,7 +382,6 @@ public:
 
     /// Add direct call edges
     void addDirectCallGraphEdge(const CallICFGNode* call, const FunObjVar* callerFun, const FunObjVar* calleeFun);
-    void addDirectCallGraphEdgeFromDB(CallGraphEdge* cgEdge);
 
     void addCallGraphNode(const FunObjVar* fun);
 
