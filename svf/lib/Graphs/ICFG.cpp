@@ -150,7 +150,6 @@ const std::string CallICFGNode::toString() const
     return rawstr.str();
 }
 
-
 const std::string RetICFGNode::toString() const
 {
     std::string str;
@@ -184,7 +183,6 @@ const std::string IntraCFGEdge::toString() const
     return rawstr.str();
 }
 
-
 const std::string CallCFGEdge::toString() const
 {
     std::string str;
@@ -202,7 +200,6 @@ const std::string RetCFGEdge::toString() const
     rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << getDstNode()->toString() << "\t";
     return rawstr.str();
 }
-
 
 /// Return call ICFGNode at the callsite
 const CallICFGNode* RetCFGEdge::getCallSite() const
@@ -239,6 +236,24 @@ ICFG::~ICFG()
         delete it;
     }
     icfgNodeToSVFLoopVec.clear();
+}
+
+void ICFG::addICFGNode(ICFGNode* node)
+{
+    if (Options::ReadFromDB())
+    {
+        totalICFGNode++;
+    }
+    addGNode(node->getId(),node);
+}
+
+void ICFG::addGlobalICFGNode(GlobalICFGNode* globalICFGNode)
+{
+    if (Options::ReadFromDB())
+    {
+        this->globalBlockNode = globalICFGNode;
+    }
+    addICFGNode(globalICFGNode);
 }
 
 

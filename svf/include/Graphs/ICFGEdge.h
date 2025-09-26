@@ -267,8 +267,8 @@ public:
     }
     //@}
     virtual const std::string toString() const;
-
 };
+
 } // End namespace SVF
 
 #endif /* ICFGEdge_H_ */
