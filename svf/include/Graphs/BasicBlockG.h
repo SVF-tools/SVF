@@ -66,7 +66,6 @@ public:
     //@}
 
     virtual const std::string toString() const;
-
 };
 
 
@@ -320,16 +319,12 @@ public:
     {
         id++;
         SVFBasicBlock* bb = new SVFBasicBlock(id, nullptr);
-        addGNode(id, bb);
         bb->setName(bbname);
+        addBasicBlock(bb);
         return bb;
     }
 
-    void addBasicBlockFromDB(SVFBasicBlock* bb)
-    {
-        id++;
-        addGNode(bb->getId(), bb);
-    }
+    void addBasicBlock(SVFBasicBlock* bb);
 
 };
 }

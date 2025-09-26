@@ -297,25 +297,13 @@ protected:
         if(it == csToIdMap.end())
         {
             CallSiteID id = totalCallSiteNum++;
-            csToIdMap.insert(std::make_pair(newCS, id));
-            idToCSMap.insert(std::make_pair(id, newCS));
+            addCallSite(cs,callee,id);
             return id;
         }
         return it->second;
     }
 
-    inline void addCallSiteFromDB(const CallICFGNode* cs, const FunObjVar* callee, const CallSiteID csid)
-    {
-        std::pair<const CallICFGNode*, const FunObjVar*> newCS(std::make_pair(cs, callee));
-        CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
-        if(it == csToIdMap.end())
-        {
-            CallSiteID id = csid;
-            totalCallSiteNum++;
-            csToIdMap.insert(std::make_pair(newCS, id));
-            idToCSMap.insert(std::make_pair(id, newCS));
-        }
-    }
+    CallSiteID addCallSite(const CallICFGNode* cs, const FunObjVar* callee, const CallSiteID csid);
 
     /// Add call graph edge
     inline void addEdge(CallGraphEdge* edge)
@@ -325,7 +313,7 @@ protected:
     }
 
     /// add direct call graph edge from database [only used this function when loading cgEdges from db results]
-    void addDirectCallGraphEdgeFromDB(CallGraphEdge* cgEdge);
+    void addDirectCallGraphEdge(CallGraphEdge* cgEdge);
 public:
     /// Constructor
     CallGraph(CGEK k = NormCallGraph);
@@ -385,7 +373,7 @@ public:
 
     void addCallGraphNode(const FunObjVar* fun);
 
-    void addCallGraphNodeFromDB(CallGraphNode* cgNode);
+    void addCallGraphNode(CallGraphNode* cgNode);
 
     /// Get call graph node
     //@{
@@ -440,7 +428,7 @@ public:
     CallGraphEdge* hasGraphEdge(CallGraphNode* src, CallGraphNode* dst,
                                 CallGraphEdge::CEDGEK kind, CallSiteID csId) const;
 
-    CallGraphEdge* hasGraphEdge(CallGraphEdge* cgEdge);
+    CallGraphEdge* hasGraphEdge(CallGraphEdge* cgEdge) const;
     /// Get call graph edge via nodes
     CallGraphEdge* getGraphEdge(CallGraphNode* src, CallGraphNode* dst,
                                 CallGraphEdge::CEDGEK kind, CallSiteID csId);
@@ -485,7 +473,7 @@ public:
     /// Add indirect call edges
     //@{
     void addIndirectCallGraphEdge(const CallICFGNode* cs,const FunObjVar* callerFun, const FunObjVar* calleeFun);
-    void addIndirectCallGraphEdgeFromDB(CallGraphEdge* cgEdge);
+    void addIndirectCallGraphEdge(CallGraphEdge* cgEdge);
     //@}
 
     /// Get callsites invoking the callee

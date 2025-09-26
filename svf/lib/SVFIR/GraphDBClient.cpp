@@ -2886,7 +2886,7 @@ void GraphDBClient::readBasicBlockNodesFromDB(lgraph::RpcClient* connection, con
                 int bbId = parseBBId(id);
                 SVFBasicBlock* bb = new SVFBasicBlock(bbId, funObjVar);
                 bb->setName(bb_name);
-                bbGraph->addBasicBlockFromDB(bb);
+                bbGraph->addBasicBlock(bb);
                 basicBlocks.insert(bb);
                 std::string allICFGNodeIds = cJSON_GetObjectItem(properties, "all_icfg_nodes_ids")->valuestring;
                 if (!allICFGNodeIds.empty())
@@ -3031,7 +3031,7 @@ void GraphDBClient::readICFGNodesFromDB(lgraph::RpcClient* connection, const std
                     icfgNode = parseIntraICFGNodeFromDBResult(node, pag);
                     if (nullptr != icfgNode)
                     {
-                        icfg->addIntraICFGNodeFromDB(SVFUtil::cast<IntraICFGNode>(icfgNode));
+                        icfg->addIntraICFGNode(SVFUtil::cast<IntraICFGNode>(icfgNode));
                     }
                 }
                 else if (nodeType == "FunEntryICFGNode")
@@ -3755,7 +3755,7 @@ void GraphDBClient::readCallGraphNodesFromDB(lgraph::RpcClient* connection, cons
                 cgNode = parseCallGraphNodeFromDB(node);
                 if (nullptr != cgNode)
                 {
-                    callGraph->addCallGraphNodeFromDB(cgNode);
+                    callGraph->addCallGraphNode(cgNode);
                 }
                 skip += 1;
             }
@@ -3787,11 +3787,11 @@ void GraphDBClient::readCallGraphEdgesFromDB(lgraph::RpcClient* connection, cons
                 {
                     if (cgEdge->isDirectCallEdge())
                     {
-                        callGraph->addDirectCallGraphEdgeFromDB(cgEdge);
+                        callGraph->addDirectCallGraphEdge(cgEdge);
                     }
                     if (cgEdge->isIndirectCallEdge())
                     {
-                        callGraph->addIndirectCallGraphEdgeFromDB(cgEdge);
+                        callGraph->addIndirectCallGraphEdge(cgEdge);
                     }
                 }
                 skip += 1;
@@ -3880,7 +3880,7 @@ CallGraphEdge* GraphDBClient::parseCallGraphEdgeFromDB(const cJSON* edge, SVFIR*
         for (int directCallId : direct_call_set_ids)
         {
             CallICFGNode* node = SVFUtil::dyn_cast<CallICFGNode>(pag->getICFG()->getGNode(directCallId));
-            callGraph->addCallSiteFromDB(node, node->getFun(), cgEdge->getCallSiteID());
+            callGraph->addCallSite(node, node->getFun(), cgEdge->getCallSiteID());
             cgEdge->addDirectCallSite(node);
             callGraph->callinstToCallGraphEdgesMap[node].insert(cgEdge);
         }
@@ -3894,7 +3894,7 @@ CallGraphEdge* GraphDBClient::parseCallGraphEdgeFromDB(const cJSON* edge, SVFIR*
         {
             CallICFGNode* node = SVFUtil::dyn_cast<CallICFGNode>(pag->getICFG()->getGNode(indirectCallId));
             callGraph->numOfResolvedIndCallEdge++;
-            callGraph->addCallSiteFromDB(node, node->getFun(), cgEdge->getCallSiteID());
+            callGraph->addCallSite(node, node->getFun(), cgEdge->getCallSiteID());
             cgEdge->addInDirectCallSite(node);
             callGraph->callinstToCallGraphEdgesMap[node].insert(cgEdge);
         }
