@@ -824,9 +824,9 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
 
         if (isAliasedForkJoin(SVFUtil::cast<CallICFGNode>(forkSite), SVFUtil::cast<CallICFGNode>(joinSite)))
         {
-            if (hasJoinLoop(SVFUtil::cast<CallICFGNode>(forkSite)))
+            if (hasJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite)))
             {
-                LoopBBs& joinLoop = getJoinLoop(SVFUtil::cast<CallICFGNode>(forkSite));
+                LoopBBs& joinLoop = getJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite));
                 std::vector<const SVFBasicBlock *> exitbbs;
                 joinSite->getFun()->getExitBlocksOfLoop(joinSite->getBB(), exitbbs);
                 while (!exitbbs.empty())
@@ -856,7 +856,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
         /// we process the loop exit
         else
         {
-            if (hasJoinLoop(SVFUtil::cast<CallICFGNode>(forkSite)))
+            if (hasJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite)))
             {
                 std::vector<const SVFBasicBlock*> exitbbs;
                 joinSite->getFun()->getExitBlocksOfLoop(joinSite->getBB(), exitbbs);
