@@ -262,7 +262,6 @@ public:
         o << node.toString();
         return o;
     }
-
 };
 
 
@@ -285,6 +284,7 @@ class ValVar: public SVFVar
 
 private:
     const ICFGNode* icfgNode; // icfgnode related to valvar
+
     ValVar(NodeID i, const SVFType* type, PNODEK ty = ValNode) : SVFVar(i, type, ty), icfgNode(nullptr) {}
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -468,7 +468,6 @@ public:
     virtual bool isPointer() const;
 
     virtual const std::string toString() const;
-
 };
 
 
@@ -921,7 +920,6 @@ public:
     {
         return base->isPointer();
     }
-
 };
 
 
@@ -940,6 +938,7 @@ class HeapObjVar: public BaseObjVar
 protected:
     /// Constructor to create heap object var
     HeapObjVar(NodeID i, const ICFGNode* node) : BaseObjVar(i, node, HeapObjNode) {}
+
     HeapObjVar(NodeID i, const SVFType* type, ObjTypeInfo* ti, PNODEK ty = HeapObjNode) :
         BaseObjVar(i, type, ti, ty) {}
 public:
@@ -984,7 +983,6 @@ public:
     }
 
     virtual const std::string toString() const;
-    
 };
 
 
@@ -1049,7 +1047,6 @@ public:
     }
 
     virtual const std::string toString() const;
-
 };
 
 
@@ -1078,7 +1075,6 @@ protected:
     {
         loopAndDom = ld;
     }
-    
 
 public:
     typedef SVFLoopAndDomInfo::BBSet BBSet;
@@ -1190,7 +1186,6 @@ public:
     {
         return isNotRet;
     }
-
     /// Returns the FunctionType
     inline const SVFFunctionType* getFunctionType() const
     {
@@ -1326,7 +1321,6 @@ public:
     {
         return allArgs;
     }
-
     inline const SVFBasicBlock* front() const
     {
         return getEntryBlock();
@@ -1354,7 +1348,6 @@ public:
     virtual bool isIsolatedNode() const;
 
     virtual const std::string toString() const;
-
 };
 class FunValVar : public ValVar
 {
@@ -1412,7 +1405,6 @@ public:
         funObjVar = cgn;
     }
     virtual const std::string toString() const;
-
 };
 
 
@@ -1459,7 +1451,6 @@ public:
 
 
     virtual const std::string toString() const;
-
 };
 
 class ConstAggValVar: public ValVar
@@ -1514,7 +1505,6 @@ public:
     }
 
     virtual const std::string toString() const;
-
 };
 
 
@@ -1627,7 +1617,6 @@ public:
     {
         return "BlackHoleValVar";
     }
-
 };
 
 class ConstFPValVar : public ConstDataValVar
@@ -1686,7 +1675,6 @@ public:
     }
 
     virtual const std::string toString() const;
-
 };
 
 class ConstIntValVar : public ConstDataValVar
@@ -1753,7 +1741,6 @@ public:
 
     }
     virtual const std::string toString() const;
-
 };
 
 class ConstNullPtrValVar : public ConstDataValVar
@@ -1808,7 +1795,6 @@ public:
     }
 
     virtual const std::string toString() const;
-
 };
 
 class GlobalObjVar : public BaseObjVar
@@ -1864,7 +1850,6 @@ public:
 
 
     virtual const std::string toString() const;
-
 };
 
 class ConstAggObjVar : public BaseObjVar
@@ -2193,7 +2178,6 @@ public:
         return false;
     }
     virtual const std::string toString() const;
-
 };
 /*
  * Unique Return node of a procedure
@@ -2255,7 +2239,6 @@ public:
     const std::string getValueName() const;
 
     virtual const std::string toString() const;
-
 };
 
 /*
@@ -2317,7 +2300,6 @@ public:
         return true;
     }
     virtual const std::string toString() const;
-
 };
 
 /*
@@ -2373,7 +2355,6 @@ public:
     }
 
     virtual const std::string toString() const;
-
 };
 
 /*
@@ -2439,7 +2420,6 @@ public:
     }
 
     virtual const std::string toString() const;
-    
 };
 
 } // End namespace SVF
