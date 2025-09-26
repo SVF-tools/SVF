@@ -283,17 +283,6 @@ public:
         }
         return nullptr;
     }
-
-    inline void addSVFTypes(const Set<SVFType*>* types)
-    {
-        svfTypes.insert(types->begin(), types->end());
-    }
-
-    inline void addStInfos(const Set<StInfo*>* stInfos)
-    {
-        this->stInfos.insert(stInfos->begin(), stInfos->end());
-    }
-
     inline const Set<const StInfo*>& getStInfos() const
     {
         return stInfos;

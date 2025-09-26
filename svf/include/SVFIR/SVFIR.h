@@ -504,57 +504,15 @@ public:
     void print();
 
 protected:
-    /// Add a value (pointer) node
-    inline NodeID addValNodeFromDB(ValVar* node)
-    {
-        assert(node && "node cannot be nullptr.");
-        if (hasGNode(node->getId()))
-        {
-            ValVar* valvar = SVFUtil::cast<ValVar>(getGNode(node->getId()));
-            valvar->updateSVFValVarFromDB(node->getType(), node->getICFGNode());
-            return valvar->getId();
-        }
-        return addNode(node);
-    }
-    /// Add a memory obj node
-    inline NodeID addObjNodeFromDB(ObjVar* node)
-    {
-        assert(node && "node cannot be nullptr.");
-        if (hasGNode(node->getId()))
-        {
-            ObjVar* objVar = SVFUtil::cast<ObjVar>(getGNode(node->getId()));
-            objVar->updateObjVarFromDB(node->getType());
-            return objVar->getId();
-        }
-        return addNode(node);
-    }
-
-    inline NodeID addInitValNodeFromDB(ValVar* node)
-    {
-        return addValNode(node);
-    }
-
-    inline NodeID addBaseObjNodeFromDB(BaseObjVar* node)
+    inline NodeID addBaseObjNode(BaseObjVar* node)
     {
         memToFieldsMap[node->getId()].set(node->getId());
         return addObjNode(node);
     }
 
-    inline NodeID addDummyObjNodeFromDB(DummyObjVar* node)
-    {
-        if (idToObjTypeInfoMap().find(node->getId()) == idToObjTypeInfoMap().end())
-        {
-            ObjTypeInfo* ti = node->getTypeInfo();
-            idToObjTypeInfoMap()[node->getId()] = ti;
-            return addObjNode(node);
-        }
-        else
-        {
-            return addObjNode(node);
-        }
-    }
+    NodeID addDummyObjNode(DummyObjVar* node);
 
-    void addGepObjNodeFromDB(GepObjVar* gepObj);
+    NodeID addGepObjNode(GepObjVar* gepObj, NodeID base, const APOffset& apOffset);
 
 private:
 
@@ -577,11 +535,10 @@ private:
     inline void addFunArgs(const FunObjVar* fun, const SVFVar* arg)
     {
         FunEntryICFGNode* funEntryBlockNode = icfg->getFunEntryICFGNode(fun);
-        funEntryBlockNode->addFormalParms(arg);
-        funArgsListMap[fun].push_back(arg);
+        addFunArgs(funEntryBlockNode, fun, arg);
     }
 
-    inline void addFunArgsFromDB(FunEntryICFGNode* funEntryBlockNode, FunObjVar* fun, const SVFVar* arg)
+    inline void addFunArgs(FunEntryICFGNode* funEntryBlockNode, const FunObjVar* fun, const SVFVar* arg)
     {
         funEntryBlockNode->addFormalParms(arg);
         funArgsListMap[fun].push_back(arg);
@@ -590,11 +547,10 @@ private:
     inline void addFunRet(const FunObjVar* fun, const SVFVar* ret)
     {
         FunExitICFGNode* funExitBlockNode = icfg->getFunExitICFGNode(fun);
-        funExitBlockNode->addFormalRet(ret);
-        funRetMap[fun] = ret;
+        addFunRet(funExitBlockNode, fun, ret);
     }
 
-    inline void addFunRetFromDB(FunExitICFGNode* funExitBlockNode, FunObjVar* fun, const SVFVar* ret)
+    inline void addFunRet(FunExitICFGNode* funExitBlockNode, const FunObjVar* fun, const SVFVar* ret)
     {
         funExitBlockNode->addFormalRet(ret);
         funRetMap[fun] = ret;
@@ -625,7 +581,7 @@ private:
     /// Add a value (pointer) node
     inline NodeID addValNode(NodeID i, const SVFType* type, const ICFGNode* icfgNode)
     {
-        SVFVar *node = new ValVar(i, type, icfgNode, ValVar::ValNode);
+        ValVar *node = new ValVar(i, type, icfgNode, ValVar::ValNode);
         return addValNode(node);
     }
 
@@ -692,9 +648,8 @@ private:
      */
     inline NodeID addHeapObjNode(NodeID i, ObjTypeInfo* ti, const SVFType* type, const ICFGNode* node)
     {
-        memToFieldsMap[i].set(i);
         HeapObjVar *heapObj = new HeapObjVar(i, ti, type, node);
-        return addObjNode(heapObj);
+        return addBaseObjNode(heapObj);
     }
 
     /**
@@ -702,60 +657,52 @@ private:
      */
     inline NodeID addStackObjNode(NodeID i, ObjTypeInfo* ti, const SVFType* type, const ICFGNode* node)
     {
-        memToFieldsMap[i].set(i);
         StackObjVar *stackObj = new StackObjVar(i, ti, type, node);
-        return addObjNode(stackObj);
+        return addBaseObjNode(stackObj);
     }
 
     NodeID addFunObjNode(NodeID id,  ObjTypeInfo* ti, const SVFType* type, const ICFGNode* node)
     {
-        memToFieldsMap[id].set(id);
         FunObjVar* funObj = new FunObjVar(id, ti, type, node);
-        return addObjNode(funObj);
+        return addBaseObjNode(funObj);
     }
 
 
     inline NodeID addConstantFPObjNode(NodeID i, ObjTypeInfo* ti, double dval, const SVFType* type, const ICFGNode* node)
     {
-        memToFieldsMap[i].set(i);
         ConstFPObjVar* conObj = new ConstFPObjVar(i, dval, ti, type, node);
-        return addObjNode(conObj);
+        return addBaseObjNode(conObj);
     }
 
 
     inline NodeID addConstantIntObjNode(NodeID i, ObjTypeInfo* ti, const std::pair<s64_t, u64_t>& intValue, const SVFType* type, const ICFGNode* node)
     {
-        memToFieldsMap[i].set(i);
         ConstIntObjVar* conObj =
             new ConstIntObjVar(i, intValue.first, intValue.second, ti, type, node);
-        return addObjNode(conObj);
+        return addBaseObjNode(conObj);
     }
 
 
     inline NodeID addConstantNullPtrObjNode(const NodeID i, ObjTypeInfo* ti, const SVFType* type, const ICFGNode* node)
     {
-        memToFieldsMap[i].set(i);
         ConstNullPtrObjVar* conObj = new ConstNullPtrObjVar(i, ti, type, node);
-        return addObjNode(conObj);
+        return addBaseObjNode(conObj);
     }
 
     inline NodeID addGlobalObjNode(const NodeID i, ObjTypeInfo* ti, const SVFType* type, const ICFGNode* node)
     {
-        memToFieldsMap[i].set(i);
         GlobalObjVar* gObj = new GlobalObjVar(i, ti, type, node);
-        return addObjNode(gObj);
+        return addBaseObjNode(gObj);
     }
     inline NodeID addConstantAggObjNode(const NodeID i, ObjTypeInfo* ti, const SVFType* type, const ICFGNode* node)
     {
-        memToFieldsMap[i].set(i);
-                ConstAggObjVar* conObj = new ConstAggObjVar(i, ti, type, node);
-        return addObjNode(conObj);
+        ConstAggObjVar* conObj = new ConstAggObjVar(i, ti, type, node);
+        return addBaseObjNode(conObj);
     }
     inline NodeID addConstantDataObjNode(const NodeID i, ObjTypeInfo* ti, const SVFType* type, const ICFGNode* node)
     {
-        memToFieldsMap[i].set(i);
         ConstDataObjVar* conObj = new ConstDataObjVar(i, ti, type, node);
-        return addObjNode(conObj);
+        return addBaseObjNode(conObj);
     }
 
     /// Add a unique return node for a procedure
@@ -778,9 +725,8 @@ private:
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
     NodeID addFIObjNode(NodeID i, ObjTypeInfo* ti, const SVFType* type, const ICFGNode* node)
     {
-        memToFieldsMap[i].set(i);
         BaseObjVar* baseObj = new BaseObjVar(i, ti, type, node);
-        return addObjNode(baseObj);
+        return addBaseObjNode(baseObj);
     }
 
 
@@ -798,11 +744,11 @@ private:
         {
             ObjTypeInfo* ti = createObjTypeInfo(type);
             idToObjTypeInfoMap()[i] = ti;
-            return addObjNode(new DummyObjVar(i, ti, nullptr, type));
+            return addDummyObjNode(new DummyObjVar(i, ti, nullptr, type));
         }
         else
         {
-            return addObjNode(new DummyObjVar(i, getObjTypeInfo(i), nullptr, type));
+            return addDummyObjNode(new DummyObjVar(i, getObjTypeInfo(i), nullptr, type));
         }
     }
 
@@ -821,23 +767,9 @@ private:
     //@}
 
     /// Add a value (pointer) node
-    inline NodeID addValNode(SVFVar *node)
-    {
-        assert(node && "node cannot be nullptr.");
-        assert(hasGNode(node->getId()) == false &&
-               "This NodeID clashes here. Please check NodeIDAllocator. Switch "
-               "Strategy::DBUG to SEQ or DENSE");
-        return addNode(node);
-    }
+    NodeID addValNode(ValVar* node);
     /// Add a memory obj node
-    inline NodeID addObjNode(SVFVar *node)
-    {
-        assert(node && "node cannot be nullptr.");
-        assert(hasGNode(node->getId()) == false &&
-               "This NodeID clashes here. Please check NodeIDAllocator. Switch "
-               "Strategy::DBUG to SEQ or DENSE");
-        return addNode(node);
-    }
+    NodeID addObjNode(ObjVar *node);
     /// Add a unique return node for a procedure
     inline NodeID addRetNode(const FunObjVar*, SVFVar *node)
     {
@@ -857,13 +789,7 @@ private:
     /// Add callsites
     inline void addCallSite(const CallICFGNode* call)
     {
-        // if (call->getId() == 9889 ||call->getId() == 9914 ||call->getId() == 9922 ||call->getId() == 9944 ||call->getId() == 10733 ||call->getId() == 10741 ||call->getId() == 10762 ||call->getId() == 10770 )
-        // {
-
-        // } else {
-            callSiteSet.insert(call);
-        //     SVFUtil::outs()<< "Adding callsite: " << call->getId() << "\n";
-        // }
+        callSiteSet.insert(call);
     }
 
     inline void addGepValObjFromDB(NodeID curInstID, const GepValVar* gepValvar)
@@ -874,49 +800,49 @@ private:
     //@{
     /// Add Address edge
     AddrStmt* addAddrStmt(NodeID src, NodeID dst);
-    void addAddrStmtFromDB(AddrStmt* edge);
+    void addAddrStmt(AddrStmt* edge);
     /// Add Copy edge
     CopyStmt* addCopyStmt(NodeID src, NodeID dst, CopyStmt::CopyKind type);
-    void addCopyStmtFromDB(CopyStmt* edge);
+    void addCopyStmt(CopyStmt* edge);
 
     /// Add phi node information
     PhiStmt*  addPhiStmt(NodeID res, NodeID opnd, const ICFGNode* pred);
-    void addPhiStmtFromDB(PhiStmt* edge, SVFVar* src, SVFVar* dst);
+    void addPhiStmt(PhiStmt* edge, SVFVar* src, SVFVar* dst);
     /// Add SelectStmt
     SelectStmt*  addSelectStmt(NodeID res, NodeID op1, NodeID op2, NodeID cond);
-    void addSelectStmtFromDB(SelectStmt* edge, SVFVar* src, SVFVar* dst);
+    void addSelectStmt(SelectStmt* edge, SVFVar* src, SVFVar* dst);
     /// Add Copy edge
     CmpStmt* addCmpStmt(NodeID op1, NodeID op2, NodeID dst, u32_t predict);
-    void addCmpStmtFromDB(CmpStmt* edge, SVFVar* src, SVFVar* dst);
+    void addCmpStmt(CmpStmt* edge, SVFVar* src, SVFVar* dst);
     /// Add Copy edge
     BinaryOPStmt* addBinaryOPStmt(NodeID op1, NodeID op2, NodeID dst,
                                   u32_t opcode);
-    void addBinaryOPStmtFromDB(BinaryOPStmt* edge, SVFVar* src, SVFVar* dst);
+    void addBinaryOPStmt(BinaryOPStmt* edge, SVFVar* src, SVFVar* dst);
     /// Add Unary edge
     UnaryOPStmt* addUnaryOPStmt(NodeID src, NodeID dst, u32_t opcode);
-    void addUnaryOPStmtFromDB(UnaryOPStmt* edge, SVFVar* src, SVFVar* dst);
+    void addUnaryOPStmt(UnaryOPStmt* edge, SVFVar* src, SVFVar* dst);
     /// Add BranchStmt
     BranchStmt* addBranchStmt(NodeID br, NodeID cond,
                               const BranchStmt::SuccAndCondPairVec& succs);
-    void addBranchStmtFromDB(BranchStmt* edge, SVFVar* src, SVFVar* dst);
+    void addBranchStmt(BranchStmt* edge, SVFVar* src, SVFVar* dst);
     /// Add Load edge
     LoadStmt* addLoadStmt(NodeID src, NodeID dst);
-    void addLoadStmtFromDB(LoadStmt* edge);
+    void addLoadStmt(LoadStmt* edge);
     /// Add Store edge
     StoreStmt* addStoreStmt(NodeID src, NodeID dst, const ICFGNode* val);
-    void addStoreStmtFromDB(StoreStmt* edge, SVFVar* src, SVFVar* dst);
+    void addStoreStmt(StoreStmt* edge, SVFVar* src, SVFVar* dst);
     /// Add Call edge
     CallPE* addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs,
                       const FunEntryICFGNode* entry);
-    void addCallPEFromDB(CallPE* edge, SVFVar* src, SVFVar* dst);
+    void addCallPE(CallPE* edge, SVFVar* src, SVFVar* dst);
     /// Add Return edge
     RetPE* addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs,
                     const FunExitICFGNode* exit);
-    void addRetPEFromDB(RetPE* edge, SVFVar* src, SVFVar* dst);
+    void addRetPE(RetPE* edge, SVFVar* src, SVFVar* dst);
     /// Add Gep edge
     GepStmt* addGepStmt(NodeID src, NodeID dst, const AccessPath& ap,
                         bool constGep);
-    void addGepStmtFromDB(GepStmt* edge);
+    void addGepStmt(GepStmt* edge);
     /// Add Offset(Gep) edge
     GepStmt* addNormalGepStmt(NodeID src, NodeID dst, const AccessPath& ap);
     /// Add Variant(Gep) edge

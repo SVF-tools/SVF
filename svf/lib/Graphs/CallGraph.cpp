@@ -32,7 +32,6 @@
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
-#include "SVFIR/GraphDBClient.h"
 #include <sstream>
 #include "Util/Options.h"
 
