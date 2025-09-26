@@ -42,8 +42,6 @@ class SVFLoopAndDomInfo
 {
 
     friend class GraphDBClient;
-
-
 public:
     typedef Set<const SVFBasicBlock*> BBSet;
     typedef std::vector<const SVFBasicBlock*> BBList;

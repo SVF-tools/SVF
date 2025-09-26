@@ -172,7 +172,6 @@ public:
     {
         return stride;
     }
-
 };
 
 class SVFType
@@ -326,7 +325,6 @@ public:
     }
 
     void print(std::ostream& os) const override;
-
 };
 
 class SVFIntegerType : public SVFType
@@ -414,7 +412,6 @@ public:
     }
 
     void print(std::ostream& os) const override;
-
 };
 
 class SVFStructType : public SVFType

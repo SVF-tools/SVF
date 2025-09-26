@@ -1,6 +1,5 @@
 #include "SVFIR/SVFType.h"
 #include <sstream>
-#include "SVFIR/GraphDBClient.h"
 
 namespace SVF
 {
