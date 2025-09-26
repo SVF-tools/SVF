@@ -148,7 +148,7 @@ private:
     inline void addGlobalICFGNode()
     {
         icfg->globalBlockNode = new GlobalICFGNode(icfg->totalICFGNode++);
-        icfg->addICFGNode(icfg->globalBlockNode);
+        icfg->addGlobalICFGNode(icfg->globalBlockNode);
     }
 
 private:

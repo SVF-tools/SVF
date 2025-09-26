@@ -3023,7 +3023,7 @@ void GraphDBClient::readICFGNodesFromDB(lgraph::RpcClient* connection, const std
                     icfgNode = parseGlobalICFGNodeFromDBResult(node);
                     if (nullptr != icfgNode)
                     {
-                        icfg->addGlobalICFGNodeFromDB(SVFUtil::cast<GlobalICFGNode>(icfgNode));
+                        icfg->addGlobalICFGNode(SVFUtil::cast<GlobalICFGNode>(icfgNode));
                     }
                 }
                 else if (nodeType == "IntraICFGNode")
@@ -3031,7 +3031,7 @@ void GraphDBClient::readICFGNodesFromDB(lgraph::RpcClient* connection, const std
                     icfgNode = parseIntraICFGNodeFromDBResult(node, pag);
                     if (nullptr != icfgNode)
                     {
-                        icfg->addIntraICFGNode(SVFUtil::cast<IntraICFGNode>(icfgNode));
+                        icfg->addICFGNode(icfgNode);
                     }
                 }
                 else if (nodeType == "FunEntryICFGNode")
@@ -3039,7 +3039,7 @@ void GraphDBClient::readICFGNodesFromDB(lgraph::RpcClient* connection, const std
                     icfgNode = parseFunEntryICFGNodeFromDBResult(node, pag);
                     if (nullptr != icfgNode)
                     {
-                        icfg->addFunEntryICFGNodeFromDB(SVFUtil::cast<FunEntryICFGNode>(icfgNode));
+                        icfg->addFunEntryICFGNode(SVFUtil::cast<FunEntryICFGNode>(icfgNode));
                     }
                 }
                 else if (nodeType == "FunExitICFGNode")
@@ -3047,7 +3047,7 @@ void GraphDBClient::readICFGNodesFromDB(lgraph::RpcClient* connection, const std
                     icfgNode = parseFunExitICFGNodeFromDBResult(node, pag);
                     if (nullptr != icfgNode)
                     {
-                        icfg->addFunExitICFGNodeFromDB(SVFUtil::cast<FunExitICFGNode>(icfgNode));
+                        icfg->addFunExitICFGNode(SVFUtil::cast<FunExitICFGNode>(icfgNode));
                     }
                 }
                 else if (nodeType == "RetICFGNode")
@@ -3055,7 +3055,7 @@ void GraphDBClient::readICFGNodesFromDB(lgraph::RpcClient* connection, const std
                     icfgNode = parseRetICFGNodeFromDBResult(node, pag);
                     if (nullptr != icfgNode)
                     {
-                        icfg->addRetICFGNodeFromDB(SVFUtil::cast<RetICFGNode>(icfgNode));
+                        icfg->addICFGNode(icfgNode);
                         id2RetICFGNodeMap[icfgNode->getId()] = SVFUtil::cast<RetICFGNode>(icfgNode);
                     }
                 }
@@ -3065,7 +3065,7 @@ void GraphDBClient::readICFGNodesFromDB(lgraph::RpcClient* connection, const std
                     if (nullptr != icfgNode)
                     {
                         CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(icfgNode);
-                        icfg->addCallICFGNodeFromDB(callNode);
+                        icfg->addICFGNode(callNode);
                         if (callNode->isIndirectCall())
                         {
                             pag->addIndirectCallsites(callNode, callNode->getIndFunPtr()->getId());
