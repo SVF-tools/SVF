@@ -30,7 +30,6 @@
 #include "SVFIR/SVFStatements.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
-#include "SVFIR/GraphDBClient.h"
 
 using namespace SVF;
 using namespace SVFUtil;

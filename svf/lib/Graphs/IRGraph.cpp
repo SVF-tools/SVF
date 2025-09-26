@@ -268,12 +268,7 @@ bool IRGraph::addEdge(SVFVar* src, SVFVar* dst, SVFStmt* edge)
 SVFStmt* IRGraph::hasNonlabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind)
 {
     SVFStmt edge(src,dst,kind, false);
-    SVFStmt::SVFStmtSetTy::iterator it = KindToSVFStmtSetMap[kind].find(&edge);
-    if (it != KindToSVFStmtSetMap[kind].end())
-    {
-        return *it;
-    }
-    return nullptr;
+    return hasEdge(&edge, kind);
 }
 
 /*!
