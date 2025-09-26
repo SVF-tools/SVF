@@ -142,6 +142,7 @@ public:
         return isICFGNodeKinds(node->getNodeKind());
     }
 
+
     std::string sourceLocToDBString() const
     {
         std::string sourceLoc = "";
@@ -199,7 +200,6 @@ public:
     {
         return "Global ICFGNode";
     }
-
 };
 
 /*!
@@ -256,7 +256,6 @@ public:
     {
         return isRet;
     }
-
 };
 
 class InterICFGNode : public ICFGNode
@@ -289,7 +288,6 @@ public:
     {
         return isInterICFGNodeKind(node->getNodeKind());
     }
-
 
     //@}
 };
@@ -374,7 +372,6 @@ public:
     const std::string toString() const override;
 
     const std::string getSourceLoc() const override;
-
 };
 
 /*!
@@ -452,7 +449,6 @@ public:
     const std::string toString() const override;
 
     const std::string getSourceLoc() const override;
-
 };
 
 /*!
@@ -644,7 +640,6 @@ public:
         return "CallICFGNode: " + ICFGNode::getSourceLoc();
     }
 
-
     inline void setIndFunPtr(const SVFVar* indFun)
     {
         assert(isIndirectCall() && "not a indirect call?");
@@ -750,7 +745,6 @@ public:
     {
         return "RetICFGNode: " + ICFGNode::getSourceLoc();
     }
-
 };
 
 } // End namespace SVF
