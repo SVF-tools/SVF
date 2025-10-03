@@ -283,9 +283,6 @@ class ValVar: public SVFVar
 
 private:
     const ICFGNode* icfgNode; // icfgnode related to valvar
-protected:
-    /// Constructor to create an empty ValVar (for SVFIRReader/deserialization)
-    ValVar(NodeID i, PNODEK ty = ValNode) : SVFVar(i, ty), icfgNode(nullptr) {}
 
     ValVar(NodeID i, const SVFType* type, PNODEK ty = ValNode) : SVFVar(i, type, ty), icfgNode(nullptr) {}
 public:
@@ -352,8 +349,6 @@ class ObjVar: public SVFVar
     friend class GepObjVar;
 
 protected:
-    /// Constructor to create an empty ObjVar (for SVFIRReader/deserialization)
-    ObjVar(NodeID i, PNODEK ty = ObjNode) : SVFVar(i, ty) {}
     /// Constructor
     ObjVar(NodeID i, const SVFType* svfType, PNODEK ty = ObjNode) :
         SVFVar(i, svfType, ty)
@@ -488,9 +483,6 @@ private:
     const ValVar* base;	// base node
     const SVFType* gepValType;
     NodeID llvmVarID;
-
-    /// Constructor to create empty GeValVar (for SVFIRReader/deserialization)
-    GepValVar(NodeID i) : ValVar(i, GepValNode), gepValType{} {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -842,10 +834,6 @@ private:
     APOffset apOffset = 0;
 
     const BaseObjVar* base;
-
-    /// Constructor to create empty GepObjVar (for SVFIRReader/deserialization)
-    //  only for reading from file when we don't have BaseObjVar*
-    GepObjVar(NodeID i, PNODEK ty = GepObjNode) : ObjVar(i, ty), base{} {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -2203,9 +2191,6 @@ protected:
 
 private:
     const FunObjVar* callGraphNode;
-private:
-    /// Constructor to create empty RetValPN (for SVFIRReader/deserialization)
-    RetValPN(NodeID i) : ValVar(i, RetValNode) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -2269,8 +2254,7 @@ private:
     const FunObjVar* callGraphNode;
 
 private:
-    /// Constructor to create empty VarArgValPN (for SVFIRReader/deserialization)
-    VarArgValPN(NodeID i) : ValVar(i, VarargValNode) {}
+    const FunObjVar* callGraphNode;
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
