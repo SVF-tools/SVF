@@ -55,11 +55,6 @@ int main(int argc, char** argv)
     auto moduleNameVec = OptionBase::parseOptions(
                              argc, argv, "llvm2svf", "[options] <input-bitcode...>");
 
-    if (Options::WriteAnder() == "ir_annotator")
-    {
-        LLVMModuleSet::preProcessBCs(moduleNameVec);
-    }
-
     const std::string jsonPath = replaceExtension(moduleNameVec.front());
     // PAG is borrowed from a unique_ptr, so we don't need to delete it.
 

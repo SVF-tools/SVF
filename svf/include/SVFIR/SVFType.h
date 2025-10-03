@@ -45,8 +45,6 @@ class SVFPointerType;
  */
 class StInfo
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     u32_t StInfoId;
@@ -178,8 +176,7 @@ public:
 
 class SVFType
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+
     friend class LLVMModuleSet;
 
 public:
@@ -309,8 +306,6 @@ std::ostream& operator<<(std::ostream& os, const SVFType& type);
 
 class SVFPointerType : public SVFType
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     SVFPointerType(u32_t i, u32_t byteSize = 1)
@@ -334,8 +329,6 @@ public:
 
 class SVFIntegerType : public SVFType
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     short signAndWidth; ///< For printing
@@ -372,8 +365,6 @@ public:
 
 class SVFFunctionType : public SVFType
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     const SVFType* retTy;
@@ -425,8 +416,6 @@ public:
 
 class SVFStructType : public SVFType
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     /// @brief Field for printing & debugging
@@ -481,8 +470,6 @@ public:
 
 class SVFArrayType : public SVFType
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     unsigned numOfElement; /// For printing & debugging
@@ -531,8 +518,6 @@ public:
 
 class SVFOtherType : public SVFType
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     std::string repr; /// Field representation for printing

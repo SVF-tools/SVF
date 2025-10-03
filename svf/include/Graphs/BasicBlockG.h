@@ -44,10 +44,7 @@ class FunObjVar;
 typedef GenericEdge<SVFBasicBlock> GenericBasicBlockEdgeTy;
 class BasicBlockEdge: public GenericBasicBlockEdgeTy
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
-public:
 public:
     /// Constructor
     BasicBlockEdge(SVFBasicBlock* s, SVFBasicBlock* d) : GenericBasicBlockEdgeTy(s, d, 0)
@@ -73,8 +70,6 @@ typedef GenericNode<SVFBasicBlock, BasicBlockEdge> GenericBasicBlockNodeTy;
 class SVFBasicBlock : public GenericBasicBlockNodeTy
 {
     friend class LLVMModuleSet;
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class SVFIRBuilder;
     friend class FunObjVar;
     friend class ICFGBuilder;

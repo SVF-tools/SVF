@@ -47,8 +47,6 @@ class SVFVar;
 typedef GenericNode<SVFVar, SVFStmt> GenericPAGNodeTy;
 class SVFVar : public GenericPAGNodeTy
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class SVFIRBuilder;
     friend class IRGraph;
     friend class SVFIR;
@@ -272,8 +270,6 @@ public:
  */
 class ValVar: public SVFVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
     friend class RetValPN;
     friend class ConstDataValVar;
@@ -351,8 +347,6 @@ public:
  */
 class ObjVar: public SVFVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
     friend class BaseObjVar;
     friend class GepObjVar;
@@ -411,8 +405,6 @@ public:
  */
 class ArgValVar: public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 private:
@@ -490,8 +482,6 @@ public:
  */
 class GepValVar: public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     AccessPath ap;	// AccessPath
@@ -617,8 +607,6 @@ public:
  */
 class BaseObjVar : public ObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class SVFIRBuilder;
     friend class ConstDataObjVar;
     friend class DummyObjVar;
@@ -844,8 +832,6 @@ public:
  */
 class GepObjVar: public ObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -959,8 +945,6 @@ public:
 class HeapObjVar: public BaseObjVar
 {
 
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -1025,8 +1009,6 @@ public:
 class StackObjVar: public BaseObjVar
 {
 
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -1084,8 +1066,6 @@ class CallGraphNode;
 
 class FunObjVar : public BaseObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class SVFIRBuilder;
     friend class LLVMModuleSet;
     friend class GraphDBClient;
@@ -1129,7 +1109,6 @@ private:
     BasicBlockGraph* bbGraph; /// the basic block graph of this function
     std::vector<const ArgValVar*> allArgs;    /// all formal arguments of this function
     const SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
-
 
 private:
     /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
@@ -1388,8 +1367,6 @@ public:
 };
 class FunValVar : public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -1449,8 +1426,6 @@ public:
 
 class GlobalValVar : public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -1495,8 +1470,6 @@ public:
 
 class ConstAggValVar: public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -1552,8 +1525,6 @@ public:
 
 class ConstDataValVar : public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class ConstNullPtrValVar;
     friend class GraphDBClient;
     friend class BlackHoleValVar;
@@ -1615,8 +1586,6 @@ public:
 
 class BlackHoleValVar : public ConstDataValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1667,8 +1636,6 @@ public:
 
 class ConstFPValVar : public ConstDataValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -1726,8 +1693,6 @@ public:
 
 class ConstIntValVar : public ConstDataValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -1793,8 +1758,6 @@ public:
 
 class ConstNullPtrValVar : public ConstDataValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -1849,8 +1812,6 @@ public:
 
 class GlobalObjVar : public BaseObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -1906,8 +1867,6 @@ public:
 
 class ConstAggObjVar : public BaseObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -1968,8 +1927,6 @@ public:
 
 class ConstDataObjVar : public BaseObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class ConstNullPtrObjVar;
     friend class ConstIntObjVar;
     friend class GraphDBClient;
@@ -2033,8 +1990,6 @@ public:
 
 class ConstFPObjVar : public ConstDataObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -2104,8 +2059,6 @@ public:
 
 class ConstIntObjVar : public ConstDataObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -2181,8 +2134,6 @@ public:
 
 class ConstNullPtrObjVar : public ConstDataObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -2244,8 +2195,6 @@ public:
  */
 class RetValPN : public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -2311,8 +2260,6 @@ public:
  */
 class VarArgValPN : public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -2377,8 +2324,6 @@ public:
  */
 class DummyValVar: public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -2434,8 +2379,6 @@ public:
  */
 class DummyObjVar: public BaseObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:

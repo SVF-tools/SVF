@@ -53,8 +53,6 @@ typedef GenericNode<ICFGNode, ICFGEdge> GenericICFGNodeTy;
 
 class ICFGNode : public GenericICFGNodeTy
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
 
@@ -207,8 +205,6 @@ public:
  */
 class IntraICFGNode : public ICFGNode
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -221,9 +217,6 @@ protected:
 
 private:
     bool isRet;
-
-    /// Constructor to create empty IntraICFGNode (for SVFIRReader/deserialization)
-    IntraICFGNode(NodeID id) : ICFGNode(id, IntraBlock), isRet(false) {}
 
 public:
     IntraICFGNode(NodeID id, const SVFBasicBlock* b, bool isReturn) : ICFGNode(id, IntraBlock), isRet(isReturn)
@@ -300,8 +293,6 @@ public:
  */
 class FunEntryICFGNode : public InterICFGNode
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -316,9 +307,6 @@ public:
     typedef std::vector<const SVFVar *> FormalParmNodeVec;
 private:
     FormalParmNodeVec FPNodes;
-
-    /// Constructor to create empty FunEntryICFGNode (for SVFIRReader/deserialization)
-    FunEntryICFGNode(NodeID id) : InterICFGNode(id, FunEntryBlock) {}
 
 public:
     FunEntryICFGNode(NodeID id, const FunObjVar* f);
@@ -379,8 +367,6 @@ public:
  */
 class FunExitICFGNode : public InterICFGNode
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -393,9 +379,6 @@ protected:
 
 private:
     const SVFVar *formalRet;
-
-    /// Constructor to create empty FunExitICFGNode (for SVFIRReader/deserialization)
-    FunExitICFGNode(NodeID id) : InterICFGNode(id, FunExitBlock), formalRet{} {}
 
 public:
     FunExitICFGNode(NodeID id, const FunObjVar* f);
@@ -456,8 +439,6 @@ public:
  */
 class CallICFGNode : public InterICFGNode
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 public:
@@ -659,8 +640,6 @@ public:
  */
 class RetICFGNode : public InterICFGNode
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GraphDBClient;
 
 protected:
@@ -675,12 +654,6 @@ protected:
 private:
     const SVFVar *actualRet;
     const CallICFGNode* callBlockNode;
-
-    /// Constructor to create empty RetICFGNode (for SVFIRReader/deserialization)
-    RetICFGNode(NodeID id)
-        : InterICFGNode(id, FunRetBlock), actualRet{}, callBlockNode{}
-    {
-    }
 
 public:
     RetICFGNode(NodeID id, CallICFGNode* cb) :

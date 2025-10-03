@@ -43,8 +43,6 @@ class RetPE;
 typedef GenericEdge<ICFGNode> GenericICFGEdgeTy;
 class ICFGEdge : public GenericICFGEdgeTy
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     /// ten types of ICFG edge
@@ -112,8 +110,6 @@ public:
  */
 class IntraCFGEdge : public ICFGEdge
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class ICFG;
     friend class SVFIRBuilder;
     friend class GraphDBClient;
@@ -182,8 +178,6 @@ private:
  */
 class CallCFGEdge : public ICFGEdge
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     std::vector<const CallPE*> callPEs;
@@ -233,8 +227,6 @@ public:
  */
 class RetCFGEdge : public ICFGEdge
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     const RetPE* retPE;
