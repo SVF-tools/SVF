@@ -77,8 +77,6 @@ protected:
 typedef GenericEdge<CHNode> GenericCHEdgeTy;
 class CHEdge: public GenericCHEdgeTy
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     typedef enum
@@ -107,8 +105,6 @@ private:
 typedef GenericNode<CHNode, CHEdge> GenericCHNodeTy;
 class CHNode: public GenericCHNodeTy
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     typedef enum
@@ -232,8 +228,6 @@ private:
 typedef GenericGraph<CHNode, CHEdge> GenericCHGraphTy;
 class CHGraph: public CommonCHGraph, public GenericCHGraphTy
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class CHGBuilder;
 
 public:

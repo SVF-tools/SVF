@@ -41,8 +41,6 @@ namespace SVF
  */
 class ObjTypeInfo
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class SymbolTableBuilder;
 
 public:

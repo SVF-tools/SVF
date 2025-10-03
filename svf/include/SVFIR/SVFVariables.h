@@ -47,8 +47,7 @@ class SVFVar;
 typedef GenericNode<SVFVar, SVFStmt> GenericPAGNodeTy;
 class SVFVar : public GenericPAGNodeTy
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+
     friend class SVFIRBuilder;
     friend class IRGraph;
     friend class SVFIR;
@@ -248,14 +247,9 @@ public:
  */
 class ValVar: public SVFVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     const ICFGNode* icfgNode; // icfgnode related to valvar
-protected:
-    /// Constructor to create an empty ValVar (for SVFIRReader/deserialization)
-    ValVar(NodeID i, PNODEK ty = ValNode) : SVFVar(i, ty), icfgNode(nullptr) {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -304,12 +298,8 @@ public:
  */
 class ObjVar: public SVFVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 protected:
-    /// Constructor to create an empty ObjVar (for SVFIRReader/deserialization)
-    ObjVar(NodeID i, PNODEK ty = ObjNode) : SVFVar(i, ty) {}
     /// Constructor
     ObjVar(NodeID i, const SVFType* svfType, PNODEK ty = ObjNode) :
         SVFVar(i, svfType, ty)
@@ -354,16 +344,10 @@ public:
  */
 class ArgValVar: public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     const FunObjVar* cgNode;
     u32_t argNo;
-
-protected:
-    /// Constructor to create function argument (for SVFIRReader/deserialization)
-    ArgValVar(NodeID i, PNODEK ty = ArgValNode) : ValVar(i, ty) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -426,16 +410,11 @@ public:
  */
 class GepValVar: public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     AccessPath ap;	// AccessPath
     const ValVar* base;	// base node
     const SVFType* gepValType;
-
-    /// Constructor to create empty GeValVar (for SVFIRReader/deserialization)
-    GepValVar(NodeID i) : ValVar(i, GepValNode), gepValType{} {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -522,17 +501,11 @@ public:
  */
 class BaseObjVar : public ObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class SVFIRBuilder;
 private:
     ObjTypeInfo* typeInfo;
 
     const ICFGNode* icfgNode; /// ICFGNode related to the creation of this object
-
-protected:
-    /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
-    BaseObjVar(NodeID i, const ICFGNode* node, PNODEK ty = BaseObjNode) : ObjVar(i, ty), icfgNode(node) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -725,17 +698,11 @@ public:
  */
 class GepObjVar: public ObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     APOffset apOffset = 0;
 
     const BaseObjVar* base;
-
-    /// Constructor to create empty GepObjVar (for SVFIRReader/deserialization)
-    //  only for reading from file when we don't have BaseObjVar*
-    GepObjVar(NodeID i, PNODEK ty = GepObjNode) : ObjVar(i, ty), base{} {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -835,13 +802,6 @@ public:
 class HeapObjVar: public BaseObjVar
 {
 
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
-protected:
-    /// Constructor to create heap object var
-    HeapObjVar(NodeID i, const ICFGNode* node) : BaseObjVar(i, node, HeapObjNode) {}
-
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -898,13 +858,6 @@ public:
 class StackObjVar: public BaseObjVar
 {
 
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
-protected:
-    /// Constructor to create stack object var
-    StackObjVar(NodeID i, const ICFGNode* node) : BaseObjVar(i, node, StackObjNode) {}
-
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -954,8 +907,6 @@ class CallGraphNode;
 
 class FunObjVar : public BaseObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class SVFIRBuilder;
     friend class LLVMModuleSet;
 
@@ -980,11 +931,6 @@ private:
     BasicBlockGraph* bbGraph; /// the basic block graph of this function
     std::vector<const ArgValVar*> allArgs;    /// all formal arguments of this function
     const SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
-
-
-private:
-    /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
-    FunObjVar(NodeID i, const ICFGNode* node) : BaseObjVar(i,node, FunObjNode) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1231,8 +1177,7 @@ public:
 };
 class FunValVar : public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+
 private:
     const FunObjVar* funObjVar;
 
@@ -1282,8 +1227,6 @@ public:
 
 class GlobalValVar : public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1323,8 +1266,6 @@ public:
 
 class ConstAggValVar: public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1375,8 +1316,6 @@ public:
 
 class ConstDataValVar : public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1426,8 +1365,6 @@ public:
 
 class BlackHoleValVar : public ConstDataValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1478,8 +1415,7 @@ public:
 
 class ConstFPValVar : public ConstDataValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+
 private:
     double dval;
 
@@ -1529,8 +1465,7 @@ public:
 
 class ConstIntValVar : public ConstDataValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+
 private:
     u64_t zval;
     s64_t sval;
@@ -1586,8 +1521,6 @@ public:
 
 class ConstNullPtrValVar : public ConstDataValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1635,12 +1568,6 @@ public:
 
 class GlobalObjVar : public BaseObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
-private:
-    /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
-    GlobalObjVar(NodeID i, const ICFGNode* node) : BaseObjVar(i, node, GlobalObjNode) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1684,8 +1611,6 @@ public:
 
 class ConstAggObjVar : public BaseObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1739,12 +1664,6 @@ public:
 
 class ConstDataObjVar : public BaseObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
-protected:
-    /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
-    ConstDataObjVar(NodeID i, const ICFGNode* node) : BaseObjVar(i, node, ConstDataObjNode) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1796,12 +1715,6 @@ public:
 
 class ConstFPObjVar : public ConstDataObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
-private:
-    /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
-    ConstFPObjVar(NodeID i, const ICFGNode* node) : ConstDataObjVar(i, node) {}
 
 private:
     float dval;
@@ -1859,12 +1772,6 @@ public:
 
 class ConstIntObjVar : public ConstDataObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
-private:
-    /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
-    ConstIntObjVar(NodeID i, const ICFGNode* node) : ConstDataObjVar(i, node) {}
 
 private:
     u64_t zval;
@@ -1929,12 +1836,6 @@ public:
 
 class ConstNullPtrObjVar : public ConstDataObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
-private:
-    /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
-    ConstNullPtrObjVar(NodeID i, const ICFGNode* node) : ConstDataObjVar(i, node) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1988,14 +1889,9 @@ public:
  */
 class RetValPN : public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     const FunObjVar* callGraphNode;
-private:
-    /// Constructor to create empty RetValPN (for SVFIRReader/deserialization)
-    RetValPN(NodeID i) : ValVar(i, RetValNode) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -2045,14 +1941,9 @@ public:
  */
 class VarArgValPN : public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-private:
-    const FunObjVar* callGraphNode;
 
 private:
-    /// Constructor to create empty VarArgValPN (for SVFIRReader/deserialization)
-    VarArgValPN(NodeID i) : ValVar(i, VarargValNode) {}
+    const FunObjVar* callGraphNode;
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -2101,8 +1992,6 @@ public:
  */
 class DummyValVar: public ValVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -2153,12 +2042,6 @@ public:
  */
 class DummyObjVar: public BaseObjVar
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
-private:
-    /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
-    DummyObjVar(NodeID i, const ICFGNode* node) : BaseObjVar(i, node, DummyObjNode) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:

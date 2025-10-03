@@ -52,11 +52,6 @@ int main(int argc, char** argv)
     }
     else
     {
-        if (Options::WriteAnder() == "ir_annotator")
-        {
-            LLVMModuleSet::preProcessBCs(moduleNameVec);
-        }
-
         LLVMModuleSet::buildSVFModule(moduleNameVec);
 
         /// Build SVFIR

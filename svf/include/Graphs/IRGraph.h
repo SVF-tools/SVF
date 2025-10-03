@@ -50,8 +50,6 @@ class ObjTypeInfo;
  */
 class IRGraph : public GenericGraph<SVFVar, SVFStmt>
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class SVFIRBuilder;
     friend class SymbolTableBuilder;
 

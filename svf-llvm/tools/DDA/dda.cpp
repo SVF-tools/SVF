@@ -52,11 +52,6 @@ int main(int argc, char ** argv)
                         argc, argv, "Demand-Driven Points-to Analysis", "[options] <input-bitcode...>"
                     );
 
-    if (Options::WriteAnder() == "ir_annotator")
-    {
-        LLVMModuleSet::preProcessBCs(moduleNameVec);
-    }
-
     LLVMModuleSet::buildSVFModule(moduleNameVec);
     SVFIRBuilder builder;
     SVFIR* pag = builder.build();

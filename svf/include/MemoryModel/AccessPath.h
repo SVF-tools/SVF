@@ -51,8 +51,6 @@ class SVFVar;
 */
 class AccessPath
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     enum LSRelation

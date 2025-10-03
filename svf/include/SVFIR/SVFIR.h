@@ -45,8 +45,6 @@ class SVFIR : public IRGraph
     friend class ExternalPAG;
     friend class PAGBuilderFromFile;
     friend class TypeBasedHeapCloning;
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class BVDataPTAImpl;
 
 public:

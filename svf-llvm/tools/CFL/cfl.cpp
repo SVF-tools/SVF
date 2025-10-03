@@ -47,12 +47,6 @@ int main(int argc, char ** argv)
                         argc, argv, "CFL Reachability Analysis", "[options] <input-bitcode...>"
                     );
 
-    // If the WriteAnder option is set to "ir_annotator", pre-processes the bytecodes of the modules
-    if (Options::WriteAnder() == "ir_annotator")
-    {
-        LLVMModuleSet::preProcessBCs(moduleNameVec);
-    }
-
     // Pointer to the SVF Intermediate Representation (IR) of the module
     SVFIR* svfir = nullptr;
 

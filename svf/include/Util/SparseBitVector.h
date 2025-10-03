@@ -258,8 +258,6 @@ inline unsigned countPopulation(T Value)
 /// kept up to date.  They are also significantly more memory intensive.
 template <unsigned ElementSize = 128> struct SparseBitVectorElement
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     using BitWord = unsigned long;
@@ -500,8 +498,6 @@ public:
 template <unsigned ElementSize = 128>
 class SparseBitVector
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
     using ElementList = std::list<SparseBitVectorElement<ElementSize>>;
     using ElementListIter = typename ElementList::iterator;

@@ -53,8 +53,6 @@ typedef GenericNode<ICFGNode, ICFGEdge> GenericICFGNodeTy;
 
 class ICFGNode : public GenericICFGNodeTy
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
 
@@ -194,13 +192,8 @@ public:
  */
 class IntraICFGNode : public ICFGNode
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 private:
     bool isRet;
-
-    /// Constructor to create empty IntraICFGNode (for SVFIRReader/deserialization)
-    IntraICFGNode(NodeID id) : ICFGNode(id, IntraBlock), isRet(false) {}
 
 public:
     IntraICFGNode(NodeID id, const SVFBasicBlock* b, bool isReturn) : ICFGNode(id, IntraBlock), isRet(isReturn)
@@ -277,16 +270,11 @@ public:
  */
 class FunEntryICFGNode : public InterICFGNode
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     typedef std::vector<const SVFVar *> FormalParmNodeVec;
 private:
     FormalParmNodeVec FPNodes;
-
-    /// Constructor to create empty FunEntryICFGNode (for SVFIRReader/deserialization)
-    FunEntryICFGNode(NodeID id) : InterICFGNode(id, FunEntryBlock) {}
 
 public:
     FunEntryICFGNode(NodeID id, const FunObjVar* f);
@@ -347,14 +335,9 @@ public:
  */
 class FunExitICFGNode : public InterICFGNode
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     const SVFVar *formalRet;
-
-    /// Constructor to create empty FunExitICFGNode (for SVFIRReader/deserialization)
-    FunExitICFGNode(NodeID id) : InterICFGNode(id, FunExitBlock), formalRet{} {}
 
 public:
     FunExitICFGNode(NodeID id, const FunObjVar* f);
@@ -415,8 +398,6 @@ public:
  */
 class CallICFGNode : public InterICFGNode
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     typedef std::vector<const ValVar *> ActualParmNodeVec;
@@ -430,9 +411,6 @@ protected:
     SVFVar* vtabPtr;                /// virtual table pointer
     s32_t virtualFunIdx;            /// virtual function index of the virtual table(s) at a virtual call
     std::string funNameOfVcall;     /// the function name of this virtual call
-
-    /// Constructor to create empty CallICFGNode (for SVFIRReader/deserialization)
-    CallICFGNode(NodeID id) : InterICFGNode(id, FunCallBlock), ret{} {}
 
 public:
     CallICFGNode(NodeID id, const SVFBasicBlock* b, const SVFType* ty,
@@ -591,18 +569,10 @@ public:
  */
 class RetICFGNode : public InterICFGNode
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     const SVFVar *actualRet;
     const CallICFGNode* callBlockNode;
-
-    /// Constructor to create empty RetICFGNode (for SVFIRReader/deserialization)
-    RetICFGNode(NodeID id)
-        : InterICFGNode(id, FunRetBlock), actualRet{}, callBlockNode{}
-    {
-    }
 
 public:
     RetICFGNode(NodeID id, CallICFGNode* cb) :

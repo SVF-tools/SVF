@@ -49,8 +49,6 @@ template <typename, typename> class GenericGraphReader;
 template<class NodeTy>
 class GenericEdge
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     /// Node type
@@ -142,8 +140,6 @@ protected:
 template<class NodeTy,class EdgeTy>
 class GenericNode: public SVFValue
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     typedef NodeTy NodeType;
@@ -340,8 +336,6 @@ public:
 template<class NodeTy, class EdgeTy>
 class GenericGraph
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class GenericGraphWriter<NodeTy, EdgeTy>;
     friend class GenericGraphReader<NodeTy, EdgeTy>;
 

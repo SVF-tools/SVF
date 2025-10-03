@@ -40,8 +40,7 @@ namespace SVF
 {
 class SVFLoopAndDomInfo
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+
 public:
     typedef Set<const SVFBasicBlock*> BBSet;
     typedef std::vector<const SVFBasicBlock*> BBList;
