@@ -370,8 +370,8 @@ class FunExitICFGNode : public InterICFGNode
     friend class GraphDBClient;
 
 protected:
-    FunExitICFGNode(NodeID id, const FunObjVar* f, SVFBasicBlock* bb) 
-    : InterICFGNode(id, FunExitBlock), formalRet(nullptr)
+    FunExitICFGNode(NodeID id, const FunObjVar* f, SVFBasicBlock* bb, SVFVar* formalRet) 
+    : InterICFGNode(id, FunExitBlock), formalRet(formalRet)
     {
         this->fun = f;
         this->bb = bb;
