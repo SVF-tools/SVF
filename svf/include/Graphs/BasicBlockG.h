@@ -99,6 +99,17 @@ protected:
 
     /// @}
 
+    // Getters of predecessor and successor basic blocks, used for writing bb to DB
+    const std::vector<const SVFBasicBlock*> getSuccBBs() const
+    {
+        return succBBs;
+    }
+
+    const std::vector<const SVFBasicBlock*> getPredBBs() const
+    {
+        return predBBs;
+    }
+
 public:
     /// Constructor without name
     SVFBasicBlock(NodeID id, const FunObjVar* f): GenericBasicBlockNodeTy(id, BasicBlockKd), fun(f)
@@ -282,16 +293,6 @@ public:
     }
 
     const std::string toString() const;
-
-    const std::vector<const SVFBasicBlock*> getSuccBBs() const
-    {
-        return succBBs;
-    }
-
-    const std::vector<const SVFBasicBlock*> getPredBBs() const
-    {
-        return predBBs;
-    }
 
 };
 

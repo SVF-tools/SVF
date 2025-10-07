@@ -87,6 +87,11 @@ inline void setBB2PIdom(Map<const SVFBasicBlock*, const SVFBasicBlock*>& bb2PIdo
     bb2PIdom = bb2PIdomMap;
 }
 
+inline const Map<const SVFBasicBlock*, LoopBBs>& getBB2LoopMap() const
+{
+    return bb2LoopMap;
+}
+
 public:
     SVFLoopAndDomInfo()
     {
@@ -102,11 +107,6 @@ public:
     inline Map<const SVFBasicBlock*,BBSet>& getDomFrontierMap()
     {
         return dfBBsMap;
-    }
-
-    inline const Map<const SVFBasicBlock*, LoopBBs>& getBB2LoopMap() const
-    {
-        return bb2LoopMap;
     }
     
     inline bool hasLoopInfo(const SVFBasicBlock* bb) const

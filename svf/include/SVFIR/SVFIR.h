@@ -511,6 +511,11 @@ protected:
     NodeID addDummyObjNode(DummyObjVar* node);
 
     NodeID addGepObjNode(GepObjVar* gepObj, NodeID base, const APOffset& apOffset);
+    
+    inline void addGepValObjFromDB(NodeID curInstID, const GepValVar* gepValvar)
+    {
+        GepValObjMap[curInstID][std::make_pair(gepValvar->getBaseNode()->getId(), gepValvar->getAccessPath())] = gepValvar->getId();
+    }
 
 private:
 
@@ -788,11 +793,6 @@ private:
     inline void addCallSite(const CallICFGNode* call)
     {
         callSiteSet.insert(call);
-    }
-
-    inline void addGepValObjFromDB(NodeID curInstID, const GepValVar* gepValvar)
-    {
-        GepValObjMap[curInstID][std::make_pair(gepValvar->getBaseNode()->getId(), gepValvar->getAccessPath())] = gepValvar->getId();
     }
     /// Add an edge into SVFIR
     //@{
