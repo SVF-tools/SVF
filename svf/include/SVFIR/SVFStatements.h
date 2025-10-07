@@ -51,10 +51,6 @@ class SVFBasicBlock;
 typedef GenericEdge<SVFVar> GenericPAGEdgeTy;
 class SVFStmt : public GenericPAGEdgeTy
 {
-    friend class AssignStmt;
-    friend class MultiOpndStmt;
-    friend class UnaryOPStmt;
-    friend class BranchStmt;
     friend class GraphDBClient;
 
 public:
@@ -96,26 +92,41 @@ protected:
 
     SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, bool real = true);
 
+    /**
+     * Set the SVF BasicBlock for the new statements, this is used when loading statements from DB
+     */
     inline void setBasicBlock(const SVFBasicBlock* bb)
     {
         basicBlock = bb;
     }
 
+    /**
+     * set the call edge lanbel counter for the new statements, this is used when loading statements from DB
+     */
     inline void setCallEdgeLabelCounter(u64_t counter)
     {
         callEdgeLabelCounter = counter;
     }
 
+    /**
+     * set the store edge lanbel counter for the new statements, this is used when loading statements from DB
+     */
     inline void setStoreEdgeLabelCounter(u64_t counter)
     {
         storeEdgeLabelCounter = counter;
     }
 
+    /**
+     * set the multi operand edge lanbel counter for the new statements, this is used when loading statements from DB
+     */
     inline void setMultiOpndLabelCounter(u64_t counter)
     {
         multiOpndLabelCounter = counter;
     }
 
+    /**
+     * Add a call site Instruction to label mapping, this is used when loading statements from DB
+     */
     static inline void addInst2Labeled(const ICFGNode* cs, u32_t label)
     {
         inst2LabelMap.emplace(cs, label);
@@ -295,13 +306,6 @@ public:
 class AssignStmt : public SVFStmt
 {
     friend class GraphDBClient;
-    friend class AddrStmt;
-    friend class CopyStmt;
-    friend class StoreStmt;
-    friend class LoadStmt;
-    friend class GepStmt;
-    friend class CallPE;
-    friend class RetPE;
 
 private:
     AssignStmt();                      ///< place holder
@@ -685,7 +689,6 @@ public:
 class CallPE: public AssignStmt
 {
     friend class GraphDBClient;
-    friend class TDForkPE;
 
 protected:
     CallPE(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const CallICFGNode* call,
@@ -747,7 +750,6 @@ public:
 class RetPE: public AssignStmt
 {
     friend class GraphDBClient;
-    friend class TDJoinPE;
 
 protected:
     RetPE(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const CallICFGNode* call,
@@ -810,10 +812,6 @@ public:
 class MultiOpndStmt : public SVFStmt
 {
     friend class GraphDBClient;
-    friend class PhiStmt;
-    friend class SelectStmt;
-    friend class CmpStmt;
-    friend class BinaryOPStmt;
     
 
 

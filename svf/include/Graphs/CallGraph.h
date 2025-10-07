@@ -314,6 +314,15 @@ protected:
 
     /// add direct call graph edge from database [only used this function when loading cgEdges from db results]
     void addDirectCallGraphEdge(CallGraphEdge* cgEdge);
+
+    /// add call graph node from database [only used this function when loading cgNodes from db results]
+    void addCallGraphNode(CallGraphNode* cgNode);
+
+    /// Whether we have already created this call graph edge, only used when adding new edge from db query results
+    CallGraphEdge* hasGraphEdge(CallGraphEdge* cgEdge) const;
+
+    /// Add indirect call graph edge from database [only used this function when loading cgEdges from db results]
+    void addIndirectCallGraphEdge(CallGraphEdge* cgEdge);
 public:
     /// Constructor
     CallGraph(CGEK k = NormCallGraph);
@@ -373,8 +382,6 @@ public:
 
     void addCallGraphNode(const FunObjVar* fun);
 
-    void addCallGraphNode(CallGraphNode* cgNode);
-
     /// Get call graph node
     //@{
 
@@ -427,8 +434,6 @@ public:
     /// Whether we have already created this call graph edge
     CallGraphEdge* hasGraphEdge(CallGraphNode* src, CallGraphNode* dst,
                                 CallGraphEdge::CEDGEK kind, CallSiteID csId) const;
-
-    CallGraphEdge* hasGraphEdge(CallGraphEdge* cgEdge) const;
     /// Get call graph edge via nodes
     CallGraphEdge* getGraphEdge(CallGraphNode* src, CallGraphNode* dst,
                                 CallGraphEdge::CEDGEK kind, CallSiteID csId);
@@ -473,7 +478,6 @@ public:
     /// Add indirect call edges
     //@{
     void addIndirectCallGraphEdge(const CallICFGNode* cs,const FunObjVar* callerFun, const FunObjVar* calleeFun);
-    void addIndirectCallGraphEdge(CallGraphEdge* cgEdge);
     //@}
 
     /// Get callsites invoking the callee

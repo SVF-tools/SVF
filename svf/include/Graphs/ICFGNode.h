@@ -208,11 +208,11 @@ class IntraICFGNode : public ICFGNode
     friend class GraphDBClient;
 
 protected:
-    IntraICFGNode(NodeID id, const SVFBasicBlock* bb, const FunObjVar* funObjVar, bool isReturn): ICFGNode(id, IntraBlock),isRet(isReturn)
+    IntraICFGNode(NodeID id, const SVFBasicBlock* b, const FunObjVar* f, bool isReturn): ICFGNode(id, IntraBlock),isRet(isReturn)
     {
 
-        this->fun = funObjVar;
-        this->bb = bb;
+        this->fun = f;
+        this->bb = b;
     }
 
 private:
@@ -296,11 +296,11 @@ class FunEntryICFGNode : public InterICFGNode
     friend class GraphDBClient;
 
 protected:
-    FunEntryICFGNode(NodeID id, const FunObjVar* f, SVFBasicBlock* bb)
+    FunEntryICFGNode(NodeID id, const FunObjVar* f, SVFBasicBlock* b)
     : InterICFGNode(id, FunEntryBlock)
     {
         this->fun = f;
-        this->bb = bb;
+        this->bb = b;
     }
 
 public:
@@ -370,11 +370,11 @@ class FunExitICFGNode : public InterICFGNode
     friend class GraphDBClient;
 
 protected:
-    FunExitICFGNode(NodeID id, const FunObjVar* f, SVFBasicBlock* bb, SVFVar* formalRet) 
+    FunExitICFGNode(NodeID id, const FunObjVar* f, SVFBasicBlock* b, SVFVar* formalRet) 
     : InterICFGNode(id, FunExitBlock), formalRet(formalRet)
     {
         this->fun = f;
-        this->bb = bb;
+        this->bb = b;
     }
 
 private:
@@ -454,20 +454,17 @@ protected:
     s32_t virtualFunIdx;            /// virtual function index of the virtual table(s) at a virtual call
     std::string funNameOfVcall;     /// the function name of this virtual call
     const SVFVar* indFunPtr;
-
-    /// Constructor to create empty CallICFGNode (for SVFIRReader/deserialization)
-    CallICFGNode(NodeID id) : InterICFGNode(id, FunCallBlock), ret{} {}
     
-    CallICFGNode(NodeID id, const SVFBasicBlock* bb, const SVFType* type,
-                 const FunObjVar* fun, const FunObjVar* cf, const RetICFGNode* ret, 
+    CallICFGNode(NodeID id, const SVFBasicBlock* b, const SVFType* ty,
+                 const FunObjVar* f, const FunObjVar* cf, const RetICFGNode* ret, 
                  bool iv, bool ivc, s32_t vfi, SVFVar* vtabPtr, const std::string& fnv)
         : InterICFGNode(id, FunCallBlock), ret(ret), calledFunc(cf),
           isvararg(iv), isVirCallInst(ivc), vtabPtr(vtabPtr),
           virtualFunIdx(vfi), funNameOfVcall(fnv)
     {
-        this->fun = fun;
-        this->bb = bb;
-        this->type = type;
+        this->fun = f;
+        this->bb = b;
+        this->type = ty;
     }
                 
 
@@ -643,12 +640,18 @@ class RetICFGNode : public InterICFGNode
     friend class GraphDBClient;
 
 protected:
-    RetICFGNode(NodeID id, const SVFType* type, const SVFBasicBlock* bb, const FunObjVar* funObjVar) : 
+    RetICFGNode(NodeID id, const SVFType* ty, const SVFBasicBlock* b, const FunObjVar* f) : 
         InterICFGNode(id, FunRetBlock), actualRet(nullptr), callBlockNode(nullptr)
     {
-        this->fun = funObjVar;
-        this->bb = bb;
-        this->type = type;
+        this->fun = f;
+        this->bb = b;
+        this->type = ty;
+    }
+
+    /// Add call block node from database for the new RetICFGNode [only used this function when loading from db results]
+    inline void addCallBlockNodeFromDB(const CallICFGNode* cb)
+    {
+        callBlockNode = cb;
     }
 
 private:
@@ -678,11 +681,6 @@ public:
     inline void addActualRet(const SVFVar *ar)
     {
         actualRet = ar;
-    }
-
-    inline void addCallBlockNodeFromDB(const CallICFGNode* cb)
-    {
-        callBlockNode = cb;
     }
 
     ///Methods for support type inquiry through isa, cast, and dyn_cast:
