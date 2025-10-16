@@ -116,7 +116,7 @@ void MHP::analyzeInterleaving()
                 {
                     handleCall(cts, rootTid);
                 }
-                else if (isRetInstNode(curInst))
+                else if (SVFUtil::dyn_cast<FunExitICFGNode>(curInst))
                 {
                     handleRet(cts);
                 }
@@ -347,7 +347,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
             {
                 for(const ICFGEdge* outEdge : cts.getStmt()->getOutEdges())
                 {
-                    if(outEdge->getDstNode()->getFun() == cts.getStmt()->getFun())
+                    if(outEdge->getDstNode()->getFun() == (*cit)->getFun())
                     {
                         CxtThreadStmt newCts(cts.getTid(), newCxt, outEdge->getDstNode());
                         addInterleavingThread(newCts, cts);
@@ -364,7 +364,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
             {
                 for(const ICFGEdge* outEdge : cts.getStmt()->getOutEdges())
                 {
-                    if(outEdge->getDstNode()->getFun() == cts.getStmt()->getFun())
+                    if(outEdge->getDstNode()->getFun() == (*cit)->getFun())
                     {
                         CxtThreadStmt newCts(cts.getTid(), newCxt, outEdge->getDstNode());
                         addInterleavingThread(newCts, cts);
