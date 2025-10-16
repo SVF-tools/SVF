@@ -463,7 +463,7 @@ void TCT::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* ca
 /*!
  * Match calling context
  */
-bool TCT::matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
+bool TCT::matchAndPopCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
 {
 
     const FunObjVar* caller = call->getFun();

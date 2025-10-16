@@ -207,9 +207,9 @@ private:
         tct->pushCxt(cxt,call,callee);
     }
     /// Match context
-    inline bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
+    inline bool matchAndPopCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
     {
-        return tct->matchCxt(cxt,call,callee);
+        return tct->matchAndPopCxt(cxt,call,callee);
     }
 
     /// WorkList helper functions
@@ -457,7 +457,7 @@ private:
     /// Match context
     inline bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
     {
-        return tct->matchCxt(cxt,call,callee);
+        return tct->matchAndPopCxt(cxt,call,callee);
     }
 
     /// Whether it is a fork site

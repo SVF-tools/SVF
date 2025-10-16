@@ -331,7 +331,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
                 cit != ecit; ++cit)
         {
             CallStrCxt newCxt = cts.getContext();
-            if (matchCxt(newCxt, *cit, curFunNode->getFunction()))
+            if (matchAndPopCxt(newCxt, *cit, curFunNode->getFunction()))
             {
                 for(const ICFGEdge* outEdge : cts.getStmt()->getOutEdges())
                 {
@@ -348,7 +348,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
                 cit != ecit; ++cit)
         {
             CallStrCxt newCxt = cts.getContext();
-            if (matchCxt(newCxt, *cit, curFunNode->getFunction()))
+            if (matchAndPopCxt(newCxt, *cit, curFunNode->getFunction()))
             {
                 for(const ICFGEdge* outEdge : cts.getStmt()->getOutEdges())
                 {
@@ -368,7 +368,6 @@ void MHP::handleRet(const CxtThreadStmt& cts)
  */
 void MHP::handleIntra(const CxtThreadStmt& cts)
 {
-
     for(const ICFGEdge* outEdge : cts.getStmt()->getOutEdges())
     {
         if(outEdge->getDstNode()->getFun() == cts.getStmt()->getFun())

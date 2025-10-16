@@ -410,7 +410,7 @@ public:
     /// Push calling context
     void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee);
     /// Match context
-    bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee);
+    bool matchAndPopCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee);
 
     inline void pushCxt(CallStrCxt& cxt, CallSiteID csId)
     {
