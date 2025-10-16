@@ -115,9 +115,6 @@ void MHP::analyzeInterleaving()
                 else if (tct->isCallSite(curInst) && !tct->isExtCall(curInst))
                 {
                     handleCall(cts, rootTid);
-                    CallGraph::FunctionSet callees;
-                    if (!tct->isCandidateFun(getCallee(SVFUtil::cast<CallICFGNode>(curInst), callees)))
-                        handleIntra(cts);
                 }
                 else if (isRetInstNode(curInst))
                 {
@@ -312,6 +309,11 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
             addInterleavingThread(newCts, cts);
         }
     }
+
+    const ICFGNode *curInst = cts.getStmt();
+    CallGraph::FunctionSet callees;
+    if (!tct->isCandidateFun(getCallee(SVFUtil::cast<CallICFGNode>(curInst), callees)))
+        handleIntra(cts);
 }
 
 /*!
@@ -382,23 +384,24 @@ void MHP::handleIntra(const CxtThreadStmt& cts)
  */
 void MHP::updateAncestorThreads(NodeID curTid)
 {
-    NodeBS tds = tct->getAncestorThread(curTid);
+    NodeBS ancestorAndSelfTids = tct->getAncestorThread(curTid);
     DBOUT(DMTA, outs() << "##Ancestor thread of " << curTid << " is : ");
     DBOUT(DMTA, dumpSet(tds));
     DBOUT(DMTA, outs() << "\n");
-    tds.set(curTid);
+    ancestorAndSelfTids.set(curTid);
 
-    for (const unsigned i : tds)
+    for (const unsigned tid : ancestorAndSelfTids)
     {
-        const CxtThread& ct = tct->getTCTNode(i)->getCxtThread();
+        const CxtThread& ct = tct->getTCTNode(tid)->getCxtThread();
         if (const ICFGNode* forkInst = ct.getThread())
         {
             CallStrCxt forkSiteCxt = tct->getCxtOfCxtThread(ct);
             for(const ICFGEdge* outEdge : forkInst->getOutEdges())
             {
+                // Ensure dst node is in the same function as forkInst
                 if(outEdge->getDstNode()->getFun() == forkInst->getFun())
                 {
-                    CxtThreadStmt cts(tct->getParentThread(i), forkSiteCxt, outEdge->getDstNode());
+                    CxtThreadStmt cts(tct->getParentThread(tid), forkSiteCxt, outEdge->getDstNode());
                     addInterleavingThread(cts, curTid);
                 }
             }
@@ -418,9 +421,9 @@ void MHP::updateAncestorThreads(NodeID curTid)
  */
 void MHP::updateSiblingThreads(NodeID curTid)
 {
-    NodeBS tds = tct->getAncestorThread(curTid);
-    tds.set(curTid);
-    for (const unsigned tid : tds)
+    NodeBS ancestorAndSelfTids = tct->getAncestorThread(curTid);
+    ancestorAndSelfTids.set(curTid);
+    for (const unsigned tid : ancestorAndSelfTids)
     {
         NodeBS siblingTds = tct->getSiblingThread(tid);
         for (const unsigned stid : siblingTds)
@@ -758,7 +761,6 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
                 }
                 else if (tct->isCallSite(curInst) && tct->isCandidateFun(getCallee(curInst, callees)))
                 {
-
                     handleCall(cts, rootTid);
                 }
                 else if (isRetInstNode(curInst))

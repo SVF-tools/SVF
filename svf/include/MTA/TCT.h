@@ -97,7 +97,7 @@ public:
         SVFUtil::outs() << "---\ntid: " << this->getId() << "  inloop:" << ctx.isInloop() << "  incycle:" << ctx.isIncycle() << " multiforked:"<< isMultiforked();
     }
 
-    /// Get CxtThread
+    /// Get thread creation context, <fork site, call string context>
     inline const CxtThread& getCxtThread() const
     {
         return ctx;
@@ -142,7 +142,7 @@ public:
 
 
 private:
-    const CxtThread ctx;
+    const CxtThread ctx;  /// Thread creation context, <fork site, call string context>
     bool multiforked;
 };
 
