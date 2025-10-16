@@ -310,10 +310,22 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
         }
     }
 
-    const ICFGNode *curInst = cts.getStmt();
-    CallGraph::FunctionSet callees;
-    if (!tct->isCandidateFun(getCallee(SVFUtil::cast<CallICFGNode>(curInst), callees)))
-        handleIntra(cts);
+    /// Propagate to the return site of the call instruction,
+    /// only if the callee is not a candidate function, while for candidate function,
+    /// return site should be handled after the callee is handled.
+    if (const CallICFGNode *callSite = SVFUtil::cast<CallICFGNode>(call))
+    {
+        CallGraph::FunctionSet callees;
+        if (!tct->isCandidateFun(getCallee(callSite, callees)))
+        {
+            CxtThreadStmt newCts(cts.getTid(), cts.getContext(), callSite->getRetICFGNode());
+            addInterleavingThread(newCts, cts);
+        }
+    }
+    else
+    {
+        assert(false && "cts.getStmt() is not a CallICFGNode!");
+    }
 }
 
 /*!
