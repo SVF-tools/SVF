@@ -311,7 +311,7 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
     }
 
     /// Propagate to the return site of the call instruction,
-    /// only if the callee is not a candidate function, while for candidate function,
+    /// only if the callee is a non-candidate function, while for candidate function,
     /// return site should be handled after the callee is handled.
     if (const CallICFGNode *callSite = SVFUtil::cast<CallICFGNode>(call))
     {
@@ -770,9 +770,23 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
                 {
                     handleJoin(cts, rootTid);
                 }
-                else if (tct->isCallSite(curInst) && tct->isCandidateFun(getCallee(curInst, callees)))
+                else if (tct->isCallSite(curInst) && !tct->isExtCall(curInst))
                 {
-                    handleCall(cts, rootTid);
+                    /// Propagate to the return site of the call instruction,
+                    /// only if the callee is a non-candidate function, while for candidate function,
+                    /// return site should be handled after the callee is handled.
+                    const CallICFGNode *callSite = SVFUtil::cast<CallICFGNode>(curInst);
+                    CallGraph::FunctionSet callees;
+                    if (!tct->isCandidateFun(getCallee(callSite, callees)))
+                    {
+                        // Do not dive into non-candidate functions
+                        CxtStmt newCts(cts.getContext(), callSite->getRetICFGNode());
+                        markCxtStmtFlag(newCts, cts);
+                    }
+                    else
+                    {
+                        handleCall(cts, rootTid);
+                    }
                 }
                 else if (SVFUtil::dyn_cast<FunExitICFGNode>(curInst))
                 {
