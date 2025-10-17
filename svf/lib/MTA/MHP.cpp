@@ -774,7 +774,7 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
                 {
                     handleCall(cts, rootTid);
                 }
-                else if (isRetInstNode(curInst))
+                else if (SVFUtil::dyn_cast<FunExitICFGNode>(curInst))
                 {
                     handleRet(cts);
                 }
