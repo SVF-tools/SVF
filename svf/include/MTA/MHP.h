@@ -381,7 +381,7 @@ private:
     /// Whether it is a matched fork join pair
     bool isAliasedForkJoin(const CallICFGNode* forkSite, const CallICFGNode* joinSite)
     {
-        return tct->getPTA()->alias(getForkedThread(forkSite)->getId(), getJoinedThread(joinSite)->getId()) && isSameSCEV(forkSite,joinSite);
+        return tct->getPTA()->alias(getForkedThread(forkSite)->getId(), getJoinedThread(joinSite)->getId());
     }
     /// Mark thread flags for cxtStmt
     //@{

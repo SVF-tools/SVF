@@ -849,9 +849,12 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
         const ICFGNode* forkSite = tct->getTCTNode(rootTid)->getCxtThread().getThread();
         const ICFGNode* joinSite = cts.getStmt();
 
-        if (isAliasedForkJoin(SVFUtil::cast<CallICFGNode>(forkSite), SVFUtil::cast<CallICFGNode>(joinSite)))
+        if (hasJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite)))
         {
-            if (hasJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite)))
+            if (isAliasedForkJoin(SVFUtil::cast<CallICFGNode>(forkSite),
+                                SVFUtil::cast<CallICFGNode>(joinSite)) &&
+                    isSameSCEV(forkSite,joinSite)
+                )
             {
                 LoopBBs& joinLoop = getJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite));
                 std::vector<const SVFBasicBlock *> exitbbs;
@@ -872,18 +875,9 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
                         markCxtStmtFlag(cts, TDAlive);
                 }
             }
+            /// for the join site in a loop loop which does not join the current thread
+            /// we process the loop exit
             else
-            {
-                markCxtStmtFlag(cts, TDDead);
-                addDirectlyJoinTID(cts, rootTid);
-                DBOUT(DMTA, outs() << "\n\t match join site " << call->toString() << "for thread " << rootTid << "\n");
-            }
-        }
-        /// for the join site in a loop loop which does not join the current thread
-        /// we process the loop exit
-        else
-        {
-            if (hasJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite)))
             {
                 std::vector<const SVFBasicBlock*> exitbbs;
                 joinSite->getFun()->getExitBlocksOfLoop(joinSite->getBB(), exitbbs);
@@ -895,6 +889,16 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
                     CxtStmt newCts(curCxt, svfEntryInst);
                     markCxtStmtFlag(newCts, cts);
                 }
+            }
+        }
+        else
+        {
+            if (isAliasedForkJoin(SVFUtil::cast<CallICFGNode>(forkSite),
+                                SVFUtil::cast<CallICFGNode>(joinSite)))
+            {
+                markCxtStmtFlag(cts, TDDead);
+                addDirectlyJoinTID(cts, rootTid);
+                DBOUT(DMTA, outs() << "\n\t match join site " << call->toString() << "for thread " << rootTid << "\n");
             }
         }
     }
