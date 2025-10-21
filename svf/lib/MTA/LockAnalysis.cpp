@@ -376,7 +376,7 @@ void LockAnalysis::analyzeLockSpanCxtStmt()
         {
             handleCall(cts);
         }
-        else if (isRetInstNode(curInst))
+        else if (SVFUtil::dyn_cast<FunExitICFGNode>(curInst))
         {
             handleRet(cts);
         }
@@ -472,7 +472,7 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
             {
                 for(const ICFGEdge* outEdge : curInst->getOutEdges())
                 {
-                    if(outEdge->getDstNode()->getFun() == curInst->getFun())
+                    if(outEdge->getDstNode()->getFun() == inst->getFun())
                     {
                         CxtStmt newCts(newCxt, outEdge->getDstNode());
                         markCxtStmtFlag(newCts, cts);
@@ -489,7 +489,7 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
             {
                 for(const ICFGEdge* outEdge : curInst->getOutEdges())
                 {
-                    if(outEdge->getDstNode()->getFun() == curInst->getFun())
+                    if(outEdge->getDstNode()->getFun() == inst->getFun())
                     {
                         CxtStmt newCts(newCxt, outEdge->getDstNode());
                         markCxtStmtFlag(newCts, cts);
