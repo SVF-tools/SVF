@@ -172,7 +172,8 @@ public:
     /// Constructor
     TCT(PointerAnalysis* p) :pta(p),TCTNodeNum(0),TCTEdgeNum(0),MaxCxtSize(0)
     {
-        tcg = SVFUtil::cast<ThreadCallGraph>(pta->getCallGraph());
+        tcg = SVFUtil::dyn_cast<ThreadCallGraph>(pta->getCallGraph());
+        assert(tcg != nullptr && "TCT::TCT: call graph is not a ThreadCallGraph!");
         tcg->updateCallGraph(pta);
         //tcg->updateJoinEdge(pta);
         tcgSCC = pta->getCallGraphSCC();
@@ -182,9 +183,7 @@ public:
 
     /// Destructor
     virtual ~TCT()
-    {
-        destroy();
-    }
+    {  }
 
     /// Get TCG
     inline ThreadCallGraph* getThreadCallGraph() const
@@ -571,13 +570,6 @@ private:
         return visitedCTPs.find(ctp)!=visitedCTPs.end();
     }
     //@}
-    /// Clean up memory
-    inline void destroy()
-    {
-        if(tcgSCC)
-            delete tcgSCC;
-        tcgSCC=nullptr;
-    }
 
     FunSet entryFuncSet; /// Procedures that are neither called by other functions nor extern functions
     FunSet candidateFuncSet; /// Procedures we care about during call graph traversing when creating TCT
