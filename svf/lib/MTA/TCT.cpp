@@ -156,7 +156,7 @@ void TCT::markRelProcs()
 }
 
 /*!
- *
+ * Add relevant procedures that are backward reachable from svffun on Thread Call Graph
  */
 void TCT::markRelProcs(const FunObjVar* svffun)
 {
@@ -182,7 +182,7 @@ void TCT::markRelProcs(const FunObjVar* svffun)
 }
 
 /*!
- * Get Main function
+ * Get entry function, i.e., functions without callers, e.g., main function
  */
 void TCT::collectEntryFunInCallGraph()
 {
@@ -513,8 +513,7 @@ void TCT::dumpCxt(CallStrCxt& cxt)
  */
 void TCT::dump(const std::string& filename)
 {
-    if (Options::TCTDotGraph())
-        GraphPrinter::WriteGraphToFile(outs(), filename, this);
+    GraphPrinter::WriteGraphToFile(outs(), filename, this);
 }
 
 /*!
