@@ -52,6 +52,7 @@ int main(int argc, char ** argv)
 
     if (Options::ReadFromDB())
     {
+        pag = builder.build();
         pag->setPagFromTXT("ReadFromDB");
     } 
     else 
@@ -62,8 +63,8 @@ int main(int argc, char ** argv)
         }
 
         LLVMModuleSet::buildSVFModule(moduleNameVec);
+        pag = builder.build();
     }
-    pag = builder.build();
 
 
     std::unique_ptr<LeakChecker> saber;
