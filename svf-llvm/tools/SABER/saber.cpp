@@ -47,9 +47,23 @@ int main(int argc, char ** argv)
                         argc, argv, "Source-Sink Bug Detector", "[options] <input-bitcode...>"
                     );
 
-    LLVMModuleSet::buildSVFModule(moduleNameVec);
     SVFIRBuilder builder;
-    SVFIR* pag = builder.build();
+    SVFIR* pag;
+
+    if (Options::ReadFromDB())
+    {
+        pag->setPagFromTXT("ReadFromDB");
+    } 
+    else 
+    {
+        if (Options::WriteAnder() == "ir_annotator")
+        {
+            LLVMModuleSet::preProcessBCs(moduleNameVec);
+        }
+
+        LLVMModuleSet::buildSVFModule(moduleNameVec);
+    }
+    pag = builder.build();
 
 
     std::unique_ptr<LeakChecker> saber;

@@ -47,6 +47,7 @@ class SVFIR : public IRGraph
     friend class TypeBasedHeapCloning;
     friend class BVDataPTAImpl;
     friend class GraphDBClient;
+    friend class GraphDBSVFIRBuilder;
 
 public:
     typedef Set<const CallICFGNode*> CallSiteSet;
@@ -180,6 +181,11 @@ public:
     {
         assert(callGraph && "empty CallGraph! Build SVF IR first!");
         return callGraph;
+    }
+
+    inline void setCallGraph(CallGraph* cg)
+    {
+        callGraph = cg;
     }
 
     const FunObjVar* getFunObjVar(const std::string& name);
