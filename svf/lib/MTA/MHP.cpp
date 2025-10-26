@@ -164,7 +164,7 @@ void MHP::updateNonCandidateFunInterleaving()
                         if (curNode == entryNode)
                             continue;
                         CxtThreadStmt newCts(cts.getTid(), curCxt, curNode);
-                        threadStmtToTheadInterLeav[newCts] |= threadStmtToTheadInterLeav[cts];
+                        threadStmtToThreadInterLeav[newCts] |= threadStmtToThreadInterLeav[cts];
                         instToTSMap[curNode].insert(newCts);
                     }
                 }
@@ -395,7 +395,7 @@ void MHP::handleIntra(const CxtThreadStmt& cts)
  */
 void MHP::updateAncestorThreads(NodeID curTid)
 {
-    NodeBS ancestorAndSelfTids = tct->getAncestorThread(curTid);
+    NodeBS ancestorAndSelfTids = tct->getAncestorThreads(curTid);
     DBOUT(DMTA, outs() << "##Ancestor thread of " << curTid << " is : ");
     DBOUT(DMTA, dumpSet(tds));
     DBOUT(DMTA, outs() << "\n");
@@ -406,14 +406,17 @@ void MHP::updateAncestorThreads(NodeID curTid)
         const CxtThread& ct = tct->getTCTNode(tid)->getCxtThread();
         if (const ICFGNode* forkInst = ct.getThread())
         {
-            CallStrCxt forkSiteCxt = tct->getCxtOfCxtThread(ct);
-            for(const ICFGEdge* outEdge : forkInst->getOutEdges())
+            for (NodeID parentTid : tct->getParentThreads(tid))
             {
-                // Ensure dst node is in the same function as forkInst
-                if(outEdge->getDstNode()->getFun() == forkInst->getFun())
+                CallStrCxt forkSiteCxt = tct->getTCTNode(parentTid)->getCxtThread().getContext();
+                for(const ICFGEdge* outEdge : forkInst->getOutEdges())
                 {
-                    CxtThreadStmt cts(tct->getParentThread(tid), forkSiteCxt, outEdge->getDstNode());
-                    addInterleavingThread(cts, curTid);
+                    // Ensure dst node is in the same function as forkInst
+                    if(outEdge->getDstNode()->getFun() == forkInst->getFun())
+                    {
+                        CxtThreadStmt cts(parentTid, forkSiteCxt, outEdge->getDstNode());
+                        addInterleavingThread(cts, curTid);
+                    }
                 }
             }
         }
@@ -432,7 +435,7 @@ void MHP::updateAncestorThreads(NodeID curTid)
  */
 void MHP::updateSiblingThreads(NodeID curTid)
 {
-    NodeBS ancestorAndSelfTids = tct->getAncestorThread(curTid);
+    NodeBS ancestorAndSelfTids = tct->getAncestorThreads(curTid);
     ancestorAndSelfTids.set(curTid);
     for (const unsigned tid : ancestorAndSelfTids)
     {
@@ -661,7 +664,7 @@ bool MHP::executedByTheSameThread(const ICFGNode* i1, const ICFGNode* i2)
  */
 void MHP::printInterleaving()
 {
-    for (const auto& pair : threadStmtToTheadInterLeav)
+    for (const auto& pair : threadStmtToThreadInterLeav)
     {
         outs() << "( t" << pair.first.getTid()
                << pair.first.getStmt()->toString() << " ) ==> [";
@@ -742,15 +745,17 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
         clearFlagMap();
         if (const ICFGNode* forkInst = ct.getThread())
         {
-            CallStrCxt forkSiteCxt = tct->getCxtOfCxtThread(ct);
-            const ICFGNode* exitInst = getExitInstOfParentRoutineFun(rootTid);
-
+            /// Start from the instruction next to the fork site
             for(const ICFGEdge* outEdge : forkInst->getOutEdges())
             {
                 if(outEdge->getDstNode()->getFun() == forkInst->getFun())
                 {
-                    CxtStmt newCts(forkSiteCxt, outEdge->getDstNode());
-                    markCxtStmtFlag(newCts, TDAlive);
+                    for (NodeID parentTid : tct->getParentThreads(rootTid))
+                    {
+                        const CallStrCxt& forkSiteCxt = tct->getTCTNode(parentTid)->getCxtThread().getContext();
+                        CxtStmt newCts(forkSiteCxt, outEdge->getDstNode());
+                        markCxtStmtFlag(newCts, TDAlive);
+                    }
                 }
             }
 
@@ -797,12 +802,20 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
                     handleIntra(cts);
                 }
 
-                if (curInst == exitInst)
+                /// If the current instruction is an exit instruction of the start routine of
+                /// a parent context thread, we need to update the join information the parent
+                /// context thread.
+                for (NodeID parentTid : tct->getParentThreads(rootTid))
                 {
-                    if (getMarkedFlag(cts) != TDAlive)
-                        addToFullJoin(tct->getParentThread(rootTid), rootTid);
-                    else
-                        addToPartial(tct->getParentThread(rootTid), rootTid);
+                    const CxtThread& parentCxtThread = tct->getTCTNode(parentTid)->getCxtThread();
+                    const FunObjVar* parentRoutine = tct->getStartRoutineOfCxtThread(parentCxtThread);
+                    if (curInst == parentRoutine->getExitBB()->back())
+                    {
+                        if (getMarkedFlag(cts) != TDAlive)
+                            addToFullJoin(parentTid, rootTid);
+                        else
+                            addToPartial(parentTid, rootTid);
+                    }
                 }
             }
         }

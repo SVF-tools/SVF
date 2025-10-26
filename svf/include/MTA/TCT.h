@@ -309,24 +309,29 @@ public:
         const TCTNode* node = getTCTNode(tid);
         return node->getInEdges().size()==1;
     }
-    /// Get parent thread
-    inline NodeID getParentThread(NodeID tid) const
+    /// Get parent threads
+    inline NodeBS getParentThreads(NodeID tid) const
     {
+        NodeBS parentTds;
         const TCTNode* node = getTCTNode(tid);
-        assert(node->getInEdges().size()<=1 && "should have at most one parent thread");
-        assert(node->getInEdges().size()==1 && "does not have a parent thread");
-        const TCTEdge* edge = *(node->getInEdges().begin());
-        return edge->getSrcID();
+        assert(node->getInEdges().size()>=1 && "does not have a parent thread");
+
+        for (const TCTEdge* edge : node->getInEdges())
+        {
+            parentTds.set(edge->getSrcID());
+        }
+        return parentTds;
     }
     /// Get all ancestor threads
-    const NodeBS getAncestorThread(NodeID tid) const
+    const NodeBS getAncestorThreads(NodeID tid) const
     {
         NodeBS tds;
         if(hasParentThread(tid) == false)
             return tds;
 
         FIFOWorkList<NodeID> worklist;
-        worklist.push(getParentThread(tid));
+        for(NodeID parentTid : getParentThreads(tid))
+            worklist.push(parentTid);
 
         while(!worklist.empty())
         {
@@ -334,7 +339,8 @@ public:
             if(tds.test_and_set(t))
             {
                 if(hasParentThread(t))
-                    worklist.push(getParentThread(t));
+                    for(NodeID parentTid : getParentThreads(t))
+                        worklist.push(parentTid);
             }
         }
         return tds;
@@ -345,26 +351,20 @@ public:
         NodeBS tds;
         if(hasParentThread(tid) == false)
             return tds;
-
-        const TCTNode* node = getTCTNode(getParentThread(tid));
-        for(ThreadCreateEdgeSet::const_iterator it = getChildrenBegin(node), eit = getChildrenEnd(node); it!=eit; ++it)
+        for (NodeID parentTid : getParentThreads(tid))
         {
-            NodeID child = (*it)->getDstNode()->getId();
-            if(child!=tid)
-                tds.set(child);
+            const TCTNode* parentNode = getTCTNode(parentTid);
+            for(ThreadCreateEdgeSet::const_iterator it = getChildrenBegin(parentNode),
+                    eit = getChildrenEnd(parentNode); it!=eit; ++it)
+            {
+                NodeID child = (*it)->getDstNode()->getId();
+                if(child!=tid)
+                    tds.set(child);
+            }
         }
-
         return tds;
     }
     //@}
-
-    /// get the context of a thread at its spawning site (fork site)
-    const CallStrCxt& getCxtOfCxtThread(const CxtThread& ct) const
-    {
-        CxtThreadToForkCxt::const_iterator it = ctToForkCxtMap.find(ct);
-        assert(it!=ctToForkCxtMap.end() && "Cxt Thread not found!!");
-        return it->second;
-    }
 
     /// get the start routine function of a thread
     const FunObjVar* getStartRoutineOfCxtThread(const CxtThread& ct) const
@@ -512,7 +512,6 @@ private:
             return it->second;
         }
 
-        addCxtOfCxtThread(oldCxt,ct);
         addStartRoutineOfCxtThread(routine,ct);
 
         setMultiForkedAttrs(ct);
@@ -538,11 +537,6 @@ private:
         }
     }
 
-    /// Add context for a thread at its spawning site (fork site)
-    void addCxtOfCxtThread(const CallStrCxt& cxt, const CxtThread& ct)
-    {
-        ctToForkCxtMap[ct] = cxt;
-    }
     /// Add start routine function of a cxt thread
     void addStartRoutineOfCxtThread(const FunObjVar* fun, const CxtThread& ct)
     {

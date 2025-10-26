@@ -440,7 +440,7 @@ void TCT::build()
 }
 
 /*!
- * Push calling context
+ * Push calling context, with k limiting
  */
 void TCT::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
 {
@@ -454,7 +454,11 @@ void TCT::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* ca
 
     if(inSameCallGraphSCC(tcg->getCallGraphNode(caller),tcg->getCallGraphNode(callee))==false)
     {
-        pushCxt(cxt,csId);
+        cxt.push_back(csId);
+        if (cxt.size() > Options::MaxContextLen())
+            cxt.erase(cxt.begin());
+        if (cxt.size() > MaxCxtSize)
+            MaxCxtSize = cxt.size();
         DBOUT(DMTA,dumpCxt(cxt));
     }
 }

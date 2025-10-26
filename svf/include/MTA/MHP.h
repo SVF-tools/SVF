@@ -96,11 +96,11 @@ public:
     //@{
     inline const NodeBS& getInterleavingThreads(const CxtThreadStmt& cts)
     {
-        return threadStmtToTheadInterLeav[cts];
+        return threadStmtToThreadInterLeav[cts];
     }
     inline bool hasInterleavingThreads(const CxtThreadStmt& cts) const
     {
-        return threadStmtToTheadInterLeav.find(cts)!=threadStmtToTheadInterLeav.end();
+        return threadStmtToThreadInterLeav.find(cts)!=threadStmtToThreadInterLeav.end();
     }
     //@}
 
@@ -154,7 +154,7 @@ private:
     //@{
     inline void addInterleavingThread(const CxtThreadStmt& tgr, NodeID tid)
     {
-        if(threadStmtToTheadInterLeav[tgr].test_and_set(tid))
+        if(threadStmtToThreadInterLeav[tgr].test_and_set(tid))
         {
             instToTSMap[tgr.getStmt()].insert(tgr);
             pushToCTSWorkList(tgr);
@@ -162,7 +162,7 @@ private:
     }
     inline void addInterleavingThread(const CxtThreadStmt& tgr, const CxtThreadStmt& src)
     {
-        bool changed = threadStmtToTheadInterLeav[tgr] |= threadStmtToTheadInterLeav[src];
+        bool changed = threadStmtToThreadInterLeav[tgr] |= threadStmtToThreadInterLeav[src];
         if(changed)
         {
             instToTSMap[tgr.getStmt()].insert(tgr);
@@ -177,7 +177,7 @@ private:
             if(isMustJoin(tgr.getTid(),joinsite))
                 joinedTids.set(*it);
         }
-        if(threadStmtToTheadInterLeav[tgr].intersectWithComplement(joinedTids))
+        if(threadStmtToThreadInterLeav[tgr].intersectWithComplement(joinedTids))
         {
             pushToCTSWorkList(tgr);
         }
@@ -253,7 +253,7 @@ private:
     TCT* tct;							///< TCT
     ForkJoinAnalysis* fja;				///< ForJoin Analysis
     CxtThreadStmtWorkList cxtStmtList;	///< CxtThreadStmt worklist
-    ThreadStmtToThreadInterleav threadStmtToTheadInterLeav; /// Map a statement to its thread interleavings
+    ThreadStmtToThreadInterleav threadStmtToThreadInterLeav; /// Map a statement to its thread interleavings
     InstToThreadStmtSetMap instToTSMap; ///< Map an instruction to its ThreadStmtSet
     FuncPairToBool nonCandidateFuncMHPRelMap;
 
@@ -335,15 +335,6 @@ public:
         bool full = fullJoin.find(std::make_pair(tid1,tid2))!=fullJoin.end();
         bool partial = partialJoin.find(std::make_pair(tid1,tid2))!=partialJoin.end();
         return full && !partial;
-    }
-
-    /// Get exit instruction of the start routine function of tid's parent thread
-    inline const ICFGNode* getExitInstOfParentRoutineFun(NodeID tid) const
-    {
-        NodeID parentTid = tct->getParentThread(tid);
-        const CxtThread& parentct = tct->getTCTNode(parentTid)->getCxtThread();
-        const FunObjVar* parentRoutine = tct->getStartRoutineOfCxtThread(parentct);
-        return parentRoutine->getExitBB()->back();
     }
 
     /// Get loop for join site
