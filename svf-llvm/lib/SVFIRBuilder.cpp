@@ -57,11 +57,21 @@ SVFIR* SVFIRBuilder::build()
 
     DBOUT(DGENERAL, outs() << pasMsg("\t Building SVFIR ...\n"));
 
-    // We read SVFIR from a user-defined txt instead of parsing SVFIR from LLVM IR
-    if (SVFIR::pagReadFromTXT())
+    if (Options::ReadFromDB())
     {
-        PAGBuilderFromFile fileBuilder(SVFIR::pagFileName());
-        return fileBuilder.build();
+        GraphDBClient::getInstance().readSVFTypesFromDB(dbConnection, "SVFType", pag);
+        GraphDBClient::getInstance().initialSVFPAGNodesFromDB(dbConnection, "PAG",pag);
+        GraphDBClient::getInstance().readBasicBlockGraphFromDB(dbConnection, "BasicBlockGraph");
+        CHGraph* chg = GraphDBClient::getInstance().buildCHGraphFromDB(dbConnection, "CHG", pag);
+        pag->setCHG(chg);
+        ICFG* icfg = GraphDBClient::getInstance().buildICFGFromDB(dbConnection, "ICFG", pag);
+        pag->icfg = icfg;
+        CallGraph* callGraph = GraphDBClient::getInstance().buildCallGraphFromDB(dbConnection,"CallGraph",pag);
+        pag->callGraph = callGraph;
+        GraphDBClient::getInstance().updatePAGNodesFromDB(dbConnection, "PAG", pag);
+        GraphDBClient::getInstance().loadSVFPAGEdgesFromDB(dbConnection, "PAG",pag);
+        GraphDBClient::getInstance().parseSVFStmtsForICFGNodeFromDBResult(pag);
+        return pag;
     }
 
     // If the SVFIR has been built before, then we return the unique SVFIR of the program

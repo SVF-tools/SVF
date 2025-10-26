@@ -240,6 +240,7 @@ typedef GenericGraph<CHNode, CHEdge> GenericCHGraphTy;
 class CHGraph: public CommonCHGraph, public GenericCHGraphTy
 {
     friend class CHGBuilder;
+    friend class GraphDBClient;
 
 public:
     typedef Set<const CHNode*> CHNodeSetTy;
