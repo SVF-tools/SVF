@@ -2208,6 +2208,10 @@ class VarArgValPN : public ValVar
 protected:
     /// Constructor to create empty VarArgValPN (for GraphDBClient)
     VarArgValPN(NodeID i, const SVFType* type, PNODEK ty = VarargValNode) : ValVar(i, type, VarargValNode) {}
+    inline void setCallGraphNode(const FunObjVar* node)
+    {
+        callGraphNode = node;
+    }
 private:
     const FunObjVar* callGraphNode;
 
