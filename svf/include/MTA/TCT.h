@@ -406,17 +406,16 @@ public:
     /// Get loop for fork/join site
     const LoopBBs& getLoop(const SVFBasicBlock* bb);
 
+    /// Context helper functions
+    //@{
     /// Push calling context
     void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee);
     /// Match context
     bool matchAndPopCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee);
+    /// If lhs is a suffix of rhs, including equal
+    bool isContextSuffix(const CallStrCxt& lhs, const CallStrCxt& call);
+    //@}
 
-    inline void pushCxt(CallStrCxt& cxt, CallSiteID csId)
-    {
-        cxt.push_back(csId);
-        if (cxt.size() > MaxCxtSize)
-            MaxCxtSize = cxt.size();
-    }
     /// Whether a join site is in recursion
     inline bool isJoinSiteInRecursion(const CallICFGNode* join) const
     {

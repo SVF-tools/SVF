@@ -349,8 +349,17 @@ void MHP::handleRet(const CxtThreadStmt& cts)
                 {
                     if(outEdge->getDstNode()->getFun() == (*cit)->getFun())
                     {
-                        CxtThreadStmt newCts(cts.getTid(), newCxt, outEdge->getDstNode());
-                        addInterleavingThread(newCts, cts);
+                        // Iterate over callSite's call string context and use as the successor's context
+                        for (const CxtThreadStmt& cxtThreadStmt: getThreadStmtSet(*cit))
+                        {
+                            CallStrCxt callSiteCxt = cxtThreadStmt.getContext();
+                            // If new context is a suffix of the call site context
+                            if (isContextSuffix(newCxt, callSiteCxt))
+                            {
+                                CxtThreadStmt newCts(cts.getTid(), callSiteCxt, outEdge->getDstNode());
+                                addInterleavingThread(newCts, cts);
+                            }
+                        }
                     }
                 }
             }
@@ -366,8 +375,17 @@ void MHP::handleRet(const CxtThreadStmt& cts)
                 {
                     if(outEdge->getDstNode()->getFun() == (*cit)->getFun())
                     {
-                        CxtThreadStmt newCts(cts.getTid(), newCxt, outEdge->getDstNode());
-                        addInterleavingThread(newCts, cts);
+                        // Iterate over callSite's call string context and use as the successor's context
+                        for (const CxtThreadStmt& cxtThreadStmt: getThreadStmtSet(*cit))
+                        {
+                            CallStrCxt callSiteCxt = cxtThreadStmt.getContext();
+                            // If new context is a suffix of the call site context
+                            if (isContextSuffix(newCxt, callSiteCxt))
+                            {
+                                CxtThreadStmt newCts(cts.getTid(), callSiteCxt, outEdge->getDstNode());
+                                addInterleavingThread(newCts, cts);
+                            }
+                        }
                     }
                 }
             }
@@ -960,14 +978,23 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
         {
             CallStrCxt newCxt = curCxt;
             const ICFGNode* curNode = (*cit);
-            if (matchCxt(newCxt, SVFUtil::cast<CallICFGNode>(curNode), curFunNode->getFunction()))
+            if (matchAndPopCxt(newCxt, SVFUtil::cast<CallICFGNode>(curNode), curFunNode->getFunction()))
             {
                 for(const ICFGEdge* outEdge : curNode->getOutEdges())
                 {
                     if(outEdge->getDstNode()->getFun() == curNode->getFun())
                     {
-                        CxtStmt newCts(newCxt, outEdge->getDstNode());
-                        markCxtStmtFlag(newCts, cts);
+                        // Iterate over callSite's call string context and use as the successor's context
+                        for (const CxtStmt& cxtStmt: getCxtStmtSet(*cit))
+                        {
+                            CallStrCxt callSiteCxt = cxtStmt.getContext();
+                            // If new context is a suffix of the call site context
+                            if (isContextSuffix(newCxt, callSiteCxt))
+                            {
+                                CxtStmt newCts(callSiteCxt, outEdge->getDstNode());
+                                markCxtStmtFlag(newCts, cts);
+                            }
+                        }
                     }
                 }
             }
@@ -979,14 +1006,23 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
             CallStrCxt newCxt = curCxt;
             const ICFGNode* curNode = (*cit);
 
-            if (matchCxt(newCxt, SVFUtil::cast<CallICFGNode>(curNode), curFunNode->getFunction()))
+            if (matchAndPopCxt(newCxt, SVFUtil::cast<CallICFGNode>(curNode), curFunNode->getFunction()))
             {
                 for(const ICFGEdge* outEdge : curNode->getOutEdges())
                 {
                     if(outEdge->getDstNode()->getFun() == curNode->getFun())
                     {
-                        CxtStmt newCts(newCxt, outEdge->getDstNode());
-                        markCxtStmtFlag(newCts, cts);
+                        // Iterate over callSite's call string context and use as the successor's context
+                        for (const CxtStmt& cxtStmt: getCxtStmtSet(*cit))
+                        {
+                            CallStrCxt callSiteCxt = cxtStmt.getContext();
+                            // If new context is a suffix of the call site context
+                            if (isContextSuffix(newCxt, callSiteCxt))
+                            {
+                                CxtStmt newCts(callSiteCxt, outEdge->getDstNode());
+                                markCxtStmtFlag(newCts, cts);
+                            }
+                        }
                     }
                 }
             }

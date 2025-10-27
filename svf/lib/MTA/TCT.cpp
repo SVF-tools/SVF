@@ -249,7 +249,10 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, co
     CallStrCxt cxt(ctp.getContext());
     CallStrCxt oldCxt = cxt;
     const CallICFGNode* callNode = cs;
-    pushCxt(cxt,callNode,callee);
+
+    /// handle calling context for candidate functions only
+    if(isCandidateFun(callNode->getFun()) == true)
+        pushCxt(cxt,callNode,callee);
 
     if(cgEdge->getEdgeKind() == CallGraphEdge::CallRetEdge)
     {
@@ -444,13 +447,8 @@ void TCT::build()
  */
 void TCT::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
 {
-
     const FunObjVar* caller = call->getFun();
     CallSiteID csId = tcg->getCallSiteID(call, callee);
-
-    /// handle calling context for candidate functions only
-    if(isCandidateFun(caller) == false)
-        return;
 
     if(inSameCallGraphSCC(tcg->getCallGraphNode(caller),tcg->getCallGraphNode(callee))==false)
     {
@@ -469,7 +467,6 @@ void TCT::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* ca
  */
 bool TCT::matchAndPopCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
 {
-
     const FunObjVar* caller = call->getFun();
     CallSiteID csId = tcg->getCallSiteID(call, callee);
 
@@ -491,6 +488,25 @@ bool TCT::matchAndPopCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObj
     }
 
     return true;
+}
+
+/*!
+ * If lhs is a suffix of rhs, including equal
+ */
+bool TCT::isContextSuffix(const CallStrCxt& lhs, const CallStrCxt& call)
+{
+    if (lhs.size() > call.size())
+        return false;
+    bool isSuffix = true;
+    for (size_t i = 0; i < lhs.size(); ++i)
+    {
+        if (lhs[lhs.size() - 1 - i] != call[call.size() - 1 - i])
+        {
+            isSuffix = false;
+            break;
+        }
+    }
+    return isSuffix;
 }
 
 

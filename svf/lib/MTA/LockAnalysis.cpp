@@ -517,21 +517,9 @@ void LockAnalysis::handleIntra(const CxtStmt& cts)
     }
 }
 
-
 void LockAnalysis::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
 {
-    const FunObjVar* svfcaller = call->getFun();
-    CallSiteID csId = getTCG()->getCallSiteID(call, callee);
-
-//    /// handle calling context for candidate functions only
-//    if (isLockCandidateFun(caller) == false)
-//        return;
-
-    if (tct->inSameCallGraphSCC(getTCG()->getCallGraphNode(svfcaller), getTCG()->getCallGraphNode(callee)) == false)
-    {
-        tct->pushCxt(cxt,csId);
-        DBOUT(DMTA, tct->dumpCxt(cxt));
-    }
+    tct->pushCxt(cxt,call,callee);
 }
 
 bool LockAnalysis::matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)

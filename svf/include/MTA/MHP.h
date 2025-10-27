@@ -201,9 +201,15 @@ private:
     {
         return tct->getTCTNode(curTid)->isMultiforked();
     }
+
+    /// Context helper functions
+    //@{
     /// Push calling context
     inline void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
     {
+        /// handle calling context for candidate functions only
+        if(tct->isCandidateFun(call->getFun()) == false)
+            return;
         tct->pushCxt(cxt,call,callee);
     }
     /// Match context
@@ -211,6 +217,12 @@ private:
     {
         return tct->matchAndPopCxt(cxt,call,callee);
     }
+    /// If lhs is a suffix of rhs, including equal
+    inline bool isContextSuffix(const CallStrCxt& lhs, const CallStrCxt call)
+    {
+        return tct->isContextSuffix(lhs,call);
+    }
+    //@}
 
     /// WorkList helper functions
     //@{
@@ -289,6 +301,10 @@ public:
     typedef Set<NodePair> ThreadPairSet;
     typedef Map<CxtStmt, LoopBBs> CxtStmtToLoopMap;
     typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
+
+    typedef Set<CxtStmt> CxtStmtSet;
+    typedef Map<const ICFGNode*, CxtStmtSet> InstToCxtStmt;
+
 
     ForkJoinAnalysis(TCT* t) : tct(t)
     {
@@ -394,7 +410,11 @@ private:
         ValDomain flag_tgr = getMarkedFlag(tgr);
         cxtStmtToAliveFlagMap[tgr] = flag;
         if(flag_tgr!=getMarkedFlag(tgr))
+        {
+            instToCxtStmt[tgr.getStmt()].insert(tgr);
             pushToCTSWorkList(tgr);
+        }
+
     }
     /// Transfer function for marking context-sensitive statement
     void markCxtStmtFlag(const CxtStmt& tgr, const CxtStmt& src)
@@ -416,6 +436,7 @@ private:
         }
         if(flag_tgr!=getMarkedFlag(tgr))
         {
+            instToCxtStmt[tgr.getStmt()].insert(tgr);
             pushToCTSWorkList(tgr);
         }
     }
@@ -440,16 +461,27 @@ private:
     }
     //@}
 
+    /// Context helper functions
+    //@{
     /// Push calling context
     inline void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
     {
+        /// handle calling context for candidate functions only
+        if(tct->isCandidateFun(call->getFun()) == false)
+            return;
         tct->pushCxt(cxt,call,callee);
     }
     /// Match context
-    inline bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
+    inline bool matchAndPopCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
     {
         return tct->matchAndPopCxt(cxt,call,callee);
     }
+    /// If lhs is a suffix of rhs, including equal
+    inline bool isContextSuffix(const CallStrCxt& lhs, const CallStrCxt call)
+    {
+        return tct->isContextSuffix(lhs,call);
+    }
+    //@}
 
     /// Whether it is a fork site
     inline bool isTDFork(const ICFGNode* call)
@@ -515,6 +547,14 @@ private:
     }
     //@}
 
+    /// Get CxtStmtSet for an instruction
+    inline const CxtStmtSet& getCxtStmtSet(const ICFGNode* inst) const
+    {
+        InstToCxtStmt::const_iterator it = instToCxtStmt.find(inst);
+        assert(it!=instToCxtStmt.end() && "no CxtStmt for the instruction?");
+        return it->second;
+    }
+
     /// Add inloop join
     inline void addSymmetricLoopJoin(const CxtStmt& cs, LoopBBs& lp)
     {
@@ -530,6 +570,7 @@ private:
     ThreadPairSet HPPair;		///< threads happen-in-parallel
     ThreadPairSet fullJoin;		///< t1 fully joins t2 along all program path
     ThreadPairSet partialJoin;		///< t1 partially joins t2 along some program path(s)
+    InstToCxtStmt instToCxtStmt;    ///< Map an instruction to its CxtStmtSet
 };
 
 } // End namespace SVF
