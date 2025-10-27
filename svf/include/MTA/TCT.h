@@ -162,7 +162,8 @@ public:
     typedef Set<const ICFGNode*> InstSet;
     typedef Set<const CallGraphNode*> PTACGNodeSet;
     typedef Map<CxtThread,TCTNode*> CxtThreadToNodeMap;
-    typedef Map<CxtThread,CallStrCxt> CxtThreadToForkCxt;
+    typedef Set<std::pair<NodeID, CallStrCxt>> CallStrCxtSet;
+    typedef Map<CxtThread,CallStrCxtSet> CxtThreadToForkCxtSet;
     typedef Map<CxtThread,const FunObjVar*> CxtThreadToFun;
     typedef Map<const ICFGNode*, LoopBBs> InstToLoopMap;
     typedef FIFOWorkList<CxtThreadProc> CxtThreadProcVec;
@@ -366,6 +367,14 @@ public:
     }
     //@}
 
+    /// get the contexts of a thread at its spawning sites (fork sites)
+    const CallStrCxtSet& getCxtOfCxtThread(const CxtThread& ct) const
+    {
+        CxtThreadToForkCxtSet::const_iterator it = ctToForkCxtsMap.find(ct);
+        assert(it!=ctToForkCxtsMap.end() && "Cxt Thread not found!!");
+        return it->second;
+    }
+
     /// get the start routine function of a thread
     const FunObjVar* getStartRoutineOfCxtThread(const CxtThread& ct) const
     {
@@ -502,7 +511,7 @@ private:
 
     /// Get or create a tct node based on CxtThread
     //@{
-    inline TCTNode* getOrCreateTCTNode(const CallStrCxt& cxt, const ICFGNode* fork,const CallStrCxt& oldCxt, const FunObjVar* routine)
+    inline TCTNode* getOrCreateTCTNode(const CallStrCxt& cxt, const ICFGNode* fork, const CxtThreadProc& forkSiteCtp, const FunObjVar* routine)
     {
         CxtThread ct(cxt,fork);
         CxtThreadToNodeMap::const_iterator it = ctpToNodeMap.find(ct);
@@ -511,6 +520,7 @@ private:
             return it->second;
         }
 
+        addCxtOfCxtThread(forkSiteCtp.getTid(), forkSiteCtp.getContext(), ct);
         addStartRoutineOfCxtThread(routine,ct);
 
         setMultiForkedAttrs(ct);
@@ -534,6 +544,12 @@ private:
             ct.setInloop(false);
             ct.setIncycle(false);
         }
+    }
+
+    /// Add context for a thread at its spawning site (fork site)
+    void addCxtOfCxtThread(NodeID pTid, const CallStrCxt& cxt, const CxtThread& ct)
+    {
+        ctToForkCxtsMap[ct].insert(std::make_pair(pTid, cxt));
     }
 
     /// Add start routine function of a cxt thread
@@ -570,7 +586,7 @@ private:
     CxtThreadProcVec ctpList;	/// CxtThreadProc List
     CxtThreadProcSet visitedCTPs; /// Record all visited ctps
     CxtThreadToNodeMap ctpToNodeMap; /// Map a ctp to its graph node
-    CxtThreadToForkCxt ctToForkCxtMap; /// Map a CxtThread to the context at its spawning site (fork site).
+    CxtThreadToForkCxtSet ctToForkCxtsMap; /// Map a CxtThread to the context at its spawning site (fork site).
     CxtThreadToFun ctToRoutineFunMap; /// Map a CxtThread to its start routine function.
     InstToLoopMap joinSiteToLoopMap; ///< map an inloop join to its loop class
     Set<const ICFGNode*>  inRecurJoinSites;	///< Fork or Join sites in recursions

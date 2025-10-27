@@ -428,15 +428,14 @@ void MHP::updateAncestorThreads(NodeID curTid)
         const CxtThread& ct = tct->getTCTNode(tid)->getCxtThread();
         if (const ICFGNode* forkInst = ct.getThread())
         {
-            for (NodeID parentTid : tct->getParentThreads(tid))
+            for(const ICFGEdge* outEdge : forkInst->getOutEdges())
             {
-                CallStrCxt forkSiteCxt = tct->getTCTNode(parentTid)->getCxtThread().getContext();
-                for(const ICFGEdge* outEdge : forkInst->getOutEdges())
+                // Ensure dst node is in the same function as forkInst
+                if(outEdge->getDstNode()->getFun() == forkInst->getFun())
                 {
-                    // Ensure dst node is in the same function as forkInst
-                    if(outEdge->getDstNode()->getFun() == forkInst->getFun())
+                    for (const auto& forkSiteCxt : tct->getCxtOfCxtThread(ct))
                     {
-                        CxtThreadStmt cts(parentTid, forkSiteCxt, outEdge->getDstNode());
+                        CxtThreadStmt cts(forkSiteCxt.first, forkSiteCxt.second, outEdge->getDstNode());
                         addInterleavingThread(cts, curTid);
                     }
                 }
@@ -772,10 +771,9 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
             {
                 if(outEdge->getDstNode()->getFun() == forkInst->getFun())
                 {
-                    for (NodeID parentTid : tct->getParentThreads(rootTid))
+                    for (const auto& forkSiteCxt : tct->getCxtOfCxtThread(ct))
                     {
-                        const CallStrCxt& forkSiteCxt = tct->getTCTNode(parentTid)->getCxtThread().getContext();
-                        CxtStmt newCts(forkSiteCxt, outEdge->getDstNode());
+                        CxtStmt newCts(forkSiteCxt.second, outEdge->getDstNode());
                         markCxtStmtFlag(newCts, TDAlive);
                     }
                 }

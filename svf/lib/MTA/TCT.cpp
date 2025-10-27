@@ -267,7 +267,7 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, co
     else if(cgEdge->getEdgeKind() == CallGraphEdge::TDForkEdge)
     {
         /// Create spawnee TCT node
-        TCTNode* spawneeNode = getOrCreateTCTNode(cxt,callNode, oldCxt, callee);
+        TCTNode* spawneeNode = getOrCreateTCTNode(cxt,callNode, ctp, callee);
         CxtThreadProc newctp(spawneeNode->getId(),cxt,callee);
 
         if(pushToCTPWorkList(newctp))
@@ -401,7 +401,8 @@ void TCT::build()
         if (!isCandidateFun(*it))
             continue;
         CallStrCxt cxt;
-        TCTNode* mainTCTNode = getOrCreateTCTNode(cxt, nullptr, cxt, *it);
+        CxtThreadProc dummyCtp(-1, cxt, nullptr);
+        TCTNode* mainTCTNode = getOrCreateTCTNode(cxt, nullptr, dummyCtp, *it);
         CxtThreadProc t(mainTCTNode->getId(), cxt, *it);
         pushToCTPWorkList(t);
     }
