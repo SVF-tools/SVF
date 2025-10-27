@@ -474,8 +474,17 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
                 {
                     if(outEdge->getDstNode()->getFun() == inst->getFun())
                     {
-                        CxtStmt newCts(newCxt, outEdge->getDstNode());
-                        markCxtStmtFlag(newCts, cts);
+                        // Iterate over callSite's call string context and use as the successor's context
+                        for (const CxtStmt& cxtStmt: getCxtStmtsfromInst(*cit))
+                        {
+                            CallStrCxt callSiteCxt = cxtStmt.getContext();
+                            // If new context is a suffix of the call site context
+                            if (isContextSuffix(newCxt, callSiteCxt))
+                            {
+                                CxtStmt newCts(callSiteCxt, outEdge->getDstNode());
+                                markCxtStmtFlag(newCts, cts);
+                            }
+                        }
                     }
                 }
             }
@@ -491,8 +500,17 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
                 {
                     if(outEdge->getDstNode()->getFun() == inst->getFun())
                     {
-                        CxtStmt newCts(newCxt, outEdge->getDstNode());
-                        markCxtStmtFlag(newCts, cts);
+                        // Iterate over callSite's call string context and use as the successor's context
+                        for (const CxtStmt& cxtStmt: getCxtStmtsfromInst(*cit))
+                        {
+                            CallStrCxt callSiteCxt = cxtStmt.getContext();
+                            // If new context is a suffix of the call site context
+                            if (isContextSuffix(newCxt, callSiteCxt))
+                            {
+                                CxtStmt newCts(callSiteCxt, outEdge->getDstNode());
+                                markCxtStmtFlag(newCts, cts);
+                            }
+                        }
                     }
                 }
             }
@@ -544,6 +562,11 @@ bool LockAnalysis::matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const Fun
         DBOUT(DMTA, tct->dumpCxt(cxt));
     }
     return true;
+}
+
+bool LockAnalysis::isContextSuffix(const CallStrCxt& lhs, const CallStrCxt& call)
+{
+    return tct->isContextSuffix(lhs,call);
 }
 
 
@@ -605,8 +628,8 @@ bool LockAnalysis::isProtectedByCommonCxtLock(const ICFGNode *i1, const ICFGNode
 {
     if(!hasCxtStmtfromInst(i1) || !hasCxtStmtfromInst(i2))
         return false;
-    const CxtStmtSet& ctsset1 = getCxtStmtfromInst(i1);
-    const CxtStmtSet& ctsset2 = getCxtStmtfromInst(i2);
+    const CxtStmtSet& ctsset1 = getCxtStmtsfromInst(i1);
+    const CxtStmtSet& ctsset2 = getCxtStmtsfromInst(i2);
     for (CxtStmtSet::const_iterator cts1 = ctsset1.begin(), ects1 = ctsset1.end(); cts1 != ects1; cts1++)
     {
         const CxtStmt& cxtStmt1 = *cts1;
@@ -679,8 +702,8 @@ bool LockAnalysis::isInSameCSSpan(const ICFGNode *I1, const ICFGNode *I2) const
 {
     if(!hasCxtStmtfromInst(I1) || !hasCxtStmtfromInst(I2))
         return false;
-    const CxtStmtSet& ctsset1 = getCxtStmtfromInst(I1);
-    const CxtStmtSet& ctsset2 = getCxtStmtfromInst(I2);
+    const CxtStmtSet& ctsset1 = getCxtStmtsfromInst(I1);
+    const CxtStmtSet& ctsset2 = getCxtStmtsfromInst(I2);
 
     for (CxtStmtSet::const_iterator cts1 = ctsset1.begin(), ects1 = ctsset1.end(); cts1 != ects1; cts1++)
     {

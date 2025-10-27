@@ -72,12 +72,10 @@ public:
     typedef Map<CxtLock, LockSpan> CxtLockToSpan;
     typedef Map<CxtLock, NodeBS> CxtLockToLockSet;
     typedef Map<const ICFGNode*, NodeBS> LockSiteToLockSet;
-    typedef Map<const ICFGNode*, LockSpan> InstToCxtStmtSet;
+    typedef Map<const ICFGNode*, CxtStmtSet> InstToCxtStmtSet;
     typedef Map<CxtStmt, CxtLockSet> CxtStmtToCxtLockSet;
     typedef FIFOWorkList<CxtLockProc> CxtLockProcVec;
     typedef Set<CxtLockProc> CxtLockProcSet;
-
-    typedef Map<const ICFGNode*, CxtStmtSet> InstToCxtStmt;
 
     LockAnalysis(TCT* t) : tct(t), lockTime(0),numOfTotalQueries(0), numOfLockedQueries(0), lockQueriesTime(0)
     {
@@ -205,7 +203,7 @@ public:
         InstToCxtStmtSet::const_iterator it = instToCxtStmtSet.find(inst);
         return (it != instToCxtStmtSet.end());
     }
-    inline const CxtStmtSet& getCxtStmtfromInst(const ICFGNode* inst) const
+    inline const CxtStmtSet& getCxtStmtsfromInst(const ICFGNode* inst) const
     {
         InstToCxtStmtSet::const_iterator it = instToCxtStmtSet.find(inst);
         assert(it != instToCxtStmtSet.end());
@@ -273,7 +271,7 @@ public:
     {
         if(!hasCxtStmtfromInst(I))
             return false;
-        const LockSpan ctsset = getCxtStmtfromInst(I);
+        const LockSpan ctsset = getCxtStmtsfromInst(I);
         for (LockSpan::const_iterator cts = ctsset.begin(), ects = ctsset.end(); cts != ects; cts++)
         {
             if(lspan.find(*cts) != lspan.end())
@@ -288,7 +286,7 @@ public:
     {
         if(!hasCxtStmtfromInst(I))
             return false;
-        const LockSpan ctsset = getCxtStmtfromInst(I);
+        const LockSpan ctsset = getCxtStmtsfromInst(I);
         for (LockSpan::const_iterator cts = ctsset.begin(), ects = ctsset.end(); cts != ects; cts++)
         {
             if (lspan.find(*cts) == lspan.end())
@@ -429,10 +427,15 @@ private:
     }
     //@}
 
+    /// Context helper functions
+    //@{
     /// Push calling context
     void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee);
     /// Match context
     bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee);
+    /// If lhs is a suffix of rhs, including equal
+    bool isContextSuffix(const CallStrCxt& lhs, const CallStrCxt& call);
+    //@}
 
     /// Whether it is a lock site
     inline bool isTDFork(const ICFGNode* call)

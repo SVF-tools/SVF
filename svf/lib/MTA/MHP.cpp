@@ -985,7 +985,7 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
                     if(outEdge->getDstNode()->getFun() == curNode->getFun())
                     {
                         // Iterate over callSite's call string context and use as the successor's context
-                        for (const CxtStmt& cxtStmt: getCxtStmtSet(*cit))
+                        for (const CxtStmt& cxtStmt: getCxtStmtsFromInst(*cit))
                         {
                             CallStrCxt callSiteCxt = cxtStmt.getContext();
                             // If new context is a suffix of the call site context
@@ -1013,7 +1013,7 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
                     if(outEdge->getDstNode()->getFun() == curNode->getFun())
                     {
                         // Iterate over callSite's call string context and use as the successor's context
-                        for (const CxtStmt& cxtStmt: getCxtStmtSet(*cit))
+                        for (const CxtStmt& cxtStmt: getCxtStmtsFromInst(*cit))
                         {
                             CallStrCxt callSiteCxt = cxtStmt.getContext();
                             // If new context is a suffix of the call site context

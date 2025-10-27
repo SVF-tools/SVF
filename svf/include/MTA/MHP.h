@@ -548,7 +548,7 @@ private:
     //@}
 
     /// Get CxtStmtSet for an instruction
-    inline const CxtStmtSet& getCxtStmtSet(const ICFGNode* inst) const
+    inline const CxtStmtSet& getCxtStmtsFromInst(const ICFGNode* inst) const
     {
         InstToCxtStmt::const_iterator it = instToCxtStmt.find(inst);
         assert(it!=instToCxtStmt.end() && "no CxtStmt for the instruction?");
@@ -570,7 +570,7 @@ private:
     ThreadPairSet HPPair;		///< threads happen-in-parallel
     ThreadPairSet fullJoin;		///< t1 fully joins t2 along all program path
     ThreadPairSet partialJoin;		///< t1 partially joins t2 along some program path(s)
-    InstToCxtStmt instToCxtStmt;    ///< Map an instruction to its CxtStmtSet
+    InstToCxtStmt instToCxtStmt;    ///<Map a statement to all its context-sensitive statements
 };
 
 } // End namespace SVF
