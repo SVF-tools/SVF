@@ -198,12 +198,12 @@ public:
     /// Context-sensitive statement and lock spans
     //@{
     /// Get LockSet and LockSpan
-    inline bool hasCxtStmtfromInst(const ICFGNode* inst) const
+    inline bool hasCxtStmtFromInst(const ICFGNode* inst) const
     {
         InstToCxtStmtSet::const_iterator it = instToCxtStmtSet.find(inst);
         return (it != instToCxtStmtSet.end());
     }
-    inline const CxtStmtSet& getCxtStmtsfromInst(const ICFGNode* inst) const
+    inline const CxtStmtSet& getCxtStmtsFromInst(const ICFGNode* inst) const
     {
         InstToCxtStmtSet::const_iterator it = instToCxtStmtSet.find(inst);
         assert(it != instToCxtStmtSet.end());
@@ -269,9 +269,9 @@ public:
     /// Check if one instruction's context stmt is in a lock span
     inline bool hasOneCxtInLockSpan(const ICFGNode *I, LockSpan lspan) const
     {
-        if(!hasCxtStmtfromInst(I))
+        if(!hasCxtStmtFromInst(I))
             return false;
-        const LockSpan ctsset = getCxtStmtsfromInst(I);
+        const LockSpan ctsset = getCxtStmtsFromInst(I);
         for (LockSpan::const_iterator cts = ctsset.begin(), ects = ctsset.end(); cts != ects; cts++)
         {
             if(lspan.find(*cts) != lspan.end())
@@ -284,9 +284,9 @@ public:
 
     inline bool hasAllCxtInLockSpan(const ICFGNode *I, LockSpan lspan) const
     {
-        if(!hasCxtStmtfromInst(I))
+        if(!hasCxtStmtFromInst(I))
             return false;
-        const LockSpan ctsset = getCxtStmtsfromInst(I);
+        const LockSpan ctsset = getCxtStmtsFromInst(I);
         for (LockSpan::const_iterator cts = ctsset.begin(), ects = ctsset.end(); cts != ects; cts++)
         {
             if (lspan.find(*cts) == lspan.end())

@@ -475,7 +475,9 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
                     if(outEdge->getDstNode()->getFun() == inst->getFun())
                     {
                         // Iterate over callSite's call string context and use as the successor's context
-                        for (const CxtStmt& cxtStmt: getCxtStmtsfromInst(*cit))
+                        if (!hasCxtStmtFromInst(*cit))
+                            continue;
+                        for (const CxtStmt& cxtStmt: getCxtStmtsFromInst(*cit))
                         {
                             CallStrCxt callSiteCxt = cxtStmt.getContext();
                             // If new context is a suffix of the call site context
@@ -501,7 +503,9 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
                     if(outEdge->getDstNode()->getFun() == inst->getFun())
                     {
                         // Iterate over callSite's call string context and use as the successor's context
-                        for (const CxtStmt& cxtStmt: getCxtStmtsfromInst(*cit))
+                        if (!hasCxtStmtFromInst(*cit))
+                            continue;
+                        for (const CxtStmt& cxtStmt: getCxtStmtsFromInst(*cit))
                         {
                             CallStrCxt callSiteCxt = cxtStmt.getContext();
                             // If new context is a suffix of the call site context
@@ -626,10 +630,10 @@ bool LockAnalysis::isProtectedByCommonCxtLock(const CxtStmt& cxtStmt1, const Cxt
  */
 bool LockAnalysis::isProtectedByCommonCxtLock(const ICFGNode *i1, const ICFGNode *i2)
 {
-    if(!hasCxtStmtfromInst(i1) || !hasCxtStmtfromInst(i2))
+    if(!hasCxtStmtFromInst(i1) || !hasCxtStmtFromInst(i2))
         return false;
-    const CxtStmtSet& ctsset1 = getCxtStmtsfromInst(i1);
-    const CxtStmtSet& ctsset2 = getCxtStmtsfromInst(i2);
+    const CxtStmtSet& ctsset1 = getCxtStmtsFromInst(i1);
+    const CxtStmtSet& ctsset2 = getCxtStmtsFromInst(i2);
     for (CxtStmtSet::const_iterator cts1 = ctsset1.begin(), ects1 = ctsset1.end(); cts1 != ects1; cts1++)
     {
         const CxtStmt& cxtStmt1 = *cts1;
@@ -700,10 +704,10 @@ bool LockAnalysis::isInSameCSSpan(const CxtStmt& cxtStmt1, const CxtStmt& cxtStm
  */
 bool LockAnalysis::isInSameCSSpan(const ICFGNode *I1, const ICFGNode *I2) const
 {
-    if(!hasCxtStmtfromInst(I1) || !hasCxtStmtfromInst(I2))
+    if(!hasCxtStmtFromInst(I1) || !hasCxtStmtFromInst(I2))
         return false;
-    const CxtStmtSet& ctsset1 = getCxtStmtsfromInst(I1);
-    const CxtStmtSet& ctsset2 = getCxtStmtsfromInst(I2);
+    const CxtStmtSet& ctsset1 = getCxtStmtsFromInst(I1);
+    const CxtStmtSet& ctsset2 = getCxtStmtsFromInst(I2);
 
     for (CxtStmtSet::const_iterator cts1 = ctsset1.begin(), ects1 = ctsset1.end(); cts1 != ects1; cts1++)
     {

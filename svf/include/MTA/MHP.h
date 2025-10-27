@@ -554,6 +554,10 @@ private:
         assert(it!=instToCxtStmt.end() && "no CxtStmt for the instruction?");
         return it->second;
     }
+    inline bool hasCxtStmtsFromInst(const ICFGNode* inst) const
+    {
+        return instToCxtStmt.find(inst)!=instToCxtStmt.end();
+    }
 
     /// Add inloop join
     inline void addSymmetricLoopJoin(const CxtStmt& cs, LoopBBs& lp)

@@ -350,6 +350,8 @@ void MHP::handleRet(const CxtThreadStmt& cts)
                     if(outEdge->getDstNode()->getFun() == (*cit)->getFun())
                     {
                         // Iterate over callSite's call string context and use as the successor's context
+                        if (!hasThreadStmtSet(*cit))
+                            continue;
                         for (const CxtThreadStmt& cxtThreadStmt: getThreadStmtSet(*cit))
                         {
                             CallStrCxt callSiteCxt = cxtThreadStmt.getContext();
@@ -376,6 +378,8 @@ void MHP::handleRet(const CxtThreadStmt& cts)
                     if(outEdge->getDstNode()->getFun() == (*cit)->getFun())
                     {
                         // Iterate over callSite's call string context and use as the successor's context
+                        if (!hasThreadStmtSet(*cit))
+                            continue;
                         for (const CxtThreadStmt& cxtThreadStmt: getThreadStmtSet(*cit))
                         {
                             CallStrCxt callSiteCxt = cxtThreadStmt.getContext();
@@ -985,6 +989,8 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
                     if(outEdge->getDstNode()->getFun() == curNode->getFun())
                     {
                         // Iterate over callSite's call string context and use as the successor's context
+                        if (!hasCxtStmtsFromInst(*cit))
+                            continue;
                         for (const CxtStmt& cxtStmt: getCxtStmtsFromInst(*cit))
                         {
                             CallStrCxt callSiteCxt = cxtStmt.getContext();
@@ -1013,6 +1019,8 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
                     if(outEdge->getDstNode()->getFun() == curNode->getFun())
                     {
                         // Iterate over callSite's call string context and use as the successor's context
+                        if (!hasCxtStmtsFromInst(*cit))
+                            continue;
                         for (const CxtStmt& cxtStmt: getCxtStmtsFromInst(*cit))
                         {
                             CallStrCxt callSiteCxt = cxtStmt.getContext();
