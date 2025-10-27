@@ -381,6 +381,7 @@ public:
 class SVFFunctionType : public SVFType
 {
 
+    friend class GraphDBClient;
 private:
     const SVFType* retTy;
     std::vector<const SVFType*> params;
