@@ -676,7 +676,7 @@ public:
     /// Get obj type
     const SVFType* getType() const
     {
-        return typeInfo->getType();
+        return type;
     }
 
     /// Get the number of elements of this object
