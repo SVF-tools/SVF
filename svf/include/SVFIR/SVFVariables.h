@@ -675,6 +675,11 @@ public:
     /// Get obj type
     const SVFType* getType() const
     {
+        return typeInfo->getType();
+    }
+
+    const SVFType* getVarType() const 
+    {
         return type;
     }
 
