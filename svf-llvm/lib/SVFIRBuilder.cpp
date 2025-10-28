@@ -56,14 +56,7 @@ SVFIR* SVFIRBuilder::build()
     double startTime = SVFStat::getClk(true);
 
     DBOUT(DGENERAL, outs() << pasMsg("\t Building SVFIR ...\n"));
-
-    // We read SVFIR from a user-defined txt instead of parsing SVFIR from LLVM IR
-    if (SVFIR::pagReadFromTXT())
-    {
-        PAGBuilderFromFile fileBuilder(SVFIR::pagFileName());
-        return fileBuilder.build();
-    }
-
+    
     // If the SVFIR has been built before, then we return the unique SVFIR of the program
     if(pag->getNodeNumAfterPAGBuild() > 1)
         return pag;
@@ -1597,7 +1590,9 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
 void SVFIRBuilder::handleIndCall(CallBase* cs)
 {
     const CallICFGNode* cbn = llvmModuleSet()->getCallICFGNode(cs);
-    pag->addIndirectCallsites(cbn,llvmModuleSet()->getValueNode(cs->getCalledOperand()));
+    NodeID indFunPtrId = llvmModuleSet()->getValueNode(cs->getCalledOperand());
+    const_cast<CallICFGNode*>(cbn)->setIndFunPtr(pag->getGNode(indFunPtrId));
+    pag->addIndirectCallsites(cbn,indFunPtrId);
 }
 
 void SVFIRBuilder::updateCallGraph(CallGraph* callgraph)

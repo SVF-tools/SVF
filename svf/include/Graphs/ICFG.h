@@ -48,6 +48,7 @@ class ICFG : public GenericICFGTy
 {
     friend class ICFGBuilder;
     friend class ICFGSimplification;
+    friend class GraphDBClient;
 
 public:
 
@@ -198,22 +199,31 @@ protected:
     virtual inline FunEntryICFGNode* addFunEntryICFGNode(const FunObjVar* svfFunc)
     {
         FunEntryICFGNode* sNode = new FunEntryICFGNode(totalICFGNode++,svfFunc);
-        addICFGNode(sNode);
-        return FunToFunEntryNodeMap[svfFunc] = sNode;
+        return addFunEntryICFGNode(sNode);
     }
+
+    virtual inline FunEntryICFGNode* addFunEntryICFGNode(FunEntryICFGNode* funEntryICFGNode)
+    {
+        addICFGNode(funEntryICFGNode);
+        return FunToFunEntryNodeMap[funEntryICFGNode->getFun()] = funEntryICFGNode;
+    }
+
+    virtual void addGlobalICFGNode(GlobalICFGNode* globalICFGNode);
 
     virtual inline FunExitICFGNode* addFunExitICFGNode(const FunObjVar* svfFunc)
     {
         FunExitICFGNode* sNode = new FunExitICFGNode(totalICFGNode++, svfFunc);
-        addICFGNode(sNode);
-        return FunToFunExitNodeMap[svfFunc] = sNode;
+        return addFunExitICFGNode(sNode);
+    }
+
+    virtual inline FunExitICFGNode* addFunExitICFGNode(FunExitICFGNode* funExitICFGNode)
+    {
+        addICFGNode(funExitICFGNode);
+        return FunToFunExitNodeMap[funExitICFGNode->getFun()] = funExitICFGNode;
     }
 
     /// Add a ICFG node
-    virtual inline void addICFGNode(ICFGNode* node)
-    {
-        addGNode(node->getId(),node);
-    }
+    virtual void addICFGNode(ICFGNode* node);
 
 public:
     /// Get a basic block ICFGNode

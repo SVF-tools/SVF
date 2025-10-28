@@ -141,6 +141,19 @@ public:
     }
 
 
+    std::string sourceLocToDBString() const
+    {
+        std::string sourceLoc = "";
+        if (getSourceLoc().empty() == false)
+        {
+            sourceLoc = ", source_loc: '" + getSourceLoc() + "'";
+        }
+        else
+        {
+            sourceLoc = ", source_loc: ''";
+        }
+        return sourceLoc;
+    }
 
 protected:
     const FunObjVar* fun;
@@ -192,6 +205,16 @@ public:
  */
 class IntraICFGNode : public ICFGNode
 {
+    friend class GraphDBClient;
+
+protected:
+    IntraICFGNode(NodeID id, const SVFBasicBlock* b, const FunObjVar* f, bool isReturn): ICFGNode(id, IntraBlock),isRet(isReturn)
+    {
+
+        this->fun = f;
+        this->bb = b;
+    }
+
 private:
     bool isRet;
 
@@ -270,6 +293,15 @@ public:
  */
 class FunEntryICFGNode : public InterICFGNode
 {
+    friend class GraphDBClient;
+
+protected:
+    FunEntryICFGNode(NodeID id, const FunObjVar* f, SVFBasicBlock* b)
+    : InterICFGNode(id, FunEntryBlock)
+    {
+        this->fun = f;
+        this->bb = b;
+    }
 
 public:
     typedef std::vector<const SVFVar *> FormalParmNodeVec;
@@ -335,6 +367,15 @@ public:
  */
 class FunExitICFGNode : public InterICFGNode
 {
+    friend class GraphDBClient;
+
+protected:
+    FunExitICFGNode(NodeID id, const FunObjVar* f, SVFBasicBlock* b) 
+    : InterICFGNode(id, FunExitBlock), formalRet(nullptr)
+    {
+        this->fun = f;
+        this->bb = b;
+    }
 
 private:
     const SVFVar *formalRet;
@@ -398,6 +439,7 @@ public:
  */
 class CallICFGNode : public InterICFGNode
 {
+    friend class GraphDBClient;
 
 public:
     typedef std::vector<const ValVar *> ActualParmNodeVec;
@@ -411,6 +453,20 @@ protected:
     SVFVar* vtabPtr;                /// virtual table pointer
     s32_t virtualFunIdx;            /// virtual function index of the virtual table(s) at a virtual call
     std::string funNameOfVcall;     /// the function name of this virtual call
+    const SVFVar* indFunPtr;
+    
+    CallICFGNode(NodeID id, const SVFBasicBlock* b, const SVFType* ty,
+                 const FunObjVar* f, const FunObjVar* cf, const RetICFGNode* ret, 
+                 bool iv, bool ivc, s32_t vfi, SVFVar* vtabPtr, const std::string& fnv)
+        : InterICFGNode(id, FunCallBlock), ret(ret), calledFunc(cf),
+          isvararg(iv), isVirCallInst(ivc), vtabPtr(vtabPtr),
+          virtualFunIdx(vfi), funNameOfVcall(fnv)
+    {
+        this->fun = f;
+        this->bb = b;
+        this->type = ty;
+    }
+                
 
 public:
     CallICFGNode(NodeID id, const SVFBasicBlock* b, const SVFType* ty,
@@ -561,6 +617,18 @@ public:
     {
         return "CallICFGNode: " + ICFGNode::getSourceLoc();
     }
+
+    inline void setIndFunPtr(const SVFVar* indFun)
+    {
+        assert(isIndirectCall() && "not a indirect call?");
+        indFunPtr = indFun;
+    }
+
+    inline const SVFVar* getIndFunPtr() const
+    {
+        assert(isIndirectCall() && "not a indirect call?");
+        return indFunPtr;
+    }
 };
 
 
@@ -569,6 +637,22 @@ public:
  */
 class RetICFGNode : public InterICFGNode
 {
+    friend class GraphDBClient;
+
+protected:
+    RetICFGNode(NodeID id, const SVFType* ty, const SVFBasicBlock* b, const FunObjVar* f) : 
+        InterICFGNode(id, FunRetBlock), actualRet(nullptr), callBlockNode(nullptr)
+    {
+        this->fun = f;
+        this->bb = b;
+        this->type = ty;
+    }
+
+    /// Add call block node from database for the new RetICFGNode [only used this function when loading from db results]
+    inline void addCallBlockNodeFromDB(const CallICFGNode* cb)
+    {
+        callBlockNode = cb;
+    }
 
 private:
     const SVFVar *actualRet;

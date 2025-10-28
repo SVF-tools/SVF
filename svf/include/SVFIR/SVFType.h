@@ -46,7 +46,35 @@ class SVFPointerType;
 class StInfo
 {
 
+    friend class GraphDBClient;
+    friend class IRGraph;
+
+protected:
+    StInfo (u32_t id, std::vector<u32_t> fldIdxVec, std::vector<u32_t> elemIdxVec, Map<u32_t, const SVFType*> fldIdx2TypeMap,
+    std::vector<const SVFType*> finfo,u32_t stride,u32_t numOfFlattenElements,u32_t numOfFlattenFields, std::vector<const SVFType*> flattenElementTypes )
+    :StInfoId(id), fldIdxVec(fldIdxVec), elemIdxVec(elemIdxVec), fldIdx2TypeMap(fldIdx2TypeMap), finfo(finfo), stride(stride), 
+    numOfFlattenElements(numOfFlattenElements), numOfFlattenFields(numOfFlattenFields), flattenElementTypes(flattenElementTypes)
+    {
+
+    }
+
+    inline const u32_t getStinfoId() const
+    {
+        return StInfoId;
+    }
+
+    inline const Map<u32_t, const SVFType*>& getFldIdx2TypeMap() const
+    {
+        return fldIdx2TypeMap;
+    }
+
+    inline void setStinfoId(u32_t id)
+    {
+        StInfoId = id;
+    }
+
 private:
+    u32_t StInfoId;
     /// flattened field indices of a struct (ignoring arrays)
     std::vector<u32_t> fldIdxVec;
     /// flattened element indices including structs and arrays by considering
@@ -77,6 +105,7 @@ public:
         : stride(s), numOfFlattenElements(s), numOfFlattenFields(s)
     {
     }
+
     /// Destructor
     ~StInfo() = default;
 
@@ -169,6 +198,20 @@ public:
         SVFArrayTy,
         SVFOtherTy,
     };
+
+protected:
+
+    /// set svfptrty and svfi8ty when initializing SVFType from db query results
+    inline static void setSVFPtrType(SVFType* ptrTy)
+    {
+        svfPtrTy = ptrTy;
+    }
+
+    inline static void setSVFInt8Type(SVFType* i8Ty)
+    {
+        svfI8Ty = i8Ty;
+    }
+
 
 public:
 
@@ -274,6 +317,14 @@ std::ostream& operator<<(std::ostream& os, const SVFType& type);
 class SVFPointerType : public SVFType
 {
 
+    friend class GraphDBClient;
+protected:
+    SVFPointerType(u32_t id, u32_t byteSize, bool isSingleValTy)
+        : SVFType(isSingleValTy, SVFPointerTy, id, byteSize)
+    {
+        
+    }
+
 public:
     SVFPointerType(u32_t i, u32_t byteSize = 1)
         : SVFType(true, SVFPointerTy, i, byteSize)
@@ -290,9 +341,22 @@ public:
 
 class SVFIntegerType : public SVFType
 {
+    friend class GraphDBClient;
 
 private:
     short signAndWidth; ///< For printing
+
+protected:
+    SVFIntegerType(u32_t i, u32_t byteSize, bool isSingleValTy,short signAndWidth)
+        : SVFType(isSingleValTy, SVFIntegerTy, i, byteSize)
+    {
+        this->signAndWidth = signAndWidth;
+    }
+
+    short getSignAndWidth() const
+    {
+        return signAndWidth;
+    }
 
 public:
     SVFIntegerType(u32_t i, u32_t byteSize = 1) : SVFType(true, SVFIntegerTy, i, byteSize) {}
@@ -317,10 +381,30 @@ public:
 class SVFFunctionType : public SVFType
 {
 
+    friend class GraphDBClient;
 private:
     const SVFType* retTy;
     std::vector<const SVFType*> params;
     bool varArg;
+
+protected:
+    /**
+     * Set return type of function, this is used when loading from DB
+     */
+    const void setReturnType(const SVFType* rt)
+    {
+        retTy = rt;
+    }
+
+    SVFFunctionType(u32_t id, bool svt, u32_t byteSize)
+        : SVFType(svt, SVFFunctionTy, id, byteSize)
+    {
+    }
+
+    void addParamType(const SVFType* type) 
+    {
+        params.push_back(type);
+    }
 
 public:
     SVFFunctionType(u32_t i, const SVFType* rt, const std::vector<const SVFType*>& p, bool isvararg)
@@ -342,7 +426,6 @@ public:
         return params;
     }
 
-
     bool isVarArg() const
     {
         return varArg;
@@ -353,6 +436,20 @@ public:
 
 class SVFStructType : public SVFType
 {
+    friend class GraphDBClient;
+
+protected:
+    SVFStructType(u32_t i, bool svt, u32_t byteSize, std::string name) : SVFType(svt, SVFStructTy, i, byteSize),name(name) {}
+    
+    const std::string& getName() const
+    {
+        return name;
+    }
+
+    void addFieldsType(const SVFType* type) 
+    {
+        fields.push_back(type);
+    }
 
 private:
     /// @brief Field for printing & debugging
@@ -376,6 +473,7 @@ public:
     {
         return name;
     }
+
     void setName(const std::string& structName)
     {
         name = structName;
@@ -389,10 +487,23 @@ public:
     {
         return fields;
     }
+
 };
 
 class SVFArrayType : public SVFType
 {
+    friend class GraphDBClient;
+
+protected:
+    SVFArrayType(u32_t id, bool svt, u32_t byteSize, unsigned elemNum)
+        : SVFType(svt, SVFArrayTy, id, byteSize), numOfElement(elemNum), typeOfElement(nullptr)
+    {
+        
+    }
+    const unsigned getNumOfElement() const
+    {
+        return numOfElement;
+    }
 
 private:
     unsigned numOfElement; /// For printing & debugging
@@ -431,6 +542,14 @@ public:
 
 class SVFOtherType : public SVFType
 {
+    friend class GraphDBClient;
+
+protected:
+    SVFOtherType(u32_t i, bool isSingleValueTy, u32_t byteSize, std::string repr) : SVFType(isSingleValueTy, SVFOtherTy, i, byteSize),repr(repr) {}
+    const std::string& getRepr() const
+    {
+        return repr;
+    }
 
 private:
     std::string repr; /// Field representation for printing

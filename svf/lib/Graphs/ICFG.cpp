@@ -237,6 +237,24 @@ ICFG::~ICFG()
     icfgNodeToSVFLoopVec.clear();
 }
 
+void ICFG::addICFGNode(ICFGNode* node)
+{
+    if (Options::ReadFromDB())
+    {
+        totalICFGNode++;
+    }
+    addGNode(node->getId(),node);
+}
+
+void ICFG::addGlobalICFGNode(GlobalICFGNode* globalICFGNode)
+{
+    if (Options::ReadFromDB())
+    {
+        this->globalBlockNode = globalICFGNode;
+    }
+    addICFGNode(globalICFGNode);
+}
+
 
 /// Add a function entry node
 FunEntryICFGNode* ICFG::getFunEntryICFGNode(const FunObjVar*  fun)

@@ -52,6 +52,7 @@ class SVFVar : public GenericPAGNodeTy
     friend class IRGraph;
     friend class SVFIR;
     friend class VFG;
+    friend class GraphDBClient;
 
 public:
     /// Node kinds for SVFIR variables:
@@ -71,8 +72,16 @@ protected:
     SVFStmt::KindToSVFStmtMapTy InEdgeKindToSetMap;
     SVFStmt::KindToSVFStmtMapTy OutEdgeKindToSetMap;
 
-    /// Empty constructor for deserialization
-    SVFVar(NodeID i, PNODEK k) : GenericPAGNodeTy(i, k) {}
+    inline const SVFStmt::KindToSVFStmtMapTy& getInEdgeKindToSetMap() const
+    {
+        return InEdgeKindToSetMap;
+    }
+
+    
+    inline const SVFStmt::KindToSVFStmtMapTy& getOutEdgeKindToSetMap() const
+    {
+        return OutEdgeKindToSetMap;
+    }
 
 
 public:
@@ -192,6 +201,20 @@ public:
         return false;
     }
 
+    std::string sourceLocToDBString() const
+    {
+        std::string sourceLoc = "";
+        if (getSourceLoc().empty() == false)
+        {
+            sourceLoc = ", source_loc: '" + getSourceLoc() + "'";
+        }
+        else
+        {
+            sourceLoc = ", source_loc: ''";
+        }
+        return sourceLoc;
+    }
+
 
 private:
     /// Edge management methods
@@ -247,13 +270,25 @@ public:
  */
 class ValVar: public SVFVar
 {
+    friend class GraphDBClient;
 
 private:
     const ICFGNode* icfgNode; // icfgnode related to valvar
+protected:
 
+    ValVar(NodeID i, const SVFType* type, PNODEK ty = ValNode) : SVFVar(i, type, ty), icfgNode(nullptr) {}
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
+    inline void updateSVFValVarFromDB(const SVFType* type, const ICFGNode* icfgNode)
+    {
+        this->type = type;
+        this->icfgNode = icfgNode;
+    }
+    inline void updateSVFValVarFromDB(const ICFGNode* icfgNode)
+    {
+        this->icfgNode = icfgNode;
+    }
     static inline bool classof(const ValVar*)
     {
         return true;
@@ -291,6 +326,9 @@ public:
     virtual const FunObjVar* getFunction() const;
 
     virtual const std::string toString() const;
+
+    std::string getValVarNodeFieldsStmt() const;
+
 };
 
 /*
@@ -298,6 +336,7 @@ public:
  */
 class ObjVar: public SVFVar
 {
+    friend class GraphDBClient;
 
 protected:
     /// Constructor
@@ -306,6 +345,10 @@ protected:
     {
     }
 public:
+    void updateObjVarFromDB(const SVFType* type)
+    {
+        this->type = type;
+    }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const ObjVar*)
@@ -333,6 +376,9 @@ public:
     }
 
     virtual const std::string toString() const;
+
+    std::string getObjVarNodeFieldsStmt() const;
+
 };
 
 
@@ -344,10 +390,14 @@ public:
  */
 class ArgValVar: public ValVar
 {
+    friend class GraphDBClient;
 
 private:
     const FunObjVar* cgNode;
     u32_t argNo;
+
+protected:
+    ArgValVar(NodeID i, const SVFType* type, u32_t argNo, PNODEK ty = ArgValNode) : ValVar(i, type, ty), argNo(argNo) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -384,6 +434,11 @@ public:
         return getName() + " (argument valvar)";
     }
 
+    inline void addCGNodeFromDB(const FunObjVar* cgNode)
+    {
+        this->cgNode = cgNode;
+    }
+
     virtual const FunObjVar* getFunction() const;
 
     const FunObjVar* getParent() const;
@@ -410,11 +465,20 @@ public:
  */
 class GepValVar: public ValVar
 {
+    friend class GraphDBClient;
+
+protected:
+    GepValVar(NodeID i, const SVFType* type, const SVFType* gepValType, PNODEK ty = GepValNode) 
+    : ValVar(i, type, GepValNode), gepValType(gepValType)
+    {
+    }
 
 private:
     AccessPath ap;	// AccessPath
     const ValVar* base;	// base node
     const SVFType* gepValType;
+    NodeID llvmVarID;
+
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -439,6 +503,16 @@ public:
     {
         return node->getNodeKind() == SVFVar::GepValNode;
     }
+
+    inline const AccessPath& getAccessPath() const
+    {
+        return ap;
+    }
+
+    inline const void setAccessPath(const AccessPath* ap)
+    {
+        this->ap = *ap;
+    }
     //@}
 
     /// Constructor
@@ -455,6 +529,10 @@ public:
     inline const ValVar* getBaseNode(void) const
     {
         return base;
+    }
+    inline void setBaseNode(const ValVar* baseNode)
+    {
+        base = baseNode;
     }
 
     /// Return name of a LLVM value
@@ -494,6 +572,18 @@ public:
     {
         return base->isConstDataOrAggData();
     }
+
+    /// Get the LLVM variable ID associated with this GepValVar
+    inline NodeID getLLVMVarInstID() const
+    {
+        return llvmVarID;   
+    }
+
+    /// Set the LLVM variable ID associated with this GepValVar
+    inline void setLLVMVarInstID(NodeID id)
+    {
+        llvmVarID = id;
+    }
 };
 
 /*
@@ -502,10 +592,15 @@ public:
 class BaseObjVar : public ObjVar
 {
     friend class SVFIRBuilder;
+    friend class GraphDBClient;
+
 private:
     ObjTypeInfo* typeInfo;
 
     const ICFGNode* icfgNode; /// ICFGNode related to the creation of this object
+
+protected:
+    BaseObjVar(NodeID i, const SVFType* type, ObjTypeInfo* typeInfo, PNODEK ty = BaseObjNode) : ObjVar(i, type, ty), typeInfo(typeInfo), icfgNode(nullptr) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -544,10 +639,24 @@ public:
         return this;
     }
 
+    inline const ObjTypeInfo* getTypeInfo() const
+    {
+        return typeInfo;
+    }
+    inline ObjTypeInfo* getTypeInfo()
+    {
+        return typeInfo;
+    }
+
     /// Get the ICFGNode related to the creation of this object
     inline const ICFGNode* getICFGNode() const
     {
         return icfgNode;
+    }
+
+    inline void setICFGNode(const ICFGNode* node)
+    {
+        icfgNode = node;
     }
 
     /// Return name of a LLVM value
@@ -568,6 +677,11 @@ public:
     const SVFType* getType() const
     {
         return typeInfo->getType();
+    }
+
+    const SVFType* getVarType() const 
+    {
+        return type;
     }
 
     /// Get the number of elements of this object
@@ -698,6 +812,11 @@ public:
  */
 class GepObjVar: public ObjVar
 {
+    friend class GraphDBClient;
+
+protected:
+    GepObjVar(NodeID i, const SVFType* type, u64_t apOffset,  const BaseObjVar* baseObj, PNODEK ty = GepObjNode)
+     : ObjVar(i, type, ty), apOffset(apOffset), base(baseObj) {}
 
 private:
     APOffset apOffset = 0;
@@ -802,6 +921,11 @@ public:
 class HeapObjVar: public BaseObjVar
 {
 
+    friend class GraphDBClient;
+
+protected:
+    HeapObjVar(NodeID i, const SVFType* type, ObjTypeInfo* ti, PNODEK ty = HeapObjNode) :
+        BaseObjVar(i, type, ti, ty) {}
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -858,6 +982,12 @@ public:
 class StackObjVar: public BaseObjVar
 {
 
+    friend class GraphDBClient;
+
+protected:
+    StackObjVar(NodeID i, const SVFType* type, ObjTypeInfo* ti, PNODEK ty = StackObjNode) :
+        BaseObjVar(i, type, ti, ty) {}
+
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -909,6 +1039,33 @@ class FunObjVar : public BaseObjVar
 {
     friend class SVFIRBuilder;
     friend class LLVMModuleSet;
+    friend class GraphDBClient;
+
+protected:
+    FunObjVar(NodeID i, const SVFType* type, ObjTypeInfo* ti, 
+        bool isDecl, bool intrinsic, bool isAddrTaken, bool isUncalled, 
+        bool isNotRet, bool supVarArg, const SVFFunctionType* funcType, PNODEK ty = FunObjNode) 
+        : BaseObjVar(i, type, ti, ty), isDecl(isDecl), intrinsic(intrinsic),
+        isAddrTaken(isAddrTaken), isUncalled(isUncalled), isNotRet(isNotRet),
+        supVarArg(supVarArg),funcType(funcType) {}
+
+    inline void updateExitBlock(SVFBasicBlock *bb)
+    {
+        exitBlock = bb;
+    }
+
+    inline void setLoopAndDomInfo(SVFLoopAndDomInfo *ld)
+    {
+        loopAndDom = ld;
+    }
+    inline bool getIsNotRet() const
+    {
+        return isNotRet;
+    }
+    inline const std::vector<const ArgValVar*> &getArgs() const
+    {
+        return allArgs;
+    }
 
 public:
     typedef SVFLoopAndDomInfo::BBSet BBSet;
@@ -931,6 +1088,7 @@ private:
     BasicBlockGraph* bbGraph; /// the basic block graph of this function
     std::vector<const ArgValVar*> allArgs;    /// all formal arguments of this function
     const SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
+
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1146,7 +1304,6 @@ public:
         assert (idx < allArgs.size() && "getArg() out of range!");
         return allArgs[idx];
     }
-
     inline const SVFBasicBlock* front() const
     {
         return getEntryBlock();
@@ -1177,6 +1334,16 @@ public:
 };
 class FunValVar : public ValVar
 {
+
+    friend class GraphDBClient;
+
+protected:
+    /// Constructor to create empty FunValNode (for GraphDBClient)
+    FunValVar(NodeID i, const SVFType* type, PNODEK ty = FunValNode) : ValVar(i, type, ty) {}
+    inline void setFunction(const FunObjVar* cgn)
+    {
+        funObjVar = cgn;
+    }
 
 private:
     const FunObjVar* funObjVar;
@@ -1227,6 +1394,11 @@ public:
 
 class GlobalValVar : public ValVar
 {
+    friend class GraphDBClient;
+
+protected:
+    /// Constructor to create empty GlobalValVar (for GraphDBClient)
+    GlobalValVar(NodeID i, const SVFType* type, PNODEK ty = GlobalValNode) : ValVar(i, type, ty) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1266,6 +1438,11 @@ public:
 
 class ConstAggValVar: public ValVar
 {
+    friend class GraphDBClient;
+
+protected:
+    /// Constructor to create empty ConstAggValVar (for GraphDBClient)
+    ConstAggValVar(NodeID i, const SVFType* type, PNODEK ty = ConstAggValNode) : ValVar(i, type, ty) {}
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1316,6 +1493,14 @@ public:
 
 class ConstDataValVar : public ValVar
 {
+    friend class GraphDBClient;
+
+protected:
+    /// Constructor
+    ConstDataValVar(NodeID i, const SVFType* svfType, PNODEK ty = ConstDataValNode)
+        : ValVar(i, svfType, ty)
+    {
+    }
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1366,6 +1551,7 @@ public:
 class BlackHoleValVar : public ConstDataValVar
 {
 
+    friend class GraphDBClient;
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -1416,6 +1602,14 @@ public:
 class ConstFPValVar : public ConstDataValVar
 {
 
+    friend class GraphDBClient;
+
+protected:
+    /// Constructor
+    ConstFPValVar(NodeID i, double dv, const SVFType* svfType, PNODEK ty = ConstFPValNode)
+        : ConstDataValVar(i, svfType, ConstFPValNode), dval(dv)
+    {
+    }
 private:
     double dval;
 
@@ -1465,6 +1659,16 @@ public:
 
 class ConstIntValVar : public ConstDataValVar
 {
+
+    friend class GraphDBClient;
+
+protected:
+    /// Constructor
+    ConstIntValVar(NodeID i, s64_t sv, u64_t zv, const SVFType* svfType,  PNODEK ty = ConstIntValNode)
+        : ConstDataValVar(i, svfType, ConstIntValNode), zval(zv), sval(sv)
+    {
+
+    }
 
 private:
     u64_t zval;
@@ -1521,6 +1725,13 @@ public:
 
 class ConstNullPtrValVar : public ConstDataValVar
 {
+    friend class GraphDBClient;
+
+protected:
+    ConstNullPtrValVar(NodeID i, const SVFType* svfType, PNODEK ty = ConstNullptrValNode)
+        : ConstDataValVar(i, svfType, ty)
+    {
+    }
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1568,6 +1779,14 @@ public:
 
 class GlobalObjVar : public BaseObjVar
 {
+    friend class GraphDBClient;
+
+protected:
+    /// Constructor to create empty ObjVar (for GraphDBClient)
+    GlobalObjVar(NodeID i, const SVFType* svfType, ObjTypeInfo* ti, PNODEK ty = GlobalObjNode)
+        : BaseObjVar(i, svfType, ti, ty)
+    {
+    }
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1611,6 +1830,13 @@ public:
 
 class ConstAggObjVar : public BaseObjVar
 {
+    friend class GraphDBClient;
+
+protected:
+    ConstAggObjVar(NodeID i, const SVFType* svfType, ObjTypeInfo* ti, PNODEK ty = ConstAggObjNode)
+        : BaseObjVar(i, svfType, ti, ty)
+    {
+    }
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1664,6 +1890,13 @@ public:
 
 class ConstDataObjVar : public BaseObjVar
 {
+    friend class GraphDBClient;
+
+protected:
+    ConstDataObjVar(NodeID i, const SVFType* svfType, ObjTypeInfo* typeInfo, PNODEK ty = ConstDataObjNode)
+        : BaseObjVar(i, svfType, typeInfo, ty)
+    {
+    }
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1715,6 +1948,15 @@ public:
 
 class ConstFPObjVar : public ConstDataObjVar
 {
+
+    friend class GraphDBClient;
+
+protected:
+    /// Constructor
+    ConstFPObjVar(NodeID i, float dval, const SVFType* svfType, ObjTypeInfo* ti, PNODEK ty = ConstFPObjNode)
+        : ConstDataObjVar(i, svfType, ti, ty), dval(dval)
+    {
+    }
 
 private:
     float dval;
@@ -1772,6 +2014,15 @@ public:
 
 class ConstIntObjVar : public ConstDataObjVar
 {
+
+    friend class GraphDBClient;
+
+protected:
+    ConstIntObjVar(NodeID i, s64_t sval, u64_t zval, const SVFType* svfType, ObjTypeInfo* objTypeInfo, PNODEK ty = ConstIntObjNode)
+        : ConstDataObjVar(i, svfType, objTypeInfo, ty), zval(zval), sval(sval)
+    {
+    }
+
 
 private:
     u64_t zval;
@@ -1837,6 +2088,12 @@ public:
 class ConstNullPtrObjVar : public ConstDataObjVar
 {
 
+    friend class GraphDBClient;
+
+protected:
+    /// Constructor to create empty DummyObjVar (for GraphDBClient)
+    ConstNullPtrObjVar(NodeID i, const SVFType* type, ObjTypeInfo* typeInfo, PNODEK ty = ConstNullptrObjNode) : ConstDataObjVar(i, type, typeInfo, ty) {}
+
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
     static inline bool classof(const ConstNullPtrObjVar*)
@@ -1889,6 +2146,15 @@ public:
  */
 class RetValPN : public ValVar
 {
+    friend class GraphDBClient;
+
+protected:
+    /// Constructor to create empty RetValPN (for GraphDBClient)
+    RetValPN(NodeID i, const SVFType* type, PNODEK ty = RetValNode) : ValVar(i, type, ty) {}
+    inline void setCallGraphNode(const FunObjVar* node)
+    {
+        callGraphNode = node;
+    }
 
 private:
     const FunObjVar* callGraphNode;
@@ -1942,6 +2208,15 @@ public:
 class VarArgValPN : public ValVar
 {
 
+    friend class GraphDBClient;
+
+protected:
+    /// Constructor to create empty VarArgValPN (for GraphDBClient)
+    VarArgValPN(NodeID i, const SVFType* type, PNODEK ty = VarargValNode) : ValVar(i, type, VarargValNode) {}
+    inline void setCallGraphNode(const FunObjVar* node)
+    {
+        callGraphNode = node;
+    }
 private:
     const FunObjVar* callGraphNode;
 
@@ -1992,6 +2267,11 @@ public:
  */
 class DummyValVar: public ValVar
 {
+    friend class GraphDBClient;
+
+protected:
+    /// Constructor to create empty DummyValVar (for GraphDBClient)
+    DummyValVar(NodeID i, const SVFType* type, PNODEK ty = DummyValNode) : ValVar(i, type, DummyValNode) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -2042,6 +2322,12 @@ public:
  */
 class DummyObjVar: public BaseObjVar
 {
+
+    friend class GraphDBClient;
+
+protected:
+    /// Constructor to create empty DummyObjVar (for GraphDBClient)
+    DummyObjVar(NodeID i, const SVFType* type, ObjTypeInfo* typeInfo, PNODEK ty = DummyObjNode) : BaseObjVar(i, type, typeInfo, ty) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:

@@ -47,6 +47,7 @@ class ExtAPI
 {
     friend class LLVMModuleSet;
     friend class SVFIRBuilder;
+    friend class GraphDBClient;
 
 private:
 

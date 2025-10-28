@@ -1,5 +1,6 @@
 #include "Graphs/BasicBlockG.h"
 #include "Graphs/ICFGNode.h"
+#include "Util/Options.h"
 
 using namespace SVF;
 const std::string BasicBlockEdge::toString() const
@@ -21,4 +22,13 @@ const std::string SVFBasicBlock::toString() const
     }
     rawstr << "\n----------------------------------------\n";
     return rawstr.str();
+}
+
+void BasicBlockGraph::addBasicBlock(SVFBasicBlock* bb)
+{
+    if (Options::ReadFromDB())
+    {
+        id++;
+    }
+    addGNode(bb->getId(), bb);
 }

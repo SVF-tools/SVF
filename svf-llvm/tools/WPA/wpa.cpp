@@ -46,9 +46,11 @@ int main(int argc, char** argv)
     // Refers to content of a singleton unique_ptr<SVFIR> in SVFIR.
     SVFIR* pag;
 
-    if (Options::ReadJson())
+   if (Options::ReadFromDB())
     {
-        assert(false && "please implement SVFIRReader::read");
+        SVFIRBuilder builder;
+        pag = builder.build();
+        pag->setPagFromTXT("ReadFromDB");
     }
     else
     {
