@@ -64,6 +64,7 @@ bool MTA::runOnModule(SVFIR* pag)
 
     PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
     pta->getCallGraph()->dump("ptacg");
+    pag->getICFG()->updateCallGraph(pta->getCallGraph());
 
     DBOUT(DGENERAL, outs() << pasMsg("Build TCT\n"));
     DBOUT(DMTA, outs() << pasMsg("Build TCT\n"));
