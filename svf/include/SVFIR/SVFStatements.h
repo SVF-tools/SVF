@@ -129,7 +129,7 @@ public:
         return edgeId;
     }
     /// Whether src and dst nodes are both of pointer type
-    bool isPTAEdge() const;
+    virtual bool isPTAEdge() const;
 
     /// Get/set methods for llvm instruction
     //@{
@@ -343,6 +343,10 @@ public:
         return arrSize;
     }
 
+    virtual bool isPTAEdge() const override
+    {
+        return true;
+    }
 };
 
 /*!
