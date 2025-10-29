@@ -339,7 +339,7 @@ void SVFIRBuilder::createFunObjVars()
         DBOUT(DPAGBuild, outs() << "add obj node " << id << "\n");
 
         // Check if the value is a function and add a function object node
-        pag->addFunObjNode(id, pag->getObjTypeInfo(id), llvmModuleSet()->getSVFType(fun->getType()), nullptr);
+        pag->addFunObjNode(id, pag->getObjTypeInfo(id), nullptr);
         llvmModuleSet()->LLVMFun2FunObjVar[fun] = cast<FunObjVar>(pag->getGNode(id));
 
         FunObjVar *funObjVar = SVFUtil::cast<FunObjVar>(pag->getGNode(id));
@@ -403,52 +403,49 @@ void SVFIRBuilder::initialiseBaseObjVars()
         else if (LLVMUtil::isHeapObj(llvmValue))
         {
             NodeID id = llvmModuleSet()->getObjectNode(iter->first);
-            pag->addHeapObjNode(iter->second, pag->getObjTypeInfo(id), llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
+            pag->addHeapObjNode(iter->second, pag->getObjTypeInfo(id), icfgNode);
         }
         // Check if the value is an alloca instruction and add a stack object node
         else if (LLVMUtil::isStackObj(llvmValue))
         {
             NodeID id = llvmModuleSet()->getObjectNode(iter->first);
-            pag->addStackObjNode(iter->second, pag->getObjTypeInfo(id), llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
+            pag->addStackObjNode(iter->second, pag->getObjTypeInfo(id), icfgNode);
         }
         else if (auto fpValue = SVFUtil::dyn_cast<ConstantFP>(llvmValue))
         {
             NodeID id = llvmModuleSet()->getObjectNode(iter->first);
-            pag->addConstantFPObjNode(iter->second, pag->getObjTypeInfo(id),  LLVMUtil::getDoubleValue(fpValue), llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
+            pag->addConstantFPObjNode(iter->second, pag->getObjTypeInfo(id),  LLVMUtil::getDoubleValue(fpValue), icfgNode);
         }
         else if (auto intValue = SVFUtil::dyn_cast<ConstantInt>(llvmValue))
         {
             NodeID id = llvmModuleSet()->getObjectNode(iter->first);
-            pag->addConstantIntObjNode(iter->second, pag->getObjTypeInfo(id), LLVMUtil::getIntegerValue(intValue), llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
+            pag->addConstantIntObjNode(iter->second, pag->getObjTypeInfo(id), LLVMUtil::getIntegerValue(intValue), icfgNode);
         }
         else if (SVFUtil::isa<ConstantPointerNull>(llvmValue))
         {
             NodeID id = llvmModuleSet()->getObjectNode(iter->first);
-            pag->addConstantNullPtrObjNode(iter->second, pag->getObjTypeInfo(id), llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
+            pag->addConstantNullPtrObjNode(iter->second, pag->getObjTypeInfo(id), icfgNode);
         }
         else if (SVFUtil::isa<GlobalValue>(llvmValue))
         {
             NodeID id = llvmModuleSet()->getObjectNode(iter->first);
-            pag->addGlobalObjNode(iter->second,
-                                  pag->getObjTypeInfo(id),
-                                  llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
+            pag->addGlobalObjNode(iter->second, pag->getObjTypeInfo(id), icfgNode);
         }
         else if (SVFUtil::isa<ConstantData, MetadataAsValue, BlockAddress>(llvmValue))
         {
             NodeID id = llvmModuleSet()->getObjectNode(iter->first);
-            pag->addConstantDataObjNode(iter->second, pag->getObjTypeInfo(id), llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
+            pag->addConstantDataObjNode(iter->second, pag->getObjTypeInfo(id), icfgNode);
         }
         else if (SVFUtil::isa<ConstantAggregate>(llvmValue))
         {
             NodeID id = llvmModuleSet()->getObjectNode(iter->first);
-            pag->addConstantAggObjNode(iter->second, pag->getObjTypeInfo(id), llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
+            pag->addConstantAggObjNode(iter->second, pag->getObjTypeInfo(id), icfgNode);
         }
         // Add a generic object node for other types of values
         else
         {
             NodeID id = llvmModuleSet()->getObjectNode(iter->first);
-            pag->addObjNode(iter->second,
-                            pag->getObjTypeInfo(id), llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
+            pag->addObjNode(iter->second, pag->getObjTypeInfo(id), icfgNode);
         }
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
     }

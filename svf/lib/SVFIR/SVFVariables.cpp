@@ -440,8 +440,8 @@ const std::string ConstNullPtrObjVar::toString() const
     return rawstr.str();
 }
 
-FunObjVar::FunObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node)
-    : BaseObjVar(i, ti, svfType, node, FunObjNode)
+FunObjVar::FunObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node)
+    : BaseObjVar(i, ti, node, FunObjNode)
 {
 }
 

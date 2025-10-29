@@ -533,9 +533,8 @@ public:
     //@}
 
     /// Constructor
-    BaseObjVar(NodeID i, ObjTypeInfo* ti,
-               const SVFType* svfType, const ICFGNode* node, PNODEK ty = BaseObjNode)
-        : ObjVar(i, svfType, ty), typeInfo(ti), icfgNode(node)
+    BaseObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node, PNODEK ty = BaseObjNode)
+        : ObjVar(i, ti->getType(), ty), typeInfo(ti), icfgNode(node)
     {
     }
 
@@ -562,12 +561,6 @@ public:
     inline NodeID getId() const
     {
         return id;
-    }
-
-    /// Get obj type
-    const SVFType* getType() const
-    {
-        return typeInfo->getType();
     }
 
     /// Get the number of elements of this object
@@ -832,8 +825,8 @@ public:
     //@}
 
     /// Constructor
-    HeapObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node):
-        BaseObjVar(i, ti, svfType, node, HeapObjNode)
+    HeapObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node):
+        BaseObjVar(i, ti, node, HeapObjNode)
     {
     }
 
@@ -888,8 +881,8 @@ public:
     //@}
 
     /// Constructor
-    StackObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node):
-        BaseObjVar(i, ti, svfType, node, StackObjNode)
+    StackObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node):
+        BaseObjVar(i, ti, node, StackObjNode)
     {
     }
 
@@ -962,7 +955,7 @@ public:
     //@}
 
     /// Constructor
-    FunObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node);
+    FunObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node);
 
 
     virtual ~FunObjVar()
@@ -1599,8 +1592,8 @@ public:
     //@}
 
     /// Constructor
-    GlobalObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node,
-                 PNODEK ty = GlobalObjNode): BaseObjVar(i, ti, svfType, node, ty)
+    GlobalObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node,
+                 PNODEK ty = GlobalObjNode): BaseObjVar(i, ti, node, ty)
     {
 
     }
@@ -1643,8 +1636,8 @@ public:
     //@}
 
     /// Constructor
-    ConstAggObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node)
-        : BaseObjVar(i,  ti, svfType, node, ConstAggObjNode)
+    ConstAggObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node)
+        : BaseObjVar(i,  ti, node, ConstAggObjNode)
     {
 
     }
@@ -1695,8 +1688,8 @@ public:
     //@}
 
     /// Constructor
-    ConstDataObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node, PNODEK ty = ConstDataObjNode)
-        : BaseObjVar(i, ti, svfType, node, ty)
+    ConstDataObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node, PNODEK ty = ConstDataObjNode)
+        : BaseObjVar(i, ti, node, ty)
     {
     }
 
@@ -1756,8 +1749,8 @@ public:
     //@}
 
     /// Constructor
-    ConstFPObjVar(NodeID i, double dv, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node)
-        : ConstDataObjVar(i, ti, svfType, node, ConstFPObjNode), dval(dv)
+    ConstFPObjVar(NodeID i, double dv, ObjTypeInfo* ti, const ICFGNode* node)
+        : ConstDataObjVar(i, ti, node, ConstFPObjNode), dval(dv)
     {
     }
 
@@ -1825,11 +1818,10 @@ public:
     //@}
 
     /// Constructor
-    ConstIntObjVar(NodeID i, s64_t sv, u64_t zv, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node)
-        : ConstDataObjVar(i, ti, svfType, node, ConstIntObjNode), zval(zv), sval(sv)
+    ConstIntObjVar(NodeID i, s64_t sv, u64_t zv, ObjTypeInfo* ti, const ICFGNode* node)
+        : ConstDataObjVar(i, ti, node, ConstIntObjNode), zval(zv), sval(sv)
     {
     }
-
 
     virtual const std::string toString() const;
 };
@@ -1874,8 +1866,8 @@ public:
     //@}
 
     /// Constructor
-    ConstNullPtrObjVar(NodeID i, ObjTypeInfo* ti, const SVFType* svfType, const ICFGNode* node)
-        : ConstDataObjVar(i, ti, svfType, node, ConstNullptrObjNode)
+    ConstNullPtrObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node)
+        : ConstDataObjVar(i, ti, node, ConstNullptrObjNode)
     {
     }
     virtual bool isConstDataOrAggDataButNotNullPtr() const
@@ -2073,8 +2065,8 @@ public:
     //@}
 
     /// Constructor
-    DummyObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node, const SVFType* svfType = SVFType::getSVFPtrType())
-        : BaseObjVar(i, ti, svfType, node, DummyObjNode)
+    DummyObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node)
+        : BaseObjVar(i, ti, node, DummyObjNode)
     {
     }
 
