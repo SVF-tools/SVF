@@ -885,9 +885,9 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
         if (hasJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite)))
         {
             if (isAliasedForkJoin(SVFUtil::cast<CallICFGNode>(forkSite),
-                                SVFUtil::cast<CallICFGNode>(joinSite)) &&
+                                  SVFUtil::cast<CallICFGNode>(joinSite)) &&
                     isSameSCEV(forkSite,joinSite)
-                )
+               )
             {
                 LoopBBs& joinLoop = getJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite));
                 std::vector<const SVFBasicBlock *> exitbbs;
@@ -927,7 +927,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
         else
         {
             if (isAliasedForkJoin(SVFUtil::cast<CallICFGNode>(forkSite),
-                                SVFUtil::cast<CallICFGNode>(joinSite)))
+                                  SVFUtil::cast<CallICFGNode>(joinSite)))
             {
                 markCxtStmtFlag(cts, TDDead);
                 addDirectlyJoinTID(cts, rootTid);
