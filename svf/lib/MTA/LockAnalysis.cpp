@@ -376,7 +376,7 @@ void LockAnalysis::analyzeLockSpanCxtStmt()
         {
             handleCall(cts);
         }
-        else if (isRetInstNode(curInst))
+        else if (SVFUtil::dyn_cast<FunExitICFGNode>(curInst))
         {
             handleRet(cts);
         }
@@ -472,10 +472,21 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
             {
                 for(const ICFGEdge* outEdge : curInst->getOutEdges())
                 {
-                    if(outEdge->getDstNode()->getFun() == curInst->getFun())
+                    if(outEdge->getDstNode()->getFun() == inst->getFun())
                     {
-                        CxtStmt newCts(newCxt, outEdge->getDstNode());
-                        markCxtStmtFlag(newCts, cts);
+                        // Iterate over callSite's call string context and use as the successor's context
+                        if (!hasCxtStmtFromInst(*cit))
+                            continue;
+                        for (const CxtStmt& cxtStmt: getCxtStmtsFromInst(*cit))
+                        {
+                            CallStrCxt callSiteCxt = cxtStmt.getContext();
+                            // If new context is a suffix of the call site context
+                            if (isContextSuffix(newCxt, callSiteCxt))
+                            {
+                                CxtStmt newCts(callSiteCxt, outEdge->getDstNode());
+                                markCxtStmtFlag(newCts, cts);
+                            }
+                        }
                     }
                 }
             }
@@ -489,10 +500,21 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
             {
                 for(const ICFGEdge* outEdge : curInst->getOutEdges())
                 {
-                    if(outEdge->getDstNode()->getFun() == curInst->getFun())
+                    if(outEdge->getDstNode()->getFun() == inst->getFun())
                     {
-                        CxtStmt newCts(newCxt, outEdge->getDstNode());
-                        markCxtStmtFlag(newCts, cts);
+                        // Iterate over callSite's call string context and use as the successor's context
+                        if (!hasCxtStmtFromInst(*cit))
+                            continue;
+                        for (const CxtStmt& cxtStmt: getCxtStmtsFromInst(*cit))
+                        {
+                            CallStrCxt callSiteCxt = cxtStmt.getContext();
+                            // If new context is a suffix of the call site context
+                            if (isContextSuffix(newCxt, callSiteCxt))
+                            {
+                                CxtStmt newCts(callSiteCxt, outEdge->getDstNode());
+                                markCxtStmtFlag(newCts, cts);
+                            }
+                        }
                     }
                 }
             }
@@ -517,21 +539,9 @@ void LockAnalysis::handleIntra(const CxtStmt& cts)
     }
 }
 
-
 void LockAnalysis::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
 {
-    const FunObjVar* svfcaller = call->getFun();
-    CallSiteID csId = getTCG()->getCallSiteID(call, callee);
-
-//    /// handle calling context for candidate functions only
-//    if (isLockCandidateFun(caller) == false)
-//        return;
-
-    if (tct->inSameCallGraphSCC(getTCG()->getCallGraphNode(svfcaller), getTCG()->getCallGraphNode(callee)) == false)
-    {
-        tct->pushCxt(cxt,csId);
-        DBOUT(DMTA, tct->dumpCxt(cxt));
-    }
+    tct->pushCxt(cxt,call,callee);
 }
 
 bool LockAnalysis::matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
@@ -556,6 +566,11 @@ bool LockAnalysis::matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const Fun
         DBOUT(DMTA, tct->dumpCxt(cxt));
     }
     return true;
+}
+
+bool LockAnalysis::isContextSuffix(const CallStrCxt& lhs, const CallStrCxt& call)
+{
+    return tct->isContextSuffix(lhs,call);
 }
 
 
@@ -615,10 +630,10 @@ bool LockAnalysis::isProtectedByCommonCxtLock(const CxtStmt& cxtStmt1, const Cxt
  */
 bool LockAnalysis::isProtectedByCommonCxtLock(const ICFGNode *i1, const ICFGNode *i2)
 {
-    if(!hasCxtStmtfromInst(i1) || !hasCxtStmtfromInst(i2))
+    if(!hasCxtStmtFromInst(i1) || !hasCxtStmtFromInst(i2))
         return false;
-    const CxtStmtSet& ctsset1 = getCxtStmtfromInst(i1);
-    const CxtStmtSet& ctsset2 = getCxtStmtfromInst(i2);
+    const CxtStmtSet& ctsset1 = getCxtStmtsFromInst(i1);
+    const CxtStmtSet& ctsset2 = getCxtStmtsFromInst(i2);
     for (CxtStmtSet::const_iterator cts1 = ctsset1.begin(), ects1 = ctsset1.end(); cts1 != ects1; cts1++)
     {
         const CxtStmt& cxtStmt1 = *cts1;
@@ -689,10 +704,10 @@ bool LockAnalysis::isInSameCSSpan(const CxtStmt& cxtStmt1, const CxtStmt& cxtStm
  */
 bool LockAnalysis::isInSameCSSpan(const ICFGNode *I1, const ICFGNode *I2) const
 {
-    if(!hasCxtStmtfromInst(I1) || !hasCxtStmtfromInst(I2))
+    if(!hasCxtStmtFromInst(I1) || !hasCxtStmtFromInst(I2))
         return false;
-    const CxtStmtSet& ctsset1 = getCxtStmtfromInst(I1);
-    const CxtStmtSet& ctsset2 = getCxtStmtfromInst(I2);
+    const CxtStmtSet& ctsset1 = getCxtStmtsFromInst(I1);
+    const CxtStmtSet& ctsset2 = getCxtStmtsFromInst(I2);
 
     for (CxtStmtSet::const_iterator cts1 = ctsset1.begin(), ects1 = ctsset1.end(); cts1 != ects1; cts1++)
     {

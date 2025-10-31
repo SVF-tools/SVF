@@ -156,7 +156,7 @@ void TCT::markRelProcs()
 }
 
 /*!
- *
+ * Add relevant procedures that are backward reachable from svffun on Thread Call Graph
  */
 void TCT::markRelProcs(const FunObjVar* svffun)
 {
@@ -182,7 +182,7 @@ void TCT::markRelProcs(const FunObjVar* svffun)
 }
 
 /*!
- * Get Main function
+ * Get entry function, i.e., functions without callers, e.g., main function
  */
 void TCT::collectEntryFunInCallGraph()
 {
@@ -249,7 +249,10 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, co
     CallStrCxt cxt(ctp.getContext());
     CallStrCxt oldCxt = cxt;
     const CallICFGNode* callNode = cs;
-    pushCxt(cxt,callNode,callee);
+
+    /// handle calling context for candidate functions only
+    if(isCandidateFun(callNode->getFun()) == true)
+        pushCxt(cxt,callNode,callee);
 
     if(cgEdge->getEdgeKind() == CallGraphEdge::CallRetEdge)
     {
@@ -264,7 +267,7 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, co
     else if(cgEdge->getEdgeKind() == CallGraphEdge::TDForkEdge)
     {
         /// Create spawnee TCT node
-        TCTNode* spawneeNode = getOrCreateTCTNode(cxt,callNode, oldCxt, callee);
+        TCTNode* spawneeNode = getOrCreateTCTNode(cxt,callNode, ctp, callee);
         CxtThreadProc newctp(spawneeNode->getId(),cxt,callee);
 
         if(pushToCTPWorkList(newctp))
@@ -398,7 +401,8 @@ void TCT::build()
         if (!isCandidateFun(*it))
             continue;
         CallStrCxt cxt;
-        TCTNode* mainTCTNode = getOrCreateTCTNode(cxt, nullptr, cxt, *it);
+        CxtThreadProc dummyCtp(-1, cxt, nullptr);
+        TCTNode* mainTCTNode = getOrCreateTCTNode(cxt, nullptr, dummyCtp, *it);
         CxtThreadProc t(mainTCTNode->getId(), cxt, *it);
         pushToCTPWorkList(t);
     }
@@ -440,21 +444,20 @@ void TCT::build()
 }
 
 /*!
- * Push calling context
+ * Push calling context, with k limiting
  */
 void TCT::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
 {
-
     const FunObjVar* caller = call->getFun();
     CallSiteID csId = tcg->getCallSiteID(call, callee);
 
-    /// handle calling context for candidate functions only
-    if(isCandidateFun(caller) == false)
-        return;
-
     if(inSameCallGraphSCC(tcg->getCallGraphNode(caller),tcg->getCallGraphNode(callee))==false)
     {
-        pushCxt(cxt,csId);
+        cxt.push_back(csId);
+        if (cxt.size() > Options::MaxContextLen())
+            cxt.erase(cxt.begin());
+        if (cxt.size() > MaxCxtSize)
+            MaxCxtSize = cxt.size();
         DBOUT(DMTA,dumpCxt(cxt));
     }
 }
@@ -463,9 +466,8 @@ void TCT::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* ca
 /*!
  * Match calling context
  */
-bool TCT::matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
+bool TCT::matchAndPopCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
 {
-
     const FunObjVar* caller = call->getFun();
     CallSiteID csId = tcg->getCallSiteID(call, callee);
 
@@ -487,6 +489,25 @@ bool TCT::matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* c
     }
 
     return true;
+}
+
+/*!
+ * If lhs is a suffix of rhs, including equal
+ */
+bool TCT::isContextSuffix(const CallStrCxt& lhs, const CallStrCxt& call)
+{
+    if (lhs.size() > call.size())
+        return false;
+    bool isSuffix = true;
+    for (size_t i = 0; i < lhs.size(); ++i)
+    {
+        if (lhs[lhs.size() - 1 - i] != call[call.size() - 1 - i])
+        {
+            isSuffix = false;
+            break;
+        }
+    }
+    return isSuffix;
 }
 
 
@@ -513,8 +534,7 @@ void TCT::dumpCxt(CallStrCxt& cxt)
  */
 void TCT::dump(const std::string& filename)
 {
-    if (Options::TCTDotGraph())
-        GraphPrinter::WriteGraphToFile(outs(), filename, this);
+    GraphPrinter::WriteGraphToFile(outs(), filename, this);
 }
 
 /*!

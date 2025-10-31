@@ -49,8 +49,7 @@ MTA::~MTA()
 {
     if (tcg)
         delete tcg;
-    //if (tct)
-    //    delete tct;
+
     delete mhp;
     delete lsa;
 }
@@ -60,33 +59,12 @@ MTA::~MTA()
  */
 bool MTA::runOnModule(SVFIR* pag)
 {
-    mhp = computeMHP();
-    lsa = computeLocksets(mhp->getTCT());
-
-    if(Options::RaceCheck())
-        detect();
-
-    return false;
-}
-
-/*!
- * Compute lock sets
- */
-LockAnalysis* MTA::computeLocksets(TCT* tct)
-{
-    LockAnalysis* lsa = new LockAnalysis(tct);
-    lsa->analyze();
-    return lsa;
-}
-
-MHP* MTA::computeMHP()
-{
-
     DBOUT(DGENERAL, outs() << pasMsg("MTA analysis\n"));
     DBOUT(DMTA, outs() << pasMsg("MTA analysis\n"));
-    SVFIR* pag = PAG::getPAG();
+
     PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
     pta->getCallGraph()->dump("ptacg");
+    pag->getICFG()->updateCallGraph(pta->getCallGraph());
 
     DBOUT(DGENERAL, outs() << pasMsg("Build TCT\n"));
     DBOUT(DMTA, outs() << pasMsg("Build TCT\n"));
@@ -104,11 +82,32 @@ MHP* MTA::computeMHP()
 
     tcg->dump("tcg");
 
+    mhp = computeMHP(tct.get());
+    lsa = computeLocksets(tct.get());
+
+    if(Options::RaceCheck())
+        detect();
+
+    return false;
+}
+
+/*!
+ * Compute lock sets
+ */
+LockAnalysis* MTA::computeLocksets(TCT* tct)
+{
+    LockAnalysis* lsa = new LockAnalysis(tct);
+    lsa->analyze();
+    return lsa;
+}
+
+MHP* MTA::computeMHP(TCT* tct)
+{
     DBOUT(DGENERAL, outs() << pasMsg("MHP analysis\n"));
     DBOUT(DMTA, outs() << pasMsg("MHP analysis\n"));
 
     DOTIMESTAT(double mhpStart = stat->getClk());
-    MHP* mhp = new MHP(tct.get());
+    MHP* mhp = new MHP(tct);
     mhp->analyze();
     DOTIMESTAT(double mhpEnd = stat->getClk());
     DOTIMESTAT(stat->MHPTime += (mhpEnd - mhpStart) / TIMEINTERVAL);
