@@ -678,11 +678,6 @@ public:
         return typeInfo->getType();
     }
 
-    const SVFType* getVarType() const 
-    {
-        return type;
-    }
-
     /// Get the number of elements of this object
     u32_t getNumOfElements() const
     {
