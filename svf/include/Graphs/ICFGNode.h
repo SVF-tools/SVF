@@ -140,21 +140,6 @@ public:
         return isICFGNodeKinds(node->getNodeKind());
     }
 
-
-    std::string sourceLocToDBString() const
-    {
-        std::string sourceLoc = "";
-        if (getSourceLoc().empty() == false)
-        {
-            sourceLoc = ", source_loc: '" + getSourceLoc() + "'";
-        }
-        else
-        {
-            sourceLoc = ", source_loc: ''";
-        }
-        return sourceLoc;
-    }
-
 protected:
     const FunObjVar* fun;
     const SVFBasicBlock* bb;

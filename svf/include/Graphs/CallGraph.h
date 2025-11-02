@@ -225,19 +225,6 @@ public:
         return node->getNodeKind() == CallNodeKd;
     }
 
-    std::string sourceLocToDBString() const
-    {
-        std::string sourceLoc = "";
-        if (!getSourceLoc().empty())
-        {
-            sourceLoc = ", source_loc: '" + getSourceLoc() + "'";
-        }
-        else
-        {
-            sourceLoc = ", source_loc: ''";
-        }
-        return sourceLoc;
-    }
     //@}
 };
 

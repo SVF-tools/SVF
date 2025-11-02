@@ -46,21 +46,11 @@ int main(int argc, char** argv)
     // Refers to content of a singleton unique_ptr<SVFIR> in SVFIR.
     SVFIR* pag;
 
-   if (Options::ReadFromDB())
-    {
-        SVFIRBuilder builder;
-        pag = builder.build();
-        pag->setPagFromTXT("ReadFromDB");
-    }
-    else
-    {
-        LLVMModuleSet::buildSVFModule(moduleNameVec);
+    LLVMModuleSet::buildSVFModule(moduleNameVec);
 
-        /// Build SVFIR
-        SVFIRBuilder builder;
-        pag = builder.build();
-
-    }
+    /// Build SVFIR
+    SVFIRBuilder builder;
+    pag = builder.build();
 
     WPAPass wpa;
     wpa.runOnModule(pag);
