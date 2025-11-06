@@ -739,12 +739,10 @@ void CHGBuilder::addFuncToFuncVector(CHNode::FuncVector &v, const Function *lf)
 {
     if (cppUtil::isCPPThunkFunction(lf))
     {
-        if (const auto* tf = cppUtil::getThunkTarget(lf))
-        {
-            const FunObjVar* pFunction =
-                llvmModuleSet()->getFunObjVar(tf);
-            v.push_back(pFunction);
-        }
+        const auto* tf = cppUtil::getThunkTarget(lf);
+        const FunObjVar* pFunction =
+            llvmModuleSet()->getFunObjVar(tf ? tf : lf);
+        v.push_back(pFunction);
     }
     else
     {
