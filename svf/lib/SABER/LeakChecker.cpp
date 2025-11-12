@@ -295,7 +295,7 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const Fun
 
     if (expectedFailure)
     {
-        if ((getSrcCSID(source))->hasLLVMValue())
+        if (!(getSrcCSID(source))->hasLLVMValue())
         {
             outs() << sucMsg("\t EXPECTED-FAILURE :") << funName <<"\n";
             return;
@@ -306,7 +306,7 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const Fun
     }
     else
     {
-        if ((getSrcCSID(source))->hasLLVMValue())
+        if (!(getSrcCSID(source))->hasLLVMValue())
         {
             SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName <<"\n";
             assert(false && "test case failed!");
