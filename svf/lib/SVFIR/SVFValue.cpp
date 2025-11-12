@@ -46,6 +46,12 @@ const std::string SVFValue::valueOnlyToString() const
     abort();
 }
 
+__attribute__((weak))
+const bool SVFValue::hasLLVMValue() const
+{
+    assert("SVFBaseNode::hasLLVMValue should be implemented or supported by fronted" && false);
+    abort();
+}
 
 /// Add field (index and offset) with its corresponding type
 void StInfo::addFldWithType(u32_t fldIdx, const SVFType* type, u32_t elemIdx)
