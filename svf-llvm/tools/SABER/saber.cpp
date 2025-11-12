@@ -47,15 +47,9 @@ int main(int argc, char ** argv)
                         argc, argv, "Source-Sink Bug Detector", "[options] <input-bitcode...>"
                     );
 
-    SVFIRBuilder builder;
-    SVFIR* pag;
-    if (Options::WriteAnder() == "ir_annotator")
-    {
-        LLVMModuleSet::preProcessBCs(moduleNameVec);
-    }
-
     LLVMModuleSet::buildSVFModule(moduleNameVec);
-    pag = builder.build();
+    SVFIRBuilder builder;
+    SVFIR* pag = builder.build();
 
 
     std::unique_ptr<LeakChecker> saber;
@@ -76,3 +70,4 @@ int main(int argc, char ** argv)
     return 0;
 
 }
+
