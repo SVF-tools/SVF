@@ -751,4 +751,9 @@ const std::string SVFValue::valueOnlyToString() const
     return rawstr.str();
 }
 
-} // namespace SVF
+const bool SVFValue::hasLLVMValue() const
+{
+    return LLVMModuleSet::getLLVMModuleSet()->hasLLVMValue(this);
+
+} 
+}// namespace SVF

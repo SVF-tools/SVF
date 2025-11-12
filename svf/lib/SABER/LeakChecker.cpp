@@ -230,7 +230,7 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const FunObjVar* 
 
     if (success)
     {
-        if (!Options::ReadFromDB())
+        if ((getSrcCSID(source))->hasLLVMValue())
         {
             outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
                << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("
@@ -243,7 +243,7 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const FunObjVar* 
     }
     else
     {
-        if (!Options::ReadFromDB())
+        if ((getSrcCSID(source))->hasLLVMValue())
         {
             SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
                         << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("
@@ -295,7 +295,7 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const Fun
 
     if (expectedFailure)
     {
-        if (Options::ReadFromDB())
+        if ((getSrcCSID(source))->hasLLVMValue())
         {
             outs() << sucMsg("\t EXPECTED-FAILURE :") << funName <<"\n";
             return;
@@ -306,7 +306,7 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const Fun
     }
     else
     {
-        if (Options::ReadFromDB())
+        if ((getSrcCSID(source))->hasLLVMValue())
         {
             SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName <<"\n";
             assert(false && "test case failed!");

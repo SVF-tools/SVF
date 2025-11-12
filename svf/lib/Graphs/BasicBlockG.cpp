@@ -26,9 +26,5 @@ const std::string SVFBasicBlock::toString() const
 
 void BasicBlockGraph::addBasicBlock(SVFBasicBlock* bb)
 {
-    if (Options::ReadFromDB())
-    {
-        id++;
-    }
     addGNode(bb->getId(), bb);
 }

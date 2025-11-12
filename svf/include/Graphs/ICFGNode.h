@@ -634,7 +634,7 @@ protected:
     }
 
     /// Add call block node from database for the new RetICFGNode [only used this function when loading from db results]
-    inline void addCallBlockNodeFromDB(const CallICFGNode* cb)
+    inline void setCallBlockNode(const CallICFGNode* cb)
     {
         callBlockNode = cb;
     }

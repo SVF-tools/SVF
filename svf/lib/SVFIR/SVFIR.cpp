@@ -128,9 +128,7 @@ void SVFIR::addPhiStmt(PhiStmt* edge, SVFVar* src, SVFVar* dst)
 {
     SVFVar* opNode = src;
     SVFVar* resNode = dst;
-    if (Options::ReadFromDB() && phiNodeMap.count(resNode))
-        return;
-
+    
     addToStmt2TypeMap(edge);
     addEdge(opNode, resNode, edge);
     phiNodeMap[resNode] = edge;
@@ -775,12 +773,6 @@ NodeID SVFIR::addValNode(ValVar* node)
     assert(hasGNode(node->getId()) == false &&
            "This NodeID clashes here. Please check NodeIDAllocator. Switch "
            "Strategy::DBUG to SEQ or DENSE");
-    if (Options::ReadFromDB() && hasGNode(node->getId()))
-    {
-        ValVar* valvar = SVFUtil::cast<ValVar>(getGNode(node->getId()));
-        valvar->updateSVFValVarFromDB(node->getType(), node->getICFGNode());
-        return valvar->getId();
-    }
     return addNode(node);
 }
 
@@ -790,22 +782,10 @@ NodeID SVFIR::addObjNode(ObjVar* node)
     assert(hasGNode(node->getId()) == false &&
            "This NodeID clashes here. Please check NodeIDAllocator. Switch "
            "Strategy::DBUG to SEQ or DENSE");
-    if (Options::ReadFromDB() && hasGNode(node->getId()))
-    {
-        ObjVar* objVar = SVFUtil::cast<ObjVar>(getGNode(node->getId()));
-        objVar->updateObjVarFromDB(node->getType());
-        return objVar->getId();
-    }
     return addNode(node);
 }
 
 NodeID SVFIR::addDummyObjNode(DummyObjVar* node)
 {
-    if (Options::ReadFromDB() && idToObjTypeInfoMap().find(node->getId()) == idToObjTypeInfoMap().end())
-    {
-        ObjTypeInfo* ti = node->getTypeInfo();
-        idToObjTypeInfoMap()[node->getId()] = ti;
-        return addObjNode(node);
-    }
     return addObjNode(node);
 }

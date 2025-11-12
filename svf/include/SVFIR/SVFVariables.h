@@ -263,18 +263,13 @@ private:
 protected:
 
     ValVar(NodeID i, const SVFType* type, PNODEK ty = ValNode) : SVFVar(i, type, ty), icfgNode(nullptr) {}
+    inline void setICFGNode(const ICFGNode* icfgNode)
+    {
+        this->icfgNode = icfgNode;
+    }
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    inline void updateSVFValVarFromDB(const SVFType* type, const ICFGNode* icfgNode)
-    {
-        this->type = type;
-        this->icfgNode = icfgNode;
-    }
-    inline void updateSVFValVarFromDB(const ICFGNode* icfgNode)
-    {
-        this->icfgNode = icfgNode;
-    }
     static inline bool classof(const ValVar*)
     {
         return true;
@@ -331,10 +326,6 @@ protected:
     {
     }
 public:
-    void updateObjVarFromDB(const SVFType* type)
-    {
-        this->type = type;
-    }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const ObjVar*)

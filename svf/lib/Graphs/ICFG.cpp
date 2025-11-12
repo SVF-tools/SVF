@@ -239,19 +239,12 @@ ICFG::~ICFG()
 
 void ICFG::addICFGNode(ICFGNode* node)
 {
-    if (Options::ReadFromDB())
-    {
-        totalICFGNode++;
-    }
     addGNode(node->getId(),node);
 }
 
 void ICFG::addGlobalICFGNode(GlobalICFGNode* globalICFGNode)
 {
-    if (Options::ReadFromDB())
-    {
-        this->globalBlockNode = globalICFGNode;
-    }
+    this->globalBlockNode = globalICFGNode;
     addICFGNode(globalICFGNode);
 }
 

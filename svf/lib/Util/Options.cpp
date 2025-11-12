@@ -629,18 +629,6 @@ const Option<bool> Options::PrintCGGraph(
     false
 );
 
-const Option<bool> Options::Write2DB(
-    "write2db",
-    "Write Graphs' nodes & edges to a graphDB",
-    false
-);
-
-const Option<bool> Options::ReadFromDB(
-    "read-from-db",
-    "Read Graphs' nodes & edges from a graphDB",
-    false
-);
-
 const Option<std::string> Options::WriteAnder(
     "write-ander",
     "Write Andersen's analysis results to a user-specified text file",

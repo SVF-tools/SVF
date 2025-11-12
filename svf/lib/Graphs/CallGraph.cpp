@@ -160,22 +160,11 @@ CallGraph::CallGraph(const CallGraph& other)
 
 }
 
-CallSiteID CallGraph::addCallSite(const CallICFGNode* cs, const FunObjVar* callee, const CallSiteID csid)
+CallSiteID CallGraph::addCallSite(const CallICFGNode* cs, const FunObjVar* callee, const CallSiteID csid, std::pair<const CallICFGNode*, const FunObjVar*> newCS)
 {
-    std::pair<const CallICFGNode*, const FunObjVar*> newCS(std::make_pair(cs, callee));
-    if (Options::ReadFromDB())
-    {
-        CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
-        if(it != csToIdMap.end())
-        {
-            return it->second;
-        }
-        totalCallSiteNum++;
-    } 
     csToIdMap.insert(std::make_pair(newCS, csid));
     idToCSMap.insert(std::make_pair(csid, newCS));
     return csid;
-       
 }
 
 /*!
@@ -251,17 +240,7 @@ void CallGraph::addIndirectCallGraphEdge(const CallICFGNode* cs,const FunObjVar*
 
 void CallGraph::addIndirectCallGraphEdge(CallGraphEdge* cgEdge)
 {
-    if (Options::ReadFromDB())
-    {
-        if (!hasGraphEdge(cgEdge))
-        {
-            addEdge(cgEdge);
-        }   
-    }
-    else 
-    {
-        addEdge(cgEdge);
-    }
+    addEdge(cgEdge);
 }
 
 /*!
@@ -439,17 +418,7 @@ void CallGraph::addDirectCallGraphEdge(const CallICFGNode* cs,const FunObjVar* c
 
 void CallGraph::addDirectCallGraphEdge(CallGraphEdge* cgEdge)
 {
-    if (Options::ReadFromDB())
-    {
-        if (!hasGraphEdge(cgEdge))
-        {
-            addEdge(cgEdge);
-        }   
-    } 
-    else 
-    {
-        addEdge(cgEdge);
-    }   
+    addEdge(cgEdge);    
 }
 
 namespace SVF

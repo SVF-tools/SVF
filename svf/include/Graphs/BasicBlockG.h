@@ -301,9 +301,8 @@ public:
 typedef GenericGraph<SVFBasicBlock, BasicBlockEdge> GenericBasicBlockGraphTy;
 class BasicBlockGraph: public GenericBasicBlockGraphTy
 {
-private:
-    NodeID id{0};
 public:
+    NodeID id{0};
     /// Constructor
     BasicBlockGraph(): GenericBasicBlockGraphTy()
     {
