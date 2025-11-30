@@ -307,9 +307,6 @@ protected:
 
     /// Whether we have already created this call graph edge
     CallGraphEdge* hasGraphEdge(CallGraphEdge* cgEdge) const;
-
-    /// Add indirect call graph edge from database [only used this function when loading cgEdges from db results]
-    void addIndirectCallGraphEdge(CallGraphEdge* cgEdge);
 public:
     /// Constructor
     CallGraph(CGEK k = NormCallGraph);

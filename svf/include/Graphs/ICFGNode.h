@@ -192,14 +192,6 @@ class IntraICFGNode : public ICFGNode
 {
     friend class GraphDBClient;
 
-protected:
-    IntraICFGNode(NodeID id, const SVFBasicBlock* b, const FunObjVar* f, bool isReturn): ICFGNode(id, IntraBlock),isRet(isReturn)
-    {
-
-        this->fun = f;
-        this->bb = b;
-    }
-
 private:
     bool isRet;
 
@@ -279,14 +271,6 @@ public:
 class FunEntryICFGNode : public InterICFGNode
 {
     friend class GraphDBClient;
-
-protected:
-    FunEntryICFGNode(NodeID id, const FunObjVar* f, SVFBasicBlock* b)
-    : InterICFGNode(id, FunEntryBlock)
-    {
-        this->fun = f;
-        this->bb = b;
-    }
 
 public:
     typedef std::vector<const SVFVar *> FormalParmNodeVec;
@@ -439,18 +423,6 @@ protected:
     s32_t virtualFunIdx;            /// virtual function index of the virtual table(s) at a virtual call
     std::string funNameOfVcall;     /// the function name of this virtual call
     const SVFVar* indFunPtr;
-    
-    CallICFGNode(NodeID id, const SVFBasicBlock* b, const SVFType* ty,
-                 const FunObjVar* f, const FunObjVar* cf, const RetICFGNode* ret, 
-                 bool iv, bool ivc, s32_t vfi, SVFVar* vtabPtr, const std::string& fnv)
-        : InterICFGNode(id, FunCallBlock), ret(ret), calledFunc(cf),
-          isvararg(iv), isVirCallInst(ivc), vtabPtr(vtabPtr),
-          virtualFunIdx(vfi), funNameOfVcall(fnv)
-    {
-        this->fun = f;
-        this->bb = b;
-        this->type = ty;
-    }
                 
 
 public:
@@ -625,14 +597,6 @@ class RetICFGNode : public InterICFGNode
     friend class GraphDBClient;
 
 protected:
-    RetICFGNode(NodeID id, const SVFType* ty, const SVFBasicBlock* b, const FunObjVar* f) : 
-        InterICFGNode(id, FunRetBlock), actualRet(nullptr), callBlockNode(nullptr)
-    {
-        this->fun = f;
-        this->bb = b;
-        this->type = ty;
-    }
-
     /// Add call block node from database for the new RetICFGNode [only used this function when loading from db results]
     inline void setCallBlockNode(const CallICFGNode* cb)
     {
@@ -647,9 +611,12 @@ public:
     RetICFGNode(NodeID id, CallICFGNode* cb) :
         InterICFGNode(id, FunRetBlock), actualRet(nullptr), callBlockNode(cb)
     {
-        fun = cb->getFun();
-        bb = cb->getBB();
-        type = cb->getType();
+        if (nullptr != cb)
+        {
+            fun = cb->getFun();
+            bb = cb->getBB();
+            type = cb->getType();
+        }
     }
 
     inline const CallICFGNode* getCallICFGNode() const

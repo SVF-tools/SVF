@@ -233,14 +233,9 @@ void CallGraph::addIndirectCallGraphEdge(const CallICFGNode* cs,const FunObjVar*
     {
         CallGraphEdge* edge = new CallGraphEdge(caller,callee, CallGraphEdge::CallRetEdge, csId);
         edge->addInDirectCallSite(cs);
-        addIndirectCallGraphEdge(edge);
+        addEdge(edge);
         callinstToCallGraphEdgesMap[cs].insert(edge);
     }
-}
-
-void CallGraph::addIndirectCallGraphEdge(CallGraphEdge* cgEdge)
-{
-    addEdge(cgEdge);
 }
 
 /*!
