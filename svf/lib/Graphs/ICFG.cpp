@@ -46,17 +46,6 @@ FunEntryICFGNode::FunEntryICFGNode(NodeID id, const FunObjVar* f) : InterICFGNod
     }
 }
 
-FunExitICFGNode::FunExitICFGNode(NodeID id, const FunObjVar* f)
-    : InterICFGNode(id, FunExitBlock), formalRet(nullptr)
-{
-    fun = f;
-    // if function is implemented
-    if (f->begin() != f->end())
-    {
-        bb = f->getExitBB();
-    }
-}
-
 const std::string ICFGNode::toString() const
 {
     std::string str;

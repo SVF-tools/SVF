@@ -339,8 +339,6 @@ StoreStmt::StoreStmt(SVFVar* s, SVFVar* d, const ICFGNode* st)
     : AssignStmt(s, d, makeEdgeFlagWithStoreInst(SVFStmt::Store, st))
 {
 }
-StoreStmt::StoreStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode)
-: AssignStmt(s, d, k, eid, value, icfgNode) {}
 
 CallPE::CallPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
                const FunEntryICFGNode* e, GEdgeKind k)
@@ -348,11 +346,6 @@ CallPE::CallPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
 {
 }
 
-CallPE::CallPE(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const CallICFGNode* call,
-    const FunEntryICFGNode* entry): AssignStmt(s, d, k, eid, value, icfgNode), call(call), entry(entry) 
-{
-
-}
 
 RetPE::RetPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
              const FunExitICFGNode* e, GEdgeKind k)
@@ -360,8 +353,6 @@ RetPE::RetPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
 {
 }
 
-RetPE::RetPE(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const CallICFGNode* call,
-    const FunExitICFGNode* exit): AssignStmt(s, d, k, eid, value, icfgNode), call(call), exit(exit) {}
 
 MultiOpndStmt::MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k)
     : SVFStmt(opnds.at(0), r, k), opVars(opnds)

@@ -34,6 +34,7 @@
 #include "Graphs/ICFGEdge.h"
 #include "Util/WorkList.h"
 #include "MemoryModel/SVFLoop.h"
+#include "SVFIR/SVFVariables.h"
 
 namespace SVF
 {
@@ -212,7 +213,12 @@ protected:
 
     virtual inline FunExitICFGNode* addFunExitICFGNode(const FunObjVar* svfFunc)
     {
-        FunExitICFGNode* sNode = new FunExitICFGNode(totalICFGNode++, svfFunc);
+        const SVFBasicBlock* bb;
+        if (svfFunc->begin() != svfFunc->end())
+        {
+            bb = svfFunc->getExitBB();
+        }
+        FunExitICFGNode* sNode = new FunExitICFGNode(totalICFGNode++, svfFunc, bb);
         return addFunExitICFGNode(sNode);
     }
 

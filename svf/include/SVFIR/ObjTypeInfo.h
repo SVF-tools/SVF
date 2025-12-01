@@ -44,13 +44,6 @@ class ObjTypeInfo
     friend class SymbolTableBuilder;
     friend class GraphDBClient;
 
-protected:
-/// Constructors
-ObjTypeInfo(const SVFType* t, u32_t flags, u32_t max, u32_t elemNum, u32_t byteSize) : type(t), flags(flags), maxOffsetLimit(max), elemNum(elemNum), byteSize(byteSize)
-{
-    assert(t && "no type information for this object?");
-}
-
 public:
     typedef enum
     {

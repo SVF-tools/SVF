@@ -338,19 +338,16 @@ class FunExitICFGNode : public InterICFGNode
 {
     friend class GraphDBClient;
 
-protected:
-    FunExitICFGNode(NodeID id, const FunObjVar* f, SVFBasicBlock* b) 
+private:
+    const SVFVar *formalRet;
+
+public:
+    FunExitICFGNode(NodeID id, const FunObjVar* f, const SVFBasicBlock* b) 
     : InterICFGNode(id, FunExitBlock), formalRet(nullptr)
     {
         this->fun = f;
         this->bb = b;
     }
-
-private:
-    const SVFVar *formalRet;
-
-public:
-    FunExitICFGNode(NodeID id, const FunObjVar* f);
 
     /// Return function
     inline const FunObjVar* getFun() const override
