@@ -213,7 +213,7 @@ protected:
 
     virtual inline FunExitICFGNode* addFunExitICFGNode(const FunObjVar* svfFunc)
     {
-        const SVFBasicBlock* bb;
+        const SVFBasicBlock* bb = nullptr;
         if (svfFunc->begin() != svfFunc->end())
         {
             bb = svfFunc->getExitBB();
