@@ -318,12 +318,6 @@ class SVFPointerType : public SVFType
 {
 
     friend class GraphDBClient;
-protected:
-    SVFPointerType(u32_t id, u32_t byteSize, bool isSingleValTy)
-        : SVFType(isSingleValTy, SVFPointerTy, id, byteSize)
-    {
-        
-    }
 
 public:
     SVFPointerType(u32_t i, u32_t byteSize = 1)
@@ -347,11 +341,6 @@ private:
     short signAndWidth; ///< For printing
 
 protected:
-    SVFIntegerType(u32_t i, u32_t byteSize, bool isSingleValTy,short signAndWidth)
-        : SVFType(isSingleValTy, SVFIntegerTy, i, byteSize)
-    {
-        this->signAndWidth = signAndWidth;
-    }
 
     short getSignAndWidth() const
     {
@@ -396,11 +385,6 @@ protected:
         retTy = rt;
     }
 
-    SVFFunctionType(u32_t id, bool svt, u32_t byteSize)
-        : SVFType(svt, SVFFunctionTy, id, byteSize)
-    {
-    }
-
     void addParamType(const SVFType* type) 
     {
         params.push_back(type);
@@ -439,7 +423,6 @@ class SVFStructType : public SVFType
     friend class GraphDBClient;
 
 protected:
-    SVFStructType(u32_t i, bool svt, u32_t byteSize, std::string name) : SVFType(svt, SVFStructTy, i, byteSize),name(name) {}
     
     const std::string& getName() const
     {
@@ -495,11 +478,6 @@ class SVFArrayType : public SVFType
     friend class GraphDBClient;
 
 protected:
-    SVFArrayType(u32_t id, bool svt, u32_t byteSize, unsigned elemNum)
-        : SVFType(svt, SVFArrayTy, id, byteSize), numOfElement(elemNum), typeOfElement(nullptr)
-    {
-        
-    }
     const unsigned getNumOfElement() const
     {
         return numOfElement;
@@ -545,7 +523,6 @@ class SVFOtherType : public SVFType
     friend class GraphDBClient;
 
 protected:
-    SVFOtherType(u32_t i, bool isSingleValueTy, u32_t byteSize, std::string repr) : SVFType(isSingleValueTy, SVFOtherTy, i, byteSize),repr(repr) {}
     const std::string& getRepr() const
     {
         return repr;
