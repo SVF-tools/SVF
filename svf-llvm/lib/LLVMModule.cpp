@@ -45,6 +45,10 @@
 #include "Graphs/CallGraph.h"
 #include "Util/CallGraphBuilder.h"
 
+#if LLVM_VERSION_MAJOR > 16
+#include <llvm/Passes/PassBuilder.h>
+#endif
+
 using namespace std;
 using namespace SVF;
 
@@ -267,7 +271,23 @@ void LLVMModuleSet::prePassSchedule()
             Function &fun = *F;
             if (fun.isDeclaration())
                 continue;
+#if LLVM_VERSION_MAJOR <= 16
             p2->runOnFunction(fun);
+#else
+            llvm::PassBuilder PB;
+            llvm::LoopAnalysisManager LAM;
+            llvm::FunctionAnalysisManager FAM;
+            llvm::CGSCCAnalysisManager CGAM;
+            llvm::ModuleAnalysisManager MAM;
+            PB.registerModuleAnalyses(MAM);
+            PB.registerCGSCCAnalyses(CGAM);
+            PB.registerFunctionAnalyses(FAM);
+            PB.registerLoopAnalyses(LAM);
+            PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+            llvm::FunctionPassManager FPM;
+            // FPM.addPass(llvm::UnifyFunctionExitNodesPass());
+            FPM.run(fun, FAM);
+#endif
         }
     }
 }
