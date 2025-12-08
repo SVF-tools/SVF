@@ -420,25 +420,92 @@ const Value* cppUtil::getVCallThisPtr(const CallBase* cs)
     }
 }
 
+/// Check if V is derived from thisPtr
+/// Handles O0 pattern: %this1 = load ptr, ptr %this.addr
+static bool isDerivedFromThisPtr(const Argument* thisPtr, const Value* V)
+{
+    V = V->stripPointerCasts();
+    if (V == thisPtr)
+        return true;
+
+    if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(V))
+    {
+        if (const AllocaInst* alloca =
+                SVFUtil::dyn_cast<AllocaInst>(load->getPointerOperand()))
+        {
+            for (const User* U : alloca->users())
+            {
+                if (const StoreInst* store = SVFUtil::dyn_cast<StoreInst>(U))
+                {
+                    if (store->getPointerOperand() == alloca &&
+                        store->getValueOperand()->stripPointerCasts() == thisPtr)
+                        return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 /*!
- * Given a inheritance relation B is a child of A
+ * Given an inheritance relation B is a child of A
  * We assume B::B(thisPtr1){ A::A(thisPtr2) } such that thisPtr1 == thisPtr2
- * In the following code thisPtr1 is "%class.B1* %this" and thisPtr2 is
- * "%class.A* %0".
  *
+ * === Typed pointer mode ===
+ * %this.addr = alloca %class.B1*
+ * store %class.B1* %this, %class.B1** %this.addr
+ * %this1 = load %class.B1*, %class.B1** %this.addr
+ * %0 = bitcast %class.B1* %this1 to %class.A*
+ * call void @A::A()(%class.A* %0)
  *
- * define linkonce_odr dso_local void @B1::B1()(%class.B1* %this) unnamed_addr #6 comdat
- *   %this.addr = alloca %class.B1*, align 8
- *   store %class.B1* %this, %class.B1** %this.addr, align 8
- *   %this1 = load %class.B1*, %class.B1** %this.addr, align 8
- *   %0 = bitcast %class.B1* %this1 to %class.A*
- *   call void @A::A()(%class.A* %0)
+ * === Opaque pointer mode ===
+ *
+ * Case 1: Primary base class (offset 0) at O1+
+ *   call ptr @Base::Base(ptr %this)
+ *   → thisPtr2 == thisPtr1, return true
+ *
+ * Case 2: Primary base class (offset 0) at O0
+ *   %this.addr = alloca ptr
+ *   store ptr %this, ptr %this.addr
+ *   %this1 = load ptr, ptr %this.addr
+ *   call void @Base::Base(ptr %this1)
+ *   → thisPtr2 is LoadInst from alloca storing thisPtr1, return true
+ *
+ * Case 3: Non-primary base class (multiple inheritance, offset > 0)
+ *   %0 = getelementptr inbounds i8, ptr %this1, i64 4
+ *   call void @Base2::Base2(ptr %0)
+ *   → i8 GEP from this, return true
+ *
+ * Case 4: Member field initialization (NOT base class)
+ *   %mem = getelementptr inbounds %struct.Derived, ptr %this1, i32 0, i32 1
+ *   call void @Member::Member(ptr %mem)
+ *   → struct GEP from this, return false
  */
 bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1,
         const Value* thisPtr2)
 {
     if (thisPtr1 == thisPtr2)
         return true;
+
+    const Value* stripped = thisPtr2->stripPointerCasts();
+    if (stripped == thisPtr1)
+        return true;
+
+    // === Opaque pointer: Load from this.addr (Case 2: primary base at O0) ===
+    if (isDerivedFromThisPtr(thisPtr1, stripped))
+        return true;
+
+    // === Opaque pointer: GEP check (Case 3 & 4) ===
+    if (const GetElementPtrInst* GEP = SVFUtil::dyn_cast<GetElementPtrInst>(stripped))
+    {
+        if (!isDerivedFromThisPtr(thisPtr1, GEP->getPointerOperand()))
+            return false;
+        // i8 GEP = non-primary base class (Case 3)
+        // struct GEP = member field (Case 4)
+        return GEP->getSourceElementType()->isIntegerTy(8);
+    }
+
+    // === Typed pointer (legacy): store -> load -> bitcast ===
     for (const Value* thisU : thisPtr1->users())
     {
         if (const StoreInst* store = SVFUtil::dyn_cast<StoreInst>(thisU))
@@ -463,7 +530,11 @@ const Argument* cppUtil::getConstructorThisPtr(const Function* fun)
     assert((isConstructor(fun) || isDestructor(fun)) &&
            "not a constructor?");
     assert(fun->arg_size() >= 1 && "argument size >= 1?");
-    const Argument* thisPtr = &*(fun->arg_begin());
+    const bool isStructRet = fun->hasParamAttribute(0, llvm::Attribute::StructRet);
+    assert((isStructRet ? fun->arg_size() >= 2 : true) &&
+           "argument size for struct ret constructor >= 2?");
+    const Argument* thisPtr = isStructRet ?
+                              fun->getArg(1) : fun->getArg(0);
     return thisPtr;
 }
 
