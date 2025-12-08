@@ -431,14 +431,14 @@ static bool isDerivedFromThisPtr(const Argument* thisPtr, const Value* V)
     if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(V))
     {
         if (const AllocaInst* alloca =
-                SVFUtil::dyn_cast<AllocaInst>(load->getPointerOperand()))
+                    SVFUtil::dyn_cast<AllocaInst>(load->getPointerOperand()))
         {
             for (const User* U : alloca->users())
             {
                 if (const StoreInst* store = SVFUtil::dyn_cast<StoreInst>(U))
                 {
                     if (store->getPointerOperand() == alloca &&
-                        store->getValueOperand()->stripPointerCasts() == thisPtr)
+                            store->getValueOperand()->stripPointerCasts() == thisPtr)
                         return true;
                 }
             }
