@@ -897,8 +897,8 @@ public:
     //@}
 
     /// constructor
-    PhiStmt(SVFVar* s, const OPVars& opnds, const OpICFGNodeVec& icfgNodes)
-        : MultiOpndStmt(s, opnds, SVFStmt::Phi), opICFGNodes(icfgNodes)
+    PhiStmt(SVFVar* res, const OPVars& opnds, const OpICFGNodeVec& icfgNodes)
+        : MultiOpndStmt(res, opnds, SVFStmt::Phi), opICFGNodes(icfgNodes)
     {
         assert(opnds.size() == icfgNodes.size() &&
                "Numbers of operands and their ICFGNodes are not consistent?");
@@ -971,7 +971,7 @@ public:
     //@}
 
     /// constructor
-    SelectStmt(SVFVar* s, const OPVars& opnds, const SVFVar* cond);
+    SelectStmt(SVFVar* res, const OPVars& opnds, const SVFVar* cond);
     virtual const std::string toString() const override;
 
     inline const SVFVar* getCondition() const
@@ -1061,7 +1061,7 @@ public:
     //@}
 
     /// constructor
-    CmpStmt(SVFVar* s, const OPVars& opnds, u32_t pre);
+    CmpStmt(SVFVar* res, const OPVars& opnds, u32_t pre);
 
     u32_t getPredicate() const
     {
@@ -1128,7 +1128,7 @@ public:
     //@}
 
     /// constructor
-    BinaryOPStmt(SVFVar* s, const OPVars& opnds, u32_t oc);
+    BinaryOPStmt(SVFVar* res, const OPVars& opnds, u32_t oc);
 
     u32_t getOpcode() const
     {
