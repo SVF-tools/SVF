@@ -233,8 +233,8 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const FunObjVar* 
         if ((getSrcCSID(source))->hasLLVMValue())
         {
             outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("
-               << cs->getSourceLoc() << ")\n";
+                   << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("
+                   << cs->getSourceLoc() << ")\n";
         }
         else
         {
@@ -246,8 +246,8 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const FunObjVar* 
         if ((getSrcCSID(source))->hasLLVMValue())
         {
             SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
-                        << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("
-                        << cs->getSourceLoc() << ")\n";
+                            << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("
+                            << cs->getSourceLoc() << ")\n";
             assert(false && "test case failed!");
         }
         else

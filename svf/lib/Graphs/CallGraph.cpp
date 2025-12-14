@@ -413,7 +413,7 @@ void CallGraph::addDirectCallGraphEdge(const CallICFGNode* cs,const FunObjVar* c
 
 void CallGraph::addDirectCallGraphEdge(CallGraphEdge* cgEdge)
 {
-    addEdge(cgEdge);    
+    addEdge(cgEdge);
 }
 
 namespace SVF

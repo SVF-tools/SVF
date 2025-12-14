@@ -755,5 +755,5 @@ const bool SVFValue::hasLLVMValue() const
 {
     return LLVMModuleSet::getLLVMModuleSet()->hasLLVMValue(this);
 
-} 
+}
 }// namespace SVF

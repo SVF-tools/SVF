@@ -51,9 +51,9 @@ class StInfo
 
 protected:
     StInfo (u32_t id, std::vector<u32_t> fldIdxVec, std::vector<u32_t> elemIdxVec, Map<u32_t, const SVFType*> fldIdx2TypeMap,
-    std::vector<const SVFType*> finfo,u32_t stride,u32_t numOfFlattenElements,u32_t numOfFlattenFields, std::vector<const SVFType*> flattenElementTypes )
-    :StInfoId(id), fldIdxVec(fldIdxVec), elemIdxVec(elemIdxVec), fldIdx2TypeMap(fldIdx2TypeMap), finfo(finfo), stride(stride), 
-    numOfFlattenElements(numOfFlattenElements), numOfFlattenFields(numOfFlattenFields), flattenElementTypes(flattenElementTypes)
+            std::vector<const SVFType*> finfo,u32_t stride,u32_t numOfFlattenElements,u32_t numOfFlattenFields, std::vector<const SVFType*> flattenElementTypes )
+        :StInfoId(id), fldIdxVec(fldIdxVec), elemIdxVec(elemIdxVec), fldIdx2TypeMap(fldIdx2TypeMap), finfo(finfo), stride(stride),
+         numOfFlattenElements(numOfFlattenElements), numOfFlattenFields(numOfFlattenFields), flattenElementTypes(flattenElementTypes)
     {
 
     }
@@ -385,7 +385,7 @@ protected:
         retTy = rt;
     }
 
-    void addParamType(const SVFType* type) 
+    void addParamType(const SVFType* type)
     {
         params.push_back(type);
     }
@@ -423,13 +423,13 @@ class SVFStructType : public SVFType
     friend class GraphDBClient;
 
 protected:
-    
+
     const std::string& getName() const
     {
         return name;
     }
 
-    void addFieldsType(const SVFType* type) 
+    void addFieldsType(const SVFType* type)
     {
         fields.push_back(type);
     }

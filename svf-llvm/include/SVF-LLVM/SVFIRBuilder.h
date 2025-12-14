@@ -46,7 +46,7 @@ namespace SVF
  */
 class SVFIRBuilder: public llvm::InstVisitor<SVFIRBuilder>
 {
-friend class GraphDBSVFIRBuilder;
+    friend class GraphDBSVFIRBuilder;
 
 private:
     SVFIR* pag;

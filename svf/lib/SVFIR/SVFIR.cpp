@@ -128,7 +128,7 @@ void SVFIR::addPhiStmt(PhiStmt* edge, SVFVar* src, SVFVar* dst)
 {
     SVFVar* opNode = src;
     SVFVar* resNode = dst;
-    
+
     addToStmt2TypeMap(edge);
     addEdge(opNode, resNode, edge);
     phiNodeMap[resNode] = edge;
@@ -230,8 +230,8 @@ UnaryOPStmt* SVFIR::addUnaryOPStmt(NodeID src, NodeID dst, u32_t opcode)
 
 void SVFIR::addUnaryOPStmt(UnaryOPStmt* edge, SVFVar* src, SVFVar* dst)
 {
-        addToStmt2TypeMap(edge);
-        addEdge(src, dst, edge);
+    addToStmt2TypeMap(edge);
+    addEdge(src, dst, edge);
 }
 
 /*
@@ -293,15 +293,15 @@ StoreStmt* SVFIR::addStoreStmt(NodeID src, NodeID dst, const ICFGNode* curVal)
     else
     {
         StoreStmt* storePE = new StoreStmt(srcNode, dstNode, curVal);
-       addStoreStmt(storePE,srcNode,dstNode);
+        addStoreStmt(storePE,srcNode,dstNode);
         return storePE;
     }
 }
 
 void SVFIR::addStoreStmt(StoreStmt* edge, SVFVar* src, SVFVar* dst)
 {
-        addToStmt2TypeMap(edge);
-        addEdge(src,dst, edge);
+    addToStmt2TypeMap(edge);
+    addEdge(src,dst, edge);
 }
 
 /*!

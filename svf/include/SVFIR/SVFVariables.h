@@ -77,7 +77,7 @@ protected:
         return InEdgeKindToSetMap;
     }
 
-    
+
     inline const SVFStmt::KindToSVFStmtMapTy& getOutEdgeKindToSetMap() const
     {
         return OutEdgeKindToSetMap;
@@ -543,7 +543,7 @@ public:
     /// Get the LLVM variable ID associated with this GepValVar
     inline NodeID getLLVMVarInstID() const
     {
-        return llvmVarID;   
+        return llvmVarID;
     }
 
     /// Set the LLVM variable ID associated with this GepValVar

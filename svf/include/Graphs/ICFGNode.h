@@ -342,8 +342,8 @@ private:
     const SVFVar *formalRet;
 
 public:
-    FunExitICFGNode(NodeID id, const FunObjVar* f, const SVFBasicBlock* b) 
-    : InterICFGNode(id, FunExitBlock), formalRet(nullptr)
+    FunExitICFGNode(NodeID id, const FunObjVar* f, const SVFBasicBlock* b)
+        : InterICFGNode(id, FunExitBlock), formalRet(nullptr)
     {
         this->fun = f;
         this->bb = b;
@@ -420,7 +420,7 @@ protected:
     s32_t virtualFunIdx;            /// virtual function index of the virtual table(s) at a virtual call
     std::string funNameOfVcall;     /// the function name of this virtual call
     const SVFVar* indFunPtr;
-                
+
 
 public:
     CallICFGNode(NodeID id, const SVFBasicBlock* b, const SVFType* ty,

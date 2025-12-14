@@ -56,7 +56,7 @@ SVFIR* SVFIRBuilder::build()
     double startTime = SVFStat::getClk(true);
 
     DBOUT(DGENERAL, outs() << pasMsg("\t Building SVFIR ...\n"));
-    
+
     // If the SVFIR has been built before, then we return the unique SVFIR of the program
     if(pag->getNodeNumAfterPAGBuild() > 1)
         return pag;

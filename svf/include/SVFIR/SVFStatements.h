@@ -785,7 +785,7 @@ public:
 class MultiOpndStmt : public SVFStmt
 {
     friend class GraphDBClient;
-    
+
 
 
 public:

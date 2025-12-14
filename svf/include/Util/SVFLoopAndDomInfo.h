@@ -55,42 +55,42 @@ private:
     Map<const SVFBasicBlock*, LoopBBs> bb2LoopMap;  ///< map a BasicBlock (if it is in a loop) to all the BasicBlocks in this loop
     Map<const SVFBasicBlock*, u32_t> bb2PdomLevel;  ///< map a BasicBlock to its level in pdom tree, used in findNearestCommonPDominator
     Map<const SVFBasicBlock*, const SVFBasicBlock*> bb2PIdom;  ///< map a BasicBlock to its immediate dominator in pdom tree, used in findNearestCommonPDominator
-    
+
 protected:
-inline void setDomTreeMap(Map<const SVFBasicBlock*,BBSet>& dtMap)
-{
-    dtBBsMap = dtMap;
-}
+    inline void setDomTreeMap(Map<const SVFBasicBlock*,BBSet>& dtMap)
+    {
+        dtBBsMap = dtMap;
+    }
 
-inline void setPostDomTreeMap(Map<const SVFBasicBlock*,BBSet>& pdtMap)
-{
-    pdtBBsMap = pdtMap;
-}
+    inline void setPostDomTreeMap(Map<const SVFBasicBlock*,BBSet>& pdtMap)
+    {
+        pdtBBsMap = pdtMap;
+    }
 
-inline void setDomFrontierMap(Map<const SVFBasicBlock*,BBSet>& dfMap)
-{
-    dfBBsMap = dfMap;
-}
+    inline void setDomFrontierMap(Map<const SVFBasicBlock*,BBSet>& dfMap)
+    {
+        dfBBsMap = dfMap;
+    }
 
-inline void setBB2LoopMap(Map<const SVFBasicBlock*, LoopBBs>& bb2Loop)
-{
-    bb2LoopMap = bb2Loop;
-}
+    inline void setBB2LoopMap(Map<const SVFBasicBlock*, LoopBBs>& bb2Loop)
+    {
+        bb2LoopMap = bb2Loop;
+    }
 
-inline void setBB2PdomLevel(Map<const SVFBasicBlock*, u32_t>& bb2Pdom)
-{
-    bb2PdomLevel = bb2Pdom;
-}
+    inline void setBB2PdomLevel(Map<const SVFBasicBlock*, u32_t>& bb2Pdom)
+    {
+        bb2PdomLevel = bb2Pdom;
+    }
 
-inline void setBB2PIdom(Map<const SVFBasicBlock*, const SVFBasicBlock*>& bb2PIdomMap)
-{
-    bb2PIdom = bb2PIdomMap;
-}
+    inline void setBB2PIdom(Map<const SVFBasicBlock*, const SVFBasicBlock*>& bb2PIdomMap)
+    {
+        bb2PIdom = bb2PIdomMap;
+    }
 
-inline const Map<const SVFBasicBlock*, LoopBBs>& getBB2LoopMap() const
-{
-    return bb2LoopMap;
-}
+    inline const Map<const SVFBasicBlock*, LoopBBs>& getBB2LoopMap() const
+    {
+        return bb2LoopMap;
+    }
 
 public:
     SVFLoopAndDomInfo()
@@ -108,7 +108,7 @@ public:
     {
         return dfBBsMap;
     }
-    
+
     inline bool hasLoopInfo(const SVFBasicBlock* bb) const
     {
         return bb2LoopMap.find(bb) != bb2LoopMap.end();
