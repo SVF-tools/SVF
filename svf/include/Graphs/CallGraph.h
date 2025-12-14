@@ -224,6 +224,7 @@ public:
     {
         return node->getNodeKind() == CallNodeKd;
     }
+
     //@}
 };
 
@@ -233,6 +234,8 @@ public:
 typedef GenericGraph<CallGraphNode, CallGraphEdge> GenericPTACallGraphTy;
 class CallGraph : public GenericPTACallGraphTy
 {
+    friend class GraphDBClient;
+
 
 public:
     typedef CallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
@@ -281,12 +284,13 @@ protected:
         if(it == csToIdMap.end())
         {
             CallSiteID id = totalCallSiteNum++;
-            csToIdMap.insert(std::make_pair(newCS, id));
-            idToCSMap.insert(std::make_pair(id, newCS));
+            addCallSite(cs,callee,id, newCS);
             return id;
         }
         return it->second;
     }
+
+    CallSiteID addCallSite(const CallICFGNode* cs, const FunObjVar* callee, const CallSiteID csid, std::pair<const CallICFGNode*, const FunObjVar*> newCS);
 
     /// Add call graph edge
     inline void addEdge(CallGraphEdge* edge)
@@ -295,6 +299,14 @@ protected:
         edge->getSrcNode()->addOutgoingEdge(edge);
     }
 
+    /// add direct call graph edge from database [only used this function when loading cgEdges from db results]
+    void addDirectCallGraphEdge(CallGraphEdge* cgEdge);
+
+    /// add call graph node from database [only used this function when loading cgNodes from db results]
+    void addCallGraphNode(CallGraphNode* cgNode);
+
+    /// Whether we have already created this call graph edge
+    CallGraphEdge* hasGraphEdge(CallGraphEdge* cgEdge) const;
 public:
     /// Constructor
     CallGraph(CGEK k = NormCallGraph);

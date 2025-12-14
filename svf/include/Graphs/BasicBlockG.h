@@ -74,6 +74,7 @@ class SVFBasicBlock : public GenericBasicBlockNodeTy
     friend class FunObjVar;
     friend class ICFGBuilder;
     friend class ICFG;
+    friend class GraphDBClient;
 
 public:
     typedef std::vector<const ICFGNode*>::const_iterator const_iterator;
@@ -97,6 +98,17 @@ protected:
     }
 
     /// @}
+
+    // Getters of predecessor and successor basic blocks, used for writing bb to DB
+    const std::vector<const SVFBasicBlock*> getSuccBBs() const
+    {
+        return succBBs;
+    }
+
+    const std::vector<const SVFBasicBlock*> getPredBBs() const
+    {
+        return predBBs;
+    }
 
 public:
     /// Constructor without name
@@ -289,23 +301,25 @@ public:
 typedef GenericGraph<SVFBasicBlock, BasicBlockEdge> GenericBasicBlockGraphTy;
 class BasicBlockGraph: public GenericBasicBlockGraphTy
 {
-private:
-    NodeID id{0};
 public:
+    NodeID id{0};
     /// Constructor
-    BasicBlockGraph()
+    BasicBlockGraph(): GenericBasicBlockGraphTy()
     {
 
     }
+
 
     SVFBasicBlock* addBasicBlock(const std::string& bbname)
     {
         id++;
         SVFBasicBlock* bb = new SVFBasicBlock(id, nullptr);
-        addGNode(id, bb);
         bb->setName(bbname);
+        addBasicBlock(bb);
         return bb;
     }
+
+    void addBasicBlock(SVFBasicBlock* bb);
 
 };
 }

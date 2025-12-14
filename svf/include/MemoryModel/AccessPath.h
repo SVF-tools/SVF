@@ -51,7 +51,7 @@ class SVFVar;
 */
 class AccessPath
 {
-
+    friend class GraphDBClient;
 public:
     enum LSRelation
     {
@@ -160,6 +160,12 @@ public:
 
     /// Dump location set
     std::string dump() const;
+
+protected:
+    inline void addIdxOperandPair(std::pair<const SVFVar*, const SVFType*> pair)
+    {
+        idxOperandPairs.push_back(pair);
+    }
 
 private:
 

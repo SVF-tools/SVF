@@ -42,6 +42,7 @@ namespace SVF
 class ObjTypeInfo
 {
     friend class SymbolTableBuilder;
+    friend class GraphDBClient;
 
 public:
     typedef enum
@@ -147,6 +148,10 @@ public:
     inline void setFlag(MEMTYPE mask)
     {
         flags |= mask;
+    }
+    inline u32_t getFlag() const
+    {
+        return flags;
     }
     inline bool hasFlag(MEMTYPE mask)
     {

@@ -230,16 +230,31 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const FunObjVar* 
 
     if (success)
     {
-        outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
+        if ((getSrcCSID(source))->hasLLVMValue())
+        {
+            outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
                << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("
                << cs->getSourceLoc() << ")\n";
+        }
+        else
+        {
+            outs() << sucMsg("\t SUCCESS :") << funName<<"\n";
+        }
     }
     else
     {
-        SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
+        if ((getSrcCSID(source))->hasLLVMValue())
+        {
+            SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
                         << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("
                         << cs->getSourceLoc() << ")\n";
-        assert(false && "test case failed!");
+            assert(false && "test case failed!");
+        }
+        else
+        {
+            SVFUtil::errs() << errMsg("\t FAILURE :") << funName <<  "\n";
+            assert(false && "test case failed!");
+        }
     }
 }
 
@@ -280,12 +295,23 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const Fun
 
     if (expectedFailure)
     {
+        if (!(getSrcCSID(source))->hasLLVMValue())
+        {
+            outs() << sucMsg("\t EXPECTED-FAILURE :") << funName <<"\n";
+            return;
+        }
         outs() << sucMsg("\t EXPECTED-FAILURE :") << funName << " check <src id:" << source->getId()
                << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("
                << cs->getSourceLoc() << ")\n";
     }
     else
     {
+        if (!(getSrcCSID(source))->hasLLVMValue())
+        {
+            SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName <<"\n";
+            assert(false && "test case failed!");
+            return;
+        }
         SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName
                         << " check <src id:" << source->getId()
                         << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("

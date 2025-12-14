@@ -93,6 +93,11 @@ void DoubleFreeChecker::validateSuccessTests(ProgSlice *slice, const FunObjVar *
 
     if (success)
     {
+        if (!(getSrcCSID(source))->hasLLVMValue())
+        {
+            outs() << sucMsg("\t SUCCESS :") << funName<<"\n";
+            return;
+        }
         outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
                << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("
                << cs->getSourceLoc() << ")\n";
@@ -100,6 +105,11 @@ void DoubleFreeChecker::validateSuccessTests(ProgSlice *slice, const FunObjVar *
     }
     else
     {
+        if (!(getSrcCSID(source))->hasLLVMValue())
+        {
+            SVFUtil::errs() << errMsg("\t FAILURE :") << funName <<  "\n";
+            return;
+        }
         SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
                         << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("
                         << cs->getSourceLoc() << ")\n";
@@ -139,6 +149,11 @@ void DoubleFreeChecker::validateExpectedFailureTests(ProgSlice *slice, const Fun
 
     if (expectedFailure)
     {
+        if (!(getSrcCSID(source))->hasLLVMValue())
+        {
+            outs() << sucMsg("\t EXPECTED-FAILURE :") << funName <<"\n";
+            return;
+        }
         outs() << sucMsg("\t EXPECTED-FAILURE :") << funName << " check <src id:" << source->getId()
                << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("
                << cs->getSourceLoc() << ")\n";
@@ -146,6 +161,12 @@ void DoubleFreeChecker::validateExpectedFailureTests(ProgSlice *slice, const Fun
     }
     else
     {
+        if (!(getSrcCSID(source))->hasLLVMValue())
+        {
+            SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName <<"\n";
+            assert(false && "test case failed!");
+            return;
+        }
         SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName
                         << " check <src id:" << source->getId()
                         << ", cs id:" << (getSrcCSID(source))->valueOnlyToString() << "> at ("

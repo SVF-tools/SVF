@@ -52,6 +52,7 @@ class IRGraph : public GenericGraph<SVFVar, SVFStmt>
 {
     friend class SVFIRBuilder;
     friend class SymbolTableBuilder;
+    friend class GraphDBClient;
 
 public:
 
@@ -129,6 +130,7 @@ protected:
     /// blocks, thus flags are needed to distinguish them
     SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind,
                             const ICFGNode* cs);
+    SVFStmt* hasEdge(SVFStmt* edge, SVFStmt::PEDGEK kind);
     /// Return MultiOpndStmt since it has more than one operands (we use operand
     /// 2 here to make the flag)
     SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind,
@@ -270,6 +272,15 @@ public:
         return svfTypes;
     }
 
+    inline const SVFType* getSVFType(u32_t id) const
+    {
+        for(const SVFType* type : svfTypes)
+        {
+            if(type->getId() == id)
+                return type;
+        }
+        return nullptr;
+    }
     inline const Set<const StInfo*>& getStInfos() const
     {
         return stInfos;
@@ -360,6 +371,7 @@ public:
 
     inline void addStInfo(StInfo* stInfo)
     {
+        stInfo->setStinfoId(stInfos.size());
         stInfos.insert(stInfo);
     }
 

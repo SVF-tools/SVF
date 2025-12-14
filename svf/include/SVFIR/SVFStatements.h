@@ -51,6 +51,7 @@ class SVFBasicBlock;
 typedef GenericEdge<SVFVar> GenericPAGEdgeTy;
 class SVFStmt : public GenericPAGEdgeTy
 {
+    friend class GraphDBClient;
 
 public:
     /// Types of SVFIR statements
@@ -89,8 +90,54 @@ protected:
     {
     }
 
+    SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, bool real = true);
+
+    /**
+     * Set the SVF BasicBlock for the new statements, this is used when loading statements from DB
+     */
+    inline void setBasicBlock(const SVFBasicBlock* bb)
+    {
+        basicBlock = bb;
+    }
+
+    /**
+     * set the call edge lanbel counter for the new statements, this is used when loading statements from DB
+     */
+    inline void setCallEdgeLabelCounter(u64_t counter)
+    {
+        callEdgeLabelCounter = counter;
+    }
+
+    /**
+     * set the store edge lanbel counter for the new statements, this is used when loading statements from DB
+     */
+    inline void setStoreEdgeLabelCounter(u64_t counter)
+    {
+        storeEdgeLabelCounter = counter;
+    }
+
+    /**
+     * set the multi operand edge lanbel counter for the new statements, this is used when loading statements from DB
+     */
+    inline void setMultiOpndLabelCounter(u64_t counter)
+    {
+        multiOpndLabelCounter = counter;
+    }
+
+    /**
+     * Add a call site Instruction to label mapping, this is used when loading statements from DB
+     */
+    static inline void addInst2Labeled(const ICFGNode* cs, u32_t label)
+    {
+        inst2LabelMap.emplace(cs, label);
+    }
+
+    static inline void addVar2Labeled(const SVFVar* var, u32_t label)
+    {
+        var2LabelMap.emplace(var, label);
+    }
+
 public:
-    static u32_t totalEdgeNum; ///< Total edge number
 
     /// Constructor
     SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, bool real = true);
@@ -222,6 +269,33 @@ private:
     static u64_t callEdgeLabelCounter;  ///< Call site Instruction counter
     static u64_t storeEdgeLabelCounter;  ///< Store Instruction counter
     static u64_t multiOpndLabelCounter;  ///< MultiOpndStmt counter
+
+public:
+    static inline const Inst2LabelMap* getInst2LabelMap()
+    {
+        return &inst2LabelMap;
+    }
+
+    static inline const Var2LabelMap* getVar2LabelMap()
+    {
+        return &var2LabelMap;
+    }
+
+    static inline const u64_t* getCallEdgeLabelCounter()
+    {
+        return &callEdgeLabelCounter;
+    }
+
+    static inline const u64_t* getStoreEdgeLabelCounter()
+    {
+        return &storeEdgeLabelCounter;
+    }
+
+    static inline const u64_t* getMultiOpndLabelCounter()
+    {
+        return &multiOpndLabelCounter;
+    }
+
 };
 
 /*
@@ -231,6 +305,7 @@ private:
 */
 class AssignStmt : public SVFStmt
 {
+    friend class GraphDBClient;
 
 private:
     AssignStmt();                      ///< place holder
@@ -303,6 +378,7 @@ public:
  */
 class AddrStmt: public AssignStmt
 {
+    friend class GraphDBClient;
 
 private:
     AddrStmt(const AddrStmt&);       ///< place holder
@@ -354,6 +430,8 @@ public:
  */
 class CopyStmt: public AssignStmt
 {
+
+    friend class GraphDBClient;
 
 private:
     CopyStmt(const CopyStmt&);       ///< place holder
@@ -430,6 +508,7 @@ public:
     CopyStmt(SVFVar* s, SVFVar* d, CopyKind k) : AssignStmt(s, d, SVFStmt::Copy), copyKind(k) {}
 
     virtual const std::string toString() const override;
+
 private:
     u32_t copyKind;
 };
@@ -439,6 +518,7 @@ private:
  */
 class StoreStmt: public AssignStmt
 {
+    friend class GraphDBClient;
 
 private:
     StoreStmt(const StoreStmt&);      ///< place holder
@@ -465,6 +545,7 @@ public:
     StoreStmt(SVFVar* s, SVFVar* d, const ICFGNode* st);
 
     virtual const std::string toString() const override;
+
 };
 
 /*!
@@ -472,6 +553,7 @@ public:
  */
 class LoadStmt: public AssignStmt
 {
+    friend class GraphDBClient;
 
 private:
     LoadStmt(const LoadStmt&);       ///< place holder
@@ -505,6 +587,8 @@ public:
  */
 class GepStmt: public AssignStmt
 {
+    friend class GraphDBClient;
+
 
 private:
     GepStmt(const GepStmt &);  ///< place holder
@@ -578,6 +662,7 @@ public:
 
     virtual const std::string toString() const;
 
+
 };
 
 
@@ -586,6 +671,7 @@ public:
  */
 class CallPE: public AssignStmt
 {
+    friend class GraphDBClient;
 
 private:
     CallPE(const CallPE&);         ///< place holder
@@ -641,6 +727,7 @@ public:
  */
 class RetPE: public AssignStmt
 {
+    friend class GraphDBClient;
 
 private:
     RetPE(const RetPE&);          ///< place holder
@@ -689,6 +776,7 @@ public:
     //@}
 
     virtual const std::string toString() const override;
+
 };
 
 /*
@@ -696,6 +784,9 @@ public:
 */
 class MultiOpndStmt : public SVFStmt
 {
+    friend class GraphDBClient;
+    
+
 
 public:
     typedef std::vector<SVFVar*> OPVars;
@@ -774,7 +865,7 @@ public:
  */
 class PhiStmt: public MultiOpndStmt
 {
-
+    friend class GraphDBClient;
 public:
     typedef std::vector<const ICFGNode*> OpICFGNodeVec;
 
@@ -820,6 +911,18 @@ public:
                "Numbers of operands and their ICFGNodes are not consistent?");
     }
 
+    void setOpICFGNodeVec(OpICFGNodeVec& icfgNodes)
+    {
+        assert(opVars.size() == icfgNodes.size() &&
+               "Numbers of operands and their ICFGNodes are not consistent?");
+        opICFGNodes = icfgNodes;
+    }
+
+    inline const OpICFGNodeVec* getOpICFGNodeVec() const
+    {
+        return &opICFGNodes;
+    }
+
     /// Return the corresponding ICFGNode of this operand
     inline const ICFGNode* getOpICFGNode(u32_t op_idx) const
     {
@@ -831,6 +934,7 @@ public:
     bool isFunctionRetPhi() const;
 
     virtual const std::string toString() const override;
+
 };
 
 /*!
@@ -838,7 +942,7 @@ public:
  */
 class SelectStmt: public MultiOpndStmt
 {
-
+    friend class GraphDBClient;
 private:
     SelectStmt(const SelectStmt&);     ///< place holder
     void operator=(const SelectStmt&); ///< place holder
@@ -882,6 +986,7 @@ public:
     {
         return getOpVar(1);
     }
+
 };
 
 /*!
@@ -889,7 +994,7 @@ public:
  */
 class CmpStmt: public MultiOpndStmt
 {
-
+    friend class GraphDBClient;
 private:
     CmpStmt(const CmpStmt&);        ///< place holder
     void operator=(const CmpStmt&); ///< place holder
@@ -964,6 +1069,7 @@ public:
     }
 
     virtual const std::string toString() const override;
+
 };
 
 /*!
@@ -971,7 +1077,7 @@ public:
  */
 class BinaryOPStmt: public MultiOpndStmt
 {
-
+    friend class GraphDBClient;
 private:
     BinaryOPStmt(const BinaryOPStmt&);   ///< place holder
     void operator=(const BinaryOPStmt&); ///< place holder
@@ -1030,6 +1136,7 @@ public:
     }
 
     virtual const std::string toString() const override;
+
 };
 
 /*!
@@ -1037,6 +1144,7 @@ public:
  */
 class UnaryOPStmt: public SVFStmt
 {
+    friend class GraphDBClient;
 
 private:
     UnaryOPStmt(const UnaryOPStmt&);    ///< place holder
@@ -1093,6 +1201,7 @@ public:
     NodeID getResID() const;
 
     virtual const std::string toString() const override;
+
 };
 
 /*!
@@ -1100,6 +1209,7 @@ public:
  */
 class BranchStmt: public SVFStmt
 {
+    friend class GraphDBClient;
 
 public:
     typedef std::vector<std::pair<const ICFGNode*, s32_t>> SuccAndCondPairVec;
@@ -1179,6 +1289,7 @@ public:
     }
     //@}
     virtual const std::string toString() const override;
+
 };
 
 /*!
@@ -1186,6 +1297,7 @@ public:
  */
 class TDForkPE: public CallPE
 {
+    friend class GraphDBClient;
 
 private:
     TDForkPE(const TDForkPE&);       ///< place holder
@@ -1216,6 +1328,7 @@ public:
     }
 
     virtual const std::string toString() const;
+
 };
 
 /*!
@@ -1223,6 +1336,7 @@ public:
  */
 class TDJoinPE: public RetPE
 {
+    friend class GraphDBClient;
 
 private:
     TDJoinPE(const TDJoinPE&);       ///< place holder
@@ -1253,6 +1367,7 @@ public:
     }
 
     virtual const std::string toString() const;
+
 };
 
 } // End namespace SVF

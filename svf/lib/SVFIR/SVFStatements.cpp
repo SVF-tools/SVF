@@ -55,6 +55,16 @@ SVFStmt::SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, bool real) :
     }
 }
 
+SVFStmt::SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, bool real) :
+GenericPAGEdgeTy(s,d,k),value(value),basicBlock(nullptr),icfgNode(icfgNode),edgeId(eid)
+{
+    if(real)
+    {
+        edgeId = eid;
+        SVFIR::getPAG()->incEdgeNum();
+    }
+}
+
 /*!
  * Whether src and dst nodes are both pointer type
  */
@@ -336,11 +346,13 @@ CallPE::CallPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
 {
 }
 
+
 RetPE::RetPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
              const FunExitICFGNode* e, GEdgeKind k)
     : AssignStmt(s, d, makeEdgeFlagWithCallInst(k, i)), call(i), exit(e)
 {
 }
+
 
 MultiOpndStmt::MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k)
     : SVFStmt(opnds.at(0), r, k), opVars(opnds)

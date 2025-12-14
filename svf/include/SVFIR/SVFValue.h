@@ -199,6 +199,7 @@ public:
     }
 
     const std::string valueOnlyToString() const;
+    const bool hasLLVMValue() const;
 
 
 protected:
