@@ -804,8 +804,6 @@ protected:
     OPVars opVars;
     /// Constructor, only used by subclasses but not external users
     MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k);
-    MultiOpndStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const OPVars& opnds)
-    : SVFStmt(s, d, k, eid, value, icfgNode), opVars(opnds) {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -868,11 +866,6 @@ public:
 class PhiStmt: public MultiOpndStmt
 {
     friend class GraphDBClient;
-
-protected:
-    PhiStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, const OPVars& opnds)
-    : MultiOpndStmt(s, d, k, eid, value, icfgNode, opnds) {}
-
 public:
     typedef std::vector<const ICFGNode*> OpICFGNodeVec;
 
@@ -950,11 +943,6 @@ public:
 class SelectStmt: public MultiOpndStmt
 {
     friend class GraphDBClient;
-
-protected:
-    SelectStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, SVFVar* condition, ICFGNode* icfgNode, const OPVars& opnds);
-    
-
 private:
     SelectStmt(const SelectStmt&);     ///< place holder
     void operator=(const SelectStmt&); ///< place holder
@@ -1007,10 +995,6 @@ public:
 class CmpStmt: public MultiOpndStmt
 {
     friend class GraphDBClient;
-
-protected:
-    CmpStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, u32_t predicate, ICFGNode* icfgNode, const OPVars& opnds);
-
 private:
     CmpStmt(const CmpStmt&);        ///< place holder
     void operator=(const CmpStmt&); ///< place holder
@@ -1094,10 +1078,6 @@ public:
 class BinaryOPStmt: public MultiOpndStmt
 {
     friend class GraphDBClient;
-
-protected:
-    BinaryOPStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, u32_t opcode, ICFGNode* icfgNode, const OPVars& opnds);
-
 private:
     BinaryOPStmt(const BinaryOPStmt&);   ///< place holder
     void operator=(const BinaryOPStmt&); ///< place holder
