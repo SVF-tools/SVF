@@ -5,6 +5,10 @@ on:
   push:
     branches: [ master ]
 
+permissions:
+  contents: read
+  id-token: write 
+
 # Customize the env variable
 env:
   SVF_CTIR: 1
@@ -15,6 +19,7 @@ jobs:
   publish:
     if: github.repository == 'SVF-tools/SVF'
     runs-on: ${{ matrix.os }}
+    environment: npm-publish
     env:
       XCODE_VERSION: '15.3.0'  # Define Xcode version here to reuse it
     strategy:
@@ -23,7 +28,7 @@ jobs:
 
     steps:
       # checkout the repo
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       # setup the environment
       - name: mac-setup
         if: runner.os == 'macOS'
@@ -140,9 +145,9 @@ jobs:
           cd $GITHUB_WORKSPACE
 
       # publish svf
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           registry-url: https://registry.npmjs.org/
       - name: publish-svf
         if: |
@@ -158,7 +163,9 @@ jobs:
           sed  -i '/version/s/[^:]*$/'"\"${npm_version}\",/" package.json
           git add .
           if [ -n "$(git status -s)" ]; then git commit -m'update version'  ; fi
+          npm i -g npm@latest
           npm version patch
-          npm publish
+          npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+          NODE_AUTH_TOKEN: ""
+          NPM_CONFIG_USERCONFIG: ""
