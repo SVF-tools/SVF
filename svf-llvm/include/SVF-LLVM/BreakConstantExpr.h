@@ -16,8 +16,8 @@
 #define BREAKCONSTANTGEPS_H
 
 #if LLVM_VERSION_MAJOR > 16
-  #include "llvm/Passes/PassBuilder.h"
-  #include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
 #endif
 
 namespace SVF
