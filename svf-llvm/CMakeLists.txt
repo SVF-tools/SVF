@@ -49,7 +49,22 @@ add_definitions(${_LLVM_DEFINITIONS})
 if(LLVM_LINK_LLVM_DYLIB)
   set(LLVM_LIBRARIES LLVM)
 else()
-  llvm_map_components_to_libnames(LLVM_LIBRARIES all)
+  llvm_map_components_to_libnames(LLVM_LIBRARIES
+    analysis
+    bitwriter
+    core
+    instcombine
+    instrumentation
+    ipo
+    irreader
+    linker
+    scalaropts
+    support
+    target
+    transformutils
+    demangle
+    Passes
+  )
 endif()
 
 # Search in the executables dir for this LLVM's clang instance
