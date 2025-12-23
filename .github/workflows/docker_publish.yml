@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        repo: ['SVF-tools/Software-Security-Analysis', 'SVF-tools/Teaching-Software-Analysis', 'SVF-tools/Teaching-Software-Verification', 'SVF-tools/SVF-example']
+        repo: ['SVF-tools/Software-Security-Analysis', 'SVF-tools/Teaching-Software-Analysis', 'SVF-tools/Teaching-Software-Verification', 'SVF-tools/SVF-example' , 'SVF-tools/SVF-GraphDB']
     steps:
       -
         name: dispatch
