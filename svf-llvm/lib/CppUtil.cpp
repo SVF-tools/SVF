@@ -529,11 +529,11 @@ const Argument* cppUtil::getConstructorThisPtr(const Function* fun)
 {
     assert((isConstructor(fun) || isDestructor(fun)) &&
            "not a constructor?");
-    // If param 0 is sret, 'this' is typically param 1, but be defensive.
-    const bool isStructRet = fun->hasParamAttribute(0, llvm::Attribute::StructRet);
-
     // We always need at least one argument to return something meaningful.
     assert(fun->arg_size() >= 1 && "expected at least one argument");
+
+    // If param 0 is sret, 'this' is typically param 1, but be defensive.
+    const bool isStructRet = fun->hasParamAttribute(0, llvm::Attribute::StructRet);
 
     // Prefer arg1 when sret is present and available; otherwise fall back to arg0.
     const u32_t thisIdx = (isStructRet && fun->arg_size() >= 2) ? 1 : 0;
