@@ -326,11 +326,7 @@ private:
     /// Currently returns DenseAbstractState; will support SparseAbstractState in the future
     std::unique_ptr<IAbstractState> createState()
     {
-        if (Options::UseSparseState())
-        {
-            // TODO: Return SparseAbstractState when implemented
-            assert(false && "SparseAbstractState not implemented yet. Use -use-sparse=false");
-        }
+        // TODO: if (Options::UseSparseState())
         return std::make_unique<AbstractState>();
     }
 
