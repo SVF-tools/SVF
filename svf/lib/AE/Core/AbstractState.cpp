@@ -62,7 +62,7 @@ u32_t AbstractState::hash() const
     return pairH({h, h2});
 }
 
-AbstractState AbstractState::wideningConcrete(const AbstractState& other) const
+AbstractState AbstractState::wideningDense(const AbstractState& other) const
 {
     // widen interval
     AbstractState es = *this;
@@ -87,10 +87,10 @@ std::unique_ptr<IAbstractState> AbstractState::widening(const IAbstractState& ot
 {
     const AbstractState* otherState = dynamic_cast<const AbstractState*>(&other);
     assert(otherState && "Type mismatch in widening: expected AbstractState");
-    return std::make_unique<AbstractState>(wideningConcrete(*otherState));
+    return std::make_unique<AbstractState>(wideningDense(*otherState));
 }
 
-AbstractState AbstractState::narrowingConcrete(const AbstractState& other) const
+AbstractState AbstractState::narrowingDense(const AbstractState& other) const
 {
     AbstractState es = *this;
     for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
@@ -114,7 +114,7 @@ std::unique_ptr<IAbstractState> AbstractState::narrowing(const IAbstractState& o
 {
     const AbstractState* otherState = dynamic_cast<const AbstractState*>(&other);
     assert(otherState && "Type mismatch in narrowing: expected AbstractState");
-    return std::make_unique<AbstractState>(narrowingConcrete(*otherState));
+    return std::make_unique<AbstractState>(narrowingDense(*otherState));
 }
 
 /// domain join with other, important! other widen this.

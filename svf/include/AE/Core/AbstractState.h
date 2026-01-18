@@ -286,11 +286,11 @@ public:
     /// domain narrow with other, and return the narrowed domain (interface version)
     std::unique_ptr<IAbstractState> narrowing(const IAbstractState& other) const override;
 
-    /// Concrete widening that returns AbstractState (for internal use and backward compatibility)
-    AbstractState wideningConcrete(const AbstractState& other) const;
+    /// Dense widening that returns AbstractState (for internal use and backward compatibility)
+    AbstractState wideningDense(const AbstractState& other) const;
 
-    /// Concrete narrowing that returns AbstractState (for internal use and backward compatibility)
-    AbstractState narrowingConcrete(const AbstractState& other) const;
+    /// Dense narrowing that returns AbstractState (for internal use and backward compatibility)
+    AbstractState narrowingDense(const AbstractState& other) const;
 
     /// domain join with other, important! other widen this.
     void joinWith(const IAbstractState& other) override;

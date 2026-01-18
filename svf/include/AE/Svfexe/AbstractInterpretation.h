@@ -178,8 +178,8 @@ public:
         }
     }
 
-    /// Concrete access to abstract state from trace (for internal use)
-    AbstractState& getConcreteAbsStateFromTrace(const ICFGNode* node)
+    /// Dense state access from trace (for internal use when AbstractState is needed)
+    AbstractState& getDenseAbsStateFromTrace(const ICFGNode* node)
     {
         if (abstractTrace.count(node) == 0)
         {

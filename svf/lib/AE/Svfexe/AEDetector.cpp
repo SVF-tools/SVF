@@ -419,9 +419,9 @@ bool BufOverflowDetector::detectStrcpy(IAbstractState& as, const CallICFGNode *c
 {
     const SVFVar* arg0Val = call->getArgument(0);
     const SVFVar* arg1Val = call->getArgument(1);
-    // Cast to AbstractState for AbsExtAPI compatibility (will be refactored in Phase 4)
-    AbstractState& concreteAs = dynamic_cast<AbstractState&>(as);
-    IntervalValue strLen = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(concreteAs, arg1Val);
+    // Cast to dense AbstractState for AbsExtAPI compatibility
+    AbstractState& denseAs = dynamic_cast<AbstractState&>(as);
+    IntervalValue strLen = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(denseAs, arg1Val);
     return canSafelyAccessMemory(as, arg0Val, strLen);
 }
 
@@ -440,15 +440,15 @@ bool BufOverflowDetector::detectStrcat(IAbstractState& as, const CallICFGNode *c
     const std::vector<std::string> strcatGroup = {"__strcat_chk", "strcat", "__wcscat_chk", "wcscat"};
     const std::vector<std::string> strncatGroup = {"__strncat_chk", "strncat", "__wcsncat_chk", "wcsncat"};
 
-    // Cast to AbstractState for AbsExtAPI compatibility (will be refactored in Phase 4)
-    AbstractState& concreteAs = dynamic_cast<AbstractState&>(as);
+    // Cast to dense AbstractState for AbsExtAPI compatibility
+    AbstractState& denseAs = dynamic_cast<AbstractState&>(as);
 
     if (std::find(strcatGroup.begin(), strcatGroup.end(), call->getCalledFunction()->getName()) != strcatGroup.end())
     {
         const SVFVar* arg0Val = call->getArgument(0);
         const SVFVar* arg1Val = call->getArgument(1);
-        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(concreteAs, arg0Val);
-        IntervalValue strLen1 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(concreteAs, arg1Val);
+        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(denseAs, arg0Val);
+        IntervalValue strLen1 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(denseAs, arg1Val);
         IntervalValue totalLen = strLen0 + strLen1;
         return canSafelyAccessMemory(as, arg0Val, totalLen);
     }
@@ -457,7 +457,7 @@ bool BufOverflowDetector::detectStrcat(IAbstractState& as, const CallICFGNode *c
         const SVFVar* arg0Val = call->getArgument(0);
         const SVFVar* arg2Val = call->getArgument(2);
         IntervalValue arg2Num = as[arg2Val->getId()].getInterval();
-        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(concreteAs, arg0Val);
+        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(denseAs, arg0Val);
         IntervalValue totalLen = strLen0 + arg2Num;
         return canSafelyAccessMemory(as, arg0Val, totalLen);
     }
