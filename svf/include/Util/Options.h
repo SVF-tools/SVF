@@ -243,6 +243,8 @@ public:
     static const Option<u32_t> WidenDelay;
     /// recursion handling mode, Default: TOP
     static const OptionMap<u32_t> HandleRecur;
+    /// Use sparse abstract state representation (experimental)
+    static const Option<bool> UseSparseState;
     /// the max time consumptions (seconds). Default: 4 hours 14400s
     static const Option<u32_t> Timeout;
     /// bug info output file, Default: output.db

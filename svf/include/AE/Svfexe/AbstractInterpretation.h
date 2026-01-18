@@ -35,7 +35,9 @@
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "Util/SVFBugReport.h"
 #include "Util/SVFStat.h"
+#include "Util/Options.h"
 #include "Graphs/SCC.h"
+#include <memory>
 
 namespace SVF
 {
@@ -163,7 +165,21 @@ public:
      * @return Reference to the abstract state.
      * @throws Assertion if no trace exists for the node.
      */
-    AbstractState& getAbsStateFromTrace(const ICFGNode* node)
+    IAbstractState& getAbsStateFromTrace(const ICFGNode* node)
+    {
+        if (abstractTrace.count(node) == 0)
+        {
+            assert(false && "No preAbsTrace for this node");
+            abort();
+        }
+        else
+        {
+            return abstractTrace[node];
+        }
+    }
+
+    /// Concrete access to abstract state from trace (for internal use)
+    AbstractState& getConcreteAbsStateFromTrace(const ICFGNode* node)
     {
         if (abstractTrace.count(node) == 0)
         {
@@ -304,6 +320,18 @@ private:
     bool hasAbsStateFromTrace(const ICFGNode* node)
     {
         return abstractTrace.count(node) != 0;
+    }
+
+    /// Factory method to create abstract state based on CLI option
+    /// Currently returns DenseAbstractState; will support SparseAbstractState in the future
+    std::unique_ptr<IAbstractState> createState()
+    {
+        if (Options::UseSparseState())
+        {
+            // TODO: Return SparseAbstractState when implemented
+            assert(false && "SparseAbstractState not implemented yet. Use -use-sparse=false");
+        }
+        return std::make_unique<AbstractState>();
     }
 
     AbsExtAPI* getUtils()

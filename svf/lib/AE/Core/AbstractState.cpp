@@ -30,13 +30,19 @@
 #include "AE/Core/AbstractState.h"
 #include "Util/SVFUtil.h"
 #include "Util/Options.h"
+#include <memory>
 
 using namespace SVF;
 using namespace SVFUtil;
 
-bool AbstractState::equals(const AbstractState&other) const
+bool AbstractState::equals(const IAbstractState& other) const
 {
-    return *this == other;
+    const AbstractState* otherState = dynamic_cast<const AbstractState*>(&other);
+    if (!otherState)
+    {
+        return false; // Different state types are never equal
+    }
+    return *this == *otherState;
 }
 
 u32_t AbstractState::hash() const
@@ -56,7 +62,7 @@ u32_t AbstractState::hash() const
     return pairH({h, h2});
 }
 
-AbstractState AbstractState::widening(const AbstractState& other)
+AbstractState AbstractState::wideningConcrete(const AbstractState& other) const
 {
     // widen interval
     AbstractState es = *this;
@@ -77,7 +83,14 @@ AbstractState AbstractState::widening(const AbstractState& other)
     return es;
 }
 
-AbstractState AbstractState::narrowing(const AbstractState& other)
+std::unique_ptr<IAbstractState> AbstractState::widening(const IAbstractState& other) const
+{
+    const AbstractState* otherState = dynamic_cast<const AbstractState*>(&other);
+    assert(otherState && "Type mismatch in widening: expected AbstractState");
+    return std::make_unique<AbstractState>(wideningConcrete(*otherState));
+}
+
+AbstractState AbstractState::narrowingConcrete(const AbstractState& other) const
 {
     AbstractState es = *this;
     for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
@@ -95,13 +108,22 @@ AbstractState AbstractState::narrowing(const AbstractState& other)
                 it->second.getInterval().narrow_with(other._addrToAbsVal.at(key).getInterval());
     }
     return es;
+}
 
+std::unique_ptr<IAbstractState> AbstractState::narrowing(const IAbstractState& other) const
+{
+    const AbstractState* otherState = dynamic_cast<const AbstractState*>(&other);
+    assert(otherState && "Type mismatch in narrowing: expected AbstractState");
+    return std::make_unique<AbstractState>(narrowingConcrete(*otherState));
 }
 
 /// domain join with other, important! other widen this.
-void AbstractState::joinWith(const AbstractState& other)
+void AbstractState::joinWith(const IAbstractState& other)
 {
-    for (auto it = other._varToAbsVal.begin(); it != other._varToAbsVal.end(); ++it)
+    const AbstractState* otherState = dynamic_cast<const AbstractState*>(&other);
+    assert(otherState && "Type mismatch in joinWith: expected AbstractState");
+
+    for (auto it = otherState->_varToAbsVal.begin(); it != otherState->_varToAbsVal.end(); ++it)
     {
         auto key = it->first;
         auto oit = _varToAbsVal.find(key);
@@ -114,7 +136,7 @@ void AbstractState::joinWith(const AbstractState& other)
             _varToAbsVal.emplace(key, it->second);
         }
     }
-    for (auto it = other._addrToAbsVal.begin(); it != other._addrToAbsVal.end(); ++it)
+    for (auto it = otherState->_addrToAbsVal.begin(); it != otherState->_addrToAbsVal.end(); ++it)
     {
         auto key = it->first;
         auto oit = _addrToAbsVal.find(key);
@@ -127,13 +149,16 @@ void AbstractState::joinWith(const AbstractState& other)
             _addrToAbsVal.emplace(key, it->second);
         }
     }
-    _freedAddrs.insert(other._freedAddrs.begin(), other._freedAddrs.end());
+    _freedAddrs.insert(otherState->_freedAddrs.begin(), otherState->_freedAddrs.end());
 }
 
 /// domain meet with other, important! other widen this.
-void AbstractState::meetWith(const AbstractState& other)
+void AbstractState::meetWith(const IAbstractState& other)
 {
-    for (auto it = other._varToAbsVal.begin(); it != other._varToAbsVal.end(); ++it)
+    const AbstractState* otherState = dynamic_cast<const AbstractState*>(&other);
+    assert(otherState && "Type mismatch in meetWith: expected AbstractState");
+
+    for (auto it = otherState->_varToAbsVal.begin(); it != otherState->_varToAbsVal.end(); ++it)
     {
         auto key = it->first;
         auto oit = _varToAbsVal.find(key);
@@ -142,7 +167,7 @@ void AbstractState::meetWith(const AbstractState& other)
             oit->second.meet_with(it->second);
         }
     }
-    for (auto it = other._addrToAbsVal.begin(); it != other._addrToAbsVal.end(); ++it)
+    for (auto it = otherState->_addrToAbsVal.begin(); it != otherState->_addrToAbsVal.end(); ++it)
     {
         auto key = it->first;
         auto oit = _addrToAbsVal.find(key);
@@ -153,7 +178,7 @@ void AbstractState::meetWith(const AbstractState& other)
     }
     Set<NodeID> intersection;
     std::set_intersection(_freedAddrs.begin(), _freedAddrs.end(),
-                          other._freedAddrs.begin(), other._freedAddrs.end(),
+                          otherState->_freedAddrs.begin(), otherState->_freedAddrs.end(),
                           std::inserter(intersection, intersection.begin()));
     _freedAddrs = std::move(intersection);
 }

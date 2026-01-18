@@ -48,6 +48,7 @@
 
 #include "AE/Core/AbstractValue.h"
 #include "AE/Core/IntervalValue.h"
+#include "AE/Core/IAbstractState.h"
 #include "SVFIR/SVFVariables.h"
 #include "Util/Z3Expr.h"
 
@@ -55,7 +56,7 @@
 
 namespace SVF
 {
-class AbstractState
+class AbstractState : public IAbstractState
 {
     friend class SVFIR2AbsState;
     friend class RelationSolver;
@@ -82,21 +83,21 @@ public:
     virtual ~AbstractState() = default;
 
     // getGepObjAddrs
-    AddressValue getGepObjAddrs(u32_t pointer, IntervalValue offset);
+    AddressValue getGepObjAddrs(u32_t pointer, IntervalValue offset) override;
 
     // initObjVar
-    void initObjVar(ObjVar* objVar);
+    void initObjVar(ObjVar* objVar) override;
     // getElementIndex
-    IntervalValue getElementIndex(const GepStmt* gep);
+    IntervalValue getElementIndex(const GepStmt* gep) override;
     // getByteOffset
-    IntervalValue getByteOffset(const GepStmt* gep);
+    IntervalValue getByteOffset(const GepStmt* gep) override;
     // printAbstractState
     // loadValue
-    AbstractValue loadValue(NodeID varId);
+    AbstractValue loadValue(NodeID varId) override;
     // storeValue
-    void storeValue(NodeID varId, AbstractValue val);
+    void storeValue(NodeID varId, AbstractValue val) override;
 
-    u32_t getAllocaInstByteSize(const AddrStmt *addr);
+    u32_t getAllocaInstByteSize(const AddrStmt *addr) override;
 
 
     /// The physical address starts with 0x7f...... + idx
@@ -112,7 +113,7 @@ public:
     }
 
     /// Return the internal index if addr is an address otherwise return the value of idx
-    inline u32_t getIDFromAddr(u32_t addr)
+    inline u32_t getIDFromAddr(u32_t addr) override
     {
         return _freedAddrs.count(addr) ?  AddressValue::getInternalID(InvalidMemAddr) : AddressValue::getInternalID(addr);
     }
@@ -202,19 +203,19 @@ public:
 
 
     /// get abstract value of variable
-    inline virtual AbstractValue &operator[](u32_t varId)
+    inline AbstractValue &operator[](u32_t varId) override
     {
         return _varToAbsVal[varId];
     }
 
     /// get abstract value of variable
-    inline virtual const AbstractValue &operator[](u32_t varId) const
+    inline const AbstractValue &operator[](u32_t varId) const override
     {
         return _varToAbsVal.at(varId);
     }
 
     /// whether the variable is in varToAddrs table
-    inline bool inVarToAddrsTable(u32_t id) const
+    inline bool inVarToAddrsTable(u32_t id) const override
     {
         if (_varToAbsVal.find(id)!= _varToAbsVal.end())
         {
@@ -227,7 +228,7 @@ public:
     }
 
     /// whether the variable is in varToVal table
-    inline virtual bool inVarToValTable(u32_t id) const
+    inline bool inVarToValTable(u32_t id) const override
     {
         if (_varToAbsVal.find(id) != _varToAbsVal.end())
         {
@@ -240,7 +241,7 @@ public:
     }
 
     /// whether the memory address stores memory addresses
-    inline bool inAddrToAddrsTable(u32_t id) const
+    inline bool inAddrToAddrsTable(u32_t id) const override
     {
         if (_addrToAbsVal.find(id)!= _addrToAbsVal.end())
         {
@@ -253,7 +254,7 @@ public:
     }
 
     /// whether the memory address stores abstract value
-    inline virtual bool inAddrToValTable(u32_t id) const
+    inline bool inAddrToValTable(u32_t id) const override
     {
         if (_addrToAbsVal.find(id) != _addrToAbsVal.end())
         {
@@ -279,24 +280,42 @@ public:
 
 public:
 
-    /// domain widen with other, and return the widened domain
-    AbstractState widening(const AbstractState&other);
+    /// domain widen with other, and return the widened domain (interface version)
+    std::unique_ptr<IAbstractState> widening(const IAbstractState& other) const override;
 
-    /// domain narrow with other, and return the narrowed domain
-    AbstractState narrowing(const AbstractState&other);
+    /// domain narrow with other, and return the narrowed domain (interface version)
+    std::unique_ptr<IAbstractState> narrowing(const IAbstractState& other) const override;
+
+    /// Concrete widening that returns AbstractState (for internal use and backward compatibility)
+    AbstractState wideningConcrete(const AbstractState& other) const;
+
+    /// Concrete narrowing that returns AbstractState (for internal use and backward compatibility)
+    AbstractState narrowingConcrete(const AbstractState& other) const;
 
     /// domain join with other, important! other widen this.
-    void joinWith(const AbstractState&other);
+    void joinWith(const IAbstractState& other) override;
 
     /// domain meet with other, important! other widen this.
-    void meetWith(const AbstractState&other);
+    void meetWith(const IAbstractState& other) override;
 
-    void addToFreedAddrs(NodeID addr)
+    /// Clone this abstract state
+    std::unique_ptr<IAbstractState> clone() const override
+    {
+        return std::make_unique<AbstractState>(*this);
+    }
+
+    /// Get state type name
+    const char* getStateName() const override
+    {
+        return "DenseAbstractState";
+    }
+
+    void addToFreedAddrs(NodeID addr) override
     {
         _freedAddrs.insert(addr);
     }
 
-    bool isFreedMem(u32_t addr) const
+    bool isFreedMem(u32_t addr) const override
     {
         return _freedAddrs.find(addr) != _freedAddrs.end();
     }
@@ -309,13 +328,13 @@ public:
     * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
     * @param call callnode of memset like api
      */
-    const SVFType* getPointeeElement(NodeID id);
+    const SVFType* getPointeeElement(NodeID id) override;
 
 
     u32_t hash() const;
 
 public:
-    inline void store(u32_t addr, const AbstractValue &val)
+    inline void store(u32_t addr, const AbstractValue &val) override
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         u32_t objId = getIDFromAddr(addr);
@@ -323,7 +342,7 @@ public:
         _addrToAbsVal[objId] = val;
     }
 
-    inline virtual AbstractValue &load(u32_t addr)
+    inline AbstractValue &load(u32_t addr) override
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         u32_t objId = getIDFromAddr(addr);
@@ -331,14 +350,14 @@ public:
 
     }
 
-    void printAbstractState() const;
+    void printAbstractState() const override;
 
     std::string toString() const
     {
         return "";
     }
 
-    bool equals(const AbstractState&other) const;
+    bool equals(const IAbstractState& other) const override;
 
 
     static bool eqVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs)

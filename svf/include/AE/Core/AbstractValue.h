@@ -24,6 +24,9 @@
 // Xiao Cheng, Jiawei Wang and Yulei Sui. Precise Sparse Abstract Execution via Cross-Domain Interaction.
 // 46th International Conference on Software Engineering. (ICSE24)
 
+#ifndef SVF_ABSTRACTVALUE_H
+#define SVF_ABSTRACTVALUE_H
+
 #include "AE/Core/IntervalValue.h"
 #include "AE/Core/AddressValue.h"
 #include "Util/SVFUtil.h"
@@ -155,3 +158,4 @@ public:
     }
 };
 }
+#endif // SVF_ABSTRACTVALUE_H
