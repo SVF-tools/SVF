@@ -802,6 +802,9 @@ const OptionMap<u32_t> Options::HandleRecur(
     }
 }
 );
+// TODO: to implement
+// const Option<bool> Options::UseSparseState(
+//     "use-sparse", "Use sparse abstract state representation (experimental)", false);
 const Option<u32_t> Options::Timeout(
     "timeout", "time out (seconds), set -1 (no timeout), default 14400s",14400);
 const Option<std::string> Options::OutputName(
