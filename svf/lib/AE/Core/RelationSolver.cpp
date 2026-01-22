@@ -33,19 +33,19 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-AbstractState RelationSolver::bilateral(const AbstractState&domain, const Z3Expr& phi,
+AbstractStateImpl RelationSolver::bilateral(const AbstractStateImpl&domain, const Z3Expr& phi,
                                         u32_t descend_check)
 {
     /// init variables
-    AbstractState upper = domain.top();
-    AbstractState lower = domain.bottom();
+    AbstractStateImpl upper = domain.top();
+    AbstractStateImpl lower = domain.bottom();
     u32_t meets_in_a_row = 0;
     z3::solver solver = Z3Expr::getSolver();
     z3::params p(Z3Expr::getContext());
     /// TODO: add option for timeout
     p.set(":timeout", static_cast<unsigned>(600)); // in milliseconds
     solver.set(p);
-    AbstractState consequence;
+    AbstractStateImpl consequence;
 
     /// start processing
     while (lower != upper)
@@ -85,9 +85,9 @@ AbstractState RelationSolver::bilateral(const AbstractState&domain, const Z3Expr
                 }
             }
             solver.pop();
-            AbstractState newLower = domain.bottom();
+            AbstractStateImpl newLower = domain.bottom();
             newLower.joinWith(lower);
-            AbstractState rhs = beta(solution, domain);
+            AbstractStateImpl rhs = beta(solution, domain);
             newLower.joinWith(rhs);
             lower = newLower;
             meets_in_a_row = 0;
@@ -101,7 +101,7 @@ AbstractState RelationSolver::bilateral(const AbstractState&domain, const Z3Expr
                 if (solver.reason_unknown() == "timeout")
                     return upper;
             }
-            AbstractState newUpper = domain.top();
+            AbstractStateImpl newUpper = domain.top();
             newUpper.meetWith(upper);
             newUpper.meetWith(consequence);
             upper = newUpper;
@@ -111,9 +111,9 @@ AbstractState RelationSolver::bilateral(const AbstractState&domain, const Z3Expr
     return upper;
 }
 
-AbstractState RelationSolver::RSY(const AbstractState& domain, const Z3Expr& phi)
+AbstractStateImpl RelationSolver::RSY(const AbstractStateImpl& domain, const Z3Expr& phi)
 {
-    AbstractState lower = domain.bottom();
+    AbstractStateImpl lower = domain.bottom();
     z3::solver& solver = Z3Expr::getSolver();
     z3::params p(Z3Expr::getContext());
     /// TODO: add option for timeout
@@ -147,7 +147,7 @@ AbstractState RelationSolver::RSY(const AbstractState& domain, const Z3Expr& phi
                 }
             }
             solver.pop();
-            AbstractState newLower = domain.bottom();
+            AbstractStateImpl newLower = domain.bottom();
             newLower.joinWith(lower);
             newLower.joinWith(beta(solution, domain));
             lower = newLower;
@@ -167,8 +167,8 @@ AbstractState RelationSolver::RSY(const AbstractState& domain, const Z3Expr& phi
     return lower;
 }
 
-AbstractState RelationSolver::abstract_consequence(
-    const AbstractState& lower, const AbstractState& upper, const AbstractState& domain) const
+AbstractStateImpl RelationSolver::abstract_consequence(
+    const AbstractStateImpl& lower, const AbstractStateImpl& upper, const AbstractStateImpl& domain) const
 {
     /*Returns the "abstract consequence" of lower and upper.
 
@@ -184,7 +184,7 @@ AbstractState RelationSolver::abstract_consequence(
             it != domain.getVarToVal().end(); ++it)
         /// for variable in self.variables:
     {
-        AbstractState proposed = domain.top(); /// proposed = self.top.copy()
+        AbstractStateImpl proposed = domain.top(); /// proposed = self.top.copy()
         proposed[it->first] = lower[it->first].getInterval();
         /// proposed.set_interval(variable, lower.interval_of(variable))
         /// proposed._locToItvVal
@@ -196,7 +196,7 @@ AbstractState RelationSolver::abstract_consequence(
     return lower; /// return lower.copy()
 }
 
-Z3Expr RelationSolver::gamma_hat(const AbstractState& exeState) const
+Z3Expr RelationSolver::gamma_hat(const AbstractStateImpl& exeState) const
 {
     Z3Expr res(Z3Expr::getContext().bool_val(true));
     for (auto& item : exeState.getVarToVal())
@@ -213,8 +213,8 @@ Z3Expr RelationSolver::gamma_hat(const AbstractState& exeState) const
     return res;
 }
 
-Z3Expr RelationSolver::gamma_hat(const AbstractState& alpha,
-                                 const AbstractState& exeState) const
+Z3Expr RelationSolver::gamma_hat(const AbstractStateImpl& alpha,
+                                 const AbstractStateImpl& exeState) const
 {
     Z3Expr res(Z3Expr::getContext().bool_val(true));
     for (auto& item : exeState.getVarToVal())
@@ -231,7 +231,7 @@ Z3Expr RelationSolver::gamma_hat(const AbstractState& alpha,
     return res;
 }
 
-Z3Expr RelationSolver::gamma_hat(u32_t id, const AbstractState& exeState) const
+Z3Expr RelationSolver::gamma_hat(u32_t id, const AbstractStateImpl& exeState) const
 {
     auto it = exeState.getVarToVal().find(id);
     assert(it != exeState.getVarToVal().end() && "id not in varToVal?");
@@ -242,10 +242,10 @@ Z3Expr RelationSolver::gamma_hat(u32_t id, const AbstractState& exeState) const
     return res;
 }
 
-AbstractState RelationSolver::beta(const Map<u32_t, s32_t>& sigma,
-                                   const AbstractState& exeState) const
+AbstractStateImpl RelationSolver::beta(const Map<u32_t, s32_t>& sigma,
+                                   const AbstractStateImpl& exeState) const
 {
-    AbstractState res;
+    AbstractStateImpl res;
     for (const auto& item : exeState.getVarToVal())
     {
         res[item.first] = IntervalValue(
@@ -267,7 +267,7 @@ void RelationSolver::updateMap(Map<u32_t, s32_t>& map, u32_t key, const s32_t& v
     }
 }
 
-AbstractState RelationSolver::BS(const AbstractState& domain, const Z3Expr &phi)
+AbstractStateImpl RelationSolver::BS(const AbstractStateImpl& domain, const Z3Expr &phi)
 {
     /// because key of _varToItvVal is u32_t, -key may out of range for int
     /// so we do key + bias for -key
@@ -315,7 +315,7 @@ AbstractState RelationSolver::BS(const AbstractState& domain, const Z3Expr &phi)
     /// optimize each object
     BoxedOptSolver(new_phi.simplify(), ret, low_values, high_values);
     /// fill in the return values
-    AbstractState retInv;
+    AbstractStateImpl retInv;
     for (const auto& item: ret)
     {
         if (item.first >= bias)

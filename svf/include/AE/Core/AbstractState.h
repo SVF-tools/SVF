@@ -56,7 +56,7 @@
 
 namespace SVF
 {
-class AbstractState : public IAbstractState
+class AbstractStateImpl : public AbstractState
 {
     friend class SVFIR2AbsState;
     friend class RelationSolver;
@@ -68,19 +68,19 @@ public:
 
 public:
     /// default constructor
-    AbstractState()
+    AbstractStateImpl()
     {
     }
 
-    AbstractState(VarToAbsValMap&_varToValMap, AddrToAbsValMap&_locToValMap) : _varToAbsVal(_varToValMap), _addrToAbsVal(_locToValMap) {}
+    AbstractStateImpl(VarToAbsValMap&_varToValMap, AddrToAbsValMap&_locToValMap) : _varToAbsVal(_varToValMap), _addrToAbsVal(_locToValMap) {}
 
     /// copy constructor
-    AbstractState(const AbstractState&rhs) : _freedAddrs(rhs._freedAddrs), _varToAbsVal(rhs.getVarToVal()), _addrToAbsVal(rhs.getLocToVal())
+    AbstractStateImpl(const AbstractStateImpl&rhs) : _freedAddrs(rhs._freedAddrs), _varToAbsVal(rhs.getVarToVal()), _addrToAbsVal(rhs.getLocToVal())
     {
 
     }
 
-    virtual ~AbstractState() = default;
+    virtual ~AbstractStateImpl() = default;
 
     // getGepObjAddrs
     AddressValue getGepObjAddrs(u32_t pointer, IntervalValue offset) override;
@@ -118,7 +118,7 @@ public:
         return _freedAddrs.count(addr) ?  AddressValue::getInternalID(InvalidMemAddr) : AddressValue::getInternalID(addr);
     }
 
-    AbstractState&operator=(const AbstractState&rhs)
+    AbstractStateImpl&operator=(const AbstractStateImpl&rhs)
     {
         if (rhs != *this)
         {
@@ -130,14 +130,14 @@ public:
     }
 
     /// move constructor
-    AbstractState(AbstractState&&rhs) : _varToAbsVal(std::move(rhs._varToAbsVal)),
+    AbstractStateImpl(AbstractStateImpl&&rhs) : _varToAbsVal(std::move(rhs._varToAbsVal)),
         _addrToAbsVal(std::move(rhs._addrToAbsVal))
     {
 
     }
 
     /// operator= move constructor
-    AbstractState&operator=(AbstractState&&rhs)
+    AbstractStateImpl&operator=(AbstractStateImpl&&rhs)
     {
         if (&rhs != this)
         {
@@ -149,9 +149,9 @@ public:
     }
 
     /// Set all value bottom
-    AbstractState bottom() const
+    AbstractStateImpl bottom() const
     {
-        AbstractState inv = *this;
+        AbstractStateImpl inv = *this;
         for (auto &item: inv._varToAbsVal)
         {
             if (item.second.isInterval())
@@ -161,9 +161,9 @@ public:
     }
 
     /// Set all value top
-    AbstractState top() const
+    AbstractStateImpl top() const
     {
-        AbstractState inv = *this;
+        AbstractStateImpl inv = *this;
         for (auto &item: inv._varToAbsVal)
         {
             if (item.second.isInterval())
@@ -173,9 +173,9 @@ public:
     }
 
     /// Copy some values and return a new IntervalExeState
-    AbstractState sliceState(Set<u32_t> &sl)
+    AbstractStateImpl sliceState(Set<u32_t> &sl)
     {
-        AbstractState inv;
+        AbstractStateImpl inv;
         for (u32_t id: sl)
         {
             inv._varToAbsVal[id] = _varToAbsVal[id];
@@ -281,27 +281,27 @@ public:
 public:
 
     /// domain widen with other, and return the widened domain (interface version)
-    std::unique_ptr<IAbstractState> widening(const IAbstractState& other) const override;
+    std::unique_ptr<AbstractState> widening(const AbstractState& other) const override;
 
     /// domain narrow with other, and return the narrowed domain (interface version)
-    std::unique_ptr<IAbstractState> narrowing(const IAbstractState& other) const override;
+    std::unique_ptr<AbstractState> narrowing(const AbstractState& other) const override;
 
-    /// Dense widening that returns AbstractState (for internal use and backward compatibility)
-    AbstractState wideningDense(const AbstractState& other) const;
+    /// Widening operation - returns widened state
+    AbstractStateImpl widening(const AbstractStateImpl& other) const;
 
-    /// Dense narrowing that returns AbstractState (for internal use and backward compatibility)
-    AbstractState narrowingDense(const AbstractState& other) const;
+    /// Narrowing operation - returns narrowed state
+    AbstractStateImpl narrowing(const AbstractStateImpl& other) const;
 
     /// domain join with other, important! other widen this.
-    void joinWith(const IAbstractState& other) override;
+    void joinWith(const AbstractState& other) override;
 
     /// domain meet with other, important! other widen this.
-    void meetWith(const IAbstractState& other) override;
+    void meetWith(const AbstractState& other) override;
 
     /// Clone this abstract state
-    std::unique_ptr<IAbstractState> clone() const override
+    std::unique_ptr<AbstractState> clone() const override
     {
-        return std::make_unique<AbstractState>(*this);
+        return std::make_unique<AbstractStateImpl>(*this);
     }
 
     /// Get state type name
@@ -357,7 +357,7 @@ public:
         return "";
     }
 
-    bool equals(const IAbstractState& other) const override;
+    bool equals(const AbstractState& other) const override;
 
 
     static bool eqVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs)
@@ -407,24 +407,24 @@ public:
         return true;
     }
 
-    bool operator==(const AbstractState&rhs) const
+    bool operator==(const AbstractStateImpl&rhs) const
     {
         return  eqVarToValMap(_varToAbsVal, rhs.getVarToVal()) &&
                 eqVarToValMap(_addrToAbsVal, rhs.getLocToVal());
     }
 
-    bool operator!=(const AbstractState&rhs) const
+    bool operator!=(const AbstractStateImpl&rhs) const
     {
         return !(*this == rhs);
     }
 
-    bool operator<(const AbstractState&rhs) const
+    bool operator<(const AbstractStateImpl&rhs) const
     {
         return !(*this >= rhs);
     }
 
 
-    bool operator>=(const AbstractState&rhs) const
+    bool operator>=(const AbstractStateImpl&rhs) const
     {
         return geqVarToValMap(_varToAbsVal, rhs.getVarToVal()) && geqVarToValMap(_addrToAbsVal, rhs.getLocToVal());
     }

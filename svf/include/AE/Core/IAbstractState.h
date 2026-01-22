@@ -1,4 +1,4 @@
-//===- IAbstractState.h -- Abstract State Interface -------------------------//
+//===- AbstractState.h -- Abstract State Interface -------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -20,7 +20,7 @@
 //
 //===----------------------------------------------------------------------===//
 /*
- * IAbstractState.h
+ * AbstractState.h
  *
  * Interface for abstract state to support runtime polymorphism.
  * This enables switching between different abstract state implementations
@@ -28,8 +28,8 @@
  *
  */
 
-#ifndef SVF_IABSTRACTSTATE_H
-#define SVF_IABSTRACTSTATE_H
+#ifndef SVF_ABSTRACTSTATE_H
+#define SVF_ABSTRACTSTATE_H
 
 #include "AE/Core/AbstractValue.h"
 #include "AE/Core/IntervalValue.h"
@@ -46,30 +46,30 @@ class AddrStmt;
 /// Abstract interface for abstract state implementations
 /// This interface enables runtime polymorphism for different state representations
 /// (e.g., DenseAbstractState, SparseAbstractState)
-class IAbstractState
+class AbstractState
 {
 public:
-    virtual ~IAbstractState() = default;
+    virtual ~AbstractState() = default;
 
     //============= Core Domain Operations =============//
 
     /// Domain join with other state (modifies this state)
-    virtual void joinWith(const IAbstractState& other) = 0;
+    virtual void joinWith(const AbstractState& other) = 0;
 
     /// Domain meet with other state (modifies this state)
-    virtual void meetWith(const IAbstractState& other) = 0;
+    virtual void meetWith(const AbstractState& other) = 0;
 
     /// Check equality with another state
-    virtual bool equals(const IAbstractState& other) const = 0;
+    virtual bool equals(const AbstractState& other) const = 0;
 
     /// Widening operation - returns new widened state
-    virtual std::unique_ptr<IAbstractState> widening(const IAbstractState& other) const = 0;
+    virtual std::unique_ptr<AbstractState> widening(const AbstractState& other) const = 0;
 
     /// Narrowing operation - returns new narrowed state
-    virtual std::unique_ptr<IAbstractState> narrowing(const IAbstractState& other) const = 0;
+    virtual std::unique_ptr<AbstractState> narrowing(const AbstractState& other) const = 0;
 
     /// Clone this state
-    virtual std::unique_ptr<IAbstractState> clone() const = 0;
+    virtual std::unique_ptr<AbstractState> clone() const = 0;
 
     //============= Variable Access Operations =============//
 
@@ -149,4 +149,4 @@ public:
 
 } // namespace SVF
 
-#endif // SVF_IABSTRACTSTATE_H
+#endif // SVF_ABSTRACTSTATE_H

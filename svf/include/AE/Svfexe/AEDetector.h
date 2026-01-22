@@ -75,8 +75,24 @@ public:
      * @brief Pure virtual function for detecting issues within a node.
      * @param as Reference to the abstract state interface.
      * @param node Pointer to the ICFG node.
+     * @note This is the legacy node-level detection method, kept for backward compatibility.
      */
-    virtual void detect(IAbstractState& as, const ICFGNode* node) = 0;
+    virtual void detect(AbstractState& as, const ICFGNode* node) = 0;
+
+    /**
+     * @brief Check for issues in a single statement.
+     *
+     * This method is called during statement processing to detect issues
+     * in the same loop as state updates, eliminating redundant traversals.
+     * Subclasses should override this to implement statement-level detection.
+     *
+     * @param stmt Pointer to the SVF statement to check.
+     * @param as Reference to the abstract state interface.
+     */
+    virtual void checkStatement(const SVFStmt* stmt, AbstractState& as)
+    {
+        // Default implementation does nothing - subclasses override as needed
+    }
 
     /**
      * @brief Pure virtual function for handling stub external API calls. (e.g. UNSAFE_BUFACCESS)
@@ -136,6 +152,10 @@ private:
 class BufOverflowDetector : public AEDetector
 {
     friend class AbstractInterpretation;
+
+private:
+    Map<const GepObjVar*, IntervalValue> gepObjOffsetFromBase; ///< Maps GEP objects to their offsets from the base.
+
 public:
     /**
      * @brief Constructor initializes the detector kind to BUF_OVERFLOW and sets up external API buffer overflow rules.
@@ -161,25 +181,25 @@ public:
         return detector->getKind() == AEDetector::BUF_OVERFLOW;
     }
 
-    /**
-     * @brief Updates the offset of a GEP object from its base.
-     * @param as Reference to the abstract state interface.
-     * @param gepAddrs Address value for GEP.
-     * @param objAddrs Address value for the object.
-     * @param offset The interval value of the offset.
-     */
-    void updateGepObjOffsetFromBase(IAbstractState& as,
-                                    AddressValue gepAddrs,
-                                    AddressValue objAddrs,
-                                    IntervalValue offset);
 
     /**
      * @brief Detect buffer overflow issues within a node.
      * @param as Reference to the abstract state interface.
      * @param node Pointer to the ICFG node.
+     * @note This is the legacy node-level detection, kept for external API handling.
      */
-    void detect(IAbstractState& as, const ICFGNode*) override;
+    void detect(AbstractState& as, const ICFGNode*) override;
 
+    /**
+     * @brief Check for buffer overflow in a single statement.
+     *
+     * This method performs buffer overflow detection for a single GEP statement
+     * in the same loop as state updates, eliminating redundant traversals.
+     *
+     * @param stmt Pointer to the SVF statement to check.
+     * @param as Reference to the abstract state interface.
+     */
+    void checkStatement(const SVFStmt* stmt, AbstractState& as) override;
 
     /**
      * @brief Handles external API calls related to buffer overflow detection.
@@ -187,41 +207,6 @@ public:
      */
     void handleStubFunctions(const CallICFGNode*) override;
 
-    /**
-     * @brief Adds an offset to a GEP object.
-     * @param obj Pointer to the GEP object.
-     * @param offset The interval value of the offset.
-     */
-    void addToGepObjOffsetFromBase(const GepObjVar* obj, const IntervalValue& offset)
-    {
-        gepObjOffsetFromBase[obj] = offset;
-    }
-
-    /**
-     * @brief Checks if a GEP object has an associated offset.
-     * @param obj Pointer to the GEP object.
-     * @return True if the GEP object has an offset, false otherwise.
-     */
-    bool hasGepObjOffsetFromBase(const GepObjVar* obj) const
-    {
-        return gepObjOffsetFromBase.find(obj) != gepObjOffsetFromBase.end();
-    }
-
-    /**
-     * @brief Retrieves the offset of a GEP object from its base.
-     * @param obj Pointer to the GEP object.
-     * @return The interval value of the offset.
-     */
-    IntervalValue getGepObjOffsetFromBase(const GepObjVar* obj) const
-    {
-        if (hasGepObjOffsetFromBase(obj))
-            return gepObjOffsetFromBase.at(obj);
-        else
-        {
-            assert(false && "GepObjVar not found in gepObjOffsetFromBase");
-            abort();
-        }
-    }
 
     /**
      * @brief Retrieves the access offset for a given object and GEP statement.
@@ -230,7 +215,7 @@ public:
      * @param gep Pointer to the GEP statement.
      * @return The interval value of the access offset.
      */
-    IntervalValue getAccessOffset(IAbstractState& as, NodeID objId, const GepStmt* gep);
+    IntervalValue getAccessOffset(AbstractState& as, NodeID objId, const GepStmt* gep);
 
     /**
      * @brief Adds a bug to the reporter based on an exception.
@@ -284,6 +269,54 @@ public:
     }
 
     /**
+     * @brief Updates the offset of a GEP object from its base.
+     * @param as Reference to the abstract state interface.
+     * @param gepAddrs Address value for GEP.
+     * @param objAddrs Address value for the object.
+     * @param offset The interval value of the offset.
+     */
+    void updateGepObjOffsetFromBase(AbstractState& as,
+                                    AddressValue gepAddrs,
+                                    AddressValue objAddrs,
+                                    IntervalValue offset);
+
+    /**
+     * @brief Adds an offset to a GEP object.
+     * @param obj Pointer to the GEP object.
+     * @param offset The interval value of the offset.
+     */
+    void addToGepObjOffsetFromBase(const GepObjVar* obj, const IntervalValue& offset)
+    {
+        gepObjOffsetFromBase[obj] = offset;
+    }
+
+    /**
+     * @brief Checks if a GEP object has an associated offset.
+     * @param obj Pointer to the GEP object.
+     * @return True if the GEP object has an offset, false otherwise.
+     */
+    bool hasGepObjOffsetFromBase(const GepObjVar* obj) const
+    {
+        return gepObjOffsetFromBase.find(obj) != gepObjOffsetFromBase.end();
+    }
+
+    /**
+     * @brief Retrieves the offset of a GEP object from its base.
+     * @param obj Pointer to the GEP object.
+     * @return The interval value of the offset.
+     */
+    IntervalValue getGepObjOffsetFromBase(const GepObjVar* obj) const
+    {
+        if (hasGepObjOffsetFromBase(obj))
+            return gepObjOffsetFromBase.at(obj);
+        else
+        {
+            assert(false && "GepObjVar not found in gepObjOffsetFromBase");
+            abort();
+        }
+    }
+
+    /**
      * @brief Initializes external API buffer overflow check rules.
      */
     void initExtAPIBufOverflowCheckRules();
@@ -293,7 +326,7 @@ public:
      * @param as Reference to the abstract state interface.
      * @param call Pointer to the call ICFG node.
      */
-    void detectExtAPI(IAbstractState& as, const CallICFGNode *call);
+    void detectExtAPI(AbstractState& as, const CallICFGNode *call);
 
     /**
      * @brief Checks if memory can be safely accessed.
@@ -302,7 +335,7 @@ public:
      * @param len The interval value representing the length of the memory access.
      * @return True if the memory access is safe, false otherwise.
      */
-    bool canSafelyAccessMemory(IAbstractState& as, const SVFVar *value, const IntervalValue &len);
+    bool canSafelyAccessMemory(AbstractState& as, const SVFVar *value, const IntervalValue &len);
 
 private:
     /**
@@ -311,7 +344,7 @@ private:
      * @param call Pointer to the call ICFG node.
      * @return True if a buffer overflow is detected, false otherwise.
      */
-    bool detectStrcat(IAbstractState& as, const CallICFGNode *call);
+    bool detectStrcat(AbstractState& as, const CallICFGNode *call);
 
     /**
      * @brief Detects buffer overflow in 'strcpy' function calls.
@@ -319,15 +352,15 @@ private:
      * @param call Pointer to the call ICFG node.
      * @return True if a buffer overflow is detected, false otherwise.
      */
-    bool detectStrcpy(IAbstractState& as, const CallICFGNode *call);
+    bool detectStrcpy(AbstractState& as, const CallICFGNode *call);
 
 private:
-    Map<const GepObjVar*, IntervalValue> gepObjOffsetFromBase; ///< Maps GEP objects to their offsets from the base.
     Map<std::string, std::vector<std::pair<u32_t, u32_t>>> extAPIBufOverflowCheckRules; ///< Rules for checking buffer overflows in external APIs.
     Set<std::string> bugLoc; ///< Set of locations where bugs have been reported.
     SVFBugReport recoder; ///< Recorder for abstract execution bugs.
     Map<const ICFGNode*, std::string> nodeToBugInfo; ///< Maps ICFG nodes to bug information.
 };
+
 class NullptrDerefDetector : public AEDetector
 {
     friend class AbstractInterpretation;
@@ -349,7 +382,7 @@ public:
      * @param as Reference to the abstract state interface.
      * @param node Pointer to the ICFG node.
      */
-    void detect(IAbstractState& as, const ICFGNode* node) override;
+    void detect(AbstractState& as, const ICFGNode* node) override;
 
     /**
      * @brief Handles external API calls related to nullptr dereferences.
@@ -421,7 +454,7 @@ public:
      * @param as Reference to the abstract state interface.
      * @param call Pointer to the call ICFG node.
      */
-    void detectExtAPI(IAbstractState& as, const CallICFGNode* call);
+    void detectExtAPI(AbstractState& as, const CallICFGNode* call);
 
 
     /**
@@ -434,7 +467,7 @@ public:
         return !v.isAddr() && !v.isInterval();
     }
 
-    bool canSafelyDerefPtr(IAbstractState& as, const SVFVar* ptr);
+    bool canSafelyDerefPtr(AbstractState& as, const SVFVar* ptr);
 
 private:
     Set<std::string> bugLoc; ///< Set of locations where bugs have been reported.
