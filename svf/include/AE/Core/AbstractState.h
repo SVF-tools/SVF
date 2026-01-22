@@ -112,7 +112,8 @@ public:
     }
 
     /// Return the internal index if addr is an address otherwise return the value of idx
-    inline u32_t getIDFromAddr(u32_t addr)    {
+    inline u32_t getIDFromAddr(u32_t addr)
+    {
         return _freedAddrs.count(addr) ?  AddressValue::getInternalID(InvalidMemAddr) : AddressValue::getInternalID(addr);
     }
 
@@ -201,17 +202,20 @@ public:
 
 
     /// get abstract value of variable
-    inline AbstractValue &operator[](u32_t varId)    {
+    inline AbstractValue &operator[](u32_t varId)
+    {
         return _varToAbsVal[varId];
     }
 
     /// get abstract value of variable
-    inline const AbstractValue &operator[](u32_t varId) const    {
+    inline const AbstractValue &operator[](u32_t varId) const
+    {
         return _varToAbsVal.at(varId);
     }
 
     /// whether the variable is in varToAddrs table
-    inline bool inVarToAddrsTable(u32_t id) const    {
+    inline bool inVarToAddrsTable(u32_t id) const
+    {
         if (_varToAbsVal.find(id)!= _varToAbsVal.end())
         {
             if (_varToAbsVal.at(id).isAddr())
@@ -223,7 +227,8 @@ public:
     }
 
     /// whether the variable is in varToVal table
-    inline bool inVarToValTable(u32_t id) const    {
+    inline bool inVarToValTable(u32_t id) const
+    {
         if (_varToAbsVal.find(id) != _varToAbsVal.end())
         {
             if (_varToAbsVal.at(id).isInterval())
@@ -235,7 +240,8 @@ public:
     }
 
     /// whether the memory address stores memory addresses
-    inline bool inAddrToAddrsTable(u32_t id) const    {
+    inline bool inAddrToAddrsTable(u32_t id) const
+    {
         if (_addrToAbsVal.find(id)!= _addrToAbsVal.end())
         {
             if (_addrToAbsVal.at(id).isAddr())
@@ -247,7 +253,8 @@ public:
     }
 
     /// whether the memory address stores abstract value
-    inline bool inAddrToValTable(u32_t id) const    {
+    inline bool inAddrToValTable(u32_t id) const
+    {
         if (_addrToAbsVal.find(id) != _addrToAbsVal.end())
         {
             if (_addrToAbsVal.at(id).isInterval())
@@ -308,14 +315,16 @@ public:
     u32_t hash() const;
 
 public:
-    inline void store(u32_t addr, const AbstractValue &val)    {
+    inline void store(u32_t addr, const AbstractValue &val)
+    {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         u32_t objId = getIDFromAddr(addr);
         if (isNullMem(addr)) return;
         _addrToAbsVal[objId] = val;
     }
 
-    inline AbstractValue &load(u32_t addr)    {
+    inline AbstractValue &load(u32_t addr)
+    {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         u32_t objId = getIDFromAddr(addr);
         return _addrToAbsVal[objId];
