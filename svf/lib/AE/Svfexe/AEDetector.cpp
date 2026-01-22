@@ -150,7 +150,7 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(AbstractState& as, SVF::Add
                 }
                 else
                 {
-                    assert(AbstractStateImpl::isInvalidMem(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
+                    assert(AbstractState::isInvalidMem(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
                 }
             }
         }
@@ -181,7 +181,7 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(AbstractState& as, SVF::Add
                 }
                 else
                 {
-                    assert(AbstractStateImpl::isInvalidMem(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
+                    assert(AbstractState::isInvalidMem(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
                 }
             }
         }
@@ -435,7 +435,7 @@ bool BufOverflowDetector::detectStrcpy(AbstractState& as, const CallICFGNode *ca
     const SVFVar* arg0Val = call->getArgument(0);
     const SVFVar* arg1Val = call->getArgument(1);
     // Cast to dense AbstractState for AbsExtAPI compatibility
-    AbstractStateImpl& denseAs = dynamic_cast<AbstractStateImpl&>(as);
+    AbstractState& denseAs = dynamic_cast<AbstractState&>(as);
     IntervalValue strLen = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(denseAs, arg1Val);
     return canSafelyAccessMemory(as, arg0Val, strLen);
 }
@@ -456,7 +456,7 @@ bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *ca
     const std::vector<std::string> strncatGroup = {"__strncat_chk", "strncat", "__wcsncat_chk", "wcsncat"};
 
     // Cast to dense AbstractState for AbsExtAPI compatibility
-    AbstractStateImpl& denseAs = dynamic_cast<AbstractStateImpl&>(as);
+    AbstractState& denseAs = dynamic_cast<AbstractState&>(as);
 
     if (std::find(strcatGroup.begin(), strcatGroup.end(), call->getCalledFunction()->getName()) != strcatGroup.end())
     {
@@ -711,10 +711,10 @@ bool NullptrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVFVar* va
     for (const auto &addr: AbsVal.getAddrs())
     {
         // if the addr itself is invalid mem, report unsafe
-        if (AbstractStateImpl::isInvalidMem(addr))
+        if (AbstractState::isInvalidMem(addr))
             return false;
         // if nullptr is detected, return unsafe
-        else if (AbstractStateImpl::isNullMem(addr))
+        else if (AbstractState::isNullMem(addr))
             return false;
         // if addr is labeled freed mem, report unsafe
         else if (as.isFreedMem(addr))

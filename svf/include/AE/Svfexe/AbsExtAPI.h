@@ -53,7 +53,7 @@ public:
      * @brief Constructor for AbsExtAPI.
      * @param abstractTrace Reference to a map of ICFG nodes to abstract states.
      */
-    AbsExtAPI(Map<const ICFGNode*, AbstractStateImpl>& traces);
+    AbsExtAPI(Map<const ICFGNode*, AbstractState>& traces);
 
     /**
      * @brief Initializes the external function map.
@@ -66,7 +66,7 @@ public:
      * @param rhs Pointer to the SVF variable representing the string.
      * @return The string value.
      */
-    std::string strRead(AbstractStateImpl& as, const SVFVar* rhs);
+    std::string strRead(AbstractState& as, const SVFVar* rhs);
 
     /**
      * @brief Handles an external API call.
@@ -86,7 +86,7 @@ public:
      * @param strValue Pointer to the SVF variable representing the string.
      * @return The interval value representing the string length.
      */
-    IntervalValue getStrlen(AbstractStateImpl& as, const SVF::SVFVar *strValue);
+    IntervalValue getStrlen(AbstractState& as, const SVF::SVFVar *strValue);
 
     /**
      * @brief Handles the strcat API call.
@@ -102,7 +102,7 @@ public:
      * @param len The interval value representing the length to copy.
      * @param start_idx The starting index for copying.
      */
-    void handleMemcpy(AbstractStateImpl& as, const SVF::SVFVar *dst, const SVF::SVFVar *src, IntervalValue len, u32_t start_idx);
+    void handleMemcpy(AbstractState& as, const SVF::SVFVar *dst, const SVF::SVFVar *src, IntervalValue len, u32_t start_idx);
 
     /**
      * @brief Handles the memset API call.
@@ -111,7 +111,7 @@ public:
      * @param elem The interval value representing the element to set.
      * @param len The interval value representing the length to set.
      */
-    void handleMemset(AbstractStateImpl& as, const SVFVar* dst, IntervalValue elem, IntervalValue len);
+    void handleMemset(AbstractState& as, const SVFVar* dst, IntervalValue elem, IntervalValue len);
 
     /**
      * @brief Gets the range limit from a type.
@@ -126,12 +126,12 @@ public:
      * @return Reference to the abstract state.
      * @throws Assertion if no trace exists for the node.
      */
-    AbstractStateImpl& getAbsStateFromTrace(const ICFGNode* node);
+    AbstractState& getAbsStateFromTrace(const ICFGNode* node);
 
 protected:
     SVFIR* svfir; ///< Pointer to the SVF intermediate representation.
     ICFG* icfg; ///< Pointer to the interprocedural control flow graph.
-    Map<const ICFGNode*, AbstractStateImpl>& abstractTrace; ///< Map of ICFG nodes to abstract states.
+    Map<const ICFGNode*, AbstractState>& abstractTrace; ///< Map of ICFG nodes to abstract states.
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map; ///< Map of function names to handlers.
 };
 

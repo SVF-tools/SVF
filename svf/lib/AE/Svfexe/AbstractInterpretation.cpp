@@ -163,7 +163,7 @@ void AbstractInterpretation::analyse()
 void AbstractInterpretation::handleGlobalNode()
 {
     const ICFGNode* node = icfg->getGlobalICFGNode();
-    abstractTrace[node] = AbstractStateImpl();
+    abstractTrace[node] = AbstractState();
     abstractTrace[node][IRGraph::NullPtr] = AddressValue();
     // Global Node, we just need to handle addr, load, store, copy and gep
     for (const SVFStmt *stmt: node->getSVFStmts())
@@ -177,8 +177,8 @@ void AbstractInterpretation::handleGlobalNode()
 /// Scenario 2: preblock -----(callEdge)----> block
 bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNode)
 {
-    std::vector<AbstractStateImpl> workList;
-    AbstractStateImpl preAs;
+    std::vector<AbstractState> workList;
+    AbstractState preAs;
     for (auto& edge: icfgNode->getInEdges())
     {
         if (abstractTrace.find(edge->getSrcNode()) != abstractTrace.end())
@@ -187,7 +187,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNo
             if (const IntraCFGEdge *intraCfgEdge =
                         SVFUtil::dyn_cast<IntraCFGEdge>(edge))
             {
-                AbstractStateImpl tmpEs = abstractTrace[edge->getSrcNode()];
+                AbstractState tmpEs = abstractTrace[edge->getSrcNode()];
                 if (intraCfgEdge->getCondition())
                 {
                     if (isBranchFeasible(intraCfgEdge, tmpEs))
@@ -256,9 +256,9 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNo
 
 
 bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t succ,
-        AbstractStateImpl& as)
+        AbstractState& as)
 {
-    AbstractStateImpl new_es = as;
+    AbstractState new_es = as;
     // get cmp stmt's op0, op1, and predicate
     NodeID op0 = cmpStmt->getOpVarID(0);
     NodeID op1 = cmpStmt->getOpVarID(1);
@@ -482,9 +482,9 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
 }
 
 bool AbstractInterpretation::isSwitchBranchFeasible(const SVFVar* var, s64_t succ,
-        AbstractStateImpl& as)
+        AbstractState& as)
 {
-    AbstractStateImpl new_es = as;
+    AbstractState new_es = as;
     IntervalValue& switch_cond = new_es[var->getId()].getInterval();
     s64_t value = succ;
     FIFOWorkList<const SVFStmt*> workList;
@@ -526,7 +526,7 @@ bool AbstractInterpretation::isSwitchBranchFeasible(const SVFVar* var, s64_t suc
 }
 
 bool AbstractInterpretation::isBranchFeasible(const IntraCFGEdge* intraEdge,
-        AbstractStateImpl& as)
+        AbstractState& as)
 {
     const SVFVar *cmpVar = intraEdge->getCondition();
     if (cmpVar->getInEdges().empty())
@@ -681,7 +681,7 @@ bool AbstractInterpretation::isRecursiveCall(const CallICFGNode *callNode)
 
 void AbstractInterpretation::recursiveCallPass(const CallICFGNode *callNode)
 {
-    AbstractStateImpl& as = getDenseAbsStateFromTrace(callNode);
+    AbstractState& as = getDenseAbsStateFromTrace(callNode);
     SkipRecursiveCall(callNode);
     const RetICFGNode *retNode = callNode->getRetICFGNode();
     if (retNode->getSVFStmts().size() > 0)
@@ -715,7 +715,7 @@ bool AbstractInterpretation::isDirectCall(const CallICFGNode *callNode)
 }
 void AbstractInterpretation::directCallFunPass(const CallICFGNode *callNode)
 {
-    AbstractStateImpl& as = getDenseAbsStateFromTrace(callNode);
+    AbstractState& as = getDenseAbsStateFromTrace(callNode);
 
     abstractTrace[callNode] = as;
 
@@ -756,7 +756,7 @@ bool AbstractInterpretation::isIndirectCall(const CallICFGNode *callNode)
 
 void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
 {
-    AbstractStateImpl& as = getDenseAbsStateFromTrace(callNode);
+    AbstractState& as = getDenseAbsStateFromTrace(callNode);
     const auto callsiteMaps = svfir->getIndirectCallsites();
     NodeID call_id = callsiteMaps.at(callNode);
     if (!as.inVarToAddrsTable(call_id))
@@ -801,9 +801,9 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
         if (cur_iter >= Options::WidenDelay())
         {
             // Widen or narrow after processing cycle head node
-            AbstractStateImpl prev_head_state = abstractTrace[cycle_head];
+            AbstractState prev_head_state = abstractTrace[cycle_head];
             handleWTOComponent(cycle->head());
-            AbstractStateImpl cur_head_state = abstractTrace[cycle_head];
+            AbstractState cur_head_state = abstractTrace[cycle_head];
             if (increasing)
             {
 
@@ -939,13 +939,13 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
 
 void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
 {
-    AbstractStateImpl& as = getDenseAbsStateFromTrace(callNode);
+    AbstractState& as = getDenseAbsStateFromTrace(callNode);
     const RetICFGNode *retNode = callNode->getRetICFGNode();
     if (retNode->getSVFStmts().size() > 0)
     {
         if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(*retNode->getSVFStmts().begin()))
         {
-            AbstractStateImpl as;
+            AbstractState as;
             if (!retPE->getLHSVar()->isPointer() && !retPE->getLHSVar()->isConstDataOrAggDataButNotNullPtr())
                 as[retPE->getLHSVarID()] = IntervalValue::top();
         }
@@ -1138,7 +1138,7 @@ void AbstractInterpretation::checkPointAllSet()
 
 void AbstractInterpretation::updateStateOnGep(const GepStmt *gep)
 {
-    AbstractStateImpl& as = getDenseAbsStateFromTrace(gep->getICFGNode());
+    AbstractState& as = getDenseAbsStateFromTrace(gep->getICFGNode());
     u32_t rhs = gep->getRHSVarID();
     u32_t lhs = gep->getLHSVarID();
     IntervalValue offsetPair = as.getElementIndex(gep);
@@ -1154,7 +1154,7 @@ void AbstractInterpretation::updateStateOnGep(const GepStmt *gep)
 
 void AbstractInterpretation::updateStateOnSelect(const SelectStmt *select)
 {
-    AbstractStateImpl& as = getDenseAbsStateFromTrace(select->getICFGNode());
+    AbstractState& as = getDenseAbsStateFromTrace(select->getICFGNode());
     u32_t res = select->getResID();
     u32_t tval = select->getTrueValue()->getId();
     u32_t fval = select->getFalseValue()->getId();
@@ -1173,7 +1173,7 @@ void AbstractInterpretation::updateStateOnSelect(const SelectStmt *select)
 void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
 {
     const ICFGNode* icfgNode = phi->getICFGNode();
-    AbstractStateImpl& as = getDenseAbsStateFromTrace(icfgNode);
+    AbstractState& as = getDenseAbsStateFromTrace(icfgNode);
     u32_t res = phi->getResID();
     AbstractValue rhs;
     for (u32_t i = 0; i < phi->getOpVarNum(); i++)
@@ -1182,8 +1182,8 @@ void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
         const ICFGNode* opICFGNode = phi->getOpICFGNode(i);
         if (hasAbsStateFromTrace(opICFGNode))
         {
-            AbstractStateImpl tmpEs = abstractTrace[opICFGNode];
-            AbstractStateImpl& opAs = getDenseAbsStateFromTrace(opICFGNode);
+            AbstractState tmpEs = abstractTrace[opICFGNode];
+            AbstractState& opAs = getDenseAbsStateFromTrace(opICFGNode);
             const ICFGEdge* edge =  icfg->getICFGEdge(opICFGNode, icfgNode, ICFGEdge::IntraCF);
             // if IntraEdge, check the condition, if it is feasible, join the value
             // if IntraEdge but not conditional edge, join the value
@@ -1211,7 +1211,7 @@ void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
 
 void AbstractInterpretation::updateStateOnCall(const CallPE *callPE)
 {
-    AbstractStateImpl& as = getDenseAbsStateFromTrace(callPE->getICFGNode());
+    AbstractState& as = getDenseAbsStateFromTrace(callPE->getICFGNode());
     NodeID lhs = callPE->getLHSVarID();
     NodeID rhs = callPE->getRHSVarID();
     as[lhs] = as[rhs];
@@ -1219,7 +1219,7 @@ void AbstractInterpretation::updateStateOnCall(const CallPE *callPE)
 
 void AbstractInterpretation::updateStateOnRet(const RetPE *retPE)
 {
-    AbstractStateImpl& as = getDenseAbsStateFromTrace(retPE->getICFGNode());
+    AbstractState& as = getDenseAbsStateFromTrace(retPE->getICFGNode());
     NodeID lhs = retPE->getLHSVarID();
     NodeID rhs = retPE->getRHSVarID();
     as[lhs] = as[rhs];
@@ -1228,7 +1228,7 @@ void AbstractInterpretation::updateStateOnRet(const RetPE *retPE)
 
 void AbstractInterpretation::updateStateOnAddr(const AddrStmt *addr)
 {
-    AbstractStateImpl& as = getDenseAbsStateFromTrace(addr->getICFGNode());
+    AbstractState& as = getDenseAbsStateFromTrace(addr->getICFGNode());
     as.initObjVar(SVFUtil::cast<ObjVar>(addr->getRHSVar()));
     if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
         as[addr->getRHSVarID()].getInterval().meet_with(utils->getRangeLimitFromType(addr->getRHSVar()->getType()));
@@ -1242,7 +1242,7 @@ void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary)
     /// You are only required to handle integer predicates, including Add, FAdd, Sub, FSub, Mul, FMul, SDiv, FDiv, UDiv,
     /// SRem, FRem, URem, Xor, And, Or, AShr, Shl, LShr
     const ICFGNode* node = binary->getICFGNode();
-    AbstractStateImpl& as = getDenseAbsStateFromTrace(node);
+    AbstractState& as = getDenseAbsStateFromTrace(node);
     u32_t op0 = binary->getOpVarID(0);
     u32_t op1 = binary->getOpVarID(1);
     u32_t res = binary->getResID();
@@ -1300,7 +1300,7 @@ void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary)
 
 void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
 {
-    AbstractStateImpl& as = getDenseAbsStateFromTrace(cmp->getICFGNode());
+    AbstractState& as = getDenseAbsStateFromTrace(cmp->getICFGNode());
     u32_t op0 = cmp->getOpVarID(0);
     u32_t op1 = cmp->getOpVarID(1);
     // if it is address
@@ -1515,7 +1515,7 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
 
 void AbstractInterpretation::updateStateOnLoad(const LoadStmt *load)
 {
-    AbstractStateImpl& as = getDenseAbsStateFromTrace(load->getICFGNode());
+    AbstractState& as = getDenseAbsStateFromTrace(load->getICFGNode());
     u32_t rhs = load->getRHSVarID();
     u32_t lhs = load->getLHSVarID();
     as[lhs] = as.loadValue(rhs);
@@ -1523,7 +1523,7 @@ void AbstractInterpretation::updateStateOnLoad(const LoadStmt *load)
 
 void AbstractInterpretation::updateStateOnStore(const StoreStmt *store)
 {
-    AbstractStateImpl& as = getDenseAbsStateFromTrace(store->getICFGNode());
+    AbstractState& as = getDenseAbsStateFromTrace(store->getICFGNode());
     u32_t rhs = store->getRHSVarID();
     u32_t lhs = store->getLHSVarID();
     as.storeValue(lhs, as[rhs]);
@@ -1531,7 +1531,7 @@ void AbstractInterpretation::updateStateOnStore(const StoreStmt *store)
 
 void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
 {
-    auto getZExtValue = [](AbstractStateImpl& as, const SVFVar* var)
+    auto getZExtValue = [](AbstractState& as, const SVFVar* var)
     {
         const SVFType* type = var->getType();
         if (SVFUtil::isa<SVFIntegerType>(type))
@@ -1574,7 +1574,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
         return IntervalValue::top(); // TODO: may have better solution
     };
 
-    auto getTruncValue = [&](const AbstractStateImpl& as, const SVFVar* var,
+    auto getTruncValue = [&](const AbstractState& as, const SVFVar* var,
                              const SVFType* dstType)
     {
         const IntervalValue& itv = as[var->getId()].getInterval();
@@ -1627,7 +1627,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
         }
     };
 
-    AbstractStateImpl& as = getDenseAbsStateFromTrace(copy->getICFGNode());
+    AbstractState& as = getDenseAbsStateFromTrace(copy->getICFGNode());
     u32_t lhs = copy->getLHSVarID();
     u32_t rhs = copy->getRHSVarID();
 

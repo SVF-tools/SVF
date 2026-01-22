@@ -27,7 +27,6 @@
 //
 #pragma once
 #include <SVFIR/SVFIR.h>
-#include <AE/Core/IAbstractState.h>
 #include <AE/Core/AbstractState.h>
 #include "Util/SVFBugReport.h"
 

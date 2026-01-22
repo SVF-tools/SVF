@@ -178,8 +178,8 @@ public:
         }
     }
 
-    /// Dense state access from trace (for internal use when AbstractStateImpl is needed)
-    AbstractStateImpl& getDenseAbsStateFromTrace(const ICFGNode* node)
+    /// Dense state access from trace (for internal use when AbstractState is needed)
+    AbstractState& getDenseAbsStateFromTrace(const ICFGNode* node)
     {
         if (abstractTrace.count(node) == 0)
         {
@@ -213,7 +213,7 @@ private:
      * @param intraEdge the edge from CmpStmt to the next node
      * @return if this edge is feasible
      */
-    bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractStateImpl& as);
+    bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractState& as);
 
     /**
      * handle instructions in ICFGSingletonWTO
@@ -264,7 +264,7 @@ private:
     * @return if this ICFGNode has preceding execution state
     */
     bool isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t succ,
-                             AbstractStateImpl& as);
+                             AbstractState& as);
 
     /**
     * Check if this SwitchInst and succ are satisfiable to the execution state.
@@ -274,7 +274,7 @@ private:
     * @return if this ICFGNode has preceding execution state
     */
     bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ,
-                                AbstractStateImpl& as);
+                                AbstractState& as);
 
 
     void collectCheckPoint();
@@ -327,7 +327,7 @@ private:
     std::unique_ptr<AbstractState> createState()
     {
         // TODO: if (Options::UseSparseState())
-        return std::make_unique<AbstractStateImpl>();
+        return std::make_unique<AbstractState>();
     }
 
     AbsExtAPI* getUtils()
@@ -350,7 +350,7 @@ private:
     // there data should be shared with subclasses
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
 
-    Map<const ICFGNode*, AbstractStateImpl> abstractTrace; // abstract states immediately after nodes
+    Map<const ICFGNode*, AbstractState> abstractTrace; // abstract states immediately after nodes
     std::string moduleName;
 
     std::vector<std::unique_ptr<AEDetector>> detectors;

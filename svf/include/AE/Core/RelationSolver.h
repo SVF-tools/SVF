@@ -44,17 +44,17 @@ public:
     IntervalESBase (the last element of inputs) for RSY or bilateral solver */
 
     /// Return Z3Expr according to valToValMap
-    Z3Expr gamma_hat(const AbstractStateImpl&exeState) const;
+    Z3Expr gamma_hat(const AbstractState&exeState) const;
 
     /// Return Z3Expr according to another valToValMap
-    Z3Expr gamma_hat(const AbstractStateImpl&alpha, const AbstractStateImpl&exeState) const;
+    Z3Expr gamma_hat(const AbstractState&alpha, const AbstractState&exeState) const;
 
     /// Return Z3Expr from a NodeID
-    Z3Expr gamma_hat(u32_t id, const AbstractStateImpl&exeState) const;
+    Z3Expr gamma_hat(u32_t id, const AbstractState&exeState) const;
 
-    AbstractStateImpl abstract_consequence(const AbstractStateImpl&lower, const AbstractStateImpl&upper, const AbstractStateImpl&domain) const;
+    AbstractState abstract_consequence(const AbstractState&lower, const AbstractState&upper, const AbstractState&domain) const;
 
-    AbstractStateImpl beta(const Map<u32_t, s32_t> &sigma, const AbstractStateImpl&exeState) const;
+    AbstractState beta(const Map<u32_t, s32_t> &sigma, const AbstractState&exeState) const;
 
 
     /// Return Z3 expression lazily based on SVFVar ID
@@ -74,13 +74,13 @@ public:
 
     /* two optional solvers: RSY and bilateral */
 
-    AbstractStateImpl bilateral(const AbstractStateImpl& domain, const Z3Expr &phi, u32_t descend_check = 0);
+    AbstractState bilateral(const AbstractState& domain, const Z3Expr &phi, u32_t descend_check = 0);
 
-    AbstractStateImpl RSY(const AbstractStateImpl& domain, const Z3Expr &phi);
+    AbstractState RSY(const AbstractState& domain, const Z3Expr &phi);
 
     Map<u32_t, s32_t> BoxedOptSolver(const Z3Expr& phi, Map<u32_t, s32_t>& ret, Map<u32_t, s32_t>& low_values, Map<u32_t, s32_t>& high_values);
 
-    AbstractStateImpl BS(const AbstractStateImpl& domain, const Z3Expr &phi);
+    AbstractState BS(const AbstractState& domain, const Z3Expr &phi);
 
     void updateMap(Map<u32_t, s32_t>& map, u32_t key, const s32_t& value);
 

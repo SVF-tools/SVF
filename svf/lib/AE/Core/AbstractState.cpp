@@ -35,17 +35,12 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-bool AbstractStateImpl::equals(const AbstractState& other) const
+bool AbstractState::equals(const AbstractState& other) const
 {
-    const AbstractStateImpl* otherState = dynamic_cast<const AbstractStateImpl*>(&other);
-    if (!otherState)
-    {
-        return false; // Different state types are never equal
-    }
-    return *this == *otherState;
+    return *this == other;
 }
 
-u32_t AbstractStateImpl::hash() const
+u32_t AbstractState::hash() const
 {
     size_t h = getVarToVal().size() * 2;
     Hash<u32_t> hf;
@@ -62,10 +57,10 @@ u32_t AbstractStateImpl::hash() const
     return pairH({h, h2});
 }
 
-AbstractStateImpl AbstractStateImpl::widening(const AbstractStateImpl& other) const
+AbstractState AbstractState::widening(const AbstractState& other) const
 {
     // widen interval
-    AbstractStateImpl es = *this;
+    AbstractState es = *this;
     for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
@@ -83,16 +78,9 @@ AbstractStateImpl AbstractStateImpl::widening(const AbstractStateImpl& other) co
     return es;
 }
 
-std::unique_ptr<AbstractState> AbstractStateImpl::widening(const AbstractState& other) const
+AbstractState AbstractState::narrowing(const AbstractState& other) const
 {
-    const AbstractStateImpl* otherState = dynamic_cast<const AbstractStateImpl*>(&other);
-    assert(otherState && "Type mismatch in widening: expected AbstractStateImpl");
-    return std::make_unique<AbstractStateImpl>(widening(*otherState));
-}
-
-AbstractStateImpl AbstractStateImpl::narrowing(const AbstractStateImpl& other) const
-{
-    AbstractStateImpl es = *this;
+    AbstractState es = *this;
     for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
@@ -110,20 +98,10 @@ AbstractStateImpl AbstractStateImpl::narrowing(const AbstractStateImpl& other) c
     return es;
 }
 
-std::unique_ptr<AbstractState> AbstractStateImpl::narrowing(const AbstractState& other) const
-{
-    const AbstractStateImpl* otherState = dynamic_cast<const AbstractStateImpl*>(&other);
-    assert(otherState && "Type mismatch in narrowing: expected AbstractStateImpl");
-    return std::make_unique<AbstractStateImpl>(narrowing(*otherState));
-}
-
 /// domain join with other, important! other widen this.
-void AbstractStateImpl::joinWith(const AbstractState& other)
+void AbstractState::joinWith(const AbstractState& other)
 {
-    const AbstractStateImpl* otherState = dynamic_cast<const AbstractStateImpl*>(&other);
-    assert(otherState && "Type mismatch in joinWith: expected AbstractStateImpl");
-
-    for (auto it = otherState->_varToAbsVal.begin(); it != otherState->_varToAbsVal.end(); ++it)
+    for (auto it = other._varToAbsVal.begin(); it != other._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
         auto oit = _varToAbsVal.find(key);
@@ -136,7 +114,7 @@ void AbstractStateImpl::joinWith(const AbstractState& other)
             _varToAbsVal.emplace(key, it->second);
         }
     }
-    for (auto it = otherState->_addrToAbsVal.begin(); it != otherState->_addrToAbsVal.end(); ++it)
+    for (auto it = other._addrToAbsVal.begin(); it != other._addrToAbsVal.end(); ++it)
     {
         auto key = it->first;
         auto oit = _addrToAbsVal.find(key);
@@ -149,16 +127,13 @@ void AbstractStateImpl::joinWith(const AbstractState& other)
             _addrToAbsVal.emplace(key, it->second);
         }
     }
-    _freedAddrs.insert(otherState->_freedAddrs.begin(), otherState->_freedAddrs.end());
+    _freedAddrs.insert(other._freedAddrs.begin(), other._freedAddrs.end());
 }
 
 /// domain meet with other, important! other widen this.
-void AbstractStateImpl::meetWith(const AbstractState& other)
+void AbstractState::meetWith(const AbstractState& other)
 {
-    const AbstractStateImpl* otherState = dynamic_cast<const AbstractStateImpl*>(&other);
-    assert(otherState && "Type mismatch in meetWith: expected AbstractStateImpl");
-
-    for (auto it = otherState->_varToAbsVal.begin(); it != otherState->_varToAbsVal.end(); ++it)
+    for (auto it = other._varToAbsVal.begin(); it != other._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
         auto oit = _varToAbsVal.find(key);
@@ -167,7 +142,7 @@ void AbstractStateImpl::meetWith(const AbstractState& other)
             oit->second.meet_with(it->second);
         }
     }
-    for (auto it = otherState->_addrToAbsVal.begin(); it != otherState->_addrToAbsVal.end(); ++it)
+    for (auto it = other._addrToAbsVal.begin(); it != other._addrToAbsVal.end(); ++it)
     {
         auto key = it->first;
         auto oit = _addrToAbsVal.find(key);
@@ -178,13 +153,13 @@ void AbstractStateImpl::meetWith(const AbstractState& other)
     }
     Set<NodeID> intersection;
     std::set_intersection(_freedAddrs.begin(), _freedAddrs.end(),
-                          otherState->_freedAddrs.begin(), otherState->_freedAddrs.end(),
+                          other._freedAddrs.begin(), other._freedAddrs.end(),
                           std::inserter(intersection, intersection.begin()));
     _freedAddrs = std::move(intersection);
 }
 
 // getGepObjAddrs
-AddressValue AbstractStateImpl::getGepObjAddrs(u32_t pointer, IntervalValue offset)
+AddressValue AbstractState::getGepObjAddrs(u32_t pointer, IntervalValue offset)
 {
     AddressValue gepAddrs;
     APOffset lb = offset.lb().getIntNumeral() < Options::MaxFieldLimit() ? offset.lb().getIntNumeral()
@@ -199,15 +174,15 @@ AddressValue AbstractStateImpl::getGepObjAddrs(u32_t pointer, IntervalValue offs
             s64_t baseObj = getIDFromAddr(addr);
             assert(SVFUtil::isa<ObjVar>(PAG::getPAG()->getGNode(baseObj)) && "Fail to get the base object address!");
             NodeID gepObj = PAG::getPAG()->getGepObjVar(baseObj, i);
-            (*this)[gepObj] = AddressValue(AbstractStateImpl::getVirtualMemAddress(gepObj));
-            gepAddrs.insert(AbstractStateImpl::getVirtualMemAddress(gepObj));
+            (*this)[gepObj] = AddressValue(AbstractState::getVirtualMemAddress(gepObj));
+            gepAddrs.insert(AbstractState::getVirtualMemAddress(gepObj));
         }
     }
 
     return gepAddrs;
 }
 // initObjVar
-void AbstractStateImpl::initObjVar(ObjVar* objVar)
+void AbstractState::initObjVar(ObjVar* objVar)
 {
     NodeID varId = objVar->getId();
 
@@ -233,7 +208,7 @@ void AbstractStateImpl::initObjVar(ObjVar* objVar)
         }
         else if (SVFUtil::isa<GlobalObjVar>(objVar))
         {
-            (*this)[varId] = AddressValue(AbstractStateImpl::getVirtualMemAddress(varId));
+            (*this)[varId] = AddressValue(AbstractState::getVirtualMemAddress(varId));
         }
         else if (obj->isConstantArray() || obj->isConstantStruct())
         {
@@ -247,13 +222,13 @@ void AbstractStateImpl::initObjVar(ObjVar* objVar)
     // Handle non-constant memory objects
     else
     {
-        (*this)[varId] = AddressValue(AbstractStateImpl::getVirtualMemAddress(varId));
+        (*this)[varId] = AddressValue(AbstractState::getVirtualMemAddress(varId));
     }
     return;
 }
 
 // getElementIndex
-IntervalValue AbstractStateImpl::getElementIndex(const GepStmt* gep)
+IntervalValue AbstractState::getElementIndex(const GepStmt* gep)
 {
     // If the GEP statement has a constant offset, return it directly as the interval value
     if (gep->isConstantOffset())
@@ -326,7 +301,7 @@ IntervalValue AbstractStateImpl::getElementIndex(const GepStmt* gep)
     return res;
 }
 // getByteOffset
-IntervalValue AbstractStateImpl::getByteOffset(const GepStmt* gep)
+IntervalValue AbstractState::getByteOffset(const GepStmt* gep)
 {
     // If the GEP statement has a constant byte offset, return it directly as the interval value
     if (gep->isConstantOffset())
@@ -393,7 +368,7 @@ IntervalValue AbstractStateImpl::getByteOffset(const GepStmt* gep)
     return res; // Return the resulting byte offset as an IntervalValue.
 }
 
-AbstractValue AbstractStateImpl::loadValue(NodeID varId)
+AbstractValue AbstractState::loadValue(NodeID varId)
 {
     AbstractValue res;
     for (auto addr : (*this)[varId].getAddrs())
@@ -403,7 +378,7 @@ AbstractValue AbstractStateImpl::loadValue(NodeID varId)
     return res;
 }
 // storeValue
-void AbstractStateImpl::storeValue(NodeID varId, AbstractValue val)
+void AbstractState::storeValue(NodeID varId, AbstractValue val)
 {
     for (auto addr : (*this)[varId].getAddrs())
     {
@@ -411,7 +386,7 @@ void AbstractStateImpl::storeValue(NodeID varId, AbstractValue val)
     }
 }
 
-void AbstractStateImpl::printAbstractState() const
+void AbstractState::printAbstractState() const
 {
     SVFUtil::outs() << "-----------Var and Value-----------\n";
     u32_t fieldWidth = 20;
@@ -461,7 +436,7 @@ void AbstractStateImpl::printAbstractState() const
     for (const auto& item: addrToAbsValVec)
     {
         std::ostringstream oss;
-        oss << "0x" << std::hex << AbstractStateImpl::getVirtualMemAddress(item.first);
+        oss << "0x" << std::hex << AbstractState::getVirtualMemAddress(item.first);
         SVFUtil::outs() << std::left << std::setw(fieldWidth) << oss.str();
         if (item.second.isInterval())
         {
@@ -493,7 +468,7 @@ void AbstractStateImpl::printAbstractState() const
     SVFUtil::outs() << "-----------------------------------------\n";
 }
 
-const SVFType* AbstractStateImpl::getPointeeElement(NodeID id)
+const SVFType* AbstractState::getPointeeElement(NodeID id)
 {
     SVFIR* svfir = PAG::getPAG();
     if (inVarToAddrsTable(id))
@@ -514,7 +489,7 @@ const SVFType* AbstractStateImpl::getPointeeElement(NodeID id)
     return nullptr;
 }
 
-u32_t AbstractStateImpl::getAllocaInstByteSize(const AddrStmt *addr)
+u32_t AbstractState::getAllocaInstByteSize(const AddrStmt *addr)
 {
     if (const ObjVar* objvar = SVFUtil::dyn_cast<ObjVar>(addr->getRHSVar()))
     {

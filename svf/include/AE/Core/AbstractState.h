@@ -48,7 +48,6 @@
 
 #include "AE/Core/AbstractValue.h"
 #include "AE/Core/IntervalValue.h"
-#include "AE/Core/IAbstractState.h"
 #include "SVFIR/SVFVariables.h"
 #include "Util/Z3Expr.h"
 
@@ -56,7 +55,7 @@
 
 namespace SVF
 {
-class AbstractStateImpl : public AbstractState
+class AbstractState
 {
     friend class SVFIR2AbsState;
     friend class RelationSolver;
@@ -68,36 +67,36 @@ public:
 
 public:
     /// default constructor
-    AbstractStateImpl()
+    AbstractState()
     {
     }
 
-    AbstractStateImpl(VarToAbsValMap&_varToValMap, AddrToAbsValMap&_locToValMap) : _varToAbsVal(_varToValMap), _addrToAbsVal(_locToValMap) {}
+    AbstractState(VarToAbsValMap&_varToValMap, AddrToAbsValMap&_locToValMap) : _varToAbsVal(_varToValMap), _addrToAbsVal(_locToValMap) {}
 
     /// copy constructor
-    AbstractStateImpl(const AbstractStateImpl&rhs) : _freedAddrs(rhs._freedAddrs), _varToAbsVal(rhs.getVarToVal()), _addrToAbsVal(rhs.getLocToVal())
+    AbstractState(const AbstractState&rhs) : _freedAddrs(rhs._freedAddrs), _varToAbsVal(rhs.getVarToVal()), _addrToAbsVal(rhs.getLocToVal())
     {
 
     }
 
-    virtual ~AbstractStateImpl() = default;
+    virtual ~AbstractState() = default;
 
     // getGepObjAddrs
-    AddressValue getGepObjAddrs(u32_t pointer, IntervalValue offset) override;
+    AddressValue getGepObjAddrs(u32_t pointer, IntervalValue offset);
 
     // initObjVar
-    void initObjVar(ObjVar* objVar) override;
+    void initObjVar(ObjVar* objVar);
     // getElementIndex
-    IntervalValue getElementIndex(const GepStmt* gep) override;
+    IntervalValue getElementIndex(const GepStmt* gep);
     // getByteOffset
-    IntervalValue getByteOffset(const GepStmt* gep) override;
+    IntervalValue getByteOffset(const GepStmt* gep);
     // printAbstractState
     // loadValue
-    AbstractValue loadValue(NodeID varId) override;
+    AbstractValue loadValue(NodeID varId);
     // storeValue
-    void storeValue(NodeID varId, AbstractValue val) override;
+    void storeValue(NodeID varId, AbstractValue val);
 
-    u32_t getAllocaInstByteSize(const AddrStmt *addr) override;
+    u32_t getAllocaInstByteSize(const AddrStmt *addr);
 
 
     /// The physical address starts with 0x7f...... + idx
@@ -113,12 +112,11 @@ public:
     }
 
     /// Return the internal index if addr is an address otherwise return the value of idx
-    inline u32_t getIDFromAddr(u32_t addr) override
-    {
+    inline u32_t getIDFromAddr(u32_t addr)    {
         return _freedAddrs.count(addr) ?  AddressValue::getInternalID(InvalidMemAddr) : AddressValue::getInternalID(addr);
     }
 
-    AbstractStateImpl&operator=(const AbstractStateImpl&rhs)
+    AbstractState&operator=(const AbstractState&rhs)
     {
         if (rhs != *this)
         {
@@ -130,14 +128,14 @@ public:
     }
 
     /// move constructor
-    AbstractStateImpl(AbstractStateImpl&&rhs) : _varToAbsVal(std::move(rhs._varToAbsVal)),
+    AbstractState(AbstractState&&rhs) : _varToAbsVal(std::move(rhs._varToAbsVal)),
         _addrToAbsVal(std::move(rhs._addrToAbsVal))
     {
 
     }
 
     /// operator= move constructor
-    AbstractStateImpl&operator=(AbstractStateImpl&&rhs)
+    AbstractState&operator=(AbstractState&&rhs)
     {
         if (&rhs != this)
         {
@@ -149,9 +147,9 @@ public:
     }
 
     /// Set all value bottom
-    AbstractStateImpl bottom() const
+    AbstractState bottom() const
     {
-        AbstractStateImpl inv = *this;
+        AbstractState inv = *this;
         for (auto &item: inv._varToAbsVal)
         {
             if (item.second.isInterval())
@@ -161,9 +159,9 @@ public:
     }
 
     /// Set all value top
-    AbstractStateImpl top() const
+    AbstractState top() const
     {
-        AbstractStateImpl inv = *this;
+        AbstractState inv = *this;
         for (auto &item: inv._varToAbsVal)
         {
             if (item.second.isInterval())
@@ -173,9 +171,9 @@ public:
     }
 
     /// Copy some values and return a new IntervalExeState
-    AbstractStateImpl sliceState(Set<u32_t> &sl)
+    AbstractState sliceState(Set<u32_t> &sl)
     {
-        AbstractStateImpl inv;
+        AbstractState inv;
         for (u32_t id: sl)
         {
             inv._varToAbsVal[id] = _varToAbsVal[id];
@@ -203,20 +201,17 @@ public:
 
 
     /// get abstract value of variable
-    inline AbstractValue &operator[](u32_t varId) override
-    {
+    inline AbstractValue &operator[](u32_t varId)    {
         return _varToAbsVal[varId];
     }
 
     /// get abstract value of variable
-    inline const AbstractValue &operator[](u32_t varId) const override
-    {
+    inline const AbstractValue &operator[](u32_t varId) const    {
         return _varToAbsVal.at(varId);
     }
 
     /// whether the variable is in varToAddrs table
-    inline bool inVarToAddrsTable(u32_t id) const override
-    {
+    inline bool inVarToAddrsTable(u32_t id) const    {
         if (_varToAbsVal.find(id)!= _varToAbsVal.end())
         {
             if (_varToAbsVal.at(id).isAddr())
@@ -228,8 +223,7 @@ public:
     }
 
     /// whether the variable is in varToVal table
-    inline bool inVarToValTable(u32_t id) const override
-    {
+    inline bool inVarToValTable(u32_t id) const    {
         if (_varToAbsVal.find(id) != _varToAbsVal.end())
         {
             if (_varToAbsVal.at(id).isInterval())
@@ -241,8 +235,7 @@ public:
     }
 
     /// whether the memory address stores memory addresses
-    inline bool inAddrToAddrsTable(u32_t id) const override
-    {
+    inline bool inAddrToAddrsTable(u32_t id) const    {
         if (_addrToAbsVal.find(id)!= _addrToAbsVal.end())
         {
             if (_addrToAbsVal.at(id).isAddr())
@@ -254,8 +247,7 @@ public:
     }
 
     /// whether the memory address stores abstract value
-    inline bool inAddrToValTable(u32_t id) const override
-    {
+    inline bool inAddrToValTable(u32_t id) const    {
         if (_addrToAbsVal.find(id) != _addrToAbsVal.end())
         {
             if (_addrToAbsVal.at(id).isInterval())
@@ -280,42 +272,24 @@ public:
 
 public:
 
-    /// domain widen with other, and return the widened domain (interface version)
-    std::unique_ptr<AbstractState> widening(const AbstractState& other) const override;
-
-    /// domain narrow with other, and return the narrowed domain (interface version)
-    std::unique_ptr<AbstractState> narrowing(const AbstractState& other) const override;
-
     /// Widening operation - returns widened state
-    AbstractStateImpl widening(const AbstractStateImpl& other) const;
+    AbstractState widening(const AbstractState& other) const;
 
     /// Narrowing operation - returns narrowed state
-    AbstractStateImpl narrowing(const AbstractStateImpl& other) const;
+    AbstractState narrowing(const AbstractState& other) const;
 
     /// domain join with other, important! other widen this.
-    void joinWith(const AbstractState& other) override;
+    void joinWith(const AbstractState& other);
 
     /// domain meet with other, important! other widen this.
-    void meetWith(const AbstractState& other) override;
+    void meetWith(const AbstractState& other);
 
-    /// Clone this abstract state
-    std::unique_ptr<AbstractState> clone() const override
-    {
-        return std::make_unique<AbstractStateImpl>(*this);
-    }
-
-    /// Get state type name
-    const char* getStateName() const override
-    {
-        return "DenseAbstractState";
-    }
-
-    void addToFreedAddrs(NodeID addr) override
+    void addToFreedAddrs(NodeID addr)
     {
         _freedAddrs.insert(addr);
     }
 
-    bool isFreedMem(u32_t addr) const override
+    bool isFreedMem(u32_t addr) const
     {
         return _freedAddrs.find(addr) != _freedAddrs.end();
     }
@@ -328,36 +302,34 @@ public:
     * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
     * @param call callnode of memset like api
      */
-    const SVFType* getPointeeElement(NodeID id) override;
+    const SVFType* getPointeeElement(NodeID id);
 
 
     u32_t hash() const;
 
 public:
-    inline void store(u32_t addr, const AbstractValue &val) override
-    {
+    inline void store(u32_t addr, const AbstractValue &val)    {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         u32_t objId = getIDFromAddr(addr);
         if (isNullMem(addr)) return;
         _addrToAbsVal[objId] = val;
     }
 
-    inline AbstractValue &load(u32_t addr) override
-    {
+    inline AbstractValue &load(u32_t addr)    {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         u32_t objId = getIDFromAddr(addr);
         return _addrToAbsVal[objId];
 
     }
 
-    void printAbstractState() const override;
+    void printAbstractState() const;
 
     std::string toString() const
     {
         return "";
     }
 
-    bool equals(const AbstractState& other) const override;
+    bool equals(const AbstractState& other) const;
 
 
     static bool eqVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs)
@@ -407,24 +379,24 @@ public:
         return true;
     }
 
-    bool operator==(const AbstractStateImpl&rhs) const
+    bool operator==(const AbstractState&rhs) const
     {
         return  eqVarToValMap(_varToAbsVal, rhs.getVarToVal()) &&
                 eqVarToValMap(_addrToAbsVal, rhs.getLocToVal());
     }
 
-    bool operator!=(const AbstractStateImpl&rhs) const
+    bool operator!=(const AbstractState&rhs) const
     {
         return !(*this == rhs);
     }
 
-    bool operator<(const AbstractStateImpl&rhs) const
+    bool operator<(const AbstractState&rhs) const
     {
         return !(*this >= rhs);
     }
 
 
-    bool operator>=(const AbstractStateImpl&rhs) const
+    bool operator>=(const AbstractState&rhs) const
     {
         return geqVarToValMap(_varToAbsVal, rhs.getVarToVal()) && geqVarToValMap(_addrToAbsVal, rhs.getLocToVal());
     }
