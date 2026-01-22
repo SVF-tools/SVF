@@ -30,12 +30,11 @@
 #include "AE/Core/AbstractState.h"
 #include "Util/SVFUtil.h"
 #include "Util/Options.h"
-#include <memory>
 
 using namespace SVF;
 using namespace SVFUtil;
 
-bool AbstractState::equals(const AbstractState& other) const
+bool AbstractState::equals(const AbstractState&other) const
 {
     return *this == other;
 }
@@ -57,7 +56,7 @@ u32_t AbstractState::hash() const
     return pairH({h, h2});
 }
 
-AbstractState AbstractState::widening(const AbstractState& other) const
+AbstractState AbstractState::widening(const AbstractState& other)
 {
     // widen interval
     AbstractState es = *this;
@@ -78,7 +77,7 @@ AbstractState AbstractState::widening(const AbstractState& other) const
     return es;
 }
 
-AbstractState AbstractState::narrowing(const AbstractState& other) const
+AbstractState AbstractState::narrowing(const AbstractState& other)
 {
     AbstractState es = *this;
     for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
@@ -96,6 +95,7 @@ AbstractState AbstractState::narrowing(const AbstractState& other) const
                 it->second.getInterval().narrow_with(other._addrToAbsVal.at(key).getInterval());
     }
     return es;
+
 }
 
 /// domain join with other, important! other widen this.

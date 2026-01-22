@@ -202,13 +202,13 @@ public:
 
 
     /// get abstract value of variable
-    inline AbstractValue &operator[](u32_t varId)
+    inline virtual AbstractValue &operator[](u32_t varId)
     {
         return _varToAbsVal[varId];
     }
 
     /// get abstract value of variable
-    inline const AbstractValue &operator[](u32_t varId) const
+    inline virtual const AbstractValue &operator[](u32_t varId) const
     {
         return _varToAbsVal.at(varId);
     }
@@ -227,7 +227,7 @@ public:
     }
 
     /// whether the variable is in varToVal table
-    inline bool inVarToValTable(u32_t id) const
+    inline virtual bool inVarToValTable(u32_t id) const
     {
         if (_varToAbsVal.find(id) != _varToAbsVal.end())
         {
@@ -253,7 +253,7 @@ public:
     }
 
     /// whether the memory address stores abstract value
-    inline bool inAddrToValTable(u32_t id) const
+    inline virtual bool inAddrToValTable(u32_t id) const
     {
         if (_addrToAbsVal.find(id) != _addrToAbsVal.end())
         {
@@ -279,17 +279,17 @@ public:
 
 public:
 
-    /// Widening operation - returns widened state
-    AbstractState widening(const AbstractState& other) const;
+    /// domain widen with other, and return the widened domain
+    AbstractState widening(const AbstractState&other);
 
-    /// Narrowing operation - returns narrowed state
-    AbstractState narrowing(const AbstractState& other) const;
+    /// domain narrow with other, and return the narrowed domain
+    AbstractState narrowing(const AbstractState&other);
 
     /// domain join with other, important! other widen this.
-    void joinWith(const AbstractState& other);
+    void joinWith(const AbstractState&other);
 
     /// domain meet with other, important! other widen this.
-    void meetWith(const AbstractState& other);
+    void meetWith(const AbstractState&other);
 
     void addToFreedAddrs(NodeID addr)
     {
@@ -323,7 +323,7 @@ public:
         _addrToAbsVal[objId] = val;
     }
 
-    inline AbstractValue &load(u32_t addr)
+    inline virtual AbstractValue &load(u32_t addr)
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         u32_t objId = getIDFromAddr(addr);
@@ -338,7 +338,7 @@ public:
         return "";
     }
 
-    bool equals(const AbstractState& other) const;
+    bool equals(const AbstractState&other) const;
 
 
     static bool eqVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs)
