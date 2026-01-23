@@ -178,8 +178,14 @@ public:
         }
     }
 
-    /// Dense state access from trace (for internal use when AbstractState is needed)
-    AbstractState& getDenseAbsStateFromTrace(const ICFGNode* node)
+    /*
+     * @brief Retrieves the abstract value from the trace for a given ICFG node and variable ID.
+     * @param node Pointer to the ICFG node.
+     * @param varId ID of the variable.
+     * @return Abstract value.
+     * @throws Assertion if no trace exists for the node.
+     */
+    AbstractValue getAbstractValueFromTrace(const ICFGNode* node, NodeID varId)
     {
         if (abstractTrace.count(node) == 0)
         {
@@ -188,7 +194,8 @@ public:
         }
         else
         {
-            return abstractTrace[node];
+            //TODO: support sparse abstract state
+            return abstractTrace[node][varId];
         }
     }
 
@@ -320,14 +327,6 @@ private:
     bool hasAbsStateFromTrace(const ICFGNode* node)
     {
         return abstractTrace.count(node) != 0;
-    }
-
-    /// Factory method to create abstract state based on CLI option
-    /// Currently returns DenseAbstractState; will support SparseAbstractState in the future
-    std::unique_ptr<AbstractState> createState()
-    {
-        // TODO: if (Options::UseSparseState())
-        return std::make_unique<AbstractState>();
     }
 
     AbsExtAPI* getUtils()

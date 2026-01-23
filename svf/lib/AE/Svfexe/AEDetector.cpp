@@ -435,8 +435,7 @@ bool BufOverflowDetector::detectStrcpy(AbstractState& as, const CallICFGNode *ca
     const SVFVar* arg0Val = call->getArgument(0);
     const SVFVar* arg1Val = call->getArgument(1);
     // Cast to dense AbstractState for AbsExtAPI compatibility
-    AbstractState& denseAs = dynamic_cast<AbstractState&>(as);
-    IntervalValue strLen = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(denseAs, arg1Val);
+    IntervalValue strLen = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg1Val);
     return canSafelyAccessMemory(as, arg0Val, strLen);
 }
 
@@ -455,15 +454,12 @@ bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *ca
     const std::vector<std::string> strcatGroup = {"__strcat_chk", "strcat", "__wcscat_chk", "wcscat"};
     const std::vector<std::string> strncatGroup = {"__strncat_chk", "strncat", "__wcsncat_chk", "wcsncat"};
 
-    // Cast to dense AbstractState for AbsExtAPI compatibility
-    AbstractState& denseAs = dynamic_cast<AbstractState&>(as);
-
     if (std::find(strcatGroup.begin(), strcatGroup.end(), call->getCalledFunction()->getName()) != strcatGroup.end())
     {
         const SVFVar* arg0Val = call->getArgument(0);
         const SVFVar* arg1Val = call->getArgument(1);
-        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(denseAs, arg0Val);
-        IntervalValue strLen1 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(denseAs, arg1Val);
+        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg0Val);
+        IntervalValue strLen1 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg1Val);
         IntervalValue totalLen = strLen0 + strLen1;
         return canSafelyAccessMemory(as, arg0Val, totalLen);
     }
@@ -472,7 +468,7 @@ bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *ca
         const SVFVar* arg0Val = call->getArgument(0);
         const SVFVar* arg2Val = call->getArgument(2);
         IntervalValue arg2Num = as[arg2Val->getId()].getInterval();
-        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(denseAs, arg0Val);
+        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg0Val);
         IntervalValue totalLen = strLen0 + arg2Num;
         return canSafelyAccessMemory(as, arg0Val, totalLen);
     }

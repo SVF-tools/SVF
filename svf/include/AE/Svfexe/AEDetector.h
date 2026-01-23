@@ -152,9 +152,6 @@ class BufOverflowDetector : public AEDetector
 {
     friend class AbstractInterpretation;
 
-private:
-    Map<const GepObjVar*, IntervalValue> gepObjOffsetFromBase; ///< Maps GEP objects to their offsets from the base.
-
 public:
     /**
      * @brief Constructor initializes the detector kind to BUF_OVERFLOW and sets up external API buffer overflow rules.
@@ -354,6 +351,7 @@ private:
     bool detectStrcpy(AbstractState& as, const CallICFGNode *call);
 
 private:
+    Map<const GepObjVar*, IntervalValue> gepObjOffsetFromBase; ///< Maps GEP objects to their offsets from their base.
     Map<std::string, std::vector<std::pair<u32_t, u32_t>>> extAPIBufOverflowCheckRules; ///< Rules for checking buffer overflows in external APIs.
     Set<std::string> bugLoc; ///< Set of locations where bugs have been reported.
     SVFBugReport recoder; ///< Recorder for abstract execution bugs.
