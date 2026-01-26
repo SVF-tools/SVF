@@ -224,6 +224,37 @@ private:
 
     void handleWTOComponent(const ICFGWTOComp* wtoComp);
 
+    /**
+     * Handle a function using worklist algorithm
+     *
+     * @param funEntry The entry node of the function to handle
+     */
+    void handleFunction(const ICFGNode* funEntry);
+
+    /**
+     * Handle an ICFG node by merging states and processing statements
+     *
+     * @param node The ICFG node to handle
+     * @return true if state changed, false if fixpoint reached or infeasible
+     */
+    bool handleICFGNode(const ICFGNode* node);
+
+    /**
+     * Get the next nodes of a node within the same function
+     *
+     * @param node The node to get successors for
+     * @return Vector of successor nodes
+     */
+    std::vector<const ICFGNode*> getNextNodes(const ICFGNode* node) const;
+
+    /**
+     * Get the next nodes outside a cycle
+     *
+     * @param cycle The cycle to get exit successors for
+     * @return Vector of successor nodes outside the cycle
+     */
+    std::vector<const ICFGNode*> getNextNodesOfCycle(const ICFGCycleWTO* cycle) const;
+
 
     /**
      * handle SVF Statement like CmpStmt, CallStmt, GepStmt, LoadStmt, StoreStmt, etc.
@@ -299,6 +330,7 @@ private:
     Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
     Set<std::pair<const CallICFGNode*, NodeID>> nonRecursiveCallSites;
     Set<const FunObjVar*> recursiveFuns;
+    Map<const ICFGNode*, const ICFGCycleWTO*> cycleHeadToCycle;
 
 
     bool hasAbsStateFromTrace(const ICFGNode* node)

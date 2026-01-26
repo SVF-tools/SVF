@@ -142,6 +142,27 @@ void AbstractInterpretation::initWTO()
             funcToWTO[it->second->getFunction()] = iwto;
         }
     }
+
+    // Build cycleHeadToCycle map for all functions
+    // This maps cycle head nodes to their corresponding WTO cycles for efficient lookup
+    for (auto& [func, wto] : funcToWTO)
+    {
+        // Recursive lambda to collect cycle heads from nested WTO components
+        std::function<void(const std::list<const ICFGWTOComp*>&)> collectCycleHeads =
+            [&](const std::list<const ICFGWTOComp*>& comps)
+        {
+            for (const ICFGWTOComp* comp : comps)
+            {
+                if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+                {
+                    cycleHeadToCycle[cycle->head()->getICFGNode()] = cycle;
+                    // Recursively collect nested cycle heads
+                    collectCycleHeads(cycle->getWTOComponents());
+                }
+            }
+        };
+        collectCycleHeads(wto->getWTOComponents());
+    }
 }
 
 /// Program entry
@@ -154,8 +175,9 @@ void AbstractInterpretation::analyse()
         icfg->getGlobalICFGNode())[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
     if (const CallGraphNode* cgn = svfir->getCallGraph()->getCallGraphNode("main"))
     {
-        const ICFGWTO* wto = funcToWTO[cgn->getFunction()];
-        handleWTOComponents(wto->getWTOComponents());
+        // Use worklist-based function handling instead of recursive WTO component handling
+        const ICFGNode* mainEntry = icfg->getFunEntryICFGNode(cgn->getFunction());
+        handleFunction(mainEntry);
     }
 }
 
@@ -577,6 +599,215 @@ void AbstractInterpretation::handleSingletonWTO(const ICFGSingletonWTO *icfgSing
 }
 
 /**
+ * Handle an ICFG node by merging states from predecessors and processing statements
+ * Returns true if the abstract state has changed, false if fixpoint reached or infeasible
+ */
+bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
+{
+    // Store the previous state for fixpoint detection
+    AbstractState prevState;
+    bool hadPrevState = hasAbsStateFromTrace(node);
+    if (hadPrevState)
+        prevState = abstractTrace[node];
+
+    // For function entry nodes, initialize state from caller or global
+    bool isFunEntry = SVFUtil::isa<FunEntryICFGNode>(node);
+    if (isFunEntry)
+    {
+        // Try to merge from predecessors first (handles call edges)
+        if (!mergeStatesFromPredecessors(node))
+        {
+            // No predecessors with state - initialize from caller or global
+            if (!callSiteStack.empty())
+            {
+                // Get state from the most recent call site
+                const CallICFGNode* caller = callSiteStack.back();
+                if (hasAbsStateFromTrace(caller))
+                {
+                    abstractTrace[node] = abstractTrace[caller];
+                }
+                else
+                {
+                    abstractTrace[node] = AbstractState();
+                }
+            }
+            else
+            {
+                // This is the main function entry, inherit from global node
+                const ICFGNode* globalNode = icfg->getGlobalICFGNode();
+                if (hasAbsStateFromTrace(globalNode))
+                {
+                    abstractTrace[node] = abstractTrace[globalNode];
+                }
+                else
+                {
+                    abstractTrace[node] = AbstractState();
+                }
+            }
+        }
+    }
+    else
+    {
+        // Merge states from predecessors
+        if (!mergeStatesFromPredecessors(node))
+            return false;
+    }
+
+    stat->getBlockTrace()++;
+    stat->getICFGNodeTrace()++;
+
+    // Handle SVF statements
+    for (const SVFStmt *stmt: node->getSVFStmts())
+    {
+        handleSVFStatement(stmt);
+    }
+
+    // Handle call sites
+    if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
+    {
+        handleCallSite(callNode);
+    }
+
+    // Run detectors
+    for (auto& detector: detectors)
+        detector->detect(getAbsStateFromTrace(node), node);
+    stat->countStateSize();
+
+    // Check if state changed (for fixpoint detection)
+    // For entry nodes on first visit, always return true to process successors
+    if (isFunEntry && !hadPrevState)
+        return true;
+
+    if (abstractTrace[node] == prevState)
+        return false;
+
+    return true;
+}
+
+/**
+ * Get the next nodes of a node within the same function
+ * For CallICFGNode, includes shortcut to RetICFGNode
+ */
+std::vector<const ICFGNode*> AbstractInterpretation::getNextNodes(const ICFGNode* node) const
+{
+    std::vector<const ICFGNode*> outEdges;
+    for (const ICFGEdge* edge : node->getOutEdges())
+    {
+        const ICFGNode* dst = edge->getDstNode();
+        // Only nodes inside the same function are included
+        if (dst->getFun() == node->getFun())
+        {
+            outEdges.push_back(dst);
+        }
+    }
+    if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
+    {
+        // Shortcut to the RetICFGNode
+        const ICFGNode* retNode = callNode->getRetICFGNode();
+        outEdges.push_back(retNode);
+    }
+    return outEdges;
+}
+
+/**
+ * Get the next nodes outside a cycle
+ * Inner cycles are skipped since their next nodes cannot be outside the outer cycle
+ */
+std::vector<const ICFGNode*> AbstractInterpretation::getNextNodesOfCycle(const ICFGCycleWTO* cycle) const
+{
+    Set<const ICFGNode*> cycleNodes;
+    // Insert the head of the cycle and all component nodes
+    cycleNodes.insert(cycle->head()->getICFGNode());
+    for (const ICFGWTOComp* comp : cycle->getWTOComponents())
+    {
+        if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+        {
+            cycleNodes.insert(singleton->getICFGNode());
+        }
+        else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+        {
+            cycleNodes.insert(subCycle->head()->getICFGNode());
+        }
+    }
+
+    std::vector<const ICFGNode*> outEdges;
+
+    // Check head's successors
+    std::vector<const ICFGNode*> nextNodes = getNextNodes(cycle->head()->getICFGNode());
+    for (const ICFGNode* nextNode : nextNodes)
+    {
+        // Only nodes that point outside the cycle are included
+        if (cycleNodes.find(nextNode) == cycleNodes.end())
+        {
+            outEdges.push_back(nextNode);
+        }
+    }
+
+    // Check each component's successors
+    for (const ICFGWTOComp* comp : cycle->getWTOComponents())
+    {
+        if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+        {
+            std::vector<const ICFGNode*> compNextNodes = getNextNodes(singleton->getICFGNode());
+            for (const ICFGNode* nextNode : compNextNodes)
+            {
+                if (cycleNodes.find(nextNode) == cycleNodes.end())
+                {
+                    outEdges.push_back(nextNode);
+                }
+            }
+        }
+        // Skip inner cycles - they are handled within the outer cycle
+    }
+    return outEdges;
+}
+
+/**
+ * Handle a function using worklist algorithm
+ * This replaces the recursive WTO component handling with explicit worklist iteration
+ */
+void AbstractInterpretation::handleFunction(const ICFGNode* funEntry)
+{
+    FIFOWorkList<const ICFGNode*> worklist;
+    worklist.push(funEntry);
+
+    while (!worklist.empty())
+    {
+        const ICFGNode* node = worklist.pop();
+
+        // Check if this node is a cycle head
+        if (cycleHeadToCycle.find(node) != cycleHeadToCycle.end())
+        {
+            const ICFGCycleWTO* cycle = cycleHeadToCycle[node];
+            handleCycleWTO(cycle);
+
+            // Push nodes outside the cycle to the worklist
+            std::vector<const ICFGNode*> cycleNextNodes = getNextNodesOfCycle(cycle);
+            for (const ICFGNode* nextNode : cycleNextNodes)
+            {
+                worklist.push(nextNode);
+            }
+        }
+        else
+        {
+            // Handle regular node
+            if (!handleICFGNode(node))
+            {
+                // Fixpoint reached or infeasible, skip successors
+                continue;
+            }
+
+            // Push successor nodes to the worklist
+            std::vector<const ICFGNode*> nextNodes = getNextNodes(node);
+            for (const ICFGNode* nextNode : nextNodes)
+            {
+                worklist.push(nextNode);
+            }
+        }
+    }
+}
+
+/**
  * @brief Handle two types of WTO components (singleton and cycle)
  */
 void AbstractInterpretation::handleWTOComponents(const std::list<const ICFGWTOComp*>& wtoComps)
@@ -721,8 +952,9 @@ void AbstractInterpretation::directCallFunPass(const CallICFGNode *callNode)
 
     callSiteStack.push_back(callNode);
 
-    const ICFGWTO* wto = funcToWTO[calleeFun];
-    handleWTOComponents(wto->getWTOComponents());
+    // Use worklist-based function handling instead of recursive WTO component handling
+    const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(calleeFun);
+    handleFunction(calleeEntry);
 
     callSiteStack.pop_back();
     // handle Ret node
@@ -762,8 +994,10 @@ void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
         callSiteStack.push_back(callNode);
         abstractTrace[callNode] = as;
 
-        const ICFGWTO* wto = funcToWTO[callfun];
-        handleWTOComponents(wto->getWTOComponents());
+        // Use worklist-based function handling instead of recursive WTO component handling
+        const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callfun);
+        handleFunction(calleeEntry);
+
         callSiteStack.pop_back();
         // handle Ret node
         const RetICFGNode* retNode = callNode->getRetICFGNode();
@@ -771,26 +1005,32 @@ void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
     }
 }
 
-/// handle wto cycle (loop)
-void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
+/// handle wto cycle (loop) using worklist-compatible widening/narrowing iteration
+void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO* cycle)
 {
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
-    // Flag to indicate if we are in the increasing phase
+    // Flag to indicate if we are in the increasing (widening) phase
     bool increasing = true;
-    // Infinite loop until a fixpoint is reached,
+    u32_t widen_delay = Options::WidenDelay();
+
+    // Infinite loop until a fixpoint is reached
     for (u32_t cur_iter = 0;; cur_iter++)
     {
-        // Start widening or narrowing if cur_iter >= widen threshold (widen delay)
-        if (cur_iter >= Options::WidenDelay())
+        // Get the abstract state before processing the cycle head
+        AbstractState prev_head_state;
+        if (hasAbsStateFromTrace(cycle_head))
+            prev_head_state = abstractTrace[cycle_head];
+
+        // Process the cycle head node
+        handleICFGNode(cycle_head);
+        AbstractState cur_head_state = abstractTrace[cycle_head];
+
+        // Start widening or narrowing if cur_iter >= widen delay threshold
+        if (cur_iter >= widen_delay)
         {
-            // Widen or narrow after processing cycle head node
-            AbstractState prev_head_state = abstractTrace[cycle_head];
-            handleWTOComponent(cycle->head());
-            AbstractState cur_head_state = abstractTrace[cycle_head];
             if (increasing)
             {
-
-                if (isRecursiveFun(cycle->head()->getICFGNode()->getFun()) &&
+                if (isRecursiveFun(cycle_head->getFun()) &&
                         !(Options::HandleRecur() == WIDEN_ONLY ||
                           Options::HandleRecur() == WIDEN_NARROW))
                 {
@@ -799,21 +1039,22 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
                     assert(false && "Recursion mode TOP should not reach here!");
                 }
 
-                // Widening
+                // Apply widening operator
                 abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
 
                 if (abstractTrace[cycle_head] == prev_head_state)
                 {
+                    // Widening fixpoint reached, switch to narrowing phase
                     increasing = false;
                     continue;
                 }
             }
             else
             {
-                // Narrowing, use different modes for nodes within recursions
-                if (isRecursiveFun(cycle->head()->getICFGNode()->getFun()))
+                // Narrowing phase - use different modes for nodes within recursions
+                if (isRecursiveFun(cycle_head->getFun()))
                 {
-                    // For nodes in recursions, skip narrowing in WIDEN_TOP mode
+                    // For nodes in recursions, skip narrowing in WIDEN_ONLY mode
                     if (Options::HandleRecur() == WIDEN_ONLY)
                     {
                         break;
@@ -821,41 +1062,44 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
                     // Perform normal narrowing in WIDEN_NARROW mode
                     else if (Options::HandleRecur() == WIDEN_NARROW)
                     {
-                        // Widening's fixpoint reached in the widening phase, switch to narrowing
                         abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
                         if (abstractTrace[cycle_head] == prev_head_state)
                         {
-                            // Narrowing's fixpoint reached in the narrowing phase, exit loop
+                            // Narrowing fixpoint reached, exit loop
                             break;
                         }
                     }
-                    // When Options::HandleRecur() == TOP, skipRecursiveCall will handle recursions,
-                    // thus should not reach this branch
                     else
                     {
                         assert(false && "Recursion mode TOP should not reach here");
                     }
                 }
-                // For nodes outside recursions, perform normal narrowing
                 else
                 {
-                    // Widening's fixpoint reached in the widening phase, switch to narrowing
+                    // For nodes outside recursions, perform normal narrowing
                     abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
                     if (abstractTrace[cycle_head] == prev_head_state)
                     {
-                        // Narrowing's fixpoint reached in the narrowing phase, exit loop
+                        // Narrowing fixpoint reached, exit loop
                         break;
                     }
                 }
             }
         }
-        else
+
+        // Process cycle body components
+        for (const ICFGWTOComp* comp : cycle->getWTOComponents())
         {
-            // Handle the cycle head
-            handleWTOComponent(cycle->head());
+            if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+            {
+                handleICFGNode(singleton->getICFGNode());
+            }
+            else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+            {
+                // Handle nested cycle recursively
+                handleCycleWTO(subCycle);
+            }
         }
-        // Handle the cycle body
-        handleWTOComponents(cycle->getWTOComponents());
     }
 }
 
