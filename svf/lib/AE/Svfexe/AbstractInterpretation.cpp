@@ -810,30 +810,101 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry)
 /**
  * @brief Handle two types of WTO components (singleton and cycle)
  */
-void AbstractInterpretation::handleWTOComponents(const std::list<const ICFGWTOComp*>& wtoComps)
+void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO* cycle)
 {
-    for (const ICFGWTOComp* wtoNode : wtoComps)
-    {
-        handleWTOComponent(wtoNode);
-    }
-}
+    const ICFGNode* cycle_head = cycle->head()->getICFGNode();
+    // Flag to indicate if we are in the increasing (widening) phase
+    bool increasing = true;
+    u32_t widen_delay = Options::WidenDelay();
 
-void AbstractInterpretation::handleWTOComponent(const ICFGWTOComp* wtoNode)
-{
-    if (const ICFGSingletonWTO* node = SVFUtil::dyn_cast<ICFGSingletonWTO>(wtoNode))
+    // Infinite loop until a fixpoint is reached
+    for (u32_t cur_iter = 0;; cur_iter++)
     {
-        if (mergeStatesFromPredecessors(node->getICFGNode()))
-            handleSingletonWTO(node);
+        // Get the abstract state before processing the cycle head
+        AbstractState prev_head_state;
+        if (hasAbsStateFromTrace(cycle_head))
+            prev_head_state = abstractTrace[cycle_head];
+
+        // Process the cycle head node
+        handleICFGNode(cycle_head);
+        AbstractState cur_head_state = abstractTrace[cycle_head];
+
+        // Start widening or narrowing if cur_iter >= widen delay threshold
+        if (cur_iter >= widen_delay)
+        {
+            if (increasing)
+            {
+                if (isRecursiveFun(cycle_head->getFun()) &&
+                        !(Options::HandleRecur() == WIDEN_ONLY ||
+                          Options::HandleRecur() == WIDEN_NARROW))
+                {
+                    // When Options::HandleRecur() == TOP, skipRecursiveCall will handle recursions,
+                    // thus should not reach this branch
+                    assert(false && "Recursion mode TOP should not reach here!");
+                }
+
+                // Apply widening operator
+                abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
+
+                if (abstractTrace[cycle_head] == prev_head_state)
+                {
+                    // Widening fixpoint reached, switch to narrowing phase
+                    increasing = false;
+                    continue;
+                }
+            }
+            else
+            {
+                // Narrowing phase - use different modes for nodes within recursions
+                if (isRecursiveFun(cycle_head->getFun()))
+                {
+                    // For nodes in recursions, skip narrowing in WIDEN_ONLY mode
+                    if (Options::HandleRecur() == WIDEN_ONLY)
+                    {
+                        break;
+                    }
+                    // Perform normal narrowing in WIDEN_NARROW mode
+                    else if (Options::HandleRecur() == WIDEN_NARROW)
+                    {
+                        abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
+                        if (abstractTrace[cycle_head] == prev_head_state)
+                        {
+                            // Narrowing fixpoint reached, exit loop
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        assert(false && "Recursion mode TOP should not reach here");
+                    }
+                }
+                else
+                {
+                    // For nodes outside recursions, perform normal narrowing
+                    abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
+                    if (abstractTrace[cycle_head] == prev_head_state)
+                    {
+                        // Narrowing fixpoint reached, exit loop
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Process cycle body components
+        for (const ICFGWTOComp* comp : cycle->getWTOComponents())
+        {
+            if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+            {
+                handleICFGNode(singleton->getICFGNode());
+            }
+            else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+            {
+                // Handle nested cycle recursively
+                handleCycleWTO(subCycle);
+            }
+        }
     }
-    // Handle WTO cycles
-    else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(wtoNode))
-    {
-        if (mergeStatesFromPredecessors(cycle->head()->getICFGNode()))
-            handleCycleWTO(cycle);
-    }
-    // Assert false for unknown WTO types
-    else
-        assert(false && "unknown WTO type!");
 }
 
 void AbstractInterpretation::handleCallSite(const ICFGNode* node)
@@ -1006,103 +1077,6 @@ void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
 }
 
 /// handle wto cycle (loop) using worklist-compatible widening/narrowing iteration
-void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO* cycle)
-{
-    const ICFGNode* cycle_head = cycle->head()->getICFGNode();
-    // Flag to indicate if we are in the increasing (widening) phase
-    bool increasing = true;
-    u32_t widen_delay = Options::WidenDelay();
-
-    // Infinite loop until a fixpoint is reached
-    for (u32_t cur_iter = 0;; cur_iter++)
-    {
-        // Get the abstract state before processing the cycle head
-        AbstractState prev_head_state;
-        if (hasAbsStateFromTrace(cycle_head))
-            prev_head_state = abstractTrace[cycle_head];
-
-        // Process the cycle head node
-        handleICFGNode(cycle_head);
-        AbstractState cur_head_state = abstractTrace[cycle_head];
-
-        // Start widening or narrowing if cur_iter >= widen delay threshold
-        if (cur_iter >= widen_delay)
-        {
-            if (increasing)
-            {
-                if (isRecursiveFun(cycle_head->getFun()) &&
-                        !(Options::HandleRecur() == WIDEN_ONLY ||
-                          Options::HandleRecur() == WIDEN_NARROW))
-                {
-                    // When Options::HandleRecur() == TOP, skipRecursiveCall will handle recursions,
-                    // thus should not reach this branch
-                    assert(false && "Recursion mode TOP should not reach here!");
-                }
-
-                // Apply widening operator
-                abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
-
-                if (abstractTrace[cycle_head] == prev_head_state)
-                {
-                    // Widening fixpoint reached, switch to narrowing phase
-                    increasing = false;
-                    continue;
-                }
-            }
-            else
-            {
-                // Narrowing phase - use different modes for nodes within recursions
-                if (isRecursiveFun(cycle_head->getFun()))
-                {
-                    // For nodes in recursions, skip narrowing in WIDEN_ONLY mode
-                    if (Options::HandleRecur() == WIDEN_ONLY)
-                    {
-                        break;
-                    }
-                    // Perform normal narrowing in WIDEN_NARROW mode
-                    else if (Options::HandleRecur() == WIDEN_NARROW)
-                    {
-                        abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
-                        if (abstractTrace[cycle_head] == prev_head_state)
-                        {
-                            // Narrowing fixpoint reached, exit loop
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        assert(false && "Recursion mode TOP should not reach here");
-                    }
-                }
-                else
-                {
-                    // For nodes outside recursions, perform normal narrowing
-                    abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
-                    if (abstractTrace[cycle_head] == prev_head_state)
-                    {
-                        // Narrowing fixpoint reached, exit loop
-                        break;
-                    }
-                }
-            }
-        }
-
-        // Process cycle body components
-        for (const ICFGWTOComp* comp : cycle->getWTOComponents())
-        {
-            if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
-            {
-                handleICFGNode(singleton->getICFGNode());
-            }
-            else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
-            {
-                // Handle nested cycle recursively
-                handleCycleWTO(subCycle);
-            }
-        }
-    }
-}
-
 void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
 {
     if (const AddrStmt *addr = SVFUtil::dyn_cast<AddrStmt>(stmt))

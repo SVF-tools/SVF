@@ -220,10 +220,6 @@ private:
      */
     virtual void handleCycleWTO(const ICFGCycleWTO* cycle);
 
-    void handleWTOComponents(const std::list<const ICFGWTOComp*>& wtoComps);
-
-    void handleWTOComponent(const ICFGWTOComp* wtoComp);
-
     /**
      * Handle a function using worklist algorithm
      *
