@@ -218,7 +218,7 @@ private:
      *
      * @param cycle WTOCycle which has weak topo order of basic blocks and nested cycles
      */
-    virtual void handleCycleWTO(const ICFGCycleWTO* cycle);
+    virtual void handleICFGCycle(const ICFGCycleWTO* cycle);
 
     /**
      * Handle a function using worklist algorithm
@@ -250,6 +250,13 @@ private:
      * @return Vector of successor nodes outside the cycle
      */
     std::vector<const ICFGNode*> getNextNodesOfCycle(const ICFGCycleWTO* cycle) const;
+
+    /**
+     * Recursively collect cycle heads from nested WTO components
+     *
+     * @param comps The list of WTO components to collect cycle heads from
+     */
+    void collectCycleHeads(const std::list<const ICFGWTOComp*>& comps);
 
 
     /**
@@ -350,6 +357,38 @@ private:
     virtual void directCallFunPass(const CallICFGNode* callNode);
     virtual bool isIndirectCall(const CallICFGNode* callNode);
     virtual void indirectCallFunPass(const CallICFGNode* callNode);
+
+    /// Recursion Handling Decision Methods
+    /// All recursion mode (TOP/WIDEN_ONLY/WIDEN_NARROW) logic is centralized here
+
+    /**
+     * Determines if a recursive call should be skipped (not inlined).
+     * - TOP mode: Always skip recursive calls
+     * - WIDEN_ONLY/WIDEN_NARROW: Skip only recursive callsites (calls within same SCC)
+     */
+    bool shouldSkipRecursiveCall(const CallICFGNode* callNode, const FunObjVar* callee);
+
+    /**
+     * Handles state for a skipped recursive call.
+     * Sets return value and stores to TOP (only meaningful in TOP mode).
+     */
+    void handleSkippedRecursiveCall(const CallICFGNode* callNode);
+
+    /**
+     * Determines if narrowing should be applied for a cycle head in a recursive function.
+     * - TOP mode: Should not reach here (asserts)
+     * - WIDEN_ONLY: Returns false (skip narrowing)
+     * - WIDEN_NARROW: Returns true (apply narrowing)
+     * For non-recursive functions, always returns true.
+     */
+    bool shouldApplyNarrowingInRecursion(const FunObjVar* fun);
+
+    /**
+     * Determines if a return edge should contribute to state merging.
+     * - TOP mode: Always include
+     * - WIDEN_ONLY/WIDEN_NARROW: Only if callsite has state
+     */
+    bool shouldIncludeReturnEdge(const RetICFGNode* returnSite);
 
     // there data should be shared with subclasses
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
