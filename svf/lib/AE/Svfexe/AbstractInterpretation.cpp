@@ -876,7 +876,7 @@ bool AbstractInterpretation::isRecursiveCallSite(const CallICFGNode* callNode,
 /// Recursion Handling Decision Methods
 /// All recursion mode (TOP/WIDEN_ONLY/WIDEN_NARROW) logic is centralized here
 
-bool AbstractInterpretation::shouldSkipRecursiveCall(
+bool AbstractInterpretation::handleRecursiveCall(
     const CallICFGNode* callNode, const FunObjVar* callee)
 {
     if (!isRecursiveFun(callee))
@@ -885,20 +885,17 @@ bool AbstractInterpretation::shouldSkipRecursiveCall(
     switch (Options::HandleRecur())
     {
     case TOP:
-        return true;  // Always skip in TOP mode
+        // Always skip recursive calls, set return value and stores to TOP
+        recursiveCallPass(callNode);
+        return true;
     case WIDEN_ONLY:
     case WIDEN_NARROW:
-        return isRecursiveCallSite(callNode, callee);  // Skip only within-SCC calls
+        // Only skip recursive callsites within same SCC (WTO handles the analysis)
+        return isRecursiveCallSite(callNode, callee);
     default:
         assert(false && "Unknown recursion handling mode");
         return false;
     }
-}
-
-void AbstractInterpretation::handleSkippedRecursiveCall(const CallICFGNode* callNode)
-{
-    // Delegate to recursiveCallPass which sets return value and stores to TOP
-    recursiveCallPass(callNode);
 }
 
 bool AbstractInterpretation::shouldApplyNarrowingInRecursion(const FunObjVar* fun)
@@ -953,15 +950,9 @@ void AbstractInterpretation::directCallFunPass(const CallICFGNode *callNode)
 
     const FunObjVar *calleeFun = callNode->getCalledFunction();
 
-    // Check if this recursive call should be skipped
-    if (shouldSkipRecursiveCall(callNode, calleeFun))
-    {
-        // In TOP mode, set return value and stores to TOP
-        // In WIDEN_ONLY/WIDEN_NARROW, just skip (WTO handles it)
-        if (Options::HandleRecur() == TOP)
-            handleSkippedRecursiveCall(callNode);
+    // Handle recursive call if applicable (returns true if handled)
+    if (handleRecursiveCall(callNode, calleeFun))
         return;
-    }
 
     callSiteStack.push_back(callNode);
 
@@ -997,15 +988,9 @@ void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
 
     if(const FunObjVar* funObjVar = SVFUtil::dyn_cast<FunObjVar>(func_var))
     {
-        // Check if this recursive call should be skipped
-        if (shouldSkipRecursiveCall(callNode, funObjVar))
-        {
-            // In TOP mode, set return value and stores to TOP
-            // In WIDEN_ONLY/WIDEN_NARROW, just skip (WTO handles it)
-            if (Options::HandleRecur() == TOP)
-                handleSkippedRecursiveCall(callNode);
+        // Handle recursive call if applicable (returns true if handled)
+        if (handleRecursiveCall(callNode, funObjVar))
             return;
-        }
 
         const FunObjVar* callfun = funObjVar->getFunction();
         callSiteStack.push_back(callNode);

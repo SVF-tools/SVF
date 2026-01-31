@@ -362,17 +362,12 @@ private:
     /// All recursion mode (TOP/WIDEN_ONLY/WIDEN_NARROW) logic is centralized here
 
     /**
-     * Determines if a recursive call should be skipped (not inlined).
-     * - TOP mode: Always skip recursive calls
-     * - WIDEN_ONLY/WIDEN_NARROW: Skip only recursive callsites (calls within same SCC)
+     * Attempts to handle a recursive call. Returns true if the call was handled
+     * (caller should return early), false if normal processing should continue.
+     * - TOP mode: Always handles recursive calls (sets return/stores to TOP)
+     * - WIDEN_ONLY/WIDEN_NARROW: Only handles recursive callsites within same SCC
      */
-    bool shouldSkipRecursiveCall(const CallICFGNode* callNode, const FunObjVar* callee);
-
-    /**
-     * Handles state for a skipped recursive call.
-     * Sets return value and stores to TOP (only meaningful in TOP mode).
-     */
-    void handleSkippedRecursiveCall(const CallICFGNode* callNode);
+    bool handleRecursiveCall(const CallICFGNode* callNode, const FunObjVar* callee);
 
     /**
      * Determines if narrowing should be applied for a cycle head in a recursive function.
