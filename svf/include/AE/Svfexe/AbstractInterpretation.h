@@ -378,13 +378,6 @@ private:
      */
     bool shouldApplyNarrowingInRecursion(const FunObjVar* fun);
 
-    /**
-     * Determines if a return edge should contribute to state merging.
-     * - TOP mode: Always include
-     * - WIDEN_ONLY/WIDEN_NARROW: Only if callsite has state
-     */
-    bool shouldIncludeReturnEdge(const RetICFGNode* returnSite);
-
     // there data should be shared with subclasses
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
 

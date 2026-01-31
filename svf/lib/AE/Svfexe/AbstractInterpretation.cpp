@@ -234,8 +234,10 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNo
             else if (const RetCFGEdge *retCfgEdge =
                          SVFUtil::dyn_cast<RetCFGEdge>(edge))
             {
-                const RetICFGNode* returnSite = SVFUtil::dyn_cast<RetICFGNode>(icfgNode);
-                if (shouldIncludeReturnEdge(returnSite))
+                // Only include return edge if the corresponding callsite was processed
+                // (skipped recursive callsites in WIDEN_ONLY/WIDEN_NARROW won't have state)
+                const RetICFGNode* retNode = SVFUtil::dyn_cast<RetICFGNode>(icfgNode);
+                if (hasAbsStateFromTrace(retNode->getCallICFGNode()))
                 {
                     workList.push_back(abstractTrace[retCfgEdge->getSrcNode()]);
                 }
@@ -918,21 +920,6 @@ bool AbstractInterpretation::shouldApplyNarrowingInRecursion(const FunObjVar* fu
     }
 }
 
-bool AbstractInterpretation::shouldIncludeReturnEdge(const RetICFGNode* returnSite)
-{
-    switch (Options::HandleRecur())
-    {
-    case TOP:
-        return true;  // Always include in TOP mode
-    case WIDEN_ONLY:
-    case WIDEN_NARROW:
-        // Only include if the corresponding callsite has state
-        return hasAbsStateFromTrace(returnSite->getCallICFGNode());
-    default:
-        assert(false && "Unknown recursion handling mode");
-        return true;
-    }
-}
 
 bool AbstractInterpretation::isDirectCall(const CallICFGNode *callNode)
 {
