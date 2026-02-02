@@ -362,12 +362,31 @@ private:
     /// All recursion mode (TOP/WIDEN_ONLY/WIDEN_NARROW) logic is centralized here
 
     /**
-     * Attempts to handle a recursive call. Returns true if the call was handled
-     * (caller should return early), false if normal processing should continue.
-     * - TOP mode: Always handles recursive calls (sets return/stores to TOP)
-     * - WIDEN_ONLY/WIDEN_NARROW: Only handles recursive callsites within same SCC
+     * Determines whether to skip (not inline) a call to a potentially recursive function.
+     * Returns true if the call should be skipped, false if normal inlining should proceed.
+     *
+     * Example:
+     *   int factorial(int n) {
+     *       if (n <= 1) return 1;
+     *       return n * factorial(n - 1);  // inner call (recursive callsite)
+     *   }
+     *   int main() {
+     *       return factorial(5);          // outer call (entry into recursion)
+     *   }
+     *
+     * Behavior by mode:
+     * - TOP mode:
+     *     Both calls are skipped. Return value and stores are set to TOP.
+     *     Result: factorial returns [-inf, +inf]
+     *
+     * - WIDEN_ONLY / WIDEN_NARROW mode:
+     *     Outer call (main -> factorial): NOT skipped, inlined normally.
+     *     Inner call (factorial -> factorial): Skipped, WTO cycle handles the iteration.
+     *     The recursive function body is analyzed via handleICFGCycle() with widening
+     *     (and narrowing for WIDEN_NARROW) to reach a fixpoint.
+     *     Result: factorial returns [10000, +inf] (WIDEN_ONLY) or [10000, 10000] (WIDEN_NARROW)
      */
-    bool handleRecursiveCall(const CallICFGNode* callNode, const FunObjVar* callee);
+    bool skipRecursiveCall(const CallICFGNode* callNode, const FunObjVar* callee);
 
     /**
      * Determines if narrowing should be applied for a cycle head in a recursive function.

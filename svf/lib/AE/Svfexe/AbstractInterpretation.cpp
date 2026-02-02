@@ -878,21 +878,24 @@ bool AbstractInterpretation::isRecursiveCallSite(const CallICFGNode* callNode,
 /// Recursion Handling Decision Methods
 /// All recursion mode (TOP/WIDEN_ONLY/WIDEN_NARROW) logic is centralized here
 
-bool AbstractInterpretation::handleRecursiveCall(
+bool AbstractInterpretation::skipRecursiveCall(
     const CallICFGNode* callNode, const FunObjVar* callee)
 {
+    // Non-recursive function: never skip, always inline
     if (!isRecursiveFun(callee))
         return false;
 
     switch (Options::HandleRecur())
     {
     case TOP:
-        // Always skip recursive calls, set return value and stores to TOP
+        // Skip all calls to recursive functions, set return value and stores to TOP
         recursiveCallPass(callNode);
         return true;
     case WIDEN_ONLY:
     case WIDEN_NARROW:
-        // Only skip recursive callsites within same SCC (WTO handles the analysis)
+        // Skip only recursive callsites (within same SCC), not the entry call.
+        // Entry call is inlined; recursive callsites are skipped so that
+        // handleICFGCycle() can analyze the function body with widening/narrowing.
         return isRecursiveCallSite(callNode, callee);
     default:
         assert(false && "Unknown recursion handling mode");
@@ -937,8 +940,8 @@ void AbstractInterpretation::directCallFunPass(const CallICFGNode *callNode)
 
     const FunObjVar *calleeFun = callNode->getCalledFunction();
 
-    // Handle recursive call if applicable (returns true if handled)
-    if (handleRecursiveCall(callNode, calleeFun))
+    // Skip recursive call if applicable (returns true if skipped)
+    if (skipRecursiveCall(callNode, calleeFun))
         return;
 
     callSiteStack.push_back(callNode);
@@ -975,8 +978,8 @@ void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
 
     if(const FunObjVar* funObjVar = SVFUtil::dyn_cast<FunObjVar>(func_var))
     {
-        // Handle recursive call if applicable (returns true if handled)
-        if (handleRecursiveCall(callNode, funObjVar))
+        // Skip recursive call if applicable (returns true if skipped)
+        if (skipRecursiveCall(callNode, funObjVar))
             return;
 
         const FunObjVar* callfun = funObjVar->getFunction();
