@@ -267,11 +267,12 @@ private:
     virtual void handleSVFStatement(const SVFStmt* stmt);
 
     /**
-     * Check if this callnode is recursive call and skip it.
+     * Sets all store values in the recursive function to TOP.
+     * This is called when skipping a recursive call in TOP mode.
      *
      * @param callnode CallICFGNode which calls a recursive function
      */
-    virtual void SkipRecursiveCall(const CallICFGNode* callnode);
+    virtual void setRecursiveCallStoresToTop(const CallICFGNode* callnode);
 
 
     /**

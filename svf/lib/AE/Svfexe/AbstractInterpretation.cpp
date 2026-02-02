@@ -852,7 +852,7 @@ bool AbstractInterpretation::isRecursiveCall(const CallICFGNode *callNode)
 void AbstractInterpretation::recursiveCallPass(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
-    SkipRecursiveCall(callNode);
+    setRecursiveCallStoresToTop(callNode);
     const RetICFGNode *retNode = callNode->getRetICFGNode();
     if (retNode->getSVFStmts().size() > 0)
     {
@@ -1158,7 +1158,7 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
            !getAbsStateFromTrace(stmt->getICFGNode())[IRGraph::NullPtr].isAddr());
 }
 
-void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
+void AbstractInterpretation::setRecursiveCallStoresToTop(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
     const RetICFGNode *retNode = callNode->getRetICFGNode();
