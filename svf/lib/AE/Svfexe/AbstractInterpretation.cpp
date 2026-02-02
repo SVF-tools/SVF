@@ -1031,27 +1031,16 @@ void AbstractInterpretation::handleICFGCycle(const ICFGCycleWTO* cycle)
 {
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
 
-    // TOP mode for recursive function cycles: set states to TOP and return immediately
+    // TOP mode for recursive function cycles: use recursiveCallPass to set
+    // all stores and return value to TOP, maintaining original semantics
     if (Options::HandleRecur() == TOP && isRecursiveFun(cycle_head->getFun()))
     {
-        // Process cycle head once to establish state
-        handleICFGNode(cycle_head);
-
-        // Process cycle body once, setting all states
-        for (const ICFGWTOComp* comp : cycle->getWTOComponents())
+        // Get the call node from callSiteStack (the call that entered this function)
+        if (!callSiteStack.empty())
         {
-            if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
-            {
-                handleICFGNode(singleton->getICFGNode());
-            }
-            else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
-            {
-                handleICFGCycle(subCycle);
-            }
+            const CallICFGNode* callNode = callSiteStack.back();
+            recursiveCallPass(callNode);
         }
-
-        // Set cycle head state to TOP to represent unknown recursive result
-        abstractTrace[cycle_head] = abstractTrace[cycle_head].top();
         return;
     }
 
