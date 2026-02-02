@@ -385,7 +385,15 @@ private:
      *   - WIDEN_ONLY: Widening iteration only. Result: [10000, +inf]
      *   - WIDEN_NARROW: Widening + narrowing. Result: [10000, 10000]
      */
-    bool skipRecursiveCall(const CallICFGNode* callNode, const FunObjVar* callee);
+    bool skipRecursiveCall(const CallICFGNode* callNode);
+
+    /**
+     * Gets the callee function for a call node.
+     * For direct calls, returns callNode->getCalledFunction().
+     * For indirect calls, resolves the callee through pointer analysis.
+     * Returns nullptr if callee cannot be determined.
+     */
+    const FunObjVar* getCallee(const CallICFGNode* callNode);
 
     /**
      * Determines if narrowing should be applied for a cycle head.

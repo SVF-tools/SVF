@@ -875,9 +875,41 @@ bool AbstractInterpretation::isRecursiveCallSite(const CallICFGNode* callNode,
            nonRecursiveCallSites.end();
 }
 
-bool AbstractInterpretation::skipRecursiveCall(
-    const CallICFGNode* callNode, const FunObjVar* callee)
+const FunObjVar* AbstractInterpretation::getCallee(const CallICFGNode* callNode)
 {
+    // Direct call: get callee directly from call node
+    if (const FunObjVar* callee = callNode->getCalledFunction())
+        return callee;
+
+    // Indirect call: resolve callee through pointer analysis
+    const auto callsiteMaps = svfir->getIndirectCallsites();
+    auto it = callsiteMaps.find(callNode);
+    if (it == callsiteMaps.end())
+        return nullptr;
+
+    NodeID call_id = it->second;
+    if (!hasAbsStateFromTrace(callNode))
+        return nullptr;
+
+    AbstractState& as = getAbsStateFromTrace(callNode);
+    if (!as.inVarToAddrsTable(call_id))
+        return nullptr;
+
+    AbstractValue Addrs = as[call_id];
+    if (Addrs.getAddrs().empty())
+        return nullptr;
+
+    NodeID addr = *Addrs.getAddrs().begin();
+    SVFVar* func_var = svfir->getGNode(as.getIDFromAddr(addr));
+    return SVFUtil::dyn_cast<FunObjVar>(func_var);
+}
+
+bool AbstractInterpretation::skipRecursiveCall(const CallICFGNode* callNode)
+{
+    const FunObjVar* callee = getCallee(callNode);
+    if (!callee)
+        return false;
+
     // Non-recursive function: never skip, always inline
     if (!isRecursiveFun(callee))
         return false;
@@ -928,12 +960,11 @@ void AbstractInterpretation::directCallFunPass(const CallICFGNode *callNode)
 
     abstractTrace[callNode] = as;
 
-    const FunObjVar *calleeFun = callNode->getCalledFunction();
-
     // Skip recursive call if applicable (returns true if skipped)
-    if (skipRecursiveCall(callNode, calleeFun))
+    if (skipRecursiveCall(callNode))
         return;
 
+    const FunObjVar *calleeFun = callNode->getCalledFunction();
     callSiteStack.push_back(callNode);
 
     // Use worklist-based function handling instead of recursive WTO component handling
@@ -956,35 +987,26 @@ bool AbstractInterpretation::isIndirectCall(const CallICFGNode *callNode)
 void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
-    const auto callsiteMaps = svfir->getIndirectCallsites();
-    NodeID call_id = callsiteMaps.at(callNode);
-    if (!as.inVarToAddrsTable(call_id))
-    {
+
+    // Skip recursive call if applicable (returns true if skipped)
+    if (skipRecursiveCall(callNode))
         return;
-    }
-    AbstractValue Addrs = as[call_id];
-    NodeID addr = *Addrs.getAddrs().begin();
-    SVFVar *func_var = svfir->getGNode(as.getIDFromAddr(addr));
 
-    if(const FunObjVar* funObjVar = SVFUtil::dyn_cast<FunObjVar>(func_var))
-    {
-        // Skip recursive call if applicable (returns true if skipped)
-        if (skipRecursiveCall(callNode, funObjVar))
-            return;
+    const FunObjVar* callee = getCallee(callNode);
+    if (!callee)
+        return;
 
-        const FunObjVar* callfun = funObjVar->getFunction();
-        callSiteStack.push_back(callNode);
-        abstractTrace[callNode] = as;
+    callSiteStack.push_back(callNode);
+    abstractTrace[callNode] = as;
 
-        // Use worklist-based function handling instead of recursive WTO component handling
-        const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callfun);
-        handleFunction(calleeEntry);
+    // Use worklist-based function handling instead of recursive WTO component handling
+    const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
+    handleFunction(calleeEntry);
 
-        callSiteStack.pop_back();
-        // handle Ret node
-        const RetICFGNode* retNode = callNode->getRetICFGNode();
-        abstractTrace[retNode] = abstractTrace[callNode];
-    }
+    callSiteStack.pop_back();
+    // handle Ret node
+    const RetICFGNode* retNode = callNode->getRetICFGNode();
+    abstractTrace[retNode] = abstractTrace[callNode];
 }
 
 /// handle wto cycle (loop) using widening/narrowing iteration
