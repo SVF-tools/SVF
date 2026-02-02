@@ -889,7 +889,7 @@ bool AbstractInterpretation::skipRecursiveCall(
     return isRecursiveCallSite(callNode, callee);
 }
 
-bool AbstractInterpretation::shouldApplyNarrowingInRecursion(const FunObjVar* fun)
+bool AbstractInterpretation::shouldApplyNarrowing(const FunObjVar* fun)
 {
     // Non-recursive functions (regular loops): always apply narrowing
     if (!isRecursiveFun(fun))
@@ -901,7 +901,7 @@ bool AbstractInterpretation::shouldApplyNarrowingInRecursion(const FunObjVar* fu
     switch (Options::HandleRecur())
     {
     case TOP:
-        assert(false && "TOP mode should not reach cycle narrowing phase for recursive functions");
+        assert(false && "TOP mode should not reach narrowing phase for recursive functions");
         return false;
     case WIDEN_ONLY:
         return false;  // Skip narrowing for recursive functions
@@ -1066,7 +1066,7 @@ void AbstractInterpretation::handleICFGCycle(const ICFGCycleWTO* cycle)
             else
             {
                 // Narrowing phase - check if narrowing should be applied
-                if (!shouldApplyNarrowingInRecursion(cycle_head->getFun()))
+                if (!shouldApplyNarrowing(cycle_head->getFun()))
                 {
                     break;
                 }

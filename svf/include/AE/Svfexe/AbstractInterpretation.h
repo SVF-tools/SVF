@@ -387,13 +387,16 @@ private:
     bool skipRecursiveCall(const CallICFGNode* callNode, const FunObjVar* callee);
 
     /**
-     * Determines if narrowing should be applied for a cycle head in a recursive function.
-     * - TOP mode: Should not reach here (asserts)
-     * - WIDEN_ONLY: Returns false (skip narrowing)
-     * - WIDEN_NARROW: Returns true (apply narrowing)
-     * For non-recursive functions, always returns true.
+     * Determines if narrowing should be applied for a cycle head.
+     * Called during the narrowing phase of handleICFGCycle().
+     *
+     * For non-recursive functions (regular loops): always returns true.
+     * For recursive functions: depends on Options::HandleRecur():
+     *   - TOP mode: Should not reach here (asserts), TOP mode exits early in handleICFGCycle
+     *   - WIDEN_ONLY: Returns false (skip narrowing)
+     *   - WIDEN_NARROW: Returns true (apply narrowing)
      */
-    bool shouldApplyNarrowingInRecursion(const FunObjVar* fun);
+    bool shouldApplyNarrowing(const FunObjVar* fun);
 
     // there data should be shared with subclasses
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
