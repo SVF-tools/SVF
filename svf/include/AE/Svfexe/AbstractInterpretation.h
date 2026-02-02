@@ -358,12 +358,13 @@ private:
     virtual bool isIndirectCall(const CallICFGNode* callNode);
     virtual void indirectCallFunPass(const CallICFGNode* callNode);
 
-    /// Recursion Handling Decision Methods
-    /// All recursion mode (TOP/WIDEN_ONLY/WIDEN_NARROW) logic is centralized here
-
     /**
      * Determines whether to skip (not inline) a call to a potentially recursive function.
      * Returns true if the call should be skipped, false if normal inlining should proceed.
+     *
+     * This function is mode-independent: it only checks whether the call is a recursive
+     * callsite (within the same SCC). The actual handling of recursive functions is done
+     * uniformly via handleICFGCycle(), with mode-specific behavior inside that function.
      *
      * Example:
      *   int factorial(int n) {
@@ -374,17 +375,14 @@ private:
      *       return factorial(5);          // outer call (entry into recursion)
      *   }
      *
-     * Behavior by mode:
-     * - TOP mode:
-     *     Both calls are skipped. Return value and stores are set to TOP.
-     *     Result: factorial returns [-inf, +inf]
+     * For all modes (TOP/WIDEN_ONLY/WIDEN_NARROW):
+     *   - Outer call (main -> factorial): NOT skipped, inlined into handleICFGCycle()
+     *   - Inner call (factorial -> factorial): Skipped (back-edge of the cycle)
      *
-     * - WIDEN_ONLY / WIDEN_NARROW mode:
-     *     Outer call (main -> factorial): NOT skipped, inlined normally.
-     *     Inner call (factorial -> factorial): Skipped, WTO cycle handles the iteration.
-     *     The recursive function body is analyzed via handleICFGCycle() with widening
-     *     (and narrowing for WIDEN_NARROW) to reach a fixpoint.
-     *     Result: factorial returns [10000, +inf] (WIDEN_ONLY) or [10000, 10000] (WIDEN_NARROW)
+     * The difference between modes is in handleICFGCycle():
+     *   - TOP: Sets all values to TOP without iteration. Result: [-inf, +inf]
+     *   - WIDEN_ONLY: Widening iteration only. Result: [10000, +inf]
+     *   - WIDEN_NARROW: Widening + narrowing. Result: [10000, 10000]
      */
     bool skipRecursiveCall(const CallICFGNode* callNode, const FunObjVar* callee);
 

@@ -875,9 +875,6 @@ bool AbstractInterpretation::isRecursiveCallSite(const CallICFGNode* callNode,
            nonRecursiveCallSites.end();
 }
 
-/// Recursion Handling Decision Methods
-/// All recursion mode (TOP/WIDEN_ONLY/WIDEN_NARROW) logic is centralized here
-
 bool AbstractInterpretation::skipRecursiveCall(
     const CallICFGNode* callNode, const FunObjVar* callee)
 {
@@ -885,33 +882,26 @@ bool AbstractInterpretation::skipRecursiveCall(
     if (!isRecursiveFun(callee))
         return false;
 
-    switch (Options::HandleRecur())
-    {
-    case TOP:
-        // Skip all calls to recursive functions, set return value and stores to TOP
-        recursiveCallPass(callNode);
-        return true;
-    case WIDEN_ONLY:
-    case WIDEN_NARROW:
-        // Skip only recursive callsites (within same SCC), not the entry call.
-        // Entry call is inlined; recursive callsites are skipped so that
-        // handleICFGCycle() can analyze the function body with widening/narrowing.
-        return isRecursiveCallSite(callNode, callee);
-    default:
-        assert(false && "Unknown recursion handling mode");
-        return false;
-    }
+    // For recursive functions, skip only recursive callsites (within same SCC).
+    // Entry calls (from outside SCC) are not skipped - they are inlined so that
+    // handleICFGCycle() can analyze the function body.
+    // This applies uniformly to all modes (TOP/WIDEN_ONLY/WIDEN_NARROW).
+    return isRecursiveCallSite(callNode, callee);
 }
 
 bool AbstractInterpretation::shouldApplyNarrowingInRecursion(const FunObjVar* fun)
 {
+    // Non-recursive functions (regular loops): always apply narrowing
     if (!isRecursiveFun(fun))
-        return true;  // Non-recursive functions always apply narrowing
+        return true;
 
+    // Recursive functions: depends on mode
+    // Note: TOP mode handles recursive cycles separately in handleICFGCycle,
+    // so this should not be reached for recursive functions in TOP mode.
     switch (Options::HandleRecur())
     {
     case TOP:
-        assert(false && "TOP mode should not reach cycle narrowing phase");
+        assert(false && "TOP mode should not reach cycle narrowing phase for recursive functions");
         return false;
     case WIDEN_ONLY:
         return false;  // Skip narrowing for recursive functions
@@ -997,15 +987,56 @@ void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
     }
 }
 
-/// handle wto cycle (loop) using worklist-compatible widening/narrowing iteration
+/// handle wto cycle (loop) using widening/narrowing iteration
+///
+/// This handles both regular loops and recursive function cycles.
+/// The behavior depends on Options::HandleRecur() for recursive functions:
+///
+/// - TOP mode (recursive function cycle only):
+///     Sets all values to TOP without iteration. This is the most conservative
+///     but fastest approach.
+///
+/// - WIDEN_ONLY mode:
+///     Iterates with widening until fixpoint. No narrowing phase.
+///     For recursive functions, this gives upper bounds (e.g., [10000, +inf]).
+///
+/// - WIDEN_NARROW mode:
+///     Iterates with widening, then narrows to refine the result.
+///     For recursive functions, this gives precise bounds (e.g., [10000, 10000]).
+///
+/// For regular (non-recursive) loops, all modes use widening + narrowing.
 void AbstractInterpretation::handleICFGCycle(const ICFGCycleWTO* cycle)
 {
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
-    // Flag to indicate if we are in the increasing (widening) phase
+
+    // TOP mode for recursive function cycles: set states to TOP and return immediately
+    if (Options::HandleRecur() == TOP && isRecursiveFun(cycle_head->getFun()))
+    {
+        // Process cycle head once to establish state
+        handleICFGNode(cycle_head);
+
+        // Process cycle body once, setting all states
+        for (const ICFGWTOComp* comp : cycle->getWTOComponents())
+        {
+            if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+            {
+                handleICFGNode(singleton->getICFGNode());
+            }
+            else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+            {
+                handleICFGCycle(subCycle);
+            }
+        }
+
+        // Set cycle head state to TOP to represent unknown recursive result
+        abstractTrace[cycle_head] = abstractTrace[cycle_head].top();
+        return;
+    }
+
+    // WIDEN_ONLY / WIDEN_NARROW modes (and regular loops): iterate until fixpoint
     bool increasing = true;
     u32_t widen_delay = Options::WidenDelay();
 
-    // Infinite loop until a fixpoint is reached
     for (u32_t cur_iter = 0;; cur_iter++)
     {
         // Get the abstract state before processing the cycle head
