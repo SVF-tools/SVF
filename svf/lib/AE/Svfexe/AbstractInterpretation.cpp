@@ -835,11 +835,13 @@ void AbstractInterpretation::extCallPass(const CallICFGNode *callNode)
     callSiteStack.pop_back();
 }
 
+/// Check if a function is recursive (part of a call graph SCC)
 bool AbstractInterpretation::isRecursiveFun(const FunObjVar* fun)
 {
     return recursiveFuns.find(fun) != recursiveFuns.end();
 }
 
+/// Check if a call node calls a recursive function
 bool AbstractInterpretation::isRecursiveCall(const CallICFGNode *callNode)
 {
     const FunObjVar *callfun = callNode->getCalledFunction();
@@ -849,6 +851,7 @@ bool AbstractInterpretation::isRecursiveCall(const CallICFGNode *callNode)
         return isRecursiveFun(callfun);
 }
 
+/// Handle recursive call in TOP mode: set all stores and return value to TOP
 void AbstractInterpretation::recursiveCallPass(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
@@ -868,6 +871,7 @@ void AbstractInterpretation::recursiveCallPass(const CallICFGNode *callNode)
     abstractTrace[retNode] = as;
 }
 
+/// Check if a call is a recursive callsite (within same SCC, not entry call from outside)
 bool AbstractInterpretation::isRecursiveCallSite(const CallICFGNode* callNode,
         const FunObjVar* callee)
 {
@@ -875,6 +879,7 @@ bool AbstractInterpretation::isRecursiveCallSite(const CallICFGNode* callNode,
            nonRecursiveCallSites.end();
 }
 
+/// Get callee function: directly for direct calls, via pointer analysis for indirect calls
 const FunObjVar* AbstractInterpretation::getCallee(const CallICFGNode* callNode)
 {
     // Direct call: get callee directly from call node
@@ -904,6 +909,7 @@ const FunObjVar* AbstractInterpretation::getCallee(const CallICFGNode* callNode)
     return SVFUtil::dyn_cast<FunObjVar>(func_var);
 }
 
+/// Skip recursive callsites (within SCC); entry calls from outside SCC are not skipped
 bool AbstractInterpretation::skipRecursiveCall(const CallICFGNode* callNode)
 {
     const FunObjVar* callee = getCallee(callNode);
@@ -921,15 +927,15 @@ bool AbstractInterpretation::skipRecursiveCall(const CallICFGNode* callNode)
     return isRecursiveCallSite(callNode, callee);
 }
 
+/// Check if narrowing should be applied: always for regular loops, mode-dependent for recursion
 bool AbstractInterpretation::shouldApplyNarrowing(const FunObjVar* fun)
 {
     // Non-recursive functions (regular loops): always apply narrowing
     if (!isRecursiveFun(fun))
         return true;
 
-    // Recursive functions: depends on mode
-    // Note: TOP mode handles recursive cycles separately in handleICFGCycle,
-    // so this should not be reached for recursive functions in TOP mode.
+    // Recursive functions: WIDEN_NARROW applies narrowing, WIDEN_ONLY does not
+    // TOP mode exits early in handleICFGCycle, so should not reach here
     switch (Options::HandleRecur())
     {
     case TOP:
@@ -1191,6 +1197,7 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
            !getAbsStateFromTrace(stmt->getICFGNode())[IRGraph::NullPtr].isAddr());
 }
 
+/// Set all store values in a recursive function to TOP (used in TOP mode)
 void AbstractInterpretation::setRecursiveCallStoresToTop(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);

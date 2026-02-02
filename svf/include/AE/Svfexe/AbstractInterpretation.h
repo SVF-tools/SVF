@@ -266,12 +266,6 @@ private:
      */
     virtual void handleSVFStatement(const SVFStmt* stmt);
 
-    /**
-     * Sets all store values in the recursive function to TOP.
-     * This is called when skipping a recursive call in TOP mode.
-     *
-     * @param callnode CallICFGNode which calls a recursive function
-     */
     virtual void setRecursiveCallStoresToTop(const CallICFGNode* callnode);
 
 
@@ -359,52 +353,8 @@ private:
     virtual bool isIndirectCall(const CallICFGNode* callNode);
     virtual void indirectCallFunPass(const CallICFGNode* callNode);
 
-    /**
-     * Determines whether to skip (not inline) a call to a potentially recursive function.
-     * Returns true if the call should be skipped, false if normal inlining should proceed.
-     *
-     * This function is mode-independent: it only checks whether the call is a recursive
-     * callsite (within the same SCC). The actual handling of recursive functions is done
-     * uniformly via handleICFGCycle(), with mode-specific behavior inside that function.
-     *
-     * Example:
-     *   int factorial(int n) {
-     *       if (n <= 1) return 1;
-     *       return n * factorial(n - 1);  // inner call (recursive callsite)
-     *   }
-     *   int main() {
-     *       return factorial(5);          // outer call (entry into recursion)
-     *   }
-     *
-     * For all modes (TOP/WIDEN_ONLY/WIDEN_NARROW):
-     *   - Outer call (main -> factorial): NOT skipped, inlined into handleICFGCycle()
-     *   - Inner call (factorial -> factorial): Skipped (back-edge of the cycle)
-     *
-     * The difference between modes is in handleICFGCycle():
-     *   - TOP: Sets all values to TOP without iteration. Result: [-inf, +inf]
-     *   - WIDEN_ONLY: Widening iteration only. Result: [10000, +inf]
-     *   - WIDEN_NARROW: Widening + narrowing. Result: [10000, 10000]
-     */
     bool skipRecursiveCall(const CallICFGNode* callNode);
-
-    /**
-     * Gets the callee function for a call node.
-     * For direct calls, returns callNode->getCalledFunction().
-     * For indirect calls, resolves the callee through pointer analysis.
-     * Returns nullptr if callee cannot be determined.
-     */
     const FunObjVar* getCallee(const CallICFGNode* callNode);
-
-    /**
-     * Determines if narrowing should be applied for a cycle head.
-     * Called during the narrowing phase of handleICFGCycle().
-     *
-     * For non-recursive functions (regular loops): always returns true.
-     * For recursive functions: depends on Options::HandleRecur():
-     *   - TOP mode: Should not reach here (asserts), TOP mode exits early in handleICFGCycle
-     *   - WIDEN_ONLY: Returns false (skip narrowing)
-     *   - WIDEN_NARROW: Returns true (apply narrowing)
-     */
     bool shouldApplyNarrowing(const FunObjVar* fun);
 
     // there data should be shared with subclasses
