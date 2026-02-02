@@ -1009,24 +1009,46 @@ void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
     abstractTrace[retNode] = abstractTrace[callNode];
 }
 
-/// handle wto cycle (loop) using widening/narrowing iteration
+/// Handle WTO cycle (loop or recursive function) using widening/narrowing iteration.
 ///
-/// This handles both regular loops and recursive function cycles.
-/// The behavior depends on Options::HandleRecur() for recursive functions:
+/// Widening is applied at the cycle head to ensure termination of the analysis.
+/// The cycle head's abstract state is iteratively updated until a fixpoint is reached.
 ///
-/// - TOP mode (recursive function cycle only):
-///     Sets all values to TOP without iteration. This is the most conservative
-///     but fastest approach.
+/// == What is being widened ==
+/// The abstract state at the cycle head node, which includes:
+/// - Variable values (intervals) that may change across loop iterations
+/// - For example, a loop counter `i` starting at 0 and incrementing each iteration
+///
+/// == Regular loops (non-recursive functions) ==
+/// All modes (TOP/WIDEN_ONLY/WIDEN_NARROW) behave the same for regular loops:
+/// 1. Widening phase: Iterate until the cycle head state stabilizes
+///    Example: for(i=0; i<100; i++) -> i widens to [0, +inf]
+/// 2. Narrowing phase: Refine the over-approximation from widening
+///    Example: [0, +inf] narrows to [0, 100] using loop condition
+///
+/// == Recursive function cycles ==
+/// Behavior depends on Options::HandleRecur():
+///
+/// - TOP mode:
+///     Does not iterate. Calls recursiveCallPass() to set all stores and
+///     return value to TOP immediately. This is the most conservative but fastest.
+///     Example:
+///       int factorial(int n) { return n <= 1 ? 1 : n * factorial(n-1); }
+///       factorial(5) -> returns [-inf, +inf]
 ///
 /// - WIDEN_ONLY mode:
-///     Iterates with widening until fixpoint. No narrowing phase.
-///     For recursive functions, this gives upper bounds (e.g., [10000, +inf]).
+///     Widening phase only, no narrowing for recursive functions.
+///     The recursive function body is analyzed with widening until fixpoint.
+///     Example:
+///       int factorial(int n) { return n <= 1 ? 1 : n * factorial(n-1); }
+///       factorial(5) -> returns [10000, +inf] (widened upper bound)
 ///
 /// - WIDEN_NARROW mode:
-///     Iterates with widening, then narrows to refine the result.
-///     For recursive functions, this gives precise bounds (e.g., [10000, 10000]).
-///
-/// For regular (non-recursive) loops, all modes use widening + narrowing.
+///     Both widening and narrowing phases for recursive functions.
+///     After widening reaches fixpoint, narrowing refines the result.
+///     Example:
+///       int factorial(int n) { return n <= 1 ? 1 : n * factorial(n-1); }
+///       factorial(5) -> returns [10000, 10000] (precise after narrowing)
 void AbstractInterpretation::handleICFGCycle(const ICFGCycleWTO* cycle)
 {
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
