@@ -218,7 +218,7 @@ private:
      *
      * @param cycle WTOCycle which has weak topo order of basic blocks and nested cycles
      */
-    virtual void handleICFGCycle(const ICFGCycleWTO* cycle);
+    virtual void HandleLoopOrRecursion(const ICFGCycleWTO* cycle);
 
     /**
      * Handle a function using worklist algorithm
