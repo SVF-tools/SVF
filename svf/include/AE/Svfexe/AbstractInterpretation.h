@@ -348,10 +348,7 @@ private:
     virtual bool isRecursiveCall(const CallICFGNode* callNode);
     virtual void recursiveCallPass(const CallICFGNode *callNode);
     virtual bool isRecursiveCallSite(const CallICFGNode* callNode, const FunObjVar *);
-    virtual bool isDirectCall(const CallICFGNode* callNode);
-    virtual void directCallFunPass(const CallICFGNode* callNode);
-    virtual bool isIndirectCall(const CallICFGNode* callNode);
-    virtual void indirectCallFunPass(const CallICFGNode* callNode);
+    virtual void callFunPass(const CallICFGNode* callNode);
 
     bool skipRecursiveCall(const CallICFGNode* callNode);
     const FunObjVar* getCallee(const CallICFGNode* callNode);

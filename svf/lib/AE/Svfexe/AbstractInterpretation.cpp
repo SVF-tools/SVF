@@ -804,16 +804,11 @@ void AbstractInterpretation::handleCallSite(const ICFGNode* node)
         {
             extCallPass(callNode);
         }
-        else if (isDirectCall(callNode))
-        {
-            directCallFunPass(callNode);
-        }
-        else if (isIndirectCall(callNode))
-        {
-            indirectCallFunPass(callNode);
-        }
         else
-            assert(false && "implement this part");
+        {
+            // Handle both direct and indirect calls uniformly
+            callFunPass(callNode);
+        }
     }
     else
         assert (false && "it is not call node");
@@ -950,51 +945,13 @@ bool AbstractInterpretation::shouldApplyNarrowing(const FunObjVar* fun)
         return false;
     }
 }
-
-
-bool AbstractInterpretation::isDirectCall(const CallICFGNode *callNode)
-{
-    const FunObjVar *callfun =callNode->getCalledFunction();
-    if (!callfun)
-        return false;
-    else
-        return !callfun->isDeclaration();
-}
-void AbstractInterpretation::directCallFunPass(const CallICFGNode *callNode)
+/// Handle direct or indirect call: get callee, process function body, set return state
+void AbstractInterpretation::callFunPass(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
-
     abstractTrace[callNode] = as;
 
-    // Skip recursive call if applicable (returns true if skipped)
-    if (skipRecursiveCall(callNode))
-        return;
-
-    const FunObjVar *calleeFun = callNode->getCalledFunction();
-    callSiteStack.push_back(callNode);
-
-    // Use worklist-based function handling instead of recursive WTO component handling
-    const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(calleeFun);
-    handleFunction(calleeEntry);
-
-    callSiteStack.pop_back();
-    // handle Ret node
-    const RetICFGNode *retNode = callNode->getRetICFGNode();
-    // resume ES to callnode
-    abstractTrace[retNode] = abstractTrace[callNode];
-}
-
-bool AbstractInterpretation::isIndirectCall(const CallICFGNode *callNode)
-{
-    const auto callsiteMaps = svfir->getIndirectCallsites();
-    return callsiteMaps.find(callNode) != callsiteMaps.end();
-}
-
-void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
-{
-    AbstractState& as = getAbsStateFromTrace(callNode);
-
-    // Skip recursive call if applicable (returns true if skipped)
+    // Skip recursive callsites (within SCC); entry calls are not skipped
     if (skipRecursiveCall(callNode))
         return;
 
@@ -1003,14 +960,11 @@ void AbstractInterpretation::indirectCallFunPass(const CallICFGNode *callNode)
         return;
 
     callSiteStack.push_back(callNode);
-    abstractTrace[callNode] = as;
 
-    // Use worklist-based function handling instead of recursive WTO component handling
     const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
     handleFunction(calleeEntry);
 
     callSiteStack.pop_back();
-    // handle Ret node
     const RetICFGNode* retNode = callNode->getRetICFGNode();
     abstractTrace[retNode] = abstractTrace[callNode];
 }
