@@ -807,7 +807,7 @@ void AbstractInterpretation::handleCallSite(const ICFGNode* node)
         else
         {
             // Handle both direct and indirect calls uniformly
-            callFunPass(callNode);
+            HandleFunCall(callNode);
         }
     }
     else
@@ -850,7 +850,7 @@ bool AbstractInterpretation::isRecursiveCall(const CallICFGNode *callNode)
 void AbstractInterpretation::recursiveCallPass(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
-    setRecursiveCallStoresToTop(callNode);
+    setTopToObjInRecursion(callNode);
     const RetICFGNode *retNode = callNode->getRetICFGNode();
     if (retNode->getSVFStmts().size() > 0)
     {
@@ -946,7 +946,7 @@ bool AbstractInterpretation::shouldApplyNarrowing(const FunObjVar* fun)
     }
 }
 /// Handle direct or indirect call: get callee, process function body, set return state
-void AbstractInterpretation::callFunPass(const CallICFGNode *callNode)
+void AbstractInterpretation::HandleFunCall(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
     abstractTrace[callNode] = as;
@@ -1152,7 +1152,7 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
 }
 
 /// Set all store values in a recursive function to TOP (used in TOP mode)
-void AbstractInterpretation::setRecursiveCallStoresToTop(const CallICFGNode *callNode)
+void AbstractInterpretation::setTopToObjInRecursion(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
     const RetICFGNode *retNode = callNode->getRetICFGNode();

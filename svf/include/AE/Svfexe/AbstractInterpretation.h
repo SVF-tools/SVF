@@ -266,7 +266,7 @@ private:
      */
     virtual void handleSVFStatement(const SVFStmt* stmt);
 
-    virtual void setRecursiveCallStoresToTop(const CallICFGNode* callnode);
+    virtual void setTopToObjInRecursion(const CallICFGNode* callnode);
 
 
     /**
@@ -348,7 +348,7 @@ private:
     virtual bool isRecursiveCall(const CallICFGNode* callNode);
     virtual void recursiveCallPass(const CallICFGNode *callNode);
     virtual bool isRecursiveCallSite(const CallICFGNode* callNode, const FunObjVar *);
-    virtual void callFunPass(const CallICFGNode* callNode);
+    virtual void HandleFunCall(const CallICFGNode* callNode);
 
     bool skipRecursiveCall(const CallICFGNode* callNode);
     const FunObjVar* getCallee(const CallICFGNode* callNode);
