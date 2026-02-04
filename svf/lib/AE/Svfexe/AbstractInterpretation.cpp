@@ -802,12 +802,12 @@ void AbstractInterpretation::handleCallSite(const ICFGNode* node)
     {
         if (isExtCall(callNode))
         {
-            extCallPass(callNode);
+            handleExtCall(callNode);
         }
         else
         {
             // Handle both direct and indirect calls uniformly
-            HandleFunCall(callNode);
+            handleFunCall(callNode);
         }
     }
     else
@@ -819,7 +819,7 @@ bool AbstractInterpretation::isExtCall(const CallICFGNode *callNode)
     return SVFUtil::isExtCall(callNode->getCalledFunction());
 }
 
-void AbstractInterpretation::extCallPass(const CallICFGNode *callNode)
+void AbstractInterpretation::handleExtCall(const CallICFGNode *callNode)
 {
     callSiteStack.push_back(callNode);
     utils->handleExtAPI(callNode);
@@ -946,7 +946,7 @@ bool AbstractInterpretation::shouldApplyNarrowing(const FunObjVar* fun)
     }
 }
 /// Handle direct or indirect call: get callee, process function body, set return state
-void AbstractInterpretation::HandleFunCall(const CallICFGNode *callNode)
+void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
     abstractTrace[callNode] = as;
