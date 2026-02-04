@@ -218,11 +218,45 @@ private:
      *
      * @param cycle WTOCycle which has weak topo order of basic blocks and nested cycles
      */
-    virtual void handleCycleWTO(const ICFGCycleWTO* cycle);
+    virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle);
 
-    void handleWTOComponents(const std::list<const ICFGWTOComp*>& wtoComps);
+    /**
+     * Handle a function using worklist algorithm
+     *
+     * @param funEntry The entry node of the function to handle
+     */
+    void handleFunction(const ICFGNode* funEntry);
 
-    void handleWTOComponent(const ICFGWTOComp* wtoComp);
+    /**
+     * Handle an ICFG node by merging states and processing statements
+     *
+     * @param node The ICFG node to handle
+     * @return true if state changed, false if fixpoint reached or infeasible
+     */
+    bool handleICFGNode(const ICFGNode* node);
+
+    /**
+     * Get the next nodes of a node within the same function
+     *
+     * @param node The node to get successors for
+     * @return Vector of successor nodes
+     */
+    std::vector<const ICFGNode*> getNextNodes(const ICFGNode* node) const;
+
+    /**
+     * Get the next nodes outside a cycle
+     *
+     * @param cycle The cycle to get exit successors for
+     * @return Vector of successor nodes outside the cycle
+     */
+    std::vector<const ICFGNode*> getNextNodesOfCycle(const ICFGCycleWTO* cycle) const;
+
+    /**
+     * Recursively collect cycle heads from nested WTO components
+     *
+     * @param comps The list of WTO components to collect cycle heads from
+     */
+    void collectCycleHeads(const std::list<const ICFGWTOComp*>& comps);
 
 
     /**
@@ -232,12 +266,7 @@ private:
      */
     virtual void handleSVFStatement(const SVFStmt* stmt);
 
-    /**
-     * Check if this callnode is recursive call and skip it.
-     *
-     * @param callnode CallICFGNode which calls a recursive function
-     */
-    virtual void SkipRecursiveCall(const CallICFGNode* callnode);
+    virtual void setTopToObjInRecursion(const CallICFGNode* callnode);
 
 
     /**
@@ -299,6 +328,7 @@ private:
     Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
     Set<std::pair<const CallICFGNode*, NodeID>> nonRecursiveCallSites;
     Set<const FunObjVar*> recursiveFuns;
+    Map<const ICFGNode*, const ICFGCycleWTO*> cycleHeadToCycle;
 
 
     bool hasAbsStateFromTrace(const ICFGNode* node)
@@ -313,15 +343,16 @@ private:
 
     // helper functions in handleCallSite
     virtual bool isExtCall(const CallICFGNode* callNode);
-    virtual void extCallPass(const CallICFGNode* callNode);
+    virtual void handleExtCall(const CallICFGNode* callNode);
     virtual bool isRecursiveFun(const FunObjVar* fun);
     virtual bool isRecursiveCall(const CallICFGNode* callNode);
     virtual void recursiveCallPass(const CallICFGNode *callNode);
     virtual bool isRecursiveCallSite(const CallICFGNode* callNode, const FunObjVar *);
-    virtual bool isDirectCall(const CallICFGNode* callNode);
-    virtual void directCallFunPass(const CallICFGNode* callNode);
-    virtual bool isIndirectCall(const CallICFGNode* callNode);
-    virtual void indirectCallFunPass(const CallICFGNode* callNode);
+    virtual void handleFunCall(const CallICFGNode* callNode);
+
+    bool skipRecursiveCall(const CallICFGNode* callNode);
+    const FunObjVar* getCallee(const CallICFGNode* callNode);
+    bool shouldApplyNarrowing(const FunObjVar* fun);
 
     // there data should be shared with subclasses
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
