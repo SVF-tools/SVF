@@ -767,7 +767,7 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry)
         if (cycleHeadToCycle.find(node) != cycleHeadToCycle.end())
         {
             const ICFGCycleWTO* cycle = cycleHeadToCycle[node];
-            HandleLoopOrRecursion(cycle);
+            handleLoopOrRecursion(cycle);
 
             // Push nodes outside the cycle to the worklist
             std::vector<const ICFGNode*> cycleNextNodes = getNextNodesOfCycle(cycle);
@@ -917,7 +917,7 @@ bool AbstractInterpretation::skipRecursiveCall(const CallICFGNode* callNode)
 
     // For recursive functions, skip only recursive callsites (within same SCC).
     // Entry calls (from outside SCC) are not skipped - they are inlined so that
-    // HandleLoopOrRecursion() can analyze the function body.
+    // handleLoopOrRecursion() can analyze the function body.
     // This applies uniformly to all modes (TOP/WIDEN_ONLY/WIDEN_NARROW).
     return isRecursiveCallSite(callNode, callee);
 }
@@ -930,7 +930,7 @@ bool AbstractInterpretation::shouldApplyNarrowing(const FunObjVar* fun)
         return true;
 
     // Recursive functions: WIDEN_NARROW applies narrowing, WIDEN_ONLY does not
-    // TOP mode exits early in HandleLoopOrRecursion, so should not reach here
+    // TOP mode exits early in handleLoopOrRecursion, so should not reach here
     switch (Options::HandleRecur())
     {
     case TOP:
@@ -1009,7 +1009,7 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 ///     Example:
 ///       int factorial(int n) { return n <= 1 ? 1 : n * factorial(n-1); }
 ///       factorial(5) -> returns [10000, 10000] (precise after narrowing)
-void AbstractInterpretation::HandleLoopOrRecursion(const ICFGCycleWTO* cycle)
+void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle)
 {
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
 
@@ -1084,7 +1084,7 @@ void AbstractInterpretation::HandleLoopOrRecursion(const ICFGCycleWTO* cycle)
             else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
             {
                 // Handle nested cycle recursively
-                HandleLoopOrRecursion(subCycle);
+                handleLoopOrRecursion(subCycle);
             }
         }
     }
