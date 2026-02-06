@@ -162,7 +162,46 @@ void AbstractInterpretation::initWTO()
     }
 }
 
-/// Program entry
+/// Collect all entry point functions (functions without callers)
+std::vector<const FunObjVar*> AbstractInterpretation::collectEntryFunctions()
+{
+    std::vector<const FunObjVar*> entryFunctions;
+    const CallGraph* callGraph = svfir->getCallGraph();
+
+    for (auto it = callGraph->begin(); it != callGraph->end(); ++it)
+    {
+        const CallGraphNode* cgNode = it->second;
+        const FunObjVar* fun = cgNode->getFunction();
+
+        // Skip declarations
+        if (fun->isDeclaration())
+            continue;
+
+        // Check if function has no callers (entry point)
+        if (cgNode->getInEdges().empty())
+        {
+            entryFunctions.push_back(fun);
+        }
+    }
+
+    // If main exists, put it first for priority
+    auto mainIt = std::find_if(entryFunctions.begin(), entryFunctions.end(),
+        [](const FunObjVar* f) { return f->getName() == "main"; });
+    if (mainIt != entryFunctions.end() && mainIt != entryFunctions.begin())
+    {
+        std::iter_swap(entryFunctions.begin(), mainIt);
+    }
+
+    return entryFunctions;
+}
+
+/// Clear abstract trace for fresh analysis from new entry
+void AbstractInterpretation::clearAbstractTrace()
+{
+    abstractTrace.clear();
+}
+
+/// Program entry - analyze from main if exists, otherwise analyze from all entry points
 void AbstractInterpretation::analyse()
 {
     initWTO();
@@ -175,6 +214,43 @@ void AbstractInterpretation::analyse()
         // Use worklist-based function handling instead of recursive WTO component handling
         const ICFGNode* mainEntry = icfg->getFunEntryICFGNode(cgn->getFunction());
         handleFunction(mainEntry);
+    }
+    else
+    {
+        // No main function found, analyze from all entry points (library code)
+        SVFUtil::outs() << "No main function found, analyzing from all entry points...\n";
+        analyseFromAllEntries();
+    }
+}
+
+/// Analyze all entry points (functions without callers) - for whole-program analysis without main
+void AbstractInterpretation::analyseFromAllEntries()
+{
+    initWTO();
+
+    // Collect all entry point functions
+    std::vector<const FunObjVar*> entryFunctions = collectEntryFunctions();
+
+    if (entryFunctions.empty())
+    {
+        SVFUtil::errs() << "Warning: No entry functions found for analysis\n";
+        return;
+    }
+
+    // Analyze from each entry point independently (Scenario 2: different entries -> fresh start)
+    for (const FunObjVar* entryFun : entryFunctions)
+    {
+        // Clear abstract trace for fresh analysis from this entry
+        clearAbstractTrace();
+
+        // Handle global node for each entry (global state is shared across entries)
+        handleGlobalNode();
+        getAbsStateFromTrace(
+            icfg->getGlobalICFGNode())[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
+
+        // Analyze from this entry function
+        const ICFGNode* funEntry = icfg->getFunEntryICFGNode(entryFun);
+        handleFunction(funEntry);
     }
 }
 
@@ -602,36 +678,57 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
     bool isFunEntry = SVFUtil::isa<FunEntryICFGNode>(node);
     if (isFunEntry)
     {
-        // Try to merge from predecessors first (handles call edges)
-        if (!mergeStatesFromPredecessors(node))
+        // For function entries, we need flow-sensitive join:
+        // When the same function is called multiple times from the same entry,
+        // we join the input states (Scenario 1: x=1 -> foo(), x=2 -> foo() => foo sees [1,2])
+
+        AbstractState inputState;
+        bool hasInput = false;
+
+        // Try to get state from ICFG predecessors (call edges)
+        // mergeStatesFromPredecessors handles CallCFGEdge
+        if (mergeStatesFromPredecessors(node))
         {
-            // No predecessors with state - initialize from caller or global
-            if (!callSiteStack.empty())
+            inputState = abstractTrace[node];
+            hasInput = true;
+        }
+        else if (!callSiteStack.empty())
+        {
+            // No ICFG predecessors with state - get from current call site stack
+            const CallICFGNode* caller = callSiteStack.back();
+            if (hasAbsStateFromTrace(caller))
             {
-                // Get state from the most recent call site
-                const CallICFGNode* caller = callSiteStack.back();
-                if (hasAbsStateFromTrace(caller))
-                {
-                    abstractTrace[node] = abstractTrace[caller];
-                }
-                else
-                {
-                    abstractTrace[node] = AbstractState();
-                }
+                inputState = abstractTrace[caller];
+                hasInput = true;
+            }
+        }
+        else
+        {
+            // Entry function (like main) - inherit from global node
+            const ICFGNode* globalNode = icfg->getGlobalICFGNode();
+            if (hasAbsStateFromTrace(globalNode))
+            {
+                inputState = abstractTrace[globalNode];
+                hasInput = true;
+            }
+        }
+
+        if (hasInput)
+        {
+            // Flow-sensitive join: if function entry already has state, join with new input
+            if (hadPrevState)
+            {
+                prevState.joinWith(inputState);
+                abstractTrace[node] = prevState;
             }
             else
             {
-                // This is the main function entry, inherit from global node
-                const ICFGNode* globalNode = icfg->getGlobalICFGNode();
-                if (hasAbsStateFromTrace(globalNode))
-                {
-                    abstractTrace[node] = abstractTrace[globalNode];
-                }
-                else
-                {
-                    abstractTrace[node] = AbstractState();
-                }
+                abstractTrace[node] = inputState;
             }
+        }
+        else
+        {
+            abstractTrace[node] = AbstractState();
         }
     }
     else
@@ -660,6 +757,9 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
     for (auto& detector: detectors)
         detector->detect(getAbsStateFromTrace(node), node);
     stat->countStateSize();
+
+    // Track this node as analyzed (for coverage statistics across all entry points)
+    allAnalyzedNodes.insert(node);
 
     // Check if state changed (for fixpoint detection)
     // For entry nodes on first visit, always return true to process successors
@@ -1229,15 +1329,39 @@ void AEStat::finializeStat()
         generalNumMap["ES_Loc_Addr_AVG_Num"] /= count;
     }
     generalNumMap["SVF_STMT_NUM"] = count;
-    generalNumMap["ICFG_Node_Num"] = _ae->svfir->getICFG()->nodeNum;
+
+    u32_t totalICFGNodes = _ae->svfir->getICFG()->nodeNum;
+    generalNumMap["ICFG_Node_Num"] = totalICFGNodes;
+
+    // Calculate coverage: use allAnalyzedNodes which tracks all nodes across all entry points
+    u32_t analyzedNodes = _ae->allAnalyzedNodes.size();
+    generalNumMap["Analyzed_ICFG_Node_Num"] = analyzedNodes;
+
+    // Coverage percentage (stored as integer percentage * 100 for precision)
+    if (totalICFGNodes > 0)
+    {
+        double coveragePercent = (double)analyzedNodes / (double)totalICFGNodes * 100.0;
+        generalNumMap["ICFG_Coverage_Percent"] = (u32_t)(coveragePercent * 100); // Store as percentage * 100
+    }
+    else
+    {
+        generalNumMap["ICFG_Coverage_Percent"] = 0;
+    }
+
     u32_t callSiteNum = 0;
     u32_t extCallSiteNum = 0;
     Set<const FunObjVar *> funs;
+    Set<const FunObjVar *> analyzedFuns;
     for (const auto &it: *_ae->svfir->getICFG())
     {
         if (it.second->getFun())
         {
             funs.insert(it.second->getFun());
+            // Check if this node was analyzed (across all entry points)
+            if (_ae->allAnalyzedNodes.find(it.second) != _ae->allAnalyzedNodes.end())
+            {
+                analyzedFuns.insert(it.second->getFun());
+            }
         }
         if (const CallICFGNode *callNode = dyn_cast<CallICFGNode>(it.second))
         {
@@ -1252,6 +1376,19 @@ void AEStat::finializeStat()
         }
     }
     generalNumMap["Func_Num"] = funs.size();
+    generalNumMap["Analyzed_Func_Num"] = analyzedFuns.size();
+
+    // Function coverage percentage
+    if (funs.size() > 0)
+    {
+        double funcCoveragePercent = (double)analyzedFuns.size() / (double)funs.size() * 100.0;
+        generalNumMap["Func_Coverage_Percent"] = (u32_t)(funcCoveragePercent * 100); // Store as percentage * 100
+    }
+    else
+    {
+        generalNumMap["Func_Coverage_Percent"] = 0;
+    }
+
     generalNumMap["EXT_CallSite_Num"] = extCallSiteNum;
     generalNumMap["NonEXT_CallSite_Num"] = callSiteNum;
     timeStatMap["Total_Time(sec)"] = (double)(endTime - startTime) / TIMEINTERVAL;
@@ -1280,8 +1417,16 @@ void AEStat::performStat()
     unsigned field_width = 30;
     for (NUMStatMap::iterator it = generalNumMap.begin(), eit = generalNumMap.end(); it != eit; ++it)
     {
-        // format out put with width 20 space
-        std::cout << std::setw(field_width) << it->first << it->second << "\n";
+        // Special handling for percentage fields (stored as percentage * 100)
+        if (it->first == "ICFG_Coverage_Percent" || it->first == "Func_Coverage_Percent")
+        {
+            double percent = (double)it->second / 100.0;
+            std::cout << std::setw(field_width) << it->first << std::fixed << std::setprecision(2) << percent << "%\n";
+        }
+        else
+        {
+            std::cout << std::setw(field_width) << it->first << it->second << "\n";
+        }
     }
     SVFUtil::outs() << "-------------------------------------------------------\n";
     for (TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it != eit; ++it)
