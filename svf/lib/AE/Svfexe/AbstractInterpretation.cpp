@@ -688,57 +688,36 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
     bool isFunEntry = SVFUtil::isa<FunEntryICFGNode>(node);
     if (isFunEntry)
     {
-        // For function entries, we need flow-sensitive join:
-        // When the same function is called multiple times from the same entry,
-        // we join the input states (Scenario 1: x=1 -> foo(), x=2 -> foo() => foo sees [1,2])
-
-        AbstractState inputState;
-        bool hasInput = false;
-
-        // Try to get state from ICFG predecessors (call edges)
-        // mergeStatesFromPredecessors handles CallCFGEdge
-        if (mergeStatesFromPredecessors(node))
+        // Try to merge from predecessors first (handles call edges)
+        if (!mergeStatesFromPredecessors(node))
         {
-            inputState = abstractTrace[node];
-            hasInput = true;
-        }
-        else if (!callSiteStack.empty())
-        {
-            // No ICFG predecessors with state - get from current call site stack
-            const CallICFGNode* caller = callSiteStack.back();
-            if (hasAbsStateFromTrace(caller))
+            // No predecessors with state - initialize from caller or global
+            if (!callSiteStack.empty())
             {
-                inputState = abstractTrace[caller];
-                hasInput = true;
-            }
-        }
-        else
-        {
-            // Entry function (like main) - inherit from global node
-            const ICFGNode* globalNode = icfg->getGlobalICFGNode();
-            if (hasAbsStateFromTrace(globalNode))
-            {
-                inputState = abstractTrace[globalNode];
-                hasInput = true;
-            }
-        }
-
-        if (hasInput)
-        {
-            // Flow-sensitive join: if function entry already has state, join with new input
-            if (hadPrevState)
-            {
-                prevState.joinWith(inputState);
-                abstractTrace[node] = prevState;
+                // Get state from the most recent call site
+                const CallICFGNode* caller = callSiteStack.back();
+                if (hasAbsStateFromTrace(caller))
+                {
+                    abstractTrace[node] = abstractTrace[caller];
+                }
+                else
+                {
+                    abstractTrace[node] = AbstractState();
+                }
             }
             else
             {
-                abstractTrace[node] = inputState;
+                // This is the main function entry, inherit from global node
+                const ICFGNode* globalNode = icfg->getGlobalICFGNode();
+                if (hasAbsStateFromTrace(globalNode))
+                {
+                    abstractTrace[node] = abstractTrace[globalNode];
+                }
+                else
+                {
+                    abstractTrace[node] = AbstractState();
+                }
             }
-        }
-        else
-        {
-            abstractTrace[node] = AbstractState();
         }
     }
     else
