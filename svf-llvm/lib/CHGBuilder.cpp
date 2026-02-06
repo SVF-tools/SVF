@@ -173,7 +173,8 @@ void CHGBuilder::connectInheritEdgeViaCall(const Function* caller, const CallBas
     {
         if (cs->arg_size() < 1 || (cs->arg_size() < 2 && cs->paramHasAttr(0, llvm::Attribute::StructRet)))
             return;
-        if(caller->arg_size() == 0){
+        if(caller->arg_size() == 0)
+        {
             return;
         }
         const Value* csThisPtr = cppUtil::getVCallThisPtr(cs);
