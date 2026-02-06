@@ -1739,6 +1739,13 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 case CmpStmt::FCMP_TRUE:
                     resVal = IntervalValue(1, 1);
                     break;
+                case CmpStmt::FCMP_ORD:
+                case CmpStmt::FCMP_UNO:
+                    // FCMP_ORD: true if both operands are not NaN
+                    // FCMP_UNO: true if either operand is NaN
+                    // Conservatively return [0, 1] since we don't track NaN
+                    resVal = IntervalValue(0, 1);
+                    break;
                 default:
                     assert(false && "undefined compare: ");
                 }
@@ -1852,6 +1859,13 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                     break;
                 case CmpStmt::FCMP_TRUE:
                     resVal = IntervalValue(1, 1);
+                    break;
+                case CmpStmt::FCMP_ORD:
+                case CmpStmt::FCMP_UNO:
+                    // FCMP_ORD: true if both operands are not NaN
+                    // FCMP_UNO: true if either operand is NaN
+                    // Conservatively return [0, 1] since we don't track NaN
+                    resVal = IntervalValue(0, 1);
                     break;
                 default:
                     assert(false && "undefined compare: ");
