@@ -209,6 +209,16 @@ void AbstractInterpretation::analyse()
     handleGlobalNode();
     getAbsStateFromTrace(
         icfg->getGlobalICFGNode())[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
+
+    // If -ae-multientry is set, always use multi-entry analysis
+    if (Options::AEMultiEntry())
+    {
+        SVFUtil::outs() << "Multi-entry analysis enabled, analyzing from all entry points...\n";
+        analyseFromAllEntries();
+        return;
+    }
+
+    // Default behavior: start from main if exists
     if (const CallGraphNode* cgn = svfir->getCallGraph()->getCallGraphNode("main"))
     {
         // Use worklist-based function handling instead of recursive WTO component handling

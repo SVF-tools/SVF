@@ -832,4 +832,10 @@ const Option<u32_t> Options::AEPrecision(
     0
 );
 
+const Option<bool> Options::AEMultiEntry(
+    "ae-multientry",
+    "Analyze from all entry points (functions without callers) instead of only main. Useful for library code.",
+    false
+);
+
 } // namespace SVF.
