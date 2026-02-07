@@ -498,6 +498,9 @@ void AbsExtAPI::handleStrcpy(const CallICFGNode *call)
     const SVFVar* arg1Val = call->getArgument(1);
     IntervalValue strLen = getStrlen(as, arg1Val);
     // no need to -1, since it has \0 as the last byte
+    // Skip if strLen is bottom or unbounded
+    if (strLen.isBottom() || strLen.lb().is_minus_infinity())
+        return;
     handleMemcpy(as, arg0Val, arg1Val, strLen, strLen.lb().getIntNumeral());
 }
 
@@ -592,6 +595,9 @@ void AbsExtAPI::handleStrcat(const SVF::CallICFGNode *call)
         IntervalValue strLen0 = getStrlen(as, arg0Val);
         IntervalValue strLen1 = getStrlen(as, arg1Val);
         IntervalValue totalLen = strLen0 + strLen1;
+        // Skip if strLen0 is bottom or unbounded
+        if (strLen0.isBottom() || strLen0.lb().is_minus_infinity())
+            return;
         handleMemcpy(as, arg0Val, arg1Val, strLen1, strLen0.lb().getIntNumeral());
         // do memcpy
     }
@@ -603,6 +609,9 @@ void AbsExtAPI::handleStrcat(const SVF::CallICFGNode *call)
         IntervalValue arg2Num = as[arg2Val->getId()].getInterval();
         IntervalValue strLen0 = getStrlen(as, arg0Val);
         IntervalValue totalLen = strLen0 + arg2Num;
+        // Skip if strLen0 is bottom or unbounded
+        if (strLen0.isBottom() || strLen0.lb().is_minus_infinity())
+            return;
         handleMemcpy(as, arg0Val, arg1Val, arg2Num, strLen0.lb().getIntNumeral());
         // do memcpy
     }
@@ -640,6 +649,11 @@ void AbsExtAPI::handleMemcpy(AbstractState& as, const SVF::SVFVar *dst, const SV
     {
         assert(false && "we cannot support this type");
     }
+    // Handle bottom or unbounded interval - skip memcpy in these cases
+    if (len.isBottom() || len.lb().is_minus_infinity())
+    {
+        return;
+    }
     u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getIntNumeral());
     u32_t range_val = size / elemSize;
     if (as.inVarToAddrsTable(srcId) && as.inVarToAddrsTable(dstId))
@@ -672,6 +686,11 @@ void AbsExtAPI::handleMemcpy(AbstractState& as, const SVF::SVFVar *dst, const SV
 
 void AbsExtAPI::handleMemset(AbstractState& as, const SVF::SVFVar *dst, IntervalValue elem, IntervalValue len)
 {
+    // Handle bottom or unbounded interval - skip memset in these cases
+    if (len.isBottom() || len.lb().is_minus_infinity())
+    {
+        return;
+    }
     u32_t dstId = dst->getId();
     u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getIntNumeral());
     u32_t elemSize = 1;

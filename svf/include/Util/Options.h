@@ -267,6 +267,10 @@ public:
 
     // float precision for symbolic abstraction
     static const Option<u32_t> AEPrecision;
+
+    /// If true, analyze from all entry points (functions without callers)
+    /// instead of only from main. Useful for library code without main function.
+    static const Option<bool> AEMultiEntry;
 };
 }  // namespace SVF
 

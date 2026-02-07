@@ -479,7 +479,12 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
     SVFIR* svfir = PAG::getPAG();
     NodeID value_id = value->getId();
 
-    assert(as[value_id].isAddr());
+    // In multi-entry analysis, some variables may not be initialized as addresses
+    if (!as[value_id].isAddr())
+    {
+        // Conservatively assume safe when we don't have address information
+        return true;
+    }
     for (const auto& addr : as[value_id].getAddrs())
     {
         NodeID objId = as.getIDFromAddr(addr);

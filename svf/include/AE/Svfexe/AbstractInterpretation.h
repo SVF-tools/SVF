@@ -144,6 +144,15 @@ public:
     /// Program entry
     void analyse();
 
+    /// Analyze all entry points (functions without callers)
+    void analyseFromAllEntries();
+
+    /// Get all entry point functions (functions without callers)
+    std::vector<const FunObjVar*> collectEntryFunctions();
+
+    /// Clear abstract trace for fresh analysis from new entry
+    void clearAbstractTrace();
+
     static AbstractInterpretation& getAEInstance()
     {
         static AbstractInterpretation instance;
@@ -358,6 +367,7 @@ private:
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
 
     Map<const ICFGNode*, AbstractState> abstractTrace; // abstract states immediately after nodes
+    Set<const ICFGNode*> allAnalyzedNodes; // All nodes ever analyzed (across all entry points)
     std::string moduleName;
 
     std::vector<std::unique_ptr<AEDetector>> detectors;
