@@ -35,6 +35,7 @@
 #include "WPA/Andersen.h"
 #include <cmath>
 #include <deque>
+#include <sstream>
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -163,12 +164,46 @@ void AbstractInterpretation::initWTO()
     }
 }
 
-/// Collect all entry point functions (functions without callers)
+/// Parse comma-separated function names from the -ae-entry-funcs option
+static Set<std::string> parseEntryFuncNames()
+{
+    Set<std::string> funcNames;
+    const std::string& entryFuncsStr = Options::AEEntryFuncs();
+
+    if (entryFuncsStr.empty())
+        return funcNames;
+
+    std::stringstream ss(entryFuncsStr);
+    std::string funcName;
+    while (std::getline(ss, funcName, ','))
+    {
+        // Trim whitespace from function name
+        size_t start = funcName.find_first_not_of(" \t");
+        size_t end = funcName.find_last_not_of(" \t");
+        if (start != std::string::npos && end != std::string::npos)
+        {
+            funcNames.insert(funcName.substr(start, end - start + 1));
+        }
+        else if (!funcName.empty())
+        {
+            funcNames.insert(funcName);
+        }
+    }
+    return funcNames;
+}
+
+/// Collect entry point functions for analysis.
+/// If -ae-entry-funcs is specified, only those functions are used.
+/// Otherwise, all functions without callers are collected as entry points.
 /// Uses a deque to allow efficient insertion at front for prioritizing main()
 std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
 {
     std::deque<const FunObjVar*> entryFunctions;
     const CallGraph* callGraph = svfir->getCallGraph();
+
+    // Check if user specified explicit entry functions
+    Set<std::string> specifiedFuncs = parseEntryFuncNames();
+    bool hasSpecifiedFuncs = !specifiedFuncs.empty();
 
     for (auto it = callGraph->begin(); it != callGraph->end(); ++it)
     {
@@ -179,8 +214,20 @@ std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
         if (fun->isDeclaration())
             continue;
 
-        // Check if function has no callers (entry point)
-        if (cgNode->getInEdges().empty())
+        bool shouldInclude = false;
+
+        if (hasSpecifiedFuncs)
+        {
+            // Use only functions specified by -ae-entry-funcs
+            shouldInclude = specifiedFuncs.count(fun->getName()) > 0;
+        }
+        else
+        {
+            // Default: use functions without callers (entry points)
+            shouldInclude = cgNode->getInEdges().empty();
+        }
+
+        if (shouldInclude)
         {
             // If main exists, put it first for priority using deque's push_front
             if (fun->getName() == "main")
@@ -194,6 +241,23 @@ std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
         }
     }
 
+    // Warn if specified functions were not found
+    if (hasSpecifiedFuncs)
+    {
+        Set<std::string> foundFuncs;
+        for (const FunObjVar* fun : entryFunctions)
+        {
+            foundFuncs.insert(fun->getName());
+        }
+        for (const std::string& name : specifiedFuncs)
+        {
+            if (foundFuncs.count(name) == 0)
+            {
+                SVFUtil::errs() << "Warning: Specified entry function '" << name << "' not found\n";
+            }
+        }
+    }
+
     return entryFunctions;
 }
 
@@ -203,34 +267,15 @@ void AbstractInterpretation::clearAbstractTrace()
     abstractTrace.clear();
 }
 
-/// Program entry - analyze from main if exists, otherwise analyze from all entry points
+/// Program entry - analyze from all entry points (multi-entry analysis is the default)
 void AbstractInterpretation::analyse()
 {
     initWTO();
     // handle Global ICFGNode of SVFModule
     handleGlobalNode();
 
-    // If -ae-multientry is set, always use multi-entry analysis
-    if (Options::AEMultiEntry())
-    {
-        SVFUtil::outs() << "Multi-entry analysis enabled, analyzing from all entry points...\n";
-        analyzeFromAllProgEntries();
-        return;
-    }
-
-    // Default behavior: start from main if exists
-    if (const CallGraphNode* cgn = svfir->getCallGraph()->getCallGraphNode("main"))
-    {
-        // Use worklist-based function handling instead of recursive WTO component handling
-        const ICFGNode* mainEntry = icfg->getFunEntryICFGNode(cgn->getFunction());
-        handleFunction(mainEntry);
-    }
-    else
-    {
-        // No main function found, analyze from all entry points (library code)
-        SVFUtil::outs() << "No main function found, analyzing from all entry points...\n";
-        analyzeFromAllProgEntries();
-    }
+    // Always use multi-entry analysis from all entry points
+    analyzeFromAllProgEntries();
 }
 
 /// Analyze all entry points (functions without callers) - for whole-program analysis without main
