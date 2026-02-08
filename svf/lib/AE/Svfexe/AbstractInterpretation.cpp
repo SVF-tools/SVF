@@ -34,6 +34,7 @@
 #include "Graphs/CallGraph.h"
 #include "WPA/Andersen.h"
 #include <cmath>
+#include <deque>
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -163,9 +164,10 @@ void AbstractInterpretation::initWTO()
 }
 
 /// Collect all entry point functions (functions without callers)
-std::vector<const FunObjVar*> AbstractInterpretation::collectEntryFunctions()
+/// Uses a deque to allow efficient insertion at front for prioritizing main()
+std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
 {
-    std::vector<const FunObjVar*> entryFunctions;
+    std::deque<const FunObjVar*> entryFunctions;
     const CallGraph* callGraph = svfir->getCallGraph();
 
     for (auto it = callGraph->begin(); it != callGraph->end(); ++it)
@@ -180,16 +182,16 @@ std::vector<const FunObjVar*> AbstractInterpretation::collectEntryFunctions()
         // Check if function has no callers (entry point)
         if (cgNode->getInEdges().empty())
         {
-            entryFunctions.push_back(fun);
+            // If main exists, put it first for priority using deque's push_front
+            if (fun->getName() == "main")
+            {
+                entryFunctions.push_front(fun);
+            }
+            else
+            {
+                entryFunctions.push_back(fun);
+            }
         }
-    }
-
-    // If main exists, put it first for priority
-    auto mainIt = std::find_if(entryFunctions.begin(), entryFunctions.end(),
-        [](const FunObjVar* f) { return f->getName() == "main"; });
-    if (mainIt != entryFunctions.end() && mainIt != entryFunctions.begin())
-    {
-        std::iter_swap(entryFunctions.begin(), mainIt);
     }
 
     return entryFunctions;
@@ -207,14 +209,12 @@ void AbstractInterpretation::analyse()
     initWTO();
     // handle Global ICFGNode of SVFModule
     handleGlobalNode();
-    getAbsStateFromTrace(
-        icfg->getGlobalICFGNode())[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
 
     // If -ae-multientry is set, always use multi-entry analysis
     if (Options::AEMultiEntry())
     {
         SVFUtil::outs() << "Multi-entry analysis enabled, analyzing from all entry points...\n";
-        analyseFromAllEntries();
+        analyzeFromAllProgEntries();
         return;
     }
 
@@ -229,17 +229,17 @@ void AbstractInterpretation::analyse()
     {
         // No main function found, analyze from all entry points (library code)
         SVFUtil::outs() << "No main function found, analyzing from all entry points...\n";
-        analyseFromAllEntries();
+        analyzeFromAllProgEntries();
     }
 }
 
 /// Analyze all entry points (functions without callers) - for whole-program analysis without main
-void AbstractInterpretation::analyseFromAllEntries()
+void AbstractInterpretation::analyzeFromAllProgEntries()
 {
     initWTO();
 
     // Collect all entry point functions
-    std::vector<const FunObjVar*> entryFunctions = collectEntryFunctions();
+    std::deque<const FunObjVar*> entryFunctions = collectProgEntryFuns();
 
     if (entryFunctions.empty())
     {
@@ -255,8 +255,6 @@ void AbstractInterpretation::analyseFromAllEntries()
 
         // Handle global node for each entry (global state is shared across entries)
         handleGlobalNode();
-        getAbsStateFromTrace(
-            icfg->getGlobalICFGNode())[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
 
         // Analyze from this entry function
         const ICFGNode* funEntry = icfg->getFunEntryICFGNode(entryFun);
@@ -265,16 +263,25 @@ void AbstractInterpretation::analyseFromAllEntries()
 }
 
 /// handle global node
+/// Initializes the abstract state for the global ICFG node and processes all global statements.
+/// This includes setting up the null pointer and black hole pointer (blkPtr) to top value,
+/// which represents unknown/uninitialized memory that can point to any location.
 void AbstractInterpretation::handleGlobalNode()
 {
     const ICFGNode* node = icfg->getGlobalICFGNode();
     abstractTrace[node] = AbstractState();
     abstractTrace[node][IRGraph::NullPtr] = AddressValue();
+
     // Global Node, we just need to handle addr, load, store, copy and gep
     for (const SVFStmt *stmt: node->getSVFStmts())
     {
         handleSVFStatement(stmt);
     }
+
+    // Set black hole pointer to top value - this represents unknown/uninitialized
+    // memory locations that may point anywhere. This is essential for soundness
+    // when analyzing code where pointers may not be fully initialized.
+    abstractTrace[node][PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
 }
 
 /// get execution state by merging states of predecessor blocks

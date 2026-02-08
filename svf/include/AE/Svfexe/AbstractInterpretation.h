@@ -36,6 +36,7 @@
 #include "Util/SVFBugReport.h"
 #include "Util/SVFStat.h"
 #include "Graphs/SCC.h"
+#include <deque>
 
 namespace SVF
 {
@@ -145,10 +146,10 @@ public:
     void analyse();
 
     /// Analyze all entry points (functions without callers)
-    void analyseFromAllEntries();
+    void analyzeFromAllProgEntries();
 
     /// Get all entry point functions (functions without callers)
-    std::vector<const FunObjVar*> collectEntryFunctions();
+    std::deque<const FunObjVar*> collectProgEntryFuns();
 
     /// Clear abstract trace for fresh analysis from new entry
     void clearAbstractTrace();
