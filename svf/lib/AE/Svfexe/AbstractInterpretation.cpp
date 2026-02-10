@@ -218,8 +218,6 @@ void AbstractInterpretation::analyse()
 /// Analyze all entry points (functions without callers) - for whole-program analysis without main
 void AbstractInterpretation::analyzeFromAllProgEntries()
 {
-    initWTO();
-
     // Collect all entry point functions
     std::deque<const FunObjVar*> entryFunctions = collectProgEntryFuns();
 
