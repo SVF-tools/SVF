@@ -832,10 +832,4 @@ const Option<u32_t> Options::AEPrecision(
     0
 );
 
-const Option<std::string> Options::AEEntryFuncs(
-    "ae-entry-funcs",
-    "Comma-separated list of function names to use as analysis entry points. If empty, all functions without callers are used.",
-    ""
-);
-
 } // namespace SVF.

@@ -267,11 +267,6 @@ public:
 
     // float precision for symbolic abstraction
     static const Option<u32_t> AEPrecision;
-
-    /// Comma-separated list of function names to use as analysis entry points.
-    /// If empty (default), all functions without callers are used as entry points.
-    /// Example: -ae-entry-funcs="main,init,setup"
-    static const Option<std::string> AEEntryFuncs;
 };
 }  // namespace SVF
 
