@@ -74,43 +74,23 @@ public:
      */
     void handleExtAPI(const CallICFGNode *call);
 
-    /**
-     * @brief Handles the strcpy API call.
-     * @param call Pointer to the call ICFG node.
-     */
-    void handleStrcpy(const CallICFGNode *call);
+    // --- Shared primitives used by string/memory handlers ---
 
-    /**
-     * @brief Calculates the length of a string.
-     * @param as Reference to the abstract state.
-     * @param strValue Pointer to the SVF variable representing the string.
-     * @return The interval value representing the string length.
-     */
+    /// Get the byte size of each element for a pointer/array variable.
+    u32_t getElementSize(AbstractState& as, const SVFVar* var);
+
+    /// Check if an interval length is usable (not bottom, not unbounded).
+    static bool isValidLength(const IntervalValue& len);
+
+    /// Calculate the length of a null-terminated string in abstract state.
     IntervalValue getStrlen(AbstractState& as, const SVF::SVFVar *strValue);
 
-    /**
-     * @brief Handles the strcat API call.
-     * @param call Pointer to the call ICFG node.
-     */
-    void handleStrcat(const SVF::CallICFGNode *call);
+    // --- String/memory operation handlers ---
 
-    /**
-     * @brief Handles the memcpy API call.
-     * @param as Reference to the abstract state.
-     * @param dst Pointer to the destination SVF variable.
-     * @param src Pointer to the source SVF variable.
-     * @param len The interval value representing the length to copy.
-     * @param start_idx The starting index for copying.
-     */
+    void handleStrcpy(const CallICFGNode *call);
+    void handleStrcat(const CallICFGNode *call);
+    void handleStrncat(const CallICFGNode *call);
     void handleMemcpy(AbstractState& as, const SVF::SVFVar *dst, const SVF::SVFVar *src, IntervalValue len, u32_t start_idx);
-
-    /**
-     * @brief Handles the memset API call.
-     * @param as Reference to the abstract state.
-     * @param dst Pointer to the destination SVF variable.
-     * @param elem The interval value representing the element to set.
-     * @param len The interval value representing the length to set.
-     */
     void handleMemset(AbstractState& as, const SVFVar* dst, IntervalValue elem, IntervalValue len);
 
     /**
