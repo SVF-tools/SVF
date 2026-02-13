@@ -36,6 +36,7 @@
 #include "Util/SVFBugReport.h"
 #include "Util/SVFStat.h"
 #include "Graphs/SCC.h"
+#include "Graphs/CallGraph.h"
 #include <deque>
 
 namespace SVF
@@ -332,6 +333,7 @@ private:
     AEAPI* api{nullptr};
 
     ICFG* icfg;
+    CallGraph* callGraph;
     AEStat* stat;
 
     std::vector<const CallICFGNode*> callSiteStack;

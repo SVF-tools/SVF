@@ -62,6 +62,7 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
 }
 
 AbstractInterpretation::AbstractInterpretation()
+    : callGraph(nullptr)
 {
     stat = new AEStat(this);
 }
@@ -99,7 +100,7 @@ void AbstractInterpretation::initWTO()
     // Detect if the call graph has cycles by finding its strongly connected components (SCC)
     Andersen::CallGraphSCC* callGraphScc = ander->getCallGraphSCC();
     callGraphScc->find();
-    CallGraph* callGraph = ander->getCallGraph();
+    callGraph = ander->getCallGraph();
 
     // Iterate through the call graph
     for (auto it = callGraph->begin(); it != callGraph->end(); it++)
@@ -215,7 +216,9 @@ void AbstractInterpretation::analyse()
     analyzeFromAllProgEntries();
 }
 
-/// Analyze all entry points (functions without callers) - for whole-program analysis without main
+/// Analyze all entry points (functions without callers) - for whole-program analysis.
+/// Abstract state is shared across entry points so that functions analyzed from
+/// earlier entries are not re-analyzed from scratch.
 void AbstractInterpretation::analyzeFromAllProgEntries()
 {
     // Collect all entry point functions
@@ -227,16 +230,14 @@ void AbstractInterpretation::analyzeFromAllProgEntries()
         return;
     }
 
-    // Analyze from each entry point independently (Scenario 2: different entries -> fresh start)
+    // Analyze from each entry point, sharing abstract state across entries.
+    // We do NOT clear abstractTrace between entries: the abstract states computed
+    // from earlier entries (e.g., library init functions, helper functions) should
+    // be visible to later entries. This is essential for whole-program analysis
+    // where different entry points may call shared utility functions — clearing
+    // the trace would discard already-computed summaries and lose precision.
     for (const FunObjVar* entryFun : entryFunctions)
     {
-        // Clear abstract trace for fresh analysis from this entry
-        clearAbstractTrace();
-
-        // Handle global node for each entry (global state is shared across entries)
-        handleGlobalNode();
-
-        // Analyze from this entry function
         const ICFGNode* funEntry = icfg->getFunEntryICFGNode(entryFun);
         handleFunction(funEntry);
     }
@@ -244,8 +245,9 @@ void AbstractInterpretation::analyzeFromAllProgEntries()
 
 /// handle global node
 /// Initializes the abstract state for the global ICFG node and processes all global statements.
-/// This includes setting up the null pointer and black hole pointer (blkPtr) to top value,
-/// which represents unknown/uninitialized memory that can point to any location.
+/// This includes setting up the null pointer and black hole pointer (blkPtr).
+/// BlkPtr is initialized to point to the InvalidMem (BlackHole) object, representing
+/// an unknown memory location that cannot be statically resolved.
 void AbstractInterpretation::handleGlobalNode()
 {
     const ICFGNode* node = icfg->getGlobalICFGNode();
@@ -258,10 +260,20 @@ void AbstractInterpretation::handleGlobalNode()
         handleSVFStatement(stmt);
     }
 
-    // Set black hole pointer to top value - this represents unknown/uninitialized
-    // memory locations that may point anywhere. This is essential for soundness
-    // when analyzing code where pointers may not be fully initialized.
-    abstractTrace[node][PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
+    // BlkPtr represents a pointer whose target is statically unknown (e.g., from
+    // int2ptr casts, external function returns, or unmodeled instructions like
+    // AtomicCmpXchg). It should be an address pointing to the InvalidMem object
+    // (BlackHole, ID=2), NOT an interval top.
+    //
+    // History: this was originally set to IntervalValue::top() as a quick fix when
+    // the analysis crashed on programs containing uninitialized BlkPtr. However,
+    // BlkPtr is semantically a *pointer* (address domain), not a numeric value
+    // (interval domain). Setting it to interval top broke cross-domain consistency:
+    // the interval domain and address domain gave contradictory information for the
+    // same variable. The correct representation is an AddressValue containing the
+    // BlackHole/InvalidMem virtual address, which means "points to unknown memory".
+    abstractTrace[node][PAG::getPAG()->getBlkPtr()] =
+        AddressValue(InvalidMemAddr);
 }
 
 /// get execution state by merging states of predecessor blocks
@@ -1021,7 +1033,15 @@ bool AbstractInterpretation::shouldApplyNarrowing(const FunObjVar* fun)
         return false;
     }
 }
-/// Handle direct or indirect call: get callee, process function body, set return state
+/// Handle direct or indirect call: get callee(s), process function body, set return state.
+///
+/// For direct calls, the callee is known statically.
+/// For indirect calls, the previous implementation resolved callees from the abstract
+/// state's address domain, which only picked the first address and missed other targets.
+/// Since the abstract state's address domain is not an over-approximation for function
+/// pointers (it may be uninitialized or incomplete), we now use Andersen's pointer
+/// analysis results from the pre-computed call graph, which soundly resolves all
+/// possible indirect call targets.
 void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
@@ -1031,16 +1051,34 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
     if (skipRecursiveCall(callNode))
         return;
 
-    const FunObjVar* callee = getCallee(callNode);
-    if (!callee)
+    // Direct call: callee is known
+    if (const FunObjVar* callee = callNode->getCalledFunction())
+    {
+        callSiteStack.push_back(callNode);
+        const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
+        handleFunction(calleeEntry);
+        callSiteStack.pop_back();
+        const RetICFGNode* retNode = callNode->getRetICFGNode();
+        abstractTrace[retNode] = abstractTrace[callNode];
         return;
+    }
 
-    callSiteStack.push_back(callNode);
-
-    const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
-    handleFunction(calleeEntry);
-
-    callSiteStack.pop_back();
+    // Indirect call: use Andersen's call graph to get all resolved callees.
+    // The call graph was built during initWTO() by running Andersen's pointer analysis,
+    // which over-approximates the set of possible targets for each indirect callsite.
+    if (callGraph->hasIndCSCallees(callNode))
+    {
+        const auto& callees = callGraph->getIndCSCallees(callNode);
+        callSiteStack.push_back(callNode);
+        for (const FunObjVar* callee : callees)
+        {
+            if (callee->isDeclaration())
+                continue;
+            const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
+            handleFunction(calleeEntry);
+        }
+        callSiteStack.pop_back();
+    }
     const RetICFGNode* retNode = callNode->getRetICFGNode();
     abstractTrace[retNode] = abstractTrace[callNode];
 }
