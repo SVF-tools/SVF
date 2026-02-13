@@ -199,11 +199,6 @@ std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
     return entryFunctions;
 }
 
-/// Clear abstract trace for fresh analysis from new entry
-void AbstractInterpretation::clearAbstractTrace()
-{
-    abstractTrace.clear();
-}
 
 /// Program entry - analyze from all entry points (multi-entry analysis is the default)
 void AbstractInterpretation::analyse()
@@ -226,16 +221,10 @@ void AbstractInterpretation::analyzeFromAllProgEntries()
 
     if (entryFunctions.empty())
     {
-        SVFUtil::errs() << "Warning: No entry functions found for analysis\n";
+        assert(false && "No entry functions found for analysis");
         return;
     }
 
-    // Analyze from each entry point, sharing abstract state across entries.
-    // We do NOT clear abstractTrace between entries: the abstract states computed
-    // from earlier entries (e.g., library init functions, helper functions) should
-    // be visible to later entries. This is essential for whole-program analysis
-    // where different entry points may call shared utility functions — clearing
-    // the trace would discard already-computed summaries and lose precision.
     for (const FunObjVar* entryFun : entryFunctions)
     {
         const ICFGNode* funEntry = icfg->getFunEntryICFGNode(entryFun);

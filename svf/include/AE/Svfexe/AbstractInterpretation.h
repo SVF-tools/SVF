@@ -152,8 +152,6 @@ public:
     /// Get all entry point functions (functions without callers)
     std::deque<const FunObjVar*> collectProgEntryFuns();
 
-    /// Clear abstract trace for fresh analysis from new entry
-    void clearAbstractTrace();
 
     static AbstractInterpretation& getAEInstance()
     {
