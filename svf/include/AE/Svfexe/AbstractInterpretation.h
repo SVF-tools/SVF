@@ -332,6 +332,7 @@ private:
 
     ICFG* icfg;
     CallGraph* callGraph;
+    CallGraphSCC* callGraphScc;
     AEStat* stat;
 
     std::vector<const CallICFGNode*> callSiteStack;

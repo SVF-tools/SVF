@@ -65,6 +65,9 @@ AbstractInterpretation::AbstractInterpretation()
 {
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfir);
     callGraph = ander->getCallGraph();
+    // Detect if the call graph has cycles by finding its strongly connected components (SCC)
+    callGraphScc = ander->getCallGraphSCC();
+    callGraphScc->find();
     stat = new AEStat(this);
 }
 /// Destructor
@@ -97,10 +100,6 @@ void AbstractInterpretation::collectCycleHeads(const std::list<const ICFGWTOComp
 
 void AbstractInterpretation::initWTO()
 {
-    // Detect if the call graph has cycles by finding its strongly connected components (SCC)
-    Andersen::CallGraphSCC* callGraphScc = ander->getCallGraphSCC();
-    callGraphScc->find();
-
     // Iterate through the call graph
     for (auto it = callGraph->begin(); it != callGraph->end(); it++)
     {
