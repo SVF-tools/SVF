@@ -34,6 +34,7 @@
 #include "Graphs/CallGraph.h"
 #include "WPA/Andersen.h"
 #include <cmath>
+#include <deque>
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -62,6 +63,11 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
 
 AbstractInterpretation::AbstractInterpretation()
 {
+    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfir);
+    callGraph = ander->getCallGraph();
+    // Detect if the call graph has cycles by finding its strongly connected components (SCC)
+    callGraphScc = ander->getCallGraphSCC();
+    callGraphScc->find();
     stat = new AEStat(this);
 }
 /// Destructor
@@ -94,12 +100,6 @@ void AbstractInterpretation::collectCycleHeads(const std::list<const ICFGWTOComp
 
 void AbstractInterpretation::initWTO()
 {
-    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfir);
-    // Detect if the call graph has cycles by finding its strongly connected components (SCC)
-    Andersen::CallGraphSCC* callGraphScc = ander->getCallGraphSCC();
-    callGraphScc->find();
-    CallGraph* callGraph = ander->getCallGraph();
-
     // Iterate through the call graph
     for (auto it = callGraph->begin(); it != callGraph->end(); it++)
     {
@@ -162,33 +162,104 @@ void AbstractInterpretation::initWTO()
     }
 }
 
-/// Program entry
+/// Collect entry point functions for analysis.
+/// Entry points are functions without callers (no incoming edges in CallGraph).
+/// Uses a deque to allow efficient insertion at front for prioritizing main()
+std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
+{
+    std::deque<const FunObjVar*> entryFunctions;
+    const CallGraph* callGraph = svfir->getCallGraph();
+
+    for (auto it = callGraph->begin(); it != callGraph->end(); ++it)
+    {
+        const CallGraphNode* cgNode = it->second;
+        const FunObjVar* fun = cgNode->getFunction();
+
+        // Skip declarations
+        if (fun->isDeclaration())
+            continue;
+
+        // Entry points are functions without callers (no incoming edges)
+        if (cgNode->getInEdges().empty())
+        {
+            // If main exists, put it first for priority using deque's push_front
+            if (fun->getName() == "main")
+            {
+                entryFunctions.push_front(fun);
+            }
+            else
+            {
+                entryFunctions.push_back(fun);
+            }
+        }
+    }
+
+    return entryFunctions;
+}
+
+
+/// Program entry - analyze from all entry points (multi-entry analysis is the default)
 void AbstractInterpretation::analyse()
 {
     initWTO();
+
+    // Always use multi-entry analysis from all entry points
+    analyzeFromAllProgEntries();
+}
+
+/// Analyze all entry points (functions without callers) - for whole-program analysis.
+/// Abstract state is shared across entry points so that functions analyzed from
+/// earlier entries are not re-analyzed from scratch.
+void AbstractInterpretation::analyzeFromAllProgEntries()
+{
+    // Collect all entry point functions
+    std::deque<const FunObjVar*> entryFunctions = collectProgEntryFuns();
+
+    if (entryFunctions.empty())
+    {
+        assert(false && "No entry functions found for analysis");
+        return;
+    }
     // handle Global ICFGNode of SVFModule
     handleGlobalNode();
-    getAbsStateFromTrace(
-        icfg->getGlobalICFGNode())[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
-    if (const CallGraphNode* cgn = svfir->getCallGraph()->getCallGraphNode("main"))
+    for (const FunObjVar* entryFun : entryFunctions)
     {
-        // Use worklist-based function handling instead of recursive WTO component handling
-        const ICFGNode* mainEntry = icfg->getFunEntryICFGNode(cgn->getFunction());
-        handleFunction(mainEntry);
+        const ICFGNode* funEntry = icfg->getFunEntryICFGNode(entryFun);
+        handleFunction(funEntry);
     }
 }
 
 /// handle global node
+/// Initializes the abstract state for the global ICFG node and processes all global statements.
+/// This includes setting up the null pointer and black hole pointer (blkPtr).
+/// BlkPtr is initialized to point to the InvalidMem (BlackHole) object, representing
+/// an unknown memory location that cannot be statically resolved.
 void AbstractInterpretation::handleGlobalNode()
 {
     const ICFGNode* node = icfg->getGlobalICFGNode();
     abstractTrace[node] = AbstractState();
     abstractTrace[node][IRGraph::NullPtr] = AddressValue();
+
     // Global Node, we just need to handle addr, load, store, copy and gep
     for (const SVFStmt *stmt: node->getSVFStmts())
     {
         handleSVFStatement(stmt);
     }
+
+    // BlkPtr represents a pointer whose target is statically unknown (e.g., from
+    // int2ptr casts, external function returns, or unmodeled instructions like
+    // AtomicCmpXchg). It should be an address pointing to the InvalidMem object
+    // (BlackHole, ID=2), NOT an interval top.
+    //
+    // History: this was originally set to IntervalValue::top() as a quick fix when
+    // the analysis crashed on programs containing uninitialized BlkPtr. However,
+    // BlkPtr is semantically a *pointer* (address domain), not a numeric value
+    // (interval domain). Setting it to interval top broke cross-domain consistency:
+    // the interval domain and address domain gave contradictory information for the
+    // same variable. The correct representation is an AddressValue containing the
+    // BlackHole/InvalidMem virtual address, which means "points to unknown memory".
+    abstractTrace[node][PAG::getPAG()->getBlkPtr()] =
+        AddressValue(InvalidMemAddr);
 }
 
 /// get execution state by merging states of predecessor blocks
@@ -661,6 +732,9 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
         detector->detect(getAbsStateFromTrace(node), node);
     stat->countStateSize();
 
+    // Track this node as analyzed (for coverage statistics across all entry points)
+    allAnalyzedNodes.insert(node);
+
     // Check if state changed (for fixpoint detection)
     // For entry nodes on first visit, always return true to process successors
     if (isFunEntry && !hadPrevState)
@@ -945,7 +1019,15 @@ bool AbstractInterpretation::shouldApplyNarrowing(const FunObjVar* fun)
         return false;
     }
 }
-/// Handle direct or indirect call: get callee, process function body, set return state
+/// Handle direct or indirect call: get callee(s), process function body, set return state.
+///
+/// For direct calls, the callee is known statically.
+/// For indirect calls, the previous implementation resolved callees from the abstract
+/// state's address domain, which only picked the first address and missed other targets.
+/// Since the abstract state's address domain is not an over-approximation for function
+/// pointers (it may be uninitialized or incomplete), we now use Andersen's pointer
+/// analysis results from the pre-computed call graph, which soundly resolves all
+/// possible indirect call targets.
 void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
@@ -955,16 +1037,34 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
     if (skipRecursiveCall(callNode))
         return;
 
-    const FunObjVar* callee = getCallee(callNode);
-    if (!callee)
+    // Direct call: callee is known
+    if (const FunObjVar* callee = callNode->getCalledFunction())
+    {
+        callSiteStack.push_back(callNode);
+        const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
+        handleFunction(calleeEntry);
+        callSiteStack.pop_back();
+        const RetICFGNode* retNode = callNode->getRetICFGNode();
+        abstractTrace[retNode] = abstractTrace[callNode];
         return;
+    }
 
-    callSiteStack.push_back(callNode);
-
-    const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
-    handleFunction(calleeEntry);
-
-    callSiteStack.pop_back();
+    // Indirect call: use Andersen's call graph to get all resolved callees.
+    // The call graph was built during initWTO() by running Andersen's pointer analysis,
+    // which over-approximates the set of possible targets for each indirect callsite.
+    if (callGraph->hasIndCSCallees(callNode))
+    {
+        const auto& callees = callGraph->getIndCSCallees(callNode);
+        callSiteStack.push_back(callNode);
+        for (const FunObjVar* callee : callees)
+        {
+            if (callee->isDeclaration())
+                continue;
+            const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
+            handleFunction(calleeEntry);
+        }
+        callSiteStack.pop_back();
+    }
     const RetICFGNode* retNode = callNode->getRetICFGNode();
     abstractTrace[retNode] = abstractTrace[callNode];
 }
@@ -1229,15 +1329,39 @@ void AEStat::finializeStat()
         generalNumMap["ES_Loc_Addr_AVG_Num"] /= count;
     }
     generalNumMap["SVF_STMT_NUM"] = count;
-    generalNumMap["ICFG_Node_Num"] = _ae->svfir->getICFG()->nodeNum;
+
+    u32_t totalICFGNodes = _ae->svfir->getICFG()->nodeNum;
+    generalNumMap["ICFG_Node_Num"] = totalICFGNodes;
+
+    // Calculate coverage: use allAnalyzedNodes which tracks all nodes across all entry points
+    u32_t analyzedNodes = _ae->allAnalyzedNodes.size();
+    generalNumMap["Analyzed_ICFG_Node_Num"] = analyzedNodes;
+
+    // Coverage percentage (stored as integer percentage * 100 for precision)
+    if (totalICFGNodes > 0)
+    {
+        double coveragePercent = (double)analyzedNodes / (double)totalICFGNodes * 100.0;
+        generalNumMap["ICFG_Coverage_Percent"] = (u32_t)(coveragePercent * 100); // Store as percentage * 100
+    }
+    else
+    {
+        generalNumMap["ICFG_Coverage_Percent"] = 0;
+    }
+
     u32_t callSiteNum = 0;
     u32_t extCallSiteNum = 0;
     Set<const FunObjVar *> funs;
+    Set<const FunObjVar *> analyzedFuns;
     for (const auto &it: *_ae->svfir->getICFG())
     {
         if (it.second->getFun())
         {
             funs.insert(it.second->getFun());
+            // Check if this node was analyzed (across all entry points)
+            if (_ae->allAnalyzedNodes.find(it.second) != _ae->allAnalyzedNodes.end())
+            {
+                analyzedFuns.insert(it.second->getFun());
+            }
         }
         if (const CallICFGNode *callNode = dyn_cast<CallICFGNode>(it.second))
         {
@@ -1252,6 +1376,19 @@ void AEStat::finializeStat()
         }
     }
     generalNumMap["Func_Num"] = funs.size();
+    generalNumMap["Analyzed_Func_Num"] = analyzedFuns.size();
+
+    // Function coverage percentage
+    if (funs.size() > 0)
+    {
+        double funcCoveragePercent = (double)analyzedFuns.size() / (double)funs.size() * 100.0;
+        generalNumMap["Func_Coverage_Percent"] = (u32_t)(funcCoveragePercent * 100); // Store as percentage * 100
+    }
+    else
+    {
+        generalNumMap["Func_Coverage_Percent"] = 0;
+    }
+
     generalNumMap["EXT_CallSite_Num"] = extCallSiteNum;
     generalNumMap["NonEXT_CallSite_Num"] = callSiteNum;
     timeStatMap["Total_Time(sec)"] = (double)(endTime - startTime) / TIMEINTERVAL;
@@ -1280,8 +1417,16 @@ void AEStat::performStat()
     unsigned field_width = 30;
     for (NUMStatMap::iterator it = generalNumMap.begin(), eit = generalNumMap.end(); it != eit; ++it)
     {
-        // format out put with width 20 space
-        std::cout << std::setw(field_width) << it->first << it->second << "\n";
+        // Special handling for percentage fields (stored as percentage * 100)
+        if (it->first == "ICFG_Coverage_Percent" || it->first == "Func_Coverage_Percent")
+        {
+            double percent = (double)it->second / 100.0;
+            std::cout << std::setw(field_width) << it->first << std::fixed << std::setprecision(2) << percent << "%\n";
+        }
+        else
+        {
+            std::cout << std::setw(field_width) << it->first << it->second << "\n";
+        }
     }
     SVFUtil::outs() << "-------------------------------------------------------\n";
     for (TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it != eit; ++it)
@@ -1605,6 +1750,13 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 case CmpStmt::FCMP_TRUE:
                     resVal = IntervalValue(1, 1);
                     break;
+                case CmpStmt::FCMP_ORD:
+                case CmpStmt::FCMP_UNO:
+                    // FCMP_ORD: true if both operands are not NaN
+                    // FCMP_UNO: true if either operand is NaN
+                    // Conservatively return [0, 1] since we don't track NaN
+                    resVal = IntervalValue(0, 1);
+                    break;
                 default:
                     assert(false && "undefined compare: ");
                 }
@@ -1718,6 +1870,13 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                     break;
                 case CmpStmt::FCMP_TRUE:
                     resVal = IntervalValue(1, 1);
+                    break;
+                case CmpStmt::FCMP_ORD:
+                case CmpStmt::FCMP_UNO:
+                    // FCMP_ORD: true if both operands are not NaN
+                    // FCMP_UNO: true if either operand is NaN
+                    // Conservatively return [0, 1] since we don't track NaN
+                    resVal = IntervalValue(0, 1);
                     break;
                 default:
                     assert(false && "undefined compare: ");

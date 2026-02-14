@@ -36,6 +36,8 @@
 #include "Util/SVFBugReport.h"
 #include "Util/SVFStat.h"
 #include "Graphs/SCC.h"
+#include "Graphs/CallGraph.h"
+#include <deque>
 
 namespace SVF
 {
@@ -143,6 +145,13 @@ public:
 
     /// Program entry
     void analyse();
+
+    /// Analyze all entry points (functions without callers)
+    void analyzeFromAllProgEntries();
+
+    /// Get all entry point functions (functions without callers)
+    std::deque<const FunObjVar*> collectProgEntryFuns();
+
 
     static AbstractInterpretation& getAEInstance()
     {
@@ -322,6 +331,8 @@ private:
     AEAPI* api{nullptr};
 
     ICFG* icfg;
+    CallGraph* callGraph;
+    CallGraphSCC* callGraphScc;
     AEStat* stat;
 
     std::vector<const CallICFGNode*> callSiteStack;
@@ -358,6 +369,7 @@ private:
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
 
     Map<const ICFGNode*, AbstractState> abstractTrace; // abstract states immediately after nodes
+    Set<const ICFGNode*> allAnalyzedNodes; // All nodes ever analyzed (across all entry points)
     std::string moduleName;
 
     std::vector<std::unique_ptr<AEDetector>> detectors;
