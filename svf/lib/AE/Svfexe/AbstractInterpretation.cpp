@@ -62,8 +62,9 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
 }
 
 AbstractInterpretation::AbstractInterpretation()
-    : callGraph(nullptr)
 {
+    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfir);
+    callGraph = ander->getCallGraph();
     stat = new AEStat(this);
 }
 /// Destructor
@@ -96,11 +97,9 @@ void AbstractInterpretation::collectCycleHeads(const std::list<const ICFGWTOComp
 
 void AbstractInterpretation::initWTO()
 {
-    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfir);
     // Detect if the call graph has cycles by finding its strongly connected components (SCC)
     Andersen::CallGraphSCC* callGraphScc = ander->getCallGraphSCC();
     callGraphScc->find();
-    callGraph = ander->getCallGraph();
 
     // Iterate through the call graph
     for (auto it = callGraph->begin(); it != callGraph->end(); it++)
@@ -204,8 +203,6 @@ std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
 void AbstractInterpretation::analyse()
 {
     initWTO();
-    // handle Global ICFGNode of SVFModule
-    handleGlobalNode();
 
     // Always use multi-entry analysis from all entry points
     analyzeFromAllProgEntries();
@@ -224,7 +221,8 @@ void AbstractInterpretation::analyzeFromAllProgEntries()
         assert(false && "No entry functions found for analysis");
         return;
     }
-
+    // handle Global ICFGNode of SVFModule
+    handleGlobalNode();
     for (const FunObjVar* entryFun : entryFunctions)
     {
         const ICFGNode* funEntry = icfg->getFunEntryICFGNode(entryFun);

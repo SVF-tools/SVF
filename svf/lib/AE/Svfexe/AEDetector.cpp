@@ -494,8 +494,7 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
     // while being conservatively sound.
     if (!as[value_id].isAddr())
     {
-        NodeID blkPtrId = svfir->getBlkPtr();
-        as[value_id] = AddressValue(AbstractState::getVirtualMemAddress(blkPtrId));
+        as[value_id] = AddressValue(InvalidMemAddr);
     }
     for (const auto& addr : as[value_id].getAddrs())
     {
