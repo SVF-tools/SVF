@@ -227,14 +227,14 @@ private:
      *
      * @param cycle WTOCycle which has weak topo order of basic blocks and nested cycles
      */
-    virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle);
+    virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller = nullptr);
 
     /**
      * Handle a function using worklist algorithm
      *
      * @param funEntry The entry node of the function to handle
      */
-    void handleFunction(const ICFGNode* funEntry);
+    void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller = nullptr);
 
     /**
      * Handle an ICFG node by merging states and processing statements
@@ -242,7 +242,7 @@ private:
      * @param node The ICFG node to handle
      * @return true if state changed, false if fixpoint reached or infeasible
      */
-    bool handleICFGNode(const ICFGNode* node);
+    bool handleICFGNode(const ICFGNode* node, const CallICFGNode* caller = nullptr);
 
     /**
      * Get the next nodes of a node within the same function
@@ -335,7 +335,6 @@ private:
     CallGraphSCC* callGraphScc;
     AEStat* stat;
 
-    std::vector<const CallICFGNode*> callSiteStack;
     Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
     Set<std::pair<const CallICFGNode*, NodeID>> nonRecursiveCallSites;
     Set<const FunObjVar*> recursiveFuns;
