@@ -332,7 +332,6 @@ private:
 
     ICFG* icfg;
     CallGraph* callGraph;
-    CallGraphSCC* callGraphScc;
     AEStat* stat;
 
     Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
