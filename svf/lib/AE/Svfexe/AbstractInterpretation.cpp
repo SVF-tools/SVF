@@ -168,7 +168,6 @@ void AbstractInterpretation::initWTO()
 std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
 {
     std::deque<const FunObjVar*> entryFunctions;
-    const CallGraph* callGraph = svfir->getCallGraph();
 
     for (auto it = callGraph->begin(); it != callGraph->end(); ++it)
     {
