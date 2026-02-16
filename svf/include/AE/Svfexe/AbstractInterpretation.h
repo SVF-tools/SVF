@@ -242,7 +242,7 @@ private:
      * @param node The ICFG node to handle
      * @return true if state changed, false if fixpoint reached or infeasible
      */
-    bool handleICFGNode(const ICFGNode* node, const CallICFGNode* caller = nullptr);
+    bool handleICFGNode(const ICFGNode* node);
 
     /**
      * Get the next nodes of a node within the same function

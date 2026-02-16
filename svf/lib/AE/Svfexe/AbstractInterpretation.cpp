@@ -661,7 +661,7 @@ void AbstractInterpretation::handleSingletonWTO(const ICFGSingletonWTO *icfgSing
  * Handle an ICFG node by merging states from predecessors and processing statements
  * Returns true if the abstract state has changed, false if fixpoint reached or infeasible
  */
-bool AbstractInterpretation::handleICFGNode(const ICFGNode* node, const CallICFGNode* caller)
+bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
 {
     // Store the previous state for fixpoint detection
     AbstractState prevState;
@@ -669,38 +669,22 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node, const CallICFG
     if (hadPrevState)
         prevState = abstractTrace[node];
 
-    // For function entry nodes, initialize state from caller or global
+    // For function entry nodes, initialize state from predecessors or global
     bool isFunEntry = SVFUtil::isa<FunEntryICFGNode>(node);
     if (isFunEntry)
     {
         // Try to merge from predecessors first (handles call edges)
         if (!mergeStatesFromPredecessors(node))
         {
-            // No predecessors with state - initialize from caller or global
-            if (caller)
+            // No predecessors with state - inherit from global node
+            const ICFGNode* globalNode = icfg->getGlobalICFGNode();
+            if (hasAbsStateFromTrace(globalNode))
             {
-                // Get state from the caller call site
-                if (hasAbsStateFromTrace(caller))
-                {
-                    abstractTrace[node] = abstractTrace[caller];
-                }
-                else
-                {
-                    abstractTrace[node] = AbstractState();
-                }
+                abstractTrace[node] = abstractTrace[globalNode];
             }
             else
             {
-                // This is the main function entry, inherit from global node
-                const ICFGNode* globalNode = icfg->getGlobalICFGNode();
-                if (hasAbsStateFromTrace(globalNode))
-                {
-                    abstractTrace[node] = abstractTrace[globalNode];
-                }
-                else
-                {
-                    abstractTrace[node] = AbstractState();
-                }
+                abstractTrace[node] = AbstractState();
             }
         }
     }
@@ -851,8 +835,8 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
         }
         else
         {
-            // Handle regular node (caller is only used when node is a FunEntryICFGNode)
-            if (!handleICFGNode(node, caller))
+            // Handle regular node
+            if (!handleICFGNode(node))
             {
                 // Fixpoint reached or infeasible, skip successors
                 continue;
