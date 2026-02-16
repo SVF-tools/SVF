@@ -367,7 +367,7 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(AbstractState& as, SVF::Add
                 }
                 else
                 {
-                    assert(AbstractState::isInvalidMem(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
+                    assert(AbstractState::isBlackHoleObjAddr(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
                 }
             }
         }
@@ -398,7 +398,7 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(AbstractState& as, SVF::Add
                 }
                 else
                 {
-                    assert(AbstractState::isInvalidMem(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
+                    assert(AbstractState::isBlackHoleObjAddr(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
                 }
             }
         }
@@ -479,7 +479,23 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
     SVFIR* svfir = PAG::getPAG();
     NodeID value_id = value->getId();
 
-    assert(as[value_id].isAddr());
+    // Lazy initialization for uninitialized pointer parameters in multi-entry analysis.
+    // When analyzing a function as an entry point (e.g., not called from main),
+    // pointer parameters may not have been initialized via AddrStmt.
+    //
+    // Example:
+    //   void process_buffer(char* buf, int len) {
+    //       buf[0] = 'a';  // accessing buf
+    //   }
+    // When analyzing process_buffer as an entry point, 'buf' is a function parameter
+    // with no AddrStmt, so it has no address information in the abstract state.
+    // We lazily initialize it to point to the black hole object (BlkPtr), representing
+    // an unknown but valid memory location. This allows the analysis to continue
+    // while being conservatively sound.
+    if (!as[value_id].isAddr())
+    {
+        as[value_id] = AddressValue(BlackHoleObjAddr);
+    }
     for (const auto& addr : as[value_id].getAddrs())
     {
         NodeID objId = as.getIDFromAddr(addr);
@@ -687,7 +703,7 @@ bool NullptrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVFVar* va
     for (const auto &addr: AbsVal.getAddrs())
     {
         // if the addr itself is invalid mem, report unsafe
-        if (AbstractState::isInvalidMem(addr))
+        if (AbstractState::isBlackHoleObjAddr(addr))
             return false;
         // if nullptr is detected, return unsafe
         else if (AbstractState::isNullMem(addr))

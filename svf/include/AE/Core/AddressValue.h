@@ -32,8 +32,8 @@
 
 #define AddressMask 0x7f000000
 #define FlippedAddressMask (AddressMask^0xffffffff)
-// the address of InvalidMem(the black hole), getVirtualMemAddress(2);
-#define InvalidMemAddr 0x7f000000 + 2
+// the address of BlackHole object, getVirtualMemAddress(2);
+#define BlackHoleObjAddr 0x7f000000 + 2
 // the address of NullMem, getVirtualMemAddress(0);
 #define NullMemAddr 0x7f000000
 

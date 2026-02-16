@@ -272,60 +272,19 @@ void AbsExtAPI::initExtFunMap()
 
     auto sse_strlen = [&](const CallICFGNode *callNode)
     {
-        // check the arg size
         if (callNode->arg_size() < 1) return;
-        const SVFVar* strValue = callNode->getArgument(0);
         AbstractState& as = getAbsStateFromTrace(callNode);
-        NodeID value_id = strValue->getId();
         u32_t lhsId = callNode->getRetICFGNode()->getActualRet()->getId();
-        u32_t dst_size = 0;
-        for (const auto& addr : as[value_id].getAddrs())
-        {
-            NodeID objId = as.getIDFromAddr(addr);
-            if (svfir->getBaseObject(objId)->isConstantByteSize())
-            {
-                dst_size = svfir->getBaseObject(objId)->getByteSizeOfObj();
-            }
-            else
-            {
-                const ICFGNode* addrNode = svfir->getBaseObject(objId)->getICFGNode();
-                for (const SVFStmt* stmt2: addrNode->getSVFStmts())
-                {
-                    if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
-                    {
-                        dst_size = as.getAllocaInstByteSize(addrStmt);
-                    }
-                }
-            }
-        }
-        u32_t len = 0;
-        NodeID dstid = strValue->getId();
-        if (as.inVarToAddrsTable(dstid))
-        {
-            for (u32_t index = 0; index < dst_size; index++)
-            {
-                AbstractValue expr0 =
-                    as.getGepObjAddrs(dstid, IntervalValue(index));
-                AbstractValue val;
-                for (const auto &addr: expr0.getAddrs())
-                {
-                    val.join_with(as.load(addr));
-                }
-                if (val.getInterval().is_numeral() && (char) val.getInterval().getIntNumeral() == '\0')
-                {
-                    break;
-                }
-                ++len;
-            }
-        }
-        if (len == 0)
-        {
-            as[lhsId] = IntervalValue((s64_t)0, (s64_t)Options::MaxFieldLimit());
-        }
+        // strlen/wcslen return the number of characters (not bytes).
+        // getStrlen returns byte-scaled length (len * elemSize) for use
+        // by memcpy/strcpy. Here we need the raw character count, so
+        // divide back by elemSize.
+        IntervalValue byteLen = getStrlen(as, callNode->getArgument(0));
+        u32_t elemSize = getElementSize(as, callNode->getArgument(0));
+        if (byteLen.is_numeral() && elemSize > 1)
+            as[lhsId] = IntervalValue(byteLen.getIntNumeral() / (s64_t)elemSize);
         else
-        {
-            as[lhsId] = IntervalValue(len);
-        }
+            as[lhsId] = byteLen;
     };
     func_map["strlen"] = sse_strlen;
     func_map["wcslen"] = sse_strlen;
@@ -350,7 +309,7 @@ void AbsExtAPI::initExtFunMap()
         const u32_t freePtr = callNode->getArgument(0)->getId();
         for (auto addr: as[freePtr].getAddrs())
         {
-            if (AbstractState::isInvalidMem(addr))
+            if (AbstractState::isBlackHoleObjAddr(addr))
             {
                 // Detected a double free — the address has already been freed.
                 // No action is taken at this point.
@@ -480,7 +439,13 @@ void AbsExtAPI::handleExtAPI(const CallICFGNode *call)
     }
     else if (extType == STRCAT)
     {
-        handleStrcat(call);
+        // Both strcat and strncat are annotated as STRCAT.
+        // Distinguish by name: strncat/wcsncat contain "ncat".
+        const std::string& name = fun->getName();
+        if (name.find("ncat") != std::string::npos)
+            handleStrncat(call);
+        else
+            handleStrcat(call);
     }
     else
     {
@@ -489,21 +454,50 @@ void AbsExtAPI::handleExtAPI(const CallICFGNode *call)
     return;
 }
 
-void AbsExtAPI::handleStrcpy(const CallICFGNode *call)
+// ===----------------------------------------------------------------------===//
+//  Shared primitives for string/memory handlers
+// ===----------------------------------------------------------------------===//
+
+/// Get the byte size of each element for a pointer/array variable.
+/// Shared by handleMemcpy, handleMemset, and getStrlen to avoid duplication.
+u32_t AbsExtAPI::getElementSize(AbstractState& as, const SVFVar* var)
 {
-    // strcpy, __strcpy_chk, stpcpy , wcscpy, __wcscpy_chk
-    // get the dst and src
-    AbstractState& as = getAbsStateFromTrace(call);
-    const SVFVar* arg0Val = call->getArgument(0);
-    const SVFVar* arg1Val = call->getArgument(1);
-    IntervalValue strLen = getStrlen(as, arg1Val);
-    // no need to -1, since it has \0 as the last byte
-    handleMemcpy(as, arg0Val, arg1Val, strLen, strLen.lb().getIntNumeral());
+    if (var->getType()->isArrayTy())
+    {
+        return SVFUtil::dyn_cast<SVFArrayType>(var->getType())
+            ->getTypeOfElement()->getByteSize();
+    }
+    if (var->getType()->isPointerTy())
+    {
+        if (const SVFType* elemType = as.getPointeeElement(var->getId()))
+        {
+            if (elemType->isArrayTy())
+                return SVFUtil::dyn_cast<SVFArrayType>(elemType)
+                    ->getTypeOfElement()->getByteSize();
+            return elemType->getByteSize();
+        }
+        return 1;
+    }
+    assert(false && "unsupported type for element size");
+    return 1;
 }
 
+/// Check if an interval length is usable for memory operations.
+/// Returns false for bottom (no information) or unbounded lower bound
+/// (cannot determine a concrete start for iteration).
+bool AbsExtAPI::isValidLength(const IntervalValue& len)
+{
+    return !len.isBottom() && !len.lb().is_minus_infinity();
+}
+
+/// Calculate the length of a null-terminated string in abstract state.
+/// Scans memory from the base of strValue looking for a '\0' byte.
+/// Returns an IntervalValue: exact length if '\0' found, otherwise [0, MaxFieldLimit].
 IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValue)
 {
     NodeID value_id = strValue->getId();
+
+    // Step 1: determine the buffer size (in bytes) backing this pointer
     u32_t dst_size = 0;
     for (const auto& addr : as[value_id].getAddrs())
     {
@@ -524,8 +518,9 @@ IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValu
             }
         }
     }
+
+    // Step 2: scan for '\0' terminator
     u32_t len = 0;
-    u32_t elemSize = 1;
     if (as.inVarToAddrsTable(value_id))
     {
         for (u32_t index = 0; index < dst_size; index++)
@@ -537,188 +532,153 @@ IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValu
             {
                 val.join_with(as.load(addr));
             }
-            if (val.getInterval().is_numeral() && (char) val.getInterval().getIntNumeral() == '\0')
+            if (val.getInterval().is_numeral() &&
+                    (char) val.getInterval().getIntNumeral() == '\0')
             {
                 break;
             }
             ++len;
         }
-        if (strValue->getType()->isArrayTy())
-        {
-            elemSize = SVFUtil::dyn_cast<SVFArrayType>(strValue->getType())->getTypeOfElement()->getByteSize();
-        }
-        else if (strValue->getType()->isPointerTy())
-        {
-            if (const SVFType* elemType = as.getPointeeElement(value_id))
-            {
-                if (elemType->isArrayTy())
-                    elemSize = SVFUtil::dyn_cast<SVFArrayType>(elemType)->getTypeOfElement()->getByteSize();
-                else
-                    elemSize = elemType->getByteSize();
-            }
-            else
-            {
-                elemSize = 1;
-            }
-        }
-        else
-        {
-            assert(false && "we cannot support this type");
-        }
     }
+
+    // Step 3: scale by element size and return
+    u32_t elemSize = getElementSize(as, strValue);
     if (len == 0)
-    {
         return IntervalValue((s64_t)0, (s64_t)Options::MaxFieldLimit());
-    }
-    else
-    {
-        return IntervalValue(len * elemSize);
-    }
+    return IntervalValue(len * elemSize);
 }
 
+// ===----------------------------------------------------------------------===//
+//  String/memory operation handlers
+// ===----------------------------------------------------------------------===//
 
-void AbsExtAPI::handleStrcat(const SVF::CallICFGNode *call)
+/// strcpy(dst, src): copy all of src (including '\0') into dst.
+/// Covers: strcpy, __strcpy_chk, stpcpy, wcscpy, __wcscpy_chk
+void AbsExtAPI::handleStrcpy(const CallICFGNode *call)
 {
-    // __strcat_chk, strcat, __wcscat_chk, wcscat, __strncat_chk, strncat, __wcsncat_chk, wcsncat
-    // to check it is  strcat group or strncat group
     AbstractState& as = getAbsStateFromTrace(call);
-    const FunObjVar *fun = call->getCalledFunction();
-    const std::vector<std::string> strcatGroup = {"__strcat_chk", "strcat", "__wcscat_chk", "wcscat"};
-    const std::vector<std::string> strncatGroup = {"__strncat_chk", "strncat", "__wcsncat_chk", "wcsncat"};
-    if (std::find(strcatGroup.begin(), strcatGroup.end(), fun->getName()) != strcatGroup.end())
-    {
-        const SVFVar* arg0Val = call->getArgument(0);
-        const SVFVar* arg1Val = call->getArgument(1);
-        IntervalValue strLen0 = getStrlen(as, arg0Val);
-        IntervalValue strLen1 = getStrlen(as, arg1Val);
-        IntervalValue totalLen = strLen0 + strLen1;
-        handleMemcpy(as, arg0Val, arg1Val, strLen1, strLen0.lb().getIntNumeral());
-        // do memcpy
-    }
-    else if (std::find(strncatGroup.begin(), strncatGroup.end(), fun->getName()) != strncatGroup.end())
-    {
-        const SVFVar* arg0Val = call->getArgument(0);
-        const SVFVar* arg1Val = call->getArgument(1);
-        const SVFVar* arg2Val = call->getArgument(2);
-        IntervalValue arg2Num = as[arg2Val->getId()].getInterval();
-        IntervalValue strLen0 = getStrlen(as, arg0Val);
-        IntervalValue totalLen = strLen0 + arg2Num;
-        handleMemcpy(as, arg0Val, arg1Val, arg2Num, strLen0.lb().getIntNumeral());
-        // do memcpy
-    }
-    else
-    {
-        assert(false && "unknown strcat function, please add it to strcatGroup or strncatGroup");
-    }
+    const SVFVar* dst = call->getArgument(0);
+    const SVFVar* src = call->getArgument(1);
+    IntervalValue srcLen = getStrlen(as, src);
+    // no need to -1, since srcLen includes up to (but not past) '\0'
+    if (!isValidLength(srcLen)) return;
+    handleMemcpy(as, dst, src, srcLen, 0);
 }
 
-void AbsExtAPI::handleMemcpy(AbstractState& as, const SVF::SVFVar *dst, const SVF::SVFVar *src, IntervalValue len,  u32_t start_idx)
+/// strcat(dst, src): append all of src after the end of dst.
+/// Covers: strcat, __strcat_chk, wcscat, __wcscat_chk
+void AbsExtAPI::handleStrcat(const CallICFGNode *call)
 {
-    u32_t dstId = dst->getId(); // pts(dstId) = {objid}  objbar objtypeinfo->getType().
-    u32_t srcId = src->getId();
-    u32_t elemSize = 1;
-    if (dst->getType()->isArrayTy())
-    {
-        elemSize = SVFUtil::dyn_cast<SVFArrayType>(dst->getType())->getTypeOfElement()->getByteSize();
-    }
-    // memcpy(i32*, i32*, 40)
-    else if (dst->getType()->isPointerTy())
-    {
-        if (const SVFType* elemType = as.getPointeeElement(dstId))
-        {
-            if (elemType->isArrayTy())
-                elemSize = SVFUtil::dyn_cast<SVFArrayType>(elemType)->getTypeOfElement()->getByteSize();
-            else
-                elemSize = elemType->getByteSize();
-        }
-        else
-        {
-            elemSize = 1;
-        }
-    }
-    else
-    {
-        assert(false && "we cannot support this type");
-    }
-    u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getIntNumeral());
-    u32_t range_val = size / elemSize;
-    if (as.inVarToAddrsTable(srcId) && as.inVarToAddrsTable(dstId))
-    {
-        for (u32_t index = 0; index < range_val; index++)
-        {
-            // dead loop for string and break if there's a \0. If no \0, it will throw err.
-            AbstractValue expr_src =
-                as.getGepObjAddrs(srcId, IntervalValue(index));
-            AbstractValue expr_dst =
-                as.getGepObjAddrs(dstId, IntervalValue(index + start_idx));
-            for (const auto &dst: expr_dst.getAddrs())
-            {
-                for (const auto &src: expr_src.getAddrs())
-                {
-                    u32_t objId = as.getIDFromAddr(src);
-                    if (as.inAddrToValTable(objId))
-                    {
-                        as.store(dst, as.load(src));
-                    }
-                    else if (as.inAddrToAddrsTable(objId))
-                    {
-                        as.store(dst, as.load(src));
-                    }
-                }
-            }
-        }
-    }
+    AbstractState& as = getAbsStateFromTrace(call);
+    const SVFVar* dst = call->getArgument(0);
+    const SVFVar* src = call->getArgument(1);
+    IntervalValue dstLen = getStrlen(as, dst);
+    IntervalValue srcLen = getStrlen(as, src);
+    if (!isValidLength(dstLen)) return;
+    handleMemcpy(as, dst, src, srcLen, dstLen.lb().getIntNumeral());
 }
 
-void AbsExtAPI::handleMemset(AbstractState& as, const SVF::SVFVar *dst, IntervalValue elem, IntervalValue len)
+/// strncat(dst, src, n): append at most n bytes of src after the end of dst.
+/// Covers: strncat, __strncat_chk, wcsncat, __wcsncat_chk
+void AbsExtAPI::handleStrncat(const CallICFGNode *call)
 {
+    AbstractState& as = getAbsStateFromTrace(call);
+    const SVFVar* dst = call->getArgument(0);
+    const SVFVar* src = call->getArgument(1);
+    IntervalValue n = as[call->getArgument(2)->getId()].getInterval();
+    IntervalValue dstLen = getStrlen(as, dst);
+    if (!isValidLength(dstLen)) return;
+    handleMemcpy(as, dst, src, n, dstLen.lb().getIntNumeral());
+}
+
+/// Core memcpy: copy `len` bytes from src to dst starting at dst[start_idx].
+void AbsExtAPI::handleMemcpy(AbstractState& as, const SVF::SVFVar *dst,
+                              const SVF::SVFVar *src, IntervalValue len,
+                              u32_t start_idx)
+{
+    if (!isValidLength(len)) return;
+
     u32_t dstId = dst->getId();
-    u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getIntNumeral());
-    u32_t elemSize = 1;
-    if (dst->getType()->isArrayTy())
-    {
-        elemSize = SVFUtil::dyn_cast<SVFArrayType>(dst->getType())->getTypeOfElement()->getByteSize();
-    }
-    else if (dst->getType()->isPointerTy())
-    {
-        if (const SVFType* elemType = as.getPointeeElement(dstId))
-        {
-            elemSize = elemType->getByteSize();
-        }
-        else
-        {
-            elemSize = 1;
-        }
-    }
-    else
-    {
-        assert(false && "we cannot support this type");
-    }
-
+    u32_t srcId = src->getId();
+    u32_t elemSize = getElementSize(as, dst);
+    u32_t size = std::min((u32_t)Options::MaxFieldLimit(),
+                          (u32_t)len.lb().getIntNumeral());
     u32_t range_val = size / elemSize;
+
+    if (!as.inVarToAddrsTable(srcId) || !as.inVarToAddrsTable(dstId))
+        return;
+
     for (u32_t index = 0; index < range_val; index++)
     {
-        // dead loop for string and break if there's a \0. If no \0, it will throw err.
-        if (as.inVarToAddrsTable(dstId))
+        AbstractValue expr_src =
+            as.getGepObjAddrs(srcId, IntervalValue(index));
+        AbstractValue expr_dst =
+            as.getGepObjAddrs(dstId, IntervalValue(index + start_idx));
+        for (const auto &dstAddr: expr_dst.getAddrs())
         {
-            AbstractValue lhs_gep = as.getGepObjAddrs(dstId, IntervalValue(index));
-            for (const auto &addr: lhs_gep.getAddrs())
+            for (const auto &srcAddr: expr_src.getAddrs())
             {
-                u32_t objId = as.getIDFromAddr(addr);
-                if (as.inAddrToValTable(objId))
+                u32_t objId = as.getIDFromAddr(srcAddr);
+                if (as.inAddrToValTable(objId) || as.inAddrToAddrsTable(objId))
                 {
-                    AbstractValue tmp = as.load(addr);
-                    tmp.join_with(elem);
-                    as.store(addr, tmp);
-                }
-                else
-                {
-                    as.store(addr, elem);
+                    as.store(dstAddr, as.load(srcAddr));
                 }
             }
         }
+    }
+}
+
+/// Core memset: fill dst with `elem` for `len` bytes.
+/// Note: elemSize here uses the pointee type's full size (not array element size)
+/// to match how LLVM memset/wmemset intrinsics measure `len`. For a pointer to
+/// wchar_t[100], elemSize = sizeof(wchar_t[100]), so range_val reflects the
+/// number of top-level GEP fields, not individual array elements.
+void AbsExtAPI::handleMemset(AbstractState& as, const SVF::SVFVar *dst,
+                              IntervalValue elem, IntervalValue len)
+{
+    if (!isValidLength(len)) return;
+
+    u32_t dstId = dst->getId();
+    u32_t elemSize = 1;
+    if (dst->getType()->isArrayTy())
+    {
+        elemSize = SVFUtil::dyn_cast<SVFArrayType>(dst->getType())
+            ->getTypeOfElement()->getByteSize();
+    }
+    else if (dst->getType()->isPointerTy())
+    {
+        if (const SVFType* elemType = as.getPointeeElement(dstId))
+            elemSize = elemType->getByteSize();
         else
+            elemSize = 1;
+    }
+    else
+    {
+        assert(false && "unsupported type for element size");
+    }
+    u32_t size = std::min((u32_t)Options::MaxFieldLimit(),
+                          (u32_t)len.lb().getIntNumeral());
+    u32_t range_val = size / elemSize;
+
+    for (u32_t index = 0; index < range_val; index++)
+    {
+        if (!as.inVarToAddrsTable(dstId))
             break;
+        AbstractValue lhs_gep = as.getGepObjAddrs(dstId, IntervalValue(index));
+        for (const auto &addr: lhs_gep.getAddrs())
+        {
+            u32_t objId = as.getIDFromAddr(addr);
+            if (as.inAddrToValTable(objId))
+            {
+                AbstractValue tmp = as.load(addr);
+                tmp.join_with(elem);
+                as.store(addr, tmp);
+            }
+            else
+            {
+                as.store(addr, elem);
+            }
+        }
     }
 }
 

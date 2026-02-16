@@ -36,6 +36,8 @@
 #include "Util/SVFBugReport.h"
 #include "Util/SVFStat.h"
 #include "Graphs/SCC.h"
+#include "Graphs/CallGraph.h"
+#include <deque>
 
 namespace SVF
 {
@@ -144,6 +146,13 @@ public:
     /// Program entry
     void analyse();
 
+    /// Analyze all entry points (functions without callers)
+    void analyzeFromAllProgEntries();
+
+    /// Get all entry point functions (functions without callers)
+    std::deque<const FunObjVar*> collectProgEntryFuns();
+
+
     static AbstractInterpretation& getAEInstance()
     {
         static AbstractInterpretation instance;
@@ -218,14 +227,14 @@ private:
      *
      * @param cycle WTOCycle which has weak topo order of basic blocks and nested cycles
      */
-    virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle);
+    virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller = nullptr);
 
     /**
      * Handle a function using worklist algorithm
      *
      * @param funEntry The entry node of the function to handle
      */
-    void handleFunction(const ICFGNode* funEntry);
+    void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller = nullptr);
 
     /**
      * Handle an ICFG node by merging states and processing statements
@@ -322,9 +331,9 @@ private:
     AEAPI* api{nullptr};
 
     ICFG* icfg;
+    CallGraph* callGraph;
     AEStat* stat;
 
-    std::vector<const CallICFGNode*> callSiteStack;
     Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
     Set<std::pair<const CallICFGNode*, NodeID>> nonRecursiveCallSites;
     Set<const FunObjVar*> recursiveFuns;
@@ -358,6 +367,7 @@ private:
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
 
     Map<const ICFGNode*, AbstractState> abstractTrace; // abstract states immediately after nodes
+    Set<const ICFGNode*> allAnalyzedNodes; // All nodes ever analyzed (across all entry points)
     std::string moduleName;
 
     std::vector<std::unique_ptr<AEDetector>> detectors;
