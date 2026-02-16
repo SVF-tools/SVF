@@ -851,11 +851,8 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
         }
         else
         {
-            // Only pass caller for function entry node, not for inner nodes
-            const CallICFGNode* nodeCallerArg =
-                SVFUtil::isa<FunEntryICFGNode>(node) ? caller : nullptr;
-            // Handle regular node
-            if (!handleICFGNode(node, nodeCallerArg))
+            // Handle regular node (caller is only used when node is a FunEntryICFGNode)
+            if (!handleICFGNode(node, caller))
             {
                 // Fixpoint reached or infeasible, skip successors
                 continue;
