@@ -114,7 +114,7 @@ public:
     /// Return the internal index if addr is an address otherwise return the value of idx
     inline u32_t getIDFromAddr(u32_t addr)
     {
-        return _freedAddrs.count(addr) ?  AddressValue::getInternalID(InvalidMemAddr) : AddressValue::getInternalID(addr);
+        return _freedAddrs.count(addr) ?  AddressValue::getInternalID(BlackHoleObjAddr) : AddressValue::getInternalID(addr);
     }
 
     AbstractState&operator=(const AbstractState&rhs)
@@ -187,9 +187,9 @@ public:
         return addr == NullMemAddr;
     }
 
-    static inline bool isInvalidMem(u32_t addr)
+    static inline bool isBlackHoleObjAddr(u32_t addr)
     {
-        return addr == InvalidMemAddr;
+        return addr == BlackHoleObjAddr;
     }
 
 

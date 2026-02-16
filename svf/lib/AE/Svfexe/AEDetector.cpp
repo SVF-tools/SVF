@@ -367,7 +367,7 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(AbstractState& as, SVF::Add
                 }
                 else
                 {
-                    assert(AbstractState::isInvalidMem(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
+                    assert(AbstractState::isBlackHoleObjAddr(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
                 }
             }
         }
@@ -398,7 +398,7 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(AbstractState& as, SVF::Add
                 }
                 else
                 {
-                    assert(AbstractState::isInvalidMem(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
+                    assert(AbstractState::isBlackHoleObjAddr(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
                 }
             }
         }
@@ -494,7 +494,7 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
     // while being conservatively sound.
     if (!as[value_id].isAddr())
     {
-        as[value_id] = AddressValue(InvalidMemAddr);
+        as[value_id] = AddressValue(BlackHoleObjAddr);
     }
     for (const auto& addr : as[value_id].getAddrs())
     {
@@ -703,7 +703,7 @@ bool NullptrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVFVar* va
     for (const auto &addr: AbsVal.getAddrs())
     {
         // if the addr itself is invalid mem, report unsafe
-        if (AbstractState::isInvalidMem(addr))
+        if (AbstractState::isBlackHoleObjAddr(addr))
             return false;
         // if nullptr is detected, return unsafe
         else if (AbstractState::isNullMem(addr))

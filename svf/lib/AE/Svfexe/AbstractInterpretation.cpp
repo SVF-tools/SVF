@@ -232,7 +232,7 @@ void AbstractInterpretation::analyzeFromAllProgEntries()
 /// handle global node
 /// Initializes the abstract state for the global ICFG node and processes all global statements.
 /// This includes setting up the null pointer and black hole pointer (blkPtr).
-/// BlkPtr is initialized to point to the InvalidMem (BlackHole) object, representing
+/// BlkPtr is initialized to point to the BlackHole object, representing
 /// an unknown memory location that cannot be statically resolved.
 void AbstractInterpretation::handleGlobalNode()
 {
@@ -248,8 +248,8 @@ void AbstractInterpretation::handleGlobalNode()
 
     // BlkPtr represents a pointer whose target is statically unknown (e.g., from
     // int2ptr casts, external function returns, or unmodeled instructions like
-    // AtomicCmpXchg). It should be an address pointing to the InvalidMem object
-    // (BlackHole, ID=2), NOT an interval top.
+    // AtomicCmpXchg). It should be an address pointing to the BlackHole object
+    // (ID=2), NOT an interval top.
     //
     // History: this was originally set to IntervalValue::top() as a quick fix when
     // the analysis crashed on programs containing uninitialized BlkPtr. However,
@@ -257,9 +257,9 @@ void AbstractInterpretation::handleGlobalNode()
     // (interval domain). Setting it to interval top broke cross-domain consistency:
     // the interval domain and address domain gave contradictory information for the
     // same variable. The correct representation is an AddressValue containing the
-    // BlackHole/InvalidMem virtual address, which means "points to unknown memory".
+    // BlackHole virtual address, which means "points to unknown memory".
     abstractTrace[node][PAG::getPAG()->getBlkPtr()] =
-        AddressValue(InvalidMemAddr);
+        AddressValue(BlackHoleObjAddr);
 }
 
 /// get execution state by merging states of predecessor blocks
