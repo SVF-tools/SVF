@@ -273,10 +273,10 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, co
         if(pushToCTPWorkList(newctp))
         {
             /// Add TCT nodes and edge
-            if(addTCTEdge(this->getGNode(ctp.getTid()), spawneeNode))
+            if(addTCTEdge(this->getTCTNode(ctp.getTid()), spawneeNode))
             {
                 DBOUT(DMTA,outs() << "Add TCT Edge from thread " << ctp.getTid() << "  ";
-                      this->getGNode(ctp.getTid())->getCxtThread().dump();
+                      this->getTCTNode(ctp.getTid())->getCxtThread().dump();
                       outs() << " to thread " << spawneeNode->getId() << "  ";
                       spawneeNode->getCxtThread().dump();
                       outs() << "\n" );

@@ -394,21 +394,21 @@ void AndersenBase::heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet &
 void AndersenBase::normalizePointsTo()
 {
     SVFIR::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
-    SVFIR::NodeOffsetMap &GepObjVarMap = pag->getGepObjNodeMap();
+    SVFIR::OffsetToGepVarMap &GepObjVarMap = pag->getGepObjNodeMap();
 
     // clear GepObjVarMap/memToFieldsMap/nodeToSubsMap/nodeToRepMap
     // for redundant gepnodes and remove those nodes from pag
     for (NodeID n: redundantGepNodes)
     {
-        NodeID base = pag->getBaseObjVar(n);
-        GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(n));
+        NodeID base = pag->getBaseObjVarID(n);
+        const GepObjVar* gepNode = pag->getGepObjVar(n);
         assert(gepNode && "Not a gep node in redundantGepNodes set");
         const APOffset apOffset = gepNode->getConstantFieldIdx();
         GepObjVarMap.erase(std::make_pair(base, apOffset));
         memToFieldsMap[base].reset(n);
         cleanConsCG(n);
 
-        pag->removeGNode(gepNode);
+        pag->removeGNode(const_cast<GepObjVar*>(gepNode));
     }
 }
 
@@ -556,7 +556,7 @@ bool Andersen::processLoad(NodeID node, const ConstraintEdge* load)
     ///       make gcc in spec 2000 pass the flow-sensitive analysis.
     ///       Try to handle black hole obj in an appropriate way.
 //	if (pag->isBlkObjOrConstantObj(node))
-    if (pag->isConstantObj(node) || pag->getGNode(load->getDstID())->isPointer() == false)
+    if (pag->isConstantObj(node) || pag->getSVFVar(load->getDstID())->isPointer() == false)
         return false;
 
     numOfProcessedLoad++;
@@ -576,7 +576,7 @@ bool Andersen::processStore(NodeID node, const ConstraintEdge* store)
     ///       make gcc in spec 2000 pass the flow-sensitive analysis.
     ///       Try to handle black hole obj in an appropriate way
 //	if (pag->isBlkObjOrConstantObj(node))
-    if (pag->isConstantObj(node) || pag->getGNode(store->getSrcID())->isPointer() == false)
+    if (pag->isConstantObj(node) || pag->getSVFVar(store->getSrcID())->isPointer() == false)
         return false;
 
     numOfProcessedStore++;
@@ -640,7 +640,7 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
             if (!isFieldInsensitive(o))
             {
                 setObjFieldInsensitive(o);
-                consCG->addNodeToBeCollapsed(consCG->getBaseObjVar(o));
+                consCG->addNodeToBeCollapsed(consCG->getBaseObjVarID(o));
             }
 
             // Add the field-insensitive node into pts.
@@ -932,7 +932,7 @@ void Andersen::dumpTopLevelPtsTo()
     for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin();
             nIter != this->getAllValidPtrs().end(); ++nIter)
     {
-        const PAGNode* node = getPAG()->getGNode(*nIter);
+        const SVFVar* node = getPAG()->getSVFVar(*nIter);
         if (getPAG()->isValidTopLevelPtr(node))
         {
             const PointsTo& pts = this->getPts(node->getId());
@@ -955,7 +955,7 @@ void Andersen::dumpTopLevelPtsTo()
                 for (multiset<u32_t>::const_iterator it = line.begin(); it != line.end(); ++it)
                 {
                     if(Options::PrintFieldWithBasePrefix())
-                        if (auto gepNode = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(*it)))
+                        if (auto gepNode = pag->getGepObjVar(*it))
                             outs() << gepNode->getBaseNode() << "_" << gepNode->getConstantFieldIdx() << " ";
                         else
                             outs() << *it << " ";

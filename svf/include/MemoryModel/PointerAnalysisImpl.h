@@ -348,7 +348,7 @@ public:
         expandedCpts = cpts;;
         for(typename CPtSet::const_iterator cit = cpts.begin(), ecit=cpts.end(); cit!=ecit; ++cit)
         {
-            if(pag->getBaseObjVar(cit->get_id())==cit->get_id())
+            if(pag->getBaseObjVarID(cit->get_id())==cit->get_id())
             {
                 NodeBS& fields = pag->getAllFieldsObjVars(cit->get_id());
                 for(NodeBS::iterator it = fields.begin(), eit = fields.end(); it!=eit; ++it)
@@ -564,7 +564,7 @@ public:
     {
         for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin(); nIter != this->getAllValidPtrs().end(); ++nIter)
         {
-            const PAGNode* node = this->getPAG()->getGNode(*nIter);
+            const SVFVar* node = this->getPAG()->getSVFVar(*nIter);
             if (this->getPAG()->isValidTopLevelPtr(node))
             {
                 if (SVFUtil::isa<DummyObjVar>(node))

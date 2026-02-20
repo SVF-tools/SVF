@@ -313,7 +313,7 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
 IntervalValue BufOverflowDetector::getAccessOffset(SVF::AbstractState& as, SVF::NodeID objId, const SVF::GepStmt* gep)
 {
     SVFIR* svfir = PAG::getPAG();
-    auto obj = svfir->getGNode(objId);
+    auto obj = svfir->getSVFVar(objId);
 
     if (SVFUtil::isa<BaseObjVar>(obj))
     {
@@ -351,7 +351,7 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(AbstractState& as, SVF::Add
     for (const auto& objAddr : objAddrs)
     {
         NodeID objId = as.getIDFromAddr(objAddr);
-        auto obj = svfir->getGNode(objId);
+        auto obj = svfir->getSVFVar(objId);
 
         if (SVFUtil::isa<BaseObjVar>(obj))
         {
@@ -361,7 +361,7 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(AbstractState& as, SVF::Add
             for (const auto& gepAddr : gepAddrs)
             {
                 NodeID gepObj = as.getIDFromAddr(gepAddr);
-                if (const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(svfir->getGNode(gepObj)))
+                if (const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(svfir->getSVFVar(gepObj)))
                 {
                     addToGepObjOffsetFromBase(gepObjVar, offset);
                 }
@@ -380,7 +380,7 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(AbstractState& as, SVF::Add
             for (const auto& gepAddr : gepAddrs)
             {
                 NodeID gepObj = as.getIDFromAddr(gepAddr);
-                if (const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(svfir->getGNode(gepObj)))
+                if (const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(svfir->getSVFVar(gepObj)))
                 {
                     if (hasGepObjOffsetFromBase(objVar))
                     {
@@ -520,11 +520,11 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
 
         IntervalValue offset(0);
         // if the object is a GepObjVar, get the offset from the base object
-        if (SVFUtil::isa<GepObjVar>(svfir->getGNode(objId)))
+        if (SVFUtil::isa<GepObjVar>(svfir->getSVFVar(objId)))
         {
-            offset = getGepObjOffsetFromBase(SVFUtil::cast<GepObjVar>(svfir->getGNode(objId))) + len;
+            offset = getGepObjOffsetFromBase(SVFUtil::cast<GepObjVar>(svfir->getSVFVar(objId))) + len;
         }
-        else if (SVFUtil::isa<BaseObjVar>(svfir->getGNode(objId)))
+        else if (SVFUtil::isa<BaseObjVar>(svfir->getSVFVar(objId)))
         {
             // if the object is a BaseObjVar, get the offset directly
             offset = len;

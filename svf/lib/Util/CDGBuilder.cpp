@@ -230,7 +230,7 @@ void CDGBuilder::buildICFGNodeControlMap()
                         SVFIR* pag = PAG::getPAG();
                         _controlDG->addCDGEdgeFromSrcDst(
                             controlNode, controllee,
-                            pag->getGNode(pag->getNullPtr()), pos);
+                            pag->getSVFVar(pag->getNullPtr()), pos);
                     }
 
                 }

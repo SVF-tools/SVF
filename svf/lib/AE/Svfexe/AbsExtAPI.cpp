@@ -165,7 +165,7 @@ void AbsExtAPI::initExtFunMap()
             for (auto vaddr: Addrs.getAddrs())
             {
                 u32_t objId = as.getIDFromAddr(vaddr);
-                AbstractValue range = getRangeLimitFromType(svfir->getGNode(objId)->getType());
+                AbstractValue range = getRangeLimitFromType(svfir->getSVFVar(objId)->getType());
                 as.store(vaddr, range);
             }
         }
@@ -185,7 +185,7 @@ void AbsExtAPI::initExtFunMap()
             for (auto vaddr: Addrs.getAddrs())
             {
                 u32_t objId = as.getIDFromAddr(vaddr);
-                AbstractValue range = getRangeLimitFromType(svfir->getGNode(objId)->getType());
+                AbstractValue range = getRangeLimitFromType(svfir->getSVFVar(objId)->getType());
                 as.store(vaddr, range);
             }
         }
@@ -423,7 +423,7 @@ void AbsExtAPI::handleExtAPI(const CallICFGNode *call)
     else if (extType == MEMCPY)
     {
         IntervalValue len = as[call->getArgument(2)->getId()].getInterval();
-        svfir->getGNode(call->getArgument(0)->getId());
+        (void)svfir->getSVFVar(call->getArgument(0)->getId());
         handleMemcpy(as, call->getArgument(0), call->getArgument(1), len, 0);
     }
     else if (extType == MEMSET)

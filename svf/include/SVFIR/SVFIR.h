@@ -64,9 +64,9 @@ public:
     typedef Map<const FunObjVar*,SVFStmtSet> FunToPAGEdgeSetMap;
     typedef Map<const ICFGNode*,SVFStmtList> ICFGNode2SVFStmtsMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
-    typedef std::pair<NodeID, APOffset> NodeOffset;
+    typedef std::pair<NodeID, APOffset> GepOffset;
     typedef std::pair<NodeID, AccessPath> NodeAccessPath;
-    typedef Map<NodeOffset,NodeID> NodeOffsetMap;
+    typedef Map<GepOffset,NodeID> OffsetToGepVarMap;
     typedef Map<NodeAccessPath,NodeID> NodeAccessPathMap;
     typedef Map<NodeID, NodeAccessPathMap> GepValueVarMap;
     typedef std::pair<const SVFType*, std::vector<AccessPath>> SVFTypeLocSetsPair;
@@ -80,7 +80,7 @@ private:
     ICFGNode2SVFStmtsMap icfgNode2PTASVFStmtsMap;	///< Map an ICFGNode to its PointerAnalysis related SVFStmts
     GepValueVarMap GepValObjMap;	///< Map a pair<base,off> to a gep value node id
     TypeLocSetsMap typeLocSetsMap;	///< Map an arg to its base SVFType* and all its field location sets
-    NodeOffsetMap GepObjVarMap;	///< Map a pair<base,off> to a gep obj node id
+    OffsetToGepVarMap GepObjVarMap;	///< Map a pair<base,off> to a gep obj node id
     MemObjToFieldsMap memToFieldsMap;	///< Map a mem object id to all its fields
     SVFStmtSet globSVFStmtSet;	///< Global PAGEdges without control flow information
     PHINodeMap phiNodeMap;	///< A set of phi copy edges
@@ -126,13 +126,67 @@ public:
         pag = nullptr;
     }
     //@}
+    /// ObjVar/GepObjVar/BaseObjVar
+    //@{
+    inline const SVFVar* getSVFVar(NodeID id) const
+    {
+        return getGNode(id);
+    }
+    inline const ObjVar* getObjVar(NodeID id) const
+    {
+        if(const SVFVar* var = getSVFVar(id))
+            return SVFUtil::dyn_cast<ObjVar>(var);
+        else
+        {
+            assert(false && "the Node is not an ObjVar");
+            return nullptr;
+        }
+    }
+    inline const BaseObjVar* getBaseObjVar(NodeID id) const
+    {
+        if(const SVFVar* var = getSVFVar(id))
+            return SVFUtil::dyn_cast<BaseObjVar>(var);
+        else
+        {
+            assert(false && "the Node is not a BaseObjVar");
+            return nullptr;
+        }
+    }
+    inline const GepObjVar* getGepObjVar(NodeID id) const
+    {
+        if(const SVFVar* var = getSVFVar(id))
+            return SVFUtil::dyn_cast<GepObjVar>(var);
+        else
+        {
+            assert(false && "the Node is not a GepObjVar");
+            return nullptr;
+        }
+    }
+    inline bool isObjVar(NodeID id) const
+    {
+        return SVFUtil::isa<ObjVar>(getSVFVar(id));
+    }
+    inline bool isBaseObjVar(NodeID id) const
+    {
+        return SVFUtil::isa<BaseObjVar>(getSVFVar(id));
+    }
+    inline bool isGepObjVar(NodeID id) const
+    {
+        return SVFUtil::isa<GepObjVar>(getSVFVar(id));
+    }
+    /// Return the entire SVFID to SVFVar map
+    inline const IDToNodeMapTy& getSVFVarMap() const
+    {
+        return IDToNodeMap;
+    }
+    //@}
     /// Return memToFieldsMap
     inline MemObjToFieldsMap& getMemToFieldsMap()
     {
         return memToFieldsMap;
     }
     /// Return GepObjVarMap
-    inline NodeOffsetMap& getGepObjNodeMap()
+    inline OffsetToGepVarMap& getGepObjNodeMap()
     {
         return GepObjVarMap;
     }
@@ -423,17 +477,17 @@ public:
     //@{
     inline const BaseObjVar* getBaseObject(NodeID id) const
     {
-        const SVFVar* node = getGNode(id);
+        const SVFVar* node = getSVFVar(id);
         if(const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(node))
             return SVFUtil::dyn_cast<BaseObjVar>(
-                       getGNode(gepObjVar->getBaseNode()));
+                       getSVFVar(gepObjVar->getBaseNode()));
         else
             return SVFUtil::dyn_cast<BaseObjVar>(node);
     }
 
     inline const ValVar* getBaseValVar(NodeID id) const
     {
-        const SVFVar* node = getGNode(id);
+        const SVFVar* node = getSVFVar(id);
         if(const GepValVar* gepVar = SVFUtil::dyn_cast<GepValVar>(node))
             return gepVar->getBaseNode();
         else
@@ -453,7 +507,7 @@ public:
     }
     inline NodeID getFIObjVar(NodeID id) const
     {
-        return getBaseObjVar(id);
+        return getBaseObjVarID(id);
     }
     //@}
 
@@ -477,7 +531,7 @@ public:
     /// Base and Offset methods for Value and Object node
     //@{
     /// Get a base pointer node given a field pointer
-    inline NodeID getBaseObjVar(NodeID id) const
+    inline NodeID getBaseObjVarID(NodeID id) const
     {
         return getBaseObject(id)->getId();
     }
