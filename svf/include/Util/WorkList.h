@@ -42,6 +42,7 @@
 #include <cstdlib>
 #include <vector>
 #include <deque>
+#include <list>
 #include <set>
 
 namespace SVF
@@ -141,6 +142,20 @@ class FIFOWorkList
 public:
     FIFOWorkList() {}
 
+    /// Construct from a vector, pushing all elements in order
+    explicit FIFOWorkList(const std::vector<Data>& vec)
+    {
+        for (const Data& d : vec)
+            push(d);
+    }
+
+    /// Construct from a list, pushing all elements in order
+    explicit FIFOWorkList(const std::list<Data>& lst)
+    {
+        for (const Data& d : lst)
+            push(d);
+    }
+
     ~FIFOWorkList() {}
 
     inline bool empty() const
@@ -232,6 +247,20 @@ class FILOWorkList
     typedef std::vector<Data> DataVector;
 public:
     FILOWorkList() {}
+
+    /// Construct from a vector, pushing all elements in order
+    explicit FILOWorkList(const std::vector<Data>& vec)
+    {
+        for (const Data& d : vec)
+            push(d);
+    }
+
+    /// Construct from a list, pushing all elements in order
+    explicit FILOWorkList(const std::list<Data>& lst)
+    {
+        for (const Data& d : lst)
+            push(d);
+    }
 
     ~FILOWorkList() {}
 

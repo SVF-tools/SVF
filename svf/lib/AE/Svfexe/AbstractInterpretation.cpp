@@ -807,46 +807,31 @@ std::vector<const ICFGNode*> AbstractInterpretation::getNextNodesOfCycle(const I
 }
 
 /**
- * Handle a function using worklist algorithm
- * This replaces the recursive WTO component handling with explicit worklist iteration
+ * Handle a function using worklist algorithm guided by WTO order.
+ * All top-level WTO components are pushed into the worklist upfront,
+ * so the traversal order is exactly the WTO order — each node is
+ * visited once, and cycles are handled as whole components.
  */
 void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller)
 {
-    FIFOWorkList<const ICFGNode*> worklist;
-    worklist.push(funEntry);
+    auto it = funcToWTO.find(funEntry->getFun());
+    if (it == funcToWTO.end())
+        return;
+
+    // Push all top-level WTO components into the worklist in WTO order
+    FIFOWorkList<const ICFGWTOComp*> worklist(it->second->getWTOComponents());
 
     while (!worklist.empty())
     {
-        const ICFGNode* node = worklist.pop();
+        const ICFGWTOComp* comp = worklist.pop();
 
-        // Check if this node is a cycle head
-        if (cycleHeadToCycle.find(node) != cycleHeadToCycle.end())
+        if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
         {
-            const ICFGCycleWTO* cycle = cycleHeadToCycle[node];
-            handleLoopOrRecursion(cycle, caller);
-
-            // Push nodes outside the cycle to the worklist
-            std::vector<const ICFGNode*> cycleNextNodes = getNextNodesOfCycle(cycle);
-            for (const ICFGNode* nextNode : cycleNextNodes)
-            {
-                worklist.push(nextNode);
-            }
+            handleICFGNode(singleton->getICFGNode());
         }
-        else
+        else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
         {
-            // Handle regular node
-            if (!handleICFGNode(node))
-            {
-                // Fixpoint reached or infeasible, skip successors
-                continue;
-            }
-
-            // Push successor nodes to the worklist
-            std::vector<const ICFGNode*> nextNodes = getNextNodes(node);
-            for (const ICFGNode* nextNode : nextNodes)
-            {
-                worklist.push(nextNode);
-            }
+            handleLoopOrRecursion(cycle, caller);
         }
     }
 }

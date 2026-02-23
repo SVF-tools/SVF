@@ -267,7 +267,6 @@ private:
      */
     void collectCycleHeads(const std::list<const ICFGWTOComp*>& comps);
 
-
     /**
      * handle SVF Statement like CmpStmt, CallStmt, GepStmt, LoadStmt, StoreStmt, etc.
      *
