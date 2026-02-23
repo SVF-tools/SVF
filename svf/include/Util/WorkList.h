@@ -240,6 +240,13 @@ class FILOWorkList
 public:
     FILOWorkList() {}
 
+    /// Construct from a vector, pushing all elements in order
+    explicit FILOWorkList(const std::vector<Data>& vec)
+    {
+        for (const Data& d : vec)
+            push(d);
+    }
+
     ~FILOWorkList() {}
 
     inline bool empty() const
