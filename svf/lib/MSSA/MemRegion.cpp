@@ -508,7 +508,7 @@ void MRGenerator::collectCallSitePts(const CallICFGNode* cs)
  */
 NodeBS& MRGenerator::CollectPtsChain(NodeID id)
 {
-    NodeID baseId = pta->getPAG()->getBaseObjVar(id);
+    NodeID baseId = pta->getPAG()->getBaseObjVarID(id);
     NodeToPTSSMap::iterator it = cachedPtsChainMap.find(baseId);
     if(it!=cachedPtsChainMap.end())
         return it->second;

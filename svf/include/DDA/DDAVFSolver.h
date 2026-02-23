@@ -475,7 +475,7 @@ protected:
         assert(baseObj && "base object is null??");
         if(SVFUtil::isa<StackObjVar>(baseObj))
         {
-            if(const FunObjVar* svffun = _pag->getGNode(id)->getFunction())
+            if(const FunObjVar* svffun = _pag->getSVFVar(id)->getFunction())
             {
                 return _callGraphSCC->isInCycle(_callGraph->getCallGraphNode(svffun)->getId());
             }
@@ -497,7 +497,7 @@ protected:
             {
                 NodeID funPtr = _pag->getFunPtr(cbn);
                 DPIm funPtrDpm(dpm);
-                funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getGNode(funPtr)),funPtr);
+                funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getSVFVar(funPtr)),funPtr);
                 findPT(funPtrDpm);
             }
         }
@@ -510,7 +510,7 @@ protected:
             {
                 NodeID funPtr = _pag->getFunPtr(*it);
                 DPIm funPtrDpm(dpm);
-                funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getGNode(funPtr)),funPtr);
+                funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getSVFVar(funPtr)),funPtr);
                 findPT(funPtrDpm);
             }
         }

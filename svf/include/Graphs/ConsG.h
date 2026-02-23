@@ -312,9 +312,9 @@ public:
     {
         return pag->getAllFieldsObjVars(id);
     }
-    inline NodeID getBaseObjVar(NodeID id)
+    inline NodeID getBaseObjVarID(NodeID id)
     {
-        return pag->getBaseObjVar(id);
+        return pag->getBaseObjVarID(id);
     }
     inline bool isSingleFieldObj(NodeID id) const
     {

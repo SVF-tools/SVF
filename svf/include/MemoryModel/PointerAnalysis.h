@@ -312,11 +312,11 @@ public:
     ///@{
     inline bool isFIObjNode(NodeID id) const
     {
-        return (SVFUtil::isa<BaseObjVar>(pag->getGNode(id)));
+        return (SVFUtil::isa<BaseObjVar>(pag->getSVFVar(id)));
     }
-    inline NodeID getBaseObjVar(NodeID id)
+    inline NodeID getBaseObjVarID(NodeID id)
     {
-        return pag->getBaseObjVar(id);
+        return pag->getBaseObjVarID(id);
     }
     inline NodeID getFIObjVar(NodeID id)
     {

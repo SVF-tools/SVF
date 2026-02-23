@@ -100,7 +100,7 @@ public:
 protected:
     void addCandidate(NodeID id)
     {
-        if (pag->isValidTopLevelPtr(pag->getGNode(id)))
+        if (pag->isValidTopLevelPtr(pag->getSVFVar(id)))
             candidateQueries.insert(id);
     }
 

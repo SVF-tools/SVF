@@ -136,7 +136,7 @@ bool PointerAnalysis::isLocalVarInRecursiveFun(NodeID id) const
     assert(baseObjVar && "base object not found!!");
     if(SVFUtil::isa<StackObjVar>(baseObjVar))
     {
-        if(const FunObjVar* svffun = pag->getGNode(id)->getFunction())
+        if(const FunObjVar* svffun = pag->getSVFVar(id)->getFunction())
         {
             return callGraphSCC->isInCycle(getCallGraph()->getCallGraphNode(svffun)->getId());
         }
@@ -234,7 +234,7 @@ void PointerAnalysis::dumpAllTypes()
     for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin();
             nIter != this->getAllValidPtrs().end(); ++nIter)
     {
-        const PAGNode* node = getPAG()->getGNode(*nIter);
+        const SVFVar* node = getPAG()->getSVFVar(*nIter);
         if (SVFUtil::isa<DummyObjVar, DummyValVar>(node))
             continue;
 
@@ -253,7 +253,7 @@ void PointerAnalysis::dumpAllTypes()
 void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
 {
 
-    const PAGNode* node = pag->getGNode(ptr);
+    const SVFVar* node = pag->getSVFVar(ptr);
     /// print the points-to set of node which has the maximum pts size.
     if (SVFUtil::isa<DummyObjVar> (node))
     {
@@ -283,12 +283,12 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
 
     for (PointsTo::iterator it = pts.begin(), eit = pts.end(); it != eit; ++it)
     {
-        const PAGNode* node = pag->getGNode(*it);
+        const SVFVar* node = pag->getSVFVar(*it);
         if(SVFUtil::isa<ObjVar>(node) == false)
             continue;
         NodeID ptd = node->getId();
         outs() << "!!Target NodeID " << ptd << "\t [";
-        const PAGNode* pagNode = pag->getGNode(ptd);
+        const SVFVar* pagNode = pag->getSVFVar(ptd);
         if (SVFUtil::isa<DummyValVar>(node))
             outs() << "DummyVal\n";
         else if (SVFUtil::isa<DummyObjVar>(node))
@@ -387,7 +387,7 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
             return;
         }
 
-        if(ObjVar* objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
+        if(const ObjVar* objPN = pag->getObjVar(*ii))
         {
             const BaseObjVar* obj = pag->getBaseObject(objPN->getId());
 
@@ -436,7 +436,7 @@ void PointerAnalysis::getVFnsFromPts(const CallICFGNode* cs, const PointsTo &tar
         const VTableSet &chaVtbls = chgraph->getCSVtblsBasedonCHA(cs);
         for (PointsTo::iterator it = target.begin(), eit = target.end(); it != eit; ++it)
         {
-            const PAGNode *ptdnode = pag->getGNode(*it);
+            const SVFVar* ptdnode = pag->getSVFVar(*it);
             const GlobalObjVar* pVar = nullptr;
             if (isa<ObjVar>(ptdnode) && isa<GlobalObjVar>(pag->getBaseObject(ptdnode->getId())))
             {

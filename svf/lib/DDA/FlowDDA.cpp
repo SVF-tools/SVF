@@ -45,7 +45,7 @@ void FlowDDA::computeDDAPts(NodeID id)
     resetQuery();
     LocDPItem::setMaxBudget(Options::FlowBudget());
 
-    PAGNode* node = getPAG()->getGNode(id);
+    const SVFVar* node = getPAG()->getSVFVar(id);
     LocDPItem dpm = getDPIm(node->getId(),getDefSVFGNode(node));
 
     /// start DDA analysis

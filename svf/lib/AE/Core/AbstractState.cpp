@@ -172,7 +172,7 @@ AddressValue AbstractState::getGepObjAddrs(u32_t pointer, IntervalValue offset)
         for (const auto& addr : addrs.getAddrs())
         {
             s64_t baseObj = getIDFromAddr(addr);
-            assert(SVFUtil::isa<ObjVar>(PAG::getPAG()->getGNode(baseObj)) && "Fail to get the base object address!");
+            assert(SVFUtil::isa<ObjVar>(PAG::getPAG()->getSVFVar(baseObj)) && "Fail to get the base object address!");
             NodeID gepObj = PAG::getPAG()->getGepObjVar(baseObj, i);
             (*this)[gepObj] = AddressValue(AbstractState::getVirtualMemAddress(gepObj));
             gepAddrs.insert(AbstractState::getVirtualMemAddress(gepObj));

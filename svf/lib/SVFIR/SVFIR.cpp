@@ -485,12 +485,12 @@ NodeID SVFIR::addGepValNode(NodeID curInst,const ValVar* baseVar, const AccessPa
  */
 NodeID SVFIR::getGepObjVar(NodeID id, const APOffset& apOffset)
 {
-    SVFVar* node = pag->getGNode(id);
-    if (GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(node))
+    const SVFVar* node = pag->getSVFVar(id);
+    if (const GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(node))
         return getGepObjVar(gepNode->getBaseObj(), gepNode->getConstantFieldIdx() + apOffset);
-    else if (BaseObjVar* baseNode = SVFUtil::dyn_cast<BaseObjVar>(node))
+    else if (const BaseObjVar* baseNode = SVFUtil::dyn_cast<BaseObjVar>(node))
         return getGepObjVar(baseNode, apOffset);
-    else if (DummyObjVar* baseNode = SVFUtil::dyn_cast<DummyObjVar>(node))
+    else if (const DummyObjVar* baseNode = SVFUtil::dyn_cast<DummyObjVar>(node))
         return getGepObjVar(baseNode, apOffset);
     else
     {
@@ -518,7 +518,7 @@ NodeID SVFIR::getGepObjVar(const BaseObjVar* baseObj, const APOffset& apOffset)
     // Base and first field are the same memory location.
     if (Options::FirstFieldEqBase() && newLS == 0) return base;
 
-    NodeOffsetMap::iterator iter = GepObjVarMap.find(std::make_pair(base, newLS));
+    OffsetToGepVarMap::iterator iter = GepObjVarMap.find(std::make_pair(base, newLS));
     if (iter == GepObjVarMap.end())
     {
         NodeID gepId = NodeIDAllocator::get()->allocateGepObjectId(base, apOffset, Options::MaxFieldLimit());
@@ -566,7 +566,7 @@ NodeBS& SVFIR::getAllFieldsObjVars(const BaseObjVar* obj)
  */
 NodeBS& SVFIR::getAllFieldsObjVars(NodeID id)
 {
-    const SVFVar* node = pag->getGNode(id);
+    const SVFVar* node = pag->getSVFVar(id);
     assert(SVFUtil::isa<ObjVar>(node) && "need an object node");
     return getAllFieldsObjVars(getBaseObject(id));
 }
@@ -578,7 +578,7 @@ NodeBS& SVFIR::getAllFieldsObjVars(NodeID id)
  */
 NodeBS SVFIR::getFieldsAfterCollapse(NodeID id)
 {
-    const SVFVar* node = pag->getGNode(id);
+    const SVFVar* node = pag->getSVFVar(id);
     assert(SVFUtil::isa<ObjVar>(node) && "need an object node");
     const BaseObjVar* obj = getBaseObject(id);
     if(obj->isFieldInsensitive())
@@ -732,7 +732,7 @@ void SVFIR::initialiseCandidatePointers()
  */
 bool SVFIR::isValidPointer(NodeID nodeId) const
 {
-    SVFVar* node = pag->getGNode(nodeId);
+    const SVFVar* node = pag->getSVFVar(nodeId);
 
     if(node->isPointer())
         if (const ValVar* pVar = pag->getBaseValVar(nodeId))

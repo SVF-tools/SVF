@@ -135,7 +135,7 @@ void BVDataPTAImpl::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts)
     expandedPts = pts;;
     for(PointsTo::iterator pit = pts.begin(), epit = pts.end(); pit!=epit; ++pit)
     {
-        if (pag->getBaseObjVar(*pit) == *pit || isFieldInsensitive(*pit))
+        if (pag->getBaseObjVarID(*pit) == *pit || isFieldInsensitive(*pit))
         {
             expandedPts |= pag->getAllFieldsObjVars(*pit);
         }
@@ -147,7 +147,7 @@ void BVDataPTAImpl::expandFIObjs(const NodeBS& pts, NodeBS& expandedPts)
     expandedPts = pts;
     for (const NodeID o : pts)
     {
-        if (pag->getBaseObjVar(o) == o || isFieldInsensitive(o))
+        if (pag->getBaseObjVarID(o) == o || isFieldInsensitive(o))
         {
             expandedPts |= pag->getAllFieldsObjVars(o);
         }
@@ -176,7 +176,7 @@ void BVDataPTAImpl::writeObjVarToFile(const string& filename)
     {
         PAGNode* pagNode = it->second;
         if (!isa<ObjVar>(pagNode)) continue;
-        NodeID n = pag->getBaseObjVar(it->first);
+        NodeID n = pag->getBaseObjVarID(it->first);
         if (NodeIDs.test(n)) continue;
         f << n << " ";
         f << isFieldInsensitive(n) << "\n";
@@ -224,10 +224,10 @@ void BVDataPTAImpl::writePtsResultToFile(std::fstream& f)
 void BVDataPTAImpl::writeGepObjVarMapToFile(std::fstream& f)
 {
     //write gepObjVarMap to file(in form of: baseID offset gepObjNodeId)
-    SVFIR::NodeOffsetMap &gepObjVarMap = pag->getGepObjNodeMap();
-    for(SVFIR::NodeOffsetMap::const_iterator it = gepObjVarMap.begin(), eit = gepObjVarMap.end(); it != eit; it++)
+    SVFIR::OffsetToGepVarMap &gepObjVarMap = pag->getGepObjNodeMap();
+    for(SVFIR::OffsetToGepVarMap::const_iterator it = gepObjVarMap.begin(), eit = gepObjVarMap.end(); it != eit; it++)
     {
-        const SVFIR::NodeOffset offsetPair = it -> first;
+        const SVFIR::GepOffset offsetPair = it -> first;
         //write the base id to file
         f << offsetPair.first << " ";
         //write the offset to file
@@ -270,7 +270,7 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     {
         PAGNode* pagNode = it->second;
         if (!isa<ObjVar>(pagNode)) continue;
-        NodeID n = pag->getBaseObjVar(it->first);
+        NodeID n = pag->getBaseObjVarID(it->first);
         if (NodeIDs.test(n)) continue;
         f << n << " ";
         f << isFieldInsensitive(n) << "\n";
@@ -344,7 +344,7 @@ void BVDataPTAImpl::readGepObjVarMapFromFile(std::ifstream& F)
 {
     string line;
     //read GepObjVarMap from file
-    SVFIR::NodeOffsetMap gepObjVarMap = pag->getGepObjNodeMap();
+    SVFIR::OffsetToGepVarMap gepObjVarMap = pag->getGepObjNodeMap();
     while (F.good())
     {
         getline(F, line);
@@ -355,20 +355,20 @@ void BVDataPTAImpl::readGepObjVarMapFromFile(std::ifstream& F)
         size_t offset;
         NodeID id;
         ss >> base >> offset >>id;
-        SVFIR::NodeOffsetMap::const_iterator iter = gepObjVarMap.find(std::make_pair(base, offset));
+        SVFIR::OffsetToGepVarMap::const_iterator iter = gepObjVarMap.find(std::make_pair(base, offset));
         if (iter == gepObjVarMap.end())
         {
-            SVFVar* node = pag->getGNode(base);
+            const SVFVar* node = pag->getSVFVar(base);
             const BaseObjVar* obj = nullptr;
-            if (GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(node))
+            if (const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(node))
             {
                 obj = gepObjVar->getBaseObj();
             }
-            else if (BaseObjVar* baseNode = SVFUtil::dyn_cast<BaseObjVar>(node))
+            else if (const BaseObjVar* baseNode = SVFUtil::dyn_cast<BaseObjVar>(node))
             {
                 obj = baseNode;
             }
-            else if (DummyObjVar* baseNode = SVFUtil::dyn_cast<DummyObjVar>(node))
+            else if (const DummyObjVar* baseNode = SVFUtil::dyn_cast<DummyObjVar>(node))
             {
                 obj = baseNode;
             }
@@ -446,7 +446,7 @@ void BVDataPTAImpl::dumpTopLevelPtsTo()
     for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin();
             nIter != this->getAllValidPtrs().end(); ++nIter)
     {
-        const PAGNode* node = getPAG()->getGNode(*nIter);
+        const SVFVar* node = getPAG()->getSVFVar(*nIter);
         if (getPAG()->isValidTopLevelPtr(node))
         {
             const PointsTo& pts = this->getPts(node->getId());
@@ -536,7 +536,7 @@ void BVDataPTAImpl::onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& call
                 const NodeBS targets = this->getPts(pVar->getId()).toNodeBS();
                 for(NodeBS::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ++ii)
                 {
-                    if(ObjVar *objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
+                    if(const ObjVar *objPN = pag->getObjVar(*ii))
                     {
                         const BaseObjVar* obj = pag->getBaseObject(objPN->getId());
                         if(obj->isFunction())
@@ -558,7 +558,7 @@ void BVDataPTAImpl::onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& call
 void BVDataPTAImpl::normalizePointsTo()
 {
     SVFIR::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
-    SVFIR::NodeOffsetMap &GepObjVarMap = pag->getGepObjNodeMap();
+    SVFIR::OffsetToGepVarMap &GepObjVarMap = pag->getGepObjNodeMap();
 
     // collect each gep node whose base node has been set as field-insensitive
     NodeBS dropNodes;
@@ -572,7 +572,7 @@ void BVDataPTAImpl::normalizePointsTo()
         {
             for (NodeID id : t.second)
             {
-                if (SVFUtil::isa<GepObjVar>(pag->getGNode(id)))
+                if (SVFUtil::isa<GepObjVar>(pag->getSVFVar(id)))
                 {
                     dropNodes.set(id);
                 }
@@ -592,7 +592,7 @@ void BVDataPTAImpl::normalizePointsTo()
         {
             if (!dropNodes.test(obj))
                 continue;
-            NodeID baseObj = pag->getBaseObjVar(obj);
+            NodeID baseObj = pag->getBaseObjVarID(obj);
             clearPts(n, obj);
             addPts(n, baseObj);
         }
@@ -602,7 +602,7 @@ void BVDataPTAImpl::normalizePointsTo()
     // and remove those nodes from pag
     for (NodeID n: dropNodes)
     {
-        NodeID base = pag->getBaseObjVar(n);
+        NodeID base = pag->getBaseObjVarID(n);
         GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(n));
         const APOffset apOffset = gepNode->getConstantFieldIdx();
         GepObjVarMap.erase(std::make_pair(base, apOffset));

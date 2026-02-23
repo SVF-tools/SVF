@@ -360,7 +360,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
     const LoadStmt *load_op0 = nullptr;
     const LoadStmt *load_op1 = nullptr;
     // get '%1 = load i32 s', and load inst may not exist
-    SVFVar* loadVar0 = svfir->getGNode(op0);
+    const SVFVar* loadVar0 = svfir->getSVFVar(op0);
     if (!loadVar0->getInEdges().empty())
     {
         SVFStmt *loadVar0InStmt = *loadVar0->getInEdges().begin();
@@ -370,7 +370,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         }
         else if (const CopyStmt *copyStmt = SVFUtil::dyn_cast<CopyStmt>(loadVar0InStmt))
         {
-            loadVar0 = svfir->getGNode(copyStmt->getRHSVarID());
+            loadVar0 = svfir->getSVFVar(copyStmt->getRHSVarID());
             if (!loadVar0->getInEdges().empty())
             {
                 SVFStmt *loadVar0InStmt2 = *loadVar0->getInEdges().begin();
@@ -382,7 +382,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         }
     }
 
-    SVFVar* loadVar1 = svfir->getGNode(op1);
+    const SVFVar* loadVar1 = svfir->getSVFVar(op1);
     if (!loadVar1->getInEdges().empty())
     {
         SVFStmt *loadVar1InStmt = *loadVar1->getInEdges().begin();
@@ -392,7 +392,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         }
         else if (const CopyStmt *copyStmt = SVFUtil::dyn_cast<CopyStmt>(loadVar1InStmt))
         {
-            loadVar1 = svfir->getGNode(copyStmt->getRHSVarID());
+            loadVar1 = svfir->getSVFVar(copyStmt->getRHSVarID());
             if (!loadVar1->getInEdges().empty())
             {
                 SVFStmt *loadVar1InStmt2 = *loadVar1->getInEdges().begin();
@@ -954,7 +954,7 @@ const FunObjVar* AbstractInterpretation::getCallee(const CallICFGNode* callNode)
         return nullptr;
 
     NodeID addr = *Addrs.getAddrs().begin();
-    SVFVar* func_var = svfir->getGNode(as.getIDFromAddr(addr));
+    const SVFVar* func_var = svfir->getSVFVar(as.getIDFromAddr(addr));
     return SVFUtil::dyn_cast<FunObjVar>(func_var);
 }
 

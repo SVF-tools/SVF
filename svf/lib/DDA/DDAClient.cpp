@@ -58,7 +58,7 @@ void DDAClient::answerQueries(PointerAnalysis* pta)
     for (OrderedNodeSet::iterator nIter = candidateQueries.begin();
             nIter != candidateQueries.end(); ++nIter,++count)
     {
-        PAGNode* node = pta->getPAG()->getGNode(*nIter);
+        const SVFVar* node = pta->getPAG()->getSVFVar(*nIter);
         if(pta->getPAG()->isValidTopLevelPtr(node))
         {
             DBOUT(DGENERAL,outs() << "\n@@Computing PointsTo for :" << node->getId() <<

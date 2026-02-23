@@ -79,7 +79,7 @@ const CxtPtSet& ContextDDA::computeDDAPts(const CxtVar& var)
     LocDPItem::setMaxBudget(Options::CxtBudget());
 
     NodeID id = var.get_id();
-    PAGNode* node = getPAG()->getGNode(id);
+    const SVFVar* node = getPAG()->getSVFVar(id);
     CxtLocDPItem dpm = getDPIm(var, getDefSVFGNode(node));
 
     // start DDA analysis
@@ -191,7 +191,7 @@ bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const FunObjVar* cal
     if(getPAG()->isIndirectCallSites(cs))
     {
         NodeID id = getPAG()->getFunPtr(cs);
-        PAGNode* node = getPAG()->getGNode(id);
+        const SVFVar* node = getPAG()->getSVFVar(id);
         CxtVar funptrVar(dpm.getCondVar().get_cond(), id);
         CxtLocDPItem funptrDpm = getDPIm(funptrVar,getDefSVFGNode(node));
         PointsTo pts = getBVPointsTo(findPT(funptrDpm));
@@ -342,11 +342,11 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
     {
         if (!isa<DummyObjVar>(baseVar))
         {
-            PAGNode *pnode = _pag->getGNode(getPtrNodeID(var));
-            GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(pnode);
+            const SVFVar* pnode = _pag->getSVFVar(getPtrNodeID(var));
+            const GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(pnode);
             if (gepobj != nullptr)
             {
-                assert(SVFUtil::isa<DummyObjVar>(_pag->getGNode(gepobj->getBaseNode()))
+                assert(SVFUtil::isa<DummyObjVar>(_pag->getSVFVar(gepobj->getBaseNode()))
                        && "empty refVal in a gep object whose base is a non-dummy object");
             }
             else

@@ -165,7 +165,7 @@ void AbsExtAPI::initExtFunMap()
             for (auto vaddr: Addrs.getAddrs())
             {
                 u32_t objId = as.getIDFromAddr(vaddr);
-                AbstractValue range = getRangeLimitFromType(svfir->getGNode(objId)->getType());
+                AbstractValue range = getRangeLimitFromType(svfir->getSVFVar(objId)->getType());
                 as.store(vaddr, range);
             }
         }
@@ -185,7 +185,7 @@ void AbsExtAPI::initExtFunMap()
             for (auto vaddr: Addrs.getAddrs())
             {
                 u32_t objId = as.getIDFromAddr(vaddr);
-                AbstractValue range = getRangeLimitFromType(svfir->getGNode(objId)->getType());
+                AbstractValue range = getRangeLimitFromType(svfir->getSVFVar(objId)->getType());
                 as.store(vaddr, range);
             }
         }
@@ -423,7 +423,7 @@ void AbsExtAPI::handleExtAPI(const CallICFGNode *call)
     else if (extType == MEMCPY)
     {
         IntervalValue len = as[call->getArgument(2)->getId()].getInterval();
-        svfir->getGNode(call->getArgument(0)->getId());
+        (void)svfir->getSVFVar(call->getArgument(0)->getId());
         handleMemcpy(as, call->getArgument(0), call->getArgument(1), len, 0);
     }
     else if (extType == MEMSET)
@@ -465,7 +465,7 @@ u32_t AbsExtAPI::getElementSize(AbstractState& as, const SVFVar* var)
     if (var->getType()->isArrayTy())
     {
         return SVFUtil::dyn_cast<SVFArrayType>(var->getType())
-            ->getTypeOfElement()->getByteSize();
+               ->getTypeOfElement()->getByteSize();
     }
     if (var->getType()->isPointerTy())
     {
@@ -473,7 +473,7 @@ u32_t AbsExtAPI::getElementSize(AbstractState& as, const SVFVar* var)
         {
             if (elemType->isArrayTy())
                 return SVFUtil::dyn_cast<SVFArrayType>(elemType)
-                    ->getTypeOfElement()->getByteSize();
+                       ->getTypeOfElement()->getByteSize();
             return elemType->getByteSize();
         }
         return 1;
@@ -593,8 +593,8 @@ void AbsExtAPI::handleStrncat(const CallICFGNode *call)
 
 /// Core memcpy: copy `len` bytes from src to dst starting at dst[start_idx].
 void AbsExtAPI::handleMemcpy(AbstractState& as, const SVF::SVFVar *dst,
-                              const SVF::SVFVar *src, IntervalValue len,
-                              u32_t start_idx)
+                             const SVF::SVFVar *src, IntervalValue len,
+                             u32_t start_idx)
 {
     if (!isValidLength(len)) return;
 
@@ -634,7 +634,7 @@ void AbsExtAPI::handleMemcpy(AbstractState& as, const SVF::SVFVar *dst,
 /// wchar_t[100], elemSize = sizeof(wchar_t[100]), so range_val reflects the
 /// number of top-level GEP fields, not individual array elements.
 void AbsExtAPI::handleMemset(AbstractState& as, const SVF::SVFVar *dst,
-                              IntervalValue elem, IntervalValue len)
+                             IntervalValue elem, IntervalValue len)
 {
     if (!isValidLength(len)) return;
 
@@ -643,7 +643,7 @@ void AbsExtAPI::handleMemset(AbstractState& as, const SVF::SVFVar *dst,
     if (dst->getType()->isArrayTy())
     {
         elemSize = SVFUtil::dyn_cast<SVFArrayType>(dst->getType())
-            ->getTypeOfElement()->getByteSize();
+                   ->getTypeOfElement()->getByteSize();
     }
     else if (dst->getType()->isPointerTy())
     {

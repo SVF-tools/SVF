@@ -163,7 +163,7 @@ void ConstraintGraph::clearSolitaries()
     {
         if (it->second->hasIncomingEdge() || it->second->hasOutgoingEdge())
             continue;
-        if (pag->getGNode(it->first)->isPointer())
+        if (pag->getSVFVar(it->first)->isPointer())
             continue;
         if (retFromIndCalls.find(it->first)!=retFromIndCalls.end())
             continue;
@@ -188,8 +188,7 @@ AddrCGEdge::AddrCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id)
     : ConstraintEdge(s,d,Addr,id)
 {
     // Retarget addr edges may lead s to be a dummy node
-    PAGNode* node = SVFIR::getPAG()->getGNode(s->getId());
-    (void)node; // Suppress warning of unused variable under release build
+    const SVFVar* node = SVFIR::getPAG()->getSVFVar(s->getId());
     if (!SVFIR::pagReadFromTXT())
     {
         assert(!SVFUtil::isa<DummyValVar>(node) && "a dummy node??");
@@ -730,7 +729,7 @@ ConstraintNode::const_iterator ConstraintNode::directInEdgeEnd() const
 
 const std::string ConstraintNode::toString() const
 {
-    return SVFIR::getPAG()->getGNode(getId())->toString();
+    return SVFIR::getPAG()->getSVFVar(getId())->toString();
 }
 
 /*!
@@ -764,7 +763,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
     /// Either you can choose to display the name of the value or the whole instruction
     static std::string getNodeLabel(NodeType *n, ConstraintGraph*)
     {
-        PAGNode* node = SVFIR::getPAG()->getGNode(n->getId());
+        const SVFVar* node = SVFIR::getPAG()->getSVFVar(n->getId());
         bool briefDisplay = Options::BriefConsCGDotGraph();
         bool nameDisplay = true;
         std::string str;
@@ -797,7 +796,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
 
     static std::string getNodeAttributes(NodeType *n, ConstraintGraph*)
     {
-        PAGNode* node = SVFIR::getPAG()->getGNode(n->getId());
+        const SVFVar* node = SVFIR::getPAG()->getSVFVar(n->getId());
         if (SVFUtil::isa<ValVar>(node))
         {
             if(SVFUtil::isa<GepValVar>(node))
