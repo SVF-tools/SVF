@@ -806,6 +806,22 @@ std::vector<const ICFGNode*> AbstractInterpretation::getNextNodesOfCycle(const I
     return outEdges;
 }
 
+void AbstractInterpretation::buildWTOOrder(const std::list<const ICFGWTOComp*>& comps, Map<const ICFGNode*, u32_t>& wtoOrder)
+{
+    for (const ICFGWTOComp* comp : comps)
+    {
+        if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+        {
+            wtoOrder[singleton->getICFGNode()] = wtoOrder.size();
+        }
+        else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+        {
+            wtoOrder[cycle->head()->getICFGNode()] = wtoOrder.size();
+            buildWTOOrder(cycle->getWTOComponents(), wtoOrder);
+        }
+    }
+}
+
 /**
  * Handle a function using worklist algorithm guided by WTO order.
  * The worklist always pops the node with the smallest WTO order,
@@ -814,27 +830,10 @@ std::vector<const ICFGNode*> AbstractInterpretation::getNextNodesOfCycle(const I
  */
 void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller)
 {
-    // Build a local WTO order map for this function by traversing its WTO components
     Map<const ICFGNode*, u32_t> wtoOrder;
-    std::function<void(const std::list<const ICFGWTOComp*>&)> buildOrder =
-        [&](const std::list<const ICFGWTOComp*>& comps)
-    {
-        for (const ICFGWTOComp* comp : comps)
-        {
-            if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
-            {
-                wtoOrder[singleton->getICFGNode()] = wtoOrder.size();
-            }
-            else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
-            {
-                wtoOrder[cycle->head()->getICFGNode()] = wtoOrder.size();
-                buildOrder(cycle->getWTOComponents());
-            }
-        }
-    };
     auto it = funcToWTO.find(funEntry->getFun());
     if (it != funcToWTO.end())
-        buildOrder(it->second->getWTOComponents());
+        buildWTOOrder(it->second->getWTOComponents(), wtoOrder);
 
     // WTO-ordered worklist: std::set of (order, node) pairs.
     // Popping from begin() always yields the smallest WTO order.

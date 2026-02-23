@@ -267,6 +267,8 @@ private:
      */
     void collectCycleHeads(const std::list<const ICFGWTOComp*>& comps);
 
+    /// Build WTO order map: assign each node a sequential index reflecting WTO traversal order
+    void buildWTOOrder(const std::list<const ICFGWTOComp*>& comps, Map<const ICFGNode*, u32_t>& wtoOrder);
 
     /**
      * handle SVF Statement like CmpStmt, CallStmt, GepStmt, LoadStmt, StoreStmt, etc.
