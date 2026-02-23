@@ -807,46 +807,61 @@ std::vector<const ICFGNode*> AbstractInterpretation::getNextNodesOfCycle(const I
 }
 
 /**
- * Handle a function using worklist algorithm
- * This replaces the recursive WTO component handling with explicit worklist iteration
+ * Handle a function using worklist algorithm guided by WTO order.
+ * The worklist always pops the node with the smallest WTO order,
+ * ensuring each node is visited at most once and all predecessors
+ * in the WTO order are processed before their successors.
  */
 void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller)
 {
-    FIFOWorkList<const ICFGNode*> worklist;
-    worklist.push(funEntry);
+    // Build a local WTO order map for this function by traversing its WTO components
+    Map<const ICFGNode*, u32_t> wtoOrder;
+    std::function<void(const std::list<const ICFGWTOComp*>&)> buildOrder =
+        [&](const std::list<const ICFGWTOComp*>& comps)
+    {
+        for (const ICFGWTOComp* comp : comps)
+        {
+            if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+            {
+                wtoOrder[singleton->getICFGNode()] = wtoOrder.size();
+            }
+            else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+            {
+                wtoOrder[cycle->head()->getICFGNode()] = wtoOrder.size();
+                buildOrder(cycle->getWTOComponents());
+            }
+        }
+    };
+    auto it = funcToWTO.find(funEntry->getFun());
+    if (it != funcToWTO.end())
+        buildOrder(it->second->getWTOComponents());
+
+    // WTO-ordered worklist: std::set of (order, node) pairs.
+    // Popping from begin() always yields the smallest WTO order.
+    // Duplicate inserts are naturally ignored by std::set.
+    std::set<std::pair<u32_t, const ICFGNode*>> worklist;
+    worklist.insert({wtoOrder[funEntry], funEntry});
 
     while (!worklist.empty())
     {
-        const ICFGNode* node = worklist.pop();
+        const ICFGNode* node = worklist.begin()->second;
+        worklist.erase(worklist.begin());
 
-        // Check if this node is a cycle head
         if (cycleHeadToCycle.find(node) != cycleHeadToCycle.end())
         {
             const ICFGCycleWTO* cycle = cycleHeadToCycle[node];
             handleLoopOrRecursion(cycle, caller);
 
-            // Push nodes outside the cycle to the worklist
-            std::vector<const ICFGNode*> cycleNextNodes = getNextNodesOfCycle(cycle);
-            for (const ICFGNode* nextNode : cycleNextNodes)
-            {
-                worklist.push(nextNode);
-            }
+            for (const ICFGNode* nextNode : getNextNodesOfCycle(cycle))
+                worklist.insert({wtoOrder[nextNode], nextNode});
         }
         else
         {
-            // Handle regular node
             if (!handleICFGNode(node))
-            {
-                // Fixpoint reached or infeasible, skip successors
                 continue;
-            }
 
-            // Push successor nodes to the worklist
-            std::vector<const ICFGNode*> nextNodes = getNextNodes(node);
-            for (const ICFGNode* nextNode : nextNodes)
-            {
-                worklist.push(nextNode);
-            }
+            for (const ICFGNode* nextNode : getNextNodes(node))
+                worklist.insert({wtoOrder[nextNode], nextNode});
         }
     }
 }
