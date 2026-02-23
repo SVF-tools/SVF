@@ -265,7 +265,7 @@ private:
      *
      * @param comps The list of WTO components to collect cycle heads from
      */
-    void collectCycleHeads(const std::vector<const ICFGWTOComp*>& comps);
+    void collectCycleHeads(const std::list<const ICFGWTOComp*>& comps);
 
     /**
      * handle SVF Statement like CmpStmt, CallStmt, GepStmt, LoadStmt, StoreStmt, etc.

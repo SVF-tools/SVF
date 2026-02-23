@@ -387,22 +387,22 @@ public:
 
 private:
     typedef const WTOComponentT* WTOComponentPtr;
-    typedef std::vector<WTOComponentPtr> WTOComponentRefVec;
+    typedef std::list<WTOComponentPtr> WTOComponentRefList;
 
 public:
     /// Iterator over the components
-    typedef typename WTOComponentRefVec::const_iterator Iterator;
+    typedef typename WTOComponentRefList::const_iterator Iterator;
 
 private:
     /// Head of the cycle
     const WTONode<GraphT>* _head;
 
     /// List of components
-    WTOComponentRefVec _components;
+    WTOComponentRefList _components;
 
 public:
     /// Constructor
-    WTOCycle(const WTONode<GraphT>* head, WTOComponentRefVec components)
+    WTOCycle(const WTONode<GraphT>* head, WTOComponentRefList components)
         : WTOComponent<GraphT>(WTOComponent<GraphT>::Cycle), _head(head),
           _components(std::move(components))
     {
@@ -415,7 +415,7 @@ public:
     }
 
     /// Get all wto components in WTO cycle
-    const WTOComponentRefVec& getWTOComponents() const
+    const WTOComponentRefList& getWTOComponents() const
     {
         return _components;
     }
@@ -531,7 +531,7 @@ public:
 
 protected:
     typedef const WTOComponentT* WTOComponentPtr;
-    typedef std::vector<WTOComponentPtr> WTOComponentRefVec;
+    typedef std::list<WTOComponentPtr> WTOComponentRefList;
     typedef Set<WTOComponentPtr> WTOComponentRefSet;
     typedef Map<const NodeT*, const WTOCycleT*> NodeRefToWTOCycleMap;
     typedef Map<const NodeT*, NodeRefList> NodeRefTONodeRefListMap;
@@ -544,10 +544,10 @@ protected:
 
 public:
     /// Iterator over the components
-    typedef typename WTOComponentRefVec::const_iterator Iterator;
+    typedef typename WTOComponentRefList::const_iterator Iterator;
 
 protected:
-    WTOComponentRefVec _components;
+    WTOComponentRefList _components;
     WTOComponentRefSet _allComponents;
     NodeRefToWTOCycleMap headRefToCycle;
     NodeRefToWTOCycleDepthPtr _nodeToDepth;
@@ -585,7 +585,7 @@ public:
     }
 
     /// Get all wto components in WTO
-    const WTOComponentRefVec& getWTOComponents() const
+    const WTOComponentRefList& getWTOComponents() const
     {
         return _components;
     }
@@ -778,7 +778,7 @@ protected:
     }
 
     const WTOCycleT* newCycle(const WTONodeT* node,
-                              const WTOComponentRefVec& partition)
+                              const WTOComponentRefList& partition)
     {
         const WTOCycleT* ptr = new WTOCycleT(node, std::move(partition));
         _allComponents.insert(ptr);
@@ -788,7 +788,7 @@ protected:
     /// Create the cycle component for the given node
     virtual const WTOCycleT* component(const NodeT* node)
     {
-        WTOComponentRefVec partition;
+        WTOComponentRefList partition;
 
         for (auto succ: getSuccessors(node))
         {
@@ -807,7 +807,7 @@ protected:
     ///
     /// Algorithm to build a weak topological order of a graph
     virtual CycleDepthNumber visit(const NodeT* node,
-                                   WTOComponentRefVec& partition)
+                                   WTOComponentRefList& partition)
     {
         CycleDepthNumber head(0);
         CycleDepthNumber min(0);
@@ -848,11 +848,11 @@ protected:
                     setCDN(element, 0);
                     element = pop();
                 }
-                partition.insert(partition.begin(), component(node));
+                partition.push_front(component(node));
             }
             else
             {
-                partition.insert(partition.begin(), newNode(node));
+                partition.push_front(newNode(node));
             }
         }
         return head;

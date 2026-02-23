@@ -82,7 +82,7 @@ AbstractInterpretation::~AbstractInterpretation()
  * map, which maps each cycle head node to its corresponding ICFGCycleWTO object.
  * This enables efficient O(1) lookup of cycles during analysis.
  */
-void AbstractInterpretation::collectCycleHeads(const std::vector<const ICFGWTOComp*>& comps)
+void AbstractInterpretation::collectCycleHeads(const std::list<const ICFGWTOComp*>& comps)
 {
     for (const ICFGWTOComp* comp : comps)
     {
