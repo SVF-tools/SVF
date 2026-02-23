@@ -82,7 +82,7 @@ AbstractInterpretation::~AbstractInterpretation()
  * map, which maps each cycle head node to its corresponding ICFGCycleWTO object.
  * This enables efficient O(1) lookup of cycles during analysis.
  */
-void AbstractInterpretation::collectCycleHeads(const std::list<const ICFGWTOComp*>& comps)
+void AbstractInterpretation::collectCycleHeads(const std::vector<const ICFGWTOComp*>& comps)
 {
     for (const ICFGWTOComp* comp : comps)
     {
@@ -819,13 +819,11 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
         return;
 
     // Push all top-level WTO components into the worklist in WTO order
-    std::deque<const ICFGWTOComp*> worklist(it->second->getWTOComponents().begin(),
-                                             it->second->getWTOComponents().end());
+    FIFOWorkList<const ICFGWTOComp*> worklist(it->second->getWTOComponents());
 
     while (!worklist.empty())
     {
-        const ICFGWTOComp* comp = worklist.front();
-        worklist.pop_front();
+        const ICFGWTOComp* comp = worklist.pop();
 
         if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
         {

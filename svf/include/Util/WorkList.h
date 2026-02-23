@@ -141,6 +141,13 @@ class FIFOWorkList
 public:
     FIFOWorkList() {}
 
+    /// Construct from a vector, pushing all elements in order
+    explicit FIFOWorkList(const std::vector<Data>& vec)
+    {
+        for (const Data& d : vec)
+            push(d);
+    }
+
     ~FIFOWorkList() {}
 
     inline bool empty() const
