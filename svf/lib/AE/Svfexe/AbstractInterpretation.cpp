@@ -806,61 +806,34 @@ std::vector<const ICFGNode*> AbstractInterpretation::getNextNodesOfCycle(const I
     return outEdges;
 }
 
-void AbstractInterpretation::buildWTOOrder(const std::list<const ICFGWTOComp*>& comps, Map<const ICFGNode*, u32_t>& wtoOrder)
-{
-    for (const ICFGWTOComp* comp : comps)
-    {
-        if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
-        {
-            wtoOrder[singleton->getICFGNode()] = wtoOrder.size();
-        }
-        else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
-        {
-            wtoOrder[cycle->head()->getICFGNode()] = wtoOrder.size();
-            buildWTOOrder(cycle->getWTOComponents(), wtoOrder);
-        }
-    }
-}
-
 /**
  * Handle a function using worklist algorithm guided by WTO order.
- * The worklist always pops the node with the smallest WTO order,
- * ensuring each node is visited at most once and all predecessors
- * in the WTO order are processed before their successors.
+ * All top-level WTO components are pushed into the worklist upfront,
+ * so the traversal order is exactly the WTO order — each node is
+ * visited once, and cycles are handled as whole components.
  */
 void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller)
 {
-    Map<const ICFGNode*, u32_t> wtoOrder;
     auto it = funcToWTO.find(funEntry->getFun());
-    if (it != funcToWTO.end())
-        buildWTOOrder(it->second->getWTOComponents(), wtoOrder);
+    if (it == funcToWTO.end())
+        return;
 
-    // WTO-ordered worklist: std::set of (order, node) pairs.
-    // Popping from begin() always yields the smallest WTO order.
-    // Duplicate inserts are naturally ignored by std::set.
-    std::set<std::pair<u32_t, const ICFGNode*>> worklist;
-    worklist.insert({wtoOrder[funEntry], funEntry});
+    // Push all top-level WTO components into the worklist in WTO order
+    std::deque<const ICFGWTOComp*> worklist(it->second->getWTOComponents().begin(),
+                                             it->second->getWTOComponents().end());
 
     while (!worklist.empty())
     {
-        const ICFGNode* node = worklist.begin()->second;
-        worklist.erase(worklist.begin());
+        const ICFGWTOComp* comp = worklist.front();
+        worklist.pop_front();
 
-        if (cycleHeadToCycle.find(node) != cycleHeadToCycle.end())
+        if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
         {
-            const ICFGCycleWTO* cycle = cycleHeadToCycle[node];
-            handleLoopOrRecursion(cycle, caller);
-
-            for (const ICFGNode* nextNode : getNextNodesOfCycle(cycle))
-                worklist.insert({wtoOrder[nextNode], nextNode});
+            handleICFGNode(singleton->getICFGNode());
         }
-        else
+        else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
         {
-            if (!handleICFGNode(node))
-                continue;
-
-            for (const ICFGNode* nextNode : getNextNodes(node))
-                worklist.insert({wtoOrder[nextNode], nextNode});
+            handleLoopOrRecursion(cycle, caller);
         }
     }
 }
