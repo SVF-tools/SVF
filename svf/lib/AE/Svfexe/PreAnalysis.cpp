@@ -97,21 +97,4 @@ void PreAnalysis::initWTO()
         }
     }
 
-    // Build cycleHeadToCycle map
-    for (auto& [func, wto] : funcToWTO)
-    {
-        collectCycleHeads(wto->getWTOComponents());
-    }
-}
-
-void PreAnalysis::collectCycleHeads(const std::list<const ICFGWTOComp*>& comps)
-{
-    for (const ICFGWTOComp* comp : comps)
-    {
-        if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
-        {
-            cycleHeadToCycle[cycle->head()->getICFGNode()] = cycle;
-            collectCycleHeads(cycle->getWTOComponents());
-        }
-    }
 }

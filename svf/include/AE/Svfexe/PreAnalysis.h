@@ -76,14 +76,7 @@ public:
         return recursiveFuns;
     }
 
-    const Map<const ICFGNode*, const ICFGCycleWTO*>& getCycleHeadToCycle() const
-    {
-        return cycleHeadToCycle;
-    }
-
 private:
-    void collectCycleHeads(const std::list<const ICFGWTOComp*>& comps);
-
     SVFIR* svfir;
     ICFG* icfg;
     AndersenWaveDiff* pta;
@@ -93,7 +86,6 @@ private:
     Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
     Set<std::pair<const CallICFGNode*, NodeID>> nonRecursiveCallSites;
     Set<const FunObjVar*> recursiveFuns;
-    Map<const ICFGNode*, const ICFGCycleWTO*> cycleHeadToCycle;
 };
 
 } // End namespace SVF
