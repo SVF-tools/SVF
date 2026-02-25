@@ -49,19 +49,8 @@ class PreAnalysis
 public:
     typedef SCCDetection<CallGraph*> CallGraphSCC;
 
-    PreAnalysis(SVFIR* pag, ICFG* icfg)
-        : svfir(pag), icfg(icfg)
-    {
-        pta = AndersenWaveDiff::createAndersenWaveDiff(svfir);
-        callGraph = pta->getCallGraph();
-        callGraphSCC = pta->getCallGraphSCC();
-    }
-
-    virtual ~PreAnalysis()
-    {
-        for (auto& [func, wto] : funcToWTO)
-            delete wto;
-    }
+    PreAnalysis(SVFIR* pag, ICFG* icfg);
+    virtual ~PreAnalysis();
 
     /// Accessors for Andersen's results
     AndersenWaveDiff* getPointerAnalysis() const { return pta; }
@@ -69,64 +58,7 @@ public:
     CallGraphSCC* getCallGraphSCC() const { return callGraphSCC; }
 
     /// Build WTO for each function using call graph SCC
-    void initWTO()
-    {
-        callGraphSCC->find();
-
-        for (auto it = callGraph->begin(); it != callGraph->end(); it++)
-        {
-            if (callGraphSCC->isInCycle(it->second->getId()))
-                recursiveFuns.insert(it->second->getFunction());
-
-            const FunObjVar *fun = it->second->getFunction();
-            if (fun->isDeclaration())
-                continue;
-
-            NodeID repNodeId = callGraphSCC->repNode(it->second->getId());
-            auto cgSCCNodes = callGraphSCC->subNodes(repNodeId);
-
-            bool isEntry = false;
-            if (it->second->getInEdges().empty())
-                isEntry = true;
-            for (auto inEdge: it->second->getInEdges())
-            {
-                NodeID srcNodeId = inEdge->getSrcID();
-                if (!cgSCCNodes.test(srcNodeId))
-                {
-                    isEntry = true;
-                    const CallICFGNode *callSite = nullptr;
-                    if (inEdge->isDirectCallEdge())
-                        callSite = *(inEdge->getDirectCalls().begin());
-                    else if (inEdge->isIndirectCallEdge())
-                        callSite = *(inEdge->getIndirectCalls().begin());
-                    else
-                        assert(false && "CallGraphEdge must "
-                               "be either direct or indirect!");
-
-                    nonRecursiveCallSites.insert(
-                    {callSite, inEdge->getDstNode()->getFunction()->getId()});
-                }
-            }
-
-            if (isEntry)
-            {
-                Set<const FunObjVar*> funcScc;
-                for (const auto& node: cgSCCNodes)
-                {
-                    funcScc.insert(callGraph->getGNode(node)->getFunction());
-                }
-                ICFGWTO* iwto = new ICFGWTO(icfg->getFunEntryICFGNode(fun), funcScc);
-                iwto->init();
-                funcToWTO[it->second->getFunction()] = iwto;
-            }
-        }
-
-        // Build cycleHeadToCycle map
-        for (auto& [func, wto] : funcToWTO)
-        {
-            collectCycleHeads(wto->getWTOComponents());
-        }
-    }
+    void initWTO();
 
     /// Accessors for WTO data
     const Map<const FunObjVar*, const ICFGWTO*>& getFuncToWTO() const
@@ -150,17 +82,7 @@ public:
     }
 
 private:
-    void collectCycleHeads(const std::list<const ICFGWTOComp*>& comps)
-    {
-        for (const ICFGWTOComp* comp : comps)
-        {
-            if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
-            {
-                cycleHeadToCycle[cycle->head()->getICFGNode()] = cycle;
-                collectCycleHeads(cycle->getWTOComponents());
-            }
-        }
-    }
+    void collectCycleHeads(const std::list<const ICFGWTOComp*>& comps);
 
     SVFIR* svfir;
     ICFG* icfg;
