@@ -49,8 +49,13 @@ class PreAnalysis
 public:
     typedef SCCDetection<CallGraph*> CallGraphSCC;
 
-    PreAnalysis(SVFIR* pag, ICFG* icfg, CallGraph* cg)
-        : svfir(pag), icfg(icfg), callGraph(cg) {}
+    PreAnalysis(SVFIR* pag, ICFG* icfg)
+        : svfir(pag), icfg(icfg)
+    {
+        pta = AndersenWaveDiff::createAndersenWaveDiff(svfir);
+        callGraph = pta->getCallGraph();
+        callGraphSCC = pta->getCallGraphSCC();
+    }
 
     virtual ~PreAnalysis()
     {
@@ -58,24 +63,27 @@ public:
             delete wto;
     }
 
-    /// Run Andersen's and build WTO for each function
+    /// Accessors for Andersen's results
+    AndersenWaveDiff* getPointerAnalysis() const { return pta; }
+    CallGraph* getCallGraph() const { return callGraph; }
+    CallGraphSCC* getCallGraphSCC() const { return callGraphSCC; }
+
+    /// Build WTO for each function using call graph SCC
     void initWTO()
     {
-        AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfir);
-        CallGraphSCC* callGraphScc = ander->getCallGraphSCC();
-        callGraphScc->find();
+        callGraphSCC->find();
 
         for (auto it = callGraph->begin(); it != callGraph->end(); it++)
         {
-            if (callGraphScc->isInCycle(it->second->getId()))
+            if (callGraphSCC->isInCycle(it->second->getId()))
                 recursiveFuns.insert(it->second->getFunction());
 
             const FunObjVar *fun = it->second->getFunction();
             if (fun->isDeclaration())
                 continue;
 
-            NodeID repNodeId = callGraphScc->repNode(it->second->getId());
-            auto cgSCCNodes = callGraphScc->subNodes(repNodeId);
+            NodeID repNodeId = callGraphSCC->repNode(it->second->getId());
+            auto cgSCCNodes = callGraphSCC->subNodes(repNodeId);
 
             bool isEntry = false;
             if (it->second->getInEdges().empty())
@@ -156,7 +164,9 @@ private:
 
     SVFIR* svfir;
     ICFG* icfg;
+    AndersenWaveDiff* pta;
     CallGraph* callGraph;
+    CallGraphSCC* callGraphSCC;
 
     Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
     Set<std::pair<const CallICFGNode*, NodeID>> nonRecursiveCallSites;

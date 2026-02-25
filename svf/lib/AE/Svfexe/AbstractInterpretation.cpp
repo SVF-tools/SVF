@@ -48,6 +48,12 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
     svfir = PAG::getPAG();
     utils = new AbsExtAPI(abstractTrace);
 
+    // Run Andersen's pointer analysis and build WTO
+    preAnalysis = new PreAnalysis(svfir, icfg);
+    callGraph = preAnalysis->getCallGraph();
+    icfg->updateCallGraph(callGraph);
+    preAnalysis->initWTO();
+
     /// collect checkpoint
     collectCheckPoint();
 
@@ -63,8 +69,6 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
 
 AbstractInterpretation::AbstractInterpretation()
 {
-    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfir);
-    callGraph = ander->getCallGraph();
     stat = new AEStat(this);
 }
 /// Destructor
@@ -112,9 +116,6 @@ std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
 /// Program entry - analyze from all entry points (multi-entry analysis is the default)
 void AbstractInterpretation::analyse()
 {
-    preAnalysis = new PreAnalysis(svfir, icfg, callGraph);
-    preAnalysis->initWTO();
-
     // Always use multi-entry analysis from all entry points
     analyzeFromAllProgEntries();
 }

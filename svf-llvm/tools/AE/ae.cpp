@@ -878,10 +878,10 @@ int main(int argc, char** argv)
     LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
     SVFIRBuilder builder;
     SVFIR* pag = builder.build();
+    // Run Andersen's to resolve indirect calls, then update SVFIR with resolved targets.
+    // The Andersen singleton will be reused inside AbstractInterpretation::runOnModule().
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
-    CallGraph* callgraph = ander->getCallGraph();
-    builder.updateCallGraph(callgraph);
-    pag->getICFG()->updateCallGraph(callgraph);
+    builder.updateCallGraph(ander->getCallGraph());
     AbstractInterpretation& ae = AbstractInterpretation::getAEInstance();
     if (Options::BufferOverflowCheck())
         ae.addDetector(std::make_unique<BufOverflowDetector>());
