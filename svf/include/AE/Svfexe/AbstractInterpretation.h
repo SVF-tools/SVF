@@ -257,6 +257,14 @@ private:
     std::vector<const ICFGNode*> getNextNodesOfCycle(const ICFGCycleWTO* cycle) const;
 
     /**
+
+     * Recursively collect cycle heads from nested WTO components
+     *
+     * @param comps The list of WTO components to collect cycle heads from
+     */
+    void collectCycleHeads(const std::list<const ICFGWTOComp*>& comps);
+
+    /**
      * handle SVF Statement like CmpStmt, CallStmt, GepStmt, LoadStmt, StoreStmt, etc.
      *
      * @param stmt SVFStatement which is a value flow of instruction
