@@ -66,11 +66,6 @@ public:
         return funcToWTO;
     }
 
-    const Set<const FunObjVar*>& getRecursiveFuns() const
-    {
-        return recursiveFuns;
-    }
-
 private:
     SVFIR* svfir;
     ICFG* icfg;
@@ -79,7 +74,6 @@ private:
     CallGraphSCC* callGraphSCC;
 
     Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
-    Set<const FunObjVar*> recursiveFuns;
 };
 
 } // End namespace SVF

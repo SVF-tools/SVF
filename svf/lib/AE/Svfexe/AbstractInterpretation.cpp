@@ -786,7 +786,7 @@ void AbstractInterpretation::handleExtCall(const CallICFGNode *callNode)
 /// Check if a function is recursive (part of a call graph SCC)
 bool AbstractInterpretation::isRecursiveFun(const FunObjVar* fun)
 {
-    return preAnalysis->getRecursiveFuns().find(fun) != preAnalysis->getRecursiveFuns().end();
+    return preAnalysis->getPointerAnalysis()->isInRecursion(fun);
 }
 
 /// Handle recursive call in TOP mode: set all stores and return value to TOP
@@ -814,11 +814,7 @@ bool AbstractInterpretation::isRecursiveCallSite(const CallICFGNode* callNode,
         const FunObjVar* callee)
 {
     const FunObjVar* caller = callNode->getCaller();
-    CallGraph* cg = preAnalysis->getCallGraph();
-    auto* scc = preAnalysis->getCallGraphSCC();
-    NodeID callerCGId = cg->getCallGraphNode(caller)->getId();
-    NodeID calleeCGId = cg->getCallGraphNode(callee)->getId();
-    return scc->repNode(callerCGId) == scc->repNode(calleeCGId);
+    return preAnalysis->getPointerAnalysis()->inSameCallGraphSCC(caller, callee);
 }
 
 /// Get callee function: directly for direct calls, via pointer analysis for indirect calls

@@ -51,9 +51,6 @@ void PreAnalysis::initWTO()
 
     for (auto it = callGraph->begin(); it != callGraph->end(); it++)
     {
-        if (callGraphSCC->isInCycle(it->second->getId()))
-            recursiveFuns.insert(it->second->getFunction());
-
         const FunObjVar *fun = it->second->getFunction();
         if (fun->isDeclaration())
             continue;
