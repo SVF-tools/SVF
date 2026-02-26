@@ -33,6 +33,7 @@
 #include "AE/Core/ICFGWTO.h"
 #include "AE/Svfexe/AEDetector.h"
 #include "AE/Svfexe/PreAnalysis.h"
+#include "AE/Svfexe/SparseDefUse.h"
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "Util/SVFBugReport.h"
 #include "Util/SVFStat.h"
@@ -239,6 +240,15 @@ private:
      * @return true if state changed, false if fixpoint reached or infeasible
      */
     bool handleICFGNode(const ICFGNode* node);
+
+    /// Sparse state propagation using Use-Def table
+    bool sparseStatePropagate(const ICFGNode* icfgNode);
+
+    /// Get the set of variables used at a given ICFG node
+    Set<NodeID> getUsedVarsAtNode(const ICFGNode* node) const;
+
+    /// Get the set of variables defined at a given ICFG node
+    Set<NodeID> getDefinedVarsAtNode(const ICFGNode* node) const;
 
     /**
      * Get the next nodes of a node within the same function

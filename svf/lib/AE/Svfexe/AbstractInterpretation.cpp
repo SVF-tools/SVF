@@ -54,11 +54,16 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
     icfg->updateCallGraph(callGraph);
     preAnalysis->initWTO();
 
+    // Build sparse def-use table if sparse mode is enabled
+    if (Options::SparseAE())
+        preAnalysis->buildDefUseTable(icfg);
+
     /// collect checkpoint
     collectCheckPoint();
 
     analyse();
     checkPointAllSet();
+
     stat->endClk();
     stat->finializeStat();
     if (Options::PStat())
@@ -570,6 +575,230 @@ void AbstractInterpretation::handleSingletonWTO(const ICFGSingletonWTO *icfgSing
     stat->countStateSize();
 }
 
+/// Get the set of variables used at a given ICFG node
+Set<NodeID> AbstractInterpretation::getUsedVarsAtNode(const ICFGNode* node) const
+{
+    Set<NodeID> usedVars;
+
+    for (const SVFStmt* stmt : node->getSVFStmts())
+    {
+        if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt))
+        {
+            usedVars.insert(store->getRHSVarID());
+            usedVars.insert(store->getLHSVarID());
+        }
+        else if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+        {
+            usedVars.insert(load->getRHSVarID());
+        }
+        else if (const CopyStmt* copy = SVFUtil::dyn_cast<CopyStmt>(stmt))
+        {
+            usedVars.insert(copy->getRHSVarID());
+        }
+        else if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt))
+        {
+            usedVars.insert(gep->getRHSVarID());
+        }
+        else if (const PhiStmt* phi = SVFUtil::dyn_cast<PhiStmt>(stmt))
+        {
+            for (u32_t i = 0; i < phi->getOpVarNum(); ++i)
+                usedVars.insert(phi->getOpVarID(i));
+        }
+        else if (const SelectStmt* select = SVFUtil::dyn_cast<SelectStmt>(stmt))
+        {
+            for (u32_t i = 0; i < select->getOpVarNum(); ++i)
+                usedVars.insert(select->getOpVarID(i));
+        }
+        else if (const BinaryOPStmt* binary = SVFUtil::dyn_cast<BinaryOPStmt>(stmt))
+        {
+            for (u32_t i = 0; i < binary->getOpVarNum(); ++i)
+                usedVars.insert(binary->getOpVarID(i));
+        }
+        else if (const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
+        {
+            for (u32_t i = 0; i < cmp->getOpVarNum(); ++i)
+                usedVars.insert(cmp->getOpVarID(i));
+        }
+        else if (const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(stmt))
+        {
+            usedVars.insert(callPE->getRHSVarID());
+        }
+        else if (const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(stmt))
+        {
+            usedVars.insert(retPE->getRHSVarID());
+        }
+        else if (const UnaryOPStmt* unary = SVFUtil::dyn_cast<UnaryOPStmt>(stmt))
+        {
+            usedVars.insert(unary->getOpVarID());
+        }
+    }
+
+    if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
+    {
+        for (u32_t i = 0; i < callNode->arg_size(); ++i)
+            usedVars.insert(callNode->getArgument(i)->getId());
+    }
+
+    for (const auto& edge : node->getOutEdges())
+    {
+        if (const IntraCFGEdge* intraCfgEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge))
+        {
+            if (const SVFVar* condVar = intraCfgEdge->getCondition())
+                usedVars.insert(condVar->getId());
+        }
+    }
+
+    return usedVars;
+}
+
+/// Get the set of variables defined at a given ICFG node
+Set<NodeID> AbstractInterpretation::getDefinedVarsAtNode(const ICFGNode* node) const
+{
+    Set<NodeID> definedVars;
+
+    for (const SVFStmt* stmt : node->getSVFStmts())
+    {
+        if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+        {
+            definedVars.insert(load->getLHSVarID());
+        }
+        else if (const CopyStmt* copy = SVFUtil::dyn_cast<CopyStmt>(stmt))
+        {
+            definedVars.insert(copy->getLHSVarID());
+        }
+        else if (const AddrStmt* addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
+        {
+            definedVars.insert(addr->getLHSVarID());
+        }
+        else if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt))
+        {
+            definedVars.insert(gep->getLHSVarID());
+        }
+        else if (const PhiStmt* phi = SVFUtil::dyn_cast<PhiStmt>(stmt))
+        {
+            definedVars.insert(phi->getResID());
+        }
+        else if (const SelectStmt* select = SVFUtil::dyn_cast<SelectStmt>(stmt))
+        {
+            definedVars.insert(select->getResID());
+        }
+        else if (const BinaryOPStmt* binary = SVFUtil::dyn_cast<BinaryOPStmt>(stmt))
+        {
+            definedVars.insert(binary->getResID());
+        }
+        else if (const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
+        {
+            definedVars.insert(cmp->getResID());
+        }
+        else if (const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(stmt))
+        {
+            definedVars.insert(callPE->getLHSVarID());
+        }
+        else if (const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(stmt))
+        {
+            definedVars.insert(retPE->getLHSVarID());
+        }
+        else if (const UnaryOPStmt* unary = SVFUtil::dyn_cast<UnaryOPStmt>(stmt))
+        {
+            definedVars.insert(unary->getResID());
+        }
+    }
+
+    return definedVars;
+}
+
+/// Sparse state propagation using Use-Def table.
+/// Builds a minimal AbstractState containing only the variables that this node
+/// actually uses. For each used variable (top-level or address-taken), fetches
+/// the value from its definition node(s) via the def-use table.
+bool AbstractInterpretation::sparseStatePropagate(const ICFGNode* icfgNode)
+{
+    SparseDefUse* defUseTable = preAnalysis ? preAnalysis->getDefUseTable() : nullptr;
+    if (!defUseTable || !defUseTable->isBuilt())
+        return mergeStatesFromPredecessors(icfgNode);
+
+    // Check reachability: at least one predecessor with state must exist
+    bool hasValidPred = false;
+    for (auto& edge : icfgNode->getInEdges())
+    {
+        if (abstractTrace.find(edge->getSrcNode()) != abstractTrace.end())
+        { hasValidPred = true; break; }
+    }
+    if (!hasValidPred)
+        return false;
+
+    AbstractState sparseState;
+
+    // Collect all vars needed at this node (used + defined)
+    Set<NodeID> neededVars = getUsedVarsAtNode(icfgNode);
+    Set<NodeID> definedVars = getDefinedVarsAtNode(icfgNode);
+    neededVars.insert(definedVars.begin(), definedVars.end());
+
+    // Step 1: Fetch top-level variables from their def nodes via def-use table
+    for (NodeID varId : neededVars)
+    {
+        const ICFGNode* defNode = defUseTable->getTopLevelDefNode(varId);
+        if (!defNode)
+            continue;
+
+        if (abstractTrace.find(defNode) != abstractTrace.end())
+        {
+            const AbstractState& defState = abstractTrace[defNode];
+            if (defState.inVarToValTable(varId) || defState.inVarToAddrsTable(varId))
+            {
+                sparseState[varId] = defState[varId];
+            }
+        }
+    }
+
+    // Step 2: Fetch address-taken objects from their def nodes via def-use table
+    // Collect all objects that might be accessed at this node through pointers
+    Set<NodeID> neededObjs;
+    for (NodeID varId : neededVars)
+    {
+        const PointsTo& pts = preAnalysis->getPts(varId);
+        for (NodeID objId : pts)
+            neededObjs.insert(objId);
+    }
+
+    for (NodeID objId : neededObjs)
+    {
+        const SparseDefUse::ICFGNodeSet& objDefNodes = defUseTable->getObjDefNodes(objId);
+        if (objDefNodes.empty())
+            continue;
+
+        bool firstDef = true;
+        AbstractValue joinedVal;
+
+        for (const ICFGNode* defNode : objDefNodes)
+        {
+            if (abstractTrace.find(defNode) != abstractTrace.end())
+            {
+                const AbstractState& defState = abstractTrace[defNode];
+                if (defState.inAddrToValTable(objId))
+                {
+                    const AbstractValue& objVal = defState.getLocToVal().at(objId);
+                    if (firstDef)
+                    {
+                        joinedVal = objVal;
+                        firstDef = false;
+                    }
+                    else
+                    {
+                        joinedVal.join_with(objVal);
+                    }
+                }
+            }
+        }
+
+        if (!firstDef)
+            sparseState.store(AbstractState::getVirtualMemAddress(objId), joinedVal);
+    }
+
+    abstractTrace[icfgNode] = sparseState;
+    return true;
+}
+
 /**
  * Handle an ICFG node by merging states from predecessors and processing statements
  * Returns true if the abstract state has changed, false if fixpoint reached or infeasible
@@ -584,10 +813,17 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
 
     // For function entry nodes, initialize state from predecessors or global
     bool isFunEntry = SVFUtil::isa<FunEntryICFGNode>(node);
+
+    // Choose merge strategy: sparse (use-def table) or dense (predecessor join)
+    bool mergeSuccess = false;
+    if (Options::SparseAE())
+        mergeSuccess = sparseStatePropagate(node);
+    else
+        mergeSuccess = mergeStatesFromPredecessors(node);
+
     if (isFunEntry)
     {
-        // Try to merge from predecessors first (handles call edges)
-        if (!mergeStatesFromPredecessors(node))
+        if (!mergeSuccess)
         {
             // No predecessors with state - inherit from global node
             const ICFGNode* globalNode = icfg->getGlobalICFGNode();
@@ -603,8 +839,7 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
     }
     else
     {
-        // Merge states from predecessors
-        if (!mergeStatesFromPredecessors(node))
+        if (!mergeSuccess)
             return false;
     }
 
