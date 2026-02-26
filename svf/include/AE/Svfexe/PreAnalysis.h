@@ -55,9 +55,18 @@ public:
     virtual ~PreAnalysis();
 
     /// Accessors for Andersen's results
-    AndersenWaveDiff* getPointerAnalysis() const { return pta; }
-    CallGraph* getCallGraph() const { return callGraph; }
-    CallGraphSCC* getCallGraphSCC() const { return callGraphSCC; }
+    AndersenWaveDiff* getPointerAnalysis() const
+    {
+        return pta;
+    }
+    CallGraph* getCallGraph() const
+    {
+        return callGraph;
+    }
+    CallGraphSCC* getCallGraphSCC() const
+    {
+        return callGraphSCC;
+    }
 
     /// Build WTO for each function using call graph SCC
     void initWTO();
