@@ -32,6 +32,7 @@
 #include "AE/Core/AbstractState.h"
 #include "AE/Core/ICFGWTO.h"
 #include "AE/Svfexe/AEDetector.h"
+#include "AE/Svfexe/PreAnalysis.h"
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "Util/SVFBugReport.h"
 #include "Util/SVFStat.h"
@@ -111,8 +112,6 @@ class AbstractInterpretation
     friend class NullptrDerefDetector;
 
 public:
-    typedef SCCDetection<CallGraph*> CallGraphSCC;
-
     /*
      * For recursive test case
      * int demo(int a) {
@@ -189,9 +188,6 @@ private:
     /// Global ICFGNode is handled at the entry of the program,
     virtual void handleGlobalNode();
 
-    /// Compute IWTO for each function partition entry
-    void initWTO();
-
     /**
      * Check if execution state exist by merging states of predecessor nodes
      *
@@ -261,13 +257,6 @@ private:
     std::vector<const ICFGNode*> getNextNodesOfCycle(const ICFGCycleWTO* cycle) const;
 
     /**
-     * Recursively collect cycle heads from nested WTO components
-     *
-     * @param comps The list of WTO components to collect cycle heads from
-     */
-    void collectCycleHeads(const std::list<const ICFGWTOComp*>& comps);
-
-    /**
      * handle SVF Statement like CmpStmt, CallStmt, GepStmt, LoadStmt, StoreStmt, etc.
      *
      * @param stmt SVFStatement which is a value flow of instruction
@@ -333,10 +322,7 @@ private:
     CallGraph* callGraph;
     AEStat* stat;
 
-    Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
-    Set<std::pair<const CallICFGNode*, NodeID>> nonRecursiveCallSites;
-    Set<const FunObjVar*> recursiveFuns;
-    Map<const ICFGNode*, const ICFGCycleWTO*> cycleHeadToCycle;
+    PreAnalysis* preAnalysis{nullptr};
 
 
     bool hasAbsStateFromTrace(const ICFGNode* node)
@@ -353,8 +339,7 @@ private:
     virtual bool isExtCall(const CallICFGNode* callNode);
     virtual void handleExtCall(const CallICFGNode* callNode);
     virtual bool isRecursiveFun(const FunObjVar* fun);
-    virtual bool isRecursiveCall(const CallICFGNode* callNode);
-    virtual void recursiveCallPass(const CallICFGNode *callNode);
+    virtual void handleRecursiveCall(const CallICFGNode *callNode);
     virtual bool isRecursiveCallSite(const CallICFGNode* callNode, const FunObjVar *);
     virtual void handleFunCall(const CallICFGNode* callNode);
 

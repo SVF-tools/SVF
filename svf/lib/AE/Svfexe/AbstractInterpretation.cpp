@@ -48,6 +48,12 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
     svfir = PAG::getPAG();
     utils = new AbsExtAPI(abstractTrace);
 
+    // Run Andersen's pointer analysis and build WTO
+    preAnalysis = new PreAnalysis(svfir, icfg);
+    callGraph = preAnalysis->getCallGraph();
+    icfg->updateCallGraph(callGraph);
+    preAnalysis->initWTO();
+
     /// collect checkpoint
     collectCheckPoint();
 
@@ -63,103 +69,13 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
 
 AbstractInterpretation::AbstractInterpretation()
 {
-    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfir);
-    callGraph = ander->getCallGraph();
     stat = new AEStat(this);
 }
 /// Destructor
 AbstractInterpretation::~AbstractInterpretation()
 {
     delete stat;
-    for (auto it: funcToWTO)
-        delete it.second;
-}
-
-/**
- * @brief Recursively collect cycle heads from nested WTO components
- *
- * This helper function traverses the WTO component tree and builds the cycleHeadToCycle
- * map, which maps each cycle head node to its corresponding ICFGCycleWTO object.
- * This enables efficient O(1) lookup of cycles during analysis.
- */
-void AbstractInterpretation::collectCycleHeads(const std::list<const ICFGWTOComp*>& comps)
-{
-    for (const ICFGWTOComp* comp : comps)
-    {
-        if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
-        {
-            cycleHeadToCycle[cycle->head()->getICFGNode()] = cycle;
-            // Recursively collect nested cycle heads
-            collectCycleHeads(cycle->getWTOComponents());
-        }
-    }
-}
-
-void AbstractInterpretation::initWTO()
-{
-    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfir);
-    CallGraphSCC* callGraphScc = ander->getCallGraphSCC();
-    callGraphScc->find();
-    // Iterate through the call graph
-    for (auto it = callGraph->begin(); it != callGraph->end(); it++)
-    {
-        // Check if the current function is part of a cycle
-        if (callGraphScc->isInCycle(it->second->getId()))
-            recursiveFuns.insert(it->second->getFunction()); // Mark the function as recursive
-
-        // Calculate ICFGWTO for each function/recursion
-        const FunObjVar *fun = it->second->getFunction();
-        if (fun->isDeclaration())
-            continue;
-
-        NodeID repNodeId = callGraphScc->repNode(it->second->getId());
-        auto cgSCCNodes = callGraphScc->subNodes(repNodeId);
-
-        // Identify if this node is an SCC entry (nodes who have incoming edges
-        // from nodes outside the SCC). Also identify non-recursive callsites.
-        bool isEntry = false;
-        if (it->second->getInEdges().empty())
-            isEntry = true;
-        for (auto inEdge: it->second->getInEdges())
-        {
-            NodeID srcNodeId = inEdge->getSrcID();
-            if (!cgSCCNodes.test(srcNodeId))
-            {
-                isEntry = true;
-                const CallICFGNode *callSite = nullptr;
-                if (inEdge->isDirectCallEdge())
-                    callSite = *(inEdge->getDirectCalls().begin());
-                else if (inEdge->isIndirectCallEdge())
-                    callSite = *(inEdge->getIndirectCalls().begin());
-                else
-                    assert(false && "CallGraphEdge must "
-                           "be either direct or indirect!");
-
-                nonRecursiveCallSites.insert(
-                {callSite, inEdge->getDstNode()->getFunction()->getId()});
-            }
-        }
-
-        // Compute IWTO for the function partition entered from each partition entry
-        if (isEntry)
-        {
-            Set<const FunObjVar*> funcScc;
-            for (const auto& node: cgSCCNodes)
-            {
-                funcScc.insert(callGraph->getGNode(node)->getFunction());
-            }
-            ICFGWTO* iwto = new ICFGWTO(icfg->getFunEntryICFGNode(fun), funcScc);
-            iwto->init();
-            funcToWTO[it->second->getFunction()] = iwto;
-        }
-    }
-
-    // Build cycleHeadToCycle map for all functions
-    // This maps cycle head nodes to their corresponding WTO cycles for efficient lookup
-    for (auto& [func, wto] : funcToWTO)
-    {
-        collectCycleHeads(wto->getWTOComponents());
-    }
+    delete preAnalysis;
 }
 
 /// Collect entry point functions for analysis.
@@ -200,8 +116,6 @@ std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
 /// Program entry - analyze from all entry points (multi-entry analysis is the default)
 void AbstractInterpretation::analyse()
 {
-    initWTO();
-
     // Always use multi-entry analysis from all entry points
     analyzeFromAllProgEntries();
 }
@@ -814,8 +728,8 @@ std::vector<const ICFGNode*> AbstractInterpretation::getNextNodesOfCycle(const I
  */
 void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller)
 {
-    auto it = funcToWTO.find(funEntry->getFun());
-    if (it == funcToWTO.end())
+    auto it = preAnalysis->getFuncToWTO().find(funEntry->getFun());
+    if (it == preAnalysis->getFuncToWTO().end())
         return;
 
     // Push all top-level WTO components into the worklist in WTO order
@@ -872,21 +786,11 @@ void AbstractInterpretation::handleExtCall(const CallICFGNode *callNode)
 /// Check if a function is recursive (part of a call graph SCC)
 bool AbstractInterpretation::isRecursiveFun(const FunObjVar* fun)
 {
-    return recursiveFuns.find(fun) != recursiveFuns.end();
-}
-
-/// Check if a call node calls a recursive function
-bool AbstractInterpretation::isRecursiveCall(const CallICFGNode *callNode)
-{
-    const FunObjVar *callfun = callNode->getCalledFunction();
-    if (!callfun)
-        return false;
-    else
-        return isRecursiveFun(callfun);
+    return preAnalysis->getPointerAnalysis()->isInRecursion(fun);
 }
 
 /// Handle recursive call in TOP mode: set all stores and return value to TOP
-void AbstractInterpretation::recursiveCallPass(const CallICFGNode *callNode)
+void AbstractInterpretation::handleRecursiveCall(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
     setTopToObjInRecursion(callNode);
@@ -905,12 +809,12 @@ void AbstractInterpretation::recursiveCallPass(const CallICFGNode *callNode)
     abstractTrace[retNode] = as;
 }
 
-/// Check if a call is a recursive callsite (within same SCC, not entry call from outside)
+/// Check if caller and callee are in the same CallGraph SCC (i.e. a recursive callsite)
 bool AbstractInterpretation::isRecursiveCallSite(const CallICFGNode* callNode,
         const FunObjVar* callee)
 {
-    return nonRecursiveCallSites.find({callNode, callee->getId()}) ==
-           nonRecursiveCallSites.end();
+    const FunObjVar* caller = callNode->getCaller();
+    return preAnalysis->getPointerAnalysis()->inSameCallGraphSCC(caller, callee);
 }
 
 /// Get callee function: directly for direct calls, via pointer analysis for indirect calls
@@ -1013,7 +917,7 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
     }
 
     // Indirect call: use Andersen's call graph to get all resolved callees.
-    // The call graph was built during initWTO() by running Andersen's pointer analysis,
+    // The call graph was built during PreAnalysis::initWTO() by running Andersen's pointer analysis,
     // which over-approximates the set of possible targets for each indirect callsite.
     if (callGraph->hasIndCSCallees(callNode))
     {
@@ -1051,7 +955,7 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 /// Behavior depends on Options::HandleRecur():
 ///
 /// - TOP mode:
-///     Does not iterate. Calls recursiveCallPass() to set all stores and
+///     Does not iterate. Calls handleRecursiveCall() to set all stores and
 ///     return value to TOP immediately. This is the most conservative but fastest.
 ///     Example:
 ///       int factorial(int n) { return n <= 1 ? 1 : n * factorial(n-1); }
@@ -1074,13 +978,13 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
 {
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
 
-    // TOP mode for recursive function cycles: use recursiveCallPass to set
+    // TOP mode for recursive function cycles: use handleRecursiveCall to set
     // all stores and return value to TOP, maintaining original semantics
     if (Options::HandleRecur() == TOP && isRecursiveFun(cycle_head->getFun()))
     {
         if (caller)
         {
-            recursiveCallPass(caller);
+            handleRecursiveCall(caller);
         }
         return;
     }
