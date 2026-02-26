@@ -339,8 +339,7 @@ private:
     virtual bool isExtCall(const CallICFGNode* callNode);
     virtual void handleExtCall(const CallICFGNode* callNode);
     virtual bool isRecursiveFun(const FunObjVar* fun);
-    virtual bool isRecursiveCall(const CallICFGNode* callNode);
-    virtual void recursiveCallPass(const CallICFGNode *callNode);
+    virtual void handleRecursiveCall(const CallICFGNode *callNode);
     virtual bool isRecursiveCallSite(const CallICFGNode* callNode, const FunObjVar *);
     virtual void handleFunCall(const CallICFGNode* callNode);
 

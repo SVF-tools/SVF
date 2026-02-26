@@ -789,18 +789,8 @@ bool AbstractInterpretation::isRecursiveFun(const FunObjVar* fun)
     return preAnalysis->getRecursiveFuns().find(fun) != preAnalysis->getRecursiveFuns().end();
 }
 
-/// Check if a call node calls a recursive function
-bool AbstractInterpretation::isRecursiveCall(const CallICFGNode *callNode)
-{
-    const FunObjVar *callfun = callNode->getCalledFunction();
-    if (!callfun)
-        return false;
-    else
-        return isRecursiveFun(callfun);
-}
-
 /// Handle recursive call in TOP mode: set all stores and return value to TOP
-void AbstractInterpretation::recursiveCallPass(const CallICFGNode *callNode)
+void AbstractInterpretation::handleRecursiveCall(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbsStateFromTrace(callNode);
     setTopToObjInRecursion(callNode);
@@ -969,7 +959,7 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 /// Behavior depends on Options::HandleRecur():
 ///
 /// - TOP mode:
-///     Does not iterate. Calls recursiveCallPass() to set all stores and
+///     Does not iterate. Calls handleRecursiveCall() to set all stores and
 ///     return value to TOP immediately. This is the most conservative but fastest.
 ///     Example:
 ///       int factorial(int n) { return n <= 1 ? 1 : n * factorial(n-1); }
@@ -992,13 +982,13 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
 {
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
 
-    // TOP mode for recursive function cycles: use recursiveCallPass to set
+    // TOP mode for recursive function cycles: use handleRecursiveCall to set
     // all stores and return value to TOP, maintaining original semantics
     if (Options::HandleRecur() == TOP && isRecursiveFun(cycle_head->getFun()))
     {
         if (caller)
         {
-            recursiveCallPass(caller);
+            handleRecursiveCall(caller);
         }
         return;
     }
