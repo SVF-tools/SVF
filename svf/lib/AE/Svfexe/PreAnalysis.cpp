@@ -68,20 +68,7 @@ void PreAnalysis::initWTO()
         {
             NodeID srcNodeId = inEdge->getSrcID();
             if (!cgSCCNodes.test(srcNodeId))
-            {
                 isEntry = true;
-                const CallICFGNode *callSite = nullptr;
-                if (inEdge->isDirectCallEdge())
-                    callSite = *(inEdge->getDirectCalls().begin());
-                else if (inEdge->isIndirectCallEdge())
-                    callSite = *(inEdge->getIndirectCalls().begin());
-                else
-                    assert(false && "CallGraphEdge must "
-                           "be either direct or indirect!");
-
-                nonRecursiveCallSites.insert(
-                {callSite, inEdge->getDstNode()->getFunction()->getId()});
-            }
         }
 
         if (isEntry)

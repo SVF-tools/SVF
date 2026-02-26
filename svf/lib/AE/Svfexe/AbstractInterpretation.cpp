@@ -819,12 +819,16 @@ void AbstractInterpretation::recursiveCallPass(const CallICFGNode *callNode)
     abstractTrace[retNode] = as;
 }
 
-/// Check if a call is a recursive callsite (within same SCC, not entry call from outside)
+/// Check if caller and callee are in the same CallGraph SCC (i.e. a recursive callsite)
 bool AbstractInterpretation::isRecursiveCallSite(const CallICFGNode* callNode,
         const FunObjVar* callee)
 {
-    return preAnalysis->getNonRecursiveCallSites().find({callNode, callee->getId()}) ==
-           preAnalysis->getNonRecursiveCallSites().end();
+    const FunObjVar* caller = callNode->getCaller();
+    CallGraph* cg = preAnalysis->getCallGraph();
+    auto* scc = preAnalysis->getCallGraphSCC();
+    NodeID callerCGId = cg->getCallGraphNode(caller)->getId();
+    NodeID calleeCGId = cg->getCallGraphNode(callee)->getId();
+    return scc->repNode(callerCGId) == scc->repNode(calleeCGId);
 }
 
 /// Get callee function: directly for direct calls, via pointer analysis for indirect calls

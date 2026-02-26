@@ -66,11 +66,6 @@ public:
         return funcToWTO;
     }
 
-    const Set<std::pair<const CallICFGNode*, NodeID>>& getNonRecursiveCallSites() const
-    {
-        return nonRecursiveCallSites;
-    }
-
     const Set<const FunObjVar*>& getRecursiveFuns() const
     {
         return recursiveFuns;
@@ -84,7 +79,6 @@ private:
     CallGraphSCC* callGraphSCC;
 
     Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
-    Set<std::pair<const CallICFGNode*, NodeID>> nonRecursiveCallSites;
     Set<const FunObjVar*> recursiveFuns;
 };
 
