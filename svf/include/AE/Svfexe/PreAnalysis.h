@@ -44,6 +44,8 @@
 namespace SVF
 {
 
+class SparseDefUse;
+
 class PreAnalysis
 {
 public:
@@ -69,6 +71,15 @@ public:
     /// Build WTO for each function using call graph SCC
     void initWTO();
 
+    /// Build the sparse def-use table for sparse state propagation
+    void buildDefUseTable(ICFG* icfg);
+
+    /// Get the sparse def-use table (nullptr if not built)
+    SparseDefUse* getDefUseTable() const { return defUseTable; }
+
+    /// Get points-to set for a variable from Andersen's analysis
+    const PointsTo& getPts(NodeID id) const;
+
     /// Accessors for WTO data
     const Map<const FunObjVar*, const ICFGWTO*>& getFuncToWTO() const
     {
@@ -83,6 +94,7 @@ private:
     CallGraphSCC* callGraphSCC;
 
     Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
+    SparseDefUse* defUseTable{nullptr};
 };
 
 } // End namespace SVF

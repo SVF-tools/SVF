@@ -78,6 +78,15 @@ public:
     virtual void detect(AbstractState& as, const ICFGNode* node) = 0;
 
     /**
+     * @brief Returns additional variable IDs needed by this detector at the given node.
+     * Used by sparse propagation to ensure the detector's needed vars are fetched.
+     */
+    virtual Set<NodeID> getNeededVarsForSparse(const ICFGNode* node)
+    {
+        return {};
+    }
+
+    /**
      * @brief Pure virtual function for handling stub external API calls. (e.g. UNSAFE_BUFACCESS)
      * @param call Pointer to the ext call ICFG node.
      */
@@ -179,6 +188,10 @@ public:
      */
     void detect(AbstractState& as, const ICFGNode*);
 
+    /**
+     * @brief Returns additional variable IDs needed by the buffer overflow detector.
+     */
+    Set<NodeID> getNeededVarsForSparse(const ICFGNode* node) override;
 
     /**
      * @brief Handles external API calls related to buffer overflow detection.
@@ -349,6 +362,11 @@ public:
      * @param node Pointer to the ICFG node.
      */
     void detect(AbstractState& as, const ICFGNode* node);
+
+    /**
+     * @brief Returns additional variable IDs needed by the nullptr deref detector.
+     */
+    Set<NodeID> getNeededVarsForSparse(const ICFGNode* node) override;
 
     /**
      * @brief Handles external API calls related to nullptr dereferences.

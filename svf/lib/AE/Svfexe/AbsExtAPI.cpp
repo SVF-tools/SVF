@@ -754,3 +754,15 @@ IntervalValue AbsExtAPI::getRangeLimitFromType(const SVFType* type)
         // other types, return top interval
     }
 }
+
+Set<NodeID> AbsExtAPI::getNeededVarsForSparse(const ICFGNode* node)
+{
+    Set<NodeID> vars;
+    if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
+    {
+        // External API handlers access call arguments via as[argId]
+        for (u32_t i = 0; i < callNode->arg_size(); ++i)
+            vars.insert(callNode->getArgument(i)->getId());
+    }
+    return vars;
+}

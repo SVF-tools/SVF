@@ -28,6 +28,7 @@
  */
 
 #include "AE/Svfexe/PreAnalysis.h"
+#include "AE/Svfexe/SparseDefUse.h"
 
 using namespace SVF;
 
@@ -43,6 +44,7 @@ PreAnalysis::~PreAnalysis()
 {
     for (auto& [func, wto] : funcToWTO)
         delete wto;
+    delete defUseTable;
 }
 
 void PreAnalysis::initWTO()
@@ -80,5 +82,17 @@ void PreAnalysis::initWTO()
             funcToWTO[it->second->getFunction()] = iwto;
         }
     }
+}
 
+void PreAnalysis::buildDefUseTable(ICFG* icfg)
+{
+    if (!pta || !icfg)
+        return;
+    defUseTable = new SparseDefUse(svfir, pta);
+    defUseTable->build(icfg);
+}
+
+const PointsTo& PreAnalysis::getPts(NodeID id) const
+{
+    return pta->getPts(id);
 }
