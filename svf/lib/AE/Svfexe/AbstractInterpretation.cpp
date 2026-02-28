@@ -734,6 +734,17 @@ bool AbstractInterpretation::sparseStatePropagate(const ICFGNode* icfgNode)
     Set<NodeID> definedVars = getDefinedVarsAtNode(icfgNode);
     neededVars.insert(definedVars.begin(), definedVars.end());
 
+    // Collect additional vars needed by detectors and external API handlers
+    for (auto& detector : detectors)
+    {
+        Set<NodeID> detVars = detector->getNeededVarsForSparse(icfgNode);
+        neededVars.insert(detVars.begin(), detVars.end());
+    }
+    {
+        Set<NodeID> extVars = AbsExtAPI::getNeededVarsForSparse(icfgNode);
+        neededVars.insert(extVars.begin(), extVars.end());
+    }
+
     // Step 1: Fetch top-level variables from their def nodes via def-use table
     for (NodeID varId : neededVars)
     {
@@ -775,7 +786,7 @@ bool AbstractInterpretation::sparseStatePropagate(const ICFGNode* icfgNode)
             if (abstractTrace.find(defNode) != abstractTrace.end())
             {
                 const AbstractState& defState = abstractTrace[defNode];
-                if (defState.inAddrToValTable(objId))
+                if (defState.inAddrToValTable(objId) || defState.inAddrToAddrsTable(objId))
                 {
                     const AbstractValue& objVal = defState.getLocToVal().at(objId);
                     if (firstDef)

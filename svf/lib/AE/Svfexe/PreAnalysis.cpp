@@ -28,6 +28,7 @@
  */
 
 #include "AE/Svfexe/PreAnalysis.h"
+#include "AE/Svfexe/SparseDefUse.h"
 
 using namespace SVF;
 

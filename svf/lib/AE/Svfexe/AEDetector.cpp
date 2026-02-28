@@ -716,3 +716,56 @@ bool NullptrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVFVar* va
 
     return true;
 }
+
+Set<NodeID> BufOverflowDetector::getNeededVarsForSparse(const ICFGNode* node)
+{
+    Set<NodeID> vars;
+    if (!SVFUtil::isa<CallICFGNode>(node))
+    {
+        // detect() checks GepStmt: as[lhs] and as[rhs]
+        for (const SVFStmt* stmt : node->getSVFStmts())
+        {
+            if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt))
+            {
+                vars.insert(gep->getLHSVarID());
+                vars.insert(gep->getRHSVarID());
+            }
+        }
+    }
+    else
+    {
+        // detect() and handleStubFunctions() check call args
+        const CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(node);
+        for (u32_t i = 0; i < callNode->arg_size(); ++i)
+            vars.insert(callNode->getArgument(i)->getId());
+    }
+    return vars;
+}
+
+Set<NodeID> NullptrDerefDetector::getNeededVarsForSparse(const ICFGNode* node)
+{
+    Set<NodeID> vars;
+    if (SVFUtil::isa<CallICFGNode>(node))
+    {
+        // detectExtAPI() and handleStubFunctions() check call args
+        const CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(node);
+        for (u32_t i = 0; i < callNode->arg_size(); ++i)
+            vars.insert(callNode->getArgument(i)->getId());
+    }
+    else
+    {
+        // detect() checks GepStmt rhs and LoadStmt lhs via canSafelyDerefPtr
+        for (const auto& stmt : node->getSVFStmts())
+        {
+            if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt))
+            {
+                vars.insert(gep->getRHSVarID());
+            }
+            else if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+            {
+                vars.insert(load->getLHSVarID());
+            }
+        }
+    }
+    return vars;
+}
