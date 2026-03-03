@@ -33,6 +33,7 @@
 #include "AE/Core/ICFGWTO.h"
 #include "AE/Svfexe/AEDetector.h"
 #include "AE/Svfexe/PreAnalysis.h"
+#include "AE/Svfexe/SparseDefUse.h"
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "Util/SVFBugReport.h"
 #include "Util/SVFStat.h"
@@ -165,23 +166,11 @@ public:
 
     Set<const CallICFGNode*> checkpoints; // for CI check
 
-    /**
-     * @brief Retrieves the abstract state from the trace for a given ICFG node.
-     * @param node Pointer to the ICFG node.
-     * @return Reference to the abstract state.
-     * @throws Assertion if no trace exists for the node.
-     */
-    AbstractState& getAbsStateFromTrace(const ICFGNode* node)
+    /// Get abstract state for an ICFG node
+    AbstractState& getAbstractState(const ICFGNode* node)
     {
-        if (abstractTrace.count(node) == 0)
-        {
-            assert(false && "No preAbsTrace for this node");
-            abort();
-        }
-        else
-        {
-            return abstractTrace[node];
-        }
+        assert(abstractTrace.count(node) && "No abstract state for this node");
+        return abstractTrace[node];
     }
 
 private:
@@ -195,6 +184,47 @@ private:
      * @return if this node has preceding execution state
      */
     bool mergeStatesFromPredecessors(const ICFGNode * icfgNode);
+
+    /// Get the definition ICFG node of a top-level variable (sparse mode only)
+    const ICFGNode* getDefICFGNode(const ValVar* var)
+    {
+        assert(Options::SparseAE() && "getDefICFGNode is only for sparse mode");
+        return var->getICFGNode();
+    }
+
+    /// Get the definition ICFG nodes of an address-taken variable (sparse mode only)
+    const std::vector<const ICFGNode*>& getDefICFGNodes(const ObjVar* var)
+    {
+        assert(Options::SparseAE() && sparseDefUse && "getDefICFGNodes is only for sparse mode");
+        return sparseDefUse->getDefICFGNodes(var->getId());
+    }
+
+    /// Get top-level ValVars accessed at an ICFG node (sparse mode only)
+    std::vector<const ValVar*> getValVars(const ICFGNode* node);
+
+    /// Get address-taken ObjVars accessed at an ICFG node via points-to (sparse mode only)
+    std::vector<const ObjVar*> getObjVars(const ICFGNode* node);
+
+    /// Get all SVFVars (ValVars + ObjVars) accessed at an ICFG node (sparse mode only)
+    std::vector<const SVFVar*> getSVFVars(const ICFGNode* node);
+
+    /// Retrieve abstract value at the definition site of a top-level variable
+    AbstractValue getAbstractValue(const ValVar* var);
+
+    /// Retrieve abstract value at the definition sites of an address-taken variable (join all defs)
+    AbstractValue getAbstractValue(const ObjVar* var);
+
+    /// Retrieve abstract value at the definition site(s) of an SVF variable (dispatches to ValVar/ObjVar)
+    AbstractValue getAbstractValue(const SVFVar* var);
+
+    /// Build an AbstractState from definition sites of multiple top-level variables
+    AbstractState getAbstractState(const std::vector<const ValVar*>& vars);
+
+    /// Build an AbstractState from definition sites of multiple address-taken variables
+    AbstractState getAbstractState(const std::vector<const ObjVar*>& vars);
+
+    /// Build an AbstractState from definition sites of multiple SVF variables
+    AbstractState getAbstractState(const std::vector<const SVFVar*>& vars);
 
     /**
      * Check if execution state exist at the branch edge
@@ -239,6 +269,9 @@ private:
      * @return true if state changed, false if fixpoint reached or infeasible
      */
     bool handleICFGNode(const ICFGNode* node);
+
+    /// Sparse state propagation: build minimal state from def sites
+    bool sparseStatePropagate(const ICFGNode* icfgNode);
 
     /**
      * Get the next nodes of a node within the same function
@@ -323,9 +356,10 @@ private:
     AEStat* stat;
 
     PreAnalysis* preAnalysis{nullptr};
+    SparseDefUse* sparseDefUse{nullptr};
 
 
-    bool hasAbsStateFromTrace(const ICFGNode* node)
+    bool hasAbstractState(const ICFGNode* node)
     {
         return abstractTrace.count(node) != 0;
     }

@@ -78,6 +78,15 @@ public:
     virtual void detect(AbstractState& as, const ICFGNode* node) = 0;
 
     /**
+     * @brief Returns additional variable IDs needed by this detector at the given node.
+     * Used by sparse propagation to ensure the detector's needed vars are fetched.
+     */
+    virtual Set<NodeID> getNeededVarsForSparse(const ICFGNode* node)
+    {
+        return {};
+    }
+
+    /**
      * @brief Pure virtual function for handling stub external API calls. (e.g. UNSAFE_BUFACCESS)
      * @param call Pointer to the ext call ICFG node.
      */
@@ -177,14 +186,18 @@ public:
      * @param as Reference to the abstract state.
      * @param node Pointer to the ICFG node.
      */
-    void detect(AbstractState& as, const ICFGNode*);
+    void detect(AbstractState& as, const ICFGNode*) override;
 
+    /**
+     * @brief Returns additional variable IDs needed by the buffer overflow detector.
+     */
+    Set<NodeID> getNeededVarsForSparse(const ICFGNode* node) override;
 
     /**
      * @brief Handles external API calls related to buffer overflow detection.
      * @param call Pointer to the call ICFG node.
      */
-    void handleStubFunctions(const CallICFGNode*);
+    void handleStubFunctions(const CallICFGNode*) override;
 
     /**
      * @brief Adds an offset to a GEP object.
@@ -268,7 +281,7 @@ public:
     /**
      * @brief Reports all detected buffer overflow bugs.
      */
-    void reportBug()
+    void reportBug() override
     {
         if (!nodeToBugInfo.empty())
         {
@@ -348,13 +361,18 @@ public:
      * @param as Reference to the abstract state.
      * @param node Pointer to the ICFG node.
      */
-    void detect(AbstractState& as, const ICFGNode* node);
+    void detect(AbstractState& as, const ICFGNode* node) override;
+
+    /**
+     * @brief Returns additional variable IDs needed by the nullptr deref detector.
+     */
+    Set<NodeID> getNeededVarsForSparse(const ICFGNode* node) override;
 
     /**
      * @brief Handles external API calls related to nullptr dereferences.
      * @param call Pointer to the call ICFG node.
      */
-    void handleStubFunctions(const CallICFGNode* call);
+    void handleStubFunctions(const CallICFGNode* call) override;
 
     /**
      * @brief Checks if an Abstract Value is uninitialized.
@@ -401,7 +419,7 @@ public:
     /**
      * @brief Reports all detected nullptr dereference bugs.
      */
-    void reportBug()
+    void reportBug() override
     {
         if (!nodeToBugInfo.empty())
         {

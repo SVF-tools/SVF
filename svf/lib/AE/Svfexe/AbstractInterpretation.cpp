@@ -54,11 +54,20 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
     icfg->updateCallGraph(callGraph);
     preAnalysis->initWTO();
 
+    // Build sparse def-use table and widen sets if sparse mode is enabled
+    if (Options::SparseAE())
+    {
+        sparseDefUse = new SparseDefUse(preAnalysis->getPointerAnalysis());
+        sparseDefUse->build(icfg);
+        preAnalysis->buildWidenSets();
+    }
+
     /// collect checkpoint
     collectCheckPoint();
 
     analyse();
     checkPointAllSet();
+
     stat->endClk();
     stat->finializeStat();
     if (Options::PStat())
@@ -76,6 +85,7 @@ AbstractInterpretation::~AbstractInterpretation()
 {
     delete stat;
     delete preAnalysis;
+    delete sparseDefUse;
 }
 
 /// Collect entry point functions for analysis.
@@ -221,7 +231,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNo
                 // Only include return edge if the corresponding callsite was processed
                 // (skipped recursive callsites in WIDEN_ONLY/WIDEN_NARROW won't have state)
                 const RetICFGNode* retNode = SVFUtil::dyn_cast<RetICFGNode>(icfgNode);
-                if (hasAbsStateFromTrace(retNode->getCallICFGNode()))
+                if (hasAbstractState(retNode->getCallICFGNode()))
                 {
                     workList.push_back(abstractTrace[retCfgEdge->getSrcNode()]);
                 }
@@ -566,8 +576,314 @@ void AbstractInterpretation::handleSingletonWTO(const ICFGSingletonWTO *icfgSing
         handleCallSite(callnode);
     }
     for (auto& detector: detectors)
-        detector->detect(getAbsStateFromTrace(node), node);
+        detector->detect(getAbstractState(node), node);
     stat->countStateSize();
+}
+
+/// Get top-level ValVars accessed at an ICFG node (sparse mode only).
+/// Collects all ValVar LHS/RHS from SVFStmts, call arguments, and branch conditions.
+/// Helper: insert a ValVar by NodeID into result if not already seen.
+static void collectValVar(SVFIR* svfir, NodeID id, Set<NodeID>& seen,
+                          std::vector<const ValVar*>& result)
+{
+    if (seen.insert(id).second)
+    {
+        const SVFVar* var = svfir->getGNode(id);
+        if (const ValVar* vv = SVFUtil::dyn_cast<ValVar>(var))
+            result.push_back(vv);
+    }
+}
+
+std::vector<const ValVar*> AbstractInterpretation::getValVars(const ICFGNode* node)
+{
+    assert(Options::SparseAE() && "getValVars is only for sparse mode");
+    Set<NodeID> seen;
+    std::vector<const ValVar*> result;
+
+    for (const SVFStmt* stmt : node->getSVFStmts())
+    {
+        if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt))
+        {
+            collectValVar(svfir, store->getRHSVarID(), seen, result);
+            collectValVar(svfir, store->getLHSVarID(), seen, result);
+        }
+        else if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+        {
+            collectValVar(svfir, load->getRHSVarID(), seen, result);
+            collectValVar(svfir, load->getLHSVarID(), seen, result);
+        }
+        else if (const CopyStmt* copy = SVFUtil::dyn_cast<CopyStmt>(stmt))
+        {
+            collectValVar(svfir, copy->getRHSVarID(), seen, result);
+            collectValVar(svfir, copy->getLHSVarID(), seen, result);
+        }
+        else if (const AddrStmt* addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
+        {
+            collectValVar(svfir, addr->getLHSVarID(), seen, result);
+        }
+        else if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt))
+        {
+            collectValVar(svfir, gep->getRHSVarID(), seen, result);
+            collectValVar(svfir, gep->getLHSVarID(), seen, result);
+        }
+        else if (const PhiStmt* phi = SVFUtil::dyn_cast<PhiStmt>(stmt))
+        {
+            collectValVar(svfir, phi->getResID(), seen, result);
+            for (u32_t i = 0; i < phi->getOpVarNum(); ++i)
+                collectValVar(svfir, phi->getOpVarID(i), seen, result);
+        }
+        else if (const SelectStmt* select = SVFUtil::dyn_cast<SelectStmt>(stmt))
+        {
+            collectValVar(svfir, select->getResID(), seen, result);
+            for (u32_t i = 0; i < select->getOpVarNum(); ++i)
+                collectValVar(svfir, select->getOpVarID(i), seen, result);
+        }
+        else if (const BinaryOPStmt* binary = SVFUtil::dyn_cast<BinaryOPStmt>(stmt))
+        {
+            collectValVar(svfir, binary->getResID(), seen, result);
+            for (u32_t i = 0; i < binary->getOpVarNum(); ++i)
+                collectValVar(svfir, binary->getOpVarID(i), seen, result);
+        }
+        else if (const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
+        {
+            collectValVar(svfir, cmp->getResID(), seen, result);
+            for (u32_t i = 0; i < cmp->getOpVarNum(); ++i)
+                collectValVar(svfir, cmp->getOpVarID(i), seen, result);
+        }
+        else if (const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(stmt))
+        {
+            collectValVar(svfir, callPE->getRHSVarID(), seen, result);
+            collectValVar(svfir, callPE->getLHSVarID(), seen, result);
+        }
+        else if (const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(stmt))
+        {
+            collectValVar(svfir, retPE->getRHSVarID(), seen, result);
+            collectValVar(svfir, retPE->getLHSVarID(), seen, result);
+        }
+        else if (const UnaryOPStmt* unary = SVFUtil::dyn_cast<UnaryOPStmt>(stmt))
+        {
+            collectValVar(svfir, unary->getResID(), seen, result);
+            collectValVar(svfir, unary->getOpVarID(), seen, result);
+        }
+    }
+
+    // CallICFGNode arguments (needed for external API handling like svf_assert)
+    if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
+    {
+        for (u32_t i = 0; i < callNode->arg_size(); ++i)
+            collectValVar(svfir, callNode->getArgument(i)->getId(), seen, result);
+    }
+
+    // Condition variables on outgoing edges
+    for (const auto& edge : node->getOutEdges())
+    {
+        if (const IntraCFGEdge* intraCfgEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge))
+        {
+            if (const SVFVar* condVar = intraCfgEdge->getCondition())
+                collectValVar(svfir, condVar->getId(), seen, result);
+        }
+    }
+
+    return result;
+}
+
+/// Get address-taken ObjVars accessed at an ICFG node (sparse mode only).
+/// Resolves points-to sets of all ValVars at this node via Andersen's analysis.
+std::vector<const ObjVar*> AbstractInterpretation::getObjVars(const ICFGNode* node)
+{
+    assert(Options::SparseAE() && "getObjVars is only for sparse mode");
+    std::vector<const ValVar*> valVars = getValVars(node);
+    Set<NodeID> seen;
+    std::vector<const ObjVar*> result;
+
+    for (const ValVar* vv : valVars)
+    {
+        const PointsTo& pts = preAnalysis->getPts(vv->getId());
+        for (NodeID objId : pts)
+        {
+            if (seen.insert(objId).second)
+            {
+                const SVFVar* var = svfir->getGNode(objId);
+                if (const ObjVar* ov = SVFUtil::dyn_cast<ObjVar>(var))
+                    result.push_back(ov);
+            }
+        }
+    }
+
+    return result;
+}
+
+/// Get all SVFVars (ValVars + ObjVars) accessed at an ICFG node (sparse mode only).
+std::vector<const SVFVar*> AbstractInterpretation::getSVFVars(const ICFGNode* node)
+{
+    assert(Options::SparseAE() && "getSVFVars is only for sparse mode");
+    std::vector<const SVFVar*> result;
+
+    for (const ValVar* vv : getValVars(node))
+        result.push_back(vv);
+    for (const ObjVar* ov : getObjVars(node))
+        result.push_back(ov);
+
+    return result;
+}
+
+/// Retrieve abstract value at the definition site of a top-level variable.
+/// ValVars have a single SSA def site (their ICFGNode). Constants have null ICFGNode
+/// and are fetched from the global node.
+AbstractValue AbstractInterpretation::getAbstractValue(const ValVar* var)
+{
+    NodeID varId = var->getId();
+    const ICFGNode* defNode = var->getICFGNode();
+    // Constants have null ICFGNode; fetch from global state
+    if (!defNode)
+        defNode = icfg->getGlobalICFGNode();
+    if (defNode && abstractTrace.count(defNode))
+    {
+        const AbstractState& defState = abstractTrace[defNode];
+        if (defState.inVarToValTable(varId) || defState.inVarToAddrsTable(varId))
+            return defState[varId];
+    }
+    return AbstractValue();
+}
+
+/// Retrieve abstract value at the definition sites of an address-taken variable.
+/// ObjVars may be defined at multiple StoreStmt sites (flow-insensitive); values are joined.
+/// Also checks the global node for objects initialized by AddrStmt.
+AbstractValue AbstractInterpretation::getAbstractValue(const ObjVar* var)
+{
+    assert(Options::SparseAE() && sparseDefUse && "getAbstractValue(ObjVar) requires sparse mode");
+    NodeID objId = var->getId();
+    const auto& objDefNodes = sparseDefUse->getDefICFGNodes(objId);
+    const ICFGNode* globalNode = icfg->getGlobalICFGNode();
+
+    bool firstDef = true;
+    AbstractValue joinedVal;
+
+    for (const ICFGNode* defNode : objDefNodes)
+    {
+        if (abstractTrace.count(defNode))
+        {
+            const AbstractState& defState = abstractTrace[defNode];
+            if (defState.inAddrToValTable(objId) || defState.inAddrToAddrsTable(objId))
+            {
+                const AbstractValue& objVal = defState.getLocToVal().at(objId);
+                if (firstDef)
+                {
+                    joinedVal = objVal;
+                    firstDef = false;
+                }
+                else
+                {
+                    joinedVal.join_with(objVal);
+                }
+            }
+        }
+    }
+
+    // Also check the global node (objects initialized by AddrStmt)
+    if (abstractTrace.count(globalNode))
+    {
+        const AbstractState& globalState = abstractTrace[globalNode];
+        if (globalState.inAddrToValTable(objId) || globalState.inAddrToAddrsTable(objId))
+        {
+            const AbstractValue& objVal = globalState.getLocToVal().at(objId);
+            if (firstDef)
+            {
+                joinedVal = objVal;
+                firstDef = false;
+            }
+            else
+            {
+                joinedVal.join_with(objVal);
+            }
+        }
+    }
+
+    return joinedVal;
+}
+
+/// Retrieve abstract value at the definition site(s) of an SVF variable.
+/// Dispatches to ValVar or ObjVar overload.
+AbstractValue AbstractInterpretation::getAbstractValue(const SVFVar* var)
+{
+    if (const ValVar* vv = SVFUtil::dyn_cast<ValVar>(var))
+        return getAbstractValue(vv);
+    else if (const ObjVar* ov = SVFUtil::dyn_cast<ObjVar>(var))
+        return getAbstractValue(ov);
+    return AbstractValue();
+}
+
+/// Build an AbstractState from definition sites of multiple top-level variables.
+AbstractState AbstractInterpretation::getAbstractState(const std::vector<const ValVar*>& vars)
+{
+    AbstractState state;
+    for (const ValVar* vv : vars)
+    {
+        AbstractValue val = getAbstractValue(vv);
+        if (val.isInterval() || val.isAddr())
+            state[vv->getId()] = val;
+    }
+    return state;
+}
+
+/// Build an AbstractState from definition sites of multiple address-taken variables.
+AbstractState AbstractInterpretation::getAbstractState(const std::vector<const ObjVar*>& vars)
+{
+    AbstractState state;
+    for (const ObjVar* ov : vars)
+    {
+        AbstractValue val = getAbstractValue(ov);
+        if (val.isInterval() || val.isAddr())
+            state.store(AbstractState::getVirtualMemAddress(ov->getId()), val);
+    }
+    return state;
+}
+
+/// Build an AbstractState from definition sites of multiple SVF variables (ValVars + ObjVars).
+AbstractState AbstractInterpretation::getAbstractState(const std::vector<const SVFVar*>& vars)
+{
+    // Separate into ValVars and ObjVars, then merge the two states
+    std::vector<const ValVar*> valVars;
+    std::vector<const ObjVar*> objVars;
+    for (const SVFVar* var : vars)
+    {
+        if (const ValVar* vv = SVFUtil::dyn_cast<ValVar>(var))
+            valVars.push_back(vv);
+        else if (const ObjVar* ov = SVFUtil::dyn_cast<ObjVar>(var))
+            objVars.push_back(ov);
+    }
+    AbstractState state = getAbstractState(valVars);
+    AbstractState objState = getAbstractState(objVars);
+    state.joinWith(objState);
+    return state;
+}
+
+/// Sparse state propagation: build a minimal state from def sites for an ICFG node.
+/// Checks reachability (at least one predecessor with state), uses getAbstractState
+/// to fetch values from definition sites, writes to abstractTrace[node].
+/// Returns true if propagation succeeded (node is reachable), false otherwise.
+bool AbstractInterpretation::sparseStatePropagate(const ICFGNode* node)
+{
+    // Check reachability: at least one predecessor must have state
+    bool reachable = false;
+    for (auto& edge : node->getInEdges())
+    {
+        if (abstractTrace.find(edge->getSrcNode()) != abstractTrace.end())
+        { reachable = true; break; }
+    }
+    if (!reachable)
+        return false;
+
+    // Build state from ValVar and ObjVar def sites
+    std::vector<const ValVar*> valVars = getValVars(node);
+    std::vector<const ObjVar*> objVars = getObjVars(node);
+
+    AbstractState sparseState = getAbstractState(valVars);
+    AbstractState objState = getAbstractState(objVars);
+    sparseState.joinWith(objState);
+
+    abstractTrace[node] = sparseState;
+    return true;
 }
 
 /**
@@ -578,33 +894,39 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
 {
     // Store the previous state for fixpoint detection
     AbstractState prevState;
-    bool hadPrevState = hasAbsStateFromTrace(node);
+    bool hadPrevState = hasAbstractState(node);
     if (hadPrevState)
         prevState = abstractTrace[node];
 
     // For function entry nodes, initialize state from predecessors or global
     bool isFunEntry = SVFUtil::isa<FunEntryICFGNode>(node);
+
+    // Merge states from predecessors (dense) or sparse propagation
+    bool mergeSuccess = false;
+    if (Options::SparseAE() && sparseDefUse)
+    {
+        mergeSuccess = sparseStatePropagate(node);
+    }
+    else
+    {
+        mergeSuccess = mergeStatesFromPredecessors(node);
+    }
+
     if (isFunEntry)
     {
-        // Try to merge from predecessors first (handles call edges)
-        if (!mergeStatesFromPredecessors(node))
+        if (!mergeSuccess)
         {
             // No predecessors with state - inherit from global node
             const ICFGNode* globalNode = icfg->getGlobalICFGNode();
-            if (hasAbsStateFromTrace(globalNode))
-            {
+            if (hasAbstractState(globalNode))
                 abstractTrace[node] = abstractTrace[globalNode];
-            }
             else
-            {
                 abstractTrace[node] = AbstractState();
-            }
         }
     }
     else
     {
-        // Merge states from predecessors
-        if (!mergeStatesFromPredecessors(node))
+        if (!mergeSuccess)
             return false;
     }
 
@@ -625,7 +947,7 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
 
     // Run detectors
     for (auto& detector: detectors)
-        detector->detect(getAbsStateFromTrace(node), node);
+        detector->detect(getAbstractState(node), node);
     stat->countStateSize();
 
     // Track this node as analyzed (for coverage statistics across all entry points)
@@ -792,7 +1114,7 @@ bool AbstractInterpretation::isRecursiveFun(const FunObjVar* fun)
 /// Handle recursive call in TOP mode: set all stores and return value to TOP
 void AbstractInterpretation::handleRecursiveCall(const CallICFGNode *callNode)
 {
-    AbstractState& as = getAbsStateFromTrace(callNode);
+    AbstractState& as = getAbstractState(callNode);
     setTopToObjInRecursion(callNode);
     const RetICFGNode *retNode = callNode->getRetICFGNode();
     if (retNode->getSVFStmts().size() > 0)
@@ -831,10 +1153,10 @@ const FunObjVar* AbstractInterpretation::getCallee(const CallICFGNode* callNode)
         return nullptr;
 
     NodeID call_id = it->second;
-    if (!hasAbsStateFromTrace(callNode))
+    if (!hasAbstractState(callNode))
         return nullptr;
 
-    AbstractState& as = getAbsStateFromTrace(callNode);
+    AbstractState& as = getAbstractState(callNode);
     if (!as.inVarToAddrsTable(call_id))
         return nullptr;
 
@@ -899,7 +1221,7 @@ bool AbstractInterpretation::shouldApplyNarrowing(const FunObjVar* fun)
 /// possible indirect call targets.
 void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 {
-    AbstractState& as = getAbsStateFromTrace(callNode);
+    AbstractState& as = getAbstractState(callNode);
     abstractTrace[callNode] = as;
 
     // Skip recursive callsites (within SCC); entry calls are not skipped
@@ -997,11 +1319,40 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
     {
         // Get the abstract state before processing the cycle head
         AbstractState prev_head_state;
-        if (hasAbsStateFromTrace(cycle_head))
+        if (hasAbstractState(cycle_head))
             prev_head_state = abstractTrace[cycle_head];
 
         // Process the cycle head node
         handleICFGNode(cycle_head);
+
+        // In sparse mode, the cycle head state only contains variables directly
+        // used at the head node. Fetch all variables defined in the loop body
+        // (the "widen set") so they participate in widening/narrowing.
+        if (Options::SparseAE() && preAnalysis)
+        {
+            const Set<NodeID>& widenVars = preAnalysis->getWidenVars(cycle_head);
+            if (!widenVars.empty())
+            {
+                AbstractState& headState = abstractTrace[cycle_head];
+                for (NodeID varId : widenVars)
+                {
+                    const SVFVar* var = svfir->getGNode(varId);
+                    if (const ObjVar* ov = SVFUtil::dyn_cast<ObjVar>(var))
+                    {
+                        AbstractValue val = getAbstractValue(ov);
+                        if (val.isInterval() || val.isAddr())
+                            headState.store(AbstractState::getVirtualMemAddress(ov->getId()), val);
+                    }
+                    else if (const ValVar* vv = SVFUtil::dyn_cast<ValVar>(var))
+                    {
+                        AbstractValue val = getAbstractValue(vv);
+                        if (val.isInterval() || val.isAddr())
+                            headState[vv->getId()] = val;
+                    }
+                }
+            }
+        }
+
         AbstractState cur_head_state = abstractTrace[cycle_head];
 
         // Start widening or narrowing if cur_iter >= widen delay threshold
@@ -1110,14 +1461,14 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
     else
         assert(false && "implement this part");
     // NullPtr is index 0, it should not be changed
-    assert(!getAbsStateFromTrace(stmt->getICFGNode())[IRGraph::NullPtr].isInterval() &&
-           !getAbsStateFromTrace(stmt->getICFGNode())[IRGraph::NullPtr].isAddr());
+    assert(!getAbstractState(stmt->getICFGNode())[IRGraph::NullPtr].isInterval() &&
+           !getAbstractState(stmt->getICFGNode())[IRGraph::NullPtr].isAddr());
 }
 
 /// Set all store values in a recursive function to TOP (used in TOP mode)
 void AbstractInterpretation::setTopToObjInRecursion(const CallICFGNode *callNode)
 {
-    AbstractState& as = getAbsStateFromTrace(callNode);
+    AbstractState& as = getAbstractState(callNode);
     const RetICFGNode *retNode = callNode->getRetICFGNode();
     if (retNode->getSVFStmts().size() > 0)
     {
@@ -1361,7 +1712,7 @@ void AbstractInterpretation::checkPointAllSet()
 
 void AbstractInterpretation::updateStateOnGep(const GepStmt *gep)
 {
-    AbstractState& as = getAbsStateFromTrace(gep->getICFGNode());
+    AbstractState& as = getAbstractState(gep->getICFGNode());
     u32_t rhs = gep->getRHSVarID();
     u32_t lhs = gep->getLHSVarID();
     IntervalValue offsetPair = as.getElementIndex(gep);
@@ -1377,7 +1728,7 @@ void AbstractInterpretation::updateStateOnGep(const GepStmt *gep)
 
 void AbstractInterpretation::updateStateOnSelect(const SelectStmt *select)
 {
-    AbstractState& as = getAbsStateFromTrace(select->getICFGNode());
+    AbstractState& as = getAbstractState(select->getICFGNode());
     u32_t res = select->getResID();
     u32_t tval = select->getTrueValue()->getId();
     u32_t fval = select->getFalseValue()->getId();
@@ -1396,17 +1747,17 @@ void AbstractInterpretation::updateStateOnSelect(const SelectStmt *select)
 void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
 {
     const ICFGNode* icfgNode = phi->getICFGNode();
-    AbstractState& as = getAbsStateFromTrace(icfgNode);
+    AbstractState& as = getAbstractState(icfgNode);
     u32_t res = phi->getResID();
     AbstractValue rhs;
     for (u32_t i = 0; i < phi->getOpVarNum(); i++)
     {
         NodeID curId = phi->getOpVarID(i);
         const ICFGNode* opICFGNode = phi->getOpICFGNode(i);
-        if (hasAbsStateFromTrace(opICFGNode))
+        if (hasAbstractState(opICFGNode))
         {
             AbstractState tmpEs = abstractTrace[opICFGNode];
-            AbstractState& opAs = getAbsStateFromTrace(opICFGNode);
+            AbstractState& opAs = getAbstractState(opICFGNode);
             const ICFGEdge* edge =  icfg->getICFGEdge(opICFGNode, icfgNode, ICFGEdge::IntraCF);
             // if IntraEdge, check the condition, if it is feasible, join the value
             // if IntraEdge but not conditional edge, join the value
@@ -1434,7 +1785,7 @@ void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
 
 void AbstractInterpretation::updateStateOnCall(const CallPE *callPE)
 {
-    AbstractState& as = getAbsStateFromTrace(callPE->getICFGNode());
+    AbstractState& as = getAbstractState(callPE->getICFGNode());
     NodeID lhs = callPE->getLHSVarID();
     NodeID rhs = callPE->getRHSVarID();
     as[lhs] = as[rhs];
@@ -1442,7 +1793,7 @@ void AbstractInterpretation::updateStateOnCall(const CallPE *callPE)
 
 void AbstractInterpretation::updateStateOnRet(const RetPE *retPE)
 {
-    AbstractState& as = getAbsStateFromTrace(retPE->getICFGNode());
+    AbstractState& as = getAbstractState(retPE->getICFGNode());
     NodeID lhs = retPE->getLHSVarID();
     NodeID rhs = retPE->getRHSVarID();
     as[lhs] = as[rhs];
@@ -1451,7 +1802,7 @@ void AbstractInterpretation::updateStateOnRet(const RetPE *retPE)
 
 void AbstractInterpretation::updateStateOnAddr(const AddrStmt *addr)
 {
-    AbstractState& as = getAbsStateFromTrace(addr->getICFGNode());
+    AbstractState& as = getAbstractState(addr->getICFGNode());
     as.initObjVar(SVFUtil::cast<ObjVar>(addr->getRHSVar()));
     if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
         as[addr->getRHSVarID()].getInterval().meet_with(utils->getRangeLimitFromType(addr->getRHSVar()->getType()));
@@ -1465,7 +1816,7 @@ void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary)
     /// You are only required to handle integer predicates, including Add, FAdd, Sub, FSub, Mul, FMul, SDiv, FDiv, UDiv,
     /// SRem, FRem, URem, Xor, And, Or, AShr, Shl, LShr
     const ICFGNode* node = binary->getICFGNode();
-    AbstractState& as = getAbsStateFromTrace(node);
+    AbstractState& as = getAbstractState(node);
     u32_t op0 = binary->getOpVarID(0);
     u32_t op1 = binary->getOpVarID(1);
     u32_t res = binary->getResID();
@@ -1523,7 +1874,7 @@ void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary)
 
 void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
 {
-    AbstractState& as = getAbsStateFromTrace(cmp->getICFGNode());
+    AbstractState& as = getAbstractState(cmp->getICFGNode());
     u32_t op0 = cmp->getOpVarID(0);
     u32_t op1 = cmp->getOpVarID(1);
     // if it is address
@@ -1752,7 +2103,7 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
 
 void AbstractInterpretation::updateStateOnLoad(const LoadStmt *load)
 {
-    AbstractState& as = getAbsStateFromTrace(load->getICFGNode());
+    AbstractState& as = getAbstractState(load->getICFGNode());
     u32_t rhs = load->getRHSVarID();
     u32_t lhs = load->getLHSVarID();
     as[lhs] = as.loadValue(rhs);
@@ -1760,7 +2111,7 @@ void AbstractInterpretation::updateStateOnLoad(const LoadStmt *load)
 
 void AbstractInterpretation::updateStateOnStore(const StoreStmt *store)
 {
-    AbstractState& as = getAbsStateFromTrace(store->getICFGNode());
+    AbstractState& as = getAbstractState(store->getICFGNode());
     u32_t rhs = store->getRHSVarID();
     u32_t lhs = store->getLHSVarID();
     as.storeValue(lhs, as[rhs]);
@@ -1864,7 +2215,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
         }
     };
 
-    AbstractState& as = getAbsStateFromTrace(copy->getICFGNode());
+    AbstractState& as = getAbstractState(copy->getICFGNode());
     u32_t lhs = copy->getLHSVarID();
     u32_t rhs = copy->getRHSVarID();
 

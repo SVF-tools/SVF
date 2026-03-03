@@ -80,5 +80,126 @@ void PreAnalysis::initWTO()
             funcToWTO[it->second->getFunction()] = iwto;
         }
     }
+}
 
+const PointsTo& PreAnalysis::getPts(NodeID id) const
+{
+    return pta->getPts(id);
+}
+
+const Set<NodeID> PreAnalysis::emptyWidenSet;
+
+void PreAnalysis::buildWidenSets()
+{
+    for (auto& [func, wto] : funcToWTO)
+    {
+        for (const ICFGWTOComp* comp : wto->getWTOComponents())
+        {
+            if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+                buildWidenSetForCycle(cycle);
+        }
+    }
+}
+
+void PreAnalysis::buildWidenSetForCycle(const ICFGCycleWTO* cycle)
+{
+    const ICFGNode* head = cycle->head()->getICFGNode();
+    Set<NodeID>& widenVars = cycleHeadToWidenVars[head];
+
+    // Collect all nodes in cycle body (not including head itself)
+    for (const ICFGWTOComp* comp : cycle->getWTOComponents())
+    {
+        if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+        {
+            collectDefsAtNode(singleton->getICFGNode(), widenVars);
+        }
+        else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+        {
+            // Recursively handle nested cycles
+            buildWidenSetForCycle(subCycle);
+            // Also collect nested cycle nodes' defs into parent's widen set
+            std::vector<const ICFGNode*> nestedNodes;
+            collectCycleNodes(subCycle, nestedNodes);
+            for (const ICFGNode* node : nestedNodes)
+                collectDefsAtNode(node, widenVars);
+        }
+    }
+    // Also collect defs at cycle head itself
+    collectDefsAtNode(head, widenVars);
+}
+
+void PreAnalysis::collectCycleNodes(const ICFGCycleWTO* cycle, std::vector<const ICFGNode*>& nodes)
+{
+    nodes.push_back(cycle->head()->getICFGNode());
+    for (const ICFGWTOComp* comp : cycle->getWTOComponents())
+    {
+        if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+        {
+            nodes.push_back(singleton->getICFGNode());
+        }
+        else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+        {
+            collectCycleNodes(subCycle, nodes);
+        }
+    }
+}
+
+void PreAnalysis::collectDefsAtNode(const ICFGNode* node, Set<NodeID>& defs)
+{
+    for (const SVFStmt* stmt : node->getSVFStmts())
+    {
+        // Top-level variable definitions (LHS of assignments)
+        if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt))
+        {
+            // Address-taken: pts(lhs_pointer) are the defined objects
+            NodeID ptrId = store->getLHSVarID();
+            const PointsTo& pts = pta->getPts(ptrId);
+            for (NodeID objId : pts)
+                defs.insert(objId);
+        }
+        else if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+        {
+            defs.insert(load->getLHSVarID());
+        }
+        else if (const CopyStmt* copy = SVFUtil::dyn_cast<CopyStmt>(stmt))
+        {
+            defs.insert(copy->getLHSVarID());
+        }
+        else if (const AddrStmt* addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
+        {
+            defs.insert(addr->getLHSVarID());
+        }
+        else if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt))
+        {
+            defs.insert(gep->getLHSVarID());
+        }
+        else if (const PhiStmt* phi = SVFUtil::dyn_cast<PhiStmt>(stmt))
+        {
+            defs.insert(phi->getResID());
+        }
+        else if (const SelectStmt* select = SVFUtil::dyn_cast<SelectStmt>(stmt))
+        {
+            defs.insert(select->getResID());
+        }
+        else if (const BinaryOPStmt* binary = SVFUtil::dyn_cast<BinaryOPStmt>(stmt))
+        {
+            defs.insert(binary->getResID());
+        }
+        else if (const UnaryOPStmt* unary = SVFUtil::dyn_cast<UnaryOPStmt>(stmt))
+        {
+            defs.insert(unary->getResID());
+        }
+        else if (const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
+        {
+            defs.insert(cmp->getResID());
+        }
+        else if (const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(stmt))
+        {
+            defs.insert(callPE->getLHSVarID());
+        }
+        else if (const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(stmt))
+        {
+            defs.insert(retPE->getLHSVarID());
+        }
+    }
 }

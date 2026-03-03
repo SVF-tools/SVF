@@ -74,6 +74,12 @@ public:
      */
     void handleExtAPI(const CallICFGNode *call);
 
+    /**
+     * @brief Returns additional variable IDs needed by external API handling at the given node.
+     * Used by sparse propagation to ensure ext API's needed vars are fetched.
+     */
+    static Set<NodeID> getNeededVarsForSparse(const ICFGNode* node);
+
     // --- Shared primitives used by string/memory handlers ---
 
     /// Get the byte size of each element for a pointer/array variable.
@@ -106,7 +112,7 @@ public:
      * @return Reference to the abstract state.
      * @throws Assertion if no trace exists for the node.
      */
-    AbstractState& getAbsStateFromTrace(const ICFGNode* node);
+    AbstractState& getAbstractState(const ICFGNode* node);
 
 protected:
     SVFIR* svfir; ///< Pointer to the SVF intermediate representation.
