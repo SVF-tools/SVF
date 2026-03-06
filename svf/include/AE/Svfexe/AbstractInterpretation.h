@@ -138,14 +138,12 @@ private:
     /// Initialize abstract state for the global ICFG node and process global statements
     virtual void handleGlobalNode();
 
-    /// Merge abstract states from predecessor nodes; return true if icfgNode has feasible incoming state
-    bool mergeStatesFromPredecessors(const ICFGNode * icfgNode);
+    /// Propagate the post-state of a node to all its intra-procedural successors
+    void propagateToSuccessor(const ICFGNode* node,
+                              const Set<const ICFGNode*>* withinSet = nullptr);
 
     /// Check if the branch on intraEdge is feasible under abstract state as
     bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractState& as);
-
-    /// Process all SVF statements in a singleton WTO component (single basic block)
-    virtual void handleSingletonWTO(const ICFGSingletonWTO *icfgSingletonWto);
 
     /// Handle a call site node: dispatch to ext-call, direct-call, or indirect-call handling
     virtual void handleCallSite(const ICFGNode* node);
@@ -156,14 +154,8 @@ private:
     /// Handle a function body via worklist-driven WTO traversal starting from funEntry
     void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller = nullptr);
 
-    /// Merge predecessor states, process statements and callsites; return true if state changed
+    /// Handle an ICFG node: execute statements; return true if state changed
     bool handleICFGNode(const ICFGNode* node);
-
-    /// Get intra-procedural successor nodes (including call-to-ret shortcut) within the same function
-    std::vector<const ICFGNode*> getNextNodes(const ICFGNode* node) const;
-
-    /// Get successor nodes that exit the given WTO cycle (skipping inner sub-cycles)
-    std::vector<const ICFGNode*> getNextNodesOfCycle(const ICFGCycleWTO* cycle) const;
 
     /// Dispatch an SVF statement (Addr/Binary/Cmp/Load/Store/Copy/Gep/Select/Phi/Call/Ret) to its handler
     virtual void handleSVFStatement(const SVFStmt* stmt);
@@ -232,7 +224,7 @@ private:
     // there data should be shared with subclasses
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
 
-    Map<const ICFGNode*, AbstractState> abstractTrace; // abstract states immediately after nodes
+    Map<const ICFGNode*, AbstractState> abstractTrace; // abstract states for nodes (pre-state before execution, post-state after)
     Set<const ICFGNode*> allAnalyzedNodes; // All nodes ever analyzed (across all entry points)
     std::string moduleName;
 
