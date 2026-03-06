@@ -148,7 +148,7 @@ PointsTo FlowDDA::processGepPts(const GepSVFGNode* gep, const PointsTo& srcPts)
             tmpDstPts.set(ptd);
         else
         {
-            const GepStmt* gepStmt = SVFUtil::cast<GepStmt>(gep->getPAGEdge());
+            const GepStmt* gepStmt = SVFUtil::cast<GepStmt>(gep->getSVFStmt());
             if (gepStmt->isVariantFieldGep())
             {
                 setObjFieldInsensitive(ptd);

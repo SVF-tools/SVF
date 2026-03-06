@@ -219,10 +219,10 @@ void SVFG::destroy()
 /*!
  * Build SVFG
  * 1) build SVFG nodes
- *    a) statements for top level pointers (PAGEdges)
+ *    a) statements for top level pointers (SVFStmts)
  *    b) operators of address-taken variables (MSSAPHI and MSSACHI)
  * 2) connect SVFG edges
- *    a) between two statements (PAGEdges)
+ *    a) between two statements (SVFStmts)
  *    b) between two memory SSA operators (MSSAPHI MSSAMU and MSSACHI)
  */
 void SVFG::buildSVFG()
@@ -256,7 +256,7 @@ void SVFG::addSVFGNodesForAddrTakenVars()
 {
 
     // set defs for address-taken vars defined at store statements
-    SVFStmt::SVFStmtSetTy& stores = getPAGEdgeSet(SVFStmt::Store);
+    SVFStmt::SVFStmtSetTy& stores = getSVFStmtSet(SVFStmt::Store);
     for (SVFStmt::SVFStmtSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter)
     {
@@ -336,7 +336,7 @@ void SVFG::connectIndirectSVFGEdges()
         const SVFGNode* node = it->second;
         if(const LoadSVFGNode* loadNode = SVFUtil::dyn_cast<LoadSVFGNode>(node))
         {
-            MUSet& muSet = mssa->getMUSet(SVFUtil::cast<LoadStmt>(loadNode->getPAGEdge()));
+            MUSet& muSet = mssa->getMUSet(SVFUtil::cast<LoadStmt>(loadNode->getSVFStmt()));
             for(MUSet::iterator it = muSet.begin(), eit = muSet.end(); it!=eit; ++it)
             {
                 if(LOADMU* mu = SVFUtil::dyn_cast<LOADMU>(*it))
@@ -348,7 +348,7 @@ void SVFG::connectIndirectSVFGEdges()
         }
         else if(const StoreSVFGNode* storeNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
         {
-            CHISet& chiSet = mssa->getCHISet(SVFUtil::cast<StoreStmt>(storeNode->getPAGEdge()));
+            CHISet& chiSet = mssa->getCHISet(SVFUtil::cast<StoreStmt>(storeNode->getSVFStmt()));
             for(CHISet::iterator it = chiSet.begin(), eit = chiSet.end(); it!=eit; ++it)
             {
                 if(STORECHI* chi = SVFUtil::dyn_cast<STORECHI>(*it))
@@ -438,7 +438,7 @@ void SVFG::connectFromGlobalToProgEntry()
         if (const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(*storeIt))
         {
             /// connect this store to main function entry
-            const NodeBS& storePts = mssa->getPTA()->getPts(store->getPAGDstNodeID()).toNodeBS();
+            const NodeBS& storePts = mssa->getPTA()->getPts(store->getDstNodeID()).toNodeBS();
 
             for (FormalINSVFGNodeSet::iterator fiIt = formalIns.begin(), fiEit =
                         formalIns.end(); fiIt != fiEit; ++fiIt)
@@ -597,7 +597,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
         {
             const SVFVar *cs_arg = *csArgIt;
             const SVFVar *fun_arg = *funArgIt;
-            if (isInterestedPAGNode(fun_arg) && isInterestedPAGNode(cs_arg))
+            if (isInterestedSVFVar(fun_arg) && isInterestedSVFVar(cs_arg))
                 getInterVFEdgeAtIndCSFromAPToFP(cs_arg, fun_arg, callICFGNode, csId, edges);
         }
         assert(funArgIt == funArgEit && "function has more arguments than call site");
@@ -605,12 +605,12 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
         {
             NodeID varFunArg = pag->getVarargNode(callee);
             const SVFVar* varFunArgNode = pag->getSVFVar(varFunArg);
-            if (isInterestedPAGNode(varFunArgNode))
+            if (isInterestedSVFVar(varFunArgNode))
             {
                 for (; csArgIt != csArgEit; csArgIt++)
                 {
                     const SVFVar *cs_arg = *csArgIt;
-                    if (isInterestedPAGNode(cs_arg))
+                    if (isInterestedSVFVar(cs_arg))
                         getInterVFEdgeAtIndCSFromAPToFP(cs_arg, varFunArgNode, callICFGNode, csId, edges);
                 }
             }
@@ -622,7 +622,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
     {
         const SVFVar* cs_return = pag->getCallSiteRet(retICFGNode);
         const SVFVar* fun_return = pag->getFunRet(callee);
-        if (isInterestedPAGNode(cs_return) && isInterestedPAGNode(fun_return))
+        if (isInterestedSVFVar(cs_return) && isInterestedSVFVar(fun_return))
             getInterVFEdgeAtIndCSFromFRToAR(fun_return, cs_return, csId, edges);
     }
 
@@ -1029,7 +1029,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<SVFIR*>
 
         if(StmtSVFGNode* stmtNode = SVFUtil::dyn_cast<StmtSVFGNode>(node))
         {
-            const PAGEdge* edge = stmtNode->getPAGEdge();
+            const SVFStmt* edge = stmtNode->getSVFStmt();
             if (SVFUtil::isa<AddrStmt>(edge))
             {
                 rawstr <<  "color=green";

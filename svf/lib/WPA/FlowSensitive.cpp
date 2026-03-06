@@ -449,12 +449,12 @@ bool FlowSensitive::propVarPtsFromSrcToDst(NodeID var, const SVFGNode* src, cons
 bool FlowSensitive::processAddr(const AddrSVFGNode* addr)
 {
     double start = stat->getClk();
-    NodeID srcID = addr->getPAGSrcNodeID();
+    NodeID srcID = addr->getSrcNodeID();
     /// TODO: If this object has been set as field-insensitive, just
     ///       add the insensitive object node into dst pointer's pts.
     if (isFieldInsensitive(srcID))
         srcID = getFIObjVar(srcID);
-    bool changed = addPts(addr->getPAGDstNodeID(), srcID);
+    bool changed = addPts(addr->getDstNodeID(), srcID);
     double end = stat->getClk();
     addrTime += (end - start) / TIMEINTERVAL;
     return changed;
@@ -466,7 +466,7 @@ bool FlowSensitive::processAddr(const AddrSVFGNode* addr)
 bool FlowSensitive::processCopy(const CopySVFGNode* copy)
 {
     double start = stat->getClk();
-    bool changed = unionPts(copy->getPAGDstNodeID(), copy->getPAGSrcNodeID());
+    bool changed = unionPts(copy->getDstNodeID(), copy->getSrcNodeID());
     double end = stat->getClk();
     copyTime += (end - start) / TIMEINTERVAL;
     return changed;
@@ -500,10 +500,10 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
 {
     double start = stat->getClk();
     bool changed = false;
-    const PointsTo& srcPts = getPts(edge->getPAGSrcNodeID());
+    const PointsTo& srcPts = getPts(edge->getSrcNodeID());
 
     PointsTo tmpDstPts;
-    const GepStmt* gepStmt = SVFUtil::cast<GepStmt>(edge->getPAGEdge());
+    const GepStmt* gepStmt = SVFUtil::cast<GepStmt>(edge->getSVFStmt());
     if (gepStmt->isVariantFieldGep())
     {
         for (NodeID o : srcPts)
@@ -533,7 +533,7 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
         }
     }
 
-    if (unionPts(edge->getPAGDstNodeID(), tmpDstPts))
+    if (unionPts(edge->getDstNodeID(), tmpDstPts))
         changed = true;
 
     double end = stat->getClk();
@@ -553,12 +553,12 @@ bool FlowSensitive::processLoad(const LoadSVFGNode* load)
     double start = stat->getClk();
     bool changed = false;
 
-    NodeID dstVar = load->getPAGDstNodeID();
+    NodeID dstVar = load->getDstNodeID();
 
-    const PointsTo& srcPts = getPts(load->getPAGSrcNodeID());
+    const PointsTo& srcPts = getPts(load->getSrcNodeID());
 
     // p = *q, the type of p must be a pointer
-    if(load->getPAGDstNode()->isPointer())
+    if(load->getDstNode()->isPointer())
     {
         for (PointsTo::iterator ptdIt = srcPts.begin(); ptdIt != srcPts.end(); ++ptdIt)
         {
@@ -598,7 +598,7 @@ bool FlowSensitive::processLoad(const LoadSVFGNode* load)
 bool FlowSensitive::processStore(const StoreSVFGNode* store)
 {
 
-    const PointsTo & dstPts = getPts(store->getPAGDstNodeID());
+    const PointsTo & dstPts = getPts(store->getDstNodeID());
 
     /// STORE statement can only be processed if the pointer on the LHS
     /// points to something. If we handle STORE with an empty points-to
@@ -613,7 +613,7 @@ bool FlowSensitive::processStore(const StoreSVFGNode* store)
     bool changed = false;
 
     // *p = q, the type of q must be a pointer
-    if(getPts(store->getPAGSrcNodeID()).empty() == false && store->getPAGSrcNode()->isPointer())
+    if(getPts(store->getSrcNodeID()).empty() == false && store->getSrcNode()->isPointer())
     {
         for (PointsTo::iterator it = dstPts.begin(), eit = dstPts.end(); it != eit; ++it)
         {
@@ -622,7 +622,7 @@ bool FlowSensitive::processStore(const StoreSVFGNode* store)
             if (pag->isConstantObj(ptd))
                 continue;
 
-            if (unionPtsFromTop(store, store->getPAGSrcNodeID(), ptd))
+            if (unionPtsFromTop(store, store->getSrcNodeID(), ptd))
                 changed = true;
         }
     }
@@ -661,7 +661,7 @@ bool FlowSensitive::isStrongUpdate(const SVFGNode* node, NodeID& singleton)
     bool isSU = false;
     if (const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(node))
     {
-        const PointsTo& dstCPSet = getPts(store->getPAGDstNodeID());
+        const PointsTo& dstCPSet = getPts(store->getDstNodeID());
         if (dstCPSet.count() == 1)
         {
             /// Find the unique element in cpts

@@ -119,7 +119,7 @@ void SVFG::writeToFile(const string& filename)
         const SVFGNode* node = it->second;
         if(const LoadSVFGNode* loadNode = SVFUtil::dyn_cast<LoadSVFGNode>(node))
         {
-            MUSet& muSet = mssa->getMUSet(SVFUtil::cast<LoadStmt>(loadNode->getPAGEdge()));
+            MUSet& muSet = mssa->getMUSet(SVFUtil::cast<LoadStmt>(loadNode->getSVFStmt()));
             for(MUSet::iterator it = muSet.begin(), eit = muSet.end(); it!=eit; ++it)
             {
                 if(LOADMU* mu = SVFUtil::dyn_cast<LOADMU>(*it))
@@ -131,7 +131,7 @@ void SVFG::writeToFile(const string& filename)
         }
         else if(const StoreSVFGNode* storeNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
         {
-            CHISet& chiSet = mssa->getCHISet(SVFUtil::cast<StoreStmt>(storeNode->getPAGEdge()));
+            CHISet& chiSet = mssa->getCHISet(SVFUtil::cast<StoreStmt>(storeNode->getSVFStmt()));
             for(CHISet::iterator it = chiSet.begin(), eit = chiSet.end(); it!=eit; ++it)
             {
                 if(STORECHI* chi = SVFUtil::dyn_cast<STORECHI>(*it))
@@ -213,8 +213,8 @@ void SVFG::readFile(const string& filename)
         return;
     }
 
-    PAGEdge::PAGEdgeSetTy& stores = getPAGEdgeSet(PAGEdge::Store);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
+    SVFStmt::SVFStmtSetTy& stores = getSVFStmtSet(SVFStmt::Store);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter)
     {
         StoreStmt* store = SVFUtil::cast<StoreStmt>(*iter);

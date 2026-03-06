@@ -95,7 +95,7 @@ protected:
 
     /// Connect SVFG nodes between caller and callee for indirect call sites
     //@{
-    inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallICFGNode*, CallSiteID csId, SVFGEdgeSetTy& edges) override
+    inline void connectAParamAndFParam(const SVFVar* cs_arg, const SVFVar* fun_arg, const CallICFGNode*, CallSiteID csId, SVFGEdgeSetTy& edges) override
     {
         NodeID phiId = getDef(fun_arg);
         SVFGEdge* edge = addCallEdge(getDef(cs_arg), phiId, csId);
@@ -107,13 +107,13 @@ protected:
         }
     }
     /// Connect formal-ret and actual ret
-    inline void connectFRetAndARet(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges) override
+    inline void connectFRetAndARet(const SVFVar* fun_ret, const SVFVar* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges) override
     {
         NodeID phiId = getDef(cs_ret);
         NodeID retdef = getDef(fun_ret);
         /// If a function does not have any return instruction. The def of a FormalRetVFGNode is itself (see VFG.h: addFormalRetVFGNode).
         /// Therefore, we do not connect return edge from a function without any return instruction (i.e., pag->isPhiNode(fun_ret)==false)
-        /// because unique fun_ret PAGNode was not collected as a PhiNode in SVFIRBuilder::visitReturnInst
+        /// because unique fun_ret SVFVar was not collected as a PhiNode in SVFIRBuilder::visitReturnInst
         if (pag->isPhiNode(fun_ret)==false)
             return;
 
@@ -244,7 +244,7 @@ private:
         return (inter1 && inter2);
     }
 
-    inline void addInterPHIOperands(PHISVFGNode* phi, const PAGNode* operand)
+    inline void addInterPHIOperands(PHISVFGNode* phi, const SVFVar* operand)
     {
         phi->setOpVer(phi->getOpVerNum(), operand);
     }
@@ -267,10 +267,10 @@ private:
         return sNode;
     }
 
-    inline void resetDef(const PAGNode* pagNode, const SVFGNode* node)
+    inline void resetDef(const SVFVar* svfVar, const SVFGNode* node)
     {
-        PAGNodeToDefMapTy::iterator it = PAGNodeToDefMap.find(pagNode);
-        assert(it != PAGNodeToDefMap.end() && "a SVFIR node doesn't have definition before");
+        SVFVarToDefMapTy::iterator it = SVFVarToDefMap.find(svfVar);
+        assert(it != SVFVarToDefMap.end() && "a SVFIR node doesn't have definition before");
         it->second = node->getId();
     }
 

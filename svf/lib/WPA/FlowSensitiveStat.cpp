@@ -459,7 +459,7 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
 
         if (const StoreSVFGNode *store = SVFUtil::dyn_cast<StoreSVFGNode>(sn))
         {
-            NodeID p = store->getPAGDstNodeID();
+            NodeID p = store->getDstNodeID();
             // Reuse incomingObjects; what's already in there will be propagated forwarded
             // as a WU/SU, and what's not (first defined at the store), will be added.
             for (NodeID o : fspta->ander->getPts(p)) incomingObjects.set(o);
@@ -481,7 +481,7 @@ void FlowSensitiveStat::statAddrVarPtsSize()
         const SVFGNode* node = it->second;
         if (const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(node))
         {
-            calculateAddrVarPts(store->getPAGDstNodeID(), store);
+            calculateAddrVarPts(store->getDstNodeID(), store);
         }
     }
 }

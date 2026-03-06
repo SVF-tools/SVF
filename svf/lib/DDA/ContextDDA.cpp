@@ -162,7 +162,7 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
             tmpDstPts.set(ptd);
         else
         {
-            const GepStmt* gepStmt = SVFUtil::cast<GepStmt>(gep->getPAGEdge());
+            const GepStmt* gepStmt = SVFUtil::cast<GepStmt>(gep->getSVFStmt());
             if (gepStmt->isVariantFieldGep())
             {
                 setObjFieldInsensitive(ptd.get_id());

@@ -157,7 +157,7 @@ bool MRGenerator::hasSVFStmtList(const ICFGNode* node)
 }
 
 
-SVFIR::SVFStmtList& MRGenerator::getPAGEdgesFromInst(const ICFGNode* node)
+SVFIR::SVFStmtList& MRGenerator::getSVFStmtsFromInst(const ICFGNode* node)
 {
     SVFIR* pag = pta->getPAG();
     if (ptrOnlyMSSA)
@@ -188,7 +188,7 @@ void MRGenerator::collectModRefForLoadStore()
             const SVFBasicBlock* bb = iter->second;
             for (const auto& inst: bb->getICFGNodeList())
             {
-                SVFStmtList& pagEdgeList = getPAGEdgesFromInst(inst);
+                SVFStmtList& pagEdgeList = getSVFStmtsFromInst(inst);
                 for (SVFStmtList::iterator bit = pagEdgeList.begin(), ebit =
                             pagEdgeList.end(); bit != ebit; ++bit)
                 {
@@ -591,7 +591,7 @@ bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGN
     /// if a callee is a heap allocator function, then its mod set of this callsite is the heap object.
     if(isHeapAllocExtCall(cs))
     {
-        SVFStmtList& pagEdgeList = getPAGEdgesFromInst(cs);
+        SVFStmtList& pagEdgeList = getSVFStmtsFromInst(cs);
         for (SVFStmtList::const_iterator bit = pagEdgeList.begin(),
                 ebit = pagEdgeList.end(); bit != ebit; ++bit)
         {
@@ -657,7 +657,7 @@ NodeBS MRGenerator::getModInfoForCall(const CallICFGNode* cs)
 {
     if (isExtCall(cs) && !isHeapAllocExtCall(cs))
     {
-        SVFStmtList& pagEdgeList = getPAGEdgesFromInst(cs);
+        SVFStmtList& pagEdgeList = getSVFStmtsFromInst(cs);
         NodeBS mods;
         for (SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit =
                     pagEdgeList.end(); bit != ebit; ++bit)
@@ -681,7 +681,7 @@ NodeBS MRGenerator::getRefInfoForCall(const CallICFGNode* cs)
 {
     if (isExtCall(cs) && !isHeapAllocExtCall(cs))
     {
-        SVFStmtList& pagEdgeList = getPAGEdgesFromInst(cs);
+        SVFStmtList& pagEdgeList = getSVFStmtsFromInst(cs);
         NodeBS refs;
         for (SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit =
                     pagEdgeList.end(); bit != ebit; ++bit)

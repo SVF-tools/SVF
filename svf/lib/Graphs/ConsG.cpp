@@ -47,7 +47,7 @@ void ConstraintGraph::buildCG()
     }
 
     // initialize edges
-    SVFStmt::SVFStmtSetTy& addrs = getPAGEdgeSet(SVFStmt::Addr);
+    SVFStmt::SVFStmtSetTy& addrs = getSVFStmtSet(SVFStmt::Addr);
     for (SVFStmt::SVFStmtSetTy::iterator iter = addrs.begin(), eiter =
                 addrs.end(); iter != eiter; ++iter)
     {
@@ -55,7 +55,7 @@ void ConstraintGraph::buildCG()
         addAddrCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
-    SVFStmt::SVFStmtSetTy& copys = getPAGEdgeSet(SVFStmt::Copy);
+    SVFStmt::SVFStmtSetTy& copys = getSVFStmtSet(SVFStmt::Copy);
     for (SVFStmt::SVFStmtSetTy::iterator iter = copys.begin(), eiter =
                 copys.end(); iter != eiter; ++iter)
     {
@@ -64,7 +64,7 @@ void ConstraintGraph::buildCG()
             addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
-    SVFStmt::SVFStmtSetTy& phis = getPAGEdgeSet(SVFStmt::Phi);
+    SVFStmt::SVFStmtSetTy& phis = getSVFStmtSet(SVFStmt::Phi);
     for (SVFStmt::SVFStmtSetTy::iterator iter = phis.begin(), eiter =
                 phis.end(); iter != eiter; ++iter)
     {
@@ -73,7 +73,7 @@ void ConstraintGraph::buildCG()
             addCopyCGEdge(opVar->getId(),edge->getResID());
     }
 
-    SVFStmt::SVFStmtSetTy& selects = getPAGEdgeSet(SVFStmt::Select);
+    SVFStmt::SVFStmtSetTy& selects = getSVFStmtSet(SVFStmt::Select);
     for (SVFStmt::SVFStmtSetTy::iterator iter = selects.begin(), eiter =
                 selects.end(); iter != eiter; ++iter)
     {
@@ -82,7 +82,7 @@ void ConstraintGraph::buildCG()
             addCopyCGEdge(opVar->getId(),edge->getResID());
     }
 
-    SVFStmt::SVFStmtSetTy& calls = getPAGEdgeSet(SVFStmt::Call);
+    SVFStmt::SVFStmtSetTy& calls = getSVFStmtSet(SVFStmt::Call);
     for (SVFStmt::SVFStmtSetTy::iterator iter = calls.begin(), eiter =
                 calls.end(); iter != eiter; ++iter)
     {
@@ -90,7 +90,7 @@ void ConstraintGraph::buildCG()
         addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
-    SVFStmt::SVFStmtSetTy& rets = getPAGEdgeSet(SVFStmt::Ret);
+    SVFStmt::SVFStmtSetTy& rets = getSVFStmtSet(SVFStmt::Ret);
     for (SVFStmt::SVFStmtSetTy::iterator iter = rets.begin(), eiter =
                 rets.end(); iter != eiter; ++iter)
     {
@@ -98,7 +98,7 @@ void ConstraintGraph::buildCG()
         addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
-    SVFStmt::SVFStmtSetTy& tdfks = getPAGEdgeSet(SVFStmt::ThreadFork);
+    SVFStmt::SVFStmtSetTy& tdfks = getSVFStmtSet(SVFStmt::ThreadFork);
     for (SVFStmt::SVFStmtSetTy::iterator iter = tdfks.begin(), eiter =
                 tdfks.end(); iter != eiter; ++iter)
     {
@@ -106,7 +106,7 @@ void ConstraintGraph::buildCG()
         addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
-    SVFStmt::SVFStmtSetTy& tdjns = getPAGEdgeSet(SVFStmt::ThreadJoin);
+    SVFStmt::SVFStmtSetTy& tdjns = getSVFStmtSet(SVFStmt::ThreadJoin);
     for (SVFStmt::SVFStmtSetTy::iterator iter = tdjns.begin(), eiter =
                 tdjns.end(); iter != eiter; ++iter)
     {
@@ -114,7 +114,7 @@ void ConstraintGraph::buildCG()
         addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
-    SVFStmt::SVFStmtSetTy& ngeps = getPAGEdgeSet(SVFStmt::Gep);
+    SVFStmt::SVFStmtSetTy& ngeps = getSVFStmtSet(SVFStmt::Gep);
     for (SVFStmt::SVFStmtSetTy::iterator iter = ngeps.begin(), eiter =
                 ngeps.end(); iter != eiter; ++iter)
     {
@@ -125,7 +125,7 @@ void ConstraintGraph::buildCG()
             addNormalGepCGEdge(edge->getRHSVarID(),edge->getLHSVarID(),edge->getAccessPath());
     }
 
-    SVFStmt::SVFStmtSetTy& loads = getPAGEdgeSet(SVFStmt::Load);
+    SVFStmt::SVFStmtSetTy& loads = getSVFStmtSet(SVFStmt::Load);
     for (SVFStmt::SVFStmtSetTy::iterator iter = loads.begin(), eiter =
                 loads.end(); iter != eiter; ++iter)
     {
@@ -133,7 +133,7 @@ void ConstraintGraph::buildCG()
         addLoadCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
-    SVFStmt::SVFStmtSetTy& stores = getPAGEdgeSet(SVFStmt::Store);
+    SVFStmt::SVFStmtSetTy& stores = getSVFStmtSet(SVFStmt::Store);
     for (SVFStmt::SVFStmtSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter)
     {

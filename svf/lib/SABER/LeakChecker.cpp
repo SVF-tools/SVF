@@ -65,8 +65,8 @@ void LeakChecker::initSrcs()
                 {
                     const CallICFGNode* cs = worklist.pop();
                     const RetICFGNode* retBlockNode = cs->getRetICFGNode();
-                    const PAGNode* pagNode = pag->getCallSiteRet(retBlockNode);
-                    const SVFGNode* node = getSVFG()->getDefSVFGNode(pagNode);
+                    const SVFVar* svfVar = pag->getCallSiteRet(retBlockNode);
+                    const SVFGNode* node = getSVFG()->getDefSVFGNode(svfVar);
                     if (visited.test(node->getId()) == 0)
                         visited.set(node->getId());
                     else
@@ -124,15 +124,15 @@ void LeakChecker::initSnks()
                 for (SVFIR::SVFVarList::const_iterator ait = arglist.begin(),
                         aeit = arglist.end(); ait != aeit; ++ait)
                 {
-                    const PAGNode *pagNode = *ait;
-                    if (pagNode->isPointer())
+                    const SVFVar *svfVar = *ait;
+                    if (svfVar->isPointer())
                     {
-                        const SVFGNode *snk = getSVFG()->getActualParmVFGNode(pagNode, it->first);
+                        const SVFGNode *snk = getSVFG()->getActualParmVFGNode(svfVar, it->first);
                         addToSinks(snk);
 
-                        // For any multi-level pointer e.g., XFree(void** pagNode) that passed into a ExtAPI::EFT_FREE_MULTILEVEL function (e.g., XFree),
-                        // we will add the DstNode of a load edge, i.e., dummy = *pagNode
-                        SVFStmt::SVFStmtSetTy& loads = const_cast<PAGNode*>(pagNode)->getOutgoingEdges(SVFStmt::Load);
+                        // For any multi-level pointer e.g., XFree(void** svfVar) that passed into a ExtAPI::EFT_FREE_MULTILEVEL function (e.g., XFree),
+                        // we will add the DstNode of a load edge, i.e., dummy = *svfVar
+                        SVFStmt::SVFStmtSetTy& loads = const_cast<SVFVar*>(svfVar)->getOutgoingEdges(SVFStmt::Load);
                         for(const SVFStmt* ld : loads)
                         {
                             if(SVFUtil::isa<DummyValVar>(ld->getDstNode()))

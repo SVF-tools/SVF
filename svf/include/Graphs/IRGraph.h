@@ -328,11 +328,11 @@ public:
         nodeNumAfterPAGBuild = num;
     }
 
-    inline u32_t getPAGNodeNum() const
+    inline u32_t getSVFVarNum() const
     {
         return nodeNum;
     }
-    inline u32_t getPAGEdgeNum() const
+    inline u32_t getSVFStmtNum() const
     {
         return edgeNum;
     }

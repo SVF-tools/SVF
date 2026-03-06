@@ -270,7 +270,7 @@ protected:
 
     /// Return the basic block where a SVFGNode resides in
     /// a SVFGNode may not in a basic block if it is not a program statement
-    /// (e.g. PAGEdge is an global assignment or NullPtrSVFGNode)
+    /// (e.g. SVFStmt is an global assignment or NullPtrSVFGNode)
     inline const SVFBasicBlock* getSVFGNodeBB(const SVFGNode* node) const
     {
         const ICFGNode* icfgNode = node->getICFGNode();

@@ -470,7 +470,7 @@ public:
     /// Whether this instruction has SVFIR Edge
     bool hasSVFStmtList(const ICFGNode* icfgNode);
     /// Given an instruction, get all its the PAGEdge (statement) in sequence
-    SVFStmtList& getPAGEdgesFromInst(const ICFGNode* node);
+    SVFStmtList& getSVFStmtsFromInst(const ICFGNode* node);
 
     /// getModRefInfo APIs
     //@{

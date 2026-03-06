@@ -73,17 +73,17 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
     NodeVector worklist;
     for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
     {
-        PAGNode* pagNode = it->second;
-        if (SVFUtil::isa<DummyValVar, DummyObjVar>(pagNode))
+        SVFVar* svfVar = it->second;
+        if (SVFUtil::isa<DummyValVar, DummyObjVar>(svfVar))
             continue;
 
-        if(GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(pagNode))
+        if(GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(svfVar))
         {
             if(SVFUtil::isa<DummyObjVar>(pag->getSVFVar(gepobj->getBaseNode())))
                 continue;
         }
-        if ((isa<ObjVar>(pagNode) && isa<GlobalObjVar>(pag->getBaseObject(pagNode->getId()))) ||
-                (isa<ValVar>(pagNode) && isa<GlobalValVar>(pag->getBaseValVar(pagNode->getId()))))
+        if ((isa<ObjVar>(svfVar) && isa<GlobalObjVar>(pag->getBaseObject(svfVar->getId()))) ||
+                (isa<ValVar>(svfVar) && isa<GlobalValVar>(pag->getBaseValVar(svfVar->getId()))))
             worklist.push_back(it->first);
     }
 
@@ -165,10 +165,10 @@ PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta, NodeID id, NodeT
 /*!
  * Decide whether the node and its points-to contains a global objects
  */
-bool SaberSVFGBuilder::accessGlobal(BVDataPTAImpl* pta,const PAGNode* pagNode)
+bool SaberSVFGBuilder::accessGlobal(BVDataPTAImpl* pta,const SVFVar* svfVar)
 {
 
-    NodeID id = pagNode->getId();
+    NodeID id = svfVar->getId();
     PointsTo pts = pta->getPts(id);
     pts.set(id);
 
@@ -187,26 +187,26 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta)
             /// for store, connect the RHS/LHS pointer to its def
             if(SVFUtil::isa<StoreSVFGNode>(stmtNode))
             {
-                const SVFGNode* def = svfg->getDefSVFGNode(stmtNode->getPAGDstNode());
+                const SVFGNode* def = svfg->getDefSVFGNode(stmtNode->getDstNode());
                 if(SVFGEdge* edge = svfg->getIntraVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF))
                     svfg->removeSVFGEdge(edge);
                 else
                     assert((svfg->getKind()==VFG::FULLSVFG_OPT || svfg->getKind()==VFG::PTRONLYSVFG_OPT)  && "Edge not found!");
 
-                if(accessGlobal(pta,stmtNode->getPAGDstNode()))
+                if(accessGlobal(pta,stmtNode->getDstNode()))
                 {
                     globSVFGNodes.insert(stmtNode);
                 }
             }
             else if(SVFUtil::isa<LoadSVFGNode>(stmtNode))
             {
-                const SVFGNode* def = svfg->getDefSVFGNode(stmtNode->getPAGSrcNode());
+                const SVFGNode* def = svfg->getDefSVFGNode(stmtNode->getSrcNode());
                 if(SVFGEdge* edge = svfg->getIntraVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF))
                     svfg->removeSVFGEdge(edge);
                 else
                     assert((svfg->getKind()==VFG::FULLSVFG_OPT || svfg->getKind()==VFG::PTRONLYSVFG_OPT)  && "Edge not found!");
 
-                if(accessGlobal(pta,stmtNode->getPAGSrcNode()))
+                if(accessGlobal(pta,stmtNode->getSrcNode()))
                 {
                     globSVFGNodes.insert(stmtNode);
                 }
@@ -224,7 +224,7 @@ bool SaberSVFGBuilder::isStrongUpdate(const SVFGNode* node, NodeID& singleton, B
     bool isSU = false;
     if (const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(node))
     {
-        const PointsTo& dstCPSet = pta->getPts(store->getPAGDstNodeID());
+        const PointsTo& dstCPSet = pta->getPts(store->getDstNodeID());
         if (dstCPSet.count() == 1)
         {
             /// Find the unique element in cpts
@@ -264,7 +264,7 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
 
         if(const StoreSVFGNode* stmtNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
         {
-            if(SVFUtil::isa<StoreStmt>(stmtNode->getPAGEdge()))
+            if(SVFUtil::isa<StoreStmt>(stmtNode->getSVFStmt()))
             {
                 NodeID singleton;
                 if(isStrongUpdate(node, singleton, pta))
@@ -310,11 +310,11 @@ void SaberSVFGBuilder::AddExtActualParmSVFGNodes(CallGraph* callgraph)
                 SVFIR::SVFVarList& arglist = it->second;
                 for(SVFIR::SVFVarList::const_iterator ait = arglist.begin(), aeit = arglist.end(); ait!=aeit; ++ait)
                 {
-                    const PAGNode *pagNode = *ait;
-                    if (pagNode->isPointer())
+                    const SVFVar *svfVar = *ait;
+                    if (svfVar->isPointer())
                     {
-                        addActualParmVFGNode(pagNode, it->first);
-                        svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(), svfg->getActualParmVFGNode(pagNode, it->first)->getId());
+                        addActualParmVFGNode(svfVar, it->first);
+                        svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(svfVar)->getId(), svfg->getActualParmVFGNode(svfVar, it->first)->getId());
                     }
                 }
             }

@@ -178,7 +178,7 @@ void SVFStat::performStat()
     generalNumMap["TotalObjects"] = pag->getObjectNodeNum();
     generalNumMap["TotalFieldObjects"] = pag->getFieldObjNodeNum();
     generalNumMap["MaxStructSize"] = pag->getMaxStructSize();
-    generalNumMap["TotalSVFStmts"] = pag->getPAGEdgeNum();
+    generalNumMap["TotalSVFStmts"] = pag->getSVFStmtNum();
     generalNumMap["TotalPTASVFStmts"] = pag->getPTAPAGEdgeNum();
     generalNumMap["FIObjNum"] = fiObjNumber;
     generalNumMap["FSObjNum"] = fsObjNumber;

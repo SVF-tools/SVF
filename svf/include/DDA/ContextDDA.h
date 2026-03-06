@@ -176,7 +176,7 @@ public:
     /// Handle Address SVFGNode to add proper conditional points-to
     virtual void handleAddr(CxtPtSet& pts,const CxtLocDPItem& dpm,const AddrSVFGNode* addr) override
     {
-        NodeID srcID = addr->getPAGSrcNodeID();
+        NodeID srcID = addr->getSrcNodeID();
         /// whether this object is set field-insensitive during pre-analysis
         if (isFieldInsensitive(srcID))
             srcID = getFIObjVar(srcID);

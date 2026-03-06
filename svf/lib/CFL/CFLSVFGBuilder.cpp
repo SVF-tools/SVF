@@ -76,7 +76,7 @@ void CFLSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
 
         if(const StoreSVFGNode* stmtNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
         {
-            if(SVFUtil::isa<StoreStmt>(stmtNode->getPAGEdge()))
+            if(SVFUtil::isa<StoreStmt>(stmtNode->getSVFStmt()))
             {
                 NodeID singleton;
                 if(isStrongUpdate(node, singleton, pta))

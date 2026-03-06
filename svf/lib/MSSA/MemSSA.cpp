@@ -147,7 +147,7 @@ void MemSSA::createMUCHI(const FunObjVar& fun)
         {
             if(mrGen->hasSVFStmtList(inst))
             {
-                SVFStmtList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
+                SVFStmtList& pagEdgeList = mrGen->getSVFStmtsFromInst(inst);
                 for (SVFStmtList::const_iterator bit = pagEdgeList.begin(),
                         ebit = pagEdgeList.end(); bit != ebit; ++bit)
                 {
@@ -284,7 +284,7 @@ void MemSSA::SSARenameBB(const SVFBasicBlock& bb)
     {
         if(mrGen->hasSVFStmtList(pNode))
         {
-            SVFStmtList& pagEdgeList = mrGen->getPAGEdgesFromInst(pNode);
+            SVFStmtList& pagEdgeList = mrGen->getSVFStmtsFromInst(pNode);
             for(SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
                     bit!=ebit; ++bit)
             {
@@ -644,7 +644,7 @@ void MemSSA::dumpMSSA(OutStream& Out)
                 else
                 {
                     bool dump_preamble = false;
-                    SVFStmtList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
+                    SVFStmtList& pagEdgeList = mrGen->getSVFStmtsFromInst(inst);
                     for(SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
                             bit!=ebit; ++bit)
                     {
