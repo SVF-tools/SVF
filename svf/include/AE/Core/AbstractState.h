@@ -208,9 +208,15 @@ public:
     }
 
     /// get abstract value of variable
+    /// Returns a default (bottom) AbstractValue if varId is not in the map,
+    /// which is safe for sparse abstract states that only store needed vars.
     inline virtual const AbstractValue &operator[](u32_t varId) const
     {
-        return _varToAbsVal.at(varId);
+        auto it = _varToAbsVal.find(varId);
+        if (it != _varToAbsVal.end())
+            return it->second;
+        static AbstractValue defaultVal;
+        return defaultVal;
     }
 
     /// whether the variable is in varToAddrs table

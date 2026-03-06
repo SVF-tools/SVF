@@ -69,13 +69,37 @@ public:
     /// Build WTO for each function using call graph SCC
     void initWTO();
 
+    /// Get points-to set for a variable from Andersen's analysis
+    const PointsTo& getPts(NodeID id) const;
+
     /// Accessors for WTO data
     const Map<const FunObjVar*, const ICFGWTO*>& getFuncToWTO() const
     {
         return funcToWTO;
     }
 
+    /// Build widen sets for all WTO cycles (call after initWTO)
+    void buildWidenSets();
+
+    /// Get the set of variable IDs that need widening at a cycle head
+    /// Includes both top-level ValVars and address-taken ObjVars defined in the loop body
+    const Set<NodeID>& getWidenVars(const ICFGNode* cycleHead) const
+    {
+        auto it = cycleHeadToWidenVars.find(cycleHead);
+        if (it != cycleHeadToWidenVars.end())
+            return it->second;
+        return emptyWidenSet;
+    }
+
 private:
+    /// Collect all ICFG nodes in a WTO cycle (head + body, including nested cycles)
+    void collectCycleNodes(const ICFGCycleWTO* cycle, std::vector<const ICFGNode*>& nodes);
+
+    /// Collect defined variables at an ICFG node (top-level defs + address-taken via pts)
+    void collectDefsAtNode(const ICFGNode* node, Set<NodeID>& defs);
+
+    /// Build widen set for a single WTO cycle (recursive for nested cycles)
+    void buildWidenSetForCycle(const ICFGCycleWTO* cycle);
     SVFIR* svfir;
     ICFG* icfg;
     AndersenWaveDiff* pta;
@@ -83,6 +107,8 @@ private:
     CallGraphSCC* callGraphSCC;
 
     Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
+    Map<const ICFGNode*, Set<NodeID>> cycleHeadToWidenVars;
+    static const Set<NodeID> emptyWidenSet;
 };
 
 } // End namespace SVF

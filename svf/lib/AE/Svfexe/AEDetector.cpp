@@ -123,7 +123,7 @@ void BufOverflowDetector::handleStubFunctions(const SVF::CallICFGNode* callNode)
         if (callNode->arg_size() < 2)
             return;
         AbstractState& as =
-            AbstractInterpretation::getAEInstance().getAbsStateFromTrace(
+            AbstractInterpretation::getAEInstance().getAbstractState(
                 callNode);
         u32_t size_id = callNode->getArgument(1)->getId();
         IntervalValue val = as[size_id].getInterval();
@@ -152,7 +152,7 @@ void BufOverflowDetector::handleStubFunctions(const SVF::CallICFGNode* callNode)
         // void UNSAFE_BUFACCESS(void* data, int size);
         AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
         if (callNode->arg_size() < 2) return;
-        AbstractState&as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
+        AbstractState&as = AbstractInterpretation::getAEInstance().getAbstractState(callNode);
         u32_t size_id = callNode->getArgument(1)->getId();
         IntervalValue val = as[size_id].getInterval();
         if (val.isBottom())
@@ -591,7 +591,7 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode)
         AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
         if (callNode->arg_size() < 1)
             return;
-        AbstractState& as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
+        AbstractState& as = AbstractInterpretation::getAEInstance().getAbstractState(callNode);
 
         const SVFVar* arg0Val = callNode->getArgument(0);
         // opt may directly dereference a null pointer and call UNSAFE_LOAD(null)
@@ -614,7 +614,7 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode)
         // void SAFE_LOAD(void* ptr);
         AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
         if (callNode->arg_size() < 1) return;
-        AbstractState&as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
+        AbstractState&as = AbstractInterpretation::getAEInstance().getAbstractState(callNode);
         const SVFVar* arg0Val = callNode->getArgument(0);
         // opt may directly dereference a null pointer and call UNSAFE_LOAD(null)ols
         bool isSafe = canSafelyDerefPtr(as, arg0Val) && arg0Val->getId() != 0;
@@ -715,4 +715,57 @@ bool NullptrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVFVar* va
 
 
     return true;
+}
+
+Set<NodeID> BufOverflowDetector::getNeededVarsForSparse(const ICFGNode* node)
+{
+    Set<NodeID> vars;
+    if (!SVFUtil::isa<CallICFGNode>(node))
+    {
+        // detect() checks GepStmt: as[lhs] and as[rhs]
+        for (const SVFStmt* stmt : node->getSVFStmts())
+        {
+            if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt))
+            {
+                vars.insert(gep->getLHSVarID());
+                vars.insert(gep->getRHSVarID());
+            }
+        }
+    }
+    else
+    {
+        // detect() and handleStubFunctions() check call args
+        const CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(node);
+        for (u32_t i = 0; i < callNode->arg_size(); ++i)
+            vars.insert(callNode->getArgument(i)->getId());
+    }
+    return vars;
+}
+
+Set<NodeID> NullptrDerefDetector::getNeededVarsForSparse(const ICFGNode* node)
+{
+    Set<NodeID> vars;
+    if (SVFUtil::isa<CallICFGNode>(node))
+    {
+        // detectExtAPI() and handleStubFunctions() check call args
+        const CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(node);
+        for (u32_t i = 0; i < callNode->arg_size(); ++i)
+            vars.insert(callNode->getArgument(i)->getId());
+    }
+    else
+    {
+        // detect() checks GepStmt rhs and LoadStmt lhs via canSafelyDerefPtr
+        for (const auto& stmt : node->getSVFStmts())
+        {
+            if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt))
+            {
+                vars.insert(gep->getRHSVarID());
+            }
+            else if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+            {
+                vars.insert(load->getLHSVarID());
+            }
+        }
+    }
+    return vars;
 }

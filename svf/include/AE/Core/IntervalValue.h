@@ -898,23 +898,22 @@ inline IntervalValue operator<<(const IntervalValue &lhs, const IntervalValue &r
         if (shift.isBottom())
             return IntervalValue::bottom();
         BoundedInt lb = 0;
-        // If the shift is greater than 32, the result is always 0
-        if ((s32_t) shift.lb().getNumeral() >= 32 || shift.lb().is_infinity())
+        if ((s64_t) shift.lb().getNumeral() >= 63 || shift.lb().is_infinity())
         {
             lb = IntervalValue::minus_infinity();
         }
         else
         {
-            lb = (1 << (s32_t) shift.lb().getNumeral());
+            lb = ((s64_t)1 << (s64_t) shift.lb().getNumeral());
         }
         BoundedInt ub = 0;
-        if (shift.ub().is_infinity())
+        if ((s64_t) shift.ub().getNumeral() >= 63 || shift.ub().is_infinity())
         {
             ub = IntervalValue::plus_infinity();
         }
         else
         {
-            ub = (1 << (s32_t) shift.ub().getNumeral());
+            ub = ((s64_t)1 << (s64_t) shift.ub().getNumeral());
         }
         IntervalValue coeff(lb, ub);
         return lhs * coeff;
