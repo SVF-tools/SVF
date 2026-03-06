@@ -179,6 +179,22 @@ public:
         return hasDef(pagNode) && hasSVFGNode(getDef(pagNode));
     }
 
+    /// Given a ValVar and its SVFGNode, find the definition-site ICFGNode
+    /// by following incoming direct VFGEdges (asserts unique definition)
+    const ICFGNode* getDefSiteOfValVar(const ValVar* var, const SVFGNode* node) const;
+
+    /// Given an ObjVar and its SVFGNode, find the definition-site ICFGNode
+    /// by following incoming IndirectSVFGEdges whose pts contains the ObjVar (asserts unique definition)
+    const ICFGNode* getDefSiteOfObjVar(const ObjVar* obj, const SVFGNode* node) const;
+
+    /// Given a ValVar and its SVFStmt, find all use-site ICFGNodes
+    /// by following outgoing direct VFGEdges from its definition SVFGNode
+    const Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var, const SVFGNode* vNode) const;
+
+    /// Given an ObjVar and its SVFStmt, find all use-site ICFGNodes
+    /// by following outgoing IndirectSVFGEdges whose pts contains the ObjVar
+    const Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const SVFGNode* vNode) const;
+
     /// Perform statistics
     void performStat();
 
