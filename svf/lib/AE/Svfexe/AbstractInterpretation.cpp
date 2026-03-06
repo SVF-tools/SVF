@@ -864,7 +864,10 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
     if (callGraph->hasIndCSCallees(callNode))
     {
         const auto& callees = callGraph->getIndCSCallees(callNode);
-        bool firstCallee = true;
+        // Start with empty (bottom) state; joinWith on empty copies the first
+        // callee's exit state as-is, then subsequent callees are joined in.
+        abstractTrace[retNode] = AbstractState();
+        bool hasCallee = false;
         for (const FunObjVar* callee : callees)
         {
             if (callee->isDeclaration())
@@ -874,20 +877,14 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
             // Push caller's state to callee entry
             abstractTrace[calleeEntry] = abstractTrace[callNode];
             handleFunction(calleeEntry, callNode);
-            // Use callee exit state for retNode (first callee assigns, rest join)
             if (hasAbsStateFromTrace(calleeExit))
             {
-                if (firstCallee)
-                {
-                    abstractTrace[retNode] = abstractTrace[calleeExit];
-                    firstCallee = false;
-                }
-                else
-                    abstractTrace[retNode].joinWith(abstractTrace[calleeExit]);
+                abstractTrace[retNode].joinWith(abstractTrace[calleeExit]);
+                hasCallee = true;
             }
         }
         // If no callee was processed, fall back to caller's state
-        if (firstCallee)
+        if (!hasCallee)
             abstractTrace[retNode] = abstractTrace[callNode];
     }
     else
