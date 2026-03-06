@@ -34,8 +34,8 @@
 #include "AE/Svfexe/AEDetector.h"
 #include "AE/Svfexe/PreAnalysis.h"
 #include "AE/Svfexe/AbsExtAPI.h"
+#include "AE/Svfexe/AEStat.h"
 #include "Util/SVFBugReport.h"
-#include "Util/SVFStat.h"
 #include "Graphs/SCC.h"
 #include "Graphs/CallGraph.h"
 #include <deque>
@@ -48,60 +48,6 @@ class AEStat;
 class AEAPI;
 
 template<typename T> class FILOWorkList;
-
-/// AEStat: Statistic for AE
-class AEStat : public SVFStat
-{
-public:
-    void countStateSize();
-    AEStat(AbstractInterpretation* ae) : _ae(ae)
-    {
-        startTime = getClk(true);
-    }
-    ~AEStat()
-    {
-    }
-    inline std::string getMemUsage()
-    {
-        u32_t vmrss, vmsize;
-        return SVFUtil::getMemoryUsageKB(&vmrss, &vmsize) ? std::to_string(vmsize) + "KB" : "cannot read memory usage";
-    }
-
-    void finializeStat();
-    void performStat() override;
-
-public:
-    AbstractInterpretation* _ae;
-    s32_t count{0};
-    std::string memory_usage;
-    std::string memUsage;
-
-
-    u32_t& getFunctionTrace()
-    {
-        if (generalNumMap.count("Function_Trace") == 0)
-        {
-            generalNumMap["Function_Trace"] = 0;
-        }
-        return generalNumMap["Function_Trace"];
-    }
-    u32_t& getBlockTrace()
-    {
-        if (generalNumMap.count("Block_Trace") == 0)
-        {
-            generalNumMap["Block_Trace"] = 0;
-        }
-        return generalNumMap["Block_Trace"];
-    }
-    u32_t& getICFGNodeTrace()
-    {
-        if (generalNumMap.count("ICFG_Node_Trace") == 0)
-        {
-            generalNumMap["ICFG_Node_Trace"] = 0;
-        }
-        return generalNumMap["ICFG_Node_Trace"];
-    }
-};
 
 /// AbstractInterpretation is same as Abstract Execution
 class AbstractInterpretation
@@ -163,7 +109,7 @@ public:
         detectors.push_back(std::move(detector));
     }
 
-    Set<const CallICFGNode*> checkpoints; // for CI check
+
 
     /**
      * @brief Retrieves the abstract state from the trace for a given ICFG node.
@@ -285,10 +231,6 @@ private:
     */
     bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ,
                                 AbstractState& as);
-
-
-    void collectCheckPoint();
-    void checkPointAllSet();
 
     void updateStateOnAddr(const AddrStmt *addr);
 

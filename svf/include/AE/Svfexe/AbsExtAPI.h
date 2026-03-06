@@ -108,6 +108,11 @@ public:
      */
     AbstractState& getAbsStateFromTrace(const ICFGNode* node);
 
+    void collectCheckPoint();
+    void checkPointAllSet();
+
+    Set<const CallICFGNode*> checkpoints; // for CI check
+
 protected:
     SVFIR* svfir; ///< Pointer to the SVF intermediate representation.
     ICFG* icfg; ///< Pointer to the interprocedural control flow graph.

@@ -76,7 +76,7 @@ void AbsExtAPI::initExtFunMap()
 
     auto sse_svf_assert = [this](const CallICFGNode* callNode)
     {
-        AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
+        checkpoints.erase(callNode);
         u32_t arg0 = callNode->getArgument(0)->getId();
         AbstractState&as = getAbsStateFromTrace(callNode);
         if (as[arg0].getInterval().equals(IntervalValue(1, 1)))
@@ -345,6 +345,61 @@ AbstractState& AbsExtAPI::getAbsStateFromTrace(const SVF::ICFGNode* node)
     else
     {
         return abstractTrace[node];
+    }
+}
+
+void AbsExtAPI::collectCheckPoint()
+{
+    // traverse every ICFGNode
+    Set<std::string> ae_checkpoint_names = {"svf_assert"};
+    Set<std::string> buf_checkpoint_names = {"UNSAFE_BUFACCESS", "SAFE_BUFACCESS"};
+    Set<std::string> nullptr_checkpoint_names = {"UNSAFE_LOAD", "SAFE_LOAD"};
+
+    for (auto it = svfir->getICFG()->begin(); it != svfir->getICFG()->end(); ++it)
+    {
+        const ICFGNode* node = it->second;
+        if (const CallICFGNode *call = SVFUtil::dyn_cast<CallICFGNode>(node))
+        {
+            if (const FunObjVar *fun = call->getCalledFunction())
+            {
+                if (ae_checkpoint_names.find(fun->getName()) !=
+                        ae_checkpoint_names.end())
+                {
+                    checkpoints.insert(call);
+                }
+                if (Options::BufferOverflowCheck())
+                {
+                    if (buf_checkpoint_names.find(fun->getName()) !=
+                            buf_checkpoint_names.end())
+                    {
+                        checkpoints.insert(call);
+                    }
+                }
+                if (Options::NullDerefCheck())
+                {
+                    if (nullptr_checkpoint_names.find(fun->getName()) !=
+                            nullptr_checkpoint_names.end())
+                    {
+                        checkpoints.insert(call);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void AbsExtAPI::checkPointAllSet()
+{
+    if (checkpoints.size() == 0)
+    {
+        return;
+    }
+    else
+    {
+        SVFUtil::errs() << SVFUtil::errMsg("At least one svf_assert has not been checked!!") << "\n";
+        for (const CallICFGNode* call: checkpoints)
+            SVFUtil::errs() << call->toString() + "\n";
+        assert(false);
     }
 }
 

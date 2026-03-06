@@ -119,7 +119,7 @@ void BufOverflowDetector::handleStubFunctions(const SVF::CallICFGNode* callNode)
     if (funcName == "SAFE_BUFACCESS")
     {
         // void SAFE_BUFACCESS(void* data, int size);
-        AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
+        AbstractInterpretation::getAEInstance().getUtils()->checkpoints.erase(callNode);
         if (callNode->arg_size() < 2)
             return;
         AbstractState& as =
@@ -150,7 +150,7 @@ void BufOverflowDetector::handleStubFunctions(const SVF::CallICFGNode* callNode)
     else if (funcName == "UNSAFE_BUFACCESS")
     {
         // void UNSAFE_BUFACCESS(void* data, int size);
-        AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
+        AbstractInterpretation::getAEInstance().getUtils()->checkpoints.erase(callNode);
         if (callNode->arg_size() < 2) return;
         AbstractState&as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
         u32_t size_id = callNode->getArgument(1)->getId();
@@ -588,7 +588,7 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode)
     if (funcName == "UNSAFE_LOAD")
     {
         // void UNSAFE_LOAD(void* ptr);
-        AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
+        AbstractInterpretation::getAEInstance().getUtils()->checkpoints.erase(callNode);
         if (callNode->arg_size() < 1)
             return;
         AbstractState& as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
@@ -612,7 +612,7 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode)
     else if (funcName == "SAFE_LOAD")
     {
         // void SAFE_LOAD(void* ptr);
-        AbstractInterpretation::getAEInstance().checkpoints.erase(callNode);
+        AbstractInterpretation::getAEInstance().getUtils()->checkpoints.erase(callNode);
         if (callNode->arg_size() < 1) return;
         AbstractState&as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
         const SVFVar* arg0Val = callNode->getArgument(0);
