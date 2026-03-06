@@ -263,6 +263,10 @@ void AbstractInterpretation::handleGlobalNode()
 /// If withinSet is non-null, only propagate to successors contained in that set.
 /// This is used during cycle iteration to avoid propagating to nodes outside the
 /// cycle, which would cause stale accumulation and lose narrowing precision.
+/// Additionally, when withinSet is provided and a RetCFGEdge target is within the set,
+/// the state is also propagated along that edge. This handles the FunExit -> RetNode
+/// path inside recursive function cycles, where the recursive call is skipped and
+/// the RetCFGEdge effectively acts as intra-procedural control flow.
 void AbstractInterpretation::propagateToSuccessor(const ICFGNode* node,
         const Set<const ICFGNode*>* withinSet)
 {
@@ -291,7 +295,20 @@ void AbstractInterpretation::propagateToSuccessor(const ICFGNode* node,
             else
                 abstractTrace[dst] = state;
         }
-        // CallCFGEdge/RetCFGEdge are handled by handleFunCall
+        else if (withinSet && SVFUtil::isa<RetCFGEdge>(edge))
+        {
+            // In recursive cycles, FunExit and RetNode are both inside the cycle.
+            // Propagate along RetCFGEdge when both endpoints are in the cycle.
+            const ICFGNode* dst = edge->getDstNode();
+            if (withinSet->find(dst) != withinSet->end())
+            {
+                if (hasAbsStateFromTrace(dst))
+                    abstractTrace[dst].joinWith(abstractTrace[node]);
+                else
+                    abstractTrace[dst] = abstractTrace[node];
+            }
+        }
+        // CallCFGEdge is handled by handleFunCall
     }
 }
 
@@ -835,10 +852,23 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbstractState(callNode);
     abstractTrace[callNode] = as;
-
-    // Skip recursive callsites (within SCC); entry calls are not skipped
+    // Skip recursive callsites (within SCC); entry calls are not skipped.
+    // For skipped recursive calls, propagate the caller's state to the callee
+    // entry as a back-edge contribution. This is needed because the IntraCFGEdge
+    // from CallNode to RetNode was removed by the ICFG builder (replaced by
+    // CallCFGEdge + RetCFGEdge), so propagateToSuccessor cannot propagate the
+    // back-edge. We manually push the CallPE parameters to the callee entry.
     if (skipRecursiveCall(callNode))
+    {
+        const FunObjVar* callee = getCallee(callNode);
+        const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
+        // Push caller's state to callee entry (back-edge of recursive cycle)
+        if (hasAbsStateFromTrace(calleeEntry))
+            abstractTrace[calleeEntry].joinWith(abstractTrace[callNode]);
+        else
+            abstractTrace[calleeEntry] = abstractTrace[callNode];
         return;
+    }
 
     // Direct call: callee is known
     if (const FunObjVar* callee = callNode->getCalledFunction())
@@ -864,10 +894,7 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
     if (callGraph->hasIndCSCallees(callNode))
     {
         const auto& callees = callGraph->getIndCSCallees(callNode);
-        // Start with empty (bottom) state; joinWith on empty copies the first
-        // callee's exit state as-is, then subsequent callees are joined in.
-        abstractTrace[retNode] = AbstractState();
-        bool hasCallee = false;
+        bool firstCallee = true;
         for (const FunObjVar* callee : callees)
         {
             if (callee->isDeclaration())
@@ -877,14 +904,20 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
             // Push caller's state to callee entry
             abstractTrace[calleeEntry] = abstractTrace[callNode];
             handleFunction(calleeEntry, callNode);
+            // Use callee exit state for retNode (first callee assigns, rest join)
             if (hasAbsStateFromTrace(calleeExit))
             {
-                abstractTrace[retNode].joinWith(abstractTrace[calleeExit]);
-                hasCallee = true;
+                if (firstCallee)
+                {
+                    abstractTrace[retNode] = abstractTrace[calleeExit];
+                    firstCallee = false;
+                }
+                else
+                    abstractTrace[retNode].joinWith(abstractTrace[calleeExit]);
             }
         }
         // If no callee was processed, fall back to caller's state
-        if (!hasCallee)
+        if (firstCallee)
             abstractTrace[retNode] = abstractTrace[callNode];
     }
     else
@@ -1059,14 +1092,30 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
         }
     }
 
-    // Final pass: propagate converged states to exit nodes (outside the cycle).
+    // Final pass: re-execute all cycle nodes and propagate without restriction.
     // During iterations, propagation was restricted to cycle-internal nodes.
-    // Now propagate from all cycle nodes without restriction.
-    // Head needs re-execution since its abstractTrace holds the pre-state.
+    // Now re-execute and propagate from all cycle nodes without restriction,
+    // so that exit edges (outside the cycle) receive the converged states.
+    // We must clear body nodes first and re-process them from scratch using
+    // the converged head pre-state, since body nodes may contain stale states
+    // from the last iteration that predate the final head re-execution.
+    for (const ICFGNode* bodyNode : bodyNodes)
+        abstractTrace.erase(bodyNode);
     handleICFGNode(cycle_head);
     propagateToSuccessor(cycle_head);
-    for (const ICFGNode* bodyNode : bodyNodes)
-        propagateToSuccessor(bodyNode);
+    for (const ICFGWTOComp* comp : cycle->getWTOComponents())
+    {
+        if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+        {
+            const ICFGNode* bodyNode = singleton->getICFGNode();
+            handleICFGNode(bodyNode);
+            propagateToSuccessor(bodyNode);
+        }
+        else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+        {
+            handleLoopOrRecursion(subCycle, caller);
+        }
+    }
 }
 
 void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
