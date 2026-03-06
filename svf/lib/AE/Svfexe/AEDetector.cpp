@@ -123,7 +123,7 @@ void BufOverflowDetector::handleStubFunctions(const SVF::CallICFGNode* callNode)
         if (callNode->arg_size() < 2)
             return;
         AbstractState& as =
-            AbstractInterpretation::getAEInstance().getAbsStateFromTrace(
+            AbstractInterpretation::getAEInstance().getAbstractState(
                 callNode);
         u32_t size_id = callNode->getArgument(1)->getId();
         IntervalValue val = as[size_id].getInterval();
@@ -152,7 +152,7 @@ void BufOverflowDetector::handleStubFunctions(const SVF::CallICFGNode* callNode)
         // void UNSAFE_BUFACCESS(void* data, int size);
         AbstractInterpretation::getAEInstance().getUtils()->checkpoints.erase(callNode);
         if (callNode->arg_size() < 2) return;
-        AbstractState&as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
+        AbstractState&as = AbstractInterpretation::getAEInstance().getAbstractState(callNode);
         u32_t size_id = callNode->getArgument(1)->getId();
         IntervalValue val = as[size_id].getInterval();
         if (val.isBottom())
@@ -591,7 +591,7 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode)
         AbstractInterpretation::getAEInstance().getUtils()->checkpoints.erase(callNode);
         if (callNode->arg_size() < 1)
             return;
-        AbstractState& as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
+        AbstractState& as = AbstractInterpretation::getAEInstance().getAbstractState(callNode);
 
         const SVFVar* arg0Val = callNode->getArgument(0);
         // opt may directly dereference a null pointer and call UNSAFE_LOAD(null)
@@ -614,7 +614,7 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode)
         // void SAFE_LOAD(void* ptr);
         AbstractInterpretation::getAEInstance().getUtils()->checkpoints.erase(callNode);
         if (callNode->arg_size() < 1) return;
-        AbstractState&as = AbstractInterpretation::getAEInstance().getAbsStateFromTrace(callNode);
+        AbstractState&as = AbstractInterpretation::getAEInstance().getAbstractState(callNode);
         const SVFVar* arg0Val = callNode->getArgument(0);
         // opt may directly dereference a null pointer and call UNSAFE_LOAD(null)ols
         bool isSafe = canSafelyDerefPtr(as, arg0Val) && arg0Val->getId() != 0;

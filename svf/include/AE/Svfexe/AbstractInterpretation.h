@@ -109,128 +109,74 @@ public:
         detectors.push_back(std::move(detector));
     }
 
+    /// Retrieve the abstract state from the trace for a given ICFG node; asserts if no trace exists
+    AbstractState& getAbstractState(const ICFGNode* node);
 
+    /// Check if an abstract state exists in the trace for a given ICFG node
+    bool hasAbsStateFromTrace(const ICFGNode* node);
 
-    /**
-     * @brief Retrieves the abstract state from the trace for a given ICFG node.
-     * @param node Pointer to the ICFG node.
-     * @return Reference to the abstract state.
-     * @throws Assertion if no trace exists for the node.
-     */
-    AbstractState& getAbsStateFromTrace(const ICFGNode* node)
-    {
-        if (abstractTrace.count(node) == 0)
-        {
-            assert(false && "No preAbsTrace for this node");
-            abort();
-        }
-        else
-        {
-            return abstractTrace[node];
-        }
-    }
+    /// Retrieve abstract value for a top-level variable at a given ICFG node
+    AbstractValue& getAbstractValue(const ICFGNode* node, const ValVar* var);
+
+    /// Retrieve abstract value for an address-taken variable at a given ICFG node
+    AbstractValue& getAbstractValue(const ICFGNode* node, const ObjVar* var);
+
+    /// Retrieve abstract value for any SVF variable at a given ICFG node
+    AbstractValue& getAbstractValue(const ICFGNode* node, const SVFVar* var);
+
+    /// Retrieve abstract state filtered to specific top-level variables
+    void getAbstractState(const ICFGNode* node, const Set<const ValVar*>& vars, AbstractState& result);
+
+    /// Retrieve abstract state filtered to specific address-taken variables
+    void getAbstractState(const ICFGNode* node, const Set<const ObjVar*>& vars, AbstractState& result);
+
+    /// Retrieve abstract state filtered to specific SVF variables
+    void getAbstractState(const ICFGNode* node, const Set<const SVFVar*>& vars, AbstractState& result);
+
 
 private:
-    /// Global ICFGNode is handled at the entry of the program,
+    /// Initialize abstract state for the global ICFG node and process global statements
     virtual void handleGlobalNode();
 
-    /**
-     * Check if execution state exist by merging states of predecessor nodes
-     *
-     * @param icfgNode The icfg node to analyse
-     * @return if this node has preceding execution state
-     */
+    /// Merge abstract states from predecessor nodes; return true if icfgNode has feasible incoming state
     bool mergeStatesFromPredecessors(const ICFGNode * icfgNode);
 
-    /**
-     * Check if execution state exist at the branch edge
-     *
-     * @param intraEdge the edge from CmpStmt to the next node
-     * @return if this edge is feasible
-     */
+    /// Check if the branch on intraEdge is feasible under abstract state as
     bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractState& as);
 
-    /**
-     * handle instructions in ICFGSingletonWTO
-     *
-     * @param block basic block that has one instruction or a series of instructions
-     */
+    /// Process all SVF statements in a singleton WTO component (single basic block)
     virtual void handleSingletonWTO(const ICFGSingletonWTO *icfgSingletonWto);
 
-    /**
-     * handle call node in ICFGNode
-     *
-     * @param node ICFGNode which has a single CallICFGNode
-     */
+    /// Handle a call site node: dispatch to ext-call, direct-call, or indirect-call handling
     virtual void handleCallSite(const ICFGNode* node);
 
-    /**
-     * handle wto cycle (loop)
-     *
-     * @param cycle WTOCycle which has weak topo order of basic blocks and nested cycles
-     */
+    /// Handle a WTO cycle (loop or recursive function) using widening/narrowing iteration
     virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller = nullptr);
 
-    /**
-     * Handle a function using worklist algorithm
-     *
-     * @param funEntry The entry node of the function to handle
-     */
+    /// Handle a function body via worklist-driven WTO traversal starting from funEntry
     void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller = nullptr);
 
-    /**
-     * Handle an ICFG node by merging states and processing statements
-     *
-     * @param node The ICFG node to handle
-     * @return true if state changed, false if fixpoint reached or infeasible
-     */
+    /// Merge predecessor states, process statements and callsites; return true if state changed
     bool handleICFGNode(const ICFGNode* node);
 
-    /**
-     * Get the next nodes of a node within the same function
-     *
-     * @param node The node to get successors for
-     * @return Vector of successor nodes
-     */
+    /// Get intra-procedural successor nodes (including call-to-ret shortcut) within the same function
     std::vector<const ICFGNode*> getNextNodes(const ICFGNode* node) const;
 
-    /**
-     * Get the next nodes outside a cycle
-     *
-     * @param cycle The cycle to get exit successors for
-     * @return Vector of successor nodes outside the cycle
-     */
+    /// Get successor nodes that exit the given WTO cycle (skipping inner sub-cycles)
     std::vector<const ICFGNode*> getNextNodesOfCycle(const ICFGCycleWTO* cycle) const;
 
-    /**
-     * handle SVF Statement like CmpStmt, CallStmt, GepStmt, LoadStmt, StoreStmt, etc.
-     *
-     * @param stmt SVFStatement which is a value flow of instruction
-     */
+    /// Dispatch an SVF statement (Addr/Binary/Cmp/Load/Store/Copy/Gep/Select/Phi/Call/Ret) to its handler
     virtual void handleSVFStatement(const SVFStmt* stmt);
 
+    /// Set all store targets and return value to TOP for a recursive call node
     virtual void setTopToObjInRecursion(const CallICFGNode* callnode);
 
-
-    /**
-    * Check if this cmpStmt and succ are satisfiable to the execution state.
-    *
-    * @param cmpStmt CmpStmt is a conditional branch statement
-    * @param succ the value of cmpStmt (True or False)
-    * @return if this ICFGNode has preceding execution state
-    */
+    /// Check if cmpStmt with successor value succ is feasible; refine intervals in as accordingly
     bool isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t succ,
                              AbstractState& as);
 
-    /**
-    * Check if this SwitchInst and succ are satisfiable to the execution state.
-    *
-    * @param var var in switch inst
-    * @param succ the case value of switch inst
-    * @return if this ICFGNode has preceding execution state
-    */
-    bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ,
-                                AbstractState& as);
+    /// Check if switch branch with case value succ is feasible; refine intervals in as accordingly
+    bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ, AbstractState& as);
 
     void updateStateOnAddr(const AddrStmt *addr);
 
@@ -265,12 +211,6 @@ private:
     AEStat* stat;
 
     PreAnalysis* preAnalysis{nullptr};
-
-
-    bool hasAbsStateFromTrace(const ICFGNode* node)
-    {
-        return abstractTrace.count(node) != 0;
-    }
 
     AbsExtAPI* getUtils()
     {

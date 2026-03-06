@@ -195,8 +195,7 @@ public:
 
 protected:
     VarToAbsValMap _varToAbsVal; ///< Map a variable (symbol) to its abstract value
-    AddrToAbsValMap
-    _addrToAbsVal; ///< Map a memory address to its stored abstract value
+    AddrToAbsValMap _addrToAbsVal; ///< Map a memory address to its stored abstract value
 
 public:
 

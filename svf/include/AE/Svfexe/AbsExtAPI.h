@@ -106,7 +106,7 @@ public:
      * @return Reference to the abstract state.
      * @throws Assertion if no trace exists for the node.
      */
-    AbstractState& getAbsStateFromTrace(const ICFGNode* node);
+    AbstractState& getAbstractState(const ICFGNode* node);
 
     void collectCheckPoint();
     void checkPointAllSet();
