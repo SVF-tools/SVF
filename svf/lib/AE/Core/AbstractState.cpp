@@ -521,3 +521,31 @@ u32_t AbstractState::getAllocaInstByteSize(const AddrStmt *addr)
     assert (false && "Addr rhs value is not ObjVar");
     abort();
 }
+
+bool AbstractState::eqVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs) const
+{
+    if (lhs.size() != rhs.size()) return false;
+    for (const auto &item: lhs)
+    {
+        auto it = rhs.find(item.first);
+        if (it == rhs.end())
+            return false;
+        if (!item.second.equals(it->second))
+            return false;
+    }
+    return true;
+}
+
+bool AbstractState::geqVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs) const
+{
+    if (rhs.empty()) return true;
+    for (const auto &item: rhs)
+    {
+        auto it = lhs.find(item.first);
+        if (it == lhs.end()) return false;
+        if (!it->second.getInterval().contain(
+                    item.second.getInterval()))
+            return false;
+    }
+    return true;
+}

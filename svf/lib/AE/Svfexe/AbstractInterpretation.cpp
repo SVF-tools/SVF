@@ -38,7 +38,6 @@
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace z3;
 
 
 void AbstractInterpretation::runOnModule(ICFG *_icfg)
@@ -85,25 +84,25 @@ AbstractState& AbstractInterpretation::getAbstractState(const ICFGNode* node)
     }
 }
 
-bool AbstractInterpretation::hasAbsStateFromTrace(const ICFGNode* node)
+bool AbstractInterpretation::hasAbstractState(const ICFGNode* node)
 {
     return abstractTrace.count(node) != 0;
 }
 
-AbstractValue& AbstractInterpretation::getAbstractValue(const ICFGNode* node, const ValVar* var)
+const AbstractValue& AbstractInterpretation::getAbstractValue(const ICFGNode* node, const ValVar* var)
 {
     AbstractState& as = getAbstractState(node);
     return as[var->getId()];
 }
 
-AbstractValue& AbstractInterpretation::getAbstractValue(const ICFGNode* node, const ObjVar* var)
+const AbstractValue& AbstractInterpretation::getAbstractValue(const ICFGNode* node, const ObjVar* var)
 {
     AbstractState& as = getAbstractState(node);
     u32_t addr = AbstractState::getVirtualMemAddress(var->getId());
     return as.load(addr);
 }
 
-AbstractValue& AbstractInterpretation::getAbstractValue(const ICFGNode* node, const SVFVar* var)
+const AbstractValue& AbstractInterpretation::getAbstractValue(const ICFGNode* node, const SVFVar* var)
 {
     if (const ValVar* valVar = SVFUtil::dyn_cast<ValVar>(var))
         return getAbstractValue(node, valVar);
@@ -270,7 +269,7 @@ void AbstractInterpretation::handleGlobalNode()
 void AbstractInterpretation::propagateToSuccessor(const ICFGNode* node,
         const Set<const ICFGNode*>* withinSet)
 {
-    if (!hasAbsStateFromTrace(node))
+    if (!hasAbstractState(node))
         return;
 
     for (auto& edge : node->getOutEdges())
@@ -290,7 +289,7 @@ void AbstractInterpretation::propagateToSuccessor(const ICFGNode* node,
                     continue;  // infeasible branch, do not propagate
                 // state has been refined in-place by isBranchFeasible
             }
-            if (hasAbsStateFromTrace(dst))
+            if (hasAbstractState(dst))
                 abstractTrace[dst].joinWith(state);
             else
                 abstractTrace[dst] = state;
@@ -302,7 +301,7 @@ void AbstractInterpretation::propagateToSuccessor(const ICFGNode* node,
             const ICFGNode* dst = edge->getDstNode();
             if (withinSet->find(dst) != withinSet->end())
             {
-                if (hasAbsStateFromTrace(dst))
+                if (hasAbstractState(dst))
                     abstractTrace[dst].joinWith(abstractTrace[node]);
                 else
                     abstractTrace[dst] = abstractTrace[node];
@@ -620,13 +619,13 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
 {
     // Check reachability: pre-state must have been propagated by predecessors
     bool isFunEntry = SVFUtil::isa<FunEntryICFGNode>(node);
-    if (!hasAbsStateFromTrace(node))
+    if (!hasAbstractState(node))
     {
         if (isFunEntry)
         {
             // Entry point with no callers: inherit from global node
             const ICFGNode* globalNode = icfg->getGlobalICFGNode();
-            if (hasAbsStateFromTrace(globalNode))
+            if (hasAbstractState(globalNode))
                 abstractTrace[node] = abstractTrace[globalNode];
             else
                 abstractTrace[node] = AbstractState();
@@ -782,7 +781,7 @@ const FunObjVar* AbstractInterpretation::getCallee(const CallICFGNode* callNode)
         return nullptr;
 
     NodeID call_id = it->second;
-    if (!hasAbsStateFromTrace(callNode))
+    if (!hasAbstractState(callNode))
         return nullptr;
 
     AbstractState& as = getAbstractState(callNode);
@@ -863,7 +862,7 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
         const FunObjVar* callee = getCallee(callNode);
         const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
         // Push caller's state to callee entry (back-edge of recursive cycle)
-        if (hasAbsStateFromTrace(calleeEntry))
+        if (hasAbstractState(calleeEntry))
             abstractTrace[calleeEntry].joinWith(abstractTrace[callNode]);
         else
             abstractTrace[calleeEntry] = abstractTrace[callNode];
@@ -880,7 +879,7 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
         handleFunction(calleeEntry, callNode);
         // Use callee exit state (which has memory side effects) for the return node
         const RetICFGNode* retNode = callNode->getRetICFGNode();
-        if (hasAbsStateFromTrace(calleeExit))
+        if (hasAbstractState(calleeExit))
             abstractTrace[retNode] = abstractTrace[calleeExit];
         else
             abstractTrace[retNode] = abstractTrace[callNode];
@@ -905,7 +904,7 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
             abstractTrace[calleeEntry] = abstractTrace[callNode];
             handleFunction(calleeEntry, callNode);
             // Use callee exit state for retNode (first callee assigns, rest join)
-            if (hasAbsStateFromTrace(calleeExit))
+            if (hasAbstractState(calleeExit))
             {
                 if (firstCallee)
                 {
@@ -985,7 +984,7 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
     // outside the cycle, already propagated before we enter the cycle).
     // This is fixed across all iterations; only back-edge contributions change.
     AbstractState externalPre;
-    if (hasAbsStateFromTrace(cycle_head))
+    if (hasAbstractState(cycle_head))
         externalPre = abstractTrace[cycle_head];
 
     // Collect all cycle body node pointers (excluding head) for clearing,
@@ -1017,7 +1016,7 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
     bool increasing = true;
     u32_t widen_delay = Options::WidenDelay();
     AbstractState prev_head_pre;
-    if (hasAbsStateFromTrace(cycle_head))
+    if (hasAbstractState(cycle_head))
         prev_head_pre = abstractTrace[cycle_head];
 
     for (u32_t cur_iter = 0;; cur_iter++)
@@ -1080,7 +1079,7 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
         // After body processing, abstractTrace[cycle_head] holds only the
         // back-edge contribution (if any). Rebuild head's pre-state for the
         // next iteration: externalPre joined with back-edge.
-        if (hasAbsStateFromTrace(cycle_head))
+        if (hasAbstractState(cycle_head))
         {
             AbstractState backEdge = abstractTrace[cycle_head];
             abstractTrace[cycle_head] = externalPre;
@@ -1277,7 +1276,7 @@ void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
     {
         NodeID curId = phi->getOpVarID(i);
         const ICFGNode* opICFGNode = phi->getOpICFGNode(i);
-        if (hasAbsStateFromTrace(opICFGNode))
+        if (hasAbstractState(opICFGNode))
         {
             AbstractState tmpEs = abstractTrace[opICFGNode];
             AbstractState& opAs = getAbstractState(opICFGNode);

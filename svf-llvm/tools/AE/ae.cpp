@@ -136,7 +136,7 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1)}, {1, IntervalValue(1, 2)}};
-        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState1_2()
@@ -171,7 +171,7 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1)}, {1, IntervalValue(0, 2)}};
-        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState2_1()
@@ -213,7 +213,7 @@ public:
             {1, IntervalValue(0, 10)},
             {2, IntervalValue(0, 0)}
         };
-        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState2_2()
@@ -256,7 +256,7 @@ public:
             {1, IntervalValue(0, 100)},
             {2, IntervalValue(0, 0)}
         };
-        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState2_3()
@@ -299,7 +299,7 @@ public:
             {1, IntervalValue(0, 1000)},
             {2, IntervalValue(0, 0)}
         };
-        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState2_4()
@@ -342,7 +342,7 @@ public:
             {1, IntervalValue(0, 10000)},
             {2, IntervalValue(0, 0)}
         };
-        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState2_5()
@@ -385,7 +385,7 @@ public:
             {1, IntervalValue(0, 100000)},
             {2, IntervalValue(0, 0)}
         };
-        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState3_1()
@@ -427,7 +427,7 @@ public:
             {1, IntervalValue(1, 10)},
             {2, IntervalValue(1, 1)}
         };
-        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState3_2()
@@ -469,7 +469,7 @@ public:
             {1, IntervalValue(1, 1000)},
             {2, IntervalValue(1, 1)}
         };
-        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState3_3()
@@ -552,7 +552,7 @@ public:
             {1, IntervalValue(1, 100000)},
             {2, IntervalValue(1, 1)}
         };
-        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState4_1()
@@ -597,7 +597,7 @@ public:
             {1, IntervalValue(0, 10)},
             {2, IntervalValue(0, 10)}
         };
-        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testsValidation()

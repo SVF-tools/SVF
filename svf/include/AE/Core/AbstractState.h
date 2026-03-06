@@ -49,9 +49,6 @@
 #include "AE/Core/AbstractValue.h"
 #include "AE/Core/IntervalValue.h"
 #include "SVFIR/SVFVariables.h"
-#include "Util/Z3Expr.h"
-
-#include <iomanip>
 
 namespace SVF
 {
@@ -62,10 +59,6 @@ class AbstractState
 public:
     typedef Map<u32_t, AbstractValue> VarToAbsValMap;
     typedef VarToAbsValMap AddrToAbsValMap;
-    Set<NodeID> _freedAddrs;
-
-
-public:
     /// default constructor
     AbstractState()
     {
@@ -74,7 +67,7 @@ public:
     AbstractState(VarToAbsValMap&_varToValMap, AddrToAbsValMap&_locToValMap) : _varToAbsVal(_varToValMap), _addrToAbsVal(_locToValMap) {}
 
     /// copy constructor
-    AbstractState(const AbstractState&rhs) : _freedAddrs(rhs._freedAddrs), _varToAbsVal(rhs.getVarToVal()), _addrToAbsVal(rhs.getLocToVal())
+    AbstractState(const AbstractState&rhs) : _varToAbsVal(rhs.getVarToVal()), _addrToAbsVal(rhs.getLocToVal()), _freedAddrs(rhs._freedAddrs)
     {
 
     }
@@ -112,39 +105,17 @@ public:
     }
 
     /// Return the internal index if addr is an address otherwise return the value of idx
-    inline u32_t getIDFromAddr(u32_t addr)
+    inline u32_t getIDFromAddr(u32_t addr) const
     {
         return _freedAddrs.count(addr) ?  AddressValue::getInternalID(BlackHoleObjAddr) : AddressValue::getInternalID(addr);
     }
 
-    AbstractState&operator=(const AbstractState&rhs)
-    {
-        if (rhs != *this)
-        {
-            _varToAbsVal = rhs._varToAbsVal;
-            _addrToAbsVal = rhs._addrToAbsVal;
-            _freedAddrs = rhs._freedAddrs;
-        }
-        return *this;
-    }
-
     /// move constructor
     AbstractState(AbstractState&&rhs) : _varToAbsVal(std::move(rhs._varToAbsVal)),
-        _addrToAbsVal(std::move(rhs._addrToAbsVal))
+        _addrToAbsVal(std::move(rhs._addrToAbsVal)),
+        _freedAddrs(std::move(rhs._freedAddrs))
     {
 
-    }
-
-    /// operator= move constructor
-    AbstractState&operator=(AbstractState&&rhs)
-    {
-        if (&rhs != this)
-        {
-            _varToAbsVal = std::move(rhs._varToAbsVal);
-            _addrToAbsVal = std::move(rhs._addrToAbsVal);
-            _freedAddrs = std::move(rhs._freedAddrs);
-        }
-        return *this;
     }
 
     /// Set all value bottom
@@ -176,9 +147,7 @@ public:
     {
         AbstractState inv;
         for (u32_t id: sl)
-        {
             inv._varToAbsVal[id] = _varToAbsVal[id];
-        }
         return inv;
     }
 
@@ -196,6 +165,7 @@ public:
 protected:
     VarToAbsValMap _varToAbsVal; ///< Map a variable (symbol) to its abstract value
     AddrToAbsValMap _addrToAbsVal; ///< Map a memory address to its stored abstract value
+    Set<NodeID> _freedAddrs;
 
 public:
 
@@ -203,13 +173,37 @@ public:
     /// get abstract value of variable
     inline virtual AbstractValue &operator[](u32_t varId)
     {
+        assert(!isVirtualMemAddress(varId) && "varId is a virtual memory address, use load() instead");
         return _varToAbsVal[varId];
     }
 
     /// get abstract value of variable
     inline virtual const AbstractValue &operator[](u32_t varId) const
     {
+        assert(!isVirtualMemAddress(varId) && "varId is a virtual memory address, use load() instead");
         return _varToAbsVal.at(varId);
+    }
+
+    inline virtual AbstractValue &load(u32_t addr)
+    {
+        assert(isVirtualMemAddress(addr) && "not virtual address?");
+        u32_t objId = getIDFromAddr(addr);
+        return _addrToAbsVal[objId];
+    }
+
+    inline virtual const AbstractValue &load(u32_t addr) const
+    {
+        assert(isVirtualMemAddress(addr) && "not virtual address?");
+        u32_t objId = getIDFromAddr(addr);
+        return _addrToAbsVal.at(objId);
+    }
+
+    inline void store(u32_t addr, const AbstractValue &val)
+    {
+        assert(isVirtualMemAddress(addr) && "not virtual address?");
+        u32_t objId = getIDFromAddr(addr);
+        if (isNullMem(addr)) return;
+        _addrToAbsVal[objId] = val;
     }
 
     /// whether the variable is in varToAddrs table
@@ -218,9 +212,7 @@ public:
         if (_varToAbsVal.find(id)!= _varToAbsVal.end())
         {
             if (_varToAbsVal.at(id).isAddr())
-            {
                 return true;
-            }
         }
         return false;
     }
@@ -231,9 +223,7 @@ public:
         if (_varToAbsVal.find(id) != _varToAbsVal.end())
         {
             if (_varToAbsVal.at(id).isInterval())
-            {
                 return true;
-            }
         }
         return false;
     }
@@ -265,18 +255,16 @@ public:
     }
 
     /// get var2val map
-    const VarToAbsValMap&getVarToVal() const
+    inline const VarToAbsValMap&getVarToVal() const
     {
         return _varToAbsVal;
     }
 
     /// get loc2val map
-    const AddrToAbsValMap&getLocToVal() const
+    inline const AddrToAbsValMap&getLocToVal() const
     {
         return _addrToAbsVal;
     }
-
-public:
 
     /// domain widen with other, and return the widened domain
     AbstractState widening(const AbstractState&other);
@@ -310,81 +298,39 @@ public:
      */
     const SVFType* getPointeeElement(NodeID id);
 
+    void printAbstractState() const;
 
     u32_t hash() const;
 
-public:
-    inline void store(u32_t addr, const AbstractValue &val)
-    {
-        assert(isVirtualMemAddress(addr) && "not virtual address?");
-        u32_t objId = getIDFromAddr(addr);
-        if (isNullMem(addr)) return;
-        _addrToAbsVal[objId] = val;
-    }
-
-    inline virtual AbstractValue &load(u32_t addr)
-    {
-        assert(isVirtualMemAddress(addr) && "not virtual address?");
-        u32_t objId = getIDFromAddr(addr);
-        return _addrToAbsVal[objId];
-
-    }
-
-    void printAbstractState() const;
-
-    std::string toString() const
-    {
-        return "";
-    }
-
+    // lhs == rhs for varToValMap
+    bool eqVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs) const;
+    // lhs >= rhs for varToValMap
+    bool geqVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs) const;
+    // lhs == rhs for AbstractState
     bool equals(const AbstractState&other) const;
 
-
-    static bool eqVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs)
+    /// Assignment operator
+    AbstractState&operator=(const AbstractState&rhs)
     {
-        if (lhs.size() != rhs.size()) return false;
-        for (const auto &item: lhs)
+        if (&rhs != this)
         {
-            auto it = rhs.find(item.first);
-            if (it == rhs.end())
-                return false;
-            if (!item.second.equals(it->second))
-                return false;
-            else
-            {
-            }
+            _varToAbsVal = rhs._varToAbsVal;
+            _addrToAbsVal = rhs._addrToAbsVal;
+            _freedAddrs = rhs._freedAddrs;
         }
-        return true;
+        return *this;
     }
 
-    static bool lessThanVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs)
+    /// operator= move constructor
+    AbstractState&operator=(AbstractState&&rhs)
     {
-        if (lhs.empty()) return !rhs.empty();
-        for (const auto &item: lhs)
+        if (&rhs != this)
         {
-            auto it = rhs.find(item.first);
-            if (it == rhs.end()) return false;
-            // judge from expr id
-            if (item.second.getInterval().contain(it->second.getInterval())) return false;
+            _varToAbsVal = std::move(rhs._varToAbsVal);
+            _addrToAbsVal = std::move(rhs._addrToAbsVal);
+            _freedAddrs = std::move(rhs._freedAddrs);
         }
-        return true;
-    }
-
-    // lhs >= rhs
-    static bool geqVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs)
-    {
-        if (rhs.empty()) return true;
-        for (const auto &item: rhs)
-        {
-            auto it = lhs.find(item.first);
-            if (it == lhs.end()) return false;
-            // judge from expr id
-            if (!it->second.getInterval().contain(
-                        item.second.getInterval()))
-                return false;
-
-        }
-        return true;
+        return *this;
     }
 
     bool operator==(const AbstractState&rhs) const
@@ -402,7 +348,6 @@ public:
     {
         return !(*this >= rhs);
     }
-
 
     bool operator>=(const AbstractState&rhs) const
     {

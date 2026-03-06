@@ -113,16 +113,16 @@ public:
     AbstractState& getAbstractState(const ICFGNode* node);
 
     /// Check if an abstract state exists in the trace for a given ICFG node
-    bool hasAbsStateFromTrace(const ICFGNode* node);
+    bool hasAbstractState(const ICFGNode* node);
 
     /// Retrieve abstract value for a top-level variable at a given ICFG node
-    AbstractValue& getAbstractValue(const ICFGNode* node, const ValVar* var);
+    const AbstractValue& getAbstractValue(const ICFGNode* node, const ValVar* var);
 
     /// Retrieve abstract value for an address-taken variable at a given ICFG node
-    AbstractValue& getAbstractValue(const ICFGNode* node, const ObjVar* var);
+    const AbstractValue& getAbstractValue(const ICFGNode* node, const ObjVar* var);
 
     /// Retrieve abstract value for any SVF variable at a given ICFG node
-    AbstractValue& getAbstractValue(const ICFGNode* node, const SVFVar* var);
+    const AbstractValue& getAbstractValue(const ICFGNode* node, const SVFVar* var);
 
     /// Retrieve abstract state filtered to specific top-level variables
     void getAbstractState(const ICFGNode* node, const Set<const ValVar*>& vars, AbstractState& result);
