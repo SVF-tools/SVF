@@ -867,10 +867,7 @@ public:
         return opVars.at(pos);
     }
     /// Result SVFVar
-    inline const SVFVar* getRes() const
-    {
-        return SVFStmt::getDstNode();
-    }
+    const ValVar* getRes() const;
 
     NodeID getOpVarID(u32_t pos) const;
     NodeID getResID() const;

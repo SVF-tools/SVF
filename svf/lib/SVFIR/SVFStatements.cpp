@@ -472,6 +472,11 @@ const ValVar* UnaryOPStmt::getRes() const
     return cast<ValVar>(SVFStmt::getDstNode());
 }
 
+const ValVar* MultiOpndStmt::getRes() const
+{
+    return cast<ValVar>(SVFStmt::getDstNode());
+}
+
 /// Return true if this is a phi at the function exit
 /// to receive one or multiple return values of this function
 bool PhiStmt::isFunctionRetPhi() const

@@ -80,7 +80,7 @@ const CxtPtSet& ContextDDA::computeDDAPts(const CxtVar& var)
 
     NodeID id = var.get_id();
     const ValVar* node = getPAG()->getValVar(id);
-    CxtLocDPItem dpm = getDPIm(var, getDefSVFGNode(node);
+    CxtLocDPItem dpm = getDPIm(var, getDefSVFGNode(node));
 
     // start DDA analysis
     DOTIMESTAT(double start = DDAStat::getClk(true));

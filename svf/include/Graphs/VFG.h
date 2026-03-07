@@ -640,7 +640,7 @@ protected:
     /// Add an llvm PHI VFG node
     inline void addIntraPHIVFGNode(const MultiOpndStmt* edge)
     {
-        IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++,edge->getRes());
+        IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++, edge->getRes());
         u32_t pos = 0;
         for(auto var : edge->getOpndVars())
         {
