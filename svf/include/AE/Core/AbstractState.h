@@ -78,7 +78,7 @@ public:
     AddressValue getGepObjAddrs(u32_t pointer, IntervalValue offset);
 
     // initObjVar
-    void initObjVar(ObjVar* objVar);
+    void initObjVar(const ObjVar* objVar);
     // getElementIndex
     IntervalValue getElementIndex(const GepStmt* gep);
     // getByteOffset

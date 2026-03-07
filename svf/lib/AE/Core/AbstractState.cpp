@@ -182,7 +182,7 @@ AddressValue AbstractState::getGepObjAddrs(u32_t pointer, IntervalValue offset)
     return gepAddrs;
 }
 // initObjVar
-void AbstractState::initObjVar(ObjVar* objVar)
+void AbstractState::initObjVar(const ObjVar* objVar)
 {
     NodeID varId = objVar->getId();
 
@@ -239,7 +239,7 @@ IntervalValue AbstractState::getElementIndex(const GepStmt* gep)
     for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
     {
         AccessPath::IdxOperandPair IdxVarAndType = gep->getOffsetVarAndGepTypePairVec()[i];
-        const SVFVar* var = gep->getOffsetVarAndGepTypePairVec()[i].first;
+        const ValVar* var = gep->getOffsetVarAndGepTypePairVec()[i].first;
         const SVFType* type = IdxVarAndType.second;
 
         // Variables to store the lower and upper bounds of the index value
@@ -312,7 +312,7 @@ IntervalValue AbstractState::getByteOffset(const GepStmt* gep)
     // Loop through the offsetVarAndGepTypePairVec in reverse order.
     for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
     {
-        const SVFVar* idxOperandVar = gep->getOffsetVarAndGepTypePairVec()[i].first;
+        const ValVar* idxOperandVar = gep->getOffsetVarAndGepTypePairVec()[i].first;
         const SVFType* idxOperandType = gep->getOffsetVarAndGepTypePairVec()[i].second;
 
         // Calculate the byte offset for array or pointer types

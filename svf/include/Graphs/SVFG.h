@@ -74,7 +74,7 @@ class SVFG : public VFG
 
 public:
     typedef VFGNodeIDToNodeMapTy SVFGNodeIDToNodeMapTy;
-    typedef Map<const SVFVar*, NodeID> SVFVarToDefMapTy;
+    typedef Map<const ValVar*, NodeID> ValVarToDefMapTy;
     typedef Map<const MRVer*, NodeID> MSSAVarToDefMapTy;
     typedef NodeBS ActualINSVFGNodeSet;
     typedef NodeBS ActualOUTSVFGNodeSet;
@@ -167,16 +167,16 @@ public:
     /// Connect SVFG nodes between caller and callee for indirect call site
     virtual void connectCallerAndCallee(const CallICFGNode* cs, const FunObjVar* callee, SVFGEdgeSetTy& edges);
 
-    /// Given a svfVar, return its definition site
-    inline const SVFGNode* getDefSVFGNode(const SVFVar* svfVar) const
+    /// Given a valVar, return its definition site
+    inline const SVFGNode* getDefSVFGNode(const ValVar* valVar) const
     {
-        return getSVFGNode(getDef(svfVar));
+        return getSVFGNode(getDef(valVar));
     }
 
-    /// Given a svfVar, return whether it has definition site
-    inline bool hasDefSVFGNode(const SVFVar* svfVar) const
+    /// Given a valVar, return whether it has definition site
+    inline bool hasDefSVFGNode(const ValVar* valVar) const
     {
-        return hasDef(svfVar) && hasSVFGNode(getDef(svfVar));
+        return hasDef(valVar) && hasSVFGNode(getDef(valVar));
     }
 
     /// Given a ValVar and its SVFGNode, find the definition-site ICFGNode
@@ -323,7 +323,7 @@ protected:
 
     /// Get inter value flow edges between indirect call site and callee.
     //@{
-    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const SVFVar* cs_arg, const SVFVar* fun_arg, const CallICFGNode*, CallSiteID csId, SVFGEdgeSetTy& edges)
+    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const ValVar* cs_arg, const ValVar* fun_arg, const CallICFGNode*, CallSiteID csId, SVFGEdgeSetTy& edges)
     {
         SVFGNode* actualParam = getSVFGNode(getDef(cs_arg));
         SVFGNode* formalParam = getSVFGNode(getDef(fun_arg));
@@ -332,7 +332,7 @@ protected:
         edges.insert(edge);
     }
 
-    virtual inline void getInterVFEdgeAtIndCSFromFRToAR(const SVFVar* fun_ret, const SVFVar* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges)
+    virtual inline void getInterVFEdgeAtIndCSFromFRToAR(const ValVar* fun_ret, const ValVar* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges)
     {
         SVFGNode* formalRet = getSVFGNode(getDef(fun_ret));
         SVFGNode* actualRet = getSVFGNode(getDef(cs_ret));
@@ -363,19 +363,19 @@ protected:
     //@}
 
 
-    /// Given a SVFVar, set/get its def SVFG node (definition of top level pointers)
+    /// Given a ValVar, set/get its def SVFG node (definition of top level pointers)
     //@{
-    inline void setDef(const SVFVar* svfVar, const SVFGNode* node)
+    inline void setDef(const ValVar* valVar, const SVFGNode* node)
     {
-        VFG::setDef(svfVar, node);
+        VFG::setDef(valVar, node);
     }
-    inline NodeID getDef(const SVFVar* svfVar) const
+    inline NodeID getDef(const ValVar* valVar) const
     {
-        return VFG::getDef(svfVar);
+        return VFG::getDef(valVar);
     }
-    inline bool hasDef(const SVFVar* svfVar) const
+    inline bool hasDef(const ValVar* valVar) const
     {
-        return VFG::hasDef(svfVar);
+        return VFG::hasDef(valVar);
     }
     //@}
 

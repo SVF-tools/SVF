@@ -187,7 +187,7 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta)
             /// for store, connect the RHS/LHS pointer to its def
             if(SVFUtil::isa<StoreSVFGNode>(stmtNode))
             {
-                const SVFGNode* def = svfg->getDefSVFGNode(stmtNode->getDstNode());
+                const SVFGNode* def = svfg->getDefSVFGNode(SVFUtil::cast<ValVar>(stmtNode->getDstNode()));
                 if(SVFGEdge* edge = svfg->getIntraVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF))
                     svfg->removeSVFGEdge(edge);
                 else
@@ -200,7 +200,7 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta)
             }
             else if(SVFUtil::isa<LoadSVFGNode>(stmtNode))
             {
-                const SVFGNode* def = svfg->getDefSVFGNode(stmtNode->getSrcNode());
+                const SVFGNode* def = svfg->getDefSVFGNode(SVFUtil::cast<ValVar>(stmtNode->getSrcNode()));
                 if(SVFGEdge* edge = svfg->getIntraVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF))
                     svfg->removeSVFGEdge(edge);
                 else
@@ -307,10 +307,10 @@ void SaberSVFGBuilder::AddExtActualParmSVFGNodes(CallGraph* callgraph)
             if (SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun)
                     || SaberCheckerAPI::getCheckerAPI()->isFClose(fun))
             {
-                SVFIR::SVFVarList& arglist = it->second;
-                for(SVFIR::SVFVarList::const_iterator ait = arglist.begin(), aeit = arglist.end(); ait!=aeit; ++ait)
+                SVFIR::ValVarList& arglist = it->second;
+                for(SVFIR::ValVarList::const_iterator ait = arglist.begin(), aeit = arglist.end(); ait!=aeit; ++ait)
                 {
-                    const SVFVar *svfVar = *ait;
+                    const ValVar *svfVar = *ait;
                     if (svfVar->isPointer())
                     {
                         addActualParmVFGNode(svfVar, it->first);

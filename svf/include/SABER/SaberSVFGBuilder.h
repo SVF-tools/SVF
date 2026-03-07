@@ -60,7 +60,7 @@ public:
     }
 
     /// Add ActualParmVFGNode
-    inline void addActualParmVFGNode(const SVFVar* svfVar, const CallICFGNode* cs)
+    inline void addActualParmVFGNode(const ValVar* svfVar, const CallICFGNode* cs)
     {
         svfg->addActualParmVFGNode(svfVar, cs);
     }

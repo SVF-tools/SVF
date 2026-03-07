@@ -344,9 +344,9 @@ protected:
         }
     }
     /// GetDefinition SVFG
-    inline const SVFGNode* getDefSVFGNode(const PAGNode* pagNode) const
+    inline const SVFGNode* getDefSVFGNode(const ValVar* valVar) const
     {
-        return getSVFG()->getDefSVFGNode(pagNode);
+        return getSVFG()->getDefSVFGNode(valVar);
     }
     /// Backward traverse along indirect value flows
     void backtraceAlongIndirectVF(CPtSet& pts, const DPIm& oldDpm)
@@ -497,7 +497,7 @@ protected:
             {
                 NodeID funPtr = _pag->getFunPtr(cbn);
                 DPIm funPtrDpm(dpm);
-                funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getSVFVar(funPtr)),funPtr);
+                funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getValVar(funPtr)),funPtr);
                 findPT(funPtrDpm);
             }
         }
@@ -510,7 +510,7 @@ protected:
             {
                 NodeID funPtr = _pag->getFunPtr(*it);
                 DPIm funPtrDpm(dpm);
-                funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getSVFVar(funPtr)),funPtr);
+                funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getValVar(funPtr)),funPtr);
                 findPT(funPtrDpm);
             }
         }

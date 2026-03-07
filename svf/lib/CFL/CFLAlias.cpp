@@ -93,12 +93,12 @@ void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const FunObjVa
     {
 
         // connect actual and formal param
-        const SVFIR::SVFVarList& csArgList = svfir->getCallSiteArgsList(callBlockNode);
-        const SVFIR::SVFVarList& funArgList = svfir->getFunArgsList(F);
+        const SVFIR::ValVarList& csArgList = svfir->getCallSiteArgsList(callBlockNode);
+        const SVFIR::ValVarList& funArgList = svfir->getFunArgsList(F);
         //Go through the fixed parameters.
         DBOUT(DPAGBuild, outs() << "      args:");
-        SVFIR::SVFVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
-        SVFIR::SVFVarList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
+        SVFIR::ValVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
+        SVFIR::ValVarList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
         for (; funArgIt != funArgEit; ++csArgIt, ++funArgIt)
         {
             //Some programs (e.g. Linux kernel) leave unneeded parameters empty.

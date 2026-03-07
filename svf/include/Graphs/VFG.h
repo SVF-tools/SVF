@@ -59,7 +59,7 @@ public:
 
     typedef OrderedMap<NodeID, VFGNode *> VFGNodeIDToNodeMapTy;
     typedef Set<VFGNode*> VFGNodeSet;
-    typedef Map<const SVFVar*, NodeID> SVFVarToDefMapTy;
+    typedef Map<const ValVar*, NodeID> ValVarToDefMapTy;
     typedef Map<std::pair<NodeID,const CallICFGNode*>, ActualParmVFGNode *> SVFVarToActualParmMapTy;
     typedef Map<const SVFVar*, ActualRetVFGNode *> SVFVarToActualRetMapTy;
     typedef Map<const SVFVar*, FormalParmVFGNode *> SVFVarToFormalParmMapTy;
@@ -86,7 +86,7 @@ public:
 
 protected:
     NodeID totalVFGNode;
-    SVFVarToDefMapTy SVFVarToDefMap;	///< map a pag node to its definition SVG node
+    ValVarToDefMapTy ValVarToDefMap;	///< map a pag node to its definition SVG node
     SVFVarToActualParmMapTy SVFVarToActualParmMap; ///< map a SVFVar to an actual parameter
     SVFVarToActualRetMapTy SVFVarToActualRetMap; ///< map a SVFVar to an actual return
     SVFVarToFormalParmMapTy SVFVarToFormalParmMap; ///< map a SVFVar to a formal parameter
@@ -185,10 +185,10 @@ public:
     }
     //@}
 
-    /// Given a svfVar, return its definition site
-    inline const VFGNode* getDefVFGNode(const SVFVar* svfVar) const
+    /// Given a valVar, return its definition site
+    inline const VFGNode* getDefVFGNode(const ValVar* valVar) const
     {
-        return getVFGNode(getDef(svfVar));
+        return getVFGNode(getDef(valVar));
     }
 
     // Given an VFG node, return true if it has a left hand side top level pointer (PAGnode)
@@ -324,11 +324,11 @@ public:
     const FunObjVar* isFunEntryVFGNode(const VFGNode* node) const;
 
     /// Whether a SVFVar has a blackhole or const object as its definition
-    inline bool hasBlackHoleConstObjAddrAsDef(const SVFVar* svfVar) const
+    inline bool hasBlackHoleConstObjAddrAsDef(const ValVar* valVar) const
     {
-        if (hasDef(svfVar))
+        if (hasDef(valVar))
         {
-            const VFGNode* defNode = getVFGNode(getDef(svfVar));
+            const VFGNode* defNode = getVFGNode(getDef(valVar));
             if (const AddrVFGNode* addr = SVFUtil::dyn_cast<AddrVFGNode>(defNode))
             {
                 if (SVFIR::getPAG()->isBlkObjOrConstantObj(addr->getSVFStmt()->getSrcID()))
@@ -445,7 +445,7 @@ protected:
     /// Connect VFG nodes between caller and callee for indirect call site
     //@{
     /// Connect actual-param and formal param
-    virtual inline void connectAParamAndFParam(const SVFVar* csArg, const SVFVar* funArg, const CallICFGNode* cbn, CallSiteID csId, VFGEdgeSetTy& edges)
+    virtual inline void connectAParamAndFParam(const ValVar* csArg, const ValVar* funArg, const CallICFGNode* cbn, CallSiteID csId, VFGEdgeSetTy& edges)
     {
         NodeID actualParam = getActualParmVFGNode(csArg, cbn)->getId();
         NodeID formalParam = getFormalParmVFGNode(funArg)->getId();
@@ -454,7 +454,7 @@ protected:
             edges.insert(edge);
     }
     /// Connect formal-ret and actual ret
-    virtual inline void connectFRetAndARet(const SVFVar* funReturn, const SVFVar* csReturn, CallSiteID csId, VFGEdgeSetTy& edges)
+    virtual inline void connectFRetAndARet(const ValVar* funReturn, const ValVar* csReturn, CallSiteID csId, VFGEdgeSetTy& edges)
     {
         NodeID formalRet = getFormalRetVFGNode(funReturn)->getId();
         NodeID actualRet = getActualRetVFGNode(csReturn)->getId();
@@ -464,30 +464,30 @@ protected:
     }
     //@}
 
-    /// Given a SVFVar, set/get its def VFG node (definition of top level pointers)
+    /// Given a ValVar, set/get its def VFG node (definition of top level pointers)
     //@{
-    inline void setDef(const SVFVar* svfVar, const VFGNode* node)
+    inline void setDef(const ValVar* valVar, const VFGNode* node)
     {
-        SVFVarToDefMapTy::iterator it = SVFVarToDefMap.find(svfVar);
-        if(it == SVFVarToDefMap.end())
+        ValVarToDefMapTy::iterator it = ValVarToDefMap.find(valVar);
+        if(it == ValVarToDefMap.end())
         {
-            SVFVarToDefMap[svfVar] = node->getId();
+            ValVarToDefMap[valVar] = node->getId();
             assert(hasVFGNode(node->getId()) && "not in the map!!");
         }
         else
         {
-            assert((it->second == node->getId()) && "a SVFVar can only have unique definition ");
+            assert((it->second == node->getId()) && "a ValVar can only have unique definition ");
         }
     }
-    inline NodeID getDef(const SVFVar* svfVar) const
+    inline NodeID getDef(const ValVar* valVar) const
     {
-        SVFVarToDefMapTy::const_iterator it = SVFVarToDefMap.find(svfVar);
-        assert(it!=SVFVarToDefMap.end() && "SVFVar does not have a definition??");
+        ValVarToDefMapTy::const_iterator it = ValVarToDefMap.find(valVar);
+        assert(it!=ValVarToDefMap.end() && "ValVar does not have a definition??");
         return it->second;
     }
-    inline bool hasDef(const SVFVar* svfVar) const
+    inline bool hasDef(const ValVar* valVar) const
     {
-        return (SVFVarToDefMap.find(svfVar) != SVFVarToDefMap.end());
+        return (ValVarToDefMap.find(valVar) != ValVarToDefMap.end());
     }
     //@}
 
@@ -544,7 +544,7 @@ protected:
     }
     /// Add a Dummy VFG node for null pointer definition
     /// To be noted for black hole pointer it has already has address edge connected
-    inline void addNullPtrVFGNode(const SVFVar* svfVar)
+    inline void addNullPtrVFGNode(const ValVar* svfVar)
     {
         NullPtrVFGNode* sNode = new NullPtrVFGNode(totalVFGNode++,svfVar);
         addVFGNode(sNode, pag->getICFG()->getGlobalICFGNode());
@@ -555,7 +555,7 @@ protected:
     {
         AddrVFGNode* sNode = new AddrVFGNode(totalVFGNode++,addr);
         addStmtVFGNode(sNode, addr);
-        setDef(addr->getLHSVar(),sNode);
+        setDef(SVFUtil::cast<ValVar>(addr->getLHSVar()),sNode);
     }
     /// Add a Copy VFG node
     inline void addCopyVFGNode(const CopyStmt* copy)
@@ -589,7 +589,7 @@ protected:
     /// Add an actual parameter VFG node
     /// To be noted that multiple actual parameters may have same value (SVFVar)
     /// So we need to make a pair <SVFVarID,CallSiteID> to find the right VFGParmNode
-    inline void addActualParmVFGNode(const SVFVar* aparm, const CallICFGNode* cs)
+    inline void addActualParmVFGNode(const ValVar* aparm, const CallICFGNode* cs)
     {
         ActualParmVFGNode* sNode = new ActualParmVFGNode(totalVFGNode++,aparm,cs);
         addVFGNode(sNode, const_cast<CallICFGNode*>(cs));
@@ -597,7 +597,7 @@ protected:
         /// do not set def here, this node is not a variable definition
     }
     /// Add a formal parameter VFG node
-    inline void addFormalParmVFGNode(const SVFVar* fparm, const FunObjVar* fun, CallPESet& callPEs)
+    inline void addFormalParmVFGNode(const ValVar* fparm, const FunObjVar* fun, CallPESet& callPEs)
     {
         FormalParmVFGNode* sNode = new FormalParmVFGNode(totalVFGNode++,fparm,fun);
         addVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(fun));
@@ -611,7 +611,7 @@ protected:
     /// Add a callee Return VFG node
     /// To be noted that here we assume returns of a procedure have already been unified into one
     /// Otherwise, we need to handle formalRet using <SVFVarID,CallSiteID> pair to find FormalRetVFG node same as handling actual parameters
-    inline void addFormalRetVFGNode(const SVFVar* uniqueFunRet, const FunObjVar* fun, RetPESet& retPEs)
+    inline void addFormalRetVFGNode(const ValVar* uniqueFunRet, const FunObjVar* fun, RetPESet& retPEs)
     {
         FormalRetVFGNode *sNode = new FormalRetVFGNode(totalVFGNode++, uniqueFunRet, fun);
         addVFGNode(sNode, pag->getICFG()->getFunExitICFGNode(fun));
@@ -630,7 +630,7 @@ protected:
         }
     }
     /// Add a callsite Receive VFG node
-    inline void addActualRetVFGNode(const SVFVar* ret,const CallICFGNode* cs)
+    inline void addActualRetVFGNode(const ValVar* ret,const CallICFGNode* cs)
     {
         ActualRetVFGNode* sNode = new ActualRetVFGNode(totalVFGNode++,ret,cs);
         addVFGNode(sNode, const_cast<RetICFGNode*>(cs->getRetICFGNode()));
@@ -640,7 +640,8 @@ protected:
     /// Add an llvm PHI VFG node
     inline void addIntraPHIVFGNode(const MultiOpndStmt* edge)
     {
-        IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++,edge->getRes());
+        const ValVar* res = SVFUtil::cast<ValVar>(edge->getRes());
+        IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++,res);
         u32_t pos = 0;
         for(auto var : edge->getOpndVars())
         {
@@ -648,13 +649,14 @@ protected:
             pos++;
         }
         addVFGNode(sNode,edge->getICFGNode());
-        setDef(edge->getRes(),sNode);
-        SVFVarToIntraPHIVFGNodeMap[edge->getRes()] = sNode;
+        setDef(res,sNode);
+        SVFVarToIntraPHIVFGNodeMap[res] = sNode;
     }
     /// Add a Compare VFG node
     inline void addCmpVFGNode(const CmpStmt* edge)
     {
-        CmpVFGNode* sNode = new CmpVFGNode(totalVFGNode++, edge->getRes());
+        const ValVar* res = SVFUtil::cast<ValVar>(edge->getRes());
+        CmpVFGNode* sNode = new CmpVFGNode(totalVFGNode++, res);
         u32_t pos = 0;
         for(auto var : edge->getOpndVars())
         {
@@ -662,13 +664,14 @@ protected:
             pos++;
         }
         addVFGNode(sNode,edge->getICFGNode());
-        setDef(edge->getRes(),sNode);
-        SVFVarToCmpVFGNodeMap[edge->getRes()] = sNode;
+        setDef(res,sNode);
+        SVFVarToCmpVFGNodeMap[res] = sNode;
     }
     /// Add a BinaryOperator VFG node
     inline void addBinaryOPVFGNode(const BinaryOPStmt* edge)
     {
-        BinaryOPVFGNode* sNode = new BinaryOPVFGNode(totalVFGNode++, edge->getRes());
+        const ValVar* res = SVFUtil::cast<ValVar>(edge->getRes());
+        BinaryOPVFGNode* sNode = new BinaryOPVFGNode(totalVFGNode++, res);
         u32_t pos = 0;
         for(auto var : edge->getOpndVars())
         {
@@ -676,8 +679,8 @@ protected:
             pos++;
         }
         addVFGNode(sNode,edge->getICFGNode());
-        setDef(edge->getRes(),sNode);
-        SVFVarToBinaryOPVFGNodeMap[edge->getRes()] = sNode;
+        setDef(res,sNode);
+        SVFVarToBinaryOPVFGNodeMap[res] = sNode;
     }
     /// Add a UnaryOperator VFG node
     inline void addUnaryOPVFGNode(const UnaryOPStmt* edge)

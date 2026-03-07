@@ -469,8 +469,8 @@ void MRGenerator::collectCallSitePts(const CallICFGNode* cs)
     WorkList worklist;
     if (pag->hasCallSiteArgsMap(callBlockNode))
     {
-        const SVFIR::SVFVarList& args = pta->getPAG()->getCallSiteArgsList(callBlockNode);
-        for(SVFIR::SVFVarList::const_iterator itA = args.begin(), ieA = args.end(); itA!=ieA; ++itA)
+        const SVFIR::ValVarList& args = pta->getPAG()->getCallSiteArgsList(callBlockNode);
+        for(SVFIR::ValVarList::const_iterator itA = args.begin(), ieA = args.end(); itA!=ieA; ++itA)
         {
             const PAGNode* node = *itA;
             if(node->isPointer())

@@ -38,6 +38,8 @@ namespace SVF
 {
 
 class SVFVar;
+class ValVar;
+class ObjVar;
 class ICFGNode;
 class IntraICFGNode;
 class CallICFGNode;
@@ -423,6 +425,11 @@ public:
     {
         return true;
     }
+
+    const ValVar* getLHSVar() const;
+    const ObjVar* getRHSVar() const;
+    const ValVar* getDstNode() const;
+    const ObjVar* getSrcNode() const;
 };
 
 /*!
@@ -507,6 +514,11 @@ public:
     /// constructor
     CopyStmt(SVFVar* s, SVFVar* d, CopyKind k) : AssignStmt(s, d, SVFStmt::Copy), copyKind(k) {}
 
+    const ValVar* getRHSVar() const;
+    const ValVar* getLHSVar() const;
+    const ValVar* getSrcNode() const;
+    const ValVar* getDstNode() const;
+
     virtual const std::string toString() const override;
 
 private:
@@ -544,6 +556,11 @@ public:
     /// constructor
     StoreStmt(SVFVar* s, SVFVar* d, const ICFGNode* st);
 
+    const ValVar* getRHSVar() const;
+    const ValVar* getLHSVar() const;
+    const ValVar* getSrcNode() const;
+    const ValVar* getDstNode() const;
+
     virtual const std::string toString() const override;
 
 };
@@ -578,6 +595,11 @@ public:
 
     /// constructor
     LoadStmt(SVFVar* s, SVFVar* d) : AssignStmt(s, d, SVFStmt::Load) {}
+
+    const ValVar* getRHSVar() const;
+    const ValVar* getLHSVar() const;
+    const ValVar* getSrcNode() const;
+    const ValVar* getDstNode() const;
 
     virtual const std::string toString() const override;
 };
@@ -660,6 +682,11 @@ public:
     {
     }
 
+    const ValVar* getRHSVar() const;
+    const ValVar* getLHSVar() const;
+    const ValVar* getSrcNode() const;
+    const ValVar* getDstNode() const;
+
     virtual const std::string toString() const;
 
 
@@ -719,6 +746,11 @@ public:
     }
     //@}
 
+    const ValVar* getRHSVar() const;
+    const ValVar* getLHSVar() const;
+    const ValVar* getSrcNode() const;
+    const ValVar* getDstNode() const;
+
     virtual const std::string toString() const override;
 };
 
@@ -775,6 +807,11 @@ public:
     }
     //@}
 
+    const ValVar* getRHSVar() const;
+    const ValVar* getLHSVar() const;
+    const ValVar* getSrcNode() const;
+    const ValVar* getDstNode() const;
+
     virtual const std::string toString() const override;
 
 };
@@ -786,10 +823,8 @@ class MultiOpndStmt : public SVFStmt
 {
     friend class GraphDBClient;
 
-
-
 public:
-    typedef std::vector<SVFVar*> OPVars;
+    typedef std::vector<ValVar*> OPVars;
 
 private:
     MultiOpndStmt();                      ///< place holder
@@ -803,7 +838,7 @@ private:
 protected:
     OPVars opVars;
     /// Constructor, only used by subclasses but not external users
-    MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k);
+    MultiOpndStmt(ValVar* r, const OPVars& opnds, GEdgeFlag k);
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -827,7 +862,7 @@ public:
     /// `r` is OpVar
     //@{
     /// Operand SVFVars
-    inline const SVFVar* getOpVar(u32_t pos) const
+    inline const ValVar* getOpVar(u32_t pos) const
     {
         return opVars.at(pos);
     }
@@ -897,13 +932,13 @@ public:
     //@}
 
     /// constructor
-    PhiStmt(SVFVar* res, const OPVars& opnds, const OpICFGNodeVec& icfgNodes)
+    PhiStmt(ValVar* res, const OPVars& opnds, const OpICFGNodeVec& icfgNodes)
         : MultiOpndStmt(res, opnds, SVFStmt::Phi), opICFGNodes(icfgNodes)
     {
         assert(opnds.size() == icfgNodes.size() &&
                "Numbers of operands and their ICFGNodes are not consistent?");
     }
-    void addOpVar(SVFVar* op, const ICFGNode* inode)
+    void addOpVar(ValVar* op, const ICFGNode* inode)
     {
         opVars.push_back(op);
         opICFGNodes.push_back(inode);
@@ -971,18 +1006,18 @@ public:
     //@}
 
     /// constructor
-    SelectStmt(SVFVar* res, const OPVars& opnds, const SVFVar* cond);
+    SelectStmt(ValVar* res, const OPVars& opnds, const SVFVar* cond);
     virtual const std::string toString() const override;
 
     inline const SVFVar* getCondition() const
     {
         return condition;
     }
-    inline const SVFVar* getTrueValue() const
+    inline const ValVar* getTrueValue() const
     {
         return getOpVar(0);
     }
-    inline const SVFVar* getFalseValue() const
+    inline const ValVar* getFalseValue() const
     {
         return getOpVar(1);
     }
@@ -1061,7 +1096,7 @@ public:
     //@}
 
     /// constructor
-    CmpStmt(SVFVar* res, const OPVars& opnds, u32_t pre);
+    CmpStmt(ValVar* res, const OPVars& opnds, u32_t pre);
 
     u32_t getPredicate() const
     {
@@ -1128,7 +1163,7 @@ public:
     //@}
 
     /// constructor
-    BinaryOPStmt(SVFVar* res, const OPVars& opnds, u32_t oc);
+    BinaryOPStmt(ValVar* res, const OPVars& opnds, u32_t oc);
 
     u32_t getOpcode() const
     {
@@ -1180,23 +1215,14 @@ public:
     //@}
 
     /// constructor
-    UnaryOPStmt(SVFVar* s, SVFVar* d, u32_t oc)
-        : SVFStmt(s, d, SVFStmt::UnaryOp), opcode(oc)
-    {
-    }
+    UnaryOPStmt(ValVar* s, ValVar* d, u32_t oc);
 
     u32_t getOpcode() const
     {
         return opcode;
     }
-    inline const SVFVar* getOpVar() const
-    {
-        return SVFStmt::getSrcNode();
-    }
-    inline const SVFVar* getRes() const
-    {
-        return SVFStmt::getDstNode();
-    }
+    const ValVar* getOpVar() const;
+    const ValVar* getRes() const;
     NodeID getOpVarID() const;
     NodeID getResID() const;
 
@@ -1223,8 +1249,8 @@ private:
     NodeID getDstID(); ///< place holder, use getResID() instead
 
     SuccAndCondPairVec successors;
-    const SVFVar* cond;
-    const SVFVar* brInst;
+    const ValVar* cond;
+    const ValVar* brInst;
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1244,19 +1270,15 @@ public:
     //@}
 
     /// constructor
-    BranchStmt(SVFVar* inst, SVFVar* c, const SuccAndCondPairVec& succs)
-        : SVFStmt(c, inst, SVFStmt::Branch), successors(succs), cond(c),
-          brInst(inst)
-    {
-    }
+    BranchStmt(ValVar* inst, ValVar* c, const SuccAndCondPairVec& succs);
 
     /// The branch is unconditional if cond is a null value
     bool isUnconditional() const;
     /// The branch is conditional if cond is not a null value
     bool isConditional() const;
     /// Return the condition
-    const SVFVar* getCondition() const;
-    const SVFVar* getBranchInst() const
+    const ValVar* getCondition() const;
+    const ValVar* getBranchInst() const
     {
         return brInst;
     }
@@ -1327,6 +1349,11 @@ public:
     {
     }
 
+    const ValVar* getRHSVar() const;
+    const ValVar* getLHSVar() const;
+    const ValVar* getSrcNode() const;
+    const ValVar* getDstNode() const;
+
     virtual const std::string toString() const;
 
 };
@@ -1365,6 +1392,11 @@ public:
         : RetPE(s, d, i, e, SVFStmt::ThreadJoin)
     {
     }
+
+    const ValVar* getRHSVar() const;
+    const ValVar* getLHSVar() const;
+    const ValVar* getSrcNode() const;
+    const ValVar* getDstNode() const;
 
     virtual const std::string toString() const;
 

@@ -65,7 +65,7 @@ void LeakChecker::initSrcs()
                 {
                     const CallICFGNode* cs = worklist.pop();
                     const RetICFGNode* retBlockNode = cs->getRetICFGNode();
-                    const SVFVar* svfVar = pag->getCallSiteRet(retBlockNode);
+                    const ValVar* svfVar = pag->getCallSiteRet(retBlockNode);
                     const SVFGNode* node = getSVFG()->getDefSVFGNode(svfVar);
                     if (visited.test(node->getId()) == 0)
                         visited.set(node->getId());
@@ -118,10 +118,10 @@ void LeakChecker::initSnks()
             const FunObjVar* fun = *cit;
             if (isSinkLikeFun(fun))
             {
-                SVFIR::SVFVarList &arglist = it->second;
+                SVFIR::ValVarList &arglist = it->second;
                 assert(!arglist.empty()	&& "no actual parameter at deallocation site?");
                 /// we only choose pointer parameters among all the actual parameters
-                for (SVFIR::SVFVarList::const_iterator ait = arglist.begin(),
+                for (SVFIR::ValVarList::const_iterator ait = arglist.begin(),
                         aeit = arglist.end(); ait != aeit; ++ait)
                 {
                     const SVFVar *svfVar = *ait;

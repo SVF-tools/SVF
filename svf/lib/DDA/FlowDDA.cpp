@@ -46,7 +46,7 @@ void FlowDDA::computeDDAPts(NodeID id)
     LocDPItem::setMaxBudget(Options::FlowBudget());
 
     const SVFVar* node = getPAG()->getSVFVar(id);
-    LocDPItem dpm = getDPIm(node->getId(),getDefSVFGNode(node));
+    LocDPItem dpm = getDPIm(node->getId(),getDefSVFGNode(SVFUtil::cast<ValVar>(node)));
 
     /// start DDA analysis
     DOTIMESTAT(double start = DDAStat::getClk(true));

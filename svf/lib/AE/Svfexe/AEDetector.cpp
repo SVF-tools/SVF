@@ -559,7 +559,7 @@ void NullptrDerefDetector::detect(AbstractState& as, const ICFGNode* node)
             {
                 // like llvm bitcode `p = gep p, idx`
                 // we check rhs p's all address are valid mem
-                SVFVar* rhs = gep->getRHSVar();
+                const ValVar* rhs = gep->getRHSVar();
                 if (!canSafelyDerefPtr(as, rhs))
                 {
                     AEException bug(stmt->toString());
@@ -570,7 +570,7 @@ void NullptrDerefDetector::detect(AbstractState& as, const ICFGNode* node)
             {
                 // like llvm bitcode `p = load q`
                 // we check lhs p's all address are valid mem
-                SVFVar* lhs = load->getLHSVar();
+                const ValVar* lhs = load->getLHSVar();
                 if ( !canSafelyDerefPtr(as, lhs))
                 {
                     AEException bug(stmt->toString());

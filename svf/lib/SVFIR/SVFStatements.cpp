@@ -290,6 +290,51 @@ const std::string TDJoinPE::toString() const
     return rawstr.str();
 }
 
+const ObjVar* AddrStmt::getRHSVar() const { return cast<ObjVar>(SVFStmt::getSrcNode()); }
+const ValVar* AddrStmt::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
+const ObjVar* AddrStmt::getSrcNode() const { return getRHSVar(); }
+const ValVar* AddrStmt::getDstNode() const { return getLHSVar(); }
+
+const ValVar* CopyStmt::getRHSVar() const { return cast<ValVar>(SVFStmt::getSrcNode()); }
+const ValVar* CopyStmt::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
+const ValVar* CopyStmt::getSrcNode() const { return getRHSVar(); }
+const ValVar* CopyStmt::getDstNode() const { return getLHSVar(); }
+
+const ValVar* StoreStmt::getRHSVar() const { return cast<ValVar>(SVFStmt::getSrcNode()); }
+const ValVar* StoreStmt::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
+const ValVar* StoreStmt::getSrcNode() const { return getRHSVar(); }
+const ValVar* StoreStmt::getDstNode() const { return getLHSVar(); }
+
+const ValVar* LoadStmt::getRHSVar() const { return cast<ValVar>(SVFStmt::getSrcNode()); }
+const ValVar* LoadStmt::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
+const ValVar* LoadStmt::getSrcNode() const { return getRHSVar(); }
+const ValVar* LoadStmt::getDstNode() const { return getLHSVar(); }
+
+const ValVar* GepStmt::getRHSVar() const { return cast<ValVar>(SVFStmt::getSrcNode()); }
+const ValVar* GepStmt::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
+const ValVar* GepStmt::getSrcNode() const { return getRHSVar(); }
+const ValVar* GepStmt::getDstNode() const { return getLHSVar(); }
+
+const ValVar* CallPE::getRHSVar() const { return cast<ValVar>(SVFStmt::getSrcNode()); }
+const ValVar* CallPE::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
+const ValVar* CallPE::getSrcNode() const { return getRHSVar(); }
+const ValVar* CallPE::getDstNode() const { return getLHSVar(); }
+
+const ValVar* RetPE::getRHSVar() const { return cast<ValVar>(SVFStmt::getSrcNode()); }
+const ValVar* RetPE::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
+const ValVar* RetPE::getSrcNode() const { return getRHSVar(); }
+const ValVar* RetPE::getDstNode() const { return getLHSVar(); }
+
+const ValVar* TDForkPE::getRHSVar() const { return cast<ValVar>(SVFStmt::getSrcNode()); }
+const ValVar* TDForkPE::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
+const ValVar* TDForkPE::getSrcNode() const { return getRHSVar(); }
+const ValVar* TDForkPE::getDstNode() const { return getLHSVar(); }
+
+const ValVar* TDJoinPE::getRHSVar() const { return cast<ValVar>(SVFStmt::getSrcNode()); }
+const ValVar* TDJoinPE::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
+const ValVar* TDJoinPE::getSrcNode() const { return getRHSVar(); }
+const ValVar* TDJoinPE::getDstNode() const { return getLHSVar(); }
+
 
 NodeID MultiOpndStmt::getOpVarID(u32_t pos) const
 {
@@ -308,6 +353,15 @@ NodeID UnaryOPStmt::getOpVarID() const
 NodeID UnaryOPStmt::getResID() const
 {
     return getRes()->getId();
+}
+
+const ValVar* UnaryOPStmt::getOpVar() const
+{
+    return cast<ValVar>(SVFStmt::getSrcNode());
+}
+const ValVar* UnaryOPStmt::getRes() const
+{
+    return cast<ValVar>(SVFStmt::getDstNode());
 }
 
 /// Return true if this is a phi at the function exit
@@ -329,10 +383,21 @@ bool BranchStmt::isConditional() const
     return cond->getId() != PAG::getPAG()->nullPtrSymID();;
 }
 /// Return the condition
-const SVFVar* BranchStmt::getCondition() const
+const ValVar* BranchStmt::getCondition() const
 {
     //assert(isConditional() && "this is a unconditional branch");
     return cond;
+}
+
+UnaryOPStmt::UnaryOPStmt(ValVar* s, ValVar* d, u32_t oc)
+    : SVFStmt(s, d, SVFStmt::UnaryOp), opcode(oc)
+{
+}
+
+BranchStmt::BranchStmt(ValVar* inst, ValVar* c, const SuccAndCondPairVec& succs)
+    : SVFStmt(c, inst, SVFStmt::Branch), successors(succs), cond(c),
+      brInst(inst)
+{
 }
 
 StoreStmt::StoreStmt(SVFVar* s, SVFVar* d, const ICFGNode* st)
@@ -354,12 +419,12 @@ RetPE::RetPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
 }
 
 
-MultiOpndStmt::MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k)
+MultiOpndStmt::MultiOpndStmt(ValVar* r, const OPVars& opnds, GEdgeFlag k)
     : SVFStmt(opnds.at(0), r, k), opVars(opnds)
 {
 }
 
-CmpStmt::CmpStmt(SVFVar* s, const OPVars& opnds, u32_t pre)
+CmpStmt::CmpStmt(ValVar* s, const OPVars& opnds, u32_t pre)
     : MultiOpndStmt(s, opnds,
                     makeEdgeFlagWithAddionalOpnd(SVFStmt::Cmp, opnds.at(1))),
       predicate(pre)
@@ -367,7 +432,7 @@ CmpStmt::CmpStmt(SVFVar* s, const OPVars& opnds, u32_t pre)
     assert(opnds.size() == 2 && "CmpStmt can only have two operands!");
 }
 
-SelectStmt::SelectStmt(SVFVar* s, const OPVars& opnds, const SVFVar* cond)
+SelectStmt::SelectStmt(ValVar* s, const OPVars& opnds, const SVFVar* cond)
     : MultiOpndStmt(s, opnds,
                     makeEdgeFlagWithAddionalOpnd(SVFStmt::Select, opnds.at(1))),
       condition(cond)
@@ -375,7 +440,7 @@ SelectStmt::SelectStmt(SVFVar* s, const OPVars& opnds, const SVFVar* cond)
     assert(opnds.size() == 2 && "SelectStmt can only have two operands!");
 }
 
-BinaryOPStmt::BinaryOPStmt(SVFVar* s, const OPVars& opnds, u32_t oc)
+BinaryOPStmt::BinaryOPStmt(ValVar* s, const OPVars& opnds, u32_t oc)
     : MultiOpndStmt(
           s, opnds,
           makeEdgeFlagWithAddionalOpnd(SVFStmt::BinaryOp, opnds.at(1))),

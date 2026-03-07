@@ -41,6 +41,7 @@ namespace SVF
 {
 
 class SVFVar;
+class ValVar;
 
 
 /*
@@ -58,7 +59,7 @@ public:
         NonOverlap, Overlap, Subset, Superset, Same
     };
 
-    typedef std::pair<const SVFVar*, const SVFType*> IdxOperandPair;
+    typedef std::pair<const ValVar*, const SVFType*> IdxOperandPair;
     typedef std::vector<IdxOperandPair> IdxOperandPairs;
 
     /// Constructor
@@ -144,7 +145,7 @@ public:
     u32_t getElementNum(const SVFType* type) const;
 
 
-    bool addOffsetVarAndGepTypePair(const SVFVar* var, const SVFType* gepIterType);
+    bool addOffsetVarAndGepTypePair(const ValVar* var, const SVFType* gepIterType);
 
     /// Return TRUE if this is a constant location set.
     bool isConstantOffset() const;
@@ -156,13 +157,13 @@ public:
     }
 
     /// Return byte offset from the beginning of the structure to the field where it is located for struct type
-    u32_t getStructFieldOffset(const SVFVar* idxOperandVar, const SVFStructType* idxOperandType) const;
+    u32_t getStructFieldOffset(const ValVar* idxOperandVar, const SVFStructType* idxOperandType) const;
 
     /// Dump location set
     std::string dump() const;
 
 protected:
-    inline void addIdxOperandPair(std::pair<const SVFVar*, const SVFType*> pair)
+    inline void addIdxOperandPair(std::pair<const ValVar*, const SVFType*> pair)
     {
         idxOperandPairs.push_back(pair);
     }

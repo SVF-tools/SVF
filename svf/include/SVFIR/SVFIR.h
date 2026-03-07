@@ -55,12 +55,12 @@ public:
     typedef Map<NodeID,CallSiteSet> FunPtrToCallSitesMap;
     typedef Map<NodeID,NodeBS> MemObjToFieldsMap;
     typedef std::vector<const SVFStmt*> SVFStmtList;
-    typedef std::vector<const SVFVar*> SVFVarList;
+    typedef std::vector<const ValVar*> ValVarList;
     typedef Map<const SVFVar*,PhiStmt*> PHINodeMap;
-    typedef Map<const FunObjVar*,SVFVarList> FunToArgsListMap;
-    typedef Map<const CallICFGNode*,SVFVarList> CSToArgsListMap;
-    typedef Map<const RetICFGNode*,const SVFVar*> CSToRetMap;
-    typedef Map<const FunObjVar*,const SVFVar*> FunToRetMap;
+    typedef Map<const FunObjVar*,ValVarList> FunToArgsListMap;
+    typedef Map<const CallICFGNode*,ValVarList> CSToArgsListMap;
+    typedef Map<const RetICFGNode*,const ValVar*> CSToRetMap;
+    typedef Map<const FunObjVar*,const ValVar*> FunToRetMap;
     typedef Map<const FunObjVar*,SVFStmtSet> FunToPAGEdgeSetMap;
     typedef Map<const ICFGNode*,SVFStmtList> ICFGNode2SVFStmtsMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
@@ -131,6 +131,16 @@ public:
     inline const SVFVar* getSVFVar(NodeID id) const
     {
         return getGNode(id);
+    }
+    inline const ValVar* getValVar(NodeID id) const
+    {
+        if(const SVFVar* var = getSVFVar(id))
+            return SVFUtil::dyn_cast<ValVar>(var);
+        else
+        {
+            assert(false && "the Node is not a ValVar");
+            return nullptr;
+        }
     }
     inline const ObjVar* getObjVar(NodeID id) const
     {
@@ -355,7 +365,7 @@ public:
         return funArgsListMap;
     }
     /// Get function arguments list
-    inline const SVFVarList& getFunArgsList(const FunObjVar*  func) const
+    inline const ValVarList& getFunArgsList(const FunObjVar*  func) const
     {
         FunToArgsListMap::const_iterator it = funArgsListMap.find(func);
         assert(it != funArgsListMap.end() && "this function doesn't have arguments");
@@ -372,7 +382,7 @@ public:
         return callSiteArgsListMap;
     }
     /// Get callsite argument list
-    inline const SVFVarList& getCallSiteArgsList(const CallICFGNode* cs) const
+    inline const ValVarList& getCallSiteArgsList(const CallICFGNode* cs) const
     {
         CSToArgsListMap::const_iterator it = callSiteArgsListMap.find(cs);
         assert(it != callSiteArgsListMap.end() && "this call site doesn't have arguments");
@@ -384,7 +394,7 @@ public:
         return callSiteRetMap;
     }
     /// Get callsite return
-    inline const SVFVar* getCallSiteRet(const RetICFGNode* cs) const
+    inline const ValVar* getCallSiteRet(const RetICFGNode* cs) const
     {
         CSToRetMap::const_iterator it = callSiteRetMap.find(cs);
         assert(it != callSiteRetMap.end() && "this call site doesn't have return");
@@ -400,7 +410,7 @@ public:
         return funRetMap;
     }
     /// Get function return list
-    inline const SVFVar* getFunRet(const FunObjVar*  func) const
+    inline const ValVar* getFunRet(const FunObjVar*  func) const
     {
         FunToRetMap::const_iterator it = funRetMap.find(func);
         assert(it != funRetMap.end() && "this function doesn't have return");
@@ -595,25 +605,25 @@ private:
     /// Get/set method for function/callsite arguments and returns
     //@{
     /// Add function arguments
-    inline void addFunArgs(const FunObjVar* fun, const SVFVar* arg)
+    inline void addFunArgs(const FunObjVar* fun, const ValVar* arg)
     {
         FunEntryICFGNode* funEntryBlockNode = icfg->getFunEntryICFGNode(fun);
         addFunArgs(funEntryBlockNode, fun, arg);
     }
 
-    inline void addFunArgs(FunEntryICFGNode* funEntryBlockNode, const FunObjVar* fun, const SVFVar* arg)
+    inline void addFunArgs(FunEntryICFGNode* funEntryBlockNode, const FunObjVar* fun, const ValVar* arg)
     {
         funEntryBlockNode->addFormalParms(arg);
         funArgsListMap[fun].push_back(arg);
     }
     /// Add function returns
-    inline void addFunRet(const FunObjVar* fun, const SVFVar* ret)
+    inline void addFunRet(const FunObjVar* fun, const ValVar* ret)
     {
         FunExitICFGNode* funExitBlockNode = icfg->getFunExitICFGNode(fun);
         addFunRet(funExitBlockNode, fun, ret);
     }
 
-    inline void addFunRet(FunExitICFGNode* funExitBlockNode, const FunObjVar* fun, const SVFVar* ret)
+    inline void addFunRet(FunExitICFGNode* funExitBlockNode, const FunObjVar* fun, const ValVar* ret)
     {
         funExitBlockNode->addFormalRet(ret);
         funRetMap[fun] = ret;
@@ -625,7 +635,7 @@ private:
         callSiteArgsListMap[callBlockNode].push_back(arg);
     }
     /// Add callsite returns
-    inline void addCallSiteRets(RetICFGNode* retBlockNode,const SVFVar* arg)
+    inline void addCallSiteRets(RetICFGNode* retBlockNode,const ValVar* arg)
     {
         retBlockNode->addActualRet(arg);
         callSiteRetMap[retBlockNode]= arg;

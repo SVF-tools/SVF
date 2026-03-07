@@ -76,7 +76,7 @@ AddrStmt* SVFIR::addAddrStmt(NodeID src, NodeID dst)
 void SVFIR::addAddrStmt(AddrStmt* edge)
 {
     addToStmt2TypeMap(edge);
-    addEdge(edge->getRHSVar(),edge->getLHSVar(), edge);
+    addEdge(getGNode(edge->getRHSVarID()),getGNode(edge->getLHSVarID()), edge);
 }
 
 /*!
@@ -99,7 +99,7 @@ CopyStmt* SVFIR::addCopyStmt(NodeID src, NodeID dst, CopyStmt::CopyKind type)
 void SVFIR::addCopyStmt(CopyStmt* edge)
 {
     addToStmt2TypeMap(edge);
-    addEdge(edge->getRHSVar(),edge->getLHSVar(), edge);
+    addEdge(getGNode(edge->getRHSVarID()),getGNode(edge->getLHSVarID()), edge);
 }
 
 /*!
@@ -107,8 +107,8 @@ void SVFIR::addCopyStmt(CopyStmt* edge)
  */
 PhiStmt* SVFIR::addPhiStmt(NodeID res, NodeID opnd, const ICFGNode* pred)
 {
-    SVFVar* opNode = getGNode(opnd);
-    SVFVar* resNode = getGNode(res);
+    ValVar* opNode = SVFUtil::cast<ValVar>(getGNode(opnd));
+    ValVar* resNode = SVFUtil::cast<ValVar>(getGNode(res));
     PHINodeMap::iterator it = phiNodeMap.find(resNode);
     if(it == phiNodeMap.end())
     {
@@ -140,15 +140,15 @@ void SVFIR::addPhiStmt(PhiStmt* edge, SVFVar* src, SVFVar* dst)
  */
 SelectStmt* SVFIR::addSelectStmt(NodeID res, NodeID op1, NodeID op2, NodeID cond)
 {
-    SVFVar* op1Node = getGNode(op1);
-    SVFVar* op2Node = getGNode(op2);
-    SVFVar* dstNode = getGNode(res);
+    ValVar* op1Node = SVFUtil::cast<ValVar>(getGNode(op1));
+    ValVar* op2Node = SVFUtil::cast<ValVar>(getGNode(op2));
+    ValVar* dstNode = SVFUtil::cast<ValVar>(getGNode(res));
     SVFVar* condNode = getGNode(cond);
     if(hasLabeledEdge(op1Node, dstNode, SVFStmt::Select, op2Node))
         return nullptr;
     else
     {
-        std::vector<SVFVar*> opnds = {op1Node, op2Node};
+        std::vector<ValVar*> opnds = {op1Node, op2Node};
         SelectStmt* select = new SelectStmt(dstNode, opnds, condNode);
         addSelectStmt(select, op1Node, dstNode);
         return select;
@@ -166,14 +166,14 @@ void SVFIR::addSelectStmt(SelectStmt* edge, SVFVar* src, SVFVar* dst)
  */
 CmpStmt* SVFIR::addCmpStmt(NodeID op1, NodeID op2, NodeID dst, u32_t predicate)
 {
-    SVFVar* op1Node = getGNode(op1);
-    SVFVar* op2Node = getGNode(op2);
-    SVFVar* dstNode = getGNode(dst);
+    ValVar* op1Node = SVFUtil::cast<ValVar>(getGNode(op1));
+    ValVar* op2Node = SVFUtil::cast<ValVar>(getGNode(op2));
+    ValVar* dstNode = SVFUtil::cast<ValVar>(getGNode(dst));
     if(hasLabeledEdge(op1Node, dstNode, SVFStmt::Cmp, op2Node))
         return nullptr;
     else
     {
-        std::vector<SVFVar*> opnds = {op1Node, op2Node};
+        std::vector<ValVar*> opnds = {op1Node, op2Node};
         CmpStmt* cmp = new CmpStmt(dstNode, opnds, predicate);
         addCmpStmt(cmp, op1Node, dstNode);
         return cmp;
@@ -192,14 +192,14 @@ void SVFIR::addCmpStmt(CmpStmt* edge, SVFVar* src, SVFVar* dst)
  */
 BinaryOPStmt* SVFIR::addBinaryOPStmt(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
 {
-    SVFVar* op1Node = getGNode(op1);
-    SVFVar* op2Node = getGNode(op2);
-    SVFVar* dstNode = getGNode(dst);
+    ValVar* op1Node = SVFUtil::cast<ValVar>(getGNode(op1));
+    ValVar* op2Node = SVFUtil::cast<ValVar>(getGNode(op2));
+    ValVar* dstNode = SVFUtil::cast<ValVar>(getGNode(dst));
     if(hasLabeledEdge(op1Node, dstNode, SVFStmt::BinaryOp, op2Node))
         return nullptr;
     else
     {
-        std::vector<SVFVar*> opnds = {op1Node, op2Node};
+        std::vector<ValVar*> opnds = {op1Node, op2Node};
         BinaryOPStmt* binaryOP = new BinaryOPStmt(dstNode, opnds, opcode);
         addBinaryOPStmt(binaryOP,op1Node,dstNode);
         return binaryOP;
@@ -216,8 +216,8 @@ void SVFIR::addBinaryOPStmt(BinaryOPStmt* edge, SVFVar* src, SVFVar* dst)
  */
 UnaryOPStmt* SVFIR::addUnaryOPStmt(NodeID src, NodeID dst, u32_t opcode)
 {
-    SVFVar* srcNode = getGNode(src);
-    SVFVar* dstNode = getGNode(dst);
+    ValVar* srcNode = SVFUtil::cast<ValVar>(getGNode(src));
+    ValVar* dstNode = SVFUtil::cast<ValVar>(getGNode(dst));
     if(hasNonlabeledEdge(srcNode,dstNode, SVFStmt::UnaryOp))
         return nullptr;
     else
@@ -239,8 +239,8 @@ void SVFIR::addUnaryOPStmt(UnaryOPStmt* edge, SVFVar* src, SVFVar* dst)
 */
 BranchStmt* SVFIR::addBranchStmt(NodeID br, NodeID cond, const BranchStmt::SuccAndCondPairVec&  succs)
 {
-    SVFVar* brNode = getGNode(br);
-    SVFVar* condNode = getGNode(cond);
+    ValVar* brNode = SVFUtil::cast<ValVar>(getGNode(br));
+    ValVar* condNode = SVFUtil::cast<ValVar>(getGNode(cond));
     if(hasNonlabeledEdge(condNode,brNode, SVFStmt::Branch))
         return nullptr;
     else
@@ -277,7 +277,7 @@ LoadStmt* SVFIR::addLoadStmt(NodeID src, NodeID dst)
 void SVFIR::addLoadStmt(LoadStmt* edge)
 {
     addToStmt2TypeMap(edge);
-    addEdge(edge->getRHSVar(),edge->getLHSVar(), edge);
+    addEdge(getGNode(edge->getRHSVarID()),getGNode(edge->getLHSVarID()), edge);
 }
 
 /*!
@@ -436,8 +436,8 @@ GepStmt* SVFIR::addNormalGepStmt(NodeID src, NodeID dst, const AccessPath& ap)
 
 void SVFIR::addGepStmt(GepStmt* gepPE)
 {
-    SVFVar* baseNode = gepPE->getRHSVar();
-    SVFVar* dstNode = gepPE->getLHSVar();
+    SVFVar* baseNode = getGNode(gepPE->getRHSVarID());
+    SVFVar* dstNode = getGNode(gepPE->getLHSVarID());
     addToStmt2TypeMap(gepPE);
     addEdge(baseNode, dstNode, gepPE);
 

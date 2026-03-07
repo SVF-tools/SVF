@@ -589,14 +589,14 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
     // Find inter direct call edges between actual param and formal param.
     if (pag->hasCallSiteArgsMap(callICFGNode) && pag->hasFunArgsList(callee))
     {
-        const SVFIR::SVFVarList& csArgList = pag->getCallSiteArgsList(callICFGNode);
-        const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(callee);
-        SVFIR::SVFVarList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
-        SVFIR::SVFVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
+        const SVFIR::ValVarList& csArgList = pag->getCallSiteArgsList(callICFGNode);
+        const SVFIR::ValVarList& funArgList = pag->getFunArgsList(callee);
+        SVFIR::ValVarList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
+        SVFIR::ValVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
         for (; funArgIt != funArgEit && csArgIt != csArgEit; funArgIt++, csArgIt++)
         {
-            const SVFVar *cs_arg = *csArgIt;
-            const SVFVar *fun_arg = *funArgIt;
+            const ValVar *cs_arg = *csArgIt;
+            const ValVar *fun_arg = *funArgIt;
             if (isInterestedSVFVar(fun_arg) && isInterestedSVFVar(cs_arg))
                 getInterVFEdgeAtIndCSFromAPToFP(cs_arg, fun_arg, callICFGNode, csId, edges);
         }
@@ -604,12 +604,12 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
         if (callee->isVarArg())
         {
             NodeID varFunArg = pag->getVarargNode(callee);
-            const SVFVar* varFunArgNode = pag->getSVFVar(varFunArg);
+            const ValVar* varFunArgNode = pag->getValVar(varFunArg);
             if (isInterestedSVFVar(varFunArgNode))
             {
                 for (; csArgIt != csArgEit; csArgIt++)
                 {
-                    const SVFVar *cs_arg = *csArgIt;
+                    const ValVar *cs_arg = *csArgIt;
                     if (isInterestedSVFVar(cs_arg))
                         getInterVFEdgeAtIndCSFromAPToFP(cs_arg, varFunArgNode, callICFGNode, csId, edges);
                 }
@@ -620,8 +620,8 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
     // Find inter direct return edges between actual return and formal return.
     if (pag->funHasRet(callee) && pag->callsiteHasRet(retICFGNode))
     {
-        const SVFVar* cs_return = pag->getCallSiteRet(retICFGNode);
-        const SVFVar* fun_return = pag->getFunRet(callee);
+        const ValVar* cs_return = pag->getCallSiteRet(retICFGNode);
+        const ValVar* fun_return = pag->getFunRet(callee);
         if (isInterestedSVFVar(cs_return) && isInterestedSVFVar(fun_return))
             getInterVFEdgeAtIndCSFromFRToAR(fun_return, cs_return, csId, edges);
     }

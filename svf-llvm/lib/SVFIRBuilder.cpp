@@ -111,7 +111,7 @@ SVFIR* SVFIRBuilder::build()
                         fun.getReturnType()->isVoidTy() == false)
                 {
                     pag->addFunRet(svffun,
-                                   pag->getGNode(pag->getReturnNode(svffun)));
+                                   pag->getValVar(pag->getReturnNode(svffun)));
                 }
 
                 /// To be noted, we do not record arguments which are in declared function without body
@@ -128,7 +128,7 @@ SVFIR* SVFIRBuilder::build()
                     //    if(I->getType()->isPointerTy())
                     //        addBlackHoleAddrEdge(argValNodeId);
                     //}
-                    pag->addFunArgs(svffun,pag->getGNode(argValNodeId));
+                    pag->addFunArgs(svffun,pag->getValVar(argValNodeId));
                 }
             }
             for (Function::const_iterator bit = fun.begin(), ebit = fun.end();
@@ -659,7 +659,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
         if(!prevPtrOperand && svfGepTy->isPointerTy()) prevPtrOperand = true;
         const Value* offsetVal = gi.getOperand();
         assert(gepTy != offsetVal->getType() && "iteration and operand have the same type?");
-        ap.addOffsetVarAndGepTypePair(getPAG()->getGNode(llvmModuleSet()->getValueNode(offsetVal)), svfGepTy);
+        ap.addOffsetVarAndGepTypePair(getPAG()->getValVar(llvmModuleSet()->getValueNode(offsetVal)), svfGepTy);
 
         //The int value of the current index operand
         const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(offsetVal);
@@ -1205,10 +1205,10 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
     for (u32_t i = 0; i < cs->arg_size(); i++)
         pag->addCallSiteArgs(
             callBlockNode,
-            SVFUtil::cast<ValVar>(pag->getGNode(getValueNode(cs->getArgOperand(i)))));
+            pag->getValVar(getValueNode(cs->getArgOperand(i))));
 
     if(!cs->getType()->isVoidTy())
-        pag->addCallSiteRets(retBlockNode,pag->getGNode(getValueNode(cs)));
+        pag->addCallSiteRets(retBlockNode,pag->getValVar(getValueNode(cs)));
 
     if (callBlockNode->isVirtualCall())
     {

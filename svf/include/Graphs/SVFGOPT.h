@@ -95,7 +95,7 @@ protected:
 
     /// Connect SVFG nodes between caller and callee for indirect call sites
     //@{
-    inline void connectAParamAndFParam(const SVFVar* cs_arg, const SVFVar* fun_arg, const CallICFGNode*, CallSiteID csId, SVFGEdgeSetTy& edges) override
+    inline void connectAParamAndFParam(const ValVar* cs_arg, const ValVar* fun_arg, const CallICFGNode*, CallSiteID csId, SVFGEdgeSetTy& edges) override
     {
         NodeID phiId = getDef(fun_arg);
         SVFGEdge* edge = addCallEdge(getDef(cs_arg), phiId, csId);
@@ -107,7 +107,7 @@ protected:
         }
     }
     /// Connect formal-ret and actual ret
-    inline void connectFRetAndARet(const SVFVar* fun_ret, const SVFVar* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges) override
+    inline void connectFRetAndARet(const ValVar* fun_ret, const ValVar* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges) override
     {
         NodeID phiId = getDef(cs_ret);
         NodeID retdef = getDef(fun_ret);
@@ -244,7 +244,7 @@ private:
         return (inter1 && inter2);
     }
 
-    inline void addInterPHIOperands(PHISVFGNode* phi, const SVFVar* operand)
+    inline void addInterPHIOperands(PHISVFGNode* phi, const ValVar* operand)
     {
         phi->setOpVer(phi->getOpVerNum(), operand);
     }
@@ -267,10 +267,10 @@ private:
         return sNode;
     }
 
-    inline void resetDef(const SVFVar* svfVar, const SVFGNode* node)
+    inline void resetDef(const ValVar* valVar, const SVFGNode* node)
     {
-        SVFVarToDefMapTy::iterator it = SVFVarToDefMap.find(svfVar);
-        assert(it != SVFVarToDefMap.end() && "a SVFIR node doesn't have definition before");
+        ValVarToDefMapTy::iterator it = ValVarToDefMap.find(valVar);
+        assert(it != ValVarToDefMap.end() && "a SVFIR node doesn't have definition before");
         it->second = node->getId();
     }
 

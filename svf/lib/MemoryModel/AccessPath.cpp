@@ -39,7 +39,7 @@ using namespace SVFUtil;
 /*!
  * Add offset value to vector offsetVarAndGepTypePairs
  */
-bool AccessPath::addOffsetVarAndGepTypePair(const SVFVar* var, const SVFType* gepIterType)
+bool AccessPath::addOffsetVarAndGepTypePair(const ValVar* var, const SVFType* gepIterType)
 {
     idxOperandPairs.emplace_back(var, gepIterType);
     return true;
@@ -95,7 +95,7 @@ u32_t AccessPath::getElementNum(const SVFType* type) const
 // e.g. idxOperandVar: i32 2  idxOperandType: %struct.Student = type { i32, [i8 x 12], i32 }
 //  we accumulate field 0 (i32) byte size (4 Bytes), and field 1 ([i8x12]) byte size (12 Bytes)
 //  then the return byte offset is 16 Bytes.
-u32_t AccessPath::getStructFieldOffset(const SVFVar* idxOperandVar, const SVFStructType* idxOperandType) const
+u32_t AccessPath::getStructFieldOffset(const ValVar* idxOperandVar, const SVFStructType* idxOperandType) const
 {
     u32_t structByteOffset = 0;
     if (const ConstIntValVar*op = SVFUtil::dyn_cast<ConstIntValVar>(idxOperandVar))
@@ -131,7 +131,7 @@ APOffset AccessPath::computeConstantByteOffset() const
         /// For example, there is struct DEST{int a, char b[10], int c[5]}
         /// (1) %c = getelementptr inbounds %struct.DEST, %struct.DEST* %arr, i32 0, i32 2
         //  (2) %arrayidx = getelementptr inbounds [10 x i8], [10 x i8]* %b, i64 0, i64 8
-        const SVFVar* var = idxOperandPairs[i].first;
+        const ValVar* var = idxOperandPairs[i].first;
         /// for (1) offsetVarAndGepTypePairs.size()  = 2
         ///     i = 0, type: %struct.DEST*, PtrType, op = 0
         ///     i = 1, type: %struct.DEST, StructType, op = 2
@@ -222,7 +222,7 @@ APOffset AccessPath::computeConstantOffset() const
         return getConstantStructFldIdx();
     for(int i = idxOperandPairs.size() - 1; i >= 0; i--)
     {
-        const SVFVar* var = idxOperandPairs[i].first;
+        const ValVar* var = idxOperandPairs[i].first;
         const SVFType* type = idxOperandPairs[i].second;
         assert(SVFUtil::isa<ConstIntValVar>(var) && "not a constant offset?");
         s64_t constOffset = SVFUtil::dyn_cast<ConstIntValVar>(var)->getSExtValue();
