@@ -300,6 +300,8 @@ public:
 
     void printAbstractState() const;
 
+    std::string toString() const;
+
     u32_t hash() const;
 
     // lhs == rhs for varToValMap

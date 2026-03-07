@@ -468,6 +468,33 @@ void AbstractState::printAbstractState() const
     SVFUtil::outs() << "-----------------------------------------\n";
 }
 
+std::string AbstractState::toString() const
+{
+    u32_t varIntervals = 0, varAddrs = 0, varBottom = 0;
+    for (const auto& item : _varToAbsVal)
+    {
+        if (item.second.isInterval()) ++varIntervals;
+        else if (item.second.isAddr()) ++varAddrs;
+        else ++varBottom;
+    }
+    u32_t addrIntervals = 0, addrAddrs = 0, addrBottom = 0;
+    for (const auto& item : _addrToAbsVal)
+    {
+        if (item.second.isInterval()) ++addrIntervals;
+        else if (item.second.isAddr()) ++addrAddrs;
+        else ++addrBottom;
+    }
+    std::ostringstream oss;
+    oss << "AbstractState {\n"
+        << "  VarToAbsVal: " << _varToAbsVal.size() << " entries ("
+        << varIntervals << " intervals, " << varAddrs << " addresses, " << varBottom << " bottom)\n"
+        << "  AddrToAbsVal: " << _addrToAbsVal.size() << " entries ("
+        << addrIntervals << " intervals, " << addrAddrs << " addresses, " << addrBottom << " bottom)\n"
+        << "  FreedAddrs: " << _freedAddrs.size() << "\n"
+        << "}";
+    return oss.str();
+}
+
 const SVFType* AbstractState::getPointeeElement(NodeID id)
 {
     SVFIR* svfir = PAG::getPAG();

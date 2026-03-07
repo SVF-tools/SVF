@@ -109,11 +109,11 @@ public:
         detectors.push_back(std::move(detector));
     }
 
-    /// Retrieve the abstract state from the trace for a given ICFG node; asserts if no trace exists
-    AbstractState& getAbstractState(const ICFGNode* node);
-
-    /// Check if an abstract state exists in the trace for a given ICFG node
-    bool hasAbstractState(const ICFGNode* node);
+    /// Retrieve SVFVar given its ID; asserts if no such variable exists
+    inline const SVFVar* getSVFVar(NodeID varId) const
+    {
+        return svfir->getSVFVar(varId);
+    }
 
     /// Retrieve abstract value for a top-level variable at a given ICFG node
     const AbstractValue& getAbstractValue(const ICFGNode* node, const ValVar* var);
@@ -123,6 +123,24 @@ public:
 
     /// Retrieve abstract value for any SVF variable at a given ICFG node
     const AbstractValue& getAbstractValue(const ICFGNode* node, const SVFVar* var);
+
+    /// Set abstract value for a top-level variable at a given ICFG node
+    void updateAbstractValue(const ICFGNode* node, const ValVar* var, const AbstractValue& val);
+
+    /// Set abstract value for an address-taken variable at a given ICFG node
+    void updateAbstractValue(const ICFGNode* node, const ObjVar* var, const AbstractValue& val);
+
+    /// Set abstract value for any SVF variable at a given ICFG node
+    void updateAbstractValue(const ICFGNode* node, const SVFVar* var, const AbstractValue& val);
+
+    /// Propagate an ObjVar's abstract value from defSite to all its use-site ICFGNodes via SVFG
+    void propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite);
+
+    /// Retrieve the abstract state from the trace for a given ICFG node; asserts if no trace exists
+    AbstractState& getAbstractState(const ICFGNode* node);
+
+    /// Check if an abstract state exists in the trace for a given ICFG node
+    bool hasAbstractState(const ICFGNode* node);
 
     /// Retrieve abstract state filtered to specific top-level variables
     void getAbstractState(const ICFGNode* node, const Set<const ValVar*>& vars, AbstractState& result);

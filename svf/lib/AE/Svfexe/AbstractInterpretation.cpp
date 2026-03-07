@@ -112,6 +112,29 @@ const AbstractValue& AbstractInterpretation::getAbstractValue(const ICFGNode* no
     abort();
 }
 
+void AbstractInterpretation::updateAbstractValue(const ICFGNode* node, const ValVar* var, const AbstractValue& val)
+{
+    AbstractState& as = getAbstractState(node);
+    as[var->getId()] = val;
+}
+
+void AbstractInterpretation::updateAbstractValue(const ICFGNode* node, const ObjVar* var, const AbstractValue& val)
+{
+    AbstractState& as = getAbstractState(node);
+    u32_t addr = AbstractState::getVirtualMemAddress(var->getId());
+    as.store(addr, val);
+}
+
+void AbstractInterpretation::updateAbstractValue(const ICFGNode* node, const SVFVar* var, const AbstractValue& val)
+{
+    if (const ValVar* valVar = SVFUtil::dyn_cast<ValVar>(var))
+        updateAbstractValue(node, valVar, val);
+    else if (const ObjVar* objVar = SVFUtil::dyn_cast<ObjVar>(var))
+        updateAbstractValue(node, objVar, val);
+    else
+        assert(false && "Unknown SVFVar kind");
+}
+
 void AbstractInterpretation::getAbstractState(const ICFGNode* node, const Set<const ValVar*>& vars, AbstractState& result)
 {
     AbstractState& as = getAbstractState(node);
@@ -147,6 +170,15 @@ void AbstractInterpretation::getAbstractState(const ICFGNode* node, const Set<co
             u32_t addr = AbstractState::getVirtualMemAddress(objVar->getId());
             result.store(addr, as.load(addr));
         }
+    }
+}
+
+void AbstractInterpretation::propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite)
+{
+    const AbstractValue& val = getAbstractValue(defSite, var);
+    for (const ICFGNode* useSite : preAnalysis->getUseSitesOfObjVar(var, defSite))
+    {
+        updateAbstractValue(useSite, var, val);
     }
 }
 
@@ -337,7 +369,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
     const LoadStmt *load_op0 = nullptr;
     const LoadStmt *load_op1 = nullptr;
     // get '%1 = load i32 s', and load inst may not exist
-    const SVFVar* loadVar0 = svfir->getSVFVar(op0);
+    const SVFVar* loadVar0 = getSVFVar(op0);
     if (!loadVar0->getInEdges().empty())
     {
         SVFStmt *loadVar0InStmt = *loadVar0->getInEdges().begin();
@@ -347,7 +379,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         }
         else if (const CopyStmt *copyStmt = SVFUtil::dyn_cast<CopyStmt>(loadVar0InStmt))
         {
-            loadVar0 = svfir->getSVFVar(copyStmt->getRHSVarID());
+            loadVar0 = getSVFVar(copyStmt->getRHSVarID());
             if (!loadVar0->getInEdges().empty())
             {
                 SVFStmt *loadVar0InStmt2 = *loadVar0->getInEdges().begin();
@@ -359,7 +391,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         }
     }
 
-    const SVFVar* loadVar1 = svfir->getSVFVar(op1);
+    const SVFVar* loadVar1 = getSVFVar(op1);
     if (!loadVar1->getInEdges().empty())
     {
         SVFStmt *loadVar1InStmt = *loadVar1->getInEdges().begin();
@@ -369,7 +401,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         }
         else if (const CopyStmt *copyStmt = SVFUtil::dyn_cast<CopyStmt>(loadVar1InStmt))
         {
-            loadVar1 = svfir->getSVFVar(copyStmt->getRHSVarID());
+            loadVar1 = getSVFVar(copyStmt->getRHSVarID());
             if (!loadVar1->getInEdges().empty())
             {
                 SVFStmt *loadVar1InStmt2 = *loadVar1->getInEdges().begin();
@@ -793,7 +825,7 @@ const FunObjVar* AbstractInterpretation::getCallee(const CallICFGNode* callNode)
         return nullptr;
 
     NodeID addr = *Addrs.getAddrs().begin();
-    const SVFVar* func_var = svfir->getSVFVar(as.getIDFromAddr(addr));
+    const SVFVar* func_var = getSVFVar(as.getIDFromAddr(addr));
     return SVFUtil::dyn_cast<FunObjVar>(func_var);
 }
 

@@ -181,19 +181,19 @@ public:
 
     /// Given a ValVar and its SVFGNode, find the definition-site ICFGNode
     /// by following incoming direct VFGEdges (asserts unique definition)
-    const ICFGNode* getDefSiteOfValVar(const ValVar* var, const SVFGNode* node) const;
+    const ICFGNode* getDefSiteOfValVar(const ValVar* var) const;
 
-    /// Given an ObjVar and its SVFGNode, find the definition-site ICFGNode
+    /// Given an ObjVar and its use-site ICFGNode, find the definition-site ICFGNode
     /// by following incoming IndirectSVFGEdges whose pts contains the ObjVar (asserts unique definition)
-    const ICFGNode* getDefSiteOfObjVar(const ObjVar* obj, const SVFGNode* node) const;
+    const ICFGNode* getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
 
-    /// Given a ValVar and its SVFStmt, find all use-site ICFGNodes
-    /// by following outgoing direct VFGEdges from its definition SVFGNode
-    const Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var, const SVFGNode* vNode) const;
+    /// Given a ValVar, find all use-site ICFGNodes
+    /// by following outgoing direct VFGEdges from its unique definition SVFGNode
+    const Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const;
 
-    /// Given an ObjVar and its SVFStmt, find all use-site ICFGNodes
+    /// Given an ObjVar and its def-site ICFGNode, find all use-site ICFGNodes
     /// by following outgoing IndirectSVFGEdges whose pts contains the ObjVar
-    const Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const SVFGNode* vNode) const;
+    const Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
 
     /// Perform statistics
     void performStat();

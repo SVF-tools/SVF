@@ -65,6 +65,12 @@ public:
     {
         return callGraphSCC;
     }
+    SVFG* getSVFG() const
+    {
+        return svfg;
+    }
+    /// Given an ObjVar and its def-site ICFGNode, find all use-site ICFGNodes
+    const Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
 
     /// Build WTO for each function using call graph SCC
     void initWTO();
@@ -78,6 +84,7 @@ public:
 private:
     SVFIR* svfir;
     ICFG* icfg;
+    SVFG* svfg;
     AndersenWaveDiff* pta;
     CallGraph* callGraph;
     CallGraphSCC* callGraphSCC;
