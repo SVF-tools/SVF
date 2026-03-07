@@ -290,50 +290,158 @@ const std::string TDJoinPE::toString() const
     return rawstr.str();
 }
 
-const ObjVar* AddrStmt::getRHSVar() const { return cast<ObjVar>(SVFStmt::getSrcNode()); }
-const ValVar* AddrStmt::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
-const ObjVar* AddrStmt::getSrcNode() const { return getRHSVar(); }
-const ValVar* AddrStmt::getDstNode() const { return getLHSVar(); }
+const ObjVar* AddrStmt::getRHSVar() const
+{
+    return cast<ObjVar>(SVFStmt::getSrcNode());
+}
+const ValVar* AddrStmt::getLHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getDstNode());
+}
+const ObjVar* AddrStmt::getSrcNode() const
+{
+    return getRHSVar();
+}
+const ValVar* AddrStmt::getDstNode() const
+{
+    return getLHSVar();
+}
 
-const ValVar* CopyStmt::getRHSVar() const { return cast<ValVar>(SVFStmt::getSrcNode()); }
-const ValVar* CopyStmt::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
-const ValVar* CopyStmt::getSrcNode() const { return getRHSVar(); }
-const ValVar* CopyStmt::getDstNode() const { return getLHSVar(); }
+const ValVar* CopyStmt::getRHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getSrcNode());
+}
+const ValVar* CopyStmt::getLHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getDstNode());
+}
+const ValVar* CopyStmt::getSrcNode() const
+{
+    return getRHSVar();
+}
+const ValVar* CopyStmt::getDstNode() const
+{
+    return getLHSVar();
+}
 
-const ValVar* StoreStmt::getRHSVar() const { return cast<ValVar>(SVFStmt::getSrcNode()); }
-const ValVar* StoreStmt::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
-const ValVar* StoreStmt::getSrcNode() const { return getRHSVar(); }
-const ValVar* StoreStmt::getDstNode() const { return getLHSVar(); }
+const ValVar* StoreStmt::getRHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getSrcNode());
+}
+const ValVar* StoreStmt::getLHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getDstNode());
+}
+const ValVar* StoreStmt::getSrcNode() const
+{
+    return getRHSVar();
+}
+const ValVar* StoreStmt::getDstNode() const
+{
+    return getLHSVar();
+}
 
-const ValVar* LoadStmt::getRHSVar() const { return cast<ValVar>(SVFStmt::getSrcNode()); }
-const ValVar* LoadStmt::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
-const ValVar* LoadStmt::getSrcNode() const { return getRHSVar(); }
-const ValVar* LoadStmt::getDstNode() const { return getLHSVar(); }
+const ValVar* LoadStmt::getRHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getSrcNode());
+}
+const ValVar* LoadStmt::getLHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getDstNode());
+}
+const ValVar* LoadStmt::getSrcNode() const
+{
+    return getRHSVar();
+}
+const ValVar* LoadStmt::getDstNode() const
+{
+    return getLHSVar();
+}
 
-const ValVar* GepStmt::getRHSVar() const { return cast<ValVar>(SVFStmt::getSrcNode()); }
-const ValVar* GepStmt::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
-const ValVar* GepStmt::getSrcNode() const { return getRHSVar(); }
-const ValVar* GepStmt::getDstNode() const { return getLHSVar(); }
+const ValVar* GepStmt::getRHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getSrcNode());
+}
+const ValVar* GepStmt::getLHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getDstNode());
+}
+const ValVar* GepStmt::getSrcNode() const
+{
+    return getRHSVar();
+}
+const ValVar* GepStmt::getDstNode() const
+{
+    return getLHSVar();
+}
 
-const ValVar* CallPE::getRHSVar() const { return cast<ValVar>(SVFStmt::getSrcNode()); }
-const ValVar* CallPE::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
-const ValVar* CallPE::getSrcNode() const { return getRHSVar(); }
-const ValVar* CallPE::getDstNode() const { return getLHSVar(); }
+const ValVar* CallPE::getRHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getSrcNode());
+}
+const ValVar* CallPE::getLHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getDstNode());
+}
+const ValVar* CallPE::getSrcNode() const
+{
+    return getRHSVar();
+}
+const ValVar* CallPE::getDstNode() const
+{
+    return getLHSVar();
+}
 
-const ValVar* RetPE::getRHSVar() const { return cast<ValVar>(SVFStmt::getSrcNode()); }
-const ValVar* RetPE::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
-const ValVar* RetPE::getSrcNode() const { return getRHSVar(); }
-const ValVar* RetPE::getDstNode() const { return getLHSVar(); }
+const ValVar* RetPE::getRHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getSrcNode());
+}
+const ValVar* RetPE::getLHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getDstNode());
+}
+const ValVar* RetPE::getSrcNode() const
+{
+    return getRHSVar();
+}
+const ValVar* RetPE::getDstNode() const
+{
+    return getLHSVar();
+}
 
-const ValVar* TDForkPE::getRHSVar() const { return cast<ValVar>(SVFStmt::getSrcNode()); }
-const ValVar* TDForkPE::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
-const ValVar* TDForkPE::getSrcNode() const { return getRHSVar(); }
-const ValVar* TDForkPE::getDstNode() const { return getLHSVar(); }
+const ValVar* TDForkPE::getRHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getSrcNode());
+}
+const ValVar* TDForkPE::getLHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getDstNode());
+}
+const ValVar* TDForkPE::getSrcNode() const
+{
+    return getRHSVar();
+}
+const ValVar* TDForkPE::getDstNode() const
+{
+    return getLHSVar();
+}
 
-const ValVar* TDJoinPE::getRHSVar() const { return cast<ValVar>(SVFStmt::getSrcNode()); }
-const ValVar* TDJoinPE::getLHSVar() const { return cast<ValVar>(SVFStmt::getDstNode()); }
-const ValVar* TDJoinPE::getSrcNode() const { return getRHSVar(); }
-const ValVar* TDJoinPE::getDstNode() const { return getLHSVar(); }
+const ValVar* TDJoinPE::getRHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getSrcNode());
+}
+const ValVar* TDJoinPE::getLHSVar() const
+{
+    return cast<ValVar>(SVFStmt::getDstNode());
+}
+const ValVar* TDJoinPE::getSrcNode() const
+{
+    return getRHSVar();
+}
+const ValVar* TDJoinPE::getDstNode() const
+{
+    return getLHSVar();
+}
 
 
 NodeID MultiOpndStmt::getOpVarID(u32_t pos) const
