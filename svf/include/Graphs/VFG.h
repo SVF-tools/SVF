@@ -640,8 +640,7 @@ protected:
     /// Add an llvm PHI VFG node
     inline void addIntraPHIVFGNode(const MultiOpndStmt* edge)
     {
-        const ValVar* res = SVFUtil::cast<ValVar>(edge->getRes());
-        IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++,res);
+        IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++,edge->getRes());
         u32_t pos = 0;
         for(auto var : edge->getOpndVars())
         {
@@ -649,14 +648,13 @@ protected:
             pos++;
         }
         addVFGNode(sNode,edge->getICFGNode());
-        setDef(res,sNode);
-        SVFVarToIntraPHIVFGNodeMap[res] = sNode;
+        setDef(edge->getRes(),sNode);
+        SVFVarToIntraPHIVFGNodeMap[edge->getRes()] = sNode;
     }
     /// Add a Compare VFG node
     inline void addCmpVFGNode(const CmpStmt* edge)
     {
-        const ValVar* res = SVFUtil::cast<ValVar>(edge->getRes());
-        CmpVFGNode* sNode = new CmpVFGNode(totalVFGNode++, res);
+        CmpVFGNode* sNode = new CmpVFGNode(totalVFGNode++, edge->getRes());
         u32_t pos = 0;
         for(auto var : edge->getOpndVars())
         {
@@ -664,14 +662,13 @@ protected:
             pos++;
         }
         addVFGNode(sNode,edge->getICFGNode());
-        setDef(res,sNode);
-        SVFVarToCmpVFGNodeMap[res] = sNode;
+        setDef(edge->getRes(),sNode);
+        SVFVarToCmpVFGNodeMap[edge->getRes()] = sNode;
     }
     /// Add a BinaryOperator VFG node
     inline void addBinaryOPVFGNode(const BinaryOPStmt* edge)
     {
-        const ValVar* res = SVFUtil::cast<ValVar>(edge->getRes());
-        BinaryOPVFGNode* sNode = new BinaryOPVFGNode(totalVFGNode++, res);
+        BinaryOPVFGNode* sNode = new BinaryOPVFGNode(totalVFGNode++, edge->getRes());
         u32_t pos = 0;
         for(auto var : edge->getOpndVars())
         {
@@ -679,8 +676,8 @@ protected:
             pos++;
         }
         addVFGNode(sNode,edge->getICFGNode());
-        setDef(res,sNode);
-        SVFVarToBinaryOPVFGNodeMap[res] = sNode;
+        setDef(edge->getRes(),sNode);
+        SVFVarToBinaryOPVFGNodeMap[edge->getRes()] = sNode;
     }
     /// Add a UnaryOperator VFG node
     inline void addUnaryOPVFGNode(const UnaryOPStmt* edge)

@@ -185,23 +185,23 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta)
         if(const StmtSVFGNode* stmtNode = SVFUtil::dyn_cast<StmtSVFGNode>(node))
         {
             /// for store, connect the RHS/LHS pointer to its def
-            if(SVFUtil::isa<StoreSVFGNode>(stmtNode))
+            if(const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(stmtNode))
             {
-                const SVFGNode* def = svfg->getDefSVFGNode(SVFUtil::cast<ValVar>(stmtNode->getDstNode()));
-                if(SVFGEdge* edge = svfg->getIntraVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF))
+                const SVFGNode* def = svfg->getDefSVFGNode(store->getDstNode());
+                if(SVFGEdge* edge = svfg->getIntraVFGEdge(def,store,SVFGEdge::IntraDirectVF))
                     svfg->removeSVFGEdge(edge);
                 else
                     assert((svfg->getKind()==VFG::FULLSVFG_OPT || svfg->getKind()==VFG::PTRONLYSVFG_OPT)  && "Edge not found!");
 
-                if(accessGlobal(pta,stmtNode->getDstNode()))
+                if(accessGlobal(pta,store->getDstNode()))
                 {
-                    globSVFGNodes.insert(stmtNode);
+                    globSVFGNodes.insert(store);
                 }
             }
-            else if(SVFUtil::isa<LoadSVFGNode>(stmtNode))
+            else if(const LoadSVFGNode* load = SVFUtil::dyn_cast<LoadSVFGNode>(stmtNode))
             {
-                const SVFGNode* def = svfg->getDefSVFGNode(SVFUtil::cast<ValVar>(stmtNode->getSrcNode()));
-                if(SVFGEdge* edge = svfg->getIntraVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF))
+                const SVFGNode* def = svfg->getDefSVFGNode(load->getSrcNode());
+                if(SVFGEdge* edge = svfg->getIntraVFGEdge(def,load,SVFGEdge::IntraDirectVF))
                     svfg->removeSVFGEdge(edge);
                 else
                     assert((svfg->getKind()==VFG::FULLSVFG_OPT || svfg->getKind()==VFG::PTRONLYSVFG_OPT)  && "Edge not found!");

@@ -747,7 +747,7 @@ void VFG::connectDirectVFGEdges()
                 {
                     if(varType.first->isConstDataOrAggDataButNotNullPtr() || isInterestedSVFVar(varType.first) == false)
                         continue;
-                    addIntraDirectVFEdge(getDef(SVFUtil::cast<ValVar>(varType.first)), nodeId);
+                    addIntraDirectVFEdge(getDef(varType.first), nodeId);
                 }
             }
             /// for store, connect the RHS/LHS pointer to its def

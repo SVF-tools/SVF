@@ -79,8 +79,8 @@ const CxtPtSet& ContextDDA::computeDDAPts(const CxtVar& var)
     LocDPItem::setMaxBudget(Options::CxtBudget());
 
     NodeID id = var.get_id();
-    const SVFVar* node = getPAG()->getSVFVar(id);
-    CxtLocDPItem dpm = getDPIm(var, getDefSVFGNode(SVFUtil::cast<ValVar>(node)));
+    const ValVar* node = getPAG()->getValVar(id);
+    CxtLocDPItem dpm = getDPIm(var, getDefSVFGNode(node);
 
     // start DDA analysis
     DOTIMESTAT(double start = DDAStat::getClk(true));
@@ -191,9 +191,9 @@ bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const FunObjVar* cal
     if(getPAG()->isIndirectCallSites(cs))
     {
         NodeID id = getPAG()->getFunPtr(cs);
-        const SVFVar* node = getPAG()->getSVFVar(id);
+        const ValVar* node = getPAG()->getValVar(id);
         CxtVar funptrVar(dpm.getCondVar().get_cond(), id);
-        CxtLocDPItem funptrDpm = getDPIm(funptrVar,getDefSVFGNode(SVFUtil::cast<ValVar>(node)));
+        CxtLocDPItem funptrDpm = getDPIm(funptrVar,getDefSVFGNode(node));
         PointsTo pts = getBVPointsTo(findPT(funptrDpm));
         if(pts.test(callee->getId()))
             return true;
