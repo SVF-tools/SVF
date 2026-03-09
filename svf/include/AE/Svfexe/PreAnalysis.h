@@ -72,6 +72,18 @@ public:
     /// Given an ObjVar and its def-site ICFGNode, find all use-site ICFGNodes
     const Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
 
+    /// Given a ValVar, find all use-site ICFGNodes
+    /// by following outgoing direct VFGEdges from its unique definition SVFGNode
+    const Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const;
+
+    /// Given a ValVar and its SVFGNode, find the definition-site ICFGNode
+    /// by following incoming direct VFGEdges (asserts unique definition)
+    const ICFGNode* getDefSiteOfValVar(const ValVar* var) const;
+
+    /// Given an ObjVar and its use-site ICFGNode, find the definition-site ICFGNode
+    /// by following incoming IndirectSVFGEdges whose pts contains the ObjVar (asserts unique definition)
+    const ICFGNode* getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
+
     /// Build WTO for each function using call graph SCC
     void initWTO();
 

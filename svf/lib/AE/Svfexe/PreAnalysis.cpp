@@ -67,6 +67,47 @@ const Set<const ICFGNode*> PreAnalysis::getUseSitesOfObjVar(const ObjVar* obj, c
     return succs;
 }
 
+const Set<const ICFGNode*> PreAnalysis::getUseSitesOfValVar(const ValVar* var) const
+{
+    if (Options::SparseAE())
+    {
+        assert(svfg && "SVFG is not built for sparse AE");
+        return svfg->getUseSitesOfValVar(var);
+    }
+    // Non-sparse mode: return ICFG successor nodes of the ValVar's ICFGNode
+    Set<const ICFGNode*> succs;
+    if (const ICFGNode* node = var->getICFGNode())
+    {
+        for (const auto* edge : node->getOutEdges())
+            succs.insert(edge->getDstNode());
+    }
+    return succs;
+}
+
+const ICFGNode* PreAnalysis::getDefSiteOfValVar(const ValVar* var) const
+{
+    if (Options::SparseAE())
+    {
+        assert(svfg && "SVFG is not built for sparse AE");
+        return svfg->getDefSiteOfValVar(var);
+    }
+    // Non-sparse mode: return the ValVar's associated ICFGNode
+    return var->getICFGNode();
+}
+
+const ICFGNode* PreAnalysis::getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const
+{
+    if (Options::SparseAE())
+    {
+        assert(svfg && "SVFG is not built for sparse AE");
+        return svfg->getDefSiteOfObjVar(obj, node);
+    }
+    // Non-sparse mode: return ICFG predecessor node
+    for (const auto* edge : node->getInEdges())
+        return edge->getSrcNode();
+    return nullptr;
+}
+
 void PreAnalysis::initWTO()
 {
     callGraphSCC->find();
