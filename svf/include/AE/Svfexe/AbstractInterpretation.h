@@ -116,7 +116,7 @@ public:
     }
 
     /// Retrieve abstract value for a top-level variable at a given ICFG node
-    const AbstractValue& getAbstractValue(const ICFGNode* node, const ValVar* var);
+    const AbstractValue& getAbstractValue(const ValVar* var);
 
     /// Retrieve abstract value for an address-taken variable at a given ICFG node
     const AbstractValue& getAbstractValue(const ICFGNode* node, const ObjVar* var);
@@ -125,7 +125,7 @@ public:
     const AbstractValue& getAbstractValue(const ICFGNode* node, const SVFVar* var);
 
     /// Set abstract value for a top-level variable at a given ICFG node
-    void updateAbstractValue(const ICFGNode* node, const ValVar* var, const AbstractValue& val);
+    void updateAbstractValue(const ValVar* var, const AbstractValue& val);
 
     /// Set abstract value for an address-taken variable at a given ICFG node
     void updateAbstractValue(const ICFGNode* node, const ObjVar* var, const AbstractValue& val);

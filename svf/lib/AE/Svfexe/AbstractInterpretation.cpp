@@ -89,9 +89,9 @@ bool AbstractInterpretation::hasAbstractState(const ICFGNode* node)
     return abstractTrace.count(node) != 0;
 }
 
-const AbstractValue& AbstractInterpretation::getAbstractValue(const ICFGNode* node, const ValVar* var)
+const AbstractValue& AbstractInterpretation::getAbstractValue(const ValVar* var)
 {
-    AbstractState& as = getAbstractState(node);
+    AbstractState& as = getAbstractState(var->getICFGNode());
     return as[var->getId()];
 }
 
@@ -105,16 +105,16 @@ const AbstractValue& AbstractInterpretation::getAbstractValue(const ICFGNode* no
 const AbstractValue& AbstractInterpretation::getAbstractValue(const ICFGNode* node, const SVFVar* var)
 {
     if (const ValVar* valVar = SVFUtil::dyn_cast<ValVar>(var))
-        return getAbstractValue(node, valVar);
+        return getAbstractValue(valVar);
     else if (const ObjVar* objVar = SVFUtil::dyn_cast<ObjVar>(var))
         return getAbstractValue(node, objVar);
     assert(false && "Unknown SVFVar kind");
     abort();
 }
 
-void AbstractInterpretation::updateAbstractValue(const ICFGNode* node, const ValVar* var, const AbstractValue& val)
+void AbstractInterpretation::updateAbstractValue(const ValVar* var, const AbstractValue& val)
 {
-    AbstractState& as = getAbstractState(node);
+    AbstractState& as = getAbstractState(var->getICFGNode());
     as[var->getId()] = val;
 }
 
@@ -128,7 +128,7 @@ void AbstractInterpretation::updateAbstractValue(const ICFGNode* node, const Obj
 void AbstractInterpretation::updateAbstractValue(const ICFGNode* node, const SVFVar* var, const AbstractValue& val)
 {
     if (const ValVar* valVar = SVFUtil::dyn_cast<ValVar>(var))
-        updateAbstractValue(node, valVar, val);
+        updateAbstractValue(valVar, val);
     else if (const ObjVar* objVar = SVFUtil::dyn_cast<ObjVar>(var))
         updateAbstractValue(node, objVar, val);
     else
