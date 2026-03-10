@@ -157,8 +157,10 @@ private:
     virtual void handleGlobalNode();
 
     /// Propagate the post-state of a node to all its intra-procedural successors
-    void propagateToSuccessor(const ICFGNode* node,
-                              const Set<const ICFGNode*>* withinSet = nullptr);
+    void propagateToSuccessor(const ICFGNode* node);
+
+    /// Propagate RetCFGEdge within a recursive cycle (FunExit -> RetNode)
+    void propagateRetEdgeInCycle(const ICFGNode* node, const Set<const ICFGNode*>& cycleNodes);
 
     /// Check if the branch on intraEdge is feasible under abstract state as
     bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractState& as);
