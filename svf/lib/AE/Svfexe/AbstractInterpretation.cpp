@@ -324,10 +324,7 @@ void AbstractInterpretation::mergeInEdges(const ICFGNode* node)
         auto it = edgeAbsStates.find(edge);
         if (it == edgeAbsStates.end())
             continue;
-        if (hasAbstractState(node))
-            abstractTrace[node].joinWith(it->second);
-        else
-            abstractTrace[node] = it->second;
+        abstractTrace[node].joinWith(it->second);
         edgeAbsStates.erase(it);
     }
 }
@@ -987,6 +984,20 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 ///     Example:
 ///       int factorial(int n) { return n <= 1 ? 1 : n * factorial(n-1); }
 ///       factorial(5) -> returns [10000, 10000] (precise after narrowing)
+void AbstractInterpretation::collectBodyNodes(const ICFGCycleWTO* cycle, Set<const ICFGNode*>& bodyNodes)
+{
+    for (const ICFGWTOComp* comp : cycle->getWTOComponents())
+    {
+        if (const ICFGSingletonWTO* s = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+            bodyNodes.insert(s->getICFGNode());
+        else if (const ICFGCycleWTO* sc = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+        {
+            bodyNodes.insert(sc->head()->getICFGNode());
+            collectBodyNodes(sc, bodyNodes);
+        }
+    }
+}
+
 void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller)
 {
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
@@ -1000,23 +1011,8 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
     }
 
     // Collect all body nodes recursively (including sub-cycle internals).
-    // Used for back-edge classification and clearing states between iterations.
     Set<const ICFGNode*> bodyNodes;
-    std::function<void(const ICFGCycleWTO*)> collectBodyNodes =
-        [&](const ICFGCycleWTO* c)
-    {
-        for (const ICFGWTOComp* comp : c->getWTOComponents())
-        {
-            if (const ICFGSingletonWTO* s = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
-                bodyNodes.insert(s->getICFGNode());
-            else if (const ICFGCycleWTO* sc = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
-            {
-                bodyNodes.insert(sc->head()->getICFGNode());
-                collectBodyNodes(sc);
-            }
-        }
-    };
-    collectBodyNodes(cycle);
+    collectBodyNodes(cycle, bodyNodes);
 
     // Classify cycle head's in-edges: back-edges (from within cycle) vs external.
     // Merge all external contributions into externalPre upfront.
@@ -1028,8 +1024,7 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
     for (auto& edge : cycle_head->getInEdges())
     {
         const ICFGNode* src = edge->getSrcNode();
-        if ((src == cycle_head || bodyNodes.count(src)) &&
-            (SVFUtil::isa<IntraCFGEdge>(edge) || SVFUtil::isa<CallCFGEdge>(edge)))
+        if (src == cycle_head || bodyNodes.count(src))
             backEdges.insert(edge);
     }
 
