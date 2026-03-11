@@ -1018,49 +1018,19 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
     };
     collectBodyNodes(cycle);
 
-    // Classify cycle head's in-edges into external edges and back-edges.
-    // A back-edge's source is in bodyNodes or is the head itself.
-    // For loops: back-edges are IntraCFGEdges from within the cycle.
-    // For recursive functions: back-edges also include CallCFGEdges from
-    // recursive callsites (written by skipRecursiveCall via edgeAbsStates).
-    // All other in-edges are external (from outside the cycle).
-    // External edge states are merged into externalPre (read, not cleared).
+    // Classify cycle head's in-edges: back-edges (from within cycle) vs external.
+    // Merge all external contributions into externalPre upfront.
     Set<const ICFGEdge*> backEdges;
+    mergeInEdges(cycle_head);
     AbstractState externalPre;
-    bool hasExternal = false;
+    if (hasAbstractState(cycle_head))
+        externalPre = abstractTrace[cycle_head];
     for (auto& edge : cycle_head->getInEdges())
     {
         const ICFGNode* src = edge->getSrcNode();
-        bool fromCycle = (src == cycle_head || bodyNodes.count(src));
-        bool isBackEdge = fromCycle &&
-                          (SVFUtil::isa<IntraCFGEdge>(edge) ||
-                           SVFUtil::isa<CallCFGEdge>(edge));
-
-        if (isBackEdge)
-        {
+        if ((src == cycle_head || bodyNodes.count(src)) &&
+            (SVFUtil::isa<IntraCFGEdge>(edge) || SVFUtil::isa<CallCFGEdge>(edge)))
             backEdges.insert(edge);
-        }
-        else
-        {
-            auto it = edgeAbsStates.find(edge);
-            if (it != edgeAbsStates.end())
-            {
-                if (hasExternal)
-                    externalPre.joinWith(it->second);
-                else
-                {
-                    externalPre = it->second;
-                    hasExternal = true;
-                }
-            }
-        }
-    }
-    // For recursive function cycles, handleFunCall writes directly to
-    // abstractTrace[calleeEntry] (the cycle head). Pick that up as external.
-    if (!hasExternal && hasAbstractState(cycle_head))
-    {
-        externalPre = abstractTrace[cycle_head];
-        hasExternal = true;
     }
 
     // Iterate until fixpoint with widening/narrowing on the cycle head.
