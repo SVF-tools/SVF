@@ -290,7 +290,16 @@ void AbstractInterpretation::handleGlobalNode()
 /// For conditional branches, the state is refined along each outgoing edge via
 /// isBranchFeasible. The refined state is joined into the successor's abstractTrace entry.
 /// Call/return edges are handled explicitly by handleFunCall, not here.
-void AbstractInterpretation::propagateToSuccessor(const ICFGNode* node)
+///
+/// If withinSet is non-null, only propagate to successors contained in that set.
+/// This is used during cycle iteration to avoid propagating to nodes outside the
+/// cycle, which would cause stale accumulation and lose narrowing precision.
+/// Additionally, when withinSet is provided and a RetCFGEdge target is within the set,
+/// the state is also propagated along that edge. This handles the FunExit -> RetNode
+/// path inside recursive function cycles, where the recursive call is skipped and
+/// the RetCFGEdge effectively acts as intra-procedural control flow.
+void AbstractInterpretation::propagateToSuccessor(const ICFGNode* node,
+        const Set<const ICFGNode*>* withinSet)
 {
     if (!hasAbstractState(node))
         return;
@@ -301,6 +310,10 @@ void AbstractInterpretation::propagateToSuccessor(const ICFGNode* node)
                     SVFUtil::dyn_cast<IntraCFGEdge>(edge))
         {
             const ICFGNode* dst = intraEdge->getDstNode();
+            // If a filter set is provided, skip successors not in the set
+            if (withinSet && withinSet->find(dst) == withinSet->end())
+                continue;
+
             AbstractState state = abstractTrace[node];
             if (intraEdge->getCondition())
             {
@@ -313,34 +326,23 @@ void AbstractInterpretation::propagateToSuccessor(const ICFGNode* node)
             else
                 abstractTrace[dst] = state;
         }
+        else if (withinSet && SVFUtil::isa<RetCFGEdge>(edge))
+        {
+            // In recursive cycles, FunExit and RetNode are both inside the cycle.
+            // Propagate along RetCFGEdge when both endpoints are in the cycle.
+            const ICFGNode* dst = edge->getDstNode();
+            if (withinSet->find(dst) != withinSet->end())
+            {
+                if (hasAbstractState(dst))
+                    abstractTrace[dst].joinWith(abstractTrace[node]);
+                else
+                    abstractTrace[dst] = abstractTrace[node];
+            }
+        }
         // CallCFGEdge is handled by handleFunCall
     }
 }
 
-/// In recursive cycles, skipRecursiveCall skips the recursive call, so
-/// FunExit -> RetNode has only a RetCFGEdge (no IntraCFGEdge).
-/// propagateToSuccessor only handles IntraCFGEdge, so we propagate
-/// RetCFGEdge explicitly when both endpoints are within the cycle.
-void AbstractInterpretation::propagateRetEdgeInCycle(
-        const ICFGNode* node, const Set<const ICFGNode*>& cycleNodes)
-{
-    if (!SVFUtil::isa<FunExitICFGNode>(node) || !hasAbstractState(node))
-        return;
-    for (auto& edge : node->getOutEdges())
-    {
-        if (SVFUtil::isa<RetCFGEdge>(edge))
-        {
-            const ICFGNode* retNode = edge->getDstNode();
-            if (cycleNodes.find(retNode) != cycleNodes.end())
-            {
-                if (hasAbstractState(retNode))
-                    abstractTrace[retNode].joinWith(abstractTrace[node]);
-                else
-                    abstractTrace[retNode] = abstractTrace[node];
-            }
-        }
-    }
-}
 
 bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t succ,
         AbstractState& as)
@@ -1018,7 +1020,7 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
         externalPre = abstractTrace[cycle_head];
 
     // Collect all cycle body node pointers (excluding head) for clearing,
-    // and build cycleNodes set (head + body).
+    // and build cycleNodes set (head + body) for restricting propagation.
     std::vector<const ICFGNode*> bodyNodes;
     Set<const ICFGNode*> cycleNodes;
     cycleNodes.insert(cycle_head);
@@ -1038,23 +1040,6 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
             cycleNodes.insert(subCycle->head()->getICFGNode());
         }
     }
-
-    // Snapshot exit successor states. Exit successors are nodes outside the
-    // cycle reachable via IntraCFGEdge from cycle nodes. Like externalPre for
-    // the cycle head, this preserves contributions from non-cycle predecessors
-    // (e.g. bypass edges) that would otherwise be polluted by intermediate
-    // widening/narrowing states leaking out during iteration.
-    Set<const ICFGNode*> exitSuccs;
-    for (const ICFGNode* cn : cycleNodes)
-        for (auto& edge : cn->getOutEdges())
-            if (SVFUtil::isa<IntraCFGEdge>(edge) &&
-                    cycleNodes.find(edge->getDstNode()) == cycleNodes.end())
-                exitSuccs.insert(edge->getDstNode());
-
-    Map<const ICFGNode*, AbstractState> savedExitStates;
-    for (const ICFGNode* es : exitSuccs)
-        if (hasAbstractState(es))
-            savedExitStates[es] = abstractTrace[es];
 
     // WIDEN_ONLY / WIDEN_NARROW modes (and regular loops): iterate until fixpoint.
     // Widening/narrowing is applied to the head's PRE-state (before execution).
@@ -1102,21 +1087,20 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
         // Process the cycle head node (execute stmts, transforms pre to post)
         handleICFGNode(cycle_head);
 
-        // Propagate head's post-state to successors, then erase head so the
-        // back-edge from body tail lands in a clean slot (not mixed with
-        // head's post-state).
-        propagateToSuccessor(cycle_head);
+        // Propagate head's post-state to body successor nodes within the cycle,
+        // then erase head so the back-edge from body tail lands in a clean slot
+        // (not mixed with head's post-state).
+        propagateToSuccessor(cycle_head, &cycleNodes);
         abstractTrace.erase(cycle_head);
 
-        // Process cycle body components
+        // Process cycle body components (propagation restricted to cycle nodes)
         for (const ICFGWTOComp* comp : cycle->getWTOComponents())
         {
             if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
             {
                 const ICFGNode* bodyNode = singleton->getICFGNode();
                 handleICFGNode(bodyNode);
-                propagateToSuccessor(bodyNode);
-                propagateRetEdgeInCycle(bodyNode, cycleNodes);
+                propagateToSuccessor(bodyNode, &cycleNodes);
             }
             else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
             {
@@ -1139,19 +1123,13 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
         }
     }
 
-    // Restore exit successors to their pre-iteration states, undoing any
-    // leakage from intermediate widening/narrowing iterations.
-    for (const ICFGNode* es : exitSuccs)
-    {
-        auto it = savedExitStates.find(es);
-        if (it != savedExitStates.end())
-            abstractTrace[es] = it->second;
-        else
-            abstractTrace.erase(es);
-    }
-
-    // Final pass: re-execute all cycle nodes with converged states and
-    // propagate to successors (including exit successors outside the cycle).
+    // Final pass: re-execute all cycle nodes and propagate without restriction.
+    // During iterations, propagation was restricted to cycle-internal nodes.
+    // Now re-execute and propagate from all cycle nodes without restriction,
+    // so that exit edges (outside the cycle) receive the converged states.
+    // We must clear body nodes first and re-process them from scratch using
+    // the converged head pre-state, since body nodes may contain stale states
+    // from the last iteration that predate the final head re-execution.
     for (const ICFGNode* bodyNode : bodyNodes)
         abstractTrace.erase(bodyNode);
     handleICFGNode(cycle_head);
@@ -1163,7 +1141,6 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
             const ICFGNode* bodyNode = singleton->getICFGNode();
             handleICFGNode(bodyNode);
             propagateToSuccessor(bodyNode);
-            propagateRetEdgeInCycle(bodyNode, cycleNodes);
         }
         else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
         {
