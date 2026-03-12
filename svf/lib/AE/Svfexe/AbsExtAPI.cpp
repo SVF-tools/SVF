@@ -90,7 +90,7 @@ void AbsExtAPI::initExtFunMap()
     };
     func_map["svf_assert"] = sse_svf_assert;
 
-    auto svf_assert_eq = [this](const CallICFGNode* callNode, AbstractState& as)
+    auto svf_assert_eq = [](const CallICFGNode* callNode, AbstractState& as)
     {
         u32_t arg0 = callNode->getArgument(0)->getId();
         u32_t arg1 = callNode->getArgument(1)->getId();
