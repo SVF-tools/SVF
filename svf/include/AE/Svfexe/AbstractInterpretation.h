@@ -115,56 +115,17 @@ public:
         return svfir->getSVFVar(varId);
     }
 
-    /// Retrieve abstract value for a top-level variable at a given ICFG node
-    const AbstractValue& getAbstractValue(const ValVar* var);
-
-    /// Retrieve abstract value for an address-taken variable at a given ICFG node
-    const AbstractValue& getAbstractValue(const ICFGNode* node, const ObjVar* var);
-
-    /// Retrieve abstract value for any SVF variable at a given ICFG node
-    const AbstractValue& getAbstractValue(const ICFGNode* node, const SVFVar* var);
-
-    /// Set abstract value for a top-level variable at a given ICFG node
-    void updateAbstractValue(const ValVar* var, const AbstractValue& val);
-
-    /// Set abstract value for an address-taken variable at a given ICFG node
-    void updateAbstractValue(const ICFGNode* node, const ObjVar* var, const AbstractValue& val);
-
-    /// Set abstract value for any SVF variable at a given ICFG node
-    void updateAbstractValue(const ICFGNode* node, const SVFVar* var, const AbstractValue& val);
-
-    /// Propagate an ObjVar's abstract value from defSite to all its use-site ICFGNodes via SVFG
-    void propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite);
-
-    /// Retrieve the abstract state from the trace for a given ICFG node; asserts if no trace exists
-    AbstractState& getAbstractState(const ICFGNode* node);
-
-    /// Check if an abstract state exists in the trace for a given ICFG node
-    bool hasAbstractState(const ICFGNode* node);
-
-    /// Retrieve abstract state filtered to specific top-level variables
-    void getAbstractState(const ICFGNode* node, const Set<const ValVar*>& vars, AbstractState& result);
-
-    /// Retrieve abstract state filtered to specific address-taken variables
-    void getAbstractState(const ICFGNode* node, const Set<const ObjVar*>& vars, AbstractState& result);
-
-    /// Retrieve abstract state filtered to specific SVF variables
-    void getAbstractState(const ICFGNode* node, const Set<const SVFVar*>& vars, AbstractState& result);
-
-
 private:
     /// Initialize abstract state for the global ICFG node and process global statements
     virtual void handleGlobalNode();
 
     /// Propagate the post-state of a node along each outgoing IntraCFGEdge,
     /// writing the (possibly branch-refined) state to edgeAbsStates.
-    void propagateToSuccessor(const ICFGNode* node);
+    void propagateToSuccessor(const ICFGNode* node, AbstractState& as);
 
-    /// Merge all incoming edge states from edgeAbsStates into abstractTrace[node],
-    /// then clear those edge entries. Existing abstractTrace[node] is joined with
-    /// (not overwritten), so inter-procedural contributions from handleFunCall
-    /// are preserved.
-    void mergeInEdges(const ICFGNode* node);
+    /// Merge all incoming edge states from edgeAbsStates into a fresh AbstractState.
+    /// Edge states are NOT erased (they persist for loop iteration and phi reads).
+    AbstractState mergeInEdges(const ICFGNode* node);
 
     /// Recursively collect all ICFG nodes in a WTO cycle (excluding the head).
     void collectBodyNodes(const ICFGCycleWTO* cycle, Set<const ICFGNode*>& bodyNodes);
@@ -173,22 +134,23 @@ private:
     bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractState& as);
 
     /// Handle a call site node: dispatch to ext-call, direct-call, or indirect-call handling
-    virtual void handleCallSite(const ICFGNode* node);
+    virtual void handleCallSite(const ICFGNode* node, AbstractState& as);
 
     /// Handle a WTO cycle (loop or recursive function) using widening/narrowing iteration
     virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller = nullptr);
 
-    /// Handle a function body via worklist-driven WTO traversal starting from funEntry
-    void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller = nullptr);
+    /// Handle a function body via worklist-driven WTO traversal starting from funEntry.
+    /// Returns the exit state of the function.
+    AbstractState handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller = nullptr);
 
-    /// Handle an ICFG node: execute statements; return true if state changed
-    bool handleICFGNode(const ICFGNode* node);
+    /// Handle an ICFG node: execute statements on the given state
+    void handleICFGNode(const ICFGNode* node, AbstractState& as);
 
     /// Dispatch an SVF statement (Addr/Binary/Cmp/Load/Store/Copy/Gep/Select/Phi/Call/Ret) to its handler
-    virtual void handleSVFStatement(const SVFStmt* stmt);
+    virtual void handleSVFStatement(const SVFStmt* stmt, AbstractState& as);
 
     /// Set all store targets and return value to TOP for a recursive call node
-    virtual void setTopToObjInRecursion(const CallICFGNode* callnode);
+    virtual void setTopToObjInRecursion(const CallICFGNode* callnode, AbstractState& as);
 
     /// Check if cmpStmt with successor value succ is feasible; refine intervals in as accordingly
     bool isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t succ,
@@ -197,27 +159,27 @@ private:
     /// Check if switch branch with case value succ is feasible; refine intervals in as accordingly
     bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ, AbstractState& as);
 
-    void updateStateOnAddr(const AddrStmt *addr);
+    void updateStateOnAddr(const AddrStmt *addr, AbstractState& as);
 
-    void updateStateOnBinary(const BinaryOPStmt *binary);
+    void updateStateOnBinary(const BinaryOPStmt *binary, AbstractState& as);
 
-    void updateStateOnCmp(const CmpStmt *cmp);
+    void updateStateOnCmp(const CmpStmt *cmp, AbstractState& as);
 
-    void updateStateOnLoad(const LoadStmt *load);
+    void updateStateOnLoad(const LoadStmt *load, AbstractState& as);
 
-    void updateStateOnStore(const StoreStmt *store);
+    void updateStateOnStore(const StoreStmt *store, AbstractState& as);
 
-    void updateStateOnCopy(const CopyStmt *copy);
+    void updateStateOnCopy(const CopyStmt *copy, AbstractState& as);
 
-    void updateStateOnCall(const CallPE *callPE);
+    void updateStateOnCall(const CallPE *callPE, AbstractState& as);
 
-    void updateStateOnRet(const RetPE *retPE);
+    void updateStateOnRet(const RetPE *retPE, AbstractState& as);
 
-    void updateStateOnGep(const GepStmt *gep);
+    void updateStateOnGep(const GepStmt *gep, AbstractState& as);
 
-    void updateStateOnSelect(const SelectStmt *select);
+    void updateStateOnSelect(const SelectStmt *select, AbstractState& as);
 
-    void updateStateOnPhi(const PhiStmt *phi);
+    void updateStateOnPhi(const PhiStmt *phi, AbstractState& as);
 
 
     /// protected data members, also used in subclasses
@@ -238,21 +200,21 @@ private:
 
     // helper functions in handleCallSite
     virtual bool isExtCall(const CallICFGNode* callNode);
-    virtual void handleExtCall(const CallICFGNode* callNode);
+    virtual void handleExtCall(const CallICFGNode* callNode, AbstractState& as);
     virtual bool isRecursiveFun(const FunObjVar* fun);
-    virtual void handleRecursiveCall(const CallICFGNode *callNode);
+    virtual void handleRecursiveCall(const CallICFGNode *callNode, AbstractState& as);
     virtual bool isRecursiveCallSite(const CallICFGNode* callNode, const FunObjVar *);
-    virtual void handleFunCall(const CallICFGNode* callNode);
+    virtual void handleFunCall(const CallICFGNode* callNode, AbstractState& as);
 
-    bool skipRecursiveCall(const CallICFGNode* callNode);
-    const FunObjVar* getCallee(const CallICFGNode* callNode);
+    bool skipRecursiveCall(const CallICFGNode* callNode, AbstractState& as);
+    const FunObjVar* getCallee(const CallICFGNode* callNode, AbstractState& as);
     bool shouldApplyNarrowing(const FunObjVar* fun);
 
     // there data should be shared with subclasses
-    Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
+    Map<std::string, std::function<void(const CallICFGNode*, AbstractState&)>> func_map;
 
-    Map<const ICFGNode*, AbstractState> abstractTrace; // abstract states for nodes
-    Map<const ICFGEdge*, AbstractState> edgeAbsStates; // temporary edge states (propagate buffer)
+    AbstractState globalState; // global node state (persists for function entry fallback)
+    Map<const ICFGEdge*, AbstractState> edgeAbsStates; // edge states (primary storage, NOT erased)
     Set<const ICFGNode*> allAnalyzedNodes; // All nodes ever analyzed (across all entry points)
     std::string moduleName;
 

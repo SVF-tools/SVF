@@ -81,7 +81,7 @@ public:
      * @brief Pure virtual function for handling stub external API calls. (e.g. UNSAFE_BUFACCESS)
      * @param call Pointer to the ext call ICFG node.
      */
-    virtual void handleStubFunctions(const CallICFGNode* call) = 0;
+    virtual void handleStubFunctions(const CallICFGNode* call, AbstractState& as) = 0;
 
     /**
      * @brief Pure virtual function to report detected bugs.
@@ -184,7 +184,7 @@ public:
      * @brief Handles external API calls related to buffer overflow detection.
      * @param call Pointer to the call ICFG node.
      */
-    void handleStubFunctions(const CallICFGNode*);
+    void handleStubFunctions(const CallICFGNode*, AbstractState& as);
 
     /**
      * @brief Adds an offset to a GEP object.
@@ -354,7 +354,7 @@ public:
      * @brief Handles external API calls related to nullptr dereferences.
      * @param call Pointer to the call ICFG node.
      */
-    void handleStubFunctions(const CallICFGNode* call);
+    void handleStubFunctions(const CallICFGNode* call, AbstractState& as);
 
     /**
      * @brief Checks if an Abstract Value is uninitialized.

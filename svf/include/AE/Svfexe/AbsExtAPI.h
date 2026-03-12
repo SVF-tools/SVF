@@ -51,9 +51,8 @@ public:
 
     /**
      * @brief Constructor for AbsExtAPI.
-     * @param abstractTrace Reference to a map of ICFG nodes to abstract states.
      */
-    AbsExtAPI(Map<const ICFGNode*, AbstractState>& traces);
+    AbsExtAPI();
 
     /**
      * @brief Initializes the external function map.
@@ -71,8 +70,9 @@ public:
     /**
      * @brief Handles an external API call.
      * @param call Pointer to the call ICFG node.
+     * @param as Reference to the abstract state.
      */
-    void handleExtAPI(const CallICFGNode *call);
+    void handleExtAPI(const CallICFGNode *call, AbstractState& as);
 
     // --- Shared primitives used by string/memory handlers ---
 
@@ -87,9 +87,9 @@ public:
 
     // --- String/memory operation handlers ---
 
-    void handleStrcpy(const CallICFGNode *call);
-    void handleStrcat(const CallICFGNode *call);
-    void handleStrncat(const CallICFGNode *call);
+    void handleStrcpy(const CallICFGNode *call, AbstractState& as);
+    void handleStrcat(const CallICFGNode *call, AbstractState& as);
+    void handleStrncat(const CallICFGNode *call, AbstractState& as);
     void handleMemcpy(AbstractState& as, const SVF::SVFVar *dst, const SVF::SVFVar *src, IntervalValue len, u32_t start_idx);
     void handleMemset(AbstractState& as, const SVFVar* dst, IntervalValue elem, IntervalValue len);
 
@@ -100,14 +100,6 @@ public:
      */
     IntervalValue getRangeLimitFromType(const SVFType* type);
 
-    /**
-     * @brief Retrieves the abstract state from the trace for a given ICFG node.
-     * @param node Pointer to the ICFG node.
-     * @return Reference to the abstract state.
-     * @throws Assertion if no trace exists for the node.
-     */
-    AbstractState& getAbstractState(const ICFGNode* node);
-
     void collectCheckPoint();
     void checkPointAllSet();
 
@@ -116,8 +108,7 @@ public:
 protected:
     SVFIR* svfir; ///< Pointer to the SVF intermediate representation.
     ICFG* icfg; ///< Pointer to the interprocedural control flow graph.
-    Map<const ICFGNode*, AbstractState>& abstractTrace; ///< Map of ICFG nodes to abstract states.
-    Map<std::string, std::function<void(const CallICFGNode*)>> func_map; ///< Map of function names to handlers.
+    Map<std::string, std::function<void(const CallICFGNode*, AbstractState&)>> func_map; ///< Map of function names to handlers.
 };
 
 } // namespace SVF
