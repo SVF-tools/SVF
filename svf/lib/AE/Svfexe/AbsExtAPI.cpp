@@ -42,7 +42,7 @@ AbsExtAPI::AbsExtAPI()
 void AbsExtAPI::initExtFunMap()
 {
 #define SSE_FUNC_PROCESS(LLVM_NAME ,FUNC_NAME) \
-        auto sse_##FUNC_NAME = [this](const CallICFGNode *callNode, AbstractState& as) { \
+        auto sse_##FUNC_NAME = [](const CallICFGNode *callNode, AbstractState& as) { \
         /* run real ext function */            \
         u32_t rhs_id = callNode->getArgument(0)->getId(); \
         if (!as.inVarToValTable(rhs_id)) return; \
