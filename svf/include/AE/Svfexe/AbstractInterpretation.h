@@ -166,9 +166,6 @@ private:
     /// are preserved.
     void mergeInEdges(const ICFGNode* node);
 
-    /// Recursively collect all ICFG nodes in a WTO cycle (excluding the head).
-    void collectBodyNodes(const ICFGCycleWTO* cycle, Set<const ICFGNode*>& bodyNodes);
-
     /// Check if the branch on intraEdge is feasible under abstract state as
     bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractState& as);
 
