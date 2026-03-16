@@ -286,51 +286,52 @@ void AbstractInterpretation::handleGlobalNode()
         AddressValue(BlackHoleObjAddr);
 }
 
-/// Propagate the post-state of a node along each outgoing IntraCFGEdge.
-/// For conditional branches, the state is refined via isBranchFeasible.
-/// The result is written to edgeAbsStates (overwrite, not join).
-/// Downstream nodes will merge these edge states via mergeInEdges().
-/// Call/return edges are handled by handleFunCall, not here.
-void AbstractInterpretation::propagateToSuccessor(const ICFGNode* node)
+/// Pull-based state merge: for each predecessor that has an abstract state,
+/// copy its state, apply branch refinement for conditional IntraCFGEdges,
+/// and join all feasible states into abstractTrace[node].
+/// Returns true if at least one predecessor contributed state.
+bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
 {
-    if (!hasAbstractState(node))
-        return;
-
-    for (auto& edge : node->getOutEdges())
-    {
-        if (const IntraCFGEdge* intraEdge =
-                    SVFUtil::dyn_cast<IntraCFGEdge>(edge))
-        {
-            AbstractState state = abstractTrace[node];
-            if (intraEdge->getCondition())
-            {
-                if (!isBranchFeasible(intraEdge, state))
-                    continue;  // infeasible branch, do not propagate
-                // state has been refined in-place by isBranchFeasible
-            }
-            edgeAbsStates[intraEdge] = state;
-        }
-        // CallCFGEdge/RetCFGEdge are handled by handleFunCall
-    }
-}
-
-/// Merge all incoming edge states into abstractTrace[node] with overwrite semantics.
-/// The result is the join of all in-edge states, replacing any previous node state.
-/// Edge states are NOT erased — they persist for repeated reads (e.g. cycle iterations).
-void AbstractInterpretation::mergeInEdges(const ICFGNode* node)
-{
-    AbstractState merged;
-    bool hasEdge = false;
+    std::vector<AbstractState> workList;
     for (auto& edge : node->getInEdges())
     {
-        auto it = edgeAbsStates.find(edge);
-        if (it == edgeAbsStates.end())
+        const ICFGNode* pred = edge->getSrcNode();
+        if (abstractTrace.find(pred) == abstractTrace.end())
             continue;
-        merged.joinWith(it->second);
-        hasEdge = true;
+
+        if (const IntraCFGEdge* intraCfgEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge))
+        {
+            AbstractState tmpState = abstractTrace[pred];
+            if (intraCfgEdge->getCondition())
+            {
+                if (isBranchFeasible(intraCfgEdge, tmpState))
+                    workList.push_back(tmpState);
+                // else: infeasible branch, skip
+            }
+            else
+            {
+                workList.push_back(tmpState);
+            }
+        }
+        else if (SVFUtil::isa<CallCFGEdge>(edge))
+        {
+            workList.push_back(abstractTrace[pred]);
+        }
+        else if (SVFUtil::isa<RetCFGEdge>(edge))
+        {
+            workList.push_back(abstractTrace[pred]);
+        }
     }
-    if (hasEdge)
-        abstractTrace[node] = std::move(merged);
+
+    if (workList.empty())
+        return false;
+
+    auto it = workList.begin();
+    abstractTrace[node] = *it;
+    for (++it; it != workList.end(); ++it)
+        abstractTrace[node].joinWith(*it);
+
+    return true;
 }
 
 
@@ -632,9 +633,9 @@ bool AbstractInterpretation::isBranchFeasible(const IntraCFGEdge* intraEdge,
     return true;
 }
 /**
- * Handle an ICFG node: execute statements and propagate post-state to successors.
- * The node's pre-state must already be in abstractTrace (set by predecessors'
- * propagateToSuccessor, or by handleGlobalNode/handleFunction for entry nodes).
+ * Handle an ICFG node: execute statements on the current abstract state.
+ * The node's pre-state must already be in abstractTrace (set by
+ * mergeStatesFromPredecessors, or by handleGlobalNode for the global node).
  * Returns true if the abstract state has changed, false if fixpoint reached or unreachable.
  */
 bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
@@ -712,9 +713,8 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
         if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
         {
             const ICFGNode* node = singleton->getICFGNode();
-            mergeInEdges(node);
+            mergeStatesFromPredecessors(node);
             handleICFGNode(node);
-            propagateToSuccessor(node);
         }
         else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
         {
@@ -875,34 +875,20 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
     AbstractState& as = getAbstractState(callNode);
     abstractTrace[callNode] = as;
     // Skip recursive callsites (within SCC); entry calls are not skipped.
-    // For skipped recursive calls, propagate the caller's state to the callee
-    // entry as a back-edge contribution. This is needed because the IntraCFGEdge
-    // from CallNode to RetNode was removed by the ICFG builder (replaced by
-    // CallCFGEdge + RetCFGEdge), so propagateToSuccessor cannot propagate the
-    // back-edge. We manually push the CallPE parameters to the callee entry.
+    // For skipped recursive calls, the caller's state is already in
+    // abstractTrace[callNode], so mergeStatesFromPredecessors(calleeEntry)
+    // will find it via the CallCFGEdge on the next cycle iteration.
     if (skipRecursiveCall(callNode))
-    {
-        const FunObjVar* callee = getCallee(callNode);
-        const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
-        // Write to the CallCFGEdge as a back-edge contribution.
-        // handleLoopOrRecursion will pick this up when merging back-edges.
-        ICFGEdge* callEdge = icfg->getICFGEdge(callNode, calleeEntry, ICFGEdge::CallCF);
-        assert(callEdge && "CallCFGEdge must exist for recursive call");
-        edgeAbsStates[callEdge] = abstractTrace[callNode];
         return;
-    }
 
     // Direct call: callee is known
     if (const FunObjVar* callee = callNode->getCalledFunction())
     {
         const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
         const ICFGNode* calleeExit = icfg->getFunExitICFGNode(callee);
-        // Push caller's state to callee entry via CallCFGEdge so that
-        // mergeInEdges(calleeEntry) can pick it up uniformly (including
-        // when the entry is a cycle head that erases abstractTrace first).
-        ICFGEdge* callEdge = icfg->getICFGEdge(callNode, calleeEntry, ICFGEdge::CallCF);
-        assert(callEdge && "CallCFGEdge must exist for direct call");
-        edgeAbsStates[callEdge] = abstractTrace[callNode];
+        // Set callee entry state so handleFunction can process it.
+        // mergeStatesFromPredecessors(calleeEntry) would also pull this
+        // via CallCFGEdge, but we set it explicitly to be safe.
         abstractTrace[calleeEntry] = abstractTrace[callNode];
         handleFunction(calleeEntry, callNode);
         // Use callee exit state (which has memory side effects) for the return node
@@ -915,8 +901,6 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
     }
 
     // Indirect call: use Andersen's call graph to get all resolved callees.
-    // The call graph was built during PreAnalysis::initWTO() by running Andersen's pointer analysis,
-    // which over-approximates the set of possible targets for each indirect callsite.
     const RetICFGNode* retNode = callNode->getRetICFGNode();
     if (callGraph->hasIndCSCallees(callNode))
     {
@@ -928,10 +912,6 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
                 continue;
             const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
             const ICFGNode* calleeExit = icfg->getFunExitICFGNode(callee);
-            // Push caller's state to callee entry via CallCFGEdge
-            ICFGEdge* indCallEdge = icfg->getICFGEdge(callNode, calleeEntry, ICFGEdge::CallCF);
-            assert(indCallEdge && "CallCFGEdge must exist for indirect call");
-            edgeAbsStates[indCallEdge] = abstractTrace[callNode];
             abstractTrace[calleeEntry] = abstractTrace[callNode];
             handleFunction(calleeEntry, callNode);
             // Use callee exit state for retNode (first callee assigns, rest join)
@@ -1012,17 +992,17 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
     bool increasing = true;
     u32_t widen_delay = Options::WidenDelay();
     // Initialize prev_head_pre from whatever is already in abstractTrace
-    // (set by external predecessors' propagateToSuccessor before entering this cycle)
+    // (set by predecessors before entering this cycle)
     AbstractState prev_head_pre;
     if (hasAbstractState(cycle_head))
         prev_head_pre = abstractTrace[cycle_head];
 
     for (u32_t cur_iter = 0;; cur_iter++)
     {
-        // Build cycle head's in-state by merging all in-edge states (overwrite).
-        // Edge states persist (not erased), so both external and back-edge
-        // contributions are read uniformly every iteration.
-        mergeInEdges(cycle_head);
+        // Pull cycle head's in-state from all predecessors (external + back-edges).
+        // On each iteration, predecessors' abstractTrace reflects the latest body state,
+        // so back-edge contributions are picked up automatically.
+        mergeStatesFromPredecessors(cycle_head);
 
         // Apply widening or narrowing
         if (cur_iter >= widen_delay)
@@ -1045,19 +1025,17 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
         }
         prev_head_pre = abstractTrace[cycle_head];
 
-        // Execute head and propagate to out-edges
+        // Execute head node
         handleICFGNode(cycle_head);
-        propagateToSuccessor(cycle_head);
 
-        // Clear body node states and process cycle body components
+        // Process cycle body components
         for (const ICFGWTOComp* comp : cycle->getWTOComponents())
         {
             if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
             {
                 const ICFGNode* bodyNode = singleton->getICFGNode();
-                mergeInEdges(bodyNode);
+                mergeStatesFromPredecessors(bodyNode);
                 handleICFGNode(bodyNode);
-                propagateToSuccessor(bodyNode);
             }
             else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
             {
