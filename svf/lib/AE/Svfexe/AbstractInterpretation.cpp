@@ -306,7 +306,6 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
             {
                 if (isBranchFeasible(intraCfgEdge, tmpState))
                     workList.push_back(tmpState);
-                // else: infeasible branch, skip
             }
             else
             {
@@ -319,7 +318,23 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
         }
         else if (SVFUtil::isa<RetCFGEdge>(edge))
         {
-            workList.push_back(abstractTrace[pred]);
+            switch (Options::HandleRecur())
+            {
+            case TOP:
+            {
+                workList.push_back(abstractTrace[pred]);
+                break;
+            }
+            case WIDEN_ONLY:
+            case WIDEN_NARROW:
+            {
+                const RetICFGNode* returnSite = SVFUtil::dyn_cast<RetICFGNode>(node);
+                const CallICFGNode* callSite = returnSite->getCallICFGNode();
+                if (hasAbstractState(callSite))
+                    workList.push_back(abstractTrace[pred]);
+                break;
+            }
+            }
         }
     }
 
@@ -713,12 +728,13 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
         if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
         {
             const ICFGNode* node = singleton->getICFGNode();
-            mergeStatesFromPredecessors(node);
-            handleICFGNode(node);
+            if (mergeStatesFromPredecessors(node))
+                handleICFGNode(node);
         }
         else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
         {
-            handleLoopOrRecursion(cycle, caller);
+            if (mergeStatesFromPredecessors(cycle->head()->getICFGNode()))
+                handleLoopOrRecursion(cycle, caller);
         }
     }
 }
@@ -874,10 +890,6 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 {
     AbstractState& as = getAbstractState(callNode);
     abstractTrace[callNode] = as;
-    // Skip recursive callsites (within SCC); entry calls are not skipped.
-    // For skipped recursive calls, the caller's state is already in
-    // abstractTrace[callNode], so mergeStatesFromPredecessors(calleeEntry)
-    // will find it via the CallCFGEdge on the next cycle iteration.
     if (skipRecursiveCall(callNode))
         return;
 
@@ -885,18 +897,11 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
     if (const FunObjVar* callee = callNode->getCalledFunction())
     {
         const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
-        const ICFGNode* calleeExit = icfg->getFunExitICFGNode(callee);
-        // Set callee entry state so handleFunction can process it.
-        // mergeStatesFromPredecessors(calleeEntry) would also pull this
-        // via CallCFGEdge, but we set it explicitly to be safe.
-        abstractTrace[calleeEntry] = abstractTrace[callNode];
         handleFunction(calleeEntry, callNode);
-        // Use callee exit state (which has memory side effects) for the return node
+        // Resume return node from caller's state (context-insensitive).
+        // Callee's side effects are reflected through shared abstractTrace.
         const RetICFGNode* retNode = callNode->getRetICFGNode();
-        if (hasAbstractState(calleeExit))
-            abstractTrace[retNode] = abstractTrace[calleeExit];
-        else
-            abstractTrace[retNode] = abstractTrace[callNode];
+        abstractTrace[retNode] = abstractTrace[callNode];
         return;
     }
 
@@ -905,35 +910,16 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
     if (callGraph->hasIndCSCallees(callNode))
     {
         const auto& callees = callGraph->getIndCSCallees(callNode);
-        bool firstCallee = true;
         for (const FunObjVar* callee : callees)
         {
             if (callee->isDeclaration())
                 continue;
             const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
-            const ICFGNode* calleeExit = icfg->getFunExitICFGNode(callee);
-            abstractTrace[calleeEntry] = abstractTrace[callNode];
             handleFunction(calleeEntry, callNode);
-            // Use callee exit state for retNode (first callee assigns, rest join)
-            if (hasAbstractState(calleeExit))
-            {
-                if (firstCallee)
-                {
-                    abstractTrace[retNode] = abstractTrace[calleeExit];
-                    firstCallee = false;
-                }
-                else
-                    abstractTrace[retNode].joinWith(abstractTrace[calleeExit]);
-            }
         }
-        // If no callee was processed, fall back to caller's state
-        if (firstCallee)
-            abstractTrace[retNode] = abstractTrace[callNode];
     }
-    else
-    {
-        abstractTrace[retNode] = abstractTrace[callNode];
-    }
+    // Resume return node from caller's state (context-insensitive)
+    abstractTrace[retNode] = abstractTrace[callNode];
 }
 
 /// Handle WTO cycle (loop or recursive function) using widening/narrowing iteration.
@@ -991,55 +977,58 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
     // Iterate until fixpoint with widening/narrowing on the cycle head.
     bool increasing = true;
     u32_t widen_delay = Options::WidenDelay();
-    // Initialize prev_head_pre from whatever is already in abstractTrace
-    // (set by predecessors before entering this cycle)
-    AbstractState prev_head_pre;
-    if (hasAbstractState(cycle_head))
-        prev_head_pre = abstractTrace[cycle_head];
-
     for (u32_t cur_iter = 0;; cur_iter++)
     {
-        // Pull cycle head's in-state from all predecessors (external + back-edges).
-        // On each iteration, predecessors' abstractTrace reflects the latest body state,
-        // so back-edge contributions are picked up automatically.
-        mergeStatesFromPredecessors(cycle_head);
-
-        // Apply widening or narrowing
         if (cur_iter >= widen_delay)
         {
-            AbstractState cur_head_pre = abstractTrace[cycle_head];
+            // Save state before processing head
+            AbstractState prev_head_state = abstractTrace[cycle_head];
+
+            // Process cycle head: merge from predecessors, then execute statements
+            // (uses same gated pattern as handleWTOComponent in origin/master)
+            if (mergeStatesFromPredecessors(cycle_head))
+                handleICFGNode(cycle_head);
+            AbstractState cur_head_state = abstractTrace[cycle_head];
+
             if (increasing)
             {
-                abstractTrace[cycle_head] = prev_head_pre.widening(cur_head_pre);
-                if (abstractTrace[cycle_head] == prev_head_pre)
+                abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
+                if (abstractTrace[cycle_head] == prev_head_state)
+                {
+                    // Widening fixpoint reached; switch to narrowing phase.
                     increasing = false;
+                    continue;
+                }
             }
             else
             {
                 if (!shouldApplyNarrowing(cycle_head->getFun()))
                     break;
-                abstractTrace[cycle_head] = prev_head_pre.narrowing(cur_head_pre);
-                if (abstractTrace[cycle_head] == prev_head_pre)
+                abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
+                if (abstractTrace[cycle_head] == prev_head_state)
                     break;
             }
         }
-        prev_head_pre = abstractTrace[cycle_head];
+        else
+        {
+            // Before widen_delay: process cycle head with gated pattern
+            if (mergeStatesFromPredecessors(cycle_head))
+                handleICFGNode(cycle_head);
+        }
 
-        // Execute head node
-        handleICFGNode(cycle_head);
-
-        // Process cycle body components
+        // Process cycle body components (each with gated merge+handle)
         for (const ICFGWTOComp* comp : cycle->getWTOComponents())
         {
             if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
             {
-                const ICFGNode* bodyNode = singleton->getICFGNode();
-                mergeStatesFromPredecessors(bodyNode);
-                handleICFGNode(bodyNode);
+                const ICFGNode* node = singleton->getICFGNode();
+                if (mergeStatesFromPredecessors(node))
+                    handleICFGNode(node);
             }
             else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
             {
-                handleLoopOrRecursion(subCycle, caller);
+                if (mergeStatesFromPredecessors(subCycle->head()->getICFGNode()))
+                    handleLoopOrRecursion(subCycle, caller);
             }
         }
     }
