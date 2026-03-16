@@ -156,9 +156,10 @@ private:
     /// Initialize abstract state for the global ICFG node and process global statements
     virtual void handleGlobalNode();
 
-    /// Propagate the post-state of a node to all its intra-procedural successors
-    void propagateToSuccessor(const ICFGNode* node,
-                              const Set<const ICFGNode*>* withinSet = nullptr);
+    /// Pull-based state merge: read abstractTrace[pred] for each predecessor,
+    /// apply branch refinement for conditional IntraCFGEdges, and join into
+    /// abstractTrace[node]. Returns true if at least one predecessor had state.
+    bool mergeStatesFromPredecessors(const ICFGNode* node);
 
     /// Check if the branch on intraEdge is feasible under abstract state as
     bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractState& as);
@@ -242,7 +243,7 @@ private:
     // there data should be shared with subclasses
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
 
-    Map<const ICFGNode*, AbstractState> abstractTrace; // abstract states for nodes (pre-state before execution, post-state after)
+    Map<const ICFGNode*, AbstractState> abstractTrace; // abstract states for nodes
     Set<const ICFGNode*> allAnalyzedNodes; // All nodes ever analyzed (across all entry points)
     std::string moduleName;
 
