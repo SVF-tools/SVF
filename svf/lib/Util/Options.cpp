@@ -783,6 +783,8 @@ const Option<u32_t> Options::LoopBound(
 
 const Option<bool> Options::SparseAE(
     "sparse-ae", "Enable sparse abstract execution via SVFG", false);
+const Option<bool> Options::SemiSparse(
+    "semi-sparse", "Enable semi-sparse abstract execution: ObjVars dense, ValVars sparse", false);
 const Option<u32_t> Options::WidenDelay(
     "widen-delay", "Loop Widen Delay", 3);
 const OptionMap<u32_t> Options::HandleRecur(

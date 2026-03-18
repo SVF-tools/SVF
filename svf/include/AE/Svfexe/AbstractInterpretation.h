@@ -115,14 +115,14 @@ public:
         return svfir->getSVFVar(varId);
     }
 
-    /// Retrieve abstract value for a top-level variable at a given ICFG node
-    const AbstractValue& getAbstractValue(const ValVar* var);
+    /// Retrieve abstract value for a top-level variable from its def-site
+    AbstractValue getAbstractValue(const ValVar* var);
 
     /// Retrieve abstract value for an address-taken variable at a given ICFG node
     const AbstractValue& getAbstractValue(const ICFGNode* node, const ObjVar* var);
 
     /// Retrieve abstract value for any SVF variable at a given ICFG node
-    const AbstractValue& getAbstractValue(const ICFGNode* node, const SVFVar* var);
+    AbstractValue getAbstractValue(const ICFGNode* node, const SVFVar* var);
 
     /// Set abstract value for a top-level variable at a given ICFG node
     void updateAbstractValue(const ValVar* var, const AbstractValue& val);
@@ -150,6 +150,26 @@ public:
 
     /// Retrieve abstract state filtered to specific SVF variables
     void getAbstractState(const ICFGNode* node, const Set<const SVFVar*>& vars, AbstractState& result);
+
+
+    /// Collect the set of ValVar IDs that a given ICFG node needs as operands.
+    Set<u32_t> collectNeededVarIds(const ICFGNode* node);
+
+    /// Pull needed ValVars from their def-sites into abstractTrace[node].
+    void buildSparseState(const ICFGNode* node);
+
+    /// Pull branch condition ValVars into the given abstract state
+    /// so that isBranchFeasible can operate correctly in semi-sparse mode.
+    void pullBranchConditionVars(const IntraCFGEdge* edge, AbstractState& state);
+
+    /// Insert id into needed if it is a non-ObjVar ValVar.
+    void addIfValVar(NodeID id, Set<u32_t>& needed);
+
+    /// Pull a single ValVar into the given state from its def-site.
+    void pullValVarIntoState(NodeID id, AbstractState& state);
+
+    /// Pull the load-chain pointer (if any) for a given operand into the state.
+    void pullLoadChainPointerIntoState(NodeID opId, AbstractState& state);
 
 
 private:
