@@ -276,6 +276,7 @@ public:
     void joinWith(const AbstractState&other);
 
     /// Join only the addr-to-value table (ObjVar state) from other, ignoring var-to-value (ValVar).
+    void joinAddrOnly(const AbstractState&other);
 
     /// domain meet with other, important! other widen this.
     void meetWith(const AbstractState&other);
