@@ -137,9 +137,9 @@ void PreAnalysis::buildOrphanVarDefMap()
                 {
                     if (const ValVar* vv = SVFUtil::dyn_cast<ValVar>(var))
                     {
-                        if (!vv->getICFGNode() && !SVFUtil::isa<ObjVar>(vv))
-                            orphanVarDefMap.emplace(vv->getId(),
-                                                    stmt->getICFGNode());
+                        if (!SVFUtil::isa<ObjVar>(vv))
+                            orphanVarDefMap[vv->getId()] =
+                                stmt->getICFGNode();
                     }
                 }
             }
