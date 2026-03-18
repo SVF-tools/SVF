@@ -64,6 +64,22 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
         stat->performStat();
     for (auto& detector: detectors)
         detector->reportBug();
+
+    {
+        u64_t totalNodes = 0, totalVarEntries = 0, totalAddrEntries = 0;
+        for (auto& kv : abstractTrace)
+        {
+            totalNodes++;
+            totalVarEntries += kv.second.getVarToVal().size();
+            totalAddrEntries += kv.second.getLocToVal().size();
+        }
+        SVFUtil::outs() << "@@STATE_SIZE@@"
+                        << " nodes=" << totalNodes
+                        << " varEntries=" << totalVarEntries
+                        << " addrEntries=" << totalAddrEntries
+                        << " totalEntries=" << (totalVarEntries + totalAddrEntries)
+                        << "\n";
+    }
 }
 
 AbstractInterpretation::AbstractInterpretation()
@@ -103,11 +119,22 @@ AbstractValue AbstractInterpretation::getAbstractValue(const ValVar* var)
     const ICFGNode* defNode = var->getICFGNode();
     if (!defNode)
         defNode = preAnalysis->getOrphanVarDefNode(var->getId());
-    if (!defNode || !hasAbstractState(defNode))
-        return IntervalValue::top();
+    if (defNode && hasAbstractState(defNode))
+    {
+        const auto& varMap = getAbstractState(defNode).getVarToVal();
+        if (varMap.count(var->getId()))
+            return getAbstractState(defNode)[var->getId()];
+    }
 
-    AbstractState& as = getAbstractState(defNode);
-    return as[var->getId()];
+    const ICFGNode* altNode = preAnalysis->getOrphanVarDefNode(var->getId());
+    if (altNode && altNode != defNode && hasAbstractState(altNode))
+    {
+        const auto& altMap = getAbstractState(altNode).getVarToVal();
+        if (altMap.count(var->getId()))
+            return getAbstractState(altNode)[var->getId()];
+    }
+
+    return IntervalValue::top();
 }
 
 const AbstractValue& AbstractInterpretation::getAbstractValue(const ICFGNode* node, const ObjVar* var)
@@ -505,7 +532,8 @@ void AbstractInterpretation::handleGlobalNode()
 bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
 {
     bool semiSparse = Options::SemiSparse();
-    std::vector<AbstractState> workList;
+    std::vector<AbstractState> intraWorkList;
+    std::vector<AbstractState> interWorkList;
     for (auto& edge : node->getInEdges())
     {
         const ICFGNode* pred = edge->getSrcNode();
@@ -521,18 +549,18 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                     pullBranchConditionVars(intraCfgEdge, tmpState);
                 if (isBranchFeasible(intraCfgEdge, tmpState))
                 {
-                    workList.push_back(tmpState);
+                    intraWorkList.push_back(tmpState);
                 }
             }
             else
             {
-                workList.push_back(tmpState);
+                intraWorkList.push_back(tmpState);
             }
         }
         else if (SVFUtil::isa<CallCFGEdge>(edge))
         {
             AbstractState tmpState = abstractTrace[pred];
-            workList.push_back(tmpState);
+            interWorkList.push_back(tmpState);
         }
         else if (SVFUtil::isa<RetCFGEdge>(edge))
         {
@@ -541,7 +569,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
             case TOP:
             {
                 AbstractState tmpState = abstractTrace[pred];
-                workList.push_back(tmpState);
+                interWorkList.push_back(tmpState);
                 break;
             }
             case WIDEN_ONLY:
@@ -552,7 +580,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                 if (hasAbstractState(callSite))
                 {
                     AbstractState tmpState = abstractTrace[pred];
-                    workList.push_back(tmpState);
+                    interWorkList.push_back(tmpState);
                 }
                 break;
             }
@@ -560,14 +588,30 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
         }
     }
 
-    if (workList.empty())
+    if (intraWorkList.empty() && interWorkList.empty())
         return false;
 
-    auto it = workList.begin();
-    abstractTrace[node] = *it;
-    for (++it; it != workList.end(); ++it)
+    if (semiSparse)
     {
-        abstractTrace[node].joinWith(*it);
+        abstractTrace[node] = AbstractState();
+        for (auto& state : intraWorkList)
+            abstractTrace[node].joinAddrOnly(state);
+        for (auto& state : interWorkList)
+            abstractTrace[node].joinWith(state);
+    }
+    else
+    {
+        bool first = true;
+        for (auto& state : intraWorkList)
+        {
+            if (first) { abstractTrace[node] = state; first = false; }
+            else abstractTrace[node].joinWith(state);
+        }
+        for (auto& state : interWorkList)
+        {
+            if (first) { abstractTrace[node] = state; first = false; }
+            else abstractTrace[node].joinWith(state);
+        }
     }
 
     return true;
