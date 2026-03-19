@@ -160,7 +160,7 @@ GepValVar::GepValVar(const ValVar* baseNode, NodeID i,
                      const AccessPath& ap, const SVFType* ty, const ICFGNode* node)
     : ValVar(i, ty, node, GepValNode), ap(ap), base(baseNode), gepValType(ty)
 {
-
+    assert(node && "GepValVar must have a valid ICFGNode");
 }
 
 const std::string GepValVar::toString() const

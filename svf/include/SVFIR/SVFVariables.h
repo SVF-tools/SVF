@@ -1357,6 +1357,7 @@ public:
     GlobalValVar(NodeID i, const ICFGNode* icn, const SVFType* svfType)
         : ValVar(i, svfType, icn, GlobalValNode)
     {
+        assert(icn && "GlobalValVar must have a valid ICFGNode");
         type = svfType;
     }
 
