@@ -120,7 +120,8 @@ ArgValVar::ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn,
     : ValVar(i, svfType, icn, ArgValNode),
       cgNode(callGraphNode), argNo(argNo)
 {
-
+    assert((callGraphNode->isDeclaration() || icn) &&
+           "ArgValVar of a defined function must have a valid ICFGNode");
 }
 
 const FunObjVar* ArgValVar::getFunction() const
@@ -179,6 +180,8 @@ const std::string GepValVar::toString() const
 RetValPN::RetValPN(NodeID i, const FunObjVar* node, const SVFType* svfType, const ICFGNode* icn)
     : ValVar(i, svfType, icn, RetValNode), callGraphNode(node)
 {
+    assert((node->isDeclaration() || icn) &&
+           "RetValPN of a defined function must have a valid ICFGNode");
 }
 
 const FunObjVar* RetValPN::getFunction() const

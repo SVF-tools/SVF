@@ -481,7 +481,6 @@ void SVFIRBuilder::initialiseValVars()
         }
         else if (auto argval = SVFUtil::dyn_cast<Argument>(llvmValue))
         {
-            // Argument is not an Instruction so icfgNode above is nullptr.
             // Formal params are defined at FunEntryICFGNode (where CallPE copies actual args).
             // External (declaration-only) functions have no entry node, so keep nullptr.
             const FunObjVar* funObj = llvmModuleSet()->getFunObjVar(argval->getParent());
@@ -506,7 +505,6 @@ void SVFIRBuilder::initialiseValVars()
         }
         else if (SVFUtil::isa<GlobalValue>(llvmValue))
         {
-            // GlobalValue is not an Instruction so icfgNode above is nullptr.
             // Global variables are defined at the global ICFG node.
             pag->addGlobalValNode(iter->second, pag->getICFG()->getGlobalICFGNode(),
                                   llvmModuleSet()->getSVFType(llvmValue->getType()));
