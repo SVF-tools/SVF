@@ -260,12 +260,7 @@ class ValVar: public SVFVar
 
 private:
     const ICFGNode* icfgNode; // icfgnode related to valvar
-protected:
 
-    inline void setICFGNode(const ICFGNode* icfgNode)
-    {
-        this->icfgNode = icfgNode;
-    }
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -615,11 +610,6 @@ public:
     inline const ICFGNode* getICFGNode() const
     {
         return icfgNode;
-    }
-
-    inline void setICFGNode(const ICFGNode* node)
-    {
-        icfgNode = node;
     }
 
     /// Return name of a LLVM value
