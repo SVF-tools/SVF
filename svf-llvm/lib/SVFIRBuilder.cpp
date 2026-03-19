@@ -481,6 +481,9 @@ void SVFIRBuilder::initialiseValVars()
         }
         else if (auto argval = SVFUtil::dyn_cast<Argument>(llvmValue))
         {
+            // Argument is not an Instruction so icfgNode above is nullptr.
+            // Formal params are defined at FunEntryICFGNode (where CallPE copies actual args).
+            // External (declaration-only) functions have no entry node, so keep nullptr.
             const FunObjVar* funObj = llvmModuleSet()->getFunObjVar(argval->getParent());
             const ICFGNode* entryNode = funObj->isDeclaration() ? nullptr : pag->getICFG()->getFunEntryICFGNode(funObj);
             pag->addArgValNode(
@@ -503,6 +506,8 @@ void SVFIRBuilder::initialiseValVars()
         }
         else if (SVFUtil::isa<GlobalValue>(llvmValue))
         {
+            // GlobalValue is not an Instruction so icfgNode above is nullptr.
+            // Global variables are defined at the global ICFG node.
             pag->addGlobalValNode(iter->second, pag->getICFG()->getGlobalICFGNode(),
                                   llvmModuleSet()->getSVFType(llvmValue->getType()));
         }
@@ -546,6 +551,9 @@ void SVFIRBuilder::initialiseNodes()
             ++iter)
     {
         const Value* llvmValue = iter->first;
+        // retSyms keys are Function*, not Instruction, so dyn_cast<Instruction> always fails.
+        // RetValPN represents the callee's return value, defined at FunExitICFGNode.
+        // External functions have no exit node, so keep nullptr.
         const FunObjVar* funObjVar = llvmModuleSet()->getFunObjVar(SVFUtil::cast<Function>(llvmValue));
         const ICFGNode* icfgNode = funObjVar->isDeclaration() ? nullptr : pag->getICFG()->getFunExitICFGNode(funObjVar);
         DBOUT(DPAGBuild, outs() << "add ret node " << iter->second << "\n");
@@ -561,6 +569,9 @@ void SVFIRBuilder::initialiseNodes()
             iter != llvmModuleSet()->varargSyms().end(); ++iter)
     {
         const Value* llvmValue = iter->first;
+        // varargSyms keys are Function*, not Instruction.
+        // Variadic arguments are received at the function entry point.
+        // External functions have no entry node, so keep nullptr.
         const FunObjVar* funObjVar = llvmModuleSet()->getFunObjVar(SVFUtil::cast<Function>(llvmValue));
         const ICFGNode* icfgNode = funObjVar->isDeclaration() ? nullptr : pag->getICFG()->getFunEntryICFGNode(funObjVar);
         DBOUT(DPAGBuild, outs() << "add vararg node " << iter->second << "\n");
@@ -1681,6 +1692,7 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const 
         }
         else if (SVFUtil::isa<GlobalVariable>(curVal))
         {
+            // GEP on a global variable: the resulting GepValVar belongs to the global ICFG node.
             node = pag->getICFG()->getGlobalICFGNode();
         }
         NodeID gepNode = pag->addGepValNode(llvmModuleSet()->getValueNode(curVal), cast<ValVar>(pag->getGNode(getValueNode(val))), ap,
