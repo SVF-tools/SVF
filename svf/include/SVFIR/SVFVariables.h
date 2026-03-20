@@ -283,7 +283,10 @@ public:
     //@}
 
     /// Constructor
-    ValVar(NodeID i, const SVFType* svfType, const ICFGNode* node, PNODEK ty = ValNode);
+    ValVar(NodeID i, const SVFType* svfType, const ICFGNode* node, PNODEK ty = ValNode)
+        : SVFVar(i, svfType, ty), icfgNode(node)
+    {
+    }
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
@@ -1354,6 +1357,7 @@ public:
     GlobalValVar(NodeID i, const ICFGNode* icn, const SVFType* svfType)
         : ValVar(i, svfType, icn, GlobalValNode)
     {
+        assert(icn && "GlobalValVar must have a valid ICFGNode");
         type = svfType;
     }
 
@@ -2108,6 +2112,8 @@ public:
     VarArgValPN(NodeID i, const FunObjVar* node, const SVFType* svfType, const ICFGNode* icn)
         : ValVar(i, svfType, icn, VarargValNode), callGraphNode(node)
     {
+        assert((node->isDeclaration() || icn) &&
+               "VarArgValPN of a defined function must have a valid ICFGNode");
     }
 
     virtual const FunObjVar* getFunction() const;
