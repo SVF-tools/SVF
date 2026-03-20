@@ -97,9 +97,7 @@ ValVar::ValVar(NodeID i, const SVFType* svfType, const ICFGNode* node, PNODEK ty
              SVFUtil::isa<RetValPN>(this) ||
              SVFUtil::isa<VarArgValPN>(this))
     {
-        // External (declaration-only) functions have no ICFG entry/exit nodes,
-        // so their params/returns may legitimately have nullptr ICFGNode.
-        // The FunObjVar* is not accessible here (subclass members not yet initialized).
+        // Conditional assert (isDeclaration || icn) is in each subclass constructor.
     }
     else if (SVFUtil::isa<ConstDataValVar>(this) ||
              SVFUtil::isa<ConstAggValVar>(this) ||
@@ -155,6 +153,8 @@ ArgValVar::ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn,
     : ValVar(i, svfType, icn, ArgValNode),
       cgNode(callGraphNode), argNo(argNo)
 {
+    assert((callGraphNode->isDeclaration() || icn) &&
+           "ArgValVar of a defined function must have a valid ICFGNode");
 }
 
 const FunObjVar* ArgValVar::getFunction() const
@@ -212,6 +212,8 @@ const std::string GepValVar::toString() const
 RetValPN::RetValPN(NodeID i, const FunObjVar* node, const SVFType* svfType, const ICFGNode* icn)
     : ValVar(i, svfType, icn, RetValNode), callGraphNode(node)
 {
+    assert((node->isDeclaration() || icn) &&
+           "RetValPN of a defined function must have a valid ICFGNode");
 }
 
 const FunObjVar* RetValPN::getFunction() const

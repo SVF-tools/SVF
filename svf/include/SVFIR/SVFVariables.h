@@ -2108,6 +2108,8 @@ public:
     VarArgValPN(NodeID i, const FunObjVar* node, const SVFType* svfType, const ICFGNode* icn)
         : ValVar(i, svfType, icn, VarargValNode), callGraphNode(node)
     {
+        assert((node->isDeclaration() || icn) &&
+               "VarArgValPN of a defined function must have a valid ICFGNode");
     }
 
     virtual const FunObjVar* getFunction() const;
