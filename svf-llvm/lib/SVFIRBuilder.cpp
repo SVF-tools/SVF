@@ -677,8 +677,17 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
         else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(gepTy))
         {
             assert(op && "non-const offset accessing a struct");
-            //The actual index
-            APOffset idx = (u32_t)LLVMUtil::getIntegerValue(op).first;
+            // guard against negative or out-of-bounds struct indices
+            // (e.g. rust hashbrown bucket back-offset: gep { ... }, ptr %p, i64 -1)
+            // a negative i64 wraps to a huge uint64_t that overflows u32_t,
+            // creating an invalid field index that severs points-to tracking
+            uint64_t rawIdx = LLVMUtil::getIntegerValue(op).first;
+            if (rawIdx >= ST->getNumElements())
+            {
+                isConst = false;
+                continue;
+            }
+            APOffset idx = (u32_t)rawIdx;
             u32_t offset = pag->getFlattenedElemIdx(llvmModuleSet()->getSVFType(ST), idx);
             ap.setFldIdx(ap.getConstantStructFldIdx() + offset);
         }
