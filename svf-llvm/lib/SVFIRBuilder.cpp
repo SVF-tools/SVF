@@ -41,6 +41,8 @@
 #include "Graphs/CallGraph.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
+#include <llvm/IR/InlineAsm.h>
+#include <llvm/IR/Constants.h>
 
 using namespace std;
 using namespace SVF;
