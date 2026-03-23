@@ -41,8 +41,6 @@
 #include "Graphs/CallGraph.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
-#include <llvm/IR/InlineAsm.h>
-#include <llvm/IR/Constants.h>
 
 using namespace std;
 using namespace SVF;
@@ -515,9 +513,9 @@ void SVFIRBuilder::initialiseValVars()
         {
             pag->addBasicBlockValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()));
         }
-        else if (SVFUtil::isa<llvm::InlineAsm>(llvmValue) ||
-                 SVFUtil::isa<llvm::DSOLocalEquivalent>(llvmValue) ||
-                 SVFUtil::isa<llvm::NoCFIValue>(llvmValue))
+        else if (SVFUtil::isa<InlineAsm>(llvmValue) ||
+                 SVFUtil::isa<DSOLocalEquivalent>(llvmValue) ||
+                 SVFUtil::isa<NoCFIValue>(llvmValue))
         {
             pag->addAsmPCValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()));
         }

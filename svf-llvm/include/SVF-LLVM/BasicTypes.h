@@ -42,6 +42,8 @@
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Statepoint.h>
 #include <llvm/IR/Intrinsics.h>
+#include <llvm/IR/InlineAsm.h>
+#include <llvm/IR/Constants.h>
 
 #include <llvm/Analysis/MemoryLocation.h>
 #include <llvm/Analysis/DominanceFrontier.h>
@@ -127,6 +129,9 @@ typedef llvm::Constant Constant;
 typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantFP ConstantFP;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
+typedef llvm::InlineAsm InlineAsm;
+typedef llvm::DSOLocalEquivalent DSOLocalEquivalent;
+typedef llvm::NoCFIValue NoCFIValue;
 typedef llvm::GlobalAlias GlobalAlias;
 typedef llvm::GlobalIFunc GlobalIFunc;
 typedef llvm::GlobalVariable GlobalVariable;
