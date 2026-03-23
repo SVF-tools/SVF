@@ -465,14 +465,6 @@ void SVFIRBuilder::initialiseValVars()
 
         const ICFGNode* icfgNode = nullptr;
         auto llvmValue = iter->first;
-        if (const Instruction* inst =
-                    SVFUtil::dyn_cast<Instruction>(llvmValue))
-        {
-            if (llvmModuleSet()->hasICFGNode(inst))
-            {
-                icfgNode = llvmModuleSet()->getICFGNode(inst);
-            }
-        }
 
         // Check if the value is a function and get its call graph node
         if (const Function* func = SVFUtil::dyn_cast<Function>(llvmValue))
@@ -521,19 +513,22 @@ void SVFIRBuilder::initialiseValVars()
         {
             pag->addBasicBlockValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()));
         }
-        else if (SVFUtil::isa<Instruction>(llvmValue) &&
-                 LLVMUtil::isIntrinsicInst(SVFUtil::cast<Instruction>(llvmValue)))
+        else if (SVFUtil::isa<llvm::InlineAsm>(llvmValue) ||
+                 SVFUtil::isa<llvm::DSOLocalEquivalent>(llvmValue) ||
+                 SVFUtil::isa<llvm::NoCFIValue>(llvmValue))
         {
-            pag->addIntrinsicValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()));
-        }
-        else if (!SVFUtil::isa<Instruction>(llvmValue))
-        {
-            // InlineAsm, DSOLocalEquivalent, NoCFIValue
             pag->addAsmPCValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()));
         }
-        else
+        else if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(llvmValue))
         {
-            pag->addValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
+            if (LLVMUtil::isIntrinsicInst(inst))
+                pag->addIntrinsicValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()));
+            else
+            {
+                assert(llvmModuleSet()->hasICFGNode(inst) && "LLVM instruction is not associated with an ICFGNode");
+                icfgNode = llvmModuleSet()->getICFGNode(inst);
+                pag->addValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
+            }
         }
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue,
                 pag->getGNode(iter->second));
