@@ -117,8 +117,6 @@ AbstractValue AbstractInterpretation::getAbstractValue(const ValVar* var)
         return IntervalValue::top();
 
     const ICFGNode* defNode = var->getICFGNode();
-    if (!defNode)
-        defNode = preAnalysis->getOrphanVarDefNode(var->getId());
     if (defNode && hasAbstractState(defNode))
     {
         const auto& varMap = getAbstractState(defNode).getVarToVal();
@@ -126,12 +124,17 @@ AbstractValue AbstractInterpretation::getAbstractValue(const ValVar* var)
             return getAbstractState(defNode)[var->getId()];
     }
 
-    const ICFGNode* altNode = preAnalysis->getOrphanVarDefNode(var->getId());
-    if (altNode && altNode != defNode && hasAbstractState(altNode))
+    // Fallback for call-result ValVars: their getICFGNode() returns
+    // CallICFGNode but the value is written by RetPE at RetICFGNode.
+    if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(defNode))
     {
-        const auto& altMap = getAbstractState(altNode).getVarToVal();
-        if (altMap.count(var->getId()))
-            return getAbstractState(altNode)[var->getId()];
+        const RetICFGNode* retNode = callNode->getRetICFGNode();
+        if (hasAbstractState(retNode))
+        {
+            const auto& retMap = getAbstractState(retNode).getVarToVal();
+            if (retMap.count(var->getId()))
+                return getAbstractState(retNode)[var->getId()];
+        }
     }
 
     return IntervalValue::top();
