@@ -45,8 +45,6 @@ PreAnalysis::PreAnalysis(SVFIR* pag, ICFG* icfg)
         SVFGBuilder memSSA(true);
         svfg = memSSA.buildFullSVFG(pta);
     }
-    if (Options::SemiSparse())
-        buildOrphanVarDefMap();
 }
 
 PreAnalysis::~PreAnalysis()
@@ -110,54 +108,6 @@ const ICFGNode* PreAnalysis::getDefSiteOfObjVar(const ObjVar* obj, const ICFGNod
     return nullptr;
 }
 
-void PreAnalysis::buildOrphanVarDefMap()
-{
-    for (auto it = icfg->begin(); it != icfg->end(); ++it)
-    {
-        const ICFGNode* node = it->second;
-        for (const SVFStmt* stmt : node->getSVFStmts())
-        {
-            if (const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(stmt))
-            {
-                const SVFVar* lhsVar = callPE->getLHSVar();
-                if (const ValVar* vv = SVFUtil::dyn_cast<ValVar>(lhsVar))
-                {
-                    if (!vv->getICFGNode())
-                    {
-                        // Formal param → map to FunEntryICFGNode (where
-                        // handleICFGNode copies the caller's value)
-                        orphanVarDefMap[vv->getId()] =
-                            callPE->getFunEntryICFGNode();
-                    }
-                }
-            }
-            else if (const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(stmt))
-            {
-                for (const SVFVar* var : {retPE->getLHSVar(), retPE->getRHSVar()})
-                {
-                    if (const ValVar* vv = SVFUtil::dyn_cast<ValVar>(var))
-                    {
-                        if (!SVFUtil::isa<ObjVar>(vv))
-                            orphanVarDefMap[vv->getId()] =
-                                stmt->getICFGNode();
-                    }
-                }
-            }
-            else if (const AssignStmt* assign = SVFUtil::dyn_cast<AssignStmt>(stmt))
-            {
-                for (const SVFVar* var : {assign->getLHSVar(), assign->getRHSVar()})
-                {
-                    if (const ValVar* vv = SVFUtil::dyn_cast<ValVar>(var))
-                    {
-                        if (!vv->getICFGNode() && !SVFUtil::isa<ObjVar>(vv))
-                            orphanVarDefMap.emplace(vv->getId(),
-                                                    stmt->getICFGNode());
-                    }
-                }
-            }
-        }
-    }
-}
 
 void PreAnalysis::initWTO()
 {

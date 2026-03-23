@@ -87,19 +87,6 @@ public:
     /// Build WTO for each function using call graph SCC
     void initWTO();
 
-    /// Build a fallback map for ValVars whose getICFGNode() is null
-    /// (e.g., formal parameters defined by CallPE, return values by RetPE).
-    /// Maps each such varId to the ICFGNode of the defining SVFStmt.
-    void buildOrphanVarDefMap();
-
-    /// Look up the def-site ICFGNode for an orphan ValVar (null getICFGNode).
-    /// Returns nullptr if the var is not in the map.
-    const ICFGNode* getOrphanVarDefNode(NodeID varId) const
-    {
-        auto it = orphanVarDefMap.find(varId);
-        return it != orphanVarDefMap.end() ? it->second : nullptr;
-    }
-
     /// Accessors for WTO data
     const Map<const FunObjVar*, const ICFGWTO*>& getFuncToWTO() const
     {
@@ -115,7 +102,6 @@ private:
     CallGraphSCC* callGraphSCC;
 
     Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
-    Map<NodeID, const ICFGNode*> orphanVarDefMap;
 };
 
 } // End namespace SVF
