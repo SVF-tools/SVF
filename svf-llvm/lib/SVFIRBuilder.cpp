@@ -428,7 +428,7 @@ void SVFIRBuilder::initialiseBaseObjVars()
             NodeID id = llvmModuleSet()->getObjectNode(iter->first);
             pag->addGlobalObjNode(iter->second, pag->getObjTypeInfo(id), icfgNode);
         }
-        else if (SVFUtil::isa<ConstantData, MetadataAsValue, BlockAddress>(llvmValue))
+        else if (SVFUtil::isa<ConstantData, ConstantExpr, MetadataAsValue, BlockAddress>(llvmValue))
         {
             NodeID id = llvmModuleSet()->getObjectNode(iter->first);
             pag->addConstantDataObjNode(iter->second, pag->getObjTypeInfo(id), icfgNode);
@@ -509,7 +509,7 @@ void SVFIRBuilder::initialiseValVars()
             pag->addGlobalValNode(iter->second, pag->getICFG()->getGlobalICFGNode(),
                                   llvmModuleSet()->getSVFType(llvmValue->getType()));
         }
-        else if (SVFUtil::isa<ConstantData, MetadataAsValue, BlockAddress>(llvmValue))
+        else if (SVFUtil::isa<ConstantData, ConstantExpr, MetadataAsValue, BlockAddress>(llvmValue))
         {
             pag->addConstantDataValNode(iter->second, icfgNode, llvmModuleSet()->getSVFType(llvmValue->getType()));
         }
@@ -517,9 +517,22 @@ void SVFIRBuilder::initialiseValVars()
         {
             pag->addConstantAggValNode(iter->second, icfgNode, llvmModuleSet()->getSVFType(llvmValue->getType()));
         }
+        else if (SVFUtil::isa<BasicBlock>(llvmValue))
+        {
+            pag->addBasicBlockValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()));
+        }
+        else if (SVFUtil::isa<Instruction>(llvmValue) &&
+                 LLVMUtil::isIntrinsicInst(SVFUtil::cast<Instruction>(llvmValue)))
+        {
+            pag->addIntrinsicValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()));
+        }
+        else if (!SVFUtil::isa<Instruction>(llvmValue))
+        {
+            // InlineAsm, DSOLocalEquivalent, NoCFIValue
+            pag->addAsmPCValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()));
+        }
         else
         {
-            // Add value node to PAG
             pag->addValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
         }
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue,
