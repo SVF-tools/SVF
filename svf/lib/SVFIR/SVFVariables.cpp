@@ -108,10 +108,11 @@ ValVar::ValVar(NodeID i, const SVFType* svfType, const ICFGNode* node, PNODEK ty
     }
     else if (ty == ValNode)
     {
-        // Base ValVar covers values without a dedicated subclass.
-        // Some Instructions are excluded from the ICFG (e.g., llvm.dbg.declare)
-        // and legitimately have nullptr ICFGNode.
-        // TODO: reclassify these or filter them from valSyms to enable assertion.
+        assert(node && "Base ValVar must have a valid ICFGNode");
+    }
+    else
+    {
+        assert(false && "Unknown ValVar subclass -- update this check");
     }
 }
 
