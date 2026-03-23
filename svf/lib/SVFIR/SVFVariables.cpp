@@ -82,6 +82,43 @@ void SVFVar::dump() const
     outs() << this->toString() << "\n";
 }
 
+ValVar::ValVar(NodeID i, const SVFType* svfType, const ICFGNode* node, PNODEK ty)
+    : SVFVar(i, svfType, ty), icfgNode(node)
+{
+    if (SVFUtil::isa<GlobalValVar>(this))
+    {
+        assert(node && "GlobalValVar must have a valid ICFGNode");
+    }
+    else if (SVFUtil::isa<GepValVar>(this))
+    {
+        assert(node && "GepValVar must have a valid ICFGNode");
+    }
+    else if (SVFUtil::isa<ArgValVar>(this) ||
+             SVFUtil::isa<RetValPN>(this) ||
+             SVFUtil::isa<VarArgValPN>(this))
+    {
+        // Conditional assert (isDeclaration || icn) is in each subclass constructor.
+    }
+    else if (SVFUtil::isa<ConstDataValVar>(this) ||
+             SVFUtil::isa<ConstAggValVar>(this) ||
+             SVFUtil::isa<FunValVar>(this) ||
+             SVFUtil::isa<DummyValVar>(this) ||
+             SVFUtil::isa<IntrinsicValVar>(this) ||
+             SVFUtil::isa<BasicBlockValVar>(this) ||
+             SVFUtil::isa<AsmPCValVar>(this))
+    {
+        // These ValVar subclasses don't require an ICFGNode.
+    }
+    else if (ty == ValNode)
+    {
+        assert(node && "Base ValVar must have a valid ICFGNode");
+    }
+    else
+    {
+        assert(false && "Unknown ValVar subclass -- update this check");
+    }
+}
+
 const FunObjVar* ValVar::getFunction() const
 {
     if(icfgNode)
@@ -120,7 +157,8 @@ ArgValVar::ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn,
     : ValVar(i, svfType, icn, ArgValNode),
       cgNode(callGraphNode), argNo(argNo)
 {
-
+    assert((callGraphNode->isDeclaration() || icn) &&
+           "ArgValVar of a defined function must have a valid ICFGNode");
 }
 
 const FunObjVar* ArgValVar::getFunction() const
@@ -160,7 +198,6 @@ GepValVar::GepValVar(const ValVar* baseNode, NodeID i,
                      const AccessPath& ap, const SVFType* ty, const ICFGNode* node)
     : ValVar(i, ty, node, GepValNode), ap(ap), base(baseNode), gepValType(ty)
 {
-
 }
 
 const std::string GepValVar::toString() const
@@ -179,6 +216,8 @@ const std::string GepValVar::toString() const
 RetValPN::RetValPN(NodeID i, const FunObjVar* node, const SVFType* svfType, const ICFGNode* icn)
     : ValVar(i, svfType, icn, RetValNode), callGraphNode(node)
 {
+    assert((node->isDeclaration() || icn) &&
+           "RetValPN of a defined function must have a valid ICFGNode");
 }
 
 const FunObjVar* RetValPN::getFunction() const
@@ -518,6 +557,30 @@ const std::string DummyValVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "DummyValVar ID: " << getId();
+    return rawstr.str();
+}
+
+const std::string IntrinsicValVar::toString() const
+{
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "IntrinsicValVar ID: " << getId();
+    return rawstr.str();
+}
+
+const std::string BasicBlockValVar::toString() const
+{
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "BasicBlockValVar ID: " << getId();
+    return rawstr.str();
+}
+
+const std::string AsmPCValVar::toString() const
+{
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "AsmPCValVar ID: " << getId();
     return rawstr.str();
 }
 

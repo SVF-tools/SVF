@@ -283,10 +283,7 @@ public:
     //@}
 
     /// Constructor
-    ValVar(NodeID i, const SVFType* svfType, const ICFGNode* node, PNODEK ty = ValNode)
-        : SVFVar(i, svfType, ty), icfgNode(node)
-    {
-    }
+    ValVar(NodeID i, const SVFType* svfType, const ICFGNode* node, PNODEK ty = ValNode);
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
@@ -2111,6 +2108,8 @@ public:
     VarArgValPN(NodeID i, const FunObjVar* node, const SVFType* svfType, const ICFGNode* icn)
         : ValVar(i, svfType, icn, VarargValNode), callGraphNode(node)
     {
+        assert((node->isDeclaration() || icn) &&
+               "VarArgValPN of a defined function must have a valid ICFGNode");
     }
 
     virtual const FunObjVar* getFunction() const;
@@ -2173,6 +2172,97 @@ public:
         return true;
     }
 
+    virtual const std::string toString() const;
+};
+
+/*
+ * Represents an LLVM intrinsic call instruction (e.g. llvm.dbg.declare).
+ * These are collected into valSyms but have no corresponding ICFGNode.
+ */
+class IntrinsicValVar: public ValVar
+{
+    friend class GraphDBClient;
+
+public:
+    //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
+    static inline bool classof(const IntrinsicValVar*)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFVar* node)
+    {
+        return node->getNodeKind() == SVFVar::IntrinsicValNode;
+    }
+    static inline bool classof(const ValVar* node)
+    {
+        return node->getNodeKind() == SVFVar::IntrinsicValNode;
+    }
+    static inline bool classof(const GenericPAGNodeTy* node)
+    {
+        return node->getNodeKind() == SVFVar::IntrinsicValNode;
+    }
+    static inline bool classof(const SVFValue* node)
+    {
+        return node->getNodeKind() == SVFVar::IntrinsicValNode;
+    }
+    //@}
+
+    IntrinsicValVar(NodeID i, const SVFType* svfType)
+        : ValVar(i, svfType, nullptr, IntrinsicValNode)
+    {
+    }
+
+    inline const std::string getValueName() const
+    {
+        return "intrinsicVal";
+    }
+
+    virtual const std::string toString() const;
+};
+
+/*
+ * Represents an LLVM BasicBlock (label operand of br/switch).
+ * Collected into valSyms as a branch operand but has no ICFGNode.
+ */
+class BasicBlockValVar: public ValVar
+{
+    friend class GraphDBClient;
+
+public:
+    static inline bool classof(const BasicBlockValVar*) { return true; }
+    static inline bool classof(const SVFVar* node) { return node->getNodeKind() == SVFVar::BasicBlockValNode; }
+    static inline bool classof(const ValVar* node) { return node->getNodeKind() == SVFVar::BasicBlockValNode; }
+    static inline bool classof(const GenericPAGNodeTy* node) { return node->getNodeKind() == SVFVar::BasicBlockValNode; }
+    static inline bool classof(const SVFValue* node) { return node->getNodeKind() == SVFVar::BasicBlockValNode; }
+
+    BasicBlockValVar(NodeID i, const SVFType* svfType)
+        : ValVar(i, svfType, nullptr, BasicBlockValNode) {}
+
+    inline const std::string getValueName() const { return "basicBlockVal"; }
+    virtual const std::string toString() const;
+};
+
+/*
+ * Represents InlineAsm, DSOLocalEquivalent, and NoCFIValue.
+ * These are non-instruction values related to inline assembly,
+ * position-independent code (PIC), or control-flow integrity (CFI).
+ * They have no corresponding ICFGNode.
+ */
+class AsmPCValVar: public ValVar
+{
+    friend class GraphDBClient;
+
+public:
+    static inline bool classof(const AsmPCValVar*) { return true; }
+    static inline bool classof(const SVFVar* node) { return node->getNodeKind() == SVFVar::AsmPCValNode; }
+    static inline bool classof(const ValVar* node) { return node->getNodeKind() == SVFVar::AsmPCValNode; }
+    static inline bool classof(const GenericPAGNodeTy* node) { return node->getNodeKind() == SVFVar::AsmPCValNode; }
+    static inline bool classof(const SVFValue* node) { return node->getNodeKind() == SVFVar::AsmPCValNode; }
+
+    AsmPCValVar(NodeID i, const SVFType* svfType)
+        : ValVar(i, svfType, nullptr, AsmPCValNode) {}
+
+    inline const std::string getValueName() const { return "asmPCVal"; }
     virtual const std::string toString() const;
 };
 
