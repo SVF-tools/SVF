@@ -64,22 +64,6 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
         stat->performStat();
     for (auto& detector: detectors)
         detector->reportBug();
-
-    {
-        u64_t totalNodes = 0, totalVarEntries = 0, totalAddrEntries = 0;
-        for (auto& kv : abstractTrace)
-        {
-            totalNodes++;
-            totalVarEntries += kv.second.getVarToVal().size();
-            totalAddrEntries += kv.second.getLocToVal().size();
-        }
-        SVFUtil::outs() << "@@STATE_SIZE@@"
-                        << " nodes=" << totalNodes
-                        << " varEntries=" << totalVarEntries
-                        << " addrEntries=" << totalAddrEntries
-                        << " totalEntries=" << (totalVarEntries + totalAddrEntries)
-                        << "\n";
-    }
 }
 
 AbstractInterpretation::AbstractInterpretation()
@@ -126,7 +110,8 @@ AbstractValue AbstractInterpretation::getAbstractValue(const ValVar* var)
 
     // Fallback for call-result ValVars: their getICFGNode() returns
     // CallICFGNode but the value is written by RetPE at RetICFGNode.
-    if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(defNode))
+    if (const CallICFGNode* callNode =
+            defNode ? SVFUtil::dyn_cast<CallICFGNode>(defNode) : nullptr)
     {
         const RetICFGNode* retNode = callNode->getRetICFGNode();
         if (hasAbstractState(retNode))
