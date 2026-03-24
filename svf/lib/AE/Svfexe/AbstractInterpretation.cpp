@@ -1556,6 +1556,12 @@ void AbstractInterpretation::updateStateOnAddr(const AddrStmt *addr)
 void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary)
 {
     const ICFGNode* node = binary->getICFGNode();
+    // Defensive: uninitialized operands default to top (not bottom)
+    AbstractState& as = getAbstractState(node);
+    u32_t op0 = binary->getOpVarID(0);
+    u32_t op1 = binary->getOpVarID(1);
+    if (!as.inVarToValTable(op0)) as[op0] = IntervalValue::top();
+    if (!as.inVarToValTable(op1)) as[op1] = IntervalValue::top();
     IntervalValue lhs = getAbstractValue(binary->getOpVar(0), node).getInterval();
     IntervalValue rhs = getAbstractValue(binary->getOpVar(1), node).getInterval();
     IntervalValue resVal;
@@ -1610,10 +1616,15 @@ void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary)
 void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
 {
     const ICFGNode* node = cmp->getICFGNode();
-    const AbstractValue& op0Val = getAbstractValue(cmp->getOpVar(0), node);
-    const AbstractValue& op1Val = getAbstractValue(cmp->getOpVar(1), node);
     u32_t op0 = cmp->getOpVarID(0);
     u32_t op1 = cmp->getOpVarID(1);
+    // Defensive: uninitialized operands default to top (not bottom)
+    // to avoid falsely pruning reachable branches
+    AbstractState& as = getAbstractState(node);
+    if (!as.inVarToValTable(op0) && !as.inVarToAddrsTable(op0)) as[op0] = IntervalValue::top();
+    if (!as.inVarToValTable(op1) && !as.inVarToAddrsTable(op1)) as[op1] = IntervalValue::top();
+    const AbstractValue& op0Val = getAbstractValue(cmp->getOpVar(0), node);
+    const AbstractValue& op1Val = getAbstractValue(cmp->getOpVar(1), node);
 
     // if it is address
     if (op0Val.isAddr() && op1Val.isAddr())
