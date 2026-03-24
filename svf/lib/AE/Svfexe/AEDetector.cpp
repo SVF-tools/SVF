@@ -53,14 +53,13 @@ void BufOverflowDetector::detect(AbstractInterpretation& ae, const ICFGNode* nod
             if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt))
             {
                 SVFIR* svfir = PAG::getPAG();
-                NodeID lhs = gep->getLHSVarID();
-                NodeID rhs = gep->getRHSVarID();
 
                 // Update the GEP object offset from its base
-                updateGepObjOffsetFromBase(as, as[lhs].getAddrs(), as[rhs].getAddrs(), as.getByteOffset(gep));
+                const AbstractValue& lhsVal = ae.getAbstractValue(gep->getLHSVar(), node);
+                const AbstractValue& rhsVal = ae.getAbstractValue(gep->getRHSVar(), node);
+                updateGepObjOffsetFromBase(as, lhsVal.getAddrs(), rhsVal.getAddrs(), as.getByteOffset(gep));
 
-                IntervalValue baseObjSize = IntervalValue::bottom();
-                AddressValue objAddrs = as[gep->getRHSVarID()].getAddrs();
+                AddressValue objAddrs = rhsVal.getAddrs();
                 for (const auto& addr : objAddrs)
                 {
                     NodeID objId = as.getIDFromAddr(addr);
@@ -119,15 +118,12 @@ void BufOverflowDetector::handleStubFunctions(const SVF::CallICFGNode* callNode)
     std::string funcName = callNode->getCalledFunction()->getName();
     if (funcName == "SAFE_BUFACCESS")
     {
-        // void SAFE_BUFACCESS(void* data, int size);
-        AbstractInterpretation::getAEInstance().getUtils()->checkpoints.erase(callNode);
+        AbstractInterpretation& aeInst = AbstractInterpretation::getAEInstance();
+        aeInst.getUtils()->checkpoints.erase(callNode);
         if (callNode->arg_size() < 2)
             return;
-        AbstractState& as =
-            AbstractInterpretation::getAEInstance().getAbstractState(
-                callNode);
-        u32_t size_id = callNode->getArgument(1)->getId();
-        IntervalValue val = as[size_id].getInterval();
+        AbstractState& as = aeInst.getAbstractState(callNode);
+        IntervalValue val = aeInst.getAbstractValue(callNode->getArgument(1), callNode).getInterval();
         if (val.isBottom())
         {
             val = IntervalValue(0);
@@ -150,12 +146,11 @@ void BufOverflowDetector::handleStubFunctions(const SVF::CallICFGNode* callNode)
     }
     else if (funcName == "UNSAFE_BUFACCESS")
     {
-        // void UNSAFE_BUFACCESS(void* data, int size);
-        AbstractInterpretation::getAEInstance().getUtils()->checkpoints.erase(callNode);
+        AbstractInterpretation& aeInst = AbstractInterpretation::getAEInstance();
+        aeInst.getUtils()->checkpoints.erase(callNode);
         if (callNode->arg_size() < 2) return;
-        AbstractState&as = AbstractInterpretation::getAEInstance().getAbstractState(callNode);
-        u32_t size_id = callNode->getArgument(1)->getId();
-        IntervalValue val = as[size_id].getInterval();
+        AbstractState&as = aeInst.getAbstractState(callNode);
+        IntervalValue val = aeInst.getAbstractValue(callNode->getArgument(1), callNode).getInterval();
         if (val.isBottom())
         {
             assert(false && "UNSAFE_BUFACCESS size is bottom");
@@ -249,7 +244,7 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
                                               extAPIBufOverflowCheckRules.at(call->getCalledFunction()->getName());
         for (auto arg : args)
         {
-            IntervalValue offset = as[call->getArgument(arg.second)->getId()].getInterval() - IntervalValue(1);
+            IntervalValue offset = AbstractInterpretation::getAEInstance().getAbstractValue(call->getArgument(arg.second), call).getInterval() - IntervalValue(1);
             const SVFVar* argVar = call->getArgument(arg.first);
             if (!canSafelyAccessMemory(as, argVar, offset))
             {
@@ -269,7 +264,7 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
                                               extAPIBufOverflowCheckRules.at(call->getCalledFunction()->getName());
         for (auto arg : args)
         {
-            IntervalValue offset = as[call->getArgument(arg.second)->getId()].getInterval() - IntervalValue(1);
+            IntervalValue offset = AbstractInterpretation::getAEInstance().getAbstractValue(call->getArgument(arg.second), call).getInterval() - IntervalValue(1);
             const SVFVar* argVar = call->getArgument(arg.first);
             if (!canSafelyAccessMemory(as, argVar, offset))
             {
@@ -452,7 +447,7 @@ bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *ca
     {
         const SVFVar* arg0Val = call->getArgument(0);
         const SVFVar* arg2Val = call->getArgument(2);
-        IntervalValue arg2Num = as[arg2Val->getId()].getInterval();
+        IntervalValue arg2Num = AbstractInterpretation::getAEInstance().getAbstractValue(arg2Val, call).getInterval();
         IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg0Val);
         IntervalValue totalLen = strLen0 + arg2Num;
         return canSafelyAccessMemory(as, arg0Val, totalLen);
@@ -493,7 +488,7 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
     // We lazily initialize it to point to the black hole object (BlkPtr), representing
     // an unknown but valid memory location. This allows the analysis to continue
     // while being conservatively sound.
-    if (!as[value_id].isAddr())
+    if (!as.inVarToValTable(value_id) || !as[value_id].isAddr())
     {
         as[value_id] = AddressValue(BlackHoleObjAddr);
     }

@@ -44,13 +44,13 @@ void AbsExtAPI::initExtFunMap()
 #define SSE_FUNC_PROCESS(LLVM_NAME ,FUNC_NAME) \
         auto sse_##FUNC_NAME = [this](const CallICFGNode *callNode) { \
         /* run real ext function */            \
-        AbstractState& as = getAbstractState(callNode); \
-        u32_t rhs_id = callNode->getArgument(0)->getId(); \
-        if (!as.inVarToValTable(rhs_id)) return; \
-        u32_t rhs = as[rhs_id].getInterval().lb().getIntNumeral(); \
+        const SVFVar* argVar = callNode->getArgument(0); \
+        const AbstractValue& argVal = ae.getAbstractValue(argVar, callNode); \
+        if (!argVal.isInterval() && !argVal.isAddr()) return; \
+        u32_t rhs = argVal.getInterval().lb().getIntNumeral(); \
         s32_t res = FUNC_NAME(rhs);            \
-        u32_t lhsId = callNode->getRetICFGNode()->getActualRet()->getId();               \
-        as[lhsId] = IntervalValue(res);           \
+        const SVFVar* retVar = callNode->getRetICFGNode()->getActualRet(); \
+        ae.updateAbstractValue(retVar, IntervalValue(res), callNode); \
         return; \
     };                                                                         \
     func_map[#FUNC_NAME] = sse_##FUNC_NAME;
@@ -77,9 +77,8 @@ void AbsExtAPI::initExtFunMap()
     auto sse_svf_assert = [this](const CallICFGNode* callNode)
     {
         checkpoints.erase(callNode);
-        u32_t arg0 = callNode->getArgument(0)->getId();
-        AbstractState&as = getAbstractState(callNode);
-        if (as[arg0].getInterval().equals(IntervalValue(1, 1)))
+        const AbstractValue& arg0Val = ae.getAbstractValue(callNode->getArgument(0), callNode);
+        if (arg0Val.getInterval().equals(IntervalValue(1, 1)))
         {
             SVFUtil::errs() << SVFUtil::sucMsg("The assertion is successfully verified!!\n");
         }
@@ -94,10 +93,9 @@ void AbsExtAPI::initExtFunMap()
 
     auto svf_assert_eq = [this](const CallICFGNode* callNode)
     {
-        u32_t arg0 = callNode->getArgument(0)->getId();
-        u32_t arg1 = callNode->getArgument(1)->getId();
-        AbstractState&as = getAbstractState(callNode);
-        if (as[arg0].getInterval().equals(as[arg1].getInterval()))
+        const AbstractValue& arg0Val = ae.getAbstractValue(callNode->getArgument(0), callNode);
+        const AbstractValue& arg1Val = ae.getAbstractValue(callNode->getArgument(1), callNode);
+        if (arg0Val.getInterval().equals(arg1Val.getInterval()))
         {
             SVFUtil::errs() << SVFUtil::sucMsg("The assertion is successfully verified!!\n");
         }
@@ -114,10 +112,8 @@ void AbsExtAPI::initExtFunMap()
     {
         if (callNode->arg_size() < 2) return;
         AbstractState&as = getAbstractState(callNode);
-        u32_t num_id = callNode->getArgument(0)->getId();
         std::string text = strRead(as, callNode->getArgument(1));
-        assert(as.inVarToValTable(num_id) && "print() should pass integer");
-        IntervalValue itv = as[num_id].getInterval();
+        IntervalValue itv = ae.getAbstractValue(callNode->getArgument(0), callNode).getInterval();
         std::cout << "Text: " << text <<", Value: " << callNode->getArgument(0)->toString()
                   << ", PrintVal: " << itv.toString() << ", Loc:" << callNode->getSourceLoc() << std::endl;
         return;
@@ -128,20 +124,22 @@ void AbsExtAPI::initExtFunMap()
     {
         if (callNode->arg_size() < 2) return;
         AbstractState&as = getAbstractState(callNode);
-        AbstractValue& num = as[callNode->getArgument(0)->getId()];
-        AbstractValue& lb = as[callNode->getArgument(1)->getId()];
-        AbstractValue& ub = as[callNode->getArgument(2)->getId()];
-        assert(lb.getInterval().is_numeral() && ub.getInterval().is_numeral());
+        const AbstractValue& lbVal = ae.getAbstractValue(callNode->getArgument(1), callNode);
+        const AbstractValue& ubVal = ae.getAbstractValue(callNode->getArgument(2), callNode);
+        assert(lbVal.getInterval().is_numeral() && ubVal.getInterval().is_numeral());
+        AbstractValue num;
         num.getInterval().set_to_top();
-        num.getInterval().meet_with(IntervalValue(lb.getInterval().lb(), ub.getInterval().ub()));
+        num.getInterval().meet_with(IntervalValue(lbVal.getInterval().lb(), ubVal.getInterval().ub()));
+        ae.updateAbstractValue(callNode->getArgument(0), num, callNode);
         const ICFGNode* node = SVFUtil::cast<ValVar>(callNode->getArgument(0))->getICFGNode();
         for (const SVFStmt* stmt: node->getSVFStmts())
         {
             if (SVFUtil::isa<LoadStmt>(stmt))
             {
                 const LoadStmt* load = SVFUtil::cast<LoadStmt>(stmt);
-                NodeID rhsId = load->getRHSVarID();
-                as.storeValue(rhsId, num);
+                const AbstractValue& ptrVal = ae.getAbstractValue(load->getRHSVar(), callNode);
+                for (auto addr : ptrVal.getAddrs())
+                    as.store(addr, num);
             }
         }
         return;
@@ -150,24 +148,16 @@ void AbsExtAPI::initExtFunMap()
 
     auto sse_scanf = [&](const CallICFGNode* callNode)
     {
-        AbstractState& as = getAbstractState(callNode);
         //scanf("%d", &data);
         if (callNode->arg_size() < 2) return;
-
-        u32_t dst_id = callNode->getArgument(1)->getId();
-        if (!as.inVarToAddrsTable(dst_id))
+        AbstractState& as = getAbstractState(callNode);
+        const AbstractValue& dstVal = ae.getAbstractValue(callNode->getArgument(1), callNode);
+        if (!dstVal.isAddr()) return;
+        for (auto vaddr: dstVal.getAddrs())
         {
-            return;
-        }
-        else
-        {
-            AbstractValue Addrs = as[dst_id];
-            for (auto vaddr: Addrs.getAddrs())
-            {
-                u32_t objId = as.getIDFromAddr(vaddr);
-                AbstractValue range = getRangeLimitFromType(svfir->getSVFVar(objId)->getType());
-                as.store(vaddr, range);
-            }
+            u32_t objId = as.getIDFromAddr(vaddr);
+            AbstractValue range = getRangeLimitFromType(svfir->getSVFVar(objId)->getType());
+            as.store(vaddr, range);
         }
     };
     auto sse_fscanf = [&](const CallICFGNode* callNode)
@@ -175,19 +165,13 @@ void AbsExtAPI::initExtFunMap()
         //fscanf(stdin, "%d", &data);
         if (callNode->arg_size() < 3) return;
         AbstractState& as = getAbstractState(callNode);
-        u32_t dst_id = callNode->getArgument(2)->getId();
-        if (!as.inVarToAddrsTable(dst_id))
+        const AbstractValue& dstVal = ae.getAbstractValue(callNode->getArgument(2), callNode);
+        if (!dstVal.isAddr()) return;
+        for (auto vaddr: dstVal.getAddrs())
         {
-        }
-        else
-        {
-            AbstractValue Addrs = as[dst_id];
-            for (auto vaddr: Addrs.getAddrs())
-            {
-                u32_t objId = as.getIDFromAddr(vaddr);
-                AbstractValue range = getRangeLimitFromType(svfir->getSVFVar(objId)->getType());
-                as.store(vaddr, range);
-            }
+            u32_t objId = as.getIDFromAddr(vaddr);
+            AbstractValue range = getRangeLimitFromType(svfir->getSVFVar(objId)->getType());
+            as.store(vaddr, range);
         }
     };
 
@@ -203,12 +187,10 @@ void AbsExtAPI::initExtFunMap()
     auto sse_fread = [&](const CallICFGNode *callNode)
     {
         if (callNode->arg_size() < 3) return;
-        AbstractState&as = getAbstractState(callNode);
-        u32_t block_count_id = callNode->getArgument(2)->getId();
-        u32_t block_size_id = callNode->getArgument(1)->getId();
-        IntervalValue block_count = as[block_count_id].getInterval();
-        IntervalValue block_size = as[block_size_id].getInterval();
+        IntervalValue block_count = ae.getAbstractValue(callNode->getArgument(2), callNode).getInterval();
+        IntervalValue block_size = ae.getAbstractValue(callNode->getArgument(1), callNode).getInterval();
         IntervalValue block_byte = block_count * block_size;
+        (void)block_byte;
     };
     func_map["fread"] = sse_fread;
 
@@ -221,8 +203,6 @@ void AbsExtAPI::initExtFunMap()
     {
         if (callNode->arg_size() < 2) return;
         AbstractState&as = getAbstractState(callNode);
-        u32_t size_id = callNode->getArgument(1)->getId();
-        u32_t dst_id = callNode->getArgument(0)->getId();
         // get elem size of arg2
         u32_t elemSize = 1;
         if (callNode->getArgument(2)->getType()->isArrayTy())
@@ -237,12 +217,10 @@ void AbsExtAPI::initExtFunMap()
         else
         {
             return;
-            // assert(false && "we cannot support this type");
         }
-        IntervalValue size = as[size_id].getInterval() * IntervalValue(elemSize) - IntervalValue(1);
-        if (!as.inVarToAddrsTable(dst_id))
-        {
-        }
+        IntervalValue size = ae.getAbstractValue(callNode->getArgument(1), callNode).getInterval()
+                             * IntervalValue(elemSize) - IntervalValue(1);
+        (void)size;
     };
     func_map["__snprintf_chk"] = sse_snprintf;
     func_map["__vsprintf_chk"] = sse_sprintf;
@@ -258,14 +236,10 @@ void AbsExtAPI::initExtFunMap()
 
     auto sse_itoa = [&](const CallICFGNode* callNode)
     {
-        // itoa(num, ch, 10);
-        // num: int, ch: char*, 10 is decimal
         if (callNode->arg_size() < 3) return;
-        AbstractState&as = getAbstractState(callNode);
-        u32_t num_id = callNode->getArgument(0)->getId();
-
-        u32_t num = (u32_t) as[num_id].getInterval().getNumeral();
+        u32_t num = (u32_t) ae.getAbstractValue(callNode->getArgument(0), callNode).getInterval().getNumeral();
         std::string snum = std::to_string(num);
+        (void)snum;
     };
     func_map["itoa"] = sse_itoa;
 
@@ -274,30 +248,23 @@ void AbsExtAPI::initExtFunMap()
     {
         if (callNode->arg_size() < 1) return;
         AbstractState& as = getAbstractState(callNode);
-        u32_t lhsId = callNode->getRetICFGNode()->getActualRet()->getId();
-        // strlen/wcslen return the number of characters (not bytes).
-        // getStrlen returns byte-scaled length (len * elemSize) for use
-        // by memcpy/strcpy. Here we need the raw character count, so
-        // divide back by elemSize.
+        const SVFVar* retVar = callNode->getRetICFGNode()->getActualRet();
         IntervalValue byteLen = getStrlen(as, callNode->getArgument(0));
         u32_t elemSize = getElementSize(as, callNode->getArgument(0));
         if (byteLen.is_numeral() && elemSize > 1)
-            as[lhsId] = IntervalValue(byteLen.getIntNumeral() / (s64_t)elemSize);
+            ae.updateAbstractValue(retVar, IntervalValue(byteLen.getIntNumeral() / (s64_t)elemSize), callNode);
         else
-            as[lhsId] = byteLen;
+            ae.updateAbstractValue(retVar, byteLen, callNode);
     };
     func_map["strlen"] = sse_strlen;
     func_map["wcslen"] = sse_strlen;
 
     auto sse_recv = [&](const CallICFGNode *callNode)
     {
-        // recv(sockfd, buf, len, flags);
         if (callNode->arg_size() < 4) return;
-        AbstractState&as = getAbstractState(callNode);
-        u32_t len_id = callNode->getArgument(2)->getId();
-        IntervalValue len = as[len_id].getInterval() - IntervalValue(1);
-        u32_t lhsId = callNode->getRetICFGNode()->getActualRet()->getId();
-        as[lhsId] = len;
+        IntervalValue len = ae.getAbstractValue(callNode->getArgument(2), callNode).getInterval() - IntervalValue(1);
+        const SVFVar* retVar = callNode->getRetICFGNode()->getActualRet();
+        ae.updateAbstractValue(retVar, len, callNode);
     };
     func_map["recv"] = sse_recv;
     func_map["__recv"] = sse_recv;
@@ -306,13 +273,11 @@ void AbsExtAPI::initExtFunMap()
     {
         if (callNode->arg_size() < 1) return;
         AbstractState& as = getAbstractState(callNode);
-        const u32_t freePtr = callNode->getArgument(0)->getId();
-        for (auto addr: as[freePtr].getAddrs())
+        const AbstractValue& ptrVal = ae.getAbstractValue(callNode->getArgument(0), callNode);
+        for (auto addr: ptrVal.getAddrs())
         {
             if (AbstractState::isBlackHoleObjAddr(addr))
             {
-                // Detected a double free — the address has already been freed.
-                // No action is taken at this point.
             }
             else
             {
@@ -453,14 +418,10 @@ void AbsExtAPI::handleExtAPI(const CallICFGNode *call)
         {
             if (const SVFVar* ret = call->getRetICFGNode()->getActualRet())
             {
-                u32_t lhsId = ret->getId();
-                if (as.inVarToAddrsTable(lhsId))
+                const AbstractValue& retVal = ae.getAbstractValue(ret, call);
+                if (!retVal.isAddr())
                 {
-
-                }
-                else
-                {
-                    as[lhsId] = IntervalValue();
+                    ae.updateAbstractValue(ret, IntervalValue(), call);
                 }
             }
             return;
@@ -469,15 +430,13 @@ void AbsExtAPI::handleExtAPI(const CallICFGNode *call)
     // 1. memcpy functions like memcpy_chk, strncpy, annotate("MEMCPY"), annotate("BUF_CHECK:Arg0, Arg2"), annotate("BUF_CHECK:Arg1, Arg2")
     else if (extType == MEMCPY)
     {
-        IntervalValue len = as[call->getArgument(2)->getId()].getInterval();
-        (void)svfir->getSVFVar(call->getArgument(0)->getId());
+        IntervalValue len = ae.getAbstractValue(call->getArgument(2), call).getInterval();
         handleMemcpy(as, call->getArgument(0), call->getArgument(1), len, 0);
     }
     else if (extType == MEMSET)
     {
-        // memset dst is arg0, elem is arg1, size is arg2
-        IntervalValue len = as[call->getArgument(2)->getId()].getInterval();
-        IntervalValue elem = as[call->getArgument(1)->getId()].getInterval();
+        IntervalValue len = ae.getAbstractValue(call->getArgument(2), call).getInterval();
+        IntervalValue elem = ae.getAbstractValue(call->getArgument(1), call).getInterval();
         handleMemset(as, call->getArgument(0), elem, len);
     }
     else if (extType == STRCPY)
@@ -632,7 +591,7 @@ void AbsExtAPI::handleStrncat(const CallICFGNode *call)
     AbstractState& as = getAbstractState(call);
     const SVFVar* dst = call->getArgument(0);
     const SVFVar* src = call->getArgument(1);
-    IntervalValue n = as[call->getArgument(2)->getId()].getInterval();
+    IntervalValue n = ae.getAbstractValue(call->getArgument(2), call).getInterval();
     IntervalValue dstLen = getStrlen(as, dst);
     if (!isValidLength(dstLen)) return;
     handleMemcpy(as, dst, src, n, dstLen.lb().getIntNumeral());

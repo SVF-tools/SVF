@@ -1069,7 +1069,7 @@ void AbstractInterpretation::handleRecursiveCall(const CallICFGNode *callNode)
             if (!retPE->getLHSVar()->isPointer() &&
                     !retPE->getLHSVar()->isConstDataOrAggDataButNotNullPtr())
             {
-                as[retPE->getLHSVarID()] = IntervalValue::top();
+                updateAbstractValue(retPE->getLHSVar(), IntervalValue::top(), callNode);
             }
         }
     }
@@ -1105,7 +1105,7 @@ const FunObjVar* AbstractInterpretation::getCallee(const CallICFGNode* callNode)
     if (!as.inVarToAddrsTable(call_id))
         return nullptr;
 
-    AbstractValue Addrs = as[call_id];
+    AbstractValue Addrs = getAbstractValue(svfir->getSVFVar(call_id), callNode);
     if (Addrs.getAddrs().empty())
         return nullptr;
 
@@ -1374,15 +1374,13 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
 /// Set all store values in a recursive function to TOP (used in TOP mode)
 void AbstractInterpretation::setTopToObjInRecursion(const CallICFGNode *callNode)
 {
-    AbstractState& as = getAbstractState(callNode);
     const RetICFGNode *retNode = callNode->getRetICFGNode();
     if (retNode->getSVFStmts().size() > 0)
     {
         if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(*retNode->getSVFStmts().begin()))
         {
-            AbstractState as;
             if (!retPE->getLHSVar()->isPointer() && !retPE->getLHSVar()->isConstDataOrAggDataButNotNullPtr())
-                as[retPE->getLHSVarID()] = IntervalValue::top();
+                updateAbstractValue(retPE->getLHSVar(), IntervalValue::top(), callNode);
         }
     }
     if (!retNode->getOutEdges().empty())
@@ -1396,8 +1394,6 @@ void AbstractInterpretation::setTopToObjInRecursion(const CallICFGNode *callNode
             return;
         }
     }
-    FIFOWorkList<const SVFBasicBlock *> blkWorkList;
-    FIFOWorkList<const ICFGNode *> instWorklist;
     for (const SVFBasicBlock * bb: callNode->getCalledFunction()->getReachableBBs())
     {
         for (const ICFGNode* node: bb->getICFGNodeList())
@@ -1407,16 +1403,14 @@ void AbstractInterpretation::setTopToObjInRecursion(const CallICFGNode *callNode
                 if (const StoreStmt *store = SVFUtil::dyn_cast<StoreStmt>(stmt))
                 {
                     const SVFVar *rhsVar = store->getRHSVar();
-                    u32_t lhs = store->getLHSVarID();
-                    if (as.inVarToAddrsTable(lhs))
+                    if (!rhsVar->isPointer() && !rhsVar->isConstDataOrAggDataButNotNullPtr())
                     {
-                        if (!rhsVar->isPointer() && !rhsVar->isConstDataOrAggDataButNotNullPtr())
+                        const AbstractValue& addrs = getAbstractValue(store->getLHSVar(), callNode);
+                        if (addrs.isAddr())
                         {
-                            const AbstractValue &addrs = as[lhs];
+                            AbstractState& as = getAbstractState(callNode);
                             for (const auto &addr: addrs.getAddrs())
-                            {
                                 as.store(addr, IntervalValue::top());
-                            }
                         }
                     }
                 }
@@ -1427,9 +1421,9 @@ void AbstractInterpretation::setTopToObjInRecursion(const CallICFGNode *callNode
 
 void AbstractInterpretation::updateStateOnGep(const GepStmt *gep)
 {
-    AbstractState& as = getAbstractState(gep->getICFGNode());
+    const ICFGNode* node = gep->getICFGNode();
+    AbstractState& as = getAbstractState(node);
     u32_t rhs = gep->getRHSVarID();
-    u32_t lhs = gep->getLHSVarID();
     IntervalValue offsetPair = as.getElementIndex(gep);
     AbstractValue gepAddrs;
     APOffset lb = offsetPair.lb().getIntNumeral() < Options::MaxFieldLimit()?
@@ -1438,33 +1432,32 @@ void AbstractInterpretation::updateStateOnGep(const GepStmt *gep)
                   offsetPair.ub().getIntNumeral(): Options::MaxFieldLimit();
     for (APOffset i = lb; i <= ub; i++)
         gepAddrs.join_with(as.getGepObjAddrs(rhs,IntervalValue(i)));
-    as[lhs] = gepAddrs;
+    updateAbstractValue(gep->getLHSVar(), gepAddrs, node);
 }
 
 void AbstractInterpretation::updateStateOnSelect(const SelectStmt *select)
 {
-    AbstractState& as = getAbstractState(select->getICFGNode());
-    u32_t res = select->getResID();
-    u32_t tval = select->getTrueValue()->getId();
-    u32_t fval = select->getFalseValue()->getId();
-    u32_t cond = select->getCondition()->getId();
-    if (as[cond].getInterval().is_numeral())
+    const ICFGNode* node = select->getICFGNode();
+    const AbstractValue& condVal = getAbstractValue(select->getCondition(), node);
+    const AbstractValue& tVal = getAbstractValue(select->getTrueValue(), node);
+    const AbstractValue& fVal = getAbstractValue(select->getFalseValue(), node);
+    AbstractValue resVal;
+    if (condVal.getInterval().is_numeral())
     {
-        as[res] = as[cond].getInterval().is_zero() ? as[fval] : as[tval];
+        resVal = condVal.getInterval().is_zero() ? fVal : tVal;
     }
     else
     {
-        as[res] = as[tval];
-        as[res].join_with(as[fval]);
+        resVal = tVal;
+        resVal.join_with(fVal);
     }
+    updateAbstractValue(select->getRes(), resVal, node);
 }
 
 void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
 {
     bool semiSparse = Options::AESparsity() == AbstractInterpretation::AESparsity::SemiSparse;
     const ICFGNode* icfgNode = phi->getICFGNode();
-    AbstractState& as = getAbstractState(icfgNode);
-    u32_t res = phi->getResID();
     AbstractValue rhs;
     for (u32_t i = 0; i < phi->getOpVarNum(); i++)
     {
@@ -1514,50 +1507,46 @@ void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
             }
         }
     }
-    as[res] = rhs;
+    updateAbstractValue(phi->getRes(), rhs, icfgNode);
 }
 
 
 void AbstractInterpretation::updateStateOnCall(const CallPE *callPE)
 {
-    AbstractState& as = getAbstractState(callPE->getICFGNode());
-    NodeID lhs = callPE->getLHSVarID();
-    NodeID rhs = callPE->getRHSVarID();
-    as[lhs] = as[rhs];
+    const ICFGNode* node = callPE->getICFGNode();
+    const AbstractValue& rhsVal = getAbstractValue(callPE->getRHSVar(), node);
+    updateAbstractValue(callPE->getLHSVar(), rhsVal, node);
 }
 
 void AbstractInterpretation::updateStateOnRet(const RetPE *retPE)
 {
-    AbstractState& as = getAbstractState(retPE->getICFGNode());
-    NodeID lhs = retPE->getLHSVarID();
-    NodeID rhs = retPE->getRHSVarID();
-    as[lhs] = as[rhs];
+    const ICFGNode* node = retPE->getICFGNode();
+    const AbstractValue& rhsVal = getAbstractValue(retPE->getRHSVar(), node);
+    updateAbstractValue(retPE->getLHSVar(), rhsVal, node);
 }
 
 
 void AbstractInterpretation::updateStateOnAddr(const AddrStmt *addr)
 {
-    AbstractState& as = getAbstractState(addr->getICFGNode());
+    const ICFGNode* node = addr->getICFGNode();
+    AbstractState& as = getAbstractState(node);
     as.initObjVar(SVFUtil::cast<ObjVar>(addr->getRHSVar()));
     if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
-        as[addr->getRHSVarID()].getInterval().meet_with(utils->getRangeLimitFromType(addr->getRHSVar()->getType()));
-    as[addr->getLHSVarID()] = as[addr->getRHSVarID()];
+    {
+        AbstractValue rhsVal = getAbstractValue(addr->getRHSVar(), node);
+        rhsVal.getInterval().meet_with(utils->getRangeLimitFromType(addr->getRHSVar()->getType()));
+        updateAbstractValue(addr->getRHSVar(), rhsVal, node);
+    }
+    const AbstractValue& rhsVal = getAbstractValue(addr->getRHSVar(), node);
+    updateAbstractValue(addr->getLHSVar(), rhsVal, node);
 }
 
 
 void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary)
 {
-    /// Find the comparison predicates in "class BinaryOPStmt:OpCode" under SVF/svf/include/SVFIR/SVFStatements.h
-    /// You are only required to handle integer predicates, including Add, FAdd, Sub, FSub, Mul, FMul, SDiv, FDiv, UDiv,
-    /// SRem, FRem, URem, Xor, And, Or, AShr, Shl, LShr
     const ICFGNode* node = binary->getICFGNode();
-    AbstractState& as = getAbstractState(node);
-    u32_t op0 = binary->getOpVarID(0);
-    u32_t op1 = binary->getOpVarID(1);
-    u32_t res = binary->getResID();
-    if (!as.inVarToValTable(op0)) as[op0] = IntervalValue::top();
-    if (!as.inVarToValTable(op1)) as[op1] = IntervalValue::top();
-    IntervalValue &lhs = as[op0].getInterval(), &rhs = as[op1].getInterval();
+    IntervalValue lhs = getAbstractValue(binary->getOpVar(0), node).getInterval();
+    IntervalValue rhs = getAbstractValue(binary->getOpVar(1), node).getInterval();
     IntervalValue resVal;
     switch (binary->getOpcode())
     {
@@ -1604,21 +1593,23 @@ void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary)
     default:
         assert(false && "undefined binary: ");
     }
-    as[res] = resVal;
+    updateAbstractValue(binary->getRes(), resVal, node);
 }
 
 void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
 {
-    AbstractState& as = getAbstractState(cmp->getICFGNode());
+    const ICFGNode* node = cmp->getICFGNode();
+    const AbstractValue& op0Val = getAbstractValue(cmp->getOpVar(0), node);
+    const AbstractValue& op1Val = getAbstractValue(cmp->getOpVar(1), node);
     u32_t op0 = cmp->getOpVarID(0);
     u32_t op1 = cmp->getOpVarID(1);
+
     // if it is address
-    if (as.inVarToAddrsTable(op0) && as.inVarToAddrsTable(op1))
+    if (op0Val.isAddr() && op1Val.isAddr())
     {
         IntervalValue resVal;
-        AddressValue addrOp0 = as[op0].getAddrs();
-        AddressValue addrOp1 = as[op1].getAddrs();
-        u32_t res = cmp->getResID();
+        AddressValue addrOp0 = op0Val.getAddrs();
+        AddressValue addrOp1 = op1Val.getAddrs();
         if (addrOp0.equals(addrOp1))
         {
             resVal = IntervalValue(1, 1);
@@ -1631,29 +1622,22 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
         {
             resVal = IntervalValue(0, 0);
         }
-        as[res] = resVal;
+        updateAbstractValue(cmp->getRes(), resVal, node);
     }
     // if op0 or op1 is nullptr, compare abstractValue instead of touching addr or interval
     else if (op0 == IRGraph::NullPtr || op1 == IRGraph::NullPtr)
     {
-        u32_t res = cmp->getResID();
-        IntervalValue resVal = (as[op0].equals(as[op1])) ? IntervalValue(1, 1) : IntervalValue(0, 0);
-        as[res] = resVal;
+        IntervalValue resVal = (op0Val.equals(op1Val)) ? IntervalValue(1, 1) : IntervalValue(0, 0);
+        updateAbstractValue(cmp->getRes(), resVal, node);
     }
     else
     {
-        if (!as.inVarToValTable(op0))
-            as[op0] = IntervalValue::top();
-        if (!as.inVarToValTable(op1))
-            as[op1] = IntervalValue::top();
-        u32_t res = cmp->getResID();
-        if (as.inVarToValTable(op0) && as.inVarToValTable(op1))
         {
             IntervalValue resVal;
-            if (as[op0].isInterval() && as[op1].isInterval())
+            if (op0Val.isInterval() && op1Val.isInterval())
             {
-                IntervalValue &lhs = as[op0].getInterval(),
-                               &rhs = as[op1].getInterval();
+                IntervalValue lhs = op0Val.getInterval(),
+                              rhs = op1Val.getInterval();
                 // AbstractValue
                 auto predicate = cmp->getPredicate();
                 switch (predicate)
@@ -1709,12 +1693,12 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 default:
                     assert(false && "undefined compare: ");
                 }
-                as[res] = resVal;
+                updateAbstractValue(cmp->getRes(), resVal, node);
             }
-            else if (as[op0].isAddr() && as[op1].isAddr())
+            else if (op0Val.isAddr() && op1Val.isAddr())
             {
-                AddressValue &lhs = as[op0].getAddrs(),
-                              &rhs = as[op1].getAddrs();
+                AddressValue lhs = op0Val.getAddrs(),
+                             rhs = op1Val.getAddrs();
                 auto predicate = cmp->getPredicate();
                 switch (predicate)
                 {
@@ -1830,7 +1814,7 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 default:
                     assert(false && "undefined compare: ");
                 }
-                as[res] = resVal;
+                updateAbstractValue(cmp->getRes(), resVal, node);
             }
         }
     }
@@ -1838,109 +1822,109 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
 
 void AbstractInterpretation::updateStateOnLoad(const LoadStmt *load)
 {
-    AbstractState& as = getAbstractState(load->getICFGNode());
-    u32_t rhs = load->getRHSVarID();
-    u32_t lhs = load->getLHSVarID();
-    as[lhs] = as.loadValue(rhs);
+    const ICFGNode* node = load->getICFGNode();
+    // Step 1: get pointer's address set (ValVar, may be at def-site in semi-sparse)
+    const AbstractValue& ptrVal = getAbstractValue(load->getRHSVar(), node);
+    // Step 2: load from each addr (ObjVar, always dense)
+    AbstractState& as = getAbstractState(node);
+    AbstractValue res;
+    for (auto addr : ptrVal.getAddrs())
+        res.join_with(as.load(addr));
+    // Step 3: write result to lhs (ValVar)
+    updateAbstractValue(load->getLHSVar(), res, node);
 }
 
 void AbstractInterpretation::updateStateOnStore(const StoreStmt *store)
 {
-    AbstractState& as = getAbstractState(store->getICFGNode());
-    u32_t rhs = store->getRHSVarID();
-    u32_t lhs = store->getLHSVarID();
-    as.storeValue(lhs, as[rhs]);
+    const ICFGNode* node = store->getICFGNode();
+    // Step 1: get pointer's address set (ValVar)
+    const AbstractValue& ptrVal = getAbstractValue(store->getLHSVar(), node);
+    // Step 2: get rhs value (ValVar)
+    const AbstractValue& rhsVal = getAbstractValue(store->getRHSVar(), node);
+    // Step 3: store to each addr (ObjVar, always dense)
+    AbstractState& as = getAbstractState(node);
+    for (auto addr : ptrVal.getAddrs())
+        as.store(addr, rhsVal);
 }
 
 void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
 {
-    auto getZExtValue = [](AbstractState& as, const SVFVar* var)
+    const ICFGNode* node = copy->getICFGNode();
+    const SVFVar* lhsVar = copy->getLHSVar();
+    const SVFVar* rhsVar = copy->getRHSVar();
+
+    auto getZExtValue = [&](const SVFVar* var)
     {
         const SVFType* type = var->getType();
         if (SVFUtil::isa<SVFIntegerType>(type))
         {
             u32_t bits = type->getByteSize() * 8;
-            if (as[var->getId()].getInterval().is_numeral())
+            const AbstractValue& val = getAbstractValue(var, node);
+            if (val.getInterval().is_numeral())
             {
                 if (bits == 8)
                 {
-                    int8_t signed_i8_value = as[var->getId()].getInterval().getIntNumeral();
+                    int8_t signed_i8_value = val.getInterval().getIntNumeral();
                     u32_t unsigned_value = static_cast<uint8_t>(signed_i8_value);
                     return IntervalValue(unsigned_value, unsigned_value);
                 }
                 else if (bits == 16)
                 {
-                    s16_t signed_i16_value = as[var->getId()].getInterval().getIntNumeral();
+                    s16_t signed_i16_value = val.getInterval().getIntNumeral();
                     u32_t unsigned_value = static_cast<u16_t>(signed_i16_value);
                     return IntervalValue(unsigned_value, unsigned_value);
                 }
                 else if (bits == 32)
                 {
-                    s32_t signed_i32_value = as[var->getId()].getInterval().getIntNumeral();
+                    s32_t signed_i32_value = val.getInterval().getIntNumeral();
                     u32_t unsigned_value = static_cast<u32_t>(signed_i32_value);
                     return IntervalValue(unsigned_value, unsigned_value);
                 }
                 else if (bits == 64)
                 {
-                    s64_t signed_i64_value = as[var->getId()].getInterval().getIntNumeral();
+                    s64_t signed_i64_value = val.getInterval().getIntNumeral();
                     return IntervalValue((s64_t)signed_i64_value, (s64_t)signed_i64_value);
-                    // we only support i64 at most
                 }
                 else
                     assert(false && "cannot support int type other than u8/16/32/64");
             }
             else
             {
-                return IntervalValue::top(); // TODO: may have better solution
+                return IntervalValue::top();
             }
         }
-        return IntervalValue::top(); // TODO: may have better solution
+        return IntervalValue::top();
     };
 
-    auto getTruncValue = [&](const AbstractState& as, const SVFVar* var,
-                             const SVFType* dstType)
+    auto getTruncValue = [&](const SVFVar* var, const SVFType* dstType)
     {
-        const IntervalValue& itv = as[var->getId()].getInterval();
+        const IntervalValue& itv = getAbstractValue(var, node).getInterval();
         if(itv.isBottom()) return itv;
-        // get the value of ub and lb
         s64_t int_lb = itv.lb().getIntNumeral();
         s64_t int_ub = itv.ub().getIntNumeral();
-        // get dst type
         u32_t dst_bits = dstType->getByteSize() * 8;
         if (dst_bits == 8)
         {
-            // get the signed value of ub and lb
             int8_t s8_lb = static_cast<int8_t>(int_lb);
             int8_t s8_ub = static_cast<int8_t>(int_ub);
             if (s8_lb > s8_ub)
-            {
-                // return range of s8
                 return utils->getRangeLimitFromType(dstType);
-            }
             return IntervalValue(s8_lb, s8_ub);
         }
         else if (dst_bits == 16)
         {
-            // get the signed value of ub and lb
             s16_t s16_lb = static_cast<s16_t>(int_lb);
             s16_t s16_ub = static_cast<s16_t>(int_ub);
             if (s16_lb > s16_ub)
-            {
-                // return range of s16
                 return utils->getRangeLimitFromType(dstType);
-            }
             return IntervalValue(s16_lb, s16_ub);
         }
         else if (dst_bits == 32)
         {
-            // get the signed value of ub and lb
             s32_t s32_lb = static_cast<s32_t>(int_lb);
             s32_t s32_ub = static_cast<s32_t>(int_ub);
             if (s32_lb > s32_ub)
-            {
-                // return range of s32
                 return utils->getRangeLimitFromType(dstType);
-            }
             return IntervalValue(s32_lb, s32_ub);
         }
         else
@@ -1950,45 +1934,43 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
         }
     };
 
-    AbstractState& as = getAbstractState(copy->getICFGNode());
-    u32_t lhs = copy->getLHSVarID();
-    u32_t rhs = copy->getRHSVarID();
+    const AbstractValue& rhsVal = getAbstractValue(rhsVar, node);
 
     if (copy->getCopyKind() == CopyStmt::COPYVAL)
     {
-        as[lhs] = as[rhs];
+        updateAbstractValue(lhsVar, rhsVal, node);
     }
     else if (copy->getCopyKind() == CopyStmt::ZEXT)
     {
-        as[lhs] = getZExtValue(as, copy->getRHSVar());
+        updateAbstractValue(lhsVar, getZExtValue(rhsVar), node);
     }
     else if (copy->getCopyKind() == CopyStmt::SEXT)
     {
-        as[lhs] = as[rhs].getInterval();
+        updateAbstractValue(lhsVar, rhsVal.getInterval(), node);
     }
     else if (copy->getCopyKind() == CopyStmt::FPTOSI)
     {
-        as[lhs] = as[rhs].getInterval();
+        updateAbstractValue(lhsVar, rhsVal.getInterval(), node);
     }
     else if (copy->getCopyKind() == CopyStmt::FPTOUI)
     {
-        as[lhs] = as[rhs].getInterval();
+        updateAbstractValue(lhsVar, rhsVal.getInterval(), node);
     }
     else if (copy->getCopyKind() == CopyStmt::SITOFP)
     {
-        as[lhs] = as[rhs].getInterval();
+        updateAbstractValue(lhsVar, rhsVal.getInterval(), node);
     }
     else if (copy->getCopyKind() == CopyStmt::UITOFP)
     {
-        as[lhs] = as[rhs].getInterval();
+        updateAbstractValue(lhsVar, rhsVal.getInterval(), node);
     }
     else if (copy->getCopyKind() == CopyStmt::TRUNC)
     {
-        as[lhs] = getTruncValue(as, copy->getRHSVar(), copy->getLHSVar()->getType());
+        updateAbstractValue(lhsVar, getTruncValue(rhsVar, lhsVar->getType()), node);
     }
     else if (copy->getCopyKind() == CopyStmt::FPTRUNC)
     {
-        as[lhs] = as[rhs].getInterval();
+        updateAbstractValue(lhsVar, rhsVal.getInterval(), node);
     }
     else if (copy->getCopyKind() == CopyStmt::INTTOPTR)
     {
@@ -1996,18 +1978,12 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
     }
     else if (copy->getCopyKind() == CopyStmt::PTRTOINT)
     {
-        as[lhs] = IntervalValue::top();
+        updateAbstractValue(lhsVar, IntervalValue::top(), node);
     }
     else if (copy->getCopyKind() == CopyStmt::BITCAST)
     {
-        if (as[rhs].isAddr())
-        {
-            as[lhs] = as[rhs];
-        }
-        else
-        {
-            // do nothing
-        }
+        if (rhsVal.isAddr())
+            updateAbstractValue(lhsVar, rhsVal, node);
     }
     else
         assert(false && "undefined copy kind");
