@@ -92,8 +92,10 @@ bool AbstractInterpretation::hasAbstractState(const ICFGNode* node)
 const AbstractValue& AbstractInterpretation::getAbstractValue(const ValVar* var, const ICFGNode* node)
 {
     u32_t id = var->getId();
-    AbstractState& as = abstractTrace[node];
+    bool semiSparse = Options::AESparsity() == AESparsity::SemiSparse;
 
+    // Constants: store into current node's state and return
+    AbstractState& as = abstractTrace[node];
     if (const ConstIntValVar* constInt = SVFUtil::dyn_cast<ConstIntValVar>(var))
     {
         as[id] = IntervalValue(constInt->getSExtValue(), constInt->getSExtValue());
@@ -115,6 +117,13 @@ const AbstractValue& AbstractInterpretation::getAbstractValue(const ValVar* var,
         return as[id];
     }
 
+    // Dense mode: read from current node's state directly
+    if (!semiSparse)
+    {
+        return as[id];
+    }
+
+    // Semi-sparse mode: pull from def-site (ignore node parameter)
     const ICFGNode* defNode = var->getICFGNode();
     if (defNode && hasAbstractState(defNode))
     {
@@ -150,10 +159,11 @@ const AbstractValue& AbstractInterpretation::getAbstractValue(const ObjVar* var,
 
 const AbstractValue& AbstractInterpretation::getAbstractValue(const SVFVar* var, const ICFGNode* node)
 {
-    if (const ValVar* valVar = SVFUtil::dyn_cast<ValVar>(var))
-        return getAbstractValue(valVar, node);
+    // Check ObjVar first since ObjVar inherits from ValVar
     if (const ObjVar* objVar = SVFUtil::dyn_cast<ObjVar>(var))
         return getAbstractValue(objVar, node);
+    if (const ValVar* valVar = SVFUtil::dyn_cast<ValVar>(var))
+        return getAbstractValue(valVar, node);
     assert(false && "Unknown SVFVar kind");
     abort();
 }
@@ -173,10 +183,11 @@ void AbstractInterpretation::updateAbstractValue(const ObjVar* var, const Abstra
 
 void AbstractInterpretation::updateAbstractValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node)
 {
-    if (const ValVar* valVar = SVFUtil::dyn_cast<ValVar>(var))
-        updateAbstractValue(valVar, val, node);
-    else if (const ObjVar* objVar = SVFUtil::dyn_cast<ObjVar>(var))
+    // Check ObjVar first since ObjVar inherits from ValVar
+    if (const ObjVar* objVar = SVFUtil::dyn_cast<ObjVar>(var))
         updateAbstractValue(objVar, val, node);
+    else if (const ValVar* valVar = SVFUtil::dyn_cast<ValVar>(var))
+        updateAbstractValue(valVar, val, node);
     else
         assert(false && "Unknown SVFVar kind");
 }
@@ -1531,14 +1542,14 @@ void AbstractInterpretation::updateStateOnAddr(const AddrStmt *addr)
     const ICFGNode* node = addr->getICFGNode();
     AbstractState& as = getAbstractState(node);
     as.initObjVar(SVFUtil::cast<ObjVar>(addr->getRHSVar()));
+    // AddrStmt: lhs(ValVar) = &rhs(ObjVar).
+    // as[rhsId] stores the ObjVar's virtual address in _varToVal,
+    // NOT the object contents. So we must use as[] directly for ObjVar.
+    u32_t rhsId = addr->getRHSVarID();
     if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
-    {
-        AbstractValue rhsVal = getAbstractValue(addr->getRHSVar(), node);
-        rhsVal.getInterval().meet_with(utils->getRangeLimitFromType(addr->getRHSVar()->getType()));
-        updateAbstractValue(addr->getRHSVar(), rhsVal, node);
-    }
-    const AbstractValue& rhsVal = getAbstractValue(addr->getRHSVar(), node);
-    updateAbstractValue(addr->getLHSVar(), rhsVal, node);
+        as[rhsId].getInterval().meet_with(utils->getRangeLimitFromType(addr->getRHSVar()->getType()));
+    // LHS is a ValVar (pointer), write through the API
+    updateAbstractValue(addr->getLHSVar(), as[rhsId], node);
 }
 
 
