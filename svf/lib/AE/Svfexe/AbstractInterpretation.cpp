@@ -123,7 +123,12 @@ const AbstractValue& AbstractInterpretation::getAbstractValue(const ValVar* var,
         return as[id];
     }
 
-    // Semi-sparse mode: pull from def-site (ignore node parameter)
+    // Semi-sparse mode: first check current node's state
+    // (buildSparseState or defensive top may have written here)
+    if (as.inVarToValTable(id) || as.inVarToAddrsTable(id))
+        return as[id];
+
+    // Semi-sparse fallback: pull from def-site
     const ICFGNode* defNode = var->getICFGNode();
     if (defNode && hasAbstractState(defNode))
     {
