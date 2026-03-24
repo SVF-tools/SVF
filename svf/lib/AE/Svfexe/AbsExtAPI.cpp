@@ -249,7 +249,7 @@ void AbsExtAPI::initExtFunMap()
         if (callNode->arg_size() < 1) return;
         AbstractState& as = getAbstractState(callNode);
         const SVFVar* retVar = callNode->getRetICFGNode()->getActualRet();
-        IntervalValue byteLen = getStrlen(as, callNode->getArgument(0));
+        IntervalValue byteLen = getStrlen(as, callNode->getArgument(0), callNode);
         u32_t elemSize = getElementSize(as, callNode->getArgument(0));
         if (byteLen.is_numeral() && elemSize > 1)
             ae.updateAbstractValue(retVar, IntervalValue(byteLen.getIntNumeral() / (s64_t)elemSize), callNode);
@@ -499,13 +499,14 @@ bool AbsExtAPI::isValidLength(const IntervalValue& len)
 /// Calculate the length of a null-terminated string in abstract state.
 /// Scans memory from the base of strValue looking for a '\0' byte.
 /// Returns an IntervalValue: exact length if '\0' found, otherwise [0, MaxFieldLimit].
-IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValue)
+IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValue, const ICFGNode* node)
 {
     NodeID value_id = strValue->getId();
 
     // Step 1: determine the buffer size (in bytes) backing this pointer
     u32_t dst_size = 0;
-    for (const auto& addr : as[value_id].getAddrs())
+    const AbstractValue& ptrVal = ae.getAbstractValue(strValue, node);
+    for (const auto& addr : ptrVal.getAddrs())
     {
         NodeID objId = as.getIDFromAddr(addr);
         if (svfir->getBaseObject(objId)->isConstantByteSize())
@@ -565,8 +566,7 @@ void AbsExtAPI::handleStrcpy(const CallICFGNode *call)
     AbstractState& as = getAbstractState(call);
     const SVFVar* dst = call->getArgument(0);
     const SVFVar* src = call->getArgument(1);
-    IntervalValue srcLen = getStrlen(as, src);
-    // no need to -1, since srcLen includes up to (but not past) '\0'
+    IntervalValue srcLen = getStrlen(as, src, call);
     if (!isValidLength(srcLen)) return;
     handleMemcpy(as, dst, src, srcLen, 0);
 }
@@ -578,8 +578,8 @@ void AbsExtAPI::handleStrcat(const CallICFGNode *call)
     AbstractState& as = getAbstractState(call);
     const SVFVar* dst = call->getArgument(0);
     const SVFVar* src = call->getArgument(1);
-    IntervalValue dstLen = getStrlen(as, dst);
-    IntervalValue srcLen = getStrlen(as, src);
+    IntervalValue dstLen = getStrlen(as, dst, call);
+    IntervalValue srcLen = getStrlen(as, src, call);
     if (!isValidLength(dstLen)) return;
     handleMemcpy(as, dst, src, srcLen, dstLen.lb().getIntNumeral());
 }
@@ -592,7 +592,7 @@ void AbsExtAPI::handleStrncat(const CallICFGNode *call)
     const SVFVar* dst = call->getArgument(0);
     const SVFVar* src = call->getArgument(1);
     IntervalValue n = ae.getAbstractValue(call->getArgument(2), call).getInterval();
-    IntervalValue dstLen = getStrlen(as, dst);
+    IntervalValue dstLen = getStrlen(as, dst, call);
     if (!isValidLength(dstLen)) return;
     handleMemcpy(as, dst, src, n, dstLen.lb().getIntNumeral());
 }

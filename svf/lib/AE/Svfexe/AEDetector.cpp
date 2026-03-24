@@ -130,7 +130,7 @@ void BufOverflowDetector::handleStubFunctions(const SVF::CallICFGNode* callNode)
             assert(false && "SAFE_BUFACCESS size is bottom");
         }
         const SVFVar* arg0Val = callNode->getArgument(0);
-        bool isSafe = canSafelyAccessMemory(as, arg0Val, val);
+        bool isSafe = canSafelyAccessMemory(as, arg0Val, val, callNode);
         if (isSafe)
         {
             SVFUtil::outs() << SVFUtil::sucMsg("success: expected safe buffer access at SAFE_BUFACCESS")
@@ -156,7 +156,7 @@ void BufOverflowDetector::handleStubFunctions(const SVF::CallICFGNode* callNode)
             assert(false && "UNSAFE_BUFACCESS size is bottom");
         }
         const SVFVar* arg0Val = callNode->getArgument(0);
-        bool isSafe = canSafelyAccessMemory(as, arg0Val, val);
+        bool isSafe = canSafelyAccessMemory(as, arg0Val, val, callNode);
         if (!isSafe)
         {
             SVFUtil::outs() << SVFUtil::sucMsg("success: expected buffer overflow at UNSAFE_BUFACCESS")
@@ -246,7 +246,7 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
         {
             IntervalValue offset = AbstractInterpretation::getAEInstance().getAbstractValue(call->getArgument(arg.second), call).getInterval() - IntervalValue(1);
             const SVFVar* argVar = call->getArgument(arg.first);
-            if (!canSafelyAccessMemory(as, argVar, offset))
+            if (!canSafelyAccessMemory(as, argVar, offset, call))
             {
                 AEException bug(call->toString());
                 addBugToReporter(bug, call);
@@ -266,7 +266,7 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
         {
             IntervalValue offset = AbstractInterpretation::getAEInstance().getAbstractValue(call->getArgument(arg.second), call).getInterval() - IntervalValue(1);
             const SVFVar* argVar = call->getArgument(arg.first);
-            if (!canSafelyAccessMemory(as, argVar, offset))
+            if (!canSafelyAccessMemory(as, argVar, offset, call))
             {
                 AEException bug(call->toString());
                 addBugToReporter(bug, call);
@@ -415,20 +415,10 @@ bool BufOverflowDetector::detectStrcpy(AbstractState& as, const CallICFGNode *ca
 {
     const SVFVar* arg0Val = call->getArgument(0);
     const SVFVar* arg1Val = call->getArgument(1);
-    IntervalValue strLen = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg1Val);
-    return canSafelyAccessMemory(as, arg0Val, strLen);
+    IntervalValue strLen = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg1Val, call);
+    return canSafelyAccessMemory(as, arg0Val, strLen, call);
 }
 
-/**
- * @brief Detects buffer overflow in 'strcat' function calls.
- *
- * This function checks if the destination buffer can safely accommodate both the
- * existing string and the concatenated string from the source.
- *
- * @param as Reference to the abstract state.
- * @param call Pointer to the call ICFG node.
- * @return True if the memory access is safe, false otherwise.
- */
 bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *call)
 {
     const std::vector<std::string> strcatGroup = {"__strcat_chk", "strcat", "__wcscat_chk", "wcscat"};
@@ -438,19 +428,19 @@ bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *ca
     {
         const SVFVar* arg0Val = call->getArgument(0);
         const SVFVar* arg1Val = call->getArgument(1);
-        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg0Val);
-        IntervalValue strLen1 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg1Val);
+        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg0Val, call);
+        IntervalValue strLen1 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg1Val, call);
         IntervalValue totalLen = strLen0 + strLen1;
-        return canSafelyAccessMemory(as, arg0Val, totalLen);
+        return canSafelyAccessMemory(as, arg0Val, totalLen, call);
     }
     else if (std::find(strncatGroup.begin(), strncatGroup.end(), call->getCalledFunction()->getName()) != strncatGroup.end())
     {
         const SVFVar* arg0Val = call->getArgument(0);
         const SVFVar* arg2Val = call->getArgument(2);
         IntervalValue arg2Num = AbstractInterpretation::getAEInstance().getAbstractValue(arg2Val, call).getInterval();
-        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg0Val);
+        IntervalValue strLen0 = AbstractInterpretation::getAEInstance().getUtils()->getStrlen(as, arg0Val, call);
         IntervalValue totalLen = strLen0 + arg2Num;
-        return canSafelyAccessMemory(as, arg0Val, totalLen);
+        return canSafelyAccessMemory(as, arg0Val, totalLen, call);
     }
     else
     {
@@ -470,29 +460,18 @@ bool BufOverflowDetector::detectStrcat(AbstractState& as, const CallICFGNode *ca
  * @param len The interval value representing the length of the memory access.
  * @return True if the memory access is safe, false otherwise.
  */
-bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SVFVar* value, const SVF::IntervalValue& len)
+bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SVFVar* value, const SVF::IntervalValue& len, const ICFGNode* node)
 {
     SVFIR* svfir = PAG::getPAG();
-    NodeID value_id = value->getId();
+    AbstractInterpretation& aeInst = AbstractInterpretation::getAEInstance();
 
-    // Lazy initialization for uninitialized pointer parameters in multi-entry analysis.
-    // When analyzing a function as an entry point (e.g., not called from main),
-    // pointer parameters may not have been initialized via AddrStmt.
-    //
-    // Example:
-    //   void process_buffer(char* buf, int len) {
-    //       buf[0] = 'a';  // accessing buf
-    //   }
-    // When analyzing process_buffer as an entry point, 'buf' is a function parameter
-    // with no AddrStmt, so it has no address information in the abstract state.
-    // We lazily initialize it to point to the black hole object (BlkPtr), representing
-    // an unknown but valid memory location. This allows the analysis to continue
-    // while being conservatively sound.
-    if (!as.inVarToValTable(value_id) || !as[value_id].isAddr())
+    AbstractValue ptrVal = aeInst.getAbstractValue(value, node);
+    if (!ptrVal.isAddr())
     {
-        as[value_id] = AddressValue(BlackHoleObjAddr);
+        ptrVal = AddressValue(BlackHoleObjAddr);
+        aeInst.updateAbstractValue(value, ptrVal, node);
     }
-    for (const auto& addr : as[value_id].getAddrs())
+    for (const auto& addr : ptrVal.getAddrs())
     {
         NodeID objId = as.getIDFromAddr(addr);
         u32_t size = 0;
@@ -557,7 +536,7 @@ void NullptrDerefDetector::detect(AbstractInterpretation& ae, const ICFGNode* no
                 // like llvm bitcode `p = gep p, idx`
                 // we check rhs p's all address are valid mem
                 const ValVar* rhs = gep->getRHSVar();
-                if (!canSafelyDerefPtr(as, rhs))
+                if (!canSafelyDerefPtr(as, rhs, node))
                 {
                     AEException bug(stmt->toString());
                     addBugToReporter(bug, stmt->getICFGNode());
@@ -568,7 +547,7 @@ void NullptrDerefDetector::detect(AbstractInterpretation& ae, const ICFGNode* no
                 // like llvm bitcode `p = load q`
                 // we check lhs p's all address are valid mem
                 const ValVar* lhs = load->getLHSVar();
-                if ( !canSafelyDerefPtr(as, lhs))
+                if ( !canSafelyDerefPtr(as, lhs, node))
                 {
                     AEException bug(stmt->toString());
                     addBugToReporter(bug, stmt->getICFGNode());
@@ -592,7 +571,7 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode)
 
         const SVFVar* arg0Val = callNode->getArgument(0);
         // opt may directly dereference a null pointer and call UNSAFE_LOAD(null)
-        bool isSafe = canSafelyDerefPtr(as, arg0Val) && arg0Val->getId() != 0;
+        bool isSafe = canSafelyDerefPtr(as, arg0Val, callNode) && arg0Val->getId() != 0;
         if (!isSafe)
         {
             SVFUtil::outs() << SVFUtil::sucMsg("success: expected null dereference at UNSAFE_LOAD")
@@ -614,7 +593,7 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode)
         AbstractState&as = AbstractInterpretation::getAEInstance().getAbstractState(callNode);
         const SVFVar* arg0Val = callNode->getArgument(0);
         // opt may directly dereference a null pointer and call UNSAFE_LOAD(null)ols
-        bool isSafe = canSafelyDerefPtr(as, arg0Val) && arg0Val->getId() != 0;
+        bool isSafe = canSafelyDerefPtr(as, arg0Val, callNode) && arg0Val->getId() != 0;
         if (isSafe)
         {
             SVFUtil::outs() << SVFUtil::sucMsg("success: expected safe dereference at SAFE_LOAD")
@@ -680,7 +659,7 @@ void NullptrDerefDetector::detectExtAPI(AbstractState& as, const CallICFGNode* c
         if (call->arg_size() <= arg)
             continue;
         const SVFVar* argVal = call->getArgument(arg);
-        if (argVal && !canSafelyDerefPtr(as, argVal))
+        if (argVal && !canSafelyDerefPtr(as, argVal, call))
         {
             AEException bug(call->toString());
             addBugToReporter(bug, call);
@@ -689,10 +668,9 @@ void NullptrDerefDetector::detectExtAPI(AbstractState& as, const CallICFGNode* c
 }
 
 
-bool NullptrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVFVar* value)
+bool NullptrDerefDetector::canSafelyDerefPtr(AbstractState& as, const SVFVar* value, const ICFGNode* node)
 {
-    NodeID value_id = value->getId();
-    AbstractValue AbsVal = as[value_id];
+    AbstractValue AbsVal = AbstractInterpretation::getAEInstance().getAbstractValue(value, node);
     // uninit value cannot be dereferenced, return unsafe
     if (isUninit(AbsVal)) return false;
     // Interval Value (non-addr) is not the checkpoint of nullptr dereference, return safe

@@ -304,7 +304,7 @@ public:
      * @param len The interval value representing the length of the memory access.
      * @return True if the memory access is safe, false otherwise.
      */
-    bool canSafelyAccessMemory(AbstractState& as, const SVFVar *value, const IntervalValue &len);
+    bool canSafelyAccessMemory(AbstractState& as, const SVFVar *value, const IntervalValue &len, const ICFGNode* node);
 
 private:
     /**
@@ -436,7 +436,7 @@ public:
         return !v.isAddr() && !v.isInterval();
     }
 
-    bool canSafelyDerefPtr(AbstractState& as, const SVFVar* ptr);
+    bool canSafelyDerefPtr(AbstractState& as, const SVFVar* ptr, const ICFGNode* node);
 
 private:
     Set<std::string> bugLoc; ///< Set of locations where bugs have been reported.
