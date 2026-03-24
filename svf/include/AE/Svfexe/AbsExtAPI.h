@@ -51,9 +51,9 @@ public:
 
     /**
      * @brief Constructor for AbsExtAPI.
-     * @param abstractTrace Reference to a map of ICFG nodes to abstract states.
+     * @param ae Reference to the AbstractInterpretation instance.
      */
-    AbsExtAPI(Map<const ICFGNode*, AbstractState>& traces);
+    AbsExtAPI(AbstractInterpretation& ae);
 
     /**
      * @brief Initializes the external function map.
@@ -114,9 +114,9 @@ public:
     Set<const CallICFGNode*> checkpoints; // for CI check
 
 protected:
+    AbstractInterpretation& ae; ///< Reference to the AbstractInterpretation instance.
     SVFIR* svfir; ///< Pointer to the SVF intermediate representation.
     ICFG* icfg; ///< Pointer to the interprocedural control flow graph.
-    Map<const ICFGNode*, AbstractState>& abstractTrace; ///< Map of ICFG nodes to abstract states.
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map; ///< Map of function names to handlers.
 };
 

@@ -32,6 +32,9 @@
 
 namespace SVF
 {
+
+class AbstractInterpretation;
+
 /**
  * @class AEDetector
  * @brief Base class for all detectors.
@@ -75,7 +78,7 @@ public:
      * @param as Reference to the abstract state.
      * @param node Pointer to the ICFG node.
      */
-    virtual void detect(AbstractState& as, const ICFGNode* node) = 0;
+    virtual void detect(AbstractInterpretation& ae, const ICFGNode* node) = 0;
 
     /**
      * @brief Pure virtual function for handling stub external API calls. (e.g. UNSAFE_BUFACCESS)
@@ -177,14 +180,14 @@ public:
      * @param as Reference to the abstract state.
      * @param node Pointer to the ICFG node.
      */
-    void detect(AbstractState& as, const ICFGNode*);
+    void detect(AbstractInterpretation& ae, const ICFGNode*) override;
 
 
     /**
      * @brief Handles external API calls related to buffer overflow detection.
      * @param call Pointer to the call ICFG node.
      */
-    void handleStubFunctions(const CallICFGNode*);
+    void handleStubFunctions(const CallICFGNode*) override;
 
     /**
      * @brief Adds an offset to a GEP object.
@@ -268,7 +271,7 @@ public:
     /**
      * @brief Reports all detected buffer overflow bugs.
      */
-    void reportBug()
+    void reportBug() override
     {
         if (!nodeToBugInfo.empty())
         {
@@ -348,13 +351,13 @@ public:
      * @param as Reference to the abstract state.
      * @param node Pointer to the ICFG node.
      */
-    void detect(AbstractState& as, const ICFGNode* node);
+    void detect(AbstractInterpretation& ae, const ICFGNode* node) override;
 
     /**
      * @brief Handles external API calls related to nullptr dereferences.
      * @param call Pointer to the call ICFG node.
      */
-    void handleStubFunctions(const CallICFGNode* call);
+    void handleStubFunctions(const CallICFGNode* call) override;
 
     /**
      * @brief Checks if an Abstract Value is uninitialized.
@@ -401,7 +404,7 @@ public:
     /**
      * @brief Reports all detected nullptr dereference bugs.
      */
-    void reportBug()
+    void reportBug() override
     {
         if (!nodeToBugInfo.empty())
         {

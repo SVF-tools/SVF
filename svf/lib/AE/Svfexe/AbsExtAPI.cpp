@@ -32,7 +32,7 @@
 #include "Util/Options.h"
 
 using namespace SVF;
-AbsExtAPI::AbsExtAPI(Map<const ICFGNode*, AbstractState>& traces): abstractTrace(traces)
+AbsExtAPI::AbsExtAPI(AbstractInterpretation& ae): ae(ae)
 {
     svfir = PAG::getPAG();
     icfg = svfir->getICFG();
@@ -337,15 +337,7 @@ void AbsExtAPI::initExtFunMap()
 
 AbstractState& AbsExtAPI::getAbstractState(const SVF::ICFGNode* node)
 {
-    if (abstractTrace.count(node) == 0)
-    {
-        assert(0 && "No preAbsTrace for this node");
-        abort();
-    }
-    else
-    {
-        return abstractTrace[node];
-    }
+    return ae.getAbstractState(node);
 }
 
 void AbsExtAPI::collectCheckPoint()

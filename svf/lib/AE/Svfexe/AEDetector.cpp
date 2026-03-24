@@ -42,8 +42,9 @@ using namespace SVF;
  * @param as Reference to the abstract state.
  * @param node Pointer to the ICFG node.
  */
-void BufOverflowDetector::detect(AbstractState& as, const ICFGNode* node)
+void BufOverflowDetector::detect(AbstractInterpretation& ae, const ICFGNode* node)
 {
+    AbstractState& as = ae.getAbstractState(node);
     if (!SVFUtil::isa<CallICFGNode>(node))
     {
         // Handle non-call nodes by analyzing GEP instructions
@@ -539,8 +540,9 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
     return true;
 }
 
-void NullptrDerefDetector::detect(AbstractState& as, const ICFGNode* node)
+void NullptrDerefDetector::detect(AbstractInterpretation& ae, const ICFGNode* node)
 {
+    AbstractState& as = ae.getAbstractState(node);
     if (SVFUtil::isa<CallICFGNode>(node))
     {
         // external API like memset(*dst, elem, sz)
