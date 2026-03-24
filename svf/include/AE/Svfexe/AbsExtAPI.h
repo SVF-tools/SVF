@@ -83,7 +83,7 @@ public:
     static bool isValidLength(const IntervalValue& len);
 
     /// Calculate the length of a null-terminated string in abstract state.
-    IntervalValue getStrlen(AbstractState& as, const SVF::SVFVar *strValue);
+    IntervalValue getStrlen(AbstractState& as, const SVF::SVFVar *strValue, const ICFGNode* node);
 
     // --- String/memory operation handlers ---
 
