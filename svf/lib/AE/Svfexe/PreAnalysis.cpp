@@ -28,6 +28,7 @@
  */
 
 #include "AE/Svfexe/PreAnalysis.h"
+#include "AE/Svfexe/AbstractInterpretation.h"
 #include "Graphs/SVFG.h"
 #include "MSSA/SVFGBuilder.h"
 #include "Util/Options.h"
@@ -40,7 +41,7 @@ PreAnalysis::PreAnalysis(SVFIR* pag, ICFG* icfg)
     pta = AndersenWaveDiff::createAndersenWaveDiff(svfir);
     callGraph = pta->getCallGraph();
     callGraphSCC = pta->getCallGraphSCC();
-    if (Options::SparseAE())
+    if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse)
     {
         SVFGBuilder memSSA(true);
         svfg = memSSA.buildFullSVFG(pta);
@@ -55,7 +56,7 @@ PreAnalysis::~PreAnalysis()
 
 const Set<const ICFGNode*> PreAnalysis::getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const
 {
-    if (Options::SparseAE())
+    if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse)
     {
         assert(svfg && "SVFG is not built for sparse AE");
         return svfg->getUseSitesOfObjVar(obj, node);
@@ -69,7 +70,7 @@ const Set<const ICFGNode*> PreAnalysis::getUseSitesOfObjVar(const ObjVar* obj, c
 
 const Set<const ICFGNode*> PreAnalysis::getUseSitesOfValVar(const ValVar* var) const
 {
-    if (Options::SparseAE())
+    if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse)
     {
         assert(svfg && "SVFG is not built for sparse AE");
         return svfg->getUseSitesOfValVar(var);
@@ -86,7 +87,7 @@ const Set<const ICFGNode*> PreAnalysis::getUseSitesOfValVar(const ValVar* var) c
 
 const ICFGNode* PreAnalysis::getDefSiteOfValVar(const ValVar* var) const
 {
-    if (Options::SparseAE())
+    if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse)
     {
         assert(svfg && "SVFG is not built for sparse AE");
         return svfg->getDefSiteOfValVar(var);
@@ -97,7 +98,7 @@ const ICFGNode* PreAnalysis::getDefSiteOfValVar(const ValVar* var) const
 
 const ICFGNode* PreAnalysis::getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const
 {
-    if (Options::SparseAE())
+    if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse)
     {
         assert(svfg && "SVFG is not built for sparse AE");
         return svfg->getDefSiteOfObjVar(obj, node);

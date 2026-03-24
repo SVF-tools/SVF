@@ -73,6 +73,13 @@ public:
      * if set WIDEN_ONLY, result = [10000, +oo] since only widening is applied at the cycle head of recursive functions without narrowing.
      * if set WIDEN_NARROW, result = [10000, 10000] since both widening and narrowing are applied at the cycle head of recursive functions.
      * */
+    enum AESparsity
+    {
+        Dense,
+        SemiSparse,
+        Sparse
+    };
+
     enum HandleRecur
     {
         TOP,
@@ -116,22 +123,22 @@ public:
     }
 
     /// Retrieve abstract value for a top-level variable from its def-site
-    AbstractValue getAbstractValue(const ValVar* var);
+    const AbstractValue& getAbstractValue(const ValVar* var, const ICFGNode* node);
 
     /// Retrieve abstract value for an address-taken variable at a given ICFG node
-    const AbstractValue& getAbstractValue(const ICFGNode* node, const ObjVar* var);
+    const AbstractValue& getAbstractValue(const ObjVar* var,  const ICFGNode* node);
 
     /// Retrieve abstract value for any SVF variable at a given ICFG node
-    AbstractValue getAbstractValue(const ICFGNode* node, const SVFVar* var);
+    const AbstractValue& getAbstractValue(const SVFVar* var, const ICFGNode* node);
 
     /// Set abstract value for a top-level variable at a given ICFG node
-    void updateAbstractValue(const ValVar* var, const AbstractValue& val);
+    void updateAbstractValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node);
 
     /// Set abstract value for an address-taken variable at a given ICFG node
-    void updateAbstractValue(const ICFGNode* node, const ObjVar* var, const AbstractValue& val);
+    void updateAbstractValue(const ObjVar* var, const AbstractValue& val, const ICFGNode* node);
 
     /// Set abstract value for any SVF variable at a given ICFG node
-    void updateAbstractValue(const ICFGNode* node, const SVFVar* var, const AbstractValue& val);
+    void updateAbstractValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node);
 
     /// Propagate an ObjVar's abstract value from defSite to all its use-site ICFGNodes via SVFG
     void propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite);
@@ -143,13 +150,13 @@ public:
     bool hasAbstractState(const ICFGNode* node);
 
     /// Retrieve abstract state filtered to specific top-level variables
-    void getAbstractState(const ICFGNode* node, const Set<const ValVar*>& vars, AbstractState& result);
+    void getAbstractState(const Set<const ValVar*>& vars, AbstractState& result, const ICFGNode* node);
 
     /// Retrieve abstract state filtered to specific address-taken variables
-    void getAbstractState(const ICFGNode* node, const Set<const ObjVar*>& vars, AbstractState& result);
+    void getAbstractState(const Set<const ObjVar*>& vars, AbstractState& result, const ICFGNode* node);
 
     /// Retrieve abstract state filtered to specific SVF variables
-    void getAbstractState(const ICFGNode* node, const Set<const SVFVar*>& vars, AbstractState& result);
+    void getAbstractState(const Set<const SVFVar*>& vars, AbstractState& result, const ICFGNode* node);
 
 
     /// Collect the set of ValVar IDs that a given ICFG node needs as operands.

@@ -781,10 +781,24 @@ const Option<u32_t> Options::LoopBound(
     1
 );
 
-const Option<bool> Options::SparseAE(
-    "sparse-ae", "Enable sparse abstract execution via SVFG", false);
-const Option<bool> Options::SemiSparse(
-    "semi-sparse", "Enable semi-sparse abstract execution: ObjVars dense, ValVars sparse", false);
+const OptionMap<u32_t> Options::AESparsity(
+    "ae-sparsity",
+    "Abstract execution mode (Default: dense)",
+    AbstractInterpretation::AESparsity::Dense,
+{
+    {
+        AbstractInterpretation::AESparsity::Dense, "dense",
+        "Dense abstract execution: all variables propagated along ICFG edges."
+    },
+    {
+        AbstractInterpretation::AESparsity::SemiSparse, "semi-sparse",
+        "Semi-sparse abstract execution: ObjVars dense, ValVars sparse."
+    },
+    {
+        AbstractInterpretation::AESparsity::Sparse, "sparse",
+        "Sparse abstract execution via SVFG."
+    }
+});
 const Option<u32_t> Options::WidenDelay(
     "widen-delay", "Loop Widen Delay", 3);
 const OptionMap<u32_t> Options::HandleRecur(
