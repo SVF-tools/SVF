@@ -159,18 +159,18 @@ public:
     void getAbstractState(const Set<const SVFVar*>& vars, AbstractState& result, const ICFGNode* node);
 
 
-    /// Collect the set of ValVar IDs that a given ICFG node needs as operands.
-    Set<u32_t> collectNeededVarIds(const ICFGNode* node);
+    /// Compute the element index of a GepStmt, reading index variables via getAbstractValue.
+    IntervalValue getGepElementIndex(const GepStmt* gep, const ICFGNode* node);
 
-    /// Pull needed ValVars from their def-sites into abstractTrace[node].
-    void buildSparseState(const ICFGNode* node);
+    /// Compute the byte offset of a GepStmt, reading index variables via getAbstractValue.
+    IntervalValue getGepByteOffset(const GepStmt* gep, const ICFGNode* node);
+
+    /// Get GEP object addresses, reading the pointer via getAbstractValue.
+    AddressValue getGepObjAddrs(const SVFVar* pointer, IntervalValue offset, const ICFGNode* node);
 
     /// Pull branch condition ValVars into the given abstract state
     /// so that isBranchFeasible can operate correctly in semi-sparse mode.
     void pullBranchConditionVars(const IntraCFGEdge* edge, AbstractState& state);
-
-    /// Insert id into needed if it is a non-ObjVar ValVar.
-    void addIfValVar(NodeID id, Set<u32_t>& needed);
 
     /// Pull a single ValVar into the given state from its def-site.
     void pullValVarIntoState(NodeID id, AbstractState& state);
@@ -189,7 +189,7 @@ private:
     bool mergeStatesFromPredecessors(const ICFGNode* node);
 
     /// Check if the branch on intraEdge is feasible under abstract state as
-    bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractState& as);
+    bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractState& as, const ICFGNode* predNode);
 
     /// Handle a call site node: dispatch to ext-call, direct-call, or indirect-call handling
     virtual void handleCallSite(const ICFGNode* node);
@@ -211,10 +211,10 @@ private:
 
     /// Check if cmpStmt with successor value succ is feasible; refine intervals in as accordingly
     bool isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t succ,
-                             AbstractState& as);
+                             AbstractState& as, const ICFGNode* predNode);
 
     /// Check if switch branch with case value succ is feasible; refine intervals in as accordingly
-    bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ, AbstractState& as);
+    bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ, AbstractState& as, const ICFGNode* predNode);
 
     void updateStateOnAddr(const AddrStmt *addr);
 

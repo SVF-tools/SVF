@@ -66,7 +66,7 @@ public:
      * @param rhs Pointer to the SVF variable representing the string.
      * @return The string value.
      */
-    std::string strRead(AbstractState& as, const SVFVar* rhs);
+    std::string strRead(AbstractState& as, const SVFVar* rhs, const ICFGNode* node);
 
     /**
      * @brief Handles an external API call.
@@ -90,8 +90,8 @@ public:
     void handleStrcpy(const CallICFGNode *call);
     void handleStrcat(const CallICFGNode *call);
     void handleStrncat(const CallICFGNode *call);
-    void handleMemcpy(AbstractState& as, const SVF::SVFVar *dst, const SVF::SVFVar *src, IntervalValue len, u32_t start_idx);
-    void handleMemset(AbstractState& as, const SVFVar* dst, IntervalValue elem, IntervalValue len);
+    void handleMemcpy(AbstractState& as, const SVF::SVFVar *dst, const SVF::SVFVar *src, IntervalValue len, u32_t start_idx, const ICFGNode* node);
+    void handleMemset(AbstractState& as, const SVFVar* dst, IntervalValue elem, IntervalValue len, const ICFGNode* node);
 
     /**
      * @brief Gets the range limit from a type.
