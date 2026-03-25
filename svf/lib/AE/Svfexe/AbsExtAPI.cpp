@@ -212,7 +212,17 @@ void AbsExtAPI::initExtFunMap()
         }
         else if (callNode->getArgument(2)->getType()->isPointerTy())
         {
-            elemSize = as.getPointeeElement(callNode->getArgument(2)->getId())->getByteSize();
+            // Ensure pointer value is in state for getPointeeElement lookup
+            const SVFVar* arg2 = callNode->getArgument(2);
+            const AbstractValue& ptrVal = ae.getAbstractValue(arg2, callNode);
+            if (ptrVal.isAddr())
+            {
+                // Write into state so getPointeeElement can find it
+                as[arg2->getId()] = ptrVal;
+            }
+            const SVFType* elemType = as.getPointeeElement(arg2->getId());
+            if (!elemType) return;
+            elemSize = elemType->getByteSize();
         }
         else
         {
