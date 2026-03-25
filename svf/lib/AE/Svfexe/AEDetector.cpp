@@ -57,7 +57,7 @@ void BufOverflowDetector::detect(AbstractInterpretation& ae, const ICFGNode* nod
                 // Update the GEP object offset from its base
                 const AbstractValue& lhsVal = ae.getAbstractValue(gep->getLHSVar(), node);
                 const AbstractValue& rhsVal = ae.getAbstractValue(gep->getRHSVar(), node);
-                updateGepObjOffsetFromBase(as, lhsVal.getAddrs(), rhsVal.getAddrs(), as.getByteOffset(gep));
+                updateGepObjOffsetFromBase(as, lhsVal.getAddrs(), rhsVal.getAddrs(), ae.getGepByteOffset(gep, node));
 
                 AddressValue objAddrs = rhsVal.getAddrs();
                 for (const auto& addr : objAddrs)
@@ -83,7 +83,7 @@ void BufOverflowDetector::detect(AbstractInterpretation& ae, const ICFGNode* nod
                     }
 
                     // Calculate access offset and check for potential overflow
-                    IntervalValue accessOffset = getAccessOffset(as, objId, gep);
+                    IntervalValue accessOffset = getAccessOffset(as, objId, gep, node);
                     if (accessOffset.ub().getIntNumeral() >= size)
                     {
                         AEException bug(stmt->toString());
@@ -306,22 +306,19 @@ void BufOverflowDetector::detectExtAPI(AbstractState& as,
  * @param gep Pointer to the GEP statement.
  * @return The interval value of the access offset.
  */
-IntervalValue BufOverflowDetector::getAccessOffset(SVF::AbstractState& as, SVF::NodeID objId, const SVF::GepStmt* gep)
+IntervalValue BufOverflowDetector::getAccessOffset(SVF::AbstractState& as, SVF::NodeID objId, const SVF::GepStmt* gep, const ICFGNode* node)
 {
     SVFIR* svfir = PAG::getPAG();
+    AbstractInterpretation& aeInst = AbstractInterpretation::getAEInstance();
     auto obj = svfir->getSVFVar(objId);
 
     if (SVFUtil::isa<BaseObjVar>(obj))
     {
-        // if the object is a BaseObjVar, return the byte offset directly
-        // like `int arr[10]; arr[5] = 1;` arr is the baseObjVar
-        return as.getByteOffset(gep);
+        return aeInst.getGepByteOffset(gep, node);
     }
     else if (SVFUtil::isa<GepObjVar>(obj))
     {
-        // if the object is a GepObjVar, return the offset from the base object
-        // like `int arr[10]; int* p=arr+5; p[3] = 1`, p is the GepObjVar from arr.
-        return getGepObjOffsetFromBase(SVFUtil::cast<GepObjVar>(obj)) + as.getByteOffset(gep);
+        return getGepObjOffsetFromBase(SVFUtil::cast<GepObjVar>(obj)) + aeInst.getGepByteOffset(gep, node);
     }
     else
     {
