@@ -557,7 +557,6 @@ void AbstractInterpretation::handleGlobalNode()
 /// Returns true if at least one predecessor contributed state.
 bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
 {
-    bool semiSparse = Options::AESparsity() == AbstractInterpretation::AESparsity::SemiSparse;
     std::vector<AbstractState> intraWorkList;
     std::vector<AbstractState> interWorkList;
     for (auto& edge : node->getInEdges())
@@ -616,27 +615,17 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
     if (intraWorkList.empty() && interWorkList.empty())
         return false;
 
-    if (semiSparse)
+    // joinWith internally skips ValVar merge in semi-sparse mode.
+    bool first = true;
+    for (auto& state : intraWorkList)
     {
-        abstractTrace[node] = AbstractState();
-        for (auto& state : intraWorkList)
-            abstractTrace[node].joinAddrOnly(state);
-        for (auto& state : interWorkList)
-            abstractTrace[node].joinWith(state);
+        if (first) { abstractTrace[node] = state; first = false; }
+        else abstractTrace[node].joinWith(state);
     }
-    else
+    for (auto& state : interWorkList)
     {
-        bool first = true;
-        for (auto& state : intraWorkList)
-        {
-            if (first) { abstractTrace[node] = state; first = false; }
-            else abstractTrace[node].joinWith(state);
-        }
-        for (auto& state : interWorkList)
-        {
-            if (first) { abstractTrace[node] = state; first = false; }
-            else abstractTrace[node].joinWith(state);
-        }
+        if (first) { abstractTrace[node] = state; first = false; }
+        else abstractTrace[node].joinWith(state);
     }
 
     return true;
