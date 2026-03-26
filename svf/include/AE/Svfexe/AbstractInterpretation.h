@@ -122,56 +122,134 @@ public:
         return svfir->getSVFVar(varId);
     }
 
-    /// Retrieve abstract value for a top-level variable from its def-site
+    // ===----------------------------------------------------------------------===//
+    //  Abstract Value Access API
+    //
+    //  Unified entry points for reading/writing abstract values.
+    //  These encapsulate the dense vs. semi-sparse lookup strategy:
+    //    - Dense:       reads from abstractTrace[node] directly.
+    //    - Semi-sparse: reads from the current node's state if present,
+    //                   otherwise pulls from the variable's def-site.
+    //  Callers (updateStateOnXxx, AEDetector, AbsExtAPI) should ONLY use
+    //  these APIs — never access abstractTrace[node][id] directly.
+    // ===----------------------------------------------------------------------===//
+
+    /// Read a top-level variable's abstract value.
+    /// @param var   The ValVar to look up.
+    /// @param node  The ICFG node providing context (dense: reads this node's
+    ///              state; semi-sparse: checks this state first, then def-site).
+    /// @return      Reference to the abstract value.  Returns top if the variable
+    ///              is absent from all reachable states (uninitialized).
     const AbstractValue& getAbstractValue(const ValVar* var, const ICFGNode* node);
 
-    /// Retrieve abstract value for an address-taken variable at a given ICFG node
-    const AbstractValue& getAbstractValue(const ObjVar* var,  const ICFGNode* node);
+    /// Read an address-taken variable's content via virtual-address load.
+    /// @param var   The ObjVar whose stored content is requested.
+    /// @param node  The ICFG node whose state to load from.
+    /// @return      Reference to the loaded abstract value (from _addrToAbsVal).
+    const AbstractValue& getAbstractValue(const ObjVar* var, const ICFGNode* node);
 
-    /// Retrieve abstract value for any SVF variable at a given ICFG node
+    /// Read any SVFVar — dispatches to the ValVar or ObjVar overload.
+    /// NOTE: checks ObjVar first since ObjVar inherits from ValVar.
     const AbstractValue& getAbstractValue(const SVFVar* var, const ICFGNode* node);
 
-    /// Set abstract value for a top-level variable at a given ICFG node
+    /// Write a top-level variable's abstract value into abstractTrace[node].
     void updateAbstractValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node);
 
-    /// Set abstract value for an address-taken variable at a given ICFG node
+    /// Write an address-taken variable's content via virtual-address store.
     void updateAbstractValue(const ObjVar* var, const AbstractValue& val, const ICFGNode* node);
 
-    /// Set abstract value for any SVF variable at a given ICFG node
+    /// Write any SVFVar — dispatches to the ValVar or ObjVar overload.
     void updateAbstractValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node);
 
-    /// Propagate an ObjVar's abstract value from defSite to all its use-site ICFGNodes via SVFG
+    /// Propagate an ObjVar's abstract value from defSite to all its
+    /// use-site ICFGNodes (determined by PreAnalysis SVFG info).
     void propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite);
 
-    /// Retrieve the abstract state from the trace for a given ICFG node; asserts if no trace exists
+    /// Retrieve the full abstract state for a given ICFG node.
+    /// Asserts if no trace exists for the node.
     AbstractState& getAbstractState(const ICFGNode* node);
 
-    /// Check if an abstract state exists in the trace for a given ICFG node
+    /// Check if an abstract state exists in the trace for a given ICFG node.
     bool hasAbstractState(const ICFGNode* node);
 
-    /// Retrieve abstract state filtered to specific top-level variables
+    /// Retrieve abstract state filtered to specific top-level variables.
     void getAbstractState(const Set<const ValVar*>& vars, AbstractState& result, const ICFGNode* node);
 
-    /// Retrieve abstract state filtered to specific address-taken variables
+    /// Retrieve abstract state filtered to specific address-taken variables.
     void getAbstractState(const Set<const ObjVar*>& vars, AbstractState& result, const ICFGNode* node);
 
-    /// Retrieve abstract state filtered to specific SVF variables
+    /// Retrieve abstract state filtered to specific SVF variables.
     void getAbstractState(const Set<const SVFVar*>& vars, AbstractState& result, const ICFGNode* node);
 
+    // ===----------------------------------------------------------------------===//
+    //  GEP Helpers (lifted from AbstractState to use getAbstractValue)
+    //
+    //  These replace AbstractState::getElementIndex / getByteOffset / getGepObjAddrs
+    //  which internally used (*this)[varId] — that doesn't work in semi-sparse mode
+    //  where ValVars may not be in the current node's state.
+    // ===----------------------------------------------------------------------===//
 
-    /// Compute the element index of a GepStmt, reading index variables via getAbstractValue.
+    /// Compute the flattened element index for a GepStmt.
+    /// Reads variable-offset indices via getAbstractValue; constant offsets are
+    /// resolved statically.  Returns an IntervalValue clamped to [0, MaxFieldLimit].
+    /// @param gep   The GepStmt to evaluate.
+    /// @param node  The ICFG node providing context for index variable lookup.
+    /// Used by: updateStateOnGep.
     IntervalValue getGepElementIndex(const GepStmt* gep, const ICFGNode* node);
 
-    /// Compute the byte offset of a GepStmt, reading index variables via getAbstractValue.
+    /// Compute the byte offset for a GepStmt.
+    /// Similar to getGepElementIndex but produces byte-level offsets, handling
+    /// array element sizes, pointer element sizes, and struct field offsets.
+    /// @param gep   The GepStmt to evaluate.
+    /// @param node  The ICFG node providing context for index variable lookup.
+    /// Used by: AEDetector (getAccessOffset, updateGepObjOffsetFromBase).
     IntervalValue getGepByteOffset(const GepStmt* gep, const ICFGNode* node);
 
-    /// Get GEP object addresses, reading the pointer via getAbstractValue.
+    /// Compute GEP object addresses for a pointer at a given element offset.
+    /// Reads the pointer's AddressValue via getAbstractValue, then resolves each
+    /// base object to its GepObjVar at the specified offset.  Initializes the
+    /// GepObjVar's virtual address in the state as a side-effect.
+    /// @param pointer  The pointer SVFVar whose address set to expand.
+    /// @param offset   The element offset interval (from getGepElementIndex).
+    /// @param node     The ICFG node providing context.
+    /// @return         The set of virtual addresses for the GEP result objects.
+    /// Used by: updateStateOnGep, AbsExtAPI (getStrlen, handleMemcpy, handleMemset, strRead).
     AddressValue getGepObjAddrs(const SVFVar* pointer, IntervalValue offset, const ICFGNode* node);
 
-    /// Pull load-chain pointers into the state for isCmpBranchFeasible ObjVar narrowing.
+    // ===----------------------------------------------------------------------===//
+    //  Branch Condition Helpers
+    // ===----------------------------------------------------------------------===//
+
+    /// Pull load-chain pointers for branch condition variables into a state copy.
+    ///
+    /// Called before isBranchFeasible in mergeStatesFromPredecessors and
+    /// updateStateOnPhi.  isCmpBranchFeasible narrows CmpStmt operands (ValVars)
+    /// AND their backing ObjVars (e.g., narrowing *%ptr when %x = load %ptr is
+    /// refined).  To narrow the ObjVar it needs %ptr's AddressValue in the state.
+    ///
+    /// This function walks each CmpStmt operand's def-chain looking for a LoadStmt
+    /// (possibly through a CopyStmt), and pulls the load's RHS pointer into the
+    /// given state via getAbstractValue.
+    ///
+    /// @param edge   The conditional IntraCFGEdge whose condition to analyze.
+    /// @param state  The predecessor state copy to populate (passed to isBranchFeasible).
+    /// Used by: mergeStatesFromPredecessors, updateStateOnPhi.
     void pullBranchConditionVars(const IntraCFGEdge* edge, AbstractState& state);
 
-    /// Pull the load-chain pointer (if any) for a given operand into the state.
+    /// Pull a single load-chain pointer into the given state.
+    ///
+    /// Given a CmpStmt operand id, traces back through its defining LoadStmt
+    /// (or CopyStmt→LoadStmt chain) to find the pointer being loaded from.
+    /// If that pointer's AddressValue is not already in the state, fetches it
+    /// via getAbstractValue and writes it into the state.
+    ///
+    /// Example: for `%x = load i32, i32* %ptr`, given opId = %x's NodeID,
+    /// this pulls %ptr's AddressValue into the state so that isCmpBranchFeasible
+    /// can do `as.load(%ptr_addr).meet_with(narrowed_value)`.
+    ///
+    /// @param opId   NodeID of the CmpStmt operand to trace.
+    /// @param state  The state to populate.
+    /// Used by: pullBranchConditionVars.
     void pullLoadChainPointerIntoState(NodeID opId, AbstractState& state);
 
 
