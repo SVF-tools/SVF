@@ -28,6 +28,8 @@
  */
 
 #include "AE/Core/AbstractState.h"
+#include "AE/Svfexe/AbstractInterpretation.h"
+#include "Util/Options.h"
 #include "Util/SVFUtil.h"
 #include "Util/Options.h"
 
@@ -101,37 +103,25 @@ AbstractState AbstractState::narrowing(const AbstractState& other)
 /// domain join with other, important! other widen this.
 void AbstractState::joinWith(const AbstractState& other)
 {
-    for (auto it = other._varToAbsVal.begin(); it != other._varToAbsVal.end(); ++it)
+    // In semi-sparse mode, skip ValVar (_varToAbsVal) merge — ValVars are
+    // pulled on demand from def-sites via getAbstractValue.
+    // In dense mode, merge everything.
+    if (Options::AESparsity() != AbstractInterpretation::AESparsity::SemiSparse)
     {
-        auto key = it->first;
-        auto oit = _varToAbsVal.find(key);
-        if (oit != _varToAbsVal.end())
+        for (auto it = other._varToAbsVal.begin(); it != other._varToAbsVal.end(); ++it)
         {
-            oit->second.join_with(it->second);
-        }
-        else
-        {
-            _varToAbsVal.emplace(key, it->second);
+            auto key = it->first;
+            auto oit = _varToAbsVal.find(key);
+            if (oit != _varToAbsVal.end())
+            {
+                oit->second.join_with(it->second);
+            }
+            else
+            {
+                _varToAbsVal.emplace(key, it->second);
+            }
         }
     }
-    for (auto it = other._addrToAbsVal.begin(); it != other._addrToAbsVal.end(); ++it)
-    {
-        auto key = it->first;
-        auto oit = _addrToAbsVal.find(key);
-        if (oit != _addrToAbsVal.end())
-        {
-            oit->second.join_with(it->second);
-        }
-        else
-        {
-            _addrToAbsVal.emplace(key, it->second);
-        }
-    }
-    _freedAddrs.insert(other._freedAddrs.begin(), other._freedAddrs.end());
-}
-
-void AbstractState::joinAddrOnly(const AbstractState& other)
-{
     for (auto it = other._addrToAbsVal.begin(); it != other._addrToAbsVal.end(); ++it)
     {
         auto key = it->first;
