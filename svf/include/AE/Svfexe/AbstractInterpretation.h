@@ -168,12 +168,8 @@ public:
     /// Get GEP object addresses, reading the pointer via getAbstractValue.
     AddressValue getGepObjAddrs(const SVFVar* pointer, IntervalValue offset, const ICFGNode* node);
 
-    /// Pull branch condition ValVars into the given abstract state
-    /// so that isBranchFeasible can operate correctly in semi-sparse mode.
+    /// Pull load-chain pointers into the state for isCmpBranchFeasible ObjVar narrowing.
     void pullBranchConditionVars(const IntraCFGEdge* edge, AbstractState& state);
-
-    /// Pull a single ValVar into the given state from its def-site.
-    void pullValVarIntoState(NodeID id, AbstractState& state);
 
     /// Pull the load-chain pointer (if any) for a given operand into the state.
     void pullLoadChainPointerIntoState(NodeID opId, AbstractState& state);
