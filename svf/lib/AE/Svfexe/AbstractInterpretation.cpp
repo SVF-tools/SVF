@@ -117,10 +117,14 @@ const AbstractValue& AbstractInterpretation::getAbstractValue(const ValVar* var,
         return as[id];
     }
 
-    // Dense mode: read from current node's state directly.
+    // Dense mode: read from current node's state.
+    // Check explicitly — do NOT use as[id] which would insert a default bottom
+    // entry via map::operator[]. An absent variable means "uninitialized" → top.
     if (!semiSparse)
     {
-        return as[id];
+        if (as.inVarToValTable(id) || as.inVarToAddrsTable(id))
+            return as[id];
+        // Fall through to final top fallback
     }
 
     // Semi-sparse mode: pull from def-site first, then check current state
