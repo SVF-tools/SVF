@@ -573,8 +573,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
             AbstractState tmpState = abstractTrace[pred];
             if (intraCfgEdge->getCondition())
             {
-                if (semiSparse)
-                    pullBranchConditionVars(intraCfgEdge, tmpState);
+                pullBranchConditionVars(intraCfgEdge, tmpState);
                 if (isBranchFeasible(intraCfgEdge, tmpState, pred))
                 {
                     intraWorkList.push_back(tmpState);
@@ -1476,45 +1475,27 @@ void AbstractInterpretation::updateStateOnSelect(const SelectStmt *select)
 
 void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
 {
-    bool semiSparse = Options::AESparsity() == AbstractInterpretation::AESparsity::SemiSparse;
     const ICFGNode* icfgNode = phi->getICFGNode();
     AbstractValue rhs;
     for (u32_t i = 0; i < phi->getOpVarNum(); i++)
     {
-        NodeID curId = phi->getOpVarID(i);
         const ICFGNode* opICFGNode = phi->getOpICFGNode(i);
         if (hasAbstractState(opICFGNode))
         {
             AbstractState tmpEs = abstractTrace[opICFGNode];
-            const ICFGEdge* edge =  icfg->getICFGEdge(opICFGNode, icfgNode, ICFGEdge::IntraCF);
+            const ICFGEdge* edge = icfg->getICFGEdge(opICFGNode, icfgNode, ICFGEdge::IntraCF);
 
-            // In semi-sparse mode, pull the phi operand from its def-site
-            const SVFVar* opVar = svfir->getSVFVar(curId);
-            AbstractValue opVal;
-            if (semiSparse)
-            {
-                if (const ValVar* valVar = SVFUtil::dyn_cast<ValVar>(opVar))
-                {
-                    if (!SVFUtil::isa<ObjVar>(valVar))
-                        opVal = getAbstractValue(valVar, icfgNode);
-                    else
-                        opVal = tmpEs[curId];
-                }
-                else
-                    opVal = tmpEs[curId];
-            }
-            else
-            {
-                opVal = tmpEs[curId];
-            }
+            // Read phi operand via getAbstractValue from the predecessor node.
+            // Dense: reads from abstractTrace[opICFGNode] (same as tmpEs).
+            // Semi-sparse: falls through to def-site if not in predecessor state.
+            AbstractValue opVal = getAbstractValue(phi->getOpVar(i), opICFGNode);
 
             if (edge)
             {
                 const IntraCFGEdge* intraEdge = SVFUtil::cast<IntraCFGEdge>(edge);
                 if (intraEdge->getCondition())
                 {
-                    if (semiSparse)
-                        pullBranchConditionVars(intraEdge, tmpEs);
+                    pullBranchConditionVars(intraEdge, tmpEs);
                     if (isBranchFeasible(intraEdge, tmpEs, opICFGNode))
                         rhs.join_with(opVal);
                 }
