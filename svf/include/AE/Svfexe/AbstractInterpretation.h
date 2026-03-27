@@ -216,42 +216,6 @@ public:
     /// Used by: updateStateOnGep, AbsExtAPI (getStrlen, handleMemcpy, handleMemset, strRead).
     AddressValue getGepObjAddrs(const SVFVar* pointer, IntervalValue offset, const ICFGNode* node);
 
-    // ===----------------------------------------------------------------------===//
-    //  Branch Condition Helpers
-    // ===----------------------------------------------------------------------===//
-
-    /// Pull load-chain pointers for branch condition variables into a state copy.
-    ///
-    /// Called before isBranchFeasible in mergeStatesFromPredecessors and
-    /// updateStateOnPhi.  isCmpBranchFeasible narrows CmpStmt operands (ValVars)
-    /// AND their backing ObjVars (e.g., narrowing *%ptr when %x = load %ptr is
-    /// refined).  To narrow the ObjVar it needs %ptr's AddressValue in the state.
-    ///
-    /// This function walks each CmpStmt operand's def-chain looking for a LoadStmt
-    /// (possibly through a CopyStmt), and pulls the load's RHS pointer into the
-    /// given state via getAbstractValue.
-    ///
-    /// @param edge   The conditional IntraCFGEdge whose condition to analyze.
-    /// @param state  The predecessor state copy to populate (passed to isBranchFeasible).
-    /// Used by: mergeStatesFromPredecessors, updateStateOnPhi.
-    void pullBranchConditionVars(const IntraCFGEdge* edge, AbstractState& state);
-
-    /// Pull a single load-chain pointer into the given state.
-    ///
-    /// Given a CmpStmt operand id, traces back through its defining LoadStmt
-    /// (or CopyStmt→LoadStmt chain) to find the pointer being loaded from.
-    /// If that pointer's AddressValue is not already in the state, fetches it
-    /// via getAbstractValue and writes it into the state.
-    ///
-    /// Example: for `%x = load i32, i32* %ptr`, given opId = %x's NodeID,
-    /// this pulls %ptr's AddressValue into the state so that isCmpBranchFeasible
-    /// can do `as.load(%ptr_addr).meet_with(narrowed_value)`.
-    ///
-    /// @param opId   NodeID of the CmpStmt operand to trace.
-    /// @param state  The state to populate.
-    /// Used by: pullBranchConditionVars.
-    void pullLoadChainPointerIntoState(NodeID opId, AbstractState& state);
-
 
 private:
     /// Initialize abstract state for the global ICFG node and process global statements

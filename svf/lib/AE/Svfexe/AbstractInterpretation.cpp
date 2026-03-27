@@ -382,69 +382,6 @@ void AbstractInterpretation::propagateObjVarAbsVal(const ObjVar* var, const ICFG
 }
 
 
-/// Pull load-chain pointers into the given abstract state so that
-/// isCmpBranchFeasible can narrow ObjVars through load pointers.
-///
-/// Example: `if (a > 5)` where `%0 = load i32, i32* %a.addr; icmp sgt %0, 5`
-/// isCmpBranchFeasible narrows %0, but also needs to narrow *%a.addr (the ObjVar).
-/// For that it needs %a.addr's AddressValue in the state. This function traces
-/// the load chain (possibly through a CopyStmt) and pulls the pointer ValVar.
-void AbstractInterpretation::pullLoadChainPointerIntoState(NodeID opId, AbstractState& state)
-{
-    auto pullIfMissing = [&](NodeID id) {
-        if (state.inVarToValTable(id) || state.inVarToAddrsTable(id))
-            return;
-        const SVFVar* var = svfir->getSVFVar(id);
-        if (const ValVar* valVar = SVFUtil::dyn_cast<ValVar>(var))
-        {
-            if (!SVFUtil::isa<ObjVar>(var))
-                state[id] = getAbstractValue(valVar, valVar->getICFGNode());
-        }
-    };
-
-    const SVFVar* loadVar = svfir->getSVFVar(opId);
-    if (!loadVar->getInEdges().empty())
-    {
-        SVFStmt* inStmt = *loadVar->getInEdges().begin();
-        if (const LoadStmt* loadStmt = SVFUtil::dyn_cast<LoadStmt>(inStmt))
-        {
-            pullIfMissing(loadStmt->getRHSVarID());
-        }
-        else if (const CopyStmt* copyStmt = SVFUtil::dyn_cast<CopyStmt>(inStmt))
-        {
-            const SVFVar* copyRHS = svfir->getSVFVar(copyStmt->getRHSVarID());
-            if (!copyRHS->getInEdges().empty())
-            {
-                SVFStmt* inStmt2 = *copyRHS->getInEdges().begin();
-                if (const LoadStmt* loadStmt2 = SVFUtil::dyn_cast<LoadStmt>(inStmt2))
-                    pullIfMissing(loadStmt2->getRHSVarID());
-            }
-        }
-    }
-}
-
-/// Pull load-chain pointers for branch condition vars into the state.
-/// ValVars (condition, CmpStmt operands, result) are handled by
-/// isCmpBranchFeasible via getAbstractValue — only pointers need pulling here.
-void AbstractInterpretation::pullBranchConditionVars(const IntraCFGEdge* edge,
-        AbstractState& state)
-{
-    const SVFVar* condVar = edge->getCondition();
-    if (!condVar) return;
-
-    pullLoadChainPointerIntoState(condVar->getId(), state);
-
-    if (!condVar->getInEdges().empty())
-    {
-        SVFStmt* condDefStmt = *condVar->getInEdges().begin();
-        if (const CmpStmt* cmpStmt = SVFUtil::dyn_cast<CmpStmt>(condDefStmt))
-        {
-            pullLoadChainPointerIntoState(cmpStmt->getOpVarID(0), state);
-            pullLoadChainPointerIntoState(cmpStmt->getOpVarID(1), state);
-        }
-    }
-}
-
 /// Destructor
 AbstractInterpretation::~AbstractInterpretation()
 {
@@ -570,11 +507,8 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
             AbstractState tmpState = abstractTrace[pred];
             if (intraCfgEdge->getCondition())
             {
-                pullBranchConditionVars(intraCfgEdge, tmpState);
                 if (isBranchFeasible(intraCfgEdge, tmpState, pred))
-                {
                     intraWorkList.push_back(tmpState);
-                }
             }
             else
             {
@@ -1482,7 +1416,6 @@ void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
                 const IntraCFGEdge* intraEdge = SVFUtil::cast<IntraCFGEdge>(edge);
                 if (intraEdge->getCondition())
                 {
-                    pullBranchConditionVars(intraEdge, tmpEs);
                     if (isBranchFeasible(intraEdge, tmpEs, opICFGNode))
                         rhs.join_with(opVal);
                 }
