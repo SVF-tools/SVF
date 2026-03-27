@@ -275,8 +275,6 @@ public:
     /// domain join with other, important! other widen this.
     void joinWith(const AbstractState&other);
 
-    /// Join only the addr-to-value table (ObjVar state) from other, ignoring var-to-value (ValVar).
-
     /// domain meet with other, important! other widen this.
     void meetWith(const AbstractState&other);
 
