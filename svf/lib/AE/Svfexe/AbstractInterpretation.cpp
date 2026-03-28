@@ -1462,28 +1462,15 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
 void AbstractInterpretation::updateStateOnLoad(const LoadStmt *load)
 {
     const ICFGNode* node = load->getICFGNode();
-    // Step 1: get pointer's address set (ValVar, may be at def-site in semi-sparse)
-    const AbstractValue& ptrVal = svfStateMgr->getAbstractValue(load->getRHSVar(), node);
-    // Step 2: load from each addr (ObjVar, always dense)
-    AbstractState& as = svfStateMgr->getAbstractState(node);
-    AbstractValue res;
-    for (auto addr : ptrVal.getAddrs())
-        res.join_with(as.load(addr));
-    // Step 3: write result to lhs (ValVar)
-    svfStateMgr->updateAbstractValue(load->getLHSVar(), res, node);
+    svfStateMgr->updateAbstractValue(load->getLHSVar(),
+        svfStateMgr->loadValue(load->getRHSVar(), node), node);
 }
 
 void AbstractInterpretation::updateStateOnStore(const StoreStmt *store)
 {
     const ICFGNode* node = store->getICFGNode();
-    // Step 1: get pointer's address set (ValVar)
-    const AbstractValue& ptrVal = svfStateMgr->getAbstractValue(store->getLHSVar(), node);
-    // Step 2: get rhs value (ValVar)
-    const AbstractValue& rhsVal = svfStateMgr->getAbstractValue(store->getRHSVar(), node);
-    // Step 3: store to each addr (ObjVar, always dense)
-    AbstractState& as = svfStateMgr->getAbstractState(node);
-    for (auto addr : ptrVal.getAddrs())
-        as.store(addr, rhsVal);
+    svfStateMgr->storeValue(store->getLHSVar(),
+        svfStateMgr->getAbstractValue(store->getRHSVar(), node), node);
 }
 
 void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
