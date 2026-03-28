@@ -31,6 +31,7 @@
 #pragma once
 #include "AE/Core/AbstractState.h"
 #include "AE/Core/ICFGWTO.h"
+#include "AE/Svfexe/AbstractStateManager.h"
 #include "AE/Svfexe/AEDetector.h"
 #include "AE/Svfexe/PreAnalysis.h"
 #include "AE/Svfexe/AbsExtAPI.h"
@@ -123,114 +124,46 @@ public:
     }
 
     // ===----------------------------------------------------------------------===//
-    //  Abstract Value Access API
-    //
-    //  Unified entry points for reading/writing abstract values.
-    //  These encapsulate the dense vs. semi-sparse lookup strategy:
-    //    - Dense:       reads from abstractTrace[node] directly.
-    //    - Semi-sparse: reads from the current node's state if present,
-    //                   otherwise pulls from the variable's def-site.
-    //  Callers (updateStateOnXxx, AEDetector, AbsExtAPI) should ONLY use
-    //  these APIs — never access abstractTrace[node][id] directly.
+    //  State Management — delegated to AbstractStateManager (svfStateMgr)
     // ===----------------------------------------------------------------------===//
 
-    /// Read a top-level variable's abstract value.
-    /// @param var   The ValVar to look up.
-    /// @param node  The ICFG node providing context (dense: reads this node's
-    ///              state; semi-sparse: checks this state first, then def-site).
-    /// @return      Reference to the abstract value.  Returns top if the variable
-    ///              is absent from all reachable states (uninitialized).
-    const AbstractValue& getAbstractValue(const ValVar* var, const ICFGNode* node);
+    /// Get the state manager instance.
+    AbstractStateManager& getStateMgr() { return *svfStateMgr; }
 
-    /// Read an address-taken variable's content via virtual-address load.
-    /// @param var   The ObjVar whose stored content is requested.
-    /// @param node  The ICFG node whose state to load from.
-    /// @return      Reference to the loaded abstract value (from _addrToAbsVal).
-    const AbstractValue& getAbstractValue(const ObjVar* var, const ICFGNode* node);
+    /// Delegate to svfStateMgr. See AbstractStateManager.h for full documentation.
+    const AbstractValue& getAbstractValue(const ValVar* var, const ICFGNode* node)
+    { return svfStateMgr->getAbstractValue(var, node); }
+    const AbstractValue& getAbstractValue(const ObjVar* var, const ICFGNode* node)
+    { return svfStateMgr->getAbstractValue(var, node); }
+    const AbstractValue& getAbstractValue(const SVFVar* var, const ICFGNode* node)
+    { return svfStateMgr->getAbstractValue(var, node); }
 
-    /// Read any SVFVar — dispatches to the ValVar or ObjVar overload.
-    /// NOTE: checks ObjVar first since ObjVar inherits from ValVar.
-    const AbstractValue& getAbstractValue(const SVFVar* var, const ICFGNode* node);
+    void updateAbstractValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node)
+    { svfStateMgr->updateAbstractValue(var, val, node); }
+    void updateAbstractValue(const ObjVar* var, const AbstractValue& val, const ICFGNode* node)
+    { svfStateMgr->updateAbstractValue(var, val, node); }
+    void updateAbstractValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node)
+    { svfStateMgr->updateAbstractValue(var, val, node); }
 
-    /// Write a top-level variable's abstract value into abstractTrace[node].
-    void updateAbstractValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node);
+    AbstractState& getAbstractState(const ICFGNode* node)
+    { return svfStateMgr->getAbstractState(node); }
+    bool hasAbstractState(const ICFGNode* node)
+    { return svfStateMgr->hasAbstractState(node); }
 
-    /// Write an address-taken variable's content via virtual-address store.
-    void updateAbstractValue(const ObjVar* var, const AbstractValue& val, const ICFGNode* node);
+    IntervalValue getGepElementIndex(const GepStmt* gep, const ICFGNode* node)
+    { return svfStateMgr->getGepElementIndex(gep, node); }
+    IntervalValue getGepByteOffset(const GepStmt* gep, const ICFGNode* node)
+    { return svfStateMgr->getGepByteOffset(gep, node); }
+    AddressValue getGepObjAddrs(const SVFVar* pointer, IntervalValue offset, const ICFGNode* node)
+    { return svfStateMgr->getGepObjAddrs(pointer, offset, node); }
 
-    /// Write any SVFVar — dispatches to the ValVar or ObjVar overload.
-    void updateAbstractValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node);
+    const SVFType* getPointeeElement(const SVFVar* var, const ICFGNode* node)
+    { return svfStateMgr->getPointeeElement(var, node); }
+    u32_t getAllocaInstByteSize(const AddrStmt* addr, const ICFGNode* node)
+    { return svfStateMgr->getAllocaInstByteSize(addr, node); }
 
-    /// Propagate an ObjVar's abstract value from defSite to all its
-    /// use-site ICFGNodes (determined by PreAnalysis SVFG info).
+    /// Propagate an ObjVar's abstract value from defSite to all its use-sites.
     void propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite);
-
-    /// Retrieve the full abstract state for a given ICFG node.
-    /// Asserts if no trace exists for the node.
-    AbstractState& getAbstractState(const ICFGNode* node);
-
-    /// Check if an abstract state exists in the trace for a given ICFG node.
-    bool hasAbstractState(const ICFGNode* node);
-
-    /// Retrieve abstract state filtered to specific top-level variables.
-    void getAbstractState(const Set<const ValVar*>& vars, AbstractState& result, const ICFGNode* node);
-
-    /// Retrieve abstract state filtered to specific address-taken variables.
-    void getAbstractState(const Set<const ObjVar*>& vars, AbstractState& result, const ICFGNode* node);
-
-    /// Retrieve abstract state filtered to specific SVF variables.
-    void getAbstractState(const Set<const SVFVar*>& vars, AbstractState& result, const ICFGNode* node);
-
-    // ===----------------------------------------------------------------------===//
-    //  GEP Helpers (lifted from AbstractState to use getAbstractValue)
-    //
-    //  These replace AbstractState::getElementIndex / getByteOffset / getGepObjAddrs
-    //  which internally used (*this)[varId] — that doesn't work in semi-sparse mode
-    //  where ValVars may not be in the current node's state.
-    // ===----------------------------------------------------------------------===//
-
-    /// Compute the flattened element index for a GepStmt.
-    /// Reads variable-offset indices via getAbstractValue; constant offsets are
-    /// resolved statically.  Returns an IntervalValue clamped to [0, MaxFieldLimit].
-    /// @param gep   The GepStmt to evaluate.
-    /// @param node  The ICFG node providing context for index variable lookup.
-    /// Used by: updateStateOnGep.
-    IntervalValue getGepElementIndex(const GepStmt* gep, const ICFGNode* node);
-
-    /// Compute the byte offset for a GepStmt.
-    /// Similar to getGepElementIndex but produces byte-level offsets, handling
-    /// array element sizes, pointer element sizes, and struct field offsets.
-    /// @param gep   The GepStmt to evaluate.
-    /// @param node  The ICFG node providing context for index variable lookup.
-    /// Used by: AEDetector (getAccessOffset, updateGepObjOffsetFromBase).
-    IntervalValue getGepByteOffset(const GepStmt* gep, const ICFGNode* node);
-
-    /// Compute GEP object addresses for a pointer at a given element offset.
-    /// Reads the pointer's AddressValue via getAbstractValue, then resolves each
-    /// base object to its GepObjVar at the specified offset.  Initializes the
-    /// GepObjVar's virtual address in the state as a side-effect.
-    /// @param pointer  The pointer SVFVar whose address set to expand.
-    /// @param offset   The element offset interval (from getGepElementIndex).
-    /// @param node     The ICFG node providing context.
-    /// @return         The set of virtual addresses for the GEP result objects.
-    /// Used by: updateStateOnGep, AbsExtAPI (getStrlen, handleMemcpy, handleMemset, strRead).
-    AddressValue getGepObjAddrs(const SVFVar* pointer, IntervalValue offset, const ICFGNode* node);
-
-    /// Get the pointee type for a pointer variable by looking up its address set.
-    /// @param var   The pointer SVFVar.
-    /// @param node  The ICFG node providing context for getAbstractValue.
-    /// @return      The pointee SVFType, or nullptr if not resolvable.
-    /// Used by: AbsExtAPI (getElementSize, snprintf handler).
-    const SVFType* getPointeeElement(const SVFVar* var, const ICFGNode* node);
-
-    /// Get the byte size of a stack allocation (alloca instruction).
-    /// For constant-size allocations returns the size directly.
-    /// For variable-length arrays, reads the size variables via getAbstractValue.
-    /// @param addr  The AddrStmt representing the allocation.
-    /// @param node  The ICFG node providing context.
-    /// @return      The allocation size in bytes.
-    /// Used by: AEDetector (buffer size calculation), AbsExtAPI (getStrlen).
-    u32_t getAllocaInstByteSize(const AddrStmt* addr, const ICFGNode* node);
 
 private:
     /// Initialize abstract state for the global ICFG node and process global statements
@@ -323,7 +256,7 @@ private:
     // there data should be shared with subclasses
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
 
-    Map<const ICFGNode*, AbstractState> abstractTrace; // abstract states for nodes
+    AbstractStateManager* svfStateMgr{nullptr}; // state management (owns abstractTrace)
     Set<const ICFGNode*> allAnalyzedNodes; // All nodes ever analyzed (across all entry points)
     std::string moduleName;
 
