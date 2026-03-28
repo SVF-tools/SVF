@@ -372,6 +372,50 @@ AddressValue AbstractInterpretation::getGepObjAddrs(const SVFVar* pointer, Inter
     return gepAddrs;
 }
 
+const SVFType* AbstractInterpretation::getPointeeElement(const SVFVar* var, const ICFGNode* node)
+{
+    const AbstractValue& ptrVal = getAbstractValue(var, node);
+    if (!ptrVal.isAddr())
+        return nullptr;
+    for (auto addr : ptrVal.getAddrs())
+    {
+        NodeID objId = getAbstractState(node).getIDFromAddr(addr);
+        if (objId == 0) // nullptr skip
+            continue;
+        return svfir->getBaseObject(objId)->getType();
+    }
+    return nullptr;
+}
+
+u32_t AbstractInterpretation::getAllocaInstByteSize(const AddrStmt* addr, const ICFGNode* node)
+{
+    if (const ObjVar* objvar = SVFUtil::dyn_cast<ObjVar>(addr->getRHSVar()))
+    {
+        if (svfir->getBaseObject(objvar->getId())->isConstantByteSize())
+        {
+            return svfir->getBaseObject(objvar->getId())->getByteSizeOfObj();
+        }
+        else
+        {
+            const std::vector<SVFVar*>& sizes = addr->getArrSize();
+            u32_t elementSize = 1;
+            u64_t res = elementSize;
+            for (const SVFVar* value : sizes)
+            {
+                const AbstractValue& sizeVal = getAbstractValue(value, node);
+                IntervalValue itv = sizeVal.getInterval();
+                if (itv.isBottom())
+                    itv = IntervalValue(Options::MaxFieldLimit());
+                res = res * itv.ub().getIntNumeral() > Options::MaxFieldLimit()
+                      ? Options::MaxFieldLimit() : res * itv.ub().getIntNumeral();
+            }
+            return (u32_t)res;
+        }
+    }
+    assert(false && "Addr rhs value is not ObjVar");
+    abort();
+}
+
 void AbstractInterpretation::propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite)
 {
     const AbstractValue& val = getAbstractValue(var, defSite);

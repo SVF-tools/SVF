@@ -832,10 +832,15 @@ public:
         as[2] = IntervalValue(2, 7);
         as[3] = AddressValue(0x7f000007);
         as[4] = AddressValue(0x7f000008);
-        as.storeValue(3, as[1]);
-        as.storeValue(4, as[2]);
+        // store: *as[3] = as[1], *as[4] = as[2]
+        for (auto addr : as[3].getAddrs()) as.store(addr, as[1]);
+        for (auto addr : as[4].getAddrs()) as.store(addr, as[2]);
         as.printAbstractState();
-        assert(as.loadValue(3).equals(as[1]) && as.loadValue(4).equals(as[2]));
+        // load: verify *as[3] == as[1] && *as[4] == as[2]
+        AbstractValue v3, v4;
+        for (auto addr : as[3].getAddrs()) v3.join_with(as.load(addr));
+        for (auto addr : as[4].getAddrs()) v4.join_with(as.load(addr));
+        assert(v3.equals(as[1]) && v4.equals(as[2]));
     }
 };
 
