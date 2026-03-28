@@ -123,44 +123,8 @@ public:
         return svfir->getSVFVar(varId);
     }
 
-    // ===----------------------------------------------------------------------===//
-    //  State Management — delegated to AbstractStateManager (svfStateMgr)
-    // ===----------------------------------------------------------------------===//
-
     /// Get the state manager instance.
-    AbstractStateManager& getStateMgr() { return *svfStateMgr; }
-
-    /// Delegate to svfStateMgr. See AbstractStateManager.h for full documentation.
-    const AbstractValue& getAbstractValue(const ValVar* var, const ICFGNode* node)
-    { return svfStateMgr->getAbstractValue(var, node); }
-    const AbstractValue& getAbstractValue(const ObjVar* var, const ICFGNode* node)
-    { return svfStateMgr->getAbstractValue(var, node); }
-    const AbstractValue& getAbstractValue(const SVFVar* var, const ICFGNode* node)
-    { return svfStateMgr->getAbstractValue(var, node); }
-
-    void updateAbstractValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node)
-    { svfStateMgr->updateAbstractValue(var, val, node); }
-    void updateAbstractValue(const ObjVar* var, const AbstractValue& val, const ICFGNode* node)
-    { svfStateMgr->updateAbstractValue(var, val, node); }
-    void updateAbstractValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node)
-    { svfStateMgr->updateAbstractValue(var, val, node); }
-
-    AbstractState& getAbstractState(const ICFGNode* node)
-    { return svfStateMgr->getAbstractState(node); }
-    bool hasAbstractState(const ICFGNode* node)
-    { return svfStateMgr->hasAbstractState(node); }
-
-    IntervalValue getGepElementIndex(const GepStmt* gep, const ICFGNode* node)
-    { return svfStateMgr->getGepElementIndex(gep, node); }
-    IntervalValue getGepByteOffset(const GepStmt* gep, const ICFGNode* node)
-    { return svfStateMgr->getGepByteOffset(gep, node); }
-    AddressValue getGepObjAddrs(const SVFVar* pointer, IntervalValue offset, const ICFGNode* node)
-    { return svfStateMgr->getGepObjAddrs(pointer, offset, node); }
-
-    const SVFType* getPointeeElement(const SVFVar* var, const ICFGNode* node)
-    { return svfStateMgr->getPointeeElement(var, node); }
-    u32_t getAllocaInstByteSize(const AddrStmt* addr, const ICFGNode* node)
-    { return svfStateMgr->getAllocaInstByteSize(addr, node); }
+    AbstractStateManager* getStateMgr() { return svfStateMgr; }
 
     /// Propagate an ObjVar's abstract value from defSite to all its use-sites.
     void propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite);

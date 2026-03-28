@@ -34,6 +34,7 @@ namespace SVF
 {
 
 class AbstractInterpretation;
+class AbstractStateManager;
 
 /**
  * @class AEDetector
@@ -78,7 +79,7 @@ public:
      * @param as Reference to the abstract state.
      * @param node Pointer to the ICFG node.
      */
-    virtual void detect(AbstractInterpretation& ae, const ICFGNode* node) = 0;
+    virtual void detect(AbstractStateManager& mgr, const ICFGNode* node) = 0;
 
     /**
      * @brief Pure virtual function for handling stub external API calls. (e.g. UNSAFE_BUFACCESS)
@@ -180,7 +181,7 @@ public:
      * @param as Reference to the abstract state.
      * @param node Pointer to the ICFG node.
      */
-    void detect(AbstractInterpretation& ae, const ICFGNode*) override;
+    void detect(AbstractStateManager& mgr, const ICFGNode*) override;
 
 
     /**
@@ -351,7 +352,7 @@ public:
      * @param as Reference to the abstract state.
      * @param node Pointer to the ICFG node.
      */
-    void detect(AbstractInterpretation& ae, const ICFGNode* node) override;
+    void detect(AbstractStateManager& mgr, const ICFGNode* node) override;
 
     /**
      * @brief Handles external API calls related to nullptr dereferences.
