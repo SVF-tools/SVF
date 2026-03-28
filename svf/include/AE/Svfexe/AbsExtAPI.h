@@ -33,8 +33,8 @@
 namespace SVF
 {
 
-// Forward declaration of AbstractInterpretation class
 class AbstractInterpretation;
+class AbstractStateManager;
 
 /**
  * @class AbsExtAPI
@@ -53,7 +53,7 @@ public:
      * @brief Constructor for AbsExtAPI.
      * @param ae Reference to the AbstractInterpretation instance.
      */
-    AbsExtAPI(AbstractInterpretation& ae);
+    AbsExtAPI(AbstractStateManager* mgr);
 
     /**
      * @brief Initializes the external function map.
@@ -114,7 +114,7 @@ public:
     Set<const CallICFGNode*> checkpoints; // for CI check
 
 protected:
-    AbstractInterpretation& ae; ///< Reference to the AbstractInterpretation instance.
+    AbstractStateManager* mgr; ///< Pointer to the state manager.
     SVFIR* svfir; ///< Pointer to the SVF intermediate representation.
     ICFG* icfg; ///< Pointer to the interprocedural control flow graph.
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map; ///< Map of function names to handlers.
