@@ -103,6 +103,24 @@ public:
     AddressValue getGepObjAddrs(const SVFVar* pointer, IntervalValue offset, const ICFGNode* node);
 
     // ===----------------------------------------------------------------------===//
+    //  Load / Store through pointer (combines ValVar lookup + ObjVar access)
+    // ===----------------------------------------------------------------------===//
+
+    /// Load value through a pointer: resolve pointer's address set via
+    /// getAbstractValue (sparsity-aware), then load from each ObjVar address.
+    /// @param pointer  The pointer SVFVar (ValVar).
+    /// @param node     The ICFG node providing context.
+    /// @return         The joined abstract value from all pointed-to objects.
+    AbstractValue loadValue(const SVFVar* pointer, const ICFGNode* node);
+
+    /// Store value through a pointer: resolve pointer's address set via
+    /// getAbstractValue (sparsity-aware), then store to each ObjVar address.
+    /// @param pointer  The pointer SVFVar (ValVar).
+    /// @param val      The value to store.
+    /// @param node     The ICFG node providing context.
+    void storeValue(const SVFVar* pointer, const AbstractValue& val, const ICFGNode* node);
+
+    // ===----------------------------------------------------------------------===//
     //  Type / Size Helpers
     // ===----------------------------------------------------------------------===//
 

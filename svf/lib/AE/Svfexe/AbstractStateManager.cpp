@@ -351,6 +351,28 @@ AddressValue AbstractStateManager::getGepObjAddrs(const SVFVar* pointer, Interva
 }
 
 // ===----------------------------------------------------------------------===//
+//  Load / Store through pointer
+// ===----------------------------------------------------------------------===//
+
+AbstractValue AbstractStateManager::loadValue(const SVFVar* pointer, const ICFGNode* node)
+{
+    const AbstractValue& ptrVal = getAbstractValue(pointer, node);
+    AbstractState& as = getAbstractState(node);
+    AbstractValue res;
+    for (auto addr : ptrVal.getAddrs())
+        res.join_with(as.load(addr));
+    return res;
+}
+
+void AbstractStateManager::storeValue(const SVFVar* pointer, const AbstractValue& val, const ICFGNode* node)
+{
+    const AbstractValue& ptrVal = getAbstractValue(pointer, node);
+    AbstractState& as = getAbstractState(node);
+    for (auto addr : ptrVal.getAddrs())
+        as.store(addr, val);
+}
+
+// ===----------------------------------------------------------------------===//
 //  Type / Size Helpers
 // ===----------------------------------------------------------------------===//
 
