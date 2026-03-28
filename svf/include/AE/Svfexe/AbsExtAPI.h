@@ -77,7 +77,7 @@ public:
     // --- Shared primitives used by string/memory handlers ---
 
     /// Get the byte size of each element for a pointer/array variable.
-    u32_t getElementSize(AbstractState& as, const SVFVar* var);
+    u32_t getElementSize(const SVFVar* var, const ICFGNode* node);
 
     /// Check if an interval length is usable (not bottom, not unbounded).
     static bool isValidLength(const IntervalValue& len);

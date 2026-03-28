@@ -202,7 +202,6 @@ void AbsExtAPI::initExtFunMap()
     auto sse_snprintf = [&](const CallICFGNode *callNode)
     {
         if (callNode->arg_size() < 2) return;
-        AbstractState&as = getAbstractState(callNode);
         // get elem size of arg2
         u32_t elemSize = 1;
         if (callNode->getArgument(2)->getType()->isArrayTy())
@@ -212,15 +211,7 @@ void AbsExtAPI::initExtFunMap()
         }
         else if (callNode->getArgument(2)->getType()->isPointerTy())
         {
-            // Ensure pointer value is in state for getPointeeElement lookup
-            const SVFVar* arg2 = callNode->getArgument(2);
-            const AbstractValue& ptrVal = ae.getAbstractValue(arg2, callNode);
-            if (ptrVal.isAddr())
-            {
-                // Write into state so getPointeeElement can find it
-                as[arg2->getId()] = ptrVal;
-            }
-            const SVFType* elemType = as.getPointeeElement(arg2->getId());
+            const SVFType* elemType = ae.getPointeeElement(callNode->getArgument(2), callNode);
             if (!elemType) return;
             elemSize = elemType->getByteSize();
         }
@@ -260,7 +251,7 @@ void AbsExtAPI::initExtFunMap()
         AbstractState& as = getAbstractState(callNode);
         const SVFVar* retVar = callNode->getRetICFGNode()->getActualRet();
         IntervalValue byteLen = getStrlen(as, callNode->getArgument(0), callNode);
-        u32_t elemSize = getElementSize(as, callNode->getArgument(0));
+        u32_t elemSize = getElementSize(callNode->getArgument(0), callNode);
         if (byteLen.is_numeral() && elemSize > 1)
             ae.updateAbstractValue(retVar, IntervalValue(byteLen.getIntNumeral() / (s64_t)elemSize), callNode);
         else
@@ -476,7 +467,7 @@ void AbsExtAPI::handleExtAPI(const CallICFGNode *call)
 
 /// Get the byte size of each element for a pointer/array variable.
 /// Shared by handleMemcpy, handleMemset, and getStrlen to avoid duplication.
-u32_t AbsExtAPI::getElementSize(AbstractState& as, const SVFVar* var)
+u32_t AbsExtAPI::getElementSize(const SVFVar* var, const ICFGNode* node)
 {
     if (var->getType()->isArrayTy())
     {
@@ -485,7 +476,7 @@ u32_t AbsExtAPI::getElementSize(AbstractState& as, const SVFVar* var)
     }
     if (var->getType()->isPointerTy())
     {
-        if (const SVFType* elemType = as.getPointeeElement(var->getId()))
+        if (const SVFType* elemType = ae.getPointeeElement(var, node))
         {
             if (elemType->isArrayTy())
                 return SVFUtil::dyn_cast<SVFArrayType>(elemType)
@@ -528,7 +519,7 @@ IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValu
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
                 {
-                    dst_size = as.getAllocaInstByteSize(addrStmt);
+                    dst_size = ae.getAllocaInstByteSize(addrStmt, node);
                 }
             }
         }
@@ -557,7 +548,7 @@ IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValu
     }
 
     // Step 3: scale by element size and return
-    u32_t elemSize = getElementSize(as, strValue);
+    u32_t elemSize = getElementSize(strValue, node);
     if (len == 0)
         return IntervalValue((s64_t)0, (s64_t)Options::MaxFieldLimit());
     return IntervalValue(len * elemSize);
@@ -612,7 +603,7 @@ void AbsExtAPI::handleMemcpy(AbstractState& as, const SVF::SVFVar *dst,
 {
     if (!isValidLength(len)) return;
 
-    u32_t elemSize = getElementSize(as, dst);
+    u32_t elemSize = getElementSize(dst, node);
     u32_t size = std::min((u32_t)Options::MaxFieldLimit(),
                           (u32_t)len.lb().getIntNumeral());
     u32_t range_val = size / elemSize;
@@ -650,7 +641,6 @@ void AbsExtAPI::handleMemset(AbstractState& as, const SVF::SVFVar *dst,
 {
     if (!isValidLength(len)) return;
 
-    u32_t dstId = dst->getId();
     u32_t elemSize = 1;
     if (dst->getType()->isArrayTy())
     {
@@ -659,7 +649,7 @@ void AbsExtAPI::handleMemset(AbstractState& as, const SVF::SVFVar *dst,
     }
     else if (dst->getType()->isPointerTy())
     {
-        if (const SVFType* elemType = as.getPointeeElement(dstId))
+        if (const SVFType* elemType = ae.getPointeeElement(dst, node))
             elemSize = elemType->getByteSize();
         else
             elemSize = 1;

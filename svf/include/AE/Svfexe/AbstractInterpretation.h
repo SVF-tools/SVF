@@ -216,6 +216,21 @@ public:
     /// Used by: updateStateOnGep, AbsExtAPI (getStrlen, handleMemcpy, handleMemset, strRead).
     AddressValue getGepObjAddrs(const SVFVar* pointer, IntervalValue offset, const ICFGNode* node);
 
+    /// Get the pointee type for a pointer variable by looking up its address set.
+    /// @param var   The pointer SVFVar.
+    /// @param node  The ICFG node providing context for getAbstractValue.
+    /// @return      The pointee SVFType, or nullptr if not resolvable.
+    /// Used by: AbsExtAPI (getElementSize, snprintf handler).
+    const SVFType* getPointeeElement(const SVFVar* var, const ICFGNode* node);
+
+    /// Get the byte size of a stack allocation (alloca instruction).
+    /// For constant-size allocations returns the size directly.
+    /// For variable-length arrays, reads the size variables via getAbstractValue.
+    /// @param addr  The AddrStmt representing the allocation.
+    /// @param node  The ICFG node providing context.
+    /// @return      The allocation size in bytes.
+    /// Used by: AEDetector (buffer size calculation), AbsExtAPI (getStrlen).
+    u32_t getAllocaInstByteSize(const AddrStmt* addr, const ICFGNode* node);
 
 private:
     /// Initialize abstract state for the global ICFG node and process global statements

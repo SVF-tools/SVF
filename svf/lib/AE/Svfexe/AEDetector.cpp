@@ -77,7 +77,7 @@ void BufOverflowDetector::detect(AbstractInterpretation& ae, const ICFGNode* nod
                         {
                             if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
                             {
-                                size = as.getAllocaInstByteSize(addrStmt);
+                                size = AbstractInterpretation::getAEInstance().getAllocaInstByteSize(addrStmt, node);
                             }
                         }
                     }
@@ -485,7 +485,7 @@ bool BufOverflowDetector::canSafelyAccessMemory(AbstractState& as, const SVF::SV
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
                 {
-                    size = as.getAllocaInstByteSize(addrStmt);
+                    size = AbstractInterpretation::getAEInstance().getAllocaInstByteSize(addrStmt, node);
                 }
             }
         }
