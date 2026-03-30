@@ -111,8 +111,7 @@ void AbsExtAPI::initExtFunMap()
     auto svf_print = [&](const CallICFGNode* callNode)
     {
         if (callNode->arg_size() < 2) return;
-        AbstractState&as = getAbstractState(callNode);
-        std::string text = strRead(as, callNode->getArgument(1), callNode);
+        std::string text = strRead(callNode->getArgument(1), callNode);
         IntervalValue itv = mgr->getAbstractValue(callNode->getArgument(0), callNode).getInterval();
         std::cout << "Text: " << text <<", Value: " << callNode->getArgument(0)->toString()
                   << ", PrintVal: " << itv.toString() << ", Loc:" << callNode->getSourceLoc() << std::endl;
@@ -211,9 +210,7 @@ void AbsExtAPI::initExtFunMap()
         }
         else if (callNode->getArgument(2)->getType()->isPointerTy())
         {
-            const SVFType* elemType = mgr->getPointeeElement(callNode->getArgument(2), callNode);
-            if (!elemType) return;
-            elemSize = elemType->getByteSize();
+            elemSize = 1;
         }
         else
         {
@@ -248,10 +245,9 @@ void AbsExtAPI::initExtFunMap()
     auto sse_strlen = [&](const CallICFGNode *callNode)
     {
         if (callNode->arg_size() < 1) return;
-        AbstractState& as = getAbstractState(callNode);
         const SVFVar* retVar = callNode->getRetICFGNode()->getActualRet();
-        IntervalValue byteLen = getStrlen(as, callNode->getArgument(0), callNode);
-        u32_t elemSize = getElementSize(callNode->getArgument(0), callNode);
+        IntervalValue byteLen = getStrlen(callNode->getArgument(0), callNode);
+        u32_t elemSize = getElementSize(callNode->getArgument(0));
         if (byteLen.is_numeral() && elemSize > 1)
             mgr->updateAbstractValue(retVar, IntervalValue(byteLen.getIntNumeral() / (s64_t)elemSize), callNode);
         else
@@ -361,17 +357,16 @@ void AbsExtAPI::checkPointAllSet()
     }
 }
 
-std::string AbsExtAPI::strRead(AbstractState& as, const SVFVar* rhs, const ICFGNode* node)
+std::string AbsExtAPI::strRead(const ValVar* rhs, const ICFGNode* node)
 {
-    // sse read string nodeID->string
+    AbstractState& as = getAbstractState(node);
     std::string str0;
 
     for (u32_t index = 0; index < Options::MaxFieldLimit(); index++)
     {
-        // dead loop for string and break if there's a \0. If no \0, it will throw err.
         if (!mgr->getAbstractValue(rhs, node).isAddr()) continue;
         AbstractValue expr0 =
-            mgr->getGepObjAddrs(rhs, IntervalValue(index), node);
+            mgr->getGepObjAddrs(rhs, IntervalValue(index));
 
         AbstractValue val;
         for (const auto &addr: expr0.getAddrs())
@@ -393,7 +388,6 @@ std::string AbsExtAPI::strRead(AbstractState& as, const SVFVar* rhs, const ICFGN
 
 void AbsExtAPI::handleExtAPI(const CallICFGNode *call)
 {
-    AbstractState& as = getAbstractState(call);
     const FunObjVar *fun = call->getCalledFunction();
     assert(fun && "FunObjVar* is nullptr");
     ExtAPIType extType = UNCLASSIFIED;
@@ -432,13 +426,13 @@ void AbsExtAPI::handleExtAPI(const CallICFGNode *call)
     else if (extType == MEMCPY)
     {
         IntervalValue len = mgr->getAbstractValue(call->getArgument(2), call).getInterval();
-        handleMemcpy(as, call->getArgument(0), call->getArgument(1), len, 0, call);
+        handleMemcpy(call->getArgument(0), call->getArgument(1), len, 0, call);
     }
     else if (extType == MEMSET)
     {
         IntervalValue len = mgr->getAbstractValue(call->getArgument(2), call).getInterval();
         IntervalValue elem = mgr->getAbstractValue(call->getArgument(1), call).getInterval();
-        handleMemset(as, call->getArgument(0), elem, len, call);
+        handleMemset(call->getArgument(0), elem, len, call);
     }
     else if (extType == STRCPY)
     {
@@ -467,7 +461,7 @@ void AbsExtAPI::handleExtAPI(const CallICFGNode *call)
 
 /// Get the byte size of each element for a pointer/array variable.
 /// Shared by handleMemcpy, handleMemset, and getStrlen to avoid duplication.
-u32_t AbsExtAPI::getElementSize(const SVFVar* var, const ICFGNode* node)
+u32_t AbsExtAPI::getElementSize(const ValVar* var)
 {
     if (var->getType()->isArrayTy())
     {
@@ -476,14 +470,7 @@ u32_t AbsExtAPI::getElementSize(const SVFVar* var, const ICFGNode* node)
     }
     if (var->getType()->isPointerTy())
     {
-        if (const SVFType* elemType = mgr->getPointeeElement(var, node))
-        {
-            if (elemType->isArrayTy())
-                return SVFUtil::dyn_cast<SVFArrayType>(elemType)
-                       ->getTypeOfElement()->getByteSize();
-            return elemType->getByteSize();
-        }
-        return 1;
+        assert(false && "pointer type not supported");
     }
     assert(false && "unsupported type for element size");
     return 1;
@@ -500,8 +487,9 @@ bool AbsExtAPI::isValidLength(const IntervalValue& len)
 /// Calculate the length of a null-terminated string in abstract state.
 /// Scans memory from the base of strValue looking for a '\0' byte.
 /// Returns an IntervalValue: exact length if '\0' found, otherwise [0, MaxFieldLimit].
-IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValue, const ICFGNode* node)
+IntervalValue AbsExtAPI::getStrlen(const ValVar *strValue, const ICFGNode* node)
 {
+    AbstractState& as = getAbstractState(node);
     // Step 1: determine the buffer size (in bytes) backing this pointer
     u32_t dst_size = 0;
     const AbstractValue& ptrVal = mgr->getAbstractValue(strValue, node);
@@ -519,7 +507,7 @@ IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValu
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
                 {
-                    dst_size = mgr->getAllocaInstByteSize(addrStmt, node);
+                    dst_size = mgr->getAllocaInstByteSize(addrStmt);
                 }
             }
         }
@@ -532,7 +520,7 @@ IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValu
         for (u32_t index = 0; index < dst_size; index++)
         {
             AbstractValue expr0 =
-                mgr->getGepObjAddrs(strValue, IntervalValue(index), node);
+                mgr->getGepObjAddrs(strValue, IntervalValue(index));
             AbstractValue val;
             for (const auto &addr: expr0.getAddrs())
             {
@@ -548,7 +536,7 @@ IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValu
     }
 
     // Step 3: scale by element size and return
-    u32_t elemSize = getElementSize(strValue, node);
+    u32_t elemSize = getElementSize(strValue);
     if (len == 0)
         return IntervalValue((s64_t)0, (s64_t)Options::MaxFieldLimit());
     return IntervalValue(len * elemSize);
@@ -562,48 +550,46 @@ IntervalValue AbsExtAPI::getStrlen(AbstractState& as, const SVF::SVFVar *strValu
 /// Covers: strcpy, __strcpy_chk, stpcpy, wcscpy, __wcscpy_chk
 void AbsExtAPI::handleStrcpy(const CallICFGNode *call)
 {
-    AbstractState& as = getAbstractState(call);
-    const SVFVar* dst = call->getArgument(0);
-    const SVFVar* src = call->getArgument(1);
-    IntervalValue srcLen = getStrlen(as, src, call);
+    const ValVar* dst = call->getArgument(0);
+    const ValVar* src = call->getArgument(1);
+    IntervalValue srcLen = getStrlen(src, call);
     if (!isValidLength(srcLen)) return;
-    handleMemcpy(as, dst, src, srcLen, 0, call);
+    handleMemcpy(dst, src, srcLen, 0, call);
 }
 
 /// strcat(dst, src): append all of src after the end of dst.
 /// Covers: strcat, __strcat_chk, wcscat, __wcscat_chk
 void AbsExtAPI::handleStrcat(const CallICFGNode *call)
 {
-    AbstractState& as = getAbstractState(call);
-    const SVFVar* dst = call->getArgument(0);
-    const SVFVar* src = call->getArgument(1);
-    IntervalValue dstLen = getStrlen(as, dst, call);
-    IntervalValue srcLen = getStrlen(as, src, call);
+    const ValVar* dst = call->getArgument(0);
+    const ValVar* src = call->getArgument(1);
+    IntervalValue dstLen = getStrlen(dst, call);
+    IntervalValue srcLen = getStrlen(src, call);
     if (!isValidLength(dstLen)) return;
-    handleMemcpy(as, dst, src, srcLen, dstLen.lb().getIntNumeral(), call);
+    handleMemcpy(dst, src, srcLen, dstLen.lb().getIntNumeral(), call);
 }
 
 /// strncat(dst, src, n): append at most n bytes of src after the end of dst.
 /// Covers: strncat, __strncat_chk, wcsncat, __wcsncat_chk
 void AbsExtAPI::handleStrncat(const CallICFGNode *call)
 {
-    AbstractState& as = getAbstractState(call);
-    const SVFVar* dst = call->getArgument(0);
-    const SVFVar* src = call->getArgument(1);
+    const ValVar* dst = call->getArgument(0);
+    const ValVar* src = call->getArgument(1);
     IntervalValue n = mgr->getAbstractValue(call->getArgument(2), call).getInterval();
-    IntervalValue dstLen = getStrlen(as, dst, call);
+    IntervalValue dstLen = getStrlen(dst, call);
     if (!isValidLength(dstLen)) return;
-    handleMemcpy(as, dst, src, n, dstLen.lb().getIntNumeral(), call);
+    handleMemcpy(dst, src, n, dstLen.lb().getIntNumeral(), call);
 }
 
 /// Core memcpy: copy `len` bytes from src to dst starting at dst[start_idx].
-void AbsExtAPI::handleMemcpy(AbstractState& as, const SVF::SVFVar *dst,
-                             const SVF::SVFVar *src, IntervalValue len,
+void AbsExtAPI::handleMemcpy(const ValVar *dst,
+                             const ValVar *src, IntervalValue len,
                              u32_t start_idx, const ICFGNode* node)
 {
     if (!isValidLength(len)) return;
+    AbstractState& as = getAbstractState(node);
 
-    u32_t elemSize = getElementSize(dst, node);
+    u32_t elemSize = getElementSize(dst);
     u32_t size = std::min((u32_t)Options::MaxFieldLimit(),
                           (u32_t)len.lb().getIntNumeral());
     u32_t range_val = size / elemSize;
@@ -614,9 +600,9 @@ void AbsExtAPI::handleMemcpy(AbstractState& as, const SVF::SVFVar *dst,
     for (u32_t index = 0; index < range_val; index++)
     {
         AbstractValue expr_src =
-            mgr->getGepObjAddrs(src, IntervalValue(index), node);
+            mgr->getGepObjAddrs(src, IntervalValue(index));
         AbstractValue expr_dst =
-            mgr->getGepObjAddrs(dst, IntervalValue(index + start_idx), node);
+            mgr->getGepObjAddrs(dst, IntervalValue(index + start_idx));
         for (const auto &dstAddr: expr_dst.getAddrs())
         {
             for (const auto &srcAddr: expr_src.getAddrs())
@@ -636,10 +622,11 @@ void AbsExtAPI::handleMemcpy(AbstractState& as, const SVF::SVFVar *dst,
 /// to match how LLVM memset/wmemset intrinsics measure `len`. For a pointer to
 /// wchar_t[100], elemSize = sizeof(wchar_t[100]), so range_val reflects the
 /// number of top-level GEP fields, not individual array elements.
-void AbsExtAPI::handleMemset(AbstractState& as, const SVF::SVFVar *dst,
+void AbsExtAPI::handleMemset(const ValVar *dst,
                              IntervalValue elem, IntervalValue len, const ICFGNode* node)
 {
     if (!isValidLength(len)) return;
+    AbstractState& as = getAbstractState(node);
 
     u32_t elemSize = 1;
     if (dst->getType()->isArrayTy())
@@ -649,10 +636,7 @@ void AbsExtAPI::handleMemset(AbstractState& as, const SVF::SVFVar *dst,
     }
     else if (dst->getType()->isPointerTy())
     {
-        if (const SVFType* elemType = mgr->getPointeeElement(dst, node))
-            elemSize = elemType->getByteSize();
-        else
-            elemSize = 1;
+        elemSize = 1;
     }
     else
     {
@@ -666,7 +650,7 @@ void AbsExtAPI::handleMemset(AbstractState& as, const SVF::SVFVar *dst,
     {
         if (!mgr->getAbstractValue(dst, node).isAddr())
             break;
-        AbstractValue lhs_gep = mgr->getGepObjAddrs(dst, IntervalValue(index), node);
+        AbstractValue lhs_gep = mgr->getGepObjAddrs(dst, IntervalValue(index));
         for (const auto &addr: lhs_gep.getAddrs())
         {
             u32_t objId = as.getIDFromAddr(addr);

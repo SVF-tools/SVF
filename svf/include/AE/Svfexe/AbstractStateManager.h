@@ -32,6 +32,8 @@ namespace SVF
 
 class GepStmt;
 class AddrStmt;
+class SVFG;
+class AndersenWaveDiff;
 
 /// Manages abstract states across ICFG nodes and provides a unified API
 /// for reading/writing abstract values. Encapsulates the dense vs.
@@ -46,7 +48,8 @@ class AddrStmt;
 class AbstractStateManager
 {
 public:
-    AbstractStateManager(SVFIR* svfir) : svfir(svfir) {}
+    AbstractStateManager(SVFIR* svfir, AndersenWaveDiff* pta);
+    ~AbstractStateManager();
 
     // ===----------------------------------------------------------------------===//
     //  Abstract Value Access API
@@ -94,13 +97,13 @@ public:
     // ===----------------------------------------------------------------------===//
 
     /// Compute the flattened element index for a GepStmt.
-    IntervalValue getGepElementIndex(const GepStmt* gep, const ICFGNode* node);
+    IntervalValue getGepElementIndex(const GepStmt* gep);
 
     /// Compute the byte offset for a GepStmt.
-    IntervalValue getGepByteOffset(const GepStmt* gep, const ICFGNode* node);
+    IntervalValue getGepByteOffset(const GepStmt* gep);
 
     /// Compute GEP object addresses for a pointer at a given element offset.
-    AddressValue getGepObjAddrs(const SVFVar* pointer, IntervalValue offset, const ICFGNode* node);
+    AddressValue getGepObjAddrs(const ValVar* pointer, IntervalValue offset);
 
     // ===----------------------------------------------------------------------===//
     //  Load / Store through pointer (combines ValVar lookup + ObjVar access)
@@ -111,24 +114,24 @@ public:
     /// @param pointer  The pointer SVFVar (ValVar).
     /// @param node     The ICFG node providing context.
     /// @return         The joined abstract value from all pointed-to objects.
-    AbstractValue loadValue(const SVFVar* pointer, const ICFGNode* node);
+    AbstractValue loadValue(const ValVar* pointer, const ICFGNode* node);
 
     /// Store value through a pointer: resolve pointer's address set via
     /// getAbstractValue (sparsity-aware), then store to each ObjVar address.
     /// @param pointer  The pointer SVFVar (ValVar).
     /// @param val      The value to store.
     /// @param node     The ICFG node providing context.
-    void storeValue(const SVFVar* pointer, const AbstractValue& val, const ICFGNode* node);
+    void storeValue(const ValVar* pointer, const AbstractValue& val, const ICFGNode* node);
 
     // ===----------------------------------------------------------------------===//
     //  Type / Size Helpers
     // ===----------------------------------------------------------------------===//
 
     /// Get the pointee type for a pointer variable.
-    const SVFType* getPointeeElement(const SVFVar* var, const ICFGNode* node);
+    const SVFType* getPointeeElement(const ObjVar* var, const ICFGNode* node);
 
     /// Get the byte size of a stack allocation.
-    u32_t getAllocaInstByteSize(const AddrStmt* addr, const ICFGNode* node);
+    u32_t getAllocaInstByteSize(const AddrStmt* addr);
 
     // ===----------------------------------------------------------------------===//
     //  Direct Trace Access (for merge, fixpoint, etc.)
@@ -137,8 +140,25 @@ public:
     Map<const ICFGNode*, AbstractState>& getTrace() { return abstractTrace; }
     AbstractState& operator[](const ICFGNode* node) { return abstractTrace[node]; }
 
+    // ===----------------------------------------------------------------------===//
+    //  Def/Use site queries (sparsity-aware)
+    // ===----------------------------------------------------------------------===//
+
+    /// Given an ObjVar and its use-site ICFGNode, find all downstream use-site ICFGNodes.
+    Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
+
+    /// Given a ValVar, find all use-site ICFGNodes.
+    Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const;
+
+    /// Given a ValVar, find its definition-site ICFGNode.
+    const ICFGNode* getDefSiteOfValVar(const ValVar* var) const;
+
+    /// Given an ObjVar and its use-site ICFGNode, find the definition-site ICFGNode.
+    const ICFGNode* getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
+
 private:
     SVFIR* svfir;
+    SVFG* svfg;
     Map<const ICFGNode*, AbstractState> abstractTrace;
 };
 

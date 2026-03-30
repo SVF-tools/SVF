@@ -66,7 +66,7 @@ public:
      * @param rhs Pointer to the SVF variable representing the string.
      * @return The string value.
      */
-    std::string strRead(AbstractState& as, const SVFVar* rhs, const ICFGNode* node);
+    std::string strRead(const ValVar* rhs, const ICFGNode* node);
 
     /**
      * @brief Handles an external API call.
@@ -77,21 +77,21 @@ public:
     // --- Shared primitives used by string/memory handlers ---
 
     /// Get the byte size of each element for a pointer/array variable.
-    u32_t getElementSize(const SVFVar* var, const ICFGNode* node);
+    u32_t getElementSize(const ValVar* var);
 
     /// Check if an interval length is usable (not bottom, not unbounded).
     static bool isValidLength(const IntervalValue& len);
 
     /// Calculate the length of a null-terminated string in abstract state.
-    IntervalValue getStrlen(AbstractState& as, const SVF::SVFVar *strValue, const ICFGNode* node);
+    IntervalValue getStrlen(const ValVar *strValue, const ICFGNode* node);
 
     // --- String/memory operation handlers ---
 
     void handleStrcpy(const CallICFGNode *call);
     void handleStrcat(const CallICFGNode *call);
     void handleStrncat(const CallICFGNode *call);
-    void handleMemcpy(AbstractState& as, const SVF::SVFVar *dst, const SVF::SVFVar *src, IntervalValue len, u32_t start_idx, const ICFGNode* node);
-    void handleMemset(AbstractState& as, const SVFVar* dst, IntervalValue elem, IntervalValue len, const ICFGNode* node);
+    void handleMemcpy(const ValVar *dst, const ValVar *src, IntervalValue len, u32_t start_idx, const ICFGNode* node);
+    void handleMemset(const ValVar* dst, IntervalValue elem, IntervalValue len, const ICFGNode* node);
 
     /**
      * @brief Gets the range limit from a type.
