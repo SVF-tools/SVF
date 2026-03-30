@@ -302,7 +302,7 @@ void BufOverflowDetector::detectExtAPI(const CallICFGNode* call)
  * @param gep Pointer to the GEP statement.
  * @return The interval value of the access offset.
  */
-IntervalValue BufOverflowDetector::getAccessOffset(SVF::NodeID objId, const SVF::GepStmt* gep, const SVF::ICFGNode* node)
+IntervalValue BufOverflowDetector::getAccessOffset(SVF::NodeID objId, const SVF::GepStmt* gep)
 {
     SVFIR* svfir = PAG::getPAG();
     AbstractStateManager* mgr = AbstractInterpretation::getAEInstance().getStateMgr();

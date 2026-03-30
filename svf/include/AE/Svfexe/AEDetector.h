@@ -233,7 +233,7 @@ public:
      * @param gep Pointer to the GEP statement.
      * @return The interval value of the access offset.
      */
-    IntervalValue getAccessOffset(NodeID objId, const GepStmt* gep, const ICFGNode* node);
+    IntervalValue getAccessOffset(NodeID objId, const GepStmt* gep);
 
     /**
      * @brief Adds a bug to the reporter based on an exception.
