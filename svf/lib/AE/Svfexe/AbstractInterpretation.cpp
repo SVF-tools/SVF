@@ -45,14 +45,14 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
     stat->startClk();
     icfg = _icfg;
     svfir = PAG::getPAG();
-    svfStateMgr = new AbstractStateManager(svfir);
-    utils = new AbsExtAPI(svfStateMgr);
-
     // Run Andersen's pointer analysis and build WTO
     preAnalysis = new PreAnalysis(svfir, icfg);
     callGraph = preAnalysis->getCallGraph();
     icfg->updateCallGraph(callGraph);
     preAnalysis->initWTO();
+
+    svfStateMgr = new AbstractStateManager(svfir, preAnalysis->getPointerAnalysis());
+    utils = new AbsExtAPI(svfStateMgr);
 
     /// collect checkpoint
     utils->collectCheckPoint();
@@ -76,7 +76,7 @@ AbstractInterpretation::AbstractInterpretation()
 void AbstractInterpretation::propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite)
 {
     const AbstractValue& val = svfStateMgr->getAbstractValue(var, defSite);
-    for (const ICFGNode* useSite : preAnalysis->getUseSitesOfObjVar(var, defSite))
+    for (const ICFGNode* useSite : svfStateMgr->getUseSitesOfObjVar(var, defSite))
     {
         svfStateMgr->updateAbstractValue(var, val, useSite);
     }
@@ -622,7 +622,7 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
 
     // Run detectors
     for (auto& detector: detectors)
-        detector->detect(*svfStateMgr, node);
+        detector->detect(node);
     stat->countStateSize();
 
     // Track this node as analyzed (for coverage statistics across all entry points)
@@ -1072,8 +1072,8 @@ void AbstractInterpretation::setTopToObjInRecursion(const CallICFGNode *callNode
 void AbstractInterpretation::updateStateOnGep(const GepStmt *gep)
 {
     const ICFGNode* node = gep->getICFGNode();
-    IntervalValue offsetPair = svfStateMgr->getGepElementIndex(gep, node);
-    AddressValue gepAddrs = svfStateMgr->getGepObjAddrs(gep->getRHSVar(), offsetPair, node);
+    IntervalValue offsetPair = svfStateMgr->getGepElementIndex(gep);
+    AddressValue gepAddrs = svfStateMgr->getGepObjAddrs(SVFUtil::cast<ValVar>(gep->getRHSVar()), offsetPair);
     svfStateMgr->updateAbstractValue(gep->getLHSVar(), gepAddrs, node);
 }
 
@@ -1463,13 +1463,13 @@ void AbstractInterpretation::updateStateOnLoad(const LoadStmt *load)
 {
     const ICFGNode* node = load->getICFGNode();
     svfStateMgr->updateAbstractValue(load->getLHSVar(),
-        svfStateMgr->loadValue(load->getRHSVar(), node), node);
+        svfStateMgr->loadValue(SVFUtil::cast<ValVar>(load->getRHSVar()), node), node);
 }
 
 void AbstractInterpretation::updateStateOnStore(const StoreStmt *store)
 {
     const ICFGNode* node = store->getICFGNode();
-    svfStateMgr->storeValue(store->getLHSVar(),
+    svfStateMgr->storeValue(SVFUtil::cast<ValVar>(store->getLHSVar()),
         svfStateMgr->getAbstractValue(store->getRHSVar(), node), node);
 }
 

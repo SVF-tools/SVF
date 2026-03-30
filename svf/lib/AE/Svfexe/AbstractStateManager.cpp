@@ -25,9 +25,27 @@
 //
 #include "AE/Svfexe/AbstractStateManager.h"
 #include "AE/Svfexe/AbstractInterpretation.h"
+#include "Graphs/SVFG.h"
+#include "MSSA/SVFGBuilder.h"
+#include "WPA/Andersen.h"
 #include "Util/Options.h"
 
 using namespace SVF;
+
+AbstractStateManager::AbstractStateManager(SVFIR* svfir, AndersenWaveDiff* pta)
+    : svfir(svfir), svfg(nullptr)
+{
+    if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse)
+    {
+        SVFGBuilder memSSA(true);
+        svfg = memSSA.buildFullSVFG(pta);
+    }
+}
+
+AbstractStateManager::~AbstractStateManager()
+{
+    delete svfg;
+}
 
 // ===----------------------------------------------------------------------===//
 //  State Access
@@ -212,8 +230,9 @@ void AbstractStateManager::getAbstractState(const Set<const SVFVar*>& vars, Abst
 //  GEP Helpers
 // ===----------------------------------------------------------------------===//
 
-IntervalValue AbstractStateManager::getGepElementIndex(const GepStmt* gep, const ICFGNode* node)
+IntervalValue AbstractStateManager::getGepElementIndex(const GepStmt* gep)
 {
+    const ICFGNode* node = gep->getICFGNode();
     if (gep->isConstantOffset())
         return IntervalValue((s64_t)gep->accumulateConstantOffset());
 
@@ -268,8 +287,9 @@ IntervalValue AbstractStateManager::getGepElementIndex(const GepStmt* gep, const
     return res;
 }
 
-IntervalValue AbstractStateManager::getGepByteOffset(const GepStmt* gep, const ICFGNode* node)
+IntervalValue AbstractStateManager::getGepByteOffset(const GepStmt* gep)
 {
+    const ICFGNode* node = gep->getICFGNode();
     if (gep->isConstantOffset())
         return IntervalValue((s64_t)gep->accumulateConstantByteOffset());
 
@@ -327,8 +347,9 @@ IntervalValue AbstractStateManager::getGepByteOffset(const GepStmt* gep, const I
     return res;
 }
 
-AddressValue AbstractStateManager::getGepObjAddrs(const SVFVar* pointer, IntervalValue offset, const ICFGNode* node)
+AddressValue AbstractStateManager::getGepObjAddrs(const ValVar* pointer, IntervalValue offset)
 {
+    const ICFGNode* node = pointer->getICFGNode();
     AddressValue gepAddrs;
     AbstractState& as = getAbstractState(node);
     APOffset lb = offset.lb().getIntNumeral() < Options::MaxFieldLimit() ? offset.lb().getIntNumeral()
@@ -354,7 +375,7 @@ AddressValue AbstractStateManager::getGepObjAddrs(const SVFVar* pointer, Interva
 //  Load / Store through pointer
 // ===----------------------------------------------------------------------===//
 
-AbstractValue AbstractStateManager::loadValue(const SVFVar* pointer, const ICFGNode* node)
+AbstractValue AbstractStateManager::loadValue(const ValVar* pointer, const ICFGNode* node)
 {
     const AbstractValue& ptrVal = getAbstractValue(pointer, node);
     AbstractState& as = getAbstractState(node);
@@ -364,7 +385,7 @@ AbstractValue AbstractStateManager::loadValue(const SVFVar* pointer, const ICFGN
     return res;
 }
 
-void AbstractStateManager::storeValue(const SVFVar* pointer, const AbstractValue& val, const ICFGNode* node)
+void AbstractStateManager::storeValue(const ValVar* pointer, const AbstractValue& val, const ICFGNode* node)
 {
     const AbstractValue& ptrVal = getAbstractValue(pointer, node);
     AbstractState& as = getAbstractState(node);
@@ -376,7 +397,7 @@ void AbstractStateManager::storeValue(const SVFVar* pointer, const AbstractValue
 //  Type / Size Helpers
 // ===----------------------------------------------------------------------===//
 
-const SVFType* AbstractStateManager::getPointeeElement(const SVFVar* var, const ICFGNode* node)
+const SVFType* AbstractStateManager::getPointeeElement(const ObjVar* var, const ICFGNode* node)
 {
     const AbstractValue& ptrVal = getAbstractValue(var, node);
     if (!ptrVal.isAddr())
@@ -391,8 +412,9 @@ const SVFType* AbstractStateManager::getPointeeElement(const SVFVar* var, const 
     return nullptr;
 }
 
-u32_t AbstractStateManager::getAllocaInstByteSize(const AddrStmt* addr, const ICFGNode* node)
+u32_t AbstractStateManager::getAllocaInstByteSize(const AddrStmt* addr)
 {
+    const ICFGNode* node = addr->getICFGNode();
     if (const ObjVar* objvar = SVFUtil::dyn_cast<ObjVar>(addr->getRHSVar()))
     {
         if (svfir->getBaseObject(objvar->getId())->isConstantByteSize())
@@ -418,4 +440,59 @@ u32_t AbstractStateManager::getAllocaInstByteSize(const AddrStmt* addr, const IC
     }
     assert(false && "Addr rhs value is not ObjVar");
     abort();
+}
+
+// ===----------------------------------------------------------------------===//
+//  Def/Use site queries
+// ===----------------------------------------------------------------------===//
+
+Set<const ICFGNode*> AbstractStateManager::getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const
+{
+    if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse)
+    {
+        assert(svfg && "SVFG is not built for sparse AE");
+        return svfg->getUseSitesOfObjVar(obj, node);
+    }
+    Set<const ICFGNode*> succs;
+    for (const auto* edge : node->getOutEdges())
+        succs.insert(edge->getDstNode());
+    return succs;
+}
+
+Set<const ICFGNode*> AbstractStateManager::getUseSitesOfValVar(const ValVar* var) const
+{
+    if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse)
+    {
+        assert(svfg && "SVFG is not built for sparse AE");
+        return svfg->getUseSitesOfValVar(var);
+    }
+    Set<const ICFGNode*> succs;
+    if (const ICFGNode* node = var->getICFGNode())
+    {
+        for (const auto* edge : node->getOutEdges())
+            succs.insert(edge->getDstNode());
+    }
+    return succs;
+}
+
+const ICFGNode* AbstractStateManager::getDefSiteOfValVar(const ValVar* var) const
+{
+    if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse)
+    {
+        assert(svfg && "SVFG is not built for sparse AE");
+        return svfg->getDefSiteOfValVar(var);
+    }
+    return var->getICFGNode();
+}
+
+const ICFGNode* AbstractStateManager::getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const
+{
+    if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse)
+    {
+        assert(svfg && "SVFG is not built for sparse AE");
+        return svfg->getDefSiteOfObjVar(obj, node);
+    }
+    for (const auto* edge : node->getInEdges())
+        return edge->getSrcNode();
+    return nullptr;
 }
