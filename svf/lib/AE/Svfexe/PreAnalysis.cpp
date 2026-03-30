@@ -28,84 +28,22 @@
  */
 
 #include "AE/Svfexe/PreAnalysis.h"
-#include "Graphs/SVFG.h"
-#include "MSSA/SVFGBuilder.h"
 #include "Util/Options.h"
 
 using namespace SVF;
 
 PreAnalysis::PreAnalysis(SVFIR* pag, ICFG* icfg)
-    : svfir(pag), icfg(icfg), svfg(nullptr), pta(nullptr), callGraph(nullptr), callGraphSCC(nullptr)
+    : svfir(pag), icfg(icfg), pta(nullptr), callGraph(nullptr), callGraphSCC(nullptr)
 {
     pta = AndersenWaveDiff::createAndersenWaveDiff(svfir);
     callGraph = pta->getCallGraph();
     callGraphSCC = pta->getCallGraphSCC();
-    if (Options::SparseAE())
-    {
-        SVFGBuilder memSSA(true);
-        svfg = memSSA.buildFullSVFG(pta);
-    }
 }
 
 PreAnalysis::~PreAnalysis()
 {
     for (auto& [func, wto] : funcToWTO)
         delete wto;
-}
-
-const Set<const ICFGNode*> PreAnalysis::getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const
-{
-    if (Options::SparseAE())
-    {
-        assert(svfg && "SVFG is not built for sparse AE");
-        return svfg->getUseSitesOfObjVar(obj, node);
-    }
-    // Non-sparse mode: return ICFG successor nodes
-    Set<const ICFGNode*> succs;
-    for (const auto* edge : node->getOutEdges())
-        succs.insert(edge->getDstNode());
-    return succs;
-}
-
-const Set<const ICFGNode*> PreAnalysis::getUseSitesOfValVar(const ValVar* var) const
-{
-    if (Options::SparseAE())
-    {
-        assert(svfg && "SVFG is not built for sparse AE");
-        return svfg->getUseSitesOfValVar(var);
-    }
-    // Non-sparse mode: return ICFG successor nodes of the ValVar's ICFGNode
-    Set<const ICFGNode*> succs;
-    if (const ICFGNode* node = var->getICFGNode())
-    {
-        for (const auto* edge : node->getOutEdges())
-            succs.insert(edge->getDstNode());
-    }
-    return succs;
-}
-
-const ICFGNode* PreAnalysis::getDefSiteOfValVar(const ValVar* var) const
-{
-    if (Options::SparseAE())
-    {
-        assert(svfg && "SVFG is not built for sparse AE");
-        return svfg->getDefSiteOfValVar(var);
-    }
-    // Non-sparse mode: return the ValVar's associated ICFGNode
-    return var->getICFGNode();
-}
-
-const ICFGNode* PreAnalysis::getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const
-{
-    if (Options::SparseAE())
-    {
-        assert(svfg && "SVFG is not built for sparse AE");
-        return svfg->getDefSiteOfObjVar(obj, node);
-    }
-    // Non-sparse mode: return ICFG predecessor node
-    for (const auto* edge : node->getInEdges())
-        return edge->getSrcNode();
-    return nullptr;
 }
 
 void PreAnalysis::initWTO()

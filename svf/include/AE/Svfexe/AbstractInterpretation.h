@@ -31,6 +31,7 @@
 #pragma once
 #include "AE/Core/AbstractState.h"
 #include "AE/Core/ICFGWTO.h"
+#include "AE/Svfexe/AbstractStateManager.h"
 #include "AE/Svfexe/AEDetector.h"
 #include "AE/Svfexe/PreAnalysis.h"
 #include "AE/Svfexe/AbsExtAPI.h"
@@ -73,6 +74,13 @@ public:
      * if set WIDEN_ONLY, result = [10000, +oo] since only widening is applied at the cycle head of recursive functions without narrowing.
      * if set WIDEN_NARROW, result = [10000, 10000] since both widening and narrowing are applied at the cycle head of recursive functions.
      * */
+    enum AESparsity
+    {
+        Dense,
+        SemiSparse,
+        Sparse
+    };
+
     enum HandleRecur
     {
         TOP,
@@ -115,42 +123,11 @@ public:
         return svfir->getSVFVar(varId);
     }
 
-    /// Retrieve abstract value for a top-level variable at a given ICFG node
-    const AbstractValue& getAbstractValue(const ValVar* var);
+    /// Get the state manager instance.
+    AbstractStateManager* getStateMgr() { return svfStateMgr; }
 
-    /// Retrieve abstract value for an address-taken variable at a given ICFG node
-    const AbstractValue& getAbstractValue(const ICFGNode* node, const ObjVar* var);
-
-    /// Retrieve abstract value for any SVF variable at a given ICFG node
-    const AbstractValue& getAbstractValue(const ICFGNode* node, const SVFVar* var);
-
-    /// Set abstract value for a top-level variable at a given ICFG node
-    void updateAbstractValue(const ValVar* var, const AbstractValue& val);
-
-    /// Set abstract value for an address-taken variable at a given ICFG node
-    void updateAbstractValue(const ICFGNode* node, const ObjVar* var, const AbstractValue& val);
-
-    /// Set abstract value for any SVF variable at a given ICFG node
-    void updateAbstractValue(const ICFGNode* node, const SVFVar* var, const AbstractValue& val);
-
-    /// Propagate an ObjVar's abstract value from defSite to all its use-site ICFGNodes via SVFG
+    /// Propagate an ObjVar's abstract value from defSite to all its use-sites.
     void propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite);
-
-    /// Retrieve the abstract state from the trace for a given ICFG node; asserts if no trace exists
-    AbstractState& getAbstractState(const ICFGNode* node);
-
-    /// Check if an abstract state exists in the trace for a given ICFG node
-    bool hasAbstractState(const ICFGNode* node);
-
-    /// Retrieve abstract state filtered to specific top-level variables
-    void getAbstractState(const ICFGNode* node, const Set<const ValVar*>& vars, AbstractState& result);
-
-    /// Retrieve abstract state filtered to specific address-taken variables
-    void getAbstractState(const ICFGNode* node, const Set<const ObjVar*>& vars, AbstractState& result);
-
-    /// Retrieve abstract state filtered to specific SVF variables
-    void getAbstractState(const ICFGNode* node, const Set<const SVFVar*>& vars, AbstractState& result);
-
 
 private:
     /// Initialize abstract state for the global ICFG node and process global statements
@@ -162,7 +139,7 @@ private:
     bool mergeStatesFromPredecessors(const ICFGNode* node);
 
     /// Check if the branch on intraEdge is feasible under abstract state as
-    bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractState& as);
+    bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractState& as, const ICFGNode* predNode);
 
     /// Handle a call site node: dispatch to ext-call, direct-call, or indirect-call handling
     virtual void handleCallSite(const ICFGNode* node);
@@ -184,10 +161,10 @@ private:
 
     /// Check if cmpStmt with successor value succ is feasible; refine intervals in as accordingly
     bool isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t succ,
-                             AbstractState& as);
+                             AbstractState& as, const ICFGNode* predNode);
 
     /// Check if switch branch with case value succ is feasible; refine intervals in as accordingly
-    bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ, AbstractState& as);
+    bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ, AbstractState& as, const ICFGNode* predNode);
 
     void updateStateOnAddr(const AddrStmt *addr);
 
@@ -243,7 +220,7 @@ private:
     // there data should be shared with subclasses
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
 
-    Map<const ICFGNode*, AbstractState> abstractTrace; // abstract states for nodes
+    AbstractStateManager* svfStateMgr{nullptr}; // state management (owns abstractTrace)
     Set<const ICFGNode*> allAnalyzedNodes; // All nodes ever analyzed (across all entry points)
     std::string moduleName;
 
