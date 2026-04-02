@@ -126,6 +126,24 @@ public:
     /// Get the state manager instance.
     AbstractStateManager* getStateMgr() { return svfStateMgr; }
 
+    // ---------------------------------------------------------------
+    //  Convenience wrappers around AbstractStateManager
+    // ---------------------------------------------------------------
+    inline AbstractState& getAbsState(const ICFGNode* node)
+    { return svfStateMgr->getAbstractState(node); }
+
+    inline bool hasAbsState(const ICFGNode* node)
+    { return svfStateMgr->hasAbstractState(node); }
+
+    inline void setAbsState(const ICFGNode* node, const AbstractState& state)
+    { svfStateMgr->updateAbstractState(node, state); }
+
+    inline const AbstractValue& getAbsValue(const SVFVar* var, const ICFGNode* node)
+    { return svfStateMgr->getAbstractValue(var, node); }
+
+    inline void setAbsValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node)
+    { svfStateMgr->updateAbstractValue(var, val, node); }
+
     /// Propagate an ObjVar's abstract value from defSite to all its use-sites.
     void propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite);
 
@@ -138,8 +156,8 @@ private:
     /// abstractTrace[node]. Returns true if at least one predecessor had state.
     bool mergeStatesFromPredecessors(const ICFGNode* node);
 
-    /// Check if the branch on intraEdge is feasible under abstract state as
-    bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractState& as, const ICFGNode* predNode);
+    /// Returns true if the branch is reachable; narrows as in-place.
+    bool isBranchFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
     /// Handle a call site node: dispatch to ext-call, direct-call, or indirect-call handling
     virtual void handleCallSite(const ICFGNode* node);
@@ -156,15 +174,16 @@ private:
     /// Dispatch an SVF statement (Addr/Binary/Cmp/Load/Store/Copy/Gep/Select/Phi/Call/Ret) to its handler
     virtual void handleSVFStatement(const SVFStmt* stmt);
 
-    /// Set all store targets and return value to TOP for a recursive call node
+    /// Set all store targets and return value to TOP for a recursive cal node
     virtual void setTopToObjInRecursion(const CallICFGNode* callnode);
 
-    /// Check if cmpStmt with successor value succ is feasible; refine intervals in as accordingly
+    /// Checks if cmpStmt's branch to succ is feasible; narrows as in-place.
     bool isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t succ,
-                             AbstractState& as, const ICFGNode* predNode);
+                             const ICFGNode* pred, AbstractState& as);
 
-    /// Check if switch branch with case value succ is feasible; refine intervals in as accordingly
-    bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ, AbstractState& as, const ICFGNode* predNode);
+    /// Checks if the switch condition can equal succ; narrows as in-place.
+    bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ,
+                                const ICFGNode* pred, AbstractState& as);
 
     void updateStateOnAddr(const AddrStmt *addr);
 
@@ -187,7 +206,6 @@ private:
     void updateStateOnSelect(const SelectStmt *select);
 
     void updateStateOnPhi(const PhiStmt *phi);
-
 
     /// protected data members, also used in subclasses
     SVFIR* svfir;
@@ -227,53 +245,6 @@ private:
     std::vector<std::unique_ptr<AEDetector>> detectors;
     AbsExtAPI* utils;
 
-    // according to varieties of cmp insts,
-    // maybe var X var, var X const, const X var, const X const
-    // we accept 'var X const' 'var X var' 'const X const'
-    // if 'const X var', we need to reverse op0 op1 and its predicate 'var X' const'
-    // X' is reverse predicate of X
-    // == -> !=, != -> ==, > -> <=, >= -> <, < -> >=, <= -> >
-
-    Map<s32_t, s32_t> _reverse_predicate =
-    {
-        {CmpStmt::Predicate::FCMP_OEQ, CmpStmt::Predicate::FCMP_ONE},  // == -> !=
-        {CmpStmt::Predicate::FCMP_UEQ, CmpStmt::Predicate::FCMP_UNE},  // == -> !=
-        {CmpStmt::Predicate::FCMP_OGT, CmpStmt::Predicate::FCMP_OLE},  // > -> <=
-        {CmpStmt::Predicate::FCMP_OGE, CmpStmt::Predicate::FCMP_OLT},  // >= -> <
-        {CmpStmt::Predicate::FCMP_OLT, CmpStmt::Predicate::FCMP_OGE},  // < -> >=
-        {CmpStmt::Predicate::FCMP_OLE, CmpStmt::Predicate::FCMP_OGT},  // <= -> >
-        {CmpStmt::Predicate::FCMP_ONE, CmpStmt::Predicate::FCMP_OEQ},  // != -> ==
-        {CmpStmt::Predicate::FCMP_UNE, CmpStmt::Predicate::FCMP_UEQ},  // != -> ==
-        {CmpStmt::Predicate::ICMP_EQ, CmpStmt::Predicate::ICMP_NE},  // == -> !=
-        {CmpStmt::Predicate::ICMP_NE, CmpStmt::Predicate::ICMP_EQ},  // != -> ==
-        {CmpStmt::Predicate::ICMP_UGT, CmpStmt::Predicate::ICMP_ULE},  // > -> <=
-        {CmpStmt::Predicate::ICMP_ULT, CmpStmt::Predicate::ICMP_UGE},  // < -> >=
-        {CmpStmt::Predicate::ICMP_UGE, CmpStmt::Predicate::ICMP_ULT},  // >= -> <
-        {CmpStmt::Predicate::ICMP_SGT, CmpStmt::Predicate::ICMP_SLE},  // > -> <=
-        {CmpStmt::Predicate::ICMP_SLT, CmpStmt::Predicate::ICMP_SGE},  // < -> >=
-        {CmpStmt::Predicate::ICMP_SGE, CmpStmt::Predicate::ICMP_SLT},  // >= -> <
-    };
-
-
-    Map<s32_t, s32_t> _switch_lhsrhs_predicate =
-    {
-        {CmpStmt::Predicate::FCMP_OEQ, CmpStmt::Predicate::FCMP_OEQ},  // == -> ==
-        {CmpStmt::Predicate::FCMP_UEQ, CmpStmt::Predicate::FCMP_UEQ},  // == -> ==
-        {CmpStmt::Predicate::FCMP_OGT, CmpStmt::Predicate::FCMP_OLT},  // > -> <
-        {CmpStmt::Predicate::FCMP_OGE, CmpStmt::Predicate::FCMP_OLE},  // >= -> <=
-        {CmpStmt::Predicate::FCMP_OLT, CmpStmt::Predicate::FCMP_OGT},  // < -> >
-        {CmpStmt::Predicate::FCMP_OLE, CmpStmt::Predicate::FCMP_OGE},  // <= -> >=
-        {CmpStmt::Predicate::FCMP_ONE, CmpStmt::Predicate::FCMP_ONE},  // != -> !=
-        {CmpStmt::Predicate::FCMP_UNE, CmpStmt::Predicate::FCMP_UNE},  // != -> !=
-        {CmpStmt::Predicate::ICMP_EQ, CmpStmt::Predicate::ICMP_EQ},  // == -> ==
-        {CmpStmt::Predicate::ICMP_NE, CmpStmt::Predicate::ICMP_NE},  // != -> !=
-        {CmpStmt::Predicate::ICMP_UGT, CmpStmt::Predicate::ICMP_ULT},  // > -> <
-        {CmpStmt::Predicate::ICMP_ULT, CmpStmt::Predicate::ICMP_UGT},  // < -> >
-        {CmpStmt::Predicate::ICMP_UGE, CmpStmt::Predicate::ICMP_ULE},  // >= -> <=
-        {CmpStmt::Predicate::ICMP_SGT, CmpStmt::Predicate::ICMP_SLT},  // > -> <
-        {CmpStmt::Predicate::ICMP_SLT, CmpStmt::Predicate::ICMP_SGT},  // < -> >
-        {CmpStmt::Predicate::ICMP_SGE, CmpStmt::Predicate::ICMP_SLE},  // >= -> <=
-    };
 
 };
 }

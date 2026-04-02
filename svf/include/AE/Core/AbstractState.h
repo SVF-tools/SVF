@@ -261,6 +261,17 @@ public:
     /// domain join with other, important! other widen this.
     void joinWith(const AbstractState&other);
 
+    /// Join only address-taken (ObjVar) state from other, ignoring ValVars.
+    /// Used in semi-sparse mode where ValVars live at their def-sites.
+    void joinAddrWith(const AbstractState&other);
+
+    /// Clear only address-taken (ObjVar) state, preserving ValVar state.
+    void clearAddrState()
+    {
+        _addrToAbsVal.clear();
+        _freedAddrs.clear();
+    }
+
     /// domain meet with other, important! other widen this.
     void meetWith(const AbstractState&other);
 

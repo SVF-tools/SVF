@@ -81,6 +81,7 @@ public:
 
     /// Retrieve the abstract state for a given ICFG node. Asserts if absent.
     AbstractState& getAbstractState(const ICFGNode* node);
+    void updateAbstractState(const ICFGNode* node, const AbstractState& state);
 
     /// Check if an abstract state exists for a given ICFG node.
     bool hasAbstractState(const ICFGNode* node);

@@ -138,6 +138,21 @@ void AbstractState::joinWith(const AbstractState& other)
     _freedAddrs.insert(other._freedAddrs.begin(), other._freedAddrs.end());
 }
 
+/// Join only address-taken (ObjVar) state from other.
+void AbstractState::joinAddrWith(const AbstractState& other)
+{
+    for (auto it = other._addrToAbsVal.begin(); it != other._addrToAbsVal.end(); ++it)
+    {
+        auto key = it->first;
+        auto oit = _addrToAbsVal.find(key);
+        if (oit != _addrToAbsVal.end())
+            oit->second.join_with(it->second);
+        else
+            _addrToAbsVal.emplace(key, it->second);
+    }
+    _freedAddrs.insert(other._freedAddrs.begin(), other._freedAddrs.end());
+}
+
 /// domain meet with other, important! other widen this.
 void AbstractState::meetWith(const AbstractState& other)
 {

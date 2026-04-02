@@ -469,9 +469,7 @@ u32_t AbsExtAPI::getElementSize(const ValVar* var)
                ->getTypeOfElement()->getByteSize();
     }
     if (var->getType()->isPointerTy())
-    {
-        assert(false && "pointer type not supported");
-    }
+        return 1;
     assert(false && "unsupported type for element size");
     return 1;
 }

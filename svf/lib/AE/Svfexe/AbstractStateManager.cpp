@@ -61,6 +61,21 @@ AbstractState& AbstractStateManager::getAbstractState(const ICFGNode* node)
     return abstractTrace[node];
 }
 
+void AbstractStateManager::updateAbstractState(const ICFGNode* node, const AbstractState& state)
+{
+    if (Options::AESparsity() == AbstractInterpretation::AESparsity::SemiSparse)
+    {
+        // Semi-sparse: only update ObjVar state. ValVars live at their
+        // def-sites and must not be overwritten by state replacement.
+        abstractTrace[node].clearAddrState();
+        abstractTrace[node].joinAddrWith(state);
+    }
+    else
+    {
+        abstractTrace[node] = state;
+    }
+}
+
 bool AbstractStateManager::hasAbstractState(const ICFGNode* node)
 {
     return abstractTrace.count(node) != 0;
@@ -163,8 +178,16 @@ const AbstractValue& AbstractStateManager::getAbstractValue(const SVFVar* var, c
 
 void AbstractStateManager::updateAbstractValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node)
 {
-    AbstractState& as = getAbstractState(node);
-    as[var->getId()] = val;
+    // In semi-sparse mode, write to the var's def-site so that
+    // getAbstractValue (which reads from def-site) stays consistent.
+    const ICFGNode* target = node;
+    if (Options::AESparsity() == AbstractInterpretation::AESparsity::SemiSparse)
+    {
+        const ICFGNode* defNode = var->getICFGNode();
+        if (defNode)
+            target = defNode;
+    }
+    abstractTrace[target][var->getId()] = val;
 }
 
 void AbstractStateManager::updateAbstractValue(const ObjVar* var, const AbstractValue& val, const ICFGNode* node)

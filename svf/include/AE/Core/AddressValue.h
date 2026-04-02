@@ -174,11 +174,12 @@ public:
         return _addrs.count(id);
     }
 
-    bool hasIntersect(const AddressValue &other)
+    bool hasIntersect(const AddressValue &other) const
     {
-        AddressValue v = *this;
-        v.meet_with(other);
-        return !v.empty();
+        for (const auto& addr : _addrs)
+            if (other._addrs.count(addr))
+                return true;
+        return false;
     }
 
     inline bool isBottom() const
