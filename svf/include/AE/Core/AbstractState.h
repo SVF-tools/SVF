@@ -351,6 +351,12 @@ public:
         _freedAddrs.clear();
     }
 
+    /// Drop all top-level variables (ValVars), keeping ObjVar storage and
+    /// freed addresses intact. Used when building a cycle snapshot so the
+    /// ValVar set is controlled by the caller rather than whatever was
+    /// cached at the seed node.
+    void clearVars() { _varToAbsVal.clear(); }
+
 
 };
 

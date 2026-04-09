@@ -337,7 +337,7 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
 {
     SVFIR* svfir = PAG::getPAG();
     auto& ae = AbstractInterpretation::getAEInstance();
-    AbstractState& as = ae.getAbsState(node);
+    const AbstractState& as = ae.getAbsState(node);
 
     for (const auto& objAddr : objAddrs)
     {
@@ -466,7 +466,7 @@ bool BufOverflowDetector::canSafelyAccessMemory(const SVF::ValVar* value, const 
     if (!ptrVal.isAddr())
     {
         ptrVal = AddressValue(BlackHoleObjAddr);
-        ae.setAbsValue(value, ptrVal, node);
+        ae.updateAbsValue(value, ptrVal, node);
     }
     for (const auto& addr : ptrVal.getAddrs())
     {

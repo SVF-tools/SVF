@@ -74,7 +74,26 @@ public:
         return funcToWTO;
     }
 
+    /// Walk every function's WTO and populate cycleToValVars bottom-up.
+    /// Called once right after initWTO(). No-op in dense mode.
+    void initCycleValVars();
+
+    /// Look up the ValVar id set of a WTO cycle. Returns nullptr if the
+    /// cycle is unknown (e.g. dense mode, where the map is never built).
+    const Set<NodeID>* getCycleValVars(const ICFGCycleWTO* cycle) const
+    {
+        auto it = cycleToValVars.find(cycle);
+        return it == cycleToValVars.end() ? nullptr : &it->second;
+    }
+
 private:
+    /// Recursive bottom-up worker for initCycleValVars.
+    const Set<NodeID>& computeCycleValVars(const ICFGCycleWTO* cycle);
+
+    /// Append the IDs of any ValVar that is the LHS of a stmt at `node`.
+    /// FunEntry nodes also contribute their formal-param ArgValVars.
+    void collectValVarsAtNode(const ICFGNode* node, Set<NodeID>& out) const;
+
     SVFIR* svfir;
     ICFG* icfg;
     AndersenWaveDiff* pta;
@@ -82,6 +101,11 @@ private:
     CallGraphSCC* callGraphSCC;
 
     Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
+
+    /// Pre-computed (semi-sparse only) map from a WTO cycle to the IDs of
+    /// every ValVar whose def-site is inside that cycle, including all
+    /// nested sub-cycles. Empty in dense mode.
+    Map<const ICFGCycleWTO*, Set<NodeID>> cycleToValVars;
 };
 
 } // End namespace SVF

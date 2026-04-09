@@ -129,19 +129,21 @@ public:
     // ---------------------------------------------------------------
     //  Convenience wrappers around AbstractStateManager
     // ---------------------------------------------------------------
-    inline AbstractState& getAbsState(const ICFGNode* node)
+    /// Read-only access to a node's AbstractState. Mutations must go through
+    /// updateAbsState (to replace) or updateAbsValue (to update one variable).
+    inline const AbstractState& getAbsState(const ICFGNode* node) const
     { return svfStateMgr->getAbstractState(node); }
 
     inline bool hasAbsState(const ICFGNode* node)
     { return svfStateMgr->hasAbstractState(node); }
 
-    inline void setAbsState(const ICFGNode* node, const AbstractState& state)
+    inline void updateAbsState(const ICFGNode* node, const AbstractState& state)
     { svfStateMgr->updateAbstractState(node, state); }
 
     inline const AbstractValue& getAbsValue(const SVFVar* var, const ICFGNode* node)
     { return svfStateMgr->getAbstractValue(var, node); }
 
-    inline void setAbsValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node)
+    inline void updateAbsValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node)
     { svfStateMgr->updateAbstractValue(var, val, node); }
 
     /// Propagate an ObjVar's abstract value from defSite to all its use-sites.
@@ -165,6 +167,30 @@ private:
     /// Handle a WTO cycle (loop or recursive function) using widening/narrowing iteration
     virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller = nullptr);
 
+    // ---- Semi-sparse cycle helpers ----
+    // ValVars whose def-site is inside the cycle but NOT cycle_head do not
+    // flow through cycle_head's merge in semi-sparse mode, so the around-merge
+    // widening cannot widen them. handleLoopOrRecursion adds one extra step
+    // per iter that gathers them, widens/narrows across iterations, and
+    // scatters the result back to each def-site.
+
+    /// Build a snapshot of `cycle` for widening/narrowing comparison:
+    /// the cycle_head's AbstractState, augmented with every cycle ValVar
+    /// pulled from its def-site via setVal (semi-sparse only — in dense the
+    /// ValVar set is empty so this reduces to cycle_head's full state).
+    AbstractState buildCycleSnapshot(const ICFGCycleWTO* cycle);
+
+    /// Join each cycle ValVar from `src` into `dst`. Opposite of
+    /// scatterCycleValVars: scatter is a strong write to def-sites, gather
+    /// is a non-destructive join between two states. No-op in dense mode
+    /// (cycle ValVar set is empty).
+    void gatherCycleValVars(AbstractState& dst, const AbstractState& src,
+                            const ICFGCycleWTO* cycle);
+
+    /// Push the ValVars in `snap` back to their def-sites via
+    /// AbstractStateManager::updateAbstractValue. No-op in dense.
+    void scatterCycleValVars(const AbstractState& snap, const ICFGCycleWTO* cycle);
+
     /// Handle a function body via worklist-driven WTO traversal starting from funEntry
     void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller = nullptr);
 
@@ -177,13 +203,11 @@ private:
     /// Set all store targets and return value to TOP for a recursive cal node
     virtual void setTopToObjInRecursion(const CallICFGNode* callnode);
 
-    /// Checks if cmpStmt's branch to succ is feasible; narrows as in-place.
-    bool isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t succ,
-                             const ICFGNode* pred, AbstractState& as);
+    /// Returns true if the cmp-conditional branch is feasible; narrows as in-place.
+    bool isCmpBranchFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
-    /// Checks if the switch condition can equal succ; narrows as in-place.
-    bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ,
-                                const ICFGNode* pred, AbstractState& as);
+    /// Returns true if the switch branch is feasible; narrows as in-place.
+    bool isSwitchBranchFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
     void updateStateOnAddr(const AddrStmt *addr);
 
