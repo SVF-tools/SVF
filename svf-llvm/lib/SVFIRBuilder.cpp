@@ -1804,7 +1804,19 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
 
     pag->addToSVFStmtList(icfgNode,edge);
     icfgNode->addSVFStmt(edge);
-    if(const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(edge))
+    if(const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(edge))
+    {
+        /// CallPE is phi-like at FunEntryICFGNode. Collect it on each CallCFGEdge
+        /// whose call site appears as an operand, so the edge knows which params are passed.
+        FunEntryICFGNode* entryNode = const_cast<FunEntryICFGNode*>(callPE->getFunEntryICFGNode());
+        for(u32_t i = 0; i < callPE->getOpVarNum(); i++)
+        {
+            CallICFGNode* callNode = const_cast<CallICFGNode*>(callPE->getOpCallICFGNode(i));
+            if(ICFGEdge* icfgEdge = pag->getICFG()->hasInterICFGEdge(callNode, entryNode, ICFGEdge::CallCF))
+                SVFUtil::cast<CallCFGEdge>(icfgEdge)->addCallPE(callPE);
+        }
+    }
+    else if(const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(edge))
     {
         RetICFGNode* retNode = const_cast<RetICFGNode*>(retPE->getCallSite()->getRetICFGNode());
         FunExitICFGNode* exitNode = const_cast<FunExitICFGNode*>(retPE->getFunExitICFGNode());
