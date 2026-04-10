@@ -539,15 +539,20 @@ void VFG::addVFGNodes()
             if (isInterestedSVFVar(param) == false || hasBlackHoleConstObjAddrAsDef(param))
                 continue;
 
-            const CallPE* callPE = nullptr;
-            if (param->hasIncomingEdges(SVFStmt::Call))
+            const CallPE* callPE = pag->getCallPEForFormalParm(param);
+            if (callPE)
             {
-                for (SVFStmt::SVFStmtSetTy::const_iterator cit = param->getIncomingEdgesBegin(SVFStmt::Call), ecit =
-                            param->getIncomingEdgesEnd(SVFStmt::Call); cit != ecit; ++cit)
+                bool hasInterestedOpVar = false;
+                for (u32_t i = 0; i < callPE->getOpVarNum(); i++)
                 {
-                    callPE = SVFUtil::cast<CallPE>(*cit);
-                    break; /// only one CallPE per formal param (phi-like)
+                    if (isInterestedSVFVar(callPE->getOpVar(i)))
+                    {
+                        hasInterestedOpVar = true;
+                        break;
+                    }
                 }
+                if (!hasInterestedOpVar)
+                    callPE = nullptr;
             }
             addFormalParmVFGNode(param,func,callPE);
         }
@@ -558,15 +563,20 @@ void VFG::addVFGNodes()
             if (isInterestedSVFVar(varParam) == false || hasBlackHoleConstObjAddrAsDef(varParam))
                 continue;
 
-            const CallPE* varCallPE = nullptr;
-            if (varParam->hasIncomingEdges(SVFStmt::Call))
+            const CallPE* varCallPE = pag->getCallPEForFormalParm(varParam);
+            if (varCallPE)
             {
-                for(SVFStmt::SVFStmtSetTy::const_iterator cit = varParam->getIncomingEdgesBegin(SVFStmt::Call),
-                        ecit = varParam->getIncomingEdgesEnd(SVFStmt::Call); cit!=ecit; ++cit)
+                bool hasInterestedOpVar = false;
+                for (u32_t i = 0; i < varCallPE->getOpVarNum(); i++)
                 {
-                    varCallPE = SVFUtil::cast<CallPE>(*cit);
-                    break; /// only one CallPE per formal param (phi-like)
+                    if (isInterestedSVFVar(varCallPE->getOpVar(i)))
+                    {
+                        hasInterestedOpVar = true;
+                        break;
+                    }
                 }
+                if (!hasInterestedOpVar)
+                    varCallPE = nullptr;
             }
             addFormalParmVFGNode(varParam,func,varCallPE);
         }

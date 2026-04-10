@@ -311,9 +311,9 @@ CallPE* SVFIR::addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs, const F
 {
     ValVar* opNode = const_cast<ValVar*>(getValVar(src));
     ValVar* resNode = const_cast<ValVar*>(getValVar(dst));
-    CallPENodeMap::iterator it = callPENodeMap.find(resNode);
+    FParmToCallPEMap::iterator it = fParmToCallPEMap.find(resNode);
     // if first operand, create a new CallPE, otherwise add the operand to the existing CallPE
-    if(it == callPENodeMap.end())
+    if(it == fParmToCallPEMap.end())
     {
         CallPE* callPE = new CallPE(resNode, {opNode}, {cs}, entry);
         addCallPE(callPE, opNode, resNode);
@@ -331,7 +331,7 @@ void SVFIR::addCallPE(CallPE* edge, SVFVar* src, SVFVar* dst)
 {
     addToStmt2TypeMap(edge);
     addEdge(src, dst, edge);
-    callPENodeMap[dst] = edge;
+    fParmToCallPEMap[dst] = edge;
 }
 
 /*!
@@ -375,14 +375,14 @@ TDForkPE* SVFIR::addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs,
 {
     ValVar* opNode = const_cast<ValVar*>(getValVar(src));
     ValVar* resNode = const_cast<ValVar*>(getValVar(dst));
-    CallPENodeMap::iterator it = callPENodeMap.find(resNode);
+    FParmToCallPEMap::iterator it = fParmToCallPEMap.find(resNode);
     // if first operand, create a new TDForkPE, otherwise add the operand to the existing TDForkPE
-    if(it == callPENodeMap.end())
+    if(it == fParmToCallPEMap.end())
     {
         TDForkPE* forkPE = new TDForkPE(resNode, {opNode}, {cs}, entry);
         addToStmt2TypeMap(forkPE);
         addEdge(opNode, resNode, forkPE);
-        callPENodeMap[resNode] = forkPE;
+        fParmToCallPEMap[resNode] = forkPE;
         return forkPE;
     }
     else

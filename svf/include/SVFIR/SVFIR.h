@@ -57,7 +57,7 @@ public:
     typedef std::vector<const SVFStmt*> SVFStmtList;
     typedef std::vector<const ValVar*> ValVarList;
     typedef Map<const SVFVar*,PhiStmt*> PHINodeMap;
-    typedef Map<const SVFVar*,CallPE*> CallPENodeMap;
+    typedef Map<const SVFVar*,CallPE*> FParmToCallPEMap;
     typedef Map<const FunObjVar*,ValVarList> FunToArgsListMap;
     typedef Map<const CallICFGNode*,ValVarList> CSToArgsListMap;
     typedef Map<const RetICFGNode*,const ValVar*> CSToRetMap;
@@ -85,7 +85,7 @@ private:
     MemObjToFieldsMap memToFieldsMap;	///< Map a mem object id to all its fields
     SVFStmtSet globSVFStmtSet;	///< Global PAGEdges without control flow information
     PHINodeMap phiNodeMap;	///< A set of phi copy edges
-    CallPENodeMap callPENodeMap; ///< Map a formal param to its CallPE
+    FParmToCallPEMap fParmToCallPEMap; ///< Map a formal param to its CallPE
     FunToArgsListMap funArgsListMap;	///< Map a function to a list of all its formal parameters
     CSToArgsListMap callSiteArgsListMap;	///< Map a callsite to a list of all its actual parameters
     CSToRetMap callSiteRetMap;	///< Map a callsite to its callsite returns PAGNodes
@@ -354,6 +354,12 @@ public:
     inline bool isPhiNode(const SVFVar* node) const
     {
         return phiNodeMap.find(node) != phiNodeMap.end();
+    }
+    /// Get the CallPE for a formal parameter (phi-like, nullptr if not found)
+    inline CallPE* getCallPEForFormalParm(const SVFVar* param) const
+    {
+        auto it = fParmToCallPEMap.find(param);
+        return it != fParmToCallPEMap.end() ? it->second : nullptr;
     }
 
     /// Function has arguments list
