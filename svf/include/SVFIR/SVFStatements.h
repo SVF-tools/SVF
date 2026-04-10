@@ -337,7 +337,6 @@ public:
                edge->getEdgeKind() == SVFStmt::Load ||
                edge->getEdgeKind() == SVFStmt::Ret ||
                edge->getEdgeKind() == SVFStmt::Gep ||
-               edge->getEdgeKind() == SVFStmt::ThreadFork ||
                edge->getEdgeKind() == SVFStmt::ThreadJoin;
     }
     static inline bool classof(const GenericPAGEdgeTy* edge)
@@ -348,7 +347,6 @@ public:
                edge->getEdgeKind() == SVFStmt::Load ||
                edge->getEdgeKind() == SVFStmt::Ret ||
                edge->getEdgeKind() == SVFStmt::Gep ||
-               edge->getEdgeKind() == SVFStmt::ThreadFork ||
                edge->getEdgeKind() == SVFStmt::ThreadJoin;
     }
     //@}
@@ -788,13 +786,13 @@ public:
     {
         return node->getEdgeKind() == Phi || node->getEdgeKind() == Select ||
                node->getEdgeKind() == BinaryOp || node->getEdgeKind() == Cmp ||
-               node->getEdgeKind() == Call;
+               node->getEdgeKind() == Call || node->getEdgeKind() == ThreadFork;
     }
     static inline bool classof(const GenericPAGEdgeTy* node)
     {
         return node->getEdgeKind() == Phi || node->getEdgeKind() == Select ||
                node->getEdgeKind() == BinaryOp || node->getEdgeKind() == Cmp ||
-               node->getEdgeKind() == Call;
+               node->getEdgeKind() == Call || node->getEdgeKind() == ThreadFork;
     }
     //@}
     /// Operands and result at a BinaryNode e.g., p = q + r, `p` is resVar and
@@ -859,18 +857,21 @@ public:
     }
     static inline bool classof(const SVFStmt* edge)
     {
-        return edge->getEdgeKind() == SVFStmt::Call;
+        return edge->getEdgeKind() == SVFStmt::Call ||
+               edge->getEdgeKind() == SVFStmt::ThreadFork;
     }
     static inline bool classof(const GenericPAGEdgeTy* edge)
     {
-        return edge->getEdgeKind() == SVFStmt::Call;
+        return edge->getEdgeKind() == SVFStmt::Call ||
+               edge->getEdgeKind() == SVFStmt::ThreadFork;
     }
     //@}
 
     /// constructor
     CallPE(ValVar* res, const OPVars& opnds,
            const CallICFGNodeVec& icfgNodes,
-           const FunEntryICFGNode* e);
+           const FunEntryICFGNode* e,
+           GEdgeKind k = SVFStmt::Call);
 
     /// Add an operand (actual param) from a call site
     void addOpVar(ValVar* op, const CallICFGNode* call)
@@ -1325,16 +1326,13 @@ public:
 /*!
  * Thread Fork
  */
-class TDForkPE: public AssignStmt
+class TDForkPE: public CallPE
 {
     friend class GraphDBClient;
 
 private:
     TDForkPE(const TDForkPE&);       ///< place holder
     void operator=(const TDForkPE&); ///< place holder
-
-    const CallICFGNode* call;        /// the callsite statement calling from
-    const FunEntryICFGNode* entry;   /// the function entry statement calling to
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1354,29 +1352,12 @@ public:
     //@}
 
     /// constructor
-    TDForkPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
-             const FunEntryICFGNode* e);
-
-    /// Get method for the call instruction
-    //@{
-    inline const CallICFGNode* getCallInst() const
+    TDForkPE(ValVar* res, const OPVars& opnds,
+             const CallICFGNodeVec& icfgNodes,
+             const FunEntryICFGNode* e)
+        : CallPE(res, opnds, icfgNodes, e, SVFStmt::ThreadFork)
     {
-        return call;
     }
-    inline const CallICFGNode* getCallSite() const
-    {
-        return call;
-    }
-    inline const FunEntryICFGNode* getFunEntryICFGNode() const
-    {
-        return entry;
-    }
-    //@}
-
-    const ValVar* getRHSVar() const;
-    const ValVar* getLHSVar() const;
-    const ValVar* getSrcNode() const;
-    const ValVar* getDstNode() const;
 
     virtual const std::string toString() const;
 

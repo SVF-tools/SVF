@@ -444,17 +444,7 @@ void ICFG::updateCallGraph(CallGraph* callgraph)
             {
                 FunEntryICFGNode* calleeEntryNode = getFunEntryBlock(callee);
                 FunExitICFGNode* calleeExitNode = getFunExitBlock(callee);
-                if(ICFGEdge* callEdge = addCallEdge(callBlockNode, calleeEntryNode))
-                {
-                    for (const SVFStmt *stmt : callBlockNode->getSVFStmts())
-                    {
-                        if(const TDForkPE *forkPE = SVFUtil::dyn_cast<TDForkPE>(stmt))
-                        {
-                            if(forkPE->getFunEntryICFGNode() == calleeEntryNode)
-                                SVFUtil::cast<CallCFGEdge>(callEdge)->addCallPE(forkPE);
-                        }
-                    }
-                }
+                addCallEdge(callBlockNode, calleeEntryNode);
                 if(ICFGEdge* retEdge = addRetEdge(calleeExitNode, retBlockNode))
                 {
                     for (const SVFStmt *stmt : retBlockNode->getSVFStmts())

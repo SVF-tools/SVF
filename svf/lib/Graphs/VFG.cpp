@@ -499,7 +499,8 @@ void VFG::addVFGNodes()
                 forks.end(); iter != eiter; ++iter)
     {
         TDForkPE* forkedge = SVFUtil::cast<TDForkPE>(*iter);
-        addActualParmVFGNode(forkedge->getRHSVar(),forkedge->getCallSite());
+        for(u32_t i = 0; i < forkedge->getOpVarNum(); i++)
+            addActualParmVFGNode(forkedge->getOpVar(i), forkedge->getOpCallICFGNode(i));
     }
 
     // initialize actual parameter nodes
@@ -836,9 +837,13 @@ void VFG::connectDirectVFGEdges()
                     forks.end(); iter != eiter; ++iter)
         {
             TDForkPE* forkedge = SVFUtil::cast<TDForkPE>(*iter);
-            ActualParmVFGNode* acutalParm = getActualParmVFGNode(forkedge->getRHSVar(),forkedge->getCallSite());
-            FormalParmVFGNode* formalParm = getFormalParmVFGNode(forkedge->getLHSVar());
-            addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(forkedge->getCallSite(), formalParm->getFun()));
+            FormalParmVFGNode* formalParm = getFormalParmVFGNode(forkedge->getRes());
+            for(u32_t i = 0; i < forkedge->getOpVarNum(); i++)
+            {
+                const CallICFGNode* cs = forkedge->getOpCallICFGNode(i);
+                ActualParmVFGNode* acutalParm = getActualParmVFGNode(forkedge->getOpVar(i), cs);
+                addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(cs, formalParm->getFun()));
+            }
         }
         /// add join edge
         SVFStmt::SVFStmtSetTy& joins = getSVFStmtSet(SVFStmt::ThreadJoin);

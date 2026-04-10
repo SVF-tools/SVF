@@ -333,12 +333,6 @@ void SVFIR::addCallPE(CallPE* edge, SVFVar* src, SVFVar* dst)
     callPENodeMap[dst] = edge;
 }
 
-void SVFIR::addTDForkPE(TDForkPE* edge, SVFVar* src, SVFVar* dst)
-{
-    addToStmt2TypeMap(edge);
-    addEdge(src, dst, edge);
-}
-
 /*!
  * Add Return edge
  */
@@ -378,15 +372,21 @@ SVFStmt* SVFIR::addBlackHoleAddrStmt(NodeID node)
  */
 TDForkPE* SVFIR::addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry)
 {
-    SVFVar* srcNode = getGNode(src);
-    SVFVar* dstNode = getGNode(dst);
-    if(hasLabeledEdge(srcNode,dstNode, SVFStmt::ThreadFork, cs))
-        return nullptr;
+    ValVar* opNode = const_cast<ValVar*>(getValVar(src));
+    ValVar* resNode = const_cast<ValVar*>(getValVar(dst));
+    CallPENodeMap::iterator it = callPENodeMap.find(resNode);
+    if(it == callPENodeMap.end())
+    {
+        TDForkPE* forkPE = new TDForkPE(resNode, {opNode}, {cs}, entry);
+        addToStmt2TypeMap(forkPE);
+        addEdge(opNode, resNode, forkPE);
+        callPENodeMap[resNode] = forkPE;
+        return forkPE;
+    }
     else
     {
-        TDForkPE* forkPE = new TDForkPE(srcNode, dstNode, cs, entry);
-        addTDForkPE(forkPE,srcNode,dstNode);
-        return forkPE;
+        it->second->addOpVar(opNode, cs);
+        return nullptr;
     }
 }
 

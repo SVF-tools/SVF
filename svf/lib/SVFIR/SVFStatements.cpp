@@ -275,7 +275,14 @@ const std::string TDForkPE::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "TDForkPE: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]\t";
+    rawstr << "TDForkPE: [Var" << getResID() << " <-- (";
+    for (u32_t i = 0; i < getOpVarNum(); i++)
+    {
+        rawstr << "[Var" << getOpVarID(i) << ", ICFGNode" << getOpCallICFGNode(i)->getId() << "]";
+        if (i + 1 < getOpVarNum())
+            rawstr << ", ";
+    }
+    rawstr << ")]  ";
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -400,22 +407,6 @@ const ValVar* RetPE::getDstNode() const
     return getLHSVar();
 }
 
-const ValVar* TDForkPE::getRHSVar() const
-{
-    return cast<ValVar>(SVFStmt::getSrcNode());
-}
-const ValVar* TDForkPE::getLHSVar() const
-{
-    return cast<ValVar>(SVFStmt::getDstNode());
-}
-const ValVar* TDForkPE::getSrcNode() const
-{
-    return getRHSVar();
-}
-const ValVar* TDForkPE::getDstNode() const
-{
-    return getLHSVar();
-}
 
 const ValVar* TDJoinPE::getRHSVar() const
 {
@@ -511,20 +502,14 @@ StoreStmt::StoreStmt(SVFVar* s, SVFVar* d, const ICFGNode* st)
 
 CallPE::CallPE(ValVar* res, const OPVars& opnds,
                const CallICFGNodeVec& icfgNodes,
-               const FunEntryICFGNode* e)
+               const FunEntryICFGNode* e,
+               GEdgeKind k)
     : MultiOpndStmt(res, opnds,
-                    makeEdgeFlagWithAddionalOpnd(SVFStmt::Call, opnds.at(0))),
+                    makeEdgeFlagWithAddionalOpnd(k, opnds.at(0))),
       opCallICFGNodes(icfgNodes), entry(e)
 {
     assert(opnds.size() == icfgNodes.size() &&
            "Numbers of operands and their CallICFGNodes are not consistent?");
-}
-
-TDForkPE::TDForkPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
-                   const FunEntryICFGNode* e)
-    : AssignStmt(s, d, makeEdgeFlagWithCallInst(SVFStmt::ThreadFork, i)),
-      call(i), entry(e)
-{
 }
 
 

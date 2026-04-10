@@ -917,8 +917,6 @@ private:
     CallPE* addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs,
                       const FunEntryICFGNode* entry);
     void addCallPE(CallPE* edge, SVFVar* src, SVFVar* dst);
-    /// Add TDForkPE edge
-    void addTDForkPE(TDForkPE* edge, SVFVar* src, SVFVar* dst);
     /// Add Return edge
     RetPE* addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs,
                     const FunExitICFGNode* exit);
