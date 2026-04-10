@@ -199,7 +199,7 @@ public:
         assert(SVFUtil::isa<CallICFGNode>(getSrcNode()) && "not a CallICFGNode?");
         return SVFUtil::cast<CallICFGNode>(getSrcNode());
     }
-    /// Get parameter edges on this CallCFGEdge
+    /// Add get parameter edge to this CallCFGEdge
     inline const std::vector<const CallPE*>& getCallPEs() const
     {
         return callPEs;
