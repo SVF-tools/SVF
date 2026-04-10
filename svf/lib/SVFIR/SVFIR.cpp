@@ -312,6 +312,7 @@ CallPE* SVFIR::addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs, const F
     ValVar* opNode = const_cast<ValVar*>(getValVar(src));
     ValVar* resNode = const_cast<ValVar*>(getValVar(dst));
     CallPENodeMap::iterator it = callPENodeMap.find(resNode);
+    // if first operand, create a new CallPE, otherwise add the operand to the existing CallPE
     if(it == callPENodeMap.end())
     {
         CallPE* callPE = new CallPE(resNode, {opNode}, {cs}, entry);
@@ -375,6 +376,7 @@ TDForkPE* SVFIR::addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs,
     ValVar* opNode = const_cast<ValVar*>(getValVar(src));
     ValVar* resNode = const_cast<ValVar*>(getValVar(dst));
     CallPENodeMap::iterator it = callPENodeMap.find(resNode);
+    // if first operand, create a new TDForkPE, otherwise add the operand to the existing TDForkPE
     if(it == callPENodeMap.end())
     {
         TDForkPE* forkPE = new TDForkPE(resNode, {opNode}, {cs}, entry);
