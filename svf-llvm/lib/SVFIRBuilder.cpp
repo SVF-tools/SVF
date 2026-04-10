@@ -1753,7 +1753,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         {
             assert(srcFun==llvmMS->getFunObjVar(curInst->getFunction()) && "SrcNode of the PAGEdge not in the same function?");
         }
-        if(dstFun!=nullptr && !SVFUtil::isa<CallPE>(edge) && !SVFUtil::isa<RetValPN>(edge->getDstNode()))
+        if(dstFun!=nullptr && !SVFUtil::isa<CallPE>(edge) && !SVFUtil::isa<TDForkPE>(edge) && !SVFUtil::isa<RetValPN>(edge->getDstNode()))
         {
             assert(dstFun==llvmMS->getFunObjVar(curInst->getFunction()) && "DstNode of the PAGEdge not in the same function?");
         }
@@ -1766,6 +1766,11 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         if(SVFUtil::isa<ReturnInst>(curInst))
         {
             icfgNode = pag->getICFG()->getFunExitICFGNode(llvmMS->getFunObjVar(curInst->getFunction()));
+        }
+        else if(const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(edge))
+        {
+            /// CallPE is placed at FunEntryICFGNode (phi-like merging of actual params)
+            icfgNode = const_cast<FunEntryICFGNode*>(callPE->getFunEntryICFGNode());
         }
         else
         {
@@ -1799,12 +1804,12 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
 
     pag->addToSVFStmtList(icfgNode,edge);
     icfgNode->addSVFStmt(edge);
-    if(const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(edge))
+    if(const TDForkPE* forkPE = SVFUtil::dyn_cast<TDForkPE>(edge))
     {
-        CallICFGNode* callNode = const_cast<CallICFGNode*>(callPE->getCallSite());
-        FunEntryICFGNode* entryNode = const_cast<FunEntryICFGNode*>(callPE->getFunEntryICFGNode());
-        if(ICFGEdge* edge = pag->getICFG()->hasInterICFGEdge(callNode,entryNode, ICFGEdge::CallCF))
-            SVFUtil::cast<CallCFGEdge>(edge)->addCallPE(callPE);
+        CallICFGNode* callNode = const_cast<CallICFGNode*>(forkPE->getCallSite());
+        FunEntryICFGNode* entryNode = const_cast<FunEntryICFGNode*>(forkPE->getFunEntryICFGNode());
+        if(ICFGEdge* icfgEdge = pag->getICFG()->hasInterICFGEdge(callNode,entryNode, ICFGEdge::CallCF))
+            SVFUtil::cast<CallCFGEdge>(icfgEdge)->addCallPE(forkPE);
     }
     else if(const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(edge))
     {

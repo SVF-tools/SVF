@@ -34,6 +34,7 @@ namespace SVF
 {
 
 class ICFGNode;
+class SVFStmt;
 class CallPE;
 class RetPE;
 
@@ -180,7 +181,7 @@ class CallCFGEdge : public ICFGEdge
 {
 
 private:
-    std::vector<const CallPE*> callPEs;
+    std::vector<const SVFStmt*> callPEs;
 
 public:
     /// Constructor
@@ -189,7 +190,7 @@ public:
     {
     }
     /// Add call parameter edge to this CallCFGEdge
-    inline void addCallPE(const CallPE* callPE)
+    inline void addCallPE(const SVFStmt* callPE)
     {
         callPEs.push_back(callPE);
     }
@@ -199,8 +200,8 @@ public:
         assert(SVFUtil::isa<CallICFGNode>(getSrcNode()) && "not a CallICFGNode?");
         return SVFUtil::cast<CallICFGNode>(getSrcNode());
     }
-    /// Add get parameter edge to this CallCFGEdge
-    inline const std::vector<const CallPE*>& getCallPEs() const
+    /// Get parameter edges on this CallCFGEdge
+    inline const std::vector<const SVFStmt*>& getCallPEs() const
     {
         return callPEs;
     }

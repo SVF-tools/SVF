@@ -514,7 +514,10 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
         assert(edge && "No edge found!!");
         if(const CallPE* calledge = SVFUtil::dyn_cast<CallPE>(edge))
         {
-            return calledge->getCallSite()->getSourceLoc();
+            const auto& callNodes = calledge->getOpCallICFGNodes();
+            if(!callNodes.empty())
+                return callNodes.front()->getSourceLoc();
+            return "";
         }
         else if(const RetPE* retedge = SVFUtil::dyn_cast<RetPE>(edge))
         {

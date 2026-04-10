@@ -538,18 +538,17 @@ void VFG::addVFGNodes()
             if (isInterestedSVFVar(param) == false || hasBlackHoleConstObjAddrAsDef(param))
                 continue;
 
-            CallPESet callPEs;
+            const CallPE* callPE = nullptr;
             if (param->hasIncomingEdges(SVFStmt::Call))
             {
                 for (SVFStmt::SVFStmtSetTy::const_iterator cit = param->getIncomingEdgesBegin(SVFStmt::Call), ecit =
                             param->getIncomingEdgesEnd(SVFStmt::Call); cit != ecit; ++cit)
                 {
-                    CallPE* callPE = SVFUtil::cast<CallPE>(*cit);
-                    if (isInterestedSVFVar(callPE->getRHSVar()))
-                        callPEs.insert(callPE);
+                    callPE = SVFUtil::cast<CallPE>(*cit);
+                    break; /// only one CallPE per formal param (phi-like)
                 }
             }
-            addFormalParmVFGNode(param,func,callPEs);
+            addFormalParmVFGNode(param,func,callPE);
         }
 
         if (func->isVarArg())
@@ -558,18 +557,17 @@ void VFG::addVFGNodes()
             if (isInterestedSVFVar(varParam) == false || hasBlackHoleConstObjAddrAsDef(varParam))
                 continue;
 
-            CallPESet callPEs;
+            const CallPE* varCallPE = nullptr;
             if (varParam->hasIncomingEdges(SVFStmt::Call))
             {
                 for(SVFStmt::SVFStmtSetTy::const_iterator cit = varParam->getIncomingEdgesBegin(SVFStmt::Call),
                         ecit = varParam->getIncomingEdgesEnd(SVFStmt::Call); cit!=ecit; ++cit)
                 {
-                    CallPE* callPE = SVFUtil::cast<CallPE>(*cit);
-                    if(isInterestedSVFVar(callPE->getRHSVar()))
-                        callPEs.insert(callPE);
+                    varCallPE = SVFUtil::cast<CallPE>(*cit);
+                    break; /// only one CallPE per formal param (phi-like)
                 }
             }
-            addFormalParmVFGNode(varParam,func,callPEs);
+            addFormalParmVFGNode(varParam,func,varCallPE);
         }
     }
 
@@ -802,12 +800,14 @@ void VFG::connectDirectVFGEdges()
         }
         else if(FormalParmVFGNode* formalParm = SVFUtil::dyn_cast<FormalParmVFGNode>(node))
         {
-            for(CallPESet::const_iterator it = formalParm->callPEBegin(), eit = formalParm->callPEEnd();
-                    it!=eit; ++it)
+            if(const CallPE* callPE = formalParm->getCallPE())
             {
-                const CallICFGNode* cs = (*it)->getCallSite();
-                ActualParmVFGNode* acutalParm = getActualParmVFGNode((*it)->getRHSVar(),cs);
-                addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(cs, formalParm->getFun()));
+                for(u32_t i = 0; i < callPE->getOpVarNum(); i++)
+                {
+                    const CallICFGNode* cs = callPE->getOpCallICFGNode(i);
+                    ActualParmVFGNode* acutalParm = getActualParmVFGNode(callPE->getOpVar(i), cs);
+                    addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(cs, formalParm->getFun()));
+                }
             }
         }
         else if(FormalRetVFGNode* calleeRet = SVFUtil::dyn_cast<FormalRetVFGNode>(node))

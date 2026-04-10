@@ -305,26 +305,38 @@ void SVFIR::addStoreStmt(StoreStmt* edge, SVFVar* src, SVFVar* dst)
 }
 
 /*!
- * Add Call edge
+ * Add Call edge (phi-like: merges actual params from all call sites into formal param)
  */
 CallPE* SVFIR::addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry)
 {
-    SVFVar* srcNode = getGNode(src);
-    SVFVar* dstNode = getGNode(dst);
-    if(hasLabeledEdge(srcNode,dstNode, SVFStmt::Call, cs))
-        return nullptr;
+    ValVar* opNode = const_cast<ValVar*>(getValVar(src));
+    ValVar* resNode = const_cast<ValVar*>(getValVar(dst));
+    CallPENodeMap::iterator it = callPENodeMap.find(resNode);
+    if(it == callPENodeMap.end())
+    {
+        CallPE* callPE = new CallPE(resNode, {opNode}, {cs}, entry);
+        addCallPE(callPE, opNode, resNode);
+        return callPE;
+    }
     else
     {
-        CallPE* callPE = new CallPE(srcNode, dstNode, cs,entry);
-        addCallPE(callPE,srcNode,dstNode);
-        return callPE;
+        it->second->addOpVar(opNode, cs);
+        /// return null if we already added this CallPE
+        return nullptr;
     }
 }
 
 void SVFIR::addCallPE(CallPE* edge, SVFVar* src, SVFVar* dst)
 {
     addToStmt2TypeMap(edge);
-    addEdge(src,dst, edge);
+    addEdge(src, dst, edge);
+    callPENodeMap[dst] = edge;
+}
+
+void SVFIR::addTDForkPE(TDForkPE* edge, SVFVar* src, SVFVar* dst)
+{
+    addToStmt2TypeMap(edge);
+    addEdge(src, dst, edge);
 }
 
 /*!
@@ -373,7 +385,7 @@ TDForkPE* SVFIR::addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs,
     else
     {
         TDForkPE* forkPE = new TDForkPE(srcNode, dstNode, cs, entry);
-        addCallPE(forkPE,srcNode,dstNode);
+        addTDForkPE(forkPE,srcNode,dstNode);
         return forkPE;
     }
 }

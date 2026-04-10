@@ -57,6 +57,7 @@ public:
     typedef std::vector<const SVFStmt*> SVFStmtList;
     typedef std::vector<const ValVar*> ValVarList;
     typedef Map<const SVFVar*,PhiStmt*> PHINodeMap;
+    typedef Map<const SVFVar*,CallPE*> CallPENodeMap;
     typedef Map<const FunObjVar*,ValVarList> FunToArgsListMap;
     typedef Map<const CallICFGNode*,ValVarList> CSToArgsListMap;
     typedef Map<const RetICFGNode*,const ValVar*> CSToRetMap;
@@ -84,6 +85,7 @@ private:
     MemObjToFieldsMap memToFieldsMap;	///< Map a mem object id to all its fields
     SVFStmtSet globSVFStmtSet;	///< Global PAGEdges without control flow information
     PHINodeMap phiNodeMap;	///< A set of phi copy edges
+    CallPENodeMap callPENodeMap; ///< Map a formal param to its CallPE
     FunToArgsListMap funArgsListMap;	///< Map a function to a list of all its formal parameters
     CSToArgsListMap callSiteArgsListMap;	///< Map a callsite to a list of all its actual parameters
     CSToRetMap callSiteRetMap;	///< Map a callsite to its callsite returns PAGNodes
@@ -911,10 +913,12 @@ private:
     /// Add Store edge
     StoreStmt* addStoreStmt(NodeID src, NodeID dst, const ICFGNode* val);
     void addStoreStmt(StoreStmt* edge, SVFVar* src, SVFVar* dst);
-    /// Add Call edge
+    /// Add Call edge (phi-like: merges actual params from all call sites into formal param)
     CallPE* addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs,
                       const FunEntryICFGNode* entry);
     void addCallPE(CallPE* edge, SVFVar* src, SVFVar* dst);
+    /// Add TDForkPE edge
+    void addTDForkPE(TDForkPE* edge, SVFVar* src, SVFVar* dst);
     /// Add Return edge
     RetPE* addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs,
                     const FunExitICFGNode* exit);

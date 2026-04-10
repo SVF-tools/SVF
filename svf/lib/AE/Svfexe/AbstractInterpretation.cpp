@@ -1225,9 +1225,19 @@ void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
 void AbstractInterpretation::updateStateOnCall(const CallPE *callPE)
 {
     AbstractState& as = getAbstractState(callPE->getICFGNode());
-    NodeID lhs = callPE->getLHSVarID();
-    NodeID rhs = callPE->getRHSVarID();
-    as[lhs] = as[rhs];
+    NodeID res = callPE->getResID();
+    AbstractValue rhs;
+    for (u32_t i = 0; i < callPE->getOpVarNum(); i++)
+    {
+        NodeID curId = callPE->getOpVarID(i);
+        const ICFGNode* opICFGNode = callPE->getOpCallICFGNode(i);
+        if (hasAbstractState(opICFGNode))
+        {
+            AbstractState& opAs = getAbstractState(opICFGNode);
+            rhs.join_with(opAs[curId]);
+        }
+    }
+    as[res] = rhs;
 }
 
 void AbstractInterpretation::updateStateOnRet(const RetPE *retPE)

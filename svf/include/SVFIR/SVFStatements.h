@@ -335,7 +335,6 @@ public:
                edge->getEdgeKind() == SVFStmt::Copy ||
                edge->getEdgeKind() == SVFStmt::Store ||
                edge->getEdgeKind() == SVFStmt::Load ||
-               edge->getEdgeKind() == SVFStmt::Call ||
                edge->getEdgeKind() == SVFStmt::Ret ||
                edge->getEdgeKind() == SVFStmt::Gep ||
                edge->getEdgeKind() == SVFStmt::ThreadFork ||
@@ -347,7 +346,6 @@ public:
                edge->getEdgeKind() == SVFStmt::Copy ||
                edge->getEdgeKind() == SVFStmt::Store ||
                edge->getEdgeKind() == SVFStmt::Load ||
-               edge->getEdgeKind() == SVFStmt::Call ||
                edge->getEdgeKind() == SVFStmt::Ret ||
                edge->getEdgeKind() == SVFStmt::Gep ||
                edge->getEdgeKind() == SVFStmt::ThreadFork ||
@@ -694,67 +692,6 @@ public:
 
 
 /*!
- * Call
- */
-class CallPE: public AssignStmt
-{
-    friend class GraphDBClient;
-
-private:
-    CallPE(const CallPE&);         ///< place holder
-    void operator=(const CallPE&); ///< place holder
-
-    const CallICFGNode* call;      /// the callsite statement calling from
-    const FunEntryICFGNode* entry; /// the function exit statement calling to
-
-public:
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const CallPE*)
-    {
-        return true;
-    }
-    static inline bool classof(const SVFStmt* edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::Call ||
-               edge->getEdgeKind() == SVFStmt::ThreadFork;
-    }
-    static inline bool classof(const GenericPAGEdgeTy* edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::Call ||
-               edge->getEdgeKind() == SVFStmt::ThreadFork;
-    }
-    //@}
-
-    /// constructor
-    CallPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
-           const FunEntryICFGNode* e, GEdgeKind k = SVFStmt::Call);
-
-    /// Get method for the call instruction
-    //@{
-    inline const CallICFGNode* getCallInst() const
-    {
-        return call;
-    }
-    inline const CallICFGNode* getCallSite() const
-    {
-        return call;
-    }
-    inline const FunEntryICFGNode* getFunEntryICFGNode() const
-    {
-        return entry;
-    }
-    //@}
-
-    const ValVar* getRHSVar() const;
-    const ValVar* getLHSVar() const;
-    const ValVar* getSrcNode() const;
-    const ValVar* getDstNode() const;
-
-    virtual const std::string toString() const override;
-};
-
-/*!
  * Return
  */
 class RetPE: public AssignStmt
@@ -850,12 +787,14 @@ public:
     static inline bool classof(const SVFStmt* node)
     {
         return node->getEdgeKind() == Phi || node->getEdgeKind() == Select ||
-               node->getEdgeKind() == BinaryOp || node->getEdgeKind() == Cmp;
+               node->getEdgeKind() == BinaryOp || node->getEdgeKind() == Cmp ||
+               node->getEdgeKind() == Call;
     }
     static inline bool classof(const GenericPAGEdgeTy* node)
     {
         return node->getEdgeKind() == Phi || node->getEdgeKind() == Select ||
-               node->getEdgeKind() == BinaryOp || node->getEdgeKind() == Cmp;
+               node->getEdgeKind() == BinaryOp || node->getEdgeKind() == Cmp ||
+               node->getEdgeKind() == Call;
     }
     //@}
     /// Operands and result at a BinaryNode e.g., p = q + r, `p` is resVar and
@@ -889,6 +828,78 @@ public:
         return opVars.end();
     }
     //@}
+};
+
+/*!
+ * Call
+ * CallPE is a phi-like statement at function entry that merges actual parameters
+ * from all call sites into the formal parameter.
+ * e.g., formal_param = CallPE(actual1@callsite1, actual2@callsite2, ...)
+ */
+class CallPE: public MultiOpndStmt
+{
+    friend class GraphDBClient;
+
+public:
+    typedef std::vector<const CallICFGNode*> CallICFGNodeVec;
+
+private:
+    CallPE(const CallPE&);         ///< place holder
+    void operator=(const CallPE&); ///< place holder
+
+    CallICFGNodeVec opCallICFGNodes; /// each operand's call site
+    const FunEntryICFGNode* entry;   /// the function entry node
+
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const CallPE*)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFStmt* edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Call;
+    }
+    static inline bool classof(const GenericPAGEdgeTy* edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Call;
+    }
+    //@}
+
+    /// constructor
+    CallPE(ValVar* res, const OPVars& opnds,
+           const CallICFGNodeVec& icfgNodes,
+           const FunEntryICFGNode* e);
+
+    /// Add an operand (actual param) from a call site
+    void addOpVar(ValVar* op, const CallICFGNode* call)
+    {
+        opVars.push_back(op);
+        opCallICFGNodes.push_back(call);
+        assert(opVars.size() == opCallICFGNodes.size() &&
+               "Numbers of operands and their CallICFGNodes are not consistent?");
+    }
+
+    /// Return the CallICFGNode of the i-th operand
+    inline const CallICFGNode* getOpCallICFGNode(u32_t op_idx) const
+    {
+        return opCallICFGNodes.at(op_idx);
+    }
+
+    /// Return all call site ICFGNodes
+    inline const CallICFGNodeVec& getOpCallICFGNodes() const
+    {
+        return opCallICFGNodes;
+    }
+
+    /// Return the function entry node
+    inline const FunEntryICFGNode* getFunEntryICFGNode() const
+    {
+        return entry;
+    }
+
+    virtual const std::string toString() const override;
 };
 
 /*!
@@ -1314,13 +1325,16 @@ public:
 /*!
  * Thread Fork
  */
-class TDForkPE: public CallPE
+class TDForkPE: public AssignStmt
 {
     friend class GraphDBClient;
 
 private:
     TDForkPE(const TDForkPE&);       ///< place holder
     void operator=(const TDForkPE&); ///< place holder
+
+    const CallICFGNode* call;        /// the callsite statement calling from
+    const FunEntryICFGNode* entry;   /// the function entry statement calling to
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1341,10 +1355,23 @@ public:
 
     /// constructor
     TDForkPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
-             const FunEntryICFGNode* entry)
-        : CallPE(s, d, i, entry, SVFStmt::ThreadFork)
+             const FunEntryICFGNode* e);
+
+    /// Get method for the call instruction
+    //@{
+    inline const CallICFGNode* getCallInst() const
     {
+        return call;
     }
+    inline const CallICFGNode* getCallSite() const
+    {
+        return call;
+    }
+    inline const FunEntryICFGNode* getFunEntryICFGNode() const
+    {
+        return entry;
+    }
+    //@}
 
     const ValVar* getRHSVar() const;
     const ValVar* getLHSVar() const;

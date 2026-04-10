@@ -597,13 +597,11 @@ protected:
         /// do not set def here, this node is not a variable definition
     }
     /// Add a formal parameter VFG node
-    inline void addFormalParmVFGNode(const ValVar* fparm, const FunObjVar* fun, CallPESet& callPEs)
+    inline void addFormalParmVFGNode(const ValVar* fparm, const FunObjVar* fun, const CallPE* callPE)
     {
         FormalParmVFGNode* sNode = new FormalParmVFGNode(totalVFGNode++,fparm,fun);
         addVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(fun));
-        for(CallPESet::const_iterator it = callPEs.begin(), eit=callPEs.end();
-                it!=eit; ++it)
-            sNode->addCallPE(*it);
+        sNode->setCallPE(callPE);
 
         setDef(fparm,sNode);
         SVFVarToFormalParmMap[fparm] = sNode;
