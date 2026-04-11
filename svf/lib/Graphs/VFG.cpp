@@ -787,9 +787,12 @@ void VFG::connectDirectVFGEdges()
             {
                 for(u32_t i = 0; i < callPE->getOpVarNum(); i++)
                 {
-                    const CallICFGNode* cs = callPE->getOpCallICFGNode(i);
-                    ActualParmVFGNode* acutalParm = getActualParmVFGNode(callPE->getOpVar(i), cs);
-                    addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(cs, formalParm->getFun()));
+                    if(isInterestedSVFVar(callPE->getOpVar(i)))
+                    {
+                        const CallICFGNode* cs = callPE->getOpCallICFGNode(i);
+                        ActualParmVFGNode* acutalParm = getActualParmVFGNode(callPE->getOpVar(i), cs);
+                        addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(cs, formalParm->getFun()));
+                    }
                 }
             }
         }
@@ -822,9 +825,12 @@ void VFG::connectDirectVFGEdges()
             FormalParmVFGNode* formalParm = getFormalParmVFGNode(forkedge->getRes());
             for(u32_t i = 0; i < forkedge->getOpVarNum(); i++)
             {
-                const CallICFGNode* cs = forkedge->getOpCallICFGNode(i);
-                ActualParmVFGNode* acutalParm = getActualParmVFGNode(forkedge->getOpVar(i), cs);
-                addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(cs, formalParm->getFun()));
+                if(isInterestedSVFVar(forkedge->getOpVar(i)))
+                {
+                    const CallICFGNode* cs = forkedge->getOpCallICFGNode(i);
+                    ActualParmVFGNode* acutalParm = getActualParmVFGNode(forkedge->getOpVar(i), cs);
+                    addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(cs, formalParm->getFun()));
+                }
             }
         }
         /// add join edge
