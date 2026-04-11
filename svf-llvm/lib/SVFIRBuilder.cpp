@@ -1772,12 +1772,13 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
             /// CallPE is placed at FunEntryICFGNode (phi-like merging of actual params)
             icfgNode = const_cast<FunEntryICFGNode*>(callPE->getFunEntryICFGNode());
         }
+        else if(SVFUtil::isa<RetPE>(edge))
+        {
+            icfgNode = llvmMS->getRetICFGNode(SVFUtil::cast<Instruction>(curInst));
+        }
         else
         {
-            if(SVFUtil::isa<RetPE>(edge))
-                icfgNode = llvmMS->getRetICFGNode(SVFUtil::cast<Instruction>(curInst));
-            else
-                icfgNode = llvmMS->getICFGNode(SVFUtil::cast<Instruction>(curInst));
+            icfgNode = llvmMS->getICFGNode(SVFUtil::cast<Instruction>(curInst));
         }
     }
     else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(curVal))

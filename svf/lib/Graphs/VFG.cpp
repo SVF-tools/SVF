@@ -540,20 +540,6 @@ void VFG::addVFGNodes()
                 continue;
 
             const CallPE* callPE = pag->getCallPEForFormalParm(param);
-            if (callPE)
-            {
-                bool hasInterestedOpVar = false;
-                for (u32_t i = 0; i < callPE->getOpVarNum(); i++)
-                {
-                    if (isInterestedSVFVar(callPE->getOpVar(i)))
-                    {
-                        hasInterestedOpVar = true;
-                        break;
-                    }
-                }
-                if (!hasInterestedOpVar)
-                    callPE = nullptr;
-            }
             addFormalParmVFGNode(param,func,callPE);
         }
 
@@ -564,20 +550,6 @@ void VFG::addVFGNodes()
                 continue;
 
             const CallPE* varCallPE = pag->getCallPEForFormalParm(varParam);
-            if (varCallPE)
-            {
-                bool hasInterestedOpVar = false;
-                for (u32_t i = 0; i < varCallPE->getOpVarNum(); i++)
-                {
-                    if (isInterestedSVFVar(varCallPE->getOpVar(i)))
-                    {
-                        hasInterestedOpVar = true;
-                        break;
-                    }
-                }
-                if (!hasInterestedOpVar)
-                    varCallPE = nullptr;
-            }
             addFormalParmVFGNode(varParam,func,varCallPE);
         }
     }
