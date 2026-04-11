@@ -1222,6 +1222,8 @@ void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
 }
 
 
+/// Handle CallPE: phi-like merging of actual parameters from all call sites
+/// into the formal parameter at FunEntryICFGNode (e.g., formal = join(actual1@cs1, actual2@cs2, ...))
 void AbstractInterpretation::updateStateOnCall(const CallPE *callPE)
 {
     AbstractState& as = getAbstractState(callPE->getICFGNode());
