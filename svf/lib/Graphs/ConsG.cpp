@@ -86,8 +86,9 @@ void ConstraintGraph::buildCG()
     for (SVFStmt::SVFStmtSetTy::iterator iter = calls.begin(), eiter =
                 calls.end(); iter != eiter; ++iter)
     {
-        const CallPE* edge = SVFUtil::cast<CallPE>(*iter);
-        addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
+        const CallPE* callPE = SVFUtil::cast<CallPE>(*iter);
+        for(u32_t i = 0; i < callPE->getOpVarNum(); i++)
+            addCopyCGEdge(callPE->getOpVarID(i), callPE->getResID());
     }
 
     SVFStmt::SVFStmtSetTy& rets = getSVFStmtSet(SVFStmt::Ret);
@@ -102,8 +103,9 @@ void ConstraintGraph::buildCG()
     for (SVFStmt::SVFStmtSetTy::iterator iter = tdfks.begin(), eiter =
                 tdfks.end(); iter != eiter; ++iter)
     {
-        const TDForkPE* edge = SVFUtil::cast<TDForkPE>(*iter);
-        addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
+        const TDForkPE* forkPE = SVFUtil::cast<TDForkPE>(*iter);
+        for(u32_t i = 0; i < forkPE->getOpVarNum(); i++)
+            addCopyCGEdge(forkPE->getOpVarID(i), forkPE->getResID());
     }
 
     SVFStmt::SVFStmtSetTy& tdjns = getSVFStmtSet(SVFStmt::ThreadJoin);

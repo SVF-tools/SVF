@@ -305,26 +305,33 @@ void SVFIR::addStoreStmt(StoreStmt* edge, SVFVar* src, SVFVar* dst)
 }
 
 /*!
- * Add Call edge
+ * Add Call edge (phi-like: merges actual params from all call sites into formal param)
  */
 CallPE* SVFIR::addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry)
 {
-    SVFVar* srcNode = getGNode(src);
-    SVFVar* dstNode = getGNode(dst);
-    if(hasLabeledEdge(srcNode,dstNode, SVFStmt::Call, cs))
-        return nullptr;
+    ValVar* opNode = const_cast<ValVar*>(getValVar(src));
+    ValVar* resNode = const_cast<ValVar*>(getValVar(dst));
+    FParmToCallPEMap::iterator it = fParmToCallPEMap.find(resNode);
+    // if first operand, create a new CallPE, otherwise add the operand to the existing CallPE
+    if(it == fParmToCallPEMap.end())
+    {
+        CallPE* callPE = new CallPE(resNode, {opNode}, {cs}, entry);
+        addCallPE(callPE, opNode, resNode);
+        return callPE;
+    }
     else
     {
-        CallPE* callPE = new CallPE(srcNode, dstNode, cs,entry);
-        addCallPE(callPE,srcNode,dstNode);
-        return callPE;
+        it->second->addOpVar(opNode, cs);
+        /// return null if we already added this CallPE
+        return nullptr;
     }
 }
 
 void SVFIR::addCallPE(CallPE* edge, SVFVar* src, SVFVar* dst)
 {
     addToStmt2TypeMap(edge);
-    addEdge(src,dst, edge);
+    addEdge(src, dst, edge);
+    fParmToCallPEMap[dst] = edge;
 }
 
 /*!
@@ -366,15 +373,22 @@ SVFStmt* SVFIR::addBlackHoleAddrStmt(NodeID node)
  */
 TDForkPE* SVFIR::addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry)
 {
-    SVFVar* srcNode = getGNode(src);
-    SVFVar* dstNode = getGNode(dst);
-    if(hasLabeledEdge(srcNode,dstNode, SVFStmt::ThreadFork, cs))
-        return nullptr;
+    ValVar* opNode = const_cast<ValVar*>(getValVar(src));
+    ValVar* resNode = const_cast<ValVar*>(getValVar(dst));
+    FParmToCallPEMap::iterator it = fParmToCallPEMap.find(resNode);
+    // if first operand, create a new TDForkPE, otherwise add the operand to the existing TDForkPE
+    if(it == fParmToCallPEMap.end())
+    {
+        TDForkPE* forkPE = new TDForkPE(resNode, {opNode}, {cs}, entry);
+        addToStmt2TypeMap(forkPE);
+        addEdge(opNode, resNode, forkPE);
+        fParmToCallPEMap[resNode] = forkPE;
+        return forkPE;
+    }
     else
     {
-        TDForkPE* forkPE = new TDForkPE(srcNode, dstNode, cs, entry);
-        addCallPE(forkPE,srcNode,dstNode);
-        return forkPE;
+        it->second->addOpVar(opNode, cs);
+        return nullptr;
     }
 }
 

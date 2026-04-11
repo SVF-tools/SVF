@@ -1028,12 +1028,12 @@ class FormalParmVFGNode : public ArgumentVFGNode
 {
 private:
     const FunObjVar* fun;
-    CallPESet callPEs;
+    const CallPE* callPE;
 
 public:
     /// Constructor
     FormalParmVFGNode(NodeID id, const ValVar* n, const FunObjVar* f):
-        ArgumentVFGNode(id, n, FParm),  fun(f)
+        ArgumentVFGNode(id, n, FParm),  fun(f), callPE(nullptr)
     {
     }
 
@@ -1048,20 +1048,15 @@ public:
     {
         return fun;
     }
-    /// Return call edge
-    inline void addCallPE(const CallPE* call)
+    /// Set the (single, phi-like) CallPE for this formal parameter
+    inline void setCallPE(const CallPE* call)
     {
-        callPEs.insert(call);
+        callPE = call;
     }
-    /// Call edge iterator
-    ///@{
-    inline CallPESet::const_iterator callPEBegin() const
+    /// Return the CallPE (phi-like, merges all actual params)
+    inline const CallPE* getCallPE() const
     {
-        return callPEs.begin();
-    }
-    inline CallPESet::const_iterator callPEEnd() const
-    {
-        return callPEs.end();
+        return callPE;
     }
     //@}
 
