@@ -117,6 +117,11 @@ jobs:
         run:
           ctest -R ae_recursion_tests -VV
 
+      - name: ctest ae_semi_sparse
+        working-directory: ${{github.workspace}}/Release-build
+        run:
+          ctest -R semi_sparse -VV
+
       - name: ctest cfl_tests
         working-directory: ${{github.workspace}}/Release-build
         run:
