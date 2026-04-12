@@ -942,13 +942,17 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
         if (mergeStatesFromPredecessors(cycle_head))
             handleICFGNode(cycle_head);
 
-        // Sparse-only: mergeStatesFromPredecessors does not join ValVars at
-        // cycle_head, so the previous iteration's accumulated values get
-        // strong-overwritten by whichever predecessor wrote last. Re-gather
-        // the cycle ValVars from their def-sites (where scatterCycleValVars
-        // left the last iter's widen/narrow result) into cycle_head's trace,
-        // so this round's body and the snapshot below see the accumulation.
-        if (cur_iter > 0 &&
+        // Sparse-only widening phase: mergeStatesFromPredecessors does not
+        // join ValVars at cycle_head, so the previous iteration's accumulated
+        // values get strong-overwritten by whichever predecessor wrote last.
+        // Re-gather the cycle ValVars from prev_snapshot into cycle_head's
+        // trace so this round's body and the snapshot see the accumulation.
+        //
+        // During narrowing, skip this: the CallPE (now MultiOpndStmt) already
+        // joins all per-callsite operands in updateStateOnCall, so cycle_head's
+        // trace has the correctly narrowed value. Re-gathering from
+        // prev_snapshot would widen it back and defeat the narrow.
+        if (cur_iter > 0 && increasing &&
             Options::AESparsity() == AbstractInterpretation::AESparsity::SemiSparse)
         {
             gatherCycleValVars(svfStateMgr->getTrace()[cycle_head],
