@@ -65,25 +65,6 @@ public:
     {
         return callGraphSCC;
     }
-    SVFG* getSVFG() const
-    {
-        return svfg;
-    }
-    /// Given an ObjVar and its def-site ICFGNode, find all use-site ICFGNodes
-    const Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
-
-    /// Given a ValVar, find all use-site ICFGNodes
-    /// by following outgoing direct VFGEdges from its unique definition SVFGNode
-    const Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const;
-
-    /// Given a ValVar and its SVFGNode, find the definition-site ICFGNode
-    /// by following incoming direct VFGEdges (asserts unique definition)
-    const ICFGNode* getDefSiteOfValVar(const ValVar* var) const;
-
-    /// Given an ObjVar and its use-site ICFGNode, find the definition-site ICFGNode
-    /// by following incoming IndirectSVFGEdges whose pts contains the ObjVar (asserts unique definition)
-    const ICFGNode* getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
-
     /// Build WTO for each function using call graph SCC
     void initWTO();
 
@@ -93,15 +74,31 @@ public:
         return funcToWTO;
     }
 
+    /// Walk every function's WTO and populate cycleToValVars bottom-up.
+    /// Called once right after initWTO(). No-op in dense mode.
+    void initCycleValVars();
+
+    /// Look up the ValVar id set of a WTO cycle. Returns nullptr if the
+    /// cycle is unknown (e.g. dense mode, where the map is never built).
+    const Set<NodeID>* getCycleValVars(const ICFGCycleWTO* cycle) const
+    {
+        auto it = cycleToValVars.find(cycle);
+        return it == cycleToValVars.end() ? nullptr : &it->second;
+    }
+
 private:
     SVFIR* svfir;
     ICFG* icfg;
-    SVFG* svfg;
     AndersenWaveDiff* pta;
     CallGraph* callGraph;
     CallGraphSCC* callGraphSCC;
 
     Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
+
+    /// Pre-computed (semi-sparse only) map from a WTO cycle to the IDs of
+    /// every ValVar whose def-site is inside that cycle, including all
+    /// nested sub-cycles. Empty in dense mode.
+    Map<const ICFGCycleWTO*, Set<NodeID>> cycleToValVars;
 };
 
 } // End namespace SVF

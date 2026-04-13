@@ -28,84 +28,24 @@
  */
 
 #include "AE/Svfexe/PreAnalysis.h"
-#include "Graphs/SVFG.h"
-#include "MSSA/SVFGBuilder.h"
+#include "AE/Svfexe/AbstractInterpretation.h"
 #include "Util/Options.h"
+#include "Util/WorkList.h"
 
 using namespace SVF;
 
 PreAnalysis::PreAnalysis(SVFIR* pag, ICFG* icfg)
-    : svfir(pag), icfg(icfg), svfg(nullptr), pta(nullptr), callGraph(nullptr), callGraphSCC(nullptr)
+    : svfir(pag), icfg(icfg), pta(nullptr), callGraph(nullptr), callGraphSCC(nullptr)
 {
     pta = AndersenWaveDiff::createAndersenWaveDiff(svfir);
     callGraph = pta->getCallGraph();
     callGraphSCC = pta->getCallGraphSCC();
-    if (Options::SparseAE())
-    {
-        SVFGBuilder memSSA(true);
-        svfg = memSSA.buildFullSVFG(pta);
-    }
 }
 
 PreAnalysis::~PreAnalysis()
 {
     for (auto& [func, wto] : funcToWTO)
         delete wto;
-}
-
-const Set<const ICFGNode*> PreAnalysis::getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const
-{
-    if (Options::SparseAE())
-    {
-        assert(svfg && "SVFG is not built for sparse AE");
-        return svfg->getUseSitesOfObjVar(obj, node);
-    }
-    // Non-sparse mode: return ICFG successor nodes
-    Set<const ICFGNode*> succs;
-    for (const auto* edge : node->getOutEdges())
-        succs.insert(edge->getDstNode());
-    return succs;
-}
-
-const Set<const ICFGNode*> PreAnalysis::getUseSitesOfValVar(const ValVar* var) const
-{
-    if (Options::SparseAE())
-    {
-        assert(svfg && "SVFG is not built for sparse AE");
-        return svfg->getUseSitesOfValVar(var);
-    }
-    // Non-sparse mode: return ICFG successor nodes of the ValVar's ICFGNode
-    Set<const ICFGNode*> succs;
-    if (const ICFGNode* node = var->getICFGNode())
-    {
-        for (const auto* edge : node->getOutEdges())
-            succs.insert(edge->getDstNode());
-    }
-    return succs;
-}
-
-const ICFGNode* PreAnalysis::getDefSiteOfValVar(const ValVar* var) const
-{
-    if (Options::SparseAE())
-    {
-        assert(svfg && "SVFG is not built for sparse AE");
-        return svfg->getDefSiteOfValVar(var);
-    }
-    // Non-sparse mode: return the ValVar's associated ICFGNode
-    return var->getICFGNode();
-}
-
-const ICFGNode* PreAnalysis::getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const
-{
-    if (Options::SparseAE())
-    {
-        assert(svfg && "SVFG is not built for sparse AE");
-        return svfg->getDefSiteOfObjVar(obj, node);
-    }
-    // Non-sparse mode: return ICFG predecessor node
-    for (const auto* edge : node->getInEdges())
-        return edge->getSrcNode();
-    return nullptr;
 }
 
 void PreAnalysis::initWTO()
@@ -144,4 +84,88 @@ void PreAnalysis::initWTO()
         }
     }
 
+}
+
+// ---------------------------------------------------------------------------
+// Semi-sparse cycle ValVar set precomputation
+// ---------------------------------------------------------------------------
+//
+// In semi-sparse mode, ValVars live at their def-sites and do not flow
+// through the cycle-head merge. handleLoopOrRecursion uses the cycle's
+// ValVar set to gather/scatter ValVars around each widening iteration.
+// We precompute the set once per cycle here so the main loop does no work.
+
+void PreAnalysis::initCycleValVars()
+{
+    if (Options::AESparsity() != AbstractInterpretation::AESparsity::SemiSparse)
+        return;
+
+    // Step 1: Collect all cycles in top-down order using a stack-based DFS,
+    // then reverse to get bottom-up order (inner cycles before outer ones).
+    std::vector<const ICFGCycleWTO*> cycles;
+    {
+        std::vector<const ICFGWTOComp*> stack;
+        for (const auto& kv : funcToWTO)
+        {
+            if (!kv.second) continue;
+            for (const ICFGWTOComp* comp : kv.second->getWTOComponents())
+                stack.push_back(comp);
+        }
+        while (!stack.empty())
+        {
+            const ICFGWTOComp* comp = stack.back();
+            stack.pop_back();
+            if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+            {
+                for (const ICFGWTOComp* sub : cycle->getWTOComponents())
+                    stack.push_back(sub);
+                cycles.push_back(cycle);
+            }
+        }
+        std::reverse(cycles.begin(), cycles.end());
+    }
+
+    // Step 2: Build ValVar sets bottom-up.  Inner cycles are already in the
+    // map when we reach their enclosing cycle.
+    for (const ICFGCycleWTO* cycle : cycles)
+    {
+        Set<NodeID>& out = cycleToValVars[cycle];
+
+        // Gather every ICFG node in this cycle (head + body singletons).
+        // For nested sub-cycles, merge their already-computed sets instead.
+        std::vector<const ICFGNode*> nodes;
+        nodes.push_back(cycle->head()->getICFGNode());
+        for (const ICFGWTOComp* comp : cycle->getWTOComponents())
+        {
+            if (const ICFGSingletonWTO* s = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+                nodes.push_back(s->getICFGNode());
+            else if (const ICFGCycleWTO* sub = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+                out.insert(cycleToValVars[sub].begin(), cycleToValVars[sub].end());
+        }
+
+        // For each node, collect LHS ValVar IDs from its statements.
+        for (const ICFGNode* node : nodes)
+        {
+            for (const SVFStmt* stmt : node->getSVFStmts())
+            {
+                const ValVar* lhs = nullptr;
+                if (const AssignStmt* a = SVFUtil::dyn_cast<AssignStmt>(stmt))
+                    lhs = SVFUtil::dyn_cast<ValVar>(a->getLHSVar());
+                else if (const MultiOpndStmt* m = SVFUtil::dyn_cast<MultiOpndStmt>(stmt))
+                    lhs = m->getRes();
+                if (lhs)
+                    out.insert(lhs->getId());
+            }
+            // FunEntryICFGNode owns ArgValVars (formal parameters) that have
+            // no defining stmt at the entry — the CallPE lives on the caller
+            // side.  For recursive cycles whose head is a FunEntry, we need
+            // these IDs so widening/narrowing observes them across iterations.
+            if (const FunEntryICFGNode* fe = SVFUtil::dyn_cast<FunEntryICFGNode>(node))
+            {
+                for (const SVFVar* fp : fe->getFormalParms())
+                    if (const ValVar* v = SVFUtil::dyn_cast<ValVar>(fp))
+                        out.insert(v->getId());
+            }
+        }
+    }
 }

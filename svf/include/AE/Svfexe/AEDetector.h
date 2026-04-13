@@ -32,6 +32,10 @@
 
 namespace SVF
 {
+
+class AbstractInterpretation;
+class AbstractStateManager;
+
 /**
  * @class AEDetector
  * @brief Base class for all detectors.
@@ -75,7 +79,7 @@ public:
      * @param as Reference to the abstract state.
      * @param node Pointer to the ICFG node.
      */
-    virtual void detect(AbstractState& as, const ICFGNode* node) = 0;
+    virtual void detect(const ICFGNode* node) = 0;
 
     /**
      * @brief Pure virtual function for handling stub external API calls. (e.g. UNSAFE_BUFACCESS)
@@ -167,7 +171,7 @@ public:
      * @param objAddrs Address value for the object.
      * @param offset The interval value of the offset.
      */
-    void updateGepObjOffsetFromBase(AbstractState& as,
+    void updateGepObjOffsetFromBase(const ICFGNode* node,
                                     AddressValue gepAddrs,
                                     AddressValue objAddrs,
                                     IntervalValue offset);
@@ -177,14 +181,14 @@ public:
      * @param as Reference to the abstract state.
      * @param node Pointer to the ICFG node.
      */
-    void detect(AbstractState& as, const ICFGNode*);
+    void detect(const ICFGNode*) override;
 
 
     /**
      * @brief Handles external API calls related to buffer overflow detection.
      * @param call Pointer to the call ICFG node.
      */
-    void handleStubFunctions(const CallICFGNode*);
+    void handleStubFunctions(const CallICFGNode*) override;
 
     /**
      * @brief Adds an offset to a GEP object.
@@ -229,7 +233,7 @@ public:
      * @param gep Pointer to the GEP statement.
      * @return The interval value of the access offset.
      */
-    IntervalValue getAccessOffset(AbstractState& as, NodeID objId, const GepStmt* gep);
+    IntervalValue getAccessOffset(NodeID objId, const GepStmt* gep);
 
     /**
      * @brief Adds a bug to the reporter based on an exception.
@@ -268,7 +272,7 @@ public:
     /**
      * @brief Reports all detected buffer overflow bugs.
      */
-    void reportBug()
+    void reportBug() override
     {
         if (!nodeToBugInfo.empty())
         {
@@ -292,33 +296,31 @@ public:
      * @param as Reference to the abstract state.
      * @param call Pointer to the call ICFG node.
      */
-    void detectExtAPI(AbstractState& as, const CallICFGNode *call);
+    void detectExtAPI(const CallICFGNode *call);
 
     /**
      * @brief Checks if memory can be safely accessed.
-     * @param as Reference to the abstract state.
      * @param value Pointer to the SVF var.
      * @param len The interval value representing the length of the memory access.
+     * @param node The ICFG node providing context.
      * @return True if the memory access is safe, false otherwise.
      */
-    bool canSafelyAccessMemory(AbstractState& as, const SVFVar *value, const IntervalValue &len);
+    bool canSafelyAccessMemory(const ValVar *value, const IntervalValue &len, const ICFGNode* node);
 
 private:
     /**
      * @brief Detects buffer overflow in 'strcat' function calls.
-     * @param as Reference to the abstract state.
      * @param call Pointer to the call ICFG node.
      * @return True if a buffer overflow is detected, false otherwise.
      */
-    bool detectStrcat(AbstractState& as, const CallICFGNode *call);
+    bool detectStrcat(const CallICFGNode *call);
 
     /**
      * @brief Detects buffer overflow in 'strcpy' function calls.
-     * @param as Reference to the abstract state.
      * @param call Pointer to the call ICFG node.
      * @return True if a buffer overflow is detected, false otherwise.
      */
-    bool detectStrcpy(AbstractState& as, const CallICFGNode *call);
+    bool detectStrcpy(const CallICFGNode *call);
 
 private:
     Map<const GepObjVar*, IntervalValue> gepObjOffsetFromBase; ///< Maps GEP objects to their offsets from the base.
@@ -348,13 +350,13 @@ public:
      * @param as Reference to the abstract state.
      * @param node Pointer to the ICFG node.
      */
-    void detect(AbstractState& as, const ICFGNode* node);
+    void detect(const ICFGNode* node) override;
 
     /**
      * @brief Handles external API calls related to nullptr dereferences.
      * @param call Pointer to the call ICFG node.
      */
-    void handleStubFunctions(const CallICFGNode* call);
+    void handleStubFunctions(const CallICFGNode* call) override;
 
     /**
      * @brief Checks if an Abstract Value is uninitialized.
@@ -401,7 +403,7 @@ public:
     /**
      * @brief Reports all detected nullptr dereference bugs.
      */
-    void reportBug()
+    void reportBug() override
     {
         if (!nodeToBugInfo.empty())
         {
@@ -420,7 +422,7 @@ public:
      * @param as Reference to the abstract state.
      * @param call Pointer to the call ICFG node.
      */
-    void detectExtAPI(AbstractState& as, const CallICFGNode* call);
+    void detectExtAPI(const CallICFGNode* call);
 
 
     /**
@@ -433,7 +435,7 @@ public:
         return !v.isAddr() && !v.isInterval();
     }
 
-    bool canSafelyDerefPtr(AbstractState& as, const SVFVar* ptr);
+    bool canSafelyDerefPtr(const ValVar* ptr, const ICFGNode* node);
 
 private:
     Set<std::string> bugLoc; ///< Set of locations where bugs have been reported.

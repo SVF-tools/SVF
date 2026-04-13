@@ -31,6 +31,7 @@
 #pragma once
 #include "AE/Core/AbstractState.h"
 #include "AE/Core/ICFGWTO.h"
+#include "AE/Svfexe/AbstractStateManager.h"
 #include "AE/Svfexe/AEDetector.h"
 #include "AE/Svfexe/PreAnalysis.h"
 #include "AE/Svfexe/AbsExtAPI.h"
@@ -73,6 +74,13 @@ public:
      * if set WIDEN_ONLY, result = [10000, +oo] since only widening is applied at the cycle head of recursive functions without narrowing.
      * if set WIDEN_NARROW, result = [10000, 10000] since both widening and narrowing are applied at the cycle head of recursive functions.
      * */
+    enum AESparsity
+    {
+        Dense,
+        SemiSparse,
+        Sparse
+    };
+
     enum HandleRecur
     {
         TOP,
@@ -115,42 +123,44 @@ public:
         return svfir->getSVFVar(varId);
     }
 
-    /// Retrieve abstract value for a top-level variable at a given ICFG node
-    const AbstractValue& getAbstractValue(const ValVar* var);
+    /// Get the state manager instance.
+    AbstractStateManager* getStateMgr()
+    {
+        return svfStateMgr;
+    }
 
-    /// Retrieve abstract value for an address-taken variable at a given ICFG node
-    const AbstractValue& getAbstractValue(const ICFGNode* node, const ObjVar* var);
+    // ---------------------------------------------------------------
+    //  Convenience wrappers around AbstractStateManager
+    // ---------------------------------------------------------------
+    /// Read-only access to a node's AbstractState. Mutations must go through
+    /// updateAbsState (to replace) or updateAbsValue (to update one variable).
+    inline const AbstractState& getAbsState(const ICFGNode* node) const
+    {
+        return svfStateMgr->getAbstractState(node);
+    }
 
-    /// Retrieve abstract value for any SVF variable at a given ICFG node
-    const AbstractValue& getAbstractValue(const ICFGNode* node, const SVFVar* var);
+    inline bool hasAbsState(const ICFGNode* node)
+    {
+        return svfStateMgr->hasAbstractState(node);
+    }
 
-    /// Set abstract value for a top-level variable at a given ICFG node
-    void updateAbstractValue(const ValVar* var, const AbstractValue& val);
+    inline void updateAbsState(const ICFGNode* node, const AbstractState& state)
+    {
+        svfStateMgr->updateAbstractState(node, state);
+    }
 
-    /// Set abstract value for an address-taken variable at a given ICFG node
-    void updateAbstractValue(const ICFGNode* node, const ObjVar* var, const AbstractValue& val);
+    inline const AbstractValue& getAbsValue(const SVFVar* var, const ICFGNode* node)
+    {
+        return svfStateMgr->getAbstractValue(var, node);
+    }
 
-    /// Set abstract value for any SVF variable at a given ICFG node
-    void updateAbstractValue(const ICFGNode* node, const SVFVar* var, const AbstractValue& val);
+    inline void updateAbsValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node)
+    {
+        svfStateMgr->updateAbstractValue(var, val, node);
+    }
 
-    /// Propagate an ObjVar's abstract value from defSite to all its use-site ICFGNodes via SVFG
+    /// Propagate an ObjVar's abstract value from defSite to all its use-sites.
     void propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite);
-
-    /// Retrieve the abstract state from the trace for a given ICFG node; asserts if no trace exists
-    AbstractState& getAbstractState(const ICFGNode* node);
-
-    /// Check if an abstract state exists in the trace for a given ICFG node
-    bool hasAbstractState(const ICFGNode* node);
-
-    /// Retrieve abstract state filtered to specific top-level variables
-    void getAbstractState(const ICFGNode* node, const Set<const ValVar*>& vars, AbstractState& result);
-
-    /// Retrieve abstract state filtered to specific address-taken variables
-    void getAbstractState(const ICFGNode* node, const Set<const ObjVar*>& vars, AbstractState& result);
-
-    /// Retrieve abstract state filtered to specific SVF variables
-    void getAbstractState(const ICFGNode* node, const Set<const SVFVar*>& vars, AbstractState& result);
-
 
 private:
     /// Initialize abstract state for the global ICFG node and process global statements
@@ -161,8 +171,8 @@ private:
     /// abstractTrace[node]. Returns true if at least one predecessor had state.
     bool mergeStatesFromPredecessors(const ICFGNode* node);
 
-    /// Check if the branch on intraEdge is feasible under abstract state as
-    bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractState& as);
+    /// Returns true if the branch is reachable; narrows as in-place.
+    bool isBranchFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
     /// Handle a call site node: dispatch to ext-call, direct-call, or indirect-call handling
     virtual void handleCallSite(const ICFGNode* node);
@@ -179,15 +189,11 @@ private:
     /// Dispatch an SVF statement (Addr/Binary/Cmp/Load/Store/Copy/Gep/Select/Phi/Call/Ret) to its handler
     virtual void handleSVFStatement(const SVFStmt* stmt);
 
-    /// Set all store targets and return value to TOP for a recursive call node
-    virtual void setTopToObjInRecursion(const CallICFGNode* callnode);
+    /// Returns true if the cmp-conditional branch is feasible; narrows as in-place.
+    bool isCmpBranchFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
-    /// Check if cmpStmt with successor value succ is feasible; refine intervals in as accordingly
-    bool isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t succ,
-                             AbstractState& as);
-
-    /// Check if switch branch with case value succ is feasible; refine intervals in as accordingly
-    bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ, AbstractState& as);
+    /// Returns true if the switch branch is feasible; narrows as in-place.
+    bool isSwitchBranchFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
     void updateStateOnAddr(const AddrStmt *addr);
 
@@ -211,7 +217,6 @@ private:
 
     void updateStateOnPhi(const PhiStmt *phi);
 
-
     /// protected data members, also used in subclasses
     SVFIR* svfir;
     /// Execution State, used to store the Interval Value of every SVF variable
@@ -232,7 +237,7 @@ private:
     virtual bool isExtCall(const CallICFGNode* callNode);
     virtual void handleExtCall(const CallICFGNode* callNode);
     virtual bool isRecursiveFun(const FunObjVar* fun);
-    virtual void handleRecursiveCall(const CallICFGNode *callNode);
+    virtual void skipRecursionWithTop(const CallICFGNode *callNode);
     virtual bool isRecursiveCallSite(const CallICFGNode* callNode, const FunObjVar *);
     virtual void handleFunCall(const CallICFGNode* callNode);
 
@@ -243,60 +248,13 @@ private:
     // there data should be shared with subclasses
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
 
-    Map<const ICFGNode*, AbstractState> abstractTrace; // abstract states for nodes
+    AbstractStateManager* svfStateMgr{nullptr}; // state management (owns abstractTrace)
     Set<const ICFGNode*> allAnalyzedNodes; // All nodes ever analyzed (across all entry points)
     std::string moduleName;
 
     std::vector<std::unique_ptr<AEDetector>> detectors;
     AbsExtAPI* utils;
 
-    // according to varieties of cmp insts,
-    // maybe var X var, var X const, const X var, const X const
-    // we accept 'var X const' 'var X var' 'const X const'
-    // if 'const X var', we need to reverse op0 op1 and its predicate 'var X' const'
-    // X' is reverse predicate of X
-    // == -> !=, != -> ==, > -> <=, >= -> <, < -> >=, <= -> >
-
-    Map<s32_t, s32_t> _reverse_predicate =
-    {
-        {CmpStmt::Predicate::FCMP_OEQ, CmpStmt::Predicate::FCMP_ONE},  // == -> !=
-        {CmpStmt::Predicate::FCMP_UEQ, CmpStmt::Predicate::FCMP_UNE},  // == -> !=
-        {CmpStmt::Predicate::FCMP_OGT, CmpStmt::Predicate::FCMP_OLE},  // > -> <=
-        {CmpStmt::Predicate::FCMP_OGE, CmpStmt::Predicate::FCMP_OLT},  // >= -> <
-        {CmpStmt::Predicate::FCMP_OLT, CmpStmt::Predicate::FCMP_OGE},  // < -> >=
-        {CmpStmt::Predicate::FCMP_OLE, CmpStmt::Predicate::FCMP_OGT},  // <= -> >
-        {CmpStmt::Predicate::FCMP_ONE, CmpStmt::Predicate::FCMP_OEQ},  // != -> ==
-        {CmpStmt::Predicate::FCMP_UNE, CmpStmt::Predicate::FCMP_UEQ},  // != -> ==
-        {CmpStmt::Predicate::ICMP_EQ, CmpStmt::Predicate::ICMP_NE},  // == -> !=
-        {CmpStmt::Predicate::ICMP_NE, CmpStmt::Predicate::ICMP_EQ},  // != -> ==
-        {CmpStmt::Predicate::ICMP_UGT, CmpStmt::Predicate::ICMP_ULE},  // > -> <=
-        {CmpStmt::Predicate::ICMP_ULT, CmpStmt::Predicate::ICMP_UGE},  // < -> >=
-        {CmpStmt::Predicate::ICMP_UGE, CmpStmt::Predicate::ICMP_ULT},  // >= -> <
-        {CmpStmt::Predicate::ICMP_SGT, CmpStmt::Predicate::ICMP_SLE},  // > -> <=
-        {CmpStmt::Predicate::ICMP_SLT, CmpStmt::Predicate::ICMP_SGE},  // < -> >=
-        {CmpStmt::Predicate::ICMP_SGE, CmpStmt::Predicate::ICMP_SLT},  // >= -> <
-    };
-
-
-    Map<s32_t, s32_t> _switch_lhsrhs_predicate =
-    {
-        {CmpStmt::Predicate::FCMP_OEQ, CmpStmt::Predicate::FCMP_OEQ},  // == -> ==
-        {CmpStmt::Predicate::FCMP_UEQ, CmpStmt::Predicate::FCMP_UEQ},  // == -> ==
-        {CmpStmt::Predicate::FCMP_OGT, CmpStmt::Predicate::FCMP_OLT},  // > -> <
-        {CmpStmt::Predicate::FCMP_OGE, CmpStmt::Predicate::FCMP_OLE},  // >= -> <=
-        {CmpStmt::Predicate::FCMP_OLT, CmpStmt::Predicate::FCMP_OGT},  // < -> >
-        {CmpStmt::Predicate::FCMP_OLE, CmpStmt::Predicate::FCMP_OGE},  // <= -> >=
-        {CmpStmt::Predicate::FCMP_ONE, CmpStmt::Predicate::FCMP_ONE},  // != -> !=
-        {CmpStmt::Predicate::FCMP_UNE, CmpStmt::Predicate::FCMP_UNE},  // != -> !=
-        {CmpStmt::Predicate::ICMP_EQ, CmpStmt::Predicate::ICMP_EQ},  // == -> ==
-        {CmpStmt::Predicate::ICMP_NE, CmpStmt::Predicate::ICMP_NE},  // != -> !=
-        {CmpStmt::Predicate::ICMP_UGT, CmpStmt::Predicate::ICMP_ULT},  // > -> <
-        {CmpStmt::Predicate::ICMP_ULT, CmpStmt::Predicate::ICMP_UGT},  // < -> >
-        {CmpStmt::Predicate::ICMP_UGE, CmpStmt::Predicate::ICMP_ULE},  // >= -> <=
-        {CmpStmt::Predicate::ICMP_SGT, CmpStmt::Predicate::ICMP_SLT},  // > -> <
-        {CmpStmt::Predicate::ICMP_SLT, CmpStmt::Predicate::ICMP_SGT},  // < -> >
-        {CmpStmt::Predicate::ICMP_SGE, CmpStmt::Predicate::ICMP_SLE},  // >= -> <=
-    };
 
 };
 }

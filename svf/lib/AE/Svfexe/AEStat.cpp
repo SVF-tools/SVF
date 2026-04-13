@@ -40,6 +40,7 @@ void AEStat::countStateSize()
     ++count;
 }
 
+
 void AEStat::finializeStat()
 {
     memUsage = getMemUsage();

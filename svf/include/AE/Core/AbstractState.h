@@ -74,22 +74,8 @@ public:
 
     virtual ~AbstractState() = default;
 
-    // getGepObjAddrs
-    AddressValue getGepObjAddrs(u32_t pointer, IntervalValue offset);
-
     // initObjVar
     void initObjVar(const ObjVar* objVar);
-    // getElementIndex
-    IntervalValue getElementIndex(const GepStmt* gep);
-    // getByteOffset
-    IntervalValue getByteOffset(const GepStmt* gep);
-    // printAbstractState
-    // loadValue
-    AbstractValue loadValue(NodeID varId);
-    // storeValue
-    void storeValue(NodeID varId, AbstractValue val);
-
-    u32_t getAllocaInstByteSize(const AddrStmt *addr);
 
 
     /// The physical address starts with 0x7f...... + idx
@@ -275,6 +261,14 @@ public:
     /// domain join with other, important! other widen this.
     void joinWith(const AbstractState&other);
 
+
+    /// Replace address-taken (ObjVar) state with other's, preserving ValVar state.
+    void updateAddrStateOnly(const AbstractState& other)
+    {
+        _addrToAbsVal = other._addrToAbsVal;
+        _freedAddrs = other._freedAddrs;
+    }
+
     /// domain meet with other, important! other widen this.
     void meetWith(const AbstractState&other);
 
@@ -288,15 +282,6 @@ public:
         return _freedAddrs.find(addr) != _freedAddrs.end();
     }
 
-
-    /**
-    * if this NodeID in SVFIR is a pointer, get the pointee type
-    * e.g  arr = (int*) malloc(10*sizeof(int))
-    *      getPointeeType(arr) -> return int
-    * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
-    * @param call callnode of memset like api
-     */
-    const SVFType* getPointeeElement(NodeID id);
 
     void printAbstractState() const;
 
@@ -362,6 +347,16 @@ public:
         _varToAbsVal.clear();
         _freedAddrs.clear();
     }
+
+    /// Drop all top-level variables (ValVars), keeping ObjVar storage and
+    /// freed addresses intact. Used when building a cycle snapshot so the
+    /// ValVar set is controlled by the caller rather than whatever was
+    /// cached at the seed node.
+    void clearVars()
+    {
+        _varToAbsVal.clear();
+    }
+
 
 };
 
