@@ -138,8 +138,14 @@ public:
     //  Direct Trace Access (for merge, fixpoint, etc.)
     // ===----------------------------------------------------------------------===//
 
-    Map<const ICFGNode*, AbstractState>& getTrace() { return abstractTrace; }
-    AbstractState& operator[](const ICFGNode* node) { return abstractTrace[node]; }
+    Map<const ICFGNode*, AbstractState>& getTrace()
+    {
+        return abstractTrace;
+    }
+    AbstractState& operator[](const ICFGNode* node)
+    {
+        return abstractTrace[node];
+    }
 
     // ===----------------------------------------------------------------------===//
     //  Def/Use site queries (sparsity-aware)

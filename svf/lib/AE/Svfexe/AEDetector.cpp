@@ -58,7 +58,7 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                 const AbstractValue& lhsVal = ae.getAbsValue(gep->getLHSVar(), node);
                 const AbstractValue& rhsVal = ae.getAbsValue(gep->getRHSVar(), node);
                 updateGepObjOffsetFromBase(node, lhsVal.getAddrs(), rhsVal.getAddrs(),
-                    ae.getStateMgr()->getGepByteOffset(gep));
+                                           ae.getStateMgr()->getGepByteOffset(gep));
 
                 const AddressValue& objAddrs = rhsVal.getAddrs();
                 for (const auto& addr : objAddrs)
