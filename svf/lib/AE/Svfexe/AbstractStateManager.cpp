@@ -136,7 +136,7 @@ const AbstractValue& AbstractStateManager::getAbstractValue(const ValVar* var, c
     // Fallback for call-result ValVars: their getICFGNode() returns
     // CallICFGNode but the value is written by RetPE at RetICFGNode.
     if (const CallICFGNode* callNode =
-            defNode ? SVFUtil::dyn_cast<CallICFGNode>(defNode) : nullptr)
+                defNode ? SVFUtil::dyn_cast<CallICFGNode>(defNode) : nullptr)
     {
         const RetICFGNode* retNode = callNode->getRetICFGNode();
         if (hasAbstractState(retNode))

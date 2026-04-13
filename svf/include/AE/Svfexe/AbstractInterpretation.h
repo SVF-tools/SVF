@@ -124,7 +124,10 @@ public:
     }
 
     /// Get the state manager instance.
-    AbstractStateManager* getStateMgr() { return svfStateMgr; }
+    AbstractStateManager* getStateMgr()
+    {
+        return svfStateMgr;
+    }
 
     // ---------------------------------------------------------------
     //  Convenience wrappers around AbstractStateManager
@@ -132,19 +135,29 @@ public:
     /// Read-only access to a node's AbstractState. Mutations must go through
     /// updateAbsState (to replace) or updateAbsValue (to update one variable).
     inline const AbstractState& getAbsState(const ICFGNode* node) const
-    { return svfStateMgr->getAbstractState(node); }
+    {
+        return svfStateMgr->getAbstractState(node);
+    }
 
     inline bool hasAbsState(const ICFGNode* node)
-    { return svfStateMgr->hasAbstractState(node); }
+    {
+        return svfStateMgr->hasAbstractState(node);
+    }
 
     inline void updateAbsState(const ICFGNode* node, const AbstractState& state)
-    { svfStateMgr->updateAbstractState(node, state); }
+    {
+        svfStateMgr->updateAbstractState(node, state);
+    }
 
     inline const AbstractValue& getAbsValue(const SVFVar* var, const ICFGNode* node)
-    { return svfStateMgr->getAbstractValue(var, node); }
+    {
+        return svfStateMgr->getAbstractValue(var, node);
+    }
 
     inline void updateAbsValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node)
-    { svfStateMgr->updateAbstractValue(var, val, node); }
+    {
+        svfStateMgr->updateAbstractValue(var, val, node);
+    }
 
     /// Propagate an ObjVar's abstract value from defSite to all its use-sites.
     void propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite);

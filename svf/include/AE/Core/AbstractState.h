@@ -352,7 +352,10 @@ public:
     /// freed addresses intact. Used when building a cycle snapshot so the
     /// ValVar set is controlled by the caller rather than whatever was
     /// cached at the seed node.
-    void clearVars() { _varToAbsVal.clear(); }
+    void clearVars()
+    {
+        _varToAbsVal.clear();
+    }
 
 
 };

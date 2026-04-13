@@ -298,15 +298,16 @@ static const LoadStmt* findBackingLoad(const SVFVar* var)
 /// [6, +inf). On the false branch (succ=0), %a is constrained to (-inf, 5].
 /// The result is used to narrow the ObjVar behind %a's load.
 static IntervalValue computeCmpConstraint(s32_t predicate, s64_t succ,
-                                          bool isLHS, const IntervalValue& self,
-                                          const IntervalValue& other)
+        bool isLHS, const IntervalValue& self,
+        const IntervalValue& other)
 {
     // Normalize: always reason from the LHS perspective.
     // If we are the RHS operand, swap the predicate direction.
     if (!isLHS)
     {
         // a > b from b's perspective: b < a
-        static const Map<s32_t, s32_t> swapPred = {
+        static const Map<s32_t, s32_t> swapPred =
+        {
             {CmpStmt::ICMP_EQ,  CmpStmt::ICMP_EQ},
             {CmpStmt::ICMP_NE,  CmpStmt::ICMP_NE},
             {CmpStmt::ICMP_SGT, CmpStmt::ICMP_SLT},
@@ -338,7 +339,8 @@ static IntervalValue computeCmpConstraint(s32_t predicate, s64_t succ,
     // If false branch, negate the predicate.
     if (succ == 0)
     {
-        static const Map<s32_t, s32_t> negPred = {
+        static const Map<s32_t, s32_t> negPred =
+        {
             {CmpStmt::ICMP_EQ,  CmpStmt::ICMP_NE},
             {CmpStmt::ICMP_NE,  CmpStmt::ICMP_EQ},
             {CmpStmt::ICMP_SGT, CmpStmt::ICMP_SLE},
@@ -413,19 +415,20 @@ static IntervalValue computeCmpConstraint(s32_t predicate, s64_t succ,
 }
 
 bool AbstractInterpretation::isCmpBranchFeasible(const IntraCFGEdge* edge,
-                                                 AbstractState& as)
+        AbstractState& as)
 {
     const ICFGNode* pred = edge->getSrcNode();
     s64_t succ = edge->getSuccessorCondValue();
     const CmpStmt* cmpStmt = SVFUtil::cast<CmpStmt>(
-        *edge->getCondition()->getInEdges().begin());
+                                 *edge->getCondition()->getInEdges().begin());
     s32_t predicate = cmpStmt->getPredicate();
 
     if (cmpStmt->getOpVarID(0) == IRGraph::NullPtr ||
             cmpStmt->getOpVarID(1) == IRGraph::NullPtr)
         return true;
 
-    AbstractValue opVal[2] = {
+    AbstractValue opVal[2] =
+    {
         getAbsValue(cmpStmt->getOpVar(0), pred),
         getAbsValue(cmpStmt->getOpVar(1), pred)
     };
@@ -449,8 +452,8 @@ bool AbstractInterpretation::isCmpBranchFeasible(const IntraCFGEdge* edge,
         if (const LoadStmt* load = findBackingLoad(cmpStmt->getOpVar(i)))
         {
             IntervalValue narrowed = computeCmpConstraint(
-                predicate, succ, i == 0,
-                opVal[i].getInterval(), opVal[1-i].getInterval());
+                                         predicate, succ, i == 0,
+                                         opVal[i].getInterval(), opVal[1-i].getInterval());
 
             if (!narrowed.isTop())
             {
@@ -471,7 +474,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const IntraCFGEdge* edge,
 }
 
 bool AbstractInterpretation::isSwitchBranchFeasible(const IntraCFGEdge* edge,
-                                                    AbstractState& as)
+        AbstractState& as)
 {
     const ICFGNode* pred = edge->getSrcNode();
     s64_t succ = edge->getSuccessorCondValue();
@@ -508,7 +511,7 @@ bool AbstractInterpretation::isSwitchBranchFeasible(const IntraCFGEdge* edge,
 }
 
 bool AbstractInterpretation::isBranchFeasible(const IntraCFGEdge* edge,
-    AbstractState& as)
+        AbstractState& as)
 {
     const SVFVar* cmpVar = edge->getCondition();
     assert(!cmpVar->getInEdges().empty() && "branch condition has no defining edge?");
@@ -1386,14 +1389,14 @@ void AbstractInterpretation::updateStateOnLoad(const LoadStmt *load)
 {
     const ICFGNode* node = load->getICFGNode();
     updateAbsValue(load->getLHSVar(),
-        svfStateMgr->loadValue(SVFUtil::cast<ValVar>(load->getRHSVar()), node), node);
+                   svfStateMgr->loadValue(SVFUtil::cast<ValVar>(load->getRHSVar()), node), node);
 }
 
 void AbstractInterpretation::updateStateOnStore(const StoreStmt *store)
 {
     const ICFGNode* node = store->getICFGNode();
     svfStateMgr->storeValue(SVFUtil::cast<ValVar>(store->getLHSVar()),
-        getAbsValue(store->getRHSVar(), node), node);
+                            getAbsValue(store->getRHSVar(), node), node);
 }
 
 void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
