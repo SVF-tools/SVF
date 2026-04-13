@@ -87,6 +87,7 @@ void AbstractInterpretation::propagateObjVarAbsVal(const ObjVar* var, const ICFG
 /// Destructor
 AbstractInterpretation::~AbstractInterpretation()
 {
+    delete utils;
     delete stat;
     delete preAnalysis;
     delete svfStateMgr;
