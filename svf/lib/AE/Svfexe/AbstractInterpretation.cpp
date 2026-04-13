@@ -204,7 +204,7 @@ void AbstractInterpretation::handleGlobalNode()
 bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
 {
     // Collect all feasible predecessor states, then merge at the end.
-    std::vector<AbstractState> feasibleStates;
+    AbstractState merged;
 
     for (auto& edge : node->getInEdges())
     {
@@ -218,23 +218,23 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
             {
                 AbstractState predState = getAbsState(pred);
                 if (isBranchFeasible(intraCfgEdge, predState))
-                    feasibleStates.push_back(std::move(predState));
+                    merged.joinWith(predState);
             }
             else
             {
-                feasibleStates.push_back(getAbsState(pred));
+                merged.joinWith(getAbsState(pred));
             }
         }
         else if (SVFUtil::isa<CallCFGEdge>(edge))
         {
-            feasibleStates.push_back(getAbsState(pred));
+            merged.joinWith(getAbsState(pred));
         }
         else if (SVFUtil::isa<RetCFGEdge>(edge))
         {
             switch (Options::HandleRecur())
             {
             case TOP:
-                feasibleStates.push_back(getAbsState(pred));
+                merged.joinWith(getAbsState(pred));
                 break;
             case WIDEN_ONLY:
             case WIDEN_NARROW:
@@ -242,19 +242,16 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                 const RetICFGNode* returnSite = SVFUtil::dyn_cast<RetICFGNode>(node);
                 const CallICFGNode* callSite = returnSite->getCallICFGNode();
                 if (hasAbsState(callSite))
-                    feasibleStates.push_back(getAbsState(pred));
+                    merged.joinWith(getAbsState(pred));
                 break;
             }
             }
         }
     }
 
-    if (feasibleStates.empty())
+    if (merged.getVarToVal().empty() && merged.getLocToVal().empty())
         return false;
 
-    AbstractState merged = std::move(feasibleStates[0]);
-    for (u32_t i = 1; i < feasibleStates.size(); i++)
-        merged.joinWith(feasibleStates[i]);
     updateAbsState(node, merged);
 
     return true;
@@ -652,7 +649,7 @@ bool AbstractInterpretation::isRecursiveFun(const FunObjVar* fun)
 }
 
 /// Handle recursive call in TOP mode: set all stores and return value to TOP
-void AbstractInterpretation::handleRecursiveCall(const CallICFGNode *callNode)
+void AbstractInterpretation::skipRecursionWithTop(const CallICFGNode *callNode)
 {
     setTopToObjInRecursion(callNode);
     const RetICFGNode *retNode = callNode->getRetICFGNode();
@@ -808,7 +805,7 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 /// Behavior depends on Options::HandleRecur():
 ///
 /// - TOP mode:
-///     Does not iterate. Calls handleRecursiveCall() to set all stores and
+///     Does not iterate. Calls skipRecursionWithTop() to set all stores and
 ///     return value to TOP immediately. This is the most conservative but fastest.
 ///     Example:
 ///       int factorial(int n) { return n <= 1 ? 1 : n * factorial(n-1); }
@@ -836,7 +833,7 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
     if (Options::HandleRecur() == TOP && isRecursiveFun(cycle_head->getFun()))
     {
         if (caller)
-            handleRecursiveCall(caller);
+            skipRecursionWithTop(caller);
         return;
     }
 
