@@ -90,8 +90,8 @@ public:
     void handleStrcpy(const CallICFGNode *call);
     void handleStrcat(const CallICFGNode *call);
     void handleStrncat(const CallICFGNode *call);
-    void handleMemcpy(const ValVar *dst, const ValVar *src, IntervalValue len, u32_t start_idx, const ICFGNode* node);
-    void handleMemset(const ValVar* dst, IntervalValue elem, IntervalValue len, const ICFGNode* node);
+    void handleMemcpy(const ValVar *dst, const ValVar *src, const IntervalValue& len, u32_t start_idx, const ICFGNode* node);
+    void handleMemset(const ValVar* dst, const IntervalValue& elem, const IntervalValue& len, const ICFGNode* node);
 
     /**
      * @brief Gets the range limit from a type.

@@ -581,7 +581,7 @@ void AbsExtAPI::handleStrncat(const CallICFGNode *call)
 
 /// Core memcpy: copy `len` bytes from src to dst starting at dst[start_idx].
 void AbsExtAPI::handleMemcpy(const ValVar *dst,
-                             const ValVar *src, IntervalValue len,
+                             const ValVar *src, const IntervalValue& len,
                              u32_t start_idx, const ICFGNode* node)
 {
     if (!isValidLength(len)) return;
@@ -621,7 +621,7 @@ void AbsExtAPI::handleMemcpy(const ValVar *dst,
 /// wchar_t[100], elemSize = sizeof(wchar_t[100]), so range_val reflects the
 /// number of top-level GEP fields, not individual array elements.
 void AbsExtAPI::handleMemset(const ValVar *dst,
-                             IntervalValue elem, IntervalValue len, const ICFGNode* node)
+                             const IntervalValue& elem, const IntervalValue& len, const ICFGNode* node)
 {
     if (!isValidLength(len)) return;
     AbstractState& as = getAbstractState(node);
