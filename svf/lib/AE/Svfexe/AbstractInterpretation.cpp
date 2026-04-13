@@ -648,23 +648,54 @@ bool AbstractInterpretation::isRecursiveFun(const FunObjVar* fun)
     return preAnalysis->getPointerAnalysis()->isInRecursion(fun);
 }
 
-/// Handle recursive call in TOP mode: set all stores and return value to TOP
+/// TOP mode for recursive calls: skip the function body entirely and
+/// conservatively set all reachable stores and the return value to TOP.
 void AbstractInterpretation::skipRecursionWithTop(const CallICFGNode *callNode)
 {
-    setTopToObjInRecursion(callNode);
     const RetICFGNode *retNode = callNode->getRetICFGNode();
+
+    // 1. Set return value to TOP
     if (retNode->getSVFStmts().size() > 0)
     {
         if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(*retNode->getSVFStmts().begin()))
         {
             if (!retPE->getLHSVar()->isPointer() &&
                     !retPE->getLHSVar()->isConstDataOrAggDataButNotNullPtr())
-            {
                 updateAbsValue(retPE->getLHSVar(), IntervalValue::top(), callNode);
+        }
+    }
+
+    // 2. Set all stores in callee's reachable BBs to TOP
+    if (retNode->getOutEdges().size() > 1)
+    {
+        updateAbsState(retNode, getAbsState(callNode));
+        return;
+    }
+    for (const SVFBasicBlock* bb : callNode->getCalledFunction()->getReachableBBs())
+    {
+        for (const ICFGNode* node : bb->getICFGNodeList())
+        {
+            for (const SVFStmt* stmt : node->getSVFStmts())
+            {
+                if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt))
+                {
+                    const SVFVar* rhsVar = store->getRHSVar();
+                    if (!rhsVar->isPointer() && !rhsVar->isConstDataOrAggDataButNotNullPtr())
+                    {
+                        const AbstractValue& addrs = getAbsValue(store->getLHSVar(), callNode);
+                        if (addrs.isAddr())
+                        {
+                            AbstractState& as = svfStateMgr->getAbstractState(callNode);
+                            for (const auto& addr : addrs.getAddrs())
+                                as.store(addr, IntervalValue::top());
+                        }
+                    }
+                }
             }
         }
     }
-    // Copy callNode's state (post setTopToObjInRecursion mutations) to retNode.
+
+    // 3. Copy callNode's state to retNode
     updateAbsState(retNode, getAbsState(callNode));
 }
 
@@ -961,55 +992,6 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
         auto it = vmap.find(IRGraph::NullPtr);
         assert(it == vmap.end() ||
                (!it->second.isInterval() && !it->second.isAddr()));
-    }
-}
-
-/// Set all store values in a recursive function to TOP (used in TOP mode)
-void AbstractInterpretation::setTopToObjInRecursion(const CallICFGNode *callNode)
-{
-    const RetICFGNode *retNode = callNode->getRetICFGNode();
-    if (retNode->getSVFStmts().size() > 0)
-    {
-        if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(*retNode->getSVFStmts().begin()))
-        {
-            if (!retPE->getLHSVar()->isPointer() && !retPE->getLHSVar()->isConstDataOrAggDataButNotNullPtr())
-                updateAbsValue(retPE->getLHSVar(), IntervalValue::top(), callNode);
-        }
-    }
-    if (!retNode->getOutEdges().empty())
-    {
-        if (retNode->getOutEdges().size() == 1)
-        {
-
-        }
-        else
-        {
-            return;
-        }
-    }
-    for (const SVFBasicBlock * bb: callNode->getCalledFunction()->getReachableBBs())
-    {
-        for (const ICFGNode* node: bb->getICFGNodeList())
-        {
-            for (const SVFStmt *stmt: node->getSVFStmts())
-            {
-                if (const StoreStmt *store = SVFUtil::dyn_cast<StoreStmt>(stmt))
-                {
-                    const SVFVar *rhsVar = store->getRHSVar();
-                    if (!rhsVar->isPointer() && !rhsVar->isConstDataOrAggDataButNotNullPtr())
-                    {
-                        const AbstractValue& addrs = getAbsValue(store->getLHSVar(), callNode);
-                        if (addrs.isAddr())
-                        {
-                            // Direct ObjVar store: route via the manager.
-                            AbstractState& as = svfStateMgr->getAbstractState(callNode);
-                            for (const auto &addr: addrs.getAddrs())
-                                as.store(addr, IntervalValue::top());
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 

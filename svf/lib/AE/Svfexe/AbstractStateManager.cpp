@@ -65,10 +65,9 @@ void AbstractStateManager::updateAbstractState(const ICFGNode* node, const Abstr
 {
     if (Options::AESparsity() == AbstractInterpretation::AESparsity::SemiSparse)
     {
-        // Semi-sparse: only update ObjVar state. ValVars live at their
+        // Semi-sparse: only replace ObjVar state. ValVars live at their
         // def-sites and must not be overwritten by state replacement.
-        abstractTrace[node].clearAddrState();
-        abstractTrace[node].joinWith(state);
+        abstractTrace[node].updateAddrStateOnly(state);
     }
     else
     {

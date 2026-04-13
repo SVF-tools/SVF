@@ -262,11 +262,11 @@ public:
     void joinWith(const AbstractState&other);
 
 
-    /// Clear only address-taken (ObjVar) state, preserving ValVar state.
-    void clearAddrState()
+    /// Replace address-taken (ObjVar) state with other's, preserving ValVar state.
+    void updateAddrStateOnly(const AbstractState& other)
     {
-        _addrToAbsVal.clear();
-        _freedAddrs.clear();
+        _addrToAbsVal = other._addrToAbsVal;
+        _freedAddrs = other._freedAddrs;
     }
 
     /// domain meet with other, important! other widen this.

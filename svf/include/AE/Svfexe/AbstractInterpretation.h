@@ -176,9 +176,6 @@ private:
     /// Dispatch an SVF statement (Addr/Binary/Cmp/Load/Store/Copy/Gep/Select/Phi/Call/Ret) to its handler
     virtual void handleSVFStatement(const SVFStmt* stmt);
 
-    /// Set all store targets and return value to TOP for a recursive cal node
-    virtual void setTopToObjInRecursion(const CallICFGNode* callnode);
-
     /// Returns true if the cmp-conditional branch is feasible; narrows as in-place.
     bool isCmpBranchFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
