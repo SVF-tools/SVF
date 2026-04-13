@@ -87,13 +87,6 @@ public:
     }
 
 private:
-    /// Recursive bottom-up worker for initCycleValVars.
-    const Set<NodeID>& computeCycleValVars(const ICFGCycleWTO* cycle);
-
-    /// Append the IDs of any ValVar that is the LHS of a stmt at `node`.
-    /// FunEntry nodes also contribute their formal-param ArgValVars.
-    void collectValVarsAtNode(const ICFGNode* node, Set<NodeID>& out) const;
-
     SVFIR* svfir;
     ICFG* icfg;
     AndersenWaveDiff* pta;

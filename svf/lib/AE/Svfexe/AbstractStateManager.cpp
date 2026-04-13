@@ -113,14 +113,16 @@ const AbstractValue& AbstractStateManager::getAbstractValue(const ValVar* var, c
         return as[id];
     }
 
-    // Dense mode: read from current node's state.
-    // Check explicitly — do NOT use as[id] which would insert a default bottom
-    // entry via map::operator[]. An absent variable means "uninitialized" → top.
+    // Dense mode: try current node's state first.
+    // If absent, fall through to the def-site lookup below — matching
+    // upstream behaviour where getAbstractValue always reads from the
+    // def-site.  Returning top or bottom here would be wrong: top loses
+    // concrete values like NULL addresses; bottom misjudges branch
+    // feasibility for uninitialised variables like argc.
     if (!semiSparse)
     {
         if (as.inVarToValTable(id) || as.inVarToAddrsTable(id))
             return as[id];
-        // Fall through to final top fallback
     }
 
     // Semi-sparse mode: pull from def-site first, then check current state

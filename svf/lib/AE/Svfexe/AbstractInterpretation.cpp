@@ -841,7 +841,7 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 // (initCycleValVars / computeCycleValVars), bottom-up so nested cycles
 // are handled before their enclosing cycle.
 
-AbstractState AbstractInterpretation::buildCycleSnapshot(const ICFGCycleWTO* cycle)
+AbstractState AbstractInterpretation::getFullCycleHeadState(const ICFGCycleWTO* cycle)
 {
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
     AbstractState snap;
@@ -852,10 +852,8 @@ AbstractState AbstractInterpretation::buildCycleSnapshot(const ICFGCycleWTO* cyc
     if (!ids)
         return snap;  // dense mode: snap already has everything
 
-    // Semi-sparse: drop the ValVar entries that cycle_head's trace happened
-    // to cache, so snap's ValVar set is exactly the cycle ValVar set after
-    // we pull them from their def-sites below. This keeps snap ValVar set
-    // aligned with scatterCycleValVars / gatherCycleValVars semantics.
+    // Semi-sparse: drop any stale ValVar entries cached at cycle_head,
+    // then pull each cycle ValVar from its def-site.
     snap.clearVars();
 
     auto& trace = svfStateMgr->getTrace();
@@ -872,6 +870,9 @@ AbstractState AbstractInterpretation::buildCycleSnapshot(const ICFGCycleWTO* cyc
         if (dit == dmap.end()) continue;
         snap[id] = dit->second;
     }
+
+    // Scatter the collected ValVars back to def-sites for consistency.
+    scatterCycleValVars(snap, cycle);
     return snap;
 }
 
@@ -897,23 +898,43 @@ void AbstractInterpretation::scatterCycleValVars(
     }
 }
 
-void AbstractInterpretation::gatherCycleValVars(
-    AbstractState& dst, const AbstractState& src, const ICFGCycleWTO* cycle)
+// --- Cycle state helpers (dense/sparse unified) ---
+
+bool AbstractInterpretation::widenCycleState(
+    AbstractState& prev, const AbstractState& cur,
+    const ICFGNode* cycle_head, const ICFGCycleWTO* cycle)
 {
-    const Set<NodeID>* ids = preAnalysis->getCycleValVars(cycle);
-    if (!ids) return;
-    for (NodeID id : *ids)
-    {
-        auto sit = src.getVarToVal().find(id);
-        if (sit == src.getVarToVal().end()) continue;
-        auto dit = dst.getVarToVal().find(id);
-        if (dit == dst.getVarToVal().end())
-            dst[id] = sit->second;
-        else
-            dst[id].join_with(sit->second);
-    }
+    AbstractState next = prev.widening(cur);
+    // Always write the widened result to trace, even at fixpoint.
+    // At fixpoint (next == prev), this restores cycle_head to the
+    // pre-merge widened state.  The subsequent narrowing phase then
+    // sees the widened values, runs the body at least once with the
+    // narrowed head state, and correctly updates cycle-body nodes.
+    // Without this write, the narrowing phase would immediately
+    // reach fixpoint (head already has the merged/narrowed value)
+    // and never re-process the body — leaving body nodes with stale
+    // widened values that leak to loop-exit successors.
+    bool fixpoint = (next == prev);
+    prev = std::move(next);
+    svfStateMgr->getTrace()[cycle_head] = prev;
+    if (Options::AESparsity() == AESparsity::SemiSparse)
+        scatterCycleValVars(prev, cycle);
+    return fixpoint;
 }
 
+bool AbstractInterpretation::narrowCycleState(
+    AbstractState& prev, const AbstractState& cur,
+    const ICFGNode* cycle_head, const ICFGCycleWTO* cycle)
+{
+    AbstractState next = prev.narrowing(cur);
+    if (next == prev)
+        return true;  // fixpoint
+    prev = std::move(next);
+    svfStateMgr->getTrace()[cycle_head] = prev;
+    if (Options::AESparsity() == AESparsity::SemiSparse)
+        scatterCycleValVars(prev, cycle);
+    return false;
+}
 
 
 void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller)
@@ -928,79 +949,46 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
         return;
     }
 
-    // Per-cycle ValVar set (lookup-only; populated in initCycleValVars).
-    // In dense mode the lookup misses, so buildCycleSnapshot reduces to
-    // cycle_head's full state.
-    AbstractState prev_snapshot;
-
-    // Iterate until fixpoint with widening/narrowing on the cycle snapshot.
+    // Iterate until fixpoint with widening/narrowing on the cycle head.
     bool increasing = true;
     u32_t widen_delay = Options::WidenDelay();
+    auto& abstractTrace = svfStateMgr->getTrace();
     for (u32_t cur_iter = 0;; cur_iter++)
     {
-        // Process cycle head (merge from predecessors, then execute statements)
-        if (mergeStatesFromPredecessors(cycle_head))
-            handleICFGNode(cycle_head);
-
-        // Sparse-only widening phase: mergeStatesFromPredecessors does not
-        // join ValVars at cycle_head, so the previous iteration's accumulated
-        // values get strong-overwritten by whichever predecessor wrote last.
-        // Re-gather the cycle ValVars from prev_snapshot into cycle_head's
-        // trace so this round's body and the snapshot see the accumulation.
-        //
-        // During narrowing, skip this: the CallPE (now MultiOpndStmt) already
-        // joins all per-callsite operands in updateStateOnCall, so cycle_head's
-        // trace has the correctly narrowed value. Re-gathering from
-        // prev_snapshot would widen it back and defeat the narrow.
-        if (cur_iter > 0 && increasing &&
-            Options::AESparsity() == AbstractInterpretation::AESparsity::SemiSparse)
+        if (cur_iter >= widen_delay)
         {
-            gatherCycleValVars(svfStateMgr->getTrace()[cycle_head],
-                               prev_snapshot, cycle);
-        }
+            // Save state before processing head
+            AbstractState prev_head_state = abstractTrace[cycle_head];
 
-        // Build the post-head snapshot (head ObjVars + cycle ValVars).
-        AbstractState cur_snapshot = buildCycleSnapshot(cycle);
+            // Process cycle head: merge from predecessors, then execute statements
+            if (mergeStatesFromPredecessors(cycle_head))
+                handleICFGNode(cycle_head);
+            AbstractState cur_head_state = abstractTrace[cycle_head];
 
-        if (cur_iter == 0)
-        {
-            prev_snapshot = std::move(cur_snapshot);
-        }
-        else if (cur_iter >= widen_delay)
-        {
-            if (!increasing && !shouldApplyNarrowing(cycle_head->getFun()))
-                break;
-
-            AbstractState next = increasing
-                                 ? prev_snapshot.widening(cur_snapshot)
-                                 : prev_snapshot.narrowing(cur_snapshot);
-
-            if (next == prev_snapshot)
+            if (increasing)
             {
-                if (increasing)
+                abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
+                if (abstractTrace[cycle_head] == prev_head_state)
                 {
                     // Widening fixpoint reached; switch to narrowing phase.
                     increasing = false;
                     continue;
-                } else {
-                    break;
                 }
             }
-            svfStateMgr->getTrace()[cycle_head] = next;
-            scatterCycleValVars(next, cycle);
-            prev_snapshot = std::move(next);
+            else
+            {
+                if (!shouldApplyNarrowing(cycle_head->getFun()))
+                    break;
+                abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
+                if (abstractTrace[cycle_head] == prev_head_state)
+                    break;
+            }
         }
         else
         {
-            // Widen-Delay: accumulate via join. AbstractState::joinWith
-            // filters ValVars in semi-sparse, so after joining ObjVars we
-            // gather the cycle ValVars from cur_snapshot explicitly.
-            AbstractState next = prev_snapshot;
-            next.joinWith(cur_snapshot);
-            gatherCycleValVars(next, cur_snapshot, cycle);
-            svfStateMgr->getTrace()[cycle_head] = next;
-            scatterCycleValVars(next, cycle);
-            prev_snapshot = std::move(next);
+            // Before widen_delay: process cycle head with gated pattern
+            if (mergeStatesFromPredecessors(cycle_head))
+                handleICFGNode(cycle_head);
         }
 
         // Process cycle body components (each with gated merge+handle)

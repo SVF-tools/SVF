@@ -174,22 +174,20 @@ private:
     // per iter that gathers them, widens/narrows across iterations, and
     // scatters the result back to each def-site.
 
-    /// Build a snapshot of `cycle` for widening/narrowing comparison:
-    /// the cycle_head's AbstractState, augmented with every cycle ValVar
-    /// pulled from its def-site via setVal (semi-sparse only — in dense the
-    /// ValVar set is empty so this reduces to cycle_head's full state).
-    AbstractState buildCycleSnapshot(const ICFGCycleWTO* cycle);
+    /// Return the full abstract state at cycle_head: ObjVars from the trace
+    /// plus every cycle ValVar collected from its def-site. In dense mode
+    /// this is simply trace[cycle_head]. In semi-sparse mode the collected
+    /// ValVars are also scattered back to their def-sites for consistency.
+    AbstractState getFullCycleHeadState(const ICFGCycleWTO* cycle);
 
-    /// Join each cycle ValVar from `src` into `dst`. Opposite of
-    /// scatterCycleValVars: scatter is a strong write to def-sites, gather
-    /// is a non-destructive join between two states. No-op in dense mode
-    /// (cycle ValVar set is empty).
-    void gatherCycleValVars(AbstractState& dst, const AbstractState& src,
-                            const ICFGCycleWTO* cycle);
-
-    /// Push the ValVars in `snap` back to their def-sites via
-    /// AbstractStateManager::updateAbstractValue. No-op in dense.
+    /// Push the ValVars in `snap` back to their def-sites. No-op in dense.
     void scatterCycleValVars(const AbstractState& snap, const ICFGCycleWTO* cycle);
+    /// Widen the cycle state of `prev` and `cur` at `cycle_head`.
+    bool widenCycleState(AbstractState& prev, const AbstractState& cur,
+                        const ICFGNode* cycle_head, const ICFGCycleWTO* cycle);
+    /// Narrow the cycle state of `prev` and `cur` at `cycle_head`.
+    bool narrowCycleState(AbstractState& prev, const AbstractState& cur,
+                        const ICFGNode* cycle_head, const ICFGCycleWTO* cycle);
 
     /// Handle a function body via worklist-driven WTO traversal starting from funEntry
     void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller = nullptr);
