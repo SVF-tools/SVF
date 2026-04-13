@@ -180,6 +180,28 @@ private:
     /// Handle a WTO cycle (loop or recursive function) using widening/narrowing iteration
     virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller = nullptr);
 
+    // ---- Semi-sparse cycle helpers ----
+    // ValVars whose def-site is inside the cycle but NOT cycle_head do not
+    // flow through cycle_head's merge in semi-sparse mode, so the around-merge
+    // widening cannot widen them. handleLoopOrRecursion adds one extra step
+    // per iter that gathers them, widens/narrows across iterations, and
+    // scatters the result back to each def-site.
+
+    /// Return the full abstract state at cycle_head: ObjVars from the trace
+    /// plus every cycle ValVar collected from its def-site. In dense mode
+    /// this is simply trace[cycle_head]. In semi-sparse mode the collected
+    /// ValVars are also scattered back to their def-sites for consistency.
+    AbstractState getFullCycleHeadState(const ICFGCycleWTO* cycle);
+
+    /// Push the ValVars in `snap` back to their def-sites. No-op in dense.
+    void scatterCycleValVars(const AbstractState& snap, const ICFGCycleWTO* cycle);
+    /// Widen the cycle state of `prev` and `cur` at `cycle_head`.
+    bool widenCycleState(AbstractState& prev, const AbstractState& cur,
+                         const ICFGNode* cycle_head, const ICFGCycleWTO* cycle);
+    /// Narrow the cycle state of `prev` and `cur` at `cycle_head`.
+    bool narrowCycleState(AbstractState& prev, const AbstractState& cur,
+                          const ICFGNode* cycle_head, const ICFGCycleWTO* cycle);
+
     /// Handle a function body via worklist-driven WTO traversal starting from funEntry
     void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller = nullptr);
 
