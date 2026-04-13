@@ -68,7 +68,7 @@ void AbstractStateManager::updateAbstractState(const ICFGNode* node, const Abstr
         // Semi-sparse: only update ObjVar state. ValVars live at their
         // def-sites and must not be overwritten by state replacement.
         abstractTrace[node].clearAddrState();
-        abstractTrace[node].joinAddrWith(state);
+        abstractTrace[node].joinWith(state);
     }
     else
     {
