@@ -66,6 +66,19 @@ public:
     /// Dispatch to ValVar or ObjVar overload (checks ObjVar first due to inheritance).
     const AbstractValue& getAbstractValue(const SVFVar* var, const ICFGNode* node);
 
+    /// Check whether a ValVar has a real stored value reachable by
+    /// getAbstractValue.  Unlike getAbstractValue, this is side-effect free
+    /// and does NOT treat the final top-fallback as "present" — so callers
+    /// that plan to write the fetched value back (e.g. cycle widen/narrow)
+    /// can distinguish a genuine stored value from the top sentinel.
+    bool hasAbstractValue(const ValVar* var, const ICFGNode* node) const;
+
+    /// Check whether an ObjVar has a stored value at node.
+    bool hasAbstractValue(const ObjVar* var, const ICFGNode* node) const;
+
+    /// Dispatch to ValVar or ObjVar overload.
+    bool hasAbstractValue(const SVFVar* var, const ICFGNode* node) const;
+
     /// Write a top-level variable's abstract value into abstractTrace[node].
     void updateAbstractValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node);
 

@@ -174,6 +174,71 @@ const AbstractValue& AbstractStateManager::getAbstractValue(const SVFVar* var, c
 }
 
 // ===----------------------------------------------------------------------===//
+//  hasAbstractValue — side-effect-free existence check
+//
+//  Mirrors the lookup chain in getAbstractValue but stops short of the
+//  top-fallback.  Returns false when getAbstractValue would only be able
+//  to return top as a default.
+// ===----------------------------------------------------------------------===//
+
+bool AbstractStateManager::hasAbstractValue(const ValVar* var, const ICFGNode* node) const
+{
+    // Constants are always "present" (their value is intrinsic).
+    if (SVFUtil::isa<ConstIntValVar>(var) || SVFUtil::isa<ConstFPValVar>(var) ||
+            SVFUtil::isa<ConstNullPtrValVar>(var) || SVFUtil::isa<ConstDataValVar>(var))
+        return true;
+
+    u32_t id = var->getId();
+    bool semiSparse = Options::AESparsity() == AbstractInterpretation::AESparsity::SemiSparse;
+
+    // Dense mode: stored at the current node.
+    if (!semiSparse)
+    {
+        auto it = abstractTrace.find(node);
+        if (it != abstractTrace.end() &&
+                (it->second.inVarToValTable(id) || it->second.inVarToAddrsTable(id)))
+            return true;
+    }
+
+    // Semi-sparse (and dense fall-through): check the def-site.
+    const ICFGNode* defNode = var->getICFGNode();
+    if (defNode)
+    {
+        auto it = abstractTrace.find(defNode);
+        if (it != abstractTrace.end() && it->second.getVarToVal().count(id))
+            return true;
+
+        // Fallback for call-result ValVars: value lives at the RetICFGNode.
+        if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(defNode))
+        {
+            const RetICFGNode* retNode = callNode->getRetICFGNode();
+            auto rit = abstractTrace.find(retNode);
+            if (rit != abstractTrace.end() && rit->second.getVarToVal().count(id))
+                return true;
+        }
+    }
+    return false;
+}
+
+bool AbstractStateManager::hasAbstractValue(const ObjVar* var, const ICFGNode* node) const
+{
+    auto it = abstractTrace.find(node);
+    if (it == abstractTrace.end())
+        return false;
+    u32_t objId = var->getId();
+    return it->second.getLocToVal().count(objId) != 0;
+}
+
+bool AbstractStateManager::hasAbstractValue(const SVFVar* var, const ICFGNode* node) const
+{
+    if (const ObjVar* objVar = SVFUtil::dyn_cast<ObjVar>(var))
+        return hasAbstractValue(objVar, node);
+    if (const ValVar* valVar = SVFUtil::dyn_cast<ValVar>(var))
+        return hasAbstractValue(valVar, node);
+    return false;
+}
+
+// ===----------------------------------------------------------------------===//
 //  Update Abstract Value
 // ===----------------------------------------------------------------------===//
 
@@ -527,19 +592,12 @@ Map<const ValVar*, AbstractValue> AbstractStateManager::getCycleAbsValues(const 
     for (const ValVar* v : valVars)
     {
         const ICFGNode* defSite = v->getICFGNode();
-        if (!defSite) continue;
-        // Skip ValVars whose def-site hasn't been processed yet, or whose
-        // value hasn't been stored there.  Using getAbstractValue here would
-        // return IntervalValue::top() as a fallback, which when later written
-        // back to the def-site via updateAbsValue contaminates every body
-        // node and defeats widening/narrowing precision (e.g. breaks
-        // semi-sparse recursion tests).
-        auto it = abstractTrace.find(defSite);
-        if (it == abstractTrace.end()) continue;
-        const auto& varMap = it->second.getVarToVal();
-        auto kv = varMap.find(v->getId());
-        if (kv == varMap.end()) continue;
-        snap[v] = kv->second;
+        // Only snapshot ValVars that genuinely have a stored value.
+        // getAbstractValue would otherwise top-fallback for uninitialised
+        // ValVars, and that top, written back to def-sites by widen/narrow,
+        // contaminates body nodes and defeats precision.
+        if (!defSite || !hasAbstractValue(v, defSite)) continue;
+        snap[v] = getAbstractValue(v, defSite);
     }
     return snap;
 }
