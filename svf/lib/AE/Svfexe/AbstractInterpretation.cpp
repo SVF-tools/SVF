@@ -884,97 +884,67 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 // (initCycleValVars), bottom-up so nested cycles are handled before their
 // enclosing cycle.
 
-AbstractState AbstractInterpretation::getFullCycleHeadState(const ICFGCycleWTO* cycle)
-{
-    const ICFGNode* cycle_head = cycle->head()->getICFGNode();
-    AbstractState snap;
-    if (hasAbsState(cycle_head))
-        snap = getAbsState(cycle_head);
-
-    const Set<NodeID>* ids = preAnalysis->getCycleValVars(cycle);
-    if (!ids)
-        return snap;  // dense mode: snap already has everything
-
-    // Semi-sparse: drop any stale ValVar entries cached at cycle_head,
-    // then pull each cycle ValVar from its def-site.
-    snap.clearVars();
-
-    auto& trace = svfStateMgr->getTrace();
-    for (NodeID id : *ids)
-    {
-        const ValVar* v = SVFUtil::dyn_cast<ValVar>(svfir->getSVFVar(id));
-        if (!v) continue;
-        const ICFGNode* defSite = v->getICFGNode();
-        if (!defSite) continue;
-        auto tit = trace.find(defSite);
-        if (tit == trace.end()) continue;
-        const auto& dmap = tit->second.getVarToVal();
-        auto dit = dmap.find(id);
-        if (dit == dmap.end()) continue;
-        snap[id] = dit->second;
-    }
-
-    // Scatter the collected ValVars back to def-sites for consistency.
-    scatterCycleValVars(snap, cycle);
-    return snap;
-}
-
-void AbstractInterpretation::scatterCycleValVars(
-    const AbstractState& snap, const ICFGCycleWTO* cycle)
-{
-    const Set<NodeID>* ids = preAnalysis->getCycleValVars(cycle);
-    if (!ids) return;
-    auto& trace = svfStateMgr->getTrace();
-    for (NodeID id : *ids)
-    {
-        const ValVar* v = SVFUtil::dyn_cast<ValVar>(svfir->getSVFVar(id));
-        if (!v) continue;
-        const ICFGNode* defSite = v->getICFGNode();
-        if (!defSite) continue;
-        auto kv = snap.getVarToVal().find(id);
-        if (kv == snap.getVarToVal().end()) continue;
-        trace[defSite][id] = kv->second;
-    }
-}
-
 // --- Cycle state helpers (dense/sparse unified) ---
 
 bool AbstractInterpretation::widenCycleState(
-    AbstractState& prev, const AbstractState& cur,
-    const ICFGNode* cycle_head, const ICFGCycleWTO* cycle)
+    const Map<const ValVar*, AbstractValue>& prev_head_valVars, const Map<const ValVar*, AbstractValue>& cur_head_valVars,
+    AbstractState& prev_head_state, AbstractState& cur_head_state)
 {
-    AbstractState next = prev.widening(cur);
-    // Always write the widened result to trace, even at fixpoint.
-    // At fixpoint (next == prev), this restores cycle_head to the
-    // pre-merge widened state.  The subsequent narrowing phase then
-    // sees the widened values, runs the body at least once with the
-    // narrowed head state, and correctly updates cycle-body nodes.
-    // Without this write, the narrowing phase would immediately
-    // reach fixpoint (head already has the merged/narrowed value)
-    // and never re-process the body — leaving body nodes with stale
-    // widened values that leak to loop-exit successors.
-    bool fixpoint = (next == prev);
-    prev = std::move(next);
-    svfStateMgr->getTrace()[cycle_head] = prev;
-    if (Options::AESparsity() == AESparsity::SemiSparse)
-        scatterCycleValVars(prev, cycle);
-    return fixpoint;
+    // Widen ValVars with the same "conservative" semantics as
+    // AbstractState::widening: iterate over prev's keys, and only widen
+    // those that are ALSO in cur.  Keys in prev but missing from cur are
+    // left unchanged (neither widened nor cleared).  This matches dense
+    // mode and prevents TOP/bottom contamination of body def-sites.
+    bool valvar_fixpoint = true;
+    for (const auto& [valVar, preVal] : prev_head_valVars)
+    {
+        auto it = cur_head_valVars.find(valVar);
+        if (it == cur_head_valVars.end())
+        {
+            // Missing in cur: preserve prev's value at the def-site
+            // (equivalent to `es[key] = prev[key]` in AbstractState::widening).
+            updateAbsValue(valVar, preVal, valVar->getICFGNode());
+            continue;
+        }
+        AbstractValue widened = preVal;
+        widened.widen_with(it->second);
+        updateAbsValue(valVar, widened, valVar->getICFGNode());
+        if (!widened.equals(preVal))
+            valvar_fixpoint = false;
+    }
+    // Widen the AbstractState. cur_head_state is a reference to
+    // trace[cycle_head]; assigning the widened result back updates the
+    // trace in-place so subsequent body processing sees the widened state.
+    cur_head_state = prev_head_state.widening(cur_head_state);
+    return valvar_fixpoint && (prev_head_state == cur_head_state);
 }
 
 bool AbstractInterpretation::narrowCycleState(
-    AbstractState& prev, const AbstractState& cur,
-    const ICFGNode* cycle_head, const ICFGCycleWTO* cycle)
+    const Map<const ValVar*, AbstractValue>& prev_head_valVars, const Map<const ValVar*, AbstractValue>& cur_head_valVars,
+    AbstractState& prev_head_state, AbstractState& cur_head_state)
 {
-    if (!shouldApplyNarrowing(cycle_head->getFun()))
-        return true;  // narrowing disabled for this function
-    AbstractState next = prev.narrowing(cur);
-    if (next == prev)
-        return true;  // fixpoint
-    prev = std::move(next);
-    svfStateMgr->getTrace()[cycle_head] = prev;
-    if (Options::AESparsity() == AESparsity::SemiSparse)
-        scatterCycleValVars(prev, cycle);
-    return false;
+    // Narrow ValVars with the same conservative semantics as
+    // AbstractState::narrowing: iterate over prev's keys, narrow only those
+    // also in cur.  Keys in prev but missing from cur are preserved.
+    bool valvar_fixpoint = true;
+    for (const auto& [valVar, preVal] : prev_head_valVars)
+    {
+        auto it = cur_head_valVars.find(valVar);
+        if (it == cur_head_valVars.end())
+        {
+            updateAbsValue(valVar, preVal, valVar->getICFGNode());
+            continue;
+        }
+        AbstractValue narrowed = preVal;
+        narrowed.narrow_with(it->second);
+        updateAbsValue(valVar, narrowed, valVar->getICFGNode());
+        if (!narrowed.equals(preVal))
+            valvar_fixpoint = false;
+    }
+    // Narrow the AbstractState. cur_head_state is a reference to
+    // trace[cycle_head]; assigning the narrowed result back updates trace.
+    cur_head_state = prev_head_state.narrowing(cur_head_state);
+    return valvar_fixpoint && (prev_head_state == cur_head_state);
 }
 
 
@@ -1000,15 +970,16 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
             // Save state before processing head.  getFullCycleHeadState
             // handles both dense (returns trace[cycle_head] as-is) and
             // semi-sparse (collects ValVars from def-sites) uniformly.
-            AbstractState prev_head_state = getFullCycleHeadState(cycle);
+            const Map<const ValVar*, AbstractValue>& prev_head_valVars = svfStateMgr->getCycleAbsValues(preAnalysis->getCycleValVars(cycle));
+            AbstractState prev_head_state = svfStateMgr->getAbstractState(cycle_head);
 
             if (mergeStatesFromPredecessors(cycle_head))
                 handleICFGNode(cycle_head);
-            AbstractState cur_head_state = getFullCycleHeadState(cycle);
+            const Map<const ValVar*, AbstractValue>& cur_head_valVars = svfStateMgr->getCycleAbsValues(preAnalysis->getCycleValVars(cycle));
 
             if (increasing)
             {
-                if (widenCycleState(prev_head_state, cur_head_state, cycle_head, cycle))
+                if (widenCycleState(prev_head_valVars, cur_head_valVars, prev_head_state, svfStateMgr->getAbstractState(cycle_head)))
                 {
                     increasing = false;
                     continue;
@@ -1016,7 +987,7 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
             }
             else
             {
-                if (narrowCycleState(prev_head_state, cur_head_state, cycle_head, cycle))
+                if (narrowCycleState(prev_head_valVars, cur_head_valVars, prev_head_state, svfStateMgr->getAbstractState(cycle_head)))
                     break;
             }
         }

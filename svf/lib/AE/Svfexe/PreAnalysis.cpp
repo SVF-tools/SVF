@@ -129,7 +129,7 @@ void PreAnalysis::initCycleValVars()
     // map when we reach their enclosing cycle.
     for (const ICFGCycleWTO* cycle : cycles)
     {
-        Set<NodeID>& out = cycleToValVars[cycle];
+        Set<const ValVar*>& out = cycleToValVars[cycle];
 
         // Gather every ICFG node in this cycle (head + body singletons).
         // For nested sub-cycles, merge their already-computed sets instead.
@@ -154,7 +154,7 @@ void PreAnalysis::initCycleValVars()
                 else if (const MultiOpndStmt* m = SVFUtil::dyn_cast<MultiOpndStmt>(stmt))
                     lhs = m->getRes();
                 if (lhs)
-                    out.insert(lhs->getId());
+                    out.insert(lhs);
             }
             // FunEntryICFGNode owns ArgValVars (formal parameters) that have
             // no defining stmt at the entry — the CallPE lives on the caller
@@ -164,7 +164,7 @@ void PreAnalysis::initCycleValVars()
             {
                 for (const SVFVar* fp : fe->getFormalParms())
                     if (const ValVar* v = SVFUtil::dyn_cast<ValVar>(fp))
-                        out.insert(v->getId());
+                        out.insert(v);
             }
         }
     }

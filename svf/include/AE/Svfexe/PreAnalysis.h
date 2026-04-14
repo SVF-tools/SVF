@@ -80,10 +80,10 @@ public:
 
     /// Look up the ValVar id set of a WTO cycle. Returns nullptr if the
     /// cycle is unknown (e.g. dense mode, where the map is never built).
-    const Set<NodeID>* getCycleValVars(const ICFGCycleWTO* cycle) const
+    const Set<const ValVar*> getCycleValVars(const ICFGCycleWTO* cycle) const
     {
         auto it = cycleToValVars.find(cycle);
-        return it == cycleToValVars.end() ? nullptr : &it->second;
+        return it == cycleToValVars.end() ? Set<const ValVar*>() : it->second;
     }
 
 private:
@@ -98,7 +98,7 @@ private:
     /// Pre-computed (semi-sparse only) map from a WTO cycle to the IDs of
     /// every ValVar whose def-site is inside that cycle, including all
     /// nested sub-cycles. Empty in dense mode.
-    Map<const ICFGCycleWTO*, Set<NodeID>> cycleToValVars;
+    Map<const ICFGCycleWTO*, Set<const ValVar*>> cycleToValVars;
 };
 
 } // End namespace SVF

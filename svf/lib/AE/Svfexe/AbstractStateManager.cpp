@@ -520,3 +520,26 @@ const ICFGNode* AbstractStateManager::getDefSiteOfObjVar(const ObjVar* obj, cons
         return edge->getSrcNode();
     return nullptr;
 }
+
+Map<const ValVar*, AbstractValue> AbstractStateManager::getCycleAbsValues(const Set<const ValVar*>& valVars)
+{
+    Map<const ValVar*, AbstractValue> snap;
+    for (const ValVar* v : valVars)
+    {
+        const ICFGNode* defSite = v->getICFGNode();
+        if (!defSite) continue;
+        // Skip ValVars whose def-site hasn't been processed yet, or whose
+        // value hasn't been stored there.  Using getAbstractValue here would
+        // return IntervalValue::top() as a fallback, which when later written
+        // back to the def-site via updateAbsValue contaminates every body
+        // node and defeats widening/narrowing precision (e.g. breaks
+        // semi-sparse recursion tests).
+        auto it = abstractTrace.find(defSite);
+        if (it == abstractTrace.end()) continue;
+        const auto& varMap = it->second.getVarToVal();
+        auto kv = varMap.find(v->getId());
+        if (kv == varMap.end()) continue;
+        snap[v] = kv->second;
+    }
+    return snap;
+}

@@ -196,11 +196,11 @@ private:
     /// Push the ValVars in `snap` back to their def-sites. No-op in dense.
     void scatterCycleValVars(const AbstractState& snap, const ICFGCycleWTO* cycle);
     /// Widen the cycle state of `prev` and `cur` at `cycle_head`.
-    bool widenCycleState(AbstractState& prev, const AbstractState& cur,
-                         const ICFGNode* cycle_head, const ICFGCycleWTO* cycle);
+    bool widenCycleState(const Map<const ValVar*, AbstractValue>& prev, const Map<const ValVar*, AbstractValue>& cur,
+                         AbstractState& prev_head_state, AbstractState& cur_head_state);
     /// Narrow the cycle state of `prev` and `cur` at `cycle_head`.
-    bool narrowCycleState(AbstractState& prev, const AbstractState& cur,
-                          const ICFGNode* cycle_head, const ICFGCycleWTO* cycle);
+    bool narrowCycleState(const Map<const ValVar*, AbstractValue>& prev, const Map<const ValVar*, AbstractValue>& cur,
+                          AbstractState& prev_head_state, AbstractState& cur_head_state);
 
     /// Handle a function body via worklist-driven WTO traversal starting from funEntry
     void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller = nullptr);
