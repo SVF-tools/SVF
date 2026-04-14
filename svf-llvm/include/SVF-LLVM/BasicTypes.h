@@ -208,17 +208,21 @@ typedef llvm::MinMaxIntrinsic MinMaxIntrinsic;
 typedef llvm::BinaryOpIntrinsic BinaryOpIntrinsic;
 typedef llvm::WithOverflowInst WithOverflowInst;
 typedef llvm::SaturatingInst SaturatingInst;
+#if LLVM_VERSION_MAJOR < 22
 typedef llvm::AtomicMemIntrinsic AtomicMemIntrinsic;
 typedef llvm::AtomicMemSetInst AtomicMemSetInst;
 typedef llvm::AtomicMemTransferInst AtomicMemTransferInst;
 typedef llvm::AtomicMemCpyInst AtomicMemCpyInst;
 typedef llvm::AtomicMemMoveInst AtomicMemMoveInst;
+#endif
 typedef llvm::MemIntrinsic MemIntrinsic;
 typedef llvm::MemSetInst MemSetInst;
 typedef llvm::MemTransferInst MemTransferInst;
 typedef llvm::MemCpyInst MemCpyInst;
 typedef llvm::MemMoveInst MemMoveInst;
+#if LLVM_VERSION_MAJOR < 22
 typedef llvm::MemCpyInlineInst MemCpyInlineInst;
+#endif
 typedef llvm::AnyMemIntrinsic AnyMemIntrinsic;
 typedef llvm::AnyMemSetInst AnyMemSetInst;
 typedef llvm::AnyMemTransferInst AnyMemTransferInst;

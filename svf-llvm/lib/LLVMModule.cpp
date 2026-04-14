@@ -518,11 +518,19 @@ void LLVMModuleSet::addSVFMain()
         // Collect ctor and dtor functions
         for (const GlobalVariable& global : mod.globals())
         {
+#if LLVM_VERSION_MAJOR < 22
             if (global.getName().equals(SVF_GLOBAL_CTORS) && global.hasInitializer())
+#else
+            if (global.getName() == SVF_GLOBAL_CTORS && global.hasInitializer())
+#endif
             {
                 ctor_funcs = getLLVMGlobalFunctions(&global);
             }
+#if LLVM_VERSION_MAJOR < 22
             else if (global.getName().equals(SVF_GLOBAL_DTORS) && global.hasInitializer())
+#else
+            else if (global.getName() == SVF_GLOBAL_DTORS && global.hasInitializer())
+#endif
             {
                 dtor_funcs = getLLVMGlobalFunctions(&global);
             }
@@ -533,9 +541,13 @@ void LLVMModuleSet::addSVFMain()
         {
             auto funName = func.getName();
 
+#if LLVM_VERSION_MAJOR < 22
             assert(!funName.equals(SVF_MAIN_FUNC_NAME) && SVF_MAIN_FUNC_NAME " already defined");
-
             if (funName.equals("main"))
+#else
+            assert(funName != SVF_MAIN_FUNC_NAME && SVF_MAIN_FUNC_NAME " already defined");
+            if (funName == "main")
+#endif
             {
                 orgMain = &func;
                 mainMod = &mod;

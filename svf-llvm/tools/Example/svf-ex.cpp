@@ -212,7 +212,9 @@ int main(int argc, char ** argv)
 
     LLVMModuleSet::getLLVMModuleSet()->dumpModulesToFile(".svf.bc");
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
+#if LLVM_VERSION_MAJOR < 22
     llvm::llvm_shutdown();
+#endif
     return 0;
 }
 

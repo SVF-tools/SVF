@@ -352,9 +352,16 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
             for (const auto& gepAddr : gepAddrs)
             {
                 NodeID gepObj = as.getIDFromAddr(gepAddr);
-                if (const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(svfir->getSVFVar(gepObj)))
+                const SVFVar* gepSvfVar = svfir->getSVFVar(gepObj);
+                if (const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(gepSvfVar))
                 {
                     addToGepObjOffsetFromBase(gepObjVar, offset);
+                }
+                else if (SVFUtil::isa<BaseObjVar>(gepSvfVar))
+                {
+                    // With -ff-eq-base, a GEP with zero net offset maps to the
+                    // base itself; offset-from-base is implicitly 0, so nothing
+                    // to record. getAccessOffset handles BaseObjVar directly.
                 }
                 else
                 {
@@ -371,7 +378,8 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
             for (const auto& gepAddr : gepAddrs)
             {
                 NodeID gepObj = as.getIDFromAddr(gepAddr);
-                if (const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(svfir->getSVFVar(gepObj)))
+                const SVFVar* gepSvfVar = svfir->getSVFVar(gepObj);
+                if (const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(gepSvfVar))
                 {
                     if (hasGepObjOffsetFromBase(objVar))
                     {
@@ -386,6 +394,10 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
                         assert(false &&
                                "GEP RHS object has no offset from base");
                     }
+                }
+                else if (SVFUtil::isa<BaseObjVar>(gepSvfVar))
+                {
+                    // With -ff-eq-base, net offset == 0 collapses to the base.
                 }
                 else
                 {
