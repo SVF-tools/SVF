@@ -187,14 +187,12 @@ private:
     // per iter that gathers them, widens/narrows across iterations, and
     // scatters the result back to each def-site.
 
-    /// Return the full abstract state at cycle_head: ObjVars from the trace
-    /// plus every cycle ValVar collected from its def-site. In dense mode
-    /// this is simply trace[cycle_head]. In semi-sparse mode the collected
-    /// ValVars are also scattered back to their def-sites for consistency.
-    AbstractState getFullCycleHeadState(const ICFGCycleWTO* cycle);
+    /// Snapshot cycle ValVars' current values from their def-sites.
+    /// Skips any ValVar without a genuinely stored value to avoid the
+    /// top-fallback from contaminating def-sites when the snapshot is
+    /// later written back by widen/narrow.
+    Map<const ValVar*, AbstractValue> getCycleAbsValues(const Set<const ValVar*>& valVars);
 
-    /// Push the ValVars in `snap` back to their def-sites. No-op in dense.
-    void scatterCycleValVars(const AbstractState& snap, const ICFGCycleWTO* cycle);
     /// Widen the cycle state of `prev` and `cur` at `cycle_head`.
     bool widenCycleState(const Map<const ValVar*, AbstractValue>& prev, const Map<const ValVar*, AbstractValue>& cur,
                          AbstractState& prev_head_state, AbstractState& cur_head_state);

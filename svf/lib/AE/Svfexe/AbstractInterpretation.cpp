@@ -886,6 +886,23 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 
 // --- Cycle state helpers (dense/sparse unified) ---
 
+Map<const ValVar*, AbstractValue> AbstractInterpretation::getCycleAbsValues(
+    const Set<const ValVar*>& valVars)
+{
+    Map<const ValVar*, AbstractValue> snap;
+    for (const ValVar* v : valVars)
+    {
+        const ICFGNode* defSite = v->getICFGNode();
+        // Only snapshot ValVars that genuinely have a stored value.
+        // getAbsValue would otherwise top-fallback for uninitialised
+        // ValVars, and that top, written back to def-sites by widen/narrow,
+        // contaminates body nodes and defeats precision.
+        if (!defSite || !svfStateMgr->hasAbstractValue(v, defSite)) continue;
+        snap[v] = svfStateMgr->getAbstractValue(v, defSite);
+    }
+    return snap;
+}
+
 bool AbstractInterpretation::widenCycleState(
     const Map<const ValVar*, AbstractValue>& prev_head_valVars, const Map<const ValVar*, AbstractValue>& cur_head_valVars,
     AbstractState& prev_head_state, AbstractState& cur_head_state)
@@ -967,15 +984,14 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
     {
         if (cur_iter >= widen_delay)
         {
-            // Save state before processing head.  getFullCycleHeadState
             // handles both dense (returns trace[cycle_head] as-is) and
             // semi-sparse (collects ValVars from def-sites) uniformly.
-            const Map<const ValVar*, AbstractValue>& prev_head_valVars = svfStateMgr->getCycleAbsValues(preAnalysis->getCycleValVars(cycle));
+            const Map<const ValVar*, AbstractValue>& prev_head_valVars = getCycleAbsValues(preAnalysis->getCycleValVars(cycle));
             AbstractState prev_head_state = svfStateMgr->getAbstractState(cycle_head);
 
             if (mergeStatesFromPredecessors(cycle_head))
                 handleICFGNode(cycle_head);
-            const Map<const ValVar*, AbstractValue>& cur_head_valVars = svfStateMgr->getCycleAbsValues(preAnalysis->getCycleValVars(cycle));
+            const Map<const ValVar*, AbstractValue>& cur_head_valVars = getCycleAbsValues(preAnalysis->getCycleValVars(cycle));
 
             if (increasing)
             {

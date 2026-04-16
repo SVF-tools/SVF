@@ -176,11 +176,6 @@ public:
     /// Given an ObjVar and its use-site ICFGNode, find the definition-site ICFGNode.
     const ICFGNode* getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
 
-    // ===----------------------------------------------------------------------===//
-    //  Cycle ValVar Access API
-    // ===----------------------------------------------------------------------===//
-    Map<const ValVar*, AbstractValue> getCycleAbsValues(const Set<const ValVar*>& valVars);
-
 private:
     SVFIR* svfir;
     SVFG* svfg;

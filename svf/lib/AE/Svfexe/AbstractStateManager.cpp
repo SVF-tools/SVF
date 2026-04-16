@@ -586,18 +586,3 @@ const ICFGNode* AbstractStateManager::getDefSiteOfObjVar(const ObjVar* obj, cons
     return nullptr;
 }
 
-Map<const ValVar*, AbstractValue> AbstractStateManager::getCycleAbsValues(const Set<const ValVar*>& valVars)
-{
-    Map<const ValVar*, AbstractValue> snap;
-    for (const ValVar* v : valVars)
-    {
-        const ICFGNode* defSite = v->getICFGNode();
-        // Only snapshot ValVars that genuinely have a stored value.
-        // getAbstractValue would otherwise top-fallback for uninitialised
-        // ValVars, and that top, written back to def-sites by widen/narrow,
-        // contaminates body nodes and defeats precision.
-        if (!defSite || !hasAbstractValue(v, defSite)) continue;
-        snap[v] = getAbstractValue(v, defSite);
-    }
-    return snap;
-}
