@@ -149,6 +149,11 @@ public:
         svfStateMgr->updateAbstractState(node, state);
     }
 
+    inline bool hasAbsValue(const SVFVar* var, const ICFGNode* node)
+    {
+        return svfStateMgr->hasAbstractValue(var, node);
+    }
+
     inline const AbstractValue& getAbsValue(const SVFVar* var, const ICFGNode* node)
     {
         return svfStateMgr->getAbstractValue(var, node);
@@ -179,6 +184,30 @@ private:
 
     /// Handle a WTO cycle (loop or recursive function) using widening/narrowing iteration
     virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller = nullptr);
+
+    // ---- Semi-sparse cycle helpers ----
+    // ValVars whose def-site is inside the cycle but NOT cycle_head do not
+    // flow through cycle_head's merge in semi-sparse mode, so the around-merge
+    // widening cannot observe them.  getFullCycleHeadState pulls these ValVars
+    // into a single AbstractState snapshot so widen/narrow can treat ValVars
+    // and ObjVars uniformly; after widen/narrow we scatter the ValVars back
+    // to their def-sites.
+
+    /// Build a full cycle-head AbstractState: the ObjVars currently at
+    /// cycle_head combined with every cycle ValVar pulled from its
+    /// def-site.  Skips ValVars without a stored value to avoid the
+    /// top-fallback contamination.  In dense mode this is equivalent to
+    /// trace[cycle_head] since ValVars already live there.
+    AbstractState getFullCycleHeadState(const ICFGCycleWTO* cycle);
+
+    /// Widen prev with cur; write the widened state to trace[cycle_head]
+    /// and scatter its ValVars back to their def-sites.  Returns true
+    /// when the widened result equals prev (fixpoint).
+    bool widenCycleState(const AbstractState& prev, const AbstractState& cur,
+                         const ICFGCycleWTO* cycle);
+    /// Narrow prev with cur; write the narrowed state back and scatter.
+    bool narrowCycleState(const AbstractState& prev, const AbstractState& cur,
+                          const ICFGCycleWTO* cycle);
 
     /// Handle a function body via worklist-driven WTO traversal starting from funEntry
     void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller = nullptr);

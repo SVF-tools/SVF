@@ -205,6 +205,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
 {
     // Collect all feasible predecessor states, then merge at the end.
     AbstractState merged;
+    bool hasFeasiblePred = false;
 
     for (auto& edge : node->getInEdges())
     {
@@ -218,16 +219,21 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
             {
                 AbstractState predState = getAbsState(pred);
                 if (isBranchFeasible(intraCfgEdge, predState))
+                {
                     merged.joinWith(predState);
+                    hasFeasiblePred = true;
+                }
             }
             else
             {
                 merged.joinWith(getAbsState(pred));
+                hasFeasiblePred = true;
             }
         }
         else if (SVFUtil::isa<CallCFGEdge>(edge))
         {
             merged.joinWith(getAbsState(pred));
+            hasFeasiblePred = true;
         }
         else if (SVFUtil::isa<RetCFGEdge>(edge))
         {
@@ -235,6 +241,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
             {
             case TOP:
                 merged.joinWith(getAbsState(pred));
+                hasFeasiblePred = true;
                 break;
             case WIDEN_ONLY:
             case WIDEN_NARROW:
@@ -242,14 +249,17 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                 const RetICFGNode* returnSite = SVFUtil::dyn_cast<RetICFGNode>(node);
                 const CallICFGNode* callSite = returnSite->getCallICFGNode();
                 if (hasAbsState(callSite))
+                {
                     merged.joinWith(getAbsState(pred));
+                    hasFeasiblePred = true;
+                }
                 break;
             }
             }
         }
     }
 
-    if (merged.getVarToVal().empty() && merged.getLocToVal().empty())
+    if (!hasFeasiblePred)
         return false;
 
     updateAbsState(node, merged);
@@ -859,6 +869,96 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 ///       int factorial(int n) { return n <= 1 ? 1 : n * factorial(n-1); }
 ///       factorial(5) -> returns [10000, 10000] (precise after narrowing)
 
+// ---------------------------------------------------------------------------
+// Semi-sparse cycle helpers
+// ---------------------------------------------------------------------------
+//
+// In semi-sparse mode, ValVars live at their def-sites and do not flow
+// through the cycle-head merge. The around-merge widening at cycle_head
+// therefore cannot observe ValVar growth across iterations (e.g. an
+// ArgValVar that a recursive CallPE keeps overwriting at the FunEntry).
+//
+// To fix that, handleLoopOrRecursion runs an extra cross-iter widening on
+// a snapshot that pulls every cycle ValVar into cycle_head's state. The set
+// of ValVar IDs per cycle is precomputed once after PreAnalysis::initWTO()
+// (initCycleValVars), bottom-up so nested cycles are handled before their
+// enclosing cycle.
+
+// --- Cycle state helpers (dense/sparse unified) ---
+
+AbstractState AbstractInterpretation::getFullCycleHeadState(const ICFGCycleWTO* cycle)
+{
+    const ICFGNode* cycle_head = cycle->head()->getICFGNode();
+    AbstractState snap;
+    if (hasAbsState(cycle_head))
+        snap = getAbsState(cycle_head);
+
+    if (Options::AESparsity() == AESparsity::SemiSparse)
+    {
+        const Set<const ValVar*>& valVars = preAnalysis->getCycleValVars(cycle);
+        if (valVars.empty())
+            return snap;  // dense path / no cycle ValVars: snap is already complete
+
+        // Semi-sparse: drop any stale ValVar entries cached at cycle_head and
+        // pull each cycle ValVar from its def-site.  ValVars without a stored
+        // value are skipped to avoid the top-fallback contamination.
+        snap.clearValVars();
+        for (const ValVar* v : valVars)
+        {
+            const ICFGNode* defSite = v->getICFGNode();
+            if (!defSite || !hasAbsValue(v, defSite)) continue;
+            snap[v->getId()] = getAbsValue(v, defSite);
+        }
+        return snap;
+    }
+    else
+    {
+        return snap;
+    }
+}
+
+
+bool AbstractInterpretation::widenCycleState(
+    const AbstractState& prev, const AbstractState& cur, const ICFGCycleWTO* cycle)
+{
+    AbstractState prev_copy = prev;
+    AbstractState next = prev_copy.widening(cur);
+    // Always write back (even at fixpoint) so cycle_head's trace holds the
+    // widened state for the upcoming narrowing phase.
+    const ICFGNode* cycle_head = cycle->head()->getICFGNode();
+    svfStateMgr->getTrace()[cycle_head] = next;
+    if (Options::AESparsity() == AESparsity::SemiSparse)
+    {
+        for (const auto& [id, val] : next.getVarToVal())
+        {
+            updateAbsValue(svfir->getSVFVar(id), val, cycle_head);
+        }
+    }
+    return next == prev;
+}
+
+bool AbstractInterpretation::narrowCycleState(
+    const AbstractState& prev, const AbstractState& cur, const ICFGCycleWTO* cycle)
+{
+    const ICFGNode* cycle_head = cycle->head()->getICFGNode();
+    if (!shouldApplyNarrowing(cycle_head->getFun()))
+        return true;
+    AbstractState prev_copy = prev;
+    AbstractState next = prev_copy.narrowing(cur);
+    if (next == prev)
+        return true;  // fixpoint
+    svfStateMgr->getTrace()[cycle_head] = next;
+    if (Options::AESparsity() == AESparsity::SemiSparse)
+    {
+        for (const auto& [id, val] : next.getVarToVal())
+        {
+            updateAbsValue(svfir->getSVFVar(id), val, cycle_head);
+        }
+    }
+    return false;
+}
+
+
 void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller)
 {
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
@@ -874,35 +974,29 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
     // Iterate until fixpoint with widening/narrowing on the cycle head.
     bool increasing = true;
     u32_t widen_delay = Options::WidenDelay();
-    auto& abstractTrace = svfStateMgr->getTrace();
     for (u32_t cur_iter = 0;; cur_iter++)
     {
         if (cur_iter >= widen_delay)
         {
-            // Save state before processing head
-            AbstractState prev_head_state = abstractTrace[cycle_head];
+            // getFullCycleHeadState handles dense (returns trace[cycle_head])
+            // and semi-sparse (collects ValVars from def-sites) uniformly.
+            AbstractState prev = getFullCycleHeadState(cycle);
 
-            // Process cycle head: merge from predecessors, then execute statements
             if (mergeStatesFromPredecessors(cycle_head))
                 handleICFGNode(cycle_head);
-            AbstractState cur_head_state = abstractTrace[cycle_head];
+            AbstractState cur = getFullCycleHeadState(cycle);
 
             if (increasing)
             {
-                abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
-                if (abstractTrace[cycle_head] == prev_head_state)
+                if (widenCycleState(prev, cur, cycle))
                 {
-                    // Widening fixpoint reached; switch to narrowing phase.
                     increasing = false;
                     continue;
                 }
             }
             else
             {
-                if (!shouldApplyNarrowing(cycle_head->getFun()))
-                    break;
-                abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
-                if (abstractTrace[cycle_head] == prev_head_state)
+                if (narrowCycleState(prev, cur, cycle))
                     break;
             }
         }
