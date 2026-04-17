@@ -310,6 +310,7 @@ inline const ConstantExpr* isUnaryConstantExpr(const Value* val)
 }
 //@}
 
+#if LLVM_VERSION_MAJOR < 22
 inline static DataLayout* getDataLayout(Module* mod)
 {
     static DataLayout *dl = nullptr;
@@ -317,6 +318,12 @@ inline static DataLayout* getDataLayout(Module* mod)
         dl = new DataLayout(mod);
     return dl;
 }
+#else
+inline static const DataLayout* getDataLayout(Module* mod)
+{
+    return mod ? &mod->getDataLayout() : nullptr;
+}
+#endif
 
 /// Get the next instructions following control flow
 void getNextInsts(const Instruction* curInst,

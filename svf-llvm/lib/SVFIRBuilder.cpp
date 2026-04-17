@@ -645,7 +645,11 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
     assert(V);
 
     const llvm::GEPOperator *gepOp = SVFUtil::dyn_cast<const llvm::GEPOperator>(V);
+#if LLVM_VERSION_MAJOR < 22
     DataLayout * dataLayout = getDataLayout(llvmModuleSet()->getMainLLVMModule());
+#else
+    const DataLayout* dataLayout = getDataLayout(llvmModuleSet()->getMainLLVMModule());
+#endif
     llvm::APInt byteOffset(dataLayout->getIndexSizeInBits(gepOp->getPointerAddressSpace()),0,true);
     if(gepOp && dataLayout && gepOp->accumulateConstantOffset(*dataLayout,byteOffset))
     {
@@ -924,10 +928,39 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     {
         if(cppUtil::isValVtbl(gvar) && !Options::VtableInSVFIR())
             return;
+        // LLVM >=17 emits global initializers of aligned structs as anonymous
+        // (literal) structs with explicit [N x i8] zero-initialized padding
+        // fields. That adds extra field positions that are absent in the named
+        // struct type used for accesses, causing field-index drift between the
+        // init side and the access side (e.g. @f1 stored at fld 2, read at
+        // fld 1). For literal structs, skip pure-padding operands and reindex.
+        const StructType* litST =
+            SVFUtil::dyn_cast<StructType>(C->getType());
+        const bool isPaddedLiteralStruct =
+            SVFUtil::isa<ConstantStruct>(C) && litST && litST->isLiteral();
+        u32_t logicalIdx = 0;
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
         {
-            u32_t off = pag->getFlattenedElemIdx(llvmModuleSet()->getSVFType(C->getType()), i);
-            InitialGlobal(gvar, SVFUtil::cast<Constant>(C->getOperand(i)), offset + off);
+            Constant* op = SVFUtil::cast<Constant>(C->getOperand(i));
+            if (isPaddedLiteralStruct)
+            {
+                // padding = [N x i8] zero-initialized
+                const ArrayType* at =
+                    SVFUtil::dyn_cast<ArrayType>(op->getType());
+                if (at && at->getElementType()->isIntegerTy(8) &&
+                        SVFUtil::isa<ConstantAggregateZero>(op))
+                {
+                    continue;
+                }
+                InitialGlobal(gvar, op, offset + logicalIdx);
+                logicalIdx++;
+            }
+            else
+            {
+                u32_t off = pag->getFlattenedElemIdx(
+                                llvmModuleSet()->getSVFType(C->getType()), i);
+                InitialGlobal(gvar, op, offset + off);
+            }
         }
     }
     else if(ConstantData* data = SVFUtil::dyn_cast<ConstantData>(C))

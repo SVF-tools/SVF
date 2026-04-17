@@ -133,9 +133,14 @@ void BVDataPTAImpl::finalize()
 void BVDataPTAImpl::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts)
 {
     expandedPts = pts;;
+    const bool ffEqBase = Options::FirstFieldEqBase();
     for(PointsTo::iterator pit = pts.begin(), epit = pts.end(); pit!=epit; ++pit)
     {
-        if (pag->getBaseObjVarID(*pit) == *pit || isFieldInsensitive(*pit))
+        const bool isBase = pag->getBaseObjVarID(*pit) == *pit;
+        const bool isFI = isFieldInsensitive(*pit);
+        // With -ff-eq-base, a base object denotes the first field (not the
+        // whole aggregate), so it must not be expanded to all fields.
+        if ((isBase && !ffEqBase) || isFI)
         {
             expandedPts |= pag->getAllFieldsObjVars(*pit);
         }
@@ -145,9 +150,12 @@ void BVDataPTAImpl::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts)
 void BVDataPTAImpl::expandFIObjs(const NodeBS& pts, NodeBS& expandedPts)
 {
     expandedPts = pts;
+    const bool ffEqBase = Options::FirstFieldEqBase();
     for (const NodeID o : pts)
     {
-        if (pag->getBaseObjVarID(o) == o || isFieldInsensitive(o))
+        const bool isBase = pag->getBaseObjVarID(o) == o;
+        const bool isFI = isFieldInsensitive(o);
+        if ((isBase && !ffEqBase) || isFI)
         {
             expandedPts |= pag->getAllFieldsObjVars(o);
         }
