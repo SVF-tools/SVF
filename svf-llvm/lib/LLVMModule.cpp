@@ -115,7 +115,7 @@ void LLVMModuleSet::buildSVFModule(Module &mod)
 
     double startSVFModuleTime = SVFStat::getClk(true);
     PAG::getPAG()->setModuleIdentifier(mod.getModuleIdentifier());
-    mset->modules.emplace_back(mod);    // Populates `modules`; can get context via `this->getContext()`
+    mset->loadBorrowedModule(mod);
     mset->loadExtAPIModules();          // Uses context from module through `this->getContext()`
     mset->build();
     double endSVFModuleTime = SVFStat::getClk(true);
@@ -130,7 +130,7 @@ void LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleNameVec
 
     LLVMModuleSet* mset = getLLVMModuleSet();
 
-    mset->loadModules(moduleNameVec);   // Populates `modules`; can get context via `this->getContext()`
+    mset->loadOwnedModules(moduleNameVec);
     mset->loadExtAPIModules();          // Uses context from first module through `this->getContext()`
 
     if (!moduleNameVec.empty())
@@ -145,6 +145,16 @@ void LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleNameVec
         (endSVFModuleTime - startSVFModuleTime) / TIMEINTERVAL;
 
     mset->buildSymbolTable();
+}
+
+void LLVMModuleSet::loadBorrowedModule(Module& mod)
+{
+    assert(modules.empty() && "Expected borrowed-module load to start from an empty module set");
+    assert(owned_modules.empty() && "Borrowed-module mode must not retain owned modules");
+    assert(!owned_ctx && "Borrowed-module mode must not retain an owned context");
+
+    moduleOwnershipMode = ModuleOwnershipMode::BorrowedModules;
+    modules.emplace_back(mod);
 }
 
 void LLVMModuleSet::buildSymbolTable() const
@@ -295,7 +305,7 @@ void LLVMModuleSet::prePassSchedule()
 void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
 {
     LLVMModuleSet* mset = getLLVMModuleSet();
-    mset->loadModules(moduleNameVec);
+    mset->loadOwnedModules(moduleNameVec);
     mset->loadExtAPIModules();
     mset->prePassSchedule();
 
@@ -313,7 +323,7 @@ void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
     releaseLLVMModuleSet();
 }
 
-void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
+void LLVMModuleSet::loadOwnedModules(const std::vector<std::string> &moduleNameVec)
 {
 
     // We read SVFIR from LLVM IR
@@ -357,6 +367,11 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     // This garbage collection should be avoided when building an SVF module from an LLVM
     // module instance; see the comment(s) in `buildSVFModule` and `loadExtAPIModules()`
 
+    assert(modules.empty() && "Expected owned-module load to start from an empty module set");
+    assert(owned_modules.empty() && "Expected owned-module load to start from an empty owned module list");
+    assert(!owned_ctx && "Expected owned-module load to start without an owned context");
+
+    moduleOwnershipMode = ModuleOwnershipMode::OwnedModules;
     owned_ctx = std::make_unique<LLVMContext>();
     for (const std::string& moduleName : moduleNameVec)
     {
@@ -386,13 +401,27 @@ void LLVMModuleSet::loadExtAPIModules()
     // being analysed.
     // When the modules are loaded from bitcode files (i.e. passing filenames to files containing
     // LLVM IR to `buildSVFModule({file1.bc, file2.bc, ...})) the context is created while loading
-    // the modules in `loadModules()`, which populates this->modules and this->owned_modules.
+    // the modules in `loadOwnedModules()`, which populates this->modules and this->owned_modules.
     // If, however, an LLVM Module object is passed to `buildSVFModule` (e.g. from an LLVM pass),
     // the context should be retrieved from the module itself (note that the garbage collection from
     // `std::unique_ptr<LLVMContext> LLVMModuleSet::owned_ctx` should be avoided in this case). This
     // function populates only this->modules.
     // In both cases, fetching the context from the main LLVM module (through `getContext`) works
     assert(!empty() && "LLVMModuleSet contains no modules; cannot load ExtAPI module without LLVMContext!");
+    assert(moduleOwnershipMode != ModuleOwnershipMode::Uninitialized &&
+           "ExtAPI loading requires an explicit module ownership mode");
+    if (moduleOwnershipMode == ModuleOwnershipMode::BorrowedModules)
+    {
+        assert(!owned_ctx && owned_modules.empty() &&
+               "Borrowed-module mode must not retain owned LLVM state while loading ExtAPI");
+    }
+    else
+    {
+        assert(moduleOwnershipMode == ModuleOwnershipMode::OwnedModules &&
+               "Unexpected module ownership mode while loading ExtAPI");
+        assert(owned_ctx && owned_modules.size() + 1 >= modules.size() &&
+               "Owned-module mode expects an owned context before loading ExtAPI");
+    }
 
     // Load external API module (extapi.bc)
     if (!ExtAPI::getExtAPI()->getExtBcPath().empty())

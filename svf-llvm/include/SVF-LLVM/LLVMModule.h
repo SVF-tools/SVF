@@ -48,6 +48,11 @@ class LLVMModuleSet
     friend class SymbolTableBuilder;
 
 public:
+    enum class ModuleOwnershipMode {
+        Uninitialized,
+        BorrowedModules,
+        OwnedModules,
+    };
 
     typedef std::vector<const Function*> FunctionSetType;
     typedef Map<const Function*, const Function*> FunDeclToDefMapTy;
@@ -81,6 +86,7 @@ private:
     static LLVMModuleSet* llvmModuleSet;
     static bool preProcessed;
     SVFIR* svfir;
+    ModuleOwnershipMode moduleOwnershipMode = ModuleOwnershipMode::Uninitialized;
     std::unique_ptr<LLVMContext> owned_ctx;
     std::vector<std::unique_ptr<Module>> owned_modules;
     std::vector<std::reference_wrapper<Module>> modules;
@@ -124,6 +130,7 @@ private:
     LLVMModuleSet();
 
     void build();
+    void loadBorrowedModule(Module& mod);
 
 public:
     ~LLVMModuleSet();
@@ -157,6 +164,11 @@ public:
     const std::vector<std::reference_wrapper<Module>>& getLLVMModules() const
     {
         return modules;
+    }
+
+    ModuleOwnershipMode getModuleOwnershipMode() const
+    {
+        return moduleOwnershipMode;
     }
 
     Module *getModule(u32_t idx) const
@@ -381,6 +393,8 @@ public:
     LLVMContext& getContext() const
     {
         assert(!empty() && "empty LLVM module!!");
+        assert(moduleOwnershipMode != ModuleOwnershipMode::Uninitialized &&
+               "module ownership mode must be established before requesting an LLVMContext");
         return getMainLLVMModule()->getContext();
     }
 
@@ -464,8 +478,9 @@ private:
 
     std::vector<const Function*> getLLVMGlobalFunctions(const GlobalVariable* global);
 
-    void loadModules(const std::vector<std::string>& moduleNameVec);
-    // Loads ExtAPI bitcode file; uses LLVMContext made while loading module bitcode files or from Module
+    void loadOwnedModules(const std::vector<std::string>& moduleNameVec);
+    // Loads ExtAPI bitcode file using the context established by either owned
+    // file-backed modules or a borrowed in-process module.
     void loadExtAPIModules();
     void addSVFMain();
 
