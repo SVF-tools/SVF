@@ -27,6 +27,7 @@
 //
 
 #include "AE/Svfexe/AbstractInterpretation.h"
+#include "AE/Svfexe/SparseAbstractInterpretation.h"
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
@@ -35,6 +36,7 @@
 #include "WPA/Andersen.h"
 #include <cmath>
 #include <deque>
+#include <memory>
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -71,6 +73,23 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
 AbstractInterpretation::AbstractInterpretation()
 {
     stat = new AEStat(this);
+}
+
+/// Factory: first call allocates the concrete subclass based on
+/// Options::AESparsity(); all subsequent calls return the same instance.
+/// Must only be called after the option parser has populated AESparsity.
+AbstractInterpretation& AbstractInterpretation::getAEInstance()
+{
+    static std::unique_ptr<AbstractInterpretation> instance = []()
+        -> std::unique_ptr<AbstractInterpretation>
+    {
+        if (Options::AESparsity() == AESparsity::SemiSparse)
+            return std::unique_ptr<AbstractInterpretation>(
+                new SparseAbstractInterpretation());
+        return std::unique_ptr<AbstractInterpretation>(
+            new AbstractInterpretation());
+    }();
+    return *instance;
 }
 
 
@@ -884,7 +903,12 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 // (initCycleValVars), bottom-up so nested cycles are handled before their
 // enclosing cycle.
 
-// --- Cycle state helpers (dense/sparse unified) ---
+// --- Cycle state helpers (dense base) ---
+//
+// The dense default: trace[cycle_head] is the authoritative primary
+// storage, so the snapshot / write-back are trivial.
+// SparseAbstractInterpretation overrides these to additionally pull/scatter
+// cycle ValVars from/to their def-sites.
 
 AbstractState AbstractInterpretation::getFullCycleHeadState(const ICFGCycleWTO* cycle)
 {
@@ -892,29 +916,7 @@ AbstractState AbstractInterpretation::getFullCycleHeadState(const ICFGCycleWTO* 
     AbstractState snap;
     if (hasAbsState(cycle_head))
         snap = getAbsState(cycle_head);
-
-    if (Options::AESparsity() == AESparsity::SemiSparse)
-    {
-        const Set<const ValVar*>& valVars = preAnalysis->getCycleValVars(cycle);
-        if (valVars.empty())
-            return snap;  // dense path / no cycle ValVars: snap is already complete
-
-        // Semi-sparse: drop any stale ValVar entries cached at cycle_head and
-        // pull each cycle ValVar from its def-site.  ValVars without a stored
-        // value are skipped to avoid the top-fallback contamination.
-        snap.clearValVars();
-        for (const ValVar* v : valVars)
-        {
-            const ICFGNode* defSite = v->getICFGNode();
-            if (!defSite || !hasAbsValue(v, defSite)) continue;
-            snap[v->getId()] = getAbsValue(v, defSite);
-        }
-        return snap;
-    }
-    else
-    {
-        return snap;
-    }
+    return snap;
 }
 
 
@@ -927,13 +929,6 @@ bool AbstractInterpretation::widenCycleState(
     // widened state for the upcoming narrowing phase.
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
     svfStateMgr->getTrace()[cycle_head] = next;
-    if (Options::AESparsity() == AESparsity::SemiSparse)
-    {
-        for (const auto& [id, val] : next.getVarToVal())
-        {
-            updateAbsValue(svfir->getSVFVar(id), val, cycle_head);
-        }
-    }
     return next == prev;
 }
 
@@ -948,13 +943,6 @@ bool AbstractInterpretation::narrowCycleState(
     if (next == prev)
         return true;  // fixpoint
     svfStateMgr->getTrace()[cycle_head] = next;
-    if (Options::AESparsity() == AESparsity::SemiSparse)
-    {
-        for (const auto& [id, val] : next.getVarToVal())
-        {
-            updateAbsValue(svfir->getSVFVar(id), val, cycle_head);
-        }
-    }
     return false;
 }
 

@@ -88,9 +88,6 @@ public:
         WIDEN_NARROW
     };
 
-    /// Constructor
-    AbstractInterpretation();
-
     virtual void runOnModule(ICFG* icfg);
 
     /// Destructor
@@ -105,12 +102,11 @@ public:
     /// Get all entry point functions (functions without callers)
     std::deque<const FunObjVar*> collectProgEntryFuns();
 
-
-    static AbstractInterpretation& getAEInstance()
-    {
-        static AbstractInterpretation instance;
-        return instance;
-    }
+    /// Factory: returns the singleton instance.  The concrete class is
+    /// chosen once, on first call, from `Options::AESparsity()`:
+    /// semi-sparse builds a `SparseAbstractInterpretation`, dense builds
+    /// the base.  Must be called only after the option parser has run.
+    static AbstractInterpretation& getAEInstance();
 
     void addDetector(std::unique_ptr<AEDetector> detector)
     {
@@ -167,6 +163,31 @@ public:
     /// Propagate an ObjVar's abstract value from defSite to all its use-sites.
     void propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite);
 
+protected:
+    /// Factory-only construction.  External callers must use getAEInstance();
+    /// `SparseAbstractInterpretation` reaches this via its own ctor.
+    AbstractInterpretation();
+
+    // ---- Cycle helpers overridden by SparseAbstractInterpretation ----
+    // The dense versions write only to trace[cycle_head].  The semi-sparse
+    // subclass adds def-site scatter on top for body ValVars.
+
+    /// Build a full cycle-head AbstractState.  Dense default: trace[cycle_head]
+    /// as-is.  Semi-sparse subclass: also pull cycle ValVars from def-sites.
+    virtual AbstractState getFullCycleHeadState(const ICFGCycleWTO* cycle);
+
+    /// Widen prev with cur; write the widened state to trace[cycle_head].
+    /// Returns true when next == prev (fixpoint).  Semi-sparse subclass
+    /// additionally scatters ValVars to their def-sites.
+    virtual bool widenCycleState(const AbstractState& prev, const AbstractState& cur,
+                                 const ICFGCycleWTO* cycle);
+
+    /// Narrow prev with cur; write the narrowed state back.  Returns true
+    /// when narrowing is disabled or the narrowed state equals prev.
+    /// Semi-sparse subclass scatters the narrowed ValVars on non-fixpoint.
+    virtual bool narrowCycleState(const AbstractState& prev, const AbstractState& cur,
+                                  const ICFGCycleWTO* cycle);
+
 private:
     /// Initialize abstract state for the global ICFG node and process global statements
     virtual void handleGlobalNode();
@@ -184,30 +205,6 @@ private:
 
     /// Handle a WTO cycle (loop or recursive function) using widening/narrowing iteration
     virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller = nullptr);
-
-    // ---- Semi-sparse cycle helpers ----
-    // ValVars whose def-site is inside the cycle but NOT cycle_head do not
-    // flow through cycle_head's merge in semi-sparse mode, so the around-merge
-    // widening cannot observe them.  getFullCycleHeadState pulls these ValVars
-    // into a single AbstractState snapshot so widen/narrow can treat ValVars
-    // and ObjVars uniformly; after widen/narrow we scatter the ValVars back
-    // to their def-sites.
-
-    /// Build a full cycle-head AbstractState: the ObjVars currently at
-    /// cycle_head combined with every cycle ValVar pulled from its
-    /// def-site.  Skips ValVars without a stored value to avoid the
-    /// top-fallback contamination.  In dense mode this is equivalent to
-    /// trace[cycle_head] since ValVars already live there.
-    AbstractState getFullCycleHeadState(const ICFGCycleWTO* cycle);
-
-    /// Widen prev with cur; write the widened state to trace[cycle_head]
-    /// and scatter its ValVars back to their def-sites.  Returns true
-    /// when the widened result equals prev (fixpoint).
-    bool widenCycleState(const AbstractState& prev, const AbstractState& cur,
-                         const ICFGCycleWTO* cycle);
-    /// Narrow prev with cur; write the narrowed state back and scatter.
-    bool narrowCycleState(const AbstractState& prev, const AbstractState& cur,
-                          const ICFGCycleWTO* cycle);
 
     /// Handle a function body via worklist-driven WTO traversal starting from funEntry
     void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller = nullptr);
@@ -246,16 +243,12 @@ private:
 
     void updateStateOnPhi(const PhiStmt *phi);
 
-    /// protected data members, also used in subclasses
-    SVFIR* svfir;
     /// Execution State, used to store the Interval Value of every SVF variable
     AEAPI* api{nullptr};
 
     ICFG* icfg;
     CallGraph* callGraph;
     AEStat* stat;
-
-    PreAnalysis* preAnalysis{nullptr};
 
     AbsExtAPI* getUtils()
     {
@@ -272,18 +265,22 @@ private:
 
     bool skipRecursiveCall(const CallICFGNode* callNode);
     const FunObjVar* getCallee(const CallICFGNode* callNode);
-    bool shouldApplyNarrowing(const FunObjVar* fun);
 
     // there data should be shared with subclasses
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
 
-    AbstractStateManager* svfStateMgr{nullptr}; // state management (owns abstractTrace)
     Set<const ICFGNode*> allAnalyzedNodes; // All nodes ever analyzed (across all entry points)
     std::string moduleName;
 
     std::vector<std::unique_ptr<AEDetector>> detectors;
     AbsExtAPI* utils;
 
+protected:
+    /// Data and helpers reachable from SparseAbstractInterpretation.
+    SVFIR* svfir;
+    PreAnalysis* preAnalysis{nullptr};
+    AbstractStateManager* svfStateMgr{nullptr}; // state management (owns abstractTrace)
 
+    bool shouldApplyNarrowing(const FunObjVar* fun);
 };
 }
