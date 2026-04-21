@@ -488,6 +488,39 @@ private:
 
     void addToSVFVar2LLVMValueMap(const Value* val, SVFValue* svfBaseNode);
     void buildFunToFunMap();
+    /// Clone-based extapi import path invoked by buildFunToFunMap().
+    ///
+    /// FIXME(llvm21-lto): CloneFunctionInto-based materialization of extapi
+    /// function bodies is fragile on merged Fat/ThinLTO post-link modules under
+    /// LLVM 21 and is the current blocker on the
+    /// `llvm21-llvmmodule-lto-safety` track. Planned replacement: import
+    /// extapi into the app module via llvm::Linker::linkModules() before SVF
+    /// symbol-table construction.
+    void importExtAPIFunctionsViaClone(
+        Module* appModule,
+        Module* extModule,
+        const Set<const Function*>& appFunDecls,
+        const Set<const Function*>& extFuncs,
+        const OrderedSet<std::string>& intersectNames);
+    /// Clone a single extapi function into `appModule`, optionally replacing
+    /// an app-side declaration/definition. Pure helper: operates only on its
+    /// arguments, no `LLVMModuleSet` state access.
+    static Function* cloneExtAPIFunctionIntoAppModule(
+        const Function* extFunToClone,
+        Function* appFunToReplace,
+        Module* appModule,
+        bool cloneBody);
+    /// Rewrite call sites in `caller` whose callee name matches
+    /// `callee->getName()` to call `callee` directly. Pure helper.
+    static void linkExtAPICallSites(Function* caller, Function* callee);
+    /// Recursively materialize transitive extapi callees reachable from
+    /// `extFunToClone` into `appClonedFun`'s parent module, linking call
+    /// sites along the way. Reads `ExtFun2Annotations`, appends cloned
+    /// functions to `ExtFuncsVec`.
+    void cloneAndLinkExtAPICallee(
+        const Function* extFunToClone,
+        Function* appClonedFun,
+        Set<const Function*>& clonedFuncs);
     void buildGlobalDefToRepMap();
     /// Invoke llvm passes to modify module
     void prePassSchedule();

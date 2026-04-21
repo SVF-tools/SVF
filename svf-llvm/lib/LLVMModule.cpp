@@ -547,11 +547,11 @@ void LLVMModuleSet::addSVFMain()
         // Collect ctor and dtor functions
         for (const GlobalVariable& global : mod.globals())
         {
-            if (global.getName().equals(SVF_GLOBAL_CTORS) && global.hasInitializer())
+            if (global.getName() == SVF_GLOBAL_CTORS && global.hasInitializer())
             {
                 ctor_funcs = getLLVMGlobalFunctions(&global);
             }
-            else if (global.getName().equals(SVF_GLOBAL_DTORS) && global.hasInitializer())
+            else if (global.getName() == SVF_GLOBAL_DTORS && global.hasInitializer())
             {
                 dtor_funcs = getLLVMGlobalFunctions(&global);
             }
@@ -562,9 +562,9 @@ void LLVMModuleSet::addSVFMain()
         {
             auto funName = func.getName();
 
-            assert(!funName.equals(SVF_MAIN_FUNC_NAME) && SVF_MAIN_FUNC_NAME " already defined");
+            assert(!(funName == SVF_MAIN_FUNC_NAME) && SVF_MAIN_FUNC_NAME " already defined");
 
-            if (funName.equals("main"))
+            if (funName == "main")
             {
                 orgMain = &func;
                 mainMod = &mod;
@@ -699,9 +699,9 @@ void LLVMModuleSet::collectExtFunAnnotations(const Module* mod)
 */
 void LLVMModuleSet::buildFunToFunMap()
 {
-    Set<const Function*> appFunDecls, appFunDefs, extFuncs, clonedFuncs;
+    // Phase 1: collect app/ext function sets and their names.
+    Set<const Function*> appFunDecls, appFunDefs, extFuncs;
     OrderedSet<string> appFuncDeclNames, appFuncDefNames, extFunDefNames, intersectNames;
-    Map<const Function*, const Function*> extFuncs2ClonedFuncs;
     Module* appModule = nullptr;
     Module* extModule = nullptr;
 
@@ -758,102 +758,64 @@ void LLVMModuleSet::buildFunToFunMap()
         appFuncDefNames.begin(), appFuncDefNames.end(), extFunDefNames.begin(), extFunDefNames.end(),
         std::inserter(intersectNames, intersectNames.end()));
 
-    auto cloneAndReplaceFunction = [&](const Function* extFunToClone, Function* appFunToReplace, Module* appModule, bool cloneBody) -> Function*
+    // Phase 2: materialize extapi function bodies inside the app module.
+    // Isolated into a dedicated seam so the clone-based path can be swapped
+    // for an llvm::Linker::linkModules() path in a follow-up commit without
+    // churning the surrounding collection/finalization code.
+    importExtAPIFunctionsViaClone(appModule, extModule,
+                                  appFunDecls, extFuncs, intersectNames);
+
+    // Phase 3: drop annotations for extapi functions that were never imported.
+    Fun2AnnoMap newFun2AnnoMap;
+    for (const Function* extFun : ExtFuncsVec)
     {
-        assert(!(appFunToReplace == NULL && appModule == NULL) && "appFunToReplace and appModule cannot both be NULL");
-
-        if (appFunToReplace)
+        std::string name = LLVMUtil::restoreFuncName(extFun->getName().str());
+        auto it = ExtFun2Annotations.find(name);
+        if (it != ExtFun2Annotations.end())
         {
-            appModule = appFunToReplace->getParent();
-        }
-        // Create a new function with the same signature as extFunToClone
-        Function *clonedFunction = Function::Create(extFunToClone->getFunctionType(), Function::ExternalLinkage, extFunToClone->getName(), appModule);
-        // Map the arguments of the new function to the arguments of extFunToClone
-        llvm::ValueToValueMapTy valueMap;
-        Function::arg_iterator destArg = clonedFunction->arg_begin();
-        for (Function::const_arg_iterator srcArg = extFunToClone->arg_begin(); srcArg != extFunToClone->arg_end(); ++srcArg)
-        {
-            destArg->setName(srcArg->getName()); // Copy the name of the original argument
-            valueMap[&*srcArg] = &*destArg++; // Add a mapping from the old arg to the new arg
-        }
-        if (cloneBody)
-        {
-            // Collect global variables referenced by extFunToClone
-            // This step identifies all global variables used within the function to be cloned
-            std::set<GlobalVariable*> referencedGlobals;
-            for (const BasicBlock& BB : *extFunToClone)
+            std::string newKey = name;
+            if (name != extFun->getName().str())
             {
-                for (const Instruction& I : BB)
-                {
-                    for (const Value* operand : I.operands())
-                    {
-                        // Check if the operand is a global variable
-                        if (const GlobalVariable* GV = SVFUtil::dyn_cast<GlobalVariable>(operand))
-                        {
-                            referencedGlobals.insert(const_cast<GlobalVariable*>(GV));
-                        }
-                    }
-                }
+                newKey = extFun->getName().str();
             }
-
-            // Copy global variables to target module and update valueMap
-            // When cloning a function, we need to ensure all global variables it references are available in the target module
-            for (GlobalVariable* GV : referencedGlobals)
-            {
-                // Check if the global variable already exists in the target module
-                GlobalVariable* existingGV = appModule->getGlobalVariable(GV->getName());
-                if (existingGV)
-                {
-                    // If the global variable already exists, ensure type consistency
-                    assert(existingGV->getType() == GV->getType() && "Global variable type mismatch in client module!");
-                    // Map the original global to the existing one in the target module
-                    valueMap[GV] = existingGV; // Map to existing global variable
-                }
-                else
-                {
-                    // If the global variable doesn't exist in the target module, create a new one with the same properties
-                    GlobalVariable* newGV = new GlobalVariable(
-                        *appModule,                   // Target module
-                        GV->getValueType(),           // Type of the global variable
-                        GV->isConstant(),             // Whether it's constant
-                        GV->getLinkage(),             // Linkage type
-                        nullptr,                      // No initializer yet
-                        GV->getName(),                // Same name
-                        nullptr,                      // No insert before instruction
-                        GV->getThreadLocalMode(),     // Thread local mode
-                        GV->getAddressSpace()         // Address space
-                    );
-
-                    // Copy initializer if present to maintain the global's value
-                    if (GV->hasInitializer())
-                    {
-                        Constant* init = GV->getInitializer();
-                        newGV->setInitializer(init); // Simple case: direct copy
-                    }
-
-                    // Copy other attributes like alignment to ensure identical behavior
-                    newGV->copyAttributesFrom(GV);
-
-                    // Add mapping from original global to the new one for use during function cloning
-                    valueMap[GV] = newGV;
-                }
-            }
-
-            // Clone function body with updated valueMap
-            llvm::SmallVector<ReturnInst*, 8> ignoredReturns;
-            CloneFunctionInto(clonedFunction, extFunToClone, valueMap, llvm::CloneFunctionChangeType::LocalChangesOnly, ignoredReturns, "", nullptr);
+            newFun2AnnoMap.insert({newKey, it->second});
         }
-        if (appFunToReplace)
-        {
-            // Replace all uses of appFunToReplace with clonedFunction
-            appFunToReplace->replaceAllUsesWith(clonedFunction);
-            std::string oldFunctionName = appFunToReplace->getName().str();
-            // Delete the old function
-            appFunToReplace->eraseFromParent();
-            clonedFunction->setName(oldFunctionName);
-        }
-        return clonedFunction;
-    };
+    }
+    ExtFun2Annotations.swap(newFun2AnnoMap);
+
+    // Phase 4: remove the ExtAPI module from the LLVMModuleSet.
+    auto it = std::find_if(modules.begin(), modules.end(),
+                           [&extModule](const std::reference_wrapper<llvm::Module>& moduleRef)
+    {
+        return &moduleRef.get() == extModule;
+    });
+
+    if (it != modules.end())
+    {
+        size_t index = std::distance(modules.begin(), it);
+        modules.erase(it);
+        owned_modules.erase(owned_modules.begin() + index);
+    }
+}
+
+void LLVMModuleSet::importExtAPIFunctionsViaClone(
+    Module* appModule,
+    Module* extModule,
+    const Set<const Function*>& appFunDecls,
+    const Set<const Function*>& extFuncs,
+    const OrderedSet<std::string>& intersectNames)
+{
+    // FIXME(llvm21-lto): CloneFunctionInto asserts under merged Fat/ThinLTO
+    // modules in LLVM 21 because the per-function cross-module clone assumes
+    // type/metadata state that the merged post-link module no longer provides.
+    // The planned replacement on the `llvm21-llvmmodule-lto-safety` branch is
+    // to load extapi into the same LLVMContext and merge it into `appModule`
+    // via llvm::Linker::linkModules() before SVF symbol-table construction.
+    // See ~/.claude/plans/vivid-shimmying-umbrella.md
+    // ("Concrete LLVMModule.cpp Plan") for the import strategy.
+
+    Set<const Function*> clonedFuncs;
+    Map<const Function*, const Function*> extFuncs2ClonedFuncs;
 
     /// App Func decl -> SVF extern Func def
     for (const Function* appFunDecl : appFunDecls)
@@ -867,7 +829,10 @@ void LLVMModuleSet::buildFunToFunMap()
                 // Without annotations, this function is normal function with useful function body
                 if (it == ExtFun2Annotations.end())
                 {
-                    Function* clonedFunction = cloneAndReplaceFunction(const_cast<Function*>(extFun), const_cast<Function*>(appFunDecl), nullptr, true);
+                    Function* clonedFunction = cloneExtAPIFunctionIntoAppModule(
+                                                   const_cast<Function*>(extFun),
+                                                   const_cast<Function*>(appFunDecl),
+                                                   nullptr, true);
                     extFuncs2ClonedFuncs[extFun] = clonedFunction;
                     clonedFuncs.insert(clonedFunction);
                 }
@@ -882,7 +847,7 @@ void LLVMModuleSet::buildFunToFunMap()
 
     /// Overwrite
     /// App Func def -> SVF extern Func def
-    for (string sameFuncDef: intersectNames)
+    for (const string& sameFuncDef: intersectNames)
     {
         Function* appFuncDef = appModule->getFunction(sameFuncDef);
         Function* extFuncDef = extModule->getFunction(sameFuncDef);
@@ -897,10 +862,13 @@ void LLVMModuleSet::buildFunToFunMap()
         auto it = ExtFun2Annotations.find(sameFuncDef);
         if (it != ExtFun2Annotations.end())
         {
-            std::vector<std::string> annotations = it->second;
+            const std::vector<std::string>& annotations = it->second;
             if (annotations.size() == 1 && annotations[0].find("OVERWRITE") != std::string::npos)
             {
-                Function* clonedFunction = cloneAndReplaceFunction(const_cast<Function*>(extFuncDef), const_cast<Function*>(appFuncDef), nullptr, true);
+                Function* clonedFunction = cloneExtAPIFunctionIntoAppModule(
+                                               const_cast<Function*>(extFuncDef),
+                                               const_cast<Function*>(appFuncDef),
+                                               nullptr, true);
                 extFuncs2ClonedFuncs[extFuncDef] = clonedFunction;
                 clonedFuncs.insert(clonedFunction);
             }
@@ -920,68 +888,7 @@ void LLVMModuleSet::buildFunToFunMap()
         }
     }
 
-    auto linkFunctions = [&](Function* caller, Function* callee)
-    {
-        for (inst_iterator I = inst_begin(caller), E = inst_end(caller); I != E; ++I)
-        {
-            Instruction *inst = &*I;
-
-            if (CallInst *callInst = SVFUtil::dyn_cast<CallInst>(inst))
-            {
-                Function *calledFunc = callInst->getCalledFunction();
-
-                if (calledFunc && calledFunc->getName() == callee->getName())
-                {
-                    callInst->setCalledFunction(callee);
-                }
-            }
-        }
-    };
-
-    std::function<void(const Function*, Function*)> cloneAndLinkFunction;
-    cloneAndLinkFunction = [&](const Function* extFunToClone, Function* appClonedFun)
-    {
-        if (clonedFuncs.find(extFunToClone) != clonedFuncs.end())
-            return;
-
-        Module* appModule = appClonedFun->getParent();
-        // Check if the function already exists in the parent module
-        if (appModule->getFunction(extFunToClone->getName()))
-        {
-            // The function already exists, no need to clone, but need to link it with the caller
-            Function*  func = appModule->getFunction(extFunToClone->getName());
-            linkFunctions(appClonedFun, func);
-            return;
-        }
-        // Decide whether to clone the function body based on ExtFun2Annotations
-        bool cloneBody = true;
-        auto it = ExtFun2Annotations.find(extFunToClone->getName().str());
-        if (it != ExtFun2Annotations.end())
-        {
-            std::vector<std::string> annotations = it->second;
-            if (!(annotations.size() == 1 && annotations[0].find("OVERWRITE") != std::string::npos))
-            {
-                cloneBody = false;
-            }
-        }
-
-        Function* clonedFunction = cloneAndReplaceFunction(extFunToClone, nullptr, appModule, cloneBody);
-
-        clonedFuncs.insert(clonedFunction);
-        // Add the cloned function to ExtFuncsVec for further processing
-        ExtFuncsVec.push_back(clonedFunction);
-
-        linkFunctions(appClonedFun, clonedFunction);
-
-        std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(extFunToClone);
-
-        for (const auto& calledFunction : calledFunctions)
-        {
-            cloneAndLinkFunction(calledFunction, clonedFunction);
-        }
-    };
-
-    // Recursive clone called functions
+    // Recursive clone of called extapi functions.
     for (const auto& pair : extFuncs2ClonedFuncs)
     {
         Function* extFun = const_cast<Function*>(pair.first);
@@ -990,40 +897,168 @@ void LLVMModuleSet::buildFunToFunMap()
 
         for (const auto& extCalledFun : extCalledFuns)
         {
-            cloneAndLinkFunction(extCalledFun, clonedExtFun);
+            cloneAndLinkExtAPICallee(extCalledFun, clonedExtFun, clonedFuncs);
         }
     }
+}
 
-    // Remove unused annotations in ExtFun2Annotations according to the functions in ExtFuncsVec
-    Fun2AnnoMap newFun2AnnoMap;
-    for (const Function* extFun : ExtFuncsVec)
+Function* LLVMModuleSet::cloneExtAPIFunctionIntoAppModule(
+    const Function* extFunToClone,
+    Function* appFunToReplace,
+    Module* appModule,
+    bool cloneBody)
+{
+    assert(!(appFunToReplace == nullptr && appModule == nullptr) &&
+           "appFunToReplace and appModule cannot both be NULL");
+
+    if (appFunToReplace)
     {
-        std::string name = LLVMUtil::restoreFuncName(extFun->getName().str());
-        auto it = ExtFun2Annotations.find(name);
-        if (it != ExtFun2Annotations.end())
+        appModule = appFunToReplace->getParent();
+    }
+    // Create a new function with the same signature as extFunToClone
+    Function* clonedFunction = Function::Create(extFunToClone->getFunctionType(),
+                               Function::ExternalLinkage,
+                               extFunToClone->getName(), appModule);
+    // Map the arguments of the new function to the arguments of extFunToClone
+    llvm::ValueToValueMapTy valueMap;
+    Function::arg_iterator destArg = clonedFunction->arg_begin();
+    for (Function::const_arg_iterator srcArg = extFunToClone->arg_begin();
+            srcArg != extFunToClone->arg_end(); ++srcArg)
+    {
+        destArg->setName(srcArg->getName()); // Copy the name of the original argument
+        valueMap[&*srcArg] = &*destArg++; // Add a mapping from the old arg to the new arg
+    }
+    if (cloneBody)
+    {
+        // Collect global variables referenced by extFunToClone
+        std::set<GlobalVariable*> referencedGlobals;
+        for (const BasicBlock& BB : *extFunToClone)
         {
-            std::string newKey = name;
-            if (name != extFun->getName().str())
+            for (const Instruction& I : BB)
             {
-                newKey = extFun->getName().str();
+                for (const Value* operand : I.operands())
+                {
+                    if (const GlobalVariable* GV = SVFUtil::dyn_cast<GlobalVariable>(operand))
+                    {
+                        referencedGlobals.insert(const_cast<GlobalVariable*>(GV));
+                    }
+                }
             }
-            newFun2AnnoMap.insert({newKey, it->second});
+        }
+
+        // Copy global variables to target module and update valueMap
+        for (GlobalVariable* GV : referencedGlobals)
+        {
+            GlobalVariable* existingGV = appModule->getGlobalVariable(GV->getName());
+            if (existingGV)
+            {
+                assert(existingGV->getType() == GV->getType() &&
+                       "Global variable type mismatch in client module!");
+                valueMap[GV] = existingGV;
+            }
+            else
+            {
+                GlobalVariable* newGV = new GlobalVariable(
+                    *appModule,
+                    GV->getValueType(),
+                    GV->isConstant(),
+                    GV->getLinkage(),
+                    nullptr,
+                    GV->getName(),
+                    nullptr,
+                    GV->getThreadLocalMode(),
+                    GV->getAddressSpace()
+                );
+
+                if (GV->hasInitializer())
+                {
+                    Constant* init = GV->getInitializer();
+                    newGV->setInitializer(init);
+                }
+
+                newGV->copyAttributesFrom(GV);
+
+                valueMap[GV] = newGV;
+            }
+        }
+
+        // Clone function body with updated valueMap
+        llvm::SmallVector<ReturnInst*, 8> ignoredReturns;
+        CloneFunctionInto(clonedFunction, extFunToClone, valueMap,
+                          llvm::CloneFunctionChangeType::LocalChangesOnly,
+                          ignoredReturns, "", nullptr);
+    }
+    if (appFunToReplace)
+    {
+        appFunToReplace->replaceAllUsesWith(clonedFunction);
+        std::string oldFunctionName = appFunToReplace->getName().str();
+        appFunToReplace->eraseFromParent();
+        clonedFunction->setName(oldFunctionName);
+    }
+    return clonedFunction;
+}
+
+void LLVMModuleSet::linkExtAPICallSites(Function* caller, Function* callee)
+{
+    for (inst_iterator I = inst_begin(caller), E = inst_end(caller); I != E; ++I)
+    {
+        Instruction* inst = &*I;
+
+        if (CallInst* callInst = SVFUtil::dyn_cast<CallInst>(inst))
+        {
+            Function* calledFunc = callInst->getCalledFunction();
+
+            if (calledFunc && calledFunc->getName() == callee->getName())
+            {
+                callInst->setCalledFunction(callee);
+            }
         }
     }
-    ExtFun2Annotations.swap(newFun2AnnoMap);
+}
 
-    // Remove ExtAPI module from modules
-    auto it = std::find_if(modules.begin(), modules.end(),
-                           [&extModule](const std::reference_wrapper<llvm::Module>& moduleRef)
-    {
-        return &moduleRef.get() == extModule;
-    });
+void LLVMModuleSet::cloneAndLinkExtAPICallee(
+    const Function* extFunToClone,
+    Function* appClonedFun,
+    Set<const Function*>& clonedFuncs)
+{
+    if (clonedFuncs.find(extFunToClone) != clonedFuncs.end())
+        return;
 
-    if (it != modules.end())
+    Module* appModule = appClonedFun->getParent();
+    // Check if the function already exists in the parent module
+    if (appModule->getFunction(extFunToClone->getName()))
     {
-        size_t index = std::distance(modules.begin(), it);
-        modules.erase(it);
-        owned_modules.erase(owned_modules.begin() + index);
+        // The function already exists, no need to clone, but need to link it with the caller
+        Function* func = appModule->getFunction(extFunToClone->getName());
+        linkExtAPICallSites(appClonedFun, func);
+        return;
+    }
+    // Decide whether to clone the function body based on ExtFun2Annotations
+    bool cloneBody = true;
+    auto it = ExtFun2Annotations.find(extFunToClone->getName().str());
+    if (it != ExtFun2Annotations.end())
+    {
+        const std::vector<std::string>& annotations = it->second;
+        if (!(annotations.size() == 1 && annotations[0].find("OVERWRITE") != std::string::npos))
+        {
+            cloneBody = false;
+        }
+    }
+
+    Function* clonedFunction = cloneExtAPIFunctionIntoAppModule(extFunToClone,
+                               nullptr, appModule, cloneBody);
+
+    clonedFuncs.insert(clonedFunction);
+    // Add the cloned function to ExtFuncsVec for further processing
+    ExtFuncsVec.push_back(clonedFunction);
+
+    linkExtAPICallSites(appClonedFun, clonedFunction);
+
+    std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(extFunToClone);
+
+    for (const auto& calledFunction : calledFunctions)
+    {
+        cloneAndLinkExtAPICallee(calledFunction, clonedFunction, clonedFuncs);
     }
 }
 
