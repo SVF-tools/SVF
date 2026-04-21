@@ -44,12 +44,10 @@ jobs:
 
       - name: Configure
         run: |
-          Z3_DIR="$(dpkg -L libz3-dev | grep '/z3Config.cmake$' | head -n1 | xargs dirname)"
           cmake -S . -B build-llvm21 -G Ninja \
             -DCMAKE_C_COMPILER=clang-21 \
             -DCMAKE_CXX_COMPILER=clang++-21 \
-            -DLLVM_DIR=/usr/lib/llvm-21/lib/cmake/llvm \
-            -DZ3_DIR="${Z3_DIR}"
+            -DLLVM_DIR=/usr/lib/llvm-21/lib/cmake/llvm
 
       - name: Build
         run: cmake --build build-llvm21 --parallel
