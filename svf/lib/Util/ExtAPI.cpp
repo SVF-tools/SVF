@@ -194,6 +194,19 @@ std::string ExtAPI::getExtBcPath()
     if (!soPath.empty())
     {
         std::string dir = soPath.substr(0, soPath.find_last_of('/'));
+
+        // Build-tree binaries live in <build>/bin while extapi.bc is emitted
+        // into the sibling <build>/lib directory.
+        std::string siblingLibCandidate = dir + "/../lib/extapi.bc";
+        if (setExtBcPath(siblingLibCandidate))
+        {
+            return extBcPath;
+        }
+        else
+        {
+            candidatePaths.push_back(siblingLibCandidate);
+        }
+
         std::string candidate = dir + "/extapi.bc";
         if (setExtBcPath(candidate))
         {
