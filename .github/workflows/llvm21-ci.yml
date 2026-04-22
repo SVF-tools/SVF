@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: cjsrxzdyzds/Test-Suite
-          ref: e24103a
+          ref: llvm21-parser-fixtures
           path: Test-Suite
 
       - name: Install system dependencies
