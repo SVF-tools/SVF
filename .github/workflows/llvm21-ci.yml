@@ -15,7 +15,8 @@ jobs:
       - name: Checkout Test-Suite
         uses: actions/checkout@v4
         with:
-          repository: SVF-tools/Test-Suite
+          repository: cjsrxzdyzds/Test-Suite
+          ref: e24103a
           path: Test-Suite
 
       - name: Install system dependencies
