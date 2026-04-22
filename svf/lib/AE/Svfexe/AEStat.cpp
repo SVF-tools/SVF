@@ -22,6 +22,7 @@
 
 #include "AE/Svfexe/AEStat.h"
 #include "AE/Svfexe/AbstractInterpretation.h"
+#include "AE/Svfexe/AbstractStateManager.h"
 #include "SVFIR/SVFIR.h"
 
 using namespace SVF;
@@ -30,13 +31,6 @@ using namespace SVFUtil;
 // count the size of memory map
 void AEStat::countStateSize()
 {
-    if (count == 0)
-    {
-        generalNumMap["ES_Var_AVG_Num"] = 0;
-        generalNumMap["ES_Loc_AVG_Num"] = 0;
-        generalNumMap["ES_Var_Addr_AVG_Num"] = 0;
-        generalNumMap["ES_Loc_Addr_AVG_Num"] = 0;
-    }
     ++count;
 }
 
@@ -44,13 +38,25 @@ void AEStat::countStateSize()
 void AEStat::finializeStat()
 {
     memUsage = getMemUsage();
-    if (count > 0)
+
+    // Total number of entries across every cached AbstractState in the trace.
+    // This is the "state size" retained at the end of analysis — used for
+    // mode comparison (Dense vs Semi vs Full sparse).
+    u64_t totalVar = 0;
+    u64_t totalLoc = 0;
+    u32_t traceNodes = 0;
+    for (const auto& kv : _ae->svfStateMgr->getTrace())
     {
-        generalNumMap["ES_Var_AVG_Num"] /= count;
-        generalNumMap["ES_Loc_AVG_Num"] /= count;
-        generalNumMap["ES_Var_Addr_AVG_Num"] /= count;
-        generalNumMap["ES_Loc_Addr_AVG_Num"] /= count;
+        totalVar += kv.second.getVarToVal().size();
+        totalLoc += kv.second.getLocToVal().size();
+        ++traceNodes;
     }
+    generalNumMap["ES_Var_TOTAL"] = totalVar;
+    generalNumMap["ES_Loc_TOTAL"] = totalLoc;
+    generalNumMap["ES_Var_AVG_Num"] = traceNodes ? totalVar / traceNodes : 0;
+    generalNumMap["ES_Loc_AVG_Num"] = traceNodes ? totalLoc / traceNodes : 0;
+    generalNumMap["ES_Trace_Node_Num"] = traceNodes;
+
     generalNumMap["SVF_STMT_NUM"] = count;
 
     u32_t totalICFGNodes = _ae->svfir->getICFG()->nodeNum;

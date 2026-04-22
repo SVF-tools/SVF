@@ -894,6 +894,10 @@ int main(int argc, char** argv)
         ae.addDetector(std::make_unique<NullptrDerefDetector>());
     ae.runOnModule(pag->getICFG());
 
+    // Destroy the AE singleton (and its SVFG, if any) before globals are
+    // released — otherwise ~SVFG runs during static destruction with
+    // dangling LLVM pointers and crashes in Sparse mode.
+    AbstractInterpretation::releaseAEInstance();
     AndersenWaveDiff::releaseAndersenWaveDiff();
     LLVMModuleSet::releaseLLVMModuleSet();
 

@@ -330,6 +330,9 @@ target_link_options(
 # =================================================================================
 
 # (1) Generate config.h into <build_tree>/include/SVF/Util; (2) Install it under <install_prefix>/include/SVF/Util
+# SVF_BUILD_DIR is consumed by the template (@SVF_BUILD_DIR@) and by ExtAPI.cpp
+# at compile time to locate extapi.bc in a dev-build tree.
+set(SVF_BUILD_DIR "${SVF_BINARY_DIR}")
 configure_file(${SVF_SOURCE_DIR}/cmake/SVFConfigHdr.cmake.in ${SVF_BINARY_DIR}/include/Util/config.h @ONLY)
 install(FILES ${SVF_BINARY_DIR}/include/Util/config.h DESTINATION ${SVF_INSTALL_INCLUDEDIR}/Util)
 

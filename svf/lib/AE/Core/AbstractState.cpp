@@ -103,10 +103,14 @@ AbstractState AbstractState::narrowing(const AbstractState& other)
 /// domain join with other, important! other widen this.
 void AbstractState::joinWith(const AbstractState& other)
 {
-    // In semi-sparse mode, skip ValVar (_varToAbsVal) merge — ValVars are
-    // pulled on demand from def-sites via getAbstractValue.
-    // In dense mode, merge everything.
-    if (Options::AESparsity() != AbstractInterpretation::AESparsity::SemiSparse)
+    u32_t sparsity = Options::AESparsity();
+    bool skipValVarMerge =
+        sparsity == AbstractInterpretation::AESparsity::SemiSparse ||
+        sparsity == AbstractInterpretation::AESparsity::Sparse;
+
+    // ValVar merge: skipped in semi-sparse and full-sparse (values live at
+    // SVFG def-sites and are pulled on demand).
+    if (!skipValVarMerge)
     {
         for (auto it = other._varToAbsVal.begin(); it != other._varToAbsVal.end(); ++it)
         {
@@ -122,17 +126,30 @@ void AbstractState::joinWith(const AbstractState& other)
             }
         }
     }
-    for (auto it = other._addrToAbsVal.begin(); it != other._addrToAbsVal.end(); ++it)
+    // ObjVar (_addrToAbsVal) merge: skipped in full-sparse only.  Under
+    // full-sparse, values live at their MSSA def-anchors (Store / MSSAPHI /
+    // FormalIN / ActualOUT / ExtAPI-writes) and are filled by the matching
+    // per-kind transfer at the def-anchor's own ICFG visit (see
+    // AbstractStateManager::run{MSSAPHI,FormalIN,ActualOUT}TransferAt).  The
+    // reader routes through getDefSiteOfObjVar to find the anchor, so
+    // propagating copies at every ICFG node is redundant and memory-heavy.
+    // Dense and Semi-Sparse keep merge unchanged.
+    bool skipObjVarMerge =
+        sparsity == AbstractInterpretation::AESparsity::Sparse;
+    if (!skipObjVarMerge)
     {
-        auto key = it->first;
-        auto oit = _addrToAbsVal.find(key);
-        if (oit != _addrToAbsVal.end())
+        for (auto it = other._addrToAbsVal.begin(); it != other._addrToAbsVal.end(); ++it)
         {
-            oit->second.join_with(it->second);
-        }
-        else
-        {
-            _addrToAbsVal.emplace(key, it->second);
+            auto key = it->first;
+            auto oit = _addrToAbsVal.find(key);
+            if (oit != _addrToAbsVal.end())
+            {
+                oit->second.join_with(it->second);
+            }
+            else
+            {
+                _addrToAbsVal.emplace(key, it->second);
+            }
         }
     }
     _freedAddrs.insert(other._freedAddrs.begin(), other._freedAddrs.end());

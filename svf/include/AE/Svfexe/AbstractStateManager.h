@@ -33,6 +33,7 @@ namespace SVF
 class GepStmt;
 class AddrStmt;
 class SVFG;
+class SVFGBuilder;
 class AndersenWaveDiff;
 
 /// Manages abstract states across ICFG nodes and provides a unified API
@@ -176,10 +177,42 @@ public:
     /// Given an ObjVar and its use-site ICFGNode, find the definition-site ICFGNode.
     const ICFGNode* getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
 
+    /// Full-sparse per-kind MSSA def-anchor transfers (Phase A of
+    /// plan/plan-per-kind-transfers.md). Each is a no-op if the given ICFG
+    /// node carries no SVFG node of the matching kind; called unconditionally
+    /// from the WTO driver. Their job is to populate
+    /// trace[N]._addrToAbsVal[obj] for every obj served by a def-anchor
+    /// hosted at N, so that readers reaching N via getDefSiteOfObjVar find
+    /// a value there regardless of whether merge has been gated.
+    void runMSSAPHITransferAt(const ICFGNode* N);
+    void runFormalINTransferAt(const ICFGNode* N);
+    void runActualOUTTransferAt(const ICFGNode* N);
+
+    /// Full-sparse branch-refinement overlay. Keyed by ICFG node, maps
+    /// per-obj narrowed interval accumulated along the path into that node.
+    /// Populated by mergeStatesFromPredecessors folding each feasible
+    /// edge's narrowingDelta (from isBranchFeasible) via per-obj meet.
+    /// Read by getAbstractValue(ObjVar*, useNode) which composes the
+    /// overlay with the def-anchor base value via meet at read time.
+    ///
+    /// Rationale: branch refinement is the one "def-like" effect MSSA does
+    /// not model (cmp is not a def in SSA). An overlay handles it at the
+    /// AE layer without polluting def-anchor traces or adding SVFG nodes.
+    Map<const ICFGNode*, Map<NodeID, AbstractValue>>& getPathRefinedAt()
+    {
+        return pathRefinedAt;
+    }
+
 private:
     SVFIR* svfir;
+    // SVFG is owned by svfgBuilder's internal unique_ptr; `svfg` is a view
+    // pointer into it.  Keeping the builder alive here prevents the
+    // unique_ptr from destroying the graph when the builder goes out of
+    // scope (the root cause of a Sparse-mode ~AbstractStateManager crash).
+    std::unique_ptr<SVFGBuilder> svfgBuilder;
     SVFG* svfg;
     Map<const ICFGNode*, AbstractState> abstractTrace;
+    Map<const ICFGNode*, Map<NodeID, AbstractValue>> pathRefinedAt;
 };
 
 } // namespace SVF

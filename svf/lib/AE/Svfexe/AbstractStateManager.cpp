@@ -37,14 +37,14 @@ AbstractStateManager::AbstractStateManager(SVFIR* svfir, AndersenWaveDiff* pta)
 {
     if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse)
     {
-        SVFGBuilder memSSA(true);
-        svfg = memSSA.buildFullSVFG(pta);
+        svfgBuilder = std::make_unique<SVFGBuilder>(true);
+        svfg = svfgBuilder->buildFullSVFG(pta);
     }
 }
 
 AbstractStateManager::~AbstractStateManager()
 {
-    delete svfg;
+    // svfg is owned by svfgBuilder's unique_ptr; no explicit delete needed.
 }
 
 // ===----------------------------------------------------------------------===//
@@ -63,10 +63,14 @@ AbstractState& AbstractStateManager::getAbstractState(const ICFGNode* node)
 
 void AbstractStateManager::updateAbstractState(const ICFGNode* node, const AbstractState& state)
 {
-    if (Options::AESparsity() == AbstractInterpretation::AESparsity::SemiSparse)
+    u32_t sparsity = Options::AESparsity();
+    if (sparsity == AbstractInterpretation::AESparsity::SemiSparse ||
+            sparsity == AbstractInterpretation::AESparsity::Sparse)
     {
-        // Semi-sparse: only replace ObjVar state. ValVars live at their
-        // def-sites and must not be overwritten by state replacement.
+        // Semi / Full sparse: only replace ObjVar state. ValVars live at
+        // their def-sites and must not be overwritten by state replacement.
+        // (In Full Sparse we still copy the merged ObjVar side for now —
+        // Phase 1b will gate this for memory reduction.)
         abstractTrace[node].updateAddrStateOnly(state);
     }
     else
@@ -157,8 +161,58 @@ const AbstractValue& AbstractStateManager::getAbstractValue(const ValVar* var, c
 
 const AbstractValue& AbstractStateManager::getAbstractValue(const ObjVar* var, const ICFGNode* node)
 {
-    AbstractState& as = getAbstractState(node);
     u32_t addr = AbstractState::getVirtualMemAddress(var->getId());
+    if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse)
+    {
+        // Full-sparse: _addrToAbsVal merge is gated in joinWith; only the
+        // def-anchor's own ICFG holds the obj's value (written by the
+        // per-kind transfer or store/ExtAPI handler). Route the read to
+        // that anchor via getDefSiteOfObjVar, then compose the
+        // path-refinement overlay (if any) via meet.
+        AbstractState& hereState = getAbstractState(node);
+
+        // Locate the base value.
+        const AbstractValue* base = nullptr;
+        // Fast-path: value already cached at this node (store/ExtAPI wrote
+        // here, or a previous materialize landed here).
+        if (hereState.getLocToVal().count(var->getId()) != 0)
+        {
+            base = &hereState.load(addr);
+        }
+        else
+        {
+            const ICFGNode* defICFG = getDefSiteOfObjVar(var, node);
+            if (defICFG && hasAbstractState(defICFG))
+            {
+                AbstractState& defState = getAbstractState(defICFG);
+                if (defState.getLocToVal().count(var->getId()) != 0)
+                    base = &defState.load(addr);
+            }
+        }
+
+        // Overlay compose: if any branch refinement reached this node for
+        // this obj, meet it into the base.  No overlay entry = no-op.
+        auto ait = pathRefinedAt.find(node);
+        if (ait != pathRefinedAt.end())
+        {
+            auto oit = ait->second.find(var->getId());
+            if (oit != ait->second.end())
+            {
+                AbstractValue composed = base ? *base : AbstractValue();
+                composed.meet_with(oit->second);
+                // Materialize at hereState so the returned reference is
+                // stable and repeated reads at the same node are O(1).
+                hereState.store(addr, composed);
+                return hereState.load(addr);
+            }
+        }
+
+        if (base)
+            return *base;
+        // No reaching def + no overlay: top via local slot.
+        return hereState.load(addr);
+    }
+    AbstractState& as = getAbstractState(node);
     return as.load(addr);
 }
 
@@ -469,8 +523,27 @@ AbstractValue AbstractStateManager::loadValue(const ValVar* pointer, const ICFGN
     const AbstractValue& ptrVal = getAbstractValue(pointer, node);
     AbstractState& as = getAbstractState(node);
     AbstractValue res;
+    bool sparse =
+        Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse;
     for (auto addr : ptrVal.getAddrs())
+    {
+        if (sparse)
+        {
+            // Route each ObjVar read through getAbstractValue(ObjVar*),
+            // which in Sparse mode redirects to the obj's MSSA def-anchor
+            // trace instead of the local one (which joinWith no longer
+            // fills).  Non-ObjVar addresses (null/blackhole) still read
+            // locally via as.load.
+            u32_t objId = as.getIDFromAddr(addr);
+            const SVFVar* v = svfir->getGNode(objId);
+            if (const ObjVar* obj = SVFUtil::dyn_cast<ObjVar>(v))
+            {
+                res.join_with(getAbstractValue(obj, node));
+                continue;
+            }
+        }
         res.join_with(as.load(addr));
+    }
     return res;
 }
 
@@ -584,5 +657,222 @@ const ICFGNode* AbstractStateManager::getDefSiteOfObjVar(const ObjVar* obj, cons
     for (const auto* edge : node->getInEdges())
         return edge->getSrcNode();
     return nullptr;
+}
+
+// ===----------------------------------------------------------------------===//
+//  MSSA def-anchor transfers (full-sparse Phase A)
+//
+//  Each helper walks SVFG only through its public graph surface
+//  (InEdgeBegin/End + IndirectSVFGEdge::getPointsTo + type casts) and fills
+//  trace[N]._addrToAbsVal[obj] for every obj served by a def-anchor hosted
+//  at N. See plan/plan-per-kind-transfers.md §"Core mechanism" for the
+//  unified pattern, and §"Mechanism / MU-vs-CHI" for the two-hop rule used
+//  by FormalIN and ActualOUT (their direct upstream is a MU that does not
+//  itself hold a value; recurse one more indirect-edge hop to the CHI).
+//
+//  Two-hop FormalIN/ActualOUT chains verified empirically via
+//  `wpa -ander -svfg -dump-vfg` on a minimal interproc test — see
+//  /tmp/mssa-phi-test/case_interproc.c during plan design.
+// ===----------------------------------------------------------------------===//
+
+namespace
+{
+/// Collect the set of ObjVar IDs an MRSVFGNode-like node services.
+/// All memory-side SVFG nodes used by the transfers expose an MRVer.
+template <class MRNodeT>
+inline NodeBS getMRNodeObjIds(const MRNodeT* mrNode)
+{
+    return mrNode->getMRVer()->getMR()->getPointsTo();
+}
+
+/// Unified "meet over upstream def-anchors" pattern. Given a worklist of
+/// upstream SVFG nodes (already filtered to those actually serving `objId`),
+/// read each one's ICFG-anchored trace value and meet them.
+/// Returns (meet, hasAny): hasAny=false means no upstream had a value yet.
+inline std::pair<AbstractValue, bool> meetFromUpstreams(
+    const std::vector<const VFGNode*>& upstreams,
+    u32_t objId,
+    const Map<const ICFGNode*, AbstractState>& trace)
+{
+    AbstractValue meet;
+    bool hasAny = false;
+    for (const VFGNode* U : upstreams)
+    {
+        auto it = trace.find(U->getICFGNode());
+        if (it == trace.end()) continue;
+        const auto& map = it->second.getLocToVal();
+        auto mit = map.find(objId);
+        if (mit == map.end()) continue;
+        if (!hasAny)
+        {
+            meet = mit->second;
+            hasAny = true;
+        }
+        else
+        {
+            meet.join_with(mit->second);
+        }
+    }
+    return {meet, hasAny};
+}
+
+/// Commit `meet` into the target node's trace for `objId` **only if the
+/// slot is currently empty**. This preserves strict transfer additivity:
+///   - Phase A (merge intact): when merge has already written a value —
+///     potentially refined by isCmpBranchFeasible's pred-state narrowing,
+///     which lives on edges and is NOT visible to upstream def-anchor
+///     reads — transfer defers to merge. Transfer only fills slots merge
+///     left empty (rare in Phase A; not a meaningful code path).
+///   - Phase B (merge gated): the slot is always empty when the transfer
+///     runs, so transfer becomes the primary filler.
+/// Merging with the existing value would risk widening away merge's
+/// branch-refined precision (transfer pulls un-refined upstream values).
+inline void commitTransferValue(AbstractState& target,
+                                u32_t objId,
+                                const AbstractValue& meet)
+{
+    const auto& map = target.getLocToVal();
+    if (map.find(objId) != map.end())
+        return;
+    target.store(AbstractState::getVirtualMemAddress(objId), meet);
+}
+}
+
+void AbstractStateManager::runMSSAPHITransferAt(const ICFGNode* N)
+{
+    if (Options::AESparsity() != AbstractInterpretation::AESparsity::Sparse)
+        return;
+    for (const VFGNode* vn : N->getVFGNodes())
+    {
+        const MSSAPHISVFGNode* phi = SVFUtil::dyn_cast<MSSAPHISVFGNode>(vn);
+        if (!phi) continue;
+        // MSSAPHISVFGNode exposes MRVer via getResVer(); only the
+        // IntraMSSAPHISVFGNode subclass aliases it as getMRVer.
+        NodeBS objIds = phi->getResVer()->getMR()->getPointsTo();
+        // One-hop: PHI operand defs arrive as indirect in-edges on the PHI
+        // itself (SVFG's connectIndirectSVFGEdges wires them). Each in-edge
+        // source is a real CHI-holding SVFG node (Store / nested MSSAPHI /
+        // FormalIN / ActualOUT / FormalOUT of inner calls).
+        std::vector<const VFGNode*> upstreams;
+        for (auto it = phi->InEdgeBegin(), eit = phi->InEdgeEnd(); it != eit; ++it)
+        {
+            const IndirectSVFGEdge* ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(*it);
+            if (!ie) continue;
+            // Edge pts must cover at least one of our objIds; we still
+            // per-obj filter inside the loop below.
+            upstreams.push_back(ie->getSrcNode());
+        }
+        AbstractState& here = abstractTrace[N];
+        for (NodeID objId : objIds)
+        {
+            // Filter upstreams to those whose edge carries this specific obj.
+            std::vector<const VFGNode*> filtered;
+            for (auto it = phi->InEdgeBegin(), eit = phi->InEdgeEnd(); it != eit; ++it)
+            {
+                const IndirectSVFGEdge* ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(*it);
+                if (ie && ie->getPointsTo().test(objId))
+                    filtered.push_back(ie->getSrcNode());
+            }
+            auto [meet, ok] = meetFromUpstreams(filtered, objId, abstractTrace);
+            if (ok)
+                commitTransferValue(here, objId, meet);
+        }
+    }
+}
+
+void AbstractStateManager::runFormalINTransferAt(const ICFGNode* N)
+{
+    if (Options::AESparsity() != AbstractInterpretation::AESparsity::Sparse)
+        return;
+    if (!SVFUtil::isa<FunEntryICFGNode>(N))
+        return;
+    for (const VFGNode* vn : N->getVFGNodes())
+    {
+        const FormalINSVFGNode* fin = SVFUtil::dyn_cast<FormalINSVFGNode>(vn);
+        if (!fin) continue;
+        NodeBS objIds = getMRNodeObjIds(fin);
+        AbstractState& here = abstractTrace[N];
+        for (NodeID objId : objIds)
+        {
+            // Two-hop: fin <-CallIndEdge- ActualIN (Mu, no value) <-IndEdge- caller CHI.
+            // Collect the caller-side CHIs by walking one more hop past
+            // each ActualIN.
+            std::vector<const VFGNode*> upstreams;
+            for (auto it = fin->InEdgeBegin(), eit = fin->InEdgeEnd(); it != eit; ++it)
+            {
+                const CallIndSVFGEdge* ce = SVFUtil::dyn_cast<CallIndSVFGEdge>(*it);
+                if (!ce || !ce->getPointsTo().test(objId)) continue;
+                const VFGNode* ain = ce->getSrcNode();
+                for (auto it2 = ain->InEdgeBegin(), eit2 = ain->InEdgeEnd();
+                        it2 != eit2; ++it2)
+                {
+                    const IndirectSVFGEdge* ie2 = SVFUtil::dyn_cast<IndirectSVFGEdge>(*it2);
+                    if (ie2 && ie2->getPointsTo().test(objId))
+                        upstreams.push_back(ie2->getSrcNode());
+                }
+            }
+            auto [meet, ok] = meetFromUpstreams(upstreams, objId, abstractTrace);
+            if (!ok)
+            {
+                // Fallback: program entry / orphan — seed from globalICFGNode.
+                const ICFGNode* g = svfir->getICFG()->getGlobalICFGNode();
+                auto git = abstractTrace.find(g);
+                if (git != abstractTrace.end())
+                {
+                    const auto& gmap = git->second.getLocToVal();
+                    auto mit = gmap.find(objId);
+                    if (mit != gmap.end())
+                    {
+                        meet = mit->second;
+                        ok = true;
+                    }
+                }
+            }
+            if (ok)
+                commitTransferValue(here, objId, meet);
+        }
+    }
+}
+
+void AbstractStateManager::runActualOUTTransferAt(const ICFGNode* N)
+{
+    if (Options::AESparsity() != AbstractInterpretation::AESparsity::Sparse)
+        return;
+    const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(N);
+    if (!callNode)
+        return;
+    // ExtAPI skip: AbsExtAPI handlers (memcpy/strcpy/...) have already
+    // written trace[callNode]._addrToAbsVal for the modified objs.
+    if (SVFUtil::isExtCall(callNode))
+        return;
+    for (const VFGNode* vn : N->getVFGNodes())
+    {
+        const ActualOUTSVFGNode* aout = SVFUtil::dyn_cast<ActualOUTSVFGNode>(vn);
+        if (!aout) continue;
+        NodeBS objIds = getMRNodeObjIds(aout);
+        AbstractState& here = abstractTrace[N];
+        for (NodeID objId : objIds)
+        {
+            // Two-hop: aout <-RetIndEdge- FormalOUT (RetMu, no value)
+            //              <-IndEdge- callee-side CHI (Store / MSSAPHI / ...).
+            std::vector<const VFGNode*> upstreams;
+            for (auto it = aout->InEdgeBegin(), eit = aout->InEdgeEnd(); it != eit; ++it)
+            {
+                const RetIndSVFGEdge* re = SVFUtil::dyn_cast<RetIndSVFGEdge>(*it);
+                if (!re || !re->getPointsTo().test(objId)) continue;
+                const VFGNode* fout = re->getSrcNode();
+                for (auto it2 = fout->InEdgeBegin(), eit2 = fout->InEdgeEnd();
+                        it2 != eit2; ++it2)
+                {
+                    const IndirectSVFGEdge* ie2 = SVFUtil::dyn_cast<IndirectSVFGEdge>(*it2);
+                    if (ie2 && ie2->getPointsTo().test(objId))
+                        upstreams.push_back(ie2->getSrcNode());
+                }
+            }
+            auto [meet, ok] = meetFromUpstreams(upstreams, objId, abstractTrace);
+            if (ok)
+                commitTransferValue(here, objId, meet);
+        }
+    }
 }
 

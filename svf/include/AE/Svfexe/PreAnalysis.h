@@ -95,7 +95,7 @@ private:
 
     Map<const FunObjVar*, const ICFGWTO*> funcToWTO;
 
-    /// Pre-computed (semi-sparse only) map from a WTO cycle to the IDs of
+    /// Pre-computed (semi-sparse / sparse) map from a WTO cycle to the IDs of
     /// every ValVar whose def-site is inside that cycle, including all
     /// nested sub-cycles. Empty in dense mode.
     Map<const ICFGCycleWTO*, Set<const ValVar*>> cycleToValVars;

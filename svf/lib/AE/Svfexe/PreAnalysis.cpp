@@ -97,7 +97,9 @@ void PreAnalysis::initWTO()
 
 void PreAnalysis::initCycleValVars()
 {
-    if (Options::AESparsity() != AbstractInterpretation::AESparsity::SemiSparse)
+    u32_t sparsity = Options::AESparsity();
+    if (sparsity != AbstractInterpretation::AESparsity::SemiSparse &&
+            sparsity != AbstractInterpretation::AESparsity::Sparse)
         return;
 
     // Step 1: Collect all cycles in top-down order using a stack-based DFS,

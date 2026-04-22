@@ -27,6 +27,7 @@
 //
 
 #include "AE/Svfexe/AbstractInterpretation.h"
+#include "AE/Svfexe/SparseAbstractInterpretation.h"
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
@@ -35,6 +36,7 @@
 #include "WPA/Andersen.h"
 #include <cmath>
 #include <deque>
+#include <memory>
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -71,6 +73,36 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
 AbstractInterpretation::AbstractInterpretation()
 {
     stat = new AEStat(this);
+}
+
+/// Factory: first call allocates the concrete subclass based on
+/// Options::AESparsity(); all subsequent calls return the same instance.
+/// Must only be called after the option parser has populated AESparsity.
+namespace
+{
+// File-scope singleton so `releaseAEInstance()` can destroy it before
+// LLVM / Andersen globals go down (avoids a ~SVFG use-after-free in
+// static destruction order).
+AbstractInterpretation* g_aeInstance = nullptr;
+}
+
+AbstractInterpretation& AbstractInterpretation::getAEInstance()
+{
+    if (!g_aeInstance)
+    {
+        u32_t sparsity = Options::AESparsity();
+        if (sparsity == AESparsity::SemiSparse || sparsity == AESparsity::Sparse)
+            g_aeInstance = new SparseAbstractInterpretation();
+        else
+            g_aeInstance = new AbstractInterpretation();
+    }
+    return *g_aeInstance;
+}
+
+void AbstractInterpretation::releaseAEInstance()
+{
+    delete g_aeInstance;
+    g_aeInstance = nullptr;
 }
 
 
@@ -206,6 +238,54 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
     // Collect all feasible predecessor states, then merge at the end.
     AbstractState merged;
     bool hasFeasiblePred = false;
+    bool sparse = Options::AESparsity() == AESparsity::Sparse;
+
+    // Full-sparse: accumulate predecessor path-refinements into this node's
+    // overlay. An obj's refinement holds at `node` only if EVERY feasible
+    // incoming path contributes a refinement for it (either inherited from
+    // pred's overlay or supplied by this edge's narrowingDelta). If even
+    // one pred has no refinement for an obj, the result is "unrefined at
+    // node" (equivalent to top for that obj — overlay entry dropped).
+    // Across multi-pred, the retained refinements are join'd (interval
+    // union) since the path-sensitive info is now disjunctive.
+    //
+    // Strategy: per pred collect that pred's contribution (inherited
+    // overlay + this edge's narrowingDelta) into `perPredOverlay`, then
+    // fold into `incomingOverlay` by *intersection of keys* (an obj is
+    // kept only if present in every perPredOverlay) with per-obj join.
+    Map<NodeID, AbstractValue> incomingOverlay;  // running result
+    bool sawAnyPred = false;
+    auto mergePredContribution = [&](Map<NodeID, AbstractValue>& perPred)
+    {
+        if (!sparse) return;
+        if (!sawAnyPred)
+        {
+            incomingOverlay = std::move(perPred);
+            sawAnyPred = true;
+            return;
+        }
+        // Intersection-with-join: keep only keys present in both,
+        // join their values.
+        Map<NodeID, AbstractValue> next;
+        for (auto& [objId, v] : incomingOverlay)
+        {
+            auto it = perPred.find(objId);
+            if (it == perPred.end()) continue;
+            AbstractValue merged = v;
+            merged.join_with(it->second);
+            next.emplace(objId, std::move(merged));
+        }
+        incomingOverlay = std::move(next);
+    };
+    auto snapshotPred = [&](const ICFGNode* pred) -> Map<NodeID, AbstractValue>
+    {
+        Map<NodeID, AbstractValue> snap;
+        if (!sparse) return snap;
+        auto pit = svfStateMgr->getPathRefinedAt().find(pred);
+        if (pit != svfStateMgr->getPathRefinedAt().end())
+            snap = pit->second;
+        return snap;
+    };
 
     for (auto& edge : node->getInEdges())
     {
@@ -218,22 +298,48 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
             if (intraCfgEdge->getCondition())
             {
                 AbstractState predState = getAbsState(pred);
-                if (isBranchFeasible(intraCfgEdge, predState))
+                // Full-sparse: collect per-obj narrowing into a delta
+                // instead of mutating predState (whose _addrToAbsVal is
+                // empty anyway under gated merge). The delta is folded
+                // into pathRefinedAt[node] for the reader to compose.
+                Map<NodeID, AbstractValue> narrowingDelta;
+                Map<NodeID, AbstractValue>* deltaPtr =
+                    sparse ? &narrowingDelta : nullptr;
+                if (isBranchFeasible(intraCfgEdge, predState, deltaPtr))
                 {
                     merged.joinWith(predState);
                     hasFeasiblePred = true;
+                    // This pred's overlay contribution = inherited overlay
+                    // tightened by this edge's narrowingDelta (per-obj meet).
+                    auto perPred = snapshotPred(pred);
+                    if (sparse)
+                    {
+                        for (auto& [objId, val] : narrowingDelta)
+                        {
+                            auto pit = perPred.find(objId);
+                            if (pit == perPred.end())
+                                perPred[objId] = val;
+                            else
+                                pit->second.meet_with(val);
+                        }
+                    }
+                    mergePredContribution(perPred);
                 }
             }
             else
             {
                 merged.joinWith(getAbsState(pred));
                 hasFeasiblePred = true;
+                auto perPred = snapshotPred(pred);
+                mergePredContribution(perPred);
             }
         }
         else if (SVFUtil::isa<CallCFGEdge>(edge))
         {
             merged.joinWith(getAbsState(pred));
             hasFeasiblePred = true;
+            auto perPred = snapshotPred(pred);
+            mergePredContribution(perPred);
         }
         else if (SVFUtil::isa<RetCFGEdge>(edge))
         {
@@ -242,6 +348,10 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
             case TOP:
                 merged.joinWith(getAbsState(pred));
                 hasFeasiblePred = true;
+                {
+                    auto perPred = snapshotPred(pred);
+                    mergePredContribution(perPred);
+                }
                 break;
             case WIDEN_ONLY:
             case WIDEN_NARROW:
@@ -252,6 +362,8 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                 {
                     merged.joinWith(getAbsState(pred));
                     hasFeasiblePred = true;
+                    auto perPred = snapshotPred(pred);
+                    mergePredContribution(perPred);
                 }
                 break;
             }
@@ -263,6 +375,23 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
         return false;
 
     updateAbsState(node, merged);
+
+    // Full-sparse: commit the accumulated overlay (inherited from preds +
+    // per-edge narrowing deltas) into pathRefinedAt[node].  Existing
+    // entries (from prior WTO iterations at this node) compose via meet —
+    // monotone refinement under widen/narrow.
+    if (sparse && !incomingOverlay.empty())
+    {
+        auto& overlay = svfStateMgr->getPathRefinedAt()[node];
+        for (auto& [objId, val] : incomingOverlay)
+        {
+            auto oit = overlay.find(objId);
+            if (oit == overlay.end())
+                overlay[objId] = val;
+            else
+                oit->second.meet_with(val);
+        }
+    }
 
     return true;
 }
@@ -425,7 +554,8 @@ static IntervalValue computeCmpConstraint(s32_t predicate, s64_t succ,
 }
 
 bool AbstractInterpretation::isCmpBranchFeasible(const IntraCFGEdge* edge,
-        AbstractState& as)
+        AbstractState& as,
+        Map<NodeID, AbstractValue>* narrowingDelta)
 {
     const ICFGNode* pred = edge->getSrcNode();
     s64_t succ = edge->getSuccessorCondValue();
@@ -473,8 +603,25 @@ bool AbstractInterpretation::isCmpBranchFeasible(const IntraCFGEdge* edge,
                     for (const auto& addr : ptrVal.getAddrs())
                     {
                         NodeID objId = as.getIDFromAddr(addr);
-                        if (as.inAddrToValTable(objId))
+                        if (narrowingDelta)
+                        {
+                            // Full-sparse: per-path delta, don't mutate as.
+                            // Meet with any prior entry so multi-obj
+                            // narrowings on the same edge compose.
+                            auto dit = narrowingDelta->find(objId);
+                            if (dit == narrowingDelta->end())
+                            {
+                                (*narrowingDelta)[objId] = AbstractValue(narrowed);
+                            }
+                            else
+                            {
+                                dit->second.meet_with(AbstractValue(narrowed));
+                            }
+                        }
+                        else if (as.inAddrToValTable(objId))
+                        {
                             as.load(addr).meet_with(narrowed);
+                        }
                     }
                 }
             }
@@ -484,7 +631,8 @@ bool AbstractInterpretation::isCmpBranchFeasible(const IntraCFGEdge* edge,
 }
 
 bool AbstractInterpretation::isSwitchBranchFeasible(const IntraCFGEdge* edge,
-        AbstractState& as)
+        AbstractState& as,
+        Map<NodeID, AbstractValue>* narrowingDelta)
 {
     const ICFGNode* pred = edge->getSrcNode();
     s64_t succ = edge->getSuccessorCondValue();
@@ -511,8 +659,18 @@ bool AbstractInterpretation::isSwitchBranchFeasible(const IntraCFGEdge* edge,
                 for (const auto& addr : ptrVal.getAddrs())
                 {
                     NodeID objId = as.getIDFromAddr(addr);
-                    if (as.inAddrToValTable(objId))
+                    if (narrowingDelta)
+                    {
+                        auto dit = narrowingDelta->find(objId);
+                        if (dit == narrowingDelta->end())
+                            (*narrowingDelta)[objId] = AbstractValue(switch_cond);
+                        else
+                            dit->second.meet_with(AbstractValue(switch_cond));
+                    }
+                    else if (as.inAddrToValTable(objId))
+                    {
                         as.load(addr).meet_with(switch_cond);
+                    }
                 }
             }
         }
@@ -521,13 +679,14 @@ bool AbstractInterpretation::isSwitchBranchFeasible(const IntraCFGEdge* edge,
 }
 
 bool AbstractInterpretation::isBranchFeasible(const IntraCFGEdge* edge,
-        AbstractState& as)
+        AbstractState& as,
+        Map<NodeID, AbstractValue>* narrowingDelta)
 {
     const SVFVar* cmpVar = edge->getCondition();
     assert(!cmpVar->getInEdges().empty() && "branch condition has no defining edge?");
     if (SVFUtil::isa<CmpStmt>(*cmpVar->getInEdges().begin()))
-        return isCmpBranchFeasible(edge, as);
-    return isSwitchBranchFeasible(edge, as);
+        return isCmpBranchFeasible(edge, as, narrowingDelta);
+    return isSwitchBranchFeasible(edge, as, narrowingDelta);
 }
 
 /**
@@ -563,6 +722,17 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
     stat->getBlockTrace()++;
     stat->getICFGNodeTrace()++;
 
+    // Full-sparse MSSA def-anchor transfers (Phase A).
+    // No-op for Dense/Semi; under Sparse each call populates
+    // trace[node]._addrToAbsVal[obj] for every obj served by a matching
+    // SVFG def node hosted at `node` (FormalIN at function entries, MSSAPHI
+    // at block joins). ActualOUT is deferred until after handleCallSite so
+    // the ExtAPI handler path has already written its values and the normal
+    // callee branch has had its FunExit analysed. See
+    // plan/plan-per-kind-transfers.md §"Driver integration".
+    svfStateMgr->runFormalINTransferAt(node);
+    svfStateMgr->runMSSAPHITransferAt(node);
+
     // Handle SVF statements
     for (const SVFStmt *stmt: node->getSVFStmts())
     {
@@ -573,6 +743,7 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
     if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
     {
         handleCallSite(callNode);
+        svfStateMgr->runActualOUTTransferAt(callNode);
     }
 
     // Run detectors
@@ -884,7 +1055,12 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 // (initCycleValVars), bottom-up so nested cycles are handled before their
 // enclosing cycle.
 
-// --- Cycle state helpers (dense/sparse unified) ---
+// --- Cycle state helpers (dense base) ---
+//
+// The dense default: trace[cycle_head] is the authoritative primary
+// storage, so the snapshot / write-back are trivial.
+// SparseAbstractInterpretation overrides these to additionally pull/scatter
+// cycle ValVars from/to their def-sites.
 
 AbstractState AbstractInterpretation::getFullCycleHeadState(const ICFGCycleWTO* cycle)
 {
@@ -892,29 +1068,7 @@ AbstractState AbstractInterpretation::getFullCycleHeadState(const ICFGCycleWTO* 
     AbstractState snap;
     if (hasAbsState(cycle_head))
         snap = getAbsState(cycle_head);
-
-    if (Options::AESparsity() == AESparsity::SemiSparse)
-    {
-        const Set<const ValVar*>& valVars = preAnalysis->getCycleValVars(cycle);
-        if (valVars.empty())
-            return snap;  // dense path / no cycle ValVars: snap is already complete
-
-        // Semi-sparse: drop any stale ValVar entries cached at cycle_head and
-        // pull each cycle ValVar from its def-site.  ValVars without a stored
-        // value are skipped to avoid the top-fallback contamination.
-        snap.clearValVars();
-        for (const ValVar* v : valVars)
-        {
-            const ICFGNode* defSite = v->getICFGNode();
-            if (!defSite || !hasAbsValue(v, defSite)) continue;
-            snap[v->getId()] = getAbsValue(v, defSite);
-        }
-        return snap;
-    }
-    else
-    {
-        return snap;
-    }
+    return snap;
 }
 
 
@@ -927,13 +1081,6 @@ bool AbstractInterpretation::widenCycleState(
     // widened state for the upcoming narrowing phase.
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
     svfStateMgr->getTrace()[cycle_head] = next;
-    if (Options::AESparsity() == AESparsity::SemiSparse)
-    {
-        for (const auto& [id, val] : next.getVarToVal())
-        {
-            updateAbsValue(svfir->getSVFVar(id), val, cycle_head);
-        }
-    }
     return next == prev;
 }
 
@@ -948,13 +1095,6 @@ bool AbstractInterpretation::narrowCycleState(
     if (next == prev)
         return true;  // fixpoint
     svfStateMgr->getTrace()[cycle_head] = next;
-    if (Options::AESparsity() == AESparsity::SemiSparse)
-    {
-        for (const auto& [id, val] : next.getVarToVal())
-        {
-            updateAbsValue(svfir->getSVFVar(id), val, cycle_head);
-        }
-    }
     return false;
 }
 
