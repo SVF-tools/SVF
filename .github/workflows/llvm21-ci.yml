@@ -53,6 +53,9 @@ jobs:
       - name: Build
         run: cmake --build build-llvm21 --parallel
 
+      - name: Make legacy build dir symlink
+        run: ln -s ./build-llvm21 ./-build
+
       - name: Test
         working-directory: build-llvm21
         run: ctest --output-on-failure
