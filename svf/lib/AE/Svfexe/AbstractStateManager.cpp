@@ -217,6 +217,50 @@ const AbstractValue& AbstractStateManager::getAbstractValue(const ObjVar* var, c
                         base = &gState.load(addr);
                 }
             }
+            // Fallback 2: ICFG reaching-def walk.  MSSA's def chain is built
+            // from Andersen's pts-to; when Andersen disagrees with AE's
+            // runtime-computed pts-to on GEP'd objs, MSSA never connects
+            // the store's ICFG node to a downstream read of the AE obj-id,
+            // and getDefSiteOfObjVar returns the wrong anchor (e.g. a stale
+            // init node) while the true reaching store lives elsewhere.
+            //
+            // Walk in-edges back from `node` until we find a predecessor
+            // whose trace has this obj populated.  Multiple reaching
+            // writers from different branches join into a single upstream
+            // value. Stops traversal at each branch as soon as a value is
+            // found, so joins respect per-path latest-writer semantics.
+            // Materialises at hereState so repeated reads are O(1).
+            if (!base)
+            {
+                AbstractValue upstream;
+                bool found = false;
+                Set<const ICFGNode*> visited;
+                std::deque<const ICFGNode*> work;
+                for (auto e : node->getInEdges())
+                    work.push_back(e->getSrcNode());
+                while (!work.empty())
+                {
+                    const ICFGNode* p = work.front();
+                    work.pop_front();
+                    if (!visited.insert(p).second) continue;
+                    auto tit = abstractTrace.find(p);
+                    if (tit != abstractTrace.end()
+                            && tit->second.getLocToVal().count(var->getId()) != 0)
+                    {
+                        const AbstractValue& v = tit->second.load(addr);
+                        if (!found) { upstream = v; found = true; }
+                        else upstream.join_with(v);
+                        continue; // do not traverse past a latest-writer
+                    }
+                    for (auto e : p->getInEdges())
+                        work.push_back(e->getSrcNode());
+                }
+                if (found)
+                {
+                    hereState.store(addr, upstream);
+                    base = &hereState.load(addr);
+                }
+            }
         }
 
         // Overlay compose: if any branch refinement reached this node for
