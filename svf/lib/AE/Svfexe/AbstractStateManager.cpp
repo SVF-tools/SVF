@@ -33,7 +33,7 @@
 using namespace SVF;
 
 AbstractStateManager::AbstractStateManager(SVFIR* svfir, AndersenWaveDiff* pta)
-    : svfir(svfir), svfg(nullptr)
+    : svfir(svfir), svfg(nullptr), pta(pta)
 {
     if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse)
     {
@@ -584,8 +584,33 @@ void AbstractStateManager::storeValue(const ValVar* pointer, const AbstractValue
 {
     const AbstractValue& ptrVal = getAbstractValue(pointer, node);
     AbstractState& as = getAbstractState(node);
+    // Write through every addr AE thinks the pointer targets.
     for (auto addr : ptrVal.getAddrs())
         as.store(addr, val);
+    // Full-sparse: also write to every obj in Andersen's pts-to set.
+    // Rationale: SVFG / MSSA builds its reaching-def chain from Andersen's
+    // static pts-to, not from AE's runtime-computed GEP addresses.  When
+    // the two diverge on GEP'd arrays (AE sees one field-obj, Andersen
+    // sees the whole field set or a different base obj), a downstream
+    // reader routed via getDefSiteOfObjVar asks for an obj-id that AE's
+    // store never touched, and the lookup fails.  Mirroring the write
+    // onto Andersen's pts keeps the MSSA-routed reader sound.  Dense and
+    // Semi-Sparse achieve the same effect implicitly via bulk
+    // _addrToAbsVal merge-copy; Full-Sparse gates merge, so we need the
+    // explicit mirror here.
+    if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse
+            && pta)
+    {
+        const PointsTo& andersenPts = pta->getPts(pointer->getId());
+        for (NodeID objId : andersenPts)
+        {
+            u32_t vaddr = AbstractState::getVirtualMemAddress(objId);
+            if (as.getLocToVal().count(objId) != 0)
+                as.load(vaddr).join_with(val);
+            else
+                as.store(vaddr, val);
+        }
+    }
 }
 
 // ===----------------------------------------------------------------------===//

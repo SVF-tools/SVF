@@ -211,6 +211,7 @@ private:
     // scope (the root cause of a Sparse-mode ~AbstractStateManager crash).
     std::unique_ptr<SVFGBuilder> svfgBuilder;
     SVFG* svfg;
+    AndersenWaveDiff* pta;
     Map<const ICFGNode*, AbstractState> abstractTrace;
     Map<const ICFGNode*, Map<NodeID, AbstractValue>> pathRefinedAt;
 };
