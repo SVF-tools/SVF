@@ -606,7 +606,21 @@ void AbsExtAPI::handleMemcpy(const ValVar *dst,
             for (const auto &srcAddr: expr_src.getAddrs())
             {
                 u32_t objId = as.getIDFromAddr(srcAddr);
-                if (as.inAddrToValTable(objId) || as.inAddrToAddrsTable(objId))
+                // Route the source read through the sparsity-aware reader
+                // so full-sparse can locate the value at its MSSA def-anchor
+                // (or at globalICFGNode for statically-initialised globals)
+                // rather than in `as` (whose _addrToAbsVal is gated in
+                // full-sparse).
+                const SVFVar* srcSvfVar = PAG::getPAG()->getGNode(objId);
+                const ObjVar* srcObjVar =
+                    SVFUtil::dyn_cast<ObjVar>(srcSvfVar);
+                if (srcObjVar)
+                {
+                    AbstractValue v =
+                        mgr->getAbstractValue(srcObjVar, node);
+                    as.store(dstAddr, v);
+                }
+                else if (as.inAddrToValTable(objId) || as.inAddrToAddrsTable(objId))
                 {
                     as.store(dstAddr, as.load(srcAddr));
                 }

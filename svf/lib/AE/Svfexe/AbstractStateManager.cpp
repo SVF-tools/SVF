@@ -133,8 +133,16 @@ const AbstractValue& AbstractStateManager::getAbstractValue(const ValVar* var, c
             return as[id];
     }
 
-    // Sparse modes: pull from def-site first, then check current state
+    // Sparse modes: pull from def-site first, then check current state.
     const ICFGNode* defNode = var->getICFGNode();
+    // Some ValVars (notably load-produced SSA values under certain IR
+    // lowerings) have no ICFGNode set; fall back to the current node,
+    // which is where the transfer would have written to by default.
+    if (!defNode)
+    {
+        if (as.inVarToValTable(id) || as.inVarToAddrsTable(id))
+            return as[id];
+    }
     if (defNode && hasAbstractState(defNode))
     {
         const auto& varMap = getAbstractState(defNode).getVarToVal();
@@ -192,6 +200,22 @@ const AbstractValue& AbstractStateManager::getAbstractValue(const ObjVar* var, c
                 AbstractState& defState = getAbstractState(defICFG);
                 if (defState.getLocToVal().count(var->getId()) != 0)
                     base = &defState.load(addr);
+            }
+            // Fallback: global const-init objects (globals, string literals,
+            // `int a[] = {...}`'s underlying global const array) are
+            // populated at globalICFGNode during program setup and have no
+            // intra-procedural def-anchor that MSSA would track.  If
+            // getDefSiteOfObjVar found nothing, consult globalICFGNode as
+            // a last resort before falling back to top.
+            if (!base)
+            {
+                const ICFGNode* g = svfir->getICFG()->getGlobalICFGNode();
+                if (g && hasAbstractState(g))
+                {
+                    AbstractState& gState = getAbstractState(g);
+                    if (gState.getLocToVal().count(var->getId()) != 0)
+                        base = &gState.load(addr);
+                }
             }
         }
 
