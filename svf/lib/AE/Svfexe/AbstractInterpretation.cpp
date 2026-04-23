@@ -732,12 +732,14 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
     // No-op for Dense/Semi; under Sparse each call populates
     // trace[node]._addrToAbsVal[obj] for every obj served by a matching
     // SVFG def node hosted at `node` (FormalIN at function entries, MSSAPHI
-    // at block joins). ActualOUT is deferred until after handleCallSite so
-    // the ExtAPI handler path has already written its values and the normal
-    // callee branch has had its FunExit analysed. See
-    // plan/plan-per-kind-transfers.md §"Driver integration".
+    // at block joins). ActualOUT is fired when we visit the RetICFGNode
+    // (its post-merge hook), NOT the CallICFGNode: APOUT VFG nodes are
+    // hosted at the retNode, and committing at callNode time would get
+    // wiped when retNode's own merge runs next in WTO order.
     svfStateMgr->runFormalINTransferAt(node);
     svfStateMgr->runMSSAPHITransferAt(node);
+    if (SVFUtil::isa<RetICFGNode>(node))
+        svfStateMgr->runActualOUTTransferAt(node);
 
     // Handle SVF statements
     for (const SVFStmt *stmt: node->getSVFStmts())
@@ -749,7 +751,6 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
     if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
     {
         handleCallSite(callNode);
-        svfStateMgr->runActualOUTTransferAt(callNode);
     }
 
     // Run detectors

@@ -847,19 +847,21 @@ void AbstractStateManager::runActualOUTTransferAt(const ICFGNode* N)
 {
     if (Options::AESparsity() != AbstractInterpretation::AESparsity::Sparse)
         return;
-    const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(N);
-    if (!callNode)
+    // APOUT VFG nodes are hosted at the RetICFGNode (not the CallICFGNode).
+    // Driver calls this hook when visiting the retNode; sanity-gate on both
+    // the retNode shape and the matching callNode not being ExtAPI.
+    const RetICFGNode* retNode = SVFUtil::dyn_cast<RetICFGNode>(N);
+    if (!retNode)
         return;
-    // ExtAPI skip: AbsExtAPI handlers (memcpy/strcpy/...) have already
-    // written trace[callNode]._addrToAbsVal for the modified objs.
-    if (SVFUtil::isExtCall(callNode))
+    const CallICFGNode* callNode = retNode->getCallICFGNode();
+    if (!callNode || SVFUtil::isExtCall(callNode))
         return;
-    for (const VFGNode* vn : N->getVFGNodes())
+    for (const VFGNode* vn : retNode->getVFGNodes())
     {
         const ActualOUTSVFGNode* aout = SVFUtil::dyn_cast<ActualOUTSVFGNode>(vn);
         if (!aout) continue;
         NodeBS objIds = getMRNodeObjIds(aout);
-        AbstractState& here = abstractTrace[N];
+        AbstractState& here = abstractTrace[retNode];
         for (NodeID objId : objIds)
         {
             // Two-hop: aout <-RetIndEdge- FormalOUT (RetMu, no value)
