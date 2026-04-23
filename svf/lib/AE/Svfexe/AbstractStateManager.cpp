@@ -91,7 +91,7 @@ bool AbstractStateManager::hasAbstractState(const ICFGNode* node)
 const AbstractValue& AbstractStateManager::getAbstractValue(const ValVar* var, const ICFGNode* node)
 {
     u32_t id = var->getId();
-    bool semiSparse = Options::AESparsity() == AbstractInterpretation::AESparsity::SemiSparse;
+    bool denseOnly = Options::AESparsity() == AbstractInterpretation::AESparsity::Dense;
 
     // Constants: store into current node's state and return
     AbstractState& as = abstractTrace[node];
@@ -122,13 +122,18 @@ const AbstractValue& AbstractStateManager::getAbstractValue(const ValVar* var, c
     // def-site.  Returning top or bottom here would be wrong: top loses
     // concrete values like NULL addresses; bottom misjudges branch
     // feasibility for uninitialised variables like argc.
-    if (!semiSparse)
+    //
+    // Sparse modes (SemiSparse / Sparse) skip this check: merge doesn't
+    // populate ValVars at non-def-site nodes, and reading a stale
+    // transfer-produced value at the current node would ignore the
+    // cycle-widened value at the def-site.
+    if (denseOnly)
     {
         if (as.inVarToValTable(id) || as.inVarToAddrsTable(id))
             return as[id];
     }
 
-    // Semi-sparse mode: pull from def-site first, then check current state
+    // Sparse modes: pull from def-site first, then check current state
     const ICFGNode* defNode = var->getICFGNode();
     if (defNode && hasAbstractState(defNode))
     {
@@ -298,10 +303,14 @@ bool AbstractStateManager::hasAbstractValue(const SVFVar* var, const ICFGNode* n
 
 void AbstractStateManager::updateAbstractValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node)
 {
-    // In semi-sparse mode, write to the var's def-site so that
-    // getAbstractValue (which reads from def-site) stays consistent.
+    // In sparse modes (SemiSparse / Sparse), write to the var's def-site so
+    // that getAbstractValue (which reads from def-site) stays consistent.
+    // This matters especially for widen/narrow scatter calls that pass
+    // cycle_head as `node` but expect the value to land on body def-sites.
     const ICFGNode* target = node;
-    if (Options::AESparsity() == AbstractInterpretation::AESparsity::SemiSparse)
+    u32_t s = Options::AESparsity();
+    if (s == AbstractInterpretation::AESparsity::SemiSparse ||
+            s == AbstractInterpretation::AESparsity::Sparse)
     {
         const ICFGNode* defNode = var->getICFGNode();
         if (defNode)

@@ -389,7 +389,13 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
             if (oit == overlay.end())
                 overlay[objId] = val;
             else
-                oit->second.meet_with(val);
+                // Join across iterations: the overlay must grow with the
+                // def-anchor value under widening. Meet here would trap
+                // the overlay at the earliest (tightest) narrowing ever
+                // observed, producing unsound reads once the base widens
+                // past that bound (e.g., recursive-call convergence where
+                // successive iters widen the incoming obj value).
+                oit->second.join_with(val);
         }
     }
 
