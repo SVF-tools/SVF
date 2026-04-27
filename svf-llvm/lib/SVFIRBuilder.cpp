@@ -35,6 +35,7 @@
 #include "SVF-LLVM/CppUtil.h"
 #include "SVF-LLVM/LLVMLoopAnalysis.h"
 #include "SVF-LLVM/LLVMUtil.h"
+#include "SVF-LLVM/ObjTypeInference.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
 #include "SVFIR/PAGBuilderFromFile.h"
 #include "Util/CallGraphBuilder.h"
@@ -666,7 +667,24 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
         if(!prevPtrOperand && svfGepTy->isPointerTy()) prevPtrOperand = true;
         const Value* offsetVal = gi.getOperand();
         assert(gepTy != offsetVal->getType() && "iteration and operand have the same type?");
-        ap.addOffsetVarAndGepTypePair(getPAG()->getValVar(llvmModuleSet()->getValueNode(offsetVal)), svfGepTy);
+
+        const ArrayType* inferredPtrArrayTy = nullptr;
+        const SVFType* idxGepTy = svfGepTy;
+        if (svfGepTy->isPointerTy() && gepOp->getSourceElementType()->isSingleValueType())
+        {
+            const Type* baseObjType =
+                LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->inferObjType(gepOp->getPointerOperand());
+            if (const auto* arrTy = SVFUtil::dyn_cast<ArrayType>(baseObjType))
+            {
+                if (arrTy->getElementType()->isPointerTy())
+                {
+                    inferredPtrArrayTy = arrTy;
+                    idxGepTy = llvmModuleSet()->getSVFType(arrTy);
+                }
+            }
+        }
+
+        ap.addOffsetVarAndGepTypePair(getPAG()->getValVar(llvmModuleSet()->getValueNode(offsetVal)), idxGepTy);
 
         //The int value of the current index operand
         const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(offsetVal);
@@ -675,6 +693,8 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
         // but we can distinguish different field of an array of struct, e.g. s[1].f1 is different from s[0].f2
         if(const ArrayType* arrTy = SVFUtil::dyn_cast<ArrayType>(gepTy))
         {
+            if (!Options::ModelArrays() && arrTy->getElementType()->isPointerTy())
+                continue;
             if(!op || (arrTy->getArrayNumElements() <= (u32_t)LLVMUtil::getIntegerValue(op).first))
                 continue;
             APOffset idx = (u32_t)LLVMUtil::getIntegerValue(op).first;
@@ -700,6 +720,15 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
         }
         else if (gepTy->isSingleValueType())
         {
+            if (inferredPtrArrayTy)
+            {
+                if (!op || (inferredPtrArrayTy->getArrayNumElements() <= (u32_t)LLVMUtil::getIntegerValue(op).first))
+                    continue;
+                APOffset idx = (u32_t)LLVMUtil::getIntegerValue(op).first;
+                u32_t offset = pag->getFlattenedElemIdx(llvmModuleSet()->getSVFType(inferredPtrArrayTy), idx);
+                ap.setFldIdx(ap.getConstantStructFldIdx() + offset);
+                continue;
+            }
             // If it's a non-constant offset access
             // If its point-to target is struct or array, it's likely an array accessing (%result = gep %struct.A* %a, i32 %non-const-index)
             // If its point-to target is single value (pointer arithmetic), then it's a variant gep (%result = gep i8* %p, i32 %non-const-index)
@@ -1106,6 +1135,19 @@ void SVFIRBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
 
     AccessPath ap(0, llvmModuleSet()->getSVFType(inst.getSourceElementType()));
     bool constGep = computeGepOffset(&inst, ap);
+    if (constGep && ap.getConstantStructFldIdx() == 0 && !Options::ModelArrays())
+    {
+        const Type* baseObjType =
+            LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->inferObjType(inst.getPointerOperand());
+        if (const auto* arrTy = SVFUtil::dyn_cast<ArrayType>(baseObjType))
+        {
+            if (arrTy->getElementType()->isPointerTy())
+            {
+                addCopyEdge(src, dst, CopyStmt::COPYVAL);
+                return;
+            }
+        }
+    }
     addGepEdge(src, dst, ap, constGep);
 }
 
@@ -1548,6 +1590,32 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
 {
     const Value*  value = stripAllCasts(V);
     assert(value && "null ptr?");
+    auto getGlobalFieldFromByteOffset =
+        [this](const GlobalVariable* glob, int64_t byteOffset) -> const Value*
+    {
+        if (!glob || !glob->hasInitializer())
+            return nullptr;
+
+        auto* initializer = SVFUtil::dyn_cast<ConstantStruct>(glob->getInitializer());
+        auto* structType = SVFUtil::dyn_cast<StructType>(glob->getValueType());
+        if (!initializer || !structType)
+            return nullptr;
+
+        DataLayout* dataLayout = getDataLayout(llvmModuleSet()->getMainLLVMModule());
+        const StructLayout* layout =
+            dataLayout->getStructLayout(const_cast<StructType*>(structType));
+        for (u32_t fieldIdx = 0; fieldIdx < initializer->getNumOperands(); ++fieldIdx)
+        {
+            if (layout->getElementOffset(fieldIdx) != static_cast<uint64_t>(byteOffset))
+                continue;
+            if (auto* ptrValue =
+                        SVFUtil::dyn_cast<llvm::GlobalVariable>(initializer->getOperand(fieldIdx)))
+                return ptrValue;
+            return nullptr;
+        }
+        return nullptr;
+    };
+
     if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(value))
     {
         APOffset totalidx = 0;
@@ -1564,34 +1632,36 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
         const Value* loadP = load->getPointerOperand();
         if (const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(loadP))
         {
-            APOffset totalidx = 0;
-            for (bridge_gep_iterator gi = bridge_gep_begin(gep), ge = bridge_gep_end(gep); gi != ge; ++gi)
-            {
-                if(const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
-                    totalidx += LLVMUtil::getIntegerValue(op).first;
-            }
+            DataLayout* dataLayout = getDataLayout(llvmModuleSet()->getMainLLVMModule());
+            llvm::APInt byteOffset(dataLayout->getIndexSizeInBits(gep->getPointerAddressSpace()), 0, true);
+            const bool hasByteOffset = dataLayout && gep->accumulateConstantOffset(*dataLayout, byteOffset);
+
             const Value * pointer_operand = gep->getPointerOperand();
             if (auto *glob = SVFUtil::dyn_cast<GlobalVariable>(pointer_operand))
             {
-                if (glob->hasInitializer())
+                if (hasByteOffset)
                 {
-                    if (auto *initializer = SVFUtil::dyn_cast<
-                                            ConstantStruct>(glob->getInitializer()))
-                    {
-                        /*
-                            *@conststruct = internal global <{ [40 x i8], [4 x i8], [4 x i8], [2512 x i8] }>
-                                <{ [40 x i8] undef, [4 x i8] zeroinitializer, [4 x i8] undef, [2512 x i8] zeroinitializer }>, align 8
+                    if (const Value* ptrValue = getGlobalFieldFromByteOffset(glob, byteOffset.getSExtValue()))
+                        return ptrValue;
+                }
+            }
+            else if (hasByteOffset)
+            {
+                for (const auto& use : pointer_operand->users())
+                {
+                    const auto* cs = SVFUtil::dyn_cast<CallBase>(use);
+                    if (!cs || cs->arg_size() < 2 || cs->getArgOperand(0) != pointer_operand)
+                        continue;
+                    const Function* calledFun = cs->getCalledFunction();
+                    if (!LLVMUtil::isMemcpyExtFun(calledFun))
+                        continue;
 
-                            %0 = load ptr, ptr getelementptr inbounds (<{ [40 x i8], [4 x i8], [4 x i8], [2512 x i8] }>,
-                                    ptr @conststruct, i64 0, i32 0, i64 16)
-                            in this case, totalidx is 16 while initializer->getNumOperands() is 4, so we return value as the base
-                         */
-                        if (totalidx >= initializer->getNumOperands()) return value;
-                        auto *ptrField = initializer->getOperand(totalidx);
-                        if (auto *ptrValue = SVFUtil::dyn_cast<llvm::GlobalVariable>(ptrField))
-                        {
+                    const Value* copiedFrom = getBaseValueForExtArg(cs->getArgOperand(1));
+                    if (const auto* copiedGlob = SVFUtil::dyn_cast<GlobalVariable>(copiedFrom))
+                    {
+                        if (const Value* ptrValue =
+                                    getGlobalFieldFromByteOffset(copiedGlob, byteOffset.getSExtValue()))
                             return ptrValue;
-                        }
                     }
                 }
             }

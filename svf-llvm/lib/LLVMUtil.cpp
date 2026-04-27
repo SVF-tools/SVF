@@ -30,11 +30,108 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVFIR/ObjTypeInfo.h"
 #include <sstream>
+#include <llvm/IRReader/IRReader.h>
+#include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/raw_ostream.h>
 #include "SVF-LLVM/LLVMModule.h"
 
 
 using namespace SVF;
+
+namespace
+{
+
+bool replaceAll(std::string& text, const std::string& from, const std::string& to)
+{
+    bool changed = false;
+    std::string::size_type pos = 0;
+    while ((pos = text.find(from, pos)) != std::string::npos)
+    {
+        text.replace(pos, from.size(), to);
+        pos += to.size();
+        changed = true;
+    }
+    return changed;
+}
+
+bool stripAttributeCalls(std::string& text, const std::string& attrName)
+{
+    bool changed = false;
+    std::string needle = " " + attrName + "(";
+    std::string::size_type pos = 0;
+    while ((pos = text.find(needle, pos)) != std::string::npos)
+    {
+        std::string::size_type end = pos + needle.size();
+        int depth = 1;
+        while (end < text.size() && depth > 0)
+        {
+            if (text[end] == '(')
+                ++depth;
+            else if (text[end] == ')')
+                --depth;
+            ++end;
+        }
+        if (depth != 0)
+            break;
+        text.erase(pos, end - pos);
+        changed = true;
+    }
+    return changed;
+}
+
+bool stripDbgPseudoLines(std::string& text)
+{
+    bool changed = false;
+    std::string normalized;
+    normalized.reserve(text.size());
+    std::string::size_type lineStart = 0;
+    while (lineStart < text.size())
+    {
+        std::string::size_type lineEnd = text.find('\n', lineStart);
+        if (lineEnd == std::string::npos)
+            lineEnd = text.size();
+
+        std::string::size_type contentStart = lineStart;
+        while (contentStart < lineEnd &&
+               (text[contentStart] == ' ' || text[contentStart] == '\t'))
+        {
+            ++contentStart;
+        }
+
+        bool isDbgPseudo = text.compare(contentStart, 5, "#dbg_") == 0;
+        if (!isDbgPseudo)
+        {
+            normalized.append(text, lineStart, lineEnd - lineStart);
+            if (lineEnd < text.size())
+                normalized.push_back('\n');
+        }
+        else
+        {
+            changed = true;
+        }
+
+        lineStart = lineEnd;
+        if (lineStart < text.size() && text[lineStart] == '\n')
+            ++lineStart;
+    }
+
+    if (changed)
+        text.swap(normalized);
+    return changed;
+}
+
+bool normalizeLLVM21TextIR(std::string& ir)
+{
+    bool changed = false;
+    changed |= replaceAll(ir, "getelementptr inbounds nuw ", "getelementptr inbounds ");
+    changed |= replaceAll(ir, ", inrange i32 0, i32 ", ", i32 0, i32 ");
+    changed |= stripAttributeCalls(ir, "captures");
+    changed |= stripAttributeCalls(ir, "inrange");
+    changed |= stripDbgPseudoLines(ir);
+    return changed;
+}
+
+}
 
 const Function* LLVMUtil::getProgFunction(const std::string& funName)
 {
@@ -317,7 +414,7 @@ bool LLVMUtil::isIRFile(const std::string &filename)
     llvm::SMDiagnostic err;
 
     // Parse the input LLVM IR file into a module
-    std::unique_ptr<llvm::Module> module = llvm::parseIRFile(filename, err, context);
+    std::unique_ptr<llvm::Module> module = LLVMUtil::parseIRFileCompat(filename, err, context);
 
     // Check if the parsing succeeded
     if (!module)
@@ -327,6 +424,32 @@ bool LLVMUtil::isIRFile(const std::string &filename)
     }
 
     return true; // It is an LLVM IR file
+}
+
+std::unique_ptr<Module> LLVMUtil::parseIRFileCompat(const std::string& filename,
+        SMDiagnostic& err, LLVMContext& context)
+{
+    if (std::unique_ptr<Module> module = llvm::parseIRFile(filename, err, context))
+        return module;
+
+    auto fileOrErr = llvm::MemoryBuffer::getFile(filename);
+    if (!fileOrErr)
+        return nullptr;
+
+    std::string normalizedIR(fileOrErr.get()->getBuffer());
+    if (!normalizeLLVM21TextIR(normalizedIR))
+        return nullptr;
+
+    SMDiagnostic retryErr;
+    std::unique_ptr<Module> module = llvm::parseIR(
+            llvm::MemoryBufferRef(normalizedIR, filename), retryErr, context);
+    if (!module)
+    {
+        err = retryErr;
+        return nullptr;
+    }
+
+    return module;
 }
 
 

@@ -94,33 +94,26 @@ AbstractInterpretation::~AbstractInterpretation()
 }
 
 /// Collect entry point functions for analysis.
-/// Entry points are functions without callers (no incoming edges in CallGraph).
-/// Uses a deque to allow efficient insertion at front for prioritizing main()
+/// Reuse the entry notion from PreAnalysis::initWTO(): a function is an entry
+/// if it has no callers outside its call-graph SCC. This covers library-style
+/// mutually recursive exports that have internal callers but no external ones.
+/// Uses a deque to allow efficient insertion at front for prioritizing main().
 std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
 {
     std::deque<const FunObjVar*> entryFunctions;
 
-    for (auto it = callGraph->begin(); it != callGraph->end(); ++it)
+    for (const auto& [fun, wto] : preAnalysis->getFuncToWTO())
     {
-        const CallGraphNode* cgNode = it->second;
-        const FunObjVar* fun = cgNode->getFunction();
-
-        // Skip declarations
-        if (fun->isDeclaration())
+        if (!wto || fun->isDeclaration())
             continue;
 
-        // Entry points are functions without callers (no incoming edges)
-        if (cgNode->getInEdges().empty())
+        if (fun->getName() == "main")
         {
-            // If main exists, put it first for priority using deque's push_front
-            if (fun->getName() == "main")
-            {
-                entryFunctions.push_front(fun);
-            }
-            else
-            {
-                entryFunctions.push_back(fun);
-            }
+            entryFunctions.push_front(fun);
+        }
+        else
+        {
+            entryFunctions.push_back(fun);
         }
     }
 
@@ -135,7 +128,7 @@ void AbstractInterpretation::analyse()
     analyzeFromAllProgEntries();
 }
 
-/// Analyze all entry points (functions without callers) - for whole-program analysis.
+/// Analyze all entry points - for whole-program analysis.
 /// Abstract state is shared across entry points so that functions analyzed from
 /// earlier entries are not re-analyzed from scratch.
 void AbstractInterpretation::analyzeFromAllProgEntries()
@@ -1634,6 +1627,3 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
     else
         assert(false && "undefined copy kind");
 }
-
-
-

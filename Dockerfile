@@ -7,7 +7,7 @@ ARG TARGETPLATFORM
 RUN set -e
 
 # Define LLVM version.
-ENV llvm_version=16.0.0
+ENV llvm_version=21.1.0
 
 # Define home directory
 ENV HOME=/home/SVF-tools

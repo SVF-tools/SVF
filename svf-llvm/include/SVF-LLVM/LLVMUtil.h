@@ -146,6 +146,11 @@ u32_t getNumOfElements(const Type* ety);
 /// Return true if this value refers to a object
 bool isObject(const Value* ref);
 
+/// Parse an LLVM IR file, retrying with a normalized textual IR buffer for
+/// known frontend syntax variants when the direct parser rejects the file.
+std::unique_ptr<Module> parseIRFileCompat(const std::string& filename,
+        SMDiagnostic& err, LLVMContext& context);
+
 /// Method for dead function, which does not have any possible caller
 /// function address is not taken and never be used in call or invoke instruction
 //@{
@@ -314,7 +319,11 @@ inline static DataLayout* getDataLayout(Module* mod)
 {
     static DataLayout *dl = nullptr;
     if (dl == nullptr)
+#if LLVM_VERSION_MAJOR >= 19
+        dl = new DataLayout(mod->getDataLayout());
+#else
         dl = new DataLayout(mod);
+#endif
     return dl;
 }
 

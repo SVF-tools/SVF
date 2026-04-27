@@ -470,7 +470,12 @@ AbstractValue AbstractStateManager::loadValue(const ValVar* pointer, const ICFGN
     AbstractState& as = getAbstractState(node);
     AbstractValue res;
     for (auto addr : ptrVal.getAddrs())
+    {
+        NodeID objId = as.getIDFromAddr(addr);
+        if (svfir->isBaseObjVar(objId) && SVFUtil::isa<SVFArrayType>(svfir->getSVFVar(objId)->getType()))
+            addr = AbstractState::getVirtualMemAddress(svfir->getGepObjVar(objId, 0));
         res.join_with(as.load(addr));
+    }
     return res;
 }
 
@@ -479,7 +484,12 @@ void AbstractStateManager::storeValue(const ValVar* pointer, const AbstractValue
     const AbstractValue& ptrVal = getAbstractValue(pointer, node);
     AbstractState& as = getAbstractState(node);
     for (auto addr : ptrVal.getAddrs())
+    {
+        NodeID objId = as.getIDFromAddr(addr);
+        if (svfir->isBaseObjVar(objId) && SVFUtil::isa<SVFArrayType>(svfir->getSVFVar(objId)->getType()))
+            addr = AbstractState::getVirtualMemAddress(svfir->getGepObjVar(objId, 0));
         as.store(addr, val);
+    }
 }
 
 // ===----------------------------------------------------------------------===//
@@ -585,4 +595,3 @@ const ICFGNode* AbstractStateManager::getDefSiteOfObjVar(const ObjVar* obj, cons
         return edge->getSrcNode();
     return nullptr;
 }
-
