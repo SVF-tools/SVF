@@ -676,9 +676,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
         // but we can distinguish different field of an array of struct, e.g. s[1].f1 is different from s[0].f2
         if(const ArrayType* arrTy = SVFUtil::dyn_cast<ArrayType>(gepTy))
         {
-            if (!Options::ModelArrays() &&
-                    (arrTy->getElementType()->isSingleValueType() ||
-                     arrTy->getElementType()->isPointerTy()))
+            if (!Options::ModelArrays() && arrTy->getElementType()->isPointerTy())
                 continue;
             if(!op || (arrTy->getArrayNumElements() <= (u32_t)LLVMUtil::getIntegerValue(op).first))
                 continue;
@@ -1117,7 +1115,7 @@ void SVFIRBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
             LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->inferObjType(inst.getPointerOperand());
         if (const auto* arrTy = SVFUtil::dyn_cast<ArrayType>(baseObjType))
         {
-            if (arrTy->getElementType()->isSingleValueType() || arrTy->getElementType()->isPointerTy())
+            if (arrTy->getElementType()->isPointerTy())
             {
                 addCopyEdge(src, dst, CopyStmt::COPYVAL);
                 return;
