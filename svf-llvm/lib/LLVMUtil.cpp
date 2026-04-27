@@ -30,7 +30,6 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVFIR/ObjTypeInfo.h"
 #include <sstream>
-#include <regex>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/raw_ostream.h>
@@ -55,39 +54,80 @@ bool replaceAll(std::string& text, const std::string& from, const std::string& t
     return changed;
 }
 
+bool stripAttributeCalls(std::string& text, const std::string& attrName)
+{
+    bool changed = false;
+    std::string needle = " " + attrName + "(";
+    std::string::size_type pos = 0;
+    while ((pos = text.find(needle, pos)) != std::string::npos)
+    {
+        std::string::size_type end = pos + needle.size();
+        int depth = 1;
+        while (end < text.size() && depth > 0)
+        {
+            if (text[end] == '(')
+                ++depth;
+            else if (text[end] == ')')
+                --depth;
+            ++end;
+        }
+        if (depth != 0)
+            break;
+        text.erase(pos, end - pos);
+        changed = true;
+    }
+    return changed;
+}
+
+bool stripDbgPseudoLines(std::string& text)
+{
+    bool changed = false;
+    std::string normalized;
+    normalized.reserve(text.size());
+    std::string::size_type lineStart = 0;
+    while (lineStart < text.size())
+    {
+        std::string::size_type lineEnd = text.find('\n', lineStart);
+        if (lineEnd == std::string::npos)
+            lineEnd = text.size();
+
+        std::string::size_type contentStart = lineStart;
+        while (contentStart < lineEnd &&
+               (text[contentStart] == ' ' || text[contentStart] == '\t'))
+        {
+            ++contentStart;
+        }
+
+        bool isDbgPseudo = text.compare(contentStart, 5, "#dbg_") == 0;
+        if (!isDbgPseudo)
+        {
+            normalized.append(text, lineStart, lineEnd - lineStart);
+            if (lineEnd < text.size())
+                normalized.push_back('\n');
+        }
+        else
+        {
+            changed = true;
+        }
+
+        lineStart = lineEnd;
+        if (lineStart < text.size() && text[lineStart] == '\n')
+            ++lineStart;
+    }
+
+    if (changed)
+        text.swap(normalized);
+    return changed;
+}
+
 bool normalizeLLVM21TextIR(std::string& ir)
 {
     bool changed = false;
     changed |= replaceAll(ir, "getelementptr inbounds nuw ", "getelementptr inbounds ");
     changed |= replaceAll(ir, ", inrange i32 0, i32 ", ", i32 0, i32 ");
-
-    const std::string capturesNormalized =
-        std::regex_replace(ir, std::regex(R"(\s+captures\([^\)]*\))"), "");
-    if (capturesNormalized != ir)
-    {
-        ir = capturesNormalized;
-        changed = true;
-    }
-
-    const std::string inrangeNormalized =
-        std::regex_replace(ir, std::regex(R"(\s+inrange\([^\)]*\))"), "");
-    if (inrangeNormalized != ir)
-    {
-        ir = inrangeNormalized;
-        changed = true;
-    }
-
-    const std::string dbgPseudoNormalized =
-        std::regex_replace(ir,
-                           std::regex(R"(^\s*#dbg_[A-Za-z0-9_]+\([^\n]*\)\s*\n)",
-                                      std::regex::multiline),
-                           "");
-    if (dbgPseudoNormalized != ir)
-    {
-        ir = dbgPseudoNormalized;
-        changed = true;
-    }
-
+    changed |= stripAttributeCalls(ir, "captures");
+    changed |= stripAttributeCalls(ir, "inrange");
+    changed |= stripDbgPseudoLines(ir);
     return changed;
 }
 
