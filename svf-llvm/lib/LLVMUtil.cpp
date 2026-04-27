@@ -30,6 +30,7 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVFIR/ObjTypeInfo.h"
 #include <sstream>
+#include <regex>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/raw_ostream.h>
@@ -59,6 +60,34 @@ bool normalizeLLVM21TextIR(std::string& ir)
     bool changed = false;
     changed |= replaceAll(ir, "getelementptr inbounds nuw ", "getelementptr inbounds ");
     changed |= replaceAll(ir, ", inrange i32 0, i32 ", ", i32 0, i32 ");
+
+    const std::string capturesNormalized =
+        std::regex_replace(ir, std::regex(R"(\s+captures\([^\)]*\))"), "");
+    if (capturesNormalized != ir)
+    {
+        ir = capturesNormalized;
+        changed = true;
+    }
+
+    const std::string inrangeNormalized =
+        std::regex_replace(ir, std::regex(R"(\s+inrange\([^\)]*\))"), "");
+    if (inrangeNormalized != ir)
+    {
+        ir = inrangeNormalized;
+        changed = true;
+    }
+
+    const std::string dbgPseudoNormalized =
+        std::regex_replace(ir,
+                           std::regex(R"(^\s*#dbg_[A-Za-z0-9_]+\([^\n]*\)\s*\n)",
+                                      std::regex::multiline),
+                           "");
+    if (dbgPseudoNormalized != ir)
+    {
+        ir = dbgPseudoNormalized;
+        changed = true;
+    }
+
     return changed;
 }
 

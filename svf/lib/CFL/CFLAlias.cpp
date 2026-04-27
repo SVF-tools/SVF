@@ -48,7 +48,17 @@ void CFLAlias::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, Call
 
             assert(vtbl != nullptr);
             NodeID vtblId = vtbl->getId();
-            resolveCPPIndCalls(cs, getCFLPts(vtblId), newEdges);
+            const PointsTo& target = getCFLPts(vtblId);
+            if (target.empty() && chgraph->csHasVtblsBasedonCHA(cs))
+            {
+                VFunSet vfns;
+                chgraph->getVFnsFromVtbls(cs, chgraph->getCSVtblsBasedonCHA(cs), vfns);
+                connectVCallToVFns(cs, vfns, newEdges);
+            }
+            else
+            {
+                resolveCPPIndCalls(cs, target, newEdges);
+            }
         }
         else
             resolveIndCalls(iter->first,getCFLPts(iter->second),newEdges);

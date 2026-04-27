@@ -667,7 +667,24 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
         if(!prevPtrOperand && svfGepTy->isPointerTy()) prevPtrOperand = true;
         const Value* offsetVal = gi.getOperand();
         assert(gepTy != offsetVal->getType() && "iteration and operand have the same type?");
-        ap.addOffsetVarAndGepTypePair(getPAG()->getValVar(llvmModuleSet()->getValueNode(offsetVal)), svfGepTy);
+
+        const ArrayType* inferredPtrArrayTy = nullptr;
+        const SVFType* idxGepTy = svfGepTy;
+        if (svfGepTy->isPointerTy() && gepOp->getSourceElementType()->isSingleValueType())
+        {
+            const Type* baseObjType =
+                LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->inferObjType(gepOp->getPointerOperand());
+            if (const auto* arrTy = SVFUtil::dyn_cast<ArrayType>(baseObjType))
+            {
+                if (arrTy->getElementType()->isPointerTy())
+                {
+                    inferredPtrArrayTy = arrTy;
+                    idxGepTy = llvmModuleSet()->getSVFType(arrTy);
+                }
+            }
+        }
+
+        ap.addOffsetVarAndGepTypePair(getPAG()->getValVar(llvmModuleSet()->getValueNode(offsetVal)), idxGepTy);
 
         //The int value of the current index operand
         const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(offsetVal);
@@ -703,6 +720,15 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
         }
         else if (gepTy->isSingleValueType())
         {
+            if (inferredPtrArrayTy)
+            {
+                if (!op || (inferredPtrArrayTy->getArrayNumElements() <= (u32_t)LLVMUtil::getIntegerValue(op).first))
+                    continue;
+                APOffset idx = (u32_t)LLVMUtil::getIntegerValue(op).first;
+                u32_t offset = pag->getFlattenedElemIdx(llvmModuleSet()->getSVFType(inferredPtrArrayTy), idx);
+                ap.setFldIdx(ap.getConstantStructFldIdx() + offset);
+                continue;
+            }
             // If it's a non-constant offset access
             // If its point-to target is struct or array, it's likely an array accessing (%result = gep %struct.A* %a, i32 %non-const-index)
             // If its point-to target is single value (pointer arithmetic), then it's a variant gep (%result = gep i8* %p, i32 %non-const-index)

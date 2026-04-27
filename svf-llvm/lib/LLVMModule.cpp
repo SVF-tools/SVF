@@ -915,10 +915,12 @@ Function* LLVMModuleSet::cloneExtAPIFunctionIntoAppModule(
     {
         appModule = appFunToReplace->getParent();
     }
-    // Create a new function with the same signature as extFunToClone
+    // LLVM 21's CloneFunctionInto requires the destination function to be
+    // parentless or belong to the same module as the source while cloning.
+    // Build the clone detached, then attach it to the app module afterwards.
     Function* clonedFunction = Function::Create(extFunToClone->getFunctionType(),
                                Function::ExternalLinkage,
-                               extFunToClone->getName(), appModule);
+                               extFunToClone->getName());
     // Map the arguments of the new function to the arguments of extFunToClone
     llvm::ValueToValueMapTy valueMap;
     Function::arg_iterator destArg = clonedFunction->arg_begin();
@@ -993,7 +995,12 @@ Function* LLVMModuleSet::cloneExtAPIFunctionIntoAppModule(
         appFunToReplace->replaceAllUsesWith(clonedFunction);
         std::string oldFunctionName = appFunToReplace->getName().str();
         appFunToReplace->eraseFromParent();
+        appModule->getFunctionList().push_back(clonedFunction);
         clonedFunction->setName(oldFunctionName);
+    }
+    else
+    {
+        appModule->getFunctionList().push_back(clonedFunction);
     }
     return clonedFunction;
 }
