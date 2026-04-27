@@ -30,11 +30,39 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVFIR/ObjTypeInfo.h"
 #include <sstream>
+#include <llvm/IRReader/IRReader.h>
+#include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/raw_ostream.h>
 #include "SVF-LLVM/LLVMModule.h"
 
 
 using namespace SVF;
+
+namespace
+{
+
+bool replaceAll(std::string& text, const std::string& from, const std::string& to)
+{
+    bool changed = false;
+    std::string::size_type pos = 0;
+    while ((pos = text.find(from, pos)) != std::string::npos)
+    {
+        text.replace(pos, from.size(), to);
+        pos += to.size();
+        changed = true;
+    }
+    return changed;
+}
+
+bool normalizeLLVM21TextIR(std::string& ir)
+{
+    bool changed = false;
+    changed |= replaceAll(ir, "getelementptr inbounds nuw ", "getelementptr inbounds ");
+    changed |= replaceAll(ir, ", inrange i32 0, i32 ", ", i32 0, i32 ");
+    return changed;
+}
+
+}
 
 const Function* LLVMUtil::getProgFunction(const std::string& funName)
 {
@@ -317,7 +345,7 @@ bool LLVMUtil::isIRFile(const std::string &filename)
     llvm::SMDiagnostic err;
 
     // Parse the input LLVM IR file into a module
-    std::unique_ptr<llvm::Module> module = llvm::parseIRFile(filename, err, context);
+    std::unique_ptr<llvm::Module> module = LLVMUtil::parseIRFileCompat(filename, err, context);
 
     // Check if the parsing succeeded
     if (!module)
@@ -327,6 +355,32 @@ bool LLVMUtil::isIRFile(const std::string &filename)
     }
 
     return true; // It is an LLVM IR file
+}
+
+std::unique_ptr<Module> LLVMUtil::parseIRFileCompat(const std::string& filename,
+        SMDiagnostic& err, LLVMContext& context)
+{
+    if (std::unique_ptr<Module> module = llvm::parseIRFile(filename, err, context))
+        return module;
+
+    auto fileOrErr = llvm::MemoryBuffer::getFile(filename);
+    if (!fileOrErr)
+        return nullptr;
+
+    std::string normalizedIR(fileOrErr.get()->getBuffer());
+    if (!normalizeLLVM21TextIR(normalizedIR))
+        return nullptr;
+
+    SMDiagnostic retryErr;
+    std::unique_ptr<Module> module = llvm::parseIR(
+            llvm::MemoryBufferRef(normalizedIR, filename), retryErr, context);
+    if (!module)
+    {
+        err = retryErr;
+        return nullptr;
+    }
+
+    return module;
 }
 
 

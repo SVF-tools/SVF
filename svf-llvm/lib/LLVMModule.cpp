@@ -382,7 +382,7 @@ void LLVMModuleSet::loadOwnedModules(const std::vector<std::string> &moduleNameV
         }
 
         SMDiagnostic Err;
-        std::unique_ptr<Module> mod = parseIRFile(moduleName, Err, *owned_ctx);
+        std::unique_ptr<Module> mod = LLVMUtil::parseIRFileCompat(moduleName, Err, *owned_ctx);
         if (mod == nullptr)
         {
             SVFUtil::errs() << "load module: " << moduleName << "failed!!\n\n";
@@ -433,7 +433,7 @@ void LLVMModuleSet::loadExtAPIModules()
             abort();
         }
         SMDiagnostic Err;
-        std::unique_ptr<Module> mod = parseIRFile(extModuleName, Err, getContext());
+        std::unique_ptr<Module> mod = LLVMUtil::parseIRFileCompat(extModuleName, Err, getContext());
         if (mod == nullptr)
         {
             SVFUtil::errs() << "load external module: " << extModuleName << "failed!!\n\n";
