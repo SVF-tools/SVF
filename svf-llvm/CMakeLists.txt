@@ -158,6 +158,16 @@ target_sources(
   PRIVATE ${SVF_LLVM_SOURCES}
 )
 
+# GCC can report false-positive -Wmaybe-uninitialized warnings from LLVM's
+# ValueMap/DenseMap internals when compiling this translation unit with heavy
+# inlining. Keep the suppression scoped to the affected file.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set_source_files_properties(
+    ${CMAKE_CURRENT_LIST_DIR}/lib/LLVMModule.cpp
+    PROPERTIES COMPILE_OPTIONS "-Wno-maybe-uninitialized"
+  )
+endif()
+
 # Only expose the headers in the source tree to in-tree users of SVF
 target_include_directories(SvfLLVM PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)
 
