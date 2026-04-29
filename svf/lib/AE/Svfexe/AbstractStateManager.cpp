@@ -217,49 +217,20 @@ const AbstractValue& AbstractStateManager::getAbstractValue(const ObjVar* var, c
                         base = &gState.load(addr);
                 }
             }
-            // Fallback 2: ICFG reaching-def walk.  MSSA's def chain is built
-            // from Andersen's pts-to; when Andersen disagrees with AE's
-            // runtime-computed pts-to on GEP'd objs, MSSA never connects
-            // the store's ICFG node to a downstream read of the AE obj-id,
-            // and getDefSiteOfObjVar returns the wrong anchor (e.g. a stale
-            // init node) while the true reaching store lives elsewhere.
+            // GepObjVar fallback: consult the flow-insensitive global
+            // gepOverlay.  MSSA does not track GepObjVar ids, so the
+            // per-node trace + def-site routing above cannot reach
+            // AE-refined GEP field writes.  storeValue folds every
+            // GepObjVar write into gepOverlay; reader finds them here.
             //
-            // Walk in-edges back from `node` until we find a predecessor
-            // whose trace has this obj populated.  Multiple reaching
-            // writers from different branches join into a single upstream
-            // value. Stops traversal at each branch as soon as a value is
-            // found, so joins respect per-path latest-writer semantics.
-            // Materialises at hereState so repeated reads are O(1).
-            if (!base)
+            // Trade-off vs the previous ICFG-BFS fallback: flow-
+            // insensitive (no path/strong-update preservation).  See
+            // gepOverlay member doc for details.
+            if (!base && SVFUtil::isa<GepObjVar>(var))
             {
-                AbstractValue upstream;
-                bool found = false;
-                Set<const ICFGNode*> visited;
-                std::deque<const ICFGNode*> work;
-                for (auto e : node->getInEdges())
-                    work.push_back(e->getSrcNode());
-                while (!work.empty())
-                {
-                    const ICFGNode* p = work.front();
-                    work.pop_front();
-                    if (!visited.insert(p).second) continue;
-                    auto tit = abstractTrace.find(p);
-                    if (tit != abstractTrace.end()
-                            && tit->second.getLocToVal().count(var->getId()) != 0)
-                    {
-                        const AbstractValue& v = tit->second.load(addr);
-                        if (!found) { upstream = v; found = true; }
-                        else upstream.join_with(v);
-                        continue; // do not traverse past a latest-writer
-                    }
-                    for (auto e : p->getInEdges())
-                        work.push_back(e->getSrcNode());
-                }
-                if (found)
-                {
-                    hereState.store(addr, upstream);
-                    base = &hereState.load(addr);
-                }
+                auto git = gepOverlay.find(var->getId());
+                if (git != gepOverlay.end())
+                    base = &git->second;
             }
         }
 
@@ -631,6 +602,24 @@ void AbstractStateManager::storeValue(const ValVar* pointer, const AbstractValue
     // Write through every addr AE thinks the pointer targets.
     for (auto addr : ptrVal.getAddrs())
         as.store(addr, val);
+    // Sparse: also fold GepObjVar writes into the global gepOverlay.
+    // MSSA cannot route reads to GepObjVar def-sites, so the overlay is
+    // the only place reads can find these values.  Flow-insensitive:
+    // join with any prior value.
+    if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse)
+    {
+        for (auto addr : ptrVal.getAddrs())
+        {
+            NodeID id = as.getIDFromAddr(addr);
+            if (!svfir->hasGNode(id)) continue;
+            if (!SVFUtil::isa<GepObjVar>(svfir->getGNode(id))) continue;
+            auto it = gepOverlay.find(id);
+            if (it == gepOverlay.end())
+                gepOverlay[id] = val;
+            else
+                it->second.join_with(val);
+        }
+    }
     // Full-sparse: also write to every obj in Andersen's pts-to set.
     // Rationale: SVFG / MSSA builds its reaching-def chain from Andersen's
     // static pts-to, not from AE's runtime-computed GEP addresses.  When

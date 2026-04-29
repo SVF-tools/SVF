@@ -371,7 +371,12 @@ std::string AbsExtAPI::strRead(const ValVar* rhs, const ICFGNode* node)
         AbstractValue val;
         for (const auto &addr: expr0.getAddrs())
         {
-            val.join_with(as.load(addr));
+            NodeID objId = as.getIDFromAddr(addr);
+            const SVFVar* svfVar = PAG::getPAG()->getGNode(objId);
+            if (const ObjVar* objVar = SVFUtil::dyn_cast<ObjVar>(svfVar))
+                val.join_with(mgr->getAbstractValue(objVar, node));
+            else
+                val.join_with(as.load(addr));
         }
         if (!val.getInterval().is_numeral())
         {
@@ -522,7 +527,12 @@ IntervalValue AbsExtAPI::getStrlen(const ValVar *strValue, const ICFGNode* node)
             AbstractValue val;
             for (const auto &addr: expr0.getAddrs())
             {
-                val.join_with(as.load(addr));
+                NodeID objId = as.getIDFromAddr(addr);
+                const SVFVar* svfVar = PAG::getPAG()->getGNode(objId);
+                if (const ObjVar* objVar = SVFUtil::dyn_cast<ObjVar>(svfVar))
+                    val.join_with(mgr->getAbstractValue(objVar, node));
+                else
+                    val.join_with(as.load(addr));
             }
             if (val.getInterval().is_numeral() &&
                     (char) val.getInterval().getIntNumeral() == '\0')
@@ -666,7 +676,15 @@ void AbsExtAPI::handleMemset(const ValVar *dst,
         for (const auto &addr: lhs_gep.getAddrs())
         {
             u32_t objId = as.getIDFromAddr(addr);
-            if (as.inAddrToValTable(objId))
+            const SVFVar* svfVar = PAG::getPAG()->getGNode(objId);
+            const ObjVar* objVar = SVFUtil::dyn_cast<ObjVar>(svfVar);
+            if (objVar)
+            {
+                AbstractValue tmp = mgr->getAbstractValue(objVar, node);
+                tmp.join_with(elem);
+                as.store(addr, tmp);
+            }
+            else if (as.inAddrToValTable(objId))
             {
                 AbstractValue tmp = as.load(addr);
                 tmp.join_with(elem);

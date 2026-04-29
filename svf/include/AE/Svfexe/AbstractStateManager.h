@@ -214,6 +214,20 @@ private:
     AndersenWaveDiff* pta;
     Map<const ICFGNode*, AbstractState> abstractTrace;
     Map<const ICFGNode*, Map<NodeID, AbstractValue>> pathRefinedAt;
+
+    /// Flow-insensitive overlay for GepObjVar values (Phase D).
+    /// MSSA tracks neither GepObjVar def chains nor LDMU/CHI annotations
+    /// on field-precise ids, so the per-node trace + def-site routing
+    /// cannot reach AE-refined GEP fields.  This single global map
+    /// (keyed by GepObjVar's NodeID — already encodes (base, offset)
+    /// uniquely via SVFIR::getGepObjVar) holds the join of every write
+    /// to each AE-precise GEP field across the program.  All Sparse
+    /// reads for a GepObjVar consult this overlay first.
+    ///
+    /// Trade-off: flow-insensitive — `a[3]=7; a[3]=11` joins to [7,11]
+    /// instead of strong-updating to 11.  Acceptable when measured on
+    /// real programs against BFS / Dense.
+    Map<NodeID, AbstractValue> gepOverlay;
 };
 
 } // namespace SVF
