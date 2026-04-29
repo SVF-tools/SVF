@@ -285,7 +285,7 @@ void LLVMModuleSet::prePassSchedule()
             PB.registerLoopAnalyses(LAM);
             PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
             llvm::FunctionPassManager FPM;
-            // FPM.addPass(llvm::UnifyFunctionExitNodesPass());
+            FPM.addPass(llvm::UnifyFunctionExitNodesPass());
             FPM.run(fun, FAM);
 #endif
         }
@@ -518,11 +518,11 @@ void LLVMModuleSet::addSVFMain()
         // Collect ctor and dtor functions
         for (const GlobalVariable& global : mod.globals())
         {
-            if (global.getName().equals(SVF_GLOBAL_CTORS) && global.hasInitializer())
+            if (global.getName() == SVF_GLOBAL_CTORS && global.hasInitializer())
             {
                 ctor_funcs = getLLVMGlobalFunctions(&global);
             }
-            else if (global.getName().equals(SVF_GLOBAL_DTORS) && global.hasInitializer())
+            else if (global.getName() == SVF_GLOBAL_DTORS && global.hasInitializer())
             {
                 dtor_funcs = getLLVMGlobalFunctions(&global);
             }
@@ -533,9 +533,9 @@ void LLVMModuleSet::addSVFMain()
         {
             auto funName = func.getName();
 
-            assert(!funName.equals(SVF_MAIN_FUNC_NAME) && SVF_MAIN_FUNC_NAME " already defined");
+            assert(!(funName == SVF_MAIN_FUNC_NAME) && SVF_MAIN_FUNC_NAME " already defined");
 
-            if (funName.equals("main"))
+            if (funName == "main")
             {
                 orgMain = &func;
                 mainMod = &mod;
@@ -737,8 +737,9 @@ void LLVMModuleSet::buildFunToFunMap()
         {
             appModule = appFunToReplace->getParent();
         }
-        // Create a new function with the same signature as extFunToClone
-        Function *clonedFunction = Function::Create(extFunToClone->getFunctionType(), Function::ExternalLinkage, extFunToClone->getName(), appModule);
+        Function* clonedFunction = Function::Create(extFunToClone->getFunctionType(),
+                                   Function::ExternalLinkage,
+                                   extFunToClone->getName());
         // Map the arguments of the new function to the arguments of extFunToClone
         llvm::ValueToValueMapTy valueMap;
         Function::arg_iterator destArg = clonedFunction->arg_begin();
@@ -821,7 +822,12 @@ void LLVMModuleSet::buildFunToFunMap()
             std::string oldFunctionName = appFunToReplace->getName().str();
             // Delete the old function
             appFunToReplace->eraseFromParent();
+            appModule->getFunctionList().push_back(clonedFunction);
             clonedFunction->setName(oldFunctionName);
+        }
+        else
+        {
+            appModule->getFunctionList().push_back(clonedFunction);
         }
         return clonedFunction;
     };

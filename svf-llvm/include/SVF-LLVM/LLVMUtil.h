@@ -314,7 +314,11 @@ inline static DataLayout* getDataLayout(Module* mod)
 {
     static DataLayout *dl = nullptr;
     if (dl == nullptr)
+#if LLVM_VERSION_MAJOR >= 19
+        dl = new DataLayout(mod->getDataLayout());
+#else
         dl = new DataLayout(mod);
+#endif
     return dl;
 }
 
