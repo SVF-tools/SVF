@@ -290,6 +290,8 @@ protected:
 
     NodeID getGepValVar(const Value* val, const AccessPath& ap, const SVFType* elementType);
 
+    NodeID getDirectAccessFieldZeroValVar(const Value* ptr, const Type* accessTy);
+
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 
     inline void addBlackHoleAddrEdge(NodeID node)
