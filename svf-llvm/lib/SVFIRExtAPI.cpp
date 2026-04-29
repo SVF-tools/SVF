@@ -38,6 +38,89 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace LLVMUtil;
 
+namespace
+{
+
+struct MemcpyField
+{
+    APOffset byteOffset;
+    AccessPath accessPath;
+    const SVFType* elementType;
+};
+
+void collectMemcpyFields(
+    const Type* llvmType,
+    const SVFType* svfType,
+    const DataLayout& dl,
+    IRGraph* pag,
+    std::vector<MemcpyField>& fields,
+    APOffset baseByteOffset = 0,
+    APOffset baseFldIdx = 0)
+{
+    if (llvmType == nullptr || svfType == nullptr)
+        return;
+
+    if (svfType->isPointerTy())
+    {
+        fields.push_back({baseByteOffset, AccessPath(baseFldIdx), svfType});
+        return;
+    }
+
+    if (const auto* structType = SVFUtil::dyn_cast<StructType>(llvmType))
+    {
+        const StructLayout* layout = dl.getStructLayout(const_cast<StructType*>(structType));
+        for (u32_t i = 0; i < structType->getNumElements(); ++i)
+        {
+            const Type* elemLLVMType = structType->getElementType(i);
+            const SVFType* elemSVFType = pag->getOriginalElemType(svfType, i);
+            if (elemSVFType == nullptr)
+                return;
+            APOffset elemByteOffset = baseByteOffset + static_cast<APOffset>(layout->getElementOffset(i));
+            APOffset elemFldIdx = baseFldIdx + pag->getFlattenedElemIdx(svfType, i);
+            collectMemcpyFields(elemLLVMType, elemSVFType, dl, pag, fields, elemByteOffset, elemFldIdx);
+        }
+        return;
+    }
+
+    if (const auto* arrayType = SVFUtil::dyn_cast<ArrayType>(llvmType))
+    {
+        const Type* elemLLVMType = arrayType->getElementType();
+        const SVFType* elemSVFType = pag->getOriginalElemType(svfType, 0);
+        if (elemSVFType == nullptr)
+            return;
+        const APOffset elemByteSize = static_cast<APOffset>(dl.getTypeAllocSize(const_cast<Type*>(elemLLVMType)));
+        for (u32_t i = 0; i < arrayType->getNumElements(); ++i)
+        {
+            APOffset elemByteOffset = baseByteOffset + i * elemByteSize;
+            APOffset elemFldIdx = baseFldIdx + pag->getFlattenedElemIdx(svfType, i);
+            collectMemcpyFields(elemLLVMType, elemSVFType, dl, pag, fields, elemByteOffset, elemFldIdx);
+        }
+    }
+}
+
+std::vector<MemcpyField> getMemcpyFields(const Value* value, const Type* llvmType, const SVFType* svfType)
+{
+    std::vector<MemcpyField> fields;
+    auto* mset = LLVMModuleSet::getLLVMModuleSet();
+    auto* pag = PAG::getPAG();
+    const DataLayout& dl = mset->getMainLLVMModule()->getDataLayout();
+    collectMemcpyFields(llvmType, svfType, dl, pag, fields);
+    return fields;
+}
+
+const Type* getMemcpyLayoutType(const Value* baseValue, const Type* fallbackType)
+{
+    if (const auto* allocaInst = llvm::dyn_cast_or_null<AllocaInst>(baseValue))
+        return allocaInst->getAllocatedType();
+
+    if (const auto* global = llvm::dyn_cast_or_null<GlobalVariable>(baseValue))
+        return global->getValueType();
+
+    return fallbackType;
+}
+
+}
+
 /*!
  * Find the base type and the max possible offset of an object pointed to by (V).
  */
@@ -109,6 +192,58 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
         return;
     }
 
+    const Value* dstBase = getBaseValueForExtArg(D);
+    const Value* srcBase = getBaseValueForExtArg(S);
+    Value* dstFieldBase = LLVMUtil::isObject(dstBase) ? const_cast<Value*>(dstBase) : D;
+    Value* srcFieldBase = LLVMUtil::isObject(srcBase) ? const_cast<Value*>(srcBase) : S;
+    const Type* dstLayoutType = getMemcpyLayoutType(dstBase, dtype);
+    const Type* srcLayoutType = getMemcpyLayoutType(srcBase, stype);
+    const bool hasRemappedGlobalBase =
+        (dstFieldBase != D && SVFUtil::isa<GlobalVariable>(dstFieldBase)) ||
+        (srcFieldBase != S && SVFUtil::isa<GlobalVariable>(srcFieldBase));
+    const bool useByteLayoutMemcpy =
+        hasRemappedGlobalBase || (dstLayoutType != dtype) || (srcLayoutType != stype);
+    if (useByteLayoutMemcpy)
+    {
+        const SVFType* dstSVFType = llvmModuleSet()->getSVFType(dstLayoutType);
+        const SVFType* srcSVFType = llvmModuleSet()->getSVFType(srcLayoutType);
+        std::vector<MemcpyField> dstMemcpyFields = getMemcpyFields(D, dstLayoutType, dstSVFType);
+        std::vector<MemcpyField> srcMemcpyFields = getMemcpyFields(S, srcLayoutType, srcSVFType);
+        if (dstMemcpyFields.empty() || srcMemcpyFields.empty())
+            goto fallback_memcpy_copy;
+
+        std::unordered_map<APOffset, MemcpyField> srcFieldsByByteOffset;
+        for (const auto& field : srcMemcpyFields)
+            srcFieldsByByteOffset.emplace(field.byteOffset, field);
+
+        const DataLayout& dl = llvmModuleSet()->getMainLLVMModule()->getDataLayout();
+        APOffset copyBytes = std::min<APOffset>(
+            static_cast<APOffset>(dl.getTypeAllocSize(const_cast<Type*>(dstLayoutType))),
+            static_cast<APOffset>(dl.getTypeAllocSize(const_cast<Type*>(srcLayoutType))));
+        if (szValue && SVFUtil::isa<ConstantInt>(szValue))
+        {
+            auto szIntVal = LLVMUtil::getIntegerValue(SVFUtil::cast<ConstantInt>(szValue));
+            copyBytes = std::min(copyBytes, static_cast<APOffset>(szIntVal.first));
+        }
+
+        for (const auto& dstField : dstMemcpyFields)
+        {
+            if (dstField.byteOffset >= copyBytes)
+                continue;
+            auto it = srcFieldsByByteOffset.find(dstField.byteOffset);
+            if (it == srcFieldsByByteOffset.end())
+                continue;
+
+            NodeID dField = getGepValVar(dstFieldBase, dstField.accessPath, dstField.elementType);
+            NodeID sField = getGepValVar(srcFieldBase, it->second.accessPath, it->second.elementType);
+            NodeID dummy = pag->addDummyValNode();
+            addLoadEdge(sField, dummy);
+            addStoreEdge(dummy, dField);
+        }
+        return;
+    }
+
+fallback_memcpy_copy:
     //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
     for (u32_t index = 0; index < sz; index++)
     {
