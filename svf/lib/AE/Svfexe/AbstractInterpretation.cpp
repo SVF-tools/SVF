@@ -27,7 +27,8 @@
 //
 
 #include "AE/Svfexe/AbstractInterpretation.h"
-#include "AE/Svfexe/SparseAbstractInterpretation.h"
+#include "AE/Svfexe/SemiSparseAbstractInterpretation.h"
+#include "AE/Svfexe/FullSparseAbstractInterpretation.h"
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
@@ -83,11 +84,19 @@ AbstractInterpretation& AbstractInterpretation::getAEInstance()
     static std::unique_ptr<AbstractInterpretation> instance = []()
         -> std::unique_ptr<AbstractInterpretation>
     {
-        if (Options::AESparsity() == AESparsity::SemiSparse)
+        switch (Options::AESparsity())
+        {
+        case AESparsity::SemiSparse:
             return std::unique_ptr<AbstractInterpretation>(
-                new SparseAbstractInterpretation());
-        return std::unique_ptr<AbstractInterpretation>(
-            new AbstractInterpretation());
+                new SemiSparseAbstractInterpretation());
+        case AESparsity::Sparse:
+            return std::unique_ptr<AbstractInterpretation>(
+                new FullSparseAbstractInterpretation());
+        case AESparsity::Dense:
+        default:
+            return std::unique_ptr<AbstractInterpretation>(
+                new AbstractInterpretation());
+        }
     }();
     return *instance;
 }
