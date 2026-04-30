@@ -54,107 +54,12 @@ class AndersenWaveDiff;
 
 template<typename T> class FILOWorkList;
 
-/// Manages abstract states across ICFG nodes and provides a unified API
-/// for reading/writing abstract values.  This base implements the dense
-/// lookup strategy.  The semi-sparse and full-sparse variants live in
-/// `SparseAbstractInterpretation.h` and override the methods marked
-/// virtual below.
+/// AbstractInterpretation is same as Abstract Execution.
 ///
-/// Hierarchy:
-///   AbstractStateManager                   — dense  (this file)
-///     └── SemiSparseAbstractStateManager    — semi-sparse  (SparseAI file)
-///           └── FullSparseAbstractStateManager — full-sparse (SparseAI file)
-///
-/// Each AbstractInterpretation subclass picks the matching manager via
-/// the virtual factory `AbstractInterpretation::createStateMgr`.
-class AbstractStateManager
-{
-public:
-    AbstractStateManager(SVFIR* svfir, AndersenWaveDiff* pta);
-    virtual ~AbstractStateManager();
-
-    // ---- Abstract Value Access ----------------------------------------
-
-    /// Read a top-level variable's abstract value.
-    /// Dense: reads from the current node's state, falling back to the
-    /// def-site for early-branch feasibility.  Sparse subclasses pull
-    /// from the def-site first.
-    virtual const AbstractValue& getAbstractValue(const ValVar* var, const ICFGNode* node);
-    const AbstractValue& getAbstractValue(const ObjVar* var, const ICFGNode* node);
-    const AbstractValue& getAbstractValue(const SVFVar* var, const ICFGNode* node);
-
-    /// Side-effect-free existence check, mirroring getAbstractValue's
-    /// lookup chain but stopping short of the top fallback.
-    virtual bool hasAbstractValue(const ValVar* var, const ICFGNode* node) const;
-    bool hasAbstractValue(const ObjVar* var, const ICFGNode* node) const;
-    bool hasAbstractValue(const SVFVar* var, const ICFGNode* node) const;
-
-    /// Write a variable's abstract value.  Sparse subclasses re-route
-    /// ValVar writes to the def-site.
-    virtual void updateAbstractValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node);
-    void updateAbstractValue(const ObjVar* var, const AbstractValue& val, const ICFGNode* node);
-    void updateAbstractValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node);
-
-    // ---- State Access -------------------------------------------------
-
-    AbstractState& getAbstractState(const ICFGNode* node);
-
-    /// Replace the state at `node`.  Sparse subclasses replace only the
-    /// ObjVar map (ValVars live at def-sites).
-    virtual void updateAbstractState(const ICFGNode* node, const AbstractState& state);
-
-    /// Join `src` into `dst` with sparsity-aware semantics.  Dense merges
-    /// everything; semi-sparse skips ValVars (they live at def-sites and
-    /// don't flow through state merges).
-    virtual void joinStates(AbstractState& dst, const AbstractState& src);
-
-    bool hasAbstractState(const ICFGNode* node);
-
-    void getAbstractState(const Set<const ValVar*>& vars, AbstractState& result, const ICFGNode* node);
-    void getAbstractState(const Set<const ObjVar*>& vars, AbstractState& result, const ICFGNode* node);
-    void getAbstractState(const Set<const SVFVar*>& vars, AbstractState& result, const ICFGNode* node);
-
-    // ---- GEP Helpers --------------------------------------------------
-
-    IntervalValue getGepElementIndex(const GepStmt* gep);
-    IntervalValue getGepByteOffset(const GepStmt* gep);
-    AddressValue getGepObjAddrs(const ValVar* pointer, IntervalValue offset);
-
-    // ---- Load / Store through pointer ---------------------------------
-
-    AbstractValue loadValue(const ValVar* pointer, const ICFGNode* node);
-    void storeValue(const ValVar* pointer, const AbstractValue& val, const ICFGNode* node);
-
-    // ---- Type / Size Helpers ------------------------------------------
-
-    const SVFType* getPointeeElement(const ObjVar* var, const ICFGNode* node);
-    u32_t getAllocaInstByteSize(const AddrStmt* addr);
-
-    // ---- Direct Trace Access ------------------------------------------
-
-    Map<const ICFGNode*, AbstractState>& getTrace()
-    {
-        return abstractTrace;
-    }
-    AbstractState& operator[](const ICFGNode* node)
-    {
-        return abstractTrace[node];
-    }
-
-    // ---- Def/Use site queries (sparsity-aware) ------------------------
-
-    virtual Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
-    virtual Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const;
-    virtual const ICFGNode* getDefSiteOfValVar(const ValVar* var) const;
-    virtual const ICFGNode* getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
-
-protected:
-    SVFIR* svfir;
-    SVFG* svfg;
-    Map<const ICFGNode*, AbstractState> abstractTrace;
-};
-
-/// AbstractInterpretation is same as Abstract Execution
+/// Owns the per-node abstract trace and exposes the read/write API
+/// directly (no separate state-manager indirection).  Sparse modes are
+/// implemented as subclasses that override the virtual hooks below
+/// (cycle helpers, ValVar accessors, joinStates, def/use queries).
 class AbstractInterpretation
 {
     friend class AEStat;
@@ -223,46 +128,73 @@ public:
         return svfir->getSVFVar(varId);
     }
 
-    /// Get the state manager instance.
-    AbstractStateManager* getStateMgr()
+    // ---- Abstract Value Access ----------------------------------------
+
+    /// Read a top-level variable's abstract value.  Dense base does a
+    /// direct trace lookup; sparse subclasses override with their own
+    /// resolution chain (def-site walk, call-result fallback, etc.).
+    virtual const AbstractValue& getAbstractValue(const ValVar* var, const ICFGNode* node);
+    const AbstractValue& getAbstractValue(const ObjVar* var, const ICFGNode* node);
+    const AbstractValue& getAbstractValue(const SVFVar* var, const ICFGNode* node);
+
+    /// Side-effect-free existence check.
+    virtual bool hasAbstractValue(const ValVar* var, const ICFGNode* node) const;
+    bool hasAbstractValue(const ObjVar* var, const ICFGNode* node) const;
+    bool hasAbstractValue(const SVFVar* var, const ICFGNode* node) const;
+
+    /// Write a variable's abstract value.  Sparse subclasses re-route
+    /// ValVar writes to the def-site.
+    virtual void updateAbstractValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node);
+    void updateAbstractValue(const ObjVar* var, const AbstractValue& val, const ICFGNode* node);
+    void updateAbstractValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node);
+
+    // ---- State Access -------------------------------------------------
+
+    AbstractState& getAbstractState(const ICFGNode* node);
+
+    /// Replace the state at `node`.  Sparse subclasses replace only the
+    /// ObjVar map (ValVars live at def-sites).
+    virtual void updateAbstractState(const ICFGNode* node, const AbstractState& state);
+
+    /// Join `src` into `dst` with sparsity-aware semantics.  Dense merges
+    /// everything; semi-sparse skips ValVars.
+    virtual void joinStates(AbstractState& dst, const AbstractState& src);
+
+    bool hasAbstractState(const ICFGNode* node);
+
+    void getAbstractState(const Set<const ValVar*>& vars, AbstractState& result, const ICFGNode* node);
+    void getAbstractState(const Set<const ObjVar*>& vars, AbstractState& result, const ICFGNode* node);
+    void getAbstractState(const Set<const SVFVar*>& vars, AbstractState& result, const ICFGNode* node);
+
+    // ---- GEP / Load-Store / Type Helpers ------------------------------
+
+    IntervalValue getGepElementIndex(const GepStmt* gep);
+    IntervalValue getGepByteOffset(const GepStmt* gep);
+    AddressValue getGepObjAddrs(const ValVar* pointer, IntervalValue offset);
+
+    AbstractValue loadValue(const ValVar* pointer, const ICFGNode* node);
+    void storeValue(const ValVar* pointer, const AbstractValue& val, const ICFGNode* node);
+
+    const SVFType* getPointeeElement(const ObjVar* var, const ICFGNode* node);
+    u32_t getAllocaInstByteSize(const AddrStmt* addr);
+
+    // ---- Direct Trace Access ------------------------------------------
+
+    Map<const ICFGNode*, AbstractState>& getTrace()
     {
-        return svfStateMgr;
+        return abstractTrace;
+    }
+    AbstractState& operator[](const ICFGNode* node)
+    {
+        return abstractTrace[node];
     }
 
-    // ---------------------------------------------------------------
-    //  Convenience wrappers around AbstractStateManager
-    // ---------------------------------------------------------------
-    /// Read-only access to a node's AbstractState. Mutations must go through
-    /// updateAbsState (to replace) or updateAbsValue (to update one variable).
-    inline const AbstractState& getAbsState(const ICFGNode* node) const
-    {
-        return svfStateMgr->getAbstractState(node);
-    }
+    // ---- Def/Use site queries (sparsity-aware) ------------------------
 
-    inline bool hasAbsState(const ICFGNode* node)
-    {
-        return svfStateMgr->hasAbstractState(node);
-    }
-
-    inline void updateAbsState(const ICFGNode* node, const AbstractState& state)
-    {
-        svfStateMgr->updateAbstractState(node, state);
-    }
-
-    inline bool hasAbsValue(const SVFVar* var, const ICFGNode* node)
-    {
-        return svfStateMgr->hasAbstractValue(var, node);
-    }
-
-    inline const AbstractValue& getAbsValue(const SVFVar* var, const ICFGNode* node)
-    {
-        return svfStateMgr->getAbstractValue(var, node);
-    }
-
-    inline void updateAbsValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node)
-    {
-        svfStateMgr->updateAbstractValue(var, val, node);
-    }
+    virtual Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
+    virtual Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const;
+    virtual const ICFGNode* getDefSiteOfValVar(const ValVar* var) const;
+    virtual const ICFGNode* getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
 
     /// Propagate an ObjVar's abstract value from defSite to all its use-sites.
     void propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite);
@@ -272,17 +204,19 @@ protected:
     /// `SparseAbstractInterpretation` reaches this via its own ctor.
     AbstractInterpretation();
 
-    /// Allocate the AbstractStateManager that matches this analysis flavour.
-    /// Dense base returns the dense manager; sparse subclasses override to
-    /// return their semi-sparse / full-sparse managers.
-    virtual AbstractStateManager* createStateMgr(SVFIR* svfir, AndersenWaveDiff* pta);
-
     /// Whether the per-cycle ValVar precompute (PreAnalysis::initCycleValVars)
     /// is needed for this flavour.  Only semi-sparse cycle helpers consume
     /// it; dense (and full-sparse, until ObjVar handling lands) skip the work.
     virtual bool needsCycleValVars() const
     {
         return false;
+    }
+
+    /// Hook called from runOnModule after preAnalysis (and PTA) are
+    /// available, before analyse() runs.  Sparse subclasses can build
+    /// auxiliary graphs (e.g. the SVFG for full-sparse) here.
+    virtual void initAuxState(AndersenWaveDiff*)
+    {
     }
 
     // ---- Cycle helpers overridden by SparseAbstractInterpretation ----
@@ -394,9 +328,10 @@ private:
 
 protected:
     /// Data and helpers reachable from SparseAbstractInterpretation.
-    SVFIR* svfir;
+    SVFIR* svfir{nullptr};
+    SVFG* svfg{nullptr};                            ///< populated only by FullSparseAbstractInterpretation
     PreAnalysis* preAnalysis{nullptr};
-    AbstractStateManager* svfStateMgr{nullptr}; // state management (owns abstractTrace)
+    Map<const ICFGNode*, AbstractState> abstractTrace; ///< per-node trace; owned here
 
     bool shouldApplyNarrowing(const FunObjVar* fun);
 };
