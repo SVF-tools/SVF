@@ -47,6 +47,20 @@ void SemiSparseAbstractStateManager::updateAbstractState(
     abstractTrace[node].updateAddrStateOnly(state);
 }
 
+void SemiSparseAbstractStateManager::joinStates(
+    AbstractState& dst, const AbstractState& src)
+{
+    // ValVars live at def-sites in semi-sparse mode; they don't flow
+    // through state merges.  Snapshot dst's ValVar map, perform the full
+    // join, then restore the snapshot — leaving only ObjVars and freed
+    // addrs merged.
+    auto saved = dst.getVarToVal();
+    dst.joinWith(src);
+    dst.clearValVars();
+    for (const auto& [id, val] : saved)
+        dst[id] = val;
+}
+
 const AbstractValue& SemiSparseAbstractStateManager::getAbstractValue(
     const ValVar* var, const ICFGNode* node)
 {

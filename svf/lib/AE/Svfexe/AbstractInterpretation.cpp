@@ -137,6 +137,11 @@ void AbstractStateManager::updateAbstractState(const ICFGNode* node, const Abstr
     abstractTrace[node] = state;
 }
 
+void AbstractStateManager::joinStates(AbstractState& dst, const AbstractState& src)
+{
+    dst.joinWith(src);
+}
+
 bool AbstractStateManager::hasAbstractState(const ICFGNode* node)
 {
     return abstractTrace.count(node) != 0;
@@ -681,7 +686,8 @@ void AbstractInterpretation::handleGlobalNode()
 /// Pull-based state merge: for each predecessor that has an abstract state,
 /// copy its state, apply branch refinement for conditional IntraCFGEdges,
 /// and join all feasible states into getAbsState(node).
-/// The join semantics are sparsity-aware (see AbstractState::joinWith).
+/// The join is dispatched through the manager so semi-sparse can skip
+/// ValVar merging.
 /// Returns true if at least one predecessor contributed state.
 bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
 {
@@ -702,19 +708,19 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                 AbstractState predState = getAbsState(pred);
                 if (isBranchFeasible(intraCfgEdge, predState))
                 {
-                    merged.joinWith(predState);
+                    svfStateMgr->joinStates(merged, predState);
                     hasFeasiblePred = true;
                 }
             }
             else
             {
-                merged.joinWith(getAbsState(pred));
+                svfStateMgr->joinStates(merged, getAbsState(pred));
                 hasFeasiblePred = true;
             }
         }
         else if (SVFUtil::isa<CallCFGEdge>(edge))
         {
-            merged.joinWith(getAbsState(pred));
+            svfStateMgr->joinStates(merged, getAbsState(pred));
             hasFeasiblePred = true;
         }
         else if (SVFUtil::isa<RetCFGEdge>(edge))
@@ -722,7 +728,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
             switch (Options::HandleRecur())
             {
             case TOP:
-                merged.joinWith(getAbsState(pred));
+                svfStateMgr->joinStates(merged, getAbsState(pred));
                 hasFeasiblePred = true;
                 break;
             case WIDEN_ONLY:
@@ -732,7 +738,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                 const CallICFGNode* callSite = returnSite->getCallICFGNode();
                 if (hasAbsState(callSite))
                 {
-                    merged.joinWith(getAbsState(pred));
+                    svfStateMgr->joinStates(merged, getAbsState(pred));
                     hasFeasiblePred = true;
                 }
                 break;

@@ -87,6 +87,8 @@ public:
     using AbstractStateManager::updateAbstractValue;
 
     void updateAbstractState(const ICFGNode* node, const AbstractState& state) override;
+
+    void joinStates(AbstractState& dst, const AbstractState& src) override;
 };
 
 /// AbstractStateManager for full-sparse mode.

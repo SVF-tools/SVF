@@ -103,6 +103,11 @@ public:
     /// ObjVar map (ValVars live at def-sites).
     virtual void updateAbstractState(const ICFGNode* node, const AbstractState& state);
 
+    /// Join `src` into `dst` with sparsity-aware semantics.  Dense merges
+    /// everything; semi-sparse skips ValVars (they live at def-sites and
+    /// don't flow through state merges).
+    virtual void joinStates(AbstractState& dst, const AbstractState& src);
+
     bool hasAbstractState(const ICFGNode* node);
 
     void getAbstractState(const Set<const ValVar*>& vars, AbstractState& result, const ICFGNode* node);
