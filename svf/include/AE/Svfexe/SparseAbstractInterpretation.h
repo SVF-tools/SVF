@@ -28,11 +28,12 @@
 namespace SVF
 {
 
-/// Abstract Interpretation driver for sparse modes (currently semi-sparse).
+/// Abstract Interpretation driver for sparse modes (semi-sparse and
+/// full-sparse).  Concrete subclasses are colocated in this header.
 ///
 /// ValVars whose def-site is inside a cycle but NOT at cycle_head do not
 /// flow through cycle_head's merge in semi-sparse mode, so the around-merge
-/// widening cannot observe them.  This subclass overrides the three cycle
+/// widening cannot observe them.  This base overrides the three cycle
 /// helpers in AbstractInterpretation:
 ///
 ///   * getFullCycleHeadState   — in addition to the base's trace read,
@@ -42,9 +43,6 @@ namespace SVF
 ///                               scatters the widened ValVars back to their
 ///                               def-sites so body nodes observe them.
 ///   * narrowCycleState        — same scatter on non-fixpoint narrowing.
-///
-/// Selected once, at first call to AbstractInterpretation::getAEInstance(),
-/// when Options::AESparsity() == SemiSparse.
 class SparseAbstractInterpretation : public AbstractInterpretation
 {
 public:
@@ -61,6 +59,37 @@ protected:
     bool narrowCycleState(const AbstractState& prev,
                           const AbstractState& cur,
                           const ICFGCycleWTO* cycle) override;
+};
+
+/// Abstract Interpretation for `Options::AESparsity::SemiSparse`.
+/// Inherits the sparse-shaped cycle helpers as-is from the base; exists
+/// as the concrete type instantiated by the factory for SemiSparse.
+class SemiSparseAbstractInterpretation : public SparseAbstractInterpretation
+{
+public:
+    SemiSparseAbstractInterpretation() = default;
+    ~SemiSparseAbstractInterpretation() override = default;
+};
+
+/// Abstract Interpretation for `Options::AESparsity::Sparse` (full-sparse).
+///
+/// In full-sparse mode both ValVars and ObjVars live at their SVFG
+/// def-sites; reads query the SVFG for the reaching-def site, writes
+/// happen at def-sites.  This is a TODO: the planned implementation
+/// extends the cycle helpers to also pull/scatter ObjVars and routes
+/// obj reads through SVFG (see `doc/plan-full-sparse.md`).  For now
+/// this class is a compile-only stub that inherits semi-sparse
+/// behaviour; it will not produce correct full-sparse results until
+/// the overrides land.
+class FullSparseAbstractInterpretation : public SparseAbstractInterpretation
+{
+public:
+    FullSparseAbstractInterpretation() = default;
+    ~FullSparseAbstractInterpretation() override = default;
+
+    // TODO(full-sparse): override getFullCycleHeadState / widenCycleState /
+    //                    narrowCycleState to also handle ObjVars via SVFG
+    //                    def-site queries (see doc/plan-full-sparse.md).
 };
 
 } // namespace SVF

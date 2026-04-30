@@ -27,8 +27,7 @@
 //
 
 #include "AE/Svfexe/AbstractInterpretation.h"
-#include "AE/Svfexe/SemiSparseAbstractInterpretation.h"
-#include "AE/Svfexe/FullSparseAbstractInterpretation.h"
+#include "AE/Svfexe/SparseAbstractInterpretation.h"
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
