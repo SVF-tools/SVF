@@ -73,17 +73,17 @@ const AbstractValue& SemiSparseAbstractStateManager::getAbstractValue(
         as[id] = IntervalValue(constInt->getSExtValue(), constInt->getSExtValue());
         return as[id];
     }
-    if (const ConstFPValVar* constFP = SVFUtil::dyn_cast<ConstFPValVar>(var))
+    else if (const ConstFPValVar* constFP = SVFUtil::dyn_cast<ConstFPValVar>(var))
     {
         as[id] = IntervalValue(constFP->getFPValue(), constFP->getFPValue());
         return as[id];
     }
-    if (SVFUtil::isa<ConstNullPtrValVar>(var))
+    else if (SVFUtil::isa<ConstNullPtrValVar>(var))
     {
         as[id] = AddressValue();
         return as[id];
     }
-    if (SVFUtil::isa<ConstDataValVar>(var))
+    else if (SVFUtil::isa<ConstDataValVar>(var))
     {
         as[id] = IntervalValue::top();
         return as[id];
@@ -97,6 +97,8 @@ const AbstractValue& SemiSparseAbstractStateManager::getAbstractValue(
         if (varMap.count(id))
             return getAbstractState(defNode)[id];
     }
+    
+    // If this is a call result, try the call's RetICFGNode as well.
     if (const CallICFGNode* callNode =
                 defNode ? SVFUtil::dyn_cast<CallICFGNode>(defNode) : nullptr)
     {
@@ -156,6 +158,23 @@ FullSparseAbstractStateManager::FullSparseAbstractStateManager(
 {
     SVFGBuilder memSSA(true);
     svfg = memSSA.buildFullSVFG(pta);
+}
+
+// TODO(full-sparse): route ValVar reads through the SVFG's reaching-def
+// query.  Stub until that lands so misuse fails loudly instead of
+// silently inheriting semi-sparse semantics.
+const AbstractValue& FullSparseAbstractStateManager::getAbstractValue(
+    const ValVar*, const ICFGNode*)
+{
+    assert(false && "FullSparseAbstractStateManager::getAbstractValue not implemented");
+    abort();
+}
+
+bool FullSparseAbstractStateManager::hasAbstractValue(
+    const ValVar*, const ICFGNode*) const
+{
+    assert(false && "FullSparseAbstractStateManager::hasAbstractValue not implemented");
+    abort();
 }
 
 Set<const ICFGNode*> FullSparseAbstractStateManager::getUseSitesOfObjVar(

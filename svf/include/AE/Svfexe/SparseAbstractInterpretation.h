@@ -102,6 +102,15 @@ public:
     FullSparseAbstractStateManager(SVFIR* svfir, AndersenWaveDiff* pta);
     ~FullSparseAbstractStateManager() override = default;
 
+    // Full-sparse ValVar resolution will route through the SVFG once
+    // implemented (see doc/plan-full-sparse.md).  Until then, fail loudly
+    // rather than silently inherit semi-sparse semantics.
+    const AbstractValue& getAbstractValue(const ValVar* var, const ICFGNode* node) override;
+    using SemiSparseAbstractStateManager::getAbstractValue;
+
+    bool hasAbstractValue(const ValVar* var, const ICFGNode* node) const override;
+    using SemiSparseAbstractStateManager::hasAbstractValue;
+
     Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const override;
     Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const override;
     const ICFGNode* getDefSiteOfValVar(const ValVar* var) const override;

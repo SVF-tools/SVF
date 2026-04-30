@@ -147,59 +147,12 @@ bool AbstractStateManager::hasAbstractState(const ICFGNode* node)
     return abstractTrace.count(node) != 0;
 }
 
+/// Dense base: direct lookup at `node`.  Sparse subclasses override with
+/// their own resolution chain (constant materialisation, def-site walk,
+/// call-result fallback, top fallback).
 const AbstractValue& AbstractStateManager::getAbstractValue(const ValVar* var, const ICFGNode* node)
 {
-    u32_t id = var->getId();
-
-    AbstractState& as = abstractTrace[node];
-    if (const ConstIntValVar* constInt = SVFUtil::dyn_cast<ConstIntValVar>(var))
-    {
-        as[id] = IntervalValue(constInt->getSExtValue(), constInt->getSExtValue());
-        return as[id];
-    }
-    if (const ConstFPValVar* constFP = SVFUtil::dyn_cast<ConstFPValVar>(var))
-    {
-        as[id] = IntervalValue(constFP->getFPValue(), constFP->getFPValue());
-        return as[id];
-    }
-    if (SVFUtil::isa<ConstNullPtrValVar>(var))
-    {
-        as[id] = AddressValue();
-        return as[id];
-    }
-    if (SVFUtil::isa<ConstDataValVar>(var))
-    {
-        as[id] = IntervalValue::top();
-        return as[id];
-    }
-
-    // Dense: trust the current node's state; fall back to the def-site
-    // only when the value hasn't been populated yet (e.g. early branch
-    // feasibility queries on uninitialised argc).
-    if (as.inVarToValTable(id) || as.inVarToAddrsTable(id))
-        return as[id];
-
-    const ICFGNode* defNode = var->getICFGNode();
-    if (defNode && hasAbstractState(defNode))
-    {
-        const auto& varMap = getAbstractState(defNode).getVarToVal();
-        if (varMap.count(id))
-            return getAbstractState(defNode)[id];
-    }
-    if (const CallICFGNode* callNode =
-                defNode ? SVFUtil::dyn_cast<CallICFGNode>(defNode) : nullptr)
-    {
-        const RetICFGNode* retNode = callNode->getRetICFGNode();
-        if (hasAbstractState(retNode))
-        {
-            const auto& retMap = getAbstractState(retNode).getVarToVal();
-            if (retMap.count(id))
-                return getAbstractState(retNode)[id];
-        }
-    }
-
-    as[id] = IntervalValue::top();
-    return as[id];
+    return abstractTrace[node][var->getId()];
 }
 
 const AbstractValue& AbstractStateManager::getAbstractValue(const ObjVar* var, const ICFGNode* node)
@@ -219,33 +172,14 @@ const AbstractValue& AbstractStateManager::getAbstractValue(const SVFVar* var, c
     abort();
 }
 
+/// Dense base: direct existence check at `node`.
 bool AbstractStateManager::hasAbstractValue(const ValVar* var, const ICFGNode* node) const
 {
-    if (SVFUtil::isa<ConstIntValVar>(var) || SVFUtil::isa<ConstFPValVar>(var) ||
-            SVFUtil::isa<ConstNullPtrValVar>(var) || SVFUtil::isa<ConstDataValVar>(var))
-        return true;
-
-    u32_t id = var->getId();
     auto it = abstractTrace.find(node);
-    if (it != abstractTrace.end() &&
-            (it->second.inVarToValTable(id) || it->second.inVarToAddrsTable(id)))
-        return true;
-
-    const ICFGNode* defNode = var->getICFGNode();
-    if (defNode)
-    {
-        auto dit = abstractTrace.find(defNode);
-        if (dit != abstractTrace.end() && dit->second.getVarToVal().count(id))
-            return true;
-        if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(defNode))
-        {
-            const RetICFGNode* retNode = callNode->getRetICFGNode();
-            auto rit = abstractTrace.find(retNode);
-            if (rit != abstractTrace.end() && rit->second.getVarToVal().count(id))
-                return true;
-        }
-    }
-    return false;
+    if (it == abstractTrace.end())
+        return false;
+    u32_t id = var->getId();
+    return it->second.inVarToValTable(id) || it->second.inVarToAddrsTable(id);
 }
 
 bool AbstractStateManager::hasAbstractValue(const ObjVar* var, const ICFGNode* node) const
