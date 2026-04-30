@@ -113,8 +113,9 @@ public:
 
     /// Factory: returns the singleton instance.  The concrete class is
     /// chosen once, on first call, from `Options::AESparsity()`:
-    /// semi-sparse builds a `SparseAbstractInterpretation`, dense builds
-    /// the base.  Must be called only after the option parser has run.
+    /// `SemiSparseAbstractInterpretation` for SemiSparse,
+    /// `FullSparseAbstractInterpretation` for Sparse, otherwise the
+    /// dense base.  Must be called only after the option parser has run.
     static AbstractInterpretation& getAEInstance();
 
     void addDetector(std::unique_ptr<AEDetector> detector)
