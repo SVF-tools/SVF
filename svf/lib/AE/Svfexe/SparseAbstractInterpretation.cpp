@@ -21,11 +21,176 @@
 //===---------------------------------------------------------------------===//
 
 #include "AE/Svfexe/SparseAbstractInterpretation.h"
-#include "AE/Svfexe/AbstractStateManager.h"
 #include "AE/Svfexe/PreAnalysis.h"
 #include "SVFIR/SVFIR.h"
+#include "Graphs/SVFG.h"
+#include "MSSA/SVFGBuilder.h"
+#include "WPA/Andersen.h"
 
 using namespace SVF;
+
+// =====================================================================
+//  SemiSparseAbstractStateManager — semi-sparse logic
+// =====================================================================
+
+SemiSparseAbstractStateManager::SemiSparseAbstractStateManager(
+    SVFIR* svfir, AndersenWaveDiff* pta)
+    : AbstractStateManager(svfir, pta)
+{
+}
+
+void SemiSparseAbstractStateManager::updateAbstractState(
+    const ICFGNode* node, const AbstractState& state)
+{
+    // Only replace ObjVar state.  ValVars live at their def-sites and
+    // must not be overwritten when the predecessor's state is merged in.
+    abstractTrace[node].updateAddrStateOnly(state);
+}
+
+const AbstractValue& SemiSparseAbstractStateManager::getAbstractValue(
+    const ValVar* var, const ICFGNode* node)
+{
+    u32_t id = var->getId();
+    AbstractState& as = abstractTrace[node];
+
+    // Constants: store at the current node and return.  Same as dense.
+    if (const ConstIntValVar* constInt = SVFUtil::dyn_cast<ConstIntValVar>(var))
+    {
+        as[id] = IntervalValue(constInt->getSExtValue(), constInt->getSExtValue());
+        return as[id];
+    }
+    if (const ConstFPValVar* constFP = SVFUtil::dyn_cast<ConstFPValVar>(var))
+    {
+        as[id] = IntervalValue(constFP->getFPValue(), constFP->getFPValue());
+        return as[id];
+    }
+    if (SVFUtil::isa<ConstNullPtrValVar>(var))
+    {
+        as[id] = AddressValue();
+        return as[id];
+    }
+    if (SVFUtil::isa<ConstDataValVar>(var))
+    {
+        as[id] = IntervalValue::top();
+        return as[id];
+    }
+
+    // Pull from def-site; for call results, the value lives at RetICFGNode.
+    const ICFGNode* defNode = var->getICFGNode();
+    if (defNode && hasAbstractState(defNode))
+    {
+        const auto& varMap = getAbstractState(defNode).getVarToVal();
+        if (varMap.count(id))
+            return getAbstractState(defNode)[id];
+    }
+    if (const CallICFGNode* callNode =
+                defNode ? SVFUtil::dyn_cast<CallICFGNode>(defNode) : nullptr)
+    {
+        const RetICFGNode* retNode = callNode->getRetICFGNode();
+        if (hasAbstractState(retNode))
+        {
+            const auto& retMap = getAbstractState(retNode).getVarToVal();
+            if (retMap.count(id))
+                return getAbstractState(retNode)[id];
+        }
+    }
+
+    as[id] = IntervalValue::top();
+    return as[id];
+}
+
+bool SemiSparseAbstractStateManager::hasAbstractValue(
+    const ValVar* var, const ICFGNode*) const
+{
+    if (SVFUtil::isa<ConstIntValVar>(var) || SVFUtil::isa<ConstFPValVar>(var) ||
+            SVFUtil::isa<ConstNullPtrValVar>(var) || SVFUtil::isa<ConstDataValVar>(var))
+        return true;
+
+    u32_t id = var->getId();
+    const ICFGNode* defNode = var->getICFGNode();
+    if (!defNode)
+        return false;
+
+    auto dit = abstractTrace.find(defNode);
+    if (dit != abstractTrace.end() && dit->second.getVarToVal().count(id))
+        return true;
+    if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(defNode))
+    {
+        const RetICFGNode* retNode = callNode->getRetICFGNode();
+        auto rit = abstractTrace.find(retNode);
+        if (rit != abstractTrace.end() && rit->second.getVarToVal().count(id))
+            return true;
+    }
+    return false;
+}
+
+void SemiSparseAbstractStateManager::updateAbstractValue(
+    const ValVar* var, const AbstractValue& val, const ICFGNode* node)
+{
+    // Write to the var's def-site so getAbstractValue stays consistent.
+    const ICFGNode* defNode = var->getICFGNode();
+    abstractTrace[defNode ? defNode : node][var->getId()] = val;
+}
+
+// =====================================================================
+//  FullSparseAbstractStateManager — full-sparse (SVFG-backed def/use)
+// =====================================================================
+
+FullSparseAbstractStateManager::FullSparseAbstractStateManager(
+    SVFIR* svfir, AndersenWaveDiff* pta)
+    : SemiSparseAbstractStateManager(svfir, pta)
+{
+    SVFGBuilder memSSA(true);
+    svfg = memSSA.buildFullSVFG(pta);
+}
+
+Set<const ICFGNode*> FullSparseAbstractStateManager::getUseSitesOfObjVar(
+    const ObjVar* obj, const ICFGNode* node) const
+{
+    assert(svfg && "SVFG is not built for full-sparse AE");
+    return svfg->getUseSitesOfObjVar(obj, node);
+}
+
+Set<const ICFGNode*> FullSparseAbstractStateManager::getUseSitesOfValVar(
+    const ValVar* var) const
+{
+    assert(svfg && "SVFG is not built for full-sparse AE");
+    return svfg->getUseSitesOfValVar(var);
+}
+
+const ICFGNode* FullSparseAbstractStateManager::getDefSiteOfValVar(
+    const ValVar* var) const
+{
+    assert(svfg && "SVFG is not built for full-sparse AE");
+    return svfg->getDefSiteOfValVar(var);
+}
+
+const ICFGNode* FullSparseAbstractStateManager::getDefSiteOfObjVar(
+    const ObjVar* obj, const ICFGNode* node) const
+{
+    assert(svfg && "SVFG is not built for full-sparse AE");
+    return svfg->getDefSiteOfObjVar(obj, node);
+}
+
+// =====================================================================
+//  AbstractInterpretation::createStateMgr overrides
+// =====================================================================
+
+AbstractStateManager* SemiSparseAbstractInterpretation::createStateMgr(
+    SVFIR* svfir, AndersenWaveDiff* pta)
+{
+    return new SemiSparseAbstractStateManager(svfir, pta);
+}
+
+AbstractStateManager* FullSparseAbstractInterpretation::createStateMgr(
+    SVFIR* svfir, AndersenWaveDiff* pta)
+{
+    return new FullSparseAbstractStateManager(svfir, pta);
+}
+
+// =====================================================================
+//  SparseAbstractInterpretation — cycle helpers (sparse-shape)
+// =====================================================================
 
 AbstractState SparseAbstractInterpretation::getFullCycleHeadState(
     const ICFGCycleWTO* cycle)

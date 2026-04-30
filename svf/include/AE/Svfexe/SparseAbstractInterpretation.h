@@ -50,6 +50,11 @@ public:
     ~SparseAbstractInterpretation() override = default;
 
 protected:
+    bool needsCycleValVars() const override
+    {
+        return true;
+    }
+
     AbstractState getFullCycleHeadState(const ICFGCycleWTO* cycle) override;
 
     bool widenCycleState(const AbstractState& prev,
@@ -61,6 +66,46 @@ protected:
                           const ICFGCycleWTO* cycle) override;
 };
 
+/// AbstractStateManager for semi-sparse mode.
+///
+/// ValVars live at their def-sites: reads pull from def-site, writes go
+/// to def-site, and `updateAbstractState` only replaces the ObjVar map
+/// (the ValVar map at non-def nodes is intentionally empty).
+class SemiSparseAbstractStateManager : public AbstractStateManager
+{
+public:
+    SemiSparseAbstractStateManager(SVFIR* svfir, AndersenWaveDiff* pta);
+    ~SemiSparseAbstractStateManager() override = default;
+
+    const AbstractValue& getAbstractValue(const ValVar* var, const ICFGNode* node) override;
+    using AbstractStateManager::getAbstractValue;
+
+    bool hasAbstractValue(const ValVar* var, const ICFGNode* node) const override;
+    using AbstractStateManager::hasAbstractValue;
+
+    void updateAbstractValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node) override;
+    using AbstractStateManager::updateAbstractValue;
+
+    void updateAbstractState(const ICFGNode* node, const AbstractState& state) override;
+};
+
+/// AbstractStateManager for full-sparse mode.
+///
+/// Inherits semi-sparse ValVar handling and adds an SVFG: def/use site
+/// queries are routed through it.  ObjVar def-site reads/writes are still
+/// TODO (see `doc/plan-full-sparse.md`).
+class FullSparseAbstractStateManager : public SemiSparseAbstractStateManager
+{
+public:
+    FullSparseAbstractStateManager(SVFIR* svfir, AndersenWaveDiff* pta);
+    ~FullSparseAbstractStateManager() override = default;
+
+    Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const override;
+    Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const override;
+    const ICFGNode* getDefSiteOfValVar(const ValVar* var) const override;
+    const ICFGNode* getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const override;
+};
+
 /// Abstract Interpretation for `Options::AESparsity::SemiSparse`.
 /// Inherits the sparse-shaped cycle helpers as-is from the base; exists
 /// as the concrete type instantiated by the factory for SemiSparse.
@@ -69,6 +114,9 @@ class SemiSparseAbstractInterpretation : public SparseAbstractInterpretation
 public:
     SemiSparseAbstractInterpretation() = default;
     ~SemiSparseAbstractInterpretation() override = default;
+
+protected:
+    AbstractStateManager* createStateMgr(SVFIR* svfir, AndersenWaveDiff* pta) override;
 };
 
 /// Abstract Interpretation for `Options::AESparsity::Sparse` (full-sparse).
@@ -90,6 +138,9 @@ public:
     // TODO(full-sparse): override getFullCycleHeadState / widenCycleState /
     //                    narrowCycleState to also handle ObjVars via SVFG
     //                    def-site queries (see doc/plan-full-sparse.md).
+
+protected:
+    AbstractStateManager* createStateMgr(SVFIR* svfir, AndersenWaveDiff* pta) override;
 };
 
 } // namespace SVF

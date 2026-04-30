@@ -97,9 +97,6 @@ void PreAnalysis::initWTO()
 
 void PreAnalysis::initCycleValVars()
 {
-    if (Options::AESparsity() != AbstractInterpretation::AESparsity::SemiSparse)
-        return;
-
     // Step 1: Collect all cycles in top-down order using a stack-based DFS,
     // then reverse to get bottom-up order (inner cycles before outer ones).
     std::vector<const ICFGCycleWTO*> cycles;

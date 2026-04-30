@@ -31,11 +31,11 @@
 #pragma once
 #include "AE/Core/AbstractState.h"
 #include "AE/Core/ICFGWTO.h"
-#include "AE/Svfexe/AbstractStateManager.h"
 #include "AE/Svfexe/AEDetector.h"
 #include "AE/Svfexe/PreAnalysis.h"
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "AE/Svfexe/AEStat.h"
+#include "SVFIR/SVFIR.h"
 #include "Util/SVFBugReport.h"
 #include "Graphs/SCC.h"
 #include "Graphs/CallGraph.h"
@@ -47,8 +47,107 @@ class AbstractInterpretation;
 class AbsExtAPI;
 class AEStat;
 class AEAPI;
+class GepStmt;
+class AddrStmt;
+class SVFG;
+class AndersenWaveDiff;
 
 template<typename T> class FILOWorkList;
+
+/// Manages abstract states across ICFG nodes and provides a unified API
+/// for reading/writing abstract values.  This base implements the dense
+/// lookup strategy.  The semi-sparse and full-sparse variants live in
+/// `SparseAbstractInterpretation.h` and override the methods marked
+/// virtual below.
+///
+/// Hierarchy:
+///   AbstractStateManager                   — dense  (this file)
+///     └── SemiSparseAbstractStateManager    — semi-sparse  (SparseAI file)
+///           └── FullSparseAbstractStateManager — full-sparse (SparseAI file)
+///
+/// Each AbstractInterpretation subclass picks the matching manager via
+/// the virtual factory `AbstractInterpretation::createStateMgr`.
+class AbstractStateManager
+{
+public:
+    AbstractStateManager(SVFIR* svfir, AndersenWaveDiff* pta);
+    virtual ~AbstractStateManager();
+
+    // ---- Abstract Value Access ----------------------------------------
+
+    /// Read a top-level variable's abstract value.
+    /// Dense: reads from the current node's state, falling back to the
+    /// def-site for early-branch feasibility.  Sparse subclasses pull
+    /// from the def-site first.
+    virtual const AbstractValue& getAbstractValue(const ValVar* var, const ICFGNode* node);
+    const AbstractValue& getAbstractValue(const ObjVar* var, const ICFGNode* node);
+    const AbstractValue& getAbstractValue(const SVFVar* var, const ICFGNode* node);
+
+    /// Side-effect-free existence check, mirroring getAbstractValue's
+    /// lookup chain but stopping short of the top fallback.
+    virtual bool hasAbstractValue(const ValVar* var, const ICFGNode* node) const;
+    bool hasAbstractValue(const ObjVar* var, const ICFGNode* node) const;
+    bool hasAbstractValue(const SVFVar* var, const ICFGNode* node) const;
+
+    /// Write a variable's abstract value.  Sparse subclasses re-route
+    /// ValVar writes to the def-site.
+    virtual void updateAbstractValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node);
+    void updateAbstractValue(const ObjVar* var, const AbstractValue& val, const ICFGNode* node);
+    void updateAbstractValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node);
+
+    // ---- State Access -------------------------------------------------
+
+    AbstractState& getAbstractState(const ICFGNode* node);
+
+    /// Replace the state at `node`.  Sparse subclasses replace only the
+    /// ObjVar map (ValVars live at def-sites).
+    virtual void updateAbstractState(const ICFGNode* node, const AbstractState& state);
+
+    bool hasAbstractState(const ICFGNode* node);
+
+    void getAbstractState(const Set<const ValVar*>& vars, AbstractState& result, const ICFGNode* node);
+    void getAbstractState(const Set<const ObjVar*>& vars, AbstractState& result, const ICFGNode* node);
+    void getAbstractState(const Set<const SVFVar*>& vars, AbstractState& result, const ICFGNode* node);
+
+    // ---- GEP Helpers --------------------------------------------------
+
+    IntervalValue getGepElementIndex(const GepStmt* gep);
+    IntervalValue getGepByteOffset(const GepStmt* gep);
+    AddressValue getGepObjAddrs(const ValVar* pointer, IntervalValue offset);
+
+    // ---- Load / Store through pointer ---------------------------------
+
+    AbstractValue loadValue(const ValVar* pointer, const ICFGNode* node);
+    void storeValue(const ValVar* pointer, const AbstractValue& val, const ICFGNode* node);
+
+    // ---- Type / Size Helpers ------------------------------------------
+
+    const SVFType* getPointeeElement(const ObjVar* var, const ICFGNode* node);
+    u32_t getAllocaInstByteSize(const AddrStmt* addr);
+
+    // ---- Direct Trace Access ------------------------------------------
+
+    Map<const ICFGNode*, AbstractState>& getTrace()
+    {
+        return abstractTrace;
+    }
+    AbstractState& operator[](const ICFGNode* node)
+    {
+        return abstractTrace[node];
+    }
+
+    // ---- Def/Use site queries (sparsity-aware) ------------------------
+
+    virtual Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
+    virtual Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const;
+    virtual const ICFGNode* getDefSiteOfValVar(const ValVar* var) const;
+    virtual const ICFGNode* getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
+
+protected:
+    SVFIR* svfir;
+    SVFG* svfg;
+    Map<const ICFGNode*, AbstractState> abstractTrace;
+};
 
 /// AbstractInterpretation is same as Abstract Execution
 class AbstractInterpretation
@@ -167,6 +266,19 @@ protected:
     /// Factory-only construction.  External callers must use getAEInstance();
     /// `SparseAbstractInterpretation` reaches this via its own ctor.
     AbstractInterpretation();
+
+    /// Allocate the AbstractStateManager that matches this analysis flavour.
+    /// Dense base returns the dense manager; sparse subclasses override to
+    /// return their semi-sparse / full-sparse managers.
+    virtual AbstractStateManager* createStateMgr(SVFIR* svfir, AndersenWaveDiff* pta);
+
+    /// Whether the per-cycle ValVar precompute (PreAnalysis::initCycleValVars)
+    /// is needed for this flavour.  Only semi-sparse cycle helpers consume
+    /// it; dense (and full-sparse, until ObjVar handling lands) skip the work.
+    virtual bool needsCycleValVars() const
+    {
+        return false;
+    }
 
     // ---- Cycle helpers overridden by SparseAbstractInterpretation ----
     // The dense versions write only to trace[cycle_head].  The semi-sparse
