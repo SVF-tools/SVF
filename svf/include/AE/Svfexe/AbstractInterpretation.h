@@ -205,18 +205,11 @@ protected:
     /// `SparseAbstractInterpretation` reaches this via its own ctor.
     AbstractInterpretation();
 
-    /// Whether the per-cycle ValVar precompute (PreAnalysis::initCycleValVars)
-    /// is needed for this flavour.  Only semi-sparse cycle helpers consume
-    /// it; dense (and full-sparse, until ObjVar handling lands) skip the work.
-    virtual bool needsCycleValVars() const
-    {
-        return false;
-    }
-
-    /// Hook called from runOnModule after preAnalysis (and PTA) are
-    /// available, before analyse() runs.  Sparse subclasses can build
-    /// auxiliary graphs (e.g. the SVFG for full-sparse) here.
-    virtual void initAuxState(AndersenWaveDiff*)
+    /// Pre-analysis hook: called from runOnModule once PTA and the WTO
+    /// are ready, before analyse().  Sparse subclasses build the index
+    /// structures the main loop will consume here (cycle-ValVar
+    /// precompute for semi-sparse, SVFG for full-sparse).  Default: no-op.
+    virtual void initFromPTA(AndersenWaveDiff*)
     {
     }
 

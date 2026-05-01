@@ -52,9 +52,7 @@ void AbstractInterpretation::runOnModule(ICFG *_icfg)
     callGraph = preAnalysis->getCallGraph();
     icfg->updateCallGraph(callGraph);
     preAnalysis->initWTO();
-    if (needsCycleValVars())
-        preAnalysis->initCycleValVars();
-    initAuxState(preAnalysis->getPointerAnalysis());
+    initFromPTA(preAnalysis->getPointerAnalysis());
 
     utils = new AbsExtAPI(this);
 
@@ -103,7 +101,7 @@ AbstractInterpretation& AbstractInterpretation::getAEInstance()
 
 // =====================================================================
 //  Dense state-access implementation (semi-sparse / full-sparse override
-//  via SparseAbstractInterpretation / FullSparseAbstractInterpretation).
+//  via SemiSparseAbstractInterpretation / FullSparseAbstractInterpretation).
 // =====================================================================
 
 AbstractState& AbstractInterpretation::getAbstractState(const ICFGNode* node)
@@ -1309,7 +1307,7 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 //
 // The dense default: trace[cycle_head] is the authoritative primary
 // storage, so the snapshot / write-back are trivial.
-// SparseAbstractInterpretation overrides these to additionally pull/scatter
+// SemiSparseAbstractInterpretation overrides these to additionally pull/scatter
 // cycle ValVars from/to their def-sites.
 
 AbstractState AbstractInterpretation::getFullCycleHeadState(const ICFGCycleWTO* cycle)

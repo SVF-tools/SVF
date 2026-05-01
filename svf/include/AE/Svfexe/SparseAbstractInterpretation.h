@@ -28,24 +28,22 @@
 namespace SVF
 {
 
-/// Abstract Interpretation driver for sparse modes (semi-sparse and
-/// full-sparse).  Concrete subclasses are colocated in this header.
+/// Abstract Interpretation for `Options::AESparsity::SemiSparse`.
 ///
-/// In addition to the cycle helpers, this class hosts the semi-sparse
-/// state-access overrides (ValVar reads/writes go to def-sites; state
-/// merges skip ValVars).  FullSparseAbstractInterpretation inherits
-/// those and adds SVFG-backed def/use queries on top.
-class SparseAbstractInterpretation : public AbstractInterpretation
+/// ValVars live at their SVFG-style def-sites: reads pull from there,
+/// writes go there, state merges replace only the ObjVar map and skip
+/// the ValVar map, and the cycle helpers gather/scatter cycle ValVars
+/// around each widening iteration.
+class SemiSparseAbstractInterpretation : public AbstractInterpretation
 {
 public:
-    SparseAbstractInterpretation() = default;
-    ~SparseAbstractInterpretation() override = default;
+    SemiSparseAbstractInterpretation() = default;
+    ~SemiSparseAbstractInterpretation() override = default;
 
 protected:
-    bool needsCycleValVars() const override
-    {
-        return true;
-    }
+    /// Precompute the per-cycle ValVar set (consumed by the
+    /// getFullCycleHeadState / widen / narrow overrides below).
+    void initFromPTA(AndersenWaveDiff* pta) override;
 
     AbstractState getFullCycleHeadState(const ICFGCycleWTO* cycle) override;
 
@@ -57,9 +55,6 @@ protected:
                           const AbstractState& cur,
                           const ICFGCycleWTO* cycle) override;
 
-    // ---- Semi-sparse state-access overrides ---------------------------
-    // ValVars live at their def-sites; reads pull from there, writes go
-    // there, and updateAbstractState only replaces the ObjVar map.
     const AbstractValue& getAbstractValue(const ValVar* var, const ICFGNode* node) override;
     using AbstractInterpretation::getAbstractValue;
 
@@ -74,17 +69,6 @@ protected:
     void joinStates(AbstractState& dst, const AbstractState& src) override;
 };
 
-/// Abstract Interpretation for `Options::AESparsity::SemiSparse`.
-/// Concrete leaf — inherits the sparse-shaped cycle helpers and the
-/// semi-sparse state-access overrides from SparseAbstractInterpretation
-/// without modification.
-class SemiSparseAbstractInterpretation : public SparseAbstractInterpretation
-{
-public:
-    SemiSparseAbstractInterpretation() = default;
-    ~SemiSparseAbstractInterpretation() override = default;
-};
-
 /// Abstract Interpretation for `Options::AESparsity::Sparse` (full-sparse).
 ///
 /// In full-sparse mode both ValVars and ObjVars live at their SVFG
@@ -93,7 +77,7 @@ public:
 /// SVFG-backed resolution lands (see `doc/plan-full-sparse.md`); cycle
 /// helpers are inherited from the semi-sparse parent and will also need
 /// extension for ObjVars.
-class FullSparseAbstractInterpretation : public SparseAbstractInterpretation
+class FullSparseAbstractInterpretation : public SemiSparseAbstractInterpretation
 {
 public:
     FullSparseAbstractInterpretation() = default;
@@ -103,10 +87,10 @@ public:
     // implemented; fail loudly until then rather than silently inherit
     // semi-sparse semantics.
     const AbstractValue& getAbstractValue(const ValVar* var, const ICFGNode* node) override;
-    using SparseAbstractInterpretation::getAbstractValue;
+    using SemiSparseAbstractInterpretation::getAbstractValue;
 
     bool hasAbstractValue(const ValVar* var, const ICFGNode* node) const override;
-    using SparseAbstractInterpretation::hasAbstractValue;
+    using SemiSparseAbstractInterpretation::hasAbstractValue;
 
     Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const override;
     Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const override;
@@ -114,8 +98,8 @@ public:
     const ICFGNode* getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const override;
 
 protected:
-    /// Build the SVFG once PTA is available (runOnModule timing).
-    void initAuxState(AndersenWaveDiff* pta) override;
+    /// Build the SVFG on top of the semi-sparse precompute.
+    void initFromPTA(AndersenWaveDiff* pta) override;
 };
 
 } // namespace SVF
