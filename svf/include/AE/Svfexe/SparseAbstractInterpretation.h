@@ -55,16 +55,16 @@ protected:
                           const AbstractState& cur,
                           const ICFGCycleWTO* cycle) override;
 
-    const AbstractValue& getAbstractValue(const ValVar* var, const ICFGNode* node) override;
-    using AbstractInterpretation::getAbstractValue;
+    const AbstractValue& getAbsValue(const ValVar* var, const ICFGNode* node) override;
+    using AbstractInterpretation::getAbsValue;
 
-    bool hasAbstractValue(const ValVar* var, const ICFGNode* node) const override;
-    using AbstractInterpretation::hasAbstractValue;
+    bool hasAbsValue(const ValVar* var, const ICFGNode* node) const override;
+    using AbstractInterpretation::hasAbsValue;
 
-    void updateAbstractValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node) override;
-    using AbstractInterpretation::updateAbstractValue;
+    void updateAbsValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node) override;
+    using AbstractInterpretation::updateAbsValue;
 
-    void updateAbstractState(const ICFGNode* node, const AbstractState& state) override;
+    void updateAbsState(const ICFGNode* node, const AbstractState& state) override;
 
     void joinStates(AbstractState& dst, const AbstractState& src) override;
 };
@@ -86,11 +86,11 @@ public:
     // Full-sparse ValVar resolution will route through the SVFG once
     // implemented; fail loudly until then rather than silently inherit
     // semi-sparse semantics.
-    const AbstractValue& getAbstractValue(const ValVar* var, const ICFGNode* node) override;
-    using SemiSparseAbstractInterpretation::getAbstractValue;
+    const AbstractValue& getAbsValue(const ValVar* var, const ICFGNode* node) override;
+    using SemiSparseAbstractInterpretation::getAbsValue;
 
-    bool hasAbstractValue(const ValVar* var, const ICFGNode* node) const override;
-    using SemiSparseAbstractInterpretation::hasAbstractValue;
+    bool hasAbsValue(const ValVar* var, const ICFGNode* node) const override;
+    using SemiSparseAbstractInterpretation::hasAbsValue;
 
     Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const override;
     Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const override;

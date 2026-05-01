@@ -134,38 +134,38 @@ public:
     /// Read a top-level variable's abstract value.  Dense base does a
     /// direct trace lookup; sparse subclasses override with their own
     /// resolution chain (def-site walk, call-result fallback, etc.).
-    virtual const AbstractValue& getAbstractValue(const ValVar* var, const ICFGNode* node);
-    const AbstractValue& getAbstractValue(const ObjVar* var, const ICFGNode* node);
-    const AbstractValue& getAbstractValue(const SVFVar* var, const ICFGNode* node);
+    virtual const AbstractValue& getAbsValue(const ValVar* var, const ICFGNode* node);
+    const AbstractValue& getAbsValue(const ObjVar* var, const ICFGNode* node);
+    const AbstractValue& getAbsValue(const SVFVar* var, const ICFGNode* node);
 
     /// Side-effect-free existence check.
-    virtual bool hasAbstractValue(const ValVar* var, const ICFGNode* node) const;
-    bool hasAbstractValue(const ObjVar* var, const ICFGNode* node) const;
-    bool hasAbstractValue(const SVFVar* var, const ICFGNode* node) const;
+    virtual bool hasAbsValue(const ValVar* var, const ICFGNode* node) const;
+    bool hasAbsValue(const ObjVar* var, const ICFGNode* node) const;
+    bool hasAbsValue(const SVFVar* var, const ICFGNode* node) const;
 
     /// Write a variable's abstract value.  Sparse subclasses re-route
     /// ValVar writes to the def-site.
-    virtual void updateAbstractValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node);
-    void updateAbstractValue(const ObjVar* var, const AbstractValue& val, const ICFGNode* node);
-    void updateAbstractValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node);
+    virtual void updateAbsValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node);
+    void updateAbsValue(const ObjVar* var, const AbstractValue& val, const ICFGNode* node);
+    void updateAbsValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node);
 
     // ---- State Access -------------------------------------------------
 
-    AbstractState& getAbstractState(const ICFGNode* node);
+    AbstractState& getAbsState(const ICFGNode* node);
 
     /// Replace the state at `node`.  Sparse subclasses replace only the
     /// ObjVar map (ValVars live at def-sites).
-    virtual void updateAbstractState(const ICFGNode* node, const AbstractState& state);
+    virtual void updateAbsState(const ICFGNode* node, const AbstractState& state);
 
     /// Join `src` into `dst` with sparsity-aware semantics.  Dense merges
     /// everything; semi-sparse skips ValVars.
     virtual void joinStates(AbstractState& dst, const AbstractState& src);
 
-    bool hasAbstractState(const ICFGNode* node);
+    bool hasAbsState(const ICFGNode* node);
 
-    void getAbstractState(const Set<const ValVar*>& vars, AbstractState& result, const ICFGNode* node);
-    void getAbstractState(const Set<const ObjVar*>& vars, AbstractState& result, const ICFGNode* node);
-    void getAbstractState(const Set<const SVFVar*>& vars, AbstractState& result, const ICFGNode* node);
+    void getAbsState(const Set<const ValVar*>& vars, AbstractState& result, const ICFGNode* node);
+    void getAbsState(const Set<const ObjVar*>& vars, AbstractState& result, const ICFGNode* node);
+    void getAbsState(const Set<const SVFVar*>& vars, AbstractState& result, const ICFGNode* node);
 
     // ---- GEP / Load-Store / Type Helpers ------------------------------
 

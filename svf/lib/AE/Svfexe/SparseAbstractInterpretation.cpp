@@ -34,7 +34,7 @@ using namespace SVF;
 //  FullSparse subclasses; the latter further restricts ValVar reads).
 // =====================================================================
 
-void SemiSparseAbstractInterpretation::updateAbstractState(
+void SemiSparseAbstractInterpretation::updateAbsState(
     const ICFGNode* node, const AbstractState& state)
 {
     // Only replace ObjVar state.  ValVars live at their def-sites and
@@ -56,7 +56,7 @@ void SemiSparseAbstractInterpretation::joinStates(
         dst[id] = val;
 }
 
-const AbstractValue& SemiSparseAbstractInterpretation::getAbstractValue(
+const AbstractValue& SemiSparseAbstractInterpretation::getAbsValue(
     const ValVar* var, const ICFGNode* node)
 {
     u32_t id = var->getId();
@@ -91,11 +91,11 @@ const AbstractValue& SemiSparseAbstractInterpretation::getAbstractValue(
 
     // Pull from def-site; for call results, the value lives at RetICFGNode.
     const ICFGNode* defNode = var->getICFGNode();
-    if (defNode && hasAbstractState(defNode))
+    if (defNode && hasAbsState(defNode))
     {
-        const auto& varMap = getAbstractState(defNode).getVarToVal();
+        const auto& varMap = getAbsState(defNode).getVarToVal();
         if (varMap.count(id))
-            return getAbstractState(defNode)[id];
+            return getAbsState(defNode)[id];
     }
     
     // If this is a call result, try the call's RetICFGNode as well.
@@ -103,11 +103,11 @@ const AbstractValue& SemiSparseAbstractInterpretation::getAbstractValue(
                 defNode ? SVFUtil::dyn_cast<CallICFGNode>(defNode) : nullptr)
     {
         const RetICFGNode* retNode = callNode->getRetICFGNode();
-        if (hasAbstractState(retNode))
+        if (hasAbsState(retNode))
         {
-            const auto& retMap = getAbstractState(retNode).getVarToVal();
+            const auto& retMap = getAbsState(retNode).getVarToVal();
             if (retMap.count(id))
-                return getAbstractState(retNode)[id];
+                return getAbsState(retNode)[id];
         }
     }
 
@@ -115,7 +115,7 @@ const AbstractValue& SemiSparseAbstractInterpretation::getAbstractValue(
     return as[id];
 }
 
-bool SemiSparseAbstractInterpretation::hasAbstractValue(
+bool SemiSparseAbstractInterpretation::hasAbsValue(
     const ValVar* var, const ICFGNode*) const
 {
     if (SVFUtil::isa<ConstIntValVar>(var) || SVFUtil::isa<ConstFPValVar>(var) ||
@@ -140,10 +140,10 @@ bool SemiSparseAbstractInterpretation::hasAbstractValue(
     return false;
 }
 
-void SemiSparseAbstractInterpretation::updateAbstractValue(
+void SemiSparseAbstractInterpretation::updateAbsValue(
     const ValVar* var, const AbstractValue& val, const ICFGNode* node)
 {
-    // Write to the var's def-site so getAbstractValue stays consistent.
+    // Write to the var's def-site so getAbsValue stays consistent.
     const ICFGNode* defNode = var->getICFGNode();
     abstractTrace[defNode ? defNode : node][var->getId()] = val;
 }
@@ -162,17 +162,17 @@ void FullSparseAbstractInterpretation::initFromPTA(AndersenWaveDiff* pta)
 // TODO(full-sparse): route ValVar reads through the SVFG's reaching-def
 // query.  Stub until that lands so misuse fails loudly instead of
 // silently inheriting semi-sparse semantics.
-const AbstractValue& FullSparseAbstractInterpretation::getAbstractValue(
+const AbstractValue& FullSparseAbstractInterpretation::getAbsValue(
     const ValVar*, const ICFGNode*)
 {
-    assert(false && "FullSparseAbstractInterpretation::getAbstractValue not implemented");
+    assert(false && "FullSparseAbstractInterpretation::getAbsValue not implemented");
     abort();
 }
 
-bool FullSparseAbstractInterpretation::hasAbstractValue(
+bool FullSparseAbstractInterpretation::hasAbsValue(
     const ValVar*, const ICFGNode*) const
 {
-    assert(false && "FullSparseAbstractInterpretation::hasAbstractValue not implemented");
+    assert(false && "FullSparseAbstractInterpretation::hasAbsValue not implemented");
     abort();
 }
 
@@ -226,15 +226,15 @@ AbstractState SemiSparseAbstractInterpretation::getFullCycleHeadState(
 
     // Drop stale ValVar entries and pull each cycle ValVar from its
     // def-site.  ValVars without a genuine stored value are skipped to
-    // avoid getAbstractValue's top-fallback contaminating body def-sites on
+    // avoid getAbsValue's top-fallback contaminating body def-sites on
     // the subsequent widen/narrow scatter.
     snap.clearValVars();
     for (const ValVar* v : valVars)
     {
         const ICFGNode* defSite = v->getICFGNode();
-        if (!defSite || !hasAbstractValue(v, defSite))
+        if (!defSite || !hasAbsValue(v, defSite))
             continue;
-        snap[v->getId()] = getAbstractValue(v, defSite);
+        snap[v->getId()] = getAbsValue(v, defSite);
     }
     return snap;
 }
@@ -253,7 +253,7 @@ bool SemiSparseAbstractInterpretation::widenCycleState(
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
     const AbstractState& next = abstractTrace[cycle_head];
     for (const auto& [id, val] : next.getVarToVal())
-        updateAbstractValue(svfir->getSVFVar(id), val, cycle_head);
+        updateAbsValue(svfir->getSVFVar(id), val, cycle_head);
     return fixpoint;
 }
 
@@ -272,6 +272,6 @@ bool SemiSparseAbstractInterpretation::narrowCycleState(
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
     const AbstractState& next = abstractTrace[cycle_head];
     for (const auto& [id, val] : next.getVarToVal())
-        updateAbstractValue(svfir->getSVFVar(id), val, cycle_head);
+        updateAbsValue(svfir->getSVFVar(id), val, cycle_head);
     return false;
 }
