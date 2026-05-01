@@ -134,20 +134,22 @@ public:
     /// Read a top-level variable's abstract value.  Dense base does a
     /// direct trace lookup; sparse subclasses override with their own
     /// resolution chain (def-site walk, call-result fallback, etc.).
+    /// All three overloads are virtual so full-sparse can route ObjVar
+    /// reads through the SVFG.
     virtual const AbstractValue& getAbsValue(const ValVar* var, const ICFGNode* node);
-    const AbstractValue& getAbsValue(const ObjVar* var, const ICFGNode* node);
-    const AbstractValue& getAbsValue(const SVFVar* var, const ICFGNode* node);
+    virtual const AbstractValue& getAbsValue(const ObjVar* var, const ICFGNode* node);
+    virtual const AbstractValue& getAbsValue(const SVFVar* var, const ICFGNode* node);
 
     /// Side-effect-free existence check.
     virtual bool hasAbsValue(const ValVar* var, const ICFGNode* node) const;
-    bool hasAbsValue(const ObjVar* var, const ICFGNode* node) const;
-    bool hasAbsValue(const SVFVar* var, const ICFGNode* node) const;
+    virtual bool hasAbsValue(const ObjVar* var, const ICFGNode* node) const;
+    virtual bool hasAbsValue(const SVFVar* var, const ICFGNode* node) const;
 
     /// Write a variable's abstract value.  Sparse subclasses re-route
     /// ValVar writes to the def-site.
     virtual void updateAbsValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node);
-    void updateAbsValue(const ObjVar* var, const AbstractValue& val, const ICFGNode* node);
-    void updateAbsValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node);
+    virtual void updateAbsValue(const ObjVar* var, const AbstractValue& val, const ICFGNode* node);
+    virtual void updateAbsValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node);
 
     // ---- State Access -------------------------------------------------
 
