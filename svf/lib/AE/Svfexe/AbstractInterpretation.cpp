@@ -131,12 +131,25 @@ bool AbstractInterpretation::hasAbstractState(const ICFGNode* node)
     return abstractTrace.count(node) != 0;
 }
 
-/// Dense base: direct lookup at `node`.  Sparse subclasses override with
-/// their own resolution chain (constant materialisation, def-site walk,
-/// call-result fallback, top fallback).
+/// Dense base: direct trace lookup, with a top sentinel for genuinely
+/// missing entries (e.g. function parameters like argc, never written
+/// before first read).  Sparse subclasses override with a def-site
+/// resolution chain.
+///
+/// The "in map" check is a raw map.count — NOT inVarToValTable /
+/// inVarToAddrsTable, which gate on isInterval / isAddr.  SVF
+/// canonically represents uninit and null-pointer shapes as
+/// (interval=bottom ∧ addrs=∅); those predicates would falsely report
+/// such an entry as "not present", and the top fallback below would
+/// then clobber the very signal NullptrDerefDetector::isUninit keys off.
 const AbstractValue& AbstractInterpretation::getAbstractValue(const ValVar* var, const ICFGNode* node)
 {
-    return abstractTrace[node][var->getId()];
+    u32_t id = var->getId();
+    AbstractState& as = abstractTrace[node];
+    if (as.getVarToVal().count(id))
+        return as[id];
+    as[id] = IntervalValue::top();
+    return as[id];
 }
 
 const AbstractValue& AbstractInterpretation::getAbstractValue(const ObjVar* var, const ICFGNode* node)
@@ -156,14 +169,16 @@ const AbstractValue& AbstractInterpretation::getAbstractValue(const SVFVar* var,
     abort();
 }
 
-/// Dense base: direct existence check at `node`.
+/// Dense base: direct existence check at `node`.  Mirrors the simplified
+/// getAbstractValue lookup — uses raw map.contains rather than
+/// inVar*Table predicates, which would falsely report neutral
+/// (interval=bottom ∧ addrs=∅) entries as "not present".
 bool AbstractInterpretation::hasAbstractValue(const ValVar* var, const ICFGNode* node) const
 {
     auto it = abstractTrace.find(node);
     if (it == abstractTrace.end())
         return false;
-    u32_t id = var->getId();
-    return it->second.inVarToValTable(id) || it->second.inVarToAddrsTable(id);
+    return it->second.getVarToVal().count(var->getId()) != 0;
 }
 
 bool AbstractInterpretation::hasAbstractValue(const ObjVar* var, const ICFGNode* node) const

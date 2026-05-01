@@ -62,7 +62,12 @@ const AbstractValue& SparseAbstractInterpretation::getAbstractValue(
     u32_t id = var->getId();
     AbstractState& as = abstractTrace[node];
 
-    // Constants: store at the current node and return.  Same as dense.
+    // LLVM IR literal constants (Int / FP / NullPtr / Data) are modelled
+    // as ValVars but have no ICFGNode — `var->getICFGNode()` returns
+    // null, so the def-site fallback below can't reach them.  Resolve
+    // them by SVFVar kind directly.  In dense this is unnecessary
+    // because joinStates copies their global-init entries forward and
+    // the in-map lookup at the current node finds them.
     if (const ConstIntValVar* constInt = SVFUtil::dyn_cast<ConstIntValVar>(var))
     {
         as[id] = IntervalValue(constInt->getSExtValue(), constInt->getSExtValue());
