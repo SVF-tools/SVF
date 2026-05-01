@@ -1,4 +1,4 @@
-//===- PreAnalysis.cpp -- Pre-Analysis for Abstract Interpretation---------//
+//===- AEWTO.cpp -- WTO + pointer-analysis prep for Abstract Interpretation ---//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,20 +21,20 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * PreAnalysis.cpp
+ * AEWTO.cpp
  *
  *  Created on: Feb 25, 2026
  *      Author: Jiawei Wang
  */
 
-#include "AE/Svfexe/PreAnalysis.h"
+#include "AE/Svfexe/AEWTO.h"
 #include "AE/Svfexe/AbstractInterpretation.h"
 #include "Util/Options.h"
 #include "Util/WorkList.h"
 
 using namespace SVF;
 
-PreAnalysis::PreAnalysis(SVFIR* pag, ICFG* icfg)
+AEWTO::AEWTO(SVFIR* pag, ICFG* icfg)
     : svfir(pag), icfg(icfg), pta(nullptr), callGraph(nullptr), callGraphSCC(nullptr)
 {
     pta = AndersenWaveDiff::createAndersenWaveDiff(svfir);
@@ -42,13 +42,13 @@ PreAnalysis::PreAnalysis(SVFIR* pag, ICFG* icfg)
     callGraphSCC = pta->getCallGraphSCC();
 }
 
-PreAnalysis::~PreAnalysis()
+AEWTO::~AEWTO()
 {
     for (auto& [func, wto] : funcToWTO)
         delete wto;
 }
 
-void PreAnalysis::initWTO()
+void AEWTO::initWTO()
 {
     callGraphSCC->find();
 
@@ -95,7 +95,7 @@ void PreAnalysis::initWTO()
 // ValVar set to gather/scatter ValVars around each widening iteration.
 // We precompute the set once per cycle here so the main loop does no work.
 
-void PreAnalysis::initCycleValVars()
+void AEWTO::initCycleValVars()
 {
     // Step 1: Collect all cycles in top-down order using a stack-based DFS,
     // then reverse to get bottom-up order (inner cycles before outer ones).

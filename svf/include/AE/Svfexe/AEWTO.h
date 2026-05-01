@@ -1,4 +1,4 @@
-//===- PreAnalysis.h -- Pre-Analysis for Abstract Interpretation----------//
+//===- AEWTO.h -- WTO + pointer-analysis prep for Abstract Interpretation ---//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,18 +21,18 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * PreAnalysis.h
+ * AEWTO.h
  *
  *  Created on: Feb 25, 2026
  *      Author: Jiawei Wang
  *
- * This file provides a pre-analysis phase for Abstract Interpretation.
- * It runs Andersen's pointer analysis and builds WTO (Weak Topological Order)
- * for each function before the main abstract interpretation.
+ * Runs Andersen's pointer analysis and builds the per-function WTO
+ * (Weak Topological Order) consumed by Abstract Interpretation.  Also
+ * caches per-cycle ValVar sets for the semi-sparse loop helpers.
  */
 
-#ifndef INCLUDE_AE_SVFEXE_PREANALYSIS_H_
-#define INCLUDE_AE_SVFEXE_PREANALYSIS_H_
+#ifndef INCLUDE_AE_SVFEXE_AEWTO_H_
+#define INCLUDE_AE_SVFEXE_AEWTO_H_
 
 #include "SVFIR/SVFIR.h"
 #include "Graphs/ICFG.h"
@@ -44,13 +44,13 @@
 namespace SVF
 {
 
-class PreAnalysis
+class AEWTO
 {
 public:
     typedef SCCDetection<CallGraph*> CallGraphSCC;
 
-    PreAnalysis(SVFIR* pag, ICFG* icfg);
-    virtual ~PreAnalysis();
+    AEWTO(SVFIR* pag, ICFG* icfg);
+    virtual ~AEWTO();
 
     /// Accessors for Andersen's results
     AndersenWaveDiff* getPointerAnalysis() const
@@ -103,4 +103,4 @@ private:
 
 } // End namespace SVF
 
-#endif /* INCLUDE_AE_SVFEXE_PREANALYSIS_H_ */
+#endif /* INCLUDE_AE_SVFEXE_AEWTO_H_ */

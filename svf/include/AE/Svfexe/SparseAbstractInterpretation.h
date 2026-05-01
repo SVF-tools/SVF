@@ -28,6 +28,8 @@
 namespace SVF
 {
 
+class SVFG;
+
 /// Abstract Interpretation for `Options::AESparsity::SemiSparse`.
 ///
 /// ValVars live at their SVFG-style def-sites: reads pull from there,
@@ -37,14 +39,12 @@ namespace SVF
 class SemiSparseAbstractInterpretation : public AbstractInterpretation
 {
 public:
-    SemiSparseAbstractInterpretation() = default;
+    SemiSparseAbstractInterpretation() {
+        preAnalysis->initCycleValVars();
+    }
     ~SemiSparseAbstractInterpretation() override = default;
 
 protected:
-    /// Precompute the per-cycle ValVar set (consumed by the
-    /// getFullCycleHeadState / widen / narrow overrides below).
-    void initFromPTA(AndersenWaveDiff* pta) override;
-
     AbstractState getFullCycleHeadState(const ICFGCycleWTO* cycle) override;
 
     bool widenCycleState(const AbstractState& prev,
@@ -67,6 +67,8 @@ protected:
     void updateAbsState(const ICFGNode* node, const AbstractState& state) override;
 
     void joinStates(AbstractState& dst, const AbstractState& src) override;
+
+    const ICFGNode* getICFGNode(const ValVar* var) const;
 };
 
 /// Abstract Interpretation for `Options::AESparsity::Sparse` (full-sparse).
@@ -80,8 +82,10 @@ protected:
 class FullSparseAbstractInterpretation : public SemiSparseAbstractInterpretation
 {
 public:
-    FullSparseAbstractInterpretation() = default;
-    ~FullSparseAbstractInterpretation() override = default;
+    FullSparseAbstractInterpretation() {
+        buildSVFG();
+    }
+    ~FullSparseAbstractInterpretation() override;
 
     // Full-sparse ValVar resolution will route through the SVFG once
     // implemented; fail loudly until then rather than silently inherit
@@ -99,7 +103,9 @@ public:
 
 protected:
     /// Build the SVFG on top of the semi-sparse precompute.
-    void initFromPTA(AndersenWaveDiff* pta) override;
+    void buildSVFG();
+
+    SVFG* svfg{nullptr};
 };
 
 } // namespace SVF

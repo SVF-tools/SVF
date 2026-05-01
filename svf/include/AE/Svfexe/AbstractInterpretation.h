@@ -32,7 +32,7 @@
 #include "AE/Core/AbstractState.h"
 #include "AE/Core/ICFGWTO.h"
 #include "AE/Svfexe/AEDetector.h"
-#include "AE/Svfexe/PreAnalysis.h"
+#include "AE/Svfexe/AEWTO.h"
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "AE/Svfexe/AEStat.h"
 #include "SVFIR/SVFIR.h"
@@ -47,9 +47,6 @@ class AbstractInterpretation;
 class AbsExtAPI;
 class AEStat;
 class AEAPI;
-class GepStmt;
-class AddrStmt;
-class SVFG;
 class AndersenWaveDiff;
 
 template<typename T> class FILOWorkList;
@@ -97,7 +94,7 @@ public:
         WIDEN_NARROW
     };
 
-    virtual void runOnModule(ICFG* icfg);
+    virtual void runOnModule();
 
     /// Destructor
     virtual ~AbstractInterpretation();
@@ -206,14 +203,6 @@ protected:
     /// Factory-only construction.  External callers must use getAEInstance();
     /// `SparseAbstractInterpretation` reaches this via its own ctor.
     AbstractInterpretation();
-
-    /// Pre-analysis hook: called from runOnModule once PTA and the WTO
-    /// are ready, before analyse().  Sparse subclasses build the index
-    /// structures the main loop will consume here (cycle-ValVar
-    /// precompute for semi-sparse, SVFG for full-sparse).  Default: no-op.
-    virtual void initFromPTA(AndersenWaveDiff*)
-    {
-    }
 
     // ---- Cycle helpers overridden by SparseAbstractInterpretation ----
     // The dense versions write only to trace[cycle_head].  The semi-sparse
@@ -325,8 +314,7 @@ private:
 protected:
     /// Data and helpers reachable from SparseAbstractInterpretation.
     SVFIR* svfir{nullptr};
-    SVFG* svfg{nullptr};                            ///< populated only by FullSparseAbstractInterpretation
-    PreAnalysis* preAnalysis{nullptr};
+    AEWTO* preAnalysis{nullptr};
     Map<const ICFGNode*, AbstractState> abstractTrace; ///< per-node trace; owned here
 
     bool shouldApplyNarrowing(const FunObjVar* fun);
