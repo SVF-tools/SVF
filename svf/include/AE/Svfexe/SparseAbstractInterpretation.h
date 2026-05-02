@@ -39,7 +39,8 @@ class SVFG;
 class SemiSparseAbstractInterpretation : public AbstractInterpretation
 {
 public:
-    SemiSparseAbstractInterpretation() {
+    SemiSparseAbstractInterpretation()
+    {
         preAnalysis->initCycleValVars();
     }
     ~SemiSparseAbstractInterpretation() override = default;
@@ -82,7 +83,8 @@ protected:
 class FullSparseAbstractInterpretation : public SemiSparseAbstractInterpretation
 {
 public:
-    FullSparseAbstractInterpretation() {
+    FullSparseAbstractInterpretation()
+    {
         buildSVFG();
     }
     ~FullSparseAbstractInterpretation() override;

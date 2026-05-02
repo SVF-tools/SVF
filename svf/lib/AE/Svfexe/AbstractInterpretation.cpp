@@ -77,7 +77,7 @@ AbstractInterpretation::AbstractInterpretation()
 AbstractInterpretation& AbstractInterpretation::getAEInstance()
 {
     static std::unique_ptr<AbstractInterpretation> instance = []()
-        -> std::unique_ptr<AbstractInterpretation>
+            -> std::unique_ptr<AbstractInterpretation>
     {
         switch (Options::AESparsity())
         {
@@ -1216,7 +1216,7 @@ void AbstractInterpretation::updateStateOnStore(const StoreStmt *store)
 {
     const ICFGNode* node = store->getICFGNode();
     storeValue(SVFUtil::cast<ValVar>(store->getLHSVar()),
-                            getAbsValue(store->getRHSVar(), node), node);
+               getAbsValue(store->getRHSVar(), node), node);
 }
 
 void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
