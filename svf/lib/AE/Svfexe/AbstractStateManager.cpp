@@ -25,15 +25,14 @@
 // respective headers; this file just hosts the implementations of the
 // methods that used to live on the (now-folded) AbstractStateManager —
 // trace lookup, value get/has/update, GEP / load / store helpers, and
-// def/use queries — for dense, semi-sparse, and full-sparse alike.
+// def/use queries — for dense and semi-sparse.  Full-sparse stubs and
+// SVFG-backed overrides live in SparseAbstractInterpretation.cpp.
 //
 
 #include "AE/Svfexe/AbstractInterpretation.h"
 #include "AE/Svfexe/SparseAbstractInterpretation.h"
 #include "SVFIR/SVFIR.h"
-#include "Graphs/SVFG.h"
 #include "Util/Options.h"
-#include "Util/SVFUtil.h"
 
 using namespace SVF;
 
@@ -495,51 +494,3 @@ void SemiSparseAbstractInterpretation::updateAbsValue(
     abstractTrace[defNode ? defNode : node][var->getId()] = val;
 }
 
-// =====================================================================
-//  Full-sparse — SVFG-backed def/use; ValVar reads stubbed.
-// =====================================================================
-
-// TODO(full-sparse): route ValVar reads through the SVFG's reaching-def
-// query.  Stub until that lands so misuse fails loudly instead of
-// silently inheriting semi-sparse semantics.
-const AbstractValue& FullSparseAbstractInterpretation::getAbsValue(
-    const ValVar*, const ICFGNode*)
-{
-    assert(false && "FullSparseAbstractInterpretation::getAbsValue not implemented");
-    abort();
-}
-
-bool FullSparseAbstractInterpretation::hasAbsValue(
-    const ValVar*, const ICFGNode*) const
-{
-    assert(false && "FullSparseAbstractInterpretation::hasAbsValue not implemented");
-    abort();
-}
-
-Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfObjVar(
-    const ObjVar* obj, const ICFGNode* node) const
-{
-    assert(svfg && "SVFG is not built for full-sparse AE");
-    return svfg->getUseSitesOfObjVar(obj, node);
-}
-
-Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfValVar(
-    const ValVar* var) const
-{
-    assert(svfg && "SVFG is not built for full-sparse AE");
-    return svfg->getUseSitesOfValVar(var);
-}
-
-const ICFGNode* FullSparseAbstractInterpretation::getDefSiteOfValVar(
-    const ValVar* var) const
-{
-    assert(svfg && "SVFG is not built for full-sparse AE");
-    return svfg->getDefSiteOfValVar(var);
-}
-
-const ICFGNode* FullSparseAbstractInterpretation::getDefSiteOfObjVar(
-    const ObjVar* obj, const ICFGNode* node) const
-{
-    assert(svfg && "SVFG is not built for full-sparse AE");
-    return svfg->getDefSiteOfObjVar(obj, node);
-}
