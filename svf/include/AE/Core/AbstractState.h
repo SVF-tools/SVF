@@ -261,7 +261,6 @@ public:
     /// domain join with other, important! other widen this.
     void joinWith(const AbstractState&other);
 
-
     /// Replace address-taken (ObjVar) state with other's, preserving ValVar state.
     void updateAddrStateOnly(const AbstractState& other)
     {
@@ -275,6 +274,11 @@ public:
     void addToFreedAddrs(NodeID addr)
     {
         _freedAddrs.insert(addr);
+    }
+
+    const Set<NodeID>& getFreedAddrs() const
+    {
+        return _freedAddrs;
     }
 
     bool isFreedMem(u32_t addr) const

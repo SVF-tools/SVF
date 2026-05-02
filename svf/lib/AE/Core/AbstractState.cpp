@@ -28,8 +28,7 @@
  */
 
 #include "AE/Core/AbstractState.h"
-#include "AE/Svfexe/AbstractInterpretation.h"
-#include "Util/Options.h"
+#include "SVFIR/SVFIR.h"
 #include "Util/SVFUtil.h"
 #include "Util/Options.h"
 
@@ -103,23 +102,17 @@ AbstractState AbstractState::narrowing(const AbstractState& other)
 /// domain join with other, important! other widen this.
 void AbstractState::joinWith(const AbstractState& other)
 {
-    // In semi-sparse mode, skip ValVar (_varToAbsVal) merge — ValVars are
-    // pulled on demand from def-sites via getAbstractValue.
-    // In dense mode, merge everything.
-    if (Options::AESparsity() != AbstractInterpretation::AESparsity::SemiSparse)
+    for (auto it = other._varToAbsVal.begin(); it != other._varToAbsVal.end(); ++it)
     {
-        for (auto it = other._varToAbsVal.begin(); it != other._varToAbsVal.end(); ++it)
+        auto key = it->first;
+        auto oit = _varToAbsVal.find(key);
+        if (oit != _varToAbsVal.end())
         {
-            auto key = it->first;
-            auto oit = _varToAbsVal.find(key);
-            if (oit != _varToAbsVal.end())
-            {
-                oit->second.join_with(it->second);
-            }
-            else
-            {
-                _varToAbsVal.emplace(key, it->second);
-            }
+            oit->second.join_with(it->second);
+        }
+        else
+        {
+            _varToAbsVal.emplace(key, it->second);
         }
     }
     for (auto it = other._addrToAbsVal.begin(); it != other._addrToAbsVal.end(); ++it)

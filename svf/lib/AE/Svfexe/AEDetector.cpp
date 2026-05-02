@@ -58,7 +58,7 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                 const AbstractValue& lhsVal = ae.getAbsValue(gep->getLHSVar(), node);
                 const AbstractValue& rhsVal = ae.getAbsValue(gep->getRHSVar(), node);
                 updateGepObjOffsetFromBase(node, lhsVal.getAddrs(), rhsVal.getAddrs(),
-                                           ae.getStateMgr()->getGepByteOffset(gep));
+                                           ae.getGepByteOffset(gep));
 
                 const AddressValue& objAddrs = rhsVal.getAddrs();
                 for (const auto& addr : objAddrs)
@@ -78,7 +78,7 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                         {
                             if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
                             {
-                                size = ae.getStateMgr()->getAllocaInstByteSize(addrStmt);
+                                size = ae.getAllocaInstByteSize(addrStmt);
                             }
                         }
                     }
@@ -310,11 +310,11 @@ IntervalValue BufOverflowDetector::getAccessOffset(SVF::NodeID objId, const SVF:
 
     if (SVFUtil::isa<BaseObjVar>(obj))
     {
-        return ae.getStateMgr()->getGepByteOffset(gep);
+        return ae.getGepByteOffset(gep);
     }
     else if (SVFUtil::isa<GepObjVar>(obj))
     {
-        return getGepObjOffsetFromBase(SVFUtil::cast<GepObjVar>(obj)) + ae.getStateMgr()->getGepByteOffset(gep);
+        return getGepObjOffsetFromBase(SVFUtil::cast<GepObjVar>(obj)) + ae.getGepByteOffset(gep);
     }
     else
     {
@@ -485,7 +485,7 @@ bool BufOverflowDetector::canSafelyAccessMemory(const SVF::ValVar* value, const 
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
                 {
-                    size = ae.getStateMgr()->getAllocaInstByteSize(addrStmt);
+                    size = ae.getAllocaInstByteSize(addrStmt);
                 }
             }
         }

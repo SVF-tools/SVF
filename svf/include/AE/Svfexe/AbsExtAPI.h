@@ -34,7 +34,6 @@ namespace SVF
 {
 
 class AbstractInterpretation;
-class AbstractStateManager;
 
 /**
  * @class AbsExtAPI
@@ -53,7 +52,7 @@ public:
      * @brief Constructor for AbsExtAPI.
      * @param ae Reference to the AbstractInterpretation instance.
      */
-    AbsExtAPI(AbstractStateManager* mgr);
+    AbsExtAPI(AbstractInterpretation* ae);
 
     /**
      * @brief Initializes the external function map.
@@ -106,7 +105,7 @@ public:
      * @return Reference to the abstract state.
      * @throws Assertion if no trace exists for the node.
      */
-    AbstractState& getAbstractState(const ICFGNode* node);
+    AbstractState& getAbsState(const ICFGNode* node);
 
     void collectCheckPoint();
     void checkPointAllSet();
@@ -114,7 +113,7 @@ public:
     Set<const CallICFGNode*> checkpoints; // for CI check
 
 protected:
-    AbstractStateManager* mgr; ///< Pointer to the state manager.
+    AbstractInterpretation* ae; ///< Owning AbstractInterpretation; provides state access.
     SVFIR* svfir; ///< Pointer to the SVF intermediate representation.
     ICFG* icfg; ///< Pointer to the interprocedural control flow graph.
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map; ///< Map of function names to handlers.
