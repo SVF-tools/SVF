@@ -96,19 +96,6 @@ AbstractInterpretation& AbstractInterpretation::getAEInstance()
     return *instance;
 }
 
-// State-access methods (getAbsValue / hasAbsValue / updateAbsValue,
-// state ops, GEP / load-store / type helpers, def-use queries) are
-// implemented in AbstractStateManager.cpp for both dense and sparse.
-
-void AbstractInterpretation::propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite)
-{
-    const AbstractValue& val = getAbsValue(var, defSite);
-    for (const ICFGNode* useSite : getUseSitesOfObjVar(var, defSite))
-    {
-        updateAbsValue(var, val, useSite);
-    }
-}
-
 
 /// Destructor
 AbstractInterpretation::~AbstractInterpretation()

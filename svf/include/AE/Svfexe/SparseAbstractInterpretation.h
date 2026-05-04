@@ -98,10 +98,14 @@ public:
     bool hasAbsValue(const ValVar* var, const ICFGNode* node) const override;
     using SemiSparseAbstractInterpretation::hasAbsValue;
 
-    Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const override;
-    Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const override;
-    const ICFGNode* getDefSiteOfValVar(const ValVar* var) const override;
-    const ICFGNode* getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const override;
+    const Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const;
+    const ICFGNode* getDefSiteOfValVar(const ValVar* var) const;
+    /// Given an ObjVar and its def-site ICFGNode, find all use-site ICFGNodes
+    /// by following outgoing IndirectSVFGEdges whose pts contains the ObjVar
+    const Set<const ICFGNode*> getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
+    /// Given an ObjVar and its def-site ICFGNode, find all use-site ICFGNodes
+    /// by following outgoing IndirectSVFGEdges whose pts contains the ObjVar
+    const Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
 
 protected:
     /// Build the SVFG on top of the semi-sparse precompute.

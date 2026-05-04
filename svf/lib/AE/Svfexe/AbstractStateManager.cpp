@@ -397,36 +397,6 @@ u32_t AbstractInterpretation::getAllocaInstByteSize(const AddrStmt* addr)
     abort();
 }
 
-Set<const ICFGNode*> AbstractInterpretation::getUseSitesOfObjVar(const ObjVar*, const ICFGNode* node) const
-{
-    Set<const ICFGNode*> succs;
-    for (const auto* edge : node->getOutEdges())
-        succs.insert(edge->getDstNode());
-    return succs;
-}
-
-Set<const ICFGNode*> AbstractInterpretation::getUseSitesOfValVar(const ValVar* var) const
-{
-    Set<const ICFGNode*> succs;
-    if (const ICFGNode* node = var->getICFGNode())
-    {
-        for (const auto* edge : node->getOutEdges())
-            succs.insert(edge->getDstNode());
-    }
-    return succs;
-}
-
-const ICFGNode* AbstractInterpretation::getDefSiteOfValVar(const ValVar* var) const
-{
-    return var->getICFGNode();
-}
-
-const ICFGNode* AbstractInterpretation::getDefSiteOfObjVar(const ObjVar*, const ICFGNode* node) const
-{
-    for (const auto* edge : node->getInEdges())
-        return edge->getSrcNode();
-    return nullptr;
-}
 
 // =====================================================================
 //  Semi-sparse state-access overrides (used by both SemiSparse and

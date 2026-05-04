@@ -74,34 +74,54 @@ bool FullSparseAbstractInterpretation::hasAbsValue(
     abort();
 }
 
-Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfObjVar(
-    const ObjVar* obj, const ICFGNode* node) const
-{
-    assert(svfg && "SVFG is not built for full-sparse AE");
-    return svfg->getUseSitesOfObjVar(obj, node);
-}
-
-Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfValVar(
+const Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfValVar(
     const ValVar* var) const
 {
     assert(svfg && "SVFG is not built for full-sparse AE");
-    return svfg->getUseSitesOfValVar(var);
+    Set<const ICFGNode*> useSites;
+    for(const SVFGNode* svfgNode : svfg->getUseSitesOfValVar(var))
+    {
+        useSites.insert(svfgNode->getICFGNode());
+    }
+    return useSites;
 }
 
 const ICFGNode* FullSparseAbstractInterpretation::getDefSiteOfValVar(
     const ValVar* var) const
 {
     assert(svfg && "SVFG is not built for full-sparse AE");
-    return svfg->getDefSiteOfValVar(var);
+    return svfg->getDefSiteOfValVar(var)->getICFGNode();
 }
 
-const ICFGNode* FullSparseAbstractInterpretation::getDefSiteOfObjVar(
+const Set<const ICFGNode*> FullSparseAbstractInterpretation::getDefSiteOfObjVar(
     const ObjVar* obj, const ICFGNode* node) const
 {
     assert(svfg && "SVFG is not built for full-sparse AE");
-    return svfg->getDefSiteOfObjVar(obj, node);
+    Set<const ICFGNode*> defSites;
+    for(auto* vNode : node->getVFGNodes())
+    {
+        for(const SVFGNode* svfgNode : svfg->getDefSiteOfObjVar(obj, vNode))
+        {
+            defSites.insert(svfgNode->getICFGNode());
+        }
+    }
+    return defSites;
 }
 
+const Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfObjVar(
+    const ObjVar* obj, const ICFGNode* node) const
+{
+    assert(svfg && "SVFG is not built for full-sparse AE");
+    Set<const ICFGNode*> useSites;
+    for(auto* vNode : node->getVFGNodes())
+    {
+        for(const SVFGNode* svfgNode : svfg->getUseSitesOfObjVar(obj, vNode))
+        {
+            useSites.insert(svfgNode->getICFGNode());
+        }
+    }
+    return useSites;
+}
 // =====================================================================
 //  Semi-sparse cycle helpers (sparse-shape gather / scatter).
 // =====================================================================

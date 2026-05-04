@@ -189,16 +189,6 @@ public:
         return abstractTrace[node];
     }
 
-    // ---- Def/Use site queries (sparsity-aware) ------------------------
-
-    virtual Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
-    virtual Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const;
-    virtual const ICFGNode* getDefSiteOfValVar(const ValVar* var) const;
-    virtual const ICFGNode* getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
-
-    /// Propagate an ObjVar's abstract value from defSite to all its use-sites.
-    void propagateObjVarAbsVal(const ObjVar* var, const ICFGNode* defSite);
-
 protected:
     /// Factory-only construction.  External callers must use getAEInstance();
     /// `SparseAbstractInterpretation` reaches this via its own ctor.
