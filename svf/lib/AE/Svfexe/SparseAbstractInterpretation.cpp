@@ -57,27 +57,22 @@ void FullSparseAbstractInterpretation::buildSVFG()
 //  right entry without read-time synthesis.
 // =====================================================================
 
+// ValVar reads/writes reuse the SemiSparse path: writes go to the var's
+// declaring ICFGNode (var->getICFGNode()), reads come from the same place.
+// SVFG def-site routing was tried earlier but breaks on phi-like ValVars
+// whose declICFG ≠ SVFG def-node icfg (notably ActualRet on RetICFGNode
+// vs the call's CallICFGNode declaration).  Reusing semi is the
+// consistent fix.
 const AbstractValue& FullSparseAbstractInterpretation::getAbsValue(
     const ValVar* var, const ICFGNode* node)
 {
-    assert(svfg && "SVFG is not built for full-sparse AE");
-    // ValVars without an SVFG def-site (constants, function-entry
-    // parameters before any def) fall back to the semi-sparse path:
-    // their declaring ICFGNode is the canonical home.
-    if (!svfg->hasDefSVFGNode(var))
-        return SemiSparseAbstractInterpretation::getAbsValue(var, node);
-    const SVFGNode* defNode = svfg->getDefSiteOfValVar(var);
-    return AbstractInterpretation::getAbsValue(var, defNode->getICFGNode());
+    return SemiSparseAbstractInterpretation::getAbsValue(var, node);
 }
 
 bool FullSparseAbstractInterpretation::hasAbsValue(
     const ValVar* var, const ICFGNode* node) const
 {
-    assert(svfg && "SVFG is not built for full-sparse AE");
-    if (!svfg->hasDefSVFGNode(var))
-        return SemiSparseAbstractInterpretation::hasAbsValue(var, node);
-    const SVFGNode* defNode = svfg->getDefSiteOfValVar(var);
-    return AbstractInterpretation::hasAbsValue(var, defNode->getICFGNode());
+    return SemiSparseAbstractInterpretation::hasAbsValue(var, node);
 }
 
 const Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfValVar(
