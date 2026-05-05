@@ -137,17 +137,19 @@ const Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfObjVar
 void FullSparseAbstractInterpretation::joinStates(
     AbstractState& dst, const AbstractState& src)
 {
-    // Full-sparse never merges ValVar / ObjVar state wholesale through
-    // ICFG-edge predecessors:
-    //   - ValVars are read from their SVFG def-sites at access time
-    //     (getAbsValue(ValVar*) override).
-    //   - ObjVars are pulled per-VFG-node along indirect SVFG in-edges
-    //     in mergeStatesFromPredecessors (a per-obj-id var-level join).
-    // The only field we still union per-edge is _freedAddrs, used by
-    // the null-deref detector — there is no SVFG-level encoding of
-    // free events, so the ICFG-edge propagation is what tracks them.
-    for (NodeID a : src.getFreedAddrs())
-        dst.addToFreedAddrs(a);
+    // Gate ValVars only.  ObjVars do flow through ICFG edges so that
+    // branch narrowing (isCmpBranchFeasible / isSwitchBranchFeasible)
+    // can take effect: those handlers narrow the predecessor's local
+    // copy of trace[pred]'s _addrToAbsVal in-place, and the narrowed
+    // value reaches trace[N] only if joinStates copies ObjVars from
+    // src to dst.
+    //
+    // _freedAddrs union also rides on this joinWith.
+    auto savedVars = dst.getVarToVal();
+    dst.joinWith(src);
+    dst.clearValVars();
+    for (const auto& [id, val] : savedVars)
+        dst[id] = val;
 }
 
 bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
