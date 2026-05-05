@@ -199,6 +199,74 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
 }
 
 // =====================================================================
+//  Full-sparse — Phase 2 GepObj overlay.
+//
+//  Bridges the GEP field-precision asymmetry: a const-offset store
+//  (arr[1]=1 / s.f=1) writes a specific GepObjVar id; a dynamic-offset
+//  or cross-function read often resolves Andersen pts to the *base*
+//  obj id; the SVFG indirect edge between them carries the load's pts
+//  so the gep-field id never reaches the load via the SVFG-pull path.
+//  The overlay records every GepObjVar write in a flat map; reads
+//  consult it before falling back to the SVFG-populated trace.
+//
+//  Trade-off: weak update / flow-insensitive (a[3]=7; a[3]=11 joins
+//  to [7,11] rather than strong-updating to 11).  Same trade-off as
+//  the 0413 reference design.
+//
+//  TODO: AbsExtAPI's memcpy / memmove / strcpy handlers call
+//  as.store(addr,...) directly, bypassing this override.  If the
+//  destination addr decodes to a GepObjVar, the value won't enter
+//  the overlay — known precision leak; revisit if benchmark exposes.
+// =====================================================================
+
+void FullSparseAbstractInterpretation::storeValue(
+    const ValVar* pointer, const AbstractValue& val, const ICFGNode* node)
+{
+    AbstractInterpretation::storeValue(pointer, val, node);
+
+    const AbstractValue& ptrVal = getAbsValue(pointer, node);
+    for (auto addr : ptrVal.getAddrs())
+    {
+        if (!AbstractState::isVirtualMemAddress(addr)) continue;
+        NodeID id = getAbsState(node).getIDFromAddr(addr);
+        if (!SVFUtil::isa<GepObjVar>(svfir->getSVFVar(id))) continue;
+        auto it = gepOverlay.find(id);
+        if (it == gepOverlay.end())
+            gepOverlay[id] = val;
+        else
+            it->second.join_with(val);
+    }
+}
+
+AbstractValue FullSparseAbstractInterpretation::loadValue(
+    const ValVar* pointer, const ICFGNode* node)
+{
+    const AbstractValue& ptrVal = getAbsValue(pointer, node);
+    AbstractState& as = getAbsState(node);
+    AbstractValue res;
+
+    for (auto addr : ptrVal.getAddrs())
+    {
+        if (AbstractState::isVirtualMemAddress(addr))
+        {
+            NodeID id = as.getIDFromAddr(addr);
+            if (SVFUtil::isa<GepObjVar>(svfir->getSVFVar(id)))
+            {
+                auto it = gepOverlay.find(id);
+                if (it != gepOverlay.end())
+                {
+                    res.join_with(it->second);
+                    continue;  // overlay hit
+                }
+                // overlay miss → fall through to trace
+            }
+        }
+        res.join_with(as.load(addr));
+    }
+    return res;
+}
+
+// =====================================================================
 //  Semi-sparse cycle helpers (sparse-shape gather / scatter).
 // =====================================================================
 

@@ -119,6 +119,16 @@ protected:
     /// SVFG-reaching def-sites' traces into trace[node].
     bool mergeStatesFromPredecessors(const ICFGNode* node) override;
 
+    /// Phase 2: GepObj overlay.  Stores fold the value into the
+    /// overlay (weak update), loads consult the overlay first.
+    /// Bridges the GEP field-precision asymmetry between Andersen
+    /// (pts often resolves to base obj) and SVFG indirect edges
+    /// (labelled with that base-obj pts) — without the overlay, a
+    /// const-offset store at gepObj_i would never reach a
+    /// dynamic-offset / cross-function read pulling the base obj.
+    AbstractValue loadValue(const ValVar* pointer, const ICFGNode* node) override;
+    void storeValue(const ValVar* pointer, const AbstractValue& val, const ICFGNode* node) override;
+
     /// Build the SVFG on top of the semi-sparse precompute.
     void buildSVFG();
 
@@ -128,6 +138,11 @@ protected:
     std::unique_ptr<SVFGBuilder> svfgBuilder;
     /// View pointer into svfgBuilder's graph; non-null after buildSVFG().
     SVFG* svfg{nullptr};
+
+    /// Flow-insensitive overlay for GepObjVar abstract values.
+    /// Keyed by GepObjVar NodeID (encodes (base, offset) uniquely via
+    /// SVFIR::getGepObjVar).  Trade-off: weak update / flow-insensitive.
+    Map<NodeID, AbstractValue> gepOverlay;
 };
 
 } // namespace SVF

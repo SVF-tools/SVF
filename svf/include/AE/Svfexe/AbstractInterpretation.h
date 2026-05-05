@@ -173,8 +173,9 @@ public:
     IntervalValue getGepByteOffset(const GepStmt* gep);
     AddressValue getGepObjAddrs(const ValVar* pointer, IntervalValue offset);
 
-    AbstractValue loadValue(const ValVar* pointer, const ICFGNode* node);
-    void storeValue(const ValVar* pointer, const AbstractValue& val, const ICFGNode* node);
+    /// Virtual so full-sparse can layer the GepObj overlay on top.
+    virtual AbstractValue loadValue(const ValVar* pointer, const ICFGNode* node);
+    virtual void storeValue(const ValVar* pointer, const AbstractValue& val, const ICFGNode* node);
 
     const SVFType* getPointeeElement(const ObjVar* var, const ICFGNode* node);
     u32_t getAllocaInstByteSize(const AddrStmt* addr);
