@@ -113,7 +113,8 @@ std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
         if (cgNode->getInEdges().empty())
         {
             // If main exists, put it first for priority using deque's push_front
-            if (fun->getName() == "main")
+            const char* main_name=Options::SVFMain() ? "svf.main" : "main";
+            if (fun->getName() == main_name)
             {
                 entryFunctions.push_front(fun);
             }
