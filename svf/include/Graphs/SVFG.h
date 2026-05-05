@@ -183,15 +183,12 @@ public:
     /// by following incoming direct VFGEdges (asserts unique definition)
     const SVFGNode* getDefSiteOfValVar(const ValVar* var) const;
 
-    /// Given an ObjVar and its use-site SVFGNode, find every reaching
-    /// StoreSVFGNode by walking incoming IndirectSVFGEdges whose pts
-    /// contains the ObjVar.  Non-defining nodes are traversed
-    /// transparently: MSSAPHISVFGNode (intra-proc memory phi) and the
-    /// four inter-procedural relay nodes — FormalIN / FormalOUT /
-    /// ActualIN / ActualOUT — don't hold abstract values themselves,
-    /// so the walk continues through them until it reaches a real
-    /// def-site (StoreSVFGNode).  The returned set therefore contains
-    /// only StoreSVFGNodes.
+    /// Given an ObjVar and its use-site SVFGNode, return the immediate
+    /// indirect predecessors of `node` along edges whose pts contains
+    /// the ObjVar (one-hop graph query).  The returned set may include
+    /// MSSAPHISVFGNode and inter-procedural relay nodes (FormalIN/OUT,
+    /// ActualIN/OUT); callers that need only "real" def-sites must
+    /// filter or recurse themselves.
     const Set<const SVFGNode*> getDefSiteOfObjVar(const ObjVar* obj, const SVFGNode* node) const;
 
     /// Given a ValVar, find all use-site SVFGNodes

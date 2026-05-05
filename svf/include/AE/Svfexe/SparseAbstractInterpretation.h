@@ -89,15 +89,12 @@ public:
     }
     ~FullSparseAbstractInterpretation() override;
 
-    /// ValVar read: route to the SVFG-reaching def-site's trace entry.
+    /// ValVar read: route to the SVFG-reaching def-site's trace entry
+    /// (returns a real reference into that node's trace).
     const AbstractValue& getAbsValue(const ValVar* var, const ICFGNode* node) override;
-    /// ObjVar read: meet of trace[d] for every non-MSSAPHI def-site `d`
-    /// reached by walking indirect SVFG in-edges from `node`'s VFG nodes.
-    const AbstractValue& getAbsValue(const ObjVar* var, const ICFGNode* node) override;
     using SemiSparseAbstractInterpretation::getAbsValue;
 
     bool hasAbsValue(const ValVar* var, const ICFGNode* node) const override;
-    bool hasAbsValue(const ObjVar* var, const ICFGNode* node) const override;
     using SemiSparseAbstractInterpretation::hasAbsValue;
 
     const Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const;
@@ -110,6 +107,18 @@ public:
     const Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
 
 protected:
+    /// Gate BOTH ValVars and ObjVars through ICFG-edge merges: in
+    /// full-sparse mode neither flows along ICFG edges.  ValVars are
+    /// pulled at read-time by getAbsValue(ValVar*); ObjVars are pulled
+    /// per-MRSVFGNode in mergeStatesFromPredecessors below.
+    void joinStates(AbstractState& dst, const AbstractState& src) override;
+
+    /// First defer to base merge (which, with the gating above,
+    /// produces an essentially empty `merged`); then for each
+    /// MRSVFGNode at `node` pull the obj values it covers from the
+    /// SVFG-reaching def-sites' traces into trace[node].
+    bool mergeStatesFromPredecessors(const ICFGNode* node) override;
+
     /// Build the SVFG on top of the semi-sparse precompute.
     void buildSVFG();
 
@@ -119,10 +128,6 @@ protected:
     std::unique_ptr<SVFGBuilder> svfgBuilder;
     /// View pointer into svfgBuilder's graph; non-null after buildSVFG().
     SVFG* svfg{nullptr};
-
-    /// Buffer for `getAbsValue(ObjVar*)`'s by-reference return.  Callers
-    /// must consume the returned reference before the next ObjVar read.
-    mutable AbstractValue _objReadBuf;
 };
 
 } // namespace SVF

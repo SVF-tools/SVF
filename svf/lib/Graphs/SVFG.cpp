@@ -767,67 +767,22 @@ const SVFGNode* SVFG::getDefSiteOfValVar(const ValVar* var) const
     return getDefSVFGNode(var);
 }
 
-/// Given an ObjVar and its use-site SVFGNode, walk incoming
-/// IndirectSVFGEdges whose pts contains the ObjVar and collect every
-/// reaching StoreSVFGNode.  MSSAPHISVFGNodes are traversed transparently
-/// (they merge incoming definitions but don't define anything
-/// themselves), so the returned set only contains real def-sites.
+/// Given an ObjVar and its use-site SVFGNode, return the immediate
+/// indirect predecessors along edges whose pts contains the ObjVar.
+/// One-hop graph query: the returned set may include MSSAPHISVFGNode
+/// and inter-procedural relay nodes (FormalIN/OUT, ActualIN/OUT);
+/// callers that need only "real" def-sites must filter or recurse.
 const Set<const SVFGNode*> SVFG::getDefSiteOfObjVar(const ObjVar* obj, const SVFGNode* vNode) const
 {
-    // ----- Original one-hop implementation kept for reference -----
-    // (Returned the immediate indirect predecessors of `vNode` along
-    //  edges whose pts contained `obj`; could include MSSAPHISVFGNodes,
-    //  forcing every caller to write their own phi-traversal worklist.)
-    //
-    // Set<const SVFGNode*> defSites;
-    // for (auto it = vNode->InEdgeBegin(), eit = vNode->InEdgeEnd(); it != eit; ++it)
-    // {
-    //     if (const IndirectSVFGEdge* indEdge = SVFUtil::dyn_cast<IndirectSVFGEdge>(*it))
-    //     {
-    //         if (indEdge->getPointsTo().test(obj->getId()))
-    //         {
-    //             defSites.insert(indEdge->getSrcNode());
-    //         }
-    //     }
-    // }
-    // return defSites;
-    // --------------------------------------------------------------
-
     Set<const SVFGNode*> defSites;
-    Set<const SVFGNode*> visited;
-    std::vector<const SVFGNode*> worklist;
-    worklist.push_back(vNode);
-
-    while (!worklist.empty())
+    for (auto it = vNode->InEdgeBegin(), eit = vNode->InEdgeEnd(); it != eit; ++it)
     {
-        const SVFGNode* cur = worklist.back();
-        worklist.pop_back();
-        for (auto it = cur->InEdgeBegin(), eit = cur->InEdgeEnd(); it != eit; ++it)
+        if (const IndirectSVFGEdge* indEdge = SVFUtil::dyn_cast<IndirectSVFGEdge>(*it))
         {
-            const IndirectSVFGEdge* indEdge = SVFUtil::dyn_cast<IndirectSVFGEdge>(*it);
-            if (!indEdge)
-                continue;
-            if (!indEdge->getPointsTo().test(obj->getId()))
-                continue;
-            const SVFGNode* src = indEdge->getSrcNode();
-            if (!visited.insert(src).second)
-                continue;
-            // Only StoreSVFGNode is a real def-site for an ObjVar.
-            // MSSAPHISVFGNode (intra-proc memory phi) and the four
-            // inter-procedural relay nodes (FormalIN / FormalOUT /
-            // ActualIN / ActualOUT) don't hold abstract values
-            // themselves — they just merge or relay the obj across
-            // a join point or a function boundary, so we walk through
-            // them.  Anything else (Addr / Copy / Gep / ...) is not a
-            // Store and is not a relay either, so it is dropped.
-            if (SVFUtil::isa<StoreSVFGNode>(src))
-                defSites.insert(src);
-            else if (SVFUtil::isa<MSSAPHISVFGNode>(src) ||
-                     SVFUtil::isa<FormalINSVFGNode>(src) ||
-                     SVFUtil::isa<FormalOUTSVFGNode>(src) ||
-                     SVFUtil::isa<ActualINSVFGNode>(src) ||
-                     SVFUtil::isa<ActualOUTSVFGNode>(src))
-                worklist.push_back(src);
+            if (indEdge->getPointsTo().test(obj->getId()))
+            {
+                defSites.insert(indEdge->getSrcNode());
+            }
         }
     }
     return defSites;

@@ -50,12 +50,11 @@ void FullSparseAbstractInterpretation::buildSVFG()
 // =====================================================================
 //  Full-sparse — Phase 1 state-access overrides.
 //
-//  ValVar reads route to the SVFG-reaching def-site; ObjVar reads walk
-//  indirect SVFG in-edges (with MSSAPHI passthrough) to collect
-//  reaching defs and join their trace entries.  Writes still go to
-//  `node`'s trace via the inherited base implementation; that's the
-//  def-site for AddrStmt / StoreStmt under the dense write semantics
-//  Phase 1 preserves.
+//  ValVar reads route to the SVFG-reaching def-site (the trace there
+//  holds the real entry).  ObjVar reads use the inherited base
+//  behaviour: trace[N] is populated eagerly by the FullSparse merge
+//  step (mergeStatesFromPredecessors) so `as.load(addr)` finds the
+//  right entry without read-time synthesis.
 // =====================================================================
 
 const AbstractValue& FullSparseAbstractInterpretation::getAbsValue(
@@ -79,49 +78,6 @@ bool FullSparseAbstractInterpretation::hasAbsValue(
         return SemiSparseAbstractInterpretation::hasAbsValue(var, node);
     const SVFGNode* defNode = svfg->getDefSiteOfValVar(var);
     return AbstractInterpretation::hasAbsValue(var, defNode->getICFGNode());
-}
-
-const AbstractValue& FullSparseAbstractInterpretation::getAbsValue(
-    const ObjVar* var, const ICFGNode* node)
-{
-    assert(svfg && "SVFG is not built for full-sparse AE");
-    // SVFG::getDefSiteOfObjVar already walks through MSSAPHI and the
-    // four inter-procedural relay nodes, so the returned set is a flat
-    // collection of StoreSVFGNodes.  Join their trace entries for `var`.
-    AbstractValue meet;  // bottom
-    for (const VFGNode* vNode : node->getVFGNodes())
-    {
-        const SVFGNode* svfgVNode = SVFUtil::dyn_cast<SVFGNode>(vNode);
-        if (!svfgVNode)
-            continue;
-        for (const SVFGNode* d : svfg->getDefSiteOfObjVar(var, svfgVNode))
-        {
-            const ICFGNode* defICFG = d->getICFGNode();
-            if (defICFG && AbstractInterpretation::hasAbsValue(var, defICFG))
-                meet.join_with(AbstractInterpretation::getAbsValue(var, defICFG));
-        }
-    }
-    _objReadBuf = meet;
-    return _objReadBuf;
-}
-
-bool FullSparseAbstractInterpretation::hasAbsValue(
-    const ObjVar* var, const ICFGNode* node) const
-{
-    assert(svfg && "SVFG is not built for full-sparse AE");
-    for (const VFGNode* vNode : node->getVFGNodes())
-    {
-        const SVFGNode* svfgVNode = SVFUtil::dyn_cast<SVFGNode>(vNode);
-        if (!svfgVNode)
-            continue;
-        for (const SVFGNode* d : svfg->getDefSiteOfObjVar(var, svfgVNode))
-        {
-            const ICFGNode* defICFG = d->getICFGNode();
-            if (defICFG && AbstractInterpretation::hasAbsValue(var, defICFG))
-                return true;
-        }
-    }
-    return false;
 }
 
 const Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfValVar(
@@ -172,6 +128,77 @@ const Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfObjVar
     }
     return useSites;
 }
+
+// =====================================================================
+//  Full-sparse — merge-time ObjVar pull.
+//
+//  joinStates gates BOTH ValVars and ObjVars: in full-sparse mode
+//  neither flows along ICFG edges.  ObjVars that an ICFGNode actually
+//  needs are then pulled, per-MRSVFGNode, from the SVFG-reaching
+//  def-sites' traces in mergeStatesFromPredecessors.  By WTO order
+//  the def-sites have already been processed by the time `node` is.
+// =====================================================================
+
+void FullSparseAbstractInterpretation::joinStates(
+    AbstractState& dst, const AbstractState& src)
+{
+    // Snapshot both maps, do the full join (which copies everything),
+    // then wipe both and restore from the snapshots.  Net effect:
+    // join contributes only the things joinWith handles outside the
+    // two maps (e.g. _freedAddrs).  ValVars are pulled at read time
+    // by getAbsValue(ValVar*); ObjVars by mergeStatesFromPredecessors.
+    auto savedVars  = dst.getVarToVal();
+    auto savedAddrs = dst.getLocToVal();
+    dst.joinWith(src);
+    dst.clearValVars();
+    dst.clearAddrs();
+    for (const auto& [id, val] : savedVars)  dst[id] = val;
+    for (const auto& [k,  val] : savedAddrs) dst.store(k, val);
+}
+
+bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
+    const ICFGNode* node)
+{
+    // Step 1: base merge.  joinStates above gates ValVar+ObjVar copy;
+    // base merge still handles branch refinement and feasibility.
+    bool ok = AbstractInterpretation::mergeStatesFromPredecessors(node);
+
+    // Step 2: pull obj values along this node's SVFG indirect in-edges.
+    // Every VFG node attached to `node` that consumes memory state
+    // (Load, MSSAPHI, FormalIN/OUT, ActualIN/OUT) has indirect in-edges
+    // whose source is a real def-site (StoreSVFGNode) or another relay
+    // already populated earlier in WTO order.  For each such edge, the
+    // edge's getPointsTo() gives the obj IDs flowing along it; copy
+    // each obj's value from the def-site's trace into trace[node].
+    AbstractState& dst = abstractTrace[node];
+    for (const VFGNode* vNode : node->getVFGNodes())
+    {
+        for (auto eit = vNode->InEdgeBegin(); eit != vNode->InEdgeEnd(); ++eit)
+        {
+            const IndirectSVFGEdge* indEdge =
+                SVFUtil::dyn_cast<IndirectSVFGEdge>(*eit);
+            if (!indEdge) continue;
+            const SVFGNode* d = SVFUtil::dyn_cast<SVFGNode>(indEdge->getSrcNode());
+            if (!d) continue;
+            const ICFGNode* defICFG = d->getICFGNode();
+            if (!defICFG || !hasAbsState(defICFG)) continue;
+            AbstractState& predTrace = getAbsState(defICFG);
+            for (NodeID id : indEdge->getPointsTo())
+            {
+                // The address-state map is keyed by obj id directly
+                // (store/load handle the addr<->id conversion internally),
+                // so we check for the obj id, not the virtual address.
+                if (predTrace.getLocToVal().count(id))
+                {
+                    u32_t addr = AbstractState::getVirtualMemAddress(id);
+                    dst.store(addr, predTrace.load(addr));
+                }
+            }
+        }
+    }
+    return ok;
+}
+
 // =====================================================================
 //  Semi-sparse cycle helpers (sparse-shape gather / scatter).
 // =====================================================================

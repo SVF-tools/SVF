@@ -361,6 +361,15 @@ public:
         _varToAbsVal.clear();
     }
 
+    /// Drop all address-taken (ObjVar) storage, keeping ValVar storage
+    /// and freed addresses intact.  Symmetric to clearValVars().  Used
+    /// by full-sparse joinStates to gate ObjVar copy through ICFG-edge
+    /// merges (per-node ObjVars are pulled from SVFG def-sites instead).
+    void clearAddrs()
+    {
+        _addrToAbsVal.clear();
+    }
+
 
 };
 

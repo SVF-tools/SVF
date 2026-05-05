@@ -129,10 +129,11 @@ public:
     // ---- Abstract Value Access ----------------------------------------
 
     /// Read a top-level variable's abstract value.  Dense base does a
-    /// direct trace lookup; sparse subclasses override with their own
-    /// resolution chain (def-site walk, call-result fallback, etc.).
-    /// All three overloads are virtual so full-sparse can route ObjVar
-    /// reads through the SVFG.
+    /// direct trace lookup; sparse subclasses override to redirect the
+    /// lookup at a different ICFGNode (e.g. a ValVar's def-site).  In
+    /// every mode the returned reference points at a real entry stored
+    /// in some node's trace — full-sparse populates trace[N] eagerly
+    /// during merge so reads stay simple.
     virtual const AbstractValue& getAbsValue(const ValVar* var, const ICFGNode* node);
     virtual const AbstractValue& getAbsValue(const ObjVar* var, const ICFGNode* node);
     virtual const AbstractValue& getAbsValue(const SVFVar* var, const ICFGNode* node);
@@ -214,14 +215,17 @@ protected:
     virtual bool narrowCycleState(const AbstractState& prev, const AbstractState& cur,
                                   const ICFGCycleWTO* cycle);
 
-private:
-    /// Initialize abstract state for the global ICFG node and process global statements
-    virtual void handleGlobalNode();
-
+protected:
     /// Pull-based state merge: read abstractTrace[pred] for each predecessor,
     /// apply branch refinement for conditional IntraCFGEdges, and join into
     /// abstractTrace[node]. Returns true if at least one predecessor had state.
-    bool mergeStatesFromPredecessors(const ICFGNode* node);
+    /// Virtual so full-sparse can layer per-MRSVFGNode obj pulls on top of the
+    /// base ICFG-edge merge.
+    virtual bool mergeStatesFromPredecessors(const ICFGNode* node);
+
+private:
+    /// Initialize abstract state for the global ICFG node and process global statements
+    virtual void handleGlobalNode();
 
     /// Returns true if the branch is reachable; narrows as in-place.
     bool isBranchFeasible(const IntraCFGEdge* edge, AbstractState& as);
