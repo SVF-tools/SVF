@@ -39,39 +39,89 @@ using namespace SVF;
 //  Full-sparse — class lifecycle + SVFG construction.
 // =====================================================================
 
-FullSparseAbstractInterpretation::~FullSparseAbstractInterpretation()
-{
-    delete svfg;
-}
+FullSparseAbstractInterpretation::~FullSparseAbstractInterpretation() = default;
 
 void FullSparseAbstractInterpretation::buildSVFG()
 {
-    SVFGBuilder memSSA(true);
-    svfg = memSSA.buildFullSVFG(preAnalysis->getPointerAnalysis());
+    svfgBuilder = std::make_unique<SVFGBuilder>(true);
+    svfg = svfgBuilder->buildFullSVFG(preAnalysis->getPointerAnalysis());
 }
 
 // =====================================================================
-//  Full-sparse — state-access overrides.
+//  Full-sparse — Phase 1 state-access overrides.
 //
-//  ValVar reads are stubbed until SVFG-backed resolution lands;
-//  def/use queries route through the SVFG.
+//  ValVar reads route to the SVFG-reaching def-site; ObjVar reads walk
+//  indirect SVFG in-edges (with MSSAPHI passthrough) to collect
+//  reaching defs and join their trace entries.  Writes still go to
+//  `node`'s trace via the inherited base implementation; that's the
+//  def-site for AddrStmt / StoreStmt under the dense write semantics
+//  Phase 1 preserves.
 // =====================================================================
 
-// TODO(full-sparse): route ValVar reads through the SVFG's reaching-def
-// query.  Stub until that lands so misuse fails loudly instead of
-// silently inheriting semi-sparse semantics.
 const AbstractValue& FullSparseAbstractInterpretation::getAbsValue(
-    const ValVar*, const ICFGNode*)
+    const ValVar* var, const ICFGNode* node)
 {
-    assert(false && "FullSparseAbstractInterpretation::getAbsValue not implemented");
-    abort();
+    assert(svfg && "SVFG is not built for full-sparse AE");
+    // ValVars without an SVFG def-site (constants, function-entry
+    // parameters before any def) fall back to the semi-sparse path:
+    // their declaring ICFGNode is the canonical home.
+    if (!svfg->hasDefSVFGNode(var))
+        return SemiSparseAbstractInterpretation::getAbsValue(var, node);
+    const SVFGNode* defNode = svfg->getDefSiteOfValVar(var);
+    return AbstractInterpretation::getAbsValue(var, defNode->getICFGNode());
 }
 
 bool FullSparseAbstractInterpretation::hasAbsValue(
-    const ValVar*, const ICFGNode*) const
+    const ValVar* var, const ICFGNode* node) const
 {
-    assert(false && "FullSparseAbstractInterpretation::hasAbsValue not implemented");
-    abort();
+    assert(svfg && "SVFG is not built for full-sparse AE");
+    if (!svfg->hasDefSVFGNode(var))
+        return SemiSparseAbstractInterpretation::hasAbsValue(var, node);
+    const SVFGNode* defNode = svfg->getDefSiteOfValVar(var);
+    return AbstractInterpretation::hasAbsValue(var, defNode->getICFGNode());
+}
+
+const AbstractValue& FullSparseAbstractInterpretation::getAbsValue(
+    const ObjVar* var, const ICFGNode* node)
+{
+    assert(svfg && "SVFG is not built for full-sparse AE");
+    // SVFG::getDefSiteOfObjVar already walks through MSSAPHI and the
+    // four inter-procedural relay nodes, so the returned set is a flat
+    // collection of StoreSVFGNodes.  Join their trace entries for `var`.
+    AbstractValue meet;  // bottom
+    for (const VFGNode* vNode : node->getVFGNodes())
+    {
+        const SVFGNode* svfgVNode = SVFUtil::dyn_cast<SVFGNode>(vNode);
+        if (!svfgVNode)
+            continue;
+        for (const SVFGNode* d : svfg->getDefSiteOfObjVar(var, svfgVNode))
+        {
+            const ICFGNode* defICFG = d->getICFGNode();
+            if (defICFG && AbstractInterpretation::hasAbsValue(var, defICFG))
+                meet.join_with(AbstractInterpretation::getAbsValue(var, defICFG));
+        }
+    }
+    _objReadBuf = meet;
+    return _objReadBuf;
+}
+
+bool FullSparseAbstractInterpretation::hasAbsValue(
+    const ObjVar* var, const ICFGNode* node) const
+{
+    assert(svfg && "SVFG is not built for full-sparse AE");
+    for (const VFGNode* vNode : node->getVFGNodes())
+    {
+        const SVFGNode* svfgVNode = SVFUtil::dyn_cast<SVFGNode>(vNode);
+        if (!svfgVNode)
+            continue;
+        for (const SVFGNode* d : svfg->getDefSiteOfObjVar(var, svfgVNode))
+        {
+            const ICFGNode* defICFG = d->getICFGNode();
+            if (defICFG && AbstractInterpretation::hasAbsValue(var, defICFG))
+                return true;
+        }
+    }
+    return false;
 }
 
 const Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfValVar(

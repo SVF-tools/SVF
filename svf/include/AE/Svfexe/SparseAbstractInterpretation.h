@@ -24,11 +24,13 @@
 #define INCLUDE_AE_SVFEXE_SPARSEABSTRACTINTERPRETATION_H_
 
 #include "AE/Svfexe/AbstractInterpretation.h"
+#include <memory>
 
 namespace SVF
 {
 
 class SVFG;
+class SVFGBuilder;
 
 /// Abstract Interpretation for `Options::AESparsity::SemiSparse`.
 ///
@@ -76,10 +78,8 @@ protected:
 ///
 /// In full-sparse mode both ValVars and ObjVars live at their SVFG
 /// def-sites; reads query the SVFG for the reaching-def site, writes
-/// happen at def-sites.  ValVar reads currently assert(false) until the
-/// SVFG-backed resolution lands (see `doc/plan-full-sparse.md`); cycle
-/// helpers are inherited from the semi-sparse parent and will also need
-/// extension for ObjVars.
+/// happen at def-sites.  See `doc/plan-full-sparse.md` for the
+/// phase plan; Phase 1 routes ValVar and ObjVar reads through the SVFG.
 class FullSparseAbstractInterpretation : public SemiSparseAbstractInterpretation
 {
 public:
@@ -89,13 +89,15 @@ public:
     }
     ~FullSparseAbstractInterpretation() override;
 
-    // Full-sparse ValVar resolution will route through the SVFG once
-    // implemented; fail loudly until then rather than silently inherit
-    // semi-sparse semantics.
+    /// ValVar read: route to the SVFG-reaching def-site's trace entry.
     const AbstractValue& getAbsValue(const ValVar* var, const ICFGNode* node) override;
+    /// ObjVar read: meet of trace[d] for every non-MSSAPHI def-site `d`
+    /// reached by walking indirect SVFG in-edges from `node`'s VFG nodes.
+    const AbstractValue& getAbsValue(const ObjVar* var, const ICFGNode* node) override;
     using SemiSparseAbstractInterpretation::getAbsValue;
 
     bool hasAbsValue(const ValVar* var, const ICFGNode* node) const override;
+    bool hasAbsValue(const ObjVar* var, const ICFGNode* node) const override;
     using SemiSparseAbstractInterpretation::hasAbsValue;
 
     const Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const;
@@ -111,7 +113,16 @@ protected:
     /// Build the SVFG on top of the semi-sparse precompute.
     void buildSVFG();
 
+    /// Owns the SVFG (via SVFGBuilder's internal unique_ptr).  Without
+    /// this, SVFGBuilder would be a local in buildSVFG() and free the
+    /// graph at scope exit, leaving `svfg` dangling.
+    std::unique_ptr<SVFGBuilder> svfgBuilder;
+    /// View pointer into svfgBuilder's graph; non-null after buildSVFG().
     SVFG* svfg{nullptr};
+
+    /// Buffer for `getAbsValue(ObjVar*)`'s by-reference return.  Callers
+    /// must consume the returned reference before the next ObjVar read.
+    mutable AbstractValue _objReadBuf;
 };
 
 } // namespace SVF
