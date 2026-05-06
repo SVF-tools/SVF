@@ -542,12 +542,12 @@ void LLVMModuleSet::addSVFMain()
             }
         }
     }
-    // Keep it simple, and reduce checks
-    // // Only create svf.main when the original main function is found, and also
-    // // there are global constructor or destructor functions.
-    // if (orgMain && getModuleNum() > 0 &&
-    //         (ctor_funcs.size() > 0 || dtor_funcs.size() > 0))
-    // {
+
+    // Only create svf.main when the original main function is found, and also
+    // there are global constructor or destructor functions.
+    if (orgMain && getModuleNum() > 0 &&
+            (ctor_funcs.size() > 0 || dtor_funcs.size() > 0))
+    {
         assert(mainMod && "Module with main function not found.");
         Module& M = *mainMod;
         // char **
@@ -597,7 +597,7 @@ void LLVMModuleSet::addSVFMain()
         }
         // return;
         Builder.CreateRetVoid();
-    // }
+    } else Options::SVFMain.setValue(false); // use SVF::Options to record whether svf.main is added or not
 }
 
 void LLVMModuleSet::collectExtFunAnnotations(const Module* mod)

@@ -177,7 +177,7 @@ public:
 
     // LLVMModule.cpp
     static const Option<std::string> Graphtxt;
-    static const Option<bool> SVFMain;
+    static Option<bool> SVFMain;
 
     // SymbolTableInfo.cpp
     static const Option<bool> LocMemModel;

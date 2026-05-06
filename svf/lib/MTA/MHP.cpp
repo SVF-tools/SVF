@@ -567,8 +567,7 @@ bool MHP::isConnectedfromMain(const FunObjVar* fun)
     while (!worklist.empty())
     {
         const CallGraphNode* node = worklist.pop();
-        const char* main_name=Options::SVFMain() ? "svf.main" : "main";
-        if (main_name == node->getFunction()->getName())
+        if (SVFUtil::isProgEntryFunction(node->getFunction()))
             return true;
         for (CallGraphNode::const_iterator nit = node->InEdgeBegin(), neit = node->InEdgeEnd(); nit != neit; nit++)
         {
