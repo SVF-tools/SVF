@@ -223,12 +223,14 @@ protected:
     /// base ICFG-edge merge.
     virtual bool mergeStatesFromPredecessors(const ICFGNode* node);
 
+    /// Returns true if the branch is reachable; narrows as in-place.
+    /// Protected so full-sparse can recompute narrowing in its own merge
+    /// override and capture the narrowed obj entries into branchOverlay.
+    bool isBranchFeasible(const IntraCFGEdge* edge, AbstractState& as);
+
 private:
     /// Initialize abstract state for the global ICFG node and process global statements
     virtual void handleGlobalNode();
-
-    /// Returns true if the branch is reachable; narrows as in-place.
-    bool isBranchFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
     /// Handle a call site node: dispatch to ext-call, direct-call, or indirect-call handling
     virtual void handleCallSite(const ICFGNode* node);

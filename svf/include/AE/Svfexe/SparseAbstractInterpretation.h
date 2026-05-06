@@ -143,6 +143,16 @@ protected:
     /// Keyed by GepObjVar NodeID (encodes (base, offset) uniquely via
     /// SVFIR::getGepObjVar).  Trade-off: weak update / flow-insensitive.
     Map<NodeID, AbstractValue> gepOverlay;
+
+    /// Backward-liveness precompute: liveIn[N] = obj NodeIDs that may
+    /// be read on some forward ICFG path from N.  Used by the post-
+    /// merge prune in mergeStatesFromPredecessors to drop obj that
+    /// won't be read again — shrinks per-node trace storage well
+    /// below semi-sparse on programs with localised obj usage.
+    Map<const ICFGNode*, Set<NodeID>> liveIn;
+
+    /// Backward-dataflow fixpoint computing `liveIn`.
+    void computeObjLiveness();
 };
 
 } // namespace SVF
