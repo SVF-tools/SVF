@@ -57,22 +57,22 @@ void FullSparseAbstractInterpretation::buildSVFG()
 //  right entry without read-time synthesis.
 // =====================================================================
 
-// ValVar reads/writes reuse the SemiSparse path: writes go to the var's
-// declaring ICFGNode (var->getICFGNode()), reads come from the same place.
-// SVFG def-site routing was tried earlier but breaks on phi-like ValVars
-// whose declICFG ≠ SVFG def-node icfg (notably ActualRet on RetICFGNode
-// vs the call's CallICFGNode declaration).  Reusing semi is the
-// consistent fix.
+// ValVar reads/writes reuse the def-site routing: writes go to the
+// var's declaring ICFGNode (via SemiSparse::updateAbsValue), reads
+// come from the same place via getICFGNode(var).  SVFG def-site
+// routing was tried earlier but breaks on phi-like ValVars whose
+// declICFG ≠ SVFG def-node icfg (notably ActualRet on RetICFGNode
+// vs the call's CallICFGNode declaration).
 const AbstractValue& FullSparseAbstractInterpretation::getAbsValue(
     const ValVar* var, const ICFGNode* node)
 {
-    return SemiSparseAbstractInterpretation::getAbsValue(var, node);
+    return AbstractInterpretation::getAbsValue(var, getICFGNode(var));
 }
 
 bool FullSparseAbstractInterpretation::hasAbsValue(
     const ValVar* var, const ICFGNode* node) const
 {
-    return SemiSparseAbstractInterpretation::hasAbsValue(var, node);
+    return AbstractInterpretation::hasAbsValue(var, getICFGNode(var));
 }
 
 const Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfValVar(
@@ -133,7 +133,7 @@ const Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfObjVar
 // =====================================================================
 
 void FullSparseAbstractInterpretation::joinStates(
-    AbstractState&, const AbstractState&)
+    AbstractState&, const AbstractState&) // add one more ICFGNODE AS PARAM
 {
     // No-op: full-sparse doesn't propagate state along ICFG edges.
 }
@@ -344,3 +344,80 @@ bool SemiSparseAbstractInterpretation::narrowCycleState(
         updateAbsValue(svfir->getSVFVar(id), val, cycle_head);
     return false;
 }
+
+
+// =====================================================================
+//  Semi-sparse state-access overrides (used by both SemiSparse and
+//  FullSparse subclasses; the latter further restricts ValVar reads).
+// =====================================================================
+
+void SemiSparseAbstractInterpretation::updateAbsState(
+    const ICFGNode* node, const AbstractState& state)
+{
+    // Only replace ObjVar state.  ValVars live at their def-sites and
+    // must not be overwritten when the predecessor's state is merged in.
+    abstractTrace[node].updateAddrStateOnly(state);
+}
+
+void SemiSparseAbstractInterpretation::joinStates(
+    AbstractState& dst, const AbstractState& src)
+{
+    // ValVars live at def-sites in semi-sparse mode; they don't flow
+    // through state merges.  Iterate src's ObjVar (_addrToAbsVal) entries
+    // directly and join into dst, leaving dst's ValVar map untouched.
+    // _freedAddrs (used by the null-deref detector) also rides along
+    // ICFG edges — there is no SVFG-level encoding of free events.
+    for (const auto& [id, val] : src.getLocToVal())
+    {
+        u32_t addr = AbstractState::getVirtualMemAddress(id);
+        if (dst.getLocToVal().count(id))
+            dst.load(addr).join_with(val);
+        else
+            dst.store(addr, val);
+    }
+    for (NodeID a : src.getFreedAddrs())
+        dst.addToFreedAddrs(a);
+}
+
+const ICFGNode* SemiSparseAbstractInterpretation::getICFGNode(const ValVar* var) const
+{
+    // const ValVars are all defined in global node
+    if (!var->getICFGNode())
+    {
+        return svfir->getICFG()->getGlobalICFGNode();
+    }
+    // for return value of callsite, use the ret-site as def-site
+    else if (SVFUtil::isa<CallICFGNode>(var->getICFGNode()) && SVFUtil::isa<RetValPN>(var))
+    {
+        return SVFUtil::dyn_cast<CallICFGNode>(var->getICFGNode())->getRetICFGNode();
+    }
+    // for other ValVars, use their def-site as the node to query abstract value.
+    else
+    {
+        return var->getICFGNode();
+    }
+}
+
+// const AbstractValue& SemiSparseAbstractInterpretation::getAbsValue(
+//     const ValVar* var, const ICFGNode* node)
+// {
+//     return AbstractInterpretation::getAbsValue(var, getICFGNode(var));
+// }
+
+// bool SemiSparseAbstractInterpretation::hasAbsValue(
+//     const ValVar* var, const ICFGNode* node) const
+// {
+//     return AbstractInterpretation::hasAbsValue(var, getICFGNode(var));
+// }
+
+void SemiSparseAbstractInterpretation::updateAbsValue(
+    const ValVar* var, const AbstractValue& val, const ICFGNode* node)
+{
+    // Write to the var's def-site so getAbsValue stays consistent.
+    const ICFGNode* defNode = var->getICFGNode();
+    abstractTrace[defNode ? defNode : node][var->getId()] = val;
+}
+
+
+// TODO: no JoinState
+// TODO: add Full UpdateAbsValue
