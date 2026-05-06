@@ -33,6 +33,7 @@
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
 #include "Util/ThreadAPI.h"
+#include "Util/Options.h"
 
 namespace SVF
 {
@@ -112,7 +113,8 @@ const Function* getProgFunction(const std::string& funName);
 /// Check whether a function is an entry function (i.e., main)
 inline bool isProgEntryFunction(const Function* fun)
 {
-    return fun && fun->getName() == "main";
+    const char* main_name=Options::SVFMain() ? "svf.main" : "main";
+    return fun && fun->getName() == main_name;
 }
 
 /// Check whether this value is a black hole
