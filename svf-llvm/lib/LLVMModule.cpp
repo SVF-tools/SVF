@@ -597,7 +597,12 @@ void LLVMModuleSet::addSVFMain()
         }
         // return;
         Builder.CreateRetVoid();
-    } else Options::SVFMain.setValue(false); // use SVF::Options to record whether svf.main is added or not
+    }
+    else
+    {
+        // use SVF::Options to record whether svf.main is added or not
+        Options::SVFMain.setValue(false);
+    }
 }
 
 void LLVMModuleSet::collectExtFunAnnotations(const Module* mod)
