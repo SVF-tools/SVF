@@ -361,15 +361,6 @@ public:
         _varToAbsVal.clear();
     }
 
-    /// Drop all address-taken (ObjVar) storage, keeping ValVar storage
-    /// and freed addresses intact.  Symmetric to clearValVars().  Used
-    /// by full-sparse to liveness-prune ObjVar entries from a per-node
-    /// trace after the merge step.
-    void clearAddrs()
-    {
-        _addrToAbsVal.clear();
-    }
-
 
 };
 

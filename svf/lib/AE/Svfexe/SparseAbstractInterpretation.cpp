@@ -45,62 +45,6 @@ void FullSparseAbstractInterpretation::buildSVFG()
 {
     svfgBuilder = std::make_unique<SVFGBuilder>(true);
     svfg = svfgBuilder->buildFullSVFG(preAnalysis->getPointerAnalysis());
-    computeObjLiveness();
-}
-
-// Backward dataflow:
-//   liveIn[N] = use[N] ∪ ∪{ liveIn[succ] | succ ∈ N.successors }
-// where use[N] is the set of obj NodeIDs that some VFG node attached
-// to N consumes via an indirect SVFG in-edge (= obj that flow into a
-// load / mphi / FPIN / etc. at this node).
-void FullSparseAbstractInterpretation::computeObjLiveness()
-{
-    ICFG* icfg = svfir->getICFG();
-
-    // Step 1: precompute use[N] for every ICFG node.
-    Map<const ICFGNode*, Set<NodeID>> useSet;
-    for (auto it = icfg->begin(), eit = icfg->end(); it != eit; ++it)
-    {
-        const ICFGNode* N = it->second;
-        Set<NodeID>& u = useSet[N];
-        for (const VFGNode* v : N->getVFGNodes())
-        {
-            for (auto eit2 = v->InEdgeBegin(); eit2 != v->InEdgeEnd(); ++eit2)
-            {
-                if (auto* ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(*eit2))
-                    for (NodeID id : ie->getPointsTo())
-                        u.insert(id);
-            }
-        }
-    }
-
-    // Step 2: fixpoint over liveIn.
-    bool changed = true;
-    while (changed)
-    {
-        changed = false;
-        for (auto it = icfg->begin(), eit = icfg->end(); it != eit; ++it)
-        {
-            const ICFGNode* N = it->second;
-            Set<NodeID> newOut;
-            for (auto& outEdge : N->getOutEdges())
-            {
-                const ICFGNode* succ = outEdge->getDstNode();
-                auto sit = liveIn.find(succ);
-                if (sit != liveIn.end())
-                    newOut.insert(sit->second.begin(), sit->second.end());
-            }
-            // newIn = use[N] ∪ newOut
-            Set<NodeID> newIn = useSet[N];
-            newIn.insert(newOut.begin(), newOut.end());
-            auto& cur = liveIn[N];
-            if (newIn.size() != cur.size() || newIn != cur)
-            {
-                cur = std::move(newIn);
-                changed = true;
-            }
-        }
-    }
 }
 
 // =====================================================================
@@ -181,61 +125,90 @@ const Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfObjVar
 }
 
 // =====================================================================
-//  Full-sparse — merge-time ObjVar pull.
+//  Full-sparse — pure SVFG-pull merge.
 //
-//  joinStates gates BOTH ValVars and ObjVars: in full-sparse mode
-//  neither flows along ICFG edges.  ObjVars that an ICFGNode actually
-//  needs are then pulled, per-MRSVFGNode, from the SVFG-reaching
-//  def-sites' traces in mergeStatesFromPredecessors.  By WTO order
-//  the def-sites have already been processed by the time `node` is.
+//  mergeStatesFromPredecessors builds trace[N] from scratch by walking
+//  N's VFG nodes' indirect SVFG in-edges.  No ICFG-edge dense copy.
+//  joinStates is a no-op safety net in case base machinery calls it.
 // =====================================================================
 
 void FullSparseAbstractInterpretation::joinStates(
-    AbstractState& dst, const AbstractState& src)
+    AbstractState&, const AbstractState&)
 {
-    // Semi-style: gate ValVars only (they live at SVFG def-sites);
-    // copy ObjVars + freedAddrs through joinWith.  Branch narrowing
-    // (isCmpBranchFeasible / isSwitchBranchFeasible) modifies the
-    // predState's _addrToAbsVal in-place; semi-style propagation
-    // surfaces the narrowed values into trace[node].
-    //
-    // The full-sparse storage win comes from the post-merge prune in
-    // mergeStatesFromPredecessors below, which drops obj that aren't
-    // live at this node.
-    auto savedVars = dst.getVarToVal();
-    dst.joinWith(src);
-    dst.clearValVars();
-    for (const auto& [id, val] : savedVars)
-        dst[id] = val;
+    // No-op: full-sparse doesn't propagate state along ICFG edges.
 }
 
 bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     const ICFGNode* node)
 {
-    // Base merge runs branch refinement (isBranchFeasible narrows
-    // predState in-place) and joinStates (semi-style copies the
-    // narrowed obj into merged → trace[node]).  After the base,
-    // trace[node]._addrToAbsVal contains every obj that any feasible
-    // predecessor carried — same density as semi-sparse.
-    bool ok = AbstractInterpretation::mergeStatesFromPredecessors(node);
-
-    // Liveness prune: keep only obj that are live at `node`.  An obj
-    // is live if it's read at this node or some forward-reachable
-    // node (use[N] ∪ liveOut[N]).  Dead obj never get read again, so
-    // dropping them from trace[node] is sound and shrinks per-node
-    // storage well below semi-sparse on programs with localised obj
-    // usage.
-    auto live_it = liveIn.find(node);
-    if (live_it == liveIn.end()) return ok;
-    const Set<NodeID>& live = live_it->second;
-
     AbstractState& dst = abstractTrace[node];
-    auto saved = dst.getLocToVal();   // copy
-    dst.clearAddrs();
-    for (const auto& [id, val] : saved)
-        if (live.count(id))
-            dst.store(AbstractState::getVirtualMemAddress(id), val);
-    return ok;
+    bool hasFeasiblePred = false;
+
+    // Step 1: pure SVFG-pull for ObjVars at `node`.
+    // For each VFG node v at `node`, follow each indirect SVFG in-edge
+    // back to its source SVFGNode `s`; pull, for every obj id in the
+    // edge's PTS, the value from trace[s->getICFGNode()][obj].  Multiple
+    // sources (e.g. mphi operands) JOIN.
+    Set<NodeID> pulled;
+    for (const VFGNode* v : node->getVFGNodes())
+    {
+        for (auto eit = v->InEdgeBegin(); eit != v->InEdgeEnd(); ++eit)
+        {
+            const IndirectSVFGEdge* indEdge =
+                SVFUtil::dyn_cast<IndirectSVFGEdge>(*eit);
+            if (!indEdge) continue;
+            const SVFGNode* src = SVFUtil::dyn_cast<SVFGNode>(indEdge->getSrcNode());
+            if (!src) continue;
+            const ICFGNode* srcICFG = src->getICFGNode();
+            if (!srcICFG || !hasAbsState(srcICFG)) continue;
+            AbstractState& srcTrace = getAbsState(srcICFG);
+            for (NodeID id : indEdge->getPointsTo())
+            {
+                if (!srcTrace.getLocToVal().count(id)) continue;
+                u32_t addr = AbstractState::getVirtualMemAddress(id);
+                if (pulled.insert(id).second)
+                    dst.store(addr, srcTrace.load(addr));
+                else
+                    dst.load(addr).join_with(srcTrace.load(addr));
+            }
+        }
+    }
+
+    // Minimal "is this node reachable" check for the function-contract
+    // return value: any predecessor with state is enough.  Real
+    // feasibility filtering and per-edge freedAddrs/branch handling
+    // belong below — see TODO.
+    for (auto& edge : node->getInEdges())
+    {
+        if (hasAbsState(edge->getSrcNode()))
+        {
+            hasFeasiblePred = true;
+            break;
+        }
+    }
+
+    // TODO(full-sparse): the following two concerns were prototyped here
+    // and removed pending a cleaner design.  Re-introduce when we tackle
+    // the gaps they address:
+    //
+    //   (a) _freedAddrs union along ICFG edges.  No SVFG-level
+    //       encoding of free events, so the null-deref detector loses
+    //       free state propagation without an ICFG-edge union here.
+    //       Will re-regress nullderef precision until restored.
+    //
+    //   (b) Branch refinement (cmp/switch narrowing).  isBranchFeasible
+    //       narrows the predState's _addrToAbsVal in-place; under pure
+    //       SVFG-pull the cmp's icfg trace doesn't carry the obj that
+    //       the cmp's backing load reads, so narrowing silently no-ops.
+    //       Solution direction: at each conditional intra in-edge,
+    //       walk the cmp/switch condition back to its backing
+    //       LoadStmt(s), pull those obj from the load's icfg trace
+    //       into a local predState, run isBranchFeasible, capture the
+    //       narrowed obj entries into a branchOverlay (virtual
+    //       StoreVFGNode at the branch successor).  loadValue then
+    //       consults branchOverlay before the trace fallback.
+
+    return hasFeasiblePred;
 }
 
 // =====================================================================
@@ -296,7 +269,7 @@ AbstractValue FullSparseAbstractInterpretation::loadValue(
                 if (it != gepOverlay.end())
                 {
                     res.join_with(it->second);
-                    continue;
+                    continue;  // overlay hit
                 }
             }
         }
