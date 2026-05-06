@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.23)
 
 project(
   SVF
-  VERSION 3.3
+  VERSION 3.4
   DESCRIPTION "SVF is a static value-flow analysis framework for source code"
   HOMEPAGE_URL "https://github.com/SVF-tools/SVF"
   LANGUAGES C CXX
