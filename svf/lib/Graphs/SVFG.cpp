@@ -767,11 +767,8 @@ const SVFGNode* SVFG::getDefSiteOfValVar(const ValVar* var) const
     return getDefSVFGNode(var);
 }
 
-/// Given an ObjVar and its use-site SVFGNode, return the immediate
-/// indirect predecessors along edges whose pts contains the ObjVar.
-/// One-hop graph query: the returned set may include MSSAPHISVFGNode
-/// and inter-procedural relay nodes (FormalIN/OUT, ActualIN/OUT);
-/// callers that need only "real" def-sites must filter or recurse.
+/// Given an ObjVar and its use-site SVFGNode, find the definition-site SVFGNodes
+/// by following incoming IndirectSVFGEdges whose pts contains the ObjVar (asserts unique definition)
 const Set<const SVFGNode*> SVFG::getDefSiteOfObjVar(const ObjVar* obj, const SVFGNode* vNode) const
 {
     Set<const SVFGNode*> defSites;

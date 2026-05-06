@@ -129,11 +129,10 @@ public:
     // ---- Abstract Value Access ----------------------------------------
 
     /// Read a top-level variable's abstract value.  Dense base does a
-    /// direct trace lookup; sparse subclasses override to redirect the
-    /// lookup at a different ICFGNode (e.g. a ValVar's def-site).  In
-    /// every mode the returned reference points at a real entry stored
-    /// in some node's trace — full-sparse populates trace[N] eagerly
-    /// during merge so reads stay simple.
+    /// direct trace lookup; sparse subclasses override with their own
+    /// resolution chain (def-site walk, call-result fallback, etc.).
+    /// All three overloads are virtual so full-sparse can route ObjVar
+    /// reads through the SVFG.
     virtual const AbstractValue& getAbsValue(const ValVar* var, const ICFGNode* node);
     virtual const AbstractValue& getAbsValue(const ObjVar* var, const ICFGNode* node);
     virtual const AbstractValue& getAbsValue(const SVFVar* var, const ICFGNode* node);
