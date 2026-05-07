@@ -109,66 +109,79 @@ const Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfObjVar
 
 
 // =====================================================================
-//  Full-sparse — pure SVFG-pull merge.
+//  Full-sparse — merge.
 //
-//  mergeStatesFromPredecessors builds trace[N] from scratch by walking
-//  N's VFG nodes' indirect SVFG in-edges.  No ICFG-edge dense copy.
-//  joinStates is a no-op safety net in case base machinery calls it.
+//  mergeStatesFromPredecessors is a thin wrapper: defer to base for
+//  ICFG-edge bookkeeping (predecessor iteration, branch feasibility,
+//  joinStates, updateAbsState, reachability return).  When base reports
+//  a feasible predecessor, run pullValueFlow to populate trace[node]
+//  with obj values pulled along SVFG indirect in-edges.
+//
+//  joinStates stays a near-no-op (only _freedAddrs rides ICFG edges,
+//  matching semi-sparse minus the obj loop) since value flow is
+//  handled by pullValueFlow, not by ICFG-edge joins.
 // =====================================================================
 
 void FullSparseAbstractInterpretation::joinStates(
-    AbstractState&, const AbstractState&) // add one more ICFGNODE AS PARAM
+    AbstractState& dst, const AbstractState& src)
 {
-    assert(false && "joinStates should not be called in full-sparse AE");
-    // No-op: full-sparse doesn't propagate state along ICFG edges.
+    // Value flow rides SVFG indirect edges (see pullValueFlow), not
+    // ICFG edges.  Only _freedAddrs has no SVFG encoding and must
+    // propagate along the control-flow graph for the null-deref
+    // detector — same as semi-sparse, minus the obj loop.
+    for (NodeID a : src.getFreedAddrs())
+        dst.addToFreedAddrs(a);
 }
 
-bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
+bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
+    const ICFGNode* node)
 {
-    AbstractState& dst = abstractTrace[node];
-    bool hasFeasiblePred = false;
+    if (!AbstractInterpretation::mergeStatesFromPredecessors(node))
+        return false;
+    pullValueFlow(node);
+    return true;
+}
 
-    // Step 1: pure SVFG-pull for ObjVars at `node`.
+void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
+{
     // For each VFG node v at `node`, follow each indirect SVFG in-edge
-    // back to its source SVFGNode `s`; pull, for every obj id in the
-    // edge's PTS, the value from trace[s->getICFGNode()][obj].  Multiple
-    // sources (e.g. mphi operands) JOIN.
-    Set<NodeID> pulled;
+    // back to its source SVFGNode `s`; for every obj id in the edge's
+    // PTS, JOIN `s`'s value into trace[node] via the polymorphic
+    // get/updateAbsValue path.  Multiple sources (e.g. mphi operands)
+    // accumulate naturally — first write seeds trace[node][obj], later
+    // writes read-join-write.
     for (const VFGNode* v : node->getVFGNodes())
     {
         for (auto eit = v->InEdgeBegin(); eit != v->InEdgeEnd(); ++eit)
         {
-            const IndirectSVFGEdge* indEdge =
-                SVFUtil::dyn_cast<IndirectSVFGEdge>(*eit);
-            if (!indEdge) continue;
-            const SVFGNode* src = SVFUtil::dyn_cast<SVFGNode>(indEdge->getSrcNode());
-            if (!src) continue;
-            const ICFGNode* srcICFG = src->getICFGNode();
-            if (!srcICFG || !hasAbsState(srcICFG)) continue;
-            AbstractState& srcTrace = getAbsState(srcICFG);
-            for (NodeID id : indEdge->getPointsTo())
+            if (const IndirectSVFGEdge* indEdge =
+                SVFUtil::dyn_cast<IndirectSVFGEdge>(*eit))
             {
-                if (!srcTrace.getLocToVal().count(id)) continue;
-                u32_t addr = AbstractState::getVirtualMemAddress(id);
-                if (pulled.insert(id).second)
-                    dst.store(addr, srcTrace.load(addr));
-                else
-                    dst.load(addr).join_with(srcTrace.load(addr));
+                const SVFGNode* src =
+                    SVFUtil::dyn_cast<SVFGNode>(indEdge->getSrcNode());
+                const ICFGNode* srcICFG = src->getICFGNode();
+                if (!srcICFG || !hasAbsState(srcICFG)) 
+                    continue;
+
+                for (NodeID id : indEdge->getPointsTo())
+                {
+                    const ObjVar* obj =
+                        SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(id));
+                    if (!obj || !hasAbsValue(obj, srcICFG)) 
+                        continue;
+
+                    AbstractValue cur;  // bottom = join identity
+                    if (hasAbsValue(obj, node))
+                        cur = getAbsValue(obj, node);
+                    cur.join_with(getAbsValue(obj, srcICFG));
+                    updateAbsValue(obj, cur, node);
+                }
+            } 
+            else {
+                // Direct SVFG edge: no value flow, so skip.
             }
         }
     }
-
-    // Minimal "is this node reachable" check for the function-contract
-    // return value: any predecessor with state is enough.
-    for (auto& edge : node->getInEdges())
-    {
-        if (hasAbsState(edge->getSrcNode()))
-        {
-            hasFeasiblePred = true;
-            break;
-        }
-    }
-    return hasFeasiblePred;
 }
 
 AbstractState SemiSparseAbstractInterpretation::getFullCycleHeadState(

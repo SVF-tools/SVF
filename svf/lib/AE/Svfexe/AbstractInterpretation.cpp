@@ -486,8 +486,14 @@ bool AbstractInterpretation::isCmpBranchFeasible(const IntraCFGEdge* edge,
                     for (const auto& addr : ptrVal.getAddrs())
                     {
                         NodeID objId = as.getIDFromAddr(addr);
-                        if (as.inAddrToValTable(objId))
-                            as.load(addr).meet_with(narrowed);
+                        const ObjVar* objVar =
+                            SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(objId));
+                        if (!objVar || !hasAbsValue(objVar, pred)) continue;
+                        AbstractValue cur = getAbsValue(objVar, pred);
+                        if (!cur.isInterval()) continue;
+                        IntervalValue itv = cur.getInterval();
+                        itv.meet_with(narrowed);
+                        as.store(addr, AbstractValue(itv));
                     }
                 }
             }
@@ -503,12 +509,12 @@ bool AbstractInterpretation::isSwitchBranchFeasible(const IntraCFGEdge* edge,
     s64_t succ = edge->getSuccessorCondValue();
     const SVFVar* var = edge->getCondition();
 
-    if (!as.inVarToValTable(var->getId()) && !as.inVarToAddrsTable(var->getId()))
-        as[var->getId()] = getAbsValue(var, pred);
-    IntervalValue& switch_cond = as[var->getId()].getInterval();
+    AbstractValue condVal = getAbsValue(var, pred);
+    IntervalValue switch_cond = condVal.getInterval();
     switch_cond.meet_with(IntervalValue(succ, succ));
     if (switch_cond.isBottom())
         return false;
+    as[var->getId()] = AbstractValue(switch_cond);
 
     FIFOWorkList<const SVFStmt*> stmtList;
     for (SVFStmt* stmt : var->getInEdges())
@@ -524,8 +530,14 @@ bool AbstractInterpretation::isSwitchBranchFeasible(const IntraCFGEdge* edge,
                 for (const auto& addr : ptrVal.getAddrs())
                 {
                     NodeID objId = as.getIDFromAddr(addr);
-                    if (as.inAddrToValTable(objId))
-                        as.load(addr).meet_with(switch_cond);
+                    const ObjVar* objVar =
+                        SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(objId));
+                    if (!objVar || !hasAbsValue(objVar, pred)) continue;
+                    AbstractValue cur = getAbsValue(objVar, pred);
+                    if (!cur.isInterval()) continue;
+                    IntervalValue itv = cur.getInterval();
+                    itv.meet_with(switch_cond);
+                    as.store(addr, AbstractValue(itv));
                 }
             }
         }

@@ -99,16 +99,24 @@ public:
     const Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
 
 protected:
-    /// Gate BOTH ValVars and ObjVars through ICFG-edge merges: in
-    /// full-sparse mode neither flows along ICFG edges.  ValVars are
-    /// pulled at read-time by getAbsValue(ValVar*); ObjVars are pulled
-    /// per-MRSVFGNode in mergeStatesFromPredecessors below.
+    /// Value flow does not propagate along ICFG edges in full-sparse;
+    /// both ValVar and ObjVar are pulled in pullValueFlow via SVFG
+    /// indirect in-edges.  Only `_freedAddrs` (no SVFG encoding) rides
+    /// ICFG edges, matching semi-sparse minus the obj loop.
     void joinStates(AbstractState& dst, const AbstractState& src) override;
 
-    /// Empty merge: full-sparse doesn't aggregate state at merge time.
-    /// trace[N] is left untouched; ObjVar reads route through SVFG
-    /// def-sites via getAbsValue(ObjVar*).
+    /// Thin wrapper: defer to base for ICFG-edge bookkeeping
+    /// (predecessor iteration, branch feasibility, joinStates,
+    /// updateAbsState, reachability return).  When base reports a
+    /// feasible predecessor, additionally run pullValueFlow to populate
+    /// trace[node] with obj values from SVFG def-sites.
     bool mergeStatesFromPredecessors(const ICFGNode* node) override;
+
+private:
+    /// SVFG-pull helper: walk each VFG node's indirect SVFG in-edges
+    /// and pull obj values from upstream def-site traces into
+    /// trace[node].  Multiple sources (e.g. mphi operands) JOIN.
+    void pullValueFlow(const ICFGNode* node);
 
     /// Build the SVFG on top of the semi-sparse precompute.
     void buildSVFG();
