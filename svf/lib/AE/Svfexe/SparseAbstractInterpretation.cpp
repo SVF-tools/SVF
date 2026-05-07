@@ -136,10 +136,12 @@ void FullSparseAbstractInterpretation::joinStates(
 bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     const ICFGNode* node)
 {
-    if (!AbstractInterpretation::mergeStatesFromPredecessors(node))
+    if (AbstractInterpretation::mergeStatesFromPredecessors(node)) {
+        pullValueFlow(node);
+        return true;
+    }
+    else
         return false;
-    pullValueFlow(node);
-    return true;
 }
 
 void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
