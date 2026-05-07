@@ -57,23 +57,6 @@ void FullSparseAbstractInterpretation::buildSVFG()
 //  right entry without read-time synthesis.
 // =====================================================================
 
-// ValVar reads/writes reuse the def-site routing: writes go to the
-// var's declaring ICFGNode (via SemiSparse::updateAbsValue), reads
-// come from the same place via getICFGNode(var).  SVFG def-site
-// routing was tried earlier but breaks on phi-like ValVars whose
-// declICFG ≠ SVFG def-node icfg (notably ActualRet on RetICFGNode
-// vs the call's CallICFGNode declaration).
-const AbstractValue& FullSparseAbstractInterpretation::getAbsValue(
-    const ValVar* var, const ICFGNode* node)
-{
-    return AbstractInterpretation::getAbsValue(var, getICFGNode(var));
-}
-
-bool FullSparseAbstractInterpretation::hasAbsValue(
-    const ValVar* var, const ICFGNode* node) const
-{
-    return AbstractInterpretation::hasAbsValue(var, getICFGNode(var));
-}
 
 const Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfValVar(
     const ValVar* var) const
@@ -124,6 +107,7 @@ const Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfObjVar
     return useSites;
 }
 
+
 // =====================================================================
 //  Full-sparse — pure SVFG-pull merge.
 //
@@ -135,11 +119,11 @@ const Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfObjVar
 void FullSparseAbstractInterpretation::joinStates(
     AbstractState&, const AbstractState&) // add one more ICFGNODE AS PARAM
 {
+    assert(false && "joinStates should not be called in full-sparse AE");
     // No-op: full-sparse doesn't propagate state along ICFG edges.
 }
 
-bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
-    const ICFGNode* node)
+bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
 {
     AbstractState& dst = abstractTrace[node];
     bool hasFeasiblePred = false;
@@ -175,9 +159,7 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     }
 
     // Minimal "is this node reachable" check for the function-contract
-    // return value: any predecessor with state is enough.  Real
-    // feasibility filtering and per-edge freedAddrs/branch handling
-    // belong below — see TODO.
+    // return value: any predecessor with state is enough.
     for (auto& edge : node->getInEdges())
     {
         if (hasAbsState(edge->getSrcNode()))
@@ -186,101 +168,8 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
             break;
         }
     }
-
-    // TODO(full-sparse): the following two concerns were prototyped here
-    // and removed pending a cleaner design.  Re-introduce when we tackle
-    // the gaps they address:
-    //
-    //   (a) _freedAddrs union along ICFG edges.  No SVFG-level
-    //       encoding of free events, so the null-deref detector loses
-    //       free state propagation without an ICFG-edge union here.
-    //       Will re-regress nullderef precision until restored.
-    //
-    //   (b) Branch refinement (cmp/switch narrowing).  isBranchFeasible
-    //       narrows the predState's _addrToAbsVal in-place; under pure
-    //       SVFG-pull the cmp's icfg trace doesn't carry the obj that
-    //       the cmp's backing load reads, so narrowing silently no-ops.
-    //       Solution direction: at each conditional intra in-edge,
-    //       walk the cmp/switch condition back to its backing
-    //       LoadStmt(s), pull those obj from the load's icfg trace
-    //       into a local predState, run isBranchFeasible, capture the
-    //       narrowed obj entries into a branchOverlay (virtual
-    //       StoreVFGNode at the branch successor).  loadValue then
-    //       consults branchOverlay before the trace fallback.
-
     return hasFeasiblePred;
 }
-
-// =====================================================================
-//  Full-sparse — Phase 2 GepObj overlay.
-//
-//  Bridges the GEP field-precision asymmetry: a const-offset store
-//  (arr[1]=1 / s.f=1) writes a specific GepObjVar id; a dynamic-offset
-//  or cross-function read often resolves Andersen pts to the *base*
-//  obj id; the SVFG indirect edge between them carries the load's pts
-//  so the gep-field id never reaches the load via the SVFG-pull path.
-//  The overlay records every GepObjVar write in a flat map; reads
-//  consult it before falling back to the SVFG-populated trace.
-//
-//  Trade-off: weak update / flow-insensitive (a[3]=7; a[3]=11 joins
-//  to [7,11] rather than strong-updating to 11).  Same trade-off as
-//  the 0413 reference design.
-//
-//  TODO: AbsExtAPI's memcpy / memmove / strcpy handlers call
-//  as.store(addr,...) directly, bypassing this override.  If the
-//  destination addr decodes to a GepObjVar, the value won't enter
-//  the overlay — known precision leak; revisit if benchmark exposes.
-// =====================================================================
-
-void FullSparseAbstractInterpretation::storeValue(
-    const ValVar* pointer, const AbstractValue& val, const ICFGNode* node)
-{
-    AbstractInterpretation::storeValue(pointer, val, node);
-
-    const AbstractValue& ptrVal = getAbsValue(pointer, node);
-    for (auto addr : ptrVal.getAddrs())
-    {
-        if (!AbstractState::isVirtualMemAddress(addr)) continue;
-        NodeID id = getAbsState(node).getIDFromAddr(addr);
-        if (!SVFUtil::isa<GepObjVar>(svfir->getSVFVar(id))) continue;
-        auto it = gepOverlay.find(id);
-        if (it == gepOverlay.end())
-            gepOverlay[id] = val;
-        else
-            it->second.join_with(val);
-    }
-}
-
-AbstractValue FullSparseAbstractInterpretation::loadValue(
-    const ValVar* pointer, const ICFGNode* node)
-{
-    const AbstractValue& ptrVal = getAbsValue(pointer, node);
-    AbstractState& as = getAbsState(node);
-    AbstractValue res;
-
-    for (auto addr : ptrVal.getAddrs())
-    {
-        if (AbstractState::isVirtualMemAddress(addr))
-        {
-            NodeID id = as.getIDFromAddr(addr);
-            if (SVFUtil::isa<GepObjVar>(svfir->getSVFVar(id)))
-            {
-                auto it = gepOverlay.find(id);
-                if (it != gepOverlay.end())
-                {
-                    res.join_with(it->second);
-                    continue;  // overlay hit
-                }
-            }
-        }
-        res.join_with(as.load(addr));
-    }
-    return res;
-}
-
-// =====================================================================
-//  Semi-sparse cycle helpers (sparse-shape gather / scatter).
-// =====================================================================
 
 AbstractState SemiSparseAbstractInterpretation::getFullCycleHeadState(
     const ICFGCycleWTO* cycle)
@@ -398,17 +287,6 @@ const ICFGNode* SemiSparseAbstractInterpretation::getICFGNode(const ValVar* var)
     }
 }
 
-// const AbstractValue& SemiSparseAbstractInterpretation::getAbsValue(
-//     const ValVar* var, const ICFGNode* node)
-// {
-//     return AbstractInterpretation::getAbsValue(var, getICFGNode(var));
-// }
-
-// bool SemiSparseAbstractInterpretation::hasAbsValue(
-//     const ValVar* var, const ICFGNode* node) const
-// {
-//     return AbstractInterpretation::hasAbsValue(var, getICFGNode(var));
-// }
 
 void SemiSparseAbstractInterpretation::updateAbsValue(
     const ValVar* var, const AbstractValue& val, const ICFGNode* node)
@@ -418,6 +296,15 @@ void SemiSparseAbstractInterpretation::updateAbsValue(
     abstractTrace[defNode ? defNode : node][var->getId()] = val;
 }
 
+const AbstractValue& SemiSparseAbstractInterpretation::getAbsValue(
+    const ValVar* var, const ICFGNode* node)
+{
+    // Read from the var's def-site (where updateAbsValue wrote it).
+    return AbstractInterpretation::getAbsValue(var, getICFGNode(var));
+}
 
-// TODO: no JoinState
-// TODO: add Full UpdateAbsValue
+bool SemiSparseAbstractInterpretation::hasAbsValue(
+    const ValVar* var, const ICFGNode* node) const
+{
+    return AbstractInterpretation::hasAbsValue(var, getICFGNode(var));
+}

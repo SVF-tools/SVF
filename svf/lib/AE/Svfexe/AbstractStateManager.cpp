@@ -339,8 +339,9 @@ AbstractValue AbstractInterpretation::loadValue(const ValVar* pointer, const ICF
     const AbstractValue& ptrVal = getAbsValue(pointer, node);
     AbstractState& as = getAbsState(node);
     AbstractValue res;
-    for (auto addr : ptrVal.getAddrs())
-        res.join_with(as.load(addr));
+    for (auto addr : ptrVal.getAddrs()) {
+        res.join_with(getAbsValue(svfir->getSVFVar(as.getIDFromAddr(addr)), node));
+    }
     return res;
 }
 
@@ -349,7 +350,7 @@ void AbstractInterpretation::storeValue(const ValVar* pointer, const AbstractVal
     const AbstractValue& ptrVal = getAbsValue(pointer, node);
     AbstractState& as = getAbsState(node);
     for (auto addr : ptrVal.getAddrs())
-        as.store(addr, val);
+        updateAbsValue(svfir->getSVFVar(as.getIDFromAddr(addr)), val, node);
 }
 
 const SVFType* AbstractInterpretation::getPointeeElement(const ObjVar* var, const ICFGNode* node)

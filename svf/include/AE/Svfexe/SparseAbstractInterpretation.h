@@ -58,6 +58,12 @@ protected:
                           const AbstractState& cur,
                           const ICFGCycleWTO* cycle) override;
 
+    const AbstractValue& getAbsValue(const ValVar* var, const ICFGNode* node) override;
+    using AbstractInterpretation::getAbsValue;
+
+    bool hasAbsValue(const ValVar* var, const ICFGNode* node) const override;
+    using AbstractInterpretation::hasAbsValue;
+
     void updateAbsValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node) override;
     using AbstractInterpretation::updateAbsValue;
 
@@ -83,14 +89,6 @@ public:
     }
     ~FullSparseAbstractInterpretation() override;
 
-    /// ValVar read: route to the SVFG-reaching def-site's trace entry
-    /// (returns a real reference into that node's trace).
-    const AbstractValue& getAbsValue(const ValVar* var, const ICFGNode* node) override;
-    using SemiSparseAbstractInterpretation::getAbsValue;
-
-    bool hasAbsValue(const ValVar* var, const ICFGNode* node) const override;
-    using SemiSparseAbstractInterpretation::hasAbsValue;
-
     const Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const;
     const ICFGNode* getDefSiteOfValVar(const ValVar* var) const;
     /// Given an ObjVar and its def-site ICFGNode, find all use-site ICFGNodes
@@ -107,21 +105,10 @@ protected:
     /// per-MRSVFGNode in mergeStatesFromPredecessors below.
     void joinStates(AbstractState& dst, const AbstractState& src) override;
 
-    /// First defer to base merge (which, with the gating above,
-    /// produces an essentially empty `merged`); then for each
-    /// MRSVFGNode at `node` pull the obj values it covers from the
-    /// SVFG-reaching def-sites' traces into trace[node].
+    /// Empty merge: full-sparse doesn't aggregate state at merge time.
+    /// trace[N] is left untouched; ObjVar reads route through SVFG
+    /// def-sites via getAbsValue(ObjVar*).
     bool mergeStatesFromPredecessors(const ICFGNode* node) override;
-
-    /// Phase 2: GepObj overlay.  Stores fold the value into the
-    /// overlay (weak update), loads consult the overlay first.
-    /// Bridges the GEP field-precision asymmetry between Andersen
-    /// (pts often resolves to base obj) and SVFG indirect edges
-    /// (labelled with that base-obj pts) — without the overlay, a
-    /// const-offset store at gepObj_i would never reach a
-    /// dynamic-offset / cross-function read pulling the base obj.
-    AbstractValue loadValue(const ValVar* pointer, const ICFGNode* node) override;
-    void storeValue(const ValVar* pointer, const AbstractValue& val, const ICFGNode* node) override;
 
     /// Build the SVFG on top of the semi-sparse precompute.
     void buildSVFG();
