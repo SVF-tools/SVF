@@ -89,15 +89,6 @@ public:
     }
     ~FullSparseAbstractInterpretation() override;
 
-    const Set<const ICFGNode*> getUseSitesOfValVar(const ValVar* var) const;
-    const ICFGNode* getDefSiteOfValVar(const ValVar* var) const;
-    /// Given an ObjVar and its def-site ICFGNode, find all use-site ICFGNodes
-    /// by following outgoing IndirectSVFGEdges whose pts contains the ObjVar
-    const Set<const ICFGNode*> getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
-    /// Given an ObjVar and its def-site ICFGNode, find all use-site ICFGNodes
-    /// by following outgoing IndirectSVFGEdges whose pts contains the ObjVar
-    const Set<const ICFGNode*> getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const;
-
 protected:
     /// Value flow does not propagate along ICFG edges in full-sparse;
     /// both ValVar and ObjVar are pulled in pullValueFlow via SVFG
@@ -112,11 +103,40 @@ protected:
     /// trace[node] with obj values from SVFG def-sites.
     bool mergeStatesFromPredecessors(const ICFGNode* node) override;
 
+    /// Capture branch narrowings into refinementTrace[succ] instead of
+    /// writing them into the local `as`: in FullSparse `as` would be
+    /// discarded by joinStates (no-op for ObjVar), so we route the
+    /// narrowing to refinementTrace and let applyRefinement bake it
+    /// into trace at the end of mergeStatesFromPredecessors.
+    void recordBranchNarrowing(
+        NodeID objId,
+        const IntervalValue& narrowed,
+        AbstractState& as,
+        const ICFGNode* loadIcfg,
+        const ICFGNode* succ) override;
+
 private:
     /// SVFG-pull helper: walk each VFG node's indirect SVFG in-edges
     /// and pull obj values from upstream def-site traces into
     /// trace[node].  Multiple sources (e.g. mphi operands) JOIN.
     void pullValueFlow(const ICFGNode* node);
+
+    /// Compose pred-inherited refinement into refinementTrace[node]
+    /// (single-pred linear copy / multi-pred intersect-JOIN; any pred
+    /// without refinement drops the inheritance), then MEET the final
+    /// refinementTrace[node] into trace[node]._addrToAbsVal so the
+    /// inherited base getAbsValue(ObjVar*, node) returns the narrowed
+    /// value directly — no read-time override or cache.  Called once
+    /// per merge as the last step.
+    void propagateAndApplyRefinement(const ICFGNode* node);
+
+    /// Path-refined obj values produced by branch narrowing.  Each
+    /// entry is the *interval constraint* (not effective value) so
+    /// base trace can widen/narrow independently.  Cached at branch
+    /// successors by isBranchFeasible override; propagated by
+    /// mergePredRefinements; applied to trace by applyRefinement at
+    /// the end of mergeStatesFromPredecessors.
+    Map<const ICFGNode*, Map<NodeID, IntervalValue>> refinementTrace;
 
     /// Build the SVFG on top of the semi-sparse precompute.
     void buildSVFG();
@@ -127,11 +147,6 @@ private:
     std::unique_ptr<SVFGBuilder> svfgBuilder;
     /// View pointer into svfgBuilder's graph; non-null after buildSVFG().
     SVFG* svfg{nullptr};
-
-    /// Flow-insensitive overlay for GepObjVar abstract values.
-    /// Keyed by GepObjVar NodeID (encodes (base, offset) uniquely via
-    /// SVFIR::getGepObjVar).  Trade-off: weak update / flow-insensitive.
-    Map<NodeID, AbstractValue> gepOverlay;
 };
 
 } // namespace SVF

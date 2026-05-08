@@ -223,10 +223,22 @@ protected:
     /// base ICFG-edge merge.
     virtual bool mergeStatesFromPredecessors(const ICFGNode* node);
 
-    /// Returns true if the branch is reachable; narrows as in-place.
-    /// Protected so full-sparse can recompute narrowing in its own merge
-    /// override and capture the narrowed obj entries into branchOverlay.
+    /// Returns true if the branch is reachable; narrows `as` in-place
+    /// via recordBranchNarrowing for each obj the cmp/switch refines.
     bool isBranchFeasible(const IntraCFGEdge* edge, AbstractState& as);
+
+    /// Hook called by isCmp/SwitchBranchFeasible for each obj that the
+    /// branch narrows.  Default (dense/semi): MEET `narrowed` onto
+    /// obj's value (read at `loadIcfg` where sparse keeps it) and
+    /// write the result into the local `as` (per-edge predState copy)
+    /// so joinStates carries it to `succ`.  FullSparse overrides to
+    /// capture into refinementTrace[succ] instead.
+    virtual void recordBranchNarrowing(
+        NodeID objId,
+        const IntervalValue& narrowed,
+        AbstractState& as,
+        const ICFGNode* loadIcfg,
+        const ICFGNode* succ);
 
 private:
     /// Initialize abstract state for the global ICFG node and process global statements

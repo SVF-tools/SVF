@@ -480,20 +480,20 @@ bool AbstractInterpretation::isCmpBranchFeasible(const IntraCFGEdge* edge,
 
             if (!narrowed.isTop())
             {
-                const AbstractValue& ptrVal = getAbsValue(load->getRHSVar(), pred);
+                // Read obj at the LOAD's icfg (where the value actually
+                // lives in sparse mode); recordBranchNarrowing decides
+                // *where* the narrowed value is written (default → `as`,
+                // FullSparse → refinementTrace[succ]).
+                const ICFGNode* loadIcfg = load->getICFGNode();
+                const AbstractValue& ptrVal =
+                    getAbsValue(load->getRHSVar(), loadIcfg);
                 if (ptrVal.isAddr())
                 {
                     for (const auto& addr : ptrVal.getAddrs())
                     {
                         NodeID objId = as.getIDFromAddr(addr);
-                        const ObjVar* objVar =
-                            SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(objId));
-                        if (!objVar || !hasAbsValue(objVar, pred)) continue;
-                        AbstractValue cur = getAbsValue(objVar, pred);
-                        if (!cur.isInterval()) continue;
-                        IntervalValue itv = cur.getInterval();
-                        itv.meet_with(narrowed);
-                        as.store(addr, AbstractValue(itv));
+                        recordBranchNarrowing(
+                            objId, narrowed, as, loadIcfg, edge->getDstNode());
                     }
                 }
             }
@@ -524,25 +524,56 @@ bool AbstractInterpretation::isSwitchBranchFeasible(const IntraCFGEdge* edge,
         const SVFStmt* stmt = stmtList.pop();
         if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
         {
-            const AbstractValue& ptrVal = getAbsValue(load->getRHSVar(), pred);
+            // Read obj at the LOAD's icfg for sparse-mode consistency
+            // (matches isCmpBranchFeasible).
+            const ICFGNode* loadIcfg = load->getICFGNode();
+            const AbstractValue& ptrVal =
+                getAbsValue(load->getRHSVar(), loadIcfg);
             if (ptrVal.isAddr())
             {
                 for (const auto& addr : ptrVal.getAddrs())
                 {
                     NodeID objId = as.getIDFromAddr(addr);
-                    const ObjVar* objVar =
-                        SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(objId));
-                    if (!objVar || !hasAbsValue(objVar, pred)) continue;
-                    AbstractValue cur = getAbsValue(objVar, pred);
-                    if (!cur.isInterval()) continue;
-                    IntervalValue itv = cur.getInterval();
-                    itv.meet_with(switch_cond);
-                    as.store(addr, AbstractValue(itv));
+                    recordBranchNarrowing(
+                        objId, switch_cond, as, loadIcfg, edge->getDstNode());
                 }
             }
         }
     }
     return true;
+}
+
+void AbstractInterpretation::recordBranchNarrowing(
+    NodeID objId, const IntervalValue& narrowed, AbstractState& as,
+    const ICFGNode* loadIcfg, const ICFGNode* /*succ*/)
+{
+    // Default (dense / semi-sparse): MEET narrowed onto obj's current
+    // value, store back into the local `as`.  Caller's joinStates
+    // propagates `as` into `merged`, then `updateAbsState(succ, merged)`
+    // commits it to trace[succ].
+    //
+    // We can't go through the polymorphic updateAbsValue here: `as` is
+    // a transient per-edge predState copy that lives outside
+    // abstractTrace, so it has no node id.  Writing via `updateAbsValue`
+    // with `succ` as the node would land in trace[succ] but get
+    // clobbered by the subsequent `updateAbsState(succ, merged)`; with
+    // `loadIcfg` it would corrupt the obj's authoritative value at its
+    // load site.  AbstractState::store on the transient `as` is the
+    // only sound primitive — and recordBranchNarrowing itself is the
+    // virtual customisation point (FullSparse routes to
+    // refinementTrace instead of touching `as`).
+    const ObjVar* objVar = SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(objId));
+    if (objVar && hasAbsValue(objVar, loadIcfg))
+    {
+        AbstractValue cur = getAbsValue(objVar, loadIcfg);
+        if (cur.isInterval())
+        {
+            IntervalValue itv = cur.getInterval();
+            itv.meet_with(narrowed);
+            u32_t addr = AbstractState::getVirtualMemAddress(objId);
+            as.store(addr, AbstractValue(itv));
+        }
+    }
 }
 
 bool AbstractInterpretation::isBranchFeasible(const IntraCFGEdge* edge,

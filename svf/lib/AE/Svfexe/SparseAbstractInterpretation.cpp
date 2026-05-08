@@ -48,67 +48,6 @@ void FullSparseAbstractInterpretation::buildSVFG()
 }
 
 // =====================================================================
-//  Full-sparse — Phase 1 state-access overrides.
-//
-//  ValVar reads route to the SVFG-reaching def-site (the trace there
-//  holds the real entry).  ObjVar reads use the inherited base
-//  behaviour: trace[N] is populated eagerly by the FullSparse merge
-//  step (mergeStatesFromPredecessors) so `as.load(addr)` finds the
-//  right entry without read-time synthesis.
-// =====================================================================
-
-
-const Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfValVar(
-    const ValVar* var) const
-{
-    assert(svfg && "SVFG is not built for full-sparse AE");
-    Set<const ICFGNode*> useSites;
-    for(const SVFGNode* svfgNode : svfg->getUseSitesOfValVar(var))
-    {
-        useSites.insert(svfgNode->getICFGNode());
-    }
-    return useSites;
-}
-
-const ICFGNode* FullSparseAbstractInterpretation::getDefSiteOfValVar(
-    const ValVar* var) const
-{
-    assert(svfg && "SVFG is not built for full-sparse AE");
-    return svfg->getDefSiteOfValVar(var)->getICFGNode();
-}
-
-const Set<const ICFGNode*> FullSparseAbstractInterpretation::getDefSiteOfObjVar(
-    const ObjVar* obj, const ICFGNode* node) const
-{
-    assert(svfg && "SVFG is not built for full-sparse AE");
-    Set<const ICFGNode*> defSites;
-    for(auto* vNode : node->getVFGNodes())
-    {
-        for(const SVFGNode* svfgNode : svfg->getDefSiteOfObjVar(obj, vNode))
-        {
-            defSites.insert(svfgNode->getICFGNode());
-        }
-    }
-    return defSites;
-}
-
-const Set<const ICFGNode*> FullSparseAbstractInterpretation::getUseSitesOfObjVar(
-    const ObjVar* obj, const ICFGNode* node) const
-{
-    assert(svfg && "SVFG is not built for full-sparse AE");
-    Set<const ICFGNode*> useSites;
-    for(auto* vNode : node->getVFGNodes())
-    {
-        for(const SVFGNode* svfgNode : svfg->getUseSitesOfObjVar(obj, vNode))
-        {
-            useSites.insert(svfgNode->getICFGNode());
-        }
-    }
-    return useSites;
-}
-
-
-// =====================================================================
 //  Full-sparse — merge.
 //
 //  mergeStatesFromPredecessors is a thin wrapper: defer to base for
@@ -136,51 +75,245 @@ void FullSparseAbstractInterpretation::joinStates(
 bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     const ICFGNode* node)
 {
-    if (AbstractInterpretation::mergeStatesFromPredecessors(node)) {
-        pullValueFlow(node);
-        return true;
-    }
-    else
+    // Reset refinement at this node — base merge below will repopulate
+    // via our recordBranchNarrowing override (per conditional in-edge).
+    refinementTrace.erase(node);
+
+    if (!AbstractInterpretation::mergeStatesFromPredecessors(node))
         return false;
+
+    pullValueFlow(node);
+
+    // Compose pred-inherited refinement on top of branch narrowings
+    // just captured, then MEET into trace[node] so reads see narrowed.
+    propagateAndApplyRefinement(node);
+    return true;
 }
 
 void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
 {
-    // For each VFG node v at `node`, follow each indirect SVFG in-edge
-    // back to its source SVFGNode `s`; for every obj id in the edge's
-    // PTS, JOIN `s`'s value into trace[node] via the polymorphic
-    // get/updateAbsValue path.  Multiple sources (e.g. mphi operands)
-    // accumulate naturally — first write seeds trace[node][obj], later
-    // writes read-join-write.
+    // e.g.
+    //     store i32 7, i32* %p   ; def-site D for obj_p
+    //     ...
+    //     %v = load i32, i32* %p ; use-site U
+    // Step 1: intra-node SVFG-pull.  For each VFG node hosted at U, walk
+    // the indirect SVFG in-edges back to D; for every obj id labelling
+    // the edge, JOIN the obj's value at D into U's trace.  When the
+    // edge's PTS carries a base obj id (Andersen is field-insensitive),
+    // expand to every sibling field via getAllFieldsObjVars — MSSA may
+    // have stamped only one field id on the edge even though the writer
+    // touched several siblings, and this expansion lets those sibling
+    // stores reach the consumer.  Reads/writes go through SemiSparse to
+    // bypass FullSparse's refinement layer (these are def-site pulls,
+    // not real stores; refinement is applied later in Step 2 of
+    // propagateAndApplyRefinement).
     for (const VFGNode* v : node->getVFGNodes())
     {
         for (auto eit = v->InEdgeBegin(); eit != v->InEdgeEnd(); ++eit)
         {
-            if (const IndirectSVFGEdge* indEdge =
-                SVFUtil::dyn_cast<IndirectSVFGEdge>(*eit))
+            const IndirectSVFGEdge* indEdge =
+                SVFUtil::dyn_cast<IndirectSVFGEdge>(*eit);
+            if (indEdge)
             {
                 const SVFGNode* src =
                     SVFUtil::dyn_cast<SVFGNode>(indEdge->getSrcNode());
-                const ICFGNode* srcICFG = src->getICFGNode();
-                if (!srcICFG || !hasAbsState(srcICFG)) 
-                    continue;
+                const ICFGNode* srcICFG = src ? src->getICFGNode() : nullptr;
+                if (srcICFG && hasAbsState(srcICFG))
+                {
+                    for (NodeID id : indEdge->getPointsTo())
+                    {
+                        SVFVar* gn = svfir->getGNode(id);
+                        const BaseObjVar* base = nullptr;
+                        if (auto* b = SVFUtil::dyn_cast<BaseObjVar>(gn))
+                        {
+                            base = b;
+                        }
+                        else if (auto* g = SVFUtil::dyn_cast<GepObjVar>(gn))
+                        {
+                            base = g->getBaseObj();
+                        }
 
-                for (NodeID id : indEdge->getPointsTo())
+                        NodeBS singleton;
+                        if (!base) singleton.set(id);
+                        const NodeBS& fids =
+                            base ? svfir->getAllFieldsObjVars(base) : singleton;
+
+                        for (NodeID fid : fids)
+                        {
+                            const ObjVar* obj =
+                                SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(fid));
+                            if (obj
+                                && SemiSparseAbstractInterpretation::hasAbsValue(obj, srcICFG))
+                            {
+                                AbstractValue cur;
+                                if (SemiSparseAbstractInterpretation::hasAbsValue(obj, node))
+                                {
+                                    cur = SemiSparseAbstractInterpretation::getAbsValue(obj, node);
+                                }
+                                cur.join_with(
+                                    SemiSparseAbstractInterpretation::getAbsValue(obj, srcICFG));
+                                SemiSparseAbstractInterpretation::updateAbsValue(obj, cur, node);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // e.g.
+    //     callee:                       caller:
+    //       store ... %arr[1] ...         %arr = alloca [4 x i32]
+    //       store ... %arr[2] ...         call @callee(%arr) ; CallICFGNode
+    //                                     ; RetICFGNode
+    //                                     load i32, i32* %arr[1]
+    // Step 2: cross-function full-field bridge at call/ret boundaries
+    // (FunEntry / FunExit / Call / Ret).  Andersen + MSSA may collapse
+    // pts(formal) to a single field when a C array decays to `int*`,
+    // leaving SVFG indirect edges labelled with only one field id even
+    // though the callee mutated several siblings.  Step 1's PTS-driven
+    // pull would miss those sibling writes.  At boundary nodes we
+    // therefore copy ALL obj entries from each ICFG predecessor's trace
+    // — this also catches ExtAPI call sites (memcpy / strcpy / ...)
+    // where AbsExtAPI writes obj values at the CallICFGNode and we need
+    // them to bridge into the RetICFGNode for downstream uses.
+    if (SVFUtil::isa<FunEntryICFGNode>(node) ||
+        SVFUtil::isa<FunExitICFGNode>(node) ||
+        SVFUtil::isa<CallICFGNode>(node) ||
+        SVFUtil::isa<RetICFGNode>(node))
+    {
+        for (auto& e : node->getInEdges())
+        {
+            const ICFGNode* pred = e->getSrcNode();
+            if (hasAbsState(pred))
+            {
+                const AbstractState& predTrace = getAbsState(pred);
+                for (const auto& [id, val] : predTrace.getLocToVal())
                 {
                     const ObjVar* obj =
                         SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(id));
-                    if (!obj || !hasAbsValue(obj, srcICFG)) 
-                        continue;
-
-                    AbstractValue cur;  // bottom = join identity
-                    if (hasAbsValue(obj, node))
-                        cur = getAbsValue(obj, node);
-                    cur.join_with(getAbsValue(obj, srcICFG));
-                    updateAbsValue(obj, cur, node);
+                    if (obj)
+                    {
+                        AbstractValue cur;
+                        if (SemiSparseAbstractInterpretation::hasAbsValue(obj, node))
+                        {
+                            cur = SemiSparseAbstractInterpretation::getAbsValue(obj, node);
+                        }
+                        cur.join_with(val);
+                        SemiSparseAbstractInterpretation::updateAbsValue(obj, cur, node);
+                    }
                 }
-            } 
-            else {
-                // Direct SVFG edge: no value flow, so skip.
+            }
+        }
+    }
+}
+
+// =====================================================================
+//  Full-sparse — refinement trace machinery.
+// =====================================================================
+
+void FullSparseAbstractInterpretation::recordBranchNarrowing(
+    NodeID objId, const IntervalValue& narrowed, AbstractState& /*as*/,
+    const ICFGNode* /*loadIcfg*/, const ICFGNode* succ)
+{
+    // FullSparse: route narrowing into refinementTrace[succ] instead
+    // of writing into `as` (which joinStates would discard).
+    // Multiple conditional in-edges to `succ` may call us in turn —
+    // JOIN narrowings across edges (path-aware merge).
+    if (!narrowed.isBottom())
+    {
+        auto& succRef = refinementTrace[succ];
+        auto rit = succRef.find(objId);
+        if (rit == succRef.end())
+        {
+            succRef[objId] = narrowed;
+        }
+        else
+        {
+            rit->second.join_with(narrowed);
+        }
+    }
+}
+
+void FullSparseAbstractInterpretation::propagateAndApplyRefinement(
+    const ICFGNode* node)
+{
+    // e.g.
+    // if (x > 0) { 
+    //     use(x); // use 1
+    //     use(x); // use 2
+    // }
+    // Step 1: compose pred-inherited refinement into refinementTrace[node].
+    // At use2, we don't have conditional intra-edge, but we can inherit the refinement from use1's conditional edge.  When multiple preds, JOIN the inherited constraints.
+    Map<NodeID, IntervalValue> inherited;
+    bool inheritOk = true;
+    bool first = true;
+    for (auto& e : node->getInEdges())
+    {
+        const ICFGNode* pred = e->getSrcNode();
+        if (hasAbsState(pred))
+        {
+            auto pit = refinementTrace.find(pred);
+            if (pit == refinementTrace.end())
+            {
+                inheritOk = false;
+                break;
+            }
+            else if (first)
+            {
+                inherited = pit->second;
+                first = false;
+            }
+            else
+            {
+                for (auto it = inherited.begin(); it != inherited.end(); )
+                {
+                    auto eit = pit->second.find(it->first);
+                    if (eit == pit->second.end())
+                    {
+                        it = inherited.erase(it);
+                    }
+                    else
+                    {
+                        it->second.join_with(eit->second);
+                        ++it;
+                    }
+                }
+            }
+        }
+    }
+    if (inheritOk && !first && !inherited.empty())
+    {
+        auto& nodeRef = refinementTrace[node];
+        for (const auto& [id, val] : inherited)
+        {
+            auto rit = nodeRef.find(id);
+            if (rit == nodeRef.end())
+            {
+                nodeRef[id] = val;
+            }
+            else
+            {
+                rit->second.meet_with(val);
+            }
+        }
+    }
+    // e.g.
+    // if (x > 0) { 
+    //     use(x); // use 1
+    //     use(x); // use 2
+    // }
+    // Step 2: at use1, recordBranchNarrowing captures the predState's narrowed constraint into refinementTrace[use1].  At use2, we find the inherited refinement from use1 and MEET it into the base value so the use observes the narrowed constraint.
+    auto nit = refinementTrace.find(node);
+    if (nit != refinementTrace.end())
+    {
+        AbstractState& trace = abstractTrace[node];
+        for (const auto& [id, constraint] : nit->second)
+        {
+            if (trace.inAddrToValTable(id))
+            {
+                u32_t addr = AbstractState::getVirtualMemAddress(id);
+                trace.load(addr).getInterval().meet_with(constraint);
             }
         }
     }
