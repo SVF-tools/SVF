@@ -47,6 +47,183 @@ void FullSparseAbstractInterpretation::buildSVFG()
     svfg = svfgBuilder->buildFullSVFG(preAnalysis->getPointerAnalysis());
 }
 
+void FullSparseAbstractInterpretation::pullObjFromDefSites(
+    const ObjVar* obj, const ICFGNode* node)
+{
+    AbstractValue cur;
+    bool found = false;
+    auto defs = getDefSiteOfObjVar(obj, node);
+    for (const ICFGNode* defICFG : defs)
+    {
+        if (defICFG != node
+                && SemiSparseAbstractInterpretation::hasAbsValue(obj, defICFG))
+        {
+            cur.join_with(
+                SemiSparseAbstractInterpretation::getAbsValue(obj, defICFG));
+            found = true;
+        }
+    }
+    if (found)
+    {
+        if (SemiSparseAbstractInterpretation::hasAbsValue(obj, node))
+        {
+            cur.join_with(
+                SemiSparseAbstractInterpretation::getAbsValue(obj, node));
+        }
+        SemiSparseAbstractInterpretation::updateAbsValue(obj, cur, node);
+    }
+}
+
+void FullSparseAbstractInterpretation::pullFieldsFromValVarPTS(
+    const SVFVar* var, const ICFGNode* node)
+{
+    if (!var)
+        return;
+    PointerAnalysis* pta = preAnalysis->getPointerAnalysis();
+    for (NodeID id : pta->getPts(var->getId()))
+    {
+        // Determine the obj's base.  BaseObjVar is its own base;
+        // GepObjVar's base is its parent.  Anything else has no base
+        // and we just pull that single obj.
+        const BaseObjVar* base = nullptr;
+        SVFVar* gn = svfir->getGNode(id);
+        if (auto* b = SVFUtil::dyn_cast<BaseObjVar>(gn))
+        {
+            base = b;
+        }
+        else if (auto* g = SVFUtil::dyn_cast<GepObjVar>(gn))
+        {
+            base = g->getBaseObj();
+        }
+
+        NodeBS fids;
+        if (base)
+        {
+            fids = svfir->getAllFieldsObjVars(base);
+        }
+        else
+        {
+            fids.set(id);
+        }
+
+        for (NodeID fid : fids)
+        {
+            if (auto* obj = SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(fid)))
+            {
+                pullObjFromDefSites(obj, node);
+            }
+        }
+    }
+}
+
+Set<const ICFGNode*> FullSparseAbstractInterpretation::getDefSiteOfObjVar(
+    const ObjVar* obj, const ICFGNode* node) const
+{
+    Set<const ICFGNode*> defSites;
+    Set<const SVFGNode*> visited;
+    std::vector<const SVFGNode*> worklist;
+    for (const VFGNode* vn : node->getVFGNodes())
+    {
+        if (auto* sv = SVFUtil::dyn_cast<SVFGNode>(vn))
+            worklist.push_back(sv);
+    }
+    while (!worklist.empty())
+    {
+        const SVFGNode* cur = worklist.back();
+        worklist.pop_back();
+        for (auto it = cur->InEdgeBegin(), eit = cur->InEdgeEnd(); it != eit; ++it)
+        {
+            const IndirectSVFGEdge* indEdge =
+                SVFUtil::dyn_cast<IndirectSVFGEdge>(*it);
+            if (!indEdge) continue;
+            if (!indEdge->getPointsTo().test(obj->getId())) continue;
+            const SVFGNode* src = indEdge->getSrcNode();
+            if (!visited.insert(src).second) continue;
+            // StoreSVFGNode is the only kind that holds an abstract
+            // value for an ObjVar; treat phi/relay nodes as transparent
+            // and walk through them.
+            if (SVFUtil::isa<StoreSVFGNode>(src))
+            {
+                if (const ICFGNode* defICFG = src->getICFGNode())
+                    defSites.insert(defICFG);
+            }
+            else if (SVFUtil::isa<MSSAPHISVFGNode>(src) ||
+                     SVFUtil::isa<FormalINSVFGNode>(src) ||
+                     SVFUtil::isa<FormalOUTSVFGNode>(src) ||
+                     SVFUtil::isa<ActualINSVFGNode>(src) ||
+                     SVFUtil::isa<ActualOUTSVFGNode>(src))
+            {
+                worklist.push_back(src);
+            }
+        }
+    }
+
+    // Array-decay fallback: if the indirect chi-mu chain returned
+    // nothing (typically because MSSA didn't configure a mu at `node`,
+    // e.g. an unannotated ExtAPI like strlen), the value is still
+    // reachable through the SVFG's *direct* edges: the GEP that
+    // produced this use's pointer traces back to the alloca's
+    // AddrSVFGNode, whose direct OUT-edges enumerate all uses of the
+    // alloca pointer.  Among those uses, any ActualParm flowing into a
+    // call that has an ActualOUT covering `obj` makes that call's
+    // ICFGNode a real def-site.  Only fires when the regular walk is
+    // empty so unrelated cases aren't perturbed.
+    if (defSites.empty())
+    {
+        const BaseObjVar* base = nullptr;
+        if (auto* g = SVFUtil::dyn_cast<GepObjVar>(obj))
+            base = g->getBaseObj();
+        else if (auto* b = SVFUtil::dyn_cast<BaseObjVar>(obj))
+            base = b;
+        if (base && base->getICFGNode())
+        {
+            // BFS forward from the base's AddrVFGNode through direct
+            // edges, transparently passing through GEP/Copy nodes
+            // (these just propagate the alloca pointer / its derived
+            // pointers).  Every ActualParmVFGNode reached marks a Call
+            // that takes a pointer derived from `base`'s alloca; that
+            // call's ICFGNode is a candidate def-site for `obj`.
+            Set<const VFGNode*> seen;
+            std::vector<const VFGNode*> wl;
+            for (const VFGNode* vn : base->getICFGNode()->getVFGNodes())
+            {
+                const AddrVFGNode* addr = SVFUtil::dyn_cast<AddrVFGNode>(vn);
+                if (!addr) continue;
+                if (addr->getSVFStmt()->getSrcID() != base->getId()) continue;
+                wl.push_back(addr);
+                seen.insert(addr);
+            }
+            while (!wl.empty())
+            {
+                const VFGNode* cur = wl.back();
+                wl.pop_back();
+                for (auto eit = cur->OutEdgeBegin(), oeit = cur->OutEdgeEnd();
+                        eit != oeit; ++eit)
+                {
+                    const VFGNode* dst = (*eit)->getDstNode();
+                    if (!seen.insert(dst).second) continue;
+                    if (auto* ap = SVFUtil::dyn_cast<ActualParmVFGNode>(dst))
+                    {
+                        if (const CallICFGNode* call = ap->getCallSite())
+                            defSites.insert(call);
+                    }
+                    else if (auto* st = SVFUtil::dyn_cast<StoreVFGNode>(dst))
+                    {
+                        if (const ICFGNode* defICFG = st->getICFGNode())
+                            defSites.insert(defICFG);
+                    }
+                    else if (SVFUtil::isa<GepVFGNode>(dst) ||
+                             SVFUtil::isa<CopyVFGNode>(dst))
+                    {
+                        wl.push_back(dst);
+                    }
+                }
+            }
+        }
+    }
+    return defSites;
+}
+
 // =====================================================================
 //  Full-sparse — merge.
 //
@@ -161,50 +338,31 @@ void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
         }
     }
 
-    // e.g.
-    //     callee:                       caller:
-    //       store ... %arr[1] ...         %arr = alloca [4 x i32]
-    //       store ... %arr[2] ...         call @callee(%arr) ; CallICFGNode
-    //                                     ; RetICFGNode
-    //                                     load i32, i32* %arr[1]
-    // Step 2: cross-function full-field bridge at call/ret boundaries
-    // (FunEntry / FunExit / Call / Ret).  Andersen + MSSA may collapse
-    // pts(formal) to a single field when a C array decays to `int*`,
-    // leaving SVFG indirect edges labelled with only one field id even
-    // though the callee mutated several siblings.  Step 1's PTS-driven
-    // pull would miss those sibling writes.  At boundary nodes we
-    // therefore copy ALL obj entries from each ICFG predecessor's trace
-    // — this also catches ExtAPI call sites (memcpy / strcpy / ...)
-    // where AbsExtAPI writes obj values at the CallICFGNode and we need
-    // them to bridge into the RetICFGNode for downstream uses.
-    if (SVFUtil::isa<FunEntryICFGNode>(node) ||
-        SVFUtil::isa<FunExitICFGNode>(node) ||
-        SVFUtil::isa<CallICFGNode>(node) ||
-        SVFUtil::isa<RetICFGNode>(node))
+    // Step 2: at inter-procedural boundary nodes, walk the ValVars
+    // crossing the boundary (Call args / Ret ret-val / FunEntry formals
+    // / FunExit formal-ret), expand each via Andersen PTS to obj ids,
+    // expand each Gep/Base obj to all of its sibling fields, and for
+    // every field ask the SVFG (via its now-transitive
+    // getDefSiteOfObjVar) for that field's StoreSVFGNode def-sites
+    // walking through any MSSAPHI / FormalIN/OUT / ActualIN/OUT relays,
+    // and pull each store's value across.
+    if (auto* call = SVFUtil::dyn_cast<CallICFGNode>(node))
     {
-        for (auto& e : node->getInEdges())
-        {
-            const ICFGNode* pred = e->getSrcNode();
-            if (hasAbsState(pred))
-            {
-                const AbstractState& predTrace = getAbsState(pred);
-                for (const auto& [id, val] : predTrace.getLocToVal())
-                {
-                    const ObjVar* obj =
-                        SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(id));
-                    if (obj)
-                    {
-                        AbstractValue cur;
-                        if (SemiSparseAbstractInterpretation::hasAbsValue(obj, node))
-                        {
-                            cur = SemiSparseAbstractInterpretation::getAbsValue(obj, node);
-                        }
-                        cur.join_with(val);
-                        SemiSparseAbstractInterpretation::updateAbsValue(obj, cur, node);
-                    }
-                }
-            }
-        }
+        for (u32_t i = 0; i < call->arg_size(); i++)
+            pullFieldsFromValVarPTS(call->getArgument(i), node);
+    }
+    else if (auto* ret = SVFUtil::dyn_cast<RetICFGNode>(node))
+    {
+        pullFieldsFromValVarPTS(ret->getActualRet(), node);
+    }
+    else if (auto* fe = SVFUtil::dyn_cast<FunEntryICFGNode>(node))
+    {
+        for (const auto* fp : fe->getFormalParms())
+            pullFieldsFromValVarPTS(fp, node);
+    }
+    else if (auto* fx = SVFUtil::dyn_cast<FunExitICFGNode>(node))
+    {
+        pullFieldsFromValVarPTS(fx->getFormalRet(), node);
     }
 }
 

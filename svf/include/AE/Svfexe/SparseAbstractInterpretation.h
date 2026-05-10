@@ -116,6 +116,27 @@ protected:
         const ICFGNode* succ) override;
 
 private:
+    /// Given an ObjVar `obj` and a use ICFGNode `node`, return the set
+    /// of ICFGNodes hosting StoreSVFGNodes that define `obj` and whose
+    /// defs reach `node` via the SVFG indirect-edge chain.  Walks
+    /// through MSSAPHI nodes (intra-proc memory phi) and the four
+    /// inter-procedural relay nodes (FormalIN/FormalOUT/ActualIN/
+    /// ActualOUT) — these merge or relay obj across joins / function
+    /// boundaries but don't define anything themselves.  Saves callers
+    /// from hand-rolling phi/relay traversal off SVFG's one-hop API.
+    Set<const ICFGNode*> getDefSiteOfObjVar(
+        const ObjVar* obj, const ICFGNode* node) const;
+
+    /// JOIN obj's value at every transitive SVFG def-site into
+    /// trace[node][obj].  No-op if no def-site has a value.
+    void pullObjFromDefSites(const ObjVar* obj, const ICFGNode* node);
+
+    /// Expand a boundary ValVar (Call arg / Ret val / formal param /
+    /// formal ret) via Andersen PTS to all the ObjVar fields it might
+    /// touch — for a Gep/Base obj, every sibling field is included —
+    /// and pull each field via pullObjFromDefSites into trace[node].
+    void pullFieldsFromValVarPTS(const SVFVar* var, const ICFGNode* node);
+
     /// SVFG-pull helper: walk each VFG node's indirect SVFG in-edges
     /// and pull obj values from upstream def-site traces into
     /// trace[node].  Multiple sources (e.g. mphi operands) JOIN.
