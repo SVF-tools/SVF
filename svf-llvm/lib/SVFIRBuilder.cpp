@@ -1256,6 +1256,9 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
     if(isIntrinsicInst(cs))
         return;
 
+    if(cs->isInlineAsm())
+        return;
+
     DBOUT(DPAGBuild,
           outs() << "process callsite " << svfcall->valueOnlyToString() << "\n");
 
