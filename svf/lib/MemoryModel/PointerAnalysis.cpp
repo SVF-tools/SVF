@@ -383,7 +383,7 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
 
         if(getNumOfResolvedIndCallEdge() >= Options::IndirectCallLimit())
         {
-            wrnMsg("Resolved Indirect Call Edges are Out-Of-Budget, please increase the limit");
+            writeWrnMsg("Resolved Indirect Call Edges are Out-Of-Budget, please increase the limit");
             return;
         }
 
