@@ -148,6 +148,13 @@ public:
     virtual void updateAbsValue(const ObjVar* var, const AbstractValue& val, const ICFGNode* node);
     virtual void updateAbsValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node);
 
+    /// Notify the sparsity layer that an obj got written at `node` outside
+    /// the SVFIR StoreStmt path (e.g. inside extapi handlers via
+    /// as.store(addr, val)).  Dense / semi-sparse don't need this and
+    /// keep the default no-op; full-sparse uses it to extend objDefSites
+    /// at runtime so subsequent reads can find these "hidden" writers.
+    virtual void recordObjWrite(NodeID /*oid*/, const ICFGNode* /*node*/) {}
+
     // ---- State Access -------------------------------------------------
 
     AbstractState& getAbsState(const ICFGNode* node);

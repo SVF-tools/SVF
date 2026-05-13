@@ -568,6 +568,9 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode)
         const ValVar* arg0Val = callNode->getArgument(0);
         // opt may directly dereference a null pointer and call UNSAFE_LOAD(null)
         bool isSafe = canSafelyDerefPtr(arg0Val, callNode) && arg0Val->getId() != 0;
+        SVFUtil::outs() << "[UNSAFE_LOAD] node=" << callNode->getId()
+                        << " arg0=" << arg0Val->getId()
+                        << " isSafe=" << isSafe << "\n";
         if (!isSafe)
         {
             SVFUtil::outs() << SVFUtil::sucMsg("success: expected null dereference at UNSAFE_LOAD")
@@ -667,9 +670,14 @@ bool NullptrDerefDetector::canSafelyDerefPtr(const ValVar* value, const ICFGNode
 {
     auto& ae = AbstractInterpretation::getAEInstance();
     const AbstractValue& AbsVal = ae.getAbsValue(value, node);
-    // uninit value cannot be dereferenced, return unsafe
+    SVFUtil::outs() << "[NullChk] node=" << node->getId()
+                    << " val=" << value->getId()
+                    << " isAddr=" << AbsVal.isAddr()
+                    << " #addrs=" << AbsVal.getAddrs().size();
+    for (auto addr : AbsVal.getAddrs())
+        SVFUtil::outs() << " " << addr << "(null=" << AbstractState::isNullMem(addr) << ")";
+    SVFUtil::outs() << "\n";
     if (isUninit(AbsVal)) return false;
-    // Interval Value (non-addr) is not the checkpoint of nullptr dereference, return safe
     if (!AbsVal.isAddr()) return true;
     for (const auto &addr: AbsVal.getAddrs())
     {

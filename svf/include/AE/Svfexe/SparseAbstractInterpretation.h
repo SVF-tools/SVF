@@ -116,27 +116,6 @@ protected:
         const ICFGNode* succ) override;
 
 private:
-    /// Given an ObjVar `obj` and a use ICFGNode `node`, return the set
-    /// of ICFGNodes hosting StoreSVFGNodes that define `obj` and whose
-    /// defs reach `node` via the SVFG indirect-edge chain.  Walks
-    /// through MSSAPHI nodes (intra-proc memory phi) and the four
-    /// inter-procedural relay nodes (FormalIN/FormalOUT/ActualIN/
-    /// ActualOUT) — these merge or relay obj across joins / function
-    /// boundaries but don't define anything themselves.  Saves callers
-    /// from hand-rolling phi/relay traversal off SVFG's one-hop API.
-    Set<const ICFGNode*> getDefSiteOfObjVar(
-        const ObjVar* obj, const ICFGNode* node) const;
-
-    /// JOIN obj's value at every transitive SVFG def-site into
-    /// trace[node][obj].  No-op if no def-site has a value.
-    void pullObjFromDefSites(const ObjVar* obj, const ICFGNode* node);
-
-    /// Expand a boundary ValVar (Call arg / Ret val / formal param /
-    /// formal ret) via Andersen PTS to all the ObjVar fields it might
-    /// touch — for a Gep/Base obj, every sibling field is included —
-    /// and pull each field via pullObjFromDefSites into trace[node].
-    void pullFieldsFromValVarPTS(const SVFVar* var, const ICFGNode* node);
-
     /// SVFG-pull helper: walk each VFG node's indirect SVFG in-edges
     /// and pull obj values from upstream def-site traces into
     /// trace[node].  Multiple sources (e.g. mphi operands) JOIN.
@@ -161,6 +140,38 @@ private:
 
     /// Build the SVFG on top of the semi-sparse precompute.
     void buildSVFG();
+
+    /// One-shot scan after SVFG built: for every StoreVFGNode, query
+    /// Andersen's PTS of the destination pointer and index store ICFG
+    /// nodes by each obj they may write.  Used at load-time to redirect
+    /// Gep reads from `trace[loadNode]._addrToAbsVal[gep]` (which may
+    /// hold ⊥ because the store wrote a sibling Gep id under a different
+    /// runtime offset) to a JOIN across the writers' own traces.
+    void buildObjDefSiteIndex();
+
+    /// Override the ObjVar getter: for GepObjVar, lazy-materialize the
+    /// reaching-def value into `trace[node]._addrToAbsVal[gep]` when
+    /// that entry is missing, by JOINing over `objDefSites[gep]`'s
+    /// writer ICFGs (fall back to base obj's def-sites if Gep has no
+    /// own writers).  Subsequent `as.load(addr)` at the same node sees
+    /// the materialized value, so extapi handlers and the rest of AE
+    /// share a single Gep read path.  Base / Dummy fall through to the
+    /// inherited as.load (already populated by Step 1 SVFG-pull with
+    /// MSSA kill semantics).
+    const AbstractValue& getAbsValue(const ObjVar* var,
+                                     const ICFGNode* node) override;
+    using SemiSparseAbstractInterpretation::getAbsValue;
+
+    /// Register dynamic obj-def-sites for writes that don't appear as
+    /// SVFIR StoreStmts (extapi handlers writing trace via as.store).
+    /// Called from AbsExtAPI's handlers right after each as.store, so
+    /// subsequent reads at downstream nodes can find these "hidden"
+    /// writers via objDefSites.
+    void recordObjWrite(NodeID oid, const ICFGNode* node) override;
+
+    /// PTA-driven obj def-sites: NodeID (ObjVar) → set of ICFG nodes
+    /// hosting a StoreVFGNode whose dst-pointer PTS contains this id.
+    Map<NodeID, Set<const ICFGNode*>> objDefSites;
 
     /// Owns the SVFG (via SVFGBuilder's internal unique_ptr).  Without
     /// this, SVFGBuilder would be a local in buildSVFG() and free the
