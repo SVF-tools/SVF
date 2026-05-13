@@ -138,10 +138,7 @@ void AbsExtAPI::initExtFunMap()
                 const LoadStmt* load = SVFUtil::cast<LoadStmt>(stmt);
                 const AbstractValue& ptrVal = ae->getAbsValue(load->getRHSVar(), callNode);
                 for (auto addr : ptrVal.getAddrs())
-                {
                     as.store(addr, num);
-                    ae->recordObjWrite(as.getIDFromAddr(addr), callNode);
-                }
             }
         }
         return;
@@ -160,7 +157,6 @@ void AbsExtAPI::initExtFunMap()
             u32_t objId = as.getIDFromAddr(vaddr);
             AbstractValue range = getRangeLimitFromType(svfir->getSVFVar(objId)->getType());
             as.store(vaddr, range);
-            ae->recordObjWrite(objId, callNode);
         }
     };
     auto sse_fscanf = [&](const CallICFGNode* callNode)
@@ -175,7 +171,6 @@ void AbsExtAPI::initExtFunMap()
             u32_t objId = as.getIDFromAddr(vaddr);
             AbstractValue range = getRangeLimitFromType(svfir->getSVFVar(objId)->getType());
             as.store(vaddr, range);
-            ae->recordObjWrite(objId, callNode);
         }
     };
 
@@ -376,11 +371,7 @@ std::string AbsExtAPI::strRead(const ValVar* rhs, const ICFGNode* node)
         AbstractValue val;
         for (const auto &addr: expr0.getAddrs())
         {
-            // Route through ae->getAbsValue so FullSparse can lazy-
-            // materialize Gep reads from objDefSites; falls through to
-            // as.load(addr) in dense / semi-sparse.
-            val.join_with(ae->getAbsValue(
-                svfir->getSVFVar(as.getIDFromAddr(addr)), node));
+            val.join_with(as.load(addr));
         }
         if (!val.getInterval().is_numeral())
         {
@@ -531,8 +522,7 @@ IntervalValue AbsExtAPI::getStrlen(const ValVar *strValue, const ICFGNode* node)
             AbstractValue val;
             for (const auto &addr: expr0.getAddrs())
             {
-                val.join_with(ae->getAbsValue(
-                    svfir->getSVFVar(as.getIDFromAddr(addr)), node));
+                val.join_with(as.load(addr));
             }
             if (val.getInterval().is_numeral() &&
                     (char) val.getInterval().getIntNumeral() == '\0')
@@ -616,15 +606,9 @@ void AbsExtAPI::handleMemcpy(const ValVar *dst,
             for (const auto &srcAddr: expr_src.getAddrs())
             {
                 u32_t objId = as.getIDFromAddr(srcAddr);
-                // Always route through ae->getAbsValue so FullSparse's
-                // lazy materialize can pull from objDefSites; dense /
-                // semi-sparse fall through to as.load via inherited.
-                const AbstractValue& v =
-                    ae->getAbsValue(svfir->getSVFVar(objId), node);
-                if (!v.getInterval().isBottom() || !v.getAddrs().empty())
+                if (as.inAddrToValTable(objId) || as.inAddrToAddrsTable(objId))
                 {
-                    as.store(dstAddr, v);
-                    ae->recordObjWrite(as.getIDFromAddr(dstAddr), node);
+                    as.store(dstAddr, as.load(srcAddr));
                 }
             }
         }
@@ -673,12 +657,10 @@ void AbsExtAPI::handleMemset(const ValVar *dst,
                 AbstractValue tmp = as.load(addr);
                 tmp.join_with(elem);
                 as.store(addr, tmp);
-                ae->recordObjWrite(objId, node);
             }
             else
             {
                 as.store(addr, elem);
-                ae->recordObjWrite(objId, node);
             }
         }
     }

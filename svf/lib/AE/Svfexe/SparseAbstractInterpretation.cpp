@@ -45,126 +45,6 @@ void FullSparseAbstractInterpretation::buildSVFG()
 {
     svfgBuilder = std::make_unique<SVFGBuilder>(true);
     svfg = svfgBuilder->buildFullSVFG(preAnalysis->getPointerAnalysis());
-    buildObjDefSiteIndex();
-}
-
-void FullSparseAbstractInterpretation::buildObjDefSiteIndex()
-{
-    AndersenWaveDiff* pta = preAnalysis->getPointerAnalysis();
-    for (auto& it : *svfg)
-    {
-        const auto* sn = SVFUtil::dyn_cast<StoreVFGNode>(it.second);
-        if (!sn) continue;
-        const ICFGNode* icfg = sn->getICFGNode();
-        if (!icfg) continue;
-        NodeID dst = sn->getLHSVar()->getId();
-        for (NodeID o : pta->getPts(dst))
-        {
-            objDefSites[o].insert(icfg);
-            // Andersen's static pts may give either the base obj or a
-            // (different) Gep id under that base — AE resolves the
-            // runtime gep at read time via getGepObjAddrs and may pick
-            // a sibling that wasn't in pts.  Register the store under
-            // every sibling field of the same base so subsequent reads
-            // find a writer regardless of which Gep id AE picks.
-            const BaseObjVar* base = nullptr;
-            const SVFVar* sv = svfir->getGNode(o);
-            if (auto* b = SVFUtil::dyn_cast<BaseObjVar>(sv))
-                base = b;
-            else if (auto* g = SVFUtil::dyn_cast<GepObjVar>(sv))
-                base = g->getBaseObj();
-            if (base)
-                for (NodeID fid : svfir->getAllFieldsObjVars(base))
-                    objDefSites[fid].insert(icfg);
-        }
-    }
-}
-
-void FullSparseAbstractInterpretation::recordObjWrite(
-    NodeID oid, const ICFGNode* node)
-{
-    if (!node) return;
-    objDefSites[oid].insert(node);
-    // Extapi handlers (memcpy/memset/strcpy/...) typically bulk-write
-    // a whole base region — the gep id Andersen produces here may not
-    // exactly match the gep id AE resolves at a downstream load
-    // (interval-aware gep can land on a sibling).  Register the same
-    // def-site under every sibling field of the same base, so reads
-    // hit a writer regardless of which specific Gep id AE picks.
-    const auto* gep = SVFUtil::dyn_cast<GepObjVar>(svfir->getGNode(oid));
-    if (!gep) return;
-    const auto* base = gep->getBaseObj();
-    if (!base) return;
-    for (NodeID fid : svfir->getAllFieldsObjVars(base))
-        objDefSites[fid].insert(node);
-}
-
-const AbstractValue& FullSparseAbstractInterpretation::getAbsValue(
-    const ObjVar* var, const ICFGNode* node)
-{
-    AbstractState& as = getAbsState(node);
-    NodeID oid = var->getId();
-    u32_t addr = AbstractState::getVirtualMemAddress(oid);
-
-    // Base / Dummy 走 inherited 路径 (Step 1 SVFG-pull populated trace
-    // with MSSA-kill-respecting reaching-def).  Gep 也先看 trace —— Step
-    // 1 / handleNode 已经写进去的话, 直接用; trace 缺位才查 objDefSites.
-    const auto* gep = SVFUtil::dyn_cast<GepObjVar>(var);
-    // Base / Dummy 走 inherited (Step 1 SVFG-pull populated, with MSSA kill).
-    if (!gep)
-        return SemiSparseAbstractInterpretation::getAbsValue(var, node);
-
-    // Gep:对所有 def-sites 算 JOIN, 并和 trace[node][gep] (Step 1 SVFG-pull
-    // 的结果, 带 kill) JOIN 在一起.  Gep 字段间没有 kill 关系, JOIN 多写者
-    // 等于 path-conservative widening, sound;  与 Step 1 的 path-aware 值再
-    // JOIN 一次只会扩大区间, 同样 sound. 这样兼顾 (a) Step 1 拉到的精度,
-    // (b) MSSA 漏配 chi 时静态 def-site 兜底.
-    AbstractValue acc;
-    if (as.inAddrToValTable(oid))
-        acc.join_with(SemiSparseAbstractInterpretation::getAbsValue(var, node));
-
-    auto it = objDefSites.find(oid);
-    if (it != objDefSites.end())
-    {
-        for (const ICFGNode* def : it->second)
-        {
-            if (!hasAbsState(def)) continue;
-            if (!SemiSparseAbstractInterpretation::hasAbsValue(gep, def))
-                continue;
-            acc.join_with(
-                SemiSparseAbstractInterpretation::getAbsValue(gep, def));
-        }
-    }
-    else
-    {
-        // Gep 没自己 def-site, 退到 base def-sites.
-        NodeID baseId = gep->getBaseObj()->getId();
-        auto bit = objDefSites.find(baseId);
-        if (bit != objDefSites.end())
-        {
-            const auto* base = gep->getBaseObj();
-            for (const ICFGNode* def : bit->second)
-            {
-                if (!hasAbsState(def)) continue;
-                if (!SemiSparseAbstractInterpretation::hasAbsValue(base, def))
-                    continue;
-                acc.join_with(
-                    SemiSparseAbstractInterpretation::getAbsValue(base, def));
-            }
-        }
-    }
-    // Re-apply branch-refinement constraint after the def-site JOIN, so
-    // path-sensitive narrowings (if (gep > 5)) survive a JOIN-with-all-
-    // writers that would otherwise widen them back to TOP.
-    auto rit = refinementTrace.find(node);
-    if (rit != refinementTrace.end())
-    {
-        auto cit = rit->second.find(oid);
-        if (cit != rit->second.end())
-            acc.getInterval().meet_with(cit->second);
-    }
-    as.store(addr, acc);
-    return as.load(addr);
 }
 
 // =====================================================================
@@ -184,10 +64,24 @@ const AbstractValue& FullSparseAbstractInterpretation::getAbsValue(
 void FullSparseAbstractInterpretation::joinStates(
     AbstractState& dst, const AbstractState& src)
 {
-    // ObjVar 不沿 ICFG 边累积. Base/Dummy 由 pullValueFlow Step 1 (SVFG
-    // indirect, 带 MSSA kill) 在 use 处补值; Gep 由 getAbsValue(ObjVar*)
-    // 在被读到时 lazy materialize 进 trace. 只有 _freedAddrs 沿 ICFG 边传
-    // (没有 SVFG 编码) 给 null-deref detector 用.
+    // Propagate GepObjVar entries along ICFG edges.  Kill semantics
+    // come from handleNode's as.store(addr, val) overwriting trace at
+    // store sites (not from a JOIN here), so joinStates only forwards
+    // the post-write snapshot.  This lets Gep fields scattered across
+    // many store ICFG nodes converge at downstream use sites, and lets
+    // extapi handlers (memcpy/memset/strlen) read upstream-written
+    // values via plain as.load(srcAddr).  Base/Dummy are NOT propagated
+    // here — they ride pullValueFlow Step 1 (SVFG indirect edges, with
+    // MSSA chi/mu kill semantics).
+    for (const auto& [id, val] : src.getLocToVal())
+    {
+        if (!SVFUtil::isa<GepObjVar>(svfir->getGNode(id))) continue;
+        u32_t addr = AbstractState::getVirtualMemAddress(id);
+        if (dst.getLocToVal().count(id))
+            dst.load(addr).join_with(val);
+        else
+            dst.store(addr, val);
+    }
     for (NodeID a : src.getFreedAddrs())
         dst.addToFreedAddrs(a);
 }

@@ -141,38 +141,6 @@ private:
     /// Build the SVFG on top of the semi-sparse precompute.
     void buildSVFG();
 
-    /// One-shot scan after SVFG built: for every StoreVFGNode, query
-    /// Andersen's PTS of the destination pointer and index store ICFG
-    /// nodes by each obj they may write.  Used at load-time to redirect
-    /// Gep reads from `trace[loadNode]._addrToAbsVal[gep]` (which may
-    /// hold ⊥ because the store wrote a sibling Gep id under a different
-    /// runtime offset) to a JOIN across the writers' own traces.
-    void buildObjDefSiteIndex();
-
-    /// Override the ObjVar getter: for GepObjVar, lazy-materialize the
-    /// reaching-def value into `trace[node]._addrToAbsVal[gep]` when
-    /// that entry is missing, by JOINing over `objDefSites[gep]`'s
-    /// writer ICFGs (fall back to base obj's def-sites if Gep has no
-    /// own writers).  Subsequent `as.load(addr)` at the same node sees
-    /// the materialized value, so extapi handlers and the rest of AE
-    /// share a single Gep read path.  Base / Dummy fall through to the
-    /// inherited as.load (already populated by Step 1 SVFG-pull with
-    /// MSSA kill semantics).
-    const AbstractValue& getAbsValue(const ObjVar* var,
-                                     const ICFGNode* node) override;
-    using SemiSparseAbstractInterpretation::getAbsValue;
-
-    /// Register dynamic obj-def-sites for writes that don't appear as
-    /// SVFIR StoreStmts (extapi handlers writing trace via as.store).
-    /// Called from AbsExtAPI's handlers right after each as.store, so
-    /// subsequent reads at downstream nodes can find these "hidden"
-    /// writers via objDefSites.
-    void recordObjWrite(NodeID oid, const ICFGNode* node) override;
-
-    /// PTA-driven obj def-sites: NodeID (ObjVar) → set of ICFG nodes
-    /// hosting a StoreVFGNode whose dst-pointer PTS contains this id.
-    Map<NodeID, Set<const ICFGNode*>> objDefSites;
-
     /// Owns the SVFG (via SVFGBuilder's internal unique_ptr).  Without
     /// this, SVFGBuilder would be a local in buildSVFG() and free the
     /// graph at scope exit, leaving `svfg` dangling.
