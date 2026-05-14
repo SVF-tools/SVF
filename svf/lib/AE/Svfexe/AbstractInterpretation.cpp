@@ -1238,15 +1238,15 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
 void AbstractInterpretation::updateStateOnLoad(const LoadStmt *load)
 {
     const ICFGNode* node = load->getICFGNode();
-    updateAbsValue(load->getLHSVar(),
-                   loadValue(SVFUtil::cast<ValVar>(load->getRHSVar()), node), node);
+    AbstractValue loaded = loadValue(SVFUtil::cast<ValVar>(load->getRHSVar()), node);
+    updateAbsValue(load->getLHSVar(), loaded, node);
 }
 
 void AbstractInterpretation::updateStateOnStore(const StoreStmt *store)
 {
     const ICFGNode* node = store->getICFGNode();
-    storeValue(SVFUtil::cast<ValVar>(store->getLHSVar()),
-               getAbsValue(store->getRHSVar(), node), node);
+    AbstractValue val = getAbsValue(store->getRHSVar(), node);
+    storeValue(SVFUtil::cast<ValVar>(store->getLHSVar()), val, node);
 }
 
 void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)

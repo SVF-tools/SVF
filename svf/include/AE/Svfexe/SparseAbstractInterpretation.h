@@ -98,6 +98,11 @@ protected:
     /// ICFG edges, matching semi-sparse minus the obj loop.
     void joinStates(AbstractState& dst, const AbstractState& src) override;
 
+    /// After a store overwrites an ObjVar, clear any branch refinement
+    /// for that ObjVar at the store's node so stale branch constraints
+    /// don't propagate past the redefinition.
+    void storeValue(const ValVar* pointer, const AbstractValue& val, const ICFGNode* node) override;
+
     /// Thin wrapper: defer to base for ICFG-edge bookkeeping
     /// (predecessor iteration, branch feasibility, joinStates,
     /// updateAbsState, reachability return).  When base reports a
