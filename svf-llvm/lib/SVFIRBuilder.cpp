@@ -549,6 +549,7 @@ void SVFIRBuilder::initialiseNodes()
     pag->addConstantObjNode();
     pag->addBlackholePtrNode();
     addNullPtrNode();
+    pag->addTopValNode();
 
     initialiseBaseObjVars();
     initialiseValVars();

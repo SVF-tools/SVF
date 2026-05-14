@@ -95,6 +95,9 @@ void SymbolTableBuilder::buildMemModel()
     assert(svfir->totalSymNum++ == IRGraph::ConstantObj && "Something changed!");
     createConstantObjTypeInfo(IRGraph::ConstantObj);
 
+    // Value #4 represents an arbitrary top value produced by modeled external calls.
+    assert(svfir->totalSymNum++ == IRGraph::TopVal && "Something changed!");
+
     for (Module &M : llvmModuleSet()->getLLVMModules())
     {
         // Add symbols for all the globals .

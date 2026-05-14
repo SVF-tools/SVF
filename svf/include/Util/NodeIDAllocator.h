@@ -42,13 +42,14 @@ public:
 
     /// These nodes, and any nodes before them are assumed allocated
     /// as objects and values. For simplicity's sake, numObjects and
-    /// numVals thus start at 4 (and the other counters are set
+    /// numVals thus start at 5 (and the other counters are set
     /// appropriately).
     ///@{
     static const NodeID blackHoleObjectId;
     static const NodeID constantObjectId;
     static const NodeID blackHolePointerId;
     static const NodeID nullPointerId;
+    static const NodeID topValueId;
     ///@}
 
     /// Return (singleton) allocator.

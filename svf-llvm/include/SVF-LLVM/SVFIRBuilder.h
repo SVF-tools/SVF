@@ -243,6 +243,7 @@ protected:
     //@{
     virtual const Type *getBaseTypeAndFlattenedFields(const Value *V, std::vector<AccessPath> &fields, const Value* szValue);
     virtual void addComplexConsForExt(Value *D, Value *S, const Value* sz);
+    virtual void handleStoreTopArgExtCall(const CallBase* cs, const CallICFGNode* callICFGNode);
     virtual void handleExtCall(const CallBase* cs, const Function* callee);
     //@}
 

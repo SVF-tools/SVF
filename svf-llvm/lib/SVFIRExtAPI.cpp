@@ -32,6 +32,7 @@
 #include "SVF-LLVM/SymbolTableBuilder.h"
 #include "SVF-LLVM/ObjTypeInference.h"
 #include "Graphs/CallGraph.h"
+#include "Util/ExtAPI.h"
 
 using namespace std;
 using namespace SVF;
@@ -47,6 +48,47 @@ struct MemcpyField
     AccessPath accessPath;
     const SVFType* elementType;
 };
+
+bool parseStoreTopArgAnnotation(const std::string& annotation, u32_t& firstArg,
+                                bool& includeFollowing)
+{
+    const std::string prefix = "STORE_TOP:Arg";
+    const size_t start = annotation.find(prefix);
+    if (start == std::string::npos)
+        return false;
+
+    size_t idx = start + prefix.size();
+    if (idx >= annotation.size() || annotation[idx] < '0' || annotation[idx] > '9')
+        return false;
+
+    firstArg = 0;
+    do
+    {
+        firstArg = firstArg * 10 + static_cast<u32_t>(annotation[idx] - '0');
+        ++idx;
+    }
+    while (idx < annotation.size() && annotation[idx] >= '0' && annotation[idx] <= '9');
+
+    includeFollowing = idx < annotation.size() && annotation[idx] == '+';
+    return true;
+}
+
+bool hasStoreTopArgAnnotation(const CallICFGNode* callICFGNode)
+{
+    const FunObjVar* extFun = callICFGNode->getCalledFunction();
+    if (extFun == nullptr)
+        return false;
+
+    for (const std::string& annotation :
+            ExtAPI::getExtAPI()->getExtFuncAnnotations(extFun))
+    {
+        u32_t firstArg = 0;
+        bool includeFollowing = false;
+        if (parseStoreTopArgAnnotation(annotation, firstArg, includeFollowing))
+            return true;
+    }
+    return false;
+}
 
 void collectMemcpyFields(
     const Type* llvmType,
@@ -209,41 +251,40 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
         const SVFType* srcSVFType = llvmModuleSet()->getSVFType(srcLayoutType);
         std::vector<MemcpyField> dstMemcpyFields = getMemcpyFields(D, dstLayoutType, dstSVFType);
         std::vector<MemcpyField> srcMemcpyFields = getMemcpyFields(S, srcLayoutType, srcSVFType);
-        if (dstMemcpyFields.empty() || srcMemcpyFields.empty())
-            goto fallback_memcpy_copy;
-
-        std::unordered_map<APOffset, MemcpyField> srcFieldsByByteOffset;
-        for (const auto& field : srcMemcpyFields)
-            srcFieldsByByteOffset.emplace(field.byteOffset, field);
-
-        const DataLayout& dl = llvmModuleSet()->getMainLLVMModule()->getDataLayout();
-        APOffset copyBytes = std::min<APOffset>(
-                                 static_cast<APOffset>(dl.getTypeAllocSize(const_cast<Type*>(dstLayoutType))),
-                                 static_cast<APOffset>(dl.getTypeAllocSize(const_cast<Type*>(srcLayoutType))));
-        if (szValue && SVFUtil::isa<ConstantInt>(szValue))
+        if (!dstMemcpyFields.empty() && !srcMemcpyFields.empty())
         {
-            auto szIntVal = LLVMUtil::getIntegerValue(SVFUtil::cast<ConstantInt>(szValue));
-            copyBytes = std::min(copyBytes, static_cast<APOffset>(szIntVal.first));
-        }
+            std::unordered_map<APOffset, MemcpyField> srcFieldsByByteOffset;
+            for (const auto& field : srcMemcpyFields)
+                srcFieldsByByteOffset.emplace(field.byteOffset, field);
 
-        for (const auto& dstField : dstMemcpyFields)
-        {
-            if (dstField.byteOffset >= copyBytes)
-                continue;
-            auto it = srcFieldsByByteOffset.find(dstField.byteOffset);
-            if (it == srcFieldsByByteOffset.end())
-                continue;
+            const DataLayout& dl = llvmModuleSet()->getMainLLVMModule()->getDataLayout();
+            APOffset copyBytes = std::min<APOffset>(
+                                     static_cast<APOffset>(dl.getTypeAllocSize(const_cast<Type*>(dstLayoutType))),
+                                     static_cast<APOffset>(dl.getTypeAllocSize(const_cast<Type*>(srcLayoutType))));
+            if (szValue && SVFUtil::isa<ConstantInt>(szValue))
+            {
+                auto szIntVal = LLVMUtil::getIntegerValue(SVFUtil::cast<ConstantInt>(szValue));
+                copyBytes = std::min(copyBytes, static_cast<APOffset>(szIntVal.first));
+            }
 
-            NodeID dField = getGepValVar(dstFieldBase, dstField.accessPath, dstField.elementType);
-            NodeID sField = getGepValVar(srcFieldBase, it->second.accessPath, it->second.elementType);
-            NodeID dummy = pag->addDummyValNode();
-            addLoadEdge(sField, dummy);
-            addStoreEdge(dummy, dField);
+            for (const auto& dstField : dstMemcpyFields)
+            {
+                if (dstField.byteOffset >= copyBytes)
+                    continue;
+                auto it = srcFieldsByByteOffset.find(dstField.byteOffset);
+                if (it == srcFieldsByByteOffset.end())
+                    continue;
+
+                NodeID dField = getGepValVar(dstFieldBase, dstField.accessPath, dstField.elementType);
+                NodeID sField = getGepValVar(srcFieldBase, it->second.accessPath, it->second.elementType);
+                NodeID dummy = pag->addDummyValNode();
+                addLoadEdge(sField, dummy);
+                addStoreEdge(dummy, dField);
+            }
+            return;
         }
-        return;
     }
 
-fallback_memcpy_copy:
     //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
     for (u32_t index = 0; index < sz; index++)
     {
@@ -260,11 +301,54 @@ fallback_memcpy_copy:
     }
 }
 
+void SVFIRBuilder::handleStoreTopArgExtCall(const CallBase* cs, const CallICFGNode* callICFGNode)
+{
+    Set<u32_t> storeTopArgs;
+    const FunObjVar* extFun = callICFGNode->getCalledFunction();
+    if (extFun)
+    {
+        for (const std::string& annotation :
+                ExtAPI::getExtAPI()->getExtFuncAnnotations(extFun))
+        {
+            u32_t firstArg = 0;
+            bool includeFollowing = false;
+            if (!parseStoreTopArgAnnotation(annotation, firstArg, includeFollowing))
+                continue;
+            if (firstArg >= cs->arg_size())
+                continue;
+
+            const u32_t endArg = includeFollowing ? cs->arg_size() : firstArg + 1;
+            for (u32_t argIdx = firstArg; argIdx < endArg; ++argIdx)
+                storeTopArgs.insert(argIdx);
+        }
+    }
+
+    for (u32_t argIdx : storeTopArgs)
+    {
+        const Value* arg = cs->getArgOperand(argIdx);
+        if (!arg->getType()->isPointerTy())
+            continue;
+
+        const Type* storedType =
+            LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->inferObjType(arg);
+        NodeID src = pag->getTopVal();
+        NodeID dst = getValueNode(arg);
+        if (NodeID fieldZero = getDirectAccessFieldZeroValVar(arg, storedType))
+            dst = fieldZero;
+        if (src && dst)
+            addStoreEdge(src, dst);
+    }
+}
+
 void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
 {
     const CallICFGNode *callICFGNode = llvmModuleSet()->getCallICFGNode(cs);
 
-    if (isHeapAllocExtCallViaRet(callICFGNode))
+    if (hasStoreTopArgAnnotation(callICFGNode))
+    {
+        handleStoreTopArgExtCall(cs, callICFGNode);
+    }
+    else if (isHeapAllocExtCallViaRet(callICFGNode))
     {
         NodeID val = llvmModuleSet()->getValueNode(cs);
         NodeID obj = llvmModuleSet()->getObjectNode(cs);

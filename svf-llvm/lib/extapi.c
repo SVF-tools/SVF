@@ -18,6 +18,8 @@
         MEMSET,            // memcpy() operations
         MEMCPY,            // memset() operations
         OVERWRITE,         // svf function overwrite app function
+        STORE_TOP:Argi,    // store a nondeterministic top value through argument i
+        STORE_TOP:Argi+,   // store nondeterministic top values through argument i and following arguments
 */
 __attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
 void *malloc(unsigned long size)
@@ -801,6 +803,42 @@ char *wcscpy(wchar_t* dest, const wchar_t* src) {
 
 __attribute__((annotate("MEMCPY")))
 unsigned long iconv(void* cd, char **__restrict inbuf, unsigned long *__restrict inbytesleft, char **__restrict outbuf, unsigned long *__restrict outbytesleft)
+{
+    return 0;
+}
+
+__attribute__((annotate("STORE_TOP:Arg1+")))
+int scanf(const char *format, ...)
+{
+    return 0;
+}
+
+__attribute__((annotate("STORE_TOP:Arg1+")))
+int __isoc99_scanf(const char *format, ...)
+{
+    return 0;
+}
+
+__attribute__((annotate("STORE_TOP:Arg2+")))
+int fscanf(void *stream, const char *format, ...)
+{
+    return 0;
+}
+
+__attribute__((annotate("STORE_TOP:Arg2+")))
+int __isoc99_fscanf(void *stream, const char *format, ...)
+{
+    return 0;
+}
+
+__attribute__((annotate("STORE_TOP:Arg2+")))
+int sscanf(const char *str, const char *format, ...)
+{
+    return 0;
+}
+
+__attribute__((annotate("STORE_TOP:Arg2+")))
+int __isoc99_sscanf(const char *str, const char *format, ...)
 {
     return 0;
 }
