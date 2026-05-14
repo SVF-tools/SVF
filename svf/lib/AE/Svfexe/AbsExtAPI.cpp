@@ -28,6 +28,7 @@
 //
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "AE/Svfexe/AbstractInterpretation.h"
+#include "AE/Svfexe/SparseAbstractInterpretation.h"
 #include "WPA/Andersen.h"
 #include "Util/Options.h"
 
@@ -157,6 +158,8 @@ void AbsExtAPI::initExtFunMap()
             u32_t objId = as.getIDFromAddr(vaddr);
             AbstractValue range = getRangeLimitFromType(svfir->getSVFVar(objId)->getType());
             as.store(vaddr, range);
+            if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse)
+                static_cast<FullSparseAbstractInterpretation*>(ae)->markExternalObjDef(objId);
         }
     };
     auto sse_fscanf = [&](const CallICFGNode* callNode)
@@ -171,6 +174,8 @@ void AbsExtAPI::initExtFunMap()
             u32_t objId = as.getIDFromAddr(vaddr);
             AbstractValue range = getRangeLimitFromType(svfir->getSVFVar(objId)->getType());
             as.store(vaddr, range);
+            if (Options::AESparsity() == AbstractInterpretation::AESparsity::Sparse)
+                static_cast<FullSparseAbstractInterpretation*>(ae)->markExternalObjDef(objId);
         }
     };
 

@@ -41,6 +41,11 @@ using namespace SVF;
 
 FullSparseAbstractInterpretation::~FullSparseAbstractInterpretation() = default;
 
+void FullSparseAbstractInterpretation::markExternalObjDef(NodeID objId)
+{
+    externalObjDefObjs.set(objId);
+}
+
 void FullSparseAbstractInterpretation::buildSVFG()
 {
     svfgBuilder = std::make_unique<SVFGBuilder>(true);
@@ -75,7 +80,9 @@ void FullSparseAbstractInterpretation::joinStates(
     // MSSA chi/mu kill semantics).
     for (const auto& [id, val] : src.getLocToVal())
     {
-        if (!SVFUtil::isa<GepObjVar>(svfir->getGNode(id))) continue;
+        if (!SVFUtil::isa<GepObjVar>(svfir->getGNode(id))
+            && !externalObjDefObjs.test(id))
+            continue;
         u32_t addr = AbstractState::getVirtualMemAddress(id);
         if (dst.getLocToVal().count(id))
             dst.load(addr).join_with(val);
@@ -106,21 +113,33 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
 
 void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
 {
+    NodeBS denseLocalObjs;
+    for (const auto& item : abstractTrace[node].getLocToVal())
+    {
+        NodeID id = item.first;
+        if (SVFUtil::isa<GepObjVar>(svfir->getGNode(id))
+            || externalObjDefObjs.test(id))
+            denseLocalObjs.set(id);
+    }
     // e.g.
     //     store i32 7, i32* %p   ; def-site D for obj_p
     //     ...
     //     %v = load i32, i32* %p ; use-site U
     // Step 1: intra-node SVFG-pull.  For each VFG node hosted at U, walk
     // the indirect SVFG in-edges back to D; for every obj id labelling
-    // the edge, JOIN the obj's value at D into U's trace.  When the
-    // edge's PTS carries a base obj id (Andersen is field-insensitive),
-    // expand to every sibling field via getAllFieldsObjVars — MSSA may
-    // have stamped only one field id on the edge even though the writer
-    // touched several siblings, and this expansion lets those sibling
-    // stores reach the consumer.  Reads/writes go through SemiSparse to
-    // bypass FullSparse's refinement layer (these are def-site pulls,
-    // not real stores; refinement is applied later in Step 2 of
-    // propagateAndApplyRefinement).
+    // the edge, JOIN the obj's value at D into U's trace.  GepObjVar
+    // labels are pulled exactly.  BaseObjVar labels are expanded to every
+    // sibling field via getAllFieldsObjVars because Andersen may label a
+    // field-sensitive consumer with the field-insensitive base.
+    //
+    // Gep fields already present at this node came through the dense
+    // ICFG propagation in joinStates.  Treat those as authoritative and
+    // do not re-join older SVFG defs over them; otherwise a killed init
+    // field can be reintroduced at the load site (e.g. a[9] initialized
+    // to 9, overwritten to 10, then pulled back to [9,10]).
+    // Reads/writes go through SemiSparse to bypass FullSparse's refinement
+    // layer (these are def-site pulls, not real stores; refinement is
+    // applied later in propagateAndApplyRefinement).
     for (const VFGNode* v : node->getVFGNodes())
     {
         for (auto eit = v->InEdgeBegin(); eit != v->InEdgeEnd(); ++eit)
@@ -137,25 +156,32 @@ void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
                     for (NodeID id : indEdge->getPointsTo())
                     {
                         SVFVar* gn = svfir->getGNode(id);
-                        const BaseObjVar* base = nullptr;
-                        if (auto* b = SVFUtil::dyn_cast<BaseObjVar>(gn))
+                        NodeBS idsToPull;
+
+                        if (SVFUtil::isa<GepObjVar>(gn))
                         {
-                            base = b;
+                            idsToPull.set(id);
                         }
-                        else if (auto* g = SVFUtil::dyn_cast<GepObjVar>(gn))
+                        else if (auto* base = SVFUtil::dyn_cast<BaseObjVar>(gn))
                         {
-                            base = g->getBaseObj();
+                            idsToPull = svfir->getAllFieldsObjVars(base);
+                        }
+                        else
+                        {
+                            idsToPull.set(id);
                         }
 
-                        NodeBS singleton;
-                        if (!base) singleton.set(id);
-                        const NodeBS& fids =
-                            base ? svfir->getAllFieldsObjVars(base) : singleton;
-
-                        for (NodeID fid : fids)
+                        for (NodeID fid : idsToPull)
                         {
                             const ObjVar* obj =
                                 SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(fid));
+                            // Dense Gep propagation and AE-local external
+                            // defs have already carried the current value to
+                            // this node.
+                            if (denseLocalObjs.test(fid))
+                            {
+                                continue;
+                            }
                             if (obj
                                 && SemiSparseAbstractInterpretation::hasAbsValue(obj, srcICFG))
                             {

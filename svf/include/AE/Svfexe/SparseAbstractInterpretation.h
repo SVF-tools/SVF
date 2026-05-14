@@ -89,6 +89,8 @@ public:
     }
     ~FullSparseAbstractInterpretation() override;
 
+    void markExternalObjDef(NodeID objId);
+
 protected:
     /// Value flow does not propagate along ICFG edges in full-sparse;
     /// both ValVar and ObjVar are pulled in pullValueFlow via SVFG
@@ -147,6 +149,9 @@ private:
     std::unique_ptr<SVFGBuilder> svfgBuilder;
     /// View pointer into svfgBuilder's graph; non-null after buildSVFG().
     SVFG* svfg{nullptr};
+
+    /// ObjVars written by AE external handlers but absent from SVFG.
+    NodeBS externalObjDefObjs;
 };
 
 } // namespace SVF
