@@ -115,24 +115,6 @@ void AEStat::finializeStat()
     generalNumMap["EXT_CallSite_Num"] = extCallSiteNum;
     generalNumMap["NonEXT_CallSite_Num"] = callSiteNum;
     timeStatMap["Total_Time(sec)"] = (double)(endTime - startTime) / TIMEINTERVAL;
-
-    // Trace storage footprint: sum |_varToAbsVal| and |_addrToAbsVal|
-    // across the per-ICFG-node abstractTrace, plus the count of nodes
-    // with at least one entry.  storage.sh consumes these to compare
-    // dense vs semi vs full.
-    u64_t varTotal = 0, locTotal = 0, nonEmpty = 0;
-    for (const auto& [node, st] : _ae->abstractTrace)
-    {
-        const u64_t v = st.getVarToVal().size();
-        const u64_t l = st.getLocToVal().size();
-        varTotal += v;
-        locTotal += l;
-        if (v + l > 0) ++nonEmpty;
-    }
-    generalNumMap["ES_Var_TOTAL"] = varTotal;
-    generalNumMap["ES_Loc_TOTAL"] = locTotal;
-    generalNumMap["ES_NonEmpty_Nodes"] = nonEmpty;
-    generalNumMap["ES_Trace_Size"] = _ae->abstractTrace.size();
 }
 
 void AEStat::performStat()

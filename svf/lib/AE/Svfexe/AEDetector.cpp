@@ -670,13 +670,6 @@ bool NullptrDerefDetector::canSafelyDerefPtr(const ValVar* value, const ICFGNode
 {
     auto& ae = AbstractInterpretation::getAEInstance();
     const AbstractValue& AbsVal = ae.getAbsValue(value, node);
-    SVFUtil::outs() << "[NullChk] node=" << node->getId()
-                    << " val=" << value->getId()
-                    << " isAddr=" << AbsVal.isAddr()
-                    << " #addrs=" << AbsVal.getAddrs().size();
-    for (auto addr : AbsVal.getAddrs())
-        SVFUtil::outs() << " " << addr << "(null=" << AbstractState::isNullMem(addr) << ")";
-    SVFUtil::outs() << "\n";
     if (isUninit(AbsVal)) return false;
     if (!AbsVal.isAddr()) return true;
     for (const auto &addr: AbsVal.getAddrs())
