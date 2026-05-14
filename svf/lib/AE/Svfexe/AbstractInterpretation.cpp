@@ -76,21 +76,33 @@ AbstractInterpretation::AbstractInterpretation()
 /// Must only be called after the option parser has populated AESparsity.
 AbstractInterpretation& AbstractInterpretation::getAEInstance()
 {
-    static std::unique_ptr<AbstractInterpretation> instance = []()
-            -> std::unique_ptr<AbstractInterpretation>
+    // Leak the singleton on purpose.  AbstractInterpretation owns a
+    // Map<std::string, std::function<void(const CallICFGNode*)>> func_map
+    // whose lambda closures back-reference state owned by other globals
+    // (preAnalysis's WTO, the call graph, ...).  Letting the static
+    // unique_ptr's atexit-time destructor run hits a static-destruction-
+    // order issue: the func_map hashtable's destructor calls into
+    // std::function destroyers whose closures touch already-destroyed
+    // state, and ~_Hashtable() segfaults during normal program shutdown.
+    //
+    // Reliably reproducible from any downstream tool that drives a full
+    // AE analysis to completion and then exits normally:
+    //   - SSA's ass3 binary (Software-Security-Analysis/Assignment-3)
+    //   - pysvf via Python interpreter shutdown
+    //
+    // A process-lifetime singleton has no observable lifecycle past
+    // program exit, so leaking is benign and avoids the use-after-destroy.
+    static AbstractInterpretation* instance = []() -> AbstractInterpretation*
     {
         switch (Options::AESparsity())
         {
         case AESparsity::SemiSparse:
-            return std::unique_ptr<AbstractInterpretation>(
-                new SemiSparseAbstractInterpretation());
+            return new SemiSparseAbstractInterpretation();
         case AESparsity::Sparse:
-            return std::unique_ptr<AbstractInterpretation>(
-                new FullSparseAbstractInterpretation());
+            return new FullSparseAbstractInterpretation();
         case AESparsity::Dense:
         default:
-            return std::unique_ptr<AbstractInterpretation>(
-                new AbstractInterpretation());
+            return new AbstractInterpretation();
         }
     }();
     return *instance;
@@ -125,7 +137,7 @@ std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
         if (cgNode->getInEdges().empty())
         {
             // If main exists, put it first for priority using deque's push_front
-            if (fun->getName() == "main")
+            if (SVFUtil::isProgEntryFunction(fun))
             {
                 entryFunctions.push_front(fun);
             }

@@ -540,7 +540,7 @@ const Option<std::string> Options::Graphtxt(
     ""
 );
 
-const Option<bool> Options::SVFMain(
+Option<bool> Options::SVFMain(
     "svf-main",
     "add svf.main()",
     false

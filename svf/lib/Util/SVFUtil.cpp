@@ -441,5 +441,6 @@ bool SVFUtil::isExtCall(const FunObjVar* fun)
 
 bool SVFUtil::isProgEntryFunction(const FunObjVar* funObjVar)
 {
-    return funObjVar && funObjVar->getName() == "main";
+    const char* main_name=Options::SVFMain() ? "svf.main" : "main";
+    return funObjVar && funObjVar->getName() == main_name;
 }
