@@ -18,7 +18,6 @@
         MEMSET,            // memcpy() operations
         MEMCPY,            // memset() operations
         OVERWRITE,         // svf function overwrite app function
-        STORE_TOP:Argi,    // store a nondeterministic top value through argument i
         STORE_TOP:Argi+,   // store nondeterministic top values through argument i and following arguments
 */
 __attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))

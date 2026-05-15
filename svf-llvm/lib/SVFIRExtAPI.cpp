@@ -49,8 +49,7 @@ struct MemcpyField
     const SVFType* elementType;
 };
 
-bool parseStoreTopArgAnnotation(const std::string& annotation, u32_t& firstArg,
-                                bool& includeFollowing)
+bool parseStoreTopArgAnnotation(const std::string& annotation, u32_t& firstArg)
 {
     const std::string prefix = "STORE_TOP:Arg";
     const size_t start = annotation.find(prefix);
@@ -69,8 +68,7 @@ bool parseStoreTopArgAnnotation(const std::string& annotation, u32_t& firstArg,
     }
     while (idx < annotation.size() && annotation[idx] >= '0' && annotation[idx] <= '9');
 
-    includeFollowing = idx < annotation.size() && annotation[idx] == '+';
-    return true;
+    return idx < annotation.size() && annotation[idx] == '+';
 }
 
 bool hasStoreTopArgAnnotation(const CallICFGNode* callICFGNode)
@@ -83,8 +81,7 @@ bool hasStoreTopArgAnnotation(const CallICFGNode* callICFGNode)
             ExtAPI::getExtAPI()->getExtFuncAnnotations(extFun))
     {
         u32_t firstArg = 0;
-        bool includeFollowing = false;
-        if (parseStoreTopArgAnnotation(annotation, firstArg, includeFollowing))
+        if (parseStoreTopArgAnnotation(annotation, firstArg))
             return true;
     }
     return false;
@@ -311,14 +308,12 @@ void SVFIRBuilder::handleStoreTopArgExtCall(const CallBase* cs, const CallICFGNo
                 ExtAPI::getExtAPI()->getExtFuncAnnotations(extFun))
         {
             u32_t firstArg = 0;
-            bool includeFollowing = false;
-            if (!parseStoreTopArgAnnotation(annotation, firstArg, includeFollowing))
+            if (!parseStoreTopArgAnnotation(annotation, firstArg))
                 continue;
             if (firstArg >= cs->arg_size())
                 continue;
 
-            const u32_t endArg = includeFollowing ? cs->arg_size() : firstArg + 1;
-            for (u32_t argIdx = firstArg; argIdx < endArg; ++argIdx)
+            for (u32_t argIdx = firstArg; argIdx < cs->arg_size(); ++argIdx)
                 storeTopArgs.insert(argIdx);
         }
     }
