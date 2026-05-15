@@ -298,7 +298,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     }
 }
 
-void SVFIRBuilder::handleStoreTopArgExtCall(const CallBase* cs, const CallICFGNode* callICFGNode)
+void SVFIRBuilder::handleNondetArgStoreAtExtCall(const CallBase* cs, const CallICFGNode* callICFGNode)
 {
     Set<u32_t> storeTopArgs;
     const FunObjVar* extFun = callICFGNode->getCalledFunction();
@@ -341,7 +341,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
 
     if (hasStoreTopArgAnnotation(callICFGNode))
     {
-        handleStoreTopArgExtCall(cs, callICFGNode);
+        handleNondetArgStoreAtExtCall(cs, callICFGNode);
     }
     else if (isHeapAllocExtCallViaRet(callICFGNode))
     {
