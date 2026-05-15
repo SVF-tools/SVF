@@ -228,6 +228,12 @@ protected:
     /// via recordBranchNarrowing for each obj the cmp/switch refines.
     bool isBranchFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
+    /// Hook called when an incoming edge actually contributes to the
+    /// predecessor merge.  Default does nothing; full-sparse uses it to
+    /// filter MemorySSA phi operands by CFG predecessor feasibility.
+    virtual void recordFeasiblePredecessor(const ICFGNode* node,
+                                           const ICFGEdge* edge);
+
     /// Hook called by isCmp/SwitchBranchFeasible for each obj that the
     /// branch narrows.  Default (dense/semi): MEET `narrowed` onto
     /// obj's value (read at `loadIcfg` where sparse keeps it) and

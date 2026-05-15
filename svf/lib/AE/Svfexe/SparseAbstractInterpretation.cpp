@@ -41,11 +41,6 @@ using namespace SVF;
 
 FullSparseAbstractInterpretation::~FullSparseAbstractInterpretation() = default;
 
-void FullSparseAbstractInterpretation::markExternalObjDef(NodeID objId)
-{
-    externalObjDefObjs.set(objId);
-}
-
 void FullSparseAbstractInterpretation::buildSVFG()
 {
     svfgBuilder = std::make_unique<SVFGBuilder>(true);
@@ -80,8 +75,7 @@ void FullSparseAbstractInterpretation::joinStates(
     // MSSA chi/mu kill semantics).
     for (const auto& [id, val] : src.getLocToVal())
     {
-        if (!SVFUtil::isa<GepObjVar>(svfir->getGNode(id))
-            && !externalObjDefObjs.test(id))
+        if (!SVFUtil::isa<GepObjVar>(svfir->getGNode(id)))
             continue;
         u32_t addr = AbstractState::getVirtualMemAddress(id);
         if (dst.getLocToVal().count(id))
@@ -117,19 +111,30 @@ void FullSparseAbstractInterpretation::storeValue(
 bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     const ICFGNode* node)
 {
-    // Reset refinement at this node — base merge below will repopulate
-    // via our recordBranchNarrowing override (per conditional in-edge).
     refinementTrace.erase(node);
+    currentFeasiblePredBBs.clear();
 
     if (!AbstractInterpretation::mergeStatesFromPredecessors(node))
+    {
+        currentFeasiblePredBBs.clear();
         return false;
+    }
 
     pullValueFlow(node);
 
     // Compose pred-inherited refinement on top of branch narrowings
     // just captured, then MEET into trace[node] so reads see narrowed.
     propagateAndApplyRefinement(node);
+    currentFeasiblePredBBs.clear();
     return true;
+}
+
+void FullSparseAbstractInterpretation::recordFeasiblePredecessor(
+    const ICFGNode*, const ICFGEdge* edge)
+{
+    const ICFGNode* pred = edge->getSrcNode();
+    if (pred && pred->getBB())
+        currentFeasiblePredBBs.insert(pred->getBB());
 }
 
 void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
@@ -138,8 +143,7 @@ void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
     for (const auto& item : abstractTrace[node].getLocToVal())
     {
         NodeID id = item.first;
-        if (SVFUtil::isa<GepObjVar>(svfir->getGNode(id))
-            || externalObjDefObjs.test(id))
+        if (SVFUtil::isa<GepObjVar>(svfir->getGNode(id)))
             denseLocalObjs.set(id);
     }
     // e.g.
@@ -169,6 +173,13 @@ void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
                 SVFUtil::dyn_cast<IndirectSVFGEdge>(*eit);
             if (indEdge)
             {
+                if (const IntraMSSAPHISVFGNode* phi =
+                            SVFUtil::dyn_cast<IntraMSSAPHISVFGNode>(v))
+                {
+                    if (!isIntraMSSAPhiIncomingEdgeFeasible(node, phi, indEdge))
+                        continue;
+                }
+
                 const SVFGNode* src =
                     SVFUtil::dyn_cast<SVFGNode>(indEdge->getSrcNode());
                 const ICFGNode* srcICFG = src ? src->getICFGNode() : nullptr;
@@ -196,9 +207,8 @@ void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
                         {
                             const ObjVar* obj =
                                 SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(fid));
-                            // Dense Gep propagation and AE-local external
-                            // defs have already carried the current value to
-                            // this node.
+                            // Dense Gep propagation has already carried the
+                            // current value to this node.
                             if (denseLocalObjs.test(fid))
                             {
                                 continue;
@@ -231,26 +241,105 @@ void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
 //  Full-sparse — refinement trace machinery.
 // =====================================================================
 
-void FullSparseAbstractInterpretation::recordBranchNarrowing(
-    NodeID objId, const IntervalValue& narrowed, AbstractState& /*as*/,
-    const ICFGNode* /*loadIcfg*/, const ICFGNode* succ)
+// MemorySSA numbers PHI operands by the destination basic block's
+// predecessor index; SVFG copies those (pos, MRVer) pairs into
+// IntraMSSAPHISVFGNode.  Indirect SVFG edges only expose a source node,
+// so match that source back to a PHI operand MRVer before checking the
+// operand's predecessor position against currentFeasiblePredBBs.
+static bool definesMSSAPhiOperand(const SVFGNode* src, const MRVer* opVer)
 {
-    // FullSparse: route narrowing into refinementTrace[succ] instead
-    // of writing into `as` (which joinStates would discard).
-    // Multiple conditional in-edges to `succ` may call us in turn —
-    // JOIN narrowings across edges (path-aware merge).
-    if (!narrowed.isBottom())
+    if (!src || !opVer)
+        return false;
+
+    if (const StoreVFGNode* store = SVFUtil::dyn_cast<StoreVFGNode>(src))
     {
-        auto& succRef = refinementTrace[succ];
-        auto rit = succRef.find(objId);
-        if (rit == succRef.end())
-        {
-            succRef[objId] = narrowed;
-        }
-        else
-        {
-            rit->second.join_with(narrowed);
-        }
+        if (const MemSSA::STORECHI* storeDef =
+                    SVFUtil::dyn_cast<MemSSA::STORECHI>(opVer->getDef()))
+            return storeDef->getStoreStmt() == store->getSVFStmt();
+    }
+    else if (const FormalINSVFGNode* formalIn =
+                 SVFUtil::dyn_cast<FormalINSVFGNode>(src))
+    {
+        return formalIn->getMRVer() == opVer;
+    }
+    else if (const FormalOUTSVFGNode* formalOut =
+                 SVFUtil::dyn_cast<FormalOUTSVFGNode>(src))
+    {
+        return formalOut->getMRVer() == opVer;
+    }
+    else if (const ActualINSVFGNode* actualIn =
+                 SVFUtil::dyn_cast<ActualINSVFGNode>(src))
+    {
+        return actualIn->getMRVer() == opVer;
+    }
+    else if (const ActualOUTSVFGNode* actualOut =
+                 SVFUtil::dyn_cast<ActualOUTSVFGNode>(src))
+    {
+        return actualOut->getMRVer() == opVer;
+    }
+    else if (const MSSAPHISVFGNode* phi =
+                 SVFUtil::dyn_cast<MSSAPHISVFGNode>(src))
+    {
+        return phi->getResVer() == opVer;
+    }
+
+    return false;
+}
+
+bool FullSparseAbstractInterpretation::isIntraMSSAPhiIncomingEdgeFeasible(
+    const ICFGNode* node, const IntraMSSAPHISVFGNode* phi,
+    const IndirectSVFGEdge* indEdge) const
+{
+    if (node->getFun() &&
+            preAnalysis->getPointerAnalysis()->isInRecursion(node->getFun()))
+        return true;
+
+    if (currentFeasiblePredBBs.empty())
+        return true;
+
+    const ICFGNode* phiICFG = phi->getICFGNode();
+    const SVFBasicBlock* bb = phiICFG ? phiICFG->getBB() : node->getBB();
+    if (!bb)
+        return true;
+
+    const std::vector<const SVFBasicBlock*> predBBs = bb->getPredecessors();
+    const SVFGNode* src =
+        SVFUtil::dyn_cast<SVFGNode>(indEdge->getSrcNode());
+    bool matchedOperand = false;
+    for (auto oit = phi->opVerBegin(), oeit = phi->opVerEnd();
+            oit != oeit; ++oit)
+    {
+        if (!definesMSSAPhiOperand(src, oit->second))
+            continue;
+
+        matchedOperand = true;
+        u32_t predPos = oit->first;
+        if (predPos >= predBBs.size())
+            return true;
+
+        if (currentFeasiblePredBBs.count(predBBs[predPos]))
+            return true;
+    }
+
+    return !matchedOperand;
+}
+
+void FullSparseAbstractInterpretation::recordBranchNarrowing(
+    NodeID objId, const IntervalValue& narrowed, AbstractState&,
+    const ICFGNode*, const ICFGNode* succ)
+{
+    if (narrowed.isBottom())
+        return;
+
+    auto& succRef = refinementTrace[succ];
+    auto rit = succRef.find(objId);
+    if (rit == succRef.end())
+    {
+        succRef[objId] = narrowed;
+    }
+    else
+    {
+        rit->second.join_with(narrowed);
     }
 }
 

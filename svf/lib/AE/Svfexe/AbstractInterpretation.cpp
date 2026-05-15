@@ -238,18 +238,21 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                 AbstractState predState = getAbsState(pred);
                 if (isBranchFeasible(intraCfgEdge, predState))
                 {
+                    recordFeasiblePredecessor(node, edge);
                     joinStates(merged, predState);
                     hasFeasiblePred = true;
                 }
             }
             else
             {
+                recordFeasiblePredecessor(node, edge);
                 joinStates(merged, getAbsState(pred));
                 hasFeasiblePred = true;
             }
         }
         else if (SVFUtil::isa<CallCFGEdge>(edge))
         {
+            recordFeasiblePredecessor(node, edge);
             joinStates(merged, getAbsState(pred));
             hasFeasiblePred = true;
         }
@@ -258,6 +261,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
             switch (Options::HandleRecur())
             {
             case TOP:
+                recordFeasiblePredecessor(node, edge);
                 joinStates(merged, getAbsState(pred));
                 hasFeasiblePred = true;
                 break;
@@ -268,6 +272,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                 const CallICFGNode* callSite = returnSite->getCallICFGNode();
                 if (hasAbsState(callSite))
                 {
+                    recordFeasiblePredecessor(node, edge);
                     joinStates(merged, getAbsState(pred));
                     hasFeasiblePred = true;
                 }
@@ -284,7 +289,6 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
 
     return true;
 }
-
 
 /// Given a cmp operand, walk its SSA def edge to find the LoadStmt that
 /// produced it. This lets us trace back to the ObjVar in memory so that
@@ -460,7 +464,9 @@ bool AbstractInterpretation::isCmpBranchFeasible(const IntraCFGEdge* edge,
         getAbsValue(cmpStmt->getOpVar(0), pred),
         getAbsValue(cmpStmt->getOpVar(1), pred)
     };
-    if (opVal[0].isAddr() || opVal[1].isAddr())
+
+    const bool hasIntervalCmp = opVal[0].isInterval() && opVal[1].isInterval();
+    if (!hasIntervalCmp && (opVal[0].isAddr() || opVal[1].isAddr()))
         return true;
 
     // Feasibility check: cmp result must be compatible with branch successor
@@ -487,8 +493,8 @@ bool AbstractInterpretation::isCmpBranchFeasible(const IntraCFGEdge* edge,
             {
                 // Read obj at the LOAD's icfg (where the value actually
                 // lives in sparse mode); recordBranchNarrowing decides
-                // *where* the narrowed value is written (default → `as`,
-                // FullSparse → refinementTrace[succ]).
+                // *where* the narrowed value is written (default -> `as`,
+                // FullSparse -> refinementTrace[succ]).
                 const ICFGNode* loadIcfg = load->getICFGNode();
                 const AbstractValue& ptrVal =
                     getAbsValue(load->getRHSVar(), loadIcfg);
@@ -579,6 +585,11 @@ void AbstractInterpretation::recordBranchNarrowing(
             as.store(addr, AbstractValue(itv));
         }
     }
+}
+
+void AbstractInterpretation::recordFeasiblePredecessor(
+    const ICFGNode*, const ICFGEdge*)
+{
 }
 
 bool AbstractInterpretation::isBranchFeasible(const IntraCFGEdge* edge,
@@ -1395,5 +1406,3 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
     else
         assert(false && "undefined copy kind");
 }
-
-
