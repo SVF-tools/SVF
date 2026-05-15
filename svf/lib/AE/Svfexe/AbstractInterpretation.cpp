@@ -205,19 +205,12 @@ void AbstractInterpretation::handleGlobalNode()
         handleSVFStatement(stmt);
     }
 
-    // BlkPtr represents a pointer whose target is statically unknown (e.g., from
-    // int2ptr casts, external function returns, or unmodeled instructions like
-    // AtomicCmpXchg). It should be an address pointing to the BlackHole object
-    // (ID=2), NOT an interval top.
-    //
-    // History: this was originally set to IntervalValue::top() as a quick fix when
-    // the analysis crashed on programs containing uninitialized BlkPtr. However,
-    // BlkPtr is semantically a *pointer* (address domain), not a numeric value
-    // (interval domain). Setting it to interval top broke cross-domain consistency:
-    // the interval domain and address domain gave contradictory information for the
-    // same variable. The correct representation is an AddressValue containing the
-    // BlackHole virtual address, which means "points to unknown memory".
-    abstractTrace[node][PAG::getPAG()->getBlkPtr()] = AddressValue(BlackHoleObjAddr);
+    // BlkPtr is the canonical unknown value.  Keep its address-domain meaning
+    // for pointer uses, and also give it numeric top so external-input stores
+    // can flow through ordinary store/load state as [-inf, +inf].
+    AbstractValue blkPtrValue(IntervalValue::top());
+    blkPtrValue.getAddrs().insert(BlackHoleObjAddr);
+    abstractTrace[node][PAG::getPAG()->getBlkPtr()] = blkPtrValue;
 }
 
 /// Pull-based state merge: for each predecessor that has an abstract state,
@@ -1402,6 +1395,5 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
     else
         assert(false && "undefined copy kind");
 }
-
 
 
