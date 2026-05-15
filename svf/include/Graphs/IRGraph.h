@@ -63,7 +63,6 @@ public:
         BlkPtr,
         BlackHole,
         ConstantObj,
-        TopVal,
         ValSymbol,
         ObjSymbol,
         RetSymbol,
@@ -171,10 +170,6 @@ public:
     {
         return (id == ConstantObj);
     }
-    static inline bool isTopVal(NodeID id)
-    {
-        return (id == TopVal);
-    }
     static inline bool isBlkObjOrConstantObj(NodeID id)
     {
         return (isBlkObj(id) || isConstantSym(id));
@@ -193,11 +188,6 @@ public:
     inline NodeID constantSymID() const
     {
         return ConstantObj;
-    }
-
-    inline NodeID topValSymID() const
-    {
-        return TopVal;
     }
 
     inline NodeID blackholeSymID() const
@@ -270,11 +260,6 @@ public:
     {
         return nullPtrSymID();
     }
-    inline NodeID getTopVal() const
-    {
-        return topValSymID();
-    }
-
     u32_t getValueNodeNum();
 
     u32_t getObjectNodeNum();

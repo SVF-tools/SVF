@@ -20,7 +20,6 @@ const NodeID NodeIDAllocator::blackHoleObjectId = 0;
 const NodeID NodeIDAllocator::constantObjectId = 1;
 const NodeID NodeIDAllocator::blackHolePointerId = 2;
 const NodeID NodeIDAllocator::nullPointerId = 3;
-const NodeID NodeIDAllocator::topValueId = 4;
 
 NodeIDAllocator *NodeIDAllocator::allocator = nullptr;
 
@@ -43,9 +42,9 @@ void NodeIDAllocator::unset(void)
     }
 }
 
-// Initialise counts to 5 because that's how many special nodes we have.
+// Initialise counts to 4 because that's how many special nodes we have.
 NodeIDAllocator::NodeIDAllocator(void)
-    : numObjects(5), numValues(5), numSymbols(5), numNodes(5), numType(0), strategy(Options::NodeAllocStrat())
+    : numObjects(4), numValues(4), numSymbols(4), numNodes(4), numType(0), strategy(Options::NodeAllocStrat())
 { }
 
 NodeID NodeIDAllocator::allocateObjectId(void)

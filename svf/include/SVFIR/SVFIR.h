@@ -845,13 +845,6 @@ private:
     {
         return addDummyValNode(getBlkPtr(), nullptr);
     }
-    inline NodeID addTopValNode()
-    {
-        ConstDataValVar* node =
-            new ConstDataValVar(getTopVal(), nullptr, SVFType::getSVFInt8Type());
-        node->setName("topVal");
-        return addValNode(node);
-    }
     inline NodeID addIntrinsicValNode(NodeID i, const SVFType* type)
     {
         return addValNode(new IntrinsicValVar(i, type));

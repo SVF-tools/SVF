@@ -331,7 +331,7 @@ void SVFIRBuilder::handleStoreTopArgExtCall(const CallBase* cs, const CallICFGNo
 
         const Type* storedType =
             LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->inferObjType(arg);
-        NodeID src = pag->getTopVal();
+        NodeID src = pag->getBlkPtr();
         NodeID dst = getValueNode(arg);
         if (NodeID fieldZero = getDirectAccessFieldZeroValVar(arg, storedType))
             dst = fieldZero;
