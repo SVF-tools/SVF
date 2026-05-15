@@ -93,6 +93,27 @@ void FullSparseAbstractInterpretation::joinStates(
         dst.addToFreedAddrs(a);
 }
 
+void FullSparseAbstractInterpretation::storeValue(
+    const ValVar* pointer, const AbstractValue& val, const ICFGNode* node)
+{
+    // Clear branch refinement for every ObjVar this store overwrites.
+    // A store redefines the ObjVar; the pre-store branch constraint
+    // (inherited into refinementTrace[node]) is immediately stale.
+    // Without this, successors inherit the stale constraint and MEET
+    // it onto the pulled post-store value, erasing the store's effect.
+    const AbstractValue& ptrVal = getAbsValue(pointer, node);
+    AbstractState& as = getAbsState(node);
+    for (auto addr : ptrVal.getAddrs())
+    {
+        NodeID objId = as.getIDFromAddr(addr);
+        auto rit = refinementTrace.find(node);
+        if (rit != refinementTrace.end())
+            rit->second.erase(objId);
+    }
+    // Delegate to base for the actual ObjVar update.
+    SemiSparseAbstractInterpretation::storeValue(pointer, val, node);
+}
+
 bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     const ICFGNode* node)
 {
