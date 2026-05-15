@@ -260,7 +260,6 @@ public:
     {
         return nullPtrSymID();
     }
-
     u32_t getValueNodeNum();
 
     u32_t getObjectNodeNum();
