@@ -49,7 +49,7 @@ struct MemcpyField
     const SVFType* elementType;
 };
 
-bool parseStoreTopArgAnnotation(const std::string& annotation, u32_t& firstArg)
+bool parseNondetArgStoreAtExtCall(const std::string& annotation, u32_t& firstArg)
 {
     const std::string prefix = "STORE_TOP:Arg";
     const size_t start = annotation.find(prefix);
@@ -71,7 +71,7 @@ bool parseStoreTopArgAnnotation(const std::string& annotation, u32_t& firstArg)
     return idx < annotation.size() && annotation[idx] == '+';
 }
 
-bool hasStoreTopArgAnnotation(const CallICFGNode* callICFGNode)
+bool hasNondetArgStoreAtExtCall(const CallICFGNode* callICFGNode)
 {
     const FunObjVar* extFun = callICFGNode->getCalledFunction();
     if (extFun == nullptr)
@@ -81,7 +81,7 @@ bool hasStoreTopArgAnnotation(const CallICFGNode* callICFGNode)
             ExtAPI::getExtAPI()->getExtFuncAnnotations(extFun))
     {
         u32_t firstArg = 0;
-        if (parseStoreTopArgAnnotation(annotation, firstArg))
+        if (parseNondetArgStoreAtExtCall(annotation, firstArg))
             return true;
     }
     return false;
@@ -308,7 +308,7 @@ void SVFIRBuilder::handleNondetArgStoreAtExtCall(const CallBase* cs, const CallI
                 ExtAPI::getExtAPI()->getExtFuncAnnotations(extFun))
         {
             u32_t firstArg = 0;
-            if (!parseStoreTopArgAnnotation(annotation, firstArg))
+            if (!parseNondetArgStoreAtExtCall(annotation, firstArg))
                 continue;
             if (firstArg >= cs->arg_size())
                 continue;
@@ -339,7 +339,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
 {
     const CallICFGNode *callICFGNode = llvmModuleSet()->getCallICFGNode(cs);
 
-    if (hasStoreTopArgAnnotation(callICFGNode))
+    if (hasNondetArgStoreAtExtCall(callICFGNode))
     {
         handleNondetArgStoreAtExtCall(cs, callICFGNode);
     }
