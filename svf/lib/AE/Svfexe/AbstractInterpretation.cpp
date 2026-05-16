@@ -238,21 +238,18 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                 AbstractState predState = getAbsState(pred);
                 if (isBranchFeasible(intraCfgEdge, predState))
                 {
-                    recordFeasiblePredecessor(node, edge);
                     joinStates(merged, predState);
                     hasFeasiblePred = true;
                 }
             }
             else
             {
-                recordFeasiblePredecessor(node, edge);
                 joinStates(merged, getAbsState(pred));
                 hasFeasiblePred = true;
             }
         }
         else if (SVFUtil::isa<CallCFGEdge>(edge))
         {
-            recordFeasiblePredecessor(node, edge);
             joinStates(merged, getAbsState(pred));
             hasFeasiblePred = true;
         }
@@ -261,7 +258,6 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
             switch (Options::HandleRecur())
             {
             case TOP:
-                recordFeasiblePredecessor(node, edge);
                 joinStates(merged, getAbsState(pred));
                 hasFeasiblePred = true;
                 break;
@@ -272,7 +268,6 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                 const CallICFGNode* callSite = returnSite->getCallICFGNode();
                 if (hasAbsState(callSite))
                 {
-                    recordFeasiblePredecessor(node, edge);
                     joinStates(merged, getAbsState(pred));
                     hasFeasiblePred = true;
                 }
@@ -447,7 +442,7 @@ static IntervalValue computeCmpConstraint(s32_t predicate, s64_t succ,
 }
 
 bool AbstractInterpretation::isCmpBranchFeasible(const IntraCFGEdge* edge,
-        AbstractState& as)
+        AbstractState& as, bool recordNarrowing)
 {
     const ICFGNode* pred = edge->getSrcNode();
     s64_t succ = edge->getSuccessorCondValue();
@@ -475,36 +470,39 @@ bool AbstractInterpretation::isCmpBranchFeasible(const IntraCFGEdge* edge,
     if (resVal.isBottom())
         return false;
 
-    // For each operand: if it is the variable side (non-constant), has a
-    // backing load, and the branch imposes a useful constraint, narrow the
-    // ObjVar behind the load.
-    for (int i = 0; i < 2; i++)
+    if (recordNarrowing)
     {
-        if (opVal[i].getInterval().is_numeral() || !opVal[1-i].getInterval().is_numeral())
-            continue; // skip constant operands and var-vs-var
-
-        if (const LoadStmt* load = findBackingLoad(cmpStmt->getOpVar(i)))
+        // For each operand: if it is the variable side (non-constant), has a
+        // backing load, and the branch imposes a useful constraint, narrow the
+        // ObjVar behind the load.
+        for (int i = 0; i < 2; i++)
         {
-            IntervalValue narrowed = computeCmpConstraint(
-                                         predicate, succ, i == 0,
-                                         opVal[i].getInterval(), opVal[1-i].getInterval());
+            if (opVal[i].getInterval().is_numeral() || !opVal[1-i].getInterval().is_numeral())
+                continue; // skip constant operands and var-vs-var
 
-            if (!narrowed.isTop())
+            if (const LoadStmt* load = findBackingLoad(cmpStmt->getOpVar(i)))
             {
-                // Read obj at the LOAD's icfg (where the value actually
-                // lives in sparse mode); recordBranchNarrowing decides
-                // *where* the narrowed value is written (default -> `as`,
-                // FullSparse -> refinementTrace[succ]).
-                const ICFGNode* loadIcfg = load->getICFGNode();
-                const AbstractValue& ptrVal =
-                    getAbsValue(load->getRHSVar(), loadIcfg);
-                if (ptrVal.isAddr())
+                IntervalValue narrowed = computeCmpConstraint(
+                                             predicate, succ, i == 0,
+                                             opVal[i].getInterval(), opVal[1-i].getInterval());
+
+                if (!narrowed.isTop())
                 {
-                    for (const auto& addr : ptrVal.getAddrs())
+                    // Read obj at the LOAD's icfg (where the value actually
+                    // lives in sparse mode); recordBranchNarrowing decides
+                    // *where* the narrowed value is written (default -> `as`,
+                    // FullSparse -> refinementTrace[succ]).
+                    const ICFGNode* loadIcfg = load->getICFGNode();
+                    const AbstractValue& ptrVal =
+                        getAbsValue(load->getRHSVar(), loadIcfg);
+                    if (ptrVal.isAddr())
                     {
-                        NodeID objId = as.getIDFromAddr(addr);
-                        recordBranchNarrowing(
-                            objId, narrowed, as, loadIcfg, edge->getDstNode());
+                        for (const auto& addr : ptrVal.getAddrs())
+                        {
+                            NodeID objId = as.getIDFromAddr(addr);
+                            recordBranchNarrowing(
+                                objId, narrowed, as, loadIcfg, edge->getDstNode());
+                        }
                     }
                 }
             }
@@ -514,7 +512,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const IntraCFGEdge* edge,
 }
 
 bool AbstractInterpretation::isSwitchBranchFeasible(const IntraCFGEdge* edge,
-        AbstractState& as)
+        AbstractState& as, bool recordNarrowing)
 {
     const ICFGNode* pred = edge->getSrcNode();
     s64_t succ = edge->getSuccessorCondValue();
@@ -525,6 +523,9 @@ bool AbstractInterpretation::isSwitchBranchFeasible(const IntraCFGEdge* edge,
     switch_cond.meet_with(IntervalValue(succ, succ));
     if (switch_cond.isBottom())
         return false;
+    if (!recordNarrowing)
+        return true;
+
     as[var->getId()] = AbstractValue(switch_cond);
 
     FIFOWorkList<const SVFStmt*> stmtList;
@@ -587,19 +588,14 @@ void AbstractInterpretation::recordBranchNarrowing(
     }
 }
 
-void AbstractInterpretation::recordFeasiblePredecessor(
-    const ICFGNode*, const ICFGEdge*)
-{
-}
-
 bool AbstractInterpretation::isBranchFeasible(const IntraCFGEdge* edge,
-        AbstractState& as)
+        AbstractState& as, bool recordNarrowing)
 {
     const SVFVar* cmpVar = edge->getCondition();
     assert(!cmpVar->getInEdges().empty() && "branch condition has no defining edge?");
     if (SVFUtil::isa<CmpStmt>(*cmpVar->getInEdges().begin()))
-        return isCmpBranchFeasible(edge, as);
-    return isSwitchBranchFeasible(edge, as);
+        return isCmpBranchFeasible(edge, as, recordNarrowing);
+    return isSwitchBranchFeasible(edge, as, recordNarrowing);
 }
 
 /**

@@ -32,7 +32,8 @@ namespace SVF
 class SVFG;
 class SVFGBuilder;
 class IntraMSSAPHISVFGNode;
-class IndirectSVFGEdge;
+class SVFBasicBlock;
+class VFGNode;
 
 /// Abstract Interpretation for `Options::AESparsity::SemiSparse`.
 ///
@@ -105,13 +106,10 @@ protected:
 
     /// Thin wrapper: defer to base for ICFG-edge bookkeeping
     /// (predecessor iteration, branch feasibility, joinStates,
-    /// updateAbsState, reachability return).  When base reports a
-    /// feasible predecessor, additionally run pullValueFlow to populate
-    /// trace[node] with obj values from SVFG def-sites.
+    /// updateAbsState, reachability return).  For reachable nodes,
+    /// additionally run pullValueFlow to populate trace[node] with obj
+    /// values from SVFG def-sites.
     bool mergeStatesFromPredecessors(const ICFGNode* node) override;
-
-    void recordFeasiblePredecessor(const ICFGNode* node,
-                                   const ICFGEdge* edge) override;
 
     /// Capture branch narrowings into refinementTrace[succ] instead of
     /// writing them into the local `as`: in FullSparse `as` would be
@@ -131,9 +129,20 @@ private:
     /// trace[node].  Multiple sources (e.g. mphi operands) JOIN.
     void pullValueFlow(const ICFGNode* node);
 
-    bool isIntraMSSAPhiIncomingEdgeFeasible(
-        const ICFGNode* node, const IntraMSSAPHISVFGNode* phi,
-        const IndirectSVFGEdge* indEdge) const;
+    /// Return false only when the source SVFG node's MemorySSA phi operand
+    /// belongs only to currently infeasible CFG predecessors.
+    bool isMSSAPhiIncomingBranchFeasible(const VFGNode* src,
+                                         const IntraMSSAPHISVFGNode* phi);
+
+    /// Branch-feasible CFG reachability only.
+    bool isICFGPathFeasible(const ICFGNode* src, const ICFGNode* dst);
+
+    bool isPhiPredecessorBranchFeasible(const ICFGNode* src,
+                                        const SVFBasicBlock* predBB,
+                                        const ICFGNode* phiICFG);
+
+    bool canSourceReachPhiPredecessor(const ICFGNode* src,
+                                      const SVFBasicBlock* predBB);
 
     /// Compose pred-inherited refinement into refinementTrace[node]
     /// (single-pred linear copy / multi-pred intersect-JOIN; any pred
@@ -151,11 +160,6 @@ private:
     /// propagateAndApplyRefinement at the end of
     /// mergeStatesFromPredecessors.
     Map<const ICFGNode*, Map<NodeID, IntervalValue>> refinementTrace;
-
-    /// Scratch set for the node currently being merged. Base merge records
-    /// feasible CFG predecessor BBs here; pullValueFlow consumes it to filter
-    /// intra MemorySSA phi operands, then mergeStatesFromPredecessors clears it.
-    Set<const SVFBasicBlock*> currentFeasiblePredBBs;
 
     /// Build the SVFG on top of the semi-sparse precompute.
     void buildSVFG();

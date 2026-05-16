@@ -120,6 +120,11 @@ jobs:
         run:
           ctest -R semi_sparse -VV
 
+      - name: ctest ae_full_sparse
+        working-directory: ${{github.workspace}}/Release-build
+        run:
+          ctest -R ae_full_sparse -VV
+
       - name: ctest cfl_tests
         working-directory: ${{github.workspace}}/Release-build
         run:

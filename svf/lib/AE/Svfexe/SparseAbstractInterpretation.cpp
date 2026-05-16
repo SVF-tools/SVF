@@ -52,9 +52,9 @@ void FullSparseAbstractInterpretation::buildSVFG()
 //
 //  mergeStatesFromPredecessors is a thin wrapper: defer to base for
 //  ICFG-edge bookkeeping (predecessor iteration, branch feasibility,
-//  joinStates, updateAbsState, reachability return).  When base reports
-//  a feasible predecessor, run pullValueFlow to populate trace[node]
-//  with obj values pulled along SVFG indirect in-edges.
+//  joinStates, updateAbsState, reachability return).  If the node is
+//  reachable, run pullValueFlow to populate trace[node] with obj values
+//  pulled along SVFG indirect in-edges.
 //
 //  joinStates stays a near-no-op (only _freedAddrs rides ICFG edges,
 //  matching semi-sparse minus the obj loop) since value flow is
@@ -112,29 +112,16 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     const ICFGNode* node)
 {
     refinementTrace.erase(node);
-    currentFeasiblePredBBs.clear();
 
     if (!AbstractInterpretation::mergeStatesFromPredecessors(node))
-    {
-        currentFeasiblePredBBs.clear();
         return false;
-    }
 
     pullValueFlow(node);
 
     // Compose pred-inherited refinement on top of branch narrowings
     // just captured, then MEET into trace[node] so reads see narrowed.
     propagateAndApplyRefinement(node);
-    currentFeasiblePredBBs.clear();
     return true;
-}
-
-void FullSparseAbstractInterpretation::recordFeasiblePredecessor(
-    const ICFGNode*, const ICFGEdge* edge)
-{
-    const ICFGNode* pred = edge->getSrcNode();
-    if (pred && pred->getBB())
-        currentFeasiblePredBBs.insert(pred->getBB());
 }
 
 void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
@@ -173,15 +160,15 @@ void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
                 SVFUtil::dyn_cast<IndirectSVFGEdge>(*eit);
             if (indEdge)
             {
+                const SVFGNode* src =
+                    SVFUtil::dyn_cast<SVFGNode>(indEdge->getSrcNode());
                 if (const IntraMSSAPHISVFGNode* phi =
                             SVFUtil::dyn_cast<IntraMSSAPHISVFGNode>(v))
                 {
-                    if (!isIntraMSSAPhiIncomingEdgeFeasible(node, phi, indEdge))
+                    if (!isMSSAPhiIncomingBranchFeasible(src, phi))
                         continue;
                 }
 
-                const SVFGNode* src =
-                    SVFUtil::dyn_cast<SVFGNode>(indEdge->getSrcNode());
                 const ICFGNode* srcICFG = src ? src->getICFGNode() : nullptr;
                 if (srcICFG && hasAbsState(srcICFG))
                 {
@@ -241,87 +228,267 @@ void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
 //  Full-sparse — refinement trace machinery.
 // =====================================================================
 
-// MemorySSA numbers PHI operands by the destination basic block's
-// predecessor index; SVFG copies those (pos, MRVer) pairs into
-// IntraMSSAPHISVFGNode.  Indirect SVFG edges only expose a source node,
-// so match that source back to a PHI operand MRVer before checking the
-// operand's predecessor position against currentFeasiblePredBBs.
-static bool definesMSSAPhiOperand(const SVFGNode* src, const MRVer* opVer)
+bool FullSparseAbstractInterpretation::isICFGPathFeasible(
+    const ICFGNode* src, const ICFGNode* dst)
 {
-    if (!src || !opVer)
-        return false;
+    if (!src || !dst)
+        return true;
 
-    if (const StoreVFGNode* store = SVFUtil::dyn_cast<StoreVFGNode>(src))
+    if (src == dst)
+        return true;
+
+    const FunObjVar* fun = src->getFun();
+    if (!fun || fun != dst->getFun())
+        return true;
+
+    std::deque<const ICFGNode*> worklist;
+    Set<const ICFGNode*> visited;
+    worklist.push_back(src);
+    visited.insert(src);
+
+    while (!worklist.empty())
     {
-        if (const MemSSA::STORECHI* storeDef =
-                    SVFUtil::dyn_cast<MemSSA::STORECHI>(opVer->getDef()))
-            return storeDef->getStoreStmt() == store->getSVFStmt();
-    }
-    else if (const FormalINSVFGNode* formalIn =
-                 SVFUtil::dyn_cast<FormalINSVFGNode>(src))
-    {
-        return formalIn->getMRVer() == opVer;
-    }
-    else if (const FormalOUTSVFGNode* formalOut =
-                 SVFUtil::dyn_cast<FormalOUTSVFGNode>(src))
-    {
-        return formalOut->getMRVer() == opVer;
-    }
-    else if (const ActualINSVFGNode* actualIn =
-                 SVFUtil::dyn_cast<ActualINSVFGNode>(src))
-    {
-        return actualIn->getMRVer() == opVer;
-    }
-    else if (const ActualOUTSVFGNode* actualOut =
-                 SVFUtil::dyn_cast<ActualOUTSVFGNode>(src))
-    {
-        return actualOut->getMRVer() == opVer;
-    }
-    else if (const MSSAPHISVFGNode* phi =
-                 SVFUtil::dyn_cast<MSSAPHISVFGNode>(src))
-    {
-        return phi->getResVer() == opVer;
+        const ICFGNode* cur = worklist.front();
+        worklist.pop_front();
+
+        // Treat a call as an intra-procedural summary edge for path queries.
+        // Feasibility of the callee body is handled by the normal analysis;
+        // here we only need caller-side reachability, e.g. entry -> ret-site.
+        if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(cur))
+        {
+            const ICFGNode* succ = call->getRetICFGNode();
+            if (succ && succ->getFun() == fun)
+            {
+                if (succ == dst)
+                    return true;
+
+                if (!visited.count(succ))
+                {
+                    visited.insert(succ);
+                    worklist.push_back(succ);
+                }
+            }
+        }
+
+        for (const ICFGEdge* edge : cur->getOutEdges())
+        {
+            const IntraCFGEdge* intraEdge =
+                SVFUtil::dyn_cast<IntraCFGEdge>(edge);
+            if (!intraEdge)
+                continue;
+
+            const ICFGNode* succ = edge->getDstNode();
+            if (!succ || succ->getFun() != fun)
+                continue;
+
+            if (intraEdge->getCondition() && hasAbsState(cur))
+            {
+                AbstractState edgeState = getAbsState(cur);
+                if (!isBranchFeasible(intraEdge, edgeState, false))
+                    continue;
+            }
+
+            if (succ == dst)
+                return true;
+
+            if (!visited.count(succ))
+            {
+                visited.insert(succ);
+                worklist.push_back(succ);
+            }
+        }
     }
 
     return false;
 }
 
-bool FullSparseAbstractInterpretation::isIntraMSSAPhiIncomingEdgeFeasible(
-    const ICFGNode* node, const IntraMSSAPHISVFGNode* phi,
-    const IndirectSVFGEdge* indEdge) const
+static bool sourceDefinesMSSAVersion(const SVFGNode* src, const MRVer* ver)
 {
-    if (node->getFun() &&
-            preAnalysis->getPointerAnalysis()->isInRecursion(node->getFun()))
-        return true;
+    if (!src || !ver)
+        return false;
 
-    if (currentFeasiblePredBBs.empty())
-        return true;
-
-    const ICFGNode* phiICFG = phi->getICFGNode();
-    const SVFBasicBlock* bb = phiICFG ? phiICFG->getBB() : node->getBB();
-    if (!bb)
-        return true;
-
-    const std::vector<const SVFBasicBlock*> predBBs = bb->getPredecessors();
-    const SVFGNode* src =
-        SVFUtil::dyn_cast<SVFGNode>(indEdge->getSrcNode());
-    bool matchedOperand = false;
-    for (auto oit = phi->opVerBegin(), oeit = phi->opVerEnd();
-            oit != oeit; ++oit)
+    if (const StoreVFGNode* store = SVFUtil::dyn_cast<StoreVFGNode>(src))
     {
-        if (!definesMSSAPhiOperand(src, oit->second))
-            continue;
-
-        matchedOperand = true;
-        u32_t predPos = oit->first;
-        if (predPos >= predBBs.size())
-            return true;
-
-        if (currentFeasiblePredBBs.count(predBBs[predPos]))
-            return true;
+        if (const MemSSA::STORECHI* storeDef =
+                    SVFUtil::dyn_cast<MemSSA::STORECHI>(ver->getDef()))
+            return storeDef->getStoreStmt() == store->getSVFStmt();
+    }
+    else if (const FormalINSVFGNode* formalIn =
+                 SVFUtil::dyn_cast<FormalINSVFGNode>(src))
+    {
+        return formalIn->getMRVer() == ver;
+    }
+    else if (const FormalOUTSVFGNode* formalOut =
+                 SVFUtil::dyn_cast<FormalOUTSVFGNode>(src))
+    {
+        return formalOut->getMRVer() == ver;
+    }
+    else if (const ActualINSVFGNode* actualIn =
+                 SVFUtil::dyn_cast<ActualINSVFGNode>(src))
+    {
+        return actualIn->getMRVer() == ver;
+    }
+    else if (const ActualOUTSVFGNode* actualOut =
+                 SVFUtil::dyn_cast<ActualOUTSVFGNode>(src))
+    {
+        return actualOut->getMRVer() == ver;
+    }
+    else if (const MSSAPHISVFGNode* phi =
+                 SVFUtil::dyn_cast<MSSAPHISVFGNode>(src))
+    {
+        return phi->getResVer() == ver;
     }
 
-    return !matchedOperand;
+    return false;
+}
+
+bool FullSparseAbstractInterpretation::isPhiPredecessorBranchFeasible(
+    const ICFGNode* src, const SVFBasicBlock* predBB,
+    const ICFGNode* phiICFG)
+{
+    bool feasible = true;
+
+    if (!src || !predBB || !phiICFG)
+    {
+        feasible = true;
+    }
+    else if (!canSourceReachPhiPredecessor(src, predBB))
+    {
+        feasible = false;
+    }
+    else
+    {
+        const ICFGNode* predExit = predBB->back();
+        if (!isICFGPathFeasible(src, predExit))
+        {
+            feasible = false;
+        }
+        else
+        {
+            const ICFGEdge* edge =
+                svfir->getICFG()->getICFGEdge(predExit, phiICFG, ICFGEdge::IntraCF);
+            const IntraCFGEdge* intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge);
+            if (!intraEdge)
+            {
+                feasible = true;
+            }
+            else if (!intraEdge->getCondition())
+            {
+                feasible = true;
+            }
+            else if (!hasAbsState(predExit))
+            {
+                feasible = true;
+            }
+            else
+            {
+                AbstractState edgeState = getAbsState(predExit);
+                feasible = isBranchFeasible(intraEdge, edgeState, false);
+            }
+        }
+    }
+
+    return feasible;
+}
+
+bool FullSparseAbstractInterpretation::canSourceReachPhiPredecessor(
+    const ICFGNode* src, const SVFBasicBlock* predBB)
+{
+    bool canReach = true;
+
+    if (!src || !predBB)
+    {
+        canReach = true;
+    }
+    else
+    {
+        const SVFBasicBlock* srcBB = src->getBB();
+        const FunObjVar* fun = src->getFun();
+        if (!srcBB)
+        {
+            canReach = true;
+        }
+        else if (srcBB == predBB)
+        {
+            canReach = true;
+        }
+        else if (fun && fun == predBB->getParent() && fun->dominate(srcBB, predBB))
+        {
+            canReach = true;
+        }
+        else
+        {
+            canReach = isICFGPathFeasible(src, predBB->back());
+        }
+    }
+
+    return canReach;
+}
+
+bool FullSparseAbstractInterpretation::isMSSAPhiIncomingBranchFeasible(
+    const VFGNode* src, const IntraMSSAPHISVFGNode* phi)
+{
+    const ICFGNode* srcICFG = src ? src->getICFGNode() : nullptr;
+    const ICFGNode* phiICFG = phi ? phi->getICFGNode() : nullptr;
+    bool feasible = true;
+
+    if (!srcICFG || !phiICFG)
+    {
+        feasible = true;
+    }
+    else if (srcICFG == phiICFG)
+    {
+        feasible = true;
+    }
+    else
+    {
+        const FunObjVar* fun = srcICFG->getFun();
+        const SVFBasicBlock* phiBB = phiICFG->getBB();
+        if (!fun || fun != phiICFG->getFun())
+        {
+            feasible = true;
+        }
+        else if (preAnalysis->getPointerAnalysis()->isInRecursion(fun))
+        {
+            feasible = true;
+        }
+        else if (!phiBB)
+        {
+            feasible = true;
+        }
+        else
+        {
+            feasible = false;
+            bool matchedOperand = false;
+            const std::vector<const SVFBasicBlock*> predBBs =
+                phiBB->getPredecessors();
+            for (auto oit = phi->opVerBegin(), oeit = phi->opVerEnd();
+                    oit != oeit; ++oit)
+            {
+                if (!sourceDefinesMSSAVersion(src, oit->second))
+                    continue;
+
+                matchedOperand = true;
+                u32_t predPos = oit->first;
+                if (predPos >= predBBs.size())
+                {
+                    feasible = true;
+                    break;
+                }
+                else if (isPhiPredecessorBranchFeasible(
+                             srcICFG, predBBs[predPos], phiICFG))
+                {
+                    feasible = true;
+                    break;
+                }
+            }
+
+            if (!matchedOperand)
+                feasible = true;
+        }
+    }
+
+    return feasible;
 }
 
 void FullSparseAbstractInterpretation::recordBranchNarrowing(

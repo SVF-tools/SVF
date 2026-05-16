@@ -224,15 +224,11 @@ protected:
     /// base ICFG-edge merge.
     virtual bool mergeStatesFromPredecessors(const ICFGNode* node);
 
-    /// Returns true if the branch is reachable; narrows `as` in-place
-    /// via recordBranchNarrowing for each obj the cmp/switch refines.
-    bool isBranchFeasible(const IntraCFGEdge* edge, AbstractState& as);
-
-    /// Hook called when an incoming edge actually contributes to the
-    /// predecessor merge.  Default does nothing; full-sparse uses it to
-    /// filter MemorySSA phi operands by CFG predecessor feasibility.
-    virtual void recordFeasiblePredecessor(const ICFGNode* node,
-                                           const ICFGEdge* edge);
+    /// Returns true if the branch is reachable.  When `recordNarrowing` is
+    /// true, also narrows `as` in-place via recordBranchNarrowing for each obj
+    /// the cmp/switch refines.
+    bool isBranchFeasible(const IntraCFGEdge* edge, AbstractState& as,
+                          bool recordNarrowing = true);
 
     /// Hook called by isCmp/SwitchBranchFeasible for each obj that the
     /// branch narrows.  Default (dense/semi): MEET `narrowed` onto
@@ -266,11 +262,13 @@ private:
     /// Dispatch an SVF statement (Addr/Binary/Cmp/Load/Store/Copy/Gep/Select/Phi/Call/Ret) to its handler
     virtual void handleSVFStatement(const SVFStmt* stmt);
 
-    /// Returns true if the cmp-conditional branch is feasible; narrows as in-place.
-    bool isCmpBranchFeasible(const IntraCFGEdge* edge, AbstractState& as);
+    /// Returns true if the cmp-conditional branch is feasible; optionally narrows as in-place.
+    bool isCmpBranchFeasible(const IntraCFGEdge* edge, AbstractState& as,
+                             bool recordNarrowing);
 
-    /// Returns true if the switch branch is feasible; narrows as in-place.
-    bool isSwitchBranchFeasible(const IntraCFGEdge* edge, AbstractState& as);
+    /// Returns true if the switch branch is feasible; optionally narrows as in-place.
+    bool isSwitchBranchFeasible(const IntraCFGEdge* edge, AbstractState& as,
+                                bool recordNarrowing);
 
     void updateStateOnAddr(const AddrStmt *addr);
 
