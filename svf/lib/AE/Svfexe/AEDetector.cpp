@@ -569,8 +569,8 @@ void NullptrDerefDetector::handleStubFunctions(const CallICFGNode* callNode)
         // opt may directly dereference a null pointer and call UNSAFE_LOAD(null)
         bool isSafe = canSafelyDerefPtr(arg0Val, callNode) && arg0Val->getId() != 0;
         SVFUtil::outs() << "[UNSAFE_LOAD] node=" << callNode->getId()
-                        << " arg0=" << arg0Val->getId()
-                        << " isSafe=" << isSafe << "\n";
+                        << " arg0=" << arg0Val->getId() << " isSafe=" << isSafe
+                        << "\n";
         if (!isSafe)
         {
             SVFUtil::outs() << SVFUtil::sucMsg("success: expected null dereference at UNSAFE_LOAD")

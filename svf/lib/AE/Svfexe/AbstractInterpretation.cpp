@@ -443,7 +443,7 @@ static IntervalValue computeCmpConstraint(s32_t predicate, s64_t succ,
 }
 
 bool AbstractInterpretation::isCmpBranchEdgeFeasible(const IntraCFGEdge* edge,
-        AbstractState& as)
+                                                     AbstractState& as)
 {
     const ICFGNode* pred = edge->getSrcNode();
     s64_t succ = edge->getSuccessorCondValue();
@@ -473,8 +473,8 @@ bool AbstractInterpretation::isCmpBranchEdgeFeasible(const IntraCFGEdge* edge,
     return true;
 }
 
-bool AbstractInterpretation::isSwitchBranchEdgeFeasible(const IntraCFGEdge* edge,
-        AbstractState& as)
+bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
+    const IntraCFGEdge* edge, AbstractState& as)
 {
     const ICFGNode* pred = edge->getSrcNode();
     s64_t succ = edge->getSuccessorCondValue();
@@ -489,14 +489,15 @@ bool AbstractInterpretation::isSwitchBranchEdgeFeasible(const IntraCFGEdge* edge
 }
 
 void AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
-        AbstractState& as)
+                                                   AbstractState& as)
 {
     const SVFVar* cond = edge->getCondition();
     const ICFGNode* pred = edge->getSrcNode();
     const ICFGNode* succNode = edge->getDstNode();
     s64_t succ = edge->getSuccessorCondValue();
 
-    assert(!cond->getInEdges().empty() && "branch condition has no defining edge?");
+    assert(!cond->getInEdges().empty() &&
+           "branch condition has no defining edge?");
     const SVFStmt* condDef = *cond->getInEdges().begin();
 
     if (const CmpStmt* cmpStmt = SVFUtil::dyn_cast<CmpStmt>(condDef))
@@ -504,19 +505,17 @@ void AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
         s32_t predicate = cmpStmt->getPredicate();
 
         if (cmpStmt->getOpVarID(0) == IRGraph::NullPtr ||
-                cmpStmt->getOpVarID(1) == IRGraph::NullPtr)
+            cmpStmt->getOpVarID(1) == IRGraph::NullPtr)
         {
             // p == NULL / p != NULL: no interval obj to refine.
         }
         else
         {
-            AbstractValue opVal[2] =
-            {
-                getAbsValue(cmpStmt->getOpVar(0), pred),
-                getAbsValue(cmpStmt->getOpVar(1), pred)
-            };
+            AbstractValue opVal[2] = {getAbsValue(cmpStmt->getOpVar(0), pred),
+                                      getAbsValue(cmpStmt->getOpVar(1), pred)};
 
-            const bool hasIntervalCmp = opVal[0].isInterval() && opVal[1].isInterval();
+            const bool hasIntervalCmp =
+                opVal[0].isInterval() && opVal[1].isInterval();
             if (!hasIntervalCmp && (opVal[0].isAddr() || opVal[1].isAddr()))
             {
                 // Pointer-valued cmp: branch feasibility only.
@@ -526,7 +525,8 @@ void AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
                 for (int i = 0; i < 2; i++)
                 {
                     const int other = 1 - i;
-                    const LoadStmt* load = findBackingLoad(cmpStmt->getOpVar(i));
+                    const LoadStmt* load =
+                        findBackingLoad(cmpStmt->getOpVar(i));
 
                     if (opVal[i].getInterval().is_numeral())
                     {
@@ -543,8 +543,8 @@ void AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
                     else
                     {
                         IntervalValue narrowed = computeCmpConstraint(
-                                                     predicate, succ, i == 0,
-                                                     opVal[i].getInterval(), opVal[other].getInterval());
+                            predicate, succ, i == 0, opVal[i].getInterval(),
+                            opVal[other].getInterval());
 
                         if (narrowed.isTop())
                         {
@@ -564,8 +564,8 @@ void AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
                                 for (const auto& addr : ptrVal.getAddrs())
                                 {
                                     NodeID objId = as.getIDFromAddr(addr);
-                                    recordBranchRefinement(
-                                        objId, narrowed, as, loadIcfg, succNode);
+                                    recordBranchRefinement(objId, narrowed, as,
+                                                           loadIcfg, succNode);
                                 }
                             }
                         }
@@ -614,8 +614,8 @@ void AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
                         for (const auto& addr : ptrVal.getAddrs())
                         {
                             NodeID objId = as.getIDFromAddr(addr);
-                            recordBranchRefinement(
-                                objId, switch_cond, as, loadIcfg, succNode);
+                            recordBranchRefinement(objId, switch_cond, as,
+                                                   loadIcfg, succNode);
                         }
                     }
                 }
@@ -658,7 +658,7 @@ void AbstractInterpretation::recordBranchRefinement(
 }
 
 bool AbstractInterpretation::isBranchEdgeFeasible(const IntraCFGEdge* edge,
-        AbstractState& as)
+                                                  AbstractState& as)
 {
     const SVFVar* cmpVar = edge->getCondition();
     assert(!cmpVar->getInEdges().empty() && "branch condition has no defining edge?");
@@ -1319,7 +1319,8 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
 void AbstractInterpretation::updateStateOnLoad(const LoadStmt *load)
 {
     const ICFGNode* node = load->getICFGNode();
-    AbstractValue loaded = loadValue(SVFUtil::cast<ValVar>(load->getRHSVar()), node);
+    AbstractValue loaded =
+        loadValue(SVFUtil::cast<ValVar>(load->getRHSVar()), node);
     updateAbsValue(load->getLHSVar(), loaded, node);
 }
 

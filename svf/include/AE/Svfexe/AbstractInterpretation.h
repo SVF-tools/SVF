@@ -148,7 +148,6 @@ public:
     virtual void updateAbsValue(const ObjVar* var, const AbstractValue& val, const ICFGNode* node);
     virtual void updateAbsValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node);
 
-
     // ---- State Access -------------------------------------------------
 
     AbstractState& getAbsState(const ICFGNode* node);
@@ -174,8 +173,10 @@ public:
     AddressValue getGepObjAddrs(const ValVar* pointer, IntervalValue offset);
 
     /// Virtual so full-sparse can layer the GepObj overlay on top.
-    virtual AbstractValue loadValue(const ValVar* pointer, const ICFGNode* node);
-    virtual void storeValue(const ValVar* pointer, const AbstractValue& val, const ICFGNode* node);
+    virtual AbstractValue loadValue(const ValVar* pointer,
+                                    const ICFGNode* node);
+    virtual void storeValue(const ValVar* pointer, const AbstractValue& val,
+                            const ICFGNode* node);
 
     const SVFType* getPointeeElement(const ObjVar* var, const ICFGNode* node);
     u32_t getAllocaInstByteSize(const AddrStmt* addr);
@@ -238,15 +239,15 @@ protected:
     /// write the result into the local `as` (per-edge predState copy)
     /// so joinStates carries it to `succ`.  FullSparse overrides to
     /// capture into refinementTrace[succ] instead.
-    virtual void recordBranchRefinement(
-        NodeID objId,
-        const IntervalValue& narrowed,
-        AbstractState& as,
-        const ICFGNode* loadIcfg,
-        const ICFGNode* succ);
+    virtual void recordBranchRefinement(NodeID objId,
+                                        const IntervalValue& narrowed,
+                                        AbstractState& as,
+                                        const ICFGNode* loadIcfg,
+                                        const ICFGNode* succ);
 
 private:
-    /// Initialize abstract state for the global ICFG node and process global statements
+    /// Initialize abstract state for the global ICFG node and process global
+    /// statements
     virtual void handleGlobalNode();
 
     /// Handle a call site node: dispatch to ext-call, direct-call, or indirect-call handling
@@ -268,7 +269,8 @@ private:
     bool isCmpBranchEdgeFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
     /// Returns true if the switch branch is feasible.
-    bool isSwitchBranchEdgeFeasible(const IntraCFGEdge* edge, AbstractState& as);
+    bool isSwitchBranchEdgeFeasible(const IntraCFGEdge* edge,
+                                    AbstractState& as);
 
     void updateStateOnAddr(const AddrStmt *addr);
 
@@ -332,4 +334,4 @@ protected:
 
     bool shouldApplyNarrowing(const FunObjVar* fun);
 };
-}
+} // namespace SVF
