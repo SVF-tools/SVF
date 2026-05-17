@@ -1,4 +1,5 @@
-//===- AbstractExecution.cpp -- Abstract Execution---------------------------------//
+//===- AbstractExecution.cpp -- Abstract
+// Execution---------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -20,19 +21,18 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 //
 //  Created on: Jan 10, 2024
 //      Author: Xiao Cheng, Jiawei Wang
 //
 
 #include "AE/Svfexe/AbstractInterpretation.h"
-#include "AE/Svfexe/SparseAbstractInterpretation.h"
 #include "AE/Svfexe/AbsExtAPI.h"
+#include "AE/Svfexe/SparseAbstractInterpretation.h"
+#include "Graphs/CallGraph.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
 #include "Util/WorkList.h"
-#include "Graphs/CallGraph.h"
 #include "WPA/Andersen.h"
 #include <cmath>
 #include <deque>
@@ -40,7 +40,6 @@
 
 using namespace SVF;
 using namespace SVFUtil;
-
 
 void AbstractInterpretation::runOnModule()
 {
@@ -55,7 +54,7 @@ void AbstractInterpretation::runOnModule()
     stat->finializeStat();
     if (Options::PStat())
         stat->performStat();
-    for (auto& detector: detectors)
+    for (auto& detector : detectors)
         detector->reportBug();
 }
 
@@ -92,8 +91,7 @@ AbstractInterpretation& AbstractInterpretation::getAEInstance()
     //
     // A process-lifetime singleton has no observable lifecycle past
     // program exit, so leaking is benign and avoids the use-after-destroy.
-    static AbstractInterpretation* instance = []() -> AbstractInterpretation*
-    {
+    static AbstractInterpretation* instance = []() -> AbstractInterpretation* {
         switch (Options::AESparsity())
         {
         case AESparsity::SemiSparse:
@@ -107,7 +105,6 @@ AbstractInterpretation& AbstractInterpretation::getAEInstance()
     }();
     return *instance;
 }
-
 
 /// Destructor
 AbstractInterpretation::~AbstractInterpretation()
@@ -136,7 +133,8 @@ std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
         // Entry points are functions without callers (no incoming edges)
         if (cgNode->getInEdges().empty())
         {
-            // If main exists, put it first for priority using deque's push_front
+            // If main exists, put it first for priority using deque's
+            // push_front
             if (SVFUtil::isProgEntryFunction(fun))
             {
                 entryFunctions.push_front(fun);
@@ -151,17 +149,17 @@ std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
     return entryFunctions;
 }
 
-
-/// Program entry - analyze from all entry points (multi-entry analysis is the default)
+/// Program entry - analyze from all entry points (multi-entry analysis is the
+/// default)
 void AbstractInterpretation::analyse()
 {
     // Always use multi-entry analysis from all entry points
     analyzeFromAllProgEntries();
 }
 
-/// Analyze all entry points (functions without callers) - for whole-program analysis.
-/// Abstract state is shared across entry points so that functions analyzed from
-/// earlier entries are not re-analyzed from scratch.
+/// Analyze all entry points (functions without callers) - for whole-program
+/// analysis. Abstract state is shared across entry points so that functions
+/// analyzed from earlier entries are not re-analyzed from scratch.
 void AbstractInterpretation::analyzeFromAllProgEntries()
 {
     // Collect all entry point functions
@@ -182,10 +180,10 @@ void AbstractInterpretation::analyzeFromAllProgEntries()
 }
 
 /// handle global node
-/// Initializes the abstract state for the global ICFG node and processes all global statements.
-/// This includes setting up the null pointer and black hole pointer (blkPtr).
-/// BlkPtr is initialized to point to the BlackHole object, representing
-/// an unknown memory location that cannot be statically resolved.
+/// Initializes the abstract state for the global ICFG node and processes all
+/// global statements. This includes setting up the null pointer and black hole
+/// pointer (blkPtr). BlkPtr is initialized to point to the BlackHole object,
+/// representing an unknown memory location that cannot be statically resolved.
 void AbstractInterpretation::handleGlobalNode()
 {
     const ICFGNode* node = icfg->getGlobalICFGNode();
@@ -200,7 +198,7 @@ void AbstractInterpretation::handleGlobalNode()
     init[IRGraph::NullPtr] = AddressValue();
 
     // Global Node, we just need to handle addr, load, store, copy and gep
-    for (const SVFStmt *stmt: node->getSVFStmts())
+    for (const SVFStmt* stmt : node->getSVFStmts())
     {
         handleSVFStatement(stmt);
     }
@@ -231,7 +229,8 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
         if (!hasAbsState(pred))
             continue;
 
-        if (const IntraCFGEdge* intraCfgEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge))
+        if (const IntraCFGEdge* intraCfgEdge =
+                SVFUtil::dyn_cast<IntraCFGEdge>(edge))
         {
             if (intraCfgEdge->getCondition())
             {
@@ -263,9 +262,9 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                 hasFeasiblePred = true;
                 break;
             case WIDEN_ONLY:
-            case WIDEN_NARROW:
-            {
-                const RetICFGNode* returnSite = SVFUtil::dyn_cast<RetICFGNode>(node);
+            case WIDEN_NARROW: {
+                const RetICFGNode* returnSite =
+                    SVFUtil::dyn_cast<RetICFGNode>(node);
                 const CallICFGNode* callSite = returnSite->getCallICFGNode();
                 if (hasAbsState(callSite))
                 {
@@ -326,18 +325,17 @@ static const LoadStmt* findBackingLoad(const SVFVar* var)
 /// [6, +inf). On the false branch (succ=0), %a is constrained to (-inf, 5].
 /// The result is used to narrow the ObjVar behind %a's load.
 static IntervalValue computeCmpConstraint(s32_t predicate, s64_t succ,
-        bool isLHS, const IntervalValue& self,
-        const IntervalValue& other)
+                                          bool isLHS, const IntervalValue& self,
+                                          const IntervalValue& other)
 {
     // Normalize: always reason from the LHS perspective.
     // If we are the RHS operand, swap the predicate direction.
     if (!isLHS)
     {
         // a > b from b's perspective: b < a
-        static const Map<s32_t, s32_t> swapPred =
-        {
-            {CmpStmt::ICMP_EQ,  CmpStmt::ICMP_EQ},
-            {CmpStmt::ICMP_NE,  CmpStmt::ICMP_NE},
+        static const Map<s32_t, s32_t> swapPred = {
+            {CmpStmt::ICMP_EQ, CmpStmt::ICMP_EQ},
+            {CmpStmt::ICMP_NE, CmpStmt::ICMP_NE},
             {CmpStmt::ICMP_SGT, CmpStmt::ICMP_SLT},
             {CmpStmt::ICMP_SGE, CmpStmt::ICMP_SLE},
             {CmpStmt::ICMP_SLT, CmpStmt::ICMP_SGT},
@@ -360,17 +358,17 @@ static IntervalValue computeCmpConstraint(s32_t predicate, s64_t succ,
             {CmpStmt::FCMP_UNE, CmpStmt::FCMP_UNE},
         };
         auto it = swapPred.find(predicate);
-        if (it == swapPred.end()) return IntervalValue::top();
+        if (it == swapPred.end())
+            return IntervalValue::top();
         predicate = it->second;
     }
 
     // If false branch, negate the predicate.
     if (succ == 0)
     {
-        static const Map<s32_t, s32_t> negPred =
-        {
-            {CmpStmt::ICMP_EQ,  CmpStmt::ICMP_NE},
-            {CmpStmt::ICMP_NE,  CmpStmt::ICMP_EQ},
+        static const Map<s32_t, s32_t> negPred = {
+            {CmpStmt::ICMP_EQ, CmpStmt::ICMP_NE},
+            {CmpStmt::ICMP_NE, CmpStmt::ICMP_EQ},
             {CmpStmt::ICMP_SGT, CmpStmt::ICMP_SLE},
             {CmpStmt::ICMP_SGE, CmpStmt::ICMP_SLT},
             {CmpStmt::ICMP_SLT, CmpStmt::ICMP_SGE},
@@ -393,7 +391,8 @@ static IntervalValue computeCmpConstraint(s32_t predicate, s64_t succ,
             {CmpStmt::FCMP_UNE, CmpStmt::FCMP_UEQ},
         };
         auto it = negPred.find(predicate);
-        if (it == negPred.end()) return IntervalValue::top();
+        if (it == negPred.end())
+            return IntervalValue::top();
         predicate = it->second;
     }
 
@@ -416,25 +415,29 @@ static IntervalValue computeCmpConstraint(s32_t predicate, s64_t succ,
     case CmpStmt::ICMP_SGT:
     case CmpStmt::FCMP_OGT:
     case CmpStmt::FCMP_UGT:
-        result.meet_with(IntervalValue(other.lb() + 1, IntervalValue::plus_infinity()));
+        result.meet_with(
+            IntervalValue(other.lb() + 1, IntervalValue::plus_infinity()));
         break;
     case CmpStmt::ICMP_UGE:
     case CmpStmt::ICMP_SGE:
     case CmpStmt::FCMP_OGE:
     case CmpStmt::FCMP_UGE:
-        result.meet_with(IntervalValue(other.lb(), IntervalValue::plus_infinity()));
+        result.meet_with(
+            IntervalValue(other.lb(), IntervalValue::plus_infinity()));
         break;
     case CmpStmt::ICMP_ULT:
     case CmpStmt::ICMP_SLT:
     case CmpStmt::FCMP_OLT:
     case CmpStmt::FCMP_ULT:
-        result.meet_with(IntervalValue(IntervalValue::minus_infinity(), other.ub() - 1));
+        result.meet_with(
+            IntervalValue(IntervalValue::minus_infinity(), other.ub() - 1));
         break;
     case CmpStmt::ICMP_ULE:
     case CmpStmt::ICMP_SLE:
     case CmpStmt::FCMP_OLE:
     case CmpStmt::FCMP_ULE:
-        result.meet_with(IntervalValue(IntervalValue::minus_infinity(), other.ub()));
+        result.meet_with(
+            IntervalValue(IntervalValue::minus_infinity(), other.ub()));
         break;
     default:
         return IntervalValue::top();
@@ -443,22 +446,19 @@ static IntervalValue computeCmpConstraint(s32_t predicate, s64_t succ,
 }
 
 bool AbstractInterpretation::isCmpBranchEdgeFeasible(const IntraCFGEdge* edge,
-        AbstractState& as)
+                                                     AbstractState& as)
 {
     const ICFGNode* pred = edge->getSrcNode();
     s64_t succ = edge->getSuccessorCondValue();
-    const CmpStmt* cmpStmt = SVFUtil::cast<CmpStmt>(
-                                 *edge->getCondition()->getInEdges().begin());
+    const CmpStmt* cmpStmt =
+        SVFUtil::cast<CmpStmt>(*edge->getCondition()->getInEdges().begin());
 
     if (cmpStmt->getOpVarID(0) == IRGraph::NullPtr ||
-            cmpStmt->getOpVarID(1) == IRGraph::NullPtr)
+        cmpStmt->getOpVarID(1) == IRGraph::NullPtr)
         return true;
 
-    AbstractValue opVal[2] =
-    {
-        getAbsValue(cmpStmt->getOpVar(0), pred),
-        getAbsValue(cmpStmt->getOpVar(1), pred)
-    };
+    AbstractValue opVal[2] = {getAbsValue(cmpStmt->getOpVar(0), pred),
+                              getAbsValue(cmpStmt->getOpVar(1), pred)};
 
     const bool hasIntervalCmp = opVal[0].isInterval() && opVal[1].isInterval();
     if (!hasIntervalCmp && (opVal[0].isAddr() || opVal[1].isAddr()))
@@ -473,8 +473,8 @@ bool AbstractInterpretation::isCmpBranchEdgeFeasible(const IntraCFGEdge* edge,
     return true;
 }
 
-bool AbstractInterpretation::isSwitchBranchEdgeFeasible(const IntraCFGEdge* edge,
-        AbstractState& as)
+bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
+    const IntraCFGEdge* edge, AbstractState& as)
 {
     const ICFGNode* pred = edge->getSrcNode();
     s64_t succ = edge->getSuccessorCondValue();
@@ -489,103 +489,134 @@ bool AbstractInterpretation::isSwitchBranchEdgeFeasible(const IntraCFGEdge* edge
 }
 
 void AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
-        AbstractState& as)
+                                                   AbstractState& as)
 {
     const SVFVar* cond = edge->getCondition();
-    assert(!cond->getInEdges().empty() && "branch condition has no defining edge?");
+    const ICFGNode* pred = edge->getSrcNode();
+    const ICFGNode* succNode = edge->getDstNode();
+    s64_t succ = edge->getSuccessorCondValue();
+
+    assert(!cond->getInEdges().empty() &&
+           "branch condition has no defining edge?");
     const SVFStmt* condDef = *cond->getInEdges().begin();
 
     if (const CmpStmt* cmpStmt = SVFUtil::dyn_cast<CmpStmt>(condDef))
     {
-        const ICFGNode* pred = edge->getSrcNode();
-        s64_t succ = edge->getSuccessorCondValue();
         s32_t predicate = cmpStmt->getPredicate();
 
         if (cmpStmt->getOpVarID(0) == IRGraph::NullPtr ||
-                cmpStmt->getOpVarID(1) == IRGraph::NullPtr)
-            return;
-
-        AbstractValue opVal[2] =
+            cmpStmt->getOpVarID(1) == IRGraph::NullPtr)
         {
-            getAbsValue(cmpStmt->getOpVar(0), pred),
-            getAbsValue(cmpStmt->getOpVar(1), pred)
-        };
-
-        const bool hasIntervalCmp = opVal[0].isInterval() && opVal[1].isInterval();
-        if (!hasIntervalCmp && (opVal[0].isAddr() || opVal[1].isAddr()))
-            return;
-
-        // For each operand: if it is the variable side (non-constant), has a
-        // backing load, and the branch imposes a useful constraint, narrow the
-        // ObjVar behind the load.
-        for (int i = 0; i < 2; i++)
+            // p == NULL / p != NULL: no interval obj to refine.
+        }
+        else
         {
-            if (opVal[i].getInterval().is_numeral() ||
-                    !opVal[1-i].getInterval().is_numeral())
-                continue; // skip constant operands and var-vs-var
+            AbstractValue opVal[2] = {getAbsValue(cmpStmt->getOpVar(0), pred),
+                                      getAbsValue(cmpStmt->getOpVar(1), pred)};
 
-            if (const LoadStmt* load = findBackingLoad(cmpStmt->getOpVar(i)))
+            const bool hasIntervalCmp =
+                opVal[0].isInterval() && opVal[1].isInterval();
+            if (!hasIntervalCmp && (opVal[0].isAddr() || opVal[1].isAddr()))
             {
-                IntervalValue narrowed = computeCmpConstraint(
-                                             predicate, succ, i == 0,
-                                             opVal[i].getInterval(), opVal[1-i].getInterval());
-
-                if (!narrowed.isTop())
+                // Pointer-valued cmp: branch feasibility only.
+            }
+            else
+            {
+                for (int i = 0; i < 2; i++)
                 {
-                    // Read obj at the LOAD's icfg (where the value actually
-                    // lives in sparse mode); recordBranchRefinement decides
-                    // *where* the narrowed value is written (default -> `as`,
-                    // FullSparse -> refinementTrace[succ]).
-                    const ICFGNode* loadIcfg = load->getICFGNode();
-                    const AbstractValue& ptrVal =
-                        getAbsValue(load->getRHSVar(), loadIcfg);
-                    if (ptrVal.isAddr())
+                    const int other = 1 - i;
+                    const LoadStmt* load =
+                        findBackingLoad(cmpStmt->getOpVar(i));
+
+                    if (opVal[i].getInterval().is_numeral())
                     {
-                        for (const auto& addr : ptrVal.getAddrs())
+                        // Example: in x < 5, operand 5 is not refined.
+                    }
+                    else if (!opVal[other].getInterval().is_numeral())
+                    {
+                        // Example: x < y, neither side has a fixed bound.
+                    }
+                    else if (!load)
+                    {
+                        // Example: cmp uses a computed temporary, not load p.
+                    }
+                    else
+                    {
+                        IntervalValue narrowed = computeCmpConstraint(
+                            predicate, succ, i == 0, opVal[i].getInterval(),
+                            opVal[other].getInterval());
+
+                        if (narrowed.isTop())
                         {
-                            NodeID objId = as.getIDFromAddr(addr);
-                            recordBranchRefinement(
-                                objId, narrowed, as, loadIcfg, edge->getDstNode());
+                            // != and unsupported predicates reach here.
+                        }
+                        else
+                        {
+                            const ICFGNode* loadIcfg = load->getICFGNode();
+                            const AbstractValue& ptrVal =
+                                getAbsValue(load->getRHSVar(), loadIcfg);
+                            if (!ptrVal.isAddr())
+                            {
+                                // Cannot map load p back to concrete ObjVars.
+                            }
+                            else
+                            {
+                                for (const auto& addr : ptrVal.getAddrs())
+                                {
+                                    NodeID objId = as.getIDFromAddr(addr);
+                                    recordBranchRefinement(objId, narrowed, as,
+                                                           loadIcfg, succNode);
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-        return;
     }
-
-    const ICFGNode* pred = edge->getSrcNode();
-    s64_t succ = edge->getSuccessorCondValue();
-    const SVFVar* var = cond;
-
-    AbstractValue condVal = getAbsValue(var, pred);
-    IntervalValue switch_cond = condVal.getInterval();
-    switch_cond.meet_with(IntervalValue(succ, succ));
-    if (switch_cond.isBottom())
-        return;
-
-    as[var->getId()] = AbstractValue(switch_cond);
-
-    FIFOWorkList<const SVFStmt*> stmtList;
-    for (SVFStmt* stmt : var->getInEdges())
-        stmtList.push(stmt);
-    while (!stmtList.empty())
+    else
     {
-        const SVFStmt* stmt = stmtList.pop();
-        if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+        const SVFVar* var = cond;
+        AbstractValue condVal = getAbsValue(var, pred);
+        IntervalValue switch_cond = condVal.getInterval();
+        switch_cond.meet_with(IntervalValue(succ, succ));
+        if (switch_cond.isBottom())
         {
-            // Read obj at the LOAD's icfg for sparse-mode consistency
-            // (matches cmp branch refinement).
-            const ICFGNode* loadIcfg = load->getICFGNode();
-            const AbstractValue& ptrVal =
-                getAbsValue(load->getRHSVar(), loadIcfg);
-            if (ptrVal.isAddr())
+            // This case label is not reachable from cond's interval.
+        }
+        else
+        {
+            as[var->getId()] = AbstractValue(switch_cond);
+
+            FIFOWorkList<const SVFStmt*> stmtList;
+            for (SVFStmt* stmt : var->getInEdges())
+                stmtList.push(stmt);
+            while (!stmtList.empty())
             {
-                for (const auto& addr : ptrVal.getAddrs())
+                const SVFStmt* stmt = stmtList.pop();
+                const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt);
+                if (!load)
                 {
-                    NodeID objId = as.getIDFromAddr(addr);
-                    recordBranchRefinement(
-                        objId, switch_cond, as, loadIcfg, edge->getDstNode());
+                    // Skip non-load definitions of the switch condition.
+                }
+                else
+                {
+                    const ICFGNode* loadIcfg = load->getICFGNode();
+                    const AbstractValue& ptrVal =
+                        getAbsValue(load->getRHSVar(), loadIcfg);
+                    if (!ptrVal.isAddr())
+                    {
+                        // Cannot map load p back to concrete ObjVars.
+                    }
+                    else
+                    {
+                        for (const auto& addr : ptrVal.getAddrs())
+                        {
+                            NodeID objId = as.getIDFromAddr(addr);
+                            recordBranchRefinement(objId, switch_cond, as,
+                                                   loadIcfg, succNode);
+                        }
+                    }
                 }
             }
         }
@@ -626,10 +657,11 @@ void AbstractInterpretation::recordBranchRefinement(
 }
 
 bool AbstractInterpretation::isBranchEdgeFeasible(const IntraCFGEdge* edge,
-        AbstractState& as)
+                                                  AbstractState& as)
 {
     const SVFVar* cmpVar = edge->getCondition();
-    assert(!cmpVar->getInEdges().empty() && "branch condition has no defining edge?");
+    assert(!cmpVar->getInEdges().empty() &&
+           "branch condition has no defining edge?");
     if (SVFUtil::isa<CmpStmt>(*cmpVar->getInEdges().begin()))
         return isCmpBranchEdgeFeasible(edge, as);
     return isSwitchBranchEdgeFeasible(edge, as);
@@ -639,7 +671,8 @@ bool AbstractInterpretation::isBranchEdgeFeasible(const IntraCFGEdge* edge,
  * Handle an ICFG node: execute statements on the current abstract state.
  * The node's pre-state must already be in getAbsState(node) (set by
  * mergeStatesFromPredecessors, or by handleGlobalNode for the global node).
- * Returns true if the abstract state has changed, false if fixpoint reached or unreachable.
+ * Returns true if the abstract state has changed, false if fixpoint reached or
+ * unreachable.
  */
 bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
 {
@@ -658,7 +691,7 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
         }
         else
         {
-            return false;  // unreachable node
+            return false; // unreachable node
         }
     }
 
@@ -669,7 +702,7 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
     stat->getICFGNodeTrace()++;
 
     // Handle SVF statements
-    for (const SVFStmt *stmt: node->getSVFStmts())
+    for (const SVFStmt* stmt : node->getSVFStmts())
     {
         handleSVFStatement(stmt);
     }
@@ -681,11 +714,12 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
     }
 
     // Run detectors
-    for (auto& detector: detectors)
+    for (auto& detector : detectors)
         detector->detect(node);
     stat->countStateSize();
 
-    // Track this node as analyzed (for coverage statistics across all entry points)
+    // Track this node as analyzed (for coverage statistics across all entry
+    // points)
     allAnalyzedNodes.insert(node);
 
     if (getAbsState(node) == prevState)
@@ -700,7 +734,8 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
  * so the traversal order is exactly the WTO order — each node is
  * visited once, and cycles are handled as whole components.
  */
-void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller)
+void AbstractInterpretation::handleFunction(const ICFGNode* funEntry,
+                                            const CallICFGNode* caller)
 {
     auto it = preAnalysis->getFuncToWTO().find(funEntry->getFun());
     if (it == preAnalysis->getFuncToWTO().end())
@@ -713,20 +748,21 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
     {
         const ICFGWTOComp* comp = worklist.pop();
 
-        if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+        if (const ICFGSingletonWTO* singleton =
+                SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
         {
             const ICFGNode* node = singleton->getICFGNode();
             if (mergeStatesFromPredecessors(node))
                 handleICFGNode(node);
         }
-        else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+        else if (const ICFGCycleWTO* cycle =
+                     SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
         {
             if (mergeStatesFromPredecessors(cycle->head()->getICFGNode()))
                 handleLoopOrRecursion(cycle, caller);
         }
     }
 }
-
 
 void AbstractInterpretation::handleCallSite(const ICFGNode* node)
 {
@@ -743,15 +779,15 @@ void AbstractInterpretation::handleCallSite(const ICFGNode* node)
         }
     }
     else
-        assert (false && "it is not call node");
+        assert(false && "it is not call node");
 }
 
-bool AbstractInterpretation::isExtCall(const CallICFGNode *callNode)
+bool AbstractInterpretation::isExtCall(const CallICFGNode* callNode)
 {
     return SVFUtil::isExtCall(callNode->getCalledFunction());
 }
 
-void AbstractInterpretation::handleExtCall(const CallICFGNode *callNode)
+void AbstractInterpretation::handleExtCall(const CallICFGNode* callNode)
 {
     utils->handleExtAPI(callNode);
     for (auto& detector : detectors)
@@ -760,7 +796,8 @@ void AbstractInterpretation::handleExtCall(const CallICFGNode *callNode)
     }
 }
 
-/// Get callee function: directly for direct calls, via pointer analysis for indirect calls
+/// Get callee function: directly for direct calls, via pointer analysis for
+/// indirect calls
 const FunObjVar* AbstractInterpretation::getCallee(const CallICFGNode* callNode)
 {
     // Direct call: get callee directly from call node
@@ -777,25 +814,29 @@ const FunObjVar* AbstractInterpretation::getCallee(const CallICFGNode* callNode)
     if (!hasAbsState(callNode))
         return nullptr;
 
-    const AbstractValue& Addrs = getAbsValue(svfir->getSVFVar(call_id), callNode);
+    const AbstractValue& Addrs =
+        getAbsValue(svfir->getSVFVar(call_id), callNode);
     if (!Addrs.isAddr() || Addrs.getAddrs().empty())
         return nullptr;
 
     NodeID addr = *Addrs.getAddrs().begin();
-    const SVFVar* func_var = getSVFVar(getAbsState(callNode).getIDFromAddr(addr));
+    const SVFVar* func_var =
+        getSVFVar(getAbsState(callNode).getIDFromAddr(addr));
     return SVFUtil::dyn_cast<FunObjVar>(func_var);
 }
 
-/// Handle direct or indirect call: get callee(s), process function body, set return state.
+/// Handle direct or indirect call: get callee(s), process function body, set
+/// return state.
 ///
 /// For direct calls, the callee is known statically.
-/// For indirect calls, the previous implementation resolved callees from the abstract
-/// state's address domain, which only picked the first address and missed other targets.
-/// Since the abstract state's address domain is not an over-approximation for function
-/// pointers (it may be uninitialized or incomplete), we now use Andersen's pointer
-/// analysis results from the pre-computed call graph, which soundly resolves all
-/// possible indirect call targets.
-void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
+/// For indirect calls, the previous implementation resolved callees from the
+/// abstract state's address domain, which only picked the first address and
+/// missed other targets. Since the abstract state's address domain is not an
+/// over-approximation for function pointers (it may be uninitialized or
+/// incomplete), we now use Andersen's pointer analysis results from the
+/// pre-computed call graph, which soundly resolves all possible indirect call
+/// targets.
+void AbstractInterpretation::handleFunCall(const CallICFGNode* callNode)
 {
     if (skipRecursiveCall(callNode))
         return;
@@ -830,17 +871,17 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
 // Loop / recursion handling (handleLoopOrRecursion + cycle helpers +
 // recursion utilities) lives in AELoopRecursion.cpp.
 
-void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
+void AbstractInterpretation::handleSVFStatement(const SVFStmt* stmt)
 {
-    if (const AddrStmt *addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
+    if (const AddrStmt* addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
     {
         updateStateOnAddr(addr);
     }
-    else if (const BinaryOPStmt *binary = SVFUtil::dyn_cast<BinaryOPStmt>(stmt))
+    else if (const BinaryOPStmt* binary = SVFUtil::dyn_cast<BinaryOPStmt>(stmt))
     {
         updateStateOnBinary(binary);
     }
-    else if (const CmpStmt *cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
+    else if (const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
     {
         updateStateOnCmp(cmp);
     }
@@ -851,36 +892,36 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
     {
         // branch stmt is handled in hasBranchES
     }
-    else if (const LoadStmt *load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+    else if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
     {
         updateStateOnLoad(load);
     }
-    else if (const StoreStmt *store = SVFUtil::dyn_cast<StoreStmt>(stmt))
+    else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt))
     {
         updateStateOnStore(store);
     }
-    else if (const CopyStmt *copy = SVFUtil::dyn_cast<CopyStmt>(stmt))
+    else if (const CopyStmt* copy = SVFUtil::dyn_cast<CopyStmt>(stmt))
     {
         updateStateOnCopy(copy);
     }
-    else if (const GepStmt *gep = SVFUtil::dyn_cast<GepStmt>(stmt))
+    else if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt))
     {
         updateStateOnGep(gep);
     }
-    else if (const SelectStmt *select = SVFUtil::dyn_cast<SelectStmt>(stmt))
+    else if (const SelectStmt* select = SVFUtil::dyn_cast<SelectStmt>(stmt))
     {
         updateStateOnSelect(select);
     }
-    else if (const PhiStmt *phi = SVFUtil::dyn_cast<PhiStmt>(stmt))
+    else if (const PhiStmt* phi = SVFUtil::dyn_cast<PhiStmt>(stmt))
     {
         updateStateOnPhi(phi);
     }
-    else if (const CallPE *callPE = SVFUtil::dyn_cast<CallPE>(stmt))
+    else if (const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(stmt))
     {
         // To handle Call Edge
         updateStateOnCall(callPE);
     }
-    else if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(stmt))
+    else if (const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(stmt))
     {
         updateStateOnRet(retPE);
     }
@@ -897,15 +938,16 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
     }
 }
 
-void AbstractInterpretation::updateStateOnGep(const GepStmt *gep)
+void AbstractInterpretation::updateStateOnGep(const GepStmt* gep)
 {
     const ICFGNode* node = gep->getICFGNode();
     IntervalValue offsetPair = getGepElementIndex(gep);
-    AddressValue gepAddrs = getGepObjAddrs(SVFUtil::cast<ValVar>(gep->getRHSVar()), offsetPair);
+    AddressValue gepAddrs =
+        getGepObjAddrs(SVFUtil::cast<ValVar>(gep->getRHSVar()), offsetPair);
     updateAbsValue(gep->getLHSVar(), gepAddrs, node);
 }
 
-void AbstractInterpretation::updateStateOnSelect(const SelectStmt *select)
+void AbstractInterpretation::updateStateOnSelect(const SelectStmt* select)
 {
     const ICFGNode* node = select->getICFGNode();
     const AbstractValue& condVal = getAbsValue(select->getCondition(), node);
@@ -924,7 +966,7 @@ void AbstractInterpretation::updateStateOnSelect(const SelectStmt *select)
     updateAbsValue(select->getRes(), resVal, node);
 }
 
-void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
+void AbstractInterpretation::updateStateOnPhi(const PhiStmt* phi)
 {
     const ICFGNode* icfgNode = phi->getICFGNode();
     AbstractValue rhs;
@@ -934,11 +976,14 @@ void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
         if (hasAbsState(opICFGNode))
         {
             AbstractState tmpState = getAbsState(opICFGNode);
-            const AbstractValue& opVal = getAbsValue(phi->getOpVar(i), opICFGNode);
-            const ICFGEdge* edge = icfg->getICFGEdge(opICFGNode, icfgNode, ICFGEdge::IntraCF);
+            const AbstractValue& opVal =
+                getAbsValue(phi->getOpVar(i), opICFGNode);
+            const ICFGEdge* edge =
+                icfg->getICFGEdge(opICFGNode, icfgNode, ICFGEdge::IntraCF);
             if (edge)
             {
-                const IntraCFGEdge* intraEdge = SVFUtil::cast<IntraCFGEdge>(edge);
+                const IntraCFGEdge* intraEdge =
+                    SVFUtil::cast<IntraCFGEdge>(edge);
                 if (intraEdge->getCondition())
                 {
                     if (isBranchEdgeFeasible(intraEdge, tmpState))
@@ -956,10 +1001,10 @@ void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
     updateAbsValue(phi->getRes(), rhs, icfgNode);
 }
 
-
 /// Handle CallPE: phi-like merging of actual parameters from all call sites
-/// into the formal parameter at FunEntryICFGNode (e.g., formal = join(actual1@cs1, actual2@cs2, ...))
-void AbstractInterpretation::updateStateOnCall(const CallPE *callPE)
+/// into the formal parameter at FunEntryICFGNode (e.g., formal =
+/// join(actual1@cs1, actual2@cs2, ...))
+void AbstractInterpretation::updateStateOnCall(const CallPE* callPE)
 {
     const ICFGNode* node = callPE->getICFGNode();
     const SVFVar* res = callPE->getRes();
@@ -969,22 +1014,22 @@ void AbstractInterpretation::updateStateOnCall(const CallPE *callPE)
         const ICFGNode* opICFGNode = callPE->getOpCallICFGNode(i);
         if (hasAbsState(opICFGNode))
         {
-            const AbstractValue& opVal = getAbsValue(callPE->getOpVar(i), opICFGNode);
+            const AbstractValue& opVal =
+                getAbsValue(callPE->getOpVar(i), opICFGNode);
             rhs.join_with(opVal);
         }
     }
     updateAbsValue(res, rhs, node);
 }
 
-void AbstractInterpretation::updateStateOnRet(const RetPE *retPE)
+void AbstractInterpretation::updateStateOnRet(const RetPE* retPE)
 {
     const ICFGNode* node = retPE->getICFGNode();
     const AbstractValue& rhsVal = getAbsValue(retPE->getRHSVar(), node);
     updateAbsValue(retPE->getLHSVar(), rhsVal, node);
 }
 
-
-void AbstractInterpretation::updateStateOnAddr(const AddrStmt *addr)
+void AbstractInterpretation::updateStateOnAddr(const AddrStmt* addr)
 {
     const ICFGNode* node = addr->getICFGNode();
     // initObjVar mutates _varToAbsVal/_addrToAbsVal directly, so we need
@@ -996,20 +1041,22 @@ void AbstractInterpretation::updateStateOnAddr(const AddrStmt *addr)
     // NOT the object contents. So we must use as[] directly for ObjVar.
     u32_t rhsId = addr->getRHSVarID();
     if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
-        as[rhsId].getInterval().meet_with(utils->getRangeLimitFromType(addr->getRHSVar()->getType()));
+        as[rhsId].getInterval().meet_with(
+            utils->getRangeLimitFromType(addr->getRHSVar()->getType()));
     // LHS is a ValVar (pointer), write through the API
     updateAbsValue(addr->getLHSVar(), as[rhsId], node);
 }
 
-
-void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary)
+void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt* binary)
 {
     const ICFGNode* node = binary->getICFGNode();
     // Treat bottom (uninitialized) operands as top for soundness
     const AbstractValue& op0Val = getAbsValue(binary->getOpVar(0), node);
     const AbstractValue& op1Val = getAbsValue(binary->getOpVar(1), node);
-    IntervalValue lhs = op0Val.getInterval().isBottom() ? IntervalValue::top() : op0Val.getInterval();
-    IntervalValue rhs = op1Val.getInterval().isBottom() ? IntervalValue::top() : op1Val.getInterval();
+    IntervalValue lhs = op0Val.getInterval().isBottom() ? IntervalValue::top()
+                                                        : op0Val.getInterval();
+    IntervalValue rhs = op1Val.getInterval().isBottom() ? IntervalValue::top()
+                                                        : op1Val.getInterval();
     IntervalValue resVal;
     switch (binary->getOpcode())
     {
@@ -1059,7 +1106,7 @@ void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary)
     updateAbsValue(binary->getRes(), resVal, node);
 }
 
-void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
+void AbstractInterpretation::updateStateOnCmp(const CmpStmt* cmp)
 {
     const ICFGNode* node = cmp->getICFGNode();
     u32_t op0 = cmp->getOpVarID(0);
@@ -1087,10 +1134,12 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
         }
         updateAbsValue(cmp->getRes(), resVal, node);
     }
-    // if op0 or op1 is nullptr, compare abstractValue instead of touching addr or interval
+    // if op0 or op1 is nullptr, compare abstractValue instead of touching addr
+    // or interval
     else if (op0 == IRGraph::NullPtr || op1 == IRGraph::NullPtr)
     {
-        IntervalValue resVal = (op0Val.equals(op1Val)) ? IntervalValue(1, 1) : IntervalValue(0, 0);
+        IntervalValue resVal =
+            (op0Val.equals(op1Val)) ? IntervalValue(1, 1) : IntervalValue(0, 0);
         updateAbsValue(cmp->getRes(), resVal, node);
     }
     else
@@ -1100,8 +1149,12 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
             if (op0Val.isInterval() && op1Val.isInterval())
             {
                 // Treat bottom (uninitialized) operands as top for soundness
-                IntervalValue lhs = op0Val.getInterval().isBottom() ? IntervalValue::top() : op0Val.getInterval(),
-                              rhs = op1Val.getInterval().isBottom() ? IntervalValue::top() : op1Val.getInterval();
+                IntervalValue lhs = op0Val.getInterval().isBottom()
+                                        ? IntervalValue::top()
+                                        : op0Val.getInterval(),
+                              rhs = op1Val.getInterval().isBottom()
+                                        ? IntervalValue::top()
+                                        : op1Val.getInterval();
                 // AbstractValue
                 auto predicate = cmp->getPredicate();
                 switch (predicate)
@@ -1168,8 +1221,7 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 {
                 case CmpStmt::ICMP_EQ:
                 case CmpStmt::FCMP_OEQ:
-                case CmpStmt::FCMP_UEQ:
-                {
+                case CmpStmt::FCMP_UEQ: {
                     if (lhs.hasIntersect(rhs))
                     {
                         resVal = IntervalValue(0, 1);
@@ -1186,8 +1238,7 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 }
                 case CmpStmt::ICMP_NE:
                 case CmpStmt::FCMP_ONE:
-                case CmpStmt::FCMP_UNE:
-                {
+                case CmpStmt::FCMP_UNE: {
                     if (lhs.hasIntersect(rhs))
                     {
                         resVal = IntervalValue(0, 1);
@@ -1205,8 +1256,7 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 case CmpStmt::ICMP_UGT:
                 case CmpStmt::ICMP_SGT:
                 case CmpStmt::FCMP_OGT:
-                case CmpStmt::FCMP_UGT:
-                {
+                case CmpStmt::FCMP_UGT: {
                     if (lhs.size() == 1 && rhs.size() == 1)
                     {
                         resVal = IntervalValue(*lhs.begin() > *rhs.begin());
@@ -1220,8 +1270,7 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 case CmpStmt::ICMP_UGE:
                 case CmpStmt::ICMP_SGE:
                 case CmpStmt::FCMP_OGE:
-                case CmpStmt::FCMP_UGE:
-                {
+                case CmpStmt::FCMP_UGE: {
                     if (lhs.size() == 1 && rhs.size() == 1)
                     {
                         resVal = IntervalValue(*lhs.begin() >= *rhs.begin());
@@ -1235,8 +1284,7 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 case CmpStmt::ICMP_ULT:
                 case CmpStmt::ICMP_SLT:
                 case CmpStmt::FCMP_OLT:
-                case CmpStmt::FCMP_ULT:
-                {
+                case CmpStmt::FCMP_ULT: {
                     if (lhs.size() == 1 && rhs.size() == 1)
                     {
                         resVal = IntervalValue(*lhs.begin() < *rhs.begin());
@@ -1250,8 +1298,7 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 case CmpStmt::ICMP_ULE:
                 case CmpStmt::ICMP_SLE:
                 case CmpStmt::FCMP_OLE:
-                case CmpStmt::FCMP_ULE:
-                {
+                case CmpStmt::FCMP_ULE: {
                     if (lhs.size() == 1 && rhs.size() == 1)
                     {
                         resVal = IntervalValue(*lhs.begin() <= *rhs.begin());
@@ -1284,28 +1331,28 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
     }
 }
 
-void AbstractInterpretation::updateStateOnLoad(const LoadStmt *load)
+void AbstractInterpretation::updateStateOnLoad(const LoadStmt* load)
 {
     const ICFGNode* node = load->getICFGNode();
-    AbstractValue loaded = loadValue(SVFUtil::cast<ValVar>(load->getRHSVar()), node);
+    AbstractValue loaded =
+        loadValue(SVFUtil::cast<ValVar>(load->getRHSVar()), node);
     updateAbsValue(load->getLHSVar(), loaded, node);
 }
 
-void AbstractInterpretation::updateStateOnStore(const StoreStmt *store)
+void AbstractInterpretation::updateStateOnStore(const StoreStmt* store)
 {
     const ICFGNode* node = store->getICFGNode();
     AbstractValue val = getAbsValue(store->getRHSVar(), node);
     storeValue(SVFUtil::cast<ValVar>(store->getLHSVar()), val, node);
 }
 
-void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
+void AbstractInterpretation::updateStateOnCopy(const CopyStmt* copy)
 {
     const ICFGNode* node = copy->getICFGNode();
     const SVFVar* lhsVar = copy->getLHSVar();
     const SVFVar* rhsVar = copy->getRHSVar();
 
-    auto getZExtValue = [&](const SVFVar* var)
-    {
+    auto getZExtValue = [&](const SVFVar* var) {
         const SVFType* type = var->getType();
         if (SVFUtil::isa<SVFIntegerType>(type))
         {
@@ -1316,7 +1363,8 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
                 if (bits == 8)
                 {
                     int8_t signed_i8_value = val.getInterval().getIntNumeral();
-                    u32_t unsigned_value = static_cast<uint8_t>(signed_i8_value);
+                    u32_t unsigned_value =
+                        static_cast<uint8_t>(signed_i8_value);
                     return IntervalValue(unsigned_value, unsigned_value);
                 }
                 else if (bits == 16)
@@ -1334,10 +1382,12 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
                 else if (bits == 64)
                 {
                     s64_t signed_i64_value = val.getInterval().getIntNumeral();
-                    return IntervalValue((s64_t)signed_i64_value, (s64_t)signed_i64_value);
+                    return IntervalValue((s64_t)signed_i64_value,
+                                         (s64_t)signed_i64_value);
                 }
                 else
-                    assert(false && "cannot support int type other than u8/16/32/64");
+                    assert(false &&
+                           "cannot support int type other than u8/16/32/64");
             }
             else
             {
@@ -1347,10 +1397,10 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
         return IntervalValue::top();
     };
 
-    auto getTruncValue = [&](const SVFVar* var, const SVFType* dstType)
-    {
+    auto getTruncValue = [&](const SVFVar* var, const SVFType* dstType) {
         const IntervalValue& itv = getAbsValue(var, node).getInterval();
-        if(itv.isBottom()) return itv;
+        if (itv.isBottom())
+            return itv;
         s64_t int_lb = itv.lb().getIntNumeral();
         s64_t int_ub = itv.ub().getIntNumeral();
         u32_t dst_bits = dstType->getByteSize() * 8;
@@ -1425,7 +1475,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
     }
     else if (copy->getCopyKind() == CopyStmt::INTTOPTR)
     {
-        //insert nullptr
+        // insert nullptr
     }
     else if (copy->getCopyKind() == CopyStmt::PTRTOINT)
     {

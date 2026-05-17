@@ -40,7 +40,6 @@ void AEStat::countStateSize()
     ++count;
 }
 
-
 void AEStat::finializeStat()
 {
     memUsage = getMemUsage();
@@ -56,15 +55,18 @@ void AEStat::finializeStat()
     u32_t totalICFGNodes = _ae->svfir->getICFG()->nodeNum;
     generalNumMap["ICFG_Node_Num"] = totalICFGNodes;
 
-    // Calculate coverage: use allAnalyzedNodes which tracks all nodes across all entry points
+    // Calculate coverage: use allAnalyzedNodes which tracks all nodes across
+    // all entry points
     u32_t analyzedNodes = _ae->allAnalyzedNodes.size();
     generalNumMap["Analyzed_ICFG_Node_Num"] = analyzedNodes;
 
     // Coverage percentage (stored as integer percentage * 100 for precision)
     if (totalICFGNodes > 0)
     {
-        double coveragePercent = (double)analyzedNodes / (double)totalICFGNodes * 100.0;
-        generalNumMap["ICFG_Coverage_Percent"] = (u32_t)(coveragePercent * 100); // Store as percentage * 100
+        double coveragePercent =
+            (double)analyzedNodes / (double)totalICFGNodes * 100.0;
+        generalNumMap["ICFG_Coverage_Percent"] =
+            (u32_t)(coveragePercent * 100); // Store as percentage * 100
     }
     else
     {
@@ -73,20 +75,21 @@ void AEStat::finializeStat()
 
     u32_t callSiteNum = 0;
     u32_t extCallSiteNum = 0;
-    Set<const FunObjVar *> funs;
-    Set<const FunObjVar *> analyzedFuns;
-    for (const auto &it: *_ae->svfir->getICFG())
+    Set<const FunObjVar*> funs;
+    Set<const FunObjVar*> analyzedFuns;
+    for (const auto& it : *_ae->svfir->getICFG())
     {
         if (it.second->getFun())
         {
             funs.insert(it.second->getFun());
             // Check if this node was analyzed (across all entry points)
-            if (_ae->allAnalyzedNodes.find(it.second) != _ae->allAnalyzedNodes.end())
+            if (_ae->allAnalyzedNodes.find(it.second) !=
+                _ae->allAnalyzedNodes.end())
             {
                 analyzedFuns.insert(it.second->getFun());
             }
         }
-        if (const CallICFGNode *callNode = dyn_cast<CallICFGNode>(it.second))
+        if (const CallICFGNode* callNode = dyn_cast<CallICFGNode>(it.second))
         {
             if (!isExtCall(callNode))
             {
@@ -104,8 +107,10 @@ void AEStat::finializeStat()
     // Function coverage percentage
     if (funs.size() > 0)
     {
-        double funcCoveragePercent = (double)analyzedFuns.size() / (double)funs.size() * 100.0;
-        generalNumMap["Func_Coverage_Percent"] = (u32_t)(funcCoveragePercent * 100); // Store as percentage * 100
+        double funcCoveragePercent =
+            (double)analyzedFuns.size() / (double)funs.size() * 100.0;
+        generalNumMap["Func_Coverage_Percent"] =
+            (u32_t)(funcCoveragePercent * 100); // Store as percentage * 100
     }
     else
     {
@@ -114,7 +119,8 @@ void AEStat::finializeStat()
 
     generalNumMap["EXT_CallSite_Num"] = extCallSiteNum;
     generalNumMap["NonEXT_CallSite_Num"] = callSiteNum;
-    timeStatMap["Total_Time(sec)"] = (double)(endTime - startTime) / TIMEINTERVAL;
+    timeStatMap["Total_Time(sec)"] =
+        (double)(endTime - startTime) / TIMEINTERVAL;
 }
 
 void AEStat::performStat()
@@ -134,30 +140,41 @@ void AEStat::performStat()
     }
 
     SVFUtil::outs() << "\n************************\n";
-    SVFUtil::outs() << "################ (program : " << moduleName << ")###############\n";
+    SVFUtil::outs() << "################ (program : " << moduleName
+                    << ")###############\n";
     SVFUtil::outs().flags(std::ios::left);
     unsigned field_width = 30;
-    for (NUMStatMap::iterator it = generalNumMap.begin(), eit = generalNumMap.end(); it != eit; ++it)
+    for (NUMStatMap::iterator it = generalNumMap.begin(),
+                              eit = generalNumMap.end();
+         it != eit; ++it)
     {
         // Special handling for percentage fields (stored as percentage * 100)
-        if (it->first == "ICFG_Coverage_Percent" || it->first == "Func_Coverage_Percent")
+        if (it->first == "ICFG_Coverage_Percent" ||
+            it->first == "Func_Coverage_Percent")
         {
             double percent = (double)it->second / 100.0;
-            std::cout << std::setw(field_width) << it->first << std::fixed << std::setprecision(2) << percent << "%\n";
+            std::cout << std::setw(field_width) << it->first << std::fixed
+                      << std::setprecision(2) << percent << "%\n";
         }
         else
         {
-            std::cout << std::setw(field_width) << it->first << it->second << "\n";
+            std::cout << std::setw(field_width) << it->first << it->second
+                      << "\n";
         }
     }
-    SVFUtil::outs() << "-------------------------------------------------------\n";
-    for (TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it != eit; ++it)
+    SVFUtil::outs()
+        << "-------------------------------------------------------\n";
+    for (TIMEStatMap::iterator it = timeStatMap.begin(),
+                               eit = timeStatMap.end();
+         it != eit; ++it)
     {
         // format out put with width 20 space
-        SVFUtil::outs() << std::setw(field_width) << it->first << it->second << "\n";
+        SVFUtil::outs() << std::setw(field_width) << it->first << it->second
+                        << "\n";
     }
     SVFUtil::outs() << "Memory usage: " << memUsage << "\n";
 
-    SVFUtil::outs() << "#######################################################" << std::endl;
+    SVFUtil::outs() << "#######################################################"
+                    << std::endl;
     SVFUtil::outs().flush();
 }

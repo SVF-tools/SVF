@@ -52,24 +52,25 @@ public:
 protected:
     AbstractState getFullCycleHeadState(const ICFGCycleWTO* cycle) override;
 
-    bool widenCycleState(const AbstractState& prev,
-                         const AbstractState& cur,
+    bool widenCycleState(const AbstractState& prev, const AbstractState& cur,
                          const ICFGCycleWTO* cycle) override;
 
-    bool narrowCycleState(const AbstractState& prev,
-                          const AbstractState& cur,
+    bool narrowCycleState(const AbstractState& prev, const AbstractState& cur,
                           const ICFGCycleWTO* cycle) override;
 
-    const AbstractValue& getAbsValue(const ValVar* var, const ICFGNode* node) override;
+    const AbstractValue& getAbsValue(const ValVar* var,
+                                     const ICFGNode* node) override;
     using AbstractInterpretation::getAbsValue;
 
     bool hasAbsValue(const ValVar* var, const ICFGNode* node) const override;
     using AbstractInterpretation::hasAbsValue;
 
-    void updateAbsValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node) override;
+    void updateAbsValue(const ValVar* var, const AbstractValue& val,
+                        const ICFGNode* node) override;
     using AbstractInterpretation::updateAbsValue;
 
-    void updateAbsState(const ICFGNode* node, const AbstractState& state) override;
+    void updateAbsState(const ICFGNode* node,
+                        const AbstractState& state) override;
 
     void joinStates(AbstractState& dst, const AbstractState& src) override;
 
@@ -103,7 +104,8 @@ protected:
     /// After a store overwrites an ObjVar, clear any branch refinement
     /// for that ObjVar at the store's node so stale branch constraints
     /// don't propagate past the redefinition.
-    void storeValue(const ValVar* pointer, const AbstractValue& val, const ICFGNode* node) override;
+    void storeValue(const ValVar* pointer, const AbstractValue& val,
+                    const ICFGNode* node) override;
 
     /// Thin wrapper: defer to base for ICFG-edge bookkeeping
     /// (predecessor iteration, branch feasibility, joinStates,
@@ -117,12 +119,9 @@ protected:
     /// discarded by joinStates (no-op for ObjVar), so we route the
     /// narrowing to refinementTrace and let propagateAndApplyRefinement
     /// bake it into trace at the end of mergeStatesFromPredecessors.
-    void recordBranchRefinement(
-        NodeID objId,
-        const IntervalValue& narrowed,
-        AbstractState& as,
-        const ICFGNode* loadIcfg,
-        const ICFGNode* succ) override;
+    void recordBranchRefinement(NodeID objId, const IntervalValue& narrowed,
+                                AbstractState& as, const ICFGNode* loadIcfg,
+                                const ICFGNode* succ) override;
 
 private:
     /// SVFG-pull helper: walk each VFG node's indirect SVFG in-edges

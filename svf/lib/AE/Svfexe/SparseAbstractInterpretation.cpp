@@ -22,9 +22,9 @@
 
 #include "AE/Svfexe/SparseAbstractInterpretation.h"
 #include "AE/Svfexe/AEWTO.h"
-#include "SVFIR/SVFIR.h"
 #include "Graphs/SVFG.h"
 #include "MSSA/SVFGBuilder.h"
+#include "SVFIR/SVFIR.h"
 #include "WPA/Andersen.h"
 
 using namespace SVF;
@@ -61,8 +61,8 @@ void FullSparseAbstractInterpretation::buildSVFG()
 //  ObjVars are handled by pullObjValueFlows, not by ICFG-edge joins.
 // =====================================================================
 
-void FullSparseAbstractInterpretation::joinStates(
-    AbstractState& dst, const AbstractState& src)
+void FullSparseAbstractInterpretation::joinStates(AbstractState& dst,
+                                                  const AbstractState& src)
 {
     // Propagate GepObjVar entries along ICFG edges.  Kill semantics
     // come from handleNode's as.store(addr, val) overwriting trace at
@@ -87,8 +87,9 @@ void FullSparseAbstractInterpretation::joinStates(
         dst.addToFreedAddrs(a);
 }
 
-void FullSparseAbstractInterpretation::storeValue(
-    const ValVar* pointer, const AbstractValue& val, const ICFGNode* node)
+void FullSparseAbstractInterpretation::storeValue(const ValVar* pointer,
+                                                  const AbstractValue& val,
+                                                  const ICFGNode* node)
 {
     // Clear branch refinement for every ObjVar this store overwrites.
     // A store redefines the ObjVar; the pre-store branch constraint
@@ -168,7 +169,8 @@ void FullSparseAbstractInterpretation::pullObjValueFlows(const ICFGNode* node)
                 const ICFGNode* srcICFG = src->getICFGNode();
                 const ICFGNode* dstICFG = v->getICFGNode();
                 assert(srcICFG && "SVFG source node must have an ICFG node");
-                assert(dstICFG && "SVFG destination node must have an ICFG node");
+                assert(dstICFG &&
+                       "SVFG destination node must have an ICFG node");
 
                 if (!isIndirectSVFGEdgeFeasible(indEdge, v))
                     continue;
@@ -203,17 +205,21 @@ void FullSparseAbstractInterpretation::pullObjValueFlows(const ICFGNode* node)
                             {
                                 continue;
                             }
-                            if (obj
-                                && SemiSparseAbstractInterpretation::hasAbsValue(obj, srcICFG))
+                            if (obj &&
+                                SemiSparseAbstractInterpretation::hasAbsValue(
+                                    obj, srcICFG))
                             {
                                 AbstractValue cur;
-                                if (SemiSparseAbstractInterpretation::hasAbsValue(obj, node))
+                                if (SemiSparseAbstractInterpretation::
+                                        hasAbsValue(obj, node))
                                 {
-                                    cur = SemiSparseAbstractInterpretation::getAbsValue(obj, node);
+                                    cur = SemiSparseAbstractInterpretation::
+                                        getAbsValue(obj, node);
                                 }
-                                cur.join_with(
-                                    SemiSparseAbstractInterpretation::getAbsValue(obj, srcICFG));
-                                SemiSparseAbstractInterpretation::updateAbsValue(obj, cur, node);
+                                cur.join_with(SemiSparseAbstractInterpretation::
+                                                  getAbsValue(obj, srcICFG));
+                                SemiSparseAbstractInterpretation::
+                                    updateAbsValue(obj, cur, node);
                             }
                         }
                     }
@@ -231,13 +237,13 @@ void FullSparseAbstractInterpretation::pullObjValueFlows(const ICFGNode* node)
 //  Full-sparse — refinement trace machinery.
 // =====================================================================
 
-static bool hasRedefineToSameObj(
-    const ICFGNode* node, const IndirectSVFGEdge* edge)
+static bool hasRedefineToSameObj(const ICFGNode* node,
+                                 const IndirectSVFGEdge* edge)
 {
     for (const VFGNode* vfgNode : node->getVFGNodes())
     {
         if (SVFUtil::isa<StoreVFGNode>(vfgNode) &&
-                vfgNode->getDefSVFVars().intersects(edge->getPointsTo()))
+            vfgNode->getDefSVFVars().intersects(edge->getPointsTo()))
             return true;
     }
 
@@ -287,10 +293,12 @@ bool FullSparseAbstractInterpretation::isIndirectSVFGEdgeFeasible(
             }
             else
             {
-                // Treat a call as an intra-procedural summary edge for path queries.
-                // Feasibility of the callee body is handled by the normal analysis;
-                // here we only need caller-side reachability, e.g. entry -> ret-site.
-                if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(cur))
+                // Treat a call as an intra-procedural summary edge for path
+                // queries. Feasibility of the callee body is handled by the
+                // normal analysis; here we only need caller-side reachability,
+                // e.g. entry -> ret-site.
+                if (const CallICFGNode* call =
+                        SVFUtil::dyn_cast<CallICFGNode>(cur))
                 {
                     const ICFGNode* succ = call->getRetICFGNode();
                     if (!succ || succ->getFun() != fun)
@@ -352,8 +360,8 @@ bool FullSparseAbstractInterpretation::isIndirectSVFGEdgeFeasible(
     return feasible;
 }
 
-bool FullSparseAbstractInterpretation::isICFGPathFeasible(
-    const ICFGNode* src, const ICFGNode* dst)
+bool FullSparseAbstractInterpretation::isICFGPathFeasible(const ICFGNode* src,
+                                                          const ICFGNode* dst)
 {
     bool feasible = true;
     if (!src || !dst)
@@ -384,10 +392,12 @@ bool FullSparseAbstractInterpretation::isICFGPathFeasible(
                 const ICFGNode* cur = worklist.front();
                 worklist.pop_front();
 
-                // Treat a call as an intra-procedural summary edge for path queries.
-                // Feasibility of the callee body is handled by the normal analysis;
-                // here we only need caller-side reachability, e.g. entry -> ret-site.
-                if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(cur))
+                // Treat a call as an intra-procedural summary edge for path
+                // queries. Feasibility of the callee body is handled by the
+                // normal analysis; here we only need caller-side reachability,
+                // e.g. entry -> ret-site.
+                if (const CallICFGNode* call =
+                        SVFUtil::dyn_cast<CallICFGNode>(cur))
                 {
                     const ICFGNode* succ = call->getRetICFGNode();
                     if (!succ || succ->getFun() != fun)
@@ -493,12 +503,14 @@ void FullSparseAbstractInterpretation::propagateAndApplyRefinement(
     const ICFGNode* node)
 {
     // e.g.
-    // if (x > 0) { 
+    // if (x > 0) {
     //     use(x); // use 1
     //     use(x); // use 2
     // }
     // Step 1: compose pred-inherited refinement into refinementTrace[node].
-    // At use2, we don't have conditional intra-edge, but we can inherit the refinement from use1's conditional edge.  When multiple preds, JOIN the inherited constraints.
+    // At use2, we don't have conditional intra-edge, but we can inherit the
+    // refinement from use1's conditional edge.  When multiple preds, JOIN the
+    // inherited constraints.
     Map<NodeID, IntervalValue> inherited;
     bool inheritOk = true;
     bool first = true;
@@ -520,7 +532,7 @@ void FullSparseAbstractInterpretation::propagateAndApplyRefinement(
             }
             else
             {
-                for (auto it = inherited.begin(); it != inherited.end(); )
+                for (auto it = inherited.begin(); it != inherited.end();)
                 {
                     auto eit = pit->second.find(it->first);
                     if (eit == pit->second.end())
@@ -553,11 +565,14 @@ void FullSparseAbstractInterpretation::propagateAndApplyRefinement(
         }
     }
     // e.g.
-    // if (x > 0) { 
+    // if (x > 0) {
     //     use(x); // use 1
     //     use(x); // use 2
     // }
-    // Step 2: at use1, recordBranchRefinement captures the predState's narrowed constraint into refinementTrace[use1].  At use2, we find the inherited refinement from use1 and MEET it into the base value so the use observes the narrowed constraint.
+    // Step 2: at use1, recordBranchRefinement captures the predState's narrowed
+    // constraint into refinementTrace[use1].  At use2, we find the inherited
+    // refinement from use1 and MEET it into the base value so the use observes
+    // the narrowed constraint.
     auto nit = refinementTrace.find(node);
     if (nit != refinementTrace.end())
     {
@@ -582,7 +597,7 @@ AbstractState SemiSparseAbstractInterpretation::getFullCycleHeadState(
 
     const Set<const ValVar*>& valVars = preAnalysis->getCycleValVars(cycle);
     if (valVars.empty())
-        return snap;  // no cycle ValVars known: nothing to pull
+        return snap; // no cycle ValVars known: nothing to pull
 
     // Drop stale ValVar entries and pull each cycle ValVar from its
     // def-site.  ValVars without a genuine stored value are skipped to
@@ -600,7 +615,8 @@ AbstractState SemiSparseAbstractInterpretation::getFullCycleHeadState(
 }
 
 bool SemiSparseAbstractInterpretation::widenCycleState(
-    const AbstractState& prev, const AbstractState& cur, const ICFGCycleWTO* cycle)
+    const AbstractState& prev, const AbstractState& cur,
+    const ICFGCycleWTO* cycle)
 {
     // Base widens, writes trace[cycle_head], and returns fixpoint bool.
     bool fixpoint = AbstractInterpretation::widenCycleState(prev, cur, cycle);
@@ -618,7 +634,8 @@ bool SemiSparseAbstractInterpretation::widenCycleState(
 }
 
 bool SemiSparseAbstractInterpretation::narrowCycleState(
-    const AbstractState& prev, const AbstractState& cur, const ICFGCycleWTO* cycle)
+    const AbstractState& prev, const AbstractState& cur,
+    const ICFGCycleWTO* cycle)
 {
     // Delegate to base.  It returns true on the two non-scatter cases
     // (narrowing disabled, or narrow fixpoint); we preserve the original
@@ -636,7 +653,6 @@ bool SemiSparseAbstractInterpretation::narrowCycleState(
     return false;
 }
 
-
 // =====================================================================
 //  Semi-sparse state-access overrides (used by both SemiSparse and
 //  FullSparse subclasses; the latter further restricts ValVar reads).
@@ -650,8 +666,8 @@ void SemiSparseAbstractInterpretation::updateAbsState(
     abstractTrace[node].updateAddrStateOnly(state);
 }
 
-void SemiSparseAbstractInterpretation::joinStates(
-    AbstractState& dst, const AbstractState& src)
+void SemiSparseAbstractInterpretation::joinStates(AbstractState& dst,
+                                                  const AbstractState& src)
 {
     // ValVars live at def-sites in semi-sparse mode; they don't flow
     // through state merges.  Iterate src's ObjVar (_addrToAbsVal) entries
@@ -670,7 +686,8 @@ void SemiSparseAbstractInterpretation::joinStates(
         dst.addToFreedAddrs(a);
 }
 
-const ICFGNode* SemiSparseAbstractInterpretation::getICFGNode(const ValVar* var) const
+const ICFGNode* SemiSparseAbstractInterpretation::getICFGNode(
+    const ValVar* var) const
 {
     // const ValVars are all defined in global node
     if (!var->getICFGNode())
@@ -678,20 +695,23 @@ const ICFGNode* SemiSparseAbstractInterpretation::getICFGNode(const ValVar* var)
         return svfir->getICFG()->getGlobalICFGNode();
     }
     // for return value of callsite, use the ret-site as def-site
-    else if (SVFUtil::isa<CallICFGNode>(var->getICFGNode()) && SVFUtil::isa<RetValPN>(var))
+    else if (SVFUtil::isa<CallICFGNode>(var->getICFGNode()) &&
+             SVFUtil::isa<RetValPN>(var))
     {
-        return SVFUtil::dyn_cast<CallICFGNode>(var->getICFGNode())->getRetICFGNode();
+        return SVFUtil::dyn_cast<CallICFGNode>(var->getICFGNode())
+            ->getRetICFGNode();
     }
-    // for other ValVars, use their def-site as the node to query abstract value.
+    // for other ValVars, use their def-site as the node to query abstract
+    // value.
     else
     {
         return var->getICFGNode();
     }
 }
 
-
-void SemiSparseAbstractInterpretation::updateAbsValue(
-    const ValVar* var, const AbstractValue& val, const ICFGNode* node)
+void SemiSparseAbstractInterpretation::updateAbsValue(const ValVar* var,
+                                                      const AbstractValue& val,
+                                                      const ICFGNode* node)
 {
     // Write to the var's def-site so getAbsValue stays consistent.
     const ICFGNode* defNode = var->getICFGNode();
@@ -705,8 +725,8 @@ const AbstractValue& SemiSparseAbstractInterpretation::getAbsValue(
     return AbstractInterpretation::getAbsValue(var, getICFGNode(var));
 }
 
-bool SemiSparseAbstractInterpretation::hasAbsValue(
-    const ValVar* var, const ICFGNode* node) const
+bool SemiSparseAbstractInterpretation::hasAbsValue(const ValVar* var,
+                                                   const ICFGNode* node) const
 {
     return AbstractInterpretation::hasAbsValue(var, getICFGNode(var));
 }
