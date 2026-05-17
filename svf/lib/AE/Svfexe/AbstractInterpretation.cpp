@@ -492,100 +492,132 @@ void AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
         AbstractState& as)
 {
     const SVFVar* cond = edge->getCondition();
+    const ICFGNode* pred = edge->getSrcNode();
+    const ICFGNode* succNode = edge->getDstNode();
+    s64_t succ = edge->getSuccessorCondValue();
+
     assert(!cond->getInEdges().empty() && "branch condition has no defining edge?");
     const SVFStmt* condDef = *cond->getInEdges().begin();
 
     if (const CmpStmt* cmpStmt = SVFUtil::dyn_cast<CmpStmt>(condDef))
     {
-        const ICFGNode* pred = edge->getSrcNode();
-        s64_t succ = edge->getSuccessorCondValue();
         s32_t predicate = cmpStmt->getPredicate();
 
         if (cmpStmt->getOpVarID(0) == IRGraph::NullPtr ||
                 cmpStmt->getOpVarID(1) == IRGraph::NullPtr)
-            return;
-
-        AbstractValue opVal[2] =
         {
-            getAbsValue(cmpStmt->getOpVar(0), pred),
-            getAbsValue(cmpStmt->getOpVar(1), pred)
-        };
-
-        const bool hasIntervalCmp = opVal[0].isInterval() && opVal[1].isInterval();
-        if (!hasIntervalCmp && (opVal[0].isAddr() || opVal[1].isAddr()))
-            return;
-
-        // For each operand: if it is the variable side (non-constant), has a
-        // backing load, and the branch imposes a useful constraint, narrow the
-        // ObjVar behind the load.
-        for (int i = 0; i < 2; i++)
+            // p == NULL / p != NULL: no interval obj to refine.
+        }
+        else
         {
-            if (opVal[i].getInterval().is_numeral() ||
-                    !opVal[1-i].getInterval().is_numeral())
-                continue; // skip constant operands and var-vs-var
-
-            if (const LoadStmt* load = findBackingLoad(cmpStmt->getOpVar(i)))
+            AbstractValue opVal[2] =
             {
-                IntervalValue narrowed = computeCmpConstraint(
-                                             predicate, succ, i == 0,
-                                             opVal[i].getInterval(), opVal[1-i].getInterval());
+                getAbsValue(cmpStmt->getOpVar(0), pred),
+                getAbsValue(cmpStmt->getOpVar(1), pred)
+            };
 
-                if (!narrowed.isTop())
+            const bool hasIntervalCmp = opVal[0].isInterval() && opVal[1].isInterval();
+            if (!hasIntervalCmp && (opVal[0].isAddr() || opVal[1].isAddr()))
+            {
+                // Pointer-valued cmp: branch feasibility only.
+            }
+            else
+            {
+                for (int i = 0; i < 2; i++)
                 {
-                    // Read obj at the LOAD's icfg (where the value actually
-                    // lives in sparse mode); recordBranchRefinement decides
-                    // *where* the narrowed value is written (default -> `as`,
-                    // FullSparse -> refinementTrace[succ]).
-                    const ICFGNode* loadIcfg = load->getICFGNode();
-                    const AbstractValue& ptrVal =
-                        getAbsValue(load->getRHSVar(), loadIcfg);
-                    if (ptrVal.isAddr())
+                    const int other = 1 - i;
+                    const LoadStmt* load = findBackingLoad(cmpStmt->getOpVar(i));
+
+                    if (opVal[i].getInterval().is_numeral())
                     {
-                        for (const auto& addr : ptrVal.getAddrs())
+                        // Example: in x < 5, operand 5 is not refined.
+                    }
+                    else if (!opVal[other].getInterval().is_numeral())
+                    {
+                        // Example: x < y, neither side has a fixed bound.
+                    }
+                    else if (!load)
+                    {
+                        // Example: cmp uses a computed temporary, not load p.
+                    }
+                    else
+                    {
+                        IntervalValue narrowed = computeCmpConstraint(
+                                                     predicate, succ, i == 0,
+                                                     opVal[i].getInterval(), opVal[other].getInterval());
+
+                        if (narrowed.isTop())
                         {
-                            NodeID objId = as.getIDFromAddr(addr);
-                            recordBranchRefinement(
-                                objId, narrowed, as, loadIcfg, edge->getDstNode());
+                            // != and unsupported predicates reach here.
+                        }
+                        else
+                        {
+                            const ICFGNode* loadIcfg = load->getICFGNode();
+                            const AbstractValue& ptrVal =
+                                getAbsValue(load->getRHSVar(), loadIcfg);
+                            if (!ptrVal.isAddr())
+                            {
+                                // Cannot map load p back to concrete ObjVars.
+                            }
+                            else
+                            {
+                                for (const auto& addr : ptrVal.getAddrs())
+                                {
+                                    NodeID objId = as.getIDFromAddr(addr);
+                                    recordBranchRefinement(
+                                        objId, narrowed, as, loadIcfg, succNode);
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-        return;
     }
-
-    const ICFGNode* pred = edge->getSrcNode();
-    s64_t succ = edge->getSuccessorCondValue();
-    const SVFVar* var = cond;
-
-    AbstractValue condVal = getAbsValue(var, pred);
-    IntervalValue switch_cond = condVal.getInterval();
-    switch_cond.meet_with(IntervalValue(succ, succ));
-    if (switch_cond.isBottom())
-        return;
-
-    as[var->getId()] = AbstractValue(switch_cond);
-
-    FIFOWorkList<const SVFStmt*> stmtList;
-    for (SVFStmt* stmt : var->getInEdges())
-        stmtList.push(stmt);
-    while (!stmtList.empty())
+    else
     {
-        const SVFStmt* stmt = stmtList.pop();
-        if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+        const SVFVar* var = cond;
+
+        AbstractValue condVal = getAbsValue(var, pred);
+        IntervalValue switch_cond = condVal.getInterval();
+        switch_cond.meet_with(IntervalValue(succ, succ));
+        if (switch_cond.isBottom())
         {
-            // Read obj at the LOAD's icfg for sparse-mode consistency
-            // (matches cmp branch refinement).
-            const ICFGNode* loadIcfg = load->getICFGNode();
-            const AbstractValue& ptrVal =
-                getAbsValue(load->getRHSVar(), loadIcfg);
-            if (ptrVal.isAddr())
+            // This case label is not reachable from cond's interval.
+        }
+        else
+        {
+            as[var->getId()] = AbstractValue(switch_cond);
+
+            FIFOWorkList<const SVFStmt*> stmtList;
+            for (SVFStmt* stmt : var->getInEdges())
+                stmtList.push(stmt);
+            while (!stmtList.empty())
             {
-                for (const auto& addr : ptrVal.getAddrs())
+                const SVFStmt* stmt = stmtList.pop();
+                const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt);
+                if (!load)
                 {
-                    NodeID objId = as.getIDFromAddr(addr);
-                    recordBranchRefinement(
-                        objId, switch_cond, as, loadIcfg, edge->getDstNode());
+                    // Skip non-load definitions of the switch condition.
+                }
+                else
+                {
+                    const ICFGNode* loadIcfg = load->getICFGNode();
+                    const AbstractValue& ptrVal =
+                        getAbsValue(load->getRHSVar(), loadIcfg);
+                    if (!ptrVal.isAddr())
+                    {
+                        // Cannot map load p back to concrete ObjVars.
+                    }
+                    else
+                    {
+                        for (const auto& addr : ptrVal.getAddrs())
+                        {
+                            NodeID objId = as.getIDFromAddr(addr);
+                            recordBranchRefinement(
+                                objId, switch_cond, as, loadIcfg, succNode);
+                        }
+                    }
                 }
             }
         }
