@@ -53,12 +53,12 @@ void FullSparseAbstractInterpretation::buildSVFG()
 //  mergeStatesFromPredecessors is a thin wrapper: defer to base for
 //  ICFG-edge bookkeeping (predecessor iteration, branch feasibility,
 //  joinStates, updateAbsState, reachability return).  If the node is
-//  reachable, run pullValueFlow to populate trace[node] with obj values
+//  reachable, run pullObjValueFlows to populate trace[node] with obj values
 //  pulled along SVFG indirect in-edges.
 //
-//  joinStates stays a near-no-op (only _freedAddrs rides ICFG edges,
-//  matching semi-sparse minus the obj loop) since value flow is
-//  handled by pullValueFlow, not by ICFG-edge joins.
+//  joinStates carries only state that is not represented as MemorySSA
+//  def-use flow: GepObjVar field snapshots and _freedAddrs.  Base/Dummy
+//  ObjVars are handled by pullObjValueFlows, not by ICFG-edge joins.
 // =====================================================================
 
 void FullSparseAbstractInterpretation::joinStates(
@@ -71,7 +71,7 @@ void FullSparseAbstractInterpretation::joinStates(
     // many store ICFG nodes converge at downstream use sites, and lets
     // extapi handlers (memcpy/memset/strlen) read upstream-written
     // values via plain as.load(srcAddr).  Base/Dummy are NOT propagated
-    // here — they ride pullValueFlow Step 1 (SVFG indirect edges, with
+    // here — they ride pullObjValueFlows Step 1 (SVFG indirect edges, with
     // MSSA chi/mu kill semantics).
     for (const auto& [id, val] : src.getLocToVal())
     {
@@ -116,7 +116,7 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     if (!AbstractInterpretation::mergeStatesFromPredecessors(node))
         return false;
 
-    pullValueFlow(node);
+    pullObjValueFlows(node);
 
     // Compose pred-inherited refinement on top of branch narrowings
     // just captured, then MEET into trace[node] so reads see narrowed.
@@ -124,7 +124,7 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     return true;
 }
 
-void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
+void FullSparseAbstractInterpretation::pullObjValueFlows(const ICFGNode* node)
 {
     NodeBS denseLocalObjs;
     for (const auto& item : abstractTrace[node].getLocToVal())
@@ -162,14 +162,17 @@ void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
             {
                 const SVFGNode* src =
                     SVFUtil::dyn_cast<SVFGNode>(indEdge->getSrcNode());
-                if (const IntraMSSAPHISVFGNode* phi =
-                            SVFUtil::dyn_cast<IntraMSSAPHISVFGNode>(v))
-                {
-                    if (!isMSSAPhiIncomingBranchFeasible(src, phi))
-                        continue;
-                }
+                assert(src && "SVFG incoming edge must have a source node");
+                assert(v && "SVFG incoming edge must have a destination node");
 
-                const ICFGNode* srcICFG = src ? src->getICFGNode() : nullptr;
+                const ICFGNode* srcICFG = src->getICFGNode();
+                const ICFGNode* dstICFG = v->getICFGNode();
+                assert(srcICFG && "SVFG source node must have an ICFG node");
+                assert(dstICFG && "SVFG destination node must have an ICFG node");
+
+                if (!isIndirectSVFGEdgeFeasible(indEdge, v))
+                    continue;
+
                 if (srcICFG && hasAbsState(srcICFG))
                 {
                     for (NodeID id : indEdge->getPointsTo())
@@ -228,162 +231,120 @@ void FullSparseAbstractInterpretation::pullValueFlow(const ICFGNode* node)
 //  Full-sparse — refinement trace machinery.
 // =====================================================================
 
-bool FullSparseAbstractInterpretation::isICFGPathFeasible(
-    const ICFGNode* src, const ICFGNode* dst)
+static bool hasRedefineToSameObj(
+    const ICFGNode* node, const IndirectSVFGEdge* edge)
 {
-    if (!src || !dst)
-        return true;
-
-    if (src == dst)
-        return true;
-
-    const FunObjVar* fun = src->getFun();
-    if (!fun || fun != dst->getFun())
-        return true;
-
-    std::deque<const ICFGNode*> worklist;
-    Set<const ICFGNode*> visited;
-    worklist.push_back(src);
-    visited.insert(src);
-
-    while (!worklist.empty())
+    for (const VFGNode* vfgNode : node->getVFGNodes())
     {
-        const ICFGNode* cur = worklist.front();
-        worklist.pop_front();
-
-        // Treat a call as an intra-procedural summary edge for path queries.
-        // Feasibility of the callee body is handled by the normal analysis;
-        // here we only need caller-side reachability, e.g. entry -> ret-site.
-        if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(cur))
-        {
-            const ICFGNode* succ = call->getRetICFGNode();
-            if (succ && succ->getFun() == fun)
-            {
-                if (succ == dst)
-                    return true;
-
-                if (!visited.count(succ))
-                {
-                    visited.insert(succ);
-                    worklist.push_back(succ);
-                }
-            }
-        }
-
-        for (const ICFGEdge* edge : cur->getOutEdges())
-        {
-            const IntraCFGEdge* intraEdge =
-                SVFUtil::dyn_cast<IntraCFGEdge>(edge);
-            if (!intraEdge)
-                continue;
-
-            const ICFGNode* succ = edge->getDstNode();
-            if (!succ || succ->getFun() != fun)
-                continue;
-
-            if (intraEdge->getCondition() && hasAbsState(cur))
-            {
-                AbstractState edgeState = getAbsState(cur);
-                if (!isBranchFeasible(intraEdge, edgeState, false))
-                    continue;
-            }
-
-            if (succ == dst)
-                return true;
-
-            if (!visited.count(succ))
-            {
-                visited.insert(succ);
-                worklist.push_back(succ);
-            }
-        }
+        if (SVFUtil::isa<StoreVFGNode>(vfgNode) &&
+                vfgNode->getDefSVFVars().intersects(edge->getPointsTo()))
+            return true;
     }
 
     return false;
 }
 
-static bool sourceDefinesMSSAVersion(const SVFGNode* src, const MRVer* ver)
+bool FullSparseAbstractInterpretation::isIndirectSVFGEdgeFeasible(
+    const IndirectSVFGEdge* edge, const VFGNode* dst)
 {
-    if (!src || !ver)
-        return false;
+    assert(edge && "Indirect SVFG edge must exist");
+    assert(dst && "Indirect SVFG edge must have a destination node");
 
-    if (const StoreVFGNode* store = SVFUtil::dyn_cast<StoreVFGNode>(src))
-    {
-        if (const MemSSA::STORECHI* storeDef =
-                    SVFUtil::dyn_cast<MemSSA::STORECHI>(ver->getDef()))
-            return storeDef->getStoreStmt() == store->getSVFStmt();
-    }
-    else if (const FormalINSVFGNode* formalIn =
-                 SVFUtil::dyn_cast<FormalINSVFGNode>(src))
-    {
-        return formalIn->getMRVer() == ver;
-    }
-    else if (const FormalOUTSVFGNode* formalOut =
-                 SVFUtil::dyn_cast<FormalOUTSVFGNode>(src))
-    {
-        return formalOut->getMRVer() == ver;
-    }
-    else if (const ActualINSVFGNode* actualIn =
-                 SVFUtil::dyn_cast<ActualINSVFGNode>(src))
-    {
-        return actualIn->getMRVer() == ver;
-    }
-    else if (const ActualOUTSVFGNode* actualOut =
-                 SVFUtil::dyn_cast<ActualOUTSVFGNode>(src))
-    {
-        return actualOut->getMRVer() == ver;
-    }
-    else if (const MSSAPHISVFGNode* phi =
-                 SVFUtil::dyn_cast<MSSAPHISVFGNode>(src))
-    {
-        return phi->getResVer() == ver;
-    }
+    const SVFGNode* src = SVFUtil::dyn_cast<SVFGNode>(edge->getSrcNode());
+    assert(src && "Indirect SVFG edge must have an SVFG source node");
 
-    return false;
-}
+    const ICFGNode* srcICFG = src->getICFGNode();
+    const ICFGNode* dstICFG = dst->getICFGNode();
+    assert(srcICFG && "SVFG source node must have an ICFG node");
+    assert(dstICFG && "SVFG destination node must have an ICFG node");
 
-bool FullSparseAbstractInterpretation::isPhiPredecessorBranchFeasible(
-    const ICFGNode* src, const SVFBasicBlock* predBB,
-    const ICFGNode* phiICFG)
-{
+    const FunObjVar* fun = srcICFG->getFun();
     bool feasible = true;
-
-    if (!src || !predBB || !phiICFG)
+    if (srcICFG == dstICFG)
     {
         feasible = true;
     }
-    else if (!canSourceReachPhiPredecessor(src, predBB))
+    else if (!fun || fun != dstICFG->getFun())
     {
-        feasible = false;
+        feasible = true;
     }
     else
     {
-        const ICFGNode* predExit = predBB->back();
-        if (!isICFGPathFeasible(src, predExit))
+        feasible = false;
+        std::deque<const ICFGNode*> worklist;
+        Set<const ICFGNode*> visited;
+        worklist.push_back(srcICFG);
+        visited.insert(srcICFG);
+
+        while (!worklist.empty() && !feasible)
         {
-            feasible = false;
-        }
-        else
-        {
-            const ICFGEdge* edge =
-                svfir->getICFG()->getICFGEdge(predExit, phiICFG, ICFGEdge::IntraCF);
-            const IntraCFGEdge* intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge);
-            if (!intraEdge)
+            const ICFGNode* cur = worklist.front();
+            worklist.pop_front();
+
+            if (cur != srcICFG && hasRedefineToSameObj(cur, edge))
             {
-                feasible = true;
-            }
-            else if (!intraEdge->getCondition())
-            {
-                feasible = true;
-            }
-            else if (!hasAbsState(predExit))
-            {
-                feasible = true;
+                // This ICFG path redefines the same object before dst.
             }
             else
             {
-                AbstractState edgeState = getAbsState(predExit);
-                feasible = isBranchFeasible(intraEdge, edgeState, false);
+                // Treat a call as an intra-procedural summary edge for path queries.
+                // Feasibility of the callee body is handled by the normal analysis;
+                // here we only need caller-side reachability, e.g. entry -> ret-site.
+                if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(cur))
+                {
+                    const ICFGNode* succ = call->getRetICFGNode();
+                    if (!succ || succ->getFun() != fun)
+                    {
+                        // Ignore missing or cross-function return summaries.
+                    }
+                    else if (succ == dstICFG)
+                    {
+                        feasible = true;
+                    }
+                    else if (!visited.count(succ))
+                    {
+                        visited.insert(succ);
+                        worklist.push_back(succ);
+                    }
+                    else
+                    {
+                        // Already visited.
+                    }
+                }
+
+                for (const ICFGEdge* icfgEdge : cur->getOutEdges())
+                {
+                    const IntraCFGEdge* intraEdge =
+                        SVFUtil::dyn_cast<IntraCFGEdge>(icfgEdge);
+                    const ICFGNode* succ =
+                        intraEdge ? intraEdge->getDstNode() : nullptr;
+
+                    if (!intraEdge)
+                    {
+                        // Non-intra ICFG edges are not part of this path query.
+                    }
+                    else if (!succ || succ->getFun() != fun)
+                    {
+                        // Keep the query inside src's function.
+                    }
+                    else if (!isIntraEdgeBranchFeasible(intraEdge, cur))
+                    {
+                        // The conditional edge is unreachable in cur's state.
+                    }
+                    else if (succ == dstICFG)
+                    {
+                        feasible = true;
+                    }
+                    else if (!visited.count(succ))
+                    {
+                        visited.insert(succ);
+                        worklist.push_back(succ);
+                    }
+                    else
+                    {
+                        // Already visited.
+                    }
+                }
             }
         }
     }
@@ -391,107 +352,125 @@ bool FullSparseAbstractInterpretation::isPhiPredecessorBranchFeasible(
     return feasible;
 }
 
-bool FullSparseAbstractInterpretation::canSourceReachPhiPredecessor(
-    const ICFGNode* src, const SVFBasicBlock* predBB)
+bool FullSparseAbstractInterpretation::isICFGPathFeasible(
+    const ICFGNode* src, const ICFGNode* dst)
 {
-    bool canReach = true;
-
-    if (!src || !predBB)
-    {
-        canReach = true;
-    }
-    else
-    {
-        const SVFBasicBlock* srcBB = src->getBB();
-        const FunObjVar* fun = src->getFun();
-        if (!srcBB)
-        {
-            canReach = true;
-        }
-        else if (srcBB == predBB)
-        {
-            canReach = true;
-        }
-        else if (fun && fun == predBB->getParent() && fun->dominate(srcBB, predBB))
-        {
-            canReach = true;
-        }
-        else
-        {
-            canReach = isICFGPathFeasible(src, predBB->back());
-        }
-    }
-
-    return canReach;
-}
-
-bool FullSparseAbstractInterpretation::isMSSAPhiIncomingBranchFeasible(
-    const VFGNode* src, const IntraMSSAPHISVFGNode* phi)
-{
-    const ICFGNode* srcICFG = src ? src->getICFGNode() : nullptr;
-    const ICFGNode* phiICFG = phi ? phi->getICFGNode() : nullptr;
     bool feasible = true;
-
-    if (!srcICFG || !phiICFG)
+    if (!src || !dst)
     {
         feasible = true;
     }
-    else if (srcICFG == phiICFG)
+    else if (src == dst)
     {
         feasible = true;
     }
     else
     {
-        const FunObjVar* fun = srcICFG->getFun();
-        const SVFBasicBlock* phiBB = phiICFG->getBB();
-        if (!fun || fun != phiICFG->getFun())
-        {
-            feasible = true;
-        }
-        else if (preAnalysis->getPointerAnalysis()->isInRecursion(fun))
-        {
-            feasible = true;
-        }
-        else if (!phiBB)
+        const FunObjVar* fun = src->getFun();
+        if (!fun || fun != dst->getFun())
         {
             feasible = true;
         }
         else
         {
             feasible = false;
-            bool matchedOperand = false;
-            const std::vector<const SVFBasicBlock*> predBBs =
-                phiBB->getPredecessors();
-            for (auto oit = phi->opVerBegin(), oeit = phi->opVerEnd();
-                    oit != oeit; ++oit)
-            {
-                if (!sourceDefinesMSSAVersion(src, oit->second))
-                    continue;
+            std::deque<const ICFGNode*> worklist;
+            Set<const ICFGNode*> visited;
+            worklist.push_back(src);
+            visited.insert(src);
 
-                matchedOperand = true;
-                u32_t predPos = oit->first;
-                if (predPos >= predBBs.size())
+            while (!worklist.empty() && !feasible)
+            {
+                const ICFGNode* cur = worklist.front();
+                worklist.pop_front();
+
+                // Treat a call as an intra-procedural summary edge for path queries.
+                // Feasibility of the callee body is handled by the normal analysis;
+                // here we only need caller-side reachability, e.g. entry -> ret-site.
+                if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(cur))
                 {
-                    feasible = true;
-                    break;
+                    const ICFGNode* succ = call->getRetICFGNode();
+                    if (!succ || succ->getFun() != fun)
+                    {
+                        // Ignore missing or cross-function return summaries.
+                    }
+                    else if (succ == dst)
+                    {
+                        feasible = true;
+                    }
+                    else if (!visited.count(succ))
+                    {
+                        visited.insert(succ);
+                        worklist.push_back(succ);
+                    }
+                    else
+                    {
+                        // Already visited.
+                    }
                 }
-                else if (isPhiPredecessorBranchFeasible(
-                             srcICFG, predBBs[predPos], phiICFG))
+
+                for (const ICFGEdge* edge : cur->getOutEdges())
                 {
-                    feasible = true;
-                    break;
+                    const IntraCFGEdge* intraEdge =
+                        SVFUtil::dyn_cast<IntraCFGEdge>(edge);
+                    const ICFGNode* succ =
+                        intraEdge ? intraEdge->getDstNode() : nullptr;
+
+                    if (!intraEdge)
+                    {
+                        // Non-intra ICFG edges are not part of this path query.
+                    }
+                    else if (!succ || succ->getFun() != fun)
+                    {
+                        // Keep the query inside src's function.
+                    }
+                    else if (!isIntraEdgeBranchFeasible(intraEdge, cur))
+                    {
+                        // The conditional edge is unreachable in cur's state.
+                    }
+                    else if (succ == dst)
+                    {
+                        feasible = true;
+                    }
+                    else if (!visited.count(succ))
+                    {
+                        visited.insert(succ);
+                        worklist.push_back(succ);
+                    }
+                    else
+                    {
+                        // Already visited.
+                    }
                 }
             }
-
-            if (!matchedOperand)
-                feasible = true;
         }
     }
 
     return feasible;
 }
 
-void FullSparseAbstractInterpretation::recordBranchNarrowing(
+bool FullSparseAbstractInterpretation::isIntraEdgeBranchFeasible(
+    const IntraCFGEdge* edge, const ICFGNode* src)
+{
+    bool feasible = true;
+    if (!edge->getCondition())
+    {
+        feasible = true;
+    }
+    else if (!hasAbsState(src))
+    {
+        feasible = true;
+    }
+    else
+    {
+        AbstractState edgeState = getAbsState(src);
+        feasible = isBranchEdgeFeasible(edge, edgeState);
+    }
+
+    return feasible;
+}
+
+void FullSparseAbstractInterpretation::recordBranchRefinement(
     NodeID objId, const IntervalValue& narrowed, AbstractState&,
     const ICFGNode*, const ICFGNode* succ)
 {
@@ -578,7 +557,7 @@ void FullSparseAbstractInterpretation::propagateAndApplyRefinement(
     //     use(x); // use 1
     //     use(x); // use 2
     // }
-    // Step 2: at use1, recordBranchNarrowing captures the predState's narrowed constraint into refinementTrace[use1].  At use2, we find the inherited refinement from use1 and MEET it into the base value so the use observes the narrowed constraint.
+    // Step 2: at use1, recordBranchRefinement captures the predState's narrowed constraint into refinementTrace[use1].  At use2, we find the inherited refinement from use1 and MEET it into the base value so the use observes the narrowed constraint.
     auto nit = refinementTrace.find(node);
     if (nit != refinementTrace.end())
     {

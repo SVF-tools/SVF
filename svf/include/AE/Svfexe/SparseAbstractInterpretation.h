@@ -31,8 +31,7 @@ namespace SVF
 
 class SVFG;
 class SVFGBuilder;
-class IntraMSSAPHISVFGNode;
-class SVFBasicBlock;
+class IndirectSVFGEdge;
 class VFGNode;
 
 /// Abstract Interpretation for `Options::AESparsity::SemiSparse`.
@@ -93,10 +92,12 @@ public:
     ~FullSparseAbstractInterpretation() override;
 
 protected:
-    /// Value flow does not propagate along ICFG edges in full-sparse;
-    /// both ValVar and ObjVar are pulled in pullValueFlow via SVFG
-    /// indirect in-edges.  Only `_freedAddrs` (no SVFG encoding) rides
-    /// ICFG edges, matching semi-sparse minus the obj loop.
+    /// Full-sparse does not merge normal value-flow state along ICFG
+    /// edges.  The ICFG join carries only side-channel state that is not
+    /// represented as MemorySSA def-use flow: GepObjVar field snapshots
+    /// and `_freedAddrs`.  Base/Dummy ObjVars are populated later by
+    /// pullObjValueFlows from SVFG indirect in-edges; ValVars stay at their
+    /// def-sites.
     void joinStates(AbstractState& dst, const AbstractState& src) override;
 
     /// After a store overwrites an ObjVar, clear any branch refinement
@@ -107,7 +108,7 @@ protected:
     /// Thin wrapper: defer to base for ICFG-edge bookkeeping
     /// (predecessor iteration, branch feasibility, joinStates,
     /// updateAbsState, reachability return).  For reachable nodes,
-    /// additionally run pullValueFlow to populate trace[node] with obj
+    /// additionally run pullObjValueFlows to populate trace[node] with obj
     /// values from SVFG def-sites.
     bool mergeStatesFromPredecessors(const ICFGNode* node) override;
 
@@ -116,7 +117,7 @@ protected:
     /// discarded by joinStates (no-op for ObjVar), so we route the
     /// narrowing to refinementTrace and let propagateAndApplyRefinement
     /// bake it into trace at the end of mergeStatesFromPredecessors.
-    void recordBranchNarrowing(
+    void recordBranchRefinement(
         NodeID objId,
         const IntervalValue& narrowed,
         AbstractState& as,
@@ -127,22 +128,22 @@ private:
     /// SVFG-pull helper: walk each VFG node's indirect SVFG in-edges
     /// and pull obj values from upstream def-site traces into
     /// trace[node].  Multiple sources (e.g. mphi operands) JOIN.
-    void pullValueFlow(const ICFGNode* node);
+    void pullObjValueFlows(const ICFGNode* node);
 
-    /// Return false only when the source SVFG node's MemorySSA phi operand
-    /// belongs only to currently infeasible CFG predecessors.
-    bool isMSSAPhiIncomingBranchFeasible(const VFGNode* src,
-                                         const IntraMSSAPHISVFGNode* phi);
+    /// Return whether an indirect SVFG edge should be pulled into dst.
+    /// Besides branch-feasible ICFG reachability, this rejects paths where
+    /// another store to the same points-to object kills the edge's value.
+    bool isIndirectSVFGEdgeFeasible(const IndirectSVFGEdge* edge,
+                                    const VFGNode* dst);
 
-    /// Branch-feasible CFG reachability only.
+    /// Return whether a branch-feasible ICFG path exists from src to dst.
+    /// Conditional edges are checked with a pure branch-feasibility query,
+    /// so path probing does not create branch-refinement side effects.
     bool isICFGPathFeasible(const ICFGNode* src, const ICFGNode* dst);
 
-    bool isPhiPredecessorBranchFeasible(const ICFGNode* src,
-                                        const SVFBasicBlock* predBB,
-                                        const ICFGNode* phiICFG);
-
-    bool canSourceReachPhiPredecessor(const ICFGNode* src,
-                                      const SVFBasicBlock* predBB);
+    /// Return whether this intra edge is allowed by the current branch state.
+    bool isIntraEdgeBranchFeasible(const IntraCFGEdge* edge,
+                                   const ICFGNode* src);
 
     /// Compose pred-inherited refinement into refinementTrace[node]
     /// (single-pred linear copy / multi-pred intersect-JOIN; any pred
@@ -156,7 +157,7 @@ private:
     /// Path-refined obj values produced by branch narrowing.  Each
     /// entry is the *interval constraint* (not effective value) so
     /// base trace can widen/narrow independently.  Cached at branch
-    /// successors by recordBranchNarrowing; propagated and applied by
+    /// successors by recordBranchRefinement; propagated and applied by
     /// propagateAndApplyRefinement at the end of
     /// mergeStatesFromPredecessors.
     Map<const ICFGNode*, Map<NodeID, IntervalValue>> refinementTrace;

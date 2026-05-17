@@ -224,19 +224,21 @@ protected:
     /// base ICFG-edge merge.
     virtual bool mergeStatesFromPredecessors(const ICFGNode* node);
 
-    /// Returns true if the branch is reachable.  When `recordNarrowing` is
-    /// true, also narrows `as` in-place via recordBranchNarrowing for each obj
-    /// the cmp/switch refines.
-    bool isBranchFeasible(const IntraCFGEdge* edge, AbstractState& as,
-                          bool recordNarrowing = true);
+    /// Returns true if the branch edge is reachable under the current state.
+    /// Pure query: does not update `as` or branch refinement traces.
+    bool isBranchEdgeFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
-    /// Hook called by isCmp/SwitchBranchFeasible for each obj that the
+    /// Apply branch-induced interval refinement after a feasible edge has
+    /// been selected for normal CFG-state merging.
+    void applyBranchRefinement(const IntraCFGEdge* edge, AbstractState& as);
+
+    /// Hook called by applyBranchRefinement for each obj that the
     /// branch narrows.  Default (dense/semi): MEET `narrowed` onto
     /// obj's value (read at `loadIcfg` where sparse keeps it) and
     /// write the result into the local `as` (per-edge predState copy)
     /// so joinStates carries it to `succ`.  FullSparse overrides to
     /// capture into refinementTrace[succ] instead.
-    virtual void recordBranchNarrowing(
+    virtual void recordBranchRefinement(
         NodeID objId,
         const IntervalValue& narrowed,
         AbstractState& as,
@@ -262,13 +264,11 @@ private:
     /// Dispatch an SVF statement (Addr/Binary/Cmp/Load/Store/Copy/Gep/Select/Phi/Call/Ret) to its handler
     virtual void handleSVFStatement(const SVFStmt* stmt);
 
-    /// Returns true if the cmp-conditional branch is feasible; optionally narrows as in-place.
-    bool isCmpBranchFeasible(const IntraCFGEdge* edge, AbstractState& as,
-                             bool recordNarrowing);
+    /// Returns true if the cmp-conditional branch is feasible.
+    bool isCmpBranchEdgeFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
-    /// Returns true if the switch branch is feasible; optionally narrows as in-place.
-    bool isSwitchBranchFeasible(const IntraCFGEdge* edge, AbstractState& as,
-                                bool recordNarrowing);
+    /// Returns true if the switch branch is feasible.
+    bool isSwitchBranchEdgeFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
     void updateStateOnAddr(const AddrStmt *addr);
 
