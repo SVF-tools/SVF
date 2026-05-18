@@ -229,11 +229,11 @@ protected:
     /// Pure query: does not update `as` or branch refinement traces.
     bool isBranchEdgeFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
-    /// Apply branch-induced interval refinement after a feasible edge has
+    /// Collect branch-induced interval refinement after a feasible edge has
     /// been selected for normal CFG-state merging.
-    void applyBranchRefinement(const IntraCFGEdge* edge, AbstractState& as);
+    void collectBranchRefinement(const IntraCFGEdge* edge, AbstractState& as);
 
-    /// Hook called by applyBranchRefinement for each obj that the
+    /// Hook called by collectBranchRefinement for each obj that the
     /// branch narrows.  Default (dense/semi): MEET `narrowed` onto
     /// obj's value (read at `loadIcfg` where sparse keeps it) and
     /// write the result into the local `as` (per-edge predState copy)

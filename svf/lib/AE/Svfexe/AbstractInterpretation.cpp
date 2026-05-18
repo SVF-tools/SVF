@@ -238,7 +238,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                 AbstractState predState = getAbsState(pred);
                 if (isBranchEdgeFeasible(intraCfgEdge, predState))
                 {
-                    applyBranchRefinement(intraCfgEdge, predState);
+                    collectBranchRefinement(intraCfgEdge, predState);
                     joinStates(merged, predState);
                     hasFeasiblePred = true;
                 }
@@ -316,7 +316,7 @@ static const LoadStmt* findBackingLoad(const SVFVar* var)
 /// branch direction (succ), which side it is on, and the other operand's
 /// interval. Returns top if no useful narrowing is possible.
 ///
-/// Called from applyBranchRefinement for each non-constant operand that has a
+/// Called from collectBranchRefinement for each non-constant operand that has a
 /// backing load. Given a branch condition like:
 ///
 ///   %cmp = icmp sgt %a, 5       ;  a > 5
@@ -488,8 +488,8 @@ bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
     return true;
 }
 
-void AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
-                                                   AbstractState& as)
+void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
+                                                     AbstractState& as)
 {
     const SVFVar* cond = edge->getCondition();
     const ICFGNode* pred = edge->getSrcNode();
