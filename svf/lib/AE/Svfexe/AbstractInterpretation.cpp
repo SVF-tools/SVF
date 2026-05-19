@@ -118,12 +118,12 @@ AbstractInterpretation::~AbstractInterpretation()
 }
 
 /// Collect entry point functions for analysis.
-/// In single-entry mode, entry is main/svf.main. In multiple-entry mode,
+/// In main mode, entry is main/svf.main. In no-main mode,
 /// entries are SCCs with no external caller in the Andersen-resolved CallGraph.
 std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
 {
     std::deque<const FunObjVar*> entryFunctions;
-    const bool singleEntry = Options::AEFunEntry() == AEFunEntryMode::SINGLE;
+    const bool mainEntry = Options::AEFunEntry() == AEFunEntryMode::MAIN;
     Set<NodeID> visitedEntrySCCs;
     auto* callGraphSCC = preAnalysis->getCallGraphSCC();
 
@@ -136,7 +136,7 @@ std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
         if (fun->isDeclaration())
             continue;
 
-        if (singleEntry)
+        if (mainEntry)
         {
             if (SVFUtil::isProgEntryFunction(fun))
             {
@@ -188,11 +188,11 @@ std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
         }
     }
 
-    if (singleEntry && entryFunctions.empty())
+    if (mainEntry && entryFunctions.empty())
     {
         SVFUtil::errs() << SVFUtil::errMsg(
-            "AE -ae-fun-entry=single requires a program entry function, but main/svf.main was not found.\n");
-        assert(false && "No program entry function found for -ae-fun-entry=single");
+            "AE -ae-fun-entry=main requires a program entry function, but main/svf.main was not found.\n");
+        assert(false && "No program entry function found for -ae-fun-entry=main");
         abort();
     }
 

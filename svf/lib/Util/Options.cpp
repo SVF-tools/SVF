@@ -801,15 +801,15 @@ const OptionMap<u32_t> Options::AESparsity(
 });
 const OptionMap<u32_t> Options::AEFunEntry(
     "ae-fun-entry",
-    "Abstract execution function entry mode (Default: single)",
-    AbstractInterpretation::AEFunEntryMode::SINGLE,
+    "Abstract execution function entry mode (Default: main)",
+    AbstractInterpretation::AEFunEntryMode::MAIN,
 {
     {
-        AbstractInterpretation::AEFunEntryMode::SINGLE, "single",
+        AbstractInterpretation::AEFunEntryMode::MAIN, "main",
         "Analyze from the program entry function only."
     },
     {
-        AbstractInterpretation::AEFunEntryMode::MULTIPLE, "multiple",
+        AbstractInterpretation::AEFunEntryMode::NO_MAIN, "no-main",
         "Analyze from every no-external-caller SCC after Andersen resolves the call graph."
     }
 });

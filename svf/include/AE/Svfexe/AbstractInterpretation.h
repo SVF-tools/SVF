@@ -96,8 +96,8 @@ public:
 
     enum AEFunEntryMode
     {
-        SINGLE,
-        MULTIPLE
+        MAIN,
+        NO_MAIN
     };
 
     virtual void runOnModule();
