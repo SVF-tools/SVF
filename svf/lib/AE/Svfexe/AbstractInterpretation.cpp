@@ -226,7 +226,7 @@ void AbstractInterpretation::analyzeFromAllProgEntries()
     {
         const ICFGNode* funEntry = icfg->getFunEntryICFGNode(entryFun);
         updateAbsState(funEntry, getAbsState(globalNode));
-        handleFunction(funEntry);
+        handleFunction(funEntry, nullptr);
     }
 }
 
@@ -785,8 +785,7 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
 void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller)
 {
     auto it = preAnalysis->getFuncToWTO().find(funEntry->getFun());
-    if (it == preAnalysis->getFuncToWTO().end())
-        return;
+    assert(it != preAnalysis->getFuncToWTO().end() && "Missing WTO for function");
 
     // Push all top-level WTO components into the worklist in WTO order
     FIFOWorkList<const ICFGWTOComp*> worklist(it->second->getWTOComponents());
@@ -798,19 +797,12 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
         if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
         {
             const ICFGNode* node = singleton->getICFGNode();
-            bool reachable = mergeStatesFromPredecessors(node);
-            if (!reachable && node == funEntry && hasAbsState(node))
-                reachable = true;
-            if (reachable)
+            if (mergeStatesFromPredecessors(node))
                 handleICFGNode(node);
         }
         else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
         {
-            const ICFGNode* node = cycle->head()->getICFGNode();
-            bool reachable = mergeStatesFromPredecessors(node);
-            if (!reachable && node == funEntry && hasAbsState(node))
-                reachable = true;
-            if (reachable)
+            if (mergeStatesFromPredecessors(cycle->head()->getICFGNode()))
                 handleLoopOrRecursion(cycle, caller);
         }
     }

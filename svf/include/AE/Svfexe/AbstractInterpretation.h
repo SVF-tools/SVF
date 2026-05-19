@@ -260,10 +260,10 @@ private:
     virtual void handleCallSite(const ICFGNode* node);
 
     /// Handle a WTO cycle (loop or recursive function) using widening/narrowing iteration
-    virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller = nullptr);
+    virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller);
 
     /// Handle a function body via worklist-driven WTO traversal starting from funEntry
-    void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller = nullptr);
+    void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller);
 
     /// Handle an ICFG node: execute statements; return true if state changed
     bool handleICFGNode(const ICFGNode* node);
