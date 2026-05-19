@@ -62,7 +62,7 @@ void FullSparseAbstractInterpretation::buildSVFG()
 // =====================================================================
 
 void FullSparseAbstractInterpretation::joinStates(AbstractState& dst,
-                                                  const AbstractState& src)
+        const AbstractState& src)
 {
     // Propagate GepObjVar entries along ICFG edges.  Kill semantics
     // come from handleNode's as.store(addr, val) overwriting trace at
@@ -88,8 +88,8 @@ void FullSparseAbstractInterpretation::joinStates(AbstractState& dst,
 }
 
 void FullSparseAbstractInterpretation::storeValue(const ValVar* pointer,
-                                                  const AbstractValue& val,
-                                                  const ICFGNode* node)
+        const AbstractValue& val,
+        const ICFGNode* node)
 {
     // Clear branch refinement for every ObjVar this store overwrites.
     // A store redefines the ObjVar; the pre-store branch constraint
@@ -206,20 +206,20 @@ void FullSparseAbstractInterpretation::pullObjValueFlows(const ICFGNode* node)
                                 continue;
                             }
                             if (obj &&
-                                SemiSparseAbstractInterpretation::hasAbsValue(
-                                    obj, srcICFG))
+                                    SemiSparseAbstractInterpretation::hasAbsValue(
+                                        obj, srcICFG))
                             {
                                 AbstractValue cur;
                                 if (SemiSparseAbstractInterpretation::
                                         hasAbsValue(obj, node))
                                 {
                                     cur = SemiSparseAbstractInterpretation::
-                                        getAbsValue(obj, node);
+                                          getAbsValue(obj, node);
                                 }
                                 cur.join_with(SemiSparseAbstractInterpretation::
-                                                  getAbsValue(obj, srcICFG));
+                                              getAbsValue(obj, srcICFG));
                                 SemiSparseAbstractInterpretation::
-                                    updateAbsValue(obj, cur, node);
+                                updateAbsValue(obj, cur, node);
                             }
                         }
                     }
@@ -243,7 +243,7 @@ static bool hasRedefineToSameObj(const ICFGNode* node,
     for (const VFGNode* vfgNode : node->getVFGNodes())
     {
         if (SVFUtil::isa<StoreVFGNode>(vfgNode) &&
-            vfgNode->getDefSVFVars().intersects(edge->getPointsTo()))
+                vfgNode->getDefSVFVars().intersects(edge->getPointsTo()))
             return true;
     }
 
@@ -298,7 +298,7 @@ bool FullSparseAbstractInterpretation::isIndirectSVFGEdgeFeasible(
                 // normal analysis; here we only need caller-side reachability,
                 // e.g. entry -> ret-site.
                 if (const CallICFGNode* call =
-                        SVFUtil::dyn_cast<CallICFGNode>(cur))
+                            SVFUtil::dyn_cast<CallICFGNode>(cur))
                 {
                     const ICFGNode* succ = call->getRetICFGNode();
                     if (!succ || succ->getFun() != fun)
@@ -361,7 +361,7 @@ bool FullSparseAbstractInterpretation::isIndirectSVFGEdgeFeasible(
 }
 
 bool FullSparseAbstractInterpretation::isICFGPathFeasible(const ICFGNode* src,
-                                                          const ICFGNode* dst)
+        const ICFGNode* dst)
 {
     bool feasible = true;
     if (!src || !dst)
@@ -397,7 +397,7 @@ bool FullSparseAbstractInterpretation::isICFGPathFeasible(const ICFGNode* src,
                 // normal analysis; here we only need caller-side reachability,
                 // e.g. entry -> ret-site.
                 if (const CallICFGNode* call =
-                        SVFUtil::dyn_cast<CallICFGNode>(cur))
+                            SVFUtil::dyn_cast<CallICFGNode>(cur))
                 {
                     const ICFGNode* succ = call->getRetICFGNode();
                     if (!succ || succ->getFun() != fun)
@@ -665,7 +665,7 @@ void SemiSparseAbstractInterpretation::updateAbsState(
 }
 
 void SemiSparseAbstractInterpretation::joinStates(AbstractState& dst,
-                                                  const AbstractState& src)
+        const AbstractState& src)
 {
     // ValVars live at def-sites in semi-sparse mode; they don't flow
     // through state merges.  Iterate src's ObjVar (_addrToAbsVal) entries
@@ -697,7 +697,7 @@ const ICFGNode* SemiSparseAbstractInterpretation::getICFGNode(
              SVFUtil::isa<RetValPN>(var))
     {
         return SVFUtil::dyn_cast<CallICFGNode>(var->getICFGNode())
-            ->getRetICFGNode();
+               ->getRetICFGNode();
     }
     // for other ValVars, use their def-site as the node to query abstract
     // value.
@@ -708,8 +708,8 @@ const ICFGNode* SemiSparseAbstractInterpretation::getICFGNode(
 }
 
 void SemiSparseAbstractInterpretation::updateAbsValue(const ValVar* var,
-                                                      const AbstractValue& val,
-                                                      const ICFGNode* node)
+        const AbstractValue& val,
+        const ICFGNode* node)
 {
     // Write to the var's def-site so getAbsValue stays consistent.
     const ICFGNode* defNode = var->getICFGNode();
@@ -724,7 +724,7 @@ const AbstractValue& SemiSparseAbstractInterpretation::getAbsValue(
 }
 
 bool SemiSparseAbstractInterpretation::hasAbsValue(const ValVar* var,
-                                                   const ICFGNode* node) const
+        const ICFGNode* node) const
 {
     return AbstractInterpretation::hasAbsValue(var, getICFGNode(var));
 }

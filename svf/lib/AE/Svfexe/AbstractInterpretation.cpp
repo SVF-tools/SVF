@@ -443,7 +443,7 @@ static IntervalValue computeCmpConstraint(s32_t predicate, s64_t succ,
 }
 
 bool AbstractInterpretation::isCmpBranchEdgeFeasible(const IntraCFGEdge* edge,
-                                                     AbstractState& as)
+        AbstractState& as)
 {
     const ICFGNode* pred = edge->getSrcNode();
     s64_t succ = edge->getSuccessorCondValue();
@@ -489,7 +489,7 @@ bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
 }
 
 void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
-                                                     AbstractState& as)
+        AbstractState& as)
 {
     const SVFVar* cond = edge->getCondition();
     const ICFGNode* pred = edge->getSrcNode();
@@ -505,14 +505,15 @@ void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
         s32_t predicate = cmpStmt->getPredicate();
 
         if (cmpStmt->getOpVarID(0) == IRGraph::NullPtr ||
-            cmpStmt->getOpVarID(1) == IRGraph::NullPtr)
+                cmpStmt->getOpVarID(1) == IRGraph::NullPtr)
         {
             // p == NULL / p != NULL: no interval obj to refine.
         }
         else
         {
             AbstractValue opVal[2] = {getAbsValue(cmpStmt->getOpVar(0), pred),
-                                      getAbsValue(cmpStmt->getOpVar(1), pred)};
+                                      getAbsValue(cmpStmt->getOpVar(1), pred)
+                                     };
 
             const bool hasIntervalCmp =
                 opVal[0].isInterval() && opVal[1].isInterval();
@@ -543,8 +544,8 @@ void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
                     else
                     {
                         IntervalValue narrowed = computeCmpConstraint(
-                            predicate, succ, i == 0, opVal[i].getInterval(),
-                            opVal[other].getInterval());
+                                                     predicate, succ, i == 0, opVal[i].getInterval(),
+                                                     opVal[other].getInterval());
 
                         if (narrowed.isTop())
                         {
@@ -658,7 +659,7 @@ void AbstractInterpretation::recordBranchRefinement(
 }
 
 bool AbstractInterpretation::isBranchEdgeFeasible(const IntraCFGEdge* edge,
-                                                  AbstractState& as)
+        AbstractState& as)
 {
     const SVFVar* cmpVar = edge->getCondition();
     assert(!cmpVar->getInEdges().empty() && "branch condition has no defining edge?");
