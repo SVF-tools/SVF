@@ -145,44 +145,6 @@ void AbsExtAPI::initExtFunMap()
     };
     func_map["set_value"] = svf_set_value;
 
-    auto sse_scanf = [&](const CallICFGNode* callNode)
-    {
-        //scanf("%d", &data);
-        if (callNode->arg_size() < 2) return;
-        AbstractState& as = getAbsState(callNode);
-        const AbstractValue& dstVal = ae->getAbsValue(callNode->getArgument(1), callNode);
-        if (!dstVal.isAddr()) return;
-        for (auto vaddr: dstVal.getAddrs())
-        {
-            u32_t objId = as.getIDFromAddr(vaddr);
-            AbstractValue range = getRangeLimitFromType(svfir->getSVFVar(objId)->getType());
-            as.store(vaddr, range);
-        }
-    };
-    auto sse_fscanf = [&](const CallICFGNode* callNode)
-    {
-        //fscanf(stdin, "%d", &data);
-        if (callNode->arg_size() < 3) return;
-        AbstractState& as = getAbsState(callNode);
-        const AbstractValue& dstVal = ae->getAbsValue(callNode->getArgument(2), callNode);
-        if (!dstVal.isAddr()) return;
-        for (auto vaddr: dstVal.getAddrs())
-        {
-            u32_t objId = as.getIDFromAddr(vaddr);
-            AbstractValue range = getRangeLimitFromType(svfir->getSVFVar(objId)->getType());
-            as.store(vaddr, range);
-        }
-    };
-
-    func_map["__isoc99_fscanf"] = sse_fscanf;
-    func_map["__isoc99_scanf"] = sse_scanf;
-    func_map["__isoc99_vscanf"] = sse_scanf;
-    func_map["fscanf"] = sse_fscanf;
-    func_map["scanf"] = sse_scanf;
-    func_map["sscanf"] = sse_scanf;
-    func_map["__isoc99_sscanf"] = sse_scanf;
-    func_map["vscanf"] = sse_scanf;
-
     auto sse_fread = [&](const CallICFGNode *callNode)
     {
         if (callNode->arg_size() < 3) return;
