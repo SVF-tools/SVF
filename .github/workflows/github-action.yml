@@ -118,7 +118,7 @@ jobs:
       - name: ctest ae_no_main
         working-directory: ${{github.workspace}}/Release-build
         run:
-          ctest -R "^ae_no_main/" -VV
+          ctest -R ae_no_main -VV
 
       - name: ctest ae_semi_sparse
         working-directory: ${{github.workspace}}/Release-build
