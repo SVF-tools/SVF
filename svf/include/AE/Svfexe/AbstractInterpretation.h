@@ -37,9 +37,9 @@
 #include "AE/Svfexe/AEStat.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/SVFBugReport.h"
+#include "Util/WorkList.h"
 #include "Graphs/SCC.h"
 #include "Graphs/CallGraph.h"
-#include <deque>
 
 namespace SVF
 {
@@ -112,7 +112,7 @@ public:
     void analyzeFromAllProgEntries();
 
     /// Get all entry point functions (functions without callers)
-    std::deque<const FunObjVar*> collectProgEntryFuns();
+    FIFOWorkList<const FunObjVar*> collectProgEntryFuns();
 
     /// Factory: returns the singleton instance.  The concrete class is
     /// chosen once, on first call, from `Options::AESparsity()`:

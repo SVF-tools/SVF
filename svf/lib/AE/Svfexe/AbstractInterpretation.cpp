@@ -35,7 +35,6 @@
 #include "Graphs/CallGraph.h"
 #include "WPA/Andersen.h"
 #include <cmath>
-#include <deque>
 #include <memory>
 
 using namespace SVF;
@@ -120,9 +119,9 @@ AbstractInterpretation::~AbstractInterpretation()
 /// Collect entry point functions for analysis.
 /// In main mode, entry is main/svf.main. In no-main mode,
 /// entries are SCCs with no external caller in the Andersen-resolved CallGraph.
-std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
+FIFOWorkList<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
 {
-    std::deque<const FunObjVar*> entryFunctions;
+    FIFOWorkList<const FunObjVar*> entryFunctions;
     const bool mainEntry = Options::AEFunEntry() == AEFunEntryMode::MAIN;
     Set<NodeID> visitedEntrySCCs;
     auto* callGraphSCC = preAnalysis->getCallGraphSCC();
@@ -140,7 +139,7 @@ std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
         {
             if (SVFUtil::isProgEntryFunction(fun))
             {
-                entryFunctions.push_back(fun);
+                entryFunctions.push(fun);
                 break;
             }
         }
@@ -181,10 +180,7 @@ std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
                     break;
                 }
             }
-            if (SVFUtil::isProgEntryFunction(entryFun))
-                entryFunctions.push_front(entryFun);
-            else
-                entryFunctions.push_back(entryFun);
+            entryFunctions.push(entryFun);
         }
     }
 
@@ -212,7 +208,7 @@ void AbstractInterpretation::analyse()
 void AbstractInterpretation::analyzeFromAllProgEntries()
 {
     // Collect all entry point functions
-    std::deque<const FunObjVar*> entryFunctions = collectProgEntryFuns();
+    FIFOWorkList<const FunObjVar*> entryFunctions = collectProgEntryFuns();
 
     if (entryFunctions.empty())
     {
@@ -222,8 +218,9 @@ void AbstractInterpretation::analyzeFromAllProgEntries()
     // handle Global ICFGNode of SVFModule
     handleGlobalNode();
     const ICFGNode* globalNode = icfg->getGlobalICFGNode();
-    for (const FunObjVar* entryFun : entryFunctions)
+    while (!entryFunctions.empty())
     {
+        const FunObjVar* entryFun = entryFunctions.pop();
         const ICFGNode* funEntry = icfg->getFunEntryICFGNode(entryFun);
         updateAbsState(funEntry, getAbsState(globalNode));
         handleFunction(funEntry, nullptr);
