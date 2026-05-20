@@ -35,7 +35,6 @@
 #include "Graphs/CallGraph.h"
 #include "WPA/Andersen.h"
 #include <cmath>
-#include <deque>
 #include <memory>
 
 using namespace SVF;
@@ -118,11 +117,14 @@ AbstractInterpretation::~AbstractInterpretation()
 }
 
 /// Collect entry point functions for analysis.
-/// Entry points are functions without callers (no incoming edges in CallGraph).
-/// Uses a deque to allow efficient insertion at front for prioritizing main()
-std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
+/// In main mode, entry is main/svf.main. In no-main mode,
+/// entries are SCCs with no external caller in the Andersen-resolved CallGraph.
+FIFOWorkList<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
 {
-    std::deque<const FunObjVar*> entryFunctions;
+    FIFOWorkList<const FunObjVar*> entryFunctions;
+    const bool mainEntry = Options::AEFunEntry() == AEFunEntryMode::MAIN;
+    Set<NodeID> visitedEntrySCCs;
+    auto* callGraphSCC = preAnalysis->getCallGraphSCC();
 
     for (auto it = callGraph->begin(); it != callGraph->end(); ++it)
     {
@@ -133,39 +135,80 @@ std::deque<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
         if (fun->isDeclaration())
             continue;
 
-        // Entry points are functions without callers (no incoming edges)
-        if (cgNode->getInEdges().empty())
+        if (mainEntry)
         {
-            // If main exists, put it first for priority using deque's push_front
             if (SVFUtil::isProgEntryFunction(fun))
             {
-                entryFunctions.push_front(fun);
-            }
-            else
-            {
-                entryFunctions.push_back(fun);
+                entryFunctions.push(fun);
+                break;
             }
         }
+        else
+        {
+            NodeID repNodeId = callGraphSCC->repNode(cgNode->getId());
+            if (visitedEntrySCCs.count(repNodeId))
+                continue;
+
+            const NodeBS& cgSCCNodes = callGraphSCC->subNodes(repNodeId);
+            bool hasExternalCaller = false;
+            for (NodeID nodeId : cgSCCNodes)
+            {
+                const CallGraphNode* sccNode = callGraph->getGNode(nodeId);
+                for (auto inEdge : sccNode->getInEdges())
+                {
+                    if (!cgSCCNodes.test(inEdge->getSrcID()))
+                    {
+                        hasExternalCaller = true;
+                        break;
+                    }
+                }
+                if (hasExternalCaller)
+                    break;
+            }
+
+            if (hasExternalCaller)
+                continue;
+
+            visitedEntrySCCs.insert(repNodeId);
+            const FunObjVar* entryFun = fun;
+            for (NodeID nodeId : cgSCCNodes)
+            {
+                const FunObjVar* sccFun = callGraph->getGNode(nodeId)->getFunction();
+                if (SVFUtil::isProgEntryFunction(sccFun))
+                {
+                    entryFun = sccFun;
+                    break;
+                }
+            }
+            entryFunctions.push(entryFun);
+        }
+    }
+
+    if (mainEntry && entryFunctions.empty())
+    {
+        SVFUtil::errs() << SVFUtil::errMsg(
+            "AE -ae-fun-entry=main requires a program entry function, but main/svf.main was not found.\n");
+        assert(false && "No program entry function found for -ae-fun-entry=main");
+        abort();
     }
 
     return entryFunctions;
 }
 
 
-/// Program entry - analyze from all entry points (multi-entry analysis is the default)
+/// Program entry - entry policy is selected by -ae-fun-entry.
 void AbstractInterpretation::analyse()
 {
-    // Always use multi-entry analysis from all entry points
     analyzeFromAllProgEntries();
 }
 
-/// Analyze all entry points (functions without callers) - for whole-program analysis.
+/// Analyze the entry functions selected by collectProgEntryFuns().
 /// Abstract state is shared across entry points so that functions analyzed from
 /// earlier entries are not re-analyzed from scratch.
 void AbstractInterpretation::analyzeFromAllProgEntries()
 {
     // Collect all entry point functions
-    std::deque<const FunObjVar*> entryFunctions = collectProgEntryFuns();
+    FIFOWorkList<const FunObjVar*> entryFunctions = collectProgEntryFuns();
 
     if (entryFunctions.empty())
     {
@@ -174,10 +217,13 @@ void AbstractInterpretation::analyzeFromAllProgEntries()
     }
     // handle Global ICFGNode of SVFModule
     handleGlobalNode();
-    for (const FunObjVar* entryFun : entryFunctions)
+    const ICFGNode* globalNode = icfg->getGlobalICFGNode();
+    while (!entryFunctions.empty())
     {
+        const FunObjVar* entryFun = entryFunctions.pop();
         const ICFGNode* funEntry = icfg->getFunEntryICFGNode(entryFun);
-        handleFunction(funEntry);
+        updateAbsState(funEntry, getAbsState(globalNode));
+        handleFunction(funEntry, nullptr);
     }
 }
 
@@ -736,8 +782,7 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
 void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller)
 {
     auto it = preAnalysis->getFuncToWTO().find(funEntry->getFun());
-    if (it == preAnalysis->getFuncToWTO().end())
-        return;
+    assert(it != preAnalysis->getFuncToWTO().end() && "Missing WTO for function");
 
     // Push all top-level WTO components into the worklist in WTO order
     FIFOWorkList<const ICFGWTOComp*> worklist(it->second->getWTOComponents());

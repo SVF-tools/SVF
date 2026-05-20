@@ -799,6 +799,20 @@ const OptionMap<u32_t> Options::AESparsity(
         "Sparse abstract execution via SVFG."
     }
 });
+const OptionMap<u32_t> Options::AEFunEntry(
+    "ae-fun-entry",
+    "Abstract execution function entry mode (Default: main)",
+    AbstractInterpretation::AEFunEntryMode::MAIN,
+{
+    {
+        AbstractInterpretation::AEFunEntryMode::MAIN, "main",
+        "Analyze from the program entry function only."
+    },
+    {
+        AbstractInterpretation::AEFunEntryMode::NO_MAIN, "no-main",
+        "Analyze from every no-external-caller SCC after Andersen resolves the call graph."
+    }
+});
 const Option<u32_t> Options::WidenDelay(
     "widen-delay", "Loop Widen Delay", 3);
 const OptionMap<u32_t> Options::HandleRecur(

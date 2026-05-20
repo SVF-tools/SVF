@@ -37,9 +37,9 @@
 #include "AE/Svfexe/AEStat.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/SVFBugReport.h"
+#include "Util/WorkList.h"
 #include "Graphs/SCC.h"
 #include "Graphs/CallGraph.h"
-#include <deque>
 
 namespace SVF
 {
@@ -94,6 +94,12 @@ public:
         WIDEN_NARROW
     };
 
+    enum AEFunEntryMode
+    {
+        MAIN,
+        NO_MAIN
+    };
+
     virtual void runOnModule();
 
     /// Destructor
@@ -106,7 +112,7 @@ public:
     void analyzeFromAllProgEntries();
 
     /// Get all entry point functions (functions without callers)
-    std::deque<const FunObjVar*> collectProgEntryFuns();
+    FIFOWorkList<const FunObjVar*> collectProgEntryFuns();
 
     /// Factory: returns the singleton instance.  The concrete class is
     /// chosen once, on first call, from `Options::AESparsity()`:
@@ -254,10 +260,10 @@ private:
     virtual void handleCallSite(const ICFGNode* node);
 
     /// Handle a WTO cycle (loop or recursive function) using widening/narrowing iteration
-    virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller = nullptr);
+    virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller);
 
     /// Handle a function body via worklist-driven WTO traversal starting from funEntry
-    void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller = nullptr);
+    void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller);
 
     /// Handle an ICFG node: execute statements; return true if state changed
     bool handleICFGNode(const ICFGNode* node);
