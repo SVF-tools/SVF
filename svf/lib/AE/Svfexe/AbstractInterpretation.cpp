@@ -187,7 +187,7 @@ FIFOWorkList<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
     if (mainEntry && entryFunctions.empty())
     {
         SVFUtil::errs() << SVFUtil::errMsg(
-            "AE -ae-fun-entry=main requires a program entry function, but main/svf.main was not found.\n");
+                            "AE -ae-fun-entry=main requires a program entry function, but main/svf.main was not found.\n");
         assert(false && "No program entry function found for -ae-fun-entry=main");
         abort();
     }
