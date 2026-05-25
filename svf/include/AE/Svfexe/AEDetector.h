@@ -196,7 +196,11 @@ public:
      */
     void addToGepObjOffsetFromBase(const GepObjVar* obj, const IntervalValue& offset)
     {
-        gepObjOffsetFromBase[obj] = offset;
+        auto it = gepObjOffsetFromBase.find(obj);
+        if (it == gepObjOffsetFromBase.end())
+            gepObjOffsetFromBase[obj] = offset;
+        else
+            it->second.join_with(offset);
     }
 
     /**
@@ -320,6 +324,13 @@ private:
      * @return True if a buffer overflow is detected, false otherwise.
      */
     bool detectStrcpy(const CallICFGNode *call);
+
+    /**
+     * @brief Detects out-of-bounds string reads in strcmp-like function calls.
+     * @param call Pointer to the call ICFG node.
+     * @return True if both string reads are safe, false otherwise.
+     */
+    bool detectStrcmp(const CallICFGNode *call);
 
 private:
     Map<const GepObjVar*, IntervalValue> gepObjOffsetFromBase; ///< Maps GEP objects to their offsets from the base.

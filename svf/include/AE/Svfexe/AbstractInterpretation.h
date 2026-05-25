@@ -231,6 +231,17 @@ protected:
     /// base ICFG-edge merge.
     virtual bool mergeStatesFromPredecessors(const ICFGNode* node);
 
+    /// Build a dense-comparable function-entry snapshot after the entry node
+    /// transfer has run. Sparse modes keep ValVars at def-sites, so the
+    /// snapshot explicitly materializes the ValVars mentioned by entry
+    /// statements next to the entry ObjVar/freed state.
+    AbstractState buildFunctionEntrySnapshot(const ICFGNode* funEntry);
+    bool sameFunctionEntrySnapshot(const AbstractState& lhs,
+                                   const AbstractState& rhs) const;
+    void addValVarToFunctionEntrySnapshot(AbstractState& snapshot,
+                                          const ValVar* var,
+                                          const ICFGNode* node);
+
     /// Returns true if the branch edge is reachable under the current state.
     /// Pure query: does not update `as` or branch refinement traces.
     bool isBranchEdgeFeasible(const IntraCFGEdge* edge, AbstractState& as);
@@ -337,6 +348,7 @@ protected:
     SVFIR* svfir{nullptr};
     AEWTO* preAnalysis{nullptr};
     Map<const ICFGNode*, AbstractState> abstractTrace; ///< per-node trace; owned here
+    Map<const ICFGNode*, AbstractState> functionEntrySnapshots;
 
     bool shouldApplyNarrowing(const FunObjVar* fun);
 };

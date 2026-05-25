@@ -286,13 +286,17 @@ IntervalValue AbstractInterpretation::getGepByteOffset(const GepStmt* gep)
                     res = res + IntervalValue(0, 0);
                 else
                 {
-                    s64_t ub = (idxVal.ub().getIntNumeral() < 0) ? 0
-                               : (double)Options::MaxFieldLimit() / elemByteSize >= idxVal.ub().getIntNumeral()
-                               ? elemByteSize * idxVal.ub().getIntNumeral()
+                    s64_t idxUb = idxVal.ub().is_plus_infinity() ?
+                                  Options::MaxFieldLimit() : idxVal.ub().getIntNumeral();
+                    s64_t idxLb = idxVal.lb().is_minus_infinity() ?
+                                  0 : idxVal.lb().getIntNumeral();
+                    s64_t ub = (idxUb < 0) ? 0
+                               : (double)Options::MaxFieldLimit() / elemByteSize >= idxUb
+                               ? elemByteSize * idxUb
                                : Options::MaxFieldLimit();
-                    s64_t lb = (idxVal.lb().getIntNumeral() < 0) ? 0
-                               : (double)Options::MaxFieldLimit() / elemByteSize >= idxVal.lb().getIntNumeral()
-                               ? elemByteSize * idxVal.lb().getIntNumeral()
+                    s64_t lb = (idxLb < 0) ? 0
+                               : (double)Options::MaxFieldLimit() / elemByteSize >= idxLb
+                               ? elemByteSize * idxLb
                                : Options::MaxFieldLimit();
                     res = res + IntervalValue(lb, ub);
                 }
@@ -341,8 +345,29 @@ AbstractValue AbstractInterpretation::loadValue(const ValVar* pointer, const ICF
     AbstractValue res;
     for (auto addr : ptrVal.getAddrs())
     {
-        res.join_with(
-            getAbsValue(svfir->getSVFVar(as.getIDFromAddr(addr)), node));
+        NodeID objId = as.getIDFromAddr(addr);
+        const SVFVar* objVar = svfir->getSVFVar(objId);
+        AbstractValue loaded = getAbsValue(objVar, node);
+        if (!loaded.isInterval() && !loaded.isAddr())
+        {
+            if (const BaseObjVar* baseObj = SVFUtil::dyn_cast<BaseObjVar>(objVar))
+            {
+                if (baseObj->isArray() || baseObj->isStruct() ||
+                        baseObj->isConstDataOrConstGlobal())
+                {
+                    NodeID field0 = svfir->getGepObjVar(baseObj, 0);
+                    if (field0 != objId)
+                    {
+                        if (const ObjVar* fieldObj = SVFUtil::dyn_cast<ObjVar>(
+                                    svfir->getSVFVar(field0)))
+                        {
+                            loaded.join_with(getAbsValue(fieldObj, node));
+                        }
+                    }
+                }
+            }
+        }
+        res.join_with(loaded);
     }
     return res;
 }
@@ -399,4 +424,3 @@ u32_t AbstractInterpretation::getAllocaInstByteSize(const AddrStmt* addr)
     assert(false && "Addr rhs value is not ObjVar");
     abort();
 }
-

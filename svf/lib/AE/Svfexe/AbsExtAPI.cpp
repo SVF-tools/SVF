@@ -46,7 +46,7 @@ void AbsExtAPI::initExtFunMap()
         /* run real ext function */            \
         const SVFVar* argVar = callNode->getArgument(0); \
         const AbstractValue& argVal = ae->getAbsValue(argVar, callNode); \
-        if (!argVal.isInterval() && !argVal.isAddr()) return; \
+        if (!argVal.isInterval() || !argVal.getInterval().is_numeral()) return; \
         u32_t rhs = argVal.getInterval().lb().getIntNumeral(); \
         s32_t res = FUNC_NAME(rhs);            \
         const SVFVar* retVar = callNode->getRetICFGNode()->getActualRet(); \
@@ -455,14 +455,28 @@ IntervalValue AbsExtAPI::getStrlen(const ValVar *strValue, const ICFGNode* node)
     const AbstractValue& ptrVal = ae->getAbsValue(strValue, node);
     for (const auto& addr : ptrVal.getAddrs())
     {
+        if (AbstractState::isBlackHoleObjAddr(addr) ||
+                AbstractState::isNullMem(addr) ||
+                !AbstractState::isVirtualMemAddress(addr))
+            continue;
+
         NodeID objId = as.getIDFromAddr(addr);
-        if (svfir->getBaseObject(objId)->isConstantByteSize())
+        if (svfir->getSVFVarMap().find(objId) == svfir->getSVFVarMap().end())
+            continue;
+
+        const BaseObjVar* baseObj = svfir->getBaseObject(objId);
+        if (baseObj == nullptr)
+            continue;
+
+        if (baseObj->isConstantByteSize())
         {
-            dst_size = svfir->getBaseObject(objId)->getByteSizeOfObj();
+            dst_size = baseObj->getByteSizeOfObj();
         }
         else
         {
-            const ICFGNode* icfgNode = svfir->getBaseObject(objId)->getICFGNode();
+            const ICFGNode* icfgNode = baseObj->getICFGNode();
+            if (icfgNode == nullptr)
+                continue;
             for (const SVFStmt* stmt2: icfgNode->getSVFStmts())
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))

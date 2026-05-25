@@ -119,6 +119,10 @@ bool AbstractInterpretation::skipRecursiveCall(const CallICFGNode* callNode)
     if (!isRecursiveFun(callee))
         return false;
 
+    const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
+    if (calleeEntry && functionEntrySnapshots.find(calleeEntry) == functionEntrySnapshots.end())
+        return false;
+
     // For recursive functions, skip only recursive callsites (within same SCC).
     // Entry calls (from outside SCC) are not skipped - they are inlined so that
     // handleLoopOrRecursion() can analyze the function body.

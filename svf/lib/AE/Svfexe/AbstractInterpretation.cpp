@@ -40,6 +40,14 @@
 using namespace SVF;
 using namespace SVFUtil;
 
+namespace
+{
+u64_t aeFunctionTrace = 0;
+u64_t aeFunctionEntryChanged = 0;
+u64_t aeFunctionEntryFixpointHit = 0;
+u64_t aeFunctionEntryShortcutHit = 0;
+u64_t aeFunctionEntryFixpointNoExit = 0;
+}
 
 void AbstractInterpretation::runOnModule()
 {
@@ -51,6 +59,11 @@ void AbstractInterpretation::runOnModule()
     analyse();
     utils->checkPointAllSet();
     stat->endClk();
+    stat->generalNumMap["AE_FP_Function_Trace"] = static_cast<u32_t>(aeFunctionTrace);
+    stat->generalNumMap["AE_FP_Function_Entry_Changed"] = static_cast<u32_t>(aeFunctionEntryChanged);
+    stat->generalNumMap["AE_FP_Function_Entry_Fixpoint_Hit"] = static_cast<u32_t>(aeFunctionEntryFixpointHit);
+    stat->generalNumMap["AE_FP_Function_Entry_Shortcut_Hit"] = static_cast<u32_t>(aeFunctionEntryShortcutHit);
+    stat->generalNumMap["AE_FP_Function_Entry_Fixpoint_NoExit"] = static_cast<u32_t>(aeFunctionEntryFixpointNoExit);
     stat->finializeStat();
     if (Options::PStat())
         stat->performStat();
@@ -332,6 +345,70 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
     return true;
 }
 
+bool AbstractInterpretation::sameFunctionEntrySnapshot(
+    const AbstractState& lhs, const AbstractState& rhs) const
+{
+    return lhs == rhs && lhs.getFreedAddrs() == rhs.getFreedAddrs();
+}
+
+void AbstractInterpretation::addValVarToFunctionEntrySnapshot(
+    AbstractState& snapshot, const ValVar* var, const ICFGNode* node)
+{
+    if (!var || !node || !hasAbsValue(var, node))
+        return;
+
+    snapshot[var->getId()] = getAbsValue(var, node);
+}
+
+AbstractState AbstractInterpretation::buildFunctionEntrySnapshot(
+    const ICFGNode* funEntry)
+{
+    AbstractState snapshot = getAbsState(funEntry);
+
+    for (const SVFStmt* stmt : funEntry->getSVFStmts())
+    {
+        if (const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(stmt))
+        {
+            addValVarToFunctionEntrySnapshot(snapshot, callPE->getRes(), funEntry);
+            for (u32_t i = 0; i < callPE->getOpVarNum(); ++i)
+                addValVarToFunctionEntrySnapshot(snapshot, callPE->getOpVar(i),
+                                                 callPE->getOpCallICFGNode(i));
+        }
+        else if (const MultiOpndStmt* multi =
+                     SVFUtil::dyn_cast<MultiOpndStmt>(stmt))
+        {
+            addValVarToFunctionEntrySnapshot(snapshot, multi->getRes(), funEntry);
+            for (u32_t i = 0; i < multi->getOpVarNum(); ++i)
+                addValVarToFunctionEntrySnapshot(snapshot, multi->getOpVar(i),
+                                                 funEntry);
+        }
+        else if (const UnaryOPStmt* unary = SVFUtil::dyn_cast<UnaryOPStmt>(stmt))
+        {
+            addValVarToFunctionEntrySnapshot(snapshot, unary->getRes(), funEntry);
+            addValVarToFunctionEntrySnapshot(snapshot, unary->getOpVar(), funEntry);
+        }
+        else if (const BranchStmt* branch = SVFUtil::dyn_cast<BranchStmt>(stmt))
+        {
+            addValVarToFunctionEntrySnapshot(snapshot, branch->getBranchInst(),
+                                             funEntry);
+            if (branch->isConditional())
+                addValVarToFunctionEntrySnapshot(snapshot, branch->getCondition(),
+                                                 funEntry);
+        }
+        else if (const AssignStmt* assign = SVFUtil::dyn_cast<AssignStmt>(stmt))
+        {
+            addValVarToFunctionEntrySnapshot(
+                snapshot, SVFUtil::dyn_cast<ValVar>(assign->getLHSVar()),
+                funEntry);
+            addValVarToFunctionEntrySnapshot(
+                snapshot, SVFUtil::dyn_cast<ValVar>(assign->getRHSVar()),
+                funEntry);
+        }
+    }
+
+    return snapshot;
+}
+
 /// Given a cmp operand, walk its SSA def edge to find the LoadStmt that
 /// produced it. This lets us trace back to the ObjVar in memory so that
 /// branch narrowing can refine the stored value.
@@ -375,6 +452,9 @@ static IntervalValue computeCmpConstraint(s32_t predicate, s64_t succ,
         bool isLHS, const IntervalValue& self,
         const IntervalValue& other)
 {
+    if (self.isBottom() || other.isBottom())
+        return IntervalValue::top();
+
     // Normalize: always reason from the LHS perspective.
     // If we are the RHS operand, swap the predicate direction.
     if (!isLHS)
@@ -488,6 +568,73 @@ static IntervalValue computeCmpConstraint(s32_t predicate, s64_t succ,
     return result;
 }
 
+static IntervalValue computeAddressCmp(s32_t predicate,
+                                        const AddressValue& lhs,
+                                        const AddressValue& rhs)
+{
+    switch (predicate)
+    {
+    case CmpStmt::ICMP_EQ:
+    case CmpStmt::FCMP_OEQ:
+    case CmpStmt::FCMP_UEQ:
+        if (lhs.empty() && rhs.empty())
+            return IntervalValue(1, 1);
+        // Null is represented as an empty address set in AE.  When a pointer
+        // value has been joined through memory/phi flow, a possible null gets
+        // erased by the non-empty address set.  Treat one-empty comparisons as
+        // maybe-null to keep list/sentinel exits feasible.
+        if (lhs.empty() || rhs.empty())
+            return IntervalValue(0, 1);
+        if (lhs.hasIntersect(rhs))
+            return IntervalValue(0, 1);
+        return IntervalValue(0, 0);
+    case CmpStmt::ICMP_NE:
+    case CmpStmt::FCMP_ONE:
+    case CmpStmt::FCMP_UNE:
+        if (lhs.empty() && rhs.empty())
+            return IntervalValue(0, 0);
+        if (lhs.empty() || rhs.empty())
+            return IntervalValue(0, 1);
+        if (lhs.hasIntersect(rhs))
+            return IntervalValue(0, 1);
+        return IntervalValue(1, 1);
+    case CmpStmt::ICMP_UGT:
+    case CmpStmt::ICMP_SGT:
+    case CmpStmt::FCMP_OGT:
+    case CmpStmt::FCMP_UGT:
+        return lhs.size() == 1 && rhs.size() == 1 ?
+               IntervalValue(*lhs.begin() > *rhs.begin()) : IntervalValue(0, 1);
+    case CmpStmt::ICMP_UGE:
+    case CmpStmt::ICMP_SGE:
+    case CmpStmt::FCMP_OGE:
+    case CmpStmt::FCMP_UGE:
+        return lhs.size() == 1 && rhs.size() == 1 ?
+               IntervalValue(*lhs.begin() >= *rhs.begin()) : IntervalValue(0, 1);
+    case CmpStmt::ICMP_ULT:
+    case CmpStmt::ICMP_SLT:
+    case CmpStmt::FCMP_OLT:
+    case CmpStmt::FCMP_ULT:
+        return lhs.size() == 1 && rhs.size() == 1 ?
+               IntervalValue(*lhs.begin() < *rhs.begin()) : IntervalValue(0, 1);
+    case CmpStmt::ICMP_ULE:
+    case CmpStmt::ICMP_SLE:
+    case CmpStmt::FCMP_OLE:
+    case CmpStmt::FCMP_ULE:
+        return lhs.size() == 1 && rhs.size() == 1 ?
+               IntervalValue(*lhs.begin() <= *rhs.begin()) : IntervalValue(0, 1);
+    case CmpStmt::FCMP_FALSE:
+        return IntervalValue(0, 0);
+    case CmpStmt::FCMP_TRUE:
+        return IntervalValue(1, 1);
+    case CmpStmt::FCMP_ORD:
+    case CmpStmt::FCMP_UNO:
+        return IntervalValue(0, 1);
+    default:
+        assert(false && "undefined compare: ");
+        return IntervalValue(0, 1);
+    }
+}
+
 bool AbstractInterpretation::isCmpBranchEdgeFeasible(const IntraCFGEdge* edge,
         AbstractState& as)
 {
@@ -496,22 +643,10 @@ bool AbstractInterpretation::isCmpBranchEdgeFeasible(const IntraCFGEdge* edge,
     const CmpStmt* cmpStmt = SVFUtil::cast<CmpStmt>(
                                  *edge->getCondition()->getInEdges().begin());
 
-    if (cmpStmt->getOpVarID(0) == IRGraph::NullPtr ||
-            cmpStmt->getOpVarID(1) == IRGraph::NullPtr)
-        return true;
-
-    AbstractValue opVal[2] =
-    {
-        getAbsValue(cmpStmt->getOpVar(0), pred),
-        getAbsValue(cmpStmt->getOpVar(1), pred)
-    };
-
-    const bool hasIntervalCmp = opVal[0].isInterval() && opVal[1].isInterval();
-    if (!hasIntervalCmp && (opVal[0].isAddr() || opVal[1].isAddr()))
-        return true;
-
     // Feasibility check: cmp result must be compatible with branch successor
     IntervalValue resVal = getAbsValue(cmpStmt->getRes(), pred).getInterval();
+    if (resVal.isBottom())
+        return true;
     resVal.meet_with(IntervalValue((s64_t)succ, succ));
     if (resVal.isBottom())
         return false;
@@ -526,10 +661,46 @@ bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
     s64_t succ = edge->getSuccessorCondValue();
     const SVFVar* var = edge->getCondition();
 
+    if ((succ == 0 || succ == 1))
+    {
+        if (const ConstIntValVar* constCond =
+                    SVFUtil::dyn_cast<ConstIntValVar>(var))
+        {
+            // LLVM i1 true is all-ones when sign-extended (-1), while
+            // branch successor values use 1 for the true edge.
+            if (constCond->getSExtValue() == -1 &&
+                    constCond->getZExtValue() == 1)
+            {
+                return succ == 1;
+            }
+        }
+    }
+
     AbstractValue condVal = getAbsValue(var, pred);
     IntervalValue switch_cond = condVal.getInterval();
+    if (succ == -1)
+    {
+        if (switch_cond.isBottom())
+            return true;
+        if (!switch_cond.is_numeral())
+            return true;
+
+        const s64_t concreteCond = switch_cond.getIntNumeral();
+        for (const ICFGEdge* outEdge : pred->getOutEdges())
+        {
+            const IntraCFGEdge* intraOut =
+                SVFUtil::dyn_cast<IntraCFGEdge>(outEdge);
+            if (!intraOut || intraOut == edge || !intraOut->getCondition())
+                continue;
+            if (intraOut->getCondition() == var &&
+                    intraOut->getSuccessorCondValue() == concreteCond)
+                return false;
+        }
+        return true;
+    }
     switch_cond.meet_with(IntervalValue(succ, succ));
-    if (switch_cond.isBottom())
+    bool feasible = !switch_cond.isBottom();
+    if (!feasible)
         return false;
     return true;
 }
@@ -542,8 +713,8 @@ void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
     const ICFGNode* succNode = edge->getDstNode();
     s64_t succ = edge->getSuccessorCondValue();
 
-    assert(!cond->getInEdges().empty() &&
-           "branch condition has no defining edge?");
+    if (cond->getInEdges().empty())
+        return;
     const SVFStmt* condDef = *cond->getInEdges().begin();
 
     if (const CmpStmt* cmpStmt = SVFUtil::dyn_cast<CmpStmt>(condDef))
@@ -627,6 +798,9 @@ void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
 
         AbstractValue condVal = getAbsValue(var, pred);
         IntervalValue switch_cond = condVal.getInterval();
+        if (succ == -1)
+            return;
+
         switch_cond.meet_with(IntervalValue(succ, succ));
         if (switch_cond.isBottom())
         {
@@ -708,7 +882,8 @@ bool AbstractInterpretation::isBranchEdgeFeasible(const IntraCFGEdge* edge,
         AbstractState& as)
 {
     const SVFVar* cmpVar = edge->getCondition();
-    assert(!cmpVar->getInEdges().empty() && "branch condition has no defining edge?");
+    if (cmpVar == nullptr || cmpVar->getInEdges().empty())
+        return true;
     if (SVFUtil::isa<CmpStmt>(*cmpVar->getInEdges().begin()))
         return isCmpBranchEdgeFeasible(edge, as);
     return isSwitchBranchEdgeFeasible(edge, as);
@@ -781,11 +956,86 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
  */
 void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller)
 {
+    const ICFGWTO* funWTO = nullptr;
     auto it = preAnalysis->getFuncToWTO().find(funEntry->getFun());
-    assert(it != preAnalysis->getFuncToWTO().end() && "Missing WTO for function");
+    if (it != preAnalysis->getFuncToWTO().end())
+    {
+        funWTO = it->second;
+    }
+    else
+    {
+        for (const auto& kv : preAnalysis->getFuncToWTO())
+        {
+            if (kv.second && kv.second->scc.find(funEntry->getFun()) != kv.second->scc.end())
+            {
+                funWTO = kv.second;
+                break;
+            }
+        }
+    }
+    if (!funWTO)
+    {
+        return;
+    }
+
+    ++aeFunctionTrace;
+    bool entryReachable = mergeStatesFromPredecessors(funEntry);
+    if (!entryReachable && hasAbsState(funEntry))
+        entryReachable = true;
+
+    if (entryReachable)
+    {
+        handleICFGNode(funEntry);
+
+        AbstractState entrySnapshot = buildFunctionEntrySnapshot(funEntry);
+        auto sit = functionEntrySnapshots.find(funEntry);
+        const bool entryChanged =
+            sit == functionEntrySnapshots.end() ||
+            !sameFunctionEntrySnapshot(sit->second, entrySnapshot);
+        functionEntrySnapshots[funEntry] = entrySnapshot;
+
+        if (entryChanged)
+            ++aeFunctionEntryChanged;
+        else
+        {
+            ++aeFunctionEntryFixpointHit;
+            const ICFGNode* funExit = icfg->getFunExitICFGNode(funEntry->getFun());
+            if (funExit && hasAbsState(funExit))
+            {
+                ++aeFunctionEntryShortcutHit;
+                if (aeFunctionEntryShortcutHit <= 16 || aeFunctionEntryShortcutHit % 10000 == 0)
+                {
+                    SVFUtil::outs() << "[AE-FP-ENTRY-SKIP] entry snapshot unchanged shortcut="
+                                    << aeFunctionEntryShortcutHit
+                                    << " entry=" << funEntry->getId()
+                                    << " exit=" << funExit->getId()
+                                    << " fun=" << funEntry->getFun()->getName()
+                                    << " entry_fixpoint=" << aeFunctionEntryFixpointHit
+                                    << " function_trace=" << aeFunctionTrace
+                                    << "\n";
+                    SVFUtil::outs().flush();
+                }
+                return;
+            }
+            ++aeFunctionEntryFixpointNoExit;
+            if (aeFunctionEntryFixpointNoExit <= 16 || aeFunctionEntryFixpointNoExit % 10000 == 0)
+            {
+                SVFUtil::outs() << "[AE-FP-ENTRY] entry snapshot unchanged without exit="
+                                << aeFunctionEntryFixpointNoExit
+                                << " entry=" << funEntry->getId()
+                                << " fun=" << funEntry->getFun()->getName()
+                                << " entry_fixpoint=" << aeFunctionEntryFixpointHit
+                                << " function_trace=" << aeFunctionTrace
+                                << " entry_changed=" << aeFunctionEntryChanged
+                                << "\n";
+                SVFUtil::outs().flush();
+            }
+            return;
+        }
+    }
 
     // Push all top-level WTO components into the worklist in WTO order
-    FIFOWorkList<const ICFGWTOComp*> worklist(it->second->getWTOComponents());
+    FIFOWorkList<const ICFGWTOComp*> worklist(funWTO->getWTOComponents());
 
     while (!worklist.empty())
     {
@@ -794,12 +1044,19 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
         if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
         {
             const ICFGNode* node = singleton->getICFGNode();
-            if (mergeStatesFromPredecessors(node))
+            if (node == funEntry)
+                continue;
+            bool reachable = mergeStatesFromPredecessors(node);
+            if (reachable)
                 handleICFGNode(node);
         }
         else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
         {
-            if (mergeStatesFromPredecessors(cycle->head()->getICFGNode()))
+            const ICFGNode* node = cycle->head()->getICFGNode();
+            bool reachable = mergeStatesFromPredecessors(node);
+            if (!reachable && node == funEntry && hasAbsState(node))
+                reachable = true;
+            if (reachable)
                 handleLoopOrRecursion(cycle, caller);
         }
     }
@@ -1145,31 +1402,21 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
     const AbstractValue& op0Val = getAbsValue(cmp->getOpVar(0), node);
     const AbstractValue& op1Val = getAbsValue(cmp->getOpVar(1), node);
 
-    // if it is address
-    if (op0Val.isAddr() && op1Val.isAddr())
+    if ((op0Val.isAddr() || op0 == IRGraph::NullPtr) &&
+            (op1Val.isAddr() || op1 == IRGraph::NullPtr))
     {
-        IntervalValue resVal;
-        const AddressValue& addrOp0 = op0Val.getAddrs();
-        const AddressValue& addrOp1 = op1Val.getAddrs();
-        if (addrOp0.equals(addrOp1))
-        {
-            resVal = IntervalValue(1, 1);
-        }
-        else if (addrOp0.hasIntersect(addrOp1))
-        {
-            resVal = IntervalValue(0, 1);
-        }
-        else
-        {
-            resVal = IntervalValue(0, 0);
-        }
+        AddressValue lhs = op0 == IRGraph::NullPtr ? AddressValue() : op0Val.getAddrs();
+        AddressValue rhs = op1 == IRGraph::NullPtr ? AddressValue() : op1Val.getAddrs();
+        IntervalValue resVal = computeAddressCmp(cmp->getPredicate(), lhs, rhs);
         updateAbsValue(cmp->getRes(), resVal, node);
     }
-    // if op0 or op1 is nullptr, compare abstractValue instead of touching addr or interval
     else if (op0 == IRGraph::NullPtr || op1 == IRGraph::NullPtr)
     {
-        IntervalValue resVal = (op0Val.equals(op1Val)) ? IntervalValue(1, 1) : IntervalValue(0, 0);
-        updateAbsValue(cmp->getRes(), resVal, node);
+        updateAbsValue(cmp->getRes(), IntervalValue(0, 1), node);
+    }
+    else if (op0Val.isAddr() || op1Val.isAddr())
+    {
+        updateAbsValue(cmp->getRes(), IntervalValue(0, 1), node);
     }
     else
     {
@@ -1237,127 +1484,6 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
                 }
                 updateAbsValue(cmp->getRes(), resVal, node);
             }
-            else if (op0Val.isAddr() && op1Val.isAddr())
-            {
-                const AddressValue& lhs = op0Val.getAddrs();
-                const AddressValue& rhs = op1Val.getAddrs();
-                auto predicate = cmp->getPredicate();
-                switch (predicate)
-                {
-                case CmpStmt::ICMP_EQ:
-                case CmpStmt::FCMP_OEQ:
-                case CmpStmt::FCMP_UEQ:
-                {
-                    if (lhs.hasIntersect(rhs))
-                    {
-                        resVal = IntervalValue(0, 1);
-                    }
-                    else if (lhs.empty() && rhs.empty())
-                    {
-                        resVal = IntervalValue(1, 1);
-                    }
-                    else
-                    {
-                        resVal = IntervalValue(0, 0);
-                    }
-                    break;
-                }
-                case CmpStmt::ICMP_NE:
-                case CmpStmt::FCMP_ONE:
-                case CmpStmt::FCMP_UNE:
-                {
-                    if (lhs.hasIntersect(rhs))
-                    {
-                        resVal = IntervalValue(0, 1);
-                    }
-                    else if (lhs.empty() && rhs.empty())
-                    {
-                        resVal = IntervalValue(0, 0);
-                    }
-                    else
-                    {
-                        resVal = IntervalValue(1, 1);
-                    }
-                    break;
-                }
-                case CmpStmt::ICMP_UGT:
-                case CmpStmt::ICMP_SGT:
-                case CmpStmt::FCMP_OGT:
-                case CmpStmt::FCMP_UGT:
-                {
-                    if (lhs.size() == 1 && rhs.size() == 1)
-                    {
-                        resVal = IntervalValue(*lhs.begin() > *rhs.begin());
-                    }
-                    else
-                    {
-                        resVal = IntervalValue(0, 1);
-                    }
-                    break;
-                }
-                case CmpStmt::ICMP_UGE:
-                case CmpStmt::ICMP_SGE:
-                case CmpStmt::FCMP_OGE:
-                case CmpStmt::FCMP_UGE:
-                {
-                    if (lhs.size() == 1 && rhs.size() == 1)
-                    {
-                        resVal = IntervalValue(*lhs.begin() >= *rhs.begin());
-                    }
-                    else
-                    {
-                        resVal = IntervalValue(0, 1);
-                    }
-                    break;
-                }
-                case CmpStmt::ICMP_ULT:
-                case CmpStmt::ICMP_SLT:
-                case CmpStmt::FCMP_OLT:
-                case CmpStmt::FCMP_ULT:
-                {
-                    if (lhs.size() == 1 && rhs.size() == 1)
-                    {
-                        resVal = IntervalValue(*lhs.begin() < *rhs.begin());
-                    }
-                    else
-                    {
-                        resVal = IntervalValue(0, 1);
-                    }
-                    break;
-                }
-                case CmpStmt::ICMP_ULE:
-                case CmpStmt::ICMP_SLE:
-                case CmpStmt::FCMP_OLE:
-                case CmpStmt::FCMP_ULE:
-                {
-                    if (lhs.size() == 1 && rhs.size() == 1)
-                    {
-                        resVal = IntervalValue(*lhs.begin() <= *rhs.begin());
-                    }
-                    else
-                    {
-                        resVal = IntervalValue(0, 1);
-                    }
-                    break;
-                }
-                case CmpStmt::FCMP_FALSE:
-                    resVal = IntervalValue(0, 0);
-                    break;
-                case CmpStmt::FCMP_TRUE:
-                    resVal = IntervalValue(1, 1);
-                    break;
-                case CmpStmt::FCMP_ORD:
-                case CmpStmt::FCMP_UNO:
-                    // FCMP_ORD: true if both operands are not NaN
-                    // FCMP_UNO: true if either operand is NaN
-                    // Conservatively return [0, 1] since we don't track NaN
-                    resVal = IntervalValue(0, 1);
-                    break;
-                default:
-                    assert(false && "undefined compare: ");
-                }
-                updateAbsValue(cmp->getRes(), resVal, node);
-            }
         }
     }
 }
@@ -1390,38 +1516,43 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
         {
             u32_t bits = type->getByteSize() * 8;
             const AbstractValue& val = getAbsValue(var, node);
-            if (val.getInterval().is_numeral())
-            {
-                if (bits == 8)
-                {
-                    int8_t signed_i8_value = val.getInterval().getIntNumeral();
-                    u32_t unsigned_value = static_cast<uint8_t>(signed_i8_value);
-                    return IntervalValue(unsigned_value, unsigned_value);
-                }
-                else if (bits == 16)
-                {
-                    s16_t signed_i16_value = val.getInterval().getIntNumeral();
-                    u32_t unsigned_value = static_cast<u16_t>(signed_i16_value);
-                    return IntervalValue(unsigned_value, unsigned_value);
-                }
-                else if (bits == 32)
-                {
-                    s32_t signed_i32_value = val.getInterval().getIntNumeral();
-                    u32_t unsigned_value = static_cast<u32_t>(signed_i32_value);
-                    return IntervalValue(unsigned_value, unsigned_value);
-                }
-                else if (bits == 64)
-                {
-                    s64_t signed_i64_value = val.getInterval().getIntNumeral();
-                    return IntervalValue((s64_t)signed_i64_value, (s64_t)signed_i64_value);
-                }
-                else
-                    assert(false && "cannot support int type other than u8/16/32/64");
-            }
-            else
-            {
+            const IntervalValue& itv = val.getInterval();
+            if (itv.isBottom() || bits == 0)
                 return IntervalValue::top();
+
+            auto fullUnsignedRange = [&]() -> IntervalValue
+            {
+                if (bits >= 63)
+                    return IntervalValue(BoundedInt((s64_t)0), IntervalValue::plus_infinity());
+                const s64_t unsignedMax = static_cast<s64_t>((1ULL << bits) - 1);
+                return IntervalValue((s64_t)0, unsignedMax);
+            };
+
+            if (itv.lb().is_infinity() || itv.ub().is_infinity())
+                return fullUnsignedRange();
+
+            const s64_t lb = itv.lb().getIntNumeral();
+            const s64_t ub = itv.ub().getIntNumeral();
+
+            if (bits >= 63)
+            {
+                if (lb >= 0)
+                    return IntervalValue(lb, ub);
+                return fullUnsignedRange();
             }
+
+            const s64_t modulus = static_cast<s64_t>(1ULL << bits);
+            const s64_t unsignedMax = modulus - 1;
+            if (lb >= 0)
+                return IntervalValue(lb, ub > unsignedMax ? unsignedMax : ub);
+            if (ub < 0)
+            {
+                if (lb < -modulus)
+                    return fullUnsignedRange();
+                return IntervalValue(modulus + lb, modulus + ub);
+            }
+
+            return fullUnsignedRange();
         }
         return IntervalValue::top();
     };
@@ -1457,10 +1588,17 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
                 return utils->getRangeLimitFromType(dstType);
             return IntervalValue(s32_lb, s32_ub);
         }
+        else if (dst_bits == 64)
+        {
+            s64_t s64_lb = static_cast<s64_t>(int_lb);
+            s64_t s64_ub = static_cast<s64_t>(int_ub);
+            if (s64_lb > s64_ub)
+                return utils->getRangeLimitFromType(dstType);
+            return IntervalValue(s64_lb, s64_ub);
+        }
         else
         {
-            assert(false && "cannot support dst int type other than u8/16/32");
-            abort();
+            return utils->getRangeLimitFromType(dstType);
         }
     };
 

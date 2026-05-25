@@ -711,8 +711,9 @@ void SemiSparseAbstractInterpretation::updateAbsValue(const ValVar* var,
         const AbstractValue& val,
         const ICFGNode* node)
 {
-    // Write to the var's def-site so getAbsValue stays consistent.
-    const ICFGNode* defNode = var->getICFGNode();
+    // Write to the same canonical def-site used by getAbsValue.  RetValPNs
+    // are canonicalized from call-site to ret-site in getICFGNode().
+    const ICFGNode* defNode = getICFGNode(var);
     abstractTrace[defNode ? defNode : node][var->getId()] = val;
 }
 

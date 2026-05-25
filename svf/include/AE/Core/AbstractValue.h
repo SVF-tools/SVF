@@ -140,13 +140,13 @@ public:
     void widen_with(const AbstractValue &other)
     {
         interval.widen_with(other.interval);
-        // TODO: widen Addrs
+        addrs.join_with(other.addrs);
     }
 
     void narrow_with(const AbstractValue &other)
     {
         interval.narrow_with(other.interval);
-        // TODO: narrow Addrs
+        addrs.meet_with(other.addrs);
     }
 
     std::string toString() const
