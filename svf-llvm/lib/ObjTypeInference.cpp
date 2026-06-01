@@ -149,6 +149,7 @@ const Type *ObjTypeInference::inferObjType(const Value *var)
     //  but we can infer the obj type of %0 based on that of %inner_v.
     if (res == defaultType(var))
     {
+        if (!var->hasUseList()) return res;
         for (const auto& use: var->users())
         {
             if (const CallBase* cs = SVFUtil::dyn_cast<CallBase>(use))
@@ -271,6 +272,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
             if (const auto* gepInst =
                         SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
                 insertInferSite(gepInst);
+            if (!curValue->hasUseList()) continue;
             for (const auto it : curValue->users())
             {
                 if (const auto* loadInst = SVFUtil::dyn_cast<LoadInst>(it))
