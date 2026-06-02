@@ -168,6 +168,7 @@ void FullSparseAbstractInterpretation::pullObjValueFlows(const ICFGNode* node)
 
                 const ICFGNode* srcICFG = src->getICFGNode();
                 const ICFGNode* dstICFG = v->getICFGNode();
+                (void)dstICFG; // Suppress warning of unused variable under release build
                 assert(srcICFG && "SVFG source node must have an ICFG node");
                 assert(dstICFG &&
                        "SVFG destination node must have an ICFG node");
