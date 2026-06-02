@@ -758,7 +758,7 @@ void SVFIRBuilder::processCE(const Value* val)
         if (const ConstantExpr* gepce = isGepConstantExpr(ref))
         {
             DBOUT(DPAGBuild, outs() << "handle gep constant expression "
-                                    << LLVMUtil::dumpValue(ref) << "\n");
+                  << LLVMUtil::dumpValue(ref) << "\n");
             const Constant* opnd = gepce->getOperand(0);
             // handle recursive constant express case (gep (bitcast (gep X 1)) 1)
             processCE(opnd);
@@ -780,7 +780,7 @@ void SVFIRBuilder::processCE(const Value* val)
         else if (const ConstantExpr* castce = isCastConstantExpr(ref))
         {
             DBOUT(DPAGBuild, outs() << "handle cast constant expression "
-                                    << LLVMUtil::dumpValue(ref) << "\n");
+                  << LLVMUtil::dumpValue(ref) << "\n");
             const Constant* opnd = castce->getOperand(0);
             processCE(opnd);
             const Value* cval = getCurrentValue();
@@ -792,7 +792,7 @@ void SVFIRBuilder::processCE(const Value* val)
         else if (const ConstantExpr* selectce = isSelectConstantExpr(ref))
         {
             DBOUT(DPAGBuild, outs() << "handle select constant expression "
-                                    << LLVMUtil::dumpValue(ref) << "\n");
+                  << LLVMUtil::dumpValue(ref) << "\n");
             const Constant* src1 = selectce->getOperand(1);
             const Constant* src2 = selectce->getOperand(2);
             processCE(src1);
@@ -916,8 +916,8 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
                                  u32_t offset)
 {
     DBOUT(DPAGBuild, outs() << "global " << LLVMUtil::dumpValue(gvar)
-                            << " constant initializer: "
-                            << LLVMUtil::dumpValue(C) << "\n");
+          << " constant initializer: "
+          << LLVMUtil::dumpValue(C) << "\n");
     if (C->getType()->isSingleValueType())
     {
         NodeID src = getValueNode(C);
@@ -1011,7 +1011,7 @@ void SVFIRBuilder::visitGlobal()
             {
                 Constant *C = gvar->getInitializer();
                 DBOUT(DPAGBuild, outs() << "add global var node "
-                                        << LLVMUtil::dumpValue(gvar) << "\n");
+                      << LLVMUtil::dumpValue(gvar) << "\n");
                 InitialGlobal(gvar, C, 0);
             }
         }
@@ -1518,7 +1518,7 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
     CallICFGNode* callICFGNode = llvmModuleSet()->getCallICFGNode(cs);
     const FunObjVar* svffun = llvmModuleSet()->getFunObjVar(F);
     DBOUT(DPAGBuild, outs() << "handle direct call " << LLVMUtil::dumpValue(cs)
-                            << " callee " << F->getName().str() << "\n");
+          << " callee " << F->getName().str() << "\n");
 
     //Only handle the ret.val. if it's used as a ptr.
     NodeID dstrec = getValueNode(cs);
@@ -1545,7 +1545,7 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
         const Value* AA = cs->getArgOperand(itA), *FA = &*itF; //current actual/formal arg
 
         DBOUT(DPAGBuild, outs() << "process actual parm "
-                                << LLVMUtil::dumpValue(AA) << "\n");
+              << LLVMUtil::dumpValue(AA) << "\n");
 
         NodeID dstFA = getValueNode(FA);
         NodeID srcAA = getValueNode(AA);

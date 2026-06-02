@@ -392,7 +392,7 @@ void SymbolTableBuilder::handleCE(const Value* val)
         if (const ConstantExpr* ce = isGepConstantExpr(ref))
         {
             DBOUT(DMemModelCE, outs() << "handle constant expression "
-                                      << LLVMUtil::dumpValue(ref) << "\n");
+                  << LLVMUtil::dumpValue(ref) << "\n");
             collectVal(ce);
 
             // handle the recursive constant express case
@@ -406,7 +406,7 @@ void SymbolTableBuilder::handleCE(const Value* val)
         else if (const ConstantExpr* ce = isCastConstantExpr(ref))
         {
             DBOUT(DMemModelCE, outs() << "handle constant expression "
-                                      << LLVMUtil::dumpValue(ref) << "\n");
+                  << LLVMUtil::dumpValue(ref) << "\n");
             collectVal(ce);
             collectVal(ce->getOperand(0));
             // handle the recursive constant express case
@@ -416,7 +416,7 @@ void SymbolTableBuilder::handleCE(const Value* val)
         else if (const ConstantExpr* ce = isSelectConstantExpr(ref))
         {
             DBOUT(DMemModelCE, outs() << "handle constant expression "
-                                      << LLVMUtil::dumpValue(ref) << "\n");
+                  << LLVMUtil::dumpValue(ref) << "\n");
             collectVal(ce);
             collectVal(ce->getOperand(0));
             collectVal(ce->getOperand(1));
