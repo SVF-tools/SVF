@@ -243,6 +243,7 @@ protected:
     //@{
     virtual const Type *getBaseTypeAndFlattenedFields(const Value *V, std::vector<AccessPath> &fields, const Value* szValue);
     virtual void addComplexConsForExt(Value *D, Value *S, const Value* sz);
+    virtual void handleNondetArgStoreAtExtCall(const CallBase* cs, const CallICFGNode* callICFGNode);
     virtual void handleExtCall(const CallBase* cs, const Function* callee);
     //@}
 
@@ -290,6 +291,8 @@ protected:
 
     NodeID getGepValVar(const Value* val, const AccessPath& ap, const SVFType* elementType);
 
+    NodeID getDirectAccessFieldZeroValVar(const Value* ptr, const Type* accessTy);
+
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 
     inline void addBlackHoleAddrEdge(NodeID node)
@@ -334,7 +337,7 @@ protected:
         }
         else
         {
-            SVFUtil::wrnMsg("not support indirect call to add AddrStmt.\n");
+            SVFUtil::writeWrnMsg("not support indirect call to add AddrStmt.\n");
         }
         if (functionName == "malloc")
         {

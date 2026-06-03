@@ -38,8 +38,6 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-          sudo apt-get update
           sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev
 
       # build-svf
@@ -117,10 +115,20 @@ jobs:
         run:
           ctest -R ae_recursion_tests -VV
 
+      - name: ctest ae_no_main
+        working-directory: ${{github.workspace}}/Release-build
+        run:
+          ctest -R ae_no_main -VV
+
       - name: ctest ae_semi_sparse
         working-directory: ${{github.workspace}}/Release-build
         run:
           ctest -R semi_sparse -VV
+
+      - name: ctest ae_full_sparse
+        working-directory: ${{github.workspace}}/Release-build
+        run:
+          ctest -R ae_full_sparse -VV
 
       - name: ctest cfl_tests
         working-directory: ${{github.workspace}}/Release-build

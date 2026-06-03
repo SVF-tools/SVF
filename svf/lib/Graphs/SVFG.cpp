@@ -760,78 +760,64 @@ void SVFG::performStat()
     stat->performStat();
 }
 
-/// Given a ValVar and its SVFGNode, find the definition-site ICFGNode
+/// Given a ValVar, find the definition-site SVFGNode
 /// by following incoming direct VFGEdges (asserts unique definition)
-const ICFGNode* SVFG::getDefSiteOfValVar(const ValVar* var) const
+const SVFGNode* SVFG::getDefSiteOfValVar(const ValVar* var) const
 {
-    return getDefSVFGNode(var)->getICFGNode();
+    return getDefSVFGNode(var);
 }
 
-/// Given an ObjVar and its use-site ICFGNode, find the definition-site ICFGNode
+/// Given an ObjVar and its use-site SVFGNode, find the definition-site SVFGNodes
 /// by following incoming IndirectSVFGEdges whose pts contains the ObjVar (asserts unique definition)
-const ICFGNode* SVFG::getDefSiteOfObjVar(const ObjVar* obj, const ICFGNode* node) const
+const Set<const SVFGNode*> SVFG::getDefSiteOfObjVar(const ObjVar* obj, const SVFGNode* vNode) const
 {
-    const ICFGNode* defSite = nullptr;
-    NodeID objId = obj->getId();
-    for (const VFGNode* vNode : node->getVFGNodes())
+    Set<const SVFGNode*> defSites;
+    for (auto it = vNode->InEdgeBegin(), eit = vNode->InEdgeEnd(); it != eit; ++it)
     {
-        for (auto it = vNode->InEdgeBegin(), eit = vNode->InEdgeEnd(); it != eit; ++it)
+        if (const IndirectSVFGEdge* indEdge = SVFUtil::dyn_cast<IndirectSVFGEdge>(*it))
         {
-            if (const IndirectSVFGEdge* indEdge = SVFUtil::dyn_cast<IndirectSVFGEdge>(*it))
+            if (indEdge->getPointsTo().test(obj->getId()))
             {
-                if (indEdge->getPointsTo().test(objId))
-                {
-                    assert(defSite == nullptr && "ObjVar should have a unique indirect definition!");
-                    defSite = indEdge->getSrcNode()->getICFGNode();
-                }
+                defSites.insert(indEdge->getSrcNode());
             }
         }
     }
-    return defSite;
+    return defSites;
 }
 
 /// Given a ValVar, find all use-site ICFGNodes
 /// by following outgoing direct VFGEdges from its unique definition SVFGNode
-const Set<const ICFGNode*> SVFG::getUseSitesOfValVar(const ValVar* var) const
+const Set<const SVFGNode*> SVFG::getUseSitesOfValVar(const ValVar* var) const
 {
     const SVFGNode* defNode = getDefSVFGNode(var);
-    Set<const ICFGNode*> useSites;
+    Set<const SVFGNode*> useSites;
     for (auto it = defNode->OutEdgeBegin(), eit = defNode->OutEdgeEnd(); it != eit; ++it)
     {
         const VFGEdge* edge = *it;
         if (edge->isDirectVFGEdge())
         {
-            if (const ICFGNode* icfgNode = edge->getDstNode()->getICFGNode())
-                useSites.insert(icfgNode);
-            else
-                assert(false && "The destination node of a direct VFG edge should have an ICFG node!");
+            useSites.insert(edge->getDstNode());
         }
     }
     return useSites;
 }
 
-/// Given an ObjVar and its def-site ICFGNode, find all use-site ICFGNodes
+/// Given an ObjVar and its def-site SVFGNode, find all use-site SVFGNodes
 /// by following outgoing IndirectSVFGEdges whose pts contains the ObjVar
-const Set<const ICFGNode*> SVFG::getUseSitesOfObjVar(const ObjVar* obj, const ICFGNode* node) const
+const Set<const SVFGNode*> SVFG::getUseSitesOfObjVar(const ObjVar* obj, const SVFGNode* vNode) const
 {
-    Set<const ICFGNode*> useSites;
-    NodeID objId = obj->getId();
-    for (const VFGNode* vNode : node->getVFGNodes())
+    Set<const SVFGNode*> useSites;
+    for (auto it = vNode->OutEdgeBegin(), eit = vNode->OutEdgeEnd(); it != eit; ++it)
     {
-        for (auto it = vNode->OutEdgeBegin(), eit = vNode->OutEdgeEnd(); it != eit; ++it)
+        if (const IndirectSVFGEdge* indEdge = SVFUtil::dyn_cast<IndirectSVFGEdge>(*it))
         {
-            if (const IndirectSVFGEdge* indEdge = SVFUtil::dyn_cast<IndirectSVFGEdge>(*it))
+            if (indEdge->getPointsTo().test(obj->getId()))
             {
-                if (indEdge->getPointsTo().test(objId))
-                {
-                    if (const ICFGNode* icfgNode = indEdge->getDstNode()->getICFGNode())
-                        useSites.insert(icfgNode);
-                    else
-                        assert(false && "The destination node of an indirect SVFG edge should have an ICFG node!");
-                }
+                useSites.insert(indEdge->getDstNode());
             }
         }
     }
+
     return useSites;
 }
 

@@ -30,6 +30,7 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVFIR/ObjTypeInfo.h"
 #include <sstream>
+#include <llvm/IRReader/IRReader.h>
 #include <llvm/Support/raw_ostream.h>
 #include "SVF-LLVM/LLVMModule.h"
 

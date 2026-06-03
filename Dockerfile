@@ -7,25 +7,23 @@ ARG TARGETPLATFORM
 RUN set -e
 
 # Define LLVM version.
-ENV llvm_version=16.0.0
+ENV llvm_version=21.1.0
 
 # Define home directory
 ENV HOME=/home/SVF-tools
 
 # Define dependencies.
-ENV lib_deps="cmake g++ gcc git zlib1g-dev libncurses5-dev libtinfo6 build-essential libssl-dev libpcre2-dev zip libzstd-dev"
-ENV build_deps="wget xz-utils git tcl software-properties-common"
+# Use the default python3-dev that ships with the Ubuntu base image (24.04
+# ships python 3.12) instead of pulling python3.10-dev from a PPA — the
+# Launchpad PPA infrastructure has been intermittently unreachable
+# (HTTP 504 from add-apt-repository), and SVF itself does not pin a Python
+# version, so the base-image python is sufficient.
+ENV lib_deps="cmake g++ gcc git zlib1g-dev libncurses5-dev libtinfo6 build-essential libssl-dev libpcre2-dev zip libzstd-dev python3-dev"
+ENV build_deps="wget xz-utils git tcl"
 
 # Fetch dependencies.
 RUN apt-get update --fix-missing
 RUN apt-get install -y $build_deps $lib_deps
-
-# Add deadsnakes PPA for multiple Python versions 
-RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt-get update
-RUN set -ex; \
-    apt-get update && apt-get install -y python3.10-dev \
-            && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1;
 
 # Fetch and build SVF source.
 RUN echo "Downloading LLVM and building SVF to " ${HOME}

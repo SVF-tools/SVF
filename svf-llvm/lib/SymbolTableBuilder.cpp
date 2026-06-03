@@ -275,10 +275,7 @@ void SymbolTableBuilder::collectSym(const Value* val)
     //TODO: filter the non-pointer type // if (!SVFUtil::isa<PointerType>(val->getType()))  return;
 
     DBOUT(DMemModel,
-          outs()
-          << "collect sym from ##"
-          << llvmModuleSet()->getSVFValue(val)->toString()
-          << " \n");
+          outs() << "collect sym from ##" << LLVMUtil::dumpValue(val) << "\n");
     //TODO handle constant expression value here??
     handleCE(val);
 
@@ -395,10 +392,7 @@ void SymbolTableBuilder::handleCE(const Value* val)
         if (const ConstantExpr* ce = isGepConstantExpr(ref))
         {
             DBOUT(DMemModelCE, outs() << "handle constant expression "
-                  << llvmModuleSet()
-                  ->getSVFValue(ref)
-                  ->toString()
-                  << "\n");
+                  << LLVMUtil::dumpValue(ref) << "\n");
             collectVal(ce);
 
             // handle the recursive constant express case
@@ -412,10 +406,7 @@ void SymbolTableBuilder::handleCE(const Value* val)
         else if (const ConstantExpr* ce = isCastConstantExpr(ref))
         {
             DBOUT(DMemModelCE, outs() << "handle constant expression "
-                  << llvmModuleSet()
-                  ->getSVFValue(ref)
-                  ->toString()
-                  << "\n");
+                  << LLVMUtil::dumpValue(ref) << "\n");
             collectVal(ce);
             collectVal(ce->getOperand(0));
             // handle the recursive constant express case
@@ -425,10 +416,7 @@ void SymbolTableBuilder::handleCE(const Value* val)
         else if (const ConstantExpr* ce = isSelectConstantExpr(ref))
         {
             DBOUT(DMemModelCE, outs() << "handle constant expression "
-                  << llvmModuleSet()
-                  ->getSVFValue(ref)
-                  ->toString()
-                  << "\n");
+                  << LLVMUtil::dumpValue(ref) << "\n");
             collectVal(ce);
             collectVal(ce->getOperand(0));
             collectVal(ce->getOperand(1));

@@ -34,7 +34,6 @@ namespace SVF
 {
 
 class AbstractInterpretation;
-class AbstractStateManager;
 
 /**
  * @class AEDetector

@@ -65,6 +65,11 @@ else()
     demangle
     Passes
   )
+  # When the host LLVM tree already contains an in-tree SVF integration,
+  # llvm_map_components_to_libnames() can pull in those LLVMSvf* libraries
+  # transitively. Exclude them so the standalone SVF build links only against
+  # its own SvfCore/SvfLLVM targets.
+  list(FILTER LLVM_LIBRARIES EXCLUDE REGEX "^LLVMSvf(Core|LLVM)$|^LLVMSVFAnalysis$")
 endif()
 
 # Search in the executables dir for this LLVM's clang instance
@@ -152,6 +157,16 @@ target_sources(
                   FILES ${SVF_LLVM_HEADERS}
   PRIVATE ${SVF_LLVM_SOURCES}
 )
+
+# GCC can report false-positive -Wmaybe-uninitialized warnings from LLVM's
+# ValueMap/DenseMap internals when compiling this translation unit with heavy
+# inlining. Keep the suppression scoped to the affected file.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set_source_files_properties(
+    ${CMAKE_CURRENT_LIST_DIR}/lib/LLVMModule.cpp
+    PROPERTIES COMPILE_OPTIONS "-Wno-maybe-uninitialized"
+  )
+endif()
 
 # Only expose the headers in the source tree to in-tree users of SVF
 target_include_directories(SvfLLVM PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)

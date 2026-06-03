@@ -719,6 +719,7 @@ bool SaberCondAllocator::isEquivalentBranchCond(const Condition &lhs,
 /// whether condition is satisfiable
 bool SaberCondAllocator::isSatisfiable(const Condition &condition)
 {
+    Condition::getSolver().push();
     Condition::getSolver().add(condition.getExpr());
     z3::check_result result = Condition::getSolver().check();
     Condition::getSolver().pop();

@@ -892,7 +892,7 @@ int main(int argc, char** argv)
         ae.addDetector(std::make_unique<BufOverflowDetector>());
     if (Options::NullDerefCheck())
         ae.addDetector(std::make_unique<NullptrDerefDetector>());
-    ae.runOnModule(pag->getICFG());
+    ae.runOnModule();
 
     AndersenWaveDiff::releaseAndersenWaveDiff();
     LLVMModuleSet::releaseLLVMModuleSet();

@@ -115,7 +115,6 @@ void AEStat::finializeStat()
     generalNumMap["EXT_CallSite_Num"] = extCallSiteNum;
     generalNumMap["NonEXT_CallSite_Num"] = callSiteNum;
     timeStatMap["Total_Time(sec)"] = (double)(endTime - startTime) / TIMEINTERVAL;
-
 }
 
 void AEStat::performStat()
