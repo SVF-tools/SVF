@@ -619,7 +619,7 @@ template <> struct Hash<NodePair>
  * processor time is measured and is returned by 'clock'.
  */
 #define TIMEINTERVAL 1000
-#define CLOCK_IN_MS() (clock() / (CLOCKS_PER_SEC / TIMEINTERVAL))
+#define CLOCK_IN_MS() (clock() / (CLOCKS_PER_SEC / (double)TIMEINTERVAL))
 
 /// Size of native integer that we'll use for bit vectors, in bits.
 #define NATIVE_INT_SIZE (sizeof(unsigned long long) * CHAR_BIT)
