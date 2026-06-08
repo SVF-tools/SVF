@@ -139,6 +139,7 @@ public:
     {
         delete llvmModuleSet;
         llvmModuleSet = nullptr;
+        NodeIDAllocator::unset();
     }
 
     // Build an SVF module from a given LLVM Module instance (for use e.g. in a LLVM pass)
