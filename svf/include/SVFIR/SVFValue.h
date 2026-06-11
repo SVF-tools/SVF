@@ -81,7 +81,6 @@ public:
         // │   └─ Subclass: DummyValVar
         DummyValNode,            // │   └── Dummy node for uninitialized values
         IntrinsicValNode,        // │   └── LLVM intrinsic call instruction (e.g. llvm.dbg.declare)
-        BasicBlockValNode,       // │   └── LLVM BasicBlock (label operand of br/switch)
         AsmPCValNode,            // │   └── InlineAsm, DSOLocalEquivalent, NoCFIValue
 
         // └─ Subclass: ObjVar (Object variable nodes)
