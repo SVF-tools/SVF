@@ -34,6 +34,7 @@
 #include "Util/SVFUtil.h"
 #include "Graphs/CallGraph.h"
 #include "SVFIR/SVFIR.h"
+#include "MemoryModel/PointerAnalysis.h"
 
 #include <iostream>		/// std output
 #include <stdio.h>
@@ -196,7 +197,7 @@ const ValVar* ThreadAPI::getActualParmAtForkSite(const CallICFGNode *inst) const
 const SVFVar* ThreadAPI::getFormalParmOfForkedFun(const FunObjVar* F) const
 {
     assert(PAG::getPAG()->hasFunArgsList(F) && "forked function has no args list!");
-    const SVFIR::ValVarList& funArgList = PAG::getPAG()->getFunArgsList(F);
+    const SVFIR::SVFVarList& funArgList = PAG::getPAG()->getFunArgsList(F);
     // in pthread, forked functions are of type void *()(void *args)
     assert(funArgList.size() == 1 && "num of pthread forked function args is not 1!");
     return funArgList[0];
@@ -219,17 +220,26 @@ const SVFVar* ThreadAPI::getLockVal(const ICFGNode *cs) const
 const SVFVar* ThreadAPI::getJoinedThread(const CallICFGNode *cs) const
 {
     assert(isTDJoin(cs) && "not a thread join function!");
-    const ValVar* join = cs->getArgument(0);
-    for(const SVFStmt* stmt : join->getInEdges())
-    {
-        if(SVFUtil::isa<LoadStmt>(stmt))
-            return stmt->getSrcNode();
-    }
-    if(SVFUtil::isa<ArgValVar>(join))
-        return join;
+    return cs->getArgument(0);
+}
 
-    assert(false && "the value of the first argument at join is not a load instruction?");
-    return nullptr;
+/*!
+ * If fork join the same thread
+ * - forkArg is the value of the first argument of pthread_create
+ *   (a pointer to pthread_t)
+ * - joinArg is the value first argument of pthread_join
+ *   (pthread_t)
+ */
+bool ThreadAPI::isAliasedForkJoin(PointerAnalysis *pta, const SVFVar *forkArg, const SVFVar *joinArg) const
+{
+    for (auto pthread_t_var : pta->getPts(forkArg->getId()))
+    {
+        if (pta->alias(pthread_t_var, joinArg->getId()))
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 /*!

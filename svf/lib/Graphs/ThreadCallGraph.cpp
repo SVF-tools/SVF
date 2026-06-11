@@ -101,7 +101,7 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
             const NodeBS targets = pta->getPts(forkedval->getId()).toNodeBS();
             for (NodeBS::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ii++)
             {
-                if(const ObjVar* objPN = pag->getObjVar(*ii))
+                if(ObjVar* objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
                 {
                     const BaseObjVar* obj = pag->getBaseObject(objPN->getId());
                     if(obj->isFunction())
@@ -130,7 +130,7 @@ void ThreadCallGraph::updateJoinEdge(PointerAnalysis* pta)
         for (CallSiteSet::const_iterator it = forksitesBegin(), eit = forksitesEnd(); it != eit; ++it)
         {
             const SVFVar* forkthread = tdAPI->getForkedThread(*it);
-            if (pta->alias(jointhread->getId(), forkthread->getId()))
+            if (tdAPI->isAliasedForkJoin(pta, forkthread, jointhread))
             {
                 forkset.insert(*it);
             }

@@ -329,6 +329,12 @@ void LockAnalysis::handleCallRelation(CxtLockProc& clp, const CallGraphEdge* cgE
 
 }
 
+bool LockAnalysis::isAliasedLocks(const ICFGNode* i1, const ICFGNode* i2)
+{
+    /// todo: must alias
+    return tct->getPTA()->alias(getLockVal(i1)->getId(), getLockVal(i2)->getId());
+}
+
 void LockAnalysis::analyzeLockSpanCxtStmt()
 {
 

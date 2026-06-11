@@ -540,7 +540,7 @@ const Option<std::string> Options::Graphtxt(
     ""
 );
 
-Option<bool> Options::SVFMain(
+const Option<bool> Options::SVFMain(
     "svf-main",
     "add svf.main()",
     false
@@ -781,38 +781,6 @@ const Option<u32_t> Options::LoopBound(
     1
 );
 
-const OptionMap<u32_t> Options::AESparsity(
-    "ae-sparsity",
-    "Abstract execution mode (Default: dense)",
-    AbstractInterpretation::AESparsity::Dense,
-{
-    {
-        AbstractInterpretation::AESparsity::Dense, "dense",
-        "Dense abstract execution: all variables propagated along ICFG edges."
-    },
-    {
-        AbstractInterpretation::AESparsity::SemiSparse, "semi-sparse",
-        "Semi-sparse abstract execution: ObjVars dense, ValVars sparse."
-    },
-    {
-        AbstractInterpretation::AESparsity::Sparse, "sparse",
-        "Sparse abstract execution via SVFG."
-    }
-});
-const OptionMap<u32_t> Options::AEFunEntry(
-    "ae-fun-entry",
-    "Abstract execution function entry mode (Default: main)",
-    AbstractInterpretation::AEFunEntryMode::MAIN,
-{
-    {
-        AbstractInterpretation::AEFunEntryMode::MAIN, "main",
-        "Analyze from the program entry function only."
-    },
-    {
-        AbstractInterpretation::AEFunEntryMode::NO_MAIN, "no-main",
-        "Analyze from every no-external-caller SCC after Andersen resolves the call graph."
-    }
-});
 const Option<u32_t> Options::WidenDelay(
     "widen-delay", "Loop Widen Delay", 3);
 const OptionMap<u32_t> Options::HandleRecur(

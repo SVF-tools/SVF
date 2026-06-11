@@ -74,6 +74,8 @@ void MHP::analyze()
  */
 void MHP::analyzeInterleaving()
 {
+
+
     for (const std::pair<const NodeID, TCTNode*>& tpair : *tct)
     {
         const CxtThread& ct = tpair.second->getCxtThread();
@@ -90,6 +92,7 @@ void MHP::analyzeInterleaving()
         {
             CxtThreadStmt cts = popFromCTSWorkList();
             const ICFGNode* curInst = cts.getStmt();
+
             DBOUT(DMTA, outs() << "-----\nMHP analysis root thread: " << rootTid << " ");
             DBOUT(DMTA, cts.dump());
             DBOUT(DMTA, outs() << "current thread interleaving: < ");
@@ -297,10 +300,10 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
                 ecgIt = tcg->getCallEdgeEnd(cbn);
                 cgIt != ecgIt; ++cgIt)
         {
-
             const FunObjVar* svfcallee = (*cgIt)->getDstNode()->getFunction();
             if (isExtCall(svfcallee))
                 continue;
+
             CallStrCxt newCxt = curCxt;
             const CallICFGNode* callicfgnode = SVFUtil::cast<CallICFGNode>(call);
             pushCxt(newCxt, callicfgnode, svfcallee);
@@ -419,7 +422,7 @@ void MHP::updateAncestorThreads(NodeID curTid)
 {
     NodeBS ancestorAndSelfTids = tct->getAncestorThreads(curTid);
     DBOUT(DMTA, outs() << "##Ancestor thread of " << curTid << " is : ");
-    DBOUT(DMTA, dumpSet(ancestorAndSelfTids));
+    DBOUT(DMTA, dumpSet(tds));
     DBOUT(DMTA, outs() << "\n");
     ancestorAndSelfTids.set(curTid);
 
@@ -567,7 +570,7 @@ bool MHP::isConnectedfromMain(const FunObjVar* fun)
     while (!worklist.empty())
     {
         const CallGraphNode* node = worklist.pop();
-        if (SVFUtil::isProgEntryFunction(node->getFunction()))
+        if ("main" == node->getFunction()->getName())
             return true;
         for (CallGraphNode::const_iterator nit = node->InEdgeBegin(), neit = node->InEdgeEnd(); nit != neit; nit++)
         {
@@ -885,9 +888,9 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
         if (hasJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite)))
         {
             if (isAliasedForkJoin(SVFUtil::cast<CallICFGNode>(forkSite),
-                                  SVFUtil::cast<CallICFGNode>(joinSite)) &&
+                                SVFUtil::cast<CallICFGNode>(joinSite)) &&
                     isSameSCEV(forkSite,joinSite)
-               )
+                )
             {
                 LoopBBs& joinLoop = getJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite));
                 std::vector<const SVFBasicBlock *> exitbbs;
@@ -927,7 +930,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
         else
         {
             if (isAliasedForkJoin(SVFUtil::cast<CallICFGNode>(forkSite),
-                                  SVFUtil::cast<CallICFGNode>(joinSite)))
+                                SVFUtil::cast<CallICFGNode>(joinSite)))
             {
                 markCxtStmtFlag(cts, TDDead);
                 addDirectlyJoinTID(cts, rootTid);
@@ -1181,4 +1184,11 @@ bool ForkJoinAnalysis::sameLoopTripCount(const ICFGNode* forkSite, const ICFGNod
     //     }
     // }
     return false;
+}
+
+bool ForkJoinAnalysis::isAliasedForkJoin(const CallICFGNode* forkSite,
+                                        const CallICFGNode* joinSite)
+{
+    return getTCG()->getThreadAPI()->isAliasedForkJoin(tct->getPTA(),
+        getForkedThread(forkSite), getJoinedThread(joinSite));
 }

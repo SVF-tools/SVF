@@ -323,7 +323,7 @@ public:
     {
         return tct;
     }
-private:
+protected:
     /// Handle fork
     void handleFork(const CxtStmt& cts);
 
@@ -344,11 +344,7 @@ private:
     {
         return isAliasedLocks(cl1.getStmt(), cl2.getStmt());
     }
-    bool isAliasedLocks(const ICFGNode* i1, const ICFGNode* i2)
-    {
-        /// todo: must alias
-        return tct->getPTA()->alias(getLockVal(i1)->getId(), getLockVal(i2)->getId());
-    }
+    bool isAliasedLocks(const ICFGNode* i1, const ICFGNode* i2);
 
     /// Mark thread flags for cxtStmt
     //@{
