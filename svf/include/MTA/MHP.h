@@ -47,6 +47,7 @@ class MHP
 
 public:
     typedef Set<const FunObjVar*> FunSet;
+    // change to a set
     typedef FIFOWorkList<CxtThreadStmt> CxtThreadStmtWorkList;
     typedef Set<CxtThreadStmt> CxtThreadStmtSet;
     typedef Map<CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
@@ -68,7 +69,7 @@ public:
     void analyze();
 
     /// Analyze thread interleaving
-    void analyzeInterleaving();
+    virtual void analyzeInterleaving();
 
     /// Get ThreadCallGraph
     inline ThreadCallGraph* getThreadCallGraph() const
@@ -121,7 +122,7 @@ public:
     /// Print interleaving results
     void printInterleaving();
 
-private:
+protected:
 
     inline const CallGraph::FunctionSet& getCallee(const CallICFGNode* inst, CallGraph::FunctionSet& callees)
     {
@@ -136,19 +137,19 @@ private:
     void handleNonCandidateFun(const CxtThreadStmt& cts);
 
     /// Handle fork
-    void handleFork(const CxtThreadStmt& cts, NodeID rootTid);
+    virtual void handleFork(const CxtThreadStmt& cts, NodeID rootTid);
 
     /// Handle join
-    void handleJoin(const CxtThreadStmt& cts, NodeID rootTid);
+    virtual void handleJoin(const CxtThreadStmt& cts, NodeID rootTid);
 
     /// Handle call
-    void handleCall(const CxtThreadStmt& cts, NodeID rootTid);
+    virtual void handleCall(const CxtThreadStmt& cts, NodeID rootTid);
 
     /// Handle return
-    void handleRet(const CxtThreadStmt& cts);
+    virtual void handleRet(const CxtThreadStmt& cts);
 
     /// Handle intra
-    void handleIntra(const CxtThreadStmt& cts);
+    virtual void handleIntra(const CxtThreadStmt& cts);
 
     /// Add/Remove interleaving thread for statement inst
     //@{
@@ -310,6 +311,7 @@ public:
     {
         collectSCEVInfo();
     }
+    virtual ~ForkJoinAnalysis() = default;
     /// functions
     void collectSCEVInfo();
 
@@ -362,22 +364,22 @@ public:
     {
         return tct->hasJoinLoop(inst);
     }
-private:
+protected:
 
     /// Handle fork
-    void handleFork(const CxtStmt& cts,NodeID rootTid);
+    virtual void handleFork(const CxtStmt& cts,NodeID rootTid);
 
     /// Handle join
-    void handleJoin(const CxtStmt& cts,NodeID rootTid);
+    virtual void handleJoin(const CxtStmt& cts,NodeID rootTid);
 
     /// Handle call
-    void handleCall(const CxtStmt& cts,NodeID rootTid);
+    virtual void handleCall(const CxtStmt& cts,NodeID rootTid);
 
     /// Handle return
-    void handleRet(const CxtStmt& cts);
+    virtual void handleRet(const CxtStmt& cts);
 
     /// Handle intra
-    void handleIntra(const CxtStmt& cts);
+    virtual void handleIntra(const CxtStmt& cts);
 
     /// Return true if the fork and join have the same SCEV
     bool isSameSCEV(const ICFGNode* forkSite, const ICFGNode* joinSite);
@@ -386,10 +388,7 @@ private:
     bool sameLoopTripCount(const ICFGNode* forkSite, const ICFGNode* joinSite);
 
     /// Whether it is a matched fork join pair
-    bool isAliasedForkJoin(const CallICFGNode* forkSite, const CallICFGNode* joinSite)
-    {
-        return tct->getPTA()->alias(getForkedThread(forkSite)->getId(), getJoinedThread(joinSite)->getId());
-    }
+    bool isAliasedForkJoin(const CallICFGNode* forkSite, const CallICFGNode* joinSite);
     /// Mark thread flags for cxtStmt
     //@{
     /// Get the flag for a cxtStmt

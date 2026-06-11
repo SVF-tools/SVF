@@ -157,7 +157,7 @@ bool MRGenerator::hasSVFStmtList(const ICFGNode* node)
 }
 
 
-SVFIR::SVFStmtList& MRGenerator::getSVFStmtsFromInst(const ICFGNode* node)
+SVFIR::SVFStmtList& MRGenerator::getPAGEdgesFromInst(const ICFGNode* node)
 {
     SVFIR* pag = pta->getPAG();
     if (ptrOnlyMSSA)
@@ -188,7 +188,7 @@ void MRGenerator::collectModRefForLoadStore()
             const SVFBasicBlock* bb = iter->second;
             for (const auto& inst: bb->getICFGNodeList())
             {
-                SVFStmtList& pagEdgeList = getSVFStmtsFromInst(inst);
+                SVFStmtList& pagEdgeList = getPAGEdgesFromInst(inst);
                 for (SVFStmtList::iterator bit = pagEdgeList.begin(), ebit =
                             pagEdgeList.end(); bit != ebit; ++bit)
                 {
@@ -469,8 +469,8 @@ void MRGenerator::collectCallSitePts(const CallICFGNode* cs)
     WorkList worklist;
     if (pag->hasCallSiteArgsMap(callBlockNode))
     {
-        const SVFIR::ValVarList& args = pta->getPAG()->getCallSiteArgsList(callBlockNode);
-        for(SVFIR::ValVarList::const_iterator itA = args.begin(), ieA = args.end(); itA!=ieA; ++itA)
+        const SVFIR::SVFVarList& args = pta->getPAG()->getCallSiteArgsList(callBlockNode);
+        for(SVFIR::SVFVarList::const_iterator itA = args.begin(), ieA = args.end(); itA!=ieA; ++itA)
         {
             const PAGNode* node = *itA;
             if(node->isPointer())
@@ -508,7 +508,7 @@ void MRGenerator::collectCallSitePts(const CallICFGNode* cs)
  */
 NodeBS& MRGenerator::CollectPtsChain(NodeID id)
 {
-    NodeID baseId = pta->getPAG()->getBaseObjVarID(id);
+    NodeID baseId = pta->getPAG()->getBaseObjVar(id);
     NodeToPTSSMap::iterator it = cachedPtsChainMap.find(baseId);
     if(it!=cachedPtsChainMap.end())
         return it->second;
@@ -591,7 +591,7 @@ bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGN
     /// if a callee is a heap allocator function, then its mod set of this callsite is the heap object.
     if(isHeapAllocExtCall(cs))
     {
-        SVFStmtList& pagEdgeList = getSVFStmtsFromInst(cs);
+        SVFStmtList& pagEdgeList = getPAGEdgesFromInst(cs);
         for (SVFStmtList::const_iterator bit = pagEdgeList.begin(),
                 ebit = pagEdgeList.end(); bit != ebit; ++bit)
         {
@@ -657,7 +657,7 @@ NodeBS MRGenerator::getModInfoForCall(const CallICFGNode* cs)
 {
     if (isExtCall(cs) && !isHeapAllocExtCall(cs))
     {
-        SVFStmtList& pagEdgeList = getSVFStmtsFromInst(cs);
+        SVFStmtList& pagEdgeList = getPAGEdgesFromInst(cs);
         NodeBS mods;
         for (SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit =
                     pagEdgeList.end(); bit != ebit; ++bit)
@@ -681,7 +681,7 @@ NodeBS MRGenerator::getRefInfoForCall(const CallICFGNode* cs)
 {
     if (isExtCall(cs) && !isHeapAllocExtCall(cs))
     {
-        SVFStmtList& pagEdgeList = getSVFStmtsFromInst(cs);
+        SVFStmtList& pagEdgeList = getPAGEdgesFromInst(cs);
         NodeBS refs;
         for (SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit =
                     pagEdgeList.end(); bit != ebit; ++bit)
