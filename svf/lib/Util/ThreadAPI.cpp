@@ -239,6 +239,18 @@ bool ThreadAPI::isAliasedForkJoin(PointerAnalysis *pta, const SVFVar *forkArg, c
             return true;
         }
     }
+    // pthread_t is commonly a scalar (e.g. i64): then the join handle is a loaded
+    // value with no points-to of its own, so the test above fails. Recover the
+    // pthread_t storage the join handle was loaded from and check whether it
+    // aliases the fork's pthread_t pointer (i.e. the same handle is forked/joined).
+    for (const SVFStmt* stmt : joinArg->getInEdges())
+    {
+        if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+        {
+            if (pta->alias(forkArg->getId(), load->getRHSVarID()))
+                return true;
+        }
+    }
     return false;
 }
 
