@@ -232,23 +232,49 @@ const SVFVar* ThreadAPI::getJoinedThread(const CallICFGNode *cs) const
  */
 bool ThreadAPI::isAliasedForkJoin(PointerAnalysis *pta, const SVFVar *forkArg, const SVFVar *joinArg) const
 {
-    for (auto pthread_t_var : pta->getPts(forkArg->getId()))
-    {
-        if (pta->alias(pthread_t_var, joinArg->getId()))
-        {
+    // pthread_create receives &t (a pointer to the pthread_t object), so the
+    // forked thread is identified by the pthread_t object(s) in pts(forkArg).
+    const PointsTo& forkObjs = pta->getPts(forkArg->getId());
+
+    // (1) Direct case: the join handle is itself a pointer to the same pthread_t.
+    for (NodeID o : forkObjs)
+        if (pta->alias(o, joinArg->getId()))
             return true;
-        }
-    }
-    // pthread_t is commonly a scalar (e.g. i64): then the join handle is a loaded
-    // value with no points-to of its own, so the test above fails. Recover the
-    // pthread_t storage the join handle was loaded from and check whether it
-    // aliases the fork's pthread_t pointer (i.e. the same handle is forked/joined).
-    for (const SVFStmt* stmt : joinArg->getInEdges())
+
+    // (2) General case: pthread_t is usually a scalar, so pthread_join receives
+    //     the pthread_t *value*, which carries no points-to of its own. That
+    //     value is loaded from the pthread_t storage, possibly after flowing
+    //     through copies / phis / casts / by-value parameter passing. We
+    //     backward value-track the join handle to every load it may originate
+    //     from and check whether the loaded-from storage is the fork's pthread_t
+    //     object. This covers the common shapes soundly (an over-approximate
+    //     match only adds a sound join-related value flow).
+    Set<NodeID> visited;
+    std::vector<const SVFVar*> worklist{joinArg};
+    while (!worklist.empty())
     {
-        if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+        const SVFVar* v = worklist.back();
+        worklist.pop_back();
+        if (!visited.insert(v->getId()).second)
+            continue;
+        for (const SVFStmt* st : v->getInEdges())
         {
-            if (pta->alias(forkArg->getId(), load->getRHSVarID()))
-                return true;
+            if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(st))
+            {
+                // handle = *src : the pthread_t object is what src points to.
+                for (NodeID o : pta->getPts(load->getRHSVarID()))
+                    if (forkObjs.test(o))
+                        return true;
+            }
+            else if (const CopyStmt* copy = SVFUtil::dyn_cast<CopyStmt>(st))
+                worklist.push_back(copy->getRHSVar());
+            else if (const PhiStmt* phi = SVFUtil::dyn_cast<PhiStmt>(st))
+                for (u32_t i = 0; i < phi->getOpVarNum(); ++i)
+                    worklist.push_back(phi->getOpVar(i));
+            else if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(st))
+                worklist.push_back(gep->getRHSVar());
+            else if (const CallPE* call = SVFUtil::dyn_cast<CallPE>(st))
+                worklist.push_back(call->getRHSVar()); // by-value actual argument
         }
     }
     return false;
