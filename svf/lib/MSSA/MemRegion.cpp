@@ -31,6 +31,7 @@
 #include "MSSA/MemRegion.h"
 #include "MSSA/MSSAMuChi.h"
 #include "Graphs/CallGraph.h"
+#include "Graphs/ThreadCallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -598,6 +599,19 @@ bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGN
             const PAGEdge* edge = *bit;
             if (const AddrStmt* addr = SVFUtil::dyn_cast<AddrStmt>(edge))
                 mod.set(addr->getRHSVarID());
+        }
+        /// Thread fork as a call WITHOUT a return: pthread_create spawns `callee`
+        /// in a new thread. We forward the spawnee's *ref* set to the fork site so
+        /// the spawner's memory state at the fork bridges into the spawnee
+        /// (ActualIN -> FormalIN, FSAM's thread-oblivious value flow). We do NOT
+        /// add the spawnee's *mod* set: a fork has no return, so the spawnee's
+        /// writes must not flow back to the spawner here (that is handled by the
+        /// thread-aware interference edges instead). The heap (pthread_t) mod set
+        /// computed above is kept.
+        if (const ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(callGraph))
+        {
+            if (tcg->hasThreadForkEdge(cs))
+                ref = getRefSideEffectOfFunction(callee);
         }
     }
     /// otherwise, we find the mod/ref sets from the callee function, who has definition and been processed
