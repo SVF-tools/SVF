@@ -641,6 +641,26 @@ void MRGenerator::modRefAnalysis(CallGraphNode* callGraphNode, WorkList& worklis
     {
         CallGraphEdge* edge = *it;
 
+        /// FSAM join-related def-use: a thread join makes the spawnee's exit
+        /// state visible to the spawner. The ThreadJoinEdge goes spawner ->
+        /// spawnee (like a call edge), so it is an InEdge of the spawnee, i.e.
+        /// `callGraphNode` is the spawnee here. We forward the spawnee's MOD set
+        /// to the join callsite (in the spawner), creating an ActualOUT there: a
+        /// "return without a call" -- the spawnee's writes flow out to the
+        /// spawner at the join. We add only MOD, never REF, since the spawner's
+        /// state at the join must not flow into the already finished spawnee.
+        if(const ThreadJoinEdge* je = SVFUtil::dyn_cast<ThreadJoinEdge>(edge))
+        {
+            const NodeBS& spawneeMod = getModSideEffectOfFunction(callGraphNode->getFunction());
+            for(const CallICFGNode* cs : je->getDirectCalls())
+                if(addModSideEffectOfCallSite(cs, spawneeMod))
+                    worklist.push(je->getSrcID());
+            for(const CallICFGNode* cs : je->getIndirectCalls())
+                if(addModSideEffectOfCallSite(cs, spawneeMod))
+                    worklist.push(je->getSrcID());
+            continue;
+        }
+
         /// handle direct callsites
         for(CallGraphEdge::CallInstSet::iterator cit = edge->getDirectCalls().begin(),
                 ecit = edge->getDirectCalls().end(); cit!=ecit; ++cit)
