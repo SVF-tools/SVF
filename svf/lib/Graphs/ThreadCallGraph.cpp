@@ -135,7 +135,11 @@ void ThreadCallGraph::updateJoinEdge(PointerAnalysis* pta)
                 forkset.insert(*it);
             }
         }
-        assert(!forkset.empty() && "Can't find a forksite for this join!!");
+        /// A join may have no statically-matchable fork site (e.g. the pthread_t
+        /// alias cannot be resolved by the pre-analysis). Skip such joins rather
+        /// than aborting -- they simply get no join-related def-use edge.
+        if (forkset.empty())
+            continue;
         addDirectJoinEdge(*it,forkset);
     }
 }
