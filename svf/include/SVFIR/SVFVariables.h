@@ -436,7 +436,6 @@ private:
     AccessPath ap;	// AccessPath
     const ValVar* base;	// base node
     const SVFType* gepValType;
-    NodeID llvmVarID;
 
 
 public:
@@ -530,18 +529,6 @@ public:
     virtual inline bool isConstDataOrAggData() const
     {
         return base->isConstDataOrAggData();
-    }
-
-    /// Get the LLVM variable ID associated with this GepValVar
-    inline NodeID getLLVMVarInstID() const
-    {
-        return llvmVarID;
-    }
-
-    /// Set the LLVM variable ID associated with this GepValVar
-    inline void setLLVMVarInstID(NodeID id)
-    {
-        llvmVarID = id;
     }
 };
 
