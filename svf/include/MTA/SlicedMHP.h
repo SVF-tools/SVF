@@ -15,7 +15,6 @@ class SlicedSVFIRView;
 class SlicedICFGView;
 
 #include <memory>
-#include <unordered_set>
 #include <vector>
 
 /**
@@ -30,65 +29,33 @@ class SlicedICFGView;
  */
 class SlicedMHP final : public SVF::MHP {
 public:
-    struct Stats {
-        size_t worklistPops = 0;
-        size_t uniqueVisitedICFGNodes = 0;
-        size_t seedEntryNotKept = 0;
-
-        size_t handleIntraCalls = 0;
-        size_t handleRetCalls = 0;
-        size_t handleCallCalls = 0;
-        size_t handleForkCalls = 0;
-        size_t handleJoinCalls = 0;
-        size_t handleNonCandidateCalls = 0;
-    };
-
     /// If slicedView is provided, it will be used to access sliced ICFG/CallGraph/ThreadCallGraph views.
     /// If slicedView is null, uses full ICFG from SVFIR.
     explicit SlicedMHP(SVF::TCT* tct, const SlicedSVFIRView* slicedView = nullptr);
     ~SlicedMHP() override;
 
-    // Override ICFG traversal methods to use sliced view
 protected:
-    // Not in base class, but we can use it internally
-    const SVF::ICFGNode* getFunEntry(const SVF::FunObjVar* fun) const;
-    void getFunICFGNodes(const SVF::FunObjVar* fun, std::vector<const SVF::ICFGNode*>& out) const;
-    void getSuccNodes(const SVF::ICFGNode* node, std::vector<const SVF::ICFGNode*>& out) const;
-    bool acceptsNode(const SVF::ICFGNode* node) const;
-    void getInEdgesOfCallGraphNode(const SVF::CallGraphNode* node, std::vector<const SVF::CallGraphEdge*>& out) const;
+    // Override the base ICFG/CallGraph traversal hooks to walk only the slice;
+    // every inherited MHP handler reaches the slice through these.
+    const SVF::ICFGNode* getFunEntry(const SVF::FunObjVar* fun) const override;
+    void getSuccNodes(const SVF::ICFGNode* node, std::vector<const SVF::ICFGNode*>& out) const override;
+    void getInEdgesOfCallGraphNode(const SVF::CallGraphNode* node, std::vector<const SVF::CallGraphEdge*>& out) const override;
 
-    // Optionally override handlers if needed
-    void handleIntra(const SVF::CxtThreadStmt& cts) override;
-    void handleCall(const SVF::CxtThreadStmt& cts, SVF::NodeID rootTid) override;
-    void handleRet(const SVF::CxtThreadStmt& cts) override;
-    void handleFork(const SVF::CxtThreadStmt& cts, SVF::NodeID rootTid) override;
+    // Kept ICFG nodes of a function (not a base hook; used by updateNonCandidateFunInterleaving).
+    void getFunICFGNodes(const SVF::FunObjVar* fun, std::vector<const SVF::ICFGNode*>& out) const;
+
+    // handleJoin needs the sliced ForkJoinAnalysis, so it stays overridden; the
+    // other handlers are inherited and reach the slice through the hooks above.
     void handleJoin(const SVF::CxtThreadStmt& cts, SVF::NodeID rootTid) override;
 
-public:
-
-    const Stats& getStats() const { return stats; }
+    // Non-candidate interleaving iterates the sliced CallGraph, so it stays overridden.
+    void updateNonCandidateFunInterleaving() override;
 
 private:
     const SlicedSVFIRView* slicedView; // Optional: for accessing sliced views
     const SlicedICFGView* icfgView; // ICFG view (from slicedView or nullptr for full ICFG)
 
     std::unique_ptr<class SlicedForkJoinAnalysis> fja;
-
-    // Additional helper methods (if needed beyond base class)
-protected:
-    void handleNonCandidateFun(const SVF::CxtThreadStmt& cts);
-    void updateNonCandidateFunInterleaving();
-    
-    // Override analyzeInterleaving to track statistics
-    void analyzeInterleaving() override;
-    
-    // Override pushCxt to use SlicedTCT's pushCxt if available
-    // This hides the base class inline pushCxt method
-    void pushCxt(SVF::CallStrCxt& cxt, const SVF::CallICFGNode* call, const SVF::FunObjVar* callee);
-
-    // debug stats
-    Stats stats{};
-    std::unordered_set<const SVF::ICFGNode*> visitedNodes;
 };
 
 // Forward declaration
