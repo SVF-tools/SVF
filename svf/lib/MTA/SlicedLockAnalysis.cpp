@@ -50,13 +50,8 @@ void SlicedLockAnalysis::getInEdgesOfCallGraphNode(const CallGraphNode* node, st
 
 const CallGraph* SlicedLockAnalysis::getAnalysisCallGraph() const
 {
-    // Prefer the sliced (Thread)CallGraph view; fall back to the full CallGraph.
-    if (slicedView != nullptr)
-    {
-        if (slicedView->getThreadCallGraph() != nullptr)
-            return slicedView->getThreadCallGraph()->getCallGraph();
-        if (slicedView->getCallGraph() != nullptr)
-            return slicedView->getCallGraph()->getCallGraph();
-    }
+    // Prefer the sliced ThreadCallGraph view; fall back to the full CallGraph.
+    if (slicedView != nullptr && slicedView->getThreadCallGraph() != nullptr)
+        return slicedView->getThreadCallGraph()->getCallGraph();
     return PAG::getPAG()->getCallGraph();
 }
