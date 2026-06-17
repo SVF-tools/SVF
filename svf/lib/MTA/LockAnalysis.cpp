@@ -37,6 +37,44 @@
 using namespace SVF;
 using namespace SVFUtil;
 
+/// ICFG/CallGraph traversal hooks -- default (full-graph) implementations.
+/// SlicedLockAnalysis overrides these to walk only the kept nodes/edges.
+const ICFGNode* LockAnalysis::getFunEntry(const FunObjVar* fun) const
+{
+    return fun->getEntryBlock()->front();
+}
+
+void LockAnalysis::getSuccNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const
+{
+    out.clear();
+    for (const ICFGEdge* e : node->getOutEdges())
+        out.push_back(e->getDstNode());
+}
+
+void LockAnalysis::getPredNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const
+{
+    out.clear();
+    for (const ICFGEdge* e : node->getInEdges())
+        out.push_back(e->getSrcNode());
+}
+
+bool LockAnalysis::acceptsNode(const ICFGNode*) const
+{
+    return true;
+}
+
+void LockAnalysis::getInEdgesOfCallGraphNode(const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const
+{
+    out.clear();
+    for (CallGraphEdge* edge : node->getInEdges())
+        out.push_back(edge);
+}
+
+const CallGraph* LockAnalysis::getAnalysisCallGraph() const
+{
+    return PAG::getPAG()->getCallGraph();
+}
+
 
 void LockAnalysis::analyze()
 {
@@ -70,7 +108,7 @@ void LockAnalysis::collectLockUnlocksites()
 {
     ThreadCallGraph* tcg=tct->getThreadCallGraph();
 
-    for (const auto& item : *PAG::getPAG()->getCallGraph())
+    for (const auto& item : *getAnalysisCallGraph())
     {
         const FunObjVar* F = item.second->getFunction();
         for (auto it : *F)
@@ -78,6 +116,8 @@ void LockAnalysis::collectLockUnlocksites()
             const SVFBasicBlock* bb = it.second;
             for (const ICFGNode* icfgNode : bb->getICFGNodeList())
             {
+                if (!acceptsNode(icfgNode))
+                    continue;
                 if (isa<CallICFGNode>(icfgNode) && tcg->getThreadAPI()->isTDRelease(cast<CallICFGNode>(icfgNode)))
                 {
                     unlocksites.insert(icfgNode);
@@ -198,11 +238,13 @@ bool LockAnalysis::intraForwardTraverse(const ICFGNode* lockSite, InstSet& unloc
             continue;
         }
 
-        for(const ICFGEdge* outEdge : I->getOutEdges())
+        std::vector<const ICFGNode*> succ;
+        getSuccNodes(I, succ);
+        for (const ICFGNode* dst : succ)
         {
-            if(outEdge->getDstNode()->getFun() == I->getFun())
+            if(dst->getFun() == I->getFun())
             {
-                worklist.push_back(outEdge->getDstNode());
+                worklist.push_back(dst);
             }
         }
     }
@@ -244,11 +286,13 @@ bool LockAnalysis::intraBackwardTraverse(const InstSet& unlockSet, InstSet& back
                 continue;
             }
 
-            for(const ICFGEdge* inEdge : I->getInEdges())
+            std::vector<const ICFGNode*> pred;
+            getPredNodes(I, pred);
+            for (const ICFGNode* src : pred)
             {
-                if(inEdge->getSrcNode()->getFun() == I->getFun())
+                if(src->getFun() == I->getFun())
                 {
-                    worklist.push_back(inEdge->getSrcNode());
+                    worklist.push_back(src);
                 }
             }
         }
@@ -312,6 +356,8 @@ void LockAnalysis::handleCallRelation(CxtLockProc& clp, const CallGraphEdge* cgE
 
     CallStrCxt cxt(clp.getContext());
     const ICFGNode* curNode = cs;
+    if (!acceptsNode(curNode))
+        return;
     if (isTDAcquire(curNode))
     {
         addCxtLock(cxt,curNode);
@@ -344,7 +390,9 @@ void LockAnalysis::analyzeLockSpanCxtStmt()
         if (!isLockCandidateFun(*it))
             continue;
         CallStrCxt cxt;
-        const ICFGNode* frontInst = (*it)->getEntryBlock()->front();
+        const ICFGNode* frontInst = getFunEntry(*it);
+        if (!acceptsNode(frontInst))
+            continue;
         CxtStmt cxtstmt(cxt, frontInst);
         pushToCTSWorkList(cxtstmt);
     }
@@ -355,6 +403,8 @@ void LockAnalysis::analyzeLockSpanCxtStmt()
 
         touchCxtStmt(cts);
         const ICFGNode* curInst = cts.getStmt();
+        if (!acceptsNode(curInst))
+            continue;
         instToCxtStmtSet[curInst].insert(cts);
 
         DBOUT(DMTA, outs() << "\nVisit cxtStmt: ");
@@ -424,7 +474,9 @@ void LockAnalysis::handleFork(const CxtStmt& cts)
             const FunObjVar* svfcallee = (*cgIt)->getDstNode()->getFunction();
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt,call,svfcallee);
-            const ICFGNode* svfInst = svfcallee->getEntryBlock()->front();
+            const ICFGNode* svfInst = getFunEntry(svfcallee);
+            if (!acceptsNode(svfInst))
+                continue;
             CxtStmt newCts(newCxt, svfInst);
             markCxtStmtFlag(newCts, cts);
         }
@@ -448,7 +500,9 @@ void LockAnalysis::handleCall(const CxtStmt& cts)
                 continue;
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt, call, svfcallee);
-            const ICFGNode* svfInst = svfcallee->getEntryBlock()->front();
+            const ICFGNode* svfInst = getFunEntry(svfcallee);
+            if (!acceptsNode(svfInst))
+                continue;
             CxtStmt newCts(newCxt, svfInst);
             markCxtStmtFlag(newCts, cts);
         }
@@ -464,11 +518,14 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
     const FunObjVar* svffun = curInst->getFun();
     CallGraphNode* curFunNode = getTCG()->getCallGraphNode(svffun);
 
-    for (CallGraphNode::const_iterator it = curFunNode->getInEdges().begin(), eit = curFunNode->getInEdges().end(); it != eit; ++it)
+    std::vector<const CallGraphEdge*> inEdges;
+    getInEdgesOfCallGraphNode(curFunNode, inEdges);
+    for (const CallGraphEdge* edgeConst : inEdges)
     {
-        CallGraphEdge* edge = *it;
-        if (SVFUtil::isa<ThreadForkEdge, ThreadJoinEdge>(edge))
+        if (SVFUtil::isa<ThreadForkEdge, ThreadJoinEdge>(edgeConst))
             continue;
+        // Need non-const for directCallsBegin/End
+        CallGraphEdge* edge = const_cast<CallGraphEdge*>(edgeConst);
         for (CallGraphEdge::CallInstSet::const_iterator cit = (edge)->directCallsBegin(), ecit = (edge)->directCallsEnd(); cit != ecit;
                 ++cit)
         {
@@ -476,9 +533,11 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
             const ICFGNode* inst = *cit;
             if (matchCxt(newCxt, SVFUtil::cast<CallICFGNode>(inst), curFunNode->getFunction()))
             {
-                for(const ICFGEdge* outEdge : curInst->getOutEdges())
+                std::vector<const ICFGNode*> succ;
+                getSuccNodes(curInst, succ);
+                for (const ICFGNode* dst : succ)
                 {
-                    if(outEdge->getDstNode()->getFun() == inst->getFun())
+                    if(dst->getFun() == inst->getFun())
                     {
                         // Iterate over callSite's call string context and use as the successor's context
                         if (!hasCxtStmtFromInst(*cit))
@@ -489,7 +548,7 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
                             // If new context is a suffix of the call site context
                             if (isContextSuffix(newCxt, callSiteCxt))
                             {
-                                CxtStmt newCts(callSiteCxt, outEdge->getDstNode());
+                                CxtStmt newCts(callSiteCxt, dst);
                                 markCxtStmtFlag(newCts, cts);
                             }
                         }
@@ -504,9 +563,11 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
             const ICFGNode* inst = *cit;
             if (matchCxt(newCxt, SVFUtil::cast<CallICFGNode>(inst), curFunNode->getFunction()))
             {
-                for(const ICFGEdge* outEdge : curInst->getOutEdges())
+                std::vector<const ICFGNode*> succ;
+                getSuccNodes(curInst, succ);
+                for (const ICFGNode* dst : succ)
                 {
-                    if(outEdge->getDstNode()->getFun() == inst->getFun())
+                    if(dst->getFun() == inst->getFun())
                     {
                         // Iterate over callSite's call string context and use as the successor's context
                         if (!hasCxtStmtFromInst(*cit))
@@ -517,7 +578,7 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
                             // If new context is a suffix of the call site context
                             if (isContextSuffix(newCxt, callSiteCxt))
                             {
-                                CxtStmt newCts(callSiteCxt, outEdge->getDstNode());
+                                CxtStmt newCts(callSiteCxt, dst);
                                 markCxtStmtFlag(newCts, cts);
                             }
                         }
@@ -535,11 +596,13 @@ void LockAnalysis::handleIntra(const CxtStmt& cts)
     const ICFGNode* curInst = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
 
-    for(const ICFGEdge* outEdge : curInst->getOutEdges())
+    std::vector<const ICFGNode*> succ;
+    getSuccNodes(curInst, succ);
+    for (const ICFGNode* dst : succ)
     {
-        if(outEdge->getDstNode()->getFun() == curInst->getFun())
+        if(dst->getFun() == curInst->getFun())
         {
-            CxtStmt newCts(curCxt, outEdge->getDstNode());
+            CxtStmt newCts(curCxt, dst);
             markCxtStmtFlag(newCts, cts);
         }
     }
