@@ -131,7 +131,8 @@ protected:
     }
     /// Update non-candidate functions' interleaving.
     /// Copy interleaving threads of the entry inst to other insts.
-    void updateNonCandidateFunInterleaving();
+    /// Virtual so SlicedMHP can iterate the sliced CallGraph instead.
+    virtual void updateNonCandidateFunInterleaving();
 
     /// Handle non-candidate function
     void handleNonCandidateFun(const CxtThreadStmt& cts);
@@ -150,6 +151,16 @@ protected:
 
     /// Handle intra
     virtual void handleIntra(const CxtThreadStmt& cts);
+
+    /// ICFG/CallGraph traversal hooks. The default implementations walk the full
+    /// ICFG/CallGraph; a subclass analysing a sliced view (SlicedMHP) overrides
+    /// them to walk only the kept nodes/edges, so the shared handlers above need
+    /// not be copied just to swap the traversal.
+    //@{
+    virtual const ICFGNode* getFunEntry(const FunObjVar* fun) const;
+    virtual void getSuccNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const;
+    virtual void getInEdgesOfCallGraphNode(const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const;
+    //@}
 
     /// Add/Remove interleaving thread for statement inst
     //@{
