@@ -81,6 +81,10 @@ public:
     {
     }
 
+    /// Virtual: the traversal hooks below make this a polymorphic base
+    /// (SlicedLockAnalysis derives from it and is deleted through a base pointer).
+    virtual ~LockAnalysis() = default;
+
     /// context-sensitive forward traversal from each lock site. Generate following results
     /// (1) context-sensitive lock site,
     /// (2) maps a context-sensitive lock site to its corresponding lock span.
@@ -338,6 +342,20 @@ protected:
 
     /// Handle call relations
     void handleCallRelation(CxtLockProc& clp, const CallGraphEdge* cgEdge, const CallICFGNode* call);
+
+    /// ICFG/CallGraph traversal hooks. The default implementations walk the full
+    /// ICFG/CallGraph; a subclass analysing a sliced view (SlicedLockAnalysis)
+    /// overrides them so the shared analysis routines above need not be copied
+    /// just to swap the traversal.
+    //@{
+    virtual const ICFGNode* getFunEntry(const FunObjVar* fun) const;
+    virtual void getSuccNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const;
+    virtual void getPredNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const;
+    virtual bool acceptsNode(const ICFGNode* node) const;
+    virtual void getInEdgesOfCallGraphNode(const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const;
+    /// CallGraph whose nodes collectLockUnlocksites scans (sliced view overrides it).
+    virtual const CallGraph* getAnalysisCallGraph() const;
+    //@}
 
     /// Return true it a lock matches an unlock
     bool isAliasedLocks(const CxtLock& cl1, const CxtLock& cl2)
