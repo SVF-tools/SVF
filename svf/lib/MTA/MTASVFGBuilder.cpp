@@ -3,6 +3,7 @@
 // Port of SVF-2.9 MTASVFGBuilder onto the SVF 3.2 SVFG/MemSSA API.
 // Implements the FSAM thread-aware value-flow construction (CGO'16, §3.3).
 //===----------------------------------------------------------------------===//
+// Author: Jiawei Yang
 
 #include "MTA/MTASVFGBuilder.h"
 #include "MSSA/MemSSA.h"

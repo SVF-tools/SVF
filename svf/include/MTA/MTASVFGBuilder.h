@@ -15,6 +15,7 @@
 // original (non-sparse, PCG, read-precision edge removal) are intentionally
 // dropped; only the default thread-aware edge construction is kept.
 //===----------------------------------------------------------------------===//
+// Author: Jiawei Yang
 
 #pragma once
 

@@ -11,6 +11,7 @@
 // Port of SVF-2.9 `FSMPTA` (removed from SVF 3.x), adapted to the SVF 3.2
 // FlowSensitive/SVFGBuilder API.
 //===----------------------------------------------------------------------===//
+// Author: Jiawei Yang
 
 #pragma once
 

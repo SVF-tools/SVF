@@ -23,6 +23,8 @@
 /*
  * Slicer.h
  *
+ *      Author: Jiawei Yang
+ *
  * The MSli program slicers: a shared SlicerBase plus three concrete slicers.
  *   - MTASlicer   : ILA (sync + dual + call) slice for the thread-aware analysis
  *   - PTASlicer   : data-dependence slice over the thread-aware VFG_pre

@@ -1,4 +1,4 @@
-//===- MTA.h -- Analysis of multithreaded programs-------------//
+//===- MTA.cpp -- Analysis of multithreaded programs-------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //

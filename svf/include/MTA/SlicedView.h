@@ -23,6 +23,8 @@
 /*
  * SlicedView.h
  *
+ *      Author: Jiawei Yang
+ *
  * Filtered ("sliced") views over the SVFIR graphs. A slice is a set of kept ICFG
  * nodes; these views present the ICFG / PAG / ThreadCallGraph restricted to that
  * set (with bridged edges across removed nodes), without mutating the originals.

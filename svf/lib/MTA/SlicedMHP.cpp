@@ -1,4 +1,5 @@
 // MSli: MHP running on sliced ICFG view.
+// Author: Jiawei Yang
 
 #include "MTA/SlicedMHP.h"
 

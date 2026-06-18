@@ -23,6 +23,8 @@
 /*
  * SlicedMTA.h
  *
+ *      Author: Jiawei Yang
+ *
  * Multi-Stage On-Demand Program Slicing for multi-threaded race detection
  * (MSli). This is the library-side orchestration of the slicing pipeline; it
  * operates entirely on the SVFIR (LLVM-free). The single LLVM-dependent step --
