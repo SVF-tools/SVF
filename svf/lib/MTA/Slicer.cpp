@@ -71,7 +71,7 @@ SlicerBase::~SlicerBase() {
 }
 
 // Helper: Get lock set for an ICFG node
-std::set<const ICFGNode*> SlicerBase::_getLockSet(const ICFGNode* node) {
+std::set<const ICFGNode*> SlicerBase::getLockSet(const ICFGNode* node) {
     std::set<const ICFGNode*> allLockSites;
 
     // Get intra-procedural locks
@@ -101,7 +101,7 @@ std::set<const ICFGNode*> SlicerBase::_getLockSet(const ICFGNode* node) {
 }
 
 // Helper: Get TCTNode set from ICFGNode
-std::set<const TCTNode*> SlicerBase::_getTCTNodeSetFromNode(const ICFGNode* node) {
+std::set<const TCTNode*> SlicerBase::getTCTNodeSetFromNode(const ICFGNode* node) {
     std::set<const TCTNode*> tctNodeSet;
 
     if (mhp->hasThreadStmtSet(node)) {
@@ -116,11 +116,11 @@ std::set<const TCTNode*> SlicerBase::_getTCTNodeSetFromNode(const ICFGNode* node
 }
 
 // Helper: Get dependent thread create statements
-std::set<const SVFStmt*> SlicerBase::_getDependentThreadCreate(const SVFStmt* stmt) {
+std::set<const SVFStmt*> SlicerBase::getDependentThreadCreate(const SVFStmt* stmt) {
     std::set<const SVFStmt*> forkSiteStmts;
 
     const ICFGNode* icfgNode = stmt->getICFGNode();
-    std::set<const TCTNode*> tctNodeSet = _getTCTNodeSetFromNode(icfgNode);
+    std::set<const TCTNode*> tctNodeSet = getTCTNodeSetFromNode(icfgNode);
 
     for (const TCTNode* tctNode : tctNodeSet) {
         const CxtThread& cxtThread = tctNode->getCxtThread();
@@ -139,7 +139,7 @@ std::set<const SVFStmt*> SlicerBase::_getDependentThreadCreate(const SVFStmt* st
 // Data-dependence slice over the thread-aware SVFG (VFG_pre). SVF 3.2's
 // value-flow graph edges already capture direct (top-level), indirect
 // (address-taken / MemSSA), and thread-aware (interference) data dependence.
-std::set<const ICFGNode*> SlicerBase::_sliceDataDependenceOverVFG(
+std::set<const ICFGNode*> SlicerBase::sliceDataDependenceOverVFG(
     const std::set<const SVFStmt*>& seeds, SVF::SVFG* vfg) {
 
     assert(vfg != nullptr && "data-dependence slice requires the thread-aware VFG_pre");
@@ -176,7 +176,7 @@ std::set<const ICFGNode*> SlicerBase::_sliceDataDependenceOverVFG(
 }
 
 // Helper: Collect pthread-related statements (create and join)
-std::set<const CallICFGNode*> SlicerBase::_collectPthreadStatements(
+std::set<const CallICFGNode*> SlicerBase::collectPthreadStatements(
     const std::set<const SVFStmt*>& vulnerableStmts) {
     std::set<const CallICFGNode*> pthreadCallNodes;
 
@@ -188,7 +188,7 @@ std::set<const CallICFGNode*> SlicerBase::_collectPthreadStatements(
 
     // First pass: collect all pthread_create nodes
     for (const SVFStmt* stmt : vulnerableStmts) {
-        std::set<const SVFStmt*> forkSiteStmts = _getDependentThreadCreate(stmt);
+        std::set<const SVFStmt*> forkSiteStmts = getDependentThreadCreate(stmt);
 
         for (const SVFStmt* forkSiteStmt : forkSiteStmts) {
             const ICFGNode* forkSiteNode = forkSiteStmt->getICFGNode();
@@ -226,7 +226,7 @@ std::set<const CallICFGNode*> SlicerBase::_collectPthreadStatements(
 }
 
 // Helper: Collect mutex-related statements (lock and unlock)
-std::set<const CallICFGNode*> SlicerBase::_collectMutexStatements(
+std::set<const CallICFGNode*> SlicerBase::collectMutexStatements(
     const std::set<const SVFStmt*>& vulnerableStmts) {
     std::set<const CallICFGNode*> mutexCallNodes;
 
@@ -238,7 +238,7 @@ std::set<const CallICFGNode*> SlicerBase::_collectMutexStatements(
 
     // First pass: collect all mutex_lock nodes from lock sets
     for (const SVFStmt* stmt : vulnerableStmts) {
-        std::set<const ICFGNode*> lockSet = _getLockSet(stmt->getICFGNode());
+        std::set<const ICFGNode*> lockSet = getLockSet(stmt->getICFGNode());
         for (const ICFGNode* lockNode : lockSet) {
             const CallICFGNode* lockCallNode = SVFUtil::dyn_cast<CallICFGNode>(lockNode);
             if (lockCallNode != nullptr && threadAPI->isTDAcquire(lockCallNode)) {
@@ -273,18 +273,18 @@ std::set<const CallICFGNode*> SlicerBase::_collectMutexStatements(
 
 // Helper: Collect common pthread and mutex statements (shared by PTA and MTA slicing)
 std::pair<std::set<const CallICFGNode*>, std::set<const CallICFGNode*>>
-SlicerBase::_collectCommonThreadStatements(const std::set<const SVFStmt*>& vulnerableStatements) {
+SlicerBase::collectCommonThreadStatements(const std::set<const SVFStmt*>& vulnerableStatements) {
     // Step 1: Collect pthread-related statements, i.e., pthread_create and pthread_join
-    std::set<const CallICFGNode*> pthreadCallNodes = _collectPthreadStatements(vulnerableStatements);
+    std::set<const CallICFGNode*> pthreadCallNodes = collectPthreadStatements(vulnerableStatements);
 
     // Step 2: Collect mutex-related statements
-    std::set<const CallICFGNode*> mutexCallNodes = _collectMutexStatements(vulnerableStatements);
+    std::set<const CallICFGNode*> mutexCallNodes = collectMutexStatements(vulnerableStatements);
 
     return std::make_pair(pthreadCallNodes, mutexCallNodes);
 }
 
 // Build backward ICFG node set from vulnerable nodes
-std::set<const ICFGNode*> SlicerBase::_buildBackwardICFGNodeSet(
+std::set<const ICFGNode*> SlicerBase::buildBackwardICFGNodeSet(
     const std::set<const ICFGNode*>& vulnerableNodes) {
     std::set<const ICFGNode*> backwardICFGNodeSet;
     std::deque<const ICFGNode*> worklist;
@@ -313,12 +313,12 @@ std::set<const ICFGNode*> SlicerBase::_buildBackwardICFGNodeSet(
 }
 
 // Perform dual slicing (temporal slicing): filter statements based on control flow and parallel execution
-std::set<const ICFGNode*> SlicerBase::_performDualSlicing(
+std::set<const ICFGNode*> SlicerBase::performDualSlicing(
     const std::set<const ICFGNode*>& slicedNodes) {
     std::set<const ICFGNode*> dualSlicedNodes;
 
     // Build backward ICFG node set
-    std::set<const ICFGNode*> backwardICFGNodeSet = _buildBackwardICFGNodeSet(slicedNodes);
+    std::set<const ICFGNode*> backwardICFGNodeSet = buildBackwardICFGNodeSet(slicedNodes);
 
     // Perform control slicing
     for (const ICFGNode* stmtICFGNode : slicedNodes) {
@@ -340,7 +340,7 @@ std::set<const ICFGNode*> SlicerBase::_performDualSlicing(
 }
 
 // Call-dependence expansion shared by MTASlicer and SingleSlicer.
-std::set<const ICFGNode*> SlicerBase::_expandCallDependence(
+std::set<const ICFGNode*> SlicerBase::expandCallDependence(
     const std::set<const ICFGNode*>& nodes) {
 
     // Determine keptFunctions from the given nodes
@@ -456,7 +456,7 @@ std::set<const ICFGNode*> MTASlicer::performSlicing(
     const std::set<const ICFGNode*>& threadVFSources) {
 
     // Step 1: Collect common pthread and mutex statements
-    auto commonStmts = _collectCommonThreadStatements(vulnerableStatements);
+    auto commonStmts = collectCommonThreadStatements(vulnerableStatements);
     const std::set<const CallICFGNode*>& pthreadCallNodes = commonStmts.first;
     const std::set<const CallICFGNode*>& mutexCallNodes = commonStmts.second;
 
@@ -479,11 +479,11 @@ std::set<const ICFGNode*> MTASlicer::performSlicing(
     initialSliceResult.insert(threadVFSources.begin(), threadVFSources.end());
 
     // Step 3: Perform dual slicing (temporal slicing)
-    std::set<const ICFGNode*> dualSlicedNodes = _performDualSlicing(initialSliceResult);
+    std::set<const ICFGNode*> dualSlicedNodes = performDualSlicing(initialSliceResult);
 
     // Step 4: Expand keptNodes to include call/ret nodes and function entry/exit
     // nodes (call dependence; shared with SingleSlicer via SlicerBase).
-    return _expandCallDependence(dualSlicedNodes);
+    return expandCallDependence(dualSlicedNodes);
 }
 
 //===----------------------------------------------------------------------===//
@@ -502,10 +502,10 @@ std::set<const ICFGNode*> PTASlicer::performSlicing(
     // Step 1: paper-faithful (§4.3) data-dependence slice over the thread-aware
     // SVFG built once in pre-analysis (the shared SlicerBase helper).
     std::set<const ICFGNode*> initialSliceResult =
-        _sliceDataDependenceOverVFG(vulnerableStatements, vfg);
+        sliceDataDependenceOverVFG(vulnerableStatements, vfg);
 
     // Step 2: Perform dual slicing (temporal slicing)
-    std::set<const ICFGNode*> dualSlicedNodes = _performDualSlicing(initialSliceResult);
+    std::set<const ICFGNode*> dualSlicedNodes = performDualSlicing(initialSliceResult);
 
     return dualSlicedNodes;
 }
@@ -524,7 +524,7 @@ std::set<const ICFGNode*> SingleSlicer::performSlicing(
     const std::set<const SVFStmt*>& vulnerableStatements) {
 
     // Step 1: Collect synchronization dependence (pthread and mutex statements)
-    auto commonStmts = _collectCommonThreadStatements(vulnerableStatements);
+    auto commonStmts = collectCommonThreadStatements(vulnerableStatements);
     const std::set<const CallICFGNode*>& pthreadCallNodes = commonStmts.first;
     const std::set<const CallICFGNode*>& mutexCallNodes = commonStmts.second;
 
@@ -561,11 +561,11 @@ std::set<const ICFGNode*> SingleSlicer::performSlicing(
         }
 
         std::set<const ICFGNode*> dataDepNodes =
-            _sliceDataDependenceOverVFG(currentStatements, vfg);
+            sliceDataDependenceOverVFG(currentStatements, vfg);
         currentNodes.insert(dataDepNodes.begin(), dataDepNodes.end());
 
         // Step 3b: Apply call dependence (function expansion)
-        currentNodes = _expandCallDependence(currentNodes);
+        currentNodes = expandCallDependence(currentNodes);
 
         // Check if we've converged (don't apply dual slicing in the loop)
         changed = (currentNodes.size() != previousNodes.size() ||
@@ -578,7 +578,7 @@ std::set<const ICFGNode*> SingleSlicer::performSlicing(
     }
 
     // Step 4: Apply dual slicing (temporal slicing) once at the end
-    std::set<const ICFGNode*> finalNodes = _performDualSlicing(currentNodes);
+    std::set<const ICFGNode*> finalNodes = performDualSlicing(currentNodes);
 
     return finalNodes;
 }

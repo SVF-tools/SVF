@@ -75,17 +75,17 @@ protected:
      * Returns the kept ICFG nodes. This is the single dependence model shared
      * by PTASlicer and SingleSlicer.
      */
-    std::set<const ICFGNode*> _sliceDataDependenceOverVFG(
+    std::set<const ICFGNode*> sliceDataDependenceOverVFG(
         const std::set<const SVFStmt*>& seeds, SVF::SVFG* vfg);
 
     // === Thread analysis helpers ===
-    std::set<const SVFStmt*> _getDependentThreadCreate(const SVFStmt* stmt);
-    std::set<const TCTNode*> _getTCTNodeSetFromNode(const ICFGNode* node);
+    std::set<const SVFStmt*> getDependentThreadCreate(const SVFStmt* stmt);
+    std::set<const TCTNode*> getTCTNodeSetFromNode(const ICFGNode* node);
 
     // === Lock analysis helpers ===
-    std::set<const ICFGNode*> _getLockSet(const ICFGNode* node);
-    std::set<const CallICFGNode*> _collectPthreadStatements(const std::set<const SVFStmt*>& vulnerableStmts);
-    std::set<const CallICFGNode*> _collectMutexStatements(const std::set<const SVFStmt*>& vulnerableStmts);
+    std::set<const ICFGNode*> getLockSet(const ICFGNode* node);
+    std::set<const CallICFGNode*> collectPthreadStatements(const std::set<const SVFStmt*>& vulnerableStmts);
+    std::set<const CallICFGNode*> collectMutexStatements(const std::set<const SVFStmt*>& vulnerableStmts);
 
     // === Common slicing helpers ===
     /**
@@ -94,10 +94,10 @@ protected:
      * @return Pair of (pthreadCallNodes, mutexCallNodes)
      */
     std::pair<std::set<const CallICFGNode*>, std::set<const CallICFGNode*>>
-        _collectCommonThreadStatements(const std::set<const SVFStmt*>& vulnerableStatements);
+        collectCommonThreadStatements(const std::set<const SVFStmt*>& vulnerableStatements);
 
     // === ICFG analysis helpers ===
-    std::set<const ICFGNode*> _buildBackwardICFGNodeSet(const std::set<const ICFGNode*>& vulnerableNodes);
+    std::set<const ICFGNode*> buildBackwardICFGNodeSet(const std::set<const ICFGNode*>& vulnerableNodes);
 
     /**
      * Call-dependence expansion (shared by MTASlicer and SingleSlicer): take the
@@ -107,7 +107,7 @@ protected:
      * @param nodes Current set of ICFG nodes
      * @return The input nodes plus the call/ret and entry/exit nodes above
      */
-    std::set<const ICFGNode*> _expandCallDependence(const std::set<const ICFGNode*>& nodes);
+    std::set<const ICFGNode*> expandCallDependence(const std::set<const ICFGNode*>& nodes);
 
     /**
      * Perform dual slicing (temporal slicing): filter statements based on control flow and parallel execution.
@@ -115,7 +115,7 @@ protected:
      * @param slicedNodes Set of statements from statement-level slicing
      * @return Set of ICFG nodes in the dual slice
      */
-    std::set<const ICFGNode*> _performDualSlicing(
+    std::set<const ICFGNode*> performDualSlicing(
         const std::set<const ICFGNode*>& slicedNodes);
 
 public:
