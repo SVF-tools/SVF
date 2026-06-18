@@ -333,6 +333,15 @@ protected:
     /// Get Mod-Ref of a callee function
     virtual bool handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGNode* cs, const FunObjVar* fun);
 
+    /// Hooks for thread fork/join side effects. The base does nothing; a
+    /// thread-aware MRGenerator (MTA) overrides them to forward a spawnee's ref
+    /// set at a fork callsite and add a spawnee's mod set at its join sites.
+    /// Keeping the thread-specific logic out of the core keeps MemRegion free of
+    /// any MTA / ThreadCallGraph knowledge.
+    virtual void handleForkSideEffect(NodeBS& /*mod*/, NodeBS& /*ref*/,
+                                      const CallICFGNode* /*cs*/, const FunObjVar* /*callee*/) {}
+    virtual void handleJoinSideEffect(CallGraphNode* /*callGraphNode*/, WorkList& /*worklist*/) {}
+
 
     /// Add cpts to store/load
     //@{
@@ -381,6 +390,13 @@ protected:
     bool addRefSideEffectOfCallSite(const CallICFGNode* cs, const NodeBS& refs);
     /// Add indirect def an memory object in the function
     bool addModSideEffectOfCallSite(const CallICFGNode* cs, const NodeBS& mods);
+
+    /// The call graph this generator works on (for subclasses, e.g. the
+    /// thread-aware MTA MRGenerator that inspects fork/join edges).
+    CallGraph* getCallGraph() const
+    {
+        return callGraph;
+    }
 
     /// Get indirect refs of a function
     inline const NodeBS& getRefSideEffectOfFunction(const FunObjVar* fun)

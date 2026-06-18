@@ -31,7 +31,6 @@
 #include "MSSA/MemRegion.h"
 #include "MSSA/MSSAMuChi.h"
 #include "Graphs/CallGraph.h"
-#include "Graphs/ThreadCallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -600,19 +599,8 @@ bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGN
             if (const AddrStmt* addr = SVFUtil::dyn_cast<AddrStmt>(edge))
                 mod.set(addr->getRHSVarID());
         }
-        /// Thread fork as a call WITHOUT a return: pthread_create spawns `callee`
-        /// in a new thread. We forward the spawnee's *ref* set to the fork site so
-        /// the spawner's memory state at the fork bridges into the spawnee
-        /// (ActualIN -> FormalIN, FSAM's thread-oblivious value flow). We do NOT
-        /// add the spawnee's *mod* set: a fork has no return, so the spawnee's
-        /// writes must not flow back to the spawner here (that is handled by the
-        /// thread-aware interference edges instead). The heap (pthread_t) mod set
-        /// computed above is kept.
-        if (const ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(callGraph))
-        {
-            if (tcg->hasThreadForkEdge(cs))
-                ref = getRefSideEffectOfFunction(callee);
-        }
+        // Thread-fork side effect (no-op unless a thread-aware MRGenerator is used).
+        handleForkSideEffect(mod, ref, cs, callee);
     }
     /// otherwise, we find the mod/ref sets from the callee function, who has definition and been processed
     else
@@ -663,26 +651,8 @@ void MRGenerator::modRefAnalysis(CallGraphNode* callGraphNode, WorkList& worklis
         }
     }
 
-    /// FSAM join-related def-use: a thread join makes the joined spawnee's exit
-    /// writes visible to the spawner. `callGraphNode` is the spawnee (start
-    /// routine) being joined; for each site that joins it, add the spawnee's MOD
-    /// set to the join callsite, creating an ActualOUT there -- a "return without
-    /// a forward" (the spawnee's writes flow out to the spawner at the join). We
-    /// add only MOD, never REF. Thread join edges are not real call-graph edges
-    /// (they are kept in a side map), so we reach them via getJoinSites rather
-    /// than the InEdge loop above.
-    if(ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(callGraph))
-    {
-        ThreadCallGraph::InstSet joinsites;
-        tcg->getJoinSites(callGraphNode, joinsites);
-        if(!joinsites.empty())
-        {
-            const NodeBS& spawneeMod = getModSideEffectOfFunction(callGraphNode->getFunction());
-            for(const CallICFGNode* cs : joinsites)
-                if(addModSideEffectOfCallSite(cs, spawneeMod))
-                    worklist.push(callGraph->getCallGraphNode(cs->getCaller())->getId());
-        }
-    }
+    // Thread-join side effect (no-op unless a thread-aware MRGenerator is used).
+    handleJoinSideEffect(callGraphNode, worklist);
 }
 
 /*!
