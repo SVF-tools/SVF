@@ -23,6 +23,8 @@
 /*
  * SlicedMTA.cpp
  *
+ *      Author: Jiawei Yang
+ *
  * Multi-Stage On-Demand Program Slicing for multi-threaded race detection (MSli).
  * Library-side orchestration of the slicing pipeline over the SVFIR.
  */

@@ -1,5 +1,6 @@
 // MSli: LockAnalysis running on a sliced ICFG view.
 // Inherits from SVF::LockAnalysis and overrides ICFG traversal methods to use SlicedICFGView.
+// Author: Jiawei Yang
 #pragma once
 
 // Include WorkList.h before TCT.h because TCT.h includes SCC.h which uses FIFOWorkList

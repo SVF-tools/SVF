@@ -2,6 +2,7 @@
 //
 // Port of SVF-2.9 FSMPTA::initialize onto SVF 3.2 FlowSensitive.
 //===----------------------------------------------------------------------===//
+// Author: Jiawei Yang
 
 #include "MTA/FSPTA.h"
 #include "WPA/Andersen.h"

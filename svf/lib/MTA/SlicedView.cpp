@@ -23,6 +23,8 @@
 /*
  * SlicedView.cpp
  *
+ *      Author: Jiawei Yang
+ *
  * SlicedICFGView + SlicedPAGView + SlicedThreadCallGraphView + SlicedSVFIRView +
  * SlicedViewAdapter.
  */

@@ -4,6 +4,7 @@
 // are overridden so the inherited analysis routines walk the sliced view. The
 // sliced ForkJoin/lock-span algorithms are exactly the base ones reached
 // through these hooks (see LockAnalysis.cpp), so nothing else is reimplemented.
+// Author: Jiawei Yang
 
 #include "MTA/SlicedLockAnalysis.h"
 

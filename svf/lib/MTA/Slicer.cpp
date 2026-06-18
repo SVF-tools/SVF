@@ -23,6 +23,8 @@
 /*
  * Slicer.cpp
  *
+ *      Author: Jiawei Yang
+ *
  * SlicerBase + MTASlicer + PTASlicer.
  */
 
