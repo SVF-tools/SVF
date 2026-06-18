@@ -336,27 +336,7 @@ bool SlicedMTA::phase3_MTASlicingAndAnalysis()
 
     std::set<const ICFGNode*> mtaSlicedNodes;
 
-    if (Options::SlicingSingle())
     {
-        // Use single slicer for both MTA and PTA
-        SVFUtil::outs() << "[Slicing Mode] Using Single Slicer\n";
-
-        singleSlicer = std::make_unique<SingleSlicer>(
-                           svfIr, preAnder, mhp.get(), lockAnalysis.get(),
-                           vfgPre /* data dependence over the thread-aware VFG_pre */);
-
-        // Unified slicing (combines sync, data, and call dependence)
-        timePhase("Unified Slicing", [&]()
-        {
-            mtaSlicedNodes = singleSlicer->performSlicing(vulnerableStatements);
-        });
-        SVFUtil::outs() << "Unified sliced to " << mtaSlicedNodes.size() << " nodes\n";
-    }
-    else
-    {
-        // Use multi (separate) MTA slicer
-        SVFUtil::outs() << "[Slicing Mode] Using Multi MTA/PTA Slicers\n";
-
         mtaSlicer = std::make_unique<MTASlicer>(
                         svfIr, preAnder, mhp.get(), lockAnalysis.get());
 
@@ -448,24 +428,7 @@ bool SlicedMTA::phase4_PTASlicingAndAnalysis()
 
     std::set<const ICFGNode*> ptaSlicedNodes;
 
-    if (Options::SlicingSingle())
     {
-        // Use the single slicer result for PTA (same as MTA)
-        SVFUtil::outs() << "[Slicing Mode] Using Single Slicer result for PTA\n";
-        if (singleSlicer == nullptr)
-        {
-            SVFUtil::errs() << "[ERROR] SingleSlicer not created in phase 3\n";
-            return false;
-        }
-        timePhase("PTA Slicing (reuse Single Slicer)", [&]()
-        {
-            ptaSlicedNodes = singleSlicer->performSlicing(vulnerableStatements);
-        });
-        SVFUtil::outs() << "PTA sliced to " << ptaSlicedNodes.size() << " nodes (same as MTA)\n";
-    }
-    else
-    {
-        // Use separate PTA slicer
         SVFUtil::outs() << "Using " << vulnerableStatements.size() << " vulnerable statements from pre-analysis\n";
         SVFUtil::outs() << "Using " << racePairs.size() << " race pairs from pre-analysis\n";
 
@@ -701,7 +664,7 @@ std::set<const FunObjVar*> SlicedMTA::detectAllThreadFunctions(CallGraph* callGr
 }
 
 // Helper: Get global object variables
-PointsTo SlicedMTA::_getGlobalObjectVariables(SVFIR* svfIr) {
+PointsTo SlicedMTA::getGlobalObjectVariables(SVFIR* svfIr) {
     PointsTo globalObjVars;
     const ICFGNode* globalICFGNode = svfIr->getICFG()->getGlobalICFGNode();
 
@@ -719,7 +682,7 @@ PointsTo SlicedMTA::_getGlobalObjectVariables(SVFIR* svfIr) {
 }
 
 // Helper: Get PointsTo closure
-PointsTo SlicedMTA::_getPointsToClosure(AndersenBase* pta, const PointsTo& pts) {
+PointsTo SlicedMTA::getPointsToClosure(AndersenBase* pta, const PointsTo& pts) {
     PointsTo ptsClosure = pts;
     std::deque<NodeID> worklist;
 
@@ -745,7 +708,7 @@ PointsTo SlicedMTA::_getPointsToClosure(AndersenBase* pta, const PointsTo& pts) 
 }
 
 // Helper: Check if two functions may happen in parallel
-bool SlicedMTA::_mayHappenInParallel(MHP* mhp, const FunObjVar* fun1, const FunObjVar* fun2) {
+bool SlicedMTA::mayHappenInParallel(MHP* mhp, const FunObjVar* fun1, const FunObjVar* fun2) {
     if (fun1->hasBasicBlock() == false || fun2->hasBasicBlock() == false) {
         return false;
     }
@@ -755,7 +718,7 @@ bool SlicedMTA::_mayHappenInParallel(MHP* mhp, const FunObjVar* fun1, const FunO
 }
 
 // Helper: Gather parallel functions of a function set
-std::set<const FunObjVar*> SlicedMTA::_gatherParallelFunctions(
+std::set<const FunObjVar*> SlicedMTA::gatherParallelFunctions(
     CallGraph* callGraph,
     MHP* mhp,
     const std::set<const FunObjVar*>& funcSet) {
@@ -775,7 +738,7 @@ std::set<const FunObjVar*> SlicedMTA::_gatherParallelFunctions(
     for (const FunObjVar* threadFunc : funcSet) {
         std::set<const FunObjVar*> remainingFunctions = allFunctions;
         for (const FunObjVar* func : remainingFunctions) {
-            if (_mayHappenInParallel(mhp, threadFunc, func)) {
+            if (mayHappenInParallel(mhp, threadFunc, func)) {
                 mhpFunctions.insert(func);
             }
         }
@@ -789,7 +752,7 @@ std::set<const FunObjVar*> SlicedMTA::_gatherParallelFunctions(
 }
 
 // Helper: Get all ICFG nodes of a function
-std::set<const ICFGNode*> SlicedMTA::_getFunctionICFGNodes(const FunObjVar* function) {
+std::set<const ICFGNode*> SlicedMTA::getFunctionICFGNodes(const FunObjVar* function) {
     std::set<const ICFGNode*> funcICFGNodes;
 
     if (!function->hasBasicBlock()) {
@@ -831,12 +794,12 @@ std::set<const ICFGNode*> SlicedMTA::_getFunctionICFGNodes(const FunObjVar* func
 }
 
 // Helper: Get all load/store statements of functions
-std::set<const SVFStmt*> SlicedMTA::_getLoadStoreStatements(
+std::set<const SVFStmt*> SlicedMTA::getLoadStoreStatements(
     const std::set<const FunObjVar*>& functions) {
     std::set<const SVFStmt*> ldStStmts;
 
     for (const FunObjVar* function : functions) {
-        std::set<const ICFGNode*> icfgNodes = _getFunctionICFGNodes(function);
+        std::set<const ICFGNode*> icfgNodes = getFunctionICFGNodes(function);
         for (const ICFGNode* icfgNode : icfgNodes) {
             for (const SVFStmt* stmt : icfgNode->getSVFStmts()) {
                 if (SVFUtil::isa<LoadStmt>(stmt) || SVFUtil::isa<StoreStmt>(stmt)) {
@@ -860,7 +823,7 @@ std::set<const SVFStmt*> SlicedMTA::detectRaceStmts(
     std::set<RacePair>& outRacePairs) {
 
     std::set<const SVFStmt*> bugStmts;
-    PointsTo globalObjVars = _getGlobalObjectVariables(svfIr);
+    PointsTo globalObjVars = getGlobalObjectVariables(svfIr);
 
     // For each thread function
     for (const FunObjVar* threadFunc : threadFunctions) {
@@ -871,16 +834,16 @@ std::set<const SVFStmt*> SlicedMTA::detectRaceStmts(
 
         NodeID argId = threadFunc->getArg(0)->getId();
         PointsTo argPts = pta->getPts(argId);
-        PointsTo argPtsClosure = _getPointsToClosure(pta, argPts);
+        PointsTo argPtsClosure = getPointsToClosure(pta, argPts);
         PointsTo potentialPts = argPtsClosure;
         potentialPts |= globalObjVars;  // Union operation
 
         // Get thread function's parallel functions
         std::set<const FunObjVar*> threadFuncSet = {threadFunc};
-        std::set<const FunObjVar*> parallelFuncs = _gatherParallelFunctions(callGraph, mhp, threadFuncSet);
+        std::set<const FunObjVar*> parallelFuncs = gatherParallelFunctions(callGraph, mhp, threadFuncSet);
 
-        std::set<const SVFStmt*> ldStStmts1 = _getLoadStoreStatements(threadFuncSet);
-        std::set<const SVFStmt*> ldStStmts2 = _getLoadStoreStatements(parallelFuncs);
+        std::set<const SVFStmt*> ldStStmts1 = getLoadStoreStatements(threadFuncSet);
+        std::set<const SVFStmt*> ldStStmts2 = getLoadStoreStatements(parallelFuncs);
 
         // filter out stmts with no intersection with potentialPts
         std::set<const LoadStmt*> ldStmts1;

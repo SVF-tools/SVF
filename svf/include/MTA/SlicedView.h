@@ -95,6 +95,9 @@ private:
     std::set<const SVF::ICFGNode*> keptNodes;
     std::set<const SVF::ICFGEdge*> keptEdges;
     std::unordered_map<const SVF::ICFGNode*, std::set<const SVF::ICFGNode*>> bridgedEdges;
+    // Reverse of bridgedEdges (dst -> srcs), so getPredNodes is O(preds) instead
+    // of scanning every bridged edge.
+    std::unordered_map<const SVF::ICFGNode*, std::set<const SVF::ICFGNode*>> bridgedPreds;
     std::unordered_set<const SVF::ICFGNode*> keptNodesSet; // For fast lookup
 
     void buildICFGSets(const std::set<const SVF::ICFGNode*>& keepNodes,

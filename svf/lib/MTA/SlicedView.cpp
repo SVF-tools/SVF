@@ -105,10 +105,11 @@ void SlicedICFGView::getPredNodes(const ICFGNode* node, std::vector<const ICFGNo
         }
     }
 
-    // 2) reverse lookup of bridged edges (scans all bridged edges)
-    for (const auto& pair : bridgedEdges) {
-        if (pair.second.count(node) > 0) {
-            out.push_back(pair.first);
+    // 2) bridged predecessors (precomputed reverse map; srcs are already kept)
+    auto it = bridgedPreds.find(node);
+    if (it != bridgedPreds.end()) {
+        for (const ICFGNode* src : it->second) {
+            out.push_back(src);
         }
     }
 }
@@ -265,6 +266,7 @@ void SlicedICFGView::buildBridgedEdges() {
             if (!keptNodesSet.count(dst))
                 continue;
             bridgedEdges[src].insert(dst);
+            bridgedPreds[dst].insert(src);
         }
     }
 
