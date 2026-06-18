@@ -23,7 +23,7 @@
 /*
  * Slicer.cpp
  *
- * SlicerBase + MTASlicer + PTASlicer + SingleSlicer.
+ * SlicerBase + MTASlicer + PTASlicer.
  */
 
 #include "MTA/Slicer.h"
@@ -339,7 +339,7 @@ std::set<const ICFGNode*> SlicerBase::performDualSlicing(
     return dualSlicedNodes;
 }
 
-// Call-dependence expansion shared by MTASlicer and SingleSlicer.
+// Call-dependence expansion (used by MTASlicer).
 std::set<const ICFGNode*> SlicerBase::expandCallDependence(
     const std::set<const ICFGNode*>& nodes) {
 
@@ -482,7 +482,7 @@ std::set<const ICFGNode*> MTASlicer::performSlicing(
     std::set<const ICFGNode*> dualSlicedNodes = performDualSlicing(initialSliceResult);
 
     // Step 4: Expand keptNodes to include call/ret nodes and function entry/exit
-    // nodes (call dependence; shared with SingleSlicer via SlicerBase).
+    // nodes (call dependence).
     return expandCallDependence(dualSlicedNodes);
 }
 
@@ -508,79 +508,6 @@ std::set<const ICFGNode*> PTASlicer::performSlicing(
     std::set<const ICFGNode*> dualSlicedNodes = performDualSlicing(initialSliceResult);
 
     return dualSlicedNodes;
-}
-
-//===----------------------------------------------------------------------===//
-// SingleSlicer
-//===----------------------------------------------------------------------===//
-
-SingleSlicer::SingleSlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
-                           LockAnalysis* lockAnalysis, SVF::SVFG* vfg)
-    : SlicerBase(svfIr, pta, mhp, lockAnalysis), vfg(vfg) {
-}
-
-// Perform unified slicing combining synchronization, data, and call dependence
-std::set<const ICFGNode*> SingleSlicer::performSlicing(
-    const std::set<const SVFStmt*>& vulnerableStatements) {
-
-    // Step 1: Collect synchronization dependence (pthread and mutex statements)
-    auto commonStmts = collectCommonThreadStatements(vulnerableStatements);
-    const std::set<const CallICFGNode*>& pthreadCallNodes = commonStmts.first;
-    const std::set<const CallICFGNode*>& mutexCallNodes = commonStmts.second;
-
-    // Step 2: Form initial slice result from synchronization statements and vulnerable statements
-    std::set<const ICFGNode*> currentNodes;
-    currentNodes.insert(pthreadCallNodes.begin(), pthreadCallNodes.end());
-    for (const CallICFGNode* pthreadCallNode : pthreadCallNodes) {
-        currentNodes.insert(pthreadCallNode->getRetICFGNode());
-    }
-    currentNodes.insert(mutexCallNodes.begin(), mutexCallNodes.end());
-    for (const CallICFGNode* mutexCallNode : mutexCallNodes) {
-        currentNodes.insert(mutexCallNode->getRetICFGNode());
-    }
-    for (const SVFStmt* stmt: vulnerableStatements) {
-        currentNodes.insert(stmt->getICFGNode());
-    }
-
-    // Step 3: Iteratively apply data dependence and call dependence until convergence
-    bool changed = true;
-    int iteration = 0;
-    const int maxIterations = 100; // Safety limit to prevent infinite loops
-
-    while (changed && iteration < maxIterations) {
-        iteration++;
-        std::set<const ICFGNode*> previousNodes = currentNodes;
-
-        // Step 3a: Apply data dependence over the thread-aware SVFG (VFG_pre),
-        // the same dependence model PTASlicer uses (direct + indirect + thread-
-        // aware value flow). Extract statements from current nodes, slice back.
-        std::set<const SVFStmt*> currentStatements;
-        for (const ICFGNode* node : currentNodes) {
-            const ICFGNode::SVFStmtList& stmts = node->getSVFStmts();
-            currentStatements.insert(stmts.begin(), stmts.end());
-        }
-
-        std::set<const ICFGNode*> dataDepNodes =
-            sliceDataDependenceOverVFG(currentStatements, vfg);
-        currentNodes.insert(dataDepNodes.begin(), dataDepNodes.end());
-
-        // Step 3b: Apply call dependence (function expansion)
-        currentNodes = expandCallDependence(currentNodes);
-
-        // Check if we've converged (don't apply dual slicing in the loop)
-        changed = (currentNodes.size() != previousNodes.size() ||
-                   currentNodes != previousNodes);
-    }
-
-    if (iteration >= maxIterations) {
-        SVFUtil::errs() << "[WARNING] SingleSlicer reached max iterations (" << maxIterations
-                  << "), may not have converged\n";
-    }
-
-    // Step 4: Apply dual slicing (temporal slicing) once at the end
-    std::set<const ICFGNode*> finalNodes = performDualSlicing(currentNodes);
-
-    return finalNodes;
 }
 
 } // namespace SVF

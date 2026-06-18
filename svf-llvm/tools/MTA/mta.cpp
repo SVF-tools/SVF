@@ -34,18 +34,33 @@ using namespace llvm;
 using namespace std;
 using namespace SVF;
 
+// Whether a boolean flag is enabled on the command line: a bare `-flag` means
+// true, `-flag=VALUE` is true unless VALUE is a falsy literal. Mirrors how
+// llvm::cl parses a bool option, so we can peek at it before parseOptions.
+static bool boolFlagEnabled(int argc, char** argv, const std::string& flag)
+{
+    for (int i = 1; i < argc; ++i)
+    {
+        std::string arg = argv[i];
+        if (arg == flag)
+            return true;
+        if (arg.rfind(flag + "=", 0) == 0)
+        {
+            std::string v = arg.substr(flag.size() + 1);
+            return !(v == "false" || v == "False" || v == "FALSE" || v == "0");
+        }
+    }
+    return false;
+}
+
 // The multi-stage slicing pipeline (and its observe modes) runs the pre-analysis
 // context-insensitively (the slice recovers precision later), matching the MSli
 // design. Force -max-cxt=0 for those runs unless the user set it explicitly.
 static bool wantsSlicedPipeline(int argc, char** argv)
 {
-    for (int i = 1; i < argc; ++i)
-    {
-        std::string arg = argv[i];
-        if (arg.rfind("-enable-slicing", 0) == 0 || arg.rfind("-observe", 0) == 0)
-            return true;
-    }
-    return false;
+    return boolFlagEnabled(argc, argv, "-enable-slicing")
+           || boolFlagEnabled(argc, argv, "-observe")
+           || boolFlagEnabled(argc, argv, "-observe-sliced");
 }
 
 static bool hasMaxCxt(int argc, char** argv)

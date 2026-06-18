@@ -826,8 +826,6 @@ const Option<bool> Options::MainIlaSliced(
     "main-ila-sliced", "MTA slicing: build the main FSPTA thread-aware value flow from the sliced ILA", false);
 const Option<bool> Options::ThreadVFSources(
     "threadvf-sources", "MTA slicing: seed the ILA slice with [THREAD-VF] sources", true);
-const Option<bool> Options::SlicingSingle(
-    "slicing-single", "MTA slicing: use the single unified slicer instead of separate MTA/PTA slicers", false);
 const Option<bool> Options::SlicedDumpDot(
     "sliced-dump-dot", "MTA slicing: dump intermediate dot graphs", false);
 const Option<bool> Options::MTAObserve(

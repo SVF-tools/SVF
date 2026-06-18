@@ -56,7 +56,6 @@ class SVFG;
 class FSPTA;
 class PTASlicer;
 class MTASlicer;
-class SingleSlicer;
 class SlicedSVFIRView;
 class SlicedTCT;
 class SlicedMHP;
@@ -73,7 +72,7 @@ class SlicedLockAnalysis;
  *   5. final race detection on the sliced graph using FSAM points-to
  *
  * Behaviour is controlled by Options (EnableSlicing, SlicedMaxCxt, MainIlaSliced,
- * ThreadVFSources, SlicingSingle, SlicedDumpDot, MTAObserve, MTAObserveSliced).
+ * ThreadVFSources, SlicedDumpDot, MTAObserve, MTAObserveSliced).
  */
 class SlicedMTA
 {
@@ -140,13 +139,13 @@ private:
         MHP* slicedMHP, LockAnalysis* slicedLockAnalysis, const SlicedSVFIRView* slicedView);
 
     // race-detection helpers
-    static PointsTo _getGlobalObjectVariables(SVFIR* svfIr);
-    static PointsTo _getPointsToClosure(AndersenBase* pta, const PointsTo& pts);
-    static std::set<const FunObjVar*> _gatherParallelFunctions(
+    static PointsTo getGlobalObjectVariables(SVFIR* svfIr);
+    static PointsTo getPointsToClosure(AndersenBase* pta, const PointsTo& pts);
+    static std::set<const FunObjVar*> gatherParallelFunctions(
         CallGraph* callGraph, MHP* mhp, const std::set<const FunObjVar*>& funcSet);
-    static bool _mayHappenInParallel(MHP* mhp, const FunObjVar* fun1, const FunObjVar* fun2);
-    static std::set<const SVFStmt*> _getLoadStoreStatements(const std::set<const FunObjVar*>& functions);
-    static std::set<const ICFGNode*> _getFunctionICFGNodes(const FunObjVar* function);
+    static bool mayHappenInParallel(MHP* mhp, const FunObjVar* fun1, const FunObjVar* fun2);
+    static std::set<const SVFStmt*> getLoadStoreStatements(const std::set<const FunObjVar*>& functions);
+    static std::set<const ICFGNode*> getFunctionICFGNodes(const FunObjVar* function);
 
     // --- pipeline state (owned unless noted) ---
     SVFIR* svfIr = nullptr;
@@ -161,7 +160,6 @@ private:
     SVFG* vfgPre = nullptr;
     std::unique_ptr<PTASlicer> ptaSlicer;
     std::unique_ptr<MTASlicer> mtaSlicer;
-    std::unique_ptr<SingleSlicer> singleSlicer;
     std::unique_ptr<SlicedSVFIRView> mtaSlicedView;
     std::unique_ptr<SlicedSVFIRView> ptaSlicedView;
     std::unique_ptr<FSPTA> mtaFSPTA;

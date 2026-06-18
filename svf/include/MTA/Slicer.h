@@ -26,7 +26,6 @@
  * The MSli program slicers: a shared SlicerBase plus three concrete slicers.
  *   - MTASlicer   : ILA (sync + dual + call) slice for the thread-aware analysis
  *   - PTASlicer   : data-dependence slice over the thread-aware VFG_pre
- *   - SingleSlicer: a unified slicer combining all three dependence kinds
  */
 
 #ifndef MTA_SLICER_H
@@ -55,8 +54,8 @@ class SlicedSVFIRView;
 /**
  * SlicerBase - Base class for program slicing.
  *
- * Holds the shared helper methods and data members used by all three slicers
- * (MTASlicer, PTASlicer, SingleSlicer).
+ * Holds the shared helper methods and data members used by both concrete slicers
+ * (MTASlicer, PTASlicer).
  */
 class SlicerBase {
 protected:
@@ -72,8 +71,8 @@ protected:
      * (VFG_pre): seed from the value-flow nodes of the given statements and
      * backward-traverse every value-flow edge -- direct (top-level def-use),
      * indirect (address-taken / MemSSA def-use), and thread-aware interference.
-     * Returns the kept ICFG nodes. This is the single dependence model shared
-     * by PTASlicer and SingleSlicer.
+     * Returns the kept ICFG nodes. This is the single dependence model used
+     * by PTASlicer.
      */
     std::set<const ICFGNode*> sliceDataDependenceOverVFG(
         const std::set<const SVFStmt*>& seeds, SVF::SVFG* vfg);
@@ -100,7 +99,7 @@ protected:
     std::set<const ICFGNode*> buildBackwardICFGNodeSet(const std::set<const ICFGNode*>& vulnerableNodes);
 
     /**
-     * Call-dependence expansion (shared by MTASlicer and SingleSlicer): take the
+     * Call-dependence expansion (used by MTASlicer): take the
      * kept functions of the given nodes, close upward over the call graph
      * (every transitive caller), then add each kept function's entry/exit nodes
      * and the call/ret nodes of every call site targeting it.
@@ -167,29 +166,6 @@ public:
      * Perform slicing for pointer analysis (returns only node set, no IRView needed).
      * @param vulnerableStatements Set of vulnerable statements to start slicing from
      * @return Set of ICFG nodes in the slice (without function expansion)
-     */
-    std::set<const ICFGNode*> performSlicing(
-        const std::set<const SVFStmt*>& vulnerableStatements);
-};
-
-/**
- * SingleSlicer - Unified slicer combining synchronization, data, and call dependence.
- *
- * Iteratively applies data dependence and call dependence until convergence,
- * then a single dual-slicing pass. (The non-default -slicing-single path.)
- */
-class SingleSlicer : public SlicerBase {
-private:
-    SVF::SVFG* vfg; ///< thread-aware VFG_pre (built once in pre-analysis)
-
-public:
-    SingleSlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
-                 LockAnalysis* lockAnalysis, SVF::SVFG* vfg = nullptr);
-
-    /**
-     * Perform unified slicing combining synchronization, data, and call dependence.
-     * @param vulnerableStatements Set of vulnerable statements to start slicing from
-     * @return Set of ICFG nodes in the slice (including call/ret and entry/exit nodes)
      */
     std::set<const ICFGNode*> performSlicing(
         const std::set<const SVFStmt*>& vulnerableStatements);
