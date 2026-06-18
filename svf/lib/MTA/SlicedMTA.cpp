@@ -188,13 +188,14 @@ SlicedMTA::SlicedMTA() = default;
 
 SlicedMTA::~SlicedMTA()
 {
-    // Cleanup in reverse order of creation.
-    // Release the VFG_pre (and its MemSSA) before the SVFIR it references.
+    // Cleanup in reverse order of creation. Release the VFG_pre (and its MemSSA),
+    // the FSAM, the sliced/base TCTs -- all of which reference the SVFIR -- before
+    // releasing the SVFIR itself. The remaining unique_ptr members (mhp /
+    // lockAnalysis / sliced* / slicers / views) auto-destroy after this body.
     vfgPreBuilder.reset();
-    delete mtaFSPTA;
-    delete slicedTCT;
-    delete tct;
-    // mhp / lockAnalysis / sliced* / slicers / views are unique_ptr: auto-deleted.
+    mtaFSPTA.reset();
+    slicedTCT.reset();
+    tct.reset();
     SVFIR::releaseSVFIR();
     // The Andersen pre-analysis is a shared singleton (reused by VFG_pre and the
     // main FSPTA, neither of which frees it); release it once here.
@@ -205,7 +206,7 @@ BVDataPTAImpl* SlicedMTA::getMainPTA() const
 {
     // The main FSPTA phase is the flow-sensitive FSAM (FSPTA), a
     // BVDataPTAImpl, so the downstream race detector queries it polymorphically.
-    return mtaFSPTA;
+    return mtaFSPTA.get();
 }
 
 // Phase 2: Pre Analysis (Pointer Analysis + TCT + MHP & Lock + Race Detection).
@@ -263,7 +264,7 @@ bool SlicedMTA::phase2_PreAnalysis(const ResolveIndirectCalls& resolveIndirectCa
     // Step 2: Build Thread Create Tree
     timePhase("Create Thread Create Tree", [&]()
     {
-        tct = new TCT(preAnder);
+        tct = std::make_unique<TCT>(preAnder);
     });
     if (dumpDot)
         tct->dump("original_tct");
@@ -273,9 +274,9 @@ bool SlicedMTA::phase2_PreAnalysis(const ResolveIndirectCalls& resolveIndirectCa
     // Step 3: Interleaving and Lock Analysis
     timePhase("Run Interleaving and Lock Analysis", [&]()
     {
-        mhp = std::make_unique<MHP>(tct);
+        mhp = std::make_unique<MHP>(tct.get());
         mhp->analyze();
-        lockAnalysis = std::make_unique<LockAnalysis>(tct);
+        lockAnalysis = std::make_unique<LockAnalysis>(tct.get());
         lockAnalysis->analyze();
     });
     if (!checkAndReport("Interleaving and Lock Analysis", mhp != nullptr && lockAnalysis != nullptr))
@@ -410,7 +411,7 @@ bool SlicedMTA::phase3_MTASlicingAndAnalysis()
             SVFUtil::outs() << "[SlicedTCT] Using max context length: " << maxContextLen
                             << " (from -max-cxt, same as pre-analysis)\n";
         // Reuse the shared pre-analysis (Andersen) for the sliced TCT.
-        slicedTCT = new SlicedTCT(preAnder, slicedView, maxContextLen);
+        slicedTCT = std::make_unique<SlicedTCT>(preAnder, slicedView, maxContextLen);
         if (dumpDot)
             slicedTCT->dump("sliced_tct");
     });
@@ -420,9 +421,9 @@ bool SlicedMTA::phase3_MTASlicingAndAnalysis()
     // Step 6: Sliced MHP and Lock Analysis
     timePhase("Sliced Interleaving and Lock Analysis", [&]()
     {
-        slicedMhp = std::make_unique<SlicedMHP>(slicedTCT, slicedView);
+        slicedMhp = std::make_unique<SlicedMHP>(slicedTCT.get(), slicedView);
         slicedMhp->analyze();
-        slicedLockAnalysis = std::make_unique<SlicedLockAnalysis>(slicedTCT, slicedView);
+        slicedLockAnalysis = std::make_unique<SlicedLockAnalysis>(slicedTCT.get(), slicedView);
         slicedLockAnalysis->analyze();
     });
 
@@ -531,10 +532,10 @@ bool SlicedMTA::phase4_PTASlicingAndAnalysis()
     timePhase("Flow-Sensitive FSAM Analysis", [&]()
     {
         if (useSlicedIla)
-            mtaFSPTA = new FSPTA(slicedMhp.get(), slicedLockAnalysis.get(),
+            mtaFSPTA = std::make_unique<FSPTA>(slicedMhp.get(), slicedLockAnalysis.get(),
                                     ptaSlicedView.get(), /*preBuilt=*/nullptr);
         else
-            mtaFSPTA = new FSPTA(mhp.get(), lockAnalysis.get(),
+            mtaFSPTA = std::make_unique<FSPTA>(mhp.get(), lockAnalysis.get(),
                                     ptaSlicedView.get(), vfgPre);
         mtaFSPTA->analyze();
         if (dumpDot)
