@@ -147,7 +147,7 @@ private:
 
     // --- pipeline state (owned unless noted) ---
     SVFIR* svfIr = nullptr;
-    TCT* tct = nullptr;
+    std::unique_ptr<TCT> tct;
     std::unique_ptr<MHP> mhp;
     std::unique_ptr<LockAnalysis> lockAnalysis;
     // Inclusion-based Andersen's pre-analysis (a shared singleton, not owned
@@ -161,8 +161,8 @@ private:
     std::unique_ptr<SingleSlicer> singleSlicer;
     std::unique_ptr<SlicedSVFIRView> mtaSlicedView;
     std::unique_ptr<SlicedSVFIRView> ptaSlicedView;
-    FSPTA* mtaFSPTA = nullptr;
-    SlicedTCT* slicedTCT = nullptr;
+    std::unique_ptr<FSPTA> mtaFSPTA;
+    std::unique_ptr<SlicedTCT> slicedTCT;
     std::unique_ptr<SlicedMHP> slicedMhp;
     std::unique_ptr<SlicedLockAnalysis> slicedLockAnalysis;
     std::set<const FunObjVar*> threadFunctions;
