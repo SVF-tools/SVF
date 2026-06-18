@@ -209,6 +209,17 @@ BVDataPTAImpl* SlicedMTA::getMainPTA() const
     return mtaFSPTA.get();
 }
 
+std::set<const SVFStmt*> SlicedMTA::vulnerableStmts() const
+{
+    std::set<const SVFStmt*> v;
+    for (const RacePair& pair : racePairs)
+    {
+        v.insert(pair.stmt1);
+        v.insert(pair.stmt2);
+    }
+    return v;
+}
+
 // Phase 2: Pre Analysis (Pointer Analysis + TCT + MHP & Lock + Race Detection).
 // Build the thread-aware value-flow graph (VFG_pre) once, on a shared Andersen
 // (reused by the main FSPTA via the AndersenWaveDiff singleton). This is the
@@ -268,8 +279,6 @@ bool SlicedMTA::phase2_PreAnalysis(const ResolveIndirectCalls& resolveIndirectCa
     });
     if (dumpDot)
         tct->dump("original_tct");
-    if (!checkAndReport("Build Thread Create Tree", tct != nullptr))
-        return false;
 
     // Step 3: Interleaving and Lock Analysis
     timePhase("Run Interleaving and Lock Analysis", [&]()
@@ -279,8 +288,6 @@ bool SlicedMTA::phase2_PreAnalysis(const ResolveIndirectCalls& resolveIndirectCa
         lockAnalysis = std::make_unique<LockAnalysis>(tct.get());
         lockAnalysis->analyze();
     });
-    if (!checkAndReport("Interleaving and Lock Analysis", mhp != nullptr && lockAnalysis != nullptr))
-        return false;
 
     // Step 4: Detect thread functions
     timePhase("Detect Thread Functions", [&]()
@@ -325,12 +332,7 @@ bool SlicedMTA::phase3_MTASlicingAndAnalysis()
     const bool dumpDot = Options::SlicedDumpDot();
 
     // Step 1: Get vulnerable statements from race pairs
-    std::set<const SVFStmt*> vulnerableStatements;
-    for (const RacePair& pair : racePairs)
-    {
-        vulnerableStatements.insert(pair.stmt1);
-        vulnerableStatements.insert(pair.stmt2);
-    }
+    std::set<const SVFStmt*> vulnerableStatements = vulnerableStmts();
 
     std::set<const ICFGNode*> mtaSlicedNodes;
 
@@ -342,8 +344,6 @@ bool SlicedMTA::phase3_MTASlicingAndAnalysis()
         singleSlicer = std::make_unique<SingleSlicer>(
                            svfIr, preAnder, mhp.get(), lockAnalysis.get(),
                            vfgPre /* data dependence over the thread-aware VFG_pre */);
-        if (!checkAndReport("Create SingleSlicer", singleSlicer != nullptr))
-            return false;
 
         // Unified slicing (combines sync, data, and call dependence)
         timePhase("Unified Slicing", [&]()
@@ -359,8 +359,6 @@ bool SlicedMTA::phase3_MTASlicingAndAnalysis()
 
         mtaSlicer = std::make_unique<MTASlicer>(
                         svfIr, preAnder, mhp.get(), lockAnalysis.get());
-        if (!checkAndReport("Create MTASlicer", mtaSlicer != nullptr))
-            return false;
 
         // MTA slicing (includes dual slicing and function expansion). ILA slicing
         // sources = [INIT] race statements + the [THREAD-VF] sources (MSli §4.2)
@@ -415,8 +413,6 @@ bool SlicedMTA::phase3_MTASlicingAndAnalysis()
         if (dumpDot)
             slicedTCT->dump("sliced_tct");
     });
-    if (!checkAndReport("Sliced Thread Create Tree", slicedTCT != nullptr))
-        return false;
 
     // Step 6: Sliced MHP and Lock Analysis
     timePhase("Sliced Interleaving and Lock Analysis", [&]()
@@ -448,12 +444,7 @@ bool SlicedMTA::phase4_PTASlicingAndAnalysis()
 
     const bool dumpDot = Options::SlicedDumpDot();
 
-    std::set<const SVFStmt*> vulnerableStatements;
-    for (const RacePair& pair : racePairs)
-    {
-        vulnerableStatements.insert(pair.stmt1);
-        vulnerableStatements.insert(pair.stmt2);
-    }
+    std::set<const SVFStmt*> vulnerableStatements = vulnerableStmts();
 
     std::set<const ICFGNode*> ptaSlicedNodes;
 
@@ -481,8 +472,6 @@ bool SlicedMTA::phase4_PTASlicingAndAnalysis()
         ptaSlicer = std::make_unique<PTASlicer>(
                         svfIr, preAnder, mhp.get(), lockAnalysis.get(),
                         vfgPre /* paper-faithful data dependence over the thread-aware VFG */);
-        if (!checkAndReport("Create PTASlicer", ptaSlicer != nullptr))
-            return false;
 
         timePhase("PTA Slicing", [&]()
         {
@@ -541,8 +530,6 @@ bool SlicedMTA::phase4_PTASlicingAndAnalysis()
         if (dumpDot)
             mtaFSPTA->getSVFG()->dump("mta_svfg");
     });
-    if (!checkAndReport("Flow-Sensitive FSAM Analysis", mtaFSPTA != nullptr))
-        return false;
 
     return true;
 }
@@ -628,12 +615,7 @@ void SlicedMTA::observeFSAMSliced()
         SVFUtil::outs() << "[no race targets -- nothing to slice]\n===== [OBSERVE-SLICED] end =====\n\n";
         return;
     }
-    std::set<const SVFStmt*> vuln;
-    for (const RacePair& p : racePairs)
-    {
-        vuln.insert(p.stmt1);
-        vuln.insert(p.stmt2);
-    }
+    std::set<const SVFStmt*> vuln = vulnerableStmts();
     PTASlicer slicer(svfIr, preAnder, mhp.get(), lockAnalysis.get(), vfgPre);
     std::set<const ICFGNode*> ptaSlicedNodes = slicer.performSlicing(vuln);
     SlicedSVFIRView view(svfIr, preAnder->getCallGraph(), svfIr->getICFG(), ptaSlicedNodes);

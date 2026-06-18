@@ -123,6 +123,9 @@ private:
     /// flow-sensitive FSAM, a BVDataPTAImpl queried polymorphically).
     BVDataPTAImpl* getMainPTA() const;
 
+    /// Union of both statements of every candidate race pair (the slice targets).
+    std::set<const SVFStmt*> vulnerableStmts() const;
+
     // --- race detection (analogous to MTA::detect) ---
     /// Detect all thread (fork-target) functions in the program.
     static std::set<const FunObjVar*> detectAllThreadFunctions(CallGraph* callGraph);
