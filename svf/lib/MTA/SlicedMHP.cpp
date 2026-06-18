@@ -8,10 +8,7 @@
 #include <Util/SVFUtil.h>
 #include <Util/WorkList.h>
 #include <Util/Options.h>
-#include "MTA/SlicedSVFIRView.h"
-#include "MTA/SlicedICFGView.h"
-#include "MTA/SlicedTCT.h"
-#include "MTA/SlicedViewAdapter.h"
+#include "MTA/SlicedView.h"
 
 using namespace SVF;
 using namespace SVFUtil;

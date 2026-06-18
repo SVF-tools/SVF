@@ -10,9 +10,7 @@
 #include <Graphs/CallGraph.h>
 #include <Graphs/ThreadCallGraph.h>
 #include <SVFIR/SVFIR.h>
-#include "MTA/SlicedSVFIRView.h"
-#include "MTA/SlicedICFGView.h"
-#include "MTA/SlicedViewAdapter.h"
+#include "MTA/SlicedView.h"
 
 using namespace SVF;
 

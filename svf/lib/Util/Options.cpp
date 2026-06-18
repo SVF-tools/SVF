@@ -818,6 +818,22 @@ const Option<bool> Options::DFreeCheck(
     "dfree", "Double Free Detection",false);
 const Option<bool> Options::RaceCheck(
     "race", "Data race Detection",false);
+const Option<bool> Options::EnableSlicing(
+    "enable-slicing", "MTA: run the multi-stage on-demand slicing pipeline (MSli)", false);
+const Option<u32_t> Options::SlicedMaxCxt(
+    "sliced-max-cxt", "MTA slicing: max context length for the sliced TCT (0 = reuse max-cxt)", 2);
+const Option<bool> Options::MainIlaSliced(
+    "main-ila-sliced", "MTA slicing: build the main FSPTA thread-aware value flow from the sliced ILA", false);
+const Option<bool> Options::ThreadVFSources(
+    "threadvf-sources", "MTA slicing: seed the ILA slice with [THREAD-VF] sources", true);
+const Option<bool> Options::SlicingSingle(
+    "slicing-single", "MTA slicing: use the single unified slicer instead of separate MTA/PTA slicers", false);
+const Option<bool> Options::SlicedDumpDot(
+    "sliced-dump-dot", "MTA slicing: dump intermediate dot graphs", false);
+const Option<bool> Options::MTAObserve(
+    "observe", "MTA: observe whole-program flow-sensitive FSAM points-to and ILA", false);
+const Option<bool> Options::MTAObserveSliced(
+    "observe-sliced", "MTA: observe the sliced FSAM points-to (query preservation)", false);
 const Option<bool> Options::GepUnknownIdx(
     "gep-unknown-idx","Skip Gep Unknown Index",false);
 const Option<bool> Options::RunUncallFuncs(

@@ -259,6 +259,25 @@ public:
     static const Option<bool> DFreeCheck;
     /// data race checker, Default: false
     static const Option<bool> RaceCheck;
+
+    /// MTA: run the multi-stage on-demand slicing pipeline (MSli) instead of the
+    /// Andersen baseline race detection, Default: false
+    static const Option<bool> EnableSlicing;
+    /// MTA slicing: max context length for the sliced TCT (0 = reuse MaxContextLen), Default: 2
+    static const Option<u32_t> SlicedMaxCxt;
+    /// MTA slicing: build the main FSPTA's thread-aware value flow from the SLICED
+    /// ILA (paper-faithful, fresh SVFG) instead of reusing VFG_pre, Default: false
+    static const Option<bool> MainIlaSliced;
+    /// MTA slicing: seed the ILA slice with [THREAD-VF] sources (paper §4.2), Default: true
+    static const Option<bool> ThreadVFSources;
+    /// MTA slicing: use the single unified slicer instead of separate MTA/PTA slicers, Default: false
+    static const Option<bool> SlicingSingle;
+    /// MTA slicing: dump intermediate dot graphs (ICFG/TCG/SVFG/...), Default: false
+    static const Option<bool> SlicedDumpDot;
+    /// MTA: observe whole-program flow-sensitive FSAM points-to + ILA (soundness), Default: false
+    static const Option<bool> MTAObserve;
+    /// MTA: observe the SLICED FSAM points-to (query preservation), Default: false
+    static const Option<bool> MTAObserveSliced;
     /// if the access index of gepstmt is unknown, skip it, Default: false
     static const Option<bool> GepUnknownIdx;
     static const Option<bool> RunUncallFuncs;
