@@ -47,7 +47,6 @@ class MHP
 
 public:
     typedef Set<const FunObjVar*> FunSet;
-    // change to a set
     typedef FIFOWorkList<CxtThreadStmt> CxtThreadStmtWorkList;
     typedef Set<CxtThreadStmt> CxtThreadStmtSet;
     typedef Map<CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
@@ -69,7 +68,7 @@ public:
     void analyze();
 
     /// Analyze thread interleaving
-    virtual void analyzeInterleaving();
+    void analyzeInterleaving();
 
     /// Get ThreadCallGraph
     inline ThreadCallGraph* getThreadCallGraph() const
@@ -138,19 +137,19 @@ protected:
     void handleNonCandidateFun(const CxtThreadStmt& cts);
 
     /// Handle fork
-    virtual void handleFork(const CxtThreadStmt& cts, NodeID rootTid);
+    void handleFork(const CxtThreadStmt& cts, NodeID rootTid);
 
     /// Handle join
-    virtual void handleJoin(const CxtThreadStmt& cts, NodeID rootTid);
+    void handleJoin(const CxtThreadStmt& cts, NodeID rootTid);
 
     /// Handle call
-    virtual void handleCall(const CxtThreadStmt& cts, NodeID rootTid);
+    void handleCall(const CxtThreadStmt& cts, NodeID rootTid);
 
     /// Handle return
-    virtual void handleRet(const CxtThreadStmt& cts);
+    void handleRet(const CxtThreadStmt& cts);
 
     /// Handle intra
-    virtual void handleIntra(const CxtThreadStmt& cts);
+    void handleIntra(const CxtThreadStmt& cts);
 
     /// ICFG/CallGraph traversal hooks. The default implementations walk the full
     /// ICFG/CallGraph; a subclass analysing a sliced view (SlicedMHP) overrides
@@ -322,7 +321,6 @@ public:
     {
         collectSCEVInfo();
     }
-    virtual ~ForkJoinAnalysis() = default;
     /// functions
     void collectSCEVInfo();
 
@@ -375,22 +373,22 @@ public:
     {
         return tct->hasJoinLoop(inst);
     }
-protected:
+private:
 
     /// Handle fork
-    virtual void handleFork(const CxtStmt& cts,NodeID rootTid);
+    void handleFork(const CxtStmt& cts,NodeID rootTid);
 
     /// Handle join
-    virtual void handleJoin(const CxtStmt& cts,NodeID rootTid);
+    void handleJoin(const CxtStmt& cts,NodeID rootTid);
 
     /// Handle call
-    virtual void handleCall(const CxtStmt& cts,NodeID rootTid);
+    void handleCall(const CxtStmt& cts,NodeID rootTid);
 
     /// Handle return
-    virtual void handleRet(const CxtStmt& cts);
+    void handleRet(const CxtStmt& cts);
 
     /// Handle intra
-    virtual void handleIntra(const CxtStmt& cts);
+    void handleIntra(const CxtStmt& cts);
 
     /// Return true if the fork and join have the same SCEV
     bool isSameSCEV(const ICFGNode* forkSite, const ICFGNode* joinSite);
