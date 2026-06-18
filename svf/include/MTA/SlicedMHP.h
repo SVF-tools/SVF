@@ -10,12 +10,15 @@
 #include <MTA/MHP.h>
 #include <MTA/TCT.h>
 
+#include <memory>
+#include <vector>
+
+namespace SVF
+{
+
 // Forward declarations
 class SlicedSVFIRView;
 class SlicedICFGView;
-
-#include <memory>
-#include <vector>
 
 /**
  * SlicedMHP
@@ -48,4 +51,6 @@ private:
     const SlicedSVFIRView* slicedView; // Optional: for accessing sliced views
     const SlicedICFGView* icfgView; // ICFG view (from slicedView or nullptr for full ICFG)
 };
+
+} // namespace SVF
 

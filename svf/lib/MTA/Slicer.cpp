@@ -51,6 +51,11 @@
 #include <Graphs/VFGNode.h>
 #include <Graphs/VFGEdge.h>
 
+using namespace SVF;
+
+namespace SVF
+{
+
 //===----------------------------------------------------------------------===//
 // SlicerBase
 //===----------------------------------------------------------------------===//
@@ -577,3 +582,5 @@ std::set<const ICFGNode*> SingleSlicer::performSlicing(
 
     return finalNodes;
 }
+
+} // namespace SVF

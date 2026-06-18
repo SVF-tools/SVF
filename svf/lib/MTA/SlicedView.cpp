@@ -49,6 +49,9 @@
 
 using namespace SVF;
 
+namespace SVF
+{
+
 //===----------------------------------------------------------------------===//
 // SlicedICFGView
 //===----------------------------------------------------------------------===//
@@ -1136,3 +1139,5 @@ void SlicedTCT::getKeptJoinSites(std::vector<const ICFGNode*>& out) const
         }
     }
 }
+
+} // namespace SVF

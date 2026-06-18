@@ -14,6 +14,9 @@
 
 using namespace SVF;
 
+namespace SVF
+{
+
 SlicedLockAnalysis::SlicedLockAnalysis(TCT* t, const SlicedSVFIRView* sv)
     : LockAnalysis(t), slicedView(sv)
 {
@@ -53,3 +56,5 @@ const CallGraph* SlicedLockAnalysis::getAnalysisCallGraph() const
         return slicedView->getThreadCallGraph()->getCallGraph();
     return PAG::getPAG()->getCallGraph();
 }
+
+} // namespace SVF
