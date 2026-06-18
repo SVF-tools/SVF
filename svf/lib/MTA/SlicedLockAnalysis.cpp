@@ -1,10 +1,37 @@
-// MSli: LockAnalysis running on a sliced ICFG view.
+//===- SlicedLockAnalysis.cpp -- Lock analysis over a sliced ICFG view --===//
 //
-// Inherits SVF::LockAnalysis unchanged; only the ICFG/CallGraph traversal hooks
-// are overridden so the inherited analysis routines walk the sliced view. The
-// sliced ForkJoin/lock-span algorithms are exactly the base ones reached
-// through these hooks (see LockAnalysis.cpp), so nothing else is reimplemented.
-// Author: Jiawei Yang
+//                     SVF: Static Value-Flow Analysis
+//
+// Copyright (C) <2013->  <Yulei Sui>
+//
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+//===----------------------------------------------------------------------===//
+
+/*
+ * SlicedLockAnalysis.cpp
+ *
+ *      Author: Jiawei Yang
+ *
+ * LockAnalysis running on a sliced ICFG view.
+ *
+ * Inherits SVF::LockAnalysis unchanged; only the ICFG/CallGraph traversal hooks
+ * are overridden so the inherited analysis routines walk the sliced view. The
+ * sliced ForkJoin/lock-span algorithms are exactly the base ones reached
+ * through these hooks (see LockAnalysis.cpp), so nothing else is reimplemented.
+ */
 
 #include "MTA/SlicedLockAnalysis.h"
 

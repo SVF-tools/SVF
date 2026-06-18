@@ -1,6 +1,34 @@
-// MSli: MHP running on a sliced ICFG view.
-// Inherits from SVF::MHP and overrides ICFG traversal methods to use SlicedICFGView.
-// Author: Jiawei Yang
+//===- SlicedMHP.h -- MHP analysis over a sliced ICFG view --------------===//
+//
+//                     SVF: Static Value-Flow Analysis
+//
+// Copyright (C) <2013->  <Yulei Sui>
+//
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+//===----------------------------------------------------------------------===//
+
+/*
+ * SlicedMHP.h
+ *
+ *      Author: Jiawei Yang
+ *
+ * MHP running on a sliced ICFG view. Inherits SVF::MHP and overrides the
+ * ICFG/CallGraph traversal hooks to walk only the kept (sliced) nodes/edges.
+ */
+
 #pragma once
 
 // Include WorkList.h before TCT.h because TCT.h includes SCC.h which uses FIFOWorkList

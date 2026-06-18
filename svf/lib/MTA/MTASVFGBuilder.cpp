@@ -1,9 +1,33 @@
-//===- MTASVFGBuilder.cpp -- Thread-aware SVFG builder for FSAM -----------===//
+//===- MTASVFGBuilder.cpp -- Thread-aware SVFG builder for FSAM ---------===//
 //
-// Port of SVF-2.9 MTASVFGBuilder onto the SVF 3.2 SVFG/MemSSA API.
-// Implements the FSAM thread-aware value-flow construction (CGO'16, §3.3).
+//                     SVF: Static Value-Flow Analysis
+//
+// Copyright (C) <2013->  <Yulei Sui>
+//
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
 //===----------------------------------------------------------------------===//
-// Author: Jiawei Yang
+
+/*
+ * MTASVFGBuilder.cpp
+ *
+ *      Author: Jiawei Yang
+ *
+ * Port of SVF-2.9 MTASVFGBuilder onto the SVF 3.2 SVFG/MemSSA API.
+ * Implements the FSAM thread-aware value-flow construction (CGO'16, §3.3).
+ */
 
 #include "MTA/MTASVFGBuilder.h"
 #include "MSSA/MemSSA.h"

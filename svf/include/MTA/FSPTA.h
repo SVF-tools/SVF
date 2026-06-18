@@ -1,17 +1,41 @@
 //===- FSPTA.h -- Flow-sensitive multithreaded pointer analysis (FSAM) --===//
 //
-// Sparse flow-sensitive pointer analysis for multithreaded programs (FSAM,
-// Sui/Di/Xue CGO'16). It runs SVF 3.2's sparse flow-sensitive solver
-// (`FlowSensitive`) over a *thread-aware* SVFG built by `MTASVFGBuilder`,
-// i.e. the stock thread-oblivious value flow augmented with inter-thread
-// (interference) edges derived from the MHP and lock analyses.
+//                     SVF: Static Value-Flow Analysis
 //
-// This is the engine the MSli paper calls the main FSPTA phase.
+// Copyright (C) <2013->  <Yulei Sui>
 //
-// Port of SVF-2.9 `FSMPTA` (removed from SVF 3.x), adapted to the SVF 3.2
-// FlowSensitive/SVFGBuilder API.
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
 //===----------------------------------------------------------------------===//
-// Author: Jiawei Yang
+
+/*
+ * FSPTA.h
+ *
+ *      Author: Jiawei Yang
+ *
+ * Sparse flow-sensitive pointer analysis for multithreaded programs (FSAM,
+ * Sui/Di/Xue CGO'16). It runs SVF 3.2's sparse flow-sensitive solver
+ * (`FlowSensitive`) over a *thread-aware* SVFG built by `MTASVFGBuilder`,
+ * i.e. the stock thread-oblivious value flow augmented with inter-thread
+ * (interference) edges derived from the MHP and lock analyses.
+ *
+ * This is the engine the MSli paper calls the main FSPTA phase.
+ *
+ * Port of SVF-2.9 `FSMPTA` (removed from SVF 3.x), adapted to the SVF 3.2
+ * FlowSensitive/SVFGBuilder API.
+ */
 
 #pragma once
 
