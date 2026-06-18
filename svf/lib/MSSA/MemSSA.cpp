@@ -45,13 +45,15 @@ double MemSSA::timeOfSSARenaming  = 0;	///< Time for SSA rename
 /*!
  * Constructor
  */
-MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA)
+MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA, MRGenerator* injectedMRG)
 {
     pta = p;
     assert((pta->getAnalysisTy()!=PointerAnalysis::Default_PTA)
            && "please specify a pointer analysis");
 
-    if (Options::MemPar() == MemPartition::Distinct)
+    if (injectedMRG != nullptr)
+        mrGen = injectedMRG;
+    else if (Options::MemPar() == MemPartition::Distinct)
         mrGen = new DistinctMRG(pta, ptrOnlyMSSA);
     else if (Options::MemPar() == MemPartition::IntraDisjoint)
         mrGen = new IntraDisjointMRG(pta, ptrOnlyMSSA);

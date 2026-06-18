@@ -19,8 +19,10 @@
 #pragma once
 
 #include "MSSA/SVFGBuilder.h"
+#include "MSSA/MemPartition.h"
 #include "Graphs/SVFG.h"
 #include "Graphs/SVFGEdge.h"
+#include "Graphs/ThreadCallGraph.h"
 #include "MTA/MHP.h"
 #include "MTA/LockAnalysis.h"
 #include "MemoryModel/PointsTo.h"
@@ -28,6 +30,51 @@
 
 namespace SVF
 {
+
+/// Thread-aware MRGenerator mixin: layers the FSAM fork/join mod-ref side
+/// effects on top of any base partition strategy (Distinct / IntraDisjoint /
+/// InterDisjoint), via the MRGenerator hooks. This keeps the thread-specific
+/// def-use out of core MemRegion -- it is only used for MTA's thread-aware SVFG.
+template <class BaseMRG>
+class ThreadMRG : public BaseMRG
+{
+public:
+    ThreadMRG(BVDataPTAImpl* p, bool ptrOnly) : BaseMRG(p, ptrOnly) {}
+
+protected:
+    /// Thread fork as a call WITHOUT a return: forward the spawnee's *ref* set to
+    /// the fork site (ActualIN -> FormalIN, FSAM's thread-oblivious value flow).
+    /// We do NOT add the spawnee's *mod* set -- a fork has no return, so its
+    /// writes flow back via the thread-aware interference edges instead.
+    void handleForkSideEffect(NodeBS& /*mod*/, NodeBS& ref,
+                              const CallICFGNode* cs, const FunObjVar* callee) override
+    {
+        if (const ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(this->getCallGraph()))
+            if (tcg->hasThreadForkEdge(cs))
+                ref = this->getRefSideEffectOfFunction(callee);
+    }
+
+    /// Thread join: the joined spawnee's exit writes become visible to the
+    /// spawner. For each site that joins this start routine, add the spawnee's
+    /// MOD set to the join callsite (creating an ActualOUT there -- a "return
+    /// without a forward"). MOD only, never REF. Join edges are not real
+    /// call-graph edges, so we reach them via getJoinSites.
+    void handleJoinSideEffect(CallGraphNode* callGraphNode,
+                              MRGenerator::WorkList& worklist) override
+    {
+        ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(this->getCallGraph());
+        if (tcg == nullptr)
+            return;
+        ThreadCallGraph::InstSet joinsites;
+        tcg->getJoinSites(callGraphNode, joinsites);
+        if (joinsites.empty())
+            return;
+        const NodeBS& spawneeMod = this->getModSideEffectOfFunction(callGraphNode->getFunction());
+        for (const CallICFGNode* cs : joinsites)
+            if (this->addModSideEffectOfCallSite(cs, spawneeMod))
+                worklist.push(this->getCallGraph()->getCallGraphNode(cs->getCaller())->getId());
+    }
+};
 
 class MTASVFGBuilder : public SVFGBuilder
 {
@@ -58,6 +105,10 @@ public:
 protected:
     /// Rewrite the SVFG build hook: build the stock SVFG, then add MHP edges.
     void buildSVFG() override;
+
+    /// Inject a thread-aware MRGenerator so the MemSSA mod-ref carries the FSAM
+    /// fork/join side effects (relocated here from core MemRegion).
+    MRGenerator* createMRGenerator(BVDataPTAImpl* pta, bool ptrOnlyMSSA) override;
 
 private:
     /// Collect all store/load SVFG nodes.

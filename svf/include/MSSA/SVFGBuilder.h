@@ -83,6 +83,14 @@ public:
     virtual std::unique_ptr<MemSSA> buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA);
 
 protected:
+    /// Hook to supply a customised MRGenerator for the MemSSA built above.
+    /// Default returns nullptr (MemSSA creates its own per Options::MemPar()).
+    /// MTASVFGBuilder overrides this to inject a thread-aware MRGenerator.
+    virtual MRGenerator* createMRGenerator(BVDataPTAImpl* /*pta*/, bool /*ptrOnlyMSSA*/)
+    {
+        return nullptr;
+    }
+
     /// Create a DDA SVFG. By default actualOut and FormalIN are removed, unless withAOFI is set true.
     SVFG* build(BVDataPTAImpl* pta, VFG::VFGK kind);
     /// Can be rewritten by subclasses

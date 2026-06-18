@@ -98,7 +98,8 @@ std::unique_ptr<MemSSA> SVFGBuilder::buildMSSA(BVDataPTAImpl* pta,
 
     DBOUT(DGENERAL, outs() << pasMsg("Build Memory SSA \n"));
 
-    auto mssa = std::make_unique<MemSSA>(pta, ptrOnlyMSSA);
+    auto mssa = std::make_unique<MemSSA>(pta, ptrOnlyMSSA,
+                                         createMRGenerator(pta, ptrOnlyMSSA));
 
     const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item : *svfirCallGraph)

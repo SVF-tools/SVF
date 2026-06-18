@@ -5,13 +5,33 @@
 //===----------------------------------------------------------------------===//
 
 #include "MTA/MTASVFGBuilder.h"
+#include "MSSA/MemSSA.h"
 #include "Util/SVFUtil.h"
+#include "Util/Options.h"
 #include "Graphs/ThreadCallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
 
 u32_t MTASVFGBuilder::numOfNewSVFGEdges = 0;
+
+// Build a thread-aware MRGenerator wrapping the configured partition strategy, so
+// the MemSSA mod-ref generation carries the FSAM fork/join side effects.
+MRGenerator* MTASVFGBuilder::createMRGenerator(BVDataPTAImpl* pta, bool ptrOnlyMSSA)
+{
+    switch (Options::MemPar())
+    {
+    case MemSSA::MemPartition::Distinct:
+        return new ThreadMRG<DistinctMRG>(pta, ptrOnlyMSSA);
+    case MemSSA::MemPartition::IntraDisjoint:
+        return new ThreadMRG<IntraDisjointMRG>(pta, ptrOnlyMSSA);
+    case MemSSA::MemPartition::InterDisjoint:
+        return new ThreadMRG<InterDisjointMRG>(pta, ptrOnlyMSSA);
+    default:
+        assert(false && "unrecognised memory partition strategy");
+        return nullptr;
+    }
+}
 
 /*!
  * Build the stock (thread-oblivious) SVFG, add the FSAM join-related def-use
