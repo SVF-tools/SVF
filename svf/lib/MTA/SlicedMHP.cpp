@@ -13,6 +13,9 @@
 using namespace SVF;
 using namespace SVFUtil;
 
+namespace SVF
+{
+
 SlicedMHP::SlicedMHP(TCT* t, const SlicedSVFIRView* sv)
     : MHP(t), slicedView(sv)
 {
@@ -87,4 +90,6 @@ void SlicedMHP::getSuccNodes(const ICFGNode* node, std::vector<const ICFGNode*>&
 {
     SlicedViewAdapter::getSuccNodes(icfgView, node, out);
 }
+
+} // namespace SVF
 

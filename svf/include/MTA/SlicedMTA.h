@@ -45,15 +45,6 @@
 #include <set>
 #include <utility>
 
-// These MSli slicing/view classes currently live in the global namespace.
-class PTASlicer;
-class MTASlicer;
-class SingleSlicer;
-class SlicedSVFIRView;
-class SlicedTCT;
-class SlicedMHP;
-class SlicedLockAnalysis;
-
 namespace SVF
 {
 
@@ -63,6 +54,13 @@ class LockAnalysis;
 class MTASVFGBuilder;
 class SVFG;
 class FSPTA;
+class PTASlicer;
+class MTASlicer;
+class SingleSlicer;
+class SlicedSVFIRView;
+class SlicedTCT;
+class SlicedMHP;
+class SlicedLockAnalysis;
 
 /*!
  * Multi-stage on-demand slicing race detection pipeline (MSli).

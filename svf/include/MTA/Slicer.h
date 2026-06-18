@@ -45,11 +45,12 @@
 #include <vector>
 #include <utility>
 
-using namespace SVF;
+namespace SVF
+{
 
 // Forward declarations
+class SVFG;
 class SlicedSVFIRView;
-namespace SVF { class SVFG; }
 
 /**
  * SlicerBase - Base class for program slicing.
@@ -193,5 +194,7 @@ public:
     std::set<const ICFGNode*> performSlicing(
         const std::set<const SVFStmt*>& vulnerableStatements);
 };
+
+} // namespace SVF
 
 #endif // MTA_SLICER_H

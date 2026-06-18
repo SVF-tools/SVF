@@ -53,7 +53,10 @@
 #include <unordered_set>
 #include <vector>
 
-namespace SVF { class PointerAnalysis; }
+namespace SVF
+{
+
+class PointerAnalysis;
 
 //===----------------------------------------------------------------------===//
 // SlicedICFGView - sliced view of the ICFG.
@@ -311,5 +314,7 @@ bool acceptsNode(const SlicedICFGView* icfgView, const SVF::ICFGNode* node);
 void getInEdgesOfCallGraphNode(const SlicedSVFIRView* slicedView, const SVF::CallGraphNode* node,
                                std::vector<const SVF::CallGraphEdge*>& out);
 } // namespace SlicedViewAdapter
+
+} // namespace SVF
 
 #endif // MTA_SLICEDVIEW_H

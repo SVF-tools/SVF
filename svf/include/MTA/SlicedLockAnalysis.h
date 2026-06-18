@@ -7,12 +7,15 @@
 #include <MTA/LockAnalysis.h>
 #include <MTA/TCT.h>
 
+#include <memory>
+#include <vector>
+
+namespace SVF
+{
+
 // Forward declarations
 class SlicedSVFIRView;
 class SlicedICFGView;
-
-#include <memory>
-#include <vector>
 
 /**
  * SlicedLockAnalysis
@@ -45,4 +48,6 @@ private:
     const SlicedSVFIRView* slicedView; // Optional: for accessing sliced views
     const SlicedICFGView* icfgView; // ICFG view (from slicedView or nullptr for full ICFG)
 };
+
+} // namespace SVF
 
