@@ -709,7 +709,18 @@ bool LockAnalysis::isProtectedByCommonCxtLock(const ICFGNode *i1, const ICFGNode
         for (CxtStmtSet::const_iterator cts2 = ctsset2.begin(), ects2 = ctsset2.end(); cts2 != ects2; cts2++)
         {
             const CxtStmt& cxtStmt2 = *cts2;
-            if(cxtStmt1==cxtStmt2) continue;
+            if(cxtStmt1==cxtStmt2)
+            {
+                // i1==i2 under the same context: a self-race between two dynamic
+                // instances of one statement (e.g. a thread forked in a loop).
+                // This is the ONLY pair the loop produces for such a query, so
+                // skipping it would fall through to the vacuous "protected" return
+                // below and drop a real race. The two instances are mutually
+                // excluded only if this context actually holds a (non-empty) lock.
+                if(!hasCxtLockfromCxtStmt(cxtStmt1) || getCxtLockfromCxtStmt(cxtStmt1).empty())
+                    return false;
+                continue;
+            }
             if(isProtectedByCommonCxtLock(cxtStmt1,cxtStmt2)==false)
                 return false;
         }
