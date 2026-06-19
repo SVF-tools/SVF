@@ -308,6 +308,11 @@ void getFunICFGNodes(const SlicedICFGView* icfgView, const SVF::FunObjVar* fun,
 void getSuccNodes(const SlicedICFGView* icfgView, const SVF::ICFGNode* node,
                   std::vector<const SVF::ICFGNode*>& out);
 
+/// Project an interleaving seed onto kept nodes: the node itself if kept (or no
+/// view), else the first kept node(s) reachable forward (intra-procedurally).
+void projectSeedToKept(const SlicedICFGView* icfgView, const SVF::ICFGNode* node,
+                       std::vector<const SVF::ICFGNode*>& out);
+
 /// Predecessors of node under the sliced view (full ICFG predecessors if no view).
 void getPredNodes(const SlicedICFGView* icfgView, const SVF::ICFGNode* node,
                   std::vector<const SVF::ICFGNode*>& out);

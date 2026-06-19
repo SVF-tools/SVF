@@ -77,6 +77,12 @@ void MHP::getInEdgesOfCallGraphNode(const CallGraphNode* node, std::vector<const
         out.push_back(edge);
 }
 
+void MHP::projectSeedToKept(const ICFGNode* node, std::vector<const ICFGNode*>& out) const
+{
+    // Full analysis: every node is "kept", so the seed is the node itself.
+    out.push_back(node);
+}
+
 /*!
  * Start analysis here
  */
@@ -272,11 +278,18 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
             {
                 const SVFBasicBlock* eb = exitbbs.back();
                 exitbbs.pop_back();
-                const ICFGNode* svfEntryInst = eb->front();
-                CxtThreadStmt newCts(cts.getTid(), curCxt, svfEntryInst);
-                addInterleavingThread(newCts, cts);
-                if (hasJoinInSymmetricLoop(curCxt, call))
-                    rmInterleavingThread(newCts, joinedTids, call);
+                // Project the loop-exit entry onto kept nodes: it may be sliced out,
+                // which would strand the continued interleaving (sliced getSuccNodes
+                // yields nothing for a removed node) and miss races after the loop.
+                std::vector<const ICFGNode*> seedNodes;
+                projectSeedToKept(eb->front(), seedNodes);
+                for (const ICFGNode* svfEntryInst : seedNodes)
+                {
+                    CxtThreadStmt newCts(cts.getTid(), curCxt, svfEntryInst);
+                    addInterleavingThread(newCts, cts);
+                    if (hasJoinInSymmetricLoop(curCxt, call))
+                        rmInterleavingThread(newCts, joinedTids, call);
+                }
             }
         }
         else
@@ -297,9 +310,14 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
             {
                 const SVFBasicBlock* eb = exitbbs.back();
                 exitbbs.pop_back();
-                const ICFGNode* svfEntryInst = eb->front();
-                CxtThreadStmt newCts(cts.getTid(), cts.getContext(), svfEntryInst);
-                addInterleavingThread(newCts, cts);
+                // Project onto kept nodes (see the matching branch above).
+                std::vector<const ICFGNode*> seedNodes;
+                projectSeedToKept(eb->front(), seedNodes);
+                for (const ICFGNode* svfEntryInst : seedNodes)
+                {
+                    CxtThreadStmt newCts(cts.getTid(), cts.getContext(), svfEntryInst);
+                    addInterleavingThread(newCts, cts);
+                }
             }
         }
     }
