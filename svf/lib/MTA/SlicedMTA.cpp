@@ -47,6 +47,7 @@
 #include <deque>
 #include <iomanip>
 #include <map>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -553,6 +554,56 @@ bool SlicedMTA::phase5_FinalRaceDetection()
     return true;
 }
 
+// No-slice A/B baseline: run the SAME refined machinery as the sliced path
+// (SlicedTCT/MHP/LockAnalysis + flow-sensitive FSAM + the same final re-check),
+// but over a "slice" that keeps EVERY ICFG node -- i.e. the whole program. This
+// is the correct reference: if slicing preserves the result, this must produce
+// the same race set as the real (reduced) slice, only slower.
+void SlicedMTA::wholeProgramDetection()
+{
+    SVFUtil::outs() << "\n=== Whole-program FSAM Race Detection (no slicing) ===\n";
+    if (threadFunctions.empty() || racePairs.empty())
+    {
+        SVFUtil::outs() << "[SKIP] No thread functions / race pairs in pre-analysis\n";
+        return;
+    }
+
+    // Full "slice" = every ICFG node.
+    std::set<const ICFGNode*> allNodes;
+    for (ICFG::iterator it = svfIr->getICFG()->begin(), eit = svfIr->getICFG()->end(); it != eit; ++it)
+        allNodes.insert(it->second);
+    ptaSlicedView = std::make_unique<SlicedSVFIRView>(
+                        svfIr, preAnder->getCallGraph(), svfIr->getICFG(), allNodes);
+
+    timePhase("Whole-program Sliced TCT/MHP/Lock", [&]()
+    {
+        slicedTCT = std::make_unique<SlicedTCT>(preAnder, ptaSlicedView.get(), slicedMaxContextLen());
+        slicedMhp = std::make_unique<SlicedMHP>(slicedTCT.get(), ptaSlicedView.get());
+        slicedMhp->analyze();
+        slicedLockAnalysis = std::make_unique<SlicedLockAnalysis>(slicedTCT.get(), ptaSlicedView.get());
+        slicedLockAnalysis->analyze();
+    });
+
+    timePhase("Whole-program Flow-Sensitive FSAM Analysis", [&]()
+    {
+        mtaFSPTA = std::make_unique<FSPTA>(mhp.get(), lockAnalysis.get(),
+                                           ptaSlicedView.get(), vfgPre);
+        mtaFSPTA->analyze();
+    });
+
+    std::set<RacePair> detectedPairs;
+    timePhase("Final Race Detection (whole program)", [&]()
+    {
+        detectedPairs = detectRacePairsOnSlicedGraph(
+                            racePairs, getMainPTA(), slicedMhp.get(),
+                            slicedLockAnalysis.get(), ptaSlicedView.get());
+    });
+
+    SVFUtil::outs() << "\n=== Race Detection Summary ===\n";
+    SVFUtil::outs() << "Race pairs (pre-analysis): " << racePairs.size() << "\n";
+    SVFUtil::outs() << "Race pairs (whole program): " << detectedPairs.size() << "\n";
+}
+
 // Observe whole-program FSAM points-to and ILA (Layer 1) for soundness checking.
 void SlicedMTA::observeFSAM()
 {
@@ -625,7 +676,11 @@ void SlicedMTA::runOnModule(SVFIR* pag, const ResolveIndirectCalls& resolveIndir
         return;
     }
 
-    if (Options::EnableSlicing())
+    if (Options::NoSlice())
+    {
+        wholeProgramDetection();
+    }
+    else if (Options::EnableSlicing())
     {
         if (!phase3_MTASlicingAndAnalysis()) return;
         if (!phase4_PTASlicingAndAnalysis()) return;
@@ -948,18 +1003,45 @@ std::set<SlicedMTA::RacePair> SlicedMTA::detectRacePairsOnSlicedGraph(
 
     std::set<RacePair> filteredRacePairs;
 
-    // Filter pre-analysis race pairs: check if they still exist in sliced graph
+    // Optional race-pair dump (RACE_DUMP=1): one stable, sort-friendly line per
+    // candidate giving its disposition (KEEP / DROPMHP / DROPLOCK / DROPPTS) and a
+    // run-independent key (sorted SVFStmt edge IDs). Diff the KEEP lines of a sliced
+    // run against a -no-slice run to see exactly which pairs the slice loses.
+    const bool dump = (getenv("RACE_DUMP") != nullptr);
+    auto key = [](const RacePair& p) {
+        EdgeID a = p.stmt1->getEdgeID(), b = p.stmt2->getEdgeID();
+        if (a > b) std::swap(a, b);
+        std::ostringstream os; os << a << " " << b; return os.str();
+    };
+    auto dumpLine = [&](const char* disp, const RacePair& p) {
+        if (!dump) return;
+        SVFUtil::outs() << "[RACEDUMP] " << disp << " " << key(p)
+                        << " | n" << p.stmt1->getICFGNode()->getId()
+                        << " n" << p.stmt2->getICFGNode()->getId()
+                        << " | " << p.stmt1->toString()
+                        << " || " << p.stmt2->toString() << "\n";
+    };
+
+    // Re-check each candidate race pair on the sliced graph: it survives only if
+    // the statements still (1) may happen in parallel under the sliced ILA,
+    // (2) are not protected by a common lock, and (3) have intersecting points-to
+    // under the flow-sensitive FSAM. Stages (1)/(2) preserve the whole-program
+    // result (the sliced ILA recomputes the same MHP/lock facts); stage (3) is the
+    // flow-sensitive refinement that prunes candidates the flow-insensitive
+    // pre-analysis over-approximated.
     for (const RacePair& pair : preAnalysisRacePairs) {
         const ICFGNode* node1 = pair.stmt1->getICFGNode();
         const ICFGNode* node2 = pair.stmt2->getICFGNode();
 
         // Check if they may happen in parallel (using sliced MHP)
         if (!slicedMHP->mayHappenInParallelCache(node1, node2)) {
+            dumpLine("DROPMHP", pair);
             continue;
         }
 
         // Check if they are protected by common lock (using sliced LockAnalysis)
         if (slicedLockAnalysis->isProtectedByCommonLock(node1, node2)) {
+            dumpLine("DROPLOCK", pair);
             continue;
         }
 
@@ -984,6 +1066,9 @@ std::set<SlicedMTA::RacePair> SlicedMTA::detectRacePairsOnSlicedGraph(
         // Check if points-to sets still intersect
         if (pts1.intersects(pts2)) {
             filteredRacePairs.insert(pair);
+            dumpLine("KEEP", pair);
+        } else {
+            dumpLine("DROPPTS", pair);
         }
     }
 

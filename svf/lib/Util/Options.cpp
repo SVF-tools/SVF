@@ -820,6 +820,8 @@ const Option<bool> Options::RaceCheck(
     "race", "Data race Detection",false);
 const Option<bool> Options::EnableSlicing(
     "enable-slicing", "MTA: run the multi-stage on-demand slicing pipeline (MSli)", false);
+const Option<bool> Options::NoSlice(
+    "no-slice", "MTA: run the FSAM race detection on the whole program (no-slice baseline)", false);
 const Option<u32_t> Options::SlicedMaxCxt(
     "sliced-max-cxt", "MTA slicing: max context length for the sliced TCT (0 = reuse max-cxt)", 2);
 const Option<bool> Options::MainIlaSliced(

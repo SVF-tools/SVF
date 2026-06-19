@@ -263,6 +263,9 @@ public:
     /// MTA: run the multi-stage on-demand slicing pipeline (MSli) instead of the
     /// Andersen baseline race detection, Default: false
     static const Option<bool> EnableSlicing;
+    /// MTA: run the FSAM race detection on the WHOLE program (no slicing) -- the
+    /// A/B baseline to compare the sliced pipeline against, Default: false
+    static const Option<bool> NoSlice;
     /// MTA slicing: max context length for the sliced TCT (0 = reuse MaxContextLen), Default: 2
     static const Option<u32_t> SlicedMaxCxt;
     /// MTA slicing: build the main FSPTA's thread-aware value flow from the SLICED

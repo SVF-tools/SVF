@@ -116,6 +116,10 @@ private:
     bool phase5_FinalRaceDetection();
     void buildVFGPre();
 
+    /// No-slice A/B baseline: run the FSAM detection on the whole program (no
+    /// slicing), so its time and race set can be compared against the sliced run.
+    void wholeProgramDetection();
+
     // --- observe modes (soundness / query-preservation checking) ---
     void observeFSAM();
     void observeFSAMSliced();

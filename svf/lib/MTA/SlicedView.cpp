@@ -697,8 +697,22 @@ const ICFGNode* getFunEntry(const SlicedICFGView* icfgView, const FunObjVar* fun
     // Use sliced view if available, otherwise fall back to original entry
     if (icfgView != nullptr)
     {
-        // Return the first kept node in the function's entry block, or the
-        // original entry if none is kept.
+        // Prefer the kept FunEntryICFGNode: MTASlicer::expandCallDependence keeps it
+        // for every kept function and buildBridgedEdges links it to the kept body, so
+        // the MHP interleaving fixpoint can flow from it to every kept statement.
+        // The entry basic block's first instruction, by contrast, may be sliced out;
+        // returning it (a removed node) would strand the root/thread seed there --
+        // getSuccNodes() yields nothing for a non-kept node -- so the function body
+        // would never receive the thread's interleaving (a soundness bug).
+        if (ICFG* icfg = icfgView->getICFG())
+        {
+            if (const ICFGNode* fe = icfg->getFunEntryICFGNode(fun))
+            {
+                if (icfgView->isKeptNode(fe))
+                    return fe;
+            }
+        }
+        // Otherwise: first kept node in the entry block, or the original entry.
         const ICFGNode* entry = fun->getEntryBlock()->front();
         if (icfgView->isKeptNode(entry))
             return entry;
