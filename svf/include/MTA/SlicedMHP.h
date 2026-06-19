@@ -69,6 +69,7 @@ protected:
     const SVF::ICFGNode* getFunEntry(const SVF::FunObjVar* fun) const override;
     void getSuccNodes(const SVF::ICFGNode* node, std::vector<const SVF::ICFGNode*>& out) const override;
     void getInEdgesOfCallGraphNode(const SVF::CallGraphNode* node, std::vector<const SVF::CallGraphEdge*>& out) const override;
+    void projectSeedToKept(const SVF::ICFGNode* node, std::vector<const SVF::ICFGNode*>& out) const override;
 
     // Kept ICFG nodes of a function (not a base hook; used by updateNonCandidateFunInterleaving).
     void getFunICFGNodes(const SVF::FunObjVar* fun, std::vector<const SVF::ICFGNode*>& out) const;

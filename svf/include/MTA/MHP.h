@@ -159,6 +159,14 @@ protected:
     virtual const ICFGNode* getFunEntry(const FunObjVar* fun) const;
     virtual void getSuccNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const;
     virtual void getInEdgesOfCallGraphNode(const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const;
+
+    /// Project an interleaving-seed node onto the kept graph. The full analysis
+    /// returns the node itself; a sliced subclass returns the first kept node(s)
+    /// reachable from it (intra-procedurally), so a seed that would land on a
+    /// removed node still propagates into the kept body instead of being stranded
+    /// (getSuccNodes() yields nothing for a non-kept node). Used where a seed is a
+    /// raw basic-block entry with no guaranteed-kept anchor (handleJoin loop exits).
+    virtual void projectSeedToKept(const ICFGNode* node, std::vector<const ICFGNode*>& out) const;
     //@}
 
     /// Add/Remove interleaving thread for statement inst

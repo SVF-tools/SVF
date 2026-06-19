@@ -47,7 +47,9 @@
 #include <fstream>
 #include <iostream>
 #include <cctype>
+#include <deque>
 #include <unordered_map>
+#include <unordered_set>
 
 using namespace SVF;
 
@@ -757,6 +759,42 @@ void getSuccNodes(const SlicedICFGView* icfgView, const ICFGNode* node,
         out.clear();
         for (const ICFGEdge* e : node->getOutEdges())
             out.push_back(e->getDstNode());
+    }
+}
+
+void projectSeedToKept(const SlicedICFGView* icfgView, const ICFGNode* node,
+                       std::vector<const ICFGNode*>& out)
+{
+    out.clear();
+    // No view, or the seed is already kept: use it directly.
+    if (icfgView == nullptr || icfgView->isKeptNode(node))
+    {
+        out.push_back(node);
+        return;
+    }
+    // The seed was sliced out. Walk forward over the full ICFG (staying in the
+    // same function, like the interleaving propagation does) to the first kept
+    // node(s) on each path -- those are where the slice resumes, so seeding them
+    // lets the interleaving continue instead of stranding on the removed node.
+    const FunObjVar* fun = node->getFun();
+    std::unordered_set<const ICFGNode*> visited;
+    std::deque<const ICFGNode*> worklist;
+    visited.insert(node);
+    worklist.push_back(node);
+    while (!worklist.empty())
+    {
+        const ICFGNode* cur = worklist.front();
+        worklist.pop_front();
+        for (const ICFGEdge* e : cur->getOutEdges())
+        {
+            const ICFGNode* dst = e->getDstNode();
+            if (dst->getFun() != fun || !visited.insert(dst).second)
+                continue;
+            if (icfgView->isKeptNode(dst))
+                out.push_back(dst);   // first kept node on this path; stop descending
+            else
+                worklist.push_back(dst);
+        }
     }
 }
 

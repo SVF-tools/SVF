@@ -119,5 +119,10 @@ void SlicedMHP::getSuccNodes(const ICFGNode* node, std::vector<const ICFGNode*>&
     SlicedViewAdapter::getSuccNodes(icfgView, node, out);
 }
 
+void SlicedMHP::projectSeedToKept(const ICFGNode* node, std::vector<const ICFGNode*>& out) const
+{
+    SlicedViewAdapter::projectSeedToKept(icfgView, node, out);
+}
+
 } // namespace SVF
 
