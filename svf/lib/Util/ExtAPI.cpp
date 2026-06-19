@@ -71,50 +71,68 @@ bool ExtAPI::setExtBcPath(const std::string& path)
     return false;
 }
 
-// Get environment variables $SVF_DIR and "npm root" through popen() method
+// Get stdout from a shell command.
+// Return empty string if the command fails.
 static std::string GetStdoutFromCommand(const std::string& command)
 {
     char buffer[128];
-    std::string result = "";
-    // Open pipe to file
+    std::string result;
+
     FILE* pipe = popen(command.c_str(), "r");
     if (!pipe)
+        return "";
+
+    while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
     {
-        return "popen failed!";
+        result += buffer;
     }
-    // read till end of process:
-    while (!feof(pipe))
-    {
-        // use buffer to read and add to result
-        if (fgets(buffer, 128, pipe) != NULL)
-            result += buffer;
-    }
-    pclose(pipe);
-    // remove "\n"
-    result.erase(remove(result.begin(), result.end(), '\n'), result.end());
+
+    int status = pclose(pipe);
+    if (status != 0)
+        return "";
+
+    // remove trailing newlines
+    result.erase(std::remove(result.begin(), result.end(), '\n'), result.end());
+    result.erase(std::remove(result.begin(), result.end(), '\r'), result.end());
+
     return result;
 }
 
-// Get extapi.bc file path in npm
+// Get extapi.bc file path from SVF_DIR or npm installation
 static std::string getFilePath(const std::string& path)
 {
-    std::string bcFilePath = "";
-    if (path.compare("SVF_DIR") == 0)
+    std::string bcFilePath;
+
+    if (path == "SVF_DIR")
     {
-        char const* svfdir = getenv("SVF_DIR");
-        if (svfdir)
-            bcFilePath = svfdir;
+        const char* svfdir = getenv("SVF_DIR");
+        if (!svfdir)
+            return "";
+
+        bcFilePath = svfdir;
+
         if (!bcFilePath.empty() && bcFilePath.back() != '/')
             bcFilePath.push_back('/');
-        bcFilePath.append(SVF_BUILD_TYPE "-build").append("/lib/extapi.bc");
+
+        bcFilePath.append(SVF_BUILD_TYPE "-build/lib/extapi.bc");
     }
-    else if (path.compare("npm root") == 0)
+    else if (path == "npm root")
     {
-        bcFilePath = GetStdoutFromCommand(path);
-        if (!bcFilePath.empty() && bcFilePath.back() != '/')
+        // Check npm exists before calling `npm root`.
+        // If npm is missing, this command returns empty.
+        bcFilePath = GetStdoutFromCommand(
+            "command -v npm >/dev/null 2>&1 && npm root"
+        );
+
+        if (bcFilePath.empty())
+            return "";
+
+        if (bcFilePath.back() != '/')
             bcFilePath.push_back('/');
+
         bcFilePath.append("SVF/lib/extapi.bc");
     }
+
     return bcFilePath;
 }
 
@@ -180,13 +198,14 @@ std::string ExtAPI::getExtBcPath()
     }
 
     // 5. Use npm root + standard relative path (for npm installations)
-    if (setExtBcPath(getFilePath("npm root")))
+    std::string npmPath = getFilePath("npm root");
+    if (setExtBcPath(npmPath))
     {
         return extBcPath;
     }
     else
     {
-        candidatePaths.push_back(getFilePath("npm root"));
+        candidatePaths.push_back(npmPath.empty() ? "npm root unavailable" : npmPath);
     }
 
     // 6. Use the directory of the loaded libSVFCore.so/.dylib + extapi.bc
