@@ -154,9 +154,31 @@ std::set<const ICFGNode*> SlicerBase::sliceDataDependenceOverVFG(
     };
 
     // Seed from the value-flow nodes of the given (e.g. race target) statements.
+    // VFG_pre is a pointer-only SVFG, so a load/store of a NON-pointer value (the
+    // usual case -- a race on an int/float field) has no statement node. For those
+    // we must still preserve the points-to of the dereferenced address pointer, or
+    // the sliced flow-sensitive solve sees an empty slice for it, computes empty
+    // points-to, and drops the race (a soundness bug). So additionally seed from the
+    // definition of each load/store's address pointer (always a pointer, hence
+    // always in the pointer-only SVFG); its backward closure keeps the pointer's
+    // def chain regardless of the value type.
     for (const SVFStmt* stmt : seeds)
+    {
         if (vfg->hasStmtVFGNode(stmt))
             seed(vfg->getStmtVFGNode(stmt));
+
+        NodeID addrPtr = 0;
+        if (const LoadStmt* ld = SVFUtil::dyn_cast<LoadStmt>(stmt))
+            addrPtr = ld->getRHSVarID();
+        else if (const StoreStmt* st = SVFUtil::dyn_cast<StoreStmt>(stmt))
+            addrPtr = st->getLHSVarID();
+        if (addrPtr != 0)
+        {
+            const SVFVar* ptrNode = svfIr->getGNode(addrPtr);
+            if (ptrNode != nullptr && vfg->hasDefSVFGNode(ptrNode))
+                seed(vfg->getDefSVFGNode(ptrNode));
+        }
+    }
 
     // Backward over every value-flow edge.
     while (!worklist.empty()) {

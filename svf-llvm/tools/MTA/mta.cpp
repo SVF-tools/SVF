@@ -59,6 +59,7 @@ static bool boolFlagEnabled(int argc, char** argv, const std::string& flag)
 static bool wantsSlicedPipeline(int argc, char** argv)
 {
     return boolFlagEnabled(argc, argv, "-enable-slicing")
+           || boolFlagEnabled(argc, argv, "-no-slice")
            || boolFlagEnabled(argc, argv, "-observe")
            || boolFlagEnabled(argc, argv, "-observe-sliced");
 }
@@ -92,7 +93,8 @@ int main(int argc, char** argv)
     // multi-stage on-demand slicing pipeline (MSli) and its observe modes live
     // in the SVF library (SlicedMTA); the only LLVM-dependent step --
     // materialising resolved indirect calls into the PAG -- is injected here.
-    if (Options::EnableSlicing() || Options::MTAObserve() || Options::MTAObserveSliced())
+    if (Options::EnableSlicing() || Options::NoSlice()
+            || Options::MTAObserve() || Options::MTAObserveSliced())
     {
         SlicedMTA sliced;
         sliced.runOnModule(pag, [&](CallGraph* cg)

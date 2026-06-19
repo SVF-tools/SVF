@@ -462,14 +462,21 @@ void MHP::updateAncestorThreads(NodeID curTid)
         const CxtThread& ct = tct->getTCTNode(tid)->getCxtThread();
         if (const ICFGNode* forkInst = ct.getThread())
         {
-            for(const ICFGEdge* outEdge : forkInst->getOutEdges())
+            // Route through the (overridable) successor hook so a sliced MHP marks
+            // the fork site's kept successors. Using forkInst->getOutEdges() directly
+            // would strand the marker on a removed node, so it never reaches the
+            // forked thread's body (the full MHP hook returns all successors, so its
+            // behaviour is unchanged).
+            std::vector<const ICFGNode*> succ;
+            getSuccNodes(forkInst, succ);
+            for(const ICFGNode* dst : succ)
             {
                 // Ensure dst node is in the same function as forkInst
-                if(outEdge->getDstNode()->getFun() == forkInst->getFun())
+                if(dst->getFun() == forkInst->getFun())
                 {
                     for (const auto& forkSiteCxt : tct->getCxtOfCxtThread(ct))
                     {
-                        CxtThreadStmt cts(forkSiteCxt.first, forkSiteCxt.second, outEdge->getDstNode());
+                        CxtThreadStmt cts(forkSiteCxt.first, forkSiteCxt.second, dst);
                         addInterleavingThread(cts, curTid);
                     }
                 }
@@ -502,7 +509,12 @@ void MHP::updateSiblingThreads(NodeID curTid)
 
             const CxtThread& ct = tct->getTCTNode(stid)->getCxtThread();
             const FunObjVar* routine = tct->getStartRoutineOfCxtThread(ct);
-            const ICFGNode* stmt = routine->getEntryBlock()->front();
+            // Use the (overridable) entry hook so a sliced MHP marks the same kept
+            // entry node the thread's own interleaving propagation starts from
+            // (analyzeInterleaving's root cts also uses getFunEntry). The raw
+            // getEntryBlock()->front() may be sliced out, stranding the marker on a
+            // removed node that the sibling's propagation never visits.
+            const ICFGNode* stmt = getFunEntry(routine);
             CxtThreadStmt cts(stid, ct.getContext(), stmt);
             addInterleavingThread(cts, curTid);
         }
