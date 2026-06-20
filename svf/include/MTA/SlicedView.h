@@ -93,7 +93,6 @@ public:
 
 private:
     SVF::ICFG* icfg;
-    SVF::CallGraph* callGraph; // Optional, for building complete view
     std::set<const SVF::ICFGNode*> keptNodes;
     std::set<const SVF::ICFGEdge*> keptEdges;
     std::unordered_map<const SVF::ICFGNode*, std::set<const SVF::ICFGNode*>> bridgedEdges;
@@ -235,7 +234,6 @@ public:
 
 private:
     SVF::SVFIR* svfIr;
-    SVF::CallGraph* callGraph;
     std::unique_ptr<SlicedICFGView> icfgView;
     std::unique_ptr<SlicedPAGView> pagView;
     std::unique_ptr<SlicedThreadCallGraphView> tcgView;
@@ -271,8 +269,7 @@ protected:
 private:
     void collectEntryFunInCallGraph() override;
 
-    const SlicedSVFIRView* slicedView;
-    const SlicedThreadCallGraphView* tcgView; // ThreadCallGraph view (from slicedView)
+    const SlicedThreadCallGraphView* tcgView; // ThreadCallGraph view (from the sliced view)
     SVF::u32_t maxContextLen; // 0 means use Options::MaxContextLen()
 
     bool isKeptNode(const SVF::CallGraphNode* node) const;

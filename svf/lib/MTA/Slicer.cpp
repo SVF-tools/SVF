@@ -174,7 +174,9 @@ std::set<const ICFGNode*> SlicerBase::sliceDataDependenceOverVFG(
             addrPtr = st->getLHSVarID();
         if (addrPtr != 0)
         {
-            const SVFVar* ptrNode = svfIr->getGNode(addrPtr);
+            // SVF 3.3: getDefSVFGNode takes a ValVar (the address pointer is a
+            // top-level value variable).
+            const ValVar* ptrNode = SVFUtil::dyn_cast<ValVar>(svfIr->getGNode(addrPtr));
             if (ptrNode != nullptr && vfg->hasDefSVFGNode(ptrNode))
                 seed(vfg->getDefSVFGNode(ptrNode));
         }

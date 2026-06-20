@@ -64,7 +64,7 @@ SlicedICFGView::SlicedICFGView(ICFG* icfg,
                                CallGraph* cg,
                                const std::set<const ICFGNode*>& keepNodes,
                                const std::set<const FunObjVar*>& keptFunctions)
-    : icfg(icfg), callGraph(cg)
+    : icfg(icfg)
 {
     buildICFGSets(keepNodes, keptFunctions);
     buildBridgedEdges();
@@ -339,8 +339,11 @@ void SlicedPAGView::buildKeptNodeIds() {
 
         const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(stmt);
         if (callPE) {
-            keptNodeIds.insert(callPE->getLHSVarID());
-            keptNodeIds.insert(callPE->getRHSVarID());
+            // SVF 3.3: CallPE is a MultiOpndStmt (result + per-call-site operands)
+            // rather than a single-LHS/RHS AssignStmt.
+            keptNodeIds.insert(callPE->getResID());
+            for (u32_t i = 0; i < callPE->getOpVarNum(); ++i)
+                keptNodeIds.insert(callPE->getOpVarID(i));
             continue;
         }
 
@@ -431,8 +434,9 @@ void SlicedPAGView::dump(const std::string& filename) const {
 
         const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(stmt);
         if (callPE) {
-            srcId = callPE->getRHSVarID();
-            dstId = callPE->getLHSVarID();
+            // SVF 3.3: CallPE is a MultiOpndStmt (see above).
+            srcId = callPE->getOpVarNum() > 0 ? callPE->getOpVarID(0) : callPE->getResID();
+            dstId = callPE->getResID();
             edgeLabel = "CallPE";
             color = "orange";
         }
@@ -624,7 +628,7 @@ SlicedSVFIRView::SlicedSVFIRView(SVFIR* svfIr,
                                  CallGraph* cg,
                                  ICFG* icfg,
                                  const std::set<const ICFGNode*>& keepNodes)
-    : svfIr(svfIr), callGraph(cg)
+    : svfIr(svfIr)
 {
     // Derive keptFunctions from keepNodes
     std::set<const FunObjVar*> keptFunctions;
@@ -848,7 +852,6 @@ void getInEdgesOfCallGraphNode(const SlicedSVFIRView* slicedView, const CallGrap
 
 SlicedTCT::SlicedTCT(PointerAnalysis* p, const SlicedSVFIRView* sv, u32_t maxCxtLen)
     : TCT(p),
-      slicedView(sv),
       tcgView(sv != nullptr && sv->getThreadCallGraph() != nullptr ? sv->getThreadCallGraph() : nullptr),
       maxContextLen(maxCxtLen)
 {

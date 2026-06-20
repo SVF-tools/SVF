@@ -177,7 +177,7 @@ public:
 
     // LLVMModule.cpp
     static const Option<std::string> Graphtxt;
-    static const Option<bool> SVFMain;
+    static Option<bool> SVFMain;
 
     // SymbolTableInfo.cpp
     static const Option<bool> LocMemModel;
@@ -240,6 +240,8 @@ public:
     static const Option<u32_t> LoopBound;
 
     // Abstract Execution
+    static const OptionMap<u32_t> AESparsity;
+    static const OptionMap<u32_t> AEFunEntry;
     static const Option<u32_t> WidenDelay;
     /// recursion handling mode, Default: TOP
     static const OptionMap<u32_t> HandleRecur;

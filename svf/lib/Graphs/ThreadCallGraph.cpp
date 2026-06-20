@@ -101,7 +101,7 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
             const NodeBS targets = pta->getPts(forkedval->getId()).toNodeBS();
             for (NodeBS::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ii++)
             {
-                if(ObjVar* objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
+                if(const ObjVar* objPN = pag->getObjVar(*ii))
                 {
                     const BaseObjVar* obj = pag->getBaseObject(objPN->getId());
                     if(obj->isFunction())
