@@ -522,14 +522,19 @@ protected:
     /// Set multi-forked thread attributes
     void setMultiForkedAttrs(CxtThread& ct)
     {
-        /// non-main thread
-        if(ct.getThread() != nullptr)
+        /// non-main thread spawned at a real fork site. The main thread uses a
+        /// synthetic dummy fork site (see createDummyForkSite); it has no real
+        /// function/call-graph node, is never in a loop or recursion, and must be
+        /// treated like the null (main) case -- otherwise isInLoopInstruction would
+        /// look up a call-graph node that does not exist.
+        if(ct.getThread() != nullptr &&
+           dummyForkSites.find(ct.getThread()) == dummyForkSites.end())
         {
             const ICFGNode* svfInst = ct.getThread();
             ct.setInloop(isInLoopInstruction(svfInst));
             ct.setIncycle(isInRecursion(svfInst));
         }
-        /// main thread
+        /// main thread (null or dummy fork site)
         else
         {
             ct.setInloop(false);

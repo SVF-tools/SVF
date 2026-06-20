@@ -197,7 +197,7 @@ const ValVar* ThreadAPI::getActualParmAtForkSite(const CallICFGNode *inst) const
 const SVFVar* ThreadAPI::getFormalParmOfForkedFun(const FunObjVar* F) const
 {
     assert(PAG::getPAG()->hasFunArgsList(F) && "forked function has no args list!");
-    const SVFIR::SVFVarList& funArgList = PAG::getPAG()->getFunArgsList(F);
+    const SVFIR::ValVarList& funArgList = PAG::getPAG()->getFunArgsList(F);
     // in pthread, forked functions are of type void *()(void *args)
     assert(funArgList.size() == 1 && "num of pthread forked function args is not 1!");
     return funArgList[0];
@@ -274,7 +274,10 @@ bool ThreadAPI::isAliasedForkJoin(PointerAnalysis *pta, const SVFVar *forkArg, c
             else if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(st))
                 worklist.push_back(gep->getRHSVar());
             else if (const CallPE* call = SVFUtil::dyn_cast<CallPE>(st))
-                worklist.push_back(call->getRHSVar()); // by-value actual argument
+                // SVF 3.3: CallPE is a MultiOpndStmt; its operands are the by-value
+                // actual argument(s), one per merged call site.
+                for (u32_t i = 0; i < call->getOpVarNum(); ++i)
+                    worklist.push_back(call->getOpVar(i));
         }
     }
     return false;

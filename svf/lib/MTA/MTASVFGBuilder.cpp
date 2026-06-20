@@ -58,12 +58,19 @@ protected:
     /// the fork site (ActualIN -> FormalIN, FSAM's thread-oblivious value flow).
     /// We do NOT add the spawnee's *mod* set -- a fork has no return, so its
     /// writes flow back via the thread-aware interference edges instead.
-    void handleForkSideEffect(NodeBS& /*mod*/, NodeBS& ref,
+    void handleForkSideEffect(NodeBS& mod, NodeBS& ref,
                               const CallICFGNode* cs, const FunObjVar* callee) override
     {
         if (const ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(this->getCallGraph()))
             if (tcg->hasThreadForkEdge(cs))
+            {
                 ref = this->getRefSideEffectOfFunction(callee);
+                // A fork is a call WITHOUT a return: the spawnee's writes must not
+                // be applied as a mod here (which would kill the spawner's own
+                // value flow past the fork). They reach later reads via the
+                // thread-aware interference edges instead.
+                mod.clear();
+            }
     }
 
     /// Thread join: the joined spawnee's exit writes become visible to the
@@ -408,11 +415,11 @@ void MTASVFGBuilder::handleStoreLoad(const StmtSVFGNode* n1, const StmtSVFGNode*
 
     if (!mhp->mayHappenInParallel(i1, i2))
         return;
-    if (!pta->alias(n1->getPAGDstNodeID(), n2->getPAGSrcNodeID()))
+    if (!pta->alias(n1->getDstNodeID(), n2->getSrcNodeID()))
         return;
 
-    PointsTo pts = pta->getPts(n1->getPAGDstNodeID());
-    pts &= pta->getPts(n2->getPAGSrcNodeID());
+    PointsTo pts = pta->getPts(n1->getDstNodeID());
+    pts &= pta->getPts(n2->getSrcNodeID());
 
     // [THREAD-VF] source extraction runs for every candidate pair (both the
     // pairs that survive and the ones the lock test prunes), so the sliced ILA
@@ -442,11 +449,11 @@ void MTASVFGBuilder::handleStoreStore(const StmtSVFGNode* n1, const StmtSVFGNode
 
     if (!mhp->mayHappenInParallel(i1, i2))
         return;
-    if (!pta->alias(n1->getPAGDstNodeID(), n2->getPAGDstNodeID()))
+    if (!pta->alias(n1->getDstNodeID(), n2->getDstNodeID()))
         return;
 
-    PointsTo pts = pta->getPts(n1->getPAGDstNodeID());
-    pts &= pta->getPts(n2->getPAGDstNodeID());
+    PointsTo pts = pta->getPts(n1->getDstNodeID());
+    pts &= pta->getPts(n2->getDstNodeID());
 
     // Both directions are candidate thread-aware edges; extract sources for each.
     bool commonLock = lockana->isProtectedByCommonLock(i1, i2);

@@ -471,7 +471,7 @@ void MHP::updateAncestorThreads(NodeID curTid)
 {
     NodeBS ancestorAndSelfTids = tct->getAncestorThreads(curTid);
     DBOUT(DMTA, outs() << "##Ancestor thread of " << curTid << " is : ");
-    DBOUT(DMTA, dumpSet(tds));
+    DBOUT(DMTA, dumpSet(ancestorAndSelfTids));
     DBOUT(DMTA, outs() << "\n");
     ancestorAndSelfTids.set(curTid);
 
@@ -631,7 +631,7 @@ bool MHP::isConnectedfromMain(const FunObjVar* fun)
     while (!worklist.empty())
     {
         const CallGraphNode* node = worklist.pop();
-        if ("main" == node->getFunction()->getName())
+        if (SVFUtil::isProgEntryFunction(node->getFunction()))
             return true;
         for (CallGraphNode::const_iterator nit = node->InEdgeBegin(), neit = node->InEdgeEnd(); nit != neit; nit++)
         {

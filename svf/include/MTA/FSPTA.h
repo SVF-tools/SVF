@@ -61,7 +61,7 @@ public:
     FSPTA(MHP* m, LockAnalysis* la,
              const SlicedSVFIRView* view = nullptr, SVFG* preBuilt = nullptr)
         : FlowSensitive(m->getTCT()->getPTA()->getPAG()),
-          mhp(m), lockana(la), mtaSVFGBuilder(m, la),
+          mhp(m), mtaSVFGBuilder(m, la),
           slicedView(view), preBuiltSVFG(preBuilt)
     {
         if (slicedView)
@@ -84,7 +84,6 @@ public:
 
 private:
     MHP* mhp;
-    LockAnalysis* lockana;
     /// Owns the thread-aware SVFG used by the FS solver (must outlive `svfg`).
     MTASVFGBuilder mtaSVFGBuilder;
     /// Non-null in sliced (Layer 2) mode.
