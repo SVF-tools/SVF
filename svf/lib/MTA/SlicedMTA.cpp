@@ -339,7 +339,25 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
 
     std::set<const ICFGNode*> mtaSlicedNodes;
 
+    if (Options::SlicingSingle())
     {
+        // Single-pass baseline (MSli §3/§5.4): one unified slice (V_Single)
+        // combining synchronization + data + call dependence, shared by both the
+        // ILA and the FSPTA stages. Computed once here; reused in PTA slicing.
+        SVFUtil::outs() << "[Slicing Mode] Single unified slice (V_Single) for ILA + FSPTA\n";
+        singleSlicer = std::make_unique<SingleSlicer>(
+                           svfIr, preAnder, mhp.get(), lockAnalysis.get(),
+                           vfgPre /* data dependence over the thread-aware VFG_pre */);
+        timePhase("Unified Slicing", [&]()
+        {
+            singleSlicedNodes = singleSlicer->performSlicing(vulnerableStatements);
+        });
+        mtaSlicedNodes = singleSlicedNodes;
+        SVFUtil::outs() << "Unified sliced to " << mtaSlicedNodes.size() << " nodes\n";
+    }
+    else
+    {
+        SVFUtil::outs() << "[Slicing Mode] Differential slices (separate ILA + FSPTA)\n";
         mtaSlicer = std::make_unique<MTASlicer>(
                         svfIr, preAnder, mhp.get(), lockAnalysis.get());
 
@@ -361,7 +379,7 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
             mtaSlicedNodes = mtaSlicer->performSlicing(vulnerableStatements, threadVFSources);
         });
         SVFUtil::outs() << "MTA sliced to " << mtaSlicedNodes.size() << " nodes\n";
-    }
+    } // end differential MTA slice
 
     // Step 4: Build MTA SlicedSVFIRView (using pre-analysis pointer analysis)
     timePhase("Build MTA Sliced View", [&]()
@@ -431,6 +449,15 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
 
     std::set<const ICFGNode*> ptaSlicedNodes;
 
+    if (Options::SlicingSingle())
+    {
+        // Single-pass baseline: reuse the unified V_Single computed in MTA slicing
+        // (no separate data-dependence slice); FSPTA runs on the same slice as ILA.
+        SVFUtil::outs() << "[Slicing Mode] Reusing unified slice (V_Single) for FSPTA\n";
+        ptaSlicedNodes = singleSlicedNodes;
+        SVFUtil::outs() << "PTA reuses unified slice: " << ptaSlicedNodes.size() << " nodes\n";
+    }
+    else
     {
         SVFUtil::outs() << "Using " << vulnerableStatements.size() << " vulnerable statements from pre-analysis\n";
         SVFUtil::outs() << "Using " << racePairs.size() << " race pairs from pre-analysis\n";

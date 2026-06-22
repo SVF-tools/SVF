@@ -25,7 +25,7 @@
  *
  *      Author: Jiawei Yang
  *
- * SlicerBase + MTASlicer + PTASlicer.
+ * SlicerBase + MTASlicer + PTASlicer + SingleSlicer.
  */
 
 #include "MTA/Slicer.h"
@@ -534,6 +534,71 @@ std::set<const ICFGNode*> PTASlicer::performSlicing(
     std::set<const ICFGNode*> dualSlicedNodes = performDualSlicing(initialSliceResult);
 
     return dualSlicedNodes;
+}
+
+//===----------------------------------------------------------------------===//
+// SingleSlicer
+//===----------------------------------------------------------------------===//
+
+SingleSlicer::SingleSlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
+                           LockAnalysis* lockAnalysis, SVF::SVFG* vfg)
+    : SlicerBase(svfIr, pta, mhp, lockAnalysis), vfg(vfg) {
+}
+
+// Single-pass slice (the baseline of MSli §3/§5.4): the transitive closure of
+// the target statements under the COMBINED dependence graph -- synchronization,
+// data, and call dependence -- yielding one slice shared by ILA and FSPTA.
+std::set<const ICFGNode*> SingleSlicer::performSlicing(
+    const std::set<const SVFStmt*>& vulnerableStatements) {
+
+    // Step 1: Synchronization dependence -- the relevant pthread (fork/join) and
+    // mutex (lock/unlock) statements for the targets.
+    auto commonStmts = collectCommonThreadStatements(vulnerableStatements);
+    const std::set<const CallICFGNode*>& pthreadCallNodes = commonStmts.first;
+    const std::set<const CallICFGNode*>& mutexCallNodes = commonStmts.second;
+
+    // Step 2: Seed the working set with the synchronization statements (and their
+    // return nodes) and the target statements themselves.
+    std::set<const ICFGNode*> currentNodes;
+    currentNodes.insert(pthreadCallNodes.begin(), pthreadCallNodes.end());
+    for (const CallICFGNode* pthreadCallNode : pthreadCallNodes)
+        currentNodes.insert(pthreadCallNode->getRetICFGNode());
+    currentNodes.insert(mutexCallNodes.begin(), mutexCallNodes.end());
+    for (const CallICFGNode* mutexCallNode : mutexCallNodes)
+        currentNodes.insert(mutexCallNode->getRetICFGNode());
+    for (const SVFStmt* stmt : vulnerableStatements)
+        currentNodes.insert(stmt->getICFGNode());
+
+    // Step 3: Close over data dependence (the thread-aware VFG_pre value flow --
+    // direct + indirect + interference, the same model PTASlicer uses) and call
+    // dependence (function expansion), alternately, until the node set converges.
+    bool changed = true;
+    int iteration = 0;
+    const int maxIterations = 100; // safety bound against non-convergence
+    while (changed && iteration < maxIterations) {
+        iteration++;
+        std::set<const ICFGNode*> previousNodes = currentNodes;
+
+        std::set<const SVFStmt*> currentStatements;
+        for (const ICFGNode* node : currentNodes) {
+            const ICFGNode::SVFStmtList& stmts = node->getSVFStmts();
+            currentStatements.insert(stmts.begin(), stmts.end());
+        }
+
+        std::set<const ICFGNode*> dataDepNodes =
+            sliceDataDependenceOverVFG(currentStatements, vfg);
+        currentNodes.insert(dataDepNodes.begin(), dataDepNodes.end());
+
+        currentNodes = expandCallDependence(currentNodes);
+
+        changed = (currentNodes != previousNodes);
+    }
+
+    if (iteration >= maxIterations)
+        SVFUtil::writeWrnMsg("SingleSlicer reached max iterations, may not have converged");
+
+    // Step 4: One dual-slicing (temporal) pass at the end.
+    return performDualSlicing(currentNodes);
 }
 
 } // namespace SVF
