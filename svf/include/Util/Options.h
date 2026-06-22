@@ -270,7 +270,7 @@ public:
     static const Option<bool> NoSlice;
     /// MTA slicing: max context length for the sliced TCT (0 = reuse MaxContextLen), Default: 2
     static const Option<u32_t> SlicedMaxCxt;
-    /// MTA slicing: build the main FSPTA's thread-aware value flow from the SLICED
+    /// MTA slicing: build the main FSMPTA's thread-aware value flow from the SLICED
     /// ILA (paper-faithful, fresh SVFG) instead of reusing VFG_pre, Default: false
     static const Option<bool> MainIlaSliced;
     /// MTA slicing: seed the ILA slice with [THREAD-VF] sources (paper §4.2), Default: true

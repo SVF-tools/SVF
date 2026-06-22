@@ -1,4 +1,4 @@
-//===- FSPTA.h -- Flow-sensitive multithreaded pointer analysis (FSAM) --===//
+//===- FSMPTA.h -- Flow-sensitive multithreaded pointer analysis (FSAM) -===//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,23 +21,21 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * FSPTA.h
+ * FSMPTA.h
  *
  *      Author: Jiawei Yang
  *
  * Sparse flow-sensitive pointer analysis for multithreaded programs (FSAM,
- * Sui/Di/Xue CGO'16). It runs SVF 3.2's sparse flow-sensitive solver
+ * Sui/Di/Xue CGO'16). It runs the sparse flow-sensitive solver
  * (`FlowSensitive`) over a *thread-aware* SVFG built by `MTASVFGBuilder`,
  * i.e. the stock thread-oblivious value flow augmented with inter-thread
  * (interference) edges derived from the MHP and lock analyses.
  *
- * This is the engine the MSli paper calls the main FSPTA phase.
- *
- * Port of SVF-2.9 `FSMPTA` (removed from SVF 3.x), adapted to the SVF 3.2
- * FlowSensitive/SVFGBuilder API.
+ * This is the engine the MSli paper calls the main FSMPTA phase.
  */
 
-#pragma once
+#ifndef INCLUDE_MTA_FSMPTA_H_
+#define INCLUDE_MTA_FSMPTA_H_
 
 #include "WPA/FlowSensitive.h"
 #include "MTA/MHP.h"
@@ -49,7 +47,7 @@
 namespace SVF
 {
 
-class FSPTA : public FlowSensitive
+class FSMPTA : public FlowSensitive
 {
 public:
     /// Constructor.
@@ -58,7 +56,7 @@ public:
     ///  - preBuilt != nullptr => reuse an already-built thread-aware SVFG instead
     ///    of building a fresh one (build the SVFG exactly once across slicing +
     ///    main solve). Ownership stays with the caller.
-    FSPTA(MHP* m, LockAnalysis* la,
+    FSMPTA(MHP* m, LockAnalysis* la,
              const SlicedSVFIRView* view = nullptr, SVFG* preBuilt = nullptr)
         : FlowSensitive(m->getTCT()->getPTA()->getPAG()),
           mhp(m), mtaSVFGBuilder(m, la),
@@ -69,7 +67,7 @@ public:
                 keptNodes.insert(n);
     }
 
-    ~FSPTA() override = default;
+    ~FSMPTA() override = default;
 
     /// Initialise: build the thread-aware SVFG, then solve sparsely on it.
     void initialize() override;
@@ -94,3 +92,5 @@ private:
 };
 
 } // End namespace SVF
+
+#endif /* INCLUDE_MTA_FSMPTA_H_ */

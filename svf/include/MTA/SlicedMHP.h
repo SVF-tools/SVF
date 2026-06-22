@@ -29,7 +29,8 @@
  * ICFG/CallGraph traversal hooks to walk only the kept (sliced) nodes/edges.
  */
 
-#pragma once
+#ifndef INCLUDE_MTA_SLICEDMHP_H_
+#define INCLUDE_MTA_SLICEDMHP_H_
 
 // Include WorkList.h before TCT.h because TCT.h includes SCC.h which uses FIFOWorkList
 // Include SVFVariables.h before MHP.h because MHP.h uses ValVar which needs complete definition
@@ -83,4 +84,6 @@ private:
 };
 
 } // namespace SVF
+
+#endif /* INCLUDE_MTA_SLICEDMHP_H_ */
 

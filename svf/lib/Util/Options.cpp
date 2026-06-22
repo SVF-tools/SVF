@@ -857,7 +857,7 @@ const Option<bool> Options::NoSlice(
 const Option<u32_t> Options::SlicedMaxCxt(
     "sliced-max-cxt", "MTA slicing: max context length for the sliced TCT (0 = reuse max-cxt)", 2);
 const Option<bool> Options::MainIlaSliced(
-    "main-ila-sliced", "MTA slicing: build the main FSPTA thread-aware value flow from the sliced ILA", false);
+    "main-ila-sliced", "MTA slicing: build the main FSMPTA thread-aware value flow from the sliced ILA", false);
 const Option<bool> Options::ThreadVFSources(
     "threadvf-sources", "MTA slicing: seed the ILA slice with [THREAD-VF] sources", true);
 const Option<bool> Options::SlicedDumpDot(

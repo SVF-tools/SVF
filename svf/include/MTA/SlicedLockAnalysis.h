@@ -29,7 +29,8 @@
  * overrides the ICFG/CallGraph traversal hooks to walk only the kept nodes/edges.
  */
 
-#pragma once
+#ifndef INCLUDE_MTA_SLICEDLOCKANALYSIS_H_
+#define INCLUDE_MTA_SLICEDLOCKANALYSIS_H_
 
 // Include WorkList.h before TCT.h because TCT.h includes SCC.h which uses FIFOWorkList
 #include <Util/WorkList.h>
@@ -79,4 +80,6 @@ private:
 };
 
 } // namespace SVF
+
+#endif /* INCLUDE_MTA_SLICEDLOCKANALYSIS_H_ */
 

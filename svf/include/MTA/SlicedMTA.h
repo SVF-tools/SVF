@@ -55,7 +55,7 @@ class MHP;
 class LockAnalysis;
 class MTASVFGBuilder;
 class SVFG;
-class FSPTA;
+class FSMPTA;
 class PTASlicer;
 class MTASlicer;
 class SlicedSVFIRView;
@@ -70,7 +70,7 @@ class SlicedLockAnalysis;
  *   1. (caller) build SVFIR + resolve indirect calls into the PAG
  *   2. pre-analysis: Andersen, TCT, MHP, lock, candidate race pairs, VFG_pre
  *   3. MTA slicing: slice the thread-aware graph, build the sliced MHP/lock
- *   4. PTA slicing + main flow-sensitive FSAM (FSPTA) on the slice
+ *   4. PTA slicing + main flow-sensitive FSAM (FSMPTA) on the slice
  *   5. final race detection on the sliced graph using FSAM points-to
  *
  * Behaviour is controlled by Options (EnableSlicing, SlicedMaxCxt, MainIlaSliced,
@@ -110,10 +110,10 @@ public:
 
 private:
     // --- pipeline stages ---
-    bool phase2_PreAnalysis(const ResolveIndirectCalls& resolveIndirectCalls);
-    bool phase3_MTASlicingAndAnalysis();
-    bool phase4_PTASlicingAndAnalysis();
-    bool phase5_FinalRaceDetection();
+    bool runPreAnalysis(const ResolveIndirectCalls& resolveIndirectCalls);
+    bool runMTASlicingAndAnalysis();
+    bool runPTASlicingAndAnalysis();
+    bool runFinalRaceDetection();
     void buildVFGPre();
 
     /// No-slice A/B baseline: run the FSAM detection on the whole program (no
@@ -160,7 +160,7 @@ private:
     std::unique_ptr<LockAnalysis> lockAnalysis;
     // Inclusion-based Andersen's pre-analysis (a shared singleton, not owned
     // here -- released once in the destructor). Feeds the TCT / MHP / lock /
-    // race pre-analysis, the thread-aware VFG_pre, and the main FSPTA.
+    // race pre-analysis, the thread-aware VFG_pre, and the main FSMPTA.
     AndersenWaveDiff* preAnder = nullptr;
     std::unique_ptr<MTASVFGBuilder> vfgPreBuilder; // owns vfgPre
     SVFG* vfgPre = nullptr;
@@ -168,7 +168,7 @@ private:
     std::unique_ptr<MTASlicer> mtaSlicer;
     std::unique_ptr<SlicedSVFIRView> mtaSlicedView;
     std::unique_ptr<SlicedSVFIRView> ptaSlicedView;
-    std::unique_ptr<FSPTA> mtaFSPTA;
+    std::unique_ptr<FSMPTA> mtaFSMPTA;
     std::unique_ptr<SlicedTCT> slicedTCT;
     std::unique_ptr<SlicedMHP> slicedMhp;
     std::unique_ptr<SlicedLockAnalysis> slicedLockAnalysis;
