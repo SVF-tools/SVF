@@ -28,6 +28,8 @@
  * The MSli program slicers: a shared SlicerBase plus three concrete slicers.
  *   - MTASlicer   : ILA (sync + dual + call) slice for the thread-aware analysis
  *   - PTASlicer   : data-dependence slice over the thread-aware VFG_pre
+ *   - SingleSlicer: one unified slice combining all three dependence kinds, shared
+ *                   by both ILA and FSPTA (the single-pass baseline, MSli §3/§5.4)
  */
 
 #ifndef MTA_SLICER_H
@@ -168,6 +170,33 @@ public:
      * Perform slicing for pointer analysis (returns only node set, no IRView needed).
      * @param vulnerableStatements Set of vulnerable statements to start slicing from
      * @return Set of ICFG nodes in the slice (without function expansion)
+     */
+    std::set<const ICFGNode*> performSlicing(
+        const std::set<const SVFStmt*>& vulnerableStatements);
+};
+
+/**
+ * SingleSlicer - Unified slicer combining synchronization, data, and call
+ * dependence into ONE slice (the single-pass baseline, MSli §3/§5.4: the
+ * transitive closure of the target statements under the combined dependence
+ * graph). Both ILA and FSPTA run on this single slice, so V_ILA, V_PTA subset
+ * V_Single. Used by the differential-slicing ablation (-slicing-single).
+ *
+ * Iteratively applies data dependence (over the thread-aware VFG_pre) and call
+ * dependence until convergence, then a single dual-slicing pass.
+ */
+class SingleSlicer : public SlicerBase {
+private:
+    SVF::SVFG* vfg; ///< thread-aware VFG_pre (built once in pre-analysis)
+
+public:
+    SingleSlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
+                 LockAnalysis* lockAnalysis, SVF::SVFG* vfg = nullptr);
+
+    /**
+     * Perform unified slicing combining synchronization, data, and call dependence.
+     * @param vulnerableStatements Set of vulnerable statements to start slicing from
+     * @return Set of ICFG nodes in the slice (including call/ret and entry/exit nodes)
      */
     std::set<const ICFGNode*> performSlicing(
         const std::set<const SVFStmt*>& vulnerableStatements);

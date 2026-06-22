@@ -275,6 +275,9 @@ public:
     static const Option<bool> MainIlaSliced;
     /// MTA slicing: seed the ILA slice with [THREAD-VF] sources (paper §4.2), Default: true
     static const Option<bool> ThreadVFSources;
+    /// MTA slicing: use one unified slice for both ILA and FSPTA (the single-pass
+    /// baseline of the differential-slicing ablation) instead of separate slices, Default: false
+    static const Option<bool> SlicingSingle;
     /// MTA slicing: dump intermediate dot graphs (ICFG/TCG/SVFG/...), Default: false
     static const Option<bool> SlicedDumpDot;
     /// MTA: observe whole-program flow-sensitive FSAM points-to + ILA (soundness), Default: false

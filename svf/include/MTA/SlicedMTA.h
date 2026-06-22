@@ -58,6 +58,7 @@ class SVFG;
 class FSMPTA;
 class PTASlicer;
 class MTASlicer;
+class SingleSlicer;
 class SlicedSVFIRView;
 class SlicedTCT;
 class SlicedMHP;
@@ -74,7 +75,7 @@ class SlicedLockAnalysis;
  *   5. final race detection on the sliced graph using FSAM points-to
  *
  * Behaviour is controlled by Options (EnableSlicing, SlicedMaxCxt, MainIlaSliced,
- * ThreadVFSources, SlicedDumpDot, MTAObserve, MTAObserveSliced).
+ * ThreadVFSources, SlicingSingle, SlicedDumpDot, MTAObserve, MTAObserveSliced).
  */
 class SlicedMTA
 {
@@ -166,6 +167,10 @@ private:
     SVFG* vfgPre = nullptr;
     std::unique_ptr<PTASlicer> ptaSlicer;
     std::unique_ptr<MTASlicer> mtaSlicer;
+    std::unique_ptr<SingleSlicer> singleSlicer;
+    // -slicing-single: the one unified slice, computed in MTA slicing and reused
+    // (not recomputed) for PTA slicing so both stages share V_Single.
+    std::set<const ICFGNode*> singleSlicedNodes;
     std::unique_ptr<SlicedSVFIRView> mtaSlicedView;
     std::unique_ptr<SlicedSVFIRView> ptaSlicedView;
     std::unique_ptr<FSMPTA> mtaFSMPTA;
