@@ -138,9 +138,9 @@ std::set<const SVFStmt*> SlicerBase::getDependentThreadCreate(const SVFStmt* stm
     return forkSiteStmts;
 }
 
-// Data-dependence slice over the thread-aware SVFG (VFG_pre). SVF 3.2's
-// value-flow graph edges already capture direct (top-level), indirect
-// (address-taken / MemSSA), and thread-aware (interference) data dependence.
+// Data-dependence slice over the thread-aware SVFG (VFG_pre). The value-flow
+// graph edges already capture direct (top-level), indirect (address-taken /
+// MemSSA), and thread-aware (interference) data dependence.
 std::set<const ICFGNode*> SlicerBase::sliceDataDependenceOverVFG(
     const std::set<const SVFStmt*>& seeds, SVF::SVFG* vfg) {
 
@@ -174,8 +174,8 @@ std::set<const ICFGNode*> SlicerBase::sliceDataDependenceOverVFG(
             addrPtr = st->getLHSVarID();
         if (addrPtr != 0)
         {
-            // SVF 3.3: getDefSVFGNode takes a ValVar (the address pointer is a
-            // top-level value variable).
+            // getDefSVFGNode takes a ValVar (the address pointer is a top-level
+            // value variable).
             const ValVar* ptrNode = SVFUtil::dyn_cast<ValVar>(svfIr->getGNode(addrPtr));
             if (ptrNode != nullptr && vfg->hasDefSVFGNode(ptrNode))
                 seed(vfg->getDefSVFGNode(ptrNode));

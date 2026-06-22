@@ -34,14 +34,13 @@
  *   (2) may-alias on the address-taken object, and
  *   (3) are not excluded by a common lock (non-interference lock-pair pruning).
  *
- * This is a port of the SVF-2.9 `MTASVFGBuilder` (removed from SVF 3.x),
- * adapted to the SVF 3.2 SVFG/MemSSA API and the artifact's ICFGNode-based
- * MHP/LockAnalysis query interface. The precision-experiment variants of the
- * original (non-sparse, PCG, read-precision edge removal) are intentionally
- * dropped; only the default thread-aware edge construction is kept.
+ * Only the default thread-aware edge construction is kept; the
+ * precision-experiment variants (non-sparse, PCG, read-precision edge removal)
+ * are intentionally omitted.
  */
 
-#pragma once
+#ifndef INCLUDE_MTA_MTASVFGBUILDER_H_
+#define INCLUDE_MTA_MTASVFGBUILDER_H_
 
 #include "MSSA/SVFGBuilder.h"
 #include "Graphs/SVFG.h"
@@ -143,3 +142,5 @@ private:
 };
 
 } // End namespace SVF
+
+#endif /* INCLUDE_MTA_MTASVFGBUILDER_H_ */

@@ -1,4 +1,4 @@
-//===- FSPTA.cpp -- Flow-sensitive multithreaded pointer analysis (FSAM) -===//
+//===- FSMPTA.cpp -- Flow-sensitive multithreaded pointer analysis (FSAM) ===//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,14 +21,15 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * FSPTA.cpp
+ * FSMPTA.cpp
  *
  *      Author: Jiawei Yang
  *
- * Port of SVF-2.9 FSMPTA::initialize onto SVF 3.2 FlowSensitive.
+ * Implements the flow-sensitive multithreaded pointer analysis (FSAM): build
+ * the thread-aware SVFG, then run the sparse flow-sensitive solver over it.
  */
 
-#include "MTA/FSPTA.h"
+#include "MTA/FSMPTA.h"
 #include "WPA/Andersen.h"
 #include "WPA/WPAStat.h"
 #include "Util/Options.h"
@@ -39,14 +40,14 @@ using namespace SVF;
 
 /*!
  * Sliced (Layer 2) mode: the thread-aware SVFG is built whole, but we do not
- * propagate flow facts through load/store statements that the FSPTA slice
+ * propagate flow facts through load/store statements that the FSMPTA slice
  * removed -- exactly "don't update the value flows that were sliced away".
  * By the slice's data-dependence closure, no target pointer depends on a
  * sliced-away statement, so the target points-to results are preserved.
  * Non-statement nodes (Addr, Phi, call/return boundaries) are always processed
  * to keep the inter-procedural value flow intact.
  */
-void FSPTA::processNode(NodeID nodeId)
+void FSMPTA::processNode(NodeID nodeId)
 {
     if (slicedView)
     {
@@ -67,7 +68,7 @@ void FSPTA::processNode(NodeID nodeId)
  * stock sparse flow-sensitive solver. Mirrors FlowSensitive::initialize()
  * but swaps the default SVFG builder for the MTA-aware one.
  */
-void FSPTA::initialize()
+void FSMPTA::initialize()
 {
     PointerAnalysis::initialize();
 
@@ -75,9 +76,9 @@ void FSPTA::initialize()
 
     // The artifact runs FSAM with default options; clustering / plain-mapping
     // of the auxiliary Andersen's analysis is not supported here.
-    assert(!Options::ClusterAnder() && "FSPTA: clustering aux. Andersen's unsupported.");
+    assert(!Options::ClusterAnder() && "FSMPTA: clustering aux. Andersen's unsupported.");
     assert(!Options::ClusterFs() && !Options::PlainMappingFs() &&
-           "FSPTA: cluster-fs / plain-mapping-fs unsupported.");
+           "FSMPTA: cluster-fs / plain-mapping-fs unsupported.");
 
     ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
 

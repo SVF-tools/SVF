@@ -274,7 +274,7 @@ bool ThreadAPI::isAliasedForkJoin(PointerAnalysis *pta, const SVFVar *forkArg, c
             else if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(st))
                 worklist.push_back(gep->getRHSVar());
             else if (const CallPE* call = SVFUtil::dyn_cast<CallPE>(st))
-                // SVF 3.3: CallPE is a MultiOpndStmt; its operands are the by-value
+                // CallPE is a MultiOpndStmt; its operands are the by-value
                 // actual argument(s), one per merged call site.
                 for (u32_t i = 0; i < call->getOpVarNum(); ++i)
                     worklist.push_back(call->getOpVar(i));

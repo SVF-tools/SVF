@@ -339,7 +339,7 @@ void SlicedPAGView::buildKeptNodeIds() {
 
         const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(stmt);
         if (callPE) {
-            // SVF 3.3: CallPE is a MultiOpndStmt (result + per-call-site operands)
+            // CallPE is a MultiOpndStmt (result + per-call-site operands)
             // rather than a single-LHS/RHS AssignStmt.
             keptNodeIds.insert(callPE->getResID());
             for (u32_t i = 0; i < callPE->getOpVarNum(); ++i)
@@ -434,7 +434,7 @@ void SlicedPAGView::dump(const std::string& filename) const {
 
         const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(stmt);
         if (callPE) {
-            // SVF 3.3: CallPE is a MultiOpndStmt (see above).
+            // CallPE is a MultiOpndStmt (see above).
             srcId = callPE->getOpVarNum() > 0 ? callPE->getOpVarID(0) : callPE->getResID();
             dstId = callPE->getResID();
             edgeLabel = "CallPE";
