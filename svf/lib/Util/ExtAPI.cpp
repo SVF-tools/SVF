@@ -121,8 +121,8 @@ static std::string getFilePath(const std::string& path)
         // Check npm exists before calling `npm root`.
         // If npm is missing, this command returns empty.
         bcFilePath = GetStdoutFromCommand(
-            "command -v npm >/dev/null 2>&1 && npm root"
-        );
+                         "command -v npm >/dev/null 2>&1 && npm root"
+                     );
 
         if (bcFilePath.empty())
             return "";
