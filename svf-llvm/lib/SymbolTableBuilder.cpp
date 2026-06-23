@@ -230,8 +230,6 @@ void SymbolTableBuilder::buildMemModel()
                     const Value* Callee = cs->getCalledOperand();
                     collectSym(Callee);
 
-                    // TODO handle inlineAsm
-                    /// if (SVFUtil::isa<InlineAsm>(Callee))
                     if (Options::EnableTypeCheck())
                     {
                         getTypeInference()->validateTypeCheck(cs);
