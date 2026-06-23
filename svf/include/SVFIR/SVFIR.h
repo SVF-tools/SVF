@@ -849,10 +849,6 @@ private:
     {
         return addValNode(new IntrinsicValVar(i, type));
     }
-    inline NodeID addAsmPCValNode(NodeID i, const SVFType* type)
-    {
-        return addValNode(new AsmPCValVar(i, type));
-    }
     //@}
 
     /// Add a value (pointer) node

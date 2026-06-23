@@ -472,6 +472,15 @@ void SVFIRBuilder::initialiseValVars()
         {
             pag->addFunValNode(iter->second, icfgNode, llvmModuleSet()->getFunObjVar(func), llvmModuleSet()->getSVFType(llvmValue->getType()));
         }
+        else if (
+            SVFUtil::isa<BasicBlock>(llvmValue) ||
+            SVFUtil::isa<InlineAsm>(llvmValue) ||
+            SVFUtil::isa<DSOLocalEquivalent>(llvmValue) ||
+            SVFUtil::isa<NoCFIValue>(llvmValue)
+        )
+        {
+            // Intentionally unhandled.
+        }
         else if (auto argval = SVFUtil::dyn_cast<Argument>(llvmValue))
         {
             // Formal params are defined at FunEntryICFGNode (where CallPE copies actual args).
@@ -509,12 +518,6 @@ void SVFIRBuilder::initialiseValVars()
         else if (SVFUtil::isa<ConstantAggregate>(llvmValue))
         {
             pag->addConstantAggValNode(iter->second, icfgNode, llvmModuleSet()->getSVFType(llvmValue->getType()));
-        }
-        else if (SVFUtil::isa<InlineAsm>(llvmValue) ||
-                 SVFUtil::isa<DSOLocalEquivalent>(llvmValue) ||
-                 SVFUtil::isa<NoCFIValue>(llvmValue))
-        {
-            pag->addAsmPCValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()));
         }
         else if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(llvmValue))
         {
