@@ -29,6 +29,7 @@
 #include "MSSA/SVFGBuilder.h"
 #include "Graphs/CallGraph.h"
 #include "Graphs/SVFG.h"
+#include "MSSA/MemPartition.h"
 #include "MSSA/MemSSA.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
@@ -92,14 +93,33 @@ void SVFGBuilder::releaseMemory()
     svfg->clearMSSA();
 }
 
+/*!
+ * Build the stock MRGenerator selected by Options::MemPar(). MTASVFGBuilder
+ * overrides this hook to inject a thread-aware (ThreadMRG) generator instead.
+ */
+MRGenerator* SVFGBuilder::createMRGenerator(BVDataPTAImpl* pta, bool ptrOnlyMSSA)
+{
+    switch (Options::MemPar())
+    {
+    case MemSSA::MemPartition::Distinct:
+        return new DistinctMRG(pta, ptrOnlyMSSA);
+    case MemSSA::MemPartition::IntraDisjoint:
+        return new IntraDisjointMRG(pta, ptrOnlyMSSA);
+    case MemSSA::MemPartition::InterDisjoint:
+        return new InterDisjointMRG(pta, ptrOnlyMSSA);
+    default:
+        assert(false && "unrecognised memory partition strategy");
+        return nullptr;
+    }
+}
+
 std::unique_ptr<MemSSA> SVFGBuilder::buildMSSA(BVDataPTAImpl* pta,
         bool ptrOnlyMSSA)
 {
 
     DBOUT(DGENERAL, outs() << pasMsg("Build Memory SSA \n"));
 
-    auto mssa = std::make_unique<MemSSA>(pta, ptrOnlyMSSA,
-                                         createMRGenerator(pta, ptrOnlyMSSA));
+    auto mssa = std::make_unique<MemSSA>(pta, createMRGenerator(pta, ptrOnlyMSSA));
 
     const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
     for (const auto& item : *svfirCallGraph)
