@@ -97,16 +97,16 @@ protected:
 
 // Build a thread-aware MRGenerator wrapping the configured partition strategy, so
 // the MemSSA mod-ref generation carries the FSAM fork/join side effects.
-MRGenerator* MTASVFGBuilder::createMRGenerator(BVDataPTAImpl* pta, bool ptrOnlyMSSA)
+std::unique_ptr<MRGenerator> MTASVFGBuilder::createMRGenerator(BVDataPTAImpl* pta, bool ptrOnlyMSSA)
 {
     switch (Options::MemPar())
     {
     case MemSSA::MemPartition::Distinct:
-        return new ThreadMRG<DistinctMRG>(pta, ptrOnlyMSSA);
+        return std::make_unique<ThreadMRG<DistinctMRG>>(pta, ptrOnlyMSSA);
     case MemSSA::MemPartition::IntraDisjoint:
-        return new ThreadMRG<IntraDisjointMRG>(pta, ptrOnlyMSSA);
+        return std::make_unique<ThreadMRG<IntraDisjointMRG>>(pta, ptrOnlyMSSA);
     case MemSSA::MemPartition::InterDisjoint:
-        return new ThreadMRG<InterDisjointMRG>(pta, ptrOnlyMSSA);
+        return std::make_unique<ThreadMRG<InterDisjointMRG>>(pta, ptrOnlyMSSA);
     default:
         assert(false && "unrecognised memory partition strategy");
         return nullptr;

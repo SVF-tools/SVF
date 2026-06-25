@@ -97,16 +97,16 @@ void SVFGBuilder::releaseMemory()
  * Build the stock MRGenerator selected by Options::MemPar(). MTASVFGBuilder
  * overrides this hook to inject a thread-aware (ThreadMRG) generator instead.
  */
-MRGenerator* SVFGBuilder::createMRGenerator(BVDataPTAImpl* pta, bool ptrOnlyMSSA)
+std::unique_ptr<MRGenerator> SVFGBuilder::createMRGenerator(BVDataPTAImpl* pta, bool ptrOnlyMSSA)
 {
     switch (Options::MemPar())
     {
     case MemSSA::MemPartition::Distinct:
-        return new DistinctMRG(pta, ptrOnlyMSSA);
+        return std::make_unique<DistinctMRG>(pta, ptrOnlyMSSA);
     case MemSSA::MemPartition::IntraDisjoint:
-        return new IntraDisjointMRG(pta, ptrOnlyMSSA);
+        return std::make_unique<IntraDisjointMRG>(pta, ptrOnlyMSSA);
     case MemSSA::MemPartition::InterDisjoint:
-        return new InterDisjointMRG(pta, ptrOnlyMSSA);
+        return std::make_unique<InterDisjointMRG>(pta, ptrOnlyMSSA);
     default:
         assert(false && "unrecognised memory partition strategy");
         return nullptr;

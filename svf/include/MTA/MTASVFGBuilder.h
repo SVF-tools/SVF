@@ -85,7 +85,7 @@ protected:
 
     /// Inject a thread-aware MRGenerator so the MemSSA mod-ref carries the FSAM
     /// fork/join side effects (relocated here from core MemRegion).
-    MRGenerator* createMRGenerator(BVDataPTAImpl* pta, bool ptrOnlyMSSA) override;
+    std::unique_ptr<MRGenerator> createMRGenerator(BVDataPTAImpl* pta, bool ptrOnlyMSSA) override;
 
 private:
     /// Collect all store/load SVFG nodes.

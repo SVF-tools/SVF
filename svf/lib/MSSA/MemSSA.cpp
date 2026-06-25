@@ -44,13 +44,13 @@ double MemSSA::timeOfSSARenaming  = 0;	///< Time for SSA rename
 /*!
  * Constructor
  */
-MemSSA::MemSSA(BVDataPTAImpl* p, MRGenerator* mrGenerator)
+MemSSA::MemSSA(BVDataPTAImpl* p, std::unique_ptr<MRGenerator> mrGenerator)
 {
     pta = p;
     assert((pta->getAnalysisTy()!=PointerAnalysis::Default_PTA)
            && "please specify a pointer analysis");
     assert(mrGenerator != nullptr && "builder must supply an MRGenerator");
-    mrGen = mrGenerator;
+    mrGen = std::move(mrGenerator);
 
     stat = new MemSSAStat(this);
 
@@ -428,8 +428,7 @@ void MemSSA::destroy()
         }
     }
 
-    delete mrGen;
-    mrGen = nullptr;
+    mrGen.reset();
     delete stat;
     stat = nullptr;
     pta = nullptr;
