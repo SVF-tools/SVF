@@ -294,10 +294,10 @@ private:
     //@}
 
 public:
-    /// Constructor. If injectedMRG is non-null, MemSSA adopts it (taking
-    /// ownership) instead of creating one per Options::MemPar(); this lets a
-    /// builder supply a customised MRGenerator (e.g. the thread-aware MTA one).
-    MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA, MRGenerator* injectedMRG = nullptr);
+    /// Constructor. The builder (SVFGBuilder::createMRGenerator) supplies the
+    /// MRGenerator and decides the partition strategy / thread-awareness; MemSSA
+    /// adopts it (taking ownership). mrGenerator must not be null.
+    MemSSA(BVDataPTAImpl* p, MRGenerator* mrGenerator);
 
     /// Destructor
     virtual ~MemSSA()
