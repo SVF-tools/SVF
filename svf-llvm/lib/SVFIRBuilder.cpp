@@ -467,19 +467,18 @@ void SVFIRBuilder::initialiseValVars()
         const ICFGNode* icfgNode = nullptr;
         auto llvmValue = iter->first;
 
-        // Check if the value is a function and get its call graph node
-        if (const Function* func = SVFUtil::dyn_cast<Function>(llvmValue))
-        {
-            pag->addFunValNode(iter->second, icfgNode, llvmModuleSet()->getFunObjVar(func), llvmModuleSet()->getSVFType(llvmValue->getType()));
-        }
-        else if (
+        // Intentionally unhandled values.
+        if (
             SVFUtil::isa<BasicBlock>(llvmValue) ||
             SVFUtil::isa<InlineAsm>(llvmValue) ||
             SVFUtil::isa<DSOLocalEquivalent>(llvmValue) ||
             SVFUtil::isa<NoCFIValue>(llvmValue)
-        )
+        ) { continue; }
+
+        // Check if the value is a function and get its call graph node
+        if (const Function* func = SVFUtil::dyn_cast<Function>(llvmValue))
         {
-            // Intentionally unhandled.
+            pag->addFunValNode(iter->second, icfgNode, llvmModuleSet()->getFunObjVar(func), llvmModuleSet()->getSVFType(llvmValue->getType()));
         }
         else if (auto argval = SVFUtil::dyn_cast<Argument>(llvmValue))
         {
@@ -530,8 +529,7 @@ void SVFIRBuilder::initialiseValVars()
                 pag->addValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
             }
         }
-        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue,
-                pag->getGNode(iter->second));
+        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
     }
 }
 
