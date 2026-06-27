@@ -871,7 +871,12 @@ void SlicedTCT::build()
         return;
     }
 
-    // Clear all TCT data structures to rebuild with sliced view
+    // The base TCT(p) constructor already built the whole-program TCT. Free the
+    // existing graph nodes/edges and bookkeeping so the slice rebuilds from a
+    // clean graph (addGNode reissues ids from 0; stale nodes left in IDToNodeMap
+    // would later fail the getCxtOfCxtThread lookup in MHP).
+    destroy();
+    IDToNodeMap.clear();
     ctpToNodeMap.clear();
     ctToForkCxtsMap.clear();
     ctToRoutineFunMap.clear();

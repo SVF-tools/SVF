@@ -36,6 +36,11 @@
 #include "MTA/MTAStat.h"
 #include "WPA/Andersen.h"
 #include "Util/SVFUtil.h"
+#include <deque>
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -86,7 +91,7 @@ bool MTA::runOnModule(SVFIR* pag)
     lsa = computeLocksets(tct.get());
 
     if(Options::RaceCheck())
-        detect();
+        reportRaces();
 
     return false;
 }
@@ -117,60 +122,293 @@ MHP* MTA::computeMHP(TCT* tct)
     return mhp;
 }
 
-///*!
-// * Check   (1) write-read race
-// * 		 (2) write-write race (optional)
-// * 		 (3) read-read race (optional)
-// * when two memory access may-happen in parallel and are not protected by the same lock
-// * (excluding global constraints because they are initialized before running the main function)
-// */
-void MTA::detect()
-{
+// Collect the global objects (addr-taken global vars at the global ICFG node).
+PointsTo MTA::getGlobalObjectVariables(SVFIR* svfIr) {
+    PointsTo globalObjVars;
+    const ICFGNode* globalICFGNode = svfIr->getICFG()->getGlobalICFGNode();
 
-    DBOUT(DGENERAL, outs() << pasMsg("Starting Race Detection\n"));
-
-    Set<const LoadStmt*> loads;
-    Set<const StoreStmt*> stores;
-    SVFIR* pag = SVFIR::getPAG();
-    PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
-
-    // Add symbols for all of the functions and the instructions in them.
-    for (const auto& item : *PAG::getPAG()->getCallGraph())
-    {
-        const FunObjVar* F = item.second->getFunction();
-        // collect and create symbols inside the function body
-        for (auto it : *F)
-        {
-            const SVFBasicBlock* svfbb = it.second;
-            for (const ICFGNode* icfgNode : svfbb->getICFGNodeList())
-            {
-                for(const SVFStmt* stmt : pag->getSVFStmtList(icfgNode))
-                {
-                    if (const LoadStmt* l = SVFUtil::dyn_cast<LoadStmt>(stmt))
-                    {
-                        loads.insert(l);
-                    }
-                    else if (const StoreStmt* s = SVFUtil::dyn_cast<StoreStmt>(stmt))
-                    {
-                        stores.insert(s);
-                    }
-                }
+    for (const SVFStmt* stmt : globalICFGNode->getSVFStmts()) {
+        const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt);
+        if (addrStmt != nullptr) {
+            const GlobalValVar* globalVar = SVFUtil::dyn_cast<GlobalValVar>(addrStmt->getLHSVar());
+            if (globalVar != nullptr) {
+                globalObjVars.set(addrStmt->getRHSVarID());
             }
         }
     }
 
-    for (Set<const LoadStmt*>::const_iterator lit = loads.begin(), elit = loads.end(); lit != elit; ++lit)
-    {
-        const LoadStmt* load = *lit;
-        for (Set<const StoreStmt*>::const_iterator sit = stores.begin(), esit = stores.end(); sit != esit; ++sit)
-        {
-            const StoreStmt* store = *sit;
-            if(SVFUtil::isa<GlobalICFGNode>(load->getICFGNode()) || SVFUtil::isa<GlobalICFGNode>(store->getICFGNode()))
-                continue;
-            if(mhp->mayHappenInParallelInst(load->getICFGNode(),store->getICFGNode()) && pta->alias(load->getRHSVarID(),store->getLHSVarID()))
-                if(lsa->isProtectedByCommonLock(load->getICFGNode(),store->getICFGNode()) == false)
-                    outs() << SVFUtil::bugMsg1("race pair(") << " store: " << store->toString() << ", load: " << load->toString() << SVFUtil::bugMsg1(")") << "\n";
+    return globalObjVars;
+}
+
+// Transitive points-to closure of a set: everything reachable by following pts.
+PointsTo MTA::getPointsToClosure(AndersenBase* pta, const PointsTo& pts) {
+    PointsTo ptsClosure = pts;
+    std::deque<NodeID> worklist;
+    for (NodeID pt : pts) {
+        worklist.push_back(pt);
+    }
+
+    while (!worklist.empty()) {
+        NodeID pt = worklist.front();
+        worklist.pop_front();
+
+        const PointsTo& newPts = pta->getPts(pt);
+        for (NodeID newPt : newPts) {
+            if (!ptsClosure.test(newPt)) {
+                ptsClosure.set(newPt);
+                worklist.push_back(newPt);
+            }
         }
     }
+
+    return ptsClosure;
+}
+
+// Equivalence-class race detector: screen accesses, bucket by object, collapse
+// occurrences sharing the race predicate's inputs into classes, then pair classes.
+std::set<const SVFStmt*> MTA::detectRace(
+    SVFIR* svfIr, AndersenBase* pta, MHP* mhp, LockAnalysis* lockAnalysis,
+    CallGraph* callGraph,
+    std::set<RacePair>& outRacePairs) {
+
+    const bool metrics = (getenv("RACE_FAST_METRICS") != nullptr);
+    const bool pairwise = (getenv("RACE_FAST_PW") != nullptr);
+    std::set<const SVFStmt*> bugStmts;
+
+    // Escape set: objects shared across threads. Seed from globals + the actual
+    // argument at each fork site (the spawner's value, which a spawnee-formal
+    // closure can miss), then take the transitive points-to closure.
+    PointsTo seed = getGlobalObjectVariables(svfIr);
+    if (ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(callGraph)) {
+        const ThreadAPI* tapi = tcg->getThreadAPI();
+        for (auto it = tcg->forksitesBegin(), eit = tcg->forksitesEnd(); it != eit; ++it)
+            if (const CallICFGNode* cs = SVFUtil::dyn_cast<CallICFGNode>(*it))
+                if (const ValVar* actual = tapi->getActualParmAtForkSite(cs))
+                    seed |= pta->getPts(actual->getId());
+    }
+    const PointsTo escSet = getPointsToClosure(pta, seed);
+
+    // Lock signature: a string capturing every input isProtectedByCommonLock
+    // reads, so equal signatures => identical lock relation against any partner
+    // ("U" = holds no lock). Lets C4 be decided once per class pair.
+    auto cxtSig = [](const CallStrCxt& c) -> std::string {
+        std::string s; for (u32_t x : c) { s += std::to_string(x); s += '.'; } return s;
+    };
+    auto lockSig = [&](const ICFGNode* n) -> std::string {
+        if (!lockAnalysis->isProtectedByCommonLock(n, n)) return "U";   // holds no lock
+        std::string s = "L";
+        s += lockAnalysis->isInsideIntraLock(n) ? 'i' : '.';
+        s += lockAnalysis->isInsideCondIntraLock(n) ? 'c' : '.';
+        s += "[I";
+        if (lockAnalysis->hasIntraLockSet(n)) {   // else: cond-only / cxt-only locked
+            std::vector<NodeID> ls;
+            for (const ICFGNode* l : lockAnalysis->getIntraLockSet(n)) ls.push_back(l->getId());
+            std::sort(ls.begin(), ls.end());
+            for (NodeID id : ls) { s += ':'; s += std::to_string(id); }
+        }
+        s += ']';
+        if (lockAnalysis->hasCxtStmtFromInst(n)) {
+            std::vector<std::string> parts;  // one per context of n: (context, held locks)
+            for (const CxtStmt& cts : lockAnalysis->getCxtStmtsFromInst(n)) {
+                std::string part = cxtSig(cts.getContext()) + "{";
+                if (lockAnalysis->hasCxtLockfromCxtStmt(cts)) {
+                    std::vector<std::string> locks;
+                    for (const CxtStmt& cl : lockAnalysis->getCxtLockfromCxtStmt(cts))
+                        locks.push_back(std::to_string(cl.getStmt()->getId()) + "@" + cxtSig(cl.getContext()));
+                    std::sort(locks.begin(), locks.end());
+                    for (const std::string& l : locks) { part += l; part += ';'; }
+                }
+                parts.push_back(part + "}");
+            }
+            std::sort(parts.begin(), parts.end());
+            s += "[X"; for (const std::string& p : parts) s += p; s += ']';
+        }
+        return s;
+    };
+
+    // One occurrence per (statement, thread instance), indexed by object (C1 ->
+    // "same bucket") as collected, so the points-to set is consumed straight into
+    // the buckets and never stored per occurrence.
+    struct Occ { const SVFStmt* stmt; const ICFGNode* node; bool isStore;
+                 NodeID tid; NodeBS interleav; std::string lsig; };
+    std::vector<Occ> occs;
+    Map<NodeID, std::vector<size_t>> objToOcc;
+    for (const auto& item : *callGraph) {
+        const FunObjVar* F = item.second->getFunction();
+        if (!F || !F->hasBasicBlock()) continue;
+        for (auto bbit : *F)
+            for (const ICFGNode* node : bbit.second->getICFGNodeList()) {
+                if (!mhp->hasThreadStmtSet(node)) continue;          // screen 1: concurrent?
+                for (const SVFStmt* stmt : svfIr->getSVFStmtList(node)) {
+                    NodeID var; bool isStore;
+                    if (auto* l = SVFUtil::dyn_cast<LoadStmt>(stmt)) { var=l->getRHSVarID(); isStore=false; }
+                    else if (auto* s = SVFUtil::dyn_cast<StoreStmt>(stmt)) { var=s->getLHSVarID(); isStore=true; }
+                    else continue;
+                    PointsTo p = pta->getPts(var);
+                    p &= escSet;                                     // screen 2: touches shared object?
+                    if (p.empty()) continue;
+                    std::string lsig = lockSig(node);
+                    const size_t base = occs.size();
+                    for (const CxtThreadStmt& cts : mhp->getThreadStmtSet(node))
+                        occs.push_back({stmt, node, isStore, cts.getTid(),
+                                        mhp->getInterleavingThreads(cts), lsig});
+                    for (NodeID o : p)
+                        for (size_t k = base; k < occs.size(); ++k)
+                            objToOcc[o].push_back(k);
+                }
+            }
+    }
+
+    size_t classPairChecks = 0, stmtPairChecks = 0;
+
+    // C3: distinct threads must mutually interleave; the same thread self-races
+    // only when it is multiforked (>1 dynamic instance).
+    auto raceMHP = [&](const Occ& a, const Occ& b) -> bool {
+        if (a.tid != b.tid) return a.interleav.test(b.tid) && b.interleav.test(a.tid);
+        return mhp->getTCT()->getTCTNode(a.tid)->isMultiforked();
+    };
+    // Both pairing algorithms (classed + reference), parameterised by output set
+    // so RACE_FAST_SELFCHECK can run both on one analysis and diff them.
+    auto pairInto = [&](std::set<RacePair>& out, bool classed) {
+        auto commit = [&](const Occ& a, const Occ& b) {
+            const SVFStmt* s1 = a.stmt; const SVFStmt* s2 = b.stmt;
+            if (s2 < s1) std::swap(s1, s2);
+            out.insert(RacePair(s1, s2));
+        };
+        if (!classed) {
+            // Reference detector: O(occurrences^2) per object.
+            for (const auto& kv : objToOcc) {
+                const std::vector<size_t>& vec = kv.second;
+                for (size_t a = 0; a < vec.size(); ++a)
+                    for (size_t b = a; b < vec.size(); ++b) {
+                        const Occ& ea = occs[vec[a]]; const Occ& eb = occs[vec[b]];
+                        ++stmtPairChecks;
+                        if (!ea.isStore && !eb.isStore) continue;             // C2
+                        if (!raceMHP(ea, eb)) continue;                       // C3
+                        if (lockAnalysis->isProtectedByCommonLock(ea.node, eb.node)) continue; // C4
+                        commit(ea, eb);
+                    }
+            }
+            return;
+        }
+        // Equivalence-class detector: within each object, occurrences sharing the
+        // race predicate's inputs (tid, interleaving, isStore, lock sig) race the
+        // same partners, so collapse into a class and judge C2/C3/C4 once per class
+        // pair -- O(classes^2) instead of O(occurrences^2).
+        for (const auto& kv : objToOcc) {
+            struct Cls { bool isStore, locked; size_t rep; std::vector<size_t> members; };
+            std::vector<Cls> classes;
+            Map<std::string, size_t> keyToClass;
+            for (size_t idx : kv.second) {
+                const Occ& o = occs[idx];
+                std::string key;
+                key += std::to_string(o.tid);
+                key += o.isStore ? 'S' : 'L';
+                key += '|'; key += o.lsig;            // lock signature (sound merge key)
+                key += '|';
+                for (NodeID t : o.interleav) { key += std::to_string(t); key += ','; }
+                auto it = keyToClass.find(key);
+                if (it == keyToClass.end()) {
+                    keyToClass[key] = classes.size();
+                    classes.push_back({o.isStore, o.lsig != "U", idx, {idx}});
+                } else
+                    classes[it->second].members.push_back(idx);
+            }
+            for (size_t a = 0; a < classes.size(); ++a)
+                for (size_t b = a; b < classes.size(); ++b) {
+                    Cls& ca = classes[a]; Cls& cb = classes[b];
+                    ++classPairChecks;
+                    if (!ca.isStore && !cb.isStore) continue;             // C2
+                    const Occ& ra = occs[ca.rep]; const Occ& rb = occs[cb.rep];
+                    if (!raceMHP(ra, rb)) continue;                       // C3
+                    // C4 + emit. Lock relation is uniform per class (the reps decide
+                    // it), so emit a statement-COVERING set -- every racy member as an
+                    // endpoint -- preserving the racy-statement set with O(|members|)
+                    // pairs. A class with itself also has self-pairs, checked per member.
+                    if (a != b) {
+                        if (ca.locked && cb.locked &&
+                            lockAnalysis->isProtectedByCommonLock(ra.node, rb.node))
+                            continue;
+                        for (size_t ia : ca.members) commit(occs[ia], occs[cb.members[0]]);
+                        for (size_t ib : cb.members) commit(occs[ca.members[0]], occs[ib]);
+                    } else {
+                        const std::vector<size_t>& M = ca.members;
+                        // Do two DISTINCT members race? (uniform lock relation by lock sig)
+                        bool crossRaces = M.size() >= 2 &&
+                            (!ca.locked ||
+                             !lockAnalysis->isProtectedByCommonLock(occs[M[0]].node, occs[M[1]].node));
+                        if (crossRaces) {
+                            for (size_t i = 0; i < M.size(); ++i)
+                                commit(occs[M[i]], occs[M[i == 0 ? 1 : 0]]);
+                        } else {
+                            // No cross race; a member still self-races (two instances of
+                            // one multiforked statement) when it is not self-locked.
+                            for (size_t idx : M)
+                                if (!ca.locked ||
+                                    !lockAnalysis->isProtectedByCommonLock(occs[idx].node, occs[idx].node))
+                                    commit(occs[idx], occs[idx]);
+                        }
+                    }
+                }
+        }
+    };
+
+    if (getenv("RACE_FAST_SELFCHECK")) {
+        // Run both algorithms on the identical analysis and diff them on the racy-
+        // STATEMENT set (classed emits a covering subset of pairwise's pairs, but
+        // the statement sets -- the soundness property and slice seed -- must match).
+        std::set<RacePair> C, P;
+        pairInto(C, true); pairInto(P, false);
+        std::set<const SVFStmt*> sC, sP;
+        for (const RacePair& r : C) { sC.insert(r.stmt1); sC.insert(r.stmt2); }
+        for (const RacePair& r : P) { sP.insert(r.stmt1); sP.insert(r.stmt2); }
+        size_t onlyC = 0, onlyP = 0;
+        for (const SVFStmt* s : sC) if (!sP.count(s)) ++onlyC;
+        for (const SVFStmt* s : sP) if (!sC.count(s)) ++onlyP;
+        SVFUtil::errs() << "[RACE_FAST_SELFCHECK] classed_pairs=" << C.size()
+                        << " pairwise_pairs=" << P.size()
+                        << " classed_stmts=" << sC.size() << " pairwise_stmts=" << sP.size()
+                        << " stmt_only_classed=" << onlyC << " stmt_only_pairwise=" << onlyP
+                        << (onlyC == 0 && onlyP == 0 ? "  STMT-IDENTICAL\n" : "  STMT-MISMATCH\n");
+        outRacePairs = C;
+    } else {
+        pairInto(outRacePairs, !pairwise);
+    }
+    for (const RacePair& r : outRacePairs) { bugStmts.insert(r.stmt1); bugStmts.insert(r.stmt2); }
+
+    if (metrics)
+        SVFUtil::errs() << "[RACE_FAST_METRICS] mode=" << (pairwise ? "pairwise" : "classed")
+                        << " occurrences=" << occs.size()
+                        << " classPairChecks=" << classPairChecks
+                        << " stmtPairChecks=" << stmtPairChecks
+                        << " bugStmts=" << bugStmts.size()
+                        << " racePairs=" << outRacePairs.size() << "\n";
+    if (getenv("RACE_FAST_DUMPPAIRS")) {
+        std::vector<std::string> lines;
+        for (const RacePair& rp : outRacePairs)
+            lines.push_back("PAIR " + std::to_string(rp.stmt1->getEdgeID()) + " "
+                            + std::to_string(rp.stmt2->getEdgeID()));
+        std::sort(lines.begin(), lines.end());
+        for (const std::string& l : lines) SVFUtil::errs() << l << "\n";
+    }
+    return bugStmts;
+}
+
+void MTA::reportRaces()
+{
+    DBOUT(DGENERAL, outs() << pasMsg("Starting Race Detection\n"));
+
+    SVFIR* pag = SVFIR::getPAG();
+    AndersenBase* pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
+    CallGraph* callGraph = pta->getCallGraph();
+
+    // Shared equivalence-class detector (the same one the slicing pipeline uses),
+    // run over the Andersen pre-analysis with this MTA's MHP/lock results.
+    std::set<RacePair> racePairs;
+    detectRace(pag, pta, mhp, lsa, callGraph, racePairs);
+
+    for (const RacePair& rp : racePairs)
+        outs() << SVFUtil::bugMsg1("race pair(") << " stmt1: " << rp.stmt1->toString()
+               << ", stmt2: " << rp.stmt2->toString() << SVFUtil::bugMsg1(")") << "\n";
 }
 

@@ -139,6 +139,14 @@ public:
         return instTocondCILocksMap.find(stmt)!=instTocondCILocksMap.end();
     }
 
+    /// Whether a statement has an (unconditional) intra-procedural lock set, i.e.
+    /// getIntraLockSet is valid for it. A statement can be locked (isInsideIntraLock)
+    /// via a *conditional* intra lock or a *context* lock without being here.
+    inline bool hasIntraLockSet(const ICFGNode* stmt) const
+    {
+        return instCILocksMap.find(stmt)!=instCILocksMap.end();
+    }
+
     inline const InstSet& getIntraLockSet(const ICFGNode* stmt) const
     {
         InstToInstSetMap::const_iterator it = instCILocksMap.find(stmt);
