@@ -44,10 +44,7 @@
 #include "Util/SVFUtil.h"
 
 #include <chrono>
-#include <deque>
 #include <iomanip>
-#include <map>
-#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -308,16 +305,10 @@ bool SlicedMTA::runPreAnalysis(const ResolveIndirectCalls& resolveIndirectCalls)
     std::set<const SVFStmt*> vulnerableStatements;
     timePhase("Detect Race Statements", [&]()
     {
-        // Default to the shared detector (the same MTA::reportRaces uses);
-        // RACE_LEGACY selects the old narrowed detector for A/B comparison.
-        if (getenv("RACE_LEGACY") != nullptr)
-            vulnerableStatements = detectRaceStmts(
-                                       svfIr, preAnder, mhp.get(), lockAnalysis.get(),
-                                       preAnder->getCallGraph(), threadFunctions, racePairs);
-        else
-            vulnerableStatements = MTA::detectRace(
-                                       svfIr, preAnder, mhp.get(), lockAnalysis.get(),
-                                       preAnder->getCallGraph(), racePairs);
+        // Shared equivalence-class detector (the same one MTA::reportRaces uses).
+        vulnerableStatements = MTA::detectRace(
+                                   svfIr, preAnder, mhp.get(), lockAnalysis.get(),
+                                   preAnder->getCallGraph(), racePairs);
     });
     SVFUtil::outs() << "Found " << vulnerableStatements.size() << " vulnerable statements\n";
     SVFUtil::outs() << "Found " << racePairs.size() << " race pairs\n";
@@ -369,15 +360,30 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
                         svfIr, preAnder, mhp.get(), lockAnalysis.get());
 
         // MTA slicing (includes dual slicing and function expansion). ILA slicing
-        // sources = [INIT] race statements + the [THREAD-VF] sources (MSli §4.2)
-        // collected while building VFG_pre, so the sliced MHP/lock preserve the
-        // queries the main-phase thread-aware value-flow construction will make.
-        static const std::set<const ICFGNode*> noSources;
+        // sources = [INIT] race statements + the [THREAD-VF] sources (MSli §4.2).
+        // We keep a candidate edge's query only if the edge survives the FSPTA
+        // slice -- ThreadVF(VFG'_pre), i.e. both its endpoints lie in the
+        // data-dependence slice over VFG_pre. This restricts the witnesses to the
+        // value flows the main phase will actually build, matching Fig. 6's
+        // [THREAD-VF] rule, while staying sound (ThreadVF(VFG') subset of
+        // ThreadVF(VFG'_pre)). The slice is computed here (pre <-> pre) and reused
+        // by PTA slicing.
+        std::set<const ICFGNode*> threadVFSources;
         const bool useThreadVFSources = Options::ThreadVFSources();
-        const std::set<const ICFGNode*>& threadVFSources =
-            (useThreadVFSources && vfgPreBuilder)
-            ? vfgPreBuilder->getThreadVFSrcNodes()
-            : noSources;
+        if (useThreadVFSources && vfgPreBuilder)
+        {
+            if (!ptaSlicer)
+                ptaSlicer = std::make_unique<PTASlicer>(
+                                svfIr, preAnder, mhp.get(), lockAnalysis.get(), vfgPre);
+            const std::set<const SVFGNode*>& retained =
+                ptaSlicer->getRetainedSVFGNodes(vulnerableStatements);
+            for (const auto& entry : vfgPreBuilder->getThreadVFQueryMap())
+            {
+                const MTASVFGBuilder::ThreadVFEdge& edge = entry.first;
+                if (retained.count(edge.first) && retained.count(edge.second))
+                    threadVFSources.insert(entry.second.begin(), entry.second.end());
+            }
+        }
         SVFUtil::outs() << "[THREAD-VF] " << threadVFSources.size()
                         << " ILA slicing sources from VFG_pre value-flow construction"
                         << (useThreadVFSources ? "\n" : " (ablation: [THREAD-VF] sources OFF)\n");
@@ -469,9 +475,13 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
         SVFUtil::outs() << "Using " << vulnerableStatements.size() << " vulnerable statements from pre-analysis\n";
         SVFUtil::outs() << "Using " << racePairs.size() << " race pairs from pre-analysis\n";
 
-        ptaSlicer = std::make_unique<PTASlicer>(
-                        svfIr, preAnder, mhp.get(), lockAnalysis.get(),
-                        vfgPre /* paper-faithful data dependence over the thread-aware VFG */);
+        // Reuse the slicer built during MTA slicing (it memoised the shared
+        // data-dependence closure over VFG_pre); construct it only if absent
+        // (e.g. the [THREAD-VF] ablation skipped its early creation).
+        if (!ptaSlicer)
+            ptaSlicer = std::make_unique<PTASlicer>(
+                            svfIr, preAnder, mhp.get(), lockAnalysis.get(),
+                            vfgPre /* paper-faithful data dependence over the thread-aware VFG */);
 
         timePhase("PTA Slicing", [&]()
         {
@@ -754,238 +764,6 @@ std::set<const FunObjVar*> SlicedMTA::detectAllThreadFunctions(CallGraph* callGr
     return threadFunctions;
 }
 
-
-
-// Helper: Check if two functions may happen in parallel
-bool SlicedMTA::mayHappenInParallel(MHP* mhp, const FunObjVar* fun1, const FunObjVar* fun2) {
-    if (fun1->hasBasicBlock() == false || fun2->hasBasicBlock() == false) {
-        return false;
-    }
-    const ICFGNode* entry1 = fun1->getEntryBlock()->front();
-    const ICFGNode* entry2 = fun2->getEntryBlock()->front();
-    return mhp->mayHappenInParallelCache(entry1, entry2);
-}
-
-// Helper: Gather parallel functions of a function set
-std::set<const FunObjVar*> SlicedMTA::gatherParallelFunctions(
-    CallGraph* callGraph,
-    MHP* mhp,
-    const std::set<const FunObjVar*>& funcSet) {
-    std::set<const FunObjVar*> allFunctions;
-    std::set<const FunObjVar*> mhpFunctions;
-
-    // Get all functions from call graph
-    for (CallGraph::iterator it = callGraph->begin(), eit = callGraph->end(); it != eit; ++it) {
-        const CallGraphNode* cgNode = it->second;
-        const FunObjVar* func = cgNode->getFunction();
-        if (func != nullptr) {
-            allFunctions.insert(func);
-        }
-    }
-
-    // For each thread function, find functions that may happen in parallel
-    for (const FunObjVar* threadFunc : funcSet) {
-        std::set<const FunObjVar*> remainingFunctions = allFunctions;
-        for (const FunObjVar* func : remainingFunctions) {
-            if (mayHappenInParallel(mhp, threadFunc, func)) {
-                mhpFunctions.insert(func);
-            }
-        }
-        // Remove found functions from all_functions for next iteration
-        for (const FunObjVar* foundFunc : mhpFunctions) {
-            allFunctions.erase(foundFunc);
-        }
-    }
-
-    return mhpFunctions;
-}
-
-// Helper: Get all ICFG nodes of a function
-std::set<const ICFGNode*> SlicedMTA::getFunctionICFGNodes(const FunObjVar* function) {
-    std::set<const ICFGNode*> funcICFGNodes;
-
-    if (!function->hasBasicBlock()) {
-        return funcICFGNodes;
-    }
-
-    const ICFGNode* entryICFGNode = function->getEntryBlock()->front();
-    funcICFGNodes.insert(entryICFGNode);
-
-    std::deque<const ICFGNode*> worklist;
-    worklist.push_back(entryICFGNode);
-
-    while (!worklist.empty()) {
-        const ICFGNode* icfgNode = worklist.front();
-        worklist.pop_front();
-
-        const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(icfgNode);
-        if (callNode != nullptr) {
-            const RetICFGNode* retNode = callNode->getRetICFGNode();
-            if (retNode != nullptr && retNode->getFun() == function) {
-                if (funcICFGNodes.find(retNode) == funcICFGNodes.end()) {
-                    funcICFGNodes.insert(retNode);
-                    worklist.push_back(retNode);
-                }
-            }
-        } else {
-            for (const ICFGEdge* outEdge : icfgNode->getOutEdges()) {
-                const ICFGNode* dstNode = outEdge->getDstNode();
-                if (dstNode->getFun() == function &&
-                    funcICFGNodes.find(dstNode) == funcICFGNodes.end()) {
-                    funcICFGNodes.insert(dstNode);
-                    worklist.push_back(dstNode);
-                }
-            }
-        }
-    }
-
-    return funcICFGNodes;
-}
-
-// Helper: Get all load/store statements of functions
-std::set<const SVFStmt*> SlicedMTA::getLoadStoreStatements(
-    const std::set<const FunObjVar*>& functions) {
-    std::set<const SVFStmt*> ldStStmts;
-
-    for (const FunObjVar* function : functions) {
-        std::set<const ICFGNode*> icfgNodes = getFunctionICFGNodes(function);
-        for (const ICFGNode* icfgNode : icfgNodes) {
-            for (const SVFStmt* stmt : icfgNode->getSVFStmts()) {
-                if (SVFUtil::isa<LoadStmt>(stmt) || SVFUtil::isa<StoreStmt>(stmt)) {
-                    ldStStmts.insert(stmt);
-                }
-            }
-        }
-    }
-
-    return ldStStmts;
-}
-
-// Race detection: detect candidate race pairs between load/store statements.
-std::set<const SVFStmt*> SlicedMTA::detectRaceStmts(
-    SVFIR* svfIr,
-    AndersenBase* pta,
-    MHP* mhp,
-    LockAnalysis* lockAnalysis,
-    CallGraph* callGraph,
-    const std::set<const FunObjVar*>& threadFunctions,
-    std::set<RacePair>& outRacePairs) {
-
-    std::set<const SVFStmt*> bugStmts;
-    PointsTo globalObjVars = MTA::getGlobalObjectVariables(svfIr);
-
-    // For each thread function
-    for (const FunObjVar* threadFunc : threadFunctions) {
-        // Get argument points-to set and its closure
-        if (!threadFunc->hasBasicBlock() || threadFunc->arg_size() == 0) {
-            continue;
-        }
-
-        NodeID argId = threadFunc->getArg(0)->getId();
-        PointsTo argPts = pta->getPts(argId);
-        PointsTo argPtsClosure = MTA::getPointsToClosure(pta, argPts);
-        PointsTo potentialPts = argPtsClosure;
-        potentialPts |= globalObjVars;  // Union operation
-
-        // Get thread function's parallel functions
-        std::set<const FunObjVar*> threadFuncSet = {threadFunc};
-        std::set<const FunObjVar*> parallelFuncs = gatherParallelFunctions(callGraph, mhp, threadFuncSet);
-
-        std::set<const SVFStmt*> ldStStmts1 = getLoadStoreStatements(threadFuncSet);
-        std::set<const SVFStmt*> ldStStmts2 = getLoadStoreStatements(parallelFuncs);
-
-        // filter out stmts with no intersection with potentialPts
-        std::set<const LoadStmt*> ldStmts1;
-        std::set<const StoreStmt*> stStmts1;
-        std::map<const SVFStmt *, PointsTo> stmt1ToIntersection;
-        for (auto stmt1 : ldStStmts1) {
-            if (const LoadStmt *ldStmt1 = SVFUtil::dyn_cast<LoadStmt>(stmt1)) {
-                NodeID ldVar = ldStmt1->getRHSVarID();
-                PointsTo pts = pta->getPts(ldVar);
-                if (pts.intersects(potentialPts)) {
-                    ldStmts1.insert(ldStmt1);
-                    stmt1ToIntersection[ldStmt1] = pts & potentialPts;
-                }
-            } else if (const StoreStmt *stStmt1 = SVFUtil::dyn_cast<StoreStmt>(stmt1)) {
-                NodeID stVar = stStmt1->getLHSVarID();
-                PointsTo pts = pta->getPts(stVar);
-                if (pts.intersects(potentialPts)) {
-                    stStmts1.insert(stStmt1);
-                    stmt1ToIntersection[stStmt1] = pts & potentialPts;
-                }
-            }
-        }
-
-        std::set<const LoadStmt*> ldStmts2;
-        std::set<const StoreStmt*> stStmts2;
-        std::map<const SVFStmt *, PointsTo> stmt2ToIntersection;
-        for (auto stmt2 : ldStStmts2) {
-            if (const LoadStmt *ldStmt2 = SVFUtil::dyn_cast<LoadStmt>(stmt2)) {
-                NodeID ldVar = ldStmt2->getRHSVarID();
-                PointsTo pts = pta->getPts(ldVar);
-                if (pts.intersects(potentialPts)) {
-                    ldStmts2.insert(ldStmt2);
-                    stmt2ToIntersection[ldStmt2] = pts & potentialPts;
-                }
-            } else if (const StoreStmt *stStmt2 = SVFUtil::dyn_cast<StoreStmt>(stmt2)) {
-                NodeID stVar = stStmt2->getLHSVarID();
-                PointsTo pts = pta->getPts(stVar);
-                if (pts.intersects(potentialPts)) {
-                    stStmts2.insert(stStmt2);
-                    stmt2ToIntersection[stStmt2] = pts & potentialPts;
-                }
-            }
-        }
-
-        for (const LoadStmt *ldStmt1 : ldStmts1) {
-            PointsTo pts1 = stmt1ToIntersection[ldStmt1];
-            for (const StoreStmt *stStmt2 : stStmts2) {
-                if (lockAnalysis->isProtectedByCommonLock(ldStmt1->getICFGNode(), stStmt2->getICFGNode()))
-                    continue;
-                PointsTo pts2 = stmt2ToIntersection[stStmt2];
-                if (pts1.intersects(pts2)) {
-                    bugStmts.insert(ldStmt1);
-                    bugStmts.insert(stStmt2);
-                    outRacePairs.insert(RacePair(ldStmt1, stStmt2));
-                }
-            }
-        }
-
-        // st1 + ld2
-        for (const StoreStmt *stStmt1 : stStmts1) {
-            PointsTo pts1 = stmt1ToIntersection[stStmt1];
-            for (const LoadStmt *ldStmt2 : ldStmts2) {
-                if (lockAnalysis->isProtectedByCommonLock(stStmt1->getICFGNode(), ldStmt2->getICFGNode()))
-                    continue;
-                PointsTo pts2 = stmt2ToIntersection[ldStmt2];
-                if (pts1.intersects(pts2)) {
-                    bugStmts.insert(stStmt1);
-                    bugStmts.insert(ldStmt2);
-                    outRacePairs.insert(RacePair(stStmt1, ldStmt2));
-                }
-            }
-        }
-
-        // st1 + st2
-        for (const StoreStmt *stStmt1 : stStmts1) {
-            PointsTo pts1 = stmt1ToIntersection[stStmt1];
-            for (const StoreStmt *stStmt2 : stStmts2) {
-                if (lockAnalysis->isProtectedByCommonLock(stStmt1->getICFGNode(), stStmt2->getICFGNode()))
-                    continue;
-                PointsTo pts2 = stmt2ToIntersection[stStmt2];
-                if (pts1.intersects(pts2)) {
-                    bugStmts.insert(stStmt1);
-                    bugStmts.insert(stStmt2);
-                    outRacePairs.insert(RacePair(stStmt1, stStmt2));
-                }
-            }
-        }
-    }
-
-    return bugStmts;
-}
-
-
 // Detect race pairs on the sliced graph using sliced analysis results.
 std::set<SlicedMTA::RacePair> SlicedMTA::detectRacePairsOnSlicedGraph(
     const std::set<RacePair>& preAnalysisRacePairs,
@@ -995,25 +773,6 @@ std::set<SlicedMTA::RacePair> SlicedMTA::detectRacePairsOnSlicedGraph(
     const SlicedSVFIRView* slicedView) {
 
     std::set<RacePair> filteredRacePairs;
-
-    // Optional race-pair dump (RACE_DUMP=1): one stable, sort-friendly line per
-    // candidate giving its disposition (KEEP / DROPMHP / DROPLOCK / DROPPTS) and a
-    // run-independent key (sorted SVFStmt edge IDs). Diff the KEEP lines of a sliced
-    // run against a -no-slice run to see exactly which pairs the slice loses.
-    const bool dump = (getenv("RACE_DUMP") != nullptr);
-    auto key = [](const RacePair& p) {
-        EdgeID a = p.stmt1->getEdgeID(), b = p.stmt2->getEdgeID();
-        if (a > b) std::swap(a, b);
-        std::ostringstream os; os << a << " " << b; return os.str();
-    };
-    auto dumpLine = [&](const char* disp, const RacePair& p) {
-        if (!dump) return;
-        SVFUtil::outs() << "[RACEDUMP] " << disp << " " << key(p)
-                        << " | n" << p.stmt1->getICFGNode()->getId()
-                        << " n" << p.stmt2->getICFGNode()->getId()
-                        << " | " << p.stmt1->toString()
-                        << " || " << p.stmt2->toString() << "\n";
-    };
 
     // Re-check each candidate race pair on the sliced graph: it survives only if
     // the statements still (1) may happen in parallel under the sliced ILA,
@@ -1027,16 +786,12 @@ std::set<SlicedMTA::RacePair> SlicedMTA::detectRacePairsOnSlicedGraph(
         const ICFGNode* node2 = pair.stmt2->getICFGNode();
 
         // Check if they may happen in parallel (using sliced MHP)
-        if (!slicedMHP->mayHappenInParallelCache(node1, node2)) {
-            dumpLine("DROPMHP", pair);
+        if (!slicedMHP->mayHappenInParallelCache(node1, node2))
             continue;
-        }
 
         // Check if they are protected by common lock (using sliced LockAnalysis)
-        if (slicedLockAnalysis->isProtectedByCommonLock(node1, node2)) {
-            dumpLine("DROPLOCK", pair);
+        if (slicedLockAnalysis->isProtectedByCommonLock(node1, node2))
             continue;
-        }
 
         // Re-check points-to intersection using sliced PTA
         PointsTo pts1, pts2;
@@ -1057,12 +812,8 @@ std::set<SlicedMTA::RacePair> SlicedMTA::detectRacePairsOnSlicedGraph(
         }
 
         // Check if points-to sets still intersect
-        if (pts1.intersects(pts2)) {
+        if (pts1.intersects(pts2))
             filteredRacePairs.insert(pair);
-            dumpLine("KEEP", pair);
-        } else {
-            dumpLine("DROPPTS", pair);
-        }
     }
 
     return filteredRacePairs;

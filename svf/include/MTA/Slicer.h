@@ -53,6 +53,7 @@ namespace SVF
 
 // Forward declarations
 class SVFG;
+class VFGNode;          // SVFGNode is a typedef for VFGNode
 class SlicedSVFIRView;
 
 /**
@@ -80,6 +81,17 @@ protected:
      */
     std::set<const ICFGNode*> sliceDataDependenceOverVFG(
         const std::set<const SVFStmt*>& seeds, SVF::SVFG* vfg);
+
+    /// The SVFG-node granularity of the data-dependence slice above: the set of
+    /// VFG nodes reachable backward from the seeds. ThreadVF(VFG'_pre) is exactly
+    /// the thread-aware edges whose *both* endpoints lie in this set, so ILA
+    /// slicing uses it to restrict the [THREAD-VF] sources to surviving edges.
+    std::set<const SVF::VFGNode*> dataDependenceSVFGNodes(
+        const std::set<const SVFStmt*>& seeds, SVF::SVFG* vfg);
+
+    /// Project the retained VFG nodes (plus the seeds) onto their ICFG nodes.
+    std::set<const ICFGNode*> svfgNodesToICFGNodes(
+        const std::set<const SVF::VFGNode*>& nodes, const std::set<const SVFStmt*>& seeds);
 
     // === Thread analysis helpers ===
     std::set<const SVFStmt*> getDependentThreadCreate(const SVFStmt* stmt);
@@ -173,6 +185,19 @@ public:
      */
     std::set<const ICFGNode*> performSlicing(
         const std::set<const SVFStmt*>& vulnerableStatements);
+
+    /**
+     * The FSPTA data-dependence slice at SVFG-node granularity (memoised). ILA
+     * slicing queries this before PTA slicing runs, to restrict the [THREAD-VF]
+     * sources to ThreadVF(VFG'_pre); performSlicing reuses the same set, so the
+     * backward closure over VFG_pre is computed once and shared.
+     */
+    const std::set<const SVF::VFGNode*>& getRetainedSVFGNodes(
+        const std::set<const SVFStmt*>& vulnerableStatements);
+
+private:
+    std::set<const SVF::VFGNode*> retainedSVFGNodes; ///< memoised data-dependence slice
+    bool retainedComputed = false;
 };
 
 /**

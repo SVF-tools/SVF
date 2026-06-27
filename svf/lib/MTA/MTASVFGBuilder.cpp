@@ -376,8 +376,10 @@ bool MTASVFGBuilder::isTailofSpan(const StmtSVFGNode* n)
  */
 void MTASVFGBuilder::recordThreadVFSource(const StmtSVFGNode* s, const StmtSVFGNode* sp, bool commonLock)
 {
-    threadVFSrcNodes.insert(s->getICFGNode());
-    threadVFSrcNodes.insert(sp->getICFGNode());
+    // Per-edge Query set: the endpoints, plus the in-span witnesses below.
+    std::set<const ICFGNode*>& query = threadVFQueryMap[{s, sp}];
+    query.insert(s->getICFGNode());
+    query.insert(sp->getICFGNode());
 
     if (!commonLock)
         return;
@@ -390,7 +392,7 @@ void MTASVFGBuilder::recordThreadVFSource(const StmtSVFGNode* s, const StmtSVFGN
             continue;
         const StmtSVFGNode* succNode = SVFUtil::cast<StmtSVFGNode>(sn);
         if (lockana->isInSameSpan(succNode->getICFGNode(), s->getICFGNode()))
-            threadVFSrcNodes.insert(succNode->getICFGNode());
+            query.insert(succNode->getICFGNode());
     }
 
     // Pred_spl'(sp) = { x in sp's span | x --o--> sp } (head witnesses).
@@ -398,7 +400,7 @@ void MTASVFGBuilder::recordThreadVFSource(const StmtSVFGNode* s, const StmtSVFGN
     {
         const StmtSVFGNode* prevNode = SVFUtil::dyn_cast<StmtSVFGNode>(svfg->getSVFGNode(id));
         if (prevNode && lockana->isInSameSpan(prevNode->getICFGNode(), sp->getICFGNode()))
-            threadVFSrcNodes.insert(prevNode->getICFGNode());
+            query.insert(prevNode->getICFGNode());
     }
 }
 
