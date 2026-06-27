@@ -48,7 +48,9 @@
 #include "MTA/MHP.h"
 #include "MTA/LockAnalysis.h"
 #include "MemoryModel/PointsTo.h"
+#include <map>
 #include <set>
+#include <utility>
 
 namespace SVF
 {
@@ -66,18 +68,24 @@ public:
     /// Number of thread-aware (interference) SVFG edges added.
     static u32_t numOfNewSVFGEdges;
 
-    /// [THREAD-VF] slicing-source set (MSli §4.2, Fig. 6 rule [THREAD-VF]).
+    /// A candidate thread-aware value-flow edge s --o--> s' (src store, dst
+    /// load/store), keyed by its endpoint SVFG nodes.
+    typedef std::pair<const StmtSVFGNode*, const StmtSVFGNode*> ThreadVFEdge;
+
+    /// [THREAD-VF] per-edge query map (MSli §4.2, Fig. 6 rule [THREAD-VF]).
     ///
     /// While building VFG_pre we record, for every candidate thread-aware
-    /// value-flow pair (s,s') the construction evaluates, the statements whose
-    /// ILA (MHP / lock-span) results are queried to decide the [THREAD-VF] rule
-    /// in the *main* phase. Per the paper's Query(s --o--> s') this is the
-    /// endpoints {s,s'} plus — under a common lock — the in-span witnesses
-    /// Succ_spl(s) / Pred_spl'(s') that determine TL/HD membership, i.e. whether
-    /// the edge survives the non-interference test (Def. 2). Feeding this set
-    /// into ILA slicing makes the sliced MHP/lock reproduce the same
-    /// value-flow-construction decisions as the whole-program ILA.
-    const std::set<const ICFGNode*>& getThreadVFSrcNodes() const { return threadVFSrcNodes; }
+    /// value-flow edge (s,s') the construction evaluates, its Query(s --o--> s')
+    /// set: the endpoints {s,s'} plus — under a common lock — the in-span
+    /// witnesses Succ_spl(s) / Pred_spl'(s') that decide TL/HD membership, i.e.
+    /// whether the edge survives the non-interference test (Def. 2). The query is
+    /// kept *per edge* (not pre-unioned) so ILA slicing can restrict the sources
+    /// to the edges that survive the FSPTA slice — ThreadVF(VFG'_pre) — rather
+    /// than every candidate pair. Feeding the retained edges' queries into ILA
+    /// slicing makes the sliced MHP/lock reproduce the same value-flow decisions
+    /// the main phase makes, while keeping the slice minimal.
+    const std::map<ThreadVFEdge, std::set<const ICFGNode*>>& getThreadVFQueryMap() const
+    { return threadVFQueryMap; }
 
 protected:
     /// Rewrite the SVFG build hook: build the stock SVFG, then add MHP edges.
@@ -130,7 +138,8 @@ private:
     SVFGNodeSet stnodeSet;  ///< all store SVFG nodes
     SVFGNodeSet ldnodeSet;  ///< all load SVFG nodes
 
-    std::set<const ICFGNode*> threadVFSrcNodes;  ///< [THREAD-VF] ILA slicing sources
+    /// [THREAD-VF] per-edge query map (see getThreadVFQueryMap).
+    std::map<ThreadVFEdge, std::set<const ICFGNode*>> threadVFQueryMap;
 
     MHP* mhp;
     LockAnalysis* lockana;

@@ -123,26 +123,13 @@ private:
     /// Union of both statements of every candidate race pair (the slice targets).
     std::set<const SVFStmt*> getVulnerableStmts() const;
 
-    // --- race detection (analogous to MTA::detect) ---
+    // --- race detection ---
     /// Detect all thread (fork-target) functions in the program (pipeline guards).
     static std::set<const FunObjVar*> detectAllThreadFunctions(CallGraph* callGraph);
-    /// Detect candidate race pairs over the Andersen pre-analysis (fills outRacePairs).
-    /// Legacy narrowed detector (function-entry MHP); kept for A/B comparison.
-    static std::set<const SVFStmt*> detectRaceStmts(
-        SVFIR* svfIr, AndersenBase* pta, MHP* mhp, LockAnalysis* lockAnalysis,
-        CallGraph* callGraph, const std::set<const FunObjVar*>& threadFunctions,
-        std::set<RacePair>& outRacePairs);
     /// Re-check the candidate race pairs on the sliced graph using FSAM points-to.
     static std::set<RacePair> detectRacePairsOnSlicedGraph(
         const std::set<RacePair>& preAnalysisRacePairs, BVDataPTAImpl* slicedPTA,
         MHP* slicedMHP, LockAnalysis* slicedLockAnalysis, const SlicedSVFIRView* slicedView);
-
-    // race-detection helpers (getGlobalObjectVariables/getPointsToClosure now in MTA)
-    static std::set<const FunObjVar*> gatherParallelFunctions(
-        CallGraph* callGraph, MHP* mhp, const std::set<const FunObjVar*>& funcSet);
-    static bool mayHappenInParallel(MHP* mhp, const FunObjVar* fun1, const FunObjVar* fun2);
-    static std::set<const SVFStmt*> getLoadStoreStatements(const std::set<const FunObjVar*>& functions);
-    static std::set<const ICFGNode*> getFunctionICFGNodes(const FunObjVar* function);
 
     // --- pipeline state (owned unless noted) ---
     SVFIR* svfIr = nullptr;

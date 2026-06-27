@@ -138,10 +138,11 @@ std::set<const SVFStmt*> SlicerBase::getDependentThreadCreate(const SVFStmt* stm
     return forkSiteStmts;
 }
 
-// Data-dependence slice over the thread-aware SVFG (VFG_pre). The value-flow
-// graph edges already capture direct (top-level), indirect (address-taken /
-// MemSSA), and thread-aware (interference) data dependence.
-std::set<const ICFGNode*> SlicerBase::sliceDataDependenceOverVFG(
+// Data-dependence slice over the thread-aware SVFG (VFG_pre), at SVFG-node
+// granularity: the value-flow nodes reachable backward from the seeds. The
+// value-flow edges already capture direct (top-level), indirect (address-taken
+// / MemSSA), and thread-aware (interference) data dependence.
+std::set<const SVFGNode*> SlicerBase::dataDependenceSVFGNodes(
     const std::set<const SVFStmt*>& seeds, SVF::SVFG* vfg) {
 
     assert(vfg != nullptr && "data-dependence slice requires the thread-aware VFG_pre");
@@ -190,15 +191,25 @@ std::set<const ICFGNode*> SlicerBase::sliceDataDependenceOverVFG(
             seed(e->getSrcNode());
     }
 
-    // Collect the ICFG nodes of the kept statement nodes, plus the seeds.
+    return visited;
+}
+
+// Project retained VFG nodes (plus the seeds) onto their ICFG nodes.
+std::set<const ICFGNode*> SlicerBase::svfgNodesToICFGNodes(
+    const std::set<const SVFGNode*>& nodes, const std::set<const SVFStmt*>& seeds) {
     std::set<const ICFGNode*> result;
-    for (const SVFGNode* n : visited)
+    for (const SVFGNode* n : nodes)
         if (const StmtVFGNode* s = SVFUtil::dyn_cast<StmtVFGNode>(n))
             if (s->getICFGNode() != nullptr)
                 result.insert(s->getICFGNode());
     for (const SVFStmt* stmt : seeds)
         result.insert(stmt->getICFGNode());
     return result;
+}
+
+std::set<const ICFGNode*> SlicerBase::sliceDataDependenceOverVFG(
+    const std::set<const SVFStmt*>& seeds, SVF::SVFG* vfg) {
+    return svfgNodesToICFGNodes(dataDependenceSVFGNodes(seeds, vfg), seeds);
 }
 
 // Helper: Collect pthread-related statements (create and join)
@@ -521,14 +532,25 @@ PTASlicer::PTASlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
     : SlicerBase(svfIr, pta, mhp, lockAnalysis), vfg(vfg) {
 }
 
+// The FSPTA data-dependence slice at SVFG-node granularity (memoised so the
+// backward closure over VFG_pre is computed once and shared with ILA slicing).
+const std::set<const SVFGNode*>& PTASlicer::getRetainedSVFGNodes(
+    const std::set<const SVFStmt*>& vulnerableStatements) {
+    if (!retainedComputed) {
+        retainedSVFGNodes = dataDependenceSVFGNodes(vulnerableStatements, vfg);
+        retainedComputed = true;
+    }
+    return retainedSVFGNodes;
+}
+
 // Perform slicing for pointer analysis (returns only node set, no IRView needed)
 std::set<const ICFGNode*> PTASlicer::performSlicing(
     const std::set<const SVFStmt*>& vulnerableStatements) {
 
     // Step 1: paper-faithful (§4.3) data-dependence slice over the thread-aware
-    // SVFG built once in pre-analysis (the shared SlicerBase helper).
+    // SVFG built once in pre-analysis (reusing the memoised SVFG-node closure).
     std::set<const ICFGNode*> initialSliceResult =
-        sliceDataDependenceOverVFG(vulnerableStatements, vfg);
+        svfgNodesToICFGNodes(getRetainedSVFGNodes(vulnerableStatements), vulnerableStatements);
 
     // Step 2: Perform dual slicing (temporal slicing)
     std::set<const ICFGNode*> dualSlicedNodes = performDualSlicing(initialSliceResult);
