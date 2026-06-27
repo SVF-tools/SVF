@@ -129,11 +129,6 @@ inline bool isNullPtrSym(const Value* val)
     return SVFUtil::dyn_cast<ConstantPointerNull>(val);
 }
 
-inline bool isBasicBlockSym(const Value* val)
-{
-    return SVFUtil::isa<BasicBlock>(val);
-}
-
 static inline Type* getPtrElementType(const PointerType* pty)
 {
 #if (LLVM_VERSION_MAJOR < 14)

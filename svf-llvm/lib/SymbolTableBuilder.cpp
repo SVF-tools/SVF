@@ -299,7 +299,7 @@ void SymbolTableBuilder::collectVal(const Value* val)
     if (
         LLVMUtil::isNullPtrSym(val) ||
         LLVMUtil::isBlackholeSym(val) ||
-        LLVMUtil::isBasicBlockSym(val) ||
+        SVFUtil::isa<BasicBlock>(val) ||
         SVFUtil::isa<InlineAsm>(val) ||
         SVFUtil::isa<DSOLocalEquivalent>(val) ||
         SVFUtil::isa<NoCFIValue>(val)
