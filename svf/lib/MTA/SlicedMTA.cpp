@@ -212,7 +212,7 @@ BVDataPTAImpl* SlicedMTA::getMainPTA() const
     return mtaFSMPTA.get();
 }
 
-std::set<const SVFStmt*> SlicedMTA::vulnerableStmts() const
+std::set<const SVFStmt*> SlicedMTA::getVulnerableStmts() const
 {
     std::set<const SVFStmt*> v;
     for (const RacePair& pair : racePairs)
@@ -308,9 +308,16 @@ bool SlicedMTA::runPreAnalysis(const ResolveIndirectCalls& resolveIndirectCalls)
     std::set<const SVFStmt*> vulnerableStatements;
     timePhase("Detect Race Statements", [&]()
     {
-        vulnerableStatements = detectRaceStmts(
-                                   svfIr, preAnder, mhp.get(), lockAnalysis.get(),
-                                   preAnder->getCallGraph(), threadFunctions, racePairs);
+        // Default to the shared detector (the same MTA::reportRaces uses);
+        // RACE_LEGACY selects the old narrowed detector for A/B comparison.
+        if (getenv("RACE_LEGACY") != nullptr)
+            vulnerableStatements = detectRaceStmts(
+                                       svfIr, preAnder, mhp.get(), lockAnalysis.get(),
+                                       preAnder->getCallGraph(), threadFunctions, racePairs);
+        else
+            vulnerableStatements = MTA::detectRace(
+                                       svfIr, preAnder, mhp.get(), lockAnalysis.get(),
+                                       preAnder->getCallGraph(), racePairs);
     });
     SVFUtil::outs() << "Found " << vulnerableStatements.size() << " vulnerable statements\n";
     SVFUtil::outs() << "Found " << racePairs.size() << " race pairs\n";
@@ -335,7 +342,7 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
     const bool dumpDot = Options::SlicedDumpDot();
 
     // Step 1: Get vulnerable statements from race pairs
-    std::set<const SVFStmt*> vulnerableStatements = vulnerableStmts();
+    std::set<const SVFStmt*> vulnerableStatements = getVulnerableStmts();
 
     std::set<const ICFGNode*> mtaSlicedNodes;
 
@@ -445,7 +452,7 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
 
     const bool dumpDot = Options::SlicedDumpDot();
 
-    std::set<const SVFStmt*> vulnerableStatements = vulnerableStmts();
+    std::set<const SVFStmt*> vulnerableStatements = getVulnerableStmts();
 
     std::set<const ICFGNode*> ptaSlicedNodes;
 
@@ -586,7 +593,7 @@ bool SlicedMTA::runFinalRaceDetection()
 // but over a "slice" that keeps EVERY ICFG node -- i.e. the whole program. This
 // is the correct reference: if slicing preserves the result, this must produce
 // the same race set as the real (reduced) slice, only slower.
-void SlicedMTA::wholeProgramDetection()
+void SlicedMTA::runWholeProgramDetection()
 {
     SVFUtil::outs() << "\n=== Whole-program FSAM Race Detection (no slicing) ===\n";
     if (threadFunctions.empty() || racePairs.empty())
@@ -658,7 +665,7 @@ void SlicedMTA::observeFSAMSliced()
         SVFUtil::outs() << "[no race targets -- nothing to slice]\n===== [OBSERVE-SLICED] end =====\n\n";
         return;
     }
-    std::set<const SVFStmt*> vuln = vulnerableStmts();
+    std::set<const SVFStmt*> vuln = getVulnerableStmts();
     PTASlicer slicer(svfIr, preAnder, mhp.get(), lockAnalysis.get(), vfgPre);
     std::set<const ICFGNode*> ptaSlicedNodes = slicer.performSlicing(vuln);
     SlicedSVFIRView view(svfIr, preAnder->getCallGraph(), svfIr->getICFG(), ptaSlicedNodes);
@@ -705,7 +712,7 @@ void SlicedMTA::runOnModule(SVFIR* pag, const ResolveIndirectCalls& resolveIndir
 
     if (Options::NoSlice())
     {
-        wholeProgramDetection();
+        runWholeProgramDetection();
     }
     else if (Options::EnableSlicing())
     {
@@ -747,49 +754,7 @@ std::set<const FunObjVar*> SlicedMTA::detectAllThreadFunctions(CallGraph* callGr
     return threadFunctions;
 }
 
-// Helper: Get global object variables
-PointsTo SlicedMTA::getGlobalObjectVariables(SVFIR* svfIr) {
-    PointsTo globalObjVars;
-    const ICFGNode* globalICFGNode = svfIr->getICFG()->getGlobalICFGNode();
 
-    for (const SVFStmt* stmt : globalICFGNode->getSVFStmts()) {
-        const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt);
-        if (addrStmt != nullptr) {
-            const GlobalValVar* globalVar = SVFUtil::dyn_cast<GlobalValVar>(addrStmt->getLHSVar());
-            if (globalVar != nullptr) {
-                globalObjVars.set(addrStmt->getRHSVarID());
-            }
-        }
-    }
-
-    return globalObjVars;
-}
-
-// Helper: Get PointsTo closure
-PointsTo SlicedMTA::getPointsToClosure(AndersenBase* pta, const PointsTo& pts) {
-    PointsTo ptsClosure = pts;
-    std::deque<NodeID> worklist;
-
-    // Initialize worklist with all points in pts
-    for (NodeID pt : pts) {
-        worklist.push_back(pt);
-    }
-
-    while (!worklist.empty()) {
-        NodeID pt = worklist.front();
-        worklist.pop_front();
-
-        const PointsTo& newPts = pta->getPts(pt);
-        for (NodeID newPt : newPts) {
-            if (!ptsClosure.test(newPt)) {
-                ptsClosure.set(newPt);
-                worklist.push_back(newPt);
-            }
-        }
-    }
-
-    return ptsClosure;
-}
 
 // Helper: Check if two functions may happen in parallel
 bool SlicedMTA::mayHappenInParallel(MHP* mhp, const FunObjVar* fun1, const FunObjVar* fun2) {
@@ -907,7 +872,7 @@ std::set<const SVFStmt*> SlicedMTA::detectRaceStmts(
     std::set<RacePair>& outRacePairs) {
 
     std::set<const SVFStmt*> bugStmts;
-    PointsTo globalObjVars = getGlobalObjectVariables(svfIr);
+    PointsTo globalObjVars = MTA::getGlobalObjectVariables(svfIr);
 
     // For each thread function
     for (const FunObjVar* threadFunc : threadFunctions) {
@@ -918,7 +883,7 @@ std::set<const SVFStmt*> SlicedMTA::detectRaceStmts(
 
         NodeID argId = threadFunc->getArg(0)->getId();
         PointsTo argPts = pta->getPts(argId);
-        PointsTo argPtsClosure = getPointsToClosure(pta, argPts);
+        PointsTo argPtsClosure = MTA::getPointsToClosure(pta, argPts);
         PointsTo potentialPts = argPtsClosure;
         potentialPts |= globalObjVars;  // Union operation
 
@@ -1019,6 +984,7 @@ std::set<const SVFStmt*> SlicedMTA::detectRaceStmts(
 
     return bugStmts;
 }
+
 
 // Detect race pairs on the sliced graph using sliced analysis results.
 std::set<SlicedMTA::RacePair> SlicedMTA::detectRacePairsOnSlicedGraph(
