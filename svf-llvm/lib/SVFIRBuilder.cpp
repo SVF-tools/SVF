@@ -467,14 +467,6 @@ void SVFIRBuilder::initialiseValVars()
         const ICFGNode* icfgNode = nullptr;
         auto llvmValue = iter->first;
 
-        // Intentionally unhandled values.
-        if (
-            SVFUtil::isa<BasicBlock>(llvmValue) ||
-            SVFUtil::isa<InlineAsm>(llvmValue) ||
-            SVFUtil::isa<DSOLocalEquivalent>(llvmValue) ||
-            SVFUtil::isa<NoCFIValue>(llvmValue)
-        ) { continue; }
-
         // Check if the value is a function and get its call graph node
         if (const Function* func = SVFUtil::dyn_cast<Function>(llvmValue))
         {
@@ -529,6 +521,12 @@ void SVFIRBuilder::initialiseValVars()
                 pag->addValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
             }
         }
+        else
+        {
+            pag->addDummyValNode(iter->second, icfgNode);
+        }
+
+
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
     }
 }

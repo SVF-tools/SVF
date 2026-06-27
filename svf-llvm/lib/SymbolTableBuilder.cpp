@@ -296,14 +296,7 @@ void SymbolTableBuilder::collectSym(const Value* val)
 void SymbolTableBuilder::collectVal(const Value* val)
 {
     // collect and record special sym here
-    if (
-        LLVMUtil::isNullPtrSym(val) ||
-        LLVMUtil::isBlackholeSym(val) ||
-        SVFUtil::isa<BasicBlock>(val) ||
-        SVFUtil::isa<InlineAsm>(val) ||
-        SVFUtil::isa<DSOLocalEquivalent>(val) ||
-        SVFUtil::isa<NoCFIValue>(val)
-    )
+    if (LLVMUtil::isNullPtrSym(val) || LLVMUtil::isBlackholeSym(val))
     {
         return;
     }
