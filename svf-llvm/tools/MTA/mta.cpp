@@ -39,20 +39,15 @@ int main(int argc, char** argv)
     std::vector<std::string> moduleNameVec = OptionBase::parseOptions(
                 argc, argv, "MTA Analysis", "[options] <input-bitcode...>");
 
-    // The slicing pipeline (and its observe modes) lives in the SVF library
-    // (SlicedMTA); plain MTA is the default. The sliced runs keep the
-    // pre-analysis context-insensitive -- the slice recovers precision later
-    // (MSli design) -- so default -max-cxt to 0 for them unless the user set it.
-    const bool slicedPipeline = Options::EnableSlicing() || Options::NoSlice()
-                                || Options::MTAObserve() || Options::MTAObserveSliced();
-    if (slicedPipeline && Options::MaxContextLen.canSet())
-        Options::MaxContextLen.setValue(0);
-
     LLVMModuleSet::buildSVFModule(moduleNameVec);
     SVFIRBuilder builder;
     SVFIR* pag = builder.build();
 
-    if (slicedPipeline)
+    // MTA's only client is race detection. -flow-sensitive (default) selects the
+    // FSAM pipeline (SlicedMTA), which decides slicing and the pre-analysis
+    // context handling internally; otherwise run the flow-insensitive Andersen
+    // detector.
+    if (Options::FlowSensitive())
     {
         // The only LLVM-dependent step -- materialising resolved indirect calls
         // into the PAG -- is injected here.
