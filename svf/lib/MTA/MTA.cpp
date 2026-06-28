@@ -91,8 +91,8 @@ bool MTA::runOnModule(SVFIR* pag)
     mhp = computeMHP(tct.get());
     lsa = computeLocksets(tct.get());
 
-    if(Options::RaceCheck())
-        reportRaces();
+    // MTA's only client is race detection; always report.
+    reportRaces();
 
     return false;
 }

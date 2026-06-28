@@ -75,8 +75,8 @@ class SlicedLockAnalysis;
  *   4. PTA slicing + main flow-sensitive FSAM (FSMPTA) on the slice
  *   5. final race detection on the sliced graph using FSAM points-to
  *
- * Behaviour is controlled by Options (EnableSlicing, SlicedMaxCxt, MainIlaSliced,
- * ThreadVFSources, SlicingSingle, SlicedDumpDot, MTAObserve, MTAObserveSliced).
+ * Behaviour is controlled by Options (FlowSensitive, EnableSlicing, MainIlaSliced,
+ * ThreadVFSources, SlicingSingle, SlicedDumpDot, MTAObserve).
  */
 class SlicedMTA
 {

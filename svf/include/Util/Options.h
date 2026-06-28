@@ -259,17 +259,13 @@ public:
     static const Option<bool> FileCheck;
     /// double free checker, Default: false
     static const Option<bool> DFreeCheck;
-    /// data race checker, Default: false
-    static const Option<bool> RaceCheck;
+    /// MTA: flow-sensitive (FSAM) main analysis; false = Andersen flow-insensitive base, Default: true
+    static const Option<bool> FlowSensitive;
     /// MTA: dump the pointer-analysis and thread call graphs (ptacg/tcg.dot), Default: false
     static const Option<bool> DumpMTAGraphs;
 
-    /// MTA: run the multi-stage on-demand slicing pipeline (MSli), Default: false
+    /// MTA slicing: slice before the FSAM main analysis (false = whole-program baseline), Default: true
     static const Option<bool> EnableSlicing;
-    /// MTA: FSAM race detection on the whole program (no-slice baseline), Default: false
-    static const Option<bool> NoSlice;
-    /// MTA slicing: max context length for the sliced TCT (0 = reuse MaxContextLen), Default: 2
-    static const Option<u32_t> SlicedMaxCxt;
     /// MTA slicing: build the main FSMPTA value flow from the sliced ILA, Default: false
     static const Option<bool> MainIlaSliced;
     /// MTA slicing: seed the ILA slice with [THREAD-VF] sources (paper §4.2), Default: true
@@ -278,10 +274,8 @@ public:
     static const Option<bool> SlicingSingle;
     /// MTA slicing: dump intermediate dot graphs (ICFG/TCG/SVFG/...), Default: false
     static const Option<bool> SlicedDumpDot;
-    /// MTA: observe whole-program flow-sensitive FSAM points-to + ILA (soundness), Default: false
+    /// MTA: observe the FSAM points-to + ILA instead of detecting races, Default: false
     static const Option<bool> MTAObserve;
-    /// MTA: observe the SLICED FSAM points-to (query preservation), Default: false
-    static const Option<bool> MTAObserveSliced;
     /// if the access index of gepstmt is unknown, skip it, Default: false
     static const Option<bool> GepUnknownIdx;
     static const Option<bool> RunUncallFuncs;

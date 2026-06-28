@@ -97,11 +97,10 @@ bool checkAndReport(const char* phase, bool condition)
     return condition;
 }
 
-// Resolve the max context length for the sliced TCT.
+// The main (sliced) analysis context length -- -max-cxt.
 u32_t slicedMaxContextLen()
 {
-    u32_t v = Options::SlicedMaxCxt();
-    return v > 0 ? v : Options::MaxContextLen();
+    return Options::MaxContextLen();
 }
 
 // --- observe-mode helpers ---
@@ -272,7 +271,8 @@ bool SlicedMTA::runPreAnalysis(const ResolveIndirectCalls& resolveIndirectCalls)
     if (!checkAndReport("Pointer Analysis", preAnder != nullptr))
         return false;
 
-    // Step 2: Build Thread Create Tree
+    // Step 2: Build Thread Create Tree (the caller forces -max-cxt to 0 around the
+    // whole pre-analysis when slicing; see runOnModule).
     timePhase("Create Thread Create Tree", [&]()
     {
         tct = std::make_unique<TCT>(preAnder);
@@ -411,12 +411,8 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
     timePhase("Sliced Thread Create Tree", [&]()
     {
         u32_t maxContextLen = slicedMaxContextLen();
-        if (Options::SlicedMaxCxt() > 0)
-            SVFUtil::outs() << "[SlicedTCT] Using max context length: " << maxContextLen
-                            << " (from -sliced-max-cxt option)\n";
-        else
-            SVFUtil::outs() << "[SlicedTCT] Using max context length: " << maxContextLen
-                            << " (from -max-cxt, same as pre-analysis)\n";
+        SVFUtil::outs() << "[SlicedTCT] Using max context length: " << maxContextLen
+                        << " (from -max-cxt)\n";
         // Reuse the shared pre-analysis (Andersen) for the sliced TCT.
         slicedTCT = std::make_unique<SlicedTCT>(preAnder, slicedView, maxContextLen);
         if (dumpDot)
@@ -687,28 +683,30 @@ void SlicedMTA::runOnModule(SVFIR* pag, const ResolveIndirectCalls& resolveIndir
 
     reportOriginalStats(svfIr);
 
-    if (!runPreAnalysis(resolveIndirectCalls))
+    // When slicing, run the whole pre-analysis context-insensitively (-max-cxt 0);
+    // the main (sliced) analysis then uses -max-cxt. Without slicing there is only
+    // the main analysis, so the pre-analysis already runs at -max-cxt.
+    const u32_t mainCxt = Options::MaxContextLen();
+    if (Options::EnableSlicing())
+        Options::MaxContextLen.setValue(0);
+    const bool preOk = runPreAnalysis(resolveIndirectCalls);
+    Options::MaxContextLen.setValue(mainCxt);
+    if (!preOk)
         return;
 
-    // Observe modes: dump FSAM points-to + ILA for soundness / query preservation.
+    // Observe mode: dump FSAM points-to + ILA instead of detecting races; the
+    // sliced/whole-program variant follows -enable-slicing.
     if (Options::MTAObserve())
     {
-        runObserveFSAM();
+        if (Options::EnableSlicing())
+            runObserveFSAMSliced();
+        else
+            runObserveFSAM();
         SVFUtil::outs() << "\n=== Analysis Complete (observe) ===\n";
         return;
     }
-    if (Options::MTAObserveSliced())
-    {
-        runObserveFSAMSliced();
-        SVFUtil::outs() << "\n=== Analysis Complete (observe-sliced) ===\n";
-        return;
-    }
 
-    if (Options::NoSlice())
-    {
-        runWholeProgramDetection();
-    }
-    else if (Options::EnableSlicing())
+    if (Options::EnableSlicing())
     {
         if (!runMTASlicingAndAnalysis()) return;
         if (!runPTASlicingAndAnalysis()) return;
@@ -716,8 +714,7 @@ void SlicedMTA::runOnModule(SVFIR* pag, const ResolveIndirectCalls& resolveIndir
     }
     else
     {
-        SVFUtil::outs() << "\n=== Race Detection Summary ===\n";
-        SVFUtil::outs() << "Race pairs detected: " << racePairs.size() << "\n";
+        runWholeProgramDetection();
     }
 
     SVFUtil::outs() << "\n=== Analysis Complete ===\n";
