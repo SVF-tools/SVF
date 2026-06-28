@@ -127,9 +127,8 @@ private:
     /// Detect all thread (fork-target) functions in the program (pipeline guards).
     static std::set<const FunObjVar*> detectAllThreadFunctions(CallGraph* callGraph);
     /// Re-check the candidate race pairs on the sliced graph using FSAM points-to.
-    static std::set<RacePair> detectRacePairsOnSlicedGraph(
-        const std::set<RacePair>& preAnalysisRacePairs, BVDataPTAImpl* slicedPTA,
-        MHP* slicedMHP, LockAnalysis* slicedLockAnalysis, const SlicedSVFIRView* slicedView);
+    std::set<RacePair> detectRacePairsOnSlicedGraph(
+        BVDataPTAImpl* slicedPTA, MHP* slicedMHP, LockAnalysis* slicedLockAnalysis);
 
     // --- pipeline state (owned unless noted) ---
     SVFIR* svfIr = nullptr;
