@@ -392,7 +392,7 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(
 
     // Work out which of the mappings we generated looks best.
     std::pair<hclust_fast_methods, std::vector<NodeID>> bestMapping =
-        determineBestMapping(candidates, pointsToSets, evalSubtitle, evalTime, printStat);
+                determineBestMapping(candidates, pointsToSets, evalSubtitle, evalTime, printStat);
 
     overallStats[DistanceMatrixTime] = std::to_string(distanceMatrixTime);
     overallStats[DendrogramTraversalTime] = std::to_string(dendrogramTraversalTime);
@@ -401,7 +401,10 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(
     overallStats[TotalTime] = std::to_string(distanceMatrixTime + dendrogramTraversalTime + fastClusterTime + regioningTime + evalTime);
 
     overallStats[BestCandidate] = SVFUtil::hclustMethodToString(bestMapping.first);
-    if (printStat) { printStats(evalSubtitle + ": overall", overallStats); }
+    if (printStat)
+    {
+        printStats(evalSubtitle + ": overall", overallStats);
+    }
 
     return bestMapping.second;
 }
@@ -660,12 +663,12 @@ void NodeIDAllocator::Clusterer::evaluate(const std::vector<NodeID> &nodeMap, co
 
 // Work out which of the mappings we generated looks best.
 std::pair<hclust_fast_methods, std::vector<NodeID>> NodeIDAllocator::Clusterer::determineBestMapping(
-    const std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> &candidates,
-    Map<PointsTo, unsigned> pointsToSets,
-    const std::string &evalSubtitle,
-    double &evalTime,
-    bool printStat
-)
+            const std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> &candidates,
+            Map<PointsTo, unsigned> pointsToSets,
+            const std::string &evalSubtitle,
+            double &evalTime,
+            bool printStat
+        )
 {
     // In case we're not comparing anything, set to first "candidate".
     std::pair<hclust_fast_methods, std::vector<NodeID>> bestMapping = candidates[0];
@@ -685,7 +688,10 @@ std::pair<hclust_fast_methods, std::vector<NodeID>> NodeIDAllocator::Clusterer::
             evaluate(candidateMapping, pointsToSets, candidateStats, true);
             const double clkEnd = PTAStat::getClk(true);
             evalTime += (clkEnd - clkStart) / TIMEINTERVAL;
-            if (printStat) { printStats(evalSubtitle + ": candidate " + candidateMethodName, candidateStats); }
+            if (printStat)
+            {
+                printStats(evalSubtitle + ": candidate " + candidateMethodName, candidateStats);
+            }
 
             size_t candidateWords = 0;
             if (Options::PtType() == PointsTo::SBV) candidateWords = std::stoull(candidateStats[NewSbvNumWords]);

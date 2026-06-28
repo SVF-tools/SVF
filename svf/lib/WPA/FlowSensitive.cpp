@@ -188,7 +188,10 @@ void FlowSensitive::finalize()
         Map<PointsTo, unsigned> allPts = ptd->getAllPts(true);
         // TODO: parameterise final arg.
         NodeIDAllocator::Clusterer::evaluate(*PointsTo::getCurrentBestNodeMapping(), allPts, stats, true);
-        if (print_stat) { NodeIDAllocator::Clusterer::printStats("post-main: best", stats); }
+        if (print_stat)
+        {
+            NodeIDAllocator::Clusterer::printStats("post-main: best", stats);
+        }
     }
 
     BVDataPTAImpl::finalize();

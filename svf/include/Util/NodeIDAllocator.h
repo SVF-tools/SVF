@@ -212,12 +212,12 @@ public:
 
         // From all the candidates, returns the best mapping for pointsToSets (points-to set -> # occurrences).
         static inline std::pair<hclust_fast_methods, std::vector<NodeID>> determineBestMapping(
-            const std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> &candidates,
-            Map<PointsTo, unsigned> pointsToSets,
-            const std::string &evalSubtitle,
-            double &evalTime,
-            bool printStat
-        );
+                    const std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> &candidates,
+                    Map<PointsTo, unsigned> pointsToSets,
+                    const std::string &evalSubtitle,
+                    double &evalTime,
+                    bool printStat
+                );
     };
 };
 

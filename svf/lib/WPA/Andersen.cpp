@@ -439,7 +439,10 @@ void Andersen::finalize()
         // TODO: should we use liveOnly?
         // TODO: parameterise final arg.
         NodeIDAllocator::Clusterer::evaluate(*PointsTo::getCurrentBestNodeMapping(), ptd->getAllPts(true), stats, true);
-        if (print_stat) { NodeIDAllocator::Clusterer::printStats("post-main", stats); }
+        if (print_stat)
+        {
+            NodeIDAllocator::Clusterer::printStats("post-main", stats);
+        }
     }
 
     /// sanitize field insensitive obj
