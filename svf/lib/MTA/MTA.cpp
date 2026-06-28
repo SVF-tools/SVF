@@ -139,8 +139,15 @@ PointsTo MTA::getGlobalObjectVariables(SVFIR* svfIr) {
     return globalObjVars;
 }
 
-// Transitive points-to closure of a set: everything reachable by following pts.
+// Transitive closure of a set under TWO relations: points-to (an object -> the
+// objects it points to) and containment (a base object -> its field sub-objects).
+// The containment step is essential for field sensitivity: a field-sensitive
+// access resolves to a GepObjVar that is NOT reachable from its base by points-to
+// edges, so without it a race on a (non-zero-offset) struct field -- or on an
+// object reached through a struct's pointer field -- would be screened out of the
+// escape set as "not shared".
 PointsTo MTA::getPointsToClosure(AndersenBase* pta, const PointsTo& pts) {
+    SVFIR* pag = pta->getPAG();
     PointsTo ptsClosure = pts;
     std::deque<NodeID> worklist;
     for (NodeID pt : pts) {
@@ -148,16 +155,18 @@ PointsTo MTA::getPointsToClosure(AndersenBase* pta, const PointsTo& pts) {
     }
 
     while (!worklist.empty()) {
-        NodeID pt = worklist.front();
+        NodeID o = worklist.front();
         worklist.pop_front();
+        auto add = [&](NodeID x) {
+            if (!ptsClosure.test(x)) { ptsClosure.set(x); worklist.push_back(x); }
+        };
 
-        const PointsTo& newPts = pta->getPts(pt);
-        for (NodeID newPt : newPts) {
-            if (!ptsClosure.test(newPt)) {
-                ptsClosure.set(newPt);
-                worklist.push_back(newPt);
-            }
-        }
+        for (NodeID t : pta->getPts(o))                  // points-to
+            add(t);
+
+        if (pag->getBaseObject(o) != nullptr)            // containment (object nodes only)
+            for (NodeID f : pta->getAllFieldsObjVars(pta->getBaseObjVarID(o)))
+                add(f);
     }
 
     return ptsClosure;
