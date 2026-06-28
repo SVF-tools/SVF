@@ -62,9 +62,6 @@ public:
           mhp(m), mtaSVFGBuilder(m, la),
           slicedView(view), preBuiltSVFG(preBuilt)
     {
-        if (slicedView)
-            for (const ICFGNode* n : slicedView->getICFG()->getKeptNodes())
-                keptNodes.insert(n);
     }
 
     ~FSMPTA() override = default;
@@ -88,7 +85,6 @@ private:
     const SlicedSVFIRView* slicedView;
     /// Non-null when reusing a pre-built thread-aware SVFG (not owned).
     SVFG* preBuiltSVFG;
-    std::unordered_set<const ICFGNode*> keptNodes;
 };
 
 } // End namespace SVF

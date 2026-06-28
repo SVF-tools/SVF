@@ -850,10 +850,10 @@ void getInEdgesOfCallGraphNode(const SlicedSVFIRView* slicedView, const CallGrap
 // SlicedTCT - TCT rebuilt over the sliced ThreadCallGraph view.
 //===----------------------------------------------------------------------===//
 
-SlicedTCT::SlicedTCT(PointerAnalysis* p, const SlicedSVFIRView* sv, u32_t maxCxtLen)
+SlicedTCT::SlicedTCT(PointerAnalysis* p, const SlicedSVFIRView* slicedView, u32_t maxContextLen)
     : TCT(p),
-      tcgView(sv != nullptr && sv->getThreadCallGraph() != nullptr ? sv->getThreadCallGraph() : nullptr),
-      maxContextLen(maxCxtLen)
+      tcgView(slicedView != nullptr && slicedView->getThreadCallGraph() != nullptr ? slicedView->getThreadCallGraph() : nullptr),
+      maxContextLen(maxContextLen)
 {
     // Base class TCT(p) constructor called build() before tcgView was initialized.
     // Now that tcgView is initialized, rebuild using sliced view.

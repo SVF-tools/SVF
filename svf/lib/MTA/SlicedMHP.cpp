@@ -44,8 +44,8 @@ using namespace SVFUtil;
 namespace SVF
 {
 
-SlicedMHP::SlicedMHP(TCT* t, const SlicedSVFIRView* sv)
-    : MHP(t), slicedView(sv)
+SlicedMHP::SlicedMHP(TCT* tct, const SlicedSVFIRView* slicedView)
+    : MHP(tct), slicedView(slicedView)
 {
     // ICFG view from slicedView if available, otherwise nullptr (full ICFG).
     icfgView = (slicedView != nullptr) ? slicedView->getICFG() : nullptr;
