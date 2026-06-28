@@ -68,7 +68,7 @@ protected:
     AndersenBase* pta;
     SVF::MHP* mhp;
     SVF::LockAnalysis* lockAnalysis;
-    CallGraph* threadCallGraph;
+    CallGraph* callGraph;
 
     // === Data flow analysis helper ===
     /**

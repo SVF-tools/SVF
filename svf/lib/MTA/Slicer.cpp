@@ -65,7 +65,7 @@ namespace SVF
 SlicerBase::SlicerBase(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
                        LockAnalysis* lockAnalysis)
     : svfIr(svfIr), pta(pta), mhp(mhp), lockAnalysis(lockAnalysis) {
-    threadCallGraph = pta->getCallGraph();
+    callGraph = pta->getCallGraph();
 }
 
 SlicerBase::~SlicerBase() {
@@ -395,7 +395,7 @@ std::set<const ICFGNode*> SlicerBase::expandCallDependence(
     }
 
     std::unordered_map<const FunObjVar*, const CallGraphNode*> fun2Node;
-    for (auto it = threadCallGraph->begin(), eit = threadCallGraph->end(); it != eit; ++it) {
+    for (auto it = callGraph->begin(), eit = callGraph->end(); it != eit; ++it) {
         const CallGraphNode* node = it->second;
         if (node && node->getFunction()) {
             fun2Node[node->getFunction()] = node;

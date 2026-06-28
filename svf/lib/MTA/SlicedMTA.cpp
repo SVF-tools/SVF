@@ -359,15 +359,10 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
         mtaSlicer = std::make_unique<MTASlicer>(
                         svfIr, preAnder, mhp.get(), lockAnalysis.get());
 
-        // MTA slicing (includes dual slicing and function expansion). ILA slicing
-        // sources = [INIT] race statements + the [THREAD-VF] sources (MSli §4.2).
-        // We keep a candidate edge's query only if the edge survives the FSPTA
-        // slice -- ThreadVF(VFG'_pre), i.e. both its endpoints lie in the
-        // data-dependence slice over VFG_pre. This restricts the witnesses to the
-        // value flows the main phase will actually build, matching Fig. 6's
-        // [THREAD-VF] rule, while staying sound (ThreadVF(VFG') subset of
-        // ThreadVF(VFG'_pre)). The slice is computed here (pre <-> pre) and reused
-        // by PTA slicing.
+        // ILA slicing sources = [INIT] race statements + [THREAD-VF] sources. Keep
+        // a candidate edge's query (see MTASVFGBuilder::getThreadVFQueryMap) only if
+        // both endpoints survive the FSPTA slice -- i.e. the edge is in
+        // ThreadVF(VFG'_pre). Closure computed here (pre<->pre) and reused by PTA slicing.
         std::set<const ICFGNode*> threadVFSources;
         const bool useThreadVFSources = Options::ThreadVFSources();
         if (useThreadVFSources && vfgPreBuilder)
@@ -498,22 +493,11 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
     });
     ptaSlicedView->dumpStats("PTA Sliced");
 
-    // Step 5: Main FSMPTA phase -- sparse flow-sensitive FSAM. The paper's main
-    // analysis runs a sparse flow-sensitive pointer analysis over a thread-aware
-    // value-flow graph; FSMPTA builds that thread-aware SVFG (via MHP + lock
-    // spans) and solves it with SVF's flow-sensitive engine.
-    //
-    // -main-ila-sliced (paper-faithful): rebuild the thread-aware value flow with
-    // the SLICED ILA. The interference edges are then constructed by querying
-    // SlicedMHP / SlicedLockAnalysis -- which can only answer correctly because
-    // [THREAD-VF] source extraction kept every interference endpoint and lock-span
-    // witness in the ILA slice. A divergence here (vs the full-ILA result) would
-    // mean the slice dropped a required ILA query. Costs a fresh SVFG build.
-    //
-    // default: reuse the thread-aware VFG_pre built once in pre-analysis with the
-    // whole-program ILA, and restrict the flow-sensitive solve to the PTA slice
-    // (processNode skips sliced-away memory ops). Under query preservation the two
-    // give the same result; this path avoids the second SVFG build.
+    // Step 5: Main FSMPTA phase (flow-sensitive FSAM over a thread-aware SVFG).
+    // -main-ila-sliced: rebuild the thread-aware value flow from the SLICED ILA
+    // (paper-faithful; relies on [THREAD-VF] keeping the queried witnesses; costs
+    // a fresh SVFG). Default: reuse VFG_pre and restrict the solve to the PTA
+    // slice -- same result under query preservation, no second SVFG build.
     bool useSlicedIla = (Options::MainIlaSliced() &&
                          slicedMhp != nullptr && slicedLockAnalysis != nullptr);
     if (useSlicedIla)

@@ -363,16 +363,10 @@ bool MTASVFGBuilder::isTailOfSpan(const StmtSVFGNode* n)
 }
 
 /*!
- * Record the [THREAD-VF] ILA slicing sources for one candidate value-flow pair
- * s --o--> sp (MSli §4.2, Fig. 6). The main-phase value-flow construction will
- * re-evaluate this pair, querying ILA for:
- *   - the endpoints (mayHappenInParallel, isProtectedByCommonLock), and
- *   - under a common lock, the intra-span witnesses Succ_spl(s) / Pred_spl'(sp)
- *     that decide TL/HD membership — i.e. whether the edge survives the
- *     non-interference test (Def. 2). Keeping these lets the sliced ILA
- *     reproduce the same keep/prune decision as the whole-program ILA.
- * The witnesses are enumerated *fully* (the tail/head boolean tests
- * short-circuit; source extraction must not).
+ * Record the per-edge [THREAD-VF] query for one candidate pair s --o--> sp (see
+ * getThreadVFQueryMap for the rule): the endpoints, plus -- under a common lock --
+ * the in-span Succ_spl(s) / Pred_spl'(sp) witnesses. Enumerated fully (the
+ * tail/head boolean tests short-circuit; source extraction must not).
  */
 void MTASVFGBuilder::recordThreadVFSource(const StmtSVFGNode* s, const StmtSVFGNode* sp, bool commonLock)
 {
