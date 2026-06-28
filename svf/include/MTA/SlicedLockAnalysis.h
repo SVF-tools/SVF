@@ -48,21 +48,14 @@ class SlicedSVFIRView;
 class SlicedICFGView;
 
 /**
- * SlicedLockAnalysis
- *
- * Inherits from SVF::LockAnalysis and overrides ICFG traversal methods to use SlicedICFGView.
- *
- * Design goals:
- * - Inherit from SVF::LockAnalysis to reuse existing implementation
- * - Override virtual ICFG traversal methods to use sliced view semantics
- * - Keep using original SVF::ICFGNode pointers as identities
+ * SlicedLockAnalysis -- LockAnalysis whose ICFG traversal hooks are overridden to
+ * use a SlicedICFGView (original ICFGNode pointers stay the identities). A null
+ * slicedView falls back to the full ICFG.
  */
 class SlicedLockAnalysis final : public SVF::LockAnalysis {
 public:
-    /// If slicedView is provided, it will be used to access sliced ICFG/CallGraph/ThreadCallGraph views.
-    /// If slicedView is null, uses full ICFG from SVFIR.
     explicit SlicedLockAnalysis(SVF::TCT* tct, const SlicedSVFIRView* slicedView = nullptr);
-    ~SlicedLockAnalysis() = default;
+    ~SlicedLockAnalysis() override = default;
 
 protected:
     // Override the base ICFG/CallGraph traversal hooks to walk only the slice;
