@@ -190,7 +190,13 @@ const std::string NodeIDAllocator::Clusterer::LargestRegion = "LargestRegion";
 const std::string NodeIDAllocator::Clusterer::BestCandidate = "BestCandidate";
 const std::string NodeIDAllocator::Clusterer::NumNonTrivialRegionObjects = "NumNonTrivObj";
 
-std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> &candidates, std::string evalSubtitle)
+std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(
+    BVDataPTAImpl *pta,
+    const std::vector<std::pair<NodeID, unsigned>> keys,
+    std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> &candidates,
+    std::string evalSubtitle,
+    bool printStat
+)
 {
     assert(pta != nullptr && "Clusterer::cluster: given null BVDataPTAImpl");
     assert(Options::NodeAllocStrat() == Strategy::DENSE && "Clusterer::cluster: only dense allocation clustering currently supported");
@@ -385,8 +391,8 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, cons
     }
 
     // Work out which of the mappings we generated looks best.
-    std::pair<hclust_fast_methods, std::vector<NodeID>> bestMapping = determineBestMapping(candidates, pointsToSets,
-            evalSubtitle, evalTime);
+    std::pair<hclust_fast_methods, std::vector<NodeID>> bestMapping =
+        determineBestMapping(candidates, pointsToSets, evalSubtitle, evalTime, printStat);
 
     overallStats[DistanceMatrixTime] = std::to_string(distanceMatrixTime);
     overallStats[DendrogramTraversalTime] = std::to_string(dendrogramTraversalTime);
@@ -395,7 +401,7 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, cons
     overallStats[TotalTime] = std::to_string(distanceMatrixTime + dendrogramTraversalTime + fastClusterTime + regioningTime + evalTime);
 
     overallStats[BestCandidate] = SVFUtil::hclustMethodToString(bestMapping.first);
-    printStats(evalSubtitle + ": overall", overallStats);
+    if (printStat) { printStats(evalSubtitle + ": overall", overallStats); }
 
     return bestMapping.second;
 }
@@ -654,14 +660,18 @@ void NodeIDAllocator::Clusterer::evaluate(const std::vector<NodeID> &nodeMap, co
 
 // Work out which of the mappings we generated looks best.
 std::pair<hclust_fast_methods, std::vector<NodeID>> NodeIDAllocator::Clusterer::determineBestMapping(
-            const std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> &candidates,
-            Map<PointsTo, unsigned> pointsToSets, const std::string &evalSubtitle, double &evalTime)
+    const std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> &candidates,
+    Map<PointsTo, unsigned> pointsToSets,
+    const std::string &evalSubtitle,
+    double &evalTime,
+    bool printStat
+)
 {
     // In case we're not comparing anything, set to first "candidate".
     std::pair<hclust_fast_methods, std::vector<NodeID>> bestMapping = candidates[0];
     // Number of bits required for the best candidate.
     size_t bestWords = std::numeric_limits<size_t>::max();
-    if (evalSubtitle != "" || (enum hclust_fast_methods)Options::ClusterMethod() == HCLUST_METHOD_SVF_BEST)
+    if ((enum hclust_fast_methods)Options::ClusterMethod() == HCLUST_METHOD_SVF_BEST)
     {
         for (const std::pair<hclust_fast_methods, std::vector<NodeID>> &candidate : candidates)
         {
@@ -675,7 +685,7 @@ std::pair<hclust_fast_methods, std::vector<NodeID>> NodeIDAllocator::Clusterer::
             evaluate(candidateMapping, pointsToSets, candidateStats, true);
             const double clkEnd = PTAStat::getClk(true);
             evalTime += (clkEnd - clkStart) / TIMEINTERVAL;
-            printStats(evalSubtitle + ": candidate " + candidateMethodName, candidateStats);
+            if (printStat) { printStats(evalSubtitle + ": candidate " + candidateMethodName, candidateStats); }
 
             size_t candidateWords = 0;
             if (Options::PtType() == PointsTo::SBV) candidateWords = std::stoull(candidateStats[NewSbvNumWords]);
