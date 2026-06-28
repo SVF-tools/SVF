@@ -466,6 +466,26 @@ protected:
     /// Build TCT
     virtual void build();
 
+    /// Free the built graph and clear all bookkeeping so build() can run again from
+    /// a clean state (SlicedTCT rebuilds the tree over a sliced view).
+    void reset()
+    {
+        destroy();
+        IDToNodeMap.clear();
+        ctpToNodeMap.clear();
+        ctToForkCxtsMap.clear();
+        ctToRoutineFunMap.clear();
+        candidateFuncSet.clear();
+        entryFuncSet.clear();
+        joinSiteToLoopMap.clear();
+        inRecurJoinSites.clear();
+        ctpList.clear();
+        visitedCTPs.clear();
+        TCTNodeNum = 0;
+        TCTEdgeNum = 0;
+        MaxCxtSize = 0;
+    }
+
     /// Mark relevant procedures that are backward reachable from any fork/join site
     //@{
     virtual void markRelProcs();
