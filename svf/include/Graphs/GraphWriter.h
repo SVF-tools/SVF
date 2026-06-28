@@ -171,7 +171,7 @@ public:
     {
         std::string NodeAttributes = DTraits.getNodeAttributes(Node, G);
 
-        O << "\tNode" << static_cast<const void*>(Node) << " [shape=record,";
+        O << "\tNode" << static_cast<const void*>(Node) << " [";
         if (!NodeAttributes.empty()) O << NodeAttributes << ",";
         O << "label=\"{";
 
