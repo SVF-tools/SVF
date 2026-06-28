@@ -157,21 +157,78 @@ PointsTo MTA::getPointsToClosure(AndersenBase* pta, const PointsTo& pts) {
     }
 
     while (!worklist.empty()) {
-        NodeID o = worklist.front();
+        NodeID obj = worklist.front();
         worklist.pop_front();
-        auto add = [&](NodeID x) {
-            if (!ptsClosure.test(x)) { ptsClosure.set(x); worklist.push_back(x); }
-        };
 
-        for (NodeID t : pta->getPts(o))                  // points-to
-            add(t);
+        for (NodeID target : pta->getPts(obj))           // points-to
+            if (!ptsClosure.test(target)) { ptsClosure.set(target); worklist.push_back(target); }
 
-        if (pag->getBaseObject(o) != nullptr)            // containment (object nodes only)
-            for (NodeID f : pta->getAllFieldsObjVars(pta->getBaseObjVarID(o)))
-                add(f);
+        if (pag->getBaseObject(obj) != nullptr)          // containment (object nodes only)
+            for (NodeID field : pta->getAllFieldsObjVars(pta->getBaseObjVarID(obj)))
+                if (!ptsClosure.test(field)) { ptsClosure.set(field); worklist.push_back(field); }
     }
 
     return ptsClosure;
+}
+
+// Serialise a calling context into a stable string key.
+std::string MTA::contextSignature(const CallStrCxt& context) {
+    std::string sig;
+    for (u32_t callSite : context) { sig += std::to_string(callSite); sig += '.'; }
+    return sig;
+}
+
+// Lock signature of a node: equal signatures => identical common-lock relation
+// against any partner ("U" = holds no lock), so C4 is decided once per class pair.
+std::string MTA::lockSignature(LockAnalysis* lockAnalysis, const ICFGNode* node) {
+    if (!lockAnalysis->isProtectedByCommonLock(node, node)) return "U";
+    std::string sig = "L";
+    sig += lockAnalysis->isInsideIntraLock(node) ? 'i' : '.';
+    sig += lockAnalysis->isInsideCondIntraLock(node) ? 'c' : '.';
+    sig += "[I";
+    if (lockAnalysis->hasIntraLockSet(node)) {   // else: cond-only / cxt-only locked
+        std::vector<NodeID> intraLocks;
+        for (const ICFGNode* lock : lockAnalysis->getIntraLockSet(node))
+            intraLocks.push_back(lock->getId());
+        std::sort(intraLocks.begin(), intraLocks.end());
+        for (NodeID id : intraLocks) { sig += ':'; sig += std::to_string(id); }
+    }
+    sig += ']';
+    if (lockAnalysis->hasCxtStmtFromInst(node)) {
+        std::vector<std::string> perContext;   // one entry per context of node
+        for (const CxtStmt& cxtStmt : lockAnalysis->getCxtStmtsFromInst(node)) {
+            std::string entry = contextSignature(cxtStmt.getContext()) + "{";
+            if (lockAnalysis->hasCxtLockfromCxtStmt(cxtStmt)) {
+                std::vector<std::string> heldLocks;
+                for (const CxtStmt& heldLock : lockAnalysis->getCxtLockfromCxtStmt(cxtStmt))
+                    heldLocks.push_back(std::to_string(heldLock.getStmt()->getId()) + "@"
+                                        + contextSignature(heldLock.getContext()));
+                std::sort(heldLocks.begin(), heldLocks.end());
+                for (const std::string& lock : heldLocks) { entry += lock; entry += ';'; }
+            }
+            perContext.push_back(entry + "}");
+        }
+        std::sort(perContext.begin(), perContext.end());
+        sig += "[X"; for (const std::string& entry : perContext) sig += entry; sig += ']';
+    }
+    return sig;
+}
+
+// C3: distinct threads must mutually interleave; the same thread self-races only
+// when it is multiforked (more than one dynamic instance).
+bool MTA::occurrencesRace(MHP* mhp, const RaceOccurrence& first, const RaceOccurrence& second) {
+    if (first.tid != second.tid)
+        return first.interleav.test(second.tid) && second.interleav.test(first.tid);
+    return mhp->getTCT()->getTCTNode(first.tid)->isMultiforked();
+}
+
+// Record one order-normalised racing statement pair.
+void MTA::commitRacePair(std::set<RacePair>& out,
+                         const RaceOccurrence& first, const RaceOccurrence& second) {
+    const SVFStmt* stmt1 = first.stmt;
+    const SVFStmt* stmt2 = second.stmt;
+    if (stmt2 < stmt1) std::swap(stmt1, stmt2);
+    out.insert(RacePair(stmt1, stmt2));
 }
 
 // Equivalence-class race detector: screen accesses, bucket by object, collapse
@@ -196,143 +253,98 @@ std::set<const SVFStmt*> MTA::detectRace(
     }
     const PointsTo escSet = getPointsToClosure(pta, seed);
 
-    // Lock signature: a string capturing every input isProtectedByCommonLock
-    // reads, so equal signatures => identical lock relation against any partner
-    // ("U" = holds no lock). Lets C4 be decided once per class pair.
-    auto cxtSig = [](const CallStrCxt& c) -> std::string {
-        std::string s; for (u32_t x : c) { s += std::to_string(x); s += '.'; } return s;
-    };
-    auto lockSig = [&](const ICFGNode* n) -> std::string {
-        if (!lockAnalysis->isProtectedByCommonLock(n, n)) return "U";   // holds no lock
-        std::string s = "L";
-        s += lockAnalysis->isInsideIntraLock(n) ? 'i' : '.';
-        s += lockAnalysis->isInsideCondIntraLock(n) ? 'c' : '.';
-        s += "[I";
-        if (lockAnalysis->hasIntraLockSet(n)) {   // else: cond-only / cxt-only locked
-            std::vector<NodeID> ls;
-            for (const ICFGNode* l : lockAnalysis->getIntraLockSet(n)) ls.push_back(l->getId());
-            std::sort(ls.begin(), ls.end());
-            for (NodeID id : ls) { s += ':'; s += std::to_string(id); }
-        }
-        s += ']';
-        if (lockAnalysis->hasCxtStmtFromInst(n)) {
-            std::vector<std::string> parts;  // one per context of n: (context, held locks)
-            for (const CxtStmt& cts : lockAnalysis->getCxtStmtsFromInst(n)) {
-                std::string part = cxtSig(cts.getContext()) + "{";
-                if (lockAnalysis->hasCxtLockfromCxtStmt(cts)) {
-                    std::vector<std::string> locks;
-                    for (const CxtStmt& cl : lockAnalysis->getCxtLockfromCxtStmt(cts))
-                        locks.push_back(std::to_string(cl.getStmt()->getId()) + "@" + cxtSig(cl.getContext()));
-                    std::sort(locks.begin(), locks.end());
-                    for (const std::string& l : locks) { part += l; part += ';'; }
-                }
-                parts.push_back(part + "}");
-            }
-            std::sort(parts.begin(), parts.end());
-            s += "[X"; for (const std::string& p : parts) s += p; s += ']';
-        }
-        return s;
-    };
-
     // One occurrence per (statement, thread instance), indexed by object (C1 ->
     // "same bucket") as collected, so the points-to set is consumed straight into
     // the buckets and never stored per occurrence.
-    struct Occ { const SVFStmt* stmt; const ICFGNode* node; bool isStore;
-                 NodeID tid; NodeBS interleav; std::string lsig; };
-    std::vector<Occ> occs;
-    Map<NodeID, std::vector<size_t>> objToOcc;
+    std::vector<RaceOccurrence> occurrences;
+    Map<NodeID, std::vector<size_t>> objectToOccurrences;
     for (const auto& item : *callGraph) {
-        const FunObjVar* F = item.second->getFunction();
-        if (!F || !F->hasBasicBlock()) continue;
-        for (auto bbit : *F)
-            for (const ICFGNode* node : bbit.second->getICFGNodeList()) {
+        const FunObjVar* fun = item.second->getFunction();
+        if (!fun || !fun->hasBasicBlock()) continue;
+        for (auto bbIt : *fun)
+            for (const ICFGNode* node : bbIt.second->getICFGNodeList()) {
                 if (!mhp->hasThreadStmtSet(node)) continue;          // screen 1: concurrent?
                 for (const SVFStmt* stmt : svfIr->getSVFStmtList(node)) {
-                    NodeID var; bool isStore;
-                    if (auto* l = SVFUtil::dyn_cast<LoadStmt>(stmt)) { var=l->getRHSVarID(); isStore=false; }
-                    else if (auto* s = SVFUtil::dyn_cast<StoreStmt>(stmt)) { var=s->getLHSVarID(); isStore=true; }
-                    else continue;
-                    PointsTo p = pta->getPts(var);
-                    p &= escSet;                                     // screen 2: touches shared object?
-                    if (p.empty()) continue;
-                    std::string lsig = lockSig(node);
-                    const size_t base = occs.size();
-                    for (const CxtThreadStmt& cts : mhp->getThreadStmtSet(node))
-                        occs.push_back({stmt, node, isStore, cts.getTid(),
-                                        mhp->getInterleavingThreads(cts), lsig});
-                    for (NodeID o : p)
-                        for (size_t k = base; k < occs.size(); ++k)
-                            objToOcc[o].push_back(k);
+                    NodeID accessedPtr; bool isStore;
+                    if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt)) {
+                        accessedPtr = load->getRHSVarID(); isStore = false;
+                    } else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt)) {
+                        accessedPtr = store->getLHSVarID(); isStore = true;
+                    } else continue;
+                    PointsTo objects = pta->getPts(accessedPtr);
+                    objects &= escSet;                               // screen 2: touches shared object?
+                    if (objects.empty()) continue;
+                    std::string sig = lockSignature(lockAnalysis, node);
+                    const size_t firstNew = occurrences.size();
+                    for (const CxtThreadStmt& threadStmt : mhp->getThreadStmtSet(node))
+                        occurrences.push_back({stmt, node, isStore, threadStmt.getTid(),
+                                               mhp->getInterleavingThreads(threadStmt), sig});
+                    for (NodeID object : objects)
+                        for (size_t k = firstNew; k < occurrences.size(); ++k)
+                            objectToOccurrences[object].push_back(k);
                 }
             }
     }
 
-    // C3: distinct threads must mutually interleave; the same thread self-races
-    // only when it is multiforked (>1 dynamic instance).
-    auto raceMHP = [&](const Occ& a, const Occ& b) -> bool {
-        if (a.tid != b.tid) return a.interleav.test(b.tid) && b.interleav.test(a.tid);
-        return mhp->getTCT()->getTCTNode(a.tid)->isMultiforked();
-    };
-    auto commit = [&](const Occ& a, const Occ& b) {
-        const SVFStmt* s1 = a.stmt; const SVFStmt* s2 = b.stmt;
-        if (s2 < s1) std::swap(s1, s2);
-        outRacePairs.insert(RacePair(s1, s2));
-    };
     // Within each object, occurrences sharing the race predicate's inputs (tid,
     // interleaving, isStore, lock sig) race the same partners, so collapse into a
     // class and judge C2/C3/C4 once per class pair -- O(classes^2) not O(occ^2).
-    for (const auto& kv : objToOcc) {
-        struct Cls { bool isStore, locked; size_t rep; std::vector<size_t> members; };
-        std::vector<Cls> classes;
+    for (const auto& objectAndOccs : objectToOccurrences) {
+        struct RaceClass { bool isStore, locked; size_t rep; std::vector<size_t> members; };
+        std::vector<RaceClass> classes;
         Map<std::string, size_t> keyToClass;
-        for (size_t idx : kv.second) {
-            const Occ& o = occs[idx];
+        for (size_t occIdx : objectAndOccs.second) {
+            const RaceOccurrence& occ = occurrences[occIdx];
             std::string key;
-            key += std::to_string(o.tid);
-            key += o.isStore ? 'S' : 'L';
-            key += '|'; key += o.lsig;            // lock signature (sound merge key)
+            key += std::to_string(occ.tid);
+            key += occ.isStore ? 'S' : 'L';
+            key += '|'; key += occ.lockSig;       // lock signature (sound merge key)
             key += '|';
-            for (NodeID t : o.interleav) { key += std::to_string(t); key += ','; }
-            auto it = keyToClass.find(key);
-            if (it == keyToClass.end()) {
+            for (NodeID interleaved : occ.interleav) { key += std::to_string(interleaved); key += ','; }
+            auto found = keyToClass.find(key);
+            if (found == keyToClass.end()) {
                 keyToClass[key] = classes.size();
-                classes.push_back({o.isStore, o.lsig != "U", idx, {idx}});
+                classes.push_back({occ.isStore, occ.lockSig != "U", occIdx, {occIdx}});
             } else
-                classes[it->second].members.push_back(idx);
+                classes[found->second].members.push_back(occIdx);
         }
-        for (size_t a = 0; a < classes.size(); ++a)
-            for (size_t b = a; b < classes.size(); ++b) {
-                Cls& ca = classes[a]; Cls& cb = classes[b];
-                if (!ca.isStore && !cb.isStore) continue;             // C2
-                const Occ& ra = occs[ca.rep]; const Occ& rb = occs[cb.rep];
-                if (!raceMHP(ra, rb)) continue;                       // C3
-                // C4 + emit. Lock relation is uniform per class (the reps decide
-                // it), so emit a statement-COVERING set -- every racy member as an
-                // endpoint -- preserving the racy-statement set with O(|members|)
-                // pairs. A class with itself also has self-pairs, checked per member.
-                if (a != b) {
-                    if (ca.locked && cb.locked &&
-                        lockAnalysis->isProtectedByCommonLock(ra.node, rb.node))
+        for (size_t firstIdx = 0; firstIdx < classes.size(); ++firstIdx)
+            for (size_t secondIdx = firstIdx; secondIdx < classes.size(); ++secondIdx) {
+                RaceClass& firstClass = classes[firstIdx];
+                RaceClass& secondClass = classes[secondIdx];
+                if (!firstClass.isStore && !secondClass.isStore) continue;   // C2: >=1 write
+                const RaceOccurrence& firstRep = occurrences[firstClass.rep];
+                const RaceOccurrence& secondRep = occurrences[secondClass.rep];
+                if (!occurrencesRace(mhp, firstRep, secondRep)) continue;    // C3
+                // C4 + emit. Lock relation is uniform per class (the reps decide it),
+                // so emit a statement-COVERING set -- every racy member as an endpoint.
+                if (firstIdx != secondIdx) {
+                    if (firstClass.locked && secondClass.locked &&
+                        lockAnalysis->isProtectedByCommonLock(firstRep.node, secondRep.node))
                         continue;
-                    for (size_t ia : ca.members) commit(occs[ia], occs[cb.members[0]]);
-                    for (size_t ib : cb.members) commit(occs[ca.members[0]], occs[ib]);
+                    for (size_t memberIdx : firstClass.members)
+                        commitRacePair(outRacePairs, occurrences[memberIdx],
+                                       occurrences[secondClass.members[0]]);
+                    for (size_t memberIdx : secondClass.members)
+                        commitRacePair(outRacePairs, occurrences[firstClass.members[0]],
+                                       occurrences[memberIdx]);
                 } else {
-                    const std::vector<size_t>& M = ca.members;
-                    // Do two DISTINCT members race? (uniform lock relation by lock sig)
-                    bool crossRaces = M.size() >= 2 &&
-                        (!ca.locked ||
-                         !lockAnalysis->isProtectedByCommonLock(occs[M[0]].node, occs[M[1]].node));
-                    if (crossRaces) {
-                        for (size_t i = 0; i < M.size(); ++i)
-                            commit(occs[M[i]], occs[M[i == 0 ? 1 : 0]]);
-                    } else {
-                        // No cross race; a member still self-races (two instances of
-                        // one multiforked statement) when it is not self-locked.
-                        for (size_t idx : M)
-                            if (!ca.locked ||
-                                !lockAnalysis->isProtectedByCommonLock(occs[idx].node, occs[idx].node))
-                                commit(occs[idx], occs[idx]);
-                    }
+                    const std::vector<size_t>& members = firstClass.members;
+                    // Multiforked self-race: every member self-races a concurrent
+                    // instance of itself, independent of any cross-race below.
+                    for (size_t memberIdx : members)
+                        if (!firstClass.locked ||
+                            !lockAnalysis->isProtectedByCommonLock(occurrences[memberIdx].node,
+                                                                   occurrences[memberIdx].node))
+                            commitRacePair(outRacePairs, occurrences[memberIdx], occurrences[memberIdx]);
+                    // Cross-race needs >=2 members: two distinct occurrences to pair.
+                    if (members.size() >= 2 &&
+                        (!firstClass.locked ||
+                         !lockAnalysis->isProtectedByCommonLock(occurrences[members[0]].node,
+                                                                occurrences[members[1]].node)))
+                        for (size_t pos = 0; pos < members.size(); ++pos)
+                            commitRacePair(outRacePairs, occurrences[members[pos]],
+                                           occurrences[members[pos == 0 ? 1 : 0]]);
                 }
             }
     }

@@ -554,11 +554,9 @@ bool SlicedMTA::runFinalRaceDetection()
     timePhase("Final Race Detection", [&]()
     {
         detectedPairs = detectRacePairsOnSlicedGraph(
-                            racePairs,        // Use pre-analysis race pairs
                             getMainPTA(),     // Use flow-sensitive FSAM points-to
                             slicedMhp.get(),
-                            slicedLockAnalysis.get(),
-                            mtaSlicedView.get());
+                            slicedLockAnalysis.get());
     });
 
     SVFUtil::outs() << "\n=== Race Detection Summary ===\n";
@@ -619,8 +617,7 @@ void SlicedMTA::runWholeProgramDetection()
     timePhase("Final Race Detection (whole program)", [&]()
     {
         detectedPairs = detectRacePairsOnSlicedGraph(
-                            racePairs, getMainPTA(), slicedMhp.get(),
-                            slicedLockAnalysis.get(), ptaSlicedView.get());
+                            getMainPTA(), slicedMhp.get(), slicedLockAnalysis.get());
     });
 
     SVFUtil::outs() << "\n=== Race Detection Summary ===\n";
@@ -747,33 +744,21 @@ std::set<const FunObjVar*> SlicedMTA::detectAllThreadFunctions(CallGraph* callGr
 
 // Detect race pairs on the sliced graph using sliced analysis results.
 std::set<SlicedMTA::RacePair> SlicedMTA::detectRacePairsOnSlicedGraph(
-    const std::set<RacePair>& preAnalysisRacePairs,
     BVDataPTAImpl* slicedPTA,
     MHP* slicedMHP,
-    LockAnalysis* slicedLockAnalysis,
-    const SlicedSVFIRView* slicedView) {
+    LockAnalysis* slicedLockAnalysis) {
 
     std::set<RacePair> filteredRacePairs;
 
-    // Re-check each candidate race pair on the sliced graph: it survives only if
-    // the statements still (1) may happen in parallel under the sliced ILA,
-    // (2) are not protected by a common lock, and (3) have intersecting points-to
-    // under the flow-sensitive FSAM. Stages (1)/(2) preserve the whole-program
-    // result (the sliced ILA recomputes the same MHP/lock facts); stage (3) is the
-    // flow-sensitive refinement that prunes candidates the flow-insensitive
-    // pre-analysis over-approximated.
-    for (const RacePair& pair : preAnalysisRacePairs) {
-        const ICFGNode* node1 = pair.stmt1->getICFGNode();
-        const ICFGNode* node2 = pair.stmt2->getICFGNode();
+    // Re-derive candidates at the main context on this graph: slicedMHP carries
+    // only kept nodes, so the sliced and whole runs invoke the identical detector.
+    std::set<RacePair> candidatePairs;
+    MTA::detectRace(svfIr, preAnder, slicedMHP, slicedLockAnalysis,
+                    preAnder->getCallGraph(), candidatePairs);
 
-        // Check if they may happen in parallel (using sliced MHP)
-        if (!slicedMHP->mayHappenInParallelCache(node1, node2))
-            continue;
-
-        // Check if they are protected by common lock (using sliced LockAnalysis)
-        if (slicedLockAnalysis->isProtectedByCommonLock(node1, node2))
-            continue;
-
+    // The only remaining screen is the flow-sensitive points-to refinement (the
+    // ILA conditions C1-C4 were already applied by detectRace above).
+    for (const RacePair& pair : candidatePairs) {
         // Re-check points-to intersection using sliced PTA
         PointsTo pts1, pts2;
         if (const LoadStmt* ldStmt1 = SVFUtil::dyn_cast<LoadStmt>(pair.stmt1)) {
