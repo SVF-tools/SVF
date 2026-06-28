@@ -871,24 +871,10 @@ void SlicedTCT::build()
         return;
     }
 
-    // The base TCT(p) constructor already built the whole-program TCT. Free the
-    // existing graph nodes/edges and bookkeeping so the slice rebuilds from a
-    // clean graph (addGNode reissues ids from 0; stale nodes left in IDToNodeMap
-    // would later fail the getCxtOfCxtThread lookup in MHP).
-    destroy();
-    IDToNodeMap.clear();
-    ctpToNodeMap.clear();
-    ctToForkCxtsMap.clear();
-    ctToRoutineFunMap.clear();
-    candidateFuncSet.clear();
-    entryFuncSet.clear();
-    joinSiteToLoopMap.clear();
-    inRecurJoinSites.clear();
-    ctpList.clear();
-    visitedCTPs.clear();
-    TCTNodeNum = 0;
-    TCTEdgeNum = 0;
-    MaxCxtSize = 0;
+    // The base TCT(p) constructor already built the whole-program TCT. Reset it to
+    // a clean graph so the slice rebuilds from scratch (addGNode reissues ids from
+    // 0; stale nodes left behind would later fail the MHP getCxtOfCxtThread lookup).
+    reset();
 
     // Call base class build() which will call our overridden methods
     // (markRelProcs, collectLoopInfoForJoin, collectEntryFunInCallGraph)
