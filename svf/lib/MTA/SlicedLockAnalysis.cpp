@@ -81,7 +81,7 @@ const CallGraph* SlicedLockAnalysis::getAnalysisCallGraph() const
 {
     // Prefer the sliced ThreadCallGraph view; fall back to the full CallGraph.
     if (slicedView != nullptr && slicedView->getThreadCallGraph() != nullptr)
-        return slicedView->getThreadCallGraph()->getCallGraph();
+        return slicedView->getThreadCallGraph()->getOriginalCallGraph();
     return PAG::getPAG()->getCallGraph();
 }
 

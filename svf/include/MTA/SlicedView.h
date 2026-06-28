@@ -89,7 +89,7 @@ public:
     void dump(const std::string& filename) const;
 
     /// Get original ICFG
-    SVF::ICFG* getICFG() const { return icfg; }
+    SVF::ICFG* getOriginalICFG() const { return icfg; }
 
 private:
     SVF::ICFG* icfg;
@@ -149,11 +149,9 @@ public:
     /// Get all kept nodes
     const std::set<const SVF::CallGraphNode*>& getKeptNodes() const { return keptNodes; }
 
-    const std::set<const SVF::FunObjVar*> getKeptFunctions() const
+    const std::unordered_set<const SVF::FunObjVar*>& getKeptFunctions() const
     {
-        std::set<const SVF::FunObjVar*> keptFunctions;
-        keptFunctions.insert(keptFunctionsSet.begin(), keptFunctionsSet.end());
-        return keptFunctions;
+        return keptFunctionsSet;
     }
 
     /// Get all kept edges
@@ -168,10 +166,10 @@ public:
     void dump(const std::string& filename) const;
 
     /// Get original ThreadCallGraph
-    SVF::ThreadCallGraph* getThreadCallGraph() const { return tcg; }
+    SVF::ThreadCallGraph* getOriginalThreadCallGraph() const { return tcg; }
 
     /// Get original CallGraph (ThreadCallGraph inherits from CallGraph)
-    SVF::CallGraph* getCallGraph() const { return tcg; }
+    SVF::CallGraph* getOriginalCallGraph() const { return tcg; }
 
 private:
     SVF::ThreadCallGraph* tcg;
@@ -209,7 +207,7 @@ public:
     SlicedThreadCallGraphView* getThreadCallGraph() { return tcgView.get(); }
 
     /// Get all kept functions
-    const std::set<const SVF::FunObjVar*> getKeptFunctions() const {
+    const std::unordered_set<const SVF::FunObjVar*>& getKeptFunctions() const {
         return tcgView->getKeptFunctions();
     }
 
@@ -219,7 +217,7 @@ public:
     }
 
     /// Get all kept statements
-    const std::set<const SVF::SVFStmt*> getKeptStatements() const {
+    const std::set<const SVF::SVFStmt*>& getKeptStatements() const {
         return pagView->getKeptStmts();
     }
 

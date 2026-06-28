@@ -142,7 +142,7 @@ std::set<const SVFStmt*> SlicerBase::getDependentThreadCreate(const SVFStmt* stm
 // granularity: the value-flow nodes reachable backward from the seeds. The
 // value-flow edges already capture direct (top-level), indirect (address-taken
 // / MemSSA), and thread-aware (interference) data dependence.
-std::set<const SVFGNode*> SlicerBase::dataDependenceSVFGNodes(
+std::set<const SVFGNode*> SlicerBase::computeDataDependenceSVFGNodes(
     const std::set<const SVFStmt*>& seeds, SVF::SVFG* vfg) {
 
     assert(vfg != nullptr && "data-dependence slice requires the thread-aware VFG_pre");
@@ -209,7 +209,7 @@ std::set<const ICFGNode*> SlicerBase::svfgNodesToICFGNodes(
 
 std::set<const ICFGNode*> SlicerBase::sliceDataDependenceOverVFG(
     const std::set<const SVFStmt*>& seeds, SVF::SVFG* vfg) {
-    return svfgNodesToICFGNodes(dataDependenceSVFGNodes(seeds, vfg), seeds);
+    return svfgNodesToICFGNodes(computeDataDependenceSVFGNodes(seeds, vfg), seeds);
 }
 
 // Helper: Collect pthread-related statements (create and join)
@@ -350,7 +350,7 @@ std::set<const ICFGNode*> SlicerBase::buildBackwardICFGNodeSet(
 }
 
 // Perform dual slicing (temporal slicing): filter statements based on control flow and parallel execution
-std::set<const ICFGNode*> SlicerBase::performDualSlicing(
+std::set<const ICFGNode*> SlicerBase::runDualSlicing(
     const std::set<const ICFGNode*>& slicedNodes) {
     std::set<const ICFGNode*> dualSlicedNodes;
 
@@ -488,7 +488,7 @@ MTASlicer::MTASlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
 }
 
 // Perform slicing for MTA (includes function expansion for IRView)
-std::set<const ICFGNode*> MTASlicer::performSlicing(
+std::set<const ICFGNode*> MTASlicer::runSlicing(
     const std::set<const SVFStmt*>& vulnerableStatements,
     const std::set<const ICFGNode*>& threadVFSources) {
 
@@ -516,7 +516,7 @@ std::set<const ICFGNode*> MTASlicer::performSlicing(
     initialSliceResult.insert(threadVFSources.begin(), threadVFSources.end());
 
     // Step 3: Perform dual slicing (temporal slicing)
-    std::set<const ICFGNode*> dualSlicedNodes = performDualSlicing(initialSliceResult);
+    std::set<const ICFGNode*> dualSlicedNodes = runDualSlicing(initialSliceResult);
 
     // Step 4: Expand keptNodes to include call/ret nodes and function entry/exit
     // nodes (call dependence).
@@ -537,14 +537,14 @@ PTASlicer::PTASlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
 const std::set<const SVFGNode*>& PTASlicer::getRetainedSVFGNodes(
     const std::set<const SVFStmt*>& vulnerableStatements) {
     if (!retainedComputed) {
-        retainedSVFGNodes = dataDependenceSVFGNodes(vulnerableStatements, vfg);
+        retainedSVFGNodes = computeDataDependenceSVFGNodes(vulnerableStatements, vfg);
         retainedComputed = true;
     }
     return retainedSVFGNodes;
 }
 
 // Perform slicing for pointer analysis (returns only node set, no IRView needed)
-std::set<const ICFGNode*> PTASlicer::performSlicing(
+std::set<const ICFGNode*> PTASlicer::runSlicing(
     const std::set<const SVFStmt*>& vulnerableStatements) {
 
     // Step 1: paper-faithful (§4.3) data-dependence slice over the thread-aware
@@ -553,7 +553,7 @@ std::set<const ICFGNode*> PTASlicer::performSlicing(
         svfgNodesToICFGNodes(getRetainedSVFGNodes(vulnerableStatements), vulnerableStatements);
 
     // Step 2: Perform dual slicing (temporal slicing)
-    std::set<const ICFGNode*> dualSlicedNodes = performDualSlicing(initialSliceResult);
+    std::set<const ICFGNode*> dualSlicedNodes = runDualSlicing(initialSliceResult);
 
     return dualSlicedNodes;
 }
@@ -570,7 +570,7 @@ SingleSlicer::SingleSlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
 // Single-pass slice (the baseline of MSli §3/§5.4): the transitive closure of
 // the target statements under the COMBINED dependence graph -- synchronization,
 // data, and call dependence -- yielding one slice shared by ILA and FSPTA.
-std::set<const ICFGNode*> SingleSlicer::performSlicing(
+std::set<const ICFGNode*> SingleSlicer::runSlicing(
     const std::set<const SVFStmt*>& vulnerableStatements) {
 
     // Step 1: Synchronization dependence -- the relevant pthread (fork/join) and
@@ -620,7 +620,7 @@ std::set<const ICFGNode*> SingleSlicer::performSlicing(
         SVFUtil::writeWrnMsg("SingleSlicer reached max iterations, may not have converged");
 
     // Step 4: One dual-slicing (temporal) pass at the end.
-    return performDualSlicing(currentNodes);
+    return runDualSlicing(currentNodes);
 }
 
 } // namespace SVF

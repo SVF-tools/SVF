@@ -63,7 +63,7 @@ void SlicedMHP::updateNonCandidateFunInterleaving()
     // Use the sliced ThreadCallGraph view if available, else the full CallGraph.
     const CallGraph* cg = nullptr;
     if (slicedView != nullptr && slicedView->getThreadCallGraph() != nullptr) {
-        cg = slicedView->getThreadCallGraph()->getCallGraph();
+        cg = slicedView->getThreadCallGraph()->getOriginalCallGraph();
     }
     if (cg == nullptr) {
         cg = PAG::getPAG()->getCallGraph();

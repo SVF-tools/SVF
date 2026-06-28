@@ -113,8 +113,8 @@ private:
     void runWholeProgramDetection();
 
     // --- observe modes (soundness / query-preservation checking) ---
-    void observeFSAM();
-    void observeFSAMSliced();
+    void runObserveFSAM();
+    void runObserveFSAMSliced();
 
     /// Main pointer-analysis instance feeding final race detection (the
     /// flow-sensitive FSAM, a BVDataPTAImpl queried polymorphically).

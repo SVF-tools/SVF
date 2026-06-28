@@ -214,7 +214,7 @@ void MTASVFGBuilder::collectLoadStoreSVFGNodes()
 /*!
  * Add (or merge into) a thread-MHP indirect value-flow edge src -> dst.
  */
-SVFGEdge* MTASVFGBuilder::addTDEdges(NodeID srcId, NodeID dstId, const PointsTo& pts)
+SVFGEdge* MTASVFGBuilder::addTDEdge(NodeID srcId, NodeID dstId, const PointsTo& pts)
 {
     SVFGNode* srcNode = svfg->getSVFGNode(srcId);
     SVFGNode* dstNode = svfg->getSVFGNode(dstId);
@@ -316,7 +316,7 @@ MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getSuccNodes(const StmtSVFGNode* n
 /*!
  * Whether, for all lock spans n belongs to, n is the first write (span head).
  */
-bool MTASVFGBuilder::isHeadofSpan(const StmtSVFGNode* n)
+bool MTASVFGBuilder::isHeadOfSpan(const StmtSVFGNode* n)
 {
     if (headmap.find(n) != headmap.end())
         return headmap[n];
@@ -338,7 +338,7 @@ bool MTASVFGBuilder::isHeadofSpan(const StmtSVFGNode* n)
 /*!
  * Whether, for all lock spans n belongs to, n is the last write (span tail).
  */
-bool MTASVFGBuilder::isTailofSpan(const StmtSVFGNode* n)
+bool MTASVFGBuilder::isTailOfSpan(const StmtSVFGNode* n)
 {
     assert(SVFUtil::isa<StoreSVFGNode>(n) && "tail test only for store nodes");
 
@@ -430,12 +430,12 @@ void MTASVFGBuilder::handleStoreLoad(const StmtSVFGNode* n1, const StmtSVFGNode*
 
     if (commonLock)
     {
-        if (isTailofSpan(n1) && isHeadofSpan(n2))
-            addTDEdges(n1->getId(), n2->getId(), pts);
+        if (isTailOfSpan(n1) && isHeadOfSpan(n2))
+            addTDEdge(n1->getId(), n2->getId(), pts);
     }
     else
     {
-        addTDEdges(n1->getId(), n2->getId(), pts);
+        addTDEdge(n1->getId(), n2->getId(), pts);
     }
 }
 
@@ -463,15 +463,15 @@ void MTASVFGBuilder::handleStoreStore(const StmtSVFGNode* n1, const StmtSVFGNode
 
     if (commonLock)
     {
-        if (isTailofSpan(n1) && isHeadofSpan(n2))
-            addTDEdges(n1->getId(), n2->getId(), pts);
-        if (isTailofSpan(n2) && isHeadofSpan(n1))
-            addTDEdges(n2->getId(), n1->getId(), pts);
+        if (isTailOfSpan(n1) && isHeadOfSpan(n2))
+            addTDEdge(n1->getId(), n2->getId(), pts);
+        if (isTailOfSpan(n2) && isHeadOfSpan(n1))
+            addTDEdge(n2->getId(), n1->getId(), pts);
     }
     else
     {
-        addTDEdges(n1->getId(), n2->getId(), pts);
-        addTDEdges(n2->getId(), n1->getId(), pts);
+        addTDEdge(n1->getId(), n2->getId(), pts);
+        addTDEdge(n2->getId(), n1->getId(), pts);
     }
 }
 
