@@ -45,8 +45,8 @@ using namespace SVF;
 namespace SVF
 {
 
-SlicedLockAnalysis::SlicedLockAnalysis(TCT* t, const SlicedSVFIRView* sv)
-    : LockAnalysis(t), slicedView(sv)
+SlicedLockAnalysis::SlicedLockAnalysis(TCT* tct, const SlicedSVFIRView* slicedView)
+    : LockAnalysis(tct), slicedView(slicedView)
 {
     // ICFG view from slicedView if available, otherwise nullptr (full ICFG).
     icfgView = (slicedView != nullptr) ? slicedView->getICFG() : nullptr;

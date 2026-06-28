@@ -63,8 +63,8 @@ namespace SVF
 //===----------------------------------------------------------------------===//
 
 SlicerBase::SlicerBase(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
-                       LockAnalysis* lockAnalysis)
-    : svfIr(svfIr), pta(pta), mhp(mhp), lockAnalysis(lockAnalysis) {
+                       LockAnalysis* lockAnalysis, SVF::SVFG* vfg)
+    : svfIr(svfIr), pta(pta), mhp(mhp), lockAnalysis(lockAnalysis), vfg(vfg) {
     callGraph = pta->getCallGraph();
 }
 
@@ -529,7 +529,7 @@ std::set<const ICFGNode*> MTASlicer::runSlicing(
 
 PTASlicer::PTASlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
                      LockAnalysis* lockAnalysis, SVF::SVFG* vfg)
-    : SlicerBase(svfIr, pta, mhp, lockAnalysis), vfg(vfg) {
+    : SlicerBase(svfIr, pta, mhp, lockAnalysis, vfg) {
 }
 
 // The FSPTA data-dependence slice at SVFG-node granularity (memoised so the
@@ -564,7 +564,7 @@ std::set<const ICFGNode*> PTASlicer::runSlicing(
 
 SingleSlicer::SingleSlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
                            LockAnalysis* lockAnalysis, SVF::SVFG* vfg)
-    : SlicerBase(svfIr, pta, mhp, lockAnalysis), vfg(vfg) {
+    : SlicerBase(svfIr, pta, mhp, lockAnalysis, vfg) {
 }
 
 // Single-pass slice (the baseline of MSli §3/§5.4): the transitive closure of

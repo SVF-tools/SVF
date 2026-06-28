@@ -63,12 +63,18 @@ class SlicedSVFIRView;
  * (MTASlicer, PTASlicer).
  */
 class SlicerBase {
+public:
+    SlicerBase(SVFIR* svfIr, AndersenBase* pta, SVF::MHP* mhp,
+               SVF::LockAnalysis* lockAnalysis, SVF::SVFG* vfg = nullptr);
+    virtual ~SlicerBase();
+
 protected:
     SVFIR* svfIr;
     AndersenBase* pta;
     SVF::MHP* mhp;
     SVF::LockAnalysis* lockAnalysis;
     CallGraph* callGraph;
+    SVF::SVFG* vfg;   ///< thread-aware VFG_pre (PTA/Single slicers; null for MTA)
 
     // === Data flow analysis helper ===
     /**
@@ -132,11 +138,6 @@ protected:
      */
     std::set<const ICFGNode*> runDualSlicing(
         const std::set<const ICFGNode*>& slicedNodes);
-
-public:
-    SlicerBase(SVFIR* svfIr, AndersenBase* pta, SVF::MHP* mhp,
-               SVF::LockAnalysis* lockAnalysis);
-    virtual ~SlicerBase();
 };
 
 /**
@@ -171,9 +172,6 @@ public:
  * Performs backward data-dependence slicing over the thread-aware VFG_pre.
  */
 class PTASlicer : public SlicerBase {
-private:
-    SVF::SVFG* vfg; ///< thread-aware VFG_pre (built once in pre-analysis)
-
 public:
     PTASlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
               LockAnalysis* lockAnalysis, SVF::SVFG* vfg = nullptr);
@@ -211,9 +209,6 @@ private:
  * dependence until convergence, then a single dual-slicing pass.
  */
 class SingleSlicer : public SlicerBase {
-private:
-    SVF::SVFG* vfg; ///< thread-aware VFG_pre (built once in pre-analysis)
-
 public:
     SingleSlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
                  LockAnalysis* lockAnalysis, SVF::SVFG* vfg = nullptr);

@@ -56,7 +56,7 @@ void FSMPTA::processNode(NodeID nodeId)
         {
             const StmtSVFGNode* stmt = SVFUtil::cast<StmtSVFGNode>(node);
             const ICFGNode* icfg = stmt->getICFGNode();
-            if (icfg && keptNodes.find(icfg) == keptNodes.end())
+            if (icfg && !slicedView->getICFG()->isKeptNode(icfg))
                 return; // sliced away -- leave inert
         }
     }
