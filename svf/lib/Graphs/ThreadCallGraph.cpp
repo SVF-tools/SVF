@@ -210,20 +210,27 @@ void ThreadCallGraph::addDirectJoinEdge(const CallICFGNode* cs,const CallSiteSet
 
     for (CallSiteSet::const_iterator it = forkset.begin(), eit = forkset.end(); it != eit; ++it)
     {
-
-        const FunObjVar* threadRoutineFun =
-            SVFUtil::dyn_cast<FunValVar>(tdAPI->getForkedFun(*it))->getFunction();
-        assert(threadRoutineFun && "thread routine function does not exist");
-        CallGraphNode* threadRoutineFunNode = getCallGraphNode(threadRoutineFun);
-        CallSiteID csId = addCallSite(cs, threadRoutineFun);
-
-        if (!hasThreadJoinEdge(cs,joinFunNode,threadRoutineFunNode, csId))
+        // The start routine(s) joined here are exactly the targets of the fork
+        // edges already resolved for this fork site (direct, or indirect via
+        // points-to in updateCallGraph). Reuse them rather than re-resolving the
+        // fork target from getForkedFun, which is not a FunValVar for an indirect
+        // fork (function pointer). An unresolved fork site simply has no edges.
+        if (!hasThreadForkEdge(*it))
+            continue;
+        for (ForkEdgeSet::const_iterator eit2 = getForkEdgeBegin(*it),
+                eeit2 = getForkEdgeEnd(*it); eit2 != eeit2; ++eit2)
         {
-            assert(cs->getCaller() == joinFunNode->getFunction() && "callee instruction not inside caller??");
-            ThreadJoinEdge* edge = new ThreadJoinEdge(joinFunNode,threadRoutineFunNode,csId);
-            edge->addDirectCallSite(cs);
+            CallGraphNode* threadRoutineFunNode = (*eit2)->getDstNode();
+            CallSiteID csId = addCallSite(cs, threadRoutineFunNode->getFunction());
 
-            addThreadJoinEdgeSetMap(cs, edge);
+            if (!hasThreadJoinEdge(cs,joinFunNode,threadRoutineFunNode, csId))
+            {
+                assert(cs->getCaller() == joinFunNode->getFunction() && "callee instruction not inside caller??");
+                ThreadJoinEdge* edge = new ThreadJoinEdge(joinFunNode,threadRoutineFunNode,csId);
+                edge->addDirectCallSite(cs);
+
+                addThreadJoinEdgeSetMap(cs, edge);
+            }
         }
     }
 }
