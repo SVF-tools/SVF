@@ -188,15 +188,7 @@ void FlowSensitive::finalize()
         Map<PointsTo, unsigned> allPts = ptd->getAllPts(true);
         // TODO: parameterise final arg.
         NodeIDAllocator::Clusterer::evaluate(*PointsTo::getCurrentBestNodeMapping(), allPts, stats, true);
-        NodeIDAllocator::Clusterer::printStats("post-main: best", stats);
-
-        // Do the same for the candidates. TODO: probably temporary for eval. purposes.
-        for (std::pair<hclust_fast_methods, std::vector<NodeID>> &candidate : candidateMappings)
-        {
-            // Can reuse stats, since we're always filling it with `evaluate`, it will always be overwritten.
-            NodeIDAllocator::Clusterer::evaluate(candidate.second, allPts, stats, true);
-            NodeIDAllocator::Clusterer::printStats("post-main: candidate " + SVFUtil::hclustMethodToString(candidate.first), stats);
-        }
+        if (print_stat) { NodeIDAllocator::Clusterer::printStats("post-main: best", stats); }
     }
 
     BVDataPTAImpl::finalize();
@@ -831,7 +823,9 @@ void FlowSensitive::cluster(void)
         keys.emplace_back(pair.first, 1);
 
     PointsTo::MappingPtr nodeMapping =
-        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(ander, keys, candidateMappings, "aux-ander"));
+        std::make_shared<std::vector<NodeID>>(
+            NodeIDAllocator::Clusterer::cluster(ander, keys, candidateMappings, "aux-ander", print_stat)
+        );
     PointsTo::MappingPtr reverseNodeMapping =
         std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
 
