@@ -348,7 +348,7 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
                            vfgPre /* data dependence over the thread-aware VFG_pre */);
         timePhase("Unified Slicing", [&]()
         {
-            singleSlicedNodes = singleSlicer->performSlicing(vulnerableStatements);
+            singleSlicedNodes = singleSlicer->runSlicing(vulnerableStatements);
         });
         mtaSlicedNodes = singleSlicedNodes;
         SVFUtil::outs() << "Unified sliced to " << mtaSlicedNodes.size() << " nodes\n";
@@ -389,7 +389,7 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
                         << (useThreadVFSources ? "\n" : " (ablation: [THREAD-VF] sources OFF)\n");
         timePhase("MTA Slicing", [&]()
         {
-            mtaSlicedNodes = mtaSlicer->performSlicing(vulnerableStatements, threadVFSources);
+            mtaSlicedNodes = mtaSlicer->runSlicing(vulnerableStatements, threadVFSources);
         });
         SVFUtil::outs() << "MTA sliced to " << mtaSlicedNodes.size() << " nodes\n";
     } // end differential MTA slice
@@ -485,7 +485,7 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
 
         timePhase("PTA Slicing", [&]()
         {
-            ptaSlicedNodes = ptaSlicer->performSlicing(vulnerableStatements);
+            ptaSlicedNodes = ptaSlicer->runSlicing(vulnerableStatements);
         });
         SVFUtil::outs() << "PTA sliced to " << ptaSlicedNodes.size() << " nodes\n";
     }
@@ -649,7 +649,7 @@ void SlicedMTA::runWholeProgramDetection()
 }
 
 // Observe whole-program FSAM points-to and ILA (Layer 1) for soundness checking.
-void SlicedMTA::observeFSAM()
+void SlicedMTA::runObserveFSAM()
 {
     SVFUtil::outs() << "\n===== [OBSERVE] Flow-sensitive FSAM points-to & ILA =====\n";
     MTASVFGBuilder::numOfNewSVFGEdges = 0;
@@ -667,7 +667,7 @@ void SlicedMTA::observeFSAM()
 // Observe SLICED FSAM points-to (Layer 2): compute the FSMPTA slice from the race
 // targets, then run the sliced flow-sensitive analysis and dump pt at the query
 // load. Used to check query preservation (sliced pt == unsliced pt).
-void SlicedMTA::observeFSAMSliced()
+void SlicedMTA::runObserveFSAMSliced()
 {
     SVFUtil::outs() << "\n===== [OBSERVE-SLICED] Sliced flow-sensitive FSAM points-to =====\n";
     if (racePairs.empty())
@@ -677,7 +677,7 @@ void SlicedMTA::observeFSAMSliced()
     }
     std::set<const SVFStmt*> vuln = getVulnerableStmts();
     PTASlicer slicer(svfIr, preAnder, mhp.get(), lockAnalysis.get(), vfgPre);
-    std::set<const ICFGNode*> ptaSlicedNodes = slicer.performSlicing(vuln);
+    std::set<const ICFGNode*> ptaSlicedNodes = slicer.runSlicing(vuln);
     SlicedSVFIRView view(svfIr, preAnder->getCallGraph(), svfIr->getICFG(), ptaSlicedNodes);
     SVFUtil::outs() << "Sliced to " << ptaSlicedNodes.size() << " ICFG nodes\n";
 
@@ -709,13 +709,13 @@ void SlicedMTA::runOnModule(SVFIR* pag, const ResolveIndirectCalls& resolveIndir
     // Observe modes: dump FSAM points-to + ILA for soundness / query preservation.
     if (Options::MTAObserve())
     {
-        observeFSAM();
+        runObserveFSAM();
         SVFUtil::outs() << "\n=== Analysis Complete (observe) ===\n";
         return;
     }
     if (Options::MTAObserveSliced())
     {
-        observeFSAMSliced();
+        runObserveFSAMSliced();
         SVFUtil::outs() << "\n=== Analysis Complete (observe-sliced) ===\n";
         return;
     }

@@ -67,7 +67,8 @@ bool MTA::runOnModule(SVFIR* pag)
     DBOUT(DMTA, outs() << pasMsg("MTA analysis\n"));
 
     PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
-    pta->getCallGraph()->dump("ptacg");
+    if (Options::DumpMTAGraphs())
+        pta->getCallGraph()->dump("ptacg");
     pag->getICFG()->updateCallGraph(pta->getCallGraph());
 
     DBOUT(DGENERAL, outs() << pasMsg("Build TCT\n"));
@@ -84,7 +85,8 @@ bool MTA::runOnModule(SVFIR* pag)
         stat->performTCTStat(tct.get());
     }
 
-    tcg->dump("tcg");
+    if (Options::DumpMTAGraphs())
+        tcg->dump("tcg");
 
     mhp = computeMHP(tct.get());
     lsa = computeLocksets(tct.get());

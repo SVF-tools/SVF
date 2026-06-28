@@ -86,7 +86,7 @@ protected:
     /// VFG nodes reachable backward from the seeds. ThreadVF(VFG'_pre) is exactly
     /// the thread-aware edges whose *both* endpoints lie in this set, so ILA
     /// slicing uses it to restrict the [THREAD-VF] sources to surviving edges.
-    std::set<const SVF::VFGNode*> dataDependenceSVFGNodes(
+    std::set<const SVF::VFGNode*> computeDataDependenceSVFGNodes(
         const std::set<const SVFStmt*>& seeds, SVF::SVFG* vfg);
 
     /// Project the retained VFG nodes (plus the seeds) onto their ICFG nodes.
@@ -130,7 +130,7 @@ protected:
      * @param slicedNodes Set of statements from statement-level slicing
      * @return Set of ICFG nodes in the dual slice
      */
-    std::set<const ICFGNode*> performDualSlicing(
+    std::set<const ICFGNode*> runDualSlicing(
         const std::set<const ICFGNode*>& slicedNodes);
 
 public:
@@ -160,7 +160,7 @@ public:
      *        in-span non-interference witnesses collected while building VFG_pre).
      * @return Set of ICFG nodes in the slice (including call/ret and entry/exit nodes)
      */
-    std::set<const ICFGNode*> performSlicing(
+    std::set<const ICFGNode*> runSlicing(
         const std::set<const SVFStmt*>& vulnerableStatements,
         const std::set<const ICFGNode*>& threadVFSources = {});
 };
@@ -183,13 +183,13 @@ public:
      * @param vulnerableStatements Set of vulnerable statements to start slicing from
      * @return Set of ICFG nodes in the slice (without function expansion)
      */
-    std::set<const ICFGNode*> performSlicing(
+    std::set<const ICFGNode*> runSlicing(
         const std::set<const SVFStmt*>& vulnerableStatements);
 
     /**
      * The FSPTA data-dependence slice at SVFG-node granularity (memoised). ILA
      * slicing queries this before PTA slicing runs, to restrict the [THREAD-VF]
-     * sources to ThreadVF(VFG'_pre); performSlicing reuses the same set, so the
+     * sources to ThreadVF(VFG'_pre); runSlicing reuses the same set, so the
      * backward closure over VFG_pre is computed once and shared.
      */
     const std::set<const SVF::VFGNode*>& getRetainedSVFGNodes(
@@ -223,7 +223,7 @@ public:
      * @param vulnerableStatements Set of vulnerable statements to start slicing from
      * @return Set of ICFG nodes in the slice (including call/ret and entry/exit nodes)
      */
-    std::set<const ICFGNode*> performSlicing(
+    std::set<const ICFGNode*> runSlicing(
         const std::set<const SVFStmt*>& vulnerableStatements);
 };
 

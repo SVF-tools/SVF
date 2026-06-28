@@ -710,7 +710,7 @@ const ICFGNode* getFunEntry(const SlicedICFGView* icfgView, const FunObjVar* fun
         // returning it (a removed node) would strand the root/thread seed there --
         // getSuccNodes() yields nothing for a non-kept node -- so the function body
         // would never receive the thread's interleaving (a soundness bug).
-        if (ICFG* icfg = icfgView->getICFG())
+        if (ICFG* icfg = icfgView->getOriginalICFG())
         {
             if (const ICFGNode* fe = icfg->getFunEntryICFGNode(fun))
             {

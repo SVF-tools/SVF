@@ -125,14 +125,14 @@ private:
     void recordThreadVFSource(const StmtSVFGNode* s, const StmtSVFGNode* sp, bool commonLock);
 
     /// Add a thread-MHP indirect value-flow edge srcId -> dstId carrying pts.
-    SVFGEdge* addTDEdges(NodeID srcId, NodeID dstId, const PointsTo& pts);
+    SVFGEdge* addTDEdge(NodeID srcId, NodeID dstId, const PointsTo& pts);
 
     /// Lock-span head/tail tests (non-interference lock-pair pruning).
     //@{
     SVFGNodeIDSet getPrevNodes(const StmtSVFGNode* n);
     SVFGNodeIDSet getSuccNodes(const StmtSVFGNode* n);
-    bool isHeadofSpan(const StmtSVFGNode* n);
-    bool isTailofSpan(const StmtSVFGNode* n);
+    bool isHeadOfSpan(const StmtSVFGNode* n);
+    bool isTailOfSpan(const StmtSVFGNode* n);
     //@}
 
     SVFGNodeSet stnodeSet;  ///< all store SVFG nodes

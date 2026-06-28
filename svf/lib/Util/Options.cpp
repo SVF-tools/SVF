@@ -864,6 +864,8 @@ const Option<bool> Options::SlicingSingle(
     "slicing-single", "MTA slicing: use one unified slice for both ILA and FSPTA (single-pass baseline)", false);
 const Option<bool> Options::SlicedDumpDot(
     "sliced-dump-dot", "MTA slicing: dump intermediate dot graphs", false);
+const Option<bool> Options::DumpMTAGraphs(
+    "dump-mta-graphs", "MTA: dump the pointer-analysis and thread call graphs (ptacg/tcg.dot)", false);
 const Option<bool> Options::MTAObserve(
     "observe", "MTA: observe whole-program flow-sensitive FSAM points-to and ILA", false);
 const Option<bool> Options::MTAObserveSliced(

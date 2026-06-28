@@ -261,6 +261,8 @@ public:
     static const Option<bool> DFreeCheck;
     /// data race checker, Default: false
     static const Option<bool> RaceCheck;
+    /// MTA: dump the pointer-analysis and thread call graphs (ptacg/tcg.dot), Default: false
+    static const Option<bool> DumpMTAGraphs;
 
     /// MTA: run the multi-stage on-demand slicing pipeline (MSli) instead of the
     /// Andersen baseline race detection, Default: false
