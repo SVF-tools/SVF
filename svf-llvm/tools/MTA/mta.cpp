@@ -34,68 +34,28 @@ using namespace llvm;
 using namespace std;
 using namespace SVF;
 
-// Whether a boolean flag is enabled on the command line: a bare `-flag` means
-// true, `-flag=VALUE` is true unless VALUE is a falsy literal. Mirrors how
-// llvm::cl parses a bool option, so we can peek at it before parseOptions.
-static bool boolFlagEnabled(int argc, char** argv, const std::string& flag)
-{
-    for (int i = 1; i < argc; ++i)
-    {
-        std::string arg = argv[i];
-        if (arg == flag)
-            return true;
-        if (arg.rfind(flag + "=", 0) == 0)
-        {
-            std::string v = arg.substr(flag.size() + 1);
-            return !(v == "false" || v == "False" || v == "FALSE" || v == "0");
-        }
-    }
-    return false;
-}
-
-// The multi-stage slicing pipeline (and its observe modes) runs the pre-analysis
-// context-insensitively (the slice recovers precision later), matching the MSli
-// design. Force -max-cxt=0 for those runs unless the user set it explicitly.
-static bool wantsSlicedPipeline(int argc, char** argv)
-{
-    return boolFlagEnabled(argc, argv, "-enable-slicing")
-           || boolFlagEnabled(argc, argv, "-no-slice")
-           || boolFlagEnabled(argc, argv, "-observe")
-           || boolFlagEnabled(argc, argv, "-observe-sliced");
-}
-
-static bool hasMaxCxt(int argc, char** argv)
-{
-    for (int i = 1; i < argc; ++i)
-        if (std::string(argv[i]).rfind("-max-cxt", 0) == 0)
-            return true;
-    return false;
-}
-
 int main(int argc, char** argv)
 {
-    // Inject -max-cxt=0 for sliced runs (before option parsing) when not set.
-    std::vector<char*> args(argv, argv + argc);
-    std::string injected = "-max-cxt=0";
-    if (wantsSlicedPipeline(argc, argv) && !hasMaxCxt(argc, argv))
-        args.push_back(const_cast<char*>(injected.c_str()));
+    std::vector<std::string> moduleNameVec = OptionBase::parseOptions(
+                argc, argv, "MTA Analysis", "[options] <input-bitcode...>");
 
-    std::vector<std::string> moduleNameVec;
-    moduleNameVec = OptionBase::parseOptions(
-                        static_cast<int>(args.size()), args.data(),
-                        "MTA Analysis", "[options] <input-bitcode...>");
+    // The slicing pipeline (and its observe modes) lives in the SVF library
+    // (SlicedMTA); plain MTA is the default. The sliced runs keep the
+    // pre-analysis context-insensitive -- the slice recovers precision later
+    // (MSli design) -- so default -max-cxt to 0 for them unless the user set it.
+    const bool slicedPipeline = Options::EnableSlicing() || Options::NoSlice()
+                                || Options::MTAObserve() || Options::MTAObserveSliced();
+    if (slicedPipeline && Options::MaxContextLen.canSet())
+        Options::MaxContextLen.setValue(0);
 
     LLVMModuleSet::buildSVFModule(moduleNameVec);
     SVFIRBuilder builder;
     SVFIR* pag = builder.build();
 
-    // MTA has a single client; slicing is an option (-enable-slicing). The
-    // multi-stage on-demand slicing pipeline (MSli) and its observe modes live
-    // in the SVF library (SlicedMTA); the only LLVM-dependent step --
-    // materialising resolved indirect calls into the PAG -- is injected here.
-    if (Options::EnableSlicing() || Options::NoSlice()
-            || Options::MTAObserve() || Options::MTAObserveSliced())
+    if (slicedPipeline)
     {
+        // The only LLVM-dependent step -- materialising resolved indirect calls
+        // into the PAG -- is injected here.
         SlicedMTA sliced;
         sliced.runOnModule(pag, [&](CallGraph* cg)
         {

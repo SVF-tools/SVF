@@ -86,7 +86,7 @@ const Option<u32_t> Options::MaxPathLen(
     100000
 );
 
-const Option<u32_t> Options::MaxContextLen(
+Option<u32_t> Options::MaxContextLen(
     "max-cxt",
     "Maximum context limit for DDA",
     3
@@ -850,6 +850,8 @@ const Option<bool> Options::DFreeCheck(
     "dfree", "Double Free Detection",false);
 const Option<bool> Options::RaceCheck(
     "race", "Data race Detection",false);
+const Option<bool> Options::DumpMTAGraphs(
+    "dump-mta-graphs", "MTA: dump the pointer-analysis and thread call graphs (ptacg/tcg.dot)", false);
 const Option<bool> Options::EnableSlicing(
     "enable-slicing", "MTA: run the multi-stage on-demand slicing pipeline (MSli)", false);
 const Option<bool> Options::NoSlice(
@@ -859,13 +861,11 @@ const Option<u32_t> Options::SlicedMaxCxt(
 const Option<bool> Options::MainIlaSliced(
     "main-ila-sliced", "MTA slicing: build the main FSMPTA thread-aware value flow from the sliced ILA", false);
 const Option<bool> Options::ThreadVFSources(
-    "threadvf-sources", "MTA slicing: seed the ILA slice with [THREAD-VF] sources", true);
+    "thread-vf-sources", "MTA slicing: seed the ILA slice with [THREAD-VF] sources", true);
 const Option<bool> Options::SlicingSingle(
     "slicing-single", "MTA slicing: use one unified slice for both ILA and FSPTA (single-pass baseline)", false);
 const Option<bool> Options::SlicedDumpDot(
     "sliced-dump-dot", "MTA slicing: dump intermediate dot graphs", false);
-const Option<bool> Options::DumpMTAGraphs(
-    "dump-mta-graphs", "MTA: dump the pointer-analysis and thread call graphs (ptacg/tcg.dot)", false);
 const Option<bool> Options::MTAObserve(
     "observe", "MTA: observe whole-program flow-sensitive FSAM points-to and ILA", false);
 const Option<bool> Options::MTAObserveSliced(

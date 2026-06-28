@@ -79,7 +79,7 @@ public:
 
     // DDAPass.cpp
     static const Option<u32_t> MaxPathLen;
-    static const Option<u32_t> MaxContextLen;
+    static Option<u32_t> MaxContextLen;
     static const Option<u32_t> MaxStepInWrapper;
     static const Option<std::string> UserInputQuery;
     static const Option<bool> InsenRecur;
