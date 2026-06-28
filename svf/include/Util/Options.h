@@ -264,21 +264,17 @@ public:
     /// MTA: dump the pointer-analysis and thread call graphs (ptacg/tcg.dot), Default: false
     static const Option<bool> DumpMTAGraphs;
 
-    /// MTA: run the multi-stage on-demand slicing pipeline (MSli) instead of the
-    /// Andersen baseline race detection, Default: false
+    /// MTA: run the multi-stage on-demand slicing pipeline (MSli), Default: false
     static const Option<bool> EnableSlicing;
-    /// MTA: run the FSAM race detection on the WHOLE program (no slicing) -- the
-    /// A/B baseline to compare the sliced pipeline against, Default: false
+    /// MTA: FSAM race detection on the whole program (no-slice baseline), Default: false
     static const Option<bool> NoSlice;
     /// MTA slicing: max context length for the sliced TCT (0 = reuse MaxContextLen), Default: 2
     static const Option<u32_t> SlicedMaxCxt;
-    /// MTA slicing: build the main FSMPTA's thread-aware value flow from the SLICED
-    /// ILA (paper-faithful, fresh SVFG) instead of reusing VFG_pre, Default: false
+    /// MTA slicing: build the main FSMPTA value flow from the sliced ILA, Default: false
     static const Option<bool> MainIlaSliced;
     /// MTA slicing: seed the ILA slice with [THREAD-VF] sources (paper §4.2), Default: true
     static const Option<bool> ThreadVFSources;
-    /// MTA slicing: use one unified slice for both ILA and FSPTA (the single-pass
-    /// baseline of the differential-slicing ablation) instead of separate slices, Default: false
+    /// MTA slicing: one unified slice for ILA + FSPTA (single-pass baseline), Default: false
     static const Option<bool> SlicingSingle;
     /// MTA slicing: dump intermediate dot graphs (ICFG/TCG/SVFG/...), Default: false
     static const Option<bool> SlicedDumpDot;
