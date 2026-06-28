@@ -320,6 +320,38 @@ SlicerBase::collectCommonThreadStatements(const std::set<const SVFStmt*>& vulner
     return std::make_pair(pthreadCallNodes, mutexCallNodes);
 }
 
+// Keep the control-flow marker nodes the (sliced) lock analysis depends on:
+// every lock/unlock-bearing function's entry and exit nodes.
+//
+// LockAnalysis classifies an intra lock as *partial* (conditional) by reaching
+// the function entry node from the unlock along a lock-free backward path
+// (intraBackwardTraverse: `entryInst == I` -> return false), and bails the
+// forward span at the function exit node (`exitInst == I`). These checks are
+// node-identity tests against the entry/exit markers. The data-dependence slice
+// does not otherwise retain those markers, so on the sliced view the backward
+// walk can never match the entry node and the lock is mis-classified as total --
+// which makes isProtectedByCommonCILock report a spurious common lock and drops
+// a real race (a query-preservation violation). Bridging preserves reachability
+// *to* the kept markers, so once they are retained the sliced lock analysis
+// reproduces the whole-program classification. Markers used: entry block
+// front (cxt-lock start) and back (intra backward marker), and exit block back
+// (intra forward marker).
+static void collectLockFunctionMarkers(
+    const std::set<const CallICFGNode*>& mutexCallNodes,
+    std::set<const ICFGNode*>& sliceResult) {
+    for (const CallICFGNode* mutexCallNode : mutexCallNodes) {
+        const FunObjVar* fun = mutexCallNode->getFun();
+        if (fun == nullptr)
+            continue;
+        if (const SVFBasicBlock* entry = fun->getEntryBlock()) {
+            sliceResult.insert(entry->front());
+            sliceResult.insert(entry->back());
+        }
+        if (const SVFBasicBlock* exit = fun->getExitBB())
+            sliceResult.insert(exit->back());
+    }
+}
+
 // Build backward ICFG node set from vulnerable nodes
 std::set<const ICFGNode*> SlicerBase::buildBackwardICFGNodeSet(
     const std::set<const ICFGNode*>& vulnerableNodes) {
@@ -510,6 +542,7 @@ std::set<const ICFGNode*> MTASlicer::runSlicing(
     for (const CallICFGNode* mutexCallNode : mutexCallNodes) {
         initialSliceResult.insert(mutexCallNode->getRetICFGNode());
     }
+    collectLockFunctionMarkers(mutexCallNodes, initialSliceResult);
     for (const SVFStmt* stmt: vulnerableStatements) {
         initialSliceResult.insert(stmt->getICFGNode());
     }
@@ -552,6 +585,11 @@ std::set<const ICFGNode*> PTASlicer::runSlicing(
     std::set<const ICFGNode*> initialSliceResult =
         svfgNodesToICFGNodes(getRetainedSVFGNodes(vulnerableStatements), vulnerableStatements);
 
+    // Retain the lock/unlock-function control-flow markers the sliced lock
+    // analysis depends on (see collectLockFunctionMarkers); the data-dependence
+    // SVFG slice does not otherwise keep them.
+    collectLockFunctionMarkers(collectMutexStatements(vulnerableStatements), initialSliceResult);
+
     // Step 2: Perform dual slicing (temporal slicing)
     std::set<const ICFGNode*> dualSlicedNodes = runDualSlicing(initialSliceResult);
 
@@ -588,6 +626,7 @@ std::set<const ICFGNode*> SingleSlicer::runSlicing(
     currentNodes.insert(mutexCallNodes.begin(), mutexCallNodes.end());
     for (const CallICFGNode* mutexCallNode : mutexCallNodes)
         currentNodes.insert(mutexCallNode->getRetICFGNode());
+    collectLockFunctionMarkers(mutexCallNodes, currentNodes);
     for (const SVFStmt* stmt : vulnerableStatements)
         currentNodes.insert(stmt->getICFGNode());
 
