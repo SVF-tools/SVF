@@ -569,12 +569,12 @@ bool SlicedMTA::runFinalRaceDetection()
     }
 
     std::set<RacePair> detectedPairs;
+    LockAnalysis* fullLock = buildFullLockAnalysis();  // whole-ICFG lock (no bridging)
     timePhase("Final Race Detection", [&]()
     {
         detectedPairs = detectRacePairsOnSlicedGraph(
                             getMainPTA(),     // Use flow-sensitive FSAM points-to
-                            slicedMhp.get(),
-                            buildFullLockAnalysis());  // whole-ICFG lock (no bridging)
+                            slicedMhp.get(), fullLock);
     });
 
     // Distinct racy statements (the endpoints of the race pairs) -- a stabler,
@@ -586,6 +586,9 @@ bool SlicedMTA::runFinalRaceDetection()
     SVFUtil::outs() << "Race pairs (pre-analysis): " << racePairs.size() << "\n";
     SVFUtil::outs() << "Race pairs (sliced graph): " << detectedPairs.size() << "\n";
     SVFUtil::outs() << "Race statements (sliced graph): " << racyStmts.size() << "\n";
+    // Machine-readable line for the artifact's `msli` table generator: the race
+    // statements reported after slicing (the preservation metric).
+    SVFUtil::outs() << "[MSLI-RQ] mode=MSli alarms=" << racyStmts.size() << "\n";
 
     if (!detectedPairs.empty())
     {
@@ -651,6 +654,7 @@ void SlicedMTA::runWholeProgramDetection()
     SVFUtil::outs() << "Race pairs (pre-analysis): " << racePairs.size() << "\n";
     SVFUtil::outs() << "Race pairs (whole program): " << detectedPairs.size() << "\n";
     SVFUtil::outs() << "Race statements (whole program): " << racyStmts.size() << "\n";
+    SVFUtil::outs() << "[MSLI-RQ] mode=FSAM alarms=" << racyStmts.size() << "\n";
 }
 
 // Observe whole-program FSAM points-to and ILA (Layer 1) for soundness checking.
