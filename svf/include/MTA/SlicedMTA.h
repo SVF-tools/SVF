@@ -130,6 +130,13 @@ private:
     std::set<RacePair> detectRacePairsOnSlicedGraph(
         BVDataPTAImpl* slicedPTA, MHP* slicedMHP, LockAnalysis* slicedLockAnalysis);
 
+    // Lock analysis over the WHOLE ICFG (real control flow, no bridging) for the
+    // final detection's lock signature. The sliced lock analysis walks bridged
+    // edges, which fabricate lock-carrying paths the whole program lacks (a
+    // query-preservation break); lock-span is control-flow-sensitive, so it must
+    // see real edges. Built lazily, cheap (no FSAM/MHP) next to the slicing win.
+    LockAnalysis* buildFullLockAnalysis();
+
     // --- pipeline state (owned unless noted) ---
     SVFIR* svfIr = nullptr;
     std::unique_ptr<TCT> tct;
@@ -153,6 +160,10 @@ private:
     std::unique_ptr<SlicedTCT> slicedTCT;
     std::unique_ptr<SlicedMHP> slicedMhp;
     std::unique_ptr<SlicedLockAnalysis> slicedLockAnalysis;
+    // Whole-ICFG lock analysis for the final detection (see buildFullLockAnalysis).
+    std::unique_ptr<SlicedSVFIRView> fullLockView;
+    std::unique_ptr<SlicedTCT> fullLockTCT;
+    std::unique_ptr<SlicedLockAnalysis> fullLockAnalysis;
     std::set<const FunObjVar*> threadFunctions;
     std::set<RacePair> racePairs;
 };

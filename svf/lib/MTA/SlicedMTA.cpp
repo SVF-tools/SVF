@@ -524,6 +524,24 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
     return true;
 }
 
+// Build a lock analysis over the WHOLE ICFG (every node kept => real control flow,
+// no bridged edges). Used for the final detection's lock signature so the sliced
+// run reproduces the whole-program lock relation exactly (query preservation).
+LockAnalysis* SlicedMTA::buildFullLockAnalysis()
+{
+    if (fullLockAnalysis != nullptr)
+        return fullLockAnalysis.get();
+    std::set<const ICFGNode*> allNodes;
+    for (ICFG::iterator it = svfIr->getICFG()->begin(), eit = svfIr->getICFG()->end(); it != eit; ++it)
+        allNodes.insert(it->second);
+    fullLockView = std::make_unique<SlicedSVFIRView>(
+                       svfIr, preAnder->getCallGraph(), svfIr->getICFG(), allNodes);
+    fullLockTCT = std::make_unique<SlicedTCT>(preAnder, fullLockView.get(), slicedMaxContextLen());
+    fullLockAnalysis = std::make_unique<SlicedLockAnalysis>(fullLockTCT.get(), fullLockView.get());
+    fullLockAnalysis->analyze();
+    return fullLockAnalysis.get();
+}
+
 // Final Race Detection using sliced analysis results
 bool SlicedMTA::runFinalRaceDetection()
 {
@@ -556,7 +574,7 @@ bool SlicedMTA::runFinalRaceDetection()
         detectedPairs = detectRacePairsOnSlicedGraph(
                             getMainPTA(),     // Use flow-sensitive FSAM points-to
                             slicedMhp.get(),
-                            slicedLockAnalysis.get());
+                            buildFullLockAnalysis());  // whole-ICFG lock (no bridging)
     });
 
     SVFUtil::outs() << "\n=== Race Detection Summary ===\n";
