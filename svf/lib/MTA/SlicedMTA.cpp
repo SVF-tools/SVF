@@ -577,9 +577,15 @@ bool SlicedMTA::runFinalRaceDetection()
                             buildFullLockAnalysis());  // whole-ICFG lock (no bridging)
     });
 
+    // Distinct racy statements (the endpoints of the race pairs) -- a stabler,
+    // smaller-to-report metric than the pair count.
+    std::set<const SVFStmt*> racyStmts;
+    for (const RacePair& rp : detectedPairs) { racyStmts.insert(rp.stmt1); racyStmts.insert(rp.stmt2); }
+
     SVFUtil::outs() << "\n=== Race Detection Summary ===\n";
     SVFUtil::outs() << "Race pairs (pre-analysis): " << racePairs.size() << "\n";
     SVFUtil::outs() << "Race pairs (sliced graph): " << detectedPairs.size() << "\n";
+    SVFUtil::outs() << "Race statements (sliced graph): " << racyStmts.size() << "\n";
 
     if (!detectedPairs.empty())
     {
@@ -638,9 +644,13 @@ void SlicedMTA::runWholeProgramDetection()
                             getMainPTA(), slicedMhp.get(), slicedLockAnalysis.get());
     });
 
+    std::set<const SVFStmt*> racyStmts;
+    for (const RacePair& rp : detectedPairs) { racyStmts.insert(rp.stmt1); racyStmts.insert(rp.stmt2); }
+
     SVFUtil::outs() << "\n=== Race Detection Summary ===\n";
     SVFUtil::outs() << "Race pairs (pre-analysis): " << racePairs.size() << "\n";
     SVFUtil::outs() << "Race pairs (whole program): " << detectedPairs.size() << "\n";
+    SVFUtil::outs() << "Race statements (whole program): " << racyStmts.size() << "\n";
 }
 
 // Observe whole-program FSAM points-to and ILA (Layer 1) for soundness checking.

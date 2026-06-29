@@ -477,14 +477,41 @@ void MTASVFGBuilder::connectMHPEdges(PointerAnalysis* pta)
 {
     collectLoadStoreSVFGNodes();
 
-    for (SVFGNodeSet::const_iterator it1 = stnodeSet.begin(), eit1 = stnodeSet.end(); it1 != eit1; ++it1)
+    // Two accesses can interfere only if they may alias, i.e. their points-to sets
+    // share an object. So bucket the store/load nodes by the objects they access
+    // and pair only within a bucket, instead of the all-pairs O(N^2) scan -- the
+    // same object-bucketing the race detector uses. handle* still applies the MHP
+    // and lock screens; the result (interference edges + thread-VF sources) is
+    // identical to the all-pairs scan, only the non-aliasing pairs are skipped.
+    Map<NodeID, std::vector<const StmtSVFGNode*>> objToStores;
+    Map<NodeID, std::vector<const StmtSVFGNode*>> objToLoads;
+    for (const StmtSVFGNode* store : stnodeSet)
+        for (NodeID obj : pta->getPts(store->getDstNodeID()))
+            objToStores[obj].push_back(store);
+    for (const StmtSVFGNode* load : ldnodeSet)
+        for (NodeID obj : pta->getPts(load->getSrcNodeID()))
+            objToLoads[obj].push_back(load);
+
+    // A pair that shares several objects appears in several buckets; handle once.
+    NodePairSet handledStoreLoad;
+    NodePairSet handledStoreStore;
+    for (const auto& objAndStores : objToStores)
     {
-        const StmtSVFGNode* n1 = *it1;
-
-        for (SVFGNodeSet::const_iterator it2 = ldnodeSet.begin(), eit2 = ldnodeSet.end(); it2 != eit2; ++it2)
-            handleStoreLoad(n1, *it2, pta);
-
-        for (SVFGNodeSet::const_iterator it2 = std::next(it1), eit2 = stnodeSet.end(); it2 != eit2; ++it2)
-            handleStoreStore(n1, *it2, pta);
+        const std::vector<const StmtSVFGNode*>& stores = objAndStores.second;
+        Map<NodeID, std::vector<const StmtSVFGNode*>>::const_iterator loadsIt =
+            objToLoads.find(objAndStores.first);
+        if (loadsIt != objToLoads.end())
+            for (const StmtSVFGNode* store : stores)
+                for (const StmtSVFGNode* load : loadsIt->second)
+                    if (handledStoreLoad.insert({store->getId(), load->getId()}).second)
+                        handleStoreLoad(store, load, pta);
+        for (size_t a = 0; a < stores.size(); ++a)
+            for (size_t b = a + 1; b < stores.size(); ++b)
+            {
+                NodeID id1 = stores[a]->getId(), id2 = stores[b]->getId();
+                NodePair key = id1 < id2 ? std::make_pair(id1, id2) : std::make_pair(id2, id1);
+                if (handledStoreStore.insert(key).second)
+                    handleStoreStore(stores[a], stores[b], pta);
+            }
     }
 }
