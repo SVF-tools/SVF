@@ -516,34 +516,34 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>
         std::string str;
         std::stringstream rawstr(str);
 
+        rawstr <<  "shape=record";
+
         if(SVFUtil::isa<IntraICFGNode>(node))
         {
-            rawstr <<  "color=black";
+            rawstr <<  ",color=black";
         }
         else if(SVFUtil::isa<FunEntryICFGNode>(node))
         {
-            rawstr <<  "color=yellow";
+            rawstr <<  ",color=yellow";
         }
         else if(SVFUtil::isa<FunExitICFGNode>(node))
         {
-            rawstr <<  "color=green";
+            rawstr <<  ",color=green";
         }
         else if(SVFUtil::isa<CallICFGNode>(node))
         {
-            rawstr <<  "color=red";
+            rawstr <<  ",color=red";
         }
         else if(SVFUtil::isa<RetICFGNode>(node))
         {
-            rawstr <<  "color=blue";
+            rawstr <<  ",color=blue";
         }
         else if(SVFUtil::isa<GlobalICFGNode>(node))
         {
-            rawstr <<  "color=purple";
+            rawstr <<  ",color=purple";
         }
         else
             assert(false && "no such kind of node!!");
-
-        rawstr <<  "";
 
         return rawstr.str();
     }

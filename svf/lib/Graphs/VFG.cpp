@@ -1224,32 +1224,34 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
         std::string str;
         std::stringstream rawstr(str);
 
+        rawstr << "shape=record";
+
         if(StmtVFGNode* stmtNode = SVFUtil::dyn_cast<StmtVFGNode>(node))
         {
             const SVFStmt* edge = stmtNode->getSVFStmt();
             if (SVFUtil::isa<AddrStmt>(edge))
             {
-                rawstr <<  "color=green";
+                rawstr <<  ",color=green";
             }
             else if (SVFUtil::isa<CopyStmt>(edge))
             {
-                rawstr <<  "color=black";
+                rawstr <<  ",color=black";
             }
             else if (SVFUtil::isa<RetPE>(edge))
             {
-                rawstr <<  "color=black,style=dotted";
+                rawstr <<  ",color=black,style=dotted";
             }
             else if (SVFUtil::isa<GepStmt>(edge))
             {
-                rawstr <<  "color=purple";
+                rawstr <<  ",color=purple";
             }
             else if (SVFUtil::isa<StoreStmt>(edge))
             {
-                rawstr <<  "color=blue";
+                rawstr <<  ",color=blue";
             }
             else if (SVFUtil::isa<LoadStmt>(edge))
             {
-                rawstr << "color=red";
+                rawstr << ",color=red";
             }
             else
             {
@@ -1259,52 +1261,50 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
         }
         else if (SVFUtil::isa<CmpVFGNode>(node))
         {
-            rawstr << "color=grey";
+            rawstr << ",color=grey";
         }
         else if (SVFUtil::isa<BinaryOPVFGNode>(node))
         {
-            rawstr << "color=grey";
+            rawstr << ",color=grey";
         }
         else if (SVFUtil::isa<UnaryOPVFGNode>(node))
         {
-            rawstr << "color=grey";
+            rawstr << ",color=grey";
         }
         else if(SVFUtil::isa<PHIVFGNode>(node))
         {
-            rawstr <<  "color=black";
+            rawstr <<  ",color=black";
         }
         else if(SVFUtil::isa<NullPtrVFGNode>(node))
         {
-            rawstr <<  "color=grey";
+            rawstr <<  ",color=grey";
         }
         else if(SVFUtil::isa<FormalParmVFGNode>(node))
         {
-            rawstr <<  "color=yellow,penwidth=2";
+            rawstr <<  ",color=yellow,penwidth=2";
         }
         else if(SVFUtil::isa<ActualParmVFGNode>(node))
         {
-            rawstr <<  "color=yellow,penwidth=2";
+            rawstr <<  ",color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<ActualRetVFGNode>(node))
         {
-            rawstr <<  "color=yellow,penwidth=2";
+            rawstr <<  ",color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<FormalRetVFGNode>(node))
         {
-            rawstr <<  "color=yellow,penwidth=2";
+            rawstr <<  ",color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<MRSVFGNode>(node))
         {
-            rawstr <<  "color=orange,penwidth=2";
+            rawstr <<  ",color=orange,penwidth=2";
         }
         else if (SVFUtil::isa<BranchVFGNode>(node))
         {
-            rawstr <<  "color=gold,penwidth=2";
+            rawstr <<  ",color=gold,penwidth=2";
         }
         else
             assert(false && "no such kind of node!!");
-
-        rawstr <<  "";
 
         return rawstr.str();
     }
