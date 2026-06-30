@@ -172,9 +172,6 @@ public:
     // CHG.cpp
     static const Option<bool> DumpCHA;
 
-    // DCHG.cpp
-    static const Option<bool> PrintDCHG;
-
     // LLVMModule.cpp
     static const Option<std::string> Graphtxt;
     static Option<bool> SVFMain;

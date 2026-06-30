@@ -525,14 +525,6 @@ const Option<bool> Options::DumpCHA(
 );
 
 
-// DCHG.cpp
-const Option<bool> Options::PrintDCHG(
-    "print-dchg",
-    "print the DCHG if debug information is available",
-    false
-);
-
-
 // LLVMModule.cpp
 const Option<std::string> Options::Graphtxt(
     "graph-txt",
