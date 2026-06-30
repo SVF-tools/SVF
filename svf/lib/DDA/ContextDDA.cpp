@@ -40,7 +40,7 @@ using namespace SVFUtil;
  * Constructor
  */
 ContextDDA::ContextDDA(SVFIR* _pag,  DDAClient* client)
-    : CondPTAImpl<ContextCond>(_pag, PointerAnalysis::Cxt_DDA),DDAVFSolver<CxtVar,CxtPtSet,CxtLocDPItem>(),
+    : CondPTAImpl<ContextCond>(_pag, PTATY::Cxt_DDA),DDAVFSolver<CxtVar,CxtPtSet,CxtLocDPItem>(),
       _client(client)
 {
     flowDDA = new FlowDDA(_pag, client);

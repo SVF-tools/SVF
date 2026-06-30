@@ -30,6 +30,7 @@
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 
+#include "MemoryModel/PTATY.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "SVFIR/PAGBuilderFromFile.h"
 #include "Util/PTAStat.h"
@@ -72,7 +73,7 @@ PointerAnalysis::PointerAnalysis(SVFIR *p, PTATY ty, bool alias_check) : ptaTy(t
     pag = p;
     OnTheFlyIterBudgetForStat = Options::StatBudget();
     print_stat = Options::PStat();
-    ptaImplTy = BaseImpl;
+    ptaImplTy = PTAImplTy::BaseImpl;
     alias_validation = (alias_check && Options::EnableAliasCheck());
 }
 

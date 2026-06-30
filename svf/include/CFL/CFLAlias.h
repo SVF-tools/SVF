@@ -44,7 +44,7 @@ class CFLAlias : public CFLBase
 public:
     typedef OrderedMap<const CallICFGNode*, NodeID> CallSite2DummyValPN;
 
-    CFLAlias(SVFIR* ir) : CFLBase(ir, PointerAnalysis::CFLFICI_WPA)
+    CFLAlias(SVFIR* ir) : CFLBase(ir, PTATY::CFLFICI_WPA)
     {
     }
 

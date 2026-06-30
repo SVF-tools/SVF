@@ -35,6 +35,8 @@
 #include "SVF-LLVM/BasicTypes.h"
 #include "Util/Options.h"
 #include "Graphs/BasicBlockG.h"
+#include "Graphs/ICFGNode.h"
+#include "SVFIR/SVFIR.h"
 
 namespace SVF
 {
