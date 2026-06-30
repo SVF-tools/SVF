@@ -2221,46 +2221,6 @@ public:
 };
 
 /*
- * Represents an LLVM BasicBlock (label operand of br/switch).
- * Collected into valSyms as a branch operand but has no ICFGNode.
- */
-class BasicBlockValVar: public ValVar
-{
-    friend class GraphDBClient;
-
-public:
-    static inline bool classof(const BasicBlockValVar*)
-    {
-        return true;
-    }
-    static inline bool classof(const SVFVar* node)
-    {
-        return node->getNodeKind() == SVFVar::BasicBlockValNode;
-    }
-    static inline bool classof(const ValVar* node)
-    {
-        return node->getNodeKind() == SVFVar::BasicBlockValNode;
-    }
-    static inline bool classof(const GenericPAGNodeTy* node)
-    {
-        return node->getNodeKind() == SVFVar::BasicBlockValNode;
-    }
-    static inline bool classof(const SVFValue* node)
-    {
-        return node->getNodeKind() == SVFVar::BasicBlockValNode;
-    }
-
-    BasicBlockValVar(NodeID i, const SVFType* svfType)
-        : ValVar(i, svfType, nullptr, BasicBlockValNode) {}
-
-    inline const std::string getValueName() const
-    {
-        return "basicBlockVal";
-    }
-    virtual const std::string toString() const;
-};
-
-/*
  * Represents InlineAsm, DSOLocalEquivalent, and NoCFIValue.
  * These are non-instruction values related to inline assembly,
  * position-independent code (PIC), or control-flow integrity (CFI).

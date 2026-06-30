@@ -81,7 +81,6 @@ public:
         // │   └─ Subclass: DummyValVar
         DummyValNode,            // │   └── Dummy node for uninitialized values
         IntrinsicValNode,        // │   └── LLVM intrinsic call instruction (e.g. llvm.dbg.declare)
-        BasicBlockValNode,       // │   └── LLVM BasicBlock (label operand of br/switch)
         AsmPCValNode,            // │   └── InlineAsm, DSOLocalEquivalent, NoCFIValue
 
         // └─ Subclass: ObjVar (Object variable nodes)
@@ -232,7 +231,7 @@ protected:
 
     static inline bool isSVFVarKind(GNodeK n)
     {
-        static_assert(DummyObjNode - ValNode == 29,
+        static_assert(DummyObjNode - ValNode == 28,
                       "The number of SVFVarKinds has changed, make sure the "
                       "range is correct");
 
@@ -241,7 +240,7 @@ protected:
 
     static inline bool isValVarKinds(GNodeK n)
     {
-        static_assert(AsmPCValNode - ValNode == 16,
+        static_assert(AsmPCValNode - ValNode == 15,
                       "The number of ValVarKinds has changed, make sure the "
                       "range is correct");
         return n <= AsmPCValNode && n >= ValNode;
