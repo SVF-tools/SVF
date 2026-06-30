@@ -510,6 +510,12 @@ void SVFIRBuilder::initialiseValVars()
         {
             pag->addConstantAggValNode(iter->second, icfgNode, llvmModuleSet()->getSVFType(llvmValue->getType()));
         }
+        else if (SVFUtil::isa<InlineAsm>(llvmValue) ||
+                 SVFUtil::isa<DSOLocalEquivalent>(llvmValue) ||
+                 SVFUtil::isa<NoCFIValue>(llvmValue))
+        {
+            pag->addAsmPCValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()));
+        }
         else if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(llvmValue))
         {
             if (LLVMUtil::isIntrinsicInst(inst))
@@ -521,13 +527,8 @@ void SVFIRBuilder::initialiseValVars()
                 pag->addValNode(iter->second, llvmModuleSet()->getSVFType(llvmValue->getType()), icfgNode);
             }
         }
-        else
-        {
-            pag->addDummyValNode(iter->second, icfgNode);
-        }
-
-
-        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
+        llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue,
+                pag->getGNode(iter->second));
     }
 }
 

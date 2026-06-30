@@ -2221,6 +2221,48 @@ public:
 };
 
 /*
+ * Represents InlineAsm, DSOLocalEquivalent, and NoCFIValue.
+ * These are non-instruction values related to inline assembly,
+ * position-independent code (PIC), or control-flow integrity (CFI).
+ * They have no corresponding ICFGNode.
+ */
+class AsmPCValVar: public ValVar
+{
+    friend class GraphDBClient;
+
+public:
+    static inline bool classof(const AsmPCValVar*)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFVar* node)
+    {
+        return node->getNodeKind() == SVFVar::AsmPCValNode;
+    }
+    static inline bool classof(const ValVar* node)
+    {
+        return node->getNodeKind() == SVFVar::AsmPCValNode;
+    }
+    static inline bool classof(const GenericPAGNodeTy* node)
+    {
+        return node->getNodeKind() == SVFVar::AsmPCValNode;
+    }
+    static inline bool classof(const SVFValue* node)
+    {
+        return node->getNodeKind() == SVFVar::AsmPCValNode;
+    }
+
+    AsmPCValVar(NodeID i, const SVFType* svfType)
+        : ValVar(i, svfType, nullptr, AsmPCValNode) {}
+
+    inline const std::string getValueName() const
+    {
+        return "asmPCVal";
+    }
+    virtual const std::string toString() const;
+};
+
+/*
  * Dummy object variable
  */
 class DummyObjVar: public BaseObjVar

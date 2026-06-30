@@ -230,6 +230,8 @@ void SymbolTableBuilder::buildMemModel()
                     const Value* Callee = cs->getCalledOperand();
                     collectSym(Callee);
 
+                    // TODO handle inlineAsm
+                    /// if (SVFUtil::isa<InlineAsm>(Callee))
                     if (Options::EnableTypeCheck())
                     {
                         getTypeInference()->validateTypeCheck(cs);
@@ -296,7 +298,11 @@ void SymbolTableBuilder::collectSym(const Value* val)
 void SymbolTableBuilder::collectVal(const Value* val)
 {
     // collect and record special sym here
-    if (LLVMUtil::isNullPtrSym(val) || LLVMUtil::isBlackholeSym(val))
+    if (
+        LLVMUtil::isNullPtrSym(val) ||
+        LLVMUtil::isBlackholeSym(val) ||
+        SVFUtil::isa<BasicBlock>(val)
+    )
     {
         return;
     }

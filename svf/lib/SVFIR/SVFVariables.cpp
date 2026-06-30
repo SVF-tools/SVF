@@ -99,13 +99,12 @@ ValVar::ValVar(NodeID i, const SVFType* svfType, const ICFGNode* node, PNODEK ty
     {
         // Conditional assert (isDeclaration || icn) is in each subclass constructor.
     }
-    else if (
-        SVFUtil::isa<ConstDataValVar>(this) ||
-        SVFUtil::isa<ConstAggValVar>(this) ||
-        SVFUtil::isa<FunValVar>(this) ||
-        SVFUtil::isa<DummyValVar>(this) ||
-        SVFUtil::isa<IntrinsicValVar>(this)
-    )
+    else if (SVFUtil::isa<ConstDataValVar>(this) ||
+             SVFUtil::isa<ConstAggValVar>(this) ||
+             SVFUtil::isa<FunValVar>(this) ||
+             SVFUtil::isa<DummyValVar>(this) ||
+             SVFUtil::isa<IntrinsicValVar>(this) ||
+             SVFUtil::isa<AsmPCValVar>(this))
     {
         // These ValVar subclasses don't require an ICFGNode.
     }
@@ -565,6 +564,14 @@ const std::string IntrinsicValVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "IntrinsicValVar ID: " << getId();
+    return rawstr.str();
+}
+
+const std::string AsmPCValVar::toString() const
+{
+    std::string str;
+    std::stringstream rawstr(str);
+    rawstr << "AsmPCValVar ID: " << getId();
     return rawstr.str();
 }
 
