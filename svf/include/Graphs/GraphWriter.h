@@ -169,6 +169,8 @@ public:
 
     void writeNode(NodeRef Node)
     {
+        static const size_t MAX_LABEL_LENGTH = 250;
+
         std::string NodeAttributes = DTraits.getNodeAttributes(Node, G);
 
         O << "\tNode" << static_cast<const void*>(Node) << " [";
@@ -177,7 +179,13 @@ public:
 
         if (!DTraits.renderGraphFromBottomUp())
         {
-            O << DOT::EscapeStr(DTraits.getNodeLabel(Node, G));
+            std::string label = DTraits.getNodeLabel(Node, G);
+            if (label.length() > MAX_LABEL_LENGTH)
+            {
+                label = label.substr(0, MAX_LABEL_LENGTH) + "...";
+            }
+
+            O << DOT::EscapeStr(label);
 
             // If we should include the address of the node in the label, do so now.
             std::string Id = DTraits.getNodeIdentifierLabel(Node, G);
