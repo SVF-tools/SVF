@@ -34,6 +34,7 @@
 
 
 #include "Util/Options.h"
+#include "MemoryModel/PTATY.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "WPA/WPAPass.h"
 #include "WPA/Andersen.h"
@@ -67,9 +68,9 @@ WPAPass::~WPAPass()
  */
 void WPAPass::runOnModule(SVFIR* pag)
 {
-    for (u32_t i = 0; i<= PointerAnalysis::Default_PTA; i++)
+    for (u32_t i = 0; i<= PTATY::Default_PTA; i++)
     {
-        PointerAnalysis::PTATY iPtaTy = static_cast<PointerAnalysis::PTATY>(i);
+        PTATY iPtaTy = static_cast<PTATY>(i);
         if (Options::PASelected(iPtaTy))
             runPointerAnalysis(pag, i);
     }
@@ -84,28 +85,28 @@ void WPAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
     /// Initialize pointer analysis.
     switch (kind)
     {
-    case PointerAnalysis::Andersen_WPA:
+    case PTATY::Andersen_WPA:
         _pta = new Andersen(pag);
         break;
-    case PointerAnalysis::AndersenSCD_WPA:
+    case PTATY::AndersenSCD_WPA:
         _pta = new AndersenSCD(pag);
         break;
-    case PointerAnalysis::AndersenSFR_WPA:
+    case PTATY::AndersenSFR_WPA:
         _pta = new AndersenSFR(pag);
         break;
-    case PointerAnalysis::AndersenWaveDiff_WPA:
+    case PTATY::AndersenWaveDiff_WPA:
         _pta = new AndersenWaveDiff(pag);
         break;
-    case PointerAnalysis::Steensgaard_WPA:
+    case PTATY::Steensgaard_WPA:
         _pta = new Steensgaard(pag);
         break;
-    case PointerAnalysis::FSSPARSE_WPA:
+    case PTATY::FSSPARSE_WPA:
         _pta = new FlowSensitive(pag);
         break;
-    case PointerAnalysis::VFS_WPA:
+    case PTATY::VFS_WPA:
         _pta = new VersionedFlowSensitive(pag);
         break;
-    case PointerAnalysis::TypeCPP_WPA:
+    case PTATY::TypeCPP_WPA:
         _pta = new TypeAnalysis(pag);
         break;
     default:
@@ -121,7 +122,7 @@ void WPAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
         assert(SVFUtil::isa<AndersenBase>(_pta) && "supports only andersen/steensgaard for pre-computed SVFG");
         SVFG *svfg = memSSA.buildFullSVFG((BVDataPTAImpl*)_pta);
         /// support mod-ref queries only for -ander
-        if (Options::PASelected(PointerAnalysis::AndersenWaveDiff_WPA))
+        if (Options::PASelected(PTATY::AndersenWaveDiff_WPA))
             _svfg = svfg;
     }
 
@@ -165,7 +166,7 @@ const PointsTo& WPAPass::getPts(NodeID var)
  */
 ModRefInfo WPAPass::getModRefInfo(const CallICFGNode* callInst)
 {
-    assert(Options::PASelected(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG() && "mod-ref query is only support with -ander and -svfg turned on");
+    assert(Options::PASelected(PTATY::AndersenWaveDiff_WPA) && Options::AnderSVFG() && "mod-ref query is only support with -ander and -svfg turned on");
     return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(callInst);
 }
 
@@ -175,6 +176,6 @@ ModRefInfo WPAPass::getModRefInfo(const CallICFGNode* callInst)
  */
 ModRefInfo WPAPass::getModRefInfo(const CallICFGNode* callInst1, const CallICFGNode* callInst2)
 {
-    assert(Options::PASelected(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG() && "mod-ref query is only support with -ander and -svfg turned on");
+    assert(Options::PASelected(PTATY::AndersenWaveDiff_WPA) && Options::AnderSVFG() && "mod-ref query is only support with -ander and -svfg turned on");
     return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(callInst1, callInst2);
 }

@@ -29,6 +29,7 @@
  *      Author: Xiao Cheng, Yulei Sui
  */
 
+#include "SVFIR/SVFIR.h"
 #include "SVFIR/SVFVariables.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"

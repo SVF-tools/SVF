@@ -27,10 +27,11 @@
  *      Author: Yulei Sui
  */
 
-
+#include "MemoryModel/PointerAnalysis.h"
 #include <Graphs/SVFGNode.h>
-#include "Util/Options.h"
+#include "Graphs/CallGraph.h"
 #include "Graphs/VFG.h"
+#include "Util/Options.h"
 #include "Util/SVFUtil.h"
 
 using namespace SVF;
@@ -928,8 +929,8 @@ void VFG::view()
 void VFG::updateCallGraph(PointerAnalysis* pta)
 {
     VFGEdgeSetTy vfEdgesAtIndCallSite;
-    PointerAnalysis::CallEdgeMap::const_iterator iter = pta->getIndCallMap().begin();
-    PointerAnalysis::CallEdgeMap::const_iterator eiter = pta->getIndCallMap().end();
+    CallGraph::CallEdgeMap::const_iterator iter = pta->getIndCallMap().begin();
+    CallGraph::CallEdgeMap::const_iterator eiter = pta->getIndCallMap().end();
     for (; iter != eiter; iter++)
     {
         const CallICFGNode* newcs = iter->first;

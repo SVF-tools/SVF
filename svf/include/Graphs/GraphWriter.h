@@ -24,6 +24,7 @@
 
 #include "Graphs/GraphTraits.h"
 #include "Graphs/DOTGraphTraits.h"
+#include "Util/Options.h"
 #include <algorithm>
 #include <cstddef>
 #include <iterator>
