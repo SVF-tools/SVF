@@ -1,7 +1,8 @@
 #ifndef PTATY_H
 #define PTATY_H
 
-namespace SVF {
+namespace SVF
+{
 
 /// Pointer analysis type list
 enum PTATY
