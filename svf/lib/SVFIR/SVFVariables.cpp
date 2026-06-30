@@ -104,7 +104,6 @@ ValVar::ValVar(NodeID i, const SVFType* svfType, const ICFGNode* node, PNODEK ty
              SVFUtil::isa<FunValVar>(this) ||
              SVFUtil::isa<DummyValVar>(this) ||
              SVFUtil::isa<IntrinsicValVar>(this) ||
-             SVFUtil::isa<BasicBlockValVar>(this) ||
              SVFUtil::isa<AsmPCValVar>(this))
     {
         // These ValVar subclasses don't require an ICFGNode.
@@ -565,14 +564,6 @@ const std::string IntrinsicValVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "IntrinsicValVar ID: " << getId();
-    return rawstr.str();
-}
-
-const std::string BasicBlockValVar::toString() const
-{
-    std::string str;
-    std::stringstream rawstr(str);
-    rawstr << "BasicBlockValVar ID: " << getId();
     return rawstr.str();
 }
 
