@@ -4,19 +4,20 @@
 #include "Util/CommandLine.h"
 #include "FastCluster/fastcluster.h"
 #include "Util/ExtAPI.h"
+#include "MemoryModel/PTATY.h"
 #include "MSSA/MemSSA.h"
 #include "WPA/WPAPass.h"
 #include "AE/Svfexe/AbstractInterpretation.h"
 
 namespace SVF
 {
-const OptionMap<enum PTAStat::ClockType> Options::ClockType(
+const OptionMap<enum SVFStat::ClockType> Options::ClockType(
     "clock-type",
     "how time should be measured",
-    PTAStat::ClockType::CPU,
+    SVFStat::ClockType::CPU,
 {
-    {PTAStat::ClockType::Wall, "wall", "use wall time"},
-    {PTAStat::ClockType::CPU, "cpu", "use CPU time"},
+    {SVFStat::ClockType::Wall, "wall", "use wall time"},
+    {SVFStat::ClockType::CPU, "cpu", "use CPU time"},
 }
 );
 
@@ -44,13 +45,13 @@ const Option<u32_t> Options::MaxFieldLimit(
     512
 );
 
-const OptionMap<BVDataPTAImpl::PTBackingType> Options::ptDataBacking(
+const OptionMap<PTBackingType> Options::ptDataBacking(
     "ptd",
     "Overarching points-to data structure",
-    BVDataPTAImpl::PTBackingType::Persistent,
+    PTBackingType::Persistent,
 {
-    {BVDataPTAImpl::PTBackingType::Mutable, "mutable", "points-to set per pointer"},
-    {BVDataPTAImpl::PTBackingType::Persistent, "persistent", "points-to set ID per pointer, operations hash-consed"},
+    {PTBackingType::Mutable, "mutable", "points-to set per pointer"},
+    {PTBackingType::Persistent, "persistent", "points-to set ID per pointer, operations hash-consed"},
 }
 );
 
@@ -136,11 +137,11 @@ const Option<bool> Options::WPANum(
 
 /// register this into alias analysis group
 //static RegisterAnalysisGroup<AliasAnalysis> AA_GROUP(DDAPA);
-OptionMultiple<PointerAnalysis::PTATY> Options::DDASelected(
+OptionMultiple<PTATY> Options::DDASelected(
     "Select pointer analysis",
 {
-    {PointerAnalysis::FlowS_DDA, "dfs", "Demand-driven flow sensitive analysis"},
-    {PointerAnalysis::Cxt_DDA, "cxt", "Demand-driven context- flow- sensitive analysis"},
+    {PTATY::FlowS_DDA, "dfs", "Demand-driven flow sensitive analysis"},
+    {PTATY::Cxt_DDA, "cxt", "Demand-driven context- flow- sensitive analysis"},
 }
 );
 
@@ -525,14 +526,6 @@ const Option<bool> Options::DumpCHA(
 );
 
 
-// DCHG.cpp
-const Option<bool> Options::PrintDCHG(
-    "print-dchg",
-    "print the DCHG if debug information is available",
-    false
-);
-
-
 // LLVMModule.cpp
 const Option<std::string> Options::Graphtxt(
     "graph-txt",
@@ -685,18 +678,18 @@ const Option<bool> Options::PrintAliases(
     false
 );
 
-OptionMultiple<PointerAnalysis::PTATY> Options::PASelected(
+OptionMultiple<PTATY> Options::PASelected(
     "Select pointer analysis",
 {
-    {PointerAnalysis::Andersen_WPA, "nander", "Standard inclusion-based analysis"},
-    {PointerAnalysis::AndersenSCD_WPA, "sander", "Selective cycle detection inclusion-based analysis"},
-    {PointerAnalysis::AndersenSFR_WPA, "sfrander", "Stride-based field representation inclusion-based analysis"},
-    {PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"},
-    {PointerAnalysis::Steensgaard_WPA, "steens", "Steensgaard's pointer analysis"},
+    {PTATY::Andersen_WPA, "nander", "Standard inclusion-based analysis"},
+    {PTATY::AndersenSCD_WPA, "sander", "Selective cycle detection inclusion-based analysis"},
+    {PTATY::AndersenSFR_WPA, "sfrander", "Stride-based field representation inclusion-based analysis"},
+    {PTATY::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"},
+    {PTATY::Steensgaard_WPA, "steens", "Steensgaard's pointer analysis"},
     // Disabled till further work is done.
-    {PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"},
-    {PointerAnalysis::VFS_WPA, "vfspta", "Versioned sparse flow-sensitive points-to analysis"},
-    {PointerAnalysis::TypeCPP_WPA, "type", "Type-based fast analysis for Callgraph, SVFIR and CHA"},
+    {PTATY::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"},
+    {PTATY::VFS_WPA, "vfspta", "Versioned sparse flow-sensitive points-to analysis"},
+    {PTATY::TypeCPP_WPA, "type", "Type-based fast analysis for Callgraph, SVFIR and CHA"},
 }
 );
 
@@ -876,6 +869,12 @@ const Option<u32_t> Options::AEPrecision(
     "precision",
     "symbolic abstraction precision for float",
     0
+);
+
+const Option<u32_t> Options::MaxNodeLabelLength(
+    "max-node-label-length",
+    "maxmimum length of dumped graph node labels",
+    250
 );
 
 } // namespace SVF.

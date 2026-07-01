@@ -30,6 +30,7 @@
 #ifndef TCTNodeDetector_H_
 #define TCTNodeDetector_H_
 
+#include "MemoryModel/PointerAnalysis.h"
 #include "Graphs/SCC.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Util/CxtStmt.h"

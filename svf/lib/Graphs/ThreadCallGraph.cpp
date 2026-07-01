@@ -46,6 +46,13 @@ ThreadCallGraph::ThreadCallGraph(const CallGraph& cg) :
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Building ThreadCallGraph\n"));
 }
 
+ThreadCallGraph::~ThreadCallGraph()
+{
+    for (const auto& entry : callinstToThreadJoinEdgesMap)
+        for (ThreadJoinEdge* edge : entry.second)
+            delete edge;
+}
+
 const std::string ThreadForkEdge::toString() const
 {
     std::string str;

@@ -28,6 +28,7 @@
  */
 
 #include "Util/Options.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "MSSA/MemRegion.h"
 #include "MSSA/MSSAMuChi.h"
 #include "Graphs/CallGraph.h"

@@ -298,10 +298,15 @@ void SymbolTableBuilder::collectSym(const Value* val)
 void SymbolTableBuilder::collectVal(const Value* val)
 {
     // collect and record special sym here
-    if (LLVMUtil::isNullPtrSym(val) || LLVMUtil::isBlackholeSym(val))
+    if (
+        LLVMUtil::isNullPtrSym(val) ||
+        LLVMUtil::isBlackholeSym(val) ||
+        SVFUtil::isa<BasicBlock>(val)
+    )
     {
         return;
     }
+
     LLVMModuleSet::ValueToIDMapTy::iterator iter = llvmModuleSet()->valSymMap.find(val);
     if (iter == llvmModuleSet()->valSymMap.end())
     {

@@ -37,6 +37,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include "SVFIR/SVFIR.h"
 #include "SVFIR/SVFValue.h"
 #include "MemoryModel/PointsTo.h"
 
@@ -121,13 +122,11 @@ private:
         bool isStore;
         NodeID tid;
         NodeBS interleav;
-        std::string lockSig;
+        bool locked;
     };
 
     /// Helpers for the equivalence-class race detector.
     //@{
-    static std::string contextSignature(const CallStrCxt& context);
-    static std::string lockSignature(LockAnalysis* lockAnalysis, const ICFGNode* node);
     static bool occurrencesRace(MHP* mhp, const RaceOccurrence& first, const RaceOccurrence& second);
     static void commitRacePair(std::set<RacePair>& out,
                                const RaceOccurrence& first, const RaceOccurrence& second);

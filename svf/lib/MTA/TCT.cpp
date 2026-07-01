@@ -636,11 +636,11 @@ struct DOTGraphTraits<TCT*> : public DefaultDOTGraphTraits
         std::string attr;
         if (node->isInloop())
         {
-            attr.append(" style=filled fillcolor=red");
+            attr.append("shape=record,style=filled,fillcolor=red");
         }
         else if (node->isIncycle())
         {
-            attr.append(" style=filled fillcolor=yellow");
+            attr.append("shape=record,style=filled,fillcolor=yellow");
         }
         return attr;
     }

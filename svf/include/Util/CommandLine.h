@@ -353,6 +353,11 @@ public:
         value = v;
     }
 
+    bool isSet(void) const
+    {
+        return isExplicitlySet;
+    }
+
     T operator()(void) const
     {
         return value;
