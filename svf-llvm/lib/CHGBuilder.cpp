@@ -468,6 +468,11 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                             SVFUtil::dyn_cast<GlobalAlias>(operand))
                                 {
                                     const Constant *aliasValue = alias->getAliasee();
+                                    while (const GlobalAlias *valAsAlias = SVFUtil::dyn_cast<GlobalAlias>(aliasValue))
+                                    {
+                                        aliasValue = valAsAlias->getAliasee();
+                                    }
+
                                     if (const Function* aliasFunc =
                                                 SVFUtil::dyn_cast<Function>(aliasValue))
                                     {
