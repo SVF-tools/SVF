@@ -29,6 +29,7 @@
 
 #include "Util/Options.h"
 #include "SVFIR/SVFIR.h"
+#include "Graphs/CHG.h"
 #include "Graphs/CallGraph.h"
 
 using namespace SVF;

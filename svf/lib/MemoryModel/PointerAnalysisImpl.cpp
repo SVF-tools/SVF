@@ -29,6 +29,7 @@
  */
 
 
+#include "MemoryModel/PTATY.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/Options.h"
 #include <fstream>
@@ -43,12 +44,12 @@ using namespace std;
 /*!
  * Constructor
  */
-BVDataPTAImpl::BVDataPTAImpl(SVFIR* p, PointerAnalysis::PTATY type, bool alias_check) :
+BVDataPTAImpl::BVDataPTAImpl(SVFIR* p, PTATY type, bool alias_check) :
     PointerAnalysis(p, type, alias_check), ptCache()
 {
-    if (type == Andersen_BASE || type == Andersen_WPA || type == AndersenWaveDiff_WPA
-            || type == TypeCPP_WPA || type == FlowS_DDA
-            || type == AndersenSCD_WPA || type == AndersenSFR_WPA || type == CFLFICI_WPA || type == CFLFSCS_WPA)
+    if (type == PTATY::Andersen_BASE || type == PTATY::Andersen_WPA || type == PTATY::AndersenWaveDiff_WPA
+            || type == PTATY::TypeCPP_WPA || type == PTATY::FlowS_DDA
+            || type == PTATY::AndersenSCD_WPA || type == PTATY::AndersenSFR_WPA || type == PTATY::CFLFICI_WPA || type == PTATY::CFLFSCS_WPA)
     {
         // Only maintain reverse points-to when the analysis is field-sensitive, as objects turning
         // field-insensitive is all it is used for.
@@ -57,14 +58,14 @@ BVDataPTAImpl::BVDataPTAImpl(SVFIR* p, PointerAnalysis::PTATY type, bool alias_c
         else if (Options::ptDataBacking() == PTBackingType::Persistent) ptD = std::make_unique<PersDiffPTDataTy>(getPtCache(), maintainRevPts);
         else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
     }
-    else if (type == Steensgaard_WPA)
+    else if (type == PTATY::Steensgaard_WPA)
     {
         // Steensgaard is only field-insensitive (for now?), so no reverse points-to.
         if (Options::ptDataBacking() == PTBackingType::Mutable) ptD = std::make_unique<MutDiffPTDataTy>(false);
         else if (Options::ptDataBacking() == PTBackingType::Persistent) ptD = std::make_unique<PersDiffPTDataTy>(getPtCache(), false);
         else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
     }
-    else if (type == FSSPARSE_WPA)
+    else if (type == PTATY::FSSPARSE_WPA)
     {
         if (Options::INCDFPTData())
         {
@@ -79,7 +80,7 @@ BVDataPTAImpl::BVDataPTAImpl(SVFIR* p, PointerAnalysis::PTATY type, bool alias_c
             else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
         }
     }
-    else if (type == VFS_WPA)
+    else if (type == PTATY::VFS_WPA)
     {
         if (Options::ptDataBacking() == PTBackingType::Mutable) ptD = std::make_unique<MutVersionedPTDataTy>(false);
         else if (Options::ptDataBacking() == PTBackingType::Persistent) ptD = std::make_unique<PersVersionedPTDataTy>(getPtCache(), false);
@@ -87,7 +88,7 @@ BVDataPTAImpl::BVDataPTAImpl(SVFIR* p, PointerAnalysis::PTATY type, bool alias_c
     }
     else assert(false && "no points-to data available");
 
-    ptaImplTy = BVDataImpl;
+    ptaImplTy = PTAImplTy::BVDataImpl;
 }
 
 void BVDataPTAImpl::finalize()
@@ -104,15 +105,15 @@ void BVDataPTAImpl::finalize()
 
         std::string subtitle;
 
-        if(ptaTy >= Andersen_BASE && ptaTy <= Steensgaard_WPA)
+        if(ptaTy >= PTATY::Andersen_BASE && ptaTy <= PTATY::Steensgaard_WPA)
             subtitle = "Andersen's analysis bitvector";
-        else if(ptaTy >=FSDATAFLOW_WPA && ptaTy <=FSCS_WPA)
+        else if(ptaTy >= PTATY::FSDATAFLOW_WPA && ptaTy <= PTATY::FSCS_WPA)
             subtitle = "flow-sensitive analysis bitvector";
-        else if(ptaTy >=CFLFICI_WPA && ptaTy <=CFLFSCS_WPA)
+        else if(ptaTy >= PTATY::CFLFICI_WPA && ptaTy <= PTATY::CFLFSCS_WPA)
             subtitle = "CFL analysis bitvector";
-        else if(ptaTy == TypeCPP_WPA)
+        else if(ptaTy == PTATY::TypeCPP_WPA)
             subtitle = "Type analysis bitvector";
-        else if(ptaTy >=FieldS_DDA && ptaTy <=Cxt_DDA)
+        else if(ptaTy >= PTATY::FieldS_DDA && ptaTy <= PTATY::Cxt_DDA)
             subtitle = "DDA bitvector";
         else
             subtitle = "bitvector";

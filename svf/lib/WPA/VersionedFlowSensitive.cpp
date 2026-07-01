@@ -10,6 +10,7 @@
 #include "WPA/Andersen.h"
 #include "WPA/VersionedFlowSensitive.h"
 #include "Util/Options.h"
+#include "MemoryModel/PTATY.h"
 #include "MemoryModel/PointsTo.h"
 #include <iostream>
 #include <queue>
@@ -791,7 +792,9 @@ void VersionedFlowSensitive::cluster(void)
     }
 
     PointsTo::MappingPtr nodeMapping =
-        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(ander, keys, candidateMappings, "aux-ander"));
+        std::make_shared<std::vector<NodeID>>(
+            NodeIDAllocator::Clusterer::cluster(ander, keys, candidateMappings, "aux-ander", print_stat)
+        );
     PointsTo::MappingPtr reverseNodeMapping =
         std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
 

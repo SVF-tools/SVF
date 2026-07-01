@@ -97,9 +97,10 @@ bool checkAndReport(const char* phase, bool condition)
     return condition;
 }
 
-// The main (sliced) analysis context length -- -max-cxt.
 u32_t slicedMaxContextLen()
 {
+    if (Options::EnableSlicing() && !Options::MaxContextLen.isSet())
+        return 2;
     return Options::MaxContextLen();
 }
 
@@ -712,10 +713,7 @@ void SlicedMTA::runOnModule(SVFIR* pag, const ResolveIndirectCalls& resolveIndir
 
     reportOriginalStats(svfIr);
 
-    // When slicing, run the whole pre-analysis context-insensitively (-max-cxt 0);
-    // the main (sliced) analysis then uses -max-cxt. Without slicing there is only
-    // the main analysis, so the pre-analysis already runs at -max-cxt.
-    const u32_t mainCxt = Options::MaxContextLen();
+    const u32_t mainCxt = slicedMaxContextLen();
     if (Options::EnableSlicing())
         Options::MaxContextLen.setValue(0);
     const bool preOk = runPreAnalysis(resolveIndirectCalls);
@@ -816,4 +814,3 @@ std::set<SlicedMTA::RacePair> SlicedMTA::detectRacePairsOnSlicedGraph(
 
     return filteredRacePairs;
 }
-

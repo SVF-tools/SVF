@@ -440,71 +440,79 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
     template<class EdgeIter>
     static std::string getEdgeAttributes(SVFVar*, EdgeIter EI, IRGraph*)
     {
+        std::string str;
+        std::stringstream rawstr(str);
+
+        rawstr << "shape=record";
+
         const SVFStmt* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
         if (SVFUtil::isa<AddrStmt>(edge))
         {
-            return "color=green";
+            rawstr << ",color=green";
         }
         else if (SVFUtil::isa<CopyStmt>(edge))
         {
-            return "color=black";
+            rawstr << ",color=black";
         }
         else if (SVFUtil::isa<GepStmt>(edge))
         {
-            return "color=purple";
+            rawstr << ",color=purple";
         }
         else if (SVFUtil::isa<StoreStmt>(edge))
         {
-            return "color=blue";
+            rawstr << ",color=blue";
         }
         else if (SVFUtil::isa<LoadStmt>(edge))
         {
-            return "color=red";
+            rawstr << ",color=red";
         }
         else if (SVFUtil::isa<PhiStmt>(edge))
         {
-            return "color=grey";
+            rawstr << ",color=grey";
         }
         else if (SVFUtil::isa<SelectStmt>(edge))
         {
-            return "color=grey";
+            rawstr << ",color=grey";
         }
         else if (SVFUtil::isa<CmpStmt>(edge))
         {
-            return "color=grey";
+            rawstr << ",color=grey";
         }
         else if (SVFUtil::isa<BinaryOPStmt>(edge))
         {
-            return "color=grey";
+            rawstr << ",color=grey";
         }
         else if (SVFUtil::isa<UnaryOPStmt>(edge))
         {
-            return "color=grey";
+            rawstr << ",color=grey";
         }
         else if (SVFUtil::isa<BranchStmt>(edge))
         {
-            return "color=grey";
+            rawstr << ",color=grey";
         }
         else if (SVFUtil::isa<TDForkPE>(edge))
         {
-            return "color=Turquoise";
+            rawstr << ",color=Turquoise";
         }
         else if (SVFUtil::isa<TDJoinPE>(edge))
         {
-            return "color=Turquoise";
+            rawstr << ",color=Turquoise";
         }
         else if (SVFUtil::isa<CallPE>(edge))
         {
-            return "color=black,style=dashed";
+            rawstr << ",color=black,style=dashed";
         }
         else if (SVFUtil::isa<RetPE>(edge))
         {
-            return "color=black,style=dotted";
+            rawstr << ",color=black,style=dotted";
+        }
+        else
+        {
+            assert(false && "No such kind edge!!");
         }
 
-        assert(false && "No such kind edge!!");
-        exit(1);
+        return rawstr.str();
     }
 
     template<class EdgeIter>

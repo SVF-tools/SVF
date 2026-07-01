@@ -35,6 +35,7 @@
 #ifndef INCLUDE_WPA_ANDERSEN_H_
 #define INCLUDE_WPA_ANDERSEN_H_
 
+#include "MemoryModel/PTATY.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "WPA/WPAStat.h"
 #include "WPA/WPASolver.h"
@@ -61,7 +62,7 @@ public:
 public:
 
     /// Constructor
-    AndersenBase(SVFIR* _pag, PTATY type = Andersen_BASE, bool alias_check = true)
+    AndersenBase(SVFIR* _pag, PTATY type = PTATY::Andersen_BASE, bool alias_check = true)
         :  BVDataPTAImpl(_pag, type, alias_check), consCG(nullptr)
     {
         iterationForPrintStat = OnTheFlyIterBudgetForStat;
@@ -107,13 +108,13 @@ public:
     }
     static inline bool classof(const PointerAnalysis *pta)
     {
-        return ( pta->getAnalysisTy() == Andersen_BASE
-                 || pta->getAnalysisTy() == Andersen_WPA
-                 || pta->getAnalysisTy() == AndersenWaveDiff_WPA
-                 || pta->getAnalysisTy() == AndersenSCD_WPA
-                 || pta->getAnalysisTy() == AndersenSFR_WPA
-                 || pta->getAnalysisTy() == TypeCPP_WPA
-                 || pta->getAnalysisTy() == Steensgaard_WPA);
+        return ( pta->getAnalysisTy() == PTATY::Andersen_BASE
+                 || pta->getAnalysisTy() == PTATY::Andersen_WPA
+                 || pta->getAnalysisTy() == PTATY::AndersenWaveDiff_WPA
+                 || pta->getAnalysisTy() == PTATY::AndersenSCD_WPA
+                 || pta->getAnalysisTy() == PTATY::AndersenSFR_WPA
+                 || pta->getAnalysisTy() == PTATY::TypeCPP_WPA
+                 || pta->getAnalysisTy() == PTATY::Steensgaard_WPA);
     }
     //@}
 
@@ -193,7 +194,7 @@ public:
     typedef SCCDetection<ConstraintGraph*> CGSCC;
 
     /// Constructor
-    Andersen(SVFIR* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
+    Andersen(SVFIR* _pag, PTATY type = PTATY::Andersen_WPA, bool alias_check = true)
         :  AndersenBase(_pag, type, alias_check)
     {
     }
@@ -227,10 +228,10 @@ public:
     }
     static inline bool classof(const PointerAnalysis *pta)
     {
-        return (pta->getAnalysisTy() == Andersen_WPA
-                || pta->getAnalysisTy() == AndersenWaveDiff_WPA
-                || pta->getAnalysisTy() == AndersenSCD_WPA
-                || pta->getAnalysisTy() == AndersenSFR_WPA);
+        return (pta->getAnalysisTy() == PTATY::Andersen_WPA
+                || pta->getAnalysisTy() == PTATY::AndersenWaveDiff_WPA
+                || pta->getAnalysisTy() == PTATY::AndersenSCD_WPA
+                || pta->getAnalysisTy() == PTATY::AndersenSFR_WPA);
     }
     //@}
 
@@ -401,14 +402,14 @@ private:
     static AndersenWaveDiff* diffWave; // static instance
 
 public:
-    AndersenWaveDiff(SVFIR* _pag, PTATY type = AndersenWaveDiff_WPA, bool alias_check = true): Andersen(_pag, type, alias_check) {}
+    AndersenWaveDiff(SVFIR* _pag, PTATY type = PTATY::AndersenWaveDiff_WPA, bool alias_check = true): Andersen(_pag, type, alias_check) {}
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
     static AndersenWaveDiff* createAndersenWaveDiff(SVFIR* _pag)
     {
         if(diffWave==nullptr)
         {
-            diffWave = new AndersenWaveDiff(_pag, AndersenWaveDiff_WPA, false);
+            diffWave = new AndersenWaveDiff(_pag, PTATY::AndersenWaveDiff_WPA, false);
             diffWave->analyze();
             return diffWave;
         }

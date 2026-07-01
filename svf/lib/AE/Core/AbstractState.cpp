@@ -27,6 +27,7 @@
  *
  */
 
+#include <iomanip>
 #include "AE/Core/AbstractState.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/SVFUtil.h"

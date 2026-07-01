@@ -33,6 +33,7 @@
 
 #include "WPA/Andersen.h"
 #include "WPA/CSC.h"
+#include "MemoryModel/PTATY.h"
 #include "MemoryModel/PointsTo.h"
 
 namespace SVF
@@ -52,7 +53,7 @@ protected:
     NodeToNodeMap pwcReps;
 
 public:
-    AndersenSCD(SVFIR* _pag, PTATY type = AndersenSCD_WPA) :
+    AndersenSCD(SVFIR* _pag, PTATY type = PTATY::AndersenSCD_WPA) :
         Andersen(_pag,type)
     {
     }
@@ -114,7 +115,7 @@ private:
     FieldReps fieldReps;
 
 public:
-    AndersenSFR(SVFIR* _pag, PTATY type = AndersenSFR_WPA) :
+    AndersenSFR(SVFIR* _pag, PTATY type = PTATY::AndersenSFR_WPA) :
         AndersenSCD(_pag, type), csc(nullptr)
     {
     }

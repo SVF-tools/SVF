@@ -431,7 +431,6 @@ void Andersen::initialize()
  */
 void Andersen::finalize()
 {
-    // TODO: check -stat too.
     // TODO: broken
     if (Options::ClusterAnder())
     {
@@ -440,7 +439,10 @@ void Andersen::finalize()
         // TODO: should we use liveOnly?
         // TODO: parameterise final arg.
         NodeIDAllocator::Clusterer::evaluate(*PointsTo::getCurrentBestNodeMapping(), ptd->getAllPts(true), stats, true);
-        NodeIDAllocator::Clusterer::printStats("post-main", stats);
+        if (print_stat)
+        {
+            NodeIDAllocator::Clusterer::printStats("post-main", stats);
+        }
     }
 
     /// sanitize field insensitive obj
@@ -917,7 +919,9 @@ void Andersen::cluster(void) const
 
     std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> candidates;
     PointsTo::MappingPtr nodeMapping =
-        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(steens, keys, candidates, "aux-steens"));
+        std::make_shared<std::vector<NodeID>>(
+            NodeIDAllocator::Clusterer::cluster(steens, keys, candidates, "aux-steens", print_stat)
+        );
     PointsTo::MappingPtr reverseNodeMapping =
         std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
 

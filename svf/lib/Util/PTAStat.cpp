@@ -30,6 +30,7 @@
 #include <iomanip>
 #include "Graphs/CallGraph.h"
 #include "Util/PTAStat.h"
+#include "MemoryModel/PTATY.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "SVFIR/SVFIR.h"
 
@@ -129,13 +130,13 @@ void PTAStat::callgraphStat()
     PTNumStatMap["TotalEdge"] = totalEdge;
     PTNumStatMap["CalRetPairInCycle"] = edgeInCycle;
 
-    if(pta->getAnalysisTy() >= PointerAnalysis::PTATY::Andersen_BASE && pta->getAnalysisTy() <= PointerAnalysis::PTATY::Steensgaard_WPA)
+    if(pta->getAnalysisTy() >= PTATY::Andersen_BASE && pta->getAnalysisTy() <= PTATY::Steensgaard_WPA)
         SVFStat::printStat("PTACallGraph Stats (Andersen analysis)");
-    else if(pta->getAnalysisTy() >= PointerAnalysis::PTATY::FSDATAFLOW_WPA && pta->getAnalysisTy() <= PointerAnalysis::PTATY::FSCS_WPA)
+    else if(pta->getAnalysisTy() >= PTATY::FSDATAFLOW_WPA && pta->getAnalysisTy() <= PTATY::FSCS_WPA)
         SVFStat::printStat("PTACallGraph Stats (Flow-sensitive analysis)");
-    else if(pta->getAnalysisTy() >= PointerAnalysis::PTATY::CFLFICI_WPA && pta->getAnalysisTy() <= PointerAnalysis::PTATY::CFLFSCS_WPA)
+    else if(pta->getAnalysisTy() >= PTATY::CFLFICI_WPA && pta->getAnalysisTy() <= PTATY::CFLFSCS_WPA)
         SVFStat::printStat("PTACallGraph Stats (CFL-R analysis)");
-    else if(pta->getAnalysisTy() >= PointerAnalysis::PTATY::FieldS_DDA && pta->getAnalysisTy() <= PointerAnalysis::PTATY::Cxt_DDA)
+    else if(pta->getAnalysisTy() >= PTATY::FieldS_DDA && pta->getAnalysisTy() <= PTATY::Cxt_DDA)
         SVFStat::printStat("PTACallGraph Stats (DDA analysis)");
     else
         SVFStat::printStat("PTACallGraph Stats");

@@ -36,8 +36,10 @@
 #include "CFL/CFLGraphBuilder.h"
 #include "CFL/CFLGramGraphChecker.h"
 #include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/ConsG.h"
 #include "Util/Options.h"
+#include "Util/PTAStat.h"
 #include "SVFIR/SVFType.h"
 
 namespace SVF
@@ -50,7 +52,7 @@ class CFLBase : public BVDataPTAImpl
 {
 
 public:
-    CFLBase(SVFIR* ir, PointerAnalysis::PTATY pty) : BVDataPTAImpl(ir, pty), svfir(ir), graph(nullptr), grammar(nullptr), solver(nullptr)
+    CFLBase(SVFIR* ir, PTATY pty) : BVDataPTAImpl(ir, pty), svfir(ir), graph(nullptr), grammar(nullptr), solver(nullptr)
     {
     }
 

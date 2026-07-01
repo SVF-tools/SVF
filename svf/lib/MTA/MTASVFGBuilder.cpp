@@ -31,6 +31,7 @@
 #include "MTA/MTASVFGBuilder.h"
 #include "MSSA/MemSSA.h"
 #include "MSSA/MemPartition.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/SVFUtil.h"
 #include "Util/Options.h"
 #include "Graphs/ThreadCallGraph.h"

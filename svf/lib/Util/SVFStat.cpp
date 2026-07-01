@@ -27,6 +27,9 @@
  *      Author: Xiao Cheng
  */
 
+#include <iomanip>
+
+#include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
 #include "Util/SVFStat.h"
 #include "Graphs/CallGraph.h"

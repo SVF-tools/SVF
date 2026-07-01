@@ -59,10 +59,9 @@ void DDAPass::runOnModule(SVFIR* pag)
 
     selectClient();
 
-    for (u32_t i = PointerAnalysis::FlowS_DDA;
-            i < PointerAnalysis::Default_PTA; i++)
+    for (u32_t i = PTATY::FlowS_DDA; i < PTATY::Default_PTA; i++)
     {
-        PointerAnalysis::PTATY iPtTy = static_cast<PointerAnalysis::PTATY>(i);
+        PTATY iPtTy = static_cast<PTATY>(i);
         if (Options::DDASelected(iPtTy))
             runPointerAnalysis(pag, i);
     }
@@ -114,12 +113,12 @@ void DDAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
     /// Initialize pointer analysis.
     switch (kind)
     {
-    case PointerAnalysis::Cxt_DDA:
+    case PTATY::Cxt_DDA:
     {
         _pta = std::make_unique<ContextDDA>(pag, _client);
         break;
     }
-    case PointerAnalysis::FlowS_DDA:
+    case PTATY::FlowS_DDA:
     {
         _pta = std::make_unique<FlowDDA>(pag, _client);
         break;

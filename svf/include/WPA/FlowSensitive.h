@@ -57,7 +57,7 @@ public:
     typedef BVDataPTAImpl::MutDFPTDataTy::PtsMap PtsMap;
 
     /// Constructor
-    explicit FlowSensitive(SVFIR* _pag, PTATY type = FSSPARSE_WPA) : WPASVFGFSSolver(), BVDataPTAImpl(_pag, type)
+    explicit FlowSensitive(SVFIR* _pag, PTATY type = PTATY::FSSPARSE_WPA) : WPASVFGFSSolver(), BVDataPTAImpl(_pag, type)
     {
         svfg = nullptr;
         solveTime = sccTime = processTime = propagationTime = updateTime = 0;
@@ -126,7 +126,7 @@ public:
     }
     static inline bool classof(const PointerAnalysis *pta)
     {
-        return pta->getAnalysisTy() == FSSPARSE_WPA;
+        return pta->getAnalysisTy() == PTATY::FSSPARSE_WPA;
     }
     //@}
 

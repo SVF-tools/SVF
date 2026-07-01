@@ -28,6 +28,8 @@
  */
 
 #include "Util/Options.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
+#include "MSSA/MemPartition.h"
 #include "MSSA/MemSSA.h"
 #include "Graphs/SVFGStat.h"
 #include "Graphs/CallGraph.h"
@@ -47,7 +49,7 @@ double MemSSA::timeOfSSARenaming  = 0;	///< Time for SSA rename
 MemSSA::MemSSA(BVDataPTAImpl* p, std::unique_ptr<MRGenerator> mrGenerator)
 {
     pta = p;
-    assert((pta->getAnalysisTy()!=PointerAnalysis::Default_PTA)
+    assert((pta->getAnalysisTy() != PTATY::Default_PTA)
            && "please specify a pointer analysis");
     assert(mrGenerator != nullptr && "builder must supply an MRGenerator");
     mrGen = std::move(mrGenerator);

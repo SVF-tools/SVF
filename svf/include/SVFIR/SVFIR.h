@@ -849,10 +849,6 @@ private:
     {
         return addValNode(new IntrinsicValVar(i, type));
     }
-    inline NodeID addBasicBlockValNode(NodeID i, const SVFType* type)
-    {
-        return addValNode(new BasicBlockValVar(i, type));
-    }
     inline NodeID addAsmPCValNode(NodeID i, const SVFType* type)
     {
         return addValNode(new AsmPCValVar(i, type));

@@ -42,7 +42,7 @@ class CFLVF : public CFLBase
 {
 
 public:
-    CFLVF(SVFIR* ir) : CFLBase(ir, PointerAnalysis::CFLFSCS_WPA)
+    CFLVF(SVFIR* ir) : CFLBase(ir, PTATY::CFLFSCS_WPA)
     {
     }
 

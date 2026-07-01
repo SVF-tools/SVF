@@ -171,49 +171,6 @@ PointsTo MTA::getPointsToClosure(AndersenBase* pta, const PointsTo& pts) {
     return ptsClosure;
 }
 
-// Serialise a calling context into a stable string key.
-std::string MTA::contextSignature(const CallStrCxt& context) {
-    std::string sig;
-    for (u32_t callSite : context) { sig += std::to_string(callSite); sig += '.'; }
-    return sig;
-}
-
-// Lock signature of a node: equal signatures => identical common-lock relation
-// against any partner ("U" = holds no lock), so C4 is decided once per class pair.
-std::string MTA::lockSignature(LockAnalysis* lockAnalysis, const ICFGNode* node) {
-    if (!lockAnalysis->isProtectedByCommonLock(node, node)) return "U";
-    std::string sig = "L";
-    sig += lockAnalysis->isInsideIntraLock(node) ? 'i' : '.';
-    sig += lockAnalysis->isInsideCondIntraLock(node) ? 'c' : '.';
-    sig += "[I";
-    if (lockAnalysis->hasIntraLockSet(node)) {   // else: cond-only / cxt-only locked
-        std::vector<NodeID> intraLocks;
-        for (const ICFGNode* lock : lockAnalysis->getIntraLockSet(node))
-            intraLocks.push_back(lock->getId());
-        std::sort(intraLocks.begin(), intraLocks.end());
-        for (NodeID id : intraLocks) { sig += ':'; sig += std::to_string(id); }
-    }
-    sig += ']';
-    if (lockAnalysis->hasCxtStmtFromInst(node)) {
-        std::vector<std::string> perContext;   // one entry per context of node
-        for (const CxtStmt& cxtStmt : lockAnalysis->getCxtStmtsFromInst(node)) {
-            std::string entry = contextSignature(cxtStmt.getContext()) + "{";
-            if (lockAnalysis->hasCxtLockfromCxtStmt(cxtStmt)) {
-                std::vector<std::string> heldLocks;
-                for (const CxtStmt& heldLock : lockAnalysis->getCxtLockfromCxtStmt(cxtStmt))
-                    heldLocks.push_back(std::to_string(heldLock.getStmt()->getId()) + "@"
-                                        + contextSignature(heldLock.getContext()));
-                std::sort(heldLocks.begin(), heldLocks.end());
-                for (const std::string& lock : heldLocks) { entry += lock; entry += ';'; }
-            }
-            perContext.push_back(entry + "}");
-        }
-        std::sort(perContext.begin(), perContext.end());
-        sig += "[X"; for (const std::string& entry : perContext) sig += entry; sig += ']';
-    }
-    return sig;
-}
-
 // C3: distinct threads must mutually interleave; the same thread self-races only
 // when it is multiforked (more than one dynamic instance).
 bool MTA::occurrencesRace(MHP* mhp, const RaceOccurrence& first, const RaceOccurrence& second) {
@@ -274,11 +231,11 @@ std::set<const SVFStmt*> MTA::detectRace(
                     PointsTo objects = pta->getPts(accessedPtr);
                     objects &= escSet;                               // screen 2: touches shared object?
                     if (objects.empty()) continue;
-                    std::string sig = lockSignature(lockAnalysis, node);
+                    bool locked = lockAnalysis->isProtectedByCommonLock(node, node);
                     const size_t firstNew = occurrences.size();
                     for (const CxtThreadStmt& threadStmt : mhp->getThreadStmtSet(node))
                         occurrences.push_back({stmt, node, isStore, threadStmt.getTid(),
-                                               mhp->getInterleavingThreads(threadStmt), sig});
+                                               mhp->getInterleavingThreads(threadStmt), locked});
                     for (NodeID object : objects)
                         for (size_t k = firstNew; k < occurrences.size(); ++k)
                             objectToOccurrences[object].push_back(k);
@@ -291,20 +248,34 @@ std::set<const SVFStmt*> MTA::detectRace(
     // class and judge C2/C3/C4 once per class pair -- O(classes^2) not O(occ^2).
     for (const auto& objectAndOccs : objectToOccurrences) {
         struct RaceClass { bool isStore, locked; size_t rep; std::vector<size_t> members; };
+        struct RaceKey {
+            NodeID tid;
+            bool isStore;
+            NodeBS interleav;
+            const ICFGNode* lockNode;
+
+            bool operator<(const RaceKey& other) const
+            {
+                if (tid != other.tid)
+                    return tid < other.tid;
+                if (isStore != other.isStore)
+                    return isStore < other.isStore;
+                if (SVFUtil::cmpNodeBS(interleav, other.interleav))
+                    return true;
+                if (SVFUtil::cmpNodeBS(other.interleav, interleav))
+                    return false;
+                return lockNode < other.lockNode;
+            }
+        };
         std::vector<RaceClass> classes;
-        Map<std::string, size_t> keyToClass;
+        OrderedMap<RaceKey, size_t> keyToClass;
         for (size_t occIdx : objectAndOccs.second) {
             const RaceOccurrence& occ = occurrences[occIdx];
-            std::string key;
-            key += std::to_string(occ.tid);
-            key += occ.isStore ? 'S' : 'L';
-            key += '|'; key += occ.lockSig;       // lock signature (sound merge key)
-            key += '|';
-            for (NodeID interleaved : occ.interleav) { key += std::to_string(interleaved); key += ','; }
+            RaceKey key{occ.tid, occ.isStore, occ.interleav, occ.locked ? occ.node : nullptr};
             auto found = keyToClass.find(key);
             if (found == keyToClass.end()) {
                 keyToClass[key] = classes.size();
-                classes.push_back({occ.isStore, occ.lockSig != "U", occIdx, {occIdx}});
+                classes.push_back({occ.isStore, occ.locked, occIdx, {occIdx}});
             } else
                 classes[found->second].members.push_back(occIdx);
         }
@@ -370,4 +341,3 @@ void MTA::reportRaces()
         outs() << SVFUtil::bugMsg1("race pair(") << " stmt1: " << rp.stmt1->toString()
                << ", stmt2: " << rp.stmt2->toString() << SVFUtil::bugMsg1(")") << "\n";
 }
-

@@ -28,6 +28,8 @@
  *      Author: Yulei Sui
  */
 
+#include <functional>
+
 #include "Graphs/CallGraph.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
@@ -449,7 +451,7 @@ struct DOTGraphTraits<CallGraph*> : public DefaultDOTGraphTraits
         const FunObjVar* fun = node->getFunction();
         if (!SVFUtil::isExtCall(fun))
         {
-            return "shape=box";
+            return "shape=record";
         }
         else
             return "shape=Mrecord";

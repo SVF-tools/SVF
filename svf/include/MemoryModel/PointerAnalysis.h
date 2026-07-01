@@ -41,6 +41,7 @@
 #include "MemoryModel/MutablePointsToDS.h"
 #include "MemoryModel/PersistentPointsToDS.h"
 #include "MemoryModel/PointsTo.h"
+#include "MemoryModel/PTATY.h"
 #include "SVFIR/SVFIR.h"
 
 namespace SVF
@@ -57,45 +58,6 @@ class PointerAnalysis
 {
 
 public:
-    /// Pointer analysis type list
-    enum PTATY
-    {
-        // Whole program analysis
-        Andersen_BASE,		///< Base Andersen PTA
-        Andersen_WPA,		///< Andersen PTA
-        AndersenSCD_WPA,    ///< Selective cycle detection andersen-style WPA
-        AndersenSFR_WPA,    ///< Stride-based field representation
-        AndersenWaveDiff_WPA,	///< Diff wave propagation andersen-style WPA
-        Steensgaard_WPA,      ///< Steensgaard PTA
-        CSCallString_WPA,	///< Call string based context sensitive WPA
-        CSSummary_WPA,		///< Summary based context sensitive WPA
-        FSDATAFLOW_WPA,	///< Traditional Dataflow-based flow sensitive WPA
-        FSSPARSE_WPA,		///< Sparse flow sensitive WPA
-        VFS_WPA,		///< Versioned sparse flow-sensitive WPA
-        FSCS_WPA,			///< Flow-, context- sensitive WPA
-        CFLFICI_WPA,		///< Flow-, context-, insensitive CFL-reachability-based analysis
-        CFLFSCI_WPA,		///< Flow-insensitive, context-sensitive CFL-reachability-based analysis
-        CFLFSCS_WPA,	///< Flow-, context-, CFL-reachability-based analysis
-        TypeCPP_WPA, ///<  Type-based analysis for C++
-
-        // Demand driven analysis
-        FieldS_DDA,		///< Field sensitive DDA
-        FlowS_DDA,		///< Flow sensitive DDA
-        PathS_DDA,		///< Guarded value-flow DDA
-        Cxt_DDA,		///< context sensitive DDA
-
-
-        Default_PTA		///< default pta without any analysis
-    };
-
-    /// Implementation type: BVDataPTAImpl or CondPTAImpl.
-    enum PTAImplTy
-    {
-        BaseImpl,   ///< Represents PointerAnalaysis.
-        BVDataImpl, ///< Represents BVDataPTAImpl.
-        CondImpl,   ///< Represents CondPTAImpl.
-    };
-
     /// Indirect call edges type, map a callsite to a set of callees
     //@{
     typedef Set<const CallICFGNode*> CallSiteSet;
@@ -176,7 +138,7 @@ public:
     }
 
     /// Constructor
-    PointerAnalysis(SVFIR* pag, PTATY ty = Default_PTA, bool alias_check = true);
+    PointerAnalysis(SVFIR* pag, PTATY ty = PTATY::Default_PTA, bool alias_check = true);
 
     /// Type of pointer analysis
     inline PTATY getAnalysisTy() const
