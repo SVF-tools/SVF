@@ -28,6 +28,8 @@
  *      Author: Yulei Sui
  */
 
+#include <functional>
+
 #include "Graphs/CallGraph.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"

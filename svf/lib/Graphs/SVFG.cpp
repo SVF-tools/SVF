@@ -852,10 +852,11 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<SVFIR*>
 
     std::string getNodeLabel(NodeType *node, SVFG *graph)
     {
+        std::string cool = std::string(240, '-');
         if (isSimple())
-            return getSimpleNodeLabel(node, graph);
+            return cool + getSimpleNodeLabel(node, graph);
         else
-            return getCompleteNodeLabel(node, graph);
+            return cool + getCompleteNodeLabel(node, graph);
     }
 
     /// Return label of a VFG node without MemSSA information
