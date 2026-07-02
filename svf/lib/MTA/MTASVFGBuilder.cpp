@@ -43,10 +43,11 @@ u32_t MTASVFGBuilder::numOfNewSVFGEdges = 0;
 
 namespace
 {
-/// Thread-aware MRGenerator mixin: layers the FSAM fork/join mod-ref side effects
-/// on top of any base partition strategy (Distinct / IntraDisjoint /
-/// InterDisjoint), via the MRGenerator hooks. This keeps the thread-specific
-/// def-use out of core MemRegion -- it is only used for MTA's thread-aware SVFG.
+/// Thread-aware MRGenerator mixin: layers the FSAM fork/join mod-ref effects on
+/// top of any base partition strategy (Distinct / IntraDisjoint / InterDisjoint).
+/// This must happen during MemorySSA mod/ref construction because callsite
+/// MU/CHI nodes, and therefore ActualIN/ActualOUT SVFG nodes, are created from
+/// these mod/ref sets.
 template <class BaseMRG>
 class ThreadMRG : public BaseMRG
 {
@@ -58,7 +59,7 @@ protected:
     /// the fork site (ActualIN -> FormalIN, FSAM's thread-oblivious value flow).
     /// We do NOT add the spawnee's *mod* set -- a fork has no return, so its
     /// writes flow back via the thread-aware interference edges instead.
-    void handleForkSideEffect(NodeBS& mod, NodeBS& ref,
+    void refineCallsiteModRef(NodeBS& mod, NodeBS& ref,
                               const CallICFGNode* cs, const FunObjVar* callee) override
     {
         if (const ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(this->getCallGraph()))
@@ -78,8 +79,8 @@ protected:
     /// MOD set to the join callsite (creating an ActualOUT there -- a "return
     /// without a forward"). MOD only, never REF. Join edges are not real
     /// call-graph edges, so we reach them via getJoinSites.
-    void handleJoinSideEffect(CallGraphNode* callGraphNode,
-                              MRGenerator::WorkList& worklist) override
+    void propagateAdditionalModRef(CallGraphNode* callGraphNode,
+                                   MRGenerator::WorkList& worklist) override
     {
         ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(this->getCallGraph());
         if (tcg == nullptr)
@@ -90,7 +91,10 @@ protected:
             return;
         const NodeBS& spawneeMod = this->getModSideEffectOfFunction(callGraphNode->getFunction());
         for (const CallICFGNode* cs : joinsites)
-            if (this->addModSideEffectOfCallSite(cs, spawneeMod))
+            // A join exposes the joined thread's writes at the join point. Those
+            // writes are not necessarily reachable from pthread_join's handle
+            // argument, so use the MOD set as computed for the start routine.
+            if (this->addUnfilteredModSideEffectOfCallSite(cs, spawneeMod))
                 worklist.push(this->getCallGraph()->getCallGraphNode(cs->getCaller())->getId());
     }
 };

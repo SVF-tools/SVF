@@ -447,10 +447,24 @@ bool MRGenerator::addModSideEffectOfCallSite(const CallICFGNode* cs, const NodeB
     if(!mods.empty())
     {
         NodeBS modset = mods;
+        // Ordinary calls expose callee writes only through memory reachable from
+        // call arguments, return values, or globals.
         modset &= (getCallSiteArgsPts(cs) | getCallSiteRetPts(cs));
         getEscapObjviaGlobals(modset,mods);
         addModSideEffectOfFunction(cs->getCaller(),modset);
         return csToModsMap[cs] |= modset;
+    }
+    return false;
+}
+
+bool MRGenerator::addUnfilteredModSideEffectOfCallSite(const CallICFGNode* cs, const NodeBS& mods)
+{
+    if(!mods.empty())
+    {
+        // Some specialised call-boundary effects are not represented by the
+        // call's argument/return points-to closure.
+        addModSideEffectOfFunction(cs->getCaller(),mods);
+        return csToModsMap[cs] |= mods;
     }
     return false;
 }
@@ -607,12 +621,7 @@ bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGN
         mod = getModSideEffectOfFunction(callee);
         ref = getRefSideEffectOfFunction(callee);
     }
-    // Thread-fork side effect (no-op unless a thread-aware MRGenerator is used).
-    // Applied after the heap/normal split so a fork edge is handled regardless of
-    // how the spawn callsite is otherwise classified: a fork forwards only the
-    // spawnee's ref (call without return); its writes interfere via thread-aware
-    // edges, so they must NOT be propagated here as a mod that kills the spawner.
-    handleForkSideEffect(mod, ref, cs, callee);
+    refineCallsiteModRef(mod, ref, cs, callee);
     // add ref set
     bool refchanged = addRefSideEffectOfCallSite(cs, ref);
     // add mod set
@@ -656,8 +665,7 @@ void MRGenerator::modRefAnalysis(CallGraphNode* callGraphNode, WorkList& worklis
         }
     }
 
-    // Thread-join side effect (no-op unless a thread-aware MRGenerator is used).
-    handleJoinSideEffect(callGraphNode, worklist);
+    propagateAdditionalModRef(callGraphNode, worklist);
 }
 
 /*!
