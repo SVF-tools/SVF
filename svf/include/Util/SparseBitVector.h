@@ -536,7 +536,9 @@ class SparseBitVector
 
         // Make sure our current iterator is valid.
         if (CurrElementIter == End)
+        {
             --CurrElementIter;
+        }
 
         // Search from our current iterator, either backwards or forwards,
         // depending on what element we are looking for.
@@ -755,7 +757,9 @@ public:
         // is nothing more to do.
         if (ElementIter == Elements.end() ||
                 ElementIter->index() != ElementIndex)
+        {
             return false;
+        }
         return ElementIter->test(Idx % ElementSize);
     }
 
