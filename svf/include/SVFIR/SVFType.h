@@ -30,7 +30,6 @@
 #ifndef INCLUDE_SVFIR_SVFTYPE_H_
 #define INCLUDE_SVFIR_SVFTYPE_H_
 
-#include "Util/SparseBitVector.h"
 #include "Util/GeneralType.h"
 
 
@@ -653,17 +652,6 @@ template <> struct std::hash<SVF::NodePair>
         uint32_t first = (uint32_t)(p.first);
         uint32_t second = (uint32_t)(p.second);
         return ((uint64_t)(first) << 32) | (uint64_t)(second);
-    }
-};
-
-/// Specialise hash for SparseBitVectors.
-template <unsigned N> struct std::hash<SVF::SparseBitVector<N>>
-{
-    size_t operator()(const SVF::SparseBitVector<N>& sbv) const
-    {
-        SVF::Hash<std::pair<std::pair<size_t, size_t>, size_t>> h;
-        return h(std::make_pair(std::make_pair(sbv.count(), sbv.find_first()),
-                                sbv.find_last()));
     }
 };
 

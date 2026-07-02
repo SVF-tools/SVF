@@ -12,6 +12,7 @@
 #ifndef POINTSTO_H_
 #define POINTSTO_H_
 
+#include <memory>
 #include <vector>
 
 #include "SVFIR/SVFType.h"
