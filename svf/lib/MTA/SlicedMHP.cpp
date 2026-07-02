@@ -36,7 +36,7 @@
 #include <Util/SVFUtil.h>
 #include <Util/WorkList.h>
 #include <Util/Options.h>
-#include "MTA/SlicedView.h"
+#include "MTA/Slicer.h"
 
 using namespace SVF;
 using namespace SVFUtil;

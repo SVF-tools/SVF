@@ -38,7 +38,7 @@
 #include <Graphs/CallGraph.h>
 #include <Graphs/ThreadCallGraph.h>
 #include <SVFIR/SVFIR.h>
-#include "MTA/SlicedView.h"
+#include "MTA/Slicer.h"
 
 using namespace SVF;
 

@@ -841,8 +841,8 @@ const Option<bool> Options::FileCheck(
     "fileck", "File Open/Close Detection",false);
 const Option<bool> Options::DFreeCheck(
     "dfree", "Double Free Detection",false);
-const Option<bool> Options::FlowSensitive(
-    "flow-sensitive", "MTA: flow-sensitive (FSAM) main analysis; false = Andersen flow-insensitive base", true);
+const Option<bool> Options::MTFlowSensitive(
+    "mt-flow-sensitive", "MTA: flow-sensitive (FSAM) main analysis; false = Andersen flow-insensitive base", true);
 const Option<bool> Options::DumpMTAGraphs(
     "dump-mta-graphs", "MTA: dump the pointer-analysis and thread call graphs (ptacg/tcg.dot)", false);
 const Option<bool> Options::EnableSlicing(

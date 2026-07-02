@@ -41,7 +41,7 @@
 #include "MTA/MHP.h"
 #include "MTA/LockAnalysis.h"
 #include "MTA/MTASVFGBuilder.h"
-#include "MTA/SlicedView.h"
+#include "MTA/Slicer.h"
 #include <unordered_set>
 
 namespace SVF
