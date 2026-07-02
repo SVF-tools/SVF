@@ -30,7 +30,7 @@
 #ifndef __ExtAPI_H
 #define __ExtAPI_H
 
-#include "SVFIR/SVFValue.h"
+#include "Util/GeneralType.h"
 #include <Util/config.h>
 #include <string>
 #include <vector>
