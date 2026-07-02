@@ -221,6 +221,12 @@ public:
     /// Interface expose to users of our pointer analysis, given two pts
     virtual AliasResult alias(const PointsTo& pts1, const PointsTo& pts2);
 
+    /// Convenience bool wrappers: return true if the two operands may/must/partial alias
+    inline bool mayAlias(const PointsTo& pts1, const PointsTo& pts2)
+    {
+        return alias(pts1, pts2)!= AliasResult::NoAlias;
+    }
+
     /// dump and debug, print out conditional pts
     //@{
     void dumpCPts() override
