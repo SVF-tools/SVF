@@ -50,8 +50,10 @@ CoreBitVector &CoreBitVector::operator=(CoreBitVector &&rhs)
 bool CoreBitVector::empty(void) const
 {
     for (const Word& w : words)
+    {
         if (w)
             return false;
+    }
     return true;
 }
 
