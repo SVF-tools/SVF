@@ -406,6 +406,7 @@ private:
 
     /// Whether it is a matched fork join pair
     bool isAliasedForkJoin(const CallICFGNode* forkSite, const CallICFGNode* joinSite);
+    ThreadAPI::ForkJoinAliasCache forkJoinAliasCache;
     /// Mark thread flags for cxtStmt
     //@{
     /// Get the flag for a cxtStmt

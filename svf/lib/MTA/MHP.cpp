@@ -1251,5 +1251,5 @@ bool ForkJoinAnalysis::isAliasedForkJoin(const CallICFGNode* forkSite,
                                         const CallICFGNode* joinSite)
 {
     return getTCG()->getThreadAPI()->isAliasedForkJoin(tct->getPTA(),
-        getForkedThread(forkSite), getJoinedThread(joinSite));
+        getForkedThread(forkSite), getJoinedThread(joinSite), forkJoinAliasCache);
 }

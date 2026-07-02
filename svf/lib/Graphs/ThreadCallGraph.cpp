@@ -128,6 +128,7 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
  */
 void ThreadCallGraph::updateJoinEdge(PointerAnalysis* pta)
 {
+    ThreadAPI::ForkJoinAliasCache aliasCache;
 
     for (CallSiteSet::const_iterator it = joinsitesBegin(), eit = joinsitesEnd(); it != eit; ++it)
     {
@@ -137,7 +138,7 @@ void ThreadCallGraph::updateJoinEdge(PointerAnalysis* pta)
         for (CallSiteSet::const_iterator it = forksitesBegin(), eit = forksitesEnd(); it != eit; ++it)
         {
             const SVFVar* forkthread = tdAPI->getForkedThread(*it);
-            if (tdAPI->isAliasedForkJoin(pta, forkthread, jointhread))
+            if (tdAPI->isAliasedForkJoin(pta, forkthread, jointhread, aliasCache))
             {
                 forkset.insert(*it);
             }

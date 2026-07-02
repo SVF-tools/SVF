@@ -41,6 +41,49 @@
 #include <iomanip>		/// for setw
 
 using namespace std;
+namespace
+{
+SVF::NodeBS collectJoinedThreadObjects(SVF::PointerAnalysis* pta,
+                                       const SVF::SVFVar* joinArg,
+                                       SVF::ThreadAPI::ForkJoinAliasCache& cache)
+{
+    SVF::Map<const SVF::SVFVar*, SVF::NodeBS>::const_iterator cacheIt =
+        cache.joinedThreadObjects.find(joinArg);
+    if (cacheIt != cache.joinedThreadObjects.end())
+        return cacheIt->second;
+
+    SVF::NodeBS objects;
+    SVF::Set<SVF::NodeID> visited;
+    std::vector<const SVF::SVFVar*> worklist{joinArg};
+    while (!worklist.empty())
+    {
+        const SVF::SVFVar* v = worklist.back();
+        worklist.pop_back();
+        if (!visited.insert(v->getId()).second)
+            continue;
+
+        for (const SVF::SVFStmt* st : v->getInEdges())
+        {
+            if (const SVF::LoadStmt* load = SVF::SVFUtil::dyn_cast<SVF::LoadStmt>(st))
+                objects |= pta->getPts(load->getRHSVarID()).toNodeBS();
+            else if (const SVF::CopyStmt* copy = SVF::SVFUtil::dyn_cast<SVF::CopyStmt>(st))
+                worklist.push_back(copy->getRHSVar());
+            else if (const SVF::PhiStmt* phi = SVF::SVFUtil::dyn_cast<SVF::PhiStmt>(st))
+                for (SVF::u32_t i = 0; i < phi->getOpVarNum(); ++i)
+                    worklist.push_back(phi->getOpVar(i));
+            else if (const SVF::GepStmt* gep = SVF::SVFUtil::dyn_cast<SVF::GepStmt>(st))
+                worklist.push_back(gep->getRHSVar());
+            else if (const SVF::CallPE* call = SVF::SVFUtil::dyn_cast<SVF::CallPE>(st))
+                for (SVF::u32_t i = 0; i < call->getOpVarNum(); ++i)
+                    worklist.push_back(call->getOpVar(i));
+        }
+    }
+
+    cache.joinedThreadObjects[joinArg] = objects;
+    return objects;
+}
+}
+
 using namespace SVF;
 
 ThreadAPI* ThreadAPI::tdAPI = nullptr;
@@ -232,9 +275,19 @@ const SVFVar* ThreadAPI::getJoinedThread(const CallICFGNode *cs) const
  */
 bool ThreadAPI::isAliasedForkJoin(PointerAnalysis *pta, const SVFVar *forkArg, const SVFVar *joinArg) const
 {
+    ForkJoinAliasCache cache;
+    return isAliasedForkJoin(pta, forkArg, joinArg, cache);
+}
+
+bool ThreadAPI::isAliasedForkJoin(PointerAnalysis *pta, const SVFVar *forkArg,
+                                  const SVFVar *joinArg, ForkJoinAliasCache& cache) const
+{
     // pthread_create receives &t (a pointer to the pthread_t object), so the
     // forked thread is identified by the pthread_t object(s) in pts(forkArg).
     const PointsTo& forkObjs = pta->getPts(forkArg->getId());
+    const NodeBS joinedObjs = collectJoinedThreadObjects(pta, joinArg, cache);
+    if (forkObjs.toNodeBS().intersects(joinedObjs))
+        return true;
 
     // (1) Direct case: the join handle is itself a pointer to the same pthread_t.
     for (NodeID o : forkObjs)
@@ -249,37 +302,6 @@ bool ThreadAPI::isAliasedForkJoin(PointerAnalysis *pta, const SVFVar *forkArg, c
     //     from and check whether the loaded-from storage is the fork's pthread_t
     //     object. This covers the common shapes soundly (an over-approximate
     //     match only adds a sound join-related value flow).
-    Set<NodeID> visited;
-    std::vector<const SVFVar*> worklist{joinArg};
-    while (!worklist.empty())
-    {
-        const SVFVar* v = worklist.back();
-        worklist.pop_back();
-        if (!visited.insert(v->getId()).second)
-            continue;
-        for (const SVFStmt* st : v->getInEdges())
-        {
-            if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(st))
-            {
-                // handle = *src : the pthread_t object is what src points to.
-                for (NodeID o : pta->getPts(load->getRHSVarID()))
-                    if (forkObjs.test(o))
-                        return true;
-            }
-            else if (const CopyStmt* copy = SVFUtil::dyn_cast<CopyStmt>(st))
-                worklist.push_back(copy->getRHSVar());
-            else if (const PhiStmt* phi = SVFUtil::dyn_cast<PhiStmt>(st))
-                for (u32_t i = 0; i < phi->getOpVarNum(); ++i)
-                    worklist.push_back(phi->getOpVar(i));
-            else if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(st))
-                worklist.push_back(gep->getRHSVar());
-            else if (const CallPE* call = SVFUtil::dyn_cast<CallPE>(st))
-                // CallPE is a MultiOpndStmt; its operands are the by-value
-                // actual argument(s), one per merged call site.
-                for (u32_t i = 0; i < call->getOpVarNum(); ++i)
-                    worklist.push_back(call->getOpVar(i));
-        }
-    }
     return false;
 }
 
