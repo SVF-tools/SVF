@@ -21,10 +21,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     environment: npm-publish
     env:
-      XCODE_VERSION: '15.3.0'  # Define Xcode version here to reuse it
+      XCODE_VERSION: 'latest-stable'  # Define Xcode version here to reuse it
     strategy:
       matrix:
-        os: [ubuntu-24.04, macos-14, ubuntu-24.04-arm]
+        os: [ubuntu-latest, macos-latest, ubuntu-24.04-arm]
 
     steps:
       # checkout the repo
@@ -38,7 +38,8 @@ jobs:
       - name: mac-setup-workaround
         if: runner.os == 'macOS'
         run: |
-          ln -sfn /Applications/Xcode_${{ env.XCODE_VERSION }}.app /Applications/Xcode.app
+          XCODE_PATH=$(dirname $(dirname $(xcode-select -p)))
+          sudo ln -sfn "$XCODE_PATH" /Applications/Xcode.app
           brew install astyle
 
       # Ubuntu settings

@@ -202,6 +202,22 @@ function unpack_z3_package {
     fi
 }
 
+function fix_macos_z3_install_name {
+    if [[ "$sysOS" != "Darwin" ]]; then
+        return
+    fi
+
+    # Only rewrite the prebuilt Z3 that build.sh owns, not a user-provided Z3_DIR.
+    if [[ "$Z3_DIR" != "$SVFHOME/$Z3Home" ]]; then
+        return
+    fi
+
+    local z3_dylib="$Z3_DIR/bin/libz3.dylib"
+    if [[ -f "$z3_dylib" ]]; then
+        install_name_tool -id "@rpath/libz3.dylib" "$z3_dylib"
+    fi
+}
+
 # OS-specific values.
 urlLLVM=""
 urlZ3=""
@@ -293,6 +309,8 @@ if [[ ! -d "$Z3_DIR" ]]; then
     export Z3_DIR="$SVFHOME/$Z3Home"
 fi
 
+fix_macos_z3_install_name
+
 # Add LLVM & Z3 to $PATH and $LD_LIBRARY_PATH (prepend so that selected instances will be used first)
 export PATH=$LLVM_DIR/bin:$Z3_DIR/bin:$PATH
 export LD_LIBRARY_PATH=$LLVM_DIR/lib:$Z3_DIR/bin:$LD_LIBRARY_PATH
@@ -311,6 +329,15 @@ else
 fi
 BUILD_DIR="./${BUILD_TYPE}-build"
 
+CMAKE_RPATH_ARGS=()
+if [[ "$sysOS" == "Darwin" ]]; then
+    CMAKE_RPATH_ARGS=(
+        -DCMAKE_MACOSX_RPATH=ON
+        "-DCMAKE_BUILD_RPATH=@loader_path/../lib;@loader_path/../../${Z3Home}/bin"
+        "-DCMAKE_INSTALL_RPATH=@loader_path/../lib;@loader_path/../../../${Z3Home}/bin"
+    )
+fi
+
 rm -rf "${BUILD_DIR}"
 mkdir "${BUILD_DIR}"
 # If you need shared libs, turn BUILD_SHARED_LIBS on
@@ -318,6 +345,7 @@ cmake -D CMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}"   \
     -DSVF_ENABLE_ASSERTIONS:BOOL=true              \
     -DSVF_SANITIZE="${SVF_SANITIZER}"              \
     -DBUILD_SHARED_LIBS=${BUILD_DYN_LIB}            \
+    "${CMAKE_RPATH_ARGS[@]}"                        \
     -S "${SVFHOME}" -B "${BUILD_DIR}"
 cmake --build "${BUILD_DIR}" -j ${jobs}
 
