@@ -32,9 +32,8 @@
 
 
 #include "CFL/CFLBase.h"
-#include "CFL/CFLStat.h"
 #include "CFL/CFLSVFGBuilder.h"
-#include "WPA/Andersen.h"
+#include "MemoryModel/PTATY.h"
 
 namespace SVF
 {

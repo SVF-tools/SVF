@@ -31,9 +31,8 @@
 #ifndef CFL_CFLSTAT_H_
 #define CFL_CFLSTAT_H_
 
+#include "CFL/CFLBase.h"
 #include "Util/PTAStat.h"
-#include "CFL/CFLAlias.h"
-#include "CFL/CFLVF.h"
 
 namespace SVF
 {
