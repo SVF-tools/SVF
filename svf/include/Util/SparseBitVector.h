@@ -536,7 +536,9 @@ class SparseBitVector
 
         // Make sure our current iterator is valid.
         if (CurrElementIter == End)
+        {
             --CurrElementIter;
+        }
 
         // Search from our current iterator, either backwards or forwards,
         // depending on what element we are looking for.
@@ -755,7 +757,9 @@ public:
         // is nothing more to do.
         if (ElementIter == Elements.end() ||
                 ElementIter->index() != ElementIndex)
+        {
             return false;
+        }
         return ElementIter->test(Idx % ElementSize);
     }
 
@@ -1231,7 +1235,7 @@ void dump(const SparseBitVector<ElementSize> &LHS, std::ostream &out)
     out << "[";
 
     typename SparseBitVector<ElementSize>::iterator bi = LHS.begin(),
-                                                    be = LHS.end();
+             be = LHS.end();
     if (bi != be)
     {
         out << *bi;
