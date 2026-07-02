@@ -36,7 +36,7 @@
 #include "MTA/MTASVFGBuilder.h"
 #include "MTA/FSMPTA.h"
 #include "MTA/Slicer.h"
-#include "MTA/SlicedView.h"
+#include "MTA/Slicer.h"
 #include "MTA/SlicedMHP.h"
 #include "MTA/SlicedLockAnalysis.h"
 #include "Graphs/ThreadCallGraph.h"
