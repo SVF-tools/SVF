@@ -556,21 +556,6 @@ public:
     void print(std::ostream& os) const override;
 };
 
-// TODO: be explicit that this is a pair of 32-bit unsigneds?
-template <> struct Hash<NodePair>
-{
-    size_t operator()(const NodePair& p) const
-    {
-        // Make sure our assumptions are sound: use u32_t
-        // and u64_t. If NodeID is not actually u32_t or size_t
-        // is not u64_t we should be fine since we get a
-        // consistent result.
-        uint32_t first = (uint32_t)(p.first);
-        uint32_t second = (uint32_t)(p.second);
-        return ((uint64_t)(first) << 32) | (uint64_t)(second);
-    }
-};
-
 #if !defined NDBUG && defined USE_SVF_DBOUT
 // TODO: This comes from the following link
 // https://github.com/llvm/llvm-project/blob/75e33f71c2dae584b13a7d1186ae0a038ba98838/llvm/include/llvm/Support/Debug.h#L64
@@ -640,36 +625,5 @@ enum AliasResult
 };
 
 } // End namespace SVF
-
-template <> struct std::hash<SVF::NodePair>
-{
-    size_t operator()(const SVF::NodePair& p) const
-    {
-        // Make sure our assumptions are sound: use u32_t
-        // and u64_t. If NodeID is not actually u32_t or size_t
-        // is not u64_t we should be fine since we get a
-        // consistent result.
-        uint32_t first = (uint32_t)(p.first);
-        uint32_t second = (uint32_t)(p.second);
-        return ((uint64_t)(first) << 32) | (uint64_t)(second);
-    }
-};
-
-template <typename T> struct std::hash<std::vector<T>>
-{
-    size_t operator()(const std::vector<T>& v) const
-    {
-        // TODO: repetition with CBV.
-        size_t h = v.size();
-
-        SVF::Hash<T> hf;
-        for (const T& t : v)
-        {
-            h ^= hf(t) + 0x9e3779b9 + (h << 6) + (h >> 2);
-        }
-
-        return h;
-    }
-};
 
 #endif /* INCLUDE_SVFIR_SVFTYPE_H_ */

@@ -1,10 +1,11 @@
 #ifndef Hash_H
 #define Hash_H
 
-#include <unordered_map>
-#include <unordered_set>
 #include <map>
 #include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 namespace SVF
 {
@@ -56,5 +57,22 @@ template <typename Key, typename Value, typename Compare = std::less<Key>,
 using OrderedMap = std::map<Key, Value, Compare, Allocator>;
 
 }  // namespace SVF
+
+template <typename T> struct std::hash<std::vector<T>>
+{
+    size_t operator()(const std::vector<T>& v) const
+    {
+        // TODO: repetition with CBV.
+        size_t h = v.size();
+
+        SVF::Hash<T> hf;
+        for (const T& t : v)
+        {
+            h ^= hf(t) + 0x9e3779b9 + (h << 6) + (h >> 2);
+        }
+
+        return h;
+    }
+};
 
 #endif // Hash_H

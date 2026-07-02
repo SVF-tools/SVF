@@ -34,6 +34,8 @@
 #include <list>
 #include <stack>
 #include <vector>
+
+#include "Util/Hash.h"
 #include "Util/SparseBitVector.h"
 
 namespace SVF
@@ -75,4 +77,33 @@ typedef Set<Version> VersionSet;
 typedef std::pair<NodeID, Version> VersionedVar;
 typedef Set<VersionedVar> VersionedVarSet;
 
-}
+// TODO: be explicit that this is a pair of 32-bit unsigneds?
+template <> struct Hash<NodePair>
+{
+    size_t operator()(const NodePair& p) const
+    {
+        // Make sure our assumptions are sound: use u32_t
+        // and u64_t. If NodeID is not actually u32_t or size_t
+        // is not u64_t we should be fine since we get a
+        // consistent result.
+        uint32_t first = (uint32_t)(p.first);
+        uint32_t second = (uint32_t)(p.second);
+        return ((uint64_t)(first) << 32) | (uint64_t)(second);
+    }
+};
+
+}  // namespace SVF
+
+template <> struct std::hash<SVF::NodePair>
+{
+    size_t operator()(const SVF::NodePair& p) const
+    {
+        // Make sure our assumptions are sound: use u32_t
+        // and u64_t. If NodeID is not actually u32_t or size_t
+        // is not u64_t we should be fine since we get a
+        // consistent result.
+        uint32_t first = (uint32_t)(p.first);
+        uint32_t second = (uint32_t)(p.second);
+        return ((uint64_t)(first) << 32) | (uint64_t)(second);
+    }
+};
