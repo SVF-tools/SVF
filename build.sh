@@ -260,6 +260,14 @@ if [[ ! -d "$Z3_DIR" ]]; then
 		      echo "z3 binary installation failed."
 		      exit 1
 	        fi
+            if [[ -n "$MACOS_Z3_VERSION" ]]; then
+                installedZ3Version=$(brew list --versions z3 | awk '{print $2}' | head -n 1)
+                if [[ "$installedZ3Version" != "$MACOS_Z3_VERSION" ]]; then
+                    echo "Expected Homebrew z3 $MACOS_Z3_VERSION on macOS, but found $installedZ3Version."
+                    exit 1
+                fi
+                echo "Verified Homebrew z3 version $installedZ3Version."
+            fi
             mkdir -p $SVFHOME/$Z3Home
             ln -s $(brew --prefix z3)/* $SVFHOME/$Z3Home
         else
