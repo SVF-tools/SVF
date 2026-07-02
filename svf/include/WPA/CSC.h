@@ -32,7 +32,7 @@
 
 #include "Graphs/ConsG.h"
 #include "Graphs/SCC.h"
-#include "SVFIR/SVFValue.h" // for NodeBS
+#include "Util/GeneralType.h"
 #include "Util/WorkList.h"
 #include <limits.h>
 #include <map>

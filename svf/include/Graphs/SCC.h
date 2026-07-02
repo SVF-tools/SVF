@@ -40,8 +40,8 @@
 #ifndef SCC_H_
 #define SCC_H_
 
-#include "SVFIR/SVFValue.h"	// for NodeBS
-#include "Util/WorkList.h"	// for NodeBS
+#include "Util/GeneralType.h"  // for NodeBS
+#include "Util/WorkList.h"
 #include <limits.h>
 #include <stack>
 #include <map>
