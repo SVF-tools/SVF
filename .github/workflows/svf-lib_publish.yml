@@ -52,8 +52,8 @@ jobs:
         if: github.event_name == 'push' && github.repository == 'SVF-tools/SVF'
         run: |
           echo $RUNNER_OS
-          git config --global user.email ${{secrets.npm_email}}
-          git config --global user.name "GitHub Actions Build"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
 
       # code-format and build-svf
       - name: code-format-and-build-svf
@@ -80,7 +80,7 @@ jobs:
             git status
             git add .
             if [ -n "$(git status -s)" ]; then git commit -m"SVF code formatter"; fi
-            git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF.git   HEAD:master
+            git push "https://x-access-token:${{github.token}}@github.com/${{github.repository}}.git" HEAD:master
             cd $GITHUB_WORKSPACE/docs && doxygen doxygen.config
             cd $GITHUB_WORKSPACE  && git clone https://github.com/SVF-tools/SVF-doxygen.git
             cp -r $GITHUB_WORKSPACE/docs/generated-doc/html $GITHUB_WORKSPACE/SVF-doxygen/
