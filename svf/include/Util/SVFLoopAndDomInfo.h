@@ -31,9 +31,8 @@
 #ifndef SVFLOOPANDDOMINFO_H
 #define SVFLOOPANDDOMINFO_H
 
-#include "SVFIR/SVFType.h"
-#include "Graphs/GraphPrinter.h"
 #include "Util/Casting.h"
+#include "Util/GeneralType.h"
 #include "Graphs/BasicBlockG.h"
 
 namespace SVF
