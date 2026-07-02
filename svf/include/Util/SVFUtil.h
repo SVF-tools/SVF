@@ -30,7 +30,6 @@
 #ifndef AnalysisUtil_H_
 #define AnalysisUtil_H_
 
-#include "FastCluster/fastcluster.h"
 #include "SVFIR/SVFValue.h"
 #include "Util/SVFLoopAndDomInfo.h"
 #include "Util/ExtAPI.h"
