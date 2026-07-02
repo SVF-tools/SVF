@@ -39,6 +39,28 @@ using namespace SVF;
 using namespace SVFUtil;
 
 /*!
+ * Constructor
+ */
+TCT::TCT(PointerAnalysis* p) :pta(p),TCTNodeNum(0),TCTEdgeNum(0),MaxCxtSize(0)
+{
+    tcg = SVFUtil::dyn_cast<ThreadCallGraph>(pta->getCallGraph());
+    assert(tcg != nullptr && "TCT::TCT: call graph is not a ThreadCallGraph!");
+    tcg->updateCallGraph(pta);
+    //tcg->updateJoinEdge(pta);
+    tcgSCC = pta->getCallGraphSCC();
+    tcgSCC->find();
+    build();
+}
+
+TCT::~TCT()
+{
+    for (const ICFGNode* dummyForkSite: dummyForkSites)
+    {
+        delete dummyForkSite;
+    }
+}
+
+/*!
  * An instruction i is in loop
  * (1) the instruction i itself
  * (2) all the callsites invoke the function where i resides in
@@ -396,13 +418,15 @@ void TCT::build()
     // start routine is empty
 
     collectEntryFunInCallGraph();
+
     for (FunSet::iterator it=entryFuncSet.begin(), eit=entryFuncSet.end(); it!=eit; ++it)
     {
         if (!isCandidateFun(*it))
             continue;
         CallStrCxt cxt;
         CxtThreadProc dummyCtp(-1, cxt, nullptr);
-        TCTNode* mainTCTNode = getOrCreateTCTNode(cxt, nullptr, dummyCtp, *it);
+        const ICFGNode* dummyForkSite = createDummyForkSite();
+        TCTNode* mainTCTNode = getOrCreateTCTNode(cxt, dummyForkSite, dummyCtp, *it);
         CxtThreadProc t(mainTCTNode->getId(), cxt, *it);
         pushToCTPWorkList(t);
     }

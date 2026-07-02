@@ -158,9 +158,7 @@ public:
     ThreadCallGraph(ThreadCallGraph& cg) = delete;
 
     /// Destructor
-    virtual ~ThreadCallGraph()
-    {
-    }
+    virtual ~ThreadCallGraph();
 
     /// ClassOf
     //@{

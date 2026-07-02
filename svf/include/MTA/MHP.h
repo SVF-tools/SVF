@@ -121,7 +121,7 @@ public:
     /// Print interleaving results
     void printInterleaving();
 
-private:
+protected:
 
     inline const CallGraph::FunctionSet& getCallee(const CallICFGNode* inst, CallGraph::FunctionSet& callees)
     {
@@ -130,7 +130,8 @@ private:
     }
     /// Update non-candidate functions' interleaving.
     /// Copy interleaving threads of the entry inst to other insts.
-    void updateNonCandidateFunInterleaving();
+    /// Virtual so SlicedMHP can iterate the sliced CallGraph instead.
+    virtual void updateNonCandidateFunInterleaving();
 
     /// Handle non-candidate function
     void handleNonCandidateFun(const CxtThreadStmt& cts);
@@ -149,6 +150,24 @@ private:
 
     /// Handle intra
     void handleIntra(const CxtThreadStmt& cts);
+
+    /// ICFG/CallGraph traversal hooks. The default implementations walk the full
+    /// ICFG/CallGraph; a subclass analysing a sliced view (SlicedMHP) overrides
+    /// them to walk only the kept nodes/edges, so the shared handlers above need
+    /// not be copied just to swap the traversal.
+    //@{
+    virtual const ICFGNode* getFunEntry(const FunObjVar* fun) const;
+    virtual void getSuccNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const;
+    virtual void getInEdgesOfCallGraphNode(const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const;
+
+    /// Project an interleaving-seed node onto the kept graph. The full analysis
+    /// returns the node itself; a sliced subclass returns the first kept node(s)
+    /// reachable from it (intra-procedurally), so a seed that would land on a
+    /// removed node still propagates into the kept body instead of being stranded
+    /// (getSuccNodes() yields nothing for a non-kept node). Used where a seed is a
+    /// raw basic-block entry with no guaranteed-kept anchor (handleJoin loop exits).
+    virtual void projectSeedToKept(const ICFGNode* node, std::vector<const ICFGNode*>& out) const;
+    //@}
 
     /// Add/Remove interleaving thread for statement inst
     //@{
@@ -386,10 +405,8 @@ private:
     bool sameLoopTripCount(const ICFGNode* forkSite, const ICFGNode* joinSite);
 
     /// Whether it is a matched fork join pair
-    bool isAliasedForkJoin(const CallICFGNode* forkSite, const CallICFGNode* joinSite)
-    {
-        return tct->getPTA()->alias(getForkedThread(forkSite)->getId(), getJoinedThread(joinSite)->getId());
-    }
+    bool isAliasedForkJoin(const CallICFGNode* forkSite, const CallICFGNode* joinSite);
+    ThreadAPI::ForkJoinAliasCache forkJoinAliasCache;
     /// Mark thread flags for cxtStmt
     //@{
     /// Get the flag for a cxtStmt

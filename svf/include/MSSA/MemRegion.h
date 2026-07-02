@@ -333,6 +333,14 @@ protected:
     /// Get Mod-Ref of a callee function
     virtual bool handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGNode* cs, const FunObjVar* fun);
 
+    /// Extension hooks for specialised MRGenerators: no-op in the base. They
+    /// run during the mod/ref fixpoint, before MemorySSA creates callsite
+    /// MU/CHI nodes; subclasses use them when a call boundary needs non-standard
+    /// mod/ref effects to expose the right ActualIN/ActualOUT nodes.
+    virtual void refineCallsiteModRef(NodeBS& /*mod*/, NodeBS& /*ref*/,
+                                      const CallICFGNode* /*cs*/, const FunObjVar* /*callee*/) {}
+    virtual void propagateAdditionalModRef(CallGraphNode* /*callGraphNode*/, WorkList& /*worklist*/) {}
+
 
     /// Add cpts to store/load
     //@{
@@ -381,6 +389,15 @@ protected:
     bool addRefSideEffectOfCallSite(const CallICFGNode* cs, const NodeBS& refs);
     /// Add indirect def an memory object in the function
     bool addModSideEffectOfCallSite(const CallICFGNode* cs, const NodeBS& mods);
+    /// Add indirect def to a callsite without applying call-argument filtering.
+    bool addUnfilteredModSideEffectOfCallSite(const CallICFGNode* cs, const NodeBS& mods);
+
+    /// The call graph this generator works on (for subclasses, e.g. the
+    /// thread-aware MTA MRGenerator that inspects fork/join edges).
+    CallGraph* getCallGraph() const
+    {
+        return callGraph;
+    }
 
     /// Get indirect refs of a function
     inline const NodeBS& getRefSideEffectOfFunction(const FunObjVar* fun)

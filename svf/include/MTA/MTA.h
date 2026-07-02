@@ -35,20 +35,27 @@
 #define MTA_H_
 
 #include <set>
+#include <string>
 #include <vector>
 #include "SVFIR/SVFIR.h"
 #include "SVFIR/SVFValue.h"
+#include "MemoryModel/PointsTo.h"
 
 namespace SVF
 {
 
 class PointerAnalysis;
 class AndersenWaveDiff;
+class AndersenBase;
 class ThreadCallGraph;
+class CallGraph;
 class MTAStat;
 class TCT;
 class MHP;
 class LockAnalysis;
+class SVFStmt;
+class SVFIR;
+class ICFGNode;
 
 /*!
  * Base data race detector
@@ -70,8 +77,8 @@ public:
     virtual MHP* computeMHP(TCT* tct);
     /// Compute locksets
     virtual LockAnalysis* computeLocksets(TCT* tct);
-    /// Perform detection
-    virtual void detect();
+    /// Run the shared detector and print a race report
+    virtual void reportRaces();
 
     // Not implemented for now
     // void dump(Module &module, MHP *mhp, LockAnalysis *lsa);
@@ -85,7 +92,46 @@ public:
     {
         return lsa;
     }
+
+    /// A race pair: two statements that may race.
+    struct RacePair {
+        const SVFStmt* stmt1;
+        const SVFStmt* stmt2;
+        RacePair(const SVFStmt* s1, const SVFStmt* s2) : stmt1(s1), stmt2(s2) {}
+        bool operator<(const RacePair& other) const {
+            if (stmt1 != other.stmt1) return stmt1 < other.stmt1;
+            return stmt2 < other.stmt2;
+        }
+    };
+
+    /// Shared equivalence-class race detector (used by both MTA::reportRaces and
+    /// the SlicedMTA pipeline). Returns the racy statements and fills outRacePairs.
+    static std::set<const SVFStmt*> detectRace(
+        SVFIR* svfIr, AndersenBase* pta, MHP* mhp, LockAnalysis* lockAnalysis,
+        CallGraph* callGraph, std::set<RacePair>& outRacePairs);
+
+    /// Escape/points-to helpers for the shared detector.
+    static PointsTo getGlobalObjectVariables(SVFIR* svfIr);
+    static PointsTo getPointsToClosure(AndersenBase* pta, const PointsTo& pts);
+
 private:
+    /// One occurrence of a memory access under one thread instance.
+    struct RaceOccurrence {
+        const SVFStmt* stmt;
+        const ICFGNode* node;
+        bool isStore;
+        NodeID tid;
+        NodeBS interleav;
+        bool locked;
+    };
+
+    /// Helpers for the equivalence-class race detector.
+    //@{
+    static bool occurrencesRace(MHP* mhp, const RaceOccurrence& first, const RaceOccurrence& second);
+    static void commitRacePair(std::set<RacePair>& out,
+                               const RaceOccurrence& first, const RaceOccurrence& second);
+    //@}
+
     ThreadCallGraph* tcg;
     std::unique_ptr<TCT> tct;
     std::unique_ptr<MTAStat> stat;

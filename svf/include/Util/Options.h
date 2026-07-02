@@ -79,7 +79,7 @@ public:
 
     // DDAPass.cpp
     static const Option<u32_t> MaxPathLen;
-    static const Option<u32_t> MaxContextLen;
+    static Option<u32_t> MaxContextLen;
     static const Option<u32_t> MaxStepInWrapper;
     static const Option<std::string> UserInputQuery;
     static const Option<bool> InsenRecur;
@@ -256,8 +256,23 @@ public:
     static const Option<bool> FileCheck;
     /// double free checker, Default: false
     static const Option<bool> DFreeCheck;
-    /// data race checker, Default: false
-    static const Option<bool> RaceCheck;
+    /// MTA: flow-sensitive (FSAM) main analysis; false = Andersen flow-insensitive base, Default: true
+    static const Option<bool> MTFlowSensitive;
+    /// MTA: dump the pointer-analysis and thread call graphs (ptacg/tcg.dot), Default: false
+    static const Option<bool> DumpMTAGraphs;
+
+    /// MTA slicing: slice before the FSAM main analysis (false = whole-program baseline), Default: true
+    static const Option<bool> EnableSlicing;
+    /// MTA slicing: build the main FSMPTA value flow from the sliced ILA, Default: false
+    static const Option<bool> MainIlaSliced;
+    /// MTA slicing: seed the ILA slice with [THREAD-VF] sources (paper §4.2), Default: true
+    static const Option<bool> ThreadVFSources;
+    /// MTA slicing: one unified slice for ILA + FSPTA (single-pass baseline), Default: false
+    static const Option<bool> SlicingSingle;
+    /// MTA slicing: dump intermediate dot graphs (ICFG/TCG/SVFG/...), Default: false
+    static const Option<bool> SlicedDumpDot;
+    /// MTA: observe the FSAM points-to + ILA instead of detecting races, Default: false
+    static const Option<bool> MTAObserve;
     /// if the access index of gepstmt is unknown, skip it, Default: false
     static const Option<bool> GepUnknownIdx;
     static const Option<bool> RunUncallFuncs;
