@@ -32,7 +32,11 @@
 #include <deque>
 #include <iostream>
 #include <list>
+#include <map>
+#include <set>
 #include <stack>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "Util/Hash.h"
@@ -40,6 +44,24 @@
 
 namespace SVF
 {
+
+template <typename Key, typename Hash = Hash<Key>,
+          typename KeyEqual = std::equal_to<Key>,
+          typename Allocator = std::allocator<Key>>
+using Set = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
+
+template <typename Key, typename Value, typename Hash = Hash<Key>,
+          typename KeyEqual = std::equal_to<Key>,
+          typename Allocator = std::allocator<std::pair<const Key, Value>>>
+using Map = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
+
+template <typename Key, typename Compare = std::less<Key>,
+        typename Allocator = std::allocator<Key>>
+using OrderedSet = std::set<Key, Compare, Allocator>;
+
+template <typename Key, typename Value, typename Compare = std::less<Key>,
+        typename Allocator = std::allocator<std::pair<const Key, Value>>>
+using OrderedMap = std::map<Key, Value, Compare, Allocator>;
 
 typedef std::ostream OutStream;
 typedef unsigned u32_t;
