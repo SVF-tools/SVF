@@ -15,7 +15,7 @@
 #include <memory>
 #include <vector>
 
-#include "SVFIR/SVFType.h"
+#include "Util/GeneralType.h"
 #include "Util/BitVector.h"
 #include "Util/CoreBitVector.h"
 #include "Util/SparseBitVector.h"
