@@ -28,9 +28,11 @@
  */
 
 #include "MemoryModel/PointerAnalysis.h"
-#include <Graphs/SVFGNode.h>
 #include "Graphs/CallGraph.h"
+#include "Graphs/GraphPrinter.h"
+#include "Graphs/SVFGNode.h"
 #include "Graphs/VFG.h"
+#include "Util/GeneralType.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 

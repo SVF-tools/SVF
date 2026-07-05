@@ -32,7 +32,6 @@
 
 #include "Util/GeneralType.h"
 
-
 namespace SVF
 {
 class SVFType;

@@ -30,12 +30,18 @@
 #ifndef SVF_CONTROLDG_H
 #define SVF_CONTROLDG_H
 
+#include "Graphs/GenericGraph.h"
+#include "Graphs/GraphPrinter.h"
+#include "Graphs/ICFGNode.h"
 #include "SVFIR/SVFIR.h"
+#include "Util/GeneralType.h"
+#include "Util/SVFUtil.h"
 
 namespace SVF
 {
 
 class CDGNode;
+class SVFVar;
 
 typedef GenericEdge<CDGNode> GenericCDGEdgeTy;
 

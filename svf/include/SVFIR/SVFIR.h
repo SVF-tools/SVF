@@ -31,6 +31,7 @@
 #define INCLUDE_SVFIR_H_
 
 #include "Graphs/IRGraph.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {
@@ -44,7 +45,6 @@ class SVFIR : public IRGraph
     friend class SVFIRBuilder;
     friend class ExternalPAG;
     friend class PAGBuilderFromFile;
-    friend class TypeBasedHeapCloning;
     friend class BVDataPTAImpl;
     friend class GraphDBClient;
     friend class GraphDBSVFIRBuilder;
