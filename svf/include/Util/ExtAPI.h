@@ -31,10 +31,9 @@
 #define __ExtAPI_H
 
 #include "Util/GeneralType.h"
-#include <Util/config.h>
+
 #include <string>
 #include <vector>
-#include <map>
 
 /// For a more detailed explanation of how External APIs are handled in SVF, please refer to the SVF Wiki: https://github.com/SVF-tools/SVF/wiki/Handling-External-APIs-with-extapi.c
 

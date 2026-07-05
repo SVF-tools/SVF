@@ -35,6 +35,8 @@
 namespace SVF
 {
 
+class SVFType;
+
 /*!
  * Type Info of an abstract memory object
  */
