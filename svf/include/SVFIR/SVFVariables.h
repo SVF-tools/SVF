@@ -35,6 +35,7 @@
 #include "Graphs/GenericGraph.h"
 #include "SVFIR/ObjTypeInfo.h"
 #include "SVFIR/SVFStatements.h"
+#include "Util/GeneralType.h"
 #include "Util/SVFUtil.h"
 
 namespace SVF

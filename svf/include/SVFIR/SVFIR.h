@@ -30,8 +30,10 @@
 #ifndef INCLUDE_SVFIR_H_
 #define INCLUDE_SVFIR_H_
 
+#include "Graphs/ICFG.h"
 #include "Graphs/IRGraph.h"
 #include "Util/GeneralType.h"
+#include "Util/SVFUtil.h"
 
 namespace SVF
 {

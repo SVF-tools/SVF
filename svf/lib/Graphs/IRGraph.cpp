@@ -28,6 +28,7 @@
  */
 
 #include "Graphs/GraphPrinter.h"
+#include "Graphs/ICFG.h"
 #include "Graphs/IRGraph.h"
 #include "Util/GeneralType.h"
 #include "Util/Options.h"
