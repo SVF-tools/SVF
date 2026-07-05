@@ -30,9 +30,13 @@
 #ifndef INCLUDE_MEMORYMODEL_POINTERANALYSISIMPL_H_
 #define INCLUDE_MEMORYMODEL_POINTERANALYSISIMPL_H_
 
-#include <Graphs/ConsG.h>
+#include "Graphs/ConsG.h"
 #include "MemoryModel/PTATY.h"
 #include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/AbstractPointsToDS.h"
+#include "MemoryModel/MutablePointsToDS.h"
+#include "MemoryModel/PersistentPointsToDS.h"
+#include "MemoryModel/ConditionalPT.h"
 
 namespace SVF
 {
