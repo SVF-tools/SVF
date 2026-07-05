@@ -32,6 +32,7 @@
 #include "WPA/Andersen.h"
 #include "WPA/Steensgaard.h"
 #include "WPA/WPAStat.h"
+#include "Util/GeneralType.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 
