@@ -30,10 +30,12 @@
 #ifndef INCLUDE_CFL_GRAMMARBUILDER_H_
 #define INCLUDE_CFL_GRAMMARBUILDER_H_
 
-#include "CFL/CFGrammar.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {
+
+class GrammarBase;
 
 /**
  * Build Grammar from a user specified grammar text

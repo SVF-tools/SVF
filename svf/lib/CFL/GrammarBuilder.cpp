@@ -31,6 +31,8 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+
+#include "CFL/CFGrammar.h"
 #include "CFL/GrammarBuilder.h"
 
 namespace SVF

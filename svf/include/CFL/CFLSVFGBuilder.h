@@ -27,10 +27,15 @@
 #ifndef SVF_CFLSVFGBUILDER_H
 #define SVF_CFLSVFGBUILDER_H
 
+#include "Graphs/SVFG.h"
 #include "SABER/SaberSVFGBuilder.h"
+#include "Util/WorkList.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {
+
+class BVDataPTAImpl;
 
 class CFLSVFGBuilder: public SaberSVFGBuilder
 {

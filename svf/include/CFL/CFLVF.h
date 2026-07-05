@@ -33,10 +33,14 @@
 
 #include "CFL/CFLBase.h"
 #include "CFL/CFLSVFGBuilder.h"
+#include "Graphs/SVFG.h"
 #include "MemoryModel/PTATY.h"
 
 namespace SVF
 {
+
+class SVFIR;
+
 class CFLVF : public CFLBase
 {
 

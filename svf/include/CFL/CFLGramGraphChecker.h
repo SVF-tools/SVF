@@ -30,7 +30,9 @@
 #define INCLUDE_CFL_CFLGRAMGRAPHCHECKER_H_
 
 #include "CFL/CFGrammar.h"
+#include "CFL/CFLGraphBuilder.h"
 #include "Graphs/CFLGraph.h"
+
 namespace SVF
 {
 

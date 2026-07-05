@@ -27,6 +27,7 @@
  *      Author: Pei Xu
  */
 
+#include "CFL/CFLGramGraphChecker.h"
 #include "CFL/CFLVF.h"
 #include "MemoryModel/PointerAnalysis.h"
 #include "WPA/Andersen.h"
