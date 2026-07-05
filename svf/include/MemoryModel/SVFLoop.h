@@ -30,10 +30,12 @@
 #ifndef SVF_SVFLOOP_H
 #define SVF_SVFLOOP_H
 
-#include "SVFIR/SVFType.h"
 
 namespace SVF
 {
+
+class ICFGEdge;
+class ICFGNode;
 
 class SVFLoop
 {
