@@ -28,6 +28,7 @@
 
 #include "AE/Core/AbstractState.h"
 #include "Graphs/SVFG.h"
+#include "MSSA/SVFGBuilder.h"
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SVFIRBuilder.h"
 #include "Util/CommandLine.h"

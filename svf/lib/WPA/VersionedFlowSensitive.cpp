@@ -7,15 +7,17 @@
  *      Author: Mohamad Barbar
  */
 
-#include "WPA/Andersen.h"
-#include "WPA/VersionedFlowSensitive.h"
-#include "Util/Options.h"
-#include "MemoryModel/PTATY.h"
-#include "MemoryModel/PointsTo.h"
 #include <iostream>
 #include <queue>
 #include <thread>
 #include <mutex>
+
+#include "WPA/Andersen.h"
+#include "WPA/VersionedFlowSensitive.h"
+#include "WPA/WPAStat.h"
+#include "MemoryModel/PTATY.h"
+#include "MemoryModel/PointsTo.h"
+#include "Util/Options.h"
 
 using namespace SVF;
 

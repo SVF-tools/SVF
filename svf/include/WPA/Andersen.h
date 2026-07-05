@@ -37,17 +37,17 @@
 
 #include "MemoryModel/PTATY.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
-#include "WPA/WPAStat.h"
+#include "MemoryModel/PointsTo.h"
 #include "WPA/WPASolver.h"
-#include "SVFIR/SVFIR.h"
 #include "Graphs/ConsG.h"
+#include "Util/GeneralType.h"
 #include "Util/Options.h"
 
 namespace SVF
 {
 
-
 class ThreadCallGraph;
+class SVFIR;
 
 /*!
  * Abstract class of inclusion-based Pointer Analysis
