@@ -30,6 +30,7 @@
 #ifndef SABERSVFGBUILDER_H_
 #define SABERSVFGBUILDER_H_
 
+#include "Graphs/SVFG.h"
 #include "MSSA/SVFGBuilder.h"
 #include "Util/GeneralType.h"
 #include "Util/WorkList.h"
@@ -41,7 +42,6 @@ namespace SVF
 class BVDataPTAImpl;
 class CallICFGNode;
 class SaberCondAllocator;
-class SVFGNode;
 class ValVar;
 
 class SaberSVFGBuilder : public SVFGBuilder
