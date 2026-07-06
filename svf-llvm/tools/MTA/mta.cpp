@@ -23,7 +23,6 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SVFIRBuilder.h"
 #include "MTA/MTA.h"
-#include "MTA/SlicedMTA.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 

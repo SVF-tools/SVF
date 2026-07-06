@@ -25,7 +25,9 @@
  *
  *      Author: Jiawei Yang
  *
- * The MSli program slicers: a shared SlicerBase plus three concrete slicers.
+ * The program slicers of "Multi-Stage On-Demand Program Slicing for Modular
+ * Analysis of Multi-Threaded Programs" (ISSTA 2026): a shared SlicerBase plus
+ * three concrete slicers.
  *   - MTASlicer   : ILA (sync + dual + call) slice for the thread-aware analysis
  *   - PTASlicer   : data-dependence slice over the thread-aware VFG_pre
  *   - SingleSlicer: one unified slice combining all three dependence kinds, shared
@@ -45,6 +47,7 @@
 #include <Graphs/ThreadCallGraph.h>
 #include <Graphs/ICFG.h>
 #include <Graphs/ICFGNode.h>
+#include <fstream>
 #include <Graphs/ICFGEdge.h>
 #include <Graphs/CallGraph.h>
 #include <Util/WorkList.h>
@@ -295,6 +298,18 @@ namespace SlicedViewAdapter
 /// Escape a string for use as a Graphviz dot label.
 std::string escapeDotLabel(const std::string& s);
 
+/// Dot dumping shared by the three sliced views (ICFG/PAG/ThreadCallGraph).
+//@{
+/// Open <filename>.dot and write the `digraph` header. Returns false (logging an
+/// error) if the file cannot be opened.
+bool openDotGraph(std::ofstream& out, const std::string& filename,
+                  const char* graphName, const char* rankdir, const char* nodeAttr);
+/// Emit one node line:  <idPrefix><id> [label="<escaped label>"];
+void emitDotNode(std::ofstream& out, const char* idPrefix, SVF::NodeID id, const std::string& label);
+/// Close the graph, the stream, and log "[<tag>] <what> dumped to <filename>.dot".
+void finishDotGraph(std::ofstream& out, const std::string& filename, const char* tag, const char* what);
+//@}
+
 /// First kept node of fun's entry block under the sliced view (original entry
 /// if none kept, or if no view is supplied).
 const SVF::ICFGNode* getFunEntry(const SlicedICFGView* icfgView, const SVF::FunObjVar* fun);
@@ -322,6 +337,10 @@ bool acceptsNode(const SlicedICFGView* icfgView, const SVF::ICFGNode* node);
 /// In-edges of a call-graph node under the sliced view (full in-edges if none).
 void getInEdgesOfCallGraphNode(const SlicedSVFIRView* slicedView, const SVF::CallGraphNode* node,
                                std::vector<const SVF::CallGraphEdge*>& out);
+
+/// The CallGraph the sliced analyses scan: the sliced ThreadCallGraph's original
+/// CallGraph if a view is supplied, else the full PAG CallGraph.
+const SVF::CallGraph* getAnalysisCallGraph(const SlicedSVFIRView* slicedView);
 } // namespace SlicedViewAdapter
 
 /**
