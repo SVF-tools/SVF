@@ -25,6 +25,10 @@
  *
  *  Created on: 26 Aug 2015
  *      Author: pengd
+ *
+ * Lock analysis. Also declares SlicedLockAnalysis, the sliced-view lock analysis
+ * used by the analysis of "Multi-Stage On-Demand Program Slicing for Modular
+ * Analysis of Multi-Threaded Programs" (ISSTA 2026).
  */
 
 #ifndef INCLUDE_MTA_LockAnalysis_H_
@@ -35,8 +39,15 @@
  */
 #include "MTA/TCT.h"
 
+#include <memory>
+#include <vector>
+
 namespace SVF
 {
+
+// Forward declarations for the sliced view (see Slicer.h / SlicedLockAnalysis).
+class SlicedSVFIRView;
+class SlicedICFGView;
 
 /*!
  * Lock analysis
@@ -551,6 +562,33 @@ public:
     u32_t numOfTotalQueries;
     u32_t numOfLockedQueries;
     double lockQueriesTime;
+};
+
+/**
+ * SlicedLockAnalysis -- LockAnalysis whose ICFG traversal hooks are overridden to
+ * use a SlicedICFGView (original ICFGNode pointers stay the identities). A null
+ * slicedView falls back to the full ICFG. Inherits SVF::LockAnalysis unchanged;
+ * the sliced ForkJoin/lock-span algorithms are exactly the base ones reached
+ * through these hooks.
+ */
+class SlicedLockAnalysis final : public LockAnalysis {
+public:
+    explicit SlicedLockAnalysis(TCT* tct, const SlicedSVFIRView* slicedView = nullptr);
+    ~SlicedLockAnalysis() override = default;
+
+protected:
+    // Override the base ICFG/CallGraph traversal hooks to walk only the slice;
+    // every inherited LockAnalysis routine reaches the slice through these.
+    const ICFGNode* getFunEntry(const FunObjVar* fun) const override;
+    void getSuccNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const override;
+    void getPredNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const override;
+    bool acceptsNode(const ICFGNode* node) const override;
+    void getInEdgesOfCallGraphNode(const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const override;
+    const CallGraph* getAnalysisCallGraph() const override;
+
+private:
+    const SlicedSVFIRView* slicedView; // Optional: for accessing sliced views
+    const SlicedICFGView* icfgView; // ICFG view (from slicedView or nullptr for full ICFG)
 };
 
 } // End namespace SVF

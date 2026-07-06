@@ -25,7 +25,9 @@
  *
  *      Author: Jiawei Yang
  *
- * SlicerBase + MTASlicer + PTASlicer + SingleSlicer.
+ * SlicerBase + MTASlicer + PTASlicer + SingleSlicer -- the program slicers of
+ * "Multi-Stage On-Demand Program Slicing for Modular Analysis of Multi-Threaded
+ * Programs" (ISSTA 2026).
  */
 
 #include "MTA/Slicer.h"
@@ -124,22 +126,12 @@ bool SlicedICFGView::isKeptNode(const ICFGNode* node) const {
 }
 
 void SlicedICFGView::dump(const std::string& filename) const {
-    std::ofstream out(filename + ".dot");
-    if (!out.is_open()) {
-        SVFUtil::errs() << "Failed to open file: " << filename << ".dot" << "\n";
+    std::ofstream out;
+    if (!SlicedViewAdapter::openDotGraph(out, filename, "ICFG", "TB", "shape=box, style=rounded"))
         return;
-    }
 
-    out << "digraph ICFG {\n";
-    out << "  rankdir=TB;\n";
-    out << "  node [shape=box, style=rounded];\n\n";
-
-    for (const ICFGNode* node : keptNodes) {
-        std::string nodeId = "N" + std::to_string(node->getId());
-        std::string label = node->toString();
-        std::string escapedLabel = SlicedViewAdapter::escapeDotLabel(label);
-        out << "  " << nodeId << " [label=\"" << escapedLabel << "\"];\n";
-    }
+    for (const ICFGNode* node : keptNodes)
+        SlicedViewAdapter::emitDotNode(out, "N", node->getId(), node->toString());
 
     out << "\n";
 
@@ -178,9 +170,7 @@ void SlicedICFGView::dump(const std::string& filename) const {
         }
     }
 
-    out << "}\n";
-    out.close();
-    SVFUtil::outs() << "[SlicedICFGView] ICFG dumped to " << filename << ".dot\n";
+    SlicedViewAdapter::finishDotGraph(out, filename, "SlicedICFGView", "ICFG");
 }
 
 void SlicedICFGView::buildICFGSets(const std::set<const ICFGNode*>& keepNodes,
@@ -358,25 +348,15 @@ void SlicedPAGView::buildKeptNodeIds() {
 }
 
 void SlicedPAGView::dump(const std::string& filename) const {
-    std::ofstream out(filename + ".dot");
-    if (!out.is_open()) {
-        SVFUtil::errs() << "Failed to open file: " << filename << ".dot" << "\n";
+    std::ofstream out;
+    if (!SlicedViewAdapter::openDotGraph(out, filename, "PAG", "LR", "shape=box"))
         return;
-    }
-
-    out << "digraph PAG {\n";
-    out << "  rankdir=LR;\n";
-    out << "  node [shape=box];\n\n";
 
     // emit nodes
     for (NodeID nodeId : keptNodeIds) {
         const SVFVar* var = pag->getGNode(nodeId);
         if (!var) continue;
-
-        std::string nodeIdStr = "PAG" + std::to_string(nodeId);
-        std::string label = var->toString();
-        std::string escapedLabel = SlicedViewAdapter::escapeDotLabel(label);
-        out << "  " << nodeIdStr << " [label=\"" << escapedLabel << "\"];\n";
+        SlicedViewAdapter::emitDotNode(out, "PAG", nodeId, var->toString());
     }
 
     out << "\n";
@@ -458,9 +438,7 @@ void SlicedPAGView::dump(const std::string& filename) const {
         }
     }
 
-    out << "}\n";
-    out.close();
-    SVFUtil::outs() << "[SlicedPAGView] PAG dumped to " << filename << ".dot\n";
+    SlicedViewAdapter::finishDotGraph(out, filename, "SlicedPAGView", "PAG");
 }
 
 //===----------------------------------------------------------------------===//
@@ -575,22 +553,12 @@ void SlicedThreadCallGraphView::buildCallGraphSets() {
 }
 
 void SlicedThreadCallGraphView::dump(const std::string& filename) const {
-    std::ofstream out(filename + ".dot");
-    if (!out.is_open()) {
-        SVFUtil::errs() << "Failed to open file: " << filename << ".dot" << "\n";
+    std::ofstream out;
+    if (!SlicedViewAdapter::openDotGraph(out, filename, "ThreadCallGraph", "TB", "shape=box, style=rounded"))
         return;
-    }
 
-    out << "digraph ThreadCallGraph {\n";
-    out << "  rankdir=TB;\n";
-    out << "  node [shape=box, style=rounded];\n\n";
-
-    for (const CallGraphNode* node : keptNodes) {
-        std::string nodeId = "CGN" + std::to_string(node->getId());
-        std::string label = node->getName();
-        std::string escapedLabel = SlicedViewAdapter::escapeDotLabel(label);
-        out << "  " << nodeId << " [label=\"" << escapedLabel << "\"];\n";
-    }
+    for (const CallGraphNode* node : keptNodes)
+        SlicedViewAdapter::emitDotNode(out, "CGN", node->getId(), node->getName());
 
     out << "\n";
 
@@ -616,9 +584,7 @@ void SlicedThreadCallGraphView::dump(const std::string& filename) const {
         out << "  " << srcId << " -> " << dstId << " [color=" << color << "];\n";
     }
 
-    out << "}\n";
-    out.close();
-    SVFUtil::outs() << "[SlicedThreadCallGraphView] ThreadCallGraph dumped to " << filename << ".dot\n";
+    SlicedViewAdapter::finishDotGraph(out, filename, "SlicedThreadCallGraphView", "ThreadCallGraph");
 }
 
 //===----------------------------------------------------------------------===//
@@ -697,6 +663,33 @@ std::string escapeDotLabel(const std::string& s)
         out.push_back(c);
     }
     return out;
+}
+
+bool openDotGraph(std::ofstream& out, const std::string& filename,
+                  const char* graphName, const char* rankdir, const char* nodeAttr)
+{
+    out.open(filename + ".dot");
+    if (!out.is_open())
+    {
+        SVFUtil::errs() << "Failed to open file: " << filename << ".dot" << "\n";
+        return false;
+    }
+    out << "digraph " << graphName << " {\n";
+    out << "  rankdir=" << rankdir << ";\n";
+    out << "  node [" << nodeAttr << "];\n\n";
+    return true;
+}
+
+void emitDotNode(std::ofstream& out, const char* idPrefix, NodeID id, const std::string& label)
+{
+    out << "  " << idPrefix << id << " [label=\"" << escapeDotLabel(label) << "\"];\n";
+}
+
+void finishDotGraph(std::ofstream& out, const std::string& filename, const char* tag, const char* what)
+{
+    out << "}\n";
+    out.close();
+    SVFUtil::outs() << "[" << tag << "] " << what << " dumped to " << filename << ".dot\n";
 }
 
 const ICFGNode* getFunEntry(const SlicedICFGView* icfgView, const FunObjVar* fun)
@@ -843,6 +836,13 @@ void getInEdgesOfCallGraphNode(const SlicedSVFIRView* slicedView, const CallGrap
             out.push_back(edge);
         }
     }
+}
+
+const CallGraph* getAnalysisCallGraph(const SlicedSVFIRView* slicedView)
+{
+    if (slicedView != nullptr && slicedView->getThreadCallGraph() != nullptr)
+        return slicedView->getThreadCallGraph()->getOriginalCallGraph();
+    return PAG::getPAG()->getCallGraph();
 }
 
 } // namespace SlicedViewAdapter

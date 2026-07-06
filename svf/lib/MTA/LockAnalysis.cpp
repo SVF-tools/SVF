@@ -25,13 +25,20 @@
  *
  *  Created on: 26 Aug 2015
  *      Author: pengd
+ *
+ * Lock analysis. Also implements SlicedLockAnalysis, the sliced-view lock
+ * analysis used by the analysis of "Multi-Stage On-Demand Program Slicing for
+ * Modular Analysis of Multi-Threaded Programs" (ISSTA 2026).
  */
 
 #include "Util/Options.h"
 #include "MTA/LockAnalysis.h"
 #include "MTA/MTA.h"
+#include "MTA/Slicer.h"
 #include "Util/SVFUtil.h"
 #include "Util/PTAStat.h"
+#include "Graphs/ThreadCallGraph.h"
+#include "SVFIR/SVFIR.h"
 
 
 using namespace SVF;
@@ -801,4 +808,48 @@ bool LockAnalysis::isInSameCSSpan(const ICFGNode *I1, const ICFGNode *I2) const
         }
     }
     return true;
+}
+
+//===----------------------------------------------------------------------===//
+// SlicedLockAnalysis -- LockAnalysis over a sliced ICFG view.
+//
+// Inherits SVF::LockAnalysis unchanged; only the ICFG/CallGraph traversal hooks
+// are overridden so the inherited analysis routines walk the sliced view.
+//===----------------------------------------------------------------------===//
+
+SlicedLockAnalysis::SlicedLockAnalysis(TCT* tct, const SlicedSVFIRView* slicedView)
+    : LockAnalysis(tct), slicedView(slicedView)
+{
+    // ICFG view from slicedView if available, otherwise nullptr (full ICFG).
+    icfgView = (slicedView != nullptr) ? slicedView->getICFG() : nullptr;
+}
+
+const ICFGNode* SlicedLockAnalysis::getFunEntry(const FunObjVar* fun) const
+{
+    return SlicedViewAdapter::getFunEntry(icfgView, fun);
+}
+
+void SlicedLockAnalysis::getSuccNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const
+{
+    SlicedViewAdapter::getSuccNodes(icfgView, node, out);
+}
+
+void SlicedLockAnalysis::getPredNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const
+{
+    SlicedViewAdapter::getPredNodes(icfgView, node, out);
+}
+
+bool SlicedLockAnalysis::acceptsNode(const ICFGNode* node) const
+{
+    return SlicedViewAdapter::acceptsNode(icfgView, node);
+}
+
+void SlicedLockAnalysis::getInEdgesOfCallGraphNode(const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const
+{
+    SlicedViewAdapter::getInEdgesOfCallGraphNode(slicedView, node, out);
+}
+
+const CallGraph* SlicedLockAnalysis::getAnalysisCallGraph() const
+{
+    return SlicedViewAdapter::getAnalysisCallGraph(slicedView);
 }
