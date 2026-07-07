@@ -412,84 +412,6 @@ u32_t slicedMaxContextLen()
     return Options::MaxContextLen();
 }
 
-// --- observe-mode helpers ---
-
-// Render a points-to set as "{name1, name2, ...}" using source-level names.
-std::string ptsToStr(SVFIR* pag, const PointsTo& pts)
-{
-    std::string s = "{";
-    bool first = true;
-    for (NodeID o : pts)
-    {
-        if (!first) s += ", ";
-        first = false;
-        s += pag->getGNode(o)->getValueName();
-    }
-    return s + "}";
-}
-
-// Short source-level name for a var, falling back to a placeholder.
-std::string varName(const SVFVar* v)
-{
-    std::string n = v->getValueName();
-    return n.empty() ? ("v" + std::to_string(v->getId())) : n;
-}
-
-// Dump the flow-sensitive points-to set at each load/store in user functions.
-void dumpFSAMPts(SVFIR* pag, BVDataPTAImpl* fs,
-                 std::vector<std::pair<const ICFGNode*, std::string>>& memOps)
-{
-    ICFG* icfg = pag->getICFG();
-    SVFUtil::outs() << "\n--- Flow-sensitive points-to at loads/stores ---\n";
-    for (ICFG::iterator it = icfg->begin(), eit = icfg->end(); it != eit; ++it)
-    {
-        const ICFGNode* node = it->second;
-        const FunObjVar* fun = node->getFun();
-        if (fun == nullptr)
-            continue;
-        std::string fn = fun->getName();
-        for (const SVFStmt* stmt : pag->getSVFStmtList(node))
-        {
-            if (const LoadStmt* L = SVFUtil::dyn_cast<LoadStmt>(stmt))
-            {
-                std::string lhs = varName(L->getLHSVar());
-                std::string label = lhs + " = *" + varName(L->getRHSVar());
-                SVFUtil::outs() << "  [" << fn << " LOAD ] " << label
-                                << "    pt(" << lhs << ") = " << ptsToStr(pag, fs->getPts(L->getLHSVarID())) << "\n";
-                memOps.emplace_back(node, fn + ":LOAD " + label);
-            }
-            else if (const StoreStmt* S = SVFUtil::dyn_cast<StoreStmt>(stmt))
-            {
-                std::string ptr = varName(S->getLHSVar());
-                std::string label = "*" + ptr + " = " + varName(S->getRHSVar());
-                SVFUtil::outs() << "  [" << fn << " STORE] " << label
-                                << "    pt(" << ptr << ") = " << ptsToStr(pag, fs->getPts(S->getLHSVarID())) << "\n";
-                memOps.emplace_back(node, fn + ":STORE " + label);
-            }
-        }
-    }
-}
-
-// Dump MHP + common-lock relations among the collected memory ops.
-void dumpILA(MHP* mhp, LockAnalysis* lockAnalysis,
-             const std::vector<std::pair<const ICFGNode*, std::string>>& memOps)
-{
-    SVFUtil::outs() << "\n--- ILA: may-happen-in-parallel (MHP) & common-lock among memory ops ---\n";
-    for (size_t i = 0; i < memOps.size(); ++i)
-    {
-        for (size_t j = i + 1; j < memOps.size(); ++j)
-        {
-            const ICFGNode* n1 = memOps[i].first;
-            const ICFGNode* n2 = memOps[j].first;
-            if (!mhp->mayHappenInParallel(n1, n2))
-                continue;
-            bool locked = lockAnalysis->isProtectedByCommonLock(n1, n2);
-            SVFUtil::outs() << "  MHP" << (locked ? " (common-lock)" : "            ")
-                            << " : [" << memOps[i].second << "]  ||  [" << memOps[j].second << "]\n";
-        }
-    }
-}
-
 } // anonymous namespace
 
 SlicedMTA::SlicedMTA() = default;
@@ -601,10 +523,9 @@ bool SlicedMTA::runPreAnalysis(const ResolveIndirectCalls& resolveIndirectCalls)
     // Step 4: Detect thread functions
     timePhase("Detect Thread Functions", [&]()
     {
-        threadFunctions = detectAllThreadFunctions(preAnder->getCallGraph());
+        hasThreadFunctions = MTA::hasThreadFunctions(preAnder->getCallGraph());
     });
-    SVFUtil::outs() << "Found " << threadFunctions.size() << " thread functions\n";
-    if (threadFunctions.empty())
+    if (!hasThreadFunctions)
     {
         SVFUtil::outs() << "[WARNING] No thread functions found\n";
         return true; // Not an error, just no threads to analyze
@@ -673,8 +594,7 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
         // both endpoints survive the FSPTA slice -- i.e. the edge is in
         // ThreadVF(VFG'_pre). Closure computed here (pre<->pre) and reused by PTA slicing.
         std::set<const ICFGNode*> threadVFSources;
-        const bool useThreadVFSources = Options::ThreadVFSources();
-        if (useThreadVFSources && vfgPreBuilder)
+        if (vfgPreBuilder)
         {
             if (!ptaSlicer)
                 ptaSlicer = std::make_unique<PTASlicer>(
@@ -689,8 +609,7 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
             }
         }
         SVFUtil::outs() << "[THREAD-VF] " << threadVFSources.size()
-                        << " ILA slicing sources from VFG_pre value-flow construction"
-                        << (useThreadVFSources ? "\n" : " (ablation: [THREAD-VF] sources OFF)\n");
+                        << " ILA slicing sources from VFG_pre value-flow construction\n";
         timePhase("MTA Slicing", [&]()
         {
             mtaSlicedNodes = mtaSlicer->runSlicing(vulnerableStatements, threadVFSources);
@@ -745,7 +664,7 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
 {
     SVFUtil::outs() << "\n=== PTA Slicing and Sliced Pointer Analysis ===\n";
 
-    if (threadFunctions.empty())
+    if (!hasThreadFunctions)
     {
         SVFUtil::outs() << "[SKIP] No thread functions found in pre-analysis, skipping PTA slicing\n";
         return true;
@@ -799,32 +718,24 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
     ptaSlicedView->dumpStats("PTA Sliced");
 
     // Step 5: Main FSMPTA phase (flow-sensitive FSAM over a thread-aware SVFG).
-    // -main-ila-sliced: rebuild the thread-aware value flow from the SLICED ILA
-    // (paper-faithful; relies on [THREAD-VF] keeping the queried witnesses; costs
-    // a fresh SVFG). Default: reuse VFG_pre and restrict the solve to the PTA
-    // slice -- same result under query preservation, no second SVFG build.
-    bool useSlicedIla = (Options::MainIlaSliced() &&
-                         slicedMhp != nullptr && slicedLockAnalysis != nullptr);
-    if (useSlicedIla)
+    // Always rebuild the thread-aware value flow from the SLICED ILA: the sliced
+    // MHP/lock analysis is context-sensitive, whereas the pre-analysis VFG_pre was
+    // built context-insensitively (max-cxt forced to 0 for slicing). Reusing
+    // VFG_pre would decide the interference (thread-aware value-flow) edges from a
+    // context-insensitive ILA and over-approximate the FSAM points-to, so a fresh
+    // context-sensitive SVFG is required to preserve the result. [THREAD-VF]
+    // seeding keeps the queried interference witnesses in the slice.
+    if (slicedMhp == nullptr || slicedLockAnalysis == nullptr)
     {
-        SVFUtil::outs() << "[Main FSMPTA] Thread-aware value flow from the SLICED ILA "
-                        "(paper-faithful; fresh SVFG; [THREAD-VF] load-bearing)\n";
+        SVFUtil::outs() << "[Main FSMPTA] Sliced MHP/LockAnalysis unavailable\n";
+        return false;
     }
-    else
-    {
-        if (Options::MainIlaSliced())
-            SVFUtil::outs() << "[Main FSMPTA] -main-ila-sliced requested but sliced ILA unavailable; "
-                            "falling back to full ILA\n";
-        SVFUtil::outs() << "[Main FSMPTA] Using flow-sensitive FSAM (FSMPTA, sliced solve, reusing VFG_pre)\n";
-    }
+    SVFUtil::outs() << "[Main FSMPTA] Thread-aware value flow rebuilt from the SLICED ILA "
+                    "(fresh context-sensitive SVFG; [THREAD-VF] load-bearing)\n";
     timePhase("Flow-Sensitive FSAM Analysis", [&]()
     {
-        if (useSlicedIla)
-            mtaFSMPTA = std::make_unique<FSMPTA>(slicedMhp.get(), slicedLockAnalysis.get(),
-                                    ptaSlicedView.get(), /*preBuilt=*/nullptr);
-        else
-            mtaFSMPTA = std::make_unique<FSMPTA>(mhp.get(), lockAnalysis.get(),
-                                    ptaSlicedView.get(), vfgPre);
+        mtaFSMPTA = std::make_unique<FSMPTA>(slicedMhp.get(), slicedLockAnalysis.get(),
+                                ptaSlicedView.get(), /*preBuilt=*/nullptr);
         mtaFSMPTA->analyze();
         if (dumpDot)
             mtaFSMPTA->getSVFG()->dump("mta_svfg");
@@ -856,7 +767,7 @@ bool SlicedMTA::runFinalRaceDetection()
 {
     SVFUtil::outs() << "\n=== Final Race Detection ===\n";
 
-    if (threadFunctions.empty())
+    if (!hasThreadFunctions)
     {
         SVFUtil::outs() << "[SKIP] No thread functions found\n";
         return true;
@@ -920,7 +831,7 @@ bool SlicedMTA::runFinalRaceDetection()
 void SlicedMTA::runWholeProgramDetection()
 {
     SVFUtil::outs() << "\n=== Whole-program FSAM Race Detection (no slicing) ===\n";
-    if (threadFunctions.empty() || racePairs.empty())
+    if (!hasThreadFunctions || racePairs.empty())
     {
         SVFUtil::outs() << "[SKIP] No thread functions / race pairs in pre-analysis\n";
         return;
@@ -966,58 +877,11 @@ void SlicedMTA::runWholeProgramDetection()
     SVFUtil::outs() << "[MSLI-RQ] mode=FSAM alarms=" << racyStmts.size() << "\n";
 }
 
-// Observe whole-program FSAM points-to and ILA (Layer 1) for soundness checking.
-void SlicedMTA::runObserveFSAM()
-{
-    SVFUtil::outs() << "\n===== [OBSERVE] Flow-sensitive FSAM points-to & ILA =====\n";
-    MTASVFGBuilder::numOfNewSVFGEdges = 0;
-    FSMPTA* fs = new FSMPTA(mhp.get(), lockAnalysis.get(), nullptr, vfgPre);
-    fs->analyze();
-    SVFUtil::outs() << "Thread-aware (interference) SVFG edges added: "
-                    << MTASVFGBuilder::numOfNewSVFGEdges << "\n";
-    std::vector<std::pair<const ICFGNode*, std::string>> memOps;
-    dumpFSAMPts(svfIr, fs, memOps);
-    dumpILA(mhp.get(), lockAnalysis.get(), memOps);
-    SVFUtil::outs() << "===== [OBSERVE] end =====\n\n";
-    delete fs;
-}
-
-// Observe SLICED FSAM points-to (Layer 2): compute the FSMPTA slice from the race
-// targets, then run the sliced flow-sensitive analysis and dump pt at the query
-// load. Used to check query preservation (sliced pt == unsliced pt).
-void SlicedMTA::runObserveFSAMSliced()
-{
-    SVFUtil::outs() << "\n===== [OBSERVE-SLICED] Sliced flow-sensitive FSAM points-to =====\n";
-    if (racePairs.empty())
-    {
-        SVFUtil::outs() << "[no race targets -- nothing to slice]\n===== [OBSERVE-SLICED] end =====\n\n";
-        return;
-    }
-    std::set<const SVFStmt*> vuln = getVulnerableStmts();
-    PTASlicer slicer(svfIr, preAnder, mhp.get(), lockAnalysis.get(), vfgPre);
-    std::set<const ICFGNode*> ptaSlicedNodes = slicer.runSlicing(vuln);
-    SlicedSVFIRView view(svfIr, preAnder->getCallGraph(), svfIr->getICFG(), ptaSlicedNodes);
-    SVFUtil::outs() << "Sliced to " << ptaSlicedNodes.size() << " ICFG nodes\n";
-
-    MTASVFGBuilder::numOfNewSVFGEdges = 0;
-    FSMPTA* fs = new FSMPTA(mhp.get(), lockAnalysis.get(), &view, vfgPre);
-    fs->analyze();
-    SVFUtil::outs() << "Thread-aware (interference) SVFG edges added: "
-                    << MTASVFGBuilder::numOfNewSVFGEdges << "\n";
-    std::vector<std::pair<const ICFGNode*, std::string>> memOps;
-    dumpFSAMPts(svfIr, fs, memOps);
-    SVFUtil::outs() << "===== [OBSERVE-SLICED] end =====\n\n";
-    delete fs;
-}
-
 void SlicedMTA::runOnModule(SVFIR* pag, const ResolveIndirectCalls& resolveIndirectCalls)
 {
     svfIr = pag;
 
     SVFUtil::outs() << "[Config] Slicing: " << (Options::EnableSlicing() ? "enabled" : "disabled") << "\n";
-    SVFUtil::outs() << "[Config] Main-phase ILA: "
-                    << (Options::MainIlaSliced() ? "sliced (paper-faithful, fresh SVFG)"
-                        : "full (reuse VFG_pre, build once)") << "\n";
 
     reportOriginalStats(svfIr);
 
@@ -1028,18 +892,6 @@ void SlicedMTA::runOnModule(SVFIR* pag, const ResolveIndirectCalls& resolveIndir
     Options::MaxContextLen.setValue(mainCxt);
     if (!preOk)
         return;
-
-    // Observe mode: dump FSAM points-to + ILA instead of detecting races; the
-    // sliced/whole-program variant follows -enable-slicing.
-    if (Options::MTAObserve())
-    {
-        if (Options::EnableSlicing())
-            runObserveFSAMSliced();
-        else
-            runObserveFSAM();
-        SVFUtil::outs() << "\n=== Analysis Complete (observe) ===\n";
-        return;
-    }
 
     if (Options::EnableSlicing())
     {
@@ -1056,28 +908,24 @@ void SlicedMTA::runOnModule(SVFIR* pag, const ResolveIndirectCalls& resolveIndir
 }
 
 //===----------------------------------------------------------------------===//
-// Race detection (the detector folded in from RaceDetector; analogous to
-// MTA::detect but driven by the sliced/FSAM analyses).
+// Race detection for the SlicedMTA pipeline (final detection + whole-program
+// baseline), driven by the sliced/FSAM analyses. hasThreadFunctions is a generic
+// helper on the base MTA detector; detectRacePairsOnSlicedGraph is the pipeline's
+// sliced-graph screen and stays on SlicedMTA.
 //===----------------------------------------------------------------------===//
 
-// Detect all thread (fork-target) functions.
-std::set<const FunObjVar*> SlicedMTA::detectAllThreadFunctions(CallGraph* callGraph) {
-    std::set<const FunObjVar*> threadFunctions;
-
-    // Iterate through all CallGraph nodes and check their out edges for fork edges
+// Whether any thread (fork-target) function is reachable via a fork edge.
+bool MTA::hasThreadFunctions(CallGraph* callGraph) {
     for (CallGraph::iterator it = callGraph->begin(), eit = callGraph->end(); it != eit; ++it) {
         const CallGraphNode* node = it->second;
         for (const CallGraphEdge* edge : node->getOutEdges()) {
-            if (edge->getEdgeKind() == CallGraphEdge::TDForkEdge) {
-                const FunObjVar* func = edge->getDstNode()->getFunction();
-                if (func != nullptr) {
-                    threadFunctions.insert(func);
-                }
+            if (edge->getEdgeKind() == CallGraphEdge::TDForkEdge &&
+                edge->getDstNode()->getFunction() != nullptr) {
+                return true;
             }
         }
     }
-
-    return threadFunctions;
+    return false;
 }
 
 // Detect race pairs on the sliced graph using sliced analysis results.

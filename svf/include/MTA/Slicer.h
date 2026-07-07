@@ -490,7 +490,7 @@ private:
  * dependence into ONE slice (the single-pass baseline, MSli §3/§5.4: the
  * transitive closure of the target statements under the combined dependence
  * graph). Both ILA and FSPTA run on this single slice, so V_ILA, V_PTA subset
- * V_Single. Used by the differential-slicing ablation (-slicing-single).
+ * V_Single. Used by the differential-slicing ablation (-mta-slicing-single).
  *
  * Iteratively applies data dependence (over the thread-aware VFG_pre) and call
  * dependence until convergence, then a single dual-slicing pass.

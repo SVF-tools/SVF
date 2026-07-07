@@ -42,7 +42,7 @@ int main(int argc, char** argv)
     SVFIRBuilder builder;
     SVFIR* pag = builder.build();
 
-    // MTA's only client is race detection. -mt-flow-sensitive (default) selects the
+    // MTA's only client is race detection. -mta-flow-sensitive (default) selects the
     // FSAM pipeline (SlicedMTA), which decides slicing and the pre-analysis
     // context handling internally; otherwise run the flow-insensitive Andersen
     // detector.

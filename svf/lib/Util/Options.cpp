@@ -452,7 +452,7 @@ const Option<std::string> Options::ReadSVFG(
 
 
 const Option<bool> Options::IntraLock(
-    "intra-lock-td-edge",
+    "mta-intra-lock-td-edge",
     "Use simple intra-procedural lock for adding SVFG edges",
     true
 );
@@ -460,7 +460,7 @@ const Option<bool> Options::IntraLock(
 
 // LockAnalysis.cpp
 const Option<bool> Options::PrintLockSpan(
-    "print-lock",
+    "mta-print-lock",
     "Print Thread Interleaving Results",
     false
 );
@@ -468,29 +468,21 @@ const Option<bool> Options::PrintLockSpan(
 
 // MHP.cpp
 const Option<bool> Options::PrintInterLev(
-    "print-interlev",
+    "mta-print-interlev",
     "Print Thread Interleaving Results",
     false
 );
 
 const Option<bool> Options::DoLockAnalysis(
-    "lock-analysis",
+    "mta-lock-analysis",
     "Run Lock Analysis",
     true
 );
 
 
-// MTAStat.cpp
-const Option<bool> Options::AllPairMHP(
-    "all-pair-mhp",
-    "All pair MHP computation",
-    false
-);
-
-
 // TCT.cpp
 const Option<bool> Options::TCTDotGraph(
-    "dump-tct",
+    "mta-dump-tct",
     "Dump dot graph of Call Graph",
     false
 );
@@ -842,21 +834,15 @@ const Option<bool> Options::FileCheck(
 const Option<bool> Options::DFreeCheck(
     "dfree", "Double Free Detection",false);
 const Option<bool> Options::MTFlowSensitive(
-    "mt-flow-sensitive", "MTA: flow-sensitive (FSAM) main analysis; false = Andersen flow-insensitive base", true);
+    "mta-flow-sensitive", "MTA: flow-sensitive (FSAM) main analysis; false = Andersen flow-insensitive base", true);
 const Option<bool> Options::DumpMTAGraphs(
-    "dump-mta-graphs", "MTA: dump the pointer-analysis and thread call graphs (ptacg/tcg.dot)", false);
+    "mta-dump-graphs", "MTA: dump the pointer-analysis and thread call graphs (ptacg/tcg.dot)", false);
 const Option<bool> Options::EnableSlicing(
-    "enable-slicing", "MTA slicing: slice before the FSAM main analysis (false = whole-program baseline)", true);
-const Option<bool> Options::MainIlaSliced(
-    "main-ila-sliced", "MTA slicing: build the main FSMPTA value flow from the sliced ILA", false);
-const Option<bool> Options::ThreadVFSources(
-    "thread-vf-sources", "MTA slicing: seed the ILA slice with [THREAD-VF] sources", true);
+    "mta-enable-slicing", "MTA slicing: slice before the FSAM main analysis (false = whole-program baseline)", true);
 const Option<bool> Options::SlicingSingle(
-    "slicing-single", "MTA slicing: use one unified slice for both ILA and FSPTA (single-pass baseline)", false);
+    "mta-slicing-single", "MTA slicing: use one unified slice for both ILA and FSPTA (single-pass baseline)", false);
 const Option<bool> Options::SlicedDumpDot(
-    "sliced-dump-dot", "MTA slicing: dump intermediate dot graphs", false);
-const Option<bool> Options::MTAObserve(
-    "observe", "MTA: observe the FSAM points-to + ILA instead of detecting races", false);
+    "mta-sliced-dump-dot", "MTA slicing: dump intermediate dot graphs", false);
 const Option<bool> Options::GepUnknownIdx(
     "gep-unknown-idx","Skip Gep Unknown Index",false);
 const Option<bool> Options::RunUncallFuncs(

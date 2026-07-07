@@ -156,9 +156,6 @@ public:
     static const Option<bool> PrintInterLev;
     static const Option<bool> DoLockAnalysis;
 
-    //MTAStat.cpp
-    static const Option<bool> AllPairMHP;
-
     // TCT.cpp
     static const Option<bool> TCTDotGraph;
 
@@ -263,16 +260,10 @@ public:
 
     /// MTA slicing: slice before the FSAM main analysis (false = whole-program baseline), Default: true
     static const Option<bool> EnableSlicing;
-    /// MTA slicing: build the main FSMPTA value flow from the sliced ILA, Default: false
-    static const Option<bool> MainIlaSliced;
-    /// MTA slicing: seed the ILA slice with [THREAD-VF] sources (paper §4.2), Default: true
-    static const Option<bool> ThreadVFSources;
     /// MTA slicing: one unified slice for ILA + FSPTA (single-pass baseline), Default: false
     static const Option<bool> SlicingSingle;
     /// MTA slicing: dump intermediate dot graphs (ICFG/TCG/SVFG/...), Default: false
     static const Option<bool> SlicedDumpDot;
-    /// MTA: observe the FSAM points-to + ILA instead of detecting races, Default: false
-    static const Option<bool> MTAObserve;
     /// if the access index of gepstmt is unknown, skip it, Default: false
     static const Option<bool> GepUnknownIdx;
     static const Option<bool> RunUncallFuncs;
