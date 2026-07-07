@@ -58,8 +58,6 @@ public:
     void performThreadCallGraphStat(ThreadCallGraph* tcg);
     /// Statistics for thread creation tree
     void performTCTStat(TCT* tct);
-    /// Statistics for MHP statement pairs
-    void performMHPPairStat(MHP* mhp, LockAnalysis* lsa);
     /// Statistics for annotation
     //void performAnnotationStat(MTAAnnotator* anno);
 

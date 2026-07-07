@@ -138,6 +138,10 @@ public:
     static PointsTo getGlobalObjectVariables(SVFIR* svfIr);
     static PointsTo getPointsToClosure(AndersenBase* pta, const PointsTo& pts);
 
+    /// Whether the program has any thread (fork-target) function reachable via a
+    /// fork edge.
+    static bool hasThreadFunctions(CallGraph* callGraph);
+
 private:
     /// One occurrence of a memory access under one thread instance.
     struct RaceOccurrence {
@@ -177,8 +181,8 @@ private:
  * materialising resolved indirect calls into the PAG -- is injected by the caller
  * as a callback (see runOnModule).
  *
- * Behaviour is controlled by Options (MTFlowSensitive, EnableSlicing, MainIlaSliced,
- * ThreadVFSources, SlicingSingle, SlicedDumpDot, MTAObserve).
+ * Behaviour is controlled by Options (MTFlowSensitive, EnableSlicing,
+ * SlicingSingle, SlicedDumpDot).
  */
 class SlicedMTA
 {
@@ -199,7 +203,7 @@ public:
     SlicedMTA(const SlicedMTA&) = delete;
     SlicedMTA& operator=(const SlicedMTA&) = delete;
 
-    /// Run the slicing pipeline (or an observe mode) on a pre-built SVFIR.
+    /// Run the slicing pipeline on a pre-built SVFIR.
     void runOnModule(SVFIR* pag, const ResolveIndirectCalls& resolveIndirectCalls);
 
 private:
@@ -214,10 +218,6 @@ private:
     /// slicing), so its time and race set can be compared against the sliced run.
     void runWholeProgramDetection();
 
-    // --- observe modes (soundness / query-preservation checking) ---
-    void runObserveFSAM();
-    void runObserveFSAMSliced();
-
     /// Main pointer-analysis instance feeding final race detection (the
     /// flow-sensitive FSAM, a BVDataPTAImpl queried polymorphically).
     BVDataPTAImpl* getMainPTA() const;
@@ -226,8 +226,6 @@ private:
     std::set<const SVFStmt*> getVulnerableStmts() const;
 
     // --- race detection ---
-    /// Detect all thread (fork-target) functions in the program (pipeline guards).
-    static std::set<const FunObjVar*> detectAllThreadFunctions(CallGraph* callGraph);
     /// Re-check the candidate race pairs on the sliced graph using FSAM points-to.
     std::set<RacePair> detectRacePairsOnSlicedGraph(
         BVDataPTAImpl* slicedPTA, MHP* slicedMHP, LockAnalysis* slicedLockAnalysis);
@@ -253,7 +251,7 @@ private:
     std::unique_ptr<PTASlicer> ptaSlicer;
     std::unique_ptr<MTASlicer> mtaSlicer;
     std::unique_ptr<SingleSlicer> singleSlicer;
-    // -slicing-single: the one unified slice, computed in MTA slicing and reused
+    // -mta-slicing-single: the one unified slice, computed in MTA slicing and reused
     // (not recomputed) for PTA slicing so both stages share V_Single.
     std::set<const ICFGNode*> singleSlicedNodes;
     std::unique_ptr<SlicedSVFIRView> mtaSlicedView;
@@ -266,7 +264,7 @@ private:
     std::unique_ptr<SlicedSVFIRView> fullLockView;
     std::unique_ptr<SlicedTCT> fullLockTCT;
     std::unique_ptr<SlicedLockAnalysis> fullLockAnalysis;
-    std::set<const FunObjVar*> threadFunctions;
+    bool hasThreadFunctions = false;
     std::set<RacePair> racePairs;
 };
 
