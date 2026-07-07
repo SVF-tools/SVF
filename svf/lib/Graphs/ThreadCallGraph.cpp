@@ -30,7 +30,7 @@
 #include "Graphs/ThreadCallGraph.h"
 #include "Util/ThreadAPI.h"
 #include "SVFIR/SVFIR.h"
-#include "MemoryModel/PointerAnalysisImpl.h"
+#include "MemoryModel/PointerAnalysis.h"
 #include "Graphs/CallGraph.h"
 
 using namespace SVF;

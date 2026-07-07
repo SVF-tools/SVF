@@ -28,9 +28,6 @@
  */
 
 #include "CFL/CFGNormalizer.h"
-#include "Util/SVFUtil.h"
-#include "Util/WorkList.h"
-#include "SVFIR/SVFValue.h"
 
 #include <algorithm>
 #include <string>
