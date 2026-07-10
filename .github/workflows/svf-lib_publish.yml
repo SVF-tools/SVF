@@ -145,6 +145,7 @@ jobs:
 
       # publish svf
       - uses: actions/setup-node@v4
+        if: runner.os == 'Linux' && runner.arch == 'X64'
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org/
@@ -153,6 +154,7 @@ jobs:
           github.event_name == 'push' &&
           github.repository == 'SVF-tools/SVF' &&
           runner.os == 'Linux' &&
+          runner.arch == 'X64' &&
           github.ref == 'refs/heads/master'
         run: |
           cd $GITHUB_WORKSPACE
@@ -162,7 +164,6 @@ jobs:
           sed  -i '/version/s/[^:]*$/'"\"${npm_version}\",/" package.json
           git add .
           if [ -n "$(git status -s)" ]; then git commit -m'update version'  ; fi
-          npm i -g npm@latest
           npm version patch
           npm publish --access public
         env:
