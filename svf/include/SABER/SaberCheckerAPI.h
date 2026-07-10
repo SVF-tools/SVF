@@ -30,9 +30,8 @@
 #ifndef SABERCHECKERAPI_H_
 #define SABERCHECKERAPI_H_
 
-#include "Util/SVFUtil.h"
 #include "Graphs/ICFGNode.h"
-#include "SVFIR/SVFVariables.h" // add header
+#include "SVFIR/SVFVariables.h"
 
 namespace SVF
 {

@@ -34,11 +34,6 @@
 #ifndef MTA_H_
 #define MTA_H_
 
-#include <set>
-#include <vector>
-#include "SVFIR/SVFIR.h"
-#include "SVFIR/SVFValue.h"
-
 namespace SVF
 {
 
@@ -49,6 +44,7 @@ class MTAStat;
 class TCT;
 class MHP;
 class LockAnalysis;
+class SVFIR;
 
 /*!
  * Base data race detector

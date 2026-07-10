@@ -28,7 +28,9 @@
  *      Author: Jiawei Wang, Xiao Cheng
  */
 
+#include "MemoryModel/SVFLoop.h"
 #include "SVF-LLVM/LLVMLoopAnalysis.h"
+#include "Util/GeneralType.h"
 #include "Util/Options.h"
 #include "SVF-LLVM/LLVMUtil.h"
 #include "llvm/Analysis/LoopInfo.h"

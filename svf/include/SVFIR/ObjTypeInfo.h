@@ -30,11 +30,12 @@
 #ifndef INCLUDE_SVFIR_OBJTYPEINFO_H_
 #define INCLUDE_SVFIR_OBJTYPEINFO_H_
 
+#include "Util/GeneralType.h"
 
-#include "Util/SVFUtil.h"
-#include "MemoryModel/AccessPath.h"
 namespace SVF
 {
+
+class SVFType;
 
 /*!
  * Type Info of an abstract memory object

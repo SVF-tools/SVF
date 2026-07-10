@@ -40,6 +40,7 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "DDA/DDAVFSolver.h"
 #include "Util/DPItem.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

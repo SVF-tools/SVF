@@ -23,8 +23,10 @@
 #ifndef INCLUDE_AE_SVFEXE_SPARSEABSTRACTINTERPRETATION_H_
 #define INCLUDE_AE_SVFEXE_SPARSEABSTRACTINTERPRETATION_H_
 
-#include "AE/Svfexe/AbstractInterpretation.h"
 #include <memory>
+
+#include "AE/Svfexe/AbstractInterpretation.h"
+#include "MSSA/SVFGBuilder.h"
 
 namespace SVF
 {

@@ -30,11 +30,15 @@
 #ifndef Z3_EXAMPLE_RELATIONSOLVER_H
 #define Z3_EXAMPLE_RELATIONSOLVER_H
 
-#include "AE/Core/AbstractState.h"
+#include "AE/Core/NumericValue.h"
 #include "Util/Z3Expr.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {
+
+class AbstractState;
+
 class RelationSolver
 {
 public:

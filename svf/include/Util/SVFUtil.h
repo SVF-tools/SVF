@@ -30,12 +30,12 @@
 #ifndef AnalysisUtil_H_
 #define AnalysisUtil_H_
 
-#include "FastCluster/fastcluster.h"
-#include "SVFIR/SVFValue.h"
-#include "Util/SVFLoopAndDomInfo.h"
-#include "Util/ExtAPI.h"
-#include "MemoryModel/PointsTo.h"
 #include <time.h>
+
+#include "MemoryModel/PointsTo.h"
+#include "Util/Casting.h"
+#include "Util/ExtAPI.h"
+#include "Util/GeneralType.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/ThreadAPI.h"
 

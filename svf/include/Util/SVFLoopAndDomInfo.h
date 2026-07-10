@@ -31,13 +31,16 @@
 #ifndef SVFLOOPANDDOMINFO_H
 #define SVFLOOPANDDOMINFO_H
 
-#include "SVFIR/SVFType.h"
-#include "Graphs/GraphPrinter.h"
-#include "Util/Casting.h"
-#include "Graphs/BasicBlockG.h"
+#include <algorithm>
+#include <vector>
+
+#include "Util/GeneralType.h"
 
 namespace SVF
 {
+
+class SVFBasicBlock;
+
 class SVFLoopAndDomInfo
 {
 

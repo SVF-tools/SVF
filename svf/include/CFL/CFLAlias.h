@@ -32,11 +32,12 @@
 
 #include "CFL/CFLBase.h"
 #include "CFL/CFLStat.h"
+#include "MemoryModel/PTATY.h"
+#include "SVFIR/SVFType.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {
-
-class CFLStat;
 
 class CFLAlias : public CFLBase
 {

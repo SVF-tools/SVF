@@ -40,7 +40,6 @@
 #include "SABER/SaberCondAllocator.h"
 #include "Util/WorkList.h"
 #include "Graphs/SVFG.h"
-#include "Util/DPItem.h"
 #include "Util/SVFBugReport.h"
 
 namespace SVF

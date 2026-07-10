@@ -14,12 +14,9 @@
 #ifndef VFS_H_
 #define VFS_H_
 
-#include "Graphs/SVFGOPT.h"
-#include "MSSA/SVFGBuilder.h"
+#include "Graphs/SVFG.h"
 #include "WPA/FlowSensitive.h"
-#include "WPA/WPAFSSolver.h"
 #include "MemoryModel/PTATY.h"
-#include "MemoryModel/PointsTo.h"
 
 namespace SVF
 {

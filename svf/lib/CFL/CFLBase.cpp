@@ -29,6 +29,12 @@
 
 
 #include "CFL/CFLBase.h"
+#include "CFL/CFLGramGraphChecker.h"
+#include "CFL/CFGNormalizer.h"
+#include "CFL/GrammarBuilder.h"
+#include "Util/Options.h"
+#include "Util/PTAStat.h"
+#include "Util/SVFUtil.h"
 
 namespace SVF
 {

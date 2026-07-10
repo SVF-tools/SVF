@@ -30,12 +30,11 @@
 #ifndef ANDERSENSTAT_H_
 #define ANDERSENSTAT_H_
 
-#include "SVFIR/SVFValue.h"
-#include "MemoryModel/PointsTo.h"
-#include "Util/SVFStat.h"
 #include <iostream>
-#include <map>
 #include <string>
+
+#include "Util/SVFStat.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

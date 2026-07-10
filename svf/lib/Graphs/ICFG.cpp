@@ -27,14 +27,15 @@
  *      Author: Yulei Sui
  */
 
-#include "Graphs/ICFG.h"
 #include "Graphs/CallGraph.h"
-#include "SVFIR/SVFIR.h"
-#include <Util/Options.h>
+#include "Graphs/GraphPrinter.h"
+#include "Graphs/ICFG.h"
+#include "Util/Options.h"
 
 using namespace SVF;
 using namespace SVFUtil;
 
+class SVFIR;
 
 FunEntryICFGNode::FunEntryICFGNode(NodeID id, const FunObjVar* f) : InterICFGNode(id, FunEntryBlock)
 {

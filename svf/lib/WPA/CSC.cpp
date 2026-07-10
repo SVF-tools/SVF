@@ -27,7 +27,9 @@
  *      Author: Yuxiang Lei
  */
 
+#include "Graphs/ConsG.h"
 #include "WPA/CSC.h"
+#include "Util/SVFUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;

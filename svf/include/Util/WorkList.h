@@ -36,14 +36,14 @@
 #ifndef WORKLIST_H_
 #define WORKLIST_H_
 
-#include "SVFIR/SVFValue.h"
-
 #include <assert.h>
 #include <cstdlib>
 #include <vector>
 #include <deque>
 #include <list>
 #include <set>
+
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

@@ -34,6 +34,7 @@
 #include "Util/PTAStat.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/VersionedFlowSensitive.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

@@ -32,13 +32,12 @@
 #ifndef INCLUDE_SVFIR_SVFVALUE_H_
 #define INCLUDE_SVFIR_SVFVALUE_H_
 
-#include "SVFIR/SVFType.h"
-#include "Graphs/GraphPrinter.h"
-
+#include "Util/GeneralType.h"
 
 namespace SVF
 {
 
+class SVFType;
 
 class SVFValue
 {

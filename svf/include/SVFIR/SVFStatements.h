@@ -33,6 +33,7 @@
 
 #include "Graphs/GenericGraph.h"
 #include "MemoryModel/AccessPath.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {
