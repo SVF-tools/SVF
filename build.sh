@@ -165,8 +165,8 @@ print_config() {
     echo "  Shared libs:    ${BUILD_DYN_LIB}"
     echo "  LLVM RTTI:      ${RTTI}"
     echo "  Jobs:           ${jobs}"
-    echo "  LLVM_DIR:       ${LLVM_DIR:-auto}"
-    echo "  Z3_DIR:         ${Z3_DIR:-auto}"
+    echo "  LLVM_DIR:       ${LLVM_DIR:-n/a}"
+    echo "  Z3_DIR:         ${Z3_DIR:-n/a}"
 }
 
 require_cmd() {
@@ -395,7 +395,7 @@ build_svf() {
 
     cmake -D CMAKE_BUILD_TYPE:STRING="$BUILD_TYPE"  \
         -DSVF_ENABLE_ASSERTIONS:BOOL=true            \
-        -DSVF_SANITIZE="${SVF_SANITIZER:-}"         \
+        -DSVF_SANITIZE="$SVF_SANITIZER"         \
         -DBUILD_SHARED_LIBS="$BUILD_DYN_LIB"         \
         "${cmake_rpath_args[@]}"                    \
         -S "$SVFHOME" -B "$build_dir"
@@ -409,6 +409,8 @@ main() {
     detect_platform
     select_dependency_urls
     print_config
+
+    cd "$SVFHOME"
 
     ensure_llvm
     ensure_z3
