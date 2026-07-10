@@ -37,9 +37,10 @@ LLVMHome="llvm-${LLVMVer}.obj"
 Z3Home="z3.obj"
 
 UbuntuArmLLVM_RTTI="https://github.com/bjjwwang/SVF-LLVM/releases/download/${LLVMVer}/llvm-${LLVMVer}-ubuntu22-rtti-aarch64.tar.gz"
-UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-aarch64-linux-gnu.tar.xz"
+UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/LLVM-${LLVMVer}-Linux-ARM64.tar.xz"
 UbuntuLLVM_RTTI="https://github.com/bjjwwang/SVF-LLVM/releases/download/${LLVMVer}/llvm-${LLVMVer}-ubuntu22-rtti-x86-64.tar.gz"
-UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
+UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/LLVM-${LLVMVer}-Linux-X64.tar.xz"
+SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-${LLVMVer}.zip"
 
 Z3PrebuiltBase="https://github.com/SVF-tools/SVF-npm/raw/prebuilt-libs"
 UbuntuZ3="${Z3PrebuiltBase}/z3-${Z3Ver}-x86_64-ubuntu-22.04.zip"
@@ -154,6 +155,10 @@ select_dependency_urls() {
             # LLVM is installed via Homebrew on macOS. No owned prebuilt Z3 is provided for this case.
             urlLLVM=""
             urlZ3=""
+            if [[ -z "${Z3_DIR:-}" ]]; then
+                echo "Warning: no prebuilt Z3 package is available for macOS x86_64."
+                echo "  Set Z3_DIR to a compatible z3.obj directory before running build.sh."
+            fi
             ;;
     esac
 }
@@ -251,13 +256,23 @@ install_llvm_with_brew() {
 
 download_llvm_prebuilt() {
     echo "Downloading LLVM ${LLVMVer} for ${PLATFORM}."
-    generic_download_file "$urlLLVM" llvm.tar.xz
-    require_cmd xz xz-utils
+
+    # Detect archive format from the URL so the correct filename and
+    # decompression tool are used (.tar.gz for RTTI builds, .tar.xz otherwise).
+    local llvm_archive
+    if [[ "$urlLLVM" == *.tar.gz ]]; then
+        llvm_archive="llvm.tar.gz"
+    else
+        llvm_archive="llvm.tar.xz"
+        require_cmd xz xz-utils
+    fi
+
+    generic_download_file "$urlLLVM" "$llvm_archive"
 
     echo "Unpacking LLVM package..."
     mkdir -p "./$LLVMHome"
-    tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
-    rm llvm.tar.xz
+    tar -xf "$llvm_archive" -C "./$LLVMHome" --strip-components 1
+    rm "$llvm_archive"
 }
 
 ensure_llvm() {
@@ -395,7 +410,7 @@ build_svf() {
 
     cmake -D CMAKE_BUILD_TYPE:STRING="$BUILD_TYPE"  \
         -DSVF_ENABLE_ASSERTIONS:BOOL=true            \
-        -DSVF_SANITIZE="$SVF_SANITIZER"         \
+        ${SVF_SANITIZER:+-DSVF_SANITIZE="$SVF_SANITIZER"} \
         -DBUILD_SHARED_LIBS="$BUILD_DYN_LIB"         \
         "${cmake_rpath_args[@]}"                    \
         -S "$SVFHOME" -B "$build_dir"
