@@ -37,6 +37,7 @@
 #define WPAFSSOLVER_H_
 
 #include "WPA/WPASolver.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

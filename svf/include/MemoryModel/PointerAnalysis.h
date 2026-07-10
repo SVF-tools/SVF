@@ -34,13 +34,8 @@
 #include <signal.h>
 
 #include "Graphs/CHG.h"
-#include "Graphs/ThreadCallGraph.h"
+#include "Graphs/CallGraph.h"
 #include "Graphs/SCC.h"
-#include "MemoryModel/AbstractPointsToDS.h"
-#include "MemoryModel/ConditionalPT.h"
-#include "MemoryModel/MutablePointsToDS.h"
-#include "MemoryModel/PersistentPointsToDS.h"
-#include "MemoryModel/PointsTo.h"
 #include "MemoryModel/PTATY.h"
 #include "SVFIR/SVFIR.h"
 
@@ -48,9 +43,9 @@ namespace SVF
 {
 
 class CommonCHGraph;
-
 class ICFG;
 class PTAStat;
+
 /*
  * Pointer Analysis Base Class
  */

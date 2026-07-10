@@ -9,9 +9,14 @@
 #define INCLUDE_WPA_STEENSGAARD_H_
 
 #include "WPA/Andersen.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {
+
+class ConstraintGraph;
+class SVFIR;
+
 /*!
  * Equivalence-based Pointer Analysis
  */

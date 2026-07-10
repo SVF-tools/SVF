@@ -27,21 +27,19 @@
 #ifndef SVF_BUGRECODER_H
 #define SVF_BUGRECODER_H
 
-#include <vector>
-#include "SVFIR/SVFValue.h"
-#include "SVFIR/SVFVariables.h"
-#include "SVFIR/SVFStatements.h"
-#include "Graphs/ICFGNode.h"
 #include <string>
-#include <map>
+#include <vector>
+
 #include "Util/cJSON.h"
-#include <set>
+#include "Util/GeneralType.h"
 
 #define BRANCHFLAGMASK 0x00000010
 #define EVENTTYPEMASK 0x0000000f
 
 namespace SVF
 {
+
+class ICFGNode;
 
 /*!
  * Bug Detector Recoder
@@ -84,7 +82,7 @@ public:
 
 public:
     enum BugType {FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE, FULLNULLPTRDEREFERENCE, PARTIALNULLPTRDEREFERENCE};
-    static const std::map<GenericBug::BugType, std::string> BugType2Str;
+    static const OrderedMap<GenericBug::BugType, std::string> BugType2Str;
 
 protected:
     BugType bugType;

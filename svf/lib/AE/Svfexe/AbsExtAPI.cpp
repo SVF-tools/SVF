@@ -28,7 +28,7 @@
 //
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "AE/Svfexe/AbstractInterpretation.h"
-#include "WPA/Andersen.h"
+#include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
 
 using namespace SVF;

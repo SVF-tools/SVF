@@ -25,12 +25,16 @@
 // Created by JoelYang on 2023/4/19.
 //
 
-#include "Util/SVFBugReport.h"
 #include <cassert>
-#include "Util/cJSON.h"
-#include "Util/SVFUtil.h"
 #include <sstream>
 #include <fstream>
+
+#include "Graphs/ICFGNode.h"
+#include "Util/cJSON.h"
+#include "Util/SVFBugReport.h"
+#include "Util/SVFUtil.h"
+#include "SVFIR/SVFVariables.h"
+
 
 using namespace std;
 using namespace SVF;

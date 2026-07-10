@@ -31,6 +31,7 @@
 #define ICFGNODE_H_
 
 #include "Util/SVFUtil.h"
+#include "Graphs/BasicBlockG.h"
 #include "Graphs/GenericGraph.h"
 #include "Graphs/ICFGEdge.h"
 

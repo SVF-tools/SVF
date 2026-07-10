@@ -33,13 +33,17 @@
 #ifndef AccessPath_H_
 #define AccessPath_H_
 
+#include <utility>
+#include <vector>
 
-#include "SVFIR/SVFValue.h"
-
+#include "Util/GeneralType.h"
+#include "Util/Hash.h"
 
 namespace SVF
 {
 
+class SVFStructType;
+class SVFType;
 class SVFVar;
 class ValVar;
 

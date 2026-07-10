@@ -31,21 +31,16 @@
 #define INCLUDE_CFL_CFLBASE_H_
 
 #include "CFL/CFLSolver.h"
-#include "CFL/CFGNormalizer.h"
-#include "CFL/GrammarBuilder.h"
-#include "CFL/CFLGraphBuilder.h"
-#include "CFL/CFLGramGraphChecker.h"
-#include "MemoryModel/PointerAnalysis.h"
+#include "CFL/CFGrammar.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
-#include "Graphs/ConsG.h"
-#include "Util/Options.h"
-#include "Util/PTAStat.h"
-#include "SVFIR/SVFType.h"
+#include "MemoryModel/PTATY.h"
 
 namespace SVF
 {
 
+class CFLGraph;
 class CFLStat;
+class SVFIR;
 
 /// CFL Client Base Class
 class CFLBase : public BVDataPTAImpl

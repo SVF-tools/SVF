@@ -32,11 +32,11 @@
 #define CFL_CFLSTAT_H_
 
 #include "Util/PTAStat.h"
-#include "CFL/CFLAlias.h"
-#include "CFL/CFLVF.h"
 
 namespace SVF
 {
+
+class CFLBase;
 
 /*!
  * Statistics of CFL's analysis

@@ -31,6 +31,7 @@
 #define DPITEM_H_
 
 #include "MemoryModel/ConditionalPT.h"
+#include "Util/GeneralType.h"
 #include <algorithm>    // std::sort
 
 namespace SVF

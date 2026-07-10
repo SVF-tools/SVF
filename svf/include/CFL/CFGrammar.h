@@ -28,7 +28,11 @@
  */
 #ifndef CFLGrammar_H_
 #define CFLGrammar_H_
-#include "SVFIR/SVFType.h"
+
+#include <deque>
+#include <vector>
+
+#include "Util/GeneralType.h"
 
 namespace SVF
 {
@@ -147,11 +151,11 @@ public:
     template<typename Key, typename Value, typename Hash = SymbolHash,
              typename KeyEqual = std::equal_to<Key>,
              typename Allocator = std::allocator<std::pair<const Key, Value>>>
-                     using SymbolMap = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
+                     using SymbolMap = Map<Key, Value, Hash, KeyEqual, Allocator>;
 
              template <typename Key, typename Hash = SymbolVectorHash, typename KeyEqual = std::equal_to<Key>,
                        typename Allocator = std::allocator<Key>>
-             using SymbolSet = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
+             using SymbolSet = Set<Key, Hash, KeyEqual, Allocator>;
 
              typedef std::vector<Symbol> Production;
              typedef SymbolSet<Production> Productions;
