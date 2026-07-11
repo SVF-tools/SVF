@@ -286,8 +286,7 @@ public:
         return (gepIn || gepOut);
     }
 
-    /// Check if a given edge is a NormalGepCGEdge that can cause a GEP object to
-    /// be created.
+    /// Check if a given edge can cause a GEP object to be created.
     inline bool canInduceGepObject(ConstraintEdge *edge) const;
 
     /// Wrappers for invoking SVFIR methods
