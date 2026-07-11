@@ -77,6 +77,18 @@ using namespace SVFUtil;
 using namespace LLVMUtil;
 using namespace cppUtil;
 
+// llvm::Value::hasUseList() was added in LLVM 21 alongside the change that
+// stopped instances of ConstantData (e.g. plain integer/float constants)
+// from carrying a use-list at all (see llvm/llvm-project@87f312a, "IR:
+// Remove uselist for constantdata"). On LLVM < 21 the method doesn't exist,
+// but the exact same condition is available through the public
+// isa<ConstantData> check that hasUseList() itself wraps internally.
+#if LLVM_VERSION_MAJOR >= 21
+static inline bool hasUseList(const Value* v) { return v->hasUseList(); }
+#else
+static inline bool hasUseList(const Value* v) { return !SVFUtil::isa<ConstantData>(v); }
+#endif
+
 
 const std::string TYPEMALLOC = "TYPE_MALLOC";
 
@@ -149,7 +161,9 @@ const Type *ObjTypeInference::inferObjType(const Value *var)
     //  but we can infer the obj type of %0 based on that of %inner_v.
     if (res == defaultType(var))
     {
-        if (!var->hasUseList()) return res;
+        // hasUseList() was removed from Value's public API in LLVM 18-20; use
+        // the version-portable compat shim defined above instead.
+        if (!hasUseList(var)) return res;
         for (const auto& use: var->users())
         {
             if (const CallBase* cs = SVFUtil::dyn_cast<CallBase>(use))
@@ -272,7 +286,9 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
             if (const auto* gepInst =
                         SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
                 insertInferSite(gepInst);
-            if (!curValue->hasUseList()) continue;
+            // hasUseList() was removed from Value's public API in LLVM 18-20; use
+            // the version-portable compat shim defined above instead.
+            if (!hasUseList(curValue)) continue;
             for (const auto it : curValue->users())
             {
                 if (const auto* loadInst = SVFUtil::dyn_cast<LoadInst>(it))
