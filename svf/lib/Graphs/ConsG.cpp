@@ -592,10 +592,12 @@ inline bool ConstraintGraph::canInduceGepObject(ConstraintEdge *edge) const
 {
     if (NormalGepCGEdge *normalGepCGEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
     {
-        // If we aren't treating the first field as equivalent to the base, no matter the
-        // offset, we may induce a GEP object. If the field index isn't 0, no matter how we
-        // treat the first field (0), we may induce a GEP object.
-        return !Options::FirstFieldEqBase() || 0 != normalGepCGEdge->getConstantFieldIdx();
+        const APOffset offset = normalGepCGEdge->getConstantFieldIdx();
+        // When we treat the first field as base, an offset of 0 cannot induce a GEP object.
+        // The converse does; that we either have a non-0 offset or we treat the first field
+        // independent to the base regardless of offset.
+        if (Options::FirstFieldEqBase() && 0 == offset) return false;
+        else return true;
     }
 
     return false;
