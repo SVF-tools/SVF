@@ -84,9 +84,15 @@ using namespace cppUtil;
 // but the exact same condition is available through the public
 // isa<ConstantData> check that hasUseList() itself wraps internally.
 #if LLVM_VERSION_MAJOR >= 21
-static inline bool hasUseList(const Value* v) { return v->hasUseList(); }
+static inline bool hasUseList(const Value* v)
+{
+    return v->hasUseList();
+}
 #else
-static inline bool hasUseList(const Value* v) { return !SVFUtil::isa<ConstantData>(v); }
+static inline bool hasUseList(const Value* v)
+{
+    return !SVFUtil::isa<ConstantData>(v);
+}
 #endif
 
 
