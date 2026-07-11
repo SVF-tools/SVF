@@ -511,7 +511,7 @@ bool ConstraintGraph::moveInEdgesToRepNode(ConstraintNode* node, ConstraintNode*
         {
             // If the GEP is critical (i.e. may have a non-zero offset),
             // then it brings impact on field-sensitivity.
-            if (!isZeroOffsettedGepCGEdge(edge))
+            if (canInduceGepObject(edge))
             {
                 criticalGepInsideSCC = true;
             }
@@ -570,7 +570,7 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
         {
             // If the GEP is critical (i.e. may have a non-zero offset),
             // then it brings impact on field-sensitivity.
-            if (!isZeroOffsettedGepCGEdge(edge))
+            if (canInduceGepObject(edge))
             {
                 criticalGepInsideSCC = true;
             }
@@ -588,6 +588,18 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
     return criticalGepInsideSCC;
 }
 
+inline bool ConstraintGraph::canInduceGepObject(ConstraintEdge *edge) const
+{
+    if (NormalGepCGEdge *normalGepCGEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
+    {
+        // If we aren't treating the first field as equivalent to the base, no matter the
+        // offset, we may induce a GEP object. If the field index isn't 0, no matter how we
+        // treat the first field (0), we may induce a GEP object.
+        return !Options::FirstFieldEqBase() || 0 != normalGepCGEdge->getConstantFieldIdx();
+    }
+
+    return false;
+}
 
 /*!
  * Dump constraint graph

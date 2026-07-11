@@ -32,6 +32,7 @@
 
 #include "Graphs/ConsGEdge.h"
 #include "Graphs/ConsGNode.h"
+#include "Util/Options.h"
 
 namespace SVF
 {
@@ -285,14 +286,9 @@ public:
         return (gepIn || gepOut);
     }
 
-    /// Check if a given edge is a NormalGepCGEdge with 0 offset.
-    inline bool isZeroOffsettedGepCGEdge(ConstraintEdge *edge) const
-    {
-        if (NormalGepCGEdge *normalGepCGEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
-            if (0 == normalGepCGEdge->getConstantFieldIdx())
-                return true;
-        return false;
-    }
+    /// Check if a given edge is a NormalGepCGEdge that can cause a GEP object to
+    /// be created.
+    inline bool canInduceGepObject(ConstraintEdge *edge) const;
 
     /// Wrappers for invoking SVFIR methods
     //@{
