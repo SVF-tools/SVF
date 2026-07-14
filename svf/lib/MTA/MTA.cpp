@@ -405,9 +405,12 @@ bool checkAndReport(const char* phase, bool condition)
     return condition;
 }
 
+// Main-phase context depth. The default must not depend on -mta-enable-slicing:
+// the sliced run and the whole-program FSAM baseline are compared against each
+// other, so both must analyze at the same context sensitivity.
 u32_t slicedMaxContextLen()
 {
-    if (Options::EnableSlicing() && !Options::MaxContextLen.isSet())
+    if (!Options::MaxContextLen.isSet())
         return 2;
     return Options::MaxContextLen();
 }
@@ -885,9 +888,11 @@ void SlicedMTA::runOnModule(SVFIR* pag, const ResolveIndirectCalls& resolveIndir
 
     reportOriginalStats(svfIr);
 
+    // The pre-analysis is context-insensitive in BOTH modes (the sliced run and
+    // the FSAM baseline must share an identical pre-analysis substrate); the
+    // main phase then runs at the configured context depth.
     const u32_t mainCxt = slicedMaxContextLen();
-    if (Options::EnableSlicing())
-        Options::MaxContextLen.setValue(0);
+    Options::MaxContextLen.setValue(0);
     const bool preOk = runPreAnalysis(resolveIndirectCalls);
     Options::MaxContextLen.setValue(mainCxt);
     if (!preOk)
