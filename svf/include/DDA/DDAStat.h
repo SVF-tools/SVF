@@ -30,8 +30,9 @@
 #ifndef DDASTAT_H_
 #define DDASTAT_H_
 
-#include "Util/PTAStat.h"
 #include "MemoryModel/PointsTo.h"
+#include "Util/PTAStat.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

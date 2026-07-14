@@ -53,8 +53,6 @@
 #ifndef ABSTRACT_POINTSTO_H_
 #define ABSTRACT_POINTSTO_H_
 
-#include "SVFIR/SVFType.h"
-
 namespace SVF
 {
 /// Basic points-to data structure

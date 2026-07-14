@@ -30,11 +30,17 @@
 #define SVF_CDGBUILDER_H
 
 #include "Graphs/CDG.h"
-#include "SVFIR/SVFValue.h"
+#include "Util/GeneralType.h"
 
 // control dependence builder
 namespace SVF
 {
+
+class FunObjVar;
+class ICFGNode;
+class SVFBasicBlock;
+class SVFLoopAndDomInfo;
+
 class CDGBuilder
 {
 public:

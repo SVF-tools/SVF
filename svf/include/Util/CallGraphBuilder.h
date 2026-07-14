@@ -31,8 +31,6 @@
 #ifndef INCLUDE_SVF_FE_CALLGRAPHBUILDER_H_
 #define INCLUDE_SVF_FE_CALLGRAPHBUILDER_H_
 
-#include "Graphs/ThreadCallGraph.h"
-
 namespace SVF
 {
 

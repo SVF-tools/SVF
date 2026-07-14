@@ -177,8 +177,10 @@ public:
     bool hasIntersect(const AddressValue &other) const
     {
         for (const auto& addr : _addrs)
+        {
             if (other._addrs.count(addr))
                 return true;
+        }
         return false;
     }
 

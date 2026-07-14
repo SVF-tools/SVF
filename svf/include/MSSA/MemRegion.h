@@ -34,8 +34,6 @@
 #ifndef MEMORYREGION_H_
 #define MEMORYREGION_H_
 
-#include "Graphs/ICFG.h"
-#include "Graphs/CallGraph.h"
 #include "Graphs/SCC.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/WorkList.h"
@@ -46,6 +44,12 @@ namespace SVF
 {
 
 class BVDataPTAImpl;
+
+class CallICFGNode;
+
+class CallGraph;
+class CallGraphSCC;
+class CallGraphNode;
 
 typedef NodeID MRID;
 typedef NodeID MRVERID;

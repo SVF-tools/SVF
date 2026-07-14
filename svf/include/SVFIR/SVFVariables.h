@@ -32,14 +32,20 @@
 #ifndef INCLUDE_SVFIR_SVFVARIABLE_H_
 #define INCLUDE_SVFIR_SVFVARIABLE_H_
 
+#include "Graphs/BasicBlockG.h"
 #include "Graphs/GenericGraph.h"
 #include "SVFIR/ObjTypeInfo.h"
 #include "SVFIR/SVFStatements.h"
+#include "Util/GeneralType.h"
+#include "Util/SVFLoopAndDomInfo.h"
+#include "Util/SVFUtil.h"
 
 namespace SVF
 {
 
+class FunObjVar;
 class SVFVar;
+
 /*
  * Program variables in SVFIR (based on PAG nodes)
  * These represent variables in the program analysis graph

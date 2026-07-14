@@ -34,12 +34,15 @@
 #ifndef SVF_ICFGWTO_H
 #define SVF_ICFGWTO_H
 
+#include <vector>
+
 #include "Graphs/ICFG.h"
 #include "Graphs/WTO.h"
-#include "Graphs/CallGraph.h"
 
 namespace SVF
 {
+
+class FunObjVar;
 
 typedef WTOComponent<ICFG> ICFGWTOComp;
 typedef WTONode<ICFG> ICFGSingletonWTO;

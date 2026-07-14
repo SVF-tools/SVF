@@ -16,6 +16,8 @@
 #include <iterator>
 #include <list>
 
+#include "Util/Hash.h"
+
 // Appease GCC?
 #ifdef __has_builtin
 #  define HAS_CLZ __has_builtin(__builtin_clz)
@@ -536,7 +538,9 @@ class SparseBitVector
 
         // Make sure our current iterator is valid.
         if (CurrElementIter == End)
+        {
             --CurrElementIter;
+        }
 
         // Search from our current iterator, either backwards or forwards,
         // depending on what element we are looking for.
@@ -755,7 +759,9 @@ public:
         // is nothing more to do.
         if (ElementIter == Elements.end() ||
                 ElementIter->index() != ElementIndex)
+        {
             return false;
+        }
         return ElementIter->test(Idx % ElementSize);
     }
 
@@ -1244,5 +1250,16 @@ void dump(const SparseBitVector<ElementSize> &LHS, std::ostream &out)
 }
 
 } // End namespace SVF
+
+/// Specialise hash for SparseBitVectors.
+template <unsigned N> struct std::hash<SVF::SparseBitVector<N>>
+{
+    size_t operator()(const SVF::SparseBitVector<N>& sbv) const
+    {
+        SVF::Hash<std::pair<std::pair<size_t, size_t>, size_t>> h;
+        return h(std::make_pair(std::make_pair(sbv.count(), sbv.find_first()),
+                                sbv.find_last()));
+    }
+};
 
 #endif // SPARSEBITVECTOR_H

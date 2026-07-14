@@ -34,13 +34,8 @@
 #include <signal.h>
 
 #include "Graphs/CHG.h"
-#include "Graphs/ThreadCallGraph.h"
+#include "Graphs/CallGraph.h"
 #include "Graphs/SCC.h"
-#include "MemoryModel/AbstractPointsToDS.h"
-#include "MemoryModel/ConditionalPT.h"
-#include "MemoryModel/MutablePointsToDS.h"
-#include "MemoryModel/PersistentPointsToDS.h"
-#include "MemoryModel/PointsTo.h"
 #include "MemoryModel/PTATY.h"
 #include "SVFIR/SVFIR.h"
 
@@ -48,9 +43,9 @@ namespace SVF
 {
 
 class CommonCHGraph;
-
 class ICFG;
 class PTAStat;
+
 /*
  * Pointer Analysis Base Class
  */
@@ -200,6 +195,16 @@ public:
     /// Given an object, get all the nodes having whose pointsto contains the object.
     /// Similar to getPts, this also needs to be implemented in child classes.
     virtual const NodeSet& getRevPts(NodeID nodeId) = 0;
+
+    /// Convenience bool wrappers: return true if the two operands may/must/partial alias
+    inline bool mayAlias(const SVFVar* V1, const SVFVar* V2)
+    {
+        return alias(V1, V2)!= AliasResult::NoAlias;
+    }
+    inline bool mayAlias(NodeID node1, NodeID node2)
+    {
+        return alias(node1, node2)!= AliasResult::NoAlias;
+    }
 
     /// Print targets of a function pointer
     void printIndCSTargets(const CallICFGNode* cs, const FunctionSet& targets);

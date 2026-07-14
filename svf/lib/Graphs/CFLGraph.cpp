@@ -28,8 +28,8 @@
  *      Author: Yulei Sui
  */
 
-#include "Util/Options.h"
 #include "Graphs/CFLGraph.h"
+#include "Graphs/GraphPrinter.h"
 #include "Util/SVFUtil.h"
 
 using namespace SVF;

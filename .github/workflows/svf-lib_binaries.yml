@@ -21,10 +21,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     environment: npm-publish
     env:
-      XCODE_VERSION: '15.3.0'  # Define Xcode version here to reuse it
+      XCODE_VERSION: 'latest-stable'  # Define Xcode version here to reuse it
     strategy:
       matrix:
-        os: [ubuntu-24.04, macos-14, ubuntu-24.04-arm]
+        os: [ubuntu-latest, macos-latest, ubuntu-24.04-arm]
 
     steps:
       # checkout the repo
@@ -38,7 +38,8 @@ jobs:
       - name: mac-setup-workaround
         if: runner.os == 'macOS'
         run: |
-          ln -sfn /Applications/Xcode_${{ env.XCODE_VERSION }}.app /Applications/Xcode.app
+          XCODE_PATH=$(dirname $(dirname $(xcode-select -p)))
+          sudo ln -sfn "$XCODE_PATH" /Applications/Xcode.app
           brew install astyle
 
       # Ubuntu settings
@@ -52,8 +53,8 @@ jobs:
         if: github.event_name == 'push' && github.repository == 'SVF-tools/SVF'
         run: |
           echo $RUNNER_OS
-          git config --global user.email ${{secrets.npm_email}}
-          git config --global user.name "GitHub Actions Build"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
 
       # code-format and build-svf
       - name: code-format-and-build-svf
@@ -80,7 +81,7 @@ jobs:
             git status
             git add .
             if [ -n "$(git status -s)" ]; then git commit -m"SVF code formatter"; fi
-            git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF.git   HEAD:master
+            git push "https://x-access-token:${{github.token}}@github.com/${{github.repository}}.git" HEAD:master
             cd $GITHUB_WORKSPACE/docs && doxygen doxygen.config
             cd $GITHUB_WORKSPACE  && git clone https://github.com/SVF-tools/SVF-doxygen.git
             cp -r $GITHUB_WORKSPACE/docs/generated-doc/html $GITHUB_WORKSPACE/SVF-doxygen/
@@ -110,7 +111,7 @@ jobs:
             git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/Test-Suite.git   HEAD:master
           fi
 
-      # update-svf-lib
+      # update-svf-lib binaries to svf-npm for later publishing
       - name: update-svf-lib
         if: |
           github.event_name == 'push' &&
@@ -141,29 +142,3 @@ jobs:
           npm version patch
           git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF-npm.git   HEAD:master
           cd $GITHUB_WORKSPACE
-
-      # publish svf
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          registry-url: https://registry.npmjs.org/
-      - name: publish-svf
-        if: |
-          github.event_name == 'push' &&
-          github.repository == 'SVF-tools/SVF' &&
-          runner.os == 'Linux' &&
-          github.ref == 'refs/heads/master'
-        run: |
-          cd $GITHUB_WORKSPACE
-          echo $(pwd)
-          git stash --all
-          npm_version=`npm v svf-tools version`
-          sed  -i '/version/s/[^:]*$/'"\"${npm_version}\",/" package.json
-          git add .
-          if [ -n "$(git status -s)" ]; then git commit -m'update version'  ; fi
-          npm i -g npm@latest
-          npm version patch
-          npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ""
-          NPM_CONFIG_USERCONFIG: ""

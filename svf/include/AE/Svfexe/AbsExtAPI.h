@@ -25,15 +25,21 @@
 //      Author: Xiao Cheng, Jiawei Wang
 //
 #pragma once
+
+#include <functional>
+
 #include "AE/Core/AbstractState.h"
-#include "AE/Core/ICFGWTO.h"
-#include "AE/Svfexe/AEDetector.h"
-#include "Util/SVFBugReport.h"
+#include "AE/Core/IntervalValue.h"
+#include "SVFIR/SVFIR.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {
 
 class AbstractInterpretation;
+class AbstractState;
+class CallICFGNode;
+class ICFGNode;
 
 /**
  * @class AbsExtAPI

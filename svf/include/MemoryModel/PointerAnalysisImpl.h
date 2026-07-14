@@ -30,9 +30,13 @@
 #ifndef INCLUDE_MEMORYMODEL_POINTERANALYSISIMPL_H_
 #define INCLUDE_MEMORYMODEL_POINTERANALYSISIMPL_H_
 
-#include <Graphs/ConsG.h>
+#include "Graphs/ConsG.h"
 #include "MemoryModel/PTATY.h"
 #include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/AbstractPointsToDS.h"
+#include "MemoryModel/MutablePointsToDS.h"
+#include "MemoryModel/PersistentPointsToDS.h"
+#include "MemoryModel/ConditionalPT.h"
 
 namespace SVF
 {
@@ -220,6 +224,12 @@ public:
 
     /// Interface expose to users of our pointer analysis, given two pts
     virtual AliasResult alias(const PointsTo& pts1, const PointsTo& pts2);
+
+    /// Convenience bool wrappers: return true if the two operands may/must/partial alias
+    inline bool mayAlias(const PointsTo& pts1, const PointsTo& pts2)
+    {
+        return alias(pts1, pts2)!= AliasResult::NoAlias;
+    }
 
     /// dump and debug, print out conditional pts
     //@{

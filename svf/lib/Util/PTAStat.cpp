@@ -31,7 +31,7 @@
 #include "Graphs/CallGraph.h"
 #include "Util/PTAStat.h"
 #include "MemoryModel/PTATY.h"
-#include "MemoryModel/PointerAnalysisImpl.h"
+#include "MemoryModel/PointerAnalysis.h"
 #include "SVFIR/SVFIR.h"
 
 using namespace SVF;

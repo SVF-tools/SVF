@@ -30,7 +30,7 @@
 
 #include "Util/SVFUtil.h"
 #include "Util/CallGraphBuilder.h"
-#include "Graphs/ICFG.h"
+#include "Graphs/ICFGNode.h"
 #include "SVFIR/SVFIR.h"
 #include "Graphs/CallGraph.h"
 #include "Graphs/ThreadCallGraph.h"
