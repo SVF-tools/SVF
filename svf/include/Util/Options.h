@@ -3,7 +3,6 @@
 #ifndef OPTIONS_H_
 #define OPTIONS_H_
 
-#include <sstream>
 #include "Util/CommandLine.h"
 #include "Util/SVFStat.h"
 #include "MemoryModel/PTATY.h"

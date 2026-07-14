@@ -178,7 +178,13 @@ public:
 
         if (!DTraits.renderGraphFromBottomUp())
         {
-            O << DOT::EscapeStr(DTraits.getNodeLabel(Node, G));
+            std::string label = DTraits.getNodeLabel(Node, G);
+            if (label.length() > Options::MaxNodeLabelLength())
+            {
+                label = label.substr(0, Options::MaxNodeLabelLength()) + "...";
+            }
+
+            O << DOT::EscapeStr(label);
 
             // If we should include the address of the node in the label, do so now.
             std::string Id = DTraits.getNodeIdentifierLabel(Node, G);

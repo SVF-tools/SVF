@@ -48,7 +48,7 @@
 
 #include "AE/Core/AbstractValue.h"
 #include "AE/Core/IntervalValue.h"
-#include "SVFIR/SVFVariables.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

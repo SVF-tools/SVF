@@ -28,9 +28,10 @@
  */
 
 #include "Graphs/CHG.h"
-#include "Util/SVFUtil.h"
+#include "Graphs/GraphPrinter.h"
 #include "Graphs/ICFG.h"
-#include "SVFIR/SVFIR.h"
+#include "Util/GeneralType.h"
+#include "Util/SVFUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;

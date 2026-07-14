@@ -31,6 +31,7 @@
 #define INCLUDE_CFL_CFGNORMALIZER_H_
 
 #include "CFGrammar.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

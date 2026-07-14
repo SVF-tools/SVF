@@ -13,8 +13,6 @@
 
 #include "Util/SparseBitVector.h"  // For LLVM's countPopulation.
 #include "Util/CoreBitVector.h"
-#include "SVFIR/SVFType.h"
-#include "Util/SVFUtil.h"
 
 namespace SVF
 {
@@ -50,8 +48,10 @@ CoreBitVector &CoreBitVector::operator=(CoreBitVector &&rhs)
 bool CoreBitVector::empty(void) const
 {
     for (const Word& w : words)
+    {
         if (w)
             return false;
+    }
     return true;
 }
 

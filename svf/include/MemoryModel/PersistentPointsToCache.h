@@ -19,7 +19,7 @@
 #include <vector>
 #include <functional>
 
-#include "SVFIR/SVFType.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

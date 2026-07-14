@@ -29,7 +29,7 @@
 
 
 #include "Util/Options.h"
-#include "MemoryModel/PointerAnalysisImpl.h"
+#include "MemoryModel/PointerAnalysis.h"
 #include "DDA/DDAPass.h"
 #include "DDA/FlowDDA.h"
 #include "DDA/ContextDDA.h"

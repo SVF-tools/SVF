@@ -29,6 +29,9 @@
 
 #include "WPA/Andersen.h"
 #include "MemoryModel/PointsTo.h"
+#include "Util/PTAStat.h"
+#include "Util/GeneralType.h"
+#include "Util/SVFUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;

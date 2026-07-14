@@ -33,6 +33,7 @@
 #include "CFL/CFGrammar.h"
 #include "Graphs/CFLGraph.h"
 #include "Graphs/SVFG.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

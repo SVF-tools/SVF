@@ -31,17 +31,16 @@
 #ifndef IRGRAPH_H_
 #define IRGRAPH_H_
 
+#include "Graphs/GenericGraph.h"
 #include "SVFIR/SVFStatements.h"
 #include "SVFIR/SVFVariables.h"
-#include "Util/NodeIDAllocator.h"
-#include "Util/SVFUtil.h"
-#include "Graphs/ICFG.h"
 
 namespace SVF
 {
 typedef SVFVar PAGNode;
 typedef SVFStmt PAGEdge;
 
+class ICFGNode;
 class ObjTypeInfo;
 
 /*

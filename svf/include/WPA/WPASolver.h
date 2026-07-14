@@ -32,6 +32,7 @@
 #define GRAPHSOLVER_H_
 
 #include "Util/WorkList.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

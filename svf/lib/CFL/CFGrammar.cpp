@@ -29,6 +29,8 @@
 
 #include "CFL/CFGrammar.h"
 #include "Util/SVFUtil.h"
+
+#include <algorithm>
 #include <string>
 #include <iostream>
 #include <fstream>

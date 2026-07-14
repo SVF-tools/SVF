@@ -37,11 +37,15 @@
 #ifndef WPA_H_
 #define WPA_H_
 
-#include "MemoryModel/PointerAnalysisImpl.h"
+#include "Util/GeneralType.h"
+#include "SVFIR/SVFType.h"
 
 namespace SVF
 {
 
+class CallICFGNode;
+class PointerAnalysis;
+class PointsTo;
 class SVFG;
 
 /*!

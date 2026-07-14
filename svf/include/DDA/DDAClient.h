@@ -35,12 +35,12 @@
 #define DDACLIENT_H_
 
 #include "SVFIR/SVFIR.h"
-#include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/SVFG.h"
-#include "SVFIR/SVFValue.h"
 
 namespace SVF
 {
+
+class PointerAnalysis;
 
 /**
  * General DDAClient which queries all top level pointers by default.

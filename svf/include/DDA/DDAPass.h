@@ -33,11 +33,15 @@
 #define DDAPASS_H_
 
 #include "DDA/DDAClient.h"
+#include "MemoryModel/PointerAnalysis.h"
 #include "Graphs/SCC.h"
-#include "MemoryModel/PointerAnalysisImpl.h"
+#include "Graphs/SVFG.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {
+
+class PointerAnalysis;
 
 /*!
  * Demand-Driven Pointer Analysis.

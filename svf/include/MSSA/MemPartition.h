@@ -37,6 +37,7 @@
 #define DISNCTMRGENERATOR_H_
 
 #include "MSSA/MemRegion.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

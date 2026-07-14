@@ -34,8 +34,7 @@
 #ifndef WTO_H_
 #define WTO_H_
 
-#include "SVFIR/SVFType.h"
-#include "SVFIR/SVFValue.h"
+#include "Util/GeneralType.h"
 #include <functional>
 
 namespace SVF

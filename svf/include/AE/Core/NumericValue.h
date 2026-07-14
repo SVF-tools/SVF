@@ -33,10 +33,11 @@
 #ifndef SVF_NUMERICVALUE_H
 #define SVF_NUMERICVALUE_H
 
-#include "SVFIR/SVFType.h"
 #include <cfloat> // For DBL_MAX
 #include <cmath>
 #include <utility>
+
+#include "Util/GeneralType.h"
 
 #define epsilon std::numeric_limits<double>::epsilon();
 namespace SVF

@@ -34,10 +34,11 @@
 #include "WPA/Andersen.h"
 #include "WPA/CSC.h"
 #include "MemoryModel/PTATY.h"
-#include "MemoryModel/PointsTo.h"
 
 namespace SVF
 {
+
+class PointsTo;
 
 /*!
  * Selective Cycle Detection Based Andersen Analysis

@@ -27,7 +27,10 @@
  *      Author: Pei Xu
  */
 
+#include "CFL/CFLGramGraphChecker.h"
 #include "CFL/CFLVF.h"
+#include "MemoryModel/PointerAnalysis.h"
+#include "WPA/Andersen.h"
 
 using namespace SVF;
 using namespace SVFUtil;

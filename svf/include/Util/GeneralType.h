@@ -38,57 +38,12 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <memory>
+
+#include "Util/Hash.h"
 #include "Util/SparseBitVector.h"
 
 namespace SVF
 {
-typedef std::ostream OutStream;
-typedef unsigned u32_t;
-typedef signed s32_t;
-typedef unsigned long long u64_t;
-typedef signed long long s64_t;
-typedef unsigned char u8_t;
-typedef signed char s8_t;
-typedef unsigned short u16_t;
-typedef signed short s16_t;
-
-typedef u32_t NodeID;
-typedef u32_t EdgeID;
-typedef unsigned CallSiteID;
-typedef unsigned ThreadID;
-typedef s64_t APOffset;
-
-typedef SparseBitVector<> NodeBS;
-typedef unsigned PointsToID;
-
-/// provide extra hash function for std::pair handling
-template <class T> struct Hash;
-
-template <class S, class T> struct Hash<std::pair<S, T>>
-{
-    // Pairing function from: http://szudzik.com/ElegantPairing.pdf
-    static size_t szudzik(size_t a, size_t b)
-    {
-        return a > b ? b * b + a : a * a + a + b;
-    }
-
-    size_t operator()(const std::pair<S, T>& t) const
-    {
-        Hash<decltype(t.first)> first;
-        Hash<decltype(t.second)> second;
-        return szudzik(first(t.first), second(t.second));
-    }
-};
-
-template <class T> struct Hash
-{
-    size_t operator()(const T& t) const
-    {
-        std::hash<T> h;
-        return h(t);
-    }
-};
 
 template <typename Key, typename Hash = Hash<Key>,
           typename KeyEqual = std::equal_to<Key>,
@@ -108,6 +63,25 @@ template <typename Key, typename Value, typename Hash = Hash<Key>,
                     typename Allocator = std::allocator<std::pair<const Key, Value>>>
                             using OrderedMap = std::map<Key, Value, Compare, Allocator>;
 
+                    typedef std::ostream OutStream;
+                    typedef unsigned u32_t;
+                    typedef signed s32_t;
+                    typedef unsigned long long u64_t;
+                    typedef signed long long s64_t;
+                    typedef unsigned char u8_t;
+                    typedef signed char s8_t;
+                    typedef unsigned short u16_t;
+                    typedef signed short s16_t;
+
+                    typedef u32_t NodeID;
+                    typedef u32_t EdgeID;
+                    typedef unsigned CallSiteID;
+                    typedef unsigned ThreadID;
+                    typedef s64_t APOffset;
+
+                    typedef SparseBitVector<> NodeBS;
+                    typedef unsigned PointsToID;
+
                     typedef std::pair<NodeID, NodeID> NodePair;
                     typedef OrderedSet<NodeID> OrderedNodeSet;
                     typedef Set<NodeID> NodeSet;
@@ -124,4 +98,34 @@ template <typename Key, typename Value, typename Hash = Hash<Key>,
                     typedef Set<Version> VersionSet;
                     typedef std::pair<NodeID, Version> VersionedVar;
                     typedef Set<VersionedVar> VersionedVarSet;
-}
+
+// TODO: be explicit that this is a pair of 32-bit unsigneds?
+                    template <> struct Hash<NodePair>
+{
+    size_t operator()(const NodePair& p) const
+    {
+        // Make sure our assumptions are sound: use u32_t
+        // and u64_t. If NodeID is not actually u32_t or size_t
+        // is not u64_t we should be fine since we get a
+        // consistent result.
+        uint32_t first = (uint32_t)(p.first);
+        uint32_t second = (uint32_t)(p.second);
+        return ((uint64_t)(first) << 32) | (uint64_t)(second);
+    }
+};
+
+}  // namespace SVF
+
+template <> struct std::hash<SVF::NodePair>
+{
+    size_t operator()(const SVF::NodePair& p) const
+    {
+        // Make sure our assumptions are sound: use u32_t
+        // and u64_t. If NodeID is not actually u32_t or size_t
+        // is not u64_t we should be fine since we get a
+        // consistent result.
+        uint32_t first = (uint32_t)(p.first);
+        uint32_t second = (uint32_t)(p.second);
+        return ((uint64_t)(first) << 32) | (uint64_t)(second);
+    }
+};

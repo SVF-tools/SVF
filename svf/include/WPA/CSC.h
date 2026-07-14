@@ -30,16 +30,16 @@
 #ifndef PROJECT_CSC_H
 #define PROJECT_CSC_H
 
-#include "Graphs/ConsG.h"
-#include "Graphs/SCC.h"
-#include "SVFIR/SVFValue.h" // for NodeBS
-#include "Util/WorkList.h"
 #include <limits.h>
-#include <map>
-#include <stack>
+
+#include "Graphs/SCC.h"
+#include "Util/GeneralType.h"
+#include "Util/WorkList.h"
 
 namespace SVF
 {
+
+class ConstraintGraph;
 
 typedef SCCDetection<ConstraintGraph *> CGSCC;
 

@@ -1674,7 +1674,9 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
 
                     const auto* copySize = SVFUtil::dyn_cast<ConstantInt>(cs->getArgOperand(2));
                     if (!copySize)
+                    {
                         return false;
+                    }
 
                     const u64_t copyBytes = copySize->getZExtValue();
                     return copyBytes >= accessBytes && copyBytes - accessBytes >= offset;

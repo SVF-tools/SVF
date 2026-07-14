@@ -39,7 +39,6 @@
 #include<fstream>
 
 #include "MemoryModel/AbstractPointsToDS.h"
-#include "SVFIR/SVFType.h"
 #include "Util/SVFUtil.h"
 
 namespace SVF

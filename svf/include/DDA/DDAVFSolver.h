@@ -30,12 +30,14 @@
 #ifndef VALUEFLOWDDA_H_
 #define VALUEFLOWDDA_H_
 
+#include <algorithm>
+
 #include "DDA/DDAStat.h"
 #include "Graphs/SCC.h"
 #include "MSSA/SVFGBuilder.h"
 #include "MemoryModel/PointsTo.h"
 #include "WPA/Andersen.h"
-#include <algorithm>
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

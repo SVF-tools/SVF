@@ -28,6 +28,8 @@
  */
 
 #include "Graphs/ConsG.h"
+#include "Graphs/GraphPrinter.h"
+#include "Util/GeneralType.h"
 #include "Util/Options.h"
 
 using namespace SVF;

@@ -27,9 +27,9 @@
  *      Author: yesen
  */
 
+#include "Graphs/CallGraph.h"
 #include "Graphs/SVFG.h"
 #include "Graphs/SVFGStat.h"
-#include "Graphs/CallGraph.h"
 
 using namespace SVF;
 using namespace std;

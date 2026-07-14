@@ -30,6 +30,7 @@
 #include "Graphs/CallGraph.h"
 #include "Graphs/SVFG.h"
 #include "MSSA/MemPartition.h"
+#include "Graphs/SVFGOPT.h"
 #include "MSSA/MemSSA.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"

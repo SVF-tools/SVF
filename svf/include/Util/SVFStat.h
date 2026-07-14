@@ -31,6 +31,7 @@
 #define SVF_SVFSTAT_H
 
 #include "MemoryModel/PointsTo.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

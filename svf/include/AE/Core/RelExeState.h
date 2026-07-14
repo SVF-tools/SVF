@@ -32,6 +32,7 @@
 
 #include "AE/Core/AddressValue.h"
 #include "Util/Z3Expr.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

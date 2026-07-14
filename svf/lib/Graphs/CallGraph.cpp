@@ -29,13 +29,12 @@
  */
 
 #include <functional>
+#include <sstream>
 
 #include "Graphs/CallGraph.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/GraphPrinter.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
-#include <sstream>
-#include "Util/Options.h"
 
 using namespace SVF;
 using namespace SVFUtil;

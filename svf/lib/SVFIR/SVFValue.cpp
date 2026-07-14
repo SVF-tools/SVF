@@ -31,6 +31,7 @@
 
 #include "SVFIR/SVFValue.h"
 #include "Util/SVFUtil.h"
+#include "Graphs/BasicBlockG.h"
 #include "Graphs/GenericGraph.h"
 #include "Util/SVFLoopAndDomInfo.h"
 

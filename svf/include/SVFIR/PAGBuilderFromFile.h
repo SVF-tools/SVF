@@ -31,6 +31,7 @@
 #define INCLUDE_SVFIR_PAGBUILDERFROMFILE_H_
 
 #include "SVFIR/SVFIR.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

@@ -29,6 +29,7 @@
  */
 
 
+#include "Graphs/ThreadCallGraph.h"
 #include "MemoryModel/PTATY.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/Options.h"

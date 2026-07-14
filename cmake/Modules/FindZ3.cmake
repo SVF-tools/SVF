@@ -4,30 +4,62 @@
 
 include(GNUInstallDirs)
 
+set(_Z3_HINTS ${Z3_HOME} $ENV{Z3_HOME} ${Z3_DIR} $ENV{Z3_DIR})
+set(_Z3_EXPLICIT_ROOT "")
+foreach(_Z3_HINT IN LISTS _Z3_HINTS)
+  if(_Z3_HINT AND EXISTS "${_Z3_HINT}/include/z3++.h")
+    set(_Z3_EXPLICIT_ROOT "${_Z3_HINT}")
+    break()
+  endif()
+endforeach()
+
 # Try upstream/system CONFIG package first; use it if found (sets required variables):
-find_package(Z3 CONFIG QUIET HINTS ${Z3_HOME} $ENV{Z3_HOME} ${Z3_DIR} $ENV{Z3_DIR})
+if(NOT _Z3_EXPLICIT_ROOT)
+  find_package(Z3 CONFIG QUIET HINTS ${_Z3_HINTS})
+endif()
 if(Z3_FOUND)
   if(NOT Z3_FIND_QUIETLY)
     message(STATUS "Found upstream/system Z3 package (Z3Config.cmake)")
   endif()
 else()
   if(NOT Z3_FIND_QUIETLY)
-    message(STATUS "Failed to find upstream/system Z3 package; reverting to manual search")
+    if(_Z3_EXPLICIT_ROOT)
+      message(STATUS "Using explicit Z3 root: ${_Z3_EXPLICIT_ROOT}")
+    else()
+      message(STATUS "Failed to find upstream/system Z3 package; reverting to manual search")
+    endif()
   endif()
 
   # Fall back to explicit manual header + lib search (prioritise searching $Z3_DIR)
-  find_library(
-    Z3_LIBRARY_DIR
-    NAMES z3 libz3
-    HINTS ${Z3_HOME} $ENV{Z3_HOME} ${Z3_DIR} $ENV{Z3_DIR}
-    PATH_SUFFIXES bin lib ${CMAKE_INSTALL_BINDIR} ${CMAKE_INSTALL_LIBDIR}
-  )
-  find_path(
-    Z3_INCLUDE_DIR
-    NAMES z3++.h
-    HINTS ${Z3_HOME} $ENV{Z3_HOME} ${Z3_DIR} $ENV{Z3_DIR}
-    PATH_SUFFIXES include ${CMAKE_INSTALL_INCLUDEDIR}
-  )
+  if(_Z3_EXPLICIT_ROOT)
+    find_library(
+      Z3_LIBRARY_DIR
+      NAMES z3 libz3
+      HINTS ${_Z3_EXPLICIT_ROOT}
+      PATH_SUFFIXES bin lib ${CMAKE_INSTALL_BINDIR} ${CMAKE_INSTALL_LIBDIR}
+      NO_DEFAULT_PATH
+    )
+    find_path(
+      Z3_INCLUDE_DIR
+      NAMES z3++.h
+      HINTS ${_Z3_EXPLICIT_ROOT}
+      PATH_SUFFIXES include ${CMAKE_INSTALL_INCLUDEDIR}
+      NO_DEFAULT_PATH
+    )
+  else()
+    find_library(
+      Z3_LIBRARY_DIR
+      NAMES z3 libz3
+      HINTS ${_Z3_HINTS}
+      PATH_SUFFIXES bin lib ${CMAKE_INSTALL_BINDIR} ${CMAKE_INSTALL_LIBDIR}
+    )
+    find_path(
+      Z3_INCLUDE_DIR
+      NAMES z3++.h
+      HINTS ${_Z3_HINTS}
+      PATH_SUFFIXES include ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+  endif()
 
   # If the headers were found, find & extract the Z3 version number
   set(_ver_h "${Z3_INCLUDE_DIR}/z3_version.h")

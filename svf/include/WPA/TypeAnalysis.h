@@ -30,10 +30,15 @@
 #ifndef INCLUDE_WPA_TYPEANALYSIS_H_
 #define INCLUDE_WPA_TYPEANALYSIS_H_
 
+#include "Util/GeneralType.h"
 #include "WPA/Andersen.h"
 
 namespace SVF
 {
+
+class CallEdgeMap;
+class CallSiteToFunPtrMap;
+class SVFIR;
 
 class TypeAnalysis:  public AndersenBase
 {

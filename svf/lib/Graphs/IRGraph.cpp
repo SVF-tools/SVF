@@ -27,8 +27,12 @@
  *      Author: Yulei Sui
  */
 
+#include "Graphs/GraphPrinter.h"
+#include "Graphs/ICFG.h"
 #include "Graphs/IRGraph.h"
+#include "Util/GeneralType.h"
 #include "Util/Options.h"
+#include "Util/SVFUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;

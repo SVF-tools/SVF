@@ -25,7 +25,6 @@
 //
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/SVFG.h"
-#include "Util/Options.h"
 #include "CFL/CFLSVFGBuilder.h"
 
 

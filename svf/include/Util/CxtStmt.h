@@ -30,8 +30,6 @@
 #ifndef INCLUDE_UTIL_CXTSTMT_H_
 #define INCLUDE_UTIL_CXTSTMT_H_
 
-#include "SVFIR/SVFValue.h"
-
 namespace SVF
 {
 

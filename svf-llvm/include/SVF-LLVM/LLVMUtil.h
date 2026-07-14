@@ -38,6 +38,8 @@
 namespace SVF
 {
 
+class SVFBasicBlock;
+
 namespace LLVMUtil
 {
 

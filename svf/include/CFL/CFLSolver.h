@@ -32,6 +32,7 @@
 
 #include "Graphs/CFLGraph.h"
 #include "CFL/CFGrammar.h"
+#include "Util/GeneralType.h"
 #include "Util/WorkList.h"
 
 using namespace std;

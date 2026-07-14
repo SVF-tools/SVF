@@ -30,11 +30,12 @@
 #ifndef MSSAMUCHI_H_
 #define MSSAMUCHI_H_
 
-#include "MSSA/MemRegion.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {
 
+class MemRegion;
 class MSSADEF;
 
 /*!

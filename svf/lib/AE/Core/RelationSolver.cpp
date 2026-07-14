@@ -26,9 +26,15 @@
  *      Author: Jiawei Ren
  *
  */
-#include "AE/Core/RelationSolver.h"
+
 #include <cmath>
+
+#include "AE/Core/AbstractState.h"
+#include "AE/Core/RelationSolver.h"
+#include "AE/Core/IntervalValue.h"
+#include "Util/GeneralType.h"
 #include "Util/Options.h"
+#include "Util/SVFUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;
