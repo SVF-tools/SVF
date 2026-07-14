@@ -454,47 +454,57 @@ private:
 };
 
 } // End namespace SVF
-// Specialise has for class defined in this header file
+// Specialise hash for the classes defined in this header file.
+// Each hash must combine every field that operator== compares; hashing only a
+// subset (e.g. the tid alone) collapses all keys sharing that field into one
+// bucket. IDs are hashed instead of raw pointers so the bucket layout does not
+// depend on allocation addresses.
 template <> struct std::hash<SVF::CxtThread>
 {
-    size_t operator()(const SVF::CxtThread& cs) const
+    size_t operator()(const SVF::CxtThread& ct) const
     {
-        std::hash<SVF::CallStrCxt> h;
-        return h(cs.getContext());
+        std::hash<SVF::CallStrCxt> ch;
+        SVF::Hash<std::pair<SVF::NodeID, size_t>> pairH;
+        const SVF::NodeID forksite =
+            ct.getThread() != nullptr ? ct.getThread()->getId() : 0;
+        return pairH({forksite, ch(ct.getContext())});
     }
 };
 template <> struct std::hash<SVF::CxtThreadProc>
 {
     size_t operator()(const SVF::CxtThreadProc& ctp) const
     {
-        std::hash<SVF::NodeID> h;
-        return h(ctp.getTid());
-    }
-};
-template <> struct std::hash<SVF::CxtThreadStmt>
-{
-    size_t operator()(const SVF::CxtThreadStmt& cts) const
-    {
-        std::hash<SVF::NodeID> h;
-        return h(cts.getTid());
+        std::hash<SVF::CallStrCxt> ch;
+        SVF::Hash<std::pair<SVF::NodeID, size_t>> pairH;
+        return pairH({ctp.getTid(),
+                      pairH({ctp.getProc()->getId(), ch(ctp.getContext())})});
     }
 };
 template <> struct std::hash<SVF::CxtStmt>
 {
     size_t operator()(const SVF::CxtStmt& cs) const
     {
-        std::hash<SVF::ICFGNode*> h;
-        SVF::ICFGNode* inst = const_cast<SVF::ICFGNode*> (cs.getStmt());
-        return h(inst);
+        std::hash<SVF::CallStrCxt> ch;
+        SVF::Hash<std::pair<SVF::NodeID, size_t>> pairH;
+        return pairH({cs.getStmt()->getId(), ch(cs.getContext())});
+    }
+};
+template <> struct std::hash<SVF::CxtThreadStmt>
+{
+    size_t operator()(const SVF::CxtThreadStmt& cts) const
+    {
+        std::hash<SVF::CxtStmt> csH;
+        SVF::Hash<std::pair<SVF::NodeID, size_t>> pairH;
+        return pairH({cts.getTid(), csH(cts)});
     }
 };
 template <> struct std::hash<SVF::CxtProc>
 {
-    size_t operator()(const SVF::CxtProc& cs) const
+    size_t operator()(const SVF::CxtProc& cp) const
     {
-        std::hash<SVF::FunObjVar*> h;
-        SVF::FunObjVar* fun = const_cast<SVF::FunObjVar*> (cs.getProc());
-        return h(fun);
+        std::hash<SVF::CallStrCxt> ch;
+        SVF::Hash<std::pair<SVF::NodeID, size_t>> pairH;
+        return pairH({cp.getProc()->getId(), ch(cp.getContext())});
     }
 };
 #endif /* INCLUDE_UTIL_CXTSTMT_H_ */
