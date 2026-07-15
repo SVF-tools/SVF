@@ -429,15 +429,10 @@ void SVFIRBuilder::initialiseBaseObjVars()
             NodeID id = llvmModuleSet()->getObjectNode(iter->first);
             pag->addGlobalObjNode(iter->second, pag->getObjTypeInfo(id), icfgNode);
         }
-        else if (SVFUtil::isa<ConstantData, ConstantExpr, MetadataAsValue, BlockAddress>(llvmValue))
+        else if (SVFUtil::isa<ConstantData, ConstantExpr, MetadataAsValue, BlockAddress, ConstantAggregate>(llvmValue))
         {
             NodeID id = llvmModuleSet()->getObjectNode(iter->first);
             pag->addConstantDataObjNode(iter->second, pag->getObjTypeInfo(id), icfgNode);
-        }
-        else if (SVFUtil::isa<ConstantAggregate>(llvmValue))
-        {
-            NodeID id = llvmModuleSet()->getObjectNode(iter->first);
-            pag->addConstantAggObjNode(iter->second, pag->getObjTypeInfo(id), icfgNode);
         }
         // Add a generic object node for other types of values
         else
@@ -502,13 +497,9 @@ void SVFIRBuilder::initialiseValVars()
             pag->addGlobalValNode(iter->second, pag->getICFG()->getGlobalICFGNode(),
                                   llvmModuleSet()->getSVFType(llvmValue->getType()));
         }
-        else if (SVFUtil::isa<ConstantData, ConstantExpr, MetadataAsValue, BlockAddress>(llvmValue))
+        else if (SVFUtil::isa<ConstantData, ConstantExpr, MetadataAsValue, BlockAddress, ConstantAggregate>(llvmValue))
         {
             pag->addConstantDataValNode(iter->second, icfgNode, llvmModuleSet()->getSVFType(llvmValue->getType()));
-        }
-        else if (SVFUtil::isa<ConstantAggregate>(llvmValue))
-        {
-            pag->addConstantAggValNode(iter->second, icfgNode, llvmModuleSet()->getSVFType(llvmValue->getType()));
         }
         else if (SVFUtil::isa<InlineAsm>(llvmValue) ||
                  SVFUtil::isa<DSOLocalEquivalent>(llvmValue) ||
