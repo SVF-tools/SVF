@@ -84,6 +84,12 @@ public:
     /// than every candidate pair. Feeding the retained edges' queries into ILA
     /// slicing makes the sliced MHP/lock reproduce the same value-flow decisions
     /// the main phase makes, while keeping the slice minimal.
+    ///
+    /// Representation: the value stores only the ADDITIONAL lock-span witnesses;
+    /// the two endpoint ICFG nodes are implicit in the key (consumers must add
+    /// key.first->getICFGNode() / key.second->getICFGNode() themselves). Most
+    /// edges have no common lock, so this avoids allocating two set nodes per
+    /// edge merely to duplicate the key.
     const std::map<ThreadVFEdge, std::set<const ICFGNode*>>& getThreadVFQueryMap() const
     { return threadVFQueryMap; }
 

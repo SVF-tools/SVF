@@ -109,8 +109,6 @@ void MHP::analyze()
  */
 void MHP::analyzeInterleaving()
 {
-
-
     for (const std::pair<const NodeID, TCTNode*>& tpair : *tct)
     {
         const CxtThread& ct = tpair.second->getCxtThread();
@@ -357,6 +355,24 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
             const ICFGNode* svfEntryInst = getFunEntry(svfcallee);
             CxtThreadStmt newCts(cts.getTid(), newCxt, svfEntryInst);
             addInterleavingThread(newCts, cts);
+
+            // Return-flow rendezvous: handleRet propagates a callee's exit to
+            // the return sites of the callsite CONTEXTS PRESENT AT THAT TIME.
+            // If this callsite context appears only after the callee's exit was
+            // processed, that return flow is lost (the exit is never re-pushed).
+            // Mirror the propagation here so whichever side is reached last
+            // triggers it: if the callee's exit already carries interleavings
+            // under newCxt, forward them to this callsite's return site now.
+            if (tct->isCandidateFun(svfcallee) && svfcallee->hasBasicBlock())
+            {
+                const ICFGNode* exitInst = svfcallee->getExitBB()->back();
+                CxtThreadStmt exitCts(cts.getTid(), newCxt, exitInst);
+                if (threadStmtToThreadInterLeav.find(exitCts) != threadStmtToThreadInterLeav.end())
+                {
+                    CxtThreadStmt retCts(cts.getTid(), curCxt, cbn->getRetICFGNode());
+                    addInterleavingThread(retCts, exitCts);
+                }
+            }
         }
     }
 
