@@ -34,12 +34,13 @@ jobs:
         run: |
           XCODE_PATH=$(dirname $(dirname $(xcode-select -p)))
           sudo ln -sfn "$XCODE_PATH" /Applications/Xcode.app
+          brew install astyle
 
       - name: ubuntu-setup
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev
+          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev astyle
 
       # build-svf
       - name: build-svf
