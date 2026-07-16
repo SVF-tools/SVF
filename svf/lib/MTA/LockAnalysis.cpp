@@ -311,8 +311,8 @@ bool LockAnalysis::intraBackwardTraverse(const InstSet& unlockSet, InstSet& back
 
 void LockAnalysis::collectCxtLock()
 {
-    FunSet entryFuncSet = tct->getEntryProcs();
-    for (FunSet::const_iterator it = entryFuncSet.begin(), eit = entryFuncSet.end(); it != eit; ++it)
+    const TCT::FunSet& entryFuncSet = tct->getEntryProcs();
+    for (TCT::FunSet::const_iterator it = entryFuncSet.begin(), eit = entryFuncSet.end(); it != eit; ++it)
     {
         if (!isLockCandidateFun(*it))
             continue;
@@ -391,8 +391,8 @@ bool LockAnalysis::isAliasedLocks(const ICFGNode* i1, const ICFGNode* i2)
 void LockAnalysis::analyzeLockSpanCxtStmt()
 {
 
-    FunSet entryFuncSet = tct->getEntryProcs();
-    for (FunSet::const_iterator it = entryFuncSet.begin(), eit = entryFuncSet.end(); it != eit; ++it)
+    const TCT::FunSet& entryFuncSet = tct->getEntryProcs();
+    for (TCT::FunSet::const_iterator it = entryFuncSet.begin(), eit = entryFuncSet.end(); it != eit; ++it)
     {
         if (!isLockCandidateFun(*it))
             continue;

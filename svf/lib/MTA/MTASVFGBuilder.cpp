@@ -375,10 +375,10 @@ bool MTASVFGBuilder::isTailOfSpan(const StmtSVFGNode* n)
  */
 void MTASVFGBuilder::recordThreadVFSource(const StmtSVFGNode* s, const StmtSVFGNode* sp, bool commonLock)
 {
-    // Per-edge Query set: the endpoints, plus the in-span witnesses below.
+    // Per-edge Query set. The endpoints are NOT duplicated into the value --
+    // they are recoverable from the map key -- so the value holds only the
+    // additional in-span witnesses below (empty for the common lock-free case).
     std::set<const ICFGNode*>& query = threadVFQueryMap[{s, sp}];
-    query.insert(s->getICFGNode());
-    query.insert(sp->getICFGNode());
 
     if (!commonLock)
         return;
@@ -415,9 +415,10 @@ void MTASVFGBuilder::handleStoreLoad(const StmtSVFGNode* n1, const StmtSVFGNode*
 
     if (!mhp->mayHappenInParallel(i1, i2))
         return;
-    if (!pta->alias(n1->getDstNodeID(), n2->getSrcNodeID()))
-        return;
 
+    // No alias() re-check: the bucketed candidate generator only pairs accesses
+    // whose raw points-to sets share an object, so the intersection below is
+    // non-empty by construction and alias() could never answer NoAlias here.
     PointsTo pts = pta->getPts(n1->getDstNodeID());
     pts &= pta->getPts(n2->getSrcNodeID());
 
@@ -449,9 +450,9 @@ void MTASVFGBuilder::handleStoreStore(const StmtSVFGNode* n1, const StmtSVFGNode
 
     if (!mhp->mayHappenInParallel(i1, i2))
         return;
-    if (!pta->alias(n1->getDstNodeID(), n2->getDstNodeID()))
-        return;
 
+    // No alias() re-check: see handleStoreLoad -- bucketing already guarantees a
+    // shared raw object.
     PointsTo pts = pta->getPts(n1->getDstNodeID());
     pts &= pta->getPts(n2->getDstNodeID());
 
@@ -482,41 +483,46 @@ void MTASVFGBuilder::connectMHPEdges(PointerAnalysis* pta)
 {
     collectLoadStoreSVFGNodes();
 
-    // Two accesses can interfere only if they may alias, i.e. their points-to sets
-    // share an object. So bucket the store/load nodes by the objects they access
-    // and pair only within a bucket, instead of the all-pairs O(N^2) scan -- the
-    // same object-bucketing the race detector uses. handle* still applies the MHP
-    // and lock screens; the result (interference edges + thread-VF sources) is
-    // identical to the all-pairs scan, only the non-aliasing pairs are skipped.
-    Map<NodeID, std::vector<const StmtSVFGNode*>> objToStores;
-    Map<NodeID, std::vector<const StmtSVFGNode*>> objToLoads;
+    // Two accesses can interfere only if they may alias, i.e. their points-to
+    // sets share an object. Build an inverted access index (object -> bitset of
+    // store/load SVFG node ids), then for each store union the bitsets of the
+    // objects it accesses and visit each unique candidate pair exactly ONCE.
+    // A pair sharing k objects is enumerated once instead of k times, so no
+    // per-occurrence dedup tables are needed (on large programs hundreds of
+    // millions of duplicate occurrences collapse to a few million pairs).
+    // handle* still applies the MHP and lock screens; the handled pair set --
+    // "store/load pairs whose raw points-to sets intersect" -- is identical to
+    // the bucket-pair enumeration this replaces.
+    Map<NodeID, SVFGNodeIDSet> objToStoreIds;
+    Map<NodeID, SVFGNodeIDSet> objToLoadIds;
     for (const StmtSVFGNode* store : stnodeSet)
         for (NodeID obj : pta->getPts(store->getDstNodeID()))
-            objToStores[obj].push_back(store);
+            objToStoreIds[obj].set(store->getId());
     for (const StmtSVFGNode* load : ldnodeSet)
         for (NodeID obj : pta->getPts(load->getSrcNodeID()))
-            objToLoads[obj].push_back(load);
+            objToLoadIds[obj].set(load->getId());
 
-    // A pair that shares several objects appears in several buckets; handle once.
-    NodePairSet handledStoreLoad;
-    NodePairSet handledStoreStore;
-    for (const auto& objAndStores : objToStores)
+    for (const StmtSVFGNode* store : stnodeSet)
     {
-        const std::vector<const StmtSVFGNode*>& stores = objAndStores.second;
-        Map<NodeID, std::vector<const StmtSVFGNode*>>::const_iterator loadsIt =
-            objToLoads.find(objAndStores.first);
-        if (loadsIt != objToLoads.end())
-            for (const StmtSVFGNode* store : stores)
-                for (const StmtSVFGNode* load : loadsIt->second)
-                    if (handledStoreLoad.insert({store->getId(), load->getId()}).second)
-                        handleStoreLoad(store, load, pta);
-        for (size_t a = 0; a < stores.size(); ++a)
-            for (size_t b = a + 1; b < stores.size(); ++b)
-            {
-                NodeID id1 = stores[a]->getId(), id2 = stores[b]->getId();
-                NodePair key = id1 < id2 ? std::make_pair(id1, id2) : std::make_pair(id2, id1);
-                if (handledStoreStore.insert(key).second)
-                    handleStoreStore(stores[a], stores[b], pta);
-            }
+        SVFGNodeIDSet candLoads, candStores;
+        for (NodeID obj : pta->getPts(store->getDstNodeID()))
+        {
+            candStores |= objToStoreIds[obj];
+            Map<NodeID, SVFGNodeIDSet>::const_iterator lIt = objToLoadIds.find(obj);
+            if (lIt != objToLoadIds.end())
+                candLoads |= lIt->second;
+        }
+
+        for (NodeID loadId : candLoads)
+            handleStoreLoad(store, SVFUtil::cast<StmtSVFGNode>(svfg->getSVFGNode(loadId)), pta);
+
+        // Visit each unordered store pair once: only partners with a larger id.
+        const NodeID storeId = store->getId();
+        for (NodeID otherId : candStores)
+        {
+            if (otherId <= storeId)
+                continue;
+            handleStoreStore(store, SVFUtil::cast<StmtSVFGNode>(svfg->getSVFGNode(otherId)), pta);
+        }
     }
 }

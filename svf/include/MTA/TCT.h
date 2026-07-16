@@ -44,6 +44,85 @@ namespace SVF
 
 class TCTNode;
 
+/// Deterministic worklist: always pops the content-smallest item (per Cmp,
+/// which must compare IDs/values, never pointers). The MTA fixed points over
+/// context-sensitive statements are not all confluent (e.g. thread joins
+/// REMOVE interleaved tids while other paths union them in), so the traversal
+/// order decides which fixed point is reached. A FIFO order inherits the
+/// iteration order of pointer-keyed containers at the push sites and therefore
+/// varies with allocation addresses (ASLR); popping in content order makes the
+/// propagation -- and the reported result -- reproducible.
+template <typename T, typename Cmp>
+class DeterministicWorkList
+{
+public:
+    inline bool push(const T& item)
+    {
+        return workSet.insert(item).second;
+    }
+    inline T pop()
+    {
+        assert(!empty() && "pop from an empty worklist");
+        T item = *workSet.begin();
+        workSet.erase(workSet.begin());
+        return item;
+    }
+    inline bool empty() const
+    {
+        return workSet.empty();
+    }
+    inline void clear()
+    {
+        workSet.clear();
+    }
+private:
+    OrderedSet<T, Cmp> workSet;
+};
+
+/// Content order for CxtStmt: (ICFG node id, context).
+struct CxtStmtCmp
+{
+    bool operator()(const CxtStmt& lhs, const CxtStmt& rhs) const
+    {
+        if (lhs.getStmt()->getId() != rhs.getStmt()->getId())
+            return lhs.getStmt()->getId() < rhs.getStmt()->getId();
+        return lhs.getContext() < rhs.getContext();
+    }
+};
+
+/// Content order for CxtThreadStmt: (tid, ICFG node id, context).
+struct CxtThreadStmtCmp
+{
+    bool operator()(const CxtThreadStmt& lhs, const CxtThreadStmt& rhs) const
+    {
+        if (lhs.getTid() != rhs.getTid())
+            return lhs.getTid() < rhs.getTid();
+        if (lhs.getStmt()->getId() != rhs.getStmt()->getId())
+            return lhs.getStmt()->getId() < rhs.getStmt()->getId();
+        return lhs.getContext() < rhs.getContext();
+    }
+};
+
+/// Content order for CxtProc: (function id, context). Null-safe: a dummy
+/// CxtProc may carry a null function; order null first.
+struct CxtProcCmp
+{
+    bool operator()(const CxtProc& lhs, const CxtProc& rhs) const
+    {
+        const FunObjVar* lf = lhs.getProc();
+        const FunObjVar* rf = rhs.getProc();
+        if (lf == nullptr || rf == nullptr)
+        {
+            if (lf != rf)
+                return lf == nullptr;
+        }
+        else if (lf->getId() != rf->getId())
+        {
+            return lf->getId() < rf->getId();
+        }
+        return lhs.getContext() < rhs.getContext();
+    }
+};
 
 /*
  * Thread creation edge represents a spawning relation between two context sensitive threads
@@ -159,7 +238,21 @@ public:
     typedef SVFLoopAndDomInfo::LoopBBs LoopBBs;
     typedef TCTEdge::ThreadCreateEdgeSet ThreadCreateEdgeSet;
     typedef ThreadCreateEdgeSet::iterator TCTNodeIter;
-    typedef Set<const FunObjVar*> FunSet;
+    /// Order functions by id, never by pointer value: root TCT nodes (thread
+    /// ids) are created in iteration order over the entry-function set, so a
+    /// pointer-hashed set would assign thread ids differently across runs.
+    /// Null-safe: membership queries may pass a null function (e.g. the
+    /// function of a global ICFG node); order null first.
+    struct FunObjVarIdCmp
+    {
+        bool operator()(const FunObjVar* lhs, const FunObjVar* rhs) const
+        {
+            if (lhs == nullptr || rhs == nullptr)
+                return lhs == nullptr && rhs != nullptr;
+            return lhs->getId() < rhs->getId();
+        }
+    };
+    typedef OrderedSet<const FunObjVar*, FunObjVarIdCmp> FunSet;
     typedef std::vector<const ICFGNode*> InstVec;
     typedef Set<const ICFGNode*> InstSet;
     typedef Set<const CallGraphNode*> PTACGNodeSet;
@@ -530,6 +623,11 @@ protected:
         CxtThreadToNodeMap::const_iterator it = ctpToNodeMap.find(ct);
         if(it!=ctpToNodeMap.end())
         {
+            // A second, distinct spawn context mapped onto the same truncated
+            // CxtThread: the node stands for multiple dynamic instances (like a
+            // fork in a loop), so mark it multiforked and record the context.
+            if (addCxtOfCxtThread(forkSiteCtp.getTid(), forkSiteCtp.getContext(), ct))
+                it->second->setMultiforked(true);
             return it->second;
         }
 
@@ -564,10 +662,11 @@ protected:
         }
     }
 
-    /// Add context for a thread at its spawning site (fork site)
-    void addCxtOfCxtThread(NodeID pTid, const CallStrCxt& cxt, const CxtThread& ct)
+    /// Add context for a thread at its spawning site (fork site).
+    /// Returns true if this (parent tid, context) pair was not recorded before.
+    bool addCxtOfCxtThread(NodeID pTid, const CallStrCxt& cxt, const CxtThread& ct)
     {
-        ctToForkCxtsMap[ct].insert(std::make_pair(pTid, cxt));
+        return ctToForkCxtsMap[ct].insert(std::make_pair(pTid, cxt)).second;
     }
 
     /// Add start routine function of a cxt thread

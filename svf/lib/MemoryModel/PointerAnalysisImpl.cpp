@@ -528,7 +528,7 @@ void BVDataPTAImpl::onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& call
     // add indirect fork edges
     if(ThreadCallGraph *tdCallGraph = SVFUtil::dyn_cast<ThreadCallGraph>(callgraph))
     {
-        for(CallSiteSet::const_iterator it = tdCallGraph->forksitesBegin(),
+        for(ThreadCallGraph::CallSiteSet::const_iterator it = tdCallGraph->forksitesBegin(),
                 eit = tdCallGraph->forksitesEnd(); it != eit; ++it)
         {
             const ValVar* pVar = tdCallGraph->getThreadAPI()->getForkedFun(*it);

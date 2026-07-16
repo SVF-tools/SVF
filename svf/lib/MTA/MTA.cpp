@@ -514,6 +514,41 @@ bool SlicedMTA::runPreAnalysis(const ResolveIndirectCalls& resolveIndirectCalls)
     if (dumpDot)
         tct->dump("original_tct");
 
+    // Context truncation must preserve thread multiplicity: a thread the main
+    // phase (mainCxtDepth contexts) sees as several mutually-interleaving
+    // instances must be multiforked in this depth-0 TCT, or the pre-analysis
+    // under-approximates the main phase. Probe with a throwaway TCT at the
+    // main depth (milliseconds) and mark the merged nodes.
+    timePhase("Mark truncation-merged multiforked threads", [&]()
+    {
+        const u32_t preCxtDepth = Options::MaxContextLen();
+        Options::MaxContextLen.setValue(mainCxtDepth);
+        TCT deepTct(preAnder);
+        Options::MaxContextLen.setValue(preCxtDepth);
+
+        // Multiforked if the main depth sees >1 instance of the fork site, or
+        // its single deep instance is itself multiforked (merging just beyond
+        // the main depth, per the getOrCreateTCTNode guard).
+        Map<const ICFGNode*, u32_t> forkSiteInstances;
+        for (const auto& deepPair : deepTct)
+            if (const ICFGNode* forkSite = deepPair.second->getCxtThread().getThread())
+            {
+                ++forkSiteInstances[forkSite];
+                if (deepPair.second->isMultiforked())
+                    forkSiteInstances[forkSite] = 2;
+            }
+
+        for (const auto& prePair : *tct)
+        {
+            const ICFGNode* forkSite = prePair.second->getCxtThread().getThread();
+            if (forkSite == nullptr)
+                continue;
+            Map<const ICFGNode*, u32_t>::const_iterator fIt = forkSiteInstances.find(forkSite);
+            if (fIt != forkSiteInstances.end() && fIt->second > 1)
+                prePair.second->setMultiforked(true);
+        }
+    });
+
     // Step 3: Interleaving and Lock Analysis
     timePhase("Run Interleaving and Lock Analysis", [&]()
     {
@@ -604,11 +639,20 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
                                 svfIr, preAnder, mhp.get(), lockAnalysis.get(), vfgPre);
             const std::set<const SVFGNode*>& retained =
                 ptaSlicer->getRetainedSVFGNodes(vulnerableStatements);
+            // Millions of query entries are scanned; use a constant-time lookup
+            // view of the retained nodes instead of two ordered-set lookups each.
+            const Set<const SVFGNode*> retainedView(retained.begin(), retained.end());
             for (const auto& entry : vfgPreBuilder->getThreadVFQueryMap())
             {
                 const MTASVFGBuilder::ThreadVFEdge& edge = entry.first;
-                if (retained.count(edge.first) && retained.count(edge.second))
+                if (retainedView.count(edge.first) && retainedView.count(edge.second))
+                {
+                    // The query value holds only the lock-span witnesses; the
+                    // endpoints are implicit in the edge key.
+                    threadVFSources.insert(edge.first->getICFGNode());
+                    threadVFSources.insert(edge.second->getICFGNode());
                     threadVFSources.insert(entry.second.begin(), entry.second.end());
+                }
             }
         }
         SVFUtil::outs() << "[THREAD-VF] " << threadVFSources.size()
@@ -719,6 +763,17 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
                             svfIr, preAnder->getCallGraph(), svfIr->getICFG(), ptaSlicedNodes);
     });
     ptaSlicedView->dumpStats("PTA Sliced");
+
+    // Both slices are now fixed and the sliced-mode main FSMPTA below always
+    // builds a FRESH SVFG from the sliced ILA, so VFG_pre (a multi-million-edge
+    // graph plus its per-edge query table) and the VFG-backed slicers are dead
+    // weight from here on. Release them now so the pre-graph and the new main
+    // graph never coexist in memory (ferret previously exceeded the container
+    // memory limit during FSMPTA construction).
+    ptaSlicer.reset();
+    singleSlicer.reset();
+    vfgPreBuilder.reset();
+    vfgPre = nullptr;
 
     // Step 5: Main FSMPTA phase (flow-sensitive FSAM over a thread-aware SVFG).
     // Always rebuild the thread-aware value flow from the SLICED ILA: the sliced
@@ -892,6 +947,7 @@ void SlicedMTA::runOnModule(SVFIR* pag, const ResolveIndirectCalls& resolveIndir
     // the FSAM baseline must share an identical pre-analysis substrate); the
     // main phase then runs at the configured context depth.
     const u32_t mainCxt = slicedMaxContextLen();
+    mainCxtDepth = mainCxt;
     Options::MaxContextLen.setValue(0);
     const bool preOk = runPreAnalysis(resolveIndirectCalls);
     Options::MaxContextLen.setValue(mainCxt);

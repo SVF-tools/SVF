@@ -75,7 +75,10 @@ public:
     typedef Set<const FunObjVar*> FunSet;
     typedef Map<const ICFGNode*, InstSet> InstToInstSetMap;
     typedef Map<CxtStmt, ValDomain> CxtStmtToLockFlagMap;
-    typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
+    /// Deterministic (content-ordered) worklist: see TCT.h. The lock-flag
+    /// propagation has kill semantics (unlock), so keep its traversal order
+    /// independent of allocation addresses.
+    typedef DeterministicWorkList<CxtStmt, CxtStmtCmp> CxtStmtWorkList;
     typedef Set<CxtStmt> LockSpan;
     typedef Set<CxtStmt> CxtStmtSet;
     typedef Set<CxtLock> CxtLockSet;
@@ -85,7 +88,7 @@ public:
     typedef Map<const ICFGNode*, NodeBS> LockSiteToLockSet;
     typedef Map<const ICFGNode*, CxtStmtSet> InstToCxtStmtSet;
     typedef Map<CxtStmt, CxtLockSet> CxtStmtToCxtLockSet;
-    typedef FIFOWorkList<CxtLockProc> CxtLockProcVec;
+    typedef DeterministicWorkList<CxtLockProc, CxtProcCmp> CxtLockProcVec;
     typedef Set<CxtLockProc> CxtLockProcSet;
 
     LockAnalysis(TCT* t) : tct(t), lockTime(0),numOfTotalQueries(0), numOfLockedQueries(0), lockQueriesTime(0)
