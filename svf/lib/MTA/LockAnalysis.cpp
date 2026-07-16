@@ -512,6 +512,23 @@ void LockAnalysis::handleCall(const CxtStmt& cts)
                 continue;
             CxtStmt newCts(newCxt, svfInst);
             markCxtStmtFlag(newCts, cts);
+
+            // Return-flow rendezvous (see MHP::handleCall): forward an already
+            // computed callee-exit lockset to this callsite's return site.
+            if (svfcallee->hasBasicBlock())
+            {
+                const ICFGNode* exitInst = svfcallee->getExitBB()->back();
+                CxtStmt exitCts(newCxt, exitInst);
+                if (acceptsNode(exitInst) && hasCxtLockfromCxtStmt(exitCts))
+                {
+                    const ICFGNode* retNode = call->getRetICFGNode();
+                    if (acceptsNode(retNode))
+                    {
+                        CxtStmt retCts(curCxt, retNode);
+                        markCxtStmtFlag(retCts, exitCts);
+                    }
+                }
+            }
         }
     }
 }

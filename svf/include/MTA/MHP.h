@@ -59,10 +59,7 @@ class MHP
 
 public:
     typedef Set<const FunObjVar*> FunSet;
-    /// Deterministic (content-ordered) worklist: see TCT.h. The interleaving
-    /// fixed point is not confluent (joins remove tids), so the traversal order
-    /// must not depend on allocation addresses.
-    typedef DeterministicWorkList<CxtThreadStmt, CxtThreadStmtCmp> CxtThreadStmtWorkList;
+    typedef FIFOWorkList<CxtThreadStmt> CxtThreadStmtWorkList;
     typedef Set<CxtThreadStmt> CxtThreadStmtSet;
     typedef Map<CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
     typedef Map<const ICFGNode*,CxtThreadStmtSet> InstToThreadStmtSetMap;
@@ -184,6 +181,15 @@ protected:
     virtual void projectSeedToKept(const ICFGNode* node, std::vector<const ICFGNode*>& out) const;
     //@}
 
+    /// Symmetric-join loop-exit kills, applied to EDGE flows (node states stay
+    /// pure unions, so paths bypassing the join keep their interleavings).
+    //@{
+    typedef Map<const SVFBasicBlock*, std::vector<CxtStmt>> BBToSymJoinsMap;
+    typedef Map<CxtStmt, Set<const SVFBasicBlock*>> SymJoinToLoopMap;
+    void buildSymJoinKillTables();
+    NodeBS edgeFlow(const CxtThreadStmt& cts, const ICFGNode* dst);
+    //@}
+
     /// Add/Remove interleaving thread for statement inst
     //@{
     inline void addInterleavingThread(const CxtThreadStmt& tgr, NodeID tid)
@@ -197,6 +203,15 @@ protected:
     inline void addInterleavingThread(const CxtThreadStmt& tgr, const CxtThreadStmt& src)
     {
         bool changed = threadStmtToThreadInterLeav[tgr] |= threadStmtToThreadInterLeav[src];
+        if(changed)
+        {
+            instToTSMap[tgr.getStmt()].insert(tgr);
+            pushToCTSWorkList(tgr);
+        }
+    }
+    inline void addInterleavingBits(const CxtThreadStmt& tgr, const NodeBS& bits)
+    {
+        bool changed = threadStmtToThreadInterLeav[tgr] |= bits;
         if(changed)
         {
             instToTSMap[tgr.getStmt()].insert(tgr);
@@ -300,6 +315,8 @@ protected:
     ForkJoinAnalysis* fja;				///< ForJoin Analysis
     CxtThreadStmtWorkList cxtStmtList;	///< CxtThreadStmt worklist
     ThreadStmtToThreadInterleav threadStmtToThreadInterLeav; /// Map a statement to its thread interleavings
+    BBToSymJoinsMap bbToSymJoins;   ///< loop block -> symmetric in-loop joins of that loop
+    SymJoinToLoopMap symJoinLoop;   ///< symmetric in-loop join -> its loop's blocks
     InstToThreadStmtSetMap instToTSMap; ///< Map an instruction to its ThreadStmtSet
     FuncPairToBool nonCandidateFuncMHPRelMap;
 
@@ -334,7 +351,7 @@ public:
     typedef Map<CxtStmt,NodeBS> CxtStmtToTIDMap;
     typedef Set<NodePair> ThreadPairSet;
     typedef Map<CxtStmt, LoopBBs> CxtStmtToLoopMap;
-    typedef DeterministicWorkList<CxtStmt, CxtStmtCmp> CxtStmtWorkList;
+    typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
 
     typedef Set<CxtStmt> CxtStmtSet;
     typedef Map<const ICFGNode*, CxtStmtSet> InstToCxtStmt;
@@ -395,6 +412,11 @@ public:
     inline bool hasJoinLoop(const CallICFGNode* inst)
     {
         return tct->hasJoinLoop(inst);
+    }
+    /// All SCEV-symmetric in-loop joins and their loop blocks.
+    inline const CxtStmtToLoopMap& getSymmetricLoopJoins() const
+    {
+        return cxtJoinInLoop;
     }
 private:
 

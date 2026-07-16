@@ -54,6 +54,52 @@ MHP::MHP(TCT* t) : tcg(t->getThreadCallGraph()), tct(t), numOfTotalQueries(0), n
 {
     fja = new ForkJoinAnalysis(tct);
     fja->analyzeForkJoinPair();
+    buildSymJoinKillTables();
+}
+
+/*!
+ * Index the SCEV-symmetric in-loop joins by their loop blocks.
+ */
+void MHP::buildSymJoinKillTables()
+{
+    for (const auto& joinAndLoop : fja->getSymmetricLoopJoins())
+    {
+        Set<const SVFBasicBlock*>& loopBlocks = symJoinLoop[joinAndLoop.first];
+        for (const SVFBasicBlock* bb : joinAndLoop.second)
+        {
+            loopBlocks.insert(bb);
+            bbToSymJoins[bb].push_back(joinAndLoop.first);
+        }
+    }
+}
+
+/*!
+ * Flow along edge cts.stmt -> dst: an edge leaving a symmetric join loop drops
+ * the joined tids (edge kill; the destination's state is never subtracted from).
+ */
+NodeBS MHP::edgeFlow(const CxtThreadStmt& cts, const ICFGNode* dst)
+{
+    NodeBS flow = getInterleavingThreads(cts);
+    const SVFBasicBlock* srcBB = cts.getStmt()->getBB();
+    const SVFBasicBlock* dstBB = dst->getBB();
+    if (srcBB == nullptr || dstBB == nullptr || srcBB == dstBB)
+        return flow;
+    BBToSymJoinsMap::const_iterator it = bbToSymJoins.find(srcBB);
+    if (it == bbToSymJoins.end())
+        return flow;
+    for (const CxtStmt& join : it->second)
+    {
+        if (join.getContext() != cts.getContext())
+            continue;
+        const Set<const SVFBasicBlock*>& loopBlocks = symJoinLoop[join];
+        if (loopBlocks.find(dstBB) != loopBlocks.end())
+            continue;                                  // edge stays inside the loop
+        if (!isMustJoin(cts.getTid(), join.getStmt()))
+            continue;
+        flow.intersectWithComplement(
+            getDirAndIndJoinedTid(join.getContext(), join.getStmt()));
+    }
+    return flow;
 }
 
 /*!
@@ -278,6 +324,12 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
     {
         if (fja->hasJoinLoop(call))
         {
+            // Seed the loop exits with the flow along the exiting edge (see
+            // edgeFlow): the kill applies to the flow, not the exit's state.
+            NodeBS flow = getInterleavingThreads(cts);
+            if (hasJoinInSymmetricLoop(curCxt, call) && isMustJoin(cts.getTid(), call))
+                flow.intersectWithComplement(joinedTids);
+
             std::vector<const SVFBasicBlock*> exitbbs;
             call->getFun()->getExitBlocksOfLoop(call->getBB(), exitbbs);
             while (!exitbbs.empty())
@@ -292,9 +344,7 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
                 for (const ICFGNode* svfEntryInst : seedNodes)
                 {
                     CxtThreadStmt newCts(cts.getTid(), curCxt, svfEntryInst);
-                    addInterleavingThread(newCts, cts);
-                    if (hasJoinInSymmetricLoop(curCxt, call))
-                        rmInterleavingThread(newCts, joinedTids, call);
+                    addInterleavingBits(newCts, flow);
                 }
             }
         }
@@ -356,13 +406,8 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
             CxtThreadStmt newCts(cts.getTid(), newCxt, svfEntryInst);
             addInterleavingThread(newCts, cts);
 
-            // Return-flow rendezvous: handleRet propagates a callee's exit to
-            // the return sites of the callsite CONTEXTS PRESENT AT THAT TIME.
-            // If this callsite context appears only after the callee's exit was
-            // processed, that return flow is lost (the exit is never re-pushed).
-            // Mirror the propagation here so whichever side is reached last
-            // triggers it: if the callee's exit already carries interleavings
-            // under newCxt, forward them to this callsite's return site now.
+            // Return-flow rendezvous: if the callee's exit already has state
+            // under newCxt, forward it now (handleRet cannot see late callsites).
             if (tct->isCandidateFun(svfcallee) && svfcallee->hasBasicBlock())
             {
                 const ICFGNode* exitInst = svfcallee->getExitBB()->back();
@@ -476,6 +521,10 @@ void MHP::handleRet(const CxtThreadStmt& cts)
  */
 void MHP::handleIntra(const CxtThreadStmt& cts)
 {
+    const SVFBasicBlock* srcBB = cts.getStmt()->getBB();
+    const bool mayExitSymJoinLoop =
+        srcBB != nullptr && bbToSymJoins.find(srcBB) != bbToSymJoins.end();
+
     std::vector<const ICFGNode*> succ;
     getSuccNodes(cts.getStmt(), succ);
     for (const ICFGNode* dst : succ)
@@ -483,7 +532,10 @@ void MHP::handleIntra(const CxtThreadStmt& cts)
         if(dst->getFun() == cts.getStmt()->getFun())
         {
             CxtThreadStmt newCts(cts.getTid(), cts.getContext(), dst);
-            addInterleavingThread(newCts, cts);
+            if (mayExitSymJoinLoop)
+                addInterleavingBits(newCts, edgeFlow(cts, dst));
+            else
+                addInterleavingThread(newCts, cts);
         }
     }
 }

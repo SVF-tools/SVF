@@ -239,9 +239,8 @@ private:
 
     // --- pipeline state (owned unless noted) ---
     SVFIR* svfIr = nullptr;
-    // Main-phase thread-context depth (runOnModule sets it before the
-    // pre-analysis, whose own context bound is forced to 0): the pre-analysis
-    // needs it to reconcile context-truncation-merged thread instances.
+    // Main-phase context depth, set by runOnModule; the pre-analysis uses it
+    // to reconcile context-truncation-merged thread instances.
     u32_t mainCxtDepth = 2;
     std::unique_ptr<TCT> tct;
     std::unique_ptr<MHP> mhp;

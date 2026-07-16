@@ -483,16 +483,8 @@ void MTASVFGBuilder::connectMHPEdges(PointerAnalysis* pta)
 {
     collectLoadStoreSVFGNodes();
 
-    // Two accesses can interfere only if they may alias, i.e. their points-to
-    // sets share an object. Build an inverted access index (object -> bitset of
-    // store/load SVFG node ids), then for each store union the bitsets of the
-    // objects it accesses and visit each unique candidate pair exactly ONCE.
-    // A pair sharing k objects is enumerated once instead of k times, so no
-    // per-occurrence dedup tables are needed (on large programs hundreds of
-    // millions of duplicate occurrences collapse to a few million pairs).
-    // handle* still applies the MHP and lock screens; the handled pair set --
-    // "store/load pairs whose raw points-to sets intersect" -- is identical to
-    // the bucket-pair enumeration this replaces.
+    // Inverted access index (object -> access-node bitset): unioning the
+    // bitsets per store visits each may-alias pair exactly once, no dedup tables.
     Map<NodeID, SVFGNodeIDSet> objToStoreIds;
     Map<NodeID, SVFGNodeIDSet> objToLoadIds;
     for (const StmtSVFGNode* store : stnodeSet)
