@@ -70,7 +70,6 @@ public:
         RetValNode,              // ├── Represents a return value node
         VarargValNode,           // ├── Represents a variadic argument node
         GlobalValNode,           // ├── Represents a global variable node
-        ConstAggValNode,         // ├── Represents a constant aggregate value node
         // │   └─ Subclass: ConstDataValVar
         ConstDataValNode,        // │   ├── Represents a constant data variable
         BlackHoleValNode,        // │   ├── Represents a black hole node
@@ -92,7 +91,6 @@ public:
         HeapObjNode,             // │   ├── Represents a heap object
         StackObjNode,            // │   ├── Represents a stack object
         GlobalObjNode,           // │   ├── Represents a global object
-        ConstAggObjNode,         // │   ├── Represents a constant aggregate object
         // │   └─ Subclass: ConstDataObjVar
         ConstDataObjNode,        // │   ├── Represents a constant data object
         ConstFPObjNode,          // │   ├── Represents a constant floating-point object
@@ -230,7 +228,7 @@ protected:
 
     static inline bool isSVFVarKind(GNodeK n)
     {
-        static_assert(DummyObjNode - ValNode == 28,
+        static_assert(DummyObjNode - ValNode == 26,
                       "The number of SVFVarKinds has changed, make sure the "
                       "range is correct");
 
@@ -239,7 +237,7 @@ protected:
 
     static inline bool isValVarKinds(GNodeK n)
     {
-        static_assert(AsmPCValNode - ValNode == 15,
+        static_assert(AsmPCValNode - ValNode == 14,
                       "The number of ValVarKinds has changed, make sure the "
                       "range is correct");
         return n <= AsmPCValNode && n >= ValNode;
@@ -256,7 +254,7 @@ protected:
 
     static inline bool isObjVarKinds(GNodeK n)
     {
-        static_assert(DummyObjNode - ObjNode == 12,
+        static_assert(DummyObjNode - ObjNode == 11,
                       "The number of ObjVarKinds has changed, make sure the "
                       "range is correct");
         return n <= DummyObjNode && n >= ObjNode;
@@ -264,7 +262,7 @@ protected:
 
     static inline bool isBaseObjVarKinds(GNodeK n)
     {
-        static_assert(DummyObjNode - BaseObjNode == 10,
+        static_assert(DummyObjNode - BaseObjNode == 9,
                       "The number of BaseObjVarKinds has changed, make sure the "
                       "range is correct");
         return n <= DummyObjNode && n >= BaseObjNode;
