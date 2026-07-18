@@ -66,11 +66,13 @@ namespace SVF
 SlicedICFGView::SlicedICFGView(ICFG* icfg,
                                CallGraph* cg,
                                const std::set<const ICFGNode*>& keepNodes,
-                               const std::set<const FunObjVar*>& keptFunctions)
+                               const std::set<const FunObjVar*>& keptFunctions,
+                               bool buildBridged)
     : icfg(icfg)
 {
     buildICFGSets(keepNodes, keptFunctions);
-    buildBridgedEdges();
+    if (buildBridged)
+        buildBridgedEdges();
 }
 
 void SlicedICFGView::getSuccNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const {
@@ -615,7 +617,8 @@ void SlicedThreadCallGraphView::dump(const std::string& filename) const {
 SlicedSVFIRView::SlicedSVFIRView(SVFIR* svfIr,
                                  CallGraph* cg,
                                  ICFG* icfg,
-                                 const std::set<const ICFGNode*>& keepNodes)
+                                 const std::set<const ICFGNode*>& keepNodes,
+                                 bool buildBridged)
     : svfIr(svfIr)
 {
     // Derive keptFunctions from keepNodes
@@ -632,7 +635,7 @@ SlicedSVFIRView::SlicedSVFIRView(SVFIR* svfIr,
     tcgView = std::make_unique<SlicedThreadCallGraphView>(tcg, keptFunctions, keepNodes);
 
     // Create ICFG view (based on keepNodes and keptFunctions)
-    icfgView = std::make_unique<SlicedICFGView>(icfg, cg, keepNodes, keptFunctions);
+    icfgView = std::make_unique<SlicedICFGView>(icfg, cg, keepNodes, keptFunctions, buildBridged);
 
     // Create PAG view (extract statements from keepNodes)
     std::set<const SVFStmt*> keptStmts;
