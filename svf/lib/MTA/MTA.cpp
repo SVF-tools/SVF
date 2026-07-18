@@ -752,11 +752,13 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
         SVFUtil::outs() << "PTA sliced to " << ptaSlicedNodes.size() << " nodes\n";
     }
 
-    // Step 4: Build PTA SlicedSVFIRView for pointer analysis
+    // Step 4: Build PTA SlicedSVFIRView for pointer analysis. Its control flow is
+    // never walked (FSMPTA uses only isKeptNode), so skip bridged-edge construction.
     timePhase("Build PTA Sliced View", [&]()
     {
         ptaSlicedView = std::make_unique<SlicedSVFIRView>(
-                            svfIr, preAnder->getCallGraph(), svfIr->getICFG(), ptaSlicedNodes);
+                            svfIr, preAnder->getCallGraph(), svfIr->getICFG(), ptaSlicedNodes,
+                            /*buildBridged=*/false);
     });
     ptaSlicedView->dumpStats("PTA Sliced");
 
