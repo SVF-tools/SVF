@@ -198,77 +198,98 @@ void SlicedICFGView::buildICFGSets(const std::set<const ICFGNode*>& keepNodes,
 }
 
 void SlicedICFGView::buildBridgedEdges() {
-    // node contraction: for each removed node n, connect its preds to its succs.
-    // keptNodesSet (member) was already populated by buildICFGSets().
-    std::unordered_set<const ICFGNode*> deletedNodesSet;
+    // bridgedEdges[u] (u kept) = kept nodes reachable from u through removed-only
+    // paths = U reachKept(s) over removed successors s of u, where reachKept(r) is
+    // computed by SCC-condensing the removed subgraph (cyclic) and propagating
+    // kept-reachability over the condensation -- linear, vs. node contraction whose
+    // cross-products blow up when the removed region is large (small slices).
 
-    // temporary edge set: edges produced by node contraction
-    std::unordered_map<const ICFGNode*, std::set<const ICFGNode*>> tempOutEdges;
-    std::unordered_map<const ICFGNode*, std::set<const ICFGNode*>> tempInEdges;
-
+    // Index the removed nodes and their removed-only adjacency + kept successors.
+    std::vector<const ICFGNode*> removed;
+    std::unordered_map<const ICFGNode*, int> rid;
     for (ICFG::iterator it = icfg->begin(), eit = icfg->end(); it != eit; ++it) {
-        const ICFGNode* node = it->second;
-        if (node == nullptr) continue;
+        const ICFGNode* n = it->second;
+        if (n == nullptr || keptNodesSet.count(n)) continue;
+        rid[n] = static_cast<int>(removed.size());
+        removed.push_back(n);
+    }
+    const int R = static_cast<int>(removed.size());
 
-        // only handle removed nodes (not in the kept set)
-        if (keptNodesSet.count(node)) continue;
-
-        // Pred
-        std::set<const ICFGNode*> predNodes;
-        for (const ICFGEdge* inEdge : node->getInEdges()) {
-            if (inEdge == nullptr) continue;
-            const ICFGNode* predNode = inEdge->getSrcNode();
-            if (predNode == nullptr) continue;
-            if (deletedNodesSet.count(predNode)) continue;
-            predNodes.insert(predNode);
+    std::vector<std::vector<int>> radj(R);                 // removed -> removed succ ids
+    std::vector<std::vector<const ICFGNode*>> keptSucc(R);  // removed -> kept succs
+    for (int i = 0; i < R; ++i) {
+        for (const ICFGEdge* e : removed[i]->getOutEdges()) {
+            const ICFGNode* d = e ? e->getDstNode() : nullptr;
+            if (d == nullptr) continue;
+            if (keptNodesSet.count(d)) keptSucc[i].push_back(d);
+            else radj[i].push_back(rid[d]);
         }
-        for (const ICFGNode* predNode : tempInEdges[node]) {
-            if (predNode == nullptr) continue;
-            if (deletedNodesSet.count(predNode)) continue;
-            predNodes.insert(predNode);
-        }
-
-        // Succ
-        std::set<const ICFGNode*> succNodes;
-        for (const ICFGEdge* outEdge : node->getOutEdges()) {
-            if (outEdge == nullptr) continue;
-            const ICFGNode* succNode = outEdge->getDstNode();
-            if (succNode == nullptr) continue;
-            if (deletedNodesSet.count(succNode)) continue;
-            succNodes.insert(succNode);
-        }
-        for (const ICFGNode* succNode : tempOutEdges[node]) {
-            if (succNode == nullptr) continue;
-            if (deletedNodesSet.count(succNode)) continue;
-            succNodes.insert(succNode);
-        }
-
-        for (const ICFGNode* predNode : predNodes) {
-            for (const ICFGNode* succNode : succNodes) {
-                tempOutEdges[predNode].insert(succNode);
-                tempInEdges[succNode].insert(predNode);
-            }
-        }
-        deletedNodesSet.insert(node);
     }
 
-    // project the contracted edges onto the kept-node set to form bridgedEdges
-    for (const auto& pair : tempOutEdges) {
-        const ICFGNode* src = pair.first;
-        if (!keptNodesSet.count(src))
-            continue;
-        for (const ICFGNode* dst : pair.second) {
-            if (!keptNodesSet.count(dst))
-                continue;
-            bridgedEdges[src].insert(dst);
-            bridgedPreds[dst].insert(src);
+    // Iterative Tarjan SCC over the removed subgraph. Components are produced in
+    // reverse-topological order, so comp ids of a node's successors are < its own.
+    std::vector<int> idx(R, -1), low(R, 0), comp(R, -1);
+    std::vector<char> onstk(R, 0);
+    std::vector<int> tstk;
+    int counter = 0, ncomp = 0;
+    for (int s0 = 0; s0 < R; ++s0) {
+        if (idx[s0] != -1) continue;
+        std::vector<std::pair<int, size_t>> work;
+        work.emplace_back(s0, 0);
+        while (!work.empty()) {
+            int v = work.back().first;
+            size_t& pi = work.back().second;
+            if (pi == 0) { idx[v] = low[v] = counter++; tstk.push_back(v); onstk[v] = 1; }
+            bool descend = false;
+            while (pi < radj[v].size()) {
+                int w = radj[v][pi++];
+                if (idx[w] == -1) { work.emplace_back(w, 0); descend = true; break; }
+                else if (onstk[w] && idx[w] < low[v]) low[v] = idx[w];
+            }
+            if (descend) continue;
+            if (low[v] == idx[v]) {
+                while (true) {
+                    int w = tstk.back(); tstk.pop_back(); onstk[w] = 0; comp[w] = ncomp;
+                    if (w == v) break;
+                }
+                ++ncomp;
+            }
+            work.pop_back();
+            if (!work.empty()) { int p = work.back().first; if (low[v] < low[p]) low[p] = low[v]; }
+        }
+    }
+
+    // Condensation: base kept-successors and DAG successors per component.
+    std::vector<std::set<const ICFGNode*>> baseKept(ncomp);
+    std::vector<std::set<int>> dagSucc(ncomp);
+    for (int i = 0; i < R; ++i) {
+        int ci = comp[i];
+        for (const ICFGNode* k : keptSucc[i]) baseKept[ci].insert(k);
+        for (int j : radj[i]) if (comp[j] != ci) dagSucc[ci].insert(comp[j]);
+    }
+
+    // Propagate reachKept in ascending comp order (successors have smaller ids).
+    std::vector<std::set<const ICFGNode*>> reachKept(ncomp);
+    for (int c = 0; c < ncomp; ++c) {
+        std::set<const ICFGNode*>& acc = reachKept[c];
+        acc = baseKept[c];
+        for (int d : dagSucc[c]) acc.insert(reachKept[d].begin(), reachKept[d].end());
+    }
+
+    // bridgedEdges[u] = U reachKept(s) over removed successors s of kept u.
+    for (const ICFGNode* u : keptNodesSet) {
+        for (const ICFGEdge* e : u->getOutEdges()) {
+            const ICFGNode* s = e ? e->getDstNode() : nullptr;
+            if (s == nullptr || keptNodesSet.count(s)) continue;   // direct kept edge: not bridged
+            for (const ICFGNode* v : reachKept[comp[rid[s]]]) {
+                bridgedEdges[u].insert(v);
+                bridgedPreds[v].insert(u);
+            }
         }
     }
 
     size_t totalBridgedEdges = 0;
-    for (const auto& pair : bridgedEdges) {
-        totalBridgedEdges += pair.second.size();
-    }
+    for (const auto& pair : bridgedEdges) totalBridgedEdges += pair.second.size();
     SVFUtil::outs() << "[SlicedICFGView] Built " << totalBridgedEdges
               << " bridged edges across " << bridgedEdges.size() << " source nodes\n";
 }
