@@ -131,11 +131,11 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
         }
         else if (edge->getEdgeKindWithMask() == ConstraintEdge::NormalGep)
         {
-            rawstr << "color=purple,label=" << '"' << "Gep_" << edge->getEdgeAttri() << '"';
+            rawstr << "color=mediumpurple3,label=" << '"' << "Gep_" << edge->getEdgeAttri() << '"';
         }
         else if (edge->getEdgeKindWithMask() == ConstraintEdge::VariantGep)
         {
-            rawstr << "color=purple,label=" << '"' << "VGep" << '"';
+            rawstr << "color=mediumpurple3,label=" << '"' << "VGep" << '"';
         }
         else if (edge->getEdgeKind() == ConstraintEdge::Store)
         {

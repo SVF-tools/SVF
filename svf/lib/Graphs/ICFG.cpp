@@ -541,7 +541,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>
         }
         else if(SVFUtil::isa<GlobalICFGNode>(node))
         {
-            rawstr <<  ",color=purple";
+            rawstr <<  ",color=mediumpurple3";
         }
         else
             assert(false && "no such kind of node!!");

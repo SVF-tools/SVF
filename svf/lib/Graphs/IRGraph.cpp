@@ -461,7 +461,7 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
         }
         else if (SVFUtil::isa<GepStmt>(edge))
         {
-            rawstr << ",color=purple";
+            rawstr << ",color=mediumpurple3";
         }
         else if (SVFUtil::isa<StoreStmt>(edge))
         {
