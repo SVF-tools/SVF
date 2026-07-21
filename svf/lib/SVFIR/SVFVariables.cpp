@@ -101,7 +101,6 @@ ValVar::ValVar(NodeID i, const SVFType* svfType, const ICFGNode* node, PNODEK ty
         // Conditional assert (isDeclaration || icn) is in each subclass constructor.
     }
     else if (SVFUtil::isa<ConstDataValVar>(this) ||
-             SVFUtil::isa<ConstAggValVar>(this) ||
              SVFUtil::isa<FunValVar>(this) ||
              SVFUtil::isa<DummyValVar>(this) ||
              SVFUtil::isa<IntrinsicValVar>(this) ||
@@ -326,18 +325,6 @@ const std::string FunValVar::toString() const
     return rawstr.str();
 }
 
-const std::string ConstAggValVar::toString() const
-{
-    std::string str;
-    std::stringstream rawstr(str);
-    rawstr << "ConstAggValVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
-    {
-        rawstr << "\n";
-        rawstr << valueOnlyToString();
-    }
-    return rawstr.str();
-}
 const std::string ConstDataValVar::toString() const
 {
     std::string str;
@@ -408,18 +395,6 @@ const std::string GlobalObjVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "GlobalObjVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
-    {
-        rawstr << "\n";
-        rawstr << valueOnlyToString();
-    }
-    return rawstr.str();
-}
-const std::string ConstAggObjVar::toString() const
-{
-    std::string str;
-    std::stringstream rawstr(str);
-    rawstr << "ConstAggObjVar ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
