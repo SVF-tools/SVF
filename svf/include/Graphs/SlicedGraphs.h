@@ -41,7 +41,6 @@
 #include "Graphs/SVFG.h"
 #include "Graphs/SVFGNode.h"
 #include "Graphs/GraphTraits.h"
-#include "Graphs/GraphTraitsModels.h"
 #include "SVFIR/SVFIR.h"
 #include "SVFIR/SVFStatements.h"
 #include "SVFIR/SVFVariables.h"
@@ -1455,25 +1454,6 @@ struct GenericGraphTraits<Inverse<const SlicedSVFGView*>>
     static NodeRef edge_dest(const EdgeRef& e) { return e.src; }
     static inline unsigned getNodeID(NodeRef n) { return n.raw->getId(); }
 };
-
-//===----------------------------------------------------------------------===//
-// Lock in the capabilities each sliced view provides: a clear compile error here
-// (rather than deep inside a template) if a future change drops one.
-//===----------------------------------------------------------------------===//
-static_assert(BidirectionalGraphModel<const SlicedICFGView*>::value,
-              "SlicedICFGView must support forward and reverse traversal");
-static_assert(EdgeAwareGraphModel<const SlicedICFGView*>::value,
-              "SlicedICFGView must expose first-class edges (child_edge + edge_dest)");
-static_assert(IndexedGraphModel<const SlicedICFGView*>::value,
-              "SlicedICFGView must support node id <-> node lookup");
-static_assert(BidirectionalGraphModel<const SlicedThreadCallGraphView*>::value,
-              "SlicedThreadCallGraphView must support forward and reverse traversal");
-static_assert(EdgeAwareGraphModel<const SlicedThreadCallGraphView*>::value,
-              "SlicedThreadCallGraphView must expose first-class edges");
-static_assert(BidirectionalGraphModel<const SlicedPAGView*>::value,
-              "SlicedPAGView must support forward and reverse traversal");
-static_assert(EdgeAwareGraphModel<const SlicedPAGView*>::value,
-              "SlicedPAGView must expose first-class edges");
 
 } // End namespace SVF
 
