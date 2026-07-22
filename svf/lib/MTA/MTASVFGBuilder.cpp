@@ -29,6 +29,7 @@
  */
 
 #include "MTA/MTASVFGBuilder.h"
+#include "Graphs/SlicedGraphs.h"
 #include "MSSA/MemSSA.h"
 #include "MSSA/MemPartition.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
@@ -201,18 +202,21 @@ void MTASVFGBuilder::collectLoadStoreSVFGNodes()
     for (SVFG::const_iterator it = svfg->begin(), eit = svfg->end(); it != eit; ++it)
     {
         const SVFGNode* snode = it->second;
-        if (SVFUtil::isa<LoadSVFGNode>(snode))
-        {
-            const StmtSVFGNode* node = SVFUtil::cast<StmtSVFGNode>(snode);
-            if (node->getICFGNode())
-                ldnodeSet.insert(node);
-        }
-        else if (SVFUtil::isa<StoreSVFGNode>(snode))
-        {
-            const StmtSVFGNode* node = SVFUtil::cast<StmtSVFGNode>(snode);
-            if (node->getICFGNode())
-                stnodeSet.insert(node);
-        }
+        const bool isLoad = SVFUtil::isa<LoadSVFGNode>(snode);
+        if (!isLoad && !SVFUtil::isa<StoreSVFGNode>(snode))
+            continue;
+        const StmtSVFGNode* node = SVFUtil::cast<StmtSVFGNode>(snode);
+        const ICFGNode* icfg = node->getICFGNode();
+        if (icfg == nullptr)
+            continue;
+        // Main-solve slice restriction: an interference edge touching a sliced-out
+        // node is inert in the gated FSAM solve, so skip building it here.
+        if (icfgSlice != nullptr && !icfgSlice->isKeptNode(icfg))
+            continue;
+        if (isLoad)
+            ldnodeSet.insert(node);
+        else
+            stnodeSet.insert(node);
     }
 }
 
@@ -426,7 +430,8 @@ void MTASVFGBuilder::handleStoreLoad(const StmtSVFGNode* n1, const StmtSVFGNode*
     // pairs that survive and the ones the lock test prunes), so the sliced ILA
     // can re-derive whether the edge holds.
     bool commonLock = lockana->isProtectedByCommonLock(i1, i2);
-    recordThreadVFSource(n1, n2, commonLock);
+    if (recordThreadVF)
+        recordThreadVFSource(n1, n2, commonLock);
 
     if (commonLock)
     {
@@ -458,8 +463,11 @@ void MTASVFGBuilder::handleStoreStore(const StmtSVFGNode* n1, const StmtSVFGNode
 
     // Both directions are candidate thread-aware edges; extract sources for each.
     bool commonLock = lockana->isProtectedByCommonLock(i1, i2);
-    recordThreadVFSource(n1, n2, commonLock);
-    recordThreadVFSource(n2, n1, commonLock);
+    if (recordThreadVF)
+    {
+        recordThreadVFSource(n1, n2, commonLock);
+        recordThreadVFSource(n2, n1, commonLock);
+    }
 
     if (commonLock)
     {

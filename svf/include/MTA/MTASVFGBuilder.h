@@ -51,6 +51,8 @@
 namespace SVF
 {
 
+class SlicedICFGView;
+
 class MTASVFGBuilder : public SVFGBuilder
 {
 public:
@@ -63,6 +65,19 @@ public:
 
     /// Number of thread-aware (interference) SVFG edges added.
     static u32_t numOfNewSVFGEdges;
+
+    /// Configure the builder for the main (post-slicing) FSAM solve rather than
+    /// the pre-analysis VFG_pre:
+    ///  - slice != null restricts the interference-edge construction to kept
+    ///    store/load nodes (a sliced-out endpoint's edge is inert in the gated
+    ///    solve, so it need not be built);
+    ///  - the [THREAD-VF] query map is skipped, as only VFG_pre slicing reads it.
+    /// The pre-analysis build leaves this unset (whole program, query map built).
+    void configureForMainSolve(const SlicedICFGView* slice)
+    {
+        icfgSlice = slice;
+        recordThreadVF = false;
+    }
 
     /// A candidate thread-aware value-flow edge s --o--> s' (src store, dst
     /// load/store), keyed by its endpoint SVFG nodes.
@@ -95,7 +110,12 @@ protected:
     std::unique_ptr<MRGenerator> createMRGenerator(BVDataPTAImpl* pta, bool ptrOnlyMSSA) override;
 
 private:
-    /// Collect all store/load SVFG nodes.
+    /// Main-solve configuration (see configureForMainSolve); defaults suit VFG_pre.
+    const SlicedICFGView* icfgSlice = nullptr; ///< null = whole program
+    bool recordThreadVF = true;                ///< false = skip [THREAD-VF] recording
+
+    /// Collect the store/load SVFG nodes to pair for interference edges (all of
+    /// them, or -- when a slice is set -- only the kept ones).
     void collectLoadStoreSVFGNodes();
 
     /// FSAM join-related thread-oblivious value flow (the "return" half of
