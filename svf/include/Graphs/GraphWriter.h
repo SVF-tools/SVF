@@ -72,10 +72,9 @@ class GraphWriter
     using child_iterator = typename GTraits::ChildIteratorType;
     DOTTraits DTraits;
 
-    static_assert(std::is_pointer<NodeRef>::value,
-                  "FIXME: Currently GraphWriter requires the NodeRef type to be "
-                  "a pointer.\nThe pointer usage should be moved to "
-                  "DOTGraphTraits, and removed from GraphWriter itself.");
+    // NodeRef may be a pointer or a value type (e.g. a sliced-view contextual
+    // NodeRef). Node identity for the dot output is obtained from
+    // DOTGraphTraits::getNodeIdentifier (defaults to the pointer value).
 
     // Writes the edge labels of the node to O and returns true if there are any
     // edge labels not equal to the empty string "".
@@ -172,7 +171,7 @@ public:
     {
         std::string NodeAttributes = DTraits.getNodeAttributes(Node, G);
 
-        O << "\tNode" << static_cast<const void*>(Node) << " [";
+        O << "\tNode" << DTraits.getNodeIdentifier(Node) << " [";
         if (!NodeAttributes.empty()) O << NodeAttributes << ",";
         O << "label=\"{";
 
@@ -271,8 +270,8 @@ public:
             if (DTraits.getEdgeSourceLabel(Node, EI).empty())
                 edgeidx = -1;
 
-            emitEdge(static_cast<const void*>(Node), edgeidx,
-                     static_cast<const void*>(TargetNode), DestPort,
+            emitEdge(DTraits.getNodeIdentifier(Node), edgeidx,
+                     DTraits.getNodeIdentifier(TargetNode), DestPort,
                      DTraits.getEdgeAttributes(Node, EI, G));
         }
     }

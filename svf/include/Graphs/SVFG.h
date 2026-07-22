@@ -500,6 +500,14 @@ namespace SVF
 template<> struct GenericGraphTraits<SVF::SVFG*> : public GenericGraphTraits<SVF::GenericGraph<SVF::SVFGNode,SVF::SVFGEdge>* >
 {
     typedef SVF::SVFGNode *NodeRef;
+
+    /// Whether n belongs to this graph (the whole SVFG contains every node).
+    /// Mirrored by GenericGraphTraits<const SlicedSVFGView*>, so a solver
+    /// templated on the graph type restricts itself to the graph's nodes.
+    static bool containsNode(SVF::SVFG*, const SVF::SVFGNode*)
+    {
+        return true;
+    }
 };
 
 } // End namespace llvm

@@ -72,14 +72,12 @@ class ICFGNode;
 // Forward declarations for the SlicedMTA slicing pipeline (see SlicedMTA impl).
 class MTASVFGBuilder;
 class SVFG;
-class FSMPTA;
-class PTASlicer;
-class MTASlicer;
+class FlowSensitive;
+class SlicedSVFGView;
+class MultiStageSlicer;
 class SingleSlicer;
 class SlicedSVFIRView;
 class SlicedTCT;
-class SlicedMHP;
-class SlicedLockAnalysis;
 
 /*!
  * Base data race detector
@@ -251,22 +249,22 @@ private:
     AndersenWaveDiff* preAnder = nullptr;
     std::unique_ptr<MTASVFGBuilder> vfgPreBuilder; // owns vfgPre
     SVFG* vfgPre = nullptr;
-    std::unique_ptr<PTASlicer> ptaSlicer;
-    std::unique_ptr<MTASlicer> mtaSlicer;
+    std::unique_ptr<MultiStageSlicer> multiStageSlicer;
     std::unique_ptr<SingleSlicer> singleSlicer;
     // -mta-slicing-single: the one unified slice, computed in MTA slicing and reused
     // (not recomputed) for PTA slicing so both stages share V_Single.
     std::set<const ICFGNode*> singleSlicedNodes;
     std::unique_ptr<SlicedSVFIRView> mtaSlicedView;
     std::unique_ptr<SlicedSVFIRView> ptaSlicedView;
-    std::unique_ptr<FSMPTA> mtaFSMPTA;
+    std::unique_ptr<SlicedSVFGView> slicedSVFGView;
+    std::unique_ptr<FlowSensitive> mtaFSMPTA;
     std::unique_ptr<SlicedTCT> slicedTCT;
-    std::unique_ptr<SlicedMHP> slicedMhp;
-    std::unique_ptr<SlicedLockAnalysis> slicedLockAnalysis;
+    std::unique_ptr<MHP> slicedMhp;
+    std::unique_ptr<LockAnalysis> slicedLockAnalysis;
     // Whole-ICFG lock analysis for the final detection (see buildFullLockAnalysis).
     std::unique_ptr<SlicedSVFIRView> fullLockView;
     std::unique_ptr<SlicedTCT> fullLockTCT;
-    std::unique_ptr<SlicedLockAnalysis> fullLockAnalysis;
+    std::unique_ptr<LockAnalysis> fullLockAnalysis;
     bool hasThreadFunctions = false;
     std::set<RacePair> racePairs;
 };

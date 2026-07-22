@@ -268,22 +268,24 @@ target_link_libraries(SvfFlags INTERFACE ${Z3_LIBRARIES})
 install(TARGETS SvfFlags EXPORT SVFTargets)
 
 # =================================================================================
-# SVF test suite
-# =================================================================================
-
-# If ./Test-Suite exists, add & run the tests
-if(EXISTS "${SVF_SOURCE_DIR}/Test-Suite")
-  include(CTest)
-  enable_testing()
-  add_subdirectory(Test-Suite)
-endif()
-
-# =================================================================================
 # SVF core definitions
 # =================================================================================
 
 add_subdirectory(svf)
 add_subdirectory(svf-llvm)
+
+# =================================================================================
+# SVF test suite
+# =================================================================================
+
+# If ./Test-Suite exists, add & run the tests. Added after svf-llvm so LLVM's
+# CMake helpers (add_llvm_executable) and the SvfCore/SvfLLVM targets are
+# available to test executables.
+if(EXISTS "${SVF_SOURCE_DIR}/Test-Suite")
+  include(CTest)
+  enable_testing()
+  add_subdirectory(Test-Suite)
+endif()
 
 # =================================================================================
 # SVF build configuration handling (post linking LLVM)
