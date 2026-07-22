@@ -56,6 +56,17 @@ void FSMPTA<SVFGGraph>::processNode(NodeID nodeId)
     FlowSensitive::processNode(nodeId);
 }
 
+// The ICFG slice to restrict the main-solve interference edges to, or null for
+// the whole-program SVFG*. Overloaded on the graph handle (static: file-local).
+static const SlicedICFGView* mtaICFGSliceOf(SVFG*)
+{
+    return nullptr;
+}
+static const SlicedICFGView* mtaICFGSliceOf(const SlicedSVFGView* v)
+{
+    return v != nullptr ? v->getICFGView() : nullptr;
+}
+
 /*!
  * Build the thread-aware SVFG with MTASVFGBuilder, then hand it to the
  * stock sparse flow-sensitive solver. Mirrors FlowSensitive::initialize()
@@ -85,6 +96,10 @@ void FSMPTA<SVFGGraph>::initialize()
         tcg->updateCallGraph(ander);   // fork edges (spawner -> spawnee, forward)
         tcg->updateJoinEdge(ander);    // join edges (for join-related def-use)
     }
+    // Main solve: restrict interference edges to the slice and skip the
+    // [THREAD-VF] recording (only VFG_pre slicing consumes it). For SVFGGraph ==
+    // SVFG* (whole program) the slice is null, so nothing is restricted.
+    mtaSVFGBuilder.configureForMainSolve(mtaICFGSliceOf(graph));
     // Build the thread-aware SVFG (stock value flow + MHP interference edges).
     svfg = mtaSVFGBuilder.buildPTROnlySVFG(ander);
 
