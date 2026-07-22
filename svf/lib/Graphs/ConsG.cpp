@@ -853,7 +853,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
         else if (edge->getEdgeKind() == ConstraintEdge::NormalGep
                  || edge->getEdgeKind() == ConstraintEdge::VariantGep)
         {
-            return "color=mediumpurple3";
+            return "color=\"purple:purple\"";
         }
         else if (edge->getEdgeKind() == ConstraintEdge::Store)
         {
