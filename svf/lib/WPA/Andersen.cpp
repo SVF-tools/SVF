@@ -722,7 +722,8 @@ void Andersen::mergeSccCycle()
         const NodeBS& subNodes = getSCCDetector()->subNodes(repNodeId);
         // merge sub nodes to rep node
         mergeSccNodes(repNodeId, subNodes);
-        if (subNodes.count() > 1) {
+        if (subNodes.count() > 1)
+        {
             pushIntoWorklist(repNodeId);
             reanalyze = true;
         }
