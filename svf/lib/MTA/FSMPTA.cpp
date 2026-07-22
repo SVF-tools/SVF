@@ -30,6 +30,7 @@
  */
 
 #include "MTA/FSMPTA.h"
+#include "Graphs/SlicedGraphs.h"
 #include "WPA/Andersen.h"
 #include "WPA/WPAStat.h"
 #include "Util/Options.h"
@@ -39,27 +40,18 @@
 using namespace SVF;
 
 /*!
- * Sliced (Layer 2) mode: the thread-aware SVFG is built whole, but we do not
- * propagate flow facts through load/store statements that the FSMPTA slice
- * removed -- exactly "don't update the value flows that were sliced away".
- * By the slice's data-dependence closure, no target pointer depends on a
- * sliced-away statement, so the target points-to results are preserved.
- * Non-statement nodes (Addr, Phi, call/return boundaries) are always processed
- * to keep the inter-procedural value flow intact.
+ * Restrict the sparse solve to the graph's nodes: a node outside the (possibly
+ * sliced) SVFG gets no transfer and propagates nothing -- a propagation barrier,
+ * exactly "don't update the value flows that were sliced away". By the slice's
+ * data-dependence closure, no target pointer depends on a sliced-away statement,
+ * so the target points-to results are preserved. The whole graph (SVFG*)
+ * contains every node, so its instantiation folds the test away.
  */
-void FSMPTA::processNode(NodeID nodeId)
+template<class SVFGGraph>
+void FSMPTA<SVFGGraph>::processNode(NodeID nodeId)
 {
-    if (slicedView)
-    {
-        const SVFGNode* node = svfg->getSVFGNode(nodeId);
-        if (SVFUtil::isa<StoreSVFGNode, LoadSVFGNode>(node))
-        {
-            const StmtSVFGNode* stmt = SVFUtil::cast<StmtSVFGNode>(node);
-            const ICFGNode* icfg = stmt->getICFGNode();
-            if (icfg && !slicedView->getICFG()->isKeptNode(icfg))
-                return; // sliced away -- leave inert
-        }
-    }
+    if (!GenericGraphTraits<SVFGGraph>::containsNode(graph, svfg->getSVFGNode(nodeId)))
+        return; // outside the sliced SVFG -- leave inert
     FlowSensitive::processNode(nodeId);
 }
 
@@ -68,7 +60,8 @@ void FSMPTA::processNode(NodeID nodeId)
  * stock sparse flow-sensitive solver. Mirrors FlowSensitive::initialize()
  * but swaps the default SVFG builder for the MTA-aware one.
  */
-void FSMPTA::initialize()
+template<class SVFGGraph>
+void FSMPTA<SVFGGraph>::initialize()
 {
     PointerAnalysis::initialize();
 
@@ -106,3 +99,10 @@ void FSMPTA::initialize()
 
     setGraph(svfg);
 }
+
+// The two SVFGs the solver runs on; the implementation above is written once.
+namespace SVF
+{
+template class FSMPTA<SVFG*>;
+template class FSMPTA<const SlicedSVFGView*>;
+} // namespace SVF

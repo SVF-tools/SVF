@@ -40,7 +40,7 @@
 #include "MTA/MTAStat.h"
 #include "MTA/MTASVFGBuilder.h"
 #include "MTA/FSMPTA.h"
-#include "MTA/Slicer.h"
+#include "MTA/MTASlicer.h"
 #include "WPA/Andersen.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Util/SVFUtil.h"
@@ -114,7 +114,7 @@ bool MTA::runOnModule(SVFIR* pag)
 LockAnalysis* MTA::computeLocksets(TCT* tct)
 {
     LockAnalysis* lsa = new LockAnalysis(tct);
-    lsa->analyze();
+    lsa->analyze(PAG::getPAG()->getICFG(), const_cast<CallGraph*>(PAG::getPAG()->getCallGraph()));
     return lsa;
 }
 
@@ -125,7 +125,7 @@ MHP* MTA::computeMHP(TCT* tct)
 
     DOTIMESTAT(double mhpStart = stat->getClk());
     MHP* mhp = new MHP(tct);
-    mhp->analyze();
+    mhp->analyze(PAG::getPAG()->getICFG(), const_cast<CallGraph*>(PAG::getPAG()->getCallGraph()));
     DOTIMESTAT(double mhpEnd = stat->getClk());
     DOTIMESTAT(stat->MHPTime += (mhpEnd - mhpStart) / TIMEINTERVAL);
 
@@ -549,9 +549,9 @@ bool SlicedMTA::runPreAnalysis(const ResolveIndirectCalls& resolveIndirectCalls)
     timePhase("Run Interleaving and Lock Analysis", [&]()
     {
         mhp = std::make_unique<MHP>(tct.get());
-        mhp->analyze();
+        mhp->analyze(svfIr->getICFG(), const_cast<CallGraph*>(svfIr->getCallGraph()));
         lockAnalysis = std::make_unique<LockAnalysis>(tct.get());
-        lockAnalysis->analyze();
+        lockAnalysis->analyze(svfIr->getICFG(), const_cast<CallGraph*>(svfIr->getCallGraph()));
     });
 
     // Step 4: Detect thread functions
@@ -620,8 +620,8 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
     else
     {
         SVFUtil::outs() << "[Slicing Mode] Differential slices (separate ILA + FSPTA)\n";
-        mtaSlicer = std::make_unique<MTASlicer>(
-                        svfIr, preAnder, mhp.get(), lockAnalysis.get());
+        multiStageSlicer = std::make_unique<MultiStageSlicer>(
+                        svfIr, preAnder, mhp.get(), lockAnalysis.get(), vfgPre);
 
         // ILA slicing sources = [INIT] race statements + [THREAD-VF] sources. Keep
         // a candidate edge's query (see MTASVFGBuilder::getThreadVFQueryMap) only if
@@ -630,11 +630,8 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
         std::set<const ICFGNode*> threadVFSources;
         if (vfgPreBuilder)
         {
-            if (!ptaSlicer)
-                ptaSlicer = std::make_unique<PTASlicer>(
-                                svfIr, preAnder, mhp.get(), lockAnalysis.get(), vfgPre);
             const std::set<const SVFGNode*>& retained =
-                ptaSlicer->getRetainedSVFGNodes(vulnerableStatements);
+                multiStageSlicer->getRetainedSVFGNodes(vulnerableStatements);
             // Millions of query entries are scanned; use a constant-time lookup
             // view of the retained nodes instead of two ordered-set lookups each.
             const Set<const SVFGNode*> retainedView(retained.begin(), retained.end());
@@ -655,7 +652,7 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
                         << " ILA slicing sources from VFG_pre value-flow construction\n";
         timePhase("MTA Slicing", [&]()
         {
-            mtaSlicedNodes = mtaSlicer->runSlicing(vulnerableStatements, threadVFSources);
+            mtaSlicedNodes = multiStageSlicer->runILASlicing(vulnerableStatements, threadVFSources);
         });
         SVFUtil::outs() << "MTA sliced to " << mtaSlicedNodes.size() << " nodes\n";
     } // end differential MTA slice
@@ -676,6 +673,7 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
         slicedView->getICFG()->dump("sliced_icfg");
         if (slicedView->getThreadCallGraph() != nullptr)
             slicedView->getThreadCallGraph()->dump("sliced_tcg");
+        slicedView->getPAG()->dump("sliced_pag");
     }
 
     // Step 5: Build Sliced TCT (using pre-analysis pointer analysis)
@@ -693,10 +691,10 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
     // Step 6: Sliced MHP and Lock Analysis
     timePhase("Sliced Interleaving and Lock Analysis", [&]()
     {
-        slicedMhp = std::make_unique<SlicedMHP>(slicedTCT.get(), slicedView);
-        slicedMhp->analyze();
-        slicedLockAnalysis = std::make_unique<SlicedLockAnalysis>(slicedTCT.get(), slicedView);
-        slicedLockAnalysis->analyze();
+        slicedMhp = std::make_unique<MHP>(slicedTCT.get());
+        slicedMhp->analyze(slicedView->getICFG(), slicedView->getThreadCallGraph());
+        slicedLockAnalysis = std::make_unique<LockAnalysis>(slicedTCT.get());
+        slicedLockAnalysis->analyze(slicedView->getICFG(), slicedView->getThreadCallGraph());
     });
 
     return true;
@@ -737,17 +735,17 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
         SVFUtil::outs() << "Using " << vulnerableStatements.size() << " vulnerable statements from pre-analysis\n";
         SVFUtil::outs() << "Using " << racePairs.size() << " race pairs from pre-analysis\n";
 
-        // Reuse the slicer built during MTA slicing (it memoised the shared
-        // data-dependence closure over VFG_pre); construct it only if absent
-        // (e.g. the [THREAD-VF] ablation skipped its early creation).
-        if (!ptaSlicer)
-            ptaSlicer = std::make_unique<PTASlicer>(
+        // Stage 2 of the multi-stage slicer built during MTA slicing (it memoised
+        // the shared data-dependence closure over VFG_pre); construct only if
+        // absent (defensive: the ILA stage normally created it).
+        if (!multiStageSlicer)
+            multiStageSlicer = std::make_unique<MultiStageSlicer>(
                             svfIr, preAnder, mhp.get(), lockAnalysis.get(),
                             vfgPre /* paper-faithful data dependence over the thread-aware VFG */);
 
         timePhase("PTA Slicing", [&]()
         {
-            ptaSlicedNodes = ptaSlicer->runSlicing(vulnerableStatements);
+            ptaSlicedNodes = multiStageSlicer->runPTASlicing(vulnerableStatements);
         });
         SVFUtil::outs() << "PTA sliced to " << ptaSlicedNodes.size() << " nodes\n";
     }
@@ -764,7 +762,7 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
 
     // Both slices are fixed and the main FSMPTA builds a fresh SVFG, so release
     // VFG_pre and the slicers: the pre- and main graphs never coexist in memory.
-    ptaSlicer.reset();
+    multiStageSlicer.reset();
     singleSlicer.reset();
     vfgPreBuilder.reset();
     vfgPre = nullptr;
@@ -786,11 +784,20 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
                     "(fresh context-sensitive SVFG; [THREAD-VF] load-bearing)\n";
     timePhase("Flow-Sensitive FSAM Analysis", [&]()
     {
-        mtaFSMPTA = std::make_unique<FSMPTA>(slicedMhp.get(), slicedLockAnalysis.get(),
-                                ptaSlicedView.get(), /*preBuilt=*/nullptr);
-        mtaFSMPTA->analyze();
+        // The sliced SVFG view: membership from the FSPTA ICFG slice; the SVFG
+        // itself is built inside the solver and bound afterwards (for dumping).
+        slicedSVFGView = std::make_unique<SlicedSVFGView>(ptaSlicedView->getICFG());
+        auto solver = std::make_unique<FSMPTA<const SlicedSVFGView*>>(
+            slicedMhp.get(), slicedLockAnalysis.get(),
+            slicedSVFGView.get(), /*preBuilt=*/nullptr);
+        solver->analyze();
+        slicedSVFGView->setSVFG(solver->getSVFG());
         if (dumpDot)
-            mtaFSMPTA->getSVFG()->dump("mta_svfg");
+        {
+            solver->getSVFG()->dump("mta_svfg");
+            slicedSVFGView->dump("sliced_svfg");
+        }
+        mtaFSMPTA = std::move(solver);
     });
 
     return true;
@@ -809,8 +816,9 @@ LockAnalysis* SlicedMTA::buildFullLockAnalysis()
     fullLockView = std::make_unique<SlicedSVFIRView>(
                        svfIr, preAnder->getCallGraph(), svfIr->getICFG(), allNodes);
     fullLockTCT = std::make_unique<SlicedTCT>(preAnder, fullLockView.get(), slicedMaxContextLen());
-    fullLockAnalysis = std::make_unique<SlicedLockAnalysis>(fullLockTCT.get(), fullLockView.get());
-    fullLockAnalysis->analyze();
+    fullLockAnalysis = std::make_unique<LockAnalysis>(fullLockTCT.get());
+    const SlicedSVFIRView* flv = fullLockView.get();
+    fullLockAnalysis->analyze(flv->getICFG(), flv->getThreadCallGraph());
     return fullLockAnalysis.get();
 }
 
@@ -899,17 +907,21 @@ void SlicedMTA::runWholeProgramDetection()
     timePhase("Whole-program Sliced TCT/MHP/Lock", [&]()
     {
         slicedTCT = std::make_unique<SlicedTCT>(preAnder, ptaSlicedView.get(), slicedMaxContextLen());
-        slicedMhp = std::make_unique<SlicedMHP>(slicedTCT.get(), ptaSlicedView.get());
-        slicedMhp->analyze();
-        slicedLockAnalysis = std::make_unique<SlicedLockAnalysis>(slicedTCT.get(), ptaSlicedView.get());
-        slicedLockAnalysis->analyze();
+        slicedMhp = std::make_unique<MHP>(slicedTCT.get());
+        const SlicedSVFIRView* pv = ptaSlicedView.get();
+        slicedMhp->analyze(pv->getICFG(), pv->getThreadCallGraph());
+        slicedLockAnalysis = std::make_unique<LockAnalysis>(slicedTCT.get());
+        slicedLockAnalysis->analyze(pv->getICFG(), pv->getThreadCallGraph());
     });
 
     timePhase("Whole-program Flow-Sensitive FSAM Analysis", [&]()
     {
-        mtaFSMPTA = std::make_unique<FSMPTA>(mhp.get(), lockAnalysis.get(),
-                                           ptaSlicedView.get(), vfgPre);
-        mtaFSMPTA->analyze();
+        slicedSVFGView = std::make_unique<SlicedSVFGView>(ptaSlicedView->getICFG());
+        auto solver = std::make_unique<FSMPTA<const SlicedSVFGView*>>(
+            mhp.get(), lockAnalysis.get(), slicedSVFGView.get(), vfgPre);
+        solver->analyze();
+        slicedSVFGView->setSVFG(solver->getSVFG());
+        mtaFSMPTA = std::move(solver);
     });
 
     std::set<RacePair> detectedPairs;

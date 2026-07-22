@@ -299,6 +299,46 @@ struct GenericGraphTraits<Inverse<SVF::ICFGNode *> > : public GenericGraphTraits
 template<> struct GenericGraphTraits<SVF::ICFG*> : public GenericGraphTraits<SVF::GenericGraph<SVF::ICFGNode,SVF::ICFGEdge>* >
 {
     typedef SVF::ICFGNode *NodeRef;
+
+    // Graph-intrinsic queries shared with the sliced-view specialisation
+    // (GenericGraphTraits<const SlicedICFGView*>), so a graph-parameterised
+    // analysis resolves the right behaviour from the graph type alone.
+    //@{
+    /// Entry node of fun under this graph (whole ICFG: the entry block's front).
+    static const SVF::ICFGNode* getFunEntry(SVF::ICFG*, const SVF::FunObjVar* fun)
+    {
+        return fun->getEntryBlock()->front();
+    }
+    /// Nodes of fun contained in this graph (whole ICFG: all of them).
+    static void getFunICFGNodes(SVF::ICFG*, const SVF::FunObjVar* fun,
+                                std::vector<const SVF::ICFGNode*>& out)
+    {
+        out.clear();
+        for (auto it : *fun)
+            for (const SVF::ICFGNode* n : it.second->getICFGNodeList())
+                out.push_back(n);
+    }
+    /// Successors / predecessors of n under this graph.
+    static void getSuccNodes(SVF::ICFG*, const SVF::ICFGNode* n,
+                             std::vector<const SVF::ICFGNode*>& out)
+    {
+        out.clear();
+        for (const SVF::ICFGEdge* e : n->getOutEdges())
+            out.push_back(e->getDstNode());
+    }
+    static void getPredNodes(SVF::ICFG*, const SVF::ICFGNode* n,
+                             std::vector<const SVF::ICFGNode*>& out)
+    {
+        out.clear();
+        for (const SVF::ICFGEdge* e : n->getInEdges())
+            out.push_back(e->getSrcNode());
+    }
+    /// Whether n belongs to this graph (whole ICFG contains every node).
+    static bool containsNode(SVF::ICFG*, const SVF::ICFGNode*)
+    {
+        return true;
+    }
+    //@}
 };
 
 } // End namespace llvm

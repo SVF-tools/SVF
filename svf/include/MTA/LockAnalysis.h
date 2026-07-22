@@ -26,9 +26,10 @@
  *  Created on: 26 Aug 2015
  *      Author: pengd
  *
- * Lock analysis. Also declares SlicedLockAnalysis, the sliced-view lock analysis
- * used by the analysis of "Multi-Stage On-Demand Program Slicing for Modular
- * Analysis of Multi-Threaded Programs" (ISSTA 2026).
+ * Lock analysis. One implementation runs on the whole program or a slice:
+ * analyze() is templated on the graph handle (SVFIR* or const SlicedSVFIRView*),
+ * as used by "Multi-Stage On-Demand Program Slicing for Modular Analysis of
+ * Multi-Threaded Programs" (ISSTA 2026).
  */
 
 #ifndef INCLUDE_MTA_LockAnalysis_H_
@@ -45,9 +46,8 @@
 namespace SVF
 {
 
-// Forward declarations for the sliced view (see Slicer.h / SlicedLockAnalysis).
+// Forward declaration for the sliced-graph handle analyze() can run on.
 class SlicedSVFIRView;
-class SlicedICFGView;
 
 /*!
  * Lock analysis
@@ -92,22 +92,23 @@ public:
     {
     }
 
-    /// Virtual: the traversal hooks below make this a polymorphic base
-    /// (SlicedLockAnalysis derives from it and is deleted through a base pointer).
-    virtual ~LockAnalysis() = default;
+    ~LockAnalysis() = default;
 
     /// context-sensitive forward traversal from each lock site. Generate following results
     /// (1) context-sensitive lock site,
     /// (2) maps a context-sensitive lock site to its corresponding lock span.
-    void analyze();
-    void analyzeIntraProcedualLock();
-    bool intraForwardTraverse(const ICFGNode* lock, InstSet& unlockset, InstSet& forwardInsts);
-    bool intraBackwardTraverse(const InstSet& unlockset, InstSet& backwardInsts);
+    /// One implementation for the whole program and a slice: GraphT is SVFIR*
+    /// (whole) or const SlicedSVFIRView* (sliced). Per-graph queries resolve at
+    /// compile time via the graph* overloads in Graphs/SlicedGraphs.h.
+    template<class ICFGGraph, class CGGraph> void analyze(ICFGGraph icfg, CGGraph cg);
+    template<class ICFGGraph, class CGGraph> void analyzeIntraProcedualLock(ICFGGraph icfg, CGGraph cg);
+    template<class ICFGGraph, class CGGraph> bool intraForwardTraverse(ICFGGraph icfg, CGGraph cg, const ICFGNode* lock, InstSet& unlockset, InstSet& forwardInsts);
+    template<class ICFGGraph, class CGGraph> bool intraBackwardTraverse(ICFGGraph icfg, CGGraph cg, const InstSet& unlockset, InstSet& backwardInsts);
 
-    void collectCxtLock();
-    void analyzeLockSpanCxtStmt();
+    template<class ICFGGraph, class CGGraph> void collectCxtLock(ICFGGraph icfg, CGGraph cg);
+    template<class ICFGGraph, class CGGraph> void analyzeLockSpanCxtStmt(ICFGGraph icfg, CGGraph cg);
 
-    void collectLockUnlocksites();
+    template<class ICFGGraph, class CGGraph> void collectLockUnlocksites(ICFGGraph icfg, CGGraph cg);
     void buildCandidateFuncSetforLock();
 
     /// Intraprocedural locks
@@ -287,8 +288,6 @@ public:
     }
     //@}
 
-
-
     /// Check if one instruction's context stmt is in a lock span
     inline bool hasOneCxtInLockSpan(const ICFGNode *I, LockSpan lspan) const
     {
@@ -320,7 +319,6 @@ public:
         return true;
     }
 
-
     /// Check if two Instructions are protected by common locks
     /// echo inst may have multiple cxt stmt
     /// we check whether every cxt stmt of instructions is protected by a common lock.
@@ -348,33 +346,19 @@ public:
     }
 protected:
     /// Handle fork
-    void handleFork(const CxtStmt& cts);
+    template<class ICFGGraph, class CGGraph> void handleFork(ICFGGraph icfg, CGGraph cg, const CxtStmt& cts);
 
     /// Handle call
-    void handleCall(const CxtStmt& cts);
+    template<class ICFGGraph, class CGGraph> void handleCall(ICFGGraph icfg, CGGraph cg, const CxtStmt& cts);
 
     /// Handle return
-    void handleRet(const CxtStmt& cts);
+    template<class ICFGGraph, class CGGraph> void handleRet(ICFGGraph icfg, CGGraph cg, const CxtStmt& cts);
 
     /// Handle intra
-    void handleIntra(const CxtStmt& cts);
+    template<class ICFGGraph, class CGGraph> void handleIntra(ICFGGraph icfg, CGGraph cg, const CxtStmt& cts);
 
     /// Handle call relations
-    void handleCallRelation(CxtLockProc& clp, const CallGraphEdge* cgEdge, const CallICFGNode* call);
-
-    /// ICFG/CallGraph traversal hooks. The default implementations walk the full
-    /// ICFG/CallGraph; a subclass analysing a sliced view (SlicedLockAnalysis)
-    /// overrides them so the shared analysis routines above need not be copied
-    /// just to swap the traversal.
-    //@{
-    virtual const ICFGNode* getFunEntry(const FunObjVar* fun) const;
-    virtual void getSuccNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const;
-    virtual void getPredNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const;
-    virtual bool acceptsNode(const ICFGNode* node) const;
-    virtual void getInEdgesOfCallGraphNode(const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const;
-    /// CallGraph whose nodes collectLockUnlocksites scans (sliced view overrides it).
-    virtual const CallGraph* getAnalysisCallGraph() const;
-    //@}
+    template<class ICFGGraph, class CGGraph> void handleCallRelation(ICFGGraph icfg, CGGraph cg, CxtLockProc& clp, const CallGraphEdge* cgEdge, const CallICFGNode* call);
 
     /// Return true it a lock matches an unlock
     bool isAliasedLocks(const CxtLock& cl1, const CxtLock& cl2)
@@ -521,7 +505,6 @@ protected:
     /// Map a statement to all its context-sensitive statements
     InstToCxtStmtSet instToCxtStmtSet;
 
-
     /// Context-sensitive locks
     CxtLockSet cxtLockset;
 
@@ -556,39 +539,11 @@ protected:
     InstToInstSetMap instTocondCILocksMap;
     //@}
 
-
 public:
     double lockTime;
     u32_t numOfTotalQueries;
     u32_t numOfLockedQueries;
     double lockQueriesTime;
-};
-
-/**
- * SlicedLockAnalysis -- LockAnalysis whose ICFG traversal hooks are overridden to
- * use a SlicedICFGView (original ICFGNode pointers stay the identities). A null
- * slicedView falls back to the full ICFG. Inherits SVF::LockAnalysis unchanged;
- * the sliced ForkJoin/lock-span algorithms are exactly the base ones reached
- * through these hooks.
- */
-class SlicedLockAnalysis final : public LockAnalysis {
-public:
-    explicit SlicedLockAnalysis(TCT* tct, const SlicedSVFIRView* slicedView = nullptr);
-    ~SlicedLockAnalysis() override = default;
-
-protected:
-    // Override the base ICFG/CallGraph traversal hooks to walk only the slice;
-    // every inherited LockAnalysis routine reaches the slice through these.
-    const ICFGNode* getFunEntry(const FunObjVar* fun) const override;
-    void getSuccNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const override;
-    void getPredNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const override;
-    bool acceptsNode(const ICFGNode* node) const override;
-    void getInEdgesOfCallGraphNode(const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const override;
-    const CallGraph* getAnalysisCallGraph() const override;
-
-private:
-    const SlicedSVFIRView* slicedView; // Optional: for accessing sliced views
-    const SlicedICFGView* icfgView; // ICFG view (from slicedView or nullptr for full ICFG)
 };
 
 } // End namespace SVF
