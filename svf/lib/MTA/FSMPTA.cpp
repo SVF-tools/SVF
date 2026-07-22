@@ -40,12 +40,13 @@
 using namespace SVF;
 
 /*!
- * Restrict the sparse solve to the graph's nodes: a node outside the (possibly
- * sliced) SVFG gets no transfer and propagates nothing -- a propagation barrier,
- * exactly "don't update the value flows that were sliced away". By the slice's
- * data-dependence closure, no target pointer depends on a sliced-away statement,
- * so the target points-to results are preserved. The whole graph (SVFG*)
- * contains every node, so its instantiation folds the test away.
+ * Gate the per-node transfer: the solver still runs over the whole thread-aware
+ * SVFG, but a node outside the (possibly sliced) graph gets no transfer and
+ * propagates nothing -- a propagation barrier, exactly "don't update the value
+ * flows that were sliced away". By the slice's data-dependence closure, no target
+ * pointer depends on a sliced-away statement, so the target points-to results are
+ * preserved. The whole graph (SVFG*) contains every node, so its instantiation
+ * folds the test away.
  */
 template<class SVFGGraph>
 void FSMPTA<SVFGGraph>::processNode(NodeID nodeId)
@@ -75,27 +76,17 @@ void FSMPTA<SVFGGraph>::initialize()
 
     ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
 
-    if (preBuiltSVFG != nullptr)
+    // FSAM's thread-oblivious value flow treats a thread fork as an ordinary
+    // call: the spawner's memory state must flow into the spawnee. The stock
+    // Andersen call graph does not carry the pthread fork/join edges, so we
+    // add them here (they are CallGraphEdges) before building MemSSA/SVFG.
+    if (ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(ander->getCallGraph()))
     {
-        // Reuse the thread-aware SVFG built once in pre-analysis (build once):
-        // its fork/join call-graph edges and interference edges are already in
-        // place. The sliced solve is handled by processNode().
-        svfg = preBuiltSVFG;
+        tcg->updateCallGraph(ander);   // fork edges (spawner -> spawnee, forward)
+        tcg->updateJoinEdge(ander);    // join edges (for join-related def-use)
     }
-    else
-    {
-        // FSAM's thread-oblivious value flow treats a thread fork as an ordinary
-        // call: the spawner's memory state must flow into the spawnee. The stock
-        // Andersen call graph does not carry the pthread fork/join edges, so we
-        // add them here (they are CallGraphEdges) before building MemSSA/SVFG.
-        if (ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(ander->getCallGraph()))
-        {
-            tcg->updateCallGraph(ander);   // fork edges (spawner -> spawnee, forward)
-            tcg->updateJoinEdge(ander);    // join edges (for join-related def-use)
-        }
-        // Build the thread-aware SVFG (stock value flow + MHP interference edges).
-        svfg = mtaSVFGBuilder.buildPTROnlySVFG(ander);
-    }
+    // Build the thread-aware SVFG (stock value flow + MHP interference edges).
+    svfg = mtaSVFGBuilder.buildPTROnlySVFG(ander);
 
     setGraph(svfg);
 }

@@ -30,8 +30,6 @@
  * (`FlowSensitive`) over a *thread-aware* SVFG built by `MTASVFGBuilder`,
  * i.e. the stock thread-oblivious value flow augmented with inter-thread
  * (interference) edges derived from the MHP and lock analyses.
- *
- * This is the engine the MSli paper calls the main FSMPTA phase.
  */
 
 #ifndef INCLUDE_MTA_FSMPTA_H_
@@ -57,18 +55,13 @@ class FSMPTA : public FlowSensitive
 {
 public:
     /// Constructor.
-    ///  - graph: the SVFG the solve is restricted to. For SVFGGraph == SVFG* it
-    ///    may be null (the whole graph contains every node). A SlicedSVFGView
-    ///    needs only its ICFG view for membership, so it can be created before
-    ///    the SVFG itself is built here.
-    ///  - preBuilt != nullptr => reuse an already-built thread-aware SVFG instead
-    ///    of building a fresh one (build the SVFG exactly once across slicing +
-    ///    main solve). Ownership stays with the caller.
-    FSMPTA(MHP* m, LockAnalysis* la,
-             SVFGGraph graph, SVFG* preBuilt = nullptr)
+    ///  - graph: gates the per-node transfer (the solver runs over the whole
+    ///    thread-aware SVFG). For SVFGGraph == SVFG* it may be null (every node
+    ///    is processed). A SlicedSVFGView needs only its ICFG view for membership,
+    ///    so it can be created before the SVFG itself is built here.
+    FSMPTA(MHP* m, LockAnalysis* la, SVFGGraph graph)
         : FlowSensitive(m->getTCT()->getPTA()->getPAG()),
-          mhp(m), mtaSVFGBuilder(m, la),
-          graph(graph), preBuiltSVFG(preBuilt)
+          mhp(m), mtaSVFGBuilder(m, la), graph(graph)
     {
     }
 
@@ -91,8 +84,6 @@ private:
     MTASVFGBuilder mtaSVFGBuilder;
     /// The graph the solve is restricted to (see the constructor).
     SVFGGraph graph;
-    /// Non-null when reusing a pre-built thread-aware SVFG (not owned).
-    SVFG* preBuiltSVFG;
 };
 
 } // End namespace SVF
