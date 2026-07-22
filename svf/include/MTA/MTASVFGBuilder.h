@@ -33,10 +33,6 @@
  *   (1) may-happen-in-parallel (MHP), and
  *   (2) may-alias on the address-taken object, and
  *   (3) are not excluded by a common lock (non-interference lock-pair pruning).
- *
- * Only the default thread-aware edge construction is kept; the
- * precision-experiment variants (non-sparse, PCG, read-precision edge removal)
- * are intentionally omitted.
  */
 
 #ifndef INCLUDE_MTA_MTASVFGBUILDER_H_

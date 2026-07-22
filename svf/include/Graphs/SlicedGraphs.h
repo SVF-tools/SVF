@@ -27,7 +27,7 @@
  *
  * General non-owning sliced views of the ICFG, PAG, and (Thread)CallGraph, and
  * their GenericGraphTraits specialisations, so a slice works with SVF's generic
- * graph algorithms and GraphWriter. Program-graph views with no MTA dependency.
+ * graph algorithms and GraphWriter.
  */
 
 #ifndef GRAPHS_SLICEDGRAPHS_H

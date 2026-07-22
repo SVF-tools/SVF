@@ -788,8 +788,7 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
         // itself is built inside the solver and bound afterwards (for dumping).
         slicedSVFGView = std::make_unique<SlicedSVFGView>(ptaSlicedView->getICFG());
         auto solver = std::make_unique<FSMPTA<const SlicedSVFGView*>>(
-            slicedMhp.get(), slicedLockAnalysis.get(),
-            slicedSVFGView.get(), /*preBuilt=*/nullptr);
+            slicedMhp.get(), slicedLockAnalysis.get(), slicedSVFGView.get());
         solver->analyze();
         slicedSVFGView->setSVFG(solver->getSVFG());
         if (dumpDot)
@@ -918,7 +917,7 @@ void SlicedMTA::runWholeProgramDetection()
     {
         slicedSVFGView = std::make_unique<SlicedSVFGView>(ptaSlicedView->getICFG());
         auto solver = std::make_unique<FSMPTA<const SlicedSVFGView*>>(
-            mhp.get(), lockAnalysis.get(), slicedSVFGView.get(), vfgPre);
+            mhp.get(), lockAnalysis.get(), slicedSVFGView.get());
         solver->analyze();
         slicedSVFGView->setSVFG(solver->getSVFG());
         mtaFSMPTA = std::move(solver);
