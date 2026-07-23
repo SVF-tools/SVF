@@ -61,15 +61,15 @@ jobs:
         run:
           ctest -R wpa_tests -VV
 
-      - name: ctest dvf and mta
+      - name: ctest dvf
         working-directory: ${{github.workspace}}/Release-build
         run:
           ctest -R dvf_tests -VV
 
-      - name: ctest sliced-mta
+      - name: ctest mta
         working-directory: ${{github.workspace}}/Release-build
-        run: |
-          ctest -R 'sliced_mta_tests|mta_stat_tests|mta_whole_tests|mta_single_slice_tests' -VV
+        run:
+          ctest -R mta_tests -VV
 
       - name: ctest andersen differential analysis
         working-directory: ${{github.workspace}}/Release-build
