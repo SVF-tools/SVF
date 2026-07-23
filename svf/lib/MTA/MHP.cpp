@@ -995,9 +995,9 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
         if (hasJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite)))
         {
             if (isAliasedForkJoin(SVFUtil::cast<CallICFGNode>(forkSite),
-                                SVFUtil::cast<CallICFGNode>(joinSite)) &&
+                                  SVFUtil::cast<CallICFGNode>(joinSite)) &&
                     isSameSCEV(forkSite,joinSite)
-                )
+               )
             {
                 LoopBBs& joinLoop = getJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite));
                 std::vector<const SVFBasicBlock *> exitbbs;
@@ -1037,7 +1037,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
         else
         {
             if (isAliasedForkJoin(SVFUtil::cast<CallICFGNode>(forkSite),
-                                SVFUtil::cast<CallICFGNode>(joinSite)))
+                                  SVFUtil::cast<CallICFGNode>(joinSite)))
             {
                 markCxtStmtFlag(cts, TDDead);
                 addDirectlyJoinTID(cts, rootTid);
@@ -1294,10 +1294,10 @@ bool ForkJoinAnalysis::sameLoopTripCount(const ICFGNode* forkSite, const ICFGNod
 }
 
 bool ForkJoinAnalysis::isAliasedForkJoin(const CallICFGNode* forkSite,
-                                        const CallICFGNode* joinSite)
+        const CallICFGNode* joinSite)
 {
     return getTCG()->getThreadAPI()->isAliasedForkJoin(tct->getPTA(),
-        getForkedThread(forkSite), getJoinedThread(joinSite), forkJoinAliasCache);
+            getForkedThread(forkSite), getJoinedThread(joinSite), forkJoinAliasCache);
 }
 
 // The two graphs the MHP analysis runs on; the algorithm above is written once

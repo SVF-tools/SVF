@@ -120,7 +120,7 @@ class MTASlicerBase
 {
 public:
     MTASlicerBase(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
-               LockAnalysis* lockAnalysis, SVFG* vfg = nullptr);
+                  LockAnalysis* lockAnalysis, SVFG* vfg = nullptr);
     virtual ~MTASlicerBase();
 
 protected:
@@ -170,7 +170,7 @@ protected:
      * @return Pair of (pthreadCallNodes, mutexCallNodes)
      */
     std::pair<OrderedSet<const CallICFGNode*>, OrderedSet<const CallICFGNode*>>
-        collectCommonThreadStatements(const OrderedSet<const SVFStmt*>& vulnerableStatements);
+            collectCommonThreadStatements(const OrderedSet<const SVFStmt*>& vulnerableStatements);
 
     // === ICFG analysis helpers ===
     OrderedSet<const ICFGNode*> buildBackwardICFGNodeSet(const OrderedSet<const ICFGNode*>& vulnerableNodes);
@@ -208,7 +208,7 @@ class MultiStageSlicer : public MTASlicerBase
 {
 public:
     MultiStageSlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
-              LockAnalysis* lockAnalysis, SVFG* vfg = nullptr);
+                     LockAnalysis* lockAnalysis, SVFG* vfg = nullptr);
 
     /**
      * Stage 1: the ILA slice (dual slicing + function expansion for the IRView).

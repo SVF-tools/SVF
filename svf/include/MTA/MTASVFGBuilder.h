@@ -99,7 +99,9 @@ public:
     /// The value stores only the additional lock-span witnesses; the endpoint
     /// ICFG nodes are implicit in the key and consumers must add them back.
     const std::map<ThreadVFEdge, std::set<const ICFGNode*>>& getThreadVFQueryMap() const
-    { return threadVFQueryMap; }
+    {
+        return threadVFQueryMap;
+    }
 
 protected:
     /// Rewrite the SVFG build hook: build the stock SVFG, then add MHP edges.

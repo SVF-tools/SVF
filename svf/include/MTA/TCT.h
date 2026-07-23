@@ -564,7 +564,7 @@ protected:
         /// treated like the null (main) case -- otherwise isInLoopInstruction would
         /// look up a call-graph node that does not exist.
         if(ct.getThread() != nullptr &&
-           dummyForkSites.find(ct.getThread()) == dummyForkSites.end())
+                dummyForkSites.find(ct.getThread()) == dummyForkSites.end())
         {
             const ICFGNode* svfInst = ct.getThread();
             ct.setInloop(isInLoopInstruction(svfInst));

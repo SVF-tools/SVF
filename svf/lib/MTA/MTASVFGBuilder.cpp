@@ -382,7 +382,7 @@ void MTASVFGBuilder::recordThreadVFSource(const StmtSVFGNode* s, const StmtSVFGN
     // Per-edge Query set. The endpoints are NOT duplicated into the value --
     // they are recoverable from the map key -- so the value holds only the
     // additional in-span witnesses below (empty for the common lock-free case).
-    std::set<const ICFGNode*>& query = threadVFQueryMap[{s, sp}];
+    std::set<const ICFGNode*>& query = threadVFQueryMap[ {s, sp}];
 
     if (!commonLock)
         return;

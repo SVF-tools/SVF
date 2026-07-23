@@ -116,11 +116,13 @@ public:
     }
 
     /// A race pair: two statements that may race.
-    struct RacePair {
+    struct RacePair
+    {
         const SVFStmt* stmt1;
         const SVFStmt* stmt2;
         RacePair(const SVFStmt* s1, const SVFStmt* s2) : stmt1(s1), stmt2(s2) {}
-        bool operator<(const RacePair& other) const {
+        bool operator<(const RacePair& other) const
+        {
             if (stmt1 != other.stmt1) return stmt1 < other.stmt1;
             return stmt2 < other.stmt2;
         }
@@ -142,7 +144,8 @@ public:
 
 private:
     /// One occurrence of a memory access under one thread instance.
-    struct RaceOccurrence {
+    struct RaceOccurrence
+    {
         const SVFStmt* stmt;
         const ICFGNode* node;
         bool isStore;
