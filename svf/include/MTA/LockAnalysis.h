@@ -25,6 +25,11 @@
  *
  *  Created on: 26 Aug 2015
  *      Author: pengd
+ *
+ * Lock analysis. One implementation runs on the whole program or a slice:
+ * analyze() is templated on the graph handle (SVFIR* or const SlicedSVFIRView*),
+ * as used by "Multi-Stage On-Demand Program Slicing for Modular Analysis of
+ * Multi-Threaded Programs" (ISSTA 2026).
  */
 
 #ifndef INCLUDE_MTA_LockAnalysis_H_
@@ -35,8 +40,14 @@
  */
 #include "MTA/TCT.h"
 
+#include <memory>
+#include <vector>
+
 namespace SVF
 {
+
+// Forward declaration for the sliced-graph handle analyze() can run on.
+class SlicedSVFIRView;
 
 /*!
  * Lock analysis
@@ -81,18 +92,23 @@ public:
     {
     }
 
+    ~LockAnalysis() = default;
+
     /// context-sensitive forward traversal from each lock site. Generate following results
     /// (1) context-sensitive lock site,
     /// (2) maps a context-sensitive lock site to its corresponding lock span.
-    void analyze();
-    void analyzeIntraProcedualLock();
-    bool intraForwardTraverse(const ICFGNode* lock, InstSet& unlockset, InstSet& forwardInsts);
-    bool intraBackwardTraverse(const InstSet& unlockset, InstSet& backwardInsts);
+    /// One implementation for the whole program and a slice: GraphT is SVFIR*
+    /// (whole) or const SlicedSVFIRView* (sliced). Per-graph queries resolve at
+    /// compile time via the graph* overloads in Graphs/SlicedGraphs.h.
+    template<class ICFGGraph, class CGGraph> void analyze(ICFGGraph icfg, CGGraph cg);
+    template<class ICFGGraph, class CGGraph> void analyzeIntraProcedualLock(ICFGGraph icfg, CGGraph cg);
+    template<class ICFGGraph, class CGGraph> bool intraForwardTraverse(ICFGGraph icfg, CGGraph cg, const ICFGNode* lock, InstSet& unlockset, InstSet& forwardInsts);
+    template<class ICFGGraph, class CGGraph> bool intraBackwardTraverse(ICFGGraph icfg, CGGraph cg, const InstSet& unlockset, InstSet& backwardInsts);
 
-    void collectCxtLock();
-    void analyzeLockSpanCxtStmt();
+    template<class ICFGGraph, class CGGraph> void collectCxtLock(ICFGGraph icfg, CGGraph cg);
+    template<class ICFGGraph, class CGGraph> void analyzeLockSpanCxtStmt(ICFGGraph icfg, CGGraph cg);
 
-    void collectLockUnlocksites();
+    template<class ICFGGraph, class CGGraph> void collectLockUnlocksites(ICFGGraph icfg, CGGraph cg);
     void buildCandidateFuncSetforLock();
 
     /// Intraprocedural locks
@@ -133,6 +149,14 @@ public:
     inline bool isInsideCondIntraLock(const ICFGNode* stmt) const
     {
         return instTocondCILocksMap.find(stmt)!=instTocondCILocksMap.end();
+    }
+
+    /// Whether a statement has an (unconditional) intra-procedural lock set, i.e.
+    /// getIntraLockSet is valid for it. A statement can be locked (isInsideIntraLock)
+    /// via a *conditional* intra lock or a *context* lock without being here.
+    inline bool hasIntraLockSet(const ICFGNode* stmt) const
+    {
+        return instCILocksMap.find(stmt)!=instCILocksMap.end();
     }
 
     inline const InstSet& getIntraLockSet(const ICFGNode* stmt) const
@@ -264,8 +288,6 @@ public:
     }
     //@}
 
-
-
     /// Check if one instruction's context stmt is in a lock span
     inline bool hasOneCxtInLockSpan(const ICFGNode *I, LockSpan lspan) const
     {
@@ -297,7 +319,6 @@ public:
         return true;
     }
 
-
     /// Check if two Instructions are protected by common locks
     /// echo inst may have multiple cxt stmt
     /// we check whether every cxt stmt of instructions is protected by a common lock.
@@ -323,32 +344,28 @@ public:
     {
         return tct;
     }
-private:
+protected:
     /// Handle fork
-    void handleFork(const CxtStmt& cts);
+    template<class ICFGGraph, class CGGraph> void handleFork(ICFGGraph icfg, CGGraph cg, const CxtStmt& cts);
 
     /// Handle call
-    void handleCall(const CxtStmt& cts);
+    template<class ICFGGraph, class CGGraph> void handleCall(ICFGGraph icfg, CGGraph cg, const CxtStmt& cts);
 
     /// Handle return
-    void handleRet(const CxtStmt& cts);
+    template<class ICFGGraph, class CGGraph> void handleRet(ICFGGraph icfg, CGGraph cg, const CxtStmt& cts);
 
     /// Handle intra
-    void handleIntra(const CxtStmt& cts);
+    template<class ICFGGraph, class CGGraph> void handleIntra(ICFGGraph icfg, CGGraph cg, const CxtStmt& cts);
 
     /// Handle call relations
-    void handleCallRelation(CxtLockProc& clp, const CallGraphEdge* cgEdge, const CallICFGNode* call);
+    template<class ICFGGraph, class CGGraph> void handleCallRelation(ICFGGraph icfg, CGGraph cg, CxtLockProc& clp, const CallGraphEdge* cgEdge, const CallICFGNode* call);
 
     /// Return true it a lock matches an unlock
     bool isAliasedLocks(const CxtLock& cl1, const CxtLock& cl2)
     {
         return isAliasedLocks(cl1.getStmt(), cl2.getStmt());
     }
-    bool isAliasedLocks(const ICFGNode* i1, const ICFGNode* i2)
-    {
-        /// todo: must alias
-        return tct->getPTA()->alias(getLockVal(i1)->getId(), getLockVal(i2)->getId());
-    }
+    bool isAliasedLocks(const ICFGNode* i1, const ICFGNode* i2);
 
     /// Mark thread flags for cxtStmt
     //@{
@@ -488,7 +505,6 @@ private:
     /// Map a statement to all its context-sensitive statements
     InstToCxtStmtSet instToCxtStmtSet;
 
-
     /// Context-sensitive locks
     CxtLockSet cxtLockset;
 
@@ -522,7 +538,6 @@ private:
     InstToInstSetMap instCILocksMap;
     InstToInstSetMap instTocondCILocksMap;
     //@}
-
 
 public:
     double lockTime;

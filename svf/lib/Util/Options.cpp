@@ -87,7 +87,7 @@ const Option<u32_t> Options::MaxPathLen(
     100000
 );
 
-const Option<u32_t> Options::MaxContextLen(
+Option<u32_t> Options::MaxContextLen(
     "max-cxt",
     "Maximum context limit for DDA",
     3
@@ -452,7 +452,7 @@ const Option<std::string> Options::ReadSVFG(
 
 
 const Option<bool> Options::IntraLock(
-    "intra-lock-td-edge",
+    "mta-intra-lock-td-edge",
     "Use simple intra-procedural lock for adding SVFG edges",
     true
 );
@@ -460,7 +460,7 @@ const Option<bool> Options::IntraLock(
 
 // LockAnalysis.cpp
 const Option<bool> Options::PrintLockSpan(
-    "print-lock",
+    "mta-print-lock",
     "Print Thread Interleaving Results",
     false
 );
@@ -468,29 +468,21 @@ const Option<bool> Options::PrintLockSpan(
 
 // MHP.cpp
 const Option<bool> Options::PrintInterLev(
-    "print-interlev",
+    "mta-print-interlev",
     "Print Thread Interleaving Results",
     false
 );
 
 const Option<bool> Options::DoLockAnalysis(
-    "lock-analysis",
+    "mta-lock-analysis",
     "Run Lock Analysis",
     true
 );
 
 
-// MTAStat.cpp
-const Option<bool> Options::AllPairMHP(
-    "all-pair-mhp",
-    "All pair MHP computation",
-    false
-);
-
-
 // TCT.cpp
 const Option<bool> Options::TCTDotGraph(
-    "dump-tct",
+    "mta-dump-tct",
     "Dump dot graph of Call Graph",
     false
 );
@@ -841,8 +833,16 @@ const Option<bool> Options::FileCheck(
     "fileck", "File Open/Close Detection",false);
 const Option<bool> Options::DFreeCheck(
     "dfree", "Double Free Detection",false);
-const Option<bool> Options::RaceCheck(
-    "race", "Data race Detection",false);
+const Option<bool> Options::MTFlowSensitive(
+    "mta-flow-sensitive", "MTA: flow-sensitive (FSAM) main analysis; false = Andersen flow-insensitive base", true);
+const Option<bool> Options::DumpMTAGraphs(
+    "mta-dump-graphs", "MTA: dump the pointer-analysis and thread call graphs (ptacg/tcg.dot)", false);
+const Option<bool> Options::EnableSlicing(
+    "mta-enable-slicing", "MTA slicing: slice before the FSAM main analysis (false = whole-program baseline)", true);
+const Option<bool> Options::SlicingSingle(
+    "mta-slicing-single", "MTA slicing: use one unified slice for both ILA and FSPTA (single-pass baseline)", false);
+const Option<bool> Options::SlicedDumpDot(
+    "mta-sliced-dump-dot", "MTA slicing: dump intermediate dot graphs", false);
 const Option<bool> Options::GepUnknownIdx(
     "gep-unknown-idx","Skip Gep Unknown Index",false);
 const Option<bool> Options::RunUncallFuncs(

@@ -26,28 +26,42 @@
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 
+#include <string>
+#include <vector>
+
 using namespace llvm;
 using namespace std;
 using namespace SVF;
 
-int main(int argc, char ** argv)
+int main(int argc, char** argv)
 {
-
-    std::vector<std::string> moduleNameVec;
-    moduleNameVec = OptionBase::parseOptions(
-                        argc, argv, "MTA Analysis", "[options] <input-bitcode...>"
-                    );
+    std::vector<std::string> moduleNameVec = OptionBase::parseOptions(
+                argc, argv, "MTA Analysis", "[options] <input-bitcode...>");
 
     LLVMModuleSet::buildSVFModule(moduleNameVec);
     SVFIRBuilder builder;
     SVFIR* pag = builder.build();
 
-
-    MTA mta;
-    mta.runOnModule(pag);
+    // MTA's only client is race detection. -mta-flow-sensitive (default) selects the
+    // FSAM pipeline (SlicedMTA), which decides slicing and the pre-analysis
+    // context handling internally; otherwise run the flow-insensitive Andersen
+    // detector.
+    if (Options::MTFlowSensitive())
+    {
+        // The only LLVM-dependent step -- materialising resolved indirect calls
+        // into the PAG -- is injected here.
+        SlicedMTA sliced;
+        sliced.runOnModule(pag, [&](CallGraph* cg)
+        {
+            builder.updateCallGraph(cg);
+        });
+    }
+    else
+    {
+        MTA mta;
+        mta.runOnModule(pag);
+    }
 
     LLVMModuleSet::releaseLLVMModuleSet();
-
-
     return 0;
 }

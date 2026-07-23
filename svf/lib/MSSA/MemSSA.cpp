@@ -46,21 +46,13 @@ double MemSSA::timeOfSSARenaming  = 0;	///< Time for SSA rename
 /*!
  * Constructor
  */
-MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA)
+MemSSA::MemSSA(BVDataPTAImpl* p, std::unique_ptr<MRGenerator> mrGenerator)
 {
     pta = p;
     assert((pta->getAnalysisTy() != PTATY::Default_PTA)
            && "please specify a pointer analysis");
-
-    if (Options::MemPar() == MemPartition::Distinct)
-        mrGen = new DistinctMRG(pta, ptrOnlyMSSA);
-    else if (Options::MemPar() == MemPartition::IntraDisjoint)
-        mrGen = new IntraDisjointMRG(pta, ptrOnlyMSSA);
-    else if (Options::MemPar() == MemPartition::InterDisjoint)
-        mrGen = new InterDisjointMRG(pta, ptrOnlyMSSA);
-    else
-        assert(false && "unrecognised memory partition strategy");
-
+    assert(mrGenerator != nullptr && "builder must supply an MRGenerator");
+    mrGen = std::move(mrGenerator);
 
     stat = new MemSSAStat(this);
 
@@ -438,8 +430,7 @@ void MemSSA::destroy()
         }
     }
 
-    delete mrGen;
-    mrGen = nullptr;
+    mrGen.reset();
     delete stat;
     stat = nullptr;
     pta = nullptr;

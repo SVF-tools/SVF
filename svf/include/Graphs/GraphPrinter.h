@@ -92,7 +92,7 @@ public:
         node_iterator E = GTraits::nodes_end(GT);
         for (; I != E; ++I)
         {
-            NodeRef *Node = *I;
+            NodeRef Node = *I;
             O << "node :" << Node << "'\n";
             child_iterator EI = GTraits::child_begin(Node);
             child_iterator EE = GTraits::child_end(Node);

@@ -119,7 +119,7 @@ public:
 
 protected:
     BVDataPTAImpl* pta;
-    MRGenerator* mrGen;
+    std::unique_ptr<MRGenerator> mrGen;
     MemSSAStat* stat;
 
     /// Create mu chi for candidate regions in a function
@@ -294,8 +294,10 @@ private:
     //@}
 
 public:
-    /// Constructor
-    MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA);
+    /// Constructor. The builder (SVFGBuilder::createMRGenerator) supplies the
+    /// MRGenerator and decides the partition strategy / thread-awareness; MemSSA
+    /// takes ownership of it via unique_ptr. mrGenerator must not be null.
+    MemSSA(BVDataPTAImpl* p, std::unique_ptr<MRGenerator> mrGenerator);
 
     /// Destructor
     virtual ~MemSSA()
@@ -309,10 +311,10 @@ public:
     {
         return pta;
     }
-    /// Return MRGenerator
+    /// Return MRGenerator (non-owning; MemSSA retains ownership)
     inline MRGenerator* getMRGenerator()
     {
-        return mrGen;
+        return mrGen.get();
     }
     /// We start from here
     virtual void buildMemSSA(const FunObjVar& fun);

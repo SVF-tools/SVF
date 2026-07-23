@@ -502,6 +502,24 @@ struct GenericGraphTraits<Inverse<SVF::CallGraphNode*> > : public GenericGraphTr
 template<> struct GenericGraphTraits<SVF::CallGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::CallGraphNode,SVF::CallGraphEdge>* >
 {
     typedef SVF::CallGraphNode*NodeRef;
+
+    // Graph-intrinsic queries shared with the sliced-view specialisation
+    // (GenericGraphTraits<const SlicedThreadCallGraphView*>).
+    //@{
+    /// In-edges of n under this graph (whole CallGraph: all of them).
+    static void getInEdges(const SVF::CallGraph*, const SVF::CallGraphNode* n,
+                           std::vector<const SVF::CallGraphEdge*>& out)
+    {
+        out.clear();
+        for (SVF::CallGraphEdge* e : n->getInEdges())
+            out.push_back(e);
+    }
+    /// The CallGraph object whose nodes an analysis over this graph scans.
+    static const SVF::CallGraph* getCallGraph(const SVF::CallGraph* g)
+    {
+        return g;
+    }
+    //@}
 };
 
 } // End namespace llvm

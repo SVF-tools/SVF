@@ -41,6 +41,7 @@ class SVFVar;
 class ValVar;
 class ObjVar;
 class FunObjVar;
+class PointerAnalysis;
 
 /*
  * ThreadAPI class contains interfaces for pthread programs
@@ -151,6 +152,17 @@ public:
     /// Note that, it is the pthread_t pointer
     const SVFVar* getRetParmAtJoinedSite(const CallICFGNode *inst) const;
     //@}
+
+    /// If fork join the same thread
+    struct ForkJoinAliasCache
+    {
+        Map<const SVFVar*, NodeBS> joinedThreadObjects;
+    };
+
+    bool isAliasedForkJoin(PointerAnalysis* pta, const SVFVar* forkArg,
+                           const SVFVar* joinArg) const;
+    bool isAliasedForkJoin(PointerAnalysis* pta, const SVFVar* forkArg,
+                           const SVFVar* joinArg, ForkJoinAliasCache& cache) const;
 
 
     /// Return true if this call exits/terminate a thread

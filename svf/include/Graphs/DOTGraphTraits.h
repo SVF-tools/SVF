@@ -66,18 +66,29 @@ public:
         return false;
     }
 
+    /// getNodeIdentifier - The value written after "Node" as the dot node id.
+    /// Defaults to the node reference reinterpreted as an address, which works
+    /// for pointer NodeRefs; value NodeRefs (e.g. sliced views) override this to
+    /// return a stable per-node address. (Node params below are templated so the
+    /// defaults accept any NodeRef, pointer or value.)
+    template <typename NodeT>
+    static const void *getNodeIdentifier(NodeT N)
+    {
+        return static_cast<const void *>(N);
+    }
+
     /// isNodeHidden - If the function returns true, the given node is not
     /// displayed in the graph.
-    template <typename GraphType>
-    static bool isNodeHidden(const void *, const GraphType &)
+    template <typename NodeT, typename GraphType>
+    static bool isNodeHidden(NodeT, const GraphType &)
     {
         return false;
     }
 
     /// getNodeLabel - Given a node and a pointer to the top level graph, return
     /// the label to print in the node.
-    template<typename GraphType>
-    std::string getNodeLabel(const void *, const GraphType &)
+    template<typename NodeT, typename GraphType>
+    std::string getNodeLabel(NodeT, const GraphType &)
     {
         return "";
     }
@@ -85,22 +96,22 @@ public:
     // getNodeIdentifierLabel - Returns a string representing the
     // address or other unique identifier of the node. (Only used if
     // non-empty.)
-    template <typename GraphType>
-    static std::string getNodeIdentifierLabel(const void *, const GraphType &)
+    template <typename NodeT, typename GraphType>
+    static std::string getNodeIdentifierLabel(NodeT, const GraphType &)
     {
         return "";
     }
 
-    template<typename GraphType>
-    static std::string getNodeDescription(const void *, const GraphType &)
+    template<typename NodeT, typename GraphType>
+    static std::string getNodeDescription(NodeT, const GraphType &)
     {
         return "";
     }
 
     /// If you want to specify custom node attributes, this is the place to do so
     ///
-    template<typename GraphType>
-    static std::string getNodeAttributes(const void *,
+    template<typename NodeT, typename GraphType>
+    static std::string getNodeAttributes(NodeT,
                                          const GraphType &)
     {
         return "";
@@ -108,8 +119,8 @@ public:
 
     /// If you want to override the dot attributes printed for a particular edge,
     /// override this method.
-    template<typename EdgeIter, typename GraphType>
-    static std::string getEdgeAttributes(const void *, EdgeIter,
+    template<typename NodeT, typename EdgeIter, typename GraphType>
+    static std::string getEdgeAttributes(NodeT, EdgeIter,
                                          const GraphType &)
     {
         return "";
@@ -117,8 +128,8 @@ public:
 
     /// getEdgeSourceLabel - If you want to label the edge source itself,
     /// implement this method.
-    template<typename EdgeIter>
-    static std::string getEdgeSourceLabel(const void *, EdgeIter)
+    template<typename NodeT, typename EdgeIter>
+    static std::string getEdgeSourceLabel(NodeT, EdgeIter)
     {
         return "";
     }
@@ -126,8 +137,8 @@ public:
     /// edgeTargetsEdgeSource - This method returns true if this outgoing edge
     /// should actually target another edge source, not a node.  If this method is
     /// implemented, getEdgeTarget should be implemented.
-    template<typename EdgeIter>
-    static bool edgeTargetsEdgeSource(const void *, EdgeIter)
+    template<typename NodeT, typename EdgeIter>
+    static bool edgeTargetsEdgeSource(NodeT, EdgeIter)
     {
         return false;
     }
@@ -135,8 +146,8 @@ public:
     /// getEdgeTarget - If edgeTargetsEdgeSource returns true, this method is
     /// called to determine which outgoing edge of Node is the target of this
     /// edge.
-    template<typename EdgeIter>
-    static EdgeIter getEdgeTarget(const void *, EdgeIter I)
+    template<typename NodeT, typename EdgeIter>
+    static EdgeIter getEdgeTarget(NodeT, EdgeIter I)
     {
         return I;
     }
@@ -150,14 +161,16 @@ public:
 
     /// numEdgeDestLabels - If hasEdgeDestLabels, this function returns the
     /// number of incoming edge labels the given node has.
-    static unsigned numEdgeDestLabels(const void *)
+    template<typename NodeT>
+    static unsigned numEdgeDestLabels(NodeT)
     {
         return 0;
     }
 
     /// getEdgeDestLabel - If hasEdgeDestLabels, this function returns the
     /// incoming edge label with the given index in the given node.
-    static std::string getEdgeDestLabel(const void *, unsigned)
+    template<typename NodeT>
+    static std::string getEdgeDestLabel(NodeT, unsigned)
     {
         return "";
     }

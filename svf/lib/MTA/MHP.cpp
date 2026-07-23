@@ -25,18 +25,28 @@
  *
  *  Created on: Jan 21, 2014
  *      Author: Yulei Sui, Peng Di
+ *
+ * May-happen-in-parallel analysis. One implementation runs on the whole program
+ * or a slice via the templated analyze(), which is parameterised on the two
+ * graphs it traverses (whole ICFG/CallGraph or their sliced views) and calls
+ * their GenericGraphTraits directly, as used by "Multi-Stage On-Demand Program Slicing for
+ * Modular Analysis of Multi-Threaded Programs" (ISSTA 2026).
  */
 
 #include "Util/Options.h"
 #include "MTA/MHP.h"
 #include "MTA/MTA.h"
 #include "MTA/LockAnalysis.h"
+#include "MTA/MTASlicer.h"
 #include "Util/SVFUtil.h"
 #include "Util/PTAStat.h"
+#include "Graphs/ThreadCallGraph.h"
+#include "Graphs/SlicedGraphs.h"
+#include "SVFIR/SVFIR.h"
+#include "WPA/Andersen.h"
 
 using namespace SVF;
 using namespace SVFUtil;
-
 
 /*!
  * Constructor
@@ -46,6 +56,52 @@ MHP::MHP(TCT* t) : tcg(t->getThreadCallGraph()), tct(t), numOfTotalQueries(0), n
 {
     fja = new ForkJoinAnalysis(tct);
     fja->analyzeForkJoinPair();
+    buildSymJoinKillTables();
+}
+
+/*!
+ * Index the SCEV-symmetric in-loop joins by their loop blocks.
+ */
+void MHP::buildSymJoinKillTables()
+{
+    for (const auto& joinAndLoop : fja->getSymmetricLoopJoins())
+    {
+        Set<const SVFBasicBlock*>& loopBlocks = symJoinLoop[joinAndLoop.first];
+        for (const SVFBasicBlock* bb : joinAndLoop.second)
+        {
+            loopBlocks.insert(bb);
+            bbToSymJoins[bb].push_back(joinAndLoop.first);
+        }
+    }
+}
+
+/*!
+ * Flow along edge cts.stmt -> dst: an edge leaving a symmetric join loop drops
+ * the joined tids (edge kill; the destination's state is never subtracted from).
+ */
+NodeBS MHP::edgeFlow(const CxtThreadStmt& cts, const ICFGNode* dst)
+{
+    NodeBS flow = getInterleavingThreads(cts);
+    const SVFBasicBlock* srcBB = cts.getStmt()->getBB();
+    const SVFBasicBlock* dstBB = dst->getBB();
+    if (srcBB == nullptr || dstBB == nullptr || srcBB == dstBB)
+        return flow;
+    BBToSymJoinsMap::const_iterator it = bbToSymJoins.find(srcBB);
+    if (it == bbToSymJoins.end())
+        return flow;
+    for (const CxtStmt& join : it->second)
+    {
+        if (join.getContext() != cts.getContext())
+            continue;
+        const Set<const SVFBasicBlock*>& loopBlocks = symJoinLoop[join];
+        if (loopBlocks.find(dstBB) != loopBlocks.end())
+            continue;                                  // edge stays inside the loop
+        if (!isMustJoin(cts.getTid(), join.getStmt()))
+            continue;
+        flow.intersectWithComplement(
+            getDirAndIndJoinedTid(join.getContext(), join.getStmt()));
+    }
+    return flow;
 }
 
 /*!
@@ -56,15 +112,17 @@ MHP::~MHP()
     delete fja;
 }
 
+
 /*!
  * Start analysis here
  */
-void MHP::analyze()
+template<class ICFGGraph, class CGGraph>
+void MHP::analyze(ICFGGraph icfg, CGGraph cg)
 {
     DBOUT(DGENERAL, outs() << pasMsg("MHP interleaving analysis\n"));
     DBOUT(DMTA, outs() << pasMsg("MHP interleaving analysis\n"));
     DOTIMESTAT(double interleavingStart = PTAStat::getClk(true));
-    analyzeInterleaving();
+    analyzeInterleaving(icfg, cg);
     DOTIMESTAT(double interleavingEnd = PTAStat::getClk(true));
     DOTIMESTAT(interleavingTime += (interleavingEnd - interleavingStart) / TIMEINTERVAL);
 }
@@ -72,24 +130,26 @@ void MHP::analyze()
 /*!
  * Analyze thread interleaving
  */
-void MHP::analyzeInterleaving()
+template<class ICFGGraph, class CGGraph>
+void MHP::analyzeInterleaving(ICFGGraph icfg, CGGraph cg)
 {
     for (const std::pair<const NodeID, TCTNode*>& tpair : *tct)
     {
         const CxtThread& ct = tpair.second->getCxtThread();
         NodeID rootTid = tpair.first;
         const FunObjVar* routine = tct->getStartRoutineOfCxtThread(ct);
-        const ICFGNode* svfInst = routine->getEntryBlock()->front();
+        const ICFGNode* svfInst = GenericGraphTraits<ICFGGraph>::getFunEntry(icfg, routine);
         CxtThreadStmt rootcts(rootTid, ct.getContext(), svfInst);
 
         addInterleavingThread(rootcts, rootTid);
-        updateAncestorThreads(rootTid);
-        updateSiblingThreads(rootTid);
+        updateAncestorThreads(icfg, cg, rootTid);
+        updateSiblingThreads(icfg, cg, rootTid);
 
         while (!cxtStmtList.empty())
         {
             CxtThreadStmt cts = popFromCTSWorkList();
             const ICFGNode* curInst = cts.getStmt();
+
             DBOUT(DMTA, outs() << "-----\nMHP analysis root thread: " << rootTid << " ");
             DBOUT(DMTA, cts.dump());
             DBOUT(DMTA, outs() << "current thread interleaving: < ");
@@ -99,37 +159,37 @@ void MHP::analyzeInterleaving()
             /// handle non-candidate function
             if (!tct->isCandidateFun(curInst->getFun()))
             {
-                handleNonCandidateFun(cts);
+                handleNonCandidateFun(icfg, cg, cts);
             }
             /// handle candidate function
             else
             {
                 if (isTDFork(curInst))
                 {
-                    handleFork(cts, rootTid);
+                    handleFork(icfg, cg, cts, rootTid);
                 }
                 else if (isTDJoin(curInst))
                 {
-                    handleJoin(cts, rootTid);
+                    handleJoin(icfg, cg, cts, rootTid);
                 }
                 else if (tct->isCallSite(curInst) && !tct->isExtCall(curInst))
                 {
-                    handleCall(cts, rootTid);
+                    handleCall(icfg, cg, cts, rootTid);
                 }
                 else if (SVFUtil::dyn_cast<FunExitICFGNode>(curInst))
                 {
-                    handleRet(cts);
+                    handleRet(icfg, cg, cts);
                 }
                 else
                 {
-                    handleIntra(cts);
+                    handleIntra(icfg, cg, cts);
                 }
             }
         }
     }
 
     /// update non-candidate functions' interleaving
-    updateNonCandidateFunInterleaving();
+    updateNonCandidateFunInterleaving(icfg, cg);
 
     if (Options::PrintInterLev())
         printInterleaving();
@@ -138,36 +198,36 @@ void MHP::analyzeInterleaving()
 /*!
  * Update non-candidate functions' interleaving
  */
-void MHP::updateNonCandidateFunInterleaving()
+template<class ICFGGraph, class CGGraph>
+void MHP::updateNonCandidateFunInterleaving(ICFGGraph icfg, CGGraph cg)
 {
-    for (const auto& item : *PAG::getPAG()->getCallGraph())
+    // Copy each non-candidate function entry's interleaving to the function's
+    // other nodes under the graph. Runs after the worklist has drained, so
+    // addInterleavingThread's push is inert.
+    for (const auto& item : *GenericGraphTraits<CGGraph>::getCallGraph(cg))
     {
         const FunObjVar* fun = item.second->getFunction();
-        if (!tct->isCandidateFun(fun) && !isExtCall(fun))
+        if (tct->isCandidateFun(fun) || isExtCall(fun))
+            continue;
+
+        const ICFGNode* entryNode = GenericGraphTraits<ICFGGraph>::getFunEntry(icfg, fun);
+        if (!hasThreadStmtSet(entryNode))
+            continue;
+
+        const CxtThreadStmtSet& tsSet = getThreadStmtSet(entryNode);
+
+        std::vector<const ICFGNode*> funICFGNodes;
+        GenericGraphTraits<ICFGGraph>::getFunICFGNodes(icfg, fun, funICFGNodes);
+
+        for (const CxtThreadStmt& cts : tsSet)
         {
-            const ICFGNode* entryNode = fun->getEntryBlock()->front();
-
-            if (!hasThreadStmtSet(entryNode))
-                continue;
-
-            const CxtThreadStmtSet& tsSet = getThreadStmtSet(entryNode);
-
-            for (const CxtThreadStmt& cts : tsSet)
+            const CallStrCxt& curCxt = cts.getContext();
+            for (const ICFGNode* curNode : funICFGNodes)
             {
-                const CallStrCxt& curCxt = cts.getContext();
-
-                for (auto it : *fun)
-                {
-                    const SVFBasicBlock* svfbb = it.second;
-                    for (const ICFGNode* curNode : svfbb->getICFGNodeList())
-                    {
-                        if (curNode == entryNode)
-                            continue;
-                        CxtThreadStmt newCts(cts.getTid(), curCxt, curNode);
-                        threadStmtToThreadInterLeav[newCts] |= threadStmtToThreadInterLeav[cts];
-                        instToTSMap[curNode].insert(newCts);
-                    }
-                }
+                if (curNode == entryNode)
+                    continue;
+                CxtThreadStmt newCts(cts.getTid(), curCxt, curNode);
+                addInterleavingThread(newCts, cts);
             }
         }
     }
@@ -176,11 +236,12 @@ void MHP::updateNonCandidateFunInterleaving()
 /*!
  * Handle call instruction in the current thread scope (excluding any fork site)
  */
-void MHP::handleNonCandidateFun(const CxtThreadStmt& cts)
+template<class ICFGGraph, class CGGraph>
+void MHP::handleNonCandidateFun(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts)
 {
     const ICFGNode* curInst = cts.getStmt();
     const FunObjVar* curfun = curInst->getFun();
-    assert((curInst == curfun->getEntryBlock()->front()) && "curInst is not the entry of non candidate function.");
+    assert((curInst == GenericGraphTraits<ICFGGraph>::getFunEntry(icfg, curfun)) && "curInst is not the entry of non candidate function.");
     const CallStrCxt& curCxt = cts.getContext();
     CallGraphNode* node = tcg->getCallGraphNode(curfun);
     for (CallGraphNode::const_iterator nit = node->OutEdgeBegin(), neit = node->OutEdgeEnd(); nit != neit; nit++)
@@ -188,7 +249,7 @@ void MHP::handleNonCandidateFun(const CxtThreadStmt& cts)
         const FunObjVar* callee = (*nit)->getDstNode()->getFunction();
         if (!isExtCall(callee))
         {
-            const ICFGNode* calleeInst = callee->getEntryBlock()->front();
+            const ICFGNode* calleeInst = GenericGraphTraits<ICFGGraph>::getFunEntry(icfg, callee);
             CxtThreadStmt newCts(cts.getTid(), curCxt, calleeInst);
             addInterleavingThread(newCts, cts);
         }
@@ -198,7 +259,8 @@ void MHP::handleNonCandidateFun(const CxtThreadStmt& cts)
 /*!
  * Handle fork
  */
-void MHP::handleFork(const CxtThreadStmt& cts, NodeID rootTid)
+template<class ICFGGraph, class CGGraph>
+void MHP::handleFork(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts, NodeID rootTid)
 {
 
     const ICFGNode* call = cts.getStmt();
@@ -216,19 +278,20 @@ void MHP::handleFork(const CxtThreadStmt& cts, NodeID rootTid)
             const FunObjVar* svfroutine = (*cgIt)->getDstNode()->getFunction();
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt, cbn, svfroutine);
-            const ICFGNode* stmt = svfroutine->getEntryBlock()->front();
+            const ICFGNode* stmt = GenericGraphTraits<ICFGGraph>::getFunEntry(icfg, svfroutine);
             CxtThread ct(newCxt, call);
             CxtThreadStmt newcts(tct->getTCTNode(ct)->getId(), ct.getContext(), stmt);
             addInterleavingThread(newcts, cts);
         }
     }
-    handleIntra(cts);
+    handleIntra(icfg, cg, cts);
 }
 
 /*!
  * Handle join
  */
-void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
+template<class ICFGGraph, class CGGraph>
+void MHP::handleJoin(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts, NodeID rootTid)
 {
 
     const CallStrCxt& curCxt = cts.getContext();
@@ -242,17 +305,23 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
     {
         if (fja->hasJoinLoop(call))
         {
+            // Seed the loop exits with the flow along the exiting edge (see
+            // edgeFlow): the kill applies to the flow, not the exit's state.
+            NodeBS flow = getInterleavingThreads(cts);
+            if (hasJoinInSymmetricLoop(curCxt, call) && isMustJoin(cts.getTid(), call))
+                flow.intersectWithComplement(joinedTids);
+
             std::vector<const SVFBasicBlock*> exitbbs;
             call->getFun()->getExitBlocksOfLoop(call->getBB(), exitbbs);
             while (!exitbbs.empty())
             {
                 const SVFBasicBlock* eb = exitbbs.back();
                 exitbbs.pop_back();
-                const ICFGNode* svfEntryInst = eb->front();
-                CxtThreadStmt newCts(cts.getTid(), curCxt, svfEntryInst);
-                addInterleavingThread(newCts, cts);
-                if (hasJoinInSymmetricLoop(curCxt, call))
-                    rmInterleavingThread(newCts, joinedTids, call);
+                // Seed the post-join interleaving at the loop-exit entry. The slicer
+                // retains these entries as anchors, so the seed always lands on a kept
+                // node (no runtime projection needed).
+                CxtThreadStmt newCts(cts.getTid(), curCxt, eb->front());
+                addInterleavingBits(newCts, flow);
             }
         }
         else
@@ -273,19 +342,20 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
             {
                 const SVFBasicBlock* eb = exitbbs.back();
                 exitbbs.pop_back();
-                const ICFGNode* svfEntryInst = eb->front();
-                CxtThreadStmt newCts(cts.getTid(), cts.getContext(), svfEntryInst);
+                // Seed at the loop-exit entry (a retained anchor; see above).
+                CxtThreadStmt newCts(cts.getTid(), cts.getContext(), eb->front());
                 addInterleavingThread(newCts, cts);
             }
         }
     }
-    handleIntra(cts);
+    handleIntra(icfg, cg, cts);
 }
 
 /*!
  * Handle call instruction in the current thread scope (excluding any fork site)
  */
-void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
+template<class ICFGGraph, class CGGraph>
+void MHP::handleCall(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts, NodeID rootTid)
 {
 
     const ICFGNode* call = cts.getStmt();
@@ -297,16 +367,29 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
                 ecgIt = tcg->getCallEdgeEnd(cbn);
                 cgIt != ecgIt; ++cgIt)
         {
-
             const FunObjVar* svfcallee = (*cgIt)->getDstNode()->getFunction();
             if (isExtCall(svfcallee))
                 continue;
+
             CallStrCxt newCxt = curCxt;
             const CallICFGNode* callicfgnode = SVFUtil::cast<CallICFGNode>(call);
             pushCxt(newCxt, callicfgnode, svfcallee);
-            const ICFGNode* svfEntryInst = svfcallee->getEntryBlock()->front();
+            const ICFGNode* svfEntryInst = GenericGraphTraits<ICFGGraph>::getFunEntry(icfg, svfcallee);
             CxtThreadStmt newCts(cts.getTid(), newCxt, svfEntryInst);
             addInterleavingThread(newCts, cts);
+
+            // Return-flow rendezvous: if the callee's exit already has state
+            // under newCxt, forward it now (handleRet cannot see late callsites).
+            if (tct->isCandidateFun(svfcallee) && svfcallee->hasBasicBlock())
+            {
+                const ICFGNode* exitInst = svfcallee->getExitBB()->back();
+                CxtThreadStmt exitCts(cts.getTid(), newCxt, exitInst);
+                if (threadStmtToThreadInterLeav.find(exitCts) != threadStmtToThreadInterLeav.end())
+                {
+                    CxtThreadStmt retCts(cts.getTid(), curCxt, cbn->getRetICFGNode());
+                    addInterleavingThread(retCts, exitCts);
+                }
+            }
         }
     }
 
@@ -331,13 +414,18 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
 /*!
  * Handle return instruction in the current thread scope (excluding any join site)
  */
-void MHP::handleRet(const CxtThreadStmt& cts)
+template<class ICFGGraph, class CGGraph>
+void MHP::handleRet(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts)
 {
     CallGraphNode* curFunNode = tcg->getCallGraphNode(cts.getStmt()->getFun());
-    for (CallGraphEdge* edge : curFunNode->getInEdges())
+    std::vector<const CallGraphEdge*> inEdges;
+    GenericGraphTraits<CGGraph>::getInEdges(cg, curFunNode, inEdges);
+    for (const CallGraphEdge* edgeConst : inEdges)
     {
-        if (SVFUtil::isa<ThreadForkEdge, ThreadJoinEdge>(edge))
+        if (SVFUtil::isa<ThreadForkEdge, ThreadJoinEdge>(edgeConst))
             continue;
+        // Need non-const for directCallsBegin/End
+        CallGraphEdge* edge = const_cast<CallGraphEdge*>(edgeConst);
         for (CallGraphEdge::CallInstSet::const_iterator cit = (edge)->directCallsBegin(),
                 ecit = (edge)->directCallsEnd();
                 cit != ecit; ++cit)
@@ -345,9 +433,11 @@ void MHP::handleRet(const CxtThreadStmt& cts)
             CallStrCxt newCxt = cts.getContext();
             if (matchAndPopCxt(newCxt, *cit, curFunNode->getFunction()))
             {
-                for(const ICFGEdge* outEdge : cts.getStmt()->getOutEdges())
+                std::vector<const ICFGNode*> succ;
+                GenericGraphTraits<ICFGGraph>::getSuccNodes(icfg, cts.getStmt(), succ);
+                for (const ICFGNode* dst : succ)
                 {
-                    if(outEdge->getDstNode()->getFun() == (*cit)->getFun())
+                    if(dst->getFun() == (*cit)->getFun())
                     {
                         // Iterate over callSite's call string context and use as the successor's context
                         if (!hasThreadStmtSet(*cit))
@@ -358,7 +448,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
                             // If new context is a suffix of the call site context
                             if (isContextSuffix(newCxt, callSiteCxt))
                             {
-                                CxtThreadStmt newCts(cts.getTid(), callSiteCxt, outEdge->getDstNode());
+                                CxtThreadStmt newCts(cts.getTid(), callSiteCxt, dst);
                                 addInterleavingThread(newCts, cts);
                             }
                         }
@@ -373,9 +463,11 @@ void MHP::handleRet(const CxtThreadStmt& cts)
             CallStrCxt newCxt = cts.getContext();
             if (matchAndPopCxt(newCxt, *cit, curFunNode->getFunction()))
             {
-                for(const ICFGEdge* outEdge : cts.getStmt()->getOutEdges())
+                std::vector<const ICFGNode*> succ;
+                GenericGraphTraits<ICFGGraph>::getSuccNodes(icfg, cts.getStmt(), succ);
+                for (const ICFGNode* dst : succ)
                 {
-                    if(outEdge->getDstNode()->getFun() == (*cit)->getFun())
+                    if(dst->getFun() == (*cit)->getFun())
                     {
                         // Iterate over callSite's call string context and use as the successor's context
                         if (!hasThreadStmtSet(*cit))
@@ -386,7 +478,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
                             // If new context is a suffix of the call site context
                             if (isContextSuffix(newCxt, callSiteCxt))
                             {
-                                CxtThreadStmt newCts(cts.getTid(), callSiteCxt, outEdge->getDstNode());
+                                CxtThreadStmt newCts(cts.getTid(), callSiteCxt, dst);
                                 addInterleavingThread(newCts, cts);
                             }
                         }
@@ -400,14 +492,24 @@ void MHP::handleRet(const CxtThreadStmt& cts)
 /*!
  * Handling intraprocedural statements (successive statements on the CFG )
  */
-void MHP::handleIntra(const CxtThreadStmt& cts)
+template<class ICFGGraph, class CGGraph>
+void MHP::handleIntra(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts)
 {
-    for(const ICFGEdge* outEdge : cts.getStmt()->getOutEdges())
+    const SVFBasicBlock* srcBB = cts.getStmt()->getBB();
+    const bool mayExitSymJoinLoop =
+        srcBB != nullptr && bbToSymJoins.find(srcBB) != bbToSymJoins.end();
+
+    std::vector<const ICFGNode*> succ;
+    GenericGraphTraits<ICFGGraph>::getSuccNodes(icfg, cts.getStmt(), succ);
+    for (const ICFGNode* dst : succ)
     {
-        if(outEdge->getDstNode()->getFun() == cts.getStmt()->getFun())
+        if(dst->getFun() == cts.getStmt()->getFun())
         {
-            CxtThreadStmt newCts(cts.getTid(), cts.getContext(), outEdge->getDstNode());
-            addInterleavingThread(newCts, cts);
+            CxtThreadStmt newCts(cts.getTid(), cts.getContext(), dst);
+            if (mayExitSymJoinLoop)
+                addInterleavingBits(newCts, edgeFlow(cts, dst));
+            else
+                addInterleavingThread(newCts, cts);
         }
     }
 }
@@ -415,7 +517,8 @@ void MHP::handleIntra(const CxtThreadStmt& cts)
 /*!
  * Update interleavings of ancestor threads according to TCT
  */
-void MHP::updateAncestorThreads(NodeID curTid)
+template<class ICFGGraph, class CGGraph>
+void MHP::updateAncestorThreads(ICFGGraph icfg, CGGraph cg, NodeID curTid)
 {
     NodeBS ancestorAndSelfTids = tct->getAncestorThreads(curTid);
     DBOUT(DMTA, outs() << "##Ancestor thread of " << curTid << " is : ");
@@ -428,14 +531,18 @@ void MHP::updateAncestorThreads(NodeID curTid)
         const CxtThread& ct = tct->getTCTNode(tid)->getCxtThread();
         if (const ICFGNode* forkInst = ct.getThread())
         {
-            for(const ICFGEdge* outEdge : forkInst->getOutEdges())
+            // Mark the fork site's successors under the graph, so a sliced run
+            // marks kept successors (a marker on a removed node would strand).
+            std::vector<const ICFGNode*> succ;
+            GenericGraphTraits<ICFGGraph>::getSuccNodes(icfg, forkInst, succ);
+            for(const ICFGNode* dst : succ)
             {
                 // Ensure dst node is in the same function as forkInst
-                if(outEdge->getDstNode()->getFun() == forkInst->getFun())
+                if(dst->getFun() == forkInst->getFun())
                 {
                     for (const auto& forkSiteCxt : tct->getCxtOfCxtThread(ct))
                     {
-                        CxtThreadStmt cts(forkSiteCxt.first, forkSiteCxt.second, outEdge->getDstNode());
+                        CxtThreadStmt cts(forkSiteCxt.first, forkSiteCxt.second, dst);
                         addInterleavingThread(cts, curTid);
                     }
                 }
@@ -454,7 +561,8 @@ void MHP::updateAncestorThreads(NodeID curTid)
  * or
  * (2) Sibling HB t
  */
-void MHP::updateSiblingThreads(NodeID curTid)
+template<class ICFGGraph, class CGGraph>
+void MHP::updateSiblingThreads(ICFGGraph icfg, CGGraph cg, NodeID curTid)
 {
     NodeBS ancestorAndSelfTids = tct->getAncestorThreads(curTid);
     ancestorAndSelfTids.set(curTid);
@@ -468,7 +576,9 @@ void MHP::updateSiblingThreads(NodeID curTid)
 
             const CxtThread& ct = tct->getTCTNode(stid)->getCxtThread();
             const FunObjVar* routine = tct->getStartRoutineOfCxtThread(ct);
-            const ICFGNode* stmt = routine->getEntryBlock()->front();
+            // The entry node under the graph: the same node the sibling thread's
+            // own propagation starts from (see analyzeInterleaving's root cts).
+            const ICFGNode* stmt = GenericGraphTraits<ICFGGraph>::getFunEntry(icfg, routine);
             CxtThreadStmt cts(stid, ct.getContext(), stmt);
             addInterleavingThread(cts, curTid);
         }
@@ -885,9 +995,9 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
         if (hasJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite)))
         {
             if (isAliasedForkJoin(SVFUtil::cast<CallICFGNode>(forkSite),
-                                  SVFUtil::cast<CallICFGNode>(joinSite)) &&
+                                SVFUtil::cast<CallICFGNode>(joinSite)) &&
                     isSameSCEV(forkSite,joinSite)
-               )
+                )
             {
                 LoopBBs& joinLoop = getJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite));
                 std::vector<const SVFBasicBlock *> exitbbs;
@@ -927,7 +1037,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
         else
         {
             if (isAliasedForkJoin(SVFUtil::cast<CallICFGNode>(forkSite),
-                                  SVFUtil::cast<CallICFGNode>(joinSite)))
+                                SVFUtil::cast<CallICFGNode>(joinSite)))
             {
                 markCxtStmtFlag(cts, TDDead);
                 addDirectlyJoinTID(cts, rootTid);
@@ -1182,3 +1292,15 @@ bool ForkJoinAnalysis::sameLoopTripCount(const ICFGNode* forkSite, const ICFGNod
     // }
     return false;
 }
+
+bool ForkJoinAnalysis::isAliasedForkJoin(const CallICFGNode* forkSite,
+                                        const CallICFGNode* joinSite)
+{
+    return getTCG()->getThreadAPI()->isAliasedForkJoin(tct->getPTA(),
+        getForkedThread(forkSite), getJoinedThread(joinSite), forkJoinAliasCache);
+}
+
+// The two graphs the MHP analysis runs on; the algorithm above is written once
+// and instantiated for both (all internal templates instantiate transitively).
+template void MHP::analyze<ICFG*, CallGraph*>(ICFG*, CallGraph*);
+template void MHP::analyze<const SlicedICFGView*, const SlicedThreadCallGraphView*>(const SlicedICFGView*, const SlicedThreadCallGraphView*);

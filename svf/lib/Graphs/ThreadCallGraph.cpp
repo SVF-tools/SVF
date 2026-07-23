@@ -46,6 +46,13 @@ ThreadCallGraph::ThreadCallGraph(const CallGraph& cg) :
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Building ThreadCallGraph\n"));
 }
 
+ThreadCallGraph::~ThreadCallGraph()
+{
+    for (const auto& entry : callinstToThreadJoinEdgesMap)
+        for (ThreadJoinEdge* edge : entry.second)
+            delete edge;
+}
+
 const std::string ThreadForkEdge::toString() const
 {
     std::string str;
@@ -121,6 +128,7 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
  */
 void ThreadCallGraph::updateJoinEdge(PointerAnalysis* pta)
 {
+    ThreadAPI::ForkJoinAliasCache aliasCache;
 
     for (CallSiteSet::const_iterator it = joinsitesBegin(), eit = joinsitesEnd(); it != eit; ++it)
     {
@@ -130,12 +138,16 @@ void ThreadCallGraph::updateJoinEdge(PointerAnalysis* pta)
         for (CallSiteSet::const_iterator it = forksitesBegin(), eit = forksitesEnd(); it != eit; ++it)
         {
             const SVFVar* forkthread = tdAPI->getForkedThread(*it);
-            if (pta->alias(jointhread->getId(), forkthread->getId()))
+            if (tdAPI->isAliasedForkJoin(pta, forkthread, jointhread, aliasCache))
             {
                 forkset.insert(*it);
             }
         }
-        assert(!forkset.empty() && "Can't find a forksite for this join!!");
+        /// A join may have no statically-matchable fork site (e.g. the pthread_t
+        /// alias cannot be resolved by the pre-analysis). Skip such joins rather
+        /// than aborting -- they simply get no join-related def-use edge.
+        if (forkset.empty())
+            continue;
         addDirectJoinEdge(*it,forkset);
     }
 }
@@ -206,20 +218,27 @@ void ThreadCallGraph::addDirectJoinEdge(const CallICFGNode* cs,const CallSiteSet
 
     for (CallSiteSet::const_iterator it = forkset.begin(), eit = forkset.end(); it != eit; ++it)
     {
-
-        const FunObjVar* threadRoutineFun =
-            SVFUtil::dyn_cast<FunValVar>(tdAPI->getForkedFun(*it))->getFunction();
-        assert(threadRoutineFun && "thread routine function does not exist");
-        CallGraphNode* threadRoutineFunNode = getCallGraphNode(threadRoutineFun);
-        CallSiteID csId = addCallSite(cs, threadRoutineFun);
-
-        if (!hasThreadJoinEdge(cs,joinFunNode,threadRoutineFunNode, csId))
+        // The start routine(s) joined here are exactly the targets of the fork
+        // edges already resolved for this fork site (direct, or indirect via
+        // points-to in updateCallGraph). Reuse them rather than re-resolving the
+        // fork target from getForkedFun, which is not a FunValVar for an indirect
+        // fork (function pointer). An unresolved fork site simply has no edges.
+        if (!hasThreadForkEdge(*it))
+            continue;
+        for (ForkEdgeSet::const_iterator eit2 = getForkEdgeBegin(*it),
+                eeit2 = getForkEdgeEnd(*it); eit2 != eeit2; ++eit2)
         {
-            assert(cs->getCaller() == joinFunNode->getFunction() && "callee instruction not inside caller??");
-            ThreadJoinEdge* edge = new ThreadJoinEdge(joinFunNode,threadRoutineFunNode,csId);
-            edge->addDirectCallSite(cs);
+            CallGraphNode* threadRoutineFunNode = (*eit2)->getDstNode();
+            CallSiteID csId = addCallSite(cs, threadRoutineFunNode->getFunction());
 
-            addThreadJoinEdgeSetMap(cs, edge);
+            if (!hasThreadJoinEdge(cs,joinFunNode,threadRoutineFunNode, csId))
+            {
+                assert(cs->getCaller() == joinFunNode->getFunction() && "callee instruction not inside caller??");
+                ThreadJoinEdge* edge = new ThreadJoinEdge(joinFunNode,threadRoutineFunNode,csId);
+                edge->addDirectCallSite(cs);
+
+                addThreadJoinEdgeSetMap(cs, edge);
+            }
         }
     }
 }

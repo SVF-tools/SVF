@@ -34,12 +34,56 @@
 #include "Util/SVFUtil.h"
 #include "Graphs/CallGraph.h"
 #include "SVFIR/SVFIR.h"
+#include "MemoryModel/PointerAnalysis.h"
 
 #include <iostream>		/// std output
 #include <stdio.h>
 #include <iomanip>		/// for setw
 
 using namespace std;
+namespace
+{
+SVF::NodeBS collectJoinedThreadObjects(SVF::PointerAnalysis* pta,
+                                       const SVF::SVFVar* joinArg,
+                                       SVF::ThreadAPI::ForkJoinAliasCache& cache)
+{
+    SVF::Map<const SVF::SVFVar*, SVF::NodeBS>::const_iterator cacheIt =
+        cache.joinedThreadObjects.find(joinArg);
+    if (cacheIt != cache.joinedThreadObjects.end())
+        return cacheIt->second;
+
+    SVF::NodeBS objects;
+    SVF::Set<SVF::NodeID> visited;
+    std::vector<const SVF::SVFVar*> worklist{joinArg};
+    while (!worklist.empty())
+    {
+        const SVF::SVFVar* v = worklist.back();
+        worklist.pop_back();
+        if (!visited.insert(v->getId()).second)
+            continue;
+
+        for (const SVF::SVFStmt* st : v->getInEdges())
+        {
+            if (const SVF::LoadStmt* load = SVF::SVFUtil::dyn_cast<SVF::LoadStmt>(st))
+                objects |= pta->getPts(load->getRHSVarID()).toNodeBS();
+            else if (const SVF::CopyStmt* copy = SVF::SVFUtil::dyn_cast<SVF::CopyStmt>(st))
+                worklist.push_back(copy->getRHSVar());
+            else if (const SVF::PhiStmt* phi = SVF::SVFUtil::dyn_cast<SVF::PhiStmt>(st))
+                for (SVF::u32_t i = 0; i < phi->getOpVarNum(); ++i)
+                    worklist.push_back(phi->getOpVar(i));
+            else if (const SVF::GepStmt* gep = SVF::SVFUtil::dyn_cast<SVF::GepStmt>(st))
+                worklist.push_back(gep->getRHSVar());
+            else if (const SVF::CallPE* call = SVF::SVFUtil::dyn_cast<SVF::CallPE>(st))
+                for (SVF::u32_t i = 0; i < call->getOpVarNum(); ++i)
+                    worklist.push_back(call->getOpVar(i));
+        }
+    }
+
+    cache.joinedThreadObjects[joinArg] = objects;
+    return objects;
+}
+}
+
 using namespace SVF;
 
 ThreadAPI* ThreadAPI::tdAPI = nullptr;
@@ -219,17 +263,46 @@ const SVFVar* ThreadAPI::getLockVal(const ICFGNode *cs) const
 const SVFVar* ThreadAPI::getJoinedThread(const CallICFGNode *cs) const
 {
     assert(isTDJoin(cs) && "not a thread join function!");
-    const ValVar* join = cs->getArgument(0);
-    for(const SVFStmt* stmt : join->getInEdges())
-    {
-        if(SVFUtil::isa<LoadStmt>(stmt))
-            return stmt->getSrcNode();
-    }
-    if(SVFUtil::isa<ArgValVar>(join))
-        return join;
+    return cs->getArgument(0);
+}
 
-    assert(false && "the value of the first argument at join is not a load instruction?");
-    return nullptr;
+/*!
+ * If fork join the same thread
+ * - forkArg is the value of the first argument of pthread_create
+ *   (a pointer to pthread_t)
+ * - joinArg is the value first argument of pthread_join
+ *   (pthread_t)
+ */
+bool ThreadAPI::isAliasedForkJoin(PointerAnalysis *pta, const SVFVar *forkArg, const SVFVar *joinArg) const
+{
+    ForkJoinAliasCache cache;
+    return isAliasedForkJoin(pta, forkArg, joinArg, cache);
+}
+
+bool ThreadAPI::isAliasedForkJoin(PointerAnalysis *pta, const SVFVar *forkArg,
+                                  const SVFVar *joinArg, ForkJoinAliasCache& cache) const
+{
+    // pthread_create receives &t (a pointer to the pthread_t object), so the
+    // forked thread is identified by the pthread_t object(s) in pts(forkArg).
+    const PointsTo& forkObjs = pta->getPts(forkArg->getId());
+    const NodeBS joinedObjs = collectJoinedThreadObjects(pta, joinArg, cache);
+    if (forkObjs.toNodeBS().intersects(joinedObjs))
+        return true;
+
+    // (1) Direct case: the join handle is itself a pointer to the same pthread_t.
+    for (NodeID o : forkObjs)
+        if (pta->alias(o, joinArg->getId()))
+            return true;
+
+    // (2) General case: pthread_t is usually a scalar, so pthread_join receives
+    //     the pthread_t *value*, which carries no points-to of its own. That
+    //     value is loaded from the pthread_t storage, possibly after flowing
+    //     through copies / phis / casts / by-value parameter passing. We
+    //     backward value-track the join handle to every load it may originate
+    //     from and check whether the loaded-from storage is the fork's pthread_t
+    //     object. This covers the common shapes soundly (an over-approximate
+    //     match only adds a sound join-related value flow).
+    return false;
 }
 
 /*!
