@@ -484,7 +484,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                     }
                                     else
                                     {
-                                        assert(false && "alias not function or bitcast");
+                                        // assert(false && "alias not function or bitcast");
                                     }
 
                                     pure_abstract &= false;

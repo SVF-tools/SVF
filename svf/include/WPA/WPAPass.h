@@ -43,6 +43,7 @@ namespace SVF
 {
 
 class SVFG;
+class SVFModule;
 
 /*!
  * Whole program pointer analysis.
@@ -78,7 +79,13 @@ public:
     virtual const PointsTo& getPts(NodeID var);
 
     /// Print all alias pairs
-    virtual void PrintAliasPairs(PointerAnalysis* pta);
+    virtual void PrintAliasPairs(PointerAnalysis* pta, SVFG* svfg);
+
+    /// Add load/store pointer alias information to database
+    virtual void addLoadStoreAliasInfoToDatabase(PointerAnalysis* pta, SVFG* svfg);
+
+    /// Perform interprocedural analysis between memory operations and call instructions
+    // virtual void performInterproceduralMemoryCallAnalysis(PointerAnalysis* pta, SVFG* svfg, const std::string& outputPrefix);
 
     /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref any memory location
     virtual ModRefInfo getModRefInfo(const CallICFGNode* callInst);
@@ -88,7 +95,8 @@ public:
     // {
     //     return getModRefInfo(callInst, Loc.Ptr);
     // }
-
+    /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref a specific memory location, given Location infos
+    // virtual inline ModRefInfo getModRefInfo(const CallICFGNode* callInst, const SVFValue* Loc);
     /// Interface of mod-ref analysis between two CallSite instructions
     virtual ModRefInfo getModRefInfo(const CallICFGNode* callInst1, const CallICFGNode* callInst2);
 
@@ -103,8 +111,20 @@ public:
 
 private:
     /// Create pointer analysis according to specified kind and analyze the module.
+    struct TestRow {
+    std::string ptr_ptr_func;
+    std::string aa;
+    };
+    struct Row {
+    int table_id;
+    std::string ptr_ptr_func;
+    std::string aa;
+    };
     void runPointerAnalysis(SVFIR* pag, u32_t kind);
-
+    void bulkInsertNewTests(const std::string& tableName, const std::vector<TestRow>& data, int batchSize = 100);
+    void CreateMultipleTables(const std::string& baseTableName, const std::vector<TestRow>& data, int batchSize = 100);
+    // void bulkInsertPostgres(const char* conninfo, const std::string& tableName, const std::vector<TestRow>& data, int batchSize = 100);
+    // void createMultipleTablesPostgres(const std::string& baseTableName, const std::vector<TestRow>& data, int batchSizePerTable, int batchSizeInsert, const char* conninfo);
     PTAVector ptaVector;	///< all pointer analysis to be executed.
     PointerAnalysis* _pta;	///<  pointer analysis to be executed.
     SVFG* _svfg;  ///< svfg generated through -ander pointer analysis

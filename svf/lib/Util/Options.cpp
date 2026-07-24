@@ -236,7 +236,7 @@ const Option<bool> Options::PTSAllPrint(
 const Option<bool> Options::PStat(
     "stat",
     "Statistic for Pointer analysis",
-    true
+    false
 );
 
 const Option<u32_t> Options::StatBudget(

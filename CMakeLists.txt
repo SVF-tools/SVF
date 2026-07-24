@@ -93,6 +93,7 @@ option(SVF_EXPORT_DYNAMIC "Export all (not only the actually used) symbols to dy
 option(SVF_ENABLE_ASSERTIONS "Always enable debugging assertions, also if the build type is a release build")
 option(SVF_ENABLE_RTTI "Adds -fno-rtti to disable runtime type information (RTTI)" ON)
 option(SVF_ENABLE_EXCEPTIONS "Adds -fno-exceptions to disable exception handling" ON)
+set(SVF_ENABLE_OPENMP ON CACHE BOOL "Enable OpenMP support for parallel processing" FORCE)
 
 # If building dynamic libraries, always enable PIC
 if(SVF_SHARED_LIBS AND NOT SVF_USE_PIC)
@@ -191,6 +192,7 @@ message(
   SVF option - Generating debug information:        ${SVF_WARN_AS_ERROR}
   SVF option - Exporting all dynamic symbols:       ${SVF_EXPORT_DYNAMIC}
   SVF option - Forcefully enabling assertions:      ${SVF_ENABLE_ASSERTIONS}
+  SVF option - Enabling OpenMP support:             ${SVF_ENABLE_OPENMP}
 
   CMake root directory:                             ${CMAKE_SOURCE_DIR}
   CMake binary directory:                           ${CMAKE_BINARY_DIR}
@@ -223,6 +225,29 @@ message(
   Z3 C include dirs:    ${Z3_C_INCLUDE_DIRS}
   Z3 C++ include dirs:  ${Z3_CXX_INCLUDE_DIRS}"
 )
+
+# =================================================================================
+# SVF OpenMP dependency finding
+# =================================================================================
+
+# Find OpenMP package if enabled
+if(SVF_ENABLE_OPENMP)
+  find_package(OpenMP REQUIRED)
+  if(OpenMP_CXX_FOUND)
+    message(
+      STATUS
+        "Using OpenMP package:
+  OpenMP version:       ${OpenMP_CXX_VERSION}
+  OpenMP compile flags: ${OpenMP_CXX_FLAGS}
+  OpenMP link flags:    ${OpenMP_CXX_LIBRARIES}"
+    )
+  else()
+    message(FATAL_ERROR "OpenMP requested but not found. Please install OpenMP or set SVF_ENABLE_OPENMP=OFF")
+  endif()
+else()
+  message(STATUS "OpenMP support disabled (SVF_ENABLE_OPENMP=OFF)")
+endif()
+
 
 # =================================================================================
 # SVF configuration interface library
@@ -263,6 +288,12 @@ target_compile_definitions(SvfFlags INTERFACE $<BUILD_INTERFACE:SVF_INSTALL_EXTA
 
 # Add Z3 as a public dependency on the interface to ensure any users inherit the dependency
 target_link_libraries(SvfFlags INTERFACE ${Z3_LIBRARIES})
+
+# Add OpenMP as a public dependency if enabled
+if(SVF_ENABLE_OPENMP)
+  target_link_libraries(SvfFlags INTERFACE OpenMP::OpenMP_CXX)
+  target_compile_definitions(SvfFlags INTERFACE SVF_ENABLE_OPENMP)
+endif()
 
 # Ensure the interface library is exposed during installation
 install(TARGETS SvfFlags EXPORT SVFTargets)
