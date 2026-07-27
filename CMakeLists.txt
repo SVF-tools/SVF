@@ -14,6 +14,7 @@ project(
 
 # Export compile commands for clangd & IDE support
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # Set SVF's default C/C++ standards (C11/C++17)
 set(CMAKE_C_STANDARD 11)

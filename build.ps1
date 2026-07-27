@@ -93,20 +93,13 @@ function Write-Step {
 }
 
 # ---------------------------------------------------------------------------
-# Risolvi LLVM_DIR (llvm-mingw)
+# Risolvi compilatore e toolchain (llvm-mingw)
 # ---------------------------------------------------------------------------
 
-Write-Step "Risoluzione LLVM_DIR (llvm-mingw)"
+Write-Step "Risoluzione Toolchain del Compilatore"
 
-if ($LLVMDir -ne "" -and (Test-Path $LLVMDir)) {
-    $env:LLVM_DIR = (Resolve-Path $LLVMDir).Path
-    Write-Host "  Usando LLVMDir fornito: $env:LLVM_DIR"
-} elseif ($env:LLVM_DIR -and (Test-Path $env:LLVM_DIR)) {
-    Write-Host "  Usando LLVM_DIR dall'ambiente: $env:LLVM_DIR"
-} elseif (Test-Path $LLVMHome) {
-    $env:LLVM_DIR = $LLVMHome
-    Write-Host "  Trovato llvm-mingw locale: $env:LLVM_DIR"
-} else {
+# Se llvm-mingw non e' presente locale, scaricalo per garantire i compilatori clang/clang++
+if (-not (Test-Path $LLVMHome)) {
     Write-Host "  llvm-mingw non trovato. Download in corso (~300 MB)..."
     $zipPath = "$SVFHome\llvm-mingw.zip"
     Get-FileDownload -Url $LLVMMingwUrl -Dest $zipPath
@@ -118,12 +111,34 @@ if ($LLVMDir -ne "" -and (Test-Path $LLVMDir)) {
     }
     Rename-Item $extracted.FullName $LLVMHome
     Remove-Item $zipPath
-    $env:LLVM_DIR = $LLVMHome
-    Write-Host "  llvm-mingw installato in: $env:LLVM_DIR"
+    Write-Host "  llvm-mingw installato in: $LLVMHome"
+} else {
+    Write-Host "  llvm-mingw locale trovato."
 }
 
-# Aggiungi clang++ al PATH per questa sessione
-$env:PATH = "$env:LLVM_DIR\bin;$env:PATH"
+# Aggiungi llvm-mingw/bin al PATH per assicurare la presenza di clang/clang++
+$env:PATH = "$LLVMHome\bin;$env:PATH"
+
+# ---------------------------------------------------------------------------
+# Risolvi LLVM_DIR (LLVM SDK per CMake)
+# ---------------------------------------------------------------------------
+
+Write-Step "Risoluzione LLVM SDK (LLVM_DIR)"
+
+if ($LLVMDir -ne "" -and (Test-Path $LLVMDir)) {
+    $env:LLVM_DIR = (Resolve-Path $LLVMDir).Path
+    Write-Host "  Usando LLVM SDK fornito: $env:LLVM_DIR"
+} elseif ($env:LLVM_DIR -and (Test-Path $env:LLVM_DIR)) {
+    Write-Host "  Usando LLVM_DIR dall'ambiente: $env:LLVM_DIR"
+} else {
+    $env:LLVM_DIR = $LLVMHome
+    Write-Host "  Usando llvm-mingw come LLVM SDK: $env:LLVM_DIR"
+}
+
+# Aggiungi anche LLVM_DIR\bin al PATH (se diverso da LLVMHome) per DLL/strumenti accessori
+if ($env:LLVM_DIR -ne $LLVMHome) {
+    $env:PATH = "$env:LLVM_DIR\bin;$env:PATH"
+}
 
 # Verifica che clang++ sia disponibile
 Assert-Tool "clang++"
@@ -146,7 +161,7 @@ if ($Z3Dir -ne "" -and (Test-Path $Z3Dir)) {
     Write-Host "  Trovato Z3 locale: $env:Z3_DIR"
 } else {
     Write-Host "  Z3 non trovato. Compilazione da sorgente con llvm-mingw..."
-    Write-Host "  (Il binario Z3 prebuilt per Windows usa l'ABI MSVC — incompatibile con MinGW)"
+    Write-Host "  (Il binario Z3 prebuilt per Windows usa l'ABI MSVC - incompatibile con MinGW)"
 
     Assert-Tool "cmake"
     Assert-Tool "ninja"
@@ -216,7 +231,12 @@ $BuildDir    = Join-Path $SVFHome "$BuildType-build"
 $LLVMCMakeDir = Join-Path $env:LLVM_DIR "lib\cmake\llvm"
 
 if (-not (Test-Path $LLVMCMakeDir)) {
-    throw "LLVMConfig.cmake non trovato in '$LLVMCMakeDir'. Verificare il contenuto di LLVM_DIR."
+    Write-Host "[ERRORE] LLVMConfig.cmake non trovato in '$LLVMCMakeDir'." -ForegroundColor Red
+    Write-Host "Nota: llvm-mingw e' solo la toolchain del compilatore (clang/clang++) e non contiene l'SDK di sviluppo di LLVM." -ForegroundColor Yellow
+    Write-Host "Per risolvere, puoi:" -ForegroundColor Yellow
+    Write-Host "  1. Compilare LLVM da sorgente con RTTI abilitato e passare il percorso con '-LLVMDir <path>'." -ForegroundColor Yellow
+    Write-Host "  2. Utilizzare MSYS2 (consigliato per MinGW) installando il pacchetto 'mingw-w64-clang-x86_64-llvm' ed eseguendo './build.sh'." -ForegroundColor Yellow
+    throw "LLVM SDK non configurato correttamente."
 }
 
 if (Test-Path $BuildDir) { Remove-Item -Recurse -Force $BuildDir }
@@ -229,12 +249,12 @@ Write-Host "  BuildDir:        $BuildDir"
 & cmake -G Ninja `
     -S $SVFHome `
     -B $BuildDir `
-    -DCMAKE_BUILD_TYPE=$BuildType `
-    -DCMAKE_C_COMPILER="$env:LLVM_DIR\bin\clang.exe" `
-    -DCMAKE_CXX_COMPILER="$env:LLVM_DIR\bin\clang++.exe" `
-    -DLLVM_DIR=$LLVMCMakeDir `
+    "-DCMAKE_BUILD_TYPE=$BuildType" `
+    -DCMAKE_C_COMPILER="$LLVMHome\bin\clang.exe" `
+    -DCMAKE_CXX_COMPILER="$LLVMHome\bin\clang++.exe" `
+    "-DLLVM_DIR=$LLVMCMakeDir" `
     -DZ3_DIR="$env:Z3_DIR" `
-    -DBUILD_SHARED_LIBS=$BuildSharedLibs `
+    "-DBUILD_SHARED_LIBS=$BuildSharedLibs" `
     -DSVF_WARN_AS_ERROR=OFF `
     -DSVF_EXPORT_DYNAMIC=OFF
 

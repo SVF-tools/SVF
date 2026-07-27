@@ -41,6 +41,8 @@ param(
     [ValidateSet("ON", "OFF")]
     [string]$BuildSharedLibs = "ON",
 
+    [string]$LLVMDir = "",
+
     [switch]$SkipTools
 )
 
@@ -74,8 +76,12 @@ Write-Step "Verifica execution policy"
 $policy = Get-ExecutionPolicy -Scope CurrentUser
 if ($policy -eq "Restricted" -or $policy -eq "Undefined") {
     Write-Host "  Impostazione RemoteSigned per l'utente corrente..."
-    Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
-    Write-Host "  Execution policy aggiornata." -ForegroundColor Green
+    try {
+        Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force -ErrorAction SilentlyContinue
+        Write-Host "  Execution policy aggiornata." -ForegroundColor Green
+    } catch {
+        Write-Host "  Impossibile aggiornare la policy per l'utente, ma l'esecuzione continua." -ForegroundColor Yellow
+    }
 } else {
     Write-Host "  Execution policy: $policy - OK"
 }
@@ -142,7 +148,14 @@ if (-not (Test-Path $buildScript)) {
     throw "build.ps1 non trovato in $ScriptDir."
 }
 
-& $buildScript -BuildType $BuildType -BuildSharedLibs $BuildSharedLibs
+$buildArgs = @{
+    BuildType = $BuildType
+    BuildSharedLibs = $BuildSharedLibs
+}
+if ($LLVMDir) {
+    $buildArgs["LLVMDir"] = $LLVMDir
+}
+& $buildScript @buildArgs
 
 # ---------------------------------------------------------------------------
 # 5. Riepilogo finale
