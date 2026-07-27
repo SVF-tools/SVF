@@ -30,8 +30,10 @@
 #ifndef POINTERANALYSIS_H_
 #define POINTERANALYSIS_H_
 
-#include <unistd.h>
-#include <signal.h>
+#ifndef _WIN32
+#  include <unistd.h>
+#  include <signal.h>
+#endif
 
 #include "Graphs/CHG.h"
 #include "Graphs/CallGraph.h"

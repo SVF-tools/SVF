@@ -35,7 +35,24 @@
 #include "SVF-LLVM/LLVMModule.h"
 #include "SVF-LLVM/ObjTypeInference.h"
 
+#if defined(_WIN32)
+#include "llvm/Demangle/Demangle.h"
+#include <cstring>
+#include <cstdlib>
+namespace abi {
+static char* __cxa_demangle(const char* name, char*, size_t*, int* status)
+{
+    std::string d = llvm::demangle(name);
+    if (d == name) { if (status) *status = -2; return nullptr; }
+    if (status) *status = 0;
+    char* r = static_cast<char*>(std::malloc(d.size() + 1));
+    std::memcpy(r, d.c_str(), d.size() + 1);
+    return r;
+}
+} // namespace abi
+#else
 #include <cxxabi.h> // for demangling
+#endif
 
 using namespace SVF;
 

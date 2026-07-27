@@ -51,11 +51,13 @@ if(WIN32
    OR MSYS
    OR CYGWIN
 )
-  file(
-    COPY ${SVF_BINARY_DIR}/compile_commands.json
-    DESTINATION ${CMAKE_CURRENT_LIST_DIR}
-    RENAME compile_commands.json
-  )
+  if(EXISTS ${SVF_BINARY_DIR}/compile_commands.json)
+    file(
+      COPY ${SVF_BINARY_DIR}/compile_commands.json
+      DESTINATION ${CMAKE_CURRENT_LIST_DIR}
+      RENAME compile_commands.json
+    )
+  endif()
 else()
   file(CREATE_LINK ${SVF_BINARY_DIR}/compile_commands.json compile_commands.json COPY_ON_ERROR SYMBOLIC)
 endif()
@@ -314,9 +316,9 @@ target_link_options(
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wall>>
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Werror>>
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wno-deprecated-declarations>>
-  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_USE_LLD}>:-fuse-ld=lld>>
-  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-rdynamic>>
-  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-Wl,--export-dynamic>>
+  INTERFACE $<BUILD_INTERFACE:$<$<AND:$<BOOL:${SVF_USE_LLD}>,$<NOT:$<PLATFORM_ID:Windows>>>:-fuse-ld=lld>>
+  INTERFACE $<BUILD_INTERFACE:$<$<AND:$<BOOL:${SVF_EXPORT_DYNAMIC}>,$<NOT:$<PLATFORM_ID:Windows>>>:-rdynamic>>
+  INTERFACE $<BUILD_INTERFACE:$<$<AND:$<BOOL:${SVF_EXPORT_DYNAMIC}>,$<NOT:$<PLATFORM_ID:Windows>>>:-Wl,--export-dynamic>>
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_ENABLE_ASSERTIONS}>:-UNDEBUG>>
   INTERFACE $<BUILD_INTERFACE:$<$<NOT:$<BOOL:${SVF_ENABLE_EXCEPTIONS}>>:-fno-exceptions>>
   INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-fprofile-arcs>>
@@ -330,6 +332,7 @@ target_link_options(
 # =================================================================================
 
 # (1) Generate config.h into <build_tree>/include/SVF/Util; (2) Install it under <install_prefix>/include/SVF/Util
+set(SVF_BUILD_DIR "${SVF_BINARY_DIR}")
 configure_file(${SVF_SOURCE_DIR}/cmake/SVFConfigHdr.cmake.in ${SVF_BINARY_DIR}/include/Util/config.h @ONLY)
 install(FILES ${SVF_BINARY_DIR}/include/Util/config.h DESTINATION ${SVF_INSTALL_INCLUDEDIR}/Util)
 

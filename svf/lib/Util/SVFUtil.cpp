@@ -27,8 +27,10 @@
  *      Author: Yulei Sui
  */
 
+#ifndef _WIN32
 #include <unistd.h>
 #include <signal.h>
+#endif
 
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
@@ -37,7 +39,9 @@
 #include "SVFIR/SVFIR.h"
 #include "SVFIR/SVFVariables.h"
 
+#ifndef _WIN32
 #include <sys/resource.h>		/// increase stack size
+#endif
 
 using namespace SVF;
 
@@ -232,6 +236,7 @@ bool SVFUtil::getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb)
  */
 void SVFUtil::increaseStackSize()
 {
+#ifndef _WIN32
     const rlim_t kStackSize = 256L * 1024L * 1024L;   // min stack size = 256 Mb
     struct rlimit rl;
     int result = getrlimit(RLIMIT_STACK, &rl);
@@ -245,6 +250,7 @@ void SVFUtil::increaseStackSize()
                 writeWrnMsg("setrlimit returned result !=0 \n");
         }
     }
+#endif
 }
 
 
@@ -280,6 +286,7 @@ void SVFUtil::timeLimitReached(int)
 
 bool SVFUtil::startAnalysisLimitTimer(unsigned timeLimit)
 {
+#ifndef _WIN32
     if (timeLimit == 0) return false;
 
     // If an alarm is already set, don't set another. That means this analysis
@@ -295,13 +302,21 @@ bool SVFUtil::startAnalysisLimitTimer(unsigned timeLimit)
     signal(SIGALRM, &timeLimitReached);
     alarm(timeLimit);
     return true;
+#else
+    (void)timeLimit;
+    return false;
+#endif
 }
 
 /// Stops an analysis timer. limitTimerSet indicates whether the caller set the
 /// timer or not (return value of startLimitTimer).
 void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
 {
+#ifndef _WIN32
     if (limitTimerSet) alarm(0);
+#else
+    (void)limitTimerSet;
+#endif
 }
 
 /// Match arguments for callsite at caller and callee

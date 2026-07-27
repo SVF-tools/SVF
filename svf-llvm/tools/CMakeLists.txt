@@ -22,6 +22,18 @@ foreach(_tool IN LISTS ALL_TOOLS)
   # Link the SvfLLVM library against SVF's core & LLVM libraries
   target_link_libraries(${_tool} PRIVATE SvfCore SvfLLVM)
 
+  # On Windows, increaseStackSize() is a no-op (RLIMIT_STACK not available).
+  # Set the PE stack reserve to 256 MB at link time to match Linux behaviour.
+  if(WIN32)
+    if(MSVC)
+      # clang-cl and cl.exe both accept MSVC linker syntax
+      target_link_options(${_tool} PRIVATE /STACK:268435456)
+    else()
+      # MinGW (clang++ or g++) uses GNU linker syntax
+      target_link_options(${_tool} PRIVATE -Wl,--stack,268435456)
+    endif()
+  endif()
+
   # Ensure that the build artifacts are placed into lib/bin/include relative to the top of the build directory
   set_target_properties(
     ${_tool}
