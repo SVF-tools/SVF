@@ -56,7 +56,6 @@ if(WIN32
     file(
       COPY ${SVF_BINARY_DIR}/compile_commands.json
       DESTINATION ${CMAKE_CURRENT_LIST_DIR}
-      RENAME compile_commands.json
     )
   endif()
 else()

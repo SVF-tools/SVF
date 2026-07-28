@@ -1,31 +1,31 @@
 <#
 .SYNOPSIS
-    Setup completo di SVF su Windows — installa le dipendenze e lancia la build.
+    Complete SVF setup on Windows — installs dependencies and runs the build.
 
 .DESCRIPTION
-    Script all-in-one basato su llvm-mingw (Clang + MinGW/UCRT).
-    Non richiede Visual Studio ne' MSYS2.
+    All-in-one script based on llvm-mingw (Clang + MinGW/UCRT).
+    Does not require Visual Studio or MSYS2.
 
-    Passi eseguiti:
-      1. Verifica winget
-      2. Installa CMake (se assente)
-      3. Installa Ninja (se assente)
-      4. Lancia build.ps1 che scarica llvm-mingw, compila Z3 e compila SVF
+    Steps performed:
+      1. Verify winget
+      2. Install CMake (if missing)
+      3. Install Ninja (if missing)
+      4. Run build.ps1 to download llvm-mingw, compile Z3, and build SVF
 
-    Tempo stimato prima esecuzione: 15-30 minuti
+    Estimated first run time: 15-30 minutes
       - llvm-mingw download: ~300 MB
-      - Z3 compilazione da sorgente: ~5 minuti
-      - SVF compilazione: ~5-10 minuti
+      - Z3 compilation from source: ~5 minutes
+      - SVF compilation: ~5-10 minutes
 
 .PARAMETER BuildType
-    Release (default) o Debug.
+    Release (default) or Debug.
 
 .PARAMETER BuildSharedLibs
-    ON (default) per DLL con RTTI, OFF per librerie statiche.
-    llvm-mingw compila LLVM con RTTI abilitato, quindi ON funziona.
+    ON (default) for DLL with RTTI, OFF for static libraries.
+    llvm-mingw compiles LLVM with RTTI enabled, so ON works.
 
 .PARAMETER SkipTools
-    Salta l'installazione di CMake e Ninja (se gia' nel PATH).
+    Skip CMake and Ninja installation (if already in PATH).
 
 .EXAMPLE
     .\setup-windows.ps1
@@ -39,7 +39,7 @@ param(
     [string]$BuildType = "Release",
 
     [ValidateSet("ON", "OFF")]
-    [string]$BuildSharedLibs = "ON",
+    [string]$BuildSharedLibs = "OFF",
 
     [string]$LLVMDir = "",
 
@@ -58,13 +58,13 @@ function Write-Step {
 }
 
 # ---------------------------------------------------------------------------
-# 1. Verifica winget
+# 1. Verify winget
 # ---------------------------------------------------------------------------
 
-Write-Step "Verifica prerequisiti di sistema"
+Write-Step "Verifying system prerequisites"
 
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-    throw "winget non trovato. Aggiornare Windows o installare 'App Installer' dal Microsoft Store."
+    throw "winget not found. Update Windows or install 'App Installer' from the Microsoft Store."
 }
 Write-Host "  winget: OK"
 
@@ -72,72 +72,72 @@ Write-Host "  winget: OK"
 # 2. Execution policy
 # ---------------------------------------------------------------------------
 
-Write-Step "Verifica execution policy"
+Write-Step "Verifying execution policy"
 $policy = Get-ExecutionPolicy -Scope CurrentUser
 if ($policy -eq "Restricted" -or $policy -eq "Undefined") {
-    Write-Host "  Impostazione RemoteSigned per l'utente corrente..."
+    Write-Host "  Setting RemoteSigned execution policy for current user..."
     try {
         Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force -ErrorAction SilentlyContinue
-        Write-Host "  Execution policy aggiornata." -ForegroundColor Green
+        Write-Host "  Execution policy updated." -ForegroundColor Green
     } catch {
-        Write-Host "  Impossibile aggiornare la policy per l'utente, ma l'esecuzione continua." -ForegroundColor Yellow
+        Write-Host "  Failed to update execution policy for current user, but execution continues." -ForegroundColor Yellow
     }
 } else {
     Write-Host "  Execution policy: $policy - OK"
 }
 
 # ---------------------------------------------------------------------------
-# 3. CMake e Ninja
+# 3. CMake and Ninja
 # ---------------------------------------------------------------------------
 
 if (-not $SkipTools) {
-    Write-Step "Controllo CMake"
+    Write-Step "Checking CMake"
 
     if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) {
-        Write-Host "  CMake non trovato. Installazione con winget..."
+        Write-Host "  CMake not found. Installing with winget..."
         winget install --id Kitware.CMake --exact --silent `
             --accept-package-agreements --accept-source-agreements
-        # Ricarica PATH nella sessione
+        # Reload PATH in session
         $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" +
                     [System.Environment]::GetEnvironmentVariable("PATH", "User")
         if (Get-Command cmake -ErrorAction SilentlyContinue) {
-            Write-Host "  CMake installato: OK" -ForegroundColor Green
+            Write-Host "  CMake installed: OK" -ForegroundColor Green
         } else {
-            Write-Host "  CMake installato ma non ancora nel PATH." -ForegroundColor Yellow
-            Write-Host "  Riavviare PowerShell e rieseguire lo script se il build fallisce." -ForegroundColor Yellow
+            Write-Host "  CMake installed but not yet in PATH." -ForegroundColor Yellow
+            Write-Host "  Restart PowerShell and rerun the script if the build fails." -ForegroundColor Yellow
         }
     } else {
         $v = cmake --version | Select-Object -First 1
-        Write-Host "  CMake gia' presente: $v"
+        Write-Host "  CMake already present: $v"
     }
 
-    Write-Step "Controllo Ninja"
+    Write-Step "Checking Ninja"
 
     if (-not (Get-Command ninja -ErrorAction SilentlyContinue)) {
-        Write-Host "  Ninja non trovato. Installazione con winget..."
+        Write-Host "  Ninja not found. Installing with winget..."
         winget install --id Ninja-build.Ninja --exact --silent `
             --accept-package-agreements --accept-source-agreements
         $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" +
                     [System.Environment]::GetEnvironmentVariable("PATH", "User")
         if (Get-Command ninja -ErrorAction SilentlyContinue) {
-            Write-Host "  Ninja installato: OK" -ForegroundColor Green
+            Write-Host "  Ninja installed: OK" -ForegroundColor Green
         } else {
-            Write-Host "  Ninja installato ma non ancora nel PATH." -ForegroundColor Yellow
-            Write-Host "  Riavviare PowerShell e rieseguire lo script se il build fallisce." -ForegroundColor Yellow
+            Write-Host "  Ninja installed but not yet in PATH." -ForegroundColor Yellow
+            Write-Host "  Restart PowerShell and rerun the script if the build fails." -ForegroundColor Yellow
         }
     } else {
         $v = ninja --version
-        Write-Host "  Ninja gia' presente: $v"
+        Write-Host "  Ninja already present: $v"
     }
 } else {
-    Write-Host "  [SkipTools] Controllo CMake/Ninja saltato."
+    Write-Host "  [SkipTools] Skipping CMake/Ninja check."
 }
 
 # ---------------------------------------------------------------------------
-# 4. Build SVF (llvm-mingw + Z3 da sorgente + SVF)
+# 4. Build SVF (llvm-mingw + Z3 from source + SVF)
 # ---------------------------------------------------------------------------
 
-Write-Step "Avvio build SVF"
+Write-Step "Starting SVF build"
 Write-Host "  BuildType:       $BuildType"
 Write-Host "  BuildSharedLibs: $BuildSharedLibs"
 Write-Host "  Toolchain:       llvm-mingw (clang++, no VS Build Tools, no MSYS2)"
@@ -145,7 +145,7 @@ Write-Host ""
 
 $buildScript = Join-Path $ScriptDir "build.ps1"
 if (-not (Test-Path $buildScript)) {
-    throw "build.ps1 non trovato in $ScriptDir."
+    throw "build.ps1 not found in $ScriptDir."
 }
 
 $buildArgs = @{
@@ -158,20 +158,20 @@ if ($LLVMDir) {
 & $buildScript @buildArgs
 
 # ---------------------------------------------------------------------------
-# 5. Riepilogo finale
+# 5. Final summary
 # ---------------------------------------------------------------------------
 
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor Green
-Write-Host " Setup completato."                                           -ForegroundColor Green
+Write-Host " Setup completed."                                           -ForegroundColor Green
 Write-Host ""
-Write-Host " Per usare SVF nella sessione corrente:"                      -ForegroundColor White
+Write-Host " To use SVF in the current session:"                      -ForegroundColor White
 Write-Host "   . .\setup.ps1"                                             -ForegroundColor Yellow
 Write-Host ""
 Write-Host " Smoke test:"                                                  -ForegroundColor White
 Write-Host "   wpa --help"                                                 -ForegroundColor Yellow
 Write-Host ""
-Write-Host " Test con bitcode:"                                            -ForegroundColor White
+Write-Host " Test with bitcode:"                                            -ForegroundColor White
 Write-Host "   clang -emit-llvm -c test.c -o test.bc"                     -ForegroundColor Yellow
 Write-Host "   wpa -ander -stat=false test.bc"                            -ForegroundColor Yellow
 Write-Host "============================================================" -ForegroundColor Green

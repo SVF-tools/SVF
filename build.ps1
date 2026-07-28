@@ -1,32 +1,32 @@
 <#
 .SYNOPSIS
-    Compila SVF su Windows usando llvm-mingw (clang++ con runtime MinGW/UCRT).
+    Builds SVF on Windows using llvm-mingw (clang++ with MinGW/UCRT runtime).
 
 .DESCRIPTION
     Toolchain: llvm-mingw (clang++ + lld + libc++ + UCRT).
-    Non richiede Visual Studio ne' MSYS2.
+    Does not require Visual Studio or MSYS2.
 
-    LLVM_DIR punta alla root di llvm-mingw, che contiene sia il compilatore
-    (bin/clang++.exe) sia i file CMake di LLVM (lib/cmake/llvm/LLVMConfig.cmake).
+    LLVM_DIR points to the root of llvm-mingw, which contains both the compiler
+    (bin/clang++.exe) and the LLVM CMake files (lib/cmake/llvm/LLVMConfig.cmake).
 
-    Z3 viene compilato da sorgente con la stessa toolchain per garantire
-    compatibilita' ABI. Se Z3_DIR e' gia' presente, il passo viene saltato.
+    Z3 is compiled from source with the same toolchain to ensure
+    ABI compatibility. If Z3_DIR is already present, the step is skipped.
 
 .PARAMETER BuildType
-    Release (default) o Debug.
+    Release (default) or Debug.
 
 .PARAMETER BuildSharedLibs
-    ON (default) per DLL, OFF per librerie statiche.
-    llvm-mingw include RTTI, quindi ON funziona.
+    ON (default) for DLL, OFF for static libraries.
+    llvm-mingw includes RTTI, so ON works.
 
 .PARAMETER LLVMDir
-    Path a llvm-mingw. Default: .\llvm-mingw.obj
+    Path to llvm-mingw. Default: .\llvm-mingw.obj
 
 .PARAMETER Z3Dir
-    Path a Z3 precompilato (layout: include/, lib/). Default: .\z3.obj
+    Path to precompiled Z3 (layout: include/, lib/). Default: .\z3.obj
 
 .PARAMETER Jobs
-    Numero di job paralleli. Default: numero di CPU logiche.
+    Number of parallel jobs. Default: number of logical CPUs.
 
 .EXAMPLE
     .\build.ps1
@@ -40,7 +40,7 @@ param(
     [string]$BuildType = "Release",
 
     [ValidateSet("ON", "OFF")]
-    [string]$BuildSharedLibs = "ON",
+    [string]$BuildSharedLibs = "OFF",
 
     [string]$LLVMDir = "",
     [string]$Z3Dir   = "",
@@ -55,34 +55,71 @@ $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SVFHome    = $ScriptDir
 
 # llvm-mingw release: https://github.com/mstorsjo/llvm-mingw/releases
-# Usiamo la versione UCRT x86_64 (toolchain moderna, Windows 10+).
-$LLVMMingwVer  = "20250114"
+# We use the UCRT x86_64 version (modern toolchain, Windows 10+).
+$LLVMMingwVer  = "20260616"
 $LLVMMingwName = "llvm-mingw-${LLVMMingwVer}-ucrt-x86_64"
 $LLVMMingwUrl  = "https://github.com/mstorsjo/llvm-mingw/releases/download/${LLVMMingwVer}/${LLVMMingwName}.zip"
 $LLVMHome      = Join-Path $SVFHome "llvm-mingw.obj"
+$LLVMSdkHome   = Join-Path $SVFHome "llvm-sdk.obj"
+$LLVMSdkUrl    = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-llvm-22.1.8-1-any.pkg.tar.zst"
+$LLVMLibsUrl   = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-llvm-libs-22.1.8-1-any.pkg.tar.zst"
+$LLVMToolsUrl  = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-llvm-tools-22.1.8-1-any.pkg.tar.zst"
+$LibffiUrl     = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-libffi-3.5.2-1-any.pkg.tar.zst"
+$Libxml2Url    = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-libxml2-2.15.3-1-any.pkg.tar.zst"
+$ZstdUrl       = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-zstd-1.5.7-2-any.pkg.tar.zst"
+$ZlibUrl       = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-zlib-1.3.2-2-any.pkg.tar.zst"
+$LibiconvUrl   = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-libiconv-1.19-1-any.pkg.tar.zst"
+$LibcxxUrl     = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-libc%2b%2b-22.1.8-1-any.pkg.tar.zst"
+$LibunwindUrl  = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-libunwind-22.1.8-1-any.pkg.tar.zst"
 
 $Z3Ver    = "4.15.4"
 $Z3SrcUrl = "https://github.com/Z3Prover/z3/archive/refs/tags/z3-${Z3Ver}.zip"
 $Z3Home   = Join-Path $SVFHome "z3.obj"
 
 # ---------------------------------------------------------------------------
-# Funzioni di supporto
+# Helper functions
 # ---------------------------------------------------------------------------
 
 function Get-FileDownload {
     param([string]$Url, [string]$Dest)
     if (Test-Path $Dest) {
-        Write-Host "  Gia' presente: $Dest"
-        return
+        if ((Get-Item $Dest).Length -gt 1000) {
+            Write-Host "  Already present: $Dest"
+            return
+        } else {
+            Remove-Item $Dest -ErrorAction SilentlyContinue
+        }
     }
-    Write-Host "  Download: $Url"
-    Invoke-WebRequest -Uri $Url -OutFile $Dest -UseBasicParsing
+    
+    $maxAttempts = 3
+    $attempt = 1
+    $success = $false
+    
+    while ($attempt -le $maxAttempts -and -not $success) {
+        try {
+            Write-Host "  Downloading: $Url (Attempt $attempt of $maxAttempts)..."
+            Invoke-WebRequest -Uri $Url -OutFile $Dest -UseBasicParsing -TimeoutSec 180
+            $success = $true
+        } catch {
+            Write-Host "  Attempt $attempt failed: $_" -ForegroundColor Yellow
+            if (Test-Path $Dest) { Remove-Item $Dest -Force -ErrorAction SilentlyContinue }
+            $attempt++
+            if ($attempt -le $maxAttempts) {
+                Write-Host "  Waiting 5 seconds before the next attempt..."
+                Start-Sleep -Seconds 5
+            }
+        }
+    }
+    
+    if (-not $success) {
+        throw "Download failed after $maxAttempts attempts for URL: $Url"
+    }
 }
 
 function Assert-Tool {
     param([string]$Name)
     if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
-        throw "Strumento non trovato nel PATH: '$Name'. Verificare i prerequisiti (cmake, ninja)."
+        throw "Tool not found in PATH: '$Name'. Verify prerequisites (cmake, ninja)."
     }
 }
 
@@ -93,75 +130,121 @@ function Write-Step {
 }
 
 # ---------------------------------------------------------------------------
-# Risolvi compilatore e toolchain (llvm-mingw)
+# Resolve compiler and toolchain (llvm-mingw)
 # ---------------------------------------------------------------------------
 
-Write-Step "Risoluzione Toolchain del Compilatore"
+Write-Step "Resolving Compiler Toolchain"
 
-# Se llvm-mingw non e' presente locale, scaricalo per garantire i compilatori clang/clang++
+# If llvm-mingw is not present locally, download it to ensure clang/clang++ compilers are available
 if (-not (Test-Path $LLVMHome)) {
-    Write-Host "  llvm-mingw non trovato. Download in corso (~300 MB)..."
+    Write-Host "  llvm-mingw not found. Downloading (~300 MB)..."
     $zipPath = "$SVFHome\llvm-mingw.zip"
     Get-FileDownload -Url $LLVMMingwUrl -Dest $zipPath
-    Write-Host "  Estrazione llvm-mingw..."
+    Write-Host "  Extracting llvm-mingw..."
     Expand-Archive -Path $zipPath -DestinationPath $SVFHome -Force
     $extracted = Get-Item "$SVFHome\$LLVMMingwName" -ErrorAction SilentlyContinue
     if (-not $extracted) {
-        throw "Estrazione llvm-mingw fallita: directory '$LLVMMingwName' non trovata in $SVFHome"
+        throw "llvm-mingw extraction failed: directory '$LLVMMingwName' not found in $SVFHome"
     }
     Rename-Item $extracted.FullName $LLVMHome
     Remove-Item $zipPath
-    Write-Host "  llvm-mingw installato in: $LLVMHome"
+    Write-Host "  llvm-mingw installed in: $LLVMHome"
 } else {
-    Write-Host "  llvm-mingw locale trovato."
+    Write-Host "  Local llvm-mingw found."
 }
 
-# Aggiungi llvm-mingw/bin al PATH per assicurare la presenza di clang/clang++
+# Add llvm-mingw/bin to PATH to ensure clang/clang++ are available
 $env:PATH = "$LLVMHome\bin;$env:PATH"
 
 # ---------------------------------------------------------------------------
-# Risolvi LLVM_DIR (LLVM SDK per CMake)
+# Resolve LLVM_DIR (LLVM SDK for CMake)
 # ---------------------------------------------------------------------------
 
-Write-Step "Risoluzione LLVM SDK (LLVM_DIR)"
+Write-Step "Resolving LLVM SDK (LLVM_DIR)"
 
 if ($LLVMDir -ne "" -and (Test-Path $LLVMDir)) {
     $env:LLVM_DIR = (Resolve-Path $LLVMDir).Path
-    Write-Host "  Usando LLVM SDK fornito: $env:LLVM_DIR"
+    Write-Host "  Using provided LLVM SDK: $env:LLVM_DIR"
 } elseif ($env:LLVM_DIR -and (Test-Path $env:LLVM_DIR)) {
-    Write-Host "  Usando LLVM_DIR dall'ambiente: $env:LLVM_DIR"
+    Write-Host "  Using LLVM_DIR from environment: $env:LLVM_DIR"
 } else {
-    $env:LLVM_DIR = $LLVMHome
-    Write-Host "  Usando llvm-mingw come LLVM SDK: $env:LLVM_DIR"
+    $LLVMSdkDir = Join-Path $LLVMSdkHome "clang64"
+    if (-not (Test-Path $LLVMSdkDir)) {
+        Write-Host "  LLVM SDK not found. Automatic download in progress (~80 MB)..."
+        New-Item -ItemType Directory -Force -Path $LLVMSdkHome | Out-Null
+        
+        # Download LLVM SDK
+        $sdkPkgPath = "$SVFHome\llvm-sdk.pkg.tar.zst"
+        Get-FileDownload -Url $LLVMSdkUrl -Dest $sdkPkgPath
+        Write-Host "  Extracting LLVM SDK (tar)..."
+        & tar -xf $sdkPkgPath -C $LLVMSdkHome
+        Remove-Item $sdkPkgPath
+        
+        # Download LLVM Libs (contains libLTO.dll, etc.)
+        $libsPkgPath = "$SVFHome\llvm-libs.pkg.tar.zst"
+        Get-FileDownload -Url $LLVMLibsUrl -Dest $libsPkgPath
+        Write-Host "  Extracting LLVM Libs (tar)..."
+        & tar -xf $libsPkgPath -C $LLVMSdkHome
+        Remove-Item $libsPkgPath
+        
+        # Download LLVM Tools (contains libLTO.dll.a, etc.)
+        $toolsPkgPath = "$SVFHome\llvm-tools.pkg.tar.zst"
+        Get-FileDownload -Url $LLVMToolsUrl -Dest $toolsPkgPath
+        Write-Host "  Extracting LLVM Tools (tar)..."
+        & tar -xf $toolsPkgPath -C $LLVMSdkHome
+        Remove-Item $toolsPkgPath
+        
+        # Download DLL dependency packages for LLVM 22
+        $deps = @(
+            @{ Name = "libffi"; Url = $LibffiUrl; File = "libffi.pkg.tar.zst" }
+            @{ Name = "libxml2"; Url = $Libxml2Url; File = "libxml2.pkg.tar.zst" }
+            @{ Name = "zstd"; Url = $ZstdUrl; File = "zstd.pkg.tar.zst" }
+            @{ Name = "zlib"; Url = $ZlibUrl; File = "zlib.pkg.tar.zst" }
+            @{ Name = "libiconv"; Url = $LibiconvUrl; File = "libiconv.pkg.tar.zst" }
+            @{ Name = "libc++"; Url = $LibcxxUrl; File = "libcxx.pkg.tar.zst" }
+            @{ Name = "libunwind"; Url = $LibunwindUrl; File = "libunwind.pkg.tar.zst" }
+        )
+        foreach ($dep in $deps) {
+            $depPath = Join-Path $SVFHome $dep.File
+            Get-FileDownload -Url $dep.Url -Dest $depPath
+            Write-Host "  Extracting $($dep.Name) (tar)..."
+            & tar -xf $depPath -C $LLVMSdkHome
+            Remove-Item $depPath
+        }
+        
+        Write-Host "  LLVM SDK installed in: $LLVMSdkDir" -ForegroundColor Green
+    }
+    $env:LLVM_DIR = $LLVMSdkDir
+    Write-Host "  Using local LLVM SDK: $env:LLVM_DIR"
 }
 
-# Aggiungi anche LLVM_DIR\bin al PATH (se diverso da LLVMHome) per DLL/strumenti accessori
+# Add LLVM_DIR\bin to PATH (if different from LLVMHome) for DLLs/accessory tools
 if ($env:LLVM_DIR -ne $LLVMHome) {
     $env:PATH = "$env:LLVM_DIR\bin;$env:PATH"
 }
 
-# Verifica che clang++ sia disponibile
+# Verify that clang++ is available
 Assert-Tool "clang++"
 $clangVer = & clang++ --version | Select-Object -First 1
 Write-Host "  Compiler: $clangVer"
 
 # ---------------------------------------------------------------------------
-# Risolvi Z3_DIR (compilazione da sorgente con llvm-mingw)
+# Resolve Z3_DIR (compiling from source with llvm-mingw)
 # ---------------------------------------------------------------------------
 
-Write-Step "Risoluzione Z3_DIR"
+Write-Step "Resolving Z3_DIR"
 
 if ($Z3Dir -ne "" -and (Test-Path $Z3Dir)) {
     $env:Z3_DIR = (Resolve-Path $Z3Dir).Path
-    Write-Host "  Usando Z3Dir fornito: $env:Z3_DIR"
+    Write-Host "  Using provided Z3Dir: $env:Z3_DIR"
 } elseif ($env:Z3_DIR -and (Test-Path $env:Z3_DIR)) {
-    Write-Host "  Usando Z3_DIR dall'ambiente: $env:Z3_DIR"
+    Write-Host "  Using Z3_DIR from environment: $env:Z3_DIR"
 } elseif (Test-Path $Z3Home) {
     $env:Z3_DIR = $Z3Home
-    Write-Host "  Trovato Z3 locale: $env:Z3_DIR"
+    Write-Host "  Found local Z3: $env:Z3_DIR"
 } else {
-    Write-Host "  Z3 non trovato. Compilazione da sorgente con llvm-mingw..."
-    Write-Host "  (Il binario Z3 prebuilt per Windows usa l'ABI MSVC - incompatibile con MinGW)"
+    Write-Host "  Z3 not found. Compiling from source with llvm-mingw..."
+    Write-Host "  (The prebuilt Z3 binary for Windows uses the MSVC ABI - incompatible with MinGW)"
 
     Assert-Tool "cmake"
     Assert-Tool "ninja"
@@ -171,14 +254,14 @@ if ($Z3Dir -ne "" -and (Test-Path $Z3Dir)) {
     $z3BuildDir = "$SVFHome\z3-build"
 
     Get-FileDownload -Url $Z3SrcUrl -Dest $z3ZipPath
-    Write-Host "  Estrazione sorgenti Z3..."
+    Write-Host "  Extracting Z3 sources..."
     if (Test-Path $z3SrcDir) { Remove-Item -Recurse -Force $z3SrcDir }
     Expand-Archive -Path $z3ZipPath -DestinationPath $SVFHome -Force
-    # Il nome interno e' z3-z3-4.8.8
+    # The internal folder name is z3-z3-4.8.8 (or z3-z3-<version>)
     $z3ExtractedName = "z3-z3-${Z3Ver}"
     Rename-Item "$SVFHome\$z3ExtractedName" $z3SrcDir
 
-    Write-Host "  Configurazione CMake per Z3..."
+    Write-Host "  CMake configuration for Z3..."
     New-Item -ItemType Directory -Force -Path $z3BuildDir | Out-Null
     & cmake -G Ninja `
         -S $z3SrcDir `
@@ -190,19 +273,19 @@ if ($Z3Dir -ne "" -and (Test-Path $Z3Dir)) {
         -DZ3_BUILD_LIBZ3_SHARED=OFF `
         -DZ3_BUILD_EXECUTABLE=OFF `
         -DZ3_BUILD_TEST_EXECUTABLES=OFF
-    if ($LASTEXITCODE -ne 0) { throw "CMake configure Z3 fallito." }
+    if ($LASTEXITCODE -ne 0) { throw "CMake configuration for Z3 failed." }
 
-    Write-Host "  Build Z3 (libreria statica)..."
+    Write-Host "  Building Z3 (static library)..."
     & cmake --build $z3BuildDir --parallel $Jobs
-    if ($LASTEXITCODE -ne 0) { throw "Build Z3 fallita." }
+    if ($LASTEXITCODE -ne 0) { throw "Build Z3 failed." }
 
-    Write-Host "  Installazione Z3 in $Z3Home..."
+    Write-Host "  Installing Z3 in $Z3Home..."
     & cmake --install $z3BuildDir
-    if ($LASTEXITCODE -ne 0) { throw "Installazione Z3 fallita." }
+    if ($LASTEXITCODE -ne 0) { throw "Z3 installation failed." }
 
     Remove-Item -Recurse -Force $z3SrcDir, $z3BuildDir, $z3ZipPath
     $env:Z3_DIR = $Z3Home
-    Write-Host "  Z3 installato in: $env:Z3_DIR" -ForegroundColor Green
+    Write-Host "  Z3 installed in: $env:Z3_DIR" -ForegroundColor Green
 }
 
 Write-Host ""
@@ -210,10 +293,10 @@ Write-Host "  LLVM_DIR = $env:LLVM_DIR"
 Write-Host "  Z3_DIR   = $env:Z3_DIR"
 
 # ---------------------------------------------------------------------------
-# Verifica strumenti di build
+# Verify build tools
 # ---------------------------------------------------------------------------
 
-Write-Step "Verifica strumenti di build"
+Write-Step "Verifying build tools"
 Assert-Tool "cmake"
 Assert-Tool "ninja"
 $cmakeVer = cmake --version | Select-Object -First 1
@@ -222,21 +305,21 @@ Write-Host "  cmake: $cmakeVer"
 Write-Host "  ninja: $ninjaVer"
 
 # ---------------------------------------------------------------------------
-# CMake configure e build SVF
+# CMake configure and build SVF
 # ---------------------------------------------------------------------------
 
-Write-Step "Configurazione e build SVF"
+Write-Step "Configuring and building SVF"
 
 $BuildDir    = Join-Path $SVFHome "$BuildType-build"
 $LLVMCMakeDir = Join-Path $env:LLVM_DIR "lib\cmake\llvm"
 
 if (-not (Test-Path $LLVMCMakeDir)) {
-    Write-Host "[ERRORE] LLVMConfig.cmake non trovato in '$LLVMCMakeDir'." -ForegroundColor Red
-    Write-Host "Nota: llvm-mingw e' solo la toolchain del compilatore (clang/clang++) e non contiene l'SDK di sviluppo di LLVM." -ForegroundColor Yellow
-    Write-Host "Per risolvere, puoi:" -ForegroundColor Yellow
-    Write-Host "  1. Compilare LLVM da sorgente con RTTI abilitato e passare il percorso con '-LLVMDir <path>'." -ForegroundColor Yellow
-    Write-Host "  2. Utilizzare MSYS2 (consigliato per MinGW) installando il pacchetto 'mingw-w64-clang-x86_64-llvm' ed eseguendo './build.sh'." -ForegroundColor Yellow
-    throw "LLVM SDK non configurato correttamente."
+    Write-Host "[ERROR] LLVMConfig.cmake not found in '$LLVMCMakeDir'." -ForegroundColor Red
+    Write-Host "Note: llvm-mingw is only the compiler toolchain (clang/clang++) and does not contain the LLVM development SDK." -ForegroundColor Yellow
+    Write-Host "To resolve this, you can:" -ForegroundColor Yellow
+    Write-Host "  1. Compile LLVM from source with RTTI enabled and pass the path with '-LLVMDir <path>'." -ForegroundColor Yellow
+    Write-Host "  2. Use MSYS2 (recommended for MinGW) by installing the 'mingw-w64-clang-x86_64-llvm' package and running './build.sh'." -ForegroundColor Yellow
+    throw "LLVM SDK not configured correctly."
 }
 
 if (Test-Path $BuildDir) { Remove-Item -Recurse -Force $BuildDir }
@@ -258,12 +341,12 @@ Write-Host "  BuildDir:        $BuildDir"
     -DSVF_WARN_AS_ERROR=OFF `
     -DSVF_EXPORT_DYNAMIC=OFF
 
-if ($LASTEXITCODE -ne 0) { throw "CMake configure SVF fallito." }
+if ($LASTEXITCODE -ne 0) { throw "CMake configure SVF failed." }
 
 & cmake --build $BuildDir --parallel $Jobs
 
-if ($LASTEXITCODE -ne 0) { throw "Build SVF fallita." }
+if ($LASTEXITCODE -ne 0) { throw "Build SVF failed." }
 
 Write-Host ""
-Write-Host "Build completata in: $BuildDir" -ForegroundColor Green
-Write-Host "Eseguire '. .\setup.ps1' per configurare l'ambiente."
+Write-Host "Build completed in: $BuildDir" -ForegroundColor Green
+Write-Host "Run '. .\setup.ps1' to configure the environment."

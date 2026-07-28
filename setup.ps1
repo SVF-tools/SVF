@@ -1,17 +1,17 @@
 <#
 .SYNOPSIS
-    Configura il PATH per usare SVF compilato su Windows con llvm-mingw.
+    Configures the PATH to use SVF compiled on Windows with llvm-mingw.
 
 .PARAMETER BuildType
-    Release (default) o Debug.
+    Release (default) or Debug.
 
 .EXAMPLE
-    . .\setup.ps1           # dot-source obbligatorio per modificare il PATH
+    . .\setup.ps1           # dot-source required to modify the PATH
     . .\setup.ps1 Debug
 
 .NOTES
-    Usare sempre il dot-source (. .\setup.ps1), altrimenti le variabili
-    d'ambiente vengono impostate in un sotto-processo e poi perse.
+    Always use dot-sourcing (. .\setup.ps1), otherwise environment variables
+    will be set in a sub-process and then lost.
 #>
 
 param(
@@ -23,25 +23,28 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $BuildDir  = Join-Path $ScriptDir "$BuildType-build"
 
 if (-not (Test-Path $BuildDir)) {
-    Write-Error "Directory di build non trovata: $BuildDir. Eseguire prima build.ps1."
+    Write-Error "Build directory not found: $BuildDir. Run build.ps1 first."
     return
 }
 
-# Risolvi LLVM_DIR (llvm-mingw) e Z3_DIR — stessa logica di build.ps1
+# Resolve LLVM_DIR (llvm-mingw) and Z3_DIR — same logic as build.ps1
 $LLVMHome = Join-Path $ScriptDir "llvm-mingw.obj"
+$LLVMSdk  = Join-Path $ScriptDir "llvm-sdk.obj\clang64"
 $Z3Home   = Join-Path $ScriptDir "z3.obj"
 
-if (-not $env:LLVM_DIR) {
-    if (Test-Path $LLVMHome) { $env:LLVM_DIR = $LLVMHome }
+if (Test-Path $LLVMSdk) {
+    $env:LLVM_DIR = $LLVMSdk
+} elseif (Test-Path $LLVMHome) {
+    $env:LLVM_DIR = $LLVMHome
 }
 if (-not $env:Z3_DIR) {
     if (Test-Path $Z3Home) { $env:Z3_DIR = $Z3Home }
 }
 
-# Su Windows le DLL devono stare nel PATH (non LD_LIBRARY_PATH).
-# llvm-mingw mette sia clang++ sia le DLL LLVM in bin/.
+# On Windows, DLLs must be in the PATH (not LD_LIBRARY_PATH).
 $additions = @()
 if ($env:LLVM_DIR) { $additions += "$env:LLVM_DIR\bin" }
+if (Test-Path $LLVMHome) { $additions += "$LLVMHome\bin" }
 if ($env:Z3_DIR)   { $additions += "$env:Z3_DIR\bin"; $additions += "$env:Z3_DIR\lib" }
 $additions += "$BuildDir\bin"
 $additions += "$BuildDir\lib"
@@ -57,4 +60,4 @@ $env:SVF_DIR = $ScriptDir
 Write-Host "SVF_DIR  = $env:SVF_DIR"
 Write-Host "LLVM_DIR = $env:LLVM_DIR"
 Write-Host "Z3_DIR   = $env:Z3_DIR"
-Write-Host "PATH aggiornato. Ora puoi usare: wpa, dvf, saber, ae, ..."
+Write-Host "PATH updated. Now you can use: wpa, dvf, saber, ae, ..."
