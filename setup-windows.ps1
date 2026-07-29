@@ -43,6 +43,9 @@ param(
 
     [string]$LLVMDir = "",
 
+    [ValidateSet("mingw", "msvc")]
+    [string]$Compiler = "mingw",
+
     [switch]$SkipTools
 )
 
@@ -134,13 +137,13 @@ if (-not $SkipTools) {
 }
 
 # ---------------------------------------------------------------------------
-# 4. Build SVF (llvm-mingw + Z3 from source + SVF)
+# 4. Build SVF (Local LLVM + Clang SDK + Z3 from source + SVF)
 # ---------------------------------------------------------------------------
 
 Write-Step "Starting SVF build"
 Write-Host "  BuildType:       $BuildType"
 Write-Host "  BuildSharedLibs: $BuildSharedLibs"
-Write-Host "  Toolchain:       llvm-mingw (clang++, no VS Build Tools, no MSYS2)"
+Write-Host "  Toolchain:       Local LLVM + Clang SDK (clang++, no VS Build Tools, no local MSYS2 install)"
 Write-Host ""
 
 $buildScript = Join-Path $ScriptDir "build.ps1"
@@ -151,6 +154,7 @@ if (-not (Test-Path $buildScript)) {
 $buildArgs = @{
     BuildType = $BuildType
     BuildSharedLibs = $BuildSharedLibs
+    Compiler = $Compiler
 }
 if ($LLVMDir) {
     $buildArgs["LLVMDir"] = $LLVMDir

@@ -1,3 +1,17 @@
+---
+title: "Quickstart — Compiling SVF on Windows with MSYS2"
+tags:
+  - svf
+  - documentation
+  - setup
+  - build
+  - saber
+  - llvm
+  - testing
+  - windows
+  - api
+---
+
 # Quickstart — Compiling SVF on Windows with MSYS2
 
 Step-by-step guide to compile SVF on Windows using MSYS2 with the CLANG64 toolchain. It assumes that the patches described in the other documents have already been applied.

@@ -173,3 +173,44 @@ jobs:
           verbose: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  windows-build:
+    name: windows-build (${{ matrix.compiler }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [mingw, msvc]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies (MSVC only)
+        if: matrix.compiler == 'msvc'
+        run: |
+          choco install llvm -y
+          echo "C:\Program Files\LLVM\bin" >> $GITHUB_PATH
+
+      - name: Add MSVC to PATH
+        if: matrix.compiler == 'msvc'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build SVF
+        shell: powershell
+        run: |
+          if ("${{ matrix.compiler }}" -eq "msvc") {
+            powershell -ExecutionPolicy Bypass -File build.ps1 -BuildType Release -Compiler msvc -LLVMDir "C:\Program Files\LLVM"
+          } else {
+            powershell -ExecutionPolicy Bypass -File build.ps1 -BuildType Release -Compiler mingw
+          }
+
+      - name: Clone Test-Suite
+        shell: powershell
+        run: |
+          git clone "https://github.com/SVF-tools/Test-Suite.git"
+
+      - name: Run CTests
+        shell: powershell
+        working-directory: ${{ github.workspace }}/Release-build
+        run: |
+          . ..\setup.ps1 Release
+          ctest --output-on-failure

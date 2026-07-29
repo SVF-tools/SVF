@@ -27,15 +27,12 @@ if (-not (Test-Path $BuildDir)) {
     return
 }
 
-# Resolve LLVM_DIR (llvm-mingw) and Z3_DIR — same logic as build.ps1
-$LLVMHome = Join-Path $ScriptDir "llvm-mingw.obj"
+# Resolve LLVM_DIR and Z3_DIR — same logic as build.ps1
 $LLVMSdk  = Join-Path $ScriptDir "llvm-sdk.obj\clang64"
 $Z3Home   = Join-Path $ScriptDir "z3.obj"
 
 if (Test-Path $LLVMSdk) {
     $env:LLVM_DIR = $LLVMSdk
-} elseif (Test-Path $LLVMHome) {
-    $env:LLVM_DIR = $LLVMHome
 }
 if (-not $env:Z3_DIR) {
     if (Test-Path $Z3Home) { $env:Z3_DIR = $Z3Home }
@@ -44,7 +41,6 @@ if (-not $env:Z3_DIR) {
 # On Windows, DLLs must be in the PATH (not LD_LIBRARY_PATH).
 $additions = @()
 if ($env:LLVM_DIR) { $additions += "$env:LLVM_DIR\bin" }
-if (Test-Path $LLVMHome) { $additions += "$LLVMHome\bin" }
 if ($env:Z3_DIR)   { $additions += "$env:Z3_DIR\bin"; $additions += "$env:Z3_DIR\lib" }
 $additions += "$BuildDir\bin"
 $additions += "$BuildDir\lib"

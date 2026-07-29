@@ -1,3 +1,17 @@
+---
+title: "SVF — Testing Guide on Windows"
+tags:
+  - svf
+  - documentation
+  - ide
+  - setup
+  - build
+  - llvm
+  - testing
+  - windows
+  - api
+---
+
 # SVF — Testing Guide on Windows
 
 This file describes how to verify that changes in the `windows-port` branch compile and run correctly on Windows.

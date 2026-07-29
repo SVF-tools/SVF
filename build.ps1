@@ -45,6 +45,9 @@ param(
     [string]$LLVMDir = "",
     [string]$Z3Dir   = "",
 
+    [ValidateSet("mingw", "msvc")]
+    [string]$Compiler = "mingw",
+
     [int]$Jobs = [Environment]::ProcessorCount
 )
 
@@ -54,23 +57,28 @@ $ErrorActionPreference = "Stop"
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SVFHome    = $ScriptDir
 
-# llvm-mingw release: https://github.com/mstorsjo/llvm-mingw/releases
-# We use the UCRT x86_64 version (modern toolchain, Windows 10+).
-$LLVMMingwVer  = "20260616"
-$LLVMMingwName = "llvm-mingw-${LLVMMingwVer}-ucrt-x86_64"
-$LLVMMingwUrl  = "https://github.com/mstorsjo/llvm-mingw/releases/download/${LLVMMingwVer}/${LLVMMingwName}.zip"
-$LLVMHome      = Join-Path $SVFHome "llvm-mingw.obj"
+# MSYS2 LLVM and Clang SDK packages.
+# We download the local LLVM + Clang SDK from MSYS2 repository.
 $LLVMSdkHome   = Join-Path $SVFHome "llvm-sdk.obj"
-$LLVMSdkUrl    = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-llvm-22.1.8-1-any.pkg.tar.zst"
-$LLVMLibsUrl   = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-llvm-libs-22.1.8-1-any.pkg.tar.zst"
-$LLVMToolsUrl  = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-llvm-tools-22.1.8-1-any.pkg.tar.zst"
-$LibffiUrl     = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-libffi-3.5.2-1-any.pkg.tar.zst"
+$LLVMSdkUrl    = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-llvm-22.1.8-2-any.pkg.tar.zst"
+$LLVMLibsUrl   = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-llvm-libs-22.1.8-2-any.pkg.tar.zst"
+$LLVMToolsUrl  = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-llvm-tools-22.1.8-2-any.pkg.tar.zst"
+$ClangUrl      = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-clang-22.1.8-2-any.pkg.tar.zst"
+$ClangLibsUrl  = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-clang-libs-22.1.8-2-any.pkg.tar.zst"
+$CompilerRtUrl = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-compiler-rt-22.1.8-2-any.pkg.tar.zst"
+$LldUrl        = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-lld-22.1.8-2-any.pkg.tar.zst"
+$CrtUrl        = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-crt-14.0.0.r98.g19f5121a2-1-any.pkg.tar.zst"
+$HeadersUrl    = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-headers-14.0.0.r98.g19f5121a2-1-any.pkg.tar.zst"
+$WinpthreadsUrl = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-winpthreads-14.0.0.r98.g19f5121a2-1-any.pkg.tar.zst"
+$LibwinpthreadUrl = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-libwinpthread-14.0.0.r98.g19f5121a2-1-any.pkg.tar.zst"
+$LibffiUrl     = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-libffi-3.7.1-1-any.pkg.tar.zst"
 $Libxml2Url    = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-libxml2-2.15.3-1-any.pkg.tar.zst"
 $ZstdUrl       = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-zstd-1.5.7-2-any.pkg.tar.zst"
 $ZlibUrl       = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-zlib-1.3.2-2-any.pkg.tar.zst"
 $LibiconvUrl   = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-libiconv-1.19-1-any.pkg.tar.zst"
-$LibcxxUrl     = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-libc%2b%2b-22.1.8-1-any.pkg.tar.zst"
+$LibcxxUrl     = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-libc%2B%2B-22.1.8-1-any.pkg.tar.zst"
 $LibunwindUrl  = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-libunwind-22.1.8-1-any.pkg.tar.zst"
+
 
 $Z3Ver    = "4.15.4"
 $Z3SrcUrl = "https://github.com/Z3Prover/z3/archive/refs/tags/z3-${Z3Ver}.zip"
@@ -130,37 +138,10 @@ function Write-Step {
 }
 
 # ---------------------------------------------------------------------------
-# Resolve compiler and toolchain (llvm-mingw)
+# Resolve LLVM SDK and Compiler Toolchain (LLVM_DIR)
 # ---------------------------------------------------------------------------
 
-Write-Step "Resolving Compiler Toolchain"
-
-# If llvm-mingw is not present locally, download it to ensure clang/clang++ compilers are available
-if (-not (Test-Path $LLVMHome)) {
-    Write-Host "  llvm-mingw not found. Downloading (~300 MB)..."
-    $zipPath = "$SVFHome\llvm-mingw.zip"
-    Get-FileDownload -Url $LLVMMingwUrl -Dest $zipPath
-    Write-Host "  Extracting llvm-mingw..."
-    Expand-Archive -Path $zipPath -DestinationPath $SVFHome -Force
-    $extracted = Get-Item "$SVFHome\$LLVMMingwName" -ErrorAction SilentlyContinue
-    if (-not $extracted) {
-        throw "llvm-mingw extraction failed: directory '$LLVMMingwName' not found in $SVFHome"
-    }
-    Rename-Item $extracted.FullName $LLVMHome
-    Remove-Item $zipPath
-    Write-Host "  llvm-mingw installed in: $LLVMHome"
-} else {
-    Write-Host "  Local llvm-mingw found."
-}
-
-# Add llvm-mingw/bin to PATH to ensure clang/clang++ are available
-$env:PATH = "$LLVMHome\bin;$env:PATH"
-
-# ---------------------------------------------------------------------------
-# Resolve LLVM_DIR (LLVM SDK for CMake)
-# ---------------------------------------------------------------------------
-
-Write-Step "Resolving LLVM SDK (LLVM_DIR)"
+Write-Step "Resolving LLVM SDK & Compiler Toolchain"
 
 if ($LLVMDir -ne "" -and (Test-Path $LLVMDir)) {
     $env:LLVM_DIR = (Resolve-Path $LLVMDir).Path
@@ -168,60 +149,58 @@ if ($LLVMDir -ne "" -and (Test-Path $LLVMDir)) {
 } elseif ($env:LLVM_DIR -and (Test-Path $env:LLVM_DIR)) {
     Write-Host "  Using LLVM_DIR from environment: $env:LLVM_DIR"
 } else {
-    $LLVMSdkDir = Join-Path $LLVMSdkHome "clang64"
-    if (-not (Test-Path $LLVMSdkDir)) {
-        Write-Host "  LLVM SDK not found. Automatic download in progress (~80 MB)..."
-        New-Item -ItemType Directory -Force -Path $LLVMSdkHome | Out-Null
-        
-        # Download LLVM SDK
-        $sdkPkgPath = "$SVFHome\llvm-sdk.pkg.tar.zst"
-        Get-FileDownload -Url $LLVMSdkUrl -Dest $sdkPkgPath
-        Write-Host "  Extracting LLVM SDK (tar)..."
-        & tar -xf $sdkPkgPath -C $LLVMSdkHome
-        Remove-Item $sdkPkgPath
-        
-        # Download LLVM Libs (contains libLTO.dll, etc.)
-        $libsPkgPath = "$SVFHome\llvm-libs.pkg.tar.zst"
-        Get-FileDownload -Url $LLVMLibsUrl -Dest $libsPkgPath
-        Write-Host "  Extracting LLVM Libs (tar)..."
-        & tar -xf $libsPkgPath -C $LLVMSdkHome
-        Remove-Item $libsPkgPath
-        
-        # Download LLVM Tools (contains libLTO.dll.a, etc.)
-        $toolsPkgPath = "$SVFHome\llvm-tools.pkg.tar.zst"
-        Get-FileDownload -Url $LLVMToolsUrl -Dest $toolsPkgPath
-        Write-Host "  Extracting LLVM Tools (tar)..."
-        & tar -xf $toolsPkgPath -C $LLVMSdkHome
-        Remove-Item $toolsPkgPath
-        
-        # Download DLL dependency packages for LLVM 22
-        $deps = @(
-            @{ Name = "libffi"; Url = $LibffiUrl; File = "libffi.pkg.tar.zst" }
-            @{ Name = "libxml2"; Url = $Libxml2Url; File = "libxml2.pkg.tar.zst" }
-            @{ Name = "zstd"; Url = $ZstdUrl; File = "zstd.pkg.tar.zst" }
-            @{ Name = "zlib"; Url = $ZlibUrl; File = "zlib.pkg.tar.zst" }
-            @{ Name = "libiconv"; Url = $LibiconvUrl; File = "libiconv.pkg.tar.zst" }
-            @{ Name = "libc++"; Url = $LibcxxUrl; File = "libcxx.pkg.tar.zst" }
-            @{ Name = "libunwind"; Url = $LibunwindUrl; File = "libunwind.pkg.tar.zst" }
-        )
-        foreach ($dep in $deps) {
-            $depPath = Join-Path $SVFHome $dep.File
-            Get-FileDownload -Url $dep.Url -Dest $depPath
-            Write-Host "  Extracting $($dep.Name) (tar)..."
-            & tar -xf $depPath -C $LLVMSdkHome
-            Remove-Item $depPath
+    if ($Compiler -eq "mingw") {
+        $LLVMSdkDir = Join-Path $LLVMSdkHome "clang64"
+        if (-not (Test-Path $LLVMSdkDir)) {
+            Write-Host "  Unified LLVM & Clang SDK not found. Automatic download in progress..."
+            New-Item -ItemType Directory -Force -Path $LLVMSdkHome | Out-Null
+            
+            $sdkComponents = @(
+                @{ Name = "llvm-sdk"; Url = $LLVMSdkUrl; File = "llvm-sdk.pkg.tar.zst" }
+                @{ Name = "llvm-libs"; Url = $LLVMLibsUrl; File = "llvm-libs.pkg.tar.zst" }
+                @{ Name = "llvm-tools"; Url = $LLVMToolsUrl; File = "llvm-tools.pkg.tar.zst" }
+                @{ Name = "clang-compiler"; Url = $ClangUrl; File = "clang-compiler.pkg.tar.zst" }
+                @{ Name = "clang-libs"; Url = $ClangLibsUrl; File = "clang-libs.pkg.tar.zst" }
+                @{ Name = "compiler-rt"; Url = $CompilerRtUrl; File = "compiler-rt.pkg.tar.zst" }
+                @{ Name = "lld-linker"; Url = $LldUrl; File = "lld-linker.pkg.tar.zst" }
+                @{ Name = "crt"; Url = $CrtUrl; File = "crt.pkg.tar.zst" }
+                @{ Name = "headers"; Url = $HeadersUrl; File = "headers.pkg.tar.zst" }
+                @{ Name = "winpthreads"; Url = $WinpthreadsUrl; File = "winpthreads.pkg.tar.zst" }
+                @{ Name = "libwinpthread"; Url = $LibwinpthreadUrl; File = "libwinpthread.pkg.tar.zst" }
+                @{ Name = "libffi"; Url = $LibffiUrl; File = "libffi.pkg.tar.zst" }
+                @{ Name = "libxml2"; Url = $Libxml2Url; File = "libxml2.pkg.tar.zst" }
+                @{ Name = "zstd"; Url = $ZstdUrl; File = "zstd.pkg.tar.zst" }
+                @{ Name = "zlib"; Url = $ZlibUrl; File = "zlib.pkg.tar.zst" }
+                @{ Name = "libiconv"; Url = $LibiconvUrl; File = "libiconv.pkg.tar.zst" }
+                @{ Name = "libc++"; Url = $LibcxxUrl; File = "libcxx.pkg.tar.zst" }
+                @{ Name = "libunwind"; Url = $LibunwindUrl; File = "libunwind.pkg.tar.zst" }
+            )
+
+            foreach ($comp in $sdkComponents) {
+                $compPath = Join-Path $SVFHome $comp.File
+                Get-FileDownload -Url $comp.Url -Dest $compPath
+                Write-Host "  Extracting $($comp.Name) (tar)..."
+                & tar -xf $compPath -C $LLVMSdkHome
+                Remove-Item $compPath
+            }
+            
+            Write-Host "  LLVM SDK and Compiler Toolchain installed in: $LLVMSdkDir" -ForegroundColor Green
         }
-        
-        Write-Host "  LLVM SDK installed in: $LLVMSdkDir" -ForegroundColor Green
+        $env:LLVM_DIR = $LLVMSdkDir
+        Write-Host "  Using local LLVM SDK: $env:LLVM_DIR"
+    } else {
+        $defaultMsvcLvm = "C:\Program Files\LLVM"
+        if (Test-Path $defaultMsvcLvm) {
+            $env:LLVM_DIR = $defaultMsvcLvm
+            Write-Host "  Using default MSVC LLVM SDK: $env:LLVM_DIR"
+        } else {
+            throw "LLVM SDK not found. For MSVC, please install LLVM (e.g., choco install llvm) or specify -LLVMDir."
+        }
     }
-    $env:LLVM_DIR = $LLVMSdkDir
-    Write-Host "  Using local LLVM SDK: $env:LLVM_DIR"
 }
 
-# Add LLVM_DIR\bin to PATH (if different from LLVMHome) for DLLs/accessory tools
-if ($env:LLVM_DIR -ne $LLVMHome) {
-    $env:PATH = "$env:LLVM_DIR\bin;$env:PATH"
-}
+# Add LLVM_DIR\bin to PATH for compiler executables and library DLLs
+$env:PATH = "$env:LLVM_DIR\bin;$env:PATH"
 
 # Verify that clang++ is available
 Assert-Tool "clang++"
@@ -263,16 +242,21 @@ if ($Z3Dir -ne "" -and (Test-Path $Z3Dir)) {
 
     Write-Host "  CMake configuration for Z3..."
     New-Item -ItemType Directory -Force -Path $z3BuildDir | Out-Null
-    & cmake -G Ninja `
-        -S $z3SrcDir `
-        -B $z3BuildDir `
-        -DCMAKE_BUILD_TYPE=Release `
-        -DCMAKE_INSTALL_PREFIX=$Z3Home `
-        -DCMAKE_C_COMPILER="$env:LLVM_DIR\bin\clang.exe" `
-        -DCMAKE_CXX_COMPILER="$env:LLVM_DIR\bin\clang++.exe" `
-        -DZ3_BUILD_LIBZ3_SHARED=OFF `
-        -DZ3_BUILD_EXECUTABLE=OFF `
-        -DZ3_BUILD_TEST_EXECUTABLES=OFF
+    $z3CmakeArgs = @(
+        "-G", "Ninja",
+        "-S", $z3SrcDir,
+        "-B", $z3BuildDir,
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_INSTALL_PREFIX=$Z3Home",
+        "-DZ3_BUILD_LIBZ3_SHARED=OFF",
+        "-DZ3_BUILD_EXECUTABLE=OFF",
+        "-DZ3_BUILD_TEST_EXECUTABLES=OFF"
+    )
+    if ($Compiler -eq "mingw") {
+        $z3CmakeArgs += "-DCMAKE_C_COMPILER=$env:LLVM_DIR\bin\clang.exe"
+        $z3CmakeArgs += "-DCMAKE_CXX_COMPILER=$env:LLVM_DIR\bin\clang++.exe"
+    }
+    & cmake @z3CmakeArgs
     if ($LASTEXITCODE -ne 0) { throw "CMake configuration for Z3 failed." }
 
     Write-Host "  Building Z3 (static library)..."
@@ -329,17 +313,22 @@ Write-Host "  BuildType:       $BuildType"
 Write-Host "  BuildSharedLibs: $BuildSharedLibs"
 Write-Host "  BuildDir:        $BuildDir"
 
-& cmake -G Ninja `
-    -S $SVFHome `
-    -B $BuildDir `
-    "-DCMAKE_BUILD_TYPE=$BuildType" `
-    -DCMAKE_C_COMPILER="$LLVMHome\bin\clang.exe" `
-    -DCMAKE_CXX_COMPILER="$LLVMHome\bin\clang++.exe" `
-    "-DLLVM_DIR=$LLVMCMakeDir" `
-    -DZ3_DIR="$env:Z3_DIR" `
-    "-DBUILD_SHARED_LIBS=$BuildSharedLibs" `
-    -DSVF_WARN_AS_ERROR=OFF `
-    -DSVF_EXPORT_DYNAMIC=OFF
+$svfCmakeArgs = @(
+    "-G", "Ninja",
+    "-S", $SVFHome,
+    "-B", $BuildDir,
+    "-DCMAKE_BUILD_TYPE=$BuildType",
+    "-DLLVM_DIR=$LLVMCMakeDir",
+    "-DZ3_DIR=$env:Z3_DIR",
+    "-DBUILD_SHARED_LIBS=$BuildSharedLibs",
+    "-DSVF_WARN_AS_ERROR=OFF",
+    "-DSVF_EXPORT_DYNAMIC=OFF"
+)
+if ($Compiler -eq "mingw") {
+    $svfCmakeArgs += "-DCMAKE_C_COMPILER=$env:LLVM_DIR\bin\clang.exe"
+    $svfCmakeArgs += "-DCMAKE_CXX_COMPILER=$env:LLVM_DIR\bin\clang++.exe"
+}
+& cmake @svfCmakeArgs
 
 if ($LASTEXITCODE -ne 0) { throw "CMake configure SVF failed." }
 

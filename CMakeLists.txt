@@ -270,6 +270,13 @@ target_link_libraries(SvfFlags INTERFACE ${Z3_LIBRARIES})
 install(TARGETS SvfFlags EXPORT SVFTargets)
 
 # =================================================================================
+# SVF core definitions
+# =================================================================================
+
+add_subdirectory(svf)
+add_subdirectory(svf-llvm)
+
+# =================================================================================
 # SVF test suite
 # =================================================================================
 
@@ -279,13 +286,6 @@ if(EXISTS "${SVF_SOURCE_DIR}/Test-Suite")
   enable_testing()
   add_subdirectory(Test-Suite)
 endif()
-
-# =================================================================================
-# SVF core definitions
-# =================================================================================
-
-add_subdirectory(svf)
-add_subdirectory(svf-llvm)
 
 # =================================================================================
 # SVF build configuration handling (post linking LLVM)

@@ -1,3 +1,15 @@
+---
+title: "C++ Source Patches — Complete Details"
+tags:
+  - svf
+  - documentation
+  - build
+  - llvm
+  - testing
+  - windows
+  - api
+---
+
 # C++ Source Patches — Complete Details
 
 This file contains the exact diffs to be applied to the three C++ files that use POSIX-only APIs not available on native Windows.

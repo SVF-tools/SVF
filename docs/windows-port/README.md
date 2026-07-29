@@ -1,3 +1,18 @@
+---
+title: "SVF Windows Port — Guide & Documentation"
+tags:
+  - svf
+  - documentation
+  - ide
+  - setup
+  - build
+  - pointer-analysis
+  - saber
+  - llvm
+  - testing
+  - windows
+---
+
 # SVF Windows Port — Guide & Documentation
 
 This directory contains the documentation for compiling and running **SVF** on Windows. The port is built using a modern, standalone **PowerShell + llvm-mingw** toolchain, which requires no emulation layers (MSYS2) or heavy installations (Visual Studio).

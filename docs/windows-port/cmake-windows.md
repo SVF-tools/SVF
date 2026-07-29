@@ -1,3 +1,17 @@
+---
+title: "Modifications to `CMakeLists.txt` for Windows"
+tags:
+  - svf
+  - documentation
+  - setup
+  - build
+  - value-flow
+  - saber
+  - llvm
+  - windows
+  - api
+---
+
 # Modifications to `CMakeLists.txt` for Windows
 
 This file describes the modifications to the CMake build system required for a clean build on Windows using MinGW-w64 + Clang.

@@ -1,3 +1,15 @@
+---
+title: "Modifications to `build.sh` for Windows (MSYS2 + MinGW-w64 + Clang)"
+tags:
+  - svf
+  - documentation
+  - setup
+  - build
+  - llvm
+  - windows
+  - api
+---
+
 # Modifications to `build.sh` for Windows (MSYS2 + MinGW-w64 + Clang)
 
 This file describes each modification to be applied to `build.sh`, with the exact context of where and how to insert it.

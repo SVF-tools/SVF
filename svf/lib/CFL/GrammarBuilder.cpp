@@ -27,10 +27,10 @@
  *      Author: Pei Xu
  */
 
-#include <string>
 #include <fstream>
-#include <sstream>
 #include <iostream>
+#include <sstream>
+#include <string>
 
 #include "CFL/CFGrammar.h"
 #include "CFL/GrammarBuilder.h"
@@ -42,7 +42,8 @@ const inline std::string GrammarBuilder::parseProductionsString() const
     std::ifstream textFile(fileName);
     if (!textFile.is_open())
     {
-        std::cerr << "Can't open CFL grammar file `" << fileName << "`" << std::endl;
+        std::cerr << "Can't open CFL grammar file `" << fileName << "`"
+                  << std::endl;
         abort();
     }
 
@@ -85,7 +86,8 @@ const inline std::string GrammarBuilder::parseProductionsString() const
     size_t productionsPos = lines.find("Productions:");
     if (productionsPos != std::string::npos)
     {
-        lines = lines.substr(productionsPos + std::string("Productions:").length());
+        lines =
+            lines.substr(productionsPos + std::string("Productions:").length());
     }
 
     // Parse `symbolString` to insert symbols
@@ -107,8 +109,8 @@ const inline std::string GrammarBuilder::parseProductionsString() const
     return lines;
 }
 
-
-const inline std::vector<std::string> GrammarBuilder::loadWordProductions() const
+const inline std::vector<std::string> GrammarBuilder::loadWordProductions()
+    const
 {
     size_t pos = 0;
     std::string lines = parseProductionsString();
@@ -155,14 +157,16 @@ GrammarBase* GrammarBuilder::build() const
         {
             // Extract and strip RHS (right-hand side) and LHS (left-hand side)
             std::string RHS = stripSpace(wordProd.substr(0, pos));
-            std::string LHS = stripSpace(wordProd.substr(pos + delimiter1.size()));
+            std::string LHS =
+                stripSpace(wordProd.substr(pos + delimiter1.size()));
 
             // Insert RHS symbol into grammar
             GrammarBase::Symbol RHSSymbol = grammar->insertSymbol(RHS);
             prod.push_back(RHSSymbol);
 
             // Ensure RHS symbol exists in raw productions
-            if (grammar->getRawProductions().find(RHSSymbol) == grammar->getRawProductions().end())
+            if (grammar->getRawProductions().find(RHSSymbol) ==
+                grammar->getRawProductions().end())
             {
                 grammar->getRawProductions().insert({RHSSymbol, {}});
             }
@@ -195,5 +199,4 @@ GrammarBase* GrammarBuilder::build() const
     return grammar;
 }
 
-
-}
+} // namespace SVF

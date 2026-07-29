@@ -1,3 +1,18 @@
+---
+title: "SVF Windows Port — PowerShell Approach (without MSYS2)"
+tags:
+  - svf
+  - documentation
+  - ide
+  - setup
+  - build
+  - saber
+  - llvm
+  - testing
+  - windows
+  - api
+---
+
 # SVF Windows Port — PowerShell Approach (without MSYS2)
 
 This document describes how to compile SVF on Windows using **PowerShell** as the build shell, **clang-cl** as the compiler, and **Visual Studio Build Tools** as the CRT/SDK. It does not require MSYS2 or any emulated Unix environment.

@@ -25,3 +25,12 @@ doxygen/
 *.svf
 cmake-build-debug/
 compile_commands.json
+
+# Local agent files and logs
+AGENTS.md
+err.txt
+wiki/
+docs/extending-handoffs/
+docs/images/
+svf-llvm/tools/GraphDB/
+docs/windows-port/IMPLEMENTATION-LOG.md

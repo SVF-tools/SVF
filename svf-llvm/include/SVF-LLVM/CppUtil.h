@@ -51,8 +51,45 @@ struct DemangledName
     bool isThunkFunc;
 };
 
-struct DemangledName demangle(const std::string& name);
+class CXXABI
+{
+public:
+    virtual ~CXXABI() = default;
+    virtual bool isVtable(const std::string& name) = 0;
+    virtual bool isTypeInfo(const std::string& name) = 0;
+    virtual bool isConstructor(const std::string& name) = 0;
+    virtual bool isDestructor(const std::string& name) = 0;
+    virtual std::string extractClassName(const std::string& name) = 0;
+    virtual DemangledName demangle(const std::string& name) = 0;
+};
 
+class ItaniumABI : public CXXABI
+{
+public:
+    bool isVtable(const std::string& name) override;
+    bool isTypeInfo(const std::string& name) override;
+    bool isConstructor(const std::string& name) override;
+    bool isDestructor(const std::string& name) override;
+    std::string extractClassName(const std::string& name) override;
+    DemangledName demangle(const std::string& name) override;
+};
+
+class MSVCABI : public CXXABI
+{
+public:
+    bool isVtable(const std::string& name) override;
+    bool isTypeInfo(const std::string& name) override;
+    bool isConstructor(const std::string& name) override;
+    bool isDestructor(const std::string& name) override;
+    std::string extractClassName(const std::string& name) override;
+    DemangledName demangle(const std::string& name) override;
+};
+
+CXXABI* getCXXABI();
+CXXABI* getCXXABI(const Module* M);
+CXXABI* getCXXABI(const Value* val);
+
+struct DemangledName demangle(const std::string& name);
 
 Set<std::string> getClsNamesInBrackets(const std::string& name);
 
@@ -80,7 +117,7 @@ std::string getClassNameFromVtblObj(const std::string& vtblName);
  *
  *  See https://github.com/SVF-tools/SVF/issues/1114 for more.
  */
-const ConstantStruct *getVtblStruct(const GlobalValue *vtbl);
+const ConstantStruct* getVtblStruct(const GlobalValue* vtbl);
 
 bool isValVtbl(const Value* val);
 bool isVirtualCallSite(const CallBase* cs);
@@ -133,28 +170,29 @@ bool isSameThisPtrInConstructor(const Argument* thisPtr1,
                                 const Value* thisPtr2);
 
 /// extract class name from the c++ function name, e.g., constructor/destructors
-Set<std::string> extractClsNamesFromFunc(const Function *foo);
+Set<std::string> extractClsNamesFromFunc(const Function* foo);
 
 /// extract class names from template functions
-Set<std::string> extractClsNamesFromTemplate(const std::string &oname);
+Set<std::string> extractClsNamesFromTemplate(const std::string& oname);
 
 /// class sources can be heap allocation
-/// or functions where we can extract the class name (constructors/destructors or template functions)
-bool isClsNameSource(const Value *val);
+/// or functions where we can extract the class name (constructors/destructors
+/// or template functions)
+bool isClsNameSource(const Value* val);
 
 /// whether foo matches the mangler label
-bool matchesLabel(const std::string &foo, const std::string &label);
+bool matchesLabel(const std::string& foo, const std::string& label);
 
 /// whether foo is a cpp template function
-bool isTemplateFunc(const Function *foo);
+bool isTemplateFunc(const Function* foo);
 
 /// whether foo is a cpp dyncast function
-bool isDynCast(const Function *foo);
+bool isDynCast(const Function* foo);
 
 /// extract class name from cpp dyncast function
 std::string extractClsNameFromDynCast(const CallBase* callBase);
 
-const Type *cppClsNameToType(const std::string &className);
+const Type* cppClsNameToType(const std::string& className);
 } // End namespace cppUtil
 
 } // End namespace SVF

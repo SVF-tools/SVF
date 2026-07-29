@@ -1,3 +1,16 @@
+---
+title: "Modifications to `setup.sh` for Windows (MSYS2 + MinGW-w64 + Clang)"
+tags:
+  - svf
+  - documentation
+  - setup
+  - build
+  - value-flow
+  - llvm
+  - testing
+  - windows
+---
+
 # Modifications to `setup.sh` for Windows (MSYS2 + MinGW-w64 + Clang)
 
 This file describes each modification to be applied to `setup.sh` to support the Windows MSYS2 environment.

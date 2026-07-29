@@ -1,3 +1,17 @@
+---
+title: "SVF Windows — Minimal Dependencies (llvm-mingw)"
+tags:
+  - svf
+  - documentation
+  - ide
+  - setup
+  - build
+  - value-flow
+  - llvm
+  - windows
+  - api
+---
+
 # SVF Windows — Minimal Dependencies (llvm-mingw)
 
 This document describes the minimal dependencies approach to compile SVF on Windows. The goal is for the user to run a single PowerShell script without installing anything manually.
