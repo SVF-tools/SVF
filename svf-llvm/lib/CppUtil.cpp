@@ -1246,13 +1246,35 @@ DemangledName MSVCABI::demangle(const std::string& name)
             dname.funcName = beforeParenthesis.substr(colon + 2);
 
             int i = classNamePart.size() - 1;
-            while (i >= 0 &&
-                   (std::isalnum(classNamePart[i]) || classNamePart[i] == '_' ||
-                    classNamePart[i] == ':' || classNamePart[i] == '<' ||
-                    classNamePart[i] == '>' || classNamePart[i] == ',' ||
-                    classNamePart[i] == ' '))
+            int bracketDepth = 0;
+            while (i >= 0)
             {
-                i--;
+                char c = classNamePart[i];
+                if (c == '>')
+                {
+                    bracketDepth++;
+                }
+                else if (c == '<')
+                {
+                    bracketDepth--;
+                }
+
+                if (bracketDepth > 0)
+                {
+                    i--;
+                }
+                else
+                {
+                    if (std::isalnum(c) || c == '_' || c == ':' || c == '<' ||
+                        c == '>')
+                    {
+                        i--;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
             }
             dname.className = classNamePart.substr(i + 1);
         }
