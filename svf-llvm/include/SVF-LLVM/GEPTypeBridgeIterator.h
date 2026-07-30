@@ -14,15 +14,19 @@ namespace llvm
 {
 
 template<typename ItTy = User::const_op_iterator>
-class generic_bridge_gep_type_iterator : public std::iterator<std::forward_iterator_tag, Type*, ptrdiff_t>
+class generic_bridge_gep_type_iterator
 {
 
-    typedef std::iterator<std::forward_iterator_tag,Type*, ptrdiff_t> super;
     ItTy OpIt;
     PointerIntPair<Type*,1> CurTy;
     unsigned AddrSpace;
     generic_bridge_gep_type_iterator() {}
 public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = Type*;
+    using difference_type = ptrdiff_t;
+    using pointer = Type**;
+    using reference = Type*&;
 
     static generic_bridge_gep_type_iterator begin(Type* Ty, ItTy It)
     {
@@ -63,7 +67,7 @@ public:
     Type* operator*() const
     {
         if ( CurTy.getInt() )
-            return CurTy.getPointer()->getPointerTo(AddrSpace);
+            return PointerType::get(CurTy.getPointer()->getContext(), AddrSpace);
         return CurTy.getPointer();
     }
 

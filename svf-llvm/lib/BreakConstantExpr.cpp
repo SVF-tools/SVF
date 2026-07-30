@@ -170,7 +170,7 @@ convertExpression (ConstantExpr * CE, Instruction*  InsertPt)
         ++GEPChanges;
     ++TotalChanges;
     Instruction* Result = CE->getAsInstruction();
-    Result->insertBefore(InsertPt);
+    Result->insertBefore(InsertPt->getIterator());
     return Result;
 }
 
