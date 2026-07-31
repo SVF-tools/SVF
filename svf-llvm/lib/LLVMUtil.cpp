@@ -588,9 +588,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val)
     else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(val))
     {
         auto nonPhiIt = bb->getFirstNonPHIIt();
-        rawstr << "\"basic block\": " << bb->getName().str()
-               << ", \"location\": "
-               << getSourceLoc(nonPhiIt != bb->end() ? &*nonPhiIt : nullptr);
+        rawstr << "\"basic block\": " << bb->getName().str() << ", \"location\": " << getSourceLoc(nonPhiIt != bb->end() ? &*nonPhiIt : nullptr);
     }
     else if (LLVMUtil::isConstDataOrAggData(val))
     {

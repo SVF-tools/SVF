@@ -38,7 +38,7 @@ public:
     }
 
     static generic_bridge_gep_type_iterator begin(Type* Ty, unsigned AddrSpace,
-                                                  ItTy It)
+                                                   ItTy It)
     {
         generic_bridge_gep_type_iterator I;
         I.CurTy.setPointer(Ty);
@@ -68,8 +68,7 @@ public:
     Type* operator*() const
     {
         if (CurTy.getInt())
-            return PointerType::get(CurTy.getPointer()->getContext(),
-                                    AddrSpace);
+            return PointerType::get(CurTy.getPointer()->getContext(), AddrSpace);
         return CurTy.getPointer();
     }
 
