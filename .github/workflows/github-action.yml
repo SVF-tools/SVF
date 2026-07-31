@@ -7,7 +7,7 @@ on: [push, pull_request]
 env:
   SVF_CTIR: 1
   SVF_Z3: 1
-  SVF_DIR: $GITHUB_WORKSPACE
+  SVF_DIR: ${{ github.workspace }}
 
 jobs:
   build:
@@ -190,9 +190,24 @@ jobs:
 
       - name: Install dependencies (MSVC only)
         if: matrix.compiler == 'msvc'
+        shell: powershell
         run: |
+          # 1. Install LLVM toolchain via Chocolatey (provides clang.exe)
           choco install llvm -y
-          echo "C:\Program Files\LLVM\bin" >> $GITHUB_PATH
+          
+          # 2. Download and extract LLVM SDK from c3lang/llvm-for-c3 (provides LLVMConfig.cmake and static libraries)
+          Invoke-WebRequest -Uri "https://github.com/c3lang/llvm-for-c3/releases/download/llvm_22.1.4/llvm-windows-amd64.tar.gz" -OutFile llvm-sdk.tar.gz
+          New-Item -ItemType Directory -Force -Path C:\llvm-sdk | Out-Null
+          tar -xf llvm-sdk.tar.gz -C C:\llvm-sdk
+          
+          # 3. Copy Clang compiler binaries from Chocolatey LLVM to the SDK bin folder
+          Copy-Item -Path "C:\Program Files\LLVM\bin\clang.exe" -Destination "C:\llvm-sdk\bin\" -Force
+          Copy-Item -Path "C:\Program Files\LLVM\bin\clang++.exe" -Destination "C:\llvm-sdk\bin\" -Force
+          Copy-Item -Path "C:\Program Files\LLVM\bin\clang-cl.exe" -Destination "C:\llvm-sdk\bin\" -Force
+          
+          # 4. Export environment variables
+          echo "C:\llvm-sdk\bin" >> $env:GITHUB_PATH
+          echo "LLVM_DIR=C:\llvm-sdk" >> $env:GITHUB_ENV
 
       - name: Add MSVC to PATH
         if: matrix.compiler == 'msvc'
@@ -202,15 +217,22 @@ jobs:
         shell: powershell
         run: |
           if ("${{ matrix.compiler }}" -eq "msvc") {
-            powershell -ExecutionPolicy Bypass -File build.ps1 -BuildType Release -Compiler msvc -LLVMDir "C:\Program Files\LLVM"
+            powershell -ExecutionPolicy Bypass -File build.ps1 -BuildType Release -Compiler msvc -LLVMDir "$env:LLVM_DIR"
           } else {
             powershell -ExecutionPolicy Bypass -File build.ps1 -BuildType Release -Compiler mingw
           }
 
-      - name: Clone Test-Suite
+      - name: Clone Test-Suite (Sparse Checkout to avoid NTFS colon files)
         shell: powershell
         run: |
-          git clone "https://github.com/SVF-tools/Test-Suite.git"
+          git clone --sparse --filter=blob:none "https://github.com/SVF-tools/Test-Suite.git" Test-Suite
+          cd Test-Suite
+          git sparse-checkout set --no-cone "/*" "!/diff_tests/perf_history/"
+
+      - name: Patch Test-Suite for Windows compatibility
+        shell: powershell
+        run: |
+          python patch_test_suite.py
 
       - name: Run CTests
         shell: powershell

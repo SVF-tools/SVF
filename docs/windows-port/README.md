@@ -42,15 +42,15 @@ The Windows port uses the **llvm-mingw** (LLVM-Clang with MinGW/UCRT runtime) co
 
 All Windows build and environment scripts are located in the SVF root directory and are **fully functional**:
 
-1. **[setup-windows.ps1](file:///D:/Documents/Progetti_porting/SVF/setup-windows.ps1)**
+1. **[setup-windows.ps1](../../setup-windows.ps1)**
    - **Status:** Fully Functional.
    - **Purpose:** All-in-one requirements validator. Verifies system tools, sets the execution policy, installs `cmake` and `ninja` via `winget` if missing, and then delegates execution to `build.ps1`.
    
-2. **[build.ps1](file:///D:/Documents/Progetti_porting/SVF/build.ps1)**
+2. **[build.ps1](../../build.ps1)**
    - **Status:** Fully Functional.
    - **Purpose:** Downloads and extracts the `llvm-mingw` compiler toolchain, downloads the LLVM 22.x SDK & dependencies, compiles the Z3 solver from source using MinGW, and runs CMake/Ninja to compile SVF statically.
 
-3. **[setup.ps1](file:///D:/Documents/Progetti_porting/SVF/setup.ps1)**
+3. **[setup.ps1](../../setup.ps1)**
    - **Status:** Fully Functional.
    - **Purpose:** Environment configuration script. Must be dot-sourced (`. .\setup.ps1`) to append the directories of `llvm-mingw` DLLs, `llvm-sdk` tools, Z3, and the newly built SVF binaries to the environment `PATH`.
 

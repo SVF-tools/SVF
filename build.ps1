@@ -322,7 +322,9 @@ $svfCmakeArgs = @(
     "-DZ3_DIR=$env:Z3_DIR",
     "-DBUILD_SHARED_LIBS=$BuildSharedLibs",
     "-DSVF_WARN_AS_ERROR=OFF",
-    "-DSVF_EXPORT_DYNAMIC=OFF"
+    "-DSVF_EXPORT_DYNAMIC=OFF",
+    "-DCMAKE_CXX_STANDARD=17",
+    "-DCMAKE_CXX_STANDARD_REQUIRED=ON"
 )
 if ($Compiler -eq "mingw") {
     $svfCmakeArgs += "-DCMAKE_C_COMPILER=$env:LLVM_DIR\bin\clang.exe"

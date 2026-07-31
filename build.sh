@@ -432,6 +432,8 @@ build_svf() {
 
     cmake -D CMAKE_BUILD_TYPE:STRING="$BUILD_TYPE"  \
         -DSVF_ENABLE_ASSERTIONS:BOOL=true            \
+        -DCMAKE_CXX_STANDARD=17                      \
+        -DCMAKE_CXX_STANDARD_REQUIRED=ON            \
         ${SVF_SANITIZER:+-DSVF_SANITIZE="$SVF_SANITIZER"} \
         -DBUILD_SHARED_LIBS="$BUILD_DYN_LIB"         \
         "${cmake_generator_args[@]}"                \
