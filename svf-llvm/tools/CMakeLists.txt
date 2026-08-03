@@ -25,9 +25,14 @@ foreach(_tool IN LISTS ALL_TOOLS)
   # On Windows, increaseStackSize() is a no-op (RLIMIT_STACK not available).
   # Set the PE stack reserve to 256 MB at link time to match Linux behaviour.
   if(WIN32)
-    if(MSVC)
-      # clang-cl and cl.exe both accept MSVC linker syntax
-      target_link_options(${_tool} PRIVATE /STACK:268435456)
+    if(MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
+      if(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
+        # clang++ targeting MSVC ABI
+        target_link_options(${_tool} PRIVATE -Xlinker /STACK:268435456)
+      else()
+        # cl.exe or clang-cl.exe targeting MSVC ABI
+        target_link_options(${_tool} PRIVATE /STACK:268435456)
+      endif()
     else()
       # MinGW (clang++ or g++) uses GNU linker syntax
       target_link_options(${_tool} PRIVATE -Wl,--stack,268435456)

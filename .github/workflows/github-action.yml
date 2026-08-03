@@ -205,21 +205,13 @@ jobs:
           Copy-Item -Path "C:\Program Files\LLVM\bin\clang++.exe" -Destination "C:\llvm-sdk\bin\" -Force
           Copy-Item -Path "C:\Program Files\LLVM\bin\clang-cl.exe" -Destination "C:\llvm-sdk\bin\" -Force
           
-          # 3.5. Locate and patch the hardcoded MSVC diaguids.lib path in the LLVM SDK configuration
-          $searchPaths = @(
-              "$env:ProgramFiles\Microsoft Visual Studio\2022",
-              "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022"
-          ) | Where-Object { Test-Path $_ }
-          $diaPath = (Get-ChildItem -Path $searchPaths -Filter "diaguids.lib" -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match "DIA SDK\\lib\\amd64" } | Select-Object -ExpandProperty FullName -First 1)
-          if ($diaPath) {
-              $diaPath = $diaPath -replace '\\', '/'
-              $exportsFile = "C:\llvm-sdk\lib\cmake\llvm\LLVMExports.cmake"
-              if (Test-Path $exportsFile) {
-                  $content = Get-Content $exportsFile -Raw
-                  $oldPath = "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/DIA SDK/lib/amd64/diaguids.lib"
-                  $newContent = $content.Replace($oldPath, $diaPath)
-                  Set-Content $exportsFile $newContent -NoNewline
-              }
+          # 3.5. Strip the hardcoded MSVC diaguids.lib dependency from LLVMExports.cmake
+          $exportsFile = "C:\llvm-sdk\lib\cmake\llvm\LLVMExports.cmake"
+          if (Test-Path $exportsFile) {
+              $content = Get-Content $exportsFile -Raw
+              # Remove any absolute path ending in /DIA SDK/lib/amd64/diaguids.lib;
+              $newContent = $content -replace '[a-zA-Z]:/[^";]+?/DIA SDK/lib/amd64/diaguids\.lib;', ""
+              Set-Content $exportsFile $newContent -NoNewline
           }
           
           # 4. Export environment variables using UTF-8 encoding

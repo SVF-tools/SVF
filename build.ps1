@@ -250,7 +250,8 @@ if ($Z3Dir -ne "" -and (Test-Path $Z3Dir)) {
         "-DCMAKE_INSTALL_PREFIX=$Z3Home",
         "-DZ3_BUILD_LIBZ3_SHARED=OFF",
         "-DZ3_BUILD_EXECUTABLE=OFF",
-        "-DZ3_BUILD_TEST_EXECUTABLES=OFF"
+        "-DZ3_BUILD_TEST_EXECUTABLES=OFF",
+        "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded"
     )
     if ($Compiler -eq "mingw") {
         $z3CmakeArgs += "-DCMAKE_C_COMPILER=$env:LLVM_DIR\bin\clang.exe"
@@ -329,6 +330,9 @@ $svfCmakeArgs = @(
 if ($Compiler -eq "mingw") {
     $svfCmakeArgs += "-DCMAKE_C_COMPILER=$env:LLVM_DIR\bin\clang.exe"
     $svfCmakeArgs += "-DCMAKE_CXX_COMPILER=$env:LLVM_DIR\bin\clang++.exe"
+} elseif ($Compiler -eq "msvc") {
+    $svfCmakeArgs += "-DCMAKE_C_COMPILER=cl"
+    $svfCmakeArgs += "-DCMAKE_CXX_COMPILER=cl"
 }
 & cmake @svfCmakeArgs
 

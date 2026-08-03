@@ -1,4 +1,5 @@
-//===- TypeAnalysis.h -- Fast type-based analysis without pointer analysis---------//
+//===- TypeAnalysis.h -- Fast type-based analysis without pointer
+//analysis---------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -40,20 +41,15 @@ class CallEdgeMap;
 class CallSiteToFunPtrMap;
 class SVFIR;
 
-class TypeAnalysis:  public AndersenBase
+class TypeAnalysis : public AndersenBase
 {
 
 public:
     /// Constructor
-    TypeAnalysis(SVFIR* pag)
-        :  AndersenBase(pag, TypeCPP_WPA)
-    {
-    }
+    TypeAnalysis(SVFIR* pag) : AndersenBase(pag, TypeCPP_WPA) {}
 
     /// Destructor
-    virtual ~TypeAnalysis()
-    {
-    }
+    virtual ~TypeAnalysis() {}
 
     /// Type analysis
     void analyze() override;
@@ -62,7 +58,7 @@ public:
     void initialize() override;
 
     /// Finalize analysis
-    virtual inline void finalize() override;
+    void finalize() override;
 
     /// Add copy edge on constraint graph
     inline bool addCopyEdge(NodeID src, NodeID dst) override
@@ -72,18 +68,19 @@ public:
     }
 
     /// Resolve callgraph based on CHA
-    void callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges);
+    void callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites,
+                                  CallEdgeMap& newEdges);
 
     /// Statistics of CHA and callgraph
     void dumpCHAStats();
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const TypeAnalysis *)
+    static inline bool classof(const TypeAnalysis*)
     {
         return true;
     }
-    static inline bool classof(const PointerAnalysis *pta)
+    static inline bool classof(const PointerAnalysis* pta)
     {
         return (pta->getAnalysisTy() == TypeCPP_WPA);
     }

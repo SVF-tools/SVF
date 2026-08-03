@@ -1,5 +1,17 @@
 cmake_minimum_required(VERSION 3.23)
 
+# Reset invalid cached compiler paths so project() can probe available compilers.
+if(DEFINED CMAKE_C_COMPILER)
+  if(IS_ABSOLUTE "${CMAKE_C_COMPILER}" AND NOT EXISTS "${CMAKE_C_COMPILER}")
+    unset(CMAKE_C_COMPILER CACHE)
+  endif()
+endif()
+if(DEFINED CMAKE_CXX_COMPILER)
+  if(IS_ABSOLUTE "${CMAKE_CXX_COMPILER}" AND NOT EXISTS "${CMAKE_CXX_COMPILER}")
+    unset(CMAKE_CXX_COMPILER CACHE)
+  endif()
+endif()
+
 # =================================================================================
 # SVF project definition
 # =================================================================================
@@ -15,6 +27,13 @@ project(
 # Export compile commands for clangd & IDE support
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+# Configure MSVC runtime library (default to static to match LLVM SDK, but allow override)
+if(MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
+  if(NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+  endif()
+endif()
 
 # Set SVF's default C/C++ standards (C11/C++17)
 set(CMAKE_C_STANDARD 11)
