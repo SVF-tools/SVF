@@ -80,7 +80,7 @@ else()
   list(FILTER LLVM_LIBRARIES EXCLUDE REGEX "^LLVMSvf(Core|LLVM)$|^LLVMSVFAnalysis$")
 endif()
 
-if(WIN32)
+if(MINGW)
   # Glob all static library files matching libLLVM*.a from the LLVM library directory
   file(GLOB LLVM_STATIC_LIBS "${LLVM_LIBRARY_DIRS}/libLLVM*.a")
   # Exclude import libraries (.dll.a) to avoid dynamic linking
