@@ -44,6 +44,12 @@ const Option<u32_t> Options::MaxFieldLimit(
     512
 );
 
+Option<u32_t> Options::ExtMemFieldLimit(
+    "ext-mem-field-limit",
+    "Maximum flattened fields expanded for one external memory operation; 0 disables summarization",
+    4096
+);
+
 const OptionMap<BVDataPTAImpl::PTBackingType> Options::ptDataBacking(
     "ptd",
     "Overarching points-to data structure",

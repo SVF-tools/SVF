@@ -48,12 +48,19 @@ public:
      */
     enum ExtAPIType { UNCLASSIFIED, MEMCPY, MEMSET, STRCPY, STRCAT };
 
+    // Only AbstractInterpretation may construct the single owned AbsExtAPI
+    // instance (reachable through its private getUtils()). Keeping the
+    // constructor private prevents external callers from creating their own
+    // AbsExtAPI and invoking handleExtAPI()/handleMemcpy()/... directly.
+    friend class AbstractInterpretation;
+private:
     /**
      * @brief Constructor for AbsExtAPI.
      * @param ae Reference to the AbstractInterpretation instance.
      */
     AbsExtAPI(AbstractInterpretation* ae);
 
+public:
     /**
      * @brief Initializes the external function map.
      */

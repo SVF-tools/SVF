@@ -258,6 +258,7 @@ private:
         return all_added;
     }
 
+public:
     /// Get/Add a function entry node
     inline FunEntryICFGNode* getFunEntryBlock(const FunObjVar* fun)
     {

@@ -325,6 +325,8 @@ protected:
     //@{
     virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const ValVar* cs_arg, const ValVar* fun_arg, const CallICFGNode*, CallSiteID csId, SVFGEdgeSetTy& edges)
     {
+        if (!hasDef(cs_arg) || !hasDef(fun_arg))
+            return;
         SVFGNode* actualParam = getSVFGNode(getDef(cs_arg));
         SVFGNode* formalParam = getSVFGNode(getDef(fun_arg));
         SVFGEdge* edge = hasInterVFGEdge(actualParam, formalParam, SVFGEdge::CallDirVF, csId);
@@ -334,6 +336,8 @@ protected:
 
     virtual inline void getInterVFEdgeAtIndCSFromFRToAR(const ValVar* fun_ret, const ValVar* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges)
     {
+        if (!hasDef(fun_ret) || !hasDef(cs_ret))
+            return;
         SVFGNode* formalRet = getSVFGNode(getDef(fun_ret));
         SVFGNode* actualRet = getSVFGNode(getDef(cs_ret));
         SVFGEdge* edge = hasInterVFGEdge(formalRet, actualRet, SVFGEdge::RetDirVF, csId);

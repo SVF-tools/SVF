@@ -33,6 +33,9 @@
 #include "AE/Svfexe/SparseAbstractInterpretation.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
+#include <cstdlib>
+#include <cstring>
+#include <limits>
 
 using namespace SVF;
 
@@ -45,6 +48,21 @@ AbstractState& AbstractInterpretation::getAbsState(const ICFGNode* node)
 {
     if (abstractTrace.count(node) == 0)
     {
+        static const bool allowMissing = []()
+        {
+            const char* env = std::getenv("AE_ALLOW_MISSING_STATE");
+            if (env == nullptr || *env == '\0')
+                return false;
+            return std::strcmp(env, "0") != 0 &&
+                   std::strcmp(env, "false") != 0 &&
+                   std::strcmp(env, "off") != 0 &&
+                   std::strcmp(env, "no") != 0;
+        }();
+        if (allowMissing)
+        {
+            abstractTrace[node] = AbstractState();
+            return abstractTrace[node];
+        }
         assert(false && "No preAbsTrace for this node");
         abort();
     }
@@ -196,6 +214,13 @@ void AbstractInterpretation::getAbsState(const Set<const SVFVar*>& vars, Abstrac
 IntervalValue AbstractInterpretation::getGepElementIndex(const GepStmt* gep)
 {
     const ICFGNode* node = gep->getICFGNode();
+    // Byte-addressed struct GEPs carry both a physical byte offset (for bound
+    // checks) and a layout-derived field index (for abstract memory state).
+    // Recomputing the latter from the raw i8 index can collapse distinct
+    // fields at MaxFieldLimit, e.g. byte offsets 80 and 368 both becoming 32.
+    if (gep->getAccessPath().hasResolvedFieldIndex())
+        return IntervalValue(
+                   (s64_t)gep->getAccessPath().getConstantStructFldIdx());
     if (gep->isConstantOffset())
         return IntervalValue((s64_t)gep->accumulateConstantOffset());
 
@@ -274,10 +299,8 @@ IntervalValue AbstractInterpretation::getGepByteOffset(const GepStmt* gep)
 
             if (const ConstIntValVar* op = SVFUtil::dyn_cast<ConstIntValVar>(idxOperandVar))
             {
-                s64_t lb = (double)Options::MaxFieldLimit() / elemByteSize >= op->getSExtValue()
-                           ? op->getSExtValue() * elemByteSize
-                           : Options::MaxFieldLimit();
-                res = res + IntervalValue(lb, lb);
+                res = res +
+                      IntervalValue(op->getSExtValue()) * IntervalValue(elemByteSize);
             }
             else
             {
@@ -285,21 +308,7 @@ IntervalValue AbstractInterpretation::getGepByteOffset(const GepStmt* gep)
                 if (idxVal.isBottom())
                     res = res + IntervalValue(0, 0);
                 else
-                {
-                    s64_t idxUb = idxVal.ub().is_plus_infinity() ?
-                                  Options::MaxFieldLimit() : idxVal.ub().getIntNumeral();
-                    s64_t idxLb = idxVal.lb().is_minus_infinity() ?
-                                  0 : idxVal.lb().getIntNumeral();
-                    s64_t ub = (idxUb < 0) ? 0
-                               : (double)Options::MaxFieldLimit() / elemByteSize >= idxUb
-                               ? elemByteSize * idxUb
-                               : Options::MaxFieldLimit();
-                    s64_t lb = (idxLb < 0) ? 0
-                               : (double)Options::MaxFieldLimit() / elemByteSize >= idxLb
-                               ? elemByteSize * idxLb
-                               : Options::MaxFieldLimit();
-                    res = res + IntervalValue(lb, ub);
-                }
+                    res = res + idxVal * IntervalValue(elemByteSize);
             }
         }
         else if (const SVFStructType* structOperandType = SVFUtil::dyn_cast<SVFStructType>(idxOperandType))
@@ -345,29 +354,8 @@ AbstractValue AbstractInterpretation::loadValue(const ValVar* pointer, const ICF
     AbstractValue res;
     for (auto addr : ptrVal.getAddrs())
     {
-        NodeID objId = as.getIDFromAddr(addr);
-        const SVFVar* objVar = svfir->getSVFVar(objId);
-        AbstractValue loaded = getAbsValue(objVar, node);
-        if (!loaded.isInterval() && !loaded.isAddr())
-        {
-            if (const BaseObjVar* baseObj = SVFUtil::dyn_cast<BaseObjVar>(objVar))
-            {
-                if (baseObj->isArray() || baseObj->isStruct() ||
-                        baseObj->isConstDataOrConstGlobal())
-                {
-                    NodeID field0 = svfir->getGepObjVar(baseObj, 0);
-                    if (field0 != objId)
-                    {
-                        if (const ObjVar* fieldObj = SVFUtil::dyn_cast<ObjVar>(
-                                    svfir->getSVFVar(field0)))
-                        {
-                            loaded.join_with(getAbsValue(fieldObj, node));
-                        }
-                    }
-                }
-            }
-        }
-        res.join_with(loaded);
+        res.join_with(
+            getAbsValue(svfir->getSVFVar(as.getIDFromAddr(addr)), node));
     }
     return res;
 }
@@ -378,6 +366,21 @@ void AbstractInterpretation::storeValue(const ValVar* pointer, const AbstractVal
     AbstractState& as = getAbsState(node);
     for (auto addr : ptrVal.getAddrs())
         updateAbsValue(svfir->getSVFVar(as.getIDFromAddr(addr)), val, node);
+}
+
+AbstractValue AbstractInterpretation::loadAddressValue(u32_t addr,
+        const ICFGNode* node)
+{
+    AbstractState& as = getAbsState(node);
+    return getAbsValue(svfir->getSVFVar(as.getIDFromAddr(addr)), node);
+}
+
+void AbstractInterpretation::storeAddressValue(u32_t addr,
+        const AbstractValue& val,
+        const ICFGNode* node)
+{
+    AbstractState& as = getAbsState(node);
+    updateAbsValue(svfir->getSVFVar(as.getIDFromAddr(addr)), val, node);
 }
 
 const SVFType* AbstractInterpretation::getPointeeElement(const ObjVar* var, const ICFGNode* node)
@@ -395,32 +398,67 @@ const SVFType* AbstractInterpretation::getPointeeElement(const ObjVar* var, cons
     return nullptr;
 }
 
-u32_t AbstractInterpretation::getAllocaInstByteSize(const AddrStmt* addr)
+IntervalValue AbstractInterpretation::getAllocaInstByteSizeInterval(const AddrStmt* addr)
 {
     const ICFGNode* node = addr->getICFGNode();
     if (const ObjVar* objvar = SVFUtil::dyn_cast<ObjVar>(addr->getRHSVar()))
     {
-        if (svfir->getBaseObject(objvar->getId())->isConstantByteSize())
+        const BaseObjVar* baseObj = svfir->getBaseObject(objvar->getId());
+        if (baseObj->isConstantByteSize())
         {
-            return svfir->getBaseObject(objvar->getId())->getByteSizeOfObj();
+            return IntervalValue(baseObj->getByteSizeOfObj());
         }
         else
         {
             const std::vector<SVFVar*>& sizes = addr->getArrSize();
-            u32_t elementSize = 1;
-            u64_t res = elementSize;
+            if (sizes.empty())
+                return IntervalValue::bottom();
+
+            // Heap allocation arguments are already byte counts. A dynamic
+            // alloca argument is an element count and needs the element size.
+            IntervalValue res((s64_t)(baseObj->isStack()
+                                      ? std::max(1U, baseObj->getType()->getByteSize())
+                                      : 1U));
             for (const SVFVar* value : sizes)
             {
                 const AbstractValue& sizeVal = getAbsValue(value, node);
-                IntervalValue itv = sizeVal.getInterval();
-                if (itv.isBottom())
-                    itv = IntervalValue(Options::MaxFieldLimit());
-                res = res * itv.ub().getIntNumeral() > Options::MaxFieldLimit()
-                      ? Options::MaxFieldLimit() : res * itv.ub().getIntNumeral();
+                IntervalValue count = sizeVal.getInterval();
+                if (count.isBottom())
+                {
+                    // This is a reachable allocation with an unknown dynamic
+                    // count.  Treat it as an unbounded non-negative size; reusing
+                    // a previous concrete invocation would be unsound.
+                    res = IntervalValue(
+                              (s64_t)0, IntervalValue::plus_infinity());
+                    break;
+                }
+                count.meet_with(IntervalValue(
+                                    (s64_t)0, IntervalValue::plus_infinity()));
+                if (count.isBottom())
+                    return IntervalValue::bottom();
+                res = res * count;
             }
-            return (u32_t)res;
+
+            auto summaryIt = allocationByteSizeSummary.find(addr);
+            if (summaryIt == allocationByteSizeSummary.end())
+                summaryIt = allocationByteSizeSummary.emplace(addr, res).first;
+            else
+                summaryIt->second.join_with(res);
+            return summaryIt->second;
         }
     }
     assert(false && "Addr rhs value is not ObjVar");
     abort();
+}
+
+u32_t AbstractInterpretation::getAllocaInstByteSize(const AddrStmt* addr)
+{
+    const IntervalValue size = getAllocaInstByteSizeInterval(addr);
+    if (size.isBottom() || size.ub().is_plus_infinity())
+        return 0;
+
+    const s64_t upper = size.ub().getIntNumeral();
+    if (upper <= 0 || (u64_t)upper > std::numeric_limits<u32_t>::max())
+        return 0;
+    return (u32_t)upper;
 }

@@ -93,10 +93,13 @@ void collectMemcpyFields(
     const DataLayout& dl,
     IRGraph* pag,
     std::vector<MemcpyField>& fields,
+    u32_t fieldLimit,
     APOffset baseByteOffset = 0,
     APOffset baseFldIdx = 0)
 {
     if (llvmType == nullptr || svfType == nullptr)
+        return;
+    if (fieldLimit > 0 && fields.size() > fieldLimit)
         return;
 
     if (svfType->isPointerTy())
@@ -116,7 +119,10 @@ void collectMemcpyFields(
                 return;
             APOffset elemByteOffset = baseByteOffset + static_cast<APOffset>(layout->getElementOffset(i));
             APOffset elemFldIdx = baseFldIdx + pag->getFlattenedElemIdx(svfType, i);
-            collectMemcpyFields(elemLLVMType, elemSVFType, dl, pag, fields, elemByteOffset, elemFldIdx);
+            collectMemcpyFields(elemLLVMType, elemSVFType, dl, pag, fields, fieldLimit,
+                                elemByteOffset, elemFldIdx);
+            if (fieldLimit > 0 && fields.size() > fieldLimit)
+                return;
         }
         return;
     }
@@ -132,18 +138,21 @@ void collectMemcpyFields(
         {
             APOffset elemByteOffset = baseByteOffset + i * elemByteSize;
             APOffset elemFldIdx = baseFldIdx + pag->getFlattenedElemIdx(svfType, i);
-            collectMemcpyFields(elemLLVMType, elemSVFType, dl, pag, fields, elemByteOffset, elemFldIdx);
+            collectMemcpyFields(elemLLVMType, elemSVFType, dl, pag, fields, fieldLimit,
+                                elemByteOffset, elemFldIdx);
+            if (fieldLimit > 0 && fields.size() > fieldLimit)
+                return;
         }
     }
 }
 
-std::vector<MemcpyField> getMemcpyFields(const Value* value, const Type* llvmType, const SVFType* svfType)
+std::vector<MemcpyField> getMemcpyFields(const Type* llvmType, const SVFType* svfType, u32_t fieldLimit)
 {
     std::vector<MemcpyField> fields;
     auto* mset = LLVMModuleSet::getLLVMModuleSet();
     auto* pag = PAG::getPAG();
     const DataLayout& dl = mset->getMainLLVMModule()->getDataLayout();
-    collectMemcpyFields(llvmType, svfType, dl, pag, fields);
+    collectMemcpyFields(llvmType, svfType, dl, pag, fields, fieldLimit);
     return fields;
 }
 
@@ -156,6 +165,39 @@ const Type* getMemcpyLayoutType(const Value* baseValue, const Type* fallbackType
         return global->getValueType();
 
     return fallbackType;
+}
+
+bool overExtMemFieldLimit(size_t fields)
+{
+    u32_t limit = Options::ExtMemFieldLimit();
+    if (limit > 0 && Options::MaxFieldLimit() > 0)
+        limit = std::min(limit, Options::MaxFieldLimit());
+    return limit > 0 && fields > limit;
+}
+
+u32_t effectiveExtMemFieldLimit()
+{
+    u32_t limit = Options::ExtMemFieldLimit();
+    if (limit > 0 && Options::MaxFieldLimit() > 0)
+        limit = std::min(limit, Options::MaxFieldLimit());
+    return limit;
+}
+
+void reportExtMemSummary(const char* kind, size_t fields)
+{
+    static unsigned long long reportCount = 0;
+    ++reportCount;
+
+    if (reportCount <= 20 || (reportCount & (reportCount - 1)) == 0)
+    {
+        SVFUtil::errs() << "[SVFIR-EXTMEM-SUMMARY] count=" << reportCount
+                        << " kind=" << kind
+                        << " fields=" << fields
+                        << " limit=" << effectiveExtMemFieldLimit()
+                        << " ext_limit=" << Options::ExtMemFieldLimit()
+                        << " field_limit=" << Options::MaxFieldLimit()
+                        << "\n";
+    }
 }
 
 }
@@ -175,6 +217,8 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
         auto szIntVal = LLVMUtil::getIntegerValue(SVFUtil::cast<ConstantInt>(szValue));
         numOfElems = (numOfElems > szIntVal.first) ? szIntVal.first : numOfElems;
     }
+    if (effectiveExtMemFieldLimit() > 0 && numOfElems > effectiveExtMemFieldLimit())
+        numOfElems = effectiveExtMemFieldLimit() + 1;
 
     LLVMContext& context = LLVMModuleSet::getLLVMModuleSet()->getContext();
     for(u32_t ei = 0; ei < numOfElems; ei++)
@@ -223,6 +267,20 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     /// If sz is 0, we will add edges for all fields.
     u32_t sz = fields.size();
 
+    auto addCoarseCopySummary = [&]()
+    {
+        NodeID dummy = pag->addDummyValNode();
+        addLoadEdge(vnS, dummy);
+        addStoreEdge(dummy, vnD);
+    };
+
+    if (overExtMemFieldLimit(fields.size()))
+    {
+        reportExtMemSummary("memcpy", fields.size());
+        addCoarseCopySummary();
+        return;
+    }
+
     if (fields.size() == 1 && (LLVMUtil::isConstDataOrAggData(D) || LLVMUtil::isConstDataOrAggData(S)))
     {
         NodeID dummy = pag->addDummyValNode();
@@ -246,8 +304,17 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     {
         const SVFType* dstSVFType = llvmModuleSet()->getSVFType(dstLayoutType);
         const SVFType* srcSVFType = llvmModuleSet()->getSVFType(srcLayoutType);
-        std::vector<MemcpyField> dstMemcpyFields = getMemcpyFields(D, dstLayoutType, dstSVFType);
-        std::vector<MemcpyField> srcMemcpyFields = getMemcpyFields(S, srcLayoutType, srcSVFType);
+        std::vector<MemcpyField> dstMemcpyFields =
+            getMemcpyFields(dstLayoutType, dstSVFType, effectiveExtMemFieldLimit());
+        std::vector<MemcpyField> srcMemcpyFields =
+            getMemcpyFields(srcLayoutType, srcSVFType, effectiveExtMemFieldLimit());
+        if (overExtMemFieldLimit(dstMemcpyFields.size()) ||
+                overExtMemFieldLimit(srcMemcpyFields.size()))
+        {
+            reportExtMemSummary("memcpy-layout", std::max(dstMemcpyFields.size(), srcMemcpyFields.size()));
+            addCoarseCopySummary();
+            return;
+        }
         if (!dstMemcpyFields.empty() && !srcMemcpyFields.empty())
         {
             std::unordered_map<APOffset, MemcpyField> srcFieldsByByteOffset;
@@ -391,6 +458,14 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
         std::vector<AccessPath> dstFields;
         const Type *dtype = getBaseTypeAndFlattenedFields(cs->getArgOperand(0), dstFields, cs->getArgOperand(2));
         u32_t sz = dstFields.size();
+        if (overExtMemFieldLimit(dstFields.size()))
+        {
+            reportExtMemSummary("memset", dstFields.size());
+            addStoreEdge(getValueNode(cs->getArgOperand(1)), getValueNode(cs->getArgOperand(0)));
+            if(SVFUtil::isa<PointerType>(cs->getType()))
+                addCopyEdge(getValueNode(cs->getArgOperand(0)), getValueNode(cs), CopyStmt::COPYVAL);
+            return;
+        }
         //For each field (i), add store edge *(arg0 + i) = arg1
         for (u32_t index = 0; index < sz; index++)
         {

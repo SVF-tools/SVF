@@ -34,6 +34,8 @@
 #include "SVF-LLVM/CppUtil.h"
 #include "Util/Casting.h"
 
+#include <cstdlib>
+
 #define TYPE_DEBUG 0 /* Turn this on if you're debugging type inference */
 #define ERR_MSG(msg)                                                           \
     do                                                                         \
@@ -80,6 +82,196 @@ using namespace cppUtil;
 
 const std::string TYPEMALLOC = "TYPE_MALLOC";
 
+namespace
+{
+const MDNode* getTBAABaseType(const Instruction* inst)
+{
+    const MDNode* tag = inst ? inst->getMetadata(LLVMContext::MD_tbaa) : nullptr;
+    if (!tag || tag->getNumOperands() < 3)
+        return nullptr;
+    return SVFUtil::dyn_cast<MDNode>(tag->getOperand(0).get());
+}
+
+bool getTBAAOffset(const llvm::Metadata* metadata, uint64_t& offset)
+{
+    const auto* constant = SVFUtil::dyn_cast<llvm::ConstantAsMetadata>(metadata);
+    const auto* integer = constant ?
+                          SVFUtil::dyn_cast<ConstantInt>(constant->getValue()) : nullptr;
+    if (!integer)
+        return false;
+    offset = integer->getZExtValue();
+    return true;
+}
+
+bool structNameMatchesTBAA(llvm::StringRef llvmName, llvm::StringRef tbaaName)
+{
+    llvmName.consume_front("struct.");
+    llvmName.consume_front("class.");
+    if (llvmName == tbaaName)
+        return true;
+    if (!llvmName.starts_with(tbaaName) || llvmName.size() <= tbaaName.size() + 1 ||
+            llvmName[tbaaName.size()] != '.')
+        return false;
+
+    const llvm::StringRef suffix = llvmName.drop_front(tbaaName.size() + 1);
+    for (const char c : suffix)
+        if (c < '0' || c > '9')
+            return false;
+    return !suffix.empty();
+}
+
+bool structLayoutMatchesTBAA(const StructType* structType, const MDNode* tbaaType,
+                             const DataLayout& dataLayout)
+{
+    if (!structType || structType->isOpaque() || !structType->isSized() ||
+            !tbaaType || tbaaType->getNumOperands() != 1 + 2 * structType->getNumElements())
+        return false;
+
+    const StructLayout* layout =
+        dataLayout.getStructLayout(const_cast<StructType*>(structType));
+    for (unsigned field = 0; field < structType->getNumElements(); ++field)
+    {
+        uint64_t tbaaOffset = 0;
+        if (!getTBAAOffset(tbaaType->getOperand(2 + 2 * field).get(), tbaaOffset) ||
+                layout->getElementOffset(field) != tbaaOffset)
+            return false;
+    }
+    return true;
+}
+
+const StructType* findStructForTBAA(const MDNode* tbaaType, bool trace)
+{
+    if (!tbaaType || tbaaType->getNumOperands() == 0)
+        return nullptr;
+    const auto* nameMetadata =
+        SVFUtil::dyn_cast<MDString>(tbaaType->getOperand(0).get());
+    if (!nameMetadata)
+        return nullptr;
+
+    const StructType* result = nullptr;
+    LLVMModuleSet* moduleSet = LLVMModuleSet::getLLVMModuleSet();
+    for (Module& module : moduleSet->getLLVMModules())
+    {
+        const DataLayout& dataLayout = module.getDataLayout();
+        for (StructType* structType : module.getIdentifiedStructTypes())
+        {
+            if (!structType->hasName() ||
+                    !structNameMatchesTBAA(structType->getName(), nameMetadata->getString()))
+                continue;
+
+            const bool layoutMatches =
+                structLayoutMatchesTBAA(structType, tbaaType, dataLayout);
+            if (trace)
+                SVFUtil::errs() << "[TBAA-TYPE] name=" << nameMetadata->getString().str()
+                                << " candidate=" << structType->getName().str()
+                                << " fields=" << structType->getNumElements()
+                                << " descriptor_operands=" << tbaaType->getNumOperands()
+                                << " layout_matches=" << layoutMatches << "\n";
+            if (!layoutMatches)
+                continue;
+
+            // LTO can retain one identified LLVM type per translation unit
+            // (for example, foo.174 and foo.240) even when both implement the
+            // same C struct ABI.  The full TBAA name/field-offset match above
+            // makes those duplicates equivalent for field partitioning.
+            if (!result)
+                result = structType;
+        }
+    }
+    return result;
+}
+
+const StructType* inferHeapStructFromTBAA(const Value* allocation)
+{
+    const char* traceValue = std::getenv("AE_TBAA_TYPE_TRACE");
+    const char* traceFun = std::getenv("AE_TBAA_TYPE_TRACE_FUN");
+    const auto* allocationInst = SVFUtil::dyn_cast<Instruction>(allocation);
+    const bool trace = traceValue && *traceValue && traceValue[0] != '0' &&
+                       (!traceFun || !*traceFun ||
+                        (allocationInst && allocationInst->getFunction()->getName() == traceFun));
+    std::vector<const Value*> workList{allocation};
+    Set<const Value*> visited;
+    Set<const MDNode*> tbaaTypes;
+
+    while (!workList.empty() && visited.size() < 4096)
+    {
+        const Value* value = workList.back();
+        workList.pop_back();
+        if (!visited.insert(value).second || !value->hasUseList())
+            continue;
+
+        for (const User* user : value->users())
+        {
+            const auto* inst = SVFUtil::dyn_cast<Instruction>(user);
+            if (!inst)
+                continue;
+
+            bool isMemoryAccess = false;
+            if (const auto* load = SVFUtil::dyn_cast<LoadInst>(inst))
+                isMemoryAccess = load->getPointerOperand() == value;
+            else if (const auto* store = SVFUtil::dyn_cast<StoreInst>(inst))
+                isMemoryAccess = store->getPointerOperand() == value;
+
+            if (isMemoryAccess)
+            {
+                if (const MDNode* tbaaType = getTBAABaseType(inst))
+                    tbaaTypes.insert(tbaaType);
+                continue;
+            }
+
+            if (const auto* gep = SVFUtil::dyn_cast<GetElementPtrInst>(inst))
+            {
+                if (gep->getPointerOperand() == value)
+                    workList.push_back(gep);
+            }
+            else if (const auto* cast = SVFUtil::dyn_cast<BitCastInst>(inst))
+            {
+                if (cast->getOperand(0) == value)
+                    workList.push_back(cast);
+            }
+            else if (const auto* cast =
+                         SVFUtil::dyn_cast<llvm::AddrSpaceCastInst>(inst))
+            {
+                if (cast->getOperand(0) == value)
+                    workList.push_back(cast);
+            }
+        }
+    }
+
+    const StructType* result = nullptr;
+    if (trace)
+        SVFUtil::errs() << "[TBAA-TYPE] allocation="
+                        << LLVMUtil::dumpValueAndDbgInfo(allocation)
+                        << " descriptors=" << tbaaTypes.size() << "\n";
+    for (const MDNode* tbaaType : tbaaTypes)
+    {
+        if (trace)
+        {
+            const auto* name = tbaaType->getNumOperands() == 0 ? nullptr :
+                               SVFUtil::dyn_cast<MDString>(tbaaType->getOperand(0).get());
+            SVFUtil::errs() << "[TBAA-TYPE] descriptor_name="
+                            << (name ? name->getString().str() : "<unnamed>")
+                            << " operands=" << tbaaType->getNumOperands()
+                            << " offsets=";
+            for (unsigned operand = 2; operand < tbaaType->getNumOperands(); operand += 2)
+            {
+                uint64_t offset = 0;
+                if (getTBAAOffset(tbaaType->getOperand(operand).get(), offset))
+                    SVFUtil::errs() << offset << ',';
+            }
+            SVFUtil::errs() << "\n";
+        }
+        const StructType* candidate = findStructForTBAA(tbaaType, trace);
+        if (!candidate)
+            continue;
+        if (result && result != candidate)
+            return nullptr;
+        result = candidate;
+    }
+    return result;
+}
+}
+
 /// Determine type based on infer site
 /// https://llvm.org/docs/OpaquePointers.html#migration-instructions
 const Type *infersiteToType(const Value *val)
@@ -93,6 +285,15 @@ const Type *infersiteToType(const Value *val)
     {
         return gepInst->getSourceElementType();
     }
+#if LLVM_VERSION_MAJOR < 17
+    else if (const auto *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(val))
+    {
+        const auto *ptrTy = SVFUtil::dyn_cast<PointerType>(bitCastInst->getDestTy());
+        ABORT_IFNOT(ptrTy,
+                    "bitcast inference site must have a pointer result");
+        return LLVMUtil::getPtrElementType(ptrTy);
+    }
+#endif
     else if (const auto *call = SVFUtil::dyn_cast<CallBase>(val))
     {
         return call->getFunctionType();
@@ -149,6 +350,7 @@ const Type *ObjTypeInference::inferObjType(const Value *var)
     //  but we can infer the obj type of %0 based on that of %inner_v.
     if (res == defaultType(var))
     {
+        if (!var->hasUseList()) return res;
         for (const auto& use: var->users())
         {
             if (const CallBase* cs = SVFUtil::dyn_cast<CallBase>(use))
@@ -220,6 +422,28 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
 
         // consult cache
         auto tIt = _valueToType.find(var);
+        if (tIt != _valueToType.end() && tIt->second &&
+                tIt->second != defaultType(var))
+        {
+            return tIt->second;
+        }
+
+        // Opaque-pointer IR can erase the cast that carried a heap object's
+        // aggregate type while preserving TBAA on its memory accesses.  A
+        // matching TBAA descriptor gives both the source type name and every
+        // field byte offset, so use it only when it identifies one exact LLVM
+        // struct layout.
+        const auto* allocationInst = SVFUtil::dyn_cast<Instruction>(var);
+        if (allocationInst && LLVMUtil::isHeapAllocExtCallViaRet(allocationInst) &&
+                _tbaaInferenceAttempted.insert(var).second)
+        {
+            if (const StructType* tbaaType = inferHeapStructFromTBAA(var))
+            {
+                _valueToType[var] = tbaaType;
+                return tbaaType;
+            }
+        }
+
         if (tIt != _valueToType.end())
         {
             return tIt->second ? tIt->second : defaultType(var);
@@ -271,6 +495,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
             if (const auto* gepInst =
                         SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
                 insertInferSite(gepInst);
+            if (!curValue->hasUseList()) continue;
             for (const auto it : curValue->users())
             {
                 if (const auto* loadInst = SVFUtil::dyn_cast<LoadInst>(it))
@@ -413,7 +638,19 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                 else if (const auto* bitcast =
                              SVFUtil::dyn_cast<BitCastInst>(it))
                 {
-                    // continue on bitcast
+#if LLVM_VERSION_MAJOR < 17
+                    // Optimized IR often keeps the allocated object's only
+                    // aggregate type evidence in a cast while using byte GEPs
+                    // for every actual field access.  Retain that evidence so
+                    // distinct byte-addressed fields do not collapse to field 0.
+                    if (const auto* ptrTy =
+                                SVFUtil::dyn_cast<PointerType>(bitcast->getDestTy()))
+                    {
+                        const Type* pointeeTy = LLVMUtil::getPtrElementType(ptrTy);
+                        if (SVFUtil::isa<StructType, ArrayType>(pointeeTy))
+                            insertInferSite(bitcast);
+                    }
+#endif
                     insertInferSitesOrPushWorklist(bitcast);
                 }
                 else if (const auto* phiNode = SVFUtil::dyn_cast<PHINode>(it))
@@ -623,7 +860,10 @@ Set<const Value *> &ObjTypeInference::bwfindAllocOfVar(const Value *var)
         }
         else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(curValue))
         {
-            ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + dumpValueAndDbgInfo(callBase));
+            // A noreturn callbase (e.g. an exception thrower / abort wrapper)
+            // has no return value to trace as an alloc source; skip it rather
+            // than aborting front-end type inference on the whole module.
+            if (!callBase->doesNotReturn())
             if (Function *callee = callBase->getCalledFunction())
             {
                 if (!callee->isDeclaration())
@@ -932,7 +1172,10 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
         }
         else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(curValue))
         {
-            ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + dumpValueAndDbgInfo(callBase));
+            // A noreturn callbase (e.g. an exception thrower / abort wrapper)
+            // has no return value to trace as a type source; skip it rather
+            // than aborting front-end type inference on the whole module.
+            if (!callBase->doesNotReturn())
             if (const auto *callee = callBase->getCalledFunction())
             {
                 if (!callee->isDeclaration())

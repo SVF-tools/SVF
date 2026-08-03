@@ -97,6 +97,8 @@ protected:
     //@{
     inline void connectAParamAndFParam(const ValVar* cs_arg, const ValVar* fun_arg, const CallICFGNode*, CallSiteID csId, SVFGEdgeSetTy& edges) override
     {
+        if (!hasDef(cs_arg) || !hasDef(fun_arg))
+            return;
         NodeID phiId = getDef(fun_arg);
         SVFGEdge* edge = addCallEdge(getDef(cs_arg), phiId, csId);
         if (edge != nullptr)
@@ -109,6 +111,8 @@ protected:
     /// Connect formal-ret and actual ret
     inline void connectFRetAndARet(const ValVar* fun_ret, const ValVar* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges) override
     {
+        if (!hasDef(fun_ret) || !hasDef(cs_ret))
+            return;
         NodeID phiId = getDef(cs_ret);
         NodeID retdef = getDef(fun_ret);
         /// If a function does not have any return instruction. The def of a FormalRetVFGNode is itself (see VFG.h: addFormalRetVFGNode).

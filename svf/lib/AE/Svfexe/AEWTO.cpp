@@ -31,13 +31,57 @@
 #include "AE/Svfexe/AbstractInterpretation.h"
 #include "Util/Options.h"
 #include "Util/WorkList.h"
+#include "WPA/Steensgaard.h"
+#include "WPA/TypeAnalysis.h"
+
+#include <cstdlib>
+#include <cstdio>
+#include <string>
 
 using namespace SVF;
+
+namespace
+{
+unsigned long aeWTOEnvUL(const char* name, unsigned long fallback)
+{
+    const char* value = std::getenv(name);
+    if (value == nullptr || value[0] == '\0')
+        return fallback;
+    char* end = nullptr;
+    unsigned long parsed = std::strtoul(value, &end, 10);
+    return end == value ? fallback : parsed;
+}
+}
 
 AEWTO::AEWTO(SVFIR* pag, ICFG* icfg)
     : svfir(pag), icfg(icfg), pta(nullptr), callGraph(nullptr), callGraphSCC(nullptr)
 {
-    pta = AndersenWaveDiff::createAndersenWaveDiff(svfir);
+    const char* envMode = std::getenv("AE_PTA_MODE");
+    const std::string mode = envMode ? envMode : "ander";
+
+    if (mode == "steens")
+    {
+        std::fprintf(stderr, "[AE-PTA] mode=steens\n");
+        pta = Steensgaard::createSteensgaard(svfir);
+    }
+    else if (mode == "type")
+    {
+        std::fprintf(stderr, "[AE-PTA] mode=type\n");
+        TypeAnalysis* typePta = new TypeAnalysis(svfir);
+        typePta->analyze();
+        pta = typePta;
+    }
+    else
+    {
+        if (mode != "ander" && !mode.empty())
+            std::fprintf(stderr,
+                         "[AE-PTA] unknown AE_PTA_MODE=%s, fallback=ander\n",
+                         mode.c_str());
+        else
+            std::fprintf(stderr, "[AE-PTA] mode=ander\n");
+        pta = AndersenWaveDiff::createAndersenWaveDiff(svfir);
+    }
+
     callGraph = pta->getCallGraph();
     callGraphSCC = pta->getCallGraphSCC();
 }
@@ -50,7 +94,16 @@ AEWTO::~AEWTO()
 
 void AEWTO::initWTO()
 {
+    const unsigned long entryLimit = aeWTOEnvUL("AE_ENTRY_LIMIT", 0);
+    std::fprintf(stderr, "[AE-WTO] init start entry_limit=%lu\n", entryLimit);
+    std::fflush(stderr);
+
     callGraphSCC->find();
+
+    Set<NodeID> visitedEntrySCCs;
+    unsigned long entrySCCsBuilt = 0;
+    unsigned long wtosBuilt = 0;
+    unsigned long entrySCCsSkippedByLimit = 0;
 
     for (auto it = callGraph->begin(); it != callGraph->end(); it++)
     {
@@ -70,9 +123,49 @@ void AEWTO::initWTO()
             if (!cgSCCNodes.test(srcNodeId))
                 isEntry = true;
         }
+        // A root SCC with no caller from OUTSIDE the whole SCC is also an
+        // analysis entry in no-main mode (see collectProgEntryFuns). The
+        // per-node check above misses it when every in-edge is intra-SCC
+        // (e.g. a self-recursive root), leaving handleFunction without a WTO.
+        // Build a WTO for such SCC members too.
+        if (!isEntry)
+        {
+            bool sccHasExternalCaller = false;
+            for (NodeID nid : cgSCCNodes)
+            {
+                for (auto ie : callGraph->getGNode(nid)->getInEdges())
+                {
+                    if (!cgSCCNodes.test(ie->getSrcID()))
+                    {
+                        sccHasExternalCaller = true;
+                        break;
+                    }
+                }
+                if (sccHasExternalCaller)
+                    break;
+            }
+            if (!sccHasExternalCaller)
+                isEntry = true;
+        }
 
         if (isEntry)
         {
+            const bool firstInEntrySCC = !visitedEntrySCCs.count(repNodeId);
+            if (firstInEntrySCC)
+            {
+                if (entryLimit != 0 && entrySCCsBuilt >= entryLimit)
+                {
+                    ++entrySCCsSkippedByLimit;
+                    continue;
+                }
+                visitedEntrySCCs.insert(repNodeId);
+                ++entrySCCsBuilt;
+            }
+            else if (entryLimit != 0 && !visitedEntrySCCs.count(repNodeId))
+            {
+                continue;
+            }
+
             Set<const FunObjVar*> funcScc;
             for (const auto& node: cgSCCNodes)
             {
@@ -81,9 +174,14 @@ void AEWTO::initWTO()
             ICFGWTO* iwto = new ICFGWTO(icfg->getFunEntryICFGNode(fun), funcScc);
             iwto->init();
             funcToWTO[it->second->getFunction()] = iwto;
+            ++wtosBuilt;
         }
     }
 
+    std::fprintf(stderr,
+                 "[AE-WTO] init done entry_sccs=%lu wtos=%lu skipped_entry_sccs=%lu\n",
+                 entrySCCsBuilt, wtosBuilt, entrySCCsSkippedByLimit);
+    std::fflush(stderr);
 }
 
 // ---------------------------------------------------------------------------

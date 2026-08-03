@@ -125,6 +125,13 @@ APOffset AccessPath::computeConstantByteOffset() const
 {
     assert(isConstantOffset() && "not a constant offset");
 
+    // The LLVM frontend knows the target ABI layout, including struct padding
+    // and typed-pointer details.  Prefer that physical offset when available;
+    // the flattened field model below is only a compatibility fallback for
+    // AccessPaths created outside the LLVM frontend.
+    if (hasExactByteOffset())
+        return getExactByteOffset();
+
     APOffset totalConstOffset = 0;
     for(int i = idxOperandPairs.size() - 1; i >= 0; i--)
     {
@@ -177,7 +184,6 @@ APOffset AccessPath::computeConstantByteOffset() const
             totalConstOffset += op->getSExtValue() * type2->getByteSize();
         }
     }
-    totalConstOffset = Options::MaxFieldLimit() > totalConstOffset? totalConstOffset: Options::MaxFieldLimit();
     return totalConstOffset;
 }
 
@@ -245,7 +251,6 @@ APOffset AccessPath::computeConstantOffset() const
                 // set offset the last index of getFlattenedElemIdxVec to avoid assertion
                 if (offset >= (APOffset)so.size())
                 {
-                    SVFUtil::errs() << "It is an overflow access, hence it is the last idx\n";
                     offset = so.size() - 1;
                 }
                 else
@@ -277,6 +282,12 @@ AccessPath AccessPath::operator+(const AccessPath& rhs) const
     assert(gepPointeeType == rhs.gepSrcPointeeType() && "source element type not match");
     AccessPath ap(rhs);
     ap.fldIdx += getConstantStructFldIdx();
+    if (hasExactByteOffset() && rhs.hasExactByteOffset())
+        ap.setExactByteOffset(getExactByteOffset() + rhs.getExactByteOffset());
+    else
+        ap.hasExactByteOffsetValue = false;
+    ap.hasResolvedFieldIndexValue =
+        hasResolvedFieldIndex() && rhs.hasResolvedFieldIndex();
     for (auto &p : ap.getIdxOperandPairVec())
         ap.addOffsetVarAndGepTypePair(p.first, p.second);
 

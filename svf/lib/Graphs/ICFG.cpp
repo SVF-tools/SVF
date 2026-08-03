@@ -31,9 +31,28 @@
 #include "Graphs/CallGraph.h"
 #include "SVFIR/SVFIR.h"
 #include <Util/Options.h>
+#include <cstdlib>
+#include <string>
 
 using namespace SVF;
 using namespace SVFUtil;
+
+namespace
+{
+bool aeICFGAllowMissingState()
+{
+    static const bool allow = []()
+    {
+        const char* raw = std::getenv("AE_ALLOW_MISSING_STATE");
+        if (raw == nullptr || *raw == '\0')
+            return false;
+        std::string text(raw);
+        return text != "0" && text != "false" && text != "FALSE" &&
+               text != "off" && text != "OFF" && text != "no" && text != "NO";
+    }();
+    return allow;
+}
+}
 
 
 FunEntryICFGNode::FunEntryICFGNode(NodeID id, const FunObjVar* f) : InterICFGNode(id, FunEntryBlock)
@@ -242,6 +261,8 @@ void ICFG::addGlobalICFGNode(GlobalICFGNode* globalICFGNode)
 FunEntryICFGNode* ICFG::getFunEntryICFGNode(const FunObjVar*  fun)
 {
     FunEntryICFGNode* entry = getFunEntryBlock(fun);
+    if (entry == nullptr && aeICFGAllowMissingState() && fun != nullptr)
+        entry = addFunEntryICFGNode(fun);
     assert (entry && "fun entry not created in ICFGBuilder?");
     return entry;
 }
@@ -249,6 +270,8 @@ FunEntryICFGNode* ICFG::getFunEntryICFGNode(const FunObjVar*  fun)
 FunExitICFGNode* ICFG::getFunExitICFGNode(const FunObjVar*  fun)
 {
     FunExitICFGNode* exit = getFunExitBlock(fun);
+    if (exit == nullptr && aeICFGAllowMissingState() && fun != nullptr)
+        exit = addFunExitICFGNode(fun);
     assert (exit && "fun exit not created in ICFGBuilder?");
     return exit;
 }

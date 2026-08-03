@@ -91,6 +91,9 @@ public:
      */
     virtual void reportBug() = 0;
 
+    /// Clear state that belongs to one analysis entry. Report sets survive.
+    virtual void resetTransientState() {}
+
     /**
      * @brief Get the kind of the detector.
      * @return The kind of the detector.
@@ -171,6 +174,8 @@ public:
      * @param offset The interval value of the offset.
      */
     void updateGepObjOffsetFromBase(const ICFGNode* node,
+                                    const ValVar* gepValue,
+                                    const ValVar* baseValue,
                                     AddressValue gepAddrs,
                                     AddressValue objAddrs,
                                     IntervalValue offset);
@@ -196,11 +201,7 @@ public:
      */
     void addToGepObjOffsetFromBase(const GepObjVar* obj, const IntervalValue& offset)
     {
-        auto it = gepObjOffsetFromBase.find(obj);
-        if (it == gepObjOffsetFromBase.end())
-            gepObjOffsetFromBase[obj] = offset;
-        else
-            it->second.join_with(offset);
+        gepObjOffsetFromBase[obj] = offset;
     }
 
     /**
@@ -224,8 +225,11 @@ public:
             return gepObjOffsetFromBase.at(obj);
         else
         {
-            assert(false && "GepObjVar not found in gepObjOffsetFromBase");
-            abort();
+            // Offset-from-base not recorded (overlay / sparse path).  Return a
+            // conservative top instead of aborting: a wider offset only widens
+            // the access range, so the bound check stays sound (over-report,
+            // never under-report).
+            return IntervalValue::top();
         }
     }
 
@@ -243,34 +247,7 @@ public:
      * @param e The exception that was thrown.
      * @param node Pointer to the ICFG node where the bug was detected.
      */
-    void addBugToReporter(const AEException& e, const ICFGNode* node)
-    {
-
-        GenericBug::EventStack eventStack;
-        SVFBugEvent sourceInstEvent(SVFBugEvent::EventType::SourceInst, node);
-        eventStack.push_back(sourceInstEvent); // Add the source instruction event to the event stack
-
-        if (eventStack.empty())
-        {
-            return; // If the event stack is empty, return early
-        }
-
-        std::string loc = eventStack.back().getEventLoc(); // Get the location of the last event in the stack
-
-        // Check if the bug at this location has already been reported
-        if (bugLoc.find(loc) != bugLoc.end())
-        {
-            return; // If the bug location is already reported, return early
-        }
-        else
-        {
-            bugLoc.insert(loc); // Otherwise, mark this location as reported
-        }
-
-        // Add the bug to the recorder with details from the event stack
-        recoder.addAbsExecBug(GenericBug::FULLBUFOVERFLOW, eventStack, 0, 0, 0, 0);
-        nodeToBugInfo[node] = e.what(); // Record the exception information for the node
-    }
+    void addBugToReporter(const AEException& e, const ICFGNode* node, bool actionable = true);
 
     /**
      * @brief Reports all detected buffer overflow bugs.
@@ -287,6 +264,14 @@ public:
                 std::cerr << it.second << "\n---------------------------------------------\n";
             }
         }
+    }
+
+    void resetTransientState() override
+    {
+        gepObjOffsetFromBase.clear();
+        valueOffsetFromBase.clear();
+        lastBoundCheckEvidence.clear();
+        lastBoundCheckConfidence = BoundConfidence::None;
     }
 
     /**
@@ -311,6 +296,23 @@ public:
     bool canSafelyAccessMemory(const ValVar *value, const IntervalValue &len, const ICFGNode* node);
 
 private:
+    enum class BoundConfidence : unsigned char
+    {
+        None,
+        Inconclusive,
+        MayOverflow,
+        MustOverflow
+    };
+
+    u32_t getAccessByteSize(const ValVar* value) const;
+    bool getObjectByteSize(NodeID objId, const ICFGNode* node,
+                           IntervalValue& size) const;
+    bool canSafelyAccessBytes(const ValVar* value, u32_t accessBytes, const ICFGNode* node);
+    void detectReadWriteAccess(const SVFStmt* stmt, const ICFGNode* node);
+    bool detectReadOnlyAPI(const CallICFGNode* call);
+    void streamBugReport(const std::string& reportText, bool actionable);
+    bool isLastBoundCheckActionable() const;
+
     /**
      * @brief Detects buffer overflow in 'strcat' function calls.
      * @param call Pointer to the call ICFG node.
@@ -325,19 +327,19 @@ private:
      */
     bool detectStrcpy(const CallICFGNode *call);
 
-    /**
-     * @brief Detects out-of-bounds string reads in strcmp-like function calls.
-     * @param call Pointer to the call ICFG node.
-     * @return True if both string reads are safe, false otherwise.
-     */
-    bool detectStrcmp(const CallICFGNode *call);
-
 private:
     Map<const GepObjVar*, IntervalValue> gepObjOffsetFromBase; ///< Maps GEP objects to their offsets from the base.
+    Map<const ValVar*, IntervalValue> valueOffsetFromBase; ///< Physical offsets for SSA pointer values.
     Map<std::string, std::vector<std::pair<u32_t, u32_t>>> extAPIBufOverflowCheckRules; ///< Rules for checking buffer overflows in external APIs.
+    Map<std::string, std::vector<std::pair<u32_t, u32_t>>> extAPIReadCheckRules; ///< Rules for read-only APIs: checked argument, length argument.
     Set<std::string> bugLoc; ///< Set of locations where bugs have been reported.
+    Set<std::string> supportBugLoc; ///< Set of supporting-only locations already streamed.
     SVFBugReport recoder; ///< Recorder for abstract execution bugs.
     Map<const ICFGNode*, std::string> nodeToBugInfo; ///< Maps ICFG nodes to bug information.
+    std::string lastBoundCheckEvidence; ///< Optional explanation for the most recent failed bound check.
+    BoundConfidence lastBoundCheckConfidence = BoundConfidence::None;
+    unsigned long streamedActionableCount = 0;
+    unsigned long streamedSupportCount = 0;
 };
 class NullptrDerefDetector : public AEDetector
 {

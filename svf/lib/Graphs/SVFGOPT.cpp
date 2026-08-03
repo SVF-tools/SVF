@@ -197,6 +197,8 @@ void SVFGOPT::replaceFParamARetWithPHI(PHISVFGNode* phi, SVFGNode* svfgNode)
                 it != eit; ++it)
         {
             ActualParmSVFGNode* ap = SVFUtil::cast<ActualParmSVFGNode>((*it)->getSrcNode());
+            if (!hasDef(ap->getParam()))
+                continue;
             addInterPHIOperands(phi, ap->getParam());
             // connect actual param's def node to phi node
             addCallEdge(getDef(ap->getParam()), phiId, getCallSiteID(ap->getCallSite(), fp->getFun()));
@@ -208,6 +210,8 @@ void SVFGOPT::replaceFParamARetWithPHI(PHISVFGNode* phi, SVFGNode* svfgNode)
                 it != eit; ++it)
         {
             FormalRetSVFGNode* fr = SVFUtil::cast<FormalRetSVFGNode>((*it)->getSrcNode());
+            if (!hasDef(fr->getRet()))
+                continue;
             addInterPHIOperands(phi, fr->getRet());
             // connect formal return's def node to phi node
             addRetEdge(getDef(fr->getRet()), phiId, getCallSiteID(ar->getCallSite(), fr->getFun()));

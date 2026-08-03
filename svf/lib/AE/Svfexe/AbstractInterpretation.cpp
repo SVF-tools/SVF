@@ -30,23 +30,749 @@
 #include "AE/Svfexe/SparseAbstractInterpretation.h"
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "SVFIR/SVFIR.h"
+#include "Util/ExtAPI.h"
 #include "Util/Options.h"
 #include "Util/WorkList.h"
 #include "Graphs/CallGraph.h"
 #include "WPA/Andersen.h"
 #include <cmath>
 #include <memory>
+#include <fstream>
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
+#include <cstdio>
+#include <vector>
+#include <utility>
+#if defined(__GLIBC__)
+#include <malloc.h>
+#endif
 
 using namespace SVF;
 using namespace SVFUtil;
 
 namespace
 {
-u64_t aeFunctionTrace = 0;
-u64_t aeFunctionEntryChanged = 0;
-u64_t aeFunctionEntryFixpointHit = 0;
-u64_t aeFunctionEntryShortcutHit = 0;
-u64_t aeFunctionEntryFixpointNoExit = 0;
+static std::string aeTmpPath(const char* name)
+{
+    const char* prefix = std::getenv("AE_TMP_PREFIX");
+    if (prefix == nullptr || *prefix == '\0')
+        return std::string("/tmp/") + name;
+    return std::string("/tmp/") + prefix + "_" + name;
+}
+
+struct ValueProbeStats
+{
+    unsigned long calls = 0;
+    unsigned long compared = 0;
+    unsigned long fullSame = 0;
+    unsigned long shapeSame = 0;
+    unsigned long shapeSameButValueChanged = 0;
+    unsigned long varValueChanged = 0;
+    unsigned long varAddedRemoved = 0;
+    unsigned long locValueChanged = 0;
+    unsigned long locAddedRemoved = 0;
+    unsigned long overlayReadSetMax = 0;
+    unsigned long overlayStaleCalls = 0;
+    unsigned long overlayStaleFields = 0;
+    unsigned long sameStateButOverlayStale = 0;
+    unsigned long lastVarN = 0;
+    unsigned long lastLocN = 0;
+};
+
+static Map<const ICFGNode*, AbstractState> valueProbePrevInput;
+static Map<std::string, ValueProbeStats> valueProbeStats;
+static unsigned long valueProbeHotCalls = 0;
+
+static bool valueProbeEnabled()
+{
+    static const bool enabled = (std::getenv("VALUEPROBE") != nullptr);
+    return enabled;
+}
+
+static bool valueProbeHotFunction(const std::string& name)
+{
+    return name == "ndpi_workflow_node_cmp" ||
+           name == "ndpi_default_ports_tree_node_t_cmp" ||
+           name == "ndpi_malloc" ||
+           name == "malloc_wrapper" ||
+           name == "ndpi_free" ||
+           name == "free_wrapper" ||
+           name == "ndpi_tsearch" ||
+           name == "cstrcasecmp" ||
+           name == "memchr";
+}
+
+static void valueProbeDiffMap(const AbstractState::VarToAbsValMap& prev,
+                              const AbstractState::VarToAbsValMap& cur,
+                              unsigned long& valueChanged,
+                              unsigned long& addedRemoved)
+{
+    for (const auto& kv : cur)
+    {
+        auto it = prev.find(kv.first);
+        if (it == prev.end())
+        {
+            ++addedRemoved;
+            continue;
+        }
+        if (!kv.second.equals(it->second))
+            ++valueChanged;
+    }
+    for (const auto& kv : prev)
+        if (cur.find(kv.first) == cur.end())
+            ++addedRemoved;
+}
+
+static void valueProbeDumpSummary()
+{
+    if (!valueProbeEnabled())
+        return;
+
+    std::ofstream of(aeTmpPath("svf_valueprobe_summary.tsv"));
+    of << "function\tcalls\tcompared\tfull_same\tfull_same_pct\tshape_same"
+       << "\tshape_same_but_value_changed\tvar_value_changed"
+       << "\tvar_added_removed\tloc_value_changed\tloc_added_removed"
+       << "\toverlay_readset_max\toverlay_stale_calls"
+       << "\toverlay_stale_fields\tsame_state_but_overlay_stale"
+       << "\tlast_var_entries\tlast_loc_entries\n";
+    for (const auto& kv : valueProbeStats)
+    {
+        const ValueProbeStats& s = kv.second;
+        double pct = s.compared ? (100.0 * s.fullSame / s.compared) : 0.0;
+        of << kv.first << "\t" << s.calls
+           << "\t" << s.compared
+           << "\t" << s.fullSame
+           << "\t" << pct
+           << "\t" << s.shapeSame
+           << "\t" << s.shapeSameButValueChanged
+           << "\t" << s.varValueChanged
+           << "\t" << s.varAddedRemoved
+           << "\t" << s.locValueChanged
+           << "\t" << s.locAddedRemoved
+           << "\t" << s.overlayReadSetMax
+           << "\t" << s.overlayStaleCalls
+           << "\t" << s.overlayStaleFields
+           << "\t" << s.sameStateButOverlayStale
+           << "\t" << s.lastVarN
+           << "\t" << s.lastLocN
+           << "\n";
+    }
+}
+
+static void valueProbeAppendDetail(const std::string& name,
+                                   unsigned long globalCall,
+                                   unsigned long localCall,
+                                   bool hadPrev,
+                                   bool fullSame,
+                                   unsigned long varN,
+                                   unsigned long locN,
+                                   unsigned long varChanged,
+                                   unsigned long varAddedRemoved,
+                                   unsigned long locChanged,
+                                   unsigned long locAddedRemoved,
+                                   unsigned long readSetSize,
+                                   unsigned long staleFields)
+{
+    static bool wroteHeader = false;
+    std::ofstream of;
+    if (!wroteHeader)
+    {
+        of.open(aeTmpPath("svf_valueprobe_detail.tsv"));
+        of << "global_call\tfunction\tlocal_call\thad_prev\tfull_same"
+           << "\tvar_entries\tloc_entries\tvar_value_changed"
+           << "\tvar_added_removed\tloc_value_changed\tloc_added_removed"
+           << "\toverlay_readset\toverlay_stale_fields\n";
+        wroteHeader = true;
+    }
+    else
+    {
+        of.open(aeTmpPath("svf_valueprobe_detail.tsv"), std::ios::app);
+    }
+    of << globalCall << "\t" << name << "\t" << localCall
+       << "\t" << hadPrev
+       << "\t" << fullSame
+       << "\t" << varN
+       << "\t" << locN
+       << "\t" << varChanged
+       << "\t" << varAddedRemoved
+       << "\t" << locChanged
+       << "\t" << locAddedRemoved
+       << "\t" << readSetSize
+       << "\t" << staleFields
+       << "\n";
+}
+
+static const std::string& hotFuncMode()
+{
+    static const std::string mode =
+        std::getenv("HOTFUNC_MODE") ? std::getenv("HOTFUNC_MODE") : "legacy";
+    return mode;
+}
+
+static bool aeAllowMissingState()
+{
+    static const bool allow = []()
+    {
+        const char* raw = std::getenv("AE_ALLOW_MISSING_STATE");
+        if (raw == nullptr || *raw == '\0')
+            return false;
+        std::string text(raw);
+        return text != "0" && text != "false" && text != "FALSE" &&
+               text != "off" && text != "OFF" && text != "no" && text != "NO";
+    }();
+    return allow;
+}
+
+static bool aeConservativeBranch()
+{
+    static const bool enabled = []()
+    {
+        const char* raw = std::getenv("AE_CONSERVATIVE_BRANCH");
+        if (raw == nullptr || *raw == '\0')
+            return false;
+        std::string text(raw);
+        return text != "0" && text != "false" && text != "FALSE" &&
+               text != "off" && text != "OFF" && text != "no" && text != "NO";
+    }();
+    return enabled;
+}
+
+static bool aeBranchPruneTrace()
+{
+    static const bool enabled = []()
+    {
+        const char* raw = std::getenv("AE_BRANCH_PRUNE_TRACE");
+        if (raw == nullptr || *raw == '\0')
+            return false;
+        std::string text(raw);
+        return text != "0" && text != "false" && text != "FALSE" &&
+               text != "off" && text != "OFF" && text != "no" && text != "NO";
+    }();
+    return enabled;
+}
+
+static unsigned long hotFuncEnvUL(const char* name, unsigned long fallback)
+{
+    const char* raw = std::getenv(name);
+    if (raw == nullptr || *raw == '\0')
+        return fallback;
+
+    char* end = nullptr;
+    unsigned long value = std::strtoul(raw, &end, 10);
+    return (end == raw) ? fallback : value;
+}
+
+static bool aeEnvBool(const char* name, bool fallback = false)
+{
+    const char* raw = std::getenv(name);
+    if (raw == nullptr || *raw == '\0')
+        return fallback;
+    std::string text(raw);
+    return text != "0" && text != "false" && text != "FALSE" &&
+           text != "off" && text != "OFF" && text != "no" && text != "NO";
+}
+
+static bool aeSkipNodePrevState()
+{
+    static const bool enabled = aeEnvBool("AE_SKIP_NODE_PREV_STATE", false);
+    return enabled;
+}
+
+static bool aeCallsiteSensitivePE()
+{
+    static const bool enabled = aeEnvBool("AE_CALLSITE_SENSITIVE_PE", false);
+    return enabled;
+}
+
+static unsigned long aeEntryNodeBudget()
+{
+    static const unsigned long budget = hotFuncEnvUL("AE_ENTRY_NODE_BUDGET", 0);
+    return budget;
+}
+
+static unsigned long aeEntryBudgetAfter()
+{
+    static const unsigned long after = hotFuncEnvUL("AE_ENTRY_BUDGET_AFTER", 0);
+    return after;
+}
+
+static unsigned long aeEntryBudgetDumpEvery()
+{
+    static const unsigned long every = hotFuncEnvUL("AE_ENTRY_BUDGET_DUMP_EVERY", 100);
+    return every == 0 ? 100 : every;
+}
+
+static void aeTrimHeap()
+{
+#if defined(__GLIBC__)
+    malloc_trim(0);
+#endif
+}
+
+static unsigned long hotFuncThreshold()
+{
+    static const unsigned long threshold = hotFuncEnvUL("HOTFUNC_THRESHOLD", 64);
+    return threshold;
+}
+
+static unsigned long hotFuncDumpEvery()
+{
+    static const unsigned long every = hotFuncEnvUL("HOTFUNC_DUMP_EVERY", 1000);
+    return every == 0 ? 1000 : every;
+}
+
+static bool hotFuncExactMode()
+{
+    const std::string& mode = hotFuncMode();
+    return mode == "exact" || mode == "exact-replay";
+}
+
+static bool hotFuncLegacyMode()
+{
+    return hotFuncMode() == "legacy";
+}
+
+static bool spinProbeLiveEnabled()
+{
+    static const bool enabled = (std::getenv("SPINPROBE_LIVE") != nullptr);
+    return enabled;
+}
+
+static unsigned long spinProbeLiveEvery()
+{
+    static const unsigned long every = hotFuncEnvUL("SPINPROBE_LIVE_EVERY", 1);
+    return every == 0 ? 1 : every;
+}
+
+static const char* spinProbeNodeKind(const ICFGNode* node)
+{
+    if (SVFUtil::isa<CallICFGNode>(node))
+        return "call";
+    if (SVFUtil::isa<RetICFGNode>(node))
+        return "ret";
+    if (SVFUtil::isa<FunEntryICFGNode>(node))
+        return "fun_entry";
+    if (SVFUtil::isa<FunExitICFGNode>(node))
+        return "fun_exit";
+    if (SVFUtil::isa<GlobalICFGNode>(node))
+        return "global";
+    return "intra";
+}
+
+static bool spinProbeStmtEnabled()
+{
+    static const bool enabled = (std::getenv("SPINPROBE_STMT") != nullptr);
+    return enabled;
+}
+
+static unsigned long spinProbeStmtNode()
+{
+    static const unsigned long node = hotFuncEnvUL("SPINPROBE_STMT_NODE", 0);
+    return node;
+}
+
+static unsigned long spinProbeStmtMin()
+{
+    static const unsigned long min = hotFuncEnvUL("SPINPROBE_STMT_MIN", 10000);
+    return min;
+}
+
+static unsigned long spinProbeStmtEvery()
+{
+    static const unsigned long every = hotFuncEnvUL("SPINPROBE_STMT_EVERY", 1000);
+    return every == 0 ? 1000 : every;
+}
+
+static const char* spinProbeStmtKind(const SVFStmt* stmt)
+{
+    if (SVFUtil::isa<AddrStmt>(stmt)) return "addr";
+    if (SVFUtil::isa<BinaryOPStmt>(stmt)) return "binary";
+    if (SVFUtil::isa<CmpStmt>(stmt)) return "cmp";
+    if (SVFUtil::isa<UnaryOPStmt>(stmt)) return "unary";
+    if (SVFUtil::isa<BranchStmt>(stmt)) return "branch";
+    if (SVFUtil::isa<LoadStmt>(stmt)) return "load";
+    if (SVFUtil::isa<StoreStmt>(stmt)) return "store";
+    if (SVFUtil::isa<CopyStmt>(stmt)) return "copy";
+    if (SVFUtil::isa<GepStmt>(stmt)) return "gep";
+    if (SVFUtil::isa<SelectStmt>(stmt)) return "select";
+    if (SVFUtil::isa<PhiStmt>(stmt)) return "phi";
+    if (SVFUtil::isa<CallPE>(stmt)) return "callpe";
+    if (SVFUtil::isa<RetPE>(stmt)) return "retpe";
+    return "unknown";
+}
+
+static bool aeSkipExtMemStmtsEnabled()
+{
+    static const bool enabled = (std::getenv("AE_SKIP_EXT_MEM_STMTS") != nullptr);
+    return enabled;
+}
+
+static unsigned long aeSkipExtMemStmtMin()
+{
+    static const unsigned long min = hotFuncEnvUL("AE_SKIP_EXT_MEM_STMT_MIN", 10000);
+    return min;
+}
+
+static const char* extMemorySummaryKind(const CallICFGNode* callNode)
+{
+    if (!callNode)
+        return nullptr;
+    const FunObjVar* fun = callNode->getCalledFunction();
+    if (!fun || !SVFUtil::isExtCall(fun))
+        return nullptr;
+
+    for (const std::string& annotation :
+            ExtAPI::getExtAPI()->getExtFuncAnnotations(fun))
+    {
+        if (annotation.find("MEMCPY") != std::string::npos)
+            return "memcpy";
+        if (annotation.find("MEMSET") != std::string::npos)
+            return "memset";
+    }
+    return nullptr;
+}
+
+struct ExtMemStmtSkipStats
+{
+    unsigned long nodes = 0;
+    unsigned long stmts = 0;
+    Map<std::string, unsigned long> nodesByFunction;
+    Map<std::string, unsigned long> stmtsByFunction;
+};
+
+static ExtMemStmtSkipStats extMemStmtSkipStats;
+
+static void dumpExtMemStmtSkipStats(const char* reason)
+{
+    std::ofstream of(aeTmpPath("svf_ext_mem_stmt_skip.tsv"));
+    of << "# reason=" << reason
+       << "\tenabled=" << (aeSkipExtMemStmtsEnabled() ? 1 : 0)
+       << "\tmin_stmt=" << aeSkipExtMemStmtMin()
+       << "\ttotal_nodes=" << extMemStmtSkipStats.nodes
+       << "\ttotal_stmts=" << extMemStmtSkipStats.stmts
+       << "\n";
+    of << "function\tskipped_nodes\tskipped_stmts\n";
+    for (const auto& kv : extMemStmtSkipStats.nodesByFunction)
+    {
+        const std::string& name = kv.first;
+        of << name
+           << "\t" << kv.second
+           << "\t" << extMemStmtSkipStats.stmtsByFunction[name]
+           << "\n";
+    }
+}
+
+static void recordExtMemStmtSkip(const ICFGNode* node,
+                                 unsigned long stmtTotal,
+                                 const char* kind)
+{
+    (void)kind;
+    const std::string name = node->getFun()->getName();
+    ++extMemStmtSkipStats.nodes;
+    extMemStmtSkipStats.stmts += stmtTotal;
+    ++extMemStmtSkipStats.nodesByFunction[name];
+    extMemStmtSkipStats.stmtsByFunction[name] += stmtTotal;
+    dumpExtMemStmtSkipStats("live");
+}
+
+static bool aeHotCyclePhiTopEnabled()
+{
+    static const bool enabled = (std::getenv("AE_HOT_CYCLE_PHI_TOP") != nullptr);
+    return enabled;
+}
+
+struct HotCyclePhiTopStats
+{
+    unsigned long hits = 0;
+    Map<std::string, unsigned long> hitsByFunction;
+};
+
+static HotCyclePhiTopStats hotCyclePhiTopStats;
+
+static void recordHotCyclePhiTop(const ICFGNode* node)
+{
+    ++hotCyclePhiTopStats.hits;
+    ++hotCyclePhiTopStats.hitsByFunction[node->getFun()->getName()];
+
+    std::ofstream of(aeTmpPath("svf_hotcycle_phi_top.tsv"));
+    of << "# enabled=" << (aeHotCyclePhiTopEnabled() ? 1 : 0)
+       << "\ttotal_hits=" << hotCyclePhiTopStats.hits
+       << "\n";
+    of << "function\thits\n";
+    for (const auto& kv : hotCyclePhiTopStats.hitsByFunction)
+        of << kv.first << "\t" << kv.second << "\n";
+}
+
+static bool aeHotFunctionTopEnabled()
+{
+    static const bool enabled = (std::getenv("AE_HOT_FUNC_TOP") != nullptr);
+    return enabled;
+}
+
+static unsigned long aeHotFunctionTopThreshold()
+{
+    static const unsigned long threshold = hotFuncEnvUL("AE_HOT_FUNC_TOP_THRESHOLD", 8);
+    return threshold == 0 ? 1 : threshold;
+}
+
+static unsigned long aeHotFunctionTopMinStmts()
+{
+    static const unsigned long minimum =
+        hotFuncEnvUL("AE_HOT_FUNC_TOP_MIN_STMTS", 0);
+    return minimum;
+}
+
+static bool aeForceTopFunctionName(const std::string& functionName)
+{
+    const char* env = std::getenv("AE_FORCE_TOP_FUNS");
+    if (env == nullptr || *env == '\0')
+        return false;
+
+    const std::string specs(env);
+    size_t start = 0;
+    while (start <= specs.size())
+    {
+        size_t end = specs.find(',', start);
+        if (end == std::string::npos)
+            end = specs.size();
+
+        size_t first = start;
+        while (first < end && std::isspace(static_cast<unsigned char>(specs[first])))
+            ++first;
+        size_t last = end;
+        while (last > first && std::isspace(static_cast<unsigned char>(specs[last - 1])))
+            --last;
+
+        if (last > first)
+        {
+            const std::string token = specs.substr(first, last - first);
+            if (functionName.find(token) != std::string::npos)
+                return true;
+        }
+
+        if (end == specs.size())
+            break;
+        start = end + 1;
+    }
+    return false;
+}
+
+struct HotFunctionTopStats
+{
+    unsigned long hits = 0;
+    unsigned long varTops = 0;
+    unsigned long locTops = 0;
+    Map<std::string, unsigned long> hitsByFunction;
+    Map<std::string, unsigned long> varTopsByFunction;
+    Map<std::string, unsigned long> locTopsByFunction;
+};
+
+static HotFunctionTopStats hotFunctionTopStats;
+
+template <typename ComponentRange>
+static void collectWTONodes(const ComponentRange& comps,
+                            std::vector<const ICFGNode*>& nodes)
+{
+    for (const ICFGWTOComp* comp : comps)
+    {
+        if (const ICFGSingletonWTO* singleton =
+                SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+        {
+            nodes.push_back(singleton->getICFGNode());
+        }
+        else if (const ICFGCycleWTO* cycle =
+                     SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+        {
+            nodes.push_back(cycle->head()->getICFGNode());
+            collectWTONodes(cycle->getWTOComponents(), nodes);
+        }
+    }
+}
+
+static void recordHotFunctionTop(const ICFGNode* funEntry,
+                                 unsigned long varTops,
+                                 unsigned long locTops)
+{
+    const std::string name = funEntry->getFun()->getName();
+    ++hotFunctionTopStats.hits;
+    hotFunctionTopStats.varTops += varTops;
+    hotFunctionTopStats.locTops += locTops;
+    ++hotFunctionTopStats.hitsByFunction[name];
+    hotFunctionTopStats.varTopsByFunction[name] += varTops;
+    hotFunctionTopStats.locTopsByFunction[name] += locTops;
+
+    std::ofstream of(aeTmpPath("svf_hotfunc_top.tsv"));
+    of << "# enabled=" << (aeHotFunctionTopEnabled() ? 1 : 0)
+       << "\tthreshold=" << aeHotFunctionTopThreshold()
+       << "\tmin_stmts=" << aeHotFunctionTopMinStmts()
+       << "\ttotal_hits=" << hotFunctionTopStats.hits
+       << "\ttotal_var_tops=" << hotFunctionTopStats.varTops
+       << "\ttotal_loc_tops=" << hotFunctionTopStats.locTops
+       << "\n";
+    of << "function\thits\tvar_tops\tloc_tops\n";
+    for (const auto& kv : hotFunctionTopStats.hitsByFunction)
+    {
+        const std::string& fun = kv.first;
+        of << fun << "\t" << kv.second
+           << "\t" << hotFunctionTopStats.varTopsByFunction[fun]
+           << "\t" << hotFunctionTopStats.locTopsByFunction[fun]
+           << "\n";
+    }
+}
+
+static bool spinProbeStmtProfileEnabled()
+{
+    static const bool enabled = (std::getenv("SPINPROBE_STMT_PROFILE") != nullptr);
+    return enabled;
+}
+
+static void dumpSpinProbeStmtProfile(const ICFGNode* node)
+{
+    if (!spinProbeStmtProfileEnabled())
+        return;
+
+    const unsigned long stmtTotal = node->getSVFStmts().size();
+    if (spinProbeStmtNode() != 0 && node->getId() != spinProbeStmtNode())
+        return;
+    if (spinProbeStmtNode() == 0 && stmtTotal < spinProbeStmtMin())
+        return;
+
+    static Set<NodeID> dumpedNodes;
+    if (dumpedNodes.find(node->getId()) != dumpedNodes.end())
+        return;
+    dumpedNodes.insert(node->getId());
+
+    Map<std::string, unsigned long> counts;
+    std::vector<std::pair<unsigned long, std::string>> firstKinds;
+    std::vector<std::pair<unsigned long, std::string>> lastKinds;
+    unsigned long stmtIndex = 0;
+    for (const SVFStmt* stmt : node->getSVFStmts())
+    {
+        ++stmtIndex;
+        const std::string kind = spinProbeStmtKind(stmt);
+        ++counts[kind];
+
+        if (firstKinds.size() < 16)
+            firstKinds.push_back(std::make_pair(stmtIndex, kind));
+
+        if (lastKinds.size() == 16)
+            lastKinds.erase(lastKinds.begin());
+        lastKinds.push_back(std::make_pair(stmtIndex, kind));
+    }
+
+    std::ofstream of(aeTmpPath("svf_stmt_profile.tsv"), std::ios::app);
+    of << "# node_fun=" << node->getFun()->getName()
+       << "\tnode_id=" << node->getId()
+       << "\tnode_kind=" << spinProbeNodeKind(node)
+       << "\tstmt_total=" << stmtTotal
+       << "\n";
+    of << "section\tindex\tkind\tcount\n";
+
+    const char* orderedKinds[] = {
+        "addr", "binary", "cmp", "unary", "branch", "load", "store",
+        "copy", "gep", "select", "phi", "callpe", "retpe", "unknown"
+    };
+    for (const char* kind : orderedKinds)
+    {
+        auto it = counts.find(kind);
+        if (it != counts.end() && it->second != 0)
+            of << "count\t0\t" << kind << "\t" << it->second << "\n";
+    }
+
+    for (const auto& item : firstKinds)
+        of << "first\t" << item.first << "\t" << item.second << "\t0\n";
+    for (const auto& item : lastKinds)
+        of << "last\t" << item.first << "\t" << item.second << "\t0\n";
+}
+}
+
+
+bool AbstractInterpretation::isExtMemHeavyNode(const ICFGNode* node) const
+{
+    return extMemHeavyNodes.find(node) != extMemHeavyNodes.end();
+}
+
+const AbstractInterpretation::ExtMemHeavyInfo*
+AbstractInterpretation::getExtMemHeavyInfo(const ICFGNode* node) const
+{
+    auto it = extMemHeavyInfos.find(node);
+    return it == extMemHeavyInfos.end() ? nullptr : &it->second;
+}
+
+void AbstractInterpretation::preAnalyzeExtMemHeavyNodes()
+{
+    extMemHeavyNodes.clear();
+    extMemHeavyInfos.clear();
+
+    if (!aeSkipExtMemStmtsEnabled() || icfg == nullptr)
+    {
+        dumpExtMemHeavyPreAnalysisStats("disabled");
+        return;
+    }
+
+    for (ICFG::const_iterator it = icfg->begin(), eit = icfg->end();
+         it != eit; ++it)
+    {
+        const ICFGNode* node = it->second;
+        const unsigned long stmtTotal = node->getSVFStmts().size();
+        if (stmtTotal < aeSkipExtMemStmtMin())
+            continue;
+
+        const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node);
+        const char* summaryKind = extMemorySummaryKind(callNode);
+        if (!summaryKind)
+            continue;
+
+        ExtMemHeavyInfo info;
+        info.stmtTotal = stmtTotal;
+        info.summaryKind = summaryKind;
+        info.functionName = node->getFun() ? node->getFun()->getName() : "<unknown>";
+        const FunObjVar* callee = callNode->getCalledFunction();
+        info.calleeName = callee ? callee->getName() : "<unknown>";
+
+        extMemHeavyNodes.insert(node);
+        extMemHeavyInfos[node] = info;
+    }
+
+    dumpExtMemHeavyPreAnalysisStats("pre");
+}
+
+void AbstractInterpretation::dumpExtMemHeavyPreAnalysisStats(const char* reason) const
+{
+    std::ofstream of(aeTmpPath("svf_ext_mem_heavy_pre.tsv"));
+
+    unsigned long totalStmts = 0;
+    for (const auto& kv : extMemHeavyInfos)
+        totalStmts += kv.second.stmtTotal;
+
+    of << "# reason=" << reason
+       << "\tenabled=" << (aeSkipExtMemStmtsEnabled() ? 1 : 0)
+       << "\tmin_stmt=" << aeSkipExtMemStmtMin()
+       << "\ttotal_nodes=" << extMemHeavyInfos.size()
+       << "\ttotal_stmts=" << totalStmts
+       << "\n";
+    of << "node_id\tfunction\tcallee\tsummary_kind\tstmt_total\n";
+
+    std::vector<const ICFGNode*> nodes;
+    nodes.reserve(extMemHeavyInfos.size());
+    for (const auto& kv : extMemHeavyInfos)
+        nodes.push_back(kv.first);
+    std::sort(nodes.begin(), nodes.end(),
+              [](const ICFGNode* lhs, const ICFGNode* rhs) {
+                  return lhs->getId() < rhs->getId();
+              });
+
+    for (const ICFGNode* node : nodes)
+    {
+        const ExtMemHeavyInfo& info = extMemHeavyInfos.find(node)->second;
+        of << node->getId()
+           << "\t" << info.functionName
+           << "\t" << info.calleeName
+           << "\t" << info.summaryKind
+           << "\t" << info.stmtTotal
+           << "\n";
+    }
 }
 
 void AbstractInterpretation::runOnModule()
@@ -55,20 +781,273 @@ void AbstractInterpretation::runOnModule()
     utils = new AbsExtAPI(this);
     /// collect checkpoint
     utils->collectCheckPoint();
+    preAnalyzeExtMemHeavyNodes();
 
     analyse();
+    SVFUtil::errs() << "[LOOP-MEMO] skipped=" << loopMemoHits << "/"
+                    << loopMemoTotal << " cycle invocations\n";
+    SVFUtil::errs() << "[FUNC-MEMO] skipped=" << funcMemoHits << "/"
+                    << funcMemoTotal << " function invocations\n";
+    valueProbeDumpSummary();
+    dumpHotFunctionStats();
+    dumpSpinProbe("final");
+    dumpHotCycleThrottleStats("final");
+    dumpExtMemStmtSkipStats("final");
     utils->checkPointAllSet();
     stat->endClk();
-    stat->generalNumMap["AE_FP_Function_Trace"] = static_cast<u32_t>(aeFunctionTrace);
-    stat->generalNumMap["AE_FP_Function_Entry_Changed"] = static_cast<u32_t>(aeFunctionEntryChanged);
-    stat->generalNumMap["AE_FP_Function_Entry_Fixpoint_Hit"] = static_cast<u32_t>(aeFunctionEntryFixpointHit);
-    stat->generalNumMap["AE_FP_Function_Entry_Shortcut_Hit"] = static_cast<u32_t>(aeFunctionEntryShortcutHit);
-    stat->generalNumMap["AE_FP_Function_Entry_Fixpoint_NoExit"] = static_cast<u32_t>(aeFunctionEntryFixpointNoExit);
     stat->finializeStat();
     if (Options::PStat())
         stat->performStat();
     for (auto& detector: detectors)
         detector->reportBug();
+}
+
+void AbstractInterpretation::dumpHotFunctionStats() const
+{
+    auto getCount = [](const Map<const ICFGNode*, unsigned long>& m,
+                       const ICFGNode* n) -> unsigned long
+    {
+        auto it = m.find(n);
+        return it == m.end() ? 0 : it->second;
+    };
+
+    std::vector<const ICFGNode*> funcs;
+    funcs.reserve(funcCallCount.size());
+    for (const auto& kv : funcCallCount)
+        funcs.push_back(kv.first);
+
+    std::sort(funcs.begin(), funcs.end(),
+              [&](const ICFGNode* lhs, const ICFGNode* rhs)
+              {
+                  const unsigned long lhsBody = getCount(funcBodyExecCount, lhs);
+                  const unsigned long rhsBody = getCount(funcBodyExecCount, rhs);
+                  if (lhsBody != rhsBody)
+                      return lhsBody > rhsBody;
+
+                  const unsigned long lhsEnter = getCount(funcCallCount, lhs);
+                  const unsigned long rhsEnter = getCount(funcCallCount, rhs);
+                  if (lhsEnter != rhsEnter)
+                      return lhsEnter > rhsEnter;
+
+                  return lhs->getFun()->getName() < rhs->getFun()->getName();
+              });
+
+    {
+        std::ofstream of(aeTmpPath("svf_funccount.txt"));
+        of << "total_calls=" << funcCallTotal
+           << " total_body_exec=" << funcBodyExecTotal
+           << " distinct_funcs=" << funcCallCount.size()
+           << " mode=" << hotFuncMode()
+           << " hot_threshold=" << hotFuncThreshold()
+           << "\n";
+        for (size_t i = 0; i < funcs.size() && i < 60; ++i)
+        {
+            const ICFGNode* f = funcs[i];
+            of << getCount(funcCallCount, f) << "\t"
+               << getCount(funcBodyExecCount, f) << "\t"
+               << getCount(funcFastHitCount, f) << "\t"
+               << f->getFun()->getName() << "\n";
+        }
+    }
+
+    std::ofstream tsv(aeTmpPath("svf_hotfunc_counts.tsv"));
+    tsv << "# mode=" << hotFuncMode()
+        << "\thot_threshold=" << hotFuncThreshold()
+        << "\ttotal_enter=" << funcCallTotal
+        << "\ttotal_body_exec=" << funcBodyExecTotal
+        << "\ttotal_fast_hit=" << funcMemoHits
+        << "\n";
+    tsv << "function\tenter\tbody_exec\tfast_hit\thot_attempt"
+        << "\tfallback_no_cache\tfallback_state_diff"
+        << "\tfallback_overlay_stale\tlast_overlay_readset"
+        << "\tstatic_stmt_count\tsmall_body_top_bypass\n";
+
+    for (const ICFGNode* f : funcs)
+    {
+        unsigned long readSetSize = 0;
+        auto rvit = funcReadVersions.find(f);
+        if (rvit != funcReadVersions.end())
+            readSetSize = rvit->second.size();
+
+        tsv << f->getFun()->getName()
+            << "\t" << getCount(funcCallCount, f)
+            << "\t" << getCount(funcBodyExecCount, f)
+            << "\t" << getCount(funcFastHitCount, f)
+            << "\t" << getCount(funcHotAttemptCount, f)
+            << "\t" << getCount(funcHotNoCacheCount, f)
+            << "\t" << getCount(funcHotStateDiffCount, f)
+            << "\t" << getCount(funcHotOverlayStaleCount, f)
+            << "\t" << readSetSize
+            << "\t" << getCount(funcStaticStmtCount, f)
+            << "\t" << getCount(funcSmallBodyTopBypassCount, f)
+            << "\n";
+    }
+}
+
+void AbstractInterpretation::dumpSpinProbe(const char* reason) const
+{
+    std::ofstream cur(aeTmpPath("svf_spinprobe_current.txt"));
+    cur << "reason=" << reason
+        << "\ttotal_enter=" << funcCallTotal
+        << "\ttotal_body_exec=" << funcBodyExecTotal
+        << "\ttotal_fast_hit=" << funcMemoHits
+        << "\tglobal_loop_iters=" << spinGlobalLoopIters
+        << "\tglobal_node_execs=" << spinGlobalNodeExecs
+        << "\n";
+
+    if (spinActiveCycle)
+    {
+        const ICFGNode* head = spinActiveCycle->head()->getICFGNode();
+        cur << "active_cycle_fun=" << head->getFun()->getName()
+            << "\tactive_cycle_head_id=" << head->getId()
+            << "\tactive_iter=" << spinActiveIter
+            << "\tcycle_iters=" << (spinCycleIterations.find(spinActiveCycle) == spinCycleIterations.end() ? 0 : spinCycleIterations.find(spinActiveCycle)->second)
+            << "\n";
+    }
+    else
+    {
+        cur << "active_cycle_fun=\tactive_cycle_head_id=\tactive_iter=0\tcycle_iters=0\n";
+    }
+
+    if (spinActiveNode)
+    {
+        cur << "active_node_fun=" << spinActiveNode->getFun()->getName()
+            << "\tactive_node_id=" << spinActiveNode->getId()
+            << "\n";
+    }
+    else
+    {
+        cur << "active_node_fun=\tactive_node_id=\n";
+    }
+
+    std::vector<const ICFGCycleWTO*> cycles;
+    cycles.reserve(spinCycleIterations.size());
+    for (const auto& kv : spinCycleIterations)
+        cycles.push_back(kv.first);
+
+    auto getCount = [](const Map<const ICFGCycleWTO*, unsigned long>& m,
+                       const ICFGCycleWTO* c) -> unsigned long
+    {
+        auto it = m.find(c);
+        return it == m.end() ? 0 : it->second;
+    };
+
+    std::sort(cycles.begin(), cycles.end(),
+              [&](const ICFGCycleWTO* lhs, const ICFGCycleWTO* rhs)
+              {
+                  const unsigned long li = getCount(spinCycleIterations, lhs);
+                  const unsigned long ri = getCount(spinCycleIterations, rhs);
+                  if (li != ri)
+                      return li > ri;
+                  return lhs->head()->getICFGNode()->getId() < rhs->head()->getICFGNode()->getId();
+              });
+
+    std::ofstream tsv(aeTmpPath("svf_spinprobe.tsv"));
+    tsv << "# reason=" << reason
+        << "\ttotal_enter=" << funcCallTotal
+        << "\ttotal_body_exec=" << funcBodyExecTotal
+        << "\ttotal_fast_hit=" << funcMemoHits
+        << "\tglobal_loop_iters=" << spinGlobalLoopIters
+        << "\tglobal_node_execs=" << spinGlobalNodeExecs
+        << "\n";
+    tsv << "function\thead_node_id\tinvocations\titerations\thead_execs"
+        << "\tbody_node_execs\tsubcycle_calls\twiden_fixpoints\tnarrow_fixpoints\n";
+
+    for (const ICFGCycleWTO* c : cycles)
+    {
+        const ICFGNode* head = c->head()->getICFGNode();
+        tsv << head->getFun()->getName()
+            << "\t" << head->getId()
+            << "\t" << getCount(spinCycleInvocations, c)
+            << "\t" << getCount(spinCycleIterations, c)
+            << "\t" << getCount(spinCycleHeadExecs, c)
+            << "\t" << getCount(spinCycleBodyNodeExecs, c)
+            << "\t" << getCount(spinCycleSubcycleCalls, c)
+            << "\t" << getCount(spinCycleWidenFixpoints, c)
+            << "\t" << getCount(spinCycleNarrowFixpoints, c)
+            << "\n";
+    }
+}
+
+void AbstractInterpretation::dumpSpinProbeLive(const ICFGNode* node, const char* reason) const
+{
+    const std::string tmpPath = aeTmpPath("svf_spinprobe_live.tmp");
+    const std::string finalPath = aeTmpPath("svf_spinprobe_live.txt");
+    std::ofstream live(tmpPath);
+    live << "reason=" << reason
+         << "\ttotal_enter=" << funcCallTotal
+         << "\ttotal_body_exec=" << funcBodyExecTotal
+         << "\ttotal_fast_hit=" << funcMemoHits
+         << "\tglobal_loop_iters=" << spinGlobalLoopIters
+         << "\tglobal_node_execs=" << spinGlobalNodeExecs
+         << "\n";
+
+    if (spinActiveCycle)
+    {
+        const ICFGNode* head = spinActiveCycle->head()->getICFGNode();
+        live << "active_cycle_fun=" << head->getFun()->getName()
+             << "\tactive_cycle_head_id=" << head->getId()
+             << "\tactive_iter=" << spinActiveIter
+             << "\n";
+    }
+    else
+    {
+        live << "active_cycle_fun=\tactive_cycle_head_id=\tactive_iter=0\n";
+    }
+
+    if (node)
+    {
+        live << "node_fun=" << node->getFun()->getName()
+             << "\tnode_id=" << node->getId()
+             << "\tnode_kind=" << spinProbeNodeKind(node)
+             << "\tstmt_count=" << node->getSVFStmts().size()
+             << "\n";
+    }
+    else
+    {
+        live << "node_fun=\tnode_id=\tnode_kind=\tstmt_count=0\n";
+    }
+    live.close();
+    std::rename(tmpPath.c_str(), finalPath.c_str());
+}
+
+void AbstractInterpretation::dumpSpinProbeStmtLive(const ICFGNode* node,
+                                                   unsigned long stmtIndex,
+                                                   unsigned long stmtTotal,
+                                                   const char* stmtKind) const
+{
+    const std::string tmpPath = aeTmpPath("svf_spinprobe_stmt.tmp");
+    const std::string finalPath = aeTmpPath("svf_spinprobe_stmt.txt");
+    std::ofstream live(tmpPath);
+    live << "total_enter=" << funcCallTotal
+         << "\ttotal_body_exec=" << funcBodyExecTotal
+         << "\ttotal_fast_hit=" << funcMemoHits
+         << "\tglobal_loop_iters=" << spinGlobalLoopIters
+         << "\tglobal_node_execs=" << spinGlobalNodeExecs
+         << "\n";
+
+    if (spinActiveCycle)
+    {
+        const ICFGNode* head = spinActiveCycle->head()->getICFGNode();
+        live << "active_cycle_fun=" << head->getFun()->getName()
+             << "\tactive_cycle_head_id=" << head->getId()
+             << "\tactive_iter=" << spinActiveIter
+             << "\n";
+    }
+    else
+    {
+        live << "active_cycle_fun=\tactive_cycle_head_id=\tactive_iter=0\n";
+    }
+
+    live << "node_fun=" << node->getFun()->getName()
+         << "\tnode_id=" << node->getId()
+         << "\tnode_kind=" << spinProbeNodeKind(node)
+         << "\tstmt_index=" << stmtIndex
+         << "\tstmt_total=" << stmtTotal
+         << "\tstmt_kind=" << stmtKind
+         << "\n";
+    live.close();
+    std::rename(tmpPath.c_str(), finalPath.c_str());
 }
 
 AbstractInterpretation::AbstractInterpretation()
@@ -231,13 +1210,68 @@ void AbstractInterpretation::analyzeFromAllProgEntries()
     // handle Global ICFGNode of SVFModule
     handleGlobalNode();
     const ICFGNode* globalNode = icfg->getGlobalICFGNode();
+    const unsigned long entryLimit = hotFuncEnvUL("AE_ENTRY_LIMIT", 0);
+    const unsigned long entryDumpEvery = hotFuncEnvUL("AE_ENTRY_DUMP_EVERY", 100);
+    const bool resetStatePerEntry = aeEnvBool("AE_ENTRY_STATE_RESET", false);
+    if (resetStatePerEntry)
+        SVFUtil::errs() << "[AE-ENTRY-STATE] reset_per_entry=1\n";
+    if (aeEntryNodeBudget() != 0)
+        SVFUtil::errs() << "[AE-ENTRY-BUDGET] node_budget=" << aeEntryNodeBudget()
+                        << " after=" << aeEntryBudgetAfter() << "\n";
+    unsigned long analyzedEntries = 0;
     while (!entryFunctions.empty())
     {
+        if (entryLimit != 0 && analyzedEntries >= entryLimit)
+        {
+            SVFUtil::errs() << "[AE-ENTRY-LIMIT] analyzed=" << analyzedEntries
+                            << " remaining=" << entryFunctions.size() << "\n";
+            break;
+        }
+        if (resetStatePerEntry && analyzedEntries != 0)
+        {
+            resetEntryTransientState();
+        }
         const FunObjVar* entryFun = entryFunctions.pop();
+        ++analyzedEntries;
+        currentEntryIndex = analyzedEntries;
+        currentEntryStartNodeExecs = spinGlobalNodeExecs;
         const ICFGNode* funEntry = icfg->getFunEntryICFGNode(entryFun);
         updateAbsState(funEntry, getAbsState(globalNode));
         handleFunction(funEntry, nullptr);
+        if (entryDumpEvery != 0 &&
+                (analyzedEntries == 1 ||
+                 analyzedEntries % entryDumpEvery == 0 ||
+                 entryFunctions.empty()))
+        {
+            SVFUtil::errs() << "[AE-ENTRY] analyzed=" << analyzedEntries
+                            << " remaining=" << entryFunctions.size()
+                            << " trace_nodes=" << abstractTrace.size()
+                            << " all_nodes=" << allAnalyzedNodes.size()
+                            << "\n";
+        }
     }
+}
+
+void AbstractInterpretation::resetEntryTransientState()
+{
+    abstractTrace.clear();
+    cycleInputCache.clear();
+    cycleInputVer.clear();
+    funcInputCache.clear();
+    funcReadVersions.clear();
+    gepReadStack.clear();
+    gepOverlayVersion = 0;
+    gepFieldVersion.clear();
+
+    spinActiveCycle = nullptr;
+    spinActiveNode = nullptr;
+    spinActiveIter = 0;
+
+    reportCallStack.clear();
+    for (auto& detector : detectors)
+        detector->resetTransientState();
+    aeTrimHeap();
+    handleGlobalNode();
 }
 
 /// handle global node
@@ -297,7 +1331,8 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                 AbstractState predState = getAbsState(pred);
                 if (isBranchEdgeFeasible(intraCfgEdge, predState))
                 {
-                    collectBranchRefinement(intraCfgEdge, predState);
+                    if (!aeConservativeBranch())
+                        collectBranchRefinement(intraCfgEdge, predState);
                     joinStates(merged, predState);
                     hasFeasiblePred = true;
                 }
@@ -310,6 +1345,13 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
         }
         else if (SVFUtil::isa<CallCFGEdge>(edge))
         {
+            // Under bounded callsite sensitivity, a function invocation inherits
+            // memory only from the caller currently being interpreted.  Joining
+            // every incoming call edge here would immediately destroy the
+            // CallPE precision by reintroducing unrelated caller states.
+            if (aeCallsiteSensitivePE() && !reportCallStack.empty() &&
+                    pred != reportCallStack.back())
+                continue;
             joinStates(merged, getAbsState(pred));
             hasFeasiblePred = true;
         }
@@ -345,70 +1387,6 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
     return true;
 }
 
-bool AbstractInterpretation::sameFunctionEntrySnapshot(
-    const AbstractState& lhs, const AbstractState& rhs) const
-{
-    return lhs == rhs && lhs.getFreedAddrs() == rhs.getFreedAddrs();
-}
-
-void AbstractInterpretation::addValVarToFunctionEntrySnapshot(
-    AbstractState& snapshot, const ValVar* var, const ICFGNode* node)
-{
-    if (!var || !node || !hasAbsValue(var, node))
-        return;
-
-    snapshot[var->getId()] = getAbsValue(var, node);
-}
-
-AbstractState AbstractInterpretation::buildFunctionEntrySnapshot(
-    const ICFGNode* funEntry)
-{
-    AbstractState snapshot = getAbsState(funEntry);
-
-    for (const SVFStmt* stmt : funEntry->getSVFStmts())
-    {
-        if (const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(stmt))
-        {
-            addValVarToFunctionEntrySnapshot(snapshot, callPE->getRes(), funEntry);
-            for (u32_t i = 0; i < callPE->getOpVarNum(); ++i)
-                addValVarToFunctionEntrySnapshot(snapshot, callPE->getOpVar(i),
-                                                 callPE->getOpCallICFGNode(i));
-        }
-        else if (const MultiOpndStmt* multi =
-                     SVFUtil::dyn_cast<MultiOpndStmt>(stmt))
-        {
-            addValVarToFunctionEntrySnapshot(snapshot, multi->getRes(), funEntry);
-            for (u32_t i = 0; i < multi->getOpVarNum(); ++i)
-                addValVarToFunctionEntrySnapshot(snapshot, multi->getOpVar(i),
-                                                 funEntry);
-        }
-        else if (const UnaryOPStmt* unary = SVFUtil::dyn_cast<UnaryOPStmt>(stmt))
-        {
-            addValVarToFunctionEntrySnapshot(snapshot, unary->getRes(), funEntry);
-            addValVarToFunctionEntrySnapshot(snapshot, unary->getOpVar(), funEntry);
-        }
-        else if (const BranchStmt* branch = SVFUtil::dyn_cast<BranchStmt>(stmt))
-        {
-            addValVarToFunctionEntrySnapshot(snapshot, branch->getBranchInst(),
-                                             funEntry);
-            if (branch->isConditional())
-                addValVarToFunctionEntrySnapshot(snapshot, branch->getCondition(),
-                                                 funEntry);
-        }
-        else if (const AssignStmt* assign = SVFUtil::dyn_cast<AssignStmt>(stmt))
-        {
-            addValVarToFunctionEntrySnapshot(
-                snapshot, SVFUtil::dyn_cast<ValVar>(assign->getLHSVar()),
-                funEntry);
-            addValVarToFunctionEntrySnapshot(
-                snapshot, SVFUtil::dyn_cast<ValVar>(assign->getRHSVar()),
-                funEntry);
-        }
-    }
-
-    return snapshot;
-}
-
 /// Given a cmp operand, walk its SSA def edge to find the LoadStmt that
 /// produced it. This lets us trace back to the ObjVar in memory so that
 /// branch narrowing can refine the stored value.
@@ -435,6 +1413,38 @@ static const LoadStmt* findBackingLoad(const SVFVar* var)
     return nullptr;
 }
 
+static bool aeVarDependsOnRetPE(const SVFVar* var, unsigned depth = 0)
+{
+    if (var == nullptr || depth > 3)
+        return false;
+
+    for (SVFStmt* inStmt : var->getInEdges())
+    {
+        if (SVFUtil::isa<RetPE>(inStmt))
+            return true;
+
+        if (const CopyStmt* copy = SVFUtil::dyn_cast<CopyStmt>(inStmt))
+        {
+            if (aeVarDependsOnRetPE(copy->getRHSVar(), depth + 1))
+                return true;
+        }
+        else if (const PhiStmt* phi = SVFUtil::dyn_cast<PhiStmt>(inStmt))
+        {
+            for (u32_t i = 0; i < phi->getOpVarNum(); ++i)
+                if (aeVarDependsOnRetPE(phi->getOpVar(i), depth + 1))
+                    return true;
+        }
+    }
+
+    return false;
+}
+
+static bool aeCmpDependsOnRetPE(const CmpStmt* cmpStmt)
+{
+    return aeVarDependsOnRetPE(cmpStmt->getOpVar(0)) ||
+           aeVarDependsOnRetPE(cmpStmt->getOpVar(1));
+}
+
 /// Compute the interval constraint on one cmp operand given the predicate,
 /// branch direction (succ), which side it is on, and the other operand's
 /// interval. Returns top if no useful narrowing is possible.
@@ -452,9 +1462,6 @@ static IntervalValue computeCmpConstraint(s32_t predicate, s64_t succ,
         bool isLHS, const IntervalValue& self,
         const IntervalValue& other)
 {
-    if (self.isBottom() || other.isBottom())
-        return IntervalValue::top();
-
     // Normalize: always reason from the LHS perspective.
     // If we are the RHS operand, swap the predicate direction.
     if (!isLHS)
@@ -568,88 +1575,75 @@ static IntervalValue computeCmpConstraint(s32_t predicate, s64_t succ,
     return result;
 }
 
-static IntervalValue computeAddressCmp(s32_t predicate,
-                                        const AddressValue& lhs,
-                                        const AddressValue& rhs)
-{
-    switch (predicate)
-    {
-    case CmpStmt::ICMP_EQ:
-    case CmpStmt::FCMP_OEQ:
-    case CmpStmt::FCMP_UEQ:
-        if (lhs.empty() && rhs.empty())
-            return IntervalValue(1, 1);
-        // Null is represented as an empty address set in AE.  When a pointer
-        // value has been joined through memory/phi flow, a possible null gets
-        // erased by the non-empty address set.  Treat one-empty comparisons as
-        // maybe-null to keep list/sentinel exits feasible.
-        if (lhs.empty() || rhs.empty())
-            return IntervalValue(0, 1);
-        if (lhs.hasIntersect(rhs))
-            return IntervalValue(0, 1);
-        return IntervalValue(0, 0);
-    case CmpStmt::ICMP_NE:
-    case CmpStmt::FCMP_ONE:
-    case CmpStmt::FCMP_UNE:
-        if (lhs.empty() && rhs.empty())
-            return IntervalValue(0, 0);
-        if (lhs.empty() || rhs.empty())
-            return IntervalValue(0, 1);
-        if (lhs.hasIntersect(rhs))
-            return IntervalValue(0, 1);
-        return IntervalValue(1, 1);
-    case CmpStmt::ICMP_UGT:
-    case CmpStmt::ICMP_SGT:
-    case CmpStmt::FCMP_OGT:
-    case CmpStmt::FCMP_UGT:
-        return lhs.size() == 1 && rhs.size() == 1 ?
-               IntervalValue(*lhs.begin() > *rhs.begin()) : IntervalValue(0, 1);
-    case CmpStmt::ICMP_UGE:
-    case CmpStmt::ICMP_SGE:
-    case CmpStmt::FCMP_OGE:
-    case CmpStmt::FCMP_UGE:
-        return lhs.size() == 1 && rhs.size() == 1 ?
-               IntervalValue(*lhs.begin() >= *rhs.begin()) : IntervalValue(0, 1);
-    case CmpStmt::ICMP_ULT:
-    case CmpStmt::ICMP_SLT:
-    case CmpStmt::FCMP_OLT:
-    case CmpStmt::FCMP_ULT:
-        return lhs.size() == 1 && rhs.size() == 1 ?
-               IntervalValue(*lhs.begin() < *rhs.begin()) : IntervalValue(0, 1);
-    case CmpStmt::ICMP_ULE:
-    case CmpStmt::ICMP_SLE:
-    case CmpStmt::FCMP_OLE:
-    case CmpStmt::FCMP_ULE:
-        return lhs.size() == 1 && rhs.size() == 1 ?
-               IntervalValue(*lhs.begin() <= *rhs.begin()) : IntervalValue(0, 1);
-    case CmpStmt::FCMP_FALSE:
-        return IntervalValue(0, 0);
-    case CmpStmt::FCMP_TRUE:
-        return IntervalValue(1, 1);
-    case CmpStmt::FCMP_ORD:
-    case CmpStmt::FCMP_UNO:
-        return IntervalValue(0, 1);
-    default:
-        assert(false && "undefined compare: ");
-        return IntervalValue(0, 1);
-    }
-}
-
 bool AbstractInterpretation::isCmpBranchEdgeFeasible(const IntraCFGEdge* edge,
         AbstractState& as)
 {
+    if (aeConservativeBranch())
+        return true;
+
     const ICFGNode* pred = edge->getSrcNode();
     s64_t succ = edge->getSuccessorCondValue();
     const CmpStmt* cmpStmt = SVFUtil::cast<CmpStmt>(
                                  *edge->getCondition()->getInEdges().begin());
 
+    if (cmpStmt->getOpVarID(0) == IRGraph::NullPtr ||
+            cmpStmt->getOpVarID(1) == IRGraph::NullPtr)
+        return true;
+
+    AbstractValue opVal[2] =
+    {
+        getAbsValue(cmpStmt->getOpVar(0), pred),
+        getAbsValue(cmpStmt->getOpVar(1), pred)
+    };
+
+    const bool hasIntervalCmp = opVal[0].isInterval() && opVal[1].isInterval();
+    if (!hasIntervalCmp && (opVal[0].isAddr() || opVal[1].isAddr()))
+        return true;
+
+    if (aeCmpDependsOnRetPE(cmpStmt))
+    {
+        if (aeBranchPruneTrace())
+        {
+            SVFUtil::errs() << "[AE-BRANCH-KEEP] reason=retpe"
+                            << " succ=" << succ
+                            << " pred_node=" << pred->getId()
+                            << " dst_node=" << edge->getDstNode()->getId()
+                            << " pred_fun=" << (pred->getFun() ? pred->getFun()->getName() : "")
+                            << " dst_fun=" << (edge->getDstNode()->getFun() ?
+                                                edge->getDstNode()->getFun()->getName() : "")
+                            << " pred_loc=" << pred->getSourceLoc()
+                            << " dst_loc=" << edge->getDstNode()->getSourceLoc()
+                            << " stmt=" << cmpStmt->toString() << "\n";
+        }
+        return true;
+    }
+
     // Feasibility check: cmp result must be compatible with branch successor
     IntervalValue resVal = getAbsValue(cmpStmt->getRes(), pred).getInterval();
-    if (resVal.isBottom())
-        return true;
     resVal.meet_with(IntervalValue((s64_t)succ, succ));
     if (resVal.isBottom())
+    {
+        if (aeBranchPruneTrace())
+        {
+            const AbstractValue op0Val = getAbsValue(cmpStmt->getOpVar(0), pred);
+            const AbstractValue op1Val = getAbsValue(cmpStmt->getOpVar(1), pred);
+            const AbstractValue cmpVal = getAbsValue(cmpStmt->getRes(), pred);
+            SVFUtil::errs() << "[AE-BRANCH-PRUNE] kind=cmp"
+                            << " succ=" << succ
+                            << " pred_node=" << pred->getId()
+                            << " dst_node=" << edge->getDstNode()->getId()
+                            << " pred_fun=" << (pred->getFun() ? pred->getFun()->getName() : "")
+                            << " dst_fun=" << (edge->getDstNode()->getFun() ?
+                                                edge->getDstNode()->getFun()->getName() : "")
+                            << " pred_loc=" << pred->getSourceLoc()
+                            << " dst_loc=" << edge->getDstNode()->getSourceLoc()
+                            << " cmp_val=" << cmpVal.toString()
+                            << " op0=" << op0Val.toString()
+                            << " op1=" << op1Val.toString()
+                            << " stmt=" << cmpStmt->toString() << "\n";
+        }
         return false;
+    }
 
     return true;
 }
@@ -657,62 +1651,49 @@ bool AbstractInterpretation::isCmpBranchEdgeFeasible(const IntraCFGEdge* edge,
 bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
     const IntraCFGEdge* edge, AbstractState& as)
 {
+    if (aeConservativeBranch())
+        return true;
+
     const ICFGNode* pred = edge->getSrcNode();
     s64_t succ = edge->getSuccessorCondValue();
     const SVFVar* var = edge->getCondition();
 
-    if ((succ == 0 || succ == 1))
-    {
-        if (const ConstIntValVar* constCond =
-                    SVFUtil::dyn_cast<ConstIntValVar>(var))
-        {
-            // LLVM i1 true is all-ones when sign-extended (-1), while
-            // branch successor values use 1 for the true edge.
-            if (constCond->getSExtValue() == -1 &&
-                    constCond->getZExtValue() == 1)
-            {
-                return succ == 1;
-            }
-        }
-    }
-
     AbstractValue condVal = getAbsValue(var, pred);
     IntervalValue switch_cond = condVal.getInterval();
-    if (succ == -1)
-    {
-        if (switch_cond.isBottom())
-            return true;
-        if (!switch_cond.is_numeral())
-            return true;
-
-        const s64_t concreteCond = switch_cond.getIntNumeral();
-        for (const ICFGEdge* outEdge : pred->getOutEdges())
-        {
-            const IntraCFGEdge* intraOut =
-                SVFUtil::dyn_cast<IntraCFGEdge>(outEdge);
-            if (!intraOut || intraOut == edge || !intraOut->getCondition())
-                continue;
-            if (intraOut->getCondition() == var &&
-                    intraOut->getSuccessorCondValue() == concreteCond)
-                return false;
-        }
-        return true;
-    }
     switch_cond.meet_with(IntervalValue(succ, succ));
-    bool feasible = !switch_cond.isBottom();
-    if (!feasible)
+    if (switch_cond.isBottom())
+    {
+        if (aeBranchPruneTrace())
+        {
+            SVFUtil::errs() << "[AE-BRANCH-PRUNE] kind=switch"
+                            << " succ=" << succ
+                            << " pred_node=" << pred->getId()
+                            << " dst_node=" << edge->getDstNode()->getId()
+                            << " pred_fun=" << (pred->getFun() ? pred->getFun()->getName() : "")
+                            << " dst_fun=" << (edge->getDstNode()->getFun() ?
+                                                edge->getDstNode()->getFun()->getName() : "")
+                            << " pred_loc=" << pred->getSourceLoc()
+                            << " dst_loc=" << edge->getDstNode()->getSourceLoc()
+                            << " cond_val=" << condVal.toString() << "\n";
+        }
         return false;
+    }
     return true;
 }
 
 void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
         AbstractState& as)
 {
+    if (aeConservativeBranch())
+        return;
+
     const SVFVar* cond = edge->getCondition();
     const ICFGNode* pred = edge->getSrcNode();
     const ICFGNode* succNode = edge->getDstNode();
     s64_t succ = edge->getSuccessorCondValue();
 
+    // A branch condition with no defining edge gives us nothing to refine on;
+    // skip refinement rather than aborting (or dereferencing an empty list).
     if (cond->getInEdges().empty())
         return;
     const SVFStmt* condDef = *cond->getInEdges().begin();
@@ -798,9 +1779,6 @@ void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
 
         AbstractValue condVal = getAbsValue(var, pred);
         IntervalValue switch_cond = condVal.getInterval();
-        if (succ == -1)
-            return;
-
         switch_cond.meet_with(IntervalValue(succ, succ));
         if (switch_cond.isBottom())
         {
@@ -882,7 +1860,12 @@ bool AbstractInterpretation::isBranchEdgeFeasible(const IntraCFGEdge* edge,
         AbstractState& as)
 {
     const SVFVar* cmpVar = edge->getCondition();
-    if (cmpVar == nullptr || cmpVar->getInEdges().empty())
+    // A branch condition with no defining edge (e.g. an undef/constant/argument
+    // value never produced by a Cmp or switch statement) gives us nothing to
+    // refine on. Conservatively treat the edge as feasible rather than aborting
+    // (and rather than dereferencing an empty in-edge list): this keeps the
+    // analysis sound by never pruning a potentially-reachable successor.
+    if (cmpVar->getInEdges().empty())
         return true;
     if (SVFUtil::isa<CmpStmt>(*cmpVar->getInEdges().begin()))
         return isCmpBranchEdgeFeasible(edge, as);
@@ -916,16 +1899,67 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
         }
     }
 
-    // Store the previous state for fixpoint detection
-    AbstractState prevState = getAbsState(node);
+    spinActiveNode = node;
+    ++spinGlobalNodeExecs;
+    if (spinProbeLiveEnabled() && spinGlobalNodeExecs % spinProbeLiveEvery() == 0)
+        dumpSpinProbeLive(node, "node-enter");
+    if (spinGlobalNodeExecs % hotFuncEnvUL("SPINPROBE_NODE_DUMP_EVERY", 200000) == 0)
+        dumpSpinProbe("node");
+
+    const unsigned long stmtTotal = node->getSVFStmts().size();
+    const SVFStmt* onlyStmt = nullptr;
+    if (stmtTotal == 1)
+        onlyStmt = *node->getSVFStmts().begin();
+    const bool hotPhiOnlyNode =
+        aeHotCyclePhiTopEnabled() &&
+        spinActiveCycle != nullptr &&
+        onlyStmt != nullptr &&
+        SVFUtil::isa<PhiStmt>(onlyStmt) &&
+        hotCycleThrottleFuns.find(node->getFun()) != hotCycleThrottleFuns.end();
+
+    // The return value is not used by the current WTO driver; cycle fixpoint
+    // checks happen at widen/narrow boundaries.  On large programs, avoiding
+    // this full-state copy removes a major transient RSS spike.
+    AbstractState prevState;
+    const bool trackPrevState = !hotPhiOnlyNode && !aeSkipNodePrevState();
+    if (trackPrevState)
+        prevState = getAbsState(node);
 
     stat->getBlockTrace()++;
     stat->getICFGNodeTrace()++;
 
-    // Handle SVF statements
-    for (const SVFStmt *stmt: node->getSVFStmts())
+    const bool stmtProbe =
+        spinProbeStmtEnabled() &&
+        ((spinProbeStmtNode() != 0 && node->getId() == spinProbeStmtNode()) ||
+         (spinProbeStmtNode() == 0 && stmtTotal >= spinProbeStmtMin()));
+    dumpSpinProbeStmtProfile(node);
+
+    const ExtMemHeavyInfo* extMemHeavyInfo = getExtMemHeavyInfo(node);
+
+    if (extMemHeavyInfo)
     {
-        handleSVFStatement(stmt);
+        recordExtMemStmtSkip(node, extMemHeavyInfo->stmtTotal,
+                             extMemHeavyInfo->summaryKind.c_str());
+    }
+    else
+    {
+        // Handle SVF statements
+        unsigned long stmtIndex = 0;
+        for (const SVFStmt *stmt: node->getSVFStmts())
+        {
+            ++stmtIndex;
+            if (stmtProbe &&
+                (stmtIndex == 1 || stmtIndex == stmtTotal ||
+                 stmtIndex % spinProbeStmtEvery() == 0))
+                dumpSpinProbeStmtLive(node, stmtIndex, stmtTotal, spinProbeStmtKind(stmt));
+            handleSVFStatement(stmt);
+        }
+    }
+
+    if (hotPhiOnlyNode)
+    {
+        allAnalyzedNodes.insert(node);
+        return true;
     }
 
     // Handle call sites
@@ -942,9 +1976,160 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
     // Track this node as analyzed (for coverage statistics across all entry points)
     allAnalyzedNodes.insert(node);
 
-    if (getAbsState(node) == prevState)
+    if (trackPrevState && getAbsState(node) == prevState)
         return false;
 
+    return true;
+}
+
+bool AbstractInterpretation::applyHotFunctionTop(const ICFGNode* funEntry,
+        const CallICFGNode* caller)
+{
+    const bool forceTop = aeForceTopFunctionName(funEntry->getFun()->getName());
+    if (!aeHotFunctionTopEnabled() && !forceTop)
+        return false;
+    if (!forceTop && funcBodyExecCount[funEntry] < aeHotFunctionTopThreshold())
+        return false;
+
+    const unsigned long minStmts = aeHotFunctionTopMinStmts();
+    if (!forceTop && minStmts != 0)
+    {
+        auto costIt = funcStaticStmtCount.find(funEntry);
+        if (costIt == funcStaticStmtCount.end())
+        {
+            unsigned long stmtCount = 0;
+            for (const SVFBasicBlock* bb : funEntry->getFun()->getReachableBBs())
+                for (const ICFGNode* node : bb->getICFGNodeList())
+                    stmtCount += node->getSVFStmts().size();
+            costIt = funcStaticStmtCount.emplace(funEntry, stmtCount).first;
+        }
+        if (costIt->second < minStmts)
+        {
+            ++funcSmallBodyTopBypassCount[funEntry];
+            return false;
+        }
+    }
+
+    if (caller != nullptr)
+    {
+        skipRecursionWithTop(caller);
+        recordHotFunctionTop(funEntry, 0, 0);
+        return true;
+    }
+
+    auto it = preAnalysis->getFuncToWTO().find(funEntry->getFun());
+    if (it == preAnalysis->getFuncToWTO().end())
+        return false;
+
+    std::vector<const ICFGNode*> nodes;
+    nodes.push_back(funEntry);
+    collectWTONodes(it->second->getWTOComponents(), nodes);
+    std::sort(nodes.begin(), nodes.end());
+    nodes.erase(std::unique(nodes.begin(), nodes.end()), nodes.end());
+
+    unsigned long varTops = 0;
+    unsigned long locTops = 0;
+    for (const ICFGNode* node : nodes)
+    {
+        auto stateIt = abstractTrace.find(node);
+        if (stateIt == abstractTrace.end())
+            continue;
+
+        AbstractState& state = stateIt->second;
+        std::vector<std::pair<u32_t, bool>> varIds;
+        for (const auto& kv : state.getVarToVal())
+        {
+            if (kv.second.isInterval() || kv.second.isAddr())
+                varIds.push_back(std::make_pair(kv.first, kv.second.isAddr()));
+        }
+        for (const auto& idAndAddr : varIds)
+        {
+            AbstractValue topValue(IntervalValue::top());
+            if (idAndAddr.second)
+                topValue.getAddrs().insert(BlackHoleObjAddr);
+            state[idAndAddr.first] = topValue;
+            ++varTops;
+        }
+
+        std::vector<std::pair<u32_t, bool>> locIds;
+        for (const auto& kv : state.getLocToVal())
+        {
+            if (kv.second.isInterval() || kv.second.isAddr())
+                locIds.push_back(std::make_pair(kv.first, kv.second.isAddr()));
+        }
+        for (const auto& idAndAddr : locIds)
+        {
+            AbstractValue topValue(IntervalValue::top());
+            if (idAndAddr.second)
+                topValue.getAddrs().insert(BlackHoleObjAddr);
+            state.store(AbstractState::getVirtualMemAddress(idAndAddr.first),
+                        topValue);
+            ++locTops;
+        }
+    }
+
+    recordHotFunctionTop(funEntry, varTops, locTops);
+    return true;
+}
+
+bool AbstractInterpretation::entryNodeBudgetExceeded() const
+{
+    const unsigned long budget = aeEntryNodeBudget();
+    if (budget == 0)
+        return false;
+    if (currentEntryIndex <= aeEntryBudgetAfter())
+        return false;
+    return spinGlobalNodeExecs - currentEntryStartNodeExecs >= budget;
+}
+
+void AbstractInterpretation::dumpEntryBudgetStats(const char* reason) const
+{
+    const unsigned long totalHits = entryBudgetFunctionTopHits + entryBudgetCycleTopHits;
+    std::ofstream of(aeTmpPath("svf_entry_budget_top.tsv"));
+    of << "# reason=" << reason
+       << "\tbudget=" << aeEntryNodeBudget()
+       << "\tafter=" << aeEntryBudgetAfter()
+       << "\tcurrent_entry=" << currentEntryIndex
+       << "\tentry_node_execs=" << (spinGlobalNodeExecs - currentEntryStartNodeExecs)
+       << "\tfunction_top_hits=" << entryBudgetFunctionTopHits
+       << "\tcycle_top_hits=" << entryBudgetCycleTopHits
+       << "\ttotal_hits=" << totalHits
+       << "\n";
+    of << "kind\tfunction\thits\n";
+    for (const auto& kv : entryBudgetFunctionTopByFunction)
+        of << "function\t" << kv.first << "\t" << kv.second << "\n";
+    for (const auto& kv : entryBudgetCycleTopByFunction)
+        of << "cycle\t" << kv.first << "\t" << kv.second << "\n";
+}
+
+bool AbstractInterpretation::applyEntryBudgetFunctionTop(const ICFGNode* funEntry,
+        const CallICFGNode* caller)
+{
+    if (caller == nullptr || !entryNodeBudgetExceeded())
+        return false;
+
+    skipRecursionWithTop(caller);
+    ++entryBudgetFunctionTopHits;
+    ++entryBudgetFunctionTopByFunction[funEntry->getFun()->getName()];
+    const unsigned long every = aeEntryBudgetDumpEvery();
+    if (entryBudgetFunctionTopHits == 1 || entryBudgetFunctionTopHits % every == 0)
+        dumpEntryBudgetStats("function");
+    return true;
+}
+
+bool AbstractInterpretation::applyEntryBudgetCycleTop(const ICFGCycleWTO* cycle)
+{
+    if (!entryNodeBudgetExceeded())
+        return false;
+    if (!applyHotCycleThrottle(cycle, true))
+        return false;
+
+    const ICFGNode* head = cycle->head()->getICFGNode();
+    ++entryBudgetCycleTopHits;
+    ++entryBudgetCycleTopByFunction[head->getFun()->getName()];
+    const unsigned long every = aeEntryBudgetDumpEvery();
+    if (entryBudgetCycleTopHits == 1 || entryBudgetCycleTopHits % every == 0)
+        dumpEntryBudgetStats("cycle");
     return true;
 }
 
@@ -956,86 +2141,210 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
  */
 void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller)
 {
-    const ICFGWTO* funWTO = nullptr;
+    static const bool memoOff = (std::getenv("MEMO_OFF") != nullptr);
+    ++funcCallTotal;
+    ++funcCallCount[funEntry];
+    if (funcCallTotal == 1 || funcCallTotal % hotFuncDumpEvery() == 0)
+        dumpHotFunctionStats();
     auto it = preAnalysis->getFuncToWTO().find(funEntry->getFun());
-    if (it != preAnalysis->getFuncToWTO().end())
+    if (it == preAnalysis->getFuncToWTO().end())
     {
-        funWTO = it->second;
-    }
-    else
-    {
-        for (const auto& kv : preAnalysis->getFuncToWTO())
+        if (!aeAllowMissingState())
+            assert(false && "Missing WTO for function");
+
+        static unsigned long missingWTO = 0;
+        ++missingWTO;
+        if (missingWTO <= 20 || missingWTO % 1000 == 0)
         {
-            if (kv.second && kv.second->scc.find(funEntry->getFun()) != kv.second->scc.end())
-            {
-                funWTO = kv.second;
-                break;
-            }
+            SVFUtil::errs() << "[AE-MISSING-WTO] skip function count=" << missingWTO
+                            << " fun=" << funEntry->getFun()->getName()
+                            << (caller ? " from_call=1" : " from_call=0")
+                            << "\n";
         }
-    }
-    if (!funWTO)
-    {
+
+        if (caller != nullptr && hasAbsState(caller))
+        {
+            AbstractState callerState = getAbsState(caller);
+
+            std::vector<std::pair<u32_t, bool>> varIds;
+            for (const auto& kv : callerState.getVarToVal())
+                varIds.push_back(std::make_pair(kv.first, kv.second.isAddr()));
+            for (const auto& idAndAddr : varIds)
+            {
+                AbstractValue topValue(IntervalValue::top());
+                if (idAndAddr.second)
+                    topValue.getAddrs().insert(BlackHoleObjAddr);
+                callerState[idAndAddr.first] = topValue;
+            }
+
+            std::vector<std::pair<u32_t, bool>> locIds;
+            for (const auto& kv : callerState.getLocToVal())
+                locIds.push_back(std::make_pair(kv.first, kv.second.isAddr()));
+            for (const auto& idAndAddr : locIds)
+            {
+                AbstractValue topValue(IntervalValue::top());
+                if (idAndAddr.second)
+                    topValue.getAddrs().insert(BlackHoleObjAddr);
+                callerState.store(AbstractState::getVirtualMemAddress(idAndAddr.first),
+                                  topValue);
+            }
+
+            updateAbsState(caller, callerState);
+            if (const RetICFGNode* retNode = caller->getRetICFGNode())
+                updateAbsState(retNode, callerState);
+        }
         return;
     }
 
-    ++aeFunctionTrace;
-    bool entryReachable = mergeStatesFromPredecessors(funEntry);
-    if (!entryReachable && hasAbsState(funEntry))
-        entryReachable = true;
+    if (applyEntryBudgetFunctionTop(funEntry, caller))
+        return;
 
-    if (entryReachable)
+    if (applyHotFunctionTop(funEntry, caller))
     {
-        handleICFGNode(funEntry);
+        ++funcMemoHits;
+        ++funcFastHitCount[funEntry];
+        return;
+    }
 
-        AbstractState entrySnapshot = buildFunctionEntrySnapshot(funEntry);
-        auto sit = functionEntrySnapshots.find(funEntry);
-        const bool entryChanged =
-            sit == functionEntrySnapshots.end() ||
-            !sameFunctionEntrySnapshot(sit->second, entrySnapshot);
-        functionEntrySnapshots[funEntry] = entrySnapshot;
+    // Semi-sparse ValVars live at their def-sites, so the formal parameters at
+    // funEntry still contain the previous invocation until CallPE executes.
+    // Materialize the active caller and its actual arguments before taking the
+    // memoization snapshot; otherwise two different calls can share a stale key
+    // and incorrectly skip the callee body.
+    if (aeCallsiteSensitivePE() && caller != nullptr && hasAbsState(caller))
+    {
+        updateAbsState(funEntry, getAbsState(caller));
+        for (const SVFStmt* stmt : funEntry->getSVFStmts())
+            if (const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(stmt))
+                updateStateOnCall(callPE);
+    }
 
-        if (entryChanged)
-            ++aeFunctionEntryChanged;
-        else
+    // EXPERIMENT (function memoization, cheap full-state key): if this function's
+    // entry state is identical to its previous invocation, re-analyzing the body
+    // would reproduce the same result, so skip it (shared/persistent trace[] from
+    // last time still holds the body effect). Keyed by FunEntry node.
+    ++funcMemoTotal;
+    AbstractState fSnap;
+    if (hasAbsState(funEntry))
+        fSnap = getAbsState(funEntry);
+    auto fmit = funcInputCache.find(funEntry);
+
+    if (valueProbeEnabled())
+    {
+        const std::string& funName = funEntry->getFun()->getName();
+        if (valueProbeHotFunction(funName))
         {
-            ++aeFunctionEntryFixpointHit;
-            const ICFGNode* funExit = icfg->getFunExitICFGNode(funEntry->getFun());
-            if (funExit && hasAbsState(funExit))
+            ValueProbeStats& s = valueProbeStats[funName];
+            ++s.calls;
+            s.lastVarN = fSnap.getVarToVal().size();
+            s.lastLocN = fSnap.getLocToVal().size();
+
+            bool hadPrev = false;
+            bool fullSame = false;
+            unsigned long varChanged = 0, varAddedRemoved = 0;
+            unsigned long locChanged = 0, locAddedRemoved = 0;
+            auto pit = valueProbePrevInput.find(funEntry);
+            if (pit != valueProbePrevInput.end())
             {
-                ++aeFunctionEntryShortcutHit;
-                if (aeFunctionEntryShortcutHit <= 16 || aeFunctionEntryShortcutHit % 10000 == 0)
+                hadPrev = true;
+                ++s.compared;
+                fullSame = (pit->second == fSnap);
+                if (fullSame)
+                    ++s.fullSame;
+
+                const bool shapeSame =
+                    pit->second.getVarToVal().size() == fSnap.getVarToVal().size() &&
+                    pit->second.getLocToVal().size() == fSnap.getLocToVal().size();
+                if (shapeSame)
+                    ++s.shapeSame;
+
+                valueProbeDiffMap(pit->second.getVarToVal(), fSnap.getVarToVal(),
+                                  varChanged, varAddedRemoved);
+                valueProbeDiffMap(pit->second.getLocToVal(), fSnap.getLocToVal(),
+                                  locChanged, locAddedRemoved);
+                s.varValueChanged += varChanged;
+                s.varAddedRemoved += varAddedRemoved;
+                s.locValueChanged += locChanged;
+                s.locAddedRemoved += locAddedRemoved;
+                if (shapeSame && !fullSame)
+                    ++s.shapeSameButValueChanged;
+            }
+
+            unsigned long readSetSize = 0;
+            unsigned long staleFields = 0;
+            auto rvit = funcReadVersions.find(funEntry);
+            if (rvit != funcReadVersions.end())
+            {
+                readSetSize = rvit->second.size();
+                for (const auto& kv : rvit->second)
+                    if (gepFieldVersion[kv.first] != kv.second)
+                        ++staleFields;
+                s.overlayReadSetMax = std::max(s.overlayReadSetMax, readSetSize);
+                if (staleFields)
                 {
-                    SVFUtil::outs() << "[AE-FP-ENTRY-SKIP] entry snapshot unchanged shortcut="
-                                    << aeFunctionEntryShortcutHit
-                                    << " entry=" << funEntry->getId()
-                                    << " exit=" << funExit->getId()
-                                    << " fun=" << funEntry->getFun()->getName()
-                                    << " entry_fixpoint=" << aeFunctionEntryFixpointHit
-                                    << " function_trace=" << aeFunctionTrace
-                                    << "\n";
-                    SVFUtil::outs().flush();
+                    ++s.overlayStaleCalls;
+                    s.overlayStaleFields += staleFields;
+                    if (hadPrev && fullSame)
+                        ++s.sameStateButOverlayStale;
                 }
-                return;
             }
-            ++aeFunctionEntryFixpointNoExit;
-            if (aeFunctionEntryFixpointNoExit <= 16 || aeFunctionEntryFixpointNoExit % 10000 == 0)
-            {
-                SVFUtil::outs() << "[AE-FP-ENTRY] entry snapshot unchanged without exit="
-                                << aeFunctionEntryFixpointNoExit
-                                << " entry=" << funEntry->getId()
-                                << " fun=" << funEntry->getFun()->getName()
-                                << " entry_fixpoint=" << aeFunctionEntryFixpointHit
-                                << " function_trace=" << aeFunctionTrace
-                                << " entry_changed=" << aeFunctionEntryChanged
-                                << "\n";
-                SVFUtil::outs().flush();
-            }
-            return;
+
+            valueProbePrevInput[funEntry] = fSnap;
+            ++valueProbeHotCalls;
+            if (s.calls <= 20 || s.calls % 500 == 0)
+                valueProbeAppendDetail(funName, funcCallTotal, s.calls, hadPrev,
+                                       fullSame, s.lastVarN, s.lastLocN,
+                                       varChanged, varAddedRemoved,
+                                       locChanged, locAddedRemoved,
+                                       readSetSize, staleFields);
+            if (valueProbeHotCalls % 1000UL == 0)
+                valueProbeDumpSummary();
         }
     }
 
+    const bool legacyExact = !memoOff && hotFuncLegacyMode();
+    const bool hotExact = !memoOff && hotFuncExactMode();
+    const bool isHot = funcBodyExecCount[funEntry] >= hotFuncThreshold();
+    const bool mayReplay = legacyExact || (hotExact && isHot);
+
+    if (hotExact && isHot)
+        ++funcHotAttemptCount[funEntry];
+
+    if (mayReplay && fmit != funcInputCache.end())
+    {
+        if (fmit->second == fSnap)
+        {
+            // Sound per-field gate: reuse only if every gepOverlay field this
+            // function read last time is unchanged (dynamic-dependency replay).
+            bool fresh = true;
+            const auto& rv = funcReadVersions[funEntry];
+            for (const auto& kv : rv)
+                if (gepFieldVersion[kv.first] != kv.second) { fresh = false; break; }
+            if (fresh)
+            {
+                ++funcMemoHits;
+                ++funcFastHitCount[funEntry];
+                if (!gepReadStack.empty())
+                    for (const auto& kv : rv)
+                        gepReadStack.back().insert(kv.first);
+                return;
+            }
+            if (hotExact && isHot)
+                ++funcHotOverlayStaleCount[funEntry];
+        }
+        else if (hotExact && isHot)
+            ++funcHotStateDiffCount[funEntry];
+    }
+    else if (hotExact && isHot)
+        ++funcHotNoCacheCount[funEntry];
+
+    ++funcBodyExecTotal;
+    ++funcBodyExecCount[funEntry];
+    funcInputCache[funEntry] = fSnap;
+    gepReadStack.push_back(Set<NodeID>());
+
     // Push all top-level WTO components into the worklist in WTO order
-    FIFOWorkList<const ICFGWTOComp*> worklist(funWTO->getWTOComponents());
+    FIFOWorkList<const ICFGWTOComp*> worklist(it->second->getWTOComponents());
 
     while (!worklist.empty())
     {
@@ -1044,22 +2353,26 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
         if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
         {
             const ICFGNode* node = singleton->getICFGNode();
-            if (node == funEntry)
-                continue;
-            bool reachable = mergeStatesFromPredecessors(node);
-            if (reachable)
+            if (mergeStatesFromPredecessors(node))
                 handleICFGNode(node);
         }
         else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
         {
-            const ICFGNode* node = cycle->head()->getICFGNode();
-            bool reachable = mergeStatesFromPredecessors(node);
-            if (!reachable && node == funEntry && hasAbsState(node))
-                reachable = true;
-            if (reachable)
+            if (mergeStatesFromPredecessors(cycle->head()->getICFGNode()))
                 handleLoopOrRecursion(cycle, caller);
         }
     }
+
+    // record this function's gepOverlay read-set and each read field's version
+    Set<NodeID> myReads = gepReadStack.back();
+    gepReadStack.pop_back();
+    Map<NodeID, unsigned long>& rv = funcReadVersions[funEntry];
+    rv.clear();
+    for (NodeID id : myReads)
+        rv[id] = gepFieldVersion[id];
+    if (!gepReadStack.empty())
+        for (NodeID id : myReads)
+            gepReadStack.back().insert(id);
 }
 
 
@@ -1139,7 +2452,9 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
     if (const FunObjVar* callee = callNode->getCalledFunction())
     {
         const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
+        reportCallStack.push_back(callNode);
         handleFunction(calleeEntry, callNode);
+        reportCallStack.pop_back();
         const RetICFGNode* retNode = callNode->getRetICFGNode();
         updateAbsState(retNode, getAbsState(callNode));
         return;
@@ -1155,7 +2470,9 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
             if (callee->isDeclaration())
                 continue;
             const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
+            reportCallStack.push_back(callNode);
             handleFunction(calleeEntry, callNode);
+            reportCallStack.pop_back();
         }
     }
     // Resume return node from caller's state (context-insensitive)
@@ -1227,8 +2544,12 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
     {
         const auto& vmap = getAbsState(stmt->getICFGNode()).getVarToVal();
         auto it = vmap.find(IRGraph::NullPtr);
-        assert(it == vmap.end() ||
-               (!it->second.isInterval() && !it->second.isAddr()));
+        (void)it; // Suppress warning of unused variable under release build
+        if (!aeAllowMissingState())
+        {
+            assert(it == vmap.end() ||
+                   (!it->second.isInterval() && !it->second.isAddr()));
+        }
     }
 }
 
@@ -1262,6 +2583,18 @@ void AbstractInterpretation::updateStateOnSelect(const SelectStmt *select)
 void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
 {
     const ICFGNode* icfgNode = phi->getICFGNode();
+    if (aeHotCyclePhiTopEnabled() && spinActiveCycle != nullptr &&
+            hotCycleThrottleFuns.find(icfgNode->getFun()) != hotCycleThrottleFuns.end())
+    {
+        const SVFVar* res = phi->getRes();
+        AbstractValue topValue(IntervalValue::top());
+        if (res->isPointer())
+            topValue.getAddrs().insert(BlackHoleObjAddr);
+        updateAbsValue(res, topValue, icfgNode);
+        recordHotCyclePhiTop(icfgNode);
+        return;
+    }
+
     AbstractValue rhs;
     for (u32_t i = 0; i < phi->getOpVarNum(); i++)
     {
@@ -1299,13 +2632,35 @@ void AbstractInterpretation::updateStateOnCall(const CallPE *callPE)
     const ICFGNode* node = callPE->getICFGNode();
     const SVFVar* res = callPE->getRes();
     AbstractValue rhs;
+
+    const CallICFGNode* activeCall = nullptr;
+    if (aeCallsiteSensitivePE() && !reportCallStack.empty())
+        activeCall = reportCallStack.back();
+
+    bool matchedActiveCall = false;
     for (u32_t i = 0; i < callPE->getOpVarNum(); i++)
     {
         const ICFGNode* opICFGNode = callPE->getOpCallICFGNode(i);
+        if (activeCall && opICFGNode != activeCall)
+            continue;
         if (hasAbsState(opICFGNode))
         {
             const AbstractValue& opVal = getAbsValue(callPE->getOpVar(i), opICFGNode);
             rhs.join_with(opVal);
+            matchedActiveCall = true;
+        }
+    }
+
+    // An indirect/thread edge may not have an operand tagged with the dynamic
+    // callsite. Fall back to the context-insensitive join instead of dropping
+    // a possible actual argument.
+    if (activeCall && !matchedActiveCall)
+    {
+        for (u32_t i = 0; i < callPE->getOpVarNum(); i++)
+        {
+            const ICFGNode* opICFGNode = callPE->getOpCallICFGNode(i);
+            if (hasAbsState(opICFGNode))
+                rhs.join_with(getAbsValue(callPE->getOpVar(i), opICFGNode));
         }
     }
     updateAbsValue(res, rhs, node);
@@ -1313,6 +2668,10 @@ void AbstractInterpretation::updateStateOnCall(const CallPE *callPE)
 
 void AbstractInterpretation::updateStateOnRet(const RetPE *retPE)
 {
+    // RetPE is already attached to the RetICFGNode of one concrete callsite.
+    // The dynamic call has been popped by the time that node executes, so
+    // filtering against reportCallStack would compare with the outer caller and
+    // could drop a real return value.
     const ICFGNode* node = retPE->getICFGNode();
     const AbstractValue& rhsVal = getAbsValue(retPE->getRHSVar(), node);
     updateAbsValue(retPE->getLHSVar(), rhsVal, node);
@@ -1326,6 +2685,7 @@ void AbstractInterpretation::updateStateOnAddr(const AddrStmt *addr)
     // mutable access; route via the manager.
     AbstractState& as = getAbsState(node);
     as.initObjVar(SVFUtil::cast<ObjVar>(addr->getRHSVar()));
+    (void)getAllocaInstByteSizeInterval(addr);
     // AddrStmt: lhs(ValVar) = &rhs(ObjVar).
     // as[rhsId] stores the ObjVar's virtual address in _varToVal,
     // NOT the object contents. So we must use as[] directly for ObjVar.
@@ -1394,6 +2754,119 @@ void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary)
     updateAbsValue(binary->getRes(), resVal, node);
 }
 
+static bool aeCmpPredicateIsEq(u32_t predicate)
+{
+    return predicate == CmpStmt::ICMP_EQ ||
+           predicate == CmpStmt::FCMP_OEQ ||
+           predicate == CmpStmt::FCMP_UEQ;
+}
+
+static bool aeCmpPredicateIsNe(u32_t predicate)
+{
+    return predicate == CmpStmt::ICMP_NE ||
+           predicate == CmpStmt::FCMP_ONE ||
+           predicate == CmpStmt::FCMP_UNE;
+}
+
+static bool aeCmpPredicateIsAlwaysFalse(u32_t predicate)
+{
+    return predicate == CmpStmt::FCMP_FALSE;
+}
+
+static bool aeCmpPredicateIsAlwaysTrue(u32_t predicate)
+{
+    return predicate == CmpStmt::FCMP_TRUE;
+}
+
+static bool aeIntervalIsZero(const AbstractValue& val)
+{
+    return val.isInterval() &&
+           val.getInterval().equals(IntervalValue((s64_t)0, (s64_t)0));
+}
+
+static bool aeOperandIsNullPtr(u32_t varId, const AbstractValue& val)
+{
+    if (varId == IRGraph::NullPtr || aeIntervalIsZero(val))
+        return true;
+
+    if (!val.isAddr())
+        return false;
+
+    const AddressValue addrs = val.getAddrs();
+    return addrs.size() == 1 && addrs.contains(NullMemAddr);
+}
+
+static bool aeAddressSetHasUnknownOrNull(const AddressValue& addrs)
+{
+    return addrs.empty() || addrs.contains(BlackHoleObjAddr) ||
+           addrs.contains(NullMemAddr);
+}
+
+static bool aeOperandDefinitelyNonNullAddr(const AbstractValue& val)
+{
+    return val.isAddr() && !aeAddressSetHasUnknownOrNull(val.getAddrs());
+}
+
+static bool aeKnownSingletonSameAddr(const AddressValue& lhs,
+                                     const AddressValue& rhs)
+{
+    if (aeAddressSetHasUnknownOrNull(lhs) || aeAddressSetHasUnknownOrNull(rhs))
+        return false;
+    return lhs.size() == 1 && rhs.size() == 1 && lhs.equals(rhs);
+}
+
+static bool aeKnownDisjointAddrs(const AddressValue& lhs,
+                                 const AddressValue& rhs)
+{
+    if (aeAddressSetHasUnknownOrNull(lhs) || aeAddressSetHasUnknownOrNull(rhs))
+        return false;
+    return !lhs.hasIntersect(rhs);
+}
+
+static IntervalValue aeConservativePointerCmpResult(
+    u32_t predicate, u32_t op0, const AbstractValue& op0Val,
+    u32_t op1, const AbstractValue& op1Val)
+{
+    if (aeCmpPredicateIsAlwaysFalse(predicate))
+        return IntervalValue((s64_t)0, (s64_t)0);
+    if (aeCmpPredicateIsAlwaysTrue(predicate))
+        return IntervalValue((s64_t)1, (s64_t)1);
+
+    if (!aeCmpPredicateIsEq(predicate) && !aeCmpPredicateIsNe(predicate))
+        return IntervalValue((s64_t)0, (s64_t)1);
+
+    const bool isEq = aeCmpPredicateIsEq(predicate);
+    const bool lhsNull = aeOperandIsNullPtr(op0, op0Val);
+    const bool rhsNull = aeOperandIsNullPtr(op1, op1Val);
+
+    if (lhsNull && rhsNull)
+        return isEq ? IntervalValue((s64_t)1, (s64_t)1) :
+               IntervalValue((s64_t)0, (s64_t)0);
+
+    if (lhsNull || rhsNull)
+    {
+        const AbstractValue& other = lhsNull ? op1Val : op0Val;
+        if (aeOperandDefinitelyNonNullAddr(other))
+            return isEq ? IntervalValue((s64_t)0, (s64_t)0) :
+                   IntervalValue((s64_t)1, (s64_t)1);
+        return IntervalValue((s64_t)0, (s64_t)1);
+    }
+
+    if (op0Val.isAddr() && op1Val.isAddr())
+    {
+        const AddressValue lhs = op0Val.getAddrs();
+        const AddressValue rhs = op1Val.getAddrs();
+        if (aeKnownSingletonSameAddr(lhs, rhs))
+            return isEq ? IntervalValue((s64_t)1, (s64_t)1) :
+                   IntervalValue((s64_t)0, (s64_t)0);
+        if (aeKnownDisjointAddrs(lhs, rhs))
+            return isEq ? IntervalValue((s64_t)0, (s64_t)0) :
+                   IntervalValue((s64_t)1, (s64_t)1);
+    }
+
+    return IntervalValue((s64_t)0, (s64_t)1);
+}
+
 void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
 {
     const ICFGNode* node = cmp->getICFGNode();
@@ -1402,89 +2875,75 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
     const AbstractValue& op0Val = getAbsValue(cmp->getOpVar(0), node);
     const AbstractValue& op1Val = getAbsValue(cmp->getOpVar(1), node);
 
-    if ((op0Val.isAddr() || op0 == IRGraph::NullPtr) &&
-            (op1Val.isAddr() || op1 == IRGraph::NullPtr))
+    const bool pointerLikeCmp = op0 == IRGraph::NullPtr ||
+                                op1 == IRGraph::NullPtr ||
+                                op0Val.isAddr() || op1Val.isAddr();
+    if (pointerLikeCmp)
     {
-        AddressValue lhs = op0 == IRGraph::NullPtr ? AddressValue() : op0Val.getAddrs();
-        AddressValue rhs = op1 == IRGraph::NullPtr ? AddressValue() : op1Val.getAddrs();
-        IntervalValue resVal = computeAddressCmp(cmp->getPredicate(), lhs, rhs);
+        IntervalValue resVal = aeConservativePointerCmpResult(
+                                   cmp->getPredicate(), op0, op0Val, op1, op1Val);
         updateAbsValue(cmp->getRes(), resVal, node);
+        return;
     }
-    else if (op0 == IRGraph::NullPtr || op1 == IRGraph::NullPtr)
+
+    IntervalValue resVal;
+    if (op0Val.isInterval() && op1Val.isInterval())
     {
-        updateAbsValue(cmp->getRes(), IntervalValue(0, 1), node);
-    }
-    else if (op0Val.isAddr() || op1Val.isAddr())
-    {
-        updateAbsValue(cmp->getRes(), IntervalValue(0, 1), node);
-    }
-    else
-    {
+        // Treat bottom (uninitialized) operands as top for soundness.
+        IntervalValue lhs = op0Val.getInterval().isBottom() ? IntervalValue::top() : op0Val.getInterval();
+        IntervalValue rhs = op1Val.getInterval().isBottom() ? IntervalValue::top() : op1Val.getInterval();
+        auto predicate = cmp->getPredicate();
+        switch (predicate)
         {
-            IntervalValue resVal;
-            if (op0Val.isInterval() && op1Val.isInterval())
-            {
-                // Treat bottom (uninitialized) operands as top for soundness
-                IntervalValue lhs = op0Val.getInterval().isBottom() ? IntervalValue::top() : op0Val.getInterval(),
-                              rhs = op1Val.getInterval().isBottom() ? IntervalValue::top() : op1Val.getInterval();
-                // AbstractValue
-                auto predicate = cmp->getPredicate();
-                switch (predicate)
-                {
-                case CmpStmt::ICMP_EQ:
-                case CmpStmt::FCMP_OEQ:
-                case CmpStmt::FCMP_UEQ:
-                    resVal = (lhs == rhs);
-                    // resVal = (lhs.getInterval() == rhs.getInterval());
-                    break;
-                case CmpStmt::ICMP_NE:
-                case CmpStmt::FCMP_ONE:
-                case CmpStmt::FCMP_UNE:
-                    resVal = (lhs != rhs);
-                    break;
-                case CmpStmt::ICMP_UGT:
-                case CmpStmt::ICMP_SGT:
-                case CmpStmt::FCMP_OGT:
-                case CmpStmt::FCMP_UGT:
-                    resVal = (lhs > rhs);
-                    break;
-                case CmpStmt::ICMP_UGE:
-                case CmpStmt::ICMP_SGE:
-                case CmpStmt::FCMP_OGE:
-                case CmpStmt::FCMP_UGE:
-                    resVal = (lhs >= rhs);
-                    break;
-                case CmpStmt::ICMP_ULT:
-                case CmpStmt::ICMP_SLT:
-                case CmpStmt::FCMP_OLT:
-                case CmpStmt::FCMP_ULT:
-                    resVal = (lhs < rhs);
-                    break;
-                case CmpStmt::ICMP_ULE:
-                case CmpStmt::ICMP_SLE:
-                case CmpStmt::FCMP_OLE:
-                case CmpStmt::FCMP_ULE:
-                    resVal = (lhs <= rhs);
-                    break;
-                case CmpStmt::FCMP_FALSE:
-                    resVal = IntervalValue(0, 0);
-                    break;
-                case CmpStmt::FCMP_TRUE:
-                    resVal = IntervalValue(1, 1);
-                    break;
-                case CmpStmt::FCMP_ORD:
-                case CmpStmt::FCMP_UNO:
-                    // FCMP_ORD: true if both operands are not NaN
-                    // FCMP_UNO: true if either operand is NaN
-                    // Conservatively return [0, 1] since we don't track NaN
-                    resVal = IntervalValue(0, 1);
-                    break;
-                default:
-                    assert(false && "undefined compare: ");
-                }
-                updateAbsValue(cmp->getRes(), resVal, node);
-            }
+        case CmpStmt::ICMP_EQ:
+        case CmpStmt::FCMP_OEQ:
+        case CmpStmt::FCMP_UEQ:
+            resVal = (lhs == rhs);
+            break;
+        case CmpStmt::ICMP_NE:
+        case CmpStmt::FCMP_ONE:
+        case CmpStmt::FCMP_UNE:
+            resVal = (lhs != rhs);
+            break;
+        case CmpStmt::ICMP_UGT:
+        case CmpStmt::ICMP_SGT:
+        case CmpStmt::FCMP_OGT:
+        case CmpStmt::FCMP_UGT:
+            resVal = (lhs > rhs);
+            break;
+        case CmpStmt::ICMP_UGE:
+        case CmpStmt::ICMP_SGE:
+        case CmpStmt::FCMP_OGE:
+        case CmpStmt::FCMP_UGE:
+            resVal = (lhs >= rhs);
+            break;
+        case CmpStmt::ICMP_ULT:
+        case CmpStmt::ICMP_SLT:
+        case CmpStmt::FCMP_OLT:
+        case CmpStmt::FCMP_ULT:
+            resVal = (lhs < rhs);
+            break;
+        case CmpStmt::ICMP_ULE:
+        case CmpStmt::ICMP_SLE:
+        case CmpStmt::FCMP_OLE:
+        case CmpStmt::FCMP_ULE:
+            resVal = (lhs <= rhs);
+            break;
+        case CmpStmt::FCMP_FALSE:
+            resVal = IntervalValue((s64_t)0, (s64_t)0);
+            break;
+        case CmpStmt::FCMP_TRUE:
+            resVal = IntervalValue((s64_t)1, (s64_t)1);
+            break;
+        case CmpStmt::FCMP_ORD:
+        case CmpStmt::FCMP_UNO:
+            // FCMP_ORD/UNO depends on NaN, which this domain does not track.
+            resVal = IntervalValue((s64_t)0, (s64_t)1);
+            break;
+        default:
+            assert(false && "undefined compare: ");
         }
+        updateAbsValue(cmp->getRes(), resVal, node);
     }
 }
 
@@ -1516,43 +2975,40 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
         {
             u32_t bits = type->getByteSize() * 8;
             const AbstractValue& val = getAbsValue(var, node);
-            const IntervalValue& itv = val.getInterval();
-            if (itv.isBottom() || bits == 0)
+            if (val.getInterval().is_numeral())
+            {
+                if (bits == 8)
+                {
+                    int8_t signed_i8_value = val.getInterval().getIntNumeral();
+                    u32_t unsigned_value = static_cast<uint8_t>(signed_i8_value);
+                    return IntervalValue(unsigned_value, unsigned_value);
+                }
+                else if (bits == 16)
+                {
+                    s16_t signed_i16_value = val.getInterval().getIntNumeral();
+                    u32_t unsigned_value = static_cast<u16_t>(signed_i16_value);
+                    return IntervalValue(unsigned_value, unsigned_value);
+                }
+                else if (bits == 32)
+                {
+                    s32_t signed_i32_value = val.getInterval().getIntNumeral();
+                    u32_t unsigned_value = static_cast<u32_t>(signed_i32_value);
+                    return IntervalValue(unsigned_value, unsigned_value);
+                }
+                else if (bits == 64)
+                {
+                    s64_t signed_i64_value = val.getInterval().getIntNumeral();
+                    return IntervalValue((s64_t)signed_i64_value, (s64_t)signed_i64_value);
+                }
+                else
+                {
+                    return IntervalValue::top();
+                }
+            }
+            else
+            {
                 return IntervalValue::top();
-
-            auto fullUnsignedRange = [&]() -> IntervalValue
-            {
-                if (bits >= 63)
-                    return IntervalValue(BoundedInt((s64_t)0), IntervalValue::plus_infinity());
-                const s64_t unsignedMax = static_cast<s64_t>((1ULL << bits) - 1);
-                return IntervalValue((s64_t)0, unsignedMax);
-            };
-
-            if (itv.lb().is_infinity() || itv.ub().is_infinity())
-                return fullUnsignedRange();
-
-            const s64_t lb = itv.lb().getIntNumeral();
-            const s64_t ub = itv.ub().getIntNumeral();
-
-            if (bits >= 63)
-            {
-                if (lb >= 0)
-                    return IntervalValue(lb, ub);
-                return fullUnsignedRange();
             }
-
-            const s64_t modulus = static_cast<s64_t>(1ULL << bits);
-            const s64_t unsignedMax = modulus - 1;
-            if (lb >= 0)
-                return IntervalValue(lb, ub > unsignedMax ? unsignedMax : ub);
-            if (ub < 0)
-            {
-                if (lb < -modulus)
-                    return fullUnsignedRange();
-                return IntervalValue(modulus + lb, modulus + ub);
-            }
-
-            return fullUnsignedRange();
         }
         return IntervalValue::top();
     };
@@ -1590,11 +3046,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
         }
         else if (dst_bits == 64)
         {
-            s64_t s64_lb = static_cast<s64_t>(int_lb);
-            s64_t s64_ub = static_cast<s64_t>(int_ub);
-            if (s64_lb > s64_ub)
-                return utils->getRangeLimitFromType(dstType);
-            return IntervalValue(s64_lb, s64_ub);
+            return IntervalValue(int_lb, int_ub);
         }
         else
         {

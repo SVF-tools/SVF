@@ -420,6 +420,8 @@ protected:
         }
     }
 
+    VFGEdge* addIntraDirectVFEdgeIfDef(const ValVar* srcVar, NodeID dstId, const char* reason);
+
     /// Add inter VF edge from actual to formal parameters
     inline VFGEdge* addInterEdgeFromAPToFP(ActualParmVFGNode* src, FormalParmVFGNode* dst, CallSiteID csId)
     {
@@ -474,9 +476,14 @@ protected:
             ValVarToDefMap[valVar] = node->getId();
             assert(hasVFGNode(node->getId()) && "not in the map!!");
         }
-        else
+        else if (it->second != node->getId())
         {
-            assert((it->second == node->getId()) && "a ValVar can only have unique definition ");
+            // Constants and synthetic dummy values may be materialized through
+            // multiple equivalent artificial defs. Real SSA ValVars must still
+            // have a unique definition.
+            assert((SVFUtil::isa<ConstDataValVar>(valVar) ||
+                    SVFUtil::isa<DummyValVar>(valVar)) &&
+                   "a non-constant ValVar can only have unique definition ");
         }
     }
     inline NodeID getDef(const ValVar* valVar) const

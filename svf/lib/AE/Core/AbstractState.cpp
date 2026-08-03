@@ -59,39 +59,41 @@ u32_t AbstractState::hash() const
 
 AbstractState AbstractState::widening(const AbstractState& other)
 {
+    // widen interval
     AbstractState es = *this;
-    for (const auto& [key, val] : other._varToAbsVal)
+    for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
     {
-        auto it = es._varToAbsVal.find(key);
-        if (it == es._varToAbsVal.end())
-            es._varToAbsVal.emplace(key, val);
-        else
-            it->second.widen_with(val);
+        auto key = it->first;
+        if (other._varToAbsVal.find(key) != other._varToAbsVal.end())
+            if (it->second.isInterval() && other._varToAbsVal.at(key).isInterval())
+                it->second.getInterval().widen_with(other._varToAbsVal.at(key).getInterval());
     }
-    for (const auto& [key, val] : other._addrToAbsVal)
+    for (auto it = es._addrToAbsVal.begin(); it != es._addrToAbsVal.end(); ++it)
     {
-        auto it = es._addrToAbsVal.find(key);
-        if (it == es._addrToAbsVal.end())
-            es._addrToAbsVal.emplace(key, val);
-        else
-            it->second.widen_with(val);
+        auto key = it->first;
+        if (other._addrToAbsVal.find(key) != other._addrToAbsVal.end())
+            if (it->second.isInterval() && other._addrToAbsVal.at(key).isInterval())
+                it->second.getInterval().widen_with(other._addrToAbsVal.at(key).getInterval());
     }
-    es._freedAddrs.insert(other._freedAddrs.begin(), other._freedAddrs.end());
     return es;
 }
 
 AbstractState AbstractState::narrowing(const AbstractState& other)
 {
     AbstractState es = *this;
-    for (auto& [key, val] : es._varToAbsVal)
+    for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
     {
+        auto key = it->first;
         if (other._varToAbsVal.find(key) != other._varToAbsVal.end())
-            val.narrow_with(other._varToAbsVal.at(key));
+            if (it->second.isInterval() && other._varToAbsVal.at(key).isInterval())
+                it->second.getInterval().narrow_with(other._varToAbsVal.at(key).getInterval());
     }
-    for (auto& [key, val] : es._addrToAbsVal)
+    for (auto it = es._addrToAbsVal.begin(); it != es._addrToAbsVal.end(); ++it)
     {
+        auto key = it->first;
         if (other._addrToAbsVal.find(key) != other._addrToAbsVal.end())
-            val.narrow_with(other._addrToAbsVal.at(key));
+            if (it->second.isInterval() && other._addrToAbsVal.at(key).isInterval())
+                it->second.getInterval().narrow_with(other._addrToAbsVal.at(key).getInterval());
     }
     return es;
 

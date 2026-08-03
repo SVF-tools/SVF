@@ -419,7 +419,7 @@ void MHP::updateAncestorThreads(NodeID curTid)
 {
     NodeBS ancestorAndSelfTids = tct->getAncestorThreads(curTid);
     DBOUT(DMTA, outs() << "##Ancestor thread of " << curTid << " is : ");
-    DBOUT(DMTA, dumpSet(tds));
+    DBOUT(DMTA, dumpSet(ancestorAndSelfTids));
     DBOUT(DMTA, outs() << "\n");
     ancestorAndSelfTids.set(curTid);
 
