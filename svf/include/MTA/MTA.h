@@ -102,9 +102,6 @@ public:
     /// Run the shared detector and print a race report
     virtual void reportRaces();
 
-    // Not implemented for now
-    // void dump(Module &module, MHP *mhp, LockAnalysis *lsa);
-
     MHP* getMHP()
     {
         return mhp;

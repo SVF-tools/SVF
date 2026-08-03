@@ -296,7 +296,6 @@ void LockAnalysis::collectCxtLock(ICFGGraph icfg, CGGraph cg)
     {
         CxtLockProc clp = popFromCTPWorkList();
         CallGraphNode* cgNode = getTCG()->getCallGraphNode(clp.getProc());
-        // lzh TODO.
         if (!isLockCandidateFun(cgNode->getFunction()))
             continue;
 
