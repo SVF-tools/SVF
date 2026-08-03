@@ -471,6 +471,9 @@ void SlicedMTA::buildVFGPre()
             tcg->updateJoinEdge(preAnder);
         }
         vfgPreBuilder = std::make_unique<MTASVFGBuilder>(mhp.get(), lockAnalysis.get());
+        // VFG_pre is only sliced, never solved: omit the interference-edge
+        // points-to labels (the dominant VFG_pre memory cost, unread by the slice).
+        vfgPreBuilder->configureForSlicingOnly();
         vfgPre = vfgPreBuilder->buildPTROnlySVFG(preAnder);
         SVFUtil::outs() << "[VFG_pre] thread-aware SVFG: " << vfgPre->getSVFGNodeNum()
                         << " nodes, " << MTASVFGBuilder::numOfNewSVFGEdges << " interference edges\n";

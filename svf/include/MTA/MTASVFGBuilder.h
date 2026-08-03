@@ -79,6 +79,19 @@ public:
         recordThreadVF = false;
     }
 
+    /// Configure the builder for VFG_pre (pre-analysis) slicing, which is only
+    /// *sliced*, never *solved*: the data-dependence slice traverses the
+    /// interference edges for connectivity only (it reads getSrcNode/getInEdges,
+    /// never the per-edge points-to label). So drop the interference-edge
+    /// points-to labels here -- they are the dominant VFG_pre memory cost (e.g.
+    /// x264: ~1.4B edge labels) yet have no consumer in the slice. The edge SET
+    /// is unchanged (edges are added on the MHP + lock tests, not on points-to),
+    /// so the slice -- and the preserved race set -- are identical.
+    void configureForSlicingOnly()
+    {
+        labelInterferenceEdges = false;
+    }
+
     /// A candidate thread-aware value-flow edge s --o--> s' (src store, dst
     /// load/store), keyed by its endpoint SVFG nodes.
     typedef std::pair<const StmtSVFGNode*, const StmtSVFGNode*> ThreadVFEdge;
@@ -113,6 +126,7 @@ private:
     /// Main-solve configuration (see configureForMainSolve); defaults suit VFG_pre.
     const SlicedICFGView* icfgSlice = nullptr; ///< null = whole program
     bool recordThreadVF = true;                ///< false = skip [THREAD-VF] recording
+    bool labelInterferenceEdges = true;        ///< false = VFG_pre (sliced-only): omit edge points-to labels
 
     /// Collect the store/load SVFG nodes to pair for interference edges (all of
     /// them, or -- when a slice is set -- only the kept ones).

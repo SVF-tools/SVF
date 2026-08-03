@@ -228,6 +228,17 @@ SVFGEdge* MTASVFGBuilder::addTDEdge(NodeID srcId, NodeID dstId, const PointsTo& 
     SVFGNode* srcNode = svfg->getSVFGNode(srcId);
     SVFGNode* dstNode = svfg->getSVFGNode(dstId);
 
+    // VFG_pre (sliced-only) mode: keep the edge for connectivity but omit its
+    // points-to label -- no slice consumer reads it (see configureForSlicingOnly).
+    if (!labelInterferenceEdges)
+    {
+        if (SVFGEdge* edge = svfg->hasThreadVFGEdge(srcNode, dstNode, SVFGEdge::TheadMHPIndirectVF))
+            return edge;
+        numOfNewSVFGEdges++;
+        ThreadMHPIndSVFGEdge* indirectEdge = new ThreadMHPIndSVFGEdge(srcNode, dstNode);
+        return (svfg->addSVFGEdge(indirectEdge) ? indirectEdge : nullptr);
+    }
+
     if (SVFGEdge* edge = svfg->hasThreadVFGEdge(srcNode, dstNode, SVFGEdge::TheadMHPIndirectVF))
     {
         assert(SVFUtil::isa<IndirectSVFGEdge>(edge) && "should be an indirect value-flow edge!");
@@ -423,8 +434,14 @@ void MTASVFGBuilder::handleStoreLoad(const StmtSVFGNode* n1, const StmtSVFGNode*
     // No alias() re-check: the bucketed candidate generator only pairs accesses
     // whose raw points-to sets share an object, so the intersection below is
     // non-empty by construction and alias() could never answer NoAlias here.
-    PointsTo pts = pta->getPts(n1->getDstNodeID());
-    pts &= pta->getPts(n2->getSrcNodeID());
+    // The label is only needed when the edge will be solved (main FSMPTA); in
+    // VFG_pre (sliced-only) mode skip the intersection -- it is never read.
+    PointsTo pts;
+    if (labelInterferenceEdges)
+    {
+        pts = pta->getPts(n1->getDstNodeID());
+        pts &= pta->getPts(n2->getSrcNodeID());
+    }
 
     // [THREAD-VF] source extraction runs for every candidate pair (both the
     // pairs that survive and the ones the lock test prunes), so the sliced ILA
@@ -457,9 +474,13 @@ void MTASVFGBuilder::handleStoreStore(const StmtSVFGNode* n1, const StmtSVFGNode
         return;
 
     // No alias() re-check: see handleStoreLoad -- bucketing already guarantees a
-    // shared raw object.
-    PointsTo pts = pta->getPts(n1->getDstNodeID());
-    pts &= pta->getPts(n2->getDstNodeID());
+    // shared raw object. Skip the label intersection in VFG_pre (sliced-only) mode.
+    PointsTo pts;
+    if (labelInterferenceEdges)
+    {
+        pts = pta->getPts(n1->getDstNodeID());
+        pts &= pta->getPts(n2->getDstNodeID());
+    }
 
     // Both directions are candidate thread-aware edges; extract sources for each.
     bool commonLock = lockana->isProtectedByCommonLock(i1, i2);
