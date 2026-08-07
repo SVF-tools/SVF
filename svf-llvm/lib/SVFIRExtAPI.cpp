@@ -33,6 +33,7 @@
 #include "SVF-LLVM/ObjTypeInference.h"
 #include "Graphs/CallGraph.h"
 #include "Util/ExtAPI.h"
+#include "Util/Options.h"
 
 using namespace std;
 using namespace SVF;
@@ -93,10 +94,15 @@ void collectMemcpyFields(
     const DataLayout& dl,
     IRGraph* pag,
     std::vector<MemcpyField>& fields,
+    u32_t fieldLimit,
     APOffset baseByteOffset = 0,
     APOffset baseFldIdx = 0)
 {
     if (llvmType == nullptr || svfType == nullptr)
+        return;
+    /// Stop as soon as the caller's budget is exceeded. One extra field is kept
+    /// so that the caller can still tell "over the limit" from "exactly at it".
+    if (fieldLimit > 0 && fields.size() > fieldLimit)
         return;
 
     if (svfType->isPointerTy())
@@ -116,7 +122,10 @@ void collectMemcpyFields(
                 return;
             APOffset elemByteOffset = baseByteOffset + static_cast<APOffset>(layout->getElementOffset(i));
             APOffset elemFldIdx = baseFldIdx + pag->getFlattenedElemIdx(svfType, i);
-            collectMemcpyFields(elemLLVMType, elemSVFType, dl, pag, fields, elemByteOffset, elemFldIdx);
+            collectMemcpyFields(elemLLVMType, elemSVFType, dl, pag, fields, fieldLimit,
+                                elemByteOffset, elemFldIdx);
+            if (fieldLimit > 0 && fields.size() > fieldLimit)
+                return;
         }
         return;
     }
@@ -132,18 +141,21 @@ void collectMemcpyFields(
         {
             APOffset elemByteOffset = baseByteOffset + i * elemByteSize;
             APOffset elemFldIdx = baseFldIdx + pag->getFlattenedElemIdx(svfType, i);
-            collectMemcpyFields(elemLLVMType, elemSVFType, dl, pag, fields, elemByteOffset, elemFldIdx);
+            collectMemcpyFields(elemLLVMType, elemSVFType, dl, pag, fields, fieldLimit,
+                                elemByteOffset, elemFldIdx);
+            if (fieldLimit > 0 && fields.size() > fieldLimit)
+                return;
         }
     }
 }
 
-std::vector<MemcpyField> getMemcpyFields(const Value* value, const Type* llvmType, const SVFType* svfType)
+std::vector<MemcpyField> getMemcpyFields(const Type* llvmType, const SVFType* svfType, u32_t fieldLimit)
 {
     std::vector<MemcpyField> fields;
     auto* mset = LLVMModuleSet::getLLVMModuleSet();
     auto* pag = PAG::getPAG();
     const DataLayout& dl = mset->getMainLLVMModule()->getDataLayout();
-    collectMemcpyFields(llvmType, svfType, dl, pag, fields);
+    collectMemcpyFields(llvmType, svfType, dl, pag, fields, fieldLimit);
     return fields;
 }
 
@@ -156,6 +168,44 @@ const Type* getMemcpyLayoutType(const Value* baseValue, const Type* fallbackType
         return global->getValueType();
 
     return fallbackType;
+}
+
+/// Number of flattened fields we are willing to expand for one external memory
+/// operation. Never larger than the global field limit; 0 disables summarization.
+u32_t effectiveExtMemFieldLimit()
+{
+    u32_t limit = Options::ExtMemFieldLimit();
+    if (limit > 0 && Options::MaxFieldLimit() > 0)
+        limit = std::min(limit, Options::MaxFieldLimit());
+    return limit;
+}
+
+bool overExtMemFieldLimit(size_t fields)
+{
+    const u32_t limit = effectiveExtMemFieldLimit();
+    return limit > 0 && fields > limit;
+}
+
+/// Collapse the object behind an external-memory argument into its
+/// field-insensitive representation. Summarizing a copy with a single
+/// base-level load/store only reads/writes field 0, so without this the
+/// pointers held in the remaining fields would be dropped from the points-to
+/// solution. Collapsing first makes the summary an over-approximation again.
+void collapseExtMemArgObject(SVFIR* pag, const Value* value)
+{
+    if (value == nullptr || !LLVMUtil::isObject(value))
+        return;
+
+    if (const auto* glob = SVFUtil::dyn_cast<GlobalVariable>(value))
+        value = LLVMUtil::getGlobalRep(glob);
+
+    LLVMModuleSet* mset = LLVMModuleSet::getLLVMModuleSet();
+    auto it = mset->objSyms().find(value);
+    if (it == mset->objSyms().end())
+        return;
+
+    if (BaseObjVar* obj = const_cast<BaseObjVar*>(pag->getBaseObject(it->second)))
+        obj->setFieldInsensitive();
 }
 
 }
@@ -175,6 +225,11 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
         auto szIntVal = LLVMUtil::getIntegerValue(SVFUtil::cast<ConstantInt>(szValue));
         numOfElems = (numOfElems > szIntVal.first) ? szIntVal.first : numOfElems;
     }
+    /// Stop materializing an AccessPath per element once we are past the limit:
+    /// the caller detects the overflow from the field count and summarizes the
+    /// whole operation instead, so the extra element is enough to signal it.
+    if (effectiveExtMemFieldLimit() > 0 && numOfElems > effectiveExtMemFieldLimit())
+        numOfElems = effectiveExtMemFieldLimit() + 1;
 
     LLVMContext& context = LLVMModuleSet::getLLVMModuleSet()->getContext();
     for(u32_t ei = 0; ei < numOfElems; ei++)
@@ -235,6 +290,27 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     const Value* srcBase = getBaseValueForExtArg(S);
     Value* dstFieldBase = LLVMUtil::isObject(dstBase) ? const_cast<Value*>(dstBase) : D;
     Value* srcFieldBase = LLVMUtil::isObject(srcBase) ? const_cast<Value*>(srcBase) : S;
+
+    /// Expanding one field at a time is the dominant cost of SVFIR construction
+    /// on real-world code: a single memcpy over a large object can contribute
+    /// hundreds of thousands of statements. Past the limit both objects are
+    /// collapsed and the copy is summarized by one base-level load/store, which
+    /// stays an over-approximation of the field-wise version.
+    auto summarizeCopy = [&]()
+    {
+        collapseExtMemArgObject(pag, dstBase);
+        collapseExtMemArgObject(pag, srcBase);
+        NodeID dummy = pag->addDummyValNode();
+        addLoadEdge(vnS, dummy);
+        addStoreEdge(dummy, vnD);
+    };
+
+    if (overExtMemFieldLimit(fields.size()))
+    {
+        summarizeCopy();
+        return;
+    }
+
     const Type* dstLayoutType = getMemcpyLayoutType(dstBase, dtype);
     const Type* srcLayoutType = getMemcpyLayoutType(srcBase, stype);
     const bool hasRemappedGlobalBase =
@@ -246,8 +322,16 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     {
         const SVFType* dstSVFType = llvmModuleSet()->getSVFType(dstLayoutType);
         const SVFType* srcSVFType = llvmModuleSet()->getSVFType(srcLayoutType);
-        std::vector<MemcpyField> dstMemcpyFields = getMemcpyFields(D, dstLayoutType, dstSVFType);
-        std::vector<MemcpyField> srcMemcpyFields = getMemcpyFields(S, srcLayoutType, srcSVFType);
+        std::vector<MemcpyField> dstMemcpyFields =
+            getMemcpyFields(dstLayoutType, dstSVFType, effectiveExtMemFieldLimit());
+        std::vector<MemcpyField> srcMemcpyFields =
+            getMemcpyFields(srcLayoutType, srcSVFType, effectiveExtMemFieldLimit());
+        if (overExtMemFieldLimit(dstMemcpyFields.size()) ||
+                overExtMemFieldLimit(srcMemcpyFields.size()))
+        {
+            summarizeCopy();
+            return;
+        }
         if (!dstMemcpyFields.empty() && !srcMemcpyFields.empty())
         {
             std::unordered_map<APOffset, MemcpyField> srcFieldsByByteOffset;
@@ -287,9 +371,9 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     {
         LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
         const SVFType* dElementType = pag->getFlatternedElemType(llvmmodule->getSVFType(dtype),
-                                      fields[index].getConstantStructFldIdx());
+            fields[index].getConstantStructFldIdx());
         const SVFType* sElementType = pag->getFlatternedElemType(llvmmodule->getSVFType(stype),
-                                      fields[index].getConstantStructFldIdx());
+            fields[index].getConstantStructFldIdx());
         NodeID dField = getGepValVar(D,fields[index],dElementType);
         NodeID sField = getGepValVar(S,fields[index],sElementType);
         NodeID dummy = pag->addDummyValNode();
@@ -391,14 +475,24 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
         std::vector<AccessPath> dstFields;
         const Type *dtype = getBaseTypeAndFlattenedFields(cs->getArgOperand(0), dstFields, cs->getArgOperand(2));
         u32_t sz = dstFields.size();
-        //For each field (i), add store edge *(arg0 + i) = arg1
-        for (u32_t index = 0; index < sz; index++)
+        if (overExtMemFieldLimit(dstFields.size()))
         {
-            LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
-            const SVFType* dElementType = pag->getFlatternedElemType(llvmmodule->getSVFType(dtype),
-                                          dstFields[index].getConstantStructFldIdx());
-            NodeID dField = getGepValVar(cs->getArgOperand(0), dstFields[index], dElementType);
-            addStoreEdge(getValueNode(cs->getArgOperand(1)),dField);
+            // Same trade-off as memcpy: collapse the object and write once
+            // through the base pointer instead of one store per field.
+            collapseExtMemArgObject(pag, getBaseValueForExtArg(cs->getArgOperand(0)));
+            addStoreEdge(getValueNode(cs->getArgOperand(1)), getValueNode(cs->getArgOperand(0)));
+        }
+        else
+        {
+            //For each field (i), add store edge *(arg0 + i) = arg1
+            for (u32_t index = 0; index < sz; index++)
+            {
+                LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
+                const SVFType* dElementType = pag->getFlatternedElemType(llvmmodule->getSVFType(dtype),
+                    dstFields[index].getConstantStructFldIdx());
+                NodeID dField = getGepValVar(cs->getArgOperand(0), dstFields[index], dElementType);
+                addStoreEdge(getValueNode(cs->getArgOperand(1)),dField);
+            }
         }
         if(SVFUtil::isa<PointerType>(cs->getType()))
             addCopyEdge(getValueNode(cs->getArgOperand(0)), getValueNode(cs), CopyStmt::COPYVAL);
@@ -462,7 +556,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
             if((u32_t)i >= fields.size())
                 break;
             const SVFType* elementType = pag->getFlatternedElemType(pag->getTypeLocSetsMap(vnArg3).first,
-                                         fields[i].getConstantStructFldIdx());
+                fields[i].getConstantStructFldIdx());
             NodeID vnD = getGepValVar(cs->getArgOperand(3), fields[i], elementType);
             NodeID vnS = llvmModuleSet()->getValueNode(cs->getArgOperand(1));
             if(vnD && vnS)

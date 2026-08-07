@@ -45,6 +45,12 @@ const Option<u32_t> Options::MaxFieldLimit(
     512
 );
 
+const Option<u32_t> Options::ExtMemFieldLimit(
+    "ext-mem-field-limit",
+    "Maximum number of flattened fields expanded for one external memory operation (0: unlimited, the default)",
+    0
+);
+
 const OptionMap<PTBackingType> Options::ptDataBacking(
     "ptd",
     "Overarching points-to data structure",

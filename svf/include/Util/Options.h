@@ -33,6 +33,11 @@ public:
     /// Maximum number of field derivations for an object.
     static const Option<u32_t> MaxFieldLimit;
 
+    /// Maximum number of flattened fields expanded for one external memory
+    /// operation (e.g. memcpy/memset) before it is summarized. 0 (the default)
+    /// keeps the unlimited field-by-field expansion.
+    static const Option<u32_t> ExtMemFieldLimit;
+
     /// Whether to stage Andersen's with Steensgaard and cluster based on that data.
     static const Option<bool> ClusterAnder;
 
