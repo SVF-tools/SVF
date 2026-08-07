@@ -33,6 +33,7 @@
 #include "SVF-LLVM/ObjTypeInference.h"
 #include "Graphs/CallGraph.h"
 #include "Util/ExtAPI.h"
+#include "Util/Options.h"
 
 using namespace std;
 using namespace SVF;
@@ -98,6 +99,15 @@ void collectMemcpyFields(
 {
     if (llvmType == nullptr || svfType == nullptr)
         return;
+    /// MaxFieldLimit == 0 denotes field-insensitive analysis, not an empty memory
+    /// model. The lower bound of one keeps a representative load/store for the
+    /// collapsed object; using zero would drop the memcpy effect entirely.
+    ///
+    /// Unsound scalability trade-off: pointer fields beyond MaxFieldLimit are
+    /// omitted from external-memory modeling rather than conservatively summarized.
+    const u32_t maxFields = std::max(Options::MaxFieldLimit(), u32_t{1});
+    if (fields.size() >= maxFields)
+        return;
 
     if (svfType->isPointerTy())
     {
@@ -108,7 +118,8 @@ void collectMemcpyFields(
     if (const auto* structType = SVFUtil::dyn_cast<StructType>(llvmType))
     {
         const StructLayout* layout = dl.getStructLayout(const_cast<StructType*>(structType));
-        for (u32_t i = 0; i < structType->getNumElements(); ++i)
+        for (u32_t i = 0;
+             i < structType->getNumElements() && fields.size() < maxFields; ++i)
         {
             const Type* elemLLVMType = structType->getElementType(i);
             const SVFType* elemSVFType = pag->getOriginalElemType(svfType, i);
@@ -128,7 +139,8 @@ void collectMemcpyFields(
         if (elemSVFType == nullptr)
             return;
         const APOffset elemByteSize = static_cast<APOffset>(dl.getTypeAllocSize(const_cast<Type*>(elemLLVMType)));
-        for (u32_t i = 0; i < arrayType->getNumElements(); ++i)
+        for (u32_t i = 0;
+             i < arrayType->getNumElements() && fields.size() < maxFields; ++i)
         {
             APOffset elemByteOffset = baseByteOffset + i * elemByteSize;
             APOffset elemFldIdx = baseFldIdx + pag->getFlattenedElemIdx(svfType, i);
@@ -175,6 +187,13 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
         auto szIntVal = LLVMUtil::getIntegerValue(SVFUtil::cast<ConstantInt>(szValue));
         numOfElems = (numOfElems > szIntVal.first) ? szIntVal.first : numOfElems;
     }
+    /// MaxFieldLimit == 0 denotes field-insensitive analysis, not an empty memory
+    /// model. The lower bound of one keeps a representative AccessPath; using zero
+    /// would drop the memcpy/memset effect entirely.
+    ///
+    /// Unsound scalability trade-off: AccessPaths beyond MaxFieldLimit are omitted,
+    /// so their external-memory effects are not represented in the SVFIR.
+    numOfElems = std::min(numOfElems, std::max(Options::MaxFieldLimit(), u32_t{1}));
 
     LLVMContext& context = LLVMModuleSet::getLLVMModuleSet()->getContext();
     for(u32_t ei = 0; ei < numOfElems; ei++)
