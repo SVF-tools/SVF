@@ -35,28 +35,9 @@
 #include "SVF-LLVM/LLVMModule.h"
 #include "SVF-LLVM/ObjTypeInference.h"
 
-#include <cstdlib>
 #include <cxxabi.h> // for demangling
 
 using namespace SVF;
-
-namespace
-{
-bool aeEnvEnabled(const char* value)
-{
-    if (value == nullptr || value[0] == '\0')
-        return false;
-    std::string text(value);
-    return text != "0" && text != "false" && text != "FALSE" &&
-           text != "off" && text != "OFF" && text != "no" && text != "NO";
-}
-
-bool aeDisableVCall()
-{
-    static bool disabled = aeEnvEnabled(std::getenv("AE_DISABLE_VCALL"));
-    return disabled;
-}
-} // namespace
 
 // label for global vtbl value before demangle
 const std::string vtblLabelAfterDemangle = "vtable for ";
@@ -370,9 +351,6 @@ bool cppUtil::isValVtbl(const Value* val)
  */
 bool cppUtil::isVirtualCallSite(const CallBase* cs)
 {
-    if (aeDisableVCall())
-        return false;
-
     // the callsite must be an indirect one with at least one argument (this
     // ptr)
     if (cs->getCalledFunction() != nullptr || cs->arg_empty())

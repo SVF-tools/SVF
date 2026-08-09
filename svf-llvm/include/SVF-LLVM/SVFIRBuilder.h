@@ -225,7 +225,7 @@ protected:
     void processCE(const Value* val);
 
     /// Infer field index from byteoffset.
-    bool inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, AccessPath& ap, APOffset idx);
+    u32_t inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, AccessPath& ap, APOffset idx);
 
     /// Compute offset of a gep instruction or gep constant expression
     bool computeGepOffset(const User *V, AccessPath& ap);

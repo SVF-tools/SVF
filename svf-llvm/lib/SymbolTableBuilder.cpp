@@ -27,9 +27,7 @@
  *      Author: Yulei Sui
  */
 
-#include <cstdlib>
 #include <memory>
-#include <string>
 
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/CppUtil.h"
@@ -44,108 +42,6 @@
 using namespace SVF;
 using namespace SVFUtil;
 using namespace LLVMUtil;
-
-namespace
-{
-bool aeSymTabEnvEnabled(const char* value)
-{
-    if (value == nullptr || value[0] == '\0')
-        return false;
-    std::string text(value);
-    return text != "0" && text != "false" && text != "FALSE" &&
-           text != "off" && text != "OFF" && text != "no" && text != "NO";
-}
-
-bool aeSymTabSkipSancovIR()
-{
-    static bool enabled = aeSymTabEnvEnabled(std::getenv("AE_SKIP_SANCOV_IR"));
-    return enabled;
-}
-
-bool aeSymTabSkipGlobalInitIR()
-{
-    static bool enabled = aeSymTabEnvEnabled(std::getenv("AE_SKIP_GLOBAL_INIT_IR"));
-    return enabled;
-}
-
-bool aeSymTabIsCoverageGlobalName(llvm::StringRef name)
-{
-    return name.starts_with("__sancov") ||
-           name.starts_with("__sanitizer_cov") ||
-           name.starts_with("__llvm_sancov");
-}
-
-bool aeSymTabIsCompilerUsedName(llvm::StringRef name)
-{
-    return name == "llvm.used" || name == "llvm.compiler.used";
-}
-
-bool aeSymTabIsSkippableCoverageGlobal(const GlobalValue* gv)
-{
-    if (gv == nullptr)
-        return false;
-    if (SVFUtil::isa<Function>(gv))
-        return false;
-    return aeSymTabIsCoverageGlobalName(gv->getName()) ||
-           aeSymTabIsCompilerUsedName(gv->getName());
-}
-
-bool aeSymTabIsCoverageValue(const Value* value, unsigned depth = 0)
-{
-    if (!aeSymTabSkipSancovIR() || value == nullptr || depth > 8)
-        return false;
-
-    value = value->stripPointerCasts();
-    if (const GlobalValue* gv = SVFUtil::dyn_cast<GlobalValue>(value))
-        return aeSymTabIsSkippableCoverageGlobal(gv);
-
-    if (const GEPOperator* gep = SVFUtil::dyn_cast<GEPOperator>(value))
-        return aeSymTabIsCoverageValue(gep->getPointerOperand(), depth + 1);
-
-    if (const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(value))
-        return aeSymTabIsCoverageValue(gep->getPointerOperand(), depth + 1);
-
-    if (const CastInst* cast = SVFUtil::dyn_cast<CastInst>(value))
-        return aeSymTabIsCoverageValue(cast->getOperand(0), depth + 1);
-
-    if (const ConstantExpr* ce = SVFUtil::dyn_cast<ConstantExpr>(value))
-    {
-        for (u32_t i = 0; i < ce->getNumOperands(); ++i)
-            if (aeSymTabIsCoverageValue(ce->getOperand(i), depth + 1))
-                return true;
-    }
-
-    return false;
-}
-
-bool aeSymTabIsCoverageCall(const Function* callee)
-{
-    return aeSymTabSkipSancovIR() && callee != nullptr &&
-           aeSymTabIsCoverageGlobalName(callee->getName());
-}
-
-bool aeSymTabShouldSkipInstruction(const Instruction& inst)
-{
-    if (!aeSymTabSkipSancovIR())
-        return false;
-
-    if (const CallBase* cs = SVFUtil::dyn_cast<CallBase>(&inst))
-        if (aeSymTabIsCoverageCall(LLVMUtil::getCallee(cs)))
-            return true;
-
-    if (const StoreInst* st = SVFUtil::dyn_cast<StoreInst>(&inst))
-        return aeSymTabIsCoverageValue(st->getPointerOperand()) ||
-               aeSymTabIsCoverageValue(st->getValueOperand());
-
-    if (const LoadInst* ld = SVFUtil::dyn_cast<LoadInst>(&inst))
-        return aeSymTabIsCoverageValue(ld->getPointerOperand());
-
-    if (const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(&inst))
-        return aeSymTabIsCoverageValue(gep->getPointerOperand());
-
-    return aeSymTabIsCoverageValue(&inst);
-}
-}
 
 ObjTypeInfo* SymbolTableBuilder::createBlkObjTypeInfo(NodeID symId)
 {
@@ -204,17 +100,12 @@ void SymbolTableBuilder::buildMemModel()
         // Add symbols for all the globals .
         for (const GlobalVariable& gv : M.globals())
         {
-            if (aeSymTabIsSkippableCoverageGlobal(&gv))
-                continue;
             collectSym(&gv);
         }
 
         // Add symbols for all the global aliases
         for (const GlobalAlias& ga : M.aliases())
         {
-            if (aeSymTabIsSkippableCoverageGlobal(&ga) ||
-                    aeSymTabIsCoverageValue(ga.getAliasee()))
-                continue;
             collectSym(&ga);
             collectSym(ga.getAliasee());
         }
@@ -222,8 +113,6 @@ void SymbolTableBuilder::buildMemModel()
         // Add symbols for all of the functions and the instructions in them.
         for (const Function& fun : M.functions())
         {
-            if (aeSymTabIsSkippableCoverageGlobal(&fun))
-                continue;
             collectSym(&fun);
             collectRet(&fun);
             if (fun.getFunctionType()->isVarArg())
@@ -238,9 +127,6 @@ void SymbolTableBuilder::buildMemModel()
             // collect and create symbols inside the function body
             for (const Instruction& inst : instructions(fun))
             {
-                if (aeSymTabShouldSkipInstruction(inst))
-                    continue;
-
                 collectSym(&inst);
 
                 // initialization for some special instructions
@@ -365,9 +251,6 @@ void SymbolTableBuilder::buildMemModel()
 
 void SymbolTableBuilder::collectSVFTypeInfo(const Value* val)
 {
-    if (aeSymTabIsCoverageValue(val))
-        return;
-
     Type *valType = val->getType();
     (void)getOrAddSVFTypeInfo(valType);
     if(isGepConstantExpr(val) || SVFUtil::isa<GetElementPtrInst>(val))
@@ -388,8 +271,6 @@ void SymbolTableBuilder::collectSVFTypeInfo(const Value* val)
  */
 void SymbolTableBuilder::collectSym(const Value* val)
 {
-    if (aeSymTabIsCoverageValue(val))
-        return;
 
     //TODO: filter the non-pointer type // if (!SVFUtil::isa<PointerType>(val->getType()))  return;
 
@@ -416,9 +297,6 @@ void SymbolTableBuilder::collectSym(const Value* val)
  */
 void SymbolTableBuilder::collectVal(const Value* val)
 {
-    if (aeSymTabIsCoverageValue(val))
-        return;
-
     // collect and record special sym here
     if (
         LLVMUtil::isNullPtrSym(val) ||
@@ -451,13 +329,7 @@ void SymbolTableBuilder::collectVal(const Value* val)
  */
 void SymbolTableBuilder::collectObj(const Value* val)
 {
-    if (aeSymTabIsCoverageValue(val))
-        return;
-
     val = LLVMUtil::getGlobalRep(val);
-    if (aeSymTabIsCoverageValue(val))
-        return;
-
     LLVMModuleSet::ValueToIDMapTy::iterator iter = llvmModuleSet()->objSymMap.find(val);
     if (iter == llvmModuleSet()->objSymMap.end())
     {
@@ -520,9 +392,6 @@ void SymbolTableBuilder::collectVararg(const Function* val)
  */
 void SymbolTableBuilder::handleCE(const Value* val)
 {
-    if (aeSymTabIsCoverageValue(val))
-        return;
-
     if (const Constant* ref = SVFUtil::dyn_cast<Constant>(val))
     {
         if (const ConstantExpr* ce = isGepConstantExpr(ref))
@@ -609,10 +478,6 @@ void SymbolTableBuilder::handleCE(const Value* val)
 void SymbolTableBuilder::handleGlobalCE(const GlobalVariable* G)
 {
     assert(G);
-    if (aeSymTabIsSkippableCoverageGlobal(G))
-        return;
-    if (aeSymTabSkipGlobalInitIR())
-        return;
 
     //The type this global points to
     const Type* T = G->getValueType();
@@ -651,10 +516,6 @@ void SymbolTableBuilder::handleGlobalCE(const GlobalVariable* G)
  */
 void SymbolTableBuilder::handleGlobalInitializerCE(const Constant* C)
 {
-    if (aeSymTabSkipGlobalInitIR())
-        return;
-    if (aeSymTabIsCoverageValue(C))
-        return;
 
     if (C->getType()->isSingleValueType())
     {
@@ -790,13 +651,8 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
             }
             else
             {
-                // blockaddress / other non-alloca, non-global pointer constants
-                // (e.g. computed-goto label-as-value in interpreters/codecs):
-                // model conservatively as a black-hole object instead of aborting.
-                ObjTypeInfo* bhInfo = new ObjTypeInfo(
-                    llvmModuleSet()->getSVFType(val->getType()), Options::MaxFieldLimit());
-                initTypeInfo(bhInfo, val, val->getType());
-                return bhInfo;
+                SVFUtil::errs() << dumpValueAndDbgInfo(val) << "\n";
+                assert(false && "not an allocation or global?");
             }
         }
     }
@@ -1063,10 +919,10 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
     if(typeinfo->getMaxFieldOffsetLimit() > elemNum)
         typeinfo->setNumOfElements(elemNum);
 
-    // Keep the physical object extent independent from field abstraction.
-    // MaxFieldLimit bounds the number of field objects; clamping byteSize to
-    // that limit turns large allocations into artificial 32/128-byte buffers
-    // and makes clients such as the overflow detector report false bounds.
+    // set ByteSize. If ByteSize > 0, this typeinfo has constant type.
+    // If ByteSize == 0, this typeinfo has 1) zero byte 2) non-const byte size
+    // If ByteSize>MaxFieldLimit, set MaxFieldLimit to the byteSize;
+    byteSize = Options::MaxFieldLimit() > byteSize? byteSize: Options::MaxFieldLimit();
     typeinfo->setByteSizeOfObj(byteSize);
 }
 

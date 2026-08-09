@@ -30,112 +30,13 @@
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 #include "WPA/Andersen.h"
-#include "WPA/Steensgaard.h"
-#include "WPA/TypeAnalysis.h"
 
 #include "AE/Core/RelExeState.h"
 #include "AE/Core/RelationSolver.h"
 #include "AE/Svfexe/AbstractInterpretation.h"
 
-#include <thread>
-#include <atomic>
-#include <chrono>
-#include <cstdlib>
-#include <cstdio>
-#include <fstream>
-#include <string>
-
 using namespace SVF;
 using namespace SVFUtil;
-
-// ---- lightweight phase + memory instrumentation (writes to stderr,
-// flushed, so it is visible live even while SVF's buffered stdout is silent) ----
-namespace
-{
-std::atomic<int> g_phase{0};
-const char* phaseName(int p)
-{
-    static const char* n[] = {"startup", "svf-module-load", "svfir-build",
-                              "pta", "ae(incl svfg-build)", "done"
-                             };
-    return (p >= 0 && p < 6) ? n[p] : "?";
-}
-double rssGB()
-{
-    std::ifstream f("/proc/self/status");
-    std::string k;
-    long v = 0;
-    while (f >> k)
-    {
-        if (k == "VmRSS:")
-        {
-            f >> v;
-            break;
-        }
-    }
-    return v / 1048576.0;
-}
-void mark(const char* what)
-{
-    fprintf(stderr, "[PHASE] %-30s RSS=%.1fGB\n", what, rssGB());
-    fflush(stderr);
-}
-void startHeartbeat(int periodSec)
-{
-    std::thread([periodSec]()
-    {
-        auto t0 = std::chrono::steady_clock::now();
-        while (g_phase.load() < 5)
-        {
-            auto s = std::chrono::duration_cast<std::chrono::seconds>(
-                         std::chrono::steady_clock::now() - t0).count();
-            fprintf(stderr, "[HB +%llds] phase=%-22s RSS=%.1fGB\n",
-                    (long long)s, phaseName(g_phase.load()), rssGB());
-            fflush(stderr);
-            std::this_thread::sleep_for(std::chrono::seconds(periodSec));
-        }
-    }).detach();
-}
-
-BVDataPTAImpl* runSelectedPTA(SVFIR* pag)
-{
-    const char* envMode = std::getenv("AE_PTA_MODE");
-    const std::string mode = envMode ? envMode : "ander";
-
-    if (mode == "steens")
-    {
-        std::fprintf(stderr, "[AE-PTA] mode=steens\n");
-        return Steensgaard::createSteensgaard(pag);
-    }
-    if (mode == "type")
-    {
-        std::fprintf(stderr, "[AE-PTA] mode=type\n");
-        TypeAnalysis* typePta = new TypeAnalysis(pag);
-        typePta->analyze();
-        return typePta;
-    }
-
-    if (mode != "ander" && !mode.empty())
-        std::fprintf(stderr, "[AE-PTA] unknown AE_PTA_MODE=%s, fallback=ander\n",
-                     mode.c_str());
-    else
-        std::fprintf(stderr, "[AE-PTA] mode=ander\n");
-    return AndersenWaveDiff::createAndersenWaveDiff(pag);
-}
-
-void releaseSelectedPTA(BVDataPTAImpl* pta)
-{
-    const char* envMode = std::getenv("AE_PTA_MODE");
-    const std::string mode = envMode ? envMode : "ander";
-
-    if (mode == "steens")
-        Steensgaard::releaseSteensgaard();
-    else if (mode == "type")
-        delete pta;
-    else
-        AndersenWaveDiff::releaseAndersenWaveDiff();
-}
-}
 
 
 static Option<bool> SYMABS(
@@ -946,53 +847,23 @@ public:
 
 int main(int argc, char** argv)
 {
-    bool hasUserExtMemFieldLimit = false;
-    for (int i = 1; i < argc; ++i)
-    {
-        std::string arg(argv[i]);
-        if (arg == "-ext-mem-field-limit" || arg.find("-ext-mem-field-limit=") == 0)
-        {
-            hasUserExtMemFieldLimit = true;
-            break;
-        }
-    }
-    const char* envExtMemFieldLimit = std::getenv("AE_EXT_MEM_FIELD_LIMIT");
-
     int arg_num = 0;
-    int extraArgc = 3 + ((envExtMemFieldLimit && !hasUserExtMemFieldLimit) ? 1 : 0);
+    int extraArgc = 3;
     char **arg_value = new char *[argc + extraArgc];
     for (; arg_num < argc; ++arg_num)
     {
         arg_value[arg_num] = argv[arg_num];
     }
     // add extra options
-    const char* modelArraysArg = "-model-arrays=true";
-    if (const char* envModelArrays = std::getenv("AE_MODEL_ARRAYS"))
-    {
-        std::string value(envModelArrays);
-        if (value == "0" || value == "false" || value == "off" || value == "no")
-            modelArraysArg = "-model-arrays=false";
-        else if (!(value == "1" || value == "true" || value == "on" || value == "yes"))
-            std::fprintf(stderr, "[AE-FRONTEND] unknown AE_MODEL_ARRAYS=%s, fallback=true\n",
-                         envModelArrays);
-    }
-    std::fprintf(stderr, "[AE-FRONTEND] %s\n", modelArraysArg);
     arg_value[arg_num++] = (char*) "-model-consts=true";
-    arg_value[arg_num++] = const_cast<char*>(modelArraysArg);
+    arg_value[arg_num++] = (char*) "-model-arrays=true";
     arg_value[arg_num++] = (char*) "-pre-field-sensitive=false";
-    std::string extMemFieldLimitArg;
-    if (envExtMemFieldLimit && !hasUserExtMemFieldLimit)
-    {
-        extMemFieldLimitArg = std::string("-ext-mem-field-limit=") + envExtMemFieldLimit;
-        arg_value[arg_num++] = const_cast<char*>(extMemFieldLimitArg.c_str());
-    }
     assert(arg_num == (argc + extraArgc) && "more extra arguments? Change the value of extraArgc");
 
     std::vector<std::string> moduleNameVec;
     moduleNameVec = OptionBase::parseOptions(
                         arg_num, arg_value, "Static Symbolic Execution", "[options] <input-bitcode...>"
                     );
-    std::fprintf(stderr, "[AE-FRONTEND] -ext-mem-field-limit=%u\n", Options::ExtMemFieldLimit());
     delete[] arg_value;
     if (SYMABS())
     {
@@ -1009,46 +880,21 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    startHeartbeat(15);
-    g_phase = 1;
-    mark("svf-module-load start");
     LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
-    g_phase = 2;
-    mark("svfir-build start");
     SVFIRBuilder builder;
     SVFIR* pag = builder.build();
-    // Run PTA to resolve indirect calls, then update SVFIR with resolved targets.
-    // Default remains Andersen. AE_PTA_MODE={steens,type} is a coarse fallback
-    // for large harnesses where Andersen front-end time dominates the budget.
-    g_phase = 3;
-    mark("pta start");
-    BVDataPTAImpl* pta = runSelectedPTA(pag);
-    builder.updateCallGraph(pta->getCallGraph());
-    mark("pta done");
-    releaseSelectedPTA(pta);
-    mark("front pta released");
-    g_phase = 4;
-    mark("ae start (svfg-build is inside)");
+    // Run Andersen's to resolve indirect calls, then update SVFIR with resolved targets.
+    // The Andersen singleton will be reused inside AbstractInterpretation::runOnModule().
+    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
+    builder.updateCallGraph(ander->getCallGraph());
     AbstractInterpretation& ae = AbstractInterpretation::getAEInstance();
     if (Options::BufferOverflowCheck())
         ae.addDetector(std::make_unique<BufOverflowDetector>());
     if (Options::NullDerefCheck())
         ae.addDetector(std::make_unique<NullptrDerefDetector>());
     ae.runOnModule();
-    g_phase = 5;
-    mark("ae done");
 
-    if (const char* envMode = std::getenv("AE_PTA_MODE"))
-    {
-        if (std::string(envMode) == "steens")
-            Steensgaard::releaseSteensgaard();
-        else
-            AndersenWaveDiff::releaseAndersenWaveDiff();
-    }
-    else
-    {
-        AndersenWaveDiff::releaseAndersenWaveDiff();
-    }
+    AndersenWaveDiff::releaseAndersenWaveDiff();
     LLVMModuleSet::releaseLLVMModuleSet();
 
     return 0;
