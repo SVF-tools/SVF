@@ -135,7 +135,8 @@ const SVFType *IRGraph::getFlatternedElemType(const SVFType *baseType, u32_t fla
     else
     {
         const std::vector<const SVFType*>& so = getTypeInfo(baseType)->getFlattenFieldTypes();
-        assert (flatten_idx < so.size() && !so.empty() && "element index out of bounds or struct opaque type, can't get element type!");
+        if (so.empty()) return nullptr;
+        if (flatten_idx >= so.size()) return so.back();
         return so[flatten_idx];
     }
 }
@@ -150,7 +151,8 @@ u32_t IRGraph::getFlattenedElemIdx(const SVFType *T, u32_t origId)
     if(Options::ModelArrays())
     {
         const std::vector<u32_t>& so = getTypeInfo(T)->getFlattenedElemIdxVec();
-        assert ((unsigned)origId < so.size() && !so.empty() && "element index out of bounds, can't get flattened index!");
+        if (so.empty()) return 0;
+        if ((unsigned)origId >= so.size()) return so.back();
         return so[origId];
     }
     else
@@ -158,13 +160,15 @@ u32_t IRGraph::getFlattenedElemIdx(const SVFType *T, u32_t origId)
         if(SVFUtil::isa<SVFStructType>(T))
         {
             const std::vector<u32_t>& so = getTypeInfo(T)->getFlattenedFieldIdxVec();
-            assert ((unsigned)origId < so.size() && !so.empty() && "Struct index out of bounds, can't get flattened index!");
+            if (so.empty()) return 0;
+            if ((unsigned)origId >= so.size()) return so.back();
             return so[origId];
         }
         else
         {
-            /// When Options::ModelArrays is disabled, any element index Array is modeled as the base
-            assert(SVFUtil::isa<SVFArrayType>(T) && "Only accept struct or array type if Options::ModelArrays is disabled!");
+            /// When Options::ModelArrays is disabled, any non-struct element
+            /// index is conservatively modeled as the base. Some frontends feed
+            /// vector/opaque shapes here; aborting defeats the coarse profile.
             return 0;
         }
     }

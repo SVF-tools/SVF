@@ -43,10 +43,195 @@
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 
+#include <cstdlib>
+#include <cstdio>
+#include <string>
+
 using namespace std;
 using namespace SVF;
 using namespace SVFUtil;
 using namespace LLVMUtil;
+
+namespace
+{
+bool aeSVFIREnvEnabled(const char* value)
+{
+    if (value == nullptr || value[0] == '\0')
+        return false;
+    std::string text(value);
+    return text != "0" && text != "false" && text != "FALSE" &&
+           text != "off" && text != "OFF" && text != "no" && text != "NO";
+}
+
+bool aeSVFIRTraceEnabled()
+{
+    static bool enabled = aeSVFIREnvEnabled(std::getenv("AE_SVFIR_TRACE"));
+    return enabled;
+}
+
+bool aeSVFIRByteGepTraceEnabled(const GEPOperator* gepOp)
+{
+    static const bool enabled =
+        aeSVFIREnvEnabled(std::getenv("AE_SVFIR_BYTE_GEP_TRACE"));
+    if (!enabled || !gepOp)
+        return false;
+
+    const char* requestedFun = std::getenv("AE_SVFIR_BYTE_GEP_TRACE_FUN");
+    if (!requestedFun || !*requestedFun)
+        return true;
+
+    const auto* inst = SVFUtil::dyn_cast<Instruction>(gepOp);
+    return inst && inst->getFunction()->getName() == requestedFun;
+}
+
+bool aeSVFIRAllowMissingState()
+{
+    static bool enabled = aeSVFIREnvEnabled(std::getenv("AE_ALLOW_MISSING_STATE"));
+    return enabled;
+}
+
+bool aeSVFIRSkipSancovIR()
+{
+    static bool enabled = aeSVFIREnvEnabled(std::getenv("AE_SKIP_SANCOV_IR"));
+    return enabled;
+}
+
+bool aeSVFIRSkipGlobalInitIR()
+{
+    static bool enabled = aeSVFIREnvEnabled(std::getenv("AE_SKIP_GLOBAL_INIT_IR"));
+    return enabled;
+}
+
+unsigned long aeSVFIREnvUL(const char* name, unsigned long fallback)
+{
+    const char* value = std::getenv(name);
+    if (value == nullptr || value[0] == '\0')
+        return fallback;
+    char* end = nullptr;
+    unsigned long parsed = std::strtoul(value, &end, 10);
+    return end == value ? fallback : parsed;
+}
+
+unsigned long aeSVFIRFunDumpEvery()
+{
+    static unsigned long every = aeSVFIREnvUL("AE_SVFIR_FUN_DUMP_EVERY", 1000);
+    return every;
+}
+
+unsigned long aeSVFIRInstDumpEvery()
+{
+    static unsigned long every = aeSVFIREnvUL("AE_SVFIR_INST_DUMP_EVERY", 0);
+    return every;
+}
+
+unsigned long aeSVFIRNodeDumpEvery()
+{
+    static unsigned long every = aeSVFIREnvUL("AE_SVFIR_NODE_DUMP_EVERY", 100000);
+    return every;
+}
+
+void aeSVFIRTrace(const char* stage)
+{
+    if (!aeSVFIRTraceEnabled())
+        return;
+    std::fprintf(stderr, "[SVFIR] %s\n", stage);
+    std::fflush(stderr);
+}
+
+void aeSVFIRTraceFun(const char* stage, unsigned long idx, const Function* fun)
+{
+    if (!aeSVFIRTraceEnabled())
+        return;
+    unsigned long every = aeSVFIRFunDumpEvery();
+    if (every == 0 || idx % every != 0)
+        return;
+    std::fprintf(stderr, "[SVFIR] %s fun=%lu name=%s\n",
+                 stage, idx, fun ? fun->getName().str().c_str() : "<null>");
+    std::fflush(stderr);
+}
+
+void aeSVFIRTraceValue(const char* stage, unsigned long idx, NodeID id,
+                       const Value* value)
+{
+    if (!aeSVFIRTraceEnabled())
+        return;
+    unsigned long every = aeSVFIRNodeDumpEvery();
+    if (every == 0 || idx % every != 0)
+        return;
+
+    std::string kind = value ? value->getValueID() ? value->getName().str() : "" : "";
+    if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
+        kind = std::string(inst->getOpcodeName()) + "@" + inst->getFunction()->getName().str();
+    else if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
+        kind = "fun@" + fun->getName().str();
+    else if (const GlobalValue* gv = SVFUtil::dyn_cast<GlobalValue>(value))
+        kind = "global@" + gv->getName().str();
+    else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
+        kind = "arg@" + arg->getParent()->getName().str();
+    else if (kind.empty() && value)
+        kind = "<unnamed>";
+
+    std::fprintf(stderr, "[SVFIR] %s count=%lu id=%u value=%s\n",
+                 stage, idx, id, kind.c_str());
+    std::fflush(stderr);
+}
+
+bool aeSVFIRIsCoverageGlobalName(llvm::StringRef name)
+{
+    return name.starts_with("__sancov") ||
+           name.starts_with("__sanitizer_cov") ||
+           name.starts_with("__llvm_sancov");
+}
+
+bool aeSVFIRIsCompilerUsedName(llvm::StringRef name)
+{
+    return name == "llvm.used" || name == "llvm.compiler.used";
+}
+
+bool aeSVFIRIsSkippableCoverageGlobal(const GlobalValue* gv)
+{
+    if (gv == nullptr)
+        return false;
+    if (SVFUtil::isa<Function>(gv))
+        return false;
+    return aeSVFIRIsCoverageGlobalName(gv->getName()) ||
+           aeSVFIRIsCompilerUsedName(gv->getName());
+}
+
+bool aeSVFIRIsCoverageValue(const Value* value, unsigned depth = 0)
+{
+    if (!aeSVFIRSkipSancovIR() || value == nullptr || depth > 8)
+        return false;
+
+    value = value->stripPointerCasts();
+    if (const GlobalValue* gv = SVFUtil::dyn_cast<GlobalValue>(value))
+        return aeSVFIRIsSkippableCoverageGlobal(gv);
+
+    if (const GEPOperator* gep = SVFUtil::dyn_cast<GEPOperator>(value))
+        return aeSVFIRIsCoverageValue(gep->getPointerOperand(), depth + 1);
+
+    if (const ConstantExpr* ce = SVFUtil::dyn_cast<ConstantExpr>(value))
+    {
+        for (const llvm::Use& operand : ce->operands())
+            if (aeSVFIRIsCoverageValue(operand.get(), depth + 1))
+                return true;
+    }
+
+    if (const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(value))
+        return aeSVFIRIsCoverageValue(gep->getPointerOperand(), depth + 1);
+
+    if (const CastInst* cast = SVFUtil::dyn_cast<CastInst>(value))
+        return aeSVFIRIsCoverageValue(cast->getOperand(0), depth + 1);
+
+    return false;
+}
+
+bool aeSVFIRIsCoverageCall(const Function* callee)
+{
+    return aeSVFIRSkipSancovIR() && callee != nullptr &&
+           aeSVFIRIsCoverageGlobalName(callee->getName());
+}
+}
 
 
 /*!
@@ -63,23 +248,32 @@ SVFIR* SVFIRBuilder::build()
         return pag;
 
 
+    aeSVFIRTrace("createFunObjVars start");
     createFunObjVars();
+    aeSVFIRTrace("createFunObjVars done");
 
     /// build icfg
+    aeSVFIRTrace("icfg build start");
     ICFGBuilder icfgbuilder;
     pag->icfg = icfgbuilder.build();
+    aeSVFIRTrace("icfg build done");
 
     /// initial external library information
     /// initial SVFIR nodes
+    aeSVFIRTrace("initialiseNodes start");
     initialiseNodes();
+    aeSVFIRTrace("initialiseNodes done");
     /// initial SVFIR edges:
     ///// handle globals
+    aeSVFIRTrace("visitGlobal start");
     visitGlobal();
+    aeSVFIRTrace("visitGlobal done");
     ///// collect exception vals in the program
 
 
 
     /// build callgraph
+    aeSVFIRTrace("callgraph build start");
     CallGraphBuilder callGraphBuilder;
     std::vector<const FunObjVar*> funset;
     for (const auto& item: llvmModuleSet()->getFunctionSet())
@@ -87,18 +281,24 @@ SVFIR* SVFIRBuilder::build()
         funset.push_back(llvmModuleSet()->getFunObjVar(item));
     }
     pag->callGraph = callGraphBuilder.buildSVFIRCallGraph(funset);
+    aeSVFIRTrace("callgraph build done");
 
+    aeSVFIRTrace("chg build start");
     CHGraph* chg = new CHGraph();
     CHGBuilder chgbuilder(chg);
     chgbuilder.buildCHG();
     pag->setCHG(chg);
+    aeSVFIRTrace("chg build done");
 
     /// handle functions
+    unsigned long svfirFunIdx = 0;
     for (Module& M : llvmModuleSet()->getLLVMModules())
     {
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
             const Function& fun = *F;
+            ++svfirFunIdx;
+            aeSVFIRTraceFun("visit-fun-start", svfirFunIdx, &fun);
             const FunObjVar* svffun = llvmModuleSet()->getFunObjVar(&fun);
             /// collect return node of function fun
             if(!fun.isDeclaration())
@@ -136,20 +336,37 @@ SVFIR* SVFIRBuilder::build()
                     bit != ebit; ++bit)
             {
                 const BasicBlock& bb = *bit;
+                unsigned long instCount = 0;
+                unsigned long instEvery = aeSVFIRInstDumpEvery();
                 for (BasicBlock::const_iterator it = bb.begin(), eit = bb.end();
                         it != eit; ++it)
                 {
                     const Instruction& inst = *it;
+                    ++instCount;
+                    if (aeSVFIRTraceEnabled() && instEvery != 0 &&
+                            instCount % instEvery == 0)
+                    {
+                        std::fprintf(stderr,
+                                     "[SVFIR] visit-inst fun=%s opcode=%s inst_in_bb=%lu\n",
+                                     fun.getName().str().c_str(),
+                                     inst.getOpcodeName(), instCount);
+                        std::fflush(stderr);
+                    }
                     setCurrentLocation(&inst,&bb);
                     visit(const_cast<Instruction&>(inst));
                 }
             }
+            aeSVFIRTraceFun("visit-fun-done", svfirFunIdx, &fun);
         }
     }
 
+    aeSVFIRTrace("sanityCheck start");
     sanityCheck();
+    aeSVFIRTrace("sanityCheck done");
 
+    aeSVFIRTrace("initialiseCandidatePointers start");
     pag->initialiseCandidatePointers();
+    aeSVFIRTrace("initialiseCandidatePointers done");
 
     pag->setNodeNumAfterPAGBuild(pag->getTotalNodeNum());
 
@@ -371,10 +588,16 @@ void SVFIRBuilder::createFunObjVars()
 void SVFIRBuilder::initialiseBaseObjVars()
 {
     // Iterate over all object symbols in the symbol table
+    unsigned long objCount = 0;
     for (LLVMModuleSet::ValueToIDMapTy::iterator iter =
                 llvmModuleSet()->objSyms().begin(); iter != llvmModuleSet()->objSyms().end();
             ++iter)
     {
+        if (aeSVFIRIsCoverageValue(iter->first))
+            continue;
+
+        ++objCount;
+        aeSVFIRTraceValue("base-obj", objCount, iter->second, iter->first);
         // Debug output for adding object node
         DBOUT(DPAGBuild, outs() << "add obj node " << iter->second << "\n");
 
@@ -448,10 +671,16 @@ void SVFIRBuilder::initialiseBaseObjVars()
 void SVFIRBuilder::initialiseValVars()
 {
     // Iterate over all value symbols in the symbol table
+    unsigned long valCount = 0;
     for (LLVMModuleSet::ValueToIDMapTy::iterator iter =
                 llvmModuleSet()->valSyms().begin(); iter != llvmModuleSet()->valSyms().end();
             ++iter)
     {
+        if (aeSVFIRIsCoverageValue(iter->first))
+            continue;
+
+        ++valCount;
+        aeSVFIRTraceValue("val", valCount, iter->second, iter->first);
         // Debug output for adding value node
         DBOUT(DPAGBuild, outs() << "add val node " << iter->second << "\n");
 
@@ -472,7 +701,13 @@ void SVFIRBuilder::initialiseValVars()
             // Formal params are defined at FunEntryICFGNode (where CallPE copies actual args).
             // External (declaration-only) functions have no entry node, so keep nullptr.
             const FunObjVar* funObj = llvmModuleSet()->getFunObjVar(argval->getParent());
-            const ICFGNode* entryNode = funObj->isDeclaration() ? nullptr : pag->getICFG()->getFunEntryICFGNode(funObj);
+            const ICFGNode* entryNode = nullptr;
+            if (!funObj->isDeclaration())
+            {
+                entryNode = pag->getICFG()->getFunEntryBlock(funObj);
+                if (entryNode == nullptr && !aeSVFIRAllowMissingState())
+                    entryNode = pag->getICFG()->getFunEntryICFGNode(funObj);
+            }
             pag->addArgValNode(
                 iter->second, argval->getArgNo(), entryNode,
                 funObj, llvmModuleSet()->getSVFType(llvmValue->getType()));
@@ -532,24 +767,40 @@ void SVFIRBuilder::initialiseNodes()
     DBOUT(DPAGBuild, outs() << "Initialise SVFIR Nodes ...\n");
 
 
+    aeSVFIRTrace("initialiseNodes special nodes start");
     pag->addBlackholeObjNode();
     pag->addConstantObjNode();
     pag->addBlackholePtrNode();
     addNullPtrNode();
+    aeSVFIRTrace("initialiseNodes special nodes done");
 
+    aeSVFIRTrace("initialiseBaseObjVars start");
     initialiseBaseObjVars();
+    aeSVFIRTrace("initialiseBaseObjVars done");
+    aeSVFIRTrace("initialiseValVars start");
     initialiseValVars();
+    aeSVFIRTrace("initialiseValVars done");
 
+    aeSVFIRTrace("retSyms start");
+    unsigned long retCount = 0;
     for (LLVMModuleSet::FunToIDMapTy::iterator iter =
                 llvmModuleSet()->retSyms().begin(); iter != llvmModuleSet()->retSyms().end();
             ++iter)
     {
+        ++retCount;
+        aeSVFIRTraceValue("ret", retCount, iter->second, iter->first);
         const Value* llvmValue = iter->first;
         // retSyms keys are Function*, not Instruction, so dyn_cast<Instruction> always fails.
         // RetValPN represents the callee's return value, defined at FunExitICFGNode.
         // External functions have no exit node, so keep nullptr.
         const FunObjVar* funObjVar = llvmModuleSet()->getFunObjVar(SVFUtil::cast<Function>(llvmValue));
-        const ICFGNode* icfgNode = funObjVar->isDeclaration() ? nullptr : pag->getICFG()->getFunExitICFGNode(funObjVar);
+        const ICFGNode* icfgNode = nullptr;
+        if (!funObjVar->isDeclaration())
+        {
+            icfgNode = pag->getICFG()->getFunExitBlock(funObjVar);
+            if (icfgNode == nullptr && !aeSVFIRAllowMissingState())
+                icfgNode = pag->getICFG()->getFunExitICFGNode(funObjVar);
+        }
         DBOUT(DPAGBuild, outs() << "add ret node " << iter->second << "\n");
         pag->addRetNode(iter->second,
                         funObjVar,
@@ -557,17 +808,28 @@ void SVFIRBuilder::initialiseNodes()
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
         pag->returnFunObjSymMap[funObjVar] = iter->second;
     }
+    aeSVFIRTrace("retSyms done");
 
+    aeSVFIRTrace("varargSyms start");
+    unsigned long varargCount = 0;
     for (LLVMModuleSet::FunToIDMapTy::iterator iter =
                 llvmModuleSet()->varargSyms().begin();
             iter != llvmModuleSet()->varargSyms().end(); ++iter)
     {
+        ++varargCount;
+        aeSVFIRTraceValue("vararg", varargCount, iter->second, iter->first);
         const Value* llvmValue = iter->first;
         // varargSyms keys are Function*, not Instruction.
         // Variadic arguments are received at the function entry point.
         // External functions have no entry node, so keep nullptr.
         const FunObjVar* funObjVar = llvmModuleSet()->getFunObjVar(SVFUtil::cast<Function>(llvmValue));
-        const ICFGNode* icfgNode = funObjVar->isDeclaration() ? nullptr : pag->getICFG()->getFunEntryICFGNode(funObjVar);
+        const ICFGNode* icfgNode = nullptr;
+        if (!funObjVar->isDeclaration())
+        {
+            icfgNode = pag->getICFG()->getFunEntryBlock(funObjVar);
+            if (icfgNode == nullptr && !aeSVFIRAllowMissingState())
+                icfgNode = pag->getICFG()->getFunEntryICFGNode(funObjVar);
+        }
         DBOUT(DPAGBuild, outs() << "add vararg node " << iter->second << "\n");
         pag->addVarargNode(iter->second,
                            funObjVar,
@@ -575,13 +837,20 @@ void SVFIRBuilder::initialiseNodes()
         llvmModuleSet()->addToSVFVar2LLVMValueMap(llvmValue, pag->getGNode(iter->second));
         pag->varargFunObjSymMap[funObjVar] = iter->second;
     }
+    aeSVFIRTrace("varargSyms done");
 
     /// add address edges for constant nodes.
+    aeSVFIRTrace("constant address edges start");
+    unsigned long constAddrCount = 0;
     for (LLVMModuleSet::ValueToIDMapTy::iterator iter =
                 llvmModuleSet()->objSyms().begin(); iter != llvmModuleSet()->objSyms().end(); ++iter)
     {
+        ++constAddrCount;
+        aeSVFIRTraceValue("const-addr", constAddrCount, iter->second, iter->first);
         DBOUT(DPAGBuild, outs() << "add address edges for constant node " << iter->second << "\n");
         const Value* val = iter->first;
+        if (aeSVFIRIsCoverageValue(val))
+            continue;
         if (isConstantObjSym(val))
         {
             NodeID ptr = llvmModuleSet()->getValueNode(val);
@@ -592,19 +861,25 @@ void SVFIRBuilder::initialiseNodes()
             }
         }
     }
+    aeSVFIRTrace("constant address edges done");
 
     assert(pag->getTotalNodeNum() >= pag->getTotalSymNum()
            && "not all node have been initialized!!!");
 
     /// add argvalvar for svffunctions
+    aeSVFIRTrace("function arguments start");
+    unsigned long argFunCount = 0;
     for (auto& fun: llvmModuleSet()->getFunctionSet())
     {
+        ++argFunCount;
+        aeSVFIRTraceFun("args-fun", argFunCount, fun);
         for (const Argument& arg : fun->args())
         {
             const_cast<FunObjVar*>(llvmModuleSet()->getFunObjVar(fun))->addArgument(SVFUtil::cast<ArgValVar>(
                         pag->getGNode(llvmModuleSet()->getValueNode(&arg))));
         }
     }
+    aeSVFIRTrace("function arguments done");
 
 }
 
@@ -617,9 +892,41 @@ void SVFIRBuilder::initialiseNodes()
     e.g. field_idx = getelementptr i8, %struct_type %p, i64 1
 
 */
-u32_t SVFIRBuilder::inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, AccessPath& ap, APOffset idx)
+bool SVFIRBuilder::inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, AccessPath& ap, APOffset idx)
 {
-    return 0;
+    if (!gepOp || !dl || idx < 0)
+        return false;
+
+    const Type* objType = LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->
+                          inferObjType(gepOp->getPointerOperand());
+    const auto* structType = SVFUtil::dyn_cast<StructType>(objType);
+    if (!structType || structType->isOpaque() || structType->getNumElements() == 0 ||
+            !structType->isSized())
+    {
+        if (aeSVFIRByteGepTraceEnabled(gepOp))
+            SVFUtil::errs() << "[SVFIR-BYTE-GEP] byte_offset=" << idx
+                            << " inferred_type=" << LLVMUtil::dumpType(objType)
+                            << " field=unresolved value="
+                            << LLVMUtil::dumpValueAndDbgInfo(gepOp) << "\n";
+        return false;
+    }
+
+    const StructLayout* layout = dl->getStructLayout(const_cast<StructType*>(structType));
+    const uint64_t byteOffset = static_cast<uint64_t>(idx);
+    if (byteOffset >= layout->getSizeInBytes())
+        return false;
+
+    const unsigned field = layout->getElementContainingOffset(byteOffset);
+    const SVFType* svfStructType = llvmModuleSet()->getSVFType(structType);
+    const u32_t flattenedField = pag->getFlattenedElemIdx(svfStructType, field);
+    if (aeSVFIRByteGepTraceEnabled(gepOp))
+        SVFUtil::errs() << "[SVFIR-BYTE-GEP] byte_offset=" << idx
+                        << " inferred_type=" << LLVMUtil::dumpType(objType)
+                        << " field=" << field
+                        << " flattened_field=" << flattenedField
+                        << " value=" << LLVMUtil::dumpValueAndDbgInfo(gepOp) << "\n";
+    ap.setResolvedFieldIdx(flattenedField);
+    return true;
 }
 
 /*!
@@ -635,10 +942,8 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
     const llvm::GEPOperator *gepOp = SVFUtil::dyn_cast<const llvm::GEPOperator>(V);
     DataLayout * dataLayout = getDataLayout(llvmModuleSet()->getMainLLVMModule());
     llvm::APInt byteOffset(dataLayout->getIndexSizeInBits(gepOp->getPointerAddressSpace()),0,true);
-    if(gepOp && dataLayout && gepOp->accumulateConstantOffset(*dataLayout,byteOffset))
-    {
-        //s32_t bo = byteOffset.getSExtValue();
-    }
+    const bool hasExactByteOffset = gepOp && dataLayout &&
+                                    gepOp->accumulateConstantOffset(*dataLayout, byteOffset);
 
     bool isConst = true;
 
@@ -732,6 +1037,23 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
             // ap.setFldIdx(ap.getConstantFieldIdx() + inferFieldIdxFromByteOffset(geopOp,idx));
         }
     }
+    if (isConst && hasExactByteOffset)
+    {
+        ap.setExactByteOffset(byteOffset.getSExtValue());
+
+        // Optimized IR frequently accesses a struct through byte-addressed
+        // GEPs (e.g. `gep i8, %calloc_result, 80`).  Keeping every such GEP at
+        // field zero aliases unrelated stores and loads.  Recover the owning
+        // struct field for points-to modeling while retaining the exact byte
+        // offset above for physical bound checks.
+        if (gepOp->getSourceElementType()->isSingleValueType() &&
+                ap.getConstantStructFldIdx() == 0)
+        {
+            (void) inferFieldIdxFromByteOffset(gepOp, dataLayout, ap,
+                                               byteOffset.getSExtValue());
+        }
+    }
+
     return isConst;
 }
 
@@ -740,6 +1062,9 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
  */
 void SVFIRBuilder::processCE(const Value* val)
 {
+    if (aeSVFIRIsCoverageValue(val))
+        return;
+
     if (const Constant* ref = SVFUtil::dyn_cast<Constant>(val))
     {
         if (const ConstantExpr* gepce = isGepConstantExpr(ref))
@@ -902,6 +1227,11 @@ NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset,
 void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
                                  u32_t offset)
 {
+    if (aeSVFIRSkipGlobalInitIR())
+        return;
+    if (aeSVFIRSkipSancovIR() && aeSVFIRIsSkippableCoverageGlobal(gvar))
+        return;
+
     DBOUT(DPAGBuild, outs() << "global " << LLVMUtil::dumpValue(gvar)
           << " constant initializer: "
           << LLVMUtil::dumpValue(C) << "\n");
@@ -988,6 +1318,9 @@ void SVFIRBuilder::visitGlobal()
         for (Module::global_iterator I = M.global_begin(), E = M.global_end(); I != E; ++I)
         {
             GlobalVariable *gvar = &*I;
+            if (aeSVFIRSkipSancovIR() && aeSVFIRIsSkippableCoverageGlobal(gvar))
+                continue;
+
             NodeID idx = getValueNode(gvar);
             NodeID obj = getObjectNode(gvar);
 
@@ -996,10 +1329,13 @@ void SVFIRBuilder::visitGlobal()
 
             if (gvar->hasInitializer())
             {
-                Constant *C = gvar->getInitializer();
-                DBOUT(DPAGBuild, outs() << "add global var node "
-                      << LLVMUtil::dumpValue(gvar) << "\n");
-                InitialGlobal(gvar, C, 0);
+                if (!aeSVFIRSkipGlobalInitIR())
+                {
+                    Constant *C = gvar->getInitializer();
+                    DBOUT(DPAGBuild, outs() << "add global var node "
+                          << LLVMUtil::dumpValue(gvar) << "\n");
+                    InitialGlobal(gvar, C, 0);
+                }
             }
         }
 
@@ -1080,6 +1416,9 @@ void SVFIRBuilder::visitPHINode(PHINode &inst)
  */
 void SVFIRBuilder::visitLoadInst(LoadInst &inst)
 {
+    if (aeSVFIRIsCoverageValue(inst.getPointerOperand()))
+        return;
+
     DBOUT(DPAGBuild,
           outs() << "process load " << LLVMUtil::dumpValue(&inst) << "\n");
 
@@ -1098,6 +1437,10 @@ void SVFIRBuilder::visitLoadInst(LoadInst &inst)
  */
 void SVFIRBuilder::visitStoreInst(StoreInst &inst)
 {
+    if (aeSVFIRIsCoverageValue(inst.getPointerOperand()) ||
+            aeSVFIRIsCoverageValue(inst.getValueOperand()))
+        return;
+
     // StoreInst itself should always not be a pointer type
     assert(!SVFUtil::isa<PointerType>(inst.getType()));
 
@@ -1120,6 +1463,8 @@ void SVFIRBuilder::visitStoreInst(StoreInst &inst)
  */
 void SVFIRBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
 {
+    if (aeSVFIRIsCoverageValue(inst.getPointerOperand()))
+        return;
 
     NodeID dst = getValueNode(&inst);
     // GetElementPtrInst should always be a pointer or a vector contains pointers
@@ -1254,6 +1599,9 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
 
     // skip llvm intrinsics
     if(isIntrinsicInst(cs))
+        return;
+
+    if (aeSVFIRIsCoverageCall(LLVMUtil::getCallee(cs)))
         return;
 
     DBOUT(DPAGBuild,
@@ -1513,9 +1861,15 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
     if (!cs->getType()->isVoidTy())
     {
         NodeID srcret = getReturnNode(svffun);
-        FunExitICFGNode* exitICFGNode = pag->getICFG()->getFunExitICFGNode(svffun);
-        addRetEdge(srcret, dstrec,callICFGNode, exitICFGNode);
+        FunExitICFGNode* exitICFGNode = pag->getICFG()->getFunExitBlock(svffun);
+        if (exitICFGNode == nullptr && !aeSVFIRAllowMissingState())
+            exitICFGNode = pag->getICFG()->getFunExitICFGNode(svffun);
+        if (exitICFGNode != nullptr)
+            addRetEdge(srcret, dstrec,callICFGNode, exitICFGNode);
     }
+    FunEntryICFGNode* entry = pag->getICFG()->getFunEntryBlock(svffun);
+    if (entry == nullptr && !aeSVFIRAllowMissingState())
+        entry = pag->getICFG()->getFunEntryICFGNode(svffun);
     //Iterators for the actual and formal parameters
     u32_t itA = 0, ieA = cs->arg_size();
     Function::const_arg_iterator itF = F->arg_begin(), ieF = F->arg_end();
@@ -1536,11 +1890,11 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
 
         NodeID dstFA = getValueNode(FA);
         NodeID srcAA = getValueNode(AA);
-        FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svffun);
-        addCallEdge(srcAA, dstFA, callICFGNode, entry);
+        if (entry != nullptr)
+            addCallEdge(srcAA, dstFA, callICFGNode, entry);
     }
     //Any remaining actual args must be varargs.
-    if (F->isVarArg())
+    if (F->isVarArg() && entry != nullptr)
     {
         NodeID vaF = getVarargNode(svffun);
         DBOUT(DPAGBuild, outs() << "\n      varargs:");
@@ -1548,7 +1902,6 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
         {
             const Value* AA = cs->getArgOperand(itA);
             NodeID vnAA = getValueNode(AA);
-            FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svffun);
             addCallEdge(vnAA,vaF, callICFGNode,entry);
         }
     }
@@ -1896,7 +2249,12 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         /// We will have one unique function exit ICFGNode for all returns
         if(SVFUtil::isa<ReturnInst>(curInst))
         {
-            icfgNode = pag->getICFG()->getFunExitICFGNode(llvmMS->getFunObjVar(curInst->getFunction()));
+            const FunObjVar* funObj = llvmMS->getFunObjVar(curInst->getFunction());
+            FunExitICFGNode* exitNode = pag->getICFG()->getFunExitBlock(funObj);
+            if (exitNode == nullptr && !aeSVFIRAllowMissingState())
+                exitNode = pag->getICFG()->getFunExitICFGNode(funObj);
+            if (exitNode != nullptr)
+                icfgNode = exitNode;
         }
         else if(const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(edge))
         {
@@ -1915,8 +2273,12 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(curVal))
     {
         assert(curBB && (curBB->getParent()->getEntryBlock() == curBB));
-        icfgNode = pag->getICFG()->getFunEntryICFGNode(
-                       llvmModuleSet()->getFunObjVar(SVFUtil::cast<Function>(arg->getParent())));
+        const FunObjVar* funObj = llvmModuleSet()->getFunObjVar(SVFUtil::cast<Function>(arg->getParent()));
+        FunEntryICFGNode* entryNode = pag->getICFG()->getFunEntryBlock(funObj);
+        if (entryNode == nullptr && !aeSVFIRAllowMissingState())
+            entryNode = pag->getICFG()->getFunEntryICFGNode(funObj);
+        if (entryNode != nullptr)
+            icfgNode = entryNode;
     }
     else if (SVFUtil::isa<Constant>(curVal) ||
              SVFUtil::isa<Function>(curVal) ||

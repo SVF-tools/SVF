@@ -30,6 +30,7 @@
 #include "AE/Svfexe/AbstractInterpretation.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
+#include <algorithm>
 
 using namespace SVF;
 AbsExtAPI::AbsExtAPI(AbstractInterpretation* ae): ae(ae)
@@ -321,7 +322,6 @@ void AbsExtAPI::checkPointAllSet()
 
 std::string AbsExtAPI::strRead(const ValVar* rhs, const ICFGNode* node)
 {
-    AbstractState& as = getAbsState(node);
     std::string str0;
 
     for (u32_t index = 0; index < Options::MaxFieldLimit(); index++)
@@ -333,7 +333,7 @@ std::string AbsExtAPI::strRead(const ValVar* rhs, const ICFGNode* node)
         AbstractValue val;
         for (const auto &addr: expr0.getAddrs())
         {
-            val.join_with(as.load(addr));
+            val.join_with(ae->loadAddressValue(addr, node));
         }
         if (!val.getInterval().is_numeral())
         {
@@ -444,9 +444,25 @@ bool AbsExtAPI::isValidLength(const IntervalValue& len)
     return !len.isBottom() && !len.lb().is_minus_infinity();
 }
 
+static u32_t boundedMemOpLength(const IntervalValue& len)
+{
+    if (!AbsExtAPI::isValidLength(len))
+        return 0;
+    if (len.ub().is_plus_infinity())
+        return Options::MaxFieldLimit();
+
+    s64_t ub = len.ub().getIntNumeral();
+    if (ub <= 0)
+        return 0;
+    return std::min((u32_t)Options::MaxFieldLimit(), (u32_t)ub);
+}
+
 /// Calculate the length of a null-terminated string in abstract state.
 /// Scans memory from the base of strValue looking for a '\0' byte.
-/// Returns an IntervalValue: exact length if '\0' found, otherwise [0, MaxFieldLimit].
+/// The lower bound is the definitely-nonzero prefix; the upper bound is the
+/// first definitely-zero byte. If the available object prefix contains no
+/// definite terminator, the upper bound is unbounded because strlen-like
+/// operations may continue beyond that object.
 IntervalValue AbsExtAPI::getStrlen(const ValVar *strValue, const ICFGNode* node)
 {
     AbstractState& as = getAbsState(node);
@@ -456,50 +472,81 @@ IntervalValue AbsExtAPI::getStrlen(const ValVar *strValue, const ICFGNode* node)
     for (const auto& addr : ptrVal.getAddrs())
     {
         NodeID objId = as.getIDFromAddr(addr);
-        if (svfir->getBaseObject(objId)->isConstantByteSize())
+        // Over-approximated string pointers can resolve to addrs whose base
+        // object is null or has no backing ICFGNode (BlackHole / non-alloca
+        // special obj). Guard both derefs to avoid a null-pointer crash.
+        const auto* baseObj = svfir->getBaseObject(objId);
+        if (!baseObj)
+            continue;
+        if (baseObj->isConstantByteSize())
         {
-            dst_size = svfir->getBaseObject(objId)->getByteSizeOfObj();
+            dst_size = std::max(dst_size, baseObj->getByteSizeOfObj());
         }
         else
         {
-            const ICFGNode* icfgNode = svfir->getBaseObject(objId)->getICFGNode();
+            const ICFGNode* icfgNode = baseObj->getICFGNode();
+            if (!icfgNode)
+                continue;
             for (const SVFStmt* stmt2: icfgNode->getSVFStmts())
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
                 {
-                    dst_size = ae->getAllocaInstByteSize(addrStmt);
+                    dst_size = std::max(dst_size,
+                                        ae->getAllocaInstByteSize(addrStmt));
                 }
             }
         }
     }
 
     // Step 2: scan for '\0' terminator
-    u32_t len = 0;
+    // Object metadata stores the physical extent. Keep the abstract memory
+    // scan bounded independently so recovering that extent does not increase
+    // the number of modeled fields.
+    if (Options::MaxFieldLimit() != 0)
+        dst_size = std::min(dst_size, (u32_t)Options::MaxFieldLimit());
+    u32_t minLen = 0;
+    u32_t maxLen = 0;
+    bool minPrefixKnown = true;
+    bool scannedByte = false;
+    bool foundTerminator = false;
     if (ae->getAbsValue(strValue, node).isAddr())
     {
         for (u32_t index = 0; index < dst_size; index++)
         {
+            scannedByte = true;
             AbstractValue expr0 =
                 ae->getGepObjAddrs(strValue, IntervalValue(index));
             AbstractValue val;
             for (const auto &addr: expr0.getAddrs())
             {
-                val.join_with(as.load(addr));
+                val.join_with(ae->loadAddressValue(addr, node));
             }
-            if (val.getInterval().is_numeral() &&
-                    (char) val.getInterval().getIntNumeral() == '\0')
+            const IntervalValue& byte = val.getInterval();
+            if (minPrefixKnown)
             {
+                if (!byte.isBottom() && !byte.contains(0))
+                    ++minLen;
+                else
+                    minPrefixKnown = false;
+            }
+            if (byte.is_numeral() &&
+                    (char) byte.getIntNumeral() == '\0')
+            {
+                foundTerminator = true;
+                maxLen = index;
                 break;
             }
-            ++len;
         }
     }
 
     // Step 3: scale by element size and return
     u32_t elemSize = getElementSize(strValue);
-    if (len == 0)
-        return IntervalValue((s64_t)0, (s64_t)Options::MaxFieldLimit());
-    return IntervalValue(len * elemSize);
+    if (!scannedByte)
+        return IntervalValue((s64_t)0, IntervalValue::plus_infinity());
+    if (foundTerminator)
+        return IntervalValue(minLen * elemSize, maxLen * elemSize);
+    return IntervalValue((s64_t)(minLen * elemSize),
+                         IntervalValue::plus_infinity());
 }
 
 // ===----------------------------------------------------------------------===//
@@ -547,11 +594,9 @@ void AbsExtAPI::handleMemcpy(const ValVar *dst,
                              u32_t start_idx, const ICFGNode* node)
 {
     if (!isValidLength(len)) return;
-    AbstractState& as = getAbsState(node);
 
     u32_t elemSize = getElementSize(dst);
-    u32_t size = std::min((u32_t)Options::MaxFieldLimit(),
-                          (u32_t)len.lb().getIntNumeral());
+    u32_t size = boundedMemOpLength(len);
     u32_t range_val = size / elemSize;
 
     if (!ae->getAbsValue(src, node).isAddr() || !ae->getAbsValue(dst, node).isAddr())
@@ -567,11 +612,9 @@ void AbsExtAPI::handleMemcpy(const ValVar *dst,
         {
             for (const auto &srcAddr: expr_src.getAddrs())
             {
-                u32_t objId = as.getIDFromAddr(srcAddr);
-                if (as.inAddrToValTable(objId) || as.inAddrToAddrsTable(objId))
-                {
-                    as.store(dstAddr, as.load(srcAddr));
-                }
+                AbstractValue srcVal = ae->loadAddressValue(srcAddr, node);
+                if (srcVal.isInterval() || srcVal.isAddr())
+                    ae->storeAddressValue(dstAddr, srcVal, node);
             }
         }
     }
@@ -602,8 +645,7 @@ void AbsExtAPI::handleMemset(const ValVar *dst,
     {
         assert(false && "unsupported type for element size");
     }
-    u32_t size = std::min((u32_t)Options::MaxFieldLimit(),
-                          (u32_t)len.lb().getIntNumeral());
+    u32_t size = boundedMemOpLength(len);
     u32_t range_val = size / elemSize;
 
     for (u32_t index = 0; index < range_val; index++)
@@ -616,13 +658,13 @@ void AbsExtAPI::handleMemset(const ValVar *dst,
             u32_t objId = as.getIDFromAddr(addr);
             if (as.inAddrToValTable(objId))
             {
-                AbstractValue tmp = as.load(addr);
+                AbstractValue tmp = ae->loadAddressValue(addr, node);
                 tmp.join_with(elem);
-                as.store(addr, tmp);
+                ae->storeAddressValue(addr, tmp, node);
             }
             else
             {
-                as.store(addr, elem);
+                ae->storeAddressValue(addr, elem, node);
             }
         }
     }

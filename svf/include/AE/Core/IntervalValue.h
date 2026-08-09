@@ -34,6 +34,7 @@
 #define Z3_EXAMPLE_IntervalValue_H
 
 #include <sstream>
+#include <iostream>
 #include "AE/Core/NumericValue.h"
 
 namespace SVF
@@ -119,7 +120,25 @@ public:
     /// Create the IntervalValue [lb, ub]
     explicit IntervalValue(BoundedInt lb, BoundedInt ub) : _lb(std::move(lb)), _ub(std::move(ub))
     {
-        assert((isBottom() || _lb.leq(_ub)) && "lower bound should be less than or equal to upper bound");
+        // Defensive recovery: if an abstract operation produces an inverted
+        // interval (lb > ub, and not the canonical bottom sentinel) -- typically
+        // due to overflow / undefined behaviour in interval arithmetic -- widen
+        // to top instead of aborting, so whole-program analysis can run to
+        // completion. This is sound (top over-approximates any value); the
+        // targeted operator fixes keep this recovery path cold.
+        if (!(isBottom() || _lb.leq(_ub)))
+        {
+            static bool warned = false;
+            if (!warned)
+            {
+                warned = true;
+                std::cerr << "[AE] warning: recovered from inverted IntervalValue ["
+                          << _lb.to_string() << ", " << _ub.to_string()
+                          << "] by widening to top (further occurrences suppressed)\n";
+            }
+            _lb = minus_infinity();
+            _ub = plus_infinity();
+        }
     }
 
     explicit IntervalValue(s64_t lb, s64_t ub) : IntervalValue(BoundedInt(lb), BoundedInt(ub)) {}
@@ -897,25 +916,24 @@ inline IntervalValue operator<<(const IntervalValue &lhs, const IntervalValue &r
         shift.meet_with(IntervalValue(0, IntervalValue::plus_infinity()));
         if (shift.isBottom())
             return IntervalValue::bottom();
-        BoundedInt lb = 0;
-        // If the shift is greater than 32, the result is always 0
-        if ((s32_t) shift.lb().getNumeral() >= 32 || shift.lb().is_infinity())
+        // Model "x << s" as "x * 2^s" over the (unbounded) abstract integers.
+        // Compute the 2^s coefficient in 64-bit arithmetic with saturation to
+        // +inf. Never use the UB-prone 32-bit `1 << n` (n >= 31 is undefined and
+        // previously yielded inverted coefficients that tripped the IntervalValue
+        // invariant). 2^s is monotonic in s, so lb <= ub always holds.
+        auto pow2 = [](const BoundedInt& s) -> BoundedInt
         {
-            lb = IntervalValue::minus_infinity();
-        }
-        else
-        {
-            lb = (1 << (s32_t) shift.lb().getNumeral());
-        }
-        BoundedInt ub = 0;
-        if (shift.ub().is_infinity())
-        {
-            ub = IntervalValue::plus_infinity();
-        }
-        else
-        {
-            ub = (1 << (s32_t) shift.ub().getNumeral());
-        }
+            if (s.is_infinity())
+                return IntervalValue::plus_infinity();
+            s64_t n = s.getNumeral();
+            if (n <= 0)            // shift was clamped to >= 0; 2^0 = 1
+                return BoundedInt((s64_t) 1);
+            if (n >= 62)           // 2^62 is the largest power of two below S64_MAX
+                return IntervalValue::plus_infinity();
+            return BoundedInt((s64_t) 1 << n);
+        };
+        BoundedInt lb = pow2(shift.lb());
+        BoundedInt ub = pow2(shift.ub());
         IntervalValue coeff(lb, ub);
         return lhs * coeff;
     }

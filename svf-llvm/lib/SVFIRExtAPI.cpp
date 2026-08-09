@@ -208,6 +208,23 @@ void collapseExtMemArgObject(SVFIR* pag, const Value* value)
         obj->setFieldInsensitive();
 }
 
+void reportExtMemSummary(const char* kind, size_t fields)
+{
+    static unsigned long long reportCount = 0;
+    ++reportCount;
+
+    if (reportCount <= 20 || (reportCount & (reportCount - 1)) == 0)
+    {
+        SVFUtil::errs() << "[SVFIR-EXTMEM-SUMMARY] count=" << reportCount
+                        << " kind=" << kind
+                        << " fields=" << fields
+                        << " limit=" << effectiveExtMemFieldLimit()
+                        << " ext_limit=" << Options::ExtMemFieldLimit()
+                        << " field_limit=" << Options::MaxFieldLimit()
+                        << "\n";
+    }
+}
+
 }
 
 /*!
@@ -307,6 +324,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
 
     if (overExtMemFieldLimit(fields.size()))
     {
+        reportExtMemSummary("memcpy", fields.size());
         summarizeCopy();
         return;
     }
@@ -329,6 +347,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
         if (overExtMemFieldLimit(dstMemcpyFields.size()) ||
                 overExtMemFieldLimit(srcMemcpyFields.size()))
         {
+            reportExtMemSummary("memcpy-layout", std::max(dstMemcpyFields.size(), srcMemcpyFields.size()));
             summarizeCopy();
             return;
         }
@@ -477,6 +496,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
         u32_t sz = dstFields.size();
         if (overExtMemFieldLimit(dstFields.size()))
         {
+            reportExtMemSummary("memset", dstFields.size());
             // Same trade-off as memcpy: collapse the object and write once
             // through the base pointer instead of one store per field.
             collapseExtMemArgObject(pag, getBaseValueForExtArg(cs->getArgOperand(0)));

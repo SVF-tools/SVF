@@ -94,6 +94,8 @@ public:
     ~FullSparseAbstractInterpretation() override;
 
 protected:
+    void resetEntryTransientState() override;
+
     /// Full-sparse does not merge normal value-flow state along ICFG
     /// edges.  The ICFG join carries only side-channel state that is not
     /// represented as MemorySSA def-use flow: GepObjVar field snapshots
@@ -104,9 +106,21 @@ protected:
 
     /// After a store overwrites an ObjVar, clear any branch refinement
     /// for that ObjVar at the store's node so stale branch constraints
-    /// don't propagate past the redefinition.
+    /// don't propagate past the redefinition.  Also folds GepObjVar writes
+    /// into the flow-insensitive `gepOverlay` (PR #1820 Gep-Overlay design).
     void storeValue(const ValVar* pointer, const AbstractValue& val,
                     const ICFGNode* node) override;
+
+    /// GepObj-overlay read: for a GepObjVar pointee consult `gepOverlay`
+    /// first (flow-insensitive value); otherwise fall back to the trace.
+    /// Bridges the GEP field-precision asymmetry between Andersen (a
+    /// dynamic/cross-fn read resolves pts to the base obj) and the SVFG
+    /// indirect edges, without coarsening the SVFG.
+    AbstractValue loadValue(const ValVar* pointer,
+                            const ICFGNode* node) override;
+    AbstractValue loadAddressValue(u32_t addr, const ICFGNode* node) override;
+    void storeAddressValue(u32_t addr, const AbstractValue& val,
+                           const ICFGNode* node) override;
 
     /// Thin wrapper: defer to base for ICFG-edge bookkeeping
     /// (predecessor iteration, branch feasibility, joinStates,
@@ -171,6 +185,15 @@ private:
     std::unique_ptr<SVFGBuilder> svfgBuilder;
     /// View pointer into svfgBuilder's graph; non-null after buildSVFG().
     SVFG* svfg{nullptr};
+
+    /// Flow-insensitive overlay for GepObjVar abstract values (PR #1820).
+    /// Keyed by GepObjVar NodeID (encodes (base,offset) uniquely).  Stores
+    /// weak-update (join) into it; loads consult it before the trace.  This
+    /// replaces the dense per-ICFG-node GepObjVar flood (the memory blow-up)
+    /// — one flat map instead of O(nodes x fields) — and the SVFG is left
+    /// untouched (no region coarsening).  Trade-off: flow-insensitive
+    /// (a[3]=7; a[3]=11 joins to [7,11] rather than strong-updating to 11).
+    Map<NodeID, AbstractValue> gepOverlay;
 };
 
 } // namespace SVF

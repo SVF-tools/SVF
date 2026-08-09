@@ -108,6 +108,27 @@ public:
     /// Program entry
     void analyse();
 
+    /// True when pre-analysis classified this ICFG node as a large
+    /// external memory-summary call whose expanded SVFStmt list should be
+    /// skipped during AE execution.
+    bool isExtMemHeavyNode(const ICFGNode* node) const;
+
+    /// Dynamic callsites leading to the currently analyzed function body.
+    const std::vector<const CallICFGNode*>& getReportCallStack() const
+    {
+        return reportCallStack;
+    }
+
+    CallGraph* getCallGraph() const
+    {
+        return callGraph;
+    }
+
+    ICFG* getICFG() const
+    {
+        return icfg;
+    }
+
     /// Analyze all entry points (functions without callers)
     void analyzeFromAllProgEntries();
 
@@ -183,8 +204,12 @@ public:
                                     const ICFGNode* node);
     virtual void storeValue(const ValVar* pointer, const AbstractValue& val,
                             const ICFGNode* node);
+    virtual AbstractValue loadAddressValue(u32_t addr, const ICFGNode* node);
+    virtual void storeAddressValue(u32_t addr, const AbstractValue& val,
+                                   const ICFGNode* node);
 
     const SVFType* getPointeeElement(const ObjVar* var, const ICFGNode* node);
+    IntervalValue getAllocaInstByteSizeInterval(const AddrStmt* addr);
     u32_t getAllocaInstByteSize(const AddrStmt* addr);
 
     // ---- Direct Trace Access ------------------------------------------
@@ -202,6 +227,10 @@ protected:
     /// Factory-only construction.  External callers must use getAEInstance();
     /// `SparseAbstractInterpretation` reaches this via its own ctor.
     AbstractInterpretation();
+
+    /// Drop per-entry execution state when AE_ENTRY_STATE_RESET is enabled.
+    /// Coverage and detector reports intentionally survive across entries.
+    virtual void resetEntryTransientState();
 
     // ---- Cycle helpers overridden by SparseAbstractInterpretation ----
     // The dense versions write only to trace[cycle_head].  The semi-sparse
@@ -322,12 +351,114 @@ private:
 
     bool skipRecursiveCall(const CallICFGNode* callNode);
     const FunObjVar* getCallee(const CallICFGNode* callNode);
+    void dumpHotFunctionStats() const;
+    void dumpSpinProbe(const char* reason = "periodic") const;
+    void dumpSpinProbeLive(const ICFGNode* node, const char* reason = "node") const;
+    void dumpSpinProbeStmtLive(const ICFGNode* node, unsigned long stmtIndex,
+                               unsigned long stmtTotal, const char* stmtKind) const;
+    bool applyHotCycleThrottle(const ICFGCycleWTO* cycle, bool force = false);
+    void dumpHotCycleThrottleStats(const char* reason = "periodic") const;
+    bool applyHotFunctionTop(const ICFGNode* funEntry, const CallICFGNode* caller);
+    bool entryNodeBudgetExceeded() const;
+    bool applyEntryBudgetFunctionTop(const ICFGNode* funEntry, const CallICFGNode* caller);
+    bool applyEntryBudgetCycleTop(const ICFGCycleWTO* cycle);
+    void dumpEntryBudgetStats(const char* reason = "periodic") const;
+    void preAnalyzeExtMemHeavyNodes();
+    void dumpExtMemHeavyPreAnalysisStats(const char* reason) const;
+
+    struct ExtMemHeavyInfo
+    {
+        unsigned long stmtTotal = 0;
+        std::string summaryKind;
+        std::string functionName;
+        std::string calleeName;
+    };
+
+    const ExtMemHeavyInfo* getExtMemHeavyInfo(const ICFGNode* node) const;
 
     // there data should be shared with subclasses
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
 
     Set<const ICFGNode*> allAnalyzedNodes; // All nodes ever analyzed (across all entry points)
+    /// A heap/alloca ObjVar represents every dynamic instance of one static
+    /// allocation site.  Preserve the union of all observed byte sizes so a
+    /// later invocation cannot overwrite the physical bound of earlier ones.
+    Map<const AddrStmt*, IntervalValue> allocationByteSizeSummary;
+    /// EXPERIMENT (loop memoization): per-cycle cache of the cycle-head input
+    /// snapshot; a cycle whose input is unchanged from its previous invocation
+    /// is skipped (its persistent body trace[] is still valid).
+    Map<const ICFGCycleWTO*, AbstractState> cycleInputCache;
+    unsigned long loopMemoHits = 0;
+    unsigned long loopMemoTotal = 0;
+    /// EXPERIMENT (function memoization, cheap version): per-function cache of
+    /// the entry-state snapshot; skip re-analyzing a function whose entry state
+    /// is identical to its previous invocation. Keyed by FunEntry ICFGNode.
+    Map<const ICFGNode*, AbstractState> funcInputCache;
+    unsigned long funcMemoHits = 0;
+    unsigned long funcMemoTotal = 0;
+    /// per-function handleFunction call count (to find over-analyzed functions).
+    Map<const ICFGNode*, unsigned long> funcCallCount;
+    unsigned long funcCallTotal = 0;
+    /// Hot-function baseline counters.  funcCallCount tracks all handleFunction
+    /// entries; these counters separate real body executions from guarded skips.
+    Map<const ICFGNode*, unsigned long> funcBodyExecCount;
+    Map<const ICFGNode*, unsigned long> funcFastHitCount;
+    Map<const ICFGNode*, unsigned long> funcHotAttemptCount;
+    Map<const ICFGNode*, unsigned long> funcHotNoCacheCount;
+    Map<const ICFGNode*, unsigned long> funcHotStateDiffCount;
+    Map<const ICFGNode*, unsigned long> funcHotOverlayStaleCount;
+    Map<const ICFGNode*, unsigned long> funcStaticStmtCount;
+    Map<const ICFGNode*, unsigned long> funcSmallBodyTopBypassCount;
+    unsigned long funcBodyExecTotal = 0;
+    /// Spin-probe counters for locating intra-function loop/fixpoint stalls.
+    Map<const ICFGCycleWTO*, unsigned long> spinCycleInvocations;
+    Map<const ICFGCycleWTO*, unsigned long> spinCycleIterations;
+    Map<const ICFGCycleWTO*, unsigned long> spinCycleHeadExecs;
+    Map<const ICFGCycleWTO*, unsigned long> spinCycleBodyNodeExecs;
+    Map<const ICFGCycleWTO*, unsigned long> spinCycleSubcycleCalls;
+    Map<const ICFGCycleWTO*, unsigned long> spinCycleWidenFixpoints;
+    Map<const ICFGCycleWTO*, unsigned long> spinCycleNarrowFixpoints;
+    /// Conservative hot-cycle throttle counters. When enabled by environment,
+    /// very frequently re-entered WTO cycles are summarized by TOP-ing the
+    /// interval values already materialized in their cycle nodes.
+    Map<const ICFGCycleWTO*, unsigned long> hotCycleThrottleHits;
+    Map<const ICFGCycleWTO*, unsigned long> hotCycleThrottleVarTops;
+    Map<const ICFGCycleWTO*, unsigned long> hotCycleThrottleLocTops;
+    Map<const ICFGCycleWTO*, unsigned long> hotCycleThrottleNodeTouches;
+    Set<const FunObjVar*> hotCycleThrottleFuns;
+    unsigned long hotCycleThrottleTotalHits = 0;
+    unsigned long hotCycleThrottleTotalVarTops = 0;
+    unsigned long hotCycleThrottleTotalLocTops = 0;
+    const ICFGCycleWTO* spinActiveCycle = nullptr;
+    const ICFGNode* spinActiveNode = nullptr;
+    unsigned long spinActiveIter = 0;
+    unsigned long spinGlobalLoopIters = 0;
+    unsigned long spinGlobalNodeExecs = 0;
+    unsigned long currentEntryIndex = 0;
+    unsigned long currentEntryStartNodeExecs = 0;
+    unsigned long entryBudgetFunctionTopHits = 0;
+    unsigned long entryBudgetCycleTopHits = 0;
+    Map<std::string, unsigned long> entryBudgetFunctionTopByFunction;
+    Map<std::string, unsigned long> entryBudgetCycleTopByFunction;
+    /// Soundness gate for both memos: bumped on every GepObjVar write into the
+    /// flow-insensitive gepOverlay (which lives outside AbstractState, so a
+    /// snapshot key cannot see overlay growth). A memo entry is reusable only if
+    /// the overlay version is unchanged since it was cached.
+protected:
+    unsigned long gepOverlayVersion = 0;
+    /// per-GepObjVar-id version: bumped when that overlay field is written.
+    Map<NodeID, unsigned long> gepFieldVersion;
+    /// stack of per-function gepOverlay read-sets (dynamic dependency capture).
+    std::vector<Set<NodeID>> gepReadStack;
+    /// per-function: gepObj fields it read + each field's version at analysis time.
+    Map<const ICFGNode*, Map<NodeID, unsigned long>> funcReadVersions;
+private:
+    Map<const ICFGCycleWTO*, unsigned long> cycleInputVer;
+    Map<const ICFGNode*, unsigned long> funcInputVer;
+    Set<const ICFGNode*> extMemHeavyNodes;
+    Map<const ICFGNode*, ExtMemHeavyInfo> extMemHeavyInfos;
     std::string moduleName;
+    std::vector<const CallICFGNode*> reportCallStack;
 
     std::vector<std::unique_ptr<AEDetector>> detectors;
     AbsExtAPI* utils;

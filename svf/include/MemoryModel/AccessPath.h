@@ -67,13 +67,21 @@ public:
     typedef std::vector<IdxOperandPair> IdxOperandPairs;
 
     /// Constructor
-    AccessPath(APOffset o = 0, const SVFType* srcTy = nullptr) : fldIdx(o), gepPointeeType(srcTy) {}
+    AccessPath(APOffset o = 0, const SVFType* srcTy = nullptr)
+        : fldIdx(o), idxOperandPairs(), gepPointeeType(srcTy),
+          exactByteOffset(0), hasExactByteOffsetValue(false),
+          hasResolvedFieldIndexValue(false)
+    {
+    }
 
     /// Copy Constructor
     AccessPath(const AccessPath& ap)
         : fldIdx(ap.fldIdx),
           idxOperandPairs(ap.getIdxOperandPairVec()),
-          gepPointeeType(ap.gepSrcPointeeType())
+          gepPointeeType(ap.gepSrcPointeeType()),
+          exactByteOffset(ap.exactByteOffset),
+          hasExactByteOffsetValue(ap.hasExactByteOffsetValue),
+          hasResolvedFieldIndexValue(ap.hasResolvedFieldIndexValue)
     {
     }
 
@@ -88,6 +96,9 @@ public:
         fldIdx = rhs.fldIdx;
         idxOperandPairs = rhs.getIdxOperandPairVec();
         gepPointeeType = rhs.gepPointeeType;
+        exactByteOffset = rhs.exactByteOffset;
+        hasExactByteOffsetValue = rhs.hasExactByteOffsetValue;
+        hasResolvedFieldIndexValue = rhs.hasResolvedFieldIndexValue;
         return *this;
     }
     inline bool operator==(const AccessPath& rhs) const
@@ -106,6 +117,16 @@ public:
     inline void setFldIdx(APOffset idx)
     {
         fldIdx = idx;
+        hasResolvedFieldIndexValue = false;
+    }
+    inline bool hasResolvedFieldIndex() const
+    {
+        return hasResolvedFieldIndexValue;
+    }
+    inline void setResolvedFieldIdx(APOffset idx)
+    {
+        fldIdx = idx;
+        hasResolvedFieldIndexValue = true;
     }
     inline const IdxOperandPairs& getIdxOperandPairVec() const
     {
@@ -114,6 +135,20 @@ public:
     inline const SVFType* gepSrcPointeeType() const
     {
         return gepPointeeType;
+    }
+    inline bool hasExactByteOffset() const
+    {
+        return hasExactByteOffsetValue;
+    }
+    inline APOffset getExactByteOffset() const
+    {
+        assert(hasExactByteOffsetValue && "exact byte offset is unavailable");
+        return exactByteOffset;
+    }
+    inline void setExactByteOffset(APOffset offset)
+    {
+        exactByteOffset = offset;
+        hasExactByteOffsetValue = true;
     }
     //@}
 
@@ -185,6 +220,9 @@ private:
     const SVFType* gepPointeeType;   /// source element type in gep instruction,
     /// e.g., %f1 = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %arrayidx, i32 0, i32 0
     /// the source element type is %struct.MyStruct
+    APOffset exactByteOffset; ///< LLVM DataLayout offset for a fully constant GEP.
+    bool hasExactByteOffsetValue;
+    bool hasResolvedFieldIndexValue; ///< Layout-derived field for a byte-addressed GEP.
 };
 
 } // End namespace SVF

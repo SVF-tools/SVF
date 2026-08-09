@@ -27,7 +27,26 @@
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/Andersen.h"
 
+#include <chrono>
+#include <cstdio>
+#include <fstream>
+
 using namespace SVF;
+
+// Local RSS reader for SVFG-build instrumentation (stderr, flushed).
+static double svfg_rssGB()
+{
+    std::ifstream f("/proc/self/status");
+    std::string k;
+    long v = 0;
+    while (f >> k)
+        if (k == "VmRSS:")
+        {
+            f >> v;
+            break;
+        }
+    return v / 1048576.0;
+}
 
 // SemiSparse state-access overrides (get/has/updateAbsValue,
 // updateAbsState, joinStates) live in AbstractStateManager.cpp; the
@@ -41,10 +60,26 @@ using namespace SVF;
 
 FullSparseAbstractInterpretation::~FullSparseAbstractInterpretation() = default;
 
+void FullSparseAbstractInterpretation::resetEntryTransientState()
+{
+    refinementTrace.clear();
+    gepOverlay.clear();
+    AbstractInterpretation::resetEntryTransientState();
+}
+
 void FullSparseAbstractInterpretation::buildSVFG()
 {
+    fprintf(stderr, "[SVFG] build start                RSS=%.1fGB\n", svfg_rssGB());
+    fflush(stderr);
+    auto t0 = std::chrono::steady_clock::now();
     svfgBuilder = std::make_unique<SVFGBuilder>(true);
     svfg = svfgBuilder->buildFullSVFG(preAnalysis->getPointerAnalysis());
+    double dt = std::chrono::duration<double>(
+                    std::chrono::steady_clock::now() - t0).count();
+    fprintf(stderr,
+            "[SVFG] built  time=%.1fs  nodes=%u  edges=%u  RSS=%.1fGB\n",
+            dt, svfg->getTotalNodeNum(), svfg->getTotalEdgeNum(), svfg_rssGB());
+    fflush(stderr);
 }
 
 // =====================================================================
@@ -64,25 +99,12 @@ void FullSparseAbstractInterpretation::buildSVFG()
 void FullSparseAbstractInterpretation::joinStates(AbstractState& dst,
         const AbstractState& src)
 {
-    // Propagate GepObjVar entries along ICFG edges.  Kill semantics
-    // come from handleNode's as.store(addr, val) overwriting trace at
-    // store sites (not from a JOIN here), so joinStates only forwards
-    // the post-write snapshot.  This lets Gep fields scattered across
-    // many store ICFG nodes converge at downstream use sites, and lets
-    // extapi handlers (memcpy/memset/strlen) read upstream-written
-    // values via plain as.load(srcAddr).  Base/Dummy are NOT propagated
-    // here — they ride pullObjValueFlows Step 1 (SVFG indirect edges, with
-    // MSSA chi/mu kill semantics).
-    for (const auto& [id, val] : src.getLocToVal())
-    {
-        if (!SVFUtil::isa<GepObjVar>(svfir->getGNode(id)))
-            continue;
-        u32_t addr = AbstractState::getVirtualMemAddress(id);
-        if (dst.getLocToVal().count(id))
-            dst.load(addr).join_with(val);
-        else
-            dst.store(addr, val);
-    }
+    // PR #1820 Gep-Overlay design: GepObjVar values NO LONGER ride ICFG
+    // edges here (that dense per-node snapshot was the O(nodes x fields)
+    // memory blow-up).  They now live in the flow-insensitive `gepOverlay`
+    // (folded in storeValue, consulted in loadValue).  joinStates therefore
+    // forwards only `_freedAddrs`, which has no SVFG-level encoding of free
+    // events and so must ride ICFG edges for the null-deref detector.
     for (NodeID a : src.getFreedAddrs())
         dst.addToFreedAddrs(a);
 }
@@ -104,9 +126,100 @@ void FullSparseAbstractInterpretation::storeValue(const ValVar* pointer,
         auto rit = refinementTrace.find(node);
         if (rit != refinementTrace.end())
             rit->second.erase(objId);
+        // PR #1820 Gep-Overlay: fold every GepObjVar write into the flat,
+        // flow-insensitive overlay (weak update / join).  loadValue consults
+        // it first, so a const-offset store reaches a dynamic-offset /
+        // cross-function read even though the SVFG never carries that field.
+        if (AbstractState::isVirtualMemAddress(addr) &&
+                SVFUtil::isa<GepObjVar>(svfir->getSVFVar(objId)))
+        {
+            auto it = gepOverlay.find(objId);
+            if (it == gepOverlay.end())
+                gepOverlay[objId] = val;
+            else
+                it->second.join_with(val);
+            ++gepOverlayVersion; ++gepFieldVersion[objId]; // global(loop) + per-field(func)
+        }
     }
     // Delegate to base for the actual ObjVar update.
     SemiSparseAbstractInterpretation::storeValue(pointer, val, node);
+}
+
+// PR #1820 Gep-Overlay read.  For a GepObjVar pointee, return the overlay
+// value (flow-insensitive) if present; otherwise fall back to the trace
+// (populated by pullObjValueFlows / the base read).  Non-gep objects read
+// straight from the trace as before.
+AbstractValue FullSparseAbstractInterpretation::loadValue(
+    const ValVar* pointer, const ICFGNode* node)
+{
+    const AbstractValue& ptrVal = getAbsValue(pointer, node);
+    AbstractState& as = getAbsState(node);
+    AbstractValue res;
+    for (auto addr : ptrVal.getAddrs())
+    {
+        if (AbstractState::isVirtualMemAddress(addr))
+        {
+            NodeID id = as.getIDFromAddr(addr);
+            if (SVFUtil::isa<GepObjVar>(svfir->getSVFVar(id)))
+            {
+                auto it = gepOverlay.find(id);
+                if (it != gepOverlay.end())
+                {
+                    res.join_with(it->second);
+                    if (!gepReadStack.empty())
+                        gepReadStack.back().insert(id);
+                    continue; // overlay hit
+                }
+            }
+        }
+        res.join_with(getAbsValue(svfir->getSVFVar(as.getIDFromAddr(addr)), node));
+    }
+    return res;
+}
+
+AbstractValue FullSparseAbstractInterpretation::loadAddressValue(
+    u32_t addr, const ICFGNode* node)
+{
+    AbstractState& as = getAbsState(node);
+    if (AbstractState::isVirtualMemAddress(addr))
+    {
+        NodeID id = as.getIDFromAddr(addr);
+        if (SVFUtil::isa<GepObjVar>(svfir->getSVFVar(id)))
+        {
+            auto it = gepOverlay.find(id);
+            if (it != gepOverlay.end())
+            {
+                if (!gepReadStack.empty())
+                    gepReadStack.back().insert(id);
+                return it->second;
+            }
+        }
+    }
+    return AbstractInterpretation::loadAddressValue(addr, node);
+}
+
+void FullSparseAbstractInterpretation::storeAddressValue(
+    u32_t addr, const AbstractValue& val, const ICFGNode* node)
+{
+    AbstractState& as = getAbsState(node);
+    NodeID objId = as.getIDFromAddr(addr);
+    auto rit = refinementTrace.find(node);
+    if (rit != refinementTrace.end())
+        rit->second.erase(objId);
+
+    if (AbstractState::isVirtualMemAddress(addr) &&
+            SVFUtil::isa<GepObjVar>(svfir->getSVFVar(objId)))
+    {
+        auto it = gepOverlay.find(objId);
+        if (it == gepOverlay.end())
+            gepOverlay[objId] = val;
+        else
+            it->second.join_with(val);
+        ++gepOverlayVersion;
+        ++gepFieldVersion[objId];
+    }
+
+    AbstractInterpretation::storeAddressValue(addr, val, node);
 }
 
 bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
@@ -127,29 +240,17 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
 
 void FullSparseAbstractInterpretation::pullObjValueFlows(const ICFGNode* node)
 {
-    NodeBS denseLocalObjs;
-    for (const auto& item : abstractTrace[node].getLocToVal())
-    {
-        NodeID id = item.first;
-        if (SVFUtil::isa<GepObjVar>(svfir->getGNode(id)))
-            denseLocalObjs.set(id);
-    }
-    // e.g.
-    //     store i32 7, i32* %p   ; def-site D for obj_p
-    //     ...
-    //     %v = load i32, i32* %p ; use-site U
-    // Step 1: intra-node SVFG-pull.  For each VFG node hosted at U, walk
-    // the indirect SVFG in-edges back to D; for every obj id labelling
-    // the edge, JOIN the obj's value at D into U's trace.  GepObjVar
-    // labels are pulled exactly.  BaseObjVar labels are expanded to every
-    // sibling field via getAllFieldsObjVars because Andersen may label a
-    // field-sensitive consumer with the field-insensitive base.
+    // Step 1: intra-node SVFG-pull for Base/Dummy ObjVars only.  For each
+    // VFG node at `node`, walk the indirect SVFG in-edges back to their
+    // def-site and JOIN the obj's value into trace[node].
     //
-    // Gep fields already present at this node came through the dense
-    // ICFG propagation in joinStates.  Treat those as authoritative and
-    // do not re-join older SVFG defs over them; otherwise a killed init
-    // field can be reintroduced at the load site (e.g. a[9] initialized
-    // to 9, overwritten to 10, then pulled back to [9,10]).
+    // PR #1820 Gep-Overlay: GepObjVar field values do NOT flow through
+    // per-node trace anymore — they live in the flat, flow-insensitive
+    // `gepOverlay` (store folds, load consults).  So we SKIP GepObjVar ids
+    // here and do NOT expand a base label to its sibling fields.  This is the
+    // key memory fix: expanding to getAllFieldsObjVars and storing each field
+    // per node re-accumulated O(nodes x fields) trace state — the same blow-up
+    // the dense flood caused (it made big programs OOM in the AE phase).
     // Reads/writes go through SemiSparse to bypass FullSparse's refinement
     // layer (these are def-site pulls, not real stores; refinement is
     // applied later in propagateAndApplyRefinement).
@@ -181,47 +282,25 @@ void FullSparseAbstractInterpretation::pullObjValueFlows(const ICFGNode* node)
                     for (NodeID id : indEdge->getPointsTo())
                     {
                         SVFVar* gn = svfir->getGNode(id);
-                        NodeBS idsToPull;
-
+                        // GepObjVar values ride the overlay, not per-node trace.
                         if (SVFUtil::isa<GepObjVar>(gn))
+                            continue;
+                        const ObjVar* obj = SVFUtil::dyn_cast<ObjVar>(gn);
+                        if (obj &&
+                                SemiSparseAbstractInterpretation::hasAbsValue(
+                                    obj, srcICFG))
                         {
-                            idsToPull.set(id);
-                        }
-                        else if (auto* base = SVFUtil::dyn_cast<BaseObjVar>(gn))
-                        {
-                            idsToPull = svfir->getAllFieldsObjVars(base);
-                        }
-                        else
-                        {
-                            idsToPull.set(id);
-                        }
-
-                        for (NodeID fid : idsToPull)
-                        {
-                            const ObjVar* obj =
-                                SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(fid));
-                            // Dense Gep propagation has already carried the
-                            // current value to this node.
-                            if (denseLocalObjs.test(fid))
+                            AbstractValue cur;
+                            if (SemiSparseAbstractInterpretation::
+                                    hasAbsValue(obj, node))
                             {
-                                continue;
+                                cur = SemiSparseAbstractInterpretation::
+                                      getAbsValue(obj, node);
                             }
-                            if (obj &&
-                                    SemiSparseAbstractInterpretation::hasAbsValue(
-                                        obj, srcICFG))
-                            {
-                                AbstractValue cur;
-                                if (SemiSparseAbstractInterpretation::
-                                        hasAbsValue(obj, node))
-                                {
-                                    cur = SemiSparseAbstractInterpretation::
-                                          getAbsValue(obj, node);
-                                }
-                                cur.join_with(SemiSparseAbstractInterpretation::
-                                              getAbsValue(obj, srcICFG));
-                                SemiSparseAbstractInterpretation::
-                                updateAbsValue(obj, cur, node);
-                            }
+                            cur.join_with(SemiSparseAbstractInterpretation::
+                                          getAbsValue(obj, srcICFG));
+                            SemiSparseAbstractInterpretation::
+                            updateAbsValue(obj, cur, node);
                         }
                     }
                 }

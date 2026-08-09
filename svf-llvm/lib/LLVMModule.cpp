@@ -31,6 +31,8 @@
 
 #include <queue>
 #include <algorithm>
+#include <cstdio>
+#include <cstdlib>
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/LLVMUtil.h"
@@ -51,6 +53,57 @@
 
 using namespace std;
 using namespace SVF;
+
+namespace
+{
+
+bool aeLLVMModuleEnvEnabled(const char* name)
+{
+    const char* value = std::getenv(name);
+    if (value == nullptr || value[0] == '\0')
+        return false;
+    return value[0] != '0';
+}
+
+bool aeLLVMModuleAllowMissingSymbol()
+{
+    static bool enabled = aeLLVMModuleEnvEnabled("AE_ALLOW_MISSING_SYMBOL") ||
+                          aeLLVMModuleEnvEnabled("AE_ALLOW_MISSING_STATE");
+    return enabled;
+}
+
+unsigned long aeLLVMModuleEnvUL(const char* name, unsigned long fallback)
+{
+    const char* value = std::getenv(name);
+    if (value == nullptr || value[0] == '\0')
+        return fallback;
+    char* end = nullptr;
+    unsigned long parsed = std::strtoul(value, &end, 10);
+    return end == value ? fallback : parsed;
+}
+
+unsigned long aeLLVMModuleMissingSymbolDumpEvery()
+{
+    static unsigned long every = aeLLVMModuleEnvUL("AE_MISSING_SYMBOL_DUMP_EVERY", 1000);
+    return every;
+}
+
+void aeLLVMModuleDumpMissingSymbol(const char* kind, const Value* value)
+{
+    static unsigned long count = 0;
+    ++count;
+    unsigned long every = aeLLVMModuleMissingSymbolDumpEvery();
+    if (every == 0 || count % every != 1)
+        return;
+
+    std::string name = value && value->hasName() ? value->getName().str() : "<unnamed>";
+    std::fprintf(stderr,
+                 "[LLVM-MISSING-SYM] use %s count=%lu value=%p name=%s\n",
+                 kind, count, static_cast<const void*>(value), name.c_str());
+    std::fflush(stderr);
+}
+
+} // namespace
 
 /*
   svf.main() is used to model the real entry point of a C++ program, which
@@ -1079,6 +1132,15 @@ void LLVMModuleSet::dumpModulesToFile(const std::string& suffix)
 
 NodeID LLVMModuleSet::getValueNode(const Value *llvm_value)
 {
+    if (llvm_value == nullptr)
+    {
+        if (aeLLVMModuleAllowMissingSymbol())
+        {
+            aeLLVMModuleDumpMissingSymbol("blkptr", llvm_value);
+            return svfir->blkPtrSymID();
+        }
+        assert(false && "null llvm value");
+    }
     if (SVFUtil::isa<ConstantPointerNull>(llvm_value))
         return svfir->nullPtrSymID();
     else if (SVFUtil::isa<UndefValue>(llvm_value))
@@ -1086,7 +1148,15 @@ NodeID LLVMModuleSet::getValueNode(const Value *llvm_value)
     else
     {
         ValueToIDMapTy::const_iterator iter = valSymMap.find(llvm_value);
-        assert(iter!=valSymMap.end() &&"value sym not found");
+        if(iter == valSymMap.end())
+        {
+            if (aeLLVMModuleAllowMissingSymbol())
+            {
+                aeLLVMModuleDumpMissingSymbol("blkptr", llvm_value);
+                return svfir->blkPtrSymID();
+            }
+            assert(iter!=valSymMap.end() &&"value sym not found");
+        }
         return iter->second;
     }
 }
@@ -1100,10 +1170,27 @@ bool LLVMModuleSet::hasValueNode(const Value *val)
 
 NodeID LLVMModuleSet::getObjectNode(const Value *llvm_value)
 {
+    if (llvm_value == nullptr)
+    {
+        if (aeLLVMModuleAllowMissingSymbol())
+        {
+            aeLLVMModuleDumpMissingSymbol("blackhole-object", llvm_value);
+            return svfir->blackholeSymID();
+        }
+        assert(false && "null llvm object value");
+    }
     if (const GlobalVariable* glob = SVFUtil::dyn_cast<GlobalVariable>(llvm_value))
         llvm_value = LLVMUtil::getGlobalRep(glob);
     ValueToIDMapTy::const_iterator iter = objSymMap.find(llvm_value);
-    assert(iter!=objSymMap.end() && "obj sym not found");
+    if(iter == objSymMap.end())
+    {
+        if (aeLLVMModuleAllowMissingSymbol())
+        {
+            aeLLVMModuleDumpMissingSymbol("blackhole-object", llvm_value);
+            return svfir->blackholeSymID();
+        }
+        assert(iter!=objSymMap.end() && "obj sym not found");
+    }
     return iter->second;
 }
 

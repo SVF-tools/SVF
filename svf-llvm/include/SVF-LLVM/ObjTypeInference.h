@@ -54,6 +54,7 @@ private:
     ValueToInferSites _valueToInferSites; // value inference site cache
     ValueToType _valueToType; // value type cache
     ValueToSources _valueToAllocs; // value allocations (stack, static, heap) cache
+    Set<const Value *> _tbaaInferenceAttempted; // negative cache for heap layout recovery
     ValueToClassNames _thisPtrClassNames; // thisptr class name cache
     ValueToSources _valueToAllocOrClsNameSources; // value alloc/clsname sources cache
     ObjToClsNameSources _objToClsNameSources; // alloc clsname sources cache

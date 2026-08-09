@@ -35,9 +35,42 @@
 #include "Util/GeneralType.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
+#include <cstdlib>
+#include <string>
 
 using namespace SVF;
 using namespace SVFUtil;
+
+namespace
+{
+bool aeVFGAllowMissingState()
+{
+    static const bool allow = []()
+    {
+        const char* raw = std::getenv("AE_ALLOW_MISSING_STATE");
+        if (raw == nullptr || *raw == '\0')
+            return false;
+        std::string text(raw);
+        return text != "0" && text != "false" && text != "FALSE" &&
+               text != "off" && text != "OFF" && text != "no" && text != "NO";
+    }();
+    return allow;
+}
+
+unsigned long aeVFGMissingDefDumpEvery()
+{
+    static const unsigned long every = []()
+    {
+        const char* raw = std::getenv("AE_VFG_MISSING_DEF_DUMP_EVERY");
+        if (raw == nullptr || *raw == '\0')
+            return 1000UL;
+        char* end = nullptr;
+        unsigned long parsed = std::strtoul(raw, &end, 10);
+        return (end == raw || parsed == 0) ? 1000UL : parsed;
+    }();
+    return every;
+}
+}
 
 const std::string VFGNode::toString() const
 {
@@ -663,6 +696,28 @@ VFGEdge* VFG::addIntraDirectVFEdge(NodeID srcId, NodeID dstId)
     }
 }
 
+VFGEdge* VFG::addIntraDirectVFEdgeIfDef(const ValVar* srcVar, NodeID dstId, const char* reason)
+{
+    if (hasDef(srcVar))
+        return addIntraDirectVFEdge(getDef(srcVar), dstId);
+
+    if (!aeVFGAllowMissingState())
+        assert(false && "ValVar does not have a definition??");
+
+    static unsigned long missing = 0;
+    ++missing;
+    const unsigned long every = aeVFGMissingDefDumpEvery();
+    if (missing <= 20 || (every != 0 && missing % every == 0))
+    {
+        outs() << "[VFG-MISSING-DEF] skip direct edge count=" << missing
+               << " srcVar=" << srcVar->getId()
+               << " dstNode=" << dstId
+               << " reason=" << (reason == nullptr ? "unknown" : reason)
+               << "\n";
+    }
+    return nullptr;
+}
+
 /*!
  * Add interprocedural call edges for top level pointers
  */
@@ -724,20 +779,20 @@ void VFG::connectDirectVFGEdges()
             if (stmtNode->getSrcNode()->isConstDataOrAggDataButNotNullPtr() == false)
                 // for ptr vfg, we skip src node of integer type if it is at a int2ptr copystmt
                 if(isInterestedSVFVar(stmtNode->getSrcNode()))
-                    addIntraDirectVFEdge(getDef(SVFUtil::cast<ValVar>(stmtNode->getSrcNode())), nodeId);
+                    addIntraDirectVFEdgeIfDef(SVFUtil::cast<ValVar>(stmtNode->getSrcNode()), nodeId, "stmt-src");
             if (const GepStmt* gepStmt = SVFUtil::dyn_cast<GepStmt>(stmtNode->getSVFStmt()))
             {
                 for (const auto &varType: gepStmt->getOffsetVarAndGepTypePairVec())
                 {
                     if(varType.first->isConstDataOrAggDataButNotNullPtr() || isInterestedSVFVar(varType.first) == false)
                         continue;
-                    addIntraDirectVFEdge(getDef(varType.first), nodeId);
+                    addIntraDirectVFEdgeIfDef(varType.first, nodeId, "gep-offset");
                 }
             }
             /// for store, connect the RHS/LHS pointer to its def
             if(SVFUtil::isa<StoreVFGNode>(stmtNode) && (stmtNode->getDstNode()->isConstDataOrAggDataButNotNullPtr() == false))
             {
-                addIntraDirectVFEdge(getDef(SVFUtil::cast<ValVar>(stmtNode->getDstNode())), nodeId);
+                addIntraDirectVFEdgeIfDef(SVFUtil::cast<ValVar>(stmtNode->getDstNode()), nodeId, "store-dst");
             }
 
         }
@@ -746,7 +801,7 @@ void VFG::connectDirectVFGEdges()
             for (PHIVFGNode::OPVers::const_iterator it = phiNode->opVerBegin(), eit = phiNode->opVerEnd(); it != eit; it++)
             {
                 if (it->second->isConstDataOrAggDataButNotNullPtr() == false)
-                    addIntraDirectVFEdge(getDef(it->second), nodeId);
+                    addIntraDirectVFEdgeIfDef(it->second, nodeId, "phi-op");
             }
         }
         else if(BinaryOPVFGNode* binaryNode = SVFUtil::dyn_cast<BinaryOPVFGNode>(node))
@@ -754,7 +809,7 @@ void VFG::connectDirectVFGEdges()
             for (BinaryOPVFGNode::OPVers::const_iterator it = binaryNode->opVerBegin(), eit = binaryNode->opVerEnd(); it != eit; it++)
             {
                 if (it->second->isConstDataOrAggDataButNotNullPtr() == false)
-                    addIntraDirectVFEdge(getDef(it->second), nodeId);
+                    addIntraDirectVFEdgeIfDef(it->second, nodeId, "binary-op");
             }
         }
         else if(UnaryOPVFGNode* unaryNode = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
@@ -762,7 +817,7 @@ void VFG::connectDirectVFGEdges()
             for (UnaryOPVFGNode::OPVers::const_iterator it = unaryNode->opVerBegin(), eit = unaryNode->opVerEnd(); it != eit; it++)
             {
                 if (it->second->isConstDataOrAggDataButNotNullPtr() == false)
-                    addIntraDirectVFEdge(getDef(it->second), nodeId);
+                    addIntraDirectVFEdgeIfDef(it->second, nodeId, "unary-op");
             }
         }
         else if(CmpVFGNode* cmpNode = SVFUtil::dyn_cast<CmpVFGNode>(node))
@@ -770,19 +825,19 @@ void VFG::connectDirectVFGEdges()
             for (CmpVFGNode::OPVers::const_iterator it = cmpNode->opVerBegin(), eit = cmpNode->opVerEnd(); it != eit; it++)
             {
                 if (it->second->isConstDataOrAggDataButNotNullPtr() == false)
-                    addIntraDirectVFEdge(getDef(it->second), nodeId);
+                    addIntraDirectVFEdgeIfDef(it->second, nodeId, "cmp-op");
             }
         }
         else if(BranchVFGNode* branchNode = SVFUtil::dyn_cast<BranchVFGNode>(node))
         {
             const ValVar* cond = branchNode->getBranchStmt()->getCondition();
             if (cond->isConstDataOrAggDataButNotNullPtr() == false)
-                addIntraDirectVFEdge(getDef(cond), nodeId);
+                addIntraDirectVFEdgeIfDef(cond, nodeId, "branch-cond");
         }
         else if(ActualParmVFGNode* actualParm = SVFUtil::dyn_cast<ActualParmVFGNode>(node))
         {
             if (actualParm->getParam()->isConstDataOrAggDataButNotNullPtr() == false)
-                addIntraDirectVFEdge(getDef(actualParm->getParam()), nodeId);
+                addIntraDirectVFEdgeIfDef(actualParm->getParam(), nodeId, "actual-param");
         }
         else if(FormalParmVFGNode* formalParm = SVFUtil::dyn_cast<FormalParmVFGNode>(node))
         {
@@ -802,7 +857,7 @@ void VFG::connectDirectVFGEdges()
         else if(FormalRetVFGNode* calleeRet = SVFUtil::dyn_cast<FormalRetVFGNode>(node))
         {
             /// connect formal ret to its definition node
-            addIntraDirectVFEdge(getDef(calleeRet->getRet()), nodeId);
+            addIntraDirectVFEdgeIfDef(calleeRet->getRet(), nodeId, "formal-ret");
 
             /// connect formal ret to actual ret
             for(RetPESet::const_iterator it = calleeRet->retPEBegin(), eit = calleeRet->retPEEnd(); it!=eit; ++it)
@@ -842,6 +897,11 @@ void VFG::connectDirectVFGEdges()
                     joins.end(); iter != eiter; ++iter)
         {
             TDJoinPE* joinedge = SVFUtil::cast<TDJoinPE>(*iter);
+            if (!hasDef(joinedge->getLHSVar()))
+            {
+                addIntraDirectVFEdgeIfDef(joinedge->getLHSVar(), 0, "thread-join-lhs");
+                continue;
+            }
             NodeID callsiteRev = getDef(joinedge->getLHSVar());
             FormalRetVFGNode* calleeRet = getFormalRetVFGNode(joinedge->getRHSVar());
             addRetEdge(calleeRet->getId(),callsiteRev, getCallSiteID(joinedge->getCallSite(), calleeRet->getFun()));

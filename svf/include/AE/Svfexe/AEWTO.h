@@ -26,7 +26,7 @@
  *  Created on: Feb 25, 2026
  *      Author: Jiawei Wang
  *
- * Runs Andersen's pointer analysis and builds the per-function WTO
+ * Runs pointer analysis and builds the per-function WTO
  * (Weak Topological Order) consumed by Abstract Interpretation.  Also
  * caches per-cycle ValVar sets for the semi-sparse loop helpers.
  */
@@ -52,8 +52,8 @@ public:
     AEWTO(SVFIR* pag, ICFG* icfg);
     virtual ~AEWTO();
 
-    /// Accessors for Andersen's results
-    AndersenWaveDiff* getPointerAnalysis() const
+    /// Accessors for pointer-analysis results.
+    BVDataPTAImpl* getPointerAnalysis() const
     {
         return pta;
     }
@@ -89,7 +89,7 @@ public:
 private:
     SVFIR* svfir;
     ICFG* icfg;
-    AndersenWaveDiff* pta;
+    BVDataPTAImpl* pta;
     CallGraph* callGraph;
     CallGraphSCC* callGraphSCC;
 

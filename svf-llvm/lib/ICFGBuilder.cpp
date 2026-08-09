@@ -35,8 +35,64 @@
 #include "SVF-LLVM/LLVMModule.h"
 #include "SVF-LLVM/LLVMUtil.h"
 
+#include <cstdlib>
+#include <cstdio>
+#include <string>
+
 using namespace SVF;
 using namespace SVFUtil;
+
+namespace
+{
+bool aeICFGEnvEnabled(const char* value)
+{
+    if (value == nullptr || value[0] == '\0')
+        return false;
+    std::string text(value);
+    return text != "0" && text != "false" && text != "FALSE" &&
+           text != "off" && text != "OFF" && text != "no" && text != "NO";
+}
+
+bool aeICFGTraceEnabled()
+{
+    static bool enabled = aeICFGEnvEnabled(std::getenv("AE_ICFG_TRACE"));
+    return enabled;
+}
+
+unsigned long aeICFGEnvUL(const char* name, unsigned long fallback)
+{
+    const char* value = std::getenv(name);
+    if (value == nullptr || value[0] == '\0')
+        return fallback;
+    char* end = nullptr;
+    unsigned long parsed = std::strtoul(value, &end, 10);
+    return end == value ? fallback : parsed;
+}
+
+unsigned long aeICFGFunDumpEvery()
+{
+    static unsigned long every = aeICFGEnvUL("AE_ICFG_FUN_DUMP_EVERY", 1000);
+    return every;
+}
+
+unsigned long aeICFGInstDumpEvery()
+{
+    static unsigned long every = aeICFGEnvUL("AE_ICFG_INST_DUMP_EVERY", 0);
+    return every;
+}
+
+void aeICFGTraceFun(const char* stage, unsigned long idx, const Function* fun)
+{
+    if (!aeICFGTraceEnabled())
+        return;
+    unsigned long every = aeICFGFunDumpEvery();
+    if (every == 0 || idx % every != 0)
+        return;
+    std::fprintf(stderr, "[ICFG] %s fun=%lu name=%s\n",
+                 stage, idx, fun ? fun->getName().str().c_str() : "<null>");
+    std::fflush(stderr);
+}
+}
 
 
 /*!
@@ -50,6 +106,7 @@ ICFG* ICFGBuilder::build()
     addGlobalICFGNode();
 
     // Add function entry and exit
+    unsigned long entryExitIdx = 0;
     for (Module &M : llvmModuleSet()->getLLVMModules())
     {
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
@@ -57,12 +114,15 @@ ICFG* ICFGBuilder::build()
             const Function *fun = &*F;
             if (fun->isDeclaration())
                 continue;
+            ++entryExitIdx;
+            aeICFGTraceFun("entry-exit", entryExitIdx, fun);
             addFunEntryBlock(fun);
             addFunExitBlock(fun);
         }
 
     }
 
+    unsigned long bodyIdx = 0;
     for (Module &M : llvmModuleSet()->getLLVMModules())
     {
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
@@ -70,6 +130,8 @@ ICFG* ICFGBuilder::build()
             const Function *fun = &*F;
             if (fun->isDeclaration())
                 continue;
+            ++bodyIdx;
+            aeICFGTraceFun("body-start", bodyIdx, fun);
             WorkList worklist;
             processFunEntry(fun,worklist);
             processUnreachableFromEntry(fun, worklist);
@@ -77,6 +139,7 @@ ICFG* ICFGBuilder::build()
             processFunExit(fun);
 
             checkICFGNodesVisited(fun);
+            aeICFGTraceFun("body-done", bodyIdx, fun);
         }
 
     }
@@ -148,9 +211,19 @@ void ICFGBuilder::processUnreachableFromEntry(const Function* fun, WorkList& wor
 void ICFGBuilder::processFunBody(WorkList& worklist)
 {
     /// function body
+    unsigned long processed = 0;
+    unsigned long instEvery = aeICFGInstDumpEvery();
     while (!worklist.empty())
     {
         const Instruction* inst = worklist.pop();
+        ++processed;
+        if (aeICFGTraceEnabled() && instEvery != 0 && processed % instEvery == 0)
+        {
+            std::fprintf(stderr, "[ICFG] body-inst count=%lu fun=%s opcode=%s\n",
+                         processed, inst->getFunction()->getName().str().c_str(),
+                         inst->getOpcodeName());
+            std::fflush(stderr);
+        }
         ICFGNode* srcNode = getICFGNode(inst);
         if (SVFUtil::isa<ReturnInst>(inst))
         {
