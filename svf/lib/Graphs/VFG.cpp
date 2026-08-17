@@ -1246,7 +1246,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
             }
             else if (SVFUtil::isa<GepStmt>(edge))
             {
-                rawstr <<  ",color=purple";
+                rawstr <<  ",color=\"purple:purple\"";
             }
             else if (SVFUtil::isa<StoreStmt>(edge))
             {

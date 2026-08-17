@@ -707,12 +707,6 @@ private:
         return addNode(node);
     }
 
-    inline NodeID addConstantAggValNode(const NodeID i, const ICFGNode* icfgNode, const SVFType* svfType)
-    {
-        SVFVar* node = new ConstAggValVar(i, icfgNode, svfType);
-        return addNode(node);
-    }
-
     inline NodeID addConstantDataValNode(const NodeID i, const ICFGNode* icfgNode, const SVFType* type)
     {
         SVFVar* node = new ConstDataValVar(i, icfgNode, type);
@@ -776,11 +770,6 @@ private:
     {
         GlobalObjVar* gObj = new GlobalObjVar(i, ti, node);
         return addBaseObjNode(gObj);
-    }
-    inline NodeID addConstantAggObjNode(const NodeID i, ObjTypeInfo* ti, const ICFGNode* node)
-    {
-        ConstAggObjVar* conObj = new ConstAggObjVar(i, ti, node);
-        return addBaseObjNode(conObj);
     }
     inline NodeID addConstantDataObjNode(const NodeID i, ObjTypeInfo* ti, const ICFGNode* node)
     {

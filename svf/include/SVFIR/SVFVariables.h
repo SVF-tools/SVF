@@ -1367,58 +1367,6 @@ public:
     virtual const std::string toString() const;
 };
 
-class ConstAggValVar: public ValVar
-{
-    friend class GraphDBClient;
-
-
-public:
-    ///  Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const ConstAggValVar*)
-    {
-        return true;
-    }
-    static inline bool classof(const ValVar* node)
-    {
-        return node->getNodeKind() == ConstAggValNode;
-    }
-    static inline bool classof(const SVFVar* node)
-    {
-        return node->getNodeKind() == ConstAggValNode;
-    }
-    static inline bool classof(const GenericPAGNodeTy* node)
-    {
-        return node->getNodeKind() == ConstAggValNode;
-    }
-    static inline bool classof(const SVFValue* node)
-    {
-        return node->getNodeKind() == ConstAggValNode;
-    }
-    //@}
-
-    /// Constructor
-    ConstAggValVar(NodeID i, const ICFGNode* icn, const SVFType* svfTy)
-        : ValVar(i, svfTy, icn, ConstAggValNode)
-    {
-        type = svfTy;
-    }
-
-
-    virtual bool isConstDataOrAggData() const
-    {
-        return true;
-    }
-
-    virtual bool isConstDataOrAggDataButNotNullPtr() const
-    {
-        return true;
-    }
-
-    virtual const std::string toString() const;
-};
-
-
 class ConstDataValVar : public ValVar
 {
     friend class GraphDBClient;
@@ -1721,61 +1669,6 @@ public:
 
     }
 
-
-    virtual const std::string toString() const;
-};
-
-class ConstAggObjVar : public BaseObjVar
-{
-    friend class GraphDBClient;
-
-
-public:
-    ///  Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const ConstAggObjVar*)
-    {
-        return true;
-    }
-    static inline bool classof(const BaseObjVar* node)
-    {
-        return node->getNodeKind() == ConstAggObjNode;
-    }
-
-    static inline bool classof(const ObjVar* node)
-    {
-        return node->getNodeKind() == ConstAggObjNode;
-    }
-    static inline bool classof(const SVFVar* node)
-    {
-        return node->getNodeKind() == ConstAggObjNode;
-    }
-    static inline bool classof(const GenericPAGNodeTy* node)
-    {
-        return node->getNodeKind() == ConstAggObjNode;
-    }
-    static inline bool classof(const SVFValue* node)
-    {
-        return node->getNodeKind() == ConstAggObjNode;
-    }
-    //@}
-
-    /// Constructor
-    ConstAggObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node)
-        : BaseObjVar(i,  ti, node, ConstAggObjNode)
-    {
-
-    }
-
-    virtual bool isConstDataOrAggData() const
-    {
-        return true;
-    }
-
-    virtual bool isConstDataOrAggDataButNotNullPtr() const
-    {
-        return true;
-    }
 
     virtual const std::string toString() const;
 };

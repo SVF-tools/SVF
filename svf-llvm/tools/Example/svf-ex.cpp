@@ -34,6 +34,7 @@
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 #include "WPA/Andersen.h"
+#include <llvm/Support/ManagedStatic.h>
 
 using namespace llvm;
 using namespace std;
