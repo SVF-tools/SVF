@@ -62,6 +62,17 @@ public:
     typedef Set<CxtThreadStmt> CxtThreadStmtSet;
     typedef Map<CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
     typedef Map<const ICFGNode*,CxtThreadStmtSet> InstToThreadStmtSetMap;
+    /// Query-only exact compression of the context-sensitive fixed point.
+    /// For one ICFG node, interleavingByTid[t] is the union of the
+    /// interleaving sets of every calling context in which thread t reaches
+    /// the node. MHP's existential context-pair query factors exactly through
+    /// these per-tid unions (see mayHappenInParallelInst).
+    struct NodeThreadSummary
+    {
+        NodeBS tids;
+        Map<NodeID, NodeBS> interleavingByTid;
+    };
+    typedef Map<const ICFGNode*, NodeThreadSummary> InstToThreadSummaryMap;
     typedef SVFLoopAndDomInfo::LoopBBs LoopBBs;
 
     typedef Set<CxtStmt> LockSpan;
@@ -69,8 +80,20 @@ public:
     typedef std::pair<const FunObjVar*,const FunObjVar*> FuncPair;
     typedef Map<FuncPair, bool> FuncPairToBool;
 
+    enum class StateRepresentation
+    {
+        MaterializedContexts,
+        QuerySummaries
+    };
+
     /// Constructor
-    MHP(TCT* t);
+    /// @param representation Keep per-context copies
+    /// for clients that enumerate raw states (the pre-analysis detector and
+    /// slicer). Main-phase clients issue only MHP queries and can use the exact
+    /// projected query summary instead.
+    explicit MHP(
+        TCT* t,
+        StateRepresentation representation = StateRepresentation::MaterializedContexts);
 
     /// Destructor
     virtual ~MHP();
@@ -100,12 +123,15 @@ public:
     /// Whether the function is connected from main function in thread call graph
     bool isConnectedfromMain(const FunObjVar* fun);
 
-//    LockSpan getSpanfromCxtLock(NodeID l);
     /// Interface to query whether two instructions may happen-in-parallel
     virtual bool mayHappenInParallel(const ICFGNode* i1, const ICFGNode* i2);
     virtual bool mayHappenInParallelCache(const ICFGNode* i1, const ICFGNode* i2);
     virtual bool mayHappenInParallelInst(const ICFGNode* i1, const ICFGNode* i2);
     virtual bool executedByTheSameThread(const ICFGNode* i1, const ICFGNode* i2);
+
+    /// Representation-independent per-thread summary used by MHP clients.
+    /// Available after analyze() in both materialized and summary-only modes.
+    const NodeThreadSummary* getThreadSummary(const ICFGNode* inst) const;
 
     /// Get interleaving thread for statement inst
     //@{
@@ -137,16 +163,13 @@ public:
     void printInterleaving();
 
 protected:
-
-    inline const CallGraph::FunctionSet& getCallee(const CallICFGNode* inst, CallGraph::FunctionSet& callees)
-    {
-        tcg->getCallees(inst, callees);
-        return callees;
-    }
     /// Update non-candidate functions' interleaving.
     /// Copy interleaving threads of the entry inst to other insts.
     template<class ICFGGraph, class CGGraph> void updateNonCandidateFunInterleaving(ICFGGraph icfg, CGGraph cg);
 
+    /// Build the exact, context-compressed representation used by repeated MHP
+    /// queries after the context-sensitive fixed point has converged.
+    template<class ICFGGraph, class CGGraph> void buildQuerySummaries(ICFGGraph icfg, CGGraph cg);
     /// Handle non-candidate function
     template<class ICFGGraph, class CGGraph> void handleNonCandidateFun(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts);
 
@@ -302,6 +325,9 @@ protected:
     BBToSymJoinsMap bbToSymJoins;   ///< loop block -> symmetric in-loop joins of that loop
     SymJoinToLoopMap symJoinLoop;   ///< symmetric in-loop join -> its loop's blocks
     InstToThreadStmtSetMap instToTSMap; ///< Map an instruction to its ThreadStmtSet
+    InstToThreadSummaryMap instToThreadSummary; ///< Exact per-node/per-tid query compression
+    Map<const ICFGNode*, const ICFGNode*> querySummaryOwner; ///< Non-candidate node -> entry summary
+    StateRepresentation stateRepresentation;
     FuncPairToBool nonCandidateFuncMHPRelMap;
 
 public:

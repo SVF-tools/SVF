@@ -503,6 +503,11 @@ template<> struct GenericGraphTraits<SVF::CallGraph*> : public GenericGraphTrait
 {
     typedef SVF::CallGraphNode*NodeRef;
 
+    static const SVF::CallGraphNode* getRawNode(const SVF::CallGraphNode* n)
+    {
+        return n;
+    }
+
     // Graph-intrinsic queries shared with the sliced-view specialisation
     // (GenericGraphTraits<const SlicedThreadCallGraphView*>).
     //@{
@@ -514,10 +519,36 @@ template<> struct GenericGraphTraits<SVF::CallGraph*> : public GenericGraphTrait
         for (SVF::CallGraphEdge* e : n->getInEdges())
             out.push_back(e);
     }
-    /// The CallGraph object whose nodes an analysis over this graph scans.
-    static const SVF::CallGraph* getCallGraph(const SVF::CallGraph* g)
+    static void getOutEdges(const SVF::CallGraph*, const SVF::CallGraphNode* n,
+                            std::vector<const SVF::CallGraphEdge*>& out)
     {
-        return g;
+        out.clear();
+        for (SVF::CallGraphEdge* e : n->getOutEdges())
+            out.push_back(e);
+    }
+    static void getDirectCalls(const SVF::CallGraph*, const SVF::CallGraphEdge* e,
+                               std::vector<const SVF::CallICFGNode*>& out)
+    {
+        out.assign(e->getDirectCalls().begin(), e->getDirectCalls().end());
+    }
+    static void getIndirectCalls(const SVF::CallGraph*, const SVF::CallGraphEdge* e,
+                                 std::vector<const SVF::CallICFGNode*>& out)
+    {
+        out.assign(e->getIndirectCalls().begin(), e->getIndirectCalls().end());
+    }
+    static bool containsCallSite(const SVF::CallGraph*,
+                                 const SVF::CallGraphEdge* e,
+                                 const SVF::CallICFGNode* callSite)
+    {
+        return e->getDirectCalls().count(callSite) ||
+               e->getIndirectCalls().count(callSite);
+    }
+    static void getCallees(SVF::CallGraph* g,
+                           const SVF::CallICFGNode* callSite,
+                           SVF::CallGraph::FunctionSet& callees)
+    {
+        callees.clear();
+        g->getCallees(callSite, callees);
     }
     //@}
 };

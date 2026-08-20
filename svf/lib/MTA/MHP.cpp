@@ -51,7 +51,10 @@ using namespace SVFUtil;
 /*!
  * Constructor
  */
-MHP::MHP(TCT* t) : tcg(t->getThreadCallGraph()), tct(t), numOfTotalQueries(0), numOfMHPQueries(0),
+MHP::MHP(TCT* t, StateRepresentation representation)
+    : tcg(t->getThreadCallGraph()), tct(t),
+      stateRepresentation(representation),
+      numOfTotalQueries(0), numOfMHPQueries(0),
     interleavingTime(0), interleavingQueriesTime(0)
 {
     fja = new ForkJoinAnalysis(tct);
@@ -189,10 +192,88 @@ void MHP::analyzeInterleaving(ICFGGraph icfg, CGGraph cg)
     }
 
     /// update non-candidate functions' interleaving
-    updateNonCandidateFunInterleaving(icfg, cg);
+    if (stateRepresentation == StateRepresentation::MaterializedContexts)
+        updateNonCandidateFunInterleaving(icfg, cg);
+    buildQuerySummaries(icfg, cg);
 
     if (Options::PrintInterLev())
         printInterleaving();
+}
+
+/*!
+ * Compress the converged context-sensitive states for repeated MHP queries.
+ * Contexts are retained in the propagation maps; this is a query-only index and
+ * therefore cannot change the fixed point.
+ */
+template<class ICFGGraph, class CGGraph>
+void MHP::buildQuerySummaries(ICFGGraph icfg, CGGraph cg)
+{
+    instToThreadSummary.clear();
+    querySummaryOwner.clear();
+    for (const auto& instAndStates : instToTSMap)
+    {
+        NodeThreadSummary& summary = instToThreadSummary[instAndStates.first];
+        for (const CxtThreadStmt& state : instAndStates.second)
+        {
+            const NodeID tid = state.getTid();
+            summary.tids.set(tid);
+            ThreadStmtToThreadInterleav::const_iterator it =
+                threadStmtToThreadInterLeav.find(state);
+            assert(it != threadStmtToThreadInterLeav.end() &&
+                   "MHP query summary requires a converged context state");
+            summary.interleavingByTid[tid] |= it->second;
+        }
+    }
+
+    if (stateRepresentation == StateRepresentation::MaterializedContexts)
+        return;
+
+    // The materialized representation copies a non-candidate function entry's state
+    // unchanged to each of that function's nodes. Main-phase clients need only
+    // query answers, so project the already-compressed entry summary instead of
+    // creating one CxtThreadStmt and one NodeBS per context at every node.
+    using CGTraits = GenericGraphTraits<CGGraph>;
+    for (auto nodeIt = CGTraits::nodes_begin(cg),
+              nodeEnd = CGTraits::nodes_end(cg); nodeIt != nodeEnd; ++nodeIt)
+    {
+        const CallGraphNode* callGraphNode = CGTraits::getRawNode(*nodeIt);
+        const FunObjVar* fun = callGraphNode->getFunction();
+        if (tct->isCandidateFun(fun) || isExtCall(fun))
+            continue;
+
+        const ICFGNode* entryNode =
+            GenericGraphTraits<ICFGGraph>::getFunEntry(icfg, fun);
+        InstToThreadSummaryMap::const_iterator entryIt =
+            instToThreadSummary.find(entryNode);
+        if (entryIt == instToThreadSummary.end())
+            continue;
+
+        std::vector<const ICFGNode*> funICFGNodes;
+        GenericGraphTraits<ICFGGraph>::getFunICFGNodes(icfg, fun, funICFGNodes);
+        for (const ICFGNode* node : funICFGNodes)
+        {
+            if (node == entryNode)
+                continue;
+            const bool inserted = querySummaryOwner.emplace(node, entryNode).second;
+            assert(inserted && instToThreadSummary.find(node) == instToThreadSummary.end() &&
+                   "non-candidate internal node unexpectedly had a raw MHP state");
+            (void)inserted;
+        }
+    }
+}
+
+const MHP::NodeThreadSummary* MHP::getThreadSummary(const ICFGNode* inst) const
+{
+    InstToThreadSummaryMap::const_iterator it = instToThreadSummary.find(inst);
+    if (it != instToThreadSummary.end())
+        return &it->second;
+    const auto ownerIt = querySummaryOwner.find(inst);
+    if (ownerIt == querySummaryOwner.end())
+        return nullptr;
+    it = instToThreadSummary.find(ownerIt->second);
+    assert(it != instToThreadSummary.end() &&
+           "non-candidate query-summary owner has no entry summary");
+    return &it->second;
 }
 
 /*!
@@ -204,9 +285,12 @@ void MHP::updateNonCandidateFunInterleaving(ICFGGraph icfg, CGGraph cg)
     // Copy each non-candidate function entry's interleaving to the function's
     // other nodes under the graph. Runs after the worklist has drained, so
     // addInterleavingThread's push is inert.
-    for (const auto& item : *GenericGraphTraits<CGGraph>::getCallGraph(cg))
+    using CGTraits = GenericGraphTraits<CGGraph>;
+    for (auto nodeIt = CGTraits::nodes_begin(cg),
+              nodeEnd = CGTraits::nodes_end(cg); nodeIt != nodeEnd; ++nodeIt)
     {
-        const FunObjVar* fun = item.second->getFunction();
+        const CallGraphNode* callGraphNode = CGTraits::getRawNode(*nodeIt);
+        const FunObjVar* fun = callGraphNode->getFunction();
         if (tct->isCandidateFun(fun) || isExtCall(fun))
             continue;
 
@@ -244,9 +328,11 @@ void MHP::handleNonCandidateFun(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt&
     assert((curInst == GenericGraphTraits<ICFGGraph>::getFunEntry(icfg, curfun)) && "curInst is not the entry of non candidate function.");
     const CallStrCxt& curCxt = cts.getContext();
     CallGraphNode* node = tcg->getCallGraphNode(curfun);
-    for (CallGraphNode::const_iterator nit = node->OutEdgeBegin(), neit = node->OutEdgeEnd(); nit != neit; nit++)
+    std::vector<const CallGraphEdge*> outEdges;
+    GenericGraphTraits<CGGraph>::getOutEdges(cg, node, outEdges);
+    for (const CallGraphEdge* edge : outEdges)
     {
-        const FunObjVar* callee = (*nit)->getDstNode()->getFunction();
+        const FunObjVar* callee = edge->getDstNode()->getFunction();
         if (!isExtCall(callee))
         {
             const ICFGNode* calleeInst = GenericGraphTraits<ICFGGraph>::getFunEntry(icfg, callee);
@@ -268,21 +354,23 @@ void MHP::handleFork(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts, NodeI
 
     assert(isTDFork(call));
     const CallICFGNode* cbn = cast<CallICFGNode>(call);
-    if (tct->getThreadCallGraph()->hasCallGraphEdge(cbn))
+    CallGraphNode* callerNode = tcg->getCallGraphNode(cbn->getFun());
+    std::vector<const CallGraphEdge*> outEdges;
+    GenericGraphTraits<CGGraph>::getOutEdges(cg, callerNode, outEdges);
+    for (const CallGraphEdge* edge : outEdges)
     {
-
-        for (ThreadCallGraph::ForkEdgeSet::const_iterator cgIt = tcg->getForkEdgeBegin(cbn),
-                ecgIt = tcg->getForkEdgeEnd(cbn);
-                cgIt != ecgIt; ++cgIt)
-        {
-            const FunObjVar* svfroutine = (*cgIt)->getDstNode()->getFunction();
-            CallStrCxt newCxt = curCxt;
-            pushCxt(newCxt, cbn, svfroutine);
-            const ICFGNode* stmt = GenericGraphTraits<ICFGGraph>::getFunEntry(icfg, svfroutine);
-            CxtThread ct(newCxt, call);
-            CxtThreadStmt newcts(tct->getTCTNode(ct)->getId(), ct.getContext(), stmt);
-            addInterleavingThread(newcts, cts);
-        }
+        if (edge->getEdgeKind() != CallGraphEdge::TDForkEdge ||
+            !GenericGraphTraits<CGGraph>::containsCallSite(cg, edge, cbn))
+            continue;
+        const FunObjVar* svfroutine = edge->getDstNode()->getFunction();
+        CallStrCxt newCxt = curCxt;
+        pushCxt(newCxt, cbn, svfroutine);
+        const ICFGNode* stmt = GenericGraphTraits<ICFGGraph>::getFunEntry(icfg, svfroutine);
+        CxtThread ct(newCxt, call);
+        if (!tct->hasTCTNode(ct))
+            continue;
+        CxtThreadStmt newcts(tct->getTCTNode(ct)->getId(), ct.getContext(), stmt);
+        addInterleavingThread(newcts, cts);
     }
     handleIntra(icfg, cg, cts);
 }
@@ -361,34 +449,42 @@ void MHP::handleCall(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts, NodeI
     const ICFGNode* call = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
     const CallICFGNode* cbn = cast<CallICFGNode>(call);
-    if (tct->getThreadCallGraph()->hasCallGraphEdge(cbn))
+    CallGraphNode* callerNode = tcg->getCallGraphNode(cbn->getFun());
+    std::vector<const CallGraphEdge*> outEdges;
+    GenericGraphTraits<CGGraph>::getOutEdges(cg, callerNode, outEdges);
+    for (const CallGraphEdge* edge : outEdges)
     {
-        for (CallGraph::CallGraphEdgeSet::const_iterator cgIt = tcg->getCallEdgeBegin(cbn),
-                ecgIt = tcg->getCallEdgeEnd(cbn);
-                cgIt != ecgIt; ++cgIt)
+        if (edge->getEdgeKind() != CallGraphEdge::CallRetEdge ||
+            !GenericGraphTraits<CGGraph>::containsCallSite(cg, edge, cbn))
+            continue;
+        const FunObjVar* svfcallee = edge->getDstNode()->getFunction();
+        if (isExtCall(svfcallee))
+            continue;
+
+        CallStrCxt newCxt = curCxt;
+        pushCxt(newCxt, cbn, svfcallee);
+        const ICFGNode* svfEntryInst =
+            GenericGraphTraits<ICFGGraph>::getFunEntry(icfg, svfcallee);
+        if (svfEntryInst == nullptr)
+            continue;
+        CxtThreadStmt newCts(cts.getTid(), newCxt, svfEntryInst);
+        addInterleavingThread(newCts, cts);
+
+        // Return-flow rendezvous: if the callee's exit already has state
+        // under newCxt, forward it now (handleRet cannot see late callsites).
+        if (tct->isCandidateFun(svfcallee) && svfcallee->hasBasicBlock())
         {
-            const FunObjVar* svfcallee = (*cgIt)->getDstNode()->getFunction();
-            if (isExtCall(svfcallee))
+            const ICFGNode* exitInst =
+                GenericGraphTraits<ICFGGraph>::getFunExit(icfg, svfcallee);
+            if (exitInst == nullptr)
                 continue;
-
-            CallStrCxt newCxt = curCxt;
-            const CallICFGNode* callicfgnode = SVFUtil::cast<CallICFGNode>(call);
-            pushCxt(newCxt, callicfgnode, svfcallee);
-            const ICFGNode* svfEntryInst = GenericGraphTraits<ICFGGraph>::getFunEntry(icfg, svfcallee);
-            CxtThreadStmt newCts(cts.getTid(), newCxt, svfEntryInst);
-            addInterleavingThread(newCts, cts);
-
-            // Return-flow rendezvous: if the callee's exit already has state
-            // under newCxt, forward it now (handleRet cannot see late callsites).
-            if (tct->isCandidateFun(svfcallee) && svfcallee->hasBasicBlock())
+            CxtThreadStmt exitCts(cts.getTid(), newCxt, exitInst);
+            if (threadStmtToThreadInterLeav.find(exitCts) !=
+                threadStmtToThreadInterLeav.end())
             {
-                const ICFGNode* exitInst = svfcallee->getExitBB()->back();
-                CxtThreadStmt exitCts(cts.getTid(), newCxt, exitInst);
-                if (threadStmtToThreadInterLeav.find(exitCts) != threadStmtToThreadInterLeav.end())
-                {
-                    CxtThreadStmt retCts(cts.getTid(), curCxt, cbn->getRetICFGNode());
-                    addInterleavingThread(retCts, exitCts);
-                }
+                CxtThreadStmt retCts(cts.getTid(), curCxt,
+                                     cbn->getRetICFGNode());
+                addInterleavingThread(retCts, exitCts);
             }
         }
     }
@@ -399,7 +495,8 @@ void MHP::handleCall(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts, NodeI
     if (const CallICFGNode *callSite = SVFUtil::cast<CallICFGNode>(call))
     {
         CallGraph::FunctionSet callees;
-        if (!tct->isCandidateFun(getCallee(callSite, callees)))
+        GenericGraphTraits<CGGraph>::getCallees(cg, callSite, callees);
+        if (!tct->isCandidateFun(callees))
         {
             CxtThreadStmt newCts(cts.getTid(), cts.getContext(), callSite->getRetICFGNode());
             addInterleavingThread(newCts, cts);
@@ -424,25 +521,24 @@ void MHP::handleRet(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts)
     {
         if (SVFUtil::isa<ThreadForkEdge, ThreadJoinEdge>(edgeConst))
             continue;
-        // Need non-const for directCallsBegin/End
-        CallGraphEdge* edge = const_cast<CallGraphEdge*>(edgeConst);
-        for (CallGraphEdge::CallInstSet::const_iterator cit = (edge)->directCallsBegin(),
-                ecit = (edge)->directCallsEnd();
-                cit != ecit; ++cit)
+        std::vector<const CallICFGNode*> directCalls;
+        GenericGraphTraits<CGGraph>::getDirectCalls(cg, edgeConst, directCalls);
+        for (const CallICFGNode* callSite : directCalls)
         {
             CallStrCxt newCxt = cts.getContext();
-            if (matchAndPopCxt(newCxt, *cit, curFunNode->getFunction()))
+            if (matchAndPopCxt(newCxt, callSite, curFunNode->getFunction()))
             {
                 std::vector<const ICFGNode*> succ;
                 GenericGraphTraits<ICFGGraph>::getSuccNodes(icfg, cts.getStmt(), succ);
                 for (const ICFGNode* dst : succ)
                 {
-                    if(dst->getFun() == (*cit)->getFun())
+                    if(dst->getFun() == callSite->getFun())
                     {
                         // Iterate over callSite's call string context and use as the successor's context
-                        if (!hasThreadStmtSet(*cit))
+                        if (!hasThreadStmtSet(callSite))
                             continue;
-                        for (const CxtThreadStmt& cxtThreadStmt: getThreadStmtSet(*cit))
+                        for (const CxtThreadStmt& cxtThreadStmt:
+                             getThreadStmtSet(callSite))
                         {
                             CallStrCxt callSiteCxt = cxtThreadStmt.getContext();
                             // If new context is a suffix of the call site context
@@ -456,23 +552,24 @@ void MHP::handleRet(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts)
                 }
             }
         }
-        for (CallGraphEdge::CallInstSet::const_iterator cit = (edge)->indirectCallsBegin(),
-                ecit = (edge)->indirectCallsEnd();
-                cit != ecit; ++cit)
+        std::vector<const CallICFGNode*> indirectCalls;
+        GenericGraphTraits<CGGraph>::getIndirectCalls(cg, edgeConst, indirectCalls);
+        for (const CallICFGNode* callSite : indirectCalls)
         {
             CallStrCxt newCxt = cts.getContext();
-            if (matchAndPopCxt(newCxt, *cit, curFunNode->getFunction()))
+            if (matchAndPopCxt(newCxt, callSite, curFunNode->getFunction()))
             {
                 std::vector<const ICFGNode*> succ;
                 GenericGraphTraits<ICFGGraph>::getSuccNodes(icfg, cts.getStmt(), succ);
                 for (const ICFGNode* dst : succ)
                 {
-                    if(dst->getFun() == (*cit)->getFun())
+                    if(dst->getFun() == callSite->getFun())
                     {
                         // Iterate over callSite's call string context and use as the successor's context
-                        if (!hasThreadStmtSet(*cit))
+                        if (!hasThreadStmtSet(callSite))
                             continue;
-                        for (const CxtThreadStmt& cxtThreadStmt: getThreadStmtSet(*cit))
+                        for (const CxtThreadStmt& cxtThreadStmt:
+                             getThreadStmtSet(callSite))
                         {
                             CallStrCxt callSiteCxt = cxtThreadStmt.getContext();
                             // If new context is a suffix of the call site context
@@ -704,34 +801,36 @@ bool MHP::isConnectedfromMain(const FunObjVar* fun)
 
 bool MHP::mayHappenInParallelInst(const ICFGNode* i1, const ICFGNode* i2)
 {
-
-    /// TODO: Any instruction in dead function is assumed no MHP with others
-    if (!hasThreadStmtSet(i1) || !hasThreadStmtSet(i2))
+    /// TODO: Any instruction in dead function is assumed no MHP with others.
+    const NodeThreadSummary* summary1 = getThreadSummary(i1);
+    const NodeThreadSummary* summary2 = getThreadSummary(i2);
+    if (summary1 == nullptr || summary2 == nullptr)
         return false;
 
-    const CxtThreadStmtSet& tsSet1 = getThreadStmtSet(i1);
-    const CxtThreadStmtSet& tsSet2 = getThreadStmtSet(i2);
-    for (const CxtThreadStmt& ts1 : tsSet1)
+    // Original rule for distinct tids:
+    //   exists c1,c2. L(i1,tid1,c1)[tid2] && L(i2,tid2,c2)[tid1].
+    // The two context choices are independent, so this is exactly equivalent
+    // to testing the two per-tid context unions. No context correlation is lost.
+    for (NodeID tid1 : summary1->tids)
     {
-        NodeBS l1 = getInterleavingThreads(ts1);
-        for (const CxtThreadStmt& ts2 : tsSet2)
+        if (summary2->tids.test(tid1) && isMultiForkedThread(tid1))
         {
-            NodeBS l2 = getInterleavingThreads(ts2);
-            if (ts1.getTid() != ts2.getTid())
+            numOfMHPQueries++;
+            return true;
+        }
+
+        const auto firstFlowIt = summary1->interleavingByTid.find(tid1);
+        assert(firstFlowIt != summary1->interleavingByTid.end());
+        for (NodeID tid2 : firstFlowIt->second)
+        {
+            if (tid1 == tid2 || !summary2->tids.test(tid2))
+                continue;
+            const auto secondFlowIt = summary2->interleavingByTid.find(tid2);
+            assert(secondFlowIt != summary2->interleavingByTid.end());
+            if (secondFlowIt->second.test(tid1))
             {
-                if (l1.test(ts2.getTid()) && l2.test(ts1.getTid()))
-                {
-                    numOfMHPQueries++;
-                    return true;
-                }
-            }
-            else
-            {
-                if (isMultiForkedThread(ts1.getTid()))
-                {
-                    numOfMHPQueries++;
-                    return true;
-                }
+                numOfMHPQueries++;
+                return true;
             }
         }
     }
@@ -774,16 +873,16 @@ bool MHP::mayHappenInParallel(const ICFGNode* i1, const ICFGNode* i2)
 
 bool MHP::executedByTheSameThread(const ICFGNode* i1, const ICFGNode* i2)
 {
-    if (!hasThreadStmtSet(i1) || !hasThreadStmtSet(i2))
+    const NodeThreadSummary* summary1 = getThreadSummary(i1);
+    const NodeThreadSummary* summary2 = getThreadSummary(i2);
+    if (summary1 == nullptr || summary2 == nullptr)
         return true;
 
-    const CxtThreadStmtSet& tsSet1 = getThreadStmtSet(i1);
-    const CxtThreadStmtSet& tsSet2 = getThreadStmtSet(i2);
-    for (const CxtThreadStmt&ts1 : tsSet1)
+    for (NodeID tid1 : summary1->tids)
     {
-        for (const CxtThreadStmt& ts2 : tsSet2)
+        for (NodeID tid2 : summary2->tids)
         {
-            if (ts1.getTid() != ts2.getTid() || isMultiForkedThread(ts1.getTid()))
+            if (tid1 != tid2 || isMultiForkedThread(tid1))
                 return false;
         }
     }

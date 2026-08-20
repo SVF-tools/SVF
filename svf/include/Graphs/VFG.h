@@ -456,6 +456,10 @@ protected:
     /// Connect formal-ret and actual ret
     virtual inline void connectFRetAndARet(const ValVar* funReturn, const ValVar* csReturn, CallSiteID csId, VFGEdgeSetTy& edges)
     {
+        // A callsite return with an existing conservative definition has no
+        // ActualRet node.  This mirrors the node-creation rule in addVFGNodes.
+        if (!hasActualRetVFGNode(csReturn))
+            return;
         NodeID formalRet = getFormalRetVFGNode(funReturn)->getId();
         NodeID actualRet = getActualRetVFGNode(csReturn)->getId();
         VFGEdge* edge = addInterEdgeFromFRToAR(formalRet, actualRet,csId);

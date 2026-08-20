@@ -110,6 +110,15 @@ void SymbolTableBuilder::buildMemModel()
             collectSym(ga.getAliasee());
         }
 
+        // LLVM ifunc symbols are global pointer values too.  They may only be
+        // referenced as instruction operands, so collect them explicitly and
+        // retain the resolver symbol for conservative modeling in SVFIR.
+        for (const GlobalIFunc& gi : M.ifuncs())
+        {
+            collectSym(&gi);
+            collectSym(gi.getResolver());
+        }
+
         // Add symbols for all of the functions and the instructions in them.
         for (const Function& fun : M.functions())
         {

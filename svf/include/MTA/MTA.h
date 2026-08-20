@@ -41,7 +41,6 @@
 #include <set>
 #include <string>
 #include <vector>
-#include <functional>
 #include <memory>
 #include <utility>
 #include "SVFIR/SVFIR.h"
@@ -73,6 +72,7 @@ class ICFGNode;
 class MTASVFGBuilder;
 class SVFG;
 class FlowSensitive;
+class FSMPTA;
 class SlicedSVFGView;
 class MultiStageSlicer;
 class SingleSlicer;
@@ -116,21 +116,32 @@ public:
     struct RacePair {
         const SVFStmt* stmt1;
         const SVFStmt* stmt2;
-        RacePair(const SVFStmt* s1, const SVFStmt* s2) : stmt1(s1), stmt2(s2) {}
+        RacePair(const SVFStmt* s1, const SVFStmt* s2)
+            : stmt1(statementLess(s2, s1) ? s2 : s1),
+              stmt2(statementLess(s2, s1) ? s1 : s2)
+        {
+        }
+
+        static bool statementLess(const SVFStmt* lhs, const SVFStmt* rhs)
+        {
+            return lhs->getEdgeID() < rhs->getEdgeID();
+        }
+
         bool operator<(const RacePair& other) const {
-            if (stmt1 != other.stmt1) return stmt1 < other.stmt1;
-            return stmt2 < other.stmt2;
+            if (stmt1->getEdgeID() != other.stmt1->getEdgeID())
+                return stmt1->getEdgeID() < other.stmt1->getEdgeID();
+            return stmt2->getEdgeID() < other.stmt2->getEdgeID();
         }
     };
 
     /// Shared equivalence-class race detector (used by both MTA::reportRaces and
     /// the SlicedMTA pipeline). Returns the racy statements and fills outRacePairs.
     static std::set<const SVFStmt*> detectRace(
-        SVFIR* svfIr, AndersenBase* pta, MHP* mhp, LockAnalysis* lockAnalysis,
+        SVFIR* svfir, AndersenBase* pta, MHP* mhp, LockAnalysis* lockAnalysis,
         CallGraph* callGraph, std::set<RacePair>& outRacePairs);
 
     /// Escape/points-to helpers for the shared detector.
-    static PointsTo getGlobalObjectVariables(SVFIR* svfIr);
+    static PointsTo getGlobalObjectVariables(SVFIR* svfir);
     static PointsTo getPointsToClosure(AndersenBase* pta, const PointsTo& pts);
 
     /// Whether the program has any thread (fork-target) function reachable via a
@@ -144,7 +155,7 @@ private:
         const ICFGNode* node;
         bool isStore;
         NodeID tid;
-        NodeBS interleav;
+        const NodeBS* interleaving;
         bool locked;
     };
 
@@ -176,8 +187,8 @@ private:
  * materialising resolved indirect calls into the PAG -- is injected by the caller
  * as a callback (see runOnModule).
  *
- * Behaviour is controlled by Options (MTFlowSensitive, EnableSlicing,
- * SlicingSingle, SlicedDumpDot).
+ * Behaviour is controlled by Options (MTFlowSensitive, MTAEnableSlicing,
+ * MTASingleStageSlicing, DumpMTAGraphs).
  */
 class SlicedMTA
 {
@@ -185,7 +196,12 @@ public:
     /// The one LLVM-dependent step of the pipeline: resolve the indirect-call
     /// edges discovered by Andersen into PAG copy/call edges. The caller (the
     /// LLVM-aware tool) supplies it via SVFIRBuilder::updateCallGraph.
-    using ResolveIndirectCalls = std::function<void(CallGraph*)>;
+    class IndirectCallResolver
+    {
+    public:
+        virtual ~IndirectCallResolver() = default;
+        virtual void resolve(CallGraph* callGraph) = 0;
+    };
 
     /// The shared race detector lives in MTA; reuse its race-pair type.
     using RacePair = MTA::RacePair;
@@ -199,19 +215,31 @@ public:
     SlicedMTA& operator=(const SlicedMTA&) = delete;
 
     /// Run the slicing pipeline on a pre-built SVFIR.
-    void runOnModule(SVFIR* pag, const ResolveIndirectCalls& resolveIndirectCalls);
+    bool runOnModule(SVFIR* pag, IndirectCallResolver& resolver);
 
 private:
     // --- pipeline stages ---
-    bool runPreAnalysis(const ResolveIndirectCalls& resolveIndirectCalls);
+    bool runPreAnalysis(IndirectCallResolver& resolver);
     bool runMTASlicingAndAnalysis();
     bool runPTASlicingAndAnalysis();
     bool runFinalRaceDetection();
-    void buildVFGPre();
+    void buildPreAnalysisSVFG();
+
+    /// Pipeline utilities shared by the sliced and whole-program paths.
+    //@{
+    static bool checkPhaseResult(const char* phase, bool condition);
+    static void reportOriginalStatistics(SVFIR* svfir);
+    static std::set<const ICFGNode*> collectICFGNodes(
+        SVFG* svfg, const NodeBS& svfgNodeIds);
+    static void reportPTASliceStatistics(
+        const std::set<const ICFGNode*>& icfgNodes);
+    static u64_t raceStatementDigest(const std::set<RacePair>& pairs);
+    static u64_t racePairDigest(const std::set<RacePair>& pairs);
+    //@}
 
     /// No-slice A/B baseline: run the FSAM detection on the whole program (no
     /// slicing), so its time and race set can be compared against the sliced run.
-    void runWholeProgramDetection();
+    bool runWholeProgramDetection();
 
     /// Main pointer-analysis instance feeding final race detection (the
     /// flow-sensitive FSAM, a BVDataPTAImpl queried polymorphically).
@@ -221,47 +249,46 @@ private:
     std::set<const SVFStmt*> getVulnerableStmts() const;
 
     // --- race detection ---
-    /// Re-check the candidate race pairs on the sliced graph using FSAM points-to.
+    /// Refine the pre-analysis candidate pairs with main-phase ILA and FSAM.
     std::set<RacePair> detectRacePairsOnSlicedGraph(
-        BVDataPTAImpl* slicedPTA, MHP* slicedMHP, LockAnalysis* slicedLockAnalysis);
-
-    // Lock analysis over the WHOLE ICFG (real control flow, no bridging) for the
-    // final detection's lock signature. The sliced lock analysis walks bridged
-    // edges, which fabricate lock-carrying paths the whole program lacks (a
-    // query-preservation break); lock-span is control-flow-sensitive, so it must
-    // see real edges. Built lazily, cheap (no FSAM/MHP) next to the slicing win.
-    LockAnalysis* buildFullLockAnalysis();
+        const std::set<RacePair>& preAnalysisRacePairs,
+        BVDataPTAImpl* slicedPTA, MHP* slicedMHP,
+        LockAnalysis* slicedLockAnalysis);
 
     // --- pipeline state (owned unless noted) ---
-    SVFIR* svfIr = nullptr;
+    SVFIR* svfir = nullptr;
     // Main-phase context depth, set by runOnModule; the pre-analysis uses it
     // to reconcile context-truncation-merged thread instances.
-    u32_t mainCxtDepth = 2;
+    u32_t mainContextDepth;
     std::unique_ptr<TCT> tct;
     std::unique_ptr<MHP> mhp;
     std::unique_ptr<LockAnalysis> lockAnalysis;
     // Inclusion-based Andersen's pre-analysis (a shared singleton, not owned
-    // here -- released once in the destructor). Feeds the TCT / MHP / lock /
+    // here; the tool releases it after this object is destroyed). Feeds TCT/MHP/lock/
     // race pre-analysis, the thread-aware VFG_pre, and the main FSMPTA.
-    AndersenWaveDiff* preAnder = nullptr;
-    std::unique_ptr<MTASVFGBuilder> vfgPreBuilder; // owns vfgPre
-    SVFG* vfgPre = nullptr;
+    AndersenWaveDiff* preAndersen = nullptr;
+    ThreadCallGraph* threadCallGraph = nullptr;
+    std::unique_ptr<MTASVFGBuilder> preSVFGBuilder; // owns preSVFG
+    SVFG* preSVFG = nullptr;
     std::unique_ptr<MultiStageSlicer> multiStageSlicer;
+    NodeBS preCandidateSolveNodeIds;
     std::unique_ptr<SingleSlicer> singleSlicer;
+    /// VFG'_pre endpoint-filtered, context-insensitive pre-MHP candidates.
+    /// This is only a conservative worklist for rebuilding Main-TVF; the main
+    /// phase independently re-decides every edge with main MHP and lock facts.
+    std::vector<std::pair<NodeID, NodeID>> selectedThreadVFCandidates;
     // -mta-slicing-single: the one unified slice, computed in MTA slicing and reused
     // (not recomputed) for PTA slicing so both stages share V_Single.
     std::set<const ICFGNode*> singleSlicedNodes;
+    NodeBS singleSlicedSVFGNodeIds;
     std::unique_ptr<SlicedSVFIRView> mtaSlicedView;
     std::unique_ptr<SlicedSVFIRView> ptaSlicedView;
+    std::unique_ptr<SlicedSVFGView> preCandidateSVFGView;
     std::unique_ptr<SlicedSVFGView> slicedSVFGView;
-    std::unique_ptr<FlowSensitive> mtaFSMPTA;
+    std::unique_ptr<FSMPTA> mainFSMPTA;
     std::unique_ptr<SlicedTCT> slicedTCT;
-    std::unique_ptr<MHP> slicedMhp;
+    std::unique_ptr<MHP> slicedMHP;
     std::unique_ptr<LockAnalysis> slicedLockAnalysis;
-    // Whole-ICFG lock analysis for the final detection (see buildFullLockAnalysis).
-    std::unique_ptr<SlicedSVFIRView> fullLockView;
-    std::unique_ptr<SlicedTCT> fullLockTCT;
-    std::unique_ptr<LockAnalysis> fullLockAnalysis;
     bool hasThreadFunctions = false;
     std::set<RacePair> racePairs;
 };

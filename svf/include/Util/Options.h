@@ -76,9 +76,9 @@ public:
     // ContextDDA.cpp
     static const Option<u32_t> CxtBudget;
 
-    // DDAPass.cpp
+    // Context-sensitive analyses (DDA and MTA)
     static const Option<u32_t> MaxPathLen;
-    static Option<u32_t> MaxContextLen;
+    static const Option<u32_t> MaxContextLen;
     static const Option<u32_t> MaxStepInWrapper;
     static const Option<std::string> UserInputQuery;
     static const Option<bool> InsenRecur;
@@ -258,11 +258,9 @@ public:
     static const Option<bool> DumpMTAGraphs;
 
     /// MTA slicing: slice before the FSAM main analysis (false = whole-program baseline), Default: true
-    static const Option<bool> EnableSlicing;
+    static const Option<bool> MTAEnableSlicing;
     /// MTA slicing: one unified slice for ILA + FSPTA (single-pass baseline), Default: false
-    static const Option<bool> SlicingSingle;
-    /// MTA slicing: dump intermediate dot graphs (ICFG/TCG/SVFG/...), Default: false
-    static const Option<bool> SlicedDumpDot;
+    static const Option<bool> MTASingleStageSlicing;
     /// if the access index of gepstmt is unknown, skip it, Default: false
     static const Option<bool> GepUnknownIdx;
     static const Option<bool> RunUncallFuncs;

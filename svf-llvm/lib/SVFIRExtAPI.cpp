@@ -225,9 +225,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
 
     if (fields.size() == 1 && (LLVMUtil::isConstDataOrAggData(D) || LLVMUtil::isConstDataOrAggData(S)))
     {
-        NodeID dummy = pag->addDummyValNode();
-        addLoadEdge(vnD,dummy);
-        addStoreEdge(dummy,vnS);
+        addComplexFieldCopy(vnD, vnS);
         return;
     }
 
@@ -274,9 +272,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
 
                 NodeID dField = getGepValVar(dstFieldBase, dstField.accessPath, dstField.elementType);
                 NodeID sField = getGepValVar(srcFieldBase, it->second.accessPath, it->second.elementType);
-                NodeID dummy = pag->addDummyValNode();
-                addLoadEdge(sField, dummy);
-                addStoreEdge(dummy, dField);
+                addComplexFieldCopy(sField, dField);
             }
             return;
         }
@@ -292,10 +288,41 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
                                       fields[index].getConstantStructFldIdx());
         NodeID dField = getGepValVar(D,fields[index],dElementType);
         NodeID sField = getGepValVar(S,fields[index],sElementType);
-        NodeID dummy = pag->addDummyValNode();
-        addLoadEdge(sField,dummy);
-        addStoreEdge(dummy,dField);
+        addComplexFieldCopy(sField, dField);
     }
+}
+
+void SVFIRBuilder::addComplexFieldCopy(NodeID srcField, NodeID dstField)
+{
+    NodeID dummy = pag->addDummyValNode();
+    const bool srcIsPointer = pag->getGNode(srcField)->isPointer();
+    const bool dstIsPointer = pag->getGNode(dstField)->isPointer();
+
+    // A byte-layout/ext-model copy can pair a non-pointer source field with a
+    // pointer destination field. Its LoadStmt is absent from the pointer-only
+    // VFG while the StoreStmt is present, so define the dummy conservatively.
+    if (!srcIsPointer && dstIsPointer)
+        addBlackHoleAddrEdge(dummy);
+    else
+        addLoadEdge(srcField, dummy);
+    addStoreEdge(dummy, dstField);
+}
+
+const Function* SVFIRBuilder::getDlsymTarget(const Value* source)
+{
+    if (!SVFUtil::isa<GlobalVariable>(source))
+        return nullptr;
+
+    const auto* global = SVFUtil::cast<GlobalVariable>(source);
+    if (!global->hasInitializer() ||
+            !SVFUtil::isa<ConstantDataArray>(global->getInitializer()))
+        return nullptr;
+
+    const auto* constantArray =
+        SVFUtil::cast<ConstantDataArray>(global->getInitializer());
+    if (!constantArray->isCString())
+        return nullptr;
+    return LLVMUtil::getProgFunction(constantArray->getAsCString().str());
 }
 
 void SVFIRBuilder::handleNondetArgStoreAtExtCall(const CallBase* cs, const CallICFGNode* callICFGNode)
@@ -422,20 +449,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
         if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
             src = stripConstantCasts(gep->getPointerOperand());
 
-        auto getHookFn = [](const Value* src)->const Function*
-        {
-            if (!SVFUtil::isa<GlobalVariable>(src))
-                return nullptr;
-
-            auto *glob = SVFUtil::cast<GlobalVariable>(src);
-            if (!glob->hasInitializer() || !SVFUtil::isa<ConstantDataArray>(glob->getInitializer()))
-                return nullptr;
-
-            auto *constarray = SVFUtil::cast<ConstantDataArray>(glob->getInitializer());
-            return LLVMUtil::getProgFunction(constarray->getAsCString().str());
-        };
-
-        if (const Function *fn = getHookFn(src))
+        if (const Function* fn = getDlsymTarget(src))
         {
             NodeID srcNode = getValueNode(fn);
             addCopyEdge(srcNode,  getValueNode(cs), CopyStmt::COPYVAL);

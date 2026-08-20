@@ -232,6 +232,12 @@ protected:
 
     /// Get the base value of (i8* src and i8* dst) for external argument (e.g. memcpy(i8* dst, i8* src, int size))
     const Value* getBaseValueForExtArg(const Value* V);
+    const Value* getGlobalFieldAtByteOffset(const GlobalVariable* global,
+                                            int64_t byteOffset);
+    static bool isAccessCoveredByMemcpy(const CallBase* callsite,
+                                        u64_t offset, u64_t accessBytes);
+    static bool hasInterveningWrite(const Instruction* from,
+                                    const Instruction* to);
 
     /// Handle direct call
     void handleDirectCall(CallBase* cs, const Function *F);
@@ -243,6 +249,8 @@ protected:
     //@{
     virtual const Type *getBaseTypeAndFlattenedFields(const Value *V, std::vector<AccessPath> &fields, const Value* szValue);
     virtual void addComplexConsForExt(Value *D, Value *S, const Value* sz);
+    void addComplexFieldCopy(NodeID srcField, NodeID dstField);
+    static const Function* getDlsymTarget(const Value* source);
     virtual void handleNondetArgStoreAtExtCall(const CallBase* cs, const CallICFGNode* callICFGNode);
     virtual void handleExtCall(const CallBase* cs, const Function* callee);
     //@}

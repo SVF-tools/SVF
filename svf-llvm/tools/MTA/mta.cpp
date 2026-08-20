@@ -33,6 +33,25 @@ using namespace llvm;
 using namespace std;
 using namespace SVF;
 
+namespace
+{
+
+class LLVMIndirectCallResolver final : public SlicedMTA::IndirectCallResolver
+{
+public:
+    explicit LLVMIndirectCallResolver(SVFIRBuilder& builder) : builder(builder) {}
+
+    void resolve(CallGraph* callGraph) override
+    {
+        builder.updateCallGraph(callGraph);
+    }
+
+private:
+    SVFIRBuilder& builder;
+};
+
+} // namespace
+
 int main(int argc, char** argv)
 {
     std::vector<std::string> moduleNameVec = OptionBase::parseOptions(
@@ -46,22 +65,21 @@ int main(int argc, char** argv)
     // FSAM pipeline (SlicedMTA), which decides slicing and the pre-analysis
     // context handling internally; otherwise run the flow-insensitive Andersen
     // detector.
+    bool succeeded = true;
     if (Options::MTFlowSensitive())
     {
-        // The only LLVM-dependent step -- materialising resolved indirect calls
-        // into the PAG -- is injected here.
+        LLVMIndirectCallResolver resolver(builder);
         SlicedMTA sliced;
-        sliced.runOnModule(pag, [&](CallGraph* cg)
-        {
-            builder.updateCallGraph(cg);
-        });
+        succeeded = sliced.runOnModule(pag, resolver);
     }
     else
     {
         MTA mta;
-        mta.runOnModule(pag);
+        succeeded = !mta.runOnModule(pag);
     }
 
+    AndersenWaveDiff::releaseAndersenWaveDiff();
+    SVFIR::releaseSVFIR();
     LLVMModuleSet::releaseLLVMModuleSet();
-    return 0;
+    return succeeded ? 0 : 1;
 }

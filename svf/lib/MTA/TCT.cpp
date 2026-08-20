@@ -41,7 +41,19 @@ using namespace SVFUtil;
 /*!
  * Constructor
  */
-TCT::TCT(PointerAnalysis* p) :pta(p),TCTNodeNum(0),TCTEdgeNum(0),MaxCxtSize(0)
+TCT::TCT(PointerAnalysis* p)
+    : TCT(p, Options::MaxContextLen(), true)
+{
+}
+
+TCT::TCT(PointerAnalysis* p, u32_t contextLimit)
+    : TCT(p, contextLimit, true)
+{
+}
+
+TCT::TCT(PointerAnalysis* p, u32_t contextLimit, bool buildImmediately)
+    : tcg(nullptr), pta(p), maxContextLen(contextLimit), TCTNodeNum(0),
+      TCTEdgeNum(0), MaxCxtSize(0), tcgSCC(nullptr)
 {
     tcg = SVFUtil::dyn_cast<ThreadCallGraph>(pta->getCallGraph());
     assert(tcg != nullptr && "TCT::TCT: call graph is not a ThreadCallGraph!");
@@ -49,7 +61,8 @@ TCT::TCT(PointerAnalysis* p) :pta(p),TCTNodeNum(0),TCTEdgeNum(0),MaxCxtSize(0)
     //tcg->updateJoinEdge(pta);
     tcgSCC = pta->getCallGraphSCC();
     tcgSCC->find();
-    build();
+    if (buildImmediately)
+        build();
 }
 
 TCT::~TCT()
@@ -478,7 +491,7 @@ void TCT::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* ca
     if(inSameCallGraphSCC(tcg->getCallGraphNode(caller),tcg->getCallGraphNode(callee))==false)
     {
         cxt.push_back(csId);
-        if (cxt.size() > Options::MaxContextLen())
+        if (cxt.size() > maxContextLen)
             cxt.erase(cxt.begin());
         if (cxt.size() > MaxCxtSize)
             MaxCxtSize = cxt.size();
@@ -657,4 +670,3 @@ struct DOTGraphTraits<TCT*> : public DefaultDOTGraphTraits
     }
 };
 } // End namespace llvm
-

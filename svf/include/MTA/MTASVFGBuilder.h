@@ -44,14 +44,13 @@
 #include "MTA/MHP.h"
 #include "MTA/LockAnalysis.h"
 #include "MemoryModel/PointsTo.h"
-#include <map>
-#include <set>
 #include <utility>
+#include <vector>
 
 namespace SVF
 {
 
-class SlicedICFGView;
+class SlicedSVFGView;
 
 class MTASVFGBuilder : public SVFGBuilder
 {
@@ -59,39 +58,28 @@ public:
     typedef Set<const StmtSVFGNode*> SVFGNodeSet;
     typedef NodeBS SVFGNodeIDSet;
 
-    /// Constructor: driven by the interleaving (MHP) and lock analyses.
-    MTASVFGBuilder(MHP* m, LockAnalysis* la) : SVFGBuilder(), mhp(m), lockana(la) {}
-    ~MTASVFGBuilder() override = default;
-
-    /// Number of thread-aware (interference) SVFG edges added.
-    static u32_t numOfNewSVFGEdges;
-
-    /// Configure the builder for the main (post-slicing) FSAM solve rather than
-    /// the pre-analysis VFG_pre:
-    ///  - slice != null restricts the interference-edge construction to kept
-    ///    store/load nodes (a sliced-out endpoint's edge is inert in the gated
-    ///    solve, so it need not be built);
-    ///  - the [THREAD-VF] query map is skipped, as only VFG_pre slicing reads it.
-    /// The pre-analysis build leaves this unset (whole program, query map built).
-    void configureForMainSolve(const SlicedICFGView* slice)
+    enum class InterferenceEdgeMode
     {
-        icfgSlice = slice;
-        recordThreadVF = false;
-    }
+        Analysis,
+        SlicingOnly
+    };
+
+    /// Constructor: driven by the interleaving (MHP) and lock analyses.
+    MTASVFGBuilder(MHP* mhp, LockAnalysis* lockAnalysis,
+                   InterferenceEdgeMode edgeMode = InterferenceEdgeMode::Analysis)
+        : SVFGBuilder(),
+          labelInterferenceEdges(edgeMode == InterferenceEdgeMode::Analysis),
+          mhp(mhp), lockAnalysis(lockAnalysis) {}
+    ~MTASVFGBuilder() override = default;
 
     /// Configure the builder for VFG_pre (pre-analysis) slicing, which is only
     /// *sliced*, never *solved*: the data-dependence slice traverses the
     /// interference edges for connectivity only (it reads getSrcNode/getInEdges,
     /// never the per-edge points-to label). So drop the interference-edge
-    /// points-to labels here -- they are the dominant VFG_pre memory cost (e.g.
-    /// x264: ~1.4B edge labels) yet have no consumer in the slice. The edge SET
+    /// points-to labels here -- large programs can carry very large labels, yet
+    /// those labels have no consumer in the slice. The edge set
     /// is unchanged (edges are added on the MHP + lock tests, not on points-to),
     /// so the slice -- and the preserved race set -- are identical.
-    void configureForSlicingOnly()
-    {
-        labelInterferenceEdges = false;
-    }
-
     /// A candidate thread-aware value-flow edge s --o--> s' (src store, dst
     /// load/store), keyed by its endpoint SVFG nodes.
     typedef std::pair<const StmtSVFGNode*, const StmtSVFGNode*> ThreadVFEdge;
@@ -111,8 +99,51 @@ public:
     ///
     /// The value stores only the additional lock-span witnesses; the endpoint
     /// ICFG nodes are implicit in the key and consumers must add them back.
-    const std::map<ThreadVFEdge, std::set<const ICFGNode*>>& getThreadVFQueryMap() const
+    using ThreadVFQueryMap = Map<ThreadVFEdge, Set<const ICFGNode*>>;
+    const ThreadVFQueryMap& getThreadVFQueryMap() const
     { return threadVFQueryMap; }
+
+    using ThreadVFCandidate = std::pair<NodeID, NodeID>;
+    using ThreadVFCandidateList = std::vector<ThreadVFCandidate>;
+
+    class ThreadVFBuildConfig
+    {
+    public:
+        static ThreadVFBuildConfig mainPhase(
+            const SlicedSVFGView* scope,
+            const ThreadVFCandidateList* candidates = nullptr)
+        {
+            return ThreadVFBuildConfig(scope, candidates);
+        }
+
+        static ThreadVFBuildConfig wholeProgram()
+        {
+            return ThreadVFBuildConfig(nullptr, nullptr);
+        }
+
+    private:
+        friend class MTASVFGBuilder;
+        ThreadVFBuildConfig(const SlicedSVFGView* scope,
+                            const ThreadVFCandidateList* candidates)
+            : scope(scope), candidates(candidates) {}
+
+        const SlicedSVFGView* scope = nullptr; ///< null means the whole base SVFG
+        /// Optional conservative candidate universe selected from VFG_pre.
+        /// Main MHP/lock facts still decide every emitted edge; this only avoids
+        /// re-querying alias pairs that context-insensitive pre MHP rejected or
+        /// whose endpoints do not survive VFG'_pre.
+        const ThreadVFCandidateList* candidates = nullptr;
+    };
+
+    /// Replace only the ILA-dependent thread-aware overlay. The underlying
+    /// MemorySSA, stock SVFG, and fork/join value flow remain unchanged.
+    void replaceThreadAwareOverlay(MHP* mhp, LockAnalysis* lockAnalysis,
+                                   const ThreadVFBuildConfig& config);
+
+    /// Remove all currently attached thread-aware interference edges.
+    void clearThreadAwareOverlay();
+
+    size_t getThreadAwareEdgeCount() const { return threadAwareEdges.size(); }
 
 protected:
     /// Rewrite the SVFG build hook: build the stock SVFG, then add MHP edges.
@@ -123,14 +154,16 @@ protected:
     std::unique_ptr<MRGenerator> createMRGenerator(BVDataPTAImpl* pta, bool ptrOnlyMSSA) override;
 
 private:
-    /// Main-solve configuration (see configureForMainSolve); defaults suit VFG_pre.
-    const SlicedICFGView* icfgSlice = nullptr; ///< null = whole program
+    /// Active overlay configuration; defaults suit VFG_pre.
+    const SlicedSVFGView* overlayScope = nullptr; ///< null = whole base SVFG
+    const ThreadVFCandidateList* overlayCandidates = nullptr;
     bool recordThreadVF = true;                ///< false = skip [THREAD-VF] recording
     bool labelInterferenceEdges = true;        ///< false = VFG_pre (sliced-only): omit edge points-to labels
 
     /// Collect the store/load SVFG nodes to pair for interference edges (all of
     /// them, or -- when a slice is set -- only the kept ones).
     void collectLoadStoreSVFGNodes();
+    bool isInOverlayScope(const SVFGNode* node) const;
 
     /// FSAM join-related thread-oblivious value flow (the "return" half of
     /// treating a join as a call without a forward): connect each start
@@ -168,19 +201,19 @@ private:
     bool isTailOfSpan(const StmtSVFGNode* n);
     //@}
 
-    SVFGNodeSet stnodeSet;  ///< all store SVFG nodes
-    SVFGNodeSet ldnodeSet;  ///< all load SVFG nodes
+    SVFGNodeSet storeNodes;
+    SVFGNodeSet loadNodes;
 
     /// [THREAD-VF] per-edge query map (see getThreadVFQueryMap).
-    std::map<ThreadVFEdge, std::set<const ICFGNode*>> threadVFQueryMap;
-
+    ThreadVFQueryMap threadVFQueryMap;
     MHP* mhp;
-    LockAnalysis* lockana;
+    LockAnalysis* lockAnalysis;
 
-    Map<const StmtSVFGNode*, SVFGNodeIDSet> prevset;
-    Map<const StmtSVFGNode*, SVFGNodeIDSet> succset;
-    Map<const StmtSVFGNode*, bool> headmap;
-    Map<const StmtSVFGNode*, bool> tailmap;
+    Map<const StmtSVFGNode*, SVFGNodeIDSet> predecessorCache;
+    Map<const StmtSVFGNode*, SVFGNodeIDSet> successorCache;
+    Map<const StmtSVFGNode*, bool> spanHeadCache;
+    Map<const StmtSVFGNode*, bool> spanTailCache;
+    SVFGEdgeSet threadAwareEdges;
 };
 
 } // End namespace SVF

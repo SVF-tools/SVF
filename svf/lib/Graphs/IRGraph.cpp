@@ -163,8 +163,10 @@ u32_t IRGraph::getFlattenedElemIdx(const SVFType *T, u32_t origId)
         }
         else
         {
-            /// When Options::ModelArrays is disabled, any element index Array is modeled as the base
-            assert(SVFUtil::isa<SVFArrayType>(T) && "Only accept struct or array type if Options::ModelArrays is disabled!");
+            /// With array modeling disabled, array elements and scalar/opaque
+            /// pointer arithmetic are conservatively folded into the base
+            /// object.  LLVM's opaque-pointer IR can expose a non-aggregate
+            /// source type here, so requiring an SVFArrayType is too strict.
             return 0;
         }
     }

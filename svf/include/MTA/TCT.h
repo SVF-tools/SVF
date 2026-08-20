@@ -186,6 +186,11 @@ public:
     /// Constructor
     TCT(PointerAnalysis* p);
 
+    /// Build a TCT with an explicit context bound. Analyses that require a
+    /// context different from the command-line default must pass it here rather
+    /// than mutating the process-global option.
+    TCT(PointerAnalysis* p, u32_t maxContextLen);
+
     /// Destructor
     virtual ~TCT();
 
@@ -444,8 +449,12 @@ public:
     void print() const;
 
 protected:
+    /// Constructor for graph-view subclasses that provide their own build.
+    TCT(PointerAnalysis* p, u32_t maxContextLen, bool buildImmediately);
+
     ThreadCallGraph* tcg;
     PointerAnalysis* pta;
+    const u32_t maxContextLen;
     u32_t TCTNodeNum;
     u32_t TCTEdgeNum;
     u32_t MaxCxtSize;
