@@ -84,7 +84,7 @@ bool MTA::runOnModule(SVFIR* pag)
     DBOUT(DGENERAL, outs() << pasMsg("Build TCT\n"));
     DBOUT(DMTA, outs() << pasMsg("Build TCT\n"));
     DOTIMESTAT(double tctStart = stat->getClk());
-    tct = std::make_unique<TCT>(pta);
+    tct = TCT::create(pta);
     tcg = tct->getThreadCallGraph();
     DOTIMESTAT(double tctEnd = stat->getClk());
     DOTIMESTAT(stat->TCTTime += (tctEnd - tctStart) / TIMEINTERVAL);
@@ -574,11 +574,10 @@ bool SlicedMTA::runPreAnalysis(IndirectCallResolver& resolver)
     if (!checkPhaseResult("Thread call graph", threadCallGraph != nullptr))
         return false;
 
-    // Step 2: Build Thread Create Tree (the caller forces -max-cxt to 0 around the
-    // whole pre-analysis when slicing; see runOnModule).
+    // Step 2: Build the context-insensitive pre-analysis Thread Creation Tree.
     {
         ScopedPhaseTimer timer("Create Thread Create Tree");
-        tct = std::make_unique<TCT>(preAndersen, 0);
+        tct = TCT::create(preAndersen, 0);
     }
     if (dumpDot)
         tct->dump("original_tct");
@@ -587,12 +586,13 @@ bool SlicedMTA::runPreAnalysis(IndirectCallResolver& resolver)
     // this depth-0 TCT, or the pre-analysis under-approximates the main phase.
     {
         ScopedPhaseTimer timer("Mark truncation-merged multiforked threads");
-        TCT deepTct(preAndersen, mainContextDepth);
+        std::unique_ptr<TCT> deepTct =
+            TCT::create(preAndersen, mainContextDepth);
 
         // >1 instance at the main depth, or a single instance that is itself
         // multiforked (merged just beyond the main depth), marks the fork site.
         Map<const ICFGNode*, u32_t> forkSiteInstances;
-        for (const auto& deepPair : deepTct)
+        for (const auto& deepPair : *deepTct)
             if (const ICFGNode* forkSite = deepPair.second->getCxtThread().getThread())
             {
                 ++forkSiteInstances[forkSite];
@@ -790,7 +790,7 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
         SVFUtil::outs() << "[SlicedTCT] Using max context length: " << mainContextDepth
                         << " (from -max-cxt)\n";
         // Reuse the shared pre-analysis (Andersen) for the sliced TCT.
-        slicedTCT = std::make_unique<SlicedTCT>(
+        slicedTCT = SlicedTCT::create(
                         *preAndersen, *slicedView, mainContextDepth);
         if (dumpDot)
             slicedTCT->dump("sliced_tct");
@@ -1079,7 +1079,7 @@ bool SlicedMTA::runWholeProgramDetection()
 
     {
         ScopedPhaseTimer timer("Whole-program Sliced TCT/MHP/Lock");
-        slicedTCT = std::make_unique<SlicedTCT>(
+        slicedTCT = SlicedTCT::create(
                         *preAndersen, *ptaSlicedView, mainContextDepth);
         slicedMHP = std::make_unique<MHP>(
                         slicedTCT.get(),

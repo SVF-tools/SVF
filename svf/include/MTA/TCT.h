@@ -30,6 +30,7 @@
 #ifndef TCTNodeDetector_H_
 #define TCTNodeDetector_H_
 
+#include <memory>
 #include <vector>
 
 #include "MemoryModel/PointerAnalysis.h"
@@ -183,13 +184,13 @@ public:
     typedef SCCDetection<CallGraph*> ThreadCallGraphSCC;
     typedef Set<const ICFGNode*> DummyForkSiteSet;
 
-    /// Constructor
-    TCT(PointerAnalysis* p);
+    /// Construct and build a TCT with the command-line context bound.
+    static std::unique_ptr<TCT> create(PointerAnalysis* p);
 
-    /// Build a TCT with an explicit context bound. Analyses that require a
-    /// context different from the command-line default must pass it here rather
-    /// than mutating the process-global option.
-    TCT(PointerAnalysis* p, u32_t maxContextLen);
+    /// Construct and build a TCT with an explicit context bound. Analyses that
+    /// require a phase-specific bound must pass it here rather than mutating
+    /// the process-global option.
+    static std::unique_ptr<TCT> create(PointerAnalysis* p, u32_t contextLimit);
 
     /// Destructor
     virtual ~TCT();
@@ -449,12 +450,13 @@ public:
     void print() const;
 
 protected:
-    /// Constructor for graph-view subclasses that provide their own build.
-    TCT(PointerAnalysis* p, u32_t maxContextLen, bool buildImmediately);
+    /// Initialize common TCT state. Factory functions invoke build() only after
+    /// the complete concrete object has been constructed.
+    TCT(PointerAnalysis* p, u32_t contextLimit);
 
     ThreadCallGraph* tcg;
     PointerAnalysis* pta;
-    const u32_t maxContextLen;
+    const u32_t contextLimit;
     u32_t TCTNodeNum;
     u32_t TCTEdgeNum;
     u32_t MaxCxtSize;
@@ -486,26 +488,6 @@ protected:
 
     /// Build TCT
     virtual void build();
-
-    /// Free the built graph and clear all bookkeeping so build() can run again from
-    /// a clean state (SlicedTCT rebuilds the tree over a sliced view).
-    void reset()
-    {
-        destroy();
-        IDToNodeMap.clear();
-        ctpToNodeMap.clear();
-        ctToForkCxtsMap.clear();
-        ctToRoutineFunMap.clear();
-        candidateFuncSet.clear();
-        entryFuncSet.clear();
-        joinSiteToLoopMap.clear();
-        inRecurJoinSites.clear();
-        ctpList.clear();
-        visitedCTPs.clear();
-        TCTNodeNum = 0;
-        TCTEdgeNum = 0;
-        MaxCxtSize = 0;
-    }
 
     /// Mark relevant procedures that are backward reachable from any fork/join site
     //@{

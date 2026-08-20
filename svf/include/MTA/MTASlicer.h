@@ -97,9 +97,10 @@ class SlicedTCT : public TCT
 public:
     /// @param pointerAnalysis the shared Andersen pre-analysis
     /// @param slicedView SlicedSVFIRView containing a SlicedThreadCallGraphView
-    /// @param maxContextLen maximum context length for the main analysis
-    SlicedTCT(PointerAnalysis& pointerAnalysis,
-              const SlicedSVFIRView& slicedView, u32_t maxContextLen);
+    /// @param contextLimit maximum context length for the main analysis
+    static std::unique_ptr<SlicedTCT> create(
+        PointerAnalysis& pointerAnalysis, const SlicedSVFIRView& slicedView,
+        u32_t contextLimit);
 
     ~SlicedTCT() override = default;
 
@@ -111,6 +112,9 @@ protected:
     void handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, const CallICFGNode* cs) override;
 
 private:
+    SlicedTCT(PointerAnalysis& pointerAnalysis,
+              const SlicedSVFIRView& slicedView, u32_t contextLimit);
+
     void collectEntryFunInCallGraph() override;
 
     const SlicedThreadCallGraphView* tcgView; // ThreadCallGraph view (from the sliced view)

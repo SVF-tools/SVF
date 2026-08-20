@@ -33,7 +33,6 @@
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
 #include "Util/ThreadAPI.h"
-#include "Util/WorkList.h"
 
 namespace SVF
 {
@@ -95,19 +94,6 @@ public:
     LLVMContext &getLLVMCtx();
 
 private:
-
-    static void insertValueIfUpdating(ValueSet& values, bool canUpdate,
-                                      const Value* value);
-    static void insertCachedValuesOrQueue(
-        const ValueToValueSet& cache, ValueSet& values,
-        FILOWorkList<ValueBoolPair>& worklist, bool canUpdate,
-        const Value* value);
-    static void collectClassNamesFromFunction(const Function* function,
-            Set<std::string>& names);
-    static void collectClassNamesFromCall(const CallBase* call,
-                                          Set<std::string>& names);
-    static void insertClassNameSource(const CallBase* call,
-                                      Set<const CallBase*>& sources);
 
     /// forward infer the type of the object pointed by var
     const Type *fwInferObjType(const Value *var);

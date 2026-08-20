@@ -63,19 +63,26 @@ namespace SVF
 // SlicedTCT - TCT rebuilt over the sliced ThreadCallGraph view.
 //===----------------------------------------------------------------------===//
 
+std::unique_ptr<SlicedTCT> SlicedTCT::create(
+    PointerAnalysis& pointerAnalysis, const SlicedSVFIRView& slicedView,
+    u32_t contextLimit)
+{
+    std::unique_ptr<SlicedTCT> tct(
+        new SlicedTCT(pointerAnalysis, slicedView, contextLimit));
+    tct->build();
+    return tct;
+}
+
 SlicedTCT::SlicedTCT(PointerAnalysis& pointerAnalysis,
-                     const SlicedSVFIRView& slicedView, u32_t maxContextLen)
-    : TCT(&pointerAnalysis, maxContextLen, false),
+                     const SlicedSVFIRView& slicedView, u32_t contextLimit)
+    : TCT(&pointerAnalysis, contextLimit),
       tcgView(slicedView.getThreadCallGraph())
 {
     assert(tcgView != nullptr && "SlicedTCT requires a sliced thread call graph");
-    build();
 }
 
 void SlicedTCT::build()
 {
-    reset();
-
     markRelProcs();
     collectLoopInfoForJoin();
     collectEntryFunInCallGraph();

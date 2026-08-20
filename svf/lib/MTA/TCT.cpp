@@ -38,21 +38,20 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-/*!
- * Constructor
- */
-TCT::TCT(PointerAnalysis* p)
-    : TCT(p, Options::MaxContextLen(), true)
+std::unique_ptr<TCT> TCT::create(PointerAnalysis* p)
 {
+    return create(p, Options::MaxContextLen());
+}
+
+std::unique_ptr<TCT> TCT::create(PointerAnalysis* p, u32_t contextLimit)
+{
+    std::unique_ptr<TCT> tct(new TCT(p, contextLimit));
+    tct->build();
+    return tct;
 }
 
 TCT::TCT(PointerAnalysis* p, u32_t contextLimit)
-    : TCT(p, contextLimit, true)
-{
-}
-
-TCT::TCT(PointerAnalysis* p, u32_t contextLimit, bool buildImmediately)
-    : tcg(nullptr), pta(p), maxContextLen(contextLimit), TCTNodeNum(0),
+    : tcg(nullptr), pta(p), contextLimit(contextLimit), TCTNodeNum(0),
       TCTEdgeNum(0), MaxCxtSize(0), tcgSCC(nullptr)
 {
     tcg = SVFUtil::dyn_cast<ThreadCallGraph>(pta->getCallGraph());
@@ -61,8 +60,6 @@ TCT::TCT(PointerAnalysis* p, u32_t contextLimit, bool buildImmediately)
     //tcg->updateJoinEdge(pta);
     tcgSCC = pta->getCallGraphSCC();
     tcgSCC->find();
-    if (buildImmediately)
-        build();
 }
 
 TCT::~TCT()
@@ -491,7 +488,7 @@ void TCT::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* ca
     if(inSameCallGraphSCC(tcg->getCallGraphNode(caller),tcg->getCallGraphNode(callee))==false)
     {
         cxt.push_back(csId);
-        if (cxt.size() > maxContextLen)
+        if (cxt.size() > contextLimit)
             cxt.erase(cxt.begin());
         if (cxt.size() > MaxCxtSize)
             MaxCxtSize = cxt.size();

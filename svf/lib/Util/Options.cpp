@@ -87,9 +87,9 @@ const Option<u32_t> Options::MaxPathLen(
     100000
 );
 
-const Option<u32_t> Options::MaxContextLen(
+Option<u32_t> Options::MaxContextLen(
     "max-cxt",
-    "Maximum call-string context depth for context-sensitive analyses",
+    "Maximum context limit for DDA",
     3
 );
 

@@ -76,9 +76,9 @@ public:
     // ContextDDA.cpp
     static const Option<u32_t> CxtBudget;
 
-    // Context-sensitive analyses (DDA and MTA)
+    // DDAPass.cpp
     static const Option<u32_t> MaxPathLen;
-    static const Option<u32_t> MaxContextLen;
+    static Option<u32_t> MaxContextLen;
     static const Option<u32_t> MaxStepInWrapper;
     static const Option<std::string> UserInputQuery;
     static const Option<bool> InsenRecur;

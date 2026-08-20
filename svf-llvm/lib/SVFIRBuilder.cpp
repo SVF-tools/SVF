@@ -1604,66 +1604,35 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
 
     The base value for %0 is still %0
  */
-const Value* SVFIRBuilder::getGlobalFieldAtByteOffset(
-    const GlobalVariable* global, int64_t byteOffset)
-{
-    if (global == nullptr || !global->hasInitializer())
-        return nullptr;
-
-    const auto* initializer =
-        SVFUtil::dyn_cast<ConstantStruct>(global->getInitializer());
-    const auto* structType =
-        SVFUtil::dyn_cast<StructType>(global->getValueType());
-    if (initializer == nullptr || structType == nullptr)
-        return nullptr;
-
-    const DataLayout& dataLayout = global->getParent()->getDataLayout();
-    const StructLayout* layout =
-        dataLayout.getStructLayout(const_cast<StructType*>(structType));
-    for (u32_t fieldIndex = 0; fieldIndex < initializer->getNumOperands();
-         ++fieldIndex)
-    {
-        if (layout->getElementOffset(fieldIndex) !=
-            static_cast<uint64_t>(byteOffset))
-            continue;
-        return SVFUtil::dyn_cast<GlobalVariable>(
-                   initializer->getOperand(fieldIndex));
-    }
-    return nullptr;
-}
-
-bool SVFIRBuilder::isAccessCoveredByMemcpy(
-    const CallBase* callsite, u64_t offset, u64_t accessBytes)
-{
-    if (callsite->arg_size() < 3)
-        return false;
-    const ConstantInt* copySize =
-        SVFUtil::dyn_cast<ConstantInt>(callsite->getArgOperand(2));
-    if (copySize == nullptr)
-        return false;
-
-    const u64_t copyBytes = copySize->getZExtValue();
-    return copyBytes >= accessBytes && copyBytes - accessBytes >= offset;
-}
-
-bool SVFIRBuilder::hasInterveningWrite(
-    const Instruction* from, const Instruction* to)
-{
-    if (from->getParent() != to->getParent() || !from->comesBefore(to))
-        return true;
-
-    auto instruction = from->getIterator();
-    const auto end = to->getIterator();
-    while (++instruction != end)
-        if (instruction->mayWriteToMemory())
-            return true;
-    return false;
-}
-
 const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
 {
-    const Value* value = stripAllCasts(V);
+    const Value*  value = stripAllCasts(V);
     assert(value && "null ptr?");
+    auto getGlobalFieldFromByteOffset =
+        [](const GlobalVariable* glob, int64_t byteOffset) -> const Value*
+    {
+        if (!glob || !glob->hasInitializer())
+            return nullptr;
+
+        auto* initializer = SVFUtil::dyn_cast<ConstantStruct>(glob->getInitializer());
+        auto* structType = SVFUtil::dyn_cast<StructType>(glob->getValueType());
+        if (!initializer || !structType)
+            return nullptr;
+
+        const DataLayout& dataLayout = glob->getParent()->getDataLayout();
+        const StructLayout* layout =
+        dataLayout.getStructLayout(const_cast<StructType*>(structType));
+        for (u32_t fieldIdx = 0; fieldIdx < initializer->getNumOperands(); ++fieldIdx)
+        {
+            if (layout->getElementOffset(fieldIdx) != static_cast<uint64_t>(byteOffset))
+                continue;
+            if (auto* ptrValue =
+                    SVFUtil::dyn_cast<llvm::GlobalVariable>(initializer->getOperand(fieldIdx)))
+                return ptrValue;
+            return nullptr;
+        }
+        return nullptr;
+    };
 
     if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(value))
     {
@@ -1690,8 +1659,7 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
             {
                 if (hasByteOffset)
                 {
-                    if (const Value* ptrValue =
-                            getGlobalFieldAtByteOffset(glob, byteOffset.getSExtValue()))
+                    if (const Value* ptrValue = getGlobalFieldFromByteOffset(glob, byteOffset.getSExtValue()))
                         return ptrValue;
                 }
             }
@@ -1700,6 +1668,36 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
             {
                 const u64_t offset = byteOffset.getZExtValue();
                 const u64_t accessBytes = dataLayout->getPointerSize(gep->getPointerAddressSpace());
+
+                auto isCoveredByMemcpy = [offset, accessBytes](const CallBase* cs) -> bool
+                {
+                    if (cs->arg_size() < 3)
+                        return false;
+
+                    const auto* copySize = SVFUtil::dyn_cast<ConstantInt>(cs->getArgOperand(2));
+                    if (!copySize)
+                    {
+                        return false;
+                    }
+
+                    const u64_t copyBytes = copySize->getZExtValue();
+                    return copyBytes >= accessBytes && copyBytes - accessBytes >= offset;
+                };
+
+                auto hasInterveningWrite = [load](const Instruction* from) -> bool
+                {
+                    if (from->getParent() != load->getParent() || !from->comesBefore(load))
+                        return true;
+
+                    auto it = from->getIterator();
+                    const auto end = load->getIterator();
+                    while (++it != end)
+                    {
+                        if (it->mayWriteToMemory())
+                            return true;
+                    }
+                    return false;
+                };
 
                 for (const auto& use : pointer_operand->users())
                 {
@@ -1710,16 +1708,15 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
                         continue;
 
                     const Function* calledFun = cs->getCalledFunction();
-                    if (!LLVMUtil::isMemcpyExtFun(calledFun) ||
-                            !isAccessCoveredByMemcpy(cs, offset, accessBytes) ||
-                            hasInterveningWrite(cs, load))
+                    if (!LLVMUtil::isMemcpyExtFun(calledFun) || !isCoveredByMemcpy(cs) ||
+                            hasInterveningWrite(cs))
                         continue;
 
                     const Value* copiedFrom = getBaseValueForExtArg(cs->getArgOperand(1));
                     if (const auto* copiedGlob = SVFUtil::dyn_cast<GlobalVariable>(copiedFrom))
                     {
                         if (const Value* ptrValue =
-                                    getGlobalFieldAtByteOffset(copiedGlob, byteOffset.getSExtValue()))
+                                    getGlobalFieldFromByteOffset(copiedGlob, byteOffset.getSExtValue()))
                             return ptrValue;
                     }
                 }
@@ -1842,7 +1839,7 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const 
         }
         else if (SVFUtil::isa<GlobalVariable>(curVal))
         {
-            // GEP on a global variable belongs to the global ICFG node.
+            // GEP on a global variable: the resulting GepValVar belongs to the global ICFG node.
             node = pag->getICFG()->getGlobalICFGNode();
         }
         NodeID gepNode = pag->addGepValNode(llvmModuleSet()->getValueNode(curVal), cast<ValVar>(pag->getGNode(getValueNode(val))), ap,
