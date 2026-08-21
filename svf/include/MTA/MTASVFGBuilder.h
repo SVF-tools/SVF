@@ -51,8 +51,8 @@ public:
 
     enum class InterferenceEdgeMode
     {
-        Analysis,
-        SlicingOnly
+        Analysis,   ///< Build labelled edges for FSMPTA.
+        SlicingOnly ///< Build unlabelled connectivity for VFG_pre slicing.
     };
 
     /// Constructor: driven by the interleaving (MHP) and lock analyses.
@@ -60,17 +60,11 @@ public:
                    InterferenceEdgeMode edgeMode = InterferenceEdgeMode::Analysis)
         : SVFGBuilder(),
           labelInterferenceEdges(edgeMode == InterferenceEdgeMode::Analysis),
-          mhp(mhp), lockAnalysis(lockAnalysis) {}
+          mhp(mhp), lockAnalysis(lockAnalysis)
+    {
+    }
     ~MTASVFGBuilder() override = default;
 
-    /// Configure the builder for VFG_pre (pre-analysis) slicing, which is only
-    /// *sliced*, never *solved*: the data-dependence slice traverses the
-    /// interference edges for connectivity only (it reads getSrcNode/getInEdges,
-    /// never the per-edge points-to label). So drop the interference-edge
-    /// points-to labels here -- large programs can carry very large labels, yet
-    /// those labels have no consumer in the slice. The edge set
-    /// is unchanged (edges are added on the MHP + lock tests, not on points-to),
-    /// so the slice -- and the preserved race set -- are identical.
     /// A candidate thread-aware value-flow edge s --o--> s' (src store, dst
     /// load/store), keyed by its endpoint SVFG nodes.
     typedef std::pair<const StmtSVFGNode*, const StmtSVFGNode*> ThreadVFEdge;
@@ -94,17 +88,39 @@ public:
     const ThreadVFQueryMap& getThreadVFQueryMap() const
     { return threadVFQueryMap; }
 
-    using ThreadVFCandidate = std::pair<NodeID, NodeID>;
+    struct ThreadVFCandidate
+    {
+        ThreadVFCandidate(NodeID sourceNodeId, NodeID destinationNodeId)
+            : sourceNodeId(sourceNodeId), destinationNodeId(destinationNodeId)
+        {
+        }
+
+        bool operator<(const ThreadVFCandidate& other) const
+        {
+            return sourceNodeId < other.sourceNodeId ||
+                   (sourceNodeId == other.sourceNodeId &&
+                    destinationNodeId < other.destinationNodeId);
+        }
+
+        bool operator==(const ThreadVFCandidate& other) const
+        {
+            return sourceNodeId == other.sourceNodeId &&
+                   destinationNodeId == other.destinationNodeId;
+        }
+
+        NodeID sourceNodeId;
+        NodeID destinationNodeId;
+    };
     using ThreadVFCandidateList = std::vector<ThreadVFCandidate>;
 
     class ThreadVFBuildConfig
     {
     public:
         static ThreadVFBuildConfig mainPhase(
-            const SlicedSVFGView* scope,
+            const SlicedSVFGView& scope,
             const ThreadVFCandidateList* candidates = nullptr)
         {
-            return ThreadVFBuildConfig(scope, candidates);
+            return ThreadVFBuildConfig(&scope, candidates);
         }
 
         static ThreadVFBuildConfig wholeProgram()
@@ -116,7 +132,9 @@ public:
         friend class MTASVFGBuilder;
         ThreadVFBuildConfig(const SlicedSVFGView* scope,
                             const ThreadVFCandidateList* candidates)
-            : scope(scope), candidates(candidates) {}
+            : scope(scope), candidates(candidates)
+        {
+        }
 
         const SlicedSVFGView* scope = nullptr; ///< null means the whole base SVFG
         /// Optional conservative candidate universe selected from VFG_pre.
@@ -148,7 +166,7 @@ private:
     /// Active overlay configuration; defaults suit VFG_pre.
     const SlicedSVFGView* overlayScope = nullptr; ///< null = whole base SVFG
     const ThreadVFCandidateList* overlayCandidates = nullptr;
-    bool recordThreadVF = true;                ///< false = skip [THREAD-VF] recording
+    bool recordThreadVFQueries = true;         ///< false = skip [THREAD-VF] recording
     bool labelInterferenceEdges = true;        ///< false = VFG_pre (sliced-only): omit edge points-to labels
 
     /// Collect the store/load SVFG nodes to pair for interference edges (all of
@@ -167,29 +185,35 @@ private:
     /// join, mirroring SVFG::addInterIndirectVFRetEdge using the public SVFG API
     /// (points-to intersection + dedup via hasInterVFGEdge + addSVFGEdge).
     void addJoinRetEdge(const FormalOUTSVFGNode* formalOut,
-                        const ActualOUTSVFGNode* actualOut, CallSiteID csId);
+                        const ActualOUTSVFGNode* actualOut,
+                        CallSiteID callSiteId);
 
     /// Connect inter-thread (interference) value-flow edges for MHP pairs.
     void connectMHPEdges(PointerAnalysis* pta);
 
-    void handleStoreLoad(const StmtSVFGNode* n1, const StmtSVFGNode* n2, PointerAnalysis* pta);
-    void handleStoreStore(const StmtSVFGNode* n1, const StmtSVFGNode* n2, PointerAnalysis* pta);
+    void handleStoreLoad(const StmtSVFGNode* store,
+                         const StmtSVFGNode* load, PointerAnalysis* pta);
+    void handleStoreStore(const StmtSVFGNode* firstStore,
+                          const StmtSVFGNode* secondStore,
+                          PointerAnalysis* pta);
 
     /// Record the [THREAD-VF] slicing sources for one candidate pair s --o--> s'
-    /// (s = src store, sp = dst load/store). Adds the endpoints, and — when the
+    /// (source = store, destination = load/store). Adds the endpoints, and — when the
     /// pair is protected by a common lock — the in-span successor/predecessor
     /// witnesses needed to re-decide the non-interference (tail/head) test.
-    void recordThreadVFSource(const StmtSVFGNode* s, const StmtSVFGNode* sp, bool commonLock);
+    void recordThreadVFSource(const StmtSVFGNode* source,
+                              const StmtSVFGNode* destination,
+                              bool commonLock);
 
     /// Add a thread-MHP indirect value-flow edge srcId -> dstId carrying pts.
     SVFGEdge* addTDEdge(NodeID srcId, NodeID dstId, const PointsTo& pts);
 
     /// Lock-span head/tail tests (non-interference lock-pair pruning).
     //@{
-    SVFGNodeIDSet getPrevNodes(const StmtSVFGNode* n);
-    SVFGNodeIDSet getSuccNodes(const StmtSVFGNode* n);
-    bool isHeadOfSpan(const StmtSVFGNode* n);
-    bool isTailOfSpan(const StmtSVFGNode* n);
+    SVFGNodeIDSet getPredecessorNodes(const StmtSVFGNode* node);
+    SVFGNodeIDSet getSuccessorNodes(const StmtSVFGNode* node);
+    bool isHeadOfSpan(const StmtSVFGNode* node);
+    bool isTailOfSpan(const StmtSVFGNode* node);
     //@}
 
     SVFGNodeSet storeNodes;

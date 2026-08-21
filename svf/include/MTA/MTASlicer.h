@@ -40,16 +40,11 @@
 #include "Graphs/ThreadCallGraph.h"
 #include "Graphs/ICFG.h"
 #include "Graphs/ICFGNode.h"
-#include <fstream>
 #include <deque>
 #include "Graphs/ICFGEdge.h"
 #include "Graphs/CallGraph.h"
 #include "Util/WorkList.h"
 #include <memory>
-#include <set>
-#include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 #include <utility>
 
@@ -140,7 +135,7 @@ protected:
 
     // === Data flow analysis helper ===
     /**
-     * Paper-faithful (§4.3) data-dependence slice over the thread-aware SVFG
+     * Data-dependence slice over the thread-aware SVFG
      * (VFG_pre): seed from the value-flow nodes of the given statements and
      * backward-traverse every value-flow edge -- direct (top-level def-use),
      * indirect (address-taken / MemSSA def-use), and thread-aware interference.

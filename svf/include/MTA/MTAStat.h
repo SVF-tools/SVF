@@ -84,7 +84,7 @@ class MTAStat : public PTAStat
 
 public:
     /// Constructor
-    MTAStat():PTAStat(nullptr),TCTTime(0),MHPTime(0),AnnotationTime(0)
+    MTAStat() : PTAStat(nullptr), TCTTime(0), MHPTime(0), AnnotationTime(0)
     {
     }
     /// Statistics for thread call graph

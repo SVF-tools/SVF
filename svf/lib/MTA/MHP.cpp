@@ -49,7 +49,7 @@ MHP::MHP(TCT* t, StateRepresentation representation)
     : tcg(t->getThreadCallGraph()), tct(t),
       stateRepresentation(representation),
       numOfTotalQueries(0), numOfMHPQueries(0),
-    interleavingTime(0), interleavingQueriesTime(0)
+      interleavingTime(0), interleavingQueriesTime(0)
 {
     fja = new ForkJoinAnalysis(tct);
 }

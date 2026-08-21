@@ -52,7 +52,7 @@ void LockAnalysis::analyze(ICFGGraph icfg, CGGraph cg)
 
     DBOUT(DGENERAL, outs() << "\tIntra-procedural LockAnalysis\n");
     DBOUT(DMTA, outs() << "\tIntra-procedural LockAnalysis\n");
-    analyzeIntraProceduralLock(icfg, cg);
+    analyzeIntraProceduralLock(icfg);
 
     DBOUT(DGENERAL, outs() << "\tCollect context-sensitive locks\n");
     DBOUT(DMTA, outs() << "\tCollect context-sensitive locks\n");
@@ -154,8 +154,8 @@ void LockAnalysis::buildCandidateFuncSetForLock(CGGraph cg)
  * Analyze intraprocedural locks
  * A lock is intraprocedural if its lock span is within a procedural
  */
-template<class ICFGGraph, class CGGraph>
-void LockAnalysis::analyzeIntraProceduralLock(ICFGGraph icfg, CGGraph cg)
+template<class ICFGGraph>
+void LockAnalysis::analyzeIntraProceduralLock(ICFGGraph icfg)
 {
 
     // Identify the protected Instructions.
@@ -169,8 +169,10 @@ void LockAnalysis::analyzeIntraProceduralLock(ICFGGraph icfg, CGGraph cg)
         InstSet backwardInsts;
         InstSet unlockSet;
 
-        bool forward = intraForwardTraverse(icfg, cg,lockSite,unlockSet,forwardInsts);
-        bool backward =	intraBackwardTraverse(icfg, cg,unlockSet,backwardInsts);
+        bool forward = intraForwardTraverse(
+                           icfg, lockSite, unlockSet, forwardInsts);
+        bool backward = intraBackwardTraverse(
+                            icfg, unlockSet, backwardInsts);
 
         /// FIXME:Should we intersect forwardInsts and backwardInsts?
         if(forward && backward)
@@ -183,8 +185,10 @@ void LockAnalysis::analyzeIntraProceduralLock(ICFGGraph icfg, CGGraph cg)
 /*!
  * Intra-procedural forward traversal
  */
-template<class ICFGGraph, class CGGraph>
-bool LockAnalysis::intraForwardTraverse(ICFGGraph icfg, CGGraph cg, const ICFGNode* lockSite, InstSet& unlockSet, InstSet& forwardInsts)
+template<class ICFGGraph>
+bool LockAnalysis::intraForwardTraverse(
+    ICFGGraph icfg, const ICFGNode* lockSite, InstSet& unlockSet,
+    InstSet& forwardInsts)
 {
 
     const FunObjVar* svfFun = lockSite->getFun();
@@ -233,8 +237,9 @@ bool LockAnalysis::intraForwardTraverse(ICFGGraph icfg, CGGraph cg, const ICFGNo
 /*!
  * Intra-procedural backward traversal
  */
-template<class ICFGGraph, class CGGraph>
-bool LockAnalysis::intraBackwardTraverse(ICFGGraph icfg, CGGraph cg, const InstSet& unlockSet, InstSet& backwardInsts)
+template<class ICFGGraph>
+bool LockAnalysis::intraBackwardTraverse(
+    ICFGGraph icfg, const InstSet& unlockSet, InstSet& backwardInsts)
 {
 
     InstVec worklist;
@@ -405,8 +410,14 @@ void LockAnalysis::analyzeLockSpanCxtStmt(ICFGGraph icfg, CGGraph cg)
         }
         else if (isTDAcquire(curInst))
         {
-            assert(hasCxtLock(cts) && "context-sensitive lock not found!!");
-            if(addCxtStmtToSpan(cts,cts))
+            // Context truncation can merge a path into a lock context that the
+            // call-graph pre-collection did not enumerate. The propagation is
+            // authoritative: register that reachable lock before constructing
+            // its span. Release builds already constructed the same span; this
+            // keeps the canonical lock registry consistent as well.
+            if (!hasCxtLock(cts))
+                addCxtLock(cts.getContext(), curInst);
+            if (addCxtStmtToSpan(cts, cts))
                 handleIntra(icfg, cg, cts);
         }
         else if (isTDRelease(curInst))

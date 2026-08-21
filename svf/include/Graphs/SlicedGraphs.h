@@ -41,13 +41,9 @@
 #include "SVFIR/SVFStatements.h"
 #include "SVFIR/SVFVariables.h"
 #include <cstddef>
-#include <fstream>
 #include <iterator>
 #include <memory>
-#include <set>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 #include <utility>
 

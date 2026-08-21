@@ -46,6 +46,7 @@
 #include "MemoryModel/PointsTo.h"
 #include "MTA/MHP.h"
 #include "MTA/LockAnalysis.h"
+#include "MTA/MTASVFGBuilder.h"
 #include "WPA/Andersen.h"
 #include "Graphs/CallGraph.h"
 
@@ -65,7 +66,6 @@ class SVFStmt;
 class SVFIR;
 class ICFGNode;
 // Forward declarations for the SlicedMTA slicing pipeline (see SlicedMTA impl).
-class MTASVFGBuilder;
 class SVFG;
 class FlowSensitive;
 class SlicedSVFGView;
@@ -108,7 +108,8 @@ public:
     }
 
     /// A race pair: two statements that may race.
-    struct RacePair {
+    struct RacePair
+    {
         const SVFStmt* stmt1;
         const SVFStmt* stmt2;
         RacePair(const SVFStmt* s1, const SVFStmt* s2)
@@ -122,7 +123,8 @@ public:
             return lhs->getEdgeID() < rhs->getEdgeID();
         }
 
-        bool operator<(const RacePair& other) const {
+        bool operator<(const RacePair& other) const
+        {
             if (stmt1->getEdgeID() != other.stmt1->getEdgeID())
                 return stmt1->getEdgeID() < other.stmt1->getEdgeID();
             return stmt2->getEdgeID() < other.stmt2->getEdgeID();
@@ -145,7 +147,8 @@ public:
 
 private:
     /// One occurrence of a memory access under one thread instance.
-    struct RaceOccurrence {
+    struct RaceOccurrence
+    {
         const SVFStmt* stmt;
         const ICFGNode* node;
         bool isStore;
@@ -218,10 +221,14 @@ private:
         SVFG* svfg, const NodeBS& svfgNodeIds);
     static void reportPTASliceStatistics(
         const std::set<const ICFGNode*>& icfgNodes);
+    struct RaceDigests
+    {
+        u64_t alarm;
+        u64_t pair;
+    };
     static std::string raceStatementKey(const SVFStmt* statement);
     static void updateDigest(u64_t& digest, const std::string& value);
-    static u64_t raceStatementDigest(const std::set<RacePair>& pairs);
-    static u64_t racePairDigest(const std::set<RacePair>& pairs);
+    static RaceDigests computeRaceDigests(const std::set<RacePair>& pairs);
     //@}
 
     /// No-slice A/B baseline: run the FSAM detection on the whole program (no
@@ -263,7 +270,7 @@ private:
     /// VFG'_pre endpoint-filtered, context-insensitive pre-MHP candidates.
     /// This is only a conservative worklist for rebuilding Main-TVF; the main
     /// phase independently re-decides every edge with main MHP and lock facts.
-    std::vector<std::pair<NodeID, NodeID>> selectedThreadVFCandidates;
+    MTASVFGBuilder::ThreadVFCandidateList selectedThreadVFCandidates;
     // -mta-slicing-single: the one unified slice, computed in MTA slicing and reused
     // (not recomputed) for PTA slicing so both stages share V_Single.
     std::set<const ICFGNode*> singleSlicedNodes;

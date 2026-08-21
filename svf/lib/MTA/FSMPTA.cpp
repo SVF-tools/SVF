@@ -366,5 +366,5 @@ void FSMPTA<SVFGGraph>::updateConnectedNodes(const SVFGEdgeSetTy& edges)
     }
 }
 
-template class FSMPTA<SVFG*>;
-template class FSMPTA<const SlicedSVFGView*>;
+template class SVF::FSMPTA<SVF::SVFG*>;
+template class SVF::FSMPTA<const SVF::SlicedSVFGView*>;

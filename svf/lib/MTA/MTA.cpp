@@ -129,15 +129,20 @@ MHP* MTA::computeMHP(TCT* tct)
 }
 
 // Collect the global objects (addr-taken global vars at the global ICFG node).
-PointsTo MTA::getGlobalObjectVariables(SVFIR* svfir) {
+PointsTo MTA::getGlobalObjectVariables(SVFIR* svfir)
+{
     PointsTo globalObjVars;
     const ICFGNode* globalICFGNode = svfir->getICFG()->getGlobalICFGNode();
 
-    for (const SVFStmt* stmt : globalICFGNode->getSVFStmts()) {
+    for (const SVFStmt* stmt : globalICFGNode->getSVFStmts())
+    {
         const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt);
-        if (addrStmt != nullptr) {
-            const GlobalValVar* globalVar = SVFUtil::dyn_cast<GlobalValVar>(addrStmt->getLHSVar());
-            if (globalVar != nullptr) {
+        if (addrStmt != nullptr)
+        {
+            const GlobalValVar* globalVar =
+                SVFUtil::dyn_cast<GlobalValVar>(addrStmt->getLHSVar());
+            if (globalVar != nullptr)
+            {
                 globalObjVars.set(addrStmt->getRHSVarID());
             }
         }
@@ -153,24 +158,35 @@ PointsTo MTA::getGlobalObjectVariables(SVFIR* svfir) {
 // edges, so without it a race on a (non-zero-offset) struct field -- or on an
 // object reached through a struct's pointer field -- would be screened out of the
 // escape set as "not shared".
-PointsTo MTA::getPointsToClosure(AndersenBase* pta, const PointsTo& pts) {
+PointsTo MTA::getPointsToClosure(AndersenBase* pta, const PointsTo& pts)
+{
     SVFIR* pag = pta->getPAG();
     PointsTo ptsClosure = pts;
     std::deque<NodeID> worklist;
-    for (NodeID pt : pts) {
+    for (NodeID pt : pts)
+    {
         worklist.push_back(pt);
     }
 
-    while (!worklist.empty()) {
+    while (!worklist.empty())
+    {
         NodeID obj = worklist.front();
         worklist.pop_front();
 
         for (NodeID target : pta->getPts(obj))           // points-to
-            if (!ptsClosure.test(target)) { ptsClosure.set(target); worklist.push_back(target); }
+            if (!ptsClosure.test(target))
+            {
+                ptsClosure.set(target);
+                worklist.push_back(target);
+            }
 
         if (pag->getBaseObject(obj) != nullptr)          // containment (object nodes only)
             for (NodeID field : pta->getAllFieldsObjVars(pta->getBaseObjVarID(obj)))
-                if (!ptsClosure.test(field)) { ptsClosure.set(field); worklist.push_back(field); }
+                if (!ptsClosure.test(field))
+                {
+                    ptsClosure.set(field);
+                    worklist.push_back(field);
+                }
     }
 
     return ptsClosure;
@@ -178,7 +194,9 @@ PointsTo MTA::getPointsToClosure(AndersenBase* pta, const PointsTo& pts) {
 
 // C3: distinct threads must mutually interleave; the same thread self-races only
 // when it is multiforked (more than one dynamic instance).
-bool MTA::occurrencesRace(MHP* mhp, const RaceOccurrence& first, const RaceOccurrence& second) {
+bool MTA::occurrencesRace(
+    MHP* mhp, const RaceOccurrence& first, const RaceOccurrence& second)
+{
     if (first.tid != second.tid)
         return first.interleaving->test(second.tid) &&
                second.interleaving->test(first.tid);
@@ -187,7 +205,9 @@ bool MTA::occurrencesRace(MHP* mhp, const RaceOccurrence& first, const RaceOccur
 
 // Record one order-normalised racing statement pair.
 void MTA::commitRacePair(std::set<RacePair>& out,
-                         const RaceOccurrence& first, const RaceOccurrence& second) {
+                         const RaceOccurrence& first,
+                         const RaceOccurrence& second)
+{
     out.emplace(first.stmt, second.stmt);
 }
 
@@ -196,7 +216,8 @@ void MTA::commitRacePair(std::set<RacePair>& out,
 std::set<const SVFStmt*> MTA::detectRace(
     SVFIR* svfir, AndersenBase* pta, MHP* mhp, LockAnalysis* lockAnalysis,
     CallGraph* callGraph,
-    std::set<RacePair>& outRacePairs) {
+    std::set<RacePair>& outRacePairs)
+{
 
     outRacePairs.clear();
     std::set<const SVFStmt*> bugStmts;
@@ -205,7 +226,8 @@ std::set<const SVFStmt*> MTA::detectRace(
     // argument at each fork site (the spawner's value, which a spawnee-formal
     // closure can miss), then take the transitive points-to closure.
     PointsTo seed = getGlobalObjectVariables(svfir);
-    if (ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(callGraph)) {
+    if (ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(callGraph))
+    {
         const ThreadAPI* tapi = tcg->getThreadAPI();
         for (auto it = tcg->forksitesBegin(), eit = tcg->forksitesEnd(); it != eit; ++it)
             if (const CallICFGNode* cs = SVFUtil::dyn_cast<CallICFGNode>(*it))
@@ -219,24 +241,39 @@ std::set<const SVFStmt*> MTA::detectRace(
     // the buckets and never stored per occurrence.
     std::vector<RaceOccurrence> occurrences;
     Map<NodeID, std::vector<size_t>> objectToOccurrences;
-    for (const auto& item : *callGraph) {
+    for (const auto& item : *callGraph)
+    {
         const FunObjVar* fun = item.second->getFunction();
-        if (!fun || !fun->hasBasicBlock()) continue;
+        if (!fun || !fun->hasBasicBlock())
+            continue;
         for (auto bbIt : *fun)
-            for (const ICFGNode* node : bbIt.second->getICFGNodeList()) {
+            for (const ICFGNode* node : bbIt.second->getICFGNodeList())
+            {
                 const MHP::NodeThreadSummary* threadSummary =
                     mhp->getThreadSummary(node);
-                if (threadSummary == nullptr) continue;              // screen 1: concurrent?
-                for (const SVFStmt* stmt : svfir->getSVFStmtList(node)) {
-                    NodeID accessedPtr; bool isStore;
-                    if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt)) {
-                        accessedPtr = load->getRHSVarID(); isStore = false;
-                    } else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt)) {
-                        accessedPtr = store->getLHSVarID(); isStore = true;
-                    } else continue;
+                if (threadSummary == nullptr)
+                    continue;                              // screen 1: concurrent?
+                for (const SVFStmt* stmt : svfir->getSVFStmtList(node))
+                {
+                    NodeID accessedPtr;
+                    bool isStore;
+                    if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+                    {
+                        accessedPtr = load->getRHSVarID();
+                        isStore = false;
+                    }
+                    else if (const StoreStmt* store =
+                                 SVFUtil::dyn_cast<StoreStmt>(stmt))
+                    {
+                        accessedPtr = store->getLHSVarID();
+                        isStore = true;
+                    }
+                    else
+                        continue;
                     PointsTo objects = pta->getPts(accessedPtr);
-                    objects &= escSet;                               // screen 2: touches shared object?
-                    if (objects.empty()) continue;
+                    objects &= escSet;                    // screen 2: shared object?
+                    if (objects.empty())
+                        continue;
                     bool locked = lockAnalysis->isProtectedByCommonLock(node, node);
                     const size_t firstNew = occurrences.size();
                     for (const auto& tidAndInterleaving :
@@ -254,9 +291,17 @@ std::set<const SVFStmt*> MTA::detectRace(
     // Within each object, occurrences sharing the race predicate's inputs (tid,
     // interleaving, isStore, lock sig) race the same partners, so collapse into a
     // class and judge C2/C3/C4 once per class pair -- O(classes^2) not O(occ^2).
-    for (const auto& objectAndOccs : objectToOccurrences) {
-        struct RaceClass { bool isStore, locked; size_t rep; std::vector<size_t> members; };
-        struct RaceKey {
+    for (const auto& objectAndOccs : objectToOccurrences)
+    {
+        struct RaceClass
+        {
+            bool isStore;
+            bool locked;
+            size_t rep;
+            std::vector<size_t> members;
+        };
+        struct RaceKey
+        {
             NodeID tid;
             bool isStore;
             const NodeBS* interleaving;
@@ -280,29 +325,36 @@ std::set<const SVFStmt*> MTA::detectRace(
         };
         std::vector<RaceClass> classes;
         OrderedMap<RaceKey, size_t> keyToClass;
-        for (size_t occIdx : objectAndOccs.second) {
+        for (size_t occIdx : objectAndOccs.second)
+        {
             const RaceOccurrence& occ = occurrences[occIdx];
             RaceKey key{occ.tid, occ.isStore, occ.interleaving, occ.locked,
                         occ.locked ? occ.node->getId() : 0};
             auto found = keyToClass.find(key);
-            if (found == keyToClass.end()) {
+            if (found == keyToClass.end())
+            {
                 keyToClass[key] = classes.size();
                 classes.push_back({occ.isStore, occ.locked, occIdx, {occIdx}});
-            } else
+            }
+            else
                 classes[found->second].members.push_back(occIdx);
         }
         for (size_t firstIdx = 0; firstIdx < classes.size(); ++firstIdx)
-            for (size_t secondIdx = firstIdx; secondIdx < classes.size(); ++secondIdx) {
+            for (size_t secondIdx = firstIdx; secondIdx < classes.size(); ++secondIdx)
+            {
                 RaceClass& firstClass = classes[firstIdx];
                 RaceClass& secondClass = classes[secondIdx];
-                if (!firstClass.isStore && !secondClass.isStore) continue;   // C2: >=1 write
+                if (!firstClass.isStore && !secondClass.isStore)
+                    continue;                                      // C2: >=1 write
                 const RaceOccurrence& firstRep = occurrences[firstClass.rep];
                 const RaceOccurrence& secondRep = occurrences[secondClass.rep];
-                if (!occurrencesRace(mhp, firstRep, secondRep)) continue;    // C3
+                if (!occurrencesRace(mhp, firstRep, secondRep))
+                    continue;                                      // C3
                 // C4 + emit. The main phase refines individual pairs, so the
                 // pre-analysis must retain the complete pair relation rather than
                 // an endpoint cover whose omitted pairs cannot be recovered later.
-                if (firstIdx != secondIdx) {
+                if (firstIdx != secondIdx)
+                {
                     if (firstClass.locked && secondClass.locked &&
                         lockAnalysis->isProtectedByCommonLock(firstRep.node, secondRep.node))
                         continue;
@@ -310,7 +362,9 @@ std::set<const SVFStmt*> MTA::detectRace(
                         for (size_t otherIdx : secondClass.members)
                             commitRacePair(outRacePairs, occurrences[memberIdx],
                                            occurrences[otherIdx]);
-                } else {
+                }
+                else
+                {
                     const std::vector<size_t>& members = firstClass.members;
                     if (firstClass.locked &&
                         lockAnalysis->isProtectedByCommonLock(firstRep.node,
@@ -326,7 +380,11 @@ std::set<const SVFStmt*> MTA::detectRace(
             }
     }
 
-    for (const RacePair& r : outRacePairs) { bugStmts.insert(r.stmt1); bugStmts.insert(r.stmt2); }
+    for (const RacePair& pair : outRacePairs)
+    {
+        bugStmts.insert(pair.stmt1);
+        bugStmts.insert(pair.stmt2);
+    }
     return bugStmts;
 }
 
@@ -452,40 +510,42 @@ void SlicedMTA::updateDigest(u64_t& digest, const std::string& value)
     digest *= 1099511628211ULL;
 }
 
-u64_t SlicedMTA::raceStatementDigest(const std::set<RacePair>& pairs)
+SlicedMTA::RaceDigests SlicedMTA::computeRaceDigests(
+    const std::set<RacePair>& pairs)
 {
+    Map<const SVFStmt*, std::string> statementToKey;
     std::set<std::string> statementKeys;
     for (const RacePair& pair : pairs)
     {
-        statementKeys.insert(raceStatementKey(pair.stmt1));
-        statementKeys.insert(raceStatementKey(pair.stmt2));
+        statementToKey.emplace(pair.stmt1, std::string());
+        statementToKey.emplace(pair.stmt2, std::string());
+    }
+    for (auto& statementAndKey : statementToKey)
+    {
+        statementAndKey.second = raceStatementKey(statementAndKey.first);
+        statementKeys.insert(statementAndKey.second);
     }
 
-    u64_t digest = 1469598103934665603ULL;
+    RaceDigests digests{1469598103934665603ULL, 1469598103934665603ULL};
     for (const std::string& key : statementKeys)
-        updateDigest(digest, key);
-    return digest;
-}
+        updateDigest(digests.alarm, key);
 
-u64_t SlicedMTA::racePairDigest(const std::set<RacePair>& pairs)
-{
     std::set<std::pair<std::string, std::string>> pairKeys;
     for (const RacePair& pair : pairs)
     {
-        std::string first = raceStatementKey(pair.stmt1);
-        std::string second = raceStatementKey(pair.stmt2);
+        std::string first = statementToKey.at(pair.stmt1);
+        std::string second = statementToKey.at(pair.stmt2);
         if (second < first)
             std::swap(first, second);
         pairKeys.emplace(std::move(first), std::move(second));
     }
 
-    u64_t digest = 1469598103934665603ULL;
     for (const auto& pair : pairKeys)
     {
-        updateDigest(digest, pair.first);
-        updateDigest(digest, pair.second);
+        updateDigest(digests.pair, pair.first);
+        updateDigest(digests.pair, pair.second);
     }
-    return digest;
+    return digests;
 }
 
 // Check and report a step result.
@@ -511,13 +571,13 @@ BVDataPTAImpl* SlicedMTA::getMainPTA() const
 
 std::set<const SVFStmt*> SlicedMTA::getVulnerableStmts() const
 {
-    std::set<const SVFStmt*> v;
+    std::set<const SVFStmt*> vulnerableStatements;
     for (const RacePair& pair : racePairs)
     {
-        v.insert(pair.stmt1);
-        v.insert(pair.stmt2);
+        vulnerableStatements.insert(pair.stmt1);
+        vulnerableStatements.insert(pair.stmt2);
     }
-    return v;
+    return vulnerableStatements;
 }
 
 // Pre-Analysis (Pointer Analysis + TCT + MHP & Lock + Race Detection).
@@ -859,7 +919,7 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
 
         const MTASVFGBuilder::ThreadVFBuildConfig mainConfig =
             MTASVFGBuilder::ThreadVFBuildConfig::mainPhase(
-                preCandidateSVFGView.get());
+                *preCandidateSVFGView);
         {
             ScopedPhaseTimer timer("Replace Pre-TVF with Main-TVF overlay");
             preSVFGBuilder->replaceThreadAwareOverlay(
@@ -893,7 +953,7 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
         // with edges derived from the context-sensitive sliced main ILA.
         const MTASVFGBuilder::ThreadVFBuildConfig mainConfig =
             MTASVFGBuilder::ThreadVFBuildConfig::mainPhase(
-                preCandidateSVFGView.get(), &selectedThreadVFCandidates);
+                *preCandidateSVFGView, &selectedThreadVFCandidates);
         {
             ScopedPhaseTimer timer("Replace Pre-TVF with Main-TVF overlay");
             preSVFGBuilder->replaceThreadAwareOverlay(
@@ -1017,7 +1077,11 @@ bool SlicedMTA::runFinalRaceDetection()
     // Distinct racy statements (the endpoints of the race pairs) -- a stabler,
     // smaller-to-report metric than the pair count.
     std::set<const SVFStmt*> racyStmts;
-    for (const RacePair& rp : detectedPairs) { racyStmts.insert(rp.stmt1); racyStmts.insert(rp.stmt2); }
+    for (const RacePair& pair : detectedPairs)
+    {
+        racyStmts.insert(pair.stmt1);
+        racyStmts.insert(pair.stmt2);
+    }
 
     SVFUtil::outs() << "\n=== Race Detection Summary ===\n";
     SVFUtil::outs() << "Race pairs (pre-analysis): " << racePairs.size() << "\n";
@@ -1025,10 +1089,11 @@ bool SlicedMTA::runFinalRaceDetection()
     SVFUtil::outs() << "Race statements (sliced graph): " << racyStmts.size() << "\n";
     // Machine-readable line for the artifact's `msli` table generator: the race
     // statements reported after slicing (the preservation metric).
+    const RaceDigests digests = computeRaceDigests(detectedPairs);
     SVFUtil::outs() << "[MSLI-RQ] mode=MSli alarms=" << racyStmts.size()
                     << " pairs=" << detectedPairs.size()
-                    << " alarm-digest=" << raceStatementDigest(detectedPairs)
-                    << " pair-digest=" << racePairDigest(detectedPairs) << "\n";
+                    << " alarm-digest=" << digests.alarm
+                    << " pair-digest=" << digests.pair << "\n";
 
     if (!detectedPairs.empty())
     {
@@ -1055,24 +1120,44 @@ bool SlicedMTA::runWholeProgramDetection()
         return true;
     }
 
-    // Full "slice" = every ICFG node.
-    std::set<const ICFGNode*> allNodes;
-    for (ICFG::iterator it = svfir->getICFG()->begin(), eit = svfir->getICFG()->end(); it != eit; ++it)
-        allNodes.insert(it->second);
-    ptaSlicedView = std::make_unique<SlicedSVFIRView>(
-                        svfir, *threadCallGraph, svfir->getICFG(), allNodes);
+    // SlicedTCT currently consumes the sliced-view representation even for the
+    // full baseline. Time that construction explicitly so the A/B phase table
+    // accounts for it instead of leaving it in unattributed wall time.
+    {
+        ScopedPhaseTimer timer("Build Whole-program View");
+        std::set<const ICFGNode*> allNodes;
+        for (ICFG::iterator it = svfir->getICFG()->begin(),
+             eit = svfir->getICFG()->end(); it != eit; ++it)
+            allNodes.insert(it->second);
+        ptaSlicedView = std::make_unique<SlicedSVFIRView>(
+                            svfir, *threadCallGraph, svfir->getICFG(), allNodes);
+    }
 
     {
         ScopedPhaseTimer timer("Whole-program TCT/MHP/Lock");
-        slicedTCT = SlicedTCT::create(
-                        *preAndersen, *ptaSlicedView, mainContextDepth);
+        {
+            ScopedPhaseTimer phaseTimer("Whole-program Thread Create Tree");
+            slicedTCT = SlicedTCT::create(
+                            *preAndersen, *ptaSlicedView, mainContextDepth);
+        }
         CallGraph* fullCallGraph = threadCallGraph;
-        slicedMHP = MHP::create(
-                        slicedTCT.get(), svfir->getICFG(), fullCallGraph,
-                        MHP::StateRepresentation::QuerySummaries);
-        slicedMHP->analyze(svfir->getICFG(), fullCallGraph);
-        slicedLockAnalysis = std::make_unique<LockAnalysis>(slicedTCT.get());
-        slicedLockAnalysis->analyze(svfir->getICFG(), fullCallGraph);
+        {
+            ScopedPhaseTimer phaseTimer(
+                "Whole-program ILA: construct MHP/ForkJoin");
+            slicedMHP = MHP::create(
+                            slicedTCT.get(), svfir->getICFG(), fullCallGraph,
+                            MHP::StateRepresentation::QuerySummaries);
+        }
+        {
+            ScopedPhaseTimer phaseTimer("Whole-program ILA: MHP propagation");
+            slicedMHP->analyze(svfir->getICFG(), fullCallGraph);
+        }
+        {
+            ScopedPhaseTimer phaseTimer("Whole-program ILA: Lock analysis");
+            slicedLockAnalysis =
+                std::make_unique<LockAnalysis>(slicedTCT.get());
+            slicedLockAnalysis->analyze(svfir->getICFG(), fullCallGraph);
+        }
     }
 
     const MTASVFGBuilder::ThreadVFBuildConfig mainConfig =
@@ -1102,16 +1187,21 @@ bool SlicedMTA::runWholeProgramDetection()
     }
 
     std::set<const SVFStmt*> racyStmts;
-    for (const RacePair& rp : detectedPairs) { racyStmts.insert(rp.stmt1); racyStmts.insert(rp.stmt2); }
+    for (const RacePair& pair : detectedPairs)
+    {
+        racyStmts.insert(pair.stmt1);
+        racyStmts.insert(pair.stmt2);
+    }
 
     SVFUtil::outs() << "\n=== Race Detection Summary ===\n";
     SVFUtil::outs() << "Race pairs (pre-analysis): " << racePairs.size() << "\n";
     SVFUtil::outs() << "Race pairs (whole program): " << detectedPairs.size() << "\n";
     SVFUtil::outs() << "Race statements (whole program): " << racyStmts.size() << "\n";
+    const RaceDigests digests = computeRaceDigests(detectedPairs);
     SVFUtil::outs() << "[MSLI-RQ] mode=FSAM alarms=" << racyStmts.size()
                     << " pairs=" << detectedPairs.size()
-                    << " alarm-digest=" << raceStatementDigest(detectedPairs)
-                    << " pair-digest=" << racePairDigest(detectedPairs) << "\n";
+                    << " alarm-digest=" << digests.alarm
+                    << " pair-digest=" << digests.pair << "\n";
     return true;
 }
 
@@ -1164,12 +1254,17 @@ bool SlicedMTA::runOnModule(SVFIR* pag, AndersenWaveDiff& preAnalysis)
 //===----------------------------------------------------------------------===//
 
 // Whether any thread (fork-target) function is reachable via a fork edge.
-bool MTA::hasThreadFunctions(CallGraph* callGraph) {
-    for (CallGraph::iterator it = callGraph->begin(), eit = callGraph->end(); it != eit; ++it) {
+bool MTA::hasThreadFunctions(CallGraph* callGraph)
+{
+    for (CallGraph::iterator it = callGraph->begin(), eit = callGraph->end();
+         it != eit; ++it)
+    {
         const CallGraphNode* node = it->second;
-        for (const CallGraphEdge* edge : node->getOutEdges()) {
+        for (const CallGraphEdge* edge : node->getOutEdges())
+        {
             if (edge->getEdgeKind() == CallGraphEdge::TDForkEdge &&
-                edge->getDstNode()->getFunction() != nullptr) {
+                edge->getDstNode()->getFunction() != nullptr)
+            {
                 return true;
             }
         }
@@ -1182,7 +1277,8 @@ std::set<SlicedMTA::RacePair> SlicedMTA::detectRacePairsOnSlicedGraph(
     const std::set<RacePair>& preAnalysisRacePairs,
     BVDataPTAImpl* slicedPTA,
     MHP* slicedMHP,
-    LockAnalysis* slicedLockAnalysis) {
+    LockAnalysis* slicedLockAnalysis)
+{
 
     std::set<RacePair> filteredRacePairs;
 
@@ -1201,19 +1297,33 @@ std::set<SlicedMTA::RacePair> SlicedMTA::detectRacePairsOnSlicedGraph(
             continue;
 
         PointsTo pts1, pts2;
-        if (const LoadStmt* ldStmt1 = SVFUtil::dyn_cast<LoadStmt>(pair.stmt1)) {
+        if (const LoadStmt* ldStmt1 =
+                SVFUtil::dyn_cast<LoadStmt>(pair.stmt1))
+        {
             pts1 = slicedPTA->getPts(ldStmt1->getRHSVarID());
-        } else if (const StoreStmt* stStmt1 = SVFUtil::dyn_cast<StoreStmt>(pair.stmt1)) {
+        }
+        else if (const StoreStmt* stStmt1 =
+                     SVFUtil::dyn_cast<StoreStmt>(pair.stmt1))
+        {
             pts1 = slicedPTA->getPts(stStmt1->getLHSVarID());
-        } else {
+        }
+        else
+        {
             continue;
         }
 
-        if (const LoadStmt* ldStmt2 = SVFUtil::dyn_cast<LoadStmt>(pair.stmt2)) {
+        if (const LoadStmt* ldStmt2 =
+                SVFUtil::dyn_cast<LoadStmt>(pair.stmt2))
+        {
             pts2 = slicedPTA->getPts(ldStmt2->getRHSVarID());
-        } else if (const StoreStmt* stStmt2 = SVFUtil::dyn_cast<StoreStmt>(pair.stmt2)) {
+        }
+        else if (const StoreStmt* stStmt2 =
+                     SVFUtil::dyn_cast<StoreStmt>(pair.stmt2))
+        {
             pts2 = slicedPTA->getPts(stStmt2->getLHSVarID());
-        } else {
+        }
+        else
+        {
             continue;
         }
 

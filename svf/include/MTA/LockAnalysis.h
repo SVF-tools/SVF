@@ -95,13 +95,16 @@ public:
     /// context-sensitive forward traversal from each lock site. Generate following results
     /// (1) context-sensitive lock site,
     /// (2) maps a context-sensitive lock site to its corresponding lock span.
-    /// One implementation for the whole program and a slice: GraphT is SVFIR*
-    /// (whole) or const SlicedSVFIRView* (sliced). Per-graph queries resolve at
-    /// compile time via the graph* overloads in Graphs/SlicedGraphs.h.
+    /// The same implementation runs over full and sliced ICFG/CallGraph traits.
     template<class ICFGGraph, class CGGraph> void analyze(ICFGGraph icfg, CGGraph cg);
-    template<class ICFGGraph, class CGGraph> void analyzeIntraProceduralLock(ICFGGraph icfg, CGGraph cg);
-    template<class ICFGGraph, class CGGraph> bool intraForwardTraverse(ICFGGraph icfg, CGGraph cg, const ICFGNode* lock, InstSet& unlockset, InstSet& forwardInsts);
-    template<class ICFGGraph, class CGGraph> bool intraBackwardTraverse(ICFGGraph icfg, CGGraph cg, const InstSet& unlockset, InstSet& backwardInsts);
+    template<class ICFGGraph>
+    void analyzeIntraProceduralLock(ICFGGraph icfg);
+    template<class ICFGGraph>
+    bool intraForwardTraverse(ICFGGraph icfg, const ICFGNode* lock,
+                              InstSet& unlockSet, InstSet& forwardInsts);
+    template<class ICFGGraph>
+    bool intraBackwardTraverse(ICFGGraph icfg, const InstSet& unlockSet,
+                               InstSet& backwardInsts);
 
     template<class ICFGGraph, class CGGraph> void collectCxtLock(ICFGGraph icfg, CGGraph cg);
     template<class ICFGGraph, class CGGraph> void analyzeLockSpanCxtStmt(ICFGGraph icfg, CGGraph cg);
