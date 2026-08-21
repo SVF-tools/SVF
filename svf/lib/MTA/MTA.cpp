@@ -45,10 +45,7 @@
 #include "Graphs/ThreadCallGraph.h"
 #include "Util/SVFUtil.h"
 #include <algorithm>
-#include <chrono>
 #include <deque>
-#include <iomanip>
-#include <sstream>
 #include <set>
 #include <string>
 #include <utility>
@@ -359,42 +356,6 @@ void MTA::reportRaces()
 // Library-side orchestration of the slicing pipeline over the SVFIR.
 //===----------------------------------------------------------------------===//
 
-namespace
-{
-
-class ScopedPhaseTimer
-{
-public:
-    explicit ScopedPhaseTimer(const char* phaseName)
-        : name(phaseName), start(std::chrono::steady_clock::now())
-    {
-        SVFUtil::outs() << "[TIMER] Phase: " << name << " - started\n";
-        SVFUtil::outs().flush();
-    }
-
-    ~ScopedPhaseTimer()
-    {
-        const auto end = std::chrono::steady_clock::now();
-        const double milliseconds =
-            std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-                end - start).count();
-        std::ostringstream elapsed;
-        elapsed << std::fixed << std::setprecision(2) << milliseconds << " ms";
-        if (milliseconds >= 1000.0)
-            elapsed << " (" << std::fixed << std::setprecision(2)
-                    << (milliseconds / 1000.0) << " s)";
-        SVFUtil::outs() << "[TIMER] Phase: " << name << " - finished in "
-                        << elapsed.str() << "\n";
-        SVFUtil::outs().flush();
-    }
-
-private:
-    const char* name;
-    std::chrono::steady_clock::time_point start;
-};
-
-} // namespace
-
 // Output statistics for the original (unsliced) SVFIR.
 void SlicedMTA::reportOriginalStatistics(SVFIR* svfir)
 {
@@ -542,33 +503,14 @@ void SlicedMTA::buildPreAnalysisSVFG()
                     << " interference edges\n";
 }
 
-bool SlicedMTA::runPreAnalysis(IndirectCallResolver& resolver)
+bool SlicedMTA::runPreAnalysis()
 {
     SVFUtil::outs() << "\n=== Pre-Analysis ===\n";
 
     const bool dumpDot = Options::DumpMTAGraphs();
 
-    // Step 1: Pointer Analysis. Inclusion-based Andersen's (more precise than
-    // Steensgaard's unification, so fewer spurious MHP/races and a smaller slice).
-    // The same Andersen instance (a singleton) is reused for the thread-aware
-    // VFG_pre and the main FSMPTA, so the whole pipeline shares one pre-analysis.
-    {
-        ScopedPhaseTimer timer("Andersen's pointer analysis");
-        preAndersen = AndersenWaveDiff::createAndersenWaveDiff(svfir);
-        if (dumpDot)
-        {
-            preAndersen->getConstraintGraph()->dump("original_consg");
-            preAndersen->getCallGraph()->dump("original_tcg");
-        }
-        // Materialise resolved indirect calls into the PAG (LLVM-dependent step,
-        // injected by the caller), then update the ICFG with the resolved calls.
-        resolver.resolve(preAndersen->getCallGraph());
-        svfir->getICFG()->updateCallGraph(preAndersen->getCallGraph());
-        if (dumpDot)
-            svfir->getICFG()->dump("original_icfg");
-    }
-    if (!checkPhaseResult("Pointer Analysis", preAndersen != nullptr))
-        return false;
+    // The LLVM-aware tool has already run Andersen and materialised its resolved
+    // indirect calls into the PAG. Reuse that same analysis throughout MSli.
     threadCallGraph =
         SVFUtil::dyn_cast<ThreadCallGraph>(preAndersen->getCallGraph());
     if (!checkPhaseResult("Thread call graph", threadCallGraph != nullptr))
@@ -1131,14 +1073,16 @@ bool SlicedMTA::runWholeProgramDetection()
     return true;
 }
 
-bool SlicedMTA::runOnModule(SVFIR* pag, IndirectCallResolver& resolver)
+bool SlicedMTA::runOnModule(SVFIR* pag, AndersenWaveDiff& preAnalysis)
 {
-    if (svfir != nullptr || pag == nullptr)
+    if (svfir != nullptr || pag == nullptr || preAnalysis.getPAG() != pag)
     {
-        SVFUtil::errs() << "[ERROR] SlicedMTA is single-use and requires a valid SVFIR\n";
+        SVFUtil::errs() << "[ERROR] SlicedMTA is single-use and requires a "
+                        << "matching SVFIR and Andersen pre-analysis\n";
         return false;
     }
     svfir = pag;
+    preAndersen = &preAnalysis;
 
     SVFUtil::outs() << "[Config] Slicing: "
                     << (Options::MTAEnableSlicing() ? "enabled" : "disabled")
@@ -1151,7 +1095,7 @@ bool SlicedMTA::runOnModule(SVFIR* pag, IndirectCallResolver& resolver)
     // main phase then runs at the configured context depth.
     // TCT context bounds are explicit constructor inputs; no process-global
     // option is mutated while the pipeline is running.
-    const bool preOk = runPreAnalysis(resolver);
+    const bool preOk = runPreAnalysis();
     if (!preOk)
         return false;
 

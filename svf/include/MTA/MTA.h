@@ -183,9 +183,9 @@ private:
  *   4. PTA slicing + main flow-sensitive FSAM (FSMPTA) on the slice
  *   5. final race detection on the sliced graph using FSAM points-to
  *
- * It operates entirely on the SVFIR (LLVM-free). The single LLVM-dependent step --
- * materialising resolved indirect calls into the PAG -- is injected by the caller
- * as a callback (see runOnModule).
+ * It operates entirely on the SVFIR (LLVM-free). The LLVM-aware caller runs the
+ * Andersen pre-analysis and materialises its resolved indirect calls into the
+ * PAG before invoking runOnModule.
  *
  * Behaviour is controlled by Options (MTFlowSensitive, MTAEnableSlicing,
  * MTASingleStageSlicing, DumpMTAGraphs).
@@ -193,16 +193,6 @@ private:
 class SlicedMTA
 {
 public:
-    /// The one LLVM-dependent step of the pipeline: resolve the indirect-call
-    /// edges discovered by Andersen into PAG copy/call edges. The caller (the
-    /// LLVM-aware tool) supplies it via SVFIRBuilder::updateCallGraph.
-    class IndirectCallResolver
-    {
-    public:
-        virtual ~IndirectCallResolver() = default;
-        virtual void resolve(CallGraph* callGraph) = 0;
-    };
-
     /// The shared race detector lives in MTA; reuse its race-pair type.
     using RacePair = MTA::RacePair;
 
@@ -214,12 +204,12 @@ public:
     SlicedMTA(const SlicedMTA&) = delete;
     SlicedMTA& operator=(const SlicedMTA&) = delete;
 
-    /// Run the slicing pipeline on a pre-built SVFIR.
-    bool runOnModule(SVFIR* pag, IndirectCallResolver& resolver);
+    /// Run the slicing pipeline with its prepared Andersen pre-analysis.
+    bool runOnModule(SVFIR* pag, AndersenWaveDiff& preAnalysis);
 
 private:
     // --- pipeline stages ---
-    bool runPreAnalysis(IndirectCallResolver& resolver);
+    bool runPreAnalysis();
     bool runMTASlicingAndAnalysis();
     bool runPTASlicingAndAnalysis();
     bool runFinalRaceDetection();

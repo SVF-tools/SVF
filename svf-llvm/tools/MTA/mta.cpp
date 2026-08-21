@@ -23,6 +23,7 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SVFIRBuilder.h"
 #include "MTA/MTA.h"
+#include "MTA/MTAStat.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 
@@ -36,19 +37,24 @@ using namespace SVF;
 namespace
 {
 
-class LLVMIndirectCallResolver final : public SlicedMTA::IndirectCallResolver
+AndersenWaveDiff* preparePreAnalysis(SVFIR* pag, SVFIRBuilder& builder)
 {
-public:
-    explicit LLVMIndirectCallResolver(SVFIRBuilder& builder) : builder(builder) {}
+    ScopedPhaseTimer timer("Andersen's pointer analysis");
 
-    void resolve(CallGraph* callGraph) override
+    AndersenWaveDiff* preAnalysis =
+        AndersenWaveDiff::createAndersenWaveDiff(pag);
+    if (Options::DumpMTAGraphs())
     {
-        builder.updateCallGraph(callGraph);
+        preAnalysis->getConstraintGraph()->dump("original_consg");
+        preAnalysis->getCallGraph()->dump("original_tcg");
     }
+    builder.updateCallGraph(preAnalysis->getCallGraph());
+    pag->getICFG()->updateCallGraph(preAnalysis->getCallGraph());
+    if (Options::DumpMTAGraphs())
+        pag->getICFG()->dump("original_icfg");
 
-private:
-    SVFIRBuilder& builder;
-};
+    return preAnalysis;
+}
 
 } // namespace
 
@@ -68,9 +74,9 @@ int main(int argc, char** argv)
     bool succeeded = true;
     if (Options::MTFlowSensitive())
     {
-        LLVMIndirectCallResolver resolver(builder);
+        AndersenWaveDiff* preAnalysis = preparePreAnalysis(pag, builder);
         SlicedMTA sliced;
-        succeeded = sliced.runOnModule(pag, resolver);
+        succeeded = sliced.runOnModule(pag, *preAnalysis);
     }
     else
     {
