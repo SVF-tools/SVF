@@ -34,10 +34,8 @@ using namespace llvm;
 using namespace std;
 using namespace SVF;
 
-namespace
-{
-
-AndersenWaveDiff* preparePreAnalysis(SVFIR* pag, SVFIRBuilder& builder)
+static AndersenWaveDiff* preparePreAnalysis(
+    SVFIR* pag, SVFIRBuilder& builder)
 {
     ScopedPhaseTimer timer("Andersen's pointer analysis");
 
@@ -55,8 +53,6 @@ AndersenWaveDiff* preparePreAnalysis(SVFIR* pag, SVFIRBuilder& builder)
 
     return preAnalysis;
 }
-
-} // namespace
 
 int main(int argc, char** argv)
 {
