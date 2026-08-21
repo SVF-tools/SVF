@@ -24,14 +24,6 @@
  * MTASlicer.h
  *
  *      Author: Jiawei Yang
- *
- * The program slicers of "Multi-Stage On-Demand Program Slicing for Modular
- * Analysis of Multi-Threaded Programs" (ISSTA 2026): a shared MTASlicerBase plus
- * three concrete slicers.
- *   - MultiStageSlicer   : ILA (synchronization + call) slice for thread-aware analysis
- *   (its FSPTA stage: data-dependence slice over the thread-aware VFG_pre)
- *   - SingleSlicer: one unified slice combining all three dependence kinds, shared
- *                   by both ILA and FSPTA (the single-pass baseline, MSli §3/§5.4)
  */
 
 #ifndef MTA_MTASLICER_H

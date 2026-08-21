@@ -25,11 +25,6 @@
  *
  *  Created on: 26 Aug 2015
  *      Author: pengd
- *
- * Lock analysis. One implementation runs on the whole program or a slice via
- * the templated analyze() (GraphT = SVFIR* or const SlicedSVFIRView*), as used
- * by "Multi-Stage On-Demand Program Slicing for Modular Analysis of
- * Multi-Threaded Programs" (ISSTA 2026).
  */
 
 #include "Util/Options.h"
@@ -51,7 +46,7 @@ template<class ICFGGraph, class CGGraph>
 void LockAnalysis::analyze(ICFGGraph icfg, CGGraph cg)
 {
     collectLockUnlockSites(icfg, cg);
-    buildCandidateFuncSetForLock();
+    buildCandidateFuncSetForLock(cg);
 
     DOTIMESTAT(double lockStart = PTAStat::getClk(true));
 
@@ -108,7 +103,8 @@ void LockAnalysis::collectLockUnlockSites(ICFGGraph icfg, CGGraph cg)
 /*!
  * Collect candidate functions for context-sensitive lock analysis
  */
-void LockAnalysis::buildCandidateFuncSetForLock()
+template<class CGGraph>
+void LockAnalysis::buildCandidateFuncSetForLock(CGGraph cg)
 {
 
     ThreadCallGraph* tcg=tct->getThreadCallGraph();
@@ -140,9 +136,11 @@ void LockAnalysis::buildCandidateFuncSetForLock()
     {
         const CallGraphNode* node = worklist.pop();
         lockCandidateFuncSet.insert(node->getFunction());
-        for (CallGraphNode::const_iterator nit = node->InEdgeBegin(), neit = node->InEdgeEnd(); nit != neit; nit++)
+        std::vector<const CallGraphEdge*> inEdges;
+        GenericGraphTraits<CGGraph>::getInEdges(cg, node, inEdges);
+        for (const CallGraphEdge* edge : inEdges)
         {
-            const CallGraphNode* srcNode = (*nit)->getSrcNode();
+            const CallGraphNode* srcNode = edge->getSrcNode();
             if (visited.find(srcNode) == visited.end())
             {
                 visited.insert(srcNode);
@@ -302,26 +300,30 @@ void LockAnalysis::collectCxtLock(ICFGGraph icfg, CGGraph cg)
         if (!isLockCandidateFun(cgNode->getFunction()))
             continue;
 
-        for (CallGraphNode::const_iterator nit = cgNode->OutEdgeBegin(), neit = cgNode->OutEdgeEnd(); nit != neit; nit++)
+        std::vector<const CallGraphEdge*> outEdges;
+        GenericGraphTraits<CGGraph>::getOutEdges(cg, cgNode, outEdges);
+        for (const CallGraphEdge* cgEdge : outEdges)
         {
-            const CallGraphEdge* cgEdge = (*nit);
-
-            for (CallGraphEdge::CallInstSet::const_iterator cit = cgEdge->directCallsBegin(), ecit = cgEdge->directCallsEnd();
-                    cit != ecit; ++cit)
+            std::vector<const CallICFGNode*> directCalls;
+            GenericGraphTraits<CGGraph>::getDirectCalls(
+                cg, cgEdge, directCalls);
+            for (const CallICFGNode* callSite : directCalls)
             {
                 DBOUT(DMTA,
-                      outs() << "\nCollecting CxtLocks: handling direct call:" << **cit << "\t" << cgEdge->getSrcNode()->getFunction()->getName()
+                      outs() << "\nCollecting CxtLocks: handling direct call:" << *callSite << "\t" << cgEdge->getSrcNode()->getFunction()->getName()
                       << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
-                handleCallRelation(icfg, cg, clp, cgEdge, *cit);
+                handleCallRelation(icfg, cg, clp, cgEdge, callSite);
             }
-            for (CallGraphEdge::CallInstSet::const_iterator ind = cgEdge->indirectCallsBegin(), eind = cgEdge->indirectCallsEnd();
-                    ind != eind; ++ind)
+            std::vector<const CallICFGNode*> indirectCalls;
+            GenericGraphTraits<CGGraph>::getIndirectCalls(
+                cg, cgEdge, indirectCalls);
+            for (const CallICFGNode* callSite : indirectCalls)
             {
                 DBOUT(DMTA,
-                      outs() << "\nCollecting CxtLocks: handling indirect call:" << **ind << "\t"
+                      outs() << "\nCollecting CxtLocks: handling indirect call:" << *callSite << "\t"
                       << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName()
                       << "\n");
-                handleCallRelation(icfg, cg, clp, cgEdge, *ind);
+                handleCallRelation(icfg, cg, clp, cgEdge, callSite);
             }
         }
     }
@@ -566,18 +568,19 @@ void LockAnalysis::handleRet(ICFGGraph icfg, CGGraph cg, const CxtStmt& cts)
     {
         if (SVFUtil::isa<ThreadForkEdge, ThreadJoinEdge>(edgeConst))
             continue;
-        // Need non-const for directCallsBegin/End
-        CallGraphEdge* edge = const_cast<CallGraphEdge*>(edgeConst);
-        for (CallGraphEdge::CallInstSet::const_iterator cit = (edge)->directCallsBegin(), ecit = (edge)->directCallsEnd(); cit != ecit;
-                ++cit)
-        {
-            handleReturnAtCallsite(cts, curFunNode->getFunction(), *cit, succ);
-        }
-        for (CallGraphEdge::CallInstSet::const_iterator cit = (edge)->indirectCallsBegin(), ecit = (edge)->indirectCallsEnd();
-                cit != ecit; ++cit)
-        {
-            handleReturnAtCallsite(cts, curFunNode->getFunction(), *cit, succ);
-        }
+        std::vector<const CallICFGNode*> directCalls;
+        GenericGraphTraits<CGGraph>::getDirectCalls(
+            cg, edgeConst, directCalls);
+        for (const CallICFGNode* callSite : directCalls)
+            handleReturnAtCallsite(
+                cts, curFunNode->getFunction(), callSite, succ);
+
+        std::vector<const CallICFGNode*> indirectCalls;
+        GenericGraphTraits<CGGraph>::getIndirectCalls(
+            cg, edgeConst, indirectCalls);
+        for (const CallICFGNode* callSite : indirectCalls)
+            handleReturnAtCallsite(
+                cts, curFunNode->getFunction(), callSite, succ);
     }
 }
 

@@ -25,11 +25,6 @@
  *
  *  Created on: Jan 21, 2014
  *      Author: Yulei Sui, Peng Di
- *
- * May-happen-in-parallel analysis. One implementation runs on the whole program
- * or a slice: analyze() is templated on the ICFG and CallGraph it traverses
- * (whole graphs or their sliced views), as used by "Multi-Stage On-Demand Program Slicing for
- * Modular Analysis of Multi-Threaded Programs" (ISSTA 2026).
  */
 
 #ifndef MHP_H_
@@ -86,13 +81,10 @@ public:
         QuerySummaries
     };
 
-    /// Constructor
-    /// @param representation Keep per-context copies
-    /// for clients that enumerate raw states (the pre-analysis detector and
-    /// slicer). Main-phase clients issue only MHP queries and can use the exact
-    /// projected query summary instead.
-    explicit MHP(
-        TCT* t,
+    /// Construct MHP and initialize its graph-dependent ForkJoinAnalysis.
+    template<class ICFGGraph, class CGGraph>
+    static std::unique_ptr<MHP> create(
+        TCT* t, ICFGGraph icfg, CGGraph cg,
         StateRepresentation representation = StateRepresentation::MaterializedContexts);
 
     /// Destructor
@@ -163,6 +155,15 @@ public:
     void printInterleaving();
 
 protected:
+    /// Construction is paired with ForkJoinAnalysis initialization by create().
+    /// @param representation Keep per-context copies
+    /// for clients that enumerate raw states (the pre-analysis detector and
+    /// slicer). Main-phase clients issue only MHP queries and can use the exact
+    /// projected query summary instead.
+    explicit MHP(
+        TCT* t,
+        StateRepresentation representation = StateRepresentation::MaterializedContexts);
+
     /// Update non-candidate functions' interleaving.
     /// Copy interleaving threads of the entry inst to other insts.
     template<class ICFGGraph, class CGGraph> void updateNonCandidateFunInterleaving(ICFGGraph icfg, CGGraph cg);
@@ -373,7 +374,8 @@ public:
     /// context-sensitive forward traversal from each fork site. Generate following results
     /// (1) fork join pair, maps a context-sensitive join site to its corresponding thread ids
     /// (2) never happen-in-parallel thread pairs
-    void analyzeForkJoinPair();
+    template<class ICFGGraph, class CGGraph>
+    void analyzeForkJoinPair(ICFGGraph icfg, CGGraph cg);
 
     /// Get directly joined threadIDs based on a context-sensitive join site
     inline NodeBS& getDirectlyJoinedTid(const CxtStmt& cs)
@@ -427,19 +429,27 @@ public:
 private:
 
     /// Handle fork
-    void handleFork(const CxtStmt& cts,NodeID rootTid);
+    template<class ICFGGraph, class CGGraph>
+    void handleFork(ICFGGraph icfg, CGGraph cg,
+                    const CxtStmt& cts, NodeID rootTid);
 
     /// Handle join
-    void handleJoin(const CxtStmt& cts,NodeID rootTid);
+    template<class ICFGGraph, class CGGraph>
+    void handleJoin(ICFGGraph icfg, CGGraph cg,
+                    const CxtStmt& cts, NodeID rootTid);
 
     /// Handle call
-    void handleCall(const CxtStmt& cts,NodeID rootTid);
+    template<class ICFGGraph, class CGGraph>
+    void handleCall(ICFGGraph icfg, CGGraph cg,
+                    const CxtStmt& cts);
 
     /// Handle return
-    void handleRet(const CxtStmt& cts);
+    template<class ICFGGraph, class CGGraph>
+    void handleRet(ICFGGraph icfg, CGGraph cg, const CxtStmt& cts);
 
     /// Handle intra
-    void handleIntra(const CxtStmt& cts);
+    template<class ICFGGraph>
+    void handleIntra(ICFGGraph icfg, const CxtStmt& cts);
 
     /// Return true if the fork and join have the same SCEV
     bool isSameSCEV(const ICFGNode* forkSite, const ICFGNode* joinSite);
@@ -565,11 +575,6 @@ private:
     {
         return getTCG()->getThreadAPI()->getJoinedThread(call);
     }
-    inline const CallGraph::FunctionSet& getCallee(const ICFGNode* inst, CallGraph::FunctionSet& callees)
-    {
-        getTCG()->getCallees(SVFUtil::cast<CallICFGNode>(inst), callees);
-        return callees;
-    }
     /// ThreadCallGraph
     inline ThreadCallGraph* getTCG() const
     {
@@ -636,6 +641,16 @@ private:
     ThreadPairSet partialJoin;		///< t1 partially joins t2 along some program path(s)
     InstToCxtStmt instToCxtStmt;    ///<Map a statement to all its context-sensitive statements
 };
+
+template<class ICFGGraph, class CGGraph>
+std::unique_ptr<MHP> MHP::create(
+    TCT* t, ICFGGraph icfg, CGGraph cg, StateRepresentation representation)
+{
+    std::unique_ptr<MHP> mhp(new MHP(t, representation));
+    mhp->fja->analyzeForkJoinPair(icfg, cg);
+    mhp->buildSymJoinKillTables();
+    return mhp;
+}
 
 } // End namespace SVF
 

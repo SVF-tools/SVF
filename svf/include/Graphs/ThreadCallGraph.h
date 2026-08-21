@@ -405,4 +405,41 @@ private:
 
 } // End namespace SVF
 
+namespace SVF
+{
+
+/// Thread-specific relations are indexed by callsite rather than represented
+/// uniformly in CallGraph node adjacency. In particular, ThreadJoinEdge is not
+/// added to adjacency because it would introduce artificial SCC cycles.
+template<>
+struct GenericGraphTraits<SVF::ThreadCallGraph*>
+    : public GenericGraphTraits<SVF::CallGraph*>
+{
+    static void getForkEdges(const SVF::ThreadCallGraph* graph,
+                             const SVF::CallICFGNode* callSite,
+                             std::vector<const SVF::CallGraphEdge*>& out)
+    {
+        out.clear();
+        if (!graph->hasThreadForkEdge(callSite))
+            return;
+        for (auto it = graph->getForkEdgeBegin(callSite),
+                  end = graph->getForkEdgeEnd(callSite); it != end; ++it)
+            out.push_back(*it);
+    }
+
+    static void getJoinEdges(const SVF::ThreadCallGraph* graph,
+                             const SVF::CallICFGNode* callSite,
+                             std::vector<const SVF::CallGraphEdge*>& out)
+    {
+        out.clear();
+        if (!graph->hasThreadJoinEdge(callSite))
+            return;
+        for (auto it = graph->getJoinEdgeBegin(callSite),
+                  end = graph->getJoinEdgeEnd(callSite); it != end; ++it)
+            out.push_back(*it);
+    }
+};
+
+} // End namespace SVF
+
 #endif /* RCG_H_ */

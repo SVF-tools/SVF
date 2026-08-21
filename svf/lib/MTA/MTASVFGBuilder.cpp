@@ -24,8 +24,6 @@
  * MTASVFGBuilder.cpp
  *
  *      Author: Jiawei Yang
- *
- * Implements the FSAM thread-aware value-flow construction (CGO'16, §3.3).
  */
 
 #include "MTA/MTASVFGBuilder.h"

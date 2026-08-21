@@ -4,17 +4,33 @@
 //
 // Copyright (C) <2013->  <Yulei Sui>
 //
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
+
+/*
+ * FSMPTA.h
+ *
+ *      Author: Jiawei Yang
+ *
+ * Sparse flow-sensitive pointer analysis for multithreaded programs (FSAM,
+ * Sui/Di/Xue CGO'16). It runs the sparse flow-sensitive solver
+ * (`FlowSensitive`) over a *thread-aware* SVFG built by `MTASVFGBuilder`,
+ * i.e. the stock thread-oblivious value flow augmented with inter-thread
+ * (interference) edges derived from the MHP and lock analyses.
+ */
 
 #ifndef INCLUDE_MTA_FSMPTA_H_
 #define INCLUDE_MTA_FSMPTA_H_
@@ -23,6 +39,7 @@
 #include "Graphs/SlicedGraphs.h"
 
 #include <deque>
+#include <type_traits>
 
 namespace SVF
 {
@@ -30,14 +47,20 @@ namespace SVF
 class AndersenBase;
 class AndersenWaveDiff;
 
-/// Flow-sensitive solver over an already-built thread-aware SVFG. The graph is
-/// owned by MTASVFGBuilder; this class owns only the analysis state and the SCC
-/// detector for the exact final slice.
+/// Flow-sensitive solver over an already-built thread-aware SVFG. SVFGGraph is
+/// either SVFG* for the whole graph or const SlicedSVFGView* for an exact slice.
+/// The backing SVFG is owned by MTASVFGBuilder; this class owns only the
+/// analysis state and the SCC detector for its solve graph.
+template<class SVFGGraph>
 class FSMPTA final : public FlowSensitive
 {
+    static_assert(std::is_same_v<SVFGGraph, SVFG*> ||
+                  std::is_same_v<SVFGGraph, const SlicedSVFGView*>,
+                  "FSMPTA supports only SVFG* and const SlicedSVFGView*");
+
 public:
     FSMPTA(AndersenWaveDiff& preAnalysis, SVFG& backingGraph,
-           const SlicedSVFGView& solveView);
+           SVFGGraph solveGraph);
     ~FSMPTA() override = default;
 
     void initialize() override;
@@ -72,13 +95,15 @@ private:
 
     AndersenWaveDiff* preAnalysis;
     SVFG* backingGraph;
-    const SlicedSVFGView* solveView;
-    std::unique_ptr<SCCDetection<const SlicedSVFGView*>> slicedSCC;
-    NodeStack slicedNodeStack;
-    bool useRetainedAdjacency = false;
+    SVFGGraph solveGraph;
+    std::unique_ptr<SCCDetection<SVFGGraph>> solveSCC;
+    NodeStack solveNodeStack;
     Map<NodeID, std::vector<SVFGEdge*>> retainedOutEdges;
     Set<const SVFGEdge*> retainedEdgeSet;
 };
+
+extern template class FSMPTA<SVFG*>;
+extern template class FSMPTA<const SlicedSVFGView*>;
 
 } // End namespace SVF
 

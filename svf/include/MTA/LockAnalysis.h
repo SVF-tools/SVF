@@ -25,11 +25,6 @@
  *
  *  Created on: 26 Aug 2015
  *      Author: pengd
- *
- * Lock analysis. One implementation runs on the whole program or a slice:
- * analyze() is templated on the graph handle (SVFIR* or const SlicedSVFIRView*),
- * as used by "Multi-Stage On-Demand Program Slicing for Modular Analysis of
- * Multi-Threaded Programs" (ISSTA 2026).
  */
 
 #ifndef INCLUDE_MTA_LockAnalysis_H_
@@ -112,7 +107,8 @@ public:
     template<class ICFGGraph, class CGGraph> void analyzeLockSpanCxtStmt(ICFGGraph icfg, CGGraph cg);
 
     template<class ICFGGraph, class CGGraph> void collectLockUnlockSites(ICFGGraph icfg, CGGraph cg);
-    void buildCandidateFuncSetForLock();
+    template<class CGGraph>
+    void buildCandidateFuncSetForLock(CGGraph cg);
 
     /// Intraprocedural locks
     //@{

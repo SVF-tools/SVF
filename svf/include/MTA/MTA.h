@@ -29,10 +29,6 @@
  * The base data race detector is based on
  * Yulei Sui, Peng Di, and Jingling Xue. "Sparse Flow-Sensitive Pointer Analysis for Multithreaded Programs".
  * 2016 International Symposium on Code Generation and Optimization (CGO'16)
- *
- * This file also declares SlicedMTA, the multi-stage on-demand program slicing
- * pipeline (MSli) introduced in "Multi-Stage On-Demand Program Slicing for
- * Modular Analysis of Multi-Threaded Programs" (ISSTA 2026).
  */
 
 #ifndef MTA_H_
@@ -72,7 +68,6 @@ class ICFGNode;
 class MTASVFGBuilder;
 class SVFG;
 class FlowSensitive;
-class FSMPTA;
 class SlicedSVFGView;
 class MultiStageSlicer;
 class SingleSlicer;
@@ -223,6 +218,8 @@ private:
         SVFG* svfg, const NodeBS& svfgNodeIds);
     static void reportPTASliceStatistics(
         const std::set<const ICFGNode*>& icfgNodes);
+    static std::string raceStatementKey(const SVFStmt* statement);
+    static void updateDigest(u64_t& digest, const std::string& value);
     static u64_t raceStatementDigest(const std::set<RacePair>& pairs);
     static u64_t racePairDigest(const std::set<RacePair>& pairs);
     //@}
@@ -275,7 +272,7 @@ private:
     std::unique_ptr<SlicedSVFIRView> ptaSlicedView;
     std::unique_ptr<SlicedSVFGView> preCandidateSVFGView;
     std::unique_ptr<SlicedSVFGView> slicedSVFGView;
-    std::unique_ptr<FSMPTA> mainFSMPTA;
+    std::unique_ptr<FlowSensitive> mainFSMPTA;
     std::unique_ptr<SlicedTCT> slicedTCT;
     std::unique_ptr<MHP> slicedMHP;
     std::unique_ptr<LockAnalysis> slicedLockAnalysis;

@@ -24,10 +24,6 @@
  * MTASlicer.cpp
  *
  *      Author: Jiawei Yang
- *
- * MTASlicerBase + MultiStageSlicer + SingleSlicer -- the program slicers of
- * "Multi-Stage On-Demand Program Slicing for Modular Analysis of Multi-Threaded
- * Programs" (ISSTA 2026).
  */
 
 #include "MTA/MTASlicer.h"
@@ -147,34 +143,13 @@ void SlicedTCT::markRelProcs()
         const FunObjVar* svfun = forkSite->getFun();
         markRelProcs(svfun);
 
-        // Get fork edges from sliced view (use tcgView to get out edges)
         const CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(forkSite);
-        const FunObjVar* callerFun = callNode->getFun();
-        CallGraphNode* callerNode = tcg->getCallGraphNode(callerFun);
-
-        if (!isKeptNode(callerNode))
-            continue;
-
-        // Use sliced view to get out edges (which filters by kept edges)
-        std::vector<const CallGraphEdge*> outEdges;
-        tcgView->getOutEdgesOf(callerNode, outEdges);
-
-        for (const CallGraphEdge* edge : outEdges)
+        std::vector<const CallGraphEdge*> forkEdges;
+        GenericGraphTraits<const SlicedThreadCallGraphView*>::getForkEdges(
+            tcgView, callNode, forkEdges);
+        for (const CallGraphEdge* edge : forkEdges)
         {
-            // Check if this is a fork edge
-            if (edge->getEdgeKind() == CallGraphEdge::TDForkEdge)
-            {
-                const CallGraphNode* forkeeNode = edge->getDstNode();
-                if (isKeptNode(forkeeNode))
-                {
-                    // Check if this edge corresponds to the fork site
-                    if (tcgView->containsCallSite(edge, callNode))
-                    {
-                        const FunObjVar* forkeeFun = forkeeNode->getFunction();
-                        candidateFuncSet.insert(forkeeFun);
-                    }
-                }
-            }
+            candidateFuncSet.insert(edge->getDstNode()->getFunction());
         }
     }
 
@@ -302,8 +277,7 @@ bool SlicedTCT::isKeptEdge(const CallGraphEdge* edge) const
 {
     if (tcgView == nullptr)
         return true;
-    const CallGraph::CallGraphEdgeSet& keptEdges = tcgView->getKeptEdges();
-    return keptEdges.find(const_cast<CallGraphEdge*>(edge)) != keptEdges.end();
+    return tcgView->isKeptEdge(edge);
 }
 
 void SlicedTCT::getKeptForkSites(std::vector<const ICFGNode*>& out) const
@@ -329,43 +303,11 @@ void SlicedTCT::getKeptForkSites(std::vector<const ICFGNode*>& out) const
         if (callNode == nullptr)
             continue;
 
-        // Check if the function containing the fork site is kept
-        const FunObjVar* fun = forkSite->getFun();
-        CallGraphNode* cgNode = tcg->getCallGraphNode(fun);
-        if (!isKeptNode(cgNode))
-            continue;
-
-        // Check if there's a kept fork edge from this fork site
-        // Use sliced view to get out edges
-        std::vector<const CallGraphEdge*> outEdges;
-        tcgView->getOutEdgesOf(cgNode, outEdges);
-
-        bool hasKeptForkEdge = false;
-        for (const CallGraphEdge* edge : outEdges)
-        {
-            if (edge->getEdgeKind() == CallGraphEdge::TDForkEdge)
-            {
-                // Check if this edge corresponds to the fork site
-                const CallGraphEdge::CallInstSet& directCalls = edge->getDirectCalls();
-                const CallGraphEdge::CallInstSet& indirectCalls = edge->getIndirectCalls();
-
-                if (directCalls.count(callNode) > 0 || indirectCalls.count(callNode) > 0)
-                {
-                    // Check if the destination is kept
-                    const CallGraphNode* dstNode = edge->getDstNode();
-                    if (isKeptNode(dstNode))
-                    {
-                        hasKeptForkEdge = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (hasKeptForkEdge)
-        {
+        std::vector<const CallGraphEdge*> forkEdges;
+        GenericGraphTraits<const SlicedThreadCallGraphView*>::getForkEdges(
+            tcgView, callNode, forkEdges);
+        if (!forkEdges.empty())
             out.push_back(forkSite);
-        }
     }
 }
 
@@ -392,43 +334,11 @@ void SlicedTCT::getKeptJoinSites(std::vector<const ICFGNode*>& out) const
         if (callNode == nullptr)
             continue;
 
-        // Check if the function containing the join site is kept
-        const FunObjVar* fun = joinSite->getFun();
-        CallGraphNode* cgNode = tcg->getCallGraphNode(fun);
-        if (!isKeptNode(cgNode))
-            continue;
-
-        // Check if there's a kept join edge to this join site
-        // Use sliced view to get in edges
-        std::vector<const CallGraphEdge*> inEdges;
-        tcgView->getInEdgesOf(cgNode, inEdges);
-
-        bool hasKeptJoinEdge = false;
-        for (const CallGraphEdge* edge : inEdges)
-        {
-            if (edge->getEdgeKind() == CallGraphEdge::TDJoinEdge)
-            {
-                // Check if this edge corresponds to the join site
-                const CallGraphEdge::CallInstSet& directCalls = edge->getDirectCalls();
-                const CallGraphEdge::CallInstSet& indirectCalls = edge->getIndirectCalls();
-
-                if (directCalls.count(callNode) > 0 || indirectCalls.count(callNode) > 0)
-                {
-                    // Check if the source is kept
-                    const CallGraphNode* srcNode = edge->getSrcNode();
-                    if (isKeptNode(srcNode))
-                    {
-                        hasKeptJoinEdge = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (hasKeptJoinEdge)
-        {
+        std::vector<const CallGraphEdge*> joinEdges;
+        GenericGraphTraits<const SlicedThreadCallGraphView*>::getJoinEdges(
+            tcgView, callNode, joinEdges);
+        if (!joinEdges.empty())
             out.push_back(joinSite);
-        }
     }
 }
 

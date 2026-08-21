@@ -24,9 +24,6 @@
  * SlicedGraphs.cpp
  *
  *      Author: Jiawei Yang
- *
- * Implementations of the general sliced graph views (SlicedGraphs.h): view
- * construction, bridged-edge contraction, and dot dumping.
  */
 
 #include "Graphs/SlicedGraphs.h"
@@ -204,22 +201,12 @@ bool SlicedSVFGView::isKeptNode(const SVFGNode* n) const
 {
     if (n == nullptr)
         return false;
-    if (membershipKind == MembershipKind::AllNodes)
-        return true;
-    if (membershipKind == MembershipKind::SVFGNodeIds)
-        return retainedNodeIds.test(n->getId());
-
-    return false;
+    return retainedNodeIds.test(n->getId());
 }
 
 size_t SlicedSVFGView::getKeptNodeCount() const
 {
-    if (membershipKind == MembershipKind::AllNodes)
-        return svfg != nullptr ? svfg->getSVFGNodeNum() : 0;
-    if (membershipKind == MembershipKind::SVFGNodeIds)
-        return retainedNodeIds.count();
-
-    return 0;
+    return retainedNodeIds.count();
 }
 
 void SlicedSVFGView::dump(const std::string& filename) const
@@ -233,13 +220,11 @@ void SlicedSVFGView::dump(const std::string& filename) const
 //===----------------------------------------------------------------------===//
 
 SlicedICFGView::SlicedICFGView(ICFG* icfg,
-                               const OrderedSet<const ICFGNode*>& keepNodes,
-                               bool buildBridged)
+                               const OrderedSet<const ICFGNode*>& keepNodes)
     : icfg(icfg)
 {
     buildICFGSets(keepNodes);
-    if (buildBridged)
-        buildBridgedEdges();
+    buildBridgedEdges();
 }
 
 // getSuccNodes/getPredNodes and the GenericGraphTraits iterators must agree on the
@@ -562,6 +547,43 @@ void SlicedThreadCallGraphView::getCalleesOf(
             callees.insert(edge->getDstNode()->getFunction());
 }
 
+void SlicedThreadCallGraphView::getForkEdgesOf(
+    const CallICFGNode* callSite,
+    std::vector<const CallGraphEdge*>& out) const
+{
+    out.clear();
+    if (!extendedKeptNodes.count(callSite) ||
+        !tcg->hasThreadForkEdge(callSite))
+        return;
+    for (auto it = tcg->getForkEdgeBegin(callSite),
+              end = tcg->getForkEdgeEnd(callSite); it != end; ++it)
+    {
+        const CallGraphEdge* edge = *it;
+        if (isKeptNode(edge->getSrcNode()) &&
+            isKeptNode(edge->getDstNode()) &&
+            containsCallSite(edge, callSite))
+            out.push_back(edge);
+    }
+}
+
+void SlicedThreadCallGraphView::getJoinEdgesOf(
+    const CallICFGNode* callSite,
+    std::vector<const CallGraphEdge*>& out) const
+{
+    out.clear();
+    if (!extendedKeptNodes.count(callSite) ||
+        !tcg->hasThreadJoinEdge(callSite))
+        return;
+    for (auto it = tcg->getJoinEdgeBegin(callSite),
+              end = tcg->getJoinEdgeEnd(callSite); it != end; ++it)
+    {
+        const CallGraphEdge* edge = *it;
+        if (isKeptNode(edge->getSrcNode()) &&
+            isKeptNode(edge->getDstNode()))
+            out.push_back(edge);
+    }
+}
+
 bool SlicedThreadCallGraphView::isKeptNode(const CallGraphNode* node) const {
     return keptNodes.count(node) > 0;
 }
@@ -600,7 +622,7 @@ void SlicedThreadCallGraphView::buildCallGraphSets() {
                 continue;
             }
 
-            keptEdges.insert(const_cast<CallGraphEdge*>(edge));
+            keptEdges.insert(edge);
         }
     }
 
@@ -631,8 +653,7 @@ void SlicedThreadCallGraphView::dump(const std::string& filename) const {
 SlicedSVFIRView::SlicedSVFIRView(SVFIR* svfir,
                                  ThreadCallGraph& callGraph,
                                  ICFG* icfg,
-                                 const OrderedSet<const ICFGNode*>& keepNodes,
-                                 bool buildBridged)
+                                 const OrderedSet<const ICFGNode*>& keepNodes)
     : svfir(svfir)
 {
     // A retained function is represented by explicit synthetic entry/exit
@@ -658,7 +679,7 @@ SlicedSVFIRView::SlicedSVFIRView(SVFIR* svfir,
 
     // Create ICFG view (based on keepNodes and keptFunctions)
     icfgView = std::make_unique<SlicedICFGView>(
-                   icfg, extendedKeepNodes, buildBridged);
+                   icfg, extendedKeepNodes);
 
     // Create PAG view (extract statements from keepNodes)
     OrderedSet<const SVFStmt*> keptStmts;

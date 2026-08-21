@@ -4,17 +4,30 @@
 //
 // Copyright (C) <2013->  <Yulei Sui>
 //
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
+
+/*
+ * FSMPTA.cpp
+ *
+ *      Author: Jiawei Yang
+ *
+ * Implements the flow-sensitive multithreaded pointer analysis (FSAM): build
+ * the thread-aware SVFG, then run the sparse flow-sensitive solver over it.
+ */
 
 #include "MTA/FSMPTA.h"
 #include "WPA/Andersen.h"
@@ -25,21 +38,25 @@
 
 using namespace SVF;
 
-FSMPTA::FSMPTA(AndersenWaveDiff& pre, SVFG& graph,
-               const SlicedSVFGView& view)
+template<class SVFGGraph>
+FSMPTA<SVFGGraph>::FSMPTA(AndersenWaveDiff& pre, SVFG& graph,
+                          SVFGGraph solveGraph)
     : FlowSensitive(pre.getPAG()), preAnalysis(&pre), backingGraph(&graph),
-      solveView(&view)
+      solveGraph(solveGraph)
 {
 }
 
-bool FSMPTA::supportsCurrentConfiguration()
+template<class SVFGGraph>
+bool FSMPTA<SVFGGraph>::supportsCurrentConfiguration()
 {
     return !Options::ClusterAnder() && !Options::ClusterFs() &&
            !Options::PlainMappingFs();
 }
 
-void FSMPTA::enqueueSVFGNode(const SVFGNode* node, NodeBS& retained,
-                            std::deque<NodeID>& nodeWorklist)
+template<class SVFGGraph>
+void FSMPTA<SVFGGraph>::enqueueSVFGNode(
+    const SVFGNode* node, NodeBS& retained,
+    std::deque<NodeID>& nodeWorklist)
 {
     if (node != nullptr && !retained.test(node->getId()))
     {
@@ -48,9 +65,10 @@ void FSMPTA::enqueueSVFGNode(const SVFGNode* node, NodeBS& retained,
     }
 }
 
-void FSMPTA::demandTopLevelPointer(const SVFVar* var, SVFG* graph,
-                                  NodeBS& demandedVars, NodeBS& retained,
-                                  std::deque<NodeID>& nodeWorklist)
+template<class SVFGGraph>
+void FSMPTA<SVFGGraph>::demandTopLevelPointer(
+    const SVFVar* var, SVFG* graph, NodeBS& demandedVars, NodeBS& retained,
+    std::deque<NodeID>& nodeWorklist)
 {
     const ValVar* val = SVFUtil::dyn_cast<ValVar>(var);
     if (val == nullptr || !val->isPointer() || demandedVars.test(val->getId()))
@@ -64,7 +82,8 @@ void FSMPTA::demandTopLevelPointer(const SVFVar* var, SVFG* graph,
 /// Register every solver-global top-level points-to read performed while a
 /// node is processed. MemorySSA IN/OUT state is carried by explicit indirect
 /// SVFG predecessors and therefore needs no separate variable root here.
-void FSMPTA::collectNodeInputDependencies(
+template<class SVFGGraph>
+void FSMPTA<SVFGGraph>::collectNodeInputDependencies(
     const SVFGNode* node, SVFG* graph, NodeBS& demandedVars,
     NodeBS& retained, std::deque<NodeID>& nodeWorklist)
 {
@@ -98,7 +117,8 @@ void FSMPTA::collectNodeInputDependencies(
                               retained, nodeWorklist);
 }
 
-NodeBS FSMPTA::buildExecutionDependencyClosure(
+template<class SVFGGraph>
+NodeBS FSMPTA<SVFGGraph>::buildExecutionDependencyClosure(
     SVFG* graph, AndersenBase* preAnalysis, NodeBS dependencyNodes)
 {
     if (graph == nullptr || preAnalysis == nullptr)
@@ -203,7 +223,8 @@ NodeBS FSMPTA::buildExecutionDependencyClosure(
     return dependencyNodes;
 }
 
-void FSMPTA::initialize()
+template<class SVFGGraph>
+void FSMPTA<SVFGGraph>::initialize()
 {
     PointerAnalysis::initialize();
     stat = new FlowSensitiveStat(this);
@@ -223,72 +244,81 @@ void FSMPTA::initialize()
     ander = preAnalysis;
     svfg = backingGraph;
     // Retain the stock graph handle for FlowSensitive's dynamic-call support;
-    // SCC/worklist topology is supplied exclusively by slicedSCC below.
+    // SCC/worklist topology is supplied exclusively by solveSCC below.
     setGraph(svfg);
-    slicedSCC = std::make_unique<SCCDetection<const SlicedSVFGView*>>(solveView);
-    useRetainedAdjacency = !solveView->keepsAllNodes();
-    if (useRetainedAdjacency)
+    solveSCC = std::make_unique<SCCDetection<SVFGGraph>>(solveGraph);
+    if constexpr (std::is_same_v<SVFGGraph, const SlicedSVFGView*>)
         buildRetainedAdjacency();
 }
 
-void FSMPTA::finalize()
+template<class SVFGGraph>
+void FSMPTA<SVFGGraph>::finalize()
 {
     if (Options::DumpVFG())
         svfg->dump("fs_solved", true);
     BVDataPTAImpl::finalize();
 }
 
-void FSMPTA::cacheRetainedEdge(SVFGEdge* edge)
+template<class SVFGGraph>
+void FSMPTA<SVFGGraph>::cacheRetainedEdge(SVFGEdge* edge)
 {
-    if (solveView->isKeptEdge(edge) && retainedEdgeSet.insert(edge).second)
-        retainedOutEdges[edge->getSrcID()].push_back(edge);
+    if constexpr (std::is_same_v<SVFGGraph, const SlicedSVFGView*>)
+        if (solveGraph->isKeptEdge(edge) && retainedEdgeSet.insert(edge).second)
+            retainedOutEdges[edge->getSrcID()].push_back(edge);
 }
 
-void FSMPTA::buildRetainedAdjacency()
+template<class SVFGGraph>
+void FSMPTA<SVFGGraph>::buildRetainedAdjacency()
 {
-    for (SVFG::iterator it = svfg->begin(), eit = svfg->end(); it != eit; ++it)
+    if constexpr (std::is_same_v<SVFGGraph, const SlicedSVFGView*>)
     {
-        SVFGNode* node = it->second;
-        if (!solveView->isKeptNode(node))
-            continue;
-        for (SVFGEdge* edge : node->getOutEdges())
-            cacheRetainedEdge(edge);
+        for (SVFG::iterator it = svfg->begin(), eit = svfg->end(); it != eit; ++it)
+        {
+            SVFGNode* node = it->second;
+            if (!solveGraph->isKeptNode(node))
+                continue;
+            for (SVFGEdge* edge : node->getOutEdges())
+                cacheRetainedEdge(edge);
+        }
     }
 }
 
-NodeStack& FSMPTA::SCCDetect()
+template<class SVFGGraph>
+NodeStack& FSMPTA<SVFGGraph>::SCCDetect()
 {
     const double start = stat->getClk();
-    slicedSCC->find();
-    assert(slicedNodeStack.empty() && "sliced SCC stack was not fully consumed");
+    solveSCC->find();
+    assert(solveNodeStack.empty() && "FSMPTA SCC stack was not fully consumed");
 
-    FIFOWorkList<NodeID> revTopo = slicedSCC->revTopoNodeStack();
+    FIFOWorkList<NodeID> revTopo = solveSCC->revTopoNodeStack();
     while (!revTopo.empty())
     {
         const NodeID rep = revTopo.front();
         revTopo.pop();
-        const NodeBS& subNodes = slicedSCC->subNodes(rep);
+        const NodeBS& subNodes = solveSCC->subNodes(rep);
         for (NodeID id : subNodes)
-            slicedNodeStack.push(id);
+            solveNodeStack.push(id);
     }
 
-    assert(slicedNodeStack.size() == solveView->getKeptNodeCount() &&
-           "FSMPTA SCC topology must contain exactly the solve view");
+    assert(solveNodeStack.size() ==
+               GenericGraphTraits<SVFGGraph>::graphSize(solveGraph) &&
+           "FSMPTA SCC topology must contain exactly the solve graph");
 
     const double end = stat->getClk();
     sccTime += (end - start) / TIMEINTERVAL;
-    return slicedNodeStack;
+    return solveNodeStack;
 }
 
-void FSMPTA::processNode(NodeID nodeId)
+template<class SVFGGraph>
+void FSMPTA<SVFGGraph>::processNode(NodeID nodeId)
 {
     SVFGNode* node = svfg->getSVFGNode(nodeId);
-    assert(solveView->isKeptNode(node) &&
-           "FSMPTA worklist must never contain a node outside the solve view");
+    assert(GenericGraphTraits<SVFGGraph>::containsNode(solveGraph, node) &&
+           "FSMPTA worklist must never contain a node outside the solve graph");
 
     if (processSVFGNode(node))
     {
-        if (useRetainedAdjacency)
+        if constexpr (std::is_same_v<SVFGGraph, const SlicedSVFGView*>)
         {
             const auto found = retainedOutEdges.find(nodeId);
             if (found != retainedOutEdges.end())
@@ -316,15 +346,25 @@ void FSMPTA::processNode(NodeID nodeId)
     clearAllDFOutVarFlag(node);
 }
 
-void FSMPTA::updateConnectedNodes(const SVFGEdgeSetTy& edges)
+template<class SVFGGraph>
+void FSMPTA<SVFGGraph>::updateConnectedNodes(const SVFGEdgeSetTy& edges)
 {
-    SVFGEdgeSetTy keptEdges;
-    for (SVFGEdge* edge : edges)
-        if (solveView->isKeptEdge(edge))
-        {
-            keptEdges.insert(edge);
-            if (useRetainedAdjacency)
+    if constexpr (std::is_same_v<SVFGGraph, const SlicedSVFGView*>)
+    {
+        SVFGEdgeSetTy keptEdges;
+        for (SVFGEdge* edge : edges)
+            if (solveGraph->isKeptEdge(edge))
+            {
+                keptEdges.insert(edge);
                 cacheRetainedEdge(edge);
-        }
-    FlowSensitive::updateConnectedNodes(keptEdges);
+            }
+        FlowSensitive::updateConnectedNodes(keptEdges);
+    }
+    else
+    {
+        FlowSensitive::updateConnectedNodes(edges);
+    }
 }
+
+template class FSMPTA<SVFG*>;
+template class FSMPTA<const SlicedSVFGView*>;

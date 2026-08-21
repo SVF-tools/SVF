@@ -24,15 +24,6 @@
  * MTASVFGBuilder.h
  *
  *      Author: Jiawei Yang
- *
- * Builds a *thread-aware* Sparse Value-Flow Graph (SVFG) for the FSAM
- * flow-sensitive multithreaded pointer analysis (Sui, Di, Xue, CGO'16).
- *
- * On top of the stock thread-oblivious SVFG, it adds inter-thread (interference)
- * indirect value-flow edges between store/load and store/store statements that
- *   (1) may-happen-in-parallel (MHP), and
- *   (2) may-alias on the address-taken object, and
- *   (3) are not excluded by a common lock (non-interference lock-pair pruning).
  */
 
 #ifndef INCLUDE_MTA_MTASVFGBUILDER_H_

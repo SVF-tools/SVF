@@ -26,10 +26,6 @@
  *
  *  Created on: May 14, 2014
  *      Author: Yulei Sui, Peng Di
- *
- * This file also implements SlicedMTA, the multi-stage on-demand program
- * slicing pipeline (MSli) introduced in "Multi-Stage On-Demand Program Slicing
- * for Modular Analysis of Multi-Threaded Programs" (ISSTA 2026).
  */
 
 #include "Util/Options.h"
@@ -120,14 +116,16 @@ MHP* MTA::computeMHP(TCT* tct)
     DBOUT(DMTA, outs() << pasMsg("MHP analysis\n"));
 
     DOTIMESTAT(double mhpStart = stat->getClk());
-    MHP* mhp = new MHP(tct);
+    std::unique_ptr<MHP> mhp = MHP::create(
+        tct, PAG::getPAG()->getICFG(),
+        const_cast<CallGraph*>(PAG::getPAG()->getCallGraph()));
     mhp->analyze(PAG::getPAG()->getICFG(), const_cast<CallGraph*>(PAG::getPAG()->getCallGraph()));
     DOTIMESTAT(double mhpEnd = stat->getClk());
     DOTIMESTAT(stat->MHPTime += (mhpEnd - mhpStart) / TIMEINTERVAL);
 
     DBOUT(DGENERAL, outs() << pasMsg("MHP analysis finish\n"));
     DBOUT(DMTA, outs() << pasMsg("MHP analysis finish\n"));
-    return mhp;
+    return mhp.release();
 }
 
 // Collect the global objects (addr-taken global vars at the global ICFG node).
@@ -416,33 +414,76 @@ void SlicedMTA::reportPTASliceStatistics(
     SVFUtil::outs() << "  PAG statements: " << statements.size() << "\n";
 }
 
+std::string SlicedMTA::raceStatementKey(const SVFStmt* statement)
+{
+    std::string key;
+    const ICFGNode* node = statement->getICFGNode();
+    const FunObjVar* function = node == nullptr ? nullptr : node->getFun();
+    const SVFBasicBlock* block = statement->getBB();
+    const SVFVar* value = statement->getValue();
+
+    const std::string fields[] = {
+        std::to_string(statement->getEdgeKind()),
+        function == nullptr ? std::string() : function->getName(),
+        block == nullptr ? std::string() : block->getName(),
+        node == nullptr ? std::string() : node->getSourceLoc(),
+        value == nullptr ? std::string() : value->getName(),
+        value == nullptr ? std::string() : value->getSourceLoc(),
+        value != nullptr && value->hasLLVMValue()
+            ? value->valueOnlyToString() : std::string()
+    };
+    for (const std::string& field : fields)
+    {
+        key += std::to_string(field.size());
+        key += ':';
+        key += field;
+    }
+    return key;
+}
+
+void SlicedMTA::updateDigest(u64_t& digest, const std::string& value)
+{
+    for (unsigned char byte : value)
+    {
+        digest ^= static_cast<u64_t>(byte);
+        digest *= 1099511628211ULL;
+    }
+    digest ^= 0xffULL;
+    digest *= 1099511628211ULL;
+}
+
 u64_t SlicedMTA::raceStatementDigest(const std::set<RacePair>& pairs)
 {
-    std::set<EdgeID> statementIds;
+    std::set<std::string> statementKeys;
     for (const RacePair& pair : pairs)
     {
-        statementIds.insert(pair.stmt1->getEdgeID());
-        statementIds.insert(pair.stmt2->getEdgeID());
+        statementKeys.insert(raceStatementKey(pair.stmt1));
+        statementKeys.insert(raceStatementKey(pair.stmt2));
     }
 
     u64_t digest = 1469598103934665603ULL;
-    for (EdgeID id : statementIds)
-    {
-        digest ^= static_cast<u64_t>(id);
-        digest *= 1099511628211ULL;
-    }
+    for (const std::string& key : statementKeys)
+        updateDigest(digest, key);
     return digest;
 }
 
 u64_t SlicedMTA::racePairDigest(const std::set<RacePair>& pairs)
 {
-    u64_t digest = 1469598103934665603ULL;
+    std::set<std::pair<std::string, std::string>> pairKeys;
     for (const RacePair& pair : pairs)
     {
-        digest ^= static_cast<u64_t>(pair.stmt1->getEdgeID());
-        digest *= 1099511628211ULL;
-        digest ^= static_cast<u64_t>(pair.stmt2->getEdgeID());
-        digest *= 1099511628211ULL;
+        std::string first = raceStatementKey(pair.stmt1);
+        std::string second = raceStatementKey(pair.stmt2);
+        if (second < first)
+            std::swap(first, second);
+        pairKeys.emplace(std::move(first), std::move(second));
+    }
+
+    u64_t digest = 1469598103934665603ULL;
+    for (const auto& pair : pairKeys)
+    {
+        updateDigest(digest, pair.first);
+        updateDigest(digest, pair.second);
     }
     return digest;
 }
@@ -558,7 +599,9 @@ bool SlicedMTA::runPreAnalysis()
         ScopedPhaseTimer ilaTimer("Run Interleaving and Lock Analysis");
         {
             ScopedPhaseTimer timer("ILA: construct MHP/ForkJoin");
-            mhp = std::make_unique<MHP>(tct.get());
+            mhp = MHP::create(
+                tct.get(), svfir->getICFG(),
+                const_cast<CallGraph*>(svfir->getCallGraph()));
         }
         {
             ScopedPhaseTimer timer("ILA: MHP propagation");
@@ -660,7 +703,7 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
                 const ValueFlowSlice& preCandidate =
                     multiStageSlicer->getPreCandidateSlice(vulnerableStatements);
                 preCandidateSolveNodeIds =
-                    FSMPTA::buildExecutionDependencyClosure(
+                    FSMPTA<const SlicedSVFGView*>::buildExecutionDependencyClosure(
                         preSVFG, preAndersen, preCandidate.nodeIds());
                 if (preCandidateSolveNodeIds.empty() &&
                     !preCandidate.svfgNodes.empty())
@@ -743,8 +786,9 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
         ScopedPhaseTimer ilaTimer("Sliced Interleaving and Lock Analysis");
         {
             ScopedPhaseTimer timer("Sliced ILA: construct MHP/ForkJoin");
-            slicedMHP = std::make_unique<MHP>(
-                            slicedTCT.get(),
+            slicedMHP = MHP::create(
+                            slicedTCT.get(), slicedView->getICFG(),
+                            slicedView->getThreadCallGraph(),
                             MHP::StateRepresentation::QuerySummaries);
         }
         {
@@ -796,7 +840,8 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
         // Single-pass baseline: reuse the unified V_Single computed in MTA slicing
         // (no separate data-dependence slice); FSPTA runs on the same slice as ILA.
         SVFUtil::outs() << "[Slicing Mode] Reusing unified slice (V_Single) for FSPTA\n";
-        finalSVFGNodeIds = FSMPTA::buildExecutionDependencyClosure(
+        finalSVFGNodeIds =
+            FSMPTA<const SlicedSVFGView*>::buildExecutionDependencyClosure(
                                preSVFG, preAndersen,
                                singleSlicedSVFGNodeIds);
         if (finalSVFGNodeIds.empty() && !singleSlicedSVFGNodeIds.empty())
@@ -877,7 +922,7 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
         {
             ScopedPhaseTimer timer("Build FSMPTA execution dependency closure");
             finalSVFGNodeIds =
-                FSMPTA::buildExecutionDependencyClosure(
+                FSMPTA<const SlicedSVFGView*>::buildExecutionDependencyClosure(
                     preSVFG, preAndersen, finalSVFGNodeIds);
         }
 
@@ -911,7 +956,7 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
 
     // Step 5: solve the exact final slice on the stable base SVFG plus Main-TVF.
     SVFUtil::outs() << "[Main FSMPTA] Reusing BaseSVFG; Main-TVF comes from the sliced main ILA\n";
-    if (!FSMPTA::supportsCurrentConfiguration())
+    if (!FSMPTA<const SlicedSVFGView*>::supportsCurrentConfiguration())
     {
         SVFUtil::errs() << "[ERROR] Unsupported FSMPTA mapping/clustering configuration\n";
         return false;
@@ -920,8 +965,8 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
         ScopedPhaseTimer timer("Flow-Sensitive FSAM Analysis");
         slicedSVFGView = std::make_unique<SlicedSVFGView>(
                              preSVFG, finalSVFGNodeIds);
-        auto solver = std::make_unique<FSMPTA>(
-                          *preAndersen, *preSVFG, *slicedSVFGView);
+        auto solver = std::make_unique<FSMPTA<const SlicedSVFGView*>>(
+                          *preAndersen, *preSVFG, slicedSVFGView.get());
         solver->analyze();
         if (dumpDot)
         {
@@ -998,11 +1043,9 @@ bool SlicedMTA::runFinalRaceDetection()
     return true;
 }
 
-// No-slice A/B baseline: run the SAME refined machinery as the sliced path
-// (SlicedTCT/MHP/LockAnalysis + flow-sensitive FSAM + the same final re-check),
-// but over a "slice" that keeps EVERY ICFG node -- i.e. the whole program. This
-// is the correct reference: if slicing preserves the result, this must produce
-// the same race set as the real (reduced) slice, only slower.
+// No-slice A/B baseline: run the same analysis as the sliced path over the whole
+// program. SlicedTCT is retained here to preserve its main-context construction;
+// MHP and LockAnalysis consume the original full graphs directly.
 bool SlicedMTA::runWholeProgramDetection()
 {
     SVFUtil::outs() << "\n=== Whole-program FSAM Race Detection (no slicing) ===\n";
@@ -1020,16 +1063,16 @@ bool SlicedMTA::runWholeProgramDetection()
                         svfir, *threadCallGraph, svfir->getICFG(), allNodes);
 
     {
-        ScopedPhaseTimer timer("Whole-program Sliced TCT/MHP/Lock");
+        ScopedPhaseTimer timer("Whole-program TCT/MHP/Lock");
         slicedTCT = SlicedTCT::create(
                         *preAndersen, *ptaSlicedView, mainContextDepth);
-        slicedMHP = std::make_unique<MHP>(
-                        slicedTCT.get(),
+        CallGraph* fullCallGraph = threadCallGraph;
+        slicedMHP = MHP::create(
+                        slicedTCT.get(), svfir->getICFG(), fullCallGraph,
                         MHP::StateRepresentation::QuerySummaries);
-        const SlicedSVFIRView* pv = ptaSlicedView.get();
-        slicedMHP->analyze(pv->getICFG(), pv->getThreadCallGraph());
+        slicedMHP->analyze(svfir->getICFG(), fullCallGraph);
         slicedLockAnalysis = std::make_unique<LockAnalysis>(slicedTCT.get());
-        slicedLockAnalysis->analyze(pv->getICFG(), pv->getThreadCallGraph());
+        slicedLockAnalysis->analyze(svfir->getICFG(), fullCallGraph);
     }
 
     const MTASVFGBuilder::ThreadVFBuildConfig mainConfig =
@@ -1044,9 +1087,8 @@ bool SlicedMTA::runWholeProgramDetection()
 
     {
         ScopedPhaseTimer timer("Whole-program Flow-Sensitive FSMPTA Solve");
-        slicedSVFGView = std::make_unique<SlicedSVFGView>(preSVFG);
-        auto solver = std::make_unique<FSMPTA>(
-                          *preAndersen, *preSVFG, *slicedSVFGView);
+        auto solver = std::make_unique<FSMPTA<SVFG*>>(
+                          *preAndersen, *preSVFG, preSVFG);
         solver->analyze();
         mainFSMPTA = std::move(solver);
     }
