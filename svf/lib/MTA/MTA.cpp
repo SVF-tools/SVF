@@ -1049,6 +1049,19 @@ bool SlicedMTA::runFinalRaceDetection()
         SVFUtil::outs() << "[SKIP] No thread functions found\n";
         return true;
     }
+    if (racePairs.empty())
+    {
+        const RaceDigests digests = computeRaceDigests(racePairs);
+        SVFUtil::outs() << "\n=== Race Detection Summary ===\n";
+        SVFUtil::outs() << "Race pairs (pre-analysis): 0\n";
+        SVFUtil::outs() << "Race pairs (sliced graph): 0\n";
+        SVFUtil::outs() << "Race statements (sliced graph): 0\n";
+        SVFUtil::outs() << "[MSLI-RQ] mode=MSli alarms=0 pairs=0"
+                        << " alarm-digest=" << digests.alarm
+                        << " pair-digest=" << digests.pair << "\n";
+        SVFUtil::outs() << "\nNo race pairs detected in sliced graph.\n";
+        return true;
+    }
     if (mtaSlicedView == nullptr)
     {
         SVFUtil::errs() << "[ERROR] MTA sliced view not available\n";
