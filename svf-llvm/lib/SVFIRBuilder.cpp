@@ -1026,17 +1026,6 @@ void SVFIRBuilder::visitGlobal()
             setCurrentLocation(alias, (SVFBasicBlock*) nullptr);
             addCopyEdge(src, dst, CopyStmt::COPYVAL);
         }
-
-        // A GlobalIFunc denotes a load-time-selected function pointer.  SVF
-        // does not currently evaluate resolver code during SVFIR building;
-        // give the symbol a conservative black-hole address definition so it
-        // remains a well-formed pointer root in VFG/SVFG construction.
-        for (const GlobalIFunc& ifunc : M.ifuncs())
-        {
-            NodeID dst = llvmModuleSet()->getValueNode(&ifunc);
-            setCurrentLocation(&ifunc, (SVFBasicBlock*) nullptr);
-            addBlackHoleAddrEdge(dst);
-        }
     }
 }
 
@@ -1609,7 +1598,7 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
     const Value*  value = stripAllCasts(V);
     assert(value && "null ptr?");
     auto getGlobalFieldFromByteOffset =
-        [](const GlobalVariable* glob, int64_t byteOffset) -> const Value*
+        [this](const GlobalVariable* glob, int64_t byteOffset) -> const Value*
     {
         if (!glob || !glob->hasInitializer())
             return nullptr;
@@ -1619,9 +1608,9 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
         if (!initializer || !structType)
             return nullptr;
 
-        const DataLayout& dataLayout = glob->getParent()->getDataLayout();
+        DataLayout* dataLayout = getDataLayout(llvmModuleSet()->getMainLLVMModule());
         const StructLayout* layout =
-        dataLayout.getStructLayout(const_cast<StructType*>(structType));
+        dataLayout->getStructLayout(const_cast<StructType*>(structType));
         for (u32_t fieldIdx = 0; fieldIdx < initializer->getNumOperands(); ++fieldIdx)
         {
             if (layout->getElementOffset(fieldIdx) != static_cast<uint64_t>(byteOffset))
@@ -1805,24 +1794,18 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const 
     NodeID gepval = pag->getGepValVar(llvmModuleSet()->getValueNode(curVal), base, ap);
     if (gepval==UINT_MAX)
     {
-        // External models can request a temporary field while the current
-        // value is a location-less constant or function (not an instruction
-        // or global variable).  Such a value cannot own a well-formed VFG
-        // definition.  Fold the unsupported field into its base instead of
-        // creating an orphan GepValVar that later makes VFG construction
-        // fail.
-        if (!SVFUtil::isa<Instruction>(curVal) &&
-                !SVFUtil::isa<GlobalVariable>(curVal))
-            return base;
-
         assert(((int) UINT_MAX)==-1 && "maximum limit of unsigned int is not -1?");
         /*
          * getGepValVar can only be called from two places:
          * 1. SVFIRBuilder::addComplexConsForExt to handle external calls
          * 2. SVFIRBuilder::getGlobalVarField to initialize global variable
-         * curVal is an Instruction or GlobalVariable; unsupported
-         * location-less values were folded into their base above.
+         * so curVal can only be
+         * 1. Instruction
+         * 2. GlobalVariable
          */
+        assert(
+            (SVFUtil::isa<Instruction>(curVal) || SVFUtil::isa<GlobalVariable>(curVal)) && "curVal not an instruction or a globalvariable?");
+
         // We assume every GepValNode and its GepEdge to the baseNode are unique across the whole program
         // We preserve the current BB information to restore it after creating the gepNode
         const Value* cval = getCurrentValue();

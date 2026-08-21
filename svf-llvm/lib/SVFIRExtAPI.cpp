@@ -226,11 +226,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     if (fields.size() == 1 && (LLVMUtil::isConstDataOrAggData(D) || LLVMUtil::isConstDataOrAggData(S)))
     {
         NodeID dummy = pag->addDummyValNode();
-        if (!pag->getGNode(vnD)->isPointer() &&
-                pag->getGNode(vnS)->isPointer())
-            addBlackHoleAddrEdge(dummy);
-        else
-            addLoadEdge(vnD,dummy);
+        addLoadEdge(vnD,dummy);
         addStoreEdge(dummy,vnS);
         return;
     }
@@ -279,11 +275,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
                 NodeID dField = getGepValVar(dstFieldBase, dstField.accessPath, dstField.elementType);
                 NodeID sField = getGepValVar(srcFieldBase, it->second.accessPath, it->second.elementType);
                 NodeID dummy = pag->addDummyValNode();
-                if (!pag->getGNode(sField)->isPointer() &&
-                        pag->getGNode(dField)->isPointer())
-                    addBlackHoleAddrEdge(dummy);
-                else
-                    addLoadEdge(sField, dummy);
+                addLoadEdge(sField, dummy);
                 addStoreEdge(dummy, dField);
             }
             return;
@@ -301,11 +293,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
         NodeID dField = getGepValVar(D,fields[index],dElementType);
         NodeID sField = getGepValVar(S,fields[index],sElementType);
         NodeID dummy = pag->addDummyValNode();
-        if (!pag->getGNode(sField)->isPointer() &&
-                pag->getGNode(dField)->isPointer())
-            addBlackHoleAddrEdge(dummy);
-        else
-            addLoadEdge(sField,dummy);
+        addLoadEdge(sField,dummy);
         addStoreEdge(dummy,dField);
     }
 }
@@ -444,8 +432,6 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
                 return nullptr;
 
             auto *constarray = SVFUtil::cast<ConstantDataArray>(glob->getInitializer());
-            if (!constarray->isCString())
-                return nullptr;
             return LLVMUtil::getProgFunction(constarray->getAsCString().str());
         };
 

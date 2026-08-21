@@ -647,23 +647,19 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOfVar(const Value *var)
         }
         else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(curValue))
         {
-            // A noreturn call cannot contribute a returned allocation.  It is
-            // valid IR (for example, a language runtime type-error helper),
-            // not a malformed allocation source.
-            if (!callBase->doesNotReturn())
+            ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + dumpValueAndDbgInfo(callBase));
+            if (Function *callee = callBase->getCalledFunction())
             {
-                if (Function *callee = callBase->getCalledFunction())
+                if (!callee->isDeclaration())
                 {
-                    if (!callee->isDeclaration())
-                    {
-                        LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
-                        const BasicBlock* exitBB = llvmmodule->getFunExitBB(callee);
-                        assert (exitBB && "exit bb is not a basic block?");
-                        const Value *pValue = &exitBB->back();
-                        const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
-                        ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
-                        insertAllocsOrPushWorklist(retInst->getReturnValue());
-                    }
+
+                    LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
+                    const BasicBlock* exitBB = llvmmodule->getFunExitBB(callee);
+                    assert (exitBB && "exit bb is not a basic block?");
+                    const Value *pValue = &exitBB->back();
+                    const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
+                    ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
+                    insertAllocsOrPushWorklist(retInst->getReturnValue());
                 }
             }
         }
@@ -788,16 +784,14 @@ Set<std::string> &ObjTypeInference::inferThisPtrClsName(const Value *thisPtr)
     // Lambda for checking a function is a valid name source & extracting a class name from it
     auto addNamesFromFunc = [&names](const Function *func) -> void
     {
-        // Backward source discovery is conservative and may reach an ordinary
-        // C allocation helper, which carries no C++ class name.
-        if (!isClsNameSource(func)) return;
+        ABORT_IFNOT(isClsNameSource(func), "Func is invalid class name source: " + dumpValueAndDbgInfo(func));
         for (const auto &name : extractClsNamesFromFunc(func)) names.insert(name);
     };
 
     // Lambda for getting callee & extracting class name for calls to constructors/destructors/template funcs
     auto addNamesFromCall = [&names, &addNamesFromFunc](const CallBase *call) -> void
     {
-        if (!isClsNameSource(call)) return;
+        ABORT_IFNOT(isClsNameSource(call), "Call is invalid class name source: " + dumpValueAndDbgInfo(call));
 
         const auto *func = call->getCalledFunction();
         if (isDynCast(func)) names.insert(extractClsNameFromDynCast(call));
@@ -962,20 +956,18 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
         }
         else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(curValue))
         {
-            if (!callBase->doesNotReturn())
+            ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + dumpValueAndDbgInfo(callBase));
+            if (const auto *callee = callBase->getCalledFunction())
             {
-                if (const auto *callee = callBase->getCalledFunction())
+                if (!callee->isDeclaration())
                 {
-                    if (!callee->isDeclaration())
-                    {
-                        LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
-                        const BasicBlock* exitBB = llvmmodule->getFunExitBB(callee);
-                        assert (exitBB && "exit bb is not a basic block?");
-                        const Value *pValue = &exitBB->back();
-                        const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
-                        ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
-                        insertSourcesOrPushWorklist(retInst->getReturnValue());
-                    }
+                    LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
+                    const BasicBlock* exitBB = llvmmodule->getFunExitBB(callee);
+                    assert (exitBB && "exit bb is not a basic block?");
+                    const Value *pValue = &exitBB->back();
+                    const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
+                    ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
+                    insertSourcesOrPushWorklist(retInst->getReturnValue());
                 }
             }
         }

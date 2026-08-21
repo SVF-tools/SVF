@@ -257,9 +257,6 @@ void AndersenBase::connectCaller2ForkedFunParams(const CallICFGNode* cs, const F
     const PAGNode *cs_arg = tdCallGraph->getThreadAPI()->getActualParmAtForkSite(cs);
     const PAGNode *fun_arg = tdCallGraph->getThreadAPI()->getFormalParmOfForkedFun(F);
 
-    if (fun_arg == nullptr)
-        return;
-
     if(cs_arg->isPointer() && fun_arg->isPointer())
     {
         DBOUT(DAndersen, outs() << "process actual parm"

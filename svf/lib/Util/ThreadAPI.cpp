@@ -239,14 +239,10 @@ const ValVar* ThreadAPI::getActualParmAtForkSite(const CallICFGNode *inst) const
 
 const SVFVar* ThreadAPI::getFormalParmOfForkedFun(const FunObjVar* F) const
 {
-    if (!PAG::getPAG()->hasFunArgsList(F))
-        return nullptr;
+    assert(PAG::getPAG()->hasFunArgsList(F) && "forked function has no args list!");
     const SVFIR::ValVarList& funArgList = PAG::getPAG()->getFunArgsList(F);
     // in pthread, forked functions are of type void *()(void *args)
-    // Indirect points-to resolution may conservatively include functions with
-    // an incompatible signature. They are not valid pthread start routines.
-    if (funArgList.size() != 1)
-        return nullptr;
+    assert(funArgList.size() == 1 && "num of pthread forked function args is not 1!");
     return funArgList[0];
 }
 

@@ -807,14 +807,7 @@ void VFG::connectDirectVFGEdges()
             /// connect formal ret to actual ret
             for(RetPESet::const_iterator it = calleeRet->retPEBegin(), eit = calleeRet->retPEEnd(); it!=eit; ++it)
             {
-                const ValVar* callsiteRet = (*it)->getLHSVar();
-                // addVFGNodes deliberately omits an ActualRet node when the
-                // callsite return already has a definition (for example, a
-                // conservative black-hole definition).  Do not add a second
-                // competing definition through the callee's FormalRet.
-                if (!hasActualRetVFGNode(callsiteRet))
-                    continue;
-                ActualRetVFGNode* callsiteRev = getActualRetVFGNode(callsiteRet);
+                ActualRetVFGNode* callsiteRev = getActualRetVFGNode((*it)->getLHSVar());
                 const CallICFGNode* callBlockNode = (*it)->getCallSite();
                 addInterEdgeFromFRToAR(calleeRet,callsiteRev, getCallSiteID(callBlockNode, calleeRet->getFun()));
             }
