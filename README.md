@@ -1,5 +1,6 @@
 <img src="./docs/images/svf_logo_2.png" width="15%"><img src="./docs/images/svf_logo_3.png" width="85%">
 
+<b>SVF</b> is a static value-flow analysis tool for LLVM-based languages.
 
 ## News
 * <b>[On-demand program slicing](https://github.com/SVF-tools/SVF/tree/master/svf/include/MTA) published in our [ISSTA paper](https://joelyyoung.github.io/pdf/issta26.pdf) is now available in SVF </b>
@@ -35,8 +36,6 @@
 
 </details>
 
-<br />
-
 ## Documentation
 
 | About SVF       | Setup  Guide         | User Guide  | Developer Guide  |
@@ -46,11 +45,9 @@
 
 <b>SVF</b>'s doxygen document is available [here](https://svf-tools.github.io/SVF-doxygen/html).
 
-<br />
+## Features and Publications
 
-## Features
-
-<b>SVF</b> is a static value-flow analysis tool for LLVM-based languages. <b>SVF</b> ([CC'16](https://dl.acm.org/doi/10.1145/2892208.2892235)) is able to perform
+<b>SVF</b> ([CC'16](https://dl.acm.org/doi/10.1145/2892208.2892235)) is able to perform
 * [AE](https://github.com/SVF-tools/SVF/tree/master/svf/include/AE) (<b>abstract execution</b>): cross-domain execution ([ICSE'24](https://dl.acm.org/doi/10.1145/3597503.3639220)), selective widening ([OOPSLA'25](https://dl.acm.org/doi/10.1145/3763083)), recursion analysis ([ECOOP'25](https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ECOOP.2025.34)), typestate analysis ([FSE'24](https://dl.acm.org/doi/10.1145/3643749));
 * [WPA](https://github.com/SVF-tools/SVF/tree/master/svf/include/WPA) (<b>whole program analysis</b>): field-sensitive ([SAS'19](https://link.springer.com/chapter/10.1007/978-3-030-32304-2_3)), flow-sensitive ([CGO'21](https://ieeexplore.ieee.org/document/9370334), [OOPSLA'21](https://dl.acm.org/doi/10.1145/3485547)) analysis;
 * [DDA](https://github.com/SVF-tools/SVF/tree/master/svf/include/DDA) (<b>demand-driven analysis</b>): flow-sensitive, context-sensitive points-to analysis ([FSE'16](https://dl.acm.org/doi/10.1145/2950290.2950296), [TSE'18](https://doi.org/10.1109/TSE.2018.2869336));
