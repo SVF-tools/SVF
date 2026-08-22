@@ -39,7 +39,6 @@
 #include "Graphs/SlicedGraphs.h"
 
 #include <deque>
-#include <type_traits>
 
 namespace SVF
 {
@@ -54,10 +53,6 @@ class AndersenWaveDiff;
 template<class SVFGGraph>
 class FSMPTA final : public FlowSensitive
 {
-    static_assert(std::is_same_v<SVFGGraph, SVFG*> ||
-                  std::is_same_v<SVFGGraph, const SlicedSVFGView*>,
-                  "FSMPTA supports only SVFG* and const SlicedSVFGView*");
-
 public:
     FSMPTA(AndersenWaveDiff& preAnalysis, SVFG& backingGraph,
            SVFGGraph solveGraph);
@@ -82,6 +77,8 @@ protected:
     void updateConnectedNodes(const SVFGEdgeSetTy& edges) override;
 
 private:
+    using SolveGraphTraits = GenericGraphTraits<SVFGGraph>;
+
     static void enqueueSVFGNode(const SVFGNode* node, NodeBS& retained,
                                 std::deque<NodeID>& worklist);
     static void demandTopLevelPointer(const SVFVar* var, SVFG* graph,

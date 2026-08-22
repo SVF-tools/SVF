@@ -162,6 +162,7 @@ void MTASVFGBuilder::replaceThreadAwareOverlay(
     spanTailCache.clear();
 
     connectMHPEdges(svfg->getMSSA()->getPTA());
+    overlayScope = nullptr;
     overlayCandidates = nullptr;
 }
 

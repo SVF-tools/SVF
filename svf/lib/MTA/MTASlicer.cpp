@@ -66,9 +66,8 @@ std::unique_ptr<SlicedTCT> SlicedTCT::create(
 SlicedTCT::SlicedTCT(PointerAnalysis& pointerAnalysis,
                      const SlicedSVFIRView& slicedView, u32_t contextLimit)
     : TCT(&pointerAnalysis, contextLimit),
-      tcgView(slicedView.getThreadCallGraph())
+      tcgView(*slicedView.getThreadCallGraph())
 {
-    assert(tcgView != nullptr && "SlicedTCT requires a sliced thread call graph");
 }
 
 void SlicedTCT::build()
@@ -96,13 +95,13 @@ void SlicedTCT::build()
             continue;
 
         std::vector<const CallGraphEdge*> outEdges;
-        tcgView->getOutEdgesOf(node, outEdges);
+        tcgView.getOutEdgesOf(node, outEdges);
         for (const CallGraphEdge* edge : outEdges)
         {
             std::vector<const CallICFGNode*> directCalls;
             std::vector<const CallICFGNode*> indirectCalls;
-            tcgView->getDirectCallsOf(edge, directCalls);
-            tcgView->getIndirectCallsOf(edge, indirectCalls);
+            tcgView.getDirectCallsOf(edge, directCalls);
+            tcgView.getIndirectCallsOf(edge, indirectCalls);
             for (const CallICFGNode* call : directCalls)
                 handleCallRelation(process, edge, call);
             for (const CallICFGNode* call : indirectCalls)
@@ -121,12 +120,6 @@ void SlicedTCT::build()
 
 void SlicedTCT::markRelProcs()
 {
-    if (tcgView == nullptr)
-    {
-        TCT::markRelProcs();
-        return;
-    }
-
     // Get kept fork sites from sliced view
     std::vector<const ICFGNode*> keptForkSites;
     getKeptForkSites(keptForkSites);
@@ -140,7 +133,7 @@ void SlicedTCT::markRelProcs()
         const CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(forkSite);
         std::vector<const CallGraphEdge*> forkEdges;
         GenericGraphTraits<const SlicedThreadCallGraphView*>::getForkEdges(
-            tcgView, callNode, forkEdges);
+            &tcgView, callNode, forkEdges);
         for (const CallGraphEdge* edge : forkEdges)
         {
             candidateFuncSet.insert(edge->getDstNode()->getFunction());
@@ -176,7 +169,7 @@ void SlicedTCT::markRelProcs(const FunObjVar* fun)
         const CallGraphNode* node = worklist.pop();
         candidateFuncSet.insert(node->getFunction());
         std::vector<const CallGraphEdge*> inEdges;
-        tcgView->getInEdgesOf(node, inEdges);
+        tcgView.getInEdgesOf(node, inEdges);
         for (const CallGraphEdge* edge : inEdges)
         {
             const CallGraphNode* caller = edge->getSrcNode();
@@ -188,12 +181,6 @@ void SlicedTCT::markRelProcs(const FunObjVar* fun)
 
 void SlicedTCT::collectLoopInfoForJoin()
 {
-    if (tcgView == nullptr)
-    {
-        TCT::collectLoopInfoForJoin();
-        return;
-    }
-
     // Get kept join sites from sliced view
     std::vector<const ICFGNode*> keptJoinSites;
     getKeptJoinSites(keptJoinSites);
@@ -221,15 +208,9 @@ void SlicedTCT::collectLoopInfoForJoin()
 
 void SlicedTCT::collectEntryFunInCallGraph()
 {
-    if (tcgView == nullptr)
-    {
-        TCT::collectEntryFunInCallGraph();
-        return;
-    }
-
     // A removed caller must not turn its callee into a new program root.
     // Start only from original roots that remain in the sliced view.
-    const OrderedSet<const CallGraphNode*>& keptNodes = tcgView->getKeptNodes();
+    const OrderedSet<const CallGraphNode*>& keptNodes = tcgView.getKeptNodes();
 
     for (const CallGraphNode* node : keptNodes)
     {
@@ -262,31 +243,17 @@ void SlicedTCT::handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEd
 
 bool SlicedTCT::isKeptNode(const CallGraphNode* node) const
 {
-    if (tcgView == nullptr)
-        return true;
-    return tcgView->isKeptNode(node);
+    return tcgView.isKeptNode(node);
 }
 
 bool SlicedTCT::isKeptEdge(const CallGraphEdge* edge) const
 {
-    if (tcgView == nullptr)
-        return true;
-    return tcgView->isKeptEdge(edge);
+    return tcgView.isKeptEdge(edge);
 }
 
 void SlicedTCT::getKeptForkSites(std::vector<const ICFGNode*>& out) const
 {
     out.clear();
-    if (tcgView == nullptr)
-    {
-        // Fall back to original
-        for (ThreadCallGraph::CallSiteSet::const_iterator it = tcg->forksitesBegin(), eit = tcg->forksitesEnd(); it != eit; ++it)
-        {
-            out.push_back(*it);
-        }
-        return;
-    }
-
     // Get all fork sites from original ThreadCallGraph, but filter by:
     // 1. The function containing the fork site is kept
     // 2. There exists a kept fork edge from this fork site
@@ -299,7 +266,7 @@ void SlicedTCT::getKeptForkSites(std::vector<const ICFGNode*>& out) const
 
         std::vector<const CallGraphEdge*> forkEdges;
         GenericGraphTraits<const SlicedThreadCallGraphView*>::getForkEdges(
-            tcgView, callNode, forkEdges);
+            &tcgView, callNode, forkEdges);
         if (!forkEdges.empty())
             out.push_back(forkSite);
     }
@@ -308,16 +275,6 @@ void SlicedTCT::getKeptForkSites(std::vector<const ICFGNode*>& out) const
 void SlicedTCT::getKeptJoinSites(std::vector<const ICFGNode*>& out) const
 {
     out.clear();
-    if (tcgView == nullptr)
-    {
-        // Fall back to original
-        for (ThreadCallGraph::CallSiteSet::const_iterator it = tcg->joinsitesBegin(), eit = tcg->joinsitesEnd(); it != eit; ++it)
-        {
-            out.push_back(*it);
-        }
-        return;
-    }
-
     // Get all join sites from original ThreadCallGraph, but filter by:
     // 1. The function containing the join site is kept
     // 2. There exists a kept join edge to this join site
@@ -330,7 +287,7 @@ void SlicedTCT::getKeptJoinSites(std::vector<const ICFGNode*>& out) const
 
         std::vector<const CallGraphEdge*> joinEdges;
         GenericGraphTraits<const SlicedThreadCallGraphView*>::getJoinEdges(
-            tcgView, callNode, joinEdges);
+            &tcgView, callNode, joinEdges);
         if (!joinEdges.empty())
             out.push_back(joinSite);
     }
@@ -518,13 +475,6 @@ OrderedSet<const ICFGNode*> MTASlicerBase::svfgNodesToICFGNodes(
         if (stmt != nullptr && stmt->getICFGNode() != nullptr)
             result.insert(stmt->getICFGNode());
     return result;
-}
-
-OrderedSet<const ICFGNode*> MTASlicerBase::sliceDataDependenceOverVFG(
-    const OrderedSet<const SVFStmt*>& seeds, SVFG* svfg)
-{
-    return svfgNodesToICFGNodes(
-        computeDataDependenceSVFGNodes(seeds, svfg), seeds);
 }
 
 // Helper: Collect pthread-related statements (create and join)
@@ -905,19 +855,20 @@ OrderedSet<const ICFGNode*> MultiStageSlicer::runILASlicing(
 // Candidate value-flow slice over VFG_pre. It is used only to select the
 // THREAD-VF queries and to scope the refined main overlay; it is not reused as
 // the final FSPTA slice.
-const ValueFlowSlice& MultiStageSlicer::getPreCandidateSlice(
+void MultiStageSlicer::computePreCandidateSlice(
     const OrderedSet<const SVFStmt*>& vulnerableStatements)
 {
-    if (!preCandidateComputed || preCandidateSeeds != vulnerableStatements)
-    {
-        preCandidateSlice = ValueFlowSlice{};
-        preCandidateSeeds = vulnerableStatements;
-        preCandidateSlice.svfgNodes =
-            computeDataDependenceSVFGNodes(vulnerableStatements, svfg);
-        preCandidateSlice.icfgNodes =
-            svfgNodesToICFGNodes(preCandidateSlice.svfgNodes, vulnerableStatements);
-        preCandidateComputed = true;
-    }
+    preCandidateSlice = ValueFlowSlice{};
+    preCandidateSlice.svfgNodes =
+        computeDataDependenceSVFGNodes(vulnerableStatements, svfg);
+    preCandidateSlice.icfgNodes =
+        svfgNodesToICFGNodes(preCandidateSlice.svfgNodes, vulnerableStatements);
+    preCandidateComputed = true;
+}
+
+const ValueFlowSlice& MultiStageSlicer::getPreCandidateSlice() const
+{
+    assert(preCandidateComputed && "pre-candidate slice has not been computed");
     return preCandidateSlice;
 }
 

@@ -831,10 +831,17 @@ SlicedSVFIRView::SlicedSVFIRView(SVFIR* svfir,
     // Create ICFG view (based on keepNodes and keptFunctions)
     icfgView = std::make_unique<SlicedICFGView>(
                    icfg, extendedKeepNodes);
+}
 
-    // Create PAG view (extract statements from keepNodes)
+void SlicedSVFIRView::ensurePAGView() const
+{
+    if (pagView != nullptr)
+        return;
+
+    // Most analyses consume only the sliced ICFG and call graph. Materialize
+    // the PAG membership only for clients that explicitly request that view.
     OrderedSet<const SVFStmt*> keptStmts;
-    for (const ICFGNode* node : extendedKeepNodes)
+    for (const ICFGNode* node : icfgView->getKeptNodes())
     {
         const ICFGNode::SVFStmtList& stmts = node->getSVFStmts();
         keptStmts.insert(stmts.begin(), stmts.end());
@@ -846,7 +853,7 @@ void SlicedSVFIRView::dumpAll(const std::string& prefix) const
 {
     icfgView->dump(prefix + "_icfg");
     tcgView->dump(prefix + "_threadcallgraph");
-    pagView->dump(prefix + "_pag");
+    getPAG()->dump(prefix + "_pag");
 }
 
 void SlicedSVFIRView::dumpStats(const std::string& prefix) const
@@ -912,21 +919,6 @@ void SlicedICFGView::getFunICFGNodes(const FunObjVar* fun,
             if (isKeptNode(node))
                 out.push_back(node);
     }
-}
-
-//===----------------------------------------------------------------------===//
-// SlicedSVFIRView call-graph helpers used by the sliced analyses.
-//===----------------------------------------------------------------------===//
-
-void SlicedSVFIRView::getInEdgesOfCallGraphNode(const CallGraphNode* node,
-                                                std::vector<const CallGraphEdge*>& out) const
-{
-    out.clear();
-    if (getThreadCallGraph() != nullptr)
-        getThreadCallGraph()->getInEdgesOf(node, out);
-    else
-        for (CallGraphEdge* edge : node->getInEdges())
-            out.push_back(edge);
 }
 
 } // End namespace SVF

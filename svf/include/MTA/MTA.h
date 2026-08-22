@@ -157,8 +157,43 @@ private:
         bool locked;
     };
 
+    struct RaceClass
+    {
+        bool isStore;
+        bool locked;
+        size_t representative;
+        std::vector<size_t> members;
+    };
+
+    struct RaceClassKey
+    {
+        NodeID tid;
+        bool isStore;
+        const NodeBS* interleaving;
+        bool locked;
+        NodeID lockNodeId;
+
+        bool operator<(const RaceClassKey& other) const;
+    };
+
+    using ObjectToRaceOccurrences = Map<NodeID, std::vector<size_t>>;
+
     /// Helpers for the equivalence-class race detector.
     //@{
+    static void collectRaceOccurrences(
+        SVFIR* svfir, AndersenBase* pta, MHP* mhp,
+        LockAnalysis* lockAnalysis, CallGraph* callGraph,
+        const PointsTo& escapedObjects,
+        std::vector<RaceOccurrence>& occurrences,
+        ObjectToRaceOccurrences& objectToOccurrences);
+    static std::vector<RaceClass> buildRaceClasses(
+        const std::vector<RaceOccurrence>& occurrences,
+        const std::vector<size_t>& occurrenceIndices);
+    static void emitRacePairs(
+        MHP* mhp, LockAnalysis* lockAnalysis,
+        const std::vector<RaceOccurrence>& occurrences,
+        const std::vector<RaceClass>& classes,
+        std::set<RacePair>& outRacePairs);
     static bool occurrencesRace(MHP* mhp, const RaceOccurrence& first, const RaceOccurrence& second);
     static void commitRacePair(std::set<RacePair>& out,
                                const RaceOccurrence& first, const RaceOccurrence& second);
@@ -215,7 +250,6 @@ private:
 
     /// Pipeline utilities shared by the sliced and whole-program paths.
     //@{
-    static bool checkPhaseResult(const char* phase, bool condition);
     static void reportOriginalStatistics(SVFIR* svfir);
     static std::set<const ICFGNode*> collectICFGNodes(
         SVFG* svfg, const NodeBS& svfgNodeIds);
@@ -277,7 +311,6 @@ private:
     NodeBS singleSlicedSVFGNodeIds;
     std::unique_ptr<SlicedSVFIRView> mtaSlicedView;
     std::unique_ptr<SlicedSVFIRView> ptaSlicedView;
-    std::unique_ptr<SlicedSVFGView> preCandidateSVFGView;
     std::unique_ptr<SlicedSVFGView> slicedSVFGView;
     std::unique_ptr<FlowSensitive> mainFSMPTA;
     std::unique_ptr<SlicedTCT> slicedTCT;

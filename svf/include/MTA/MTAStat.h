@@ -31,6 +31,7 @@
 #define MTASTAT_H_
 
 #include "Util/PTAStat.h"
+#include "Util/Options.h"
 #include "Util/SVFUtil.h"
 
 #include <chrono>
@@ -40,18 +41,33 @@
 namespace SVF
 {
 
+/// MTA's phase and slice reports are opt-in. PStat itself defaults to true in
+/// SVF, so its value alone does not indicate that the user requested -stat.
+inline bool isMTAStatEnabled()
+{
+    return Options::PStat.isSet() && Options::PStat();
+}
+
 class ScopedPhaseTimer
 {
 public:
     explicit ScopedPhaseTimer(const char* phaseName)
-        : name(phaseName), start(std::chrono::steady_clock::now())
+        : name(phaseName), enabled(isMTAStatEnabled()),
+          start(enabled ? std::chrono::steady_clock::now()
+                : std::chrono::steady_clock::time_point())
     {
-        SVFUtil::outs() << "[TIMER] Phase: " << name << " - started\n";
-        SVFUtil::outs().flush();
+        if (enabled)
+        {
+            SVFUtil::outs() << "[TIMER] Phase: " << name << " - started\n";
+            SVFUtil::outs().flush();
+        }
     }
 
     ~ScopedPhaseTimer()
     {
+        if (!enabled)
+            return;
+
         const auto end = std::chrono::steady_clock::now();
         const double milliseconds =
             std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
@@ -68,6 +84,7 @@ public:
 
 private:
     const char* name;
+    const bool enabled;
     std::chrono::steady_clock::time_point start;
 };
 

@@ -318,10 +318,12 @@ public:
     /// Get SlicedPAGView
     inline const SlicedPAGView* getPAG() const
     {
+        ensurePAGView();
         return pagView.get();
     }
     inline SlicedPAGView* getPAG()
     {
+        ensurePAGView();
         return pagView.get();
     }
 
@@ -350,13 +352,8 @@ public:
     /// Get all kept statements
     inline const OrderedSet<const SVFStmt*>& getKeptStatements() const
     {
-        return pagView->getKeptStmts();
+        return getPAG()->getKeptStmts();
     }
-
-    /// In-edges of a call-graph node under the sliced ThreadCallGraph view (the
-    /// full node in-edges if no TCG view was built).
-    void getInEdgesOfCallGraphNode(const CallGraphNode* node,
-                                   std::vector<const CallGraphEdge*>& out) const;
 
     /// Dump all views to files
     void dumpAll(const std::string& prefix) const;
@@ -371,9 +368,11 @@ public:
     void dumpStats(const std::string& prefix = "") const;
 
 private:
+    void ensurePAGView() const;
+
     SVFIR* svfir;
     std::unique_ptr<SlicedICFGView> icfgView;
-    std::unique_ptr<SlicedPAGView> pagView;
+    mutable std::unique_ptr<SlicedPAGView> pagView;
     std::unique_ptr<SlicedThreadCallGraphView> tcgView;
 };
 
@@ -1406,6 +1405,7 @@ struct GenericGraphTraits<const SlicedSVFGView*>
     using nodes_iterator = SlicedSVFGNodeIter;
     using ChildIteratorType = SlicedSVFGChildIterImpl<true>;
     using ChildEdgeIteratorType = SlicedSVFGEdgeIterImpl<true>;
+    static constexpr bool isFilteredGraph = true;
 
     static const SVFGNode* getRawNode(NodeRef n) { return n.raw; }
 
@@ -1413,6 +1413,11 @@ struct GenericGraphTraits<const SlicedSVFGView*>
     static bool containsNode(const SlicedSVFGView* g, const SVFGNode* n)
     {
         return g->isKeptNode(n);
+    }
+
+    static bool containsEdge(const SlicedSVFGView* g, const SVFGEdge* e)
+    {
+        return g->isKeptEdge(e);
     }
 
     static NodeRef getEntryNode(const SlicedSVFGView*) { return NodeRef{}; }

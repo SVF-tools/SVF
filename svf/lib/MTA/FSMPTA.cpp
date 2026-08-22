@@ -247,7 +247,7 @@ void FSMPTA<SVFGGraph>::initialize()
     // SCC/worklist topology is supplied exclusively by solveSCC below.
     setGraph(svfg);
     solveSCC = std::make_unique<SCCDetection<SVFGGraph>>(solveGraph);
-    if constexpr (std::is_same_v<SVFGGraph, const SlicedSVFGView*>)
+    if constexpr (SolveGraphTraits::isFilteredGraph)
         buildRetainedAdjacency();
 }
 
@@ -262,24 +262,21 @@ void FSMPTA<SVFGGraph>::finalize()
 template<class SVFGGraph>
 void FSMPTA<SVFGGraph>::cacheRetainedEdge(SVFGEdge* edge)
 {
-    if constexpr (std::is_same_v<SVFGGraph, const SlicedSVFGView*>)
-        if (solveGraph->isKeptEdge(edge) && retainedEdgeSet.insert(edge).second)
-            retainedOutEdges[edge->getSrcID()].push_back(edge);
+    if (SolveGraphTraits::containsEdge(solveGraph, edge) &&
+        retainedEdgeSet.insert(edge).second)
+        retainedOutEdges[edge->getSrcID()].push_back(edge);
 }
 
 template<class SVFGGraph>
 void FSMPTA<SVFGGraph>::buildRetainedAdjacency()
 {
-    if constexpr (std::is_same_v<SVFGGraph, const SlicedSVFGView*>)
+    for (SVFG::iterator it = svfg->begin(), eit = svfg->end(); it != eit; ++it)
     {
-        for (SVFG::iterator it = svfg->begin(), eit = svfg->end(); it != eit; ++it)
-        {
-            SVFGNode* node = it->second;
-            if (!solveGraph->isKeptNode(node))
-                continue;
-            for (SVFGEdge* edge : node->getOutEdges())
-                cacheRetainedEdge(edge);
-        }
+        SVFGNode* node = it->second;
+        if (!SolveGraphTraits::containsNode(solveGraph, node))
+            continue;
+        for (SVFGEdge* edge : node->getOutEdges())
+            cacheRetainedEdge(edge);
     }
 }
 
@@ -300,8 +297,7 @@ NodeStack& FSMPTA<SVFGGraph>::SCCDetect()
             solveNodeStack.push(id);
     }
 
-    assert(solveNodeStack.size() ==
-               GenericGraphTraits<SVFGGraph>::graphSize(solveGraph) &&
+    assert(solveNodeStack.size() == SolveGraphTraits::graphSize(solveGraph) &&
            "FSMPTA SCC topology must contain exactly the solve graph");
 
     const double end = stat->getClk();
@@ -313,12 +309,12 @@ template<class SVFGGraph>
 void FSMPTA<SVFGGraph>::processNode(NodeID nodeId)
 {
     SVFGNode* node = svfg->getSVFGNode(nodeId);
-    assert(GenericGraphTraits<SVFGGraph>::containsNode(solveGraph, node) &&
+    assert(SolveGraphTraits::containsNode(solveGraph, node) &&
            "FSMPTA worklist must never contain a node outside the solve graph");
 
     if (processSVFGNode(node))
     {
-        if constexpr (std::is_same_v<SVFGGraph, const SlicedSVFGView*>)
+        if constexpr (SolveGraphTraits::isFilteredGraph)
         {
             const auto found = retainedOutEdges.find(nodeId);
             if (found != retainedOutEdges.end())
@@ -349,11 +345,11 @@ void FSMPTA<SVFGGraph>::processNode(NodeID nodeId)
 template<class SVFGGraph>
 void FSMPTA<SVFGGraph>::updateConnectedNodes(const SVFGEdgeSetTy& edges)
 {
-    if constexpr (std::is_same_v<SVFGGraph, const SlicedSVFGView*>)
+    if constexpr (SolveGraphTraits::isFilteredGraph)
     {
         SVFGEdgeSetTy keptEdges;
         for (SVFGEdge* edge : edges)
-            if (solveGraph->isKeptEdge(edge))
+            if (SolveGraphTraits::containsEdge(solveGraph, edge))
             {
                 keptEdges.insert(edge);
                 cacheRetainedEdge(edge);

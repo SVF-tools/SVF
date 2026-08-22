@@ -104,7 +104,7 @@ private:
 
     void collectEntryFunInCallGraph() override;
 
-    const SlicedThreadCallGraphView* tcgView; // ThreadCallGraph view (from the sliced view)
+    const SlicedThreadCallGraphView& tcgView;
     bool isKeptNode(const CallGraphNode* node) const;
     bool isKeptEdge(const CallGraphEdge* edge) const;
     void getKeptForkSites(std::vector<const ICFGNode*>& out) const;
@@ -123,7 +123,6 @@ class MTASlicerBase
 public:
     MTASlicerBase(SVFIR* svfir, AndersenBase* pta, MHP* mhp,
                LockAnalysis* lockAnalysis, SVFG* svfg = nullptr);
-    virtual ~MTASlicerBase() = default;
 
 protected:
     SVFIR* svfir;
@@ -134,17 +133,6 @@ protected:
     SVFG* svfg;   ///< thread-aware VFG_pre (PTA/Single slicers; null for MTA)
 
     // === Data flow analysis helper ===
-    /**
-     * Data-dependence slice over the thread-aware SVFG
-     * (VFG_pre): seed from the value-flow nodes of the given statements and
-     * backward-traverse every value-flow edge -- direct (top-level def-use),
-     * indirect (address-taken / MemSSA def-use), and thread-aware interference.
-     * Returns the kept ICFG nodes. This is the single dependence model used
-     * by the FSPTA stage.
-     */
-    OrderedSet<const ICFGNode*> sliceDataDependenceOverVFG(
-        const OrderedSet<const SVFStmt*>& seeds, SVFG* svfg);
-
     /// The SVFG-node granularity of the data-dependence slice above: the set of
     /// VFG nodes reachable backward from the seeds. ThreadVF(VFG'_pre) is exactly
     /// the thread-aware edges whose *both* endpoints lie in this set, so ILA
@@ -238,16 +226,16 @@ public:
         const OrderedSet<const SVFStmt*>& vulnerableStatements,
         SVFG* refinedMainVFG);
 
-    /**
-     * Memoised pre-candidate slice used to restrict [THREAD-VF] sources to
-     * ThreadVF(VFG'_pre) and scope construction of the refined main overlay.
-     */
-    const ValueFlowSlice& getPreCandidateSlice(
+    /// Compute the pre-candidate slice used to restrict [THREAD-VF] sources and
+    /// scope construction of the refined main overlay.
+    void computePreCandidateSlice(
         const OrderedSet<const SVFStmt*>& vulnerableStatements);
+
+    /// Return the pre-candidate slice after computePreCandidateSlice().
+    const ValueFlowSlice& getPreCandidateSlice() const;
 
 private:
     ValueFlowSlice preCandidateSlice;
-    OrderedSet<const SVFStmt*> preCandidateSeeds;
     bool preCandidateComputed = false;
 };
 
