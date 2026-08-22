@@ -1,6 +1,6 @@
 <img src="./docs/images/svf_logo_2.png" width="15%"><img src="./docs/images/svf_logo_3.png" width="85%">
 
-<b>SVF</b> is a static value-flow analysis tool for LLVM-based languages.
+SVF provides reusable abstractions, graphs, and solvers for analyzing LLVM IR.
 
 ## News
 * <b>[On-demand program slicing](https://github.com/SVF-tools/SVF/tree/master/svf/include/MTA) published in our [ISSTA paper](https://joelyyoung.github.io/pdf/issta26.pdf) is now available in SVF </b>
