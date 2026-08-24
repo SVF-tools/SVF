@@ -26,10 +26,6 @@
  *
  *  Created on: May 14, 2014
  *      Author: Yulei Sui, Peng Di
- *
- * This file also implements SlicedMTA, the multi-stage on-demand program
- * slicing pipeline (MSli) introduced in "Multi-Stage On-Demand Program Slicing
- * for Modular Analysis of Multi-Threaded Programs" (ISSTA 2026).
  */
 
 #include "Util/Options.h"
@@ -44,9 +40,8 @@
 #include "WPA/Andersen.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Util/SVFUtil.h"
-#include <chrono>
+#include <algorithm>
 #include <deque>
-#include <iomanip>
 #include <set>
 #include <string>
 #include <utility>
@@ -62,9 +57,6 @@ MTA::MTA() : tcg(nullptr), tct(nullptr), mhp(nullptr), lsa(nullptr)
 
 MTA::~MTA()
 {
-    if (tcg)
-        delete tcg;
-
     delete mhp;
     delete lsa;
 }
@@ -85,7 +77,7 @@ bool MTA::runOnModule(SVFIR* pag)
     DBOUT(DGENERAL, outs() << pasMsg("Build TCT\n"));
     DBOUT(DMTA, outs() << pasMsg("Build TCT\n"));
     DOTIMESTAT(double tctStart = stat->getClk());
-    tct = std::make_unique<TCT>(pta);
+    tct = TCT::create(pta);
     tcg = tct->getThreadCallGraph();
     DOTIMESTAT(double tctEnd = stat->getClk());
     DOTIMESTAT(stat->TCTTime += (tctEnd - tctStart) / TIMEINTERVAL);
@@ -124,28 +116,31 @@ MHP* MTA::computeMHP(TCT* tct)
     DBOUT(DMTA, outs() << pasMsg("MHP analysis\n"));
 
     DOTIMESTAT(double mhpStart = stat->getClk());
-    MHP* mhp = new MHP(tct);
+    std::unique_ptr<MHP> mhp = MHP::create(
+        tct, PAG::getPAG()->getICFG(),
+        const_cast<CallGraph*>(PAG::getPAG()->getCallGraph()));
     mhp->analyze(PAG::getPAG()->getICFG(), const_cast<CallGraph*>(PAG::getPAG()->getCallGraph()));
     DOTIMESTAT(double mhpEnd = stat->getClk());
     DOTIMESTAT(stat->MHPTime += (mhpEnd - mhpStart) / TIMEINTERVAL);
 
     DBOUT(DGENERAL, outs() << pasMsg("MHP analysis finish\n"));
     DBOUT(DMTA, outs() << pasMsg("MHP analysis finish\n"));
-    return mhp;
+    return mhp.release();
 }
 
 // Collect the global objects (addr-taken global vars at the global ICFG node).
-PointsTo MTA::getGlobalObjectVariables(SVFIR* svfIr)
+PointsTo MTA::getGlobalObjectVariables(SVFIR* svfir)
 {
     PointsTo globalObjVars;
-    const ICFGNode* globalICFGNode = svfIr->getICFG()->getGlobalICFGNode();
+    const ICFGNode* globalICFGNode = svfir->getICFG()->getGlobalICFGNode();
 
     for (const SVFStmt* stmt : globalICFGNode->getSVFStmts())
     {
         const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt);
         if (addrStmt != nullptr)
         {
-            const GlobalValVar* globalVar = SVFUtil::dyn_cast<GlobalValVar>(addrStmt->getLHSVar());
+            const GlobalValVar* globalVar =
+                SVFUtil::dyn_cast<GlobalValVar>(addrStmt->getLHSVar());
             if (globalVar != nullptr)
             {
                 globalObjVars.set(addrStmt->getRHSVarID());
@@ -199,37 +194,191 @@ PointsTo MTA::getPointsToClosure(AndersenBase* pta, const PointsTo& pts)
 
 // C3: distinct threads must mutually interleave; the same thread self-races only
 // when it is multiforked (more than one dynamic instance).
-bool MTA::occurrencesRace(MHP* mhp, const RaceOccurrence& first, const RaceOccurrence& second)
+bool MTA::occurrencesRace(
+    MHP* mhp, const RaceOccurrence& first, const RaceOccurrence& second)
 {
     if (first.tid != second.tid)
-        return first.interleav.test(second.tid) && second.interleav.test(first.tid);
+        return first.interleaving->test(second.tid) &&
+               second.interleaving->test(first.tid);
     return mhp->getTCT()->getTCTNode(first.tid)->isMultiforked();
 }
 
 // Record one order-normalised racing statement pair.
 void MTA::commitRacePair(std::set<RacePair>& out,
-                         const RaceOccurrence& first, const RaceOccurrence& second)
+                         const RaceOccurrence& first,
+                         const RaceOccurrence& second)
 {
-    const SVFStmt* stmt1 = first.stmt;
-    const SVFStmt* stmt2 = second.stmt;
-    if (stmt2 < stmt1) std::swap(stmt1, stmt2);
-    out.insert(RacePair(stmt1, stmt2));
+    out.emplace(first.stmt, second.stmt);
+}
+
+bool MTA::RaceClassKey::operator<(const RaceClassKey& other) const
+{
+    if (tid != other.tid)
+        return tid < other.tid;
+    if (isStore != other.isStore)
+        return isStore < other.isStore;
+    if (SVFUtil::cmpNodeBS(*interleaving, *other.interleaving))
+        return true;
+    if (SVFUtil::cmpNodeBS(*other.interleaving, *interleaving))
+        return false;
+    if (locked != other.locked)
+        return locked < other.locked;
+    return lockNodeId < other.lockNodeId;
+}
+
+void MTA::collectRaceOccurrences(
+    SVFIR* svfir, AndersenBase* pta, MHP* mhp,
+    LockAnalysis* lockAnalysis, CallGraph* callGraph,
+    const PointsTo& escapedObjects,
+    std::vector<RaceOccurrence>& occurrences,
+    ObjectToRaceOccurrences& objectToOccurrences)
+{
+    for (const auto& item : *callGraph)
+    {
+        const FunObjVar* fun = item.second->getFunction();
+        if (!fun || !fun->hasBasicBlock())
+            continue;
+        for (auto bbIt : *fun)
+            for (const ICFGNode* node : bbIt.second->getICFGNodeList())
+            {
+                const MHP::NodeThreadSummary* threadSummary =
+                    mhp->getThreadSummary(node);
+                if (threadSummary == nullptr)
+                    continue;
+                for (const SVFStmt* stmt : svfir->getSVFStmtList(node))
+                {
+                    NodeID accessedPtr;
+                    bool isStore;
+                    if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+                    {
+                        accessedPtr = load->getRHSVarID();
+                        isStore = false;
+                    }
+                    else if (const StoreStmt* store =
+                                 SVFUtil::dyn_cast<StoreStmt>(stmt))
+                    {
+                        accessedPtr = store->getLHSVarID();
+                        isStore = true;
+                    }
+                    else
+                        continue;
+
+                    PointsTo objects = pta->getPts(accessedPtr);
+                    objects &= escapedObjects;
+                    if (objects.empty())
+                        continue;
+
+                    const bool locked =
+                        lockAnalysis->isProtectedByCommonLock(node, node);
+                    const size_t firstNewOccurrence = occurrences.size();
+                    for (const auto& tidAndInterleaving :
+                         threadSummary->interleavingByTid)
+                        occurrences.push_back(
+                            {stmt, node, isStore, tidAndInterleaving.first,
+                             &tidAndInterleaving.second, locked});
+                    for (NodeID object : objects)
+                        for (size_t index = firstNewOccurrence;
+                             index < occurrences.size(); ++index)
+                            objectToOccurrences[object].push_back(index);
+                }
+            }
+    }
+}
+
+std::vector<MTA::RaceClass> MTA::buildRaceClasses(
+    const std::vector<RaceOccurrence>& occurrences,
+    const std::vector<size_t>& occurrenceIndices)
+{
+    std::vector<RaceClass> classes;
+    OrderedMap<RaceClassKey, size_t> keyToClass;
+    for (size_t occurrenceIndex : occurrenceIndices)
+    {
+        const RaceOccurrence& occurrence = occurrences[occurrenceIndex];
+        const RaceClassKey key{
+            occurrence.tid, occurrence.isStore, occurrence.interleaving,
+            occurrence.locked,
+            occurrence.locked ? occurrence.node->getId() : 0};
+        const auto found = keyToClass.find(key);
+        if (found == keyToClass.end())
+        {
+            keyToClass[key] = classes.size();
+            classes.push_back(
+                {occurrence.isStore, occurrence.locked, occurrenceIndex,
+                 {occurrenceIndex}});
+        }
+        else
+            classes[found->second].members.push_back(occurrenceIndex);
+    }
+    return classes;
+}
+
+void MTA::emitRacePairs(
+    MHP* mhp, LockAnalysis* lockAnalysis,
+    const std::vector<RaceOccurrence>& occurrences,
+    const std::vector<RaceClass>& classes,
+    std::set<RacePair>& outRacePairs)
+{
+    for (size_t firstIndex = 0; firstIndex < classes.size(); ++firstIndex)
+        for (size_t secondIndex = firstIndex;
+             secondIndex < classes.size(); ++secondIndex)
+        {
+            const RaceClass& firstClass = classes[firstIndex];
+            const RaceClass& secondClass = classes[secondIndex];
+            if (!firstClass.isStore && !secondClass.isStore)
+                continue;
+
+            const RaceOccurrence& firstRepresentative =
+                occurrences[firstClass.representative];
+            const RaceOccurrence& secondRepresentative =
+                occurrences[secondClass.representative];
+            if (!occurrencesRace(
+                    mhp, firstRepresentative, secondRepresentative))
+                continue;
+
+            if (firstIndex != secondIndex)
+            {
+                if (firstClass.locked && secondClass.locked &&
+                    lockAnalysis->isProtectedByCommonLock(
+                        firstRepresentative.node, secondRepresentative.node))
+                    continue;
+                for (size_t memberIndex : firstClass.members)
+                    for (size_t otherIndex : secondClass.members)
+                        commitRacePair(outRacePairs, occurrences[memberIndex],
+                                       occurrences[otherIndex]);
+            }
+            else
+            {
+                const std::vector<size_t>& members = firstClass.members;
+                if (firstClass.locked &&
+                    lockAnalysis->isProtectedByCommonLock(
+                        firstRepresentative.node, firstRepresentative.node))
+                    continue;
+                for (size_t firstPosition = 0;
+                     firstPosition < members.size(); ++firstPosition)
+                    for (size_t secondPosition = firstPosition;
+                         secondPosition < members.size(); ++secondPosition)
+                        commitRacePair(
+                            outRacePairs, occurrences[members[firstPosition]],
+                            occurrences[members[secondPosition]]);
+            }
+        }
 }
 
 // Equivalence-class race detector: screen accesses, bucket by object, collapse
 // occurrences sharing the race predicate's inputs into classes, then pair classes.
 std::set<const SVFStmt*> MTA::detectRace(
-    SVFIR* svfIr, AndersenBase* pta, MHP* mhp, LockAnalysis* lockAnalysis,
+    SVFIR* svfir, AndersenBase* pta, MHP* mhp, LockAnalysis* lockAnalysis,
     CallGraph* callGraph,
     std::set<RacePair>& outRacePairs)
 {
 
+    outRacePairs.clear();
     std::set<const SVFStmt*> bugStmts;
 
     // Escape set: objects shared across threads. Seed from globals + the actual
     // argument at each fork site (the spawner's value, which a spawnee-formal
     // closure can miss), then take the transitive points-to closure.
-    PointsTo seed = getGlobalObjectVariables(svfIr);
+    PointsTo seed = getGlobalObjectVariables(svfir);
     if (ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(callGraph))
     {
         const ThreadAPI* tapi = tcg->getThreadAPI();
@@ -240,144 +389,27 @@ std::set<const SVFStmt*> MTA::detectRace(
     }
     const PointsTo escSet = getPointsToClosure(pta, seed);
 
-    // One occurrence per (statement, thread instance), indexed by object (C1 ->
-    // "same bucket") as collected, so the points-to set is consumed straight into
-    // the buckets and never stored per occurrence.
     std::vector<RaceOccurrence> occurrences;
-    Map<NodeID, std::vector<size_t>> objectToOccurrences;
-    for (const auto& item : *callGraph)
-    {
-        const FunObjVar* fun = item.second->getFunction();
-        if (!fun || !fun->hasBasicBlock()) continue;
-        for (auto bbIt : *fun)
-            for (const ICFGNode* node : bbIt.second->getICFGNodeList())
-            {
-                if (!mhp->hasThreadStmtSet(node)) continue;          // screen 1: concurrent?
-                for (const SVFStmt* stmt : svfIr->getSVFStmtList(node))
-                {
-                    NodeID accessedPtr;
-                    bool isStore;
-                    if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
-                    {
-                        accessedPtr = load->getRHSVarID();
-                        isStore = false;
-                    }
-                    else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt))
-                    {
-                        accessedPtr = store->getLHSVarID();
-                        isStore = true;
-                    }
-                    else continue;
-                    PointsTo objects = pta->getPts(accessedPtr);
-                    objects &= escSet;                               // screen 2: touches shared object?
-                    if (objects.empty()) continue;
-                    bool locked = lockAnalysis->isProtectedByCommonLock(node, node);
-                    const size_t firstNew = occurrences.size();
-                    for (const CxtThreadStmt& threadStmt : mhp->getThreadStmtSet(node))
-                        occurrences.push_back({stmt, node, isStore, threadStmt.getTid(),
-                                               mhp->getInterleavingThreads(threadStmt), locked});
-                    for (NodeID object : objects)
-                        for (size_t k = firstNew; k < occurrences.size(); ++k)
-                            objectToOccurrences[object].push_back(k);
-                }
-            }
-    }
+    ObjectToRaceOccurrences objectToOccurrences;
+    collectRaceOccurrences(
+        svfir, pta, mhp, lockAnalysis, callGraph, escSet,
+        occurrences, objectToOccurrences);
 
     // Within each object, occurrences sharing the race predicate's inputs (tid,
     // interleaving, isStore, lock sig) race the same partners, so collapse into a
     // class and judge C2/C3/C4 once per class pair -- O(classes^2) not O(occ^2).
     for (const auto& objectAndOccs : objectToOccurrences)
     {
-        struct RaceClass
-        {
-            bool isStore, locked;
-            size_t rep;
-            std::vector<size_t> members;
-        };
-        struct RaceKey
-        {
-            NodeID tid;
-            bool isStore;
-            NodeBS interleav;
-            const ICFGNode* lockNode;
-
-            bool operator<(const RaceKey& other) const
-            {
-                if (tid != other.tid)
-                    return tid < other.tid;
-                if (isStore != other.isStore)
-                    return isStore < other.isStore;
-                if (SVFUtil::cmpNodeBS(interleav, other.interleav))
-                    return true;
-                if (SVFUtil::cmpNodeBS(other.interleav, interleav))
-                    return false;
-                return lockNode < other.lockNode;
-            }
-        };
-        std::vector<RaceClass> classes;
-        OrderedMap<RaceKey, size_t> keyToClass;
-        for (size_t occIdx : objectAndOccs.second)
-        {
-            const RaceOccurrence& occ = occurrences[occIdx];
-            RaceKey key{occ.tid, occ.isStore, occ.interleav, occ.locked ? occ.node : nullptr};
-            auto found = keyToClass.find(key);
-            if (found == keyToClass.end())
-            {
-                keyToClass[key] = classes.size();
-                classes.push_back({occ.isStore, occ.locked, occIdx, {occIdx}});
-            }
-            else
-                classes[found->second].members.push_back(occIdx);
-        }
-        for (size_t firstIdx = 0; firstIdx < classes.size(); ++firstIdx)
-            for (size_t secondIdx = firstIdx; secondIdx < classes.size(); ++secondIdx)
-            {
-                RaceClass& firstClass = classes[firstIdx];
-                RaceClass& secondClass = classes[secondIdx];
-                if (!firstClass.isStore && !secondClass.isStore) continue;   // C2: >=1 write
-                const RaceOccurrence& firstRep = occurrences[firstClass.rep];
-                const RaceOccurrence& secondRep = occurrences[secondClass.rep];
-                if (!occurrencesRace(mhp, firstRep, secondRep)) continue;    // C3
-                // C4 + emit. Lock relation is uniform per class (the reps decide it),
-                // so emit a statement-COVERING set -- every racy member as an endpoint.
-                if (firstIdx != secondIdx)
-                {
-                    if (firstClass.locked && secondClass.locked &&
-                            lockAnalysis->isProtectedByCommonLock(firstRep.node, secondRep.node))
-                        continue;
-                    for (size_t memberIdx : firstClass.members)
-                        commitRacePair(outRacePairs, occurrences[memberIdx],
-                                       occurrences[secondClass.members[0]]);
-                    for (size_t memberIdx : secondClass.members)
-                        commitRacePair(outRacePairs, occurrences[firstClass.members[0]],
-                                       occurrences[memberIdx]);
-                }
-                else
-                {
-                    const std::vector<size_t>& members = firstClass.members;
-                    // Multiforked self-race: every member self-races a concurrent
-                    // instance of itself, independent of any cross-race below.
-                    for (size_t memberIdx : members)
-                        if (!firstClass.locked ||
-                                !lockAnalysis->isProtectedByCommonLock(occurrences[memberIdx].node,
-                                        occurrences[memberIdx].node))
-                            commitRacePair(outRacePairs, occurrences[memberIdx], occurrences[memberIdx]);
-                    // Cross-race needs >=2 members: two distinct occurrences to pair.
-                    if (members.size() >= 2 &&
-                            (!firstClass.locked ||
-                             !lockAnalysis->isProtectedByCommonLock(occurrences[members[0]].node,
-                                     occurrences[members[1]].node)))
-                        for (size_t pos = 0; pos < members.size(); ++pos)
-                            commitRacePair(outRacePairs, occurrences[members[pos]],
-                                           occurrences[members[pos == 0 ? 1 : 0]]);
-                }
-            }
+        const std::vector<RaceClass> classes =
+            buildRaceClasses(occurrences, objectAndOccs.second);
+        emitRacePairs(
+            mhp, lockAnalysis, occurrences, classes, outRacePairs);
     }
 
-    for (const RacePair& r : outRacePairs)
+    for (const RacePair& pair : outRacePairs)
     {
-        bugStmts.insert(r.stmt1);
-        bugStmts.insert(r.stmt2);
+        bugStmts.insert(pair.stmt1);
+        bugStmts.insert(pair.stmt2);
     }
     return bugStmts;
 }
@@ -406,37 +438,25 @@ void MTA::reportRaces()
 // Library-side orchestration of the slicing pipeline over the SVFIR.
 //===----------------------------------------------------------------------===//
 
-namespace
-{
-
-// Timing helper.
-void timePhase(const char* name, const std::function<void()>& fn)
-{
-    SVFUtil::outs() << "[TIMER] Phase: " << name << " - started\n";
-    auto start = std::chrono::steady_clock::now();
-    fn();
-    auto end = std::chrono::steady_clock::now();
-    double ms = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(end - start).count();
-    SVFUtil::outs() << "[TIMER] Phase: " << name << " - finished in " << std::fixed << std::setprecision(2) << ms << " ms";
-    if (ms >= 1000.0)
-        SVFUtil::outs() << " (" << std::fixed << std::setprecision(2) << (ms / 1000.0) << " s)";
-    SVFUtil::outs() << "\n";
-}
-
 // Output statistics for the original (unsliced) SVFIR.
-void reportOriginalStats(SVFIR* svfIr)
+void SlicedMTA::reportOriginalStatistics(SVFIR* svfir)
 {
     size_t icfgNodeCount = 0;
-    for (ICFG::iterator it = svfIr->getICFG()->begin(), eit = svfIr->getICFG()->end(); it != eit; ++it)
+    for (ICFG::iterator it = svfir->getICFG()->begin(), eit = svfir->getICFG()->end(); it != eit; ++it)
         icfgNodeCount++;
 
     size_t functionCount = 0;
-    for (auto it = svfIr->getCallGraph()->begin(), eit = svfIr->getCallGraph()->end(); it != eit; ++it)
+    for (auto it = svfir->getCallGraph()->begin(), eit = svfir->getCallGraph()->end(); it != eit; ++it)
         functionCount++;
 
     size_t pagStmtCount = 0;
-    for (PAG::iterator it = svfIr->getPAG()->begin(), eit = svfIr->getPAG()->end(); it != eit; ++it)
-        pagStmtCount++;
+    for (ICFG::iterator it = svfir->getICFG()->begin(),
+         eit = svfir->getICFG()->end(); it != eit; ++it)
+    {
+        const ICFGNode* node = it->second;
+        if (svfir->hasSVFStmtList(node))
+            pagStmtCount += svfir->getSVFStmtList(node).size();
+    }
 
     SVFUtil::outs() << "\n[Original SVFIR] Statistics:\n";
     SVFUtil::outs() << "  ICFG nodes: " << icfgNodeCount << "\n";
@@ -444,136 +464,201 @@ void reportOriginalStats(SVFIR* svfIr)
     SVFUtil::outs() << "  PAG statements: " << pagStmtCount << "\n";
 }
 
-// Check and report a step result.
-bool checkAndReport(const char* phase, bool condition)
+std::set<const ICFGNode*> SlicedMTA::collectICFGNodes(
+    SVFG* svfg, const NodeBS& svfgNodeIds)
 {
-    if (!condition)
-        SVFUtil::errs() << "[ERROR] " << phase << " failed\n";
-    return condition;
+    std::set<const ICFGNode*> nodes;
+    for (NodeID id : svfgNodeIds)
+    {
+        if (!svfg->hasSVFGNode(id))
+            continue;
+        if (const StmtVFGNode* stmtNode =
+                SVFUtil::dyn_cast<StmtVFGNode>(svfg->getSVFGNode(id)))
+            if (stmtNode->getICFGNode() != nullptr)
+                nodes.insert(stmtNode->getICFGNode());
+    }
+    return nodes;
 }
 
-// Main-phase context depth. The default must not depend on -mta-enable-slicing:
-// the sliced run and the whole-program FSAM baseline are compared against each
-// other, so both must analyze at the same context sensitivity.
-u32_t slicedMaxContextLen()
+void SlicedMTA::reportPTASliceStatistics(
+    const std::set<const ICFGNode*>& icfgNodes)
 {
-    if (!Options::MaxContextLen.isSet())
-        return 2;
-    return Options::MaxContextLen();
+    std::set<const FunObjVar*> functions;
+    std::set<const SVFStmt*> statements;
+    for (const ICFGNode* node : icfgNodes)
+    {
+        if (node->getFun() != nullptr)
+            functions.insert(node->getFun());
+        statements.insert(node->getSVFStmts().begin(), node->getSVFStmts().end());
+    }
+
+    SVFUtil::outs() << "[PTA Sliced] Statistics:\n";
+    SVFUtil::outs() << "  ICFG nodes: " << icfgNodes.size() << "\n";
+    SVFUtil::outs() << "  Functions: " << functions.size() << "\n";
+    SVFUtil::outs() << "  PAG statements: " << statements.size() << "\n";
 }
 
-} // anonymous namespace
-
-SlicedMTA::SlicedMTA() = default;
-
-SlicedMTA::~SlicedMTA()
+std::string SlicedMTA::raceStatementKey(const SVFStmt* statement)
 {
-    // Cleanup in reverse order of creation. Release the VFG_pre (and its MemSSA),
-    // the FSAM, the sliced/base TCTs -- all of which reference the SVFIR -- before
-    // releasing the SVFIR itself. The remaining unique_ptr members (mhp /
-    // lockAnalysis / sliced* / slicers / views) auto-destroy after this body.
-    vfgPreBuilder.reset();
-    mtaFSMPTA.reset();
-    slicedTCT.reset();
-    tct.reset();
-    SVFIR::releaseSVFIR();
-    // The Andersen pre-analysis is a shared singleton (reused by VFG_pre and the
-    // main FSMPTA, neither of which frees it); release it once here.
-    AndersenWaveDiff::releaseAndersenWaveDiff();
+    std::string key;
+    const ICFGNode* node = statement->getICFGNode();
+    const FunObjVar* function = node == nullptr ? nullptr : node->getFun();
+    const SVFBasicBlock* block = statement->getBB();
+    const SVFVar* value = statement->getValue();
+
+    const std::string fields[] = {
+        std::to_string(statement->getEdgeKind()),
+        function == nullptr ? std::string() : function->getName(),
+        block == nullptr ? std::string() : block->getName(),
+        node == nullptr ? std::string() : node->getSourceLoc(),
+        value == nullptr ? std::string() : value->getName(),
+        value == nullptr ? std::string() : value->getSourceLoc(),
+        value != nullptr && value->hasLLVMValue()
+            ? value->valueOnlyToString() : std::string()
+    };
+    for (const std::string& field : fields)
+    {
+        key += std::to_string(field.size());
+        key += ':';
+        key += field;
+    }
+    return key;
 }
+
+void SlicedMTA::updateDigest(u64_t& digest, const std::string& value)
+{
+    for (unsigned char byte : value)
+    {
+        digest ^= static_cast<u64_t>(byte);
+        digest *= 1099511628211ULL;
+    }
+    digest ^= 0xffULL;
+    digest *= 1099511628211ULL;
+}
+
+SlicedMTA::RaceDigests SlicedMTA::computeRaceDigests(
+    const std::set<RacePair>& pairs)
+{
+    Map<const SVFStmt*, std::string> statementToKey;
+    std::set<std::string> statementKeys;
+    for (const RacePair& pair : pairs)
+    {
+        statementToKey.emplace(pair.stmt1, std::string());
+        statementToKey.emplace(pair.stmt2, std::string());
+    }
+    for (auto& statementAndKey : statementToKey)
+    {
+        statementAndKey.second = raceStatementKey(statementAndKey.first);
+        statementKeys.insert(statementAndKey.second);
+    }
+
+    RaceDigests digests{1469598103934665603ULL, 1469598103934665603ULL};
+    for (const std::string& key : statementKeys)
+        updateDigest(digests.alarm, key);
+
+    std::set<std::pair<std::string, std::string>> pairKeys;
+    for (const RacePair& pair : pairs)
+    {
+        std::string first = statementToKey.at(pair.stmt1);
+        std::string second = statementToKey.at(pair.stmt2);
+        if (second < first)
+            std::swap(first, second);
+        pairKeys.emplace(std::move(first), std::move(second));
+    }
+
+    for (const auto& pair : pairKeys)
+    {
+        updateDigest(digests.pair, pair.first);
+        updateDigest(digests.pair, pair.second);
+    }
+    return digests;
+}
+
+SlicedMTA::SlicedMTA() : mainContextDepth(Options::MaxContextLen())
+{
+}
+
+SlicedMTA::~SlicedMTA() = default;
 
 BVDataPTAImpl* SlicedMTA::getMainPTA() const
 {
     // The main FSMPTA phase is the flow-sensitive FSAM (FSMPTA), a
     // BVDataPTAImpl, so the downstream race detector queries it polymorphically.
-    return mtaFSMPTA.get();
+    return mainFSMPTA.get();
 }
 
 std::set<const SVFStmt*> SlicedMTA::getVulnerableStmts() const
 {
-    std::set<const SVFStmt*> v;
+    std::set<const SVFStmt*> vulnerableStatements;
     for (const RacePair& pair : racePairs)
     {
-        v.insert(pair.stmt1);
-        v.insert(pair.stmt2);
+        vulnerableStatements.insert(pair.stmt1);
+        vulnerableStatements.insert(pair.stmt2);
     }
-    return v;
+    return vulnerableStatements;
 }
 
 // Pre-Analysis (Pointer Analysis + TCT + MHP & Lock + Race Detection).
-// Build the thread-aware value-flow graph (VFG_pre) once, on a shared Andersen
-// (reused by the main FSMPTA via the AndersenWaveDiff singleton). This is the
-// substrate the paper uses for both slicing (data dependence over the
-// thread-aware value flow) and the main sparse FS resolution.
-void SlicedMTA::buildVFGPre()
+// Build the BaseSVFG once, then attach its pre-analysis TVF overlay. The base is
+// reused by the main FSMPTA after replacing only that overlay.
+void SlicedMTA::buildPreAnalysisSVFG()
 {
-    timePhase("Build thread-aware VFG_pre", [&]()
+    ScopedPhaseTimer timer("Build thread-aware VFG_pre");
+    // Treat fork/join as calls so the SVFG carries the thread-oblivious
+    // (fork/join-ordered) value flow.
+    if (ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(preAndersen->getCallGraph()))
     {
-        // preAnder is the pre-analysis Andersen built in runPreAnalysis.
-        // Treat fork/join as calls so the SVFG carries the thread-oblivious
-        // (fork/join-ordered) value flow.
-        if (ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(preAnder->getCallGraph()))
-        {
-            tcg->updateCallGraph(preAnder);
-            tcg->updateJoinEdge(preAnder);
-        }
-        vfgPreBuilder = std::make_unique<MTASVFGBuilder>(mhp.get(), lockAnalysis.get());
-        vfgPre = vfgPreBuilder->buildPTROnlySVFG(preAnder);
-        SVFUtil::outs() << "[VFG_pre] thread-aware SVFG: " << vfgPre->getSVFGNodeNum()
-                        << " nodes, " << MTASVFGBuilder::numOfNewSVFGEdges << " interference edges\n";
-    });
+        tcg->updateCallGraph(preAndersen);
+        tcg->updateJoinEdge(preAndersen);
+    }
+    preSVFGBuilder = std::make_unique<MTASVFGBuilder>(
+                         mhp.get(), lockAnalysis.get(),
+                         MTASVFGBuilder::InterferenceEdgeMode::SlicingOnly);
+    // The Pre-TVF overlay is sliced, never solved: omit its interference-edge
+    // labels. Main-TVF labels are added after the pre overlay is removed.
+    preSVFG = preSVFGBuilder->buildPTROnlySVFG(preAndersen);
+    if (isMTAStatEnabled())
+        SVFUtil::outs() << "[BaseSVFG] built once: " << preSVFG->getSVFGNodeNum()
+                        << " nodes; [Pre-TVF] "
+                        << preSVFGBuilder->getThreadAwareEdgeCount()
+                        << " interference edges\n";
 }
 
-bool SlicedMTA::runPreAnalysis(const ResolveIndirectCalls& resolveIndirectCalls)
+bool SlicedMTA::runPreAnalysis()
 {
     SVFUtil::outs() << "\n=== Pre-Analysis ===\n";
 
-    const bool dumpDot = Options::SlicedDumpDot();
+    const bool dumpDot = Options::DumpMTAGraphs();
 
-    // Step 1: Pointer Analysis. Inclusion-based Andersen's (more precise than
-    // Steensgaard's unification, so fewer spurious MHP/races and a smaller slice).
-    // The same Andersen instance (a singleton) is reused for the thread-aware
-    // VFG_pre and the main FSMPTA, so the whole pipeline shares one pre-analysis.
-    timePhase("Andersen's pointer analysis", [&]()
+    // The LLVM-aware tool has already run Andersen and materialised its resolved
+    // indirect calls into the PAG. Reuse that same analysis throughout MSli.
+    threadCallGraph =
+        SVFUtil::dyn_cast<ThreadCallGraph>(preAndersen->getCallGraph());
+    if (threadCallGraph == nullptr)
     {
-        preAnder = AndersenWaveDiff::createAndersenWaveDiff(svfIr);
-        if (dumpDot)
-        {
-            preAnder->getConstraintGraph()->dump("original_consg");
-            preAnder->getCallGraph()->dump("original_tcg");
-        }
-        // Materialise resolved indirect calls into the PAG (LLVM-dependent step,
-        // injected by the caller), then update the ICFG with the resolved calls.
-        resolveIndirectCalls(preAnder->getCallGraph());
-        svfIr->getICFG()->updateCallGraph(preAnder->getCallGraph());
-        if (dumpDot)
-            svfIr->getICFG()->dump("original_icfg");
-    });
-    if (!checkAndReport("Pointer Analysis", preAnder != nullptr))
+        SVFUtil::errs() << "[ERROR] Thread call graph failed\n";
         return false;
+    }
 
-    // Step 2: Build Thread Create Tree (the caller forces -max-cxt to 0 around the
-    // whole pre-analysis when slicing; see runOnModule).
-    timePhase("Create Thread Create Tree", [&]()
+    // Step 2: Build the context-insensitive pre-analysis Thread Creation Tree.
     {
-        tct = std::make_unique<TCT>(preAnder);
-    });
+        ScopedPhaseTimer timer("Create Thread Create Tree");
+        tct = TCT::create(preAndersen, 0);
+    }
     if (dumpDot)
         tct->dump("original_tct");
 
     // A thread with several instances at the main depth must be multiforked in
     // this depth-0 TCT, or the pre-analysis under-approximates the main phase.
-    timePhase("Mark truncation-merged multiforked threads", [&]()
     {
-        const u32_t preCxtDepth = Options::MaxContextLen();
-        Options::MaxContextLen.setValue(mainCxtDepth);
-        TCT deepTct(preAnder);
-        Options::MaxContextLen.setValue(preCxtDepth);
+        ScopedPhaseTimer timer("Mark truncation-merged multiforked threads");
+        std::unique_ptr<TCT> deepTct =
+            TCT::create(preAndersen, mainContextDepth);
 
         // >1 instance at the main depth, or a single instance that is itself
         // multiforked (merged just beyond the main depth), marks the fork site.
         Map<const ICFGNode*, u32_t> forkSiteInstances;
-        for (const auto& deepPair : deepTct)
+        for (const auto& deepPair : *deepTct)
             if (const ICFGNode* forkSite = deepPair.second->getCxtThread().getThread())
             {
                 ++forkSiteInstances[forkSite];
@@ -590,22 +675,33 @@ bool SlicedMTA::runPreAnalysis(const ResolveIndirectCalls& resolveIndirectCalls)
             if (fIt != forkSiteInstances.end() && fIt->second > 1)
                 prePair.second->setMultiforked(true);
         }
-    });
+    }
 
     // Step 3: Interleaving and Lock Analysis
-    timePhase("Run Interleaving and Lock Analysis", [&]()
     {
-        mhp = std::make_unique<MHP>(tct.get());
-        mhp->analyze(svfIr->getICFG(), const_cast<CallGraph*>(svfIr->getCallGraph()));
-        lockAnalysis = std::make_unique<LockAnalysis>(tct.get());
-        lockAnalysis->analyze(svfIr->getICFG(), const_cast<CallGraph*>(svfIr->getCallGraph()));
-    });
+        ScopedPhaseTimer ilaTimer("Run Interleaving and Lock Analysis");
+        {
+            ScopedPhaseTimer timer("ILA: construct MHP/ForkJoin");
+            mhp = MHP::create(
+                tct.get(), svfir->getICFG(),
+                const_cast<CallGraph*>(svfir->getCallGraph()));
+        }
+        {
+            ScopedPhaseTimer timer("ILA: MHP propagation");
+            mhp->analyze(svfir->getICFG(), const_cast<CallGraph*>(svfir->getCallGraph()));
+        }
+        {
+            ScopedPhaseTimer timer("ILA: Lock analysis");
+            lockAnalysis = std::make_unique<LockAnalysis>(tct.get());
+            lockAnalysis->analyze(svfir->getICFG(), const_cast<CallGraph*>(svfir->getCallGraph()));
+        }
+    }
 
     // Step 4: Detect thread functions
-    timePhase("Detect Thread Functions", [&]()
     {
-        hasThreadFunctions = MTA::hasThreadFunctions(preAnder->getCallGraph());
-    });
+        ScopedPhaseTimer timer("Detect Thread Functions");
+        hasThreadFunctions = MTA::hasThreadFunctions(preAndersen->getCallGraph());
+    }
     if (!hasThreadFunctions)
     {
         SVFUtil::outs() << "[WARNING] No thread functions found\n";
@@ -614,18 +710,22 @@ bool SlicedMTA::runPreAnalysis(const ResolveIndirectCalls& resolveIndirectCalls)
 
     // Step 5: Detect race statements
     std::set<const SVFStmt*> vulnerableStatements;
-    timePhase("Detect Race Statements", [&]()
     {
+        ScopedPhaseTimer timer("Detect Race Statements");
         // Shared equivalence-class detector (the same one MTA::reportRaces uses).
         vulnerableStatements = MTA::detectRace(
-                                   svfIr, preAnder, mhp.get(), lockAnalysis.get(),
-                                   preAnder->getCallGraph(), racePairs);
-    });
+                                   svfir, preAndersen, mhp.get(), lockAnalysis.get(),
+                                   preAndersen->getCallGraph(), racePairs);
+    }
     SVFUtil::outs() << "Found " << vulnerableStatements.size() << " vulnerable statements\n";
     SVFUtil::outs() << "Found " << racePairs.size() << " race pairs\n";
 
-    // Step 6: build the thread-aware VFG once (substrate for slicing + main FS).
-    buildVFGPre();
+    // Step 6: build the thread-aware VFG only when a downstream slice/solve
+    // exists. No-race programs end after the pre-detector.
+    if (!racePairs.empty())
+        buildPreAnalysisSVFG();
+    else
+        SVFUtil::outs() << "[SKIP] No race candidates; VFG_pre is unnecessary\n";
 
     return true;
 }
@@ -641,76 +741,112 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
         return true;
     }
 
-    const bool dumpDot = Options::SlicedDumpDot();
+    const bool dumpDot = Options::DumpMTAGraphs();
 
     // Step 1: Get vulnerable statements from race pairs
     std::set<const SVFStmt*> vulnerableStatements = getVulnerableStmts();
 
     std::set<const ICFGNode*> mtaSlicedNodes;
 
-    if (Options::SlicingSingle())
+    if (Options::MTASingleStageSlicing())
     {
         // Single-pass baseline (MSli §3/§5.4): one unified slice (V_Single)
         // combining synchronization + data + call dependence, shared by both the
         // ILA and the FSPTA stages. Computed once here; reused in PTA slicing.
         SVFUtil::outs() << "[Slicing Mode] Single unified slice (V_Single) for ILA + FSPTA\n";
         singleSlicer = std::make_unique<SingleSlicer>(
-                           svfIr, preAnder, mhp.get(), lockAnalysis.get(),
-                           vfgPre /* data dependence over the thread-aware VFG_pre */);
-        timePhase("Unified Slicing", [&]()
+                           svfir, preAndersen, mhp.get(), lockAnalysis.get(),
+                           preSVFG /* data dependence over the thread-aware VFG_pre */);
         {
-            singleSlicedNodes = singleSlicer->runSlicing(vulnerableStatements);
-        });
+            ScopedPhaseTimer timer("Unified Slicing");
+            ValueFlowSlice singleSlice =
+                singleSlicer->runSlicing(vulnerableStatements);
+            singleSlicedNodes = std::move(singleSlice.icfgNodes);
+            singleSlicedSVFGNodeIds = singleSlice.nodeIds();
+        }
         mtaSlicedNodes = singleSlicedNodes;
-        SVFUtil::outs() << "Unified sliced to " << mtaSlicedNodes.size() << " nodes\n";
+        if (isMTAStatEnabled())
+            SVFUtil::outs() << "Unified sliced to " << mtaSlicedNodes.size()
+                            << " nodes\n";
     }
     else
     {
         SVFUtil::outs() << "[Slicing Mode] Differential slices (separate ILA + FSPTA)\n";
         multiStageSlicer = std::make_unique<MultiStageSlicer>(
-                               svfIr, preAnder, mhp.get(), lockAnalysis.get(), vfgPre);
+                        svfir, preAndersen, mhp.get(), lockAnalysis.get(), preSVFG);
 
         // ILA slicing sources = [INIT] race statements + [THREAD-VF] sources. Keep
         // a candidate edge's query (see MTASVFGBuilder::getThreadVFQueryMap) only if
         // both endpoints survive the FSPTA slice -- i.e. the edge is in
         // ThreadVF(VFG'_pre). Closure computed here (pre<->pre) and reused by PTA slicing.
         std::set<const ICFGNode*> threadVFSources;
-        if (vfgPreBuilder)
+        selectedThreadVFCandidates.clear();
         {
-            const std::set<const SVFGNode*>& retained =
-                multiStageSlicer->getRetainedSVFGNodes(vulnerableStatements);
-            // Millions of query entries are scanned; use a constant-time lookup
-            // view of the retained nodes instead of two ordered-set lookups each.
-            const Set<const SVFGNode*> retainedView(retained.begin(), retained.end());
-            for (const auto& entry : vfgPreBuilder->getThreadVFQueryMap())
+            ScopedPhaseTimer timer("Select THREAD-VF slicing sources");
+            if (preSVFGBuilder)
             {
-                const MTASVFGBuilder::ThreadVFEdge& edge = entry.first;
-                if (retainedView.count(edge.first) && retainedView.count(edge.second))
+                multiStageSlicer->computePreCandidateSlice(vulnerableStatements);
+                const ValueFlowSlice& preCandidate =
+                    multiStageSlicer->getPreCandidateSlice();
+                preCandidateSolveNodeIds =
+                    FSMPTA<const SlicedSVFGView*>::buildExecutionDependencyClosure(
+                        preSVFG, preAndersen, preCandidate.nodeIds());
+                if (preCandidateSolveNodeIds.empty() &&
+                    !preCandidate.svfgNodes.empty())
                 {
-                    // The query value holds only the lock-span witnesses; the
-                    // endpoints are implicit in the edge key.
-                    threadVFSources.insert(edge.first->getICFGNode());
-                    threadVFSources.insert(edge.second->getICFGNode());
-                    threadVFSources.insert(entry.second.begin(), entry.second.end());
+                    SVFUtil::errs() << "[ERROR] Failed to execution-close VFG'_pre\n";
+                    return false;
+                }
+                if (isMTAStatEnabled())
+                    SVFUtil::outs()
+                        << "[VFG'_pre] " << preCandidate.svfgNodes.size()
+                        << " dependency nodes, "
+                        << preCandidateSolveNodeIds.count()
+                        << " execution-closure nodes\n";
+
+                // The query map can be large; use node-ID membership rather than
+                // two ordered-set lookups for every candidate edge.
+                for (const auto& entry : preSVFGBuilder->getThreadVFQueryMap())
+                {
+                    const MTASVFGBuilder::ThreadVFEdge& edge = entry.first;
+                    if (preCandidateSolveNodeIds.test(edge.first->getId()) &&
+                        preCandidateSolveNodeIds.test(edge.second->getId()))
+                    {
+                        selectedThreadVFCandidates.emplace_back(
+                            edge.first->getId(), edge.second->getId());
+                        // The query value holds only the lock-span witnesses; the
+                        // endpoints are implicit in the edge key.
+                        threadVFSources.insert(edge.first->getICFGNode());
+                        threadVFSources.insert(edge.second->getICFGNode());
+                        threadVFSources.insert(entry.second.begin(), entry.second.end());
+                    }
                 }
             }
         }
-        SVFUtil::outs() << "[THREAD-VF] " << threadVFSources.size()
-                        << " ILA slicing sources from VFG_pre value-flow construction\n";
-        timePhase("MTA Slicing", [&]()
+        std::sort(selectedThreadVFCandidates.begin(),
+                  selectedThreadVFCandidates.end());
+        selectedThreadVFCandidates.erase(
+            std::unique(selectedThreadVFCandidates.begin(),
+                        selectedThreadVFCandidates.end()),
+            selectedThreadVFCandidates.end());
         {
+            ScopedPhaseTimer timer("MTA Slicing");
             mtaSlicedNodes = multiStageSlicer->runILASlicing(vulnerableStatements, threadVFSources);
-        });
-        SVFUtil::outs() << "MTA sliced to " << mtaSlicedNodes.size() << " nodes\n";
+        }
+        if (isMTAStatEnabled())
+            SVFUtil::outs() << "MTA sliced to " << mtaSlicedNodes.size()
+                            << " nodes\n";
     } // end differential MTA slice
 
     // Step 4: Build MTA SlicedSVFIRView (using pre-analysis pointer analysis)
-    timePhase("Build MTA Sliced View", [&]()
     {
+        ScopedPhaseTimer timer("Build MTA Sliced View");
         mtaSlicedView = std::make_unique<SlicedSVFIRView>(
-                            svfIr, preAnder->getCallGraph(), svfIr->getICFG(), mtaSlicedNodes);
-    });
-    mtaSlicedView->dumpStats("MTA Sliced");
+                            svfir, *threadCallGraph, svfir->getICFG(),
+                            mtaSlicedNodes);
+    }
+    if (isMTAStatEnabled())
+        mtaSlicedView->dumpStats("MTA Sliced");
 
     const SlicedSVFIRView* slicedView = mtaSlicedView.get();
 
@@ -724,25 +860,38 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
     }
 
     // Step 5: Build Sliced TCT (using pre-analysis pointer analysis)
-    timePhase("Sliced Thread Create Tree", [&]()
     {
-        u32_t maxContextLen = slicedMaxContextLen();
-        SVFUtil::outs() << "[SlicedTCT] Using max context length: " << maxContextLen
-                        << " (from -max-cxt)\n";
+        ScopedPhaseTimer timer("Sliced Thread Create Tree");
+        if (isMTAStatEnabled())
+            SVFUtil::outs() << "[SlicedTCT] Using max context length: "
+                            << mainContextDepth << " (from -max-cxt)\n";
         // Reuse the shared pre-analysis (Andersen) for the sliced TCT.
-        slicedTCT = std::make_unique<SlicedTCT>(preAnder, slicedView, maxContextLen);
+        slicedTCT = SlicedTCT::create(
+                        *preAndersen, *slicedView, mainContextDepth);
         if (dumpDot)
             slicedTCT->dump("sliced_tct");
-    });
+    }
 
     // Step 6: Sliced MHP and Lock Analysis
-    timePhase("Sliced Interleaving and Lock Analysis", [&]()
     {
-        slicedMhp = std::make_unique<MHP>(slicedTCT.get());
-        slicedMhp->analyze(slicedView->getICFG(), slicedView->getThreadCallGraph());
-        slicedLockAnalysis = std::make_unique<LockAnalysis>(slicedTCT.get());
-        slicedLockAnalysis->analyze(slicedView->getICFG(), slicedView->getThreadCallGraph());
-    });
+        ScopedPhaseTimer ilaTimer("Sliced Interleaving and Lock Analysis");
+        {
+            ScopedPhaseTimer timer("Sliced ILA: construct MHP/ForkJoin");
+            slicedMHP = MHP::create(
+                            slicedTCT.get(), slicedView->getICFG(),
+                            slicedView->getThreadCallGraph(),
+                            MHP::StateRepresentation::QuerySummaries);
+        }
+        {
+            ScopedPhaseTimer timer("Sliced ILA: MHP propagation");
+            slicedMHP->analyze(slicedView->getICFG(), slicedView->getThreadCallGraph());
+        }
+        {
+            ScopedPhaseTimer timer("Sliced ILA: Lock analysis");
+            slicedLockAnalysis = std::make_unique<LockAnalysis>(slicedTCT.get());
+            slicedLockAnalysis->analyze(slicedView->getICFG(), slicedView->getThreadCallGraph());
+        }
+    }
 
     return true;
 }
@@ -763,109 +912,171 @@ bool SlicedMTA::runPTASlicingAndAnalysis()
         return true;
     }
 
-    const bool dumpDot = Options::SlicedDumpDot();
+    const bool dumpDot = Options::DumpMTAGraphs();
 
     std::set<const SVFStmt*> vulnerableStatements = getVulnerableStmts();
 
     std::set<const ICFGNode*> ptaSlicedNodes;
+    NodeBS finalSVFGNodeIds;
 
-    if (Options::SlicingSingle())
+    if (slicedMHP == nullptr || slicedLockAnalysis == nullptr ||
+        preSVFGBuilder == nullptr || preSVFG == nullptr)
+    {
+        SVFUtil::outs() << "[Main FSMPTA] Base SVFG or sliced ILA unavailable\n";
+        return false;
+    }
+
+    if (Options::MTASingleStageSlicing())
     {
         // Single-pass baseline: reuse the unified V_Single computed in MTA slicing
         // (no separate data-dependence slice); FSPTA runs on the same slice as ILA.
         SVFUtil::outs() << "[Slicing Mode] Reusing unified slice (V_Single) for FSPTA\n";
-        ptaSlicedNodes = singleSlicedNodes;
-        SVFUtil::outs() << "PTA reuses unified slice: " << ptaSlicedNodes.size() << " nodes\n";
+        finalSVFGNodeIds =
+            FSMPTA<const SlicedSVFGView*>::buildExecutionDependencyClosure(
+                               preSVFG, preAndersen,
+                               singleSlicedSVFGNodeIds);
+        if (finalSVFGNodeIds.empty() && !singleSlicedSVFGNodeIds.empty())
+        {
+            SVFUtil::errs() << "[ERROR] Single-slice FSMPTA execution closure failed\n";
+            return false;
+        }
+        ptaSlicedNodes = collectICFGNodes(preSVFG, finalSVFGNodeIds);
+        if (isMTAStatEnabled())
+            SVFUtil::outs() << "PTA reuses unified slice: "
+                            << ptaSlicedNodes.size() << " ICFG nodes, "
+                            << finalSVFGNodeIds.count()
+                            << " execution-closure SVFG nodes\n";
+
+        const SlicedSVFGView mainScope(preSVFG, finalSVFGNodeIds);
+
+        const MTASVFGBuilder::ThreadVFBuildConfig mainConfig =
+            MTASVFGBuilder::ThreadVFBuildConfig::mainPhase(
+                mainScope);
+        {
+            ScopedPhaseTimer timer("Replace Pre-TVF with Main-TVF overlay");
+            preSVFGBuilder->replaceThreadAwareOverlay(
+                slicedMHP.get(), slicedLockAnalysis.get(), mainConfig);
+        }
     }
     else
     {
         SVFUtil::outs() << "Using " << vulnerableStatements.size() << " vulnerable statements from pre-analysis\n";
         SVFUtil::outs() << "Using " << racePairs.size() << " race pairs from pre-analysis\n";
 
-        // Stage 2 of the multi-stage slicer built during MTA slicing (it memoised
-        // the shared data-dependence closure over VFG_pre); construct only if
-        // absent (defensive: the ILA stage normally created it).
-        if (!multiStageSlicer)
-            multiStageSlicer = std::make_unique<MultiStageSlicer>(
-                                   svfIr, preAnder, mhp.get(), lockAnalysis.get(),
-                                   vfgPre /* paper-faithful data dependence over the thread-aware VFG */);
-
-        timePhase("PTA Slicing", [&]()
+        // Differential stage 1 always constructs this slicer and its conservative
+        // pre-candidate closure before stage 2 starts.
+        if (multiStageSlicer == nullptr)
         {
-            ptaSlicedNodes = multiStageSlicer->runPTASlicing(vulnerableStatements);
-        });
-        SVFUtil::outs() << "PTA sliced to " << ptaSlicedNodes.size() << " nodes\n";
+            SVFUtil::errs() << "[ERROR] Differential PTA slicing requires the ILA slicer\n";
+            return false;
+        }
+
+        const ValueFlowSlice& preCandidate =
+            multiStageSlicer->getPreCandidateSlice();
+        if (preCandidateSolveNodeIds.empty() && !preCandidate.svfgNodes.empty())
+        {
+            SVFUtil::errs() << "[ERROR] Execution-closed VFG'_pre is unavailable\n";
+            return false;
+        }
+        const NodeBS& preCandidateIds = preCandidateSolveNodeIds;
+        const SlicedSVFGView mainScope(preSVFG, preCandidateIds);
+
+        // The base SVFG is stable. Replace only the pre-analysis TVF overlay
+        // with edges derived from the context-sensitive sliced main ILA.
+        const MTASVFGBuilder::ThreadVFBuildConfig mainConfig =
+            MTASVFGBuilder::ThreadVFBuildConfig::mainPhase(
+                mainScope, &selectedThreadVFCandidates);
+        {
+            ScopedPhaseTimer timer("Replace Pre-TVF with Main-TVF overlay");
+            preSVFGBuilder->replaceThreadAwareOverlay(
+                slicedMHP.get(), slicedLockAnalysis.get(), mainConfig);
+        }
+        if (isMTAStatEnabled())
+            SVFUtil::outs() << "[Main-TVF] "
+                            << preSVFGBuilder->getThreadAwareEdgeCount()
+                            << " interference edges over VFG'_pre\n";
+
+        ValueFlowSlice finalSlice;
+        {
+            ScopedPhaseTimer timer("PTA Slicing over refined main VFG");
+            finalSlice = multiStageSlicer->runPTASlicing(vulnerableStatements, preSVFG);
+        }
+        ptaSlicedNodes = finalSlice.icfgNodes;
+        finalSVFGNodeIds = finalSlice.nodeIds();
+
+        NodeBS outsideCandidate = finalSVFGNodeIds;
+        outsideCandidate.intersectWithComplement(preCandidateIds);
+        if (!outsideCandidate.empty())
+        {
+            SVFUtil::errs() << "[ERROR] Initial FSPTA slice escapes VFG'_pre by "
+                            << outsideCandidate.count() << " SVFG nodes\n";
+            return false;
+        }
+
+        {
+            ScopedPhaseTimer timer("Build FSMPTA execution dependency closure");
+            finalSVFGNodeIds =
+                FSMPTA<const SlicedSVFGView*>::buildExecutionDependencyClosure(
+                    preSVFG, preAndersen, finalSVFGNodeIds);
+        }
+
+        outsideCandidate = finalSVFGNodeIds;
+        outsideCandidate.intersectWithComplement(preCandidateIds);
+        if (!outsideCandidate.empty())
+        {
+            SVFUtil::errs() << "[ERROR] FSMPTA execution closure escapes VFG'_pre by "
+                            << outsideCandidate.count() << " SVFG nodes\n";
+            return false;
+        }
+
+        // Report the exact execution-closed solve set, rather than the smaller
+        // pre-closure dependency seed shown by the old implementation.
+        ptaSlicedNodes = collectICFGNodes(preSVFG, finalSVFGNodeIds);
+
+        if (isMTAStatEnabled())
+        {
+            SVFUtil::outs() << "[FSPTA Slice] " << finalSlice.svfgNodes.size()
+                            << " / " << preCandidate.svfgNodes.size() << " / "
+                            << preCandidateIds.count()
+                            << " SVFG nodes (final / pre-candidate / execution-closed), "
+                            << finalSVFGNodeIds.count()
+                            << " execution-closure solve nodes\n";
+            SVFUtil::outs() << "PTA sliced to " << ptaSlicedNodes.size()
+                            << " nodes\n";
+        }
     }
 
-    // Step 4: Build PTA SlicedSVFIRView for pointer analysis. Its control flow is
-    // never walked (FSMPTA uses only isKeptNode), so skip bridged-edge construction.
-    timePhase("Build PTA Sliced View", [&]()
-    {
-        ptaSlicedView = std::make_unique<SlicedSVFIRView>(
-                            svfIr, preAnder->getCallGraph(), svfIr->getICFG(), ptaSlicedNodes,
-                            /*buildBridged=*/false);
-    });
-    ptaSlicedView->dumpStats("PTA Sliced");
+    if (isMTAStatEnabled())
+        reportPTASliceStatistics(ptaSlicedNodes);
 
-    // Both slices are fixed and the main FSMPTA builds a fresh SVFG, so release
-    // VFG_pre and the slicers: the pre- and main graphs never coexist in memory.
+    // Slicers are no longer needed. The builder and its one stable base SVFG
+    // remain alive because FSMPTA solves that graph directly.
     multiStageSlicer.reset();
     singleSlicer.reset();
-    vfgPreBuilder.reset();
-    vfgPre = nullptr;
 
-    // Step 5: Main FSMPTA phase (flow-sensitive FSAM over a thread-aware SVFG).
-    // Always rebuild the thread-aware value flow from the SLICED ILA: the sliced
-    // MHP/lock analysis is context-sensitive, whereas the pre-analysis VFG_pre was
-    // built context-insensitively (max-cxt forced to 0 for slicing). Reusing
-    // VFG_pre would decide the interference (thread-aware value-flow) edges from a
-    // context-insensitive ILA and over-approximate the FSAM points-to, so a fresh
-    // context-sensitive SVFG is required to preserve the result. [THREAD-VF]
-    // seeding keeps the queried interference witnesses in the slice.
-    if (slicedMhp == nullptr || slicedLockAnalysis == nullptr)
+    // Step 5: solve the exact final slice on the stable base SVFG plus Main-TVF.
+    SVFUtil::outs() << "[Main FSMPTA] Reusing BaseSVFG; Main-TVF comes from the sliced main ILA\n";
+    if (!FSMPTA<const SlicedSVFGView*>::supportsCurrentConfiguration())
     {
-        SVFUtil::outs() << "[Main FSMPTA] Sliced MHP/LockAnalysis unavailable\n";
+        SVFUtil::errs() << "[ERROR] Unsupported FSMPTA mapping/clustering configuration\n";
         return false;
     }
-    SVFUtil::outs() << "[Main FSMPTA] Thread-aware value flow rebuilt from the SLICED ILA "
-                    "(fresh context-sensitive SVFG; [THREAD-VF] load-bearing)\n";
-    timePhase("Flow-Sensitive FSAM Analysis", [&]()
     {
-        // The sliced SVFG view: membership from the FSPTA ICFG slice; the SVFG
-        // itself is built inside the solver and bound afterwards (for dumping).
-        slicedSVFGView = std::make_unique<SlicedSVFGView>(ptaSlicedView->getICFG());
+        ScopedPhaseTimer timer("Flow-Sensitive FSAM Analysis");
+        slicedSVFGView = std::make_unique<SlicedSVFGView>(
+                             preSVFG, finalSVFGNodeIds);
         auto solver = std::make_unique<FSMPTA<const SlicedSVFGView*>>(
-                          slicedMhp.get(), slicedLockAnalysis.get(), slicedSVFGView.get());
+                          *preAndersen, *preSVFG, slicedSVFGView.get());
         solver->analyze();
-        slicedSVFGView->setSVFG(solver->getSVFG());
         if (dumpDot)
         {
             solver->getSVFG()->dump("mta_svfg");
             slicedSVFGView->dump("sliced_svfg");
         }
-        mtaFSMPTA = std::move(solver);
-    });
+        mainFSMPTA = std::move(solver);
+    }
 
     return true;
-}
-
-// Build a lock analysis over the WHOLE ICFG (every node kept => real control flow,
-// no bridged edges). Used for the final detection's lock signature so the sliced
-// run reproduces the whole-program lock relation exactly (query preservation).
-LockAnalysis* SlicedMTA::buildFullLockAnalysis()
-{
-    if (fullLockAnalysis != nullptr)
-        return fullLockAnalysis.get();
-    std::set<const ICFGNode*> allNodes;
-    for (ICFG::iterator it = svfIr->getICFG()->begin(), eit = svfIr->getICFG()->end(); it != eit; ++it)
-        allNodes.insert(it->second);
-    fullLockView = std::make_unique<SlicedSVFIRView>(
-                       svfIr, preAnder->getCallGraph(), svfIr->getICFG(), allNodes);
-    fullLockTCT = std::make_unique<SlicedTCT>(preAnder, fullLockView.get(), slicedMaxContextLen());
-    fullLockAnalysis = std::make_unique<LockAnalysis>(fullLockTCT.get());
-    const SlicedSVFIRView* flv = fullLockView.get();
-    fullLockAnalysis->analyze(flv->getICFG(), flv->getThreadCallGraph());
-    return fullLockAnalysis.get();
 }
 
 // Final Race Detection using sliced analysis results
@@ -878,38 +1089,54 @@ bool SlicedMTA::runFinalRaceDetection()
         SVFUtil::outs() << "[SKIP] No thread functions found\n";
         return true;
     }
-    if (mtaSlicedView == nullptr)
+    if (racePairs.empty())
     {
-        SVFUtil::outs() << "[SKIP] MTA sliced view not available\n";
+        SVFUtil::outs() << "\n=== Race Detection Summary ===\n";
+        SVFUtil::outs() << "Race pairs (pre-analysis): 0\n";
+        SVFUtil::outs() << "Race pairs (sliced graph): 0\n";
+        SVFUtil::outs() << "Race statements (sliced graph): 0\n";
+        if (isMTAStatEnabled())
+        {
+            const RaceDigests digests = computeRaceDigests(racePairs);
+            SVFUtil::outs() << "[MSLI-RQ] mode=MSli alarms=0 pairs=0"
+                            << " alarm-digest=" << digests.alarm
+                            << " pair-digest=" << digests.pair << "\n";
+        }
+        SVFUtil::outs() << "\nNo race pairs detected in sliced graph.\n";
         return true;
     }
-    if (slicedMhp == nullptr || slicedLockAnalysis == nullptr)
+    if (mtaSlicedView == nullptr)
     {
-        SVFUtil::outs() << "[SKIP] Sliced MHP or LockAnalysis not available\n";
-        return true;
+        SVFUtil::errs() << "[ERROR] MTA sliced view not available\n";
+        return false;
+    }
+    if (slicedMHP == nullptr || slicedLockAnalysis == nullptr)
+    {
+        SVFUtil::errs() << "[ERROR] Sliced MHP or LockAnalysis not available\n";
+        return false;
     }
     if (getMainPTA() == nullptr)
     {
-        SVFUtil::outs() << "[SKIP] Main flow-sensitive pointer analysis not available\n";
-        return true;
+        SVFUtil::errs() << "[ERROR] Main flow-sensitive pointer analysis not available\n";
+        return false;
     }
 
     std::set<RacePair> detectedPairs;
-    LockAnalysis* fullLock = buildFullLockAnalysis();  // whole-ICFG lock (no bridging)
-    timePhase("Final Race Detection", [&]()
     {
+        ScopedPhaseTimer timer("Final Race Detection");
         detectedPairs = detectRacePairsOnSlicedGraph(
+                            racePairs,        // Refine only pre-analysis candidates
                             getMainPTA(),     // Use flow-sensitive FSAM points-to
-                            slicedMhp.get(), fullLock);
-    });
+                            slicedMHP.get(), slicedLockAnalysis.get());
+    }
 
     // Distinct racy statements (the endpoints of the race pairs) -- a stabler,
     // smaller-to-report metric than the pair count.
     std::set<const SVFStmt*> racyStmts;
-    for (const RacePair& rp : detectedPairs)
+    for (const RacePair& pair : detectedPairs)
     {
-        racyStmts.insert(rp.stmt1);
-        racyStmts.insert(rp.stmt2);
+        racyStmts.insert(pair.stmt1);
+        racyStmts.insert(pair.stmt2);
     }
 
     SVFUtil::outs() << "\n=== Race Detection Summary ===\n";
@@ -918,7 +1145,14 @@ bool SlicedMTA::runFinalRaceDetection()
     SVFUtil::outs() << "Race statements (sliced graph): " << racyStmts.size() << "\n";
     // Machine-readable line for the artifact's `msli` table generator: the race
     // statements reported after slicing (the preservation metric).
-    SVFUtil::outs() << "[MSLI-RQ] mode=MSli alarms=" << racyStmts.size() << "\n";
+    if (isMTAStatEnabled())
+    {
+        const RaceDigests digests = computeRaceDigests(detectedPairs);
+        SVFUtil::outs() << "[MSLI-RQ] mode=MSli alarms=" << racyStmts.size()
+                        << " pairs=" << detectedPairs.size()
+                        << " alarm-digest=" << digests.alarm
+                        << " pair-digest=" << digests.pair << "\n";
+    }
 
     if (!detectedPairs.empty())
     {
@@ -933,99 +1167,148 @@ bool SlicedMTA::runFinalRaceDetection()
     return true;
 }
 
-// No-slice A/B baseline: run the SAME refined machinery as the sliced path
-// (SlicedTCT/MHP/LockAnalysis + flow-sensitive FSAM + the same final re-check),
-// but over a "slice" that keeps EVERY ICFG node -- i.e. the whole program. This
-// is the correct reference: if slicing preserves the result, this must produce
-// the same race set as the real (reduced) slice, only slower.
-void SlicedMTA::runWholeProgramDetection()
+// No-slice A/B baseline: run the same analysis as the sliced path over the whole
+// program. SlicedTCT is retained here to preserve its main-context construction;
+// MHP and LockAnalysis consume the original full graphs directly.
+bool SlicedMTA::runWholeProgramDetection()
 {
     SVFUtil::outs() << "\n=== Whole-program FSAM Race Detection (no slicing) ===\n";
     if (!hasThreadFunctions || racePairs.empty())
     {
         SVFUtil::outs() << "[SKIP] No thread functions / race pairs in pre-analysis\n";
-        return;
+        return true;
     }
 
-    // Full "slice" = every ICFG node.
-    std::set<const ICFGNode*> allNodes;
-    for (ICFG::iterator it = svfIr->getICFG()->begin(), eit = svfIr->getICFG()->end(); it != eit; ++it)
-        allNodes.insert(it->second);
-    ptaSlicedView = std::make_unique<SlicedSVFIRView>(
-                        svfIr, preAnder->getCallGraph(), svfIr->getICFG(), allNodes);
-
-    timePhase("Whole-program Sliced TCT/MHP/Lock", [&]()
+    // SlicedTCT currently consumes the sliced-view representation even for the
+    // full baseline. Time that construction explicitly so the A/B phase table
+    // accounts for it instead of leaving it in unattributed wall time.
     {
-        slicedTCT = std::make_unique<SlicedTCT>(preAnder, ptaSlicedView.get(), slicedMaxContextLen());
-        slicedMhp = std::make_unique<MHP>(slicedTCT.get());
-        const SlicedSVFIRView* pv = ptaSlicedView.get();
-        slicedMhp->analyze(pv->getICFG(), pv->getThreadCallGraph());
-        slicedLockAnalysis = std::make_unique<LockAnalysis>(slicedTCT.get());
-        slicedLockAnalysis->analyze(pv->getICFG(), pv->getThreadCallGraph());
-    });
+        ScopedPhaseTimer timer("Build Whole-program View");
+        std::set<const ICFGNode*> allNodes;
+        for (ICFG::iterator it = svfir->getICFG()->begin(),
+             eit = svfir->getICFG()->end(); it != eit; ++it)
+            allNodes.insert(it->second);
+        ptaSlicedView = std::make_unique<SlicedSVFIRView>(
+                            svfir, *threadCallGraph, svfir->getICFG(), allNodes);
+    }
 
-    timePhase("Whole-program Flow-Sensitive FSAM Analysis", [&]()
     {
-        slicedSVFGView = std::make_unique<SlicedSVFGView>(ptaSlicedView->getICFG());
-        auto solver = std::make_unique<FSMPTA<const SlicedSVFGView*>>(
-                          mhp.get(), lockAnalysis.get(), slicedSVFGView.get());
+        ScopedPhaseTimer timer("Whole-program TCT/MHP/Lock");
+        {
+            ScopedPhaseTimer phaseTimer("Whole-program Thread Create Tree");
+            slicedTCT = SlicedTCT::create(
+                            *preAndersen, *ptaSlicedView, mainContextDepth);
+        }
+        CallGraph* fullCallGraph = threadCallGraph;
+        {
+            ScopedPhaseTimer phaseTimer(
+                "Whole-program ILA: construct MHP/ForkJoin");
+            slicedMHP = MHP::create(
+                            slicedTCT.get(), svfir->getICFG(), fullCallGraph,
+                            MHP::StateRepresentation::QuerySummaries);
+        }
+        {
+            ScopedPhaseTimer phaseTimer("Whole-program ILA: MHP propagation");
+            slicedMHP->analyze(svfir->getICFG(), fullCallGraph);
+        }
+        {
+            ScopedPhaseTimer phaseTimer("Whole-program ILA: Lock analysis");
+            slicedLockAnalysis =
+                std::make_unique<LockAnalysis>(slicedTCT.get());
+            slicedLockAnalysis->analyze(svfir->getICFG(), fullCallGraph);
+        }
+    }
+
+    const MTASVFGBuilder::ThreadVFBuildConfig mainConfig =
+        MTASVFGBuilder::ThreadVFBuildConfig::wholeProgram();
+    {
+        ScopedPhaseTimer timer("Whole-program Replace Pre-TVF with Main-TVF overlay");
+        preSVFGBuilder->replaceThreadAwareOverlay(
+            slicedMHP.get(), slicedLockAnalysis.get(), mainConfig);
+    }
+    if (isMTAStatEnabled())
+        SVFUtil::outs() << "[Main-TVF] "
+                        << preSVFGBuilder->getThreadAwareEdgeCount()
+                        << " interference edges over the whole BaseSVFG\n";
+
+    {
+        ScopedPhaseTimer timer("Whole-program Flow-Sensitive FSMPTA Solve");
+        auto solver = std::make_unique<FSMPTA<SVFG*>>(
+                          *preAndersen, *preSVFG, preSVFG);
         solver->analyze();
-        slicedSVFGView->setSVFG(solver->getSVFG());
-        mtaFSMPTA = std::move(solver);
-    });
+        mainFSMPTA = std::move(solver);
+    }
 
     std::set<RacePair> detectedPairs;
-    timePhase("Final Race Detection (whole program)", [&]()
     {
+        ScopedPhaseTimer timer("Final Race Detection (whole program)");
         detectedPairs = detectRacePairsOnSlicedGraph(
-                            getMainPTA(), slicedMhp.get(), slicedLockAnalysis.get());
-    });
+                            racePairs, getMainPTA(), slicedMHP.get(),
+                            slicedLockAnalysis.get());
+    }
 
     std::set<const SVFStmt*> racyStmts;
-    for (const RacePair& rp : detectedPairs)
+    for (const RacePair& pair : detectedPairs)
     {
-        racyStmts.insert(rp.stmt1);
-        racyStmts.insert(rp.stmt2);
+        racyStmts.insert(pair.stmt1);
+        racyStmts.insert(pair.stmt2);
     }
 
     SVFUtil::outs() << "\n=== Race Detection Summary ===\n";
     SVFUtil::outs() << "Race pairs (pre-analysis): " << racePairs.size() << "\n";
     SVFUtil::outs() << "Race pairs (whole program): " << detectedPairs.size() << "\n";
     SVFUtil::outs() << "Race statements (whole program): " << racyStmts.size() << "\n";
-    SVFUtil::outs() << "[MSLI-RQ] mode=FSAM alarms=" << racyStmts.size() << "\n";
+    if (isMTAStatEnabled())
+    {
+        const RaceDigests digests = computeRaceDigests(detectedPairs);
+        SVFUtil::outs() << "[MSLI-RQ] mode=FSAM alarms=" << racyStmts.size()
+                        << " pairs=" << detectedPairs.size()
+                        << " alarm-digest=" << digests.alarm
+                        << " pair-digest=" << digests.pair << "\n";
+    }
+    return true;
 }
 
-void SlicedMTA::runOnModule(SVFIR* pag, const ResolveIndirectCalls& resolveIndirectCalls)
+bool SlicedMTA::runOnModule(SVFIR* pag, AndersenWaveDiff& preAnalysis)
 {
-    svfIr = pag;
+    if (svfir != nullptr || pag == nullptr || preAnalysis.getPAG() != pag)
+    {
+        SVFUtil::errs() << "[ERROR] SlicedMTA is single-use and requires a "
+                        << "matching SVFIR and Andersen pre-analysis\n";
+        return false;
+    }
+    svfir = pag;
+    preAndersen = &preAnalysis;
 
-    SVFUtil::outs() << "[Config] Slicing: " << (Options::EnableSlicing() ? "enabled" : "disabled") << "\n";
+    SVFUtil::outs() << "[Config] Slicing: "
+                    << (Options::MTAEnableSlicing() ? "enabled" : "disabled")
+                    << "\n";
 
-    reportOriginalStats(svfIr);
+    if (isMTAStatEnabled())
+        reportOriginalStatistics(svfir);
 
     // The pre-analysis is context-insensitive in BOTH modes (the sliced run and
     // the FSAM baseline must share an identical pre-analysis substrate); the
     // main phase then runs at the configured context depth.
-    const u32_t mainCxt = slicedMaxContextLen();
-    mainCxtDepth = mainCxt;
-    Options::MaxContextLen.setValue(0);
-    const bool preOk = runPreAnalysis(resolveIndirectCalls);
-    Options::MaxContextLen.setValue(mainCxt);
+    // TCT context bounds are explicit constructor inputs; no process-global
+    // option is mutated while the pipeline is running.
+    const bool preOk = runPreAnalysis();
     if (!preOk)
-        return;
+        return false;
 
-    if (Options::EnableSlicing())
+    if (Options::MTAEnableSlicing())
     {
-        if (!runMTASlicingAndAnalysis()) return;
-        if (!runPTASlicingAndAnalysis()) return;
-        if (!runFinalRaceDetection()) return;
+        if (!runMTASlicingAndAnalysis()) return false;
+        if (!runPTASlicingAndAnalysis()) return false;
+        if (!runFinalRaceDetection()) return false;
     }
     else
     {
-        runWholeProgramDetection();
+        if (!runWholeProgramDetection()) return false;
     }
 
     SVFUtil::outs() << "\n=== Analysis Complete ===\n";
+    return true;
 }
 
 //===----------------------------------------------------------------------===//
@@ -1038,13 +1321,14 @@ void SlicedMTA::runOnModule(SVFIR* pag, const ResolveIndirectCalls& resolveIndir
 // Whether any thread (fork-target) function is reachable via a fork edge.
 bool MTA::hasThreadFunctions(CallGraph* callGraph)
 {
-    for (CallGraph::iterator it = callGraph->begin(), eit = callGraph->end(); it != eit; ++it)
+    for (CallGraph::iterator it = callGraph->begin(), eit = callGraph->end();
+         it != eit; ++it)
     {
         const CallGraphNode* node = it->second;
         for (const CallGraphEdge* edge : node->getOutEdges())
         {
             if (edge->getEdgeKind() == CallGraphEdge::TDForkEdge &&
-                    edge->getDstNode()->getFunction() != nullptr)
+                edge->getDstNode()->getFunction() != nullptr)
             {
                 return true;
             }
@@ -1055,6 +1339,7 @@ bool MTA::hasThreadFunctions(CallGraph* callGraph)
 
 // Detect race pairs on the sliced graph using sliced analysis results.
 std::set<SlicedMTA::RacePair> SlicedMTA::detectRacePairsOnSlicedGraph(
+    const std::set<RacePair>& preAnalysisRacePairs,
     BVDataPTAImpl* slicedPTA,
     MHP* slicedMHP,
     LockAnalysis* slicedLockAnalysis)
@@ -1062,23 +1347,28 @@ std::set<SlicedMTA::RacePair> SlicedMTA::detectRacePairsOnSlicedGraph(
 
     std::set<RacePair> filteredRacePairs;
 
-    // Re-derive candidates at the main context on this graph: slicedMHP carries
-    // only kept nodes, so the sliced and whole runs invoke the identical detector.
-    std::set<RacePair> candidatePairs;
-    MTA::detectRace(svfIr, preAnder, slicedMHP, slicedLockAnalysis,
-                    preAnder->getCallGraph(), candidatePairs);
-
-    // The only remaining screen is the flow-sensitive points-to refinement (the
-    // ILA conditions C1-C4 were already applied by detectRace above).
-    for (const RacePair& pair : candidatePairs)
+    // MSli's main phase refines the alarms produced by the conservative
+    // pre-analysis. Main ILA and FSMPTA are recomputed independently on their
+    // slices; only the candidate universe comes from pre-analysis.
+    for (const RacePair& pair : preAnalysisRacePairs)
     {
-        // Re-check points-to intersection using sliced PTA
+        const ICFGNode* node1 = pair.stmt1->getICFGNode();
+        const ICFGNode* node2 = pair.stmt2->getICFGNode();
+
+        if (!slicedMHP->mayHappenInParallelCache(node1, node2))
+            continue;
+
+        if (slicedLockAnalysis->isProtectedByCommonLock(node1, node2))
+            continue;
+
         PointsTo pts1, pts2;
-        if (const LoadStmt* ldStmt1 = SVFUtil::dyn_cast<LoadStmt>(pair.stmt1))
+        if (const LoadStmt* ldStmt1 =
+                SVFUtil::dyn_cast<LoadStmt>(pair.stmt1))
         {
             pts1 = slicedPTA->getPts(ldStmt1->getRHSVarID());
         }
-        else if (const StoreStmt* stStmt1 = SVFUtil::dyn_cast<StoreStmt>(pair.stmt1))
+        else if (const StoreStmt* stStmt1 =
+                     SVFUtil::dyn_cast<StoreStmt>(pair.stmt1))
         {
             pts1 = slicedPTA->getPts(stStmt1->getLHSVarID());
         }
@@ -1087,11 +1377,13 @@ std::set<SlicedMTA::RacePair> SlicedMTA::detectRacePairsOnSlicedGraph(
             continue;
         }
 
-        if (const LoadStmt* ldStmt2 = SVFUtil::dyn_cast<LoadStmt>(pair.stmt2))
+        if (const LoadStmt* ldStmt2 =
+                SVFUtil::dyn_cast<LoadStmt>(pair.stmt2))
         {
             pts2 = slicedPTA->getPts(ldStmt2->getRHSVarID());
         }
-        else if (const StoreStmt* stStmt2 = SVFUtil::dyn_cast<StoreStmt>(pair.stmt2))
+        else if (const StoreStmt* stStmt2 =
+                     SVFUtil::dyn_cast<StoreStmt>(pair.stmt2))
         {
             pts2 = slicedPTA->getPts(stStmt2->getLHSVarID());
         }

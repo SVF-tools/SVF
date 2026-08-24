@@ -36,55 +36,71 @@
 #define INCLUDE_MTA_FSMPTA_H_
 
 #include "WPA/FlowSensitive.h"
-#include "MTA/MHP.h"
-#include "MTA/LockAnalysis.h"
-#include "MTA/MTASVFGBuilder.h"
-#include "MTA/MTASlicer.h"
-#include <unordered_set>
+#include "Graphs/SlicedGraphs.h"
+
+#include <deque>
 
 namespace SVF
 {
 
-/// One solver for the whole and the sliced SVFG: SVFGGraph is SVFG* (whole;
-/// every node processed) or const SlicedSVFGView* (sliced; nodes outside the
-/// view are propagation barriers). Restriction is answered by
-/// GenericGraphTraits<SVFGGraph>::containsNode, resolved at compile time; the
-/// stock FlowSensitive transfer semantics are untouched.
+class AndersenBase;
+class AndersenWaveDiff;
+
+/// Flow-sensitive solver over an already-built thread-aware SVFG. SVFGGraph is
+/// either SVFG* for the whole graph or const SlicedSVFGView* for an exact slice.
+/// The backing SVFG is owned by MTASVFGBuilder; this class owns only the
+/// analysis state and the SCC detector for its solve graph.
 template<class SVFGGraph>
-class FSMPTA : public FlowSensitive
+class FSMPTA final : public FlowSensitive
 {
 public:
-    /// Constructor.
-    ///  - graph: gates the per-node transfer (the solver runs over the whole
-    ///    thread-aware SVFG). For SVFGGraph == SVFG* it may be null (every node
-    ///    is processed). A SlicedSVFGView needs only its ICFG view for membership,
-    ///    so it can be created before the SVFG itself is built here.
-    FSMPTA(MHP* m, LockAnalysis* la, SVFGGraph graph)
-        : FlowSensitive(m->getTCT()->getPTA()->getPAG()),
-          mhp(m), mtaSVFGBuilder(m, la), graph(graph)
-    {
-    }
-
+    FSMPTA(AndersenWaveDiff& preAnalysis, SVFG& backingGraph,
+           SVFGGraph solveGraph);
     ~FSMPTA() override = default;
 
-    /// Initialise: build the thread-aware SVFG, then solve sparsely on it.
     void initialize() override;
+    void finalize() override;
 
-    /// Restrict the solve to the graph's nodes (whole: no restriction).
+    static bool supportsCurrentConfiguration();
+
+    /// Close a backward value-flow slice over FlowSensitive's execution
+    /// dependencies. Besides explicit SVFG predecessors, this follows the
+    /// definition of every top-level pointer read through the solver-global
+    /// points-to map, closes future indirect-call boundary edges, and retains
+    /// variant-GEP transfers whose field-sensitivity side effect is global.
+    static NodeBS buildExecutionDependencyClosure(
+        SVFG* graph, AndersenBase* preAnalysis, NodeBS dependencyNodes);
+
+protected:
+    NodeStack& SCCDetect() override;
     void processNode(NodeID nodeId) override;
-
-    inline MHP* getMHP() const
-    {
-        return mhp;
-    }
+    void updateConnectedNodes(const SVFGEdgeSetTy& edges) override;
 
 private:
-    MHP* mhp;
-    /// Owns the thread-aware SVFG used by the FS solver (must outlive `svfg`).
-    MTASVFGBuilder mtaSVFGBuilder;
-    /// The graph the solve is restricted to (see the constructor).
-    SVFGGraph graph;
+    using SolveGraphTraits = GenericGraphTraits<SVFGGraph>;
+
+    static void enqueueSVFGNode(const SVFGNode* node, NodeBS& retained,
+                                std::deque<NodeID>& worklist);
+    static void demandTopLevelPointer(const SVFVar* var, SVFG* graph,
+                                      NodeBS& demandedVars, NodeBS& retained,
+                                      std::deque<NodeID>& worklist);
+    static void collectNodeInputDependencies(
+        const SVFGNode* node, SVFG* graph, NodeBS& demandedVars,
+        NodeBS& retained, std::deque<NodeID>& worklist);
+    void buildRetainedAdjacency();
+    void cacheRetainedEdge(SVFGEdge* edge);
+
+    AndersenWaveDiff* preAnalysis;
+    SVFG* backingGraph;
+    SVFGGraph solveGraph;
+    std::unique_ptr<SCCDetection<SVFGGraph>> solveSCC;
+    NodeStack solveNodeStack;
+    Map<NodeID, std::vector<SVFGEdge*>> retainedOutEdges;
+    Set<const SVFGEdge*> retainedEdgeSet;
 };
+
+extern template class FSMPTA<SVFG*>;
+extern template class FSMPTA<const SlicedSVFGView*>;
 
 } // End namespace SVF
 

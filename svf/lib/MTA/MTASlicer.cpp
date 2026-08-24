@@ -24,10 +24,6 @@
  * MTASlicer.cpp
  *
  *      Author: Jiawei Yang
- *
- * MTASlicerBase + MultiStageSlicer + SingleSlicer -- the program slicers of
- * "Multi-Stage On-Demand Program Slicing for Modular Analysis of Multi-Threaded
- * Programs" (ISSTA 2026).
  */
 
 #include "MTA/MTASlicer.h"
@@ -37,19 +33,13 @@
 #include "Util/CxtStmt.h"
 #include "Util/ThreadAPI.h"
 #include <deque>
-#include <algorithm>
 #include <cassert>
 #include "Graphs/ICFGEdge.h"
 #include "Graphs/ICFGNode.h"
 #include "Graphs/CallGraph.h"
 #include "SVFIR/SVFStatements.h"
 #include "SVFIR/SVFVariables.h"
-#include <fstream>
-#include <sstream>
 #include <queue>
-#include <unordered_map>
-#include <iostream>
-#include <cctype>
 #include "Graphs/SVFG.h"
 #include "Graphs/VFGNode.h"
 #include "Graphs/VFGEdge.h"
@@ -63,46 +53,73 @@ namespace SVF
 // SlicedTCT - TCT rebuilt over the sliced ThreadCallGraph view.
 //===----------------------------------------------------------------------===//
 
-SlicedTCT::SlicedTCT(PointerAnalysis* p, const SlicedSVFIRView* slicedView, u32_t maxContextLen)
-    : TCT(p),
-      tcgView(slicedView != nullptr && slicedView->getThreadCallGraph() != nullptr ? slicedView->getThreadCallGraph() : nullptr),
-      maxContextLen(maxContextLen)
+std::unique_ptr<SlicedTCT> SlicedTCT::create(
+    PointerAnalysis& pointerAnalysis, const SlicedSVFIRView& slicedView,
+    u32_t contextLimit)
 {
-    // Base class TCT(p) constructor called build() before tcgView was initialized.
-    // Now that tcgView is initialized, rebuild using sliced view.
-    if (tcgView != nullptr)
-    {
-        build();
-    }
+    std::unique_ptr<SlicedTCT> tct(
+        new SlicedTCT(pointerAnalysis, slicedView, contextLimit));
+    tct->build();
+    return tct;
+}
+
+SlicedTCT::SlicedTCT(PointerAnalysis& pointerAnalysis,
+                     const SlicedSVFIRView& slicedView, u32_t contextLimit)
+    : TCT(&pointerAnalysis, contextLimit),
+      tcgView(*slicedView.getThreadCallGraph())
+{
 }
 
 void SlicedTCT::build()
 {
-    if (tcgView == nullptr)
+    markRelProcs();
+    collectLoopInfoForJoin();
+    collectEntryFunInCallGraph();
+
+    for (const FunObjVar* entry : entryFuncSet)
     {
-        TCT::build();
-        return;
+        if (!isCandidateFun(entry))
+            continue;
+        CallStrCxt context;
+        CxtThreadProc parent(-1, context, nullptr);
+        TCTNode* root = getOrCreateTCTNode(
+                            context, createDummyForkSite(), parent, entry);
+        pushToCTPWorkList(CxtThreadProc(root->getId(), context, entry));
     }
 
-    // The base TCT(p) constructor already built the whole-program TCT. Reset it to
-    // a clean graph so the slice rebuilds from scratch (addGNode reissues ids from
-    // 0; stale nodes left behind would later fail the MHP getCxtOfCxtThread lookup).
-    reset();
+    while (!ctpList.empty())
+    {
+        CxtThreadProc process = popFromCTPWorkList();
+        CallGraphNode* node = tcg->getCallGraphNode(process.getProc());
+        if (!isCandidateFun(node->getFunction()) || !isKeptNode(node))
+            continue;
 
-    // Call base class build() which will call our overridden methods
-    // (markRelProcs, collectLoopInfoForJoin, collectEntryFunInCallGraph)
-    // that filter using sliced view, then build the TCT tree
-    TCT::build();
+        std::vector<const CallGraphEdge*> outEdges;
+        tcgView.getOutEdgesOf(node, outEdges);
+        for (const CallGraphEdge* edge : outEdges)
+        {
+            std::vector<const CallICFGNode*> directCalls;
+            std::vector<const CallICFGNode*> indirectCalls;
+            tcgView.getDirectCallsOf(edge, directCalls);
+            tcgView.getIndirectCallsOf(edge, indirectCalls);
+            for (const CallICFGNode* call : directCalls)
+                handleCallRelation(process, edge, call);
+            for (const CallICFGNode* call : indirectCalls)
+                handleCallRelation(process, edge, call);
+        }
+    }
+
+    collectMultiForkedThreads();
+
+    if (Options::TCTDotGraph())
+    {
+        print();
+        dump("tct");
+    }
 }
 
 void SlicedTCT::markRelProcs()
 {
-    if (tcgView == nullptr)
-    {
-        TCT::markRelProcs();
-        return;
-    }
-
     // Get kept fork sites from sliced view
     std::vector<const ICFGNode*> keptForkSites;
     getKeptForkSites(keptForkSites);
@@ -111,39 +128,15 @@ void SlicedTCT::markRelProcs()
     {
         // Get function from fork site
         const FunObjVar* svfun = forkSite->getFun();
-        TCT::markRelProcs(svfun);
+        markRelProcs(svfun);
 
-        // Get fork edges from sliced view (use tcgView to get out edges)
         const CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(forkSite);
-        const FunObjVar* callerFun = callNode->getFun();
-        CallGraphNode* callerNode = tcg->getCallGraphNode(callerFun);
-
-        if (!isKeptNode(callerNode))
-            continue;
-
-        // Use sliced view to get out edges (which filters by kept edges)
-        std::vector<const CallGraphEdge*> outEdges;
-        tcgView->getOutEdgesOf(callerNode, outEdges);
-
-        for (const CallGraphEdge* edge : outEdges)
+        std::vector<const CallGraphEdge*> forkEdges;
+        GenericGraphTraits<const SlicedThreadCallGraphView*>::getForkEdges(
+            &tcgView, callNode, forkEdges);
+        for (const CallGraphEdge* edge : forkEdges)
         {
-            // Check if this is a fork edge
-            if (edge->getEdgeKind() == CallGraphEdge::TDForkEdge)
-            {
-                const CallGraphNode* forkeeNode = edge->getDstNode();
-                if (isKeptNode(forkeeNode))
-                {
-                    // Check if this edge corresponds to the fork site
-                    const CallGraphEdge::CallInstSet& directCalls = edge->getDirectCalls();
-                    const CallGraphEdge::CallInstSet& indirectCalls = edge->getIndirectCalls();
-
-                    if (directCalls.count(callNode) > 0 || indirectCalls.count(callNode) > 0)
-                    {
-                        const FunObjVar* forkeeFun = forkeeNode->getFunction();
-                        candidateFuncSet.insert(forkeeFun);
-                    }
-                }
-            }
+            candidateFuncSet.insert(edge->getDstNode()->getFunction());
         }
     }
 
@@ -154,7 +147,7 @@ void SlicedTCT::markRelProcs()
     for (const ICFGNode* joinSite : keptJoinSites)
     {
         const FunObjVar* svfun = joinSite->getFun();
-        TCT::markRelProcs(svfun);
+        markRelProcs(svfun);
     }
 
     if(getMakredProcs().empty())
@@ -163,18 +156,31 @@ void SlicedTCT::markRelProcs()
 
 void SlicedTCT::markRelProcs(const FunObjVar* fun)
 {
-    // Call base class implementation
-    TCT::markRelProcs(fun);
+    const CallGraphNode* start = tcg->getCallGraphNode(fun);
+    if (!isKeptNode(start))
+        return;
+
+    FIFOWorkList<const CallGraphNode*> worklist;
+    PTACGNodeSet visited;
+    worklist.push(start);
+    visited.insert(start);
+    while (!worklist.empty())
+    {
+        const CallGraphNode* node = worklist.pop();
+        candidateFuncSet.insert(node->getFunction());
+        std::vector<const CallGraphEdge*> inEdges;
+        tcgView.getInEdgesOf(node, inEdges);
+        for (const CallGraphEdge* edge : inEdges)
+        {
+            const CallGraphNode* caller = edge->getSrcNode();
+            if (visited.insert(caller).second)
+                worklist.push(caller);
+        }
+    }
 }
 
 void SlicedTCT::collectLoopInfoForJoin()
 {
-    if (tcgView == nullptr)
-    {
-        TCT::collectLoopInfoForJoin();
-        return;
-    }
-
     // Get kept join sites from sliced view
     std::vector<const ICFGNode*> keptJoinSites;
     getKeptJoinSites(keptJoinSites);
@@ -202,15 +208,9 @@ void SlicedTCT::collectLoopInfoForJoin()
 
 void SlicedTCT::collectEntryFunInCallGraph()
 {
-    if (tcgView == nullptr)
-    {
-        TCT::collectEntryFunInCallGraph();
-        return;
-    }
-
-    // Use sliced CallGraph view to collect entry functions
-    // Only collect functions that are kept in sliced view
-    const OrderedSet<const CallGraphNode*>& keptNodes = tcgView->getKeptNodes();
+    // A removed caller must not turn its callee into a new program root.
+    // Start only from original roots that remain in the sliced view.
+    const OrderedSet<const CallGraphNode*>& keptNodes = tcgView.getKeptNodes();
 
     for (const CallGraphNode* node : keptNodes)
     {
@@ -218,10 +218,7 @@ void SlicedTCT::collectEntryFunInCallGraph()
         if (SVFUtil::isExtCall(fun))
             continue;
 
-        // Check if this node has no incoming edges in the sliced view
-        std::vector<const CallGraphEdge*> inEdges;
-        tcgView->getInEdgesOf(node, inEdges);
-        if (inEdges.empty())
+        if (!node->hasIncomingEdge())
         {
             entryFuncSet.insert(fun);
         }
@@ -244,52 +241,19 @@ void SlicedTCT::handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEd
     TCT::handleCallRelation(ctp, cgEdge, cs);
 }
 
-void SlicedTCT::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee)
-{
-    const FunObjVar* caller = call->getFun();
-    CallSiteID csId = tcg->getCallSiteID(call, callee);
-
-    if(inSameCallGraphSCC(tcg->getCallGraphNode(caller), tcg->getCallGraphNode(callee)) == false)
-    {
-        cxt.push_back(csId);
-        // Use custom maxContextLen if set, otherwise use Options::MaxContextLen()
-        u32_t maxLen = (maxContextLen > 0) ? maxContextLen : Options::MaxContextLen();
-        if (cxt.size() > maxLen)
-            cxt.erase(cxt.begin());
-        if (cxt.size() > MaxCxtSize)
-            MaxCxtSize = cxt.size();
-        DBOUT(DMTA, dumpCxt(cxt));
-    }
-}
-
 bool SlicedTCT::isKeptNode(const CallGraphNode* node) const
 {
-    if (tcgView == nullptr)
-        return true;
-    return tcgView->isKeptNode(node);
+    return tcgView.isKeptNode(node);
 }
 
 bool SlicedTCT::isKeptEdge(const CallGraphEdge* edge) const
 {
-    if (tcgView == nullptr)
-        return true;
-    const CallGraph::CallGraphEdgeSet& keptEdges = tcgView->getKeptEdges();
-    return keptEdges.find(const_cast<CallGraphEdge*>(edge)) != keptEdges.end();
+    return tcgView.isKeptEdge(edge);
 }
 
 void SlicedTCT::getKeptForkSites(std::vector<const ICFGNode*>& out) const
 {
     out.clear();
-    if (tcgView == nullptr)
-    {
-        // Fall back to original
-        for (ThreadCallGraph::CallSiteSet::const_iterator it = tcg->forksitesBegin(), eit = tcg->forksitesEnd(); it != eit; ++it)
-        {
-            out.push_back(*it);
-        }
-        return;
-    }
-
     // Get all fork sites from original ThreadCallGraph, but filter by:
     // 1. The function containing the fork site is kept
     // 2. There exists a kept fork edge from this fork site
@@ -300,59 +264,17 @@ void SlicedTCT::getKeptForkSites(std::vector<const ICFGNode*>& out) const
         if (callNode == nullptr)
             continue;
 
-        // Check if the function containing the fork site is kept
-        const FunObjVar* fun = forkSite->getFun();
-        CallGraphNode* cgNode = tcg->getCallGraphNode(fun);
-        if (!isKeptNode(cgNode))
-            continue;
-
-        // Check if there's a kept fork edge from this fork site
-        // Use sliced view to get out edges
-        std::vector<const CallGraphEdge*> outEdges;
-        tcgView->getOutEdgesOf(cgNode, outEdges);
-
-        bool hasKeptForkEdge = false;
-        for (const CallGraphEdge* edge : outEdges)
-        {
-            if (edge->getEdgeKind() == CallGraphEdge::TDForkEdge)
-            {
-                // Check if this edge corresponds to the fork site
-                const CallGraphEdge::CallInstSet& directCalls = edge->getDirectCalls();
-                const CallGraphEdge::CallInstSet& indirectCalls = edge->getIndirectCalls();
-
-                if (directCalls.count(callNode) > 0 || indirectCalls.count(callNode) > 0)
-                {
-                    // Check if the destination is kept
-                    const CallGraphNode* dstNode = edge->getDstNode();
-                    if (isKeptNode(dstNode))
-                    {
-                        hasKeptForkEdge = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (hasKeptForkEdge)
-        {
+        std::vector<const CallGraphEdge*> forkEdges;
+        GenericGraphTraits<const SlicedThreadCallGraphView*>::getForkEdges(
+            &tcgView, callNode, forkEdges);
+        if (!forkEdges.empty())
             out.push_back(forkSite);
-        }
     }
 }
 
 void SlicedTCT::getKeptJoinSites(std::vector<const ICFGNode*>& out) const
 {
     out.clear();
-    if (tcgView == nullptr)
-    {
-        // Fall back to original
-        for (ThreadCallGraph::CallSiteSet::const_iterator it = tcg->joinsitesBegin(), eit = tcg->joinsitesEnd(); it != eit; ++it)
-        {
-            out.push_back(*it);
-        }
-        return;
-    }
-
     // Get all join sites from original ThreadCallGraph, but filter by:
     // 1. The function containing the join site is kept
     // 2. There exists a kept join edge to this join site
@@ -363,43 +285,11 @@ void SlicedTCT::getKeptJoinSites(std::vector<const ICFGNode*>& out) const
         if (callNode == nullptr)
             continue;
 
-        // Check if the function containing the join site is kept
-        const FunObjVar* fun = joinSite->getFun();
-        CallGraphNode* cgNode = tcg->getCallGraphNode(fun);
-        if (!isKeptNode(cgNode))
-            continue;
-
-        // Check if there's a kept join edge to this join site
-        // Use sliced view to get in edges
-        std::vector<const CallGraphEdge*> inEdges;
-        tcgView->getInEdgesOf(cgNode, inEdges);
-
-        bool hasKeptJoinEdge = false;
-        for (const CallGraphEdge* edge : inEdges)
-        {
-            if (edge->getEdgeKind() == CallGraphEdge::TDJoinEdge)
-            {
-                // Check if this edge corresponds to the join site
-                const CallGraphEdge::CallInstSet& directCalls = edge->getDirectCalls();
-                const CallGraphEdge::CallInstSet& indirectCalls = edge->getIndirectCalls();
-
-                if (directCalls.count(callNode) > 0 || indirectCalls.count(callNode) > 0)
-                {
-                    // Check if the source is kept
-                    const CallGraphNode* srcNode = edge->getSrcNode();
-                    if (isKeptNode(srcNode))
-                    {
-                        hasKeptJoinEdge = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (hasKeptJoinEdge)
-        {
+        std::vector<const CallGraphEdge*> joinEdges;
+        GenericGraphTraits<const SlicedThreadCallGraphView*>::getJoinEdges(
+            &tcgView, callNode, joinEdges);
+        if (!joinEdges.empty())
             out.push_back(joinSite);
-        }
     }
 }
 
@@ -407,16 +297,11 @@ void SlicedTCT::getKeptJoinSites(std::vector<const ICFGNode*>& out) const
 // MTASlicerBase
 //===----------------------------------------------------------------------===//
 
-MTASlicerBase::MTASlicerBase(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
-                             LockAnalysis* lockAnalysis, SVFG* vfg)
-    : svfIr(svfIr), pta(pta), mhp(mhp), lockAnalysis(lockAnalysis), vfg(vfg)
+MTASlicerBase::MTASlicerBase(SVFIR* svfir, AndersenBase* pta, MHP* mhp,
+                             LockAnalysis* lockAnalysis, SVFG* svfg)
+    : svfir(svfir), pta(pta), mhp(mhp), lockAnalysis(lockAnalysis), svfg(svfg)
 {
     callGraph = pta->getCallGraph();
-}
-
-MTASlicerBase::~MTASlicerBase()
-{
-    // No dynamic memory to clean up - all pointers are managed externally
 }
 
 // Helper: Get lock set for an ICFG node
@@ -424,12 +309,22 @@ OrderedSet<const ICFGNode*> MTASlicerBase::getLockSet(const ICFGNode* node)
 {
     OrderedSet<const ICFGNode*> allLockSites;
 
-    // Get intra-procedural locks
-    if (lockAnalysis->isInsideIntraLock(node) &&
-            !lockAnalysis->isInsideCondIntraLock(node))
+    // Synchronization dependence is based on may-lock spans. Retain both the
+    // unconditional locks used to prove mutual exclusion and conditional locks
+    // whose spans can affect the sliced lock analysis' classification.
+    if (lockAnalysis->hasIntraLockSet(node))
     {
         const LockAnalysis::InstSet& intraLocks = lockAnalysis->getIntraLockSet(node);
         for (const ICFGNode* lockSite : intraLocks)
+        {
+            allLockSites.insert(lockSite);
+        }
+    }
+    if (lockAnalysis->isInsideCondIntraLock(node))
+    {
+        const LockAnalysis::InstSet& conditionalLocks =
+            lockAnalysis->getCondIntraLockSet(node);
+        for (const ICFGNode* lockSite : conditionalLocks)
         {
             allLockSites.insert(lockSite);
         }
@@ -441,10 +336,10 @@ OrderedSet<const ICFGNode*> MTASlicerBase::getLockSet(const ICFGNode* node)
         const LockAnalysis::CxtStmtSet& cxtStmts = lockAnalysis->getCxtStmtsFromInst(node);
         for (const CxtStmt& cxtStmt : cxtStmts)
         {
-            if (lockAnalysis->hasCxtLockfromCxtStmt(cxtStmt))
+            if (lockAnalysis->hasCxtLockFromCxtStmt(cxtStmt))
             {
                 const LockAnalysis::CxtLockSet& cxtLocks =
-                    lockAnalysis->getCxtLockfromCxtStmt(cxtStmt);
+                    lockAnalysis->getCxtLockFromCxtStmt(cxtStmt);
                 for (const LockAnalysis::CxtLock& cxtLock : cxtLocks)
                 {
                     allLockSites.insert(cxtLock.getStmt());
@@ -457,7 +352,8 @@ OrderedSet<const ICFGNode*> MTASlicerBase::getLockSet(const ICFGNode* node)
 }
 
 // Helper: Get TCTNode set from ICFGNode
-OrderedSet<const TCTNode*> MTASlicerBase::getTCTNodeSetFromNode(const ICFGNode* node)
+OrderedSet<const TCTNode*> MTASlicerBase::getTCTNodeSetFromNode(
+    const ICFGNode* node)
 {
     OrderedSet<const TCTNode*> tctNodeSet;
 
@@ -475,29 +371,31 @@ OrderedSet<const TCTNode*> MTASlicerBase::getTCTNodeSetFromNode(const ICFGNode* 
     return tctNodeSet;
 }
 
-// Helper: Get dependent thread create statements
-OrderedSet<const SVFStmt*> MTASlicerBase::getDependentThreadCreate(const SVFStmt* stmt)
+// Helper: Get dependent thread-create sites for an ICFG source node.
+OrderedSet<const CallICFGNode*> MTASlicerBase::getDependentThreadCreate(
+    const ICFGNode* node)
 {
-    OrderedSet<const SVFStmt*> forkSiteStmts;
+    OrderedSet<const CallICFGNode*> forkSites;
+    OrderedSet<const TCTNode*> tctNodeSet = getTCTNodeSetFromNode(node);
+    ThreadAPI* threadAPI = mhp->getThreadCallGraph()->getThreadAPI();
 
-    const ICFGNode* icfgNode = stmt->getICFGNode();
-    OrderedSet<const TCTNode*> tctNodeSet = getTCTNodeSetFromNode(icfgNode);
-
+    TCT* tct = mhp->getTCT();
     for (const TCTNode* tctNode : tctNodeSet)
     {
-        const CxtThread& cxtThread = tctNode->getCxtThread();
-        const ICFGNode* forkSite = cxtThread.getThread();
-        if (forkSite != nullptr)
+        NodeBS dependentThreads = tct->getAncestorThreads(tctNode->getId());
+        dependentThreads.set(tctNode->getId());
+        for (NodeID tid : dependentThreads)
         {
-            const ICFGNode::SVFStmtList& svfStmts = forkSite->getSVFStmts();
-            if (!svfStmts.empty())
-            {
-                forkSiteStmts.insert(svfStmts.front());
-            }
+            const ICFGNode* forkSite =
+                tct->getTCTNode(tid)->getCxtThread().getThread();
+            const CallICFGNode* forkCall =
+                SVFUtil::dyn_cast<CallICFGNode>(forkSite);
+            if (forkCall != nullptr && threadAPI->isTDFork(forkCall))
+                forkSites.insert(forkCall);
         }
     }
 
-    return forkSiteStmts;
+    return forkSites;
 }
 
 // Data-dependence slice over the thread-aware SVFG (VFG_pre), at SVFG-node
@@ -505,18 +403,13 @@ OrderedSet<const SVFStmt*> MTASlicerBase::getDependentThreadCreate(const SVFStmt
 // value-flow edges already capture direct (top-level), indirect (address-taken
 // / MemSSA), and thread-aware (interference) data dependence.
 OrderedSet<const SVFGNode*> MTASlicerBase::computeDataDependenceSVFGNodes(
-    const OrderedSet<const SVFStmt*>& seeds, SVFG* vfg)
+    const OrderedSet<const SVFStmt*>& seeds, SVFG* svfg)
 {
 
-    assert(vfg != nullptr && "data-dependence slice requires the thread-aware VFG_pre");
+    assert(svfg != nullptr && "data-dependence slice requires the thread-aware VFG_pre");
 
     OrderedSet<const SVFGNode*> visited;
     std::deque<const SVFGNode*> worklist;
-    auto seed = [&](const SVFGNode* n)
-    {
-        if (n != nullptr && visited.insert(n).second)
-            worklist.push_back(n);
-    };
 
     // Seed from the value-flow nodes of the given (e.g. race target) statements.
     // VFG_pre is a pointer-only SVFG, so a load/store of a NON-pointer value (the
@@ -529,59 +422,64 @@ OrderedSet<const SVFGNode*> MTASlicerBase::computeDataDependenceSVFGNodes(
     // def chain regardless of the value type.
     for (const SVFStmt* stmt : seeds)
     {
-        if (vfg->hasStmtVFGNode(stmt))
-            seed(vfg->getStmtVFGNode(stmt));
+        if (svfg->hasStmtVFGNode(stmt))
+            enqueueSVFGNode(svfg->getStmtVFGNode(stmt), visited, worklist);
 
         NodeID addrPtr = 0;
-        if (const LoadStmt* ld = SVFUtil::dyn_cast<LoadStmt>(stmt))
-            addrPtr = ld->getRHSVarID();
-        else if (const StoreStmt* st = SVFUtil::dyn_cast<StoreStmt>(stmt))
-            addrPtr = st->getLHSVarID();
+        if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+            addrPtr = load->getRHSVarID();
+        else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt))
+            addrPtr = store->getLHSVarID();
         if (addrPtr != 0)
         {
             // getDefSVFGNode takes a ValVar (the address pointer is a top-level
             // value variable).
-            const ValVar* ptrNode = SVFUtil::dyn_cast<ValVar>(svfIr->getGNode(addrPtr));
-            if (ptrNode != nullptr && vfg->hasDefSVFGNode(ptrNode))
-                seed(vfg->getDefSVFGNode(ptrNode));
+            const ValVar* ptrNode = SVFUtil::dyn_cast<ValVar>(svfir->getGNode(addrPtr));
+            if (ptrNode != nullptr && svfg->hasDefSVFGNode(ptrNode))
+                enqueueSVFGNode(svfg->getDefSVFGNode(ptrNode), visited, worklist);
         }
     }
 
     // Backward over every value-flow edge.
     while (!worklist.empty())
     {
-        const SVFGNode* n = worklist.front();
+        const SVFGNode* node = worklist.front();
         worklist.pop_front();
-        for (const VFGEdge* e : n->getInEdges())
-            seed(e->getSrcNode());
+        for (const VFGEdge* edge : node->getInEdges())
+            enqueueSVFGNode(edge->getSrcNode(), visited, worklist);
     }
 
     return visited;
 }
 
-// Project retained VFG nodes (plus the seeds) onto their ICFG nodes.
-OrderedSet<const ICFGNode*> MTASlicerBase::svfgNodesToICFGNodes(
-    const OrderedSet<const SVFGNode*>& nodes, const OrderedSet<const SVFStmt*>& seeds)
+void MTASlicerBase::enqueueSVFGNode(
+    const SVFGNode* node, OrderedSet<const SVFGNode*>& visited,
+    std::deque<const SVFGNode*>& worklist)
 {
-    OrderedSet<const ICFGNode*> result;
-    for (const SVFGNode* n : nodes)
-        if (const StmtVFGNode* s = SVFUtil::dyn_cast<StmtVFGNode>(n))
-            if (s->getICFGNode() != nullptr)
-                result.insert(s->getICFGNode());
-    for (const SVFStmt* stmt : seeds)
-        result.insert(stmt->getICFGNode());
-    return result;
+    if (node != nullptr && visited.insert(node).second)
+        worklist.push_back(node);
 }
 
-OrderedSet<const ICFGNode*> MTASlicerBase::sliceDataDependenceOverVFG(
-    const OrderedSet<const SVFStmt*>& seeds, SVFG* vfg)
+// Project retained VFG nodes (plus the seeds) onto their ICFG nodes.
+OrderedSet<const ICFGNode*> MTASlicerBase::svfgNodesToICFGNodes(
+    const OrderedSet<const SVFGNode*>& nodes,
+    const OrderedSet<const SVFStmt*>& seeds)
 {
-    return svfgNodesToICFGNodes(computeDataDependenceSVFGNodes(seeds, vfg), seeds);
+    OrderedSet<const ICFGNode*> result;
+    for (const SVFGNode* node : nodes)
+        if (const StmtVFGNode* statementNode =
+                SVFUtil::dyn_cast<StmtVFGNode>(node))
+            if (statementNode->getICFGNode() != nullptr)
+                result.insert(statementNode->getICFGNode());
+    for (const SVFStmt* stmt : seeds)
+        if (stmt != nullptr && stmt->getICFGNode() != nullptr)
+            result.insert(stmt->getICFGNode());
+    return result;
 }
 
 // Helper: Collect pthread-related statements (create and join)
 OrderedSet<const CallICFGNode*> MTASlicerBase::collectPthreadStatements(
-    const OrderedSet<const SVFStmt*>& vulnerableStmts)
+    const OrderedSet<const ICFGNode*>& sourceNodes)
 {
     OrderedSet<const CallICFGNode*> pthreadCallNodes;
 
@@ -589,28 +487,24 @@ OrderedSet<const CallICFGNode*> MTASlicerBase::collectPthreadStatements(
     ThreadAPI* threadAPI = tcg->getThreadAPI();
 
     // Map pthread_create nodes to their corresponding pthread_join nodes
-    OrderedSet<const SVFStmt*> pthreadCreateStmts;
+    OrderedSet<const CallICFGNode*> pthreadCreateNodes;
 
     // First pass: collect all pthread_create nodes
-    for (const SVFStmt* stmt : vulnerableStmts)
+    for (const ICFGNode* sourceNode : sourceNodes)
     {
-        OrderedSet<const SVFStmt*> forkSiteStmts = getDependentThreadCreate(stmt);
-
-        for (const SVFStmt* forkSiteStmt : forkSiteStmts)
+        OrderedSet<const CallICFGNode*> forkSites =
+            getDependentThreadCreate(sourceNode);
+        for (const CallICFGNode* forkCallNode : forkSites)
         {
-            const ICFGNode* forkSiteNode = forkSiteStmt->getICFGNode();
-            const CallICFGNode* forkCallNode = SVFUtil::dyn_cast<CallICFGNode>(forkSiteNode);
-            if (forkCallNode != nullptr && threadAPI->isTDFork(forkCallNode))
-            {
-                pthreadCallNodes.insert(forkCallNode);
-                pthreadCreateStmts.insert(forkSiteStmt);
-            }
+            pthreadCallNodes.insert(forkCallNode);
+            pthreadCreateNodes.insert(forkCallNode);
         }
     }
 
     // Second pass: find corresponding pthread_join nodes
-    ICFG* icfg = svfIr->getICFG();
-    for (ICFG::iterator it = icfg->begin(), eit = icfg->end(); it != eit; ++it)
+    ICFG* icfg = svfir->getICFG();
+    for (ICFG::iterator it = icfg->begin(), eit = icfg->end();
+         it != eit; ++it)
     {
         const ICFGNode* node = it->second;
         const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node);
@@ -619,17 +513,14 @@ OrderedSet<const CallICFGNode*> MTASlicerBase::collectPthreadStatements(
             const SVFVar* joinThread = threadAPI->getJoinedThread(callNode);
             if (joinThread != nullptr)
             {
-                for (auto& createStmt : pthreadCreateStmts)
+                for (const CallICFGNode* createCallNode : pthreadCreateNodes)
                 {
-                    const ICFGNode* createNode = createStmt->getICFGNode();
-                    const CallICFGNode* createCallNode = SVFUtil::dyn_cast<CallICFGNode>(createNode);
-                    if (createCallNode != nullptr)
+                    const SVFVar* forkedThread = threadAPI->getForkedThread(createCallNode);
+                    if (forkedThread != nullptr &&
+                        threadAPI->isAliasedForkJoin(
+                            pta, forkedThread, joinThread))
                     {
-                        const SVFVar* forkedThread = threadAPI->getForkedThread(createCallNode);
-                        if (forkedThread != nullptr && threadAPI->isAliasedForkJoin(pta, forkedThread, joinThread))
-                        {
-                            pthreadCallNodes.insert(callNode);
-                        }
+                        pthreadCallNodes.insert(callNode);
                     }
                 }
             }
@@ -641,7 +532,7 @@ OrderedSet<const CallICFGNode*> MTASlicerBase::collectPthreadStatements(
 
 // Helper: Collect mutex-related statements (lock and unlock)
 OrderedSet<const CallICFGNode*> MTASlicerBase::collectMutexStatements(
-    const OrderedSet<const SVFStmt*>& vulnerableStmts)
+    const OrderedSet<const ICFGNode*>& sourceNodes)
 {
     OrderedSet<const CallICFGNode*> mutexCallNodes;
 
@@ -652,13 +543,15 @@ OrderedSet<const CallICFGNode*> MTASlicerBase::collectMutexStatements(
     OrderedSet<const CallICFGNode*> mutexLockCallNodes;
 
     // First pass: collect all mutex_lock nodes from lock sets
-    for (const SVFStmt* stmt : vulnerableStmts)
+    for (const ICFGNode* sourceNode : sourceNodes)
     {
-        OrderedSet<const ICFGNode*> lockSet = getLockSet(stmt->getICFGNode());
+        OrderedSet<const ICFGNode*> lockSet = getLockSet(sourceNode);
         for (const ICFGNode* lockNode : lockSet)
         {
-            const CallICFGNode* lockCallNode = SVFUtil::dyn_cast<CallICFGNode>(lockNode);
-            if (lockCallNode != nullptr && threadAPI->isTDAcquire(lockCallNode))
+            const CallICFGNode* lockCallNode =
+                SVFUtil::dyn_cast<CallICFGNode>(lockNode);
+            if (lockCallNode != nullptr &&
+                threadAPI->isTDAcquire(lockCallNode))
             {
                 mutexCallNodes.insert(lockCallNode);
                 mutexLockCallNodes.insert(lockCallNode);
@@ -667,8 +560,9 @@ OrderedSet<const CallICFGNode*> MTASlicerBase::collectMutexStatements(
     }
 
     // Second pass: find corresponding mutex_unlock nodes
-    ICFG* icfg = svfIr->getICFG();
-    for (ICFG::iterator it = icfg->begin(), eit = icfg->end(); it != eit; ++it)
+    ICFG* icfg = svfir->getICFG();
+    for (ICFG::iterator it = icfg->begin(), eit = icfg->end();
+         it != eit; ++it)
     {
         const ICFGNode* node = it->second;
         const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node);
@@ -677,12 +571,13 @@ OrderedSet<const CallICFGNode*> MTASlicerBase::collectMutexStatements(
             const SVFVar* unlockVar = threadAPI->getLockVal(callNode);
             if (unlockVar != nullptr)
             {
-                for (auto lockCallNode : mutexLockCallNodes)
+                for (const CallICFGNode* lockCallNode : mutexLockCallNodes)
                 {
                     if (lockCallNode != nullptr)
                     {
                         const SVFVar* lockVar = threadAPI->getLockVal(lockCallNode);
-                        if (lockVar != nullptr && pta->alias(unlockVar->getId(), lockVar->getId()))
+                        if (lockVar != nullptr &&
+                            pta->alias(unlockVar->getId(), lockVar->getId()))
                         {
                             mutexCallNodes.insert(callNode);
                         }
@@ -697,13 +592,16 @@ OrderedSet<const CallICFGNode*> MTASlicerBase::collectMutexStatements(
 
 // Helper: Collect common pthread and mutex statements (shared by PTA and MTA slicing)
 std::pair<OrderedSet<const CallICFGNode*>, OrderedSet<const CallICFGNode*>>
-        MTASlicerBase::collectCommonThreadStatements(const OrderedSet<const SVFStmt*>& vulnerableStatements)
+MTASlicerBase::collectCommonThreadStatements(
+    const OrderedSet<const ICFGNode*>& sourceNodes)
 {
     // Step 1: Collect pthread-related statements, i.e., pthread_create and pthread_join
-    OrderedSet<const CallICFGNode*> pthreadCallNodes = collectPthreadStatements(vulnerableStatements);
+    OrderedSet<const CallICFGNode*> pthreadCallNodes =
+        collectPthreadStatements(sourceNodes);
 
     // Step 2: Collect mutex-related statements
-    OrderedSet<const CallICFGNode*> mutexCallNodes = collectMutexStatements(vulnerableStatements);
+    OrderedSet<const CallICFGNode*> mutexCallNodes =
+        collectMutexStatements(sourceNodes);
 
     return std::make_pair(pthreadCallNodes, mutexCallNodes);
 }
@@ -724,10 +622,24 @@ std::pair<OrderedSet<const CallICFGNode*>, OrderedSet<const CallICFGNode*>>
 // reproduces the whole-program classification. Markers used: entry block
 // front (cxt-lock start) and back (intra backward marker), and exit block back
 // (intra forward marker).
-static void collectLockFunctionMarkers(
+void MTASlicerBase::addSynchronizationDependencies(
+    const OrderedSet<const CallICFGNode*>& pthreadCallNodes,
     const OrderedSet<const CallICFGNode*>& mutexCallNodes,
     OrderedSet<const ICFGNode*>& sliceResult)
 {
+    for (const CallICFGNode* callNode : pthreadCallNodes)
+    {
+        sliceResult.insert(callNode);
+        if (callNode->getRetICFGNode() != nullptr)
+            sliceResult.insert(callNode->getRetICFGNode());
+    }
+    for (const CallICFGNode* callNode : mutexCallNodes)
+    {
+        sliceResult.insert(callNode);
+        if (callNode->getRetICFGNode() != nullptr)
+            sliceResult.insert(callNode->getRetICFGNode());
+    }
+
     for (const CallICFGNode* mutexCallNode : mutexCallNodes)
     {
         const FunObjVar* fun = mutexCallNode->getFun();
@@ -741,74 +653,18 @@ static void collectLockFunctionMarkers(
         if (const SVFBasicBlock* exit = fun->getExitBB())
             sliceResult.insert(exit->back());
     }
-}
 
-// Build backward ICFG node set from vulnerable nodes
-OrderedSet<const ICFGNode*> MTASlicerBase::buildBackwardICFGNodeSet(
-    const OrderedSet<const ICFGNode*>& vulnerableNodes)
-{
-    OrderedSet<const ICFGNode*> backwardICFGNodeSet;
-    std::deque<const ICFGNode*> worklist;
-
-    // Initialize with vulnerable nodes
-    for (const ICFGNode* node : vulnerableNodes)
+    ThreadAPI* threadAPI = mhp->getThreadCallGraph()->getThreadAPI();
+    for (const CallICFGNode* callNode : pthreadCallNodes)
     {
-        backwardICFGNodeSet.insert(node);
-        worklist.push_back(node);
+        if (!threadAPI->isTDJoin(callNode) || callNode->getBB() == nullptr)
+            continue;
+        std::vector<const SVFBasicBlock*> exitBlocks;
+        callNode->getFun()->getExitBlocksOfLoop(callNode->getBB(), exitBlocks);
+        for (const SVFBasicBlock* exitBlock : exitBlocks)
+            if (!exitBlock->getICFGNodeList().empty())
+                sliceResult.insert(exitBlock->front());
     }
-
-    // Traverse backward along ICFG edges
-    while (!worklist.empty())
-    {
-        const ICFGNode* currICFGNode = worklist.front();
-        worklist.pop_front();
-
-        for (const ICFGEdge* inEdge : currICFGNode->getInEdges())
-        {
-            const ICFGNode* srcNode = inEdge->getSrcNode();
-            if (backwardICFGNodeSet.find(srcNode) == backwardICFGNodeSet.end())
-            {
-                backwardICFGNodeSet.insert(srcNode);
-                worklist.push_back(srcNode);
-            }
-        }
-    }
-
-    return backwardICFGNodeSet;
-}
-
-// Perform dual slicing (temporal slicing): filter statements based on control flow and parallel execution
-OrderedSet<const ICFGNode*> MTASlicerBase::runDualSlicing(
-    const OrderedSet<const ICFGNode*>& slicedNodes)
-{
-    OrderedSet<const ICFGNode*> dualSlicedNodes;
-
-    // Build backward ICFG node set
-    OrderedSet<const ICFGNode*> backwardICFGNodeSet = buildBackwardICFGNodeSet(slicedNodes);
-
-    // Perform control slicing
-    for (const ICFGNode* stmtICFGNode : slicedNodes)
-    {
-        // Check if the ICFG node is in backward_icfg_node_set
-        if (backwardICFGNodeSet.find(stmtICFGNode) != backwardICFGNodeSet.end())
-        {
-            dualSlicedNodes.insert(stmtICFGNode);
-        }
-        else
-        {
-            // Check if it may happen in parallel with any vulnerable node
-            for (const ICFGNode* bugICFGNode : slicedNodes)
-            {
-                if (mhp->mayHappenInParallelCache(stmtICFGNode, bugICFGNode))
-                {
-                    dualSlicedNodes.insert(stmtICFGNode);
-                    break;
-                }
-            }
-        }
-    }
-
-    return dualSlicedNodes;
 }
 
 // Call-dependence expansion (used by MultiStageSlicer).
@@ -827,81 +683,80 @@ OrderedSet<const ICFGNode*> MTASlicerBase::expandCallDependence(
     }
 
     // Build ancestor closure (upward traversal in call graph)
-    std::queue<const FunObjVar*> worklistFuncs;
+    std::queue<const FunObjVar*> functionWorklist;
     for (const FunObjVar* fun : keptFunctions)
-    {
-        worklistFuncs.push(fun);
-    }
+        functionWorklist.push(fun);
 
-    Map<const FunObjVar*, const CallGraphNode*> fun2Node;
-    for (auto it = callGraph->begin(), eit = callGraph->end(); it != eit; ++it)
+    Map<const FunObjVar*, const CallGraphNode*> functionToNode;
+    for (auto it = callGraph->begin(), eit = callGraph->end();
+         it != eit; ++it)
     {
         const CallGraphNode* node = it->second;
-        if (node && node->getFunction())
-        {
-            fun2Node[node->getFunction()] = node;
-        }
+        if (node != nullptr && node->getFunction() != nullptr)
+            functionToNode[node->getFunction()] = node;
     }
 
-    OrderedSet<const FunObjVar*> visitedFuncs = keptFunctions;
-    while (!worklistFuncs.empty())
+    OrderedSet<const FunObjVar*> visitedFunctions = keptFunctions;
+    while (!functionWorklist.empty())
     {
-        const FunObjVar* target = worklistFuncs.front();
-        worklistFuncs.pop();
-        auto nodeIt = fun2Node.find(target);
-        if (nodeIt == fun2Node.end()) continue;
+        const FunObjVar* target = functionWorklist.front();
+        functionWorklist.pop();
+        const auto nodeIt = functionToNode.find(target);
+        if (nodeIt == functionToNode.end())
+            continue;
 
         const CallGraphNode* node = nodeIt->second;
         for (const CallGraphEdge* inEdge : node->getInEdges())
         {
-            if (inEdge == nullptr) continue;
+            if (inEdge == nullptr)
+                continue;
             const CallGraphNode* callerNode = inEdge->getSrcNode();
-            if (callerNode && callerNode->getFunction())
+            if (callerNode != nullptr && callerNode->getFunction() != nullptr)
             {
                 const FunObjVar* callerFun = callerNode->getFunction();
-                if (visitedFuncs.find(callerFun) == visitedFuncs.end())
+                if (visitedFunctions.find(callerFun) == visitedFunctions.end())
                 {
                     keptFunctions.insert(callerFun);
-                    visitedFuncs.insert(callerFun);
-                    worklistFuncs.push(callerFun);
+                    visitedFunctions.insert(callerFun);
+                    functionWorklist.push(callerFun);
                 }
             }
         }
     }
 
     // For each keptFunction, add call/ret nodes and entry/exit nodes
-    ICFG* icfg = svfIr->getICFG();
+    ICFG* icfg = svfir->getICFG();
     OrderedSet<const ICFGNode*> expandedNodes = nodes;
     for (const FunObjVar* fun : keptFunctions)
     {
-        if (!fun) continue;
+        if (fun == nullptr)
+            continue;
 
         // Add function entry/exit nodes
         if (fun->hasBasicBlock())
         {
             if (FunEntryICFGNode* entry = icfg->getFunEntryICFGNode(fun))
-            {
                 expandedNodes.insert(entry);
-            }
             if (FunExitICFGNode* exit = icfg->getFunExitICFGNode(fun))
-            {
                 expandedNodes.insert(exit);
-            }
         }
 
         // Find all call/ret nodes that call this function
-        auto funNodeIt = fun2Node.find(fun);
-        if (funNodeIt != fun2Node.end())
+        const auto funNodeIt = functionToNode.find(fun);
+        if (funNodeIt != functionToNode.end())
         {
             const CallGraphNode* calleeNode = funNodeIt->second;
 
             // Traverse all edges that call this function
             for (const CallGraphEdge* inEdge : calleeNode->getInEdges())
             {
-                if (inEdge == nullptr) continue;
+                if (inEdge == nullptr)
+                    continue;
 
-                const CallGraphEdge::CallInstSet &directCalls = inEdge->getDirectCalls();
-                const CallGraphEdge::CallInstSet &indirectCalls = inEdge->getIndirectCalls();
+                const CallGraphEdge::CallInstSet& directCalls =
+                    inEdge->getDirectCalls();
+                const CallGraphEdge::CallInstSet& indirectCalls =
+                    inEdge->getIndirectCalls();
 
                 for (const CallICFGNode* callNode : directCalls)
                 {
@@ -910,9 +765,7 @@ OrderedSet<const ICFGNode*> MTASlicerBase::expandCallDependence(
                         expandedNodes.insert(callNode);
                         const RetICFGNode* retNode = callNode->getRetICFGNode();
                         if (retNode != nullptr)
-                        {
                             expandedNodes.insert(retNode);
-                        }
                     }
                 }
 
@@ -923,9 +776,7 @@ OrderedSet<const ICFGNode*> MTASlicerBase::expandCallDependence(
                         expandedNodes.insert(callNode);
                         const RetICFGNode* retNode = callNode->getRetICFGNode();
                         if (retNode != nullptr)
-                        {
                             expandedNodes.insert(retNode);
-                        }
                     }
                 }
             }
@@ -939,9 +790,9 @@ OrderedSet<const ICFGNode*> MTASlicerBase::expandCallDependence(
 // MultiStageSlicer
 //===----------------------------------------------------------------------===//
 
-MultiStageSlicer::MultiStageSlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
-                                   LockAnalysis* lockAnalysis, SVFG* vfg)
-    : MTASlicerBase(svfIr, pta, mhp, lockAnalysis, vfg)
+MultiStageSlicer::MultiStageSlicer(SVFIR* svfir, AndersenBase* pta, MHP* mhp,
+                                   LockAnalysis* lockAnalysis, SVFG* svfg)
+    : MTASlicerBase(svfir, pta, mhp, lockAnalysis, svfg)
 {
 }
 
@@ -951,140 +802,124 @@ OrderedSet<const ICFGNode*> MultiStageSlicer::runILASlicing(
     const OrderedSet<const ICFGNode*>& threadVFSources)
 {
 
-    // Step 1: Collect common pthread and mutex statements
-    auto commonStmts = collectCommonThreadStatements(vulnerableStatements);
+    // Step 1: Form the complete ILA source set first. MSli section 4.2 defines
+    // V_ILA as [INIT] union [THREAD-VF], then closes every source over its
+    // synchronization dependences. Keep this set at ICFG granularity: some
+    // THREAD-VF call/marker nodes have no attached SVF statement.
+    OrderedSet<const ICFGNode*> ilaSourceNodes = threadVFSources;
+    for (const SVFStmt* stmt : vulnerableStatements)
+        ilaSourceNodes.insert(stmt->getICFGNode());
+
+    // Step 2: synchronization-dependence closure of the complete source set.
+    auto commonStmts = collectCommonThreadStatements(ilaSourceNodes);
     const OrderedSet<const CallICFGNode*>& pthreadCallNodes = commonStmts.first;
     const OrderedSet<const CallICFGNode*>& mutexCallNodes = commonStmts.second;
 
-    // Step 2: Form initial slice result (before function expansion). The ILA
-    // slicing sources are the [INIT] race statements plus the [THREAD-VF]
-    // sources (MSli §4.2) extracted while building VFG_pre: the endpoints and
-    // in-span lock witnesses queried during main-phase value-flow construction.
+    // Form V_ILA_sync before function expansion: all [INIT] and [THREAD-VF]
+    // sources plus the synchronization primitives on which they depend.
     OrderedSet<const ICFGNode*> initialSliceResult;
-    initialSliceResult.insert(pthreadCallNodes.begin(), pthreadCallNodes.end());
-    for (const CallICFGNode* pthreadCallNode : pthreadCallNodes)
-    {
-        initialSliceResult.insert(pthreadCallNode->getRetICFGNode());
-    }
-    initialSliceResult.insert(mutexCallNodes.begin(), mutexCallNodes.end());
-    for (const CallICFGNode* mutexCallNode : mutexCallNodes)
-    {
-        initialSliceResult.insert(mutexCallNode->getRetICFGNode());
-    }
-    collectLockFunctionMarkers(mutexCallNodes, initialSliceResult);
-    for (const SVFStmt* stmt: vulnerableStatements)
+    addSynchronizationDependencies(
+        pthreadCallNodes, mutexCallNodes, initialSliceResult);
+    for (const SVFStmt* stmt : vulnerableStatements)
     {
         initialSliceResult.insert(stmt->getICFGNode());
     }
     initialSliceResult.insert(threadVFSources.begin(), threadVFSources.end());
 
-    // Retain loop-exit entry anchors. MHP seeds post-join interleaving directly at
-    // the loop-exit block entry of each join in a loop; keeping those entries makes
-    // the seed land on a kept node, so no runtime seed projection is needed. Reuses
-    // the shared FunObjVar::getExitBlocksOfLoop.
-    ThreadAPI* threadAPI = mhp->getThreadCallGraph()->getThreadAPI();
-    for (const CallICFGNode* c : pthreadCallNodes)
-    {
-        if (!threadAPI->isTDJoin(c) || c->getBB() == nullptr) continue;
-        std::vector<const SVFBasicBlock*> exitbbs;
-        c->getFun()->getExitBlocksOfLoop(c->getBB(), exitbbs);
-        for (const SVFBasicBlock* eb : exitbbs)
-            if (!eb->getICFGNodeList().empty())
-                initialSliceResult.insert(eb->front());
-    }
-
-    // Step 3: Perform dual slicing (temporal slicing)
-    OrderedSet<const ICFGNode*> dualSlicedNodes = runDualSlicing(initialSliceResult);
-
-    // Step 4: Expand keptNodes to include call/ret nodes and function entry/exit
+    // Step 3: Expand keptNodes to include call/ret nodes and function entry/exit
     // nodes (call dependence).
-    return expandCallDependence(dualSlicedNodes);
+    OrderedSet<const ICFGNode*> finalSlice = expandCallDependence(initialSliceResult);
+
+    // Slicing invariant: no relevant synchronization primitive may be contracted
+    // into a bridge edge. Return nodes are retained because the sliced ICFG
+    // represents external synchronization calls as paired call/return nodes.
+    for (const CallICFGNode* callNode : pthreadCallNodes)
+    {
+        assert(finalSlice.count(callNode) && finalSlice.count(callNode->getRetICFGNode()) &&
+               "ILA slice dropped a fork/join synchronization dependence");
+        (void)callNode;
+    }
+    for (const CallICFGNode* callNode : mutexCallNodes)
+    {
+        assert(finalSlice.count(callNode) && finalSlice.count(callNode->getRetICFGNode()) &&
+               "ILA slice dropped a lock/unlock synchronization dependence");
+        (void)callNode;
+    }
+    return finalSlice;
 }
 
 //===----------------------------------------------------------------------===//
 // MultiStageSlicer -- stage 2 (FSPTA data-dependence slice)
 //===----------------------------------------------------------------------===//
 
-// The FSPTA data-dependence slice at SVFG-node granularity (memoised so the
-// backward closure over VFG_pre is computed once and shared with ILA slicing).
-const OrderedSet<const SVFGNode*>& MultiStageSlicer::getRetainedSVFGNodes(
+// Candidate value-flow slice over VFG_pre. It is used only to select the
+// THREAD-VF queries and to scope the refined main overlay; it is not reused as
+// the final FSPTA slice.
+void MultiStageSlicer::computePreCandidateSlice(
     const OrderedSet<const SVFStmt*>& vulnerableStatements)
 {
-    if (!retainedComputed)
-    {
-        retainedSVFGNodes = computeDataDependenceSVFGNodes(vulnerableStatements, vfg);
-        retainedComputed = true;
-    }
-    return retainedSVFGNodes;
+    preCandidateSlice = ValueFlowSlice{};
+    preCandidateSlice.svfgNodes =
+        computeDataDependenceSVFGNodes(vulnerableStatements, svfg);
+    preCandidateSlice.icfgNodes =
+        svfgNodesToICFGNodes(preCandidateSlice.svfgNodes, vulnerableStatements);
+    preCandidateComputed = true;
 }
 
-// Perform slicing for pointer analysis (returns only node set, no IRView needed)
-OrderedSet<const ICFGNode*> MultiStageSlicer::runPTASlicing(
-    const OrderedSet<const SVFStmt*>& vulnerableStatements)
+const ValueFlowSlice& MultiStageSlicer::getPreCandidateSlice() const
 {
+    assert(preCandidateComputed && "pre-candidate slice has not been computed");
+    return preCandidateSlice;
+}
 
-    // Step 1: paper-faithful (§4.3) data-dependence slice over the thread-aware
-    // SVFG built once in pre-analysis (reusing the memoised SVFG-node closure).
-    OrderedSet<const ICFGNode*> initialSliceResult =
-        svfgNodesToICFGNodes(getRetainedSVFGNodes(vulnerableStatements), vulnerableStatements);
-
-    // Retain the lock/unlock-function control-flow markers the sliced lock
-    // analysis depends on (see collectLockFunctionMarkers); the data-dependence
-    // SVFG slice does not otherwise keep them.
-    collectLockFunctionMarkers(collectMutexStatements(vulnerableStatements), initialSliceResult);
-
-    // Step 2: Perform dual slicing (temporal slicing)
-    OrderedSet<const ICFGNode*> dualSlicedNodes = runDualSlicing(initialSliceResult);
-
-    return dualSlicedNodes;
+// Final FSPTA data-dependence slice over the refined main value-flow graph.
+ValueFlowSlice MultiStageSlicer::runPTASlicing(
+    const OrderedSet<const SVFStmt*>& vulnerableStatements,
+    SVFG* refinedMainVFG)
+{
+    ValueFlowSlice result;
+    result.svfgNodes =
+        computeDataDependenceSVFGNodes(vulnerableStatements, refinedMainVFG);
+    result.icfgNodes =
+        svfgNodesToICFGNodes(result.svfgNodes, vulnerableStatements);
+    return result;
 }
 
 //===----------------------------------------------------------------------===//
 // SingleSlicer
 //===----------------------------------------------------------------------===//
 
-SingleSlicer::SingleSlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
-                           LockAnalysis* lockAnalysis, SVFG* vfg)
-    : MTASlicerBase(svfIr, pta, mhp, lockAnalysis, vfg)
+SingleSlicer::SingleSlicer(SVFIR* svfir, AndersenBase* pta, MHP* mhp,
+                           LockAnalysis* lockAnalysis, SVFG* svfg)
+    : MTASlicerBase(svfir, pta, mhp, lockAnalysis, svfg)
 {
 }
 
 // Single-pass slice (the baseline of MSli §3/§5.4): the transitive closure of
 // the target statements under the COMBINED dependence graph -- synchronization,
 // data, and call dependence -- yielding one slice shared by ILA and FSPTA.
-OrderedSet<const ICFGNode*> SingleSlicer::runSlicing(
+ValueFlowSlice SingleSlicer::runSlicing(
     const OrderedSet<const SVFStmt*>& vulnerableStatements)
 {
 
-    // Step 1: Synchronization dependence -- the relevant pthread (fork/join) and
-    // mutex (lock/unlock) statements for the targets.
-    auto commonStmts = collectCommonThreadStatements(vulnerableStatements);
-    const OrderedSet<const CallICFGNode*>& pthreadCallNodes = commonStmts.first;
-    const OrderedSet<const CallICFGNode*>& mutexCallNodes = commonStmts.second;
-
-    // Step 2: Seed the working set with the synchronization statements (and their
-    // return nodes) and the target statements themselves.
-    OrderedSet<const ICFGNode*> currentNodes;
-    currentNodes.insert(pthreadCallNodes.begin(), pthreadCallNodes.end());
-    for (const CallICFGNode* pthreadCallNode : pthreadCallNodes)
-        currentNodes.insert(pthreadCallNode->getRetICFGNode());
-    currentNodes.insert(mutexCallNodes.begin(), mutexCallNodes.end());
-    for (const CallICFGNode* mutexCallNode : mutexCallNodes)
-        currentNodes.insert(mutexCallNode->getRetICFGNode());
-    collectLockFunctionMarkers(mutexCallNodes, currentNodes);
+    OrderedSet<const ICFGNode*> sourceNodes;
     for (const SVFStmt* stmt : vulnerableStatements)
-        currentNodes.insert(stmt->getICFGNode());
+        if (stmt != nullptr && stmt->getICFGNode() != nullptr)
+            sourceNodes.insert(stmt->getICFGNode());
+
+    OrderedSet<const ICFGNode*> currentNodes = sourceNodes;
+    OrderedSet<const SVFGNode*> dataSliceNodes;
 
     // Step 3: Close over data dependence (the thread-aware VFG_pre value flow --
     // direct + indirect + interference, the same model the FSPTA stage uses) and call
     // dependence (function expansion), alternately, until the node set converges.
-    bool changed = true;
-    int iteration = 0;
-    const int maxIterations = 100; // safety bound against non-convergence
-    while (changed && iteration < maxIterations)
+    while (true)
     {
-        iteration++;
         OrderedSet<const ICFGNode*> previousNodes = currentNodes;
+
+        auto commonStmts = collectCommonThreadStatements(currentNodes);
+        addSynchronizationDependencies(
+            commonStmts.first, commonStmts.second, currentNodes);
 
         OrderedSet<const SVFStmt*> currentStatements;
         for (const ICFGNode* node : currentNodes)
@@ -1093,20 +928,21 @@ OrderedSet<const ICFGNode*> SingleSlicer::runSlicing(
             currentStatements.insert(stmts.begin(), stmts.end());
         }
 
+        dataSliceNodes =
+            computeDataDependenceSVFGNodes(currentStatements, svfg);
         OrderedSet<const ICFGNode*> dataDepNodes =
-            sliceDataDependenceOverVFG(currentStatements, vfg);
+            svfgNodesToICFGNodes(dataSliceNodes, currentStatements);
         currentNodes.insert(dataDepNodes.begin(), dataDepNodes.end());
 
         currentNodes = expandCallDependence(currentNodes);
 
-        changed = (currentNodes != previousNodes);
+        if (currentNodes == previousNodes)
+            break;
     }
-
-    if (iteration >= maxIterations)
-        SVFUtil::writeWrnMsg("SingleSlicer reached max iterations, may not have converged");
-
-    // Step 4: One dual-slicing (temporal) pass at the end.
-    return runDualSlicing(currentNodes);
+    ValueFlowSlice result;
+    result.svfgNodes = std::move(dataSliceNodes);
+    result.icfgNodes = std::move(currentNodes);
+    return result;
 }
 
 } // End namespace SVF

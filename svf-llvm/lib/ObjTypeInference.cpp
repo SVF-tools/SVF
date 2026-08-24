@@ -200,7 +200,7 @@ const Type *ObjTypeInference::inferObjType(const Value *var)
 const Type *ObjTypeInference::inferPointsToType(const Value *var)
 {
     if (isAlloc(var)) return fwInferObjType(var);
-    Set<const Value *> &sources = bwfindAllocOfVar(var);
+    Set<const Value *> &sources = bwFindAllocOfVar(var);
     Set<const Type *> types;
     if (sources.empty())
     {
@@ -554,7 +554,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
  * @param var
  * @return
  */
-Set<const Value *> &ObjTypeInference::bwfindAllocOfVar(const Value *var)
+Set<const Value *> &ObjTypeInference::bwFindAllocOfVar(const Value *var)
 {
 
     // consult cache

@@ -23,6 +23,7 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SVFIRBuilder.h"
 #include "MTA/MTA.h"
+#include "MTA/MTAStat.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 
@@ -32,6 +33,31 @@
 using namespace llvm;
 using namespace std;
 using namespace SVF;
+
+namespace
+{
+
+AndersenWaveDiff* preparePreAnalysis(
+    SVFIR* pag, SVFIRBuilder& builder)
+{
+    ScopedPhaseTimer timer("Andersen's pointer analysis");
+
+    AndersenWaveDiff* preAnalysis =
+        AndersenWaveDiff::createAndersenWaveDiff(pag);
+    if (Options::DumpMTAGraphs())
+    {
+        preAnalysis->getConstraintGraph()->dump("original_consg");
+        preAnalysis->getCallGraph()->dump("original_tcg");
+    }
+    builder.updateCallGraph(preAnalysis->getCallGraph());
+    pag->getICFG()->updateCallGraph(preAnalysis->getCallGraph());
+    if (Options::DumpMTAGraphs())
+        pag->getICFG()->dump("original_icfg");
+
+    return preAnalysis;
+}
+
+} // namespace
 
 int main(int argc, char** argv)
 {
@@ -46,22 +72,21 @@ int main(int argc, char** argv)
     // FSAM pipeline (SlicedMTA), which decides slicing and the pre-analysis
     // context handling internally; otherwise run the flow-insensitive Andersen
     // detector.
+    bool succeeded = true;
     if (Options::MTFlowSensitive())
     {
-        // The only LLVM-dependent step -- materialising resolved indirect calls
-        // into the PAG -- is injected here.
+        AndersenWaveDiff* preAnalysis = preparePreAnalysis(pag, builder);
         SlicedMTA sliced;
-        sliced.runOnModule(pag, [&](CallGraph* cg)
-        {
-            builder.updateCallGraph(cg);
-        });
+        succeeded = sliced.runOnModule(pag, *preAnalysis);
     }
     else
     {
         MTA mta;
-        mta.runOnModule(pag);
+        succeeded = !mta.runOnModule(pag);
     }
 
+    AndersenWaveDiff::releaseAndersenWaveDiff();
+    SVFIR::releaseSVFIR();
     LLVMModuleSet::releaseLLVMModuleSet();
-    return 0;
+    return succeeded ? 0 : 1;
 }
