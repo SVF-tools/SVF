@@ -339,7 +339,7 @@ void SlicedICFGView::buildBridgedEdges()
     std::vector<const ICFGNode*> removed;
     Map<const ICFGNode*, int> removedNodeIndex;
     for (ICFG::iterator it = icfg->begin(), eit = icfg->end();
-         it != eit; ++it)
+            it != eit; ++it)
     {
         const ICFGNode* node = it->second;
         if (node == nullptr || keptNodesSet.count(node))
@@ -354,14 +354,14 @@ void SlicedICFGView::buildBridgedEdges()
     // removed ones. ret_i is in the same caller, so the seed stays intra-procedural.
     Map<const ICFGNode*, const ICFGNode*> seedRet;
     for (ICFG::iterator it = icfg->begin(), eit = icfg->end();
-         it != eit; ++it)
+            it != eit; ++it)
     {
         const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(it->second);
         if (call == nullptr || call->getRetICFGNode() == nullptr)
             continue;
         for (const ICFGEdge* edge : call->getOutEdges())
             if (edge != nullptr && SVFUtil::isa<CallCFGEdge>(edge) &&
-                keptNodesSet.count(edge->getDstNode()) == 0)
+                    keptNodesSet.count(edge->getDstNode()) == 0)
             {
                 seedRet[call] = call->getRetICFGNode();
                 break;
@@ -371,7 +371,7 @@ void SlicedICFGView::buildBridgedEdges()
     // contraction may traverse. Original call/ret edges are excluded.
     std::vector<std::vector<int>> removedSuccessors(removedNodeCount);
     std::vector<std::vector<const ICFGNode*>>
-        keptSuccessors(removedNodeCount);
+                                           keptSuccessors(removedNodeCount);
     std::vector<const ICFGNode*> successors;
     for (int nodeIndex = 0; nodeIndex < removedNodeCount; ++nodeIndex)
     {
@@ -427,7 +427,7 @@ void SlicedICFGView::buildBridgedEdges()
                     break;
                 }
                 if (onStack[successorIndex] &&
-                    discoveryIndex[successorIndex] < lowLink[nodeIndex])
+                        discoveryIndex[successorIndex] < lowLink[nodeIndex])
                     lowLink[nodeIndex] = discoveryIndex[successorIndex];
             }
             if (descend)
@@ -471,9 +471,9 @@ void SlicedICFGView::buildBridgedEdges()
 
     // Propagate reachKept in ascending comp order (successors have smaller ids).
     std::vector<OrderedSet<const ICFGNode*>>
-        reachableKeptNodes(componentCount);
+                                          reachableKeptNodes(componentCount);
     for (int componentIndex = 0; componentIndex < componentCount;
-         ++componentIndex)
+            ++componentIndex)
     {
         OrderedSet<const ICFGNode*>& reachable =
             reachableKeptNodes[componentIndex];
@@ -497,7 +497,7 @@ void SlicedICFGView::buildBridgedEdges()
                 // Kept seed target: no real edge exists, so record the bridge; a
                 // kept intra target is a real edge handled by getSuccNodes.
                 if (seedReturn != seedRet.end() &&
-                    seedReturn->second == successor)
+                        seedReturn->second == successor)
                 {
                     bridgedEdges[source].insert(successor);
                     bridgedPreds[successor].insert(source);
@@ -508,11 +508,11 @@ void SlicedICFGView::buildBridgedEdges()
             if (removedIndex == removedNodeIndex.end())
             {
                 SVFUtil::errs()
-                    << "[ERROR] Local ICFG successor is neither kept nor indexed\n";
+                        << "[ERROR] Local ICFG successor is neither kept nor indexed\n";
                 std::abort();
             }
             for (const ICFGNode* target :
-                 reachableKeptNodes[component[removedIndex->second]])
+                    reachableKeptNodes[component[removedIndex->second]])
             {
                 bridgedEdges[source].insert(target);
                 bridgedPreds[target].insert(source);
@@ -536,7 +536,7 @@ void SlicedICFGView::getLocalSuccessors(
     successors.clear();
     for (const ICFGEdge* edge : node->getOutEdges())
         if (edge != nullptr && SVFUtil::isa<IntraCFGEdge>(edge) &&
-            edge->getDstNode() != nullptr)
+                edge->getDstNode() != nullptr)
             successors.push_back(edge->getDstNode());
 
     const auto returnNode = callsiteReturnNodes.find(node);
@@ -567,7 +567,7 @@ void SlicedPAGView::buildKeptNodeIds()
             continue;
         }
         if (const MultiOpndStmt* multi =
-                SVFUtil::dyn_cast<MultiOpndStmt>(stmt))
+                    SVFUtil::dyn_cast<MultiOpndStmt>(stmt))
         {
             keptNodeIds.insert(multi->getResID());
             for (u32_t i = 0; i < multi->getOpVarNum(); ++i)
@@ -589,8 +589,8 @@ void SlicedPAGView::dump(const std::string& filename) const
 //===----------------------------------------------------------------------===//
 
 SlicedThreadCallGraphView::SlicedThreadCallGraphView(ThreadCallGraph* tcg,
-    const OrderedSet<const FunObjVar*>& keptFunctions,
-    const OrderedSet<const ICFGNode*>& extendedKeptNodes)
+        const OrderedSet<const FunObjVar*>& keptFunctions,
+        const OrderedSet<const ICFGNode*>& extendedKeptNodes)
     : tcg(tcg)
 {
     for (const FunObjVar* fun : keptFunctions)
@@ -607,11 +607,11 @@ SlicedThreadCallGraphView::SlicedThreadCallGraphView(ThreadCallGraph* tcg,
 void SlicedThreadCallGraphView::buildKeptNodes()
 {
     for (CallGraph::iterator it = tcg->begin(), eit = tcg->end();
-         it != eit; ++it)
+            it != eit; ++it)
     {
         const CallGraphNode* node = it->second;
         if (node != nullptr && node->getFunction() != nullptr &&
-            keptFunctionsSet.count(node->getFunction()))
+                keptFunctionsSet.count(node->getFunction()))
         {
             keptNodes.insert(node);
         }
@@ -682,12 +682,18 @@ void SlicedThreadCallGraphView::getCalleesOf(
     callees.clear();
     const CallGraphNode* caller = tcg->getCallGraphNode(callSite->getFun());
     if (!isKeptNode(caller))
+    {
         return;
+    }
     std::vector<const CallGraphEdge*> outEdges;
     getOutEdgesOf(caller, outEdges);
     for (const CallGraphEdge* edge : outEdges)
+    {
         if (containsCallSite(edge, callSite))
+        {
             callees.insert(edge->getDstNode()->getFunction());
+        }
+    }
 }
 
 void SlicedThreadCallGraphView::getForkEdgesOf(
@@ -696,15 +702,15 @@ void SlicedThreadCallGraphView::getForkEdgesOf(
 {
     out.clear();
     if (!extendedKeptNodes.count(callSite) ||
-        !tcg->hasThreadForkEdge(callSite))
+            !tcg->hasThreadForkEdge(callSite))
         return;
     for (auto it = tcg->getForkEdgeBegin(callSite),
-              end = tcg->getForkEdgeEnd(callSite); it != end; ++it)
+            end = tcg->getForkEdgeEnd(callSite); it != end; ++it)
     {
         const CallGraphEdge* edge = *it;
         if (isKeptNode(edge->getSrcNode()) &&
-            isKeptNode(edge->getDstNode()) &&
-            containsCallSite(edge, callSite))
+                isKeptNode(edge->getDstNode()) &&
+                containsCallSite(edge, callSite))
             out.push_back(edge);
     }
 }
@@ -715,14 +721,14 @@ void SlicedThreadCallGraphView::getJoinEdgesOf(
 {
     out.clear();
     if (!extendedKeptNodes.count(callSite) ||
-        !tcg->hasThreadJoinEdge(callSite))
+            !tcg->hasThreadJoinEdge(callSite))
         return;
     for (auto it = tcg->getJoinEdgeBegin(callSite),
-              end = tcg->getJoinEdgeEnd(callSite); it != end; ++it)
+            end = tcg->getJoinEdgeEnd(callSite); it != end; ++it)
     {
         const CallGraphEdge* edge = *it;
         if (isKeptNode(edge->getSrcNode()) &&
-            isKeptNode(edge->getDstNode()))
+                isKeptNode(edge->getDstNode()))
             out.push_back(edge);
     }
 }
@@ -866,7 +872,7 @@ void SlicedSVFIRView::dumpStats(const std::string& prefix) const
     if (!getIndirectSitesWithEmptyTargets().empty())
     {
         SVFUtil::outs() << "  Indirect callsites that lost all targets: "
-                  << getIndirectSitesWithEmptyTargets().size() << "\n";
+                        << getIndirectSitesWithEmptyTargets().size() << "\n";
     }
 }
 

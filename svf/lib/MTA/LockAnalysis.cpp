@@ -77,7 +77,7 @@ void LockAnalysis::collectLockUnlockSites(ICFGGraph icfg, CGGraph cg)
 
     using CGTraits = GenericGraphTraits<CGGraph>;
     for (auto nodeIt = CGTraits::nodes_begin(cg),
-              nodeEnd = CGTraits::nodes_end(cg); nodeIt != nodeEnd; ++nodeIt)
+            nodeEnd = CGTraits::nodes_end(cg); nodeIt != nodeEnd; ++nodeIt)
     {
         const FunObjVar* F = CGTraits::getRawNode(*nodeIt)->getFunction();
         for (auto it : *F)
@@ -470,7 +470,7 @@ void LockAnalysis::handleFork(ICFGGraph icfg, CGGraph cg, const CxtStmt& cts)
     for (const CallGraphEdge* edge : outEdges)
     {
         if (!SVFUtil::isa<ThreadForkEdge>(edge) ||
-            !GenericGraphTraits<CGGraph>::containsCallSite(cg, edge, call))
+                !GenericGraphTraits<CGGraph>::containsCallSite(cg, edge, call))
             continue;
         const FunObjVar* svfcallee = edge->getDstNode()->getFunction();
         CallStrCxt newCxt = curCxt;
@@ -498,7 +498,7 @@ void LockAnalysis::handleCall(ICFGGraph icfg, CGGraph cg, const CxtStmt& cts)
     for (const CallGraphEdge* edge : outEdges)
     {
         if (edge->getEdgeKind() != CallGraphEdge::CallRetEdge ||
-            !GenericGraphTraits<CGGraph>::containsCallSite(cg, edge, call))
+                !GenericGraphTraits<CGGraph>::containsCallSite(cg, edge, call))
             continue;
         const FunObjVar* svfcallee = edge->getDstNode()->getFunction();
         if (SVFUtil::isExtCall(svfcallee))

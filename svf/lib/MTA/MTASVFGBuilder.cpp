@@ -183,7 +183,7 @@ void MTASVFGBuilder::addJoinRetEdge(const FormalOUTSVFGNode* formalOut,
     SVFGNode* src = svfg->getSVFGNode(formalOut->getId());
     SVFGNode* dst = svfg->getSVFGNode(actualOut->getId());
     if (SVFGEdge* edge = svfg->hasInterVFGEdge(
-            src, dst, SVFGEdge::RetIndVF, callSiteId))
+                             src, dst, SVFGEdge::RetIndVF, callSiteId))
     {
         SVFUtil::cast<RetIndSVFGEdge>(edge)->addPointsTo(cpts);
     }
@@ -322,11 +322,11 @@ MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getPredecessorNodes(
     Set<const SVFGNode*> visited;
 
     for (SVFGEdge::SVFGEdgeSetTy::iterator iter = node->InEdgeBegin();
-         iter != node->InEdgeEnd(); ++iter)
+            iter != node->InEdgeEnd(); ++iter)
     {
         SVFGEdge* edge = *iter;
         if (edge->isIndirectVFGEdge() && !edge->isThreadMHPIndirectVFGEdge() &&
-            isInOverlayScope(edge->getSrcNode()))
+                isInOverlayScope(edge->getSrcNode()))
             worklist.insert(edge->getSrcNode());
     }
 
@@ -343,9 +343,9 @@ MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getPredecessorNodes(
             {
                 SVFGEdge* edge = *iter;
                 if (edge->isIndirectVFGEdge() &&
-                    !edge->isThreadMHPIndirectVFGEdge() &&
-                    isInOverlayScope(edge->getSrcNode()) &&
-                    visited.find(edge->getSrcNode()) == visited.end())
+                        !edge->isThreadMHPIndirectVFGEdge() &&
+                        isInOverlayScope(edge->getSrcNode()) &&
+                        visited.find(edge->getSrcNode()) == visited.end())
                     worklist.insert(edge->getSrcNode());
             }
         }
@@ -369,11 +369,11 @@ MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getSuccessorNodes(
     Set<const SVFGNode*> visited;
 
     for (SVFGEdge::SVFGEdgeSetTy::iterator iter = node->OutEdgeBegin();
-         iter != node->OutEdgeEnd(); ++iter)
+            iter != node->OutEdgeEnd(); ++iter)
     {
         SVFGEdge* edge = *iter;
         if (edge->isIndirectVFGEdge() && !edge->isThreadMHPIndirectVFGEdge() &&
-            isInOverlayScope(edge->getDstNode()))
+                isInOverlayScope(edge->getDstNode()))
             worklist.insert(edge->getDstNode());
     }
 
@@ -390,9 +390,9 @@ MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getSuccessorNodes(
             {
                 SVFGEdge* edge = *iter;
                 if (edge->isIndirectVFGEdge() &&
-                    !edge->isThreadMHPIndirectVFGEdge() &&
-                    isInOverlayScope(edge->getDstNode()) &&
-                    visited.find(edge->getDstNode()) == visited.end())
+                        !edge->isThreadMHPIndirectVFGEdge() &&
+                        isInOverlayScope(edge->getDstNode()) &&
+                        visited.find(edge->getDstNode()) == visited.end())
                     worklist.insert(edge->getDstNode());
             }
         }
@@ -415,7 +415,7 @@ bool MTASVFGBuilder::isHeadOfSpan(const StmtSVFGNode* node)
     {
         const StmtSVFGNode* prevNode = SVFUtil::dyn_cast<StmtSVFGNode>(svfg->getSVFGNode(id));
         if (prevNode != nullptr && lockAnalysis->isInSameSpan(
-                prevNode->getICFGNode(), node->getICFGNode()))
+                    prevNode->getICFGNode(), node->getICFGNode()))
         {
             spanHeadCache[node] = false;
             return false;
@@ -446,7 +446,7 @@ bool MTASVFGBuilder::isTailOfSpan(const StmtSVFGNode* node)
         const StmtSVFGNode* successorStatement =
             SVFUtil::dyn_cast<StmtSVFGNode>(successor);
         if (successorStatement != nullptr && lockAnalysis->isInSameSpan(
-                successorStatement->getICFGNode(), node->getICFGNode()))
+                    successorStatement->getICFGNode(), node->getICFGNode()))
         {
             spanTailCache[node] = false;
             return false;
@@ -470,7 +470,7 @@ void MTASVFGBuilder::recordThreadVFSource(
     // they are recoverable from the map key -- so the value holds only the
     // additional in-span witnesses below (empty for the common lock-free case).
     Set<const ICFGNode*>& query =
-        threadVFQueryMap[{source, destination}];
+        threadVFQueryMap[ {source, destination}];
 
     if (!commonLock)
         return;
@@ -484,7 +484,7 @@ void MTASVFGBuilder::recordThreadVFSource(
         const StmtSVFGNode* successorStatement =
             SVFUtil::cast<StmtSVFGNode>(successor);
         if (lockAnalysis->isInSameSpan(
-                successorStatement->getICFGNode(), source->getICFGNode()))
+                    successorStatement->getICFGNode(), source->getICFGNode()))
             query.insert(successorStatement->getICFGNode());
     }
 
@@ -494,7 +494,7 @@ void MTASVFGBuilder::recordThreadVFSource(
         const StmtSVFGNode* prevNode =
             SVFUtil::dyn_cast<StmtSVFGNode>(svfg->getSVFGNode(id));
         if (prevNode != nullptr && lockAnalysis->isInSameSpan(
-                prevNode->getICFGNode(), destination->getICFGNode()))
+                    prevNode->getICFGNode(), destination->getICFGNode()))
             query.insert(prevNode->getICFGNode());
     }
 }
@@ -626,9 +626,9 @@ void MTASVFGBuilder::connectMHPEdges(PointerAnalysis* pta)
             {
                 const ThreadVFCandidate canonicalPair =
                     candidate.sourceNodeId < candidate.destinationNodeId
-                        ? candidate
-                        : ThreadVFCandidate(candidate.destinationNodeId,
-                                            candidate.sourceNodeId);
+                    ? candidate
+                    : ThreadVFCandidate(candidate.destinationNodeId,
+                                        candidate.sourceNodeId);
                 if (processedStorePairs.insert(canonicalPair).second)
                     // Main ILA re-decides the unordered pair once; the handler
                     // emits whichever directed edges pass the lock-span rules.

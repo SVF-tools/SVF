@@ -511,7 +511,7 @@ protected:
             return true;
     }
 
-    /// Create edges between VFG nodes within a function
+/// Create edges between VFG nodes within a function
     void connectDirectVFGEdges();
 
     /// Create edges between VFG nodes across functions

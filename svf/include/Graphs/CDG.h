@@ -197,7 +197,7 @@ public:
         return getGNode(id);
     }
 
-    /// Whether has the CDGNode
+/// Whether has the CDGNode
     inline bool hasCDGNode(NodeID id) const
     {
         return hasGNode(id);

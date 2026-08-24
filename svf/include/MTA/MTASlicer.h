@@ -122,7 +122,7 @@ class MTASlicerBase
 {
 public:
     MTASlicerBase(SVFIR* svfir, AndersenBase* pta, MHP* mhp,
-               LockAnalysis* lockAnalysis, SVFG* svfg = nullptr);
+                  LockAnalysis* lockAnalysis, SVFG* svfg = nullptr);
 
 protected:
     SVFIR* svfir;
@@ -166,7 +166,7 @@ protected:
      * @return Pair of (pthreadCallNodes, mutexCallNodes)
      */
     std::pair<OrderedSet<const CallICFGNode*>, OrderedSet<const CallICFGNode*>>
-        collectCommonThreadStatements(const OrderedSet<const ICFGNode*>& sourceNodes);
+            collectCommonThreadStatements(const OrderedSet<const ICFGNode*>& sourceNodes);
 
     /// Add synchronization primitives and the control-flow anchors required by
     /// the sliced MHP/lock analyses.
@@ -202,7 +202,7 @@ class MultiStageSlicer : public MTASlicerBase
 {
 public:
     MultiStageSlicer(SVFIR* svfir, AndersenBase* pta, MHP* mhp,
-              LockAnalysis* lockAnalysis, SVFG* svfg = nullptr);
+                     LockAnalysis* lockAnalysis, SVFG* svfg = nullptr);
 
     /**
      * Stage 1: the ILA slice (synchronization + function expansion for the IRView).
