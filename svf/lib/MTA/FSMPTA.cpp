@@ -155,12 +155,12 @@ NodeBS FSMPTA<SVFGGraph>::buildExecutionDependencyClosure(
     // One backing-SVFG pass collects both kinds of solver-global roots:
     // updateCallGraph boundary nodes and variant-GEP side effects.
     for (SVFG::const_iterator it = graph->begin(), eit = graph->end();
-         it != eit; ++it)
+            it != eit; ++it)
     {
         const SVFGNode* node = it->second;
         bool boundary = false;
         if (const ActualParmSVFGNode* actual =
-                SVFUtil::dyn_cast<ActualParmSVFGNode>(node))
+                    SVFUtil::dyn_cast<ActualParmSVFGNode>(node))
             boundary = indirectSites.count(actual->getCallSite()) > 0;
         else if (const ActualRetSVFGNode* actual =
                      SVFUtil::dyn_cast<ActualRetSVFGNode>(node))
@@ -180,16 +180,16 @@ NodeBS FSMPTA<SVFGGraph>::buildExecutionDependencyClosure(
         else if (const FormalINSVFGNode* formal =
                      SVFUtil::dyn_cast<FormalINSVFGNode>(node))
             boundary = indirectTargets.count(
-                formal->getFunEntryNode()->getFun()) > 0;
+                           formal->getFunEntryNode()->getFun()) > 0;
         else if (const FormalOUTSVFGNode* formal =
                      SVFUtil::dyn_cast<FormalOUTSVFGNode>(node))
             boundary = indirectTargets.count(
-                formal->getFunExitNode()->getFun()) > 0;
+                           formal->getFunExitNode()->getFun()) > 0;
         else if (const InterMSSAPHISVFGNode* phi =
                      SVFUtil::dyn_cast<InterMSSAPHISVFGNode>(node))
             boundary = phi->isFormalINPHI()
-                           ? indirectTargets.count(phi->getFun()) > 0
-                           : indirectSites.count(phi->getCallSite()) > 0;
+                       ? indirectTargets.count(phi->getFun()) > 0
+                       : indirectSites.count(phi->getCallSite()) > 0;
 
         if (boundary)
             enqueueSVFGNode(node, dependencyNodes, nodeWorklist);
@@ -263,7 +263,7 @@ template<class SVFGGraph>
 void FSMPTA<SVFGGraph>::cacheRetainedEdge(SVFGEdge* edge)
 {
     if (SolveGraphTraits::containsEdge(solveGraph, edge) &&
-        retainedEdgeSet.insert(edge).second)
+            retainedEdgeSet.insert(edge).second)
         retainedOutEdges[edge->getSrcID()].push_back(edge);
 }
 

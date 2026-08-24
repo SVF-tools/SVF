@@ -226,7 +226,7 @@ void MHP::buildQuerySummaries(ICFGGraph icfg, CGGraph cg)
     // creating one CxtThreadStmt and one NodeBS per context at every node.
     using CGTraits = GenericGraphTraits<CGGraph>;
     for (auto nodeIt = CGTraits::nodes_begin(cg),
-              nodeEnd = CGTraits::nodes_end(cg); nodeIt != nodeEnd; ++nodeIt)
+            nodeEnd = CGTraits::nodes_end(cg); nodeIt != nodeEnd; ++nodeIt)
     {
         const CallGraphNode* callGraphNode = CGTraits::getRawNode(*nodeIt);
         const FunObjVar* fun = callGraphNode->getFunction();
@@ -279,7 +279,7 @@ void MHP::updateNonCandidateFunInterleaving(ICFGGraph icfg, CGGraph cg)
     // addInterleavingThread's push is inert.
     using CGTraits = GenericGraphTraits<CGGraph>;
     for (auto nodeIt = CGTraits::nodes_begin(cg),
-              nodeEnd = CGTraits::nodes_end(cg); nodeIt != nodeEnd; ++nodeIt)
+            nodeEnd = CGTraits::nodes_end(cg); nodeIt != nodeEnd; ++nodeIt)
     {
         const CallGraphNode* callGraphNode = CGTraits::getRawNode(*nodeIt);
         const FunObjVar* fun = callGraphNode->getFunction();
@@ -352,7 +352,7 @@ void MHP::handleFork(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts, NodeI
     for (const CallGraphEdge* edge : outEdges)
     {
         if (edge->getEdgeKind() != CallGraphEdge::TDForkEdge ||
-            !GenericGraphTraits<CGGraph>::containsCallSite(cg, edge, cbn))
+                !GenericGraphTraits<CGGraph>::containsCallSite(cg, edge, cbn))
             continue;
         const FunObjVar* svfroutine = edge->getDstNode()->getFunction();
         CallStrCxt newCxt = curCxt;
@@ -447,7 +447,7 @@ void MHP::handleCall(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts, NodeI
     for (const CallGraphEdge* edge : outEdges)
     {
         if (edge->getEdgeKind() != CallGraphEdge::CallRetEdge ||
-            !GenericGraphTraits<CGGraph>::containsCallSite(cg, edge, cbn))
+                !GenericGraphTraits<CGGraph>::containsCallSite(cg, edge, cbn))
             continue;
         const FunObjVar* svfcallee = edge->getDstNode()->getFunction();
         if (isExtCall(svfcallee))
@@ -472,7 +472,7 @@ void MHP::handleCall(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts, NodeI
                 continue;
             CxtThreadStmt exitCts(cts.getTid(), newCxt, exitInst);
             if (threadStmtToThreadInterLeav.find(exitCts) !=
-                threadStmtToThreadInterLeav.end())
+                    threadStmtToThreadInterLeav.end())
             {
                 CxtThreadStmt retCts(cts.getTid(), curCxt,
                                      cbn->getRetICFGNode());
@@ -530,7 +530,7 @@ void MHP::handleRet(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts)
                         if (!hasThreadStmtSet(callSite))
                             continue;
                         for (const CxtThreadStmt& cxtThreadStmt:
-                             getThreadStmtSet(callSite))
+                                getThreadStmtSet(callSite))
                         {
                             CallStrCxt callSiteCxt = cxtThreadStmt.getContext();
                             // If new context is a suffix of the call site context
@@ -561,7 +561,7 @@ void MHP::handleRet(ICFGGraph icfg, CGGraph cg, const CxtThreadStmt& cts)
                         if (!hasThreadStmtSet(callSite))
                             continue;
                         for (const CxtThreadStmt& cxtThreadStmt:
-                             getThreadStmtSet(callSite))
+                                getThreadStmtSet(callSite))
                         {
                             CallStrCxt callSiteCxt = cxtThreadStmt.getContext();
                             // If new context is a suffix of the call site context
@@ -1036,7 +1036,7 @@ void ForkJoinAnalysis::analyzeForkJoinPair(ICFGGraph icfg, CGGraph cg)
                     const CxtThread& parentCxtThread = tct->getTCTNode(parentTid)->getCxtThread();
                     const FunObjVar* parentRoutine = tct->getStartRoutineOfCxtThread(parentCxtThread);
                     if (curInst == GenericGraphTraits<ICFGGraph>::getFunExit(
-                                       icfg, parentRoutine))
+                                icfg, parentRoutine))
                     {
                         if (getMarkedFlag(cts) != TDAlive)
                             addToFullJoin(parentTid, rootTid);
@@ -1065,7 +1065,7 @@ void ForkJoinAnalysis::handleFork(ICFGGraph icfg, CGGraph cg,
     for (const CallGraphEdge* edge : outEdges)
     {
         if (edge->getEdgeKind() != CallGraphEdge::TDForkEdge ||
-            !GenericGraphTraits<CGGraph>::containsCallSite(cg, edge, cbn))
+                !GenericGraphTraits<CGGraph>::containsCallSite(cg, edge, cbn))
             continue;
         const FunObjVar* callee = edge->getDstNode()->getFunction();
         CallStrCxt newCxt = curCxt;
@@ -1111,9 +1111,9 @@ void ForkJoinAnalysis::handleJoin(ICFGGraph icfg, CGGraph cg,
         if (hasJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite)))
         {
             if (isAliasedForkJoin(SVFUtil::cast<CallICFGNode>(forkSite),
-                                SVFUtil::cast<CallICFGNode>(joinSite)) &&
+                                  SVFUtil::cast<CallICFGNode>(joinSite)) &&
                     isSameSCEV(forkSite,joinSite)
-                )
+               )
             {
                 LoopBBs& joinLoop = getJoinLoop(SVFUtil::cast<CallICFGNode>(joinSite));
                 std::vector<const SVFBasicBlock *> exitbbs;
@@ -1153,7 +1153,7 @@ void ForkJoinAnalysis::handleJoin(ICFGGraph icfg, CGGraph cg,
         else
         {
             if (isAliasedForkJoin(SVFUtil::cast<CallICFGNode>(forkSite),
-                                SVFUtil::cast<CallICFGNode>(joinSite)))
+                                  SVFUtil::cast<CallICFGNode>(joinSite)))
             {
                 markCxtStmtFlag(cts, TDDead);
                 addDirectlyJoinTID(cts, rootTid);
@@ -1178,7 +1178,7 @@ void ForkJoinAnalysis::handleCall(ICFGGraph icfg, CGGraph cg,
     for (const CallGraphEdge* edge : outEdges)
     {
         if (edge->getEdgeKind() != CallGraphEdge::CallRetEdge ||
-            !GenericGraphTraits<CGGraph>::containsCallSite(cg, edge, cbn))
+                !GenericGraphTraits<CGGraph>::containsCallSite(cg, edge, cbn))
             continue;
         const FunObjVar* svfcallee = edge->getDstNode()->getFunction();
         if (isExtCall(svfcallee))
@@ -1228,7 +1228,7 @@ void ForkJoinAnalysis::handleRet(ICFGGraph icfg, CGGraph cg,
                         if (!hasCxtStmtsFromInst(callSite))
                             continue;
                         for (const CxtStmt& cxtStmt:
-                             getCxtStmtsFromInst(callSite))
+                                getCxtStmtsFromInst(callSite))
                         {
                             CallStrCxt callSiteCxt = cxtStmt.getContext();
                             // If new context is a suffix of the call site context
@@ -1261,7 +1261,7 @@ void ForkJoinAnalysis::handleRet(ICFGGraph icfg, CGGraph cg,
                         if (!hasCxtStmtsFromInst(callSite))
                             continue;
                         for (const CxtStmt& cxtStmt:
-                             getCxtStmtsFromInst(callSite))
+                                getCxtStmtsFromInst(callSite))
                         {
                             CallStrCxt callSiteCxt = cxtStmt.getContext();
                             // If new context is a suffix of the call site context
@@ -1429,10 +1429,10 @@ bool ForkJoinAnalysis::sameLoopTripCount(const ICFGNode* forkSite, const ICFGNod
 }
 
 bool ForkJoinAnalysis::isAliasedForkJoin(const CallICFGNode* forkSite,
-                                        const CallICFGNode* joinSite)
+        const CallICFGNode* joinSite)
 {
     return getTCG()->getThreadAPI()->isAliasedForkJoin(tct->getPTA(),
-        getForkedThread(forkSite), getJoinedThread(joinSite), forkJoinAliasCache);
+            getForkedThread(forkSite), getJoinedThread(joinSite), forkJoinAliasCache);
 }
 
 template void ForkJoinAnalysis::analyzeForkJoinPair<ICFG*, CallGraph*>(

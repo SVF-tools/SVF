@@ -423,7 +423,7 @@ struct GenericGraphTraits<SVF::ThreadCallGraph*>
         if (!graph->hasThreadForkEdge(callSite))
             return;
         for (auto it = graph->getForkEdgeBegin(callSite),
-                  end = graph->getForkEdgeEnd(callSite); it != end; ++it)
+                end = graph->getForkEdgeEnd(callSite); it != end; ++it)
             out.push_back(*it);
     }
 
@@ -435,7 +435,7 @@ struct GenericGraphTraits<SVF::ThreadCallGraph*>
         if (!graph->hasThreadJoinEdge(callSite))
             return;
         for (auto it = graph->getJoinEdgeBegin(callSite),
-                  end = graph->getJoinEdgeEnd(callSite); it != end; ++it)
+                end = graph->getJoinEdgeEnd(callSite); it != end; ++it)
             out.push_back(*it);
     }
 };

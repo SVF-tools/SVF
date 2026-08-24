@@ -86,7 +86,9 @@ public:
     /// ICFG nodes are implicit in the key and consumers must add them back.
     using ThreadVFQueryMap = Map<ThreadVFEdge, Set<const ICFGNode*>>;
     const ThreadVFQueryMap& getThreadVFQueryMap() const
-    { return threadVFQueryMap; }
+    {
+        return threadVFQueryMap;
+    }
 
     struct ThreadVFCandidate
     {
@@ -152,7 +154,10 @@ public:
     /// Remove all currently attached thread-aware interference edges.
     void clearThreadAwareOverlay();
 
-    size_t getThreadAwareEdgeCount() const { return threadAwareEdges.size(); }
+    size_t getThreadAwareEdgeCount() const
+    {
+        return threadAwareEdges.size();
+    }
 
 protected:
     /// Rewrite the SVFG build hook: build the stock SVFG, then add MHP edges.

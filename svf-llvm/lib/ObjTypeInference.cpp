@@ -788,7 +788,7 @@ Set<std::string> &ObjTypeInference::inferThisPtrClsName(const Value *thisPtr)
         for (const auto &name : extractClsNamesFromFunc(func)) names.insert(name);
     };
 
-    // Lambda for getting callee & extracting class name for calls to constructors/destructors/template funcs
+// Lambda for getting callee & extracting class name for calls to constructors/destructors/template funcs
     auto addNamesFromCall = [&names, &addNamesFromFunc](const CallBase *call) -> void
     {
         ABORT_IFNOT(isClsNameSource(call), "Call is invalid class name source: " + dumpValueAndDbgInfo(call));
@@ -798,7 +798,7 @@ Set<std::string> &ObjTypeInference::inferThisPtrClsName(const Value *thisPtr)
         else addNamesFromFunc(func);
     };
 
-    // Walk backwards to find all valid source sites for the pointer (e.g. stack/global/heap variables)
+// Walk backwards to find all valid source sites for the pointer (e.g. stack/global/heap variables)
     for (const auto &val: bwFindAllocOrClsNameSources(thisPtr))
     {
         // A source site is either a constructor/destructor/template function from which the class name can be

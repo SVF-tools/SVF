@@ -468,7 +468,7 @@ OrderedSet<const ICFGNode*> MTASlicerBase::svfgNodesToICFGNodes(
     OrderedSet<const ICFGNode*> result;
     for (const SVFGNode* node : nodes)
         if (const StmtVFGNode* statementNode =
-                SVFUtil::dyn_cast<StmtVFGNode>(node))
+                    SVFUtil::dyn_cast<StmtVFGNode>(node))
             if (statementNode->getICFGNode() != nullptr)
                 result.insert(statementNode->getICFGNode());
     for (const SVFStmt* stmt : seeds)
@@ -504,7 +504,7 @@ OrderedSet<const CallICFGNode*> MTASlicerBase::collectPthreadStatements(
     // Second pass: find corresponding pthread_join nodes
     ICFG* icfg = svfir->getICFG();
     for (ICFG::iterator it = icfg->begin(), eit = icfg->end();
-         it != eit; ++it)
+            it != eit; ++it)
     {
         const ICFGNode* node = it->second;
         const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node);
@@ -517,8 +517,8 @@ OrderedSet<const CallICFGNode*> MTASlicerBase::collectPthreadStatements(
                 {
                     const SVFVar* forkedThread = threadAPI->getForkedThread(createCallNode);
                     if (forkedThread != nullptr &&
-                        threadAPI->isAliasedForkJoin(
-                            pta, forkedThread, joinThread))
+                            threadAPI->isAliasedForkJoin(
+                                pta, forkedThread, joinThread))
                     {
                         pthreadCallNodes.insert(callNode);
                     }
@@ -551,7 +551,7 @@ OrderedSet<const CallICFGNode*> MTASlicerBase::collectMutexStatements(
             const CallICFGNode* lockCallNode =
                 SVFUtil::dyn_cast<CallICFGNode>(lockNode);
             if (lockCallNode != nullptr &&
-                threadAPI->isTDAcquire(lockCallNode))
+                    threadAPI->isTDAcquire(lockCallNode))
             {
                 mutexCallNodes.insert(lockCallNode);
                 mutexLockCallNodes.insert(lockCallNode);
@@ -562,7 +562,7 @@ OrderedSet<const CallICFGNode*> MTASlicerBase::collectMutexStatements(
     // Second pass: find corresponding mutex_unlock nodes
     ICFG* icfg = svfir->getICFG();
     for (ICFG::iterator it = icfg->begin(), eit = icfg->end();
-         it != eit; ++it)
+            it != eit; ++it)
     {
         const ICFGNode* node = it->second;
         const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node);
@@ -577,7 +577,7 @@ OrderedSet<const CallICFGNode*> MTASlicerBase::collectMutexStatements(
                     {
                         const SVFVar* lockVar = threadAPI->getLockVal(lockCallNode);
                         if (lockVar != nullptr &&
-                            pta->alias(unlockVar->getId(), lockVar->getId()))
+                                pta->alias(unlockVar->getId(), lockVar->getId()))
                         {
                             mutexCallNodes.insert(callNode);
                         }
@@ -592,8 +592,8 @@ OrderedSet<const CallICFGNode*> MTASlicerBase::collectMutexStatements(
 
 // Helper: Collect common pthread and mutex statements (shared by PTA and MTA slicing)
 std::pair<OrderedSet<const CallICFGNode*>, OrderedSet<const CallICFGNode*>>
-MTASlicerBase::collectCommonThreadStatements(
-    const OrderedSet<const ICFGNode*>& sourceNodes)
+        MTASlicerBase::collectCommonThreadStatements(
+            const OrderedSet<const ICFGNode*>& sourceNodes)
 {
     // Step 1: Collect pthread-related statements, i.e., pthread_create and pthread_join
     OrderedSet<const CallICFGNode*> pthreadCallNodes =
@@ -689,7 +689,7 @@ OrderedSet<const ICFGNode*> MTASlicerBase::expandCallDependence(
 
     Map<const FunObjVar*, const CallGraphNode*> functionToNode;
     for (auto it = callGraph->begin(), eit = callGraph->end();
-         it != eit; ++it)
+            it != eit; ++it)
     {
         const CallGraphNode* node = it->second;
         if (node != nullptr && node->getFunction() != nullptr)

@@ -1,6 +1,6 @@
 # MTA and MSli
 
 This directory contains SVF's multithreaded analysis (MTA) and the MSli
-multi-stage slicing implementation. See the [MTA-MSli wiki page](https://github.com/SVF-tools/SVF/wiki/MTA-%E2%80%90-MSli)
+multi-stage slicing implementation. See the [MTA-MSli wiki page](https://github.com/SVF-tools/SVF/wiki/MTA-‐-MSli)
 for build instructions, command examples, and measured small- and large-program
 results.
