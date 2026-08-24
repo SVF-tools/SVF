@@ -3,7 +3,7 @@
 SVF provides reusable abstractions, graphs, and solvers for analyzing LLVM IR.
 
 ## News
-* <b>[MSli](https://github.com/SVF-tools/SVF/wiki/MTA-MSli), an on-demand program slicing tool for multithreaded programs, is now available in [SVF/MTA](https://github.com/SVF-tools/SVF/tree/master/svf/lib/MTA). </b>
+* <b>[MSli](https://github.com/SVF-tools/SVF/wiki/MTA-MSli), an on-demand program slicing tool for multithreaded programs, is now available in [SVF/MTA](https://github.com/SVF-tools/SVF/tree/master/svf/include/MTA). </b>
 * <b>SVF now supports [LLVM-22](https://github.com/SVF-tools/SVF/pull/1876) (Contributed by [Giorgio](https://github.com/dg1474)). </b>
 * <b>SVF now supports [LLVM-21](https://github.com/SVF-tools/SVF/pull/1815) (Contributed by [cjsrxzdyzds](https://github.com/cjsrxzdyzds)). </b>
 * <b>SVF now supports new [build system](https://github.com/SVF-tools/SVF/pull/1703) (Thank [Johannes](https://github.com/Johanmyst) for his help!). </b>
