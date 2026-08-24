@@ -24,8 +24,6 @@
  * MTASVFGBuilder.cpp
  *
  *      Author: Jiawei Yang
- *
- * Implements the FSAM thread-aware value-flow construction (CGO'16, §3.3).
  */
 
 #include "MTA/MTASVFGBuilder.h"
@@ -40,8 +38,6 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-u32_t MTASVFGBuilder::numOfNewSVFGEdges = 0;
-
 namespace
 {
 /// Thread-aware MRGenerator mixin: layers the FSAM fork/join mod-ref effects on
@@ -53,7 +49,10 @@ template <class BaseMRG>
 class ThreadMRG : public BaseMRG
 {
 public:
-    ThreadMRG(BVDataPTAImpl* p, bool ptrOnly) : BaseMRG(p, ptrOnly) {}
+    ThreadMRG(BVDataPTAImpl* pta, bool pointerOnly)
+        : BaseMRG(pta, pointerOnly)
+    {
+    }
 
 protected:
     /// Thread fork as a call WITHOUT a return: forward the spawnee's *ref* set to
@@ -86,17 +85,18 @@ protected:
         ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(this->getCallGraph());
         if (tcg == nullptr)
             return;
-        ThreadCallGraph::InstSet joinsites;
-        tcg->getJoinSites(callGraphNode, joinsites);
-        if (joinsites.empty())
+        ThreadCallGraph::InstSet joinSites;
+        tcg->getJoinSites(callGraphNode, joinSites);
+        if (joinSites.empty())
             return;
         const NodeBS& spawneeMod = this->getModSideEffectOfFunction(callGraphNode->getFunction());
-        for (const CallICFGNode* cs : joinsites)
+        for (const CallICFGNode* callSite : joinSites)
             // A join exposes the joined thread's writes at the join point. Those
             // writes are not necessarily reachable from pthread_join's handle
             // argument, so use the MOD set as computed for the start routine.
-            if (this->addUnfilteredModSideEffectOfCallSite(cs, spawneeMod))
-                worklist.push(this->getCallGraph()->getCallGraphNode(cs->getCaller())->getId());
+            if (this->addUnfilteredModSideEffectOfCallSite(callSite, spawneeMod))
+                worklist.push(this->getCallGraph()->getCallGraphNode(
+                                  callSite->getCaller())->getId());
     }
 };
 } // anonymous namespace
@@ -130,12 +130,49 @@ void MTASVFGBuilder::buildSVFG()
     connectMHPEdges(svfg->getMSSA()->getPTA());
 }
 
+void MTASVFGBuilder::clearThreadAwareOverlay()
+{
+    for (SVFGEdge* edge : threadAwareEdges)
+        svfg->removeSVFGEdge(edge);
+    threadAwareEdges.clear();
+}
+
+void MTASVFGBuilder::replaceThreadAwareOverlay(
+    MHP* mainMHP, LockAnalysis* mainLockAnalysis,
+    const ThreadVFBuildConfig& config)
+{
+    assert(svfg != nullptr && "base SVFG must be built before replacing its overlay");
+    assert(mainMHP != nullptr && mainLockAnalysis != nullptr &&
+           "thread-aware overlay requires main ILA results");
+
+    clearThreadAwareOverlay();
+    mhp = mainMHP;
+    lockAnalysis = mainLockAnalysis;
+    overlayScope = config.scope;
+    overlayCandidates = config.candidates;
+    recordThreadVFQueries = false;
+    labelInterferenceEdges = true;
+
+    storeNodes.clear();
+    loadNodes.clear();
+    threadVFQueryMap.clear();
+    predecessorCache.clear();
+    successorCache.clear();
+    spanHeadCache.clear();
+    spanTailCache.clear();
+
+    connectMHPEdges(svfg->getMSSA()->getPTA());
+    overlayScope = nullptr;
+    overlayCandidates = nullptr;
+}
+
 /*!
  * Mirror of SVFG::addInterIndirectVFRetEdge over the public SVFG API, so the
  * join edges can be added from the builder without modifying core SVFG.
  */
 void MTASVFGBuilder::addJoinRetEdge(const FormalOUTSVFGNode* formalOut,
-                                    const ActualOUTSVFGNode* actualOut, CallSiteID csId)
+                                    const ActualOUTSVFGNode* actualOut,
+                                    CallSiteID callSiteId)
 {
     NodeBS cpts = formalOut->getPointsTo();
     const NodeBS& dpts = actualOut->getPointsTo();
@@ -145,13 +182,14 @@ void MTASVFGBuilder::addJoinRetEdge(const FormalOUTSVFGNode* formalOut,
 
     SVFGNode* src = svfg->getSVFGNode(formalOut->getId());
     SVFGNode* dst = svfg->getSVFGNode(actualOut->getId());
-    if (SVFGEdge* edge = svfg->hasInterVFGEdge(src, dst, SVFGEdge::RetIndVF, csId))
+    if (SVFGEdge* edge = svfg->hasInterVFGEdge(
+            src, dst, SVFGEdge::RetIndVF, callSiteId))
     {
         SVFUtil::cast<RetIndSVFGEdge>(edge)->addPointsTo(cpts);
     }
     else
     {
-        RetIndSVFGEdge* retEdge = new RetIndSVFGEdge(src, dst, csId);
+        RetIndSVFGEdge* retEdge = new RetIndSVFGEdge(src, dst, callSiteId);
         retEdge->addPointsTo(cpts);
         svfg->addSVFGEdge(retEdge);
     }
@@ -177,18 +215,22 @@ void MTASVFGBuilder::connectThreadJoinEdges()
         if (formalOut == nullptr)
             continue;
 
-        ThreadCallGraph::InstSet joinsites;
-        tcg->getJoinSites(tcg->getCallGraphNode(formalOut->getFun()), joinsites);
-        for (const CallICFGNode* cs : joinsites)
+        ThreadCallGraph::InstSet joinSites;
+        tcg->getJoinSites(tcg->getCallGraphNode(formalOut->getFun()), joinSites);
+        for (const CallICFGNode* callSite : joinSites)
         {
-            if (!mssa->hasCHI(cs))
+            if (!mssa->hasCHI(callSite))
                 continue;
-            SVFG::ActualOUTSVFGNodeSet& actualOuts = svfg->getActualOUTSVFGNodes(cs);
-            for (NodeID aoId : actualOuts)
+            SVFG::ActualOUTSVFGNodeSet& actualOuts =
+                svfg->getActualOUTSVFGNodes(callSite);
+            for (NodeID actualOutId : actualOuts)
             {
                 const ActualOUTSVFGNode* actualOut =
-                    SVFUtil::cast<ActualOUTSVFGNode>(svfg->getSVFGNode(aoId));
-                addJoinRetEdge(formalOut, actualOut, svfg->getCallSiteID(cs, formalOut->getFun()));
+                    SVFUtil::cast<ActualOUTSVFGNode>(
+                        svfg->getSVFGNode(actualOutId));
+                addJoinRetEdge(
+                    formalOut, actualOut,
+                    svfg->getCallSiteID(callSite, formalOut->getFun()));
             }
         }
     }
@@ -201,23 +243,25 @@ void MTASVFGBuilder::collectLoadStoreSVFGNodes()
 {
     for (SVFG::const_iterator it = svfg->begin(), eit = svfg->end(); it != eit; ++it)
     {
-        const SVFGNode* snode = it->second;
-        const bool isLoad = SVFUtil::isa<LoadSVFGNode>(snode);
-        if (!isLoad && !SVFUtil::isa<StoreSVFGNode>(snode))
+        const SVFGNode* svfgNode = it->second;
+        const bool isLoad = SVFUtil::isa<LoadSVFGNode>(svfgNode);
+        if (!isLoad && !SVFUtil::isa<StoreSVFGNode>(svfgNode))
             continue;
-        const StmtSVFGNode* node = SVFUtil::cast<StmtSVFGNode>(snode);
-        const ICFGNode* icfg = node->getICFGNode();
-        if (icfg == nullptr)
+        const StmtSVFGNode* node = SVFUtil::cast<StmtSVFGNode>(svfgNode);
+        if (node->getICFGNode() == nullptr)
             continue;
-        // Main-solve slice restriction: an interference edge touching a sliced-out
-        // node is inert in the gated FSAM solve, so skip building it here.
-        if (icfgSlice != nullptr && !icfgSlice->isKeptNode(icfg))
+        if (!isInOverlayScope(node))
             continue;
         if (isLoad)
-            ldnodeSet.insert(node);
+            loadNodes.insert(node);
         else
-            stnodeSet.insert(node);
+            storeNodes.insert(node);
     }
+}
+
+bool MTASVFGBuilder::isInOverlayScope(const SVFGNode* node) const
+{
+    return overlayScope == nullptr || overlayScope->isKeptNode(node);
 }
 
 /*!
@@ -227,6 +271,23 @@ SVFGEdge* MTASVFGBuilder::addTDEdge(NodeID srcId, NodeID dstId, const PointsTo& 
 {
     SVFGNode* srcNode = svfg->getSVFGNode(srcId);
     SVFGNode* dstNode = svfg->getSVFGNode(dstId);
+    assert(isInOverlayScope(srcNode) && isInOverlayScope(dstNode) &&
+           "thread-aware overlay edge escaped its construction scope");
+
+    // VFG_pre (sliced-only) mode: keep the edge for connectivity but omit its
+    // points-to label -- no slice consumer reads it.
+    if (!labelInterferenceEdges)
+    {
+        if (SVFGEdge* edge = svfg->hasThreadVFGEdge(srcNode, dstNode, SVFGEdge::TheadMHPIndirectVF))
+            return edge;
+        ThreadMHPIndSVFGEdge* indirectEdge = new ThreadMHPIndSVFGEdge(srcNode, dstNode);
+        if (svfg->addSVFGEdge(indirectEdge))
+        {
+            threadAwareEdges.insert(indirectEdge);
+            return indirectEdge;
+        }
+        return nullptr;
+    }
 
     if (SVFGEdge* edge = svfg->hasThreadVFGEdge(srcNode, dstNode, SVFGEdge::TheadMHPIndirectVF))
     {
@@ -235,29 +296,37 @@ SVFGEdge* MTASVFGBuilder::addTDEdge(NodeID srcId, NodeID dstId, const PointsTo& 
     }
     else
     {
-        numOfNewSVFGEdges++;
         ThreadMHPIndSVFGEdge* indirectEdge = new ThreadMHPIndSVFGEdge(srcNode, dstNode);
         indirectEdge->addPointsTo(pts.toNodeBS());
-        return (svfg->addSVFGEdge(indirectEdge) ? indirectEdge : nullptr);
+        if (svfg->addSVFGEdge(indirectEdge))
+        {
+            threadAwareEdges.insert(indirectEdge);
+            return indirectEdge;
+        }
+        return nullptr;
     }
 }
 
 /*!
  * Backward reachable store SVFG nodes via indirect value flow (lock-span head test).
  */
-MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getPrevNodes(const StmtSVFGNode* n)
+MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getPredecessorNodes(
+    const StmtSVFGNode* node)
 {
-    if (prevset.find(n) != prevset.end())
-        return prevset[n];
+    const auto found = predecessorCache.find(node);
+    if (found != predecessorCache.end())
+        return found->second;
 
-    SVFGNodeIDSet prev;
+    SVFGNodeIDSet predecessors;
     Set<const SVFGNode*> worklist;
     Set<const SVFGNode*> visited;
 
-    for (SVFGEdge::SVFGEdgeSetTy::iterator iter = n->InEdgeBegin(); iter != n->InEdgeEnd(); ++iter)
+    for (SVFGEdge::SVFGEdgeSetTy::iterator iter = node->InEdgeBegin();
+         iter != node->InEdgeEnd(); ++iter)
     {
         SVFGEdge* edge = *iter;
-        if (edge->isIndirectVFGEdge())
+        if (edge->isIndirectVFGEdge() && !edge->isThreadMHPIndirectVFGEdge() &&
+            isInOverlayScope(edge->getSrcNode()))
             worklist.insert(edge->getSrcNode());
     }
 
@@ -267,37 +336,44 @@ MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getPrevNodes(const StmtSVFGNode* n
         worklist.erase(worklist.begin());
         visited.insert(node);
         if (SVFUtil::isa<StoreSVFGNode>(node))
-            prev.set(node->getId());
+            predecessors.set(node->getId());
         else
         {
             for (SVFGEdge::SVFGEdgeSetTy::iterator iter = node->InEdgeBegin(); iter != node->InEdgeEnd(); ++iter)
             {
                 SVFGEdge* edge = *iter;
-                if (edge->isIndirectVFGEdge() && visited.find(edge->getSrcNode()) == visited.end())
+                if (edge->isIndirectVFGEdge() &&
+                    !edge->isThreadMHPIndirectVFGEdge() &&
+                    isInOverlayScope(edge->getSrcNode()) &&
+                    visited.find(edge->getSrcNode()) == visited.end())
                     worklist.insert(edge->getSrcNode());
             }
         }
     }
-    prevset[n] = prev;
-    return prev;
+    predecessorCache[node] = predecessors;
+    return predecessors;
 }
 
 /*!
  * Forward reachable store/load SVFG nodes via indirect value flow (lock-span tail test).
  */
-MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getSuccNodes(const StmtSVFGNode* n)
+MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getSuccessorNodes(
+    const StmtSVFGNode* node)
 {
-    if (succset.find(n) != succset.end())
-        return succset[n];
+    const auto found = successorCache.find(node);
+    if (found != successorCache.end())
+        return found->second;
 
-    SVFGNodeIDSet succ;
+    SVFGNodeIDSet successors;
     Set<const SVFGNode*> worklist;
     Set<const SVFGNode*> visited;
 
-    for (SVFGEdge::SVFGEdgeSetTy::iterator iter = n->OutEdgeBegin(); iter != n->OutEdgeEnd(); ++iter)
+    for (SVFGEdge::SVFGEdgeSetTy::iterator iter = node->OutEdgeBegin();
+         iter != node->OutEdgeEnd(); ++iter)
     {
         SVFGEdge* edge = *iter;
-        if (edge->isIndirectVFGEdge())
+        if (edge->isIndirectVFGEdge() && !edge->isThreadMHPIndirectVFGEdge() &&
+            isInOverlayScope(edge->getDstNode()))
             worklist.insert(edge->getDstNode());
     }
 
@@ -307,102 +383,118 @@ MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getSuccNodes(const StmtSVFGNode* n
         worklist.erase(worklist.begin());
         visited.insert(node);
         if (SVFUtil::isa<StoreSVFGNode, LoadSVFGNode>(node))
-            succ.set(node->getId());
+            successors.set(node->getId());
         else
         {
             for (SVFGEdge::SVFGEdgeSetTy::iterator iter = node->OutEdgeBegin(); iter != node->OutEdgeEnd(); ++iter)
             {
                 SVFGEdge* edge = *iter;
-                if (edge->isIndirectVFGEdge() && visited.find(edge->getDstNode()) == visited.end())
+                if (edge->isIndirectVFGEdge() &&
+                    !edge->isThreadMHPIndirectVFGEdge() &&
+                    isInOverlayScope(edge->getDstNode()) &&
+                    visited.find(edge->getDstNode()) == visited.end())
                     worklist.insert(edge->getDstNode());
             }
         }
     }
-    succset[n] = succ;
-    return succ;
+    successorCache[node] = successors;
+    return successors;
 }
 
 /*!
  * Whether, for all lock spans n belongs to, n is the first write (span head).
  */
-bool MTASVFGBuilder::isHeadOfSpan(const StmtSVFGNode* n)
+bool MTASVFGBuilder::isHeadOfSpan(const StmtSVFGNode* node)
 {
-    if (headmap.find(n) != headmap.end())
-        return headmap[n];
+    const auto found = spanHeadCache.find(node);
+    if (found != spanHeadCache.end())
+        return found->second;
 
-    SVFGNodeIDSet prev = getPrevNodes(n);
-    for (NodeID id : prev)
+    const SVFGNodeIDSet predecessors = getPredecessorNodes(node);
+    for (NodeID id : predecessors)
     {
         const StmtSVFGNode* prevNode = SVFUtil::dyn_cast<StmtSVFGNode>(svfg->getSVFGNode(id));
-        if (prevNode && lockana->isInSameSpan(prevNode->getICFGNode(), n->getICFGNode()))
+        if (prevNode != nullptr && lockAnalysis->isInSameSpan(
+                prevNode->getICFGNode(), node->getICFGNode()))
         {
-            headmap[n] = false;
+            spanHeadCache[node] = false;
             return false;
         }
     }
-    headmap[n] = true;
+    spanHeadCache[node] = true;
     return true;
 }
 
 /*!
  * Whether, for all lock spans n belongs to, n is the last write (span tail).
  */
-bool MTASVFGBuilder::isTailOfSpan(const StmtSVFGNode* n)
+bool MTASVFGBuilder::isTailOfSpan(const StmtSVFGNode* node)
 {
-    assert(SVFUtil::isa<StoreSVFGNode>(n) && "tail test only for store nodes");
+    assert(SVFUtil::isa<StoreSVFGNode>(node) &&
+           "tail test only for store nodes");
 
-    if (tailmap.find(n) != tailmap.end())
-        return tailmap[n];
+    const auto found = spanTailCache.find(node);
+    if (found != spanTailCache.end())
+        return found->second;
 
-    SVFGNodeIDSet succ = getSuccNodes(n);
-    for (NodeID id : succ)
+    const SVFGNodeIDSet successors = getSuccessorNodes(node);
+    for (NodeID id : successors)
     {
-        const SVFGNode* sn = svfg->getSVFGNode(id);
-        if (SVFUtil::isa<LoadSVFGNode>(sn))
+        const SVFGNode* successor = svfg->getSVFGNode(id);
+        if (SVFUtil::isa<LoadSVFGNode>(successor))
             continue;
-        const StmtSVFGNode* succNode = SVFUtil::dyn_cast<StmtSVFGNode>(sn);
-        if (succNode && lockana->isInSameSpan(succNode->getICFGNode(), n->getICFGNode()))
+        const StmtSVFGNode* successorStatement =
+            SVFUtil::dyn_cast<StmtSVFGNode>(successor);
+        if (successorStatement != nullptr && lockAnalysis->isInSameSpan(
+                successorStatement->getICFGNode(), node->getICFGNode()))
         {
-            tailmap[n] = false;
+            spanTailCache[node] = false;
             return false;
         }
     }
-    tailmap[n] = true;
+    spanTailCache[node] = true;
     return true;
 }
 
 /*!
- * Record the per-edge [THREAD-VF] query for one candidate pair s --o--> sp (see
+ * Record the per-edge [THREAD-VF] query for one candidate pair s --o--> s' (see
  * getThreadVFQueryMap for the rule): the endpoints, plus -- under a common lock --
- * the in-span Succ_spl(s) / Pred_spl'(sp) witnesses. Enumerated fully (the
+ * the in-span Succ_spl(s) / Pred_spl'(s') witnesses. Enumerated fully (the
  * tail/head boolean tests short-circuit; source extraction must not).
  */
-void MTASVFGBuilder::recordThreadVFSource(const StmtSVFGNode* s, const StmtSVFGNode* sp, bool commonLock)
+void MTASVFGBuilder::recordThreadVFSource(
+    const StmtSVFGNode* source, const StmtSVFGNode* destination,
+    bool commonLock)
 {
     // Per-edge Query set. The endpoints are NOT duplicated into the value --
     // they are recoverable from the map key -- so the value holds only the
     // additional in-span witnesses below (empty for the common lock-free case).
-    std::set<const ICFGNode*>& query = threadVFQueryMap[ {s, sp}];
+    Set<const ICFGNode*>& query =
+        threadVFQueryMap[{source, destination}];
 
     if (!commonLock)
         return;
 
-    // Succ_spl(s) = { x in s's span | x is a store, s --o--> x } (tail witnesses).
-    for (NodeID id : getSuccNodes(s))
+    // Succ_spl(s) = { x in s's span | x is a store, s --o--> x }.
+    for (NodeID id : getSuccessorNodes(source))
     {
-        const SVFGNode* sn = svfg->getSVFGNode(id);
-        if (!SVFUtil::isa<StoreSVFGNode>(sn))
+        const SVFGNode* successor = svfg->getSVFGNode(id);
+        if (!SVFUtil::isa<StoreSVFGNode>(successor))
             continue;
-        const StmtSVFGNode* succNode = SVFUtil::cast<StmtSVFGNode>(sn);
-        if (lockana->isInSameSpan(succNode->getICFGNode(), s->getICFGNode()))
-            query.insert(succNode->getICFGNode());
+        const StmtSVFGNode* successorStatement =
+            SVFUtil::cast<StmtSVFGNode>(successor);
+        if (lockAnalysis->isInSameSpan(
+                successorStatement->getICFGNode(), source->getICFGNode()))
+            query.insert(successorStatement->getICFGNode());
     }
 
-    // Pred_spl'(sp) = { x in sp's span | x --o--> sp } (head witnesses).
-    for (NodeID id : getPrevNodes(sp))
+    // Pred_spl'(s') = { x in s' span | x --o--> s' }.
+    for (NodeID id : getPredecessorNodes(destination))
     {
-        const StmtSVFGNode* prevNode = SVFUtil::dyn_cast<StmtSVFGNode>(svfg->getSVFGNode(id));
-        if (prevNode && lockana->isInSameSpan(prevNode->getICFGNode(), sp->getICFGNode()))
+        const StmtSVFGNode* prevNode =
+            SVFUtil::dyn_cast<StmtSVFGNode>(svfg->getSVFGNode(id));
+        if (prevNode != nullptr && lockAnalysis->isInSameSpan(
+                prevNode->getICFGNode(), destination->getICFGNode()))
             query.insert(prevNode->getICFGNode());
     }
 }
@@ -412,35 +504,45 @@ void MTASVFGBuilder::recordThreadVFSource(const StmtSVFGNode* s, const StmtSVFGN
  * happen in parallel with and may alias the load, unless excluded by a common
  * lock (then only when the store is a span tail and the load a span head).
  */
-void MTASVFGBuilder::handleStoreLoad(const StmtSVFGNode* n1, const StmtSVFGNode* n2, PointerAnalysis* pta)
+void MTASVFGBuilder::handleStoreLoad(
+    const StmtSVFGNode* store, const StmtSVFGNode* load,
+    PointerAnalysis* pta)
 {
-    const ICFGNode* i1 = n1->getICFGNode();
-    const ICFGNode* i2 = n2->getICFGNode();
+    const ICFGNode* storeNode = store->getICFGNode();
+    const ICFGNode* loadNode = load->getICFGNode();
 
-    if (!mhp->mayHappenInParallel(i1, i2))
+    const bool mayParallel = mhp->mayHappenInParallel(storeNode, loadNode);
+    if (!mayParallel)
         return;
 
     // No alias() re-check: the bucketed candidate generator only pairs accesses
     // whose raw points-to sets share an object, so the intersection below is
     // non-empty by construction and alias() could never answer NoAlias here.
-    PointsTo pts = pta->getPts(n1->getDstNodeID());
-    pts &= pta->getPts(n2->getSrcNodeID());
+    // The label is only needed when the edge will be solved (main FSMPTA); in
+    // VFG_pre (sliced-only) mode skip the intersection -- it is never read.
+    PointsTo pts;
+    if (labelInterferenceEdges)
+    {
+        pts = pta->getPts(store->getDstNodeID());
+        pts &= pta->getPts(load->getSrcNodeID());
+    }
 
     // [THREAD-VF] source extraction runs for every candidate pair (both the
     // pairs that survive and the ones the lock test prunes), so the sliced ILA
     // can re-derive whether the edge holds.
-    bool commonLock = lockana->isProtectedByCommonLock(i1, i2);
-    if (recordThreadVF)
-        recordThreadVFSource(n1, n2, commonLock);
+    const bool commonLock =
+        lockAnalysis->isProtectedByCommonLock(storeNode, loadNode);
+    if (recordThreadVFQueries)
+        recordThreadVFSource(store, load, commonLock);
 
     if (commonLock)
     {
-        if (isTailOfSpan(n1) && isHeadOfSpan(n2))
-            addTDEdge(n1->getId(), n2->getId(), pts);
+        if (isTailOfSpan(store) && isHeadOfSpan(load))
+            addTDEdge(store->getId(), load->getId(), pts);
     }
     else
     {
-        addTDEdge(n1->getId(), n2->getId(), pts);
+        addTDEdge(store->getId(), load->getId(), pts);
     }
 }
 
@@ -448,38 +550,46 @@ void MTASVFGBuilder::handleStoreLoad(const StmtSVFGNode* n1, const StmtSVFGNode*
  * Store -> Store interference (symmetric): add thread-aware def-use edges in
  * both directions, with the same lock-span pruning as store/load.
  */
-void MTASVFGBuilder::handleStoreStore(const StmtSVFGNode* n1, const StmtSVFGNode* n2, PointerAnalysis* pta)
+void MTASVFGBuilder::handleStoreStore(
+    const StmtSVFGNode* firstStore, const StmtSVFGNode* secondStore,
+    PointerAnalysis* pta)
 {
-    const ICFGNode* i1 = n1->getICFGNode();
-    const ICFGNode* i2 = n2->getICFGNode();
+    const ICFGNode* firstNode = firstStore->getICFGNode();
+    const ICFGNode* secondNode = secondStore->getICFGNode();
 
-    if (!mhp->mayHappenInParallel(i1, i2))
+    const bool mayParallel = mhp->mayHappenInParallel(firstNode, secondNode);
+    if (!mayParallel)
         return;
 
     // No alias() re-check: see handleStoreLoad -- bucketing already guarantees a
-    // shared raw object.
-    PointsTo pts = pta->getPts(n1->getDstNodeID());
-    pts &= pta->getPts(n2->getDstNodeID());
+    // shared raw object. Skip the label intersection in VFG_pre (sliced-only) mode.
+    PointsTo pts;
+    if (labelInterferenceEdges)
+    {
+        pts = pta->getPts(firstStore->getDstNodeID());
+        pts &= pta->getPts(secondStore->getDstNodeID());
+    }
 
     // Both directions are candidate thread-aware edges; extract sources for each.
-    bool commonLock = lockana->isProtectedByCommonLock(i1, i2);
-    if (recordThreadVF)
+    const bool commonLock =
+        lockAnalysis->isProtectedByCommonLock(firstNode, secondNode);
+    if (recordThreadVFQueries)
     {
-        recordThreadVFSource(n1, n2, commonLock);
-        recordThreadVFSource(n2, n1, commonLock);
+        recordThreadVFSource(firstStore, secondStore, commonLock);
+        recordThreadVFSource(secondStore, firstStore, commonLock);
     }
 
     if (commonLock)
     {
-        if (isTailOfSpan(n1) && isHeadOfSpan(n2))
-            addTDEdge(n1->getId(), n2->getId(), pts);
-        if (isTailOfSpan(n2) && isHeadOfSpan(n1))
-            addTDEdge(n2->getId(), n1->getId(), pts);
+        if (isTailOfSpan(firstStore) && isHeadOfSpan(secondStore))
+            addTDEdge(firstStore->getId(), secondStore->getId(), pts);
+        if (isTailOfSpan(secondStore) && isHeadOfSpan(firstStore))
+            addTDEdge(secondStore->getId(), firstStore->getId(), pts);
     }
     else
     {
-        addTDEdge(n1->getId(), n2->getId(), pts);
-        addTDEdge(n2->getId(), n1->getId(), pts);
+        addTDEdge(firstStore->getId(), secondStore->getId(), pts);
+        addTDEdge(secondStore->getId(), firstStore->getId(), pts);
     }
 }
 
@@ -489,40 +599,86 @@ void MTASVFGBuilder::handleStoreStore(const StmtSVFGNode* n1, const StmtSVFGNode
  */
 void MTASVFGBuilder::connectMHPEdges(PointerAnalysis* pta)
 {
+    if (overlayCandidates != nullptr)
+    {
+        // The pre-analysis candidate set is a conservative directed universe.
+        // Traverse it directly so main overlay construction is proportional to
+        // retained candidates instead of re-enumerating every alias pair.
+        OrderedSet<ThreadVFCandidate> processedStorePairs;
+        for (const ThreadVFCandidate& candidate : *overlayCandidates)
+        {
+            const StmtSVFGNode* src = SVFUtil::dyn_cast<StmtSVFGNode>(
+                                          svfg->getSVFGNode(
+                                              candidate.sourceNodeId));
+            const StmtSVFGNode* dst = SVFUtil::dyn_cast<StmtSVFGNode>(
+                                          svfg->getSVFGNode(
+                                              candidate.destinationNodeId));
+            assert(src != nullptr && dst != nullptr &&
+                   "thread-aware candidates must reference statement nodes");
+            assert(SVFUtil::isa<StoreSVFGNode>(src) &&
+                   "thread-aware candidate source must be a store");
+            assert(isInOverlayScope(src) && isInOverlayScope(dst) &&
+                   "thread-aware candidate escaped its selected scope");
+
+            if (SVFUtil::isa<LoadSVFGNode>(dst))
+                handleStoreLoad(src, dst, pta);
+            else if (SVFUtil::isa<StoreSVFGNode>(dst))
+            {
+                const ThreadVFCandidate canonicalPair =
+                    candidate.sourceNodeId < candidate.destinationNodeId
+                        ? candidate
+                        : ThreadVFCandidate(candidate.destinationNodeId,
+                                            candidate.sourceNodeId);
+                if (processedStorePairs.insert(canonicalPair).second)
+                    // Main ILA re-decides the unordered pair once; the handler
+                    // emits whichever directed edges pass the lock-span rules.
+                    handleStoreStore(src, dst, pta);
+            }
+        }
+        return;
+    }
+
     collectLoadStoreSVFGNodes();
 
     // Inverted access index (object -> access-node bitset): unioning the
     // bitsets per store visits each may-alias pair exactly once, no dedup tables.
-    Map<NodeID, SVFGNodeIDSet> objToStoreIds;
-    Map<NodeID, SVFGNodeIDSet> objToLoadIds;
-    for (const StmtSVFGNode* store : stnodeSet)
-        for (NodeID obj : pta->getPts(store->getDstNodeID()))
-            objToStoreIds[obj].set(store->getId());
-    for (const StmtSVFGNode* load : ldnodeSet)
-        for (NodeID obj : pta->getPts(load->getSrcNodeID()))
-            objToLoadIds[obj].set(load->getId());
+    Map<NodeID, SVFGNodeIDSet> objectToStoreIds;
+    Map<NodeID, SVFGNodeIDSet> objectToLoadIds;
+    for (const StmtSVFGNode* store : storeNodes)
+        for (NodeID objectId : pta->getPts(store->getDstNodeID()))
+            objectToStoreIds[objectId].set(store->getId());
+    for (const StmtSVFGNode* load : loadNodes)
+        for (NodeID objectId : pta->getPts(load->getSrcNodeID()))
+            objectToLoadIds[objectId].set(load->getId());
 
-    for (const StmtSVFGNode* store : stnodeSet)
+    for (const StmtSVFGNode* store : storeNodes)
     {
-        SVFGNodeIDSet candLoads, candStores;
-        for (NodeID obj : pta->getPts(store->getDstNodeID()))
+        SVFGNodeIDSet candidateLoads;
+        SVFGNodeIDSet candidateStores;
+        for (NodeID objectId : pta->getPts(store->getDstNodeID()))
         {
-            candStores |= objToStoreIds[obj];
-            Map<NodeID, SVFGNodeIDSet>::const_iterator lIt = objToLoadIds.find(obj);
-            if (lIt != objToLoadIds.end())
-                candLoads |= lIt->second;
+            candidateStores |= objectToStoreIds[objectId];
+            const auto loads = objectToLoadIds.find(objectId);
+            if (loads != objectToLoadIds.end())
+                candidateLoads |= loads->second;
         }
 
-        for (NodeID loadId : candLoads)
-            handleStoreLoad(store, SVFUtil::cast<StmtSVFGNode>(svfg->getSVFGNode(loadId)), pta);
+        for (NodeID loadId : candidateLoads)
+        {
+            const StmtSVFGNode* load =
+                SVFUtil::cast<StmtSVFGNode>(svfg->getSVFGNode(loadId));
+            handleStoreLoad(store, load, pta);
+        }
 
         // Visit each unordered store pair once: only partners with a larger id.
         const NodeID storeId = store->getId();
-        for (NodeID otherId : candStores)
+        for (NodeID otherId : candidateStores)
         {
             if (otherId <= storeId)
                 continue;
-            handleStoreStore(store, SVFUtil::cast<StmtSVFGNode>(svfg->getSVFGNode(otherId)), pta);
+            const StmtSVFGNode* other =
+                SVFUtil::cast<StmtSVFGNode>(svfg->getSVFGNode(otherId));
+            handleStoreStore(store, other, pta);
         }
     }
 }

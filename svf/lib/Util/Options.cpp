@@ -837,12 +837,10 @@ const Option<bool> Options::MTFlowSensitive(
     "mta-flow-sensitive", "MTA: flow-sensitive (FSAM) main analysis; false = Andersen flow-insensitive base", true);
 const Option<bool> Options::DumpMTAGraphs(
     "mta-dump-graphs", "MTA: dump the pointer-analysis and thread call graphs (ptacg/tcg.dot)", false);
-const Option<bool> Options::EnableSlicing(
+const Option<bool> Options::MTAEnableSlicing(
     "mta-enable-slicing", "MTA slicing: slice before the FSAM main analysis (false = whole-program baseline)", true);
-const Option<bool> Options::SlicingSingle(
+const Option<bool> Options::MTASingleStageSlicing(
     "mta-slicing-single", "MTA slicing: use one unified slice for both ILA and FSPTA (single-pass baseline)", false);
-const Option<bool> Options::SlicedDumpDot(
-    "mta-sliced-dump-dot", "MTA slicing: dump intermediate dot graphs", false);
 const Option<bool> Options::GepUnknownIdx(
     "gep-unknown-idx","Skip Gep Unknown Index",false);
 const Option<bool> Options::RunUncallFuncs(

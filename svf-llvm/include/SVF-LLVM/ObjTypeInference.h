@@ -99,7 +99,7 @@ private:
     const Type *fwInferObjType(const Value *var);
 
     /// backward collect all possible allocation sites (stack, static, heap) of var
-    Set<const Value *>& bwfindAllocOfVar(const Value *var);
+    Set<const Value *>& bwFindAllocOfVar(const Value *var);
 
     /// is allocation (stack, static, heap)
     bool isAlloc(const SVF::Value *val);

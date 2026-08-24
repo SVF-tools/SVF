@@ -24,10 +24,6 @@
  * SlicedGraphs.h
  *
  *      Author: Jiawei Yang
- *
- * General non-owning sliced views of the ICFG, PAG, and (Thread)CallGraph, and
- * their GenericGraphTraits specialisations, so a slice works with SVF's generic
- * graph algorithms and GraphWriter.
  */
 
 #ifndef GRAPHS_SLICEDGRAPHS_H
@@ -45,13 +41,9 @@
 #include "SVFIR/SVFStatements.h"
 #include "SVFIR/SVFVariables.h"
 #include <cstddef>
-#include <fstream>
 #include <iterator>
 #include <memory>
-#include <set>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 #include <utility>
 
@@ -66,14 +58,9 @@ namespace SVF
 class SlicedICFGView
 {
 public:
-    /// Build complete ICFG view from keepNodes and keptFunctions
-    // buildBridged=false skips bridged-edge construction for views whose control
-    // flow is never walked (e.g. the FSPTA view, used only for isKeptNode).
+    /// Build an ICFG view from its explicit node membership.
     SlicedICFGView(ICFG* icfg,
-                   CallGraph* cg,
-                   const OrderedSet<const ICFGNode*>& keepNodes,
-                   const OrderedSet<const FunObjVar*>& keptFunctions,
-                   bool buildBridged = true);
+                   const OrderedSet<const ICFGNode*>& keepNodes);
 
     /// Get successor nodes (including bridged edges)
     void getSuccNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const;
@@ -84,9 +71,11 @@ public:
     /// Check if a node is in the sliced view
     bool isKeptNode(const ICFGNode* node) const;
 
-    /// First kept node of fun's entry (the kept FunEntryICFGNode, else the first
-    /// kept node of the entry block, else the original entry).
+    /// First kept node of fun's entry, or null when fun is outside the view.
     const ICFGNode* getFunEntry(const FunObjVar* fun) const;
+
+    /// Kept synthetic exit node of fun, or null when fun is outside the view.
+    const ICFGNode* getFunExit(const FunObjVar* fun) const;
 
     /// Kept ICFG nodes of fun.
     void getFunICFGNodes(const FunObjVar* fun, std::vector<const ICFGNode*>& out) const;
@@ -122,16 +111,18 @@ public:
 private:
     ICFG* icfg;
     OrderedSet<const ICFGNode*> keptNodes;
-    OrderedSet<const ICFGEdge*> keptEdges;
     Map<const ICFGNode*, OrderedSet<const ICFGNode*>> bridgedEdges;
     // Reverse of bridgedEdges (dst -> srcs), so getPredNodes is O(preds) instead
     // of scanning every bridged edge.
     Map<const ICFGNode*, OrderedSet<const ICFGNode*>> bridgedPreds;
     Set<const ICFGNode*> keptNodesSet; // For fast lookup
 
-    void buildICFGSets(const OrderedSet<const ICFGNode*>& keepNodes,
-                       const OrderedSet<const FunObjVar*>& keptFunctions);
+    void buildICFGSets(const OrderedSet<const ICFGNode*>& keepNodes);
     void buildBridgedEdges();
+    static void getLocalSuccessors(
+        const ICFGNode* node,
+        const Map<const ICFGNode*, const ICFGNode*>& callsiteReturnNodes,
+        std::vector<const ICFGNode*>& successors);
 };
 
 //===----------------------------------------------------------------------===//
@@ -187,13 +178,34 @@ class SlicedThreadCallGraphView
 public:
     SlicedThreadCallGraphView(ThreadCallGraph* tcg,
                               const OrderedSet<const FunObjVar*>& keptFunctions,
-                              const OrderedSet<const ICFGNode*>& extendedKeptNodes = OrderedSet<const ICFGNode*>());
+                              const OrderedSet<const ICFGNode*>& extendedKeptNodes);
 
     /// Get out edges of a node (only returns kept edges and target nodes)
     void getOutEdgesOf(const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const;
 
     /// Get in edges of a node (only returns kept edges and source nodes)
     void getInEdgesOf(const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const;
+
+    /// Retained callsites carried by an aggregated call-graph edge.
+    void getDirectCallsOf(const CallGraphEdge* edge,
+                          std::vector<const CallICFGNode*>& out) const;
+    void getIndirectCallsOf(const CallGraphEdge* edge,
+                            std::vector<const CallICFGNode*>& out) const;
+
+    /// Whether this precise callsite-to-callee relation is retained.
+    bool containsCallSite(const CallGraphEdge* edge,
+                          const CallICFGNode* callSite) const;
+
+    /// Retained callees of a callsite.
+    void getCalleesOf(const CallICFGNode* callSite,
+                      CallGraph::FunctionSet& callees) const;
+
+    /// Retained thread relations indexed by their fork/join callsite. Join
+    /// relations are deliberately separate from normal CallGraph adjacency.
+    void getForkEdgesOf(const CallICFGNode* callSite,
+                        std::vector<const CallGraphEdge*>& out) const;
+    void getJoinEdgesOf(const CallICFGNode* callSite,
+                        std::vector<const CallGraphEdge*>& out) const;
 
     /// Check if a node is in the sliced view
     bool isKeptNode(const CallGraphNode* node) const;
@@ -209,17 +221,11 @@ public:
         return keptFunctionsSet;
     }
 
-    /// Get all kept edges
-    inline const CallGraph::CallGraphEdgeSet& getKeptEdges() const
-    {
-        return keptEdges;
-    }
-
     /// Canonical edge membership: keptEdges excludes edges whose call site was
     /// pruned, so endpoint checks alone are not enough (queries/traits use this).
     inline bool isKeptEdge(const CallGraphEdge* e) const
     {
-        return keptEdges.find(const_cast<CallGraphEdge*>(e)) != keptEdges.end();
+        return keptEdges.find(e) != keptEdges.end();
     }
 
     /// Indirect call sites that lost all targets after filtering
@@ -231,14 +237,9 @@ public:
     /// Dump sliced ThreadCallGraph to dot file
     void dump(const std::string& filename) const;
 
-    /// Get original ThreadCallGraph
-    inline ThreadCallGraph* getOriginalThreadCallGraph() const
-    {
-        return tcg;
-    }
-
-    /// Get original CallGraph (ThreadCallGraph inherits from CallGraph)
-    inline CallGraph* getOriginalCallGraph() const
+    /// Backing graph access for the graph-traits implementation only. Analysis
+    /// traversal must use this view's filtered methods above.
+    inline CallGraph* getBackingCallGraph() const
     {
         return tcg;
     }
@@ -246,7 +247,9 @@ public:
 private:
     ThreadCallGraph* tcg;
     OrderedSet<const CallGraphNode*> keptNodes;
-    CallGraph::CallGraphEdgeSet keptEdges;
+    Set<const CallGraphEdge*> keptEdges;
+    Map<const CallGraphEdge*, CallGraphEdge::CallInstSet> keptDirectCalls;
+    Map<const CallGraphEdge*, CallGraphEdge::CallInstSet> keptIndirectCalls;
     Set<const FunObjVar*> keptFunctionsSet; // For fast lookup
     Set<const CallICFGNode*> indirectSitesWithEmptyTargets;
     OrderedSet<const ICFGNode*> extendedKeptNodes; // For checking if call sites are kept
@@ -256,21 +259,16 @@ private:
 };
 
 //===----------------------------------------------------------------------===//
-// SlicedSVFGView - non-owning sliced view of the (thread-aware) SVFG.
-// Retained nodes: everything except Load/Store statement nodes whose ICFG node
-// was sliced out; structural nodes (Addr/Copy/Gep, MSSA phi/mu/chi, call/return
-// boundaries) always remain so inter-procedural and memory-SSA flow is intact.
-// Deliberately NO bridge edges: bridging removed SVFG nodes could fabricate
-// value-flow paths that do not exist in the original graph. Removed nodes act
-// as propagation barriers (matching the sliced FSAM solve).
+// SlicedSVFGView - non-owning exact node-induced view of an SVFG.
+// Membership is supplied as an explicit node-ID set; an edge is visible iff
+// both endpoints are retained. There are deliberately no bridge edges, since
+// bridging would fabricate value-flow paths.
 //===----------------------------------------------------------------------===//
 class SlicedSVFGView
 {
 public:
-    /// Membership needs only the sliced ICFG view; the SVFG handle (for node
-    /// iteration and dumping) may be bound later, once the solver has built it.
-    explicit SlicedSVFGView(const SlicedICFGView* icfgView, const SVFG* svfg = nullptr)
-        : icfgView(icfgView), svfg(svfg) {}
+    SlicedSVFGView(const SVFG* svfg, const NodeBS& retainedNodeIds)
+        : svfg(svfg), retainedNodeIds(retainedNodeIds) {}
 
     /// Whether the node is retained (see the class comment for the rule).
     bool isKeptNode(const SVFGNode* n) const;
@@ -281,26 +279,18 @@ public:
         return isKeptNode(e->getSrcNode()) && isKeptNode(e->getDstNode());
     }
 
-    inline const SlicedICFGView* getICFGView() const
-    {
-        return icfgView;
-    }
     inline const SVFG* getSVFG() const
     {
         return svfg;
     }
-    /// Bind the underlying SVFG (enables node iteration and dumping).
-    inline void setSVFG(const SVFG* g)
-    {
-        svfg = g;
-    }
+    size_t getKeptNodeCount() const;
 
     /// Dump the sliced SVFG (retained nodes/edges only) via GraphWriter.
     void dump(const std::string& filename) const;
 
 private:
-    const SlicedICFGView* icfgView;
-    const SVFG* svfg;
+    const SVFG* svfg = nullptr;
+    NodeBS retainedNodeIds;
 };
 
 //===----------------------------------------------------------------------===//
@@ -310,11 +300,10 @@ private:
 class SlicedSVFIRView
 {
 public:
-    SlicedSVFIRView(SVFIR* svfIr,
-                    CallGraph* cg,
+    SlicedSVFIRView(SVFIR* svfir,
+                    ThreadCallGraph& callGraph,
                     ICFG* icfg,
-                    const OrderedSet<const ICFGNode*>& keepNodes,
-                    bool buildBridged = true);
+                    const OrderedSet<const ICFGNode*>& keepNodes);
 
     /// Get SlicedICFGView
     inline const SlicedICFGView* getICFG() const
@@ -329,10 +318,12 @@ public:
     /// Get SlicedPAGView
     inline const SlicedPAGView* getPAG() const
     {
+        ensurePAGView();
         return pagView.get();
     }
     inline SlicedPAGView* getPAG()
     {
+        ensurePAGView();
         return pagView.get();
     }
 
@@ -361,17 +352,8 @@ public:
     /// Get all kept statements
     inline const OrderedSet<const SVFStmt*>& getKeptStatements() const
     {
-        return pagView->getKeptStmts();
+        return getPAG()->getKeptStmts();
     }
-
-    /// In-edges of a call-graph node under the sliced ThreadCallGraph view (the
-    /// full node in-edges if no TCG view was built).
-    void getInEdgesOfCallGraphNode(const CallGraphNode* node,
-                                   std::vector<const CallGraphEdge*>& out) const;
-
-    /// The CallGraph the sliced analyses scan: the sliced ThreadCallGraph's
-    /// original CallGraph, or the full PAG CallGraph if no TCG view was built.
-    const CallGraph* getAnalysisCallGraph() const;
 
     /// Dump all views to files
     void dumpAll(const std::string& prefix) const;
@@ -379,16 +361,18 @@ public:
     /// Get original SVFIR
     inline SVFIR* getSVFIR() const
     {
-        return svfIr;
+        return svfir;
     }
 
     /// Output statistics
     void dumpStats(const std::string& prefix = "") const;
 
 private:
-    SVFIR* svfIr;
+    void ensurePAGView() const;
+
+    SVFIR* svfir;
     std::unique_ptr<SlicedICFGView> icfgView;
-    std::unique_ptr<SlicedPAGView> pagView;
+    mutable std::unique_ptr<SlicedPAGView> pagView;
     std::unique_ptr<SlicedThreadCallGraphView> tcgView;
 };
 
@@ -411,19 +395,13 @@ struct SlicedNodeRef
     SlicedNodeRef() = default;
     SlicedNodeRef(const ViewT* v, const RawNodeT* r) : view(v), raw(r) {}
 
-    explicit operator bool() const
-    {
-        return raw != nullptr;
-    }
+    explicit operator bool() const { return raw != nullptr; }
 
     friend bool operator==(SlicedNodeRef lhs, SlicedNodeRef rhs)
     {
         return lhs.view == rhs.view && lhs.raw == rhs.raw;
     }
-    friend bool operator!=(SlicedNodeRef lhs, SlicedNodeRef rhs)
-    {
-        return !(lhs == rhs);
-    }
+    friend bool operator!=(SlicedNodeRef lhs, SlicedNodeRef rhs) { return !(lhs == rhs); }
 };
 
 using SlicedICFGNodeRef = SlicedNodeRef<SlicedICFGView, ICFGNode>;
@@ -477,41 +455,20 @@ public:
         return it;
     }
 
-    reference operator*() const
-    {
-        return cur;
-    }
-    pointer operator->() const
-    {
-        return &cur;
-    }
+    reference operator*() const { return cur; }
+    pointer operator->() const { return &cur; }
 
     // The node this edge traverses to (successor for Forward, predecessor for Inverse).
-    SlicedICFGNodeRef target() const
-    {
-        return Forward ? cur.dst : cur.src;
-    }
+    SlicedICFGNodeRef target() const { return Forward ? cur.dst : cur.src; }
 
     SlicedICFGEdgeIterImpl& operator++()
     {
-        if (realIt != realEnd)
-        {
-            ++realIt;
-            skipNonKeptReal();
-        }
-        else if (brIt != brEnd)
-        {
-            ++brIt;
-        }
+        if (realIt != realEnd) { ++realIt; skipNonKeptReal(); }
+        else if (brIt != brEnd) { ++brIt; }
         refresh();
         return *this;
     }
-    SlicedICFGEdgeIterImpl operator++(int)
-    {
-        SlicedICFGEdgeIterImpl t = *this;
-        ++*this;
-        return t;
-    }
+    SlicedICFGEdgeIterImpl operator++(int) { SlicedICFGEdgeIterImpl t = *this; ++*this; return t; }
 
     friend bool operator==(const SlicedICFGEdgeIterImpl& a, const SlicedICFGEdgeIterImpl& b)
     {
@@ -560,8 +517,7 @@ private:
         {
             SlicedICFGNodeRef self{view, src}, adj{view, *brIt};
             cur = Forward ? SlicedICFGEdgeRef{self, adj, nullptr, true}
-                  :
-                  SlicedICFGEdgeRef{adj, self, nullptr, true};
+                          : SlicedICFGEdgeRef{adj, self, nullptr, true};
         }
         else
         {
@@ -585,26 +541,11 @@ public:
     SlicedICFGChildIterImpl() = default;
     explicit SlicedICFGChildIterImpl(SlicedICFGEdgeIterImpl<Forward> it) : e(it) {}
 
-    reference operator*() const
-    {
-        return e.target();
-    }
-    const SlicedICFGEdgeRef& currentEdge() const
-    {
-        return *e;
-    }
+    reference operator*() const { return e.target(); }
+    const SlicedICFGEdgeRef& currentEdge() const { return *e; }
 
-    SlicedICFGChildIterImpl& operator++()
-    {
-        ++e;
-        return *this;
-    }
-    SlicedICFGChildIterImpl operator++(int)
-    {
-        SlicedICFGChildIterImpl t = *this;
-        ++e;
-        return t;
-    }
+    SlicedICFGChildIterImpl& operator++() { ++e; return *this; }
+    SlicedICFGChildIterImpl operator++(int) { SlicedICFGChildIterImpl t = *this; ++e; return t; }
 
     friend bool operator==(const SlicedICFGChildIterImpl& a, const SlicedICFGChildIterImpl& b)
     {
@@ -633,25 +574,13 @@ public:
     SlicedICFGNodeIter(const SlicedICFGView* v, OrderedSet<const ICFGNode*>::const_iterator i)
         : view(v), it(i) {}
 
-    reference operator*() const
-    {
-        return SlicedICFGNodeRef{view, *it};
-    }
-    SlicedICFGNodeIter& operator++()
-    {
-        ++it;
-        return *this;
-    }
-    SlicedICFGNodeIter operator++(int)
-    {
-        SlicedICFGNodeIter t = *this;
-        ++it;
-        return t;
-    }
+    reference operator*() const { return SlicedICFGNodeRef{view, *it}; }
+    SlicedICFGNodeIter& operator++() { ++it; return *this; }
+    SlicedICFGNodeIter operator++(int) { SlicedICFGNodeIter t = *this; ++it; return t; }
 
     friend bool operator==(const SlicedICFGNodeIter& a, const SlicedICFGNodeIter& b)
     {
-        return a.it == b.it;
+        return a.view == b.view && a.it == b.it;
     }
     friend bool operator!=(const SlicedICFGNodeIter& a, const SlicedICFGNodeIter& b)
     {
@@ -710,44 +639,23 @@ public:
         return it;
     }
 
-    reference operator*() const
-    {
-        return cur;
-    }
-    pointer operator->() const
-    {
-        return &cur;
-    }
-    SlicedCallGraphNodeRef target() const
-    {
-        return Forward ? cur.dst : cur.src;
-    }
+    reference operator*() const { return cur; }
+    pointer operator->() const { return &cur; }
+    SlicedCallGraphNodeRef target() const { return Forward ? cur.dst : cur.src; }
 
     SlicedCGEdgeIterImpl& operator++()
     {
-        if (realIt != realEnd)
-        {
-            ++realIt;
-            skipNonKept();
-        }
+        if (realIt != realEnd) { ++realIt; skipNonKept(); }
         refresh();
         return *this;
     }
-    SlicedCGEdgeIterImpl operator++(int)
-    {
-        SlicedCGEdgeIterImpl t = *this;
-        ++*this;
-        return t;
-    }
+    SlicedCGEdgeIterImpl operator++(int) { SlicedCGEdgeIterImpl t = *this; ++*this; return t; }
 
     friend bool operator==(const SlicedCGEdgeIterImpl& a, const SlicedCGEdgeIterImpl& b)
     {
         return a.view == b.view && a.src == b.src && a.realIt == b.realIt;
     }
-    friend bool operator!=(const SlicedCGEdgeIterImpl& a, const SlicedCGEdgeIterImpl& b)
-    {
-        return !(a == b);
-    }
+    friend bool operator!=(const SlicedCGEdgeIterImpl& a, const SlicedCGEdgeIterImpl& b) { return !(a == b); }
 
 private:
     using EdgeIt = CallGraphNode::const_iterator;
@@ -789,33 +697,12 @@ public:
     SlicedCGChildIterImpl() = default;
     explicit SlicedCGChildIterImpl(SlicedCGEdgeIterImpl<Forward> it) : e(it) {}
 
-    reference operator*() const
-    {
-        return e.target();
-    }
-    const SlicedCallGraphEdgeRef& currentEdge() const
-    {
-        return *e;
-    }
-    SlicedCGChildIterImpl& operator++()
-    {
-        ++e;
-        return *this;
-    }
-    SlicedCGChildIterImpl operator++(int)
-    {
-        SlicedCGChildIterImpl t = *this;
-        ++e;
-        return t;
-    }
-    friend bool operator==(const SlicedCGChildIterImpl& a, const SlicedCGChildIterImpl& b)
-    {
-        return a.e == b.e;
-    }
-    friend bool operator!=(const SlicedCGChildIterImpl& a, const SlicedCGChildIterImpl& b)
-    {
-        return !(a == b);
-    }
+    reference operator*() const { return e.target(); }
+    const SlicedCallGraphEdgeRef& currentEdge() const { return *e; }
+    SlicedCGChildIterImpl& operator++() { ++e; return *this; }
+    SlicedCGChildIterImpl operator++(int) { SlicedCGChildIterImpl t = *this; ++e; return t; }
+    friend bool operator==(const SlicedCGChildIterImpl& a, const SlicedCGChildIterImpl& b) { return a.e == b.e; }
+    friend bool operator!=(const SlicedCGChildIterImpl& a, const SlicedCGChildIterImpl& b) { return !(a == b); }
 
 private:
     SlicedCGEdgeIterImpl<Forward> e{};
@@ -834,29 +721,14 @@ public:
     SlicedCGNodeIter(const SlicedThreadCallGraphView* v, OrderedSet<const CallGraphNode*>::const_iterator i)
         : view(v), it(i) {}
 
-    reference operator*() const
-    {
-        return SlicedCallGraphNodeRef{view, *it};
-    }
-    SlicedCGNodeIter& operator++()
-    {
-        ++it;
-        return *this;
-    }
-    SlicedCGNodeIter operator++(int)
-    {
-        SlicedCGNodeIter t = *this;
-        ++it;
-        return t;
-    }
+    reference operator*() const { return SlicedCallGraphNodeRef{view, *it}; }
+    SlicedCGNodeIter& operator++() { ++it; return *this; }
+    SlicedCGNodeIter operator++(int) { SlicedCGNodeIter t = *this; ++it; return t; }
     friend bool operator==(const SlicedCGNodeIter& a, const SlicedCGNodeIter& b)
     {
-        return a.it == b.it;
+        return a.view == b.view && a.it == b.it;
     }
-    friend bool operator!=(const SlicedCGNodeIter& a, const SlicedCGNodeIter& b)
-    {
-        return !(a == b);
-    }
+    friend bool operator!=(const SlicedCGNodeIter& a, const SlicedCGNodeIter& b) { return !(a == b); }
 
 private:
     const SlicedThreadCallGraphView* view = nullptr;
@@ -910,44 +782,23 @@ public:
         return it;
     }
 
-    reference operator*() const
-    {
-        return cur;
-    }
-    pointer operator->() const
-    {
-        return &cur;
-    }
-    SlicedPAGNodeRef target() const
-    {
-        return Forward ? cur.dst : cur.src;
-    }
+    reference operator*() const { return cur; }
+    pointer operator->() const { return &cur; }
+    SlicedPAGNodeRef target() const { return Forward ? cur.dst : cur.src; }
 
     SlicedPAGEdgeIterImpl& operator++()
     {
-        if (realIt != realEnd)
-        {
-            ++realIt;
-            skipNonKept();
-        }
+        if (realIt != realEnd) { ++realIt; skipNonKept(); }
         refresh();
         return *this;
     }
-    SlicedPAGEdgeIterImpl operator++(int)
-    {
-        SlicedPAGEdgeIterImpl t = *this;
-        ++*this;
-        return t;
-    }
+    SlicedPAGEdgeIterImpl operator++(int) { SlicedPAGEdgeIterImpl t = *this; ++*this; return t; }
 
     friend bool operator==(const SlicedPAGEdgeIterImpl& a, const SlicedPAGEdgeIterImpl& b)
     {
         return a.view == b.view && a.src == b.src && a.realIt == b.realIt;
     }
-    friend bool operator!=(const SlicedPAGEdgeIterImpl& a, const SlicedPAGEdgeIterImpl& b)
-    {
-        return !(a == b);
-    }
+    friend bool operator!=(const SlicedPAGEdgeIterImpl& a, const SlicedPAGEdgeIterImpl& b) { return !(a == b); }
 
 private:
     using EdgeIt = SVFVar::const_iterator;
@@ -989,33 +840,12 @@ public:
     SlicedPAGChildIterImpl() = default;
     explicit SlicedPAGChildIterImpl(SlicedPAGEdgeIterImpl<Forward> it) : e(it) {}
 
-    reference operator*() const
-    {
-        return e.target();
-    }
-    const SlicedPAGEdgeRef& currentEdge() const
-    {
-        return *e;
-    }
-    SlicedPAGChildIterImpl& operator++()
-    {
-        ++e;
-        return *this;
-    }
-    SlicedPAGChildIterImpl operator++(int)
-    {
-        SlicedPAGChildIterImpl t = *this;
-        ++e;
-        return t;
-    }
-    friend bool operator==(const SlicedPAGChildIterImpl& a, const SlicedPAGChildIterImpl& b)
-    {
-        return a.e == b.e;
-    }
-    friend bool operator!=(const SlicedPAGChildIterImpl& a, const SlicedPAGChildIterImpl& b)
-    {
-        return !(a == b);
-    }
+    reference operator*() const { return e.target(); }
+    const SlicedPAGEdgeRef& currentEdge() const { return *e; }
+    SlicedPAGChildIterImpl& operator++() { ++e; return *this; }
+    SlicedPAGChildIterImpl operator++(int) { SlicedPAGChildIterImpl t = *this; ++e; return t; }
+    friend bool operator==(const SlicedPAGChildIterImpl& a, const SlicedPAGChildIterImpl& b) { return a.e == b.e; }
+    friend bool operator!=(const SlicedPAGChildIterImpl& a, const SlicedPAGChildIterImpl& b) { return !(a == b); }
 
 private:
     SlicedPAGEdgeIterImpl<Forward> e{};
@@ -1039,25 +869,13 @@ public:
     {
         return SlicedPAGNodeRef{view, view->getSVFIR()->getGNode(*it)};
     }
-    SlicedPAGNodeIter& operator++()
-    {
-        ++it;
-        return *this;
-    }
-    SlicedPAGNodeIter operator++(int)
-    {
-        SlicedPAGNodeIter t = *this;
-        ++it;
-        return t;
-    }
+    SlicedPAGNodeIter& operator++() { ++it; return *this; }
+    SlicedPAGNodeIter operator++(int) { SlicedPAGNodeIter t = *this; ++it; return t; }
     friend bool operator==(const SlicedPAGNodeIter& a, const SlicedPAGNodeIter& b)
     {
-        return a.it == b.it;
+        return a.view == b.view && a.it == b.it;
     }
-    friend bool operator!=(const SlicedPAGNodeIter& a, const SlicedPAGNodeIter& b)
-    {
-        return !(a == b);
-    }
+    friend bool operator!=(const SlicedPAGNodeIter& a, const SlicedPAGNodeIter& b) { return !(a == b); }
 
 private:
     const SlicedPAGView* view = nullptr;
@@ -1066,7 +884,7 @@ private:
 
 //===----------------------------------------------------------------------===//
 // SlicedSVFGView traits support (no bridged edges; membership is the view's
-// retained-node rule, so removed nodes are propagation barriers).
+// retained-node rule, so removed nodes never enter SCC/worklist traversal).
 //===----------------------------------------------------------------------===//
 
 using SlicedSVFGNodeRef = SlicedNodeRef<SlicedSVFGView, SVFGNode>;
@@ -1110,44 +928,23 @@ public:
         return it;
     }
 
-    reference operator*() const
-    {
-        return cur;
-    }
-    pointer operator->() const
-    {
-        return &cur;
-    }
-    SlicedSVFGNodeRef target() const
-    {
-        return Forward ? cur.dst : cur.src;
-    }
+    reference operator*() const { return cur; }
+    pointer operator->() const { return &cur; }
+    SlicedSVFGNodeRef target() const { return Forward ? cur.dst : cur.src; }
 
     SlicedSVFGEdgeIterImpl& operator++()
     {
-        if (realIt != realEnd)
-        {
-            ++realIt;
-            skipNonKept();
-        }
+        if (realIt != realEnd) { ++realIt; skipNonKept(); }
         refresh();
         return *this;
     }
-    SlicedSVFGEdgeIterImpl operator++(int)
-    {
-        SlicedSVFGEdgeIterImpl t = *this;
-        ++*this;
-        return t;
-    }
+    SlicedSVFGEdgeIterImpl operator++(int) { SlicedSVFGEdgeIterImpl t = *this; ++*this; return t; }
 
     friend bool operator==(const SlicedSVFGEdgeIterImpl& a, const SlicedSVFGEdgeIterImpl& b)
     {
         return a.view == b.view && a.src == b.src && a.realIt == b.realIt;
     }
-    friend bool operator!=(const SlicedSVFGEdgeIterImpl& a, const SlicedSVFGEdgeIterImpl& b)
-    {
-        return !(a == b);
-    }
+    friend bool operator!=(const SlicedSVFGEdgeIterImpl& a, const SlicedSVFGEdgeIterImpl& b) { return !(a == b); }
 
 private:
     using EdgeIt = SVFGNode::const_iterator;
@@ -1161,7 +958,7 @@ private:
     void skipNonKept()
     {
         while (realIt != realEnd &&
-                !view->isKeptNode(Forward ? (*realIt)->getDstNode() : (*realIt)->getSrcNode()))
+               !view->isKeptNode(Forward ? (*realIt)->getDstNode() : (*realIt)->getSrcNode()))
             ++realIt;
     }
     void refresh()
@@ -1191,33 +988,12 @@ public:
     SlicedSVFGChildIterImpl() = default;
     explicit SlicedSVFGChildIterImpl(SlicedSVFGEdgeIterImpl<Forward> it) : e(it) {}
 
-    reference operator*() const
-    {
-        return e.target();
-    }
-    const SlicedSVFGEdgeRef& currentEdge() const
-    {
-        return *e;
-    }
-    SlicedSVFGChildIterImpl& operator++()
-    {
-        ++e;
-        return *this;
-    }
-    SlicedSVFGChildIterImpl operator++(int)
-    {
-        SlicedSVFGChildIterImpl t = *this;
-        ++e;
-        return t;
-    }
-    friend bool operator==(const SlicedSVFGChildIterImpl& a, const SlicedSVFGChildIterImpl& b)
-    {
-        return a.e == b.e;
-    }
-    friend bool operator!=(const SlicedSVFGChildIterImpl& a, const SlicedSVFGChildIterImpl& b)
-    {
-        return !(a == b);
-    }
+    reference operator*() const { return e.target(); }
+    const SlicedSVFGEdgeRef& currentEdge() const { return *e; }
+    SlicedSVFGChildIterImpl& operator++() { ++e; return *this; }
+    SlicedSVFGChildIterImpl operator++(int) { SlicedSVFGChildIterImpl t = *this; ++e; return t; }
+    friend bool operator==(const SlicedSVFGChildIterImpl& a, const SlicedSVFGChildIterImpl& b) { return a.e == b.e; }
+    friend bool operator!=(const SlicedSVFGChildIterImpl& a, const SlicedSVFGChildIterImpl& b) { return !(a == b); }
 
 private:
     SlicedSVFGEdgeIterImpl<Forward> e{};
@@ -1240,30 +1016,14 @@ public:
         skipNonKept();
     }
 
-    reference operator*() const
-    {
-        return SlicedSVFGNodeRef{view, it->second};
-    }
-    SlicedSVFGNodeIter& operator++()
-    {
-        ++it;
-        skipNonKept();
-        return *this;
-    }
-    SlicedSVFGNodeIter operator++(int)
-    {
-        SlicedSVFGNodeIter t = *this;
-        ++*this;
-        return t;
-    }
+    reference operator*() const { return SlicedSVFGNodeRef{view, it->second}; }
+    SlicedSVFGNodeIter& operator++() { ++it; skipNonKept(); return *this; }
+    SlicedSVFGNodeIter operator++(int) { SlicedSVFGNodeIter t = *this; ++*this; return t; }
     friend bool operator==(const SlicedSVFGNodeIter& a, const SlicedSVFGNodeIter& b)
     {
-        return a.it == b.it;
+        return a.view == b.view && a.it == b.it;
     }
-    friend bool operator!=(const SlicedSVFGNodeIter& a, const SlicedSVFGNodeIter& b)
-    {
-        return !(a == b);
-    }
+    friend bool operator!=(const SlicedSVFGNodeIter& a, const SlicedSVFGNodeIter& b) { return !(a == b); }
 
 private:
     const SlicedSVFGView* view = nullptr;
@@ -1295,10 +1055,7 @@ struct GenericGraphTraits<const SlicedICFGView*>
 
     // Escape hatch to the underlying node so graph-generic algorithms can reach
     // domain data (getFun/getSVFStmts) uniformly. Full-ICFG traits return the node.
-    static const ICFGNode* getRawNode(NodeRef n)
-    {
-        return n.raw;
-    }
+    static const ICFGNode* getRawNode(NodeRef n) { return n.raw; }
 
     // Graph-intrinsic queries mirroring GenericGraphTraits<ICFG*>, so a
     // graph-parameterised analysis resolves the right behaviour from the type.
@@ -1306,6 +1063,10 @@ struct GenericGraphTraits<const SlicedICFGView*>
     static const ICFGNode* getFunEntry(const SlicedICFGView* g, const FunObjVar* fun)
     {
         return g->getFunEntry(fun);
+    }
+    static const ICFGNode* getFunExit(const SlicedICFGView* g, const FunObjVar* fun)
+    {
+        return g->getFunExit(fun);
     }
     static void getFunICFGNodes(const SlicedICFGView* g, const FunObjVar* fun,
                                 std::vector<const ICFGNode*>& out)
@@ -1328,10 +1089,7 @@ struct GenericGraphTraits<const SlicedICFGView*>
     }
     //@}
 
-    static NodeRef getEntryNode(const SlicedICFGView*)
-    {
-        return NodeRef{};
-    }
+    static NodeRef getEntryNode(const SlicedICFGView*) { return NodeRef{}; }
 
     static nodes_iterator nodes_begin(const SlicedICFGView* v)
     {
@@ -1350,14 +1108,8 @@ struct GenericGraphTraits<const SlicedICFGView*>
     {
         return ChildIteratorType(ChildEdgeIteratorType::end(n.view, n.raw));
     }
-    static ChildIteratorType direct_child_begin(NodeRef n)
-    {
-        return child_begin(n);
-    }
-    static ChildIteratorType direct_child_end(NodeRef n)
-    {
-        return child_end(n);
-    }
+    static ChildIteratorType direct_child_begin(NodeRef n) { return child_begin(n); }
+    static ChildIteratorType direct_child_end(NodeRef n) { return child_end(n); }
 
     static ChildEdgeIteratorType child_edge_begin(NodeRef n)
     {
@@ -1368,19 +1120,13 @@ struct GenericGraphTraits<const SlicedICFGView*>
         return ChildEdgeIteratorType::end(n.view, n.raw);
     }
 
-    static NodeRef edge_dest(const EdgeRef& e)
-    {
-        return e.dst;
-    }
+    static NodeRef edge_dest(const EdgeRef& e) { return e.dst; }
 
     static unsigned graphSize(const SlicedICFGView* v)
     {
         return static_cast<unsigned>(v->getKeptNodes().size());
     }
-    static inline unsigned getNodeID(NodeRef n)
-    {
-        return n.raw->getId();
-    }
+    static inline unsigned getNodeID(NodeRef n) { return n.raw->getId(); }
     static NodeRef getNode(const SlicedICFGView* v, NodeID id)
     {
         const ICFGNode* raw = v->getOriginalICFG()->getGNode(id);
@@ -1397,10 +1143,7 @@ struct GenericGraphTraits<Inverse<const SlicedICFGView*>>
     using ChildIteratorType = SlicedICFGChildIterImpl<false>;
     using ChildEdgeIteratorType = SlicedICFGEdgeIterImpl<false>;
 
-    static NodeRef getEntryNode(Inverse<const SlicedICFGView*>)
-    {
-        return NodeRef{};
-    }
+    static NodeRef getEntryNode(Inverse<const SlicedICFGView*>) { return NodeRef{}; }
 
     static ChildIteratorType child_begin(NodeRef n)
     {
@@ -1421,14 +1164,8 @@ struct GenericGraphTraits<Inverse<const SlicedICFGView*>>
     }
 
     // Inverse: the traversed "child" is the predecessor -> the edge source.
-    static NodeRef edge_dest(const EdgeRef& e)
-    {
-        return e.src;
-    }
-    static inline unsigned getNodeID(NodeRef n)
-    {
-        return n.raw->getId();
-    }
+    static NodeRef edge_dest(const EdgeRef& e) { return e.src; }
+    static inline unsigned getNodeID(NodeRef n) { return n.raw->getId(); }
 };
 
 // Forward traits for SlicedThreadCallGraphView.
@@ -1441,10 +1178,7 @@ struct GenericGraphTraits<const SlicedThreadCallGraphView*>
     using ChildIteratorType = SlicedCGChildIterImpl<true>;
     using ChildEdgeIteratorType = SlicedCGEdgeIterImpl<true>;
 
-    static const CallGraphNode* getRawNode(NodeRef n)
-    {
-        return n.raw;
-    }
+    static const CallGraphNode* getRawNode(NodeRef n) { return n.raw; }
 
     // Graph-intrinsic queries mirroring GenericGraphTraits<CallGraph*>.
     //@{
@@ -1453,16 +1187,50 @@ struct GenericGraphTraits<const SlicedThreadCallGraphView*>
     {
         g->getInEdgesOf(n, out);
     }
-    static const CallGraph* getCallGraph(const SlicedThreadCallGraphView* g)
+    static void getOutEdges(const SlicedThreadCallGraphView* g, const CallGraphNode* n,
+                            std::vector<const CallGraphEdge*>& out)
     {
-        return g->getOriginalCallGraph();
+        g->getOutEdgesOf(n, out);
+    }
+    static void getDirectCalls(const SlicedThreadCallGraphView* g,
+                               const CallGraphEdge* e,
+                               std::vector<const CallICFGNode*>& out)
+    {
+        g->getDirectCallsOf(e, out);
+    }
+    static void getIndirectCalls(const SlicedThreadCallGraphView* g,
+                                 const CallGraphEdge* e,
+                                 std::vector<const CallICFGNode*>& out)
+    {
+        g->getIndirectCallsOf(e, out);
+    }
+    static bool containsCallSite(const SlicedThreadCallGraphView* g,
+                                 const CallGraphEdge* e,
+                                 const CallICFGNode* callSite)
+    {
+        return g->containsCallSite(e, callSite);
+    }
+    static void getCallees(const SlicedThreadCallGraphView* g,
+                           const CallICFGNode* callSite,
+                           CallGraph::FunctionSet& callees)
+    {
+        g->getCalleesOf(callSite, callees);
+    }
+    static void getForkEdges(const SlicedThreadCallGraphView* g,
+                             const CallICFGNode* callSite,
+                             std::vector<const CallGraphEdge*>& out)
+    {
+        g->getForkEdgesOf(callSite, out);
+    }
+    static void getJoinEdges(const SlicedThreadCallGraphView* g,
+                             const CallICFGNode* callSite,
+                             std::vector<const CallGraphEdge*>& out)
+    {
+        g->getJoinEdgesOf(callSite, out);
     }
     //@}
 
-    static NodeRef getEntryNode(const SlicedThreadCallGraphView*)
-    {
-        return NodeRef{};
-    }
+    static NodeRef getEntryNode(const SlicedThreadCallGraphView*) { return NodeRef{}; }
 
     static nodes_iterator nodes_begin(const SlicedThreadCallGraphView* v)
     {
@@ -1481,14 +1249,8 @@ struct GenericGraphTraits<const SlicedThreadCallGraphView*>
     {
         return ChildIteratorType(ChildEdgeIteratorType::end(n.view, n.raw));
     }
-    static ChildIteratorType direct_child_begin(NodeRef n)
-    {
-        return child_begin(n);
-    }
-    static ChildIteratorType direct_child_end(NodeRef n)
-    {
-        return child_end(n);
-    }
+    static ChildIteratorType direct_child_begin(NodeRef n) { return child_begin(n); }
+    static ChildIteratorType direct_child_end(NodeRef n) { return child_end(n); }
 
     static ChildEdgeIteratorType child_edge_begin(NodeRef n)
     {
@@ -1499,22 +1261,16 @@ struct GenericGraphTraits<const SlicedThreadCallGraphView*>
         return ChildEdgeIteratorType::end(n.view, n.raw);
     }
 
-    static NodeRef edge_dest(const EdgeRef& e)
-    {
-        return e.dst;
-    }
+    static NodeRef edge_dest(const EdgeRef& e) { return e.dst; }
 
     static unsigned graphSize(const SlicedThreadCallGraphView* v)
     {
         return static_cast<unsigned>(v->getKeptNodes().size());
     }
-    static inline unsigned getNodeID(NodeRef n)
-    {
-        return n.raw->getId();
-    }
+    static inline unsigned getNodeID(NodeRef n) { return n.raw->getId(); }
     static NodeRef getNode(const SlicedThreadCallGraphView* v, NodeID id)
     {
-        const CallGraphNode* raw = v->getOriginalCallGraph()->getGNode(id);
+        const CallGraphNode* raw = v->getBackingCallGraph()->getGNode(id);
         return NodeRef{v, (raw != nullptr && v->isKeptNode(raw)) ? raw : nullptr};
     }
 };
@@ -1528,10 +1284,7 @@ struct GenericGraphTraits<Inverse<const SlicedThreadCallGraphView*>>
     using ChildIteratorType = SlicedCGChildIterImpl<false>;
     using ChildEdgeIteratorType = SlicedCGEdgeIterImpl<false>;
 
-    static NodeRef getEntryNode(Inverse<const SlicedThreadCallGraphView*>)
-    {
-        return NodeRef{};
-    }
+    static NodeRef getEntryNode(Inverse<const SlicedThreadCallGraphView*>) { return NodeRef{}; }
 
     static ChildIteratorType child_begin(NodeRef n)
     {
@@ -1550,14 +1303,8 @@ struct GenericGraphTraits<Inverse<const SlicedThreadCallGraphView*>>
         return ChildEdgeIteratorType::end(n.view, n.raw);
     }
 
-    static NodeRef edge_dest(const EdgeRef& e)
-    {
-        return e.src;
-    }
-    static inline unsigned getNodeID(NodeRef n)
-    {
-        return n.raw->getId();
-    }
+    static NodeRef edge_dest(const EdgeRef& e) { return e.src; }
+    static inline unsigned getNodeID(NodeRef n) { return n.raw->getId(); }
 };
 
 // Forward traits for SlicedPAGView.
@@ -1570,15 +1317,9 @@ struct GenericGraphTraits<const SlicedPAGView*>
     using ChildIteratorType = SlicedPAGChildIterImpl<true>;
     using ChildEdgeIteratorType = SlicedPAGEdgeIterImpl<true>;
 
-    static const SVFVar* getRawNode(NodeRef n)
-    {
-        return n.raw;
-    }
+    static const SVFVar* getRawNode(NodeRef n) { return n.raw; }
 
-    static NodeRef getEntryNode(const SlicedPAGView*)
-    {
-        return NodeRef{};
-    }
+    static NodeRef getEntryNode(const SlicedPAGView*) { return NodeRef{}; }
 
     static nodes_iterator nodes_begin(const SlicedPAGView* v)
     {
@@ -1597,14 +1338,8 @@ struct GenericGraphTraits<const SlicedPAGView*>
     {
         return ChildIteratorType(ChildEdgeIteratorType::end(n.view, n.raw));
     }
-    static ChildIteratorType direct_child_begin(NodeRef n)
-    {
-        return child_begin(n);
-    }
-    static ChildIteratorType direct_child_end(NodeRef n)
-    {
-        return child_end(n);
-    }
+    static ChildIteratorType direct_child_begin(NodeRef n) { return child_begin(n); }
+    static ChildIteratorType direct_child_end(NodeRef n) { return child_end(n); }
 
     static ChildEdgeIteratorType child_edge_begin(NodeRef n)
     {
@@ -1615,19 +1350,13 @@ struct GenericGraphTraits<const SlicedPAGView*>
         return ChildEdgeIteratorType::end(n.view, n.raw);
     }
 
-    static NodeRef edge_dest(const EdgeRef& e)
-    {
-        return e.dst;
-    }
+    static NodeRef edge_dest(const EdgeRef& e) { return e.dst; }
 
     static unsigned graphSize(const SlicedPAGView* v)
     {
         return static_cast<unsigned>(v->getKeptNodeIds().size());
     }
-    static inline unsigned getNodeID(NodeRef n)
-    {
-        return n.raw->getId();
-    }
+    static inline unsigned getNodeID(NodeRef n) { return n.raw->getId(); }
     static NodeRef getNode(const SlicedPAGView* v, NodeID id)
     {
         const bool kept = v->getKeptNodeIds().count(id) > 0;
@@ -1644,10 +1373,7 @@ struct GenericGraphTraits<Inverse<const SlicedPAGView*>>
     using ChildIteratorType = SlicedPAGChildIterImpl<false>;
     using ChildEdgeIteratorType = SlicedPAGEdgeIterImpl<false>;
 
-    static NodeRef getEntryNode(Inverse<const SlicedPAGView*>)
-    {
-        return NodeRef{};
-    }
+    static NodeRef getEntryNode(Inverse<const SlicedPAGView*>) { return NodeRef{}; }
 
     static ChildIteratorType child_begin(NodeRef n)
     {
@@ -1666,14 +1392,8 @@ struct GenericGraphTraits<Inverse<const SlicedPAGView*>>
         return ChildEdgeIteratorType::end(n.view, n.raw);
     }
 
-    static NodeRef edge_dest(const EdgeRef& e)
-    {
-        return e.src;
-    }
-    static inline unsigned getNodeID(NodeRef n)
-    {
-        return n.raw->getId();
-    }
+    static NodeRef edge_dest(const EdgeRef& e) { return e.src; }
+    static inline unsigned getNodeID(NodeRef n) { return n.raw->getId(); }
 };
 
 // Forward traits for SlicedSVFGView.
@@ -1685,11 +1405,9 @@ struct GenericGraphTraits<const SlicedSVFGView*>
     using nodes_iterator = SlicedSVFGNodeIter;
     using ChildIteratorType = SlicedSVFGChildIterImpl<true>;
     using ChildEdgeIteratorType = SlicedSVFGEdgeIterImpl<true>;
+    static constexpr bool isFilteredGraph = true;
 
-    static const SVFGNode* getRawNode(NodeRef n)
-    {
-        return n.raw;
-    }
+    static const SVFGNode* getRawNode(NodeRef n) { return n.raw; }
 
     /// Whether n is retained by this sliced SVFG (the solver's restriction test).
     static bool containsNode(const SlicedSVFGView* g, const SVFGNode* n)
@@ -1697,10 +1415,12 @@ struct GenericGraphTraits<const SlicedSVFGView*>
         return g->isKeptNode(n);
     }
 
-    static NodeRef getEntryNode(const SlicedSVFGView*)
+    static bool containsEdge(const SlicedSVFGView* g, const SVFGEdge* e)
     {
-        return NodeRef{};
+        return g->isKeptEdge(e);
     }
+
+    static NodeRef getEntryNode(const SlicedSVFGView*) { return NodeRef{}; }
 
     static nodes_iterator nodes_begin(const SlicedSVFGView* v)
     {
@@ -1721,14 +1441,8 @@ struct GenericGraphTraits<const SlicedSVFGView*>
     {
         return ChildIteratorType(ChildEdgeIteratorType::end(n.view, n.raw));
     }
-    static ChildIteratorType direct_child_begin(NodeRef n)
-    {
-        return child_begin(n);
-    }
-    static ChildIteratorType direct_child_end(NodeRef n)
-    {
-        return child_end(n);
-    }
+    static ChildIteratorType direct_child_begin(NodeRef n) { return child_begin(n); }
+    static ChildIteratorType direct_child_end(NodeRef n) { return child_end(n); }
 
     static ChildEdgeIteratorType child_edge_begin(NodeRef n)
     {
@@ -1739,13 +1453,11 @@ struct GenericGraphTraits<const SlicedSVFGView*>
         return ChildEdgeIteratorType::end(n.view, n.raw);
     }
 
-    static NodeRef edge_dest(const EdgeRef& e)
+    static NodeRef edge_dest(const EdgeRef& e) { return e.dst; }
+    static inline unsigned getNodeID(NodeRef n) { return n.raw->getId(); }
+    static unsigned graphSize(const SlicedSVFGView* v)
     {
-        return e.dst;
-    }
-    static inline unsigned getNodeID(NodeRef n)
-    {
-        return n.raw->getId();
+        return static_cast<unsigned>(v->getKeptNodeCount());
     }
     static NodeRef getNode(const SlicedSVFGView* v, NodeID id)
     {
@@ -1764,10 +1476,7 @@ struct GenericGraphTraits<Inverse<const SlicedSVFGView*>>
     using ChildIteratorType = SlicedSVFGChildIterImpl<false>;
     using ChildEdgeIteratorType = SlicedSVFGEdgeIterImpl<false>;
 
-    static NodeRef getEntryNode(Inverse<const SlicedSVFGView*>)
-    {
-        return NodeRef{};
-    }
+    static NodeRef getEntryNode(Inverse<const SlicedSVFGView*>) { return NodeRef{}; }
 
     static ChildIteratorType child_begin(NodeRef n)
     {
@@ -1786,14 +1495,8 @@ struct GenericGraphTraits<Inverse<const SlicedSVFGView*>>
         return ChildEdgeIteratorType::end(n.view, n.raw);
     }
 
-    static NodeRef edge_dest(const EdgeRef& e)
-    {
-        return e.src;
-    }
-    static inline unsigned getNodeID(NodeRef n)
-    {
-        return n.raw->getId();
-    }
+    static NodeRef edge_dest(const EdgeRef& e) { return e.src; }
+    static inline unsigned getNodeID(NodeRef n) { return n.raw->getId(); }
 };
 
 } // End namespace SVF
