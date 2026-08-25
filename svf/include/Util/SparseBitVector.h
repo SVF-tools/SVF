@@ -1130,7 +1130,7 @@ public:
         return (First.index() * ElementSize) + First.find_first();
     }
 
-    // Return the last set bit in the bitmap.  Return -1 if no bits are set.
+// Return the last set bit in the bitmap.  Return -1 if no bits are set.
     int find_last() const
     {
         if (Elements.empty())
@@ -1139,7 +1139,7 @@ public:
         return (Last.index() * ElementSize) + Last.find_last();
     }
 
-    // Return true if the SparseBitVector is empty
+// Return true if the SparseBitVector is empty
     bool empty() const
     {
         return Elements.empty();

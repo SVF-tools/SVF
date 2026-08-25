@@ -24,9 +24,6 @@
  * SlicedGraphs.cpp
  *
  *      Author: Jiawei Yang
- *
- * Implementations of the general sliced graph views (SlicedGraphs.h): view
- * construction, bridged-edge contraction, and dot dumping.
  */
 
 #include "Graphs/SlicedGraphs.h"
@@ -36,13 +33,8 @@
 #include "Util/SVFUtil.h"
 #include "Util/ThreadAPI.h"
 #include "SVFIR/SVFIR.h"
-#include <algorithm>
 #include <cassert>
-#include <cctype>
-#include <fstream>
-#include <sstream>
-#include <queue>
-#include <iostream>
+#include <cstdlib>
 
 using namespace SVF;
 
@@ -56,7 +48,9 @@ namespace SVF
 template <>
 struct DOTGraphTraits<const SlicedICFGView*> : public DefaultDOTGraphTraits
 {
-    DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
+    DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple)
+    {
+    }
 
     static std::string getGraphName(const SlicedICFGView*)
     {
@@ -78,12 +72,18 @@ struct DOTGraphTraits<const SlicedICFGView*> : public DefaultDOTGraphTraits
     {
         std::string str = "shape=record";
         const ICFGNode* node = n.raw;
-        if (SVFUtil::isa<FunEntryICFGNode>(node)) str += ",color=yellow";
-        else if (SVFUtil::isa<FunExitICFGNode>(node)) str += ",color=green";
-        else if (SVFUtil::isa<CallICFGNode>(node)) str += ",color=red";
-        else if (SVFUtil::isa<RetICFGNode>(node)) str += ",color=blue";
-        else if (SVFUtil::isa<GlobalICFGNode>(node)) str += ",color=purple";
-        else str += ",color=black";
+        if (SVFUtil::isa<FunEntryICFGNode>(node))
+            str += ",color=yellow";
+        else if (SVFUtil::isa<FunExitICFGNode>(node))
+            str += ",color=green";
+        else if (SVFUtil::isa<CallICFGNode>(node))
+            str += ",color=red";
+        else if (SVFUtil::isa<RetICFGNode>(node))
+            str += ",color=blue";
+        else if (SVFUtil::isa<GlobalICFGNode>(node))
+            str += ",color=purple";
+        else
+            str += ",color=black";
         return str;
     }
 
@@ -92,7 +92,8 @@ struct DOTGraphTraits<const SlicedICFGView*> : public DefaultDOTGraphTraits
     static std::string getEdgeAttributes(SlicedICFGNodeRef, EdgeIter EI, const SlicedICFGView*)
     {
         const SlicedICFGEdgeRef& e = EI.currentEdge();
-        if (e.bridged) return "style=dashed,color=gray";
+        if (e.bridged)
+            return "style=dashed,color=gray";
         if (e.underlying != nullptr && SVFUtil::isa<CallCFGEdge>(e.underlying))
             return "style=solid,color=red";
         if (e.underlying != nullptr && SVFUtil::isa<RetCFGEdge>(e.underlying))
@@ -107,7 +108,9 @@ struct DOTGraphTraits<const SlicedICFGView*> : public DefaultDOTGraphTraits
 template <>
 struct DOTGraphTraits<const SlicedThreadCallGraphView*> : public DefaultDOTGraphTraits
 {
-    DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
+    DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple)
+    {
+    }
 
     static std::string getGraphName(const SlicedThreadCallGraphView*)
     {
@@ -133,8 +136,10 @@ struct DOTGraphTraits<const SlicedThreadCallGraphView*> : public DefaultDOTGraph
     static std::string getEdgeAttributes(SlicedCallGraphNodeRef, EdgeIter EI, const SlicedThreadCallGraphView*)
     {
         const CallGraphEdge* e = EI.currentEdge().underlying;
-        if (e != nullptr && e->getEdgeKind() == CallGraphEdge::TDForkEdge) return "color=green";
-        if (e != nullptr && e->getEdgeKind() == CallGraphEdge::CallRetEdge) return "color=blue";
+        if (e != nullptr && e->getEdgeKind() == CallGraphEdge::TDForkEdge)
+            return "color=green";
+        if (e != nullptr && e->getEdgeKind() == CallGraphEdge::CallRetEdge)
+            return "color=blue";
         return "color=black";
     }
 };
@@ -145,7 +150,9 @@ struct DOTGraphTraits<const SlicedThreadCallGraphView*> : public DefaultDOTGraph
 template <>
 struct DOTGraphTraits<const SlicedPAGView*> : public DefaultDOTGraphTraits
 {
-    DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
+    DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple)
+    {
+    }
 
     static std::string getGraphName(const SlicedPAGView*)
     {
@@ -171,12 +178,18 @@ struct DOTGraphTraits<const SlicedPAGView*> : public DefaultDOTGraphTraits
     static std::string getEdgeAttributes(SlicedPAGNodeRef, EdgeIter EI, const SlicedPAGView*)
     {
         const SVFStmt* s = EI.currentEdge().underlying;
-        if (SVFUtil::isa<LoadStmt>(s)) return "color=blue";
-        if (SVFUtil::isa<StoreStmt>(s)) return "color=red";
-        if (SVFUtil::isa<GepStmt>(s)) return "color=purple";
-        if (SVFUtil::isa<AddrStmt>(s)) return "color=green";
-        if (SVFUtil::isa<CallPE>(s)) return "color=orange";
-        if (SVFUtil::isa<RetPE>(s)) return "color=cyan";
+        if (SVFUtil::isa<LoadStmt>(s))
+            return "color=blue";
+        if (SVFUtil::isa<StoreStmt>(s))
+            return "color=red";
+        if (SVFUtil::isa<GepStmt>(s))
+            return "color=purple";
+        if (SVFUtil::isa<AddrStmt>(s))
+            return "color=green";
+        if (SVFUtil::isa<CallPE>(s))
+            return "color=orange";
+        if (SVFUtil::isa<RetPE>(s))
+            return "color=cyan";
         return "color=black";
     }
 };
@@ -187,7 +200,9 @@ struct DOTGraphTraits<const SlicedPAGView*> : public DefaultDOTGraphTraits
 template <>
 struct DOTGraphTraits<const SlicedSVFGView*> : public DefaultDOTGraphTraits
 {
-    DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
+    DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple)
+    {
+    }
 
     static std::string getGraphName(const SlicedSVFGView*)
     {
@@ -206,8 +221,10 @@ struct DOTGraphTraits<const SlicedSVFGView*> : public DefaultDOTGraphTraits
 
     static std::string getNodeAttributes(SlicedSVFGNodeRef n, const SlicedSVFGView*)
     {
-        if (SVFUtil::isa<StoreSVFGNode>(n.raw)) return "shape=record,color=red";
-        if (SVFUtil::isa<LoadSVFGNode>(n.raw)) return "shape=record,color=blue";
+        if (SVFUtil::isa<StoreSVFGNode>(n.raw))
+            return "shape=record,color=red";
+        if (SVFUtil::isa<LoadSVFGNode>(n.raw))
+            return "shape=record,color=blue";
         return "shape=record,color=black";
     }
 
@@ -215,7 +232,8 @@ struct DOTGraphTraits<const SlicedSVFGView*> : public DefaultDOTGraphTraits
     static std::string getEdgeAttributes(SlicedSVFGNodeRef, EdgeIter EI, const SlicedSVFGView*)
     {
         const SVFGEdge* e = EI.currentEdge().underlying;
-        if (e != nullptr && SVFUtil::isa<IndirectSVFGEdge>(e)) return "style=dashed";
+        if (e != nullptr && SVFUtil::isa<IndirectSVFGEdge>(e))
+            return "style=dashed";
         return "style=solid";
     }
 };
@@ -224,19 +242,16 @@ struct DOTGraphTraits<const SlicedSVFGView*> : public DefaultDOTGraphTraits
 // SlicedSVFGView
 //===----------------------------------------------------------------------===//
 
-// Retained rule (must mirror the sliced FSAM gate): Load/Store statement nodes
-// whose ICFG node was sliced out are removed; every other node is structural
-// for inter-procedural / memory-SSA flow and remains.
 bool SlicedSVFGView::isKeptNode(const SVFGNode* n) const
 {
-    if (SVFUtil::isa<StoreSVFGNode, LoadSVFGNode>(n))
-    {
-        const StmtSVFGNode* stmt = SVFUtil::cast<StmtSVFGNode>(n);
-        const ICFGNode* icfg = stmt->getICFGNode();
-        if (icfg != nullptr && !icfgView->isKeptNode(icfg))
-            return false;
-    }
-    return true;
+    if (n == nullptr)
+        return false;
+    return retainedNodeIds.test(n->getId());
+}
+
+size_t SlicedSVFGView::getKeptNodeCount() const
+{
+    return retainedNodeIds.count();
 }
 
 void SlicedSVFGView::dump(const std::string& filename) const
@@ -250,21 +265,18 @@ void SlicedSVFGView::dump(const std::string& filename) const
 //===----------------------------------------------------------------------===//
 
 SlicedICFGView::SlicedICFGView(ICFG* icfg,
-                               CallGraph* cg,
-                               const OrderedSet<const ICFGNode*>& keepNodes,
-                               const OrderedSet<const FunObjVar*>& keptFunctions,
-                               bool buildBridged)
+                               const OrderedSet<const ICFGNode*>& keepNodes)
     : icfg(icfg)
 {
-    buildICFGSets(keepNodes, keptFunctions);
-    if (buildBridged)
-        buildBridgedEdges();
+    buildICFGSets(keepNodes);
+    buildBridgedEdges();
 }
 
 // getSuccNodes/getPredNodes and the GenericGraphTraits iterators must agree on the
 // slice topology, so both go through the one traits definition (kept original
 // edges + bridged edges). The sliced MHP/Lock analyses reach the slice here.
-void SlicedICFGView::getSuccNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const
+void SlicedICFGView::getSuccNodes(
+    const ICFGNode* node, std::vector<const ICFGNode*>& out) const
 {
     out.clear();
     if (!isKeptNode(node))
@@ -277,7 +289,8 @@ void SlicedICFGView::getSuccNodes(const ICFGNode* node, std::vector<const ICFGNo
         out.push_back((*it).raw);
 }
 
-void SlicedICFGView::getPredNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const
+void SlicedICFGView::getPredNodes(
+    const ICFGNode* node, std::vector<const ICFGNode*>& out) const
 {
     out.clear();
     if (!isKeptNode(node))
@@ -303,32 +316,15 @@ void SlicedICFGView::dump(const std::string& filename) const
     GraphPrinter::WriteGraphToFile(SVFUtil::outs(), filename, this);
 }
 
-void SlicedICFGView::buildICFGSets(const OrderedSet<const ICFGNode*>& keepNodes,
-                                   const OrderedSet<const FunObjVar*>& keptFunctions)
+void SlicedICFGView::buildICFGSets(
+    const OrderedSet<const ICFGNode*>& keepNodes)
 {
-    // keepNodes already includes all necessary nodes (call/ret nodes and entry/exit nodes)
-    // so we just need to copy them and build edges.
-
-    // Copy keepNodes to keptNodes
     keptNodes.clear();
     keptNodes.insert(keepNodes.begin(), keepNodes.end());
 
     // Build keptNodesSet for fast lookup
     keptNodesSet.clear();
     keptNodesSet.insert(keptNodes.begin(), keptNodes.end());
-
-    // Build edges: only when both src and dst are in keptNodes
-    keptEdges.clear();
-    for (const ICFGNode* node : keptNodes)
-    {
-        for (const ICFGEdge* edge : node->getOutEdges())
-        {
-            if (edge && keptNodesSet.count(edge->getDstNode()))
-            {
-                keptEdges.insert(edge);
-            }
-        }
-    }
 }
 
 void SlicedICFGView::buildBridgedEdges()
@@ -341,26 +337,31 @@ void SlicedICFGView::buildBridgedEdges()
 
     // Index the removed nodes and their removed-only adjacency + kept successors.
     std::vector<const ICFGNode*> removed;
-    Map<const ICFGNode*, int> rid;
-    for (ICFG::iterator it = icfg->begin(), eit = icfg->end(); it != eit; ++it)
+    Map<const ICFGNode*, int> removedNodeIndex;
+    for (ICFG::iterator it = icfg->begin(), eit = icfg->end();
+            it != eit; ++it)
     {
-        const ICFGNode* n = it->second;
-        if (n == nullptr || keptNodesSet.count(n)) continue;
-        rid[n] = static_cast<int>(removed.size());
-        removed.push_back(n);
+        const ICFGNode* node = it->second;
+        if (node == nullptr || keptNodesSet.count(node))
+            continue;
+        removedNodeIndex[node] = static_cast<int>(removed.size());
+        removed.push_back(node);
     }
-    const int R = static_cast<int>(removed.size());
+    const int removedNodeCount = static_cast<int>(removed.size());
 
     // call_i -> ret_i summary for call sites with an omitted callee (some resolved
     // callee entry not retained), for every call site so paths can compose through
     // removed ones. ret_i is in the same caller, so the seed stays intra-procedural.
     Map<const ICFGNode*, const ICFGNode*> seedRet;
-    for (ICFG::iterator it = icfg->begin(), eit = icfg->end(); it != eit; ++it)
+    for (ICFG::iterator it = icfg->begin(), eit = icfg->end();
+            it != eit; ++it)
     {
         const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(it->second);
-        if (call == nullptr || call->getRetICFGNode() == nullptr) continue;
-        for (const ICFGEdge* e : call->getOutEdges())
-            if (e && SVFUtil::isa<CallCFGEdge>(e) && keptNodesSet.count(e->getDstNode()) == 0)
+        if (call == nullptr || call->getRetICFGNode() == nullptr)
+            continue;
+        for (const ICFGEdge* edge : call->getOutEdges())
+            if (edge != nullptr && SVFUtil::isa<CallCFGEdge>(edge) &&
+                    keptNodesSet.count(edge->getDstNode()) == 0)
             {
                 seedRet[call] = call->getRetICFGNode();
                 break;
@@ -368,134 +369,179 @@ void SlicedICFGView::buildBridgedEdges()
     }
     // Local successors = intra edges + matched call->ret seeds; the only edges
     // contraction may traverse. Original call/ret edges are excluded.
-    auto localSuccs = [&](const ICFGNode* n, std::vector<const ICFGNode*>& out)
+    std::vector<std::vector<int>> removedSuccessors(removedNodeCount);
+    std::vector<std::vector<const ICFGNode*>>
+                                           keptSuccessors(removedNodeCount);
+    std::vector<const ICFGNode*> successors;
+    for (int nodeIndex = 0; nodeIndex < removedNodeCount; ++nodeIndex)
     {
-        out.clear();
-        for (const ICFGEdge* e : n->getOutEdges())
-            if (e && SVFUtil::isa<IntraCFGEdge>(e) && e->getDstNode())
-                out.push_back(e->getDstNode());
-        auto sit = seedRet.find(n);
-        if (sit != seedRet.end()) out.push_back(sit->second);
-    };
-
-    std::vector<std::vector<int>> radj(R);                 // removed -> removed succ ids
-    std::vector<std::vector<const ICFGNode*>> keptSucc(R);  // removed -> kept succs
-    std::vector<const ICFGNode*> succs;
-    for (int i = 0; i < R; ++i)
-    {
-        localSuccs(removed[i], succs);
-        for (const ICFGNode* d : succs)
+        getLocalSuccessors(removed[nodeIndex], seedRet, successors);
+        for (const ICFGNode* successor : successors)
         {
-            if (keptNodesSet.count(d)) keptSucc[i].push_back(d);
-            else radj[i].push_back(rid[d]);
+            if (keptNodesSet.count(successor))
+                keptSuccessors[nodeIndex].push_back(successor);
+            else
+            {
+                const auto found = removedNodeIndex.find(successor);
+                if (found != removedNodeIndex.end())
+                    removedSuccessors[nodeIndex].push_back(found->second);
+            }
         }
     }
 
     // Iterative Tarjan SCC over the removed subgraph. Components are produced in
     // reverse-topological order, so comp ids of a node's successors are < its own.
-    std::vector<int> idx(R, -1), low(R, 0), comp(R, -1);
-    std::vector<char> onstk(R, 0);
-    std::vector<int> tstk;
-    int counter = 0, ncomp = 0;
-    for (int s0 = 0; s0 < R; ++s0)
+    std::vector<int> discoveryIndex(removedNodeCount, -1);
+    std::vector<int> lowLink(removedNodeCount, 0);
+    std::vector<int> component(removedNodeCount, -1);
+    std::vector<char> onStack(removedNodeCount, 0);
+    std::vector<int> tarjanStack;
+    int nextDiscoveryIndex = 0;
+    int componentCount = 0;
+    for (int root = 0; root < removedNodeCount; ++root)
     {
-        if (idx[s0] != -1) continue;
+        if (discoveryIndex[root] != -1)
+            continue;
         std::vector<std::pair<int, size_t>> work;
-        work.emplace_back(s0, 0);
+        work.emplace_back(root, 0);
         while (!work.empty())
         {
-            int v = work.back().first;
-            size_t& pi = work.back().second;
-            if (pi == 0)
+            const int nodeIndex = work.back().first;
+            size_t& successorPosition = work.back().second;
+            if (successorPosition == 0)
             {
-                idx[v] = low[v] = counter++;
-                tstk.push_back(v);
-                onstk[v] = 1;
+                discoveryIndex[nodeIndex] =
+                    lowLink[nodeIndex] = nextDiscoveryIndex++;
+                tarjanStack.push_back(nodeIndex);
+                onStack[nodeIndex] = 1;
             }
             bool descend = false;
-            while (pi < radj[v].size())
+            while (successorPosition < removedSuccessors[nodeIndex].size())
             {
-                int w = radj[v][pi++];
-                if (idx[w] == -1)
+                const int successorIndex =
+                    removedSuccessors[nodeIndex][successorPosition++];
+                if (discoveryIndex[successorIndex] == -1)
                 {
-                    work.emplace_back(w, 0);
+                    work.emplace_back(successorIndex, 0);
                     descend = true;
                     break;
                 }
-                else if (onstk[w] && idx[w] < low[v]) low[v] = idx[w];
+                if (onStack[successorIndex] &&
+                        discoveryIndex[successorIndex] < lowLink[nodeIndex])
+                    lowLink[nodeIndex] = discoveryIndex[successorIndex];
             }
-            if (descend) continue;
-            if (low[v] == idx[v])
+            if (descend)
+                continue;
+            if (lowLink[nodeIndex] == discoveryIndex[nodeIndex])
             {
                 while (true)
                 {
-                    int w = tstk.back();
-                    tstk.pop_back();
-                    onstk[w] = 0;
-                    comp[w] = ncomp;
-                    if (w == v) break;
+                    const int componentNode = tarjanStack.back();
+                    tarjanStack.pop_back();
+                    onStack[componentNode] = 0;
+                    component[componentNode] = componentCount;
+                    if (componentNode == nodeIndex)
+                        break;
                 }
-                ++ncomp;
+                ++componentCount;
             }
             work.pop_back();
             if (!work.empty())
             {
-                int p = work.back().first;
-                if (low[v] < low[p]) low[p] = low[v];
+                const int parentIndex = work.back().first;
+                if (lowLink[nodeIndex] < lowLink[parentIndex])
+                    lowLink[parentIndex] = lowLink[nodeIndex];
             }
         }
     }
 
     // Condensation: base kept-successors and DAG successors per component.
-    std::vector<OrderedSet<const ICFGNode*>> baseKept(ncomp);
-    std::vector<OrderedSet<int>> dagSucc(ncomp);
-    for (int i = 0; i < R; ++i)
+    std::vector<OrderedSet<const ICFGNode*>> baseKept(componentCount);
+    std::vector<OrderedSet<int>> componentSuccessors(componentCount);
+    for (int nodeIndex = 0; nodeIndex < removedNodeCount; ++nodeIndex)
     {
-        int ci = comp[i];
-        for (const ICFGNode* k : keptSucc[i]) baseKept[ci].insert(k);
-        for (int j : radj[i]) if (comp[j] != ci) dagSucc[ci].insert(comp[j]);
+        const int componentIndex = component[nodeIndex];
+        for (const ICFGNode* keptSuccessor : keptSuccessors[nodeIndex])
+            baseKept[componentIndex].insert(keptSuccessor);
+        for (int successorIndex : removedSuccessors[nodeIndex])
+            if (component[successorIndex] != componentIndex)
+                componentSuccessors[componentIndex].insert(
+                    component[successorIndex]);
     }
 
     // Propagate reachKept in ascending comp order (successors have smaller ids).
-    std::vector<OrderedSet<const ICFGNode*>> reachKept(ncomp);
-    for (int c = 0; c < ncomp; ++c)
+    std::vector<OrderedSet<const ICFGNode*>>
+                                          reachableKeptNodes(componentCount);
+    for (int componentIndex = 0; componentIndex < componentCount;
+            ++componentIndex)
     {
-        OrderedSet<const ICFGNode*>& acc = reachKept[c];
-        acc = baseKept[c];
-        for (int d : dagSucc[c]) acc.insert(reachKept[d].begin(), reachKept[d].end());
+        OrderedSet<const ICFGNode*>& reachable =
+            reachableKeptNodes[componentIndex];
+        reachable = baseKept[componentIndex];
+        for (int successorComponent : componentSuccessors[componentIndex])
+            reachable.insert(
+                reachableKeptNodes[successorComponent].begin(),
+                reachableKeptNodes[successorComponent].end());
     }
 
     // bridgedEdges[u] = kept nodes reached from kept u through removed local paths,
     // plus a matched call->ret summary when u is a seeded call site (kept ret).
-    for (const ICFGNode* u : keptNodesSet)
+    for (const ICFGNode* source : keptNodesSet)
     {
-        localSuccs(u, succs);
-        auto sit = seedRet.find(u);
-        for (const ICFGNode* s : succs)
+        getLocalSuccessors(source, seedRet, successors);
+        const auto seedReturn = seedRet.find(source);
+        for (const ICFGNode* successor : successors)
         {
-            if (keptNodesSet.count(s))
+            if (keptNodesSet.count(successor))
             {
                 // Kept seed target: no real edge exists, so record the bridge; a
                 // kept intra target is a real edge handled by getSuccNodes.
-                if (sit != seedRet.end() && sit->second == s)
+                if (seedReturn != seedRet.end() &&
+                        seedReturn->second == successor)
                 {
-                    bridgedEdges[u].insert(s);
-                    bridgedPreds[s].insert(u);
+                    bridgedEdges[source].insert(successor);
+                    bridgedPreds[successor].insert(source);
                 }
                 continue;
             }
-            for (const ICFGNode* v : reachKept[comp[rid[s]]])
+            const auto removedIndex = removedNodeIndex.find(successor);
+            if (removedIndex == removedNodeIndex.end())
             {
-                bridgedEdges[u].insert(v);
-                bridgedPreds[v].insert(u);
+                SVFUtil::errs()
+                        << "[ERROR] Local ICFG successor is neither kept nor indexed\n";
+                std::abort();
+            }
+            for (const ICFGNode* target :
+                    reachableKeptNodes[component[removedIndex->second]])
+            {
+                bridgedEdges[source].insert(target);
+                bridgedPreds[target].insert(source);
             }
         }
     }
 
     size_t totalBridgedEdges = 0;
-    for (const auto& pair : bridgedEdges) totalBridgedEdges += pair.second.size();
+    for (const auto& pair : bridgedEdges)
+        totalBridgedEdges += pair.second.size();
     SVFUtil::outs() << "[SlicedICFGView] Built " << totalBridgedEdges
-                    << " bridged edges across " << bridgedEdges.size() << " source nodes\n";
+                    << " bridged edges across " << bridgedEdges.size()
+                    << " source nodes\n";
+}
+
+void SlicedICFGView::getLocalSuccessors(
+    const ICFGNode* node,
+    const Map<const ICFGNode*, const ICFGNode*>& callsiteReturnNodes,
+    std::vector<const ICFGNode*>& successors)
+{
+    successors.clear();
+    for (const ICFGEdge* edge : node->getOutEdges())
+        if (edge != nullptr && SVFUtil::isa<IntraCFGEdge>(edge) &&
+                edge->getDstNode() != nullptr)
+            successors.push_back(edge->getDstNode());
+
+    const auto returnNode = callsiteReturnNodes.find(node);
+    if (returnNode != callsiteReturnNodes.end())
+        successors.push_back(returnNode->second);
 }
 
 //===----------------------------------------------------------------------===//
@@ -512,72 +558,20 @@ void SlicedPAGView::buildKeptNodeIds()
 {
     for (const SVFStmt* stmt : keptStmts)
     {
-        // extract the node IDs involved in the statement
-        const AssignStmt* assignStmt = SVFUtil::dyn_cast<AssignStmt>(stmt);
-        if (assignStmt)
+        // Handle the two SVF statement abstractions directly so new concrete
+        // statement subclasses cannot silently disappear from the PAG view.
+        if (const AssignStmt* assignStmt = SVFUtil::dyn_cast<AssignStmt>(stmt))
         {
             keptNodeIds.insert(assignStmt->getLHSVarID());
             keptNodeIds.insert(assignStmt->getRHSVarID());
             continue;
         }
-
-        const LoadStmt* loadStmt = SVFUtil::dyn_cast<LoadStmt>(stmt);
-        if (loadStmt)
+        if (const MultiOpndStmt* multi =
+                    SVFUtil::dyn_cast<MultiOpndStmt>(stmt))
         {
-            keptNodeIds.insert(loadStmt->getLHSVarID());
-            keptNodeIds.insert(loadStmt->getRHSVarID());
-            continue;
-        }
-
-        const StoreStmt* storeStmt = SVFUtil::dyn_cast<StoreStmt>(stmt);
-        if (storeStmt)
-        {
-            keptNodeIds.insert(storeStmt->getLHSVarID());
-            keptNodeIds.insert(storeStmt->getRHSVarID());
-            continue;
-        }
-
-        const CopyStmt* copyStmt = SVFUtil::dyn_cast<CopyStmt>(stmt);
-        if (copyStmt)
-        {
-            keptNodeIds.insert(copyStmt->getLHSVarID());
-            keptNodeIds.insert(copyStmt->getRHSVarID());
-            continue;
-        }
-
-        const GepStmt* gepStmt = SVFUtil::dyn_cast<GepStmt>(stmt);
-        if (gepStmt)
-        {
-            keptNodeIds.insert(gepStmt->getLHSVarID());
-            keptNodeIds.insert(gepStmt->getRHSVarID());
-            continue;
-        }
-
-        const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt);
-        if (addrStmt)
-        {
-            keptNodeIds.insert(addrStmt->getLHSVarID());
-            keptNodeIds.insert(addrStmt->getRHSVarID());
-            continue;
-        }
-
-        const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(stmt);
-        if (callPE)
-        {
-            // CallPE is a MultiOpndStmt (result + per-call-site operands)
-            // rather than a single-LHS/RHS AssignStmt.
-            keptNodeIds.insert(callPE->getResID());
-            for (u32_t i = 0; i < callPE->getOpVarNum(); ++i)
-                keptNodeIds.insert(callPE->getOpVarID(i));
-            continue;
-        }
-
-        const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(stmt);
-        if (retPE)
-        {
-            keptNodeIds.insert(retPE->getLHSVarID());
-            keptNodeIds.insert(retPE->getRHSVarID());
-            continue;
+            keptNodeIds.insert(multi->getResID());
+            for (u32_t i = 0; i < multi->getOpVarNum(); ++i)
+                keptNodeIds.insert(multi->getOpVarID(i));
         }
     }
 }
@@ -605,24 +599,27 @@ SlicedThreadCallGraphView::SlicedThreadCallGraphView(ThreadCallGraph* tcg,
     }
     this->extendedKeptNodes = extendedKeptNodes;
     buildKeptNodes();
-    // extendedKeptNodes already includes all necessary nodes from performSpatialSlicing;
-    // buildCallGraphSets builds the kept edges (filtering pruned call sites when it is non-empty).
+    // The input already contains the slicing targets and control-flow anchors;
+    // buildCallGraphSets filters edges whose callsites were pruned.
     buildCallGraphSets();
 }
 
 void SlicedThreadCallGraphView::buildKeptNodes()
 {
-    for (CallGraph::iterator it = tcg->begin(), eit = tcg->end(); it != eit; ++it)
+    for (CallGraph::iterator it = tcg->begin(), eit = tcg->end();
+            it != eit; ++it)
     {
         const CallGraphNode* node = it->second;
-        if (node && node->getFunction() && keptFunctionsSet.count(node->getFunction()))
+        if (node != nullptr && node->getFunction() != nullptr &&
+                keptFunctionsSet.count(node->getFunction()))
         {
             keptNodes.insert(node);
         }
     }
 }
 
-void SlicedThreadCallGraphView::getOutEdgesOf(const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const
+void SlicedThreadCallGraphView::getOutEdgesOf(
+    const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const
 {
     out.clear();
     if (!isKeptNode(node))
@@ -636,7 +633,8 @@ void SlicedThreadCallGraphView::getOutEdgesOf(const CallGraphNode* node, std::ve
         out.push_back((*it).underlying);
 }
 
-void SlicedThreadCallGraphView::getInEdgesOf(const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const
+void SlicedThreadCallGraphView::getInEdgesOf(
+    const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const
 {
     out.clear();
     if (!isKeptNode(node))
@@ -649,6 +647,92 @@ void SlicedThreadCallGraphView::getInEdgesOf(const CallGraphNode* node, std::vec
         out.push_back((*it).underlying);
 }
 
+void SlicedThreadCallGraphView::getDirectCallsOf(
+    const CallGraphEdge* edge, std::vector<const CallICFGNode*>& out) const
+{
+    out.clear();
+    const auto found = keptDirectCalls.find(edge);
+    if (found != keptDirectCalls.end())
+        out.insert(out.end(), found->second.begin(), found->second.end());
+}
+
+void SlicedThreadCallGraphView::getIndirectCallsOf(
+    const CallGraphEdge* edge, std::vector<const CallICFGNode*>& out) const
+{
+    out.clear();
+    const auto found = keptIndirectCalls.find(edge);
+    if (found != keptIndirectCalls.end())
+        out.insert(out.end(), found->second.begin(), found->second.end());
+}
+
+bool SlicedThreadCallGraphView::containsCallSite(
+    const CallGraphEdge* edge, const CallICFGNode* callSite) const
+{
+    const auto direct = keptDirectCalls.find(edge);
+    if (direct != keptDirectCalls.end() && direct->second.count(callSite))
+        return true;
+    const auto indirect = keptIndirectCalls.find(edge);
+    return indirect != keptIndirectCalls.end() &&
+           indirect->second.count(callSite);
+}
+
+void SlicedThreadCallGraphView::getCalleesOf(
+    const CallICFGNode* callSite, CallGraph::FunctionSet& callees) const
+{
+    callees.clear();
+    const CallGraphNode* caller = tcg->getCallGraphNode(callSite->getFun());
+    if (!isKeptNode(caller))
+    {
+        return;
+    }
+    std::vector<const CallGraphEdge*> outEdges;
+    getOutEdgesOf(caller, outEdges);
+    for (const CallGraphEdge* edge : outEdges)
+    {
+        if (containsCallSite(edge, callSite))
+        {
+            callees.insert(edge->getDstNode()->getFunction());
+        }
+    }
+}
+
+void SlicedThreadCallGraphView::getForkEdgesOf(
+    const CallICFGNode* callSite,
+    std::vector<const CallGraphEdge*>& out) const
+{
+    out.clear();
+    if (!extendedKeptNodes.count(callSite) ||
+            !tcg->hasThreadForkEdge(callSite))
+        return;
+    for (auto it = tcg->getForkEdgeBegin(callSite),
+            end = tcg->getForkEdgeEnd(callSite); it != end; ++it)
+    {
+        const CallGraphEdge* edge = *it;
+        if (isKeptNode(edge->getSrcNode()) &&
+                isKeptNode(edge->getDstNode()) &&
+                containsCallSite(edge, callSite))
+            out.push_back(edge);
+    }
+}
+
+void SlicedThreadCallGraphView::getJoinEdgesOf(
+    const CallICFGNode* callSite,
+    std::vector<const CallGraphEdge*>& out) const
+{
+    out.clear();
+    if (!extendedKeptNodes.count(callSite) ||
+            !tcg->hasThreadJoinEdge(callSite))
+        return;
+    for (auto it = tcg->getJoinEdgeBegin(callSite),
+            end = tcg->getJoinEdgeEnd(callSite); it != end; ++it)
+    {
+        const CallGraphEdge* edge = *it;
+        if (isKeptNode(edge->getSrcNode()) &&
+                isKeptNode(edge->getDstNode()))
+            out.push_back(edge);
+    }
+}
+
 bool SlicedThreadCallGraphView::isKeptNode(const CallGraphNode* node) const
 {
     return keptNodes.count(node) > 0;
@@ -658,6 +742,8 @@ void SlicedThreadCallGraphView::buildCallGraphSets()
 {
     // rebuild kept edges, accounting for whether the call site is kept
     keptEdges.clear();
+    keptDirectCalls.clear();
+    keptIndirectCalls.clear();
     indirectSitesWithEmptyTargets.clear();
 
     // CallGraph edge: src/dst both in kept functions and the call site still in the kept ICFG node set
@@ -666,51 +752,45 @@ void SlicedThreadCallGraphView::buildCallGraphSets()
         for (const CallGraphEdge* edge : srcNode->getOutEdges())
         {
             const CallGraphNode* dstNode = edge ? edge->getDstNode() : nullptr;
-            if (!dstNode || !keptNodes.count(dstNode))
+            if (dstNode == nullptr || !keptNodes.count(dstNode))
             {
                 continue;
             }
 
-            const CallGraphEdge::CallInstSet &directCalls = edge->getDirectCalls();
-            const CallGraphEdge::CallInstSet &indirectCalls = edge->getIndirectCalls();
-            const CallICFGNode* callSite = nullptr;
-            if (!directCalls.empty())
-            {
-                callSite = *directCalls.begin();
-            }
-            else if (!indirectCalls.empty())
-            {
-                callSite = *indirectCalls.begin();
-            }
+            CallGraphEdge::CallInstSet& retainedDirect = keptDirectCalls[edge];
+            for (const CallICFGNode* callSite : edge->getDirectCalls())
+                if (extendedKeptNodes.count(callSite))
+                    retainedDirect.insert(callSite);
 
-            if (!extendedKeptNodes.empty() && callSite && !extendedKeptNodes.count(callSite))
+            CallGraphEdge::CallInstSet& retainedIndirect = keptIndirectCalls[edge];
+            for (const CallICFGNode* callSite : edge->getIndirectCalls())
+                if (extendedKeptNodes.count(callSite))
+                    retainedIndirect.insert(callSite);
+
+            const bool hasOriginalCallSites =
+                !edge->getDirectCalls().empty() || !edge->getIndirectCalls().empty();
+            if (hasOriginalCallSites && retainedDirect.empty() && retainedIndirect.empty())
             {
-                // call site was pruned, skip this edge
+                keptDirectCalls.erase(edge);
+                keptIndirectCalls.erase(edge);
                 continue;
             }
 
-            // indirect call: record if all targets were filtered out
-            if (callSite && edge->getEdgeKind() == CallGraphEdge::CallRetEdge &&
-                    tcg->hasIndCSCallees(callSite))
-            {
-                const CallGraph::FunctionSet& targets = tcg->getIndCSCallees(callSite);
-                bool hasKeptTarget = false;
-                for (const FunObjVar* tgt : targets)
-                {
-                    if (keptFunctionsSet.count(tgt))
-                    {
-                        hasKeptTarget = true;
-                        break;
-                    }
-                }
-                if (!hasKeptTarget)
-                {
-                    indirectSitesWithEmptyTargets.insert(callSite);
-                }
-            }
-
-            keptEdges.insert(const_cast<CallGraphEdge*>(edge));
+            keptEdges.insert(edge);
         }
+    }
+
+    // An indirect callsite is empty only when none of its original targets is
+    // represented by a retained callsite-to-callee relation.
+    for (const ICFGNode* node : extendedKeptNodes)
+    {
+        const CallICFGNode* callSite = SVFUtil::dyn_cast<CallICFGNode>(node);
+        if (callSite == nullptr || !tcg->hasIndCSCallees(callSite))
+            continue;
+        CallGraph::FunctionSet callees;
+        getCalleesOf(callSite, callees);
+        if (callees.empty())
+            indirectSitesWithEmptyTargets.insert(callSite);
     }
 }
 
@@ -725,14 +805,18 @@ void SlicedThreadCallGraphView::dump(const std::string& filename) const
 // SlicedSVFIRView
 //===----------------------------------------------------------------------===//
 
-SlicedSVFIRView::SlicedSVFIRView(SVFIR* svfIr,
-                                 CallGraph* cg,
+SlicedSVFIRView::SlicedSVFIRView(SVFIR* svfir,
+                                 ThreadCallGraph& callGraph,
                                  ICFG* icfg,
-                                 const OrderedSet<const ICFGNode*>& keepNodes,
-                                 bool buildBridged)
-    : svfIr(svfIr)
+                                 const OrderedSet<const ICFGNode*>& keepNodes)
+    : svfir(svfir)
 {
-    // Derive keptFunctions from keepNodes
+    // A retained function is represented by explicit synthetic entry/exit
+    // nodes. Graph-generic MHP and lock propagation can therefore never seed or
+    // rendezvous at a node outside the view.
+    OrderedSet<const ICFGNode*> extendedKeepNodes = keepNodes;
+
+    // Derive keptFunctions from keepNodes.
     OrderedSet<const FunObjVar*> keptFunctions;
     for (const ICFGNode* node : keepNodes)
     {
@@ -741,30 +825,41 @@ SlicedSVFIRView::SlicedSVFIRView(SVFIR* svfIr,
             keptFunctions.insert(node->getFun());
         }
     }
+    for (const FunObjVar* fun : keptFunctions)
+    {
+        extendedKeepNodes.insert(icfg->getFunEntryICFGNode(fun));
+        extendedKeepNodes.insert(icfg->getFunExitICFGNode(fun));
+    }
 
-    // The MTA pipeline always slices over a ThreadCallGraph.
-    ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(cg);
-    assert(tcg != nullptr && "SlicedSVFIRView expects a ThreadCallGraph");
-    tcgView = std::make_unique<SlicedThreadCallGraphView>(tcg, keptFunctions, keepNodes);
+    tcgView = std::make_unique<SlicedThreadCallGraphView>(
+                  &callGraph, keptFunctions, extendedKeepNodes);
 
     // Create ICFG view (based on keepNodes and keptFunctions)
-    icfgView = std::make_unique<SlicedICFGView>(icfg, cg, keepNodes, keptFunctions, buildBridged);
+    icfgView = std::make_unique<SlicedICFGView>(
+                   icfg, extendedKeepNodes);
+}
 
-    // Create PAG view (extract statements from keepNodes)
+void SlicedSVFIRView::ensurePAGView() const
+{
+    if (pagView != nullptr)
+        return;
+
+    // Most analyses consume only the sliced ICFG and call graph. Materialize
+    // the PAG membership only for clients that explicitly request that view.
     OrderedSet<const SVFStmt*> keptStmts;
-    for (const ICFGNode* node : keepNodes)
+    for (const ICFGNode* node : icfgView->getKeptNodes())
     {
         const ICFGNode::SVFStmtList& stmts = node->getSVFStmts();
         keptStmts.insert(stmts.begin(), stmts.end());
     }
-    pagView = std::make_unique<SlicedPAGView>(svfIr, keptStmts);
+    pagView = std::make_unique<SlicedPAGView>(svfir, keptStmts);
 }
 
 void SlicedSVFIRView::dumpAll(const std::string& prefix) const
 {
     icfgView->dump(prefix + "_icfg");
     tcgView->dump(prefix + "_threadcallgraph");
-    pagView->dump(prefix + "_pag");
+    getPAG()->dump(prefix + "_pag");
 }
 
 void SlicedSVFIRView::dumpStats(const std::string& prefix) const
@@ -799,7 +894,9 @@ const ICFGNode* SlicedICFGView::getFunEntry(const FunObjVar* fun) const
         if (isKeptNode(fe))
             return fe;
     }
-    // Otherwise: first kept node in the entry block, or the original entry.
+    // A view constructor always retains the synthetic entry. Keep the fallback
+    // for defensive compatibility with directly constructed SlicedICFGViews,
+    // but never return a node outside this view.
     const ICFGNode* entry = fun->getEntryBlock()->front();
     if (isKeptNode(entry))
         return entry;
@@ -808,7 +905,13 @@ const ICFGNode* SlicedICFGView::getFunEntry(const FunObjVar* fun) const
         if (isKeptNode(node))
             return node;
     }
-    return entry;
+    return nullptr;
+}
+
+const ICFGNode* SlicedICFGView::getFunExit(const FunObjVar* fun) const
+{
+    const ICFGNode* exit = icfg->getFunExitICFGNode(fun);
+    return isKeptNode(exit) ? exit : nullptr;
 }
 
 void SlicedICFGView::getFunICFGNodes(const FunObjVar* fun,
@@ -822,28 +925,6 @@ void SlicedICFGView::getFunICFGNodes(const FunObjVar* fun,
             if (isKeptNode(node))
                 out.push_back(node);
     }
-}
-
-//===----------------------------------------------------------------------===//
-// SlicedSVFIRView call-graph helpers used by the sliced analyses.
-//===----------------------------------------------------------------------===//
-
-void SlicedSVFIRView::getInEdgesOfCallGraphNode(const CallGraphNode* node,
-        std::vector<const CallGraphEdge*>& out) const
-{
-    out.clear();
-    if (getThreadCallGraph() != nullptr)
-        getThreadCallGraph()->getInEdgesOf(node, out);
-    else
-        for (CallGraphEdge* edge : node->getInEdges())
-            out.push_back(edge);
-}
-
-const CallGraph* SlicedSVFIRView::getAnalysisCallGraph() const
-{
-    if (getThreadCallGraph() != nullptr)
-        return getThreadCallGraph()->getOriginalCallGraph();
-    return PAG::getPAG()->getCallGraph();
 }
 
 } // End namespace SVF

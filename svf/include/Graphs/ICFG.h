@@ -309,6 +309,12 @@ template<> struct GenericGraphTraits<SVF::ICFG*> : public GenericGraphTraits<SVF
     {
         return fun->getEntryBlock()->front();
     }
+    /// Exit node of fun under the whole ICFG.
+    static const SVF::ICFGNode* getFunExit(SVF::ICFG* graph,
+                                           const SVF::FunObjVar* fun)
+    {
+        return graph->getFunExitICFGNode(fun);
+    }
     /// Nodes of fun contained in this graph (whole ICFG: all of them).
     static void getFunICFGNodes(SVF::ICFG*, const SVF::FunObjVar* fun,
                                 std::vector<const SVF::ICFGNode*>& out)

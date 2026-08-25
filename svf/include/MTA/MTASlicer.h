@@ -24,14 +24,6 @@
  * MTASlicer.h
  *
  *      Author: Jiawei Yang
- *
- * The program slicers of "Multi-Stage On-Demand Program Slicing for Modular
- * Analysis of Multi-Threaded Programs" (ISSTA 2026): a shared MTASlicerBase plus
- * three concrete slicers.
- *   - MultiStageSlicer   : ILA (sync + dual + call) slice for the thread-aware analysis
- *   (its FSPTA stage: data-dependence slice over the thread-aware VFG_pre)
- *   - SingleSlicer: one unified slice combining all three dependence kinds, shared
- *                   by both ILA and FSPTA (the single-pass baseline, MSli §3/§5.4)
  */
 
 #ifndef MTA_MTASLICER_H
@@ -48,15 +40,11 @@
 #include "Graphs/ThreadCallGraph.h"
 #include "Graphs/ICFG.h"
 #include "Graphs/ICFGNode.h"
-#include <fstream>
+#include <deque>
 #include "Graphs/ICFGEdge.h"
 #include "Graphs/CallGraph.h"
 #include "Util/WorkList.h"
 #include <memory>
-#include <set>
-#include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 #include <utility>
 
@@ -67,6 +55,20 @@ namespace SVF
 class SVFG;
 class VFGNode;          // SVFGNode is a typedef for VFGNode
 class PointerAnalysis;
+
+struct ValueFlowSlice
+{
+    OrderedSet<const SVFGNode*> svfgNodes;
+    OrderedSet<const ICFGNode*> icfgNodes;
+
+    NodeBS nodeIds() const
+    {
+        NodeBS ids;
+        for (const SVFGNode* node : svfgNodes)
+            ids.set(node->getId());
+        return ids;
+    }
+};
 
 
 //===----------------------------------------------------------------------===//
@@ -80,15 +82,14 @@ class PointerAnalysis;
 class SlicedTCT : public TCT
 {
 public:
-    /// @param p PointerAnalysis (the shared Andersen pre-analysis)
+    /// @param pointerAnalysis the shared Andersen pre-analysis
     /// @param slicedView SlicedSVFIRView containing a SlicedThreadCallGraphView
-    /// @param maxContextLen Max context length (0 = use Options::MaxContextLen())
-    SlicedTCT(PointerAnalysis* p, const SlicedSVFIRView* slicedView, u32_t maxContextLen = 0);
+    /// @param contextLimit maximum context length for the main analysis
+    static std::unique_ptr<SlicedTCT> create(
+        PointerAnalysis& pointerAnalysis, const SlicedSVFIRView& slicedView,
+        u32_t contextLimit);
 
     ~SlicedTCT() override = default;
-
-    /// Override pushCxt to use the custom maxContextLen
-    void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const FunObjVar* callee) override;
 
 protected:
     void build() override;
@@ -98,11 +99,12 @@ protected:
     void handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, const CallICFGNode* cs) override;
 
 private:
+    SlicedTCT(PointerAnalysis& pointerAnalysis,
+              const SlicedSVFIRView& slicedView, u32_t contextLimit);
+
     void collectEntryFunInCallGraph() override;
 
-    const SlicedThreadCallGraphView* tcgView; // ThreadCallGraph view (from the sliced view)
-    u32_t maxContextLen; // 0 means use Options::MaxContextLen()
-
+    const SlicedThreadCallGraphView& tcgView;
     bool isKeptNode(const CallGraphNode* node) const;
     bool isKeptEdge(const CallGraphEdge* edge) const;
     void getKeptForkSites(std::vector<const ICFGNode*>& out) const;
@@ -119,62 +121,61 @@ private:
 class MTASlicerBase
 {
 public:
-    MTASlicerBase(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
-                  LockAnalysis* lockAnalysis, SVFG* vfg = nullptr);
-    virtual ~MTASlicerBase();
+    MTASlicerBase(SVFIR* svfir, AndersenBase* pta, MHP* mhp,
+                  LockAnalysis* lockAnalysis, SVFG* svfg = nullptr);
 
 protected:
-    SVFIR* svfIr;
+    SVFIR* svfir;
     AndersenBase* pta;
     MHP* mhp;
     LockAnalysis* lockAnalysis;
     CallGraph* callGraph;
-    SVFG* vfg;   ///< thread-aware VFG_pre (PTA/Single slicers; null for MTA)
+    SVFG* svfg;   ///< thread-aware VFG_pre (PTA/Single slicers; null for MTA)
 
     // === Data flow analysis helper ===
-    /**
-     * Paper-faithful (§4.3) data-dependence slice over the thread-aware SVFG
-     * (VFG_pre): seed from the value-flow nodes of the given statements and
-     * backward-traverse every value-flow edge -- direct (top-level def-use),
-     * indirect (address-taken / MemSSA def-use), and thread-aware interference.
-     * Returns the kept ICFG nodes. This is the single dependence model used
-     * by the FSPTA stage.
-     */
-    OrderedSet<const ICFGNode*> sliceDataDependenceOverVFG(
-        const OrderedSet<const SVFStmt*>& seeds, SVFG* vfg);
-
     /// The SVFG-node granularity of the data-dependence slice above: the set of
     /// VFG nodes reachable backward from the seeds. ThreadVF(VFG'_pre) is exactly
     /// the thread-aware edges whose *both* endpoints lie in this set, so ILA
     /// slicing uses it to restrict the [THREAD-VF] sources to surviving edges.
     OrderedSet<const VFGNode*> computeDataDependenceSVFGNodes(
-        const OrderedSet<const SVFStmt*>& seeds, SVFG* vfg);
+        const OrderedSet<const SVFStmt*>& seeds, SVFG* svfg);
+
+    static void enqueueSVFGNode(const SVFGNode* node,
+                                OrderedSet<const SVFGNode*>& visited,
+                                std::deque<const SVFGNode*>& worklist);
 
     /// Project the retained VFG nodes (plus the seeds) onto their ICFG nodes.
     OrderedSet<const ICFGNode*> svfgNodesToICFGNodes(
         const OrderedSet<const VFGNode*>& nodes, const OrderedSet<const SVFStmt*>& seeds);
 
     // === Thread analysis helpers ===
-    OrderedSet<const SVFStmt*> getDependentThreadCreate(const SVFStmt* stmt);
+    OrderedSet<const CallICFGNode*> getDependentThreadCreate(const ICFGNode* node);
     OrderedSet<const TCTNode*> getTCTNodeSetFromNode(const ICFGNode* node);
 
     // === Lock analysis helpers ===
     OrderedSet<const ICFGNode*> getLockSet(const ICFGNode* node);
-    OrderedSet<const CallICFGNode*> collectPthreadStatements(const OrderedSet<const SVFStmt*>& vulnerableStmts);
-    OrderedSet<const CallICFGNode*> collectMutexStatements(const OrderedSet<const SVFStmt*>& vulnerableStmts);
+    OrderedSet<const CallICFGNode*> collectPthreadStatements(
+        const OrderedSet<const ICFGNode*>& sourceNodes);
+    OrderedSet<const CallICFGNode*> collectMutexStatements(
+        const OrderedSet<const ICFGNode*>& sourceNodes);
 
     // === Common slicing helpers ===
     /**
      * Collect common pthread and mutex statements (shared by PTA and MTA slicing).
-     * @param vulnerableStatements Set of vulnerable statements
+     * @param sourceNodes Complete ILA source set ([INIT] union [THREAD-VF])
      * @return Pair of (pthreadCallNodes, mutexCallNodes)
      */
     std::pair<OrderedSet<const CallICFGNode*>, OrderedSet<const CallICFGNode*>>
-            collectCommonThreadStatements(const OrderedSet<const SVFStmt*>& vulnerableStatements);
+            collectCommonThreadStatements(const OrderedSet<const ICFGNode*>& sourceNodes);
+
+    /// Add synchronization primitives and the control-flow anchors required by
+    /// the sliced MHP/lock analyses.
+    void addSynchronizationDependencies(
+        const OrderedSet<const CallICFGNode*>& pthreadCallNodes,
+        const OrderedSet<const CallICFGNode*>& mutexCallNodes,
+        OrderedSet<const ICFGNode*>& retainedNodes);
 
     // === ICFG analysis helpers ===
-    OrderedSet<const ICFGNode*> buildBackwardICFGNodeSet(const OrderedSet<const ICFGNode*>& vulnerableNodes);
-
     /**
      * Call-dependence expansion (used by MultiStageSlicer): take the
      * kept functions of the given nodes, close upward over the call graph
@@ -185,20 +186,13 @@ protected:
      */
     OrderedSet<const ICFGNode*> expandCallDependence(const OrderedSet<const ICFGNode*>& nodes);
 
-    /**
-     * Perform dual slicing (temporal slicing): filter statements based on control flow and parallel execution.
-     * This is shared by both PTA and MTA slicing.
-     * @param slicedNodes Set of statements from statement-level slicing
-     * @return Set of ICFG nodes in the dual slice
-     */
-    OrderedSet<const ICFGNode*> runDualSlicing(
-        const OrderedSet<const ICFGNode*>& slicedNodes);
 };
 
 /**
- * MultiStageSlicer - the multi-stage (differential) slicer of MSli: one class,
- * two stages sharing one memoised data-dependence closure over VFG_pre.
- *   Stage 1 (ILA):  runILASlicing  -- synchronization/dual slicing + function
+ * MultiStageSlicer - the multi-stage (differential) slicer of MSli. The
+ * pre-candidate closure scopes ILA queries and the Main-TVF overlay; the final
+ * closure is recomputed over that refined main graph.
+ *   Stage 1 (ILA):  runILASlicing  -- synchronization slicing + function
  *                                     expansion, feeding the sliced MHP/lock.
  *   Stage 2 (FSPTA): runPTASlicing -- backward data-dependence slice feeding
  *                                     the sliced flow-sensitive solve.
@@ -207,11 +201,11 @@ protected:
 class MultiStageSlicer : public MTASlicerBase
 {
 public:
-    MultiStageSlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
-                     LockAnalysis* lockAnalysis, SVFG* vfg = nullptr);
+    MultiStageSlicer(SVFIR* svfir, AndersenBase* pta, MHP* mhp,
+                     LockAnalysis* lockAnalysis, SVFG* svfg = nullptr);
 
     /**
-     * Stage 1: the ILA slice (dual slicing + function expansion for the IRView).
+     * Stage 1: the ILA slice (synchronization + function expansion for the IRView).
      * @param vulnerableStatements Set of vulnerable statements to start slicing from
      *        (the [INIT] rule: pre-analysis race statements).
      * @param threadVFSources Extra ILA slicing sources from the [THREAD-VF] rule
@@ -225,24 +219,24 @@ public:
         const OrderedSet<const ICFGNode*>& threadVFSources = {});
 
     /**
-     * Stage 2: the FSPTA slice (backward data dependence over the thread-aware
-     * VFG_pre; node set only, no function expansion).
+     * Stage 2: the FSPTA slice (backward data dependence over the refined main
+     * value-flow graph; node set only, no function expansion).
      */
-    OrderedSet<const ICFGNode*> runPTASlicing(
+    ValueFlowSlice runPTASlicing(
+        const OrderedSet<const SVFStmt*>& vulnerableStatements,
+        SVFG* refinedMainVFG);
+
+    /// Compute the pre-candidate slice used to restrict [THREAD-VF] sources and
+    /// scope construction of the refined main overlay.
+    void computePreCandidateSlice(
         const OrderedSet<const SVFStmt*>& vulnerableStatements);
 
-    /**
-     * The FSPTA data-dependence slice at SVFG-node granularity (memoised). The
-     * ILA stage queries this first, to restrict the [THREAD-VF] sources to
-     * ThreadVF(VFG'_pre); runPTASlicing reuses the same set, so the backward
-     * closure over VFG_pre is computed once and shared across both stages.
-     */
-    const OrderedSet<const VFGNode*>& getRetainedSVFGNodes(
-        const OrderedSet<const SVFStmt*>& vulnerableStatements);
+    /// Return the pre-candidate slice after computePreCandidateSlice().
+    const ValueFlowSlice& getPreCandidateSlice() const;
 
 private:
-    OrderedSet<const VFGNode*> retainedSVFGNodes; ///< memoised data-dependence slice
-    bool retainedComputed = false;
+    ValueFlowSlice preCandidateSlice;
+    bool preCandidateComputed = false;
 };
 
 /**
@@ -252,21 +246,21 @@ private:
  * graph). Both ILA and FSPTA run on this single slice, so V_ILA, V_PTA subset
  * V_Single. Used by the differential-slicing ablation (-mta-slicing-single).
  *
- * Iteratively applies data dependence (over the thread-aware VFG_pre) and call
- * dependence until convergence, then a single dual-slicing pass.
+ * Iteratively applies synchronization, data, and call dependence over the
+ * thread-aware VFG_pre until convergence.
  */
 class SingleSlicer : public MTASlicerBase
 {
 public:
-    SingleSlicer(SVFIR* svfIr, AndersenBase* pta, MHP* mhp,
-                 LockAnalysis* lockAnalysis, SVFG* vfg = nullptr);
+    SingleSlicer(SVFIR* svfir, AndersenBase* pta, MHP* mhp,
+                 LockAnalysis* lockAnalysis, SVFG* svfg = nullptr);
 
     /**
      * Perform unified slicing combining synchronization, data, and call dependence.
      * @param vulnerableStatements Set of vulnerable statements to start slicing from
-     * @return Set of ICFG nodes in the slice (including call/ret and entry/exit nodes)
+     * @return Exact SVFG data slice plus its synchronization/call-complete ICFG view
      */
-    OrderedSet<const ICFGNode*> runSlicing(
+    ValueFlowSlice runSlicing(
         const OrderedSet<const SVFStmt*>& vulnerableStatements);
 };
 

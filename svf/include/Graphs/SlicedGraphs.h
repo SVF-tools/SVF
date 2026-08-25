@@ -24,10 +24,6 @@
  * SlicedGraphs.h
  *
  *      Author: Jiawei Yang
- *
- * General non-owning sliced views of the ICFG, PAG, and (Thread)CallGraph, and
- * their GenericGraphTraits specialisations, so a slice works with SVF's generic
- * graph algorithms and GraphWriter.
  */
 
 #ifndef GRAPHS_SLICEDGRAPHS_H
@@ -45,13 +41,9 @@
 #include "SVFIR/SVFStatements.h"
 #include "SVFIR/SVFVariables.h"
 #include <cstddef>
-#include <fstream>
 #include <iterator>
 #include <memory>
-#include <set>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 #include <utility>
 
@@ -66,14 +58,9 @@ namespace SVF
 class SlicedICFGView
 {
 public:
-    /// Build complete ICFG view from keepNodes and keptFunctions
-    // buildBridged=false skips bridged-edge construction for views whose control
-    // flow is never walked (e.g. the FSPTA view, used only for isKeptNode).
+    /// Build an ICFG view from its explicit node membership.
     SlicedICFGView(ICFG* icfg,
-                   CallGraph* cg,
-                   const OrderedSet<const ICFGNode*>& keepNodes,
-                   const OrderedSet<const FunObjVar*>& keptFunctions,
-                   bool buildBridged = true);
+                   const OrderedSet<const ICFGNode*>& keepNodes);
 
     /// Get successor nodes (including bridged edges)
     void getSuccNodes(const ICFGNode* node, std::vector<const ICFGNode*>& out) const;
@@ -84,9 +71,11 @@ public:
     /// Check if a node is in the sliced view
     bool isKeptNode(const ICFGNode* node) const;
 
-    /// First kept node of fun's entry (the kept FunEntryICFGNode, else the first
-    /// kept node of the entry block, else the original entry).
+    /// First kept node of fun's entry, or null when fun is outside the view.
     const ICFGNode* getFunEntry(const FunObjVar* fun) const;
+
+    /// Kept synthetic exit node of fun, or null when fun is outside the view.
+    const ICFGNode* getFunExit(const FunObjVar* fun) const;
 
     /// Kept ICFG nodes of fun.
     void getFunICFGNodes(const FunObjVar* fun, std::vector<const ICFGNode*>& out) const;
@@ -122,16 +111,18 @@ public:
 private:
     ICFG* icfg;
     OrderedSet<const ICFGNode*> keptNodes;
-    OrderedSet<const ICFGEdge*> keptEdges;
     Map<const ICFGNode*, OrderedSet<const ICFGNode*>> bridgedEdges;
     // Reverse of bridgedEdges (dst -> srcs), so getPredNodes is O(preds) instead
     // of scanning every bridged edge.
     Map<const ICFGNode*, OrderedSet<const ICFGNode*>> bridgedPreds;
     Set<const ICFGNode*> keptNodesSet; // For fast lookup
 
-    void buildICFGSets(const OrderedSet<const ICFGNode*>& keepNodes,
-                       const OrderedSet<const FunObjVar*>& keptFunctions);
+    void buildICFGSets(const OrderedSet<const ICFGNode*>& keepNodes);
     void buildBridgedEdges();
+    static void getLocalSuccessors(
+        const ICFGNode* node,
+        const Map<const ICFGNode*, const ICFGNode*>& callsiteReturnNodes,
+        std::vector<const ICFGNode*>& successors);
 };
 
 //===----------------------------------------------------------------------===//
@@ -187,13 +178,34 @@ class SlicedThreadCallGraphView
 public:
     SlicedThreadCallGraphView(ThreadCallGraph* tcg,
                               const OrderedSet<const FunObjVar*>& keptFunctions,
-                              const OrderedSet<const ICFGNode*>& extendedKeptNodes = OrderedSet<const ICFGNode*>());
+                              const OrderedSet<const ICFGNode*>& extendedKeptNodes);
 
     /// Get out edges of a node (only returns kept edges and target nodes)
     void getOutEdgesOf(const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const;
 
     /// Get in edges of a node (only returns kept edges and source nodes)
     void getInEdgesOf(const CallGraphNode* node, std::vector<const CallGraphEdge*>& out) const;
+
+    /// Retained callsites carried by an aggregated call-graph edge.
+    void getDirectCallsOf(const CallGraphEdge* edge,
+                          std::vector<const CallICFGNode*>& out) const;
+    void getIndirectCallsOf(const CallGraphEdge* edge,
+                            std::vector<const CallICFGNode*>& out) const;
+
+    /// Whether this precise callsite-to-callee relation is retained.
+    bool containsCallSite(const CallGraphEdge* edge,
+                          const CallICFGNode* callSite) const;
+
+    /// Retained callees of a callsite.
+    void getCalleesOf(const CallICFGNode* callSite,
+                      CallGraph::FunctionSet& callees) const;
+
+    /// Retained thread relations indexed by their fork/join callsite. Join
+    /// relations are deliberately separate from normal CallGraph adjacency.
+    void getForkEdgesOf(const CallICFGNode* callSite,
+                        std::vector<const CallGraphEdge*>& out) const;
+    void getJoinEdgesOf(const CallICFGNode* callSite,
+                        std::vector<const CallGraphEdge*>& out) const;
 
     /// Check if a node is in the sliced view
     bool isKeptNode(const CallGraphNode* node) const;
@@ -209,17 +221,11 @@ public:
         return keptFunctionsSet;
     }
 
-    /// Get all kept edges
-    inline const CallGraph::CallGraphEdgeSet& getKeptEdges() const
-    {
-        return keptEdges;
-    }
-
     /// Canonical edge membership: keptEdges excludes edges whose call site was
     /// pruned, so endpoint checks alone are not enough (queries/traits use this).
     inline bool isKeptEdge(const CallGraphEdge* e) const
     {
-        return keptEdges.find(const_cast<CallGraphEdge*>(e)) != keptEdges.end();
+        return keptEdges.find(e) != keptEdges.end();
     }
 
     /// Indirect call sites that lost all targets after filtering
@@ -231,14 +237,9 @@ public:
     /// Dump sliced ThreadCallGraph to dot file
     void dump(const std::string& filename) const;
 
-    /// Get original ThreadCallGraph
-    inline ThreadCallGraph* getOriginalThreadCallGraph() const
-    {
-        return tcg;
-    }
-
-    /// Get original CallGraph (ThreadCallGraph inherits from CallGraph)
-    inline CallGraph* getOriginalCallGraph() const
+    /// Backing graph access for the graph-traits implementation only. Analysis
+    /// traversal must use this view's filtered methods above.
+    inline CallGraph* getBackingCallGraph() const
     {
         return tcg;
     }
@@ -246,7 +247,9 @@ public:
 private:
     ThreadCallGraph* tcg;
     OrderedSet<const CallGraphNode*> keptNodes;
-    CallGraph::CallGraphEdgeSet keptEdges;
+    Set<const CallGraphEdge*> keptEdges;
+    Map<const CallGraphEdge*, CallGraphEdge::CallInstSet> keptDirectCalls;
+    Map<const CallGraphEdge*, CallGraphEdge::CallInstSet> keptIndirectCalls;
     Set<const FunObjVar*> keptFunctionsSet; // For fast lookup
     Set<const CallICFGNode*> indirectSitesWithEmptyTargets;
     OrderedSet<const ICFGNode*> extendedKeptNodes; // For checking if call sites are kept
@@ -256,21 +259,16 @@ private:
 };
 
 //===----------------------------------------------------------------------===//
-// SlicedSVFGView - non-owning sliced view of the (thread-aware) SVFG.
-// Retained nodes: everything except Load/Store statement nodes whose ICFG node
-// was sliced out; structural nodes (Addr/Copy/Gep, MSSA phi/mu/chi, call/return
-// boundaries) always remain so inter-procedural and memory-SSA flow is intact.
-// Deliberately NO bridge edges: bridging removed SVFG nodes could fabricate
-// value-flow paths that do not exist in the original graph. Removed nodes act
-// as propagation barriers (matching the sliced FSAM solve).
+// SlicedSVFGView - non-owning exact node-induced view of an SVFG.
+// Membership is supplied as an explicit node-ID set; an edge is visible iff
+// both endpoints are retained. There are deliberately no bridge edges, since
+// bridging would fabricate value-flow paths.
 //===----------------------------------------------------------------------===//
 class SlicedSVFGView
 {
 public:
-    /// Membership needs only the sliced ICFG view; the SVFG handle (for node
-    /// iteration and dumping) may be bound later, once the solver has built it.
-    explicit SlicedSVFGView(const SlicedICFGView* icfgView, const SVFG* svfg = nullptr)
-        : icfgView(icfgView), svfg(svfg) {}
+    SlicedSVFGView(const SVFG* svfg, const NodeBS& retainedNodeIds)
+        : svfg(svfg), retainedNodeIds(retainedNodeIds) {}
 
     /// Whether the node is retained (see the class comment for the rule).
     bool isKeptNode(const SVFGNode* n) const;
@@ -281,26 +279,18 @@ public:
         return isKeptNode(e->getSrcNode()) && isKeptNode(e->getDstNode());
     }
 
-    inline const SlicedICFGView* getICFGView() const
-    {
-        return icfgView;
-    }
     inline const SVFG* getSVFG() const
     {
         return svfg;
     }
-    /// Bind the underlying SVFG (enables node iteration and dumping).
-    inline void setSVFG(const SVFG* g)
-    {
-        svfg = g;
-    }
+    size_t getKeptNodeCount() const;
 
     /// Dump the sliced SVFG (retained nodes/edges only) via GraphWriter.
     void dump(const std::string& filename) const;
 
 private:
-    const SlicedICFGView* icfgView;
-    const SVFG* svfg;
+    const SVFG* svfg = nullptr;
+    NodeBS retainedNodeIds;
 };
 
 //===----------------------------------------------------------------------===//
@@ -310,11 +300,10 @@ private:
 class SlicedSVFIRView
 {
 public:
-    SlicedSVFIRView(SVFIR* svfIr,
-                    CallGraph* cg,
+    SlicedSVFIRView(SVFIR* svfir,
+                    ThreadCallGraph& callGraph,
                     ICFG* icfg,
-                    const OrderedSet<const ICFGNode*>& keepNodes,
-                    bool buildBridged = true);
+                    const OrderedSet<const ICFGNode*>& keepNodes);
 
     /// Get SlicedICFGView
     inline const SlicedICFGView* getICFG() const
@@ -329,10 +318,12 @@ public:
     /// Get SlicedPAGView
     inline const SlicedPAGView* getPAG() const
     {
+        ensurePAGView();
         return pagView.get();
     }
     inline SlicedPAGView* getPAG()
     {
+        ensurePAGView();
         return pagView.get();
     }
 
@@ -361,17 +352,8 @@ public:
     /// Get all kept statements
     inline const OrderedSet<const SVFStmt*>& getKeptStatements() const
     {
-        return pagView->getKeptStmts();
+        return getPAG()->getKeptStmts();
     }
-
-    /// In-edges of a call-graph node under the sliced ThreadCallGraph view (the
-    /// full node in-edges if no TCG view was built).
-    void getInEdgesOfCallGraphNode(const CallGraphNode* node,
-                                   std::vector<const CallGraphEdge*>& out) const;
-
-    /// The CallGraph the sliced analyses scan: the sliced ThreadCallGraph's
-    /// original CallGraph, or the full PAG CallGraph if no TCG view was built.
-    const CallGraph* getAnalysisCallGraph() const;
 
     /// Dump all views to files
     void dumpAll(const std::string& prefix) const;
@@ -379,16 +361,18 @@ public:
     /// Get original SVFIR
     inline SVFIR* getSVFIR() const
     {
-        return svfIr;
+        return svfir;
     }
 
     /// Output statistics
     void dumpStats(const std::string& prefix = "") const;
 
 private:
-    SVFIR* svfIr;
+    void ensurePAGView() const;
+
+    SVFIR* svfir;
     std::unique_ptr<SlicedICFGView> icfgView;
-    std::unique_ptr<SlicedPAGView> pagView;
+    mutable std::unique_ptr<SlicedPAGView> pagView;
     std::unique_ptr<SlicedThreadCallGraphView> tcgView;
 };
 
@@ -651,7 +635,7 @@ public:
 
     friend bool operator==(const SlicedICFGNodeIter& a, const SlicedICFGNodeIter& b)
     {
-        return a.it == b.it;
+        return a.view == b.view && a.it == b.it;
     }
     friend bool operator!=(const SlicedICFGNodeIter& a, const SlicedICFGNodeIter& b)
     {
@@ -851,7 +835,7 @@ public:
     }
     friend bool operator==(const SlicedCGNodeIter& a, const SlicedCGNodeIter& b)
     {
-        return a.it == b.it;
+        return a.view == b.view && a.it == b.it;
     }
     friend bool operator!=(const SlicedCGNodeIter& a, const SlicedCGNodeIter& b)
     {
@@ -1052,7 +1036,7 @@ public:
     }
     friend bool operator==(const SlicedPAGNodeIter& a, const SlicedPAGNodeIter& b)
     {
-        return a.it == b.it;
+        return a.view == b.view && a.it == b.it;
     }
     friend bool operator!=(const SlicedPAGNodeIter& a, const SlicedPAGNodeIter& b)
     {
@@ -1066,7 +1050,7 @@ private:
 
 //===----------------------------------------------------------------------===//
 // SlicedSVFGView traits support (no bridged edges; membership is the view's
-// retained-node rule, so removed nodes are propagation barriers).
+// retained-node rule, so removed nodes never enter SCC/worklist traversal).
 //===----------------------------------------------------------------------===//
 
 using SlicedSVFGNodeRef = SlicedNodeRef<SlicedSVFGView, SVFGNode>;
@@ -1258,7 +1242,7 @@ public:
     }
     friend bool operator==(const SlicedSVFGNodeIter& a, const SlicedSVFGNodeIter& b)
     {
-        return a.it == b.it;
+        return a.view == b.view && a.it == b.it;
     }
     friend bool operator!=(const SlicedSVFGNodeIter& a, const SlicedSVFGNodeIter& b)
     {
@@ -1306,6 +1290,10 @@ struct GenericGraphTraits<const SlicedICFGView*>
     static const ICFGNode* getFunEntry(const SlicedICFGView* g, const FunObjVar* fun)
     {
         return g->getFunEntry(fun);
+    }
+    static const ICFGNode* getFunExit(const SlicedICFGView* g, const FunObjVar* fun)
+    {
+        return g->getFunExit(fun);
     }
     static void getFunICFGNodes(const SlicedICFGView* g, const FunObjVar* fun,
                                 std::vector<const ICFGNode*>& out)
@@ -1453,9 +1441,46 @@ struct GenericGraphTraits<const SlicedThreadCallGraphView*>
     {
         g->getInEdgesOf(n, out);
     }
-    static const CallGraph* getCallGraph(const SlicedThreadCallGraphView* g)
+    static void getOutEdges(const SlicedThreadCallGraphView* g, const CallGraphNode* n,
+                            std::vector<const CallGraphEdge*>& out)
     {
-        return g->getOriginalCallGraph();
+        g->getOutEdgesOf(n, out);
+    }
+    static void getDirectCalls(const SlicedThreadCallGraphView* g,
+                               const CallGraphEdge* e,
+                               std::vector<const CallICFGNode*>& out)
+    {
+        g->getDirectCallsOf(e, out);
+    }
+    static void getIndirectCalls(const SlicedThreadCallGraphView* g,
+                                 const CallGraphEdge* e,
+                                 std::vector<const CallICFGNode*>& out)
+    {
+        g->getIndirectCallsOf(e, out);
+    }
+    static bool containsCallSite(const SlicedThreadCallGraphView* g,
+                                 const CallGraphEdge* e,
+                                 const CallICFGNode* callSite)
+    {
+        return g->containsCallSite(e, callSite);
+    }
+    static void getCallees(const SlicedThreadCallGraphView* g,
+                           const CallICFGNode* callSite,
+                           CallGraph::FunctionSet& callees)
+    {
+        g->getCalleesOf(callSite, callees);
+    }
+    static void getForkEdges(const SlicedThreadCallGraphView* g,
+                             const CallICFGNode* callSite,
+                             std::vector<const CallGraphEdge*>& out)
+    {
+        g->getForkEdgesOf(callSite, out);
+    }
+    static void getJoinEdges(const SlicedThreadCallGraphView* g,
+                             const CallICFGNode* callSite,
+                             std::vector<const CallGraphEdge*>& out)
+    {
+        g->getJoinEdgesOf(callSite, out);
     }
     //@}
 
@@ -1514,7 +1539,7 @@ struct GenericGraphTraits<const SlicedThreadCallGraphView*>
     }
     static NodeRef getNode(const SlicedThreadCallGraphView* v, NodeID id)
     {
-        const CallGraphNode* raw = v->getOriginalCallGraph()->getGNode(id);
+        const CallGraphNode* raw = v->getBackingCallGraph()->getGNode(id);
         return NodeRef{v, (raw != nullptr && v->isKeptNode(raw)) ? raw : nullptr};
     }
 };
@@ -1685,6 +1710,7 @@ struct GenericGraphTraits<const SlicedSVFGView*>
     using nodes_iterator = SlicedSVFGNodeIter;
     using ChildIteratorType = SlicedSVFGChildIterImpl<true>;
     using ChildEdgeIteratorType = SlicedSVFGEdgeIterImpl<true>;
+    static constexpr bool isFilteredGraph = true;
 
     static const SVFGNode* getRawNode(NodeRef n)
     {
@@ -1695,6 +1721,11 @@ struct GenericGraphTraits<const SlicedSVFGView*>
     static bool containsNode(const SlicedSVFGView* g, const SVFGNode* n)
     {
         return g->isKeptNode(n);
+    }
+
+    static bool containsEdge(const SlicedSVFGView* g, const SVFGEdge* e)
+    {
+        return g->isKeptEdge(e);
     }
 
     static NodeRef getEntryNode(const SlicedSVFGView*)
@@ -1746,6 +1777,10 @@ struct GenericGraphTraits<const SlicedSVFGView*>
     static inline unsigned getNodeID(NodeRef n)
     {
         return n.raw->getId();
+    }
+    static unsigned graphSize(const SlicedSVFGView* v)
+    {
+        return static_cast<unsigned>(v->getKeptNodeCount());
     }
     static NodeRef getNode(const SlicedSVFGView* v, NodeID id)
     {

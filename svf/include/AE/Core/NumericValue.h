@@ -697,7 +697,7 @@ public:
             return std::to_string(_iVal);
     }
 
-    //%}
+//%}
 
     bool is_real() const
     {
