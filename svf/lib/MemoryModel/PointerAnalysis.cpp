@@ -430,34 +430,35 @@ void PointerAnalysis::getVFnsFromCHA(const CallICFGNode* cs, VFunSet &vfns)
  */
 void PointerAnalysis::getVFnsFromPts(const CallICFGNode* cs, const PointsTo &target, VFunSet &vfns)
 {
-
-    if (chgraph->csHasVtblsBasedonCHA(cs))
+    // CHA vtables sometimes cannot be resolved (for a virtual call)
+    // When CHA vtables can be resolved, use CHA vtables to filter the target points-to set
+    // Otherwise, use the points-to set from the pointer analysis
+    const VTableSet *pChaVtbls = chgraph->csHasVtblsBasedonCHA(cs) ?
+        &chgraph->getCSVtblsBasedonCHA(cs) :
+        nullptr;
+    if (!pChaVtbls && !Options::FieldSensitiveSound()) return;
+    Set<const GlobalObjVar*> vtbls;
+    for (PointsTo::iterator it = target.begin(), eit = target.end(); it != eit; ++it)
     {
-        Set<const GlobalObjVar*> vtbls;
-        const VTableSet &chaVtbls = chgraph->getCSVtblsBasedonCHA(cs);
-        for (PointsTo::iterator it = target.begin(), eit = target.end(); it != eit; ++it)
+        const SVFVar* ptdnode = pag->getSVFVar(*it);
+        const GlobalObjVar* pVar = nullptr;
+        if (isa<ObjVar>(ptdnode) && isa<GlobalObjVar>(pag->getBaseObject(ptdnode->getId())))
         {
-            const SVFVar* ptdnode = pag->getSVFVar(*it);
-            const GlobalObjVar* pVar = nullptr;
-            if (isa<ObjVar>(ptdnode) && isa<GlobalObjVar>(pag->getBaseObject(ptdnode->getId())))
-            {
-                pVar = cast<GlobalObjVar>(pag->getBaseObject(ptdnode->getId()));
-
-            }
-            else if (isa<ValVar>(ptdnode) &&
-                     isa<GlobalValVar>(
-                         pag->getBaseValVar(ptdnode->getId())))
-            {
-                pVar = cast<GlobalObjVar>(
-                           SVFUtil::getObjVarOfValVar(cast<GlobalValVar>(
-                                   pag->getBaseValVar(ptdnode->getId()))));
-            }
-
-            if (pVar && chaVtbls.find(pVar) != chaVtbls.end())
-                vtbls.insert(pVar);
+            pVar = cast<GlobalObjVar>(pag->getBaseObject(ptdnode->getId()));
         }
-        chgraph->getVFnsFromVtbls(cs, vtbls, vfns);
+        else if (isa<ValVar>(ptdnode) &&
+                    isa<GlobalValVar>(
+                        pag->getBaseValVar(ptdnode->getId())))
+        {
+            pVar = cast<GlobalObjVar>(
+                        SVFUtil::getObjVarOfValVar(cast<GlobalValVar>(
+                                pag->getBaseValVar(ptdnode->getId()))));
+        }
+
+        if (pVar && (!pChaVtbls || pChaVtbls->find(pVar) != pChaVtbls->end()))
+            vtbls.insert(pVar);
     }
+    chgraph->getVFnsFromVtbls(cs, vtbls, vfns);
 }
 
 /*

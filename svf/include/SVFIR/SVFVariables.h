@@ -507,10 +507,7 @@ public:
                std::to_string(getConstantFieldIdx());
     }
 
-    virtual bool isPointer() const
-    {
-        return base->isPointer();
-    }
+    virtual inline bool isPointer() const;
 
     inline const SVFType* getType() const
     {
@@ -852,10 +849,7 @@ public:
         return base->isConstDataOrAggDataButNotNullPtr();
     }
 
-    virtual bool isPointer() const
-    {
-        return base->isPointer();
-    }
+    virtual inline bool isPointer() const;
 };
 
 

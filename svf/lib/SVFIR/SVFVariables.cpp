@@ -212,6 +212,13 @@ const std::string GepValVar::toString() const
     return rawstr.str();
 }
 
+bool GepValVar::isPointer() const
+{
+    if (Options::FieldSensitiveSound())
+        return true;
+    return base->isPointer();
+}
+
 RetValPN::RetValPN(NodeID i, const FunObjVar* node, const SVFType* svfType, const ICFGNode* icn)
     : ValVar(i, svfType, icn, RetValNode), callGraphNode(node)
 {
@@ -251,6 +258,13 @@ const std::string GepObjVar::toString() const
 const SVFType *GepObjVar::getType() const
 {
     return SVFIR::getPAG()->getFlatternedElemType(type, apOffset);
+}
+
+bool GepObjVar::isPointer() const
+{
+    if (Options::FieldSensitiveSound())
+        return true;
+    return base->isPointer();
 }
 
 bool BaseObjVar::isBlackHoleObj() const

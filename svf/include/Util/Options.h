@@ -33,6 +33,9 @@ public:
     /// Maximum number of field derivations for an object.
     static const Option<u32_t> MaxFieldLimit;
 
+    /// Ensure field-sensitive soundness.
+    static const Option<bool> FieldSensitiveSound;
+
     /// Whether to stage Andersen's with Steensgaard and cluster based on that data.
     static const Option<bool> ClusterAnder;
 

@@ -45,6 +45,12 @@ const Option<u32_t> Options::MaxFieldLimit(
     512
 );
 
+const Option<bool> Options::FieldSensitiveSound(
+    "fs-sound",
+    "Ensure field-sensitive soundness",
+    false
+);
+
 const OptionMap<PTBackingType> Options::ptDataBacking(
     "ptd",
     "Overarching points-to data structure",

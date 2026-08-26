@@ -681,9 +681,15 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
         if(const ArrayType* arrTy = SVFUtil::dyn_cast<ArrayType>(gepTy))
         {
             if (!Options::ModelArrays() && arrTy->getElementType()->isPointerTy())
+            {
+                if(Options::FieldSensitiveSound()) isConst = false;
                 continue;
+            }
             if(!op || (arrTy->getArrayNumElements() <= (u32_t)LLVMUtil::getIntegerValue(op).first))
+            {
+                if(Options::FieldSensitiveSound()) isConst = false;
                 continue;
+            }
             APOffset idx = (u32_t)LLVMUtil::getIntegerValue(op).first;
             u32_t offset = pag->getFlattenedElemIdx(llvmModuleSet()->getSVFType(arrTy), idx);
             ap.setFldIdx(ap.getConstantStructFldIdx() + offset);
@@ -730,6 +736,9 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
             // For pointer arithmetic we ignore the byte offset
             // consider using inferFieldIdxFromByteOffset(geopOp,dataLayout,ap,idx)?
             // ap.setFldIdx(ap.getConstantFieldIdx() + inferFieldIdxFromByteOffset(geopOp,idx));
+
+            // For soundness, if ap.setFldIdx is not called, then we consider it as a non-constant access
+            if(Options::FieldSensitiveSound()) isConst = false;
         }
     }
     return isConst;
