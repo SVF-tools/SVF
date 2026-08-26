@@ -222,15 +222,11 @@ jobs:
         if: matrix.compiler == 'msvc'
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Clone Test-Suite (Windows compatible branch)
+      - name: Clone Test-Suite
         shell: powershell
         run: |
-          git clone -b windows-compat "https://github.com/dg1474/Test-Suite.git" Test-Suite
+          git clone "https://github.com/SVF-tools/Test-Suite.git" Test-Suite
 
-      - name: Patch Test-Suite for Windows compatibility
-        shell: powershell
-        run: |
-          python patch_test_suite.py
 
       - name: Build SVF
         shell: powershell
