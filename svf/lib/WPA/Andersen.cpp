@@ -687,30 +687,6 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
     return false;
 }
 
-/**
- * Detect and collapse PWC nodes produced by processing gep edges, under the constraint of field limit.
- */
-inline void Andersen::collapsePWCNode(NodeID nodeId)
-{
-    // If a node is a PWC node, collapse all its points-to target.
-    // collapseNodePts() may change the points-to set of the nodes which have been processed
-    // before, in this case, we may need to re-do the analysis.
-    if (consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
-        reanalyze = true;
-}
-
-inline void Andersen::collapseFields()
-{
-    while (consCG->hasNodesToBeCollapsed())
-    {
-        NodeID node = consCG->getNextCollapseNode();
-        // collapseField() may change the points-to set of the nodes which have been processed
-        // before, in this case, we may need to re-do the analysis.
-        if (collapseField(node))
-            reanalyze = true;
-    }
-}
-
 /*
  * Merge constraint graph nodes based on SCC cycle detected.
  */

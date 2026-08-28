@@ -36,18 +36,24 @@
 #include "Util/SVFLoopAndDomInfo.h"
 
 
+#ifdef _MSC_VER
+#    define SVF_WEAK inline
+#else
+#    define SVF_WEAK __attribute__((weak))
+#endif
+
 using namespace SVF;
 using namespace SVFUtil;
 
 
-__attribute__((weak))
+SVF_WEAK
 const std::string SVFValue::valueOnlyToString() const
 {
     assert("SVFBaseNode::valueOnlyToString should be implemented or supported by fronted" && false);
     abort();
 }
 
-__attribute__((weak))
+SVF_WEAK
 const bool SVFValue::hasLLVMValue() const
 {
     assert("SVFBaseNode::hasLLVMValue should be implemented or supported by fronted" && false);

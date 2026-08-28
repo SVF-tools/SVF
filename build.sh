@@ -107,29 +107,40 @@ normalise_options() {
 }
 
 detect_platform() {
-    case "${sysOS}-${arch}" in
-        Linux-x86_64|Linux-amd64)
-            PLATFORM="ubuntu-x86_64"
-            ;;
-        Linux-aarch64|Linux-arm64)
-            PLATFORM="ubuntu-aarch64"
-            ;;
-        Darwin-arm64)
-            PLATFORM="macos-arm64"
-            ;;
-        Darwin-x86_64|Darwin-amd64)
-            PLATFORM="macos-x86_64"
+    case "${sysOS}" in
+        MINGW*|MSYS*|CYGWIN*)
+            PLATFORM="windows-mingw"
             ;;
         *)
-            echo "Unsupported platform: ${sysOS}/${arch}"
-            echo "Supported platforms: Linux x86_64, Linux aarch64/arm64, macOS arm64, macOS x86_64."
-            exit 1
+            case "${sysOS}-${arch}" in
+                Linux-x86_64|Linux-amd64)
+                    PLATFORM="ubuntu-x86_64"
+                    ;;
+                Linux-aarch64|Linux-arm64)
+                    PLATFORM="ubuntu-aarch64"
+                    ;;
+                Darwin-arm64)
+                    PLATFORM="macos-arm64"
+                    ;;
+                Darwin-x86_64|Darwin-amd64)
+                    PLATFORM="macos-x86_64"
+                    ;;
+                *)
+                    echo "Unsupported platform: ${sysOS}/${arch}"
+                    echo "Supported platforms: Linux x86_64, Linux aarch64/arm64, macOS arm64, macOS x86_64, Windows MinGW/MSYS2."
+                    exit 1
+                    ;;
+            esac
             ;;
     esac
 }
 
 select_dependency_urls() {
     case "$PLATFORM" in
+        windows-mingw)
+            urlLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-pc-windows-msvc.tar.xz"
+            urlZ3="https://github.com/Z3Prover/z3/releases/download/z3-${Z3Ver}/z3-${Z3Ver}-x64-win.zip"
+            ;;
         ubuntu-x86_64)
             if [[ "$RTTI" == "ON" ]]; then
                 urlLLVM="$UbuntuLLVM_RTTI"
@@ -286,7 +297,7 @@ ensure_llvm() {
             macos-*)
                 install_llvm_with_brew
                 ;;
-            ubuntu-*)
+            ubuntu-*|windows-mingw)
                 download_llvm_prebuilt
                 ;;
             *)
@@ -396,6 +407,7 @@ configure_runtime_env() {
 build_svf() {
     local build_dir="./${BUILD_TYPE}-build"
     local cmake_rpath_args=()
+    local cmake_generator_args=()
 
     if [[ "$sysOS" == "Darwin" ]]; then
         cmake_rpath_args=(
@@ -405,13 +417,26 @@ build_svf() {
         )
     fi
 
+    if [[ "$PLATFORM" == "windows-mingw" ]]; then
+        cmake_generator_args=(
+            -G "Ninja"
+            -DCMAKE_C_COMPILER=clang
+            -DCMAKE_CXX_COMPILER=clang++
+            -DSVF_WARN_AS_ERROR=OFF
+            -DSVF_EXPORT_DYNAMIC=OFF
+        )
+    fi
+
     rm -rf "$build_dir"
     mkdir "$build_dir"
 
     cmake -D CMAKE_BUILD_TYPE:STRING="$BUILD_TYPE"  \
         -DSVF_ENABLE_ASSERTIONS:BOOL=true            \
+        -DCMAKE_CXX_STANDARD=17                      \
+        -DCMAKE_CXX_STANDARD_REQUIRED=ON            \
         ${SVF_SANITIZER:+-DSVF_SANITIZE="$SVF_SANITIZER"} \
         -DBUILD_SHARED_LIBS="$BUILD_DYN_LIB"         \
+        "${cmake_generator_args[@]}"                \
         "${cmake_rpath_args[@]}"                    \
         -S "$SVFHOME" -B "$build_dir"
 

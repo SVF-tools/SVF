@@ -440,6 +440,30 @@ public:
     virtual bool handleStore(NodeID id, const ConstraintEdge* store);
 };
 
+/**
+ * Detect and collapse PWC nodes produced by processing gep edges, under the constraint of field limit.
+ */
+inline void Andersen::collapsePWCNode(NodeID nodeId)
+{
+    // If a node is a PWC node, collapse all its points-to target.
+    // collapseNodePts() may change the points-to set of the nodes which have been processed
+    // before, in this case, we may need to re-do the analysis.
+    if (consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
+        reanalyze = true;
+}
+
+inline void Andersen::collapseFields()
+{
+    while (consCG->hasNodesToBeCollapsed())
+    {
+        NodeID node = consCG->getNextCollapseNode();
+        // collapseField() may change the points-to set of the nodes which have been processed
+        // before, in this case, we may need to re-do the analysis.
+        if (collapseField(node))
+            reanalyze = true;
+    }
+}
+
 } // End namespace SVF
 
 #endif /* INCLUDE_WPA_ANDERSEN_H_ */
