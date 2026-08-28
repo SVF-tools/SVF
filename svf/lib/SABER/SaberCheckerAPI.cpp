@@ -40,16 +40,15 @@ namespace
 /// string and type pair
 struct ei_pair
 {
-    const char *n;
+    const char* n;
     SaberCheckerAPI::CHECKER_TYPE t;
 };
 
 } // End anonymous namespace
 
-//Each (name, type) pair will be inserted into the map.
-//All entries of the same type must occur together (for error detection).
-static const ei_pair ei_pairs[]=
-{
+// Each (name, type) pair will be inserted into the map.
+// All entries of the same type must occur together (for error detection).
+static const ei_pair ei_pairs[] = {
     {"alloc", SaberCheckerAPI::CK_ALLOC},
     {"alloc_check", SaberCheckerAPI::CK_ALLOC},
     {"alloc_clear", SaberCheckerAPI::CK_ALLOC},
@@ -77,6 +76,16 @@ static const ei_pair ei_pairs[]=
     {"SSL_CTX_new", SaberCheckerAPI::CK_ALLOC},
     {"SSL_new", SaberCheckerAPI::CK_ALLOC},
     {"VOS_MemAlloc", SaberCheckerAPI::CK_ALLOC},
+    {"HeapAlloc", SaberCheckerAPI::CK_ALLOC},
+    {"\01HeapAlloc", SaberCheckerAPI::CK_ALLOC},
+    {"LocalAlloc", SaberCheckerAPI::CK_ALLOC},
+    {"\01LocalAlloc", SaberCheckerAPI::CK_ALLOC},
+    {"GlobalAlloc", SaberCheckerAPI::CK_ALLOC},
+    {"\01GlobalAlloc", SaberCheckerAPI::CK_ALLOC},
+    {"_malloc_dbg", SaberCheckerAPI::CK_ALLOC},
+    {"\01_malloc_dbg", SaberCheckerAPI::CK_ALLOC},
+    {"_aligned_malloc", SaberCheckerAPI::CK_ALLOC},
+    {"\01_aligned_malloc", SaberCheckerAPI::CK_ALLOC},
 
     {"VOS_MemFree", SaberCheckerAPI::CK_FREE},
     {"cfree", SaberCheckerAPI::CK_FREE},
@@ -98,6 +107,16 @@ static const ei_pair ei_pairs[]=
     {"SSL_CTX_free", SaberCheckerAPI::CK_FREE},
     {"SSL_free", SaberCheckerAPI::CK_FREE},
     {"XFree", SaberCheckerAPI::CK_FREE},
+    {"HeapFree", SaberCheckerAPI::CK_FREE},
+    {"\01HeapFree", SaberCheckerAPI::CK_FREE},
+    {"LocalFree", SaberCheckerAPI::CK_FREE},
+    {"\01LocalFree", SaberCheckerAPI::CK_FREE},
+    {"GlobalFree", SaberCheckerAPI::CK_FREE},
+    {"\01GlobalFree", SaberCheckerAPI::CK_FREE},
+    {"_free_dbg", SaberCheckerAPI::CK_FREE},
+    {"\01_free_dbg", SaberCheckerAPI::CK_FREE},
+    {"_aligned_free", SaberCheckerAPI::CK_FREE},
+    {"\01_aligned_free", SaberCheckerAPI::CK_FREE},
 
     {"fopen", SaberCheckerAPI::CK_FOPEN},
     {"\01_fopen", SaberCheckerAPI::CK_FOPEN},
@@ -119,7 +138,6 @@ static const ei_pair ei_pairs[]=
     {"gcry_md_open", SaberCheckerAPI::CK_FOPEN},
     {"gcry_cipher_open", SaberCheckerAPI::CK_FOPEN},
 
-
     {"fclose", SaberCheckerAPI::CK_FCLOSE},
     {"XCloseDisplay", SaberCheckerAPI::CK_FCLOSE},
     {"XtCloseDisplay", SaberCheckerAPI::CK_FCLOSE},
@@ -132,11 +150,10 @@ static const ei_pair ei_pairs[]=
     {"gcry_md_close", SaberCheckerAPI::CK_FCLOSE},
     {"gcry_cipher_close", SaberCheckerAPI::CK_FCLOSE},
 
-    //This must be the last entry.
+    // This must be the last entry.
     {0, SaberCheckerAPI::CK_DUMMY}
 
 };
-
 
 /*!
  * initialize the map
@@ -144,33 +161,29 @@ static const ei_pair ei_pairs[]=
 void SaberCheckerAPI::init()
 {
     set<CHECKER_TYPE> t_seen;
-    CHECKER_TYPE prev_t= CK_DUMMY;
+    CHECKER_TYPE prev_t = CK_DUMMY;
     t_seen.insert(CK_DUMMY);
-    for(const ei_pair *p= ei_pairs; p->n; ++p)
+    for (const ei_pair* p = ei_pairs; p->n; ++p)
     {
-        if(p->t != prev_t)
+        if (p->t != prev_t)
         {
-            //This will detect if you move an entry to another block
-            //  but forget to change the type.
-            if(t_seen.count(p->t))
+            // This will detect if you move an entry to another block
+            //   but forget to change the type.
+            if (t_seen.count(p->t))
             {
                 fputs(p->n, stderr);
                 putc('\n', stderr);
                 assert(!"ei_pairs not grouped by type");
             }
             t_seen.insert(p->t);
-            prev_t= p->t;
+            prev_t = p->t;
         }
-        if(tdAPIMap.count(p->n))
+        if (tdAPIMap.count(p->n))
         {
             fputs(p->n, stderr);
             putc('\n', stderr);
             assert(!"duplicate name in ei_pairs");
         }
-        tdAPIMap[p->n]= p->t;
+        tdAPIMap[p->n] = p->t;
     }
 }
-
-
-
-
