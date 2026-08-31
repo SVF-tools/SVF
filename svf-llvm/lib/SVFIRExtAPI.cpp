@@ -119,7 +119,7 @@ void collectMemcpyFields(
     {
         const StructLayout* layout = dl.getStructLayout(const_cast<StructType*>(structType));
         for (u32_t i = 0;
-             i < structType->getNumElements() && fields.size() < maxFields; ++i)
+                i < structType->getNumElements() && fields.size() < maxFields; ++i)
         {
             const Type* elemLLVMType = structType->getElementType(i);
             const SVFType* elemSVFType = pag->getOriginalElemType(svfType, i);
@@ -140,7 +140,7 @@ void collectMemcpyFields(
             return;
         const APOffset elemByteSize = static_cast<APOffset>(dl.getTypeAllocSize(const_cast<Type*>(elemLLVMType)));
         for (u32_t i = 0;
-             i < arrayType->getNumElements() && fields.size() < maxFields; ++i)
+                i < arrayType->getNumElements() && fields.size() < maxFields; ++i)
         {
             APOffset elemByteOffset = baseByteOffset + i * elemByteSize;
             APOffset elemFldIdx = baseFldIdx + pag->getFlattenedElemIdx(svfType, i);
