@@ -31,21 +31,21 @@
 #define THREADAPI_CPP_
 
 #include "Util/ThreadAPI.h"
-#include "Util/SVFUtil.h"
 #include "Graphs/CallGraph.h"
-#include "SVFIR/SVFIR.h"
 #include "MemoryModel/PointerAnalysis.h"
+#include "SVFIR/SVFIR.h"
+#include "Util/SVFUtil.h"
 
-#include <iostream>		/// std output
+#include <iomanip>  /// for setw
+#include <iostream> /// std output
 #include <stdio.h>
-#include <iomanip>		/// for setw
 
 using namespace std;
 namespace
 {
-SVF::NodeBS collectJoinedThreadObjects(SVF::PointerAnalysis* pta,
-                                       const SVF::SVFVar* joinArg,
-                                       SVF::ThreadAPI::ForkJoinAliasCache& cache)
+SVF::NodeBS collectJoinedThreadObjects(
+    SVF::PointerAnalysis* pta, const SVF::SVFVar* joinArg,
+    SVF::ThreadAPI::ForkJoinAliasCache& cache)
 {
     SVF::Map<const SVF::SVFVar*, SVF::NodeBS>::const_iterator cacheIt =
         cache.joinedThreadObjects.find(joinArg);
@@ -64,16 +64,21 @@ SVF::NodeBS collectJoinedThreadObjects(SVF::PointerAnalysis* pta,
 
         for (const SVF::SVFStmt* st : v->getInEdges())
         {
-            if (const SVF::LoadStmt* load = SVF::SVFUtil::dyn_cast<SVF::LoadStmt>(st))
+            if (const SVF::LoadStmt* load =
+                    SVF::SVFUtil::dyn_cast<SVF::LoadStmt>(st))
                 objects |= pta->getPts(load->getRHSVarID()).toNodeBS();
-            else if (const SVF::CopyStmt* copy = SVF::SVFUtil::dyn_cast<SVF::CopyStmt>(st))
+            else if (const SVF::CopyStmt* copy =
+                         SVF::SVFUtil::dyn_cast<SVF::CopyStmt>(st))
                 worklist.push_back(copy->getRHSVar());
-            else if (const SVF::PhiStmt* phi = SVF::SVFUtil::dyn_cast<SVF::PhiStmt>(st))
+            else if (const SVF::PhiStmt* phi =
+                         SVF::SVFUtil::dyn_cast<SVF::PhiStmt>(st))
                 for (SVF::u32_t i = 0; i < phi->getOpVarNum(); ++i)
                     worklist.push_back(phi->getOpVar(i));
-            else if (const SVF::GepStmt* gep = SVF::SVFUtil::dyn_cast<SVF::GepStmt>(st))
+            else if (const SVF::GepStmt* gep =
+                         SVF::SVFUtil::dyn_cast<SVF::GepStmt>(st))
                 worklist.push_back(gep->getRHSVar());
-            else if (const SVF::CallPE* call = SVF::SVFUtil::dyn_cast<SVF::CallPE>(st))
+            else if (const SVF::CallPE* call =
+                         SVF::SVFUtil::dyn_cast<SVF::CallPE>(st))
                 for (SVF::u32_t i = 0; i < call->getOpVarNum(); ++i)
                     worklist.push_back(call->getOpVar(i));
         }
@@ -82,7 +87,7 @@ SVF::NodeBS collectJoinedThreadObjects(SVF::PointerAnalysis* pta,
     cache.joinedThreadObjects[joinArg] = objects;
     return objects;
 }
-}
+} // namespace
 
 using namespace SVF;
 
@@ -94,19 +99,22 @@ namespace
 /// string and type pair
 struct ei_pair
 {
-    const char *n;
+    const char* n;
     ThreadAPI::TD_TYPE t;
 };
 
 } // End anonymous namespace
 
-//Each (name, type) pair will be inserted into the map.
-//All entries of the same type must occur together (for error detection).
-static const ei_pair ei_pairs[]=
-{
-    //The current llvm-gcc puts in the \01.
+// Each (name, type) pair will be inserted into the map.
+// All entries of the same type must occur together (for error detection).
+static const ei_pair ei_pairs[] = {
+    // The current llvm-gcc puts in the \01.
     {"pthread_create", ThreadAPI::TD_FORK},
     {"apr_thread_create", ThreadAPI::TD_FORK},
+    {"CreateThread", ThreadAPI::TD_FORK},
+    {"\01CreateThread", ThreadAPI::TD_FORK},
+    {"_beginthreadex", ThreadAPI::TD_FORK},
+    {"\01_beginthreadex", ThreadAPI::TD_FORK},
     {"pthread_join", ThreadAPI::TD_JOIN},
     {"\01_pthread_join", ThreadAPI::TD_JOIN},
     {"pthread_cancel", ThreadAPI::TD_JOIN},
@@ -115,13 +123,17 @@ static const ei_pair ei_pairs[]=
     {"sem_wait", ThreadAPI::TD_ACQUIRE},
     {"_spin_lock", ThreadAPI::TD_ACQUIRE},
     {"SRE_SplSpecLockEx", ThreadAPI::TD_ACQUIRE},
+    {"EnterCriticalSection", ThreadAPI::TD_ACQUIRE},
+    {"\01EnterCriticalSection", ThreadAPI::TD_ACQUIRE},
     {"pthread_mutex_trylock", ThreadAPI::TD_TRY_ACQUIRE},
     {"pthread_mutex_unlock", ThreadAPI::TD_RELEASE},
     {"pthread_rwlock_unlock", ThreadAPI::TD_RELEASE},
     {"sem_post", ThreadAPI::TD_RELEASE},
     {"_spin_unlock", ThreadAPI::TD_RELEASE},
     {"SRE_SplSpecUnlockEx", ThreadAPI::TD_RELEASE},
-//    {"pthread_cancel", ThreadAPI::TD_CANCEL},
+    {"LeaveCriticalSection", ThreadAPI::TD_RELEASE},
+    {"\01LeaveCriticalSection", ThreadAPI::TD_RELEASE},
+    //    {"pthread_cancel", ThreadAPI::TD_CANCEL},
     {"pthread_exit", ThreadAPI::TD_EXIT},
     {"pthread_detach", ThreadAPI::TD_DETACH},
     {"pthread_cond_wait", ThreadAPI::TD_COND_WAIT},
@@ -137,9 +149,8 @@ static const ei_pair ei_pairs[]=
     // Hare APIs
     {"hare_parallel_for", ThreadAPI::HARE_PAR_FOR},
 
-    //This must be the last entry.
-    {0, ThreadAPI::TD_DUMMY}
-};
+    // This must be the last entry.
+    {0, ThreadAPI::TD_DUMMY}};
 
 /*!
  * initialize the map
@@ -147,56 +158,56 @@ static const ei_pair ei_pairs[]=
 void ThreadAPI::init()
 {
     set<TD_TYPE> t_seen;
-    TD_TYPE prev_t= TD_DUMMY;
+    TD_TYPE prev_t = TD_DUMMY;
     t_seen.insert(TD_DUMMY);
-    for(const ei_pair *p= ei_pairs; p->n; ++p)
+    for (const ei_pair* p = ei_pairs; p->n; ++p)
     {
-        if(p->t != prev_t)
+        if (p->t != prev_t)
         {
-            //This will detect if you move an entry to another block
-            //  but forget to change the type.
-            if(t_seen.count(p->t))
+            // This will detect if you move an entry to another block
+            //   but forget to change the type.
+            if (t_seen.count(p->t))
             {
                 fputs(p->n, stderr);
                 putc('\n', stderr);
                 assert(!"ei_pairs not grouped by type");
             }
             t_seen.insert(p->t);
-            prev_t= p->t;
+            prev_t = p->t;
         }
-        if(tdAPIMap.count(p->n))
+        if (tdAPIMap.count(p->n))
         {
             fputs(p->n, stderr);
             putc('\n', stderr);
             assert(!"duplicate name in ei_pairs");
         }
-        tdAPIMap[p->n]= p->t;
+        tdAPIMap[p->n] = p->t;
     }
 }
 
 /// Get the function type if it is a threadAPI function
 ThreadAPI::TD_TYPE ThreadAPI::getType(const FunObjVar* F) const
 {
-    if(F)
+    if (F)
     {
-        TDAPIMap::const_iterator it= tdAPIMap.find(F->getName());
-        if(it != tdAPIMap.end())
+        TDAPIMap::const_iterator it = tdAPIMap.find(F->getName());
+        if (it != tdAPIMap.end())
             return it->second;
     }
     return TD_DUMMY;
 }
 
-bool ThreadAPI::isTDFork(const CallICFGNode *inst) const
+bool ThreadAPI::isTDFork(const CallICFGNode* inst) const
 {
     return getType(inst->getCalledFunction()) == TD_FORK;
 }
 
-bool ThreadAPI::isTDJoin(const CallICFGNode *inst) const
+bool ThreadAPI::isTDJoin(const CallICFGNode* inst) const
 {
     return getType(inst->getCalledFunction()) == TD_JOIN;
 }
 
-bool ThreadAPI::isTDExit(const CallICFGNode *inst) const
+bool ThreadAPI::isTDExit(const CallICFGNode* inst) const
 {
     return getType(inst->getCalledFunction()) == TD_EXIT;
 }
@@ -206,24 +217,31 @@ bool ThreadAPI::isTDAcquire(const CallICFGNode* inst) const
     return getType(inst->getCalledFunction()) == TD_ACQUIRE;
 }
 
-bool ThreadAPI::isTDRelease(const CallICFGNode *inst) const
+bool ThreadAPI::isTDRelease(const CallICFGNode* inst) const
 {
     return getType(inst->getCalledFunction()) == TD_RELEASE;
 }
 
-bool ThreadAPI::isTDBarWait(const CallICFGNode *inst) const
+bool ThreadAPI::isTDBarWait(const CallICFGNode* inst) const
 {
     return getType(inst->getCalledFunction()) == TD_BAR_WAIT;
 }
 
-
-const ValVar* ThreadAPI::getForkedThread(const CallICFGNode *inst) const
+const ValVar* ThreadAPI::getForkedThread(const CallICFGNode* inst) const
 {
     assert(isTDFork(inst) && "not a thread fork function!");
+    const FunObjVar* fun = inst->getCalledFunction();
+    if (fun && (fun->getName() == "CreateThread" ||
+                fun->getName() == "_beginthreadex" ||
+                fun->getName() == "\01CreateThread" ||
+                fun->getName() == "\01_beginthreadex"))
+    {
+        return inst->getArgument(5);
+    }
     return inst->getArgument(0);
 }
 
-const ValVar* ThreadAPI::getForkedFun(const CallICFGNode *inst) const
+const ValVar* ThreadAPI::getForkedFun(const CallICFGNode* inst) const
 {
     assert(isTDFork(inst) && "not a thread fork function!");
     return inst->getArgument(2);
@@ -231,7 +249,7 @@ const ValVar* ThreadAPI::getForkedFun(const CallICFGNode *inst) const
 
 /// Return the forth argument of the call,
 /// Note that, it is the sole argument of start routine ( a void* pointer )
-const ValVar* ThreadAPI::getActualParmAtForkSite(const CallICFGNode *inst) const
+const ValVar* ThreadAPI::getActualParmAtForkSite(const CallICFGNode* inst) const
 {
     assert(isTDFork(inst) && "not a thread fork function!");
     return inst->getArgument(3);
@@ -239,28 +257,31 @@ const ValVar* ThreadAPI::getActualParmAtForkSite(const CallICFGNode *inst) const
 
 const SVFVar* ThreadAPI::getFormalParmOfForkedFun(const FunObjVar* F) const
 {
-    assert(PAG::getPAG()->hasFunArgsList(F) && "forked function has no args list!");
+    assert(PAG::getPAG()->hasFunArgsList(F) &&
+           "forked function has no args list!");
     const SVFIR::ValVarList& funArgList = PAG::getPAG()->getFunArgsList(F);
     // in pthread, forked functions are of type void *()(void *args)
-    assert(funArgList.size() == 1 && "num of pthread forked function args is not 1!");
+    assert(funArgList.size() == 1 &&
+           "num of pthread forked function args is not 1!");
     return funArgList[0];
 }
 
-const SVFVar* ThreadAPI::getRetParmAtJoinedSite(const CallICFGNode *inst) const
+const SVFVar* ThreadAPI::getRetParmAtJoinedSite(const CallICFGNode* inst) const
 {
     assert(isTDJoin(inst) && "not a thread join function!");
     return inst->getArgument(1);
 }
 
-const SVFVar* ThreadAPI::getLockVal(const ICFGNode *cs) const
+const SVFVar* ThreadAPI::getLockVal(const ICFGNode* cs) const
 {
     const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(cs);
     assert(call && "not a call ICFGNode?");
-    assert((isTDAcquire(call) || isTDRelease(call)) && "not a lock acquire or release function");
+    assert((isTDAcquire(call) || isTDRelease(call)) &&
+           "not a lock acquire or release function");
     return call->getArgument(0);
 }
 
-const SVFVar* ThreadAPI::getJoinedThread(const CallICFGNode *cs) const
+const SVFVar* ThreadAPI::getJoinedThread(const CallICFGNode* cs) const
 {
     assert(isTDJoin(cs) && "not a thread join function!");
     return cs->getArgument(0);
@@ -273,14 +294,16 @@ const SVFVar* ThreadAPI::getJoinedThread(const CallICFGNode *cs) const
  * - joinArg is the value first argument of pthread_join
  *   (pthread_t)
  */
-bool ThreadAPI::isAliasedForkJoin(PointerAnalysis *pta, const SVFVar *forkArg, const SVFVar *joinArg) const
+bool ThreadAPI::isAliasedForkJoin(PointerAnalysis* pta, const SVFVar* forkArg,
+                                  const SVFVar* joinArg) const
 {
     ForkJoinAliasCache cache;
     return isAliasedForkJoin(pta, forkArg, joinArg, cache);
 }
 
-bool ThreadAPI::isAliasedForkJoin(PointerAnalysis *pta, const SVFVar *forkArg,
-                                  const SVFVar *joinArg, ForkJoinAliasCache& cache) const
+bool ThreadAPI::isAliasedForkJoin(PointerAnalysis* pta, const SVFVar* forkArg,
+                                  const SVFVar* joinArg,
+                                  ForkJoinAliasCache& cache) const
 {
     // pthread_create receives &t (a pointer to the pthread_t object), so the
     // forked thread is identified by the pthread_t object(s) in pts(forkArg).
@@ -289,7 +312,8 @@ bool ThreadAPI::isAliasedForkJoin(PointerAnalysis *pta, const SVFVar *forkArg,
     if (forkObjs.toNodeBS().intersects(joinedObjs))
         return true;
 
-    // (1) Direct case: the join handle is itself a pointer to the same pthread_t.
+    // (1) Direct case: the join handle is itself a pointer to the same
+    // pthread_t.
     for (NodeID o : forkObjs)
         if (pta->alias(o, joinArg->getId()))
             return true;
@@ -299,9 +323,9 @@ bool ThreadAPI::isAliasedForkJoin(PointerAnalysis *pta, const SVFVar *forkArg,
     //     value is loaded from the pthread_t storage, possibly after flowing
     //     through copies / phis / casts / by-value parameter passing. We
     //     backward value-track the join handle to every load it may originate
-    //     from and check whether the loaded-from storage is the fork's pthread_t
-    //     object. This covers the common shapes soundly (an over-approximate
-    //     match only adds a sound join-related value flow).
+    //     from and check whether the loaded-from storage is the fork's
+    //     pthread_t object. This covers the common shapes soundly (an
+    //     over-approximate match only adds a sound join-related value flow).
     return false;
 }
 
@@ -356,122 +380,106 @@ void ThreadAPI::performAPIStat()
     statInit(tdAPIStatMap);
 
     const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
-    for (const auto& item: *svfirCallGraph)
+    for (const auto& item : *svfirCallGraph)
     {
-        for (FunObjVar::const_bb_iterator bit = (item.second)->getFunction()->begin(), ebit = (item.second)->getFunction()->end(); bit != ebit; ++bit)
+        for (FunObjVar::const_bb_iterator
+                 bit = (item.second)->getFunction()->begin(),
+                 ebit = (item.second)->getFunction()->end();
+             bit != ebit; ++bit)
         {
             const SVFBasicBlock* bb = bit->second;
-            for (const auto& svfInst: bb->getICFGNodeList())
+            for (const auto& svfInst : bb->getICFGNodeList())
             {
                 if (!SVFUtil::isCallSite(svfInst))
                     continue;
 
-                const FunObjVar* fun = SVFUtil::cast<CallICFGNode>(svfInst)->getCalledFunction();
+                const FunObjVar* fun =
+                    SVFUtil::cast<CallICFGNode>(svfInst)->getCalledFunction();
                 TD_TYPE type = getType(fun);
                 switch (type)
                 {
-                case TD_FORK:
-                {
+                case TD_FORK: {
                     tdAPIStatMap["pthread_create"]++;
                     break;
                 }
-                case TD_JOIN:
-                {
+                case TD_JOIN: {
                     tdAPIStatMap["pthread_join"]++;
                     break;
                 }
-                case TD_ACQUIRE:
-                {
+                case TD_ACQUIRE: {
                     tdAPIStatMap["pthread_mutex_lock"]++;
                     break;
                 }
-                case TD_TRY_ACQUIRE:
-                {
+                case TD_TRY_ACQUIRE: {
                     tdAPIStatMap["pthread_mutex_trylock"]++;
                     break;
                 }
-                case TD_RELEASE:
-                {
+                case TD_RELEASE: {
                     tdAPIStatMap["pthread_mutex_unlock"]++;
                     break;
                 }
-                case TD_CANCEL:
-                {
+                case TD_CANCEL: {
                     tdAPIStatMap["pthread_cancel"]++;
                     break;
                 }
-                case TD_EXIT:
-                {
+                case TD_EXIT: {
                     tdAPIStatMap["pthread_exit"]++;
                     break;
                 }
-                case TD_DETACH:
-                {
+                case TD_DETACH: {
                     tdAPIStatMap["pthread_detach"]++;
                     break;
                 }
-                case TD_COND_WAIT:
-                {
+                case TD_COND_WAIT: {
                     tdAPIStatMap["pthread_cond_wait"]++;
                     break;
                 }
-                case TD_COND_SIGNAL:
-                {
+                case TD_COND_SIGNAL: {
                     tdAPIStatMap["pthread_cond_signal"]++;
                     break;
                 }
-                case TD_COND_BROADCAST:
-                {
+                case TD_COND_BROADCAST: {
                     tdAPIStatMap["pthread_cond_broadcast"]++;
                     break;
                 }
-                case TD_CONDVAR_INI:
-                {
+                case TD_CONDVAR_INI: {
                     tdAPIStatMap["pthread_cond_init"]++;
                     break;
                 }
-                case TD_CONDVAR_DESTROY:
-                {
+                case TD_CONDVAR_DESTROY: {
                     tdAPIStatMap["pthread_cond_destroy"]++;
                     break;
                 }
-                case TD_MUTEX_INI:
-                {
+                case TD_MUTEX_INI: {
                     tdAPIStatMap["pthread_mutex_init"]++;
                     break;
                 }
-                case TD_MUTEX_DESTROY:
-                {
+                case TD_MUTEX_DESTROY: {
                     tdAPIStatMap["pthread_mutex_destroy"]++;
                     break;
                 }
-                case TD_BAR_INIT:
-                {
+                case TD_BAR_INIT: {
                     tdAPIStatMap["pthread_barrier_init"]++;
                     break;
                 }
-                case TD_BAR_WAIT:
-                {
+                case TD_BAR_WAIT: {
                     tdAPIStatMap["pthread_barrier_wait"]++;
                     break;
                 }
-                case HARE_PAR_FOR:
-                {
+                case HARE_PAR_FOR: {
                     tdAPIStatMap["hare_parallel_for"]++;
                     break;
                 }
-                case TD_DUMMY:
-                {
+                case TD_DUMMY: {
                     break;
                 }
                 }
             }
         }
-
     }
 
     std::string name(PAG::getPAG()->getModuleIdentifier());
-    std::vector<std::string> fullNames = SVFUtil::split(name,'/');
+    std::vector<std::string> fullNames = SVFUtil::split(name, '/');
     if (fullNames.size() > 1)
     {
         name = fullNames[fullNames.size() - 1];
@@ -480,17 +488,17 @@ void ThreadAPI::performAPIStat()
                     << ")###############\n";
     SVFUtil::outs().flags(std::ios::left);
     unsigned field_width = 20;
-    for (Map<std::string, u32_t>::iterator it = tdAPIStatMap.begin(), eit =
-                tdAPIStatMap.end(); it != eit; ++it)
+    for (Map<std::string, u32_t>::iterator it = tdAPIStatMap.begin(),
+                                           eit = tdAPIStatMap.end();
+         it != eit; ++it)
     {
         std::string apiName = it->first;
         // format out put with width 20 space
-        SVFUtil::outs() << std::setw(field_width) << apiName << " : " << it->second
-                        << "\n";
+        SVFUtil::outs() << std::setw(field_width) << apiName << " : "
+                        << it->second << "\n";
     }
     SVFUtil::outs() << "#######################################################"
                     << std::endl;
-
 }
 
 #endif /* THREADAPI_CPP_ */

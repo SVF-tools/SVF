@@ -83,12 +83,10 @@ protected:
         return InEdgeKindToSetMap;
     }
 
-
     inline const SVFStmt::KindToSVFStmtMapTy& getOutEdgeKindToSetMap() const
     {
         return OutEdgeKindToSetMap;
     }
-
 
 public:
     /// Standard constructor with ID, type and kind
@@ -104,7 +102,8 @@ public:
         return type->isPointerTy();
     }
 
-    /// Check if this variable represents constant data/metadata but not null pointer
+    /// Check if this variable represents constant data/metadata but not null
+    /// pointer
     virtual bool isConstDataOrAggDataButNotNullPtr() const
     {
         return false;
@@ -136,7 +135,8 @@ public:
 
     inline bool hasIncomingEdges(SVFStmt::PEDGEK kind) const
     {
-        SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it =
+            InEdgeKindToSetMap.find(kind);
         if (it != InEdgeKindToSetMap.end())
             return (!it->second.empty());
         else
@@ -145,7 +145,8 @@ public:
 
     inline bool hasOutgoingEdges(SVFStmt::PEDGEK kind) const
     {
-        SVFStmt::KindToSVFStmtMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it =
+            OutEdgeKindToSetMap.find(kind);
         if (it != OutEdgeKindToSetMap.end())
             return (!it->second.empty());
         else
@@ -153,42 +154,50 @@ public:
     }
 
     /// Edge iterators
-    inline SVFStmt::SVFStmtSetTy::iterator getIncomingEdgesBegin(SVFStmt::PEDGEK kind) const
+    inline SVFStmt::SVFStmtSetTy::iterator getIncomingEdgesBegin(
+        SVFStmt::PEDGEK kind) const
     {
-        SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
-        assert(it!=InEdgeKindToSetMap.end() && "Edge kind not found");
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it =
+            InEdgeKindToSetMap.find(kind);
+        assert(it != InEdgeKindToSetMap.end() && "Edge kind not found");
         return it->second.begin();
     }
 
-    inline SVFStmt::SVFStmtSetTy::iterator getIncomingEdgesEnd(SVFStmt::PEDGEK kind) const
+    inline SVFStmt::SVFStmtSetTy::iterator getIncomingEdgesEnd(
+        SVFStmt::PEDGEK kind) const
     {
-        SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
-        assert(it!=InEdgeKindToSetMap.end() && "Edge kind not found");
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it =
+            InEdgeKindToSetMap.find(kind);
+        assert(it != InEdgeKindToSetMap.end() && "Edge kind not found");
         return it->second.end();
     }
 
-    inline SVFStmt::SVFStmtSetTy::iterator getOutgoingEdgesBegin(SVFStmt::PEDGEK kind) const
+    inline SVFStmt::SVFStmtSetTy::iterator getOutgoingEdgesBegin(
+        SVFStmt::PEDGEK kind) const
     {
-        SVFStmt::KindToSVFStmtMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
-        assert(it!=OutEdgeKindToSetMap.end() && "Edge kind not found");
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it =
+            OutEdgeKindToSetMap.find(kind);
+        assert(it != OutEdgeKindToSetMap.end() && "Edge kind not found");
         return it->second.begin();
     }
 
-    inline SVFStmt::SVFStmtSetTy::iterator getOutgoingEdgesEnd(SVFStmt::PEDGEK kind) const
+    inline SVFStmt::SVFStmtSetTy::iterator getOutgoingEdgesEnd(
+        SVFStmt::PEDGEK kind) const
     {
-        SVFStmt::KindToSVFStmtMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
-        assert(it!=OutEdgeKindToSetMap.end() && "Edge kind not found");
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it =
+            OutEdgeKindToSetMap.find(kind);
+        assert(it != OutEdgeKindToSetMap.end() && "Edge kind not found");
         return it->second.end();
     }
     //@}
 
     /// Type checking support for LLVM-style RTTI
-    static inline bool classof(const SVFVar *)
+    static inline bool classof(const SVFVar*)
     {
         return true;
     }
 
-    static inline bool classof(const GenericPAGNodeTy * node)
+    static inline bool classof(const GenericPAGNodeTy* node)
     {
         return isSVFVarKind(node->getNodeKind());
     }
@@ -206,7 +215,6 @@ public:
     {
         return false;
     }
-
 
 private:
     /// Edge management methods
@@ -228,12 +236,13 @@ private:
     /// Check for incoming variable field GEP edges
     inline bool hasIncomingVariantGepEdge() const
     {
-        SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(SVFStmt::Gep);
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it =
+            InEdgeKindToSetMap.find(SVFStmt::Gep);
         if (it != InEdgeKindToSetMap.end())
         {
-            for(auto gep : it->second)
+            for (auto gep : it->second)
             {
-                if(SVFUtil::cast<GepStmt>(gep)->isVariantFieldGep())
+                if (SVFUtil::cast<GepStmt>(gep)->isVariantFieldGep())
                     return true;
             }
         }
@@ -248,19 +257,17 @@ public:
     void dump() const;
 
     /// Stream operator overload for output
-    friend OutStream& operator<< (OutStream &o, const SVFVar &node)
+    friend OutStream& operator<<(OutStream& o, const SVFVar& node)
     {
         o << node.toString();
         return o;
     }
 };
 
-
-
 /*
  * Value (Pointer) variable
  */
-class ValVar: public SVFVar
+class ValVar : public SVFVar
 {
     friend class GraphDBClient;
 
@@ -289,7 +296,8 @@ public:
     //@}
 
     /// Constructor
-    ValVar(NodeID i, const SVFType* svfType, const ICFGNode* node, PNODEK ty = ValNode);
+    ValVar(NodeID i, const SVFType* svfType, const ICFGNode* node,
+           PNODEK ty = ValNode);
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
@@ -306,22 +314,22 @@ public:
     virtual const std::string toString() const;
 
     std::string getValVarNodeFieldsStmt() const;
-
 };
 
 /*
  * Memory Object variable
  */
-class ObjVar: public SVFVar
+class ObjVar : public SVFVar
 {
     friend class GraphDBClient;
 
 protected:
     /// Constructor
-    ObjVar(NodeID i, const SVFType* svfType, PNODEK ty = ObjNode) :
-        SVFVar(i, svfType, ty)
+    ObjVar(NodeID i, const SVFType* svfType, PNODEK ty = ObjNode)
+        : SVFVar(i, svfType, ty)
     {
     }
+
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -352,17 +360,15 @@ public:
     virtual const std::string toString() const;
 
     std::string getObjVarNodeFieldsStmt() const;
-
 };
-
 
 /**
  * @brief Class representing a function argument variable in the SVFIR
  *
- * This class models function argument in the program analysis. It extends ValVar
- * to specifically handle function argument.
+ * This class models function argument in the program analysis. It extends
+ * ValVar to specifically handle function argument.
  */
-class ArgValVar: public ValVar
+class ArgValVar : public ValVar
 {
     friend class GraphDBClient;
 
@@ -396,8 +402,8 @@ public:
     //@}
 
     /// Constructor
-    ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn, const FunObjVar* callGraphNode,
-              const SVFType* svfType);
+    ArgValVar(NodeID i, u32_t argNo, const ICFGNode* icn,
+              const FunObjVar* callGraphNode, const SVFType* svfType);
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const
@@ -428,39 +434,38 @@ public:
     virtual const std::string toString() const;
 };
 
-
 /*
- * Gep Value (Pointer) variable, this variable can be dynamic generated for field sensitive analysis
- * e.g. memcpy, temp gep value variable needs to be created
- * Each Gep Value variable is connected to base value variable via gep edge
+ * Gep Value (Pointer) variable, this variable can be dynamic generated for
+ * field sensitive analysis e.g. memcpy, temp gep value variable needs to be
+ * created Each Gep Value variable is connected to base value variable via gep
+ * edge
  */
-class GepValVar: public ValVar
+class GepValVar : public ValVar
 {
     friend class GraphDBClient;
 
 private:
-    AccessPath ap;	// AccessPath
-    const ValVar* base;	// base node
+    AccessPath ap;      // AccessPath
+    const ValVar* base; // base node
     const SVFType* gepValType;
     NodeID llvmVarID;
-
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const GepValVar *)
+    static inline bool classof(const GepValVar*)
     {
         return true;
     }
-    static inline bool classof(const ValVar * node)
+    static inline bool classof(const ValVar* node)
     {
         return node->getNodeKind() == SVFVar::GepValNode;
     }
-    static inline bool classof(const SVFVar *node)
+    static inline bool classof(const SVFVar* node)
     {
         return node->getNodeKind() == SVFVar::GepValNode;
     }
-    static inline bool classof(const GenericPAGNodeTy *node)
+    static inline bool classof(const GenericPAGNodeTy* node)
     {
         return node->getNodeKind() == SVFVar::GepValNode;
     }
@@ -503,8 +508,7 @@ public:
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
-        return getName() + "_" +
-               std::to_string(getConstantFieldIdx());
+        return getName() + "_" + std::to_string(getConstantFieldIdx());
     }
 
     virtual bool isPointer() const
@@ -562,7 +566,8 @@ class BaseObjVar : public ObjVar
 private:
     ObjTypeInfo* typeInfo;
 
-    const ICFGNode* icfgNode; /// ICFGNode related to the creation of this object
+    const ICFGNode*
+        icfgNode; /// ICFGNode related to the creation of this object
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -590,7 +595,8 @@ public:
     //@}
 
     /// Constructor
-    BaseObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node, PNODEK ty = BaseObjNode)
+    BaseObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node,
+               PNODEK ty = BaseObjNode)
         : ObjVar(i, ti->getType(), ty), typeInfo(ti), icfgNode(node)
     {
     }
@@ -653,7 +659,6 @@ public:
         return typeInfo->getMaxFieldOffsetLimit();
     }
 
-
     /// Return true if its field limit is 0
     bool isFieldInsensitive() const
     {
@@ -665,7 +670,6 @@ public:
     {
         typeInfo->setMaxFieldOffsetLimit(0);
     }
-
 
     /// Set the memory object to be field sensitive (up to max field limit)
     void setFieldSensitive()
@@ -687,7 +691,6 @@ public:
     {
         return typeInfo->isConstantByteSize();
     }
-
 
     /// object attributes methods
     //@{
@@ -753,18 +756,15 @@ public:
     }
 
     virtual const FunObjVar* getFunction() const;
-
 };
-
 
 /*
  * Gep Obj variable, this is dynamic generated for field sensitive analysis
  * Each gep obj variable is one field of a BaseObjVar (base)
  */
-class GepObjVar: public ObjVar
+class GepObjVar : public ObjVar
 {
     friend class GraphDBClient;
-
 
 private:
     APOffset apOffset = 0;
@@ -797,8 +797,8 @@ public:
     //@}
 
     /// Constructor
-    GepObjVar(const BaseObjVar* baseObj, NodeID i,
-              const APOffset& apOffset, PNODEK ty = GepObjNode)
+    GepObjVar(const BaseObjVar* baseObj, NodeID i, const APOffset& apOffset,
+              PNODEK ty = GepObjNode)
         : ObjVar(i, baseObj->getType(), ty), apOffset(apOffset), base(baseObj)
     {
     }
@@ -821,8 +821,7 @@ public:
     }
 
     /// Return the type of this gep object
-    inline virtual const SVFType* getType() const;
-
+    virtual const SVFType* getType() const;
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const
@@ -858,15 +857,13 @@ public:
     }
 };
 
-
-
 /**
  * @brief Class representing a heap object variable in the SVFIR
  *
- * This class models heap-allocated objects in the program analysis. It extends BaseObjVar
- * to specifically handle heap memory locations.
+ * This class models heap-allocated objects in the program analysis. It extends
+ * BaseObjVar to specifically handle heap memory locations.
  */
-class HeapObjVar: public BaseObjVar
+class HeapObjVar : public BaseObjVar
 {
 
     friend class GraphDBClient;
@@ -901,8 +898,8 @@ public:
     //@}
 
     /// Constructor
-    HeapObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node):
-        BaseObjVar(i, ti, node, HeapObjNode)
+    HeapObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node)
+        : BaseObjVar(i, ti, node, HeapObjNode)
     {
     }
 
@@ -915,20 +912,19 @@ public:
     virtual const std::string toString() const;
 };
 
-
 /**
- * @brief Represents a stack-allocated object variable in the SVFIR (SVF Intermediate Representation)
+ * @brief Represents a stack-allocated object variable in the SVFIR (SVF
+ * Intermediate Representation)
  * @inherits BaseObjVar
  *
  * This class models variables that are allocated on the stack in the program.
- * It provides type checking functionality through LLVM-style RTTI (Runtime Type Information)
- * methods like classof.
+ * It provides type checking functionality through LLVM-style RTTI (Runtime Type
+ * Information) methods like classof.
  */
-class StackObjVar: public BaseObjVar
+class StackObjVar : public BaseObjVar
 {
 
     friend class GraphDBClient;
-
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -960,8 +956,8 @@ public:
     //@}
 
     /// Constructor
-    StackObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node):
-        BaseObjVar(i, ti, node, StackObjNode)
+    StackObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node)
+        : BaseObjVar(i, ti, node, StackObjNode)
     {
     }
 
@@ -974,7 +970,6 @@ public:
     virtual const std::string toString() const;
 };
 
-
 class CallGraphNode;
 
 class FunObjVar : public BaseObjVar
@@ -984,13 +979,12 @@ class FunObjVar : public BaseObjVar
     friend class GraphDBClient;
 
 protected:
-
-    inline void updateExitBlock(SVFBasicBlock *bb)
+    inline void updateExitBlock(SVFBasicBlock* bb)
     {
         exitBlock = bb;
     }
 
-    inline void setLoopAndDomInfo(SVFLoopAndDomInfo *ld)
+    inline void setLoopAndDomInfo(SVFLoopAndDomInfo* ld)
     {
         loopAndDom = ld;
     }
@@ -998,7 +992,7 @@ protected:
     {
         return isNotRet;
     }
-    inline const std::vector<const ArgValVar*> &getArgs() const
+    inline const std::vector<const ArgValVar*>& getArgs() const
     {
         return allArgs;
     }
@@ -1010,21 +1004,28 @@ public:
 
     typedef BasicBlockGraph::IDToNodeMapTy::const_iterator const_bb_iterator;
 
-
 private:
-    bool isDecl;   /// return true if this function does not have a body
-    bool intrinsic; /// return true if this function is an intrinsic function (e.g., llvm.dbg), which does not reside in the application code
-    bool isAddrTaken; /// return true if this function is address-taken (for indirect call purposes)
-    bool isUncalled;    /// return true if this function is never called
-    bool isNotRet;   /// return true if this function never returns
-    bool supVarArg;    /// return true if this function supports variable arguments
-    const SVFFunctionType* funcType; /// FunctionType, which is different from the type (PointerType) of this SVF Function
-    SVFLoopAndDomInfo* loopAndDom;  /// the loop and dominate information
-    const FunObjVar * realDefFun;  /// the definition of a function across multiple modules
+    bool isDecl;      /// return true if this function does not have a body
+    bool intrinsic;   /// return true if this function is an intrinsic function
+                      /// (e.g., llvm.dbg), which does not reside in the
+                      /// application code
+    bool isAddrTaken; /// return true if this function is address-taken (for
+                      /// indirect call purposes)
+    bool isUncalled;  /// return true if this function is never called
+    bool isNotRet;    /// return true if this function never returns
+    bool supVarArg; /// return true if this function supports variable arguments
+    const SVFFunctionType*
+        funcType; /// FunctionType, which is different from the type
+                  /// (PointerType) of this SVF Function
+    SVFLoopAndDomInfo* loopAndDom; /// the loop and dominate information
+    const FunObjVar*
+        realDefFun; /// the definition of a function across multiple modules
     BasicBlockGraph* bbGraph; /// the basic block graph of this function
-    std::vector<const ArgValVar*> allArgs;    /// all formal arguments of this function
-    const SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
-
+    std::vector<const ArgValVar*>
+        allArgs; /// all formal arguments of this function
+    const SVFBasicBlock*
+        exitBlock; /// a 'single' basic block having no successors and
+                   /// containing return instruction in a function
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1058,25 +1059,27 @@ public:
     /// Constructor
     FunObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node);
 
-
     virtual ~FunObjVar()
     {
         delete loopAndDom;
         delete bbGraph;
     }
 
-    void initFunObjVar(bool decl, bool intrinc, bool addr, bool uncalled, bool notret, bool vararg, const SVFFunctionType *ft,
-                       SVFLoopAndDomInfo *ld, const FunObjVar *real, BasicBlockGraph *bbg,
-                       const std::vector<const ArgValVar *> &allarg, const SVFBasicBlock *exit);
+    void initFunObjVar(bool decl, bool intrinc, bool addr, bool uncalled,
+                       bool notret, bool vararg, const SVFFunctionType* ft,
+                       SVFLoopAndDomInfo* ld, const FunObjVar* real,
+                       BasicBlockGraph* bbg,
+                       const std::vector<const ArgValVar*>& allarg,
+                       const SVFBasicBlock* exit);
 
-    void setRelDefFun(const FunObjVar *real)
+    void setRelDefFun(const FunObjVar* real)
     {
         realDefFun = real;
     }
 
-    virtual const FunObjVar*getFunction() const;
+    virtual const FunObjVar* getFunction() const;
 
-    inline void addArgument(const ArgValVar *arg)
+    inline void addArgument(const ArgValVar* arg)
     {
         allArgs.push_back(arg);
     }
@@ -1107,7 +1110,7 @@ public:
 
     inline bool hasReturn() const
     {
-        return  !isNotRet;
+        return !isNotRet;
     }
 
     /// Returns the FunctionType
@@ -1132,9 +1135,10 @@ public:
         return loopAndDom->getReachableBBs();
     }
 
-    inline void getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exitbbs) const
+    inline void getExitBlocksOfLoop(const SVFBasicBlock* bb,
+                                    BBList& exitbbs) const
     {
-        return loopAndDom->getExitBlocksOfLoop(bb,exitbbs);
+        return loopAndDom->getExitBlocksOfLoop(bb, exitbbs);
     }
 
     inline bool hasLoopInfo(const SVFBasicBlock* bb) const
@@ -1154,15 +1158,15 @@ public:
 
     inline bool loopContainsBB(const BBList& lp, const SVFBasicBlock* bb) const
     {
-        return loopAndDom->loopContainsBB(lp,bb);
+        return loopAndDom->loopContainsBB(lp, bb);
     }
 
-    inline const Map<const SVFBasicBlock*,BBSet>& getDomTreeMap() const
+    inline const Map<const SVFBasicBlock*, BBSet>& getDomTreeMap() const
     {
         return loopAndDom->getDomTreeMap();
     }
 
-    inline const Map<const SVFBasicBlock*,BBSet>& getDomFrontierMap() const
+    inline const Map<const SVFBasicBlock*, BBSet>& getDomFrontierMap() const
     {
         return loopAndDom->getDomFrontierMap();
     }
@@ -1172,19 +1176,21 @@ public:
         return loopAndDom->isLoopHeader(bb);
     }
 
-    inline bool dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
+    inline bool dominate(const SVFBasicBlock* bbKey,
+                         const SVFBasicBlock* bbValue) const
     {
-        return loopAndDom->dominate(bbKey,bbValue);
+        return loopAndDom->dominate(bbKey, bbValue);
     }
 
-    inline bool postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
+    inline bool postDominate(const SVFBasicBlock* bbKey,
+                             const SVFBasicBlock* bbValue) const
     {
-        return loopAndDom->postDominate(bbKey,bbValue);
+        return loopAndDom->postDominate(bbKey, bbValue);
     }
 
     inline const FunObjVar* getDefFunForMultipleModule() const
     {
-        if(realDefFun==nullptr)
+        if (realDefFun == nullptr)
             return this;
         return realDefFun;
     }
@@ -1211,33 +1217,35 @@ public:
 
     inline const SVFBasicBlock* getEntryBlock() const
     {
-        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
-        assert(bbGraph->begin()->second->getInEdges().size() == 0 && "the first basic block is not entry block");
+        assert(hasBasicBlock() &&
+               "function does not have any Basicblock, external function?");
+        assert(bbGraph->begin()->second->getInEdges().size() == 0 &&
+               "the first basic block is not entry block");
         return bbGraph->begin()->second;
     }
 
     inline const SVFBasicBlock* getExitBB() const
     {
-        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
+        assert(hasBasicBlock() &&
+               "function does not have any Basicblock, external function?");
         assert(exitBlock && "must have an exitBlock");
         return exitBlock;
     }
 
-    inline void setExitBlock(SVFBasicBlock *bb)
+    inline void setExitBlock(SVFBasicBlock* bb)
     {
         assert(!exitBlock && "have already set exit Basicblock!");
         exitBlock = bb;
     }
-
 
     u32_t inline arg_size() const
     {
         return allArgs.size();
     }
 
-    inline const ArgValVar*  getArg(u32_t idx) const
+    inline const ArgValVar* getArg(u32_t idx) const
     {
-        assert (idx < allArgs.size() && "getArg() out of range!");
+        assert(idx < allArgs.size() && "getArg() out of range!");
         return allArgs[idx];
     }
     inline const SVFBasicBlock* front() const
@@ -1247,7 +1255,8 @@ public:
 
     inline const SVFBasicBlock* back() const
     {
-        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
+        assert(hasBasicBlock() &&
+               "function does not have any Basicblock, external function?");
         /// Carefully! 'back' is just the last basic block of function,
         /// but not necessarily a exit basic block
         /// more refer to: https://github.com/SVF-tools/SVF/pull/1262
@@ -1313,8 +1322,8 @@ public:
     }
 
     /// Constructor
-    FunValVar(NodeID i, const ICFGNode* icn, const FunObjVar* cgn, const SVFType* svfType);
-
+    FunValVar(NodeID i, const ICFGNode* icn, const FunObjVar* cgn,
+              const SVFType* svfType);
 
     virtual bool isPointer() const
     {
@@ -1324,12 +1333,9 @@ public:
     virtual const std::string toString() const;
 };
 
-
-
 class GlobalValVar : public ValVar
 {
     friend class GraphDBClient;
-
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1363,14 +1369,12 @@ public:
         type = svfType;
     }
 
-
     virtual const std::string toString() const;
 };
 
 class ConstDataValVar : public ValVar
 {
     friend class GraphDBClient;
-
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1402,7 +1406,6 @@ public:
                     PNODEK ty = ConstDataValNode)
         : ValVar(i, svfType, icn, ty)
     {
-
     }
 
     virtual bool isConstDataOrAggData() const
@@ -1422,6 +1425,7 @@ class BlackHoleValVar : public ConstDataValVar
 {
 
     friend class GraphDBClient;
+
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -1452,10 +1456,10 @@ public:
     //@}
 
     /// Constructor
-    BlackHoleValVar(NodeID i, const SVFType* svfType, PNODEK ty = BlackHoleValNode)
-        : ConstDataValVar(i,  nullptr, svfType, ty)
+    BlackHoleValVar(NodeID i, const SVFType* svfType,
+                    PNODEK ty = BlackHoleValNode)
+        : ConstDataValVar(i, nullptr, svfType, ty)
     {
-
     }
 
     virtual bool isConstDataOrAggDataButNotNullPtr() const
@@ -1512,8 +1516,8 @@ public:
     }
 
     /// Constructor
-    ConstFPValVar(NodeID i, double dv,
-                  const ICFGNode* icn, const SVFType* svfType)
+    ConstFPValVar(NodeID i, double dv, const ICFGNode* icn,
+                  const SVFType* svfType)
         : ConstDataValVar(i, icn, svfType, ConstFPValNode), dval(dv)
     {
     }
@@ -1525,7 +1529,6 @@ class ConstIntValVar : public ConstDataValVar
 {
 
     friend class GraphDBClient;
-
 
 private:
     u64_t zval;
@@ -1565,17 +1568,16 @@ public:
         return sval;
     }
 
-
     u64_t getZExtValue() const
     {
         return zval;
     }
 
     /// Constructor
-    ConstIntValVar(NodeID i, s64_t sv, u64_t zv, const ICFGNode* icn, const SVFType* svfType)
-        : ConstDataValVar(i,  icn, svfType, ConstIntValNode), zval(zv), sval(sv)
+    ConstIntValVar(NodeID i, s64_t sv, u64_t zv, const ICFGNode* icn,
+                   const SVFType* svfType)
+        : ConstDataValVar(i, icn, svfType, ConstIntValNode), zval(zv), sval(sv)
     {
-
     }
     virtual const std::string toString() const;
 };
@@ -1615,9 +1617,8 @@ public:
 
     /// Constructor
     ConstNullPtrValVar(NodeID i, const ICFGNode* icn, const SVFType* svfType)
-        : ConstDataValVar(i,  icn, svfType, ConstNullptrValNode)
+        : ConstDataValVar(i, icn, svfType, ConstNullptrValNode)
     {
-
     }
 
     virtual bool isConstDataOrAggDataButNotNullPtr() const
@@ -1631,7 +1632,6 @@ public:
 class GlobalObjVar : public BaseObjVar
 {
     friend class GraphDBClient;
-
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1664,11 +1664,10 @@ public:
 
     /// Constructor
     GlobalObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node,
-                 PNODEK ty = GlobalObjNode): BaseObjVar(i, ti, node, ty)
+                 PNODEK ty = GlobalObjNode)
+        : BaseObjVar(i, ti, node, ty)
     {
-
     }
-
 
     virtual const std::string toString() const;
 };
@@ -1707,7 +1706,8 @@ public:
     //@}
 
     /// Constructor
-    ConstDataObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node, PNODEK ty = ConstDataObjNode)
+    ConstDataObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node,
+                    PNODEK ty = ConstDataObjNode)
         : BaseObjVar(i, ti, node, ty)
     {
     }
@@ -1729,7 +1729,6 @@ class ConstFPObjVar : public ConstDataObjVar
 {
 
     friend class GraphDBClient;
-
 
 private:
     float dval;
@@ -1781,7 +1780,6 @@ public:
         return dval;
     }
 
-
     virtual const std::string toString() const;
 };
 
@@ -1789,8 +1787,6 @@ class ConstIntObjVar : public ConstDataObjVar
 {
 
     friend class GraphDBClient;
-
-
 
 private:
     u64_t zval;
@@ -1836,7 +1832,6 @@ public:
         return sval;
     }
 
-
     u64_t getZExtValue() const
     {
         return zval;
@@ -1844,7 +1839,8 @@ public:
     //@}
 
     /// Constructor
-    ConstIntObjVar(NodeID i, s64_t sv, u64_t zv, ObjTypeInfo* ti, const ICFGNode* node)
+    ConstIntObjVar(NodeID i, s64_t sv, u64_t zv, ObjTypeInfo* ti,
+                   const ICFGNode* node)
         : ConstDataObjVar(i, ti, node, ConstIntObjNode), zval(zv), sval(sv)
     {
     }
@@ -1944,9 +1940,9 @@ public:
     }
     //@}
 
-
     /// Constructor
-    RetValPN(NodeID i, const FunObjVar* node, const SVFType* svfType, const ICFGNode* icn);
+    RetValPN(NodeID i, const FunObjVar* node, const SVFType* svfType,
+             const ICFGNode* icn);
 
     inline const FunObjVar* getCallGraphNode() const
     {
@@ -1976,6 +1972,7 @@ protected:
     {
         callGraphNode = node;
     }
+
 private:
     const FunObjVar* callGraphNode;
 
@@ -2004,7 +2001,8 @@ public:
     //@}
 
     /// Constructor
-    VarArgValPN(NodeID i, const FunObjVar* node, const SVFType* svfType, const ICFGNode* icn)
+    VarArgValPN(NodeID i, const FunObjVar* node, const SVFType* svfType,
+                const ICFGNode* icn)
         : ValVar(i, svfType, icn, VarargValNode), callGraphNode(node)
     {
         assert((node->isDeclaration() || icn) &&
@@ -2026,7 +2024,7 @@ public:
 /*
  * Dummy variable without any LLVM value
  */
-class DummyValVar: public ValVar
+class DummyValVar : public ValVar
 {
     friend class GraphDBClient;
 
@@ -2055,7 +2053,8 @@ public:
     //@}
 
     /// Constructor
-    DummyValVar(NodeID i, const ICFGNode* node, const SVFType* svfType = SVFType::getSVFPtrType())
+    DummyValVar(NodeID i, const ICFGNode* node,
+                const SVFType* svfType = SVFType::getSVFPtrType())
         : ValVar(i, svfType, node, DummyValNode)
     {
     }
@@ -2078,7 +2077,7 @@ public:
  * Represents an LLVM intrinsic call instruction (e.g. llvm.dbg.declare).
  * These are collected into valSyms but have no corresponding ICFGNode.
  */
-class IntrinsicValVar: public ValVar
+class IntrinsicValVar : public ValVar
 {
     friend class GraphDBClient;
 
@@ -2125,7 +2124,7 @@ public:
  * position-independent code (PIC), or control-flow integrity (CFI).
  * They have no corresponding ICFGNode.
  */
-class AsmPCValVar: public ValVar
+class AsmPCValVar : public ValVar
 {
     friend class GraphDBClient;
 
@@ -2152,7 +2151,9 @@ public:
     }
 
     AsmPCValVar(NodeID i, const SVFType* svfType)
-        : ValVar(i, svfType, nullptr, AsmPCValNode) {}
+        : ValVar(i, svfType, nullptr, AsmPCValNode)
+    {
+    }
 
     inline const std::string getValueName() const
     {
@@ -2164,11 +2165,10 @@ public:
 /*
  * Dummy object variable
  */
-class DummyObjVar: public BaseObjVar
+class DummyObjVar : public BaseObjVar
 {
 
     friend class GraphDBClient;
-
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:

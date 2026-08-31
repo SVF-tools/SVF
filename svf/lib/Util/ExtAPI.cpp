@@ -32,9 +32,18 @@
 #include "Util/Options.h"
 #include "Util/config.h"
 #include <ostream>
-#include <sys/stat.h>
+#ifdef _WIN32
+#  include <sys/types.h>
+#  include <sys/stat.h>
+#  include <windows.h>
+#  define stat  _stat
+#  define popen  _popen
+#  define pclose _pclose
+#else
+#  include <sys/stat.h>
+#  include <dlfcn.h>
+#endif
 #include "SVFIR/SVFVariables.h"
-#include <dlfcn.h>
 
 using namespace SVF;
 
@@ -142,12 +151,31 @@ static std::string getFilePath(const std::string& path)
 // This is useful for locating resource files (such as extapi.bc) relative to the module at runtime.
 std::string getCurrentSOPath()
 {
+#ifdef _WIN32
+    char path[MAX_PATH];
+    HMODULE hm = NULL;
+    if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                           GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                           (LPCSTR)&getCurrentSOPath, &hm))
+    {
+        GetModuleFileNameA(hm, path, sizeof(path));
+        std::string s(path);
+        for (size_t i = 0; i < s.length(); ++i) {
+            if (s[i] == '\\') {
+                s[i] = '/';
+            }
+        }
+        return s;
+    }
+    return "";
+#else
     Dl_info info;
     if (dladdr((void*)&getCurrentSOPath, &info) && info.dli_fname)
     {
         return std::string(info.dli_fname);
     }
     return "";
+#endif
 }
 
 // Get extapi.bc path

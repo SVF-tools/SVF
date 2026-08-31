@@ -26,30 +26,23 @@
  // Author: Jiawei Wang, Xiao Cheng, Jiawei Yang, Jiawei Ren, Yulei Sui
  */
 #include "SVF-LLVM/SVFIRBuilder.h"
-#include "WPA/WPAPass.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 #include "WPA/Andersen.h"
+#include "WPA/WPAPass.h"
 
 #include "AE/Core/RelExeState.h"
 #include "AE/Core/RelationSolver.h"
 #include "AE/Svfexe/AbstractInterpretation.h"
+#include <chrono>
 
 using namespace SVF;
 using namespace SVFUtil;
 
+static Option<bool> SYMABS("symabs", "symbolic abstraction test", false);
 
-static Option<bool> SYMABS(
-    "symabs",
-    "symbolic abstraction test",
-    false
-);
-
-static Option<bool> AETEST(
-    "aetest",
-    "abstract execution basic function test",
-    false
-);
+static Option<bool> AETEST("aetest", "abstract execution basic function test",
+                           false);
 
 class SymblicAbstractionTest
 {
@@ -75,7 +68,7 @@ public:
         AbstractState resRSY = rs.RSY(inv, phi);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-                            end_time - start_time);
+            end_time - start_time);
         outs() << "running time of RSY      : " << duration.count()
                << " microseconds\n";
         return resRSY;
@@ -87,7 +80,7 @@ public:
         AbstractState resBilateral = rs.bilateral(inv, phi);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-                            end_time - start_time);
+            end_time - start_time);
         outs() << "running time of Bilateral: " << duration.count()
                << " microseconds\n";
         return resBilateral;
@@ -99,7 +92,7 @@ public:
         AbstractState resBS = rs.BS(inv, phi);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-                            end_time - start_time);
+            end_time - start_time);
         outs() << "running time of BS       : " << duration.count()
                << " microseconds\n";
         return resBS;
@@ -130,13 +123,16 @@ public:
         AbstractState resBilateral = rs.bilateral(inv, phi);
         AbstractState resBS = rs.BS(inv, phi);
         // 0:[0,1] 1:[1,2]
-        assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
+        assert(resRSY == resBS && resBS == resBilateral &&
+               "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1)}, {1, IntervalValue(1, 2)}};
-        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1)},
+                                                     {1, IntervalValue(1, 2)}};
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) &&
+               "inconsistency occurs");
     }
 
     void testRelExeState1_2()
@@ -165,13 +161,16 @@ public:
         AbstractState resBilateral = rs.bilateral(inv, phi);
         AbstractState resBS = rs.BS(inv, phi);
         // 0:[0,1] 1:[0,2]
-        assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
+        assert(resRSY == resBS && resBS == resBilateral &&
+               "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1)}, {1, IntervalValue(0, 2)}};
-        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1)},
+                                                     {1, IntervalValue(0, 2)}};
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) &&
+               "inconsistency occurs");
     }
 
     void testRelExeState2_1()
@@ -203,17 +202,18 @@ public:
         AbstractState resBilateral = rs.bilateral(inv, phi);
         AbstractState resBS = rs.BS(inv, phi);
         // 0:[0,10] 1:[0,10] 2:[0,0]
-        assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
+        assert(resRSY == resBS && resBS == resBilateral &&
+               "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
         AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 10)},
-            {1, IntervalValue(0, 10)},
-            {2, IntervalValue(0, 0)}
-        };
-        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+                                                     {1, IntervalValue(0, 10)},
+                                                     {2, IntervalValue(0, 0)}};
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) &&
+               "inconsistency occurs");
     }
 
     void testRelExeState2_2()
@@ -246,17 +246,18 @@ public:
         AbstractState resBilateral = rs.bilateral(inv, phi);
         AbstractState resBS = rs.BS(inv, phi);
         // 0:[0,100] 1:[0,100] 2:[0,0]
-        assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
+        assert(resRSY == resBS && resBS == resBilateral &&
+               "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
         AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 100)},
-            {1, IntervalValue(0, 100)},
-            {2, IntervalValue(0, 0)}
-        };
-        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+                                                     {1, IntervalValue(0, 100)},
+                                                     {2, IntervalValue(0, 0)}};
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) &&
+               "inconsistency occurs");
     }
 
     void testRelExeState2_3()
@@ -289,17 +290,19 @@ public:
         AbstractState resBilateral = rs.bilateral(inv, phi);
         AbstractState resBS = rs.BS(inv, phi);
         // 0:[0,1000] 1:[0,1000] 2:[0,0]
-        assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
+        assert(resRSY == resBS && resBS == resBilateral &&
+               "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1000)},
+        AbstractState::VarToAbsValMap intendedRes = {
+            {0, IntervalValue(0, 1000)},
             {1, IntervalValue(0, 1000)},
-            {2, IntervalValue(0, 0)}
-        };
-        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+            {2, IntervalValue(0, 0)}};
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) &&
+               "inconsistency occurs");
     }
 
     void testRelExeState2_4()
@@ -332,17 +335,19 @@ public:
         AbstractState resBilateral = Bilateral_time(inv, phi, rs);
         AbstractState resBS = BS_time(inv, phi, rs);
         // 0:[0,10000] 1:[0,10000] 2:[0,0]
-        assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
+        assert(resRSY == resBS && resBS == resBilateral &&
+               "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 10000)},
+        AbstractState::VarToAbsValMap intendedRes = {
+            {0, IntervalValue(0, 10000)},
             {1, IntervalValue(0, 10000)},
-            {2, IntervalValue(0, 0)}
-        };
-        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+            {2, IntervalValue(0, 0)}};
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) &&
+               "inconsistency occurs");
     }
 
     void testRelExeState2_5()
@@ -375,17 +380,19 @@ public:
         AbstractState resBilateral = Bilateral_time(inv, phi, rs);
         AbstractState resBS = BS_time(inv, phi, rs);
         // 0:[0,100000] 1:[0,100000] 2:[0,0]
-        assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
+        assert(resRSY == resBS && resBS == resBilateral &&
+               "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 100000)},
+        AbstractState::VarToAbsValMap intendedRes = {
+            {0, IntervalValue(0, 100000)},
             {1, IntervalValue(0, 100000)},
-            {2, IntervalValue(0, 0)}
-        };
-        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+            {2, IntervalValue(0, 0)}};
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) &&
+               "inconsistency occurs");
     }
 
     void testRelExeState3_1()
@@ -417,17 +424,18 @@ public:
         AbstractState resBilateral = rs.bilateral(inv, phi);
         AbstractState resBS = rs.BS(inv, phi);
         // 0:[1,10] 1:[1,10] 2:[1,1]
-        assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
+        assert(resRSY == resBS && resBS == resBilateral &&
+               "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
         AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 10)},
-            {1, IntervalValue(1, 10)},
-            {2, IntervalValue(1, 1)}
-        };
-        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+                                                     {1, IntervalValue(1, 10)},
+                                                     {2, IntervalValue(1, 1)}};
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) &&
+               "inconsistency occurs");
     }
 
     void testRelExeState3_2()
@@ -459,17 +467,19 @@ public:
         AbstractState resBilateral = rs.bilateral(inv, phi);
         AbstractState resBS = rs.BS(inv, phi);
         // 0:[1,1000] 1:[1,1000] 2:[1,1]
-        assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
+        assert(resRSY == resBS && resBS == resBilateral &&
+               "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 1000)},
+        AbstractState::VarToAbsValMap intendedRes = {
+            {0, IntervalValue(1, 1000)},
             {1, IntervalValue(1, 1000)},
-            {2, IntervalValue(1, 1)}
-        };
-        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+            {2, IntervalValue(1, 1)}};
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) &&
+               "inconsistency occurs");
     }
 
     void testRelExeState3_3()
@@ -501,16 +511,17 @@ public:
         AbstractState resBilateral = Bilateral_time(inv, phi, rs);
         AbstractState resBS = BS_time(inv, phi, rs);
         // 0:[1,10000] 1:[1,10000] 2:[1,1]
-        assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
+        assert(resRSY == resBS && resBS == resBilateral &&
+               "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 10000)},
+        AbstractState::VarToAbsValMap intendedRes = {
+            {0, IntervalValue(1, 10000)},
             {1, IntervalValue(1, 10000)},
-            {2, IntervalValue(1, 1)}
-        };
+            {2, IntervalValue(1, 1)}};
     }
 
     void testRelExeState3_4()
@@ -542,17 +553,19 @@ public:
         AbstractState resBilateral = Bilateral_time(inv, phi, rs);
         AbstractState resBS = BS_time(inv, phi, rs);
         // 0:[1,100000] 1:[1,100000] 2:[1,1]
-        assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
+        assert(resRSY == resBS && resBS == resBilateral &&
+               "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 100000)},
+        AbstractState::VarToAbsValMap intendedRes = {
+            {0, IntervalValue(1, 100000)},
             {1, IntervalValue(1, 100000)},
-            {2, IntervalValue(1, 1)}
-        };
-        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+            {2, IntervalValue(1, 1)}};
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) &&
+               "inconsistency occurs");
     }
 
     void testRelExeState4_1()
@@ -594,10 +607,10 @@ public:
         }
         // ground truth
         AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 10)},
-            {1, IntervalValue(0, 10)},
-            {2, IntervalValue(0, 10)}
-        };
-        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+                                                     {1, IntervalValue(0, 10)},
+                                                     {2, IntervalValue(0, 10)}};
+        assert(resBS.eqVarToValMap(resBS.getVarToVal(), intendedRes) &&
+               "inconsistency occurs");
     }
 
     void testsValidation()
@@ -632,197 +645,417 @@ public:
     void testBinaryOpStmt()
     {
         // test division /
-        assert((IntervalValue(4) / IntervalValue::bottom()).equals(IntervalValue::bottom()));
-        assert((IntervalValue::bottom() / IntervalValue(2)).equals(IntervalValue::bottom()));
-        assert((IntervalValue::top() / IntervalValue(0)).equals(IntervalValue::bottom()));
+        assert((IntervalValue(4) / IntervalValue::bottom())
+                   .equals(IntervalValue::bottom()));
+        assert((IntervalValue::bottom() / IntervalValue(2))
+                   .equals(IntervalValue::bottom()));
+        assert((IntervalValue::top() / IntervalValue(0))
+                   .equals(IntervalValue::bottom()));
         assert((IntervalValue(4) / IntervalValue(2)).equals(IntervalValue(2)));
-        assert((IntervalValue(3) / IntervalValue(2)).equals(IntervalValue(1))); //
-        assert((IntervalValue(-3) / IntervalValue(2)).equals(IntervalValue(-1))); //
-        assert((IntervalValue(1, 3) / IntervalValue(2)).equals(IntervalValue(0, 1))); //
-        assert((IntervalValue(2, 7) / IntervalValue(2)).equals(IntervalValue(1, 3))); //
-        assert((IntervalValue(-3, 3) / IntervalValue(2)).equals(IntervalValue(-1, 1)));
-        assert((IntervalValue(-3, IntervalValue::plus_infinity()) / IntervalValue(2)).equals(IntervalValue(-1, IntervalValue::plus_infinity())));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 3) / IntervalValue(2)).equals(IntervalValue(IntervalValue::minus_infinity(), 1)));
-        assert((IntervalValue(1, 3) / IntervalValue(1, 2)).equals(IntervalValue(0, 3)));//
-        assert((IntervalValue(-3, 3) / IntervalValue(1, 2)).equals(IntervalValue(-3, 3)));
-        assert((IntervalValue(2, 7) / IntervalValue(-2, 3)).equals(IntervalValue(-7, 7))); //
-        assert((IntervalValue(-2, 7) / IntervalValue(-2, 3)).equals(IntervalValue(-7, 7))); //
-        assert((IntervalValue(IntervalValue::minus_infinity(), 7) / IntervalValue(-2, 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(-2, IntervalValue::plus_infinity()) / IntervalValue(-2, 3)).equals(IntervalValue::top()));
+        assert(
+            (IntervalValue(3) / IntervalValue(2)).equals(IntervalValue(1))); //
+        assert((IntervalValue(-3) / IntervalValue(2))
+                   .equals(IntervalValue(-1))); //
+        assert((IntervalValue(1, 3) / IntervalValue(2))
+                   .equals(IntervalValue(0, 1))); //
+        assert((IntervalValue(2, 7) / IntervalValue(2))
+                   .equals(IntervalValue(1, 3))); //
+        assert((IntervalValue(-3, 3) / IntervalValue(2))
+                   .equals(IntervalValue(-1, 1)));
+        assert((IntervalValue(-3, IntervalValue::plus_infinity()) /
+                IntervalValue(2))
+                   .equals(IntervalValue(-1, IntervalValue::plus_infinity())));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 3) /
+                IntervalValue(2))
+                   .equals(IntervalValue(IntervalValue::minus_infinity(), 1)));
+        assert((IntervalValue(1, 3) / IntervalValue(1, 2))
+                   .equals(IntervalValue(0, 3))); //
+        assert((IntervalValue(-3, 3) / IntervalValue(1, 2))
+                   .equals(IntervalValue(-3, 3)));
+        assert((IntervalValue(2, 7) / IntervalValue(-2, 3))
+                   .equals(IntervalValue(-7, 7))); //
+        assert((IntervalValue(-2, 7) / IntervalValue(-2, 3))
+                   .equals(IntervalValue(-7, 7))); //
+        assert((IntervalValue(IntervalValue::minus_infinity(), 7) /
+                IntervalValue(-2, 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-2, IntervalValue::plus_infinity()) /
+                IntervalValue(-2, 3))
+                   .equals(IntervalValue::top()));
 
-        assert((IntervalValue(-2, 7) / IntervalValue(IntervalValue::minus_infinity(), 3)).equals(IntervalValue(-7, 7)));
-        assert((IntervalValue(-2, 7) / IntervalValue(-2, IntervalValue::plus_infinity())).equals(IntervalValue(-7, 7)));
-        assert((IntervalValue(-6, -3) / IntervalValue(3, 9)).equals(IntervalValue(-2, 0)));
-        assert((IntervalValue(-6, 6) / IntervalValue(3, 9)).equals(IntervalValue(-2, 2)));
+        assert((IntervalValue(-2, 7) /
+                IntervalValue(IntervalValue::minus_infinity(), 3))
+                   .equals(IntervalValue(-7, 7)));
+        assert((IntervalValue(-2, 7) /
+                IntervalValue(-2, IntervalValue::plus_infinity()))
+                   .equals(IntervalValue(-7, 7)));
+        assert((IntervalValue(-6, -3) / IntervalValue(3, 9))
+                   .equals(IntervalValue(-2, 0)));
+        assert((IntervalValue(-6, 6) / IntervalValue(3, 9))
+                   .equals(IntervalValue(-2, 2)));
 
         // test remainder %
-        assert((IntervalValue(4) % IntervalValue::bottom()).equals(IntervalValue::bottom()));
-        assert((IntervalValue::bottom() % IntervalValue(2)).equals(IntervalValue::bottom()));
-        assert((IntervalValue::top() % IntervalValue(0)).equals(IntervalValue::top()));
+        assert((IntervalValue(4) % IntervalValue::bottom())
+                   .equals(IntervalValue::bottom()));
+        assert((IntervalValue::bottom() % IntervalValue(2))
+                   .equals(IntervalValue::bottom()));
+        assert((IntervalValue::top() % IntervalValue(0))
+                   .equals(IntervalValue::top()));
         assert((IntervalValue(4) % IntervalValue(2)).equals(IntervalValue(0)));
         assert((IntervalValue(3) % IntervalValue(2)).equals(IntervalValue(1)));
-        assert((IntervalValue(-3) % IntervalValue(2)).equals(IntervalValue(-1)));
-        assert((IntervalValue(1, 3) % IntervalValue(2)).equals(IntervalValue(0, 1)));
-        assert((IntervalValue(2, 7) % IntervalValue(2)).equals(IntervalValue(0, 1)));
-        assert((IntervalValue(-3, 3) % IntervalValue(2)).equals(IntervalValue(-1, 1)));
-        assert((IntervalValue(-3, IntervalValue::plus_infinity()) % IntervalValue(2)).equals(IntervalValue(-1, 1)));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 3) % IntervalValue(2)).equals(IntervalValue(-1, 1)));
-        assert((IntervalValue(1, 3) % IntervalValue(1, 2)).equals(IntervalValue(0, 1)));
-        assert((IntervalValue(-3, 3) % IntervalValue(1, 2)).equals(IntervalValue(-1, 1)));
-        assert((IntervalValue(2, 7) % IntervalValue(-2, 3)).equals(IntervalValue::top())); //
-        assert((IntervalValue(-2, 7) % IntervalValue(-2, 3)).equals(IntervalValue::top())); //
-        assert((IntervalValue(IntervalValue::minus_infinity(), 7) % IntervalValue(-2, 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(-2, IntervalValue::plus_infinity()) % IntervalValue(-2, 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(-2, 7) % IntervalValue(IntervalValue::minus_infinity(), 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(-2, 7) % IntervalValue(-2, IntervalValue::plus_infinity())).equals(IntervalValue::top()));
-        assert((IntervalValue(-6, -3) % IntervalValue(3, 9)).equals(IntervalValue(-6, 0)));
-        assert((IntervalValue(-6, 6) % IntervalValue(3, 9)).equals(IntervalValue(-6, 6)));
+        assert(
+            (IntervalValue(-3) % IntervalValue(2)).equals(IntervalValue(-1)));
+        assert((IntervalValue(1, 3) % IntervalValue(2))
+                   .equals(IntervalValue(0, 1)));
+        assert((IntervalValue(2, 7) % IntervalValue(2))
+                   .equals(IntervalValue(0, 1)));
+        assert((IntervalValue(-3, 3) % IntervalValue(2))
+                   .equals(IntervalValue(-1, 1)));
+        assert((IntervalValue(-3, IntervalValue::plus_infinity()) %
+                IntervalValue(2))
+                   .equals(IntervalValue(-1, 1)));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 3) %
+                IntervalValue(2))
+                   .equals(IntervalValue(-1, 1)));
+        assert((IntervalValue(1, 3) % IntervalValue(1, 2))
+                   .equals(IntervalValue(0, 1)));
+        assert((IntervalValue(-3, 3) % IntervalValue(1, 2))
+                   .equals(IntervalValue(-1, 1)));
+        assert((IntervalValue(2, 7) % IntervalValue(-2, 3))
+                   .equals(IntervalValue::top())); //
+        assert((IntervalValue(-2, 7) % IntervalValue(-2, 3))
+                   .equals(IntervalValue::top())); //
+        assert((IntervalValue(IntervalValue::minus_infinity(), 7) %
+                IntervalValue(-2, 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-2, IntervalValue::plus_infinity()) %
+                IntervalValue(-2, 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-2, 7) %
+                IntervalValue(IntervalValue::minus_infinity(), 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-2, 7) %
+                IntervalValue(-2, IntervalValue::plus_infinity()))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-6, -3) % IntervalValue(3, 9))
+                   .equals(IntervalValue(-6, 0)));
+        assert((IntervalValue(-6, 6) % IntervalValue(3, 9))
+                   .equals(IntervalValue(-6, 6)));
 
         // shl  <<
-        assert((IntervalValue(IntervalValue::plus_infinity()) << IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(IntervalValue::top())));
-        assert((IntervalValue(IntervalValue::plus_infinity()) << IntervalValue(2, 2)).equals(IntervalValue(IntervalValue::plus_infinity())));
-        assert((IntervalValue(IntervalValue::minus_infinity()) << IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(IntervalValue::top())));
-        assert((IntervalValue(IntervalValue::minus_infinity()) << IntervalValue(2, 2)).equals(IntervalValue(IntervalValue::minus_infinity())));
-        assert((IntervalValue(2, 2) << IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(IntervalValue::top())));
-        assert((IntervalValue(0, 0) << IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(0, 0)));
-        assert((IntervalValue(-2, -2) << IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(IntervalValue::top())));
-        assert((IntervalValue(0, 0) << IntervalValue(2, 2)).equals(IntervalValue(0, 0)));
-        assert((IntervalValue(2, 2) << IntervalValue(3, 3)).equals(IntervalValue(16, 16)));
-        assert((IntervalValue(-2, -2) << IntervalValue(3, 3)).equals(IntervalValue(-16, -16)));
+        assert((IntervalValue(IntervalValue::plus_infinity())
+                << IntervalValue(IntervalValue::plus_infinity()))
+                   .equals(IntervalValue(IntervalValue::top())));
+        assert((IntervalValue(IntervalValue::plus_infinity())
+                << IntervalValue(2, 2))
+                   .equals(IntervalValue(IntervalValue::plus_infinity())));
+        assert((IntervalValue(IntervalValue::minus_infinity())
+                << IntervalValue(IntervalValue::plus_infinity()))
+                   .equals(IntervalValue(IntervalValue::top())));
+        assert((IntervalValue(IntervalValue::minus_infinity())
+                << IntervalValue(2, 2))
+                   .equals(IntervalValue(IntervalValue::minus_infinity())));
+        assert((IntervalValue(2, 2)
+                << IntervalValue(IntervalValue::plus_infinity()))
+                   .equals(IntervalValue(IntervalValue::top())));
+        assert((IntervalValue(0, 0)
+                << IntervalValue(IntervalValue::plus_infinity()))
+                   .equals(IntervalValue(0, 0)));
+        assert((IntervalValue(-2, -2)
+                << IntervalValue(IntervalValue::plus_infinity()))
+                   .equals(IntervalValue(IntervalValue::top())));
+        assert((IntervalValue(0, 0) << IntervalValue(2, 2))
+                   .equals(IntervalValue(0, 0)));
+        assert((IntervalValue(2, 2) << IntervalValue(3, 3))
+                   .equals(IntervalValue(16, 16)));
+        assert((IntervalValue(-2, -2) << IntervalValue(3, 3))
+                   .equals(IntervalValue(-16, -16)));
 
-        assert((IntervalValue(4) << IntervalValue::bottom()).equals(IntervalValue::bottom()));
-        assert((IntervalValue::bottom() << IntervalValue(2)).equals(IntervalValue::bottom()));
-        assert((IntervalValue::top() << IntervalValue(0)).equals(IntervalValue::top()));
-        assert((IntervalValue(4) << IntervalValue(2)).equals(IntervalValue(16)));
-        assert((IntervalValue(3) << IntervalValue(2)).equals(IntervalValue(12)));
-        assert((IntervalValue(-3) << IntervalValue(2)).equals(IntervalValue(-12)));
-        assert((IntervalValue(4) << IntervalValue(-2)).equals(IntervalValue::bottom()));
-        assert((IntervalValue(1, 3) << IntervalValue(2)).equals(IntervalValue(4, 12)));
-        assert((IntervalValue(2, 7) << IntervalValue(2)).equals(IntervalValue(8, 28)));
-        assert((IntervalValue(-3, 3) << IntervalValue(2)).equals(IntervalValue(-12, 12)));
-        assert((IntervalValue(-3, IntervalValue::plus_infinity()) << IntervalValue(2)).equals(IntervalValue(-12, IntervalValue::plus_infinity())));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 3) << IntervalValue(2)).equals(IntervalValue(IntervalValue::minus_infinity(), 12)));
-        assert((IntervalValue(1, 3) << IntervalValue(1, 2)).equals(IntervalValue(2, 12)));
-        assert((IntervalValue(-3, 3) << IntervalValue(1, 2)).equals(IntervalValue(-12, 12)));
-        assert((IntervalValue(2, 7) << IntervalValue(-2, 3)).equals(IntervalValue(2, 56)));
-        assert((IntervalValue(-2, 7) << IntervalValue(-2, 3)).equals(IntervalValue(-16, 56)));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 7) << IntervalValue(-2, 3)).equals(IntervalValue(IntervalValue::minus_infinity(), 56)));
-        assert((IntervalValue(-2, IntervalValue::plus_infinity()) << IntervalValue(-2, 3)).equals(IntervalValue(-16, IntervalValue::plus_infinity())));
-        assert((IntervalValue(-2, 7) << IntervalValue(IntervalValue::minus_infinity(), 3)).equals(IntervalValue(-16, 56)));
-        assert((IntervalValue(-2, 7) << IntervalValue(-2, IntervalValue::plus_infinity())).equals(IntervalValue::top()));
-        assert((IntervalValue(-6, -3) << IntervalValue(3, 9)).equals(IntervalValue(-3072, -24)));
-        assert((IntervalValue(-6, 6) << IntervalValue(3, 9)).equals(IntervalValue(-3072, 3072)));
-        assert((IntervalValue(-2, 7) << IntervalValue(IntervalValue::minus_infinity(), -1)).equals(IntervalValue::bottom()));
-        assert((IntervalValue(0) << IntervalValue::top()).equals(IntervalValue(0)));
-
+        assert((IntervalValue(4) << IntervalValue::bottom())
+                   .equals(IntervalValue::bottom()));
+        assert((IntervalValue::bottom() << IntervalValue(2))
+                   .equals(IntervalValue::bottom()));
+        assert((IntervalValue::top() << IntervalValue(0))
+                   .equals(IntervalValue::top()));
+        assert(
+            (IntervalValue(4) << IntervalValue(2)).equals(IntervalValue(16)));
+        assert(
+            (IntervalValue(3) << IntervalValue(2)).equals(IntervalValue(12)));
+        assert(
+            (IntervalValue(-3) << IntervalValue(2)).equals(IntervalValue(-12)));
+        assert((IntervalValue(4) << IntervalValue(-2))
+                   .equals(IntervalValue::bottom()));
+        assert((IntervalValue(1, 3) << IntervalValue(2))
+                   .equals(IntervalValue(4, 12)));
+        assert((IntervalValue(2, 7) << IntervalValue(2))
+                   .equals(IntervalValue(8, 28)));
+        assert((IntervalValue(-3, 3) << IntervalValue(2))
+                   .equals(IntervalValue(-12, 12)));
+        assert((IntervalValue(-3, IntervalValue::plus_infinity())
+                << IntervalValue(2))
+                   .equals(IntervalValue(-12, IntervalValue::plus_infinity())));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 3)
+                << IntervalValue(2))
+                   .equals(IntervalValue(IntervalValue::minus_infinity(), 12)));
+        assert((IntervalValue(1, 3) << IntervalValue(1, 2))
+                   .equals(IntervalValue(2, 12)));
+        assert((IntervalValue(-3, 3) << IntervalValue(1, 2))
+                   .equals(IntervalValue(-12, 12)));
+        assert((IntervalValue(2, 7) << IntervalValue(-2, 3))
+                   .equals(IntervalValue(2, 56)));
+        assert((IntervalValue(-2, 7) << IntervalValue(-2, 3))
+                   .equals(IntervalValue(-16, 56)));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 7)
+                << IntervalValue(-2, 3))
+                   .equals(IntervalValue(IntervalValue::minus_infinity(), 56)));
+        assert((IntervalValue(-2, IntervalValue::plus_infinity())
+                << IntervalValue(-2, 3))
+                   .equals(IntervalValue(-16, IntervalValue::plus_infinity())));
+        assert((IntervalValue(-2, 7)
+                << IntervalValue(IntervalValue::minus_infinity(), 3))
+                   .equals(IntervalValue(-16, 56)));
+        assert((IntervalValue(-2, 7)
+                << IntervalValue(-2, IntervalValue::plus_infinity()))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-6, -3) << IntervalValue(3, 9))
+                   .equals(IntervalValue(-3072, -24)));
+        assert((IntervalValue(-6, 6) << IntervalValue(3, 9))
+                   .equals(IntervalValue(-3072, 3072)));
+        assert((IntervalValue(-2, 7)
+                << IntervalValue(IntervalValue::minus_infinity(), -1))
+                   .equals(IntervalValue::bottom()));
+        assert((IntervalValue(0) << IntervalValue::top())
+                   .equals(IntervalValue(0)));
 
         // shr >>
-        assert((IntervalValue(IntervalValue::plus_infinity()) >> IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(IntervalValue::plus_infinity())));
-        assert((IntervalValue(IntervalValue::plus_infinity()) >> IntervalValue(2)).equals(IntervalValue(IntervalValue::plus_infinity())));
-        assert((IntervalValue(IntervalValue::minus_infinity()) >> IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(IntervalValue::minus_infinity())));
-        assert((IntervalValue(IntervalValue::minus_infinity()) >> IntervalValue(2)).equals(IntervalValue(IntervalValue::minus_infinity())));
-        assert((IntervalValue(2) >> IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(0)));
-        assert((IntervalValue(0) >> IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(0)));
-        assert((IntervalValue(-2) >> IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(-1)));
+        assert((IntervalValue(IntervalValue::plus_infinity()) >>
+                IntervalValue(IntervalValue::plus_infinity()))
+                   .equals(IntervalValue(IntervalValue::plus_infinity())));
+        assert(
+            (IntervalValue(IntervalValue::plus_infinity()) >> IntervalValue(2))
+                .equals(IntervalValue(IntervalValue::plus_infinity())));
+        assert((IntervalValue(IntervalValue::minus_infinity()) >>
+                IntervalValue(IntervalValue::plus_infinity()))
+                   .equals(IntervalValue(IntervalValue::minus_infinity())));
+        assert(
+            (IntervalValue(IntervalValue::minus_infinity()) >> IntervalValue(2))
+                .equals(IntervalValue(IntervalValue::minus_infinity())));
+        assert(
+            (IntervalValue(2) >> IntervalValue(IntervalValue::plus_infinity()))
+                .equals(IntervalValue(0)));
+        assert(
+            (IntervalValue(0) >> IntervalValue(IntervalValue::plus_infinity()))
+                .equals(IntervalValue(0)));
+        assert(
+            (IntervalValue(-2) >> IntervalValue(IntervalValue::plus_infinity()))
+                .equals(IntervalValue(-1)));
         assert((IntervalValue(0) >> IntervalValue(2)).equals(IntervalValue(0)));
-        assert((IntervalValue(15) >> IntervalValue(2)).equals(IntervalValue(3)));
-        assert((IntervalValue(-15) >> IntervalValue(2)).equals(IntervalValue(-4)));
+        assert(
+            (IntervalValue(15) >> IntervalValue(2)).equals(IntervalValue(3)));
+        assert(
+            (IntervalValue(-15) >> IntervalValue(2)).equals(IntervalValue(-4)));
 
-        assert((IntervalValue(4) >> IntervalValue::bottom()).equals(IntervalValue::bottom()));
-        assert((IntervalValue::bottom() >> IntervalValue(2)).equals(IntervalValue::bottom()));
-        assert((IntervalValue::top() >> IntervalValue(0)).equals(IntervalValue::top()));
-        assert((IntervalValue(15) >> IntervalValue(2)).equals(IntervalValue(3)));
+        assert((IntervalValue(4) >> IntervalValue::bottom())
+                   .equals(IntervalValue::bottom()));
+        assert((IntervalValue::bottom() >> IntervalValue(2))
+                   .equals(IntervalValue::bottom()));
+        assert((IntervalValue::top() >> IntervalValue(0))
+                   .equals(IntervalValue::top()));
+        assert(
+            (IntervalValue(15) >> IntervalValue(2)).equals(IntervalValue(3)));
         assert((IntervalValue(1) >> IntervalValue(2)).equals(IntervalValue(0)));
-        assert((IntervalValue(-15) >> IntervalValue(2)).equals(IntervalValue(-4)));
-        assert((IntervalValue(4) >> IntervalValue(-2)).equals(IntervalValue::bottom()));
-        assert((IntervalValue(1, 3) >> IntervalValue(2)).equals(IntervalValue(0)));
-        assert((IntervalValue(2, 7) >> IntervalValue(2)).equals(IntervalValue(0, 1)));
-        assert((IntervalValue(-15, 15) >> IntervalValue(2)).equals(IntervalValue(-4, 3)));
-        assert((IntervalValue(-15, IntervalValue::plus_infinity()) >> IntervalValue(2)).equals(IntervalValue(-4, IntervalValue::plus_infinity())));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 15) >> IntervalValue(2)).equals(IntervalValue(IntervalValue::minus_infinity(), 3)));
-        assert((IntervalValue(0, 15) >> IntervalValue(1, 2)).equals(IntervalValue(0, 7)));
-        assert((IntervalValue(-17, 15) >> IntervalValue(1, 2)).equals(IntervalValue(-9, 7)));
-        assert((IntervalValue(2, 7) >> IntervalValue(-2, 3)).equals(IntervalValue(0, 7)));
-        assert((IntervalValue(-2, 7) >> IntervalValue(-2, 3)).equals(IntervalValue(-2, 7)));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 7) >> IntervalValue(-2, 3)).equals(IntervalValue(IntervalValue::minus_infinity(), 7)));
-        assert((IntervalValue(-2, IntervalValue::plus_infinity()) >> IntervalValue(-2, 3)).equals(IntervalValue(-2, IntervalValue::plus_infinity())));
-        assert((IntervalValue(-2, 7) >> IntervalValue(IntervalValue::minus_infinity(), 3)).equals(IntervalValue(-2, 7)));
-        assert((IntervalValue(-2, 7) >> IntervalValue(-2, IntervalValue::plus_infinity())).equals(IntervalValue(-2, 7)));
-        assert((IntervalValue(-6, -3) >> IntervalValue(2, 3)).equals(IntervalValue(-2, -1)));
-        assert((IntervalValue(-6, 6) >> IntervalValue(2, 3)).equals(IntervalValue(-2, 1)));
-        assert((IntervalValue(-2, 7) >> IntervalValue(IntervalValue::minus_infinity(), -1)).equals(IntervalValue::bottom()));
-        assert((IntervalValue(0) >> IntervalValue::top()).equals(IntervalValue(0)));
+        assert(
+            (IntervalValue(-15) >> IntervalValue(2)).equals(IntervalValue(-4)));
+        assert((IntervalValue(4) >> IntervalValue(-2))
+                   .equals(IntervalValue::bottom()));
+        assert(
+            (IntervalValue(1, 3) >> IntervalValue(2)).equals(IntervalValue(0)));
+        assert((IntervalValue(2, 7) >> IntervalValue(2))
+                   .equals(IntervalValue(0, 1)));
+        assert((IntervalValue(-15, 15) >> IntervalValue(2))
+                   .equals(IntervalValue(-4, 3)));
+        assert((IntervalValue(-15, IntervalValue::plus_infinity()) >>
+                IntervalValue(2))
+                   .equals(IntervalValue(-4, IntervalValue::plus_infinity())));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 15) >>
+                IntervalValue(2))
+                   .equals(IntervalValue(IntervalValue::minus_infinity(), 3)));
+        assert((IntervalValue(0, 15) >> IntervalValue(1, 2))
+                   .equals(IntervalValue(0, 7)));
+        assert((IntervalValue(-17, 15) >> IntervalValue(1, 2))
+                   .equals(IntervalValue(-9, 7)));
+        assert((IntervalValue(2, 7) >> IntervalValue(-2, 3))
+                   .equals(IntervalValue(0, 7)));
+        assert((IntervalValue(-2, 7) >> IntervalValue(-2, 3))
+                   .equals(IntervalValue(-2, 7)));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 7) >>
+                IntervalValue(-2, 3))
+                   .equals(IntervalValue(IntervalValue::minus_infinity(), 7)));
+        assert((IntervalValue(-2, IntervalValue::plus_infinity()) >>
+                IntervalValue(-2, 3))
+                   .equals(IntervalValue(-2, IntervalValue::plus_infinity())));
+        assert((IntervalValue(-2, 7) >>
+                IntervalValue(IntervalValue::minus_infinity(), 3))
+                   .equals(IntervalValue(-2, 7)));
+        assert((IntervalValue(-2, 7) >>
+                IntervalValue(-2, IntervalValue::plus_infinity()))
+                   .equals(IntervalValue(-2, 7)));
+        assert((IntervalValue(-6, -3) >> IntervalValue(2, 3))
+                   .equals(IntervalValue(-2, -1)));
+        assert((IntervalValue(-6, 6) >> IntervalValue(2, 3))
+                   .equals(IntervalValue(-2, 1)));
+        assert((IntervalValue(-2, 7) >>
+                IntervalValue(IntervalValue::minus_infinity(), -1))
+                   .equals(IntervalValue::bottom()));
+        assert((IntervalValue(0) >> IntervalValue::top())
+                   .equals(IntervalValue(0)));
 
         // and &
-        assert((IntervalValue(4) & IntervalValue::bottom()).equals(IntervalValue::bottom()));
-        assert((IntervalValue::bottom() & IntervalValue(2)).equals(IntervalValue::bottom()));
-        assert((IntervalValue::top() & IntervalValue(0)).equals(IntervalValue(0)));
+        assert((IntervalValue(4) & IntervalValue::bottom())
+                   .equals(IntervalValue::bottom()));
+        assert((IntervalValue::bottom() & IntervalValue(2))
+                   .equals(IntervalValue::bottom()));
+        assert(
+            (IntervalValue::top() & IntervalValue(0)).equals(IntervalValue(0)));
         assert((IntervalValue(4) & IntervalValue(2)).equals(IntervalValue(0)));
         assert((IntervalValue(3) & IntervalValue(2)).equals(IntervalValue(2)));
         assert((IntervalValue(-3) & IntervalValue(2)).equals(IntervalValue(0)));
-        assert((IntervalValue(1, 3) & IntervalValue(2)).equals(IntervalValue(0, 2)));
-        assert((IntervalValue(2, 7) & IntervalValue(2)).equals(IntervalValue(0, 2)));
-        assert((IntervalValue(-3, 3) & IntervalValue(2)).equals(IntervalValue(0, 2)));
-        assert((IntervalValue(-3, IntervalValue::plus_infinity()) & IntervalValue(2)).equals(IntervalValue(0, 2)));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 3) & IntervalValue(2)).equals(IntervalValue(0, 2)));
-        assert((IntervalValue(1, 3) & IntervalValue(1, 2)).equals(IntervalValue(0, 2)));
-        assert((IntervalValue(-3, 3) & IntervalValue(1, 2)).equals(IntervalValue(0, 2)));
-        assert((IntervalValue(2, 7) & IntervalValue(-2, 3)).equals(IntervalValue(0, 7)));
-        assert((IntervalValue(-2, 7) & IntervalValue(-2, 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 7) & IntervalValue(-2, 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(-2, IntervalValue::plus_infinity()) & IntervalValue(-2, 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(-2, 7) & IntervalValue(IntervalValue::minus_infinity(), 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(-2, 7) & IntervalValue(-2, IntervalValue::plus_infinity())).equals(IntervalValue::top()));
-        assert((IntervalValue(-6, -3) & IntervalValue(3, 9)).equals(IntervalValue(0, 9)));
-        assert((IntervalValue(-6, 6) & IntervalValue(3, 9)).equals(IntervalValue(0, 9)));
+        assert((IntervalValue(1, 3) & IntervalValue(2))
+                   .equals(IntervalValue(0, 2)));
+        assert((IntervalValue(2, 7) & IntervalValue(2))
+                   .equals(IntervalValue(0, 2)));
+        assert((IntervalValue(-3, 3) & IntervalValue(2))
+                   .equals(IntervalValue(0, 2)));
+        assert((IntervalValue(-3, IntervalValue::plus_infinity()) &
+                IntervalValue(2))
+                   .equals(IntervalValue(0, 2)));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 3) &
+                IntervalValue(2))
+                   .equals(IntervalValue(0, 2)));
+        assert((IntervalValue(1, 3) & IntervalValue(1, 2))
+                   .equals(IntervalValue(0, 2)));
+        assert((IntervalValue(-3, 3) & IntervalValue(1, 2))
+                   .equals(IntervalValue(0, 2)));
+        assert((IntervalValue(2, 7) & IntervalValue(-2, 3))
+                   .equals(IntervalValue(0, 7)));
+        assert((IntervalValue(-2, 7) & IntervalValue(-2, 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 7) &
+                IntervalValue(-2, 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-2, IntervalValue::plus_infinity()) &
+                IntervalValue(-2, 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-2, 7) &
+                IntervalValue(IntervalValue::minus_infinity(), 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-2, 7) &
+                IntervalValue(-2, IntervalValue::plus_infinity()))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-6, -3) & IntervalValue(3, 9))
+                   .equals(IntervalValue(0, 9)));
+        assert((IntervalValue(-6, 6) & IntervalValue(3, 9))
+                   .equals(IntervalValue(0, 9)));
 
         // Or |
-        assert((IntervalValue(4) | IntervalValue::bottom()).equals(IntervalValue::bottom()));
-        assert((IntervalValue::bottom() | IntervalValue(2)).equals(IntervalValue::bottom()));
-        assert((IntervalValue::top() | IntervalValue(-1)).equals(IntervalValue::top()));//
-        assert((IntervalValue(-1) | IntervalValue::top()).equals(IntervalValue::top()));//
+        assert((IntervalValue(4) | IntervalValue::bottom())
+                   .equals(IntervalValue::bottom()));
+        assert((IntervalValue::bottom() | IntervalValue(2))
+                   .equals(IntervalValue::bottom()));
+        assert((IntervalValue::top() | IntervalValue(-1))
+                   .equals(IntervalValue::top())); //
+        assert((IntervalValue(-1) | IntervalValue::top())
+                   .equals(IntervalValue::top())); //
         assert((IntervalValue(4) | IntervalValue(2)).equals(IntervalValue(6)));
         assert((IntervalValue(3) | IntervalValue(2)).equals(IntervalValue(3)));
-        assert((IntervalValue(-3) | IntervalValue(2)).equals(IntervalValue(-1)));
-        assert((IntervalValue(1, 3) | IntervalValue(2)).equals(IntervalValue(0, 3)));
-        assert((IntervalValue(2, 7) | IntervalValue(2)).equals(IntervalValue(0, 7)));
-        assert((IntervalValue(-3, 3) | IntervalValue(2)).equals(IntervalValue::top()));
-        assert((IntervalValue(-3, IntervalValue::plus_infinity()) | IntervalValue(2)).equals(IntervalValue::top()));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 3) | IntervalValue(2)).equals(IntervalValue::top()));
-        assert((IntervalValue(1, 3) | IntervalValue(1, 2)).equals(IntervalValue(0, 3)));
-        assert((IntervalValue(-3, 3) | IntervalValue(1, 2)).equals(IntervalValue::top()));
-        assert((IntervalValue(2, 7) | IntervalValue(-2, 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(-2, 7) | IntervalValue(-2, 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 7) | IntervalValue(-2, 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(-2, IntervalValue::plus_infinity()) | IntervalValue(-2, 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(-2, 7) | IntervalValue(IntervalValue::minus_infinity(), 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(-2, 7) | IntervalValue(-2, IntervalValue::plus_infinity())).equals(IntervalValue::top()));
-        assert((IntervalValue(-6, -3) | IntervalValue(3, 9)).equals(IntervalValue::top()));
-        assert((IntervalValue(-6, 6) | IntervalValue(3, 9)).equals(IntervalValue::top()));
+        assert(
+            (IntervalValue(-3) | IntervalValue(2)).equals(IntervalValue(-1)));
+        assert((IntervalValue(1, 3) | IntervalValue(2))
+                   .equals(IntervalValue(0, 3)));
+        assert((IntervalValue(2, 7) | IntervalValue(2))
+                   .equals(IntervalValue(0, 7)));
+        assert((IntervalValue(-3, 3) | IntervalValue(2))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-3, IntervalValue::plus_infinity()) |
+                IntervalValue(2))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 3) |
+                IntervalValue(2))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(1, 3) | IntervalValue(1, 2))
+                   .equals(IntervalValue(0, 3)));
+        assert((IntervalValue(-3, 3) | IntervalValue(1, 2))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(2, 7) | IntervalValue(-2, 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-2, 7) | IntervalValue(-2, 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 7) |
+                IntervalValue(-2, 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-2, IntervalValue::plus_infinity()) |
+                IntervalValue(-2, 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-2, 7) |
+                IntervalValue(IntervalValue::minus_infinity(), 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-2, 7) |
+                IntervalValue(-2, IntervalValue::plus_infinity()))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-6, -3) | IntervalValue(3, 9))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-6, 6) | IntervalValue(3, 9))
+                   .equals(IntervalValue::top()));
 
         // Xor ^
-        assert((IntervalValue(4) ^ IntervalValue::bottom()).equals(IntervalValue::bottom()));
-        assert((IntervalValue::bottom() ^ IntervalValue(2)).equals(IntervalValue::bottom()));
-        assert((IntervalValue::top() ^ IntervalValue(-1)).equals(IntervalValue::top()));
-        assert((IntervalValue(-1) ^ IntervalValue::top()).equals(IntervalValue::top()));
+        assert((IntervalValue(4) ^ IntervalValue::bottom())
+                   .equals(IntervalValue::bottom()));
+        assert((IntervalValue::bottom() ^ IntervalValue(2))
+                   .equals(IntervalValue::bottom()));
+        assert((IntervalValue::top() ^ IntervalValue(-1))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-1) ^ IntervalValue::top())
+                   .equals(IntervalValue::top()));
         assert((IntervalValue(4) ^ IntervalValue(2)).equals(IntervalValue(6)));
         assert((IntervalValue(3) ^ IntervalValue(2)).equals(IntervalValue(1)));
-        assert((IntervalValue(-3) ^ IntervalValue(2)).equals(IntervalValue(-1)));
-        assert((IntervalValue(1, 3) ^ IntervalValue(2)).equals(IntervalValue(0, 3)));
-        assert((IntervalValue(2, 7) ^ IntervalValue(2)).equals(IntervalValue(0, 7)));
-        assert((IntervalValue(-3, 3) ^ IntervalValue(2)).equals(IntervalValue::top()));
-        assert((IntervalValue(-3, IntervalValue::plus_infinity()) ^ IntervalValue(2)).equals(IntervalValue::top()));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 3) ^ IntervalValue(2)).equals(IntervalValue::top()));
-        assert((IntervalValue(1, 3) ^ IntervalValue(1, 2)).equals(IntervalValue(0, 3)));
-        assert((IntervalValue(-3, 3) ^ IntervalValue(1, 2)).equals(IntervalValue::top()));
-        assert((IntervalValue(2, 7) ^ IntervalValue(-2, 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(-2, 7) ^ IntervalValue(-2, 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(IntervalValue::minus_infinity(), 7) ^ IntervalValue(-2, 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(-2, IntervalValue::plus_infinity()) ^ IntervalValue(-2, 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(-2, 7) ^ IntervalValue(IntervalValue::minus_infinity(), 3)).equals(IntervalValue::top()));
-        assert((IntervalValue(-2, 7) ^ IntervalValue(-2, IntervalValue::plus_infinity())).equals(IntervalValue::top()));
-        assert((IntervalValue(-6, -3) ^ IntervalValue(3, 9)).equals(IntervalValue::top()));
-        assert((IntervalValue(-6, 6) ^ IntervalValue(3, 9)).equals(IntervalValue::top()));
+        assert(
+            (IntervalValue(-3) ^ IntervalValue(2)).equals(IntervalValue(-1)));
+        assert((IntervalValue(1, 3) ^ IntervalValue(2))
+                   .equals(IntervalValue(0, 3)));
+        assert((IntervalValue(2, 7) ^ IntervalValue(2))
+                   .equals(IntervalValue(0, 7)));
+        assert((IntervalValue(-3, 3) ^ IntervalValue(2))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-3, IntervalValue::plus_infinity()) ^
+                IntervalValue(2))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 3) ^
+                IntervalValue(2))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(1, 3) ^ IntervalValue(1, 2))
+                   .equals(IntervalValue(0, 3)));
+        assert((IntervalValue(-3, 3) ^ IntervalValue(1, 2))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(2, 7) ^ IntervalValue(-2, 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-2, 7) ^ IntervalValue(-2, 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(IntervalValue::minus_infinity(), 7) ^
+                IntervalValue(-2, 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-2, IntervalValue::plus_infinity()) ^
+                IntervalValue(-2, 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-2, 7) ^
+                IntervalValue(IntervalValue::minus_infinity(), 3))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-2, 7) ^
+                IntervalValue(-2, IntervalValue::plus_infinity()))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-6, -3) ^ IntervalValue(3, 9))
+                   .equals(IntervalValue::top()));
+        assert((IntervalValue(-6, 6) ^ IntervalValue(3, 9))
+                   .equals(IntervalValue::top()));
     }
 
     void testAbsState()
@@ -833,37 +1066,41 @@ public:
         as[3] = AddressValue(0x7f000007);
         as[4] = AddressValue(0x7f000008);
         // store: *as[3] = as[1], *as[4] = as[2]
-        for (auto addr : as[3].getAddrs()) as.store(addr, as[1]);
-        for (auto addr : as[4].getAddrs()) as.store(addr, as[2]);
+        for (auto addr : as[3].getAddrs())
+            as.store(addr, as[1]);
+        for (auto addr : as[4].getAddrs())
+            as.store(addr, as[2]);
         as.printAbstractState();
         // load: verify *as[3] == as[1] && *as[4] == as[2]
         AbstractValue v3, v4;
-        for (auto addr : as[3].getAddrs()) v3.join_with(as.load(addr));
-        for (auto addr : as[4].getAddrs()) v4.join_with(as.load(addr));
+        for (auto addr : as[3].getAddrs())
+            v3.join_with(as.load(addr));
+        for (auto addr : as[4].getAddrs())
+            v4.join_with(as.load(addr));
         assert(v3.equals(as[1]) && v4.equals(as[2]));
     }
 };
-
 
 int main(int argc, char** argv)
 {
     int arg_num = 0;
     int extraArgc = 3;
-    char **arg_value = new char *[argc + extraArgc];
+    char** arg_value = new char*[argc + extraArgc];
     for (; arg_num < argc; ++arg_num)
     {
         arg_value[arg_num] = argv[arg_num];
     }
     // add extra options
-    arg_value[arg_num++] = (char*) "-model-consts=true";
-    arg_value[arg_num++] = (char*) "-model-arrays=true";
-    arg_value[arg_num++] = (char*) "-pre-field-sensitive=false";
-    assert(arg_num == (argc + extraArgc) && "more extra arguments? Change the value of extraArgc");
+    arg_value[arg_num++] = (char*)"-model-consts=true";
+    arg_value[arg_num++] = (char*)"-model-arrays=true";
+    arg_value[arg_num++] = (char*)"-pre-field-sensitive=false";
+    assert(arg_num == (argc + extraArgc) &&
+           "more extra arguments? Change the value of extraArgc");
 
     std::vector<std::string> moduleNameVec;
-    moduleNameVec = OptionBase::parseOptions(
-                        arg_num, arg_value, "Static Symbolic Execution", "[options] <input-bitcode...>"
-                    );
+    moduleNameVec = OptionBase::parseOptions(arg_num, arg_value,
+                                             "Static Symbolic Execution",
+                                             "[options] <input-bitcode...>");
     delete[] arg_value;
     if (SYMABS())
     {
@@ -883,8 +1120,9 @@ int main(int argc, char** argv)
     LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
     SVFIRBuilder builder;
     SVFIR* pag = builder.build();
-    // Run Andersen's to resolve indirect calls, then update SVFIR with resolved targets.
-    // The Andersen singleton will be reused inside AbstractInterpretation::runOnModule().
+    // Run Andersen's to resolve indirect calls, then update SVFIR with resolved
+    // targets. The Andersen singleton will be reused inside
+    // AbstractInterpretation::runOnModule().
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
     builder.updateCallGraph(ander->getCallGraph());
     AbstractInterpretation& ae = AbstractInterpretation::getAEInstance();

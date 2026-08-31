@@ -1,13 +1,19 @@
 #include "SVFIR/SVFType.h"
 #include <sstream>
 
+#ifdef _MSC_VER
+#    define SVF_WEAK inline
+#else
+#    define SVF_WEAK __attribute__((weak))
+#endif
+
 namespace SVF
 {
 
 SVFType* SVFType::svfI8Ty = nullptr;
 SVFType* SVFType::svfPtrTy = nullptr;
 
-__attribute__((weak))
+SVF_WEAK
 std::string SVFType::toString() const
 {
     std::ostringstream os;

@@ -7,7 +7,7 @@ on: [push, pull_request]
 env:
   SVF_CTIR: 1
   SVF_Z3: 1
-  SVF_DIR: $GITHUB_WORKSPACE
+  SVF_DIR: ${{ github.workspace }}
 
 jobs:
   build:
@@ -40,7 +40,10 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev astyle
+          sudo apt-get install -y cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev astyle wget
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 22
 
       # build-svf
       - name: build-svf
@@ -49,6 +52,7 @@ jobs:
           echo $(pwd)
           if [ "${{matrix.sanitizer}}" != "" ]; then export SVF_SANITIZER="${{matrix.sanitizer}}"; fi
           if [ "$RUNNER_OS" == "Linux" ] && [ "${{matrix.sanitizer}}" == "" ]; then export SVF_COVERAGE=1; fi
+          export LLVM_DIR=/usr/lib/llvm-22
           git clone "https://github.com/SVF-tools/Test-Suite.git";
           source ${{github.workspace}}/build.sh
 
@@ -173,3 +177,69 @@ jobs:
           verbose: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  windows-build:
+    name: windows-build (${{ matrix.compiler }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [mingw, msvc]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (MSVC only)
+        if: matrix.compiler == 'msvc'
+        shell: powershell
+        run: |
+          # 1. Install LLVM toolchain via Chocolatey (provides clang.exe)
+          choco install llvm -y
+          
+          # 2. Download and extract LLVM SDK from c3lang/llvm-for-c3 (provides LLVMConfig.cmake and static libraries) using curl.exe
+          curl.exe -L "https://github.com/c3lang/llvm-for-c3/releases/download/llvm_22.1.4/llvm-windows-amd64.tar.gz" -o llvm-sdk.tar.gz
+          New-Item -ItemType Directory -Force -Path C:\llvm-sdk | Out-Null
+          tar -xf llvm-sdk.tar.gz -C C:\llvm-sdk
+          
+          # 3. Copy Clang compiler binaries from Chocolatey LLVM to the SDK bin folder
+          Copy-Item -Path "C:\Program Files\LLVM\bin\clang.exe" -Destination "C:\llvm-sdk\bin\" -Force
+          Copy-Item -Path "C:\Program Files\LLVM\bin\clang++.exe" -Destination "C:\llvm-sdk\bin\" -Force
+          Copy-Item -Path "C:\Program Files\LLVM\bin\clang-cl.exe" -Destination "C:\llvm-sdk\bin\" -Force
+          
+          # 3.5. Strip the hardcoded MSVC diaguids.lib dependency from LLVMExports.cmake
+          $exportsFile = "C:\llvm-sdk\lib\cmake\llvm\LLVMExports.cmake"
+          if (Test-Path $exportsFile) {
+              $content = Get-Content $exportsFile -Raw
+              # Remove any absolute path ending in /DIA SDK/lib/amd64/diaguids.lib;
+              $newContent = $content -replace '[a-zA-Z]:/[^";]+?/DIA SDK/lib/amd64/diaguids\.lib;', ""
+              Set-Content $exportsFile $newContent -NoNewline
+          }
+          
+          # 4. Export environment variables using UTF-8 encoding
+          Add-Content -Path $env:GITHUB_PATH -Value "C:\llvm-sdk\bin" -Encoding UTF8
+          Add-Content -Path $env:GITHUB_ENV -Value "LLVM_DIR=C:\llvm-sdk" -Encoding UTF8
+
+      - name: Add MSVC to PATH
+        if: matrix.compiler == 'msvc'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Clone Test-Suite
+        shell: powershell
+        run: |
+          git clone "https://github.com/SVF-tools/Test-Suite.git" Test-Suite
+
+
+      - name: Build SVF
+        shell: powershell
+        run: |
+          if ("${{ matrix.compiler }}" -eq "msvc") {
+            powershell -ExecutionPolicy Bypass -File build.ps1 -BuildType Release -Compiler msvc -LLVMDir "$env:LLVM_DIR"
+          } else {
+            powershell -ExecutionPolicy Bypass -File build.ps1 -BuildType Release -Compiler mingw
+          }
+
+      - name: Run CTests
+        shell: powershell
+        working-directory: ${{ github.workspace }}/Release-build
+        run: |
+          . ..\setup.ps1 Release
+          ctest --output-on-failure

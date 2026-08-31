@@ -28,20 +28,21 @@
  *
  * The field-sensitive implementation is improved based on
  *
- * Yuxiang Lei and Yulei Sui. "Fast and Precise Handling of Positive Weight Cycles for Field-sensitive Pointer Analysis".
- * 26th International Static Analysis Symposium (SAS'19)
+ * Yuxiang Lei and Yulei Sui. "Fast and Precise Handling of Positive Weight
+ * Cycles for Field-sensitive Pointer Analysis". 26th International Static
+ * Analysis Symposium (SAS'19)
  */
 
 #ifndef INCLUDE_WPA_ANDERSEN_H_
 #define INCLUDE_WPA_ANDERSEN_H_
 
+#include "Graphs/ConsG.h"
 #include "MemoryModel/PTATY.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "MemoryModel/PointsTo.h"
-#include "WPA/WPASolver.h"
-#include "Graphs/ConsG.h"
 #include "Util/GeneralType.h"
 #include "Util/Options.h"
+#include "WPA/WPASolver.h"
 
 namespace SVF
 {
@@ -54,16 +55,16 @@ class SVFIR;
  */
 typedef WPASolver<ConstraintGraph*> WPAConstraintSolver;
 
-class AndersenBase:  public WPAConstraintSolver, public BVDataPTAImpl
+class AndersenBase : public WPAConstraintSolver, public BVDataPTAImpl
 {
 public:
     typedef OrderedMap<const CallICFGNode*, NodeID> CallSite2DummyValPN;
 
 public:
-
     /// Constructor
-    AndersenBase(SVFIR* _pag, PTATY type = PTATY::Andersen_BASE, bool alias_check = true)
-        :  BVDataPTAImpl(_pag, type, alias_check), consCG(nullptr)
+    AndersenBase(SVFIR* _pag, PTATY type = PTATY::Andersen_BASE,
+                 bool alias_check = true)
+        : BVDataPTAImpl(_pag, type, alias_check), consCG(nullptr)
     {
         iterationForPrintStat = OnTheFlyIterBudgetForStat;
     }
@@ -90,31 +91,34 @@ public:
     virtual bool updateCallGraph(const CallSiteToFunPtrMap&) override;
 
     /// Update thread call graph
-    virtual bool updateThreadCallGraph(const CallSiteToFunPtrMap&, NodePairSet&);
+    virtual bool updateThreadCallGraph(const CallSiteToFunPtrMap&,
+                                       NodePairSet&);
 
     /// Connect formal and actual parameters for indirect forksites
-    virtual void connectCaller2ForkedFunParams(const CallICFGNode* cs, const FunObjVar* F,
-            NodePairSet& cpySrcNodes);
+    virtual void connectCaller2ForkedFunParams(const CallICFGNode* cs,
+                                               const FunObjVar* F,
+                                               NodePairSet& cpySrcNodes);
 
     /// Connect formal and actual parameters for indirect callsites
-    virtual void connectCaller2CalleeParams(const CallICFGNode* cs, const FunObjVar* F,
+    virtual void connectCaller2CalleeParams(const CallICFGNode* cs,
+                                            const FunObjVar* F,
                                             NodePairSet& cpySrcNodes);
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const AndersenBase *)
+    static inline bool classof(const AndersenBase*)
     {
         return true;
     }
-    static inline bool classof(const PointerAnalysis *pta)
+    static inline bool classof(const PointerAnalysis* pta)
     {
-        return ( pta->getAnalysisTy() == PTATY::Andersen_BASE
-                 || pta->getAnalysisTy() == PTATY::Andersen_WPA
-                 || pta->getAnalysisTy() == PTATY::AndersenWaveDiff_WPA
-                 || pta->getAnalysisTy() == PTATY::AndersenSCD_WPA
-                 || pta->getAnalysisTy() == PTATY::AndersenSFR_WPA
-                 || pta->getAnalysisTy() == PTATY::TypeCPP_WPA
-                 || pta->getAnalysisTy() == PTATY::Steensgaard_WPA);
+        return (pta->getAnalysisTy() == PTATY::Andersen_BASE ||
+                pta->getAnalysisTy() == PTATY::Andersen_WPA ||
+                pta->getAnalysisTy() == PTATY::AndersenWaveDiff_WPA ||
+                pta->getAnalysisTy() == PTATY::AndersenSCD_WPA ||
+                pta->getAnalysisTy() == PTATY::AndersenSFR_WPA ||
+                pta->getAnalysisTy() == PTATY::TypeCPP_WPA ||
+                pta->getAnalysisTy() == PTATY::Steensgaard_WPA);
     }
     //@}
 
@@ -154,11 +158,11 @@ public:
 
     /// Statistics
     //@{
-    static u32_t numOfProcessedAddr;   /// Number of processed Addr edge
-    static u32_t numOfProcessedCopy;   /// Number of processed Copy edge
-    static u32_t numOfProcessedGep;    /// Number of processed Gep edge
-    static u32_t numOfProcessedLoad;   /// Number of processed Load edge
-    static u32_t numOfProcessedStore;  /// Number of processed Store edge
+    static u32_t numOfProcessedAddr;  /// Number of processed Addr edge
+    static u32_t numOfProcessedCopy;  /// Number of processed Copy edge
+    static u32_t numOfProcessedGep;   /// Number of processed Gep edge
+    static u32_t numOfProcessedLoad;  /// Number of processed Load edge
+    static u32_t numOfProcessedStore; /// Number of processed Store edge
     static u32_t numOfSfrs;
     static u32_t numOfFieldExpand;
 
@@ -177,33 +181,31 @@ protected:
     /// Constraint Graph
     ConstraintGraph* consCG;
     CallSite2DummyValPN
-    callsite2DummyValPN; ///< Map an instruction to a dummy obj which
+        callsite2DummyValPN; ///< Map an instruction to a dummy obj which
     ///< created at an indirect callsite, which invokes
     ///< a heap allocator
-    void heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet& cpySrcNodes);
+    void heapAllocatorViaIndCall(const CallICFGNode* cs,
+                                 NodePairSet& cpySrcNodes);
 };
 
 /*!
  * Inclusion-based Pointer Analysis
  */
-class Andersen:  public AndersenBase
+class Andersen : public AndersenBase
 {
-
 
 public:
     typedef SCCDetection<ConstraintGraph*> CGSCC;
 
     /// Constructor
-    Andersen(SVFIR* _pag, PTATY type = PTATY::Andersen_WPA, bool alias_check = true)
-        :  AndersenBase(_pag, type, alias_check)
+    Andersen(SVFIR* _pag, PTATY type = PTATY::Andersen_WPA,
+             bool alias_check = true)
+        : AndersenBase(_pag, type, alias_check)
     {
     }
 
     /// Destructor
-    virtual ~Andersen()
-    {
-
-    }
+    virtual ~Andersen() {}
 
     /// Initialize analysis
     virtual void initialize();
@@ -222,16 +224,16 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const Andersen *)
+    static inline bool classof(const Andersen*)
     {
         return true;
     }
-    static inline bool classof(const PointerAnalysis *pta)
+    static inline bool classof(const PointerAnalysis* pta)
     {
-        return (pta->getAnalysisTy() == PTATY::Andersen_WPA
-                || pta->getAnalysisTy() == PTATY::AndersenWaveDiff_WPA
-                || pta->getAnalysisTy() == PTATY::AndersenSCD_WPA
-                || pta->getAnalysisTy() == PTATY::AndersenSFR_WPA);
+        return (pta->getAnalysisTy() == PTATY::Andersen_WPA ||
+                pta->getAnalysisTy() == PTATY::AndersenWaveDiff_WPA ||
+                pta->getAnalysisTy() == PTATY::AndersenSCD_WPA ||
+                pta->getAnalysisTy() == PTATY::AndersenSFR_WPA);
     }
     //@}
 
@@ -249,9 +251,8 @@ public:
     {
         id = sccRepNode(id);
         ptd = sccRepNode(ptd);
-        return getPTDataTy()->unionPts(id,ptd);
+        return getPTDataTy()->unionPts(id, ptd);
     }
-
 
     void dumpTopLevelPtsTo();
 
@@ -261,8 +262,10 @@ public:
     }
 
 protected:
-
-    CallSite2DummyValPN callsite2DummyValPN;        ///< Map an instruction to a dummy obj which created at an indirect callsite, which invokes a heap allocator
+    CallSite2DummyValPN
+        callsite2DummyValPN; ///< Map an instruction to a dummy obj which
+                             ///< created at an indirect callsite, which invokes
+                             ///< a heap allocator
 
     /// Handle diff points-to set.
     virtual inline void computeDiffPts(NodeID id)
@@ -270,7 +273,8 @@ protected:
         if (Options::DiffPts())
         {
             NodeID rep = sccRepNode(id);
-            getDiffPTDataTy()->computeDiffPts(rep, getDiffPTDataTy()->getPts(rep));
+            getDiffPTDataTy()->computeDiffPts(rep,
+                                              getDiffPTDataTy()->getPts(rep));
         }
     }
     virtual inline const PointsTo& getDiffPts(NodeID id)
@@ -331,9 +335,9 @@ protected:
     }
 
     /// Merge sub node to its rep
-    virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);
+    virtual void mergeNodeToRep(NodeID nodeId, NodeID newRepId);
 
-    virtual bool mergeSrcToTgt(NodeID srcId,NodeID tgtId);
+    virtual bool mergeSrcToTgt(NodeID srcId, NodeID tgtId);
 
     /// Merge sub node in a SCC cycle to their rep node
     //@{
@@ -349,31 +353,32 @@ protected:
     //@}
 
     /// Updates subnodes of its rep, and rep node of its subs
-    void updateNodeRepAndSubs(NodeID nodeId,NodeID newRepId);
+    void updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId);
 
     /// SCC detection
     virtual NodeStack& SCCDetect();
 
-
-
     /// Sanitize pts for field insensitive objects
     void sanitizePts()
     {
-        for(ConstraintGraph::iterator it = consCG->begin(), eit = consCG->end(); it!=eit; ++it)
+        for (ConstraintGraph::iterator it = consCG->begin(),
+                                       eit = consCG->end();
+             it != eit; ++it)
         {
             const PointsTo& pts = getPts(it->first);
             NodeBS fldInsenObjs;
 
             for (NodeID o : pts)
             {
-                if(isFieldInsensitive(o))
+                if (isFieldInsensitive(o))
                     fldInsenObjs.set(o);
             }
 
             for (NodeID o : fldInsenObjs)
             {
-                const NodeBS &allFields = consCG->getAllFieldsObjVars(o);
-                for (NodeID f : allFields) addPts(it->first, f);
+                const NodeBS& allFields = consCG->getAllFieldsObjVars(o);
+                for (NodeID f : allFields)
+                    addPts(it->first, f);
             }
         }
     }
@@ -389,8 +394,6 @@ protected:
     virtual void cluster(void) const;
 };
 
-
-
 /**
  * Wave propagation with diff points-to set.
  */
@@ -398,18 +401,23 @@ class AndersenWaveDiff : public Andersen
 {
 
 private:
-
     static AndersenWaveDiff* diffWave; // static instance
 
 public:
-    AndersenWaveDiff(SVFIR* _pag, PTATY type = PTATY::AndersenWaveDiff_WPA, bool alias_check = true): Andersen(_pag, type, alias_check) {}
+    AndersenWaveDiff(SVFIR* _pag, PTATY type = PTATY::AndersenWaveDiff_WPA,
+                     bool alias_check = true)
+        : Andersen(_pag, type, alias_check)
+    {
+    }
 
-    /// Create an singleton instance directly instead of invoking llvm pass manager
+    /// Create an singleton instance directly instead of invoking llvm pass
+    /// manager
     static AndersenWaveDiff* createAndersenWaveDiff(SVFIR* _pag)
     {
-        if(diffWave==nullptr)
+        if (diffWave == nullptr)
         {
-            diffWave = new AndersenWaveDiff(_pag, PTATY::AndersenWaveDiff_WPA, false);
+            diffWave =
+                new AndersenWaveDiff(_pag, PTATY::AndersenWaveDiff_WPA, false);
             diffWave->analyze();
             return diffWave;
         }
@@ -429,6 +437,32 @@ public:
     virtual bool handleLoad(NodeID id, const ConstraintEdge* load);
     virtual bool handleStore(NodeID id, const ConstraintEdge* store);
 };
+
+/**
+ * Detect and collapse PWC nodes produced by processing gep edges, under the
+ * constraint of field limit.
+ */
+inline void Andersen::collapsePWCNode(NodeID nodeId)
+{
+    // If a node is a PWC node, collapse all its points-to target.
+    // collapseNodePts() may change the points-to set of the nodes which have
+    // been processed before, in this case, we may need to re-do the analysis.
+    if (consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
+        reanalyze = true;
+}
+
+inline void Andersen::collapseFields()
+{
+    while (consCG->hasNodesToBeCollapsed())
+    {
+        NodeID node = consCG->getNextCollapseNode();
+        // collapseField() may change the points-to set of the nodes which have
+        // been processed before, in this case, we may need to re-do the
+        // analysis.
+        if (collapseField(node))
+            reanalyze = true;
+    }
+}
 
 } // End namespace SVF
 
