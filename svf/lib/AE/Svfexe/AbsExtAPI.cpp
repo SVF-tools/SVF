@@ -31,6 +31,8 @@
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
 
+#include <algorithm>
+
 using namespace SVF;
 AbsExtAPI::AbsExtAPI(AbstractInterpretation* ae): ae(ae)
 {
@@ -122,7 +124,6 @@ void AbsExtAPI::initExtFunMap()
     auto svf_set_value = [&](const CallICFGNode* callNode)
     {
         if (callNode->arg_size() < 2) return;
-        AbstractState&as = getAbsState(callNode);
         const AbstractValue& lbVal = ae->getAbsValue(callNode->getArgument(1), callNode);
         const AbstractValue& ubVal = ae->getAbsValue(callNode->getArgument(2), callNode);
         assert(lbVal.getInterval().is_numeral() && ubVal.getInterval().is_numeral());
@@ -138,7 +139,7 @@ void AbsExtAPI::initExtFunMap()
                 const LoadStmt* load = SVFUtil::cast<LoadStmt>(stmt);
                 const AbstractValue& ptrVal = ae->getAbsValue(load->getRHSVar(), callNode);
                 for (auto addr : ptrVal.getAddrs())
-                    as.store(addr, num);
+                    ae->updateMemoryValue(addr, num, callNode);
             }
         }
         return;
@@ -231,16 +232,15 @@ void AbsExtAPI::initExtFunMap()
     auto sse_free = [&](const CallICFGNode *callNode)
     {
         if (callNode->arg_size() < 1) return;
-        AbstractState& as = getAbsState(callNode);
         const AbstractValue& ptrVal = ae->getAbsValue(callNode->getArgument(0), callNode);
         for (auto addr: ptrVal.getAddrs())
         {
-            if (AbstractState::isBlackHoleObjAddr(addr))
+            if (addr == BlackHoleObjAddr)
             {
             }
             else
             {
-                as.addToFreedAddrs(addr);
+                ae->markFreedMemory(addr, callNode);
             }
         }
     };
@@ -259,10 +259,6 @@ void AbsExtAPI::initExtFunMap()
     }
 };
 
-AbstractState& AbsExtAPI::getAbsState(const SVF::ICFGNode* node)
-{
-    return ae->getAbsState(node);
-}
 
 void AbsExtAPI::collectCheckPoint()
 {
@@ -321,7 +317,6 @@ void AbsExtAPI::checkPointAllSet()
 
 std::string AbsExtAPI::strRead(const ValVar* rhs, const ICFGNode* node)
 {
-    AbstractState& as = getAbsState(node);
     std::string str0;
 
     for (u32_t index = 0; index < Options::MaxFieldLimit(); index++)
@@ -333,7 +328,7 @@ std::string AbsExtAPI::strRead(const ValVar* rhs, const ICFGNode* node)
         AbstractValue val;
         for (const auto &addr: expr0.getAddrs())
         {
-            val.join_with(as.load(addr));
+            val.join_with(ae->getMemoryValue(addr, node));
         }
         if (!val.getInterval().is_numeral())
         {
@@ -449,33 +444,44 @@ bool AbsExtAPI::isValidLength(const IntervalValue& len)
 /// Returns an IntervalValue: exact length if '\0' found, otherwise [0, MaxFieldLimit].
 IntervalValue AbsExtAPI::getStrlen(const ValVar *strValue, const ICFGNode* node)
 {
-    AbstractState& as = getAbsState(node);
     // Step 1: determine the buffer size (in bytes) backing this pointer
     u32_t dst_size = 0;
     const AbstractValue& ptrVal = ae->getAbsValue(strValue, node);
     for (const auto& addr : ptrVal.getAddrs())
     {
-        NodeID objId = as.getIDFromAddr(addr);
-        if (svfir->getBaseObject(objId)->isConstantByteSize())
+        NodeID objId = AbstractInterpretation::objectIdFromAddress(addr);
+        const BaseObjVar* baseObject = svfir->getBaseObject(objId);
+        // Abstract addresses may denote black-hole, integer-derived, or other
+        // non-object nodes.  In that case the backing size is unknown; keep
+        // the conservative unknown-length result instead of dereferencing a
+        // missing BaseObjVar.
+        if (baseObject == nullptr)
+            continue;
+        if (baseObject->isConstantByteSize())
         {
-            dst_size = svfir->getBaseObject(objId)->getByteSizeOfObj();
+            dst_size = std::max(dst_size, baseObject->getByteSizeOfObj());
         }
         else
         {
-            const ICFGNode* icfgNode = svfir->getBaseObject(objId)->getICFGNode();
+            const ICFGNode* icfgNode = baseObject->getICFGNode();
+            if (icfgNode == nullptr)
+                continue;
             for (const SVFStmt* stmt2: icfgNode->getSVFStmts())
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
                 {
-                    dst_size = ae->getAllocaInstByteSize(addrStmt);
+                    dst_size = std::max(
+                        dst_size, ae->getAllocaInstByteSize(addrStmt));
                 }
             }
         }
     }
 
-    // Step 2: scan for '\0' terminator
-    u32_t len = 0;
-    if (ae->getAbsValue(strValue, node).isAddr())
+    // Step 2: scan for a definitely positioned '\0' terminator.  A pointer
+    // may denote several backing objects, so every byte before the terminator
+    // must be definitely non-zero across all pointees.  An unknown byte or a
+    // missing terminator cannot soundly be treated as an exact string length.
+    if (ae->getAbsValue(strValue, node).isAddr() && dst_size != 0)
     {
         for (u32_t index = 0; index < dst_size; index++)
         {
@@ -484,22 +490,23 @@ IntervalValue AbsExtAPI::getStrlen(const ValVar *strValue, const ICFGNode* node)
             AbstractValue val;
             for (const auto &addr: expr0.getAddrs())
             {
-                val.join_with(as.load(addr));
+                val.join_with(ae->getMemoryValue(addr, node));
             }
-            if (val.getInterval().is_numeral() &&
-                    (char) val.getInterval().getIntNumeral() == '\0')
+            if (!val.getInterval().is_numeral())
+                return IntervalValue((s64_t)0,
+                                     (s64_t)Options::MaxFieldLimit());
+            if (val.getInterval().getIntNumeral() == 0)
             {
-                break;
+                const u32_t elemSize = getElementSize(strValue);
+                return IntervalValue(index * elemSize);
             }
-            ++len;
         }
     }
 
-    // Step 3: scale by element size and return
-    u32_t elemSize = getElementSize(strValue);
-    if (len == 0)
-        return IntervalValue((s64_t)0, (s64_t)Options::MaxFieldLimit());
-    return IntervalValue(len * elemSize);
+    // No definite terminator was established.  This includes unknown backing
+    // size, an empty points-to set, and a fully scanned but unterminated
+    // buffer.  Preserve the documented conservative fallback.
+    return IntervalValue((s64_t)0, (s64_t)Options::MaxFieldLimit());
 }
 
 // ===----------------------------------------------------------------------===//
@@ -547,7 +554,6 @@ void AbsExtAPI::handleMemcpy(const ValVar *dst,
                              u32_t start_idx, const ICFGNode* node)
 {
     if (!isValidLength(len)) return;
-    AbstractState& as = getAbsState(node);
 
     u32_t elemSize = getElementSize(dst);
     u32_t size = std::min((u32_t)Options::MaxFieldLimit(),
@@ -567,11 +573,9 @@ void AbsExtAPI::handleMemcpy(const ValVar *dst,
         {
             for (const auto &srcAddr: expr_src.getAddrs())
             {
-                u32_t objId = as.getIDFromAddr(srcAddr);
-                if (as.inAddrToValTable(objId) || as.inAddrToAddrsTable(objId))
-                {
-                    as.store(dstAddr, as.load(srcAddr));
-                }
+                if (ae->hasMemoryValue(srcAddr, node))
+                    ae->updateMemoryValue(
+                        dstAddr, ae->getMemoryValue(srcAddr, node), node);
             }
         }
     }
@@ -586,7 +590,6 @@ void AbsExtAPI::handleMemset(const ValVar *dst,
                              const IntervalValue& elem, const IntervalValue& len, const ICFGNode* node)
 {
     if (!isValidLength(len)) return;
-    AbstractState& as = getAbsState(node);
 
     u32_t elemSize = 1;
     if (dst->getType()->isArrayTy())
@@ -613,16 +616,15 @@ void AbsExtAPI::handleMemset(const ValVar *dst,
         AbstractValue lhs_gep = ae->getGepObjAddrs(dst, IntervalValue(index));
         for (const auto &addr: lhs_gep.getAddrs())
         {
-            u32_t objId = as.getIDFromAddr(addr);
-            if (as.inAddrToValTable(objId))
+            if (ae->hasMemoryValue(addr, node))
             {
-                AbstractValue tmp = as.load(addr);
+                AbstractValue tmp = ae->getMemoryValue(addr, node);
                 tmp.join_with(elem);
-                as.store(addr, tmp);
+                ae->updateMemoryValue(addr, tmp, node);
             }
             else
             {
-                as.store(addr, elem);
+                ae->updateMemoryValue(addr, elem, node);
             }
         }
     }

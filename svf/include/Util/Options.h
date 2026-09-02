@@ -236,6 +236,8 @@ public:
     static const OptionMap<u32_t> AESparsity;
     static const OptionMap<u32_t> AEFunEntry;
     static const Option<u32_t> WidenDelay;
+    /// Print inclusive phase timings for native semi/full-sparse AE.
+    static const Option<bool> AESparseProfile;
     /// recursion handling mode, Default: TOP
     static const OptionMap<u32_t> HandleRecur;
     /// the max time consumptions (seconds). Default: 4 hours 14400s

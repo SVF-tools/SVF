@@ -63,7 +63,7 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                 const AddressValue& objAddrs = rhsVal.getAddrs();
                 for (const auto& addr : objAddrs)
                 {
-                    NodeID objId = ae.getAbsState(node).getIDFromAddr(addr);
+                    NodeID objId = AbstractInterpretation::objectIdFromAddress(addr);
                     u32_t size = 0;
                     // like `int arr[10]` which has constant size before runtime
                     if (svfir->getBaseObject(objId)->isConstantByteSize())
@@ -336,12 +336,11 @@ IntervalValue BufOverflowDetector::getAccessOffset(SVF::NodeID objId, const SVF:
 void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, SVF::AddressValue gepAddrs, SVF::AddressValue objAddrs, SVF::IntervalValue offset)
 {
     SVFIR* svfir = PAG::getPAG();
-    auto& ae = AbstractInterpretation::getAEInstance();
-    const AbstractState& as = ae.getAbsState(node);
+    (void)node;
 
     for (const auto& objAddr : objAddrs)
     {
-        NodeID objId = as.getIDFromAddr(objAddr);
+        NodeID objId = AbstractInterpretation::objectIdFromAddress(objAddr);
         auto obj = svfir->getSVFVar(objId);
 
         if (SVFUtil::isa<BaseObjVar>(obj))
@@ -351,14 +350,14 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
             // we write key value pair {gep, 4}
             for (const auto& gepAddr : gepAddrs)
             {
-                NodeID gepObj = as.getIDFromAddr(gepAddr);
+                NodeID gepObj = AbstractInterpretation::objectIdFromAddress(gepAddr);
                 if (const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(svfir->getSVFVar(gepObj)))
                 {
                     addToGepObjOffsetFromBase(gepObjVar, offset);
                 }
                 else
                 {
-                    assert(AbstractState::isBlackHoleObjAddr(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
+                    assert(gepAddr == BlackHoleObjAddr && "GEP object is neither a GepObjVar nor an invalid memory address");
                 }
             }
         }
@@ -370,7 +369,7 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
             const GepObjVar* objVar = SVFUtil::cast<GepObjVar>(obj);
             for (const auto& gepAddr : gepAddrs)
             {
-                NodeID gepObj = as.getIDFromAddr(gepAddr);
+                NodeID gepObj = AbstractInterpretation::objectIdFromAddress(gepAddr);
                 if (const GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(svfir->getSVFVar(gepObj)))
                 {
                     if (hasGepObjOffsetFromBase(objVar))
@@ -389,7 +388,7 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
                 }
                 else
                 {
-                    assert(AbstractState::isBlackHoleObjAddr(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
+                    assert(gepAddr == BlackHoleObjAddr && "GEP object is neither a GepObjVar nor an invalid memory address");
                 }
             }
         }
@@ -470,7 +469,7 @@ bool BufOverflowDetector::canSafelyAccessMemory(const SVF::ValVar* value, const 
     }
     for (const auto& addr : ptrVal.getAddrs())
     {
-        NodeID objId = ae.getAbsState(node).getIDFromAddr(addr);
+        NodeID objId = AbstractInterpretation::objectIdFromAddress(addr);
         u32_t size = 0;
         // if the object is a constant size object, get the size directly
         if (svfir->getBaseObject(objId)->isConstantByteSize())
@@ -675,13 +674,13 @@ bool NullptrDerefDetector::canSafelyDerefPtr(const ValVar* value, const ICFGNode
     for (const auto &addr: AbsVal.getAddrs())
     {
         // if the addr itself is invalid mem, report unsafe
-        if (AbstractState::isBlackHoleObjAddr(addr))
+        if (addr == BlackHoleObjAddr)
             return false;
         // if nullptr is detected, return unsafe
-        else if (AbstractState::isNullMem(addr))
+        else if (addr == NullMemAddr)
             return false;
         // if addr is labeled freed mem, report unsafe
-        else if (ae.getAbsState(node).isFreedMem(addr))
+        else if (ae.isFreedMemory(addr, node))
             return false;
     }
     return true;

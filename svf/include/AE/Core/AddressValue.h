@@ -46,7 +46,6 @@ namespace SVF
 {
 class AddressValue
 {
-    friend class AbstractState;
     friend class RelExeState;
 public:
     typedef Set<u32_t> AddrSet;

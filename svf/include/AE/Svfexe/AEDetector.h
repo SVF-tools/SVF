@@ -27,7 +27,7 @@
 //
 #pragma once
 #include <SVFIR/SVFIR.h>
-#include <AE/Core/AbstractState.h>
+#include <AE/Core/AbstractValue.h>
 #include "Util/SVFBugReport.h"
 
 namespace SVF

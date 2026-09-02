@@ -23,18 +23,15 @@
 // Loop and recursion handling factored out of AbstractInterpretation.cpp.
 // Contains:
 //   * The widen/narrow fixpoint driver (handleLoopOrRecursion)
-//   * The dense base cycle helpers (getFullCycleHeadState /
-//     widenCycleState / narrowCycleState — semi-sparse overrides live in
-//     SparseAbstractInterpretation.cpp)
 //   * Recursion-specific helpers (isRecursiveFun, isRecursiveCallSite,
 //     skipRecursiveCall, skipRecursionWithTop, shouldApplyNarrowing)
 //
 
-#include "AE/Svfexe/AbstractInterpretation.h"
 #include "AE/Svfexe/AEWTO.h"
+#include "AE/Svfexe/AbstractInterpretation.h"
 #include "SVFIR/SVFIR.h"
-#include "WPA/Andersen.h"
 #include "Util/Options.h"
+#include "WPA/Andersen.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -51,28 +48,31 @@ bool AbstractInterpretation::isRecursiveFun(const FunObjVar* fun)
 
 /// TOP mode for recursive calls: skip the function body entirely and
 /// conservatively set all reachable stores and the return value to TOP.
-void AbstractInterpretation::skipRecursionWithTop(const CallICFGNode *callNode)
+void AbstractInterpretation::skipRecursionWithTop(const CallICFGNode* callNode)
 {
-    const RetICFGNode *retNode = callNode->getRetICFGNode();
+    const RetICFGNode* retNode = callNode->getRetICFGNode();
 
     // 1. Set return value to TOP
     if (retNode->getSVFStmts().size() > 0)
     {
-        if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(*retNode->getSVFStmts().begin()))
+        if (const RetPE* retPE =
+                SVFUtil::dyn_cast<RetPE>(*retNode->getSVFStmts().begin()))
         {
             if (!retPE->getLHSVar()->isPointer() &&
-                    !retPE->getLHSVar()->isConstDataOrAggDataButNotNullPtr())
-                updateAbsValue(retPE->getLHSVar(), IntervalValue::top(), callNode);
+                !retPE->getLHSVar()->isConstDataOrAggDataButNotNullPtr())
+                updateAbsValue(retPE->getLHSVar(), IntervalValue::top(),
+                               callNode);
         }
     }
 
     // 2. Set all stores in callee's reachable BBs to TOP
     if (retNode->getOutEdges().size() > 1)
     {
-        updateAbsState(retNode, getAbsState(callNode));
+        copyAbstractState(callNode, retNode);
         return;
     }
-    for (const SVFBasicBlock* bb : callNode->getCalledFunction()->getReachableBBs())
+    for (const SVFBasicBlock* bb :
+         callNode->getCalledFunction()->getReachableBBs())
     {
         for (const ICFGNode* node : bb->getICFGNodeList())
         {
@@ -81,14 +81,18 @@ void AbstractInterpretation::skipRecursionWithTop(const CallICFGNode *callNode)
                 if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt))
                 {
                     const SVFVar* rhsVar = store->getRHSVar();
-                    if (!rhsVar->isPointer() && !rhsVar->isConstDataOrAggDataButNotNullPtr())
+                    if (!rhsVar->isPointer() &&
+                        !rhsVar->isConstDataOrAggDataButNotNullPtr())
                     {
-                        const AbstractValue& addrs = getAbsValue(store->getLHSVar(), callNode);
+                        const AbstractValue& addrs =
+                            getAbsValue(store->getLHSVar(), callNode);
                         if (addrs.isAddr())
                         {
-                            AbstractState& as = getAbsState(callNode);
                             for (const auto& addr : addrs.getAddrs())
-                                as.store(addr, IntervalValue::top());
+                            {
+                                updateMemoryValue(addr, IntervalValue::top(),
+                                                  callNode);
+                            }
                         }
                     }
                 }
@@ -97,18 +101,21 @@ void AbstractInterpretation::skipRecursionWithTop(const CallICFGNode *callNode)
     }
 
     // 3. Copy callNode's state to retNode
-    updateAbsState(retNode, getAbsState(callNode));
+    copyAbstractState(callNode, retNode);
 }
 
-/// Check if caller and callee are in the same CallGraph SCC (i.e. a recursive callsite)
+/// Check if caller and callee are in the same CallGraph SCC (i.e. a recursive
+/// callsite)
 bool AbstractInterpretation::isRecursiveCallSite(const CallICFGNode* callNode,
-        const FunObjVar* callee)
+                                                 const FunObjVar* callee)
 {
     const FunObjVar* caller = callNode->getCaller();
-    return preAnalysis->getPointerAnalysis()->inSameCallGraphSCC(caller, callee);
+    return preAnalysis->getPointerAnalysis()->inSameCallGraphSCC(caller,
+                                                                 callee);
 }
 
-/// Skip recursive callsites (within SCC); entry calls from outside SCC are not skipped
+/// Skip recursive callsites (within SCC); entry calls from outside SCC are not
+/// skipped
 bool AbstractInterpretation::skipRecursiveCall(const CallICFGNode* callNode)
 {
     const FunObjVar* callee = getCallee(callNode);
@@ -126,7 +133,8 @@ bool AbstractInterpretation::skipRecursiveCall(const CallICFGNode* callNode)
     return isRecursiveCallSite(callNode, callee);
 }
 
-/// Check if narrowing should be applied: always for regular loops, mode-dependent for recursion
+/// Check if narrowing should be applied: always for regular loops,
+/// mode-dependent for recursion
 bool AbstractInterpretation::shouldApplyNarrowing(const FunObjVar* fun)
 {
     // Non-recursive functions (regular loops): always apply narrowing
@@ -138,60 +146,17 @@ bool AbstractInterpretation::shouldApplyNarrowing(const FunObjVar* fun)
     switch (Options::HandleRecur())
     {
     case TOP:
-        assert(false && "TOP mode should not reach narrowing phase for recursive functions");
+        assert(false && "TOP mode should not reach narrowing phase for "
+                        "recursive functions");
         return false;
     case WIDEN_ONLY:
-        return false;  // Skip narrowing for recursive functions
+        return false; // Skip narrowing for recursive functions
     case WIDEN_NARROW:
-        return true;   // Apply narrowing for recursive functions
+        return true; // Apply narrowing for recursive functions
     default:
         assert(false && "Unknown recursion handling mode");
         return false;
     }
-}
-
-// =====================================================================
-//  Cycle state helpers (dense base)
-//
-//  Dense default: trace[cycle_head] is the authoritative primary
-//  storage, so the snapshot / write-back are trivial.
-//  SemiSparseAbstractInterpretation overrides these to additionally
-//  pull/scatter cycle ValVars from/to their def-sites.
-// =====================================================================
-
-AbstractState AbstractInterpretation::getFullCycleHeadState(const ICFGCycleWTO* cycle)
-{
-    const ICFGNode* cycle_head = cycle->head()->getICFGNode();
-    AbstractState snap;
-    if (hasAbsState(cycle_head))
-        snap = getAbsState(cycle_head);
-    return snap;
-}
-
-bool AbstractInterpretation::widenCycleState(
-    const AbstractState& prev, const AbstractState& cur, const ICFGCycleWTO* cycle)
-{
-    AbstractState prev_copy = prev;
-    AbstractState next = prev_copy.widening(cur);
-    // Always write back (even at fixpoint) so cycle_head's trace holds the
-    // widened state for the upcoming narrowing phase.
-    const ICFGNode* cycle_head = cycle->head()->getICFGNode();
-    abstractTrace[cycle_head] = next;
-    return next == prev;
-}
-
-bool AbstractInterpretation::narrowCycleState(
-    const AbstractState& prev, const AbstractState& cur, const ICFGCycleWTO* cycle)
-{
-    const ICFGNode* cycle_head = cycle->head()->getICFGNode();
-    if (!shouldApplyNarrowing(cycle_head->getFun()))
-        return true;
-    AbstractState prev_copy = prev;
-    AbstractState next = prev_copy.narrowing(cur);
-    if (next == prev)
-        return true;  // fixpoint
-    abstractTrace[cycle_head] = next;
-    return false;
 }
 
 // =====================================================================
@@ -227,16 +192,18 @@ bool AbstractInterpretation::narrowCycleState(
 //  == Semi-sparse note ==
 //  In semi-sparse mode ValVars live at their def-sites and do not flow
 //  through cycle_head's merge.  The cycle helpers in
-//  SparseAbstractInterpretation.cpp gather them into the cycle_head
+//  Native sparse implementations gather them into the cycle head
 //  snapshot and scatter them back after each widen/narrow step so the
 //  fixpoint can observe ValVar growth across iterations.
 // =====================================================================
 
-void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller)
+void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle,
+                                                   const CallICFGNode* caller)
 {
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
 
-    // TOP mode for recursive function cycles: set all stores and return value to TOP
+    // TOP mode for recursive function cycles: set all stores and return value
+    // to TOP
     if (Options::HandleRecur() == TOP && isRecursiveFun(cycle_head->getFun()))
     {
         if (caller)
@@ -251,17 +218,21 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
     {
         if (cur_iter >= widen_delay)
         {
-            // getFullCycleHeadState handles dense (returns trace[cycle_head])
+            // cloneCycleHeadState handles dense (returns trace[cycle_head])
             // and semi-sparse (collects ValVars from def-sites) uniformly.
-            AbstractState prev = getFullCycleHeadState(cycle);
+            std::unique_ptr<AbstractDomain::AbstractState> previous =
+                cloneCycleHeadState(cycle);
 
             if (mergeStatesFromPredecessors(cycle_head))
                 handleICFGNode(cycle_head);
-            AbstractState cur = getFullCycleHeadState(cycle);
+            std::unique_ptr<AbstractDomain::AbstractState> current =
+                cloneCycleHeadState(cycle);
 
             if (increasing)
             {
-                if (widenCycleState(prev, cur, cycle))
+                const bool stateFixpoint =
+                    widenCycleState(*previous, *current, cycle);
+                if (stateFixpoint)
                 {
                     increasing = false;
                     continue;
@@ -269,7 +240,9 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
             }
             else
             {
-                if (narrowCycleState(prev, cur, cycle))
+                const bool stateFixpoint =
+                    narrowCycleState(*previous, *current, cycle);
+                if (stateFixpoint)
                     break;
             }
         }
@@ -283,15 +256,18 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
         // Process cycle body components (each with gated merge+handle)
         for (const ICFGWTOComp* comp : cycle->getWTOComponents())
         {
-            if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+            if (const ICFGSingletonWTO* singleton =
+                    SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
             {
                 const ICFGNode* node = singleton->getICFGNode();
                 if (mergeStatesFromPredecessors(node))
                     handleICFGNode(node);
             }
-            else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+            else if (const ICFGCycleWTO* subCycle =
+                         SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
             {
-                if (mergeStatesFromPredecessors(subCycle->head()->getICFGNode()))
+                if (mergeStatesFromPredecessors(
+                        subCycle->head()->getICFGNode()))
                     handleLoopOrRecursion(subCycle, caller);
             }
         }

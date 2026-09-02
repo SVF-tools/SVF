@@ -34,13 +34,13 @@ jobs:
         run: |
           XCODE_PATH=$(dirname $(dirname $(xcode-select -p)))
           sudo ln -sfn "$XCODE_PATH" /Applications/Xcode.app
-          brew install astyle
+          brew install astyle gmp mpfr
 
       - name: ubuntu-setup
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev astyle
+          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev libgmp-dev libmpfr-dev astyle
 
       # build-svf
       - name: build-svf
@@ -97,10 +97,10 @@ jobs:
         run:
           ctest -R double_free -VV
 
-      - name: ctest ae_symabs
+      - name: ctest box domain and integration
         working-directory: ${{github.workspace}}/Release-build
         run:
-          ctest -R symabs -VV
+          ctest -R '^box-' -VV
 
       - name: ctest ae_assert
         working-directory: ${{github.workspace}}/Release-build

@@ -168,8 +168,16 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   )
 endif()
 
-# Only expose the headers in the source tree to in-tree users of SVF
-target_include_directories(SvfLLVM PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)
+# Only expose the headers in the source tree to in-tree users of SVF.  SvfLLVM's
+# public headers include LLVM headers, so their build-tree include directories
+# are part of the public build interface as well.
+target_include_directories(
+  SvfLLVM
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
+)
+target_include_directories(
+  SvfLLVM SYSTEM PUBLIC "$<BUILD_INTERFACE:${LLVM_INCLUDE_DIRS}>"
+)
 
 # Set the library & .so version of the LLVM library
 set_target_properties(SvfLLVM PROPERTIES VERSION ${SVF_VERSION} SOVERSION ${SVF_VERSION_MAJOR})

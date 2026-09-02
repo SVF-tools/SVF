@@ -12,7 +12,8 @@
 # If LLVM_DIR or Z3_DIR points to an existing directory, that installation is used.
 # Otherwise, this script installs/downloads the supported prebuilt dependencies.
 #
-# Linux dependencies include: build-essential libncurses5 libncurses-dev cmake zlib1g-dev unzip xz-utils
+# Linux dependencies include: build-essential libncurses5 libncurses-dev cmake
+# zlib1g-dev libgmp-dev libmpfr-dev unzip xz-utils
 
 set -e
 set -o pipefail
@@ -246,7 +247,7 @@ install_llvm_with_brew() {
     check_and_install_brew
 
     echo "Installing LLVM ${MajorLLVMVer} via Homebrew for ${PLATFORM}."
-    brew install "llvm@${MajorLLVMVer}"
+    brew install "llvm@${MajorLLVMVer}" gmp mpfr
 
     mkdir -p "$SVFHOME/$LLVMHome"
     ln -s "$(brew --prefix llvm@${MajorLLVMVer})"/* "$SVFHOME/$LLVMHome"

@@ -45,6 +45,10 @@ include(CMakePackageConfigHelpers)
 # Allow checking for IPO support by the used compiler
 include(CheckIPOSupported)
 
+# Define BUILD_TESTING consistently even when the historical Test-Suite
+# directory is absent.  AE/Core tests are registered independently below.
+include(CTest)
+
 # Since SVF builds into non-standard directories; symlink/copy compile commands into top-level directory
 if(WIN32
    OR MINGW
@@ -93,6 +97,15 @@ option(SVF_EXPORT_DYNAMIC "Export all (not only the actually used) symbols to dy
 option(SVF_ENABLE_ASSERTIONS "Always enable debugging assertions, also if the build type is a release build")
 option(SVF_ENABLE_RTTI "Adds -fno-rtti to disable runtime type information (RTTI)" ON)
 option(SVF_ENABLE_EXCEPTIONS "Adds -fno-exceptions to disable exception handling" ON)
+option(SVF_BUILD_ABSTRACT_DOMAIN_TESTS
+       "Build Box domain unit and abstract-execution integration tests"
+       ${BUILD_TESTING})
+
+if(NOT SVF_ENABLE_EXCEPTIONS)
+  message(FATAL_ERROR
+          "AbstractDomainCore uses exception-based API diagnostics; "
+          "SVF_ENABLE_EXCEPTIONS must be ON")
+endif()
 
 # If building dynamic libraries, always enable PIC
 if(SVF_SHARED_LIBS AND NOT SVF_USE_PIC)
@@ -224,6 +237,18 @@ message(
   Z3 C++ include dirs:  ${Z3_CXX_INCLUDE_DIRS}"
 )
 
+find_package(GMP REQUIRED)
+find_package(MPFR REQUIRED)
+message(
+  STATUS
+    "Using Box numeric libraries:
+  GMP include directory:  ${GMP_INCLUDE_DIR}
+  GMP C library:          ${GMP_LIBRARY}
+  GMP C++ library:        ${GMPXX_LIBRARY}
+  MPFR include directory: ${MPFR_INCLUDE_DIR}
+  MPFR library:           ${MPFR_LIBRARY}"
+)
+
 # =================================================================================
 # SVF configuration interface library
 # =================================================================================
@@ -272,8 +297,7 @@ install(TARGETS SvfFlags EXPORT SVFTargets)
 # =================================================================================
 
 # If ./Test-Suite exists, add & run the tests
-if(EXISTS "${SVF_SOURCE_DIR}/Test-Suite")
-  include(CTest)
+if(EXISTS "${SVF_SOURCE_DIR}/Test-Suite/CMakeLists.txt")
   enable_testing()
   add_subdirectory(Test-Suite)
 endif()
@@ -285,6 +309,11 @@ endif()
 add_subdirectory(svf)
 add_subdirectory(svf-llvm)
 
+if(SVF_BUILD_ABSTRACT_DOMAIN_TESTS)
+  enable_testing()
+  add_subdirectory(svf/lib/AE/Test)
+endif()
+
 # =================================================================================
 # SVF build configuration handling (post linking LLVM)
 # =================================================================================
@@ -292,6 +321,18 @@ add_subdirectory(svf-llvm)
 # Expose the required ABI flags (e.g., whether RTTI was disabled) in the build & install trees
 target_compile_options(SvfFlags INTERFACE $<$<NOT:$<BOOL:${SVF_ENABLE_RTTI}>>:-fno-rtti>)
 target_link_options(SvfFlags INTERFACE $<$<NOT:$<BOOL:${SVF_ENABLE_RTTI}>>:-fno-rtti>)
+if(TARGET AbstractStateCore)
+  target_compile_options(
+    AbstractStateCore PUBLIC
+    $<$<NOT:$<BOOL:${SVF_ENABLE_RTTI}>>:-fno-rtti>
+  )
+endif()
+if(TARGET AbstractDomainCore)
+  target_compile_options(
+    AbstractDomainCore PUBLIC
+    $<$<NOT:$<BOOL:${SVF_ENABLE_RTTI}>>:-fno-rtti>
+  )
+endif()
 
 # Expose build/link flags not required for users of SVF only in the build tree
 target_compile_options(

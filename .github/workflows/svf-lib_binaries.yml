@@ -40,14 +40,14 @@ jobs:
         run: |
           XCODE_PATH=$(dirname $(dirname $(xcode-select -p)))
           sudo ln -sfn "$XCODE_PATH" /Applications/Xcode.app
-          brew install astyle
+          brew install astyle gmp mpfr
 
       # Ubuntu settings
       - name: ubuntu-setup
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake gcc g++ nodejs doxygen graphviz libncurses5-dev libtinfo6 libzstd-dev astyle
+          sudo apt-get install -y cmake gcc g++ nodejs doxygen graphviz libncurses5-dev libtinfo6 libzstd-dev libgmp-dev libmpfr-dev astyle
 
       - name: env-setup
         if: github.event_name == 'push' && github.repository == 'SVF-tools/SVF'

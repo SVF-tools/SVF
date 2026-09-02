@@ -897,25 +897,17 @@ inline IntervalValue operator<<(const IntervalValue &lhs, const IntervalValue &r
         shift.meet_with(IntervalValue(0, IntervalValue::plus_infinity()));
         if (shift.isBottom())
             return IntervalValue::bottom();
-        BoundedInt lb = 0;
-        // If the shift is greater than 32, the result is always 0
-        if ((s32_t) shift.lb().getNumeral() >= 32 || shift.lb().is_infinity())
-        {
-            lb = IntervalValue::minus_infinity();
-        }
-        else
-        {
-            lb = (1 << (s32_t) shift.lb().getNumeral());
-        }
-        BoundedInt ub = 0;
-        if (shift.ub().is_infinity())
-        {
-            ub = IntervalValue::plus_infinity();
-        }
-        else
-        {
-            ub = (1 << (s32_t) shift.ub().getNumeral());
-        }
+        if (shift.lb().is_infinity() || shift.ub().is_infinity())
+            return IntervalValue::top();
+        const s64_t lowerShift = shift.lb().getNumeral();
+        const s64_t upperShift = shift.ub().getNumeral();
+        // 2^63 is not representable by the signed numeral carrier.  Keep the
+        // operation sound instead of overflowing a host integer while
+        // constructing the scaling interval.
+        if (lowerShift >= 63 || upperShift >= 63)
+            return IntervalValue::top();
+        const BoundedInt lb = s64_t{1} << lowerShift;
+        const BoundedInt ub = s64_t{1} << upperShift;
         IntervalValue coeff(lb, ub);
         return lhs * coeff;
     }

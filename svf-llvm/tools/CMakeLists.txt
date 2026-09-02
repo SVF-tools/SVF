@@ -1,3 +1,19 @@
+if(APPLE)
+  # LLVM distributions may install a private libc++ beside libLLVM. Because
+  # that directory precedes the SDK on the link path, it can shadow the host
+  # runtime and leave exception-enabled SVF archives unresolved. Select the
+  # SDK runtime explicitly at the end of every tool link.
+  execute_process(
+    COMMAND xcrun --show-sdk-path
+    OUTPUT_VARIABLE SVF_APPLE_SDK
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  set(
+    CMAKE_CXX_STANDARD_LIBRARIES
+    "${CMAKE_CXX_STANDARD_LIBRARIES} ${SVF_APPLE_SDK}/usr/lib/libc++.tbd"
+  )
+endif()
+
 add_subdirectory(SABER)
 add_subdirectory(WPA)
 add_subdirectory(Example)

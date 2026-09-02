@@ -1,4 +1,5 @@
 //===- AbstractValue.h ----AbstractValue-------------------------//
+#pragma once
 //
 //                     SVF: Static Value-Flow Analysis
 //

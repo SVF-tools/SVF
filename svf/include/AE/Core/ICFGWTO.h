@@ -34,6 +34,7 @@
 #ifndef SVF_ICFGWTO_H
 #define SVF_ICFGWTO_H
 
+#include <algorithm>
 #include <vector>
 
 #include "Graphs/ICFG.h"
@@ -100,6 +101,18 @@ public:
             }
         }
 
+        // ICFG edge containers may be ordered by allocation-dependent pointer
+        // values.  WTO order determines widening points and therefore must not
+        // vary across otherwise identical analyzer processes.  Canonicalize
+        // successors by the stable ICFG node ID; a call node can also produce
+        // the same return successor through multiple outgoing call edges.
+        std::sort(successors.begin(), successors.end(),
+                  [](const ICFGNode* lhs, const ICFGNode* rhs)
+                  {
+                      return lhs->getId() < rhs->getId();
+                  });
+        successors.erase(std::unique(successors.begin(), successors.end()),
+                         successors.end());
         return successors;
     }
 };

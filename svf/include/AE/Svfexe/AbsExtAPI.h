@@ -28,7 +28,6 @@
 
 #include <functional>
 
-#include "AE/Core/AbstractState.h"
 #include "AE/Core/IntervalValue.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/GeneralType.h"
@@ -37,7 +36,6 @@ namespace SVF
 {
 
 class AbstractInterpretation;
-class AbstractState;
 class CallICFGNode;
 class ICFGNode;
 
@@ -111,14 +109,6 @@ public:
      * @return The interval value representing the range limit.
      */
     IntervalValue getRangeLimitFromType(const SVFType* type);
-
-    /**
-     * @brief Retrieves the abstract state from the trace for a given ICFG node.
-     * @param node Pointer to the ICFG node.
-     * @return Reference to the abstract state.
-     * @throws Assertion if no trace exists for the node.
-     */
-    AbstractState& getAbsState(const ICFGNode* node);
 
     void collectCheckPoint();
     void checkPointAllSet();
