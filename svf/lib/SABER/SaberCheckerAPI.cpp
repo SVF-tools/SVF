@@ -166,7 +166,7 @@ void SaberCheckerAPI::init()
     set<CHECKER_TYPE> t_seen;
     CHECKER_TYPE prev_t= CK_DUMMY;
     t_seen.insert(CK_DUMMY);
-    for(const ei_pair *p = ei_pairs; p->n; ++p)
+    for(const ei_pair *p= ei_pairs; p->n; ++p)
     {
         if(p->t != prev_t)
         {
