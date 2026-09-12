@@ -225,6 +225,10 @@ public:
     /// Interface expose to users of our pointer analysis, given two pts
     virtual AliasResult alias(const PointsTo& pts1, const PointsTo& pts2);
 
+    /// Declaring the PointsTo overload below would otherwise hide the base class's
+    /// mayAlias(NodeID, NodeID) and mayAlias(const SVFVar*, const SVFVar*).
+    using PointerAnalysis::mayAlias;
+
     /// Convenience bool wrappers: return true if the two operands may/must/partial alias
     inline bool mayAlias(const PointsTo& pts1, const PointsTo& pts2)
     {
