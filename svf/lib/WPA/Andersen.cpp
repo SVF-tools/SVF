@@ -181,7 +181,10 @@ void AndersenBase:: solveAndwritePtsToFile(const std::string& filename)
 
 void AndersenBase::cleanConsCG(NodeID id)
 {
-    consCG->resetSubs(consCG->getRep(id));
+    // Remove only this node from its representative's members. Erasing the whole
+    // member set would leave every other member mapped to a representative that no
+    // longer lists it, so sccSubNodes would stop being the inverse of sccRepNode.
+    consCG->getSubs(consCG->sccRepNode(id)).reset(id);
     for (NodeID sub: consCG->getSubs(id))
         consCG->resetRep(sub);
     consCG->resetSubs(id);
