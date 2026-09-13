@@ -917,6 +917,115 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
     consCG->resetSubs(nodeId);
 }
 
+/*!
+ * Collect every SVFIR node that may alias the given node. Each candidate is confirmed
+ * with mayAlias, so the result is exactly the nodes q for which mayAlias(node, q) holds.
+ */
+void Andersen::getMayAliases(NodeID node, NodeBS& aliases)
+{
+    PointsTo expandedPts;
+    expandFIObjs(getPts(node), expandedPts);
+
+    NodeBS candidates;
+    if (!getMayAliasCandidates(expandedPts, candidates))
+    {
+        for (SVFIR::iterator it = pag->begin(), eit = pag->end(); it != eit; ++it)
+            candidates.set(it->first);
+    }
+
+    // Field nodes removed by normalizePointsTo keep stale points-to entries
+    aliases.clear();
+    for (NodeID candidate : candidates)
+    {
+        if (pag->hasGNode(candidate) && mayAlias(node, candidate))
+            aliases.set(candidate);
+    }
+}
+
+/*!
+ * Collect a superset of the may-aliases of a node from reverse points-to sets, given
+ * the node's expanded points-to set. Return false when every node has to be tried
+ * instead, or trying every node is cheaper.
+ */
+bool Andersen::getMayAliasCandidates(const PointsTo& expandedPts, NodeBS& candidates)
+{
+    // A node that may point to the black hole aliases every node
+    if (!getPTDataTy()->hasReversePts() || containBlackHoleNode(expandedPts))
+        return false;
+
+    // expandFIObjs only adds fields of an object's own base, so another expanded
+    // points-to set can only meet this one on these bases and their fields. Dummy
+    // objects are not listed among their own fields, hence the bases themselves.
+    // Nodes that may point to the black hole alias this node too.
+    NodeBS objs;
+    for (NodeID obj : expandedPts)
+    {
+        NodeID base = pag->getBaseObjVarID(obj);
+        objs.set(base);
+        objs |= pag->getAllFieldsObjVars(base);
+    }
+    objs.set(pag->getBlackHoleNode());
+
+    // Heavily shared objects can make the reverse walk longer than trying every node
+    size_t entries = 0;
+    for (NodeID obj : objs)
+        entries += getRevPts(obj).size();
+    if (entries > pag->getTotalNodeNum())
+        return false;
+
+    // Andersen keeps an SCC's points-to set under its representative, so a reverse
+    // points-to key stands for its whole SCC. Collecting representatives first adds
+    // each SCC once.
+    NodeBS reps;
+    for (NodeID obj : objs)
+    {
+        for (NodeID key : getRevPts(obj))
+            reps.set(sccRepNode(key));
+    }
+    for (NodeID rep : reps)
+        candidates |= sccSubNodes(rep);
+    return true;
+}
+
+/*!
+ * Run the alias tests, then check getMayAliases on every pointer they use: it must
+ * return exactly the nodes that mayAlias reports
+ */
+void Andersen::validateSuccessTests(std::string fun)
+{
+    AndersenBase::validateSuccessTests(fun);
+
+    const FunObjVar* checkFun = pag->getFunObjVar(fun);
+    if (!checkFun)
+        return;
+    NodeBS actual, expected;
+    for (const CallICFGNode* callNode : pag->getCallSiteSet())
+    {
+        if (callNode->getCalledFunction() != checkFun)
+            continue;
+        for (u32_t i = 0; i < callNode->arg_size(); ++i)
+        {
+            NodeID ptr = callNode->getArgument(i)->getId();
+            getMayAliases(ptr, actual);
+            expected.clear();
+            for (SVFIR::iterator it = pag->begin(), eit = pag->end(); it != eit; ++it)
+            {
+                if (mayAlias(ptr, it->first))
+                    expected.set(it->first);
+            }
+            if (actual == expected)
+                outs() << sucMsg("\t SUCCESS :") << "getMayAliases check <id:" << ptr << "> at ("
+                       << callNode->getSourceLoc() << ")\n";
+            else
+            {
+                SVFUtil::errs() << errMsg("\t FAILURE :") << "getMayAliases check <id:" << ptr
+                                << "> at (" << callNode->getSourceLoc() << ")\n";
+                assert(false && "getMayAliases disagrees with mayAlias!");
+            }
+        }
+    }
+}
+
 void Andersen::cluster(void) const
 {
     assert(Options::MaxFieldLimit() == 0 && "Andersen::cluster: clustering for Andersen's is currently only supported in field-insensitive analysis");
