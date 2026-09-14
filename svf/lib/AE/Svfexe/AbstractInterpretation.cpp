@@ -496,16 +496,13 @@ bool AbstractInterpretation::isCmpBranchEdgeFeasible(const IntraCFGEdge* edge,
     const CmpStmt* cmpStmt = SVFUtil::cast<CmpStmt>(
                                  *edge->getCondition()->getInEdges().begin());
     const AbstractValue& cmpValue = getAbsValue(cmpStmt->getRes(), pred);
-    if (!cmpValue.isInterval())
-        return true;
+    assert(cmpValue.isInterval() &&
+           "CmpStmt result must be represented by a Boolean interval");
 
     // Feasibility check: cmp result must be compatible with branch successor
     IntervalValue resVal = cmpValue.getInterval();
     resVal.meet_with(IntervalValue((s64_t)succ, succ));
-    if (resVal.isBottom())
-        return false;
-
-    return true;
+    return !resVal.isBottom();
 }
 
 bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
@@ -1128,136 +1125,144 @@ void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary)
     updateAbsValue(binary->getRes(), resVal, node);
 }
 
-/// Equality is definitely true only for the same known singleton and may be
-/// true whenever the sets intersect or contain an unknown address.
-IntervalValue AbstractInterpretation::comparePointerValues(
-    const CmpStmt *cmp, const AbstractValue& lhsValue,
-    const AbstractValue& rhsValue) const
+IntervalValue AbstractInterpretation::evaluatePointerEquality(
+    const AddressValue& lhs, const AddressValue& rhs) const
 {
-    const u32_t predicate = cmp->getPredicate();
-    bool negateResult;
-    // Equality uses the address-set result directly.
-    if (predicate == CmpStmt::ICMP_EQ)
-        negateResult = false;
-    // Inequality is the complement of a definite equality result.
-    else if (predicate == CmpStmt::ICMP_NE)
-        negateResult = true;
-    // Pointer ordering is not modelled, so either Boolean outcome is feasible.
-    else
-        return IntervalValue((s64_t)0, (s64_t)1);
+    const bool lhsTargetKnown =
+        !lhs.isBottom() && !lhs.contains(BlackHoleObjAddr);
+    const bool rhsTargetKnown =
+        !rhs.isBottom() && !rhs.contains(BlackHoleObjAddr);
+    const bool hasUnknownTarget = !lhsTargetKnown || !rhsTargetKnown;
+    const bool targetsMayBeEqual = lhs.hasIntersect(rhs);
+    const bool targetsMustBeEqual =
+        targetsMayBeEqual && lhs.size() == 1 && rhs.size() == 1;
 
-    // A pointer outside the address domain has no known target. Keep both
-    // outcomes instead of interpreting another abstract domain as an address.
-    if (!lhsValue.isAddr() || !rhsValue.isAddr())
-        return IntervalValue((s64_t)0, (s64_t)1);
-
-    const AddressValue lhs = lhsValue.getAddrs();
-    const AddressValue rhs = rhsValue.getAddrs();
-
-    // An unknown left address may equal any address on the right.
-    if (lhs.contains(BlackHoleObjAddr))
-        return IntervalValue((s64_t)0, (s64_t)1);
-
-    // An unknown right address may equal any address on the left.
-    if (rhs.contains(BlackHoleObjAddr))
-        return IntervalValue((s64_t)0, (s64_t)1);
-
-    bool equal;
-    // Two known, disjoint points-to sets are definitely unequal.
-    if (!lhs.hasIntersect(rhs))
+    IntervalValue result;
+    if (hasUnknownTarget)
     {
-        equal = false;
+        // Case 1: an unknown target may equal or differ from the other target.
+        result = IntervalValue((s64_t)0, (s64_t)1);
+    }
+    else if (!targetsMayBeEqual)
+    {
+        // Case 2: known disjoint target sets are definitely unequal.
+        result = IntervalValue((s64_t)0);
+    }
+    else if (targetsMustBeEqual)
+    {
+        // Case 3: intersecting single-target sets contain the same target.
+        result = IntervalValue((s64_t)1);
     }
     else
     {
-        // A non-singleton left set may select either an equal or unequal address.
-        if (lhs.size() != 1)
-            return IntervalValue((s64_t)0, (s64_t)1);
-
-        // The same uncertainty applies when only the right set is non-singleton.
-        if (rhs.size() != 1)
-            return IntervalValue((s64_t)0, (s64_t)1);
-
-        // Intersecting singleton sets necessarily contain the same address.
-        equal = true;
+        // Case 4: intersecting sets with multiple choices may be equal.
+        result = IntervalValue((s64_t)0, (s64_t)1);
     }
-
-    // The cases above establish equality; complement it only for ICMP_NE.
-    if (negateResult)
-        equal = !equal;
-    return IntervalValue((s64_t)equal);
+    return result;
 }
 
-void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
+/// Evaluate a pointer-typed ICMP over abstract points-to alternatives. Object
+/// IDs identify targets but their numeric order does not model runtime address
+/// order, so only equality and inequality can produce a definite result.
+IntervalValue AbstractInterpretation::evaluatePointerCmp(
+    u32_t predicate, const AddressValue& lhs, const AddressValue& rhs) const
 {
-    const ICFGNode* node = cmp->getICFGNode();
-    const AbstractValue& op0Val = getAbsValue(cmp->getOpVar(0), node);
-    const AbstractValue& op1Val = getAbsValue(cmp->getOpVar(1), node);
+    assert(predicate >= CmpStmt::FIRST_ICMP_PREDICATE &&
+           predicate <= CmpStmt::LAST_ICMP_PREDICATE &&
+           "pointer comparison must use an ICMP predicate");
 
-    if (cmp->getOpVar(0)->getType()->isPointerTy())
-    {
-        updateAbsValue(cmp->getRes(), comparePointerValues(cmp, op0Val, op1Val),
-                       node);
-        return;
-    }
+    const IntervalValue equality = evaluatePointerEquality(lhs, rhs);
+    IntervalValue result((s64_t)0, (s64_t)1);
+    if (predicate == CmpStmt::ICMP_EQ)
+        result = equality;
+    else if (predicate == CmpStmt::ICMP_NE)
+        result = IntervalValue((s64_t)1) - equality;
+    return result;
+}
 
-    if (!op0Val.isInterval() || !op1Val.isInterval())
-        return;
-
-    const IntervalValue lhs = op0Val.getInterval();
-    const IntervalValue rhs = op1Val.getInterval();
-    IntervalValue resVal;
-    switch (cmp->getPredicate())
+IntervalValue AbstractInterpretation::evaluateIntervalCmp(
+    u32_t predicate, const IntervalValue& lhs, const IntervalValue& rhs) const
+{
+    IntervalValue result = IntervalValue::top();
+    switch (predicate)
     {
     case CmpStmt::ICMP_EQ:
     case CmpStmt::FCMP_OEQ:
     case CmpStmt::FCMP_UEQ:
-        resVal = (lhs == rhs);
+        result = (lhs == rhs);
         break;
     case CmpStmt::ICMP_NE:
     case CmpStmt::FCMP_ONE:
     case CmpStmt::FCMP_UNE:
-        resVal = (lhs != rhs);
+        result = (lhs != rhs);
         break;
     case CmpStmt::ICMP_UGT:
     case CmpStmt::ICMP_SGT:
     case CmpStmt::FCMP_OGT:
     case CmpStmt::FCMP_UGT:
-        resVal = (lhs > rhs);
+        result = (lhs > rhs);
         break;
     case CmpStmt::ICMP_UGE:
     case CmpStmt::ICMP_SGE:
     case CmpStmt::FCMP_OGE:
     case CmpStmt::FCMP_UGE:
-        resVal = (lhs >= rhs);
+        result = (lhs >= rhs);
         break;
     case CmpStmt::ICMP_ULT:
     case CmpStmt::ICMP_SLT:
     case CmpStmt::FCMP_OLT:
     case CmpStmt::FCMP_ULT:
-        resVal = (lhs < rhs);
+        result = (lhs < rhs);
         break;
     case CmpStmt::ICMP_ULE:
     case CmpStmt::ICMP_SLE:
     case CmpStmt::FCMP_OLE:
     case CmpStmt::FCMP_ULE:
-        resVal = (lhs <= rhs);
+        result = (lhs <= rhs);
         break;
     case CmpStmt::FCMP_FALSE:
-        resVal = IntervalValue(0, 0);
+        result = IntervalValue(0, 0);
         break;
     case CmpStmt::FCMP_TRUE:
-        resVal = IntervalValue(1, 1);
+        result = IntervalValue(1, 1);
         break;
     case CmpStmt::FCMP_ORD:
     case CmpStmt::FCMP_UNO:
-        // Conservatively return [0, 1] since we do not track NaN.
-        resVal = IntervalValue(0, 1);
+        // Keep both outcomes because the interval domain does not track NaN.
+        result = IntervalValue(0, 1);
         break;
     default:
         assert(false && "undefined compare: ");
     }
-    updateAbsValue(cmp->getRes(), resVal, node);
+    return result;
+}
+
+void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
+{
+    const ICFGNode* node = cmp->getICFGNode();
+    const AbstractValue& lhsValue = getAbsValue(cmp->getOpVar(0), node);
+    const AbstractValue& rhsValue = getAbsValue(cmp->getOpVar(1), node);
+    const bool pointerCmp = cmp->getOpVar(0)->getType()->isPointerTy();
+    assert(pointerCmp == cmp->getOpVar(1)->getType()->isPointerTy() &&
+           "CmpStmt operands must belong to the same value domain");
+
+    IntervalValue result;
+    if (pointerCmp)
+    {
+        result = evaluatePointerCmp(cmp->getPredicate(), lhsValue.getAddrs(),
+                                    rhsValue.getAddrs());
+    }
+    else
+    {
+        const IntervalValue lhs = lhsValue.isInterval()
+                                  ? lhsValue.getInterval()
+                                  : IntervalValue::top();
+        const IntervalValue rhs = rhsValue.isInterval()
+                                  ? rhsValue.getInterval()
+                                  : IntervalValue::top();
+        result = evaluateIntervalCmp(cmp->getPredicate(), lhs, rhs);
+    }
+    updateAbsValue(cmp->getRes(), result, node);
 }
 
 void AbstractInterpretation::updateStateOnLoad(const LoadStmt *load)

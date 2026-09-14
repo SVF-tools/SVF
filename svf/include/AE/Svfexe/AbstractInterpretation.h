@@ -282,9 +282,16 @@ private:
 
     void updateStateOnBinary(const BinaryOPStmt *binary);
 
-    IntervalValue comparePointerValues(const CmpStmt *cmp,
-                                       const AbstractValue& lhsValue,
-                                       const AbstractValue& rhsValue) const;
+    IntervalValue evaluatePointerEquality(const AddressValue& lhs,
+                                          const AddressValue& rhs) const;
+
+    IntervalValue evaluatePointerCmp(u32_t predicate,
+                                     const AddressValue& lhs,
+                                     const AddressValue& rhs) const;
+
+    IntervalValue evaluateIntervalCmp(u32_t predicate,
+                                      const IntervalValue& lhs,
+                                      const IntervalValue& rhs) const;
 
     void updateStateOnCmp(const CmpStmt *cmp);
 
