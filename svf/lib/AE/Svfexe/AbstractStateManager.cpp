@@ -66,10 +66,9 @@ bool AbstractInterpretation::hasAbsState(const ICFGNode* node)
     return abstractTrace.count(node) != 0;
 }
 
-/// Dense base: direct trace lookup, with a top sentinel for genuinely
-/// missing entries (e.g. function parameters like argc, never written
-/// before first read).  Sparse subclasses override with a def-site
-/// resolution chain.
+/// Dense base: direct trace lookup, with a type-directed top value for
+/// genuinely missing entries (e.g. function parameters never written before
+/// first read). Sparse subclasses override with a def-site resolution chain.
 ///
 /// The "in map" check is a raw map.count — NOT inVarToValTable /
 /// inVarToAddrsTable, which gate on isInterval / isAddr.  SVF
@@ -81,9 +80,13 @@ const AbstractValue& AbstractInterpretation::getAbsValue(const ValVar* var, cons
 {
     u32_t id = var->getId();
     AbstractState& as = abstractTrace[node];
-    if (as.getVarToVal().count(id))
-        return as[id];
-    as[id] = IntervalValue::top();
+    if (!as.getVarToVal().count(id))
+    {
+        if (var->getType()->isPointerTy())
+            as[id] = AddressValue(BlackHoleObjAddr);
+        else
+            as[id] = IntervalValue::top();
+    }
     return as[id];
 }
 
