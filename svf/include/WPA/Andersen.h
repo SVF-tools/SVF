@@ -252,8 +252,8 @@ public:
         return getPTDataTy()->unionPts(id,ptd);
     }
 
-    /// Collect exactly the SVFIR nodes q for which mayAlias(node, q) holds, clearing aliases first
-    void getMayAliases(NodeID node, NodeBS& aliases);
+    /// Collect exactly the SVFIR nodes q for which mayAlias(node, q) holds
+    NodeBS getMayAliases(NodeID node);
 
 
     void dumpTopLevelPtsTo();
@@ -357,8 +357,9 @@ protected:
     /// SCC detection
     virtual NodeStack& SCCDetect();
 
-    /// Collect may-alias candidates from reverse points-to sets, if cheaper than trying every node
-    bool getMayAliasCandidates(const PointsTo& expandedPts, NodeBS& candidates);
+    /// Collect may-alias candidates. Attempts to do so from reverse points-to sets (cheaper),
+    /// and if not possible, falls back to trying every node (costlier).
+    NodeBS getMayAliasCandidates(NodeID node);
 
     /// Also check getMayAliases on the pointers that the alias tests use
     virtual void validateSuccessTests(std::string fun);

@@ -101,7 +101,7 @@ public:
         return ptdTy;
     }
 
-    /// Whether reverse points-to sets were requested when this was constructed.
+    /// Whether we maintain reverse points-to sets.
     inline bool hasReversePts() const
     {
         return rev;
