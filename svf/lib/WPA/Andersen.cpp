@@ -995,6 +995,7 @@ void Andersen::validateSuccessTests(std::string fun)
 {
     AndersenBase::validateSuccessTests(fun);
 
+    PointerAnalysis* pta = this;
     const FunObjVar* checkFun = pag->getFunObjVar(fun);
     if (!checkFun)
         return;
@@ -1011,7 +1012,7 @@ void Andersen::validateSuccessTests(std::string fun)
                 if (mayAlias(ptr, it->first))
                     expected.set(it->first);
             }
-            if (getMayAliases(ptr) == expected)
+            if (pta->getMayAliases(ptr) == expected)
                 outs() << sucMsg("\t SUCCESS :") << "getMayAliases check <id:" << ptr << "> at ("
                        << callNode->getSourceLoc() << ")\n";
             else

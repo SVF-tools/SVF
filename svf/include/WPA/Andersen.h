@@ -253,7 +253,7 @@ public:
     }
 
     /// Collect exactly the SVFIR nodes q for which mayAlias(node, q) holds
-    NodeBS getMayAliases(NodeID node);
+    virtual NodeBS getMayAliases(NodeID node);
 
 
     void dumpTopLevelPtsTo();
