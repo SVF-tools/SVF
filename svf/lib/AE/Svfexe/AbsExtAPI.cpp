@@ -427,7 +427,7 @@ bool AbsExtAPI::isValidLength(const IntervalValue& len)
     return !len.isBottom() && !len.lb().is_minus_infinity();
 }
 
-u32_t AbsExtAPI::getDefiniteByteCount(const IntervalValue& len)
+u32_t AbsExtAPI::getBoundedMinimumByteCount(const IntervalValue& len)
 {
     u32_t byteCount = 0;
     if (isValidLength(len) && len.lb().getIntNumeral() > 0)
@@ -544,7 +544,7 @@ void AbsExtAPI::handleMemcpy(const ValVar *dst,
     AbstractState& as = getAbsState(node);
 
     u32_t elemSize = getElementSize(dst);
-    u32_t size = getDefiniteByteCount(len);
+    u32_t size = getBoundedMinimumByteCount(len);
     u32_t range_val = size / elemSize;
 
     for (u32_t index = 0; index < range_val; index++)
@@ -591,7 +591,7 @@ void AbsExtAPI::handleMemset(const ValVar *dst,
     {
         assert(false && "unsupported type for element size");
     }
-    u32_t size = getDefiniteByteCount(len);
+    u32_t size = getBoundedMinimumByteCount(len);
     u32_t range_val = size / elemSize;
 
     for (u32_t index = 0; index < range_val; index++)

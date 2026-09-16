@@ -468,11 +468,15 @@ bool BufOverflowDetector::canSafelyAccessMemory(const SVF::ValVar* value, const 
         ptrVal = AddressValue(BlackHoleObjAddr);
         ae.updateAbsValue(value, ptrVal, node);
     }
-    for (const auto& addr : ptrVal.getAddrs())
+
+    const AddressValue& addresses = ptrVal.getAddrs();
+    // A points-to set containing null makes the access potentially invalid.
+    // The loop below only inspects targets that can have backing objects.
+    if (addresses.contains(NullMemAddr))
+        return false;
+
+    for (const auto& addr : addresses)
     {
-        // Null cannot safely access a backing memory object.
-        if (AbstractState::isNullMem(addr))
-            return false;
         NodeID objId = ae.getAbsState(node).getIDFromAddr(addr);
         u32_t size = 0;
         // if the object is a constant size object, get the size directly
