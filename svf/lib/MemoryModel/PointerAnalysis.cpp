@@ -39,6 +39,7 @@
 #include "Graphs/CallGraph.h"
 #include "Util/CallGraphBuilder.h"
 
+#include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <fstream>
@@ -85,6 +86,13 @@ PointerAnalysis::~PointerAnalysis()
     destroy();
     // do not delete the SVFIR for now
     //delete pag;
+}
+
+
+NodeBS PointerAnalysis::getMayAliases(NodeID)
+{
+    SVFUtil::errs() << "getMayAliases is not supported by this pointer analysis.\n";
+    std::abort();
 }
 
 

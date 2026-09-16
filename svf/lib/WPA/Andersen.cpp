@@ -181,7 +181,10 @@ void AndersenBase:: solveAndwritePtsToFile(const std::string& filename)
 
 void AndersenBase::cleanConsCG(NodeID id)
 {
-    consCG->resetSubs(consCG->getRep(id));
+    // Remove only this node from its representative's members. Erasing the whole
+    // member set would leave every other member mapped to a representative that no
+    // longer lists it, so sccSubNodes would stop being the inverse of sccRepNode.
+    consCG->getSubs(consCG->sccRepNode(id)).reset(id);
     for (NodeID sub: consCG->getSubs(id))
         consCG->resetRep(sub);
     consCG->resetSubs(id);
@@ -912,6 +915,114 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
     repSubs |= nodeSubs;
     consCG->setSubs(newRepId,repSubs);
     consCG->resetSubs(nodeId);
+}
+
+/*!
+ * Collect every SVFIR node that may alias the given node. Each candidate is confirmed
+ * with mayAlias, so the result is exactly the nodes q for which mayAlias(node, q) holds.
+ */
+NodeBS Andersen::getMayAliases(NodeID node)
+{
+    NodeBS aliases;
+    for (NodeID candidate : getMayAliasCandidates(node))
+    {
+        // Check the candidate still exists, because field nodes removed by
+        // normalizePointsTo keep stale points-to entries
+        if (pag->hasGNode(candidate) && mayAlias(node, candidate))
+            aliases.set(candidate);
+    }
+    return aliases;
+}
+
+/*!
+ * Collect a superset of the may-aliases of a node. Attempts to do so from reverse
+ * points-to sets (cheaper), and if not possible, falls back to trying every node
+ * (costlier).
+ */
+NodeBS Andersen::getMayAliasCandidates(NodeID node)
+{
+    NodeBS candidates;
+    PointsTo expandedPts;
+    expandFIObjs(getPts(node), expandedPts);
+
+    // A node that may point to the black hole aliases every node
+    if (getPTDataTy()->hasReversePts() && !containBlackHoleNode(expandedPts))
+    {
+        // Expansion only adds fields of an object's own base, so another node's expanded
+        // points-to set can only meet this one on these bases and their fields. Dummy
+        // objects are not listed among their own fields, hence the bases themselves.
+        NodeBS objs;
+        for (NodeID obj : expandedPts)
+        {
+            NodeID base = pag->getBaseObjVarID(obj);
+            objs.set(base);
+            objs |= pag->getAllFieldsObjVars(base);
+        }
+        // Nodes that may point to the black hole alias this node too
+        objs.set(pag->getBlackHoleNode());
+
+        // Heavily shared objects can make the reverse walk longer than trying every node
+        size_t entries = 0;
+        for (NodeID obj : objs)
+            entries += getRevPts(obj).size();
+        if (entries <= pag->getTotalNodeNum())
+        {
+            // Andersen keeps an SCC's points-to set under its representative, so a reverse
+            // points-to key stands for its whole SCC. Collecting representatives first adds
+            // each SCC once.
+            NodeBS reps;
+            for (NodeID obj : objs)
+            {
+                for (NodeID key : getRevPts(obj))
+                    reps.set(sccRepNode(key));
+            }
+            for (NodeID rep : reps)
+                candidates |= sccSubNodes(rep);
+            return candidates;
+        }
+    }
+
+    for (SVFIR::iterator it = pag->begin(), eit = pag->end(); it != eit; ++it)
+        candidates.set(it->first);
+    return candidates;
+}
+
+/*!
+ * Run the alias tests, then check getMayAliases on every pointer they use: it must
+ * return exactly the nodes that mayAlias reports
+ */
+void Andersen::validateSuccessTests(std::string fun)
+{
+    AndersenBase::validateSuccessTests(fun);
+
+    PointerAnalysis* pta = this;
+    const FunObjVar* checkFun = pag->getFunObjVar(fun);
+    if (!checkFun)
+        return;
+    for (const CallICFGNode* callNode : pag->getCallSiteSet())
+    {
+        if (callNode->getCalledFunction() != checkFun)
+            continue;
+        for (u32_t i = 0; i < callNode->arg_size(); ++i)
+        {
+            NodeID ptr = callNode->getArgument(i)->getId();
+            NodeBS expected;
+            for (SVFIR::iterator it = pag->begin(), eit = pag->end(); it != eit; ++it)
+            {
+                if (mayAlias(ptr, it->first))
+                    expected.set(it->first);
+            }
+            if (pta->getMayAliases(ptr) == expected)
+                outs() << sucMsg("\t SUCCESS :") << "getMayAliases check <id:" << ptr << "> at ("
+                       << callNode->getSourceLoc() << ")\n";
+            else
+            {
+                SVFUtil::errs() << errMsg("\t FAILURE :") << "getMayAliases check <id:" << ptr
+                                << "> at (" << callNode->getSourceLoc() << ")\n";
+                assert(false && "getMayAliases disagrees with mayAlias!");
+            }
+        }
+    }
 }
 
 void Andersen::cluster(void) const

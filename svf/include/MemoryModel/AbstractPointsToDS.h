@@ -101,6 +101,12 @@ public:
         return ptdTy;
     }
 
+    /// Whether we maintain reverse points-to sets.
+    inline bool hasReversePts() const
+    {
+        return rev;
+    }
+
     /// Clears all points-to sets as if nothing is stored.
     virtual void clear() = 0;
 
