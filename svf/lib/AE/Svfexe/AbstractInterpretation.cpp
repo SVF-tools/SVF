@@ -1125,42 +1125,6 @@ void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary)
     updateAbsValue(binary->getRes(), resVal, node);
 }
 
-IntervalValue AbstractInterpretation::evaluatePointerEquality(
-    const AddressValue& lhs, const AddressValue& rhs) const
-{
-    const bool lhsTargetKnown =
-        !lhs.isBottom() && !lhs.contains(BlackHoleObjAddr);
-    const bool rhsTargetKnown =
-        !rhs.isBottom() && !rhs.contains(BlackHoleObjAddr);
-    const bool hasUnknownTarget = !lhsTargetKnown || !rhsTargetKnown;
-    const bool targetsMayBeEqual = lhs.hasIntersect(rhs);
-    const bool targetsMustBeEqual =
-        targetsMayBeEqual && lhs.size() == 1 && rhs.size() == 1;
-
-    IntervalValue result;
-    if (hasUnknownTarget)
-    {
-        // Case 1: an unknown target may equal or differ from the other target.
-        result = IntervalValue((s64_t)0, (s64_t)1);
-    }
-    else if (!targetsMayBeEqual)
-    {
-        // Case 2: known disjoint target sets are definitely unequal.
-        result = IntervalValue((s64_t)0);
-    }
-    else if (targetsMustBeEqual)
-    {
-        // Case 3: intersecting single-target sets contain the same target.
-        result = IntervalValue((s64_t)1);
-    }
-    else
-    {
-        // Case 4: intersecting sets with multiple choices may be equal.
-        result = IntervalValue((s64_t)0, (s64_t)1);
-    }
-    return result;
-}
-
 /// Evaluate a pointer-typed ICMP over abstract points-to alternatives. Object
 /// IDs identify targets but their numeric order does not model runtime address
 /// order, so only equality and inequality can produce a definite result.
@@ -1171,7 +1135,37 @@ IntervalValue AbstractInterpretation::evaluatePointerCmp(
            predicate <= CmpStmt::LAST_ICMP_PREDICATE &&
            "pointer comparison must use an ICMP predicate");
 
-    const IntervalValue equality = evaluatePointerEquality(lhs, rhs);
+    const bool lhsTargetKnown =
+        !lhs.isBottom() && !lhs.contains(BlackHoleObjAddr);
+    const bool rhsTargetKnown =
+        !rhs.isBottom() && !rhs.contains(BlackHoleObjAddr);
+    const bool hasUnknownTarget = !lhsTargetKnown || !rhsTargetKnown;
+    const bool targetsMayBeEqual = lhs.hasIntersect(rhs);
+    const bool targetsMustBeEqual =
+        targetsMayBeEqual && lhs.size() == 1 && rhs.size() == 1;
+
+    IntervalValue equality;
+    if (hasUnknownTarget)
+    {
+        // Case 1: an unknown target may equal or differ from the other target.
+        equality = IntervalValue((s64_t)0, (s64_t)1);
+    }
+    else if (!targetsMayBeEqual)
+    {
+        // Case 2: known disjoint target sets are definitely unequal.
+        equality = IntervalValue((s64_t)0);
+    }
+    else if (targetsMustBeEqual)
+    {
+        // Case 3: intersecting single-target sets contain the same target.
+        equality = IntervalValue((s64_t)1);
+    }
+    else
+    {
+        // Case 4: intersecting sets with multiple choices may be equal.
+        equality = IntervalValue((s64_t)0, (s64_t)1);
+    }
+
     IntervalValue result((s64_t)0, (s64_t)1);
     if (predicate == CmpStmt::ICMP_EQ)
         result = equality;

@@ -681,14 +681,9 @@ bool NullptrDerefDetector::canSafelyDerefPtr(const ValVar* value, const ICFGNode
     if (!AbsVal.isAddr()) return true;
     for (const auto &addr: AbsVal.getAddrs())
     {
-        // if the addr itself is invalid mem, report unsafe
-        if (AbstractState::isBlackHoleObjAddr(addr))
-            return false;
-        // if nullptr is detected, return unsafe
-        else if (AbstractState::isNullMem(addr))
-            return false;
-        // if addr is labeled freed mem, report unsafe
-        else if (ae.getAbsState(node).isFreedMem(addr))
+        // Unknown, null, and freed addresses cannot be safely dereferenced.
+        if (AbstractState::isNullOrBlackHoleAddr(addr) ||
+                ae.getAbsState(node).isFreedMem(addr))
             return false;
     }
     return true;

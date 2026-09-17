@@ -282,9 +282,6 @@ private:
 
     void updateStateOnBinary(const BinaryOPStmt *binary);
 
-    IntervalValue evaluatePointerEquality(const AddressValue& lhs,
-                                          const AddressValue& rhs) const;
-
     IntervalValue evaluatePointerCmp(u32_t predicate,
                                      const AddressValue& lhs,
                                      const AddressValue& rhs) const;

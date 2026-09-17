@@ -147,6 +147,12 @@ public:
         return addr == BlackHoleObjAddr;
     }
 
+    /// Whether addr has no concrete backing memory object.
+    static inline bool isNullOrBlackHoleAddr(u32_t addr)
+    {
+        return isNullMem(addr) || isBlackHoleObjAddr(addr);
+    }
+
 
 protected:
     VarToAbsValMap _varToAbsVal; ///< Map a variable (symbol) to its abstract value
