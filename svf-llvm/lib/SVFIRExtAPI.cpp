@@ -88,6 +88,26 @@ bool hasNondetArgStoreAtExtCall(const CallICFGNode* callICFGNode)
     return false;
 }
 
+/// IRGraph::getFlattenedElemIdx() asserts that T is a struct or array type
+/// whenever Options::ModelArrays() is disabled (see IRGraph.cpp). Under
+/// LLVM's opaque pointers, the SVFType resolved for a GEP base can fold to
+/// something other than a struct/array SVFType even though the corresponding
+/// LLVM aggregate genuinely is a StructType/ArrayType, so the unguarded call
+/// below can hit that assert on real, opaque-pointer-compiled code (observed
+/// while integrating SVF against an LLVM 21 -O0 build). Guard it and fall
+/// back to field/element 0 rather than aborting: memcpy field flattening is
+/// already a best-effort external-memory approximation (see the
+/// MaxFieldLimit comment above), so a degraded offset here is consistent
+/// with the existing soundness trade-off rather than a new one.
+APOffset safeFlattenedElemIdx(IRGraph* pag, const SVFType* svfType, u32_t idx)
+{
+    if (!Options::ModelArrays() &&
+            !SVFUtil::isa<SVFStructType>(svfType) &&
+            !SVFUtil::isa<SVFArrayType>(svfType))
+        return 0;
+    return pag->getFlattenedElemIdx(svfType, idx);
+}
+
 void collectMemcpyFields(
     const Type* llvmType,
     const SVFType* svfType,
@@ -126,7 +146,7 @@ void collectMemcpyFields(
             if (elemSVFType == nullptr)
                 return;
             APOffset elemByteOffset = baseByteOffset + static_cast<APOffset>(layout->getElementOffset(i));
-            APOffset elemFldIdx = baseFldIdx + pag->getFlattenedElemIdx(svfType, i);
+            APOffset elemFldIdx = baseFldIdx + safeFlattenedElemIdx(pag, svfType, i);
             collectMemcpyFields(elemLLVMType, elemSVFType, dl, pag, fields, elemByteOffset, elemFldIdx);
         }
         return;
@@ -143,7 +163,7 @@ void collectMemcpyFields(
                 i < arrayType->getNumElements() && fields.size() < maxFields; ++i)
         {
             APOffset elemByteOffset = baseByteOffset + i * elemByteSize;
-            APOffset elemFldIdx = baseFldIdx + pag->getFlattenedElemIdx(svfType, i);
+            APOffset elemFldIdx = baseFldIdx + safeFlattenedElemIdx(pag, svfType, i);
             collectMemcpyFields(elemLLVMType, elemSVFType, dl, pag, fields, elemByteOffset, elemFldIdx);
         }
     }
