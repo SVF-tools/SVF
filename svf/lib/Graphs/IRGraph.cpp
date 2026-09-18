@@ -147,15 +147,6 @@ const SVFType *IRGraph::getOriginalElemType(const SVFType *baseType, u32_t origI
 
 u32_t IRGraph::getFlattenedElemIdx(const SVFType *T, u32_t origId)
 {
-    // Under LLVM's opaque pointers, the SVFType resolved for a GEP base can fold to
-    // something other than a struct/array SVFType even though the corresponding LLVM
-    // aggregate genuinely is a StructType/ArrayType (seen integrating SVF against an
-    // LLVM 21 -O0 build). Fall back to element 0 instead of hitting the assert below.
-    if (!Options::ModelArrays() &&
-            !SVFUtil::isa<SVFStructType>(T) &&
-            !SVFUtil::isa<SVFArrayType>(T))
-        return 0;
-
     if(Options::ModelArrays())
     {
         const std::vector<u32_t>& so = getTypeInfo(T)->getFlattenedElemIdxVec();
@@ -170,9 +161,17 @@ u32_t IRGraph::getFlattenedElemIdx(const SVFType *T, u32_t origId)
             assert ((unsigned)origId < so.size() && !so.empty() && "Struct index out of bounds, can't get flattened index!");
             return so[origId];
         }
-        else
+        else if(SVFUtil::isa<SVFArrayType>(T))
         {
             /// When Options::ModelArrays is disabled, any element index Array is modeled as the base
+            return 0;
+        }
+        else
+        {
+            // Under LLVM's opaque pointers, the SVFType resolved for a GEP base can fold to
+            // something other than a struct/array SVFType even though the corresponding LLVM
+            // aggregate genuinely is a StructType/ArrayType (seen integrating SVF against an
+            // LLVM 21 -O0 build). Fall back to element 0 instead of asserting.
             return 0;
         }
     }
