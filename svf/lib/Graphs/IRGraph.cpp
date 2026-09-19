@@ -171,7 +171,13 @@ u32_t IRGraph::getFlattenedElemIdx(const SVFType *T, u32_t origId)
             // Under LLVM's opaque pointers, the SVFType resolved for a GEP base can fold to
             // something other than a struct/array SVFType even though the corresponding LLVM
             // aggregate genuinely is a StructType/ArrayType (seen integrating SVF against an
-            // LLVM 21 -O0 build). Fall back to element 0 instead of asserting.
+            // LLVM 21 -O0 build). Report the concrete type so a future hit of this branch is
+            // diagnosable rather than guessed at, then fall back to element 0 instead of
+            // crashing (the printed type survives into release builds even when the assert
+            // below is compiled out).
+            SVFUtil::errs() << "getFlattenedElemIdx: type is neither struct nor array: "
+                            << T->toString() << "\n";
+            assert(false && "getFlattenedElemIdx: type is neither struct nor array (see printed type above)");
             return 0;
         }
     }
