@@ -153,6 +153,11 @@ private:
     /// and reverseNodeMapping
     bool metaSame(const PointsTo &pt) const;
 
+    /// Ends the lifetime of the backing this set currently holds, through the
+    /// type currently stored in `type`. Callers that then placement new a new
+    /// backing must call this first, or whatever the old backing owned is lost.
+    void destroyBacking();
+
 private:
     /// Best node mapping we know of the for the analyses at hand.
     static MappingPtr currentBestNodeMapping;
