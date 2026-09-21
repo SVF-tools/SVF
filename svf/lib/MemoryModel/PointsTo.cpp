@@ -52,12 +52,17 @@ noexcept     : type(pt.type), nodeMapping(std::move(pt.nodeMapping)),
     else assert(false && "PointsTo::PointsTo&&: unknown type");
 }
 
-PointsTo::~PointsTo()
+void PointsTo::destroyBacking()
 {
     if (type == SBV) sbv.~SparseBitVector<>();
     else if (type == CBV) cbv.~CoreBitVector();
     else if (type == BV) bv.~BitVector();
-    else assert(false && "PointsTo::~PointsTo: unknown type");
+    else assert(false && "PointsTo::destroyBacking: unknown type");
+}
+
+PointsTo::~PointsTo()
+{
+    destroyBacking();
 
     nodeMapping = nullptr;
     reverseNodeMapping = nullptr;
@@ -67,6 +72,10 @@ PointsTo &PointsTo::operator=(const PointsTo &rhs)
 {
     if (this == &rhs)
         return *this;
+    // End the lifetime of the backing held now before placement new builds the
+    // new one over it. Destroy through the type stored now, which may differ
+    // from rhs's. Without this the old backing's storage is never freed.
+    destroyBacking();
     this->type = rhs.type;
     this->nodeMapping = rhs.nodeMapping;
     this->reverseNodeMapping = rhs.reverseNodeMapping;
@@ -83,10 +92,13 @@ PointsTo &PointsTo::operator=(const PointsTo &rhs)
 PointsTo &PointsTo::operator=(PointsTo &&rhs)
 noexcept
 {
+    if (this == &rhs)
+        return *this;
+    // See comment in copy assignment.
+    destroyBacking();
     this->type = rhs.type;
     this->nodeMapping = rhs.nodeMapping;
     this->reverseNodeMapping = rhs.reverseNodeMapping;
-    // See comment in copy assignment.
     if (type == SBV) new (&sbv) SparseBitVector<>(std::move(rhs.sbv));
     else if (type == CBV) new (&cbv) CoreBitVector(std::move(rhs.cbv));
     else if (type == BV) new (&bv) BitVector(std::move(rhs.bv));
