@@ -241,9 +241,9 @@ void AbstractInterpretation::handleGlobalNode()
     // Use the manager's operator[] (auto-creates the entry if absent).
     AbstractState& init = abstractTrace[node];
     init = AbstractState();
-    // TODO: we cannot find right SVFVar for NullPtr, so we use init[NullPtr]
-    // directly. Same for BlkPtr below.
-    init[IRGraph::NullPtr] = AddressValue();
+    // NullPtr has no backing SVFVar. Model it directly as the singleton null
+    // address; BlkPtr is initialized directly below for the same reason.
+    init[IRGraph::NullPtr] = AddressValue(NullMemAddr);
 
     // Global Node, we just need to handle addr, load, store, copy and gep
     for (const SVFStmt *stmt: node->getSVFStmts())
@@ -495,28 +495,14 @@ bool AbstractInterpretation::isCmpBranchEdgeFeasible(const IntraCFGEdge* edge,
     s64_t succ = edge->getSuccessorCondValue();
     const CmpStmt* cmpStmt = SVFUtil::cast<CmpStmt>(
                                  *edge->getCondition()->getInEdges().begin());
-
-    if (cmpStmt->getOpVarID(0) == IRGraph::NullPtr ||
-            cmpStmt->getOpVarID(1) == IRGraph::NullPtr)
-        return true;
-
-    AbstractValue opVal[2] =
-    {
-        getAbsValue(cmpStmt->getOpVar(0), pred),
-        getAbsValue(cmpStmt->getOpVar(1), pred)
-    };
-
-    const bool hasIntervalCmp = opVal[0].isInterval() && opVal[1].isInterval();
-    if (!hasIntervalCmp && (opVal[0].isAddr() || opVal[1].isAddr()))
-        return true;
+    const AbstractValue& cmpValue = getAbsValue(cmpStmt->getRes(), pred);
+    assert(cmpValue.isInterval() &&
+           "CmpStmt result must be represented by a Boolean interval");
 
     // Feasibility check: cmp result must be compatible with branch successor
-    IntervalValue resVal = getAbsValue(cmpStmt->getRes(), pred).getInterval();
+    IntervalValue resVal = cmpValue.getInterval();
     resVal.meet_with(IntervalValue((s64_t)succ, succ));
-    if (resVal.isBottom())
-        return false;
-
-    return true;
+    return !resVal.isBottom();
 }
 
 bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
@@ -972,7 +958,8 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
         auto it = vmap.find(IRGraph::NullPtr);
         (void)it; // Suppress warning of unused variable under release build
         assert(it == vmap.end() ||
-               (!it->second.isInterval() && !it->second.isAddr()));
+               (it->second.isAddr() &&
+                it->second.getAddrs().equals(AddressValue(NullMemAddr))));
     }
 }
 
@@ -1138,229 +1125,138 @@ void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary)
     updateAbsValue(binary->getRes(), resVal, node);
 }
 
-void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
+/// Evaluate a pointer-typed ICMP over abstract points-to alternatives. Object
+/// IDs identify targets but their numeric order does not model runtime address
+/// order, so only equality and inequality can produce a definite result.
+IntervalValue AbstractInterpretation::evaluatePointerCmp(
+    u32_t predicate, const AddressValue& lhs, const AddressValue& rhs) const
 {
-    const ICFGNode* node = cmp->getICFGNode();
-    u32_t op0 = cmp->getOpVarID(0);
-    u32_t op1 = cmp->getOpVarID(1);
-    const AbstractValue& op0Val = getAbsValue(cmp->getOpVar(0), node);
-    const AbstractValue& op1Val = getAbsValue(cmp->getOpVar(1), node);
+    assert(predicate >= CmpStmt::FIRST_ICMP_PREDICATE &&
+           predicate <= CmpStmt::LAST_ICMP_PREDICATE &&
+           "pointer comparison must use an ICMP predicate");
 
-    // if it is address
-    if (op0Val.isAddr() && op1Val.isAddr())
+    const bool lhsTargetKnown =
+        !lhs.isBottom() && !lhs.contains(BlackHoleObjAddr);
+    const bool rhsTargetKnown =
+        !rhs.isBottom() && !rhs.contains(BlackHoleObjAddr);
+    const bool hasUnknownTarget = !lhsTargetKnown || !rhsTargetKnown;
+    const bool targetsMayBeEqual = lhs.hasIntersect(rhs);
+    const bool targetsMustBeEqual =
+        targetsMayBeEqual && lhs.size() == 1 && rhs.size() == 1;
+
+    IntervalValue equality;
+    if (hasUnknownTarget)
     {
-        IntervalValue resVal;
-        const AddressValue& addrOp0 = op0Val.getAddrs();
-        const AddressValue& addrOp1 = op1Val.getAddrs();
-        if (addrOp0.equals(addrOp1))
-        {
-            resVal = IntervalValue(1, 1);
-        }
-        else if (addrOp0.hasIntersect(addrOp1))
-        {
-            resVal = IntervalValue(0, 1);
-        }
-        else
-        {
-            resVal = IntervalValue(0, 0);
-        }
-        updateAbsValue(cmp->getRes(), resVal, node);
+        // Case 1: an unknown target may equal or differ from the other target.
+        equality = IntervalValue((s64_t)0, (s64_t)1);
     }
-    // if op0 or op1 is nullptr, compare abstractValue instead of touching addr or interval
-    else if (op0 == IRGraph::NullPtr || op1 == IRGraph::NullPtr)
+    else if (!targetsMayBeEqual)
     {
-        IntervalValue resVal = (op0Val.equals(op1Val)) ? IntervalValue(1, 1) : IntervalValue(0, 0);
-        updateAbsValue(cmp->getRes(), resVal, node);
+        // Case 2: known disjoint target sets are definitely unequal.
+        equality = IntervalValue((s64_t)0);
+    }
+    else if (targetsMustBeEqual)
+    {
+        // Case 3: intersecting single-target sets contain the same target.
+        equality = IntervalValue((s64_t)1);
     }
     else
     {
-        {
-            IntervalValue resVal;
-            if (op0Val.isInterval() && op1Val.isInterval())
-            {
-                // Treat bottom (uninitialized) operands as top for soundness
-                IntervalValue lhs = op0Val.getInterval().isBottom() ? IntervalValue::top() : op0Val.getInterval(),
-                              rhs = op1Val.getInterval().isBottom() ? IntervalValue::top() : op1Val.getInterval();
-                // AbstractValue
-                auto predicate = cmp->getPredicate();
-                switch (predicate)
-                {
-                case CmpStmt::ICMP_EQ:
-                case CmpStmt::FCMP_OEQ:
-                case CmpStmt::FCMP_UEQ:
-                    resVal = (lhs == rhs);
-                    // resVal = (lhs.getInterval() == rhs.getInterval());
-                    break;
-                case CmpStmt::ICMP_NE:
-                case CmpStmt::FCMP_ONE:
-                case CmpStmt::FCMP_UNE:
-                    resVal = (lhs != rhs);
-                    break;
-                case CmpStmt::ICMP_UGT:
-                case CmpStmt::ICMP_SGT:
-                case CmpStmt::FCMP_OGT:
-                case CmpStmt::FCMP_UGT:
-                    resVal = (lhs > rhs);
-                    break;
-                case CmpStmt::ICMP_UGE:
-                case CmpStmt::ICMP_SGE:
-                case CmpStmt::FCMP_OGE:
-                case CmpStmt::FCMP_UGE:
-                    resVal = (lhs >= rhs);
-                    break;
-                case CmpStmt::ICMP_ULT:
-                case CmpStmt::ICMP_SLT:
-                case CmpStmt::FCMP_OLT:
-                case CmpStmt::FCMP_ULT:
-                    resVal = (lhs < rhs);
-                    break;
-                case CmpStmt::ICMP_ULE:
-                case CmpStmt::ICMP_SLE:
-                case CmpStmt::FCMP_OLE:
-                case CmpStmt::FCMP_ULE:
-                    resVal = (lhs <= rhs);
-                    break;
-                case CmpStmt::FCMP_FALSE:
-                    resVal = IntervalValue(0, 0);
-                    break;
-                case CmpStmt::FCMP_TRUE:
-                    resVal = IntervalValue(1, 1);
-                    break;
-                case CmpStmt::FCMP_ORD:
-                case CmpStmt::FCMP_UNO:
-                    // FCMP_ORD: true if both operands are not NaN
-                    // FCMP_UNO: true if either operand is NaN
-                    // Conservatively return [0, 1] since we don't track NaN
-                    resVal = IntervalValue(0, 1);
-                    break;
-                default:
-                    assert(false && "undefined compare: ");
-                }
-                updateAbsValue(cmp->getRes(), resVal, node);
-            }
-            else if (op0Val.isAddr() && op1Val.isAddr())
-            {
-                const AddressValue& lhs = op0Val.getAddrs();
-                const AddressValue& rhs = op1Val.getAddrs();
-                auto predicate = cmp->getPredicate();
-                switch (predicate)
-                {
-                case CmpStmt::ICMP_EQ:
-                case CmpStmt::FCMP_OEQ:
-                case CmpStmt::FCMP_UEQ:
-                {
-                    if (lhs.hasIntersect(rhs))
-                    {
-                        resVal = IntervalValue(0, 1);
-                    }
-                    else if (lhs.empty() && rhs.empty())
-                    {
-                        resVal = IntervalValue(1, 1);
-                    }
-                    else
-                    {
-                        resVal = IntervalValue(0, 0);
-                    }
-                    break;
-                }
-                case CmpStmt::ICMP_NE:
-                case CmpStmt::FCMP_ONE:
-                case CmpStmt::FCMP_UNE:
-                {
-                    if (lhs.hasIntersect(rhs))
-                    {
-                        resVal = IntervalValue(0, 1);
-                    }
-                    else if (lhs.empty() && rhs.empty())
-                    {
-                        resVal = IntervalValue(0, 0);
-                    }
-                    else
-                    {
-                        resVal = IntervalValue(1, 1);
-                    }
-                    break;
-                }
-                case CmpStmt::ICMP_UGT:
-                case CmpStmt::ICMP_SGT:
-                case CmpStmt::FCMP_OGT:
-                case CmpStmt::FCMP_UGT:
-                {
-                    if (lhs.size() == 1 && rhs.size() == 1)
-                    {
-                        resVal = IntervalValue(*lhs.begin() > *rhs.begin());
-                    }
-                    else
-                    {
-                        resVal = IntervalValue(0, 1);
-                    }
-                    break;
-                }
-                case CmpStmt::ICMP_UGE:
-                case CmpStmt::ICMP_SGE:
-                case CmpStmt::FCMP_OGE:
-                case CmpStmt::FCMP_UGE:
-                {
-                    if (lhs.size() == 1 && rhs.size() == 1)
-                    {
-                        resVal = IntervalValue(*lhs.begin() >= *rhs.begin());
-                    }
-                    else
-                    {
-                        resVal = IntervalValue(0, 1);
-                    }
-                    break;
-                }
-                case CmpStmt::ICMP_ULT:
-                case CmpStmt::ICMP_SLT:
-                case CmpStmt::FCMP_OLT:
-                case CmpStmt::FCMP_ULT:
-                {
-                    if (lhs.size() == 1 && rhs.size() == 1)
-                    {
-                        resVal = IntervalValue(*lhs.begin() < *rhs.begin());
-                    }
-                    else
-                    {
-                        resVal = IntervalValue(0, 1);
-                    }
-                    break;
-                }
-                case CmpStmt::ICMP_ULE:
-                case CmpStmt::ICMP_SLE:
-                case CmpStmt::FCMP_OLE:
-                case CmpStmt::FCMP_ULE:
-                {
-                    if (lhs.size() == 1 && rhs.size() == 1)
-                    {
-                        resVal = IntervalValue(*lhs.begin() <= *rhs.begin());
-                    }
-                    else
-                    {
-                        resVal = IntervalValue(0, 1);
-                    }
-                    break;
-                }
-                case CmpStmt::FCMP_FALSE:
-                    resVal = IntervalValue(0, 0);
-                    break;
-                case CmpStmt::FCMP_TRUE:
-                    resVal = IntervalValue(1, 1);
-                    break;
-                case CmpStmt::FCMP_ORD:
-                case CmpStmt::FCMP_UNO:
-                    // FCMP_ORD: true if both operands are not NaN
-                    // FCMP_UNO: true if either operand is NaN
-                    // Conservatively return [0, 1] since we don't track NaN
-                    resVal = IntervalValue(0, 1);
-                    break;
-                default:
-                    assert(false && "undefined compare: ");
-                }
-                updateAbsValue(cmp->getRes(), resVal, node);
-            }
-        }
+        // Case 4: intersecting sets with multiple choices may be equal.
+        equality = IntervalValue((s64_t)0, (s64_t)1);
     }
+
+    IntervalValue result((s64_t)0, (s64_t)1);
+    if (predicate == CmpStmt::ICMP_EQ)
+        result = equality;
+    else if (predicate == CmpStmt::ICMP_NE)
+        result = IntervalValue((s64_t)1) - equality;
+    return result;
+}
+
+IntervalValue AbstractInterpretation::evaluateIntervalCmp(
+    u32_t predicate, const IntervalValue& lhs, const IntervalValue& rhs) const
+{
+    IntervalValue result = IntervalValue::top();
+    switch (predicate)
+    {
+    case CmpStmt::ICMP_EQ:
+    case CmpStmt::FCMP_OEQ:
+    case CmpStmt::FCMP_UEQ:
+        result = (lhs == rhs);
+        break;
+    case CmpStmt::ICMP_NE:
+    case CmpStmt::FCMP_ONE:
+    case CmpStmt::FCMP_UNE:
+        result = (lhs != rhs);
+        break;
+    case CmpStmt::ICMP_UGT:
+    case CmpStmt::ICMP_SGT:
+    case CmpStmt::FCMP_OGT:
+    case CmpStmt::FCMP_UGT:
+        result = (lhs > rhs);
+        break;
+    case CmpStmt::ICMP_UGE:
+    case CmpStmt::ICMP_SGE:
+    case CmpStmt::FCMP_OGE:
+    case CmpStmt::FCMP_UGE:
+        result = (lhs >= rhs);
+        break;
+    case CmpStmt::ICMP_ULT:
+    case CmpStmt::ICMP_SLT:
+    case CmpStmt::FCMP_OLT:
+    case CmpStmt::FCMP_ULT:
+        result = (lhs < rhs);
+        break;
+    case CmpStmt::ICMP_ULE:
+    case CmpStmt::ICMP_SLE:
+    case CmpStmt::FCMP_OLE:
+    case CmpStmt::FCMP_ULE:
+        result = (lhs <= rhs);
+        break;
+    case CmpStmt::FCMP_FALSE:
+        result = IntervalValue(0, 0);
+        break;
+    case CmpStmt::FCMP_TRUE:
+        result = IntervalValue(1, 1);
+        break;
+    case CmpStmt::FCMP_ORD:
+    case CmpStmt::FCMP_UNO:
+        // Keep both outcomes because the interval domain does not track NaN.
+        result = IntervalValue(0, 1);
+        break;
+    default:
+        assert(false && "undefined compare: ");
+    }
+    return result;
+}
+
+void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
+{
+    const ICFGNode* node = cmp->getICFGNode();
+    const AbstractValue& lhsValue = getAbsValue(cmp->getOpVar(0), node);
+    const AbstractValue& rhsValue = getAbsValue(cmp->getOpVar(1), node);
+    const bool pointerCmp = cmp->getOpVar(0)->getType()->isPointerTy();
+    assert(pointerCmp == cmp->getOpVar(1)->getType()->isPointerTy() &&
+           "CmpStmt operands must belong to the same value domain");
+
+    IntervalValue result;
+    if (pointerCmp)
+    {
+        result = evaluatePointerCmp(cmp->getPredicate(), lhsValue.getAddrs(),
+                                    rhsValue.getAddrs());
+    }
+    else
+    {
+        const IntervalValue lhs = lhsValue.isInterval()
+                                  ? lhsValue.getInterval()
+                                  : IntervalValue::top();
+        const IntervalValue rhs = rhsValue.isInterval()
+                                  ? rhsValue.getInterval()
+                                  : IntervalValue::top();
+        result = evaluateIntervalCmp(cmp->getPredicate(), lhs, rhs);
+    }
+    updateAbsValue(cmp->getRes(), result, node);
 }
 
 void AbstractInterpretation::updateStateOnLoad(const LoadStmt *load)

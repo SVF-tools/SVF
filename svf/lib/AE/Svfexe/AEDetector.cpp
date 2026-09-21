@@ -30,6 +30,7 @@
 #include <AE/Svfexe/AbsExtAPI.h>
 #include <AE/Svfexe/AbstractInterpretation.h>
 #include "AE/Core/AddressValue.h"
+#include <algorithm>
 
 using namespace SVF;
 /**
@@ -358,7 +359,8 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
                 }
                 else
                 {
-                    assert(AbstractState::isBlackHoleObjAddr(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
+                    assert(AbstractState::isNullOrBlackHoleAddr(gepAddr) &&
+                           "GEP object is neither a GepObjVar nor an address without a backing object");
                 }
             }
         }
@@ -389,7 +391,8 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
                 }
                 else
                 {
-                    assert(AbstractState::isBlackHoleObjAddr(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
+                    assert(AbstractState::isNullOrBlackHoleAddr(gepAddr) &&
+                           "GEP object is neither a GepObjVar nor an address without a backing object");
                 }
             }
         }
@@ -468,7 +471,13 @@ bool BufOverflowDetector::canSafelyAccessMemory(const SVF::ValVar* value, const 
         ptrVal = AddressValue(BlackHoleObjAddr);
         ae.updateAbsValue(value, ptrVal, node);
     }
-    for (const auto& addr : ptrVal.getAddrs())
+
+    const AddressValue& addresses = ptrVal.getAddrs();
+    if (std::any_of(addresses.begin(), addresses.end(),
+                    AbstractState::isNullOrBlackHoleAddr))
+        return false;
+
+    for (const auto& addr : addresses)
     {
         NodeID objId = ae.getAbsState(node).getIDFromAddr(addr);
         u32_t size = 0;
@@ -674,14 +683,9 @@ bool NullptrDerefDetector::canSafelyDerefPtr(const ValVar* value, const ICFGNode
     if (!AbsVal.isAddr()) return true;
     for (const auto &addr: AbsVal.getAddrs())
     {
-        // if the addr itself is invalid mem, report unsafe
-        if (AbstractState::isBlackHoleObjAddr(addr))
-            return false;
-        // if nullptr is detected, return unsafe
-        else if (AbstractState::isNullMem(addr))
-            return false;
-        // if addr is labeled freed mem, report unsafe
-        else if (ae.getAbsState(node).isFreedMem(addr))
+        // Unknown, null, and freed addresses cannot be safely dereferenced.
+        if (AbstractState::isNullOrBlackHoleAddr(addr) ||
+                ae.getAbsState(node).isFreedMem(addr))
             return false;
     }
     return true;

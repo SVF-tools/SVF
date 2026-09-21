@@ -66,10 +66,9 @@ bool AbstractInterpretation::hasAbsState(const ICFGNode* node)
     return abstractTrace.count(node) != 0;
 }
 
-/// Dense base: direct trace lookup, with a top sentinel for genuinely
-/// missing entries (e.g. function parameters like argc, never written
-/// before first read).  Sparse subclasses override with a def-site
-/// resolution chain.
+/// Dense base: direct trace lookup, with a type-directed top value for
+/// genuinely missing entries (e.g. function parameters never written before
+/// first read). Sparse subclasses override with a def-site resolution chain.
 ///
 /// The "in map" check is a raw map.count — NOT inVarToValTable /
 /// inVarToAddrsTable, which gate on isInterval / isAddr.  SVF
@@ -81,9 +80,13 @@ const AbstractValue& AbstractInterpretation::getAbsValue(const ValVar* var, cons
 {
     u32_t id = var->getId();
     AbstractState& as = abstractTrace[node];
-    if (as.getVarToVal().count(id))
-        return as[id];
-    as[id] = IntervalValue::top();
+    if (!as.getVarToVal().count(id))
+    {
+        if (var->getType()->isPointerTy())
+            as[id] = AddressValue(BlackHoleObjAddr);
+        else
+            as[id] = IntervalValue::top();
+    }
     return as[id];
 }
 
@@ -324,6 +327,9 @@ AddressValue AbstractInterpretation::getGepObjAddrs(const ValVar* pointer, Inter
         const AbstractValue& addrs = getAbsValue(pointer, node);
         for (const auto& addr : addrs.getAddrs())
         {
+            // Null and black-hole addresses have no backing object.
+            if (AbstractState::isNullOrBlackHoleAddr(addr))
+                continue;
             s64_t baseObj = as.getIDFromAddr(addr);
             assert(SVFUtil::isa<ObjVar>(svfir->getSVFVar(baseObj)) && "Fail to get the base object address!");
             NodeID gepObj = svfir->getGepObjVar(baseObj, i);
@@ -341,6 +347,9 @@ AbstractValue AbstractInterpretation::loadValue(const ValVar* pointer, const ICF
     AbstractValue res;
     for (auto addr : ptrVal.getAddrs())
     {
+        // Null and black-hole addresses have no backing object.
+        if (AbstractState::isNullOrBlackHoleAddr(addr))
+            continue;
         res.join_with(
             getAbsValue(svfir->getSVFVar(as.getIDFromAddr(addr)), node));
     }
@@ -352,7 +361,12 @@ void AbstractInterpretation::storeValue(const ValVar* pointer, const AbstractVal
     const AbstractValue& ptrVal = getAbsValue(pointer, node);
     AbstractState& as = getAbsState(node);
     for (auto addr : ptrVal.getAddrs())
+    {
+        // Null and black-hole addresses have no backing object.
+        if (AbstractState::isNullOrBlackHoleAddr(addr))
+            continue;
         updateAbsValue(svfir->getSVFVar(as.getIDFromAddr(addr)), val, node);
+    }
 }
 
 const SVFType* AbstractInterpretation::getPointeeElement(const ObjVar* var, const ICFGNode* node)
@@ -399,4 +413,3 @@ u32_t AbstractInterpretation::getAllocaInstByteSize(const AddrStmt* addr)
     assert(false && "Addr rhs value is not ObjVar");
     abort();
 }
-

@@ -94,6 +94,9 @@ public:
     /// Check if an interval length is usable (not bottom, not unbounded).
     static bool isValidLength(const IntervalValue& len);
 
+    /// Return the lower bound of len, capped by the field limit.
+    static u32_t getBoundedMinimumByteCount(const IntervalValue& len);
+
     /// Calculate the length of a null-terminated string in abstract state.
     IntervalValue getStrlen(const ValVar *strValue, const ICFGNode* node);
 

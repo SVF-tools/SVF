@@ -147,6 +147,12 @@ public:
         return addr == BlackHoleObjAddr;
     }
 
+    /// Whether addr has no concrete backing memory object.
+    static inline bool isNullOrBlackHoleAddr(u32_t addr)
+    {
+        return isNullMem(addr) || isBlackHoleObjAddr(addr);
+    }
+
 
 protected:
     VarToAbsValMap _varToAbsVal; ///< Map a variable (symbol) to its abstract value
@@ -187,9 +193,8 @@ public:
     inline void store(u32_t addr, const AbstractValue &val)
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
-        u32_t objId = getIDFromAddr(addr);
-        if (isNullMem(addr)) return;
-        _addrToAbsVal[objId] = val;
+        if (!isNullOrBlackHoleAddr(addr))
+            _addrToAbsVal[getIDFromAddr(addr)] = val;
     }
 
     /// whether the variable is in varToAddrs table

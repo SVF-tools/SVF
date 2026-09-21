@@ -282,6 +282,14 @@ private:
 
     void updateStateOnBinary(const BinaryOPStmt *binary);
 
+    IntervalValue evaluatePointerCmp(u32_t predicate,
+                                     const AddressValue& lhs,
+                                     const AddressValue& rhs) const;
+
+    IntervalValue evaluateIntervalCmp(u32_t predicate,
+                                      const IntervalValue& lhs,
+                                      const IntervalValue& rhs) const;
+
     void updateStateOnCmp(const CmpStmt *cmp);
 
     void updateStateOnLoad(const LoadStmt *load);
