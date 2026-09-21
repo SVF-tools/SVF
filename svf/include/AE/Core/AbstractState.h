@@ -193,9 +193,8 @@ public:
     inline void store(u32_t addr, const AbstractValue &val)
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
-        u32_t objId = getIDFromAddr(addr);
-        if (isNullMem(addr)) return;
-        _addrToAbsVal[objId] = val;
+        if (!isNullOrBlackHoleAddr(addr))
+            _addrToAbsVal[getIDFromAddr(addr)] = val;
     }
 
     /// whether the variable is in varToAddrs table
