@@ -30,6 +30,7 @@
 #include <AE/Svfexe/AbsExtAPI.h>
 #include <AE/Svfexe/AbstractInterpretation.h>
 #include "AE/Core/AddressValue.h"
+#include <algorithm>
 
 using namespace SVF;
 /**
@@ -358,7 +359,8 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
                 }
                 else
                 {
-                    assert(AbstractState::isBlackHoleObjAddr(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
+                    assert(AbstractState::isNullOrBlackHoleAddr(gepAddr) &&
+                           "GEP object is neither a GepObjVar nor an address without a backing object");
                 }
             }
         }
@@ -389,7 +391,8 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
                 }
                 else
                 {
-                    assert(AbstractState::isBlackHoleObjAddr(gepAddr) && "GEP object is neither a GepObjVar nor an invalid memory address");
+                    assert(AbstractState::isNullOrBlackHoleAddr(gepAddr) &&
+                           "GEP object is neither a GepObjVar nor an address without a backing object");
                 }
             }
         }
@@ -470,9 +473,8 @@ bool BufOverflowDetector::canSafelyAccessMemory(const SVF::ValVar* value, const 
     }
 
     const AddressValue& addresses = ptrVal.getAddrs();
-    // A points-to set containing null makes the access potentially invalid.
-    // The loop below only inspects targets that can have backing objects.
-    if (addresses.contains(NullMemAddr))
+    if (std::any_of(addresses.begin(), addresses.end(),
+                    AbstractState::isNullOrBlackHoleAddr))
         return false;
 
     for (const auto& addr : addresses)
