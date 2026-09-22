@@ -34,4 +34,7 @@ wiki/
 docs/extending-handoffs/
 docs/images/
 svf-llvm/tools/GraphDB/
-docs/windows-port/IMPLEMENTATION-LOG.md
+docs/windows-port/
+memory/
+wokflow_logs/
+docs/docs-ticket/
