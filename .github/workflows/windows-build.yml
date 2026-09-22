@@ -10,7 +10,7 @@ env:
 jobs:
   windows-build:
     name: windows-build (${{ matrix.compiler }})
-    runs-on: windows-latest
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -55,7 +55,16 @@ jobs:
       - name: Clone Test-Suite
         shell: powershell
         run: |
-          git clone "https://github.com/SVF-tools/Test-Suite.git" Test-Suite
+          $ErrorActionPreference = "Continue"
+          git clone --depth 1 "https://github.com/SVF-tools/Test-Suite.git" Test-Suite
+          if (-not (Test-Path "Test-Suite\CMakeLists.txt")) {
+            Write-Host "Upstream Test-Suite clone failed (due to Windows path colons). Falling back to dg1474/Test-Suite (windows-compat)..." -ForegroundColor Yellow
+            Remove-Item -Recurse -Force Test-Suite -ErrorAction SilentlyContinue
+            git clone --depth 1 -b windows-compat "https://github.com/dg1474/Test-Suite.git" Test-Suite
+          }
+          if (-not (Test-Path "Test-Suite\CMakeLists.txt")) {
+            throw "Test-Suite checkout failed."
+          }
 
       - name: Build SVF
         shell: powershell
