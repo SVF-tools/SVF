@@ -7,7 +7,6 @@ namespace SVF
 SVFType* SVFType::svfI8Ty = nullptr;
 SVFType* SVFType::svfPtrTy = nullptr;
 
-__attribute__((weak))
 std::string SVFType::toString() const
 {
     std::ostringstream os;

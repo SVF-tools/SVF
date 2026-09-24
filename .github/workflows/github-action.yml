@@ -7,7 +7,8 @@ on: [push, pull_request]
 env:
   SVF_CTIR: 1
   SVF_Z3: 1
-  SVF_DIR: $GITHUB_WORKSPACE
+  SVF_DIR: ${{ github.workspace }}
+  LLVM_VERSION: 22
 
 jobs:
   build:
@@ -40,7 +41,10 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev astyle
+          sudo apt-get install -y cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev astyle wget
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh ${{ env.LLVM_VERSION }}
 
       # build-svf
       - name: build-svf
@@ -49,6 +53,7 @@ jobs:
           echo $(pwd)
           if [ "${{matrix.sanitizer}}" != "" ]; then export SVF_SANITIZER="${{matrix.sanitizer}}"; fi
           if [ "$RUNNER_OS" == "Linux" ] && [ "${{matrix.sanitizer}}" == "" ]; then export SVF_COVERAGE=1; fi
+          export LLVM_DIR=/usr/lib/llvm-${{ env.LLVM_VERSION }}
           git clone "https://github.com/SVF-tools/Test-Suite.git";
           source ${{github.workspace}}/build.sh
 

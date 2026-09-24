@@ -27,8 +27,20 @@
  *      Author: Yulei Sui
  */
 
+#ifdef _WIN32
+#include <windows.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#define stat _stat
+#define popen _popen
+#define pclose _pclose
+#else
 #include <unistd.h>
 #include <signal.h>
+#include <sys/resource.h>
+#include <sys/stat.h>
+#include <dlfcn.h>
+#endif
 
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
@@ -36,8 +48,6 @@
 #include "Graphs/CallGraph.h"
 #include "SVFIR/SVFIR.h"
 #include "SVFIR/SVFVariables.h"
-
-#include <sys/resource.h>		/// increase stack size
 
 using namespace SVF;
 
@@ -232,6 +242,8 @@ bool SVFUtil::getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb)
  */
 void SVFUtil::increaseStackSize()
 {
+#ifndef _WIN32
+    // Increase stack size via POSIX rlimit
     const rlim_t kStackSize = 256L * 1024L * 1024L;   // min stack size = 256 Mb
     struct rlimit rl;
     int result = getrlimit(RLIMIT_STACK, &rl);
@@ -245,6 +257,69 @@ void SVFUtil::increaseStackSize()
                 writeWrnMsg("setrlimit returned result !=0 \n");
         }
     }
+#else
+    // On Windows, stack size is set at link time via CMake (/STACK:268435456)
+#endif
+}
+
+bool SVFUtil::fileExists(const std::string& path)
+{
+    struct stat statbuf;
+    return !path.empty() && (stat(path.c_str(), &statbuf) == 0);
+}
+
+std::string SVFUtil::getStdoutFromCommand(const std::string& command)
+{
+    char buffer[128];
+    std::string result;
+
+    FILE* pipe = popen(command.c_str(), "r");
+    if (!pipe)
+        return "";
+
+    while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
+    {
+        result += buffer;
+    }
+
+    int status = pclose(pipe);
+    if (status != 0)
+        return "";
+
+    // remove trailing newlines
+    result.erase(std::remove(result.begin(), result.end(), '\n'), result.end());
+    result.erase(std::remove(result.begin(), result.end(), '\r'), result.end());
+
+    return result;
+}
+
+std::string SVFUtil::getCurrentSOPath()
+{
+#ifdef _WIN32
+    char path[MAX_PATH];
+    HMODULE hm = NULL;
+    if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                           GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                           (LPCSTR)&getCurrentSOPath, &hm))
+    {
+        GetModuleFileNameA(hm, path, sizeof(path));
+        std::string s(path);
+        for (size_t i = 0; i < s.length(); ++i) {
+            if (s[i] == '\\') {
+                s[i] = '/';
+            }
+        }
+        return s;
+    }
+    return "";
+#else
+    Dl_info info;
+    if (dladdr((void*)&getCurrentSOPath, &info) && info.dli_fname)
+    {
+        return std::string(info.dli_fname);
+    }
+    return "";
+#endif
 }
 
 
@@ -280,6 +355,7 @@ void SVFUtil::timeLimitReached(int)
 
 bool SVFUtil::startAnalysisLimitTimer(unsigned timeLimit)
 {
+#ifndef _WIN32
     if (timeLimit == 0) return false;
 
     // If an alarm is already set, don't set another. That means this analysis
@@ -295,13 +371,22 @@ bool SVFUtil::startAnalysisLimitTimer(unsigned timeLimit)
     signal(SIGALRM, &timeLimitReached);
     alarm(timeLimit);
     return true;
+#else
+    // POSIX alarm signals are not available on Win32
+    (void)timeLimit;
+    return false;
+#endif
 }
 
 /// Stops an analysis timer. limitTimerSet indicates whether the caller set the
 /// timer or not (return value of startLimitTimer).
 void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
 {
+#ifndef _WIN32
     if (limitTimerSet) alarm(0);
+#else
+    (void)limitTimerSet;
+#endif
 }
 
 /// Match arguments for callsite at caller and callee

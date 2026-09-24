@@ -27,6 +27,7 @@
  *      Author: Xiao Cheng
  */
 
+#include <chrono>
 #include <iomanip>
 
 #include "SVFIR/SVFIR.h"
@@ -54,9 +55,9 @@ double SVFStat::getClk(bool mark)
 
     if (Options::ClockType() == ClockType::Wall)
     {
-        struct timespec time;
-        clock_gettime(CLOCK_MONOTONIC, &time);
-        return (double)(time.tv_nsec + time.tv_sec * 1000000000) / 1000000.0;
+        return std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now().time_since_epoch()
+        ).count();
     }
     else if (Options::ClockType() == ClockType::CPU)
     {

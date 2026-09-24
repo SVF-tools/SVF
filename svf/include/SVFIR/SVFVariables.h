@@ -821,7 +821,7 @@ public:
     }
 
     /// Return the type of this gep object
-    inline virtual const SVFType* getType() const;
+    virtual const SVFType* getType() const;
 
 
     /// Return name of a LLVM value
