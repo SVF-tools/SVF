@@ -95,18 +95,17 @@ public:
 
 protected:
     /// Full-sparse does not merge normal value-flow state along ICFG
-    /// edges.  The ICFG join carries only side-channel state that is not
-    /// represented as MemorySSA def-use flow: GepObjVar field snapshots
-    /// and `_freedAddrs`.  Base/Dummy ObjVars are populated later by
-    /// pullObjValueFlows from SVFG indirect in-edges; ValVars stay at their
-    /// def-sites.
+    /// edges. ObjVar values remain at their memory definitions and are pulled
+    /// from reaching SVFG definitions; only `_freedAddrs`, which has no SVFG
+    /// representation, continues along ICFG edges.
     void joinStates(AbstractState& dst, const AbstractState& src) override;
 
-    /// After a store overwrites an ObjVar, clear any branch refinement
-    /// for that ObjVar at the store's node so stale branch constraints
-    /// don't propagate past the redefinition.
-    void storeValue(const ValVar* pointer, const AbstractValue& val,
-                    const ICFGNode* node) override;
+    /// Keep an object's value at the node that defines it. For a GepObjVar,
+    /// also remember the definition site so a later use can retrieve that
+    /// sub-object even when MemorySSA exposes only its base object.
+    void updateAbsValue(const ObjVar* var, const AbstractValue& val,
+                        const ICFGNode* node) override;
+    using SemiSparseAbstractInterpretation::updateAbsValue;
 
     /// Thin wrapper: defer to base for ICFG-edge bookkeeping
     /// (predecessor iteration, branch feasibility, joinStates,
@@ -125,10 +124,33 @@ protected:
                                 const ICFGNode* succ) override;
 
 private:
-    /// SVFG-pull helper: walk each VFG node's indirect SVFG in-edges
-    /// and pull obj values from upstream def-site traces into
-    /// trace[node].  Multiple sources (e.g. mphi operands) JOIN.
+    /// Coordinate object retrieval for one ICFG use node.
     void pullObjValueFlows(const ICFGNode* node);
+
+    /// Return the concrete sub-objects addressed by a load. This supplements
+    /// a coarse SVFG base-object label with information known by AE at the use.
+    NodeBS resolveLoadSubObjects(const VFGNode* valueFlow,
+                                 const ICFGNode* use);
+
+    /// Return the already-defined sub-objects reachable through pointer
+    /// arguments of an external-memory call.
+    NodeBS collectCallArgumentSubObjects(const CallICFGNode* call);
+
+    /// Return the sub-objects of `baseObjectId` that have an abstract
+    /// definition. Unmaterialized SVFIR fields are deliberately excluded.
+    NodeBS collectDefinedSubObjects(NodeID baseObjectId) const;
+
+    /// Pull values for one indirect SVFG edge. Exact sub-objects use the
+    /// definition-site index; remaining objects use the edge's SVFG source.
+    void pullValuesFromIndirectEdge(const IndirectSVFGEdge* edge,
+                                    const VFGNode* destination,
+                                    const ICFGNode* use,
+                                    const NodeBS& loadSubObjects);
+
+    /// Pull the reaching definition-site values of the requested sub-objects
+    /// into one use node. The authoritative values remain at their definitions.
+    NodeBS pullReachingSubObjectValues(const NodeBS& subObjectIds,
+                                       const ICFGNode* use);
 
     /// Return whether an indirect SVFG edge should be pulled into dst.
     /// Besides branch-feasible ICFG reachability, this rejects paths where
@@ -136,10 +158,21 @@ private:
     bool isIndirectSVFGEdgeFeasible(const IndirectSVFGEdge* edge,
                                     const VFGNode* dst);
 
-    /// Return whether a branch-feasible ICFG path exists from src to dst.
-    /// Conditional edges are checked with a pure branch-feasibility query,
-    /// so path probing does not create branch-refinement side effects.
-    bool isICFGPathFeasible(const ICFGNode* src, const ICFGNode* dst);
+    /// Return whether `definition` reaches `use` without another definition
+    /// of the same sub-object on the path. For example, for
+    /// `a[3] = 1; a[3] = 2; x = a[3]`, the first definition is killed by the
+    /// second, while the second definition reaches the load.
+    bool doesSubObjectDefinitionReach(const ICFGNode* definition,
+                                      const ICFGNode* use, NodeID subObjectId);
+
+    /// Return branch-feasible caller-side successors in the same function.
+    /// A call contributes its return site as a summary successor.
+    std::vector<const ICFGNode*> collectFeasibleIntraSuccessors(
+        const ICFGNode* node, const FunObjVar* function);
+
+    /// Return whether `node` defines any object carried by `edge`.
+    bool redefinesIndirectEdgeObject(const ICFGNode* node,
+                                     const IndirectSVFGEdge* edge) const;
 
     /// Return whether this intra edge is allowed by the current branch state.
     bool isIntraEdgeBranchFeasible(const IntraCFGEdge* edge,
@@ -148,10 +181,8 @@ private:
     /// Compose pred-inherited refinement into refinementTrace[node]
     /// (single-pred linear copy / multi-pred intersect-JOIN; any pred
     /// without refinement drops the inheritance), then MEET the final
-    /// refinementTrace[node] into trace[node]._addrToAbsVal so the
-    /// inherited base getAbsValue(ObjVar*, node) returns the narrowed
-    /// value directly — no read-time override or cache.  Called once
-    /// per merge as the last step.
+    /// refinementTrace[node] into node-local ObjVar state. Called once per
+    /// merge as the last step.
     void propagateAndApplyRefinement(const ICFGNode* node);
 
     /// Path-refined obj values produced by branch narrowing.  Each
@@ -161,6 +192,11 @@ private:
     /// propagateAndApplyRefinement at the end of
     /// mergeStatesFromPredecessors.
     Map<const ICFGNode*, Map<NodeID, IntervalValue>> refinementTrace;
+
+    /// Definition sites discovered while abstractly executing stores and
+    /// external-memory operations. Sub-object values remain in abstractTrace
+    /// at these nodes; this index only tells a use where to retrieve them.
+    Map<NodeID, Set<const ICFGNode*>> subObjectDefinitions;
 
     /// Build the SVFG on top of the semi-sparse precompute.
     void buildSVFG();

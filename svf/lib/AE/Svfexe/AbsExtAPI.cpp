@@ -124,7 +124,6 @@ void AbsExtAPI::initExtFunMap()
     auto svf_set_value = [&](const CallICFGNode* callNode)
     {
         assert(callNode->arg_size() >= 3 && "set_value expects three arguments");
-        AbstractState&as = getAbsState(callNode);
         const AbstractValue& lbVal = ae->getAbsValue(callNode->getArgument(1), callNode);
         const AbstractValue& ubVal = ae->getAbsValue(callNode->getArgument(2), callNode);
         assert(lbVal.getInterval().is_numeral() && ubVal.getInterval().is_numeral());
@@ -140,7 +139,10 @@ void AbsExtAPI::initExtFunMap()
                 const LoadStmt* load = SVFUtil::cast<LoadStmt>(stmt);
                 const AbstractValue& ptrVal = ae->getAbsValue(load->getRHSVar(), callNode);
                 for (auto addr : ptrVal.getAddrs())
-                    as.store(addr, num);
+                {
+                    if (const ObjVar* obj = resolveObjVar(addr, callNode))
+                        ae->updateAbsValue(obj, num, callNode);
+                }
             }
         }
         return;
@@ -255,6 +257,19 @@ AbstractState& AbsExtAPI::getAbsState(const SVF::ICFGNode* node)
     return ae->getAbsState(node);
 }
 
+const ObjVar* AbsExtAPI::resolveObjVar(u32_t addr, const ICFGNode* node) const
+{
+    // Sentinel addresses have no backing SVF object.
+    if (AbstractState::isNullOrBlackHoleAddr(addr))
+        return nullptr;
+
+    // Decoding recovers an SVFVar ID. The dyn_cast verifies that it denotes a
+    // memory object (BaseObjVar or GepObjVar), which is required by AE's
+    // object-value accessors; it does not infer or create a sub-object.
+    const NodeID objectId = ae->getAbsState(node).getIDFromAddr(addr);
+    return SVFUtil::dyn_cast<ObjVar>(svfir->getSVFVar(objectId));
+}
+
 void AbsExtAPI::collectCheckPoint()
 {
     // traverse every ICFGNode
@@ -308,7 +323,6 @@ void AbsExtAPI::checkPointAllSet()
 
 std::string AbsExtAPI::strRead(const ValVar* rhs, const ICFGNode* node)
 {
-    AbstractState& as = getAbsState(node);
     std::string str0;
 
     for (u32_t index = 0; index < Options::MaxFieldLimit(); index++)
@@ -319,7 +333,8 @@ std::string AbsExtAPI::strRead(const ValVar* rhs, const ICFGNode* node)
         AbstractValue val;
         for (const auto &addr: expr0.getAddrs())
         {
-            val.join_with(as.load(addr));
+            if (const ObjVar* obj = resolveObjVar(addr, node))
+                val.join_with(ae->getAbsValue(obj, node));
         }
         if (!val.getInterval().is_numeral())
         {
@@ -478,7 +493,8 @@ IntervalValue AbsExtAPI::getStrlen(const ValVar *strValue, const ICFGNode* node)
         AbstractValue val;
         for (const auto &addr: expr0.getAddrs())
         {
-            val.join_with(as.load(addr));
+            if (const ObjVar* obj = resolveObjVar(addr, node))
+                val.join_with(ae->getAbsValue(obj, node));
         }
         if (val.getInterval().is_numeral() &&
                 (char) val.getInterval().getIntNumeral() == '\0')
@@ -539,8 +555,6 @@ void AbsExtAPI::handleMemcpy(const ValVar *dst,
                              const ValVar *src, const IntervalValue& len,
                              u32_t start_idx, const ICFGNode* node)
 {
-    AbstractState& as = getAbsState(node);
-
     u32_t elemSize = getElementSize(dst);
     u32_t size = getBoundedMinimumByteCount(len);
     u32_t range_val = size / elemSize;
@@ -555,11 +569,14 @@ void AbsExtAPI::handleMemcpy(const ValVar *dst,
         {
             for (const auto &srcAddr: expr_src.getAddrs())
             {
-                u32_t objId = as.getIDFromAddr(srcAddr);
-                if (as.inAddrToValTable(objId) || as.inAddrToAddrsTable(objId))
-                {
-                    as.store(dstAddr, as.load(srcAddr));
-                }
+                const ObjVar* srcObj = resolveObjVar(srcAddr, node);
+                const ObjVar* dstObj = resolveObjVar(dstAddr, node);
+                if (!srcObj || !dstObj)
+                    continue;
+
+                const AbstractValue& srcVal = ae->getAbsValue(srcObj, node);
+                if (srcVal.isInterval() || srcVal.isAddr())
+                    ae->updateAbsValue(dstObj, srcVal, node);
             }
         }
     }
@@ -573,8 +590,6 @@ void AbsExtAPI::handleMemcpy(const ValVar *dst,
 void AbsExtAPI::handleMemset(const ValVar *dst,
                              const IntervalValue& elem, const IntervalValue& len, const ICFGNode* node)
 {
-    AbstractState& as = getAbsState(node);
-
     u32_t elemSize = 1;
     if (dst->getType()->isArrayTy())
     {
@@ -597,17 +612,16 @@ void AbsExtAPI::handleMemset(const ValVar *dst,
         AbstractValue lhs_gep = ae->getGepObjAddrs(dst, IntervalValue(index));
         for (const auto &addr: lhs_gep.getAddrs())
         {
-            u32_t objId = as.getIDFromAddr(addr);
-            if (as.inAddrToValTable(objId))
-            {
-                AbstractValue tmp = as.load(addr);
+            const ObjVar* obj = resolveObjVar(addr, node);
+            if (!obj)
+                continue;
+
+            AbstractValue tmp = ae->getAbsValue(obj, node);
+            if (tmp.isInterval())
                 tmp.join_with(elem);
-                as.store(addr, tmp);
-            }
             else
-            {
-                as.store(addr, elem);
-            }
+                tmp = elem;
+            ae->updateAbsValue(obj, tmp, node);
         }
     }
 }

@@ -137,8 +137,8 @@ public:
     /// Read a top-level variable's abstract value.  Dense base does a
     /// direct trace lookup; sparse subclasses override with their own
     /// resolution chain (def-site walk, call-result fallback, etc.).
-    /// All three overloads are virtual so full-sparse can route ObjVar
-    /// reads through the SVFG.
+    /// The overloads are virtual so sparse variants can choose where values
+    /// are placed and how reaching definitions are retrieved.
     virtual const AbstractValue& getAbsValue(const ValVar* var, const ICFGNode* node);
     virtual const AbstractValue& getAbsValue(const ObjVar* var, const ICFGNode* node);
     virtual const AbstractValue& getAbsValue(const SVFVar* var, const ICFGNode* node);
@@ -178,7 +178,8 @@ public:
     IntervalValue getGepByteOffset(const GepStmt* gep);
     AddressValue getGepObjAddrs(const ValVar* pointer, IntervalValue offset);
 
-    /// Virtual so full-sparse can layer the GepObj overlay on top.
+    /// Virtual so sparse variants can maintain definition-site state around
+    /// memory transfers.
     virtual AbstractValue loadValue(const ValVar* pointer,
                                     const ICFGNode* node);
     virtual void storeValue(const ValVar* pointer, const AbstractValue& val,
