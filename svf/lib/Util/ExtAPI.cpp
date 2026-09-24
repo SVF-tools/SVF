@@ -31,19 +31,9 @@
 #include "Util/SVFUtil.h"
 #include "Util/Options.h"
 #include "Util/config.h"
-#include <ostream>
-#ifdef _WIN32
-#  include <sys/types.h>
-#  include <sys/stat.h>
-#  include <windows.h>
-#  define stat  _stat
-#  define popen  _popen
-#  define pclose _pclose
-#else
-#  include <sys/stat.h>
-#  include <dlfcn.h>
-#endif
 #include "SVFIR/SVFVariables.h"
+#include <algorithm>
+#include <ostream>
 
 using namespace SVF;
 
@@ -71,40 +61,12 @@ void ExtAPI::destory()
 // Set extapi.bc file path
 bool ExtAPI::setExtBcPath(const std::string& path)
 {
-    struct stat statbuf;
-    if (!path.empty() && !stat(path.c_str(), &statbuf))
+    if (!path.empty() && SVFUtil::fileExists(path))
     {
         extBcPath = path;
         return true;
     }
     return false;
-}
-
-// Get stdout from a shell command.
-// Return empty string if the command fails.
-static std::string GetStdoutFromCommand(const std::string& command)
-{
-    char buffer[128];
-    std::string result;
-
-    FILE* pipe = popen(command.c_str(), "r");
-    if (!pipe)
-        return "";
-
-    while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
-    {
-        result += buffer;
-    }
-
-    int status = pclose(pipe);
-    if (status != 0)
-        return "";
-
-    // remove trailing newlines
-    result.erase(std::remove(result.begin(), result.end(), '\n'), result.end());
-    result.erase(std::remove(result.begin(), result.end(), '\r'), result.end());
-
-    return result;
 }
 
 // Get extapi.bc file path from SVF_DIR or npm installation
@@ -129,53 +91,20 @@ static std::string getFilePath(const std::string& path)
     {
         // Check npm exists before calling `npm root`.
         // If npm is missing, this command returns empty.
-        bcFilePath = GetStdoutFromCommand(
+        bcFilePath = SVFUtil::getStdoutFromCommand(
                          "command -v npm >/dev/null 2>&1 && npm root"
                      );
 
         if (bcFilePath.empty())
             return "";
 
-        if (bcFilePath.back() != '/')
+        if (!bcFilePath.empty() && bcFilePath.back() != '/')
             bcFilePath.push_back('/');
 
         bcFilePath.append("SVF/lib/extapi.bc");
     }
 
     return bcFilePath;
-}
-
-// This function returns the absolute path of the current module:
-// - If SVF is built and loaded as a dynamic library (e.g., libSVFCore.so or .dylib), it returns the path to that shared object file.
-// - If SVF is linked as a static library, it returns the path to the main executable.
-// This is useful for locating resource files (such as extapi.bc) relative to the module at runtime.
-std::string getCurrentSOPath()
-{
-#ifdef _WIN32
-    char path[MAX_PATH];
-    HMODULE hm = NULL;
-    if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                           GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                           (LPCSTR)&getCurrentSOPath, &hm))
-    {
-        GetModuleFileNameA(hm, path, sizeof(path));
-        std::string s(path);
-        for (size_t i = 0; i < s.length(); ++i) {
-            if (s[i] == '\\') {
-                s[i] = '/';
-            }
-        }
-        return s;
-    }
-    return "";
-#else
-    Dl_info info;
-    if (dladdr((void*)&getCurrentSOPath, &info) && info.dli_fname)
-    {
-        return std::string(info.dli_fname);
-    }
-    return "";
-#endif
 }
 
 // Get extapi.bc path
@@ -237,7 +166,7 @@ std::string ExtAPI::getExtBcPath()
     }
 
     // 6. Use the directory of the loaded libSVFCore.so/.dylib + extapi.bc
-    std::string soPath = getCurrentSOPath();
+    std::string soPath = SVFUtil::getCurrentSOPath();
     if (!soPath.empty())
     {
         std::string dir = soPath.substr(0, soPath.find_last_of('/'));

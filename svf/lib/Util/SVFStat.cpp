@@ -27,15 +27,13 @@
  *      Author: Xiao Cheng
  */
 
+#include <chrono>
 #include <iomanip>
 
 #include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
 #include "Util/SVFStat.h"
 #include "Graphs/CallGraph.h"
-#if defined(_WIN32)
-#include <windows.h>
-#endif
 
 using namespace SVF;
 using namespace std;
@@ -51,27 +49,15 @@ SVFStat::SVFStat() : startTime(0), endTime(0)
            && "PTAStat: unknown clock type!");
 }
 
-static double getWallClockTimeMs()
-{
-#if defined(_WIN32)
-    LARGE_INTEGER freq, counter;
-    QueryPerformanceFrequency(&freq);
-    QueryPerformanceCounter(&counter);
-    return (double)counter.QuadPart / (double)freq.QuadPart * 1000.0;
-#else
-    struct timespec time;
-    clock_gettime(CLOCK_MONOTONIC, &time);
-    return (double)(time.tv_nsec + time.tv_sec * 1000000000) / 1000000.0;
-#endif
-}
-
 double SVFStat::getClk(bool mark)
 {
     if (Options::MarkedClocksOnly() && !mark) return 0.0;
 
     if (Options::ClockType() == ClockType::Wall)
     {
-        return getWallClockTimeMs();
+        return std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now().time_since_epoch()
+        ).count();
     }
     else if (Options::ClockType() == ClockType::CPU)
     {

@@ -36,12 +36,6 @@
 #include "Util/SVFLoopAndDomInfo.h"
 
 
-#ifdef _MSC_VER
-#    define SVF_WEAK inline
-#else
-#    define SVF_WEAK __attribute__((weak))
-#endif
-
 using namespace SVF;
 using namespace SVFUtil;
 

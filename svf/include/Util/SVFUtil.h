@@ -39,6 +39,12 @@
 #include "Util/NodeIDAllocator.h"
 #include "Util/ThreadAPI.h"
 
+#ifdef _MSC_VER
+#    define SVF_WEAK inline
+#else
+#    define SVF_WEAK __attribute__((weak))
+#endif
+
 namespace SVF
 {
 
@@ -100,6 +106,15 @@ bool getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb);
 
 /// Increase the stack size limit
 void increaseStackSize();
+
+/// Check whether a file exists at the given path
+bool fileExists(const std::string& path);
+
+/// Execute a shell command and capture its stdout output
+std::string getStdoutFromCommand(const std::string& command);
+
+/// Return the absolute path of the current module/executable
+std::string getCurrentSOPath();
 
 /*!
  * Compare two PointsTo according to their size and points-to elements.
