@@ -113,7 +113,7 @@ endif()
 # Add a custom command to compile the extapi.bc bitcode file from extapi.c
 add_custom_command(
   OUTPUT ${SVF_BUILD_EXTAPI_BC}
-  COMMAND ${LLVM_CLANG} -w -S -c -fPIC -std=gnu11 -emit-llvm -o ${SVF_BUILD_EXTAPI_BC} ${EXTAPI_SRC}
+  COMMAND ${LLVM_CLANG} -w -c -fPIC -std=gnu11 -emit-llvm -o ${SVF_BUILD_EXTAPI_BC} ${EXTAPI_SRC}
   COMMENT "Generating extapi.bc LLVM bitcode file..."
   MAIN_DEPENDENCY ${EXTAPI_SRC}
   DEPENDS ${EXTAPI_SRC}
