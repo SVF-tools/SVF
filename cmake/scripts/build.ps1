@@ -55,7 +55,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
-$SVFHome    = $ScriptDir
+$SVFHome    = (Resolve-Path (Join-Path $ScriptDir "..\..")).Path
 
 # MSYS2 LLVM and Clang SDK packages.
 # We download the local LLVM + Clang SDK from MSYS2 repository.
@@ -323,9 +323,7 @@ $svfCmakeArgs = @(
     "-DZ3_DIR=$env:Z3_DIR",
     "-DBUILD_SHARED_LIBS=$BuildSharedLibs",
     "-DSVF_WARN_AS_ERROR=OFF",
-    "-DSVF_EXPORT_DYNAMIC=OFF",
-    "-DCMAKE_CXX_STANDARD=17",
-    "-DCMAKE_CXX_STANDARD_REQUIRED=ON"
+    "-DSVF_EXPORT_DYNAMIC=OFF"
 )
 if ($Compiler -eq "mingw") {
     $svfCmakeArgs += "-DCMAKE_C_COMPILER=$env:LLVM_DIR\bin\clang.exe"

@@ -242,7 +242,9 @@ bool SVFUtil::getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb)
  */
 void SVFUtil::increaseStackSize()
 {
-#ifndef _WIN32
+#ifdef _WIN32
+    // On Windows, stack size is set at link time via CMake (/STACK:268435456)
+#else
     // Increase stack size via POSIX rlimit
     const rlim_t kStackSize = 256L * 1024L * 1024L;   // min stack size = 256 Mb
     struct rlimit rl;
@@ -257,8 +259,6 @@ void SVFUtil::increaseStackSize()
                 writeWrnMsg("setrlimit returned result !=0 \n");
         }
     }
-#else
-    // On Windows, stack size is set at link time via CMake (/STACK:268435456)
 #endif
 }
 
@@ -355,7 +355,11 @@ void SVFUtil::timeLimitReached(int)
 
 bool SVFUtil::startAnalysisLimitTimer(unsigned timeLimit)
 {
-#ifndef _WIN32
+#ifdef _WIN32
+    // POSIX alarm signals are not available on Win32
+    (void)timeLimit;
+    return false;
+#else
     if (timeLimit == 0) return false;
 
     // If an alarm is already set, don't set another. That means this analysis
@@ -371,10 +375,6 @@ bool SVFUtil::startAnalysisLimitTimer(unsigned timeLimit)
     signal(SIGALRM, &timeLimitReached);
     alarm(timeLimit);
     return true;
-#else
-    // POSIX alarm signals are not available on Win32
-    (void)timeLimit;
-    return false;
 #endif
 }
 
@@ -382,10 +382,10 @@ bool SVFUtil::startAnalysisLimitTimer(unsigned timeLimit)
 /// timer or not (return value of startLimitTimer).
 void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
 {
-#ifndef _WIN32
-    if (limitTimerSet) alarm(0);
-#else
+#ifdef _WIN32
     (void)limitTimerSet;
+#else
+    if (limitTimerSet) alarm(0);
 #endif
 }
 

@@ -3,9 +3,8 @@ name: windows-build
 on: [push, pull_request]
 
 env:
-  SVF_CTIR: 1
   SVF_Z3: 1
-  SVF_DIR: ${{ github.workspace }}
+  LLVM_VERSION: 16
 
 jobs:
   windows-build:
@@ -14,19 +13,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [mingw, msvc]
+        compiler: [msvc, mingw]
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup MSYS2 (MinGW only)
+        if: matrix.compiler == 'mingw'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANG64
+          update: true
+          install: >-
+            mingw-w64-clang-x86_64-clang
+            mingw-w64-clang-x86_64-llvm
+            mingw-w64-clang-x86_64-lld
+            mingw-w64-clang-x86_64-cmake
+            mingw-w64-clang-x86_64-ninja
+            mingw-w64-clang-x86_64-z3
 
       - name: Install dependencies (MSVC only)
         if: matrix.compiler == 'msvc'
         shell: powershell
         run: |
           # 1. Install LLVM toolchain via Chocolatey (provides clang.exe)
-          choco install llvm -y
+          choco install llvm --version=${{ env.LLVM_VERSION }}.0.0 -y || choco install llvm -y
           
-          # 2. Download and extract LLVM SDK from c3lang/llvm-for-c3 (provides LLVMConfig.cmake and static libraries) using curl.exe
-          curl.exe -L "https://github.com/c3lang/llvm-for-c3/releases/download/llvm_22.1.4/llvm-windows-amd64.tar.gz" -o llvm-sdk.tar.gz
+          # 2. Download and extract LLVM development SDK
+          curl.exe -L "https://github.com/c3lang/llvm-for-c3/releases/download/llvm_${{ env.LLVM_VERSION }}.1.4/llvm-windows-amd64.tar.gz" -o llvm-sdk.tar.gz
           New-Item -ItemType Directory -Force -Path C:\llvm-sdk | Out-Null
           tar -xf llvm-sdk.tar.gz -C C:\llvm-sdk
           
@@ -35,16 +48,15 @@ jobs:
           Copy-Item -Path "C:\Program Files\LLVM\bin\clang++.exe" -Destination "C:\llvm-sdk\bin\" -Force
           Copy-Item -Path "C:\Program Files\LLVM\bin\clang-cl.exe" -Destination "C:\llvm-sdk\bin\" -Force
           
-          # 3.5. Strip the hardcoded MSVC diaguids.lib dependency from LLVMExports.cmake
+          # 3.5. Strip hardcoded absolute MSVC diaguids.lib path from LLVMExports.cmake
           $exportsFile = "C:\llvm-sdk\lib\cmake\llvm\LLVMExports.cmake"
           if (Test-Path $exportsFile) {
               $content = Get-Content $exportsFile -Raw
-              # Remove any absolute path ending in /DIA SDK/lib/amd64/diaguids.lib;
               $newContent = $content -replace '[a-zA-Z]:/[^";]+?/DIA SDK/lib/amd64/diaguids\.lib;', ""
               Set-Content $exportsFile $newContent -NoNewline
           }
           
-          # 4. Export environment variables using UTF-8 encoding
+          # 4. Export environment variables
           Add-Content -Path $env:GITHUB_PATH -Value "C:\llvm-sdk\bin" -Encoding UTF8
           Add-Content -Path $env:GITHUB_ENV -Value "LLVM_DIR=C:\llvm-sdk" -Encoding UTF8
 
@@ -66,18 +78,40 @@ jobs:
             throw "Test-Suite checkout failed."
           }
 
-      - name: Build SVF
+      - name: Build SVF (MSVC)
+        if: matrix.compiler == 'msvc'
         shell: powershell
         run: |
-          if ("${{ matrix.compiler }}" -eq "msvc") {
-            powershell -ExecutionPolicy Bypass -File build.ps1 -BuildType Release -Compiler msvc -LLVMDir "$env:LLVM_DIR"
-          } else {
-            powershell -ExecutionPolicy Bypass -File build.ps1 -BuildType Release -Compiler mingw
-          }
+          cmake -B Release-build -S . `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DLLVM_DIR="$env:LLVM_DIR" `
+            -DSVF_Z3=ON
+          cmake --build Release-build --config Release -j
 
-      - name: Run CTests
+      - name: Build SVF (MinGW)
+        if: matrix.compiler == 'mingw'
+        shell: msys2 {0}
+        run: |
+          cmake -B Release-build -S . \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DSVF_Z3=ON
+          cmake --build Release-build -j
+
+      - name: Run CTests (MSVC)
+        if: matrix.compiler == 'msvc'
         shell: powershell
         working-directory: ${{ github.workspace }}/Release-build
         run: |
-          . ..\setup.ps1 Release
+          $env:PATH = "${{ github.workspace }}\Release-build\bin;${{ github.workspace }}\Release-build\lib;$env:PATH"
+          ctest -C Release --output-on-failure
+
+      - name: Run CTests (MinGW)
+        if: matrix.compiler == 'mingw'
+        shell: msys2 {0}
+        working-directory: ${{ github.workspace }}/Release-build
+        run: |
+          export PATH="${{ github.workspace }}/Release-build/bin:${{ github.workspace }}/Release-build/lib:$PATH"
           ctest --output-on-failure

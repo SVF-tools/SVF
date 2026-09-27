@@ -170,7 +170,7 @@ Write-Host "============================================================" -Foreg
 Write-Host " Setup completed."                                           -ForegroundColor Green
 Write-Host ""
 Write-Host " To use SVF in the current session:"                      -ForegroundColor White
-Write-Host "   . .\setup.ps1"                                             -ForegroundColor Yellow
+Write-Host "   . .\cmake\scripts\setup.ps1"                               -ForegroundColor Yellow
 Write-Host ""
 Write-Host " Smoke test:"                                                  -ForegroundColor White
 Write-Host "   wpa --help"                                                 -ForegroundColor Yellow

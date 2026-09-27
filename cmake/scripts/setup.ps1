@@ -20,7 +20,8 @@ param(
 )
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$BuildDir  = Join-Path $ScriptDir "$BuildType-build"
+$SVF_DIR   = (Resolve-Path (Join-Path $ScriptDir "..\..")).Path
+$BuildDir  = Join-Path $SVF_DIR "$BuildType-build"
 
 if (-not (Test-Path $BuildDir)) {
     Write-Error "Build directory not found: $BuildDir. Run build.ps1 first."
@@ -28,8 +29,8 @@ if (-not (Test-Path $BuildDir)) {
 }
 
 # Resolve LLVM_DIR and Z3_DIR — same logic as build.ps1
-$LLVMSdk  = Join-Path $ScriptDir "llvm-sdk.obj\clang64"
-$Z3Home   = Join-Path $ScriptDir "z3.obj"
+$LLVMSdk  = Join-Path $SVF_DIR "llvm-sdk.obj\clang64"
+$Z3Home   = Join-Path $SVF_DIR "z3.obj"
 
 if (Test-Path $LLVMSdk) {
     $env:LLVM_DIR = $LLVMSdk
@@ -51,7 +52,7 @@ foreach ($p in $additions) {
     }
 }
 
-$env:SVF_DIR = $ScriptDir
+$env:SVF_DIR = $SVF_DIR
 
 Write-Host "SVF_DIR  = $env:SVF_DIR"
 Write-Host "LLVM_DIR = $env:LLVM_DIR"
