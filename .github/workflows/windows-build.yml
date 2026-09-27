@@ -5,6 +5,7 @@ on: [push, pull_request]
 env:
   SVF_Z3: 1
   LLVM_SDK_TAG: "llvm_22.1.4"
+  Z3_VERSION: "4.15.4"
 
 jobs:
   windows-build:
@@ -56,9 +57,17 @@ jobs:
               Set-Content $exportsFile $newContent -NoNewline
           }
           
+          # 3.8. Download and extract Z3 for MSVC
+          curl.exe -L "https://github.com/Z3Prover/z3/releases/download/z3-${{ env.Z3_VERSION }}/z3-${{ env.Z3_VERSION }}-x64-win.zip" -o z3.zip
+          Expand-Archive -Path z3.zip -DestinationPath C:\z3-temp
+          $z3Folder = Get-ChildItem C:\z3-temp -Directory | Select-Object -First 1
+          Move-Item -Path $z3Folder.FullName -Destination C:\z3
+          
           # 4. Export environment variables
           Add-Content -Path $env:GITHUB_PATH -Value "C:\llvm-sdk\bin" -Encoding UTF8
+          Add-Content -Path $env:GITHUB_PATH -Value "C:\z3\bin" -Encoding UTF8
           Add-Content -Path $env:GITHUB_ENV -Value "LLVM_DIR=C:\llvm-sdk" -Encoding UTF8
+          Add-Content -Path $env:GITHUB_ENV -Value "Z3_DIR=C:\z3" -Encoding UTF8
 
       - name: Add MSVC to PATH
         if: matrix.compiler == 'msvc'
@@ -85,6 +94,7 @@ jobs:
           cmake -B Release-build -S . `
             -DCMAKE_BUILD_TYPE=Release `
             -DLLVM_DIR="$env:LLVM_DIR" `
+            -DZ3_DIR="$env:Z3_DIR" `
             -DSVF_Z3=ON `
             -DSVF_WARN_AS_ERROR=OFF
           cmake --build Release-build --config Release -j
@@ -107,7 +117,7 @@ jobs:
         shell: powershell
         working-directory: ${{ github.workspace }}/Release-build
         run: |
-          $env:PATH = "${{ github.workspace }}\Release-build\bin;${{ github.workspace }}\Release-build\lib;$env:PATH"
+          $env:PATH = "${{ github.workspace }}\Release-build\bin;${{ github.workspace }}\Release-build\lib;C:\z3\bin;$env:PATH"
           ctest -C Release --output-on-failure
 
       - name: Run CTests (MinGW)
