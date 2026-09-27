@@ -36,8 +36,8 @@ jobs:
         if: matrix.compiler == 'msvc'
         shell: powershell
         run: |
-          # 1. Install LLVM toolchain via Chocolatey (provides clang.exe)
-          choco install llvm -y
+          # 1. Install LLVM toolchain and Ninja via Chocolatey
+          choco install llvm ninja -y
           
           # 2. Download and extract LLVM development SDK
           curl.exe -L "https://github.com/c3lang/llvm-for-c3/releases/download/${{ env.LLVM_SDK_TAG }}/llvm-windows-amd64.tar.gz" -o llvm-sdk.tar.gz
@@ -92,12 +92,13 @@ jobs:
         shell: powershell
         run: |
           cmake -B Release-build -S . `
+            -G Ninja `
             -DCMAKE_BUILD_TYPE=Release `
             -DLLVM_DIR="$env:LLVM_DIR" `
             -DZ3_DIR="$env:Z3_DIR" `
             -DSVF_Z3=ON `
             -DSVF_WARN_AS_ERROR=OFF
-          cmake --build Release-build --config Release -j
+          cmake --build Release-build -j
 
       - name: Build SVF (MinGW)
         if: matrix.compiler == 'mingw'
@@ -118,7 +119,7 @@ jobs:
         working-directory: ${{ github.workspace }}/Release-build
         run: |
           $env:PATH = "${{ github.workspace }}\Release-build\bin;${{ github.workspace }}\Release-build\lib;C:\z3\bin;$env:PATH"
-          ctest -C Release --output-on-failure
+          ctest --output-on-failure
 
       - name: Run CTests (MinGW)
         if: matrix.compiler == 'mingw'
