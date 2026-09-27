@@ -249,14 +249,11 @@ inline void removeKey(const NodeID &key, NodeBS &keySet)
 /// Function to call when alarm for time limit hits.
 void timeLimitReached(int signum);
 
-/// Starts an analysis timer. If timeLimit is 0, sets no timer.
-/// If an alarm has already been set, does not set another.
-/// Returns whether we set a timer or not.
-bool startAnalysisLimitTimer(unsigned timeLimit);
+/// Starts analysis timer. timeLimit must be non-0. Timer must not be already set.
+void startAnalysisLimitTimer(unsigned timeLimit);
 
-/// Stops an analysis timer. limitTimerSet indicates whether the caller set the
-/// timer or not (return value of startLimitTimer).
-void stopAnalysisLimitTimer(bool limitTimerSet);
+/// Stops analysis timer.
+void stopAnalysisLimitTimer(void);
 
 /// Return true if the call is an external call (external library in function summary table)
 /// If the library function is redefined in the application code (e.g., memcpy), it will return false and will not be treated as an external call.
