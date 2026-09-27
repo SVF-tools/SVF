@@ -113,7 +113,7 @@ void AndersenBase::solveConstraints()
 
     bool timeLimited = Options::AnderTimeLimit() > 0;
     if (timeLimited) {
-        assert(Options::FsTimeLimit == 0 && "both -ander-time-limit and -fs-time-limit set.");
+        assert(Options::FsTimeLimit() == 0 && "both -ander-time-limit and -fs-time-limit set.");
         SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit());
     }
 

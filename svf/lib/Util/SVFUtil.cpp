@@ -289,7 +289,6 @@ void SVFUtil::startAnalysisLimitTimer(unsigned timeLimit)
 
     signal(SIGALRM, &timeLimitReached);
     alarm(timeLimit);
-    return true;
 }
 
 /// Stops analysis timer.
