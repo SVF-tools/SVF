@@ -111,7 +111,11 @@ void AndersenBase::solveConstraints()
     // Start solving constraints
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
-    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit());
+    bool timeLimited = Options::AnderTimeLimit() > 0;
+    if (timeLimited) {
+        assert(Options::FsTimeLimit == 0 && "both -ander-time-limit and -fs-time-limit set.");
+        SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit());
+    }
 
     initWorklist();
     do
@@ -131,7 +135,7 @@ void AndersenBase::solveConstraints()
     while (reanalyze);
 
     // Analysis is finished, reset the alarm if we set it.
-    SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
+    if (timeLimited) { SVFUtil::stopAnalysisLimitTimer(); }
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 }
