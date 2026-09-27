@@ -223,6 +223,7 @@ public:
     {
         CDGEdge *edge = nullptr;
         size_t counter = 0;
+        (void)counter;
         for (CDGEdge::CDGEdgeSetTy::iterator iter = src->OutEdgeBegin();
                 iter != src->OutEdgeEnd(); ++iter)
         {

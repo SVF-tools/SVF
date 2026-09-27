@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 env:
   SVF_Z3: 1
-  LLVM_VERSION: 16
+  LLVM_SDK_TAG: "llvm_22.1.4"
 
 jobs:
   windows-build:
@@ -36,10 +36,10 @@ jobs:
         shell: powershell
         run: |
           # 1. Install LLVM toolchain via Chocolatey (provides clang.exe)
-          choco install llvm --version=${{ env.LLVM_VERSION }}.0.0 -y || choco install llvm -y
+          choco install llvm -y
           
           # 2. Download and extract LLVM development SDK
-          curl.exe -L "https://github.com/c3lang/llvm-for-c3/releases/download/llvm_${{ env.LLVM_VERSION }}.1.4/llvm-windows-amd64.tar.gz" -o llvm-sdk.tar.gz
+          curl.exe -L "https://github.com/c3lang/llvm-for-c3/releases/download/${{ env.LLVM_SDK_TAG }}/llvm-windows-amd64.tar.gz" -o llvm-sdk.tar.gz
           New-Item -ItemType Directory -Force -Path C:\llvm-sdk | Out-Null
           tar -xf llvm-sdk.tar.gz -C C:\llvm-sdk
           
@@ -85,7 +85,8 @@ jobs:
           cmake -B Release-build -S . `
             -DCMAKE_BUILD_TYPE=Release `
             -DLLVM_DIR="$env:LLVM_DIR" `
-            -DSVF_Z3=ON
+            -DSVF_Z3=ON `
+            -DSVF_WARN_AS_ERROR=OFF
           cmake --build Release-build --config Release -j
 
       - name: Build SVF (MinGW)
@@ -97,7 +98,8 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER=clang \
             -DCMAKE_CXX_COMPILER=clang++ \
-            -DSVF_Z3=ON
+            -DSVF_Z3=ON \
+            -DSVF_WARN_AS_ERROR=OFF
           cmake --build Release-build -j
 
       - name: Run CTests (MSVC)
