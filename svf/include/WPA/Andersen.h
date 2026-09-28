@@ -43,6 +43,8 @@
 #include "Util/GeneralType.h"
 #include "Util/Options.h"
 
+#include <optional>
+
 namespace SVF
 {
 
@@ -357,9 +359,9 @@ protected:
     /// SCC detection
     virtual NodeStack& SCCDetect();
 
-    /// Collect may-alias candidates. Attempts to do so from reverse points-to sets (cheaper),
-    /// and if not possible, falls back to trying every node (costlier).
-    NodeBS getMayAliasCandidates(NodeID node);
+    /// Answer a may-alias query from the reverse points-to sets. Returns nullopt
+    /// when those sets cannot answer it, leaving the caller to try every node.
+    std::optional<NodeBS> collectMayAliasesFromIndex(const PointsTo& expandedPts);
 
     /// Also check getMayAliases on the pointers that the alias tests use
     virtual void validateSuccessTests(std::string fun);

@@ -57,7 +57,7 @@ const OptionMap<PTBackingType> Options::ptDataBacking(
 
 const Option<u32_t> Options::FsTimeLimit(
     "fs-time-limit",
-    "time limit for main phase of flow-sensitive analyses",
+    "time limit for main phase of flow-sensitive analyses (0 = no timer)",
     0
 );
 
@@ -69,7 +69,7 @@ const Option<u32_t> Options::VersioningThreads(
 
 const Option<u32_t> Options::AnderTimeLimit(
     "ander-time-limit",
-    "time limit for Andersen's analyses (ignored when -fs-time-limit set)",
+    "time limit for Andersen's analyses (erroneous to set when -fs-time-limit is; 0 = no timer)",
     0
 );
 

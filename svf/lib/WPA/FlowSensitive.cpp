@@ -75,7 +75,11 @@ void FlowSensitive::initialize()
 }
 void FlowSensitive::solveConstraints()
 {
-    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::FsTimeLimit());
+    bool timeLimited = Options::FsTimeLimit() > 0;
+    if (timeLimited)
+    {
+        SVFUtil::startAnalysisLimitTimer(Options::FsTimeLimit());
+    }
 
     double start = stat->getClk(true);
     /// Start solving constraints
@@ -98,7 +102,10 @@ void FlowSensitive::solveConstraints()
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
     // Reset the time-up alarm; analysis is done.
-    SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
+    if (timeLimited)
+    {
+        SVFUtil::stopAnalysisLimitTimer();
+    }
 
     double end = stat->getClk(true);
     solveTime += (end - start) / TIMEINTERVAL;

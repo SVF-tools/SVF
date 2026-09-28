@@ -359,39 +359,31 @@ void SVFUtil::timeLimitReached(int)
     exit(101);
 }
 
-bool SVFUtil::startAnalysisLimitTimer(unsigned timeLimit)
+void SVFUtil::startAnalysisLimitTimer(unsigned timeLimit)
 {
 #ifdef _WIN32
     // POSIX alarm signals are not available on Win32
     (void)timeLimit;
-    return false;
 #else
-    if (timeLimit == 0) return false;
+    assert(timeLimit > 0 && "startAnalysisTimer: given non-0 time-limit.");
 
     // If an alarm is already set, don't set another. That means this analysis
     // is part of another which has a time limit.
     unsigned remainingSeconds = alarm(0);
-    if (remainingSeconds != 0)
-    {
-        // Continue the previous alarm and move on.
-        alarm(remainingSeconds);
-        return false;
-    }
+    assert(remainingSeconds != 0 && "startAnalysisTimer: attempt to set a second alarm.");
 
     signal(SIGALRM, &timeLimitReached);
     alarm(timeLimit);
-    return true;
 #endif
 }
 
-/// Stops an analysis timer. limitTimerSet indicates whether the caller set the
-/// timer or not (return value of startLimitTimer).
-void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
+/// Stops analysis timer.
+void SVFUtil::stopAnalysisLimitTimer(void)
 {
 #ifdef _WIN32
-    (void)limitTimerSet;
+    // No-op on Win32
 #else
-    if (limitTimerSet) alarm(0);
+    alarm(0);
 #endif
 }
 
