@@ -48,6 +48,15 @@ void ConstraintGraph::buildCG()
         addConstraintNode(new ConstraintNode(it->first), it->first);
     }
 
+    // With -blk-skip-undef, operands that are undef/poison (all mapped to BlkPtr)
+    // contribute nothing; BlkPtr itself still points to the black hole.
+    const NodeID blkPtr = pag->getBlkPtr();
+    const bool skipUndef = Options::HandBlackHole() && Options::BlkSkipUndef();
+    auto skip = [&](NodeID src)
+    {
+        return skipUndef && src == blkPtr;
+    };
+
     // initialize edges
     SVFStmt::SVFStmtSetTy& addrs = getSVFStmtSet(SVFStmt::Addr);
     for (SVFStmt::SVFStmtSetTy::iterator iter = addrs.begin(), eiter =
@@ -62,7 +71,7 @@ void ConstraintGraph::buildCG()
                 copys.end(); iter != eiter; ++iter)
     {
         const CopyStmt* edge = SVFUtil::cast<CopyStmt>(*iter);
-        if(edge->isBitCast() || edge->isValueCopy())
+        if((edge->isBitCast() || edge->isValueCopy()) && !skip(edge->getRHSVarID()))
             addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
@@ -72,7 +81,8 @@ void ConstraintGraph::buildCG()
     {
         const PhiStmt* edge = SVFUtil::cast<PhiStmt>(*iter);
         for(const auto opVar : edge->getOpndVars())
-            addCopyCGEdge(opVar->getId(),edge->getResID());
+            if (!skip(opVar->getId()))
+                addCopyCGEdge(opVar->getId(),edge->getResID());
     }
 
     SVFStmt::SVFStmtSetTy& selects = getSVFStmtSet(SVFStmt::Select);
@@ -81,7 +91,8 @@ void ConstraintGraph::buildCG()
     {
         const SelectStmt* edge = SVFUtil::cast<SelectStmt>(*iter);
         for(const auto opVar : edge->getOpndVars())
-            addCopyCGEdge(opVar->getId(),edge->getResID());
+            if (!skip(opVar->getId()))
+                addCopyCGEdge(opVar->getId(),edge->getResID());
     }
 
     SVFStmt::SVFStmtSetTy& calls = getSVFStmtSet(SVFStmt::Call);
@@ -90,7 +101,8 @@ void ConstraintGraph::buildCG()
     {
         const CallPE* callPE = SVFUtil::cast<CallPE>(*iter);
         for(u32_t i = 0; i < callPE->getOpVarNum(); i++)
-            addCopyCGEdge(callPE->getOpVarID(i), callPE->getResID());
+            if (!skip(callPE->getOpVarID(i)))
+                addCopyCGEdge(callPE->getOpVarID(i), callPE->getResID());
     }
 
     SVFStmt::SVFStmtSetTy& rets = getSVFStmtSet(SVFStmt::Ret);
@@ -98,7 +110,8 @@ void ConstraintGraph::buildCG()
                 rets.end(); iter != eiter; ++iter)
     {
         const RetPE* edge = SVFUtil::cast<RetPE>(*iter);
-        addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
+        if (!skip(edge->getRHSVarID()))
+            addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
     SVFStmt::SVFStmtSetTy& tdfks = getSVFStmtSet(SVFStmt::ThreadFork);
@@ -107,7 +120,8 @@ void ConstraintGraph::buildCG()
     {
         const TDForkPE* forkPE = SVFUtil::cast<TDForkPE>(*iter);
         for(u32_t i = 0; i < forkPE->getOpVarNum(); i++)
-            addCopyCGEdge(forkPE->getOpVarID(i), forkPE->getResID());
+            if (!skip(forkPE->getOpVarID(i)))
+                addCopyCGEdge(forkPE->getOpVarID(i), forkPE->getResID());
     }
 
     SVFStmt::SVFStmtSetTy& tdjns = getSVFStmtSet(SVFStmt::ThreadJoin);
@@ -115,7 +129,8 @@ void ConstraintGraph::buildCG()
                 tdjns.end(); iter != eiter; ++iter)
     {
         const TDJoinPE* edge = SVFUtil::cast<TDJoinPE>(*iter);
-        addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
+        if (!skip(edge->getRHSVarID()))
+            addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
     SVFStmt::SVFStmtSetTy& ngeps = getSVFStmtSet(SVFStmt::Gep);
@@ -123,6 +138,8 @@ void ConstraintGraph::buildCG()
                 ngeps.end(); iter != eiter; ++iter)
     {
         GepStmt* edge = SVFUtil::cast<GepStmt>(*iter);
+        if (skip(edge->getRHSVarID()))
+            continue;
         if(edge->isVariantFieldGep())
             addVariantGepCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
         else
@@ -142,6 +159,15 @@ void ConstraintGraph::buildCG()
                 stores.end(); iter != eiter; ++iter)
     {
         StoreStmt* edge = SVFUtil::cast<StoreStmt>(*iter);
+        if (edge->getRHSVarID() == blkPtr && Options::HandBlackHole())
+        {
+            // A store of BlkPtr at a call site is a STORE_TOP summary; elsewhere it
+            // stores an undef/poison value.
+            const bool atCall = edge->getICFGNode() && SVFUtil::isa<CallICFGNode>(edge->getICFGNode());
+            if (atCall ? Options::BlkScanfFormat() && pag->isNondetStoreWithoutPointer(edge->getICFGNode())
+                    : skipUndef)
+                continue;
+        }
         addStoreCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 

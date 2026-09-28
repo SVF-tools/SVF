@@ -34,6 +34,7 @@
 #include "Graphs/CallGraph.h"
 #include "Util/ExtAPI.h"
 #include "Util/Options.h"
+#include "llvm/Analysis/ValueTracking.h"
 
 using namespace std;
 using namespace SVF;
@@ -70,6 +71,59 @@ bool parseNondetArgStoreAtExtCall(const std::string& annotation, u32_t& firstArg
     while (idx < annotation.size() && annotation[idx] >= '0' && annotation[idx] <= '9');
 
     return idx < annotation.size() && annotation[idx] == '+';
+}
+
+/// Whether a scanf-family call provably stores no pointer through its output
+/// arguments: its format is a constant string with no assigned %p conversion and
+/// no allocating form (%ms, %mc, %m[, and the old GNU %as). Anything unparsed
+/// counts as possibly storing a pointer.
+bool scanfFormatStoresNoPointer(const CallBase* cs, u32_t formatArg)
+{
+    const Function* callee = cs->getCalledFunction();
+    if (!callee || callee->getName().find("scanf") == llvm::StringRef::npos || formatArg >= cs->arg_size())
+        return false;
+    llvm::StringRef fmt;
+    if (!llvm::getConstantStringInfo(cs->getArgOperand(formatArg), fmt))
+        return false;
+    for (size_t i = 0; i < fmt.size(); ++i)
+    {
+        if (fmt[i] != '%')
+            continue;
+        if (++i >= fmt.size())
+            return false;
+        if (fmt[i] == '%')
+            continue;
+        const bool suppressed = fmt[i] == '*';
+        if (suppressed)
+            ++i;
+        while (i < fmt.size() && isdigit(static_cast<unsigned char>(fmt[i])))
+            ++i;
+        bool allocating = false;
+        while (i < fmt.size() && llvm::StringRef("hljztLqm").contains(fmt[i]))
+            allocating |= fmt[i++] == 'm';
+        if (i >= fmt.size())
+            return false;
+        const char conv = fmt[i];
+        if (!suppressed && (allocating || conv == 'p' ||
+                            (conv == 'a' && i + 1 < fmt.size() && llvm::StringRef("sS[").contains(fmt[i + 1]))))
+            return false;
+        if (conv == '[')
+        {
+            ++i;
+            if (i < fmt.size() && fmt[i] == '^')
+                ++i;
+            if (i < fmt.size() && fmt[i] == ']')
+                ++i;
+            while (i < fmt.size() && fmt[i] != ']')
+                ++i;
+            if (i >= fmt.size())
+                return false;
+            continue;
+        }
+        if (!llvm::StringRef("diouxXaAeEfFgGsScCnp").contains(conv))
+            return false;
+    }
+    return true;
 }
 
 bool hasNondetArgStoreAtExtCall(const CallICFGNode* callICFGNode)
@@ -334,6 +388,10 @@ void SVFIRBuilder::handleNondetArgStoreAtExtCall(const CallBase* cs, const CallI
 
             for (u32_t argIdx = firstArg; argIdx < cs->arg_size(); ++argIdx)
                 storeTopArgs.insert(argIdx);
+            // The format string is the argument just before the first output argument.
+            if (Options::BlkScanfFormat() && firstArg > 0 &&
+                    scanfFormatStoresNoPointer(cs, firstArg - 1))
+                pag->addNondetStoreWithoutPointer(callICFGNode);
         }
     }
 

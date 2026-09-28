@@ -168,6 +168,18 @@ Option<bool> Options::HandBlackHole(
     false
 );
 
+const Option<bool> Options::BlkSkipUndef(
+    "blk-skip-undef",
+    "With -blk, undef and poison pointer operands add no black hole to the constraint graph (assumes no undefined behaviour)",
+    false
+);
+
+const Option<bool> Options::BlkScanfFormat(
+    "blk-scanf-format",
+    "With -blk, a scanf-family call whose constant format has no pointer conversion stores no black hole in the constraint graph",
+    false
+);
+
 const Option<bool> Options::FirstFieldEqBase(
     "ff-eq-base",
     "Treat base objects as their first fields",

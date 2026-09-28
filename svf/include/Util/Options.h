@@ -96,6 +96,8 @@ public:
 
     // Program Assignment Graph for pointer analysis (SVFIR.cpp)
     static Option<bool> HandBlackHole;
+    static const Option<bool> BlkSkipUndef;
+    static const Option<bool> BlkScanfFormat;
     static const Option<bool> FirstFieldEqBase;
 
     // SVFG optimizer (SVFGOPT.cpp)

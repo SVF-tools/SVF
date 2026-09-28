@@ -101,6 +101,7 @@ private:
     CommonCHGraph* chgraph; // class hierarchy graph
     CallSiteSet callSiteSet; /// all the callsites of a program
     CallGraph* callGraph; /// Callgraph with direct calls only; no change allowed after init and use callgraph in PointerAnalysis for indirect calls)
+    Set<const ICFGNode*> nondetStoresWithoutPointer; ///< STORE_TOP call sites proven to store no pointer (-blk-scanf-format)
 
     static std::unique_ptr<SVFIR> pag;	///< Singleton pattern here to enable instance of SVFIR can only be created once.
     static std::string pagReadFromTxt;
@@ -351,6 +352,15 @@ public:
     inline const CallSiteSet& getCallSiteSet() const
     {
         return callSiteSet;
+    }
+    /// STORE_TOP call sites whose stores provably write no pointer (-blk-scanf-format)
+    inline void addNondetStoreWithoutPointer(const ICFGNode* cs)
+    {
+        nondetStoresWithoutPointer.insert(cs);
+    }
+    inline bool isNondetStoreWithoutPointer(const ICFGNode* cs) const
+    {
+        return nondetStoresWithoutPointer.count(cs) != 0;
     }
     /// Whether this SVFVar is a result operand a of phi node
     inline bool isPhiNode(const SVFVar* node) const
