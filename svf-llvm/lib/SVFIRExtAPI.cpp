@@ -34,7 +34,6 @@
 #include "Graphs/CallGraph.h"
 #include "Util/ExtAPI.h"
 #include "Util/Options.h"
-#include "llvm/Analysis/ValueTracking.h"
 
 using namespace std;
 using namespace SVF;
@@ -73,57 +72,49 @@ bool parseNondetArgStoreAtExtCall(const std::string& annotation, u32_t& firstArg
     return idx < annotation.size() && annotation[idx] == '+';
 }
 
-/// Whether a scanf-family call provably stores no pointer through its output
-/// arguments: its format is a constant string with no assigned %p conversion and
-/// no allocating form (%ms, %mc, %m[, and the old GNU %as). Anything unparsed
-/// counts as possibly storing a pointer.
-bool scanfFormatStoresNoPointer(const CallBase* cs, u32_t formatArg)
+/// Whether a scanf-family call can store an address: its format is not a constant
+/// string, or it has an assigned %p conversion or an allocating one (%ms, %mc, %m[,
+/// and the old GNU %as). Otherwise it stores only numbers and characters.
+bool scanfMayStorePointer(const CallBase* cs, u32_t formatArg)
 {
-    const Function* callee = cs->getCalledFunction();
-    if (!callee || callee->getName().find("scanf") == llvm::StringRef::npos || formatArg >= cs->arg_size())
-        return false;
-    llvm::StringRef fmt;
-    if (!llvm::getConstantStringInfo(cs->getArgOperand(formatArg), fmt))
-        return false;
+    const GlobalVariable* glob = SVFUtil::dyn_cast<GlobalVariable>(cs->getArgOperand(formatArg));
+    if (!glob || !glob->isConstant() || !glob->hasInitializer())
+        return true;
+    const ConstantDataArray* data = SVFUtil::dyn_cast<ConstantDataArray>(glob->getInitializer());
+    if (!data || !data->isCString())
+        return true;
+    const std::string fmt = data->getAsCString().str();
+    auto in = [](const std::string& set, char c)
+    {
+        return set.find(c) != std::string::npos;
+    };
     for (size_t i = 0; i < fmt.size(); ++i)
     {
         if (fmt[i] != '%')
             continue;
-        if (++i >= fmt.size())
-            return false;
-        if (fmt[i] == '%')
+        if (++i < fmt.size() && fmt[i] == '%')
             continue;
-        const bool suppressed = fmt[i] == '*';
-        if (suppressed)
+        const bool assigned = i >= fmt.size() || fmt[i] != '*';
+        if (!assigned)
             ++i;
-        while (i < fmt.size() && isdigit(static_cast<unsigned char>(fmt[i])))
+        while (i < fmt.size() && fmt[i] >= '0' && fmt[i] <= '9')
             ++i;
         bool allocating = false;
-        while (i < fmt.size() && llvm::StringRef("hljztLqm").contains(fmt[i]))
+        while (i < fmt.size() && in("hljztLqm", fmt[i]))
             allocating |= fmt[i++] == 'm';
-        if (i >= fmt.size())
-            return false;
-        const char conv = fmt[i];
-        if (!suppressed && (allocating || conv == 'p' ||
-                            (conv == 'a' && i + 1 < fmt.size() && llvm::StringRef("sS[").contains(fmt[i + 1]))))
-            return false;
-        if (conv == '[')
+        if (i >= fmt.size() || !in("diouxXaAeEfFgGsScCnp[", fmt[i]))
+            return true;
+        if (assigned && (allocating || fmt[i] == 'p' || (fmt[i] == 'a' && i + 1 < fmt.size() && in("sS[", fmt[i + 1]))))
+            return true;
+        if (fmt[i] == '[')
         {
-            ++i;
-            if (i < fmt.size() && fmt[i] == '^')
-                ++i;
-            if (i < fmt.size() && fmt[i] == ']')
-                ++i;
-            while (i < fmt.size() && fmt[i] != ']')
-                ++i;
-            if (i >= fmt.size())
-                return false;
-            continue;
+            i += (i + 1 < fmt.size() && fmt[i + 1] == '^') ? 2 : 1;
+            i = fmt.find(']', i + 1);
+            if (i == std::string::npos)
+                return true;
         }
-        if (!llvm::StringRef("diouxXaAeEfFgGsScCnp").contains(conv))
-            return false;
     }
-    return true;
+    return false;
 }
 
 bool hasNondetArgStoreAtExtCall(const CallICFGNode* callICFGNode)
@@ -374,6 +365,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
 void SVFIRBuilder::handleNondetArgStoreAtExtCall(const CallBase* cs, const CallICFGNode* callICFGNode)
 {
     Set<u32_t> storeTopArgs;
+    u32_t formatArg = 0;
     const FunObjVar* extFun = callICFGNode->getCalledFunction();
     if (extFun)
     {
@@ -388,11 +380,21 @@ void SVFIRBuilder::handleNondetArgStoreAtExtCall(const CallBase* cs, const CallI
 
             for (u32_t argIdx = firstArg; argIdx < cs->arg_size(); ++argIdx)
                 storeTopArgs.insert(argIdx);
-            // The format string is the argument just before the first output argument.
-            if (Options::BlkScanfFormat() && firstArg > 0 &&
-                    scanfFormatStoresNoPointer(cs, firstArg - 1))
-                pag->addNondetStoreWithoutPointer(callICFGNode);
+            // The format string is the argument just before the outputs.
+            if (firstArg > 0)
+                formatArg = firstArg - 1;
         }
+    }
+
+    // BlkPtr is an unknown number for AE and, under -blk, an unknown address for
+    // Andersen. When the format cannot store an address, pass BlkPtr through a
+    // non-pointer variable: AE still reads top, and the stores are not pointer
+    // edges, so Andersen does not write the black hole into the outputs.
+    NodeID src = pag->getBlkPtr();
+    if (extFun && extFun->getName().find("scanf") != std::string::npos && !scanfMayStorePointer(cs, formatArg))
+    {
+        src = pag->addValNode(NodeIDAllocator::get()->allocateValueId(), SVFType::getSVFInt8Type(), callICFGNode);
+        addCopyEdge(pag->getBlkPtr(), src, CopyStmt::COPYVAL);
     }
 
     for (u32_t argIdx : storeTopArgs)
@@ -403,7 +405,6 @@ void SVFIRBuilder::handleNondetArgStoreAtExtCall(const CallBase* cs, const CallI
 
         const Type* storedType =
             LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->inferObjType(arg);
-        NodeID src = pag->getBlkPtr();
         NodeID dst = getValueNode(arg);
         if (NodeID fieldZero = getDirectAccessFieldZeroValVar(arg, storedType))
             dst = fieldZero;
