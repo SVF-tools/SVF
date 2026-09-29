@@ -310,8 +310,10 @@ std::string SVFUtil::getCurrentSOPath()
     {
         GetModuleFileNameA(hm, path, sizeof(path));
         std::string s(path);
-        for (size_t i = 0; i < s.length(); ++i) {
-            if (s[i] == '\\') {
+        for (size_t i = 0; i < s.length(); ++i)
+        {
+            if (s[i] == '\\')
+            {
                 s[i] = '/';
             }
         }

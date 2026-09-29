@@ -56,8 +56,8 @@ double SVFStat::getClk(bool mark)
     if (Options::ClockType() == ClockType::Wall)
     {
         return std::chrono::duration<double, std::milli>(
-            std::chrono::steady_clock::now().time_since_epoch()
-        ).count();
+                   std::chrono::steady_clock::now().time_since_epoch()
+               ).count();
     }
     else if (Options::ClockType() == ClockType::CPU)
     {
