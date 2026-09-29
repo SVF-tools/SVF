@@ -64,15 +64,20 @@ fi
 
 Build="${PTAOBJTY}-build"
 
-# Add LLVM & Z3 to $PATH and $LD_LIBRARY_PATH (prepend so that selected instances will be used first)
-export PATH=$LLVM_DIR/bin:$Z3_DIR/bin:$PATH
-export LD_LIBRARY_PATH=$LLVM_DIR/lib:$Z3_DIR/bin:$LD_LIBRARY_PATH
-export DYLD_LIBRARY_PATH=$LLVM_DIR/lib:$Z3_DIR/bin:$DYLD_LIBRARY_PATH
+if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* ]]; then
+    # On Windows, DLLs must be in the PATH (LD_LIBRARY_PATH is ignored)
+    export PATH=$LLVM_DIR/bin:$Z3_DIR/bin:$SVF_DIR/$Build/bin:$PATH
+else
+    # Add LLVM & Z3 to $PATH and $LD_LIBRARY_PATH (prepend so that selected instances will be used first)
+    export PATH=$LLVM_DIR/bin:$Z3_DIR/bin:$PATH
+    export LD_LIBRARY_PATH=$LLVM_DIR/lib:$Z3_DIR/bin:$LD_LIBRARY_PATH
+    export DYLD_LIBRARY_PATH=$LLVM_DIR/lib:$Z3_DIR/bin:$DYLD_LIBRARY_PATH
 
-# Add compiled SVF binaries dir to $PATH
-export PATH=$SVF_DIR/$Build/bin:$PATH
+    # Add compiled SVF binaries dir to $PATH
+    export PATH=$SVF_DIR/$Build/bin:$PATH
 
-# Add compiled library directories to $LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=$SVF_DIR/$Build/svf:$SVF_DIR/$Build/svf-llvm:$LD_LIBRARY_PATH
+    # Add compiled library directories to $LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=$SVF_DIR/$Build/svf:$SVF_DIR/$Build/svf-llvm:$LD_LIBRARY_PATH
+fi
 
 echo "Added SVF, LLVM, and Z3 to each of \$PATH, \$LD_LIBRARY_PATH, and \$DYLD_LIBRARY_PATH."

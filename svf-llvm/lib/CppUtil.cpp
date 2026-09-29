@@ -35,7 +35,7 @@
 #include "SVF-LLVM/LLVMModule.h"
 #include "SVF-LLVM/ObjTypeInference.h"
 
-#include <cxxabi.h> // for demangling
+#include "llvm/Demangle/Demangle.h"
 
 using namespace SVF;
 
@@ -197,16 +197,14 @@ struct cppUtil::DemangledName cppUtil::demangle(const std::string& name)
     struct cppUtil::DemangledName dname;
     dname.isThunkFunc = false;
 
-    s32_t status;
-    char* realname = abi::__cxa_demangle(name.c_str(), 0, 0, &status);
-    if (realname == nullptr)
+    std::string realnameStr = llvm::demangle(name);
+    if (realnameStr == name)
     {
         dname.className = "";
         dname.funcName = "";
     }
     else
     {
-        std::string realnameStr = std::string(realname);
         std::string beforeParenthesis = getBeforeParenthesis(realnameStr);
         if (beforeParenthesis.find("::") == std::string::npos ||
                 isOperOverload(beforeParenthesis))
@@ -229,7 +227,6 @@ struct cppUtil::DemangledName cppUtil::demangle(const std::string& name)
                 dname.funcName = beforeParenthesis.substr(colon + 2);
             }
         }
-        std::free(realname);
     }
 
     handleThunkFunction(dname);
@@ -266,16 +263,9 @@ Set<std::string> cppUtil::getClsNamesInBrackets(const std::string& name)
         }
     };
 
-    s32_t status;
-    char* realname = abi::__cxa_demangle(name.c_str(), 0, 0, &status);
-    if (realname == nullptr)
+    std::string realnameStr = llvm::demangle(name);
+    if (realnameStr != name)
     {
-        // do nothing
-    }
-    else
-    {
-        std::string realnameStr = std::string(realname);
-
         // Find the start and end of the parameter list
         size_t start = realnameStr.find('(');
         size_t end = realnameStr.find(')');
@@ -296,7 +286,6 @@ Set<std::string> cppUtil::getClsNamesInBrackets(const std::string& name)
             removePointerAndReference(param);
             res.insert(param);
         }
-        std::free(realname);
     }
     return res;
 }
@@ -305,17 +294,14 @@ std::string cppUtil::getClassNameFromVtblObj(const std::string& vtblName)
 {
     std::string className = "";
 
-    s32_t status;
-    char* realname = abi::__cxa_demangle(vtblName.c_str(), 0, 0, &status);
-    if (realname != nullptr)
+    std::string realnameStr = llvm::demangle(vtblName);
+    if (realnameStr != vtblName)
     {
-        std::string realnameStr = std::string(realname);
         if (realnameStr.compare(0, vtblLabelAfterDemangle.size(),
                                 vtblLabelAfterDemangle) == 0)
         {
             className = realnameStr.substr(vtblLabelAfterDemangle.size());
         }
-        std::free(realname);
     }
     return className;
 }

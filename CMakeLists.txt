@@ -1,5 +1,17 @@
 cmake_minimum_required(VERSION 3.23)
 
+# Reset invalid cached compiler paths so project() can probe available compilers.
+if(DEFINED CMAKE_C_COMPILER)
+  if(IS_ABSOLUTE "${CMAKE_C_COMPILER}" AND NOT EXISTS "${CMAKE_C_COMPILER}")
+    unset(CMAKE_C_COMPILER CACHE)
+  endif()
+endif()
+if(DEFINED CMAKE_CXX_COMPILER)
+  if(IS_ABSOLUTE "${CMAKE_CXX_COMPILER}" AND NOT EXISTS "${CMAKE_CXX_COMPILER}")
+    unset(CMAKE_CXX_COMPILER CACHE)
+  endif()
+endif()
+
 # =================================================================================
 # SVF project definition
 # =================================================================================
@@ -14,6 +26,14 @@ project(
 
 # Export compile commands for clangd & IDE support
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+# Configure MSVC runtime library (default to static to match LLVM SDK, but allow override)
+if(MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
+  if(NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+  endif()
+endif()
 
 # Set SVF's default C/C++ standards (C11/C++17)
 set(CMAKE_C_STANDARD 11)
@@ -51,11 +71,12 @@ if(WIN32
    OR MSYS
    OR CYGWIN
 )
-  file(
-    COPY ${SVF_BINARY_DIR}/compile_commands.json
-    DESTINATION ${CMAKE_CURRENT_LIST_DIR}
-    RENAME compile_commands.json
-  )
+  if(EXISTS ${SVF_BINARY_DIR}/compile_commands.json)
+    file(
+      COPY ${SVF_BINARY_DIR}/compile_commands.json
+      DESTINATION ${CMAKE_CURRENT_LIST_DIR}
+    )
+  endif()
 else()
   file(CREATE_LINK ${SVF_BINARY_DIR}/compile_commands.json compile_commands.json COPY_ON_ERROR SYMBOLIC)
 endif()
@@ -268,6 +289,13 @@ target_link_libraries(SvfFlags INTERFACE ${Z3_LIBRARIES})
 install(TARGETS SvfFlags EXPORT SVFTargets)
 
 # =================================================================================
+# SVF core definitions
+# =================================================================================
+
+add_subdirectory(svf)
+add_subdirectory(svf-llvm)
+
+# =================================================================================
 # SVF test suite
 # =================================================================================
 
@@ -279,19 +307,16 @@ if(EXISTS "${SVF_SOURCE_DIR}/Test-Suite")
 endif()
 
 # =================================================================================
-# SVF core definitions
-# =================================================================================
-
-add_subdirectory(svf)
-add_subdirectory(svf-llvm)
-
-# =================================================================================
 # SVF build configuration handling (post linking LLVM)
 # =================================================================================
 
 # Expose the required ABI flags (e.g., whether RTTI was disabled) in the build & install trees
-target_compile_options(SvfFlags INTERFACE $<$<NOT:$<BOOL:${SVF_ENABLE_RTTI}>>:-fno-rtti>)
-target_link_options(SvfFlags INTERFACE $<$<NOT:$<BOOL:${SVF_ENABLE_RTTI}>>:-fno-rtti>)
+if(MSVC)
+  target_compile_options(SvfFlags INTERFACE $<$<NOT:$<BOOL:${SVF_ENABLE_RTTI}>>:/GR->)
+else()
+  target_compile_options(SvfFlags INTERFACE $<$<NOT:$<BOOL:${SVF_ENABLE_RTTI}>>:-fno-rtti>)
+  target_link_options(SvfFlags INTERFACE $<$<NOT:$<BOOL:${SVF_ENABLE_RTTI}>>:-fno-rtti>)
+endif()
 
 # Expose build/link flags not required for users of SVF only in the build tree
 target_compile_options(
@@ -314,9 +339,9 @@ target_link_options(
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wall>>
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Werror>>
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wno-deprecated-declarations>>
-  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_USE_LLD}>:-fuse-ld=lld>>
-  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-rdynamic>>
-  INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-Wl,--export-dynamic>>
+  INTERFACE $<BUILD_INTERFACE:$<$<AND:$<BOOL:${SVF_USE_LLD}>,$<NOT:$<PLATFORM_ID:Windows>>>:-fuse-ld=lld>>
+  INTERFACE $<BUILD_INTERFACE:$<$<AND:$<BOOL:${SVF_EXPORT_DYNAMIC}>,$<NOT:$<PLATFORM_ID:Windows>>>:-rdynamic>>
+  INTERFACE $<BUILD_INTERFACE:$<$<AND:$<BOOL:${SVF_EXPORT_DYNAMIC}>,$<NOT:$<PLATFORM_ID:Windows>>>:-Wl,--export-dynamic>>
   INTERFACE $<BUILD_INTERFACE:$<$<BOOL:${SVF_ENABLE_ASSERTIONS}>:-UNDEBUG>>
   INTERFACE $<BUILD_INTERFACE:$<$<NOT:$<BOOL:${SVF_ENABLE_EXCEPTIONS}>>:-fno-exceptions>>
   INTERFACE $<BUILD_INTERFACE:$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-fprofile-arcs>>
@@ -330,6 +355,7 @@ target_link_options(
 # =================================================================================
 
 # (1) Generate config.h into <build_tree>/include/SVF/Util; (2) Install it under <install_prefix>/include/SVF/Util
+set(SVF_BUILD_DIR "${SVF_BINARY_DIR}")
 configure_file(${SVF_SOURCE_DIR}/cmake/SVFConfigHdr.cmake.in ${SVF_BINARY_DIR}/include/Util/config.h @ONLY)
 install(FILES ${SVF_BINARY_DIR}/include/Util/config.h DESTINATION ${SVF_INSTALL_INCLUDEDIR}/Util)
 
