@@ -76,6 +76,7 @@ bool parseNondetArgStoreAtExtCall(const std::string& annotation, u32_t& firstArg
 /// Keep the pointer model if the format is unknown or could write a pointer.
 bool scanfMayStorePointer(const CallBase* cs, u32_t formatArg)
 {
+    // Unknown or writable formats may contain pointer conversions.
     const GlobalVariable* glob = SVFUtil::dyn_cast<GlobalVariable>(cs->getArgOperand(formatArg));
     if (!glob || !glob->isConstant() || !glob->hasInitializer())
         return true;
@@ -88,6 +89,9 @@ bool scanfMayStorePointer(const CallBase* cs, u32_t formatArg)
     {
         return set.find(c) != std::string::npos;
     };
+    // Consume one conversion at a time. For "%*5d %lf %p", %*5d suppresses
+    // assignment, %lf writes a double, and %p makes us return true.
+    // With just "%*5d %lf", no conversion writes a pointer, so we return false.
     while (!format.empty())
     {
         const size_t percent = format.find('%');
@@ -97,7 +101,7 @@ bool scanfMayStorePointer(const CallBase* cs, u32_t formatArg)
         if (format.consume_front("%")) // %% is a literal percent sign.
             continue;
 
-        // A conversion has an optional '*', a width, length modifiers, and a type.
+        // Split %*5ld into suppression (*), width (5), modifier (l), and type (d).
         const bool suppressed = format.consume_front("*");
         format = format.ltrim("0123456789");
         const auto modifiers = format.take_front(format.find_first_not_of("hljztLqm"));
@@ -106,6 +110,7 @@ bool scanfMayStorePointer(const CallBase* cs, u32_t formatArg)
             return true;
         const char conversion = format.front();
         format = format.drop_front();
+        // Keep the pointer model when a conversion is not recognized.
         if (!in("diouxXaAeEfFgGsScCnp[", conversion))
             return true;
 
@@ -117,6 +122,7 @@ bool scanfMayStorePointer(const CallBase* cs, u32_t formatArg)
 
         if (conversion == '[')
         {
+            // Skip the whole character set: %[%p] matches '%' or 'p', not a pointer.
             // In %[^]p], the first ']' is part of the character set.
             format.consume_front("^");
             format.consume_front("]");
