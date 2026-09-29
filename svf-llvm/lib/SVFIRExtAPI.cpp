@@ -72,9 +72,8 @@ bool parseNondetArgStoreAtExtCall(const std::string& annotation, u32_t& firstArg
     return idx < annotation.size() && annotation[idx] == '+';
 }
 
-/// Whether a scanf-family call can store an address: its format is not a constant
-/// string, or it has an assigned %p conversion or an allocating one (%ms, %mc, %m[,
-/// and the old GNU %as). Otherwise it stores only numbers and characters.
+/// scanf("%d", &n) writes a number, while scanf("%p", &p) writes a pointer.
+/// Keep the pointer model if the format is unknown or could write a pointer.
 bool scanfMayStorePointer(const CallBase* cs, u32_t formatArg)
 {
     const GlobalVariable* glob = SVFUtil::dyn_cast<GlobalVariable>(cs->getArgOperand(formatArg));
@@ -83,35 +82,48 @@ bool scanfMayStorePointer(const CallBase* cs, u32_t formatArg)
     const ConstantDataArray* data = SVFUtil::dyn_cast<ConstantDataArray>(glob->getInitializer());
     if (!data || !data->isCString())
         return true;
-    const std::string fmt = data->getAsCString().str();
+
+    auto format = data->getAsCString();
     auto in = [](const std::string& set, char c)
     {
         return set.find(c) != std::string::npos;
     };
-    for (size_t i = 0; i < fmt.size(); ++i)
+    while (!format.empty())
     {
-        if (fmt[i] != '%')
+        const size_t percent = format.find('%');
+        if (percent == format.npos)
+            break;
+        format = format.drop_front(percent + 1);
+        if (format.consume_front("%")) // %% is a literal percent sign.
             continue;
-        if (++i < fmt.size() && fmt[i] == '%')
-            continue;
-        const bool assigned = i >= fmt.size() || fmt[i] != '*';
-        if (!assigned)
-            ++i;
-        while (i < fmt.size() && fmt[i] >= '0' && fmt[i] <= '9')
-            ++i;
-        bool allocating = false;
-        while (i < fmt.size() && in("hljztLqm", fmt[i]))
-            allocating |= fmt[i++] == 'm';
-        if (i >= fmt.size() || !in("diouxXaAeEfFgGsScCnp[", fmt[i]))
+
+        // A conversion has an optional '*', a width, length modifiers, and a type.
+        const bool suppressed = format.consume_front("*");
+        format = format.ltrim("0123456789");
+        const auto modifiers = format.take_front(format.find_first_not_of("hljztLqm"));
+        format = format.drop_front(modifiers.size());
+        if (format.empty())
             return true;
-        if (assigned && (allocating || fmt[i] == 'p' || (fmt[i] == 'a' && i + 1 < fmt.size() && in("sS[", fmt[i + 1]))))
+        const char conversion = format.front();
+        format = format.drop_front();
+        if (!in("diouxXaAeEfFgGsScCnp[", conversion))
             return true;
-        if (fmt[i] == '[')
+
+        // %m and the old GNU %as/%a[ forms allocate a string and store its address.
+        const bool allocatesString = modifiers.contains('m') ||
+                                     (conversion == 'a' && !format.empty() && in("sS[", format.front()));
+        if (!suppressed && (conversion == 'p' || allocatesString))
+            return true;
+
+        if (conversion == '[')
         {
-            i += (i + 1 < fmt.size() && fmt[i + 1] == '^') ? 2 : 1;
-            i = fmt.find(']', i + 1);
-            if (i == std::string::npos)
+            // In %[^]p], the first ']' is part of the character set.
+            format.consume_front("^");
+            format.consume_front("]");
+            const size_t end = format.find(']');
+            if (end == format.npos)
                 return true;
+            format = format.drop_front(end + 1);
         }
     }
     return false;
@@ -386,10 +398,9 @@ void SVFIRBuilder::handleNondetArgStoreAtExtCall(const CallBase* cs, const CallI
         }
     }
 
-    // BlkPtr is an unknown number for AE and, under -blk, an unknown address for
-    // Andersen. When the format cannot store an address, pass BlkPtr through a
-    // non-pointer variable: AE still reads top, and the stores are not pointer
-    // edges, so Andersen does not write the black hole into the outputs.
+    // scanf("%d", &obj.n) writes an unknown number. Use a non-pointer variable
+    // so pointer analysis does not add a black-hole pointer to obj. Copy BlkPtr
+    // into this variable so abstract execution still sees an unknown value.
     NodeID src = pag->getBlkPtr();
     if (extFun && extFun->getName().find("scanf") != std::string::npos && !scanfMayStorePointer(cs, formatArg))
     {
