@@ -416,7 +416,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                         null_ptr_num = 1;
                                         while (i+null_ptr_num < vtbl->getNumOperands())
                                         {
-                                            if (SVFUtil::isa< ConstantPointerNull>( vtbl->getOperand(i+null_ptr_num)))
+                                            if (SVFUtil::isa<ConstantPointerNull>(vtbl->getOperand(i+null_ptr_num)))
                                                 null_ptr_num++;
                                             else
                                                 break;
