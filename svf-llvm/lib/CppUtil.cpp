@@ -194,44 +194,7 @@ static void handleThunkFunction(cppUtil::DemangledName& dname)
 
 struct cppUtil::DemangledName cppUtil::demangle(const std::string& name)
 {
-    struct cppUtil::DemangledName dname;
-    dname.isThunkFunc = false;
-
-    std::string realnameStr = llvm::demangle(name);
-    if (realnameStr == name)
-    {
-        dname.className = "";
-        dname.funcName = "";
-    }
-    else
-    {
-        std::string beforeParenthesis = getBeforeParenthesis(realnameStr);
-        if (beforeParenthesis.find("::") == std::string::npos ||
-                isOperOverload(beforeParenthesis))
-        {
-            dname.className = "";
-            dname.funcName = "";
-        }
-        else
-        {
-            std::string beforeBracket = getBeforeBrackets(beforeParenthesis);
-            size_t colon = beforeBracket.rfind("::");
-            if (colon == std::string::npos)
-            {
-                dname.className = "";
-                dname.funcName = "";
-            }
-            else
-            {
-                dname.className = beforeParenthesis.substr(0, colon);
-                dname.funcName = beforeParenthesis.substr(colon + 2);
-            }
-        }
-    }
-
-    handleThunkFunction(dname);
-
-    return dname;
+    return getCXXABI()->demangle(name);
 }
 
 // Extract class name in parameters
@@ -263,8 +226,8 @@ Set<std::string> cppUtil::getClsNamesInBrackets(const std::string& name)
         }
     };
 
-    std::string realnameStr = llvm::demangle(name);
-    if (realnameStr != name)
+    const std::string realnameStr = llvm::demangle(name);
+    if (realnameStr != name && !realnameStr.empty())
     {
         // Find the start and end of the parameter list
         size_t start = realnameStr.find('(');
@@ -292,18 +255,7 @@ Set<std::string> cppUtil::getClsNamesInBrackets(const std::string& name)
 
 std::string cppUtil::getClassNameFromVtblObj(const std::string& vtblName)
 {
-    std::string className = "";
-
-    std::string realnameStr = llvm::demangle(vtblName);
-    if (realnameStr != vtblName)
-    {
-        if (realnameStr.compare(0, vtblLabelAfterDemangle.size(),
-                                vtblLabelAfterDemangle) == 0)
-        {
-            className = realnameStr.substr(vtblLabelAfterDemangle.size());
-        }
-    }
-    return className;
+    return getCXXABI()->extractClassName(vtblName);
 }
 
 const ConstantStruct *cppUtil::getVtblStruct(const GlobalValue *vtbl)
@@ -324,8 +276,7 @@ bool cppUtil::isValVtbl(const Value* val)
     if (!SVFUtil::isa<GlobalVariable>(val))
         return false;
     std::string valName = val->getName().str();
-    return valName.compare(0, vtblLabelBeforeDemangle.size(),
-                           vtblLabelBeforeDemangle) == 0;
+    return getCXXABI(val)->isVtable(valName);
 }
 
 /*
@@ -998,3 +949,279 @@ const Type *cppUtil::cppClsNameToType(const std::string &className)
                           clsName + className);
     return classTy ? classTy : LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->ptrType();
 }
+
+namespace SVF
+{
+namespace cppUtil
+{
+
+CXXABI* getCXXABI(const Module* M)
+{
+    if (M)
+    {
+        llvm::Triple triple(M->getTargetTriple());
+        if (triple.isKnownWindowsMSVCEnvironment() ||
+            triple.isOSBinFormatCOFF())
+        {
+            static MSVCABI msvcabi;
+            return &msvcabi;
+        }
+    }
+    static ItaniumABI itaniumabi;
+    return &itaniumabi;
+}
+
+CXXABI* getCXXABI(const Value* val)
+{
+    if (val)
+    {
+        if (const GlobalValue* GV = SVFUtil::dyn_cast<GlobalValue>(val))
+        {
+            return getCXXABI(GV->getParent());
+        }
+        if (const Instruction* I = SVFUtil::dyn_cast<Instruction>(val))
+        {
+            return getCXXABI(I->getFunction()->getParent());
+        }
+        if (const Argument* Arg = SVFUtil::dyn_cast<Argument>(val))
+        {
+            return getCXXABI(Arg->getParent()->getParent());
+        }
+    }
+    return getCXXABI();
+}
+
+CXXABI* getCXXABI()
+{
+    if (LLVMModuleSet::getLLVMModuleSet() &&
+        !LLVMModuleSet::getLLVMModuleSet()->empty())
+    {
+        return getCXXABI(
+            LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule());
+    }
+    static ItaniumABI itaniumabi;
+    return &itaniumabi;
+}
+
+bool ItaniumABI::isVtable(const std::string& name)
+{
+    return name.compare(0, vtblLabelBeforeDemangle.size(),
+                        vtblLabelBeforeDemangle) == 0;
+}
+
+bool ItaniumABI::isTypeInfo(const std::string& name)
+{
+    return name.compare(0, ztilabel.size(), ztilabel) == 0;
+}
+
+bool ItaniumABI::isConstructor(const std::string& name)
+{
+    if (name.compare(0, vfunPreLabel.size(), vfunPreLabel) != 0)
+    {
+        return false;
+    }
+    cppUtil::DemangledName dname = demangle(name);
+    if (dname.className.size() == 0)
+    {
+        return false;
+    }
+    stripBracketsAndNamespace(dname);
+    return dname.className.size() > 0 && dname.className == dname.funcName;
+}
+
+bool ItaniumABI::isDestructor(const std::string& name)
+{
+    if (name.compare(0, vfunPreLabel.size(), vfunPreLabel) != 0)
+    {
+        return false;
+    }
+    cppUtil::DemangledName dname = demangle(name);
+    if (dname.className.size() == 0)
+    {
+        return false;
+    }
+    stripBracketsAndNamespace(dname);
+    return (dname.className.size() > 0 && dname.funcName.size() > 0 &&
+            dname.className.size() + 1 == dname.funcName.size() &&
+            dname.funcName.compare(0, 1, "~") == 0 &&
+            dname.className.compare(dname.funcName.substr(1)) == 0);
+}
+
+std::string ItaniumABI::extractClassName(const std::string& name)
+{
+    std::string className = "";
+    std::string realnameStr = llvm::demangle(name);
+    if (realnameStr != name)
+    {
+        if (realnameStr.compare(0, vtblLabelAfterDemangle.size(),
+                                vtblLabelAfterDemangle) == 0)
+        {
+            className = realnameStr.substr(vtblLabelAfterDemangle.size());
+        }
+    }
+    return className;
+}
+
+DemangledName ItaniumABI::demangle(const std::string& name)
+{
+    DemangledName dname;
+    dname.isThunkFunc = false;
+
+    std::string realnameStr = llvm::demangle(name);
+    if (realnameStr == name)
+    {
+        dname.className = "";
+        dname.funcName = "";
+    }
+    else
+    {
+        std::string beforeParenthesis = getBeforeParenthesis(realnameStr);
+        if (beforeParenthesis.find("::") == std::string::npos ||
+            isOperOverload(beforeParenthesis))
+        {
+            dname.className = "";
+            dname.funcName = "";
+        }
+        else
+        {
+            std::string beforeBracket = getBeforeBrackets(beforeParenthesis);
+            size_t colon = beforeBracket.rfind("::");
+            if (colon == std::string::npos)
+            {
+                dname.className = "";
+                dname.funcName = "";
+            }
+            else
+            {
+                dname.className = beforeParenthesis.substr(0, colon);
+                dname.funcName = beforeParenthesis.substr(colon + 2);
+            }
+        }
+    }
+
+    handleThunkFunction(dname);
+
+    return dname;
+}
+
+bool MSVCABI::isVtable(const std::string& name)
+{
+    return name.compare(0, 4, "??_7") == 0 || name.compare(0, 4, "??_8") == 0;
+}
+
+bool MSVCABI::isTypeInfo(const std::string& name)
+{
+    return name.compare(0, 4, "??_R") == 0;
+}
+
+bool MSVCABI::isConstructor(const std::string& name)
+{
+    return name.compare(0, 3, "??0") == 0;
+}
+
+bool MSVCABI::isDestructor(const std::string& name)
+{
+    return name.compare(0, 3, "??1") == 0;
+}
+
+std::string MSVCABI::extractClassName(const std::string& name)
+{
+    std::string className = "";
+    std::string realnameStr = llvm::demangle(name);
+    size_t pos = realnameStr.rfind("::`vftable'");
+    if (pos == std::string::npos)
+    {
+        pos = realnameStr.rfind("::`vbtable'");
+    }
+    if (pos != std::string::npos)
+    {
+        className = realnameStr.substr(0, pos);
+        if (className.compare(0, 6, "const ") == 0)
+        {
+            className = className.substr(6);
+        }
+    }
+    return className;
+}
+
+DemangledName MSVCABI::demangle(const std::string& name)
+{
+    DemangledName dname;
+    dname.isThunkFunc = false;
+
+    std::string realnameStr = llvm::demangle(name);
+    if (realnameStr == name)
+    {
+        dname.className = "";
+        dname.funcName = "";
+        return dname;
+    }
+
+    if (realnameStr.find("[thunk]") != std::string::npos ||
+        realnameStr.find("`vcall'") != std::string::npos ||
+        realnameStr.find("`adjustor'") != std::string::npos)
+    {
+        dname.isThunkFunc = true;
+    }
+
+    std::string beforeParenthesis = getBeforeParenthesis(realnameStr);
+    if (beforeParenthesis.find("::") == std::string::npos ||
+        isOperOverload(beforeParenthesis))
+    {
+        dname.className = "";
+        dname.funcName = "";
+    }
+    else
+    {
+        std::string beforeBracket = getBeforeBrackets(beforeParenthesis);
+        size_t colon = beforeBracket.rfind("::");
+        if (colon == std::string::npos)
+        {
+            dname.className = "";
+            dname.funcName = "";
+        }
+        else
+        {
+            std::string classNamePart = beforeParenthesis.substr(0, colon);
+            dname.funcName = beforeParenthesis.substr(colon + 2);
+
+            int i = classNamePart.size() - 1;
+            int bracketDepth = 0;
+            while (i >= 0)
+            {
+                char c = classNamePart[i];
+                if (c == '>')
+                {
+                    bracketDepth++;
+                }
+                else if (c == '<')
+                {
+                    bracketDepth--;
+                }
+
+                if (bracketDepth > 0)
+                {
+                    i--;
+                }
+                else
+                {
+                    if (std::isalnum(c) || c == '_' || c == ':' || c == '<' ||
+                        c == '>')
+                    {
+                        i--;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+            dname.className = classNamePart.substr(i + 1);
+        }
+    }
+
+    return dname;
+}
+
+} // namespace cppUtil
+} // namespace SVF
