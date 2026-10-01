@@ -137,8 +137,8 @@ public:
     /// Read a top-level variable's abstract value.  Dense base does a
     /// direct trace lookup; sparse subclasses override with their own
     /// resolution chain (def-site walk, call-result fallback, etc.).
-    /// All three overloads are virtual so full-sparse can route ObjVar
-    /// reads through the SVFG.
+    /// The overloads are virtual so sparse variants can choose where values
+    /// are placed and how reaching definitions are retrieved.
     virtual const AbstractValue& getAbsValue(const ValVar* var, const ICFGNode* node);
     virtual const AbstractValue& getAbsValue(const ObjVar* var, const ICFGNode* node);
     virtual const AbstractValue& getAbsValue(const SVFVar* var, const ICFGNode* node);
@@ -178,7 +178,8 @@ public:
     IntervalValue getGepByteOffset(const GepStmt* gep);
     AddressValue getGepObjAddrs(const ValVar* pointer, IntervalValue offset);
 
-    /// Virtual so full-sparse can layer the GepObj overlay on top.
+    /// Virtual so sparse variants can maintain definition-site state around
+    /// memory transfers.
     virtual AbstractValue loadValue(const ValVar* pointer,
                                     const ICFGNode* node);
     virtual void storeValue(const ValVar* pointer, const AbstractValue& val,
@@ -224,12 +225,18 @@ protected:
                                   const ICFGCycleWTO* cycle);
 
 protected:
-    /// Pull-based state merge: read abstractTrace[pred] for each predecessor,
-    /// apply branch refinement for conditional IntraCFGEdges, and join into
-    /// abstractTrace[node]. Returns true if at least one predecessor had state.
-    /// Virtual so full-sparse can layer per-MRSVFGNode obj pulls on top of the
-    /// base ICFG-edge merge.
+    /// Merge abstractTrace[pred] for each predecessor after applying edge-local
+    /// branch refinement, then write the result to abstractTrace[node]. Returns
+    /// true if at least one predecessor had state. Sparse variants may merge
+    /// additional graph-selected values after this ICFG merge.
     virtual bool mergeStatesFromPredecessors(const ICFGNode* node);
+
+    /// Send values produced at node through an analysis-specific graph. Dense
+    /// and semi-sparse modes keep the default no-op. FullSparse scans outgoing
+    /// SVFG routes and sends the affected base and sub-object values.
+    virtual void propagateOutgoingObjValues(const ICFGNode*)
+    {
+    }
 
     /// Returns true if the branch edge is reachable under the current state.
     /// Pure query: does not update `as` or branch refinement traces.

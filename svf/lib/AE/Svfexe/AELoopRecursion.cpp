@@ -83,13 +83,8 @@ void AbstractInterpretation::skipRecursionWithTop(const CallICFGNode *callNode)
                     const SVFVar* rhsVar = store->getRHSVar();
                     if (!rhsVar->isPointer() && !rhsVar->isConstDataOrAggDataButNotNullPtr())
                     {
-                        const AbstractValue& addrs = getAbsValue(store->getLHSVar(), callNode);
-                        if (addrs.isAddr())
-                        {
-                            AbstractState& as = getAbsState(callNode);
-                            for (const auto& addr : addrs.getAddrs())
-                                as.store(addr, IntervalValue::top());
-                        }
+                        storeValue(store->getLHSVar(), IntervalValue::top(),
+                                   callNode);
                     }
                 }
             }

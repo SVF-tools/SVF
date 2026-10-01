@@ -66,6 +66,11 @@ private:
      */
     AbsExtAPI(AbstractInterpretation* ae);
 
+    /// Resolve an abstract address to its stable ObjVar identity. The caller
+    /// then reads or defines that object through the existing AE accessors;
+    /// sparse execution has already made its reaching value available here.
+    const ObjVar* resolveObjVar(u32_t addr, const ICFGNode* node) const;
+
 public:
     /**
      * @brief Initializes the external function map.
