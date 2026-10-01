@@ -80,10 +80,16 @@ protected:
 
 /// Abstract Interpretation for `Options::AESparsity::Sparse` (full-sparse).
 ///
-/// In full-sparse mode both ValVars and ObjVars live at their SVFG
-/// def-sites; reads query the SVFG for the reaching-def site, writes
-/// happen at def-sites.  See `doc/plan-full-sparse.md` for the
-/// phase plan; Phase 1 routes ValVar and ObjVar reads through the SVFG.
+/// In full-sparse mode ValVars remain at their SSA def-sites. ObjVars are
+/// projected from an ICFG-node state into incoming Obj values, then joined
+/// into the destination ICFG-node state before its transfer executes. A
+/// transfer carries one base object and any of its precise GepObjVar
+/// sub-objects currently known to AE.
+///
+/// Running example:
+///   LLVM IR:  store i32 10, ptr %a9
+///   SVFG:     StoreVFGNode --indirect {a}--> LoadVFGNode
+///   AE:       State[store][a.9]=10 --{a.9:10}--> State[load]
 class FullSparseAbstractInterpretation : public SemiSparseAbstractInterpretation
 {
 public:
@@ -94,64 +100,116 @@ public:
     ~FullSparseAbstractInterpretation() override;
 
 protected:
-    /// Full-sparse does not merge normal value-flow state along ICFG
-    /// edges.  The ICFG join carries only side-channel state that is not
-    /// represented as MemorySSA def-use flow: GepObjVar field snapshots
-    /// and `_freedAddrs`.  Base/Dummy ObjVars are populated later by
-    /// pullObjValueFlows from SVFG indirect in-edges; ValVars stay at their
-    /// def-sites.
+    /// Do not copy ObjVars along ordinary ICFG edges. For `store a[9] = 10`,
+    /// the value reaches a later load through SVFG propagation rather than
+    /// by copying the whole store-node state through every intermediate node.
+    /// `_freedAddrs` is still copied because it has no SVFG representation.
     void joinStates(AbstractState& dst, const AbstractState& src) override;
 
-    /// After a store overwrites an ObjVar, clear any branch refinement
-    /// for that ObjVar at the store's node so stale branch constraints
-    /// don't propagate past the redefinition.
-    void storeValue(const ValVar* pointer, const AbstractValue& val,
-                    const ICFGNode* node) override;
+    /// Write an ObjVar into State[node] and discard any stale branch constraint
+    /// for that object. A precise GepObjVar write also propagates its values to
+    /// the current SVFG use sites of its base object. This supplements cases
+    /// such
+    /// as a dynamic `a[i][j]` load whose SVFG edge names only one
+    /// representative field of `a`.
+    void updateAbsValue(const ObjVar* var, const AbstractValue& val,
+                        const ICFGNode* node) override;
+    using SemiSparseAbstractInterpretation::updateAbsValue;
 
-    /// Thin wrapper: defer to base for ICFG-edge bookkeeping
-    /// (predecessor iteration, branch feasibility, joinStates,
-    /// updateAbsState, reachability return).  For reachable nodes,
-    /// additionally run pullObjValueFlows to populate trace[node] with obj
-    /// values from SVFG def-sites.
+    /// Prepare State[node] before its transfer. ICFG predecessors first carry
+    /// control-flow side state; incoming Obj values then add ObjVars. For
+    /// `%x = load i32, ptr %a9`, the load state receives `{a.9: 10}` before
+    /// evaluating `%x`.
     bool mergeStatesFromPredecessors(const ICFGNode* node) override;
 
-    /// Capture branch narrowings into refinementTrace[succ] instead of
-    /// writing them into the local `as`: in FullSparse `as` would be
-    /// discarded by joinStates (no-op for ObjVar), so we route the
-    /// narrowing to refinementTrace and let propagateAndApplyRefinement
-    /// bake it into trace at the end of mergeStatesFromPredecessors.
+    /// Scan outgoing indirect SVFG edges after node executes. This method
+    /// chooses each target and base object, then delegates the target update
+    /// to writeObjValuesToTarget. Precise GepObjVar writes use the same
+    /// operation for supplementary base-object routes.
+    void propagateOutgoingObjValues(const ICFGNode* node) override;
+
+    /// Republish the widened loop-head state. For `a[i] = i` in a loop, the
+    /// WTO state remains the fixpoint authority; propagation only transports
+    /// its latest base and sub-object values to body uses.
+    bool widenCycleState(const AbstractState& prev,
+                         const AbstractState& cur,
+                         const ICFGCycleWTO* cycle) override;
+
+    /// Republish a narrowed loop-head state when narrowing changes it. This
+    /// lets later body loads observe the narrowed `a[i]` values without making
+    /// propagated-value changes a second fixpoint condition.
+    bool narrowCycleState(const AbstractState& prev,
+                          const AbstractState& cur,
+                          const ICFGCycleWTO* cycle) override;
+
+    /// Capture branch narrowings into refinementTrace[succ]. For
+    /// `if (a[9] < 10)`, incoming Obj values first supply the value of a.9;
+    /// the conditional ICFG edge then records `a.9 < 10` for the true
+    /// successor. It cannot be written only to the temporary predecessor state
+    /// because FullSparse does not copy ObjVars along ordinary ICFG edges.
     void recordBranchRefinement(NodeID objId, const IntervalValue& narrowed,
                                 AbstractState& as, const ICFGNode* loadIcfg,
                                 const ICFGNode* succ) override;
 
 private:
-    /// SVFG-pull helper: walk each VFG node's indirect SVFG in-edges
-    /// and pull obj values from upstream def-site traces into
-    /// trace[node].  Multiple sources (e.g. mphi operands) JOIN.
-    void pullObjValueFlows(const ICFGNode* node);
+    /// Obj values transported between two ICFG-node states. A base-only map
+    /// is `{a: value}`; a map with sub-objects may be
+    /// `{a: value, a.3: value, a.9: value}`.
+    using ObjValueMap = Map<NodeID, AbstractValue>;
 
-    /// Return whether an indirect SVFG edge should be pulled into dst.
-    /// Besides branch-feasible ICFG reachability, this rejects paths where
-    /// another store to the same points-to object kills the edge's value.
-    bool isIndirectSVFGEdgeFeasible(const IndirectSVFGEdge* edge,
-                                    const VFGNode* dst);
+    /// Identifies replaceable Obj values by their producer and base object.
+    /// Re-executing the same loop node replaces `{source, a}` instead of
+    /// appending stale values; values from different sources still JOIN.
+    using ObjValueOrigin = std::pair<const ICFGNode*, NodeID>;
 
-    /// Return whether a branch-feasible ICFG path exists from src to dst.
-    /// Conditional edges are checked with a pure branch-feasibility query,
-    /// so path probing does not create branch-refinement side effects.
-    bool isICFGPathFeasible(const ICFGNode* src, const ICFGNode* dst);
+    /// Join all incoming Obj values addressed to node into State[node]. For
+    /// two incoming SVFG edges:
+    ///
+    ///   Store1(a.9 = 10) --indirect {a}--+
+    ///                                      +--> Load(a.9)
+    ///   Store2(a.9 = 20) --indirect {a}--+
+    ///
+    /// the incoming maps contain `{a.9:[10,10]}` from Store1 and
+    /// `{a.9:[20,20]}` from Store2. Before the load executes, this method sets
+    /// `State[load][a.9]` to their JOIN, `[10,20]`. It conservatively keeps both
+    /// values without an additional ICFG path or overwrite filter.
+    void mergeIncomingObjValues(const ICFGNode* node);
 
-    /// Return whether this intra edge is allowed by the current branch state.
-    bool isIntraEdgeBranchFeasible(const IntraCFGEdge* edge,
-                                   const ICFGNode* src);
+    /// Collect one base object and its sub-objects from State[source]. For
+    /// `a[9] = 10`, a source state containing `a.9`
+    /// produces `{a.9:10}`. Missing objects are omitted rather than inserted
+    /// as TOP. Base/sub-object membership is queried directly
+    /// from SVFIR rather than cached by AE.
+    ObjValueMap collectBaseObjValues(const ICFGNode* source,
+                                     NodeID baseObj);
 
-    /// Compose pred-inherited refinement into refinementTrace[node]
-    /// (single-pred linear copy / multi-pred intersect-JOIN; any pred
-    /// without refinement drops the inheritance), then MEET the final
-    /// refinementTrace[node] into trace[node]._addrToAbsVal so the
-    /// inherited base getAbsValue(ObjVar*, node) returns the narrowed
-    /// value directly — no read-time override or cache.  Called once
-    /// per merge as the last step.
+    /// Write or replace incoming Obj values after their route has selected a
+    /// source, target, and base object. Both native SVFG edges and supplementary
+    /// base-object use-site routes use this operation:
+    ///   State[source] --collect(base)--> incoming[target][source, base].
+    void writeObjValuesToTarget(const ICFGNode* source,
+                                const ICFGNode* target,
+                                NodeID baseObj);
+
+    /// Find SVFG use sites of baseObj without keeping a persistent index.
+    /// For:
+    ///
+    ///   Store S: a[2][2] = 8     // writes sub-object a.8, base a
+    ///   Load  L: x = a[i][j]     // an incoming edge may name a.0, base a
+    ///
+    /// the native SVFG may have no S-to-L edge. This method scans each target's
+    /// incoming indirect edges, normalizes their object labels to a base, and
+    /// finds that L also uses base a. It then propagates S's `{a.8:[8,8]}`
+    /// to L. External calls without an indirect edge are matched in the same
+    /// way through the points-to sets of their pointer arguments.
+    void propagateBaseObjValuesToUses(const ICFGNode* source,
+                                      NodeID baseObj);
+
+    /// Propagate and apply branch constraints after incoming Obj values merge.
+    /// For
+    /// `if (a[9] < 10) { use1(a[9]); use2(a[9]); }`, use1 receives the edge
+    /// constraint and use2 inherits it. Multi-predecessor constraints JOIN;
+    /// the result is then MEETed into State[node] so normal object reads see it.
     void propagateAndApplyRefinement(const ICFGNode* node);
 
     /// Path-refined obj values produced by branch narrowing.  Each
@@ -162,7 +220,12 @@ private:
     /// mergeStatesFromPredecessors.
     Map<const ICFGNode*, Map<NodeID, IntervalValue>> refinementTrace;
 
-    /// Build the SVFG on top of the semi-sparse precompute.
+    /// Incoming FullSparse Obj values, grouped by target, source, and base Obj.
+    /// Some entries contain only a base Obj, while others also contain
+    /// sub-objects. The authoritative states remain in abstractTrace.
+    Map<const ICFGNode*, Map<ObjValueOrigin, ObjValueMap>> incomingObjValues;
+
+    /// Build the SVFG used by FullSparse value propagation.
     void buildSVFG();
 
     /// Owns the SVFG (via SVFGBuilder's internal unique_ptr).  Without
