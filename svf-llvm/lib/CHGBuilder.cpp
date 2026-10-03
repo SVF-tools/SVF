@@ -409,7 +409,8 @@ void CHGBuilder::analyzeVTables(const Module &M)
                         {
                             if (i > 0 && !SVFUtil::isa<ConstantPointerNull>(vtbl->getOperand(i-1)))
                             {
-                                auto foo = [&is_virtual, &null_ptr_num, &vtbl, &i](const Value* val) {
+                                auto foo = [&is_virtual, &null_ptr_num, &vtbl, &i](const Value* val)
+                                {
                                     if (getCXXABI(val)->isTypeInfo(val->getName().str()))
                                     {
                                         is_virtual = true;

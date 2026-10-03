@@ -961,7 +961,7 @@ CXXABI* getCXXABI(const Module* M)
     {
         llvm::Triple triple(M->getTargetTriple());
         if (triple.isKnownWindowsMSVCEnvironment() ||
-            triple.isOSBinFormatCOFF())
+                triple.isOSBinFormatCOFF())
         {
             static MSVCABI msvcabi;
             return &msvcabi;
@@ -994,10 +994,10 @@ CXXABI* getCXXABI(const Value* val)
 CXXABI* getCXXABI()
 {
     if (LLVMModuleSet::getLLVMModuleSet() &&
-        !LLVMModuleSet::getLLVMModuleSet()->empty())
+            !LLVMModuleSet::getLLVMModuleSet()->empty())
     {
         return getCXXABI(
-            LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule());
+                   LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule());
     }
     static ItaniumABI itaniumabi;
     return &itaniumabi;
@@ -1077,7 +1077,7 @@ DemangledName ItaniumABI::demangle(const std::string& name)
     {
         std::string beforeParenthesis = getBeforeParenthesis(realnameStr);
         if (beforeParenthesis.find("::") == std::string::npos ||
-            isOperOverload(beforeParenthesis))
+                isOperOverload(beforeParenthesis))
         {
             dname.className = "";
             dname.funcName = "";
@@ -1158,15 +1158,15 @@ DemangledName MSVCABI::demangle(const std::string& name)
     }
 
     if (realnameStr.find("[thunk]") != std::string::npos ||
-        realnameStr.find("`vcall'") != std::string::npos ||
-        realnameStr.find("`adjustor'") != std::string::npos)
+            realnameStr.find("`vcall'") != std::string::npos ||
+            realnameStr.find("`adjustor'") != std::string::npos)
     {
         dname.isThunkFunc = true;
     }
 
     std::string beforeParenthesis = getBeforeParenthesis(realnameStr);
     if (beforeParenthesis.find("::") == std::string::npos ||
-        isOperOverload(beforeParenthesis))
+            isOperOverload(beforeParenthesis))
     {
         dname.className = "";
         dname.funcName = "";
@@ -1206,7 +1206,7 @@ DemangledName MSVCABI::demangle(const std::string& name)
                 else
                 {
                     if (std::isalnum(c) || c == '_' || c == ':' || c == '<' ||
-                        c == '>')
+                            c == '>')
                     {
                         i--;
                     }
