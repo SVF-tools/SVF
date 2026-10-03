@@ -54,8 +54,6 @@ using namespace std;
 
 const string pureVirtualFunName = "__cxa_pure_virtual";
 
-const string ztiLabel = "_ZTI";
-
 LLVMModuleSet* CHGBuilder::llvmModuleSet()
 {
     return LLVMModuleSet::getLLVMModuleSet();
@@ -411,9 +409,8 @@ void CHGBuilder::analyzeVTables(const Module &M)
                         {
                             if (i > 0 && !SVFUtil::isa<ConstantPointerNull>(vtbl->getOperand(i-1)))
                             {
-                                auto foo = [&is_virtual, &null_ptr_num, &vtbl, &i](const Value* val)
-                                {
-                                    if (val->getName().str().compare(0, ztiLabel.size(), ztiLabel) == 0)
+                                auto foo = [&is_virtual, &null_ptr_num, &vtbl, &i](const Value* val) {
+                                    if (getCXXABI(val)->isTypeInfo(val->getName().str()))
                                     {
                                         is_virtual = true;
                                         null_ptr_num = 1;
@@ -497,8 +494,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
 
                                     pure_abstract &= false;
                                 }
-                                else if (operand->getName().str().compare(0, ztiLabel.size(),
-                                         ztiLabel) == 0)
+                                else if (getCXXABI(operand)->isTypeInfo(operand->getName().str()))
                                 {
                                 }
                                 else
