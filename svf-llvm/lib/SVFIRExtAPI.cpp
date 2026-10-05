@@ -50,8 +50,10 @@ struct MemcpyField
     const SVFType* elementType;
 };
 
-/// Read the argument index that follows `prefix`, e.g. 2 in "STORE_TOP:Arg2+".
-/// `end` is set to the position just after the digits.
+/// Extract a zero-based argument index from an extapi annotation.
+/// For example, parseAnnotationArgIndex("STORE_TOP:Arg2+", "STORE_TOP:Arg",
+/// argIdx, end) returns true with argIdx = 2 and end = 14 (the '+' position).
+/// The caller checks any suffix; return false if the prefix or digits are missing.
 bool parseAnnotationArgIndex(const std::string& annotation, const std::string& prefix,
                              u32_t& argIdx, size_t& end)
 {
@@ -73,7 +75,9 @@ bool parseAnnotationArgIndex(const std::string& annotation, const std::string& p
     return true;
 }
 
-/// "STORE_TOP:Arg2+" stores unknown values through argument 2 and all later arguments.
+/// Find the first output argument described by a STORE_TOP annotation.
+/// For sscanf(input, "%d", &n), "STORE_TOP:Arg2+" returns true with firstArg = 2:
+/// unknown values are stored through &n and any later output arguments.
 bool parseNondetArgStoreAtExtCall(const std::string& annotation, u32_t& firstArg)
 {
     size_t end = 0;
@@ -81,9 +85,11 @@ bool parseNondetArgStoreAtExtCall(const std::string& annotation, u32_t& firstArg
            end < annotation.size() && annotation[end] == '+';
 }
 
-/// "SCANF:FormatArg1" marks argument 1 as a scanf-style format string.
-/// Annotations read from extapi.bc keep the C string's trailing '\0', so the
-/// index is not required to end the string.
+/// Find the format argument described by a SCANF annotation.
+/// For sscanf(input, "%d", &n), parseScanfFormatArg("SCANF:FormatArg1", formatArg)
+/// returns true with formatArg = 1, selecting "%d" (the second call argument).
+/// "STORE_TOP:Arg2+" returns false because it does not describe a format argument.
+/// A trailing '\0' from extapi.bc is allowed after the index.
 bool parseScanfFormatArg(const std::string& annotation, u32_t& formatArg)
 {
     size_t end = 0;
@@ -401,8 +407,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
 void SVFIRBuilder::handleNondetArgStoreAtExtCall(const CallBase* cs, const CallICFGNode* callICFGNode)
 {
     Set<u32_t> storeTopArgs;
-    bool hasFormatArg = false;
-    u32_t formatArg = 0;
+    NodeID src = pag->getBlkPtr();
     const FunObjVar* extFun = callICFGNode->getCalledFunction();
     if (extFun)
     {
@@ -414,8 +419,16 @@ void SVFIRBuilder::handleNondetArgStoreAtExtCall(const CallBase* cs, const CallI
             {
                 if (annotatedFormatArg < cs->arg_size())
                 {
-                    hasFormatArg = true;
-                    formatArg = annotatedFormatArg;
+                    src = pag->getBlkPtr();
+                    if (!scanfMayStorePointer(cs, annotatedFormatArg))
+                    {
+                        // scanf("%d", &n) writes a number, not a pointer. Copy BlkPtr
+                        // into a non-pointer variable so AE still sees an unknown value.
+                        src = pag->addValNode(NodeIDAllocator::get()->allocateValueId(), SVFType::getSVFInt8Type(), callICFGNode);
+                        // Keep the call's LLVM value available when printing this variable.
+                        llvmModuleSet()->addToSVFVar2LLVMValueMap(cs, pag->getGNode(src));
+                        addCopyEdge(pag->getBlkPtr(), src, CopyStmt::COPYVAL);
+                    }
                 }
                 continue;
             }
@@ -429,20 +442,6 @@ void SVFIRBuilder::handleNondetArgStoreAtExtCall(const CallBase* cs, const CallI
             for (u32_t argIdx = firstArg; argIdx < cs->arg_size(); ++argIdx)
                 storeTopArgs.insert(argIdx);
         }
-    }
-
-    // scanf("%d", &obj.n) writes an unknown number. Use a non-pointer variable
-    // so pointer analysis does not add a black-hole pointer to obj. Copy BlkPtr
-    // into this variable so abstract execution still sees an unknown value.
-    // Only functions annotated with SCANF:FormatArgN get this treatment; other
-    // STORE_TOP functions keep storing BlkPtr.
-    NodeID src = pag->getBlkPtr();
-    if (hasFormatArg && !scanfMayStorePointer(cs, formatArg))
-    {
-        src = pag->addValNode(NodeIDAllocator::get()->allocateValueId(), SVFType::getSVFInt8Type(), callICFGNode);
-        // Map the variable to the call so that printing it can show its LLVM value.
-        llvmModuleSet()->addToSVFVar2LLVMValueMap(cs, pag->getGNode(src));
-        addCopyEdge(pag->getBlkPtr(), src, CopyStmt::COPYVAL);
     }
 
     for (u32_t argIdx : storeTopArgs)
