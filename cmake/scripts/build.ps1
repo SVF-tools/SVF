@@ -1,38 +1,38 @@
 <#
 .SYNOPSIS
-    Builds SVF on Windows using llvm-mingw (clang++ with MinGW/UCRT runtime).
+    Builds SVF on Windows using either MSYS2 Clang/MinGW or MSVC (cl.exe).
 
 .DESCRIPTION
-    Toolchain: llvm-mingw (clang++ + lld + libc++ + UCRT).
-    Does not require Visual Studio or MSYS2.
-
-    LLVM_DIR points to the root of llvm-mingw, which contains both the compiler
-    (bin/clang++.exe) and the LLVM CMake files (lib/cmake/llvm/LLVMConfig.cmake).
-
-    Z3 is compiled from source with the same toolchain to ensure
-    ABI compatibility. If Z3_DIR is already present, the step is skipped.
+    Supported toolchains:
+      - mingw (default): MSYS2 clang64 (clang++ + lld + libc++ + UCRT).
+        Automatically downloads bundled LLVM & Clang SDK and compiles Z3.
+      - msvc: Microsoft Visual C++ (cl.exe) with Visual Studio.
+        Automatically downloads LLVM MSVC SDK (c3lang/llvm-for-c3) and prebuilt Z3 MSVC package.
 
 .PARAMETER BuildType
     Release (default) or Debug.
 
 .PARAMETER BuildSharedLibs
-    ON (default) for DLL, OFF for static libraries.
-    llvm-mingw includes RTTI, so ON works.
+    OFF (default) for static libraries; ON builds shared libraries.
+    The bundled LLVM SDK includes RTTI, so ON works.
 
 .PARAMETER LLVMDir
-    Path to llvm-mingw. Default: .\llvm-mingw.obj
+    Path to LLVM SDK root (must contain lib/cmake/llvm/LLVMConfig.cmake).
 
 .PARAMETER Z3Dir
-    Path to precompiled Z3 (layout: include/, lib/). Default: .\z3.obj
+    Path to Z3 installation root (layout: include/, lib/ or bin/).
+
+.PARAMETER Compiler
+    mingw (default) or msvc.
 
 .PARAMETER Jobs
     Number of parallel jobs. Default: number of logical CPUs.
 
 .EXAMPLE
     .\build.ps1
+    .\build.ps1 -Compiler msvc
     .\build.ps1 -BuildType Debug
     .\build.ps1 -BuildSharedLibs OFF
-    .\build.ps1 -LLVMDir C:\llvm-mingw -Z3Dir C:\z3-mingw
 #>
 
 param(
@@ -57,8 +57,11 @@ $ErrorActionPreference = "Stop"
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SVFHome    = (Resolve-Path (Join-Path $ScriptDir "..\..")).Path
 
-# MSYS2 LLVM and Clang SDK packages.
-# We download the local LLVM + Clang SDK from MSYS2 repository.
+# ---------------------------------------------------------------------------
+# SDK and Dependency URLs
+# ---------------------------------------------------------------------------
+
+# MinGW (MSYS2 clang64) SDK packages
 $LLVMSdkHome   = Join-Path $SVFHome "llvm-sdk.obj"
 $LLVMSdkUrl    = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-llvm-22.1.8-2-any.pkg.tar.zst"
 $LLVMLibsUrl   = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-llvm-libs-22.1.8-2-any.pkg.tar.zst"
@@ -79,10 +82,16 @@ $LibiconvUrl   = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-li
 $LibcxxUrl     = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-libc%2B%2B-22.1.8-1-any.pkg.tar.zst"
 $LibunwindUrl  = "https://repo.msys2.org/mingw/clang64/mingw-w64-clang-x86_64-libunwind-22.1.8-1-any.pkg.tar.zst"
 
+# MSVC LLVM SDK (LLVM 22.1.4 MSVC SDK from c3lang/llvm-for-c3 as used in SVF CI)
+$LLVMMsvcSdkHome = Join-Path $SVFHome "llvm-msvc-sdk.obj"
+$LLVMMsvcSdkUrl  = "https://github.com/c3lang/llvm-for-c3/releases/download/llvm_22.1.4/llvm-windows-amd64.tar.gz"
 
-$Z3Ver    = "4.15.4"
-$Z3SrcUrl = "https://github.com/Z3Prover/z3/archive/refs/tags/z3-${Z3Ver}.zip"
-$Z3Home   = Join-Path $SVFHome "z3.obj"
+# Z3
+$Z3Ver          = "4.15.4"
+$Z3SrcUrl       = "https://github.com/Z3Prover/z3/archive/refs/tags/z3-${Z3Ver}.zip"
+$Z3MsvcUrl      = "https://github.com/Z3Prover/z3/releases/download/z3-${Z3Ver}/z3-${Z3Ver}-x64-win.zip"
+$Z3HomeMinGW    = Join-Path $SVFHome "z3.obj"
+$Z3HomeMSVC     = Join-Path $SVFHome "z3-msvc.obj"
 
 # ---------------------------------------------------------------------------
 # Helper functions
@@ -106,8 +115,23 @@ function Get-FileDownload {
     while ($attempt -le $maxAttempts -and -not $success) {
         try {
             Write-Host "  Downloading: $Url (Attempt $attempt of $maxAttempts)..."
-            Invoke-WebRequest -Uri $Url -OutFile $Dest -UseBasicParsing -TimeoutSec 180
-            $success = $true
+            if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
+                & curl.exe -f -L --retry 3 --connect-timeout 30 -o "$Dest" "$Url"
+                if ($LASTEXITCODE -eq 0 -and (Test-Path $Dest) -and (Get-Item $Dest).Length -gt 1000) {
+                    $success = $true
+                } else {
+                    throw "curl failed with exit code $LASTEXITCODE"
+                }
+            } else {
+                $oldPref = $ProgressPreference
+                $ProgressPreference = 'SilentlyContinue'
+                try {
+                    Invoke-WebRequest -Uri $Url -OutFile $Dest -UseBasicParsing -TimeoutSec 300
+                    $success = $true
+                } finally {
+                    $ProgressPreference = $oldPref
+                }
+            }
         } catch {
             Write-Host "  Attempt $attempt failed: $_" -ForegroundColor Yellow
             if (Test-Path $Dest) { Remove-Item $Dest -Force -ErrorAction SilentlyContinue }
@@ -127,7 +151,7 @@ function Get-FileDownload {
 function Assert-Tool {
     param([string]$Name)
     if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
-        throw "Tool not found in PATH: '$Name'. Verify prerequisites (cmake, ninja)."
+        throw "Tool not found in PATH: '$Name'. Verify prerequisites."
     }
 }
 
@@ -137,22 +161,85 @@ function Write-Step {
     Write-Host "==> $Msg" -ForegroundColor Cyan
 }
 
+function Initialize-VsDevEnv {
+    if (Get-Command cl.exe -ErrorAction SilentlyContinue) {
+        return
+    }
+
+    Write-Host "  cl.exe not in PATH. Searching for Visual Studio installation..." -ForegroundColor Yellow
+    $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+    $vsPath = $null
+
+    if (Test-Path $vswhere) {
+        $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+    }
+
+    if (-not $vsPath) {
+        $candidates = @(
+            "C:\Program Files\Microsoft Visual Studio\2022\Community",
+            "C:\Program Files\Microsoft Visual Studio\2022\Professional",
+            "C:\Program Files\Microsoft Visual Studio\2022\Enterprise",
+            "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools",
+            "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community",
+            "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional"
+        )
+        foreach ($c in $candidates) {
+            if (Test-Path $c) {
+                $vsPath = $c
+                break
+            }
+        }
+    }
+
+    if ($vsPath) {
+        $devShellScript = Join-Path $vsPath "Common7\Tools\Launch-VsDevShell.ps1"
+        if (Test-Path $devShellScript) {
+            Write-Host "  Initializing Visual Studio environment from: $vsPath" -ForegroundColor Green
+            & {
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
+                $null
+            }
+            . $devShellScript -VsInstallationPath $vsPath -Arch amd64 -HostArch amd64 -SkipAutomaticLocation
+        }
+    }
+
+    if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue)) {
+        throw "MSVC compiler (cl.exe) not found. Please run within a Visual Studio Developer PowerShell session."
+    }
+}
+
 # ---------------------------------------------------------------------------
-# Resolve LLVM SDK and Compiler Toolchain (LLVM_DIR)
+# 1. Compiler Environment Initialization
 # ---------------------------------------------------------------------------
 
-Write-Step "Resolving LLVM SDK & Compiler Toolchain"
+Write-Step "Checking Compiler Environment"
+
+if ($Compiler -eq "msvc") {
+    Initialize-VsDevEnv
+    Assert-Tool "cl"
+    $compilerDescription = "MSVC cl.exe ($(Get-Command cl.exe | Select-Object -ExpandProperty Source))"
+} else {
+    # For mingw, clang++ is part of the local SDK resolved in next step or system
+    $compilerDescription = "MSYS2 clang64 (Clang targeting MinGW/UCRT)"
+}
+Write-Host "  Selected Compiler: $compilerDescription"
+
+# ---------------------------------------------------------------------------
+# 2. Resolve LLVM SDK (LLVM_DIR)
+# ---------------------------------------------------------------------------
+
+Write-Step "Resolving LLVM SDK"
 
 if ($LLVMDir -ne "" -and (Test-Path $LLVMDir)) {
     $env:LLVM_DIR = (Resolve-Path $LLVMDir).Path
     Write-Host "  Using provided LLVM SDK: $env:LLVM_DIR"
-} elseif ($env:LLVM_DIR -and (Test-Path $env:LLVM_DIR)) {
+} elseif ($env:LLVM_DIR -and (Test-Path $env:LLVM_DIR) -and (Test-Path (Join-Path $env:LLVM_DIR "lib\cmake\llvm\LLVMConfig.cmake"))) {
     Write-Host "  Using LLVM_DIR from environment: $env:LLVM_DIR"
 } else {
     if ($Compiler -eq "mingw") {
         $LLVMSdkDir = Join-Path $LLVMSdkHome "clang64"
-        if (-not (Test-Path $LLVMSdkDir)) {
-            Write-Host "  Unified LLVM & Clang SDK not found. Automatic download in progress..."
+        if (-not (Test-Path (Join-Path $LLVMSdkDir "lib\cmake\llvm\LLVMConfig.cmake"))) {
+            Write-Host "  MinGW LLVM & Clang SDK not found. Automatic download in progress..."
             New-Item -ItemType Directory -Force -Path $LLVMSdkHome | Out-Null
             
             $sdkComponents = @(
@@ -184,101 +271,128 @@ if ($LLVMDir -ne "" -and (Test-Path $LLVMDir)) {
                 Remove-Item $compPath
             }
             
-            Write-Host "  LLVM SDK and Compiler Toolchain installed in: $LLVMSdkDir" -ForegroundColor Green
+            Write-Host "  LLVM SDK installed in: $LLVMSdkDir" -ForegroundColor Green
         }
         $env:LLVM_DIR = $LLVMSdkDir
-        Write-Host "  Using local LLVM SDK: $env:LLVM_DIR"
+        $env:PATH = "$env:LLVM_DIR\bin;$env:PATH"
+        Assert-Tool "clang++"
     } else {
-        $defaultMsvcLvm = "C:\Program Files\LLVM"
-        if (Test-Path $defaultMsvcLvm) {
-            $env:LLVM_DIR = $defaultMsvcLvm
-            Write-Host "  Using default MSVC LLVM SDK: $env:LLVM_DIR"
-        } else {
-            throw "LLVM SDK not found. For MSVC, please install LLVM (e.g., choco install llvm) or specify -LLVMDir."
+        # MSVC toolchain
+        $LLVMMsvcSdkDir = $LLVMMsvcSdkHome
+        $llvmConfigPath = Join-Path $LLVMMsvcSdkDir "lib\cmake\llvm\LLVMConfig.cmake"
+        
+        if (-not (Test-Path $llvmConfigPath)) {
+            Write-Host "  LLVM MSVC SDK not found. Downloading prebuilt LLVM MSVC SDK (c3lang/llvm-for-c3)..."
+            New-Item -ItemType Directory -Force -Path $LLVMMsvcSdkDir | Out-Null
+            $tarGzPath = Join-Path $SVFHome "llvm-msvc-sdk.tar.gz"
+            Get-FileDownload -Url $LLVMMsvcSdkUrl -Dest $tarGzPath
+            Write-Host "  Extracting LLVM MSVC SDK..."
+            & tar -xf $tarGzPath -C $LLVMMsvcSdkDir
+            Remove-Item $tarGzPath
+
+            # Strip hardcoded absolute MSVC diaguids.lib path from LLVMExports.cmake (same as SVF CI)
+            $exportsFile = Join-Path $LLVMMsvcSdkDir "lib\cmake\llvm\LLVMExports.cmake"
+            if (Test-Path $exportsFile) {
+                Write-Host "  Patching LLVMExports.cmake (removing absolute diaguids.lib reference)..."
+                $content = Get-Content $exportsFile -Raw
+                $newContent = $content -replace '[a-zA-Z]:/[^";]+?/DIA SDK/lib/amd64/diaguids\.lib;', ""
+                Set-Content $exportsFile $newContent -NoNewline
+            }
+
+            Write-Host "  LLVM MSVC SDK installed in: $LLVMMsvcSdkDir" -ForegroundColor Green
         }
+        $env:LLVM_DIR = $LLVMMsvcSdkDir
+        $env:PATH = "$env:LLVM_DIR\bin;$env:PATH"
     }
 }
 
-# Add LLVM_DIR\bin to PATH for compiler executables and library DLLs
-$env:PATH = "$env:LLVM_DIR\bin;$env:PATH"
-
-# Verify that clang++ is available
-Assert-Tool "clang++"
-$clangVer = & clang++ --version | Select-Object -First 1
-Write-Host "  Compiler: $clangVer"
+Write-Host "  LLVM_DIR = $env:LLVM_DIR"
 
 # ---------------------------------------------------------------------------
-# Resolve Z3_DIR (compiling from source with llvm-mingw)
+# 3. Resolve Z3 (Z3_DIR)
 # ---------------------------------------------------------------------------
 
 Write-Step "Resolving Z3_DIR"
+
+$currentZ3Home = if ($Compiler -eq "msvc") { $Z3HomeMSVC } else { $Z3HomeMinGW }
 
 if ($Z3Dir -ne "" -and (Test-Path $Z3Dir)) {
     $env:Z3_DIR = (Resolve-Path $Z3Dir).Path
     Write-Host "  Using provided Z3Dir: $env:Z3_DIR"
 } elseif ($env:Z3_DIR -and (Test-Path $env:Z3_DIR)) {
     Write-Host "  Using Z3_DIR from environment: $env:Z3_DIR"
-} elseif (Test-Path $Z3Home) {
-    $env:Z3_DIR = $Z3Home
+} elseif (Test-Path $currentZ3Home) {
+    $env:Z3_DIR = $currentZ3Home
     Write-Host "  Found local Z3: $env:Z3_DIR"
 } else {
-    Write-Host "  Z3 not found. Compiling from source with llvm-mingw..."
-    Write-Host "  (The prebuilt Z3 binary for Windows uses the MSVC ABI - incompatible with MinGW)"
+    if ($Compiler -eq "msvc") {
+        Write-Host "  Downloading prebuilt Z3 package for MSVC (x64)..."
+        $z3ZipPath = Join-Path $SVFHome "z3-msvc.zip"
+        $z3TempDir = Join-Path $SVFHome "z3-temp"
+        
+        Get-FileDownload -Url $Z3MsvcUrl -Dest $z3ZipPath
+        Write-Host "  Extracting Z3 MSVC package..."
+        if (Test-Path $z3TempDir) { Remove-Item -Recurse -Force $z3TempDir }
+        Expand-Archive -Path $z3ZipPath -DestinationPath $z3TempDir -Force
+        
+        $extractedFolder = (Get-ChildItem $z3TempDir -Directory | Select-Object -First 1).FullName
+        if (Test-Path $currentZ3Home) { Remove-Item -Recurse -Force $currentZ3Home }
+        Move-Item -Path $extractedFolder -Destination $currentZ3Home
+        
+        Remove-Item -Recurse -Force $z3TempDir, $z3ZipPath
+        $env:Z3_DIR = $currentZ3Home
+        Write-Host "  Z3 MSVC installed in: $env:Z3_DIR" -ForegroundColor Green
+    } else {
+        Write-Host "  Z3 not found. Compiling from source with Clang/MinGW..."
+        Assert-Tool "cmake"
+        Assert-Tool "ninja"
 
-    Assert-Tool "cmake"
-    Assert-Tool "ninja"
+        $z3ZipPath  = "$SVFHome\z3-src.zip"
+        $z3SrcDir   = "$SVFHome\z3-source"
+        $z3BuildDir = "$SVFHome\z3-build"
 
-    $z3ZipPath  = "$SVFHome\z3-src.zip"
-    $z3SrcDir   = "$SVFHome\z3-source"
-    $z3BuildDir = "$SVFHome\z3-build"
+        Get-FileDownload -Url $Z3SrcUrl -Dest $z3ZipPath
+        Write-Host "  Extracting Z3 sources..."
+        if (Test-Path $z3SrcDir) { Remove-Item -Recurse -Force $z3SrcDir }
+        Expand-Archive -Path $z3ZipPath -DestinationPath $SVFHome -Force
+        $z3ExtractedName = "z3-z3-${Z3Ver}"
+        Rename-Item "$SVFHome\$z3ExtractedName" $z3SrcDir
 
-    Get-FileDownload -Url $Z3SrcUrl -Dest $z3ZipPath
-    Write-Host "  Extracting Z3 sources..."
-    if (Test-Path $z3SrcDir) { Remove-Item -Recurse -Force $z3SrcDir }
-    Expand-Archive -Path $z3ZipPath -DestinationPath $SVFHome -Force
-    # The internal folder name is z3-z3-4.8.8 (or z3-z3-<version>)
-    $z3ExtractedName = "z3-z3-${Z3Ver}"
-    Rename-Item "$SVFHome\$z3ExtractedName" $z3SrcDir
+        Write-Host "  CMake configuration for Z3..."
+        New-Item -ItemType Directory -Force -Path $z3BuildDir | Out-Null
+        $z3CmakeArgs = @(
+            "-G", "Ninja",
+            "-S", $z3SrcDir,
+            "-B", $z3BuildDir,
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_INSTALL_PREFIX=$currentZ3Home",
+            "-DZ3_BUILD_LIBZ3_SHARED=OFF",
+            "-DZ3_BUILD_EXECUTABLE=OFF",
+            "-DZ3_BUILD_TEST_EXECUTABLES=OFF",
+            "-DCMAKE_C_COMPILER=$env:LLVM_DIR\bin\clang.exe",
+            "-DCMAKE_CXX_COMPILER=$env:LLVM_DIR\bin\clang++.exe"
+        )
+        & cmake @z3CmakeArgs
+        if ($LASTEXITCODE -ne 0) { throw "CMake configuration for Z3 failed." }
 
-    Write-Host "  CMake configuration for Z3..."
-    New-Item -ItemType Directory -Force -Path $z3BuildDir | Out-Null
-    $z3CmakeArgs = @(
-        "-G", "Ninja",
-        "-S", $z3SrcDir,
-        "-B", $z3BuildDir,
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_INSTALL_PREFIX=$Z3Home",
-        "-DZ3_BUILD_LIBZ3_SHARED=OFF",
-        "-DZ3_BUILD_EXECUTABLE=OFF",
-        "-DZ3_BUILD_TEST_EXECUTABLES=OFF",
-        "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded"
-    )
-    if ($Compiler -eq "mingw") {
-        $z3CmakeArgs += "-DCMAKE_C_COMPILER=$env:LLVM_DIR\bin\clang.exe"
-        $z3CmakeArgs += "-DCMAKE_CXX_COMPILER=$env:LLVM_DIR\bin\clang++.exe"
+        Write-Host "  Building Z3 (static library)..."
+        & cmake --build $z3BuildDir --parallel $Jobs
+        if ($LASTEXITCODE -ne 0) { throw "Build Z3 failed." }
+
+        Write-Host "  Installing Z3 in $currentZ3Home..."
+        & cmake --install $z3BuildDir
+        if ($LASTEXITCODE -ne 0) { throw "Z3 installation failed." }
+
+        Remove-Item -Recurse -Force $z3SrcDir, $z3BuildDir, $z3ZipPath
+        $env:Z3_DIR = $currentZ3Home
+        Write-Host "  Z3 installed in: $env:Z3_DIR" -ForegroundColor Green
     }
-    & cmake @z3CmakeArgs
-    if ($LASTEXITCODE -ne 0) { throw "CMake configuration for Z3 failed." }
-
-    Write-Host "  Building Z3 (static library)..."
-    & cmake --build $z3BuildDir --parallel $Jobs
-    if ($LASTEXITCODE -ne 0) { throw "Build Z3 failed." }
-
-    Write-Host "  Installing Z3 in $Z3Home..."
-    & cmake --install $z3BuildDir
-    if ($LASTEXITCODE -ne 0) { throw "Z3 installation failed." }
-
-    Remove-Item -Recurse -Force $z3SrcDir, $z3BuildDir, $z3ZipPath
-    $env:Z3_DIR = $Z3Home
-    Write-Host "  Z3 installed in: $env:Z3_DIR" -ForegroundColor Green
 }
 
-Write-Host ""
-Write-Host "  LLVM_DIR = $env:LLVM_DIR"
-Write-Host "  Z3_DIR   = $env:Z3_DIR"
+Write-Host "  Z3_DIR = $env:Z3_DIR"
 
 # ---------------------------------------------------------------------------
-# Verify build tools
+# 4. Verify build tools
 # ---------------------------------------------------------------------------
 
 Write-Step "Verifying build tools"
@@ -290,21 +404,16 @@ Write-Host "  cmake: $cmakeVer"
 Write-Host "  ninja: $ninjaVer"
 
 # ---------------------------------------------------------------------------
-# CMake configure and build SVF
+# 5. CMake configure and build SVF
 # ---------------------------------------------------------------------------
 
 Write-Step "Configuring and building SVF"
 
-$BuildDir    = Join-Path $SVFHome "$BuildType-build"
+$BuildDir     = Join-Path $SVFHome "$BuildType-build"
 $LLVMCMakeDir = Join-Path $env:LLVM_DIR "lib\cmake\llvm"
 
 if (-not (Test-Path $LLVMCMakeDir)) {
-    Write-Host "[ERROR] LLVMConfig.cmake not found in '$LLVMCMakeDir'." -ForegroundColor Red
-    Write-Host "Note: llvm-mingw is only the compiler toolchain (clang/clang++) and does not contain the LLVM development SDK." -ForegroundColor Yellow
-    Write-Host "To resolve this, you can:" -ForegroundColor Yellow
-    Write-Host "  1. Compile LLVM from source with RTTI enabled and pass the path with '-LLVMDir <path>'." -ForegroundColor Yellow
-    Write-Host "  2. Use MSYS2 (recommended for MinGW) by installing the 'mingw-w64-clang-x86_64-llvm' package and running './build.sh'." -ForegroundColor Yellow
-    throw "LLVM SDK not configured correctly."
+    throw "LLVMConfig.cmake not found in '$LLVMCMakeDir'."
 }
 
 if (Test-Path $BuildDir) { Remove-Item -Recurse -Force $BuildDir }
@@ -313,6 +422,7 @@ New-Item -ItemType Directory -Force -Path $BuildDir | Out-Null
 Write-Host "  BuildType:       $BuildType"
 Write-Host "  BuildSharedLibs: $BuildSharedLibs"
 Write-Host "  BuildDir:        $BuildDir"
+Write-Host "  Compiler:        $Compiler"
 
 $svfCmakeArgs = @(
     "-G", "Ninja",
@@ -321,10 +431,12 @@ $svfCmakeArgs = @(
     "-DCMAKE_BUILD_TYPE=$BuildType",
     "-DLLVM_DIR=$LLVMCMakeDir",
     "-DZ3_DIR=$env:Z3_DIR",
+    "-DSVF_Z3=ON",
     "-DBUILD_SHARED_LIBS=$BuildSharedLibs",
     "-DSVF_WARN_AS_ERROR=OFF",
     "-DSVF_EXPORT_DYNAMIC=OFF"
 )
+
 if ($Compiler -eq "mingw") {
     $svfCmakeArgs += "-DCMAKE_C_COMPILER=$env:LLVM_DIR\bin\clang.exe"
     $svfCmakeArgs += "-DCMAKE_CXX_COMPILER=$env:LLVM_DIR\bin\clang++.exe"
@@ -332,14 +444,15 @@ if ($Compiler -eq "mingw") {
     $svfCmakeArgs += "-DCMAKE_C_COMPILER=cl"
     $svfCmakeArgs += "-DCMAKE_CXX_COMPILER=cl"
 }
-& cmake @svfCmakeArgs
 
+Write-Host "  Running CMake configure..."
+& cmake @svfCmakeArgs
 if ($LASTEXITCODE -ne 0) { throw "CMake configure SVF failed." }
 
+Write-Host "  Building SVF..."
 & cmake --build $BuildDir --parallel $Jobs
-
 if ($LASTEXITCODE -ne 0) { throw "Build SVF failed." }
 
 Write-Host ""
-Write-Host "Build completed in: $BuildDir" -ForegroundColor Green
-Write-Host "Run '. .\setup.ps1' to configure the environment."
+Write-Host "Build completed successfully in: $BuildDir" -ForegroundColor Green
+Write-Host "Run '. .\cmake\scripts\setup.ps1' to configure the environment."
