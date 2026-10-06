@@ -31,7 +31,7 @@ jobs:
       # checkout the repo
       - uses: actions/checkout@v4
 
-      # setup the environment
+      # macOS settings
       - name: mac-setup
         if: runner.os == 'macOS'
         uses: maxim-lobanov/setup-xcode@v1
@@ -52,36 +52,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake gcc g++ nodejs doxygen graphviz libncurses5-dev libtinfo6 libzstd-dev astyle
 
-      # Windows settings (MSVC)
+      # Windows settings (MSVC tools)
       - name: windows-setup
         if: runner.os == 'Windows'
-        shell: powershell
         run: |
-          choco install llvm ninja -y
-          curl.exe -L "https://github.com/c3lang/llvm-for-c3/releases/download/llvm_22.1.4/llvm-windows-amd64.tar.gz" -o llvm-sdk.tar.gz
-          New-Item -ItemType Directory -Force -Path C:\llvm-sdk | Out-Null
-          tar -xf llvm-sdk.tar.gz -C C:\llvm-sdk
-          
-          Copy-Item -Path "C:\Program Files\LLVM\bin\clang.exe" -Destination "C:\llvm-sdk\bin\" -Force
-          Copy-Item -Path "C:\Program Files\LLVM\bin\clang++.exe" -Destination "C:\llvm-sdk\bin\" -Force
-          Copy-Item -Path "C:\Program Files\LLVM\bin\clang-cl.exe" -Destination "C:\llvm-sdk\bin\" -Force
-          
-          $exportsFile = "C:\llvm-sdk\lib\cmake\llvm\LLVMExports.cmake"
-          if (Test-Path $exportsFile) {
-              $content = Get-Content $exportsFile -Raw
-              $newContent = $content -replace '[a-zA-Z]:/[^";]+?/DIA SDK/lib/amd64/diaguids\.lib;', ""
-              Set-Content $exportsFile $newContent -NoNewline
-          }
-          
-          curl.exe -L "https://github.com/Z3Prover/z3/releases/download/z3-4.15.4/z3-4.15.4-x64-win.zip" -o z3.zip
-          Expand-Archive -Path z3.zip -DestinationPath C:\z3-temp
-          $z3Folder = Get-ChildItem C:\z3-temp -Directory | Select-Object -First 1
-          Move-Item -Path $z3Folder.FullName -Destination C:\z3
-          
-          Add-Content -Path $env:GITHUB_PATH -Value "C:\llvm-sdk\bin" -Encoding UTF8
-          Add-Content -Path $env:GITHUB_PATH -Value "C:\z3\bin" -Encoding UTF8
-          Add-Content -Path $env:GITHUB_ENV -Value "LLVM_DIR=C:\llvm-sdk" -Encoding UTF8
-          Add-Content -Path $env:GITHUB_ENV -Value "Z3_DIR=C:\z3" -Encoding UTF8
+          choco install ninja -y
 
       - name: Add MSVC to PATH
         if: runner.os == 'Windows'
@@ -95,31 +70,18 @@ jobs:
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      # code-format and build-svf (Unix)
-      - name: code-format-and-build-svf (Unix)
-        if: runner.os != 'Windows'
+      # code-format and build-svf (All OSs unified via build.sh)
+      - name: code-format-and-build-svf
+        shell: bash
         run: |
           cd $GITHUB_WORKSPACE
           echo $(pwd)
           git pull
-          astyle --style=allman -n -r "*.h" "*.cpp"
+          if [ "$RUNNER_OS" != "Windows" ]; then
+            astyle --style=allman -n -r "*.h" "*.cpp"
+          fi
           git clone "https://github.com/SVF-tools/Test-Suite.git";
           source ${{github.workspace}}/build.sh dyn_lib
-
-      # build-svf (Windows)
-      - name: build-svf (Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          cmake -B Release-build -S . `
-            -G Ninja `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DLLVM_DIR="$env:LLVM_DIR" `
-            -DZ3_DIR="$env:Z3_DIR" `
-            -DSVF_Z3=ON `
-            -DBUILD_SHARED_LIBS=ON `
-            -DSVF_WARN_AS_ERROR=OFF
-          cmake --build Release-build -j
 
       # update formatting code and doxygen
       - name: update-formatting-code-and-doxygen
