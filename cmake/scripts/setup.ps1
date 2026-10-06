@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Configures the PATH to use SVF compiled on Windows with llvm-mingw.
+    Configures the PATH to use SVF compiled on Windows (MinGW or MSVC).
 
 .PARAMETER BuildType
     Release (default) or Debug.
@@ -28,18 +28,29 @@ if (-not (Test-Path $BuildDir)) {
     return
 }
 
-# Resolve LLVM_DIR and Z3_DIR — same logic as build.ps1
-$LLVMSdk  = Join-Path $SVF_DIR "llvm-sdk.obj\clang64"
-$Z3Home   = Join-Path $SVF_DIR "z3.obj"
+# Resolve LLVM_DIR and Z3_DIR for both MSVC and MinGW
+$LLVMSdkMinGW = Join-Path $SVF_DIR "llvm-sdk.obj\clang64"
+$LLVMSdkMSVC  = Join-Path $SVF_DIR "llvm-msvc-sdk.obj"
+$Z3HomeMinGW  = Join-Path $SVF_DIR "z3.obj"
+$Z3HomeMSVC   = Join-Path $SVF_DIR "z3-msvc.obj"
 
-if (Test-Path $LLVMSdk) {
-    $env:LLVM_DIR = $LLVMSdk
-}
-if (-not $env:Z3_DIR) {
-    if (Test-Path $Z3Home) { $env:Z3_DIR = $Z3Home }
+if (-not $env:LLVM_DIR -or -not (Test-Path $env:LLVM_DIR)) {
+    if (Test-Path (Join-Path $LLVMSdkMSVC "lib\cmake\llvm\LLVMConfig.cmake")) {
+        $env:LLVM_DIR = $LLVMSdkMSVC
+    } elseif (Test-Path (Join-Path $LLVMSdkMinGW "lib\cmake\llvm\LLVMConfig.cmake")) {
+        $env:LLVM_DIR = $LLVMSdkMinGW
+    }
 }
 
-# On Windows, DLLs must be in the PATH (not LD_LIBRARY_PATH).
+if (-not $env:Z3_DIR -or -not (Test-Path $env:Z3_DIR)) {
+    if (Test-Path $Z3HomeMSVC) {
+        $env:Z3_DIR = $Z3HomeMSVC
+    } elseif (Test-Path $Z3HomeMinGW) {
+        $env:Z3_DIR = $Z3HomeMinGW
+    }
+}
+
+# On Windows, DLLs must be in the PATH.
 $additions = @()
 if ($env:LLVM_DIR) { $additions += "$env:LLVM_DIR\bin" }
 if ($env:Z3_DIR)   { $additions += "$env:Z3_DIR\bin"; $additions += "$env:Z3_DIR\lib" }

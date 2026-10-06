@@ -3,38 +3,42 @@
     Complete SVF setup on Windows — installs dependencies and runs the build.
 
 .DESCRIPTION
-    All-in-one script based on llvm-mingw (Clang + MinGW/UCRT).
-    Does not require Visual Studio or MSYS2.
+    All-in-one setup script supporting:
+      - MinGW / Clang (default): uses bundled MSYS2 clang64 SDK. No Visual Studio needed.
+      - MSVC: uses Visual Studio (cl.exe), downloads prebuilt LLVM MSVC SDK and prebuilt Z3 package.
 
     Steps performed:
-      1. Verify winget
+      1. Verify winget & execution policy
       2. Install CMake (if missing)
       3. Install Ninja (if missing)
-      4. Run build.ps1 to download llvm-mingw, compile Z3, and build SVF
+      4. Run build.ps1 to download SDKs, configure, and build SVF
 
-    Estimated first run time: 15-30 minutes
-      - llvm-mingw download: ~300 MB
-      - Z3 compilation from source: ~5 minutes
-      - SVF compilation: ~5-10 minutes
+.PARAMETER Compiler
+    mingw (default) or msvc.
 
 .PARAMETER BuildType
     Release (default) or Debug.
 
 .PARAMETER BuildSharedLibs
-    ON (default) for DLL with RTTI, OFF for static libraries.
-    llvm-mingw compiles LLVM with RTTI enabled, so ON works.
+    OFF (default) for static libraries, ON for shared libraries.
+
+.PARAMETER LLVMDir
+    Optional custom LLVM SDK directory.
 
 .PARAMETER SkipTools
-    Skip CMake and Ninja installation (if already in PATH).
+    Skip CMake and Ninja installation check.
 
 .EXAMPLE
     .\setup-windows.ps1
-    .\setup-windows.ps1 -BuildType Debug
+    .\setup-windows.ps1 -Compiler msvc
+    .\setup-windows.ps1 -Compiler msvc -BuildType Debug
     .\setup-windows.ps1 -BuildSharedLibs OFF
-    .\setup-windows.ps1 -SkipTools
 #>
 
 param(
+    [ValidateSet("mingw", "msvc")]
+    [string]$Compiler = "mingw",
+
     [ValidateSet("Release", "Debug")]
     [string]$BuildType = "Release",
 
@@ -42,9 +46,6 @@ param(
     [string]$BuildSharedLibs = "OFF",
 
     [string]$LLVMDir = "",
-
-    [ValidateSet("mingw", "msvc")]
-    [string]$Compiler = "mingw",
 
     [switch]$SkipTools
 )
@@ -100,14 +101,12 @@ if (-not $SkipTools) {
         Write-Host "  CMake not found. Installing with winget..."
         winget install --id Kitware.CMake --exact --silent `
             --accept-package-agreements --accept-source-agreements
-        # Reload PATH in session
         $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" +
                     [System.Environment]::GetEnvironmentVariable("PATH", "User")
         if (Get-Command cmake -ErrorAction SilentlyContinue) {
             Write-Host "  CMake installed: OK" -ForegroundColor Green
         } else {
-            Write-Host "  CMake installed but not yet in PATH." -ForegroundColor Yellow
-            Write-Host "  Restart PowerShell and rerun the script if the build fails." -ForegroundColor Yellow
+            Write-Host "  CMake installed but not yet in PATH. Restart PowerShell if needed." -ForegroundColor Yellow
         }
     } else {
         $v = cmake --version | Select-Object -First 1
@@ -125,8 +124,7 @@ if (-not $SkipTools) {
         if (Get-Command ninja -ErrorAction SilentlyContinue) {
             Write-Host "  Ninja installed: OK" -ForegroundColor Green
         } else {
-            Write-Host "  Ninja installed but not yet in PATH." -ForegroundColor Yellow
-            Write-Host "  Restart PowerShell and rerun the script if the build fails." -ForegroundColor Yellow
+            Write-Host "  Ninja installed but not yet in PATH. Restart PowerShell if needed." -ForegroundColor Yellow
         }
     } else {
         $v = ninja --version
@@ -137,13 +135,18 @@ if (-not $SkipTools) {
 }
 
 # ---------------------------------------------------------------------------
-# 4. Build SVF (Local LLVM + Clang SDK + Z3 from source + SVF)
+# 4. Build SVF
 # ---------------------------------------------------------------------------
 
 Write-Step "Starting SVF build"
+Write-Host "  Compiler:        $Compiler"
 Write-Host "  BuildType:       $BuildType"
 Write-Host "  BuildSharedLibs: $BuildSharedLibs"
-Write-Host "  Toolchain:       Local LLVM + Clang SDK (clang++, no VS Build Tools, no local MSYS2 install)"
+if ($Compiler -eq "mingw") {
+    Write-Host "  Toolchain:       Local MSYS2 clang64 SDK (Clang targeting MinGW/UCRT)"
+} else {
+    Write-Host "  Toolchain:       MSVC cl.exe with automated LLVM MSVC SDK"
+}
 Write-Host ""
 
 $buildScript = Join-Path $ScriptDir "build.ps1"
@@ -152,13 +155,14 @@ if (-not (Test-Path $buildScript)) {
 }
 
 $buildArgs = @{
-    BuildType = $BuildType
+    Compiler        = $Compiler
+    BuildType       = $BuildType
     BuildSharedLibs = $BuildSharedLibs
-    Compiler = $Compiler
 }
 if ($LLVMDir) {
     $buildArgs["LLVMDir"] = $LLVMDir
 }
+
 & $buildScript @buildArgs
 
 # ---------------------------------------------------------------------------
@@ -167,15 +171,11 @@ if ($LLVMDir) {
 
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor Green
-Write-Host " Setup completed."                                           -ForegroundColor Green
+Write-Host " Setup completed successfully."                               -ForegroundColor Green
 Write-Host ""
-Write-Host " To use SVF in the current session:"                      -ForegroundColor White
-Write-Host "   . .\cmake\scripts\setup.ps1"                               -ForegroundColor Yellow
+Write-Host " To use SVF in the current session:"                         -ForegroundColor White
+Write-Host "   . .\cmake\scripts\setup.ps1"                                  -ForegroundColor Yellow
 Write-Host ""
-Write-Host " Smoke test:"                                                  -ForegroundColor White
-Write-Host "   wpa --help"                                                 -ForegroundColor Yellow
-Write-Host ""
-Write-Host " Test with bitcode:"                                            -ForegroundColor White
-Write-Host "   clang -emit-llvm -c test.c -o test.bc"                     -ForegroundColor Yellow
-Write-Host "   wpa -ander -stat=false test.bc"                            -ForegroundColor Yellow
+Write-Host " Smoke test:"                                                     -ForegroundColor White
+Write-Host "   wpa --help"                                                    -ForegroundColor Yellow
 Write-Host "============================================================" -ForegroundColor Green
