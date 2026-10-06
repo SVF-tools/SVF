@@ -50,26 +50,113 @@ struct MemcpyField
     const SVFType* elementType;
 };
 
-bool parseNondetArgStoreAtExtCall(const std::string& annotation, u32_t& firstArg)
+/// Extract a zero-based argument index from an extapi annotation.
+/// For example, parseAnnotationArgIndex("STORE_TOP:Arg2+", "STORE_TOP:Arg",
+/// argIdx, end) returns true with argIdx = 2 and end = 14 (the '+' position).
+/// The caller checks any suffix; return false if the prefix or digits are missing.
+bool parseAnnotationArgIndex(const std::string& annotation, const std::string& prefix,
+                             u32_t& argIdx, size_t& end)
 {
-    const std::string prefix = "STORE_TOP:Arg";
     const size_t start = annotation.find(prefix);
     if (start == std::string::npos)
         return false;
 
-    size_t idx = start + prefix.size();
-    if (idx >= annotation.size() || annotation[idx] < '0' || annotation[idx] > '9')
+    end = start + prefix.size();
+    if (end >= annotation.size() || annotation[end] < '0' || annotation[end] > '9')
         return false;
 
-    firstArg = 0;
+    argIdx = 0;
     do
     {
-        firstArg = firstArg * 10 + static_cast<u32_t>(annotation[idx] - '0');
-        ++idx;
+        argIdx = argIdx * 10 + static_cast<u32_t>(annotation[end] - '0');
+        ++end;
     }
-    while (idx < annotation.size() && annotation[idx] >= '0' && annotation[idx] <= '9');
+    while (end < annotation.size() && annotation[end] >= '0' && annotation[end] <= '9');
+    return true;
+}
 
-    return idx < annotation.size() && annotation[idx] == '+';
+/// Find the first output argument described by a STORE_TOP annotation.
+/// For sscanf(input, "%d", &n), "STORE_TOP:Arg2+" returns true with firstArg = 2:
+/// unknown values are stored through &n and any later output arguments.
+bool parseNondetArgStoreAtExtCall(const std::string& annotation, u32_t& firstArg)
+{
+    size_t end = 0;
+    return parseAnnotationArgIndex(annotation, "STORE_TOP:Arg", firstArg, end) &&
+           end < annotation.size() && annotation[end] == '+';
+}
+
+/// Find the format argument described by a SCANF annotation.
+/// For sscanf(input, "%d", &n), parseScanfFormatArg("SCANF:FormatArg1", formatArg)
+/// returns true with formatArg = 1, selecting "%d" (the second call argument).
+/// "STORE_TOP:Arg2+" returns false because it does not describe a format argument.
+/// A trailing '\0' from extapi.bc is allowed after the index.
+bool parseScanfFormatArg(const std::string& annotation, u32_t& formatArg)
+{
+    size_t end = 0;
+    return parseAnnotationArgIndex(annotation, "SCANF:FormatArg", formatArg, end);
+}
+
+/// scanf("%d", &n) writes a number, while scanf("%p", &p) writes a pointer.
+/// Keep the pointer model if the format is unknown or could write a pointer.
+bool scanfMayStorePointer(const CallBase* cs, u32_t formatArg)
+{
+    // Unknown or writable formats may contain pointer conversions.
+    const GlobalVariable* glob = SVFUtil::dyn_cast<GlobalVariable>(cs->getArgOperand(formatArg));
+    if (!glob || !glob->isConstant() || !glob->hasDefinitiveInitializer())
+        return true;
+    const ConstantDataArray* data = SVFUtil::dyn_cast<ConstantDataArray>(glob->getInitializer());
+    if (!data || !data->isCString())
+        return true;
+
+    auto format = data->getAsCString();
+    auto in = [](const std::string& set, char c)
+    {
+        return set.find(c) != std::string::npos;
+    };
+    // Consume one conversion at a time. For "%*5d %lf %p", %*5d suppresses
+    // assignment, %lf writes a double, and %p makes us return true.
+    // With just "%*5d %lf", no conversion writes a pointer, so we return false.
+    while (!format.empty())
+    {
+        const size_t percent = format.find('%');
+        if (percent == format.npos)
+            break;
+        format = format.drop_front(percent + 1);
+        if (format.consume_front("%")) // %% is a literal percent sign.
+            continue;
+
+        // Split %*5ld into suppression (*), width (5), modifier (l), and type (d).
+        const bool suppressed = format.consume_front("*");
+        format = format.ltrim("0123456789");
+        const auto modifiers = format.take_front(format.find_first_not_of("hljztLqm"));
+        format = format.drop_front(modifiers.size());
+        if (format.empty())
+            return true;
+        const char conversion = format.front();
+        format = format.drop_front();
+        // Keep the pointer model when a conversion is not recognized.
+        if (!in("diouxXaAeEfFgGsScCnp[", conversion))
+            return true;
+
+        // %m and the old GNU %as/%a[ forms allocate a string and store its address.
+        const bool allocatesString = modifiers.contains('m') ||
+                                     (conversion == 'a' && !format.empty() && in("sS[", format.front()));
+        if (!suppressed && (conversion == 'p' || allocatesString))
+            return true;
+
+        if (conversion == '[')
+        {
+            // Skip the whole character set: %[%p] matches '%' or 'p', not a pointer.
+            // In %[^]p], the first ']' is part of the character set.
+            format.consume_front("^");
+            format.consume_front("]");
+            const size_t end = format.find(']');
+            if (end == format.npos)
+                return true;
+            format = format.drop_front(end + 1);
+        }
+    }
+    return false;
 }
 
 bool hasNondetArgStoreAtExtCall(const CallICFGNode* callICFGNode)
@@ -320,12 +407,32 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
 void SVFIRBuilder::handleNondetArgStoreAtExtCall(const CallBase* cs, const CallICFGNode* callICFGNode)
 {
     Set<u32_t> storeTopArgs;
+    NodeID src = pag->getBlkPtr();
     const FunObjVar* extFun = callICFGNode->getCalledFunction();
     if (extFun)
     {
         for (const std::string& annotation :
                 ExtAPI::getExtAPI()->getExtFuncAnnotations(extFun))
         {
+            u32_t annotatedFormatArg = 0;
+            if (parseScanfFormatArg(annotation, annotatedFormatArg))
+            {
+                if (annotatedFormatArg < cs->arg_size())
+                {
+                    src = pag->getBlkPtr();
+                    if (!scanfMayStorePointer(cs, annotatedFormatArg))
+                    {
+                        // scanf("%d", &n) writes a number, not a pointer. Copy BlkPtr
+                        // into a non-pointer variable so AE still sees an unknown value.
+                        src = pag->addValNode(NodeIDAllocator::get()->allocateValueId(), SVFType::getSVFInt8Type(), callICFGNode);
+                        // Keep the call's LLVM value available when printing this variable.
+                        llvmModuleSet()->addToSVFVar2LLVMValueMap(cs, pag->getGNode(src));
+                        addCopyEdge(pag->getBlkPtr(), src, CopyStmt::COPYVAL);
+                    }
+                }
+                continue;
+            }
+
             u32_t firstArg = 0;
             if (!parseNondetArgStoreAtExtCall(annotation, firstArg))
                 continue;
@@ -345,7 +452,6 @@ void SVFIRBuilder::handleNondetArgStoreAtExtCall(const CallBase* cs, const CallI
 
         const Type* storedType =
             LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->inferObjType(arg);
-        NodeID src = pag->getBlkPtr();
         NodeID dst = getValueNode(arg);
         if (NodeID fieldZero = getDirectAccessFieldZeroValVar(arg, storedType))
             dst = fieldZero;

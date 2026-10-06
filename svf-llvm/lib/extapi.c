@@ -19,6 +19,8 @@
         MEMCPY,            // memset() operations
         OVERWRITE,         // svf function overwrite app function
         STORE_TOP:Argi+,   // store nondeterministic top values through argument i and following arguments
+        SCANF:FormatArgi,  // argument i is a scanf-style format string; if it cannot write an address,
+                           // the STORE_TOP outputs get an unknown non-pointer value instead of a black-hole pointer
 */
 __attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
 void *malloc(unsigned long size)
@@ -848,37 +850,37 @@ unsigned long iconv(void* cd, char **__restrict inbuf, unsigned long *__restrict
     return 0;
 }
 
-__attribute__((annotate("STORE_TOP:Arg1+")))
+__attribute__((annotate("STORE_TOP:Arg1+"), annotate("SCANF:FormatArg0")))
 int scanf(const char *format, ...)
 {
     return 0;
 }
 
-__attribute__((annotate("STORE_TOP:Arg1+")))
+__attribute__((annotate("STORE_TOP:Arg1+"), annotate("SCANF:FormatArg0")))
 int __isoc99_scanf(const char *format, ...)
 {
     return 0;
 }
 
-__attribute__((annotate("STORE_TOP:Arg2+")))
+__attribute__((annotate("STORE_TOP:Arg2+"), annotate("SCANF:FormatArg1")))
 int fscanf(void *stream, const char *format, ...)
 {
     return 0;
 }
 
-__attribute__((annotate("STORE_TOP:Arg2+")))
+__attribute__((annotate("STORE_TOP:Arg2+"), annotate("SCANF:FormatArg1")))
 int __isoc99_fscanf(void *stream, const char *format, ...)
 {
     return 0;
 }
 
-__attribute__((annotate("STORE_TOP:Arg2+")))
+__attribute__((annotate("STORE_TOP:Arg2+"), annotate("SCANF:FormatArg1")))
 int sscanf(const char *str, const char *format, ...)
 {
     return 0;
 }
 
-__attribute__((annotate("STORE_TOP:Arg2+")))
+__attribute__((annotate("STORE_TOP:Arg2+"), annotate("SCANF:FormatArg1")))
 int __isoc99_sscanf(const char *str, const char *format, ...)
 {
     return 0;
