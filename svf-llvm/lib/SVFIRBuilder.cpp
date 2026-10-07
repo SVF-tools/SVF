@@ -48,6 +48,8 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace LLVMUtil;
 
+u32_t SVFIRBuilder::numModeledExtractValue = 0;
+u32_t SVFIRBuilder::numUnmodeledExtractValue = 0;
 
 /*!
  * Start building SVFIR here
@@ -62,6 +64,7 @@ SVFIR* SVFIRBuilder::build()
     if(pag->getNodeNumAfterPAGBuild() > 1)
         return pag;
 
+    numModeledExtractValue = numUnmodeledExtractValue = 0;
 
     createFunObjVars();
 
@@ -1329,9 +1332,126 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
  * however we can not create %call34 as an memory object, as it is register value.
  * Is that necessary treat extract value as getelementptr instruction later to get more precise results?
  */
+bool SVFIRBuilder::collectAggFieldSources(const Value* agg, llvm::ArrayRef<unsigned> indices,
+        const llvm::CallBase* via,
+        Set<std::pair<const Value*, std::vector<unsigned>>>& visited,
+        std::vector<std::pair<const Value*, const llvm::CallBase*>>& srcs,
+        u32_t depth)
+{
+    if (depth > 32)
+        return false;
+    // A (value, field) pair seen before adds nothing: its first visit collects its sources.
+    if (!visited.insert({agg, std::vector<unsigned>(indices.begin(), indices.end())}).second)
+        return true;
+
+    if (const auto* iv = SVFUtil::dyn_cast<llvm::InsertValueInst>(agg))
+    {
+        llvm::ArrayRef<unsigned> ivIdx = iv->getIndices();
+        size_t n = std::min(ivIdx.size(), indices.size());
+        if (!std::equal(ivIdx.begin(), ivIdx.begin() + n, indices.begin()))
+            return collectAggFieldSources(iv->getAggregateOperand(), indices, via, visited, srcs,
+                                          depth + 1);
+        if (ivIdx.size() == indices.size())
+        {
+            srcs.push_back({iv->getInsertedValueOperand(), via});
+            return true;
+        }
+        if (ivIdx.size() < indices.size())
+            return collectAggFieldSources(iv->getInsertedValueOperand(),
+                                          indices.drop_front(ivIdx.size()), via, visited, srcs,
+                                          depth + 1);
+        // The insertion writes inside our field, which is then not a scalar.
+        return false;
+    }
+    if (const auto* ev = SVFUtil::dyn_cast<llvm::ExtractValueInst>(agg))
+    {
+        std::vector<unsigned> outer(ev->getIndices().begin(), ev->getIndices().end());
+        outer.insert(outer.end(), indices.begin(), indices.end());
+        return collectAggFieldSources(ev->getAggregateOperand(), outer, via, visited, srcs,
+                                      depth + 1);
+    }
+    if (const auto* phi = SVFUtil::dyn_cast<llvm::PHINode>(agg))
+    {
+        for (const Value* in : phi->incoming_values())
+            if (!collectAggFieldSources(in, indices, via, visited, srcs, depth + 1))
+                return false;
+        return true;
+    }
+    if (const auto* sel = SVFUtil::dyn_cast<llvm::SelectInst>(agg))
+        return collectAggFieldSources(sel->getTrueValue(), indices, via, visited, srcs, depth + 1) &&
+               collectAggFieldSources(sel->getFalseValue(), indices, via, visited, srcs, depth + 1);
+    if (const auto* fr = SVFUtil::dyn_cast<llvm::FreezeInst>(agg))
+        return collectAggFieldSources(fr->getOperand(0), indices, via, visited, srcs, depth + 1);
+    if (const auto* cb = SVFUtil::dyn_cast<llvm::CallBase>(agg))
+    {
+        const Function* callee = cb->getCalledFunction();
+        if (callee == nullptr || callee->isDeclaration() || callee->isIntrinsic())
+            return false;
+        // The sources below are in the callee; the copy is anchored at the outermost call.
+        const llvm::CallBase* boundary = via ? via : cb;
+        for (const BasicBlock& bb : *callee)
+            if (const auto* ret = SVFUtil::dyn_cast<llvm::ReturnInst>(bb.getTerminator()))
+                if (const Value* rv = ret->getReturnValue())
+                    if (!collectAggFieldSources(rv, indices, boundary, visited, srcs, depth + 1))
+                        return false;
+        return true;
+    }
+    if (SVFUtil::isa<llvm::UndefValue>(agg))
+    {
+        srcs.push_back({agg, via});
+        return true;
+    }
+    if (const auto* c = SVFUtil::dyn_cast<llvm::Constant>(agg))
+    {
+        const llvm::Constant* field = c;
+        for (unsigned i : indices)
+        {
+            field = field->getAggregateElement(i);
+            if (field == nullptr)
+                return false;
+        }
+        if (field->isNullValue())
+            return true;
+        if (SVFUtil::isa<llvm::UndefValue>(field))
+        {
+            srcs.push_back({field, via});
+            return true;
+        }
+        return false;
+    }
+    // Aggregates loaded from memory, passed as arguments, or produced by landingpad,
+    // cmpxchg or inline assembly are not traced.
+    return false;
+}
+
+/*!
+ * visit extract value instructions for structures in registers
+ * Without -model-extractvalue the result points to the black hole. With it, a pointer
+ * result gets the values inserted into its field, wherever they can all be traced.
+ */
 void SVFIRBuilder::visitExtractValueInst(ExtractValueInst  &inst)
 {
     NodeID dst = getValueNode(&inst);
+    if (Options::ModelExtractValue() && inst.getType()->isPointerTy())
+    {
+        Set<std::pair<const Value*, std::vector<unsigned>>> visited;
+        std::vector<std::pair<const Value*, const llvm::CallBase*>> srcs;
+        if (collectAggFieldSources(inst.getAggregateOperand(), inst.getIndices(), nullptr, visited,
+                                   srcs, 0))
+        {
+            for (const auto& [src, via] : srcs)
+            {
+                NodeID srcId = getValueNode(src);
+                if (via == nullptr)
+                    addCopyEdge(srcId, dst, CopyStmt::COPYVAL);
+                else
+                    pag->addAggFieldCopy(srcId, dst);
+            }
+            ++numModeledExtractValue;
+            return;
+        }
+        ++numUnmodeledExtractValue;
+    }
     addBlackHoleAddrEdge(dst);
 }
 

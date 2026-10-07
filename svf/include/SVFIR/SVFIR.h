@@ -101,6 +101,10 @@ private:
     CommonCHGraph* chgraph; // class hierarchy graph
     CallSiteSet callSiteSet; /// all the callsites of a program
     CallGraph* callGraph; /// Callgraph with direct calls only; no change allowed after init and use callgraph in PointerAnalysis for indirect calls)
+    /// Copies (source, destination) from a callee's value into an aggregate field to the
+    /// caller's extractvalue of it (-model-extractvalue). They cross a function boundary
+    /// that already has its one return statement, so ConstraintGraph adds them directly.
+    std::vector<std::pair<NodeID, NodeID>> aggFieldCopies;
 
     static std::unique_ptr<SVFIR> pag;	///< Singleton pattern here to enable instance of SVFIR can only be created once.
     static std::string pagReadFromTxt;
@@ -192,6 +196,17 @@ public:
     inline const IDToNodeMapTy& getSVFVarMap() const
     {
         return IDToNodeMap;
+    }
+    //@}
+    /// Cross-function aggregate field copies of -model-extractvalue
+    //@{
+    inline void addAggFieldCopy(NodeID src, NodeID dst)
+    {
+        aggFieldCopies.emplace_back(src, dst);
+    }
+    inline const std::vector<std::pair<NodeID, NodeID>>& getAggFieldCopies() const
+    {
+        return aggFieldCopies;
     }
     //@}
     /// Return memToFieldsMap
