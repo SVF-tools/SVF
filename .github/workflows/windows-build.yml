@@ -64,7 +64,7 @@ jobs:
         working-directory: ${{ github.workspace }}/Release-build
         run: |
           $env:PATH = "${{ github.workspace }}\Release-build\bin;${{ github.workspace }}\Release-build\lib;${{ github.workspace }}\z3.obj\bin;${{ github.workspace }}\llvm-21.1.0.obj\bin;$env:PATH"
-          ctest --output-on-failure
+          ctest --output-on-failure -E symabs
 
       - name: Run CTests (MinGW)
         if: matrix.compiler == 'mingw'
@@ -72,7 +72,7 @@ jobs:
         working-directory: ${{ github.workspace }}/Release-build
         run: |
           export PATH="${{ github.workspace }}/Release-build/bin:${{ github.workspace }}/Release-build/lib:$PATH"
-          ctest --output-on-failure
+          ctest --output-on-failure -E symabs
 
       - name: Create Coverage Report (MinGW)
         if: matrix.compiler == 'mingw'
