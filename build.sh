@@ -317,6 +317,24 @@ ensure_llvm() {
         return
     fi
 
+    # In MinGW / MSYS2, check if system LLVM is installed
+    if [[ "$PLATFORM" == "windows-mingw" ]]; then
+        if command -v llvm-config >/dev/null 2>&1; then
+            LLVM_DIR="$(llvm-config --prefix)"
+            export LLVM_DIR
+            echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
+            return
+        elif [[ -d "/clang64/include/llvm" ]]; then
+            export LLVM_DIR="/clang64"
+            echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
+            return
+        elif [[ -d "/mingw64/include/llvm" ]]; then
+            export LLVM_DIR="/mingw64"
+            echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
+            return
+        fi
+    fi
+
     if [[ ! -d "$LLVMHome" ]]; then
         case "$PLATFORM" in
             macos-*)
@@ -390,6 +408,19 @@ ensure_z3() {
     if [[ -n "${Z3_DIR:-}" && -d "$Z3_DIR" ]]; then
         echo "Using existing Z3_DIR=$Z3_DIR"
         return
+    fi
+
+    # In MinGW / MSYS2, check if system Z3 is installed
+    if [[ "$PLATFORM" == "windows-mingw" ]]; then
+        if [[ -f "/clang64/include/z3.h" || -d "/clang64/include/z3" ]]; then
+            export Z3_DIR="/clang64"
+            echo "Using MinGW system Z3_DIR=$Z3_DIR"
+            return
+        elif [[ -f "/mingw64/include/z3.h" || -d "/mingw64/include/z3" ]]; then
+            export Z3_DIR="/mingw64"
+            echo "Using MinGW system Z3_DIR=$Z3_DIR"
+            return
+        fi
     fi
 
     if [[ ! -d "$Z3Home" ]]; then
@@ -468,6 +499,7 @@ build_svf() {
     cmake -D CMAKE_BUILD_TYPE:STRING="$BUILD_TYPE"  \
         -DSVF_ENABLE_ASSERTIONS:BOOL=true            \
         ${SVF_SANITIZER:+-DSVF_SANITIZE="$SVF_SANITIZER"} \
+        ${SVF_COVERAGE:+-DSVF_COVERAGE=ON -DSVF_DEBUG_INFO=ON} \
         -DBUILD_SHARED_LIBS="$BUILD_DYN_LIB"         \
         "${cmake_generator_args[@]}"                \
         "${cmake_rpath_args[@]}"                    \
