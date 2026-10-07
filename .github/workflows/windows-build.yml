@@ -49,14 +49,14 @@ jobs:
         if: matrix.compiler == 'msvc'
         shell: bash
         run: |
-          source ${{ github.workspace }}/build.sh
+          source ./build.sh
 
       - name: Build SVF (MinGW)
         if: matrix.compiler == 'mingw'
         shell: msys2 {0}
         run: |
           export SVF_COVERAGE=1
-          source ${{ github.workspace }}/build.sh
+          source ./build.sh
 
       - name: Run CTests (MSVC)
         if: matrix.compiler == 'msvc'
