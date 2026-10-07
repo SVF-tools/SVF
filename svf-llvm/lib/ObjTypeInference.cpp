@@ -320,7 +320,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                          */
                         insertInferSite(storeInst);
                     }
-                    else
+                    else if (hasUseList(storeInst->getPointerOperand()))
                     {
                         for (const auto nit :
                                 storeInst->getPointerOperand()->users())
@@ -361,8 +361,8 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                               0, !dbg !50
                              */
                             const Value* gepBase = gepInst->getPointerOperand();
-                            if (const auto* load =
-                                        SVFUtil::dyn_cast<LoadInst>(gepBase))
+                            const auto* load = SVFUtil::dyn_cast<LoadInst>(gepBase);
+                            if (load && hasUseList(load->getPointerOperand()))
                             {
                                 for (const auto loadUse :
                                         load->getPointerOperand()->users())
@@ -620,13 +620,19 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOfVar(const Value *var)
         }
         else if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue))
         {
-            for (const auto use: loadInst->getPointerOperand()->users())
+            // A load through a constant pointer (null, undef, poison) has no store to
+            // follow, and LLVM 21 keeps no use list for such constants.
+            const Value* ptr = loadInst->getPointerOperand();
+            if (hasUseList(ptr))
             {
-                if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(use))
+                for (const auto use: ptr->users())
                 {
-                    if (storeInst->getPointerOperand() == loadInst->getPointerOperand())
+                    if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(use))
                     {
-                        insertAllocsOrPushWorklist(storeInst->getValueOperand());
+                        if (storeInst->getPointerOperand() == loadInst->getPointerOperand())
+                        {
+                            insertAllocsOrPushWorklist(storeInst->getValueOperand());
+                        }
                     }
                 }
             }
@@ -929,13 +935,17 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
         }
         else if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue))
         {
-            for (const auto *user : loadInst->getPointerOperand()->users())
+            const Value* ptr = loadInst->getPointerOperand();
+            if (hasUseList(ptr))
             {
-                if (const auto *storeInst = SVFUtil::dyn_cast<StoreInst>(user))
+                for (const auto *user : ptr->users())
                 {
-                    if (storeInst->getPointerOperand() == loadInst->getPointerOperand())
+                    if (const auto *storeInst = SVFUtil::dyn_cast<StoreInst>(user))
                     {
-                        insertSourcesOrPushWorklist(storeInst->getValueOperand());
+                        if (storeInst->getPointerOperand() == loadInst->getPointerOperand())
+                        {
+                            insertSourcesOrPushWorklist(storeInst->getValueOperand());
+                        }
                     }
                 }
             }
