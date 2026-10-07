@@ -168,6 +168,13 @@ Option<bool> Options::HandBlackHole(
     false
 );
 
+const Option<bool> Options::UndefAsNull(
+    "undef-as-null",
+    "Give undef and poison pointers no targets instead of the black hole "
+    "(sound for clients that may assume the program has no undefined behaviour)",
+    false
+);
+
 const Option<bool> Options::FirstFieldEqBase(
     "ff-eq-base",
     "Treat base objects as their first fields",

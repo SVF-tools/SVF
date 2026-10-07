@@ -1082,7 +1082,7 @@ NodeID LLVMModuleSet::getValueNode(const Value *llvm_value)
     if (SVFUtil::isa<ConstantPointerNull>(llvm_value))
         return svfir->nullPtrSymID();
     else if (SVFUtil::isa<UndefValue>(llvm_value))
-        return svfir->blkPtrSymID();
+        return Options::UndefAsNull() ? svfir->nullPtrSymID() : svfir->blkPtrSymID();
     else
     {
         ValueToIDMapTy::const_iterator iter = valSymMap.find(llvm_value);
