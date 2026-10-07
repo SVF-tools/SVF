@@ -202,14 +202,21 @@ void collectMemcpyFields(
         return;
     }
 
+    // The LLVM and SVF types are walked one level at a time, so each element's SVF type is
+    // taken from its parent SVF type directly. getOriginalElemType() cannot be used here: it
+    // is keyed by flattened field index, and for nested arrays it returns the innermost
+    // element type, which pairs e.g. [8192 x i8] with i8 one level down.
     if (const auto* structType = SVFUtil::dyn_cast<StructType>(llvmType))
     {
+        const auto* svfStructType = SVFUtil::dyn_cast<SVFStructType>(svfType);
+        if (svfStructType == nullptr)
+            return;
         const StructLayout* layout = dl.getStructLayout(const_cast<StructType*>(structType));
         for (u32_t i = 0;
                 i < structType->getNumElements() && fields.size() < maxFields; ++i)
         {
             const Type* elemLLVMType = structType->getElementType(i);
-            const SVFType* elemSVFType = pag->getOriginalElemType(svfType, i);
+            const SVFType* elemSVFType = svfStructType->getFieldTypes()[i];
             if (elemSVFType == nullptr)
                 return;
             APOffset elemByteOffset = baseByteOffset + static_cast<APOffset>(layout->getElementOffset(i));
@@ -221,8 +228,11 @@ void collectMemcpyFields(
 
     if (const auto* arrayType = SVFUtil::dyn_cast<ArrayType>(llvmType))
     {
+        const auto* svfArrayType = SVFUtil::dyn_cast<SVFArrayType>(svfType);
+        if (svfArrayType == nullptr)
+            return;
         const Type* elemLLVMType = arrayType->getElementType();
-        const SVFType* elemSVFType = pag->getOriginalElemType(svfType, 0);
+        const SVFType* elemSVFType = svfArrayType->getTypeOfElement();
         if (elemSVFType == nullptr)
             return;
         const APOffset elemByteSize = static_cast<APOffset>(dl.getTypeAllocSize(const_cast<Type*>(elemLLVMType)));
