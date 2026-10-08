@@ -60,11 +60,17 @@ fi
 #########
 #export PATH FOR SVF and LLVM executables
 #########
-if [[ $1 =~ ^[Dd]ebug$ ]]; then
-    PTAOBJTY='Debug'
-else
-    PTAOBJTY='Release'
-fi
+case "$1" in
+    [Dd]ebug)
+        PTAOBJTY='Debug'
+        ;;
+    [Mm]in[Ss]ize[Rr]el)
+        PTAOBJTY='MinSizeRel'
+        ;;
+    *)
+        PTAOBJTY='Release'
+        ;;
+esac
 
 Build="${PTAOBJTY}-build"
 

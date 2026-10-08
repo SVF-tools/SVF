@@ -2,6 +2,7 @@
 # Usage examples:
 #   ./build.sh                         # Release build, shared libs, RTTI on
 #   ./build.sh debug                   # Debug build, shared libs, RTTI on
+#   ./build.sh minsize                 # MinSizeRel build, shared libs, RTTI on
 #   ./build.sh dyn_lib                 # Release build, shared libs, RTTI on
 #   ./build.sh debug dyn_lib           # Debug build, shared libs, RTTI on
 #   ./build.sh sta_lib                 # Release build, static libs, RTTI on
@@ -51,16 +52,18 @@ MacOSZ3Arm="${Z3PrebuiltBase}/z3-${Z3Ver}-arm64-macos-14.zip"
 BUILD_TYPE="Release"
 BUILD_DYN_LIB="ON"
 RTTI="ON"
+ENABLE_ASSERTIONS="${SVF_ENABLE_ASSERTIONS:-ON}"
 PLATFORM=""
 urlLLVM=""
 urlZ3=""
 
 usage() {
     cat <<USAGE
-Usage: ./build.sh [debug] [dyn_lib|sta_lib] [nortti]
+Usage: ./build.sh [debug|minsize] [dyn_lib|sta_lib] [nortti]
 
 Options:
   debug      Build Debug instead of Release.
+  minsize    Build MinSizeRel to reduce binary size.
   dyn_lib    Build shared libraries. This is the default.
   sta_lib    Build static libraries.
   nortti     Disable LLVM RTTI. Valid only for static-library builds.
@@ -70,6 +73,7 @@ Environment variables:
   Z3_DIR             Use an existing Z3 installation.
   SVF_BUILD_JOBS     Number of parallel build jobs. Default: 8.
   SVF_SANITIZER      Sanitizer option passed to CMake.
+  SVF_ENABLE_ASSERTIONS  Enable assertions. Default: ON.
 USAGE
 }
 
@@ -78,6 +82,9 @@ parse_args() {
         case "$arg" in
             [Dd]ebug)
                 BUILD_TYPE="Debug"
+                ;;
+            [Mm]insize|[Mm]in[Ss]ize[Rr]el)
+                BUILD_TYPE="MinSizeRel"
                 ;;
             [Dd]yn_[Ll]ib)
                 BUILD_DYN_LIB="ON"
@@ -192,6 +199,7 @@ print_config() {
     echo "  Platform:       ${PLATFORM} (${sysOS}/${arch})"
     echo "  Build type:     ${BUILD_TYPE}"
     echo "  Shared libs:    ${BUILD_DYN_LIB}"
+    echo "  Assertions:     ${ENABLE_ASSERTIONS}"
     echo "  LLVM RTTI:      ${RTTI}"
     echo "  Jobs:           ${jobs}"
     echo "  LLVM_DIR:       ${LLVM_DIR:-n/a}"
@@ -497,7 +505,7 @@ build_svf() {
     mkdir "$build_dir"
 
     cmake -D CMAKE_BUILD_TYPE:STRING="$BUILD_TYPE"  \
-        -DSVF_ENABLE_ASSERTIONS:BOOL=true            \
+        -DSVF_ENABLE_ASSERTIONS:BOOL="$ENABLE_ASSERTIONS" \
         ${SVF_SANITIZER:+-DSVF_SANITIZE="$SVF_SANITIZER"} \
         ${SVF_COVERAGE:+-DSVF_COVERAGE=ON}           \
         ${SVF_DEBUG_INFO:+-DSVF_DEBUG_INFO=ON}       \
