@@ -83,7 +83,7 @@ jobs:
           git clone "https://github.com/SVF-tools/Test-Suite.git";
           if [ "$RUNNER_OS" == "Windows" ]; then
             export SVF_ENABLE_ASSERTIONS=OFF
-            source ./build.sh minsize
+            source ./build.sh minsize nortti
           else
             source ./build.sh dyn_lib
           fi
