@@ -32,7 +32,6 @@
 
 #include "Util/cJSON.h"
 #include "Util/GeneralType.h"
-#include "AE/Core/NumericValue.h"
 
 #define BRANCHFLAGMASK 0x00000010
 #define EVENTTYPEMASK 0x0000000f
@@ -120,12 +119,12 @@ public:
 class BufferOverflowBug: public GenericBug
 {
 protected:
-    BoundedInt allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound;
+    s64_t allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound;
 
 public:
     BufferOverflowBug(GenericBug::BugType bugType, const EventStack &eventStack,
-                      BoundedInt allocLowerBound, BoundedInt allocUpperBound,
-                      BoundedInt accessLowerBound, BoundedInt accessUpperBound):
+                      s64_t allocLowerBound, s64_t allocUpperBound,
+                      s64_t accessLowerBound, s64_t accessUpperBound):
         GenericBug(bugType, eventStack), allocLowerBound(allocLowerBound),
         allocUpperBound(allocUpperBound), accessLowerBound(accessLowerBound),
         accessUpperBound(accessUpperBound) { }
@@ -144,8 +143,8 @@ class FullBufferOverflowBug: public BufferOverflowBug
 {
 public:
     FullBufferOverflowBug(const EventStack &eventStack,
-                          BoundedInt allocLowerBound, BoundedInt allocUpperBound,
-                          BoundedInt accessLowerBound, BoundedInt accessUpperBound):
+                          s64_t allocLowerBound, s64_t allocUpperBound,
+                          s64_t accessLowerBound, s64_t accessUpperBound):
         BufferOverflowBug(GenericBug::FULLBUFOVERFLOW, eventStack, allocLowerBound,
                           allocUpperBound, accessLowerBound, accessUpperBound) { }
 
@@ -160,8 +159,8 @@ class PartialBufferOverflowBug: public BufferOverflowBug
 {
 public:
     PartialBufferOverflowBug( const EventStack &eventStack,
-                              BoundedInt allocLowerBound, BoundedInt allocUpperBound,
-                              BoundedInt accessLowerBound, BoundedInt accessUpperBound):
+                              s64_t allocLowerBound, s64_t allocUpperBound,
+                              s64_t accessLowerBound, s64_t accessUpperBound):
         BufferOverflowBug(GenericBug::PARTIALBUFOVERFLOW, eventStack, allocLowerBound,
                           allocUpperBound, accessLowerBound, accessUpperBound) { }
 
@@ -364,8 +363,7 @@ public:
      * usage: addAbsExecBug(GenericBug::FULLBUFOVERFLOW, eventStack, 0, 10, 11, 11)
      */
     void addAbsExecBug(GenericBug::BugType bugType, const GenericBug::EventStack &eventStack,
-                       BoundedInt allocLowerBound, BoundedInt allocUpperBound,
-                       BoundedInt accessLowerBound, BoundedInt accessUpperBound)
+                       s64_t allocLowerBound, s64_t allocUpperBound, s64_t accessLowerBound, s64_t accessUpperBound)
     {
         /// add bugs
         GenericBug *newBug = nullptr;
