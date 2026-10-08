@@ -620,8 +620,10 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOfVar(const Value *var)
         }
         else if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue))
         {
-            // A load through a constant pointer (null, undef, poison) has no store to
-            // follow, and LLVM 21 keeps no use list for such constants.
+            // Skip a load through a constant pointer: it has no store to follow, and LLVM 21
+            // keeps no use list for constants, so users() would assert, e.g.:
+            //   %p = load ptr, ptr poison
+            //   %q = getelementptr inbounds i8, ptr %p, i64 8
             const Value* ptr = loadInst->getPointerOperand();
             if (hasUseList(ptr))
             {
