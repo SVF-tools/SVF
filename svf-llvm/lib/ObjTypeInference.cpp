@@ -647,10 +647,9 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOfVar(const Value *var)
         }
         else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(curValue))
         {
-            // A call that never returns yields no value, so no allocation flows out of it.
-            // Linked programs contain such calls: LLVM infers noreturn for a stub in one
-            // module (e.g. a function that only calls exit) while callers elsewhere still
-            // use its result.
+            // A noreturn call yields no value, so skip it, e.g. (@stub only calls exit):
+            //   %p = call ptr @stub()
+            //   %q = getelementptr inbounds i8, ptr %p, i64 4
             const Function *callee =
                 callBase->doesNotReturn() ? nullptr : callBase->getCalledFunction();
             if (callee)
@@ -662,9 +661,8 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOfVar(const Value *var)
                     const BasicBlock* exitBB = llvmmodule->getFunExitBB(callee);
                     assert (exitBB && "exit bb is not a basic block?");
                     const Value *pValue = &exitBB->back();
-                    // The callee may end without returning a value even when it is not
-                    // marked noreturn (an unoptimised function that only calls exit); it then
-                    // contributes no allocation.
+                    // The callee may end without a return value, e.g. (unoptimised @stub):
+                    //   define ptr @stub() { call void @exit(i32 1)  unreachable }
                     const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
                     if (retInst && retInst->getReturnValue())
                         insertAllocsOrPushWorklist(retInst->getReturnValue());
@@ -964,10 +962,9 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
         }
         else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(curValue))
         {
-            // A call that never returns yields no value, so no allocation flows out of it.
-            // Linked programs contain such calls: LLVM infers noreturn for a stub in one
-            // module (e.g. a function that only calls exit) while callers elsewhere still
-            // use its result.
+            // A noreturn call yields no value, so skip it, e.g. (@stub only calls exit):
+            //   %p = call ptr @stub()
+            //   %q = getelementptr inbounds i8, ptr %p, i64 4
             const Function *callee =
                 callBase->doesNotReturn() ? nullptr : callBase->getCalledFunction();
             if (callee)
@@ -978,9 +975,8 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
                     const BasicBlock* exitBB = llvmmodule->getFunExitBB(callee);
                     assert (exitBB && "exit bb is not a basic block?");
                     const Value *pValue = &exitBB->back();
-                    // The callee may end without returning a value even when it is not
-                    // marked noreturn (an unoptimised function that only calls exit); it then
-                    // contributes no allocation.
+                    // The callee may end without a return value, e.g. (unoptimised @stub):
+                    //   define ptr @stub() { call void @exit(i32 1)  unreachable }
                     const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
                     if (retInst && retInst->getReturnValue())
                         insertSourcesOrPushWorklist(retInst->getReturnValue());
