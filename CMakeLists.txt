@@ -363,6 +363,10 @@ install(FILES ${SVF_BINARY_DIR}/include/Util/config.h DESTINATION ${SVF_INSTALL_
 # SVF pkgconf package configuration
 # =================================================================================
 
+set(SVF_CORE_LIBS "-lSvfCore")
+if(MSVC AND NOT BUILD_SHARED_LIBS)
+  string(APPEND SVF_CORE_LIBS " -lSvfCoreExtra")
+endif()
 configure_file(cmake/SVF.pc.in ${SVF_BINARY_DIR}/lib/pkgconfig/SVF.pc @ONLY)
 install(FILES ${SVF_BINARY_DIR}/lib/pkgconfig/SVF.pc DESTINATION ${SVF_INSTALL_PKGCONFDIR})
 
