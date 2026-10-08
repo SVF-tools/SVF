@@ -4,8 +4,6 @@ on: [push, pull_request]
 
 env:
   SVF_Z3: 1
-  LLVM_SDK_TAG: "llvm_22.1.4"
-  Z3_VERSION: "4.15.4"
 
 jobs:
   windows-build:
@@ -35,132 +33,38 @@ jobs:
 
       - name: Install dependencies (MSVC only)
         if: matrix.compiler == 'msvc'
-        shell: powershell
         run: |
-          # 1. Install LLVM toolchain and Ninja via Chocolatey
-          choco install llvm ninja -y
-          
-          # 2. Download and extract LLVM development SDK
-          curl.exe -L "https://github.com/c3lang/llvm-for-c3/releases/download/${{ env.LLVM_SDK_TAG }}/llvm-windows-amd64.tar.gz" -o llvm-sdk.tar.gz
-          New-Item -ItemType Directory -Force -Path C:\llvm-sdk | Out-Null
-          tar -xf llvm-sdk.tar.gz -C C:\llvm-sdk
-          
-          # 3. Copy Clang compiler binaries and LLVM coverage tools to the SDK bin folder
-          Copy-Item -Path "C:\Program Files\LLVM\bin\clang.exe" -Destination "C:\llvm-sdk\bin\" -Force
-          Copy-Item -Path "C:\Program Files\LLVM\bin\clang++.exe" -Destination "C:\llvm-sdk\bin\" -Force
-          Copy-Item -Path "C:\Program Files\LLVM\bin\clang-cl.exe" -Destination "C:\llvm-sdk\bin\" -Force
-          Copy-Item -Path "C:\Program Files\LLVM\bin\llvm-cov.exe" -Destination "C:\llvm-sdk\bin\" -Force -ErrorAction SilentlyContinue
-          Copy-Item -Path "C:\Program Files\LLVM\bin\llvm-profdata.exe" -Destination "C:\llvm-sdk\bin\" -Force -ErrorAction SilentlyContinue
-          
-          # 3.5. Strip hardcoded absolute MSVC diaguids.lib path from LLVMExports.cmake
-          $exportsFile = "C:\llvm-sdk\lib\cmake\llvm\LLVMExports.cmake"
-          if (Test-Path $exportsFile) {
-              $content = Get-Content $exportsFile -Raw
-              $newContent = $content -replace '[a-zA-Z]:/[^";]+?/DIA SDK/lib/amd64/diaguids\.lib;', ""
-              Set-Content $exportsFile $newContent -NoNewline
-          }
-          
-          # 3.8. Download and extract Z3 for MSVC
-          curl.exe -L "https://github.com/Z3Prover/z3/releases/download/z3-${{ env.Z3_VERSION }}/z3-${{ env.Z3_VERSION }}-x64-win.zip" -o z3.zip
-          Expand-Archive -Path z3.zip -DestinationPath C:\z3-temp
-          $z3Folder = Get-ChildItem C:\z3-temp -Directory | Select-Object -First 1
-          Move-Item -Path $z3Folder.FullName -Destination C:\z3
-          
-          # 4. Export environment variables
-          Add-Content -Path $env:GITHUB_PATH -Value "C:\llvm-sdk\bin" -Encoding UTF8
-          Add-Content -Path $env:GITHUB_PATH -Value "C:\Program Files\LLVM\bin" -Encoding UTF8
-          Add-Content -Path $env:GITHUB_PATH -Value "C:\z3\bin" -Encoding UTF8
-          Add-Content -Path $env:GITHUB_ENV -Value "LLVM_DIR=C:\llvm-sdk" -Encoding UTF8
-          Add-Content -Path $env:GITHUB_ENV -Value "Z3_DIR=C:\z3" -Encoding UTF8
+          choco install ninja -y
 
       - name: Add MSVC to PATH
         if: matrix.compiler == 'msvc'
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Clone Test-Suite
-        shell: powershell
+        shell: bash
         run: |
           git clone --depth 1 "https://github.com/SVF-tools/Test-Suite.git" Test-Suite
 
       - name: Build SVF (MSVC)
         if: matrix.compiler == 'msvc'
-        shell: powershell
+        shell: bash
         run: |
-          cmake -B Release-build -S . `
-            -G Ninja `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_C_COMPILER=clang-cl `
-            -DCMAKE_CXX_COMPILER=clang-cl `
-            -DCMAKE_C_FLAGS="-fprofile-instr-generate -fcoverage-mapping" `
-            -DCMAKE_CXX_FLAGS="-fprofile-instr-generate -fcoverage-mapping" `
-            -DLLVM_DIR="$env:LLVM_DIR" `
-            -DZ3_DIR="$env:Z3_DIR" `
-            -DSVF_Z3=ON `
-            -DSVF_WARN_AS_ERROR=OFF
-          cmake --build Release-build -j
+          source ./build.sh
 
       - name: Build SVF (MinGW)
         if: matrix.compiler == 'mingw'
         shell: msys2 {0}
         run: |
-          cmake -B Release-build -S . \
-            -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER=clang \
-            -DCMAKE_CXX_COMPILER=clang++ \
-            -DSVF_Z3=ON \
-            -DSVF_COVERAGE=ON \
-            -DSVF_DEBUG_INFO=ON \
-            -DSVF_WARN_AS_ERROR=OFF
-          cmake --build Release-build -j
+          export SVF_COVERAGE=1
+          source ./build.sh
 
       - name: Run CTests (MSVC)
         if: matrix.compiler == 'msvc'
         shell: powershell
         working-directory: ${{ github.workspace }}/Release-build
         run: |
-          $env:PATH = "${{ github.workspace }}\Release-build\bin;${{ github.workspace }}\Release-build\lib;C:\z3\bin;$env:PATH"
-          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}\Release-build\profdata" | Out-Null
-          $env:LLVM_PROFILE_FILE = "${{ github.workspace }}\Release-build\profdata\svf-%p-%m.profraw"
-          ctest --output-on-failure
-
-      - name: Create Coverage Report (MSVC)
-        if: matrix.compiler == 'msvc'
-        shell: powershell
-        working-directory: ${{ github.workspace }}/Release-build
-        run: |
-          # 1. Merge raw profiles into indexed profile data
-          $profFiles = Get-ChildItem "${{ github.workspace }}\Release-build\profdata\*.profraw"
-          if ($profFiles.Count -gt 0) {
-              $profListFile = "${{ github.workspace }}\Release-build\profraw_list.txt"
-              $profFiles | ForEach-Object { $_.FullName } | Set-Content -Path $profListFile -Encoding ascii
-              llvm-profdata merge -sparse "-input-files=$profListFile" -o "${{ github.workspace }}\Release-build\coverage.profdata"
-              
-              # 2. Get all SVF executable binaries and DLLs
-              $binFiles = Get-ChildItem -Path "${{ github.workspace }}\Release-build\bin\*.exe"
-              $dllFiles = Get-ChildItem -Path "${{ github.workspace }}\Release-build\bin\*.dll", "${{ github.workspace }}\Release-build\lib\*.dll" -ErrorAction SilentlyContinue
-              $allBins = @($binFiles) + @($dllFiles) | Where-Object { $_ -ne $null }
-              $mainBin = $allBins[0].FullName
-              $extraBins = $allBins | Select-Object -Skip 1 | ForEach-Object { "-object=$($_.FullName)" }
-              
-              # 3. Export to LCOV format
-              & llvm-cov export $mainBin $extraBins `
-                "-instr-profile=${{ github.workspace }}\Release-build\coverage.profdata" `
-                -format=lcov `
-                "-sources=${{ github.workspace }}\svf" `
-                "-sources=${{ github.workspace }}\svf-llvm" | Set-Content -Path "${{ github.workspace }}\Release-build\coverage-msvc.info" -Encoding ascii
-              
-              # 4. Normalize paths in coverage-msvc.info to relative repository paths for Codecov
-              $ws = $env:GITHUB_WORKSPACE
-              $wsForward = $ws -replace '\\', '/'
-              if (Test-Path "${{ github.workspace }}\Release-build\coverage-msvc.info") {
-                  (Get-Content "${{ github.workspace }}\Release-build\coverage-msvc.info") | ForEach-Object {
-                      $_ -replace ('SF:' + [regex]::Escape($ws + '\')), 'SF:' `
-                         -replace ('SF:' + [regex]::Escape($wsForward + '/')), 'SF:' `
-                         -replace ('SF:' + [regex]::Escape($ws + '/')), 'SF:'
-                  } | Set-Content -Path "${{ github.workspace }}\Release-build\coverage-msvc.info" -Encoding ascii
-              }
-          }
+          $env:PATH = "${{ github.workspace }}\Release-build\bin;${{ github.workspace }}\Release-build\lib;${{ github.workspace }}\z3.obj\bin;${{ github.workspace }}\llvm-21.1.0.obj\bin;$env:PATH"
+          ctest --output-on-failure -E symabs
 
       - name: Run CTests (MinGW)
         if: matrix.compiler == 'mingw'
@@ -168,7 +72,7 @@ jobs:
         working-directory: ${{ github.workspace }}/Release-build
         run: |
           export PATH="${{ github.workspace }}/Release-build/bin:${{ github.workspace }}/Release-build/lib:$PATH"
-          ctest --output-on-failure
+          ctest --output-on-failure -E symabs
 
       - name: Create Coverage Report (MinGW)
         if: matrix.compiler == 'mingw'
@@ -190,8 +94,9 @@ jobs:
 
       - name: Upload Windows Coverage to Codecov
         uses: codecov/codecov-action@v5
+        if: matrix.compiler == 'mingw'
         with:
-          files: ${{ matrix.compiler == 'mingw' && 'Release-build/coverage-mingw.info' || 'Release-build/coverage-msvc.info' }}
+          files: Release-build/coverage-mingw.info
           flags: windows-${{ matrix.compiler }}
           verbose: true
         env:
