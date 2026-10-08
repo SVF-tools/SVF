@@ -44,6 +44,8 @@ AndersenWaveDiff* AndersenWaveDiff::diffWave = nullptr;
  */
 void AndersenWaveDiff::initialize()
 {
+    handledPts.clear();
+    handledEdges.clear();
     Andersen::initialize();
     setDetectPWC(true);   // Standard wave propagation always collapses PWCs
 }
@@ -95,40 +97,50 @@ void AndersenWaveDiff::processNode(NodeID nodeId)
 }
 
 /*!
- * Post process node
+ * Post process node: add the copy edges of its loads and stores.
+ * A load or store edge already handled at this node needs only the objects added to the
+ * node's points-to set since then; an edge new at the node (e.g. moved here by an SCC merge)
+ * needs all of them.
  */
 void AndersenWaveDiff::postProcessNode(NodeID nodeId)
 {
     double insertStart = stat->getClk();
 
     ConstraintNode* node = consCG->getConstraintNode(nodeId);
+    if (node->getLoadOutEdges().empty() && node->getStoreInEdges().empty())
+        return;
+    const PointsTo all = getPts(nodeId);
+    PointsTo added = all;
+    added -= handledPts[nodeId];
+    Set<EdgeID>& handled = handledEdges[nodeId];
 
     // handle load
     for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(), eit = node->outgoingLoadsEnd();
             it != eit; ++it)
     {
-        if (handleLoad(nodeId, *it))
+        if (handleLoad(handled.insert((*it)->getEdgeID()).second ? all : added, *it))
             reanalyze = true;
     }
     // handle store
     for (ConstraintNode::const_iterator it = node->incomingStoresBegin(), eit =  node->incomingStoresEnd();
             it != eit; ++it)
     {
-        if (handleStore(nodeId, *it))
+        if (handleStore(handled.insert((*it)->getEdgeID()).second ? all : added, *it))
             reanalyze = true;
     }
+    handledPts[nodeId] = all;
 
     double insertEnd = stat->getClk();
     timeOfProcessLoadStore += (insertEnd - insertStart) / TIMEINTERVAL;
 }
 
 /*!
- * Handle load
+ * Handle load: add a copy edge from each given object to the load's destination
  */
-bool AndersenWaveDiff::handleLoad(NodeID nodeId, const ConstraintEdge* edge)
+bool AndersenWaveDiff::handleLoad(const PointsTo& objs, const ConstraintEdge* edge)
 {
     bool changed = false;
-    for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(nodeId).end();
+    for (PointsTo::iterator piter = objs.begin(), epiter = objs.end();
             piter != epiter; ++piter)
     {
         if (processLoad(*piter, edge))
@@ -140,12 +152,12 @@ bool AndersenWaveDiff::handleLoad(NodeID nodeId, const ConstraintEdge* edge)
 }
 
 /*!
- * Handle store
+ * Handle store: add a copy edge from the store's source to each given object
  */
-bool AndersenWaveDiff::handleStore(NodeID nodeId, const ConstraintEdge* edge)
+bool AndersenWaveDiff::handleStore(const PointsTo& objs, const ConstraintEdge* edge)
 {
     bool changed = false;
-    for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(nodeId).end();
+    for (PointsTo::iterator piter = objs.begin(), epiter = objs.end();
             piter != epiter; ++piter)
     {
         if (processStore(*piter, edge))

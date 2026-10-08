@@ -438,8 +438,13 @@ public:
     virtual void solveWorklist();
     virtual void processNode(NodeID nodeId);
     virtual void postProcessNode(NodeID nodeId);
-    virtual bool handleLoad(NodeID id, const ConstraintEdge* load);
-    virtual bool handleStore(NodeID id, const ConstraintEdge* store);
+    virtual bool handleLoad(const PointsTo& objs, const ConstraintEdge* load);
+    virtual bool handleStore(const PointsTo& objs, const ConstraintEdge* store);
+
+private:
+    /// Per node, the objects and the load/store edges it was last post-processed with
+    Map<NodeID, PointsTo> handledPts;
+    Map<NodeID, Set<EdgeID>> handledEdges;
 };
 
 } // End namespace SVF
