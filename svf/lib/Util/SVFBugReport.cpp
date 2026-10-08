@@ -67,10 +67,17 @@ const std::string GenericBug::getFuncName() const
 cJSON *BufferOverflowBug::getBugDescription() const
 {
     cJSON *bugDescription = cJSON_CreateObject();
-    cJSON *allocLB = cJSON_CreateNumber(allocLowerBound);
-    cJSON *allocUB = cJSON_CreateNumber(allocUpperBound);
-    cJSON *accessLB = cJSON_CreateNumber(accessLowerBound);
-    cJSON *accessUB = cJSON_CreateNumber(accessUpperBound);
+    // Preserve infinite/unknown endpoints instead of reporting finite limits.
+    const auto boundToJson = [](const BoundedInt& bound)
+    {
+        return bound.is_infinity()
+               ? cJSON_CreateString(bound.to_string().c_str())
+               : cJSON_CreateNumber(bound.getNumeral());
+    };
+    cJSON *allocLB = boundToJson(allocLowerBound);
+    cJSON *allocUB = boundToJson(allocUpperBound);
+    cJSON *accessLB = boundToJson(accessLowerBound);
+    cJSON *accessUB = boundToJson(accessUpperBound);
 
     cJSON_AddItemToObject(bugDescription, "AllocLowerBound", allocLB);
     cJSON_AddItemToObject(bugDescription, "AllocUpperBound", allocUB);
@@ -94,8 +101,8 @@ void BufferOverflowBug::printBugToTerminal() const
         SVFUtil::errs() << SVFUtil::bugMsg1("\t Partial Overflow :") <<  " accessing at : ("
                         << GenericBug::getLoc() << ")\n";
     }
-    bugInfo << "\t\t  allocate size : [" << allocLowerBound << ", " << allocUpperBound << "], ";
-    bugInfo << "access size : [" << accessLowerBound << ", " << accessUpperBound << "]\n";
+    bugInfo << "\t\t  allocate size : [" << allocLowerBound.to_string() << ", " << allocUpperBound.to_string() << "], ";
+    bugInfo << "access size : [" << accessLowerBound.to_string() << ", " << accessUpperBound.to_string() << "]\n";
     SVFUtil::errs() << "\t\t Info : \n" << bugInfo.str();
     SVFUtil::errs() << "\t\t Events : \n";
 

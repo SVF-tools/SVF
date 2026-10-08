@@ -238,8 +238,13 @@ public:
      * @brief Adds a bug to the reporter based on an exception.
      * @param e The exception that was thrown.
      * @param node Pointer to the ICFG node where the bug was detected.
+     * @param bufferSize Size used in AE's comparison, which may be capped.
+     * @param accessOffset Checked byte offset: a GEP result offset or the last
+     * byte offset for a memory call. Unknown diagnostics are represented by top.
      */
-    void addBugToReporter(const AEException& e, const ICFGNode* node)
+    void addBugToReporter(const AEException& e, const ICFGNode* node,
+                          const IntervalValue& bufferSize = IntervalValue::top(),
+                          const IntervalValue& accessOffset = IntervalValue::top())
     {
 
         GenericBug::EventStack eventStack;
@@ -264,7 +269,9 @@ public:
         }
 
         // Add the bug to the recorder with details from the event stack
-        recoder.addAbsExecBug(GenericBug::FULLBUFOVERFLOW, eventStack, 0, 0, 0, 0);
+        recoder.addAbsExecBug(GenericBug::FULLBUFOVERFLOW, eventStack,
+                             bufferSize.lb(), bufferSize.ub(),
+                             accessOffset.lb(), accessOffset.ub());
         nodeToBugInfo[node] = e.what(); // Record the exception information for the node
     }
 
@@ -307,19 +314,27 @@ public:
     bool canSafelyAccessMemory(const ValVar *value, const IntervalValue &len, const ICFGNode* node);
 
 private:
+    // Return the values from the first failing comparison. Unknown/null
+    // addresses have no numerical comparison and leave both intervals top.
+    bool canSafelyAccessMemory(const ValVar* value, const IntervalValue& len,
+                              const ICFGNode* node, IntervalValue& bufferSize,
+                              IntervalValue& accessOffset);
+
     /**
      * @brief Detects buffer overflow in 'strcat' function calls.
      * @param call Pointer to the call ICFG node.
      * @return True if a buffer overflow is detected, false otherwise.
      */
-    bool detectStrcat(const CallICFGNode *call);
+    bool detectStrcat(const CallICFGNode *call, IntervalValue& bufferSize,
+                      IntervalValue& accessOffset);
 
     /**
      * @brief Detects buffer overflow in 'strcpy' function calls.
      * @param call Pointer to the call ICFG node.
      * @return True if a buffer overflow is detected, false otherwise.
      */
-    bool detectStrcpy(const CallICFGNode *call);
+    bool detectStrcpy(const CallICFGNode *call, IntervalValue& bufferSize,
+                      IntervalValue& accessOffset);
 
 private:
     Map<const GepObjVar*, IntervalValue> gepObjOffsetFromBase; ///< Maps GEP objects to their offsets from the base.
