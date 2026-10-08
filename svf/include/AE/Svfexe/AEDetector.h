@@ -244,8 +244,13 @@ public:
      * @brief Adds a bug to the reporter based on an exception.
      * @param e The exception that was thrown.
      * @param node Pointer to the ICFG node where the bug was detected.
-     * @param info Buffer size and byte offset used by the failing check.
      */
+    void addBugToReporter(const AEException& e, const ICFGNode* node)
+    {
+        addBugToReporter(e, node, BufferOverflowInfo{});
+    }
+
+    /// Report an OOB alarm with the buffer size and offset from its check.
     void addBugToReporter(const AEException& e, const ICFGNode* node,
                           const BufferOverflowInfo& info)
     {
