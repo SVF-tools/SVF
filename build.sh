@@ -499,7 +499,8 @@ build_svf() {
     cmake -D CMAKE_BUILD_TYPE:STRING="$BUILD_TYPE"  \
         -DSVF_ENABLE_ASSERTIONS:BOOL=true            \
         ${SVF_SANITIZER:+-DSVF_SANITIZE="$SVF_SANITIZER"} \
-        ${SVF_COVERAGE:+-DSVF_COVERAGE=ON -DSVF_DEBUG_INFO=ON} \
+        ${SVF_COVERAGE:+-DSVF_COVERAGE=ON}           \
+        ${SVF_DEBUG_INFO:+-DSVF_DEBUG_INFO=ON}       \
         -DBUILD_SHARED_LIBS="$BUILD_DYN_LIB"         \
         "${cmake_generator_args[@]}"                \
         "${cmake_rpath_args[@]}"                    \
