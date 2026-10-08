@@ -647,7 +647,12 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOfVar(const Value *var)
         }
         else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(curValue))
         {
-            // A noreturn call yields no value, so skip it, e.g. (@stub only calls exit):
+            // A noreturn call yields no value, so skip it, e.g.:
+            //   declare void @exit(i32) noreturn
+            //   define ptr @stub() noreturn {
+            //     call void @exit(i32 1)
+            //     unreachable
+            //   }
             //   %p = call ptr @stub()
             //   %q = getelementptr inbounds i8, ptr %p, i64 4
             const Function *callee =
@@ -661,8 +666,8 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOfVar(const Value *var)
                     const BasicBlock* exitBB = llvmmodule->getFunExitBB(callee);
                     assert (exitBB && "exit bb is not a basic block?");
                     const Value *pValue = &exitBB->back();
-                    // The callee may end without a return value, e.g. (unoptimised @stub):
-                    //   define ptr @stub() { call void @exit(i32 1)  unreachable }
+                    // The callee may end without a return value, e.g. @stub above without
+                    // noreturn (as before optimisation).
                     const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
                     if (retInst && retInst->getReturnValue())
                         insertAllocsOrPushWorklist(retInst->getReturnValue());
@@ -962,7 +967,12 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
         }
         else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(curValue))
         {
-            // A noreturn call yields no value, so skip it, e.g. (@stub only calls exit):
+            // A noreturn call yields no value, so skip it, e.g.:
+            //   declare void @exit(i32) noreturn
+            //   define ptr @stub() noreturn {
+            //     call void @exit(i32 1)
+            //     unreachable
+            //   }
             //   %p = call ptr @stub()
             //   %q = getelementptr inbounds i8, ptr %p, i64 4
             const Function *callee =
@@ -975,8 +985,8 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
                     const BasicBlock* exitBB = llvmmodule->getFunExitBB(callee);
                     assert (exitBB && "exit bb is not a basic block?");
                     const Value *pValue = &exitBB->back();
-                    // The callee may end without a return value, e.g. (unoptimised @stub):
-                    //   define ptr @stub() { call void @exit(i32 1)  unreachable }
+                    // The callee may end without a return value, e.g. @stub above without
+                    // noreturn (as before optimisation).
                     const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
                     if (retInst && retInst->getReturnValue())
                         insertSourcesOrPushWorklist(retInst->getReturnValue());
