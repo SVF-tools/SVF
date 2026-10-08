@@ -319,8 +319,7 @@ public:
      * @param node The ICFG node providing context.
      * @return True if the memory access is safe, false otherwise.
      */
-    bool canSafelyAccessMemory(const ValVar *value, const IntervalValue &len,
-                              const ICFGNode* node, BufferOverflowInfo* info = nullptr);
+    bool canSafelyAccessMemory(const ValVar *value, const IntervalValue &len, const ICFGNode* node);
 
 private:
     /**
@@ -328,16 +327,18 @@ private:
      * @param call Pointer to the call ICFG node.
      * @return True if a buffer overflow is detected, false otherwise.
      */
-    bool detectStrcat(const CallICFGNode *call, BufferOverflowInfo& info);
+    bool detectStrcat(const CallICFGNode *call);
 
     /**
      * @brief Detects buffer overflow in 'strcpy' function calls.
      * @param call Pointer to the call ICFG node.
      * @return True if a buffer overflow is detected, false otherwise.
      */
-    bool detectStrcpy(const CallICFGNode *call, BufferOverflowInfo& info);
+    bool detectStrcpy(const CallICFGNode *call);
 
 private:
+    // Reset for each memory check and consumed immediately by its reporter.
+    BufferOverflowInfo lastBufferOverflowInfo;
     Map<const GepObjVar*, IntervalValue> gepObjOffsetFromBase; ///< Maps GEP objects to their offsets from the base.
     Map<std::string, std::vector<std::pair<u32_t, u32_t>>> extAPIBufOverflowCheckRules; ///< Rules for checking buffer overflows in external APIs.
     Set<std::string> bugLoc; ///< Set of locations where bugs have been reported.

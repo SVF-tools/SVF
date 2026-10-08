@@ -232,7 +232,6 @@ void BufOverflowDetector::detectExtAPI(const CallICFGNode* call)
     }
 
     // Apply buffer overflow checks based on the determined API type
-    BufferOverflowInfo info;
     if (extType == AbsExtAPI::MEMCPY)
     {
         if (extAPIBufOverflowCheckRules.count(call->getCalledFunction()->getName()) == 0)
@@ -246,10 +245,10 @@ void BufOverflowDetector::detectExtAPI(const CallICFGNode* call)
         {
             IntervalValue offset = ae.getAbsValue(call->getArgument(arg.second), call).getInterval() - IntervalValue(1);
             const ValVar* argVar = call->getArgument(arg.first);
-            if (!canSafelyAccessMemory(argVar, offset, call, &info))
+            if (!canSafelyAccessMemory(argVar, offset, call))
             {
                 AEException bug(call->toString());
-                addBugToReporter(bug, call, info);
+                addBugToReporter(bug, call, lastBufferOverflowInfo);
             }
         }
     }
@@ -266,27 +265,27 @@ void BufOverflowDetector::detectExtAPI(const CallICFGNode* call)
         {
             IntervalValue offset = ae.getAbsValue(call->getArgument(arg.second), call).getInterval() - IntervalValue(1);
             const ValVar* argVar = call->getArgument(arg.first);
-            if (!canSafelyAccessMemory(argVar, offset, call, &info))
+            if (!canSafelyAccessMemory(argVar, offset, call))
             {
                 AEException bug(call->toString());
-                addBugToReporter(bug, call, info);
+                addBugToReporter(bug, call, lastBufferOverflowInfo);
             }
         }
     }
     else if (extType == AbsExtAPI::STRCPY)
     {
-        if (!detectStrcpy(call, info))
+        if (!detectStrcpy(call))
         {
             AEException bug(call->toString());
-            addBugToReporter(bug, call, info);
+            addBugToReporter(bug, call, lastBufferOverflowInfo);
         }
     }
     else if (extType == AbsExtAPI::STRCAT)
     {
-        if (!detectStrcat(call, info))
+        if (!detectStrcat(call))
         {
             AEException bug(call->toString());
-            addBugToReporter(bug, call, info);
+            addBugToReporter(bug, call, lastBufferOverflowInfo);
         }
     }
     else
@@ -411,16 +410,16 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
  * @param call Pointer to the call ICFG node.
  * @return True if the memory access is safe, false otherwise.
  */
-bool BufOverflowDetector::detectStrcpy(const CallICFGNode *call, BufferOverflowInfo& info)
+bool BufOverflowDetector::detectStrcpy(const CallICFGNode *call)
 {
     const ValVar* arg0Val = call->getArgument(0);
     const ValVar* arg1Val = call->getArgument(1);
     auto& ae = AbstractInterpretation::getAEInstance();
     IntervalValue strLen = ae.getUtils()->getStrlen(arg1Val, call);
-    return canSafelyAccessMemory(arg0Val, strLen, call, &info);
+    return canSafelyAccessMemory(arg0Val, strLen, call);
 }
 
-bool BufOverflowDetector::detectStrcat(const CallICFGNode *call, BufferOverflowInfo& info)
+bool BufOverflowDetector::detectStrcat(const CallICFGNode *call)
 {
     auto& ae = AbstractInterpretation::getAEInstance();
     const std::vector<std::string> strcatGroup = {"__strcat_chk", "strcat", "__wcscat_chk", "wcscat"};
@@ -433,7 +432,7 @@ bool BufOverflowDetector::detectStrcat(const CallICFGNode *call, BufferOverflowI
         IntervalValue strLen0 = ae.getUtils()->getStrlen(arg0Val, call);
         IntervalValue strLen1 = ae.getUtils()->getStrlen(arg1Val, call);
         IntervalValue totalLen = strLen0 + strLen1;
-        return canSafelyAccessMemory(arg0Val, totalLen, call, &info);
+        return canSafelyAccessMemory(arg0Val, totalLen, call);
     }
     else if (std::find(strncatGroup.begin(), strncatGroup.end(), call->getCalledFunction()->getName()) != strncatGroup.end())
     {
@@ -442,7 +441,7 @@ bool BufOverflowDetector::detectStrcat(const CallICFGNode *call, BufferOverflowI
         IntervalValue arg2Num = ae.getAbsValue(arg2Val, call).getInterval();
         IntervalValue strLen0 = ae.getUtils()->getStrlen(arg0Val, call);
         IntervalValue totalLen = strLen0 + arg2Num;
-        return canSafelyAccessMemory(arg0Val, totalLen, call, &info);
+        return canSafelyAccessMemory(arg0Val, totalLen, call);
     }
     else
     {
@@ -462,10 +461,9 @@ bool BufOverflowDetector::detectStrcat(const CallICFGNode *call, BufferOverflowI
  * @param len The interval value representing the length of the memory access.
  * @return True if the memory access is safe, false otherwise.
  */
-bool BufOverflowDetector::canSafelyAccessMemory(const ValVar* value, const IntervalValue& len,
-        const ICFGNode* node, BufferOverflowInfo* info)
+bool BufOverflowDetector::canSafelyAccessMemory(const SVF::ValVar* value, const SVF::IntervalValue& len, const ICFGNode* node)
 {
-    if (info) *info = {};
+    lastBufferOverflowInfo = {};
     SVFIR* svfir = PAG::getPAG();
     auto& ae = AbstractInterpretation::getAEInstance();
 
@@ -518,7 +516,7 @@ bool BufOverflowDetector::canSafelyAccessMemory(const ValVar* value, const Inter
         // if the offset is greater than the size, return false
         if (offset.ub().getIntNumeral() >= size)
         {
-            if (info) *info = {size, offset};
+            lastBufferOverflowInfo = {size, offset};
             return false;
         }
     }
