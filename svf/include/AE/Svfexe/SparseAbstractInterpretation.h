@@ -116,6 +116,26 @@ protected:
                         const ICFGNode* node) override;
     using SemiSparseAbstractInterpretation::updateAbsValue;
 
+    /// Apply FullSparse store semantics when handling an ordinary StoreStmt.
+    /// A strong update kills the previous value of one concrete object:
+    ///
+    ///   int x = 1;
+    ///   int *p = &x;        // Andersen pts(p) = {x}
+    ///   *p = 2;             // State[x] becomes [2,2]
+    ///
+    /// A weak update preserves every possible old value and joins the stored
+    /// value. It is required when the pointer has multiple targets or denotes
+    /// a summary object such as a heap allocation or array:
+    ///
+    ///   int x = 1, y = 3;
+    ///   int *p = cond ? &x : &y;  // pts(p) = {x,y}
+    ///   *p = 2;                   // x: [1,2], y: [2,3]
+    ///
+    /// The distinction is local to FullSparse; dense and semi-sparse retain
+    /// their existing store implementation.
+    void storeValue(const ValVar* pointer, const AbstractValue& val,
+                    const ICFGNode* node) override;
+
     /// Prepare State[node] before its transfer. ICFG predecessors first carry
     /// control-flow side state; incoming Obj values then add ObjVars. For
     /// `%x = load i32, ptr %a9`, the load state receives `{a.9: 10}` before
@@ -152,6 +172,48 @@ protected:
                                 const ICFGNode* succ) override;
 
 private:
+    /// Decide whether `*pointer = value` is a strong update. This uses the same
+    /// policy as FlowSensitive::isStrongUpdate: Andersen must report exactly
+    /// one target, and that target must not be a heap object, array object,
+    /// field-insensitive base, or local object in a recursive function.
+    ///
+    ///   int x; int *p = &x; *p = 1;       // strong update
+    ///   int *p = malloc(sizeof(int));      // heap summary
+    ///   *p = 1;                            // weak update
+    ///   int a[4]; a[i] = 1;                // weak update: array summary
+    ///   int *q = cond ? &x : &y; *q = 1;   // weak update: two targets
+    ///
+    /// On success, targetObj receives the unique object killed by the store.
+    bool isStrongUpdate(const ValVar* pointer, NodeID& targetObj) const;
+
+    /// Match a MemorySSA version to the ICFG node that produced it. This is
+    /// used only while resolving operands of an IntraMSSAPHISVFGNode:
+    ///
+    ///   S1: *p = 1;             // defines MR_p.v1 through StoreCHI
+    ///   S2: ext_write(p);       // may define MR_p.v2 through CallCHI
+    ///   J:  MemoryPhi(v1, v2)
+    ///
+    /// Definitions may come from a store, call, function entry, or an earlier
+    /// MemoryPhi. The check lets AE associate v1 with S1 and v2 with S2 without
+    /// adding an MRVer lookup API to SVFG.
+    bool isMemoryVersionDefinedAt(const MRVer* version,
+                                  const ICFGNode* source) const;
+
+    /// Test whether an incoming object value is carried by a reachable operand
+    /// of a MemorySSA Phi. For example:
+    ///
+    ///   int x = 0;
+    ///   if (cond) x = 1; else x = 2;
+    ///   use(x);                 // MemoryPhi(x_then, x_else)
+    ///
+    /// If both branches are reachable, both versions are retained and JOINed.
+    /// If `cond` is true and the else predecessor has no abstract state, x_else
+    /// is omitted. When no matching IntraMSSAPHISVFGNode exists, this function
+    /// returns true so non-Phi value flow remains conservative.
+    bool isMemoryPhiOperandReachable(const ICFGNode* source,
+                                     const ICFGNode* target,
+                                     NodeID baseObj) const;
+
     /// Obj values transported between two ICFG-node states. A base-only map
     /// is `{a: value}`; a map with sub-objects may be
     /// `{a: value, a.3: value, a.9: value}`.
@@ -171,8 +233,10 @@ private:
     ///
     /// the incoming maps contain `{a.9:[10,10]}` from Store1 and
     /// `{a.9:[20,20]}` from Store2. Before the load executes, this method sets
-    /// `State[load][a.9]` to their JOIN, `[10,20]`. It conservatively keeps both
-    /// values without an additional ICFG path or overwrite filter.
+    /// `State[load][a.9]` to their JOIN, `[10,20]`. This is a conservative JOIN
+    /// across different reaching definitions, not another store update. An
+    /// incoming MemorySSA-Phi operand is omitted only when its corresponding
+    /// CFG predecessor is unreachable; all remaining versions are retained.
     void mergeIncomingObjValues(const ICFGNode* node);
 
     /// Collect one base object and its sub-objects from State[source]. For

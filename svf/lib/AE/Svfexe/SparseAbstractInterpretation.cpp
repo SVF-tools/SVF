@@ -80,6 +80,130 @@ void FullSparseAbstractInterpretation::updateAbsValue(
     }
 }
 
+bool FullSparseAbstractInterpretation::isStrongUpdate(
+    const ValVar* pointer, NodeID& targetObj) const
+{
+    AndersenWaveDiff* pta = preAnalysis->getPointerAnalysis();
+    const PointsTo& targets = pta->getPts(pointer->getId());
+    if (targets.count() != 1)
+        return false;
+
+    targetObj = *targets.begin();
+    const BaseObjVar* baseObj = svfir->getBaseObject(targetObj);
+    return !pta->isHeapMemObj(targetObj) &&
+           !pta->isArrayMemObj(targetObj) &&
+           !baseObj->isFieldInsensitive() &&
+           !pta->isLocalVarInRecursiveFun(targetObj);
+}
+
+void FullSparseAbstractInterpretation::storeValue(
+    const ValVar* pointer, const AbstractValue& val, const ICFGNode* node)
+{
+    NodeID strongTarget = 0;
+    const bool strongUpdate = isStrongUpdate(pointer, strongTarget);
+    const AbstractValue& pointerValue = getAbsValue(pointer, node);
+    AbstractState& state = getAbsState(node);
+
+    for (u32_t address : pointerValue.getAddrs())
+    {
+        if (AbstractState::isNullOrBlackHoleAddr(address))
+            continue;
+
+        NodeID targetObj = state.getIDFromAddr(address);
+        const ObjVar* target =
+            SVFUtil::cast<ObjVar>(svfir->getSVFVar(targetObj));
+        if (strongUpdate && targetObj == strongTarget)
+        {
+            // Strong update: this store identifies one concrete object, so the
+            // newly stored value kills that object's previous abstract value.
+            updateAbsValue(target, val, node);
+        }
+        else
+        {
+            // Weak update: this address may denote one of several concrete
+            // objects or a summary object, so retain old and new possibilities.
+            AbstractValue joined = getAbsValue(target, node);
+            joined.join_with(val);
+            updateAbsValue(target, joined, node);
+        }
+    }
+}
+
+bool FullSparseAbstractInterpretation::isMemoryVersionDefinedAt(
+    const MRVer* version, const ICFGNode* source) const
+{
+    const MSSADEF* definition = version->getDef();
+    if (const MemSSA::STORECHI* store =
+            SVFUtil::dyn_cast<MemSSA::STORECHI>(definition))
+        return store->getStoreStmt()->getICFGNode() == source;
+
+    if (const MemSSA::CALLCHI* call =
+            SVFUtil::dyn_cast<MemSSA::CALLCHI>(definition))
+        return call->getCallSite() == source;
+
+    if (const MemSSA::ENTRYCHI* entry =
+            SVFUtil::dyn_cast<MemSSA::ENTRYCHI>(definition))
+        return svfir->getICFG()->getFunEntryICFGNode(entry->getFunction()) ==
+               source;
+
+    if (const MemSSA::PHI* phi =
+            SVFUtil::dyn_cast<MemSSA::PHI>(definition))
+        return phi->getBasicBlock() == source->getBB();
+
+    return false;
+}
+
+bool FullSparseAbstractInterpretation::isMemoryPhiOperandReachable(
+    const ICFGNode* source, const ICFGNode* target, NodeID baseObj) const
+{
+    bool matchesPhiOperand = false;
+    for (const VFGNode* targetVfg : target->getVFGNodes())
+    {
+        const IntraMSSAPHISVFGNode* phi =
+            SVFUtil::dyn_cast<IntraMSSAPHISVFGNode>(targetVfg);
+        if (!phi)
+            continue;
+
+        const std::vector<const SVFBasicBlock*> predecessors =
+            target->getBB()->getPredecessors();
+        for (auto edgeIt = phi->InEdgeBegin();
+                edgeIt != phi->InEdgeEnd(); ++edgeIt)
+        {
+            const IndirectSVFGEdge* edge =
+                SVFUtil::dyn_cast<IndirectSVFGEdge>(*edgeIt);
+            if (!edge || edge->getSrcNode()->getICFGNode() != source)
+                continue;
+
+            bool carriesBaseObj = false;
+            for (NodeID objId : edge->getPointsTo())
+            {
+                if (SVFUtil::isa<ObjVar>(svfir->getGNode(objId)) &&
+                        svfir->getBaseObject(objId)->getId() == baseObj)
+                {
+                    carriesBaseObj = true;
+                    break;
+                }
+            }
+            if (!carriesBaseObj)
+                continue;
+
+            for (auto opIt = phi->opVerBegin();
+                    opIt != phi->opVerEnd(); ++opIt)
+            {
+                if (!isMemoryVersionDefinedAt(opIt->second, source))
+                    continue;
+
+                matchesPhiOperand = true;
+                u32_t position = opIt->first;
+                if (position < predecessors.size() &&
+                        abstractTrace.count(predecessors[position]->back()))
+                    return true;
+            }
+        }
+    }
+    return !matchesPhiOperand;
+}
+
 bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     const ICFGNode* node)
 {
@@ -226,14 +350,18 @@ void FullSparseAbstractInterpretation::propagateOutgoingObjValues(
 void FullSparseAbstractInterpretation::mergeIncomingObjValues(
     const ICFGNode* node)
 {
-    // Each entry is one incoming source/base pair. Keep every source and JOIN
-    // colliding object values; there is no ICFG path or overwrite filter.
+    // Each entry is one incoming source/base pair. Omit unreachable
+    // MemorySSA-Phi operands, then JOIN values from every remaining source.
     AbstractState& targetState = abstractTrace[node];
     auto incoming = incomingObjValues.find(node);
     if (incoming != incomingObjValues.end())
     {
         for (const auto& incomingValues : incoming->second)
         {
+            const ObjValueOrigin& origin = incomingValues.first;
+            if (!isMemoryPhiOperandReachable(origin.first, node, origin.second))
+                continue;
+
             const ObjValueMap& objValues = incomingValues.second;
             for (const auto& [objId, value] : objValues)
             {
