@@ -257,11 +257,13 @@ void AbstractInterpretation::handleGlobalNode()
     AbstractValue blkPtrValue(IntervalValue::top());
     blkPtrValue.getAddrs().insert(BlackHoleObjAddr);
     abstractTrace[node][PAG::getPAG()->getBlkPtr()] = blkPtrValue;
+
+    propagateOutgoingObjValues(node);
 }
 
-/// Pull-based state merge: for each predecessor that has an abstract state,
-/// copy its state, apply branch refinement for conditional IntraCFGEdges,
-/// and join all feasible states into getAbsState(node).
+/// For each predecessor that has an abstract state, copy its state, apply
+/// branch refinement for conditional IntraCFGEdges, and join all feasible
+/// states into getAbsState(node).
 /// The join is dispatched through the manager so semi-sparse can skip
 /// ValVar merging.
 /// Returns true if at least one predecessor contributed state.
@@ -739,15 +741,22 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
         handleSVFStatement(stmt);
     }
 
+    // At call nodes this sends actual-in memory values before the callee is
+    // analyzed. Full-sparse also runs the hook again after the call so values
+    // produced by the callee or an external summary can leave the call site.
+    propagateOutgoingObjValues(node);
+
     // Handle call sites
     if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
     {
         handleCallSite(callNode);
+        propagateOutgoingObjValues(node);
     }
 
     // Run detectors
     for (auto& detector: detectors)
         detector->detect(node);
+
     stat->countStateSize();
 
     // Track this node as analyzed (for coverage statistics across all entry points)

@@ -31,9 +31,8 @@ using namespace SVF;
 
 // SemiSparse state-access overrides (get/has/updateAbsValue,
 // updateAbsState, joinStates) live in AbstractStateManager.cpp; the
-// FullSparse-specific overrides — including the SVFG-backed def/use
-// queries and the ValVar stubs — live below alongside the rest of
-// FullSparse so the whole subclass stays in one file.
+// FullSparse-specific propagation lives below alongside the rest of the
+// subclass so its state and value-flow policies remain visible together.
 
 // =====================================================================
 //  Full-sparse — class lifecycle + SVFG construction.
@@ -48,65 +47,161 @@ void FullSparseAbstractInterpretation::buildSVFG()
 }
 
 // =====================================================================
-//  Full-sparse — merge.
+//  Full-sparse — SVFG-driven object propagation.
 //
-//  mergeStatesFromPredecessors is a thin wrapper: defer to base for
-//  ICFG-edge bookkeeping (predecessor iteration, branch feasibility,
-//  joinStates, updateAbsState, reachability return).  If the node is
-//  reachable, run pullObjValueFlows to populate trace[node] with obj values
-//  pulled along SVFG indirect in-edges.
-//
-//  joinStates carries only state that is not represented as MemorySSA
-//  def-use flow: GepObjVar field snapshots and _freedAddrs.  Base/Dummy
-//  ObjVars are handled by pullObjValueFlows, not by ICFG-edge joins.
+//  The authoritative AbstractState remains keyed by ICFGNode.  Once an ICFG
+//  node has executed, propagateOutgoingObjValues collects each relevant base
+//  object and its sub-objects into one Obj-value map. Native SVFG edges and
+//  supplementary base-object routes use the same representation. A
+//  destination ICFG node joins its incoming Obj values before executing. Only
+//  _freedAddrs, which has no MemorySSA representation, still travels on ICFG
+//  edges.
 // =====================================================================
 
 void FullSparseAbstractInterpretation::joinStates(AbstractState& dst,
         const AbstractState& src)
 {
-    // Propagate GepObjVar entries along ICFG edges.  Kill semantics
-    // come from handleNode's as.store(addr, val) overwriting trace at
-    // store sites (not from a JOIN here), so joinStates only forwards
-    // the post-write snapshot.  This lets Gep fields scattered across
-    // many store ICFG nodes converge at downstream use sites, and lets
-    // extapi handlers (memcpy/memset/strlen) read upstream-written
-    // values via plain as.load(srcAddr).  Base/Dummy are NOT propagated
-    // here — they ride pullObjValueFlows Step 1 (SVFG indirect edges, with
-    // MSSA chi/mu kill semantics).
-    for (const auto& [id, val] : src.getLocToVal())
-    {
-        if (!SVFUtil::isa<GepObjVar>(svfir->getGNode(id)))
-            continue;
-        u32_t addr = AbstractState::getVirtualMemAddress(id);
-        if (dst.getLocToVal().count(id))
-            dst.load(addr).join_with(val);
-        else
-            dst.store(addr, val);
-    }
     for (NodeID a : src.getFreedAddrs())
         dst.addToFreedAddrs(a);
 }
 
-void FullSparseAbstractInterpretation::storeValue(const ValVar* pointer,
-        const AbstractValue& val,
-        const ICFGNode* node)
+void FullSparseAbstractInterpretation::updateAbsValue(
+    const ObjVar* var, const AbstractValue& val, const ICFGNode* node)
 {
-    // Clear branch refinement for every ObjVar this store overwrites.
-    // A store redefines the ObjVar; the pre-store branch constraint
-    // (inherited into refinementTrace[node]) is immediately stale.
-    // Without this, successors inherit the stale constraint and MEET
-    // it onto the pulled post-store value, erasing the store's effect.
-    const AbstractValue& ptrVal = getAbsValue(pointer, node);
-    AbstractState& as = getAbsState(node);
-    for (auto addr : ptrVal.getAddrs())
+    auto refinement = refinementTrace.find(node);
+    if (refinement != refinementTrace.end())
+        refinement->second.erase(var->getId());
+
+    AbstractInterpretation::updateAbsValue(var, val, node);
+    if (SVFUtil::isa<GepObjVar>(var))
     {
-        NodeID objId = as.getIDFromAddr(addr);
-        auto rit = refinementTrace.find(node);
-        if (rit != refinementTrace.end())
-            rit->second.erase(objId);
+        NodeID baseObj = svfir->getBaseObject(var->getId())->getId();
+        propagateBaseObjValuesToUses(node, baseObj);
     }
-    // Delegate to base for the actual ObjVar update.
-    SemiSparseAbstractInterpretation::storeValue(pointer, val, node);
+}
+
+bool FullSparseAbstractInterpretation::isStrongUpdate(
+    const ValVar* pointer, NodeID& targetObj) const
+{
+    AndersenWaveDiff* pta = preAnalysis->getPointerAnalysis();
+    const PointsTo& targets = pta->getPts(pointer->getId());
+    if (targets.count() != 1)
+        return false;
+
+    targetObj = *targets.begin();
+    const BaseObjVar* baseObj = svfir->getBaseObject(targetObj);
+    return !pta->isHeapMemObj(targetObj) &&
+           !pta->isArrayMemObj(targetObj) &&
+           !baseObj->isFieldInsensitive() &&
+           !pta->isLocalVarInRecursiveFun(targetObj);
+}
+
+void FullSparseAbstractInterpretation::storeValue(
+    const ValVar* pointer, const AbstractValue& val, const ICFGNode* node)
+{
+    NodeID strongTarget = 0;
+    const bool strongUpdate = isStrongUpdate(pointer, strongTarget);
+    const AbstractValue& pointerValue = getAbsValue(pointer, node);
+    AbstractState& state = getAbsState(node);
+
+    for (u32_t address : pointerValue.getAddrs())
+    {
+        if (AbstractState::isNullOrBlackHoleAddr(address))
+            continue;
+
+        NodeID targetObj = state.getIDFromAddr(address);
+        const ObjVar* target =
+            SVFUtil::cast<ObjVar>(svfir->getSVFVar(targetObj));
+        if (strongUpdate && targetObj == strongTarget)
+        {
+            // Strong update: this store identifies one concrete object, so the
+            // newly stored value kills that object's previous abstract value.
+            updateAbsValue(target, val, node);
+        }
+        else
+        {
+            // Weak update: this address may denote one of several concrete
+            // objects or a summary object, so retain old and new possibilities.
+            AbstractValue joined = getAbsValue(target, node);
+            joined.join_with(val);
+            updateAbsValue(target, joined, node);
+        }
+    }
+}
+
+bool FullSparseAbstractInterpretation::isMemoryVersionDefinedAt(
+    const MRVer* version, const ICFGNode* source) const
+{
+    const MSSADEF* definition = version->getDef();
+    if (const MemSSA::STORECHI* store =
+            SVFUtil::dyn_cast<MemSSA::STORECHI>(definition))
+        return store->getStoreStmt()->getICFGNode() == source;
+
+    if (const MemSSA::CALLCHI* call =
+            SVFUtil::dyn_cast<MemSSA::CALLCHI>(definition))
+        return call->getCallSite() == source;
+
+    if (const MemSSA::ENTRYCHI* entry =
+            SVFUtil::dyn_cast<MemSSA::ENTRYCHI>(definition))
+        return svfir->getICFG()->getFunEntryICFGNode(entry->getFunction()) ==
+               source;
+
+    if (const MemSSA::PHI* phi =
+            SVFUtil::dyn_cast<MemSSA::PHI>(definition))
+        return phi->getBasicBlock() == source->getBB();
+
+    return false;
+}
+
+bool FullSparseAbstractInterpretation::isMemoryPhiOperandReachable(
+    const ICFGNode* source, const ICFGNode* target, NodeID baseObj) const
+{
+    bool matchesPhiOperand = false;
+    for (const VFGNode* targetVfg : target->getVFGNodes())
+    {
+        const IntraMSSAPHISVFGNode* phi =
+            SVFUtil::dyn_cast<IntraMSSAPHISVFGNode>(targetVfg);
+        if (!phi)
+            continue;
+
+        const std::vector<const SVFBasicBlock*> predecessors =
+            target->getBB()->getPredecessors();
+        for (auto edgeIt = phi->InEdgeBegin();
+                edgeIt != phi->InEdgeEnd(); ++edgeIt)
+        {
+            const IndirectSVFGEdge* edge =
+                SVFUtil::dyn_cast<IndirectSVFGEdge>(*edgeIt);
+            if (!edge || edge->getSrcNode()->getICFGNode() != source)
+                continue;
+
+            bool carriesBaseObj = false;
+            for (NodeID objId : edge->getPointsTo())
+            {
+                if (SVFUtil::isa<ObjVar>(svfir->getGNode(objId)) &&
+                        svfir->getBaseObject(objId)->getId() == baseObj)
+                {
+                    carriesBaseObj = true;
+                    break;
+                }
+            }
+            if (!carriesBaseObj)
+                continue;
+
+            for (auto opIt = phi->opVerBegin();
+                    opIt != phi->opVerEnd(); ++opIt)
+            {
+                if (!isMemoryVersionDefinedAt(opIt->second, source))
+                    continue;
+
+                matchesPhiOperand = true;
+                u32_t position = opIt->first;
+                if (position < predecessors.size() &&
+                        abstractTrace.count(predecessors[position]->back()))
+                    return true;
+            }
+        }
+    }
+    return !matchesPhiOperand;
 }
 
 bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
@@ -114,372 +209,175 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
 {
     refinementTrace.erase(node);
 
-    if (!AbstractInterpretation::mergeStatesFromPredecessors(node))
-        return false;
+    const bool reachable =
+        AbstractInterpretation::mergeStatesFromPredecessors(node);
+    if (reachable)
+    {
+        mergeIncomingObjValues(node);
 
-    pullObjValueFlows(node);
-
-    // Compose pred-inherited refinement on top of branch narrowings
-    // just captured, then MEET into trace[node] so reads see narrowed.
-    propagateAndApplyRefinement(node);
-    return true;
+        // Compose pred-inherited refinement on top of branch narrowings
+        // just captured, then MEET into trace[node] so reads see narrowed.
+        propagateAndApplyRefinement(node);
+    }
+    return reachable;
 }
 
-void FullSparseAbstractInterpretation::pullObjValueFlows(const ICFGNode* node)
+FullSparseAbstractInterpretation::ObjValueMap
+FullSparseAbstractInterpretation::collectBaseObjValues(
+    const ICFGNode* source, NodeID baseObj)
 {
-    NodeBS denseLocalObjs;
-    for (const auto& item : abstractTrace[node].getLocToVal())
+    const BaseObjVar* baseObjVar = svfir->getBaseObject(baseObj);
+    ObjValueMap objValues;
+
+    if (AbstractInterpretation::hasAbsValue(baseObjVar, source))
+        objValues[baseObjVar->getId()] =
+            AbstractInterpretation::getAbsValue(baseObjVar, source);
+
+    for (NodeID objId : svfir->getAllFieldsObjVars(baseObjVar))
     {
-        NodeID id = item.first;
-        if (SVFUtil::isa<GepObjVar>(svfir->getGNode(id)))
-            denseLocalObjs.set(id);
+        const ObjVar* obj =
+            SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(objId));
+        if (obj && AbstractInterpretation::hasAbsValue(obj, source))
+            objValues[objId] =
+                AbstractInterpretation::getAbsValue(obj, source);
     }
-    // e.g.
-    //     store i32 7, i32* %p   ; def-site D for obj_p
-    //     ...
-    //     %v = load i32, i32* %p ; use-site U
-    // Step 1: intra-node SVFG-pull.  For each VFG node hosted at U, walk
-    // the indirect SVFG in-edges back to D; for every obj id labelling
-    // the edge, JOIN the obj's value at D into U's trace.  GepObjVar
-    // labels are pulled exactly.  BaseObjVar labels are expanded to every
-    // sibling field via getAllFieldsObjVars because Andersen may label a
-    // field-sensitive consumer with the field-insensitive base.
-    //
-    // Gep fields already present at this node came through the dense
-    // ICFG propagation in joinStates.  Treat those as authoritative and
-    // do not re-join older SVFG defs over them; otherwise a killed init
-    // field can be reintroduced at the load site (e.g. a[9] initialized
-    // to 9, overwritten to 10, then pulled back to [9,10]).
-    // Reads/writes go through SemiSparse to bypass FullSparse's refinement
-    // layer (these are def-site pulls, not real stores; refinement is
-    // applied later in propagateAndApplyRefinement).
-    for (const VFGNode* v : node->getVFGNodes())
+    return objValues;
+}
+
+void FullSparseAbstractInterpretation::writeObjValuesToTarget(
+    const ICFGNode* source, const ICFGNode* target, NodeID baseObj)
+{
+    // Both SVFG endpoints already read the same state at one ICFG node. A
+    // self-transfer is therefore redundant and can preserve a stale widened
+    // MemoryPhi value while narrowing tries to recompute that state.
+    if (source != target)
     {
-        for (auto eit = v->InEdgeBegin(); eit != v->InEdgeEnd(); ++eit)
+        ObjValueOrigin origin{source, baseObj};
+        incomingObjValues[target][origin] =
+            collectBaseObjValues(source, baseObj);
+    }
+}
+
+void FullSparseAbstractInterpretation::propagateBaseObjValuesToUses(
+    const ICFGNode* source, NodeID baseObj)
+{
+    for (auto it = svfg->begin(); it != svfg->end(); ++it)
+    {
+        const VFGNode* target = it->second;
+        const ICFGNode* targetIcfg = target->getICFGNode();
+        bool usesBaseObj = false;
+
+        for (auto eit = target->InEdgeBegin();
+                eit != target->InEdgeEnd() && !usesBaseObj; ++eit)
         {
-            const IndirectSVFGEdge* indEdge =
+            const IndirectSVFGEdge* edge =
                 SVFUtil::dyn_cast<IndirectSVFGEdge>(*eit);
-            if (indEdge)
+            if (edge)
             {
-                const SVFGNode* src =
-                    SVFUtil::dyn_cast<SVFGNode>(indEdge->getSrcNode());
-                assert(src && "SVFG incoming edge must have a source node");
-                assert(v && "SVFG incoming edge must have a destination node");
-
-                const ICFGNode* srcICFG = src->getICFGNode();
-                const ICFGNode* dstICFG = v->getICFGNode();
-                (void)dstICFG; // Suppress warning of unused variable under release build
-                assert(srcICFG && "SVFG source node must have an ICFG node");
-                assert(dstICFG &&
-                       "SVFG destination node must have an ICFG node");
-
-                if (!isIndirectSVFGEdgeFeasible(indEdge, v))
-                    continue;
-
-                if (srcICFG && hasAbsState(srcICFG))
+                for (NodeID objId : edge->getPointsTo())
                 {
-                    for (NodeID id : indEdge->getPointsTo())
+                    if (SVFUtil::isa<ObjVar>(svfir->getGNode(objId)) &&
+                            svfir->getBaseObject(objId)->getId() == baseObj)
                     {
-                        SVFVar* gn = svfir->getGNode(id);
-                        NodeBS idsToPull;
+                        usesBaseObj = true;
+                        break;
+                    }
+                }
+            }
+        }
 
-                        if (SVFUtil::isa<GepObjVar>(gn))
+        const CallICFGNode* call =
+            SVFUtil::dyn_cast<CallICFGNode>(targetIcfg);
+        if (!usesBaseObj && call && SVFUtil::isExtCall(call))
+        {
+            for (u32_t index = 0;
+                    index < call->arg_size() && !usesBaseObj; ++index)
+            {
+                const ValVar* argument = call->getArgument(index);
+                if (argument->getType()->isPointerTy())
+                {
+                    for (NodeID objId : preAnalysis->getPointerAnalysis()
+                            ->getPts(argument->getId()))
+                    {
+                        if (SVFUtil::isa<ObjVar>(svfir->getGNode(objId)) &&
+                                svfir->getBaseObject(objId)->getId() == baseObj)
                         {
-                            idsToPull.set(id);
-                        }
-                        else if (auto* base = SVFUtil::dyn_cast<BaseObjVar>(gn))
-                        {
-                            idsToPull = svfir->getAllFieldsObjVars(base);
-                        }
-                        else
-                        {
-                            idsToPull.set(id);
-                        }
-
-                        for (NodeID fid : idsToPull)
-                        {
-                            const ObjVar* obj =
-                                SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(fid));
-                            // Dense Gep propagation has already carried the
-                            // current value to this node.
-                            if (denseLocalObjs.test(fid))
-                            {
-                                continue;
-                            }
-                            if (obj &&
-                                    SemiSparseAbstractInterpretation::hasAbsValue(
-                                        obj, srcICFG))
-                            {
-                                AbstractValue cur;
-                                if (SemiSparseAbstractInterpretation::
-                                        hasAbsValue(obj, node))
-                                {
-                                    cur = SemiSparseAbstractInterpretation::
-                                          getAbsValue(obj, node);
-                                }
-                                cur.join_with(SemiSparseAbstractInterpretation::
-                                              getAbsValue(obj, srcICFG));
-                                SemiSparseAbstractInterpretation::
-                                updateAbsValue(obj, cur, node);
-                            }
+                            usesBaseObj = true;
+                            break;
                         }
                     }
                 }
             }
         }
-    }
 
-    // Step 2 (boundary pull) intentionally removed: with GepObjVar dense
-    // propagation in joinStates above, Gep field values arrive at use
-    // sites along ICFG edges without needing the boundary pull.
+        if (usesBaseObj)
+            writeObjValuesToTarget(source, targetIcfg, baseObj);
+    }
+}
+
+void FullSparseAbstractInterpretation::propagateOutgoingObjValues(
+    const ICFGNode* node)
+{
+    // Native routes. Example:
+    //   LLVM IR: store i32 10, ptr %a9
+    //   SVFG:    Store(a) --indirect {a}--> Load(a)
+    // The edge selects target=Load and base=a. collectBaseObjValues adds every
+    // currently available member of a, including the precise a.9 value.
+    for (const VFGNode* source : node->getVFGNodes())
+    {
+        for (auto eit = source->OutEdgeBegin();
+                eit != source->OutEdgeEnd(); ++eit)
+        {
+            const IndirectSVFGEdge* edge =
+                SVFUtil::dyn_cast<IndirectSVFGEdge>(*eit);
+            if (edge)
+            {
+                const ICFGNode* target = edge->getDstNode()->getICFGNode();
+                for (NodeID objId : edge->getPointsTo())
+                {
+                    if (SVFUtil::isa<ObjVar>(svfir->getGNode(objId)))
+                    {
+                        NodeID baseObj =
+                            svfir->getBaseObject(objId)->getId();
+                        writeObjValuesToTarget(node, target, baseObj);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void FullSparseAbstractInterpretation::mergeIncomingObjValues(
+    const ICFGNode* node)
+{
+    // Each entry is one incoming source/base pair. Omit unreachable
+    // MemorySSA-Phi operands, then JOIN values from every remaining source.
+    AbstractState& targetState = abstractTrace[node];
+    auto incoming = incomingObjValues.find(node);
+    if (incoming != incomingObjValues.end())
+    {
+        for (const auto& incomingValues : incoming->second)
+        {
+            const ObjValueOrigin& origin = incomingValues.first;
+            if (!isMemoryPhiOperandReachable(origin.first, node, origin.second))
+                continue;
+
+            const ObjValueMap& objValues = incomingValues.second;
+            for (const auto& [objId, value] : objValues)
+            {
+                u32_t address = AbstractState::getVirtualMemAddress(objId);
+                if (targetState.getLocToVal().count(objId))
+                    targetState.load(address).join_with(value);
+                else
+                    targetState.store(address, value);
+            }
+        }
+    }
 }
 
 // =====================================================================
 //  Full-sparse — refinement trace machinery.
 // =====================================================================
-
-static bool hasRedefineToSameObj(const ICFGNode* node,
-                                 const IndirectSVFGEdge* edge)
-{
-    for (const VFGNode* vfgNode : node->getVFGNodes())
-    {
-        if (SVFUtil::isa<StoreVFGNode>(vfgNode) &&
-                vfgNode->getDefSVFVars().intersects(edge->getPointsTo()))
-            return true;
-    }
-
-    return false;
-}
-
-bool FullSparseAbstractInterpretation::isIndirectSVFGEdgeFeasible(
-    const IndirectSVFGEdge* edge, const VFGNode* dst)
-{
-    assert(edge && "Indirect SVFG edge must exist");
-    assert(dst && "Indirect SVFG edge must have a destination node");
-
-    const SVFGNode* src = SVFUtil::dyn_cast<SVFGNode>(edge->getSrcNode());
-    assert(src && "Indirect SVFG edge must have an SVFG source node");
-
-    const ICFGNode* srcICFG = src->getICFGNode();
-    const ICFGNode* dstICFG = dst->getICFGNode();
-    assert(srcICFG && "SVFG source node must have an ICFG node");
-    assert(dstICFG && "SVFG destination node must have an ICFG node");
-
-    const FunObjVar* fun = srcICFG->getFun();
-    bool feasible = true;
-    if (srcICFG == dstICFG)
-    {
-        feasible = true;
-    }
-    else if (!fun || fun != dstICFG->getFun())
-    {
-        feasible = true;
-    }
-    else
-    {
-        feasible = false;
-        std::deque<const ICFGNode*> worklist;
-        Set<const ICFGNode*> visited;
-        worklist.push_back(srcICFG);
-        visited.insert(srcICFG);
-
-        while (!worklist.empty() && !feasible)
-        {
-            const ICFGNode* cur = worklist.front();
-            worklist.pop_front();
-
-            if (cur != srcICFG && hasRedefineToSameObj(cur, edge))
-            {
-                // This ICFG path redefines the same object before dst.
-            }
-            else
-            {
-                // Treat a call as an intra-procedural summary edge for path
-                // queries. Feasibility of the callee body is handled by the
-                // normal analysis; here we only need caller-side reachability,
-                // e.g. entry -> ret-site.
-                if (const CallICFGNode* call =
-                            SVFUtil::dyn_cast<CallICFGNode>(cur))
-                {
-                    const ICFGNode* succ = call->getRetICFGNode();
-                    if (!succ || succ->getFun() != fun)
-                    {
-                        // Ignore missing or cross-function return summaries.
-                    }
-                    else if (succ == dstICFG)
-                    {
-                        feasible = true;
-                    }
-                    else if (!visited.count(succ))
-                    {
-                        visited.insert(succ);
-                        worklist.push_back(succ);
-                    }
-                    else
-                    {
-                        // Already visited.
-                    }
-                }
-
-                for (const ICFGEdge* icfgEdge : cur->getOutEdges())
-                {
-                    const IntraCFGEdge* intraEdge =
-                        SVFUtil::dyn_cast<IntraCFGEdge>(icfgEdge);
-                    const ICFGNode* succ =
-                        intraEdge ? intraEdge->getDstNode() : nullptr;
-
-                    if (!intraEdge)
-                    {
-                        // Non-intra ICFG edges are not part of this path query.
-                    }
-                    else if (!succ || succ->getFun() != fun)
-                    {
-                        // Keep the query inside src's function.
-                    }
-                    else if (!isIntraEdgeBranchFeasible(intraEdge, cur))
-                    {
-                        // The conditional edge is unreachable in cur's state.
-                    }
-                    else if (succ == dstICFG)
-                    {
-                        feasible = true;
-                    }
-                    else if (!visited.count(succ))
-                    {
-                        visited.insert(succ);
-                        worklist.push_back(succ);
-                    }
-                    else
-                    {
-                        // Already visited.
-                    }
-                }
-            }
-        }
-    }
-
-    return feasible;
-}
-
-bool FullSparseAbstractInterpretation::isICFGPathFeasible(const ICFGNode* src,
-        const ICFGNode* dst)
-{
-    bool feasible = true;
-    if (!src || !dst)
-    {
-        feasible = true;
-    }
-    else if (src == dst)
-    {
-        feasible = true;
-    }
-    else
-    {
-        const FunObjVar* fun = src->getFun();
-        if (!fun || fun != dst->getFun())
-        {
-            feasible = true;
-        }
-        else
-        {
-            feasible = false;
-            std::deque<const ICFGNode*> worklist;
-            Set<const ICFGNode*> visited;
-            worklist.push_back(src);
-            visited.insert(src);
-
-            while (!worklist.empty() && !feasible)
-            {
-                const ICFGNode* cur = worklist.front();
-                worklist.pop_front();
-
-                // Treat a call as an intra-procedural summary edge for path
-                // queries. Feasibility of the callee body is handled by the
-                // normal analysis; here we only need caller-side reachability,
-                // e.g. entry -> ret-site.
-                if (const CallICFGNode* call =
-                            SVFUtil::dyn_cast<CallICFGNode>(cur))
-                {
-                    const ICFGNode* succ = call->getRetICFGNode();
-                    if (!succ || succ->getFun() != fun)
-                    {
-                        // Ignore missing or cross-function return summaries.
-                    }
-                    else if (succ == dst)
-                    {
-                        feasible = true;
-                    }
-                    else if (!visited.count(succ))
-                    {
-                        visited.insert(succ);
-                        worklist.push_back(succ);
-                    }
-                    else
-                    {
-                        // Already visited.
-                    }
-                }
-
-                for (const ICFGEdge* edge : cur->getOutEdges())
-                {
-                    const IntraCFGEdge* intraEdge =
-                        SVFUtil::dyn_cast<IntraCFGEdge>(edge);
-                    const ICFGNode* succ =
-                        intraEdge ? intraEdge->getDstNode() : nullptr;
-
-                    if (!intraEdge)
-                    {
-                        // Non-intra ICFG edges are not part of this path query.
-                    }
-                    else if (!succ || succ->getFun() != fun)
-                    {
-                        // Keep the query inside src's function.
-                    }
-                    else if (!isIntraEdgeBranchFeasible(intraEdge, cur))
-                    {
-                        // The conditional edge is unreachable in cur's state.
-                    }
-                    else if (succ == dst)
-                    {
-                        feasible = true;
-                    }
-                    else if (!visited.count(succ))
-                    {
-                        visited.insert(succ);
-                        worklist.push_back(succ);
-                    }
-                    else
-                    {
-                        // Already visited.
-                    }
-                }
-            }
-        }
-    }
-
-    return feasible;
-}
-
-bool FullSparseAbstractInterpretation::isIntraEdgeBranchFeasible(
-    const IntraCFGEdge* edge, const ICFGNode* src)
-{
-    bool feasible = true;
-    if (!edge->getCondition())
-    {
-        feasible = true;
-    }
-    else if (!hasAbsState(src))
-    {
-        feasible = true;
-    }
-    else
-    {
-        AbstractState edgeState = getAbsState(src);
-        feasible = isBranchEdgeFeasible(edge, edgeState);
-    }
-
-    return feasible;
-}
 
 void FullSparseAbstractInterpretation::recordBranchRefinement(
     NodeID objId, const IntervalValue& narrowed, AbstractState&,
@@ -587,6 +485,29 @@ void FullSparseAbstractInterpretation::propagateAndApplyRefinement(
             }
         }
     }
+}
+
+bool FullSparseAbstractInterpretation::widenCycleState(
+    const AbstractState& prev, const AbstractState& cur,
+    const ICFGCycleWTO* cycle)
+{
+    bool fixpoint =
+        SemiSparseAbstractInterpretation::widenCycleState(prev, cur, cycle);
+    propagateOutgoingObjValues(cycle->head()->getICFGNode());
+    return fixpoint;
+}
+
+bool FullSparseAbstractInterpretation::narrowCycleState(
+    const AbstractState& prev, const AbstractState& cur,
+    const ICFGCycleWTO* cycle)
+{
+    bool fixpoint =
+        SemiSparseAbstractInterpretation::narrowCycleState(prev, cur, cycle);
+    const ICFGNode* cycleHead = cycle->head()->getICFGNode();
+
+    if (!fixpoint)
+        propagateOutgoingObjValues(cycleHead);
+    return fixpoint;
 }
 
 AbstractState SemiSparseAbstractInterpretation::getFullCycleHeadState(
