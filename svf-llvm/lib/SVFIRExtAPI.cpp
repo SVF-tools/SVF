@@ -209,8 +209,7 @@ void collectMemcpyFields(
     if (const auto* structType = SVFUtil::dyn_cast<StructType>(llvmType))
     {
         const auto* svfStructType = SVFUtil::dyn_cast<SVFStructType>(svfType);
-        if (svfStructType == nullptr)
-            return;
+        assert(svfStructType && "an LLVM struct type maps to an SVFStructType");
         const StructLayout* layout = dl.getStructLayout(const_cast<StructType*>(structType));
         for (u32_t i = 0;
                 i < structType->getNumElements() && fields.size() < maxFields; ++i)
@@ -229,8 +228,7 @@ void collectMemcpyFields(
     if (const auto* arrayType = SVFUtil::dyn_cast<ArrayType>(llvmType))
     {
         const auto* svfArrayType = SVFUtil::dyn_cast<SVFArrayType>(svfType);
-        if (svfArrayType == nullptr)
-            return;
+        assert(svfArrayType && "an LLVM array type maps to an SVFArrayType");
         const Type* elemLLVMType = arrayType->getElementType();
         const SVFType* elemSVFType = svfArrayType->getTypeOfElement();
         if (elemSVFType == nullptr)
