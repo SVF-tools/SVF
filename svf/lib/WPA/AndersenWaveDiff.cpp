@@ -44,10 +44,18 @@ AndersenWaveDiff* AndersenWaveDiff::diffWave = nullptr;
  */
 void AndersenWaveDiff::initialize()
 {
-    handledPts.clear();
-    handledEdges.clear();
+    loadStoreStates.clear();
     Andersen::initialize();
     setDetectPWC(true);   // Standard wave propagation always collapses PWCs
+}
+
+/*!
+ * Release the snapshots used only during constraint solving.
+ */
+void AndersenWaveDiff::finalize()
+{
+    loadStoreStates.clear();
+    Andersen::finalize();
 }
 
 /*!
@@ -98,9 +106,10 @@ void AndersenWaveDiff::processNode(NodeID nodeId)
 
 /*!
  * Post process node: add the copy edges of its loads and stores.
+ * For x = *p, growing pts(p) from {a} to {a, b} only needs the new copy b -> x.
  * A load or store edge already handled at this node needs only the objects added to the
  * node's points-to set since then; an edge new at the node (e.g. moved here by an SCC merge)
- * needs all of them.
+ * needs all of them. Endpoints identify each constraint even when its edge is recreated.
  */
 void AndersenWaveDiff::postProcessNode(NodeID nodeId)
 {
@@ -109,26 +118,26 @@ void AndersenWaveDiff::postProcessNode(NodeID nodeId)
     ConstraintNode* node = consCG->getConstraintNode(nodeId);
     if (node->getLoadOutEdges().empty() && node->getStoreInEdges().empty())
         return;
+    LoadStoreState& handled = loadStoreStates[nodeId];
     const PointsTo all = getPts(nodeId);
     PointsTo added = all;
-    added -= handledPts[nodeId];
-    Set<EdgeID>& handled = handledEdges[nodeId];
+    added -= handled.pts;
 
     // handle load
     for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(), eit = node->outgoingLoadsEnd();
             it != eit; ++it)
     {
-        if (handleLoad(handled.insert((*it)->getEdgeID()).second ? all : added, *it))
+        if (handleLoad(handled.loadDsts.test_and_set((*it)->getDstID()) ? all : added, *it))
             reanalyze = true;
     }
     // handle store
     for (ConstraintNode::const_iterator it = node->incomingStoresBegin(), eit =  node->incomingStoresEnd();
             it != eit; ++it)
     {
-        if (handleStore(handled.insert((*it)->getEdgeID()).second ? all : added, *it))
+        if (handleStore(handled.storeSrcs.test_and_set((*it)->getSrcID()) ? all : added, *it))
             reanalyze = true;
     }
-    handledPts[nodeId] = all;
+    handled.pts = all;
 
     double insertEnd = stat->getClk();
     timeOfProcessLoadStore += (insertEnd - insertStart) / TIMEINTERVAL;
