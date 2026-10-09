@@ -72,6 +72,7 @@ SVFIR* SVFIRBuilder::build()
     /// initial external library information
     /// initial SVFIR nodes
     initialiseNodes();
+    initialiseAggregateReturns();
     /// initial SVFIR edges:
     ///// handle globals
     visitGlobal();
@@ -131,6 +132,10 @@ SVFIR* SVFIRBuilder::build()
                     //}
                     pag->addFunArgs(svffun,pag->getValVar(argValNodeId));
                 }
+                auto returns = aggregateReturnParams.find(&fun);
+                if (returns != aggregateReturnParams.end())
+                    for (const auto& field : returns->second)
+                        pag->addFunArgs(svffun, pag->getValVar(field.second));
             }
             for (Function::const_iterator bit = fun.begin(), ebit = fun.end();
                     bit != ebit; ++bit)
@@ -1273,6 +1278,9 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
     if(!cs->getType()->isVoidTy())
         pag->addCallSiteRets(retBlockNode,pag->getValVar(getValueNode(cs)));
 
+    if (const auto* call = SVFUtil::dyn_cast<CallInst>(cs))
+        addAggregateCallFields(call);
+
     if (callBlockNode->isVirtualCall())
     {
         const Value* value = cppUtil::getVCallVtblPtr(cs);
@@ -1308,6 +1316,8 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
     DBOUT(DPAGBuild,
           outs() << "process return " << LLVMUtil::dumpValue(&inst) << "\n");
 
+    addAggregateReturnStores(inst);
+
     if(Value* src = inst.getReturnValue())
     {
         const FunObjVar *F = llvmModuleSet()->getFunObjVar(inst.getParent()->getParent());
@@ -1321,21 +1331,22 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
 }
 
 
-/// Find the pointer values held by one field of an aggregate in this function.
-/// For example, extracting field 1 of `insertvalue {i32, ptr} %a, ptr %p, 1`
-/// copies %p; an insertion into field 0 leaves the requested field unchanged.
+/// Find scalar sources and call results for one aggregate field. Discovery keeps
+/// walking after an unsupported source so other call dependencies are still found.
+using AggregateCallSource = std::pair<const CallInst*, std::vector<unsigned>>;
 static bool collectAggFieldSources(const Value* aggregate,
                                    const std::vector<unsigned>& indices,
-                                   Set<const Value*>& sources)
+                                   Set<const Value*>& sources,
+                                   Set<AggregateCallSource>& calls)
 {
     using Field = std::pair<const Value*, std::vector<unsigned>>;
     std::vector<Field> worklist{{aggregate, indices}};
     Set<Field> visited;
+    bool complete = true;
     while (!worklist.empty())
     {
         Field field = worklist.back();
         worklist.pop_back();
-        // Revisiting a field through a loop adds no new sources.
         if (!visited.insert(field).second)
             continue;
         const Value* value = field.first;
@@ -1354,7 +1365,7 @@ static bool collectAggFieldSources(const Value* aggregate,
                                       std::vector<unsigned>(path.begin() + insertedPath.size(),
                                                             path.end()));
             else
-                return false;
+                complete = false;
         }
         else if (const auto* extract = SVFUtil::dyn_cast<ExtractValueInst>(value))
         {
@@ -1374,58 +1385,222 @@ static bool collectAggFieldSources(const Value* aggregate,
         }
         else if (const auto* freeze = SVFUtil::dyn_cast<FreezeInst>(value))
             worklist.emplace_back(freeze->getOperand(0), path);
+        else if (const auto* call = SVFUtil::dyn_cast<CallInst>(value))
+            calls.emplace(call, path);
         else if (const auto* constant = SVFUtil::dyn_cast<Constant>(value))
         {
             for (unsigned index : path)
             {
                 constant = constant->getAggregateElement(index);
                 if (!constant)
-                    return false;
+                    break;
             }
-            sources.insert(constant);
+            if (constant)
+                sources.insert(constant);
+            else
+                complete = false;
         }
         else
-            // Calls, arguments and memory loads need aggregate models of their own.
-            return false;
+            complete = false;
     }
-    return !sources.empty();
+    return complete && (!sources.empty() || !calls.empty());
 }
 
-/*!
- * Copy the known pointer sources of a register aggregate field. Keep the usual
- * black-hole fallback if any possible source cannot be traced.
- */
+/// Use output parameters only when every use has the same direct-call interface.
+static bool canModelAggregateReturn(const Function* fun)
+{
+    if (!fun || LLVMUtil::isExtCall(fun) || fun->isVarArg() ||
+            fun->doesNotReturn() || !fun->getReturnType()->isAggregateType() ||
+            fun->hasAddressTaken())
+        return false;
+    for (const User* user : fun->users())
+    {
+        const auto* call = SVFUtil::dyn_cast<CallInst>(user);
+        if (!call || call->getCalledFunction() != fun ||
+                call->getFunctionType() != fun->getFunctionType())
+            return false;
+    }
+    return true;
+}
+
+void SVFIRBuilder::initialiseAggregateReturns()
+{
+    using Field = std::pair<const Value*, AggregateField>;
+    std::vector<Field> worklist;
+    for (Module& module : llvmModuleSet()->getLLVMModules())
+        for (const Function& fun : module)
+            for (const BasicBlock& bb : fun)
+                for (const Instruction& inst : bb)
+                    if (const auto* extract = SVFUtil::dyn_cast<ExtractValueInst>(&inst))
+                        if (extract->getType()->isPointerTy())
+                            worklist.emplace_back(extract->getAggregateOperand(),
+                                                  AggregateField(extract->idx_begin(), extract->idx_end()));
+
+    // A function/field is queued once, including through recursive returns.
+    while (!worklist.empty())
+    {
+        Field field = std::move(worklist.back());
+        worklist.pop_back();
+        Set<const Value*> sources;
+        Set<AggregateCallSource> calls;
+        collectAggFieldSources(field.first, field.second, sources, calls);
+        for (const auto& source : calls)
+        {
+            const Function* callee = source.first->getCalledFunction();
+            if (!canModelAggregateReturn(callee))
+                continue;
+            if (!aggregateReturnParams[callee].emplace(source.second, 0).second)
+                continue;
+            for (const BasicBlock& bb : *callee)
+                if (const auto* ret = SVFUtil::dyn_cast<ReturnInst>(bb.getTerminator()))
+                    if (ret->getReturnValue())
+                        worklist.emplace_back(ret->getReturnValue(), source.second);
+        }
+    }
+
+    const SVFType* pointerType = llvmModuleSet()->getSVFType(
+                                    PointerType::getUnqual(llvmModuleSet()->getContext()));
+    for (auto& function : aggregateReturnParams)
+    {
+        const Function* fun = function.first;
+        FunObjVar* svfFun = const_cast<FunObjVar*>(llvmModuleSet()->getFunObjVar(fun));
+        const FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svfFun);
+        for (auto& field : function.second)
+        {
+            NodeID id = NodeIDAllocator::get()->allocateValueId();
+            pag->addArgValNode(id, svfFun->arg_size(), entry, svfFun, pointerType);
+            auto* arg = SVFUtil::cast<ArgValVar>(pag->getGNode(id));
+            svfFun->addArgument(arg);
+            // Like RetValPN, the synthetic parameter uses its function as a
+            // diagnostic source; it does not add or replace an LLVM argument.
+            llvmModuleSet()->addToSVFVar2LLVMValueMap(fun, arg);
+            arg->setName("aggregate_return_" + std::to_string(arg->getArgNo()));
+            field.second = id;
+        }
+        // Every call receives the same extra parameters, even if its result is unused.
+        for (const User* user : fun->users())
+        {
+            const auto* call = SVFUtil::cast<CallInst>(user);
+            std::vector<const Instruction*> next;
+            LLVMUtil::getNextInsts(call, next);
+            assert(next.size() == 1 && "ordinary call must have one continuation");
+            AggregateCall& model = aggregateCalls[call];
+            model.continuation = next.front();
+            ICFGNode* callNode = llvmModuleSet()->getCallICFGNode(call);
+            ICFGNode* resumeNode = llvmModuleSet()->getICFGNode(model.continuation);
+            for (const auto& field : function.second)
+            {
+                NodeID object = pag->addDummyObjNode(pointerType);
+                pag->getAllFieldsObjVars(object).set(object);
+                pag->getObjTypeInfo(object)->setNumOfElements(1);
+                pag->getObjTypeInfo(object)->setByteSizeOfObj(pointerType->getByteSize());
+                NodeID address = pag->addDummyValNode(NodeIDAllocator::get()->allocateValueId(), callNode);
+                NodeID value = pag->addDummyValNode(NodeIDAllocator::get()->allocateValueId(), resumeNode);
+                model.fields.emplace(field.first, AggregateCallField{object, address, value});
+            }
+        }
+    }
+}
+
+/// Model `a = make(p); q = extractvalue a, 1` as an output slot passed to
+/// make(), followed by a load into a separate SSA value when the call returns.
+void SVFIRBuilder::addAggregateCallFields(const CallInst* call)
+{
+    auto found = aggregateCalls.find(call);
+    if (found == aggregateCalls.end())
+        return;
+    const AggregateCall& model = found->second;
+    CallICFGNode* callNode = llvmModuleSet()->getCallICFGNode(call);
+    const FunObjVar* callee = llvmModuleSet()->getFunObjVar(call->getCalledFunction());
+    FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(callee);
+    ICFGNode* resumeNode = llvmModuleSet()->getICFGNode(model.continuation);
+    const auto& params = aggregateReturnParams.at(call->getCalledFunction());
+    for (const auto& field : model.fields)
+    {
+        const AggregateCallField& nodes = field.second;
+        addAddrEdge(nodes.object, nodes.address);
+        pag->addCallSiteArgs(callNode, pag->getValVar(nodes.address));
+        addCallEdge(nodes.address, params.at(field.first), callNode, entry);
+        // MemSSA visits the next instruction after the call's memory effects.
+        // Snapshot the field now so later calls cannot change an older result.
+        if (LoadStmt* load = pag->addLoadStmt(nodes.address, nodes.value))
+            setCurrentBBAndValueForPAGEdge(load, resumeNode);
+    }
+}
+
+void SVFIRBuilder::addAggregateReturnStores(ReturnInst& inst)
+{
+    auto found = aggregateReturnParams.find(inst.getFunction());
+    if (found == aggregateReturnParams.end() || !inst.getReturnValue())
+        return;
+    ICFGNode* location = llvmModuleSet()->getICFGNode(&inst);
+    for (const auto& field : found->second)
+    {
+        NodeID value = pag->addDummyValNode(NodeIDAllocator::get()->allocateValueId(), location);
+        addAggregateFieldCopy(inst.getReturnValue(), field.first, value, location);
+        if (StoreStmt* store = pag->addStoreStmt(value, field.second, location))
+            setCurrentBBAndValueForPAGEdge(store, location);
+    }
+}
+
+void SVFIRBuilder::addAggregateFieldCopy(const Value* aggregate,
+                                        const AggregateField& indices,
+                                        NodeID dst, ICFGNode* location)
+{
+    Set<const Value*> sources;
+    Set<AggregateCallSource> calls;
+    Set<NodeID> values;
+    bool complete = collectAggFieldSources(aggregate, indices, sources, calls);
+    for (const Value* source : sources)
+    {
+        // Keep the fallback for constant expressions without local definitions.
+        if (SVFUtil::isa<ConstantExpr>(source) || !llvmModuleSet()->hasValueNode(source))
+            complete = false;
+        else
+            values.insert(getValueNode(source));
+    }
+    for (const auto& source : calls)
+    {
+        auto call = aggregateCalls.find(source.first);
+        if (call == aggregateCalls.end())
+        {
+            complete = false;
+            continue;
+        }
+        auto field = call->second.fields.find(source.second);
+        if (field == call->second.fields.end())
+            complete = false;
+        else
+            values.insert(field->second.value);
+    }
+    if (!complete || values.empty())
+    {
+        if (PAGEdge* edge = pag->addBlackHoleAddrStmt(dst))
+            setCurrentBBAndValueForPAGEdge(edge, location);
+    }
+    else if (values.size() == 1)
+    {
+        if (CopyStmt* edge = pag->addCopyStmt(*values.begin(), dst, CopyStmt::COPYVAL))
+            setCurrentBBAndValueForPAGEdge(edge, location);
+    }
+    else
+    {
+        // Multiple sources share one PhiStmt and one value-flow definition.
+        for (NodeID source : values)
+            if (PhiStmt* edge = pag->addPhiStmt(dst, source, location))
+                setCurrentBBAndValueForPAGEdge(edge, location);
+    }
+}
+
 void SVFIRBuilder::visitExtractValueInst(ExtractValueInst &inst)
 {
     NodeID dst = getValueNode(&inst);
-    Set<const Value*> sources;
-    const std::vector<unsigned> indices(inst.idx_begin(), inst.idx_end());
-    if (inst.getType()->isPointerTy() &&
-            collectAggFieldSources(inst.getAggregateOperand(), indices, sources))
-    {
-        // Nested constant expressions may not be lowered to instructions;
-        // keep their fallback rather than bypassing local value-flow definitions.
-        for (const Value* source : sources)
-        {
-            if (SVFUtil::isa<ConstantExpr>(source) || !llvmModuleSet()->hasValueNode(source))
-            {
-                addBlackHoleAddrEdge(dst);
-                return;
-            }
-        }
-        if (sources.size() == 1)
-            addCopyEdge(getValueNode(*sources.begin()), dst, CopyStmt::COPYVAL);
-        else
-        {
-            // A select or phi can contribute several pointers. One PhiStmt keeps
-            // the extractvalue's single definition in the value-flow graph.
-            const ICFGNode* location = llvmModuleSet()->getICFGNode(&inst);
-            for (const Value* source : sources)
-                addPhiStmt(dst, getValueNode(source), location);
-        }
-        return;
-    }
-    addBlackHoleAddrEdge(dst);
+    if (inst.getType()->isPointerTy())
+        addAggregateFieldCopy(inst.getAggregateOperand(),
+                              AggregateField(inst.idx_begin(), inst.idx_end()), dst,
+                              llvmModuleSet()->getICFGNode(&inst));
+    else
+        addBlackHoleAddrEdge(dst);
 }
 
 /*!
@@ -1959,7 +2134,7 @@ NodeID SVFIRBuilder::getDirectAccessFieldZeroValVar(const Value* ptr, const Type
  * Function             AddrEdge  (SVFIRBuilder::visitGlobal)
  * Constant             StoreEdge (SVFIRBuilder::InitialGlobal)
  */
-void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
+void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge, ICFGNode* location)
 {
     if (SVFIR::pagReadFromTXT())
         return;
@@ -2027,6 +2202,8 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         assert(false && "what else value can we have?");
     }
 
+    if (location)
+        icfgNode = location;
     pag->addToSVFStmtList(icfgNode,edge);
     icfgNode->addSVFStmt(edge);
     if(const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(edge))
