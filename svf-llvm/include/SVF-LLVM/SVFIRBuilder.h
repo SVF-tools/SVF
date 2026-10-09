@@ -54,11 +54,6 @@ private:
     const Value* curVal;	///< Current Value during SVFIR construction when visiting the module
 
 public:
-    /// Pointer-typed extractvalue results that -model-extractvalue traced, or left to the
-    /// black hole, in the last build
-    static u32_t numModeledExtractValue;
-    static u32_t numUnmodeledExtractValue;
-
     /// Constructor
     SVFIRBuilder(): pag(SVFIR::getPAG()), curBB(nullptr),curVal(nullptr)
     {
@@ -228,16 +223,6 @@ protected:
 
     /// Process constant expression
     void processCE(const Value* val);
-
-    /// Collect the values that field `indices` of aggregate `agg` can hold, following
-    /// insertvalue, extractvalue, phi, select, freeze and the returns of directly called
-    /// functions. Each source is paired with the outermost call it crosses (nullptr when it
-    /// is in the current function). Returns false if some source cannot be traced.
-    bool collectAggFieldSources(const Value* agg, llvm::ArrayRef<unsigned> indices,
-                                const llvm::CallBase* via,
-                                Set<std::pair<const Value*, std::vector<unsigned>>>& visited,
-                                std::vector<std::pair<const Value*, const llvm::CallBase*>>& srcs,
-                                u32_t depth);
 
     /// Infer field index from byteoffset.
     u32_t inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, AccessPath& ap, APOffset idx);

@@ -66,10 +66,6 @@ void ConstraintGraph::buildCG()
             addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
-    if (Options::ModelExtractValue())
-        for (const auto& [src, dst] : pag->getAggFieldCopies())
-            addCopyCGEdge(src, dst);
-
     SVFStmt::SVFStmtSetTy& phis = getSVFStmtSet(SVFStmt::Phi);
     for (SVFStmt::SVFStmtSetTy::iterator iter = phis.begin(), eiter =
                 phis.end(); iter != eiter; ++iter)

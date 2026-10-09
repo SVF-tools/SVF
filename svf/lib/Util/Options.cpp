@@ -168,14 +168,6 @@ Option<bool> Options::HandBlackHole(
     false
 );
 
-const Option<bool> Options::ModelExtractValue(
-    "model-extractvalue",
-    "Give a pointer taken out of an aggregate with extractvalue the pointers inserted into "
-    "that field (through insertvalue, phi, select, freeze and the returns of directly called "
-    "functions) instead of the black hole, which stays for sources that cannot be traced",
-    false
-);
-
 const Option<bool> Options::FirstFieldEqBase(
     "ff-eq-base",
     "Treat base objects as their first fields",
