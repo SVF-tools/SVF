@@ -1082,7 +1082,13 @@ NodeID LLVMModuleSet::getValueNode(const Value *llvm_value)
     if (SVFUtil::isa<ConstantPointerNull>(llvm_value))
         return svfir->nullPtrSymID();
     else if (SVFUtil::isa<UndefValue>(llvm_value))
-        return Options::UndefAsNull() ? svfir->nullPtrSymID() : svfir->blkPtrSymID();
+    {
+        // For phi ptr [ @x, ... ], [ undef, ... ], keep @x without adding
+        // a black-hole target. Integer and aggregate undef keep their model.
+        if (Options::UndefAsNull() && llvm_value->getType()->isPointerTy())
+            return svfir->nullPtrSymID();
+        return svfir->blkPtrSymID();
+    }
     else
     {
         ValueToIDMapTy::const_iterator iter = valSymMap.find(llvm_value);

@@ -170,8 +170,8 @@ Option<bool> Options::HandBlackHole(
 
 const Option<bool> Options::UndefAsNull(
     "undef-as-null",
-    "Give undef and poison pointers no targets instead of the black hole "
-    "(sound for clients that may assume the program has no undefined behaviour)",
+    "Map pointer-typed undef and poison to the null node "
+    "(opt-in points-to approximation; unsuitable for abstract execution)",
     false
 );
 
