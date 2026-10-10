@@ -493,8 +493,8 @@ build_svf() {
     elif [[ "$PLATFORM" == "windows-mingw" ]]; then
         cmake_generator_args=(
             -G "Ninja"
-            -DCMAKE_C_COMPILER=clang
-            -DCMAKE_CXX_COMPILER=clang++
+            -DCMAKE_C_COMPILER="${CC:-clang}"
+            -DCMAKE_CXX_COMPILER="${CXX:-clang++}"
             -DSVF_WARN_AS_ERROR=OFF
             -DSVF_EXPORT_DYNAMIC=OFF
             -DSVF_Z3=ON

@@ -23,6 +23,7 @@ jobs:
           msystem: CLANG64
           update: true
           install: >-
+            mingw-w64-clang-x86_64-clang
             mingw-w64-clang-x86_64-cmake
             mingw-w64-clang-x86_64-ninja
             mingw-w64-clang-x86_64-z3
@@ -53,6 +54,8 @@ jobs:
         shell: msys2 {0}
         run: |
           export SVF_COVERAGE=1
+          export CC=/clang64/bin/clang.exe
+          export CXX=/clang64/bin/clang++.exe
           source ./build.sh
 
       - name: Run CTests (MSVC)
