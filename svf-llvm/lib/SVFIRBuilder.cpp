@@ -1321,17 +1321,110 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
 }
 
 
+/// Find the pointer values held by one field of an aggregate in this function.
+/// For example, extracting field 1 of `insertvalue {i32, ptr} %a, ptr %p, 1`
+/// copies %p; an insertion into field 0 leaves the requested field unchanged.
+static bool collectAggFieldSources(const Value* aggregate,
+                                   const std::vector<unsigned>& indices,
+                                   Set<const Value*>& sources)
+{
+    using Field = std::pair<const Value*, std::vector<unsigned>>;
+    std::vector<Field> worklist{{aggregate, indices}};
+    Set<Field> visited;
+    while (!worklist.empty())
+    {
+        Field field = worklist.back();
+        worklist.pop_back();
+        // Revisiting a field through a loop adds no new sources.
+        if (!visited.insert(field).second)
+            continue;
+        const Value* value = field.first;
+        const std::vector<unsigned>& path = field.second;
+        if (const auto* insert = SVFUtil::dyn_cast<InsertValueInst>(value))
+        {
+            const auto insertedPath = insert->getIndices();
+            const size_t commonLength = std::min(insertedPath.size(), path.size());
+            if (!std::equal(insertedPath.begin(), insertedPath.begin() + commonLength,
+                            path.begin()))
+                worklist.emplace_back(insert->getAggregateOperand(), path);
+            else if (insertedPath.size() == path.size())
+                sources.insert(insert->getInsertedValueOperand());
+            else if (insertedPath.size() < path.size())
+                worklist.emplace_back(insert->getInsertedValueOperand(),
+                                      std::vector<unsigned>(path.begin() + insertedPath.size(),
+                                                            path.end()));
+            else
+                return false;
+        }
+        else if (const auto* extract = SVFUtil::dyn_cast<ExtractValueInst>(value))
+        {
+            std::vector<unsigned> outer(extract->idx_begin(), extract->idx_end());
+            outer.insert(outer.end(), path.begin(), path.end());
+            worklist.emplace_back(extract->getAggregateOperand(), std::move(outer));
+        }
+        else if (const auto* phi = SVFUtil::dyn_cast<PHINode>(value))
+        {
+            for (const Value* incoming : phi->incoming_values())
+                worklist.emplace_back(incoming, path);
+        }
+        else if (const auto* select = SVFUtil::dyn_cast<SelectInst>(value))
+        {
+            worklist.emplace_back(select->getTrueValue(), path);
+            worklist.emplace_back(select->getFalseValue(), path);
+        }
+        else if (const auto* freeze = SVFUtil::dyn_cast<FreezeInst>(value))
+            worklist.emplace_back(freeze->getOperand(0), path);
+        else if (const auto* constant = SVFUtil::dyn_cast<Constant>(value))
+        {
+            for (unsigned index : path)
+            {
+                constant = constant->getAggregateElement(index);
+                if (!constant)
+                    return false;
+            }
+            sources.insert(constant);
+        }
+        else
+            // Calls, arguments and memory loads need aggregate models of their own.
+            return false;
+    }
+    return !sources.empty();
+}
+
 /*!
- * visit extract value instructions for structures in registers
- * TODO: for now we just assume the pointer after extraction points to blackhole
- * for example %24 = extractvalue { i32, %struct.s_hash* } %call34, 0
- * %24 is a pointer points to first field of a register value %call34
- * however we can not create %call34 as an memory object, as it is register value.
- * Is that necessary treat extract value as getelementptr instruction later to get more precise results?
+ * Copy the known pointer sources of a register aggregate field. Keep the usual
+ * black-hole fallback if any possible source cannot be traced.
  */
-void SVFIRBuilder::visitExtractValueInst(ExtractValueInst  &inst)
+void SVFIRBuilder::visitExtractValueInst(ExtractValueInst &inst)
 {
     NodeID dst = getValueNode(&inst);
+    Set<const Value*> sources;
+    const std::vector<unsigned> indices(inst.idx_begin(), inst.idx_end());
+    if (inst.getType()->isPointerTy() &&
+            collectAggFieldSources(inst.getAggregateOperand(), indices, sources))
+    {
+        // Nested constant expressions may not be lowered to instructions;
+        // keep their fallback rather than bypassing local value-flow definitions.
+        for (const Value* source : sources)
+        {
+            if (SVFUtil::isa<ConstantExpr>(source) || !llvmModuleSet()->hasValueNode(source))
+            {
+                addBlackHoleAddrEdge(dst);
+                return;
+            }
+        }
+        if (sources.size() == 1)
+            addCopyEdge(getValueNode(*sources.begin()), dst, CopyStmt::COPYVAL);
+        else
+        {
+            // A select or phi can contribute several pointers. One PhiStmt keeps
+            // the extractvalue's single definition in the value-flow graph.
+            const ICFGNode* location = llvmModuleSet()->getICFGNode(&inst);
+            for (const Value* source : sources)
+                addPhiStmt(dst, getValueNode(source), location);
+        }
+        return;
+    }
     addBlackHoleAddrEdge(dst);
 }
 
