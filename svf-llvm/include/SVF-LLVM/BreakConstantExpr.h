@@ -17,7 +17,9 @@
 
 #if LLVM_VERSION_MAJOR > 16
 #include "llvm/Passes/PassBuilder.h"
+#if LLVM_VERSION_MAJOR <= 22
 #include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
+#endif
 #endif
 
 namespace SVF
@@ -95,7 +97,11 @@ public:
             PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 
             llvm::FunctionPassManager FPM;
+#if LLVM_VERSION_MAJOR <= 22
             FPM.addPass(llvm::UnifyFunctionExitNodesPass());
+#else
+            FPM.addPass(UnifyFunctionExitNodes());
+#endif
             FPM.run(const_cast<llvm::Function&>(fun), FAM);
         }
     }
