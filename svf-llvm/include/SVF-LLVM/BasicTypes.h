@@ -51,7 +51,9 @@
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
 
+#if LLVM_VERSION_MAJOR < 23
 #include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
+#endif
 
 #include <llvm/Support/SourceMgr.h>
 

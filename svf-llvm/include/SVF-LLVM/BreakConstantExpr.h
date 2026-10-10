@@ -17,7 +17,9 @@
 
 #if LLVM_VERSION_MAJOR > 16
 #include "llvm/Passes/PassBuilder.h"
+#if LLVM_VERSION_MAJOR < 23
 #include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
+#endif
 #endif
 
 namespace SVF
