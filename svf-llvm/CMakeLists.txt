@@ -92,7 +92,7 @@ if(MINGW)
 endif()
 
 # Search in the executables dir or system PATH for this LLVM's clang instance
-find_program(LLVM_CLANG NAMES clang clang.exe clang-21 PATHS ${LLVM_BINARY_DIR} ${LLVM_TOOLS_BINARY_DIR})
+find_program(LLVM_CLANG NAMES clang clang.exe clang-${LLVM_VERSION_MAJOR} PATHS ${LLVM_BINARY_DIR} ${LLVM_TOOLS_BINARY_DIR})
 if(NOT LLVM_CLANG)
   message(FATAL_ERROR "Failed to find 'clang' in LLVM package!")
 endif()
