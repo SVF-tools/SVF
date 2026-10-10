@@ -119,7 +119,8 @@ void AndersenWaveDiff::postProcessNode(NodeID nodeId)
     if (node->getLoadOutEdges().empty() && node->getStoreInEdges().empty())
         return;
     LoadStoreState& handled = loadStoreStates[nodeId];
-    const PointsTo all = getPts(nodeId);
+    // Adding copy edges below does not change points-to sets until the next wave.
+    const PointsTo& all = getPts(nodeId);
     PointsTo added = all;
     added -= handled.pts;
 
@@ -127,14 +128,22 @@ void AndersenWaveDiff::postProcessNode(NodeID nodeId)
     for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(), eit = node->outgoingLoadsEnd();
             it != eit; ++it)
     {
-        if (handleLoad(handled.loadDsts.test_and_set((*it)->getDstID()) ? all : added, *it))
+        // A new destination means this load has not seen this node's old objects,
+        // e.g. when the edge was moved here by an SCC merge.
+        const bool isNewLoad = handled.loadDsts.test_and_set((*it)->getDstID());
+        const PointsTo& objs = isNewLoad ? all : added;
+        if (handleLoad(objs, *it))
             reanalyze = true;
     }
     // handle store
     for (ConstraintNode::const_iterator it = node->incomingStoresBegin(), eit =  node->incomingStoresEnd();
             it != eit; ++it)
     {
-        if (handleStore(handled.storeSrcs.test_and_set((*it)->getSrcID()) ? all : added, *it))
+        // Likewise, a new store source needs all objects; an existing one needs
+        // only the objects added since this node was last handled.
+        const bool isNewStore = handled.storeSrcs.test_and_set((*it)->getSrcID());
+        const PointsTo& objs = isNewStore ? all : added;
+        if (handleStore(objs, *it))
             reanalyze = true;
     }
     handled.pts = all;
