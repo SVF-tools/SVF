@@ -60,7 +60,8 @@ jobs:
         shell: powershell
         working-directory: ${{ github.workspace }}/Release-build
         run: |
-          $env:PATH = "${{ github.workspace }}\Release-build\bin;${{ github.workspace }}\Release-build\lib;${{ github.workspace }}\z3.obj\bin;${{ github.workspace }}\llvm-21.1.0.obj\bin;$env:PATH"
+          $llvm_bin = (Get-Item "${{ github.workspace }}\llvm-*.obj\bin").FullName
+          $env:PATH = "${{ github.workspace }}\Release-build\bin;${{ github.workspace }}\Release-build\lib;${{ github.workspace }}\z3.obj\bin;$llvm_bin;$env:PATH"
           ctest --output-on-failure -E symabs
 
       - name: Run CTests (MinGW)
@@ -68,7 +69,8 @@ jobs:
         shell: msys2 {0}
         working-directory: ${{ github.workspace }}/Release-build
         run: |
-          export PATH="${{ github.workspace }}/Release-build/bin:${{ github.workspace }}/Release-build/lib:$PATH"
+          source ../setup.sh
+          export PATH="$(pwd)/bin:$(pwd)/lib:$PATH"
           ctest --output-on-failure -E symabs
 
       - name: Create Coverage Report (MinGW)
@@ -78,10 +80,10 @@ jobs:
         run: |
           lcov --capture --directory ./ --output-file coverage-mingw.info --ignore-errors gcov,source || true
           lcov --remove coverage-mingw.info '/usr/*' --output-file coverage-mingw.info --ignore-errors unused || true
-          lcov --remove coverage-mingw.info '${{ github.workspace }}/z3.obj/*' --output-file coverage-mingw.info --ignore-errors unused || true
-          lcov --remove coverage-mingw.info '${{ github.workspace }}/llvm-*.obj/*' --output-file coverage-mingw.info --ignore-errors unused || true
-          lcov --remove coverage-mingw.info '${{ github.workspace }}/svf/include/FastCluster/*' --output-file coverage-mingw.info --ignore-errors unused || true
-          lcov --remove coverage-mingw.info '${{ github.workspace }}/svf/lib/FastCluster/*' --output-file coverage-mingw.info --ignore-errors unused || true
+          lcov --remove coverage-mingw.info '*/z3.obj/*' --output-file coverage-mingw.info --ignore-errors unused || true
+          lcov --remove coverage-mingw.info '*/llvm-*.obj/*' --output-file coverage-mingw.info --ignore-errors unused || true
+          lcov --remove coverage-mingw.info '*/svf/include/FastCluster/*' --output-file coverage-mingw.info --ignore-errors unused || true
+          lcov --remove coverage-mingw.info '*/svf/lib/FastCluster/*' --output-file coverage-mingw.info --ignore-errors unused || true
           
           # Normalize paths in coverage-mingw.info to relative repository paths for Codecov
           if [ -f coverage-mingw.info ]; then
