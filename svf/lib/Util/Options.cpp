@@ -168,6 +168,13 @@ Option<bool> Options::HandBlackHole(
     false
 );
 
+const Option<bool> Options::UndefAsNull(
+    "undef-as-null",
+    "Map pointer-typed undef and poison to the null node "
+    "(opt-in points-to approximation; unsuitable for abstract execution)",
+    false
+);
+
 const Option<bool> Options::FirstFieldEqBase(
     "ff-eq-base",
     "Treat base objects as their first fields",
