@@ -317,6 +317,17 @@ download_llvm_prebuilt() {
             sed -i 's|[a-zA-Z]:/[^";]*DIA SDK/lib/amd64/diaguids\.lib;||g' "$exports_file" || true
         fi
     fi
+
+    # For Windows MinGW LLVM SDK, ensure libzstd.a is available for Ninja/CMake targets
+    if [[ "$PLATFORM" == "windows-mingw" ]]; then
+        if [[ -f "/clang64/lib/libzstd.a" ]]; then
+            cp "/clang64/lib/libzstd.a" "./$LLVMHome/lib/" || true
+        elif [[ -f "/mingw64/lib/libzstd.a" ]]; then
+            cp "/mingw64/lib/libzstd.a" "./$LLVMHome/lib/" || true
+        else
+            touch "./$LLVMHome/lib/libzstd.a" 2>/dev/null || true
+        fi
+    fi
 }
 
 ensure_llvm() {
@@ -325,21 +336,53 @@ ensure_llvm() {
         return
     fi
 
-    # In MinGW / MSYS2, check if system LLVM is installed
+    # In MinGW / MSYS2, use native MinGW LLVM installation matching MajorLLVMVer
     if [[ "$PLATFORM" == "windows-mingw" ]]; then
-        if command -v llvm-config >/dev/null 2>&1; then
-            LLVM_DIR="$(llvm-config --prefix)"
+        if [[ -d "/clang64/opt/llvm-${MajorLLVMVer}" ]]; then
+            export LLVM_DIR="/clang64/opt/llvm-${MajorLLVMVer}"
+            export PATH="/clang64/opt/llvm-${MajorLLVMVer}/bin:$PATH"
+            echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
+            return
+        elif [[ -d "/mingw64/opt/llvm-${MajorLLVMVer}" ]]; then
+            export LLVM_DIR="/mingw64/opt/llvm-${MajorLLVMVer}"
+            export PATH="/mingw64/opt/llvm-${MajorLLVMVer}/bin:$PATH"
+            echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
+            return
+        elif command -v "llvm-config-${MajorLLVMVer}" >/dev/null 2>&1; then
+            LLVM_DIR="$("llvm-config-${MajorLLVMVer}" --prefix)"
             export LLVM_DIR
             echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
             return
-        elif [[ -d "/clang64/include/llvm" ]]; then
-            export LLVM_DIR="/clang64"
-            echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
-            return
-        elif [[ -d "/mingw64/include/llvm" ]]; then
-            export LLVM_DIR="/mingw64"
-            echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
-            return
+        fi
+
+        # If LLVM is not yet installed in MSYS2, install pinned packages for MajorLLVMVer
+        if command -v pacman >/dev/null 2>&1; then
+            echo "Installing LLVM ${MajorLLVMVer} packages for MinGW in MSYS2..."
+            local msys_mirror="https://mirror.msys2.org/mingw/clang64"
+            local pkg_suffix="${MajorLLVMVer}.1.8-4-any"
+            pacman -U --noconfirm --needed \
+                "${msys_mirror}/mingw-w64-clang-x86_64-llvm-libs-${pkg_suffix}.pkg.tar.zst" \
+                "${msys_mirror}/mingw-w64-clang-x86_64-llvm-tools-${pkg_suffix}.pkg.tar.zst" \
+                "${msys_mirror}/mingw-w64-clang-x86_64-llvm-${pkg_suffix}.pkg.tar.zst" \
+                "${msys_mirror}/mingw-w64-clang-x86_64-clang-libs-${pkg_suffix}.pkg.tar.zst" \
+                "${msys_mirror}/mingw-w64-clang-x86_64-compiler-rt-${pkg_suffix}.pkg.tar.zst" \
+                "${msys_mirror}/mingw-w64-clang-x86_64-clang-${pkg_suffix}.pkg.tar.zst" \
+                "${msys_mirror}/mingw-w64-clang-x86_64-lld-${pkg_suffix}.pkg.tar.zst"
+
+            if command -v llvm-config >/dev/null 2>&1; then
+                LLVM_DIR="$(llvm-config --prefix)"
+                export LLVM_DIR
+                echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
+                return
+            elif [[ -d "/clang64/include/llvm" ]]; then
+                export LLVM_DIR="/clang64"
+                echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
+                return
+            elif [[ -d "/mingw64/include/llvm" ]]; then
+                export LLVM_DIR="/mingw64"
+                echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
+                return
+            fi
         fi
     fi
 
@@ -491,10 +534,19 @@ build_svf() {
             -DSVF_Z3=ON
         )
     elif [[ "$PLATFORM" == "windows-mingw" ]]; then
+        local c_comp="${CC:-clang}"
+        local cxx_comp="${CXX:-clang++}"
+        if [[ -x "$LLVM_DIR/bin/clang.exe" || -x "$LLVM_DIR/bin/clang" ]]; then
+            c_comp="$LLVM_DIR/bin/clang"
+            cxx_comp="$LLVM_DIR/bin/clang++"
+        elif command -v "clang-${MajorLLVMVer}" >/dev/null 2>&1; then
+            c_comp="clang-${MajorLLVMVer}"
+            cxx_comp="clang++-${MajorLLVMVer}"
+        fi
         cmake_generator_args=(
             -G "Ninja"
-            -DCMAKE_C_COMPILER=clang
-            -DCMAKE_CXX_COMPILER=clang++
+            -DCMAKE_C_COMPILER="$c_comp"
+            -DCMAKE_CXX_COMPILER="$cxx_comp"
             -DSVF_WARN_AS_ERROR=OFF
             -DSVF_EXPORT_DYNAMIC=OFF
             -DSVF_Z3=ON
