@@ -325,23 +325,7 @@ ensure_llvm() {
         return
     fi
 
-    # In MinGW / MSYS2, check if system LLVM is installed
-    if [[ "$PLATFORM" == "windows-mingw" ]]; then
-        if command -v llvm-config >/dev/null 2>&1; then
-            LLVM_DIR="$(llvm-config --prefix)"
-            export LLVM_DIR
-            echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
-            return
-        elif [[ -d "/clang64/include/llvm" ]]; then
-            export LLVM_DIR="/clang64"
-            echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
-            return
-        elif [[ -d "/mingw64/include/llvm" ]]; then
-            export LLVM_DIR="/mingw64"
-            echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
-            return
-        fi
-    fi
+    echo "LLVM_DIR not set; using build.sh-pinned LLVM ${LLVMVer} (${LLVMHome})"
 
     if [[ ! -d "$LLVMHome" ]]; then
         case "$PLATFORM" in
