@@ -51,7 +51,12 @@
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
 
+#if LLVM_VERSION_MAJOR <= 22
 #include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
+#else
+#include <llvm/IR/PassManager.h>
+#include <vector>
+#endif
 
 #include <llvm/Support/SourceMgr.h>
 
@@ -76,10 +81,75 @@ typedef llvm::ModulePass ModulePass;
 typedef llvm::IRBuilder<> IRBuilder;
 #if LLVM_VERSION_MAJOR >= 12 && LLVM_VERSION_MAJOR <= 16
 typedef llvm::UnifyFunctionExitNodesLegacyPass UnifyFunctionExitNodes;
-#elif LLVM_VERSION_MAJOR > 16
+#elif LLVM_VERSION_MAJOR > 16 && LLVM_VERSION_MAJOR <= 22
 typedef llvm::UnifyFunctionExitNodesPass UnifyFunctionExitNodes;
 #else
-typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
+class UnifyFunctionExitNodes : public llvm::PassInfoMixin<UnifyFunctionExitNodes>
+{
+public:
+    llvm::PreservedAnalyses run(llvm::Function& function,
+                                llvm::FunctionAnalysisManager&)
+    {
+        bool changed = false;
+        std::vector<llvm::BasicBlock*> unreachableBlocks;
+        std::vector<llvm::BasicBlock*> returningBlocks;
+
+        for (llvm::BasicBlock& block : function)
+        {
+            if (llvm::isa<llvm::UnreachableInst>(block.getTerminator()))
+                unreachableBlocks.push_back(&block);
+            if (llvm::isa<llvm::ReturnInst>(block.getTerminator()))
+                returningBlocks.push_back(&block);
+        }
+
+        if (unreachableBlocks.size() > 1)
+        {
+            llvm::BasicBlock* unifiedBlock =
+                llvm::BasicBlock::Create(function.getContext(),
+                                         "UnifiedUnreachableBlock", &function);
+            new llvm::UnreachableInst(function.getContext(), unifiedBlock);
+            for (llvm::BasicBlock* block : unreachableBlocks)
+            {
+                block->back().eraseFromParent();
+                llvm::BranchInst::Create(unifiedBlock, block);
+            }
+            changed = true;
+        }
+
+        if (returningBlocks.size() > 1)
+        {
+            llvm::BasicBlock* unifiedBlock =
+                llvm::BasicBlock::Create(function.getContext(),
+                                         "UnifiedReturnBlock", &function);
+            llvm::PHINode* returnValue = nullptr;
+            if (function.getReturnType()->isVoidTy())
+                llvm::ReturnInst::Create(function.getContext(), nullptr,
+                                         unifiedBlock);
+            else
+            {
+                returnValue = llvm::PHINode::Create(
+                    function.getReturnType(), returningBlocks.size(),
+                    "UnifiedRetVal");
+                returnValue->insertInto(unifiedBlock, unifiedBlock->end());
+                llvm::ReturnInst::Create(function.getContext(), returnValue,
+                                         unifiedBlock);
+            }
+            for (llvm::BasicBlock* block : returningBlocks)
+            {
+                llvm::ReturnInst* returnInst =
+                    llvm::cast<llvm::ReturnInst>(block->getTerminator());
+                if (returnValue)
+                    returnValue->addIncoming(returnInst->getReturnValue(), block);
+                block->back().eraseFromParent();
+                llvm::BranchInst::Create(unifiedBlock, block);
+            }
+            changed = true;
+        }
+
+        return changed ? llvm::PreservedAnalyses()
+                       : llvm::PreservedAnalyses::all();
+    }
+};
 #endif
 
 /// LLVM Basic classes
