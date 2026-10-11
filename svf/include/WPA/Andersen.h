@@ -43,7 +43,9 @@
 #include "Util/GeneralType.h"
 #include "Util/Options.h"
 
+#include <functional>
 #include <optional>
+#include <vector>
 
 namespace SVF
 {
@@ -216,7 +218,6 @@ public:
     /// Reset data
     inline void resetData()
     {
-        mayAliasesByPts.clear();
         AveragePointsToSetSize = 0;
         MaxPointsToSetSize = 0;
         timeOfProcessCopyGep = 0;
@@ -258,6 +259,13 @@ public:
     /// Collect exactly the SVFIR nodes q for which mayAlias(node, q) holds
     virtual NodeBS getMayAliases(NodeID node);
 
+    /// Query an unchanged analysis in input order, reusing answers for equal points-to sets.
+    /// Equal points-to sets must imply equal answers, including in subclass overrides.
+    /// The callback must not change the analysis, SVFIR, SCCs, or points-to mapping.
+    /// Answer references are valid only during the callback; the cache lasts for this call.
+    void getMayAliasesBatch(const std::vector<NodeID>& nodes,
+                            const std::function<void(NodeID, const NodeBS&)>& consume);
+
 
     void dumpTopLevelPtsTo();
 
@@ -269,8 +277,6 @@ public:
 protected:
 
     CallSite2DummyValPN callsite2DummyValPN;        ///< Map an instruction to a dummy obj which created at an indirect callsite, which invokes a heap allocator
-    /// getMayAliases answers, keyed by the query's points-to set, which is all an answer depends on
-    Map<PointsTo, NodeBS> mayAliasesByPts;
 
     /// Handle diff points-to set.
     virtual inline void computeDiffPts(NodeID id)
@@ -365,8 +371,6 @@ protected:
     /// Answer a may-alias query from the reverse points-to sets. Returns nullopt
     /// when those sets cannot answer it, leaving the caller to try every node.
     std::optional<NodeBS> collectMayAliasesFromIndex(const PointsTo& expandedPts);
-    /// Every SVFIR node that may alias a node with this points-to set
-    NodeBS collectMayAliases(const PointsTo& pts);
 
     /// Also check getMayAliases on the pointers that the alias tests use
     virtual void validateSuccessTests(std::string fun);

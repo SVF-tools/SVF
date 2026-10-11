@@ -451,7 +451,6 @@ void Andersen::initialize()
  */
 void Andersen::finalize()
 {
-    mayAliasesByPts.clear();
     // TODO: broken
     if (Options::ClusterAnder())
     {
@@ -938,22 +937,10 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
  */
 NodeBS Andersen::getMayAliases(NodeID node)
 {
-    // The answer depends only on the node's points-to set, and many nodes share
-    // one set: every member of a cycle, and every pointer loaded from the
-    // objects the cycle points to. Compute each set's answer once.
-    const PointsTo& pts = getPts(node);
-    auto cached = mayAliasesByPts.find(pts);
-    if (cached != mayAliasesByPts.end())
-        return cached->second;
-    return mayAliasesByPts.emplace(pts, collectMayAliases(pts)).first->second;
-}
-
-NodeBS Andersen::collectMayAliases(const PointsTo& pts)
-{
     // Reuse this expansion for the index lookup and, when necessary, every
     // comparison in the exhaustive fallback.
     PointsTo expandedPts;
-    expandFIObjs(pts, expandedPts);
+    expandFIObjs(getPts(node), expandedPts);
     if (auto aliases = collectMayAliasesFromIndex(expandedPts))
         return std::move(*aliases);
 
@@ -975,6 +962,47 @@ NodeBS Andersen::collectMayAliases(const PointsTo& pts)
             aliases.set(candidate);
     }
     return aliases;
+}
+
+/*!
+ * Reuse answers only within a batch whose analysis state is unchanged. For example,
+ * queries for p and q with pts(p) = pts(q) = {o} need the same reverse-index walk.
+ * Keep the cache local so later batches and scalar queries observe current state.
+ */
+void Andersen::getMayAliasesBatch(const std::vector<NodeID>& nodes,
+                                  const std::function<void(NodeID, const NodeBS&)>& consume)
+{
+    Map<PointsTo, NodeBS> answers;
+    size_t cachedMembers = 0;
+    // Bound retained keys and answers, including distinct sets that all alias the graph.
+    constexpr size_t maxCachedSets = 256;
+    constexpr size_t maxCachedMembers = 1 << 20;
+    for (NodeID node : nodes)
+    {
+        const PointsTo& pts = getPts(node);
+        auto cached = answers.find(pts);
+        if (cached != answers.end())
+        {
+            consume(node, cached->second);
+            continue;
+        }
+
+        NodeBS aliases = getMayAliases(node);
+        const size_t members = static_cast<size_t>(pts.count()) + aliases.count();
+        if (members > maxCachedMembers)
+        {
+            consume(node, aliases);
+            continue;
+        }
+        if (answers.size() == maxCachedSets || cachedMembers > maxCachedMembers - members)
+        {
+            answers.clear();
+            cachedMembers = 0;
+        }
+        auto inserted = answers.emplace(pts, std::move(aliases));
+        cachedMembers += members;
+        consume(node, inserted.first->second);
+    }
 }
 
 /*!
@@ -1061,16 +1089,18 @@ void Andersen::validateSuccessTests(std::string fun)
     {
         if (callNode->getCalledFunction() != checkFun)
             continue;
+        std::vector<NodeID> queries;
         for (u32_t i = 0; i < callNode->arg_size(); ++i)
+            queries.push_back(callNode->getArgument(i)->getId());
+        getMayAliasesBatch(queries, [&](NodeID ptr, const NodeBS& aliases)
         {
-            NodeID ptr = callNode->getArgument(i)->getId();
             NodeBS expected;
             for (SVFIR::iterator it = pag->begin(), eit = pag->end(); it != eit; ++it)
             {
                 if (mayAlias(ptr, it->first))
                     expected.set(it->first);
             }
-            if (pta->getMayAliases(ptr) == expected)
+            if (aliases == expected && pta->getMayAliases(ptr) == expected)
                 outs() << sucMsg("\t SUCCESS :") << "getMayAliases check <id:" << ptr << "> at ("
                        << callNode->getSourceLoc() << ")\n";
             else
@@ -1079,7 +1109,7 @@ void Andersen::validateSuccessTests(std::string fun)
                                 << "> at (" << callNode->getSourceLoc() << ")\n";
                 assert(false && "getMayAliases disagrees with mayAlias!");
             }
-        }
+        });
     }
 }
 
