@@ -799,7 +799,15 @@ NodeID SVFIR::addObjNode(ObjVar* node)
     assert(hasGNode(node->getId()) == false &&
            "This NodeID clashes here. Please check NodeIDAllocator. Switch "
            "Strategy::DBUG to SEQ or DENSE");
-    return addNode(node);
+    NodeID id = addNode(node);
+    // An object's constness is fixed by the time its node is added: SymbolTableBuilder sets
+    // the constant flags before the SVFIR is built, and a field object (GepObjVar) shares
+    // the constness of its base object, which is added first.
+    const BaseObjVar* obj = getBaseObject(id);
+    assert(obj && "not an object node?");
+    if (isConstantSym(id) || obj->isConstDataOrConstGlobal())
+        constantObjs.insert(id);
+    return id;
 }
 
 NodeID SVFIR::addDummyObjNode(DummyObjVar* node)
