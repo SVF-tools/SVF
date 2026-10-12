@@ -8,5 +8,5 @@ Name: SVF
 Description: SVF Points to Analysis Framework
 Version: @SVF_VERSION@
 Requires: z3
-Libs: -L${libdir} -lSvfCore -lSvfLLVM
+Libs: -L${libdir} @SVF_CORE_LIBS@ -lSvfLLVM
 Cflags: -I${includedir}

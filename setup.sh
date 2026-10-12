@@ -18,8 +18,12 @@ function set_llvm {
     [[ -n "$LLVM_DIR" ]] && return 0
 
     # use local download directory
-    LLVM_DIR="$SVF_DIR/llvm-21.1.0.obj"
-    [[ -d "$LLVM_DIR" ]] && return 0
+    for d in "$SVF_DIR"/llvm-*.obj; do
+        if [[ -d "$d" ]]; then
+            LLVM_DIR="$d"
+            return 0
+        fi
+    done
 
     # ... otherwise don't set LLVM_DIR
     return 1
@@ -56,15 +60,21 @@ fi
 #########
 #export PATH FOR SVF and LLVM executables
 #########
-if [[ $1 =~ ^[Dd]ebug$ ]]; then
-    PTAOBJTY='Debug'
-else
-    PTAOBJTY='Release'
-fi
+case "$1" in
+    [Dd]ebug)
+        PTAOBJTY='Debug'
+        ;;
+    [Mm]in[Ss]ize[Rr]el)
+        PTAOBJTY='MinSizeRel'
+        ;;
+    *)
+        PTAOBJTY='Release'
+        ;;
+esac
 
 Build="${PTAOBJTY}-build"
 
-if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* ]]; then
+if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* || "$(uname -s)" == CYGWIN* || "$(uname -s)" == Windows_NT ]]; then
     # On Windows, DLLs must be in the PATH (LD_LIBRARY_PATH is ignored)
     export PATH=$LLVM_DIR/bin:$Z3_DIR/bin:$SVF_DIR/$Build/bin:$PATH
 else

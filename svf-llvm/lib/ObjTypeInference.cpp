@@ -320,7 +320,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                          */
                         insertInferSite(storeInst);
                     }
-                    else
+                    else if (hasUseList(storeInst->getPointerOperand()))
                     {
                         for (const auto nit :
                                 storeInst->getPointerOperand()->users())
@@ -361,8 +361,8 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                               0, !dbg !50
                              */
                             const Value* gepBase = gepInst->getPointerOperand();
-                            if (const auto* load =
-                                        SVFUtil::dyn_cast<LoadInst>(gepBase))
+                            const auto* load = SVFUtil::dyn_cast<LoadInst>(gepBase);
+                            if (load && hasUseList(load->getPointerOperand()))
                             {
                                 for (const auto loadUse :
                                         load->getPointerOperand()->users())
@@ -620,13 +620,22 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOfVar(const Value *var)
         }
         else if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue))
         {
-            for (const auto use: loadInst->getPointerOperand()->users())
+            // Skip a load through a constant pointer such as `poison` below: no store writes
+            // through it, so there is nothing to follow, and LLVM 21 keeps no use list for
+            // constants, so users() would assert.
+            //   %p = load ptr, ptr poison
+            //   %q = getelementptr inbounds i8, ptr %p, i64 8
+            const Value* ptr = loadInst->getPointerOperand();
+            if (hasUseList(ptr))
             {
-                if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(use))
+                for (const auto use: ptr->users())
                 {
-                    if (storeInst->getPointerOperand() == loadInst->getPointerOperand())
+                    if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(use))
                     {
-                        insertAllocsOrPushWorklist(storeInst->getValueOperand());
+                        if (storeInst->getPointerOperand() == loadInst->getPointerOperand())
+                        {
+                            insertAllocsOrPushWorklist(storeInst->getValueOperand());
+                        }
                     }
                 }
             }
@@ -647,8 +656,17 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOfVar(const Value *var)
         }
         else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(curValue))
         {
-            ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + dumpValueAndDbgInfo(callBase));
-            if (Function *callee = callBase->getCalledFunction())
+            // A noreturn call yields no value, so skip it, e.g.:
+            //   declare void @exit(i32) noreturn
+            //   define ptr @stub() noreturn {
+            //     call void @exit(i32 1)
+            //     unreachable
+            //   }
+            //   %p = call ptr @stub()
+            //   %q = getelementptr inbounds i8, ptr %p, i64 4
+            const Function *callee =
+                callBase->doesNotReturn() ? nullptr : callBase->getCalledFunction();
+            if (callee)
             {
                 if (!callee->isDeclaration())
                 {
@@ -657,9 +675,11 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOfVar(const Value *var)
                     const BasicBlock* exitBB = llvmmodule->getFunExitBB(callee);
                     assert (exitBB && "exit bb is not a basic block?");
                     const Value *pValue = &exitBB->back();
+                    // The callee may end without a return value, e.g. @stub above without
+                    // noreturn (as before optimisation).
                     const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
-                    ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
-                    insertAllocsOrPushWorklist(retInst->getReturnValue());
+                    if (retInst && retInst->getReturnValue())
+                        insertAllocsOrPushWorklist(retInst->getReturnValue());
                 }
             }
         }
@@ -929,13 +949,17 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
         }
         else if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue))
         {
-            for (const auto *user : loadInst->getPointerOperand()->users())
+            const Value* ptr = loadInst->getPointerOperand();
+            if (hasUseList(ptr))
             {
-                if (const auto *storeInst = SVFUtil::dyn_cast<StoreInst>(user))
+                for (const auto *user : ptr->users())
                 {
-                    if (storeInst->getPointerOperand() == loadInst->getPointerOperand())
+                    if (const auto *storeInst = SVFUtil::dyn_cast<StoreInst>(user))
                     {
-                        insertSourcesOrPushWorklist(storeInst->getValueOperand());
+                        if (storeInst->getPointerOperand() == loadInst->getPointerOperand())
+                        {
+                            insertSourcesOrPushWorklist(storeInst->getValueOperand());
+                        }
                     }
                 }
             }
@@ -956,8 +980,17 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
         }
         else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(curValue))
         {
-            ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + dumpValueAndDbgInfo(callBase));
-            if (const auto *callee = callBase->getCalledFunction())
+            // A noreturn call yields no value, so skip it, e.g.:
+            //   declare void @exit(i32) noreturn
+            //   define ptr @stub() noreturn {
+            //     call void @exit(i32 1)
+            //     unreachable
+            //   }
+            //   %p = call ptr @stub()
+            //   %q = getelementptr inbounds i8, ptr %p, i64 4
+            const Function *callee =
+                callBase->doesNotReturn() ? nullptr : callBase->getCalledFunction();
+            if (callee)
             {
                 if (!callee->isDeclaration())
                 {
@@ -965,9 +998,11 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
                     const BasicBlock* exitBB = llvmmodule->getFunExitBB(callee);
                     assert (exitBB && "exit bb is not a basic block?");
                     const Value *pValue = &exitBB->back();
+                    // The callee may end without a return value, e.g. @stub above without
+                    // noreturn (as before optimisation).
                     const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
-                    ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
-                    insertSourcesOrPushWorklist(retInst->getReturnValue());
+                    if (retInst && retInst->getReturnValue())
+                        insertSourcesOrPushWorklist(retInst->getReturnValue());
                 }
             }
         }

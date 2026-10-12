@@ -2,6 +2,7 @@
 # Usage examples:
 #   ./build.sh                         # Release build, shared libs, RTTI on
 #   ./build.sh debug                   # Debug build, shared libs, RTTI on
+#   ./build.sh minsize                 # MinSizeRel build, shared libs, RTTI on
 #   ./build.sh dyn_lib                 # Release build, shared libs, RTTI on
 #   ./build.sh debug dyn_lib           # Debug build, shared libs, RTTI on
 #   ./build.sh sta_lib                 # Release build, static libs, RTTI on
@@ -29,6 +30,7 @@ arch=$(uname -m)
 
 MajorLLVMVer=21
 LLVMVer=${MajorLLVMVer}.1.0
+LLVM_SDK_TAG="llvm_${MajorLLVMVer}"
 Z3Ver=4.15.4
 
 # Keep LLVM version suffix for version checking and better debugging.
@@ -50,16 +52,18 @@ MacOSZ3Arm="${Z3PrebuiltBase}/z3-${Z3Ver}-arm64-macos-14.zip"
 BUILD_TYPE="Release"
 BUILD_DYN_LIB="ON"
 RTTI="ON"
+ENABLE_ASSERTIONS="${SVF_ENABLE_ASSERTIONS:-ON}"
 PLATFORM=""
 urlLLVM=""
 urlZ3=""
 
 usage() {
     cat <<USAGE
-Usage: ./build.sh [debug] [dyn_lib|sta_lib] [nortti]
+Usage: ./build.sh [debug|minsize] [dyn_lib|sta_lib] [nortti]
 
 Options:
   debug      Build Debug instead of Release.
+  minsize    Build MinSizeRel to reduce binary size.
   dyn_lib    Build shared libraries. This is the default.
   sta_lib    Build static libraries.
   nortti     Disable LLVM RTTI. Valid only for static-library builds.
@@ -69,6 +73,7 @@ Environment variables:
   Z3_DIR             Use an existing Z3 installation.
   SVF_BUILD_JOBS     Number of parallel build jobs. Default: 8.
   SVF_SANITIZER      Sanitizer option passed to CMake.
+  SVF_ENABLE_ASSERTIONS  Enable assertions. Default: ON.
 USAGE
 }
 
@@ -77,6 +82,9 @@ parse_args() {
         case "$arg" in
             [Dd]ebug)
                 BUILD_TYPE="Debug"
+                ;;
+            [Mm]insize|[Mm]in[Ss]ize[Rr]el)
+                BUILD_TYPE="MinSizeRel"
                 ;;
             [Dd]yn_[Ll]ib)
                 BUILD_DYN_LIB="ON"
@@ -99,6 +107,14 @@ parse_args() {
 }
 
 normalise_options() {
+    # Windows builds (both MSVC and MinGW) must use static libraries due to circular symbol dependencies across SvfCore and SvfLLVM
+    if [[ "$PLATFORM" == windows-* ]]; then
+        if [[ "$BUILD_DYN_LIB" == "ON" ]]; then
+            echo "Notice: Windows builds require static libraries. Forcing BUILD_DYN_LIB=OFF (sta_lib)."
+            BUILD_DYN_LIB="OFF"
+        fi
+    fi
+
     # Shared-library builds require RTTI in the current SVF/LLVM setup.
     if [[ "$BUILD_DYN_LIB" == "ON" && "$RTTI" == "OFF" ]]; then
         echo "Warning: LLVM RTTI is always on when building shared libraries. Ignoring 'nortti'."
@@ -108,8 +124,12 @@ normalise_options() {
 
 detect_platform() {
     case "${sysOS}" in
-        MINGW*|MSYS*|CYGWIN*)
-            PLATFORM="windows-mingw"
+        MINGW*|MSYS*|CYGWIN*|Windows_NT)
+            if command -v cl >/dev/null 2>&1; then
+                PLATFORM="windows-msvc"
+            else
+                PLATFORM="windows-mingw"
+            fi
             ;;
         *)
             case "${sysOS}-${arch}" in
@@ -127,7 +147,7 @@ detect_platform() {
                     ;;
                 *)
                     echo "Unsupported platform: ${sysOS}/${arch}"
-                    echo "Supported platforms: Linux x86_64, Linux aarch64/arm64, macOS arm64, macOS x86_64, Windows MinGW/MSYS2."
+                    echo "Supported platforms: Linux x86_64, Linux aarch64/arm64, macOS arm64, macOS x86_64, Windows (MSVC / MinGW)."
                     exit 1
                     ;;
             esac
@@ -137,8 +157,8 @@ detect_platform() {
 
 select_dependency_urls() {
     case "$PLATFORM" in
-        windows-mingw)
-            urlLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-pc-windows-msvc.tar.xz"
+        windows-msvc|windows-mingw)
+            urlLLVM="https://github.com/c3lang/llvm-for-c3/releases/download/${LLVM_SDK_TAG}/llvm-windows-amd64.tar.gz"
             urlZ3="https://github.com/Z3Prover/z3/releases/download/z3-${Z3Ver}/z3-${Z3Ver}-x64-win.zip"
             ;;
         ubuntu-x86_64)
@@ -179,6 +199,7 @@ print_config() {
     echo "  Platform:       ${PLATFORM} (${sysOS}/${arch})"
     echo "  Build type:     ${BUILD_TYPE}"
     echo "  Shared libs:    ${BUILD_DYN_LIB}"
+    echo "  Assertions:     ${ENABLE_ASSERTIONS}"
     echo "  LLVM RTTI:      ${RTTI}"
     echo "  Jobs:           ${jobs}"
     echo "  LLVM_DIR:       ${LLVM_DIR:-n/a}"
@@ -282,8 +303,31 @@ download_llvm_prebuilt() {
 
     echo "Unpacking LLVM package..."
     mkdir -p "./$LLVMHome"
-    tar -xf "$llvm_archive" -C "./$LLVMHome" --strip-components 1
+    if [[ "$PLATFORM" == windows-* ]]; then
+        tar -xf "$llvm_archive" -C "./$LLVMHome"
+    else
+        tar -xf "$llvm_archive" -C "./$LLVMHome" --strip-components 1
+    fi
     rm "$llvm_archive"
+
+    # For Windows MSVC LLVM SDK, strip hardcoded diaguids.lib path from LLVMExports.cmake
+    if [[ "$PLATFORM" == windows-* ]]; then
+        local exports_file="./$LLVMHome/lib/cmake/llvm/LLVMExports.cmake"
+        if [[ -f "$exports_file" ]]; then
+            sed -i 's|[a-zA-Z]:/[^";]*DIA SDK/lib/amd64/diaguids\.lib;||g' "$exports_file" || true
+        fi
+    fi
+
+    # For Windows MinGW LLVM SDK, ensure libzstd.a is available for Ninja/CMake targets
+    if [[ "$PLATFORM" == "windows-mingw" ]]; then
+        if [[ -f "/clang64/lib/libzstd.a" ]]; then
+            cp "/clang64/lib/libzstd.a" "./$LLVMHome/lib/" || true
+        elif [[ -f "/mingw64/lib/libzstd.a" ]]; then
+            cp "/mingw64/lib/libzstd.a" "./$LLVMHome/lib/" || true
+        else
+            touch "./$LLVMHome/lib/libzstd.a" 2>/dev/null || true
+        fi
+    fi
 }
 
 ensure_llvm() {
@@ -292,12 +336,62 @@ ensure_llvm() {
         return
     fi
 
+    # In MinGW / MSYS2, use native MinGW LLVM installation matching MajorLLVMVer
+    if [[ "$PLATFORM" == "windows-mingw" ]]; then
+        if [[ -d "/clang64/opt/llvm-${MajorLLVMVer}" ]]; then
+            export LLVM_DIR="/clang64/opt/llvm-${MajorLLVMVer}"
+            export PATH="/clang64/opt/llvm-${MajorLLVMVer}/bin:$PATH"
+            echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
+            return
+        elif [[ -d "/mingw64/opt/llvm-${MajorLLVMVer}" ]]; then
+            export LLVM_DIR="/mingw64/opt/llvm-${MajorLLVMVer}"
+            export PATH="/mingw64/opt/llvm-${MajorLLVMVer}/bin:$PATH"
+            echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
+            return
+        elif command -v "llvm-config-${MajorLLVMVer}" >/dev/null 2>&1; then
+            LLVM_DIR="$("llvm-config-${MajorLLVMVer}" --prefix)"
+            export LLVM_DIR
+            echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
+            return
+        fi
+
+        # If LLVM is not yet installed in MSYS2, install pinned packages for MajorLLVMVer
+        if command -v pacman >/dev/null 2>&1; then
+            echo "Installing LLVM ${MajorLLVMVer} packages for MinGW in MSYS2..."
+            local msys_mirror="https://mirror.msys2.org/mingw/clang64"
+            local pkg_suffix="${MajorLLVMVer}.1.8-4-any"
+            pacman -U --noconfirm --needed \
+                "${msys_mirror}/mingw-w64-clang-x86_64-llvm-libs-${pkg_suffix}.pkg.tar.zst" \
+                "${msys_mirror}/mingw-w64-clang-x86_64-llvm-tools-${pkg_suffix}.pkg.tar.zst" \
+                "${msys_mirror}/mingw-w64-clang-x86_64-llvm-${pkg_suffix}.pkg.tar.zst" \
+                "${msys_mirror}/mingw-w64-clang-x86_64-clang-libs-${pkg_suffix}.pkg.tar.zst" \
+                "${msys_mirror}/mingw-w64-clang-x86_64-compiler-rt-${pkg_suffix}.pkg.tar.zst" \
+                "${msys_mirror}/mingw-w64-clang-x86_64-clang-${pkg_suffix}.pkg.tar.zst" \
+                "${msys_mirror}/mingw-w64-clang-x86_64-lld-${pkg_suffix}.pkg.tar.zst"
+
+            if command -v llvm-config >/dev/null 2>&1; then
+                LLVM_DIR="$(llvm-config --prefix)"
+                export LLVM_DIR
+                echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
+                return
+            elif [[ -d "/clang64/include/llvm" ]]; then
+                export LLVM_DIR="/clang64"
+                echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
+                return
+            elif [[ -d "/mingw64/include/llvm" ]]; then
+                export LLVM_DIR="/mingw64"
+                echo "Using MinGW system LLVM_DIR=$LLVM_DIR"
+                return
+            fi
+        fi
+    fi
+
     if [[ ! -d "$LLVMHome" ]]; then
         case "$PLATFORM" in
             macos-*)
                 install_llvm_with_brew
                 ;;
-            ubuntu-*|windows-mingw)
+            ubuntu-*|windows-*)
                 download_llvm_prebuilt
                 ;;
             *)
@@ -315,7 +409,7 @@ find_z3_root() {
     local candidate=""
 
     while IFS= read -r -d '' candidate; do
-        if [[ -d "$candidate/include" && -d "$candidate/bin" ]]; then
+        if [[ -d "$candidate/include" && (-d "$candidate/bin" || -d "$candidate/lib") ]]; then
             echo "$candidate"
             return 0
         fi
@@ -365,6 +459,19 @@ ensure_z3() {
     if [[ -n "${Z3_DIR:-}" && -d "$Z3_DIR" ]]; then
         echo "Using existing Z3_DIR=$Z3_DIR"
         return
+    fi
+
+    # In MinGW / MSYS2, check if system Z3 is installed
+    if [[ "$PLATFORM" == "windows-mingw" ]]; then
+        if [[ -f "/clang64/include/z3.h" || -d "/clang64/include/z3" ]]; then
+            export Z3_DIR="/clang64"
+            echo "Using MinGW system Z3_DIR=$Z3_DIR"
+            return
+        elif [[ -f "/mingw64/include/z3.h" || -d "/mingw64/include/z3" ]]; then
+            export Z3_DIR="/mingw64"
+            echo "Using MinGW system Z3_DIR=$Z3_DIR"
+            return
+        fi
     fi
 
     if [[ ! -d "$Z3Home" ]]; then
@@ -417,13 +524,32 @@ build_svf() {
         )
     fi
 
-    if [[ "$PLATFORM" == "windows-mingw" ]]; then
+    if [[ "$PLATFORM" == "windows-msvc" ]]; then
         cmake_generator_args=(
             -G "Ninja"
-            -DCMAKE_C_COMPILER=clang
-            -DCMAKE_CXX_COMPILER=clang++
+            -DCMAKE_C_COMPILER=cl
+            -DCMAKE_CXX_COMPILER=cl
             -DSVF_WARN_AS_ERROR=OFF
             -DSVF_EXPORT_DYNAMIC=OFF
+            -DSVF_Z3=ON
+        )
+    elif [[ "$PLATFORM" == "windows-mingw" ]]; then
+        local c_comp="${CC:-clang}"
+        local cxx_comp="${CXX:-clang++}"
+        if [[ -x "$LLVM_DIR/bin/clang.exe" || -x "$LLVM_DIR/bin/clang" ]]; then
+            c_comp="$LLVM_DIR/bin/clang"
+            cxx_comp="$LLVM_DIR/bin/clang++"
+        elif command -v "clang-${MajorLLVMVer}" >/dev/null 2>&1; then
+            c_comp="clang-${MajorLLVMVer}"
+            cxx_comp="clang++-${MajorLLVMVer}"
+        fi
+        cmake_generator_args=(
+            -G "Ninja"
+            -DCMAKE_C_COMPILER="$c_comp"
+            -DCMAKE_CXX_COMPILER="$cxx_comp"
+            -DSVF_WARN_AS_ERROR=OFF
+            -DSVF_EXPORT_DYNAMIC=OFF
+            -DSVF_Z3=ON
         )
     fi
 
@@ -431,8 +557,11 @@ build_svf() {
     mkdir "$build_dir"
 
     cmake -D CMAKE_BUILD_TYPE:STRING="$BUILD_TYPE"  \
-        -DSVF_ENABLE_ASSERTIONS:BOOL=true            \
+        -DSVF_ENABLE_ASSERTIONS:BOOL="$ENABLE_ASSERTIONS" \
+        -DSVF_ENABLE_RTTI:BOOL="$RTTI" \
         ${SVF_SANITIZER:+-DSVF_SANITIZE="$SVF_SANITIZER"} \
+        ${SVF_COVERAGE:+-DSVF_COVERAGE=ON}           \
+        ${SVF_DEBUG_INFO:+-DSVF_DEBUG_INFO=ON}       \
         -DBUILD_SHARED_LIBS="$BUILD_DYN_LIB"         \
         "${cmake_generator_args[@]}"                \
         "${cmake_rpath_args[@]}"                    \
@@ -442,9 +571,9 @@ build_svf() {
 }
 
 main() {
+    detect_platform
     parse_args "$@"
     normalise_options
-    detect_platform
     select_dependency_urls
     print_config
 
@@ -456,8 +585,10 @@ main() {
     build_svf
 
     # Set up SVF environment variables.
-    # shellcheck disable=SC1091
-    source "$SVFHOME/setup.sh" "$BUILD_TYPE"
+    if [[ -f "$SVFHOME/setup.sh" ]]; then
+        # shellcheck disable=SC1091
+        source "$SVFHOME/setup.sh" "$BUILD_TYPE"
+    fi
 }
 
 main "$@"
