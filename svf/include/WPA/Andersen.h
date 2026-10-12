@@ -43,7 +43,6 @@
 #include "Util/GeneralType.h"
 #include "Util/Options.h"
 
-#include <functional>
 #include <optional>
 #include <vector>
 
@@ -259,12 +258,14 @@ public:
     /// Collect exactly the SVFIR nodes q for which mayAlias(node, q) holds
     virtual NodeBS getMayAliases(NodeID node);
 
-    /// Query an unchanged analysis in input order, reusing answers for equal points-to sets.
+    /// Query multiple pointers, reusing answers for equal points-to sets within this call.
+    /// @param nodes Input SVFIR node IDs in query order.
+    /// @return One owned alias set per input: result[i] equals getMayAliases(nodes[i]).
+    ///         Duplicates are preserved; empty input returns an empty vector.
+    /// The analysis, SVFIR, SCCs and points-to mapping must stay unchanged during the call.
     /// Equal points-to sets must imply equal answers, including in subclass overrides.
-    /// The callback must not change the analysis, SVFIR, SCCs, or points-to mapping.
-    /// Answer references are valid only during the callback; the cache lasts for this call.
-    void getMayAliasesBatch(const std::vector<NodeID>& nodes,
-                            const std::function<void(NodeID, const NodeBS&)>& consume);
+    /// Cache limits exclude the returned results; split large inputs to limit output storage.
+    std::vector<NodeBS> getMayAliasesBatch(const std::vector<NodeID>& nodes);
 
 
     void dumpTopLevelPtsTo();

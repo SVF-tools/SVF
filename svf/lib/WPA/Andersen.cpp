@@ -969,12 +969,13 @@ NodeBS Andersen::getMayAliases(NodeID node)
  * queries for p and q with pts(p) = pts(q) = {o} need the same reverse-index walk.
  * Keep the cache local so later batches and scalar queries observe current state.
  */
-void Andersen::getMayAliasesBatch(const std::vector<NodeID>& nodes,
-                                  const std::function<void(NodeID, const NodeBS&)>& consume)
+std::vector<NodeBS> Andersen::getMayAliasesBatch(const std::vector<NodeID>& nodes)
 {
+    std::vector<NodeBS> results;
+    results.reserve(nodes.size());
     Map<PointsTo, NodeBS> answers;
     size_t cachedMembers = 0;
-    // Bound retained keys and answers, including distinct sets that all alias the graph.
+    // Bound the reuse cache separately from the caller-owned results.
     constexpr size_t maxCachedSets = 256;
     constexpr size_t maxCachedMembers = 1 << 20;
     for (NodeID node : nodes)
@@ -983,7 +984,7 @@ void Andersen::getMayAliasesBatch(const std::vector<NodeID>& nodes,
         auto cached = answers.find(pts);
         if (cached != answers.end())
         {
-            consume(node, cached->second);
+            results.push_back(cached->second);
             continue;
         }
 
@@ -991,7 +992,7 @@ void Andersen::getMayAliasesBatch(const std::vector<NodeID>& nodes,
         const size_t members = static_cast<size_t>(pts.count()) + aliases.count();
         if (members > maxCachedMembers)
         {
-            consume(node, aliases);
+            results.push_back(std::move(aliases));
             continue;
         }
         if (answers.size() == maxCachedSets || cachedMembers > maxCachedMembers - members)
@@ -1001,8 +1002,9 @@ void Andersen::getMayAliasesBatch(const std::vector<NodeID>& nodes,
         }
         auto inserted = answers.emplace(pts, std::move(aliases));
         cachedMembers += members;
-        consume(node, inserted.first->second);
+        results.push_back(inserted.first->second);
     }
+    return results;
 }
 
 /*!
@@ -1092,15 +1094,18 @@ void Andersen::validateSuccessTests(std::string fun)
         std::vector<NodeID> queries;
         for (u32_t i = 0; i < callNode->arg_size(); ++i)
             queries.push_back(callNode->getArgument(i)->getId());
-        getMayAliasesBatch(queries, [&](NodeID ptr, const NodeBS& aliases)
+        const std::vector<NodeBS> aliases = getMayAliasesBatch(queries);
+        assert(aliases.size() == queries.size() && "getMayAliasesBatch result count mismatch!");
+        for (size_t i = 0; i < queries.size(); ++i)
         {
+            const NodeID ptr = queries[i];
             NodeBS expected;
             for (SVFIR::iterator it = pag->begin(), eit = pag->end(); it != eit; ++it)
             {
                 if (mayAlias(ptr, it->first))
                     expected.set(it->first);
             }
-            if (aliases == expected && pta->getMayAliases(ptr) == expected)
+            if (aliases[i] == expected && pta->getMayAliases(ptr) == expected)
                 outs() << sucMsg("\t SUCCESS :") << "getMayAliases check <id:" << ptr << "> at ("
                        << callNode->getSourceLoc() << ")\n";
             else
@@ -1109,7 +1114,7 @@ void Andersen::validateSuccessTests(std::string fun)
                                 << "> at (" << callNode->getSourceLoc() << ")\n";
                 assert(false && "getMayAliases disagrees with mayAlias!");
             }
-        });
+        }
     }
 }
 
