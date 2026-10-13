@@ -463,7 +463,7 @@ IntervalValue AbsExtAPI::getStrlen(const ValVar *strValue, const ICFGNode* node)
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
                 {
-                    dst_size = ae->getAllocaInstByteSize(addrStmt);
+                    dst_size = ae->getAllocaInstByteSize(addrStmt).upperBound;
                 }
             }
         }

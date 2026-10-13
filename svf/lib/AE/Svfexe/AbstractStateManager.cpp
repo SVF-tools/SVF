@@ -384,30 +384,36 @@ const SVFType* AbstractInterpretation::getPointeeElement(const ObjVar* var, cons
     return nullptr;
 }
 
-u32_t AbstractInterpretation::getAllocaInstByteSize(const AddrStmt* addr)
+AbstractInterpretation::AllocationSizeBounds
+AbstractInterpretation::getAllocaInstByteSize(const AddrStmt* addr)
 {
     const ICFGNode* node = addr->getICFGNode();
     if (const ObjVar* objvar = SVFUtil::dyn_cast<ObjVar>(addr->getRHSVar()))
     {
         if (svfir->getBaseObject(objvar->getId())->isConstantByteSize())
         {
-            return svfir->getBaseObject(objvar->getId())->getByteSizeOfObj();
+            const u32_t size = svfir->getBaseObject(objvar->getId())->getByteSizeOfObj();
+            return {size, size};
         }
         else
         {
             const std::vector<SVFVar*>& sizes = addr->getArrSize();
             u32_t elementSize = 1;
-            u64_t res = elementSize;
+            u64_t upper = elementSize;
+            u64_t lower = sizes.empty() ? 0 : elementSize;
             for (const SVFVar* value : sizes)
             {
                 const AbstractValue& sizeVal = getAbsValue(value, node);
                 IntervalValue itv = sizeVal.getInterval();
                 if (itv.isBottom())
-                    itv = IntervalValue(Options::MaxFieldLimit());
-                res = res * itv.ub().getIntNumeral() > Options::MaxFieldLimit()
-                      ? Options::MaxFieldLimit() : res * itv.ub().getIntNumeral();
+                    itv = IntervalValue(0u, Options::MaxFieldLimit());
+                const s64_t lb = std::max<s64_t>(0, itv.lb().getIntNumeral());
+                lower = lower * lb > Options::MaxFieldLimit()
+                        ? Options::MaxFieldLimit() : lower * lb;
+                upper = upper * itv.ub().getIntNumeral() > Options::MaxFieldLimit()
+                        ? Options::MaxFieldLimit() : upper * itv.ub().getIntNumeral();
             }
-            return (u32_t)res;
+            return {static_cast<u32_t>(std::min(lower, upper)), static_cast<u32_t>(upper)};
         }
     }
     assert(false && "Addr rhs value is not ObjVar");

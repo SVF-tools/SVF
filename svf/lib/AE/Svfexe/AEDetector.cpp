@@ -66,10 +66,12 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                 {
                     NodeID objId = ae.getAbsState(node).getIDFromAddr(addr);
                     u32_t size = 0;
+                    u32_t lower = 0;
                     // like `int arr[10]` which has constant size before runtime
                     if (svfir->getBaseObject(objId)->isConstantByteSize())
                     {
                         size = svfir->getBaseObject(objId)->getByteSizeOfObj();
+                        lower = size;
                     }
                     else
                     {
@@ -79,7 +81,9 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                         {
                             if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
                             {
-                                size = ae.getAllocaInstByteSize(addrStmt);
+                                const auto bounds = ae.getAllocaInstByteSize(addrStmt);
+                                size = bounds.upperBound;
+                                lower = bounds.lowerBound;
                             }
                         }
                     }
@@ -90,7 +94,7 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                     {
                         AEException bug(stmt->toString());
                         addBugToReporter(bug, stmt->getICFGNode(),
-                        {size, accessOffset});
+                        {size, lower, accessOffset});
                     }
                 }
             }
@@ -485,10 +489,12 @@ bool BufOverflowDetector::canSafelyAccessMemory(const ValVar* value, const Inter
     {
         NodeID objId = ae.getAbsState(node).getIDFromAddr(addr);
         u32_t size = 0;
+        u32_t lower = 0;
         // if the object is a constant size object, get the size directly
         if (svfir->getBaseObject(objId)->isConstantByteSize())
         {
             size = svfir->getBaseObject(objId)->getByteSizeOfObj();
+            lower = size;
         }
         else
         {
@@ -498,7 +504,9 @@ bool BufOverflowDetector::canSafelyAccessMemory(const ValVar* value, const Inter
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
                 {
-                    size = ae.getAllocaInstByteSize(addrStmt);
+                    const auto bounds = ae.getAllocaInstByteSize(addrStmt);
+                    size = bounds.upperBound;
+                    lower = bounds.lowerBound;
                 }
             }
         }
@@ -518,7 +526,7 @@ bool BufOverflowDetector::canSafelyAccessMemory(const ValVar* value, const Inter
         // if the offset is greater than the size, return false
         if (offset.ub().getIntNumeral() >= size)
         {
-            if (info) *info = {size, offset};
+            if (info) *info = {size, lower, offset};
             return false;
         }
     }
