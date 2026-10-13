@@ -139,6 +139,12 @@ class BufOverflowDetector : public AEDetector
 {
     friend class AbstractInterpretation;
 public:
+    struct BufferOverflowInfo
+    {
+        u32_t bufferSize = 0;
+        IntervalValue accessOffset = IntervalValue(0);
+    };
+
     /**
      * @brief Constructor initializes the detector kind to BUF_OVERFLOW and sets up external API buffer overflow rules.
      */
@@ -241,6 +247,13 @@ public:
      */
     void addBugToReporter(const AEException& e, const ICFGNode* node)
     {
+        addBugToReporter(e, node, BufferOverflowInfo{});
+    }
+
+    /// Report an OOB alarm with the buffer size and offset from its check.
+    void addBugToReporter(const AEException& e, const ICFGNode* node,
+                          const BufferOverflowInfo& info)
+    {
 
         GenericBug::EventStack eventStack;
         SVFBugEvent sourceInstEvent(SVFBugEvent::EventType::SourceInst, node);
@@ -264,7 +277,9 @@ public:
         }
 
         // Add the bug to the recorder with details from the event stack
-        recoder.addAbsExecBug(GenericBug::FULLBUFOVERFLOW, eventStack, 0, 0, 0, 0);
+        recoder.addAbsExecBug(GenericBug::FULLBUFOVERFLOW, eventStack,
+                             info.bufferSize, info.bufferSize,
+                             info.accessOffset.lb().getNumeral(), info.accessOffset.ub().getNumeral());
         nodeToBugInfo[node] = e.what(); // Record the exception information for the node
     }
 
@@ -304,7 +319,8 @@ public:
      * @param node The ICFG node providing context.
      * @return True if the memory access is safe, false otherwise.
      */
-    bool canSafelyAccessMemory(const ValVar *value, const IntervalValue &len, const ICFGNode* node);
+    bool canSafelyAccessMemory(const ValVar *value, const IntervalValue &len,
+                              const ICFGNode* node, BufferOverflowInfo* info = nullptr);
 
 private:
     /**
@@ -312,14 +328,14 @@ private:
      * @param call Pointer to the call ICFG node.
      * @return True if a buffer overflow is detected, false otherwise.
      */
-    bool detectStrcat(const CallICFGNode *call);
+    bool detectStrcat(const CallICFGNode *call, BufferOverflowInfo& info);
 
     /**
      * @brief Detects buffer overflow in 'strcpy' function calls.
      * @param call Pointer to the call ICFG node.
      * @return True if a buffer overflow is detected, false otherwise.
      */
-    bool detectStrcpy(const CallICFGNode *call);
+    bool detectStrcpy(const CallICFGNode *call, BufferOverflowInfo& info);
 
 private:
     Map<const GepObjVar*, IntervalValue> gepObjOffsetFromBase; ///< Maps GEP objects to their offsets from the base.
