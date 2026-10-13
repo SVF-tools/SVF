@@ -53,6 +53,16 @@ private:
     const SVFBasicBlock* curBB;	///< Current basic block during SVFIR construction when visiting the module
     const Value* curVal;	///< Current Value during SVFIR construction when visiting the module
 
+
+    using AggregateField = std::vector<unsigned>;
+    using AggregateFieldKey = std::pair<const Value*, AggregateField>;
+    Map<AggregateFieldKey, NodeID> aggregateFieldNodes;
+
+    bool getAggregateFieldOperands(const AggregateFieldKey& field,
+                                   std::vector<AggregateFieldKey>& operands);
+    bool getAggregateFieldNode(const Value* aggregate, const AggregateField& indices,
+                               NodeID& node);
+
 public:
     /// Constructor
     SVFIRBuilder(): pag(SVFIR::getPAG()), curBB(nullptr),curVal(nullptr)

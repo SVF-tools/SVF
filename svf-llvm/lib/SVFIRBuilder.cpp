@@ -1321,125 +1321,215 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
 }
 
 
-/// Find the pointer values held by one field of an aggregate in this function.
-/// For example, extracting field 1 of `insertvalue {i32, ptr} %a, ptr %p, 1`
-/// copies %p; an insertion into field 0 leaves the requested field unchanged.
-static bool collectAggFieldSources(const Value* aggregate,
-                                   const std::vector<unsigned>& indices,
-                                   Set<const Value*>& sources)
+/// Return the type at a constant aggregate path, including fixed vector lanes.
+static const Type* getAggregateFieldType(const Type* type,
+                                        const std::vector<unsigned>& indices)
 {
-    using Field = std::pair<const Value*, std::vector<unsigned>>;
-    std::vector<Field> worklist{{aggregate, indices}};
-    Set<Field> visited;
-    while (!worklist.empty())
+    for (unsigned index : indices)
     {
-        Field field = worklist.back();
-        worklist.pop_back();
-        // Revisiting a field through a loop adds no new sources.
-        if (!visited.insert(field).second)
-            continue;
-        const Value* value = field.first;
-        const std::vector<unsigned>& path = field.second;
-        if (const auto* insert = SVFUtil::dyn_cast<InsertValueInst>(value))
+        if (const auto* structure = SVFUtil::dyn_cast<StructType>(type))
         {
-            const auto insertedPath = insert->getIndices();
-            const size_t commonLength = std::min(insertedPath.size(), path.size());
-            if (!std::equal(insertedPath.begin(), insertedPath.begin() + commonLength,
-                            path.begin()))
-                worklist.emplace_back(insert->getAggregateOperand(), path);
-            else if (insertedPath.size() == path.size())
-                sources.insert(insert->getInsertedValueOperand());
-            else if (insertedPath.size() < path.size())
-                worklist.emplace_back(insert->getInsertedValueOperand(),
-                                      std::vector<unsigned>(path.begin() + insertedPath.size(),
-                                                            path.end()));
-            else
-                return false;
+            if (index >= structure->getNumElements())
+                return nullptr;
+            type = structure->getElementType(index);
         }
-        else if (const auto* extract = SVFUtil::dyn_cast<ExtractValueInst>(value))
+        else if (const auto* array = SVFUtil::dyn_cast<ArrayType>(type))
         {
-            std::vector<unsigned> outer(extract->idx_begin(), extract->idx_end());
-            outer.insert(outer.end(), path.begin(), path.end());
-            worklist.emplace_back(extract->getAggregateOperand(), std::move(outer));
+            if (index >= array->getNumElements())
+                return nullptr;
+            type = array->getElementType();
         }
-        else if (const auto* phi = SVFUtil::dyn_cast<PHINode>(value))
+        else if (const auto* vector = SVFUtil::dyn_cast<llvm::FixedVectorType>(type))
         {
-            for (const Value* incoming : phi->incoming_values())
-                worklist.emplace_back(incoming, path);
-        }
-        else if (const auto* select = SVFUtil::dyn_cast<SelectInst>(value))
-        {
-            worklist.emplace_back(select->getTrueValue(), path);
-            worklist.emplace_back(select->getFalseValue(), path);
-        }
-        else if (const auto* freeze = SVFUtil::dyn_cast<FreezeInst>(value))
-            worklist.emplace_back(freeze->getOperand(0), path);
-        else if (const auto* constant = SVFUtil::dyn_cast<Constant>(value))
-        {
-            for (unsigned index : path)
-            {
-                constant = constant->getAggregateElement(index);
-                if (!constant)
-                    return false;
-            }
-            sources.insert(constant);
+            if (index >= vector->getNumElements())
+                return nullptr;
+            type = vector->getElementType();
         }
         else
-            // Calls, arguments and memory loads need aggregate models of their own.
-            return false;
+            return nullptr;
     }
-    return !sources.empty();
+    return type;
 }
 
-/*!
- * Copy the known pointer sources of a register aggregate field. Keep the usual
- * black-hole fallback if any possible source cannot be traced.
- */
+/// Describe one field definition without emitting any SVFIR statements.
+bool SVFIRBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
+                                             std::vector<AggregateFieldKey>& operands)
+{
+    const Value* value = field.first;
+    const AggregateField& path = field.second;
+    if (path.empty())
+        return value->getType()->isPointerTy() && !SVFUtil::isa<ConstantExpr>(value) &&
+               !SVFUtil::isa<UndefValue>(value) && llvmModuleSet()->hasValueNode(value);
+    if (const auto* insert = SVFUtil::dyn_cast<InsertValueInst>(value))
+    {
+        const auto insertedPath = insert->getIndices();
+        const size_t commonLength = std::min(insertedPath.size(), path.size());
+        if (!std::equal(insertedPath.begin(), insertedPath.begin() + commonLength, path.begin()))
+            operands.emplace_back(insert->getAggregateOperand(), path);
+        else if (insertedPath.size() <= path.size())
+            operands.emplace_back(insert->getInsertedValueOperand(),
+                                  AggregateField(path.begin() + insertedPath.size(), path.end()));
+        else
+            return false;
+    }
+    else if (const auto* extract = SVFUtil::dyn_cast<ExtractValueInst>(value))
+    {
+        AggregateField outer(extract->idx_begin(), extract->idx_end());
+        outer.insert(outer.end(), path.begin(), path.end());
+        operands.emplace_back(extract->getAggregateOperand(), std::move(outer));
+    }
+    else if (const auto* phi = SVFUtil::dyn_cast<PHINode>(value))
+    {
+        for (const Value* incoming : phi->incoming_values())
+            operands.emplace_back(incoming, path);
+    }
+    else if (const auto* select = SVFUtil::dyn_cast<SelectInst>(value))
+    {
+        if (!select->getCondition()->getType()->isIntegerTy(1))
+            return false;
+        operands.emplace_back(select->getTrueValue(), path);
+        operands.emplace_back(select->getFalseValue(), path);
+    }
+    else if (const auto* freeze = SVFUtil::dyn_cast<FreezeInst>(value))
+        operands.emplace_back(freeze->getOperand(0), path);
+    else if (const auto* insert = SVFUtil::dyn_cast<InsertElementInst>(value))
+    {
+        const auto* vector = SVFUtil::dyn_cast<llvm::FixedVectorType>(insert->getType());
+        const auto* index = SVFUtil::dyn_cast<ConstantInt>(insert->getOperand(2));
+        if (!vector || path.size() != 1 || !index ||
+                index->getValue().uge(vector->getNumElements()))
+            return false;
+        if (index->getZExtValue() == path.front())
+            operands.emplace_back(insert->getOperand(1), AggregateField{});
+        else
+            operands.emplace_back(insert->getOperand(0), path);
+    }
+    else if (const auto* shuffle = SVFUtil::dyn_cast<ShuffleVectorInst>(value))
+    {
+        const auto* vector = SVFUtil::dyn_cast<llvm::FixedVectorType>(shuffle->getOperand(0)->getType());
+        if (!vector || path.size() != 1)
+            return false;
+        int index = shuffle->getMaskValue(path.front());
+        if (index < 0)
+            return false;
+        unsigned width = vector->getNumElements();
+        operands.emplace_back(shuffle->getOperand(static_cast<unsigned>(index) / width),
+                              AggregateField{static_cast<unsigned>(index) % width});
+    }
+    else if (const auto* constant = SVFUtil::dyn_cast<Constant>(value))
+    {
+        for (unsigned index : path)
+        {
+            constant = constant->getAggregateElement(index);
+            if (!constant)
+                return false;
+        }
+        operands.emplace_back(constant, AggregateField{});
+    }
+    else
+        // Aggregate arguments, calls and loads need their own field interfaces.
+        return false;
+    return !operands.empty();
+}
+
+/// Materialize a demanded pointer field at its producer. Repeated extracts share
+/// one definition; Phi predecessors and Select conditions remain in ordinary SVFIR.
+bool SVFIRBuilder::getAggregateFieldNode(const Value* aggregate,
+                                         const AggregateField& indices, NodeID& node)
+{
+    const AggregateFieldKey root{aggregate, indices};
+    Map<AggregateFieldKey, std::vector<AggregateFieldKey>> definitions;
+    std::vector<AggregateFieldKey> worklist{root};
+    while (!worklist.empty())
+    {
+        AggregateFieldKey field = std::move(worklist.back());
+        worklist.pop_back();
+        if (aggregateFieldNodes.count(field) || definitions.count(field))
+            continue;
+        const Type* type = getAggregateFieldType(field.first->getType(), field.second);
+        if (!type || !type->isPointerTy())
+            return false;
+        auto& operands = definitions[field];
+        if (!getAggregateFieldOperands(field, operands))
+            return false;
+        worklist.insert(worklist.end(), operands.begin(), operands.end());
+    }
+
+    // Validate the entire dependency graph before changing SVFIR. Allocate every
+    // field before wiring definitions, including loop-carried Phi/Select cycles.
+    for (const auto& definition : definitions)
+    {
+        const AggregateFieldKey& field = definition.first;
+        NodeID id;
+        if (field.second.empty())
+            id = getValueNode(field.first);
+        else if (SVFUtil::isa<Constant>(field.first))
+            id = getValueNode(definition.second.front().first);
+        else
+        {
+            const auto* producer = SVFUtil::cast<Instruction>(field.first);
+            const Type* type = getAggregateFieldType(producer->getType(), field.second);
+            id = NodeIDAllocator::get()->allocateValueId();
+            pag->addValNode(id, llvmModuleSet()->getSVFType(type),
+                            llvmModuleSet()->getICFGNode(producer));
+            llvmModuleSet()->addToSVFVar2LLVMValueMap(producer, pag->getGNode(id));
+        }
+        aggregateFieldNodes.emplace(field, id);
+    }
+
+    const Value* savedValue = curVal;
+    const SVFBasicBlock* savedBB = curBB;
+    for (const auto& definition : definitions)
+    {
+        const AggregateFieldKey& field = definition.first;
+        if (field.second.empty() || SVFUtil::isa<Constant>(field.first))
+            continue;
+        const auto* producer = SVFUtil::cast<Instruction>(field.first);
+        const auto& operands = definition.second;
+        NodeID dst = aggregateFieldNodes.at(field);
+        setCurrentLocation(producer, producer->getParent());
+        if (const auto* phi = SVFUtil::dyn_cast<PHINode>(producer))
+        {
+            for (unsigned i = 0; i < operands.size(); ++i)
+                addPhiStmt(dst, aggregateFieldNodes.at(operands[i]),
+                           llvmModuleSet()->getICFGNode(phi->getIncomingBlock(i)->getTerminator()));
+        }
+        else if (const auto* select = SVFUtil::dyn_cast<SelectInst>(producer))
+            addSelectStmt(dst, aggregateFieldNodes.at(operands[0]),
+                          aggregateFieldNodes.at(operands[1]), getValueNode(select->getCondition()));
+        else
+            addCopyEdge(aggregateFieldNodes.at(operands.front()), dst, CopyStmt::COPYVAL);
+    }
+    setCurrentLocation(savedValue, savedBB);
+    node = aggregateFieldNodes.at(root);
+    return true;
+}
+
 void SVFIRBuilder::visitExtractValueInst(ExtractValueInst &inst)
 {
     NodeID dst = getValueNode(&inst);
-    Set<const Value*> sources;
-    const std::vector<unsigned> indices(inst.idx_begin(), inst.idx_end());
+    NodeID field;
     if (inst.getType()->isPointerTy() &&
-            collectAggFieldSources(inst.getAggregateOperand(), indices, sources))
-    {
-        // Nested constant expressions may not be lowered to instructions;
-        // keep their fallback rather than bypassing local value-flow definitions.
-        for (const Value* source : sources)
-        {
-            if (SVFUtil::isa<ConstantExpr>(source) || !llvmModuleSet()->hasValueNode(source))
-            {
-                addBlackHoleAddrEdge(dst);
-                return;
-            }
-        }
-        if (sources.size() == 1)
-            addCopyEdge(getValueNode(*sources.begin()), dst, CopyStmt::COPYVAL);
-        else
-        {
-            // A select or phi can contribute several pointers. One PhiStmt keeps
-            // the extractvalue's single definition in the value-flow graph.
-            const ICFGNode* location = llvmModuleSet()->getICFGNode(&inst);
-            for (const Value* source : sources)
-                addPhiStmt(dst, getValueNode(source), location);
-        }
-        return;
-    }
-    addBlackHoleAddrEdge(dst);
+            getAggregateFieldNode(inst.getAggregateOperand(),
+                                  AggregateField(inst.idx_begin(), inst.idx_end()), field))
+        addCopyEdge(field, dst, CopyStmt::COPYVAL);
+    else
+        addBlackHoleAddrEdge(dst);
 }
 
-/*!
- * The �extractelement� instruction extracts a single scalar element from a vector at a specified index.
- * TODO: for now we just assume the pointer after extraction points to blackhole
- * The first operand of an �extractelement� instruction is a value of vector type.
- * The second operand is an index indicating the position from which to extract the element.
- *
- * <result> = extractelement <4 x i32> %vec, i32 0    ; yields i32
- */
 void SVFIRBuilder::visitExtractElementInst(ExtractElementInst &inst)
 {
     NodeID dst = getValueNode(&inst);
-    addBlackHoleAddrEdge(dst);
+    NodeID field;
+    const auto* vector = SVFUtil::dyn_cast<llvm::FixedVectorType>(inst.getVectorOperandType());
+    const auto* index = SVFUtil::dyn_cast<ConstantInt>(inst.getIndexOperand());
+    if (inst.getType()->isPointerTy() && vector && index &&
+            index->getValue().ult(vector->getNumElements()) &&
+            getAggregateFieldNode(inst.getVectorOperand(),
+                                  AggregateField{static_cast<unsigned>(index->getZExtValue())}, field))
+        addCopyEdge(field, dst, CopyStmt::COPYVAL);
+    else
+        addBlackHoleAddrEdge(dst);
 }
 
 /*!
