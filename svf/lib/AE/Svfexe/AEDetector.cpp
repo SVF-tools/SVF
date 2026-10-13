@@ -90,7 +90,7 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                     {
                         AEException bug(stmt->toString());
                         addBugToReporter(bug, stmt->getICFGNode(),
-                                         {size, accessOffset});
+                        {size, accessOffset});
                     }
                 }
             }

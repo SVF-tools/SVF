@@ -278,8 +278,8 @@ public:
 
         // Add the bug to the recorder with details from the event stack
         recoder.addAbsExecBug(GenericBug::FULLBUFOVERFLOW, eventStack,
-                             info.bufferSize, info.bufferSize,
-                             info.accessOffset.lb().getNumeral(), info.accessOffset.ub().getNumeral());
+                              info.bufferSize, info.bufferSize,
+                              info.accessOffset.lb().getNumeral(), info.accessOffset.ub().getNumeral());
         nodeToBugInfo[node] = e.what(); // Record the exception information for the node
     }
 
@@ -320,7 +320,7 @@ public:
      * @return True if the memory access is safe, false otherwise.
      */
     bool canSafelyAccessMemory(const ValVar *value, const IntervalValue &len,
-                              const ICFGNode* node, BufferOverflowInfo* info = nullptr);
+                               const ICFGNode* node, BufferOverflowInfo* info = nullptr);
 
 private:
     /**
