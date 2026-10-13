@@ -54,8 +54,13 @@ private:
     const Value* curVal;	///< Current Value during SVFIR construction when visiting the module
 
 
+    /// Zero-based indices through nested structs, arrays or fixed vector lanes.
+    /// For {i32, {ptr, ptr}}, {1, 0} selects the first pointer in the inner struct.
+    /// An empty path denotes a scalar pointer leaf during dependency traversal.
     using AggregateField = std::vector<unsigned>;
+    /// Identify a field by its LLVM value and path, rather than by its type alone.
     using AggregateFieldKey = std::pair<const Value*, AggregateField>;
+    /// Reuse the same scalar SVFIR node for repeated requests for a field.
     Map<AggregateFieldKey, NodeID> aggregateFieldNodes;
 
     bool getAggregateFieldOperands(const AggregateFieldKey& field,

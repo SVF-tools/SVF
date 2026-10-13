@@ -1432,8 +1432,17 @@ bool SVFIRBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
     return !operands.empty();
 }
 
-/// Materialize a demanded pointer field at its producer. Repeated extracts share
-/// one definition; Phi predecessors and Select conditions remain in ordinary SVFIR.
+/*!
+ * Resolve the pointer field at indices in aggregate, returning its SVFIR ID in node.
+ * Reuse cached fields and existing scalar leaves; otherwise create typed field
+ * nodes with definitions at their LLVM producers. Phi predecessors and Select
+ * conditions are preserved, and repeated extracts share the same field node.
+ *
+ * Validate all dependencies before changing SVFIR, then allocate every field node
+ * before wiring definitions so loop-carried fields can refer to each other.
+ * Return false without changing node or emitting field definitions if any
+ * dependency is unsupported; the caller supplies the existing fallback.
+ */
 bool SVFIRBuilder::getAggregateFieldNode(const Value* aggregate,
                                          const AggregateField& indices, NodeID& node)
 {
@@ -1505,6 +1514,19 @@ bool SVFIRBuilder::getAggregateFieldNode(const Value* aggregate,
     return true;
 }
 
+/*!
+ * Extract a pointer from a register aggregate using its shared field definition.
+ * For example:
+ *   %a = insertvalue {ptr} poison, ptr %p, 0
+ *   %b = insertvalue {ptr} poison, ptr %q, 0
+ *   %s = select i1 %cond, {ptr} %a, {ptr} %b
+ *   %r = extractvalue {ptr} %s, 0
+ *
+ * getAggregateFieldNode(%s, {0}, field) creates field copies at %a and %b and
+ * a SelectStmt with %cond at %s. This visitor adds one CopyStmt from field to
+ * %r. Further extracts of %s's field 0 reuse that definition. Unsupported
+ * fields keep the existing black-hole fallback.
+ */
 void SVFIRBuilder::visitExtractValueInst(ExtractValueInst &inst)
 {
     NodeID dst = getValueNode(&inst);
@@ -1517,6 +1539,18 @@ void SVFIRBuilder::visitExtractValueInst(ExtractValueInst &inst)
         addBlackHoleAddrEdge(dst);
 }
 
+/*!
+ * Extract a constant pointer lane using the same field model as extractvalue.
+ * For example:
+ *   %a = insertelement <2 x ptr> poison, ptr %p, i32 0
+ *   %b = insertelement <2 x ptr> poison, ptr %q, i32 0
+ *   %s = select i1 %cond, <2 x ptr> %a, <2 x ptr> %b
+ *   %r = extractelement <2 x ptr> %s, i32 0
+ *
+ * Lane 0 is AggregateField{0}: its copies and conditional SelectStmt are defined
+ * at %a, %b and %s, then this visitor copies the lane into %r. Dynamic indices,
+ * scalable vectors and unsupported lane definitions keep the existing fallback.
+ */
 void SVFIRBuilder::visitExtractElementInst(ExtractElementInst &inst)
 {
     NodeID dst = getValueNode(&inst);
