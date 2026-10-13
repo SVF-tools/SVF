@@ -250,8 +250,8 @@ protected:
     /// branch narrows.  Default (dense/semi): MEET `narrowed` onto
     /// obj's value (read at `loadIcfg` where sparse keeps it) and
     /// write the result into the local `as` (per-edge predState copy)
-    /// so joinStates carries it to `succ`.  FullSparse overrides to
-    /// capture into refinementTrace[succ] instead.
+    /// so joinStates carries it to `succ`. FullSparse records the constraint
+    /// in branchConstraints[succ] and applies it after incoming Obj values merge.
     virtual void recordBranchRefinement(NodeID objId,
                                         const IntervalValue& narrowed,
                                         AbstractState& as,

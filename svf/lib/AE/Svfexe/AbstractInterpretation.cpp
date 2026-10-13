@@ -676,8 +676,8 @@ void AbstractInterpretation::recordBranchRefinement(
     // `loadIcfg` it would corrupt the obj's authoritative value at its
     // load site.  AbstractState::store on the transient `as` is the
     // only sound primitive — and recordBranchRefinement itself is the
-    // virtual customisation point (FullSparse routes to
-    // refinementTrace instead of touching `as`).
+    // virtual customisation point. FullSparse instead records the constraint
+    // in branchConstraints[succ], then applies it after incoming Obj values merge.
     const ObjVar* objVar = SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(objId));
     if (objVar && hasAbsValue(objVar, loadIcfg))
     {

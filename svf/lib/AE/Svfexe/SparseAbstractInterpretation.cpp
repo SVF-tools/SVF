@@ -68,9 +68,9 @@ void FullSparseAbstractInterpretation::joinStates(AbstractState& dst,
 void FullSparseAbstractInterpretation::updateAbsValue(
     const ObjVar* var, const AbstractValue& val, const ICFGNode* node)
 {
-    auto refinement = refinementTrace.find(node);
-    if (refinement != refinementTrace.end())
-        refinement->second.erase(var->getId());
+    auto constraints = branchConstraints.find(node);
+    if (constraints != branchConstraints.end())
+        constraints->second.erase(var->getId());
 
     AbstractInterpretation::updateAbsValue(var, val, node);
     if (SVFUtil::isa<GepObjVar>(var))
@@ -81,28 +81,32 @@ void FullSparseAbstractInterpretation::updateAbsValue(
 }
 
 bool FullSparseAbstractInterpretation::isStrongUpdate(
-    const ValVar* pointer, NodeID& targetObj) const
+    const AddressValue& targets, const AbstractState& state) const
 {
-    AndersenWaveDiff* pta = preAnalysis->getPointerAnalysis();
-    const PointsTo& targets = pta->getPts(pointer->getId());
-    if (targets.count() != 1)
+    if (targets.size() == 1 &&
+            !AbstractState::isNullOrBlackHoleAddr(*targets.begin()))
+    {
+        NodeID targetObj = state.getIDFromAddr(*targets.begin());
+        const BaseObjVar* baseObj = svfir->getBaseObject(targetObj);
+        AndersenWaveDiff* pta = preAnalysis->getPointerAnalysis();
+        return !pta->isHeapMemObj(targetObj) &&
+               !pta->isLocalVarInRecursiveFun(targetObj) &&
+               !baseObj->isFieldInsensitive() &&
+               baseObj->getNumOfElements() <= Options::MaxFieldLimit() &&
+               (!baseObj->isArray() || svfir->isGepObjVar(targetObj));
+    }
+    else
+    {
         return false;
-
-    targetObj = *targets.begin();
-    const BaseObjVar* baseObj = svfir->getBaseObject(targetObj);
-    return !pta->isHeapMemObj(targetObj) &&
-           !pta->isArrayMemObj(targetObj) &&
-           !baseObj->isFieldInsensitive() &&
-           !pta->isLocalVarInRecursiveFun(targetObj);
+    }
 }
 
 void FullSparseAbstractInterpretation::storeValue(
     const ValVar* pointer, const AbstractValue& val, const ICFGNode* node)
 {
-    NodeID strongTarget = 0;
-    const bool strongUpdate = isStrongUpdate(pointer, strongTarget);
     const AbstractValue& pointerValue = getAbsValue(pointer, node);
     AbstractState& state = getAbsState(node);
+    const bool strongUpdate = isStrongUpdate(pointerValue.getAddrs(), state);
 
     for (u32_t address : pointerValue.getAddrs())
     {
@@ -112,7 +116,7 @@ void FullSparseAbstractInterpretation::storeValue(
         NodeID targetObj = state.getIDFromAddr(address);
         const ObjVar* target =
             SVFUtil::cast<ObjVar>(svfir->getSVFVar(targetObj));
-        if (strongUpdate && targetObj == strongTarget)
+        if (strongUpdate)
         {
             // Strong update: this store identifies one concrete object, so the
             // newly stored value kills that object's previous abstract value.
@@ -129,95 +133,52 @@ void FullSparseAbstractInterpretation::storeValue(
     }
 }
 
-bool FullSparseAbstractInterpretation::isMemoryVersionDefinedAt(
-    const MRVer* version, const ICFGNode* source) const
+bool FullSparseAbstractInterpretation::isObjValueOverwrittenInBlock(
+    const ICFGNode* source, const ICFGNode* target, NodeID objId)
 {
-    const MSSADEF* definition = version->getDef();
-    if (const MemSSA::STORECHI* store =
-            SVFUtil::dyn_cast<MemSSA::STORECHI>(definition))
-        return store->getStoreStmt()->getICFGNode() == source;
-
-    if (const MemSSA::CALLCHI* call =
-            SVFUtil::dyn_cast<MemSSA::CALLCHI>(definition))
-        return call->getCallSite() == source;
-
-    if (const MemSSA::ENTRYCHI* entry =
-            SVFUtil::dyn_cast<MemSSA::ENTRYCHI>(definition))
-        return svfir->getICFG()->getFunEntryICFGNode(entry->getFunction()) ==
-               source;
-
-    if (const MemSSA::PHI* phi =
-            SVFUtil::dyn_cast<MemSSA::PHI>(definition))
-        return phi->getBasicBlock() == source->getBB();
-
-    return false;
-}
-
-bool FullSparseAbstractInterpretation::isMemoryPhiOperandReachable(
-    const ICFGNode* source, const ICFGNode* target, NodeID baseObj) const
-{
-    bool matchesPhiOperand = false;
-    for (const VFGNode* targetVfg : target->getVFGNodes())
+    bool overwritten = false;
+    if (source->getBB() && source->getBB() == target->getBB())
     {
-        const IntraMSSAPHISVFGNode* phi =
-            SVFUtil::dyn_cast<IntraMSSAPHISVFGNode>(targetVfg);
-        if (!phi)
-            continue;
-
-        const std::vector<const SVFBasicBlock*> predecessors =
-            target->getBB()->getPredecessors();
-        for (auto edgeIt = phi->InEdgeBegin();
-                edgeIt != phi->InEdgeEnd(); ++edgeIt)
+        bool afterSource = false;
+        for (const ICFGNode* node : source->getBB()->getICFGNodeList())
         {
-            const IndirectSVFGEdge* edge =
-                SVFUtil::dyn_cast<IndirectSVFGEdge>(*edgeIt);
-            if (!edge || edge->getSrcNode()->getICFGNode() != source)
-                continue;
+            if (node == target)
+                break;
 
-            bool carriesBaseObj = false;
-            for (NodeID objId : edge->getPointsTo())
+            if (node == source)
+                afterSource = true;
+            else if (afterSource && hasAbsState(node))
             {
-                if (SVFUtil::isa<ObjVar>(svfir->getGNode(objId)) &&
-                        svfir->getBaseObject(objId)->getId() == baseObj)
+                for (const SVFStmt* stmt : node->getSVFStmts())
                 {
-                    carriesBaseObj = true;
-                    break;
+                    const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt);
+                    if (store)
+                    {
+                        const AddressValue& targets =
+                            getAbsValue(store->getLHSVar(), node).getAddrs();
+                        const AbstractState& state = getAbsState(node);
+                        if (isStrongUpdate(targets, state) &&
+                                state.getIDFromAddr(*targets.begin()) == objId)
+                            overwritten = true;
+                    }
                 }
-            }
-            if (!carriesBaseObj)
-                continue;
-
-            for (auto opIt = phi->opVerBegin();
-                    opIt != phi->opVerEnd(); ++opIt)
-            {
-                if (!isMemoryVersionDefinedAt(opIt->second, source))
-                    continue;
-
-                matchesPhiOperand = true;
-                u32_t position = opIt->first;
-                if (position < predecessors.size() &&
-                        abstractTrace.count(predecessors[position]->back()))
-                    return true;
             }
         }
     }
-    return !matchesPhiOperand;
+    return overwritten;
 }
 
 bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     const ICFGNode* node)
 {
-    refinementTrace.erase(node);
+    branchConstraints.erase(node);
 
     const bool reachable =
         AbstractInterpretation::mergeStatesFromPredecessors(node);
     if (reachable)
     {
         mergeIncomingObjValues(node);
-
-        // Compose pred-inherited refinement on top of branch narrowings
-        // just captured, then MEET into trace[node] so reads see narrowed.
-        propagateAndApplyRefinement(node);
+        propagateAndApplyBranchConstraints(node);
     }
     return reachable;
 }
@@ -249,11 +210,11 @@ void FullSparseAbstractInterpretation::writeObjValuesToTarget(
 {
     // Both SVFG endpoints already read the same state at one ICFG node. A
     // self-transfer is therefore redundant and can preserve a stale widened
-    // MemoryPhi value while narrowing tries to recompute that state.
+    // value while narrowing tries to recompute that state.
     if (source != target)
     {
         ObjValueOrigin origin{source, baseObj};
-        incomingObjValues[target][origin] =
+        propagatedObjValues[target][origin] =
             collectBaseObjValues(source, baseObj);
     }
 }
@@ -350,138 +311,125 @@ void FullSparseAbstractInterpretation::propagateOutgoingObjValues(
 void FullSparseAbstractInterpretation::mergeIncomingObjValues(
     const ICFGNode* node)
 {
-    // Each entry is one incoming source/base pair. Omit unreachable
-    // MemorySSA-Phi operands, then JOIN values from every remaining source.
+    // Each entry is one incoming source/base pair. JOIN the supplied values,
+    // except when a same-block strong store must have overwritten an old value.
     AbstractState& targetState = abstractTrace[node];
-    auto incoming = incomingObjValues.find(node);
-    if (incoming != incomingObjValues.end())
+    auto incoming = propagatedObjValues.find(node);
+    if (incoming != propagatedObjValues.end())
     {
         for (const auto& incomingValues : incoming->second)
         {
-            const ObjValueOrigin& origin = incomingValues.first;
-            if (!isMemoryPhiOperandReachable(origin.first, node, origin.second))
-                continue;
-
             const ObjValueMap& objValues = incomingValues.second;
             for (const auto& [objId, value] : objValues)
             {
-                u32_t address = AbstractState::getVirtualMemAddress(objId);
-                if (targetState.getLocToVal().count(objId))
-                    targetState.load(address).join_with(value);
-                else
-                    targetState.store(address, value);
+                if (!isObjValueOverwrittenInBlock(incomingValues.first.first,
+                                                  node, objId))
+                {
+                    u32_t address = AbstractState::getVirtualMemAddress(objId);
+                    if (targetState.getLocToVal().count(objId))
+                        targetState.load(address).join_with(value);
+                    else
+                        targetState.store(address, value);
+                }
             }
         }
     }
 }
 
 // =====================================================================
-//  Full-sparse — refinement trace machinery.
+//  Full-sparse — path-local branch constraints.
 // =====================================================================
 
 void FullSparseAbstractInterpretation::recordBranchRefinement(
     NodeID objId, const IntervalValue& narrowed, AbstractState&,
     const ICFGNode*, const ICFGNode* succ)
 {
-    if (narrowed.isBottom())
-        return;
-
-    auto& succRef = refinementTrace[succ];
-    auto rit = succRef.find(objId);
-    if (rit == succRef.end())
+    if (!narrowed.isBottom())
     {
-        succRef[objId] = narrowed;
-    }
-    else
-    {
-        rit->second.join_with(narrowed);
+        auto& constraints = branchConstraints[succ];
+        auto it = constraints.find(objId);
+        if (it == constraints.end())
+        {
+            constraints[objId] = narrowed;
+        }
+        else
+        {
+            it->second.join_with(narrowed);
+        }
     }
 }
 
-void FullSparseAbstractInterpretation::propagateAndApplyRefinement(
+void FullSparseAbstractInterpretation::propagateAndApplyBranchConstraints(
     const ICFGNode* node)
 {
-    // e.g.
-    // if (x > 0) {
-    //     use(x); // use 1
-    //     use(x); // use 2
-    // }
-    // Step 1: compose pred-inherited refinement into refinementTrace[node].
-    // At use2, we don't have conditional intra-edge, but we can inherit the
-    // refinement from use1's conditional edge.  When multiple preds, JOIN the
-    // inherited constraints.
+    // if (x > 0) { use1(x); use2(x); }
+    // use1 records the edge constraint; use2 inherits it along the ICFG.
+    // At a merge, a constraint survives only if every predecessor with state
+    // carries it. JOIN those intervals to cover the alternative paths.
     Map<NodeID, IntervalValue> inherited;
     bool inheritOk = true;
     bool first = true;
-    for (auto& e : node->getInEdges())
+    for (auto& edge : node->getInEdges())
     {
-        const ICFGNode* pred = e->getSrcNode();
+        const ICFGNode* pred = edge->getSrcNode();
         if (hasAbsState(pred))
         {
-            auto pit = refinementTrace.find(pred);
-            if (pit == refinementTrace.end())
+            auto constraints = branchConstraints.find(pred);
+            if (constraints == branchConstraints.end())
             {
                 inheritOk = false;
                 break;
             }
             else if (first)
             {
-                inherited = pit->second;
+                inherited = constraints->second;
                 first = false;
             }
             else
             {
                 for (auto it = inherited.begin(); it != inherited.end();)
                 {
-                    auto eit = pit->second.find(it->first);
-                    if (eit == pit->second.end())
+                    auto constraint = constraints->second.find(it->first);
+                    if (constraint == constraints->second.end())
                     {
                         it = inherited.erase(it);
                     }
                     else
                     {
-                        it->second.join_with(eit->second);
+                        it->second.join_with(constraint->second);
                         ++it;
                     }
                 }
             }
         }
     }
+
     if (inheritOk && !first && !inherited.empty())
     {
-        auto& nodeRef = refinementTrace[node];
-        for (const auto& [id, val] : inherited)
+        auto& constraints = branchConstraints[node];
+        for (const auto& [id, value] : inherited)
         {
-            auto rit = nodeRef.find(id);
-            if (rit == nodeRef.end())
-            {
-                nodeRef[id] = val;
-            }
+            auto constraint = constraints.find(id);
+            if (constraint == constraints.end())
+                constraints[id] = value;
             else
-            {
-                rit->second.meet_with(val);
-            }
+                constraint->second.meet_with(value);
         }
     }
-    // e.g.
-    // if (x > 0) {
-    //     use(x); // use 1
-    //     use(x); // use 2
-    // }
-    // Step 2: at use1, recordBranchRefinement captures the predState's narrowed
-    // constraint into refinementTrace[use1].  At use2, we find the inherited
-    // refinement from use1 and MEET it into the base value so the use observes
-    // the narrowed constraint.
-    auto nit = refinementTrace.find(node);
-    if (nit != refinementTrace.end())
+
+    // Apply after incoming Obj values merge: JOINing an older wide value
+    // afterwards would undo the path constraint. Object writes erase it in
+    // updateAbsValue, so it is not inherited beyond that write.
+    auto constraints = branchConstraints.find(node);
+    if (constraints != branchConstraints.end())
     {
-        AbstractState& trace = abstractTrace[node];
-        for (const auto& [id, constraint] : nit->second)
+        AbstractState& state = abstractTrace[node];
+        for (const auto& [id, constraint] : constraints->second)
         {
-            if (trace.inAddrToValTable(id))
+            if (state.inAddrToValTable(id))
             {
-                u32_t addr = AbstractState::getVirtualMemAddress(id);
-                trace.load(addr).getInterval().meet_with(constraint);
+                u32_t address = AbstractState::getVirtualMemAddress(id);
+                state.load(address).getInterval().meet_with(constraint);
             }
         }
     }

@@ -106,11 +106,10 @@ protected:
     /// `_freedAddrs` is still copied because it has no SVFG representation.
     void joinStates(AbstractState& dst, const AbstractState& src) override;
 
-    /// Write an ObjVar into State[node] and discard any stale branch constraint
-    /// for that object. A precise GepObjVar write also propagates its values to
-    /// the current SVFG use sites of its base object. This supplements cases
-    /// such
-    /// as a dynamic `a[i][j]` load whose SVFG edge names only one
+    /// Write an ObjVar into State[node] and discard its old branch constraint.
+    /// A precise GepObjVar write also
+    /// propagates the base and sub-object values to its SVFG use sites.
+    /// This supplements a dynamic `a[i][j]` load whose SVFG edge names only one
     /// representative field of `a`.
     void updateAbsValue(const ObjVar* var, const AbstractValue& val,
                         const ICFGNode* node) override;
@@ -120,15 +119,15 @@ protected:
     /// A strong update kills the previous value of one concrete object:
     ///
     ///   int x = 1;
-    ///   int *p = &x;        // Andersen pts(p) = {x}
+    ///   int *p = &x;        // AE address candidates = {x}
     ///   *p = 2;             // State[x] becomes [2,2]
     ///
     /// A weak update preserves every possible old value and joins the stored
     /// value. It is required when the pointer has multiple targets or denotes
-    /// a summary object such as a heap allocation or array:
+    /// a summary object such as a heap allocation or merged array elements:
     ///
     ///   int x = 1, y = 3;
-    ///   int *p = cond ? &x : &y;  // pts(p) = {x,y}
+    ///   int *p = cond ? &x : &y;  // AE address candidates = {x,y}
     ///   *p = 2;                   // x: [1,2], y: [2,3]
     ///
     /// The distinction is local to FullSparse; dense and semi-sparse retain
@@ -162,57 +161,40 @@ protected:
                           const AbstractState& cur,
                           const ICFGCycleWTO* cycle) override;
 
-    /// Capture branch narrowings into refinementTrace[succ]. For
-    /// `if (a[9] < 10)`, incoming Obj values first supply the value of a.9;
-    /// the conditional ICFG edge then records `a.9 < 10` for the true
-    /// successor. It cannot be written only to the temporary predecessor state
-    /// because FullSparse does not copy ObjVars along ordinary ICFG edges.
+    /// Record a conditional edge's interval in branchConstraints[succ]. For
+    /// `if (a[9] < 10)`, the true successor records the constraint on a.9.
+    /// FullSparse applies it after incoming Obj values merge; writing it only
+    /// to the temporary predecessor state would lose it because joinStates
+    /// does not copy ObjVars along ordinary ICFG edges.
     void recordBranchRefinement(NodeID objId, const IntervalValue& narrowed,
                                 AbstractState& as, const ICFGNode* loadIcfg,
                                 const ICFGNode* succ) override;
 
 private:
-    /// Decide whether `*pointer = value` is a strong update. This uses the same
-    /// policy as FlowSensitive::isStrongUpdate: Andersen must report exactly
-    /// one target, and that target must not be a heap object, array object,
-    /// field-insensitive base, or local object in a recursive function.
+    /// Decide whether a store's AE address value identifies one concrete Obj.
+    /// Heap objects, recursive locals, field-insensitive objects, and layouts
+    /// exceeding the field limit cannot be strongly updated. An array element
+    /// is eligible only when it has a separate GepObjVar in an unmerged layout.
     ///
     ///   int x; int *p = &x; *p = 1;       // strong update
     ///   int *p = malloc(sizeof(int));      // heap summary
     ///   *p = 1;                            // weak update
-    ///   int a[4]; a[i] = 1;                // weak update: array summary
+    ///   int a[4]; a[3] = 1;                // strong: one concrete sub-object
+    ///   a[i] = 1;                          // weak: several candidate elements
     ///   int *q = cond ? &x : &y; *q = 1;   // weak update: two targets
     ///
-    /// On success, targetObj receives the unique object killed by the store.
-    bool isStrongUpdate(const ValVar* pointer, NodeID& targetObj) const;
+    bool isStrongUpdate(const AddressValue& targets,
+                        const AbstractState& state) const;
 
-    /// Match a MemorySSA version to the ICFG node that produced it. This is
-    /// used only while resolving operands of an IntraMSSAPHISVFGNode:
-    ///
-    ///   S1: *p = 1;             // defines MR_p.v1 through StoreCHI
-    ///   S2: ext_write(p);       // may define MR_p.v2 through CallCHI
-    ///   J:  MemoryPhi(v1, v2)
-    ///
-    /// Definitions may come from a store, call, function entry, or an earlier
-    /// MemoryPhi. The check lets AE associate v1 with S1 and v2 with S2 without
-    /// adding an MRVer lookup API to SVFG.
-    bool isMemoryVersionDefinedAt(const MRVer* version,
-                                  const ICFGNode* source) const;
-
-    /// Test whether an incoming object value is carried by a reachable operand
-    /// of a MemorySSA Phi. For example:
-    ///
-    ///   int x = 0;
-    ///   if (cond) x = 1; else x = 2;
-    ///   use(x);                 // MemoryPhi(x_then, x_else)
-    ///
-    /// If both branches are reachable, both versions are retained and JOINed.
-    /// If `cond` is true and the else predecessor has no abstract state, x_else
-    /// is omitted. When no matching IntraMSSAPHISVFGNode exists, this function
-    /// returns true so non-Phi value flow remains conservative.
-    bool isMemoryPhiOperandReachable(const ICFGNode* source,
-                                     const ICFGNode* target,
-                                     NodeID baseObj) const;
+    /// Ignore an older value only when a later strong store must overwrite it
+    /// before the use, in the same straight-line basic block:
+    ///   S: int a[10] = {0, ..., 9};
+    ///   W: a[9] = 10;
+    ///   L: use(a[9]);          // S's a.9 is killed by W, other elements stay
+    /// Stores in other blocks may be conditional, so their incoming values
+    /// still JOIN. This checks instruction order, not MemorySSA versions.
+    bool isObjValueOverwrittenInBlock(const ICFGNode* source,
+                                      const ICFGNode* target, NodeID objId);
 
     /// Obj values transported between two ICFG-node states. A base-only map
     /// is `{a: value}`; a map with sub-objects may be
@@ -231,12 +213,13 @@ private:
     ///                                      +--> Load(a.9)
     ///   Store2(a.9 = 20) --indirect {a}--+
     ///
-    /// the incoming maps contain `{a.9:[10,10]}` from Store1 and
+    /// For stores on alternative branches, the incoming maps contain
+    /// `{a.9:[10,10]}` from Store1 and
     /// `{a.9:[20,20]}` from Store2. Before the load executes, this method sets
     /// `State[load][a.9]` to their JOIN, `[10,20]`. This is a conservative JOIN
-    /// across different reaching definitions, not another store update. An
-    /// incoming MemorySSA-Phi operand is omitted only when its corresponding
-    /// CFG predecessor is unreachable; all remaining versions are retained.
+    /// across different sources, not another store update. An older value is
+    /// omitted only if a strong store overwrites it in the same basic block.
+    /// No MemorySSA definition or Phi-operand filtering is performed here.
     void mergeIncomingObjValues(const ICFGNode* node);
 
     /// Collect one base object and its sub-objects from State[source]. For
@@ -250,7 +233,7 @@ private:
     /// Write or replace incoming Obj values after their route has selected a
     /// source, target, and base object. Both native SVFG edges and supplementary
     /// base-object use-site routes use this operation:
-    ///   State[source] --collect(base)--> incoming[target][source, base].
+    ///   State[source] --collect(base)--> propagatedObjValues[target][source, base].
     void writeObjValuesToTarget(const ICFGNode* source,
                                 const ICFGNode* target,
                                 NodeID baseObj);
@@ -269,25 +252,23 @@ private:
     void propagateBaseObjValuesToUses(const ICFGNode* source,
                                       NodeID baseObj);
 
-    /// Propagate and apply branch constraints after incoming Obj values merge.
-    /// For
-    /// `if (a[9] < 10) { use1(a[9]); use2(a[9]); }`, use1 receives the edge
-    /// constraint and use2 inherits it. Multi-predecessor constraints JOIN;
-    /// the result is then MEETed into State[node] so normal object reads see it.
-    void propagateAndApplyRefinement(const ICFGNode* node);
+    /// Inherit branch constraints along ICFG edges, then apply them to incoming
+    /// Obj values. In `if (x > 0) { use1(x); use2(x); }`, use1 gets the edge
+    /// constraint and use2 inherits it. At a merge, retain only constraints
+    /// present on every predecessor with state and JOIN their intervals.
+    /// Finally MEET them into State[node] after the incoming Obj-value JOIN.
+    void propagateAndApplyBranchConstraints(const ICFGNode* node);
 
-    /// Path-refined obj values produced by branch narrowing.  Each
-    /// entry is the *interval constraint* (not effective value) so
-    /// base trace can widen/narrow independently.  Cached at branch
-    /// successors by recordBranchRefinement; propagated and applied by
-    /// propagateAndApplyRefinement at the end of
-    /// mergeStatesFromPredecessors.
-    Map<const ICFGNode*, Map<NodeID, IntervalValue>> refinementTrace;
+    /// Path-local interval constraints, not another complete AbstractState.
+    /// The key is the ICFG node where the constraint is currently valid, not
+    /// just the conditional edge's first successor. Object writes remove the
+    /// affected entry; subsequent nodes inherit only the remaining entries.
+    Map<const ICFGNode*, Map<NodeID, IntervalValue>> branchConstraints;
 
-    /// Incoming FullSparse Obj values, grouped by target, source, and base Obj.
+    /// Propagated FullSparse Obj values, grouped by target, source, and base Obj.
     /// Some entries contain only a base Obj, while others also contain
     /// sub-objects. The authoritative states remain in abstractTrace.
-    Map<const ICFGNode*, Map<ObjValueOrigin, ObjValueMap>> incomingObjValues;
+    Map<const ICFGNode*, Map<ObjValueOrigin, ObjValueMap>> propagatedObjValues;
 
     /// Build the SVFG used by FullSparse value propagation.
     void buildSVFG();
