@@ -157,11 +157,9 @@ public:
     void visitExtractValueInst(ExtractValueInst  &EVI);
     void visitBranchInst(BranchInst &I);
     void visitSwitchInst(SwitchInst &I);
-    /// Keep the existing fallback for the whole aggregate value. When a pointer
-    /// field is requested, getAggregateFieldNode models this insert separately:
-    /// the inserted field copies the inserted value, and other fields copy the
-    /// previous aggregate's fields. Those definitions are attached to this insert
-    /// and do not read the whole-value fallback node.
+    /// Keep the whole aggregate defined for full-SVFG consumers.
+    /// getAggregateFieldNode models demanded pointer fields separately;
+    /// those definitions do not read this fallback.
     void visitInsertValueInst(InsertValueInst &I)
     {
         addBlackHoleAddrEdge(getValueNode(&I));
@@ -188,10 +186,9 @@ public:
 
     void visitExtractElementInst(ExtractElementInst &I);
 
-    /// Keep the existing fallback for the whole vector value. For a demanded
-    /// constant lane of a fixed vector, getAggregateFieldNode creates a separate
-    /// field copy at this insert, using the inserted pointer or the previous
-    /// vector's lane. Dynamic indices remain unsupported by the field model.
+    /// Keep the whole vector defined for full-SVFG consumers.
+    /// getAggregateFieldNode models supported pointer lanes separately;
+    /// those definitions do not read this fallback.
     void visitInsertElementInst(InsertElementInst &I)
     {
         addBlackHoleAddrEdge(getValueNode(&I));
