@@ -86,7 +86,7 @@ void BufOverflowDetector::detect(const ICFGNode* node)
 
                     // Calculate access offset and check for potential overflow
                     IntervalValue accessOffset = getAccessOffset(objId, gep);
-                    if (accessOffset.ub().getIntNumeral() >= size)
+                    if (accessOffset.ub() >= BoundedInt(size))
                     {
                         AEException bug(stmt->toString());
                         addBugToReporter(bug, stmt->getICFGNode(),
@@ -516,7 +516,7 @@ bool BufOverflowDetector::canSafelyAccessMemory(const ValVar* value, const Inter
         }
 
         // if the offset is greater than the size, return false
-        if (offset.ub().getIntNumeral() >= size)
+        if (offset.ub() >= BoundedInt(size))
         {
             if (info) *info = {size, offset};
             return false;

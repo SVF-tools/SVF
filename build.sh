@@ -28,7 +28,7 @@ SVFHOME="${SCRIPT_DIR}"
 sysOS=$(uname -s)
 arch=$(uname -m)
 
-MajorLLVMVer=21
+MajorLLVMVer=23
 LLVMVer=${MajorLLVMVer}.1.0
 LLVM_SDK_TAG="llvm_${MajorLLVMVer}"
 Z3Ver=4.15.4
