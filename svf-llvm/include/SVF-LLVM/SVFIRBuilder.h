@@ -53,6 +53,21 @@ private:
     const SVFBasicBlock* curBB;	///< Current basic block during SVFIR construction when visiting the module
     const Value* curVal;	///< Current Value during SVFIR construction when visiting the module
 
+
+    /// Zero-based indices through nested structs, arrays or fixed vector lanes.
+    /// For {i32, {ptr, ptr}}, {1, 0} selects the first pointer in the inner struct.
+    /// An empty path denotes a scalar pointer leaf during dependency traversal.
+    using AggregateField = std::vector<unsigned>;
+    /// Identify a field by its LLVM value and path, rather than by its type alone.
+    using AggregateFieldKey = std::pair<const Value*, AggregateField>;
+    /// Reuse the same scalar SVFIR node for repeated requests for a field.
+    Map<AggregateFieldKey, NodeID> aggregateFieldNodes;
+
+    bool getAggregateFieldOperands(const AggregateFieldKey& field,
+                                   std::vector<AggregateFieldKey>& operands);
+    bool getAggregateFieldNode(const Value* aggregate, const AggregateField& indices,
+                               NodeID& node);
+
 public:
     /// Constructor
     SVFIRBuilder(): pag(SVFIR::getPAG()), curBB(nullptr),curVal(nullptr)
@@ -142,6 +157,9 @@ public:
     void visitExtractValueInst(ExtractValueInst  &EVI);
     void visitBranchInst(BranchInst &I);
     void visitSwitchInst(SwitchInst &I);
+    /// Keep the whole aggregate defined for full-SVFG consumers.
+    /// getAggregateFieldNode models demanded pointer fields separately;
+    /// those definitions do not read this fallback.
     void visitInsertValueInst(InsertValueInst &I)
     {
         addBlackHoleAddrEdge(getValueNode(&I));
@@ -168,6 +186,9 @@ public:
 
     void visitExtractElementInst(ExtractElementInst &I);
 
+    /// Keep the whole vector defined for full-SVFG consumers.
+    /// getAggregateFieldNode models supported pointer lanes separately;
+    /// those definitions do not read this fallback.
     void visitInsertElementInst(InsertElementInst &I)
     {
         addBlackHoleAddrEdge(getValueNode(&I));
