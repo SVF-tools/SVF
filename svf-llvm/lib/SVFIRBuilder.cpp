@@ -1323,7 +1323,7 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
 
 /// Return the type at a constant aggregate path, including fixed vector lanes.
 static const Type* getAggregateFieldType(const Type* type,
-                                        const std::vector<unsigned>& indices)
+        const std::vector<unsigned>& indices)
 {
     for (unsigned index : indices)
     {
@@ -1353,7 +1353,7 @@ static const Type* getAggregateFieldType(const Type* type,
 
 /// Describe one field definition without emitting any SVFIR statements.
 bool SVFIRBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
-                                             std::vector<AggregateFieldKey>& operands)
+        std::vector<AggregateFieldKey>& operands)
 {
     const Value* value = field.first;
     const AggregateField& path = field.second;
@@ -1444,7 +1444,7 @@ bool SVFIRBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
  * dependency is unsupported; the caller supplies the existing fallback.
  */
 bool SVFIRBuilder::getAggregateFieldNode(const Value* aggregate,
-                                         const AggregateField& indices, NodeID& node)
+        const AggregateField& indices, NodeID& node)
 {
     const AggregateFieldKey root{aggregate, indices};
     Map<AggregateFieldKey, std::vector<AggregateFieldKey>> definitions;
