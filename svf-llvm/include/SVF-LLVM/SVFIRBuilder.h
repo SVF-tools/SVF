@@ -68,6 +68,24 @@ private:
     bool getAggregateFieldNode(const Value* aggregate, const AggregateField& indices,
                                NodeID& node);
 
+    struct AggregateCallField
+    {
+        NodeID object;
+        NodeID address;
+        NodeID value;
+    };
+    struct AggregateCall
+    {
+        const Instruction* continuation;
+        std::map<AggregateField, AggregateCallField> fields;
+    };
+    Map<const Function*, std::map<AggregateField, NodeID>> aggregateReturnParams;
+    Map<const CallInst*, AggregateCall> aggregateCalls;
+
+    void initialiseAggregateReturns();
+    void addAggregateCallFields(const CallInst* call);
+    void addAggregateReturnStores(ReturnInst& inst);
+
 public:
     /// Constructor
     SVFIRBuilder(): pag(SVFIR::getPAG()), curBB(nullptr),curVal(nullptr)
@@ -314,7 +332,7 @@ protected:
 
     NodeID getDirectAccessFieldZeroValVar(const Value* ptr, const Type* accessTy);
 
-    void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
+    void setCurrentBBAndValueForPAGEdge(PAGEdge* edge, ICFGNode* location = nullptr);
 
     inline void addBlackHoleAddrEdge(NodeID node)
     {
