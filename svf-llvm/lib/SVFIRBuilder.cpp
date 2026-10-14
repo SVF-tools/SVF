@@ -1524,7 +1524,8 @@ bool SVFIRBuilder::getAggregateFieldNode(const Value* aggregate,
     return true;
 }
 
-/// Use output parameters only when every use has the same direct-call interface.
+/// Append output parameters only when every use can receive the same lowered
+/// interface. Matching ordinary direct calls give each snapshot one continuation.
 static bool canModelAggregateReturn(const Function* fun)
 {
     if (!fun || LLVMUtil::isExtCall(fun) || fun->isVarArg() ||
@@ -1541,6 +1542,21 @@ static bool canModelAggregateReturn(const Function* fun)
     return true;
 }
 
+/*!
+ * Lower a demanded return field, for example:
+ *   %a = call {ptr} @make(ptr %p)
+ *   %q = extractvalue {ptr} %a, 0
+ * using the following SVFIR transport:
+ *   caller:  addr = Addr(slot); CallParm(addr, out_0)
+ *   return:  Store(shared_field, out_0)
+ *   resume:  saved = Load(addr)
+ *   extract: q = Copy(saved)
+ *
+ * Discover demands through the shared local field grammar, crossing eligible
+ * calls to their return operands. Preallocate interfaces and field snapshots
+ * before visiting instructions so forwarding and recursive calls can reuse them.
+ * Only the SVFIR argument lists grow; LLVM signatures remain unchanged.
+ */
 void SVFIRBuilder::initialiseAggregateReturns()
 {
     std::vector<AggregateFieldKey> worklist;
@@ -1566,7 +1582,8 @@ void SVFIRBuilder::initialiseAggregateReturns()
                     }
                 }
 
-    // Reuse the local field grammar, adding only the direct-call boundary.
+    // Discover callee demands without materializing local field definitions.
+    // Calls cross into return operands; other producers use the shared grammar.
     Set<AggregateFieldKey> visited;
     while (!worklist.empty())
     {
@@ -1628,6 +1645,8 @@ void SVFIRBuilder::initialiseAggregateReturns()
             setCurrentLocation(call, call->getParent());
             for (const auto& field : function.second)
             {
+                // DummyObjVar keeps the static slot nonlocal to the callee in MemSSA.
+                // Later extracts read the SSA snapshot, not the reused slot contents.
                 NodeID object = pag->addDummyObjNode(pointerType);
                 pag->getAllFieldsObjVars(object).set(object);
                 pag->getObjTypeInfo(object)->setNumOfElements(1);
@@ -1647,8 +1666,8 @@ void SVFIRBuilder::initialiseAggregateReturns()
     setCurrentLocation(savedValue, savedBB);
 }
 
-/// Model `a = make(p); q = extractvalue a, 1` as an output slot passed to
-/// make(), followed by a load into a separate SSA value when the call returns.
+/// Define slot addresses and append actual output arguments for a modeled call.
+/// initialiseAggregateReturns has already placed its snapshot loads.
 void SVFIRBuilder::addAggregateCallFields(const CallInst* call)
 {
     auto found = aggregateCalls.find(call);
@@ -1668,11 +1687,14 @@ void SVFIRBuilder::addAggregateCallFields(const CallInst* call)
     }
 }
 
+/// Store shared field nodes into the callee's output parameters. An unsupported
+/// field gets its own fallback; supported siblings keep their shared definitions.
 void SVFIRBuilder::addAggregateReturnStores(ReturnInst& inst)
 {
     auto found = aggregateReturnParams.find(inst.getFunction());
     if (found == aggregateReturnParams.end() || !inst.getReturnValue())
         return;
+    // Keep each store on its own return path, before the shared function exit.
     ICFGNode* location = llvmModuleSet()->getICFGNode(&inst);
     for (const auto& field : found->second)
     {

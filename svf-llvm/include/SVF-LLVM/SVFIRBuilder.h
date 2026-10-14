@@ -68,18 +68,22 @@ private:
     bool getAggregateFieldNode(const Value* aggregate, const AggregateField& indices,
                                NodeID& node);
 
+    /// One static return slot and a separate SSA snapshot per callsite/field.
     struct AggregateCallField
     {
-        NodeID object;
-        NodeID address;
-        NodeID value;
+        NodeID object;  ///< Pointer-sized return slot.
+        NodeID address; ///< Output pointer passed to the callee.
+        NodeID value;   ///< Snapshot loaded at the continuation; used by extracts.
     };
     struct AggregateCall
     {
         const Instruction* continuation;
         std::map<AggregateField, AggregateCallField> fields;
     };
+    /// One synthetic output ArgValVar per demanded callee field. Ordered paths
+    /// keep appended formal and actual arguments in the same positions.
     Map<const Function*, std::map<AggregateField, NodeID>> aggregateReturnParams;
+    /// All calls to a modeled callee, including calls with unused results.
     Map<const CallInst*, AggregateCall> aggregateCalls;
 
     void initialiseAggregateReturns();
@@ -332,6 +336,7 @@ protected:
 
     NodeID getDirectAccessFieldZeroValVar(const Value* ptr, const Type* accessTy);
 
+    /// An explicit location overrides ICFG placement, retaining curVal/curBB metadata.
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge, ICFGNode* location = nullptr);
 
     inline void addBlackHoleAddrEdge(NodeID node)
