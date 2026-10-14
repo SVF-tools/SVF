@@ -115,26 +115,6 @@ protected:
                         const ICFGNode* node) override;
     using SemiSparseAbstractInterpretation::updateAbsValue;
 
-    /// Apply FullSparse store semantics when handling an ordinary StoreStmt.
-    /// A strong update kills the previous value of one concrete object:
-    ///
-    ///   int x = 1;
-    ///   int *p = &x;        // AE address candidates = {x}
-    ///   *p = 2;             // State[x] becomes [2,2]
-    ///
-    /// A weak update preserves every possible old value and joins the stored
-    /// value. It is required when the pointer has multiple targets or denotes
-    /// a summary object such as a heap allocation or merged array elements:
-    ///
-    ///   int x = 1, y = 3;
-    ///   int *p = cond ? &x : &y;  // AE address candidates = {x,y}
-    ///   *p = 2;                   // x: [1,2], y: [2,3]
-    ///
-    /// The distinction is local to FullSparse; dense and semi-sparse retain
-    /// their existing store implementation.
-    void storeValue(const ValVar* pointer, const AbstractValue& val,
-                    const ICFGNode* node) override;
-
     /// Prepare State[node] before its transfer. ICFG predecessors first carry
     /// control-flow side state; incoming Obj values then add ObjVars. For
     /// `%x = load i32, ptr %a9`, the load state receives `{a.9: 10}` before
@@ -171,30 +151,34 @@ protected:
                                 const ICFGNode* succ) override;
 
 private:
-    /// Decide whether a store's AE address value identifies one concrete Obj.
-    /// Heap objects, recursive locals, field-insensitive objects, and layouts
-    /// exceeding the field limit cannot be strongly updated. An array element
-    /// is eligible only when it has a separate GepObjVar in an unmerged layout.
-    ///
-    ///   int x; int *p = &x; *p = 1;       // strong update
-    ///   int *p = malloc(sizeof(int));      // heap summary
-    ///   *p = 1;                            // weak update
-    ///   int a[4]; a[3] = 1;                // strong: one concrete sub-object
-    ///   a[i] = 1;                          // weak: several candidate elements
-    ///   int *q = cond ? &x : &y; *q = 1;   // weak update: two targets
-    ///
-    bool isStrongUpdate(const AddressValue& targets,
-                        const AbstractState& state) const;
-
-    /// Ignore an older value only when a later strong store must overwrite it
-    /// before the use, in the same straight-line basic block:
-    ///   S: int a[10] = {0, ..., 9};
-    ///   W: a[9] = 10;
-    ///   L: use(a[9]);          // S's a.9 is killed by W, other elements stay
-    /// Stores in other blocks may be conditional, so their incoming values
-    /// still JOIN. This checks instruction order, not MemorySSA versions.
+    /// Check whether an incoming Obj value was overwritten in the same block.
+    /// For one non-summary stack Obj x, with S, W and L in one basic block:
+    ///   S: x = 1;             // source sends x = [1,1]
+    ///   W: x = 2;             // strong store sends x = [2,2]
+    ///   L: use(x);            // target receives values from S and W
+    /// When merging S's input at L, return true because W lies between S and
+    /// L and strongly updates x. Ignore S's old value instead of JOINing it
+    /// back into [1,2]. For W's input, there is no intervening store.
+    /// This filters propagated inputs; storeValue performs the actual update.
+    /// Different basic blocks are not checked by this helper.
     bool isObjValueOverwrittenInBlock(const ICFGNode* source,
                                       const ICFGNode* target, NodeID objId);
+
+    /// Find the strong store supplying a unique feasible predecessor's value.
+    /// For a scalar, non-summary stack Obj x in an acyclic function:
+    ///   S: x = 1;
+    ///      if (condition) {   // AE proves only the then branch feasible
+    ///   W:     x = 2;
+    ///   P: }                  // then block branches to the merge
+    ///   L: use(x);            // merge has only P as a feasible predecessor
+    /// L is outside W's block, so isObjValueOverwrittenInBlock cannot filter S.
+    /// Scan P's block up to pred=P and return W if it fully writes x and no
+    /// later store, call or unavailable state invalidates that candidate.
+    /// mergeIncomingObjValues ignores other inputs for x only after confirming
+    /// that W's propagated value is present. Otherwise it retains the JOIN.
+    /// The caller excludes loops and multiple feasible predecessors. This
+    /// helper excludes sub-Objs and does no CFG search or MemorySSA lookup.
+    const ICFGNode* getLastStrongStore(const ICFGNode* pred, NodeID objId);
 
     /// Obj values transported between two ICFG-node states. A base-only map
     /// is `{a: value}`; a map with sub-objects may be
@@ -218,9 +202,12 @@ private:
     /// `{a.9:[20,20]}` from Store2. Before the load executes, this method sets
     /// `State[load][a.9]` to their JOIN, `[10,20]`. This is a conservative JOIN
     /// across different sources, not another store update. An older value is
-    /// omitted only if a strong store overwrites it in the same basic block.
+    /// omitted by isObjValueOverwrittenInBlock for a same-block overwrite, or
+    /// by getLastStrongStore for a unique feasible predecessor's complete
+    /// scalar write whose propagated value is already among the inputs.
     /// No MemorySSA definition or Phi-operand filtering is performed here.
-    void mergeIncomingObjValues(const ICFGNode* node);
+    void mergeIncomingObjValues(const ICFGNode* node,
+                                const ICFGNode* uniquePred);
 
     /// Collect one base object and its sub-objects from State[source]. For
     /// `a[9] = 10`, a source state containing `a.9`

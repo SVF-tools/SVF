@@ -80,59 +80,6 @@ void FullSparseAbstractInterpretation::updateAbsValue(
     }
 }
 
-bool FullSparseAbstractInterpretation::isStrongUpdate(
-    const AddressValue& targets, const AbstractState& state) const
-{
-    if (targets.size() == 1 &&
-            !AbstractState::isNullOrBlackHoleAddr(*targets.begin()))
-    {
-        NodeID targetObj = state.getIDFromAddr(*targets.begin());
-        const BaseObjVar* baseObj = svfir->getBaseObject(targetObj);
-        AndersenWaveDiff* pta = preAnalysis->getPointerAnalysis();
-        return !pta->isHeapMemObj(targetObj) &&
-               !pta->isLocalVarInRecursiveFun(targetObj) &&
-               !baseObj->isFieldInsensitive() &&
-               baseObj->getNumOfElements() <= Options::MaxFieldLimit() &&
-               (!baseObj->isArray() || svfir->isGepObjVar(targetObj));
-    }
-    else
-    {
-        return false;
-    }
-}
-
-void FullSparseAbstractInterpretation::storeValue(
-    const ValVar* pointer, const AbstractValue& val, const ICFGNode* node)
-{
-    const AbstractValue& pointerValue = getAbsValue(pointer, node);
-    AbstractState& state = getAbsState(node);
-    const bool strongUpdate = isStrongUpdate(pointerValue.getAddrs(), state);
-
-    for (u32_t address : pointerValue.getAddrs())
-    {
-        if (AbstractState::isNullOrBlackHoleAddr(address))
-            continue;
-
-        NodeID targetObj = state.getIDFromAddr(address);
-        const ObjVar* target =
-            SVFUtil::cast<ObjVar>(svfir->getSVFVar(targetObj));
-        if (strongUpdate)
-        {
-            // Strong update: this store identifies one concrete object, so the
-            // newly stored value kills that object's previous abstract value.
-            updateAbsValue(target, val, node);
-        }
-        else
-        {
-            // Weak update: this address may denote one of several concrete
-            // objects or a summary object, so retain old and new possibilities.
-            AbstractValue joined = getAbsValue(target, node);
-            joined.join_with(val);
-            updateAbsValue(target, joined, node);
-        }
-    }
-}
-
 bool FullSparseAbstractInterpretation::isObjValueOverwrittenInBlock(
     const ICFGNode* source, const ICFGNode* target, NodeID objId)
 {
@@ -173,14 +120,73 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
 {
     branchConstraints.erase(node);
 
+    std::vector<const ICFGNode*> feasiblePreds;
     const bool reachable =
-        AbstractInterpretation::mergeStatesFromPredecessors(node);
+        AbstractInterpretation::mergeStatesFromPredecessors(node, &feasiblePreds);
     if (reachable)
     {
-        mergeIncomingObjValues(node);
+        // For x=1; if (known_true) { x=2; } use(x), only the then predecessor
+        // contributes to the merge. Its strong store can replace the old input.
+        // Restrict this to actual joins in a function without WTO cycles: an
+        // absent loop-back state may mean "not visited yet", not "infeasible".
+        // Calls, cycles and multiple feasible predecessors retain the JOIN.
+        const ICFGNode* uniquePred = nullptr;
+        auto wto = preAnalysis->getFuncToWTO().find(node->getFun());
+        if (node->getInEdges().size() > 1 && feasiblePreds.size() == 1 &&
+                feasiblePreds.front()->getFun() == node->getFun() &&
+                feasiblePreds.front()->getBB() &&
+                feasiblePreds.front()->getBB() != node->getBB() &&
+                wto != preAnalysis->getFuncToWTO().end() &&
+                wto->second->headBegin() == wto->second->headEnd())
+            uniquePred = feasiblePreds.front();
+
+        mergeIncomingObjValues(node, uniquePred);
         propagateAndApplyBranchConstraints(node);
     }
     return reachable;
+}
+
+const ICFGNode* FullSparseAbstractInterpretation::getLastStrongStore(
+    const ICFGNode* pred, NodeID objId)
+{
+    const ICFGNode* lastStore = nullptr;
+    const BaseObjVar* obj =
+        SVFUtil::dyn_cast<BaseObjVar>(svfir->getSVFVar(objId));
+    if (obj && obj->getType()->isSingleValueType() &&
+            obj->getType()->getByteSize() != 0)
+    {
+        const u32_t address = AbstractState::getVirtualMemAddress(objId);
+        for (const ICFGNode* node : pred->getBB()->getICFGNodeList())
+        {
+            if (hasAbsState(node) && SVFUtil::isa<IntraICFGNode>(node))
+            {
+                for (const SVFStmt* stmt : node->getSVFStmts())
+                {
+                    if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt))
+                    {
+                        const AddressValue& targets =
+                            getAbsValue(store->getLHSVar(), node).getAddrs();
+                        if (isStrongUpdate(targets, getAbsState(node)) &&
+                                *targets.begin() == address &&
+                                store->getRHSVar()->getType()->getByteSize() ==
+                                obj->getType()->getByteSize())
+                            lastStore = node;
+                        else
+                            lastStore = nullptr;
+                    }
+                }
+            }
+            else
+            {
+                // A call or unavailable state prevents using an earlier store.
+                lastStore = nullptr;
+            }
+
+            if (node == pred)
+                break;
+        }
+    }
+    return lastStore;
 }
 
 FullSparseAbstractInterpretation::ObjValueMap
@@ -309,10 +315,13 @@ void FullSparseAbstractInterpretation::propagateOutgoingObjValues(
 }
 
 void FullSparseAbstractInterpretation::mergeIncomingObjValues(
-    const ICFGNode* node)
+    const ICFGNode* node, const ICFGNode* uniquePred)
 {
-    // Each entry is one incoming source/base pair. JOIN the supplied values,
-    // except when a same-block strong store must have overwritten an old value.
+    // Each source/base pair supplies Obj values. Normally JOIN different inputs.
+    // For x=1; x=2; use(x) in one block, omit the first store's old x value.
+    // For x=1; if (known_true) { x=2; } use(x), use the unique predecessor's
+    // complete scalar store only if its replacement input has arrived.
+    // Neither check executes a store; shared storeValue handles strong/weak writes.
     AbstractState& targetState = abstractTrace[node];
     auto incoming = propagatedObjValues.find(node);
     if (incoming != propagatedObjValues.end())
@@ -322,8 +331,19 @@ void FullSparseAbstractInterpretation::mergeIncomingObjValues(
             const ObjValueMap& objValues = incomingValues.second;
             for (const auto& [objId, value] : objValues)
             {
-                if (!isObjValueOverwrittenInBlock(incomingValues.first.first,
-                                                  node, objId))
+                bool overwritten = isObjValueOverwrittenInBlock(
+                    incomingValues.first.first, node, objId);
+                if (uniquePred)
+                {
+                    const ICFGNode* lastStore = getLastStrongStore(uniquePred, objId);
+                    auto replacement = incoming->second.find(
+                                           ObjValueOrigin{lastStore, incomingValues.first.second});
+                    if (lastStore && replacement != incoming->second.end() &&
+                            replacement->second.count(objId))
+                        overwritten = incomingValues.first.first != lastStore;
+                }
+
+                if (!overwritten)
                 {
                     u32_t address = AbstractState::getVirtualMemAddress(objId);
                     if (targetState.getLocToVal().count(objId))

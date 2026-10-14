@@ -182,6 +182,13 @@ public:
     /// memory transfers.
     virtual AbstractValue loadValue(const ValVar* pointer,
                                     const ICFGNode* node);
+
+    /// Shared store semantics for dense, semi-sparse, and full-sparse modes.
+    /// A strong update replaces one concrete cell; a weak update joins old
+    /// and new values for every possible target.
+    ///   int x = 1; int *p = &x; *p = 2;      // x becomes [2,2]
+    ///   p = cond ? &x : &y; *p = 2;          // JOIN into both x and y
+    /// Sparse modes customize value access and propagation, not this decision.
     virtual void storeValue(const ValVar* pointer, const AbstractValue& val,
                             const ICFGNode* node);
 
@@ -203,6 +210,16 @@ protected:
     /// Factory-only construction.  External callers must use getAEInstance();
     /// `SparseAbstractInterpretation` reaches this via its own ctor.
     AbstractInterpretation();
+
+    /// One abstract address need not denote one concrete cell.
+    ///   int *foo() { return malloc(sizeof(int)); }
+    ///   int *a = foo(), *b = foo();  // both may name the same heap summary H
+    ///   *a = 1; *b = 2;             // H must retain [1,2], not just [2,2]
+    /// Heap summaries, recursive locals, field-insensitive objects, and merged
+    /// layouts require weak updates. A separate, unmerged array element may
+    /// be strongly updated when the AE address identifies only that element.
+    bool isStrongUpdate(const AddressValue& targets,
+                        const AbstractState& state) const;
 
     // ---- Cycle helpers overridden by SparseAbstractInterpretation ----
     // The dense versions write only to trace[cycle_head].  The semi-sparse
@@ -230,6 +247,12 @@ protected:
     /// true if at least one predecessor had state. Sparse variants may merge
     /// additional graph-selected values after this ICFG merge.
     virtual bool mergeStatesFromPredecessors(const ICFGNode* node);
+
+    /// Optionally report the predecessors whose states actually contributed
+    /// to this merge. FullSparse uses this local result without duplicating
+    /// the branch-feasibility checks or retaining another predecessor table.
+    bool mergeStatesFromPredecessors(const ICFGNode* node,
+                                    std::vector<const ICFGNode*>* feasiblePreds);
 
     /// Send values produced at node through an analysis-specific graph. Dense
     /// and semi-sparse modes keep the default no-op. FullSparse scans outgoing
