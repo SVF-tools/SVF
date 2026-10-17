@@ -6,6 +6,26 @@
 find_package(LLVM CONFIG REQUIRED HINTS ${LLVM_HOME} $ENV{LLVM_HOME} ${LLVM_DIR} $ENV{LLVM_DIR})
 add_compile_definitions(LLVM_BUILD_STATIC)
 
+# Handle missing or static zstd target by redirecting to dynamic zstd (libzstd.so)
+if(NOT TARGET zstd::libzstd_static)
+  if(TARGET zstd::libzstd_shared)
+    add_library(zstd::libzstd_static ALIAS zstd::libzstd_shared)
+  else()
+    add_library(zstd::libzstd_static INTERFACE IMPORTED)
+    set_target_properties(zstd::libzstd_static PROPERTIES INTERFACE_LINK_LIBRARIES "zstd")
+  endif()
+endif()
+
+# On Linux/Unix, if LLVM targets export static non-PIC libzstd, redirect to dynamic zstd to allow building shared libSvfLLVM.so
+if(TARGET LLVMSupport AND UNIX AND NOT APPLE)
+  get_target_property(_llvm_support_libs LLVMSupport INTERFACE_LINK_LIBRARIES)
+  if(_llvm_support_libs)
+    string(REGEX REPLACE "[^;]*/libzstd\\.a" "zstd" _llvm_support_libs_fixed "${_llvm_support_libs}")
+    string(REGEX REPLACE "zstd::libzstd_static" "zstd" _llvm_support_libs_fixed "${_llvm_support_libs_fixed}")
+    set_target_properties(LLVMSupport PROPERTIES INTERFACE_LINK_LIBRARIES "${_llvm_support_libs_fixed}")
+  endif()
+endif()
+
 # Import certain utilities (e.g. to make add_llvm_library() available)
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 include(AddLLVM)
