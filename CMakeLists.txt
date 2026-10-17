@@ -88,6 +88,11 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake" "${CMAKE_CURRENT
 set(SVF_BUILD_TYPE ${CMAKE_BUILD_TYPE})
 set(SVF_SHARED_LIBS ${BUILD_SHARED_LIBS})
 
+# Prefer dynamic libraries over static archives on UNIX when building shared libraries
+if(UNIX AND NOT APPLE AND BUILD_SHARED_LIBS)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".a")
+endif()
+
 # =================================================================================
 # SVF options & settings
 # =================================================================================
