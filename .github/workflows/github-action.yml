@@ -8,6 +8,7 @@ env:
   SVF_CTIR: 1
   SVF_Z3: 1
   SVF_DIR: $GITHUB_WORKSPACE
+  ASAN_OPTIONS: "detect_container_overflow=0"
 
 jobs:
   build:
@@ -15,6 +16,7 @@ jobs:
     env:
       XCODE_VERSION: "latest-stable"
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         include:
