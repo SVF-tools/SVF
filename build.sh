@@ -61,7 +61,7 @@ WindowsZ3="https://github.com/Z3Prover/z3/releases/download/z3-${Z3Ver}/z3-${Z3V
 
 BUILD_TYPE="Release"
 BUILD_DYN_LIB="ON"
-RTTI="ON"
+RTTI="OFF"
 ENABLE_ASSERTIONS="${SVF_ENABLE_ASSERTIONS:-ON}"
 PLATFORM=""
 urlLLVM=""
@@ -69,14 +69,15 @@ urlZ3=""
 
 usage() {
     cat <<USAGE
-Usage: ./build.sh [debug|minsize] [dyn_lib|sta_lib] [nortti]
+Usage: ./build.sh [debug|minsize] [dyn_lib|sta_lib] [rtti|nortti]
 
 Options:
   debug      Build Debug instead of Release.
   minsize    Build MinSizeRel to reduce binary size.
   dyn_lib    Build shared libraries. This is the default.
   sta_lib    Build static libraries.
-  nortti     Disable LLVM RTTI. Valid only for static-library builds.
+  rtti       Enable LLVM RTTI (downloads custom RTTI builds if available).
+  nortti     Disable LLVM RTTI (uses official upstream LLVM releases). This is the default.
 
 Environment variables:
   LLVM_DIR           Use an existing LLVM installation.
@@ -105,6 +106,9 @@ parse_args() {
             [Nn]ortti)
                 RTTI="OFF"
                 ;;
+            [Rr]tti)
+                RTTI="ON"
+                ;;
             -h|--help|[Hh]elp)
                 usage
                 exit 0
@@ -123,12 +127,6 @@ normalise_options() {
             echo "Notice: Windows builds require static libraries. Forcing BUILD_DYN_LIB=OFF (sta_lib)."
             BUILD_DYN_LIB="OFF"
         fi
-    fi
-
-    # Shared-library builds require RTTI in the current SVF/LLVM setup.
-    if [[ "$BUILD_DYN_LIB" == "ON" && "$RTTI" == "OFF" ]]; then
-        echo "Warning: LLVM RTTI is always on when building shared libraries. Ignoring 'nortti'."
-        RTTI="ON"
     fi
 }
 
