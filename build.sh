@@ -511,6 +511,10 @@ configure_runtime_env() {
     export LD_LIBRARY_PATH="$llvm_lib_dirs:$Z3_DIR/bin:${LD_LIBRARY_PATH:-}"
     export DYLD_LIBRARY_PATH="$LLVM_DIR/lib:$Z3_DIR/bin:${DYLD_LIBRARY_PATH:-}"
 
+    if [[ "${SVF_SANITIZER:-}" == "address" ]]; then
+        export ASAN_OPTIONS="detect_container_overflow=0:${ASAN_OPTIONS:-}"
+    fi
+
     echo "LLVM_DIR=$LLVM_DIR"
     echo "Z3_DIR=$Z3_DIR"
 }
