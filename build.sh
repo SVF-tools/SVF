@@ -28,7 +28,7 @@ SVFHOME="${SCRIPT_DIR}"
 sysOS=$(uname -s)
 arch=$(uname -m)
 
-MajorLLVMVer=21
+MajorLLVMVer=22
 LLVMVer=${MajorLLVMVer}.1.0
 LLVM_SDK_TAG="llvm_${MajorLLVMVer}"
 Z3Ver=4.15.4
@@ -155,8 +155,12 @@ detect_platform() {
 
 select_dependency_urls() {
     case "$PLATFORM" in
-        windows-msvc|windows-mingw)
-            urlLLVM="https://github.com/c3lang/llvm-for-c3/releases/download/${LLVM_SDK_TAG}/llvm-windows-amd64.tar.gz"
+        windows-msvc)
+            urlLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-pc-windows-msvc.tar.xz"
+            urlZ3="https://github.com/Z3Prover/z3/releases/download/z3-${Z3Ver}/z3-${Z3Ver}-x64-win.zip"
+            ;;
+        windows-mingw)
+            urlLLVM=""
             urlZ3="https://github.com/Z3Prover/z3/releases/download/z3-${Z3Ver}/z3-${Z3Ver}-x64-win.zip"
             ;;
         ubuntu-x86_64)
@@ -301,11 +305,7 @@ download_llvm_prebuilt() {
 
     echo "Unpacking LLVM package..."
     mkdir -p "./$LLVMHome"
-    if [[ "$PLATFORM" == windows-* ]]; then
-        tar -xf "$llvm_archive" -C "./$LLVMHome"
-    else
-        tar -xf "$llvm_archive" -C "./$LLVMHome" --strip-components 1
-    fi
+    tar -xf "$llvm_archive" -C "./$LLVMHome" --strip-components 1
     rm "$llvm_archive"
 
     # For Windows MSVC LLVM SDK, strip hardcoded diaguids.lib path from LLVMExports.cmake
@@ -358,6 +358,9 @@ ensure_llvm() {
             echo "Installing LLVM ${MajorLLVMVer} packages for MinGW in MSYS2..."
             local msys_mirror="https://mirror.msys2.org/mingw/clang64"
             local pkg_suffix="${MajorLLVMVer}.1.8-4-any"
+            if [[ "$MajorLLVMVer" == "22" ]]; then
+                pkg_suffix="22.1.8-3-any"
+            fi
             pacman -U --noconfirm --needed \
                 "${msys_mirror}/mingw-w64-clang-x86_64-llvm-libs-${pkg_suffix}.pkg.tar.zst" \
                 "${msys_mirror}/mingw-w64-clang-x86_64-llvm-tools-${pkg_suffix}.pkg.tar.zst" \
