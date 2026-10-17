@@ -164,6 +164,12 @@ void LLVMModuleSet::buildSymbolTable() const
 
 void LLVMModuleSet::build()
 {
+    if (!empty())
+    {
+        targetABI = LLVMUtil::detectTargetABI(
+                        LLVMUtil::getTargetTriple(getMainLLVMModule()));
+    }
+
     if(preProcessed==false)
         prePassSchedule();
 
