@@ -502,7 +502,13 @@ ensure_z3() {
 
 configure_runtime_env() {
     export PATH="$LLVM_DIR/bin:$Z3_DIR/bin:$PATH"
-    export LD_LIBRARY_PATH="$LLVM_DIR/lib:$Z3_DIR/bin:${LD_LIBRARY_PATH:-}"
+    local llvm_lib_dirs="$LLVM_DIR/lib"
+    if [[ -d "$LLVM_DIR/lib/x86_64-unknown-linux-gnu" ]]; then
+        llvm_lib_dirs="$LLVM_DIR/lib/x86_64-unknown-linux-gnu:$llvm_lib_dirs"
+    elif [[ -d "$LLVM_DIR/lib/aarch64-unknown-linux-gnu" ]]; then
+        llvm_lib_dirs="$LLVM_DIR/lib/aarch64-unknown-linux-gnu:$llvm_lib_dirs"
+    fi
+    export LD_LIBRARY_PATH="$llvm_lib_dirs:$Z3_DIR/bin:${LD_LIBRARY_PATH:-}"
     export DYLD_LIBRARY_PATH="$LLVM_DIR/lib:$Z3_DIR/bin:${DYLD_LIBRARY_PATH:-}"
 
     echo "LLVM_DIR=$LLVM_DIR"
@@ -562,10 +568,34 @@ build_svf() {
                 -DCMAKE_CXX_COMPILER="$cxx_comp"
             )
         fi
+        local extra_cxx_flags=""
+        local extra_link_flags=""
+        if [[ -d "$LLVM_DIR/include/c++/v1" ]]; then
+            extra_cxx_flags="-stdlib=libc++"
+            extra_link_flags="-stdlib=libc++"
+        fi
         if [[ -x "$LLVM_DIR/bin/ld.lld" ]]; then
+            extra_link_flags="${extra_link_flags:+$extra_link_flags }-fuse-ld=lld"
+            cmake_generator_args+=(-DSVF_USE_LLD=ON)
+        fi
+        local target_lib_dir=""
+        if [[ -d "$LLVM_DIR/lib/x86_64-unknown-linux-gnu" ]]; then
+            target_lib_dir="$LLVM_DIR/lib/x86_64-unknown-linux-gnu"
+        elif [[ -d "$LLVM_DIR/lib/aarch64-unknown-linux-gnu" ]]; then
+            target_lib_dir="$LLVM_DIR/lib/aarch64-unknown-linux-gnu"
+        fi
+        if [[ -n "$target_lib_dir" ]]; then
+            extra_link_flags="${extra_link_flags:+$extra_link_flags }-L$target_lib_dir -Wl,-rpath,$target_lib_dir"
+        fi
+        if [[ -n "$extra_cxx_flags" ]]; then
             cmake_generator_args+=(
-                -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
-                -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld"
+                "-DCMAKE_CXX_FLAGS=${extra_cxx_flags}"
+            )
+        fi
+        if [[ -n "$extra_link_flags" ]]; then
+            cmake_generator_args+=(
+                "-DCMAKE_SHARED_LINKER_FLAGS=${extra_link_flags}"
+                "-DCMAKE_EXE_LINKER_FLAGS=${extra_link_flags}"
             )
         fi
     fi
