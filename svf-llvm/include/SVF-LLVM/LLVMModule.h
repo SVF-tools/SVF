@@ -33,6 +33,7 @@
 #define INCLUDE_SVF_FE_LLVMMODULE_H_
 
 #include "SVF-LLVM/BasicTypes.h"
+#include "SVF-LLVM/LLVMUtil.h"
 #include "Util/Options.h"
 #include "Graphs/BasicBlockG.h"
 #include "Graphs/ICFGNode.h"
@@ -86,6 +87,9 @@ private:
     std::unique_ptr<LLVMContext> owned_ctx;
     std::vector<std::unique_ptr<Module>> owned_modules;
     std::vector<std::reference_wrapper<Module>> modules;
+
+    /// C++ ABI of the module being analyzed.
+    TargetABI targetABI = TargetABI::Itanium;
 
     /// Record some "sse_" function declarations used in other ext function definition, e.g., svf_ext_foo(), and svf_ext_foo() used in app functions
     FunctionSetType ExtFuncsVec;
@@ -379,6 +383,11 @@ public:
         }
         assert(false && "no main module found!");
         return nullptr;
+    }
+
+    TargetABI getTargetABI() const
+    {
+        return targetABI;
     }
 
     LLVMContext& getContext() const

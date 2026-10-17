@@ -119,6 +119,7 @@ std::string getClassNameFromVtblObj(const std::string& vtblName);
  */
 const ConstantStruct *getVtblStruct(const GlobalValue *vtbl);
 
+/// A carefully crafted input such as `FakeVTable _ZTV1A = {{nullptr, nullptr}};` can forge a vtable; detection is approximate and heuristic.
 bool isValVtbl(const Value* val);
 bool isVirtualCallSite(const CallBase* cs);
 bool isConstructor(const Function* F);

@@ -35,8 +35,22 @@
 #include "Util/ThreadAPI.h"
 #include "Util/Options.h"
 
+#include <llvm/Config/llvm-config.h>
+#if LLVM_VERSION_MAJOR < 16
+#include <llvm/ADT/Triple.h>
+#else
+#include <llvm/TargetParser/Triple.h>
+#endif
+
 namespace SVF
 {
+
+/// C++ ABI inferred from the target triple.
+enum class TargetABI
+{
+    Itanium,
+    MSVC,
+};
 
 class SVFBasicBlock;
 
@@ -326,6 +340,29 @@ inline static DataLayout* getDataLayout(Module* mod)
         dl = new DataLayout(mod);
 #endif
     return dl;
+}
+
+inline static llvm::Triple getTargetTriple(const Module* mod)
+{
+    assert(mod && "null module");
+#if LLVM_VERSION_MAJOR >= 21
+    return mod->getTargetTriple();
+#else
+    return llvm::Triple(mod->getTargetTriple());
+#endif
+}
+
+inline static TargetABI detectTargetABI(const llvm::Triple &triple)
+{
+    if (triple.isWindowsMSVCEnvironment())
+        return TargetABI::MSVC;
+
+    if (triple.isWindowsItaniumEnvironment() ||
+        triple.isWindowsGNUEnvironment() ||
+        triple.isWindowsCygwinEnvironment())
+        return TargetABI::Itanium;
+
+    return TargetABI::Itanium;
 }
 
 /// Get the next instructions following control flow
