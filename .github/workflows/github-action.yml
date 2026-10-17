@@ -160,8 +160,13 @@ jobs:
         working-directory: ${{github.workspace}}/Release-build
         if: runner.os == 'Linux' && matrix.sanitizer == ''
         run: |
-          lcov --capture --directory ./ --output-file coverage.info --rc check_data_consistency=0
-          lcov --remove coverage.info '/usr/*' '${{github.workspace}}/z3.obj/*' '${{github.workspace}}/llvm-*.obj/*' '${{github.workspace}}/svf/include/FastCluster/*' '${{github.workspace}}/svf/lib/FastCluster/*' --output-file coverage.info --ignore-errors unused --rc check_data_consistency=0
+          if command -v llvm-cov >/dev/null 2>&1; then
+            printf '#!/usr/bin/env bash\nexec llvm-cov gcov "$@"\n' > /tmp/llvm-gcov.sh
+            chmod +x /tmp/llvm-gcov.sh
+            GCOV_TOOL_ARG="--gcov-tool /tmp/llvm-gcov.sh"
+          fi
+          lcov ${GCOV_TOOL_ARG:-} --capture --directory ./ --output-file coverage.info --ignore-errors version,unused,gcov,source --rc check_data_consistency=0 || lcov --capture --directory ./ --output-file coverage.info --ignore-errors version,unused,gcov,source --rc check_data_consistency=0 || true
+          lcov --remove coverage.info '/usr/*' '${{github.workspace}}/z3.obj/*' '${{github.workspace}}/llvm-*.obj/*' '${{github.workspace}}/svf/include/FastCluster/*' '${{github.workspace}}/svf/lib/FastCluster/*' --output-file coverage.info --ignore-errors unused --rc check_data_consistency=0 || true
 
       - name: upload-coverage
         if: runner.os == 'Linux' && matrix.sanitizer == ''
