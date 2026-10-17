@@ -568,9 +568,32 @@ build_svf() {
             -DSVF_Z3=ON
         )
     elif [[ "$PLATFORM" == ubuntu-* ]]; then
-        # When official LLVM prebuilt bundles libc++, use Clang/libc++ to match its ABI.
-        # When libc++ is NOT bundled (e.g. LLVM compiled with GCC/libstdc++), use default system compiler.
-        if [[ -d "$LLVM_DIR/include/c++/v1" ]]; then
+        # When official LLVM prebuilt is built with libc++, use Clang/libc++ to match its ABI.
+        # When LLVM is built with GCC/libstdc++, use the default system compiler (GCC/libstdc++).
+        local llvm_uses_libcxx=false
+        local llvm_cflags=""
+        if [[ -x "$LLVM_DIR/bin/llvm-config" ]]; then
+            llvm_cflags=$("$LLVM_DIR/bin/llvm-config" --cxxflags 2>/dev/null || true)
+            if [[ "$llvm_cflags" == *"-stdlib=libc++"* ]]; then
+                llvm_uses_libcxx=true
+            elif [[ "$llvm_cflags" == *"_GLIBCXX"* ]]; then
+                llvm_uses_libcxx=false
+            elif ldd "$LLVM_DIR/bin/llvm-config" 2>/dev/null | grep -q "libc++.so"; then
+                llvm_uses_libcxx=true
+            fi
+        fi
+        if [[ "$llvm_uses_libcxx" == "false" && ! "$llvm_cflags" == *"_GLIBCXX"* ]]; then
+            for sup_lib in "$LLVM_DIR"/lib*/libLLVMSupport*; do
+                if [[ -f "$sup_lib" ]]; then
+                    if grep -q "_ZNSt3__1" "$sup_lib" 2>/dev/null; then
+                        llvm_uses_libcxx=true
+                        break
+                    fi
+                fi
+            done
+        fi
+        if [[ "$llvm_uses_libcxx" == "true" ]]; then
+            echo "Detected LLVM prebuilt with libc++: configuring Clang with libc++"
             local c_comp="${CC:-}"
             local cxx_comp="${CXX:-}"
             if [[ -z "$c_comp" && -x "$LLVM_DIR/bin/clang" && -x "$LLVM_DIR/bin/clang++" ]]; then
@@ -603,6 +626,8 @@ build_svf() {
                 "-DCMAKE_SHARED_LINKER_FLAGS=${extra_link_flags}"
                 "-DCMAKE_EXE_LINKER_FLAGS=${extra_link_flags}"
             )
+        else
+            echo "Detected LLVM prebuilt with libstdc++: using system default compiler"
         fi
     fi
 
