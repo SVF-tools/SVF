@@ -111,7 +111,12 @@ void AndersenBase::solveConstraints()
     // Start solving constraints
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
-    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit());
+    bool timeLimited = Options::AnderTimeLimit() > 0;
+    if (timeLimited)
+    {
+        assert(Options::FsTimeLimit() == 0 && "both -ander-time-limit and -fs-time-limit set.");
+        SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit());
+    }
 
     initWorklist();
     do
@@ -131,7 +136,10 @@ void AndersenBase::solveConstraints()
     while (reanalyze);
 
     // Analysis is finished, reset the alarm if we set it.
-    SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
+    if (timeLimited)
+    {
+        SVFUtil::stopAnalysisLimitTimer();
+    }
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 }
@@ -697,7 +705,7 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
 /**
  * Detect and collapse PWC nodes produced by processing gep edges, under the constraint of field limit.
  */
-inline void Andersen::collapsePWCNode(NodeID nodeId)
+void Andersen::collapsePWCNode(NodeID nodeId)
 {
     // If a node is a PWC node, collapse all its points-to target.
     // collapseNodePts() may change the points-to set of the nodes which have been processed
@@ -706,7 +714,7 @@ inline void Andersen::collapsePWCNode(NodeID nodeId)
         reanalyze = true;
 }
 
-inline void Andersen::collapseFields()
+void Andersen::collapseFields()
 {
     while (consCG->hasNodesToBeCollapsed())
     {
@@ -957,6 +965,49 @@ NodeBS Andersen::getMayAliases(NodeID node)
 }
 
 /*!
+ * Reuse answers only within a batch whose analysis state is unchanged. For example,
+ * queries for p and q with pts(p) = pts(q) = {o} need the same reverse-index walk.
+ * Keep the cache local so later batches and scalar queries observe current state.
+ */
+std::vector<NodeBS> Andersen::getMayAliasesBatch(const std::vector<NodeID>& nodes)
+{
+    std::vector<NodeBS> results;
+    results.reserve(nodes.size());
+    Map<PointsTo, NodeBS> answers;
+    size_t cachedMembers = 0;
+    // Bound the reuse cache separately from the caller-owned results.
+    constexpr size_t maxCachedSets = 256;
+    constexpr size_t maxCachedMembers = 1 << 20;
+    for (NodeID node : nodes)
+    {
+        const PointsTo& pts = getPts(node);
+        auto cached = answers.find(pts);
+        if (cached != answers.end())
+        {
+            results.push_back(cached->second);
+            continue;
+        }
+
+        NodeBS aliases = getMayAliases(node);
+        const size_t members = static_cast<size_t>(pts.count()) + aliases.count();
+        if (members > maxCachedMembers)
+        {
+            results.push_back(std::move(aliases));
+            continue;
+        }
+        if (answers.size() == maxCachedSets || cachedMembers > maxCachedMembers - members)
+        {
+            answers.clear();
+            cachedMembers = 0;
+        }
+        auto inserted = answers.emplace(pts, std::move(aliases));
+        cachedMembers += members;
+        results.push_back(inserted.first->second);
+    }
+    return results;
+}
+
+/*!
  * Answer a may-alias query from the reverse points-to sets, which say which nodes
  * may point to a given object.
  *
@@ -1040,16 +1091,21 @@ void Andersen::validateSuccessTests(std::string fun)
     {
         if (callNode->getCalledFunction() != checkFun)
             continue;
+        std::vector<NodeID> queries;
         for (u32_t i = 0; i < callNode->arg_size(); ++i)
+            queries.push_back(callNode->getArgument(i)->getId());
+        const std::vector<NodeBS> aliases = getMayAliasesBatch(queries);
+        assert(aliases.size() == queries.size() && "getMayAliasesBatch result count mismatch!");
+        for (size_t i = 0; i < queries.size(); ++i)
         {
-            NodeID ptr = callNode->getArgument(i)->getId();
+            const NodeID ptr = queries[i];
             NodeBS expected;
             for (SVFIR::iterator it = pag->begin(), eit = pag->end(); it != eit; ++it)
             {
                 if (mayAlias(ptr, it->first))
                     expected.set(it->first);
             }
-            if (pta->getMayAliases(ptr) == expected)
+            if (aliases[i] == expected && pta->getMayAliases(ptr) == expected)
                 outs() << sucMsg("\t SUCCESS :") << "getMayAliases check <id:" << ptr << "> at ("
                        << callNode->getSourceLoc() << ")\n";
             else

@@ -62,7 +62,7 @@ public:
     void initialize() override;
 
     /// Finalize analysis
-    virtual inline void finalize() override;
+    virtual void finalize() override;
 
     /// Add copy edge on constraint graph
     inline bool addCopyEdge(NodeID src, NodeID dst) override

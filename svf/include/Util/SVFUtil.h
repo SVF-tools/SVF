@@ -39,6 +39,12 @@
 #include "Util/NodeIDAllocator.h"
 #include "Util/ThreadAPI.h"
 
+#ifdef _MSC_VER
+#    define SVF_WEAK inline
+#else
+#    define SVF_WEAK __attribute__((weak))
+#endif
+
 namespace SVF
 {
 
@@ -100,6 +106,15 @@ bool getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb);
 
 /// Increase the stack size limit
 void increaseStackSize();
+
+/// Check whether a file exists at the given path
+bool fileExists(const std::string& path);
+
+/// Execute a shell command and capture its stdout output
+std::string getStdoutFromCommand(const std::string& command);
+
+/// Return the absolute path of the current module/executable
+std::string getCurrentSOPath();
 
 /*!
  * Compare two PointsTo according to their size and points-to elements.
@@ -249,14 +264,11 @@ inline void removeKey(const NodeID &key, NodeBS &keySet)
 /// Function to call when alarm for time limit hits.
 void timeLimitReached(int signum);
 
-/// Starts an analysis timer. If timeLimit is 0, sets no timer.
-/// If an alarm has already been set, does not set another.
-/// Returns whether we set a timer or not.
-bool startAnalysisLimitTimer(unsigned timeLimit);
+/// Starts analysis timer. timeLimit must be non-0. Timer must not be already set.
+void startAnalysisLimitTimer(unsigned timeLimit);
 
-/// Stops an analysis timer. limitTimerSet indicates whether the caller set the
-/// timer or not (return value of startLimitTimer).
-void stopAnalysisLimitTimer(bool limitTimerSet);
+/// Stops analysis timer.
+void stopAnalysisLimitTimer(void);
 
 /// Return true if the call is an external call (external library in function summary table)
 /// If the library function is redefined in the application code (e.g., memcpy), it will return false and will not be treated as an external call.

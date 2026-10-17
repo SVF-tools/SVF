@@ -1,0 +1,102 @@
+name: windows-build
+
+on: [push, pull_request]
+
+env:
+  SVF_Z3: 1
+
+jobs:
+  windows-build:
+    name: windows-build (${{ matrix.compiler }})
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [msvc, mingw]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSYS2 (MinGW only)
+        if: matrix.compiler == 'mingw'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANG64
+          update: true
+          install: >-
+            mingw-w64-clang-x86_64-cmake
+            mingw-w64-clang-x86_64-ninja
+            mingw-w64-clang-x86_64-z3
+            lcov
+
+      - name: Install dependencies (MSVC only)
+        if: matrix.compiler == 'msvc'
+        run: |
+          choco install ninja -y
+
+      - name: Add MSVC to PATH
+        if: matrix.compiler == 'msvc'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Clone Test-Suite
+        shell: bash
+        run: |
+          git clone --depth 1 "https://github.com/SVF-tools/Test-Suite.git" Test-Suite
+
+      - name: Build SVF (MSVC)
+        if: matrix.compiler == 'msvc'
+        shell: bash
+        run: |
+          source ./build.sh
+
+      - name: Build SVF (MinGW)
+        if: matrix.compiler == 'mingw'
+        shell: msys2 {0}
+        run: |
+          export SVF_COVERAGE=1
+          source ./build.sh
+
+      - name: Run CTests (MSVC)
+        if: matrix.compiler == 'msvc'
+        shell: powershell
+        working-directory: ${{ github.workspace }}/Release-build
+        run: |
+          $llvm_bin = (Get-Item "${{ github.workspace }}\llvm-*.obj\bin").FullName
+          $env:PATH = "${{ github.workspace }}\Release-build\bin;${{ github.workspace }}\Release-build\lib;${{ github.workspace }}\z3.obj\bin;$llvm_bin;$env:PATH"
+          ctest --output-on-failure -E symabs
+
+      - name: Run CTests (MinGW)
+        if: matrix.compiler == 'mingw'
+        shell: msys2 {0}
+        working-directory: ${{ github.workspace }}/Release-build
+        run: |
+          source ../setup.sh
+          export PATH="$(pwd)/bin:$(pwd)/lib:$PATH"
+          ctest --output-on-failure -E symabs
+
+      - name: Create Coverage Report (MinGW)
+        if: matrix.compiler == 'mingw'
+        shell: msys2 {0}
+        working-directory: ${{ github.workspace }}/Release-build
+        run: |
+          lcov --capture --directory ./ --output-file coverage-mingw.info --ignore-errors gcov,source || true
+          lcov --remove coverage-mingw.info '/usr/*' --output-file coverage-mingw.info --ignore-errors unused || true
+          lcov --remove coverage-mingw.info '*/z3.obj/*' --output-file coverage-mingw.info --ignore-errors unused || true
+          lcov --remove coverage-mingw.info '*/llvm-*.obj/*' --output-file coverage-mingw.info --ignore-errors unused || true
+          lcov --remove coverage-mingw.info '*/svf/include/FastCluster/*' --output-file coverage-mingw.info --ignore-errors unused || true
+          lcov --remove coverage-mingw.info '*/svf/lib/FastCluster/*' --output-file coverage-mingw.info --ignore-errors unused || true
+          
+          # Normalize paths in coverage-mingw.info to relative repository paths for Codecov
+          if [ -f coverage-mingw.info ]; then
+            sed -i 's|SF:[A-Za-z]:/[^/]*/[^/]*/[^/]*/|SF:|g' coverage-mingw.info || true
+            sed -i 's|SF:/[a-z]/a/SVF/SVF/|SF:|g' coverage-mingw.info || true
+          fi
+
+      - name: Upload Windows Coverage to Codecov
+        uses: codecov/codecov-action@v5
+        if: matrix.compiler == 'mingw'
+        with:
+          files: Release-build/coverage-mingw.info
+          flags: windows-${{ matrix.compiler }}
+          verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

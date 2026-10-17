@@ -77,6 +77,16 @@ static const ei_pair ei_pairs[]=
     {"SSL_CTX_new", SaberCheckerAPI::CK_ALLOC},
     {"SSL_new", SaberCheckerAPI::CK_ALLOC},
     {"VOS_MemAlloc", SaberCheckerAPI::CK_ALLOC},
+    {"HeapAlloc", SaberCheckerAPI::CK_ALLOC},
+    {"\01HeapAlloc", SaberCheckerAPI::CK_ALLOC},
+    {"LocalAlloc", SaberCheckerAPI::CK_ALLOC},
+    {"\01LocalAlloc", SaberCheckerAPI::CK_ALLOC},
+    {"GlobalAlloc", SaberCheckerAPI::CK_ALLOC},
+    {"\01GlobalAlloc", SaberCheckerAPI::CK_ALLOC},
+    {"_malloc_dbg", SaberCheckerAPI::CK_ALLOC},
+    {"\01_malloc_dbg", SaberCheckerAPI::CK_ALLOC},
+    {"_aligned_malloc", SaberCheckerAPI::CK_ALLOC},
+    {"\01_aligned_malloc", SaberCheckerAPI::CK_ALLOC},
 
     {"VOS_MemFree", SaberCheckerAPI::CK_FREE},
     {"cfree", SaberCheckerAPI::CK_FREE},
@@ -98,6 +108,16 @@ static const ei_pair ei_pairs[]=
     {"SSL_CTX_free", SaberCheckerAPI::CK_FREE},
     {"SSL_free", SaberCheckerAPI::CK_FREE},
     {"XFree", SaberCheckerAPI::CK_FREE},
+    {"HeapFree", SaberCheckerAPI::CK_FREE},
+    {"\01HeapFree", SaberCheckerAPI::CK_FREE},
+    {"LocalFree", SaberCheckerAPI::CK_FREE},
+    {"\01LocalFree", SaberCheckerAPI::CK_FREE},
+    {"GlobalFree", SaberCheckerAPI::CK_FREE},
+    {"\01GlobalFree", SaberCheckerAPI::CK_FREE},
+    {"_free_dbg", SaberCheckerAPI::CK_FREE},
+    {"\01_free_dbg", SaberCheckerAPI::CK_FREE},
+    {"_aligned_free", SaberCheckerAPI::CK_FREE},
+    {"\01_aligned_free", SaberCheckerAPI::CK_FREE},
 
     {"fopen", SaberCheckerAPI::CK_FOPEN},
     {"\01_fopen", SaberCheckerAPI::CK_FOPEN},
@@ -170,7 +190,3 @@ void SaberCheckerAPI::init()
         tdAPIMap[p->n]= p->t;
     }
 }
-
-
-
-

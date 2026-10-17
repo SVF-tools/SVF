@@ -85,6 +85,7 @@ private:
     TypeLocSetsMap typeLocSetsMap;	///< Map an arg to its base SVFType* and all its field location sets
     OffsetToGepVarMap GepObjVarMap;	///< Map a pair<base,off> to a gep obj node id
     MemObjToFieldsMap memToFieldsMap;	///< Map a mem object id to all its fields
+    NodeSet constantObjs;	///< Constant objects and their fields, recorded when each object node is added
     SVFStmtSet globSVFStmtSet;	///< Global PAGEdges without control flow information
     PHINodeMap phiNodeMap;	///< A set of phi copy edges
     FParmToCallPEMap fParmToCallPEMap; ///< Map a formal param to its CallPE
@@ -539,12 +540,11 @@ public:
         return (isBlkObj(id) || isConstantObj(id));
     }
 
+    /// Answered from a set filled in addObjNode, so the solvers' per-object test does
+    /// not look the node up in the node map.
     inline bool isConstantObj(NodeID id) const
     {
-        const BaseObjVar* obj = getBaseObject(id);
-        assert(obj && "not an object node?");
-        return isConstantSym(id) ||
-               obj->isConstDataOrConstGlobal();
+        return constantObjs.find(id) != constantObjs.end();
     }
     //@}
 

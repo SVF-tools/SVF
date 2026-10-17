@@ -1321,32 +1321,249 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
 }
 
 
-/*!
- * visit extract value instructions for structures in registers
- * TODO: for now we just assume the pointer after extraction points to blackhole
- * for example %24 = extractvalue { i32, %struct.s_hash* } %call34, 0
- * %24 is a pointer points to first field of a register value %call34
- * however we can not create %call34 as an memory object, as it is register value.
- * Is that necessary treat extract value as getelementptr instruction later to get more precise results?
- */
-void SVFIRBuilder::visitExtractValueInst(ExtractValueInst  &inst)
+/// Return the type at a constant aggregate path, including fixed vector lanes.
+static const Type* getAggregateFieldType(const Type* type,
+        const std::vector<unsigned>& indices)
 {
-    NodeID dst = getValueNode(&inst);
-    addBlackHoleAddrEdge(dst);
+    for (unsigned index : indices)
+    {
+        if (const auto* structure = SVFUtil::dyn_cast<StructType>(type))
+        {
+            if (index >= structure->getNumElements())
+                return nullptr;
+            type = structure->getElementType(index);
+        }
+        else if (const auto* array = SVFUtil::dyn_cast<ArrayType>(type))
+        {
+            if (index >= array->getNumElements())
+                return nullptr;
+            type = array->getElementType();
+        }
+        else if (const auto* vector = SVFUtil::dyn_cast<llvm::FixedVectorType>(type))
+        {
+            if (index >= vector->getNumElements())
+                return nullptr;
+            type = vector->getElementType();
+        }
+        else
+            return nullptr;
+    }
+    return type;
+}
+
+/// Describe one field definition without emitting any SVFIR statements.
+bool SVFIRBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
+        std::vector<AggregateFieldKey>& operands)
+{
+    const Value* value = field.first;
+    const AggregateField& path = field.second;
+    if (path.empty())
+        return value->getType()->isPointerTy() && !SVFUtil::isa<ConstantExpr>(value) &&
+               !SVFUtil::isa<UndefValue>(value) && llvmModuleSet()->hasValueNode(value);
+    if (const auto* insert = SVFUtil::dyn_cast<InsertValueInst>(value))
+    {
+        const auto insertedPath = insert->getIndices();
+        const size_t commonLength = std::min(insertedPath.size(), path.size());
+        if (!std::equal(insertedPath.begin(), insertedPath.begin() + commonLength, path.begin()))
+            operands.emplace_back(insert->getAggregateOperand(), path);
+        else if (insertedPath.size() <= path.size())
+            operands.emplace_back(insert->getInsertedValueOperand(),
+                                  AggregateField(path.begin() + insertedPath.size(), path.end()));
+        else
+            return false;
+    }
+    else if (const auto* extract = SVFUtil::dyn_cast<ExtractValueInst>(value))
+    {
+        AggregateField outer(extract->idx_begin(), extract->idx_end());
+        outer.insert(outer.end(), path.begin(), path.end());
+        operands.emplace_back(extract->getAggregateOperand(), std::move(outer));
+    }
+    else if (const auto* phi = SVFUtil::dyn_cast<PHINode>(value))
+    {
+        for (const Value* incoming : phi->incoming_values())
+            operands.emplace_back(incoming, path);
+    }
+    else if (const auto* select = SVFUtil::dyn_cast<SelectInst>(value))
+    {
+        if (!select->getCondition()->getType()->isIntegerTy(1))
+            return false;
+        operands.emplace_back(select->getTrueValue(), path);
+        operands.emplace_back(select->getFalseValue(), path);
+    }
+    else if (const auto* freeze = SVFUtil::dyn_cast<FreezeInst>(value))
+        operands.emplace_back(freeze->getOperand(0), path);
+    else if (const auto* insert = SVFUtil::dyn_cast<InsertElementInst>(value))
+    {
+        const auto* vector = SVFUtil::dyn_cast<llvm::FixedVectorType>(insert->getType());
+        const auto* index = SVFUtil::dyn_cast<ConstantInt>(insert->getOperand(2));
+        if (!vector || path.size() != 1 || !index ||
+                index->getValue().uge(vector->getNumElements()))
+            return false;
+        if (index->getZExtValue() == path.front())
+            operands.emplace_back(insert->getOperand(1), AggregateField{});
+        else
+            operands.emplace_back(insert->getOperand(0), path);
+    }
+    else if (const auto* shuffle = SVFUtil::dyn_cast<ShuffleVectorInst>(value))
+    {
+        const auto* vector = SVFUtil::dyn_cast<llvm::FixedVectorType>(shuffle->getOperand(0)->getType());
+        if (!vector || path.size() != 1)
+            return false;
+        int index = shuffle->getMaskValue(path.front());
+        if (index < 0)
+            return false;
+        unsigned width = vector->getNumElements();
+        operands.emplace_back(shuffle->getOperand(static_cast<unsigned>(index) / width),
+                              AggregateField{static_cast<unsigned>(index) % width});
+    }
+    else if (const auto* constant = SVFUtil::dyn_cast<Constant>(value))
+    {
+        for (unsigned index : path)
+        {
+            constant = constant->getAggregateElement(index);
+            if (!constant)
+                return false;
+        }
+        operands.emplace_back(constant, AggregateField{});
+    }
+    else
+        // Aggregate arguments, calls and loads need their own field interfaces.
+        return false;
+    return !operands.empty();
 }
 
 /*!
- * The �extractelement� instruction extracts a single scalar element from a vector at a specified index.
- * TODO: for now we just assume the pointer after extraction points to blackhole
- * The first operand of an �extractelement� instruction is a value of vector type.
- * The second operand is an index indicating the position from which to extract the element.
+ * Resolve the pointer field at indices in aggregate, returning its SVFIR ID in node.
+ * Reuse cached fields and existing scalar leaves; otherwise create typed field
+ * nodes with definitions at their LLVM producers. Phi predecessors and Select
+ * conditions are preserved, and repeated extracts share the same field node.
  *
- * <result> = extractelement <4 x i32> %vec, i32 0    ; yields i32
+ * Validate all dependencies before changing SVFIR, then allocate every field node
+ * before wiring definitions so loop-carried fields can refer to each other.
+ * Return false without changing node or emitting field definitions if any
+ * dependency is unsupported; the caller supplies the existing fallback.
+ */
+bool SVFIRBuilder::getAggregateFieldNode(const Value* aggregate,
+        const AggregateField& indices, NodeID& node)
+{
+    const AggregateFieldKey root{aggregate, indices};
+    Map<AggregateFieldKey, std::vector<AggregateFieldKey>> definitions;
+    std::vector<AggregateFieldKey> worklist{root};
+    while (!worklist.empty())
+    {
+        AggregateFieldKey field = std::move(worklist.back());
+        worklist.pop_back();
+        if (aggregateFieldNodes.count(field) || definitions.count(field))
+            continue;
+        const Type* type = getAggregateFieldType(field.first->getType(), field.second);
+        if (!type || !type->isPointerTy())
+            return false;
+        auto& operands = definitions[field];
+        if (!getAggregateFieldOperands(field, operands))
+            return false;
+        worklist.insert(worklist.end(), operands.begin(), operands.end());
+    }
+
+    // Validate the entire dependency graph before changing SVFIR. Allocate every
+    // field before wiring definitions, including loop-carried Phi/Select cycles.
+    for (const auto& definition : definitions)
+    {
+        const AggregateFieldKey& field = definition.first;
+        NodeID id;
+        if (field.second.empty())
+            id = getValueNode(field.first);
+        else if (SVFUtil::isa<Constant>(field.first))
+            id = getValueNode(definition.second.front().first);
+        else
+        {
+            const auto* producer = SVFUtil::cast<Instruction>(field.first);
+            const Type* type = getAggregateFieldType(producer->getType(), field.second);
+            id = NodeIDAllocator::get()->allocateValueId();
+            pag->addValNode(id, llvmModuleSet()->getSVFType(type),
+                            llvmModuleSet()->getICFGNode(producer));
+            llvmModuleSet()->addToSVFVar2LLVMValueMap(producer, pag->getGNode(id));
+        }
+        aggregateFieldNodes.emplace(field, id);
+    }
+
+    const Value* savedValue = curVal;
+    const SVFBasicBlock* savedBB = curBB;
+    for (const auto& definition : definitions)
+    {
+        const AggregateFieldKey& field = definition.first;
+        if (field.second.empty() || SVFUtil::isa<Constant>(field.first))
+            continue;
+        const auto* producer = SVFUtil::cast<Instruction>(field.first);
+        const auto& operands = definition.second;
+        NodeID dst = aggregateFieldNodes.at(field);
+        setCurrentLocation(producer, producer->getParent());
+        if (const auto* phi = SVFUtil::dyn_cast<PHINode>(producer))
+        {
+            for (unsigned i = 0; i < operands.size(); ++i)
+                addPhiStmt(dst, aggregateFieldNodes.at(operands[i]),
+                           llvmModuleSet()->getICFGNode(phi->getIncomingBlock(i)->getTerminator()));
+        }
+        else if (const auto* select = SVFUtil::dyn_cast<SelectInst>(producer))
+            addSelectStmt(dst, aggregateFieldNodes.at(operands[0]),
+                          aggregateFieldNodes.at(operands[1]), getValueNode(select->getCondition()));
+        else
+            addCopyEdge(aggregateFieldNodes.at(operands.front()), dst, CopyStmt::COPYVAL);
+    }
+    setCurrentLocation(savedValue, savedBB);
+    node = aggregateFieldNodes.at(root);
+    return true;
+}
+
+/*!
+ * Extract a pointer from a register aggregate using its shared field definition.
+ * For example:
+ *   %a = insertvalue {ptr} poison, ptr %p, 0
+ *   %b = insertvalue {ptr} poison, ptr %q, 0
+ *   %s = select i1 %cond, {ptr} %a, {ptr} %b
+ *   %r = extractvalue {ptr} %s, 0
+ *
+ * getAggregateFieldNode(%s, {0}, field) creates field copies at %a and %b and
+ * a SelectStmt with %cond at %s. This visitor adds one CopyStmt from field to
+ * %r. Further extracts of %s's field 0 reuse that definition. Unsupported
+ * fields keep the existing black-hole fallback.
+ */
+void SVFIRBuilder::visitExtractValueInst(ExtractValueInst &inst)
+{
+    NodeID dst = getValueNode(&inst);
+    NodeID field;
+    if (inst.getType()->isPointerTy() &&
+            getAggregateFieldNode(inst.getAggregateOperand(),
+                                  AggregateField(inst.idx_begin(), inst.idx_end()), field))
+        addCopyEdge(field, dst, CopyStmt::COPYVAL);
+    else
+        addBlackHoleAddrEdge(dst);
+}
+
+/*!
+ * Extract a constant pointer lane using the same field model as extractvalue.
+ * For example:
+ *   %a = insertelement <2 x ptr> poison, ptr %p, i32 0
+ *   %b = insertelement <2 x ptr> poison, ptr %q, i32 0
+ *   %s = select i1 %cond, <2 x ptr> %a, <2 x ptr> %b
+ *   %r = extractelement <2 x ptr> %s, i32 0
+ *
+ * Lane 0 is AggregateField{0}: its copies and conditional SelectStmt are defined
+ * at %a, %b and %s, then this visitor copies the lane into %r. Dynamic indices,
+ * scalable vectors and unsupported lane definitions keep the existing fallback.
  */
 void SVFIRBuilder::visitExtractElementInst(ExtractElementInst &inst)
 {
     NodeID dst = getValueNode(&inst);
-    addBlackHoleAddrEdge(dst);
+    NodeID field;
+    const auto* vector = SVFUtil::dyn_cast<llvm::FixedVectorType>(inst.getVectorOperandType());
+    const auto* index = SVFUtil::dyn_cast<ConstantInt>(inst.getIndexOperand());
+    if (inst.getType()->isPointerTy() && vector && index &&
+            index->getValue().ult(vector->getNumElements()) &&
+            getAggregateFieldNode(inst.getVectorOperand(),
+                                  AggregateField{static_cast<unsigned>(index->getZExtValue())}, field))
+        addCopyEdge(field, dst, CopyStmt::COPYVAL);
+    else
+        addBlackHoleAddrEdge(dst);
 }
 
 /*!

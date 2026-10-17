@@ -4,10 +4,15 @@
 
 # Find the LLVM instance to build & link SvfLLVM against (prioritise $LLVM_DIR)
 find_package(LLVM CONFIG REQUIRED HINTS ${LLVM_HOME} $ENV{LLVM_HOME} ${LLVM_DIR} $ENV{LLVM_DIR})
+add_compile_definitions(LLVM_BUILD_STATIC)
 
 # Import certain utilities (e.g. to make add_llvm_library() available)
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 include(AddLLVM)
+
+macro(add_llvm_executable target)
+  add_executable(${target} ${ARGN})
+endmacro()
 
 # If exceptions are disabled, verify the LLVM instance could never raise them
 if(LLVM_ENABLE_EH AND NOT SVF_ENABLE_EXCEPTIONS)
@@ -45,6 +50,9 @@ include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 link_directories(${LLVM_LIBRARY_DIRS})
 add_definitions(${_LLVM_DEFINITIONS})
 
+# Force dynamic dylib link checking to OFF so that llvm_map_components_to_libnames returns the individual component libraries.
+set(LLVM_LINK_LLVM_DYLIB OFF)
+
 # Use all components as link targets (picks dynamic/static libs); store in $LLVM_LIBRARIES
 if(LLVM_LINK_LLVM_DYLIB)
   set(LLVM_LIBRARIES LLVM)
@@ -72,8 +80,19 @@ else()
   list(FILTER LLVM_LIBRARIES EXCLUDE REGEX "^LLVMSvf(Core|LLVM)$|^LLVMSVFAnalysis$")
 endif()
 
-# Search in the executables dir for this LLVM's clang instance
-find_program(LLVM_CLANG clang ${LLVM_BINARY_DIR} ${LLVM_TOOLS_BINARY_DIR})
+if(MINGW)
+  # Append optional static support libraries if present in LLVM_LIBRARY_DIRS
+  foreach(_lib libzstd.a libxml2.a libz.a libffi.a)
+    if(EXISTS "${LLVM_LIBRARY_DIRS}/${_lib}")
+      list(APPEND LLVM_LIBRARIES "${LLVM_LIBRARY_DIRS}/${_lib}")
+    endif()
+  endforeach()
+  # Add required Windows system libraries for MinGW
+  list(APPEND LLVM_LIBRARIES bcrypt ntdll)
+endif()
+
+# Search in the executables dir or system PATH for this LLVM's clang instance
+find_program(LLVM_CLANG NAMES clang clang.exe clang-${LLVM_VERSION_MAJOR} PATHS ${LLVM_BINARY_DIR} ${LLVM_TOOLS_BINARY_DIR})
 if(NOT LLVM_CLANG)
   message(FATAL_ERROR "Failed to find 'clang' in LLVM package!")
 endif()
@@ -111,9 +130,15 @@ else()
 endif()
 
 # Add a custom command to compile the extapi.bc bitcode file from extapi.c
+if(WIN32)
+  set(EXTAPI_PIC_FLAG "")
+else()
+  set(EXTAPI_PIC_FLAG "-fPIC")
+endif()
+
 add_custom_command(
   OUTPUT ${SVF_BUILD_EXTAPI_BC}
-  COMMAND ${LLVM_CLANG} -w -S -c -fPIC -std=gnu11 -emit-llvm -o ${SVF_BUILD_EXTAPI_BC} ${EXTAPI_SRC}
+  COMMAND ${LLVM_CLANG} -w -S -c ${EXTAPI_PIC_FLAG} -std=gnu11 -emit-llvm -o ${SVF_BUILD_EXTAPI_BC} ${EXTAPI_SRC}
   COMMENT "Generating extapi.bc LLVM bitcode file..."
   MAIN_DEPENDENCY ${EXTAPI_SRC}
   DEPENDS ${EXTAPI_SRC}

@@ -19,9 +19,53 @@
         MEMCPY,            // memset() operations
         OVERWRITE,         // svf function overwrite app function
         STORE_TOP:Argi+,   // store nondeterministic top values through argument i and following arguments
+        SCANF:FormatArgi,  // argument i is a scanf-style format string; if it cannot write an address,
+                           // the STORE_TOP outputs get an unknown non-pointer value instead of a black-hole pointer
 */
 __attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
 void *malloc(unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg2")))
+void *HeapAlloc(void *hHeap, unsigned int dwFlags, unsigned long dwBytes)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg1")))
+void *LocalAlloc(unsigned int uFlags, unsigned long uBytes)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg1")))
+void *GlobalAlloc(unsigned int uFlags, unsigned long uBytes)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
+void *_malloc_dbg(unsigned long size, int blockType, const char *filename, int linenumber)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_HEAP_RET"), annotate("AllocSize:Arg0")))
+void *_aligned_malloc(unsigned long size, unsigned long alignment)
+{
+    return NULL;
+}
+
+__attribute__((annotate("REALLOC_HEAP_RET"), annotate("AllocSize:Arg3")))
+void *HeapReAlloc(void *hHeap, unsigned int dwFlags, void *lpMem, unsigned long dwBytes)
+{
+    return NULL;
+}
+
+__attribute__((annotate("REALLOC_HEAP_RET"), annotate("AllocSize:Arg1")))
+void *LocalReAlloc(void *hMem, unsigned long uBytes, unsigned int uFlags)
 {
     return NULL;
 }
@@ -806,37 +850,37 @@ unsigned long iconv(void* cd, char **__restrict inbuf, unsigned long *__restrict
     return 0;
 }
 
-__attribute__((annotate("STORE_TOP:Arg1+")))
+__attribute__((annotate("STORE_TOP:Arg1+"), annotate("SCANF:FormatArg0")))
 int scanf(const char *format, ...)
 {
     return 0;
 }
 
-__attribute__((annotate("STORE_TOP:Arg1+")))
+__attribute__((annotate("STORE_TOP:Arg1+"), annotate("SCANF:FormatArg0")))
 int __isoc99_scanf(const char *format, ...)
 {
     return 0;
 }
 
-__attribute__((annotate("STORE_TOP:Arg2+")))
+__attribute__((annotate("STORE_TOP:Arg2+"), annotate("SCANF:FormatArg1")))
 int fscanf(void *stream, const char *format, ...)
 {
     return 0;
 }
 
-__attribute__((annotate("STORE_TOP:Arg2+")))
+__attribute__((annotate("STORE_TOP:Arg2+"), annotate("SCANF:FormatArg1")))
 int __isoc99_fscanf(void *stream, const char *format, ...)
 {
     return 0;
 }
 
-__attribute__((annotate("STORE_TOP:Arg2+")))
+__attribute__((annotate("STORE_TOP:Arg2+"), annotate("SCANF:FormatArg1")))
 int sscanf(const char *str, const char *format, ...)
 {
     return 0;
 }
 
-__attribute__((annotate("STORE_TOP:Arg2+")))
+__attribute__((annotate("STORE_TOP:Arg2+"), annotate("SCANF:FormatArg1")))
 int __isoc99_sscanf(const char *str, const char *format, ...)
 {
     return 0;
@@ -1153,7 +1197,7 @@ void _ZNSt8__detail15_List_node_base7_M_hookEPS0_(void *arg0, void **arg1)
     *arg1 = arg0;
 }
 
-void* __dynamic_cast(void* source, const void* sourceTypeInfo, const void* targetTypeInfo, unsigned long castType)
+void* __dynamic_cast(void* source, const void* sourceTypeInfo, const void* targetTypeInfo, ptrdiff_t castType)
 {
     return source;
 }
