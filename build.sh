@@ -549,6 +549,25 @@ build_svf() {
             -DSVF_EXPORT_DYNAMIC=OFF
             -DSVF_Z3=ON
         )
+    elif [[ "$PLATFORM" == ubuntu-* ]]; then
+        local c_comp="${CC:-}"
+        local cxx_comp="${CXX:-}"
+        if [[ -z "$c_comp" && -x "$LLVM_DIR/bin/clang" && -x "$LLVM_DIR/bin/clang++" ]]; then
+            c_comp="$LLVM_DIR/bin/clang"
+            cxx_comp="$LLVM_DIR/bin/clang++"
+        fi
+        if [[ -n "$c_comp" && -n "$cxx_comp" ]]; then
+            cmake_generator_args+=(
+                -DCMAKE_C_COMPILER="$c_comp"
+                -DCMAKE_CXX_COMPILER="$cxx_comp"
+            )
+        fi
+        if [[ -x "$LLVM_DIR/bin/ld.lld" ]]; then
+            cmake_generator_args+=(
+                -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
+                -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld"
+            )
+        fi
     fi
 
     rm -rf "$build_dir"
