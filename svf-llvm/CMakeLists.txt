@@ -91,7 +91,7 @@ else()
     target
     transformutils
     demangle
-    Passes
+    passes
   )
   # When the host LLVM tree already contains an in-tree SVF integration,
   # llvm_map_components_to_libnames() can pull in those LLVMSvf* libraries
