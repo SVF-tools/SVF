@@ -177,6 +177,13 @@ public:
     //@}
 
 protected:
+    /// Add constraints that become due only once points-to sets are known; return true
+    /// if any was added (see Andersen::addDeferredConstraints)
+    virtual bool addDeferredConstraints()
+    {
+        return false;
+    }
+
     /// Constraint Graph
     ConstraintGraph* consCG;
     CallSite2DummyValPN
@@ -332,6 +339,28 @@ protected:
     virtual void handleLoadStore(ConstraintNode* node);
     virtual void processAddr(const AddrCGEdge* addr);
     virtual bool processGepPts(const PointsTo& pts, const GepCGEdge* edge);
+    //@}
+
+    /// Exposed provenance (-exposed-provenance, PNVI-ae)
+    ///
+    /// An inttoptr result is a pointer without provenance of its own: it may access any
+    /// object whose address was exposed, by a ptrtoint of a pointer to it or by an integer
+    /// load of a pointer's bytes. One value node, exposedNode, collects the exposed objects:
+    ///   ptrtoint p          p --copy--> exposedNode
+    ///   x = inttoptr i      exposedNode --copy--> x
+    ///   i = *p, i integer   o in pts(p) ==> o --copy--> exposedNode
+    /// A pointer loaded from integer bytes is read as an inttoptr of them. The dummy object
+    /// intObj marks objects that may hold integer bytes:
+    ///   *p = i, i integer   o in pts(p) ==> intObj in pts(o)   (except constant zero)
+    /// so it reaches a pointer loaded from such an object, and every node whose points-to
+    /// set holds intObj gets exposedNode's objects (addDeferredConstraints).
+    //@{
+    void initExposedProvenance();
+    bool addDeferredConstraints() override;
+    bool isIntegerStoreSource(NodeID src) const;
+    NodeID exposedNode = 0;
+    NodeID intObj = 0;
+    NodeBS intObjLinked;   ///< nodes already given exposedNode's objects
     //@}
 
     /// Add copy edge on constraint graph

@@ -132,6 +132,9 @@ void AndersenBase::solveConstraints()
         if (updateCallGraph(getIndirectCallsites()))
             reanalyze = true;
 
+        if (addDeferredConstraints())
+            reanalyze = true;
+
     }
     while (reanalyze);
 
@@ -438,12 +441,94 @@ void AndersenBase::normalizePointsTo()
 void Andersen::initialize()
 {
     resetData();
+    if (Options::ExposedProvenance() && exposedNode == 0)
+    {
+        exposedNode = pag->addDummyValNode();
+        intObj = pag->addDummyObjNode(SVFType::getSVFPtrType());
+    }
     AndersenBase::initialize();
+
+    if (Options::ExposedProvenance())
+        initExposedProvenance();
 
     if (Options::ClusterAnder()) cluster();
 
     /// Initialize worklist
     processAllAddr();
+}
+
+/*!
+ * Exposed provenance: connect ptrtoint operands to exposedNode and exposedNode to
+ * inttoptr results. The constraint graph drops both casts otherwise.
+ */
+void Andersen::initExposedProvenance()
+{
+    // The constraint graph drops nodes without edges, and the nodes of integers.
+    auto ensure = [this](NodeID id)
+    {
+        if (!consCG->hasConstraintNode(id))
+            consCG->addConstraintNode(new ConstraintNode(id), id);
+        return id;
+    };
+    ensure(exposedNode);
+    ensure(intObj);
+    for (const SVFStmt* stmt : pag->getSVFStmtSet(SVFStmt::Copy))
+    {
+        const CopyStmt* copy = SVFUtil::cast<CopyStmt>(stmt);
+        if (copy->isPtr2Int())
+            consCG->addCopyCGEdge(ensure(copy->getRHSVarID()), exposedNode);
+        else if (copy->isInt2Ptr())
+            consCG->addCopyCGEdge(exposedNode, ensure(copy->getLHSVarID()));
+    }
+    // The constraint graph keeps only loads and stores of pointers. Integer loads expose
+    // the pointers whose bytes they read, and integer stores write integer bytes:
+    // processLoad and processStore handle both.
+    for (const SVFStmt* stmt : pag->getSVFStmtSet(SVFStmt::Load))
+        if (!stmt->isPTAEdge())
+            consCG->addLoadCGEdge(ensure(stmt->getSrcID()), ensure(stmt->getDstID()));
+    for (const SVFStmt* stmt : pag->getSVFStmtSet(SVFStmt::Store))
+        if (!stmt->isPTAEdge() && isIntegerStoreSource(stmt->getSrcID()))
+            consCG->addStoreCGEdge(ensure(stmt->getSrcID()), ensure(stmt->getDstID()));
+}
+
+/*!
+ * Whether a store of src writes integer bytes that a pointer load could read as an
+ * address. A store of constant zero writes the bytes of null, which point nowhere.
+ */
+bool Andersen::isIntegerStoreSource(NodeID src) const
+{
+    const SVFVar* var = pag->getSVFVar(src);
+    if (var->isPointer())
+        return false;
+    if (const ConstIntValVar* c = SVFUtil::dyn_cast<ConstIntValVar>(var))
+        return c->getSExtValue() != 0;
+    return true;
+}
+
+/*!
+ * Give every node whose points-to set holds intObj the objects of exposedNode: it may be
+ * a pointer loaded from integer bytes, which accesses an exposed object.
+ */
+bool Andersen::addDeferredConstraints()
+{
+    if (!Options::ExposedProvenance())
+        return false;
+    bool changed = false;
+    for (const auto& it : *consCG)
+    {
+        NodeID id = it.first;
+        if (sccRepNode(id) != id || id == sccRepNode(exposedNode) || intObjLinked.test(id))
+            continue;
+        if (!getPts(id).test(intObj))
+            continue;
+        intObjLinked.set(id);
+        if (addCopyEdge(sccRepNode(exposedNode), id))
+        {
+            pushIntoWorklist(sccRepNode(exposedNode));
+            changed = true;
+        }
+    }
+    return changed;
 }
 
 /*!
@@ -578,8 +663,15 @@ bool Andersen::processLoad(NodeID node, const ConstraintEdge* load)
     ///       make gcc in spec 2000 pass the flow-sensitive analysis.
     ///       Try to handle black hole obj in an appropriate way.
 //	if (pag->isBlkObjOrConstantObj(node))
-    if (pag->isConstantObj(node) || pag->getSVFVar(load->getDstID())->isPointer() == false)
+    if (pag->isConstantObj(node))
         return false;
+    if (pag->getSVFVar(load->getDstID())->isPointer() == false)
+    {
+        // An integer load of a pointer's bytes exposes the pointer (PNVI-ae).
+        if (Options::ExposedProvenance() && node != intObj)
+            return addCopyEdge(node, sccRepNode(exposedNode));
+        return false;
+    }
 
     numOfProcessedLoad++;
 
@@ -598,8 +690,19 @@ bool Andersen::processStore(NodeID node, const ConstraintEdge* store)
     ///       make gcc in spec 2000 pass the flow-sensitive analysis.
     ///       Try to handle black hole obj in an appropriate way
 //	if (pag->isBlkObjOrConstantObj(node))
-    if (pag->isConstantObj(node) || pag->getSVFVar(store->getSrcID())->isPointer() == false)
+    if (pag->isConstantObj(node))
         return false;
+    if (pag->getSVFVar(store->getSrcID())->isPointer() == false)
+    {
+        // Integer bytes in node: a pointer loaded from them is an inttoptr of them.
+        if (Options::ExposedProvenance() && node != intObj &&
+                isIntegerStoreSource(store->getSrcID()) && addPts(node, intObj))
+        {
+            pushIntoWorklist(node);
+            return true;
+        }
+        return false;
+    }
 
     numOfProcessedStore++;
 

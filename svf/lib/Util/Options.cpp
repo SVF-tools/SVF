@@ -175,6 +175,14 @@ const Option<bool> Options::UndefAsNull(
     false
 );
 
+const Option<bool> Options::ExposedProvenance(
+    "exposed-provenance",
+    "Model ptrtoint/inttoptr with exposed provenance (PNVI-ae) in Andersen: an "
+    "inttoptr may target any object whose address a ptrtoint or an integer load "
+    "of a pointer's bytes exposed",
+    false
+);
+
 const Option<bool> Options::FirstFieldEqBase(
     "ff-eq-base",
     "Treat base objects as their first fields",
