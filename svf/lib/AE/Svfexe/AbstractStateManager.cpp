@@ -356,16 +356,52 @@ AbstractValue AbstractInterpretation::loadValue(const ValVar* pointer, const ICF
     return res;
 }
 
+bool AbstractInterpretation::isStrongUpdate(
+    const AddressValue& targets, const AbstractState& state) const
+{
+    if (targets.size() == 1 &&
+            !AbstractState::isNullOrBlackHoleAddr(*targets.begin()))
+    {
+        NodeID targetObj = state.getIDFromAddr(*targets.begin());
+        const BaseObjVar* baseObj = svfir->getBaseObject(targetObj);
+        AndersenWaveDiff* pta = preAnalysis->getPointerAnalysis();
+        // getNumOfElements() is already capped. Compare the full layout with
+        // the represented capacity to reject merged array/struct cells.
+        return !pta->isHeapMemObj(targetObj) &&
+               !pta->isLocalVarInRecursiveFun(targetObj) &&
+               !baseObj->isFieldInsensitive() &&
+               baseObj->getType()->getTypeInfo()->getNumOfFlattenElements() <=
+                   baseObj->getMaxFieldOffsetLimit() &&
+               (!baseObj->isArray() || svfir->isGepObjVar(targetObj));
+    }
+    else
+    {
+        return false;
+    }
+}
+
 void AbstractInterpretation::storeValue(const ValVar* pointer, const AbstractValue& val, const ICFGNode* node)
 {
     const AbstractValue& ptrVal = getAbsValue(pointer, node);
     AbstractState& as = getAbsState(node);
+    const bool strongUpdate = isStrongUpdate(ptrVal.getAddrs(), as);
     for (auto addr : ptrVal.getAddrs())
     {
         // Null and black-hole addresses have no backing object.
         if (AbstractState::isNullOrBlackHoleAddr(addr))
             continue;
-        updateAbsValue(svfir->getSVFVar(as.getIDFromAddr(addr)), val, node);
+        const ObjVar* target =
+            SVFUtil::cast<ObjVar>(svfir->getSVFVar(as.getIDFromAddr(addr)));
+        if (strongUpdate)
+        {
+            updateAbsValue(target, val, node);
+        }
+        else
+        {
+            AbstractValue joined = getAbsValue(target, node);
+            joined.join_with(val);
+            updateAbsValue(target, joined, node);
+        }
     }
 }
 
