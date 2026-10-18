@@ -356,7 +356,7 @@ protected:
     /// set holds intObj gets exposedNode's objects (addDeferredConstraints).
     //@{
     void initExposedProvenance();
-    bool addDeferredConstraints() override;
+    virtual bool addDeferredConstraints();
     bool isIntegerStoreSource(NodeID src) const;
     NodeID exposedNode = 0;
     NodeID intObj = 0;
