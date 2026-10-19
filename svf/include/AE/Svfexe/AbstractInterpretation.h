@@ -211,6 +211,11 @@ protected:
     /// updates, just like multi-target pointers and merged fields. A separate
     /// array element can be strongly updated if elements are modeled separately
     /// and its address is unique.
+    ///
+    /// state is needed because getIDFromAddr checks its freed-address set,
+    /// not just the address bits. An address recorded as freed resolves to the
+    /// BlackHole Obj and must not receive a strong update.
+    ///
     ///   int x=1, y=3; p=cond ? &x : &y; *p=2;  // x:[1,2], y:[2,3]
     ///   a=foo(); b=foo(); // foo returns malloc: a/b may name one heap summary
     bool isStrongUpdate(const AddressValue& targets,

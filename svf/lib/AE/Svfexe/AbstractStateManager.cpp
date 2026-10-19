@@ -362,6 +362,9 @@ bool AbstractInterpretation::isStrongUpdate(
     if (targets.size() == 1 &&
             !AbstractState::isNullOrBlackHoleAddr(*targets.begin()))
     {
+        // Null and BlackHole addresses are rejected above. An address may
+        // still be recorded as freed in state; getIDFromAddr then returns the
+        // BlackHole Obj, which isHeapMemObj rejects below as a DummyObjVar.
         NodeID targetObj = state.getIDFromAddr(*targets.begin());
         const BaseObjVar* baseObj = svfir->getBaseObject(targetObj);
         AndersenWaveDiff* pta = preAnalysis->getPointerAnalysis();
