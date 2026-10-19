@@ -68,28 +68,67 @@ private:
     bool getAggregateFieldNode(const Value* aggregate, const AggregateField& indices,
                                NodeID& node);
 
-    /// For:
-    ///   %a = call {ptr} @make(ptr %p)
-    ///   %q = extractvalue {ptr} %a, 0
-    /// Field {0}: object = slot, address = Addr(slot), value = Load(address).
-    /// The callee writes through address; %q copies the saved value.
+    /*!
+     * Carry a pointer field from a returned aggregate to its extraction.
+     * C example (Clang 21, x86-64 Linux, -O1; noinline preserves the call):
+     *   struct Pair { int *first, *second; };
+     *   __attribute__((noinline))
+     *   struct Pair make(int *p, int *q) { return (struct Pair){p, q}; }
+     *   int *first(int *p, int *q)
+     *   {
+     *       struct Pair a = make(p, q);
+     *       return a.first;
+     *   }
+     * Corresponding LLVM IR (names simplified, attributes omitted):
+     *   define {ptr, ptr} @make(ptr %p, ptr %q) {
+     *     %r0 = insertvalue {ptr, ptr} poison, ptr %p, 0
+     *     %r1 = insertvalue {ptr, ptr} %r0, ptr %q, 1
+     *     ret {ptr, ptr} %r1
+     *   }
+     *   define ptr @first(ptr %p, ptr %q) {
+     *     %a = tail call {ptr, ptr} @make(ptr %p, ptr %q)
+     *     %x = extractvalue {ptr, ptr} %a, 0
+     *     ret ptr %x
+     *   }
+     * Only field {0} is extracted. For this call, its AggregateCallField holds
+     * the NodeIDs of three distinct SVFIR nodes:
+     *   object  = O: a pointer-sized DummyObjVar, called the return slot.
+     *               This is synthetic storage, not the Pair object or an
+     *               LLVM alloca. "Slot" names O, not a fourth node.
+     *   address = A: a DummyValVar pointing to O, passed to make.
+     *   value   = V: a DummyValVar holding the pointer loaded from O after
+     *               the call; later uses read V without reloading O.
+     * Each static callsite has its own O/A/V for each demanded field.
+     * make also gets a synthetic output ArgValVar, named out_0 below.
+     * Using symbolic node names, the field transport is shown below; ordinary
+     * argument/return edges and whole-aggregate fallback edges are omitted:
+     *   first's call:  A = Addr(O)
+     *   make's entry:  CallPE(A, out_0)
+     *   make's %r0:    F0 = Copy(%p)
+     *   make's %r1:    F1 = Copy(F0)
+     *   make's return: Store(F1, out_0)
+     *   first's %x:    V = Load(A); %x = Copy(V)
+     * F0 and F1 are the shared field-{0} value nodes for %r0 and %r1.
+     * The snapshot load precedes the extraction copy at the same continuation.
+     * In aggregateCalls[%a], continuation is the %x instruction and fields[{0}]
+     * holds {O, A, V}. aggregateReturnParams[make][{0}] holds out_0's NodeID.
+     * All calls to make append their own A to match out_0, even with unused
+     * results. More demanded fields follow field-path order. These additions
+     * affect only SVFIR; the LLVM signatures above do not change.
+     */
     struct AggregateCallField
     {
         NodeID object;  ///< Pointer-sized return slot.
         NodeID address; ///< Output pointer passed to the callee.
         NodeID value;   ///< Snapshot loaded at the continuation; used by extracts.
     };
-    /// In the example above, continuation is %q and fields[{0}] holds its
-    /// slot, address and saved value. Each call has its own field entries.
+    /// Continuation and field nodes for one call; see the example above.
     struct AggregateCall
     {
         const Instruction* continuation;
         std::map<AggregateField, AggregateCallField> fields;
     };
-    /// If both fields of @pair's {ptr, ptr} result are needed, its map is
-    /// {{0}: out_0, {1}: out_1}, where each out is an SVFIR ArgValVar ID.
-    /// Every call passes matching slot addresses in this field order.
-    /// Only demanded fields get parameters; LLVM signatures stay unchanged.
+    /// Demanded field paths to output-parameter IDs, ordered per callee.
     Map<const Function*, std::map<AggregateField, NodeID>> aggregateReturnParams;
     /// All calls to a modeled callee, including calls with unused results.
     Map<const CallInst*, AggregateCall> aggregateCalls;

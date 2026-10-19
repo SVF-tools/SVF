@@ -1524,10 +1524,8 @@ bool SVFIRBuilder::getAggregateFieldNode(const Value* aggregate,
     return true;
 }
 
-/// For %a = call {ptr} @make(ptr %p), @make must be a returning, nonvariadic
-/// definition used only by direct calls with matching function types.
-/// A use such as store ptr @make, ptr @fp rejects the whole callee: calls
-/// through @fp could not receive the added output parameters.
+/// Require a returning, nonvariadic definition whose uses are all ordinary
+/// direct calls with matching types, so each call can pass the output pointers.
 static bool canModelAggregateReturn(const Function* fun)
 {
     if (!fun || LLVMUtil::isExtCall(fun) || fun->isVarArg() ||
@@ -1544,21 +1542,8 @@ static bool canModelAggregateReturn(const Function* fun)
     return true;
 }
 
-/*!
- * Lower a demanded return field, for example:
- *   %a = call {ptr} @make(ptr %p)
- *   %q = extractvalue {ptr} %a, 0
- * using the following SVFIR transport:
- *   caller:  addr = Addr(slot); CallParm(addr, out_0)
- *   return:  Store(shared_field, out_0)
- *   resume:  saved = Load(addr)
- *   extract: q = Copy(saved)
- *
- * Discover demands through the shared local field grammar, crossing eligible
- * calls to their return operands. Preallocate interfaces and field snapshots
- * before visiting instructions so forwarding and recursive calls can reuse them.
- * Only the SVFIR argument lists grow; LLVM signatures remain unchanged.
- */
+/// Discover demanded fields and preallocate output parameters, slots and
+/// snapshots before visiting instructions. See AggregateCallField's example.
 void SVFIRBuilder::initialiseAggregateReturns()
 {
     std::vector<AggregateFieldKey> worklist;
@@ -1667,10 +1652,8 @@ void SVFIRBuilder::initialiseAggregateReturns()
     setCurrentLocation(savedValue, savedBB);
 }
 
-/// For %a = call {ptr} @make(ptr %p) with field {0} demanded, emit
-/// addr = Addr(slot) and CallParm(addr, out_0), and append addr after %p
-/// in the call's SVFIR argument list. The snapshot Load(addr) was already
-/// placed at the continuation by initialiseAggregateReturns.
+/// Define slot addresses and append matching actual output arguments.
+/// initialiseAggregateReturns has already placed the snapshot loads.
 void SVFIRBuilder::addAggregateCallFields(const CallInst* call)
 {
     auto found = aggregateCalls.find(call);
