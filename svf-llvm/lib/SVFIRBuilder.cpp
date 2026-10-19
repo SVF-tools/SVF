@@ -1601,12 +1601,17 @@ void SVFIRBuilder::initialiseAggregateReturns()
                                     PointerType::getUnqual(llvmModuleSet()->getContext()));
     const Value* savedValue = curVal;
     const SVFBasicBlock* savedBB = curBB;
-    for (auto& function : aggregateReturnParams)
+    // Serialized points-to sets use NodeIDs. Allocate in function order,
+    // independent of pointer-keyed hash table iteration.
+    for (const Function* fun : llvmModuleSet()->getFunctionSet())
     {
-        const Function* fun = function.first;
+        auto found = aggregateReturnParams.find(fun);
+        if (found == aggregateReturnParams.end())
+            continue;
+        auto& fields = found->second;
         FunObjVar* svfFun = const_cast<FunObjVar*>(llvmModuleSet()->getFunObjVar(fun));
         const FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svfFun);
-        for (auto& field : function.second)
+        for (auto& field : fields)
         {
             NodeID id = NodeIDAllocator::get()->allocateValueId();
             pag->addArgValNode(id, svfFun->arg_size(), entry, svfFun, pointerType);
@@ -1618,10 +1623,20 @@ void SVFIRBuilder::initialiseAggregateReturns()
             arg->setName("aggregate_return_" + std::to_string(arg->getArgNo()));
             field.second = id;
         }
-        // Every call receives the same extra parameters, even if its result is unused.
+        // LLVM use-list order can change on bitcode reload. Order calls by
+        // their ICFG IDs so each call receives the same slot IDs on readback.
+        std::vector<const CallInst*> calls;
         for (const User* user : fun->users())
+            calls.push_back(SVFUtil::cast<CallInst>(user));
+        std::sort(calls.begin(), calls.end(), [this](const CallInst* lhs,
+                                                  const CallInst* rhs)
         {
-            const auto* call = SVFUtil::cast<CallInst>(user);
+            return llvmModuleSet()->getCallICFGNode(lhs)->getId() <
+                   llvmModuleSet()->getCallICFGNode(rhs)->getId();
+        });
+        // Include calls with unused results to keep actual/formal lists aligned.
+        for (const CallInst* call : calls)
+        {
             std::vector<const Instruction*> next;
             LLVMUtil::getNextInsts(call, next);
             assert(next.size() == 1 && "ordinary call must have one continuation");
@@ -1630,7 +1645,7 @@ void SVFIRBuilder::initialiseAggregateReturns()
             ICFGNode* callNode = llvmModuleSet()->getCallICFGNode(call);
             ICFGNode* resumeNode = llvmModuleSet()->getICFGNode(model.continuation);
             setCurrentLocation(model.continuation, model.continuation->getParent());
-            for (const auto& field : function.second)
+            for (const auto& field : fields)
             {
                 // DummyObjVar keeps the static slot nonlocal to the callee in MemSSA.
                 // Later extracts read the SSA snapshot, not the reused slot contents.
