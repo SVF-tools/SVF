@@ -257,25 +257,37 @@ void AbstractInterpretation::handleGlobalNode()
     AbstractValue blkPtrValue(IntervalValue::top());
     blkPtrValue.getAddrs().insert(BlackHoleObjAddr);
     abstractTrace[node][PAG::getPAG()->getBlkPtr()] = blkPtrValue;
+
+    propagateOutgoingObjValues(node);
 }
 
-/// Pull-based state merge: for each predecessor that has an abstract state,
-/// copy its state, apply branch refinement for conditional IntraCFGEdges,
-/// and join all feasible states into getAbsState(node).
+/// For each predecessor that has an abstract state, copy its state, apply
+/// branch refinement for conditional IntraCFGEdges, and join all feasible
+/// states into getAbsState(node).
 /// The join is dispatched through the manager so semi-sparse can skip
 /// ValVar merging.
 /// Returns true if at least one predecessor contributed state.
 bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
 {
+    return mergeStatesFromPredecessors(node, nullptr);
+}
+
+bool AbstractInterpretation::mergeStatesFromPredecessors(
+    const ICFGNode* node, std::vector<const ICFGNode*>* feasiblePreds)
+{
     // Collect all feasible predecessor states, then merge at the end.
     AbstractState merged;
     bool hasFeasiblePred = false;
+    if (feasiblePreds)
+        feasiblePreds->clear();
 
     for (auto& edge : node->getInEdges())
     {
         const ICFGNode* pred = edge->getSrcNode();
         if (!hasAbsState(pred))
             continue;
+
+        bool feasible = false;
 
         if (const IntraCFGEdge* intraCfgEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge))
         {
@@ -286,19 +298,19 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                 {
                     collectBranchRefinement(intraCfgEdge, predState);
                     joinStates(merged, predState);
-                    hasFeasiblePred = true;
+                    feasible = true;
                 }
             }
             else
             {
                 joinStates(merged, getAbsState(pred));
-                hasFeasiblePred = true;
+                feasible = true;
             }
         }
         else if (SVFUtil::isa<CallCFGEdge>(edge))
         {
             joinStates(merged, getAbsState(pred));
-            hasFeasiblePred = true;
+            feasible = true;
         }
         else if (SVFUtil::isa<RetCFGEdge>(edge))
         {
@@ -306,7 +318,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
             {
             case TOP:
                 joinStates(merged, getAbsState(pred));
-                hasFeasiblePred = true;
+                feasible = true;
                 break;
             case WIDEN_ONLY:
             case WIDEN_NARROW:
@@ -316,11 +328,18 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                 if (hasAbsState(callSite))
                 {
                     joinStates(merged, getAbsState(pred));
-                    hasFeasiblePred = true;
+                    feasible = true;
                 }
                 break;
             }
             }
+        }
+
+        if (feasible)
+        {
+            hasFeasiblePred = true;
+            if (feasiblePreds)
+                feasiblePreds->push_back(pred);
         }
     }
 
@@ -514,10 +533,47 @@ bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
 
     AbstractValue condVal = getAbsValue(var, pred);
     IntervalValue switch_cond = condVal.getInterval();
-    switch_cond.meet_with(IntervalValue(succ, succ));
-    if (switch_cond.isBottom())
-        return false;
-    return true;
+    bool feasible = false;
+    if (!switch_cond.isBottom())
+    {
+        if (succ != -1)
+        {
+            switch_cond.meet_with(IntervalValue(succ, succ));
+            feasible = !switch_cond.isBottom();
+        }
+        else if (switch_cond.is_infinite())
+        {
+            feasible = true;
+        }
+        else
+        {
+            // -1 labels the default route; it is not a comparison with -1.
+            // For switch(a) { case 1: ...; default: ...; }, a=[1,2] keeps
+            // both routes, whereas a=[1,1] excludes the default route.
+            // A literal case -1 has the same label, so keep that route
+            // conservatively rather than counting it as an explicit case.
+            Set<s64_t> coveredCases;
+            for (const ICFGEdge* successor : pred->getOutEdges())
+            {
+                const IntraCFGEdge* caseEdge =
+                    SVFUtil::dyn_cast<IntraCFGEdge>(successor);
+                if (caseEdge && caseEdge->getSuccessorCondValue() != -1)
+                {
+                    s64_t caseValue = caseEdge->getSuccessorCondValue();
+                    IntervalValue caseRange = switch_cond;
+                    caseRange.meet_with(IntervalValue(caseValue, caseValue));
+                    if (!caseRange.isBottom())
+                        coveredCases.insert(caseValue);
+                }
+            }
+            // An interval has width+1 integer values. Use unsigned subtraction
+            // and compare width to the case count without overflowing width+1.
+            u64_t width = static_cast<u64_t>(switch_cond.ub().getIntNumeral()) -
+                          static_cast<u64_t>(switch_cond.lb().getIntNumeral());
+            feasible = width >= coveredCases.size();
+        }
+    }
+    return feasible;
 }
 
 void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
@@ -607,6 +663,12 @@ void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
             }
         }
     }
+    else if (succ == -1)
+    {
+        // The default route does not imply cond == -1. For example,
+        // switch(a) { case 1: ...; default: use(a); } with a=[-1,2]
+        // must retain both -1 and 2 here. Keep the incoming interval.
+    }
     else
     {
         const SVFVar* var = cond;
@@ -674,8 +736,8 @@ void AbstractInterpretation::recordBranchRefinement(
     // `loadIcfg` it would corrupt the obj's authoritative value at its
     // load site.  AbstractState::store on the transient `as` is the
     // only sound primitive — and recordBranchRefinement itself is the
-    // virtual customisation point (FullSparse routes to
-    // refinementTrace instead of touching `as`).
+    // virtual customisation point. FullSparse instead records the constraint
+    // in branchConstraints[succ], then applies it after incoming Obj values merge.
     const ObjVar* objVar = SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(objId));
     if (objVar && hasAbsValue(objVar, loadIcfg))
     {
@@ -739,15 +801,22 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
         handleSVFStatement(stmt);
     }
 
+    // At call nodes this sends actual-in memory values before the callee is
+    // analyzed. Full-sparse also runs the hook again after the call so values
+    // produced by the callee or an external summary can leave the call site.
+    propagateOutgoingObjValues(node);
+
     // Handle call sites
     if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
     {
         handleCallSite(callNode);
+        propagateOutgoingObjValues(node);
     }
 
     // Run detectors
     for (auto& detector: detectors)
         detector->detect(node);
+
     stat->countStateSize();
 
     // Track this node as analyzed (for coverage statistics across all entry points)
