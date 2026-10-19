@@ -92,27 +92,31 @@ private:
      *   }
      * Only field {0} is extracted. For this call, its AggregateCallField holds
      * the NodeIDs of three distinct SVFIR nodes:
-     *   object  = O: a pointer-sized DummyObjVar, called the return slot.
+     *   object  = obj: a pointer-sized DummyObjVar, called the return slot.
      *               This is synthetic storage, not the Pair object or an
-     *               LLVM alloca. "Slot" names O, not a fourth node.
-     *   address = A: a DummyValVar pointing to O, passed to make.
-     *   value   = V: a DummyValVar holding the pointer loaded from O after
-     *               the call; later uses read V without reloading O.
-     * Each static callsite has its own O/A/V for each demanded field.
-     * make also gets a synthetic output ArgValVar, named out_0 below.
+     *               LLVM alloca. "Slot" names obj, not a fourth node.
+     *   address = A: a DummyValVar pointing to obj, passed to make.
+     *   value   = V: a DummyValVar holding the pointer loaded from obj after
+     *               the call; later uses read V without reloading obj.
+     * Each static callsite has its own obj/A/V for each demanded field.
+     * make also gets a synthetic output ArgValVar, named out_obj below.
      * Using symbolic node names, the field transport is shown below; ordinary
      * argument/return edges and whole-aggregate fallback edges are omitted:
-     *   first's call:  A = Addr(O)
-     *   make's entry:  CallPE(A, out_0)
+     *   first's call:  A = Addr(obj)
+     *   make's entry:  CallPE(A, out_obj)
      *   make's %r0:    F0 = Copy(%p)
      *   make's %r1:    F1 = Copy(F0)
-     *   make's return: Store(F1, out_0)
+     *   make's return: Store(F1, out_obj)
      *   first's %x:    V = Load(A); %x = Copy(V)
-     * F0 and F1 are the shared field-{0} value nodes for %r0 and %r1.
+     * insertvalue creates a new aggregate: %r0 = {%p, poison},
+     * %r1 = {%p, %q}. The second insertion preserves field {0}.
+     * F0 models (%r0, {0}) and F1 models (%r1, {0}); field {1} is not
+     * extracted here, so it needs no separate field node.
      * The snapshot load precedes the extraction copy at the same continuation.
      * In aggregateCalls[%a], continuation is the %x instruction and fields[{0}]
-     * holds {O, A, V}. aggregateReturnParams[make][{0}] holds out_0's NodeID.
-     * All calls to make append their own A to match out_0, even with unused
+     * holds {obj, A, V}. aggregateReturnParams[make][{0}] holds the NodeID
+     * of out_obj.
+     * All calls to make append their own A to match out_obj, even with unused
      * results. More demanded fields follow field-path order. These additions
      * affect only SVFIR; the LLVM signatures above do not change.
      */
