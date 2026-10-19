@@ -185,7 +185,13 @@ public:
                             const ICFGNode* node);
 
     const SVFType* getPointeeElement(const ObjVar* var, const ICFGNode* node);
-    u32_t getAllocaInstByteSize(const AddrStmt* addr);
+    struct AllocationSizeBounds
+    {
+        u32_t lowerBound;
+        u32_t upperBound;
+    };
+
+    AllocationSizeBounds getAllocaInstByteSize(const AddrStmt* addr);
 
     // ---- Direct Trace Access ------------------------------------------
 
