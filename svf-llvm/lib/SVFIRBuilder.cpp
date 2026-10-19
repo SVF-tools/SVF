@@ -1642,7 +1642,7 @@ void SVFIRBuilder::initialiseAggregateReturns()
             model.continuation = next.front();
             ICFGNode* callNode = llvmModuleSet()->getCallICFGNode(call);
             ICFGNode* resumeNode = llvmModuleSet()->getICFGNode(model.continuation);
-            setCurrentLocation(call, call->getParent());
+            setCurrentLocation(model.continuation, model.continuation->getParent());
             for (const auto& field : function.second)
             {
                 // DummyObjVar keeps the static slot nonlocal to the callee in MemSSA.
@@ -1658,8 +1658,7 @@ void SVFIRBuilder::initialiseAggregateReturns()
                 aggregateFieldNodes.emplace(AggregateFieldKey{call, field.first}, value);
                 // Snapshots must precede field statements at the continuation,
                 // even when LLVM block order differs from dominance order.
-                if (LoadStmt* load = pag->addLoadStmt(address, value))
-                    setCurrentBBAndValueForPAGEdge(load, resumeNode);
+                addLoadEdge(address, value);
             }
         }
     }
@@ -1702,11 +1701,9 @@ void SVFIRBuilder::addAggregateReturnStores(ReturnInst& inst)
         if (!getAggregateFieldNode(inst.getReturnValue(), field.first, value))
         {
             value = pag->addDummyValNode(NodeIDAllocator::get()->allocateValueId(), location);
-            if (PAGEdge* edge = pag->addBlackHoleAddrStmt(value))
-                setCurrentBBAndValueForPAGEdge(edge, location);
+            addBlackHoleAddrEdge(value);
         }
-        if (StoreStmt* store = pag->addStoreStmt(value, field.second, location))
-            setCurrentBBAndValueForPAGEdge(store, location);
+        addStoreEdge(value, field.second);
     }
 }
 
@@ -2279,7 +2276,7 @@ NodeID SVFIRBuilder::getDirectAccessFieldZeroValVar(const Value* ptr, const Type
  * Function             AddrEdge  (SVFIRBuilder::visitGlobal)
  * Constant             StoreEdge (SVFIRBuilder::InitialGlobal)
  */
-void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge, ICFGNode* location)
+void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
 {
     if (SVFIR::pagReadFromTXT())
         return;
@@ -2306,8 +2303,10 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge, ICFGNode* locat
         if (!(SVFUtil::isa<GepStmt>(edge) && SVFUtil::isa<GepValVar>(edge->getDstNode())))
             assert(curBB && "instruction does not have a basic block??");
 
-        /// We will have one unique function exit ICFGNode for all returns
-        if(SVFUtil::isa<ReturnInst>(curInst))
+        /// Only the return-value Phi merges at the shared function exit.
+        /// Aggregate field stores, fallback addresses and a snapshot load before
+        /// an immediate return belong to the individual return instruction.
+        if(SVFUtil::isa<ReturnInst>(curInst) && SVFUtil::isa<PhiStmt>(edge))
         {
             icfgNode = pag->getICFG()->getFunExitICFGNode(llvmMS->getFunObjVar(curInst->getFunction()));
         }
@@ -2347,8 +2346,6 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge, ICFGNode* locat
         assert(false && "what else value can we have?");
     }
 
-    if (location)
-        icfgNode = location;
     pag->addToSVFStmtList(icfgNode,edge);
     icfgNode->addSVFStmt(edge);
     if(const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(edge))

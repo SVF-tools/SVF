@@ -336,8 +336,7 @@ protected:
 
     NodeID getDirectAccessFieldZeroValVar(const Value* ptr, const Type* accessTy);
 
-    /// An explicit location overrides ICFG placement, retaining curVal/curBB metadata.
-    void setCurrentBBAndValueForPAGEdge(PAGEdge* edge, ICFGNode* location = nullptr);
+    void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 
     inline void addBlackHoleAddrEdge(NodeID node)
     {
