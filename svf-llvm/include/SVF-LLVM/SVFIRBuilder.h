@@ -68,6 +68,79 @@ private:
     bool getAggregateFieldNode(const Value* aggregate, const AggregateField& indices,
                                NodeID& node);
 
+    /*!
+     * Carry a pointer field from a returned aggregate to its extraction.
+     * C example (Clang 21, x86-64 Linux, -O1; noinline preserves the call):
+     *   struct Pair { int *first, *second; };
+     *   __attribute__((noinline))
+     *   struct Pair make(int *p, int *q) { return (struct Pair){p, q}; }
+     *   int *first(int *p, int *q)
+     *   {
+     *       struct Pair a = make(p, q);
+     *       return a.first;
+     *   }
+     * Corresponding LLVM IR (names simplified, attributes omitted):
+     *   define {ptr, ptr} @make(ptr %p, ptr %q) {
+     *     %r0 = insertvalue {ptr, ptr} poison, ptr %p, 0
+     *     %r1 = insertvalue {ptr, ptr} %r0, ptr %q, 1
+     *     ret {ptr, ptr} %r1
+     *   }
+     *   define ptr @first(ptr %p, ptr %q) {
+     *     %a = tail call {ptr, ptr} @make(ptr %p, ptr %q)
+     *     %x = extractvalue {ptr, ptr} %a, 0
+     *     ret ptr %x
+     *   }
+     * Only field {0} is extracted. For this call, its AggregateCallField holds
+     * the NodeIDs of three distinct SVFIR nodes:
+     *   object  = obj: a pointer-sized DummyObjVar, called the return slot.
+     *               This is synthetic storage, not the Pair object or an
+     *               LLVM alloca. "Slot" names obj, not a fourth node.
+     *   address = A: a DummyValVar pointing to obj, passed to make.
+     *   value   = V: a DummyValVar holding the pointer loaded from obj after
+     *               the call; later uses read V without reloading obj.
+     * Each static callsite has its own obj/A/V for each demanded field.
+     * make also gets a synthetic output ArgValVar, named out_obj below.
+     * Using symbolic node names, the field transport is shown below; ordinary
+     * argument/return edges and whole-aggregate fallback edges are omitted:
+     *   first's call:  A = Addr(obj)
+     *   make's entry:  CallPE(A, out_obj)
+     *   make's %r0:    F0 = Copy(%p)
+     *   make's %r1:    F1 = Copy(F0)
+     *   make's return: Store(F1, out_obj)
+     *   first's %x:    V = Load(A); %x = Copy(V)
+     * insertvalue creates a new aggregate: %r0 = {%p, poison},
+     * %r1 = {%p, %q}. The second insertion preserves field {0}.
+     * F0 models (%r0, {0}) and F1 models (%r1, {0}); field {1} is not
+     * extracted here, so it needs no separate field node.
+     * The snapshot load precedes the extraction copy at the same continuation.
+     * In aggregateCalls[%a], continuation is the %x instruction and fields[{0}]
+     * holds {obj, A, V}. aggregateReturnParams[make][{0}] holds the NodeID
+     * of out_obj.
+     * All calls to make append their own A to match out_obj, even with unused
+     * results. More demanded fields follow field-path order. These additions
+     * affect only SVFIR; the LLVM signatures above do not change.
+     */
+    struct AggregateCallField
+    {
+        NodeID object;  ///< Pointer-sized return slot.
+        NodeID address; ///< Output pointer passed to the callee.
+        NodeID value;   ///< Snapshot loaded at the continuation; used by extracts.
+    };
+    /// Continuation and field nodes for one call; see the example above.
+    struct AggregateCall
+    {
+        const Instruction* continuation;
+        std::map<AggregateField, AggregateCallField> fields;
+    };
+    /// Demanded field paths to output-parameter IDs, ordered per callee.
+    Map<const Function*, std::map<AggregateField, NodeID>> aggregateReturnParams;
+    /// All calls to a modeled callee, including calls with unused results.
+    Map<const CallInst*, AggregateCall> aggregateCalls;
+
+    void initialiseAggregateReturns();
+    void addAggregateCallFields(const CallInst* call);
+    void addAggregateReturnStores(ReturnInst& inst);
+
 public:
     /// Constructor
     SVFIRBuilder(): pag(SVFIR::getPAG()), curBB(nullptr),curVal(nullptr)
