@@ -359,23 +359,26 @@ AbstractValue AbstractInterpretation::loadValue(const ValVar* pointer, const ICF
 bool AbstractInterpretation::isStrongUpdate(
     const AddressValue& targets, const AbstractState& state) const
 {
-    if (targets.size() == 1 &&
-            !AbstractState::isNullOrBlackHoleAddr(*targets.begin()))
-    {
-        // Null and BlackHole addresses are rejected above. An address may
-        // still be recorded as freed in state; getIDFromAddr then returns the
-        // BlackHole Obj, which isHeapMemObj rejects below as a DummyObjVar.
+    if (targets.size() == 1) {
+        // Decode with state so freed addresses become the BlackHole Obj ID.
         NodeID targetObj = state.getIDFromAddr(*targets.begin());
-        const BaseObjVar* baseObj = svfir->getBaseObject(targetObj);
-        AndersenWaveDiff* pta = preAnalysis->getPointerAnalysis();
-        // getNumOfElements() is already capped. Compare the full layout with
-        // the represented capacity to reject merged array/struct cells.
-        return !pta->isHeapMemObj(targetObj) &&
-               !pta->isLocalVarInRecursiveFun(targetObj) &&
-               !baseObj->isFieldInsensitive() &&
-               baseObj->getType()->getTypeInfo()->getNumOfFlattenElements() <=
-                   baseObj->getMaxFieldOffsetLimit() &&
-               (!baseObj->isArray() || svfir->isGepObjVar(targetObj));
+        // Restore the address tag for the Null/BlackHole check, including freed targets.
+        if (!AbstractState::isNullOrBlackHoleAddr(targetObj | AddressMask)) {
+            const BaseObjVar* baseObj = svfir->getBaseObject(targetObj);
+            AndersenWaveDiff* pta = preAnalysis->getPointerAnalysis();
+            // getNumOfElements() is already capped. Compare the full layout with
+            // the represented capacity to reject merged array/struct cells.
+            return !pta->isHeapMemObj(targetObj) &&
+                !pta->isLocalVarInRecursiveFun(targetObj) &&
+                !baseObj->isFieldInsensitive() &&
+                baseObj->getType()->getTypeInfo()->getNumOfFlattenElements() <=
+                    baseObj->getMaxFieldOffsetLimit() &&
+                (!baseObj->isArray() || svfir->isGepObjVar(targetObj));
+        }
+        else
+        {
+            return false;
+        }
     }
     else
     {
