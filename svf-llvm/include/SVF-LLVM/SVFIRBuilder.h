@@ -68,20 +68,28 @@ private:
     bool getAggregateFieldNode(const Value* aggregate, const AggregateField& indices,
                                NodeID& node);
 
-    /// One static return slot and a separate SSA snapshot per callsite/field.
+    /// For:
+    ///   %a = call {ptr} @make(ptr %p)
+    ///   %q = extractvalue {ptr} %a, 0
+    /// Field {0}: object = slot, address = Addr(slot), value = Load(address).
+    /// The callee writes through address; %q copies the saved value.
     struct AggregateCallField
     {
         NodeID object;  ///< Pointer-sized return slot.
         NodeID address; ///< Output pointer passed to the callee.
         NodeID value;   ///< Snapshot loaded at the continuation; used by extracts.
     };
+    /// In the example above, continuation is %q and fields[{0}] holds its
+    /// slot, address and saved value. Each call has its own field entries.
     struct AggregateCall
     {
         const Instruction* continuation;
         std::map<AggregateField, AggregateCallField> fields;
     };
-    /// One synthetic output ArgValVar per demanded callee field. Ordered paths
-    /// keep appended formal and actual arguments in the same positions.
+    /// If both fields of @pair's {ptr, ptr} result are needed, its map is
+    /// {{0}: out_0, {1}: out_1}, where each out is an SVFIR ArgValVar ID.
+    /// Every call passes matching slot addresses in this field order.
+    /// Only demanded fields get parameters; LLVM signatures stay unchanged.
     Map<const Function*, std::map<AggregateField, NodeID>> aggregateReturnParams;
     /// All calls to a modeled callee, including calls with unused results.
     Map<const CallInst*, AggregateCall> aggregateCalls;

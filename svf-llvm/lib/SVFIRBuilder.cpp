@@ -1524,8 +1524,10 @@ bool SVFIRBuilder::getAggregateFieldNode(const Value* aggregate,
     return true;
 }
 
-/// Append output parameters only when every use can receive the same lowered
-/// interface. Matching ordinary direct calls give each snapshot one continuation.
+/// For %a = call {ptr} @make(ptr %p), @make must be a returning, nonvariadic
+/// definition used only by direct calls with matching function types.
+/// A use such as store ptr @make, ptr @fp rejects the whole callee: calls
+/// through @fp could not receive the added output parameters.
 static bool canModelAggregateReturn(const Function* fun)
 {
     if (!fun || LLVMUtil::isExtCall(fun) || fun->isVarArg() ||
@@ -1665,8 +1667,10 @@ void SVFIRBuilder::initialiseAggregateReturns()
     setCurrentLocation(savedValue, savedBB);
 }
 
-/// Define slot addresses and append actual output arguments for a modeled call.
-/// initialiseAggregateReturns has already placed its snapshot loads.
+/// For %a = call {ptr} @make(ptr %p) with field {0} demanded, emit
+/// addr = Addr(slot) and CallParm(addr, out_0), and append addr after %p
+/// in the call's SVFIR argument list. The snapshot Load(addr) was already
+/// placed at the continuation by initialiseAggregateReturns.
 void SVFIRBuilder::addAggregateCallFields(const CallInst* call)
 {
     auto found = aggregateCalls.find(call);
