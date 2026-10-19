@@ -1598,7 +1598,7 @@ void SVFIRBuilder::initialiseAggregateReturns()
     }
 
     const SVFType* pointerType = llvmModuleSet()->getSVFType(
-                                    PointerType::getUnqual(llvmModuleSet()->getContext()));
+                                     PointerType::getUnqual(llvmModuleSet()->getContext()));
     const Value* savedValue = curVal;
     const SVFBasicBlock* savedBB = curBB;
     // Serialized points-to sets use NodeIDs. Allocate in function order,
@@ -1629,7 +1629,7 @@ void SVFIRBuilder::initialiseAggregateReturns()
         for (const User* user : fun->users())
             calls.push_back(SVFUtil::cast<CallInst>(user));
         std::sort(calls.begin(), calls.end(), [this](const CallInst* lhs,
-                                                  const CallInst* rhs)
+                  const CallInst* rhs)
         {
             return llvmModuleSet()->getCallICFGNode(lhs)->getId() <
                    llvmModuleSet()->getCallICFGNode(rhs)->getId();
