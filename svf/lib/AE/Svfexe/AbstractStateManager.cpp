@@ -357,36 +357,33 @@ AbstractValue AbstractInterpretation::loadValue(const ValVar* pointer, const ICF
 }
 
 bool AbstractInterpretation::isStrongUpdate(
-    const AddressValue& targets, const AbstractState& state) const
+    const AddressValue& targets,
+    const AbstractState& state) const
 {
-    bool isSU = false;
-    if (targets.size() == 1)
-    {
-        // Decode with state so freed addresses become the BlackHole Obj ID.
-        NodeID targetObj = state.getIDFromAddr(*targets.begin());
-        if (!svfir->isNullOrBlkObj(targetObj))
-        {
-            const BaseObjVar* baseObj = svfir->getBaseObject(targetObj);
-            AndersenWaveDiff* pta = preAnalysis->getPointerAnalysis();
-            // Exclude heap summaries. For other objects, !isArrayMemObj allows
-            // non-array targets; isGepObjVar also allows individual array elements,
-            // but not array bases. Remaining checks below reject summary cells.
-            if (!pta->isHeapMemObj(targetObj) &&
-                    (!pta->isArrayMemObj(targetObj) || svfir->isGepObjVar(targetObj)))
-            {
-                if (!baseObj->isFieldInsensitive() &&
-                        !pta->isLocalVarInRecursiveFun(targetObj))
-                {
-                    // A GepObjVar may still summarize multiple elements when arrays
-                    // are collapsed or field-limit is exceeded. Compare the full
-                    // layout with the represented capacity to reject merged cells.
-                    isSU = baseObj->getType()->getTypeInfo()->getNumOfFlattenElements() <=
-                           baseObj->getMaxFieldOffsetLimit();
-                }
-            }
-        }
-    }
-    return isSU;
+    if (targets.size() != 1)
+        return false;
+
+    const NodeID obj = state.getIDFromAddr(*targets.begin());
+    if (svfir->isNullOrBlkObj(obj))
+        return false;
+
+    const BaseObjVar* base = svfir->getBaseObject(obj);
+    const auto* pta = preAnalysis->getPointerAnalysis();
+
+    if (pta->isHeapMemObj(obj) ||
+        base->isFieldInsensitive() ||
+        pta->isLocalVarInRecursiveFun(obj))
+        return false;
+
+    // Array bases are summaries; individual GEP objects may be
+    // strongly updated only when their offsets are precise.
+    if (pta->isArrayMemObj(obj) && !svfir->isGepObjVar(obj))
+        return false;
+
+    // Reject objects whose fields may be merged by the field limit.
+    const auto* typeInfo = base->getType()->getTypeInfo();
+    return typeInfo->getNumOfFlattenElements() <=
+           base->getMaxFieldOffsetLimit();
 }
 
 void AbstractInterpretation::storeValue(const ValVar* pointer, const AbstractValue& val, const ICFGNode* node)
