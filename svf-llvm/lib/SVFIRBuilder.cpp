@@ -1546,6 +1546,27 @@ static bool canModelAggregateReturn(const Function* fun)
 /// snapshots before visiting instructions. See ReturnSlot's example.
 void SVFIRBuilder::initialiseAggregateReturns()
 {
+    const auto demands = discoverAggregateReturnFields();
+    const SVFType* pointerType = llvmModuleSet()->getSVFType(
+                                     PointerType::getUnqual(llvmModuleSet()->getContext()));
+    // Serialized points-to sets use NodeIDs. Allocate in function order,
+    // independent of pointer-keyed hash table iteration.
+    for (const Function* fun : llvmModuleSet()->getFunctionSet())
+    {
+        auto found = demands.find(fun);
+        if (found == demands.end())
+            continue;
+        createAggregateReturnParams(fun, found->second, pointerType);
+        createAggregateCallSlots(fun, pointerType);
+    }
+}
+
+/// Find the fields of each callee's returned aggregate that callers extract,
+/// such as field {0} of make in ReturnSlot's example. Paths that
+/// getAggregateFieldOperands cannot follow are skipped; getAggregateFieldNode
+/// later decides which extracted fields are modeled.
+SVFIRBuilder::AggregateReturnFields SVFIRBuilder::discoverAggregateReturnFields()
+{
     std::vector<AggregateFieldKey> worklist;
     for (Module& module : llvmModuleSet()->getLLVMModules())
         for (const Function& fun : module)
@@ -1571,6 +1592,7 @@ void SVFIRBuilder::initialiseAggregateReturns()
 
     // Discover callee demands without materializing local field definitions.
     // Calls cross into return operands; other producers use the shared grammar.
+    AggregateReturnFields demands;
     Set<AggregateFieldKey> visited;
     while (!worklist.empty())
     {
@@ -1582,7 +1604,7 @@ void SVFIRBuilder::initialiseAggregateReturns()
         {
             const Function* callee = call->getCalledFunction();
             if (!canModelAggregateReturn(callee) ||
-                    !aggregateReturnParams[callee].emplace(field.second, 0).second)
+                    !demands[callee].insert(field.second).second)
                 continue;
             for (const BasicBlock& bb : *callee)
                 if (const auto* ret = SVFUtil::dyn_cast<ReturnInst>(bb.getTerminator()))
@@ -1596,74 +1618,80 @@ void SVFIRBuilder::initialiseAggregateReturns()
                 worklist.insert(worklist.end(), operands.begin(), operands.end());
         }
     }
+    return demands;
+}
 
-    const SVFType* pointerType = llvmModuleSet()->getSVFType(
-                                     PointerType::getUnqual(llvmModuleSet()->getContext()));
+/// Add one output parameter to fun for each demanded field, in field-path
+/// order (out_obj in ReturnSlot's example). The LLVM signature does not change.
+void SVFIRBuilder::createAggregateReturnParams(const Function* fun,
+        const std::set<AggregateField>& fields, const SVFType* pointerType)
+{
+    FunObjVar* svfFun = const_cast<FunObjVar*>(llvmModuleSet()->getFunObjVar(fun));
+    const FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svfFun);
+    auto& params = aggregateReturnParams[fun];
+    for (const AggregateField& field : fields)
+    {
+        NodeID id = NodeIDAllocator::get()->allocateValueId();
+        pag->addArgValNode(id, svfFun->arg_size(), entry, svfFun, pointerType);
+        auto* arg = SVFUtil::cast<ArgValVar>(pag->getGNode(id));
+        svfFun->addArgument(arg);
+        // Like RetValPN, the synthetic parameter uses its function as a
+        // diagnostic source; it does not add or replace an LLVM argument.
+        llvmModuleSet()->addToSVFVar2LLVMValueMap(fun, arg);
+        arg->setName("aggregate_return_" + std::to_string(arg->getArgNo()));
+        params.emplace(field, id);
+    }
+}
+
+/// At every call to fun, create a slot, its address and its snapshot for each
+/// output parameter (obj, A and V in ReturnSlot's example), and load the
+/// snapshot at the instruction after the call.
+void SVFIRBuilder::createAggregateCallSlots(const Function* fun,
+        const SVFType* pointerType)
+{
+    const auto& params = aggregateReturnParams.at(fun);
+    // LLVM use-list order can change on bitcode reload. Order calls by
+    // their ICFG IDs so each call receives the same slot IDs on readback.
+    std::vector<const CallInst*> calls;
+    for (const User* user : fun->users())
+        calls.push_back(SVFUtil::cast<CallInst>(user));
+    std::sort(calls.begin(), calls.end(), [this](const CallInst* lhs,
+              const CallInst* rhs)
+    {
+        return llvmModuleSet()->getCallICFGNode(lhs)->getId() <
+               llvmModuleSet()->getCallICFGNode(rhs)->getId();
+    });
     const Value* savedValue = curVal;
     const SVFBasicBlock* savedBB = curBB;
-    // Serialized points-to sets use NodeIDs. Allocate in function order,
-    // independent of pointer-keyed hash table iteration.
-    for (const Function* fun : llvmModuleSet()->getFunctionSet())
+    // Include calls with unused results to keep actual/formal lists aligned.
+    for (const CallInst* call : calls)
     {
-        auto found = aggregateReturnParams.find(fun);
-        if (found == aggregateReturnParams.end())
-            continue;
-        auto& fields = found->second;
-        FunObjVar* svfFun = const_cast<FunObjVar*>(llvmModuleSet()->getFunObjVar(fun));
-        const FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svfFun);
-        for (auto& field : fields)
+        std::vector<const Instruction*> next;
+        LLVMUtil::getNextInsts(call, next);
+        assert(next.size() == 1 && "ordinary call must have one continuation");
+        const Instruction* continuation = next.front();
+        auto& slots = aggregateCallSlots[call];
+        ICFGNode* callNode = llvmModuleSet()->getCallICFGNode(call);
+        ICFGNode* resumeNode = llvmModuleSet()->getICFGNode(continuation);
+        setCurrentLocation(continuation, continuation->getParent());
+        for (const auto& param : params)
         {
-            NodeID id = NodeIDAllocator::get()->allocateValueId();
-            pag->addArgValNode(id, svfFun->arg_size(), entry, svfFun, pointerType);
-            auto* arg = SVFUtil::cast<ArgValVar>(pag->getGNode(id));
-            svfFun->addArgument(arg);
-            // Like RetValPN, the synthetic parameter uses its function as a
-            // diagnostic source; it does not add or replace an LLVM argument.
-            llvmModuleSet()->addToSVFVar2LLVMValueMap(fun, arg);
-            arg->setName("aggregate_return_" + std::to_string(arg->getArgNo()));
-            field.second = id;
-        }
-        // LLVM use-list order can change on bitcode reload. Order calls by
-        // their ICFG IDs so each call receives the same slot IDs on readback.
-        std::vector<const CallInst*> calls;
-        for (const User* user : fun->users())
-            calls.push_back(SVFUtil::cast<CallInst>(user));
-        std::sort(calls.begin(), calls.end(), [this](const CallInst* lhs,
-                  const CallInst* rhs)
-        {
-            return llvmModuleSet()->getCallICFGNode(lhs)->getId() <
-                   llvmModuleSet()->getCallICFGNode(rhs)->getId();
-        });
-        // Include calls with unused results to keep actual/formal lists aligned.
-        for (const CallInst* call : calls)
-        {
-            std::vector<const Instruction*> next;
-            LLVMUtil::getNextInsts(call, next);
-            assert(next.size() == 1 && "ordinary call must have one continuation");
-            const Instruction* continuation = next.front();
-            auto& slots = aggregateCallSlots[call];
-            ICFGNode* callNode = llvmModuleSet()->getCallICFGNode(call);
-            ICFGNode* resumeNode = llvmModuleSet()->getICFGNode(continuation);
-            setCurrentLocation(continuation, continuation->getParent());
-            for (const auto& field : fields)
-            {
-                // DummyObjVar keeps the static slot nonlocal to the callee in MemSSA.
-                // Later extracts read the SSA snapshot, not the reused slot contents.
-                NodeID object = pag->addDummyObjNode(pointerType);
-                pag->getAllFieldsObjVars(object).set(object);
-                pag->getObjTypeInfo(object)->setNumOfElements(1);
-                pag->getObjTypeInfo(object)->setByteSizeOfObj(pointerType->getByteSize());
-                NodeID address = pag->addDummyValNode(NodeIDAllocator::get()->allocateValueId(), callNode);
-                NodeID value = pag->addDummyValNode(NodeIDAllocator::get()->allocateValueId(), resumeNode);
-                slots.emplace(field.first, ReturnSlot{object, address});
-                // Call fields use the same identity as local aggregate fields.
-                assert(!aggregateFieldNodes.count({call, field.first}) &&
-                       "call field registered twice");
-                aggregateFieldNodes.emplace(AggregateFieldKey{call, field.first}, value);
-                // Snapshots must precede field statements at the continuation,
-                // even when LLVM block order differs from dominance order.
-                addLoadEdge(address, value);
-            }
+            // DummyObjVar keeps the static slot nonlocal to the callee in MemSSA.
+            // Later extracts read the SSA snapshot, not the reused slot contents.
+            NodeID object = pag->addDummyObjNode(pointerType);
+            pag->getAllFieldsObjVars(object).set(object);
+            pag->getObjTypeInfo(object)->setNumOfElements(1);
+            pag->getObjTypeInfo(object)->setByteSizeOfObj(pointerType->getByteSize());
+            NodeID address = pag->addDummyValNode(NodeIDAllocator::get()->allocateValueId(), callNode);
+            NodeID value = pag->addDummyValNode(NodeIDAllocator::get()->allocateValueId(), resumeNode);
+            slots.emplace(param.first, ReturnSlot{object, address});
+            // Call fields use the same identity as local aggregate fields.
+            assert(!aggregateFieldNodes.count({call, param.first}) &&
+                   "call field registered twice");
+            aggregateFieldNodes.emplace(AggregateFieldKey{call, param.first}, value);
+            // Snapshots must precede field statements at the continuation,
+            // even when LLVM block order differs from dominance order.
+            addLoadEdge(address, value);
         }
     }
     setCurrentLocation(savedValue, savedBB);

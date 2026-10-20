@@ -133,7 +133,15 @@ private:
     /// after the call's ordinary arguments.
     Map<const CallInst*, std::map<AggregateField, ReturnSlot>> aggregateCallSlots;
 
+    /// Field paths extracted from each callee's returned aggregate.
+    using AggregateReturnFields = Map<const Function*, std::set<AggregateField>>;
+
     void initialiseAggregateReturns();
+    AggregateReturnFields discoverAggregateReturnFields();
+    void createAggregateReturnParams(const Function* fun,
+                                     const std::set<AggregateField>& fields,
+                                     const SVFType* pointerType);
+    void createAggregateCallSlots(const Function* fun, const SVFType* pointerType);
     void addAggregateCallFields(const CallInst* call);
     void addAggregateReturnStores(ReturnInst& inst);
 
