@@ -51,7 +51,7 @@ MacOSZ3Arm="${Z3PrebuiltBase}/z3-${Z3Ver}-arm64-macos-14.zip"
 
 BUILD_TYPE="Release"
 BUILD_DYN_LIB="ON"
-RTTI="ON"
+RTTI="OFF"
 ENABLE_ASSERTIONS="${SVF_ENABLE_ASSERTIONS:-ON}"
 PLATFORM=""
 urlLLVM=""
@@ -59,14 +59,15 @@ urlZ3=""
 
 usage() {
     cat <<USAGE
-Usage: ./build.sh [debug|minsize] [dyn_lib|sta_lib] [nortti]
+Usage: ./build.sh [debug|minsize] [dyn_lib|sta_lib] [rtti|nortti]
 
 Options:
   debug      Build Debug instead of Release.
   minsize    Build MinSizeRel to reduce binary size.
   dyn_lib    Build shared libraries. This is the default.
   sta_lib    Build static libraries.
-  nortti     Disable LLVM RTTI. Valid only for static-library builds.
+  rtti       Enable LLVM RTTI (downloads custom RTTI builds if available).
+  nortti     Disable LLVM RTTI (uses official upstream LLVM releases). This is the default.
 
 Environment variables:
   LLVM_DIR           Use an existing LLVM installation.
@@ -95,6 +96,9 @@ parse_args() {
             [Nn]ortti)
                 RTTI="OFF"
                 ;;
+            [Rr]tti)
+                RTTI="ON"
+                ;;
             -h|--help|[Hh]elp)
                 usage
                 exit 0
@@ -113,12 +117,6 @@ normalise_options() {
             echo "Notice: Windows builds require static libraries. Forcing BUILD_DYN_LIB=OFF (sta_lib)."
             BUILD_DYN_LIB="OFF"
         fi
-    fi
-
-    # Shared-library builds require RTTI in the current SVF/LLVM setup.
-    if [[ "$BUILD_DYN_LIB" == "ON" && "$RTTI" == "OFF" ]]; then
-        echo "Warning: LLVM RTTI is always on when building shared libraries. Ignoring 'nortti'."
-        RTTI="ON"
     fi
 }
 
@@ -504,8 +502,18 @@ ensure_z3() {
 
 configure_runtime_env() {
     export PATH="$LLVM_DIR/bin:$Z3_DIR/bin:$PATH"
-    export LD_LIBRARY_PATH="$LLVM_DIR/lib:$Z3_DIR/bin:${LD_LIBRARY_PATH:-}"
+    local llvm_lib_dirs="$LLVM_DIR/lib"
+    if [[ -d "$LLVM_DIR/lib/x86_64-unknown-linux-gnu" ]]; then
+        llvm_lib_dirs="$LLVM_DIR/lib/x86_64-unknown-linux-gnu:$llvm_lib_dirs"
+    elif [[ -d "$LLVM_DIR/lib/aarch64-unknown-linux-gnu" ]]; then
+        llvm_lib_dirs="$LLVM_DIR/lib/aarch64-unknown-linux-gnu:$llvm_lib_dirs"
+    fi
+    export LD_LIBRARY_PATH="$llvm_lib_dirs:$Z3_DIR/bin:${LD_LIBRARY_PATH:-}"
     export DYLD_LIBRARY_PATH="$LLVM_DIR/lib:$Z3_DIR/bin:${DYLD_LIBRARY_PATH:-}"
+
+    if [[ "${SVF_SANITIZER:-}" == "address" ]]; then
+        export ASAN_OPTIONS="detect_container_overflow=0:${ASAN_OPTIONS:-}"
+    fi
 
     echo "LLVM_DIR=$LLVM_DIR"
     echo "Z3_DIR=$Z3_DIR"
@@ -551,6 +559,49 @@ build_svf() {
             -DSVF_EXPORT_DYNAMIC=OFF
             -DSVF_Z3=ON
         )
+    elif [[ "$PLATFORM" == ubuntu-* ]]; then
+        local c_comp="${CC:-}"
+        local cxx_comp="${CXX:-}"
+        if [[ -z "$c_comp" && -x "$LLVM_DIR/bin/clang" && -x "$LLVM_DIR/bin/clang++" ]]; then
+            c_comp="$LLVM_DIR/bin/clang"
+            cxx_comp="$LLVM_DIR/bin/clang++"
+        fi
+        if [[ -n "$c_comp" && -n "$cxx_comp" ]]; then
+            cmake_generator_args+=(
+                -DCMAKE_C_COMPILER="$c_comp"
+                -DCMAKE_CXX_COMPILER="$cxx_comp"
+            )
+        fi
+        local extra_cxx_flags=""
+        local extra_link_flags=""
+        if [[ -d "$LLVM_DIR/include/c++/v1" ]]; then
+            extra_cxx_flags="-stdlib=libc++"
+            extra_link_flags="-stdlib=libc++"
+        fi
+        if [[ -x "$LLVM_DIR/bin/ld.lld" ]]; then
+            extra_link_flags="${extra_link_flags:+$extra_link_flags }-fuse-ld=lld"
+            cmake_generator_args+=(-DSVF_USE_LLD=ON)
+        fi
+        local target_lib_dir=""
+        if [[ -d "$LLVM_DIR/lib/x86_64-unknown-linux-gnu" ]]; then
+            target_lib_dir="$LLVM_DIR/lib/x86_64-unknown-linux-gnu"
+        elif [[ -d "$LLVM_DIR/lib/aarch64-unknown-linux-gnu" ]]; then
+            target_lib_dir="$LLVM_DIR/lib/aarch64-unknown-linux-gnu"
+        fi
+        if [[ -n "$target_lib_dir" ]]; then
+            extra_link_flags="${extra_link_flags:+$extra_link_flags }-L$target_lib_dir -Wl,-rpath,$target_lib_dir"
+        fi
+        if [[ -n "$extra_cxx_flags" ]]; then
+            cmake_generator_args+=(
+                "-DCMAKE_CXX_FLAGS=${extra_cxx_flags}"
+            )
+        fi
+        if [[ -n "$extra_link_flags" ]]; then
+            cmake_generator_args+=(
+                "-DCMAKE_SHARED_LINKER_FLAGS=${extra_link_flags}"
+                "-DCMAKE_EXE_LINKER_FLAGS=${extra_link_flags}"
+            )
+        fi
     fi
 
     rm -rf "$build_dir"
