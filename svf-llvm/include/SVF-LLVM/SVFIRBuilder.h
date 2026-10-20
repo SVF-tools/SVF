@@ -94,12 +94,11 @@ private:
      *   }
      * Only field {0} is extracted. For this call, the field uses three
      * distinct SVFIR nodes:
-     *   object  = obj: a pointer-sized DummyObjVar, called the return slot.
-     *               This is synthetic storage, not the Pair object or an
-     *               LLVM alloca. "Slot" names obj, not a fourth node.
-     *   address = A: a DummyValVar pointing to obj, passed to make.
-     *   value   = V: a DummyValVar holding the pointer loaded from obj after
-     *               the call; later uses read V without reloading obj.
+     *   obj: a pointer-sized DummyObjVar, called the return slot. This is
+     *        synthetic storage, not the Pair object or an LLVM alloca.
+     *   A:   a DummyValVar pointing to obj, passed to make.
+     *   V:   a DummyValVar holding the pointer loaded from obj after the
+     *        call; later uses read V without reloading obj.
      * Each static callsite has its own obj/A/V for each demanded field.
      * make also gets a synthetic output ArgValVar, named out_obj below.
      * Using symbolic node names, the field transport is shown below; ordinary
@@ -115,25 +114,20 @@ private:
      * F0 models (%r0, {0}) and F1 models (%r1, {0}); field {1} is not
      * extracted here, so it needs no separate field node.
      * The snapshot load precedes the extraction copy at the same continuation.
-     * aggregateCallSlots[%a][{0}] holds {obj, A}. V is stored only in
-     * aggregateFieldNodes[(%a, {0})] and is loaded at %x, the instruction
-     * after the call.
-     * aggregateReturnParams[make][{0}] holds the NodeID of out_obj.
+     * aggregateReturnParams[make][{0}] holds out_obj, aggregateCallArgs[%a][{0}]
+     * holds A, and aggregateFieldNodes[(%a, {0})] holds V. obj, Addr(obj) and
+     * Load(A) are created before instructions are visited; V is loaded at %x,
+     * the instruction after the call.
      * All calls to make append their own A to match out_obj, even with unused
      * results. More demanded fields follow field-path order. These additions
      * affect only SVFIR; the LLVM signatures above do not change.
      */
-    struct ReturnSlot
-    {
-        NodeID object;  ///< Pointer-sized return slot.
-        NodeID address; ///< Output pointer passed to the callee.
-    };
-    /// Demanded field paths to output-parameter IDs, ordered per callee.
+    /// Output parameters of each modeled callee, in field-path order.
     Map<const Function*, std::map<AggregateField, NodeID>> aggregateReturnParams;
-    /// Return slots of every call to a modeled callee, in field-path order,
-    /// including calls with unused results. visitCallSite passes each address
-    /// after the call's ordinary arguments.
-    Map<const CallInst*, std::map<AggregateField, ReturnSlot>> aggregateCallSlots;
+    /// Slot addresses that each call to a modeled callee passes as output
+    /// arguments, in field-path order, including calls with unused results.
+    /// visitCallSite appends them after the call's ordinary arguments.
+    Map<const CallInst*, std::map<AggregateField, NodeID>> aggregateCallArgs;
 
     /// Field paths extracted from each callee's returned aggregate.
     using AggregateReturnFields = Map<const Function*, std::set<AggregateField>>;
