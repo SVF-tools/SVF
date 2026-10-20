@@ -335,12 +335,11 @@ void SymbolTableBuilder::collectObj(const Value* val)
     {
         // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
         // then we treat them as one ConstantObj
-        // -model-consts cannot model a pointer-typed constant data (e.g. a blockaddress or a
-        // pointer-typed metadata; neither is an allocation or global, see
+        // -model-consts cannot model a blockaddress (neither an allocation nor global, see
         // SVFIRBuilder::processCE/InitialGlobal) as an individual object, so it always maps to
         // the same ConstantObj.
-        const bool mcUnmodelled = isConstDataOrAggData(val) && val->getType()->isPointerTy();
-        if (isConstantObjSym(val) && (!Options::ModelConsts() || mcUnmodelled))
+        if (isConstantObjSym(val) &&
+            (!Options::ModelConsts() || SVFUtil::isa<BlockAddress>(val)))
         {
             llvmModuleSet()->objSymMap.insert(std::make_pair(val, svfir->constantSymID()));
         }
