@@ -1461,14 +1461,16 @@ bool SVFIRBuilder::getAggregateFieldNode(const Value* aggregate,
     // pointers would make the field NodeIDs below differ between processes, so
     // -read-ander would assign points-to sets written by -write-ander to the
     // wrong field nodes.
-    std::vector<std::pair<AggregateFieldKey, std::vector<AggregateFieldKey>>> definitions;
+    std::vector<std::pair<AggregateFieldKey, std::vector<AggregateFieldKey>>>
+        definitions;
     Set<AggregateFieldKey> discovered;
     std::vector<AggregateFieldKey> worklist{root};
     while (!worklist.empty())
     {
         AggregateFieldKey field = std::move(worklist.back());
         worklist.pop_back();
-        if (aggregateFieldNodes.count(field) || !discovered.insert(field).second)
+        if (aggregateFieldNodes.count(field) ||
+                !discovered.insert(field).second)
             continue;
         const Type* type = getAggregateFieldType(field.first->getType(), field.second);
         if (!type || !type->isPointerTy())
