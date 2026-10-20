@@ -368,15 +368,18 @@ bool AbstractInterpretation::isStrongUpdate(
         {
             const BaseObjVar* baseObj = svfir->getBaseObject(targetObj);
             AndersenWaveDiff* pta = preAnalysis->getPointerAnalysis();
-            // AE can distinguish individual array elements from the array base.
+            // Exclude heap summaries. For other objects, !isArrayMemObj allows
+            // non-array targets; isGepObjVar also allows individual array elements,
+            // but not array bases. Remaining checks below reject summary cells.
             if (!pta->isHeapMemObj(targetObj) &&
                     (!pta->isArrayMemObj(targetObj) || svfir->isGepObjVar(targetObj)))
             {
                 if (!baseObj->isFieldInsensitive() &&
                         !pta->isLocalVarInRecursiveFun(targetObj))
                 {
-                    // getNumOfElements() is capped; use the full layout to
-                    // reject fields or array elements merged by field-limit.
+                    // A GepObjVar may still summarize multiple elements when arrays
+                    // are collapsed or field-limit is exceeded. Compare the full
+                    // layout with the represented capacity to reject merged cells.
                     isSU = baseObj->getType()->getTypeInfo()->getNumOfFlattenElements() <=
                            baseObj->getMaxFieldOffsetLimit();
                 }
