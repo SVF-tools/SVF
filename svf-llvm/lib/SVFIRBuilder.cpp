@@ -1361,16 +1361,17 @@ static const Type* getAggregateFieldType(const Type* type,
     return type;
 }
 
-/// Get the lane that a constant index selects in a fixed vector type. Return
-/// false for other vector types, variable indices and out-of-range indices.
-static bool getFixedVectorLane(const Type* type, const Value* index, unsigned& lane)
+/// Return the selected fixed-vector lane, or no lane for other vector types,
+/// variable indices and out-of-range indices.
+static std::optional<unsigned> getFixedVectorLane(const Type* type,
+        const Value* index)
 {
     const auto* vector = SVFUtil::dyn_cast<llvm::FixedVectorType>(type);
     const auto* constant = SVFUtil::dyn_cast<ConstantInt>(index);
-    if (!vector || !constant || constant->getValue().uge(vector->getNumElements()))
-        return false;
-    lane = static_cast<unsigned>(constant->getZExtValue());
-    return true;
+    if (!vector || !constant ||
+            constant->getValue().uge(vector->getNumElements()))
+        return std::nullopt;
+    return static_cast<unsigned>(constant->getZExtValue());
 }
 
 /// Describe one field definition without emitting any SVFIR statements.
@@ -1396,12 +1397,13 @@ bool SVFIRBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
     }
     else if (const auto* insert = SVFUtil::dyn_cast<InsertElementInst>(value))
     {
-        unsigned lane;
-        if (!getFixedVectorLane(insert->getType(), insert->getOperand(2), lane))
+        const auto lane = getFixedVectorLane(insert->getType(),
+                                            insert->getOperand(2));
+        if (!lane)
             return false;
         original = insert->getOperand(0);
         inserted = insert->getOperand(1);
-        insertedPath = {lane};
+        insertedPath = {*lane};
     }
 
     if (inserted)
@@ -1570,7 +1572,7 @@ void SVFIRBuilder::initialiseAggregateReturns()
 {
     const auto demands = discoverAggregateReturnFields();
     const SVFType* pointerType = llvmModuleSet()->getSVFType(
-                                     PointerType::getUnqual(llvmModuleSet()->getContext()));
+        PointerType::getUnqual(llvmModuleSet()->getContext()));
     // Serialized points-to sets use NodeIDs. Allocate in function order,
     // independent of pointer-keyed hash table iteration.
     for (const Function* fun : llvmModuleSet()->getFunctionSet())
@@ -1587,7 +1589,8 @@ void SVFIRBuilder::initialiseAggregateReturns()
 /// such as field {0} of make in the aggregate return example. Paths that
 /// getAggregateFieldOperands cannot follow are skipped; getAggregateFieldNode
 /// later decides which extracted fields are modeled.
-SVFIRBuilder::AggregateReturnFields SVFIRBuilder::discoverAggregateReturnFields()
+SVFIRBuilder::AggregateReturnFields
+SVFIRBuilder::discoverAggregateReturnFields()
 {
     std::vector<AggregateFieldKey> worklist;
     for (Module& module : llvmModuleSet()->getLLVMModules())
@@ -1595,9 +1598,8 @@ SVFIRBuilder::AggregateReturnFields SVFIRBuilder::discoverAggregateReturnFields(
             for (const BasicBlock& bb : fun)
                 for (const Instruction& inst : bb)
                 {
-                    AggregateFieldKey field;
-                    if (getExtractedField(inst, field))
-                        worklist.push_back(std::move(field));
+                    if (auto field = getExtractedField(inst))
+                        worklist.push_back(std::move(*field));
                 }
 
     // Discover callee demands without materializing local field definitions.
@@ -1637,7 +1639,8 @@ SVFIRBuilder::AggregateReturnFields SVFIRBuilder::discoverAggregateReturnFields(
 void SVFIRBuilder::createAggregateReturnParams(const Function* fun,
         const std::set<AggregateField>& fields, const SVFType* pointerType)
 {
-    FunObjVar* svfFun = const_cast<FunObjVar*>(llvmModuleSet()->getFunObjVar(fun));
+    FunObjVar* svfFun =
+        const_cast<FunObjVar*>(llvmModuleSet()->getFunObjVar(fun));
     const FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svfFun);
     auto& params = aggregateReturnParams[fun];
     for (const AggregateField& field : fields)
@@ -1687,19 +1690,24 @@ void SVFIRBuilder::createAggregateCallSlots(const Function* fun,
         ICFGNode* resumeNode = llvmModuleSet()->getICFGNode(continuation);
         for (const auto& param : params)
         {
-            // DummyObjVar keeps the static slot nonlocal to the callee in MemSSA.
-            // Later extracts read the SSA snapshot, not the reused slot contents.
+            // DummyObjVar keeps the static slot nonlocal to the callee
+            // in MemSSA. Later extracts read the SSA snapshot rather
+            // than the reused slot contents.
             NodeID object = pag->addDummyObjNode(pointerType);
             pag->getAllFieldsObjVars(object).set(object);
             pag->getObjTypeInfo(object)->setNumOfElements(1);
-            pag->getObjTypeInfo(object)->setByteSizeOfObj(pointerType->getByteSize());
-            NodeID address = pag->addDummyValNode(NodeIDAllocator::get()->allocateValueId(), callNode);
-            NodeID value = pag->addDummyValNode(NodeIDAllocator::get()->allocateValueId(), resumeNode);
+            pag->getObjTypeInfo(object)->setByteSizeOfObj(
+                pointerType->getByteSize());
+            NodeID address = pag->addDummyValNode(
+                NodeIDAllocator::get()->allocateValueId(), callNode);
+            NodeID value = pag->addDummyValNode(
+                NodeIDAllocator::get()->allocateValueId(), resumeNode);
             args.emplace(param.first, address);
             // Call fields use the same identity as local aggregate fields.
             assert(!aggregateFieldNodes.count({call, param.first}) &&
                    "call field registered twice");
-            aggregateFieldNodes.emplace(AggregateFieldKey{call, param.first}, value);
+            aggregateFieldNodes.emplace(
+                AggregateFieldKey{call, param.first}, value);
             setCurrentLocation(call, call->getParent());
             addAddrEdge(object, address);
             // Snapshots must precede field statements at the continuation,
@@ -1755,23 +1763,26 @@ void SVFIRBuilder::addAggregateReturnStores(ReturnInst& inst)
 /// extractelement with a constant index, reads. For example,
 ///   %x = extractvalue {ptr, ptr} %a, 0
 /// reads field {0} of %a.
-bool SVFIRBuilder::getExtractedField(const Instruction& inst, AggregateFieldKey& field)
+std::optional<SVFIRBuilder::AggregateFieldKey>
+SVFIRBuilder::getExtractedField(const Instruction& inst)
 {
     if (!inst.getType()->isPointerTy())
-        return false;
+        return std::nullopt;
     if (const auto* extract = SVFUtil::dyn_cast<ExtractValueInst>(&inst))
     {
-        field.first = extract->getAggregateOperand();
-        field.second.assign(extract->idx_begin(), extract->idx_end());
-        return true;
+        return AggregateFieldKey{
+            extract->getAggregateOperand(),
+            AggregateField(extract->idx_begin(), extract->idx_end())};
     }
     const auto* extract = SVFUtil::dyn_cast<ExtractElementInst>(&inst);
-    unsigned lane;
-    if (!extract || !getFixedVectorLane(extract->getVectorOperandType(),
-                                        extract->getIndexOperand(), lane))
-        return false;
-    field = {extract->getVectorOperand(), AggregateField{lane}};
-    return true;
+    if (!extract)
+        return std::nullopt;
+    const auto lane = getFixedVectorLane(extract->getVectorOperandType(),
+                                        extract->getIndexOperand());
+    if (!lane)
+        return std::nullopt;
+    return AggregateFieldKey{extract->getVectorOperand(),
+                             AggregateField{*lane}};
 }
 
 /// Copy an extracted pointer from its shared field definition. Unsupported
@@ -1779,10 +1790,9 @@ bool SVFIRBuilder::getExtractedField(const Instruction& inst, AggregateFieldKey&
 void SVFIRBuilder::addExtractedFieldCopy(Instruction& inst)
 {
     NodeID dst = getValueNode(&inst);
-    AggregateFieldKey field;
+    const auto field = getExtractedField(inst);
     NodeID src;
-    if (getExtractedField(inst, field) &&
-            getAggregateFieldNode(field.first, field.second, src))
+    if (field && getAggregateFieldNode(field->first, field->second, src))
         addCopyEdge(src, dst, CopyStmt::COPYVAL);
     else
         addBlackHoleAddrEdge(dst);
