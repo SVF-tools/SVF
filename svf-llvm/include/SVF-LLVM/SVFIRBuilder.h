@@ -38,6 +38,8 @@
 #include "SVF-LLVM/LLVMModule.h"
 #include "SVF-LLVM/LLVMUtil.h"
 
+#include <optional>
+
 namespace SVF
 {
 
@@ -67,7 +69,9 @@ private:
                                    std::vector<AggregateFieldKey>& operands);
     bool getAggregateFieldNode(const Value* aggregate, const AggregateField& indices,
                                NodeID& node);
-    static bool getExtractedField(const Instruction& inst, AggregateFieldKey& field);
+    /// Decode a pointer extraction; unsupported instructions have no field.
+    static std::optional<AggregateFieldKey>
+    getExtractedField(const Instruction& inst);
     void addExtractedFieldCopy(Instruction& inst);
 
     /*!
@@ -114,8 +118,9 @@ private:
      * F0 models (%r0, {0}) and F1 models (%r1, {0}); field {1} is not
      * extracted here, so it needs no separate field node.
      * The snapshot load precedes the extraction copy at the same continuation.
-     * aggregateReturnParams[make][{0}] holds out_obj, aggregateCallArgs[%a][{0}]
-     * holds A, and aggregateFieldNodes[(%a, {0})] holds V. obj, Addr(obj) and
+     * aggregateReturnParams[make][{0}] holds out_obj.
+     * aggregateCallArgs[%a][{0}] holds A, and
+     * aggregateFieldNodes[(%a, {0})] holds V. obj, Addr(obj) and
      * Load(A) are created before instructions are visited; V is loaded at %x,
      * the instruction after the call.
      * All calls to make append their own A to match out_obj, even with unused
@@ -130,14 +135,16 @@ private:
     Map<const CallInst*, std::map<AggregateField, NodeID>> aggregateCallArgs;
 
     /// Field paths extracted from each callee's returned aggregate.
-    using AggregateReturnFields = Map<const Function*, std::set<AggregateField>>;
+    using AggregateReturnFields =
+        Map<const Function*, std::set<AggregateField>>;
 
     void initialiseAggregateReturns();
     AggregateReturnFields discoverAggregateReturnFields();
     void createAggregateReturnParams(const Function* fun,
                                      const std::set<AggregateField>& fields,
                                      const SVFType* pointerType);
-    void createAggregateCallSlots(const Function* fun, const SVFType* pointerType);
+    void createAggregateCallSlots(const Function* fun,
+                                  const SVFType* pointerType);
     void addAggregateCallFields(const CallInst* call);
     void addAggregateReturnStores(ReturnInst& inst);
 
