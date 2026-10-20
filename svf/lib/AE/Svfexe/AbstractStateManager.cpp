@@ -371,8 +371,8 @@ bool AbstractInterpretation::isStrongUpdate(
     const auto* pta = preAnalysis->getPointerAnalysis();
 
     if (pta->isHeapMemObj(obj) ||
-        base->isFieldInsensitive() ||
-        pta->isLocalVarInRecursiveFun(obj))
+            base->isFieldInsensitive() ||
+            pta->isLocalVarInRecursiveFun(obj))
         return false;
 
     // Array bases are summaries; individual GEP objects may be
