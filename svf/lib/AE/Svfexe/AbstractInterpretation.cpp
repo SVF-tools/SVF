@@ -642,17 +642,28 @@ void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
             {
                 BoundedInt new_lb = switch_cond.lb();
                 BoundedInt new_ub = switch_cond.ub();
-                for (const auto* outEdge : pred->getOutEdges())
+                bool changed = true;
+                while (changed && new_lb.leq(new_ub))
                 {
-                    if (const auto* intra = SVFUtil::dyn_cast<IntraCFGEdge>(outEdge))
+                    changed = false;
+                    for (const auto* outEdge : pred->getOutEdges())
                     {
-                        if (intra->getCondition() == var && intra->getSuccessorCondValue() != -1)
+                        if (const auto* intra = SVFUtil::dyn_cast<IntraCFGEdge>(outEdge))
                         {
-                            s64_t caseVal = intra->getSuccessorCondValue();
-                            if (!new_lb.is_minus_infinity() && new_lb.getNumeral() == caseVal)
-                                new_lb = BoundedInt(caseVal + 1);
-                            if (!new_ub.is_plus_infinity() && new_ub.getNumeral() == caseVal)
-                                new_ub = BoundedInt(caseVal - 1);
+                            if (intra->getCondition() == var && intra->getSuccessorCondValue() != -1)
+                            {
+                                s64_t caseVal = intra->getSuccessorCondValue();
+                                if (!new_lb.is_minus_infinity() && new_lb.getNumeral() == caseVal)
+                                {
+                                    new_lb = BoundedInt(caseVal + 1);
+                                    changed = true;
+                                }
+                                if (!new_ub.is_plus_infinity() && new_ub.getNumeral() == caseVal)
+                                {
+                                    new_ub = BoundedInt(caseVal - 1);
+                                    changed = true;
+                                }
+                            }
                         }
                     }
                 }
