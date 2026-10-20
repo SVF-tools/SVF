@@ -1382,14 +1382,35 @@ bool SVFIRBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
     if (path.empty())
         return value->getType()->isPointerTy() && !SVFUtil::isa<ConstantExpr>(value) &&
                !SVFUtil::isa<UndefValue>(value) && llvmModuleSet()->hasValueNode(value);
+    // insertvalue and insertelement replace one field. For example, in
+    //   %b = insertvalue {ptr, ptr} %a, ptr %q, 1
+    // field {1} of %b is %q, and field {0} of %b is field {0} of %a.
+    const Value* original = nullptr;
+    const Value* inserted = nullptr;
+    AggregateField insertedPath;
     if (const auto* insert = SVFUtil::dyn_cast<InsertValueInst>(value))
     {
-        const auto insertedPath = insert->getIndices();
+        original = insert->getAggregateOperand();
+        inserted = insert->getInsertedValueOperand();
+        insertedPath.assign(insert->idx_begin(), insert->idx_end());
+    }
+    else if (const auto* insert = SVFUtil::dyn_cast<InsertElementInst>(value))
+    {
+        unsigned lane;
+        if (!getFixedVectorLane(insert->getType(), insert->getOperand(2), lane))
+            return false;
+        original = insert->getOperand(0);
+        inserted = insert->getOperand(1);
+        insertedPath = {lane};
+    }
+
+    if (inserted)
+    {
         const size_t commonLength = std::min(insertedPath.size(), path.size());
         if (!std::equal(insertedPath.begin(), insertedPath.begin() + commonLength, path.begin()))
-            operands.emplace_back(insert->getAggregateOperand(), path);
+            operands.emplace_back(original, path);
         else if (insertedPath.size() <= path.size())
-            operands.emplace_back(insert->getInsertedValueOperand(),
+            operands.emplace_back(inserted,
                                   AggregateField(path.begin() + insertedPath.size(), path.end()));
         else
             return false;
@@ -1414,18 +1435,6 @@ bool SVFIRBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
     }
     else if (const auto* freeze = SVFUtil::dyn_cast<FreezeInst>(value))
         operands.emplace_back(freeze->getOperand(0), path);
-    else if (const auto* insert = SVFUtil::dyn_cast<InsertElementInst>(value))
-    {
-        const auto* vector = SVFUtil::dyn_cast<llvm::FixedVectorType>(insert->getType());
-        const auto* index = SVFUtil::dyn_cast<ConstantInt>(insert->getOperand(2));
-        if (!vector || path.size() != 1 || !index ||
-                index->getValue().uge(vector->getNumElements()))
-            return false;
-        if (index->getZExtValue() == path.front())
-            operands.emplace_back(insert->getOperand(1), AggregateField{});
-        else
-            operands.emplace_back(insert->getOperand(0), path);
-    }
     else if (const auto* shuffle = SVFUtil::dyn_cast<ShuffleVectorInst>(value))
     {
         const auto* vector = SVFUtil::dyn_cast<llvm::FixedVectorType>(shuffle->getOperand(0)->getType());
