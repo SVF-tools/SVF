@@ -358,8 +358,8 @@ inline static TargetABI detectTargetABI(const llvm::Triple &triple)
         return TargetABI::MSVC;
 
     if (triple.isWindowsItaniumEnvironment() ||
-        triple.isWindowsGNUEnvironment() ||
-        triple.isWindowsCygwinEnvironment())
+            triple.isWindowsGNUEnvironment() ||
+            triple.isWindowsCygwinEnvironment())
         return TargetABI::Itanium;
 
     return TargetABI::Itanium;
