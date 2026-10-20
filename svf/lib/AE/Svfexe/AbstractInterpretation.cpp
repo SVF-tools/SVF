@@ -514,6 +514,27 @@ bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
 
     AbstractValue condVal = getAbsValue(var, pred);
     IntervalValue switch_cond = condVal.getInterval();
+
+    if (succ == -1)
+    {
+        // Default edge of a switch is feasible unless condVal is a singleton matching an explicit case.
+        if (switch_cond.isBottom())
+            return false;
+        if (switch_cond.is_numeral())
+        {
+            s64_t val = switch_cond.getNumeral();
+            for (const auto* outEdge : pred->getOutEdges())
+            {
+                if (const auto* intra = SVFUtil::dyn_cast<IntraCFGEdge>(outEdge))
+                {
+                    if (intra->getCondition() == var && intra->getSuccessorCondValue() == val)
+                        return false;
+                }
+            }
+        }
+        return true;
+    }
+
     switch_cond.meet_with(IntervalValue(succ, succ));
     if (switch_cond.isBottom())
         return false;
@@ -613,7 +634,48 @@ void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
 
         AbstractValue condVal = getAbsValue(var, pred);
         IntervalValue switch_cond = condVal.getInterval();
-        switch_cond.meet_with(IntervalValue(succ, succ));
+
+        if (succ == -1)
+        {
+            // Default edge of a switch: refine bounds if an explicit case matches an endpoint
+            if (!switch_cond.is_numeral())
+            {
+                BoundedInt new_lb = switch_cond.lb();
+                BoundedInt new_ub = switch_cond.ub();
+                bool changed = true;
+                while (changed && new_lb.leq(new_ub))
+                {
+                    changed = false;
+                    for (const auto* outEdge : pred->getOutEdges())
+                    {
+                        if (const auto* intra = SVFUtil::dyn_cast<IntraCFGEdge>(outEdge))
+                        {
+                            if (intra->getCondition() == var && intra->getSuccessorCondValue() != -1)
+                            {
+                                s64_t caseVal = intra->getSuccessorCondValue();
+                                if (!new_lb.is_minus_infinity() && new_lb.getNumeral() == caseVal)
+                                {
+                                    new_lb = BoundedInt(caseVal + 1);
+                                    changed = true;
+                                }
+                                if (!new_ub.is_plus_infinity() && new_ub.getNumeral() == caseVal)
+                                {
+                                    new_ub = BoundedInt(caseVal - 1);
+                                    changed = true;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (new_lb.leq(new_ub))
+                    switch_cond = IntervalValue(new_lb, new_ub);
+            }
+        }
+        else
+        {
+            switch_cond.meet_with(IntervalValue(succ, succ));
+        }
+
         if (switch_cond.isBottom())
         {
             // This case label is not reachable from cond's interval.

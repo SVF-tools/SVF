@@ -356,6 +356,14 @@ bool FullSparseAbstractInterpretation::isIndirectSVFGEdgeFeasible(
                 }
             }
         }
+
+        // In recursive functions, a def in a callee frame can reach a use
+        // in a caller frame (or vice versa) via call/return across activation
+        // frames, which has no intra-procedural CFG path within the function.
+        if (!feasible && preAnalysis->getPointerAnalysis()->isInRecursion(fun))
+        {
+            feasible = true;
+        }
     }
 
     return feasible;
