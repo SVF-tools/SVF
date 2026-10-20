@@ -271,7 +271,8 @@ bool FullSparseAbstractInterpretation::isIndirectSVFGEdgeFeasible(
     {
         feasible = true;
     }
-    else if (!fun || fun != dstICFG->getFun())
+    else if (!fun || fun != dstICFG->getFun() ||
+             preAnalysis->getPointerAnalysis()->isInRecursion(fun))
     {
         feasible = true;
     }
