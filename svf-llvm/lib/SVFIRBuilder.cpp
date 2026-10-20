@@ -1564,7 +1564,8 @@ static bool canModelAggregateReturn(const Function* fun)
 }
 
 /// Discover demanded fields and preallocate output parameters, slots and
-/// snapshots before visiting instructions. See ReturnSlot's example.
+/// snapshots before visiting instructions. See the aggregate return example
+/// in SVFIRBuilder.h.
 void SVFIRBuilder::initialiseAggregateReturns()
 {
     const auto demands = discoverAggregateReturnFields();
@@ -1583,7 +1584,7 @@ void SVFIRBuilder::initialiseAggregateReturns()
 }
 
 /// Find the fields of each callee's returned aggregate that callers extract,
-/// such as field {0} of make in ReturnSlot's example. Paths that
+/// such as field {0} of make in the aggregate return example. Paths that
 /// getAggregateFieldOperands cannot follow are skipped; getAggregateFieldNode
 /// later decides which extracted fields are modeled.
 SVFIRBuilder::AggregateReturnFields SVFIRBuilder::discoverAggregateReturnFields()
@@ -1631,7 +1632,8 @@ SVFIRBuilder::AggregateReturnFields SVFIRBuilder::discoverAggregateReturnFields(
 }
 
 /// Add one output parameter to fun for each demanded field, in field-path
-/// order (out_obj in ReturnSlot's example). The LLVM signature does not change.
+/// order (out_obj in the aggregate return example). The LLVM signature does
+/// not change.
 void SVFIRBuilder::createAggregateReturnParams(const Function* fun,
         const std::set<AggregateField>& fields, const SVFType* pointerType)
 {
@@ -1653,8 +1655,9 @@ void SVFIRBuilder::createAggregateReturnParams(const Function* fun,
 }
 
 /// At every call to fun, create a slot, its address and its snapshot for each
-/// output parameter (obj, A and V in ReturnSlot's example), and load the
-/// snapshot at the instruction after the call.
+/// output parameter (obj, A and V in the aggregate return example). The
+/// address is defined at the call, and the snapshot is loaded at the
+/// instruction after the call.
 void SVFIRBuilder::createAggregateCallSlots(const Function* fun,
         const SVFType* pointerType)
 {
@@ -1679,10 +1682,9 @@ void SVFIRBuilder::createAggregateCallSlots(const Function* fun,
         LLVMUtil::getNextInsts(call, next);
         assert(next.size() == 1 && "ordinary call must have one continuation");
         const Instruction* continuation = next.front();
-        auto& slots = aggregateCallSlots[call];
+        auto& args = aggregateCallArgs[call];
         ICFGNode* callNode = llvmModuleSet()->getCallICFGNode(call);
         ICFGNode* resumeNode = llvmModuleSet()->getICFGNode(continuation);
-        setCurrentLocation(continuation, continuation->getParent());
         for (const auto& param : params)
         {
             // DummyObjVar keeps the static slot nonlocal to the callee in MemSSA.
@@ -1693,36 +1695,38 @@ void SVFIRBuilder::createAggregateCallSlots(const Function* fun,
             pag->getObjTypeInfo(object)->setByteSizeOfObj(pointerType->getByteSize());
             NodeID address = pag->addDummyValNode(NodeIDAllocator::get()->allocateValueId(), callNode);
             NodeID value = pag->addDummyValNode(NodeIDAllocator::get()->allocateValueId(), resumeNode);
-            slots.emplace(param.first, ReturnSlot{object, address});
+            args.emplace(param.first, address);
             // Call fields use the same identity as local aggregate fields.
             assert(!aggregateFieldNodes.count({call, param.first}) &&
                    "call field registered twice");
             aggregateFieldNodes.emplace(AggregateFieldKey{call, param.first}, value);
+            setCurrentLocation(call, call->getParent());
+            addAddrEdge(object, address);
             // Snapshots must precede field statements at the continuation,
             // even when LLVM block order differs from dominance order.
+            setCurrentLocation(continuation, continuation->getParent());
             addLoadEdge(address, value);
         }
     }
     setCurrentLocation(savedValue, savedBB);
 }
 
-/// Define slot addresses and append matching actual output arguments.
-/// initialiseAggregateReturns has already placed the snapshot loads.
+/// Append the slot addresses of call as actual output arguments and pass each
+/// to the callee's output parameter. createAggregateCallSlots has already
+/// created the slots, their addresses and the snapshot loads.
 void SVFIRBuilder::addAggregateCallFields(const CallInst* call)
 {
-    auto found = aggregateCallSlots.find(call);
-    if (found == aggregateCallSlots.end())
+    auto found = aggregateCallArgs.find(call);
+    if (found == aggregateCallArgs.end())
         return;
     CallICFGNode* callNode = llvmModuleSet()->getCallICFGNode(call);
     const FunObjVar* callee = llvmModuleSet()->getFunObjVar(call->getCalledFunction());
     FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(callee);
     const auto& params = aggregateReturnParams.at(call->getCalledFunction());
-    for (const auto& field : found->second)
+    for (const auto& arg : found->second)
     {
-        const ReturnSlot& slot = field.second;
-        addAddrEdge(slot.object, slot.address);
-        pag->addCallSiteArgs(callNode, pag->getValVar(slot.address));
-        addCallEdge(slot.address, params.at(field.first), callNode, entry);
+        pag->addCallSiteArgs(callNode, pag->getValVar(arg.second));
+        addCallEdge(arg.second, params.at(arg.first), callNode, entry);
     }
 }
 
