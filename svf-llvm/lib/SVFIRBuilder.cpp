@@ -1543,7 +1543,7 @@ static bool canModelAggregateReturn(const Function* fun)
 }
 
 /// Discover demanded fields and preallocate output parameters, slots and
-/// snapshots before visiting instructions. See AggregateCallField's example.
+/// snapshots before visiting instructions. See ReturnSlot's example.
 void SVFIRBuilder::initialiseAggregateReturns()
 {
     std::vector<AggregateFieldKey> worklist;
@@ -1640,11 +1640,11 @@ void SVFIRBuilder::initialiseAggregateReturns()
             std::vector<const Instruction*> next;
             LLVMUtil::getNextInsts(call, next);
             assert(next.size() == 1 && "ordinary call must have one continuation");
-            AggregateCall& model = aggregateCalls[call];
-            model.continuation = next.front();
+            const Instruction* continuation = next.front();
+            auto& slots = aggregateCallSlots[call];
             ICFGNode* callNode = llvmModuleSet()->getCallICFGNode(call);
-            ICFGNode* resumeNode = llvmModuleSet()->getICFGNode(model.continuation);
-            setCurrentLocation(model.continuation, model.continuation->getParent());
+            ICFGNode* resumeNode = llvmModuleSet()->getICFGNode(continuation);
+            setCurrentLocation(continuation, continuation->getParent());
             for (const auto& field : fields)
             {
                 // DummyObjVar keeps the static slot nonlocal to the callee in MemSSA.
@@ -1655,8 +1655,10 @@ void SVFIRBuilder::initialiseAggregateReturns()
                 pag->getObjTypeInfo(object)->setByteSizeOfObj(pointerType->getByteSize());
                 NodeID address = pag->addDummyValNode(NodeIDAllocator::get()->allocateValueId(), callNode);
                 NodeID value = pag->addDummyValNode(NodeIDAllocator::get()->allocateValueId(), resumeNode);
-                model.fields.emplace(field.first, AggregateCallField{object, address, value});
+                slots.emplace(field.first, ReturnSlot{object, address});
                 // Call fields use the same identity as local aggregate fields.
+                assert(!aggregateFieldNodes.count({call, field.first}) &&
+                       "call field registered twice");
                 aggregateFieldNodes.emplace(AggregateFieldKey{call, field.first}, value);
                 // Snapshots must precede field statements at the continuation,
                 // even when LLVM block order differs from dominance order.
@@ -1671,20 +1673,19 @@ void SVFIRBuilder::initialiseAggregateReturns()
 /// initialiseAggregateReturns has already placed the snapshot loads.
 void SVFIRBuilder::addAggregateCallFields(const CallInst* call)
 {
-    auto found = aggregateCalls.find(call);
-    if (found == aggregateCalls.end())
+    auto found = aggregateCallSlots.find(call);
+    if (found == aggregateCallSlots.end())
         return;
-    const AggregateCall& model = found->second;
     CallICFGNode* callNode = llvmModuleSet()->getCallICFGNode(call);
     const FunObjVar* callee = llvmModuleSet()->getFunObjVar(call->getCalledFunction());
     FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(callee);
     const auto& params = aggregateReturnParams.at(call->getCalledFunction());
-    for (const auto& field : model.fields)
+    for (const auto& field : found->second)
     {
-        const AggregateCallField& nodes = field.second;
-        addAddrEdge(nodes.object, nodes.address);
-        pag->addCallSiteArgs(callNode, pag->getValVar(nodes.address));
-        addCallEdge(nodes.address, params.at(field.first), callNode, entry);
+        const ReturnSlot& slot = field.second;
+        addAddrEdge(slot.object, slot.address);
+        pag->addCallSiteArgs(callNode, pag->getValVar(slot.address));
+        addCallEdge(slot.address, params.at(field.first), callNode, entry);
     }
 }
 
