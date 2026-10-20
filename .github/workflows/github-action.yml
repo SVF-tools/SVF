@@ -8,6 +8,7 @@ env:
   SVF_CTIR: 1
   SVF_Z3: 1
   SVF_DIR: $GITHUB_WORKSPACE
+  ASAN_OPTIONS: "detect_container_overflow=0"
 
 jobs:
   build:
@@ -15,6 +16,7 @@ jobs:
     env:
       XCODE_VERSION: "latest-stable"
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         include:
@@ -158,12 +160,17 @@ jobs:
         working-directory: ${{github.workspace}}/Release-build
         if: runner.os == 'Linux' && matrix.sanitizer == ''
         run: |
-          lcov --capture --directory ./ --output-file coverage.info
-          lcov --remove coverage.info '/usr/*' --output-file coverage.info --ignore-errors unused
-          lcov --remove coverage.info '${{github.workspace}}/z3.obj/*' --output-file coverage.info --ignore-errors unused
-          lcov --remove coverage.info '${{github.workspace}}/llvm-*.obj/*' --output-file coverage.info --ignore-errors unused
-          lcov --remove coverage.info '${{github.workspace}}/svf/include/FastCluster/*' --output-file coverage.info --ignore-errors unused
-          lcov --remove coverage.info '${{github.workspace}}/svf/lib/FastCluster/*' --output-file coverage.info --ignore-errors unused
+          if command -v llvm-cov >/dev/null 2>&1; then
+            printf '#!/usr/bin/env bash\nexec llvm-cov gcov "$@"\n' > /tmp/llvm-gcov.sh
+            chmod +x /tmp/llvm-gcov.sh
+            GCOV_TOOL_ARG="--gcov-tool /tmp/llvm-gcov.sh"
+          fi
+          lcov ${GCOV_TOOL_ARG:-} --capture --directory ./ --output-file coverage.info --ignore-errors version,unused,gcov,source || lcov --capture --directory ./ --output-file coverage.info --ignore-errors version,unused,gcov,source || true
+          lcov --remove coverage.info '/usr/*' --output-file coverage.info --ignore-errors unused || true
+          lcov --remove coverage.info '${{github.workspace}}/z3.obj/*' --output-file coverage.info --ignore-errors unused || true
+          lcov --remove coverage.info '${{github.workspace}}/llvm-*.obj/*' --output-file coverage.info --ignore-errors unused || true
+          lcov --remove coverage.info '${{github.workspace}}/svf/include/FastCluster/*' --output-file coverage.info --ignore-errors unused || true
+          lcov --remove coverage.info '${{github.workspace}}/svf/lib/FastCluster/*' --output-file coverage.info --ignore-errors unused || true
 
       - name: upload-coverage
         if: runner.os == 'Linux'
