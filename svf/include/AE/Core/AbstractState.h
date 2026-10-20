@@ -139,11 +139,13 @@ public:
 
     static inline bool isNullMem(u32_t addr)
     {
+        assert(isVirtualMemAddress(addr) && "needs to be a virtual memory address");
         return addr == NullMemAddr;
     }
 
     static inline bool isBlackHoleObjAddr(u32_t addr)
     {
+        assert(isVirtualMemAddress(addr) && "needs to be a virtual memory address");
         return addr == BlackHoleObjAddr;
     }
 

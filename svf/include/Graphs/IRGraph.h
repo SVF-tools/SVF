@@ -165,6 +165,11 @@ public:
     {
         return (id == BlackHole);
     }
+    /// Check a decoded NodeID, not an AE virtual memory address.
+    static inline bool isNullOrBlkObj(NodeID id)
+    {
+        return isNullPtr(id) || isBlkObj(id);
+    }
     static inline bool isConstantSym(NodeID id)
     {
         return (id == ConstantObj);

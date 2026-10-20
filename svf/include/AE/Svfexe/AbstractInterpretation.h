@@ -181,6 +181,9 @@ public:
     /// Virtual so full-sparse can layer the GepObj overlay on top.
     virtual AbstractValue loadValue(const ValVar* pointer,
                                     const ICFGNode* node);
+
+    /// Shared by all sparsity modes: a strong update replaces one concrete
+    /// cell; a weak update JOINs the old and new values at every possible target.
     virtual void storeValue(const ValVar* pointer, const AbstractValue& val,
                             const ICFGNode* node);
 
@@ -208,6 +211,21 @@ protected:
     /// Factory-only construction.  External callers must use getAEInstance();
     /// `SparseAbstractInterpretation` reaches this via its own ctor.
     AbstractInterpretation();
+
+    /// One abstract address need not denote one concrete cell. Heap allocation
+    /// sites and recursive locals summarize multiple instances and need weak
+    /// updates, just like multi-target pointers and merged fields. A separate
+    /// array element can be strongly updated if elements are modeled separately
+    /// and its address is unique.
+    ///
+    /// state is needed because getIDFromAddr checks its freed-address set,
+    /// not just the address bits. An address recorded as freed resolves to the
+    /// BlackHole Obj and must not receive a strong update.
+    ///
+    ///   int x=1, y=3; p=cond ? &x : &y; *p=2;  // x:[1,2], y:[2,3]
+    ///   a=foo(); b=foo(); // foo returns malloc: a/b may name one heap summary
+    bool isStrongUpdate(const AddressValue& targets,
+                        const AbstractState& state) const;
 
     // ---- Cycle helpers overridden by SparseAbstractInterpretation ----
     // The dense versions write only to trace[cycle_head].  The semi-sparse

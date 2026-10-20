@@ -356,16 +356,58 @@ AbstractValue AbstractInterpretation::loadValue(const ValVar* pointer, const ICF
     return res;
 }
 
+bool AbstractInterpretation::isStrongUpdate(
+    const AddressValue& targets,
+    const AbstractState& state) const
+{
+    if (targets.size() != 1)
+        return false;
+
+    const NodeID obj = state.getIDFromAddr(*targets.begin());
+    if (svfir->isNullOrBlkObj(obj))
+        return false;
+
+    const BaseObjVar* base = svfir->getBaseObject(obj);
+    const auto* pta = preAnalysis->getPointerAnalysis();
+
+    if (pta->isHeapMemObj(obj) ||
+        base->isFieldInsensitive() ||
+        pta->isLocalVarInRecursiveFun(obj))
+        return false;
+
+    // Array bases are summaries; individual GEP objects may be
+    // strongly updated only when their offsets are precise.
+    if (pta->isArrayMemObj(obj) && !svfir->isGepObjVar(obj))
+        return false;
+
+    // Reject objects whose fields may be merged by the field limit.
+    const auto* typeInfo = base->getType()->getTypeInfo();
+    return typeInfo->getNumOfFlattenElements() <=
+           base->getMaxFieldOffsetLimit();
+}
+
 void AbstractInterpretation::storeValue(const ValVar* pointer, const AbstractValue& val, const ICFGNode* node)
 {
     const AbstractValue& ptrVal = getAbsValue(pointer, node);
     AbstractState& as = getAbsState(node);
+    const bool strongUpdate = isStrongUpdate(ptrVal.getAddrs(), as);
     for (auto addr : ptrVal.getAddrs())
     {
         // Null and black-hole addresses have no backing object.
         if (AbstractState::isNullOrBlackHoleAddr(addr))
             continue;
-        updateAbsValue(svfir->getSVFVar(as.getIDFromAddr(addr)), val, node);
+        const ObjVar* target =
+            SVFUtil::cast<ObjVar>(svfir->getSVFVar(as.getIDFromAddr(addr)));
+        if (strongUpdate)
+        {
+            updateAbsValue(target, val, node);
+        }
+        else
+        {
+            AbstractValue joined = getAbsValue(target, node);
+            joined.join_with(val);
+            updateAbsValue(target, joined, node);
+        }
     }
 }
 
