@@ -359,31 +359,31 @@ AbstractValue AbstractInterpretation::loadValue(const ValVar* pointer, const ICF
 bool AbstractInterpretation::isStrongUpdate(
     const AddressValue& targets, const AbstractState& state) const
 {
-    if (targets.size() == 1) {
+    bool isSU = false;
+    if (targets.size() == 1)
+    {
         // Decode with state so freed addresses become the BlackHole Obj ID.
         NodeID targetObj = state.getIDFromAddr(*targets.begin());
-        // Restore the address tag for the Null/BlackHole check, including freed targets.
-        if (!AbstractState::isNullOrBlackHoleAddr(targetObj | AddressMask)) {
+        if (!svfir->isNullOrBlkObj(targetObj))
+        {
             const BaseObjVar* baseObj = svfir->getBaseObject(targetObj);
             AndersenWaveDiff* pta = preAnalysis->getPointerAnalysis();
-            // getNumOfElements() is already capped. Compare the full layout with
-            // the represented capacity to reject merged array/struct cells.
-            return !pta->isHeapMemObj(targetObj) &&
-                !pta->isLocalVarInRecursiveFun(targetObj) &&
-                !baseObj->isFieldInsensitive() &&
-                baseObj->getType()->getTypeInfo()->getNumOfFlattenElements() <=
-                    baseObj->getMaxFieldOffsetLimit() &&
-                (!baseObj->isArray() || svfir->isGepObjVar(targetObj));
-        }
-        else
-        {
-            return false;
+            // AE can distinguish individual array elements from the array base.
+            if (!pta->isHeapMemObj(targetObj) &&
+                    (!pta->isArrayMemObj(targetObj) || svfir->isGepObjVar(targetObj)))
+            {
+                if (!baseObj->isFieldInsensitive() &&
+                        !pta->isLocalVarInRecursiveFun(targetObj))
+                {
+                    // getNumOfElements() is capped; use the full layout to
+                    // reject fields or array elements merged by field-limit.
+                    isSU = baseObj->getType()->getTypeInfo()->getNumOfFlattenElements() <=
+                           baseObj->getMaxFieldOffsetLimit();
+                }
+            }
         }
     }
-    else
-    {
-        return false;
-    }
+    return isSU;
 }
 
 void AbstractInterpretation::storeValue(const ValVar* pointer, const AbstractValue& val, const ICFGNode* node)
