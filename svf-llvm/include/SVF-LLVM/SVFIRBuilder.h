@@ -67,6 +67,8 @@ private:
                                    std::vector<AggregateFieldKey>& operands);
     bool getAggregateFieldNode(const Value* aggregate, const AggregateField& indices,
                                NodeID& node);
+    static bool getExtractedField(const Instruction& inst, AggregateFieldKey& field);
+    void addExtractedFieldCopy(Instruction& inst);
 
     /*!
      * Carry a pointer field from a returned aggregate to its extraction.
