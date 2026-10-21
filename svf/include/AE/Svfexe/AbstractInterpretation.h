@@ -251,9 +251,14 @@ protected:
     /// Pull-based state merge: read abstractTrace[pred] for each predecessor,
     /// apply branch refinement for conditional IntraCFGEdges, and join into
     /// abstractTrace[node]. Returns true if at least one predecessor had state.
-    /// Virtual so full-sparse can layer per-MRSVFGNode obj pulls on top of the
+    /// Virtual so full-sparse can merge incoming SVFG Obj values after the
     /// base ICFG-edge merge.
     virtual bool mergeStatesFromPredecessors(const ICFGNode* node);
+
+    /// FullSparse publishes Obj values after transfer; other modes do nothing.
+    virtual void propagateOutgoingObjValues(const ICFGNode*)
+    {
+    }
 
     /// Returns true if the branch edge is reachable under the current state.
     /// Pure query: does not update `as` or branch refinement traces.
@@ -301,6 +306,10 @@ private:
     /// Returns true if the switch branch is feasible.
     bool isSwitchBranchEdgeFeasible(const IntraCFGEdge* edge,
                                     AbstractState& as);
+
+    /// Switch BranchStmt preserves LLVM successor order: default is first.
+    /// Use its destination, not the label -1, which can also be a real case.
+    bool isSwitchDefaultEdge(const IntraCFGEdge* edge) const;
 
     void updateStateOnAddr(const AddrStmt *addr);
 

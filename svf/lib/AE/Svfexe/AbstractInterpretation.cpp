@@ -257,6 +257,7 @@ void AbstractInterpretation::handleGlobalNode()
     AbstractValue blkPtrValue(IntervalValue::top());
     blkPtrValue.getAddrs().insert(BlackHoleObjAddr);
     abstractTrace[node][PAG::getPAG()->getBlkPtr()] = blkPtrValue;
+    propagateOutgoingObjValues(node);
 }
 
 /// Pull-based state merge: for each predecessor that has an abstract state,
@@ -505,6 +506,13 @@ bool AbstractInterpretation::isCmpBranchEdgeFeasible(const IntraCFGEdge* edge,
     return !resVal.isBottom();
 }
 
+bool AbstractInterpretation::isSwitchDefaultEdge(const IntraCFGEdge* edge) const
+{
+    const SVFStmt* terminator = edge->getSrcNode()->getSVFStmts().back();
+    const auto* branch = SVFUtil::cast<BranchStmt>(terminator);
+    return branch->getSuccessor(0) == edge->getDstNode();
+}
+
 bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
     const IntraCFGEdge* edge, AbstractState& as)
 {
@@ -514,7 +522,27 @@ bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
 
     AbstractValue condVal = getAbsValue(var, pred);
     IntervalValue switch_cond = condVal.getInterval();
-    switch_cond.meet_with(IntervalValue(succ, succ));
+    if (isSwitchDefaultEdge(edge))
+    {
+        // The default edge is not selector == -1. Only exclude this edge
+        // when a known selector matches an explicit case, e.g. switch(1)
+        // with case 1. A non-singleton interval keeps its conservative hull.
+        if (switch_cond.is_numeral())
+        {
+            const s64_t selector = switch_cond.getIntNumeral();
+            for (const ICFGEdge* successor : pred->getOutEdges())
+            {
+                const auto* caseEdge = SVFUtil::cast<IntraCFGEdge>(successor);
+                const s64_t label = caseEdge->getSuccessorCondValue();
+                if (successor != edge && label == selector)
+                    switch_cond.set_to_bottom();
+            }
+        }
+    }
+    else
+    {
+        switch_cond.meet_with(IntervalValue(succ, succ));
+    }
     if (switch_cond.isBottom())
         return false;
     return true;
@@ -613,13 +641,17 @@ void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
 
         AbstractValue condVal = getAbsValue(var, pred);
         IntervalValue switch_cond = condVal.getInterval();
-        switch_cond.meet_with(IntervalValue(succ, succ));
-        if (switch_cond.isBottom())
+        if (isSwitchDefaultEdge(edge))
+        {
+            // Default does not impose equality with a case label.
+        }
+        else if ((switch_cond & IntervalValue(succ, succ)).isBottom())
         {
             // This case label is not reachable from cond's interval.
         }
         else
         {
+            switch_cond = IntervalValue(succ, succ);
             as[var->getId()] = AbstractValue(switch_cond);
 
             FIFOWorkList<const SVFStmt*> stmtList;
@@ -739,10 +771,14 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
         handleSVFStatement(stmt);
     }
 
+    // Actual-in Obj values must be available before entering the callee.
+    propagateOutgoingObjValues(node);
+
     // Handle call sites
     if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
     {
         handleCallSite(callNode);
+        propagateOutgoingObjValues(node);
     }
 
     // Run detectors
