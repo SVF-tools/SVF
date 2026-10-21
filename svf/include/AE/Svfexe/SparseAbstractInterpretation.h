@@ -92,11 +92,6 @@ protected:
     /// 3. JOIN it into this ICFGNode's state, then execute normally.
     bool mergeStatesFromPredecessors(const ICFGNode* node) override;
 
-    /// Refine only this temporary path input, never the source's trace.
-    /// A false result means its interval contradicts the selected branch.
-    bool applyBranchRefinement(NodeID objId, const IntervalValue& narrowed,
-                                AbstractState& input, const LoadStmt* load) override;
-
 private:
     /// LLVM: store i32 7, ptr %a2; ...; load i32, ptr %a2.
     /// An indirect edge naming a or a.2 reads State[store]'s available

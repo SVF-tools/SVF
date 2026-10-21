@@ -258,21 +258,11 @@ protected:
     /// Pure query: does not update abstract states.
     bool isBranchEdgeFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
-    /// Collect branch-induced interval refinement after a feasible edge has
-    /// been selected for normal CFG-state merging.
-    /// Returns false if the branch is not feasible
-    bool collectBranchRefinement(const IntraCFGEdge* edge, AbstractState& as);
-
-    /// Apply one Obj's branch constraint, found by collectBranchRefinement,
-    /// to the temporary state. Default (dense/semi): MEET `narrowed` onto
-    /// obj's value (read at the backing load) and
-    /// write the result into the local `as` (per-edge predState copy)
-    /// so joinStates carries it to the successor. FullSparse only refines values
-    /// already present in its temporary SVFG contribution.
-    virtual bool applyBranchRefinement(NodeID objId,
-                                        const IntervalValue& narrowed,
-                                        AbstractState& as,
-                                        const LoadStmt* load);
+    /// Derive cmp/switch constraints and apply them to this temporary input.
+    /// Dense/Semi read Obj values at the backing load; FullSparse narrows only
+    /// carried Obj values reached through one known pointer target.
+    /// Return false when a FullSparse input contradicts the selected branch.
+    bool applyBranchRefinement(const IntraCFGEdge* edge, AbstractState& as);
 
 private:
     /// Initialize abstract state for the global ICFG node and process global

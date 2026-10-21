@@ -301,7 +301,7 @@ AbstractState FullSparseAbstractInterpretation::filterValueFlowInputByPath(
                             // Even if State[B2] still admits true, intersecting
                             // candidate [0,5] with [6,10] gives bottom. Other
                             // unsupported constraints conservatively keep input.
-                            feasible = collectBranchRefinement(branch, candidate);
+                            feasible = applyBranchRefinement(branch, candidate);
                     }
 
                     // The two feasible-arrival cases below use one diamond:
@@ -364,39 +364,6 @@ AbstractState FullSparseAbstractInterpretation::filterValueFlowInputByPath(
         }
     }
     return result;
-}
-
-bool FullSparseAbstractInterpretation::applyBranchRefinement(
-    NodeID objId, const IntervalValue& narrowed, AbstractState& input,
-    const LoadStmt* load)
-{
-    bool feasible = true;
-    const ICFGNode* loadICFG = load->getICFGNode();
-    if (!input.inAddrToValTable(objId) || !hasAbsState(loadICFG))
-    {
-        // Only refine an interval actually carried by this contribution.
-    }
-    else
-    {
-        const AbstractValue& pointer = getAbsValue(load->getRHSVar(), loadICFG);
-        if (!pointer.isAddr() || pointer.getAddrs().size() != 1)
-        {
-            // Do not apply a condition on one possible target to every alias.
-            // This is branch refinement, not a strong-update eligibility test.
-        }
-        else if (AbstractState::isNullOrBlackHoleAddr(*pointer.getAddrs().begin()))
-        {
-            // Special addresses do not identify a backing cell to refine.
-        }
-        else
-        {
-            IntervalValue& value =
-                input.load(AbstractState::getVirtualMemAddress(objId)).getInterval();
-            value.meet_with(narrowed);
-            feasible = !value.isBottom();
-        }
-    }
-    return feasible;
 }
 
 AbstractState SemiSparseAbstractInterpretation::getFullCycleHeadState(
