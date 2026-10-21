@@ -1457,18 +1457,26 @@ bool SVFIRBuilder::getAggregateFieldNode(const Value* aggregate,
         const AggregateField& indices, NodeID& node)
 {
     const AggregateFieldKey root{aggregate, indices};
-    Map<AggregateFieldKey, std::vector<AggregateFieldKey>> definitions;
+    // Keep definitions in discovery order. Iterating a hash map keyed by Value
+    // pointers would make the field NodeIDs below differ between processes, so
+    // -read-ander would assign points-to sets written by -write-ander to the
+    // wrong field nodes.
+    std::vector<std::pair<AggregateFieldKey, std::vector<AggregateFieldKey>>>
+        definitions;
+    Set<AggregateFieldKey> discovered;
     std::vector<AggregateFieldKey> worklist{root};
     while (!worklist.empty())
     {
         AggregateFieldKey field = std::move(worklist.back());
         worklist.pop_back();
-        if (aggregateFieldNodes.count(field) || definitions.count(field))
+        if (aggregateFieldNodes.count(field) ||
+                !discovered.insert(field).second)
             continue;
         const Type* type = getAggregateFieldType(field.first->getType(), field.second);
         if (!type || !type->isPointerTy())
             return false;
-        auto& operands = definitions[field];
+        definitions.emplace_back(field, std::vector<AggregateFieldKey>());
+        auto& operands = definitions.back().second;
         if (!getAggregateFieldOperands(field, operands))
             return false;
         worklist.insert(worklist.end(), operands.begin(), operands.end());
