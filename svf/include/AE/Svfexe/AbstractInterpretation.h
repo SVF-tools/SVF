@@ -178,7 +178,7 @@ public:
     IntervalValue getGepByteOffset(const GepStmt* gep);
     AddressValue getGepObjAddrs(const ValVar* pointer, IntervalValue offset);
 
-    /// Virtual so full-sparse can layer the GepObj overlay on top.
+    /// Read memory through the pointer's address targets.
     virtual AbstractValue loadValue(const ValVar* pointer,
                                     const ICFGNode* node);
 
@@ -251,34 +251,28 @@ protected:
     /// Pull-based state merge: read abstractTrace[pred] for each predecessor,
     /// apply branch refinement for conditional IntraCFGEdges, and join into
     /// abstractTrace[node]. Returns true if at least one predecessor had state.
-    /// Virtual so full-sparse can merge incoming SVFG Obj values after the
-    /// base ICFG-edge merge.
+    /// FullSparse additionally assembles inputs from direct SVFG predecessors.
     virtual bool mergeStatesFromPredecessors(const ICFGNode* node);
 
-    /// FullSparse publishes Obj values after transfer; other modes do nothing.
-    virtual void propagateOutgoingObjValues(const ICFGNode*)
-    {
-    }
-
     /// Returns true if the branch edge is reachable under the current state.
-    /// Pure query: does not update `as` or branch refinement traces.
+    /// Pure query: does not update abstract states.
     bool isBranchEdgeFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
     /// Collect branch-induced interval refinement after a feasible edge has
     /// been selected for normal CFG-state merging.
-    void collectBranchRefinement(const IntraCFGEdge* edge, AbstractState& as);
+    /// Returns false if the branch is not feasible
+    bool collectBranchRefinement(const IntraCFGEdge* edge, AbstractState& as);
 
-    /// Hook called by collectBranchRefinement for each obj that the
-    /// branch narrows.  Default (dense/semi): MEET `narrowed` onto
-    /// obj's value (read at `loadIcfg` where sparse keeps it) and
+    /// Apply one Obj's branch constraint, found by collectBranchRefinement,
+    /// to the temporary state. Default (dense/semi): MEET `narrowed` onto
+    /// obj's value (read at the backing load) and
     /// write the result into the local `as` (per-edge predState copy)
-    /// so joinStates carries it to `succ`.  FullSparse overrides to
-    /// capture into refinementTrace[succ] instead.
-    virtual void recordBranchRefinement(NodeID objId,
+    /// so joinStates carries it to the successor. FullSparse only refines values
+    /// already present in its temporary SVFG contribution.
+    virtual bool applyBranchRefinement(NodeID objId,
                                         const IntervalValue& narrowed,
                                         AbstractState& as,
-                                        const ICFGNode* loadIcfg,
-                                        const ICFGNode* succ);
+                                        const LoadStmt* load);
 
 private:
     /// Initialize abstract state for the global ICFG node and process global

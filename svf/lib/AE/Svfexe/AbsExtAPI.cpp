@@ -140,8 +140,7 @@ void AbsExtAPI::initExtFunMap()
                 const LoadStmt* load = SVFUtil::cast<LoadStmt>(stmt);
                 const AbstractValue& ptrVal = ae->getAbsValue(load->getRHSVar(), callNode);
                 for (auto addr : ptrVal.getAddrs())
-                    ae->updateAbsValue(svfir->getObjVar(as.getIDFromAddr(addr)),
-                                       num, callNode);
+                    as.store(addr, num);
             }
         }
         return;
@@ -559,8 +558,7 @@ void AbsExtAPI::handleMemcpy(const ValVar *dst,
                 u32_t objId = as.getIDFromAddr(srcAddr);
                 if (as.inAddrToValTable(objId) || as.inAddrToAddrsTable(objId))
                 {
-                    ae->updateAbsValue(svfir->getObjVar(as.getIDFromAddr(dstAddr)),
-                                       as.load(srcAddr), node);
+                    as.store(dstAddr, as.load(srcAddr));
                 }
             }
         }
@@ -604,11 +602,11 @@ void AbsExtAPI::handleMemset(const ValVar *dst,
             {
                 AbstractValue tmp = as.load(addr);
                 tmp.join_with(elem);
-                ae->updateAbsValue(svfir->getObjVar(objId), tmp, node);
+                as.store(addr, tmp);
             }
             else
             {
-                ae->updateAbsValue(svfir->getObjVar(objId), elem, node);
+                as.store(addr, elem);
             }
         }
     }

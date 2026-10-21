@@ -257,7 +257,6 @@ void AbstractInterpretation::handleGlobalNode()
     AbstractValue blkPtrValue(IntervalValue::top());
     blkPtrValue.getAddrs().insert(BlackHoleObjAddr);
     abstractTrace[node][PAG::getPAG()->getBlkPtr()] = blkPtrValue;
-    propagateOutgoingObjValues(node);
 }
 
 /// Pull-based state merge: for each predecessor that has an abstract state,
@@ -524,9 +523,11 @@ bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
     IntervalValue switch_cond = condVal.getInterval();
     if (isSwitchDefaultEdge(edge))
     {
-        // The default edge is not selector == -1. Only exclude this edge
-        // when a known selector matches an explicit case, e.g. switch(1)
-        // with case 1. A non-singleton interval keeps its conservative hull.
+        // See ICFGBuilder::processFunBody (svf-llvm/lib/ICFGBuilder.cpp):
+        // default receives the internal label -1, not selector == -1.
+        // A real case -1 can have the same label. Exclude default only when
+        // a known selector matches an explicit case, e.g. switch(1) with
+        // case 1. A non-singleton interval keeps its conservative hull.
         if (switch_cond.is_numeral())
         {
             const s64_t selector = switch_cond.getIntNumeral();
@@ -548,12 +549,12 @@ bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
     return true;
 }
 
-void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
+bool AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
         AbstractState& as)
 {
+    bool feasible = true;
     const SVFVar* cond = edge->getCondition();
     const ICFGNode* pred = edge->getSrcNode();
-    const ICFGNode* succNode = edge->getDstNode();
     s64_t succ = edge->getSuccessorCondValue();
 
     assert(!cond->getInEdges().empty() &&
@@ -625,8 +626,8 @@ void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
                                 for (const auto& addr : ptrVal.getAddrs())
                                 {
                                     NodeID objId = as.getIDFromAddr(addr);
-                                    recordBranchRefinement(objId, narrowed, as,
-                                                           loadIcfg, succNode);
+                                    feasible &= applyBranchRefinement(
+                                                    objId, narrowed, as, load);
                                 }
                             }
                         }
@@ -679,35 +680,25 @@ void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
                         for (const auto& addr : ptrVal.getAddrs())
                         {
                             NodeID objId = as.getIDFromAddr(addr);
-                            recordBranchRefinement(objId, switch_cond, as,
-                                                   loadIcfg, succNode);
+                            feasible &= applyBranchRefinement(
+                                            objId, switch_cond, as, load);
                         }
                     }
                 }
             }
         }
     }
+    return feasible;
 }
 
-void AbstractInterpretation::recordBranchRefinement(
+bool AbstractInterpretation::applyBranchRefinement(
     NodeID objId, const IntervalValue& narrowed, AbstractState& as,
-    const ICFGNode* loadIcfg, const ICFGNode* /*succ*/)
+    const LoadStmt* load)
 {
-    // Default (dense / semi-sparse): MEET narrowed onto obj's current
-    // value, store back into the local `as`.  Caller's joinStates
-    // propagates `as` into `merged`, then `updateAbsState(succ, merged)`
-    // commits it to trace[succ].
-    //
-    // We can't go through the polymorphic updateAbsValue here: `as` is
-    // a transient per-edge predState copy that lives outside
-    // abstractTrace, so it has no node id.  Writing via `updateAbsValue`
-    // with `succ` as the node would land in trace[succ] but get
-    // clobbered by the subsequent `updateAbsState(succ, merged)`; with
-    // `loadIcfg` it would corrupt the obj's authoritative value at its
-    // load site.  AbstractState::store on the transient `as` is the
-    // only sound primitive — and recordBranchRefinement itself is the
-    // virtual customisation point (FullSparse routes to
-    // refinementTrace instead of touching `as`).
+    const ICFGNode* loadIcfg = load->getICFGNode();
+    // Dense/Semi refine the temporary edge state, not the load's stored
+    // output or the successor's trace. The caller merges this copy later.
+    // FullSparse overrides this hook to refine its temporary SVFG input.
     const ObjVar* objVar = SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(objId));
     if (objVar && hasAbsValue(objVar, loadIcfg))
     {
@@ -720,6 +711,7 @@ void AbstractInterpretation::recordBranchRefinement(
             as.store(addr, AbstractValue(itv));
         }
     }
+    return true;
 }
 
 bool AbstractInterpretation::isBranchEdgeFeasible(const IntraCFGEdge* edge,
@@ -771,14 +763,10 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
         handleSVFStatement(stmt);
     }
 
-    // Actual-in Obj values must be available before entering the callee.
-    propagateOutgoingObjValues(node);
-
     // Handle call sites
     if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
     {
         handleCallSite(callNode);
-        propagateOutgoingObjValues(node);
     }
 
     // Run detectors
