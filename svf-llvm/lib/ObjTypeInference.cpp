@@ -495,7 +495,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                     // e.g., %0 = ... -> call %0(...)
                     if (!callBase->hasArgument(curValue))
                         continue;
-                    if (Function* calleeFunc = LLVMUtil::getCallee(callBase))
+                    if (const Function* calleeFunc = LLVMUtil::getCallee(callBase))
                     {
                         u32_t pos = getArgPosInCall(callBase, curValue);
                         // for varargs function, we cannot directly get the value-flow between actual and formal args e.g., consider the following vararg function @callee 1: call void @callee(%arg) 2: define dso_local i32 @callee(...) #0 !dbg !17 { 3:  ....... 4:  %5 = load i32, ptr %vaarg.addr, align 4, !dbg !55 5:  .......
@@ -509,7 +509,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                                 if (auto* load =
                                             llvm::dyn_cast<llvm::LoadInst>(&I))
                                 {
-                                    llvm::Value* loadPointer =
+                                    const llvm::Value* loadPointer =
                                         load->getPointerOperand();
                                     if (loadPointer->getName().compare(
                                                 "vaarg.addr") == 0)
@@ -521,8 +521,8 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                         }
                         else if (!calleeFunc->isDeclaration())
                         {
-                            insertInferSitesOrPushWorklist(
-                                calleeFunc->getArg(pos));
+                            if (pos < calleeFunc->arg_size())
+                                insertInferSitesOrPushWorklist(calleeFunc->getArg(pos));
                         }
                     }
                 }
@@ -650,7 +650,8 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOfVar(const Value *var)
                     // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
                     if (LLVMUtil::getCallee(callBase) != argument->getParent()) continue;
                     u32_t pos = argument->getParent()->isVarArg() ? 0 : argument->getArgNo();
-                    insertAllocsOrPushWorklist(callBase->getArgOperand(pos));
+                    if (pos < callBase->arg_size())
+                        insertAllocsOrPushWorklist(callBase->getArgOperand(pos));
                 }
             }
         }
@@ -974,7 +975,8 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
                     // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
                     if (LLVMUtil::getCallee(callBase) != argument->getParent()) continue;
                     u32_t pos = argument->getParent()->isVarArg() ? 0 : argument->getArgNo();
-                    insertSourcesOrPushWorklist(callBase->getArgOperand(pos));
+                    if (pos < callBase->arg_size())
+                        insertSourcesOrPushWorklist(callBase->getArgOperand(pos));
                 }
             }
         }

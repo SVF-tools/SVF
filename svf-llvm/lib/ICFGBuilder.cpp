@@ -244,14 +244,13 @@ InterICFGNode* ICFGBuilder::addInterBlockICFGNode(const Instruction* inst)
     const CallBase* cb = SVFUtil::dyn_cast<CallBase>(inst);
     bool isvcall = cppUtil::isVirtualCallSite(cb);
     const FunObjVar* calledFunc = nullptr;
-    auto called_llvmval = cb->getCalledOperand()->stripPointerCasts();
-    if (const Function* called_llvmfunc = SVFUtil::dyn_cast<Function>(called_llvmval))
+    if (const Function* called_llvmfunc = SVFUtil::getCallee(cb))
     {
         calledFunc = llvmModuleSet()->getFunObjVar(called_llvmfunc);
     }
     else
     {
-        assert(SVFUtil::dyn_cast<Function>(called_llvmval) == nullptr && "must be nullptr");
+        assert(SVFUtil::getCallee(cb) == nullptr && "must be nullptr");
     }
 
     SVFBasicBlock* bb = llvmModuleSet()->getSVFBasicBlock(inst->getParent());
