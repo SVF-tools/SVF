@@ -165,10 +165,17 @@ AbstractState FullSparseAbstractInterpretation::filterValueFlowInputByPath(
 {
     const ICFGNode* source = edge->getSrcNode()->getICFGNode();
     const ICFGNode* target = edge->getDstNode()->getICFGNode();
-    AbstractState result;
-    if (input.getVarToVal().empty() && input.getLocToVal().empty())
+    NodeBS objs;
+    if (const auto* indirect = SVFUtil::dyn_cast<IndirectSVFGEdge>(edge))
     {
-        // No values to be pulled here, directly skip.
+        for (NodeID obj : indirect->getPointsTo())
+            objs |= svfir->getAllFieldsObjVars(svfir->getBaseObject(obj));
+    }
+    AbstractState result;
+    if (input.getVarToVal().empty() && input.getLocToVal().empty() && objs.empty())
+    {
+        // No values or queried Objs. An indirect edge still identifies its
+        // base/sub Objs even when D has not produced their values yet.
     }
     else if (!edge->isIntraVFGEdge() || source->getFun() != target->getFun() ||
              !source->getFun())
@@ -234,9 +241,8 @@ AbstractState FullSparseAbstractInterpretation::filterValueFlowInputByPath(
                             const AddressValue& targets =
                                 getAbsValue(store->getLHSVar(), current).getAddrs();
                             const bool strongUpdate = isStrongUpdate(targets, state);
-                            for (const auto& entry : incoming[current].getLocToVal())
+                            for (NodeID obj : objs)
                             {
-                                const NodeID obj = entry.first;
                                 const u32_t addr = AbstractState::getVirtualMemAddress(obj);
                                 if (targets.contains(addr) &&
                                         state.getIDFromAddr(addr) == obj && state.getLocToVal().count(obj))
@@ -257,14 +263,34 @@ AbstractState FullSparseAbstractInterpretation::filterValueFlowInputByPath(
                 std::vector<std::pair<const ICFGNode*, const IntraCFGEdge*>> successors;
                 if (const auto* call = SVFUtil::dyn_cast<CallICFGNode>(current))
                 {
+                    if (current != source && SVFUtil::isExtCall(call->getCalledFunction()) &&
+                            hasAbsState(current))
+                    {
+                        // D: x=0; C: a model writes x=5; N: use(x).
+                        // Read the queried Objs from C's already computed
+                        // output, including x=5 even when input contains x=0.
+                        // This is a projection of C's output, not proof that
+                        // C wrote every present Obj. A joined output may be
+                        // less precise than this query's path-specific values.
+                        const AbstractState& state = getAbsState(current);
+                        for (NodeID obj : objs)
+                        {
+                            const u32_t addr = AbstractState::getVirtualMemAddress(obj);
+                            if (state.getIDFromAddr(addr) == obj && state.getLocToVal().count(obj))
+                            {
+                                output.store(addr, state.load(addr));
+                            }
+                        }
+                    }
                     // int x = input();   // D
                     // f();               // CallICFGNode
                     // ...                // matching RetICFGNode is in caller
                     // use(x);            // N
                     // Search: D -> call f -> caller return point -> ... -> N.
-                    // Do not enter f. Retain D's input even if f may write x;
-                    // other SVFG inputs supply callee results. Whether f can
-                    // return is not proved here (also conservative for abort()).
+                    // Do not enter f. External calls reuse queried Obj outputs
+                    // above; ordinary callee results come from their SVFG inputs.
+                    // Whether f can return is not proved here (also conservative
+                    // for abort()).
                     successors.emplace_back(call->getRetICFGNode(), nullptr);
                 }
                 else
