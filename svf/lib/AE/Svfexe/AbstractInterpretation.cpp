@@ -284,7 +284,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
                 AbstractState predState = getAbsState(pred);
                 if (isBranchEdgeFeasible(intraCfgEdge, predState))
                 {
-                    collectBranchRefinement(intraCfgEdge, predState);
+                    applyBranchRefinement(intraCfgEdge, predState);
                     joinStates(merged, predState);
                     hasFeasiblePred = true;
                 }
@@ -362,7 +362,7 @@ static const LoadStmt* findBackingLoad(const SVFVar* var)
 /// branch direction (succ), which side it is on, and the other operand's
 /// interval. Returns top if no useful narrowing is possible.
 ///
-/// Called from collectBranchRefinement for each non-constant operand that has a
+/// Called from applyBranchRefinement for each non-constant operand that has a
 /// backing load. Given a branch condition like:
 ///
 ///   %cmp = icmp sgt %a, 5       ;  a > 5
@@ -505,6 +505,13 @@ bool AbstractInterpretation::isCmpBranchEdgeFeasible(const IntraCFGEdge* edge,
     return !resVal.isBottom();
 }
 
+bool AbstractInterpretation::isSwitchDefaultEdge(const IntraCFGEdge* edge) const
+{
+    const SVFStmt* terminator = edge->getSrcNode()->getSVFStmts().back();
+    const auto* branch = SVFUtil::cast<BranchStmt>(terminator);
+    return branch->getSuccessor(0) == edge->getDstNode();
+}
+
 bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
     const IntraCFGEdge* edge, AbstractState& as)
 {
@@ -514,18 +521,43 @@ bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
 
     AbstractValue condVal = getAbsValue(var, pred);
     IntervalValue switch_cond = condVal.getInterval();
-    switch_cond.meet_with(IntervalValue(succ, succ));
+    if (isSwitchDefaultEdge(edge))
+    {
+        // See ICFGBuilder::processFunBody (svf-llvm/lib/ICFGBuilder.cpp):
+        // default receives the internal label -1, not selector == -1.
+        // A real case -1 can have the same label. Exclude default only when
+        // a known selector matches an explicit case, e.g. switch(1) with
+        // case 1. A non-singleton interval keeps its conservative hull.
+        if (switch_cond.is_numeral())
+        {
+            const s64_t selector = switch_cond.getIntNumeral();
+            for (const ICFGEdge* successor : pred->getOutEdges())
+            {
+                const auto* caseEdge = SVFUtil::cast<IntraCFGEdge>(successor);
+                const s64_t label = caseEdge->getSuccessorCondValue();
+                if (successor != edge && label == selector)
+                    switch_cond.set_to_bottom();
+            }
+        }
+    }
+    else
+    {
+        switch_cond.meet_with(IntervalValue(succ, succ));
+    }
     if (switch_cond.isBottom())
         return false;
     return true;
 }
 
-void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
+bool AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
         AbstractState& as)
 {
+    bool feasible = true;
+    std::vector<std::pair<const LoadStmt*, IntervalValue>> constraints;
+    // Step 1: collect Load ObjVars related to CmpStmt
+    // e.g. cmp = (*p>0), we need to get var p, constant number 0, and predicate > (greater than)
     const SVFVar* cond = edge->getCondition();
     const ICFGNode* pred = edge->getSrcNode();
-    const ICFGNode* succNode = edge->getDstNode();
     s64_t succ = edge->getSuccessorCondValue();
 
     assert(!cond->getInEdges().empty() &&
@@ -585,22 +617,7 @@ void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
                         }
                         else
                         {
-                            const ICFGNode* loadIcfg = load->getICFGNode();
-                            const AbstractValue& ptrVal =
-                                getAbsValue(load->getRHSVar(), loadIcfg);
-                            if (!ptrVal.isAddr())
-                            {
-                                // Cannot map load p back to concrete ObjVars.
-                            }
-                            else
-                            {
-                                for (const auto& addr : ptrVal.getAddrs())
-                                {
-                                    NodeID objId = as.getIDFromAddr(addr);
-                                    recordBranchRefinement(objId, narrowed, as,
-                                                           loadIcfg, succNode);
-                                }
-                            }
+                            constraints.emplace_back(load, narrowed);
                         }
                     }
                 }
@@ -613,81 +630,59 @@ void AbstractInterpretation::collectBranchRefinement(const IntraCFGEdge* edge,
 
         AbstractValue condVal = getAbsValue(var, pred);
         IntervalValue switch_cond = condVal.getInterval();
-        switch_cond.meet_with(IntervalValue(succ, succ));
-        if (switch_cond.isBottom())
+        if (isSwitchDefaultEdge(edge))
+        {
+            // Default does not impose equality with a case label.
+        }
+        else if ((switch_cond & IntervalValue(succ, succ)).isBottom())
         {
             // This case label is not reachable from cond's interval.
         }
         else
         {
+            switch_cond = IntervalValue(succ, succ);
             as[var->getId()] = AbstractValue(switch_cond);
 
-            FIFOWorkList<const SVFStmt*> stmtList;
             for (SVFStmt* stmt : var->getInEdges())
-                stmtList.push(stmt);
-            while (!stmtList.empty())
             {
-                const SVFStmt* stmt = stmtList.pop();
-                const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt);
-                if (!load)
-                {
-                    // Skip non-load definitions of the switch condition.
-                }
-                else
-                {
-                    const ICFGNode* loadIcfg = load->getICFGNode();
-                    const AbstractValue& ptrVal =
-                        getAbsValue(load->getRHSVar(), loadIcfg);
-                    if (!ptrVal.isAddr())
-                    {
-                        // Cannot map load p back to concrete ObjVars.
-                    }
-                    else
-                    {
-                        for (const auto& addr : ptrVal.getAddrs())
-                        {
-                            NodeID objId = as.getIDFromAddr(addr);
-                            recordBranchRefinement(objId, switch_cond, as,
-                                                   loadIcfg, succNode);
-                        }
-                    }
-                }
+                if (const auto* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+                    constraints.emplace_back(load, switch_cond);
             }
         }
     }
-}
 
-void AbstractInterpretation::recordBranchRefinement(
-    NodeID objId, const IntervalValue& narrowed, AbstractState& as,
-    const ICFGNode* loadIcfg, const ICFGNode* /*succ*/)
-{
-    // Default (dense / semi-sparse): MEET narrowed onto obj's current
-    // value, store back into the local `as`.  Caller's joinStates
-    // propagates `as` into `merged`, then `updateAbsState(succ, merged)`
-    // commits it to trace[succ].
-    //
-    // We can't go through the polymorphic updateAbsValue here: `as` is
-    // a transient per-edge predState copy that lives outside
-    // abstractTrace, so it has no node id.  Writing via `updateAbsValue`
-    // with `succ` as the node would land in trace[succ] but get
-    // clobbered by the subsequent `updateAbsState(succ, merged)`; with
-    // `loadIcfg` it would corrupt the obj's authoritative value at its
-    // load site.  AbstractState::store on the transient `as` is the
-    // only sound primitive — and recordBranchRefinement itself is the
-    // virtual customisation point (FullSparse routes to
-    // refinementTrace instead of touching `as`).
-    const ObjVar* objVar = SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(objId));
-    if (objVar && hasAbsValue(objVar, loadIcfg))
+    // Step 2: refine Obj below.
+    // Example: x > 5 supplies [6,+inf]; narrowing [0,10] yields [6,10].
+    // Only this temporary input changes, never the backing load's trace.
+    for (const auto& [load, narrowed] : constraints)
     {
-        AbstractValue cur = getAbsValue(objVar, loadIcfg);
-        if (cur.isInterval())
+        const ICFGNode* loadICFG = load->getICFGNode();
+        const AbstractValue& pointer = getAbsValue(load->getRHSVar(), loadICFG);
+        if (!pointer.isAddr() || pointer.getAddrs().size() != 1)
         {
-            IntervalValue itv = cur.getInterval();
-            itv.meet_with(narrowed);
-            u32_t addr = AbstractState::getVirtualMemAddress(objId);
-            as.store(addr, AbstractValue(itv));
+            // A condition on *p cannot refine every possible target of p.
+        }
+        else
+        {
+            const u32_t addr = *pointer.getAddrs().begin();
+            const NodeID objId = as.getIDFromAddr(addr);
+            if (AbstractState::isNullOrBlackHoleAddr(addr))
+            {
+                // No backing memory cell to refine.
+            }
+            else if (!as.inAddrToValTable(objId))
+            {
+                // Refine only an interval Obj already carried by this state.
+            }
+            else
+            {
+                IntervalValue& value = as.load(addr).getInterval();
+                value.meet_with(narrowed);
+                feasible &= !value.isBottom();
+            }
         }
     }
+    return feasible;
 }
 
 bool AbstractInterpretation::isBranchEdgeFeasible(const IntraCFGEdge* edge,
