@@ -658,52 +658,27 @@ bool AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
     {
         const ICFGNode* loadICFG = load->getICFGNode();
         const AbstractValue& pointer = getAbsValue(load->getRHSVar(), loadICFG);
-        if (!pointer.isAddr())
+        if (!pointer.isAddr() || pointer.getAddrs().size() != 1)
         {
-            // Cannot map this load back to ObjVars.
+            // A condition on *p cannot refine every possible target of p.
         }
         else
         {
-            for (u32_t addr : pointer.getAddrs())
+            const u32_t addr = *pointer.getAddrs().begin();
+            const NodeID objId = as.getIDFromAddr(addr);
+            if (AbstractState::isNullOrBlackHoleAddr(addr))
             {
-                const NodeID objId = as.getIDFromAddr(addr);
-                if (Options::AESparsity() == AESparsity::Sparse)
-                {
-                    if (!as.inAddrToValTable(objId) || !hasAbsState(loadICFG))
-                    {
-                        // This SVFG contribution does not carry the Obj.
-                    }
-                    else if (pointer.getAddrs().size() != 1)
-                    {
-                        // A condition on one possible target cannot refine all aliases.
-                    }
-                    else if (AbstractState::isNullOrBlackHoleAddr(addr))
-                    {
-                        // No backing memory cell to refine.
-                    }
-                    else
-                    {
-                        IntervalValue& value =
-                            as.load(AbstractState::getVirtualMemAddress(objId)).getInterval();
-                        value.meet_with(narrowed);
-                        feasible &= !value.isBottom();
-                    }
-                }
-                else
-                {
-                    // Dense/Semi retain their existing backing-load read.
-                    const auto* obj = SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(objId));
-                    if (obj && hasAbsValue(obj, loadICFG))
-                    {
-                        const AbstractValue current = getAbsValue(obj, loadICFG);
-                        if (current.isInterval())
-                        {
-                            IntervalValue value = current.getInterval();
-                            value.meet_with(narrowed);
-                            as.store(AbstractState::getVirtualMemAddress(objId), AbstractValue(value));
-                        }
-                    }
-                }
+                // No backing memory cell to refine.
+            }
+            else if (!as.inAddrToValTable(objId))
+            {
+                // Refine only an interval Obj already carried by this state.
+            }
+            else
+            {
+                IntervalValue& value = as.load(addr).getInterval();
+                value.meet_with(narrowed);
+                feasible &= !value.isBottom();
             }
         }
     }

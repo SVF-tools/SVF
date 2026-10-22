@@ -100,8 +100,6 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
                         merged[id].join_with(value);
                     for (const auto& [obj, value] : input.getLocToVal())
                     {
-                        // Keep all feasible inputs; do not infer which
-                        // predecessor provides the latest base/sub value.
                         const u32_t addr = AbstractState::getVirtualMemAddress(obj);
                         if (merged.getLocToVal().count(obj))
                             merged.load(addr).join_with(value);
@@ -219,6 +217,43 @@ AbstractState FullSparseAbstractInterpretation::filterValueFlowInputByPath(
             }
             else
             {
+                // int a[2] = {0,1} // D: a[0] = [0,0], a[1] = [1,1]
+                // a[1] = 2         // S: a[1] = [2,2]
+                // use(a[1])        // N: if an input carries D's old a[1],
+                // its D -> S -> N path reuses S's result when strongly updated.
+                // An input from S already has a[1]=2; S itself is not replayed.
+
+                AbstractState output = incoming[current];
+                if (current != source && hasAbsState(current))
+                {
+                    const AbstractState& state = getAbsState(current);
+                    for (const SVFStmt* stmt : current->getSVFStmts())
+                    {
+                        if (const auto* store = SVFUtil::dyn_cast<StoreStmt>(stmt))
+                        {
+                            const AddressValue& targets =
+                                getAbsValue(store->getLHSVar(), current).getAddrs();
+                            const bool strongUpdate = isStrongUpdate(targets, state);
+                            for (const auto& entry : incoming[current].getLocToVal())
+                            {
+                                const NodeID obj = entry.first;
+                                const u32_t addr = AbstractState::getVirtualMemAddress(obj);
+                                if (targets.contains(addr) &&
+                                        state.getIDFromAddr(addr) == obj && state.getLocToVal().count(obj))
+                                {
+                                    // D: a[9]=9; p=a+9; S: *p=10; N: use(a[9]).
+                                    // Static GEP mapping may leave D -> N, not S -> N.
+                                    // At S, AE identifies the carried sub-Obj a[9].
+                                    // Reuse S's computed value; do not execute S again.
+                                    if (strongUpdate)
+                                        output.store(addr, state.load(addr));
+                                    else
+                                        output.load(addr).join_with(state.load(addr));
+                                }
+                            }
+                        }
+                    }
+                }
                 std::vector<std::pair<const ICFGNode*, const IntraCFGEdge*>> successors;
                 if (const auto* call = SVFUtil::dyn_cast<CallICFGNode>(current))
                 {
@@ -249,7 +284,7 @@ AbstractState FullSparseAbstractInterpretation::filterValueFlowInputByPath(
 
                 for (const auto& [next, branch] : successors)
                 {
-                    AbstractState candidate = incoming[current];
+                    AbstractState candidate = output;
                     bool feasible = true;
                     if (!next || next->getFun() != source->getFun())
                     {

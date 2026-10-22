@@ -107,7 +107,8 @@ private:
     /// including conservative call/global handling and path/loop merges.
     /// A local worklist JOINs inputs at visited ICFG nodes, not whole paths.
     /// It does not execute arithmetic or cache results across WTO iterations.
-    /// Feasible predecessor values are joined without inferring Store order.
+    /// Along the path, reuse computed Store results only for carried Objs;
+    /// shared isStrongUpdate selects replacement versus conservative JOIN.
     AbstractState filterValueFlowInputByPath(const VFGEdge* edge,
                                             const AbstractState& input);
 

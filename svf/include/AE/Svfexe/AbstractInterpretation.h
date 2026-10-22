@@ -259,9 +259,9 @@ protected:
     bool isBranchEdgeFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
     /// Derive cmp/switch constraints and apply them to this temporary input.
-    /// Dense/Semi read Obj values at the backing load; FullSparse narrows only
-    /// carried Obj values reached through one known pointer target.
-    /// Return false when a FullSparse input contradicts the selected branch.
+    /// Narrow only carried interval Obj values reached through one known
+    /// pointer target, without changing the backing load's trace.
+    /// Return false when a carried value contradicts the selected branch.
     bool applyBranchRefinement(const IntraCFGEdge* edge, AbstractState& as);
 
 private:
