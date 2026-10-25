@@ -44,31 +44,35 @@ void FullSparseAbstractInterpretation::buildSVFG()
     svfgBuilder->buildFullSVFG(preAnalysis->getPointerAnalysis());
 }
 
-// FullSparse keeps the established GEP/freed-address compatibility path.
-// Base Obj values and top-level inputs are assembled from direct SVFG edges.
-void FullSparseAbstractInterpretation::joinStates(AbstractState& dst,
+void FullSparseAbstractInterpretation::mergeFreedAddrs(AbstractState& dst,
         const AbstractState& src)
 {
-    for (const auto& [id, val] : src.getLocToVal())
-    {
-        if (SVFUtil::isa<GepObjVar>(svfir->getSVFVar(id)))
-        {
-            const u32_t addr = AbstractState::getVirtualMemAddress(id);
-            if (dst.getLocToVal().count(id))
-                dst.load(addr).join_with(val);
-            else
-                dst.store(addr, val);
-        }
-    }
     for (NodeID addr : src.getFreedAddrs())
         dst.addToFreedAddrs(addr);
+}
+
+void FullSparseAbstractInterpretation::joinStates(AbstractState& dst,
+        const AbstractState& src, const NodeBS& objs)
+{
+    for (NodeID obj : objs)
+    {
+        const u32_t addr = AbstractState::getVirtualMemAddress(obj);
+        const auto value = src.getLocToVal().find(src.getIDFromAddr(addr));
+        if (value != src.getLocToVal().end())
+        {
+            if (dst.getLocToVal().count(dst.getIDFromAddr(addr)))
+                dst.load(addr).join_with(value->second);
+            else
+                dst.store(addr, value->second);
+        }
+    }
 }
 
 bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     const ICFGNode* node)
 {
     // An empty SVFG input is not proof of unreachability. Reuse the existing
-    // control gate and GEP/freed-address compatibility merge, not a new solver.
+    // control gate and mergeFreedAddrs, not a new solver.
     const bool reachable =
         AbstractInterpretation::mergeStatesFromPredecessors(node);
     if (reachable)
@@ -91,66 +95,32 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
                 }
                 else
                 {
-                    // Step 1. Read this direct and indirect predecessor's current edge values.
-                    AbstractState input = collectValueFlowInput(edge);
+                    // Step 1. Read this predecessor's current edge values.
+                    NodeBS objs;
+                    AbstractState input = CollectObjValueFlowInput(edge, objs);
                     // Step 2. JOIN the contributions of feasible, refined paths.
                     input = filterValueFlowInputByPath(edge, input);
                     // Step 3. Merge this contribution, never the whole source state.
-                    for (const auto& [id, value] : input.getVarToVal())
-                        merged[id].join_with(value);
-                    for (const auto& [obj, value] : input.getLocToVal())
-                    {
-                        const u32_t addr = AbstractState::getVirtualMemAddress(obj);
-                        if (merged.getLocToVal().count(obj))
-                            merged.load(addr).join_with(value);
-                        else
-                            merged.store(addr, value);
-                    }
+                    joinStates(merged, input, objs);
                 }
             }
         }
         updateAbsState(node, merged);
-        // The shared semi-sparse setter replaces Obj state only. Copy
-        // the collected SSA inputs here without changing their canonical
-        // def-site reads or the WTO gather/scatter convention.
-        for (const auto& [id, value] : merged.getVarToVal())
-            getAbsState(node)[id] = value;
     }
     return reachable;
 }
 
-// Step 1 helper function - collect predecessors' local vars including top-level and address-taken
-AbstractState FullSparseAbstractInterpretation::collectValueFlowInput(
-    const VFGEdge* edge)
+AbstractState FullSparseAbstractInterpretation::CollectObjValueFlowInput(
+    const VFGEdge* edge, NodeBS& objs)
 {
     AbstractState input;
-    const VFGNode* source = edge->getSrcNode();
-    const ICFGNode* sourceICFG = source->getICFGNode();
-    const auto* indirect = SVFUtil::dyn_cast<IndirectSVFGEdge>(edge);
-    if (indirect)
+    objs.clear();
+    if (const auto* indirect = SVFUtil::dyn_cast<IndirectSVFGEdge>(edge))
     {
-        // indirect edge (address-taken vars)
-        for (NodeID id : indirect->getPointsTo())
-        {
-            const BaseObjVar* base = svfir->getBaseObject(id);
-            for (NodeID obj : svfir->getAllFieldsObjVars(base))
-            {
-                const auto* var = svfir->getObjVar(obj);
-                if (AbstractInterpretation::hasAbsValue(var, sourceICFG))
-                    input.store(AbstractState::getVirtualMemAddress(obj),
-                                AbstractInterpretation::getAbsValue(var, sourceICFG));
-            }
-        }
-    }
-    else
-    {
-        // direct edge (top-level vars)
-        for (NodeID id : source->getDefSVFVars())
-        {
-            const auto* var = SVFUtil::dyn_cast<ValVar>(svfir->getSVFVar(id));
-            if (var && hasAbsValue(var, sourceICFG))
-                input[id] = getAbsValue(var, sourceICFG);
-        }
+        for (NodeID obj : indirect->getPointsTo())
+            objs |= svfir->getAllFieldsObjVars(svfir->getBaseObject(obj));
+        const ICFGNode* source = edge->getSrcNode()->getICFGNode();
+        joinStates(input, getAbsState(source), objs);
     }
     return input;
 }
@@ -172,10 +142,11 @@ AbstractState FullSparseAbstractInterpretation::filterValueFlowInputByPath(
             objs |= svfir->getAllFieldsObjVars(svfir->getBaseObject(obj));
     }
     AbstractState result;
-    if (input.getVarToVal().empty() && input.getLocToVal().empty() && objs.empty())
+    if (input.getLocToVal().empty() && objs.empty())
     {
         // No values or queried Objs. An indirect edge still identifies its
         // base/sub Objs even when D has not produced their values yet.
+        // this branch will return empty result
     }
     else if (!edge->isIntraVFGEdge() || source->getFun() != target->getFun() ||
              !source->getFun())
@@ -192,6 +163,7 @@ AbstractState FullSparseAbstractInterpretation::filterValueFlowInputByPath(
         //   int g = 7;                 // D: global node, no owning function
         //   void f() { use(g); }       // N
         // All retain D's input; no cross-procedural feasibility is proved.
+        // In one word, if edge is interprocedural, we reckon it feasible, no filter applies.
         result = input;
     }
     else
@@ -204,7 +176,9 @@ AbstractState FullSparseAbstractInterpretation::filterValueFlowInputByPath(
         // }
         // Same function: search D -> B -> ... -> N, carrying x=[6,10]
         // on B's true edge. More branches give D -> B1 -> ... -> Bk -> N.
-        // incoming is temporary to this query; no statements are re-executed.
+        // incoming's key is the iterated ICFGNode in worklist
+        // incoming's value is initialized as AbstractState pulled from SVFG predecessor 
+        //    the AbstractState only change some interval values at branches (branch refinement)
         Map<const ICFGNode*, AbstractState> incoming;
         FIFOWorkList<const ICFGNode*> worklist;
         incoming[source] = input;
@@ -263,35 +237,99 @@ AbstractState FullSparseAbstractInterpretation::filterValueFlowInputByPath(
                 std::vector<std::pair<const ICFGNode*, const IntraCFGEdge*>> successors;
                 if (const auto* call = SVFUtil::dyn_cast<CallICFGNode>(current))
                 {
-                    if (current != source && SVFUtil::isExtCall(call->getCalledFunction()) &&
-                            hasAbsState(current))
+                    const RetICFGNode* retNode = call->getRetICFGNode();
+                    if (call->getCalledFunction() &&
+                            SVFUtil::isExtCall(call->getCalledFunction()))
                     {
                         // D: x=0; C: a model writes x=5; N: use(x).
                         // Read the queried Objs from C's already computed
                         // output, including x=5 even when input contains x=0.
+                        // C may also be D, e.g. memset(a, 7, 1) -> use(a[0]);
+                        // read its model output rather than skipping the call.
                         // This is a projection of C's output, not proof that
                         // C wrote every present Obj. A joined output may be
                         // less precise than this query's path-specific values.
-                        const AbstractState& state = getAbsState(current);
-                        for (NodeID obj : objs)
+                        if (hasAbsState(current))
                         {
-                            const u32_t addr = AbstractState::getVirtualMemAddress(obj);
-                            if (state.getIDFromAddr(addr) == obj && state.getLocToVal().count(obj))
+                            const AbstractState& state = getAbsState(current);
+                            for (NodeID obj : objs)
                             {
-                                output.store(addr, state.load(addr));
+                                const u32_t addr = AbstractState::getVirtualMemAddress(obj);
+                                if (state.getIDFromAddr(addr) == obj && state.getLocToVal().count(obj))
+                                {
+                                    output.store(addr, state.load(addr));
+                                }
                             }
                         }
                     }
-                    // int x = input();   // D
-                    // f();               // CallICFGNode
-                    // ...                // matching RetICFGNode is in caller
-                    // use(x);            // N
-                    // Search: D -> call f -> caller return point -> ... -> N.
-                    // Do not enter f. External calls reuse queried Obj outputs
-                    // above; ordinary callee results come from their SVFG inputs.
+                    else
+                    {
+                        // Ordinary and recursive calls use the same Obj return
+                        // inputs. void f(int *p) { *p=7; } f(&x); returns x=7
+                        // as an Obj value. Do not execute the callee again.
+                        // INTERVAL_test_16-0.c: main starts i in [0,5].
+                        // void foo(int* i) {
+                        //     *i = *i + 1;  // D: i=[1,10] at fixpoint
+                        //     if (*i < 10) {
+                        //         foo(i);   // C: carried i=[1,9]
+                        //                   // R: callee output i=[10,10]
+                        //     }
+                        // }                 // N: merge both branches and return
+                        // Unlike a loop exit, C -> R does not test i again.
+                        // The callee's exit condition is already reflected in
+                        // its Obj output. Read that output before continuing
+                        // at R, without searching or executing the callee body.
+                        AbstractState calleeOutput;
+                        NodeBS calleeOutputObjs;
+                        // R may still contain a copy of C's pre-call state.
+                        // Read R's indirect SVFG predecessors, not State[R].
+                        for (const VFGNode* retSVFGNode : retNode->getVFGNodes())
+                        {
+                            for (const VFGEdge* retEdge : retSVFGNode->getInEdges())
+                            {
+                                if (const auto* indirect = SVFUtil::dyn_cast<IndirectSVFGEdge>(retEdge))
+                                {
+                                    NodeBS retObjs;
+                                    for (NodeID obj : indirect->getPointsTo())
+                                        retObjs |= svfir->getAllFieldsObjVars(svfir->getBaseObject(obj));
+                                    calleeOutputObjs |= retObjs;
+                                    const ICFGNode* calleeOutputNode = retEdge->getSrcNode()->getICFGNode();
+                                    if (calleeOutputNode && hasAbsState(calleeOutputNode))
+                                        joinStates(calleeOutput, getAbsState(calleeOutputNode), retObjs);
+                                }
+                            }
+                        }
+                        // Change only queried Objs identified by the return
+                        // edges; all other carried values stay unchanged.
+                        for (NodeID obj : objs)
+                        {
+                            if (calleeOutputObjs.test(obj))
+                            {
+                                const u32_t addr = AbstractState::getVirtualMemAddress(obj);
+                                if (calleeOutput.getLocToVal().count(obj))
+                                {
+                                    // Replace pre-call [1,9] with returned 10.
+                                    // Do not JOIN or intersect with the old value:
+                                    // the call may have changed this Obj.
+                                    output.store(addr, calleeOutput.load(addr));
+                                }
+                                else
+                                {
+                                    // The return edge exists, but no Obj value
+                                    // is available yet. Contribute bottom until
+                                    // a later WTO iteration supplies the output,
+                                    // not the pre-call value as a guessed return.
+                                    output.store(addr, AbstractValue());
+                                }
+                            }
+                        }
+                    }
+                    // Continue the caller-side D -> C -> R -> ... -> N path
+                    // with the Obj outputs collected above. Do not enter or
+                    // execute the callee again in this path query.
                     // Whether f can return is not proved here (also conservative
                     // for abort()).
-                    successors.emplace_back(call->getRetICFGNode(), nullptr);
+                    successors.emplace_back(retNode, nullptr);
                 }
                 else
                 {

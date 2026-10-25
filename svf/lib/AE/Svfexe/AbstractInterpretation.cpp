@@ -262,8 +262,8 @@ void AbstractInterpretation::handleGlobalNode()
 /// Pull-based state merge: for each predecessor that has an abstract state,
 /// copy its state, apply branch refinement for conditional IntraCFGEdges,
 /// and join all feasible states into getAbsState(node).
-/// The join is dispatched through the manager so semi-sparse can skip
-/// ValVar merging.
+/// Dense/semi-sparse use their state JOIN; full-sparse merges only freed
+/// addresses here and collects Obj values separately through SVFG inputs.
 /// Returns true if at least one predecessor contributed state.
 bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
 {
@@ -277,50 +277,53 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
         if (!hasAbsState(pred))
             continue;
 
+        AbstractState predState = getAbsState(pred);
+        bool feasible = false;
         if (const IntraCFGEdge* intraCfgEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge))
         {
             if (intraCfgEdge->getCondition())
             {
-                AbstractState predState = getAbsState(pred);
-                if (isBranchEdgeFeasible(intraCfgEdge, predState))
-                {
+                feasible = isBranchEdgeFeasible(intraCfgEdge, predState);
+                if (feasible)
                     applyBranchRefinement(intraCfgEdge, predState);
-                    joinStates(merged, predState);
-                    hasFeasiblePred = true;
-                }
             }
             else
             {
-                joinStates(merged, getAbsState(pred));
-                hasFeasiblePred = true;
+                feasible = true;
             }
         }
         else if (SVFUtil::isa<CallCFGEdge>(edge))
         {
-            joinStates(merged, getAbsState(pred));
-            hasFeasiblePred = true;
+            feasible = true;
         }
         else if (SVFUtil::isa<RetCFGEdge>(edge))
         {
             switch (Options::HandleRecur())
             {
             case TOP:
-                joinStates(merged, getAbsState(pred));
-                hasFeasiblePred = true;
+                feasible = true;
                 break;
             case WIDEN_ONLY:
             case WIDEN_NARROW:
             {
                 const RetICFGNode* returnSite = SVFUtil::dyn_cast<RetICFGNode>(node);
                 const CallICFGNode* callSite = returnSite->getCallICFGNode();
-                if (hasAbsState(callSite))
-                {
-                    joinStates(merged, getAbsState(pred));
-                    hasFeasiblePred = true;
-                }
+                feasible = hasAbsState(callSite);
                 break;
             }
             }
+        }
+
+        if (feasible)
+        {
+            if (Options::AESparsity() == AESparsity::Sparse)
+            {
+                // getAEInstance() selects this class for Sparse mode.
+                dynamic_cast<FullSparseAbstractInterpretation*>(this)->mergeFreedAddrs(merged, predState);
+            }
+            else
+                joinStates(merged, predState);
+            hasFeasiblePred = true;
         }
     }
 

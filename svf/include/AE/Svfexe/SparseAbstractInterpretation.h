@@ -83,20 +83,34 @@ public:
     }
     ~FullSparseAbstractInterpretation() override;
 
-protected:
-    /// Keep the existing ICFG transport of GEP values and freed addresses.
-    void joinStates(AbstractState& dst, const AbstractState& src) override;
+    /// Merge only freed addresses from a feasible ICFG predecessor.
+    /// Obj values are collected separately through SVFG inputs.
+    void mergeFreedAddrs(AbstractState& dst, const AbstractState& src);
 
-    /// 1. Read the direct SVFG predecessor's values.
+protected:
+    using SemiSparseAbstractInterpretation::joinStates;
+
+    /// JOIN only the selected Obj IDs from src into dst; missing values
+    /// contribute nothing. The caller selects base/sub Objs and handles
+    /// path constraints and strong/weak updates. ValVars and freed addresses
+    /// are not copied here. Memory lookups use AbstractState's
+    /// existing address resolution, including its freed-address handling.
+    void joinStates(AbstractState& dst, const AbstractState& src,
+                    const NodeBS& objs);
+
+    /// 1. Read Obj values from incoming indirect SVFG edges.
     /// 2. Filter/refine that contribution along feasible ICFG paths.
     /// 3. JOIN it into this ICFGNode's state, then execute normally.
     bool mergeStatesFromPredecessors(const ICFGNode* node) override;
 
 private:
-    /// LLVM: store i32 7, ptr %a2; ...; load i32, ptr %a2.
-    /// An indirect edge naming a or a.2 reads State[store]'s available
-    /// base/sub values through SVFIR membership. Direct edges read ValVars.
-    AbstractState collectValueFlowInput(const VFGEdge* edge);
+    /// Step 1: collect only the indirect edge's base/sub Obj values.
+    /// store i32 7, ptr %a2; ...; load i32, ptr %a2:
+    /// an edge naming a or a.2 selects its base/sub Objs from State[store].
+    /// The caller checks that the source state is available. Return the
+    /// selected IDs in objs, even if their values are not available yet.
+    /// Direct ValVar edges contribute no Obj values or IDs.
+    AbstractState CollectObjValueFlowInput(const VFGEdge* edge, NodeBS& objs);
 
     /// Filter one SVFG input using branch-feasible ICFG paths.
     /// int x = input();   // D: x=[0,10]
