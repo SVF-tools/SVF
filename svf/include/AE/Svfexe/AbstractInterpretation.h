@@ -287,12 +287,13 @@ private:
     /// Returns true if the cmp-conditional branch is feasible.
     bool isCmpBranchEdgeFeasible(const IntraCFGEdge* edge, AbstractState& as);
 
-    /// Returns true if the switch branch is feasible.
+    /// Check whether any input value can take this switch edge; do not refine it.
     bool isSwitchBranchEdgeFeasible(const IntraCFGEdge* edge,
-                                    AbstractState& as);
+                                    const IntervalValue& input) const;
 
-    /// Switch BranchStmt preserves LLVM successor order: default is first.
-    /// Use its destination, not the label -1, which can also be a real case.
+    /// True when the edge enters the switch's default destination.
+    /// LLVM provides this destination even without a source-level default.
+    /// Explicit cases may share it; this checks the destination only.
     bool isSwitchDefaultEdge(const IntraCFGEdge* edge) const;
 
     void updateStateOnAddr(const AddrStmt *addr);

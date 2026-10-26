@@ -1843,10 +1843,7 @@ void SVFIRBuilder::visitBranchInst(BranchInst &inst)
  * ]
  * Note: default case value is nullptr
  */
-/// For larger number, we preserve case value just -1 now
-/// see more: https://github.com/SVF-tools/SVF/pull/992
-
-/// The following implementation follows ICFGBuilder::processFunBody
+/// Preserve LLVM switch destinations and case values in BranchStmt.
 void SVFIRBuilder::visitSwitchInst(SwitchInst &inst)
 {
     NodeID brinst = getValueNode(&inst);
@@ -1854,15 +1851,29 @@ void SVFIRBuilder::visitSwitchInst(SwitchInst &inst)
 
     BranchStmt::SuccAndCondPairVec successors;
     std::vector<const Instruction*> nextInsts;
+    // Resolve each LLVM successor to its first non-intrinsic instruction.
     LLVMUtil::getNextInsts(&inst, nextInsts);
-    for (const Instruction* succInst : nextInsts)
+
+    // Record default first and -1 is the getSuccessorCondValue(default iter, usually 0)
+    successors.emplace_back(llvmModuleSet()->getICFGNode(nextInsts.front()), -1);
+
+    // switch (x) {
+    // case 1:
+    // case 2: work(); break;
+    // default: other(); break;
+    // }
+    // Both cases jump to the same call instruction, work(). Keep two records
+    // for that call's ICFG node: one with case value 1, one with case value 2.
+    // findCaseDest() returns nullptr for a block shared by multiple cases.
+    // Read the value from each case, not from its destination block.
+    for (const auto& switchCase : inst.cases())
     {
-        /// branch condition value
-        const ConstantInt* condVal = inst.findCaseDest(const_cast<BasicBlock*>(succInst->getParent()));
-        /// default case is set to -1;
+        const ConstantInt* condVal = switchCase.getCaseValue();
         s64_t val = -1;
-        if (condVal && condVal->getBitWidth() <= 64)
-            val = (u32_t)LLVMUtil::getIntegerValue(condVal).first;
+        if (condVal->getBitWidth() <= 64)
+            val = LLVMUtil::getIntegerValue(condVal).first;
+        // In the example, both cases resolve to the same call to work().
+        const Instruction* succInst = nextInsts[switchCase.getSuccessorIndex()];
         const ICFGNode* icfgNode = llvmModuleSet()->getICFGNode(succInst);
         successors.push_back(std::make_pair(icfgNode, val));
     }

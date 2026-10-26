@@ -510,46 +510,57 @@ bool AbstractInterpretation::isCmpBranchEdgeFeasible(const IntraCFGEdge* edge,
 
 bool AbstractInterpretation::isSwitchDefaultEdge(const IntraCFGEdge* edge) const
 {
+    // LLVM successor 0 is the default destination, not ICFGNode ID 0.
+    // switch(x) { case 1: work(); break; } after(); -> default goes to after().
+    // Explicit cases may enter the same block; this checks the destination only.
+    enum : u32_t { DefaultSuccessor = 0 };
     const SVFStmt* terminator = edge->getSrcNode()->getSVFStmts().back();
     const auto* branch = SVFUtil::cast<BranchStmt>(terminator);
-    return branch->getSuccessor(0) == edge->getDstNode();
+    return branch->getSuccessor(DefaultSuccessor) == edge->getDstNode();
 }
 
 bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
-    const IntraCFGEdge* edge, AbstractState& as)
+    const IntraCFGEdge* edge, const IntervalValue& input) const
 {
-    const ICFGNode* pred = edge->getSrcNode();
-    s64_t succ = edge->getSuccessorCondValue();
-    const SVFVar* var = edge->getCondition();
+    if (input.isBottom())
+        return false;
+    else if (edge->getCondition()->getType()->getByteSize() > sizeof(s64_t))
+        return true;
 
-    AbstractValue condVal = getAbsValue(var, pred);
-    IntervalValue switch_cond = condVal.getInterval();
-    if (isSwitchDefaultEdge(edge))
+    const auto* branch = SVFUtil::cast<BranchStmt>(
+                             edge->getSrcNode()->getSVFStmts().back());
+    u64_t matchedCases = 0;
+    for (u32_t i = 1; i < branch->getNumSuccessors(); ++i)
     {
-        // See ICFGBuilder::processFunBody (svf-llvm/lib/ICFGBuilder.cpp):
-        // default receives the internal label -1, not selector == -1.
-        // A real case -1 can have the same label. Exclude default only when
-        // a known selector matches an explicit case, e.g. switch(1) with
-        // case 1. A non-singleton interval keeps its conservative hull.
-        if (switch_cond.is_numeral())
+        const s64_t caseValue = branch->getSuccessorCondValue(i);
+        if (input.lb().leq(caseValue) && input.ub().geq(caseValue))
         {
-            const s64_t selector = switch_cond.getIntNumeral();
-            for (const ICFGEdge* successor : pred->getOutEdges())
-            {
-                const auto* caseEdge = SVFUtil::cast<IntraCFGEdge>(successor);
-                const s64_t label = caseEdge->getSuccessorCondValue();
-                if (successor != edge && label == selector)
-                    switch_cond.set_to_bottom();
-            }
+            // case 1:  (input: [0,2])
+            //     {block for case 1 }
+            // so input can satisfy this case
+            if (branch->getSuccessor(i) == edge->getDstNode())
+                return true;
+            ++matchedCases;
         }
     }
+
+    // after last for loop, we test all non-default edge. If we reach here
+    // 1)non-default edge, infeasible 2)default edge, it depends.
+    if (!isSwitchDefaultEdge(edge))
+        return false;
+    else if (input.is_infinite())
+    // default edge here
+    // if input reach infinity, conservatively think it can go default edge
+        return true;
     else
     {
-        switch_cond.meet_with(IntervalValue(succ, succ));
+        // default edge here
+        // if we still have possible value to miss all non-default cases, it can
+        // go default now.
+        const u64_t span = static_cast<u64_t>(input.ub().getIntNumeral()) -
+                           static_cast<u64_t>(input.lb().getIntNumeral());
+        return span >= matchedCases;
     }
-    if (switch_cond.isBottom())
-        return false;
-    return true;
 }
 
 bool AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
@@ -629,29 +640,8 @@ bool AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
     }
     else
     {
-        const SVFVar* var = cond;
-
-        AbstractValue condVal = getAbsValue(var, pred);
-        IntervalValue switch_cond = condVal.getInterval();
-        if (isSwitchDefaultEdge(edge))
-        {
-            // Default does not impose equality with a case label.
-        }
-        else if ((switch_cond & IntervalValue(succ, succ)).isBottom())
-        {
-            // This case label is not reachable from cond's interval.
-        }
-        else
-        {
-            switch_cond = IntervalValue(succ, succ);
-            as[var->getId()] = AbstractValue(switch_cond);
-
-            for (SVFStmt* stmt : var->getInEdges())
-            {
-                if (const auto* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
-                    constraints.emplace_back(load, switch_cond);
-            }
-        }
+        // Switch edges only filter feasibility; leave all carried values unchanged.
+        return isSwitchBranchEdgeFeasible(edge, getAbsValue(cond, pred).getInterval());
     }
 
     // Step 2: refine Obj below.
@@ -695,7 +685,8 @@ bool AbstractInterpretation::isBranchEdgeFeasible(const IntraCFGEdge* edge,
     assert(!cmpVar->getInEdges().empty() && "branch condition has no defining edge?");
     if (SVFUtil::isa<CmpStmt>(*cmpVar->getInEdges().begin()))
         return isCmpBranchEdgeFeasible(edge, as);
-    return isSwitchBranchEdgeFeasible(edge, as);
+    return isSwitchBranchEdgeFeasible(edge,
+                                     getAbsValue(cmpVar, edge->getSrcNode()).getInterval());
 }
 
 /**
