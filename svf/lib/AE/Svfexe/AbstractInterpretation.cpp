@@ -640,8 +640,33 @@ bool AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
     }
     else
     {
-        // Switch edges only filter feasibility; leave all carried values unchanged.
-        return isSwitchBranchEdgeFeasible(edge, getAbsValue(cond, pred).getInterval());
+        if (!isSwitchBranchEdgeFeasible(edge, getAbsValue(cond, pred).getInterval()))
+            return false;
+        else if (isSwitchDefaultEdge(edge))
+            return true;
+        else
+        {
+            const auto* branch = SVFUtil::cast<BranchStmt>(pred->getSVFStmts().back());
+            u32_t caseCount = 0;
+            s64_t caseValue = 0;
+            for (u32_t i = 1; i < branch->getNumSuccessors(); ++i)
+            {
+                if (branch->getSuccessor(i) == edge->getDstNode())
+                {
+                    ++caseCount;
+                    caseValue = branch->getSuccessorCondValue(i);
+                }
+            }
+
+            // case 10: A(); -> entering A requires x == 10.
+            // case 10: case 20: A(); -> do not select just one value.
+            // Reuse the Obj refinement below; do not modify the defining state.
+            if (caseCount == 1)
+            {
+                if (const LoadStmt* load = findBackingLoad(cond))
+                    constraints.emplace_back(load, IntervalValue(caseValue));
+            }
+        }
     }
 
     // Step 2: refine Obj below.
