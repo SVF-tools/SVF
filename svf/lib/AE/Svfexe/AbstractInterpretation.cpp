@@ -319,7 +319,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
             if (Options::AESparsity() == AESparsity::Sparse)
             {
                 // getAEInstance() selects this class for Sparse mode.
-                dynamic_cast<FullSparseAbstractInterpretation*>(this)->mergeFreedAddrs(merged, predState);
+                static_cast<FullSparseAbstractInterpretation*>(this)->mergeFreedAddrs(merged, predState);
             }
             else
                 joinStates(merged, predState);
