@@ -1460,7 +1460,7 @@ bool SVFIRBuilder::getAggregateFieldNode(const Value* aggregate,
     // Discovery order keeps field NodeIDs stable across -write-ander and
     // -read-ander runs; Value-pointer hash order can swap their points-to sets.
     std::vector<std::pair<AggregateFieldKey, std::vector<AggregateFieldKey>>>
-        definitions;
+    definitions;
     Set<AggregateFieldKey> discovered;
     std::vector<AggregateFieldKey> worklist{root};
     while (!worklist.empty())
