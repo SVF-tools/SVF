@@ -124,7 +124,7 @@ private:
     /// Along the path, reuse computed Store results only for carried Objs;
     /// shared isStrongUpdate selects replacement versus conservative JOIN.
     AbstractState filterValueFlowInputByPath(const VFGEdge* edge,
-                                            const AbstractState& input);
+            const AbstractState& input);
 
     void buildSVFG();
     // Owns the graph whose VFG nodes are indexed by their ICFG nodes.

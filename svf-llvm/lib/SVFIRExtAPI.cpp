@@ -528,8 +528,8 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
         for (const AccessPath& field : fields)
         {
             const SVFType* elementType = pag->getFlatternedElemType(
-                                            llvmModuleSet()->getSVFType(type),
-                                            field.getConstantStructFldIdx());
+                                             llvmModuleSet()->getSVFType(type),
+                                             field.getConstantStructFldIdx());
             NodeID address = getGepValVar(arg, field, elementType);
             addLoadEdge(address, pag->addDummyValNode());
         }

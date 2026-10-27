@@ -549,8 +549,8 @@ bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
     if (!isSwitchDefaultEdge(edge))
         return false;
     else if (input.is_infinite())
-    // default edge here
-    // if input reach infinity, conservatively think it can go default edge
+        // default edge here
+        // if input reach infinity, conservatively think it can go default edge
         return true;
     else
     {
@@ -711,7 +711,7 @@ bool AbstractInterpretation::isBranchEdgeFeasible(const IntraCFGEdge* edge,
     if (SVFUtil::isa<CmpStmt>(*cmpVar->getInEdges().begin()))
         return isCmpBranchEdgeFeasible(edge, as);
     return isSwitchBranchEdgeFeasible(edge,
-                                     getAbsValue(cmpVar, edge->getSrcNode()).getInterval());
+                                      getAbsValue(cmpVar, edge->getSrcNode()).getInterval());
 }
 
 /**

@@ -354,7 +354,10 @@ public:
         return geqVarToValMap(_varToAbsVal, rhs.getVarToVal()) &&
                geqVarToValMap(_addrToAbsVal, rhs.getLocToVal()) &&
                std::all_of(rhs._freedAddrs.begin(), rhs._freedAddrs.end(),
-                           [this](NodeID addr) { return _freedAddrs.count(addr) != 0; });
+                           [this](NodeID addr)
+        {
+            return _freedAddrs.count(addr) != 0;
+        });
     }
 
     void clear()

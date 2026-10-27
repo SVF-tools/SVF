@@ -177,7 +177,7 @@ AbstractState FullSparseAbstractInterpretation::filterValueFlowInputByPath(
         // Same function: search D -> B -> ... -> N, carrying x=[6,10]
         // on B's true edge. More branches give D -> B1 -> ... -> Bk -> N.
         // incoming's key is the iterated ICFGNode in worklist
-        // incoming's value is initialized as AbstractState pulled from SVFG predecessor 
+        // incoming's value is initialized as AbstractState pulled from SVFG predecessor
         //    the AbstractState only change some interval values at branches (branch refinement)
         Map<const ICFGNode*, AbstractState> incoming;
         FIFOWorkList<const ICFGNode*> worklist;
