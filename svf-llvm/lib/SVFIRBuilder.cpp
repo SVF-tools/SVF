@@ -1443,24 +1443,22 @@ bool SVFIRBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
 }
 
 /*!
- * Resolve the pointer field at indices in aggregate, returning its SVFIR ID in node.
- * Reuse cached fields and existing scalar leaves; otherwise create typed field
- * nodes with definitions at their LLVM producers. Phi predecessors and Select
- * conditions are preserved, and repeated extracts share the same field node.
+ * Return the node for (aggregate, indices), reusing cached fields.
+ * Unsupported dependencies return false without changing SVFIR or node.
  *
- * Validate all dependencies before changing SVFIR, then allocate every field node
- * before wiring definitions so loop-carried fields can refer to each other.
- * Return false without changing node or emitting field definitions if any
- * dependency is unsupported; the caller supplies the existing fallback.
+ * Here, the field node for (%a, {0}) copies %p; %x copies that node:
+ *   define ptr @field(ptr %p) {
+ *     %a = insertvalue { ptr } poison, ptr %p, 0
+ *     %x = extractvalue { ptr } %a, 0
+ *     ret ptr %x
+ *   }
  */
 bool SVFIRBuilder::getAggregateFieldNode(const Value* aggregate,
         const AggregateField& indices, NodeID& node)
 {
     const AggregateFieldKey root{aggregate, indices};
-    // Keep definitions in discovery order. Iterating a hash map keyed by Value
-    // pointers would make the field NodeIDs below differ between processes, so
-    // -read-ander would assign points-to sets written by -write-ander to the
-    // wrong field nodes.
+    // Discovery order keeps field NodeIDs stable across -write-ander and
+    // -read-ander runs; Value-pointer hash order can swap their points-to sets.
     std::vector<std::pair<AggregateFieldKey, std::vector<AggregateFieldKey>>>
         definitions;
     Set<AggregateFieldKey> discovered;
