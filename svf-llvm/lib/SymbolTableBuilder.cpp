@@ -333,11 +333,11 @@ void SymbolTableBuilder::collectObj(const Value* val)
     LLVMModuleSet::ValueToIDMapTy::iterator iter = llvmModuleSet()->objSymMap.find(val);
     if (iter == llvmModuleSet()->objSymMap.end())
     {
-        // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
-        // then we treat them as one ConstantObj
-        // -model-consts cannot model a pointer-typed constant data (e.g. a blockaddress;
-        // neither is an allocation or global, see SVFIRBuilder::processCE/InitialGlobal)
-        // as an individual object, so it always maps to the same ConstantObj.
+        // Constant data and global constants normally share one ConstantObj.
+        // With -model-consts, individual objects are created instead, except
+        // for pointer-typed constant data (e.g., blockaddress). Such a constant
+        // is neither an allocation nor a global, so it still maps to the shared
+        // ConstantObj (see SVFIRBuilder::processCE/InitialGlobal).
         const bool mcUnmodelled = isConstDataOrAggData(val) && val->getType()->isPointerTy();
         if (isConstantObjSym(val) && (!Options::ModelConsts() || mcUnmodelled))
         {
