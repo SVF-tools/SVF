@@ -517,6 +517,23 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
         if(SVFUtil::isa<PointerType>(cs->getType()))
             addCopyEdge(getValueNode(cs->getArgOperand(0)), getValueNode(cs), CopyStmt::COPYVAL);
     }
+    else if (llvmModuleSet()->hasExtFuncAnnotation(callee, "STRLEN"))
+    {
+        // strlen(p) and wcslen(p) read characters, not just p's address.
+        // For char s[4]="ABC", represent reads of s[0..3] so a write
+        // to s[1] in a callee can reach this call through the SVFG.
+        std::vector<AccessPath> fields;
+        const Value* arg = cs->getArgOperand(0);
+        const Type* type = getBaseTypeAndFlattenedFields(arg, fields, nullptr);
+        for (const AccessPath& field : fields)
+        {
+            const SVFType* elementType = pag->getFlatternedElemType(
+                                            llvmModuleSet()->getSVFType(type),
+                                            field.getConstantStructFldIdx());
+            NodeID address = getGepValVar(arg, field, elementType);
+            addLoadEdge(address, pag->addDummyValNode());
+        }
+    }
     else if(LLVMUtil::isMemsetExtFun(callee))
     {
         // Side-effects similar to memset(void *str, int c, size_t n)

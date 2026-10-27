@@ -1248,7 +1248,7 @@ class BranchStmt: public SVFStmt
     friend class GraphDBClient;
 
 public:
-    typedef std::vector<std::pair<const ICFGNode*, s32_t>> SuccAndCondPairVec;
+    typedef std::vector<std::pair<const ICFGNode*, s64_t>> SuccAndCondPairVec;
 
 private:
     BranchStmt(const BranchStmt&);     ///< place holder
@@ -1297,9 +1297,9 @@ public:
     /// successor(0): stmt1, 1
     /// successor(1): stmt2, 0
 
-    /// For example switch(c) case 0: {stmt1; break;} case 1: {stmt2; break;}
-    /// default {stmt3: break} successor(0): stmt1, 0 successor(1): stmt2, 1
-    /// successor(3): stmt3, -1
+    /// Switch successors follow LLVM order: default first, then each case.
+    /// case 1: case 2: work(); retains (work, 1) and (work, 2), even when
+    /// both cases share a target. Default is identified by position, not -1.
 
     /// Successors of this branch statement
     ///@{
