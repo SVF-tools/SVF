@@ -51,7 +51,7 @@ MacOSZ3Arm="${Z3PrebuiltBase}/z3-${Z3Ver}-arm64-macos-14.zip"
 
 BUILD_TYPE="Release"
 BUILD_DYN_LIB="ON"
-RTTI="OFF"
+RTTI="ON"
 ENABLE_ASSERTIONS="${SVF_ENABLE_ASSERTIONS:-ON}"
 PLATFORM=""
 urlLLVM=""
@@ -66,8 +66,8 @@ Options:
   minsize    Build MinSizeRel to reduce binary size.
   dyn_lib    Build shared libraries. This is the default.
   sta_lib    Build static libraries.
-  rtti       Enable LLVM RTTI (downloads custom RTTI builds if available).
-  nortti     Disable LLVM RTTI (uses official upstream LLVM releases). This is the default.
+  rtti       Enable LLVM RTTI (downloads custom RTTI builds if available). This is the default.
+  nortti     Disable LLVM RTTI (uses official upstream LLVM releases).
 
 Environment variables:
   LLVM_DIR           Use an existing LLVM installation.
@@ -609,7 +609,7 @@ build_svf() {
 
     cmake -D CMAKE_BUILD_TYPE:STRING="$BUILD_TYPE"  \
         -DSVF_ENABLE_ASSERTIONS:BOOL="$ENABLE_ASSERTIONS" \
-        -DSVF_ENABLE_RTTI:BOOL="$RTTI" \
+        -DSVF_ENABLE_RTTI:BOOL="ON" \
         ${SVF_SANITIZER:+-DSVF_SANITIZE="$SVF_SANITIZER"} \
         ${SVF_COVERAGE:+-DSVF_COVERAGE=ON}           \
         ${SVF_DEBUG_INFO:+-DSVF_DEBUG_INFO=ON}       \
