@@ -1398,7 +1398,7 @@ bool SVFIRBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
     else if (const auto* insert = SVFUtil::dyn_cast<InsertElementInst>(value))
     {
         const auto lane = getFixedVectorLane(insert->getType(),
-                                            insert->getOperand(2));
+                                             insert->getOperand(2));
         if (!lane)
             return false;
         original = insert->getOperand(0);
@@ -1578,7 +1578,7 @@ void SVFIRBuilder::initialiseAggregateReturns()
 {
     const auto demands = discoverAggregateReturnFields();
     const SVFType* pointerType = llvmModuleSet()->getSVFType(
-        PointerType::getUnqual(llvmModuleSet()->getContext()));
+                                     PointerType::getUnqual(llvmModuleSet()->getContext()));
     // Serialized points-to sets use NodeIDs. Allocate in function order,
     // independent of pointer-keyed hash table iteration.
     for (const Function* fun : llvmModuleSet()->getFunctionSet())
@@ -1705,9 +1705,9 @@ void SVFIRBuilder::createAggregateCallSlots(const Function* fun,
             pag->getObjTypeInfo(object)->setByteSizeOfObj(
                 pointerType->getByteSize());
             NodeID address = pag->addDummyValNode(
-                NodeIDAllocator::get()->allocateValueId(), callNode);
+                                 NodeIDAllocator::get()->allocateValueId(), callNode);
             NodeID value = pag->addDummyValNode(
-                NodeIDAllocator::get()->allocateValueId(), resumeNode);
+                               NodeIDAllocator::get()->allocateValueId(), resumeNode);
             args.emplace(param.first, address);
             // Call fields use the same identity as local aggregate fields.
             assert(!aggregateFieldNodes.count({call, param.first}) &&
@@ -1776,7 +1776,8 @@ SVFIRBuilder::getExtractedField(const Instruction& inst)
         return std::nullopt;
     if (const auto* extract = SVFUtil::dyn_cast<ExtractValueInst>(&inst))
     {
-        return AggregateFieldKey{
+        return AggregateFieldKey
+        {
             extract->getAggregateOperand(),
             AggregateField(extract->idx_begin(), extract->idx_end())};
     }
@@ -1784,7 +1785,7 @@ SVFIRBuilder::getExtractedField(const Instruction& inst)
     if (!extract)
         return std::nullopt;
     const auto lane = getFixedVectorLane(extract->getVectorOperandType(),
-                                        extract->getIndexOperand());
+                                         extract->getIndexOperand());
     if (!lane)
         return std::nullopt;
     return AggregateFieldKey{extract->getVectorOperand(),
