@@ -6,6 +6,26 @@
 find_package(LLVM CONFIG REQUIRED HINTS ${LLVM_HOME} $ENV{LLVM_HOME} ${LLVM_DIR} $ENV{LLVM_DIR})
 add_compile_definitions(LLVM_BUILD_STATIC)
 
+# Handle missing or static zstd target by redirecting to dynamic zstd (libzstd.so)
+if(NOT TARGET zstd::libzstd_static)
+  if(TARGET zstd::libzstd_shared)
+    add_library(zstd::libzstd_static ALIAS zstd::libzstd_shared)
+  else()
+    add_library(zstd::libzstd_static INTERFACE IMPORTED)
+    set_target_properties(zstd::libzstd_static PROPERTIES INTERFACE_LINK_LIBRARIES "zstd")
+  endif()
+endif()
+
+# On Linux/Unix, if LLVM targets export static non-PIC libzstd, redirect to dynamic zstd to allow building shared libSvfLLVM.so
+if(TARGET LLVMSupport AND UNIX AND NOT APPLE)
+  get_target_property(_llvm_support_libs LLVMSupport INTERFACE_LINK_LIBRARIES)
+  if(_llvm_support_libs)
+    string(REGEX REPLACE "[^;]*/libzstd\\.a" "zstd" _llvm_support_libs_fixed "${_llvm_support_libs}")
+    string(REGEX REPLACE "zstd::libzstd_static" "zstd" _llvm_support_libs_fixed "${_llvm_support_libs_fixed}")
+    set_target_properties(LLVMSupport PROPERTIES INTERFACE_LINK_LIBRARIES "${_llvm_support_libs_fixed}")
+  endif()
+endif()
+
 # Import certain utilities (e.g. to make add_llvm_library() available)
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 include(AddLLVM)
@@ -25,7 +45,9 @@ if(LLVM_ENABLE_EH AND NOT SVF_ENABLE_EXCEPTIONS)
   )
 endif()
 
-# If RTTI is disabled in LLVM, it must be for SVF as well (and vice versa)
+# If RTTI is disabled in LLVM, SvfLLVM is compiled without RTTI to match LLVM's ABI,
+# while SvfCore preserves RTTI so downstream consumers and language bindings (e.g. SVF-Python / pybind11)
+# retain typeinfo for SVF classes.
 if(LLVM_ENABLE_RTTI AND NOT SVF_ENABLE_RTTI)
   message(WARNING "LLVM is built with RTTI support but SVF is configured to disable RTTI support; "
                   "forcing $SVF_ENABLE_RTTI to ON!"
@@ -34,14 +56,8 @@ if(LLVM_ENABLE_RTTI AND NOT SVF_ENABLE_RTTI)
       ON
       CACHE BOOL "" FORCE
   )
-elseif(NOT LLVM_ENABLE_RTTI AND SVF_ENABLE_RTTI)
-  message(WARNING "LLVM is built without RTTI support but SVF configured to enable RTTI support; "
-                  "forcing $SVF_ENABLE_RTTI to OFF!"
-  )
-  set(SVF_ENABLE_RTTI
-      OFF
-      CACHE BOOL "" FORCE
-  )
+elseif(NOT LLVM_ENABLE_RTTI)
+  message(STATUS "LLVM is built without RTTI support; SvfLLVM will compile with -fno-rtti while preserving SvfCore RTTI.")
 endif()
 
 # Make the include/link directories & definitions available globally
@@ -71,7 +87,7 @@ else()
     target
     transformutils
     demangle
-    Passes
+    passes
   )
   # When the host LLVM tree already contains an in-tree SVF integration,
   # llvm_map_components_to_libnames() can pull in those LLVMSvf* libraries
@@ -171,6 +187,16 @@ add_dependencies(SvfLLVM gen_extapi_ir)
 
 # Link the SVF LLVM library to the core library, the build/link flags, and the LLVM libraries
 target_link_libraries(SvfLLVM PUBLIC SvfFlags SvfCore ${LLVM_LIBRARIES})
+
+# If LLVM is built without RTTI support, SvfLLVM must be compiled with -fno-rtti
+# to match LLVM's ABI, while SvfCore retains RTTI for downstream language bindings (e.g. SVF-Python).
+if(NOT LLVM_ENABLE_RTTI)
+  if(MSVC)
+    target_compile_options(SvfLLVM PRIVATE /GR-)
+  else()
+    target_compile_options(SvfLLVM PRIVATE -fno-rtti)
+  endif()
+endif()
 
 # Gather & set all of the core library's source files by globbing all .h and .cpp files (recursively)
 file(GLOB_RECURSE SVF_LLVM_HEADERS ${CMAKE_CURRENT_LIST_DIR}/include/*.h)
