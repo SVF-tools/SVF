@@ -22,6 +22,7 @@ jobs:
         include:
           - os: [ubuntu-latest]
             sanitizer: address
+            rtti_mode: nortti
           - os: ubuntu-latest
             rtti_mode: nortti
     steps:
