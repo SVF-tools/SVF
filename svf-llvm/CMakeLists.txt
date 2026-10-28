@@ -45,7 +45,9 @@ if(LLVM_ENABLE_EH AND NOT SVF_ENABLE_EXCEPTIONS)
   )
 endif()
 
-# If RTTI is disabled in LLVM, it must be for SVF as well (and vice versa)
+# If RTTI is disabled in LLVM, SvfLLVM is compiled without RTTI to match LLVM's ABI,
+# while SvfCore preserves RTTI so downstream consumers and language bindings (e.g. SVF-Python / pybind11)
+# retain typeinfo for SVF classes.
 if(LLVM_ENABLE_RTTI AND NOT SVF_ENABLE_RTTI)
   message(WARNING "LLVM is built with RTTI support but SVF is configured to disable RTTI support; "
                   "forcing $SVF_ENABLE_RTTI to ON!"
@@ -54,14 +56,8 @@ if(LLVM_ENABLE_RTTI AND NOT SVF_ENABLE_RTTI)
       ON
       CACHE BOOL "" FORCE
   )
-elseif(NOT LLVM_ENABLE_RTTI AND SVF_ENABLE_RTTI)
-  message(WARNING "LLVM is built without RTTI support but SVF configured to enable RTTI support; "
-                  "forcing $SVF_ENABLE_RTTI to OFF!"
-  )
-  set(SVF_ENABLE_RTTI
-      OFF
-      CACHE BOOL "" FORCE
-  )
+elseif(NOT LLVM_ENABLE_RTTI)
+  message(STATUS "LLVM is built without RTTI support; SvfLLVM will compile with -fno-rtti while preserving SvfCore RTTI.")
 endif()
 
 # Make the include/link directories & definitions available globally
@@ -191,6 +187,16 @@ add_dependencies(SvfLLVM gen_extapi_ir)
 
 # Link the SVF LLVM library to the core library, the build/link flags, and the LLVM libraries
 target_link_libraries(SvfLLVM PUBLIC SvfFlags SvfCore ${LLVM_LIBRARIES})
+
+# If LLVM is built without RTTI support, SvfLLVM must be compiled with -fno-rtti
+# to match LLVM's ABI, while SvfCore retains RTTI for downstream language bindings (e.g. SVF-Python).
+if(NOT LLVM_ENABLE_RTTI)
+  if(MSVC)
+    target_compile_options(SvfLLVM PRIVATE /GR-)
+  else()
+    target_compile_options(SvfLLVM PRIVATE -fno-rtti)
+  endif()
+endif()
 
 # Gather & set all of the core library's source files by globbing all .h and .cpp files (recursively)
 file(GLOB_RECURSE SVF_LLVM_HEADERS ${CMAKE_CURRENT_LIST_DIR}/include/*.h)
