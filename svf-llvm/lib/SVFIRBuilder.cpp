@@ -1361,6 +1361,19 @@ static const Type* getAggregateFieldType(const Type* type,
     return type;
 }
 
+/// Return the selected fixed-vector lane, or no lane for other vector types,
+/// variable indices and out-of-range indices.
+static std::optional<unsigned> getFixedVectorLane(const Type* type,
+        const Value* index)
+{
+    const auto* vector = SVFUtil::dyn_cast<llvm::FixedVectorType>(type);
+    const auto* constant = SVFUtil::dyn_cast<ConstantInt>(index);
+    if (!vector || !constant ||
+            constant->getValue().uge(vector->getNumElements()))
+        return std::nullopt;
+    return static_cast<unsigned>(constant->getZExtValue());
+}
+
 /// Describe one field definition without emitting any SVFIR statements.
 bool SVFIRBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
         std::vector<AggregateFieldKey>& operands)
@@ -1370,14 +1383,36 @@ bool SVFIRBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
     if (path.empty())
         return value->getType()->isPointerTy() && !SVFUtil::isa<ConstantExpr>(value) &&
                !SVFUtil::isa<UndefValue>(value) && llvmModuleSet()->hasValueNode(value);
+    // insertvalue and insertelement replace one field. For example, in
+    //   %b = insertvalue {ptr, ptr} %a, ptr %q, 1
+    // field {1} of %b is %q, and field {0} of %b is field {0} of %a.
+    const Value* original = nullptr;
+    const Value* inserted = nullptr;
+    AggregateField insertedPath;
     if (const auto* insert = SVFUtil::dyn_cast<InsertValueInst>(value))
     {
-        const auto insertedPath = insert->getIndices();
+        original = insert->getAggregateOperand();
+        inserted = insert->getInsertedValueOperand();
+        insertedPath.assign(insert->idx_begin(), insert->idx_end());
+    }
+    else if (const auto* insert = SVFUtil::dyn_cast<InsertElementInst>(value))
+    {
+        const auto lane = getFixedVectorLane(insert->getType(),
+                                            insert->getOperand(2));
+        if (!lane)
+            return false;
+        original = insert->getOperand(0);
+        inserted = insert->getOperand(1);
+        insertedPath = {*lane};
+    }
+
+    if (inserted)
+    {
         const size_t commonLength = std::min(insertedPath.size(), path.size());
         if (!std::equal(insertedPath.begin(), insertedPath.begin() + commonLength, path.begin()))
-            operands.emplace_back(insert->getAggregateOperand(), path);
+            operands.emplace_back(original, path);
         else if (insertedPath.size() <= path.size())
-            operands.emplace_back(insert->getInsertedValueOperand(),
+            operands.emplace_back(inserted,
                                   AggregateField(path.begin() + insertedPath.size(), path.end()));
         else
             return false;
@@ -1402,18 +1437,6 @@ bool SVFIRBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
     }
     else if (const auto* freeze = SVFUtil::dyn_cast<FreezeInst>(value))
         operands.emplace_back(freeze->getOperand(0), path);
-    else if (const auto* insert = SVFUtil::dyn_cast<InsertElementInst>(value))
-    {
-        const auto* vector = SVFUtil::dyn_cast<llvm::FixedVectorType>(insert->getType());
-        const auto* index = SVFUtil::dyn_cast<ConstantInt>(insert->getOperand(2));
-        if (!vector || path.size() != 1 || !index ||
-                index->getValue().uge(vector->getNumElements()))
-            return false;
-        if (index->getZExtValue() == path.front())
-            operands.emplace_back(insert->getOperand(1), AggregateField{});
-        else
-            operands.emplace_back(insert->getOperand(0), path);
-    }
     else if (const auto* shuffle = SVFUtil::dyn_cast<ShuffleVectorInst>(value))
     {
         const auto* vector = SVFUtil::dyn_cast<llvm::FixedVectorType>(shuffle->getOperand(0)->getType());
@@ -1549,8 +1572,31 @@ static bool canModelAggregateReturn(const Function* fun)
 }
 
 /// Discover demanded fields and preallocate output parameters, slots and
-/// snapshots before visiting instructions. See AggregateCallField's example.
+/// snapshots before visiting instructions. See the aggregate return example
+/// in SVFIRBuilder.h.
 void SVFIRBuilder::initialiseAggregateReturns()
+{
+    const auto demands = discoverAggregateReturnFields();
+    const SVFType* pointerType = llvmModuleSet()->getSVFType(
+        PointerType::getUnqual(llvmModuleSet()->getContext()));
+    // Serialized points-to sets use NodeIDs. Allocate in function order,
+    // independent of pointer-keyed hash table iteration.
+    for (const Function* fun : llvmModuleSet()->getFunctionSet())
+    {
+        auto found = demands.find(fun);
+        if (found == demands.end())
+            continue;
+        createAggregateReturnParams(fun, found->second, pointerType);
+        createAggregateCallSlots(fun, pointerType);
+    }
+}
+
+/// Find the fields of each callee's returned aggregate that callers extract,
+/// such as field {0} of make in the aggregate return example. Paths that
+/// getAggregateFieldOperands cannot follow are skipped; getAggregateFieldNode
+/// later decides which extracted fields are modeled.
+SVFIRBuilder::AggregateReturnFields
+SVFIRBuilder::discoverAggregateReturnFields()
 {
     std::vector<AggregateFieldKey> worklist;
     for (Module& module : llvmModuleSet()->getLLVMModules())
@@ -1558,25 +1604,13 @@ void SVFIRBuilder::initialiseAggregateReturns()
             for (const BasicBlock& bb : fun)
                 for (const Instruction& inst : bb)
                 {
-                    if (const auto* extract = SVFUtil::dyn_cast<ExtractValueInst>(&inst))
-                    {
-                        if (extract->getType()->isPointerTy())
-                            worklist.emplace_back(extract->getAggregateOperand(),
-                                                  AggregateField(extract->idx_begin(), extract->idx_end()));
-                    }
-                    else if (const auto* extract = SVFUtil::dyn_cast<ExtractElementInst>(&inst))
-                    {
-                        const auto* vector = SVFUtil::dyn_cast<llvm::FixedVectorType>(extract->getVectorOperandType());
-                        const auto* index = SVFUtil::dyn_cast<ConstantInt>(extract->getIndexOperand());
-                        if (extract->getType()->isPointerTy() && vector && index &&
-                                index->getValue().ult(vector->getNumElements()))
-                            worklist.emplace_back(extract->getVectorOperand(),
-                                                  AggregateField{static_cast<unsigned>(index->getZExtValue())});
-                    }
+                    if (auto field = getExtractedField(inst))
+                        worklist.push_back(std::move(*field));
                 }
 
     // Discover callee demands without materializing local field definitions.
     // Calls cross into return operands; other producers use the shared grammar.
+    AggregateReturnFields demands;
     Set<AggregateFieldKey> visited;
     while (!worklist.empty())
     {
@@ -1588,7 +1622,7 @@ void SVFIRBuilder::initialiseAggregateReturns()
         {
             const Function* callee = call->getCalledFunction();
             if (!canModelAggregateReturn(callee) ||
-                    !aggregateReturnParams[callee].emplace(field.second, 0).second)
+                    !demands[callee].insert(field.second).second)
                 continue;
             for (const BasicBlock& bb : *callee)
                 if (const auto* ret = SVFUtil::dyn_cast<ReturnInst>(bb.getTerminator()))
@@ -1602,95 +1636,111 @@ void SVFIRBuilder::initialiseAggregateReturns()
                 worklist.insert(worklist.end(), operands.begin(), operands.end());
         }
     }
+    return demands;
+}
 
-    const SVFType* pointerType = llvmModuleSet()->getSVFType(
-                                     PointerType::getUnqual(llvmModuleSet()->getContext()));
+/// Add one output parameter to fun for each demanded field, in field-path
+/// order (out_obj in the aggregate return example). The LLVM signature does
+/// not change.
+void SVFIRBuilder::createAggregateReturnParams(const Function* fun,
+        const std::set<AggregateField>& fields, const SVFType* pointerType)
+{
+    FunObjVar* svfFun =
+        const_cast<FunObjVar*>(llvmModuleSet()->getFunObjVar(fun));
+    const FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svfFun);
+    auto& params = aggregateReturnParams[fun];
+    for (const AggregateField& field : fields)
+    {
+        NodeID id = NodeIDAllocator::get()->allocateValueId();
+        pag->addArgValNode(id, svfFun->arg_size(), entry, svfFun, pointerType);
+        auto* arg = SVFUtil::cast<ArgValVar>(pag->getGNode(id));
+        svfFun->addArgument(arg);
+        // Like RetValPN, the synthetic parameter uses its function as a
+        // diagnostic source; it does not add or replace an LLVM argument.
+        llvmModuleSet()->addToSVFVar2LLVMValueMap(fun, arg);
+        arg->setName("aggregate_return_" + std::to_string(arg->getArgNo()));
+        params.emplace(field, id);
+    }
+}
+
+/// At every call to fun, create a slot, its address and its snapshot for each
+/// output parameter (obj, A and V in the aggregate return example). The
+/// address is defined at the call, and the snapshot is loaded at the
+/// instruction after the call.
+void SVFIRBuilder::createAggregateCallSlots(const Function* fun,
+        const SVFType* pointerType)
+{
+    const auto& params = aggregateReturnParams.at(fun);
+    // LLVM use-list order can change on bitcode reload. Order calls by
+    // their ICFG IDs so each call receives the same slot IDs on readback.
+    std::vector<const CallInst*> calls;
+    for (const User* user : fun->users())
+        calls.push_back(SVFUtil::cast<CallInst>(user));
+    std::sort(calls.begin(), calls.end(), [this](const CallInst* lhs,
+              const CallInst* rhs)
+    {
+        return llvmModuleSet()->getCallICFGNode(lhs)->getId() <
+               llvmModuleSet()->getCallICFGNode(rhs)->getId();
+    });
     const Value* savedValue = curVal;
     const SVFBasicBlock* savedBB = curBB;
-    // Serialized points-to sets use NodeIDs. Allocate in function order,
-    // independent of pointer-keyed hash table iteration.
-    for (const Function* fun : llvmModuleSet()->getFunctionSet())
+    // Include calls with unused results to keep actual/formal lists aligned.
+    for (const CallInst* call : calls)
     {
-        auto found = aggregateReturnParams.find(fun);
-        if (found == aggregateReturnParams.end())
-            continue;
-        auto& fields = found->second;
-        FunObjVar* svfFun = const_cast<FunObjVar*>(llvmModuleSet()->getFunObjVar(fun));
-        const FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svfFun);
-        for (auto& field : fields)
+        std::vector<const Instruction*> next;
+        LLVMUtil::getNextInsts(call, next);
+        assert(next.size() == 1 && "ordinary call must have one continuation");
+        const Instruction* continuation = next.front();
+        auto& args = aggregateCallArgs[call];
+        ICFGNode* callNode = llvmModuleSet()->getCallICFGNode(call);
+        ICFGNode* resumeNode = llvmModuleSet()->getICFGNode(continuation);
+        for (const auto& param : params)
         {
-            NodeID id = NodeIDAllocator::get()->allocateValueId();
-            pag->addArgValNode(id, svfFun->arg_size(), entry, svfFun, pointerType);
-            auto* arg = SVFUtil::cast<ArgValVar>(pag->getGNode(id));
-            svfFun->addArgument(arg);
-            // Like RetValPN, the synthetic parameter uses its function as a
-            // diagnostic source; it does not add or replace an LLVM argument.
-            llvmModuleSet()->addToSVFVar2LLVMValueMap(fun, arg);
-            arg->setName("aggregate_return_" + std::to_string(arg->getArgNo()));
-            field.second = id;
-        }
-        // LLVM use-list order can change on bitcode reload. Order calls by
-        // their ICFG IDs so each call receives the same slot IDs on readback.
-        std::vector<const CallInst*> calls;
-        for (const User* user : fun->users())
-            calls.push_back(SVFUtil::cast<CallInst>(user));
-        std::sort(calls.begin(), calls.end(), [this](const CallInst* lhs,
-                  const CallInst* rhs)
-        {
-            return llvmModuleSet()->getCallICFGNode(lhs)->getId() <
-                   llvmModuleSet()->getCallICFGNode(rhs)->getId();
-        });
-        // Include calls with unused results to keep actual/formal lists aligned.
-        for (const CallInst* call : calls)
-        {
-            std::vector<const Instruction*> next;
-            LLVMUtil::getNextInsts(call, next);
-            assert(next.size() == 1 && "ordinary call must have one continuation");
-            AggregateCall& model = aggregateCalls[call];
-            model.continuation = next.front();
-            ICFGNode* callNode = llvmModuleSet()->getCallICFGNode(call);
-            ICFGNode* resumeNode = llvmModuleSet()->getICFGNode(model.continuation);
-            setCurrentLocation(model.continuation, model.continuation->getParent());
-            for (const auto& field : fields)
-            {
-                // DummyObjVar keeps the static slot nonlocal to the callee in MemSSA.
-                // Later extracts read the SSA snapshot, not the reused slot contents.
-                NodeID object = pag->addDummyObjNode(pointerType);
-                pag->getAllFieldsObjVars(object).set(object);
-                pag->getObjTypeInfo(object)->setNumOfElements(1);
-                pag->getObjTypeInfo(object)->setByteSizeOfObj(pointerType->getByteSize());
-                NodeID address = pag->addDummyValNode(NodeIDAllocator::get()->allocateValueId(), callNode);
-                NodeID value = pag->addDummyValNode(NodeIDAllocator::get()->allocateValueId(), resumeNode);
-                model.fields.emplace(field.first, AggregateCallField{object, address, value});
-                // Call fields use the same identity as local aggregate fields.
-                aggregateFieldNodes.emplace(AggregateFieldKey{call, field.first}, value);
-                // Snapshots must precede field statements at the continuation,
-                // even when LLVM block order differs from dominance order.
-                addLoadEdge(address, value);
-            }
+            // DummyObjVar keeps the static slot nonlocal to the callee
+            // in MemSSA. Later extracts read the SSA snapshot rather
+            // than the reused slot contents.
+            NodeID object = pag->addDummyObjNode(pointerType);
+            pag->getAllFieldsObjVars(object).set(object);
+            pag->getObjTypeInfo(object)->setNumOfElements(1);
+            pag->getObjTypeInfo(object)->setByteSizeOfObj(
+                pointerType->getByteSize());
+            NodeID address = pag->addDummyValNode(
+                NodeIDAllocator::get()->allocateValueId(), callNode);
+            NodeID value = pag->addDummyValNode(
+                NodeIDAllocator::get()->allocateValueId(), resumeNode);
+            args.emplace(param.first, address);
+            // Call fields use the same identity as local aggregate fields.
+            assert(!aggregateFieldNodes.count({call, param.first}) &&
+                   "call field registered twice");
+            aggregateFieldNodes.emplace(
+                AggregateFieldKey{call, param.first}, value);
+            setCurrentLocation(call, call->getParent());
+            addAddrEdge(object, address);
+            // Snapshots must precede field statements at the continuation,
+            // even when LLVM block order differs from dominance order.
+            setCurrentLocation(continuation, continuation->getParent());
+            addLoadEdge(address, value);
         }
     }
     setCurrentLocation(savedValue, savedBB);
 }
 
-/// Define slot addresses and append matching actual output arguments.
-/// initialiseAggregateReturns has already placed the snapshot loads.
+/// Append the slot addresses of call as actual output arguments and pass each
+/// to the callee's output parameter. createAggregateCallSlots has already
+/// created the slots, their addresses and the snapshot loads.
 void SVFIRBuilder::addAggregateCallFields(const CallInst* call)
 {
-    auto found = aggregateCalls.find(call);
-    if (found == aggregateCalls.end())
+    auto found = aggregateCallArgs.find(call);
+    if (found == aggregateCallArgs.end())
         return;
-    const AggregateCall& model = found->second;
     CallICFGNode* callNode = llvmModuleSet()->getCallICFGNode(call);
     const FunObjVar* callee = llvmModuleSet()->getFunObjVar(call->getCalledFunction());
     FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(callee);
     const auto& params = aggregateReturnParams.at(call->getCalledFunction());
-    for (const auto& field : model.fields)
+    for (const auto& arg : found->second)
     {
-        const AggregateCallField& nodes = field.second;
-        addAddrEdge(nodes.object, nodes.address);
-        pag->addCallSiteArgs(callNode, pag->getValVar(nodes.address));
-        addCallEdge(nodes.address, params.at(field.first), callNode, entry);
+        pag->addCallSiteArgs(callNode, pag->getValVar(arg.second));
+        addCallEdge(arg.second, params.at(arg.first), callNode, entry);
     }
 }
 
@@ -1715,6 +1765,45 @@ void SVFIRBuilder::addAggregateReturnStores(ReturnInst& inst)
     }
 }
 
+/// Get the aggregate and field path that a pointer extractvalue, or a pointer
+/// extractelement with a constant index, reads. For example,
+///   %x = extractvalue {ptr, ptr} %a, 0
+/// reads field {0} of %a.
+std::optional<SVFIRBuilder::AggregateFieldKey>
+SVFIRBuilder::getExtractedField(const Instruction& inst)
+{
+    if (!inst.getType()->isPointerTy())
+        return std::nullopt;
+    if (const auto* extract = SVFUtil::dyn_cast<ExtractValueInst>(&inst))
+    {
+        return AggregateFieldKey{
+            extract->getAggregateOperand(),
+            AggregateField(extract->idx_begin(), extract->idx_end())};
+    }
+    const auto* extract = SVFUtil::dyn_cast<ExtractElementInst>(&inst);
+    if (!extract)
+        return std::nullopt;
+    const auto lane = getFixedVectorLane(extract->getVectorOperandType(),
+                                        extract->getIndexOperand());
+    if (!lane)
+        return std::nullopt;
+    return AggregateFieldKey{extract->getVectorOperand(),
+                             AggregateField{*lane}};
+}
+
+/// Copy an extracted pointer from its shared field definition. Unsupported
+/// fields keep the existing black-hole fallback.
+void SVFIRBuilder::addExtractedFieldCopy(Instruction& inst)
+{
+    NodeID dst = getValueNode(&inst);
+    const auto field = getExtractedField(inst);
+    NodeID src;
+    if (field && getAggregateFieldNode(field->first, field->second, src))
+        addCopyEdge(src, dst, CopyStmt::COPYVAL);
+    else
+        addBlackHoleAddrEdge(dst);
+}
+
 /*!
  * Extract a pointer from a register aggregate using its shared field definition.
  * For example:
@@ -1730,14 +1819,7 @@ void SVFIRBuilder::addAggregateReturnStores(ReturnInst& inst)
  */
 void SVFIRBuilder::visitExtractValueInst(ExtractValueInst &inst)
 {
-    NodeID dst = getValueNode(&inst);
-    NodeID field;
-    if (inst.getType()->isPointerTy() &&
-            getAggregateFieldNode(inst.getAggregateOperand(),
-                                  AggregateField(inst.idx_begin(), inst.idx_end()), field))
-        addCopyEdge(field, dst, CopyStmt::COPYVAL);
-    else
-        addBlackHoleAddrEdge(dst);
+    addExtractedFieldCopy(inst);
 }
 
 /*!
@@ -1754,17 +1836,7 @@ void SVFIRBuilder::visitExtractValueInst(ExtractValueInst &inst)
  */
 void SVFIRBuilder::visitExtractElementInst(ExtractElementInst &inst)
 {
-    NodeID dst = getValueNode(&inst);
-    NodeID field;
-    const auto* vector = SVFUtil::dyn_cast<llvm::FixedVectorType>(inst.getVectorOperandType());
-    const auto* index = SVFUtil::dyn_cast<ConstantInt>(inst.getIndexOperand());
-    if (inst.getType()->isPointerTy() && vector && index &&
-            index->getValue().ult(vector->getNumElements()) &&
-            getAggregateFieldNode(inst.getVectorOperand(),
-                                  AggregateField{static_cast<unsigned>(index->getZExtValue())}, field))
-        addCopyEdge(field, dst, CopyStmt::COPYVAL);
-    else
-        addBlackHoleAddrEdge(dst);
+    addExtractedFieldCopy(inst);
 }
 
 /*!
