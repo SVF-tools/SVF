@@ -166,7 +166,7 @@ jobs:
           lcov --remove coverage.info '${{github.workspace}}/svf/lib/FastCluster/*' --output-file coverage.info --ignore-errors unused
 
       - name: upload-coverage
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.sanitizer == ''
         uses: codecov/codecov-action@v5
         with:
           files: coverage.info
