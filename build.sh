@@ -28,10 +28,18 @@ SVFHOME="${SCRIPT_DIR}"
 sysOS=$(uname -s)
 arch=$(uname -m)
 
-MajorLLVMVer=21
-LLVMVer=${MajorLLVMVer}.1.0
+MajorLLVMVer=22
+MinorLLVMVer=1
+PatchLLVMVer=0
+LLVMVer="${MajorLLVMVer}.${MinorLLVMVer}.${PatchLLVMVer}"
 LLVM_SDK_TAG="llvm_${MajorLLVMVer}"
 Z3Ver=4.15.4
+
+# MSYS2 Clang64 LLVM package revision for Windows MinGW
+# Pkg format: mingw-w64-clang-x86_64-*-${MajorLLVMVer}.${MinorLLVMVer}.${MSYS2_LLVM_PATCH}-${MSYS2_LLVM_BUILD}-any.pkg.tar.zst
+MSYS2_LLVM_PATCH="8"
+MSYS2_LLVM_BUILD="3"
+MSYS2_PKG_SUFFIX="${MajorLLVMVer}.${MinorLLVMVer}.${MSYS2_LLVM_PATCH}-${MSYS2_LLVM_BUILD}-any"
 
 # Keep LLVM version suffix for version checking and better debugging.
 # Keep this consistent with LLVM_DIR in setup.sh and llvm_version in Dockerfile.
@@ -42,12 +50,14 @@ UbuntuArmLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.3/l
 UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/LLVM-${LLVMVer}-Linux-ARM64.tar.xz"
 UbuntuLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.3/llvm-${LLVMVer}-ubuntu22-rtti-x86-64.tar.gz"
 UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/LLVM-${LLVMVer}-Linux-X64.tar.xz"
+WindowsLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-pc-windows-msvc.tar.xz"
 SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-${LLVMVer}.zip"
 
 Z3PrebuiltBase="https://github.com/SVF-tools/SVF-npm/raw/prebuilt-libs"
 UbuntuZ3="${Z3PrebuiltBase}/z3-${Z3Ver}-x86_64-ubuntu-22.04.zip"
 UbuntuZ3Arm="${Z3PrebuiltBase}/z3-${Z3Ver}-arm64-ubuntu-22.04.zip"
 MacOSZ3Arm="${Z3PrebuiltBase}/z3-${Z3Ver}-arm64-macos-14.zip"
+WindowsZ3="https://github.com/Z3Prover/z3/releases/download/z3-${Z3Ver}/z3-${Z3Ver}-x64-win.zip"
 
 BUILD_TYPE="Release"
 BUILD_DYN_LIB="ON"
@@ -157,9 +167,13 @@ detect_platform() {
 
 select_dependency_urls() {
     case "$PLATFORM" in
-        windows-msvc|windows-mingw)
-            urlLLVM="https://github.com/c3lang/llvm-for-c3/releases/download/${LLVM_SDK_TAG}/llvm-windows-amd64.tar.gz"
-            urlZ3="https://github.com/Z3Prover/z3/releases/download/z3-${Z3Ver}/z3-${Z3Ver}-x64-win.zip"
+        windows-msvc)
+            urlLLVM="$WindowsLLVM"
+            urlZ3="$WindowsZ3"
+            ;;
+        windows-mingw)
+            urlLLVM=""
+            urlZ3="$WindowsZ3"
             ;;
         ubuntu-x86_64)
             if [[ "$RTTI" == "ON" ]]; then
@@ -303,11 +317,7 @@ download_llvm_prebuilt() {
 
     echo "Unpacking LLVM package..."
     mkdir -p "./$LLVMHome"
-    if [[ "$PLATFORM" == windows-* ]]; then
-        tar -xf "$llvm_archive" -C "./$LLVMHome"
-    else
-        tar -xf "$llvm_archive" -C "./$LLVMHome" --strip-components 1
-    fi
+    tar -xf "$llvm_archive" -C "./$LLVMHome" --strip-components 1
     rm "$llvm_archive"
 
     # For Windows MSVC LLVM SDK, strip hardcoded diaguids.lib path from LLVMExports.cmake
@@ -359,7 +369,7 @@ ensure_llvm() {
         if command -v pacman >/dev/null 2>&1; then
             echo "Installing LLVM ${MajorLLVMVer} packages for MinGW in MSYS2..."
             local msys_mirror="https://mirror.msys2.org/mingw/clang64"
-            local pkg_suffix="${MajorLLVMVer}.1.8-4-any"
+            local pkg_suffix="${MSYS2_PKG_SUFFIX}"
             pacman -U --noconfirm --needed \
                 "${msys_mirror}/mingw-w64-clang-x86_64-llvm-libs-${pkg_suffix}.pkg.tar.zst" \
                 "${msys_mirror}/mingw-w64-clang-x86_64-llvm-tools-${pkg_suffix}.pkg.tar.zst" \
