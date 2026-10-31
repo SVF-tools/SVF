@@ -50,12 +50,14 @@ UbuntuArmLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.3/l
 UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/LLVM-${LLVMVer}-Linux-ARM64.tar.xz"
 UbuntuLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.3/llvm-${LLVMVer}-ubuntu22-rtti-x86-64.tar.gz"
 UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/LLVM-${LLVMVer}-Linux-X64.tar.xz"
+WindowsLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-pc-windows-msvc.tar.xz"
 SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-${LLVMVer}.zip"
 
 Z3PrebuiltBase="https://github.com/SVF-tools/SVF-npm/raw/prebuilt-libs"
 UbuntuZ3="${Z3PrebuiltBase}/z3-${Z3Ver}-x86_64-ubuntu-22.04.zip"
 UbuntuZ3Arm="${Z3PrebuiltBase}/z3-${Z3Ver}-arm64-ubuntu-22.04.zip"
 MacOSZ3Arm="${Z3PrebuiltBase}/z3-${Z3Ver}-arm64-macos-14.zip"
+WindowsZ3="https://github.com/Z3Prover/z3/releases/download/z3-${Z3Ver}/z3-${Z3Ver}-x64-win.zip"
 
 BUILD_TYPE="Release"
 BUILD_DYN_LIB="ON"
@@ -166,12 +168,12 @@ detect_platform() {
 select_dependency_urls() {
     case "$PLATFORM" in
         windows-msvc)
-            urlLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-pc-windows-msvc.tar.xz"
-            urlZ3="https://github.com/Z3Prover/z3/releases/download/z3-${Z3Ver}/z3-${Z3Ver}-x64-win.zip"
+            urlLLVM="$WindowsLLVM"
+            urlZ3="$WindowsZ3"
             ;;
         windows-mingw)
             urlLLVM=""
-            urlZ3="https://github.com/Z3Prover/z3/releases/download/z3-${Z3Ver}/z3-${Z3Ver}-x64-win.zip"
+            urlZ3="$WindowsZ3"
             ;;
         ubuntu-x86_64)
             if [[ "$RTTI" == "ON" ]]; then
