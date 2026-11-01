@@ -235,6 +235,7 @@ public:
 
     // Abstract Execution
     static const OptionMap<u32_t> AESparsity;
+    static const Option<bool> DumpAEObjRouteGraph;
     static const OptionMap<u32_t> AEFunEntry;
     static const Option<u32_t> WidenDelay;
     /// recursion handling mode, Default: TOP

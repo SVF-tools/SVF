@@ -791,6 +791,11 @@ const OptionMap<u32_t> Options::AESparsity(
         "Sparse abstract execution via SVFG."
     }
 });
+const Option<bool> Options::DumpAEObjRouteGraph(
+    "dump-ae-obj-route-graph",
+    "Dump AE Obj Route Graph to ae_obj_route_graph.dot (AE full-sparse mode only)",
+    false
+);
 const OptionMap<u32_t> Options::AEFunEntry(
     "ae-fun-entry",
     "Abstract execution function entry mode (Default: main)",

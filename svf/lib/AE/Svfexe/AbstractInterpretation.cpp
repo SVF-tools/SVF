@@ -35,6 +35,7 @@
 #include "Graphs/CallGraph.h"
 #include "WPA/Andersen.h"
 #include <cmath>
+#include <cstdlib>
 #include <memory>
 
 using namespace SVF;
@@ -75,6 +76,11 @@ AbstractInterpretation::AbstractInterpretation()
 /// Must only be called after the option parser has populated AESparsity.
 AbstractInterpretation& AbstractInterpretation::getAEInstance()
 {
+    if (Options::DumpAEObjRouteGraph() && Options::AESparsity() != AESparsity::Sparse)
+    {
+        SVFUtil::errs() << "-dump-ae-obj-route-graph requires -ae-sparsity=sparse.\n";
+        std::exit(EXIT_FAILURE);
+    }
     // Leak the singleton on purpose.  AbstractInterpretation owns a
     // Map<std::string, std::function<void(const CallICFGNode*)>> func_map
     // whose lambda closures back-reference state owned by other globals

@@ -21,11 +21,13 @@
 //===---------------------------------------------------------------------===//
 
 #include "AE/Svfexe/SparseAbstractInterpretation.h"
+#include "AE/Svfexe/AEObjRouteGraph.h"
 #include "AE/Svfexe/AEWTO.h"
 #include "SVFIR/SVFIR.h"
 #include "Graphs/SVFG.h"
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/Andersen.h"
+#include "Util/Options.h"
 
 using namespace SVF;
 
@@ -41,7 +43,13 @@ FullSparseAbstractInterpretation::~FullSparseAbstractInterpretation() = default;
 void FullSparseAbstractInterpretation::buildSVFG()
 {
     svfgBuilder = std::make_unique<SVFGBuilder>(true);
-    svfgBuilder->buildFullSVFG(preAnalysis->getPointerAnalysis());
+    SVFG* svfg = svfgBuilder->buildFullSVFG(preAnalysis->getPointerAnalysis());
+    if (Options::DumpAEObjRouteGraph())
+    {
+        AEObjRouteGraph routes(*svfg, *svfir->getICFG(),
+                               *preAnalysis->getPointerAnalysis(), *svfir);
+        routes.dump("ae_obj_route_graph");
+    }
 }
 
 void FullSparseAbstractInterpretation::mergeFreedAddrs(AbstractState& dst,
