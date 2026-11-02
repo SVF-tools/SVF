@@ -84,7 +84,7 @@ bool ProgSlice::AllPathReachableSolve()
             }
 
             DBOUT(DSaber, outs() << " node (" << node->getId()  <<
-                  ") --> " << "succ (" << succ->getId() << ") condition: " << getVFCond(succ) << "\n");
+                                    ") --> " << "succ (" << succ->getId() << ") condition: " << getVFCond(succ) << "\n");
         }
     }
 

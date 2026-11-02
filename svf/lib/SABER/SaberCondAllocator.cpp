@@ -554,7 +554,7 @@ SaberCondAllocator::Condition SaberCondAllocator::ComputeIntraVFGGuard(const SVF
                 brCond = getEvalBrCond(bb, succ);
 
             DBOUT(DSaber, outs() << " bb (" << bb->getName() <<
-                  ") --> " << "succ_bb (" << succ->getName() << ") condition: " << brCond << "\n");
+                                    ") --> " << "succ_bb (" << succ->getName() << ") condition: " << brCond << "\n");
             Condition succPathCond = condAnd(cond, brCond);
             if (setCFCond(succ, condOr(getCFCond(succ), succPathCond)))
                 worklist.push(succ);
@@ -562,7 +562,7 @@ SaberCondAllocator::Condition SaberCondAllocator::ComputeIntraVFGGuard(const SVF
     }
 
     DBOUT(DSaber, outs() << " src_bb (" << srcBB->getName() <<
-          ") --> " << "dst_bb (" << dstBB->getName() << ") condition: " << getCFCond(dstBB)
+                            ") --> " << "dst_bb (" << dstBB->getName() << ") condition: " << getCFCond(dstBB)
           << "\n");
 
     return getCFCond(dstBB);

@@ -749,8 +749,8 @@ void LLVMModuleSet::buildFunToFunMap()
             appModule = appFunToReplace->getParent();
         }
         Function* clonedFunction = Function::Create(extFunToClone->getFunctionType(),
-                Function::ExternalLinkage,
-                extFunToClone->getName());
+            Function::ExternalLinkage,
+            extFunToClone->getName());
         // Map the arguments of the new function to the arguments of extFunToClone
         llvm::ValueToValueMapTy valueMap;
         Function::arg_iterator destArg = clonedFunction->arg_begin();

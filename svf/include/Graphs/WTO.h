@@ -493,7 +493,7 @@ public:
 
     /// Copy assignment operator
     WTOComponentVisitor& operator=(const WTOComponentVisitor&) noexcept =
-        default;
+    default;
 
     /// Move assignment operator
     WTOComponentVisitor& operator=(WTOComponentVisitor&&) noexcept = default;
@@ -700,7 +700,7 @@ protected:
             WTOCycleDepthPtr previous_cycleDepth = _wtoCycleDepth;
             _nodeToWTOCycleDepth.insert(std::make_pair(head, _wtoCycleDepth));
             _wtoCycleDepth =
-                std::make_shared<GraphTWTOCycleDepth>(*_wtoCycleDepth);
+            std::make_shared<GraphTWTOCycleDepth>(*_wtoCycleDepth);
             _wtoCycleDepth->add(head);
             for (auto it = cycle.begin(), et = cycle.end(); it != et; ++it)
             {
