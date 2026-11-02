@@ -1,45 +1,39 @@
-//===- AEObjRouteGraph.cpp - Static base/sub routes -------------------------===//
+//===- SparseObjGraph.cpp - Static packed Obj routes -----------------------===//
 
-#include "AE/Svfexe/AEObjRouteGraph.h"
+#include "Graphs/SparseObjGraph.h"
 
 #include <cassert>
 #include <deque>
-#include <fstream>
-#include <ostream>
-#include <algorithm>
 #include <sstream>
 
+#include "Graphs/GraphPrinter.h"
+#include "Graphs/SVFG.h"
 #include "MemoryModel/PointerAnalysis.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/SVFUtil.h"
 
 using namespace SVF;
 
-std::string AEObjRouteEdge::toString() const
+std::string SparseObjEdge::toString() const
 {
     std::ostringstream out;
     out << "edge " << getSrcID() << " -> " << getDstID();
     return out.str();
 }
 
-std::string AEObjRouteNode::toString() const
+std::string SparseObjNode::toString() const
 {
     std::ostringstream out;
     out << "node " << getId() << " base " << base << " ICFG "
         << location->getId();
     if (branch)
         out << " branch " << branch->getSrcNode()->getId()
-            << " -> " << branch->getDstNode()->getId();
-    else
-    {
-        out << " SVFG";
-        for (const VFGNode* original : originals)
-            out << ' ' << original->getId();
-    }
+            << " -> " << branch->getDstNode()->getId()
+            << " label " << branch->getSuccessorCondValue();
     return out.str();
 }
 
-AEObjRouteGraph::AEObjRouteGraph(const SVFG& svfg, ICFG& graph,
+SparseObjGraph::SparseObjGraph(const SVFG& svfg, ICFG& graph,
         PointerAnalysis& pta, const SVFIR& svfir) : icfg(graph)
 {
     //Step 1 collect key: All base Obj ID, value: all def-use sites related to the base id
@@ -52,7 +46,7 @@ AEObjRouteGraph::AEObjRouteGraph(const SVFG& svfg, ICFG& graph,
         // are connected below.
         if (location && location->getFun())
         {
-            // An indirect call edge identifies the Obj group passed to the
+            // An indirect call edge identifies the packed Obj passed to the
             // callee: C: f(&x) -> P: callee entry. Register both C and P as
             // events for x so intra-function routing stops and resumes there;
             // addEdge connects the interprocedural C -> P edge separately.
@@ -70,8 +64,8 @@ AEObjRouteGraph::AEObjRouteGraph(const SVFG& svfg, ICFG& graph,
                                 const NodeID base = svfir.getBaseObject(obj)->getId();
                                 eventsByBase[base].insert(caller);
                                 eventsByBase[base].insert(location);
-                                recordOriginal(base, caller, call->getSrcNode());
-                                recordOriginal(base, location, vfg);
+                                getOrCreateBaseObjNode(base, caller);
+                                getOrCreateBaseObjNode(base, location);
                                 addEdge(base, caller, location, nullptr);
                             }
                         }
@@ -90,7 +84,7 @@ AEObjRouteGraph::AEObjRouteGraph(const SVFG& svfg, ICFG& graph,
                     {
                         const NodeID base = svfir.getBaseObject(obj)->getId();
                         eventsByBase[base].insert(location);
-                        recordOriginal(base, location, vfg);
+                        getOrCreateBaseObjNode(base, location);
                     }
                 }
             }
@@ -101,7 +95,7 @@ AEObjRouteGraph::AEObjRouteGraph(const SVFG& svfg, ICFG& graph,
 
             // Resolve ordinary load/store targets with points-to analysis.
             // If p points to a[1], record a's base so a[0] and a[1] travel
-            // through this location as one group.
+            // through this location as one packed Obj.
             if (pointer)
             {
                 for (NodeID obj : pta.getPts(pointer->getId()))
@@ -110,7 +104,7 @@ AEObjRouteGraph::AEObjRouteGraph(const SVFG& svfg, ICFG& graph,
                     {
                         const NodeID base = svfir.getBaseObject(obj)->getId();
                         eventsByBase[base].insert(location);
-                        recordOriginal(base, location, vfg);
+                        getOrCreateBaseObjNode(base, location);
                     }
                 }
             }
@@ -144,8 +138,8 @@ AEObjRouteGraph::AEObjRouteGraph(const SVFG& svfg, ICFG& graph,
                                     eventsByBase[base].insert(ret);
                                     if (source->getFun())
                                         eventsByBase[base].insert(source);
-                                    recordOriginal(base, source, output->getSrcNode());
-                                    recordOriginal(base, ret, target);
+                                    getOrCreateBaseObjNode(base, source);
+                                    getOrCreateBaseObjNode(base, ret);
                                     addEdge(base, source, ret, nullptr);
                                 }
                             }
@@ -193,19 +187,9 @@ AEObjRouteGraph::AEObjRouteGraph(const SVFG& svfg, ICFG& graph,
         }
     }
 
-    // Some branch sites were found along the ICFG, not as initial SVFG
-    // events. Keep their BranchVFGNode for mapping dump output to the SVFG.
-    for (const auto& entry : *this)
-    {
-        Node* node = entry.second;
-        if (!node->branch && isBranch(node->location))
-            for (const VFGNode* vfg : node->location->getVFGNodes())
-                if (SVFUtil::isa<BranchVFGNode>(vfg))
-                    node->originals.push_back(vfg);
-    }
 }
 
-bool AEObjRouteGraph::isBranch(const ICFGNode* node) const
+bool SparseObjGraph::isBranch(const ICFGNode* node) const
 {
     // Only conditional intra-function ICFG edges count as branches.
     for (const ICFGEdge* out : node->getOutEdges())
@@ -217,7 +201,7 @@ bool AEObjRouteGraph::isBranch(const ICFGNode* node) const
     return false;
 }
 
-AEObjRouteGraph::Node* AEObjRouteGraph::getOrCreateBaseObjNode(
+SparseObjGraph::Node* SparseObjGraph::getOrCreateBaseObjNode(
     NodeID baseObjId, const ICFGNode* location)
 {
     // One node per (base, ICFG location) may group several SVFG nodes.
@@ -230,7 +214,7 @@ AEObjRouteGraph::Node* AEObjRouteGraph::getOrCreateBaseObjNode(
     return node;
 }
 
-AEObjRouteGraph::Node* AEObjRouteGraph::getBranchNode(
+SparseObjGraph::Node* SparseObjGraph::getBranchNode(
     NodeID base, const IntraCFGEdge* branch)
 {
     // B: if (x > 0) -> N: use(x). B's true and false edges have distinct
@@ -244,21 +228,7 @@ AEObjRouteGraph::Node* AEObjRouteGraph::getBranchNode(
     return node;
 }
 
-// create link between baseID to subID
-// e.g. Store a[1], 10;
-// SVFGNode ID a(base):100, a[1](gep):101
-// we record mapping from 100 to 101
-// if base is normal objid, still record, but record the same node
-void AEObjRouteGraph::recordOriginal(NodeID base,
-        const ICFGNode* location, const VFGNode* original)
-{
-    Node* node = getOrCreateBaseObjNode(base, location);
-    if (std::find(node->originals.begin(), node->originals.end(), original) ==
-            node->originals.end())
-        node->originals.push_back(original);
-}
-
-void AEObjRouteGraph::addRouteEdge(Node* source, Node* target)
+void SparseObjGraph::addRouteEdge(Node* source, Node* target)
 {
     Edge candidate(source, target);
     if (source->hasOutgoingEdge(&candidate))
@@ -275,7 +245,7 @@ void AEObjRouteGraph::addRouteEdge(Node* source, Node* target)
         inputs[target->location].push_back(edge);
 }
 
-void AEObjRouteGraph::addEdge(NodeID base, const ICFGNode* source,
+void SparseObjGraph::addEdge(NodeID base, const ICFGNode* source,
                                    const ICFGNode* target,
                                    const IntraCFGEdge* branch)
 {
@@ -292,7 +262,7 @@ void AEObjRouteGraph::addEdge(NodeID base, const ICFGNode* source,
     addRouteEdge(input, to);
 }
 
-void AEObjRouteGraph::connectFrom(
+void SparseObjGraph::connectFrom(
     NodeID base, const ICFGNode* source,
     const Set<const ICFGNode*>& events,
     Set<const ICFGNode*>& newSources)
@@ -371,15 +341,15 @@ void AEObjRouteGraph::connectFrom(
     }
 }
 
-const std::vector<const AEObjRouteGraph::Edge*>&
-AEObjRouteGraph::getInputs(const ICFGNode* node) const
+const std::vector<const SparseObjGraph::Edge*>&
+SparseObjGraph::getInputs(const ICFGNode* node) const
 {
     static const std::vector<const Edge*> empty;
     const auto it = inputs.find(node);
     return it == inputs.end() ? empty : it->second;
 }
 
-std::string AEObjRouteGraph::toString() const
+std::string SparseObjGraph::toString() const
 {
     std::ostringstream out;
     for (const auto& entry : *this)
@@ -390,62 +360,34 @@ std::string AEObjRouteGraph::toString() const
     return out.str();
 }
 
-void AEObjRouteGraph::dump(const std::string& file) const
+namespace SVF
 {
-    const std::string filename = file + ".dot";
-    std::ofstream out(filename);
-    if (!out)
-    {
-        SVFUtil::errs() << "Cannot write '" << filename << "'\n";
-        return;
-    }
-    SVFUtil::outs() << "Writing '" << filename << "'...\n";
-    dumpDot(out);
-}
 
-void AEObjRouteGraph::dumpDot(std::ostream& out) const
+template<>
+struct DOTGraphTraits<SparseObjGraph*> : public DefaultDOTGraphTraits
 {
-    // DOT uses the same static nodes and edges, with no AE runtime values.
-    out << "digraph AEObjRouteGraph {\n"
-        << "  graph [rankdir=LR, label=\"AE base/sub value flow (static routes)\", "
-           "labelloc=t];\n"
-        << "  node [fontname=Helvetica, fontsize=10];\n"
-        << "  edge [color=\"#475569\"];\n";
+    DOTGraphTraits(bool simple = false) : DefaultDOTGraphTraits(simple) {}
 
-    for (const auto& entry : *this)
+    static std::string getGraphName(SparseObjGraph*)
     {
-        const Node* node = entry.second;
-        out << "  n" << node->getId();
-        if (node->branch)
-        {
-            out << " [shape=diamond, style=filled, fillcolor=\"#ffedd5\", "
-                   "label=\"Branch edge\\nbase " << node->base
-                << "\\nICFG " << node->branch->getSrcNode()->getId()
-                << " -> " << node->branch->getDstNode()->getId()
-                << "\\nedge label " << node->branch->getSuccessorCondValue()
-                << "\"];\n";
-        }
-        else
-        {
-            out << " [shape=box, style=filled, fillcolor=\""
-                << (node->originals.empty() ? "#e5e7eb" : "#dbeafe")
-                << "\", label=\"";
-            out << (node->originals.empty() ? "Route junction" : "SVFG group")
-                << "\\nbase " << node->base << "\\nICFG "
-                << node->location->getId();
-            if (!node->originals.empty())
-            {
-                out << "\\nSVFG";
-                for (const VFGNode* original : node->originals)
-                    out << ' ' << original->getId();
-            }
-            out << "\"];\n";
-        }
+        return "Sparse object routes";
     }
 
-    for (const auto& entry : *this)
-        for (const Edge* edge : entry.second->getOutEdges())
-            out << "  n" << edge->getSrcID() << " -> n"
-                << edge->getDstID() << ";\n";
-    out << "}\n";
+    static std::string getNodeLabel(SparseObjNode* node, SparseObjGraph*)
+    {
+        return node->toString();
+    }
+
+    static std::string getNodeAttributes(SparseObjNode* node, SparseObjGraph*)
+    {
+        return node->branch ? "shape=diamond,style=filled,fillcolor=\"#ffedd5\""
+               : "shape=box,style=filled,fillcolor=\"#dbeafe\"";
+    }
+};
+
+} // namespace SVF
+
+void SparseObjGraph::dump(const std::string& file)
+{
+    GraphPrinter::WriteGraphToFile(SVFUtil::outs(), file, this);
 }

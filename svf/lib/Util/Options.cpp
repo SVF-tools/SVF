@@ -208,6 +208,11 @@ const Option<bool> Options::DumpVFG(
     "Dump dot graph of VFG",
     false
 );
+const Option<bool> Options::DumpSparseObjGraph(
+    "dump-sparse-obj-graph",
+    "Dump object routes to sparse_obj_graph.dot when a full SVFG is built",
+    false
+);
 
 
 // Base class of pointer analyses (PointerAnalysis.cpp)
@@ -791,11 +796,6 @@ const OptionMap<u32_t> Options::AESparsity(
         "Sparse abstract execution via SVFG."
     }
 });
-const Option<bool> Options::DumpAEObjRouteGraph(
-    "dump-ae-obj-route-graph",
-    "Dump AE Obj Route Graph to ae_obj_route_graph.dot (AE full-sparse mode only)",
-    false
-);
 const OptionMap<u32_t> Options::AEFunEntry(
     "ae-fun-entry",
     "Abstract execution function entry mode (Default: main)",
