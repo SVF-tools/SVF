@@ -419,7 +419,7 @@ enum class OperationKind
     GeneratorExport
 };
 
-/// APRON-style information about the most recently completed mutating
+/// Information about the most recently completed mutating
 /// operation. `exact` means that no semantic approximation beyond the
 /// selected abstract domain was introduced. `best` means that the operation
 /// used the strongest implemented transformer for that domain and syntax.
@@ -501,7 +501,6 @@ public:
     virtual void assignParallel(const LinearAssignmentList& assignments) = 0;
     virtual void assignParallel(const TreeAssignmentList& assignments);
     /// Compute the preimage of this post-state under target := expression.
-    /// This is APRON's substitute operation, not a forward strong update.
     virtual void substitute(Variable target,
                             const LinearExpression& expression) = 0;
     void substitute(Variable target, const TreeExpression& expression);
@@ -518,13 +517,12 @@ public:
     /// Duplicate a summary variable into fresh variables. Every copy has the
     /// source variable's relations with all other variables, while the
     /// expanded variables remain mutually unrelated except where those
-    /// duplicated relations logically imply otherwise. This is APRON's
-    /// expand operation.
+    /// duplicated relations logically imply otherwise.
     virtual void expand(Variable source,
                         const std::vector<Variable>& copies) = 0;
     /// Merge several materialized variables into `target` by taking the
     /// abstract hull of every possible representative, then remove the other
-    /// variables. This is APRON's fold operation.
+    /// variables.
     virtual void fold(Variable target, const std::vector<Variable>& folded) = 0;
 
     /// Assume every constraint, letting them propagate into each other until

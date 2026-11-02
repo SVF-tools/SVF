@@ -636,8 +636,8 @@ ConvexPolyhedraDomain ConvexPolyhedraDomain::fromGeneratorsInLayout(
         std::abort();
     }
 
-    // Public PPL/APRON-style NNC generators carry point/closure membership,
-    // not the internal numeric epsilon witness. First compute the facets of
+    // Generators distinguish included points from excluded boundary points.
+    // They do not expose the internal epsilon witness. First compute the facets of
     // their closed hull, then mark exactly those facets strict that no
     // included point saturates. This is invariant under the internal epsilon
     // scaling chosen by a previous H -> V conversion.
@@ -1406,9 +1406,8 @@ void ConvexPolyhedraDomain::expandDimensions(
     const std::vector<Inequality> original = impl_->inequalities;
     std::vector<Inequality> expanded;
     expanded.reserve(original.size() * (copies.size() + 1));
-    // APRON expansion is the conjunction of one renamed copy of the original
-    // H system per representative. Building that fiber product in one batch
-    // avoids a complete H/V cycle for every new dimension.
+    // Conjoin one renamed constraint set per representative in one batch,
+    // avoiding a constraint/generator conversion for every new dimension.
     std::vector<Variable> representatives{source};
     representatives.reserve(copies.size() + 1);
     for (const DimensionEntry& copy : copies)

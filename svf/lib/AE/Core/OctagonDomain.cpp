@@ -558,7 +558,7 @@ private:
         std::shared_ptr<std::vector<Bound>> matrix;
     };
 
-    /// APRON's hmat layout stores triangular 2x2 variable blocks. Coherent
+    /// Store triangular 2x2 variable blocks. Coherent
     /// off-diagonal entries share an index. Each diagonal block is fully
     /// stored, so its two main-diagonal entries remain a distinct coherent
     /// pair that normalize() keeps equal. at(row,column) preserves the logical
@@ -1214,8 +1214,7 @@ public:
         // K[i,j] <= K[i,h] + K[h,j] <= R[i,h] + R[h,j]; the same monotonicity
         // argument applies to the strong-closure inequality. Integer-tight
         // unary entries remain even because the maximum of two even bounds is
-        // even. APRON's oct_join uses this same closed-result fast path instead
-        // of scheduling another cubic close.
+        // even, so the result needs no further closure.
         result->stronglyClosed = true;
         return result;
     }
@@ -2405,8 +2404,7 @@ private:
     }
 
     /// Restore closure after adding exact constraints that all involve one
-    /// variable to an already strongly closed DBM. This is the logical-matrix
-    /// form of APRON octagons' hmat_close_incremental: first repair rows and
+    /// variable to an already strongly closed DBM. First repair rows and
     /// columns incident to the changed variable, then use its two signed nodes
     /// as the only new pivots. The unaffected submatrix was already closed, so
     /// the work is quadratic rather than cubic.
