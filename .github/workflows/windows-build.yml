@@ -99,7 +99,7 @@ jobs:
       - name: Clone Test-Suite
         shell: bash
         run: |
-          git clone --depth 1 --branch ae-domain-tests "https://github.com/JoelYYoung/Test-Suite.git" Test-Suite
+          git clone --depth 1 "https://github.com/SVF-tools/Test-Suite.git" Test-Suite
 
       - name: Build SVF (MSVC)
         if: matrix.compiler == 'msvc'
