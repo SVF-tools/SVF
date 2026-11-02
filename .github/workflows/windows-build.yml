@@ -26,6 +26,8 @@ jobs:
             mingw-w64-clang-x86_64-cmake
             mingw-w64-clang-x86_64-ninja
             mingw-w64-clang-x86_64-z3
+            mingw-w64-clang-x86_64-gmp
+            mingw-w64-clang-x86_64-mpfr
             lcov
 
       - name: Install dependencies (MSVC only)
@@ -37,10 +39,67 @@ jobs:
         if: matrix.compiler == 'msvc'
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Install numeric libraries (MSVC)
+        timeout-minutes: 25
+        if: matrix.compiler == 'msvc'
+        shell: pwsh
+        run: |
+          # This job builds Release with the static MSVC runtime.
+          $triplets = "$env:RUNNER_TEMP/svf-triplets"
+          New-Item -ItemType Directory -Force $triplets | Out-Null
+          $builtin = "$env:VCPKG_INSTALLATION_ROOT/triplets/x64-windows-static.cmake".Replace('\', '/')
+          @("include(`"$builtin`")", "set(VCPKG_BUILD_TYPE release)") |
+            Set-Content "$triplets/x64-windows-static.cmake"
+          $stdout = "$env:RUNNER_TEMP/vcpkg-out.log"
+          $stderr = "$env:RUNNER_TEMP/vcpkg-err.log"
+          $install = Start-Process "$env:VCPKG_INSTALLATION_ROOT/vcpkg.exe" -ArgumentList @(
+            "install", "gmp:x64-windows-static", "mpfr:x64-windows-static",
+            "--host-triplet=x64-windows-static", "--overlay-triplets=$triplets"
+          ) -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          while (-not $install.WaitForExit(30000)) {
+            Get-Content $stdout -Tail 12
+            Get-Content $stderr -Tail 5
+            Get-ChildItem "$env:VCPKG_INSTALLATION_ROOT/buildtrees/mpfr" -Recurse -Filter config.log -ErrorAction SilentlyContinue |
+              ForEach-Object { Write-Host $_.FullName; Get-Content $_.FullName -Tail 80 }
+          }
+          Get-Content $stdout
+          Get-Content $stderr
+          if ($install.ExitCode -ne 0) { exit $install.ExitCode }
+          $prefix = "$env:VCPKG_INSTALLATION_ROOT/installed/x64-windows-static"
+          "GMP_ROOT=$prefix" >> $env:GITHUB_ENV
+          "MPFR_ROOT=$prefix" >> $env:GITHUB_ENV
+
+      - name: Collect numeric dependency logs
+        if: always() && matrix.compiler == 'msvc'
+        shell: pwsh
+        run: |
+          $logs = "$env:RUNNER_TEMP/msvc-numeric-logs"
+          New-Item -ItemType Directory -Force $logs | Out-Null
+          Copy-Item "$env:RUNNER_TEMP/vcpkg-*.log" $logs -ErrorAction SilentlyContinue
+          foreach ($port in @("gmp", "mpfr")) {
+            $root = "$env:VCPKG_INSTALLATION_ROOT/buildtrees/$port"
+            Get-ChildItem $root -Recurse -File -ErrorAction SilentlyContinue |
+              Where-Object { $_.Extension -eq ".log" -or $_.Name -eq "conftest.c" } |
+              ForEach-Object {
+                $relative = [IO.Path]::GetRelativePath($root, $_.FullName)
+                $target = Join-Path "$logs/$port" $relative
+                New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+                Copy-Item $_.FullName $target
+              }
+          }
+
+      - name: Preserve numeric dependency logs
+        if: always() && matrix.compiler == 'msvc'
+        uses: actions/upload-artifact@v4
+        with:
+          name: msvc-numeric-logs
+          path: ${{ runner.temp }}/msvc-numeric-logs
+          retention-days: 7
+
       - name: Clone Test-Suite
         shell: bash
         run: |
-          git clone --depth 1 "https://github.com/SVF-tools/Test-Suite.git" Test-Suite
+          git clone --depth 1 --branch ae-domain-tests "https://github.com/JoelYYoung/Test-Suite.git" Test-Suite
 
       - name: Build SVF (MSVC)
         if: matrix.compiler == 'msvc'
@@ -84,7 +143,7 @@ jobs:
           lcov --remove coverage-mingw.info '*/llvm-*.obj/*' --output-file coverage-mingw.info --ignore-errors unused || true
           lcov --remove coverage-mingw.info '*/svf/include/FastCluster/*' --output-file coverage-mingw.info --ignore-errors unused || true
           lcov --remove coverage-mingw.info '*/svf/lib/FastCluster/*' --output-file coverage-mingw.info --ignore-errors unused || true
-          
+
           # Normalize paths in coverage-mingw.info to relative repository paths for Codecov
           if [ -f coverage-mingw.info ]; then
             sed -i 's|SF:[A-Za-z]:/[^/]*/[^/]*/[^/]*/|SF:|g' coverage-mingw.info || true

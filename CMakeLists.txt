@@ -245,6 +245,18 @@ message(
   Z3 C++ include dirs:  ${Z3_CXX_INCLUDE_DIRS}"
 )
 
+find_package(GMP REQUIRED)
+find_package(MPFR REQUIRED)
+message(
+  STATUS
+    "Using Box numeric libraries:
+  GMP include directory:  ${GMP_INCLUDE_DIR}
+  GMP C library:          ${GMP_LIBRARY}
+  GMP C++ library:        ${GMPXX_LIBRARY}
+  MPFR include directory: ${MPFR_INCLUDE_DIR}
+  MPFR library:           ${MPFR_LIBRARY}"
+)
+
 # =================================================================================
 # SVF configuration interface library
 # =================================================================================
@@ -260,7 +272,6 @@ target_include_directories(
   SvfFlags
   INTERFACE $<BUILD_INTERFACE:${SVF_BINARY_DIR}>
   INTERFACE $<BUILD_INTERFACE:${SVF_BINARY_DIR}/include>
-  INTERFACE $<BUILD_INTERFACE:${SVF_BINARY_DIR}/include/SVF>
 )
 
 # Expose installed headers publicly (as system headers to suppress internal warnings to end-users)
@@ -300,10 +311,12 @@ add_subdirectory(svf-llvm)
 # =================================================================================
 
 # If ./Test-Suite exists, add & run the tests
-if(EXISTS "${SVF_SOURCE_DIR}/Test-Suite")
+if(EXISTS "${SVF_SOURCE_DIR}/Test-Suite/CMakeLists.txt")
   include(CTest)
   enable_testing()
   add_subdirectory(Test-Suite)
+
+
 endif()
 
 # =================================================================================
@@ -313,9 +326,17 @@ endif()
 # Expose the required ABI flags (e.g., whether RTTI was disabled) in the build & install trees
 if(MSVC)
   target_compile_options(SvfFlags INTERFACE $<$<NOT:$<BOOL:${SVF_ENABLE_RTTI}>>:/GR->)
+  target_compile_options(AbstractDomainCore PUBLIC $<$<NOT:$<BOOL:${SVF_ENABLE_RTTI}>>:/GR->)
+  target_compile_options(AbstractDomainCore PRIVATE
+    $<$<BOOL:${SVF_ENABLE_ASSERTIONS}>:/UNDEBUG>
+    $<$<NOT:$<BOOL:${SVF_ENABLE_EXCEPTIONS}>>:/EHs-c->)
 else()
   target_compile_options(SvfFlags INTERFACE $<$<NOT:$<BOOL:${SVF_ENABLE_RTTI}>>:-fno-rtti>)
   target_link_options(SvfFlags INTERFACE $<$<NOT:$<BOOL:${SVF_ENABLE_RTTI}>>:-fno-rtti>)
+  target_compile_options(AbstractDomainCore PUBLIC $<$<NOT:$<BOOL:${SVF_ENABLE_RTTI}>>:-fno-rtti>)
+  target_compile_options(AbstractDomainCore PRIVATE
+    $<$<BOOL:${SVF_ENABLE_ASSERTIONS}>:-UNDEBUG>
+    $<$<NOT:$<BOOL:${SVF_ENABLE_EXCEPTIONS}>>:-fno-exceptions>)
 endif()
 
 # Expose build/link flags not required for users of SVF only in the build tree
@@ -354,7 +375,7 @@ target_link_options(
 # SVF configuration header
 # =================================================================================
 
-# (1) Generate config.h into <build_tree>/include/SVF/Util; (2) Install it under <install_prefix>/include/SVF/Util
+# Generate config.h in the build include tree and install it with SVF headers.
 set(SVF_BUILD_DIR "${SVF_BINARY_DIR}")
 configure_file(${SVF_SOURCE_DIR}/cmake/SVFConfigHdr.cmake.in ${SVF_BINARY_DIR}/include/Util/config.h @ONLY)
 install(FILES ${SVF_BINARY_DIR}/include/Util/config.h DESTINATION ${SVF_INSTALL_INCLUDEDIR}/Util)
@@ -412,8 +433,14 @@ write_basic_package_version_file(
 install(FILES ${SVF_BINARY_DIR}/lib/cmake/SVF/SVFConfig.cmake DESTINATION ${SVF_INSTALL_CMAKECONFIGDIR})
 install(FILES ${SVF_BINARY_DIR}/lib/cmake/SVF/SVFConfigVersion.cmake DESTINATION ${SVF_INSTALL_CMAKECONFIGDIR})
 
-# Also install the extra module finding package definitions (e.g., FindZ3.cmake)
-configure_file(cmake/Modules/FindZ3.cmake ${SVF_BINARY_DIR}/lib/cmake/SVF/FindZ3.cmake @ONLY)
+# Make dependency finders available to build-tree package consumers as well.
+foreach(dependency IN ITEMS Z3 GMP MPFR)
+  configure_file(
+    cmake/Modules/Find${dependency}.cmake
+    ${SVF_BINARY_DIR}/lib/cmake/SVF/Modules/Find${dependency}.cmake
+    COPYONLY
+  )
+endforeach()
 install(
   DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules"
   DESTINATION "${SVF_INSTALL_CMAKECONFIGDIR}"

@@ -7,10 +7,12 @@ on:
 
 permissions:
   contents: write
-  id-token: write 
+  id-token: write
 
 # Customize the env variable
 env:
+  # Match the suite used by upstream d700066b CI.
+  SVF_TEST_SUITE_REV: 8ce4e183ea89c38a52ba8b0527ef72a1a566c789
   SVF_CTIR: 1
   SVF_Z3: 1
   SVF_DIR: $GITHUB_WORKSPACE
@@ -43,14 +45,14 @@ jobs:
         run: |
           XCODE_PATH=$(dirname $(dirname $(xcode-select -p)))
           sudo ln -sfn "$XCODE_PATH" /Applications/Xcode.app
-          brew install astyle
+          brew install astyle gmp mpfr
 
       # Ubuntu settings
       - name: ubuntu-setup
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake gcc g++ nodejs doxygen graphviz libncurses5-dev libtinfo6 libzstd-dev astyle
+          sudo apt-get install -y cmake gcc g++ nodejs doxygen graphviz libncurses5-dev libtinfo6 libzstd-dev libgmp-dev libmpfr-dev astyle
 
       # Windows settings (MSVC tools)
       - name: windows-setup
@@ -61,6 +63,16 @@ jobs:
       - name: Add MSVC to PATH
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install numeric libraries (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          & "$env:VCPKG_INSTALLATION_ROOT/vcpkg.exe" install gmp:x64-windows-static mpfr:x64-windows-static --host-triplet=x64-windows-static
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $prefix = "$env:VCPKG_INSTALLATION_ROOT/installed/x64-windows-static"
+          "GMP_ROOT=$prefix" >> $env:GITHUB_ENV
+          "MPFR_ROOT=$prefix" >> $env:GITHUB_ENV
 
       - name: env-setup
         if: github.event_name == 'push' && github.repository == 'SVF-tools/SVF'
@@ -80,7 +92,8 @@ jobs:
           if [ "$RUNNER_OS" != "Windows" ]; then
             astyle --style=allman -n -r "*.h" "*.cpp"
           fi
-          git clone "https://github.com/SVF-tools/Test-Suite.git";
+          git clone "https://github.com/SVF-tools/Test-Suite.git"
+          git -C Test-Suite checkout "$SVF_TEST_SUITE_REV"
           if [ "$RUNNER_OS" == "Windows" ]; then
             export SVF_ENABLE_ASSERTIONS=OFF
             source ./build.sh minsize nortti

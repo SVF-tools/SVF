@@ -16,6 +16,10 @@
 #include <iterator>
 #include <list>
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
+
 #include "Util/Hash.h"
 
 // Appease GCC?
@@ -1237,7 +1241,7 @@ void dump(const SparseBitVector<ElementSize> &LHS, std::ostream &out)
     out << "[";
 
     typename SparseBitVector<ElementSize>::iterator bi = LHS.begin(),
-                                                    be = LHS.end();
+             be = LHS.end();
     if (bi != be)
     {
         out << *bi;

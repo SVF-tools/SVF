@@ -34,6 +34,7 @@
 #include "AE/Core/RelExeState.h"
 #include "AE/Core/RelationSolver.h"
 #include "AE/Svfexe/AbstractInterpretation.h"
+#include "AE/Core/AbstractState.h"
 #include <chrono>
 
 using namespace SVF;

@@ -29,28 +29,30 @@
 // 46th International Conference on Software Engineering. (ICSE24)
 //
 #pragma once
-#include "AE/Core/AbstractState.h"
+#include "AE/Core/AbstractDomain.h"
+#include "AE/Core/AddressDomain.h"
+#include "AE/Core/BoxAddressDomain.h"
 #include "AE/Core/ICFGWTO.h"
+#include "AE/Core/NumericalDomain.h"
 #include "AE/Svfexe/AEDetector.h"
+#include "AE/Svfexe/AEStat.h"
 #include "AE/Svfexe/AEWTO.h"
 #include "AE/Svfexe/AbsExtAPI.h"
-#include "AE/Svfexe/AEStat.h"
+#include "AE/Svfexe/SVFIRAdapter.h"
+#include "Graphs/CallGraph.h"
+#include "Graphs/SCC.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/SVFBugReport.h"
 #include "Util/WorkList.h"
-#include "Graphs/SCC.h"
-#include "Graphs/CallGraph.h"
+#include <memory>
+#include <set>
+#include <vector>
 
 namespace SVF
 {
 class AbstractInterpretation;
 class AbsExtAPI;
 class AEStat;
-class AEAPI;
-class AndersenWaveDiff;
-
-template<typename T> class FILOWorkList;
-
 /// AbstractInterpretation is same as Abstract Execution.
 ///
 /// Owns the per-node abstract trace and exposes the read/write API
@@ -60,11 +62,13 @@ template<typename T> class FILOWorkList;
 class AbstractInterpretation
 {
     friend class AEStat;
-    friend class AEAPI;
+    friend class AbsExtAPI;
     friend class BufOverflowDetector;
     friend class NullptrDerefDetector;
 
 public:
+    using State = SVF::BoxAddressDomain;
+
     /*
      * For recursive test case
      * int demo(int a) {
@@ -76,15 +80,19 @@ public:
         int main() {
             int result = demo(0);
         }
-     * if set TOP, result = [-oo, +oo] since the return value, and any stored object pointed by q at *q = p in recursive functions will be set to the top value.
-     * if set WIDEN_ONLY, result = [10000, +oo] since only widening is applied at the cycle head of recursive functions without narrowing.
-     * if set WIDEN_NARROW, result = [10000, 10000] since both widening and narrowing are applied at the cycle head of recursive functions.
+     * if set TOP, result = [-oo, +oo] since the return value, and any stored
+     object pointed by q at *q = p in recursive functions will be set to the top
+     value.
+     * if set WIDEN_ONLY, result = [10000, +oo] since only widening is applied
+     at the cycle head of recursive functions without narrowing.
+     * if set WIDEN_NARROW, result = [10000, 10000] since both widening and
+     narrowing are applied at the cycle head of recursive functions.
      * */
     enum AESparsity
     {
         Dense,
         SemiSparse,
-        Sparse
+        Sparse,
     };
 
     enum HandleRecur
@@ -116,9 +124,8 @@ public:
 
     /// Factory: returns the singleton instance.  The concrete class is
     /// chosen once, on first call, from `Options::AESparsity()`:
-    /// `SemiSparseAbstractInterpretation` for SemiSparse,
-    /// `FullSparseAbstractInterpretation` for Sparse, otherwise the
-    /// dense base.  Must be called only after the option parser has run.
+    /// the native Box semi-sparse/full-sparse implementation, or the dense
+    /// Box implementation. Must be called only after option parsing.
     static AbstractInterpretation& getAEInstance();
 
     void addDetector(std::unique_ptr<AEDetector> detector)
@@ -132,62 +139,112 @@ public:
         return svfir->getSVFVar(varId);
     }
 
-    // ---- Abstract Value Access ----------------------------------------
+    // ---- Domain projection access ------------------------------------
 
     /// Read a top-level variable's abstract value.  Dense base does a
     /// direct trace lookup; sparse subclasses override with their own
-    /// resolution chain (def-site walk, call-result fallback, etc.).
+    /// definition-site lookup.
     /// All three overloads are virtual so full-sparse can route ObjVar
     /// reads through the SVFG.
-    virtual const AbstractValue& getAbsValue(const ValVar* var, const ICFGNode* node);
-    virtual const AbstractValue& getAbsValue(const ObjVar* var, const ICFGNode* node);
-    virtual const AbstractValue& getAbsValue(const SVFVar* var, const ICFGNode* node);
+    virtual SVF::Interval getInterval(const ValVar* var,
+                                      const ICFGNode* node);
+    /// Return the numerical payload conditional on the value being
+    /// initialized. Ordinary reads use getInterval(), which applies AE's
+    /// uninitialized-read policy.
+    virtual SVF::Interval getDefinedInterval(
+        const ValVar* var, const ICFGNode* node);
+    virtual SVF::Interval getInterval(const ObjVar* var,
+                                      const ICFGNode* node);
+    virtual SVF::Interval getInterval(const SVFVar* var,
+                                      const ICFGNode* node);
+    virtual SVF::AddressSet getAddressSet(const ValVar* var,
+                                          const ICFGNode* node);
+    virtual SVF::AddressSet getAddressSet(const ObjVar* var,
+                                          const ICFGNode* node);
+    virtual SVF::AddressSet getAddressSet(const SVFVar* var,
+                                          const ICFGNode* node);
 
-    /// Side-effect-free existence check.
+    /// Whether the value is present at this node.
     virtual bool hasAbsValue(const ValVar* var, const ICFGNode* node) const;
     virtual bool hasAbsValue(const ObjVar* var, const ICFGNode* node) const;
     virtual bool hasAbsValue(const SVFVar* var, const ICFGNode* node) const;
 
-    /// Write a variable's abstract value.  Sparse subclasses re-route
-    /// ValVar writes to the def-site.
-    virtual void updateAbsValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node);
-    virtual void updateAbsValue(const ObjVar* var, const AbstractValue& val, const ICFGNode* node);
-    virtual void updateAbsValue(const SVFVar* var, const AbstractValue& val, const ICFGNode* node);
+    /// Whether an uninitialized numerical alternative is present.
+    virtual bool numericalValueMayBeUninitialized(
+        const ValVar* var, const ICFGNode* node) const;
+
+    /// Write both scalar facets without constructing an intermediate value
+    /// object. Sparse subclasses re-route ValVar writes to the def-site.
+    virtual void updateValue(const ValVar* var,
+                             const SVF::Interval& interval,
+                             const SVF::AddressSet& addresses,
+                             const ICFGNode* node);
+    virtual void updateValue(const ObjVar* var,
+                             const SVF::Interval& interval,
+                             const SVF::AddressSet& addresses,
+                             const ICFGNode* node);
+    virtual void updateValue(const SVFVar* var,
+                             const SVF::Interval& interval,
+                             const SVF::AddressSet& addresses,
+                             const ICFGNode* node);
+    virtual void addUninitializedNumericalAlternative(
+        const ValVar* var, const ICFGNode* node);
+
+    void updateInterval(const SVFVar* var,
+                        const SVF::Interval& interval,
+                        const ICFGNode* node);
+    void updateAddressSet(const SVFVar* var,
+                          const SVF::AddressSet& addresses,
+                          const ICFGNode* node);
+
+    /// Representation-independent memory and lifetime access uses native
+    /// abstract locations; no encoded integer-address protocol is exposed.
+    virtual SVF::Interval getMemoryInterval(
+        SVF::Location location, const ICFGNode* node);
+    virtual SVF::AddressSet getMemoryAddressSet(
+        SVF::Location location, const ICFGNode* node);
+    virtual bool hasMemoryValue(SVF::Location location,
+                                const ICFGNode* node) const;
+    virtual void updateMemoryValue(SVF::Location location,
+                                   const SVF::Interval& interval,
+                                   const SVF::AddressSet& addresses,
+                                   const ICFGNode* node);
+    virtual void markFreedMemory(SVF::Location location,
+                                 const ICFGNode* node);
+    virtual bool isFreedMemory(SVF::Location location,
+                               const ICFGNode* node) const;
 
     // ---- State Access -------------------------------------------------
 
-    AbstractState& getAbsState(const ICFGNode* node);
+    /// Return the authoritative complete state used for control-flow joins
+    /// and fixpoint computation.
+    virtual const SVF::AbstractDomain& getAbstractState(
+        const ICFGNode* node) const;
 
-    /// Replace the state at `node`.  Sparse subclasses replace only the
-    /// ObjVar map (ValVars live at def-sites).
-    virtual void updateAbsState(const ICFGNode* node, const AbstractState& state);
+    virtual bool hasAbsState(const ICFGNode* node) const;
 
-    /// Join `src` into `dst` with sparsity-aware semantics.  Dense merges
-    /// everything; semi-sparse skips ValVars.
-    virtual void joinStates(AbstractState& dst, const AbstractState& src);
-
-    bool hasAbsState(const ICFGNode* node);
-
-    void getAbsState(const Set<const ValVar*>& vars, AbstractState& result, const ICFGNode* node);
-    void getAbsState(const Set<const ObjVar*>& vars, AbstractState& result, const ICFGNode* node);
-    void getAbsState(const Set<const SVFVar*>& vars, AbstractState& result, const ICFGNode* node);
+    virtual SVF::Location locationOf(const ObjVar* object) const;
+    virtual const ObjVar* objectAt(SVF::Location location) const;
 
     // ---- GEP / Load-Store / Type Helpers ------------------------------
 
-    IntervalValue getGepElementIndex(const GepStmt* gep);
-    IntervalValue getGepByteOffset(const GepStmt* gep);
-    AddressValue getGepObjAddrs(const ValVar* pointer, IntervalValue offset);
+    SVF::Interval getGepElementIndex(const GepStmt* gep);
+    SVF::Interval getGepByteOffset(const GepStmt* gep);
+    SVF::AddressSet getGepObjAddrs(
+        const ValVar* pointer, const SVF::Interval& offset,
+        const ICFGNode* node);
 
     /// Virtual so full-sparse can layer the GepObj overlay on top.
-    virtual AbstractValue loadValue(const ValVar* pointer,
-                                    const ICFGNode* node);
-
-    /// Shared by all sparsity modes: a strong update replaces one concrete
-    /// cell; a weak update JOINs the old and new values at every possible target.
-    virtual void storeValue(const ValVar* pointer, const AbstractValue& val,
+    virtual void loadValue(const ValVar* pointer,
+                           SVF::Interval& interval,
+                           SVF::AddressSet& addresses,
+                           bool& numericalMayBeUninitialized,
+                           const ICFGNode* node);
+    virtual void storeValue(const ValVar* pointer,
+                            const SVF::Interval& interval,
+                            const SVF::AddressSet& addresses,
                             const ICFGNode* node);
 
-    const SVFType* getPointeeElement(const ObjVar* var, const ICFGNode* node);
     struct AllocationSizeBounds
     {
         u32_t lowerBound;
@@ -195,59 +252,62 @@ public:
     };
 
     AllocationSizeBounds getAllocaInstByteSize(const AddrStmt* addr);
+    /// Value of an unmodelled input (external result, root argument,
+    /// unresolved call): its machine type range for integers, else Top.
+    SVF::Interval unknownInterval(const SVFVar* var) const;
 
-    // ---- Direct Trace Access ------------------------------------------
-
-    Map<const ICFGNode*, AbstractState>& getTrace()
+    const Set<const ICFGNode*>& getAnalyzedNodes() const
     {
-        return abstractTrace;
-    }
-    AbstractState& operator[](const ICFGNode* node)
-    {
-        return abstractTrace[node];
+        return allAnalyzedNodes;
     }
 
 protected:
-    /// Factory-only construction.  External callers must use getAEInstance();
-    /// `SparseAbstractInterpretation` reaches this via its own ctor.
+    /// Factory-only construction. External callers use getAEInstance().
     AbstractInterpretation();
 
-    /// One abstract address need not denote one concrete cell. Heap allocation
-    /// sites and recursive locals summarize multiple instances and need weak
-    /// updates, just like multi-target pointers and merged fields. A separate
-    /// array element can be strongly updated if elements are modeled separately
-    /// and its address is unique.
-    ///
-    /// state is needed because getIDFromAddr checks its freed-address set,
-    /// not just the address bits. An address recorded as freed resolves to the
-    /// BlackHole Obj and must not receive a strong update.
-    ///
-    ///   int x=1, y=3; p=cond ? &x : &y; *p=2;  // x:[1,2], y:[2,3]
-    ///   a=foo(); b=foo(); // foo returns malloc: a/b may name one heap summary
-    bool isStrongUpdate(const AddressValue& targets,
-                        const AbstractState& state) const;
-
-    // ---- Cycle helpers overridden by SparseAbstractInterpretation ----
+    /// SVF's BlackHole is an explicit summary object in the current transfer
+    /// policy, not AddressSet object-top. Keeping its Location concrete
+    /// matches the pointer-analysis value-flow contract while AddressSet still
+    /// supports object-top for clients that require arbitrary modeled objects.
+    SVF::AddressSet blackHoleAddressSet() const;
+    // ---- Cycle helpers implemented by Box-backed execution modes ----
     // The dense versions write only to trace[cycle_head].  The semi-sparse
     // subclass adds def-site scatter on top for body ValVars.
 
-    /// Build a full cycle-head AbstractState.  Dense default: trace[cycle_head]
-    /// as-is.  Semi-sparse subclass: also pull cycle ValVars from def-sites.
-    virtual AbstractState getFullCycleHeadState(const ICFGCycleWTO* cycle);
-
+    /// Clone the complete cycle-head state. Sparse subclasses may first gather
+    /// values held at def-sites; dense implementations clone their domain
+    /// state directly.
+    virtual std::unique_ptr<SVF::AbstractDomain> cloneCycleHeadState(
+        const ICFGCycleWTO* cycle);
     /// Widen prev with cur; write the widened state to trace[cycle_head].
     /// Returns true when next == prev (fixpoint).  Semi-sparse subclass
     /// additionally scatters ValVars to their def-sites.
-    virtual bool widenCycleState(const AbstractState& prev, const AbstractState& cur,
+    virtual bool widenCycleState(const SVF::AbstractDomain& prev,
+                                 const SVF::AbstractDomain& cur,
                                  const ICFGCycleWTO* cycle);
 
     /// Narrow prev with cur; write the narrowed state back.  Returns true
     /// when narrowing is disabled or the narrowed state equals prev.
     /// Semi-sparse subclass scatters the narrowed ValVars on non-fixpoint.
-    virtual bool narrowCycleState(const AbstractState& prev, const AbstractState& cur,
+    virtual bool narrowCycleState(const SVF::AbstractDomain& prev,
+                                  const SVF::AbstractDomain& cur,
                                   const ICFGCycleWTO* cycle);
 
 protected:
+    /// Representation-independent state lifecycle used by the shared WTO and
+    /// call/return drivers. Dense and sparse analyses provide different
+    /// storage implementations behind this small surface.
+    virtual void resetAbstractState(const ICFGNode* node);
+    virtual void copyAbstractState(const ICFGNode* source,
+                                   const ICFGNode* destination);
+    virtual std::unique_ptr<SVF::AbstractDomain> cloneAbstractState(
+        const ICFGNode* node) const;
+    virtual bool isAbstractStateEquivalent(
+        const ICFGNode* node,
+        const SVF::AbstractDomain& snapshot) const;
+
+    virtual void beginAbstractState(const ICFGNode*) {}
+
     /// Pull-based state merge: read abstractTrace[pred] for each predecessor,
     /// apply branch refinement for conditional IntraCFGEdges, and join into
     /// abstractTrace[node]. Returns true if at least one predecessor had state.
@@ -255,85 +315,83 @@ protected:
     /// base ICFG-edge merge.
     virtual bool mergeStatesFromPredecessors(const ICFGNode* node);
 
-    /// Returns true if the branch edge is reachable under the current state.
-    /// Pure query: does not update `as` or branch refinement traces.
-    bool isBranchEdgeFeasible(const IntraCFGEdge* edge, AbstractState& as);
+    /// Representation-independent feasibility query used by shared transfer
+    /// code.  Native dense domains apply the constraint directly.
+    virtual bool isBranchEdgeFeasibleAt(const IntraCFGEdge* edge,
+                                        const ICFGNode* predecessor);
+
+    bool isSwitchDefaultEdge(const IntraCFGEdge* edge) const;
+    bool isSwitchBranchEdgeFeasible(const IntraCFGEdge* edge,
+                                    const SVF::Interval& input) const;
+    void collectSwitchRefinement(const IntraCFGEdge* edge,
+                                 SVF::AbstractDomain& state);
 
     /// Collect branch-induced interval refinement after a feasible edge has
     /// been selected for normal CFG-state merging.
-    void collectBranchRefinement(const IntraCFGEdge* edge, AbstractState& as);
+    void collectBranchRefinement(const IntraCFGEdge* edge,
+                                 SVF::AbstractDomain& state);
 
-    /// Hook called by collectBranchRefinement for each obj that the
-    /// branch narrows.  Default (dense/semi): MEET `narrowed` onto
-    /// obj's value (read at `loadIcfg` where sparse keeps it) and
-    /// write the result into the local `as` (per-edge predState copy)
-    /// so joinStates carries it to `succ`.  FullSparse overrides to
-    /// capture into refinementTrace[succ] instead.
-    virtual void recordBranchRefinement(NodeID objId,
-                                        const IntervalValue& narrowed,
-                                        AbstractState& as,
-                                        const ICFGNode* loadIcfg,
-                                        const ICFGNode* succ);
+    /// Hook called by collectBranchRefinement for each object narrowed by the
+    /// branch. Dense and semi-sparse implementations meet the constraint into
+    /// the transient edge state; full-sparse records it for MemorySSA flow.
+    virtual void recordBranchRefinement(
+        NodeID objId, const SVF::Interval& narrowed,
+        SVF::AbstractDomain& state, const ICFGNode* loadIcfg,
+        const ICFGNode* succ);
 
-private:
+protected:
     /// Initialize abstract state for the global ICFG node and process global
     /// statements
     virtual void handleGlobalNode();
 
-    /// Handle a call site node: dispatch to ext-call, direct-call, or indirect-call handling
+    /// Materialise the value produced by an AddrStmt without prescribing a
+    /// concrete state representation.
+    virtual void initializeObjectValue(const ObjVar* object,
+                                       SVF::Interval& interval,
+                                       SVF::AddressSet& addresses,
+                                       const ICFGNode* node);
+
+    /// Handle a call site node: dispatch to ext-call, direct-call, or
+    /// indirect-call handling
     virtual void handleCallSite(const ICFGNode* node);
 
-    /// Handle a WTO cycle (loop or recursive function) using widening/narrowing iteration
-    virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller);
+    /// Handle a WTO cycle (loop or recursive function) using widening/narrowing
+    /// iteration
+    virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle,
+                                       const CallICFGNode* caller);
 
-    /// Handle a function body via worklist-driven WTO traversal starting from funEntry
+    /// Handle a function body via worklist-driven WTO traversal starting from
+    /// funEntry
     void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller);
 
     /// Handle an ICFG node: execute statements; return true if state changed
     bool handleICFGNode(const ICFGNode* node);
 
-    /// Dispatch an SVF statement (Addr/Binary/Cmp/Load/Store/Copy/Gep/Select/Phi/Call/Ret) to its handler
+    /// Dispatch an SVF statement
+    /// (Addr/Binary/Cmp/Load/Store/Copy/Gep/Select/Phi/Call/Ret) to its handler
     virtual void handleSVFStatement(const SVFStmt* stmt);
 
-    /// Returns true if the cmp-conditional branch is feasible.
-    bool isCmpBranchEdgeFeasible(const IntraCFGEdge* edge, AbstractState& as);
+    void updateStateOnAddr(const AddrStmt* addr);
 
-    /// Returns true if the switch branch is feasible.
-    bool isSwitchBranchEdgeFeasible(const IntraCFGEdge* edge,
-                                    AbstractState& as);
+    void updateStateOnBinary(const BinaryOPStmt* binary);
 
-    void updateStateOnAddr(const AddrStmt *addr);
+    void updateStateOnCmp(const CmpStmt* cmp);
 
-    void updateStateOnBinary(const BinaryOPStmt *binary);
+    void updateStateOnLoad(const LoadStmt* load);
 
-    IntervalValue evaluatePointerCmp(u32_t predicate,
-                                     const AddressValue& lhs,
-                                     const AddressValue& rhs) const;
+    void updateStateOnStore(const StoreStmt* store);
 
-    IntervalValue evaluateIntervalCmp(u32_t predicate,
-                                      const IntervalValue& lhs,
-                                      const IntervalValue& rhs) const;
+    void updateStateOnCopy(const CopyStmt* copy);
 
-    void updateStateOnCmp(const CmpStmt *cmp);
+    void updateStateOnCall(const CallPE* callPE);
 
-    void updateStateOnLoad(const LoadStmt *load);
+    void updateStateOnRet(const RetPE* retPE);
 
-    void updateStateOnStore(const StoreStmt *store);
+    void updateStateOnGep(const GepStmt* gep);
 
-    void updateStateOnCopy(const CopyStmt *copy);
+    void updateStateOnSelect(const SelectStmt* select);
 
-    void updateStateOnCall(const CallPE *callPE);
-
-    void updateStateOnRet(const RetPE *retPE);
-
-    void updateStateOnGep(const GepStmt *gep);
-
-    void updateStateOnSelect(const SelectStmt *select);
-
-    void updateStateOnPhi(const PhiStmt *phi);
-
-    /// Execution State, used to store the Interval Value of every SVF variable
-    AEAPI* api{nullptr};
+    void updateStateOnPhi(const PhiStmt* phi);
 
     ICFG* icfg;
     CallGraph* callGraph;
@@ -348,27 +406,56 @@ private:
     virtual bool isExtCall(const CallICFGNode* callNode);
     virtual void handleExtCall(const CallICFGNode* callNode);
     virtual bool isRecursiveFun(const FunObjVar* fun);
-    virtual void skipRecursionWithTop(const CallICFGNode *callNode);
-    virtual bool isRecursiveCallSite(const CallICFGNode* callNode, const FunObjVar *);
+    virtual void skipRecursionWithTop(const CallICFGNode* callNode);
+    virtual bool isRecursiveCallSite(const CallICFGNode* callNode,
+                                     const FunObjVar*);
     virtual void handleFunCall(const CallICFGNode* callNode);
 
     bool skipRecursiveCall(const CallICFGNode* callNode);
     const FunObjVar* getCallee(const CallICFGNode* callNode);
 
-    // there data should be shared with subclasses
-    Map<std::string, std::function<void(const CallICFGNode*)>> func_map;
-
-    Set<const ICFGNode*> allAnalyzedNodes; // All nodes ever analyzed (across all entry points)
-    std::string moduleName;
+    Set<const ICFGNode*>
+    allAnalyzedNodes; // All nodes ever analyzed (across all entry points)
 
     std::vector<std::unique_ptr<AEDetector>> detectors;
     AbsExtAPI* utils;
 
 protected:
-    /// Data and helpers reachable from SparseAbstractInterpretation.
+
+    virtual State& ensureState(const ICFGNode* node);
+    virtual const State& state(const ICFGNode* node) const;
+    State topState() const;
+    State bottomState() const;
+    std::unique_ptr<SVF::NumericalDomain> makeNumericalDomain(
+        bool bottom) const;
+
+    void assignValue(State& state, SVF::Variable variable,
+                     const SVF::Interval& interval,
+                     const SVF::AddressSet& addresses);
+    void assignMemoryValue(State& state,
+                           SVF::Variable content,
+                           const SVF::Interval& interval,
+                           const SVF::AddressSet& addresses);
+    /// Strong writes require a definite, non-summary, live memory cell.
+    bool canStrongStore(const SVF::AddressSet& pointees,
+                        const ObjVar& object, const State& state);
+    SVF::Variable memoryVariable(const ObjVar& object,
+                                 const State& state) const;
+    void assignInterval(State& state, SVF::Variable variable,
+                        const SVF::Interval& interval);
+    void constrainInterval(State& state, SVF::Variable variable,
+                           const SVF::Interval& interval) const;
+    void forgetValue(State& state,
+                     SVF::Variable variable) const;
+    void assumeBranch(const IntraCFGEdge* edge, State& state);
+
     SVFIR* svfir{nullptr};
     AEWTO* preAnalysis{nullptr};
-    Map<const ICFGNode*, AbstractState> abstractTrace; ///< per-node trace; owned here
+    SVFIRAdapter adapter_;
+    bool equivalentValues(const State& left, const State& right) const;
+
+    Map<const ICFGNode*, State> abstractTrace_;
+    Map<const ICFGNode*, NodeBS> definedValues_;
 
     bool shouldApplyNarrowing(const FunObjVar* fun);
 };
