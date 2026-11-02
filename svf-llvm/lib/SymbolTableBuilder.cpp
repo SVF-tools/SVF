@@ -335,7 +335,9 @@ void SymbolTableBuilder::collectObj(const Value* val)
     {
         // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
         // then we treat them as one ConstantObj
-        if (isConstantObjSym(val) && !Options::ModelConsts())
+        // the IR features can't be modelled, like Blockaddress still maps to the ConstantObj
+        const bool mcUnmodelled = isConstDataOrAggData(val) && val->getType()->isPointerTy();
+        if (isConstantObjSym(val) && (!Options::ModelConsts() || mcUnmodelled))
         {
             llvmModuleSet()->objSymMap.insert(std::make_pair(val, svfir->constantSymID()));
         }

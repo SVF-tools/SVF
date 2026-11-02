@@ -17,6 +17,7 @@
         REALLOC_HEAP_RET,  
         MEMSET,            // memcpy() operations
         MEMCPY,            // memset() operations
+        STRLEN,            // reads modeled fields of argument 0; clients compute the length
         OVERWRITE,         // svf function overwrite app function
         STORE_TOP:Argi+,   // store nondeterministic top values through argument i and following arguments
         SCANF:FormatArgi,  // argument i is a scanf-style format string; if it cannot write an address,
@@ -740,6 +741,18 @@ void *memccpy( void *__restrict dest, const void *__restrict src, int c, unsigne
 
 __attribute__((annotate("MEMCPY")))
 void __memmove_chk(char* dst, char* src, int sz){}
+
+__attribute__((annotate("STRLEN")))
+size_t strlen(const char *str)
+{
+    return 0;
+}
+
+__attribute__((annotate("STRLEN")))
+size_t wcslen(const wchar_t *str)
+{
+    return 0;
+}
 
 __attribute__((annotate("MEMSET")))
 void llvm_memset(char* dst, char elem, int sz, int flag){}

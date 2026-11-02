@@ -38,6 +38,8 @@
 #include "SVF-LLVM/LLVMModule.h"
 #include "SVF-LLVM/LLVMUtil.h"
 
+#include <optional>
+
 namespace SVF
 {
 
@@ -67,6 +69,10 @@ private:
                                    std::vector<AggregateFieldKey>& operands);
     bool getAggregateFieldNode(const Value* aggregate, const AggregateField& indices,
                                NodeID& node);
+    /// Decode a pointer extraction; unsupported instructions have no field.
+    static std::optional<AggregateFieldKey>
+    getExtractedField(const Instruction& inst);
+    void addExtractedFieldCopy(Instruction& inst);
 
     /*!
      * Carry a pointer field from a returned aggregate to its extraction.
@@ -90,14 +96,13 @@ private:
      *     %x = extractvalue {ptr, ptr} %a, 0
      *     ret ptr %x
      *   }
-     * Only field {0} is extracted. For this call, its AggregateCallField holds
-     * the NodeIDs of three distinct SVFIR nodes:
-     *   object  = obj: a pointer-sized DummyObjVar, called the return slot.
-     *               This is synthetic storage, not the Pair object or an
-     *               LLVM alloca. "Slot" names obj, not a fourth node.
-     *   address = A: a DummyValVar pointing to obj, passed to make.
-     *   value   = V: a DummyValVar holding the pointer loaded from obj after
-     *               the call; later uses read V without reloading obj.
+     * Only field {0} is extracted. For this call, the field uses three
+     * distinct SVFIR nodes:
+     *   obj: a pointer-sized DummyObjVar, called the return slot. This is
+     *        synthetic storage, not the Pair object or an LLVM alloca.
+     *   A:   a DummyValVar pointing to obj, passed to make.
+     *   V:   a DummyValVar holding the pointer loaded from obj after the
+     *        call; later uses read V without reloading obj.
      * Each static callsite has its own obj/A/V for each demanded field.
      * make also gets a synthetic output ArgValVar, named out_obj below.
      * Using symbolic node names, the field transport is shown below; ordinary
@@ -113,31 +118,33 @@ private:
      * F0 models (%r0, {0}) and F1 models (%r1, {0}); field {1} is not
      * extracted here, so it needs no separate field node.
      * The snapshot load precedes the extraction copy at the same continuation.
-     * In aggregateCalls[%a], continuation is the %x instruction and fields[{0}]
-     * holds {obj, A, V}. aggregateReturnParams[make][{0}] holds the NodeID
-     * of out_obj.
+     * aggregateReturnParams[make][{0}] holds out_obj.
+     * aggregateCallArgs[%a][{0}] holds A, and
+     * aggregateFieldNodes[(%a, {0})] holds V. obj, Addr(obj) and
+     * Load(A) are created before instructions are visited; V is loaded at %x,
+     * the instruction after the call.
      * All calls to make append their own A to match out_obj, even with unused
      * results. More demanded fields follow field-path order. These additions
      * affect only SVFIR; the LLVM signatures above do not change.
      */
-    struct AggregateCallField
-    {
-        NodeID object;  ///< Pointer-sized return slot.
-        NodeID address; ///< Output pointer passed to the callee.
-        NodeID value;   ///< Snapshot loaded at the continuation; used by extracts.
-    };
-    /// Continuation and field nodes for one call; see the example above.
-    struct AggregateCall
-    {
-        const Instruction* continuation;
-        std::map<AggregateField, AggregateCallField> fields;
-    };
-    /// Demanded field paths to output-parameter IDs, ordered per callee.
+    /// Output parameters of each modeled callee, in field-path order.
     Map<const Function*, std::map<AggregateField, NodeID>> aggregateReturnParams;
-    /// All calls to a modeled callee, including calls with unused results.
-    Map<const CallInst*, AggregateCall> aggregateCalls;
+    /// Slot addresses that each call to a modeled callee passes as output
+    /// arguments, in field-path order, including calls with unused results.
+    /// visitCallSite appends them after the call's ordinary arguments.
+    Map<const CallInst*, std::map<AggregateField, NodeID>> aggregateCallArgs;
+
+    /// Field paths extracted from each callee's returned aggregate.
+    using AggregateReturnFields =
+        Map<const Function*, std::set<AggregateField>>;
 
     void initialiseAggregateReturns();
+    AggregateReturnFields discoverAggregateReturnFields();
+    void createAggregateReturnParams(const Function* fun,
+                                     const std::set<AggregateField>& fields,
+                                     const SVFType* pointerType);
+    void createAggregateCallSlots(const Function* fun,
+                                  const SVFType* pointerType);
     void addAggregateCallFields(const CallInst* call);
     void addAggregateReturnStores(ReturnInst& inst);
 
