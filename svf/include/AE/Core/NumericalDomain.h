@@ -26,6 +26,8 @@
 
 #include "AE/Core/AbstractDomain.h"
 
+#include <cstdlib>
+#include <cassert>
 #include <gmpxx.h>
 #include <mpfr.h>
 
@@ -37,6 +39,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <algorithm>
+#include <iterator>
 
 namespace SVF
 {
@@ -994,6 +998,163 @@ struct TreeAssignment
 };
 
 using TreeAssignmentList = std::vector<TreeAssignment>;
+
+/// Selects the physical carrier of an Octagon DBM.  This is deliberately not
+/// part of the abstract semantics: states using different carriers may be
+/// combined, compared, and converted without approximation.
+enum class OctagonStorageKind
+{
+    DenseHalf,
+    SparseFinite,
+    ComponentDense
+};
+
+const char* octagonStorageKindName(OctagonStorageKind kind);
+OctagonStorageKind octagonStorageKindFromName(const std::string& name);
+
+struct OctagonConfig
+{
+    bool strongClosure = true;
+    bool integerTightening = true;
+    OctagonStorageKind storage = OctagonStorageKind::DenseHalf;
+    /// ComponentDense only: share component matrices across abstract-state
+    /// copies until the first write. Disabling this keeps identical abstract
+    /// semantics but moves the matrix-copy cost from mutation to clone.
+    bool componentCopyOnWrite = true;
+    /// Use the quadratic single-variable closure repair where its precondition
+    /// holds. Disabling it computes the same canonical state with full closure.
+    bool incrementalClosure = true;
+    std::shared_ptr<DiagnosticSink> diagnostics;
+
+    /// Diagnostics affect observation only, not abstract-state semantics.
+    bool operationCompatible(const OctagonConfig& other) const
+    {
+        return strongClosure == other.strongClosure &&
+               integerTightening == other.integerTightening;
+    }
+};
+
+using Dimension = std::size_t;
+
+struct DimensionEntry
+{
+    Variable variable;
+    explicit DimensionEntry(Variable value) : variable(value) {}
+};
+
+/// Physical coordinates, not a mathematical environment. Every domain denotes
+/// a property over all typed Variables; variables absent here are unrestricted.
+/// Immutable layouts are shared by copies. A relational operation extends or
+/// aligns them internally before touching its matrix.
+class DimensionLayout
+{
+public:
+    DimensionLayout() : DimensionLayout(std::vector<DimensionEntry> {}) {}
+    explicit DimensionLayout(std::vector<DimensionEntry> entries)
+    {
+        std::sort(entries.begin(), entries.end(), [](const auto& a, const auto& b)
+        {
+            return a.variable < b.variable;
+        });
+        for (std::size_t i = 1; i < entries.size(); ++i)
+            if (entries[i - 1].variable == entries[i].variable)
+            {
+                assert(false && "duplicate relational coordinate");
+                std::abort();
+            }
+        entries_ = std::make_shared<const std::vector<DimensionEntry>>(std::move(entries));
+    }
+    std::size_t size() const
+    {
+        return entries_->size();
+    }
+    bool empty() const
+    {
+        return entries_->empty();
+    }
+    bool contains(Variable variable) const
+    {
+        const auto it = find(variable);
+        return it != entries_->end() && it->variable == variable;
+    }
+    Dimension dimensionOf(Variable variable) const
+    {
+        const auto it = find(variable);
+        if (it == entries_->end() || it->variable != variable)
+        {
+            assert(false && "missing relational coordinate");
+            std::abort();
+        }
+        return static_cast<Dimension>(it - entries_->begin());
+    }
+    Variable variableOf(Dimension dimension) const
+    {
+        return entries_->at(dimension).variable;
+    }
+    const NumericType& typeOf(Variable variable) const
+    {
+        return entries_->at(dimensionOf(variable)).variable.type();
+    }
+    const std::vector<DimensionEntry>& variables() const
+    {
+        return *entries_;
+    }
+    DimensionLayout add(const std::vector<DimensionEntry>& added) const
+    {
+        auto entries = *entries_;
+        entries.insert(entries.end(), added.begin(), added.end());
+        return DimensionLayout(std::move(entries));
+    }
+    DimensionLayout remove(const std::vector<Variable>& removed) const
+    {
+        std::vector<DimensionEntry> entries;
+        for (const auto& entry : *entries_)
+            if (std::find(removed.begin(), removed.end(), entry.variable) == removed.end())
+                entries.push_back(entry);
+        return DimensionLayout(std::move(entries));
+    }
+    DimensionLayout merge(const DimensionLayout& other) const
+    {
+        if (*this == other)
+            return *this;
+        std::vector<DimensionEntry> entries;
+        std::set_union(entries_->begin(), entries_->end(), other.entries_->begin(), other.entries_->end(),
+                       std::back_inserter(entries), [](const auto& a, const auto& b)
+        {
+            return a.variable < b.variable;
+        });
+        return DimensionLayout(std::move(entries));
+    }
+    friend bool operator==(const DimensionLayout& a, const DimensionLayout& b)
+    {
+        return a.entries_ == b.entries_ || (a.size() == b.size() &&
+                                            std::equal(a.entries_->begin(), a.entries_->end(), b.entries_->begin(),
+                                                    [](const auto& x, const auto& y)
+        {
+            return x.variable == y.variable;
+        }));
+    }
+    friend bool operator!=(const DimensionLayout& a, const DimensionLayout& b)
+    {
+        return !(a == b);
+    }
+
+private:
+    std::vector<DimensionEntry>::const_iterator find(Variable variable) const
+    {
+        return std::lower_bound(entries_->begin(), entries_->end(), variable,
+                                [](const auto& entry, Variable value)
+        {
+            return entry.variable < value;
+        });
+    }
+    std::shared_ptr<const std::vector<DimensionEntry>> entries_;
+};
+
+std::unique_ptr<NumericalDomain> makeNumericalDomain(
+    DomainKind kind, bool bottom, const OctagonConfig& config = {});
+std::unique_ptr<NumericalDomain> makeOctagonDomain(
+    bool bottom = false, const OctagonConfig& config = {});
 
 } // namespace SVF
 
