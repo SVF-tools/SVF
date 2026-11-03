@@ -570,44 +570,38 @@ build_svf() {
             -DSVF_Z3=ON
         )
     elif [[ "$PLATFORM" == ubuntu-* ]]; then
-        local c_comp="${CC:-}"
-        local cxx_comp="${CXX:-}"
-        if [[ -z "$c_comp" && -x "$LLVM_DIR/bin/clang" && -x "$LLVM_DIR/bin/clang++" ]]; then
-            c_comp="$LLVM_DIR/bin/clang"
-            cxx_comp="$LLVM_DIR/bin/clang++"
-        fi
-        if [[ -n "$c_comp" && -n "$cxx_comp" ]]; then
-            cmake_generator_args+=(
-                -DCMAKE_C_COMPILER="$c_comp"
-                -DCMAKE_CXX_COMPILER="$cxx_comp"
-            )
-        fi
-        local extra_cxx_flags=""
-        local extra_link_flags=""
+        # When official LLVM prebuilt bundles libc++, use Clang/libc++ to match its ABI.
+        # When libc++ is NOT bundled (e.g. LLVM compiled with GCC/libstdc++), use default system compiler.
         if [[ -d "$LLVM_DIR/include/c++/v1" ]]; then
-            extra_cxx_flags="-stdlib=libc++"
-            extra_link_flags="-stdlib=libc++"
-        fi
-        if [[ -x "$LLVM_DIR/bin/ld.lld" ]]; then
-            extra_link_flags="${extra_link_flags:+$extra_link_flags }-fuse-ld=lld"
-            cmake_generator_args+=(-DSVF_USE_LLD=ON)
-        fi
-        local target_lib_dir=""
-        if [[ -d "$LLVM_DIR/lib/x86_64-unknown-linux-gnu" ]]; then
-            target_lib_dir="$LLVM_DIR/lib/x86_64-unknown-linux-gnu"
-        elif [[ -d "$LLVM_DIR/lib/aarch64-unknown-linux-gnu" ]]; then
-            target_lib_dir="$LLVM_DIR/lib/aarch64-unknown-linux-gnu"
-        fi
-        if [[ -n "$target_lib_dir" ]]; then
-            extra_link_flags="${extra_link_flags:+$extra_link_flags }-L$target_lib_dir -Wl,-rpath,$target_lib_dir"
-        fi
-        if [[ -n "$extra_cxx_flags" ]]; then
+            local c_comp="${CC:-}"
+            local cxx_comp="${CXX:-}"
+            if [[ -z "$c_comp" && -x "$LLVM_DIR/bin/clang" && -x "$LLVM_DIR/bin/clang++" ]]; then
+                c_comp="$LLVM_DIR/bin/clang"
+                cxx_comp="$LLVM_DIR/bin/clang++"
+            fi
+            if [[ -n "$c_comp" && -n "$cxx_comp" ]]; then
+                cmake_generator_args+=(
+                    -DCMAKE_C_COMPILER="$c_comp"
+                    -DCMAKE_CXX_COMPILER="$cxx_comp"
+                )
+            fi
+            local extra_cxx_flags="-stdlib=libc++"
+            local extra_link_flags="-stdlib=libc++"
+            if [[ -x "$LLVM_DIR/bin/ld.lld" ]]; then
+                extra_link_flags="${extra_link_flags} -fuse-ld=lld"
+                cmake_generator_args+=(-DSVF_USE_LLD=ON)
+            fi
+            local target_lib_dir=""
+            if [[ -d "$LLVM_DIR/lib/x86_64-unknown-linux-gnu" ]]; then
+                target_lib_dir="$LLVM_DIR/lib/x86_64-unknown-linux-gnu"
+            elif [[ -d "$LLVM_DIR/lib/aarch64-unknown-linux-gnu" ]]; then
+                target_lib_dir="$LLVM_DIR/lib/aarch64-unknown-linux-gnu"
+            fi
+            if [[ -n "$target_lib_dir" ]]; then
+                extra_link_flags="${extra_link_flags} -L$target_lib_dir -Wl,-rpath,$target_lib_dir"
+            fi
             cmake_generator_args+=(
                 "-DCMAKE_CXX_FLAGS=${extra_cxx_flags}"
-            )
-        fi
-        if [[ -n "$extra_link_flags" ]]; then
-            cmake_generator_args+=(
                 "-DCMAKE_SHARED_LINKER_FLAGS=${extra_link_flags}"
                 "-DCMAKE_EXE_LINKER_FLAGS=${extra_link_flags}"
             )
