@@ -18,13 +18,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
         include:
-          - os: [ubuntu-latest]
+          - os: ubuntu-latest
+          - os: ubuntu-latest
             sanitizer: address
-            rtti_mode: nortti
           - os: ubuntu-latest
             rtti_mode: nortti
+          - os: macos-latest
     steps:
       # checkout the repo
       - uses: actions/checkout@v4
@@ -59,7 +59,7 @@ jobs:
           cd $GITHUB_WORKSPACE
           echo $(pwd)
           if [ "${{matrix.sanitizer}}" != "" ]; then export SVF_SANITIZER="${{matrix.sanitizer}}"; fi
-          if [ "$RUNNER_OS" == "Linux" ] && [ "${{matrix.sanitizer}}" == "" ]; then export SVF_COVERAGE=1; fi
+          if [ "$RUNNER_OS" == "Linux" ] && [ "${{matrix.sanitizer}}" == "" ] && [ "${{matrix.rtti_mode}}" == "" ]; then export SVF_COVERAGE=1; fi
           git clone "https://github.com/SVF-tools/Test-Suite.git";
           source ${{github.workspace}}/build.sh ${{matrix.rtti_mode}}
 
@@ -167,7 +167,7 @@ jobs:
 
       - name: create-coverage-report-and-remove-system-files
         working-directory: ${{github.workspace}}/Release-build
-        if: runner.os == 'Linux' && matrix.sanitizer == ''
+        if: runner.os == 'Linux' && matrix.sanitizer == '' && matrix.rtti_mode == ''
         run: |
           if command -v llvm-cov >/dev/null 2>&1; then
             printf '#!/usr/bin/env bash\nexec llvm-cov gcov "$@"\n' > /tmp/llvm-gcov.sh
@@ -178,7 +178,7 @@ jobs:
           lcov --remove coverage.info '/usr/*' '${{github.workspace}}/z3.obj/*' '${{github.workspace}}/llvm-*.obj/*' '${{github.workspace}}/svf/include/FastCluster/*' '${{github.workspace}}/svf/lib/FastCluster/*' --output-file coverage.info --ignore-errors unused --rc check_data_consistency=0 || true
 
       - name: upload-coverage
-        if: runner.os == 'Linux' && matrix.sanitizer == ''
+        if: runner.os == 'Linux' && matrix.sanitizer == '' && matrix.rtti_mode == ''
         uses: codecov/codecov-action@v5
         with:
           files: coverage.info
