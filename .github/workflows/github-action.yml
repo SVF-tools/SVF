@@ -46,7 +46,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev astyle
-          sudo apt-get install -y libxml2t64 2>/dev/null || sudo apt-get install -y libxml2 2>/dev/null || true
+          if [ ! -f /usr/lib/x86_64-linux-gnu/libxml2.so.2 ]; then
+            libxml_target=$(find /usr/lib -name 'libxml2.so*' 2>/dev/null | head -n 1)
+            if [ -n "$libxml_target" ]; then
+              sudo ln -sf "$libxml_target" /usr/lib/x86_64-linux-gnu/libxml2.so.2
+            fi
+          fi
 
       # build-svf
       - name: build-svf
