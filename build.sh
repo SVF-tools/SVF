@@ -589,9 +589,23 @@ build_svf() {
             fi
             local extra_cxx_flags="-stdlib=libc++"
             local extra_link_flags="-stdlib=libc++"
-            if [[ -x "$LLVM_DIR/bin/ld.lld" ]] && "$LLVM_DIR/bin/ld.lld" --version >/dev/null 2>&1; then
-                extra_link_flags="${extra_link_flags} -fuse-ld=lld"
-                cmake_generator_args+=(-DSVF_USE_LLD=ON)
+            if [[ -x "$LLVM_DIR/bin/ld.lld" ]]; then
+                if ! "$LLVM_DIR/bin/ld.lld" --version >/dev/null 2>&1; then
+                    for lxml in /usr/lib/*/libxml2.so* /usr/lib/libxml2.so*; do
+                        if [[ -f "$lxml" ]]; then
+                            local lxml_dir
+                            lxml_dir=$(dirname "$lxml")
+                            if [[ ! -f "$lxml_dir/libxml2.so.2" && -w "$lxml_dir" ]]; then
+                                ln -sf "$lxml" "$lxml_dir/libxml2.so.2" 2>/dev/null || true
+                            fi
+                            break
+                        fi
+                    done
+                fi
+                if "$LLVM_DIR/bin/ld.lld" --version >/dev/null 2>&1; then
+                    extra_link_flags="${extra_link_flags:+$extra_link_flags }-fuse-ld=lld"
+                    cmake_generator_args+=(-DSVF_USE_LLD=ON)
+                fi
             fi
             local target_lib_dir=""
             if [[ -d "$LLVM_DIR/lib/x86_64-unknown-linux-gnu" ]]; then
