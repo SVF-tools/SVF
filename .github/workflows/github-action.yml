@@ -45,7 +45,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev astyle libxml2
+          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev astyle
+          sudo apt-get install -y libxml2t64 2>/dev/null || sudo apt-get install -y libxml2 2>/dev/null || true
 
       # build-svf
       - name: build-svf

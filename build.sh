@@ -566,8 +566,10 @@ build_svf() {
             local c_comp="${CC:-}"
             local cxx_comp="${CXX:-}"
             if [[ -z "$c_comp" && -x "$LLVM_DIR/bin/clang" && -x "$LLVM_DIR/bin/clang++" ]]; then
-                c_comp="$LLVM_DIR/bin/clang"
-                cxx_comp="$LLVM_DIR/bin/clang++"
+                if "$LLVM_DIR/bin/clang" --version >/dev/null 2>&1; then
+                    c_comp="$LLVM_DIR/bin/clang"
+                    cxx_comp="$LLVM_DIR/bin/clang++"
+                fi
             fi
             if [[ -n "$c_comp" && -n "$cxx_comp" ]]; then
                 cmake_generator_args+=(
@@ -577,7 +579,7 @@ build_svf() {
             fi
             local extra_cxx_flags="-stdlib=libc++"
             local extra_link_flags="-stdlib=libc++"
-            if [[ -x "$LLVM_DIR/bin/ld.lld" ]]; then
+            if [[ -x "$LLVM_DIR/bin/ld.lld" ]] && "$LLVM_DIR/bin/ld.lld" --version >/dev/null 2>&1; then
                 extra_link_flags="${extra_link_flags} -fuse-ld=lld"
                 cmake_generator_args+=(-DSVF_USE_LLD=ON)
             fi
