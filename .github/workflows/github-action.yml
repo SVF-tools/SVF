@@ -16,9 +16,9 @@ jobs:
       XCODE_VERSION: "latest-stable"
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-latest]
+        os: [ubuntu-latest, macos-latest]
         include:
-          - os: [ubuntu-22.04]
+          - os: [ubuntu-latest]
             sanitizer: address
     steps:
       # checkout the repo
@@ -40,7 +40,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libxml2 libzstd-dev libgmp-dev libmpfr-dev astyle
+          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev libgmp-dev libmpfr-dev astyle
 
       # build-svf
       - name: build-svf
@@ -158,12 +158,8 @@ jobs:
         working-directory: ${{github.workspace}}/Release-build
         if: runner.os == 'Linux' && matrix.sanitizer == ''
         run: |
-          lcov --capture --directory ./ --output-file coverage.info
-          lcov --remove coverage.info '/usr/*' --output-file coverage.info --ignore-errors unused
-          lcov --remove coverage.info '${{github.workspace}}/z3.obj/*' --output-file coverage.info --ignore-errors unused
-          lcov --remove coverage.info '${{github.workspace}}/llvm-*.obj/*' --output-file coverage.info --ignore-errors unused
-          lcov --remove coverage.info '${{github.workspace}}/svf/include/FastCluster/*' --output-file coverage.info --ignore-errors unused
-          lcov --remove coverage.info '${{github.workspace}}/svf/lib/FastCluster/*' --output-file coverage.info --ignore-errors unused
+          lcov --capture --directory ./ --output-file coverage.info --rc check_data_consistency=0
+          lcov --remove coverage.info '/usr/*' '${{github.workspace}}/z3.obj/*' '${{github.workspace}}/llvm-*.obj/*' '${{github.workspace}}/svf/include/FastCluster/*' '${{github.workspace}}/svf/lib/FastCluster/*' --output-file coverage.info --ignore-errors unused --rc check_data_consistency=0
 
       - name: upload-coverage
         if: runner.os == 'Linux'

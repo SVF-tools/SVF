@@ -151,17 +151,17 @@ public:
     template<typename Key, typename Value, typename Hash = SymbolHash,
              typename KeyEqual = std::equal_to<Key>,
              typename Allocator = std::allocator<std::pair<const Key, Value>>>
-                     using SymbolMap = Map<Key, Value, Hash, KeyEqual, Allocator>;
+    using SymbolMap = Map<Key, Value, Hash, KeyEqual, Allocator>;
 
-             template <typename Key, typename Hash = SymbolVectorHash, typename KeyEqual = std::equal_to<Key>,
-                       typename Allocator = std::allocator<Key>>
-             using SymbolSet = Set<Key, Hash, KeyEqual, Allocator>;
+    template <typename Key, typename Hash = SymbolVectorHash, typename KeyEqual = std::equal_to<Key>,
+              typename Allocator = std::allocator<Key>>
+    using SymbolSet = Set<Key, Hash, KeyEqual, Allocator>;
 
-             typedef std::vector<Symbol> Production;
-             typedef SymbolSet<Production> Productions;
+    typedef std::vector<Symbol> Production;
+    typedef SymbolSet<Production> Productions;
 
 
-             inline Map<std::string, Kind>& getNonterminals()
+    inline Map<std::string, Kind>& getNonterminals()
     {
         return this->nonterminals;
     }

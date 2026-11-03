@@ -266,7 +266,7 @@ bool ContextDDA::handleBKCondition(CxtLocDPItem& dpm, const SVFGEdge* edge)
             if(isEdgeInRecursion(csId))
             {
                 DBOUT(DDDA,outs() << "\t\t call edge " << getCallGraph()->getCallerOfCallSite(csId)->getName() <<
-                      "=>" << getCallGraph()->getCalleeOfCallSite(csId)->getName() << "in recursion \n");
+                                     "=>" << getCallGraph()->getCalleeOfCallSite(csId)->getName() << "in recursion \n");
                 popRecursiveCallSites(dpm);
             }
             else
@@ -294,7 +294,7 @@ bool ContextDDA::handleBKCondition(CxtLocDPItem& dpm, const SVFGEdge* edge)
             if(isEdgeInRecursion(csId))
             {
                 DBOUT(DDDA,outs() << "\t\t return edge " << getCallGraph()->getCalleeOfCallSite(csId)->getName() <<
-                      "=>" << getCallGraph()->getCallerOfCallSite(csId)->getName() << "in recursion \n");
+                                     "=>" << getCallGraph()->getCallerOfCallSite(csId)->getName() << "in recursion \n");
                 popRecursiveCallSites(dpm);
             }
             else

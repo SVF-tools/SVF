@@ -62,7 +62,7 @@ AndersenWaveDiff* preparePreAnalysis(
 int main(int argc, char** argv)
 {
     std::vector<std::string> moduleNameVec = OptionBase::parseOptions(
-                argc, argv, "MTA Analysis", "[options] <input-bitcode...>");
+            argc, argv, "MTA Analysis", "[options] <input-bitcode...>");
 
     LLVMModuleSet::buildSVFModule(moduleNameVec);
     SVFIRBuilder builder;

@@ -64,9 +64,9 @@ void DDAClient::answerQueries(PointerAnalysis* pta)
         if(pta->getPAG()->isValidTopLevelPtr(node))
         {
             DBOUT(DGENERAL,outs() << "\n@@Computing PointsTo for :" << node->getId() <<
-                  " [" << count + 1<< "/" << candidateQueries.size() << "]" << " \n");
+                                     " [" << count + 1<< "/" << candidateQueries.size() << "]" << " \n");
             DBOUT(DDDA,outs() << "\n@@Computing PointsTo for :" << node->getId() <<
-                  " [" << count + 1<< "/" << candidateQueries.size() << "]" << " \n");
+                                 " [" << count + 1<< "/" << candidateQueries.size() << "]" << " \n");
             setCurrentQueryPtr(node->getId());
             pta->computeDDAPts(node->getId());
         }
