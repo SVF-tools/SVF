@@ -74,7 +74,7 @@ private:
     u32_t elemNum;
 
     /// Byte size of object
-    u32_t byteSize;
+    u32_t byteSize = 0;
 
     inline void resetTypeForHeapStaticObj(const SVFType* t)
     {

@@ -62,8 +62,16 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                                            ae.getGepByteOffset(gep));
 
                 const AddressValue& objAddrs = rhsVal.getAddrs();
+                bool specialTarget = false;
                 for (const auto& addr : objAddrs)
                 {
+                    // Special addresses have neither an allocation extent nor
+                    // a defining ICFG node that can be inspected below.
+                    if (AbstractState::isNullOrBlackHoleAddr(addr))
+                    {
+                        specialTarget = true;
+                        continue;
+                    }
                     NodeID objId = ae.getAbsState(node).getIDFromAddr(addr);
                     u32_t size = 0;
                     u32_t lower = 0;
@@ -94,9 +102,15 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                     {
                         AEException bug(stmt->toString());
                         addBugToReporter(bug, stmt->getICFGNode(),
-                        {size, lower, accessOffset});
+                        {IntervalValue(lower, size), accessOffset});
                     }
                 }
+                // Retain an alarm when no concrete failure was reported. A
+                // special address cannot supply exact size or offset bounds.
+                if (specialTarget)
+                    addBugToReporter(AEException(stmt->toString()), node,
+                                     {IntervalValue(0, IntervalValue::plus_infinity()),
+                                      IntervalValue::top()});
             }
         }
     }
@@ -348,6 +362,7 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
 
     for (const auto& objAddr : objAddrs)
     {
+        if (AbstractState::isNullOrBlackHoleAddr(objAddr)) continue;
         NodeID objId = as.getIDFromAddr(objAddr);
         auto obj = svfir->getSVFVar(objId);
 
@@ -526,7 +541,7 @@ bool BufOverflowDetector::canSafelyAccessMemory(const ValVar* value, const Inter
         // if the offset is greater than the size, return false
         if (offset.ub().getIntNumeral() >= size)
         {
-            if (info) *info = {size, lower, offset};
+            if (info) *info = {IntervalValue(lower, size), offset};
             return false;
         }
     }
