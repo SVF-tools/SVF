@@ -26,6 +26,7 @@
 #include <memory>
 
 #include "AE/Svfexe/AbstractInterpretation.h"
+#include "Graphs/SparseObjGraph.h"
 #include "MSSA/SVFGBuilder.h"
 
 namespace SVF
@@ -73,7 +74,8 @@ protected:
     const ICFGNode* getICFGNode(const ValVar* var) const;
 };
 
-// TODO: write comments, step 1 2 3
+/// Full-sparse Obj values follow prebuilt packed-object routes. ValVars retain
+/// semi-sparse def-site access; freed addresses follow feasible ICFG edges.
 class FullSparseAbstractInterpretation : public SemiSparseAbstractInterpretation
 {
 public:
@@ -84,7 +86,7 @@ public:
     ~FullSparseAbstractInterpretation() override;
 
     /// Merge only freed addresses from a feasible ICFG predecessor.
-    /// Obj values are collected separately through SVFG inputs.
+    /// Obj values are collected separately through sparse object routes.
     void mergeFreedAddrs(AbstractState& dst, const AbstractState& src);
 
 protected:
@@ -98,37 +100,15 @@ protected:
     void joinStates(AbstractState& dst, const AbstractState& src,
                     const NodeBS& objs);
 
-    /// 1. Read Obj values from incoming indirect SVFG edges.
-    /// 2. Filter/refine that contribution along feasible ICFG paths.
-    /// 3. JOIN it into this ICFGNode's state, then execute normally.
+    /// Read incoming route sources, refine branch inputs, and JOIN their
+    /// selected Obj values into this ICFG node's state.
     bool mergeStatesFromPredecessors(const ICFGNode* node) override;
 
 private:
-    /// Step 1: collect only the indirect edge's base/sub Obj values.
-    /// store i32 7, ptr %a2; ...; load i32, ptr %a2:
-    /// an edge naming a or a.2 selects its base/sub Objs from State[store].
-    /// The caller checks that the source state is available. Return the
-    /// selected IDs in objs, even if their values are not available yet.
-    /// Direct ValVar edges contribute no Obj values or IDs.
-    AbstractState CollectObjValueFlowInput(const VFGEdge* edge, NodeBS& objs);
-
-    /// Filter one SVFG input using branch-feasible ICFG paths.
-    /// int x = input();   // D: x=[0,10]
-    /// if (x > 5) {       // B
-    ///     use(x);        // N: this path contributes x=[6,10]
-    /// }
-    /// See the implementation for D/B/N patterns at each decision branch,
-    /// including conservative call/global handling and path/loop merges.
-    /// A local worklist JOINs inputs at visited ICFG nodes, not whole paths.
-    /// It does not execute arithmetic or cache results across WTO iterations.
-    /// Along the path, reuse computed Store results only for carried Objs;
-    /// shared isStrongUpdate selects replacement versus conservative JOIN.
-    AbstractState filterValueFlowInputByPath(const VFGEdge* edge,
-            const AbstractState& input);
-
     void buildSVFG();
-    // Owns the graph whose VFG nodes are indexed by their ICFG nodes.
+    // Owns the original SVFG and the prebuilt packed-Obj route graph.
     std::unique_ptr<SVFGBuilder> svfgBuilder;
+    std::unique_ptr<SparseObjGraph> objRoutes;
 };
 
 } // namespace SVF

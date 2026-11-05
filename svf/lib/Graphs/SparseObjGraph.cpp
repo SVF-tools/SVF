@@ -64,8 +64,6 @@ SparseObjGraph::SparseObjGraph(const SVFG& svfg, ICFG& graph,
                                 const NodeID base = svfir.getBaseObject(obj)->getId();
                                 eventsByBase[base].insert(caller);
                                 eventsByBase[base].insert(location);
-                                getOrCreateBaseObjNode(base, caller);
-                                getOrCreateBaseObjNode(base, location);
                                 addEdge(base, caller, location, nullptr);
                             }
                         }
@@ -138,8 +136,6 @@ SparseObjGraph::SparseObjGraph(const SVFG& svfg, ICFG& graph,
                                     eventsByBase[base].insert(ret);
                                     if (source->getFun())
                                         eventsByBase[base].insert(source);
-                                    getOrCreateBaseObjNode(base, source);
-                                    getOrCreateBaseObjNode(base, ret);
                                     addEdge(base, source, ret, nullptr);
                                 }
                             }
