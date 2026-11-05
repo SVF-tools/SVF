@@ -141,8 +141,8 @@ class BufOverflowDetector : public AEDetector
 public:
     struct BufferOverflowInfo
     {
-        IntervalValue bufferSize = IntervalValue(0);
-        IntervalValue accessOffset = IntervalValue(0);
+        IntervalValue bufferSize = IntervalValue(0, IntervalValue::plus_infinity());
+        IntervalValue accessOffset = IntervalValue::top();
     };
 
     /**

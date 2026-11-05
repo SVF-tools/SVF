@@ -496,12 +496,16 @@ bool BufOverflowDetector::canSafelyAccessMemory(const ValVar* value, const Inter
     }
 
     const AddressValue& addresses = ptrVal.getAddrs();
-    if (std::any_of(addresses.begin(), addresses.end(),
-                    AbstractState::isNullOrBlackHoleAddr))
-        return false;
-
+    BufferOverflowInfo report{IntervalValue::bottom(), IntervalValue::bottom()};
+    bool unsafe = false;
+    bool unknown = false;
     for (const auto& addr : addresses)
     {
+        if (AbstractState::isNullOrBlackHoleAddr(addr))
+        {
+            unknown = true;
+            continue;
+        }
         NodeID objId = ae.getAbsState(node).getIDFromAddr(addr);
         u32_t size = 0;
         u32_t lower = 0;
@@ -541,11 +545,16 @@ bool BufOverflowDetector::canSafelyAccessMemory(const ValVar* value, const Inter
         // if the offset is greater than the size, return false
         if (offset.ub().getIntNumeral() >= size)
         {
-            if (info) *info = {IntervalValue(lower, size), offset};
-            return false;
+            report.bufferSize.join_with(IntervalValue(lower, size));
+            report.accessOffset.join_with(offset);
+            unsafe = true;
         }
     }
-    return true;
+    // Report concrete failures when present. Otherwise the retained alarm
+    // has no established operands; never export the default exact zeros.
+    if (!unsafe && unknown) report = {};
+    if ((unsafe || unknown) && info) *info = report;
+    return !unsafe && !unknown;
 }
 
 void NullptrDerefDetector::detect(const ICFGNode* node)
