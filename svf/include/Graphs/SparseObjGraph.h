@@ -3,10 +3,6 @@
 #ifndef INCLUDE_GRAPHS_SPARSEOBJGRAPH_H_
 #define INCLUDE_GRAPHS_SPARSEOBJGRAPH_H_
 
-#include <string>
-#include <vector>
-
-#include "Graphs/GenericGraph.h"
 #include "Graphs/ICFG.h"
 
 namespace SVF

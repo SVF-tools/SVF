@@ -2,15 +2,9 @@
 
 #include "Graphs/SparseObjGraph.h"
 
-#include <cassert>
-#include <deque>
-#include <sstream>
-
 #include "Graphs/GraphPrinter.h"
 #include "Graphs/SVFG.h"
 #include "MemoryModel/PointerAnalysis.h"
-#include "SVFIR/SVFIR.h"
-#include "Util/SVFUtil.h"
 
 using namespace SVF;
 
