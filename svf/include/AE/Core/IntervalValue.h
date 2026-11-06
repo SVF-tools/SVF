@@ -897,6 +897,9 @@ inline IntervalValue operator<<(const IntervalValue &lhs, const IntervalValue &r
         shift.meet_with(IntervalValue(0, IntervalValue::plus_infinity()));
         if (shift.isBottom())
             return IntervalValue::bottom();
+        // Zero stays zero for any admitted shift, even an unbounded one.
+        if (lhs.equals(IntervalValue(0)))
+            return lhs;
         // 1 << 31 overflows a signed 32-bit coefficient and may create an
         // invalid interval whose lower bound is greater than its upper bound.
         if (shift.ub().is_infinity() || shift.ub().getIntNumeral() >= 31)
