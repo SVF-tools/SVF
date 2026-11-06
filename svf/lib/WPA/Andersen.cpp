@@ -47,7 +47,6 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace std;
 
-
 u32_t AndersenBase::numOfProcessedAddr = 0;
 u32_t AndersenBase::numOfProcessedCopy = 0;
 u32_t AndersenBase::numOfProcessedGep = 0;
@@ -578,7 +577,11 @@ bool Andersen::processLoad(NodeID node, const ConstraintEdge* load)
     ///       make gcc in spec 2000 pass the flow-sensitive analysis.
     ///       Try to handle black hole obj in an appropriate way.
 //	if (pag->isBlkObjOrConstantObj(node))
-    if (pag->isConstantObj(node) || pag->getSVFVar(load->getDstID())->isPointer() == false)
+    // SCC merging can choose a non-pointer object as the representative of
+    // pointer values. Its original type must not discard inherited constraints.
+    if (pag->isConstantObj(node) ||
+        (!pag->getSVFVar(load->getDstID())->isPointer() &&
+         !sccSubNodes(load->getDstID()).hasMultipleElements()))
         return false;
 
     numOfProcessedLoad++;
@@ -598,7 +601,11 @@ bool Andersen::processStore(NodeID node, const ConstraintEdge* store)
     ///       make gcc in spec 2000 pass the flow-sensitive analysis.
     ///       Try to handle black hole obj in an appropriate way
 //	if (pag->isBlkObjOrConstantObj(node))
-    if (pag->isConstantObj(node) || pag->getSVFVar(store->getSrcID())->isPointer() == false)
+    // SCC merging can choose a non-pointer object as the representative of
+    // pointer values. Its original type must not discard inherited constraints.
+    if (pag->isConstantObj(node) ||
+        (!pag->getSVFVar(store->getSrcID())->isPointer() &&
+         !sccSubNodes(store->getSrcID()).hasMultipleElements()))
         return false;
 
     numOfProcessedStore++;
