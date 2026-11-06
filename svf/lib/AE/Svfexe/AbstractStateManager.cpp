@@ -856,8 +856,23 @@ bool AbstractInterpretation::isBranchEdgeFeasibleAt(
     const IntraCFGEdge* edge, const ICFGNode* predecessor)
 {
     const SVFVar* condition = edge->getCondition();
-    assert(condition && !condition->getInEdges().empty() &&
-           "branch condition has no defining edge?");
+    assert(condition && "branch condition is missing");
+    if (condition->getInEdges().empty())
+    {
+        const auto* branch =
+            SVFUtil::cast<BranchStmt>(edge->getSrcNode()->getSVFStmts().back());
+        if (branch->getNumSuccessors() == 2 &&
+            branch->getSuccessorCondValue(0) == 1 &&
+            branch->getSuccessorCondValue(1) == 0)
+        {
+            Interval value = getInterval(condition, predecessor);
+            value.meetWith(
+                Interval::singleton(Rational(edge->getSuccessorCondValue())));
+            return !value.isBottom();
+        }
+        return isSwitchBranchEdgeFeasible(edge,
+                                          getInterval(condition, predecessor));
+    }
     if (!SVFUtil::isa<CmpStmt>(*condition->getInEdges().begin()))
         return isSwitchBranchEdgeFeasible(edge, getInterval(condition, predecessor));
     SVF::Interval result = getInterval(condition, predecessor);

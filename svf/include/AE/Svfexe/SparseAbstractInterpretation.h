@@ -29,6 +29,7 @@
 #include <set>
 
 #include "AE/Svfexe/AbstractInterpretation.h"
+#include "Graphs/SparseObjGraph.h"
 
 namespace SVF
 {
@@ -69,53 +70,25 @@ protected:
     void scatterCycleValues(const State&, const ICFGNode*);
 };
 
-class FullSparseAbstractInterpretation
-    : public SemiSparseAbstractInterpretation
+class FullSparseAbstractInterpretation : public SemiSparseAbstractInterpretation
 {
 public:
     using Base = SemiSparseAbstractInterpretation;
     using State = typename Base::State;
-
     FullSparseAbstractInterpretation();
     ~FullSparseAbstractInterpretation() override;
-
 protected:
     bool mergeStatesFromPredecessors(const ICFGNode* node) override;
-    void storeValue(const ValVar* pointer,
-                    const SVF::Interval& interval,
-                    const SVF::AddressSet& addresses,
-                    const ICFGNode* node) override;
-    State propagatedState(const State& state) const override;
-    void classifyMemoryVariables() const;
-    void recordBranchRefinement(NodeID objectId,
-                                const SVF::Interval& narrowed,
-                                SVF::AbstractDomain& state,
-                                const ICFGNode* loadNode,
-                                const ICFGNode* successor) override;
+    State propagatedState(const State& source) const override;
+    void storeValue(const ValVar* pointer, const Interval& interval,
+                    const AddressSet& addresses, const ICFGNode* node) override;
 
 private:
-    void recordMemoryDefinition(const ICFGNode* node,
-                                const SVF::AddressSet& targets);
-    bool hasMemoryDefinition(const ICFGNode* node,
-                             SVF::Variable content) const;
-    void pullObjectValueFlows(const ICFGNode* node);
-    bool isIndirectSVFGEdgeFeasible(const IndirectSVFGEdge* edge,
-                                    const VFGNode* destination);
-    bool isIntraEdgeBranchFeasible(const IntraCFGEdge* edge,
-                                   const ICFGNode* source);
-    void propagateAndApplyMemoryRefinement(const ICFGNode* node);
-
-    Map<const ICFGNode*, Map<NodeID, SVF::Interval>>
-    memoryRefinementTrace_;
-    mutable SVF::Location classifiedMemoryLocation_;
-    mutable std::set<SVF::Variable> svfgMemoryVariables_;
-    mutable std::map<SVF::Variable, NodeID> fieldVariables_;
-    /// SVFG definition support is separate from abstract values. A numeric
-    /// Top has no Box slot, but a StoreStmt that produces it must still be
-    /// distinguishable from an SVFG source that contributed no definition.
-    Map<const ICFGNode*, std::set<SVF::Variable>>
-    memoryDefinitionSupport_;
     std::unique_ptr<SVFGBuilder> svfgBuilder_;
+    std::unique_ptr<SparseObjGraph> objRoutes_;
+    mutable std::set<Variable> memoryVariables_;
+    mutable Location classifiedMemoryLocation_;
+    Map<const ICFGNode*, std::set<Variable>> memoryDefinitionSupport_;
 };
 
 } // namespace SVF

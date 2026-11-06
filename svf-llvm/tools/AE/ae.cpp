@@ -687,6 +687,11 @@ public:
         assert((IntervalValue(IntervalValue::minus_infinity()) << IntervalValue(2, 2)).equals(IntervalValue(IntervalValue::minus_infinity())));
         assert((IntervalValue(2, 2) << IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(IntervalValue::top())));
         assert((IntervalValue(0, 0) << IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(0, 0)));
+        assert((IntervalValue(0) << IntervalValue(31)).equals(IntervalValue(0)));
+        assert((IntervalValue(0) << IntervalValue(31, 32)).equals(IntervalValue(0)));
+        assert((IntervalValue(0) << IntervalValue(-1)).equals(IntervalValue::bottom()));
+        assert((IntervalValue(0) << IntervalValue::bottom()).equals(IntervalValue::bottom()));
+        assert((IntervalValue(1) << IntervalValue(31)).equals(IntervalValue::top()));
         assert((IntervalValue(-2, -2) << IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(IntervalValue::top())));
         assert((IntervalValue(0, 0) << IntervalValue(2, 2)).equals(IntervalValue(0, 0)));
         assert((IntervalValue(2, 2) << IntervalValue(3, 3)).equals(IntervalValue(16, 16)));

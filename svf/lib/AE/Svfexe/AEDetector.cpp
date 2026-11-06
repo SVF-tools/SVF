@@ -78,6 +78,12 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                 {
                     const ObjVar* object = ae.objectAt(addr);
                     NodeID objId = object ? object->getId() : IRGraph::NullPtr;
+                    if (!object || svfir->isNullOrBlkObj(objId))
+                    {
+                        AEException bug(stmt->toString());
+                        addBugToReporter(bug, stmt->getICFGNode());
+                        continue;
+                    }
                     u32_t size = 0;
                     u32_t lower = 0;
                     // like `int arr[10]` which has constant size before runtime
@@ -90,6 +96,12 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                     {
                         // like `int len = ***; int arr[len]`, whose size can only be known in runtime
                         const ICFGNode* addrNode = svfir->getBaseObject(objId)->getICFGNode();
+                        if (!addrNode)
+                        {
+                            AEException bug(stmt->toString());
+                            addBugToReporter(bug, stmt->getICFGNode());
+                            continue;
+                        }
                         for (const SVFStmt* stmt2 : addrNode->getSVFStmts())
                         {
                             if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
@@ -523,6 +535,8 @@ bool BufOverflowDetector::canSafelyAccessMemory(const ValVar* value, const Inter
         {
             // if the object is not a constant size object, get the size from the addrStmt
             const ICFGNode* addrNode = svfir->getBaseObject(objId)->getICFGNode();
+            if (!addrNode)
+                return false;
             for (const SVFStmt* stmt2 : addrNode->getSVFStmts())
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
