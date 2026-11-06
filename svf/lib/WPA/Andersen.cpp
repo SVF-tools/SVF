@@ -47,15 +47,6 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace std;
 
-namespace
-{
-bool hasMultipleMembers(const NodeBS& members)
-{
-    return members.find_first() != members.find_last();
-}
-}
-
-
 u32_t AndersenBase::numOfProcessedAddr = 0;
 u32_t AndersenBase::numOfProcessedCopy = 0;
 u32_t AndersenBase::numOfProcessedGep = 0;
@@ -590,7 +581,7 @@ bool Andersen::processLoad(NodeID node, const ConstraintEdge* load)
     // pointer values. Its original type must not discard inherited constraints.
     if (pag->isConstantObj(node) ||
         (!pag->getSVFVar(load->getDstID())->isPointer() &&
-         !hasMultipleMembers(sccSubNodes(load->getDstID()))))
+         !sccSubNodes(load->getDstID()).hasMultipleElements()))
         return false;
 
     numOfProcessedLoad++;
@@ -614,7 +605,7 @@ bool Andersen::processStore(NodeID node, const ConstraintEdge* store)
     // pointer values. Its original type must not discard inherited constraints.
     if (pag->isConstantObj(node) ||
         (!pag->getSVFVar(store->getSrcID())->isPointer() &&
-         !hasMultipleMembers(sccSubNodes(store->getSrcID()))))
+         !sccSubNodes(store->getSrcID()).hasMultipleElements()))
         return false;
 
     numOfProcessedStore++;

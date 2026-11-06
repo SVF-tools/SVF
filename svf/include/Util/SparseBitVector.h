@@ -1145,6 +1145,14 @@ public:
         return Elements.empty();
     }
 
+    // Return true if at least two bits are set.
+    bool hasMultipleElements() const
+    {
+        if (empty())
+            return false;
+        return find_first() != find_last();
+    }
+
     unsigned count() const
     {
         unsigned BitCount = 0;
