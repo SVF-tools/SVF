@@ -337,7 +337,7 @@ const Function* cppUtil::getThunkTarget(const Function* F)
                 //        "Indirect call detected in thunk func");
                 // assert(ret == nullptr && "multiple callsites in thunk func");
 
-                ret = callbase->getCalledFunction();
+                ret = LLVMUtil::getCallee(callbase);
             }
         }
     }
@@ -873,7 +873,7 @@ bool cppUtil::isClsNameSource(const Value *val)
 {
     if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(val))
     {
-        const Function *foo = callBase->getCalledFunction();
+        const Function *foo = LLVMUtil::getCallee(callBase);
         // indirect call
         if(!foo) return false;
         return isConstructor(foo) || isDestructor(foo) || isTemplateFunc(foo) || isDynCast(foo);

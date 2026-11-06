@@ -114,13 +114,13 @@ inline const CallBase* getLLVMCallSite(const Value* value)
 inline const Function* getCallee(const CallBase* cs)
 {
     // FIXME: do we need to strip-off the casts here to discover more library functions
-    return SVFUtil::dyn_cast<Function>(cs->getCalledOperand()->stripPointerCasts());
+    return SVFUtil::dyn_cast<Function>(cs->getCalledOperand()->stripPointerCastsAndAliases());
 }
 
 /// Return LLVM function if this value is
 inline const Function* getLLVMFunction(const Value* val)
 {
-    return SVFUtil::dyn_cast<Function>(val->stripPointerCasts());
+    return SVFUtil::dyn_cast<Function>(val->stripPointerCastsAndAliases());
 }
 
 /// Get program entry function from module.
