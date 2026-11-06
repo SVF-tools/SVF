@@ -28,7 +28,7 @@ std::string SparseObjNode::toString() const
 }
 
 SparseObjGraph::SparseObjGraph(const SVFG& svfg, ICFG& graph,
-        PointerAnalysis& pta, const SVFIR& svfir) : icfg(graph)
+                               PointerAnalysis& pta, const SVFIR& svfir) : icfg(graph)
 {
     //Step 1 collect key: All base Obj ID, value: all def-use sites related to the base id
     Map<NodeID, Set<const ICFGNode*>> eventsByBase;
@@ -236,8 +236,8 @@ void SparseObjGraph::addRouteEdge(Node* source, Node* target)
 }
 
 void SparseObjGraph::addEdge(NodeID base, const ICFGNode* source,
-                                   const ICFGNode* target,
-                                   const IntraCFGEdge* branch)
+                             const ICFGNode* target,
+                             const IntraCFGEdge* branch)
 {
     // B: if (z > 0) { use(x); use(z); }, with ordinary loads and no aliasing.
     // For base=z, connectFrom passes source=B, target=N (the z use), and
@@ -282,7 +282,7 @@ void SparseObjGraph::connectFrom(
             first.emplace_back(call->getRetICFGNode(), nullptr);
     }
     else
-    // intra-procedure
+        // intra-procedure
     {
         for (const ICFGEdge* out : source->getOutEdges())
         {

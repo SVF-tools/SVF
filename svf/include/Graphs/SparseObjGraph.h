@@ -34,7 +34,7 @@ class SparseObjNode : public GenericSparseObjNodeTy
 {
 public:
     SparseObjNode(NodeID id, NodeID base, const ICFGNode* location,
-                   const IntraCFGEdge* branch)
+                  const IntraCFGEdge* branch)
         : GenericSparseObjNodeTy(id, OtherKd), base(base), location(location),
           branch(branch) {}
 
@@ -42,7 +42,10 @@ public:
     const ICFGNode* location;
     const IntraCFGEdge* branch;
 
-    const ICFGNode* getICFGNode() const { return location; }
+    const ICFGNode* getICFGNode() const
+    {
+        return location;
+    }
     std::string toString() const;
 };
 
@@ -62,7 +65,7 @@ public:
 
     /// Construction uses static graphs and points-to results, not AE state.
     SparseObjGraph(const SVFG& svfg, ICFG& icfg,
-                    PointerAnalysis& pta, const SVFIR& svfir);
+                   PointerAnalysis& pta, const SVFIR& svfir);
     SparseObjGraph(const SparseObjGraph&) = delete;
     SparseObjGraph& operator=(const SparseObjGraph&) = delete;
 
@@ -102,7 +105,8 @@ namespace SVF
 
 template<>
 struct GenericGraphTraits<SparseObjNode*>
-    : public GenericGraphTraits<GenericNode<SparseObjNode, SparseObjEdge>*>
+    :
+    public GenericGraphTraits<GenericNode<SparseObjNode, SparseObjEdge>*>
 {
 };
 

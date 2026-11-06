@@ -504,8 +504,10 @@ bool BufOverflowDetector::canSafelyAccessMemory(const ValVar* value, const Inter
 
     const AddressValue& addresses = ptrVal.getAddrs();
     if (std::any_of(addresses.begin(), addresses.end(), [&](u32_t addr)
-                    { return svfir->isNullOrBlkObj(ae.getAbsState(node).getIDFromAddr(addr)); }))
-        return false;
+{
+    return svfir->isNullOrBlkObj(ae.getAbsState(node).getIDFromAddr(addr));
+    }))
+    return false;
 
     for (const auto& addr : addresses)
     {
