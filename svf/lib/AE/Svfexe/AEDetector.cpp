@@ -64,7 +64,13 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                 const AddressValue& objAddrs = rhsVal.getAddrs();
                 for (const auto& addr : objAddrs)
                 {
-                    NodeID objId = ae.getAbsState(node).getIDFromAddr(addr);
+                    const NodeID objId = ae.getAbsState(node).getIDFromAddr(addr);
+                    if (svfir->isNullOrBlkObj(objId))
+                    {
+                        AEException bug(stmt->toString());
+                        addBugToReporter(bug, stmt->getICFGNode());
+                        continue;
+                    }
                     u32_t size = 0;
                     u32_t lower = 0;
                     // like `int arr[10]` which has constant size before runtime
@@ -77,6 +83,12 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                     {
                         // like `int len = ***; int arr[len]`, whose size can only be known in runtime
                         const ICFGNode* addrNode = svfir->getBaseObject(objId)->getICFGNode();
+                        if (!addrNode)
+                        {
+                            AEException bug(stmt->toString());
+                            addBugToReporter(bug, stmt->getICFGNode());
+                            continue;
+                        }
                         for (const SVFStmt* stmt2 : addrNode->getSVFStmts())
                         {
                             if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))
@@ -363,9 +375,14 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
                 {
                     addToGepObjOffsetFromBase(gepObjVar, offset);
                 }
+                else if (SVFUtil::isa<BaseObjVar>(svfir->getSVFVar(gepObj)) &&
+                         svfir->getBaseObject(gepObj) == svfir->getBaseObject(objId))
+                {
+                    // First-field and field-insensitive GEPs retain the base Obj.
+                }
                 else
                 {
-                    assert(AbstractState::isNullOrBlackHoleAddr(gepAddr) &&
+                    assert(svfir->isNullOrBlkObj(gepObj) &&
                            "GEP object is neither a GepObjVar nor an address without a backing object");
                 }
             }
@@ -395,9 +412,14 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
                                "GEP RHS object has no offset from base");
                     }
                 }
+                else if (SVFUtil::isa<BaseObjVar>(svfir->getSVFVar(gepObj)) &&
+                         svfir->getBaseObject(gepObj) == svfir->getBaseObject(objId))
+                {
+                    // A collapsed field has no distinct GepObjVar offset to record.
+                }
                 else
                 {
-                    assert(AbstractState::isNullOrBlackHoleAddr(gepAddr) &&
+                    assert(svfir->isNullOrBlkObj(gepObj) &&
                            "GEP object is neither a GepObjVar nor an address without a backing object");
                 }
             }
@@ -481,8 +503,8 @@ bool BufOverflowDetector::canSafelyAccessMemory(const ValVar* value, const Inter
     }
 
     const AddressValue& addresses = ptrVal.getAddrs();
-    if (std::any_of(addresses.begin(), addresses.end(),
-                    AbstractState::isNullOrBlackHoleAddr))
+    if (std::any_of(addresses.begin(), addresses.end(), [&](u32_t addr)
+                    { return svfir->isNullOrBlkObj(ae.getAbsState(node).getIDFromAddr(addr)); }))
         return false;
 
     for (const auto& addr : addresses)
@@ -500,6 +522,8 @@ bool BufOverflowDetector::canSafelyAccessMemory(const ValVar* value, const Inter
         {
             // if the object is not a constant size object, get the size from the addrStmt
             const ICFGNode* addrNode = svfir->getBaseObject(objId)->getICFGNode();
+            if (!addrNode)
+                return false;
             for (const SVFStmt* stmt2 : addrNode->getSVFStmts())
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))

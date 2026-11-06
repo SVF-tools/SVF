@@ -574,8 +574,10 @@ bool AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
     const ICFGNode* pred = edge->getSrcNode();
     s64_t succ = edge->getSuccessorCondValue();
 
-    assert(!cond->getInEdges().empty() &&
-           "branch condition has no defining edge?");
+    // A formal argument may directly drive a branch or switch. It has no SVF
+    // defining edge, so feasibility is known but there is no Obj to refine.
+    if (cond->getInEdges().empty())
+        return true;
     const SVFStmt* condDef = *cond->getInEdges().begin();
 
     if (const CmpStmt* cmpStmt = SVFUtil::dyn_cast<CmpStmt>(condDef))
@@ -707,7 +709,23 @@ bool AbstractInterpretation::isBranchEdgeFeasible(const IntraCFGEdge* edge,
         AbstractState& as)
 {
     const SVFVar* cmpVar = edge->getCondition();
-    assert(!cmpVar->getInEdges().empty() && "branch condition has no defining edge?");
+    // A formal argument can be used directly as a branch or switch condition
+    // without an SVF defining edge (e.g. switch on a function argument).
+    if (cmpVar->getInEdges().empty())
+    {
+        const auto* branch = SVFUtil::cast<BranchStmt>(edge->getSrcNode()->getSVFStmts().back());
+        // SVFIRBuilder emits true=1, false=0 for br; switch starts with default=-1.
+        if (branch->getNumSuccessors() == 2 &&
+                branch->getSuccessorCondValue(0) == 1 &&
+                branch->getSuccessorCondValue(1) == 0)
+        {
+            IntervalValue value = getAbsValue(cmpVar, edge->getSrcNode()).getInterval();
+            value.meet_with(IntervalValue(edge->getSuccessorCondValue()));
+            return !value.isBottom();
+        }
+        return isSwitchBranchEdgeFeasible(edge,
+                                          getAbsValue(cmpVar, edge->getSrcNode()).getInterval());
+    }
     if (SVFUtil::isa<CmpStmt>(*cmpVar->getInEdges().begin()))
         return isCmpBranchEdgeFeasible(edge, as);
     return isSwitchBranchEdgeFeasible(edge,
@@ -1339,6 +1357,8 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
 
     auto getTruncValue = [&](const SVFVar* var, const SVFType* dstType)
     {
+        if (!SVFUtil::isa<SVFIntegerType>(dstType))
+            return IntervalValue::top();
         const IntervalValue& itv = getAbsValue(var, node).getInterval();
         if(itv.isBottom()) return itv;
         s64_t int_lb = itv.lb().getIntNumeral();
@@ -1370,8 +1390,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
         }
         else
         {
-            assert(false && "cannot support dst int type other than u8/16/32");
-            abort();
+            return IntervalValue::top();
         }
     };
 

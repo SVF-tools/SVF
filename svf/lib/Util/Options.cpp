@@ -208,6 +208,11 @@ const Option<bool> Options::DumpVFG(
     "Dump dot graph of VFG",
     false
 );
+const Option<bool> Options::DumpSparseObjGraph(
+    "dump-sparse-obj-graph",
+    "Dump object routes to sparse_obj_graph.dot when a full SVFG is built",
+    false
+);
 
 
 // Base class of pointer analyses (PointerAnalysis.cpp)

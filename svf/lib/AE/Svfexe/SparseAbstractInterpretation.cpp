@@ -22,6 +22,7 @@
 
 #include "AE/Svfexe/SparseAbstractInterpretation.h"
 #include "AE/Svfexe/AEWTO.h"
+#include "Graphs/SparseObjGraph.h"
 #include "SVFIR/SVFIR.h"
 #include "Graphs/SVFG.h"
 #include "MSSA/SVFGBuilder.h"
@@ -29,8 +30,8 @@
 
 using namespace SVF;
 
-// FullSparse input assembly is kept together below. Shared SSA def-site
-// access and WTO gather/scatter retain their existing implementations.
+// FullSparse Obj inputs follow prebuilt routes. Shared SSA def-site access
+// and WTO gather/scatter retain their existing implementations.
 
 // =====================================================================
 //  Full-sparse — class lifecycle + SVFG construction.
@@ -42,6 +43,9 @@ void FullSparseAbstractInterpretation::buildSVFG()
 {
     svfgBuilder = std::make_unique<SVFGBuilder>(true);
     svfgBuilder->buildFullSVFG(preAnalysis->getPointerAnalysis());
+    objRoutes = std::make_unique<SparseObjGraph>(
+                    *svfgBuilder->getSVFG(), *svfir->getICFG(),
+                    *preAnalysis->getPointerAnalysis(), *svfir);
 }
 
 void FullSparseAbstractInterpretation::mergeFreedAddrs(AbstractState& dst,
@@ -71,398 +75,51 @@ void FullSparseAbstractInterpretation::joinStates(AbstractState& dst,
 bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     const ICFGNode* node)
 {
-    // An empty SVFG input is not proof of unreachability. Reuse the existing
-    // control gate and mergeFreedAddrs, not a new solver.
-    const bool reachable =
-        AbstractInterpretation::mergeStatesFromPredecessors(node);
+    const auto& graphEdges = objRoutes->getInputs(node);
+    AbstractState previous;
+    bool hasPrevious = false;
+    for (const SparseObjGraph::Edge* edge : graphEdges)
+    {
+        if (edge->getSrcNode()->getICFGNode() == node && hasAbsState(node))
+        {
+            previous = getAbsState(node);
+            hasPrevious = true;
+            break;
+        }
+    }
+
+    // The ICFG merge determines reachability and propagates freed addresses.
+    const bool reachable = AbstractInterpretation::mergeStatesFromPredecessors(node);
     if (reachable)
     {
         AbstractState merged = getAbsState(node);
-        for (const VFGNode* target : node->getVFGNodes())
+        for (const SparseObjGraph::Edge* edge : graphEdges)
         {
-            for (auto it = target->InEdgeBegin(); it != target->InEdgeEnd(); ++it)
+            const SparseObjGraph::Node* sourceNode = edge->getSrcNode();
+            const ICFGNode* source = sourceNode->getICFGNode();
+            const AbstractState* sourceState = source == node
+                                               ? (hasPrevious ? &previous : nullptr)
+                                               : (hasAbsState(source)
+                                                  ? &getAbsState(source) : nullptr);
+            if (!sourceState)
+                continue;
+
+            const AbstractState* input = sourceState;
+            AbstractState refined;
+            if (sourceNode->branch)
             {
-                const VFGEdge* edge = *it;
-                const ICFGNode* source = edge->getSrcNode()->getICFGNode();
-                if (source == node)
-                {
-                    // Dependencies inside one ICFG node are handled by its
-                    // statement execution, not by reading its old output.
-                }
-                else if (!source || !hasAbsState(source))
-                {
-                    // This direct predecessor has no available output yet.
-                }
-                else
-                {
-                    // Step 1. Read this predecessor's current edge values.
-                    NodeBS objs;
-                    AbstractState input = CollectObjValueFlowInput(edge, objs);
-                    // Step 2. JOIN the contributions of feasible, refined paths.
-                    input = filterValueFlowInputByPath(edge, input);
-                    // Step 3. Merge this contribution, never the whole source state.
-                    joinStates(merged, input, objs);
-                }
+                refined = *sourceState;
+                if (!isBranchEdgeFeasible(sourceNode->branch, refined) ||
+                        !applyBranchRefinement(sourceNode->branch, refined))
+                    continue;
+                input = &refined;
             }
+            joinStates(merged, *input, svfir->getAllFieldsObjVars(
+                           svfir->getBaseObject(sourceNode->base)));
         }
         updateAbsState(node, merged);
     }
     return reachable;
-}
-
-AbstractState FullSparseAbstractInterpretation::CollectObjValueFlowInput(
-    const VFGEdge* edge, NodeBS& objs)
-{
-    AbstractState input;
-    objs.clear();
-    if (const auto* indirect = SVFUtil::dyn_cast<IndirectSVFGEdge>(edge))
-    {
-        for (NodeID obj : indirect->getPointsTo())
-            objs |= svfir->getAllFieldsObjVars(svfir->getBaseObject(obj));
-        const ICFGNode* source = edge->getSrcNode()->getICFGNode();
-        joinStates(input, getAbsState(source), objs);
-    }
-    return input;
-}
-
-// Step 2: filter one SVFG input D -> N along ICFG paths.
-// D/N label the source/target ICFG nodes; B labels a branch node.
-// Snippets below are simplified C. Interval annotations describe the already
-// computed AE values, not assignments executed by this search. For narrowing
-// examples, x is a memory Obj loaded through a pointer with one known target.
-AbstractState FullSparseAbstractInterpretation::filterValueFlowInputByPath(
-    const VFGEdge* edge, const AbstractState& input)
-{
-    const ICFGNode* source = edge->getSrcNode()->getICFGNode();
-    const ICFGNode* target = edge->getDstNode()->getICFGNode();
-    NodeBS objs;
-    if (const auto* indirect = SVFUtil::dyn_cast<IndirectSVFGEdge>(edge))
-    {
-        for (NodeID obj : indirect->getPointsTo())
-            objs |= svfir->getAllFieldsObjVars(svfir->getBaseObject(obj));
-    }
-    AbstractState result;
-    if (input.getLocToVal().empty() && objs.empty())
-    {
-        // No values or queried Objs. An indirect edge still identifies its
-        // base/sub Objs even when D has not produced their values yet.
-        // this branch will return empty result
-    }
-    else if (!edge->isIntraVFGEdge() || source->getFun() != target->getFun() ||
-             !source->getFun())
-    {
-        // Call input:
-        //   f(&x);                      // D: ActualIn in caller
-        //   void f(int *p) { ... }      // N: FormalIn at callee entry
-        // Call output:
-        //   void f(int *p) { *p = 7; }  // D: FormalOut at callee exit
-        //   f(&x);                     // N: ActualOut at caller return point
-        // Recursive input (same function, but a non-intra SVFG edge):
-        //   void f(int *p) { f(p); }    // D: call ActualIn -> N: entry FormalIn
-        // Global initialization:
-        //   int g = 7;                 // D: global node, no owning function
-        //   void f() { use(g); }       // N
-        // All retain D's input; no cross-procedural feasibility is proved.
-        // In one word, if edge is interprocedural, we reckon it feasible, no filter applies.
-        result = input;
-    }
-    else
-    {
-        // int x = input();   // D: x=[0,10]
-        // ...
-        // if (x > 5) {       // B
-        //     ...
-        //     use(x);        // N
-        // }
-        // Same function: search D -> B -> ... -> N, carrying x=[6,10]
-        // on B's true edge. More branches give D -> B1 -> ... -> Bk -> N.
-        // incoming's key is the iterated ICFGNode in worklist
-        // incoming's value is initialized as AbstractState pulled from SVFG predecessor
-        //    the AbstractState only change some interval values at branches (branch refinement)
-        Map<const ICFGNode*, AbstractState> incoming;
-        FIFOWorkList<const ICFGNode*> worklist;
-        incoming[source] = input;
-        worklist.push(source);
-        while (!worklist.empty())
-        {
-            const ICFGNode* current = worklist.pop();
-            if (current == target)
-            {
-                // int x = read_int();  // D: x=[-10,10]
-                // if (x > 0) {        // B: true edge carries x=[1,10]
-                //     use(x);         // N: current == target
-                // }
-                // JOIN incoming[N] into this D -> N query's result. Stop at
-                // N: do not inspect or follow any of N's outgoing edges.
-                result.joinWith(incoming[current]);
-            }
-            else
-            {
-                // int a[2] = {0,1} // D: a[0] = [0,0], a[1] = [1,1]
-                // a[1] = 2         // S: a[1] = [2,2]
-                // use(a[1])        // N: if an input carries D's old a[1],
-                // its D -> S -> N path reuses S's result when strongly updated.
-                // An input from S already has a[1]=2; S itself is not replayed.
-
-                AbstractState output = incoming[current];
-                if (current != source && hasAbsState(current))
-                {
-                    const AbstractState& state = getAbsState(current);
-                    for (const SVFStmt* stmt : current->getSVFStmts())
-                    {
-                        if (const auto* store = SVFUtil::dyn_cast<StoreStmt>(stmt))
-                        {
-                            const AddressValue& targets =
-                                getAbsValue(store->getLHSVar(), current).getAddrs();
-                            const bool strongUpdate = isStrongUpdate(targets, state);
-                            for (NodeID obj : objs)
-                            {
-                                const u32_t addr = AbstractState::getVirtualMemAddress(obj);
-                                if (targets.contains(addr) &&
-                                        state.getIDFromAddr(addr) == obj && state.getLocToVal().count(obj))
-                                {
-                                    // D: a[9]=9; p=a+9; S: *p=10; N: use(a[9]).
-                                    // Static GEP mapping may leave D -> N, not S -> N.
-                                    // At S, AE identifies the carried sub-Obj a[9].
-                                    // Reuse S's computed value; do not execute S again.
-                                    if (strongUpdate)
-                                        output.store(addr, state.load(addr));
-                                    else
-                                        output.load(addr).join_with(state.load(addr));
-                                }
-                            }
-                        }
-                    }
-                }
-                std::vector<std::pair<const ICFGNode*, const IntraCFGEdge*>> successors;
-                if (const auto* call = SVFUtil::dyn_cast<CallICFGNode>(current))
-                {
-                    const RetICFGNode* retNode = call->getRetICFGNode();
-                    if (call->getCalledFunction() &&
-                            SVFUtil::isExtCall(call->getCalledFunction()))
-                    {
-                        // D: x=0; C: a model writes x=5; N: use(x).
-                        // Read the queried Objs from C's already computed
-                        // output, including x=5 even when input contains x=0.
-                        // C may also be D, e.g. memset(a, 7, 1) -> use(a[0]);
-                        // read its model output rather than skipping the call.
-                        // This is a projection of C's output, not proof that
-                        // C wrote every present Obj. A joined output may be
-                        // less precise than this query's path-specific values.
-                        if (hasAbsState(current))
-                        {
-                            const AbstractState& state = getAbsState(current);
-                            for (NodeID obj : objs)
-                            {
-                                const u32_t addr = AbstractState::getVirtualMemAddress(obj);
-                                if (state.getIDFromAddr(addr) == obj && state.getLocToVal().count(obj))
-                                {
-                                    output.store(addr, state.load(addr));
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // Ordinary and recursive calls use the same Obj return
-                        // inputs. void f(int *p) { *p=7; } f(&x); returns x=7
-                        // as an Obj value. Do not execute the callee again.
-                        // INTERVAL_test_16-0.c: main starts i in [0,5].
-                        // void foo(int* i) {
-                        //     *i = *i + 1;  // D: i=[1,10] at fixpoint
-                        //     if (*i < 10) {
-                        //         foo(i);   // C: carried i=[1,9]
-                        //                   // R: callee output i=[10,10]
-                        //     }
-                        // }                 // N: merge both branches and return
-                        // Unlike a loop exit, C -> R does not test i again.
-                        // The callee's exit condition is already reflected in
-                        // its Obj output. Read that output before continuing
-                        // at R, without searching or executing the callee body.
-                        AbstractState calleeOutput;
-                        NodeBS calleeOutputObjs;
-                        // R may still contain a copy of C's pre-call state.
-                        // Read R's indirect SVFG predecessors, not State[R].
-                        for (const VFGNode* retSVFGNode : retNode->getVFGNodes())
-                        {
-                            for (const VFGEdge* retEdge : retSVFGNode->getInEdges())
-                            {
-                                if (const auto* indirect = SVFUtil::dyn_cast<IndirectSVFGEdge>(retEdge))
-                                {
-                                    NodeBS retObjs;
-                                    for (NodeID obj : indirect->getPointsTo())
-                                        retObjs |= svfir->getAllFieldsObjVars(svfir->getBaseObject(obj));
-                                    calleeOutputObjs |= retObjs;
-                                    const ICFGNode* calleeOutputNode = retEdge->getSrcNode()->getICFGNode();
-                                    if (calleeOutputNode && hasAbsState(calleeOutputNode))
-                                        joinStates(calleeOutput, getAbsState(calleeOutputNode), retObjs);
-                                }
-                            }
-                        }
-                        // Change only queried Objs identified by the return
-                        // edges; all other carried values stay unchanged.
-                        for (NodeID obj : objs)
-                        {
-                            if (calleeOutputObjs.test(obj))
-                            {
-                                const u32_t addr = AbstractState::getVirtualMemAddress(obj);
-                                if (calleeOutput.getLocToVal().count(obj))
-                                {
-                                    // Replace pre-call [1,9] with returned 10.
-                                    // Do not JOIN or intersect with the old value:
-                                    // the call may have changed this Obj.
-                                    output.store(addr, calleeOutput.load(addr));
-                                }
-                                else
-                                {
-                                    // The return edge exists, but no Obj value
-                                    // is available yet. Contribute bottom until
-                                    // a later WTO iteration supplies the output,
-                                    // not the pre-call value as a guessed return.
-                                    output.store(addr, AbstractValue());
-                                }
-                            }
-                        }
-                    }
-                    // Continue the caller-side D -> C -> R -> ... -> N path
-                    // with the Obj outputs collected above. Do not enter or
-                    // execute the callee again in this path query.
-                    // Whether f can return is not proved here (also conservative
-                    // for abort()).
-                    successors.emplace_back(retNode, nullptr);
-                }
-                else
-                {
-                    // int x = 1;         // D
-                    // int y = 2;         // ordinary node: keep carried x=1
-                    // x = 9;             // S: still keep D's carried x=1
-                    // use(x);            // N: may also receive x=9 from S
-                    // Follow intra edges only. Do not execute y=2 or x=9;
-                    // do not infer that S kills D's contribution.
-                    for (const ICFGEdge* out : current->getOutEdges())
-                    {
-                        if (const auto* intra = SVFUtil::dyn_cast<IntraCFGEdge>(out))
-                            successors.emplace_back(intra->getDstNode(), intra);
-                    }
-                }
-
-                for (const auto& [next, branch] : successors)
-                {
-                    AbstractState candidate = output;
-                    bool feasible = true;
-                    if (!next || next->getFun() != source->getFun())
-                    {
-                        // Structural boundary (not a C-level branch test):
-                        //   D -> call f -> [missing caller return point]
-                        //   D[in f] -> next[in g] -> ... -> N[in f]
-                        // next is missing or outside D's function. Do not
-                        // extend this intra-procedural search through that hop.
-                        feasible = false;
-                    }
-                    else if (!branch || !branch->getCondition() || !hasAbsState(current))
-                    {
-                        // Unconditional edge:
-                        //   int x = input();  // D
-                        //   int y = 2;        // M: no branch condition
-                        //   use(x);           // N
-                        // Caller-side hop:
-                        //   D: ...; f(); ...; use(x);  // N
-                        // Branch state not available yet:
-                        //   D: ...; if (c) { ...; use(x); }  // B -> N
-                        //   State[B] is absent in this iteration.
-                        // Keep the input unchanged: none proves the hop false.
-                    }
-                    else
-                    {
-                        // int x = input();   // D
-                        // if (x > 5) {       // B: an AE state already exists
-                        //     use(x);        // N
-                        // }
-                        // Read B's existing Boolean result to check its edge;
-                        // narrow only this path's copy of D's input below.
-                        AbstractState branchState = getAbsState(current);
-                        if (!isBranchEdgeFeasible(branch, branchState))
-                            // int x = 0;        // D
-                            // if (x > 5) {      // B: condition=[0,0]
-                            //     use(x);       // N: true edge requires 1
-                            // }
-                            // [0,0] cannot take the true edge: reject this hop.
-                            feasible = false;
-                        else
-                            // int x = input();  // D: x=[0,10]
-                            // if (x > 5) {      // B: condition=[0,1]
-                            //     use(x);       // N: keep true, carry x=[6,10]
-                            // }
-                            // Nested constraints can reject a carried input:
-                            // if (x <= 5) {     // B1: candidate x=[0,5]
-                            //     if (x > 5) { use(x); }  // B2 -> N
-                            // }
-                            // Even if State[B2] still admits true, intersecting
-                            // candidate [0,5] with [6,10] gives bottom. Other
-                            // unsupported constraints conservatively keep input.
-                            feasible = applyBranchRefinement(branch, candidate);
-                    }
-
-                    // The two feasible-arrival cases below use one diamond:
-                    //   int x = read_int();         // D: x=[-10,10]
-                    //   if (x > 0) { then_work(); }  // B: true carries [1,10]
-                    //   else { else_work(); }       // false carries [-10,0]
-                    //   work();                     // M (= next), merge point
-                    //   use(x);                     // N
-                    //
-                    //                D -> B
-                    //             true /   \ false
-                    //            [1,10]   [-10,0]
-                    //                  \ /
-                    //                   M -> N
-                    // "First" means search arrival order, not program order.
-                    // Either route can arrive first; the final JOIN is the same.
-                    if (!feasible)
-                    {
-                        // int x = 0;        // D
-                        // if (x > 5) { ...; }
-                        // use(x);           // N is after the if
-                        // Drop the true route only; the false route can still
-                        // reach N. Other SVFG predecessors are not rejected.
-                    }
-                    else if (!incoming.count(next))
-                    {
-                        // Diamond above, assuming the true route arrives first:
-                        //   incoming[M] absent, candidate=[1,10]
-                        //   -> save incoming[M]=[1,10] and queue M.
-                        // The false route has not contributed yet. This is
-                        // the same initialization used for any first visit.
-                        incoming[next] = candidate;
-                        worklist.push(next);
-                    }
-                    else
-                    {
-                        // Same diamond, now the false route arrives at M:
-                        //   incoming[M]=[1,10], candidate=[-10,0]
-                        //   -> JOIN gives [-10,10]. M need not have been
-                        //   processed yet; its first input is already saved.
-                        // Both routes started at D, not two different SVFG defs.
-                        AbstractState joined = incoming[next];
-                        joined.joinWith(candidate);
-                        // Another repeated-arrival pattern is a loop back edge:
-                        //   int x = read_int();  // D: x=[-10,10]
-                        //   while (again()) {}  // M: head / back edge
-                        //   use(x);             // N
-                        // Existing [-10,10] JOIN back-edge [-10,10] is unchanged:
-                        // skip the if below and do not queue M again.
-                        if (joined != incoming[next])
-                        {
-                            // Diamond: [1,10] -> [-10,10] enlarged M's input.
-                            // Queue M so the added values can also reach N.
-                            incoming[next] = std::move(joined);
-                            worklist.push(next);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return result;
 }
 
 AbstractState SemiSparseAbstractInterpretation::getFullCycleHeadState(
