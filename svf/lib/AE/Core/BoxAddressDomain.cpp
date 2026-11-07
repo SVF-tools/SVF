@@ -171,6 +171,55 @@ bool BoxAddressDomain::hasValue(Variable variable) const
            !addresses_.addressSet(variable).isTop();
 }
 
+const Interval& BoxAddressDomain::boxInterval(Variable variable) const
+{
+    static const Interval bottom = Interval::bottom();
+    if (isBottomDomain() || (trackInitialization_ &&
+            !mayBeInitialized(numericalInitialization_.value(variable))))
+        return bottom;
+    return static_cast<const BoxDomain&>(*numerical_).boundAt(variable);
+}
+
+bool BoxAddressDomain::hasSameValue(Variable variable,
+                                    const BoxAddressDomain& other) const
+{
+    if (numerical_->kind() != DomainKind::Box ||
+            other.numerical_->kind() != DomainKind::Box)
+        return interval(variable) == other.interval(variable) &&
+               addressSet(variable) == other.addressSet(variable);
+    const Interval& left = boxInterval(variable);
+    const Interval& right = other.boxInterval(variable);
+    return (&left == &right || left == right) &&
+           addressSet(variable) == other.addressSet(variable);
+}
+
+bool BoxAddressDomain::hasSameValues(const BoxAddressDomain& other) const
+{
+    if (isBottomDomain() != other.isBottomDomain())
+        return false;
+    const auto check = [&](const BoxAddressDomain& source, bool compare) {
+        if (!source.trackInitialization_)
+            return true;
+        for (const auto* facet : {&source.numericalInitialization_,
+                                  &source.addressInitialization_})
+            for (const auto& entry : *facet->pages_)
+            {
+                auto bits = entry.page->uninitialized | entry.page->initialized;
+                while (bits)
+                {
+                    const Variable variable(entry.key.id() * InitializationDomain::ValuesPerPage +
+                                            countTrailingZeros(bits), entry.key.type());
+                    if (compare ? !hasSameValue(variable, other)
+                                : (!hasValue(variable) && other.hasValue(variable)))
+                        return false;
+                    bits &= bits - 1;
+                }
+            }
+        return true;
+    };
+    return check(*this, true) && check(other, false);
+}
+
 void BoxAddressDomain::setInterval(Variable variable, const Interval& value)
 {
     if (isBottomDomain())
@@ -211,7 +260,6 @@ void BoxAddressDomain::assignValueFrom(Variable target,
         std::abort();
     }
 
-    const Interval number = sourceState.interval(source);
     const AddressSet pointers = sourceState.addressSet(source);
     InitializationState numericGuard = InitializationState::Bottom;
     InitializationState pointerGuard = InitializationState::Bottom;
@@ -220,7 +268,10 @@ void BoxAddressDomain::assignValueFrom(Variable target,
         numericGuard = sourceState.numericalInitialization_.value(source);
         pointerGuard = sourceState.addressInitialization_.value(source);
     }
-    setInterval(target, number);
+    if (sourceState.numerical_->kind() == DomainKind::Box)
+        setInterval(target, sourceState.boxInterval(source));
+    else
+        setInterval(target, sourceState.interval(source));
     setAddressSet(target, pointers);
     if (trackInitialization_)
     {
@@ -252,7 +303,10 @@ void BoxAddressDomain::joinValueFrom(Variable target,
                            addressInitialization_.value(target),
                            sourceState.addressInitialization_.value(source));
     }
-    number.joinWith(sourceState.interval(source));
+    if (sourceState.numerical_->kind() == DomainKind::Box)
+        number.joinWith(sourceState.boxInterval(source));
+    else
+        number.joinWith(sourceState.interval(source));
     pointers.joinWith(sourceState.addressSet(source));
     setInterval(target, number);
     setAddressSet(target, pointers);
@@ -467,6 +521,12 @@ void BoxAddressDomain::combineInitialized(
         {
             if (result.isBottomDomain())
                 break;
+            const auto& leftBox = static_cast<const BoxDomain&>(*numerical_);
+            const auto& rightBox = static_cast<const BoxDomain&>(*other.numerical_);
+            if (mayBeInitialized(numericalInitialization_.value(variable)) &&
+                    mayBeInitialized(other.numericalInitialization_.value(variable)) &&
+                    leftBox.boundAt(variable) == rightBox.boundAt(variable))
+                continue;
             Interval number = interval(variable);
             const Interval nextNumber = other.interval(variable);
             if (intersect)

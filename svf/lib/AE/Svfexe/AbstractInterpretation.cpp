@@ -75,8 +75,6 @@ void AbstractInterpretation::initializeObjectValue(
 {
     interval = SVF::Interval::bottom();
     addresses = SVF::AddressSet::bottom();
-    State& denseState = ensureState(node);
-    denseState.allocate(adapter_.location(*object));
 
     const BaseObjVar* base = PAG::getPAG()->getBaseObject(object->getId());
 
@@ -496,11 +494,11 @@ bool AbstractInterpretation::isSwitchBranchEdgeFeasible(
     return span >= SVF::Rational(static_cast<s64_t>(matchedCases));
 }
 
-void AbstractInterpretation::collectSwitchRefinement(
+bool AbstractInterpretation::collectSwitchRefinement(
     const IntraCFGEdge* edge, SVF::AbstractDomain& state)
 {
     if (isSwitchDefaultEdge(edge))
-        return;
+        return true;
     const auto* branch = SVFUtil::cast<BranchStmt>(
                              edge->getSrcNode()->getSVFStmts().back());
     u32_t caseCount = 0;
@@ -512,23 +510,25 @@ void AbstractInterpretation::collectSwitchRefinement(
             caseValue = branch->getSuccessorCondValue(i);
         }
     if (caseCount != 1)
-        return;
+        return true;
     const LoadStmt* load = findBackingLoad(edge->getCondition());
     if (!load)
-        return;
+        return true;
     const SVF::AddressSet targets = getAddressSet(load->getRHSVar(), load->getICFGNode());
     if (!targets.isSingleton() || targets.hasUnknownObject())
-        return;
+        return true;
     const ObjVar* object = objectAt(*targets.begin());
     if (object && object->getId() != IRGraph::NullPtr && object->getId() != IRGraph::BlackHole)
-        recordBranchRefinement(object->getId(),
+        return recordBranchRefinement(object->getId(),
                                SVF::Interval::singleton(SVF::Rational(caseValue)), state,
                                load->getICFGNode(), edge->getDstNode());
+    return true;
 }
 
-void AbstractInterpretation::collectBranchRefinement(
+bool AbstractInterpretation::collectBranchRefinement(
     const IntraCFGEdge* edge, SVF::AbstractDomain& state)
 {
+    bool feasible = true;
     const SVFVar* cond = edge->getCondition();
     const ICFGNode* pred = edge->getSrcNode();
     const ICFGNode* succNode = edge->getDstNode();
@@ -539,7 +539,7 @@ void AbstractInterpretation::collectBranchRefinement(
     // dereference the empty edge set; there is simply no sound refinement to
     // collect in this case.
     if (cond->getInEdges().empty())
-        return;
+        return true;
     const SVFStmt* condDef = *cond->getInEdges().begin();
 
     const CmpStmt* cmpStmt = SVFUtil::dyn_cast<CmpStmt>(condDef);
@@ -602,7 +602,7 @@ void AbstractInterpretation::collectBranchRefinement(
                             const ICFGNode* loadIcfg = load->getICFGNode();
                             const SVF::AddressSet ptrVal =
                                 getAddressSet(load->getRHSVar(), loadIcfg);
-                            if (ptrVal.isBottom() || !ptrVal.isFinite())
+                            if (!ptrVal.isSingleton() || ptrVal.hasUnknownObject())
                             {
                                 // Cannot map load p back to concrete ObjVars.
                             }
@@ -612,7 +612,7 @@ void AbstractInterpretation::collectBranchRefinement(
                                 {
                                     if (const ObjVar* object = objectAt(location))
 
-                                        recordBranchRefinement(
+                                        feasible &= recordBranchRefinement(
                                             object->getId(), narrowed, state,
                                             loadIcfg, succNode);
                                 }
@@ -624,34 +624,33 @@ void AbstractInterpretation::collectBranchRefinement(
         }
     }
     else
-        collectSwitchRefinement(edge, state);
+        feasible &= collectSwitchRefinement(edge, state);
+    return feasible;
 }
 
-void AbstractInterpretation::recordBranchRefinement(
+bool AbstractInterpretation::recordBranchRefinement(
     NodeID objectId, const SVF::Interval& narrowed,
-    SVF::AbstractDomain& abstractState, const ICFGNode* loadIcfg, const ICFGNode*)
+    SVF::AbstractDomain& abstractState, const ICFGNode*, const ICFGNode*)
 {
     const auto* object = SVFUtil::dyn_cast<ObjVar>(svfir->getGNode(objectId));
-    if (object && hasAbsValue(object, loadIcfg))
-    {
-        SVF::Interval value = getInterval(object, loadIcfg);
-        if (!value.isBottom())
-        {
-            value.meetWith(narrowed);
-            assignInterval(static_cast<State&>(abstractState),
-                           adapter_.contentVariable(*object), value);
-        }
-    }
+    State& incoming = static_cast<State&>(abstractState);
+    if (!object || incoming.isBottom())
+        return true;
+    const Variable content = memoryVariable(*object, incoming);
+    if (!incoming.hasValue(content))
+        return true;
+    Interval value = incoming.interval(content);
+    value.meetWith(narrowed);
+    assignInterval(incoming, content, value);
+    return !value.isBottom();
 }
 
 /**
  * Handle an ICFG node: execute statements on the current abstract state.
  * The node's pre-state must already be installed by
  * mergeStatesFromPredecessors, or by handleGlobalNode for the global node.
- * Returns true if the abstract state has changed, false if fixpoint reached or
- * unreachable.
  */
-bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
+void AbstractInterpretation::handleICFGNode(const ICFGNode* node)
 {
     // Check reachability: pre-state must have been propagated by predecessors
     bool isFunEntry = SVFUtil::isa<FunEntryICFGNode>(node);
@@ -672,14 +671,11 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
         }
         else
         {
-            return false; // unreachable node
+            return; // unreachable node
         }
     }
 
     beginAbstractState(node);
-    // Store the previous state for fixpoint detection
-    std::unique_ptr<SVF::AbstractDomain> previousState =
-        cloneAbstractState(node);
 
     stat->getBlockTrace()++;
     stat->getICFGNodeTrace()++;
@@ -700,11 +696,6 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
     // Track this node as analyzed (for coverage statistics across all entry
     // points)
     allAnalyzedNodes.insert(node);
-
-    if (isAbstractStateEquivalent(node, *previousState))
-        return false;
-
-    return true;
 }
 
 /**

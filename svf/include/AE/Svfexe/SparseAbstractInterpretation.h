@@ -86,8 +86,6 @@ protected:
 private:
     std::unique_ptr<SVFGBuilder> svfgBuilder_;
     std::unique_ptr<SparseObjGraph> objRoutes_;
-    mutable std::set<Variable> memoryVariables_;
-    mutable Location classifiedMemoryLocation_;
     Map<const ICFGNode*, std::set<Variable>> memoryDefinitionSupport_;
 };
 

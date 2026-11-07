@@ -390,24 +390,9 @@ cloneAbstractState(const ICFGNode* node) const
     return state(node).clone();
 }
 
-bool AbstractInterpretation::isAbstractStateEquivalent(
-    const ICFGNode* node, const SVF::AbstractDomain& snapshot) const
-{
-    return equivalentValues(state(node), static_cast<const State&>(snapshot));
-}
-
 bool AbstractInterpretation::equivalentValues(const State& left, const State& right) const
 {
-    if (left.isBottom() != right.isBottom())
-        return false;
-    for (SVF::Variable variable : left.initializedVariables())
-        if (left.interval(variable) != right.interval(variable) ||
-                left.addressSet(variable) != right.addressSet(variable))
-            return false;
-    for (SVF::Variable variable : right.initializedVariables())
-        if (!left.hasValue(variable) && right.hasValue(variable))
-            return false;
-    return true;
+    return left.hasSameValues(right);
 }
 
 void AbstractInterpretation::assignInterval(State& denseState,

@@ -2782,6 +2782,16 @@ std::unique_ptr<AbstractDomain> BoxDomain::clone() const
     return std::make_unique<BoxDomain>(*this);
 }
 
+void BoxDomain::assignInterval(Variable target, const Interval& value)
+{
+    if (bottom_)
+        return;
+    recordOperation(value.isTop() ? OperationKind::Forget : OperationKind::Assumption,
+                    ApproximationKind::Exact, true);
+    if (boundAt(target) != value)
+        setBound(target, value);
+}
+
 void BoxDomain::assign(Variable target, const LinearExpression& expression)
 {
     recordOperation(OperationKind::Assignment, ApproximationKind::Exact, true);
@@ -3492,16 +3502,24 @@ void BoxDomain::canonicalize(Variable variable)
 
 void BoxDomain::setBound(Variable variable, Interval interval)
 {
-    // A stable ID denotes one typed variable for the lifetime of an analysis.
-    // Detect accidental ID reuse before touching the physical slot.
-    (void)boundAt(variable);
-    if (interval.isTop())
+    const Interval& previous = boundAt(variable);
+    if (previous == interval)
+        return;
+    if (config_.integerTightening && variable.type().kind == NumericKind::Integer &&
+            ((interval.lower().isFinite() && (interval.lower().isStrict() ||
+               !interval.lower().value().isInteger())) ||
+             (interval.upper().isFinite() && (interval.upper().isStrict() ||
+               !interval.upper().value().isInteger()))))
+        interval = Interval(integerLower(interval.lower()),
+                            integerUpper(interval.upper()));
+    if (interval.isBottom())
+        makeBottom();
+    else if (interval.isTop())
         eraseBound(variable);
     else
         writablePage(variable.id() / BoundsPerPage)
         .bounds[variable.id() % BoundsPerPage] =
             BoundSlot{variable, std::move(interval)};
-    canonicalize(variable);
 }
 
 const Interval& BoxDomain::boundAt(Variable variable) const

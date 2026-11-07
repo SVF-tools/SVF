@@ -78,7 +78,8 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                 {
                     const ObjVar* object = ae.objectAt(addr);
                     NodeID objId = object ? object->getId() : IRGraph::NullPtr;
-                    if (!object || svfir->isNullOrBlkObj(objId))
+                    if (!object || svfir->isNullOrBlkObj(objId) ||
+                            ae.isFreedMemory(addr, node))
                     {
                         AEException bug(stmt->toString());
                         addBugToReporter(bug, stmt->getICFGNode());
@@ -514,7 +515,7 @@ bool BufOverflowDetector::canSafelyAccessMemory(const ValVar* value, const Inter
     for (Location location : addresses)
     {
         const ObjVar* object = ae.objectAt(location);
-        if (location.isNull() || !object ||
+        if (location.isNull() || ae.isFreedMemory(location, node) || !object ||
                 svfir->getBaseObject(object->getId())->isBlackHoleObj())
             return false;
     }

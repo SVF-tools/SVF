@@ -309,6 +309,9 @@ public:
     Interval interval(Variable variable) const;
     AddressSet addressSet(Variable variable) const;
     bool hasValue(Variable variable) const;
+    bool hasSameValue(Variable variable, const BoxAddressDomain& other) const;
+    /// Compare visible values, excluding lifetime and initialization alternatives.
+    bool hasSameValues(const BoxAddressDomain& other) const;
     void setInterval(Variable variable, const Interval& value);
     void setAddressSet(Variable variable, const AddressSet& value);
     /// Copy or join one reduced-product coordinate without copying a state.
@@ -477,6 +480,7 @@ public:
     }
 
 private:
+    const Interval& boxInterval(Variable variable) const;
     const void* dynamicTypeToken() const noexcept override
     {
         return staticTypeToken<BoxAddressDomain>();

@@ -243,16 +243,20 @@ const ValVar* SVFIRAdapter::value(Variable variable) const
 
 Location SVFIRAdapter::location(const ObjVar& object) const
 {
-    registerObject(object);
     const auto iterator = locations_.find(&object);
-    return iterator->second;
+    if (iterator != locations_.end())
+        return iterator->second;
+    registerObject(object);
+    return locations_.find(&object)->second;
 }
 
 Variable SVFIRAdapter::contentVariable(const ObjVar& object) const
 {
-    registerObject(object);
     const auto iterator = contentVariables_.find(&object);
-    return iterator->second;
+    if (iterator != contentVariables_.end())
+        return iterator->second;
+    registerObject(object);
+    return contentVariables_.find(&object)->second;
 }
 
 const ObjVar* SVFIRAdapter::contentObject(Variable variable) const

@@ -302,9 +302,6 @@ protected:
                                    const ICFGNode* destination);
     virtual std::unique_ptr<SVF::AbstractDomain> cloneAbstractState(
         const ICFGNode* node) const;
-    virtual bool isAbstractStateEquivalent(
-        const ICFGNode* node,
-        const SVF::AbstractDomain& snapshot) const;
 
     virtual void beginAbstractState(const ICFGNode*) {}
 
@@ -323,18 +320,18 @@ protected:
     bool isSwitchDefaultEdge(const IntraCFGEdge* edge) const;
     bool isSwitchBranchEdgeFeasible(const IntraCFGEdge* edge,
                                     const SVF::Interval& input) const;
-    void collectSwitchRefinement(const IntraCFGEdge* edge,
+    bool collectSwitchRefinement(const IntraCFGEdge* edge,
                                  SVF::AbstractDomain& state);
 
     /// Collect branch-induced interval refinement after a feasible edge has
     /// been selected for normal CFG-state merging.
-    void collectBranchRefinement(const IntraCFGEdge* edge,
+    bool collectBranchRefinement(const IntraCFGEdge* edge,
                                  SVF::AbstractDomain& state);
 
     /// Hook called by collectBranchRefinement for each object narrowed by the
     /// branch. Dense and semi-sparse implementations meet the constraint into
     /// the transient edge state; full-sparse records it for MemorySSA flow.
-    virtual void recordBranchRefinement(
+    virtual bool recordBranchRefinement(
         NodeID objId, const SVF::Interval& narrowed,
         SVF::AbstractDomain& state, const ICFGNode* loadIcfg,
         const ICFGNode* succ);
@@ -365,7 +362,7 @@ protected:
     void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller);
 
     /// Handle an ICFG node: execute statements; return true if state changed
-    bool handleICFGNode(const ICFGNode* node);
+    void handleICFGNode(const ICFGNode* node);
 
     /// Dispatch an SVF statement
     /// (Addr/Binary/Cmp/Load/Store/Copy/Gep/Select/Phi/Call/Ret) to its handler

@@ -215,15 +215,10 @@ FullSparseAbstractInterpretation::~FullSparseAbstractInterpretation() = default;
 FullSparseAbstractInterpretation::State FullSparseAbstractInterpretation::
     propagatedState(const State& source) const
 {
-    const auto& cells = adapter_.memoryLayout().cells();
-    for (auto it = cells.upper_bound(classifiedMemoryLocation_);
-         it != cells.end(); ++it)
-    {
-        memoryVariables_.insert(it->second);
-        classifiedMemoryLocation_ = it->first;
-    }
-    State result = source.withoutValues(memoryVariables_);
-    forgetScalarValues(result);
+    if (source.isBottom())
+        return bottomState();
+    State result = topState();
+    result.lifetimes() = source.lifetimes();
     return result;
 }
 
@@ -256,12 +251,13 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     const ICFGNode* node)
 {
     std::optional<State> previous;
-    const auto previousSupport = memoryDefinitionSupport_[node];
+    std::set<Variable> previousSupport;
     const auto& edges = objRoutes_->getInputs(node);
     for (const auto* edge : edges)
         if (edge->getSrcNode()->getICFGNode() == node && hasAbsState(node))
         {
             previous = state(node);
+            previousSupport = std::move(memoryDefinitionSupport_[node]);
             break;
         }
     memoryDefinitionSupport_.erase(node);
@@ -278,12 +274,16 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
                            : (hasAbsState(source) ? &state(source) : nullptr);
         if (!input)
             continue;
-        State refined = *input;
+        std::optional<State> refined;
+        const State* values = input;
         if (sourceNode->branch)
         {
             if (!isBranchEdgeFeasibleAt(sourceNode->branch, source))
                 continue;
-            collectBranchRefinement(sourceNode->branch, refined);
+            refined = *input;
+            if (!collectBranchRefinement(sourceNode->branch, *refined))
+                continue;
+            values = &*refined;
         }
         const auto& support =
             source == node ? previousSupport : memoryDefinitionSupport_[source];
@@ -297,12 +297,12 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
             const Variable content = adapter_.contentVariable(*object);
             if (!input->hasValue(content) && !support.count(content))
                 continue;
-            const Variable from = memoryVariable(*object, refined);
+            const Variable from = memoryVariable(*object, *values);
             const Variable to = memoryVariable(*object, merged);
             if (pulled.test(id))
-                merged.joinValueFrom(to, refined, from);
+                merged.joinValueFrom(to, *values, from);
             else
-                merged.assignValueFrom(to, refined, from);
+                merged.assignValueFrom(to, *values, from);
             pulled.set(id);
             memoryDefinitionSupport_[node].insert(content);
         }

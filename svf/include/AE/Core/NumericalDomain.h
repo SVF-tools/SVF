@@ -742,6 +742,7 @@ private:
         std::uint32_t upperBound) const;
     void makeBottom();
     void canonicalize(Variable variable);
+    void assignInterval(Variable target, const Interval& value) override;
     void setBound(Variable variable, Interval interval);
     void report(OperationKind operation, ApproximationKind approximation,
                 std::string reason, bool best = true) const;
