@@ -94,6 +94,12 @@ void CHGBuilder::buildCHGNodes(const GlobalValue *globalvalue)
     if (cppUtil::isValVtbl(globalvalue) && globalvalue->getNumOperands() > 0)
     {
         const ConstantStruct *vtblStruct = cppUtil::getVtblStruct(globalvalue);
+        if (!vtblStruct)
+        {
+            SVFUtil::errs() << "Warning: skipping unsupported vtable initializer for "
+                           << globalvalue->getName().str() << "; class hierarchy analysis may be incomplete\n";
+            return;
+        }
         string className = getClassNameFromVtblObj(globalvalue->getName().str());
         if (!chg->getNode(className))
             createNode(className);
@@ -373,6 +379,8 @@ void CHGBuilder::analyzeVTables(const Module &M)
         if (cppUtil::isValVtbl(globalvalue) && globalvalue->getNumOperands() > 0)
         {
             const ConstantStruct *vtblStruct = cppUtil::getVtblStruct(globalvalue);
+            if (!vtblStruct)
+                continue;
 
             string vtblClassName = getClassNameFromVtblObj(globalvalue->getName().str());
             CHNode *node = chg->getNode(vtblClassName);
