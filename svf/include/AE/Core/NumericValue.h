@@ -35,11 +35,11 @@
 
 #include <cfloat> // For DBL_MAX
 #include <cmath>
+#include <limits>
 #include <utility>
 
 #include "Util/GeneralType.h"
 
-#define epsilon std::numeric_limits<double>::epsilon();
 namespace SVF
 {
 
@@ -756,7 +756,7 @@ public:
     {
         if (std::isinf(a) && std::isinf(b))
             return a == b;
-        return std::fabs(a - b) < epsilon;
+        return std::fabs(a - b) < std::numeric_limits<double>::epsilon();
     }
 
     const double getFVal() const

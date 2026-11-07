@@ -107,11 +107,11 @@ function Get-FileDownload {
             Remove-Item $Dest -ErrorAction SilentlyContinue
         }
     }
-    
+
     $maxAttempts = 3
     $attempt = 1
     $success = $false
-    
+
     while ($attempt -le $maxAttempts -and -not $success) {
         try {
             Write-Host "  Downloading: $Url (Attempt $attempt of $maxAttempts)..."
@@ -142,7 +142,7 @@ function Get-FileDownload {
             }
         }
     }
-    
+
     if (-not $success) {
         throw "Download failed after $maxAttempts attempts for URL: $Url"
     }
@@ -241,7 +241,7 @@ if ($LLVMDir -ne "" -and (Test-Path $LLVMDir)) {
         if (-not (Test-Path (Join-Path $LLVMSdkDir "lib\cmake\llvm\LLVMConfig.cmake"))) {
             Write-Host "  MinGW LLVM & Clang SDK not found. Automatic download in progress..."
             New-Item -ItemType Directory -Force -Path $LLVMSdkHome | Out-Null
-            
+
             $sdkComponents = @(
                 @{ Name = "llvm-sdk"; Url = $LLVMSdkUrl; File = "llvm-sdk.pkg.tar.zst" }
                 @{ Name = "llvm-libs"; Url = $LLVMLibsUrl; File = "llvm-libs.pkg.tar.zst" }
@@ -270,7 +270,7 @@ if ($LLVMDir -ne "" -and (Test-Path $LLVMDir)) {
                 & tar -xf $compPath -C $LLVMSdkHome
                 Remove-Item $compPath
             }
-            
+
             Write-Host "  LLVM SDK installed in: $LLVMSdkDir" -ForegroundColor Green
         }
         $env:LLVM_DIR = $LLVMSdkDir
@@ -280,7 +280,7 @@ if ($LLVMDir -ne "" -and (Test-Path $LLVMDir)) {
         # MSVC toolchain
         $LLVMMsvcSdkDir = $LLVMMsvcSdkHome
         $llvmConfigPath = Join-Path $LLVMMsvcSdkDir "lib\cmake\llvm\LLVMConfig.cmake"
-        
+
         if (-not (Test-Path $llvmConfigPath)) {
             Write-Host "  LLVM MSVC SDK not found. Downloading prebuilt LLVM MSVC SDK (c3lang/llvm-for-c3)..."
             New-Item -ItemType Directory -Force -Path $LLVMMsvcSdkDir | Out-Null
@@ -329,16 +329,16 @@ if ($Z3Dir -ne "" -and (Test-Path $Z3Dir)) {
         Write-Host "  Downloading prebuilt Z3 package for MSVC (x64)..."
         $z3ZipPath = Join-Path $SVFHome "z3-msvc.zip"
         $z3TempDir = Join-Path $SVFHome "z3-temp"
-        
+
         Get-FileDownload -Url $Z3MsvcUrl -Dest $z3ZipPath
         Write-Host "  Extracting Z3 MSVC package..."
         if (Test-Path $z3TempDir) { Remove-Item -Recurse -Force $z3TempDir }
         Expand-Archive -Path $z3ZipPath -DestinationPath $z3TempDir -Force
-        
+
         $extractedFolder = (Get-ChildItem $z3TempDir -Directory | Select-Object -First 1).FullName
         if (Test-Path $currentZ3Home) { Remove-Item -Recurse -Force $currentZ3Home }
         Move-Item -Path $extractedFolder -Destination $currentZ3Home
-        
+
         Remove-Item -Recurse -Force $z3TempDir, $z3ZipPath
         $env:Z3_DIR = $currentZ3Home
         Write-Host "  Z3 MSVC installed in: $env:Z3_DIR" -ForegroundColor Green

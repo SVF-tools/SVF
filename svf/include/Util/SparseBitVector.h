@@ -16,6 +16,10 @@
 #include <iterator>
 #include <list>
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
+
 #include "Util/Hash.h"
 
 // Appease GCC?

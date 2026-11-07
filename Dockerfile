@@ -18,7 +18,7 @@ ENV HOME=/home/SVF-tools
 # Launchpad PPA infrastructure has been intermittently unreachable
 # (HTTP 504 from add-apt-repository), and SVF itself does not pin a Python
 # version, so the base-image python is sufficient.
-ENV lib_deps="cmake g++ gcc git zlib1g-dev libncurses5-dev libtinfo6 build-essential libssl-dev libpcre2-dev zip libzstd-dev python3-dev"
+ENV lib_deps="cmake g++ gcc git zlib1g-dev libncurses5-dev libtinfo6 build-essential libssl-dev libpcre2-dev zip libzstd-dev libgmp-dev libmpfr-dev python3-dev"
 ENV build_deps="wget xz-utils git tcl"
 
 # Fetch dependencies.
