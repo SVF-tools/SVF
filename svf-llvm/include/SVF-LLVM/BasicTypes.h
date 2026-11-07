@@ -74,13 +74,7 @@ typedef llvm::GlobalObject GlobalObject;
 typedef llvm::Use Use;
 typedef llvm::ModulePass ModulePass;
 typedef llvm::IRBuilder<> IRBuilder;
-#if LLVM_VERSION_MAJOR >= 12 && LLVM_VERSION_MAJOR <= 16
-typedef llvm::UnifyFunctionExitNodesLegacyPass UnifyFunctionExitNodes;
-#elif LLVM_VERSION_MAJOR > 16
 typedef llvm::UnifyFunctionExitNodesPass UnifyFunctionExitNodes;
-#else
-typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
-#endif
 
 /// LLVM Basic classes
 typedef llvm::Value Value;
@@ -193,7 +187,6 @@ typedef std::pair<const BasicBlock*, const ConstantInt*> SuccBBAndCondValPair;
 typedef std::vector<SuccBBAndCondValPair> SuccBBAndCondValPairVec;
 
 // LLVM Intrinsic Instructions
-#if LLVM_VERSION_MAJOR >= 13
 typedef llvm::IntrinsicInst IntrinsicInst;
 typedef llvm::DbgInfoIntrinsic DbgInfoIntrinsic;
 typedef llvm::DbgVariableIntrinsic DbgVariableIntrinsic;
@@ -241,7 +234,6 @@ typedef llvm::GCProjectionInst GCProjectionInst;
 typedef llvm::GCRelocateInst GCRelocateInst;
 typedef llvm::GCResultInst GCResultInst;
 typedef llvm::AssumeInst AssumeInst;
-#endif
 
 // LLVM Debug Information
 typedef llvm::DIType DIType;
@@ -276,16 +268,10 @@ typedef llvm::raw_fd_ostream raw_fd_ostream;
 
 // LLVM Types.
 typedef llvm::VectorType VectorType;
-#if (LLVM_VERSION_MAJOR >= 9)
 typedef llvm::FunctionCallee FunctionCallee;
-#endif
 
 /// LLVM Iterators
-#if LLVM_VERSION_MAJOR >= 11
 typedef llvm::const_succ_iterator succ_const_iterator;
-#else
-typedef llvm::succ_const_iterator succ_const_iterator;
-#endif
 } // End namespace SVF
 
 #endif  // SVF_FE_BASIC_TYPES_H

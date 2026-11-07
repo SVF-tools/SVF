@@ -15,10 +15,8 @@
 #ifndef BREAKCONSTANTGEPS_H
 #define BREAKCONSTANTGEPS_H
 
-#if LLVM_VERSION_MAJOR > 16
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
-#endif
 
 namespace SVF
 {
@@ -81,7 +79,6 @@ public:
             const Function& fun = *iter;
             if(fun.isDeclaration())
                 continue;
-#if LLVM_VERSION_MAJOR > 16
             llvm::PassBuilder PB;
             llvm::LoopAnalysisManager LAM;
             llvm::FunctionAnalysisManager FAM;
@@ -99,17 +96,6 @@ public:
             FPM.run(const_cast<llvm::Function&>(fun), FAM);
         }
     }
-#else
-            getUnifyExit(fun)->runOnFunction(const_cast<Function&>(fun));
-        }
-    }
-    /// Get Unified Exit basic block node
-    inline UnifyFunctionExitNodes* getUnifyExit(const Function& fn)
-    {
-        assert(!fn.isDeclaration() && "external function does not have DF");
-        return &getAnalysis<UnifyFunctionExitNodes>(const_cast<Function&>(fn));
-    }
-#endif
 };
 
 } // End namespace SVF
