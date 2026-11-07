@@ -97,7 +97,7 @@ void CHGBuilder::buildCHGNodes(const GlobalValue *globalvalue)
         if (!vtblStruct)
         {
             SVFUtil::errs() << "Warning: skipping unsupported vtable initializer for "
-                           << globalvalue->getName().str() << "; class hierarchy analysis may be incomplete\n";
+                            << globalvalue->getName().str() << "; class hierarchy analysis may be incomplete\n";
             return;
         }
         string className = getClassNameFromVtblObj(globalvalue->getName().str());
