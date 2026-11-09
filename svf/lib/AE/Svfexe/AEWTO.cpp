@@ -52,6 +52,26 @@ void AEWTO::initWTO()
 {
     callGraphSCC->find();
 
+    // In no-main mode, an SCC with no outside caller is an analysis entry.
+    // Choose one function per SCC, preferring main when it is present.
+    Map<NodeID, const FunObjVar*> rootEntry;
+    Set<NodeID> nonRootSCCs;
+    for (auto it = callGraph->begin(); it != callGraph->end(); ++it)
+    {
+        const CallGraphNode* node = it->second;
+        const FunObjVar* fun = node->getFunction();
+        if (fun->isDeclaration())
+            continue;
+        const NodeID rep = callGraphSCC->repNode(node->getId());
+        if (!rootEntry.count(rep) || SVFUtil::isProgEntryFunction(fun))
+            rootEntry[rep] = fun;
+        for (const auto* edge : node->getInEdges())
+        {
+            if (callGraphSCC->repNode(edge->getSrcID()) != rep)
+                nonRootSCCs.insert(rep);
+        }
+    }
+
     for (auto it = callGraph->begin(); it != callGraph->end(); it++)
     {
         const FunObjVar *fun = it->second->getFunction();
@@ -70,6 +90,13 @@ void AEWTO::initWTO()
             if (!cgSCCNodes.test(srcNodeId))
                 isEntry = true;
         }
+        // A root recursive SCC (e.g. nDPI's bt_decode in no-main mode) has
+        // internal callers but no outside caller, so neither check above
+        // selects an entry. Build its WTO too, or handleFunction will fail
+        // with "Missing WTO for function". In contrast, main -> foo with
+        // foo -> foo is already covered by the outside call from main.
+        if (!nonRootSCCs.count(repNodeId) && rootEntry[repNodeId] == fun)
+            isEntry = true;
 
         if (isEntry)
         {

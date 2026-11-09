@@ -166,7 +166,7 @@ protected:
      * @return Pair of (pthreadCallNodes, mutexCallNodes)
      */
     std::pair<OrderedSet<const CallICFGNode*>, OrderedSet<const CallICFGNode*>>
-            collectCommonThreadStatements(const OrderedSet<const ICFGNode*>& sourceNodes);
+    collectCommonThreadStatements(const OrderedSet<const ICFGNode*>& sourceNodes);
 
     /// Add synchronization primitives and the control-flow anchors required by
     /// the sliced MHP/lock analyses.

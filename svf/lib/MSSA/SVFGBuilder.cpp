@@ -28,10 +28,12 @@
  */
 #include "MSSA/SVFGBuilder.h"
 #include "Graphs/CallGraph.h"
+#include "Graphs/SparseObjGraph.h"
 #include "Graphs/SVFG.h"
 #include "MSSA/MemPartition.h"
 #include "Graphs/SVFGOPT.h"
 #include "MSSA/MemSSA.h"
+#include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 #include "WPA/Andersen.h"
@@ -82,6 +84,14 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind)
 
     if (Options::DumpVFG())
         svfg->dump("svfg_final");
+
+    if ((kind == VFG::FULLSVFG || kind == VFG::FULLSVFG_OPT) &&
+            Options::DumpSparseObjGraph())
+    {
+        SVFIR* svfir = pta->getPAG();
+        SparseObjGraph routes(*svfg, *svfir->getICFG(), *pta, *svfir);
+        routes.dump("sparse_obj_graph");
+    }
 
     return svfg.get();
 }

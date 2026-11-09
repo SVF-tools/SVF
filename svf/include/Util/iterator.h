@@ -331,7 +331,7 @@ public:
 /// \endcode
 template <typename WrappedIteratorT,
           typename T = std::remove_reference_t<decltype(
-                      **std::declval<WrappedIteratorT>())>>
+                  **std::declval<WrappedIteratorT>())>>
 struct pointee_iter
     : iter_adaptor_base<
       pointee_iter<WrappedIteratorT, T>, WrappedIteratorT,
@@ -352,7 +352,7 @@ struct pointee_iter
 template <typename RangeT, typename WrappedIteratorT =
           decltype(std::begin(std::declval<RangeT>()))>
 iter_range<pointee_iter<WrappedIteratorT>>
-                                        make_pointee_range(RangeT &&Range)
+make_pointee_range(RangeT &&Range)
 {
     using PointeeIteratorT = pointee_iter<WrappedIteratorT>;
     return make_range(PointeeIteratorT(std::begin(std::forward<RangeT>(Range))),
@@ -388,7 +388,7 @@ public:
 template <typename RangeT, typename WrappedIteratorT =
           decltype(std::begin(std::declval<RangeT>()))>
 iter_range<pointer_iterator<WrappedIteratorT>>
-        make_pointer_range(RangeT &&Range)
+make_pointer_range(RangeT &&Range)
 {
     using PointerIteratorT = pointer_iterator<WrappedIteratorT>;
     return make_range(PointerIteratorT(std::begin(std::forward<RangeT>(Range))),
@@ -397,7 +397,7 @@ iter_range<pointer_iterator<WrappedIteratorT>>
 
 template <typename WrappedIteratorT,
           typename T1 = std::remove_reference_t<decltype(
-                      **std::declval<WrappedIteratorT>())>,
+                  **std::declval<WrappedIteratorT>())>,
           typename T2 = std::add_pointer_t<T1>>
 using raw_pointer_iterator =
     pointer_iterator<pointee_iter<WrappedIteratorT, T1>, T2>;

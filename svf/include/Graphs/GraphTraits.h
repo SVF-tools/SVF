@@ -115,7 +115,7 @@ nodes(const GraphType &G)
 }
 template <class GraphType>
 iter_range<typename GenericGraphTraits<Inverse<GraphType>>::nodes_iterator>
-        inverse_nodes(const GraphType &G)
+inverse_nodes(const GraphType &G)
 {
     return make_range(GenericGraphTraits<Inverse<GraphType>>::nodes_begin(G),
                       GenericGraphTraits<Inverse<GraphType>>::nodes_end(G));
@@ -131,7 +131,7 @@ children(const typename GenericGraphTraits<GraphType>::NodeRef &G)
 
 template <class GraphType>
 iter_range<typename GenericGraphTraits<Inverse<GraphType>>::ChildIteratorType>
-        inverse_children(const typename GenericGraphTraits<GraphType>::NodeRef &G)
+inverse_children(const typename GenericGraphTraits<GraphType>::NodeRef &G)
 {
     return make_range(GenericGraphTraits<Inverse<GraphType>>::child_begin(G),
                       GenericGraphTraits<Inverse<GraphType>>::child_end(G));

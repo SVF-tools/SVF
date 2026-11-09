@@ -371,7 +371,7 @@ void SlicedICFGView::buildBridgedEdges()
     // contraction may traverse. Original call/ret edges are excluded.
     std::vector<std::vector<int>> removedSuccessors(removedNodeCount);
     std::vector<std::vector<const ICFGNode*>>
-                                           keptSuccessors(removedNodeCount);
+    keptSuccessors(removedNodeCount);
     std::vector<const ICFGNode*> successors;
     for (int nodeIndex = 0; nodeIndex < removedNodeCount; ++nodeIndex)
     {
@@ -471,7 +471,7 @@ void SlicedICFGView::buildBridgedEdges()
 
     // Propagate reachKept in ascending comp order (successors have smaller ids).
     std::vector<OrderedSet<const ICFGNode*>>
-                                          reachableKeptNodes(componentCount);
+    reachableKeptNodes(componentCount);
     for (int componentIndex = 0; componentIndex < componentCount;
             ++componentIndex)
     {
