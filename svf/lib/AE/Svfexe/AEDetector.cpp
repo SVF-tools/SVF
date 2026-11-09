@@ -111,11 +111,11 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                     }
                 }
                 // Some target has no known allocation size, so report one
-                // alarm with unknown size and offset bounds.
+                // alarm with an unbounded size and the GEP's own byte offset.
                 if (hasUnknownSizeTarget)
                     addBugToReporter(AEException(stmt->toString()), node,
                                      {IntervalValue(0, IntervalValue::plus_infinity()),
-                                      IntervalValue::top()});
+                                      ae.getGepByteOffset(gep)});
             }
         }
     }
