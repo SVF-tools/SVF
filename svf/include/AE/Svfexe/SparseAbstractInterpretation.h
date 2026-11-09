@@ -104,11 +104,101 @@ protected:
     /// selected Obj values into this ICFG node's state.
     bool mergeStatesFromPredecessors(const ICFGNode* node) override;
 
+    bool reuseFunctionResult(const ICFGNode* funEntry) override;
+    void recordFunctionResult(const ICFGNode* funEntry) override;
+    bool reuseCycleResult(const ICFGCycleWTO* cycle) override;
+    void recordCycleResult(const ICFGCycleWTO* cycle) override;
+
 private:
+    struct FunctionInputSignature
+    {
+        AbstractState scalarAndFreedInputs;
+        std::vector<AbstractState> objInputs;
+
+        bool operator==(const FunctionInputSignature& other) const
+        {
+            return scalarAndFreedInputs == other.scalarAndFreedInputs &&
+                   objInputs == other.objInputs;
+        }
+    };
+
+    /// One version number per subgraph function; the inputs themselves are
+    /// stored once per function in latestFunctionInputs (avoids copying every
+    /// callee's inputs into every caller's signature).
+    using FunctionSubgraphSignature = std::vector<u64_t>;
+
+    /// Static description of what can reach a loop from outside it. The
+    /// region is the cycle's ICFG nodes plus the call closure of its calls.
+    struct CycleRegion
+    {
+        /// ICFG nodes of the cycle, including nested cycles.
+        Set<const ICFGNode*> nodes;
+        /// Functions called from the cycle, transitively.
+        Set<const FunObjVar*> closure;
+        /// The same functions in call-graph DFS order.
+        std::vector<const FunObjVar*> functions;
+        std::vector<const ValVar*> externalValVars;
+        std::vector<const SparseObjGraph::Edge*> externalObjRoutes;
+        std::vector<const ICFGEdge*> externalICFGEdges;
+
+        bool contains(const ICFGNode* node) const
+        {
+            return nodes.count(node) || closure.count(node->getFun());
+        }
+    };
+
+    struct CycleInputSignature
+    {
+        FunctionSubgraphSignature functions;
+        /// External ValVar values, then this cycle's own ValVars. An
+        /// enclosing cycle's widening can rewrite the latter at def-sites.
+        AbstractState scalars;
+        AbstractState cycleValVars;
+        std::vector<AbstractState> objInputs;
+        /// Feasibility of each external ICFG in-edge and its freed addresses.
+        std::vector<bool> feasibleEdges;
+        AbstractState freed;
+
+        bool operator==(const CycleInputSignature& other) const
+        {
+            return functions == other.functions && scalars == other.scalars &&
+                   cycleValVars == other.cycleValVars &&
+                   objInputs == other.objInputs &&
+                   feasibleEdges == other.feasibleEdges && freed == other.freed;
+        }
+    };
+
+    FunctionInputSignature collectFunctionInputs(const ICFGNode* funEntry);
+    bool buildReusableFunctionSubgraph(const FunObjVar* fun,
+                                       Set<const FunObjVar*>& visited,
+                                       std::vector<const FunObjVar*>& functions);
+    const std::vector<const FunObjVar*>* getReusableFunctionSubgraph(
+        const FunObjVar* fun);
+    FunctionSubgraphSignature collectFunctionSubgraphInputs(
+        const std::vector<const FunObjVar*>& functions);
+    bool allowRecursiveReuse() const;
+    const CycleRegion* getCycleRegion(const ICFGCycleWTO* cycle);
+    void collectCycleNodes(const ICFGCycleWTO* cycle,
+                           Set<const ICFGNode*>& nodes) const;
+    bool collectCycleCallees(CycleRegion& region);
+    void collectCycleExternalInputs(CycleRegion& region);
+    void addExternalValVar(const SVFVar* var, CycleRegion& region,
+                           Set<const ValVar*>& visited);
+    CycleInputSignature collectCycleInputs(const ICFGCycleWTO* cycle,
+                                           const CycleRegion& region);
     void buildSVFG();
-    // Owns the original SVFG and the prebuilt packed-Obj route graph.
-    std::unique_ptr<SVFGBuilder> svfgBuilder;
+    // The prebuilt packed-Obj route graph; the SVFG is released once it is built.
     std::unique_ptr<SparseObjGraph> objRoutes;
+    Map<const FunObjVar*, std::vector<const FunObjVar*>> reusableFunctionSubgraphs;
+    Set<const FunObjVar*> nonReusableFunctions;
+    Map<const FunObjVar*, FunctionSubgraphSignature> lastFunctionInputs;
+    Map<const FunObjVar*, std::pair<FunctionInputSignature, u64_t>> latestFunctionInputs;
+    u64_t functionInputVersion(const FunObjVar* fun);
+    Set<const FunObjVar*> completedFunctions;
+    Map<const ICFGCycleWTO*, CycleRegion> cycleRegions;
+    Set<const ICFGCycleWTO*> nonReusableCycles;
+    Map<const ICFGCycleWTO*, CycleInputSignature> lastCycleInputs;
+    Set<const ICFGCycleWTO*> completedCycles;
 };
 
 } // namespace SVF
