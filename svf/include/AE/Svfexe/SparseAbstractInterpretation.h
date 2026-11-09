@@ -20,97 +20,75 @@
 //
 //===---------------------------------------------------------------------===//
 
-#ifndef INCLUDE_AE_SVFEXE_SPARSEABSTRACTINTERPRETATION_H_
-#define INCLUDE_AE_SVFEXE_SPARSEABSTRACTINTERPRETATION_H_
+#ifndef SVF_AE_SPARSE_ABSTRACT_INTERPRETATION_H
+#define SVF_AE_SPARSE_ABSTRACT_INTERPRETATION_H
 
+#include <map>
 #include <memory>
+#include <optional>
+#include <set>
 
 #include "AE/Svfexe/AbstractInterpretation.h"
 #include "Graphs/SparseObjGraph.h"
-#include "MSSA/SVFGBuilder.h"
 
 namespace SVF
 {
 
-/// Abstract Interpretation for `Options::AESparsity::SemiSparse`.
-///
-/// ValVars live at their SVFG-style def-sites: reads pull from there,
-/// writes go there, state merges replace only the ObjVar map and skip
-/// the ValVar map, and the cycle helpers gather/scatter cycle ValVars
-/// around each widening iteration.
+class IndirectSVFGEdge;
+class SVFGBuilder;
+class VFGNode;
+
+/// Sparse scalar values are stored and read at their defining ICFG nodes.
 class SemiSparseAbstractInterpretation : public AbstractInterpretation
 {
 public:
-    SemiSparseAbstractInterpretation()
-    {
-        preAnalysis->initCycleValVars();
-    }
-    ~SemiSparseAbstractInterpretation() override = default;
+    using Base = AbstractInterpretation;
+    using State = Base::State;
+    SemiSparseAbstractInterpretation();
 
 protected:
-    AbstractState getFullCycleHeadState(const ICFGCycleWTO* cycle) override;
-
-    bool widenCycleState(const AbstractState& prev,
-                         const AbstractState& cur,
-                         const ICFGCycleWTO* cycle) override;
-
-    bool narrowCycleState(const AbstractState& prev,
-                          const AbstractState& cur,
-                          const ICFGCycleWTO* cycle) override;
-
-    const AbstractValue& getAbsValue(const ValVar* var, const ICFGNode* node) override;
-    using AbstractInterpretation::getAbsValue;
-
-    bool hasAbsValue(const ValVar* var, const ICFGNode* node) const override;
-    using AbstractInterpretation::hasAbsValue;
-
-    void updateAbsValue(const ValVar* var, const AbstractValue& val, const ICFGNode* node) override;
-    using AbstractInterpretation::updateAbsValue;
-
-    void updateAbsState(const ICFGNode* node, const AbstractState& state) override;
-
-    void joinStates(AbstractState& dst, const AbstractState& src) override;
-
     const ICFGNode* getICFGNode(const ValVar* var) const;
+    SVF::Interval getInterval(const ValVar*, const ICFGNode*) override;
+    SVF::Interval getDefinedInterval(const ValVar*, const ICFGNode*) override;
+    SVF::AddressSet getAddressSet(const ValVar*, const ICFGNode*) override;
+    bool hasAbsValue(const ValVar*, const ICFGNode*) const override;
+    bool numericalValueMayBeUninitialized(const ValVar*, const ICFGNode*) const override;
+    void updateValue(const ValVar*, const SVF::Interval&, const SVF::AddressSet&, const ICFGNode*) override;
+    void addUninitializedNumericalAlternative(const ValVar*, const ICFGNode*) override;
+    using Base::getInterval;
+    using Base::getAddressSet;
+    using Base::hasAbsValue;
+    using Base::updateValue;
+    void copyAbstractState(const ICFGNode*, const ICFGNode*) override;
+    bool mergeStatesFromPredecessors(const ICFGNode*) override;
+    std::unique_ptr<SVF::AbstractDomain> cloneCycleHeadState(const ICFGCycleWTO*) override;
+    bool widenCycleState(const SVF::AbstractDomain&, const SVF::AbstractDomain&, const ICFGCycleWTO*) override;
+    bool narrowCycleState(const SVF::AbstractDomain&, const SVF::AbstractDomain&, const ICFGCycleWTO*) override;
+    virtual State propagatedState(const State& state) const;
+    void forgetScalarValues(State& state) const;
+    void updateFlowState(const ICFGNode*, State state);
+    void scatterCycleValues(const State&, const ICFGNode*);
 };
 
-/// Full-sparse Obj values follow prebuilt packed-object routes. ValVars retain
-/// semi-sparse def-site access; freed addresses follow feasible ICFG edges.
 class FullSparseAbstractInterpretation : public SemiSparseAbstractInterpretation
 {
 public:
-    FullSparseAbstractInterpretation()
-    {
-        buildSVFG();
-    }
+    using Base = SemiSparseAbstractInterpretation;
+    using State = typename Base::State;
+    FullSparseAbstractInterpretation();
     ~FullSparseAbstractInterpretation() override;
-
-    /// Merge only freed addresses from a feasible ICFG predecessor.
-    /// Obj values are collected separately through sparse object routes.
-    void mergeFreedAddrs(AbstractState& dst, const AbstractState& src);
-
 protected:
-    using SemiSparseAbstractInterpretation::joinStates;
-
-    /// JOIN only the selected Obj IDs from src into dst; missing values
-    /// contribute nothing. The caller selects base/sub Objs and handles
-    /// path constraints and strong/weak updates. ValVars and freed addresses
-    /// are not copied here. Memory lookups use AbstractState's
-    /// existing address resolution, including its freed-address handling.
-    void joinStates(AbstractState& dst, const AbstractState& src,
-                    const NodeBS& objs);
-
-    /// Read incoming route sources, refine branch inputs, and JOIN their
-    /// selected Obj values into this ICFG node's state.
     bool mergeStatesFromPredecessors(const ICFGNode* node) override;
+    State propagatedState(const State& source) const override;
+    void storeValue(const ValVar* pointer, const Interval& interval,
+                    const AddressSet& addresses, const ICFGNode* node) override;
 
 private:
-    void buildSVFG();
-    // Owns the original SVFG and the prebuilt packed-Obj route graph.
-    std::unique_ptr<SVFGBuilder> svfgBuilder;
-    std::unique_ptr<SparseObjGraph> objRoutes;
+    std::unique_ptr<SVFGBuilder> svfgBuilder_;
+    std::unique_ptr<SparseObjGraph> objRoutes_;
+    Map<const ICFGNode*, std::set<Variable>> memoryDefinitionSupport_;
 };
 
 } // namespace SVF
 
-#endif /* INCLUDE_AE_SVFEXE_SPARSEABSTRACTINTERPRETATION_H_ */
+#endif // SVF_AE_SPARSE_ABSTRACT_INTERPRETATION_H

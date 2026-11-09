@@ -27,7 +27,9 @@
 //
 #pragma once
 #include <SVFIR/SVFIR.h>
-#include <AE/Core/AbstractState.h>
+#include "AE/Core/AddressDomain.h"
+#include "AE/Core/NumericalDomain.h"
+#include <limits>
 #include "Util/SVFBugReport.h"
 
 namespace SVF
@@ -143,7 +145,7 @@ public:
     {
         u32_t bufferSize = 0;
         u32_t bufferLowerBound = 0;
-        IntervalValue accessOffset = IntervalValue(0);
+        Interval accessOffset = Interval::singleton(Rational(0));
     };
 
     /**
@@ -178,9 +180,9 @@ public:
      * @param offset The interval value of the offset.
      */
     void updateGepObjOffsetFromBase(const ICFGNode* node,
-                                    AddressValue gepAddrs,
-                                    AddressValue objAddrs,
-                                    IntervalValue offset);
+                                    AddressSet gepAddrs,
+                                    AddressSet objAddrs,
+                                    Interval offset);
 
     /**
      * @brief Detect buffer overflow issues within a node.
@@ -188,7 +190,6 @@ public:
      * @param node Pointer to the ICFG node.
      */
     void detect(const ICFGNode*) override;
-
 
     /**
      * @brief Handles external API calls related to buffer overflow detection.
@@ -201,7 +202,7 @@ public:
      * @param obj Pointer to the GEP object.
      * @param offset The interval value of the offset.
      */
-    void addToGepObjOffsetFromBase(const GepObjVar* obj, const IntervalValue& offset)
+    void addToGepObjOffsetFromBase(const GepObjVar* obj, const Interval& offset)
     {
         gepObjOffsetFromBase[obj] = offset;
     }
@@ -221,7 +222,7 @@ public:
      * @param obj Pointer to the GEP object.
      * @return The interval value of the offset.
      */
-    IntervalValue getGepObjOffsetFromBase(const GepObjVar* obj) const
+    Interval getGepObjOffsetFromBase(const GepObjVar* obj) const
     {
         if (hasGepObjOffsetFromBase(obj))
             return gepObjOffsetFromBase.at(obj);
@@ -239,7 +240,7 @@ public:
      * @param gep Pointer to the GEP statement.
      * @return The interval value of the access offset.
      */
-    IntervalValue getAccessOffset(NodeID objId, const GepStmt* gep);
+    Interval getAccessOffset(NodeID objId, const GepStmt* gep);
 
     /**
      * @brief Adds a bug to the reporter based on an exception.
@@ -278,9 +279,18 @@ public:
         }
 
         // Add the bug to the recorder with details from the event stack
+        const auto value = [](const Bound& bound)
+        {
+            if (bound.isFinite())
+                return bound.value().toDouble();
+            return bound.kind() == Bound::Kind::MinusInfinity
+                   ? -std::numeric_limits<double>::infinity()
+                   : std::numeric_limits<double>::infinity();
+        };
         recoder.addAbsExecBug(GenericBug::FULLBUFOVERFLOW, eventStack,
                               info.bufferLowerBound, info.bufferSize,
-                              info.accessOffset.lb().getNumeral(), info.accessOffset.ub().getNumeral());
+                              value(info.accessOffset.lower()),
+                              value(info.accessOffset.upper()));
         nodeToBugInfo[node] = e.what(); // Record the exception information for the node
     }
 
@@ -320,7 +330,7 @@ public:
      * @param node The ICFG node providing context.
      * @return True if the memory access is safe, false otherwise.
      */
-    bool canSafelyAccessMemory(const ValVar *value, const IntervalValue &len,
+    bool canSafelyAccessMemory(const ValVar *value, const Interval &len,
                                const ICFGNode* node, BufferOverflowInfo* info = nullptr);
 
 private:
@@ -339,7 +349,7 @@ private:
     bool detectStrcpy(const CallICFGNode *call, BufferOverflowInfo& info);
 
 private:
-    Map<const GepObjVar*, IntervalValue> gepObjOffsetFromBase; ///< Maps GEP objects to their offsets from the base.
+    Map<const GepObjVar*, Interval> gepObjOffsetFromBase; ///< Maps GEP objects to their offsets from the base.
     Map<std::string, std::vector<std::pair<u32_t, u32_t>>> extAPIBufOverflowCheckRules; ///< Rules for checking buffer overflows in external APIs.
     Set<std::string> bugLoc; ///< Set of locations where bugs have been reported.
     SVFBugReport recoder; ///< Recorder for abstract execution bugs.
@@ -373,18 +383,6 @@ public:
      * @param call Pointer to the call ICFG node.
      */
     void handleStubFunctions(const CallICFGNode* call) override;
-
-    /**
-     * @brief Checks if an Abstract Value is uninitialized.
-     * @param v The Abstract Value to check.
-     * @return True if the value is uninitialized, false otherwise.
-     */
-    bool isUninit(AbstractValue v)
-    {
-        // uninitialized value has neither interval value nor address value
-        bool is = v.getAddrs().isBottom() && v.getInterval().isBottom();
-        return is;
-    }
 
     /**
     * @brief Adds a bug to the reporter based on an exception.
@@ -439,17 +437,6 @@ public:
      * @param call Pointer to the call ICFG node.
      */
     void detectExtAPI(const CallICFGNode* call);
-
-
-    /**
-     * @brief Check if an Abstract Value is NULL (or uninitialized).
-     *
-     * @param v An Abstract Value of loaded from an address in an Abstract State.
-     */
-    bool isNull(AbstractValue v)
-    {
-        return !v.isAddr() && !v.isInterval();
-    }
 
     bool canSafelyDerefPtr(const ValVar* ptr, const ICFGNode* node);
 

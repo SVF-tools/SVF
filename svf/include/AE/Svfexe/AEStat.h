@@ -22,8 +22,8 @@
 
 #pragma once
 #include "SVFIR/SVFType.h"
-#include "Util/SVFUtil.h"
 #include "Util/SVFStat.h"
+#include "Util/SVFUtil.h"
 #include <string>
 
 namespace SVF
@@ -35,18 +35,17 @@ class AbstractInterpretation;
 class AEStat : public SVFStat
 {
 public:
-    void countStateSize();
     AEStat(AbstractInterpretation* ae) : _ae(ae)
     {
         startTime = getClk(true);
     }
-    ~AEStat()
-    {
-    }
+    ~AEStat() {}
     inline std::string getMemUsage()
     {
         u32_t vmrss, vmsize;
-        return SVFUtil::getMemoryUsageKB(&vmrss, &vmsize) ? std::to_string(vmsize) + "KB" : "cannot read memory usage";
+        return SVFUtil::getMemoryUsageKB(&vmrss, &vmsize)
+               ? std::to_string(vmsize) + "KB"
+               : "cannot read memory usage";
     }
 
     void finializeStat();
@@ -54,19 +53,7 @@ public:
 
 public:
     AbstractInterpretation* _ae;
-    s32_t count{0};
-    std::string memory_usage;
     std::string memUsage;
-
-
-    u32_t& getFunctionTrace()
-    {
-        if (generalNumMap.count("Function_Trace") == 0)
-        {
-            generalNumMap["Function_Trace"] = 0;
-        }
-        return generalNumMap["Function_Trace"];
-    }
     u32_t& getBlockTrace()
     {
         if (generalNumMap.count("Block_Trace") == 0)
