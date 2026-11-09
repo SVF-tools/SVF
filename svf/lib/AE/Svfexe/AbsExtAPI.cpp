@@ -448,10 +448,10 @@ IntervalValue AbsExtAPI::getStrlen(const ValVar *strValue, const ICFGNode* node)
     const AbstractValue& ptrVal = ae->getAbsValue(strValue, node);
     for (const auto& addr : ptrVal.getAddrs())
     {
-        // Unknown and null pointers have no concrete backing buffer to inspect.
-        if (AbstractState::isNullOrBlackHoleAddr(addr))
-            continue;
         NodeID objId = as.getIDFromAddr(addr);
+        // A freed address also resolves to the blackhole object.
+        if (svfir->isNullOrBlkObj(objId))
+            continue;
         if (svfir->getBaseObject(objId)->isConstantByteSize())
         {
             dst_size = svfir->getBaseObject(objId)->getByteSizeOfObj();
@@ -459,6 +459,8 @@ IntervalValue AbsExtAPI::getStrlen(const ValVar *strValue, const ICFGNode* node)
         else
         {
             const ICFGNode* icfgNode = svfir->getBaseObject(objId)->getICFGNode();
+            if (!icfgNode)
+                continue;
             for (const SVFStmt* stmt2: icfgNode->getSVFStmts())
             {
                 if (const AddrStmt* addrStmt = SVFUtil::dyn_cast<AddrStmt>(stmt2))

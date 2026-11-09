@@ -106,6 +106,7 @@ public:
 
     // Sparse value-flow graph (VFG.cpp)
     static const Option<bool> DumpVFG;
+    static const Option<bool> DumpSparseObjGraph;
 
     // Base class of pointer analyses (PointerAnalysis.cpp)
     static const Option<bool> TypePrint;

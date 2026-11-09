@@ -390,7 +390,7 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(
 
     // Work out which of the mappings we generated looks best.
     std::pair<hclust_fast_methods, std::vector<NodeID>> bestMapping =
-                determineBestMapping(candidates, pointsToSets, evalSubtitle, evalTime, printStat);
+        determineBestMapping(candidates, pointsToSets, evalSubtitle, evalTime, printStat);
 
     overallStats[DistanceMatrixTime] = std::to_string(distanceMatrixTime);
     overallStats[DendrogramTraversalTime] = std::to_string(dendrogramTraversalTime);
@@ -661,12 +661,12 @@ void NodeIDAllocator::Clusterer::evaluate(const std::vector<NodeID> &nodeMap, co
 
 // Work out which of the mappings we generated looks best.
 std::pair<hclust_fast_methods, std::vector<NodeID>> NodeIDAllocator::Clusterer::determineBestMapping(
-            const std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> &candidates,
-            Map<PointsTo, unsigned> pointsToSets,
-            const std::string &evalSubtitle,
-            double &evalTime,
-            bool printStat
-        )
+    const std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> &candidates,
+    Map<PointsTo, unsigned> pointsToSets,
+    const std::string &evalSubtitle,
+    double &evalTime,
+    bool printStat
+)
 {
     // In case we're not comparing anything, set to first "candidate".
     std::pair<hclust_fast_methods, std::vector<NodeID>> bestMapping = candidates[0];

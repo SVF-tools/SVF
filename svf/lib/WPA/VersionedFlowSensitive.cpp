@@ -178,8 +178,8 @@ void VersionedFlowSensitive::meldLabel(void)
     std::mutex footprintOwnerMutex;
 
     auto meldVersionWorker = [this, &footprintOwner, &objectQueue,
-                                    &objectQueueMutex, &footprintOwnerMutex, &versionMutexes,
-                                    &prelabeledNodes, &isPrelabeled, &nodesWhichNeedVersions]
+                              &objectQueueMutex, &footprintOwnerMutex, &versionMutexes,
+                              &prelabeledNodes, &isPrelabeled, &nodesWhichNeedVersions]
          (const unsigned thread)
     {
         while (true)

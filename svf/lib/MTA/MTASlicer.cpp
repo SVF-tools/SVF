@@ -592,8 +592,8 @@ OrderedSet<const CallICFGNode*> MTASlicerBase::collectMutexStatements(
 
 // Helper: Collect common pthread and mutex statements (shared by PTA and MTA slicing)
 std::pair<OrderedSet<const CallICFGNode*>, OrderedSet<const CallICFGNode*>>
-        MTASlicerBase::collectCommonThreadStatements(
-            const OrderedSet<const ICFGNode*>& sourceNodes)
+MTASlicerBase::collectCommonThreadStatements(
+    const OrderedSet<const ICFGNode*>& sourceNodes)
 {
     // Step 1: Collect pthread-related statements, i.e., pthread_create and pthread_join
     OrderedSet<const CallICFGNode*> pthreadCallNodes =
