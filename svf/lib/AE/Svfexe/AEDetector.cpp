@@ -62,15 +62,15 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                                            ae.getGepByteOffset(gep));
 
                 const AddressValue& objAddrs = rhsVal.getAddrs();
-                bool specialTarget = false;
+                bool hasUnknownExtentTarget = false;
                 for (const auto& addr : objAddrs)
                 {
-                    // Special objects have neither an allocation extent nor
+                    // Null/black-hole objects have neither an allocation extent nor
                     // a defining ICFG node that can be inspected below.
                     const NodeID objId = ae.getAbsState(node).getIDFromAddr(addr);
                     if (svfir->isNullOrBlkObj(objId))
                     {
-                        specialTarget = true;
+                        hasUnknownExtentTarget = true;
                         continue;
                     }
                     u32_t size = 0;
@@ -87,7 +87,7 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                         const ICFGNode* addrNode = svfir->getBaseObject(objId)->getICFGNode();
                         if (!addrNode)
                         {
-                            specialTarget = true;
+                            hasUnknownExtentTarget = true;
                             continue;
                         }
                         for (const SVFStmt* stmt2 : addrNode->getSVFStmts())
@@ -110,9 +110,9 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                         {IntervalValue(lower, size), accessOffset});
                     }
                 }
-                // Retain an alarm when no concrete failure was reported. A
-                // special address cannot supply exact size or offset bounds.
-                if (specialTarget)
+                // Some target has no known allocation extent, so report one
+                // alarm with unknown size and offset bounds.
+                if (hasUnknownExtentTarget)
                     addBugToReporter(AEException(stmt->toString()), node,
                                      {IntervalValue(0, IntervalValue::plus_infinity()),
                                       IntervalValue::top()});
