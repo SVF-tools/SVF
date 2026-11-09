@@ -176,7 +176,7 @@ public:
 
     IntervalValue getGepElementIndex(const GepStmt* gep);
     IntervalValue getGepByteOffset(const GepStmt* gep);
-    AddressValue getGepObjAddrs(const ValVar* pointer, IntervalValue offset);
+    AddressValue getGepObjAddrs(const ValVar* pointer, IntervalValue offset, const ICFGNode* curNode);
 
     /// Read memory through the pointer's address targets.
     virtual AbstractValue loadValue(const ValVar* pointer,
@@ -263,6 +263,15 @@ protected:
     /// pointer target, without changing the backing load's trace.
     /// Return false when a carried value contradicts the selected branch.
     bool applyBranchRefinement(const IntraCFGEdge* edge, AbstractState& as);
+
+    /// Full-sparse may reuse a completed non-recursive function analysis when
+    /// every semantic input is unchanged. Other modes always analyze it.
+    virtual bool reuseFunctionResult(const ICFGNode*) { return false; }
+    virtual void recordFunctionResult(const ICFGNode*) {}
+    /// Full-sparse may reuse a completed WTO cycle when its external inputs
+    /// and its cycle ValVars are unchanged. Other modes always iterate it.
+    virtual bool reuseCycleResult(const ICFGCycleWTO*) { return false; }
+    virtual void recordCycleResult(const ICFGCycleWTO*) {}
 
 private:
     /// Initialize abstract state for the global ICFG node and process global

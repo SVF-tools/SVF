@@ -802,6 +802,10 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
     auto it = preAnalysis->getFuncToWTO().find(funEntry->getFun());
     assert(it != preAnalysis->getFuncToWTO().end() && "Missing WTO for function");
 
+    // The full-sparse override decides which functions are eligible.
+    if (reuseFunctionResult(funEntry))
+        return;
+
     // Push all top-level WTO components into the worklist in WTO order
     FIFOWorkList<const ICFGWTOComp*> worklist(it->second->getWTOComponents());
 
@@ -821,6 +825,8 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
                 handleLoopOrRecursion(cycle, caller);
         }
     }
+
+    recordFunctionResult(funEntry);
 }
 
 
@@ -915,6 +921,10 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
         {
             if (callee->isDeclaration())
                 continue;
+            // A recursive back edge through a function pointer: the SCC is
+            // analysed by the cycle that contains this call, as for direct calls.
+            if (isRecursiveFun(callee) && isRecursiveCallSite(callNode, callee))
+                continue;
             const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
             handleFunction(calleeEntry, callNode);
         }
@@ -999,7 +1009,7 @@ void AbstractInterpretation::updateStateOnGep(const GepStmt *gep)
 {
     const ICFGNode* node = gep->getICFGNode();
     IntervalValue offsetPair = getGepElementIndex(gep);
-    AddressValue gepAddrs = getGepObjAddrs(SVFUtil::cast<ValVar>(gep->getRHSVar()), offsetPair);
+    AddressValue gepAddrs = getGepObjAddrs(SVFUtil::cast<ValVar>(gep->getRHSVar()), offsetPair, node);
     updateAbsValue(gep->getLHSVar(), gepAddrs, node);
 }
 
