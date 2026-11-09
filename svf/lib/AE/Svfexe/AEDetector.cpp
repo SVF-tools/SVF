@@ -572,8 +572,6 @@ bool BufOverflowDetector::canSafelyAccessMemory(const ValVar* value, const Inter
     }
     // Safe only if every target has a known size and passes the check.
     const bool unsafe = hasFailingTarget || hasUnknownSizeTarget;
-    // Prefer the bounds of the failing targets. Otherwise keep the unknown
-    // size and offset set at the top of this function.
     if (hasFailingTarget && info) *info = report;
     return !unsafe;
 }
