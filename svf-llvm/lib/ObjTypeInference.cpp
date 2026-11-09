@@ -730,20 +730,6 @@ void ObjTypeInference::validateTypeCheck(const CallBase *cs)
     }
 }
 
-void ObjTypeInference::typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val)
-{
-#if TYPE_DEBUG
-    Type *oTy = getPtrElementType(oPTy);
-    u32_t iTyNum = objTyToNumFields(iTy);
-    if (getNumOfElements(oTy) > iTyNum)
-    {
-        ERR_MSG("original type is:" + dumpType(oTy));
-        ERR_MSG("infered type is:" + dumpType(iTy));
-        ABORT_MSG("wrong type, trace ID is " + std::to_string(traceId) + ":" + dumpValueAndDbgInfo(val));
-    }
-#endif
-}
-
 u32_t ObjTypeInference::getArgPosInCall(const CallBase *callBase, const Value *arg)
 {
     assert(callBase->hasArgument(arg) && "callInst does not have argument arg?");

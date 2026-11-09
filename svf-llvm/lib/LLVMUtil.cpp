@@ -471,11 +471,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
                 break;
             }
 #else
-#if LLVM_VERSION_MAJOR > 16
             for (llvm::DbgInfoIntrinsic *DII : llvm::findDbgDeclares(const_cast<Instruction*>(inst)))
-#else
-            for (llvm::DbgInfoIntrinsic *DII : FindDbgDeclareUses(const_cast<Instruction*>(inst)))
-#endif
             {
                 if (llvm::DbgDeclareInst *DDI = SVFUtil::dyn_cast<llvm::DbgDeclareInst>(DII))
                 {
