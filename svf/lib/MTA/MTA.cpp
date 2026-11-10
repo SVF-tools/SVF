@@ -1275,7 +1275,7 @@ bool SlicedMTA::runWholeProgramDetection()
 
 bool SlicedMTA::runOnModule(PAG* pag, AndersenWaveDiff& preAnalysis)
 {
-    if (pag != nullptr || pag == nullptr || preAnalysis.getPAG() != pag)
+    if (this->pag != nullptr || pag == nullptr || preAnalysis.getPAG() != pag)
     {
         SVFUtil::errs() << "[ERROR] SlicedMTA is single-use and requires a "
                         << "matching PAG and Andersen pre-analysis\n";
@@ -1289,7 +1289,7 @@ bool SlicedMTA::runOnModule(PAG* pag, AndersenWaveDiff& preAnalysis)
                     << "\n";
 
     if (isMTAStatEnabled())
-        reportOriginalStatistics(pag);
+        reportOriginalStatistics(this->pag);
 
     // The pre-analysis is context-insensitive in BOTH modes (the sliced run and
     // the FSAM baseline must share an identical pre-analysis substrate); the
