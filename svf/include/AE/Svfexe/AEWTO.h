@@ -87,7 +87,6 @@ public:
     }
 
 private:
-    PAG* pag;
     ICFG* icfg;
     AndersenWaveDiff* pta;
     CallGraph* callGraph;

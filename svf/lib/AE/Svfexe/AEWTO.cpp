@@ -35,7 +35,7 @@
 using namespace SVF;
 
 AEWTO::AEWTO(PAG* pag, ICFG* icfg)
-    : pag(pag), icfg(icfg), pta(nullptr), callGraph(nullptr), callGraphSCC(nullptr)
+    : icfg(icfg), pta(nullptr), callGraph(nullptr), callGraphSCC(nullptr)
 {
     pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
     callGraph = pta->getCallGraph();
