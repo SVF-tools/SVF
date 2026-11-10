@@ -45,9 +45,7 @@
 #include "Graphs/CallGraph.h"
 #include "Util/CallGraphBuilder.h"
 
-#if LLVM_VERSION_MAJOR > 16
 #include <llvm/Passes/PassBuilder.h>
-#endif
 
 using namespace std;
 using namespace SVF;
@@ -277,9 +275,6 @@ void LLVMModuleSet::prePassSchedule()
             Function &fun = *F;
             if (fun.isDeclaration())
                 continue;
-#if LLVM_VERSION_MAJOR <= 16
-            p2->runOnFunction(fun);
-#else
             llvm::PassBuilder PB;
             llvm::LoopAnalysisManager LAM;
             llvm::FunctionAnalysisManager FAM;
@@ -293,7 +288,6 @@ void LLVMModuleSet::prePassSchedule()
             llvm::FunctionPassManager FPM;
             FPM.addPass(llvm::UnifyFunctionExitNodesPass());
             FPM.run(fun, FAM);
-#endif
         }
     }
 }
@@ -560,20 +554,12 @@ void LLVMModuleSet::addSVFMain()
         Type* ptr = PointerType::getUnqual(M.getContext());
         Type* i32 = IntegerType::getInt32Ty(M.getContext());
         // define void @svf.main(i32, i8**, i8**)
-#if (LLVM_VERSION_MAJOR >= 9)
         FunctionCallee svfmainFn = M.getOrInsertFunction(
                                        SVF_MAIN_FUNC_NAME,
                                        Type::getVoidTy(M.getContext()),
                                        i32,ptr,ptr
                                    );
         Function* svfmain = SVFUtil::dyn_cast<Function>(svfmainFn.getCallee());
-#else
-        Function* svfmain = SVFUtil::dyn_cast<Function>(M.getOrInsertFunction(
-                                SVF_MAIN_FUNC_NAME,
-                                Type::getVoidTy(M.getContext()),
-                                i32,i8ptr2,i8ptr2
-                            ));
-#endif
         svfmain->setCallingConv(llvm::CallingConv::C);
         BasicBlock* block = BasicBlock::Create(M.getContext(), "entry", svfmain);
         IRBuilder Builder(block);
@@ -1072,13 +1058,7 @@ void LLVMModuleSet::dumpModulesToFile(const std::string& suffix)
 
         std::error_code EC;
         raw_fd_ostream OS(OutputFilename.c_str(), EC, llvm::sys::fs::OF_None);
-
-#if (LLVM_VERSION_MAJOR >= 7)
         WriteBitcodeToFile(mod, OS);
-#else
-        WriteBitcodeToFile(&mod, OS);
-#endif
-
         OS.flush();
     }
 }
