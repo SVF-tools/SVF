@@ -1281,7 +1281,7 @@ bool SlicedMTA::runOnModule(PAG* pag, AndersenWaveDiff& preAnalysis)
                         << "matching PAG and Andersen pre-analysis\n";
         return false;
     }
-    pag = pag;
+    this->pag = pag;
     preAndersen = &preAnalysis;
 
     SVFUtil::outs() << "[Config] Slicing: "
