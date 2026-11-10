@@ -244,15 +244,6 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
         return;
     }
 
-    // The caller has already merged the cycle head. A reused cycle keeps the
-    // body states of its last completed fixpoint; only the head is evaluated
-    // again so that its post-state matches that fixpoint.
-    if (reuseCycleResult(cycle))
-    {
-        handleICFGNode(cycle_head);
-        return;
-    }
-
     // Iterate until fixpoint with widening/narrowing on the cycle head.
     bool increasing = true;
     u32_t widen_delay = Options::WidenDelay();
@@ -316,5 +307,4 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
             }
         }
     }
-    recordCycleResult(cycle);
 }

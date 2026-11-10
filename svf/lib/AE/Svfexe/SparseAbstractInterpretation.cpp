@@ -30,8 +30,42 @@
 #include "Util/Options.h"
 
 #include <cstdlib>
+#include <optional>
 
 using namespace SVF;
+
+/// Compare one value a node reads with the value it read at its last
+/// visit (index i), or record it when save is set. A null value is a value
+/// that is not there (no state, or no entry).
+static bool matchValue(std::vector<std::optional<AbstractValue>>& last,
+                       u32_t& i, bool save, const AbstractValue* value)
+{
+    if (save)
+    {
+        last.push_back(value ? std::optional<AbstractValue>(*value) : std::nullopt);
+        return true;
+    }
+    if (i >= last.size())
+        return false;
+    const std::optional<AbstractValue>& old = last[i++];
+    return value ? old && old->equals(*value) : !old;
+}
+
+/// The freed addresses of a predecessor are compared like a value.
+static bool matchFreed(std::vector<std::optional<AbstractValue>>& last,
+                       u32_t& i, bool save, const AbstractState* pred)
+{
+    if (save)
+    {
+        last.push_back(pred ? std::optional<AbstractValue>(
+                           AddressValue(pred->getFreedAddrs())) : std::nullopt);
+        return true;
+    }
+    if (i >= last.size())
+        return false;
+    const std::optional<AbstractValue>& old = last[i++];
+    return pred ? old && old->addrs.getVals() == pred->getFreedAddrs() : !old;
+}
 
 // FullSparse Obj inputs follow prebuilt routes. Shared SSA def-site access
 // and WTO gather/scatter retain their existing implementations.
@@ -81,6 +115,18 @@ void FullSparseAbstractInterpretation::joinStates(AbstractState& dst,
 bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     const ICFGNode* node)
 {
+    // Inputs unchanged since the last visit: merging and handling the node
+    // again would reproduce its current state.
+    if (canSkip(node))
+    {
+        // The overflow detector keeps the latest offset of each GEP Obj,
+        // which another GEP may have overwritten since the last visit.
+        runDetectors(node);
+        return false;
+    }
+    // Record what this visit reads.
+    matchInputs(node, true);
+
     const auto& graphEdges = objRoutes->getInputs(node);
     AbstractState previous;
     bool hasPrevious = false;
@@ -129,426 +175,176 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     return reachable;
 }
 
-FullSparseAbstractInterpretation::FunctionInputSignature
-FullSparseAbstractInterpretation::collectFunctionInputs(
-    const ICFGNode* funEntry)
+/// Add the vars that stmt reads. Its LHS is added too; matchInputs drops
+/// the ValVars that the node itself defines.
+static void addReadVars(const SVFStmt* stmt, OrderedSet<const SVFVar*>& vars)
 {
-    FunctionInputSignature signature;
+    vars.insert(stmt->getSrcNode());
+    vars.insert(stmt->getDstNode());
+    if (const MultiOpndStmt* multi = SVFUtil::dyn_cast<MultiOpndStmt>(stmt))
+        for (u32_t k = 0; k < multi->getOpVarNum(); ++k)
+            vars.insert(multi->getOpVar(k));
+    if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt))
+        for (const auto& offset : gep->getOffsetVarAndGepTypePairVec())
+            vars.insert(offset.first);
+    if (const BranchStmt* branch = SVFUtil::dyn_cast<BranchStmt>(stmt))
+        vars.insert(branch->getCondition());
+    if (const SelectStmt* select = SVFUtil::dyn_cast<SelectStmt>(stmt))
+        vars.insert(select->getCondition());
+}
 
-    // Match updateStateOnCall: each CallPE summarizes the actual scalar values
-    // that define one formal parameter at this context-insensitive entry.
-    for (const SVFStmt* stmt : funEntry->getSVFStmts())
+/// The statement that defines var, if any.
+static const SVFStmt* getDefStmt(const SVFVar* var)
+{
+    return var->getInEdges().empty() ? nullptr : *var->getInEdges().begin();
+}
+
+bool FullSparseAbstractInterpretation::matchInputs(const ICFGNode* node, bool save)
+{
+    std::vector<std::optional<AbstractValue>>& last = preAbsTrace[node];
+    if (save)
+        last.clear();
+    u32_t i = 0;
+    // Branch edges whose condition this visit checks or refines with.
+    OrderedSet<const IntraCFGEdge*> branches;
+
+    // (1) ICFG predecessors: reachability and freed addresses.
+    for (const ICFGEdge* edge : node->getInEdges())
     {
-        if (const auto* call = SVFUtil::dyn_cast<CallPE>(stmt))
-        {
-            AbstractValue value;
-            for (u32_t i = 0; i < call->getOpVarNum(); ++i)
+        const ICFGNode* pred = edge->getSrcNode();
+        if (!matchFreed(last, i, save, hasAbsState(pred) ? &getAbsState(pred) : nullptr))
+            return false;
+        const IntraCFGEdge* intra = SVFUtil::dyn_cast<IntraCFGEdge>(edge);
+        if (intra && intra->getCondition())
+            branches.insert(intra);
+    }
+
+    // (2) ObjGraph predecessors: the fields of the base Objs on each route.
+    for (const SparseObjGraph::Edge* edge : objRoutes->getInputs(node))
+    {
+        const ICFGNode* source = edge->getSrcNode()->getICFGNode();
+        if (edge->getSrcNode()->branch)
+            branches.insert(edge->getSrcNode()->branch);
+        const AbstractState* state = hasAbsState(source) ? &getAbsState(source) : nullptr;
+        for (NodeID base : edge->getBases())
+            for (NodeID obj : svfir->getAllFieldsObjVars(svfir->getBaseObject(base)))
             {
-                const ICFGNode* actualNode = call->getOpCallICFGNode(i);
-                if (hasAbsState(actualNode))
-                    value.join_with(getAbsValue(call->getOpVar(i), actualNode));
+                const AbstractValue* read = nullptr;
+                if (state)
+                {
+                    const auto value = state->getLocToVal().find(state->getIDFromAddr(
+                                           AbstractState::getVirtualMemAddress(obj)));
+                    if (value != state->getLocToVal().end())
+                        read = &value->second;
+                }
+                if (!matchValue(last, i, save, read))
+                    return false;
             }
-            signature.scalarAndFreedInputs[call->getResID()] = value;
+    }
+
+    // (3) ValVars, read at their def-sites. They come from the SVFStmts:
+    OrderedSet<const SVFVar*> vars;
+    //   (a) the statements of node;
+    for (const SVFStmt* stmt : node->getSVFStmts())
+        addReadVars(stmt, vars);
+    //   (b) the actual parameters of a call, which an external call reads
+    //       without a CallPE;
+    if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node))
+        for (const ValVar* actual : call->getActualParms())
+            vars.insert(actual);
+    //   (c) for each branch edge of (1) and (2), the statements that define
+    //       its condition: the comparison, and the copy and load behind each
+    //       of its operands.
+    for (const IntraCFGEdge* edge : branches)
+    {
+        vars.insert(edge->getCondition());
+        const SVFStmt* cmp = getDefStmt(edge->getCondition());
+        if (!cmp || !SVFUtil::isa<CmpStmt>(cmp))
+            continue;
+        addReadVars(cmp, vars);
+        for (const SVFVar* operand : {SVFUtil::cast<CmpStmt>(cmp)->getOpVar(0),
+                                      SVFUtil::cast<CmpStmt>(cmp)->getOpVar(1)})
+        {
+            const SVFStmt* def = getDefStmt(operand);
+            if (def && SVFUtil::isa<CopyStmt>(def))
+            {
+                addReadVars(def, vars);
+                def = getDefStmt(def->getSrcNode());
+            }
+            if (def && SVFUtil::isa<LoadStmt>(def))
+                addReadVars(def, vars);
         }
     }
-
-    // Freed-address reachability enters a function through ordinary ICFG
-    // call edges rather than packed-Obj routes.
-    for (const ICFGEdge* edge : funEntry->getInEdges())
+    for (const SVFVar* var : vars)
     {
-        const ICFGNode* source = edge->getSrcNode();
-        if (hasAbsState(source))
-            mergeFreedAddrs(signature.scalarAndFreedInputs,
-                            getAbsState(source));
-    }
-
-    // Preserve route identity: two call sites may carry different values for
-    // the same packed base Obj and must remain separate signature entries.
-    for (const SparseObjGraph::Edge* edge :
-            objRoutes->getFunctionInputs(funEntry->getFun()))
-    {
-        AbstractState input;
-        const SparseObjGraph::Node* sourceNode = edge->getSrcNode();
-        const ICFGNode* source = sourceNode->getICFGNode();
-        if (hasAbsState(source))
-            for (NodeID base : edge->getBases())
-                joinStates(input, getAbsState(source),
-                           svfir->getAllFieldsObjVars(
-                               svfir->getBaseObject(base)));
-        signature.objInputs.push_back(std::move(input));
-    }
-    return signature;
-}
-
-bool FullSparseAbstractInterpretation::buildReusableFunctionSubgraph(
-    const FunObjVar* fun, Set<const FunObjVar*>& visited,
-    std::vector<const FunObjVar*>& functions)
-{
-    // A recursive SCC is entered only through a call from outside the SCC;
-    // its internal calls are skipped and its body is one interprocedural WTO.
-    // When recursive reuse is enabled, the closure therefore contains every
-    // SCC member and compares their inputs like any other callee.
-    if (!allowRecursiveReuse() &&
-            preAnalysis->getPointerAnalysis()->isInRecursion(fun))
-        return false;
-    if (!visited.insert(fun).second)
-        return true;
-
-    functions.push_back(fun);
-    const CallGraphNode* node =
-        preAnalysis->getCallGraph()->getCallGraphNode(fun);
-    for (const CallGraphEdge* edge : node->getOutEdges())
-    {
-        const FunObjVar* callee = edge->getDstNode()->getFunction();
-        if (!callee->isDeclaration() &&
-                !buildReusableFunctionSubgraph(callee, visited, functions))
+        const ValVar* value = var ? SVFUtil::dyn_cast<ValVar>(var) : nullptr;
+        // A ValVar defined by this node is its output, not its input.
+        if (!value || getICFGNode(value) == node)
+            continue;
+        const ICFGNode* def = getICFGNode(value);
+        const AbstractValue* read = nullptr;
+        if (hasAbsState(def))
+        {
+            const auto it = getAbsState(def).getVarToVal().find(value->getId());
+            if (it != getAbsState(def).getVarToVal().end())
+                read = &it->second;
+        }
+        if (!matchValue(last, i, save, read))
             return false;
     }
-    return true;
+    return save || i == last.size();
 }
 
-const std::vector<const FunObjVar*>*
-FullSparseAbstractInterpretation::getReusableFunctionSubgraph(
-    const FunObjVar* fun)
-{
-    if (nonReusableFunctions.count(fun))
-        return nullptr;
-
-    const auto existing = reusableFunctionSubgraphs.find(fun);
-    if (existing != reusableFunctionSubgraphs.end())
-        return &existing->second;
-
-    Set<const FunObjVar*> visited;
-    std::vector<const FunObjVar*> functions;
-    if (!buildReusableFunctionSubgraph(fun, visited, functions))
-    {
-        nonReusableFunctions.insert(fun);
-        return nullptr;
-    }
-    return &reusableFunctionSubgraphs.emplace(fun, std::move(functions))
-                .first->second;
-}
-
-FullSparseAbstractInterpretation::FunctionSubgraphSignature
-FullSparseAbstractInterpretation::collectFunctionSubgraphInputs(
-    const std::vector<const FunObjVar*>& functions)
-{
-    FunctionSubgraphSignature signature;
-    signature.reserve(functions.size());
-    for (const FunObjVar* dependency : functions)
-        signature.push_back(functionInputVersion(dependency));
-    return signature;
-}
-
-u64_t FullSparseAbstractInterpretation::functionInputVersion(
-    const FunObjVar* fun)
-{
-    // Equal versions imply equal inputs: the version changes whenever a newly
-    // collected signature differs from the stored one. A->B->A yields a new
-    // version, which only costs a reuse miss.
-    FunctionInputSignature current =
-        collectFunctionInputs(svfir->getICFG()->getFunEntryICFGNode(fun));
-    auto it = latestFunctionInputs.find(fun);
-    if (it == latestFunctionInputs.end())
-    {
-        latestFunctionInputs.emplace(fun, std::make_pair(std::move(current), u64_t(1)));
-        return 1;
-    }
-    if (!(it->second.first == current))
-    {
-        it->second.first = std::move(current);
-        ++it->second.second;
-    }
-    return it->second.second;
-}
-
-bool FullSparseAbstractInterpretation::reuseFunctionResult(
-    const ICFGNode* funEntry)
+bool FullSparseAbstractInterpretation::canSkip(const ICFGNode* node)
 {
     if (!Options::AEReuse())
         return false;
-
-    const FunObjVar* fun = funEntry->getFun();
-    const std::vector<const FunObjVar*>* subgraph =
-        getReusableFunctionSubgraph(fun);
-    if (!subgraph)
+    const auto running = runningCycles.find(node->getFun());
+    if (running != runningCycles.end() && running->second > 0)
         return false;
-
-    // Checking only fun's direct inputs is insufficient: wrapper() may have
-    // no Obj input itself while a transitive callee reads a changed global.
-    const auto previous = lastFunctionInputs.find(fun);
-    bool stable = false;
-    if (previous != lastFunctionInputs.end() && completedFunctions.count(fun))
-    {
-        stable = previous->second == collectFunctionSubgraphInputs(*subgraph);
-    }
-    if (stable)
-        return true;
-
-    // The next complete analysis replaces the cached signature in
-    // recordFunctionResult. Until then this result is not reusable.
-    completedFunctions.erase(fun);
-    return false;
+    if (SVFUtil::isa<RetICFGNode>(node))
+        return false;
+    const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node);
+    if (call && !SVFUtil::isExtCall(call->getCalledFunction()))
+        return false;
+    // The head of a cycle that is not iterating starts the whole cycle.
+    const auto wto = preAnalysis->getFuncToWTO().find(node->getFun());
+    if (wto != preAnalysis->getFuncToWTO().end() && wto->second->isHead(node))
+        for (auto it = wto->second->headBegin(); it != wto->second->headEnd(); ++it)
+            if (it->first == node)
+                return isCycleUnchanged(it->second);
+    return preAbsTrace.count(node) && matchInputs(node, false);
 }
 
-void FullSparseAbstractInterpretation::recordFunctionResult(
-    const ICFGNode* funEntry)
+bool FullSparseAbstractInterpretation::isCycleUnchanged(const ICFGCycleWTO* cycle)
 {
-    if (!Options::AEReuse())
-        return;
-
-    const FunObjVar* fun = funEntry->getFun();
-    if (const std::vector<const FunObjVar*>* subgraph =
-            getReusableFunctionSubgraph(fun))
-    {
-        // Record after the body completes so internal call-site inputs and
-        // the result describe the same fixpoint, not the pre-analysis state.
-        lastFunctionInputs[fun] = collectFunctionSubgraphInputs(*subgraph);
-        completedFunctions.insert(fun);
-    }
-}
-
-bool FullSparseAbstractInterpretation::allowRecursiveReuse() const
-{
-    // TOP recursion handling writes the caller's state while skipping the
-    // SCC, so a skipped SCC would lose that effect.
-    static const bool enabled = Options::AEReuse() &&
-                                Options::HandleRecur() != TOP;
-    return enabled;
-}
-
-const FullSparseAbstractInterpretation::CycleRegion*
-FullSparseAbstractInterpretation::getCycleRegion(const ICFGCycleWTO* cycle)
-{
-    if (nonReusableCycles.count(cycle))
-        return nullptr;
-    const auto existing = cycleRegions.find(cycle);
-    if (existing != cycleRegions.end())
-        return &existing->second;
-
-    // Loops of a recursive function lie inside the SCC's interprocedural WTO.
-    // They are covered by SCC-level function reuse, not by cycle reuse.
-    const FunObjVar* fun = cycle->head()->getICFGNode()->getFun();
-    if (!fun || preAnalysis->getPointerAnalysis()->isInRecursion(fun))
-    {
-        nonReusableCycles.insert(cycle);
-        return nullptr;
-    }
-
-    CycleRegion region;
-    collectCycleNodes(cycle, region.nodes);
-    if (!collectCycleCallees(region) || region.closure.count(fun))
-    {
-        nonReusableCycles.insert(cycle);
-        return nullptr;
-    }
-    collectCycleExternalInputs(region);
-    return &cycleRegions.emplace(cycle, std::move(region)).first->second;
-}
-
-void FullSparseAbstractInterpretation::collectCycleNodes(
-    const ICFGCycleWTO* cycle, Set<const ICFGNode*>& nodes) const
-{
-    nodes.insert(cycle->head()->getICFGNode());
+    const ICFGNode* head = cycle->head()->getICFGNode();
+    if (!preAbsTrace.count(head) || !matchInputs(head, false))
+        return false;
     for (const ICFGWTOComp* comp : cycle->getWTOComponents())
     {
-        if (const ICFGSingletonWTO* singleton =
-                    SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
-            nodes.insert(singleton->getICFGNode());
-        else if (const ICFGCycleWTO* subCycle =
-                     SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
-            collectCycleNodes(subCycle, nodes);
-    }
-}
-
-bool FullSparseAbstractInterpretation::collectCycleCallees(CycleRegion& region)
-{
-    // The call closure is analyzed from inside the cycle, so its nodes belong
-    // to the region. Its own boundary inputs are compared per function.
-    for (const ICFGNode* node : region.nodes)
-    {
-        const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node);
-        if (!call || SVFUtil::isExtCall(call->getCalledFunction()))
-            continue;
-
-        std::vector<const FunObjVar*> callees;
-        if (const FunObjVar* callee = call->getCalledFunction())
-            callees.push_back(callee);
-        else if (preAnalysis->getCallGraph()->hasIndCSCallees(call))
-            for (const FunObjVar* callee :
-                    preAnalysis->getCallGraph()->getIndCSCallees(call))
-                callees.push_back(callee);
-
-        for (const FunObjVar* callee : callees)
+        if (const ICFGCycleWTO* sub = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
         {
-            if (callee->isDeclaration())
-                continue;
-            if (!buildReusableFunctionSubgraph(callee, region.closure,
-                                               region.functions))
+            if (!isCycleUnchanged(sub))
+                return false;
+        }
+        else
+        {
+            const ICFGNode* node = SVFUtil::cast<ICFGSingletonWTO>(comp)->getICFGNode();
+            if (!preAbsTrace.count(node) || !matchInputs(node, false))
                 return false;
         }
     }
     return true;
 }
 
-void FullSparseAbstractInterpretation::addExternalValVar(
-    const SVFVar* var, CycleRegion& region, Set<const ValVar*>& visited)
+void FullSparseAbstractInterpretation::handleLoopOrRecursion(
+    const ICFGCycleWTO* cycle, const CallICFGNode* caller)
 {
-    // A ValVar is an external input when it is read in the cycle and its
-    // def-site lies outside the region. Constants at the global node never
-    // change after initialization and are omitted.
-    const ValVar* value = var ? SVFUtil::dyn_cast<ValVar>(var) : nullptr;
-    if (!value || !visited.insert(value).second)
-        return;
-    const ICFGNode* defSite = getICFGNode(value);
-    if (defSite != svfir->getICFG()->getGlobalICFGNode() &&
-            !region.contains(defSite))
-        region.externalValVars.push_back(value);
-}
-
-void FullSparseAbstractInterpretation::collectCycleExternalInputs(
-    CycleRegion& region)
-{
-    Set<const ValVar*> visited;
-    for (const ICFGNode* node : region.nodes)
-    {
-        for (const SVFStmt* stmt : node->getSVFStmts())
-        {
-            addExternalValVar(stmt->getSrcNode(), region, visited);
-            addExternalValVar(stmt->getDstNode(), region, visited);
-            if (const MultiOpndStmt* multi = SVFUtil::dyn_cast<MultiOpndStmt>(stmt))
-                for (u32_t i = 0; i < multi->getOpVarNum(); ++i)
-                    addExternalValVar(multi->getOpVar(i), region, visited);
-            if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt))
-                for (const auto& offset : gep->getOffsetVarAndGepTypePairVec())
-                    addExternalValVar(offset.first, region, visited);
-            if (const BranchStmt* branch = SVFUtil::dyn_cast<BranchStmt>(stmt))
-                addExternalValVar(branch->getCondition(), region, visited);
-            if (const SelectStmt* select = SVFUtil::dyn_cast<SelectStmt>(stmt))
-                addExternalValVar(select->getCondition(), region, visited);
-        }
-        if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node))
-            for (const ValVar* actual : call->getActualParms())
-                addExternalValVar(actual, region, visited);
-        if (const RetICFGNode* ret = SVFUtil::dyn_cast<RetICFGNode>(node))
-            addExternalValVar(ret->getActualRet(), region, visited);
-
-        for (const ICFGEdge* edge : node->getInEdges())
-        {
-            if (const IntraCFGEdge* intra = SVFUtil::dyn_cast<IntraCFGEdge>(edge))
-                addExternalValVar(intra->getCondition(), region, visited);
-            if (!region.contains(edge->getSrcNode()))
-                region.externalICFGEdges.push_back(edge);
-        }
-
-        for (const SparseObjGraph::Edge* edge : objRoutes->getInputs(node))
-        {
-            const SparseObjGraph::Node* source = edge->getSrcNode();
-            if (source->branch)
-                addExternalValVar(source->branch->getCondition(), region, visited);
-            if (!region.contains(source->getICFGNode()))
-                region.externalObjRoutes.push_back(edge);
-        }
-    }
-}
-
-FullSparseAbstractInterpretation::CycleInputSignature
-FullSparseAbstractInterpretation::collectCycleInputs(
-    const ICFGCycleWTO* cycle, const CycleRegion& region)
-{
-    CycleInputSignature signature;
-    signature.functions = collectFunctionSubgraphInputs(region.functions);
-
-    for (const ValVar* var : region.externalValVars)
-    {
-        const ICFGNode* defSite = getICFGNode(var);
-        if (hasAbsValue(var, defSite))
-            signature.scalars[var->getId()] = getAbsValue(var, defSite);
-    }
-
-    // An enclosing cycle's widening and narrowing scatter values to the
-    // def-sites of this cycle's ValVars without running this cycle.
-    for (const ValVar* var : preAnalysis->getCycleValVars(cycle))
-    {
-        const ICFGNode* defSite = getICFGNode(var);
-        if (hasAbsValue(var, defSite))
-            signature.cycleValVars[var->getId()] = getAbsValue(var, defSite);
-    }
-
-    for (const SparseObjGraph::Edge* edge : region.externalObjRoutes)
-    {
-        AbstractState input;
-        const SparseObjGraph::Node* sourceNode = edge->getSrcNode();
-        const ICFGNode* source = sourceNode->getICFGNode();
-        if (hasAbsState(source))
-            for (NodeID base : edge->getBases())
-                joinStates(input, getAbsState(source),
-                           svfir->getAllFieldsObjVars(
-                               svfir->getBaseObject(base)));
-        signature.objInputs.push_back(std::move(input));
-    }
-
-    // Reproduce the ICFG merge decision. A branch condition may depend on
-    // loaded Obj values, so feasibility is recorded rather than inferred.
-    for (const ICFGEdge* edge : region.externalICFGEdges)
-    {
-        const ICFGNode* source = edge->getSrcNode();
-        bool feasible = false;
-        if (hasAbsState(source))
-        {
-            const auto* intra = SVFUtil::dyn_cast<IntraCFGEdge>(edge);
-            if (intra && intra->getCondition())
-            {
-                AbstractState state = getAbsState(source);
-                feasible = isBranchEdgeFeasible(intra, state);
-                if (feasible)
-                    applyBranchRefinement(intra, state);
-                if (feasible)
-                    mergeFreedAddrs(signature.freed, state);
-            }
-            else
-            {
-                feasible = true;
-                mergeFreedAddrs(signature.freed, getAbsState(source));
-            }
-        }
-        signature.feasibleEdges.push_back(feasible);
-    }
-    return signature;
-}
-
-bool FullSparseAbstractInterpretation::reuseCycleResult(
-    const ICFGCycleWTO* cycle)
-{
-    if (!Options::AEReuse())
-        return false;
-
-    const CycleRegion* region = getCycleRegion(cycle);
-    if (!region)
-        return false;
-
-    const auto previous = lastCycleInputs.find(cycle);
-    bool stable = false;
-    if (previous != lastCycleInputs.end() && completedCycles.count(cycle))
-    {
-        stable = previous->second == collectCycleInputs(cycle, *region);
-    }
-    if (stable)
-        return true;
-    completedCycles.erase(cycle);
-    return false;
-}
-
-void FullSparseAbstractInterpretation::recordCycleResult(
-    const ICFGCycleWTO* cycle)
-{
-    if (!Options::AEReuse())
-        return;
-    if (const CycleRegion* region = getCycleRegion(cycle))
-    {
-        lastCycleInputs[cycle] = collectCycleInputs(cycle, *region);
-        completedCycles.insert(cycle);
-    }
+    const FunObjVar* fun = cycle->head()->getICFGNode()->getFun();
+    ++runningCycles[fun];
+    SemiSparseAbstractInterpretation::handleLoopOrRecursion(cycle, caller);
+    --runningCycles[fun];
 }
 
 AbstractState SemiSparseAbstractInterpretation::getFullCycleHeadState(
