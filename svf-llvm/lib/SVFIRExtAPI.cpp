@@ -505,9 +505,9 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
     else if (llvmModuleSet()->hasExtFuncAnnotation(callee, "STRCAT") ||
              llvmModuleSet()->hasExtFuncAnnotation(callee, "STRCPY"))
     {
-        // Not memcpy: strcpy stops at the source NUL and strcat writes at
-        // strlen(dst), so a field copy from offset 0 would be wrong.
-        // Keep only the returned dst alias; AbsExtAPI models the contents.
+        // strcpy/strcat: add only ret = dst. Unlike the memcpy branch below, add no
+        // field copies (addComplexConsForExt), because the copied range depends on
+        // the string contents. AbsExtAPI's strcpy/strcat handlers write dst.
         if(SVFUtil::isa<PointerType>(cs->getType()))
             addCopyEdge(getValueNode(cs->getArgOperand(0)), getValueNode(cs), CopyStmt::COPYVAL);
     }
