@@ -31,7 +31,7 @@
 
 #include "AE/Svfexe/AbstractInterpretation.h"
 #include "AE/Svfexe/SparseAbstractInterpretation.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Util/Options.h"
 
 using namespace SVF;
@@ -331,8 +331,8 @@ AddressValue AbstractInterpretation::getGepObjAddrs(const ValVar* pointer, Inter
             if (AbstractState::isNullOrBlackHoleAddr(addr))
                 continue;
             s64_t baseObj = as.getIDFromAddr(addr);
-            assert(SVFUtil::isa<ObjVar>(svfir->getSVFVar(baseObj)) && "Fail to get the base object address!");
-            NodeID gepObj = svfir->getGepObjVar(baseObj, i);
+            assert(SVFUtil::isa<ObjVar>(pag->getSVFVar(baseObj)) && "Fail to get the base object address!");
+            NodeID gepObj = pag->getGepObjVar(baseObj, i);
             as[gepObj] = AddressValue(AbstractState::getVirtualMemAddress(gepObj));
             gepAddrs.insert(AbstractState::getVirtualMemAddress(gepObj));
         }
@@ -351,7 +351,7 @@ AbstractValue AbstractInterpretation::loadValue(const ValVar* pointer, const ICF
         if (AbstractState::isNullOrBlackHoleAddr(addr))
             continue;
         res.join_with(
-            getAbsValue(svfir->getSVFVar(as.getIDFromAddr(addr)), node));
+            getAbsValue(pag->getSVFVar(as.getIDFromAddr(addr)), node));
     }
     return res;
 }
@@ -364,10 +364,10 @@ bool AbstractInterpretation::isStrongUpdate(
         return false;
 
     const NodeID obj = state.getIDFromAddr(*targets.begin());
-    if (svfir->isNullOrBlkObj(obj))
+    if (pag->isNullOrBlkObj(obj))
         return false;
 
-    const BaseObjVar* base = svfir->getBaseObject(obj);
+    const BaseObjVar* base = pag->getBaseObject(obj);
     const auto* pta = preAnalysis->getPointerAnalysis();
 
     if (pta->isHeapMemObj(obj) ||
@@ -377,7 +377,7 @@ bool AbstractInterpretation::isStrongUpdate(
 
     // Array bases are summaries; individual GEP objects may be
     // strongly updated only when their offsets are precise.
-    if (pta->isArrayMemObj(obj) && !svfir->isGepObjVar(obj))
+    if (pta->isArrayMemObj(obj) && !pag->isGepObjVar(obj))
         return false;
 
     // Reject objects whose fields may be merged by the field limit.
@@ -397,7 +397,7 @@ void AbstractInterpretation::storeValue(const ValVar* pointer, const AbstractVal
         if (AbstractState::isNullOrBlackHoleAddr(addr))
             continue;
         const ObjVar* target =
-            SVFUtil::cast<ObjVar>(svfir->getSVFVar(as.getIDFromAddr(addr)));
+            SVFUtil::cast<ObjVar>(pag->getSVFVar(as.getIDFromAddr(addr)));
         if (strongUpdate)
         {
             updateAbsValue(target, val, node);
@@ -421,7 +421,7 @@ const SVFType* AbstractInterpretation::getPointeeElement(const ObjVar* var, cons
         NodeID objId = getAbsState(node).getIDFromAddr(addr);
         if (objId == 0)
             continue;
-        return svfir->getBaseObject(objId)->getType();
+        return pag->getBaseObject(objId)->getType();
     }
     return nullptr;
 }
@@ -432,9 +432,9 @@ AbstractInterpretation::getAllocaInstByteSize(const AddrStmt* addr)
     const ICFGNode* node = addr->getICFGNode();
     if (const ObjVar* objvar = SVFUtil::dyn_cast<ObjVar>(addr->getRHSVar()))
     {
-        if (svfir->getBaseObject(objvar->getId())->isConstantByteSize())
+        if (pag->getBaseObject(objvar->getId())->isConstantByteSize())
         {
-            const u32_t size = svfir->getBaseObject(objvar->getId())->getByteSizeOfObj();
+            const u32_t size = pag->getBaseObject(objvar->getId())->getByteSizeOfObj();
             return {size, size};
         }
         else

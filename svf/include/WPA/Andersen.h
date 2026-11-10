@@ -50,7 +50,7 @@ namespace SVF
 {
 
 class ThreadCallGraph;
-class SVFIR;
+class PAG;
 
 /*!
  * Abstract class of inclusion-based Pointer Analysis
@@ -65,7 +65,7 @@ public:
 public:
 
     /// Constructor
-    AndersenBase(SVFIR* _pag, PTATY type = PTATY::Andersen_BASE, bool alias_check = true)
+    AndersenBase(PAG* _pag, PTATY type = PTATY::Andersen_BASE, bool alias_check = true)
         :  BVDataPTAImpl(_pag, type, alias_check), consCG(nullptr)
     {
         iterationForPrintStat = OnTheFlyIterBudgetForStat;
@@ -197,7 +197,7 @@ public:
     typedef SCCDetection<ConstraintGraph*> CGSCC;
 
     /// Constructor
-    Andersen(SVFIR* _pag, PTATY type = PTATY::Andersen_WPA, bool alias_check = true)
+    Andersen(PAG* _pag, PTATY type = PTATY::Andersen_WPA, bool alias_check = true)
         :  AndersenBase(_pag, type, alias_check)
     {
     }
@@ -255,14 +255,14 @@ public:
         return getPTDataTy()->unionPts(id,ptd);
     }
 
-    /// Collect exactly the SVFIR nodes q for which mayAlias(node, q) holds
+    /// Collect exactly the PAG nodes q for which mayAlias(node, q) holds
     virtual NodeBS getMayAliases(NodeID node);
 
     /// Query multiple pointers, reusing answers for equal points-to sets within this call.
-    /// @param nodes Input SVFIR node IDs in query order.
+    /// @param nodes Input PAG node IDs in query order.
     /// @return One owned alias set per input: result[i] equals getMayAliases(nodes[i]).
     ///         Duplicates are preserved; empty input returns an empty vector.
-    /// The analysis, SVFIR, SCCs and points-to mapping must stay unchanged during the call.
+    /// The analysis, PAG, SCCs and points-to mapping must stay unchanged during the call.
     /// Equal points-to sets must imply equal answers, including in subclass overrides.
     /// Cache limits exclude the returned results; split large inputs to limit output storage.
     std::vector<NodeBS> getMayAliasesBatch(const std::vector<NodeID>& nodes);
@@ -424,10 +424,10 @@ private:
     static AndersenWaveDiff* diffWave; // static instance
 
 public:
-    AndersenWaveDiff(SVFIR* _pag, PTATY type = PTATY::AndersenWaveDiff_WPA, bool alias_check = true): Andersen(_pag, type, alias_check) {}
+    AndersenWaveDiff(PAG* _pag, PTATY type = PTATY::AndersenWaveDiff_WPA, bool alias_check = true): Andersen(_pag, type, alias_check) {}
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenWaveDiff* createAndersenWaveDiff(SVFIR* _pag)
+    static AndersenWaveDiff* createAndersenWaveDiff(PAG* _pag)
     {
         if(diffWave==nullptr)
         {

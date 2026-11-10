@@ -31,7 +31,7 @@
 #define SABERCHECKERAPI_H_
 
 #include "Graphs/ICFGNode.h"
-#include "SVFIR/SVFVariables.h"
+#include "SVFValues/SVFVariables.h"
 
 namespace SVF
 {

@@ -30,7 +30,7 @@
 #ifndef SVF_LLVMLOOPANALYSIS_H
 #define SVF_LLVMLOOPANALYSIS_H
 
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "SVF-LLVM/BasicTypes.h"
 
 namespace SVF

@@ -34,7 +34,7 @@
 #ifndef INCLUDE_AE_SVFEXE_AEWTO_H_
 #define INCLUDE_AE_SVFEXE_AEWTO_H_
 
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Graphs/ICFG.h"
 #include "Graphs/CallGraph.h"
 #include "Graphs/SCC.h"
@@ -49,7 +49,7 @@ class AEWTO
 public:
     typedef SCCDetection<CallGraph*> CallGraphSCC;
 
-    AEWTO(SVFIR* pag, ICFG* icfg);
+    AEWTO(PAG* pag, ICFG* icfg);
     virtual ~AEWTO();
 
     /// Accessors for Andersen's results
@@ -87,7 +87,7 @@ public:
     }
 
 private:
-    SVFIR* svfir;
+    PAG* pag;
     ICFG* icfg;
     AndersenWaveDiff* pta;
     CallGraph* callGraph;

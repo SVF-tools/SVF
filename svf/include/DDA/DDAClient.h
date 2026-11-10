@@ -34,7 +34,7 @@
 #ifndef DDACLIENT_H_
 #define DDACLIENT_H_
 
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Graphs/SVFG.h"
 
 namespace SVF
@@ -55,7 +55,7 @@ public:
     virtual inline void initialise() {}
 
     /// Collect candidate pointers for query.
-    virtual inline OrderedNodeSet& collectCandidateQueries(SVFIR* p)
+    virtual inline OrderedNodeSet& collectCandidateQueries(PAG* p)
     {
         setPAG(p);
         if (solveAll)
@@ -75,8 +75,8 @@ public:
 
     /// Call back used by DDAVFSolver.
     virtual inline void handleStatement(const SVFGNode*, NodeID) {}
-    /// Set SVFIR graph.
-    inline void setPAG(SVFIR* g)
+    /// Set PAG graph.
+    inline void setPAG(PAG* g)
     {
         pag = g;
     }
@@ -104,7 +104,7 @@ protected:
             candidateQueries.insert(id);
     }
 
-    SVFIR*   pag;					///< SVFIR graph used by current DDA analysis
+    PAG*   pag;					///< PAG graph used by current DDA analysis
     NodeID curPtr;				///< current pointer being queried
     OrderedNodeSet candidateQueries;	///< store all candidate pointers to be queried
 
@@ -127,7 +127,7 @@ public:
     ~FunptrDDAClient() {}
 
     /// Only collect function pointers as query candidates.
-    virtual OrderedNodeSet& collectCandidateQueries(SVFIR* p);
+    virtual OrderedNodeSet& collectCandidateQueries(PAG* p);
     virtual void performStat(PointerAnalysis* pta);
 };
 
@@ -146,7 +146,7 @@ public:
     ~AliasDDAClient() {}
 
     /// Only collect function pointers as query candidates.
-    virtual OrderedNodeSet& collectCandidateQueries(SVFIR* pag);
+    virtual OrderedNodeSet& collectCandidateQueries(PAG* pag);
 
     virtual void performStat(PointerAnalysis* pta);
 

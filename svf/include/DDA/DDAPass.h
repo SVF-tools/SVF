@@ -70,7 +70,7 @@ public:
     virtual AliasResult alias(NodeID V1, NodeID V2);
 
     /// We start from here
-    virtual void runOnModule(SVFIR* module);
+    virtual void runOnModule(PAG* module);
 
     /// Select a client
     virtual void selectClient();
@@ -85,7 +85,7 @@ private:
     /// Print queries' pts
     void printQueryPTS();
     /// Create pointer analysis according to specified kind and analyze the module.
-    void runPointerAnalysis(SVFIR* module, u32_t kind);
+    void runPointerAnalysis(PAG* module, u32_t kind);
     /// Context insensitive Edge for DDA
     void initCxtInsensitiveEdges(PointerAnalysis* pta, const SVFG* svfg,const SVFGSCC* svfgSCC, SVFGEdgeSet& insensitveEdges);
     /// Return TRUE if this edge is inside a SVFG SCC, i.e., src node and dst node are in the same SCC on the SVFG.

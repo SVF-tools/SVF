@@ -211,7 +211,7 @@ void AndersenStat::statNullPtr()
 {
 
     _NumOfNullPtr = 0;
-    for (SVFIR::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
+    for (PAG::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
             iter != eiter; ++iter)
     {
         NodeID pagNodeId = iter->first;
@@ -267,7 +267,7 @@ void AndersenStat::performStat()
     assert(SVFUtil::isa<AndersenBase>(pta) && "not an andersen pta pass!! what else??");
     endClk();
 
-    SVFIR* pag = pta->getPAG();
+    PAG* pag = pta->getPAG();
     ConstraintGraph* consCG = pta->getConstraintGraph();
 
     // collect constraint graph cycles
@@ -280,7 +280,7 @@ void AndersenStat::performStat()
     u32_t totalTopLevPointers = 0;
     u32_t totalPtsSize = 0;
     u32_t totalTopLevPtsSize = 0;
-    for (SVFIR::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
+    for (PAG::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
             iter != eiter; ++iter)
     {
         NodeID node = iter->first;

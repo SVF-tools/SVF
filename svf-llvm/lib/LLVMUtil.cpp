@@ -28,8 +28,8 @@
  */
 
 #include "SVF-LLVM/LLVMUtil.h"
-#include "SVFIR/ObjTypeInfo.h"
-#include "SVFIR/SVFType.h"
+#include "SVFValues/ObjTypeInfo.h"
+#include "SVFValues/SVFType.h"
 #include <sstream>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Support/raw_ostream.h>

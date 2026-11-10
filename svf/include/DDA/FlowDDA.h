@@ -59,7 +59,7 @@ public:
     typedef BVDataPTAImpl::CallEdgeMap	CallEdgeMap;
     typedef BVDataPTAImpl::FunctionSet	FunctionSet;
     /// Constructor
-    FlowDDA(SVFIR* _pag, DDAClient* client): BVDataPTAImpl(_pag, PTATY::FlowS_DDA),
+    FlowDDA(PAG* _pag, DDAClient* client): BVDataPTAImpl(_pag, PTATY::FlowS_DDA),
         DDAVFSolver<NodeID,PointsTo,LocDPItem>(),
         _client(client)
     {

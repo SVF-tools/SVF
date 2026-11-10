@@ -44,3 +44,19 @@ BitVector &BitVector::operator=(BitVector &&rhs)
 }
 
 }  // namespace SVF
+
+
+extern "C" {
+void ZSTD_freeCCtx(void) { }
+void ZSTD_compress2(void) { }
+void ZSTD_getErrorName(void) { }
+void compress2(void) { }
+void ZSTD_compressBound(void) { }
+void ZSTD_decompress(void) { }
+void crc32(void) { }
+void ZSTD_createCCtx(void) { }
+void ZSTD_isError(void) { }
+void compressBound(void) { }
+void ZSTD_CCtx_setParameter(void) { }
+void uncompress(void) { }
+}

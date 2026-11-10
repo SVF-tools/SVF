@@ -1,4 +1,4 @@
-//===- SVFIR.h -- SVF IR Graph or PAG (Program Assignment Graph)--------------//
+//===- PAG.h -- PAG (Program Assignment Graph) -------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,19 +21,19 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * IRGraph.h
+ * PAGBase.h
  *
  *  Created on: Nov 1, 2013
  *      Author: Yulei Sui
  */
 
 
-#ifndef IRGRAPH_H_
-#define IRGRAPH_H_
+#ifndef PAGBASE_H_
+#define PAGBASE_H_
 
 #include "Graphs/GenericGraph.h"
-#include "SVFIR/SVFStatements.h"
-#include "SVFIR/SVFVariables.h"
+#include "SVFValues/SVFStatements.h"
+#include "SVFValues/SVFVariables.h"
 
 namespace SVF
 {
@@ -44,12 +44,11 @@ class ICFGNode;
 class ObjTypeInfo;
 
 /*
- * Graph representation of SVF IR.
- * It can be seen as a program assignment graph (PAG).
+ * To be extended by PAG. Perhaps we should fold this into PAG in the future.
  */
-class IRGraph : public GenericGraph<SVFVar, SVFStmt>
+class PAGBase : public GenericGraph<SVFVar, SVFStmt>
 {
-    friend class SVFIRBuilder;
+    friend class PAGBuilder;
     friend class SymbolTableBuilder;
     friend class GraphDBClient;
 
@@ -104,10 +103,10 @@ public:
     typedef Set<const SVFStmt*> SVFStmtSet;
 
 protected:
-    SVFStmt::KindToSVFStmtMapTy KindToSVFStmtSetMap; ///< SVFIR edge map containing all PAGEdges
-    SVFStmt::KindToSVFStmtMapTy KindToPTASVFStmtSetMap; ///< SVFIR edge map containing only pointer-related edges, i.e., both LHS and RHS are of pointer type
-    bool fromFile; ///< Whether the SVFIR is built according to user specified data from a txt file
-    NodeID nodeNumAfterPAGBuild; ///< initial node number after building SVFIR, excluding later added nodes, e.g., gepobj nodes
+    SVFStmt::KindToSVFStmtMapTy KindToSVFStmtSetMap; ///< PAG edge map containing all PAGEdges
+    SVFStmt::KindToSVFStmtMapTy KindToPTASVFStmtSetMap; ///< PAG edge map containing only pointer-related edges, i.e., both LHS and RHS are of pointer type
+    bool fromFile; ///< Whether the PAG is built according to user specified data from a txt file
+    NodeID nodeNumAfterPAGBuild; ///< initial node number after building PAG, excluding later added nodes, e.g., gepobj nodes
     u32_t totalPTAPAGEdge;
     u32_t valVarNum;
     u32_t objVarNum;
@@ -136,16 +135,16 @@ protected:
                             const SVFVar* op2);
 
 public:
-    IRGraph(bool buildFromFile)
+    PAGBase(bool buildFromFile)
         : totalSymNum(0), fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0), valVarNum(0), objVarNum(0),
           maxStruct(nullptr), maxStSize(0)
     {
     }
 
-    virtual ~IRGraph();
+    virtual ~PAGBase();
 
 
-    /// Whether this SVFIR built from a txt file
+    /// Whether this PAG built from a txt file
     inline bool isBuiltFromFile()
     {
         return fromFile;
@@ -346,12 +345,12 @@ public:
     /// Return graph name
     inline std::string getGraphName() const
     {
-        return "SVFIR";
+        return "PAG";
     }
 
     void dumpSymTable();
 
-    /// Dump SVFIR
+    /// Dump PAG
     void dump(std::string name);
 
     /// View graph from the debugger
@@ -390,22 +389,22 @@ namespace SVF
 {
 
 /* !
- * GenericGraphTraits specializations of SVFIR to be used for the generic graph algorithms.
- * Provide graph traits for traversing from a SVFIR node using standard graph traversals.
+ * GenericGraphTraits specializations of PAG to be used for the generic graph algorithms.
+ * Provide graph traits for traversing from a PAG node using standard graph traversals.
  */
 template<> struct GenericGraphTraits<SVF::SVFVar*> : public GenericGraphTraits<SVF::GenericNode<SVF::SVFVar,SVF::SVFStmt>*  >
 {
 };
 
-/// Inverse GenericGraphTraits specializations for SVFIR node, it is used for inverse traversal.
+/// Inverse GenericGraphTraits specializations for PAG node, it is used for inverse traversal.
 template<> struct GenericGraphTraits<Inverse<SVF::SVFVar *> > : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::SVFVar,SVF::SVFStmt>* > >
 {
 };
 
-template<> struct GenericGraphTraits<SVF::IRGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::SVFVar,SVF::SVFStmt>* >
+template<> struct GenericGraphTraits<SVF::PAGBase*> : public GenericGraphTraits<SVF::GenericGraph<SVF::SVFVar,SVF::SVFStmt>* >
 {
     typedef SVF::SVFVar* NodeRef;
 };
 
 } // End namespace llvm
-#endif /* IRGRAPH_H_ */
+#endif /* PAGBASE_H_ */

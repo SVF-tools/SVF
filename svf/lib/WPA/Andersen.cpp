@@ -81,7 +81,7 @@ AndersenBase::~AndersenBase()
  */
 void AndersenBase::initialize()
 {
-    /// Build SVFIR
+    /// Build PAG
     PointerAnalysis::initialize();
     /// Create statistic class
     stat = new AndersenStat(this);
@@ -329,12 +329,12 @@ void AndersenBase::connectCaller2CalleeParams(const CallICFGNode* cs,
     {
 
         // connect actual and formal param
-        const SVFIR::ValVarList& csArgList = pag->getCallSiteArgsList(callBlockNode);
-        const SVFIR::ValVarList& funArgList = pag->getFunArgsList(F);
+        const PAG::ValVarList& csArgList = pag->getCallSiteArgsList(callBlockNode);
+        const PAG::ValVarList& funArgList = pag->getFunArgsList(F);
         //Go through the fixed parameters.
         DBOUT(DPAGBuild, outs() << "      args:");
-        SVFIR::ValVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
-        SVFIR::ValVarList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
+        PAG::ValVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
+        PAG::ValVarList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
         for (; funArgIt != funArgEit; ++csArgIt, ++funArgIt)
         {
             //Some programs (e.g. Linux kernel) leave unneeded parameters empty.
@@ -413,8 +413,8 @@ void AndersenBase::heapAllocatorViaIndCall(const CallICFGNode* cs, NodePairSet &
 
 void AndersenBase::normalizePointsTo()
 {
-    SVFIR::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
-    SVFIR::OffsetToGepVarMap &GepObjVarMap = pag->getGepObjNodeMap();
+    PAG::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
+    PAG::OffsetToGepVarMap &GepObjVarMap = pag->getGepObjNodeMap();
 
     // clear GepObjVarMap/memToFieldsMap/nodeToSubsMap/nodeToRepMap
     // for redundant gepnodes and remove those nodes from pag
@@ -933,7 +933,7 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
 }
 
 /*!
- * Collect every SVFIR node that may alias the given node.
+ * Collect every PAG node that may alias the given node.
  */
 NodeBS Andersen::getMayAliases(NodeID node)
 {
@@ -946,7 +946,7 @@ NodeBS Andersen::getMayAliases(NodeID node)
 
     NodeBS aliases;
     const bool queryPointsToBlackHole = containBlackHoleNode(expandedPts);
-    for (SVFIR::iterator it = pag->begin(), eit = pag->end(); it != eit; ++it)
+    for (PAG::iterator it = pag->begin(), eit = pag->end(); it != eit; ++it)
     {
         const NodeID candidate = it->first;
         if (queryPointsToBlackHole)
@@ -1100,7 +1100,7 @@ void Andersen::validateSuccessTests(std::string fun)
         {
             const NodeID ptr = queries[i];
             NodeBS expected;
-            for (SVFIR::iterator it = pag->begin(), eit = pag->end(); it != eit; ++it)
+            for (PAG::iterator it = pag->begin(), eit = pag->end(); it != eit; ++it)
             {
                 if (mayAlias(ptr, it->first))
                     expected.set(it->first);
@@ -1123,7 +1123,7 @@ void Andersen::cluster(void) const
     assert(Options::MaxFieldLimit() == 0 && "Andersen::cluster: clustering for Andersen's is currently only supported in field-insensitive analysis");
     Steensgaard *steens = Steensgaard::createSteensgaard(pag);
     std::vector<std::pair<unsigned, unsigned>> keys;
-    for (SVFIR::iterator pit = pag->begin(); pit != pag->end(); ++pit)
+    for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit)
     {
         keys.push_back(std::make_pair(pit->first, 1));
     }

@@ -27,8 +27,8 @@
  *      Author: Yulei Sui
  */
 
-#ifndef INCLUDE_SVFIR_OBJTYPEINFO_H_
-#define INCLUDE_SVFIR_OBJTYPEINFO_H_
+#ifndef INCLUDE_PAG_OBJTYPEINFO_H_
+#define INCLUDE_PAG_OBJTYPEINFO_H_
 
 #include "Util/GeneralType.h"
 
@@ -225,4 +225,4 @@ public:
 
 } // End namespace SVF
 
-#endif /* INCLUDE_SVFIR_OBJTYPEINFO_H_ */
+#endif /* INCLUDE_PAG_OBJTYPEINFO_H_ */

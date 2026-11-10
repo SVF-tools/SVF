@@ -29,7 +29,7 @@
 
 #include "Graphs/ThreadCallGraph.h"
 #include "Util/ThreadAPI.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "MemoryModel/PointerAnalysis.h"
 #include "Graphs/CallGraph.h"
 
@@ -104,7 +104,7 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
         const ValVar* forkedval = tdAPI->getForkedFun(*it);
         if(SVFUtil::dyn_cast<FunValVar>(forkedval)==nullptr)
         {
-            SVFIR* pag = pta->getPAG();
+            PAG* pag = pta->getPAG();
             const NodeBS targets = pta->getPts(forkedval->getId()).toNodeBS();
             for (NodeBS::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ii++)
             {

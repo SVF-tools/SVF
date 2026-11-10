@@ -31,7 +31,7 @@
 // then runs the analysis.
 
 #include "SVF-LLVM/LLVMUtil.h"
-#include "SVF-LLVM/SVFIRBuilder.h"
+#include "SVF-LLVM/PAGBuilder.h"
 #include "CFL/CFLAlias.h"
 #include "CFL/CFLVF.h"
 
@@ -48,34 +48,34 @@ int main(int argc, char ** argv)
                     );
 
     // Pointer to the SVF Intermediate Representation (IR) of the module
-    SVFIR* svfir = nullptr;
+    PAG* pag = nullptr;
 
-    // If no CFLGraph option is specified, the SVFIR is built from the .bc (bytecode) files of the modules
+    // If no CFLGraph option is specified, the PAG is built from the .bc (bytecode) files of the modules
     if (Options::CFLGraph().empty())
     {
         LLVMModuleSet::buildSVFModule(moduleNameVec);
-        SVFIRBuilder builder;
-        svfir = builder.build();
-    }  // if no dot form CFLGraph is specified, we use svfir from .bc.
+        PAGBuilder builder;
+        pag = builder.build();
+    }  // if no dot form CFLGraph is specified, we use pag from .bc.
 
     // The CFLBase pointer that will be used to run the analysis
     std::unique_ptr<CFLBase> cfl;
 
     // Determines which type of analysis to run based on the options and sets up cfl accordingly
     if (Options::CFLSVFG())
-        cfl = std::make_unique<CFLVF>(svfir);
+        cfl = std::make_unique<CFLVF>(pag);
     else if (Options::POCRHybrid())
-        cfl = std::make_unique<POCRHybrid>(svfir);
+        cfl = std::make_unique<POCRHybrid>(pag);
     else if (Options::POCRAlias())
-        cfl = std::make_unique<POCRAlias>(svfir);
+        cfl = std::make_unique<POCRAlias>(pag);
     else
-        cfl = std::make_unique<CFLAlias>(svfir); // if no svfg is specified, we use CFLAlias as the default one.
+        cfl = std::make_unique<CFLAlias>(pag); // if no svfg is specified, we use CFLAlias as the default one.
 
     // Runs the analysis
     cfl->analyze();
 
-    // Releases the SVFIR and the LLVMModuleSet to free memory
-    SVFIR::releaseSVFIR();
+    // Releases the PAG and the LLVMModuleSet to free memory
+    PAG::releasePAG();
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
 
 

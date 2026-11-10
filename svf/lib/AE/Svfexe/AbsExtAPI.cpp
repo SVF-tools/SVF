@@ -28,14 +28,14 @@
 //
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "AE/Svfexe/AbstractInterpretation.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Util/Options.h"
 
 using namespace SVF;
 AbsExtAPI::AbsExtAPI(AbstractInterpretation* ae): ae(ae)
 {
-    svfir = PAG::getPAG();
-    icfg = svfir->getICFG();
+    pag = PAG::getPAG();
+    icfg = pag->getICFG();
     initExtFunMap();
 }
 
@@ -262,7 +262,7 @@ void AbsExtAPI::collectCheckPoint()
     Set<std::string> buf_checkpoint_names = {"UNSAFE_BUFACCESS", "SAFE_BUFACCESS"};
     Set<std::string> nullptr_checkpoint_names = {"UNSAFE_LOAD", "SAFE_LOAD"};
 
-    for (auto it = svfir->getICFG()->begin(); it != svfir->getICFG()->end(); ++it)
+    for (auto it = pag->getICFG()->begin(); it != pag->getICFG()->end(); ++it)
     {
         const ICFGNode* node = it->second;
         if (const CallICFGNode *call = SVFUtil::dyn_cast<CallICFGNode>(node))
@@ -450,15 +450,15 @@ IntervalValue AbsExtAPI::getStrlen(const ValVar *strValue, const ICFGNode* node)
     {
         NodeID objId = as.getIDFromAddr(addr);
         // A freed address also resolves to the blackhole object.
-        if (svfir->isNullOrBlkObj(objId))
+        if (pag->isNullOrBlkObj(objId))
             continue;
-        if (svfir->getBaseObject(objId)->isConstantByteSize())
+        if (pag->getBaseObject(objId)->isConstantByteSize())
         {
-            dst_size = svfir->getBaseObject(objId)->getByteSizeOfObj();
+            dst_size = pag->getBaseObject(objId)->getByteSizeOfObj();
         }
         else
         {
-            const ICFGNode* icfgNode = svfir->getBaseObject(objId)->getICFGNode();
+            const ICFGNode* icfgNode = pag->getBaseObject(objId)->getICFGNode();
             if (!icfgNode)
                 continue;
             for (const SVFStmt* stmt2: icfgNode->getSVFStmts())

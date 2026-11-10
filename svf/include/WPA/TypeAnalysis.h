@@ -38,14 +38,14 @@ namespace SVF
 
 class CallEdgeMap;
 class CallSiteToFunPtrMap;
-class SVFIR;
+class PAG;
 
 class TypeAnalysis:  public AndersenBase
 {
 
 public:
     /// Constructor
-    TypeAnalysis(SVFIR* pag)
+    TypeAnalysis(PAG* pag)
         :  AndersenBase(pag, TypeCPP_WPA)
     {
     }

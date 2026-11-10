@@ -1,4 +1,4 @@
-//===- SVFIRBuilder.cpp -- SVFIR builder-----------------------------------------//
+//===- PAGBuilder.cpp -- PAG builder------------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * SVFIRBuilder.cpp
+ * PAGBuilder.cpp
  *
  *  Created on: Nov 1, 2013
  *      Author: Yulei Sui
@@ -29,7 +29,7 @@
  *      Author: Xiao Cheng, Yulei Sui
  */
 
-#include "SVF-LLVM/SVFIRBuilder.h"
+#include "SVF-LLVM/PAGBuilder.h"
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/CHGBuilder.h"
 #include "SVF-LLVM/CppUtil.h"
@@ -37,7 +37,7 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/ObjTypeInference.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
-#include "SVFIR/PAGBuilderFromFile.h"
+#include "Graphs/PAGBuilderFromFile.h"
 #include "Util/CallGraphBuilder.h"
 #include "Graphs/CallGraph.h"
 #include "Util/Options.h"
@@ -50,15 +50,15 @@ using namespace LLVMUtil;
 
 
 /*!
- * Start building SVFIR here
+ * Start building PAG here
  */
-SVFIR* SVFIRBuilder::build()
+PAG* PAGBuilder::build()
 {
     double startTime = SVFStat::getClk(true);
 
-    DBOUT(DGENERAL, outs() << pasMsg("\t Building SVFIR ...\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\t Building PAG ...\n"));
 
-    // If the SVFIR has been built before, then we return the unique SVFIR of the program
+    // If the PAG has been built before, then we return the unique PAG of the program
     if(pag->getNodeNumAfterPAGBuild() > 1)
         return pag;
 
@@ -70,10 +70,10 @@ SVFIR* SVFIRBuilder::build()
     pag->icfg = icfgbuilder.build();
 
     /// initial external library information
-    /// initial SVFIR nodes
+    /// initial PAG nodes
     initialiseNodes();
     initialiseAggregateReturns();
-    /// initial SVFIR edges:
+    /// initial PAG edges:
     ///// handle globals
     visitGlobal();
     ///// collect exception vals in the program
@@ -87,7 +87,7 @@ SVFIR* SVFIRBuilder::build()
     {
         funset.push_back(llvmModuleSet()->getFunObjVar(item));
     }
-    pag->callGraph = callGraphBuilder.buildSVFIRCallGraph(funset);
+    pag->callGraph = callGraphBuilder.buildPAGCallGraph(funset);
 
     CHGraph* chg = new CHGraph();
     CHGBuilder chgbuilder(chg);
@@ -104,7 +104,7 @@ SVFIR* SVFIRBuilder::build()
             /// collect return node of function fun
             if(!fun.isDeclaration())
             {
-                /// Return SVFIR node will not be created for function which can not
+                /// Return PAG node will not be created for function which can not
                 /// reach the return instruction due to call to abort(), exit(),
                 /// etc. In 176.gcc of SPEC 2000, function build_objc_string() from
                 /// c-lang.c shows an example when fun.doesNotReturn() evaluates
@@ -117,7 +117,7 @@ SVFIR* SVFIRBuilder::build()
                 }
 
                 /// To be noted, we do not record arguments which are in declared function without body
-                /// TODO: what about external functions with SVFIR imported by commandline?
+                /// TODO: what about external functions with PAG imported by commandline?
                 for (Function::const_arg_iterator I = fun.arg_begin(), E = fun.arg_end();
                         I != E; ++I)
                 {
@@ -158,11 +158,11 @@ SVFIR* SVFIRBuilder::build()
 
     pag->setNodeNumAfterPAGBuild(pag->getTotalNodeNum());
 
-    // dump SVFIR
+    // dump PAG
     if (Options::PAGDotGraph())
-        pag->dump("svfir_initial");
+        pag->dump("pag_initial");
 
-    // print to command line of the SVFIR graph
+    // print to command line of the PAG graph
     if (Options::PAGPrint())
         pag->print();
 
@@ -176,19 +176,19 @@ SVFIR* SVFIRBuilder::build()
         loopAnalysis.build(pag->getICFG());
     }
 
-    // dump SVFIR as JSON
+    // dump PAG as JSON
     if (!Options::DumpJson().empty())
     {
-        assert(false && "please implement SVFIRWriter::writeJsonToPath");
+        assert(false && "please implement PAGWriter::writeJsonToPath");
     }
 
     double endTime = SVFStat::getClk(true);
-    SVFStat::timeOfBuildingSVFIR = (endTime - startTime) / TIMEINTERVAL;
+    SVFStat::timeOfBuildingPAG = (endTime - startTime) / TIMEINTERVAL;
 
     return pag;
 }
 
-void SVFIRBuilder::initFunObjVar()
+void PAGBuilder::initFunObjVar()
 {
     for (Module& mod : llvmModuleSet()->getLLVMModules())
     {
@@ -216,7 +216,7 @@ void SVFIRBuilder::initFunObjVar()
 
 }
 
-void SVFIRBuilder::initSVFBasicBlock(const Function* func)
+void PAGBuilder::initSVFBasicBlock(const Function* func)
 {
     FunObjVar *svfFun = const_cast<FunObjVar *>(llvmModuleSet()->getFunObjVar(func));
     for (Function::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
@@ -259,7 +259,7 @@ void SVFIRBuilder::initSVFBasicBlock(const Function* func)
 }
 
 
-void SVFIRBuilder::initDomTree(FunObjVar* svffun, const Function* fun)
+void PAGBuilder::initDomTree(FunObjVar* svffun, const Function* fun)
 {
     if (fun->isDeclaration())
         return;
@@ -331,7 +331,7 @@ void SVFIRBuilder::initDomTree(FunObjVar* svffun, const Function* fun)
     }
 }
 
-void SVFIRBuilder::createFunObjVars()
+void PAGBuilder::createFunObjVars()
 {
     std::vector<FunObjVar*> funset;
     // Iterate over all object symbols in the symbol table
@@ -373,7 +373,7 @@ void SVFIRBuilder::createFunObjVars()
     initFunObjVar();
 }
 
-void SVFIRBuilder::initialiseBaseObjVars()
+void PAGBuilder::initialiseBaseObjVars()
 {
     // Iterate over all object symbols in the symbol table
     for (LLVMModuleSet::ValueToIDMapTy::iterator iter =
@@ -450,7 +450,7 @@ void SVFIRBuilder::initialiseBaseObjVars()
 
 }
 
-void SVFIRBuilder::initialiseValVars()
+void PAGBuilder::initialiseValVars()
 {
     // Iterate over all value symbols in the symbol table
     for (LLVMModuleSet::ValueToIDMapTy::iterator iter =
@@ -532,9 +532,9 @@ void SVFIRBuilder::initialiseValVars()
 /*
  * Initial all the nodes from symbol table
  */
-void SVFIRBuilder::initialiseNodes()
+void PAGBuilder::initialiseNodes()
 {
-    DBOUT(DPAGBuild, outs() << "Initialise SVFIR Nodes ...\n");
+    DBOUT(DPAGBuild, outs() << "Initialise PAG Nodes ...\n");
 
 
     pag->addBlackholeObjNode();
@@ -622,7 +622,7 @@ void SVFIRBuilder::initialiseNodes()
     e.g. field_idx = getelementptr i8, %struct_type %p, i64 1
 
 */
-u32_t SVFIRBuilder::inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, AccessPath& ap, APOffset idx)
+u32_t PAGBuilder::inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, AccessPath& ap, APOffset idx)
 {
     return 0;
 }
@@ -633,7 +633,7 @@ u32_t SVFIRBuilder::inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, 
  * otherwise if "i" is a variable determined by runtime, then it is a variant offset
  * Return TRUE if the offset of this GEP insn is a constant.
  */
-bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
+bool PAGBuilder::computeGepOffset(const User *V, AccessPath& ap)
 {
     assert(V);
 
@@ -743,7 +743,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
 /*!
  * Handle constant expression, and connect the gep edge
  */
-void SVFIRBuilder::processCE(const Value* val)
+void PAGBuilder::processCE(const Value* val)
 {
     if (const Constant* ref = SVFUtil::dyn_cast<Constant>(val))
     {
@@ -857,7 +857,7 @@ void SVFIRBuilder::processCE(const Value* val)
         else if (SVFUtil::isa<BlockAddress>(ref))
         {
             // blockaddress instruction (e.g. i8* blockaddress(@run_vm, %182))
-            // is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and SVFIRBuilder.cpp:183-194
+            // is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and PAGBuilder.cpp:183-194
             const Value* cval = getCurrentValue();
             const SVFBasicBlock* cbb = getCurrentBB();
             setCurrentLocation(ref, (SVFBasicBlock*) nullptr);
@@ -877,7 +877,7 @@ void SVFIRBuilder::processCE(const Value* val)
  * FIXME:Here we only get the field that actually used in the program
  * We ignore the initialization of global variable field that not used in the program
  */
-NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset, SVFType* tpy)
+NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset, SVFType* tpy)
 {
 
     // if the global variable do not have any field needs to be initialized
@@ -904,7 +904,7 @@ NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset,
  * struct Z *m = &z;       // store z m  (pointer type)
  * struct Z n = {10,&z.s}; // store z.s n ,  &z.s constant expression (constant expression)
  */
-void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
+void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
                                  u32_t offset)
 {
     DBOUT(DPAGBuild, outs() << "global " << LLVMUtil::dumpValue(gvar)
@@ -932,7 +932,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
         else if (SVFUtil::isa<BlockAddress>(C))
         {
             // blockaddress instruction (e.g. i8* blockaddress(@run_vm, %182))
-            // is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and SVFIRBuilder.cpp:183-194
+            // is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and PAGBuilder.cpp:183-194
             processCE(C);
             setCurrentLocation(C, (SVFBasicBlock*) nullptr);
             addAddrEdge(pag->getConstantNode(), src);
@@ -948,7 +948,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     }
     else if (SVFUtil::isa<ConstantArray, ConstantStruct>(C))
     {
-        if(cppUtil::isValVtbl(gvar) && !Options::VtableInSVFIR())
+        if(cppUtil::isValVtbl(gvar) && !Options::VtableInPAG())
             return;
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
         {
@@ -982,9 +982,9 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
 }
 
 /*!
- *  Visit global variables for building SVFIR
+ *  Visit global variables for building PAG
  */
-void SVFIRBuilder::visitGlobal()
+void PAGBuilder::visitGlobal()
 {
 
     /// initialize global variable
@@ -1036,9 +1036,9 @@ void SVFIRBuilder::visitGlobal()
 
 /*!
  * Visit alloca instructions
- * Add edge V (dst) <-- O (src), V here is a value node on SVFIR, O is object node on SVFIR
+ * Add edge V (dst) <-- O (src), V here is a value node on PAG, O is object node on PAG
  */
-void SVFIRBuilder::visitAllocaInst(AllocaInst &inst)
+void PAGBuilder::visitAllocaInst(AllocaInst &inst)
 {
 
     // AllocaInst should always be a pointer type
@@ -1057,7 +1057,7 @@ void SVFIRBuilder::visitAllocaInst(AllocaInst &inst)
 /*!
  * Visit phi instructions
  */
-void SVFIRBuilder::visitPHINode(PHINode &inst)
+void PAGBuilder::visitPHINode(PHINode &inst)
 {
 
     DBOUT(DPAGBuild,
@@ -1083,7 +1083,7 @@ void SVFIRBuilder::visitPHINode(PHINode &inst)
 /*
  * Visit load instructions
  */
-void SVFIRBuilder::visitLoadInst(LoadInst &inst)
+void PAGBuilder::visitLoadInst(LoadInst &inst)
 {
     DBOUT(DPAGBuild,
           outs() << "process load " << LLVMUtil::dumpValue(&inst) << "\n");
@@ -1101,7 +1101,7 @@ void SVFIRBuilder::visitLoadInst(LoadInst &inst)
 /*!
  * Visit store instructions
  */
-void SVFIRBuilder::visitStoreInst(StoreInst &inst)
+void PAGBuilder::visitStoreInst(StoreInst &inst)
 {
     // StoreInst itself should always not be a pointer type
     assert(!SVFUtil::isa<PointerType>(inst.getType()));
@@ -1123,7 +1123,7 @@ void SVFIRBuilder::visitStoreInst(StoreInst &inst)
 /*!
  * Visit getelementptr instructions
  */
-void SVFIRBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
+void PAGBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
 {
 
     NodeID dst = getValueNode(&inst);
@@ -1163,7 +1163,7 @@ void SVFIRBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
 /*
  * Visit cast instructions
  */
-void SVFIRBuilder::visitCastInst(CastInst &inst)
+void PAGBuilder::visitCastInst(CastInst &inst)
 {
 
     DBOUT(DPAGBuild,
@@ -1178,7 +1178,7 @@ void SVFIRBuilder::visitCastInst(CastInst &inst)
 /*!
  * Visit Binary Operator
  */
-void SVFIRBuilder::visitBinaryOperator(BinaryOperator &inst)
+void PAGBuilder::visitBinaryOperator(BinaryOperator &inst)
 {
     NodeID dst = getValueNode(&inst);
     assert(inst.getNumOperands() == 2 && "not two operands for BinaryOperator?");
@@ -1193,7 +1193,7 @@ void SVFIRBuilder::visitBinaryOperator(BinaryOperator &inst)
 /*!
  * Visit Unary Operator
  */
-void SVFIRBuilder::visitUnaryOperator(UnaryOperator &inst)
+void PAGBuilder::visitUnaryOperator(UnaryOperator &inst)
 {
     NodeID dst = getValueNode(&inst);
     assert(inst.getNumOperands() == 1 && "not one operand for Unary instruction?");
@@ -1206,7 +1206,7 @@ void SVFIRBuilder::visitUnaryOperator(UnaryOperator &inst)
 /*!
  * Visit compare instruction
  */
-void SVFIRBuilder::visitCmpInst(CmpInst &inst)
+void PAGBuilder::visitCmpInst(CmpInst &inst)
 {
     NodeID dst = getValueNode(&inst);
     assert(inst.getNumOperands() == 2 && "not two operands for compare instruction?");
@@ -1222,7 +1222,7 @@ void SVFIRBuilder::visitCmpInst(CmpInst &inst)
 /*!
  * Visit select instructions
  */
-void SVFIRBuilder::visitSelectInst(SelectInst &inst)
+void PAGBuilder::visitSelectInst(SelectInst &inst)
 {
 
     DBOUT(DPAGBuild,
@@ -1236,17 +1236,17 @@ void SVFIRBuilder::visitSelectInst(SelectInst &inst)
     addSelectStmt(dst,src1,src2, cond);
 }
 
-void SVFIRBuilder::visitCallInst(CallInst &i)
+void PAGBuilder::visitCallInst(CallInst &i)
 {
     visitCallSite(&i);
 }
 
-void SVFIRBuilder::visitInvokeInst(InvokeInst &i)
+void PAGBuilder::visitInvokeInst(InvokeInst &i)
 {
     visitCallSite(&i);
 }
 
-void SVFIRBuilder::visitCallBrInst(CallBrInst &i)
+void PAGBuilder::visitCallBrInst(CallBrInst &i)
 {
     visitCallSite(&i);
 }
@@ -1254,7 +1254,7 @@ void SVFIRBuilder::visitCallBrInst(CallBrInst &i)
 /*
  * Visit callsites
  */
-void SVFIRBuilder::visitCallSite(CallBase* cs)
+void PAGBuilder::visitCallSite(CallBase* cs)
 {
 
     // skip llvm intrinsics
@@ -1307,7 +1307,7 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
 /*!
  * Visit return instructions of a function
  */
-void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
+void PAGBuilder::visitReturnInst(ReturnInst &inst)
 {
 
     // ReturnInst itself should always not be a pointer type
@@ -1374,8 +1374,8 @@ static std::optional<unsigned> getFixedVectorLane(const Type* type,
     return static_cast<unsigned>(constant->getZExtValue());
 }
 
-/// Describe one field definition without emitting any SVFIR statements.
-bool SVFIRBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
+/// Describe one field definition without emitting any PAG statements.
+bool PAGBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
         std::vector<AggregateFieldKey>& operands)
 {
     const Value* value = field.first;
@@ -1467,7 +1467,7 @@ bool SVFIRBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
 
 /*!
  * Return the node for (aggregate, indices), reusing cached fields.
- * Unsupported dependencies return false without changing SVFIR or node.
+ * Unsupported dependencies return false without changing PAG or node.
  *
  * Here, the field node for (%a, {0}) copies %p; %x copies that node:
  *   define ptr @field(ptr %p) {
@@ -1476,7 +1476,7 @@ bool SVFIRBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
  *     ret ptr %x
  *   }
  */
-bool SVFIRBuilder::getAggregateFieldNode(const Value* aggregate,
+bool PAGBuilder::getAggregateFieldNode(const Value* aggregate,
         const AggregateField& indices, NodeID& node)
 {
     const AggregateFieldKey root{aggregate, indices};
@@ -1503,7 +1503,7 @@ bool SVFIRBuilder::getAggregateFieldNode(const Value* aggregate,
         worklist.insert(worklist.end(), operands.begin(), operands.end());
     }
 
-    // Validate the entire dependency graph before changing SVFIR. Allocate every
+    // Validate the entire dependency graph before changing PAG. Allocate every
     // field before wiring definitions, including loop-carried Phi/Select cycles.
     for (const auto& definition : definitions)
     {
@@ -1573,8 +1573,8 @@ static bool canModelAggregateReturn(const Function* fun)
 
 /// Discover demanded fields and preallocate output parameters, slots and
 /// snapshots before visiting instructions. See the aggregate return example
-/// in SVFIRBuilder.h.
-void SVFIRBuilder::initialiseAggregateReturns()
+/// in PAGBuilder.h.
+void PAGBuilder::initialiseAggregateReturns()
 {
     const auto demands = discoverAggregateReturnFields();
     const SVFType* pointerType = llvmModuleSet()->getSVFType(
@@ -1595,8 +1595,8 @@ void SVFIRBuilder::initialiseAggregateReturns()
 /// such as field {0} of make in the aggregate return example. Paths that
 /// getAggregateFieldOperands cannot follow are skipped; getAggregateFieldNode
 /// later decides which extracted fields are modeled.
-SVFIRBuilder::AggregateReturnFields
-SVFIRBuilder::discoverAggregateReturnFields()
+PAGBuilder::AggregateReturnFields
+PAGBuilder::discoverAggregateReturnFields()
 {
     std::vector<AggregateFieldKey> worklist;
     for (Module& module : llvmModuleSet()->getLLVMModules())
@@ -1642,7 +1642,7 @@ SVFIRBuilder::discoverAggregateReturnFields()
 /// Add one output parameter to fun for each demanded field, in field-path
 /// order (out_obj in the aggregate return example). The LLVM signature does
 /// not change.
-void SVFIRBuilder::createAggregateReturnParams(const Function* fun,
+void PAGBuilder::createAggregateReturnParams(const Function* fun,
         const std::set<AggregateField>& fields, const SVFType* pointerType)
 {
     FunObjVar* svfFun =
@@ -1667,7 +1667,7 @@ void SVFIRBuilder::createAggregateReturnParams(const Function* fun,
 /// output parameter (obj, A and V in the aggregate return example). The
 /// address is defined at the call, and the snapshot is loaded at the
 /// instruction after the call.
-void SVFIRBuilder::createAggregateCallSlots(const Function* fun,
+void PAGBuilder::createAggregateCallSlots(const Function* fun,
         const SVFType* pointerType)
 {
     const auto& params = aggregateReturnParams.at(fun);
@@ -1728,7 +1728,7 @@ void SVFIRBuilder::createAggregateCallSlots(const Function* fun,
 /// Append the slot addresses of call as actual output arguments and pass each
 /// to the callee's output parameter. createAggregateCallSlots has already
 /// created the slots, their addresses and the snapshot loads.
-void SVFIRBuilder::addAggregateCallFields(const CallInst* call)
+void PAGBuilder::addAggregateCallFields(const CallInst* call)
 {
     auto found = aggregateCallArgs.find(call);
     if (found == aggregateCallArgs.end())
@@ -1746,7 +1746,7 @@ void SVFIRBuilder::addAggregateCallFields(const CallInst* call)
 
 /// Store shared field nodes into the callee's output parameters. An unsupported
 /// field gets its own fallback; supported siblings keep their shared definitions.
-void SVFIRBuilder::addAggregateReturnStores(ReturnInst& inst)
+void PAGBuilder::addAggregateReturnStores(ReturnInst& inst)
 {
     auto found = aggregateReturnParams.find(inst.getFunction());
     if (found == aggregateReturnParams.end() || !inst.getReturnValue())
@@ -1769,8 +1769,8 @@ void SVFIRBuilder::addAggregateReturnStores(ReturnInst& inst)
 /// extractelement with a constant index, reads. For example,
 ///   %x = extractvalue {ptr, ptr} %a, 0
 /// reads field {0} of %a.
-std::optional<SVFIRBuilder::AggregateFieldKey>
-SVFIRBuilder::getExtractedField(const Instruction& inst)
+std::optional<PAGBuilder::AggregateFieldKey>
+PAGBuilder::getExtractedField(const Instruction& inst)
 {
     if (!inst.getType()->isPointerTy())
         return std::nullopt;
@@ -1794,7 +1794,7 @@ SVFIRBuilder::getExtractedField(const Instruction& inst)
 
 /// Copy an extracted pointer from its shared field definition. Unsupported
 /// fields keep the existing black-hole fallback.
-void SVFIRBuilder::addExtractedFieldCopy(Instruction& inst)
+void PAGBuilder::addExtractedFieldCopy(Instruction& inst)
 {
     NodeID dst = getValueNode(&inst);
     const auto field = getExtractedField(inst);
@@ -1818,7 +1818,7 @@ void SVFIRBuilder::addExtractedFieldCopy(Instruction& inst)
  * %r. Further extracts of %s's field 0 reuse that definition. Unsupported
  * fields keep the existing black-hole fallback.
  */
-void SVFIRBuilder::visitExtractValueInst(ExtractValueInst &inst)
+void PAGBuilder::visitExtractValueInst(ExtractValueInst &inst)
 {
     addExtractedFieldCopy(inst);
 }
@@ -1835,7 +1835,7 @@ void SVFIRBuilder::visitExtractValueInst(ExtractValueInst &inst)
  * at %a, %b and %s, then this visitor copies the lane into %r. Dynamic indices,
  * scalable vectors and unsupported lane definitions keep the existing fallback.
  */
-void SVFIRBuilder::visitExtractElementInst(ExtractElementInst &inst)
+void PAGBuilder::visitExtractElementInst(ExtractElementInst &inst)
 {
     addExtractedFieldCopy(inst);
 }
@@ -1844,7 +1844,7 @@ void SVFIRBuilder::visitExtractElementInst(ExtractElementInst &inst)
  * Branch and switch instructions are treated as UnaryOP
  * br %cmp label %if.then, label %if.else
  */
-void SVFIRBuilder::visitBranchInst(BranchInst &inst)
+void PAGBuilder::visitBranchInst(BranchInst &inst)
 {
     NodeID brinst = getValueNode(&inst);
     NodeID cond;
@@ -1923,7 +1923,7 @@ void SVFIRBuilder::visitBranchInst(BranchInst &inst)
  * Note: default case value is nullptr
  */
 /// Preserve LLVM switch destinations and case values in BranchStmt.
-void SVFIRBuilder::visitSwitchInst(SwitchInst &inst)
+void PAGBuilder::visitSwitchInst(SwitchInst &inst)
 {
     NodeID brinst = getValueNode(&inst);
     NodeID cond = getValueNode(inst.getCondition());
@@ -1973,7 +1973,7 @@ void SVFIRBuilder::visitSwitchInst(SwitchInst &inst)
 /// ; Read a single integer argument from %ap2
 /// %tmp = va_arg i8* %ap2, i32 (VAArgInst)
 /// TODO: for now, create a copy edge from %ap2 to %tmp, we assume here %tmp should point to the n-th argument of the var_args
-void SVFIRBuilder::visitVAArgInst(VAArgInst &inst)
+void PAGBuilder::visitVAArgInst(VAArgInst &inst)
 {
     NodeID dst = getValueNode(&inst);
     Value* opnd = inst.getPointerOperand();
@@ -1985,7 +1985,7 @@ void SVFIRBuilder::visitVAArgInst(VAArgInst &inst)
 /// If <val> is undef or poison, ‘freeze’ returns an arbitrary, but fixed value of type `ty`
 /// Otherwise, this instruction is a no-op and returns the input <val>
 /// For now, we assume <val> is never a poison or undef.
-void SVFIRBuilder::visitFreezeInst(FreezeInst &inst)
+void PAGBuilder::visitFreezeInst(FreezeInst &inst)
 {
     NodeID dst = getValueNode(&inst);
     for (u32_t i = 0; i < inst.getNumOperands(); i++)
@@ -2000,7 +2000,7 @@ void SVFIRBuilder::visitFreezeInst(FreezeInst &inst)
 /*!
  * Add the constraints for a direct, non-external call.
  */
-void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
+void PAGBuilder::handleDirectCall(CallBase* cs, const Function *F)
 {
 
     assert(F);
@@ -2095,7 +2095,7 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
 
     The base value for %0 is still %0
  */
-const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
+const Value* PAGBuilder::getBaseValueForExtArg(const Value* V)
 {
     const Value*  value = stripAllCasts(V);
     assert(value && "null ptr?");
@@ -2221,7 +2221,7 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
 /*!
  * Indirect call is resolved on-the-fly during pointer analysis
  */
-void SVFIRBuilder::handleIndCall(CallBase* cs)
+void PAGBuilder::handleIndCall(CallBase* cs)
 {
     const CallICFGNode* cbn = llvmModuleSet()->getCallICFGNode(cs);
     NodeID indFunPtrId = llvmModuleSet()->getValueNode(cs->getCalledOperand());
@@ -2229,7 +2229,7 @@ void SVFIRBuilder::handleIndCall(CallBase* cs)
     pag->addIndirectCallsites(cbn,indFunPtrId);
 }
 
-void SVFIRBuilder::updateCallGraph(CallGraph* callgraph)
+void PAGBuilder::updateCallGraph(CallGraph* callgraph)
 {
     CallGraph::CallEdgeMap::const_iterator iter = callgraph->getIndCallMap().begin();
     CallGraph::CallEdgeMap::const_iterator eiter = callgraph->getIndCallMap().end();
@@ -2256,17 +2256,17 @@ void SVFIRBuilder::updateCallGraph(CallGraph* callgraph)
         }
     }
 
-    // dump SVFIR
+    // dump PAG
     if (Options::PAGDotGraph())
-        pag->dump("svfir_final");
+        pag->dump("pag_final");
 }
 
 /*
  * TODO: more sanity checks might be needed here
  */
-void SVFIRBuilder::sanityCheck()
+void PAGBuilder::sanityCheck()
 {
-    for (SVFIR::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
+    for (PAG::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
     {
         (void) pag->getGNode(nIter->first);
         //TODO::
@@ -2290,7 +2290,7 @@ void SVFIRBuilder::sanityCheck()
  * Add a temp field value node according to base value and offset
  * this node is after the initial node method, it is out of scope of symInfo table
  */
-NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const SVFType* elementType)
+NodeID PAGBuilder::getGepValVar(const Value* val, const AccessPath& ap, const SVFType* elementType)
 {
     NodeID base = getValueNode(val);
     NodeID gepval = pag->getGepValVar(llvmModuleSet()->getValueNode(curVal), base, ap);
@@ -2299,8 +2299,8 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const 
         assert(((int) UINT_MAX)==-1 && "maximum limit of unsigned int is not -1?");
         /*
          * getGepValVar can only be called from two places:
-         * 1. SVFIRBuilder::addComplexConsForExt to handle external calls
-         * 2. SVFIRBuilder::getGlobalVarField to initialize global variable
+         * 1. PAGBuilder::addComplexConsForExt to handle external calls
+         * 2. PAGBuilder::getGlobalVarField to initialize global variable
          * so curVal can only be
          * 1. Instruction
          * 2. GlobalVariable
@@ -2338,7 +2338,7 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const 
         return gepval;
 }
 
-NodeID SVFIRBuilder::getDirectAccessFieldZeroValVar(const Value* ptr, const Type* accessTy)
+NodeID PAGBuilder::getDirectAccessFieldZeroValVar(const Value* ptr, const Type* accessTy)
 {
     if (!Options::ModelArrays() || SVFUtil::isa<llvm::GEPOperator>(ptr))
         return 0;
@@ -2358,19 +2358,19 @@ NodeID SVFIRBuilder::getDirectAccessFieldZeroValVar(const Value* ptr, const Type
 /*
  * curVal   <-------->  PAGEdge
  * Instruction          Any Edge
- * Argument             CopyEdge  (SVFIR::addFormalParamBlackHoleAddrEdge)
- * ConstantExpr         CopyEdge  (Int2PtrConstantExpr   CastConstantExpr  SVFIRBuilder::processCE)
- *                      GepEdge   (GepConstantExpr   SVFIRBuilder::processCE)
- * ConstantPointerNull  CopyEdge  (3-->2 NullPtr-->BlkPtr SVFIR::addNullPtrNode)
- *  				    AddrEdge  (0-->2 BlkObj-->BlkPtr SVFIR::addNullPtrNode)
- * GlobalVariable       AddrEdge  (SVFIRBuilder::visitGlobal)
- *                      GepEdge   (SVFIRBuilder::getGlobalVarField)
- * Function             AddrEdge  (SVFIRBuilder::visitGlobal)
- * Constant             StoreEdge (SVFIRBuilder::InitialGlobal)
+ * Argument             CopyEdge  (PAG::addFormalParamBlackHoleAddrEdge)
+ * ConstantExpr         CopyEdge  (Int2PtrConstantExpr   CastConstantExpr  PAGBuilder::processCE)
+ *                      GepEdge   (GepConstantExpr   PAGBuilder::processCE)
+ * ConstantPointerNull  CopyEdge  (3-->2 NullPtr-->BlkPtr PAG::addNullPtrNode)
+ *  				    AddrEdge  (0-->2 BlkObj-->BlkPtr PAG::addNullPtrNode)
+ * GlobalVariable       AddrEdge  (PAGBuilder::visitGlobal)
+ *                      GepEdge   (PAGBuilder::getGlobalVarField)
+ * Function             AddrEdge  (PAGBuilder::visitGlobal)
+ * Constant             StoreEdge (PAGBuilder::InitialGlobal)
  */
-void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
+void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
 {
-    if (SVFIR::pagReadFromTXT())
+    if (PAG::pagReadFromTXT())
         return;
 
     assert(curVal && "current Val is nullptr?");
@@ -2468,7 +2468,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
  * Otherwise return the node id itself
  * s32_t offset : gep offset
  */
-AccessPath SVFIRBuilder::getAccessPathFromBaseNode(NodeID nodeId)
+AccessPath PAGBuilder::getAccessPathFromBaseNode(NodeID nodeId)
 {
     SVFVar* node  = pag->getGNode(nodeId);
     SVFStmt::SVFStmtSetTy& geps = node->getIncomingEdges(SVFStmt::Gep);

@@ -32,7 +32,7 @@
 #include "Util/PTAStat.h"
 #include "MemoryModel/PTATY.h"
 #include "MemoryModel/PointerAnalysis.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 
 using namespace SVF;
 using namespace std;
@@ -57,8 +57,8 @@ void PTAStat::performStat()
 
     callgraphStat();
 
-    SVFIR* pag = SVFIR::getPAG();
-    for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
+    PAG* pag = PAG::getPAG();
+    for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
         PAGNode* node = it->second;
         if(SVFUtil::isa<ObjVar>(node))

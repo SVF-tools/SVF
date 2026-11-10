@@ -70,15 +70,15 @@ void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const FunObjVa
     const CallICFGNode* callBlockNode = cs;
     const RetICFGNode* retBlockNode = cs->getRetICFGNode();
 
-    if(SVFUtil::isHeapAllocExtFunViaRet(F) && svfir->callsiteHasRet(retBlockNode))
+    if(SVFUtil::isHeapAllocExtFunViaRet(F) && pag->callsiteHasRet(retBlockNode))
     {
         heapAllocatorViaIndCall(cs);
     }
 
-    if (svfir->funHasRet(F) && svfir->callsiteHasRet(retBlockNode))
+    if (pag->funHasRet(F) && pag->callsiteHasRet(retBlockNode))
     {
-        const PAGNode* cs_return = svfir->getCallSiteRet(retBlockNode);
-        const PAGNode* fun_return = svfir->getFunRet(F);
+        const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
+        const PAGNode* fun_return = pag->getFunRet(F);
         if (cs_return->isPointer() && fun_return->isPointer())
         {
             NodeID dstrec = cs_return->getId();
@@ -91,16 +91,16 @@ void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const FunObjVa
         }
     }
 
-    if (svfir->hasCallSiteArgsMap(callBlockNode) && svfir->hasFunArgsList(F))
+    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(F))
     {
 
         // connect actual and formal param
-        const SVFIR::ValVarList& csArgList = svfir->getCallSiteArgsList(callBlockNode);
-        const SVFIR::ValVarList& funArgList = svfir->getFunArgsList(F);
+        const PAG::ValVarList& csArgList = pag->getCallSiteArgsList(callBlockNode);
+        const PAG::ValVarList& funArgList = pag->getFunArgsList(F);
         //Go through the fixed parameters.
         DBOUT(DPAGBuild, outs() << "      args:");
-        SVFIR::ValVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
-        SVFIR::ValVarList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
+        PAG::ValVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
+        PAG::ValVarList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
         for (; funArgIt != funArgEit; ++csArgIt, ++funArgIt)
         {
             //Some programs (e.g. Linux kernel) leave unneeded parameters empty.
@@ -124,7 +124,7 @@ void CFLAlias::connectCaller2CalleeParams(const CallICFGNode* cs, const FunObjVa
         //Any remaining actual args must be varargs.
         if (F->isVarArg())
         {
-            NodeID vaF = svfir->getVarargNode(F);
+            NodeID vaF = pag->getVarargNode(F);
             DBOUT(DPAGBuild, outs() << "\n      varargs:");
             for (; csArgIt != csArgEit; ++csArgIt)
             {
@@ -148,7 +148,7 @@ void CFLAlias::heapAllocatorViaIndCall(const CallICFGNode* cs)
 {
     assert(cs->getCalledFunction() == nullptr && "not an indirect callsite?");
     const RetICFGNode* retBlockNode = cs->getRetICFGNode();
-    const PAGNode* cs_return = svfir->getCallSiteRet(retBlockNode);
+    const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
     NodeID srcret;
     CallSite2DummyValPN::const_iterator it = callsite2DummyValPN.find(cs);
     if(it != callsite2DummyValPN.end())
@@ -157,8 +157,8 @@ void CFLAlias::heapAllocatorViaIndCall(const CallICFGNode* cs)
     }
     else
     {
-        NodeID valNode = svfir->addDummyValNode();
-        NodeID objNode = svfir->addDummyObjNode(cs->getType());
+        NodeID valNode = pag->addDummyValNode();
+        NodeID objNode = pag->addDummyObjNode(cs->getType());
         callsite2DummyValPN.insert(std::make_pair(cs,valNode));
         graph->addCFLNode(valNode, new CFLNode(valNode));
         graph->addCFLNode(objNode, new CFLNode(objNode));
@@ -219,7 +219,7 @@ void CFLAlias::finalize()
     if(Options::PrintCFL() == true)
     {
         if (Options::CFLGraph().empty())
-            svfir->dump("IR");
+            pag->dump("IR");
         grammar->dump("Grammar");
         graph->dump("CFLGraph");
     }
@@ -235,7 +235,7 @@ void CFLAlias::solve()
     solver->solve();
     if (Options::CFLGraph().empty())
     {
-        while (updateCallGraph(svfir->getIndirectCallsites()))
+        while (updateCallGraph(pag->getIndirectCallsites()))
         {
             numOfIteration++;
             solver->solve();

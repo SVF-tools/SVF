@@ -1,4 +1,4 @@
-//===- SVFIRBuilder.h -- Building SVFIR-------------------------------------------//
+//===- PAGBuilder.h -- Building PAG ------------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * SVFIRBuilder.h
+ * PAGBuilder.h
  *
  *  Created on: Nov 1, 2013
  *      Author: Yulei Sui
@@ -32,7 +32,7 @@
 #ifndef PAGBUILDER_H_
 #define PAGBUILDER_H_
 
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/ICFGBuilder.h"
 #include "SVF-LLVM/LLVMModule.h"
@@ -44,16 +44,16 @@ namespace SVF
 {
 
 /*!
- *  SVFIR Builder to create SVF variables and statements and PAG
+ *  PAG Builder to create SVF variables and statements and PAG
  */
-class SVFIRBuilder: public llvm::InstVisitor<SVFIRBuilder>
+class PAGBuilder: public llvm::InstVisitor<PAGBuilder>
 {
     friend class GraphDBSVFIRBuilder;
 
 private:
-    SVFIR* pag;
-    const SVFBasicBlock* curBB;	///< Current basic block during SVFIR construction when visiting the module
-    const Value* curVal;	///< Current Value during SVFIR construction when visiting the module
+    PAG* pag;
+    const SVFBasicBlock* curBB;	///< Current basic block during PAG construction when visiting the module
+    const Value* curVal;	///< Current Value during PAG construction when visiting the module
 
 
     /// Zero-based indices through nested structs, arrays or fixed vector lanes.
@@ -62,7 +62,7 @@ private:
     using AggregateField = std::vector<unsigned>;
     /// Identify a field by its LLVM value and path, rather than by its type alone.
     using AggregateFieldKey = std::pair<const Value*, AggregateField>;
-    /// Reuse the same scalar SVFIR node for repeated requests for a field.
+    /// Reuse the same scalar PAG node for repeated requests for a field.
     Map<AggregateFieldKey, NodeID> aggregateFieldNodes;
 
     bool getAggregateFieldOperands(const AggregateFieldKey& field,
@@ -97,7 +97,7 @@ private:
      *     ret ptr %x
      *   }
      * Only field {0} is extracted. For this call, the field uses three
-     * distinct SVFIR nodes:
+     * distinct PAG nodes:
      *   obj: a pointer-sized DummyObjVar, called the return slot. This is
      *        synthetic storage, not the Pair object or an LLVM alloca.
      *   A:   a DummyValVar pointing to obj, passed to make.
@@ -125,7 +125,7 @@ private:
      * the instruction after the call.
      * All calls to make append their own A to match out_obj, even with unused
      * results. More demanded fields follow field-path order. These additions
-     * affect only SVFIR; the LLVM signatures above do not change.
+     * affect only PAG; the LLVM signatures above do not change.
      */
     /// Output parameters of each modeled callee, in field-path order.
     Map<const Function*, std::map<AggregateField, NodeID>> aggregateReturnParams;
@@ -150,19 +150,19 @@ private:
 
 public:
     /// Constructor
-    SVFIRBuilder(): pag(SVFIR::getPAG()), curBB(nullptr),curVal(nullptr)
+    PAGBuilder(): pag(PAG::getPAG()), curBB(nullptr),curVal(nullptr)
     {
     }
     /// Destructor
-    virtual ~SVFIRBuilder()
+    virtual ~PAGBuilder()
     {
     }
 
-    /// Start building SVFIR here
-    virtual SVFIR* build();
+    /// Start building PAG here
+    virtual PAG* build();
 
-    /// Return SVFIR
-    SVFIR* getPAG() const
+    /// Return PAG
+    PAG* getPAG() const
     {
         return pag;
     }
@@ -184,7 +184,7 @@ public:
                  APOffset offset = 0, Instruction* cs = nullptr);
     // @}
 
-    /// Sanity check for SVFIR
+    /// Sanity check for PAG
     void sanityCheck();
 
     /// Get different kinds of node

@@ -52,7 +52,7 @@ public:
     typedef FIFOWorkList<NodeID> WorkList;
 
 protected:
-    SVFIR* pag;
+    PAG* pag;
     NodeToRepMap nodeToRepMap;
     NodeToSubsMap nodeToSubsMap;
     WorkList nodesToBeCollapsed;
@@ -89,7 +89,7 @@ protected:
 
 public:
     /// Constructor
-    ConstraintGraph(SVFIR* p): pag(p), edgeIndex(0)
+    ConstraintGraph(PAG* p): pag(p), edgeIndex(0)
     {
         buildCG();
     }
@@ -170,7 +170,7 @@ public:
         }
     }
 
-    ///Add a SVFIR edge into Edge map
+    ///Add a PAG edge into Edge map
     //@{
     /// Add Address edge
     AddrCGEdge* addAddrCGEdge(NodeID src, NodeID dst);
@@ -185,7 +185,7 @@ public:
     StoreCGEdge* addStoreCGEdge(NodeID src, NodeID dst);
     //@}
 
-    ///Get SVFIR edge
+    ///Get PAG edge
     //@{
     /// Get Address edges
     inline ConstraintEdge::ConstraintEdgeSetTy& getAddrCGEdges()
@@ -294,9 +294,9 @@ public:
         return false;
     }
 
-    /// Wrappers for invoking SVFIR methods
+    /// Wrappers for invoking PAG methods
     //@{
-    inline const SVFIR::CallSiteToFunPtrMap& getIndirectCallsites() const
+    inline const PAG::CallSiteToFunPtrMap& getIndirectCallsites() const
     {
         return pag->getIndirectCallsites();
     }

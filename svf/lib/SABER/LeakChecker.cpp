@@ -40,8 +40,8 @@ using namespace SVFUtil;
 void LeakChecker::initSrcs()
 {
 
-    SVFIR* pag = getPAG();
-    for(SVFIR::CSToRetMap::iterator it = pag->getCallSiteRets().begin(),
+    PAG* pag = getPAG();
+    for(PAG::CSToRetMap::iterator it = pag->getCallSiteRets().begin(),
             eit = pag->getCallSiteRets().end(); it!=eit; ++it)
     {
         const RetICFGNode* cs = it->first;
@@ -105,9 +105,9 @@ void LeakChecker::initSrcs()
 void LeakChecker::initSnks()
 {
 
-    SVFIR* pag = getPAG();
+    PAG* pag = getPAG();
 
-    for(SVFIR::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
+    for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it)
     {
 
@@ -118,10 +118,10 @@ void LeakChecker::initSnks()
             const FunObjVar* fun = *cit;
             if (isSinkLikeFun(fun))
             {
-                SVFIR::ValVarList &arglist = it->second;
+                PAG::ValVarList &arglist = it->second;
                 assert(!arglist.empty()	&& "no actual parameter at deallocation site?");
                 /// we only choose pointer parameters among all the actual parameters
-                for (SVFIR::ValVarList::const_iterator ait = arglist.begin(),
+                for (PAG::ValVarList::const_iterator ait = arglist.begin(),
                         aeit = arglist.end(); ait != aeit; ++ait)
                 {
                     const SVFVar *svfVar = *ait;

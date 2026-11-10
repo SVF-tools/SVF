@@ -27,8 +27,8 @@
  *      Author: Yulei Sui
  */
 
-#ifndef INCLUDE_SVFIR_SVFTYPE_H_
-#define INCLUDE_SVFIR_SVFTYPE_H_
+#ifndef INCLUDE_PAG_SVFTYPE_H_
+#define INCLUDE_PAG_SVFTYPE_H_
 
 #include "Util/GeneralType.h"
 
@@ -45,7 +45,7 @@ class StInfo
 {
 
     friend class GraphDBClient;
-    friend class IRGraph;
+    friend class PAGBase;
 
 protected:
     StInfo (u32_t id, std::vector<u32_t> fldIdxVec, std::vector<u32_t> elemIdxVec, Map<u32_t, const SVFType*> fldIdx2TypeMap,
@@ -625,4 +625,4 @@ enum AliasResult
 
 } // End namespace SVF
 
-#endif /* INCLUDE_SVFIR_SVFTYPE_H_ */
+#endif /* INCLUDE_PAG_SVFTYPE_H_ */

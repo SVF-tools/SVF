@@ -31,7 +31,7 @@
 #define PTACALLGRAPH_H_
 
 #include "Graphs/GenericGraph.h"
-#include "SVFIR/SVFValue.h"
+#include "SVFValues/SVFValue.h"
 #include "Graphs/ICFG.h"
 #include <set>
 

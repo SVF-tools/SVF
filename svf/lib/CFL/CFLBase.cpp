@@ -87,12 +87,12 @@ void CFLBase::buildCFLGraph()
     double start = stat->getClk(true);
 
     AliasCFLGraphBuilder cflGraphBuilder = AliasCFLGraphBuilder();
-    if (Options::CFLGraph().empty()) // built from svfir
+    if (Options::CFLGraph().empty()) // built from PAG
     {
         PointerAnalysis::initialize();
-        ConstraintGraph *consCG = new ConstraintGraph(svfir);
+        ConstraintGraph *consCG = new ConstraintGraph(pag);
         if (Options::PEGTransfer())
-            graph = cflGraphBuilder.buildBiPEGgraph(consCG, grammarBase->getStartKind(), grammarBase, svfir);
+            graph = cflGraphBuilder.buildBiPEGgraph(consCG, grammarBase->getStartKind(), grammarBase, pag);
         else
             graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
         delete consCG;

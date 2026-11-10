@@ -64,7 +64,7 @@ MTA::~MTA()
 /*!
  * Perform data race detection
  */
-bool MTA::runOnModule(SVFIR* pag)
+bool MTA::runOnModule(PAG* pag)
 {
     DBOUT(DGENERAL, outs() << pasMsg("MTA analysis\n"));
     DBOUT(DMTA, outs() << pasMsg("MTA analysis\n"));
@@ -129,10 +129,10 @@ MHP* MTA::computeMHP(TCT* tct)
 }
 
 // Collect the global objects (addr-taken global vars at the global ICFG node).
-PointsTo MTA::getGlobalObjectVariables(SVFIR* svfir)
+PointsTo MTA::getGlobalObjectVariables(PAG* pag)
 {
     PointsTo globalObjVars;
-    const ICFGNode* globalICFGNode = svfir->getICFG()->getGlobalICFGNode();
+    const ICFGNode* globalICFGNode = pag->getICFG()->getGlobalICFGNode();
 
     for (const SVFStmt* stmt : globalICFGNode->getSVFStmts())
     {
@@ -160,7 +160,7 @@ PointsTo MTA::getGlobalObjectVariables(SVFIR* svfir)
 // escape set as "not shared".
 PointsTo MTA::getPointsToClosure(AndersenBase* pta, const PointsTo& pts)
 {
-    SVFIR* pag = pta->getPAG();
+    PAG* pag = pta->getPAG();
     PointsTo ptsClosure = pts;
     std::deque<NodeID> worklist;
     for (NodeID pt : pts)
@@ -227,7 +227,7 @@ bool MTA::RaceClassKey::operator<(const RaceClassKey& other) const
 }
 
 void MTA::collectRaceOccurrences(
-    SVFIR* svfir, AndersenBase* pta, MHP* mhp,
+    PAG* pag, AndersenBase* pta, MHP* mhp,
     LockAnalysis* lockAnalysis, CallGraph* callGraph,
     const PointsTo& escapedObjects,
     std::vector<RaceOccurrence>& occurrences,
@@ -245,7 +245,7 @@ void MTA::collectRaceOccurrences(
                     mhp->getThreadSummary(node);
                 if (threadSummary == nullptr)
                     continue;
-                for (const SVFStmt* stmt : svfir->getSVFStmtList(node))
+                for (const SVFStmt* stmt : pag->getSVFStmtList(node))
                 {
                     NodeID accessedPtr;
                     bool isStore;
@@ -370,7 +370,7 @@ void MTA::emitRacePairs(
 // Equivalence-class race detector: screen accesses, bucket by object, collapse
 // occurrences sharing the race predicate's inputs into classes, then pair classes.
 std::set<const SVFStmt*> MTA::detectRace(
-    SVFIR* svfir, AndersenBase* pta, MHP* mhp, LockAnalysis* lockAnalysis,
+    PAG* pag, AndersenBase* pta, MHP* mhp, LockAnalysis* lockAnalysis,
     CallGraph* callGraph,
     std::set<RacePair>& outRacePairs)
 {
@@ -381,7 +381,7 @@ std::set<const SVFStmt*> MTA::detectRace(
     // Escape set: objects shared across threads. Seed from globals + the actual
     // argument at each fork site (the spawner's value, which a spawnee-formal
     // closure can miss), then take the transitive points-to closure.
-    PointsTo seed = getGlobalObjectVariables(svfir);
+    PointsTo seed = getGlobalObjectVariables(pag);
     if (ThreadCallGraph* tcg = SVFUtil::dyn_cast<ThreadCallGraph>(callGraph))
     {
         const ThreadAPI* tapi = tcg->getThreadAPI();
@@ -395,7 +395,7 @@ std::set<const SVFStmt*> MTA::detectRace(
     std::vector<RaceOccurrence> occurrences;
     ObjectToRaceOccurrences objectToOccurrences;
     collectRaceOccurrences(
-        svfir, pta, mhp, lockAnalysis, callGraph, escSet,
+        pag, pta, mhp, lockAnalysis, callGraph, escSet,
         occurrences, objectToOccurrences);
 
     // Within each object, occurrences sharing the race predicate's inputs (tid,
@@ -421,7 +421,7 @@ void MTA::reportRaces()
 {
     DBOUT(DGENERAL, outs() << pasMsg("Starting Race Detection\n"));
 
-    SVFIR* pag = SVFIR::getPAG();
+    PAG* pag = PAG::getPAG();
     AndersenBase* pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
     CallGraph* callGraph = pta->getCallGraph();
 
@@ -438,30 +438,30 @@ void MTA::reportRaces()
 //===----------------------------------------------------------------------===//
 // SlicedMTA -- Multi-stage on-demand slicing race detection (MSli).
 //
-// Library-side orchestration of the slicing pipeline over the SVFIR.
+// Library-side orchestration of the slicing pipeline over the PAG.
 //===----------------------------------------------------------------------===//
 
-// Output statistics for the original (unsliced) SVFIR.
-void SlicedMTA::reportOriginalStatistics(SVFIR* svfir)
+// Output statistics for the original (unsliced) PAG.
+void SlicedMTA::reportOriginalStatistics(PAG* pag)
 {
     size_t icfgNodeCount = 0;
-    for (ICFG::iterator it = svfir->getICFG()->begin(), eit = svfir->getICFG()->end(); it != eit; ++it)
+    for (ICFG::iterator it = pag->getICFG()->begin(), eit = pag->getICFG()->end(); it != eit; ++it)
         icfgNodeCount++;
 
     size_t functionCount = 0;
-    for (auto it = svfir->getCallGraph()->begin(), eit = svfir->getCallGraph()->end(); it != eit; ++it)
+    for (auto it = pag->getCallGraph()->begin(), eit = pag->getCallGraph()->end(); it != eit; ++it)
         functionCount++;
 
     size_t pagStmtCount = 0;
-    for (ICFG::iterator it = svfir->getICFG()->begin(),
-            eit = svfir->getICFG()->end(); it != eit; ++it)
+    for (ICFG::iterator it = pag->getICFG()->begin(),
+            eit = pag->getICFG()->end(); it != eit; ++it)
     {
         const ICFGNode* node = it->second;
-        if (svfir->hasSVFStmtList(node))
-            pagStmtCount += svfir->getSVFStmtList(node).size();
+        if (pag->hasSVFStmtList(node))
+            pagStmtCount += pag->getSVFStmtList(node).size();
     }
 
-    SVFUtil::outs() << "\n[Original SVFIR] Statistics:\n";
+    SVFUtil::outs() << "\n[Original PAG] Statistics:\n";
     SVFUtil::outs() << "  ICFG nodes: " << icfgNodeCount << "\n";
     SVFUtil::outs() << "  Functions: " << functionCount << "\n";
     SVFUtil::outs() << "  PAG statements: " << pagStmtCount << "\n";
@@ -687,17 +687,17 @@ bool SlicedMTA::runPreAnalysis()
         {
             ScopedPhaseTimer timer("ILA: construct MHP/ForkJoin");
             mhp = MHP::create(
-                      tct.get(), svfir->getICFG(),
-                      const_cast<CallGraph*>(svfir->getCallGraph()));
+                      tct.get(), pag->getICFG(),
+                      const_cast<CallGraph*>(pag->getCallGraph()));
         }
         {
             ScopedPhaseTimer timer("ILA: MHP propagation");
-            mhp->analyze(svfir->getICFG(), const_cast<CallGraph*>(svfir->getCallGraph()));
+            mhp->analyze(pag->getICFG(), const_cast<CallGraph*>(pag->getCallGraph()));
         }
         {
             ScopedPhaseTimer timer("ILA: Lock analysis");
             lockAnalysis = std::make_unique<LockAnalysis>(tct.get());
-            lockAnalysis->analyze(svfir->getICFG(), const_cast<CallGraph*>(svfir->getCallGraph()));
+            lockAnalysis->analyze(pag->getICFG(), const_cast<CallGraph*>(pag->getCallGraph()));
         }
     }
 
@@ -718,7 +718,7 @@ bool SlicedMTA::runPreAnalysis()
         ScopedPhaseTimer timer("Detect Race Statements");
         // Shared equivalence-class detector (the same one MTA::reportRaces uses).
         vulnerableStatements = MTA::detectRace(
-                                   svfir, preAndersen, mhp.get(), lockAnalysis.get(),
+                                   pag, preAndersen, mhp.get(), lockAnalysis.get(),
                                    preAndersen->getCallGraph(), racePairs);
     }
     SVFUtil::outs() << "Found " << vulnerableStatements.size() << " vulnerable statements\n";
@@ -759,7 +759,7 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
         // ILA and the FSPTA stages. Computed once here; reused in PTA slicing.
         SVFUtil::outs() << "[Slicing Mode] Single unified slice (V_Single) for ILA + FSPTA\n";
         singleSlicer = std::make_unique<SingleSlicer>(
-                           svfir, preAndersen, mhp.get(), lockAnalysis.get(),
+                           pag, preAndersen, mhp.get(), lockAnalysis.get(),
                            preSVFG /* data dependence over the thread-aware VFG_pre */);
         {
             ScopedPhaseTimer timer("Unified Slicing");
@@ -777,7 +777,7 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
     {
         SVFUtil::outs() << "[Slicing Mode] Differential slices (separate ILA + FSPTA)\n";
         multiStageSlicer = std::make_unique<MultiStageSlicer>(
-                               svfir, preAndersen, mhp.get(), lockAnalysis.get(), preSVFG);
+                               pag, preAndersen, mhp.get(), lockAnalysis.get(), preSVFG);
 
         // ILA slicing sources = [INIT] race statements + [THREAD-VF] sources. Keep
         // a candidate edge's query (see MTASVFGBuilder::getThreadVFQueryMap) only if
@@ -842,17 +842,17 @@ bool SlicedMTA::runMTASlicingAndAnalysis()
                             << " nodes\n";
     } // end differential MTA slice
 
-    // Step 4: Build MTA SlicedSVFIRView (using pre-analysis pointer analysis)
+    // Step 4: Build MTA SlicedUnifiedView (using pre-analysis pointer analysis)
     {
         ScopedPhaseTimer timer("Build MTA Sliced View");
-        mtaSlicedView = std::make_unique<SlicedSVFIRView>(
-                            svfir, *threadCallGraph, svfir->getICFG(),
+        mtaSlicedView = std::make_unique<SlicedUnifiedView>(
+                            pag, *threadCallGraph, pag->getICFG(),
                             mtaSlicedNodes);
     }
     if (isMTAStatEnabled())
         mtaSlicedView->dumpStats("MTA Sliced");
 
-    const SlicedSVFIRView* slicedView = mtaSlicedView.get();
+    const SlicedUnifiedView* slicedView = mtaSlicedView.get();
 
     if (dumpDot)
     {
@@ -1189,11 +1189,11 @@ bool SlicedMTA::runWholeProgramDetection()
     {
         ScopedPhaseTimer timer("Build Whole-program View");
         std::set<const ICFGNode*> allNodes;
-        for (ICFG::iterator it = svfir->getICFG()->begin(),
-                eit = svfir->getICFG()->end(); it != eit; ++it)
+        for (ICFG::iterator it = pag->getICFG()->begin(),
+                eit = pag->getICFG()->end(); it != eit; ++it)
             allNodes.insert(it->second);
-        ptaSlicedView = std::make_unique<SlicedSVFIRView>(
-                            svfir, *threadCallGraph, svfir->getICFG(), allNodes);
+        ptaSlicedView = std::make_unique<SlicedUnifiedView>(
+                            pag, *threadCallGraph, pag->getICFG(), allNodes);
     }
 
     {
@@ -1208,18 +1208,18 @@ bool SlicedMTA::runWholeProgramDetection()
             ScopedPhaseTimer phaseTimer(
                 "Whole-program ILA: construct MHP/ForkJoin");
             slicedMHP = MHP::create(
-                            slicedTCT.get(), svfir->getICFG(), fullCallGraph,
+                            slicedTCT.get(), pag->getICFG(), fullCallGraph,
                             MHP::StateRepresentation::QuerySummaries);
         }
         {
             ScopedPhaseTimer phaseTimer("Whole-program ILA: MHP propagation");
-            slicedMHP->analyze(svfir->getICFG(), fullCallGraph);
+            slicedMHP->analyze(pag->getICFG(), fullCallGraph);
         }
         {
             ScopedPhaseTimer phaseTimer("Whole-program ILA: Lock analysis");
             slicedLockAnalysis =
                 std::make_unique<LockAnalysis>(slicedTCT.get());
-            slicedLockAnalysis->analyze(svfir->getICFG(), fullCallGraph);
+            slicedLockAnalysis->analyze(pag->getICFG(), fullCallGraph);
         }
     }
 
@@ -1273,15 +1273,15 @@ bool SlicedMTA::runWholeProgramDetection()
     return true;
 }
 
-bool SlicedMTA::runOnModule(SVFIR* pag, AndersenWaveDiff& preAnalysis)
+bool SlicedMTA::runOnModule(PAG* pag, AndersenWaveDiff& preAnalysis)
 {
-    if (svfir != nullptr || pag == nullptr || preAnalysis.getPAG() != pag)
+    if (pag != nullptr || pag == nullptr || preAnalysis.getPAG() != pag)
     {
         SVFUtil::errs() << "[ERROR] SlicedMTA is single-use and requires a "
-                        << "matching SVFIR and Andersen pre-analysis\n";
+                        << "matching PAG and Andersen pre-analysis\n";
         return false;
     }
-    svfir = pag;
+    pag = pag;
     preAndersen = &preAnalysis;
 
     SVFUtil::outs() << "[Config] Slicing: "
@@ -1289,7 +1289,7 @@ bool SlicedMTA::runOnModule(SVFIR* pag, AndersenWaveDiff& preAnalysis)
                     << "\n";
 
     if (isMTAStatEnabled())
-        reportOriginalStatistics(svfir);
+        reportOriginalStatistics(pag);
 
     // The pre-analysis is context-insensitive in BOTH modes (the sliced run and
     // the FSAM baseline must share an identical pre-analysis substrate); the

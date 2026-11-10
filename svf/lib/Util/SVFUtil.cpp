@@ -52,8 +52,8 @@
 #include "Util/SVFUtil.h"
 #include "MemoryModel/PointsTo.h"
 #include "Graphs/CallGraph.h"
-#include "SVFIR/SVFIR.h"
-#include "SVFIR/SVFVariables.h"
+#include "Graphs/PAG.h"
+#include "SVFValues/SVFVariables.h"
 
 using namespace SVF;
 
@@ -485,8 +485,7 @@ bool SVFUtil::isProgExitCall(const CallICFGNode* cs)
 /// Get program entry function from module.
 const FunObjVar* SVFUtil::getProgFunction(const std::string& funName)
 {
-    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
-    for (const auto& item: *svfirCallGraph)
+    for (const auto& item: *(PAG::getPAG()->getCallGraph()))
     {
         const CallGraphNode*fun = item.second;
         if (fun->getName()==funName)
@@ -498,8 +497,7 @@ const FunObjVar* SVFUtil::getProgFunction(const std::string& funName)
 /// Get program entry function from module.
 const FunObjVar* SVFUtil::getProgEntryFunction()
 {
-    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
-    for (const auto& item: *svfirCallGraph)
+    for (const auto& item: *(PAG::getPAG()->getCallGraph()))
     {
         const CallGraphNode*fun = item.second;
         if (isProgEntryFunction(fun->getFunction()))

@@ -45,7 +45,7 @@ class FunObjVar;
 class ExtAPI
 {
     friend class LLVMModuleSet;
-    friend class SVFIRBuilder;
+    friend class PAGBuilder;
     friend class GraphDBClient;
 
 private:

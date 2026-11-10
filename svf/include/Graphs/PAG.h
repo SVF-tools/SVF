@@ -1,4 +1,4 @@
-//===- SVFIR.h -- IR of SVF ---------------------------------------------//
+//===- PAG.h -- IR of SVF ---------------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,17 +21,17 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * SVFIR.h
+ * PAG.h
  *
  *  Created on: 31, 12, 2021
  *      Author: Yulei Sui
  */
 
-#ifndef INCLUDE_SVFIR_H_
-#define INCLUDE_SVFIR_H_
+#ifndef INCLUDE_PAG_H_
+#define INCLUDE_PAG_H_
 
 #include "Graphs/ICFG.h"
-#include "Graphs/IRGraph.h"
+#include "Graphs/PAGBase.h"
 #include "Util/GeneralType.h"
 #include "Util/SVFUtil.h"
 
@@ -42,9 +42,9 @@ class CommonCHGraph;
  * SVF Intermediate representation, representing variables and statements as a Program Assignment Graph (PAG)
  * Variables as nodes and statements as edges.
  */
-class SVFIR : public IRGraph
+class PAG : public PAGBase
 {
-    friend class SVFIRBuilder;
+    friend class PAGBuilder;
     friend class ExternalPAG;
     friend class PAGBuilderFromFile;
     friend class BVDataPTAImpl;
@@ -95,7 +95,7 @@ private:
     FunToRetMap funRetMap;	///< Map a function to its unique function return PAGNodes
     CallSiteToFunPtrMap indCallSiteToFunPtrMap; ///< Map an indirect callsite to its function pointer
     FunPtrToCallSitesMap funPtrToCallSitesMap;	///< Map a function pointer to the callsites where it is used
-    /// Valid pointers for pointer analysis resolution connected by SVFIR edges (constraints)
+    /// Valid pointers for pointer analysis resolution connected by PAG edges (constraints)
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
     OrderedNodeSet candidatePointers;
     ICFG* icfg; // ICFG
@@ -103,13 +103,13 @@ private:
     CallSiteSet callSiteSet; /// all the callsites of a program
     CallGraph* callGraph; /// Callgraph with direct calls only; no change allowed after init and use callgraph in PointerAnalysis for indirect calls)
 
-    static std::unique_ptr<SVFIR> pag;	///< Singleton pattern here to enable instance of SVFIR can only be created once.
+    static std::unique_ptr<PAG> pag;	///< Singleton pattern here to enable instance of PAG can only be created once.
     static std::string pagReadFromTxt;
 
     std::string moduleIdentifier;
 
     /// Constructor
-    SVFIR(bool buildFromFile);
+    PAG(bool buildFromFile);
 
     /// Clean up memory
     void destroy();
@@ -118,15 +118,15 @@ public:
 
     /// Singleton design here to make sure we only have one instance during any analysis
     //@{
-    static inline SVFIR* getPAG(bool buildFromFile = false)
+    static inline PAG* getPAG(bool buildFromFile = false)
     {
         if (pag == nullptr)
         {
-            pag = std::unique_ptr<SVFIR>(new SVFIR(buildFromFile));
+            pag = std::unique_ptr<PAG>(new PAG(buildFromFile));
         }
         return pag.get();
     }
-    static void releaseSVFIR()
+    static void releasePAG()
     {
         pag = nullptr;
     }
@@ -214,11 +214,11 @@ public:
     void initialiseCandidatePointers();
 
     /// Destructor
-    virtual ~SVFIR()
+    virtual ~PAG()
     {
         destroy();
     }
-    /// SVFIR build configurations
+    /// PAG build configurations
     //@{
     /// Whether to handle blackhole edge
     static void handleBlackHole(bool b);
@@ -231,7 +231,7 @@ public:
     }
     inline ICFG* getICFG() const
     {
-        assert(icfg->totalICFGNode>0 && "empty ICFG! Build SVF IR first!");
+        assert(icfg->totalICFGNode>0 && "empty ICFG! Build PAG first!");
         return icfg;
     }
     /// Set/Get CHG
@@ -241,14 +241,14 @@ public:
     }
     inline CommonCHGraph* getCHG()
     {
-        assert(chgraph && "empty ICFG! Build SVF IR first!");
+        assert(chgraph && "empty ICFG! Build PAG first!");
         return chgraph;
     }
 
     /// Get CG
     inline const CallGraph* getCallGraph()
     {
-        assert(callGraph && "empty CallGraph! Build SVF IR first!");
+        assert(callGraph && "empty CallGraph! Build PAG first!");
         return callGraph;
     }
 
@@ -305,7 +305,7 @@ public:
     {
         return KindToPTASVFStmtSetMap[kind];
     }
-    /// Whether this instruction has SVFIR Edge
+    /// Whether this instruction has PAG Edge
     inline bool hasSVFStmtList(const ICFGNode* inst) const
     {
         return icfgNode2SVFStmtsMap.find(inst) != icfgNode2SVFStmtsMap.end();
@@ -516,11 +516,11 @@ public:
     }
     //@}
 
-    /// Get a field SVFIR Object node according to base mem obj and offset
+    /// Get a field PAG Object node according to base mem obj and offset
     NodeID getGepObjVar(const BaseObjVar* baseObj, const APOffset& ap);
-    /// Get a field obj SVFIR node according to a mem obj and a given offset
+    /// Get a field obj PAG node according to a mem obj and a given offset
     NodeID getGepObjVar(NodeID id, const APOffset& ap) ;
-    /// Get a field-insensitive obj SVFIR node according to a mem obj
+    /// Get a field-insensitive obj PAG node according to a mem obj
     //@{
     inline NodeID getFIObjVar(const BaseObjVar* obj) const
     {
@@ -578,7 +578,7 @@ public:
     bool isValidTopLevelPtr(const SVFVar* node);
     //@}
 
-    /// Print SVFIR
+    /// Print PAG
     void print();
 
 protected:
@@ -659,7 +659,7 @@ private:
         assert(added && "adding the same indirect callsite twice?");
     }
 
-    /// add node into SVFIR
+    /// add node into PAG
     //@{
     /// Add a value (pointer) node
     inline NodeID addValNode(NodeID i, const SVFType* type, const ICFGNode* icfgNode)
@@ -721,7 +721,7 @@ private:
     }
 
     /**
-     * Creates and adds a heap object node to the SVFIR
+     * Creates and adds a heap object node to the PAG
      */
     inline NodeID addHeapObjNode(NodeID i, ObjTypeInfo* ti, const ICFGNode* node)
     {
@@ -730,7 +730,7 @@ private:
     }
 
     /**
-     * Creates and adds a stack object node to the SVFIR
+     * Creates and adds a stack object node to the PAG
      */
     inline NodeID addStackObjNode(NodeID i, ObjTypeInfo* ti, const ICFGNode* node)
     {
@@ -871,7 +871,7 @@ private:
     {
         callSiteSet.insert(call);
     }
-    /// Add an edge into SVFIR
+    /// Add an edge into PAG
     //@{
     /// Add Address edge
     AddrStmt* addAddrStmt(NodeID src, NodeID dst);
@@ -934,10 +934,8 @@ private:
     SVFStmt* addBlackHoleAddrStmt(NodeID node);
 };
 
-typedef SVFIR PAG;
-
 } // End namespace SVF
 
 
 
-#endif /* INCLUDE_SVFIR_H_ */
+#endif /* INCLUDE_PAG_H_ */

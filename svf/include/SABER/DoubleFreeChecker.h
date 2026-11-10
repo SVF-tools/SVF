@@ -54,7 +54,7 @@ public:
     }
 
     /// We start from here
-    virtual bool runOnModule(SVFIR* pag) override
+    virtual bool runOnModule(PAG* pag) override
     {
         /// start analysis
         analyze();

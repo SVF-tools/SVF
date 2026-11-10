@@ -45,31 +45,31 @@ using namespace LLVMUtil;
 
 ObjTypeInfo* SymbolTableBuilder::createBlkObjTypeInfo(NodeID symId)
 {
-    assert(svfir->isBlkObj(symId));
+    assert(pag->isBlkObj(symId));
     LLVMModuleSet* llvmset = llvmModuleSet();
-    if (svfir->objTypeInfoMap.find(symId)==svfir->objTypeInfoMap.end())
+    if (pag->objTypeInfoMap.find(symId)==pag->objTypeInfoMap.end())
     {
-        ObjTypeInfo* ti =svfir->createObjTypeInfo(llvmset->getSVFType(
+        ObjTypeInfo* ti = pag->createObjTypeInfo(llvmset->getSVFType(
                              IntegerType::get(llvmset->getContext(), 32)));
         ti->setNumOfElements(0);
-        svfir->objTypeInfoMap[symId] = ti;
+        pag->objTypeInfoMap[symId] = ti;
     }
-    ObjTypeInfo* ti = svfir->objTypeInfoMap[symId];
+    ObjTypeInfo* ti = pag->objTypeInfoMap[symId];
     return ti;
 }
 
 ObjTypeInfo* SymbolTableBuilder::createConstantObjTypeInfo(NodeID symId)
 {
-    assert(IRGraph::isConstantSym(symId));
+    assert(PAGBase::isConstantSym(symId));
     LLVMModuleSet* llvmset = llvmModuleSet();
-    if (svfir->objTypeInfoMap.find(symId)==svfir->objTypeInfoMap.end())
+    if (pag->objTypeInfoMap.find(symId)==pag->objTypeInfoMap.end())
     {
-        ObjTypeInfo* ti = svfir->createObjTypeInfo(
+        ObjTypeInfo* ti = pag->createObjTypeInfo(
                               llvmset->getSVFType(IntegerType::get(llvmset->getContext(), 32)));
         ti->setNumOfElements(0);
-        svfir->objTypeInfoMap[symId] = ti;
+        pag->objTypeInfoMap[symId] = ti;
     }
-    ObjTypeInfo* ti = svfir->objTypeInfoMap[symId];
+    ObjTypeInfo* ti = pag->objTypeInfoMap[symId];
     return ti;
 }
 
@@ -82,18 +82,18 @@ void SymbolTableBuilder::buildMemModel()
     SVFUtil::increaseStackSize();
 
     // Pointer #0 always represents the null pointer.
-    assert(svfir->totalSymNum++ == IRGraph::NullPtr && "Something changed!");
+    assert(pag->totalSymNum++ == PAGBase::NullPtr && "Something changed!");
 
     // Pointer #1 always represents the pointer points-to black hole.
-    assert(svfir->totalSymNum++ == IRGraph::BlkPtr && "Something changed!");
+    assert(pag->totalSymNum++ == PAGBase::BlkPtr && "Something changed!");
 
     // Object #2 is black hole the object that may point to any object
-    assert(svfir->totalSymNum++ == IRGraph::BlackHole && "Something changed!");
-    createBlkObjTypeInfo(IRGraph::BlackHole);
+    assert(pag->totalSymNum++ == PAGBase::BlackHole && "Something changed!");
+    createBlkObjTypeInfo(PAGBase::BlackHole);
 
     // Object #3 always represents the unique constant of a program (merging all constants if Options::ModelConsts is disabled)
-    assert(svfir->totalSymNum++ == IRGraph::ConstantObj && "Something changed!");
-    createConstantObjTypeInfo(IRGraph::ConstantObj);
+    assert(pag->totalSymNum++ == PAGBase::ConstantObj && "Something changed!");
+    createConstantObjTypeInfo(PAGBase::ConstantObj);
 
     for (Module &M : llvmModuleSet()->getLLVMModules())
     {
@@ -242,7 +242,7 @@ void SymbolTableBuilder::buildMemModel()
         }
     }
 
-    svfir->totalSymNum = NodeIDAllocator::get()->endSymbolAllocation();
+    pag->totalSymNum = NodeIDAllocator::get()->endSymbolAllocation();
     if (Options::SymTabPrint())
     {
         llvmModuleSet()->dumpSymTable();
@@ -339,7 +339,7 @@ void SymbolTableBuilder::collectObj(const Value* val)
         const bool mcUnmodelled = isConstDataOrAggData(val) && val->getType()->isPointerTy();
         if (isConstantObjSym(val) && (!Options::ModelConsts() || mcUnmodelled))
         {
-            llvmModuleSet()->objSymMap.insert(std::make_pair(val, svfir->constantSymID()));
+            llvmModuleSet()->objSymMap.insert(std::make_pair(val, pag->constantSymID()));
         }
         // otherwise, we will create an object for each abstract memory location
         else
@@ -352,8 +352,8 @@ void SymbolTableBuilder::collectObj(const Value* val)
 
             // create a memory object
             ObjTypeInfo* ti = createObjTypeInfo(val);
-            assert(svfir->objTypeInfoMap.find(id) == svfir->objTypeInfoMap.end());
-            svfir->objTypeInfoMap[id] = ti;
+            assert(pag->objTypeInfoMap.find(id) == pag->objTypeInfoMap.end());
+            pag->objTypeInfoMap[id] = ti;
         }
     }
 }

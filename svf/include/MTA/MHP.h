@@ -42,7 +42,7 @@ namespace SVF
 class ForkJoinAnalysis;
 class LockAnalysis;
 // Forward declaration for the sliced-graph handle analyze() can run on.
-class SlicedSVFIRView;
+class SlicedUnifiedView;
 
 /*!
  * This class serves as a base may-happen in parallel analysis for multithreaded program

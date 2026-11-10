@@ -37,9 +37,9 @@
 #include "Graphs/SVFG.h"
 #include "Graphs/SVFGNode.h"
 #include "Graphs/GraphTraits.h"
-#include "SVFIR/SVFIR.h"
-#include "SVFIR/SVFStatements.h"
-#include "SVFIR/SVFVariables.h"
+#include "Graphs/PAG.h"
+#include "SVFValues/SVFStatements.h"
+#include "SVFValues/SVFVariables.h"
 #include <cstddef>
 #include <iterator>
 #include <memory>
@@ -131,7 +131,7 @@ private:
 class SlicedPAGView
 {
 public:
-    SlicedPAGView(SVFIR* pag, const OrderedSet<const SVFStmt*>& keptStmts);
+    SlicedPAGView(PAG* pag, const OrderedSet<const SVFStmt*>& keptStmts);
 
     /// Get all kept statements
     inline const OrderedSet<const SVFStmt*>& getKeptStmts() const
@@ -152,8 +152,8 @@ public:
         return keptStmts.count(s) > 0;
     }
 
-    /// The underlying SVFIR (to resolve node ids to SVFVars).
-    inline SVFIR* getSVFIR() const
+    /// The underlying PAG (to resolve node ids to SVFVars).
+    inline PAG* getOriginalPAG() const
     {
         return pag;
     }
@@ -162,7 +162,7 @@ public:
     void dump(const std::string& filename) const;
 
 private:
-    SVFIR* pag;
+    PAG* pag;
     OrderedSet<const SVFStmt*> keptStmts;
     Set<NodeID> keptNodeIds; // node IDs extracted from kept statements
 
@@ -294,13 +294,13 @@ private:
 };
 
 //===----------------------------------------------------------------------===//
-// SlicedSVFIRView - unified facade over the three sliced graph views.
+// SlicedUnifiedView - unified facade over the three sliced graph views.
 // The MTA pipeline always slices over a ThreadCallGraph.
 //===----------------------------------------------------------------------===//
-class SlicedSVFIRView
+class SlicedUnifiedView
 {
 public:
-    SlicedSVFIRView(SVFIR* svfir,
+    SlicedUnifiedView(PAG* pag,
                     ThreadCallGraph& callGraph,
                     ICFG* icfg,
                     const OrderedSet<const ICFGNode*>& keepNodes);
@@ -358,10 +358,10 @@ public:
     /// Dump all views to files
     void dumpAll(const std::string& prefix) const;
 
-    /// Get original SVFIR
-    inline SVFIR* getSVFIR() const
+    /// Get original PAG
+    inline PAG* getOriginalPAG() const
     {
-        return svfir;
+        return pag;
     }
 
     /// Output statistics
@@ -370,7 +370,7 @@ public:
 private:
     void ensurePAGView() const;
 
-    SVFIR* svfir;
+    PAG* pag;
     std::unique_ptr<SlicedICFGView> icfgView;
     mutable std::unique_ptr<SlicedPAGView> pagView;
     std::unique_ptr<SlicedThreadCallGraphView> tcgView;
@@ -1005,7 +1005,7 @@ private:
     SlicedPAGEdgeIterImpl<Forward> e{};
 };
 
-// Node iterator over the kept SVFVar ids (resolved against the SVFIR).
+// Node iterator over the kept SVFVar ids (resolved against the PAG).
 class SlicedPAGNodeIter
 {
 public:
@@ -1021,7 +1021,7 @@ public:
 
     reference operator*() const
     {
-        return SlicedPAGNodeRef{view, view->getSVFIR()->getGNode(*it)};
+        return SlicedPAGNodeRef{view, view->getOriginalPAG()->getGNode(*it)};
     }
     SlicedPAGNodeIter& operator++()
     {
@@ -1656,7 +1656,7 @@ struct GenericGraphTraits<const SlicedPAGView*>
     static NodeRef getNode(const SlicedPAGView* v, NodeID id)
     {
         const bool kept = v->getKeptNodeIds().count(id) > 0;
-        return NodeRef{v, kept ? v->getSVFIR()->getGNode(id) : nullptr};
+        return NodeRef{v, kept ? v->getOriginalPAG()->getGNode(id) : nullptr};
     }
 };
 

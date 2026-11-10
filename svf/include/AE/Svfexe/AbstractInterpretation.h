@@ -35,7 +35,7 @@
 #include "AE/Svfexe/AEWTO.h"
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "AE/Svfexe/AEStat.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Util/SVFBugReport.h"
 #include "Util/WorkList.h"
 #include "Graphs/SCC.h"
@@ -129,7 +129,7 @@ public:
     /// Retrieve SVFVar given its ID; asserts if no such variable exists
     inline const SVFVar* getSVFVar(NodeID varId) const
     {
-        return svfir->getSVFVar(varId);
+        return pag->getSVFVar(varId);
     }
 
     // ---- Abstract Value Access ----------------------------------------
@@ -360,7 +360,7 @@ private:
 
 protected:
     /// Data and helpers reachable from SparseAbstractInterpretation.
-    SVFIR* svfir{nullptr};
+    PAG* pag{nullptr};
     AEWTO* preAnalysis{nullptr};
     Map<const ICFGNode*, AbstractState> abstractTrace; ///< per-node trace; owned here
 

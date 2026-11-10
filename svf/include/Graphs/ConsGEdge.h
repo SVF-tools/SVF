@@ -30,7 +30,7 @@
 #ifndef CONSGEDGE_H_
 #define CONSGEDGE_H_
 
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Util/WorkList.h"
 
 #include <map>
@@ -42,7 +42,7 @@ namespace SVF
 class ConstraintNode;
 /*!
  * Self-defined edge for constraint resolution
- * including add/remove/re-target, but all the operations do not affect original SVFIR Edges
+ * including add/remove/re-target, but all the operations do not affect original PAG Edges
  */
 typedef GenericEdge<ConstraintNode> GenericConsEdgeTy;
 class ConstraintEdge : public GenericConsEdgeTy

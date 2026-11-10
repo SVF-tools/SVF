@@ -31,7 +31,7 @@
 #include "Util/SVFUtil.h"
 #include "Util/Options.h"
 #include "Util/config.h"
-#include "SVFIR/SVFVariables.h"
+#include "SVFValues/SVFVariables.h"
 #include <algorithm>
 #include <ostream>
 

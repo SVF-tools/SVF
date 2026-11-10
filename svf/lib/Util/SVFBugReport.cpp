@@ -33,7 +33,7 @@
 #include "Util/cJSON.h"
 #include "Util/SVFBugReport.h"
 #include "Util/SVFUtil.h"
-#include "SVFIR/SVFVariables.h"
+#include "SVFValues/SVFVariables.h"
 
 
 using namespace std;

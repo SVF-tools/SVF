@@ -161,7 +161,7 @@ const Option<bool> Options::OCGDotGraph(
 );
 
 
-// Program Assignment Graph for pointer analysis (SVFIR.cpp)
+// Program Assignment Graph for pointer analysis (PAG.cpp)
 Option<bool> Options::HandBlackHole(
     "blk",
     "Handle blackhole edge",
@@ -260,13 +260,13 @@ const Option<u32_t> Options::StatBudget(
 
 const Option<bool> Options::PAGDotGraph(
     "dump-pag",
-    "Dump dot graph of SVFIR",
+    "Dump dot graph of PAG",
     false
 );
 
-const Option<bool> Options::ShowSVFIRValue(
-    "show-ir-value",
-    "Show values of SVFIR (e.g., when generating dot graph)",
+const Option<bool> Options::ShowPAGValue(
+    "show-pag-value",
+    "Show values of PAG (e.g., when generating dot graph)",
     true
 );
 
@@ -278,13 +278,13 @@ const Option<bool> Options::DumpICFG(
 
 const Option<std::string> Options::DumpJson(
     "dump-json",
-    "Dump the SVFIR in JSON format",
+    "Dump the PAG in JSON format",
     ""
 );
 
 const Option<bool> Options::ReadJson(
     "read-json",
-    "Read the SVFIR in JSON format",
+    "Read the PAG in JSON format",
     false
 );
 
@@ -296,7 +296,7 @@ const Option<bool> Options::CallGraphDotGraph(
 
 const Option<bool> Options::PAGPrint(
     "print-pag",
-    "Print SVFIR to command line",
+    "Print PAG to command line",
     false
 );
 
@@ -533,7 +533,7 @@ const Option<bool> Options::DumpCHA(
 // LLVMModule.cpp
 const Option<std::string> Options::Graphtxt(
     "graph-txt",
-    "graph txt file to build SVFIR",
+    "graph txt file to build PAG",
     ""
 );
 
@@ -650,10 +650,10 @@ Option<bool> Options::DetectPWC(
     true
 );
 
-//SVFIRBuilder.cpp
-const Option<bool> Options::VtableInSVFIR(
-    "vt-in-ir",
-    "Handle vtable in ConstantArray/ConstantStruct in SVFIRBuilder (already handled in CHA?)",
+//PAGBuilder.cpp
+const Option<bool> Options::VtableInPAG(
+    "vt-in-pag",
+    "Handle vtable in ConstantArray/ConstantStruct in PAGBuilder (already handled in CHA?)",
     false
 );
 
@@ -693,7 +693,7 @@ OptionMultiple<PTATY> Options::PASelected(
     // Disabled till further work is done.
     {PTATY::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"},
     {PTATY::VFS_WPA, "vfspta", "Versioned sparse flow-sensitive points-to analysis"},
-    {PTATY::TypeCPP_WPA, "type", "Type-based fast analysis for Callgraph, SVFIR and CHA"},
+    {PTATY::TypeCPP_WPA, "type", "Type-based fast analysis for Callgraph, PAG and CHA"},
 }
 );
 
@@ -726,7 +726,7 @@ const Option<std::string> Options::CFLGraph(
 
 const Option<bool> Options::PrintCFL(
     "print-cfl",
-    "Print ir, grammar and cflgraph for debug.",
+    "Print PAG, grammar and cflgraph for debug.",
     false
 );
 
