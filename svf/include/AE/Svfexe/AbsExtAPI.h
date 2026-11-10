@@ -95,8 +95,6 @@ public:
     u32_t getStringElementSize(const ValVar* var, const ICFGNode* node);
     /// Last byte offset written for `length` elements plus the terminator.
     IntervalValue getStringLastByte(const CallICFGNode* call, const IntervalValue& length);
-    /// Consume the bound recorded by this visit's concatenation handler.
-    bool takeStrcatLastByte(const CallICFGNode* call, IntervalValue& lastByte);
     /// Elements strncat appends: min(n, strlen(src)).
     IntervalValue getStrncatLength(const CallICFGNode* call);
     /// Write `length` source elements and a NUL into dst at element `start`.
@@ -145,7 +143,6 @@ protected:
     SVFIR* svfir; ///< Pointer to the SVF intermediate representation.
     ICFG* icfg; ///< Pointer to the interprocedural control flow graph.
     Map<std::string, std::function<void(const CallICFGNode*)>> func_map; ///< Map of function names to handlers.
-    Map<const CallICFGNode*, IntervalValue> strcatLastBytes; ///< Last byte written by each concatenation, from the pre-call state.
 };
 
 } // namespace SVF

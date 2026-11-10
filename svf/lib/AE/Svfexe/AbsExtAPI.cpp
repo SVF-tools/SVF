@@ -470,8 +470,12 @@ IntervalValue AbsExtAPI::getStringLastByte(const CallICFGNode* call,
     return (length + IntervalValue(1)) * width - IntervalValue(1);
 }
 
-/// Only a nonzero prefix proves a lower bound, and only a definite NUL
-/// proves an upper bound. The scan budget is not a termination guarantee.
+/// String length in elements, read from the abstract state only.
+/// Lower bound: leading elements whose abstract value excludes 0; it stops
+/// at the first element that may be 0 (unknown, uninitialized, pointer, or a
+/// range containing 0), so uncertainty only weakens it.
+/// Upper bound: an element that is exactly 0; without one the length is
+/// unbounded above. The scan budget is not a termination guarantee.
 IntervalValue AbsExtAPI::getStrlen(const ValVar *strValue, const ICFGNode* node)
 {
     AbstractState& as = getAbsState(node);
@@ -545,7 +549,6 @@ void AbsExtAPI::handleStrcat(const CallICFGNode *call)
     const ValVar* src = call->getArgument(1);
     IntervalValue dstLen = getStrlen(dst, call);
     IntervalValue srcLen = getStrlen(src, call);
-    strcatLastBytes[call] = getStringLastByte(call, dstLen + srcLen);
     handleStringCopy(call, srcLen, dstLen);
 }
 
@@ -556,21 +559,7 @@ void AbsExtAPI::handleStrncat(const CallICFGNode *call)
     const ValVar* dst = call->getArgument(0);
     IntervalValue n = getStrncatLength(call);
     IntervalValue dstLen = getStrlen(dst, call);
-    strcatLastBytes[call] = getStringLastByte(call, dstLen + n);
     handleStringCopy(call, n, dstLen);
-}
-
-bool AbsExtAPI::takeStrcatLastByte(const CallICFGNode* call, IntervalValue& lastByte)
-{
-    auto it = strcatLastBytes.find(call);
-    if (it == strcatLastBytes.end())
-        return false;
-    lastByte = it->second;
-    // Detection immediately follows the handler in dense and semi-sparse AE.
-    // Consume the record so a later check without a handler cannot reuse it.
-    // Each handler visit overwrites it, including loop and context revisits.
-    strcatLastBytes.erase(it);
-    return true;
 }
 
 IntervalValue AbsExtAPI::getStrncatLength(const CallICFGNode* call)

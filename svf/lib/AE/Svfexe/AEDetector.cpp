@@ -452,15 +452,14 @@ bool BufOverflowDetector::detectStrcat(const CallICFGNode *call, BufferOverflowI
     const std::vector<std::string> strcatGroup = {"__strcat_chk", "strcat", "__wcscat_chk", "wcscat"};
     const std::vector<std::string> strncatGroup = {"__strncat_chk", "strncat", "__wcsncat_chk", "wcsncat"};
 
-    // The handler records the bound before changing dst. Fall back to the
-    // post-call terminator when no record is available for this visit.
+    // Detectors see the state after the call, where dst already holds the
+    // concatenation, so strlen(dst) is the index of the new terminator.
+    // If the append overflowed, no terminator is inside dst and the length
+    // stays unbounded above, which keeps the reported access sound.
     if (std::find(strcatGroup.begin(), strcatGroup.end(), call->getCalledFunction()->getName()) != strcatGroup.end() ||
             std::find(strncatGroup.begin(), strncatGroup.end(), call->getCalledFunction()->getName()) != strncatGroup.end())
     {
         const ValVar* arg0Val = call->getArgument(0);
-        IntervalValue lastByte;
-        if (ae.getUtils()->takeStrcatLastByte(call, lastByte))
-            return canSafelyAccessMemory(arg0Val, lastByte, call, &info);
         IntervalValue totalLen = ae.getUtils()->getStrlen(arg0Val, call);
         return canSafelyAccessMemory(arg0Val, ae.getUtils()->getStringLastByte(call, totalLen), call, &info);
     }
