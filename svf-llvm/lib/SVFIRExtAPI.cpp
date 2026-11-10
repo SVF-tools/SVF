@@ -502,6 +502,17 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
             writeWrnMsg("Arg receiving new object must be pointer type");
         }
     }
+    else if (llvmModuleSet()->hasExtFuncAnnotation(callee, "STRCAT") ||
+             llvmModuleSet()->hasExtFuncAnnotation(callee, "STRCPY"))
+    {
+        // String copies end at the source NUL, and strcat starts at
+        // strlen(dst); neither is known here. A memcpy-style field copy
+        // would copy every source field at offset 0 instead. The copied
+        // bytes are characters, so only the returned dst alias matters
+        // for pointer flow; AbsExtAPI models the contents.
+        if(SVFUtil::isa<PointerType>(cs->getType()))
+            addCopyEdge(getValueNode(cs->getArgOperand(0)), getValueNode(cs), CopyStmt::COPYVAL);
+    }
     else if (LLVMUtil::isMemcpyExtFun(callee))
     {
         // Side-effects similar to void *memcpy(void *dest, const void * src, size_t n)

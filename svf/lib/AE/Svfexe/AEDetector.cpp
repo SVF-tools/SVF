@@ -443,7 +443,7 @@ bool BufOverflowDetector::detectStrcpy(const CallICFGNode *call, BufferOverflowI
     const ValVar* arg1Val = call->getArgument(1);
     auto& ae = AbstractInterpretation::getAEInstance();
     IntervalValue strLen = ae.getUtils()->getStrlen(arg1Val, call);
-    return canSafelyAccessMemory(arg0Val, strLen, call, &info);
+    return canSafelyAccessMemory(arg0Val, ae.getUtils()->getStringLastByte(call, strLen), call, &info);
 }
 
 bool BufOverflowDetector::detectStrcat(const CallICFGNode *call, BufferOverflowInfo& info)
@@ -452,23 +452,17 @@ bool BufOverflowDetector::detectStrcat(const CallICFGNode *call, BufferOverflowI
     const std::vector<std::string> strcatGroup = {"__strcat_chk", "strcat", "__wcscat_chk", "wcscat"};
     const std::vector<std::string> strncatGroup = {"__strncat_chk", "strncat", "__wcsncat_chk", "wcsncat"};
 
-    if (std::find(strcatGroup.begin(), strcatGroup.end(), call->getCalledFunction()->getName()) != strcatGroup.end())
+    // The handler records the bound before changing dst. Fall back to the
+    // post-call terminator when no record is available for this visit.
+    if (std::find(strcatGroup.begin(), strcatGroup.end(), call->getCalledFunction()->getName()) != strcatGroup.end() ||
+            std::find(strncatGroup.begin(), strncatGroup.end(), call->getCalledFunction()->getName()) != strncatGroup.end())
     {
         const ValVar* arg0Val = call->getArgument(0);
-        const ValVar* arg1Val = call->getArgument(1);
-        IntervalValue strLen0 = ae.getUtils()->getStrlen(arg0Val, call);
-        IntervalValue strLen1 = ae.getUtils()->getStrlen(arg1Val, call);
-        IntervalValue totalLen = strLen0 + strLen1;
-        return canSafelyAccessMemory(arg0Val, totalLen, call, &info);
-    }
-    else if (std::find(strncatGroup.begin(), strncatGroup.end(), call->getCalledFunction()->getName()) != strncatGroup.end())
-    {
-        const ValVar* arg0Val = call->getArgument(0);
-        const ValVar* arg2Val = call->getArgument(2);
-        IntervalValue arg2Num = ae.getAbsValue(arg2Val, call).getInterval();
-        IntervalValue strLen0 = ae.getUtils()->getStrlen(arg0Val, call);
-        IntervalValue totalLen = strLen0 + arg2Num;
-        return canSafelyAccessMemory(arg0Val, totalLen, call, &info);
+        IntervalValue lastByte;
+        if (ae.getUtils()->takeStrcatLastByte(call, lastByte))
+            return canSafelyAccessMemory(arg0Val, lastByte, call, &info);
+        IntervalValue totalLen = ae.getUtils()->getStrlen(arg0Val, call);
+        return canSafelyAccessMemory(arg0Val, ae.getUtils()->getStringLastByte(call, totalLen), call, &info);
     }
     else
     {
