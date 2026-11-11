@@ -566,61 +566,53 @@ build_svf() {
             -DSVF_Z3=ON
         )
     elif [[ "$PLATFORM" == ubuntu-* ]]; then
-        # When official LLVM prebuilt bundles libc++, use Clang/libc++ to match its ABI.
-        # When libc++ is NOT bundled (e.g. LLVM compiled with GCC/libstdc++), use default system compiler.
-        if [[ -d "$LLVM_DIR/include/c++/v1" ]]; then
-            local c_comp="${CC:-}"
-            local cxx_comp="${CXX:-}"
-            if [[ -z "$c_comp" && -x "$LLVM_DIR/bin/clang" && -x "$LLVM_DIR/bin/clang++" ]]; then
-                if "$LLVM_DIR/bin/clang" --version >/dev/null 2>&1; then
-                    c_comp="$LLVM_DIR/bin/clang"
-                    cxx_comp="$LLVM_DIR/bin/clang++"
-                fi
+        local c_comp="${CC:-}"
+        local cxx_comp="${CXX:-}"
+        if [[ -z "$c_comp" && -x "$LLVM_DIR/bin/clang" && -x "$LLVM_DIR/bin/clang++" ]]; then
+            if "$LLVM_DIR/bin/clang" --version >/dev/null 2>&1; then
+                c_comp="$LLVM_DIR/bin/clang"
+                cxx_comp="$LLVM_DIR/bin/clang++"
             fi
-            if [[ -n "$c_comp" && -n "$cxx_comp" ]]; then
-                cmake_generator_args+=(
-                    -DCMAKE_C_COMPILER="$c_comp"
-                    -DCMAKE_CXX_COMPILER="$cxx_comp"
-                )
-            fi
-            local extra_cxx_flags="-stdlib=libc++"
-            local extra_link_flags="-stdlib=libc++"
-            if [[ -x "$LLVM_DIR/bin/ld.lld" ]]; then
-                if ! "$LLVM_DIR/bin/ld.lld" --version >/dev/null 2>&1; then
-                    for lxml in /usr/lib/*/libxml2.so* /usr/lib/libxml2.so*; do
-                        if [[ -f "$lxml" ]]; then
-                            local lxml_dir
-                            lxml_dir=$(dirname "$lxml")
-                            if [[ ! -f "$lxml_dir/libxml2.so.2" && -w "$lxml_dir" ]]; then
-                                ln -sf "$lxml" "$lxml_dir/libxml2.so.2" 2>/dev/null || true
-                            fi
-                            break
-                        fi
-                    done
-                fi
-                if "$LLVM_DIR/bin/ld.lld" --version >/dev/null 2>&1; then
-                    extra_link_flags="${extra_link_flags:+$extra_link_flags }-fuse-ld=lld"
-                    cmake_generator_args+=(-DSVF_USE_LLD=ON)
-                fi
-            fi
-            local target_lib_dir=""
-            if [[ -d "$LLVM_DIR/lib/x86_64-unknown-linux-gnu" ]]; then
-                target_lib_dir="$LLVM_DIR/lib/x86_64-unknown-linux-gnu"
-            elif [[ -d "$LLVM_DIR/lib/aarch64-unknown-linux-gnu" ]]; then
-                target_lib_dir="$LLVM_DIR/lib/aarch64-unknown-linux-gnu"
-            fi
-            if [[ -n "$target_lib_dir" ]]; then
-                extra_link_flags="${extra_link_flags} -L$target_lib_dir -Wl,-rpath,$target_lib_dir"
-            fi
+        fi
+        if [[ -n "$c_comp" && -n "$cxx_comp" ]]; then
             cmake_generator_args+=(
-                "-DCMAKE_CXX_FLAGS=${extra_cxx_flags}"
+                -DCMAKE_C_COMPILER="$c_comp"
+                -DCMAKE_CXX_COMPILER="$cxx_comp"
+            )
+        fi
+        local extra_link_flags=""
+        if [[ -x "$LLVM_DIR/bin/ld.lld" ]]; then
+            if ! "$LLVM_DIR/bin/ld.lld" --version >/dev/null 2>&1; then
+                for lxml in /usr/lib/*/libxml2.so* /usr/lib/libxml2.so*; do
+                    if [[ -f "$lxml" ]]; then
+                        local lxml_dir
+                        lxml_dir=$(dirname "$lxml")
+                        if [[ ! -f "$lxml_dir/libxml2.so.2" && -w "$lxml_dir" ]]; then
+                            ln -sf "$lxml" "$lxml_dir/libxml2.so.2" 2>/dev/null || true
+                        fi
+                        break
+                    fi
+                done
+            fi
+            if "$LLVM_DIR/bin/ld.lld" --version >/dev/null 2>&1; then
+                extra_link_flags="${extra_link_flags:+$extra_link_flags }-fuse-ld=lld"
+                cmake_generator_args+=(-DSVF_USE_LLD=ON)
+            fi
+        fi
+        local target_lib_dir=""
+        if [[ -d "$LLVM_DIR/lib/x86_64-unknown-linux-gnu" ]]; then
+            target_lib_dir="$LLVM_DIR/lib/x86_64-unknown-linux-gnu"
+        elif [[ -d "$LLVM_DIR/lib/aarch64-unknown-linux-gnu" ]]; then
+            target_lib_dir="$LLVM_DIR/lib/aarch64-unknown-linux-gnu"
+        fi
+        if [[ -n "$target_lib_dir" ]]; then
+            extra_link_flags="${extra_link_flags} -L$target_lib_dir -Wl,-rpath,$target_lib_dir"
+        fi
+        if [[ -n "$extra_link_flags" ]]; then
+            cmake_generator_args+=(
                 "-DCMAKE_SHARED_LINKER_FLAGS=${extra_link_flags}"
                 "-DCMAKE_EXE_LINKER_FLAGS=${extra_link_flags}"
             )
-            # Only disable ASan container overflow detection when linking against Clang's libc++
-            if [[ "${SVF_SANITIZER:-}" == "address" ]]; then
-                export ASAN_OPTIONS="detect_container_overflow=0:${ASAN_OPTIONS:-}"
-            fi
         fi
     fi
 
