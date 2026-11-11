@@ -66,7 +66,7 @@ public:
         return callGraphSCC;
     }
     /// Build WTO for each function using call graph SCC
-    void initWTO();
+    void initWTO(const FunObjVar* userEntry = nullptr);
 
     /// Accessors for WTO data
     const Map<const FunObjVar*, const ICFGWTO*>& getFuncToWTO() const

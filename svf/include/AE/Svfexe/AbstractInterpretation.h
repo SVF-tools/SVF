@@ -114,6 +114,9 @@ public:
     /// Get all entry point functions (functions without callers)
     FIFOWorkList<const FunObjVar*> collectProgEntryFuns();
 
+    /// Resolve the AE-only entry without changing program entry semantics.
+    static const FunObjVar* resolveUserEntry(const CallGraph* callGraph);
+
     /// Factory: returns the singleton instance.  The concrete class is
     /// chosen once, on first call, from `Options::AESparsity()`:
     /// `SemiSparseAbstractInterpretation` for SemiSparse,
@@ -331,6 +334,8 @@ private:
 
     ICFG* icfg;
     CallGraph* callGraph;
+    /// Resolved once after Andersen; null means the existing entry policy.
+    const FunObjVar* userEntry = nullptr;
     AEStat* stat;
 
     AbsExtAPI* getUtils()

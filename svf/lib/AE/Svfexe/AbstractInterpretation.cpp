@@ -66,8 +66,9 @@ AbstractInterpretation::AbstractInterpretation()
     icfg = svfir->getICFG();
     preAnalysis = new AEWTO(svfir, icfg);
     callGraph = preAnalysis->getCallGraph();
+    userEntry = resolveUserEntry(callGraph);
     icfg->updateCallGraph(callGraph);
-    preAnalysis->initWTO();
+    preAnalysis->initWTO(userEntry);
 }
 
 /// Factory: first call allocates the concrete subclass based on
@@ -116,12 +117,62 @@ AbstractInterpretation::~AbstractInterpretation()
     delete preAnalysis;
 }
 
+const FunObjVar* AbstractInterpretation::resolveUserEntry(const CallGraph* callGraph)
+{
+    const std::string& name = Options::AEEntry();
+    if (name.empty())
+        return nullptr;
+    if (Options::AEFunEntry() == AEFunEntryMode::NO_MAIN)
+    {
+        SVFUtil::errs() << SVFUtil::errMsg(
+                           "AE -ae-entry and -ae-fun-entry=no-main are mutually exclusive.\n");
+        assert(false && "Mutually exclusive AE entry options");
+        abort();
+    }
+
+    const FunObjVar* match = nullptr;
+    std::string variants;
+    const std::string prefix = name + ".";
+    for (auto it = callGraph->begin(); it != callGraph->end(); ++it)
+    {
+        const FunObjVar* fun = it->second->getFunction();
+        const std::string& symbol = fun->getName();
+        if (symbol == name)
+            match = fun;
+        else if (symbol.compare(0, prefix.size(), prefix) == 0 &&
+                 symbol.size() > prefix.size() &&
+                 symbol.find_first_not_of("0123456789", prefix.size()) == std::string::npos)
+            variants += " " + symbol;
+    }
+    if (match && !match->isDeclaration())
+    {
+        if (!variants.empty())
+            SVFUtil::errs() << "AE -ae-entry='" << name
+                            << "' selects the exact symbol. Internal-linkage variants:"
+                            << variants << "\n";
+        return match;
+    }
+
+    std::string message = "AE -ae-entry='" + name + "' ";
+    message += match ? "has no body (declaration only)." : "was not found.";
+    if (!match && !variants.empty())
+        message += " Internal-linkage variants:" + variants;
+    SVFUtil::errs() << SVFUtil::errMsg(message + "\n");
+    assert(false && "Invalid AE entry function");
+    abort();
+}
+
 /// Collect entry point functions for analysis.
 /// In main mode, entry is main/svf.main. In no-main mode,
 /// entries are SCCs with no external caller in the Andersen-resolved CallGraph.
 FIFOWorkList<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
 {
     FIFOWorkList<const FunObjVar*> entryFunctions;
+    if (const FunObjVar* entry = userEntry)
+    {
+        entryFunctions.push(entry);
+        return entryFunctions;
+    }
     const bool mainEntry = Options::AEFunEntry() == AEFunEntryMode::MAIN;
     Set<NodeID> visitedEntrySCCs;
     auto* callGraphSCC = preAnalysis->getCallGraphSCC();
@@ -271,6 +322,16 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
     AbstractState merged;
     bool hasFeasiblePred = false;
 
+    // The custom entry is reachable independently of its callers. Keep this
+    // boundary on every recursive iteration, joining any recursive feedback.
+    // It skips svf.main, hence C++ global constructors and destructors.
+    if (userEntry && SVFUtil::isa<FunEntryICFGNode>(node) &&
+            node->getFun() == userEntry)
+    {
+        joinStates(merged, getAbsState(icfg->getGlobalICFGNode()));
+        hasFeasiblePred = true;
+    }
+
     for (auto& edge : node->getInEdges())
     {
         const ICFGNode* pred = edge->getSrcNode();
@@ -316,13 +377,17 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
 
         if (feasible)
         {
-            if (Options::AESparsity() == AESparsity::Sparse)
+            if (Options::AESparsity() == AESparsity::Sparse && !userEntry)
             {
                 // getAEInstance() selects this class for Sparse mode.
                 static_cast<FullSparseAbstractInterpretation*>(this)->mergeFreedAddrs(merged, predState);
             }
             else
+            {
+                // A custom full-sparse entry uses a conservative dense-memory
+                // fallback: SVFG global-store inputs are wired to main/svf.main.
                 joinStates(merged, predState);
+            }
             hasFeasiblePred = true;
         }
     }
@@ -765,7 +830,18 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
     stat->getBlockTrace()++;
     stat->getICFGNodeTrace()++;
 
-    // Handle SVF statements
+    // Custom-entry integers start at top and pointers at BlackHole.
+    if (userEntry && isFunEntry && node->getFun() == userEntry)
+    {
+        const auto* entry = SVFUtil::cast<FunEntryICFGNode>(node);
+        for (const SVFVar* param : entry->getFormalParms())
+        {
+            AbstractValue value = param->getType()->isPointerTy()
+                                  ? AbstractValue(AddressValue(BlackHoleObjAddr))
+                                  : AbstractValue(IntervalValue::top());
+            updateAbsValue(param, value, node);
+        }
+    }
     for (const SVFStmt *stmt: node->getSVFStmts())
     {
         handleSVFStatement(stmt);
@@ -1062,6 +1138,13 @@ void AbstractInterpretation::updateStateOnCall(const CallPE *callPE)
     const ICFGNode* node = callPE->getICFGNode();
     const SVFVar* res = callPE->getRes();
     AbstractValue rhs;
+    // Preserve the external caller's unknown arguments through CallPE merges.
+    if (userEntry && node->getFun() == userEntry)
+    {
+        rhs = res->getType()->isPointerTy()
+              ? AbstractValue(AddressValue(BlackHoleObjAddr))
+              : AbstractValue(IntervalValue::top());
+    }
     for (u32_t i = 0; i < callPE->getOpVarNum(); i++)
     {
         const ICFGNode* opICFGNode = callPE->getOpCallICFGNode(i);
