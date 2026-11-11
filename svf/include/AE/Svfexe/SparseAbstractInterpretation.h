@@ -105,24 +105,29 @@ protected:
     /// selected Obj values into this ICFG node's state.
     bool mergeStatesFromPredecessors(const ICFGNode* node) override;
 
-    /// While a cycle iterates, no node of its function is skipped: widening
-    /// and narrowing write values back into the cycle body.
+    /// A cycle is skipped as a whole when the inputs it gathers from outside
+    /// at its entry match those of its last run; the states of its last run
+    /// are then restored. Otherwise it iterates to
+    /// its fixpoint, and no node of its function is skipped meanwhile:
+    /// widening and narrowing write values back into the cycle body.
     void handleLoopOrRecursion(const ICFGCycleWTO* cycle,
                                const CallICFGNode* caller) override;
 
 private:
-    /// A node can be skipped when every value it reads equals the value it
-    /// read at its last visit. A cycle is skipped as a whole, at its head,
-    /// when this holds for every node in it. Calls to defined functions and
-    /// their return sites are never skipped: the call runs the callee and
-    /// writes the return site.
+    /// A node outside an iterating cycle can be skipped when the inputs it
+    /// reads match those of its last visit. Cycle heads are left to
+    /// handleLoopOrRecursion. Calls to defined functions and their return
+    /// sites are never skipped: the call runs the callee and writes the
+    /// return site.
     bool canSkip(const ICFGNode* node);
-    bool isCycleUnchanged(const ICFGCycleWTO* cycle);
-    /// Compare the values node reads with those of its last visit, or
-    /// record them when save is set: the freed addresses (and reachability)
-    /// of its ICFG predecessors, the fields of the base Objs on its routes,
-    /// and its ValVars.
-    bool matchInputs(const ICFGNode* node, bool save);
+    bool isCycleHead(const ICFGNode* node) const;
+    /// Compare the inputs that nodes read from outside nodes with those
+    /// recorded under key, or record them when save is set: the freed
+    /// addresses (and reachability) of their ICFG predecessors, the fields
+    /// of the base Objs on their routes, and their ValVars. A single node
+    /// gathers its own inputs; a cycle gathers the inputs from outside it.
+    bool matchInputs(const ICFGNode* key, const std::vector<const ICFGNode*>& nodes,
+                     bool save);
 
     void buildSVFG();
     // The prebuilt packed-Obj route graph; the SVFG is released once it is built.
@@ -130,6 +135,8 @@ private:
     /// The values each node read before its last visit: the counterpart of
     /// abstractTrace, which holds the state after it.
     Map<const ICFGNode*, std::vector<std::optional<AbstractValue>>> preAbsTrace;
+    /// The states of the nodes of each cycle after its last run, by head.
+    Map<const ICFGNode*, std::vector<std::pair<const ICFGNode*, AbstractState>>> cycleOutputs;
     /// The number of cycles of each function that are iterating.
     Map<const FunObjVar*, u32_t> runningCycles;
 };
