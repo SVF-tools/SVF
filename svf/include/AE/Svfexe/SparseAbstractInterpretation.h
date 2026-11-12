@@ -24,6 +24,7 @@
 #define INCLUDE_AE_SVFEXE_SPARSEABSTRACTINTERPRETATION_H_
 
 #include <memory>
+#include <optional>
 
 #include "AE/Svfexe/AbstractInterpretation.h"
 #include "Graphs/SparseObjGraph.h"
@@ -104,11 +105,51 @@ protected:
     /// selected Obj values into this ICFG node's state.
     bool mergeStatesFromPredecessors(const ICFGNode* node) override;
 
+    /// Skip a WTO component, a single node or a cycle, when the inputs it
+    /// reads from outside itself match those of its last run (preAbsTrace):
+    /// abstractTrace then still holds what running it again would produce.
+    /// A node written by another (a return site by its call, a def-site by
+    /// widening or narrowing) loses its record, so it is run again.
+    void handleWTOComponent(const ICFGWTOComp* comp,
+                            const CallICFGNode* caller) override;
+    bool widenCycleState(const AbstractState& prev, const AbstractState& cur,
+                         const ICFGCycleWTO* cycle) override;
+    bool narrowCycleState(const AbstractState& prev, const AbstractState& cur,
+                          const ICFGCycleWTO* cycle) override;
+
 private:
+    /// Compare the inputs that nodes read from outside nodes with inputs,
+    /// or record them when save is set: the freed addresses (and
+    /// reachability) of their ICFG predecessors, the fields of the base Objs
+    /// on their routes, and their ValVars.
+    bool matchInputs(std::vector<std::optional<AbstractValue>>& inputs,
+                     const std::vector<const ICFGNode*>& nodes, bool save);
+
+    // ---- Helpers of matchInputs ----
+    /// Compare one value read with entry i of last (and advance i), or
+    /// append it when save is set. A null value is one that is not there
+    /// (no state, or no entry).
+    static bool matchValue(std::vector<std::optional<AbstractValue>>& last,
+                           u32_t& i, bool save, const AbstractValue* value);
+    /// Compare the freed addresses of a predecessor (null if it has no
+    /// state) like a value.
+    static bool matchFreed(std::vector<std::optional<AbstractValue>>& last,
+                           u32_t& i, bool save, const AbstractState* pred);
+    /// Add the vars that stmt reads. Its LHS is added too; matchInputs drops
+    /// the ValVars defined inside the component.
+    static void addReadVars(const SVFStmt* stmt, OrderedSet<const SVFVar*>& vars);
+    /// The statement that defines var, if any; used to follow a branch
+    /// condition back to its comparison, copy and load.
+    static const SVFStmt* getDefStmt(const SVFVar* var);
+
+    void forgetDefSites(const ICFGCycleWTO* cycle);
+
     void buildSVFG();
-    // Owns the original SVFG and the prebuilt packed-Obj route graph.
-    std::unique_ptr<SVFGBuilder> svfgBuilder;
+    // The prebuilt packed-Obj route graph; the SVFG is released once it is built.
     std::unique_ptr<SparseObjGraph> objRoutes;
+    /// The inputs each component read from outside itself at its last run,
+    /// by its first node (a single node, or the head of a cycle).
+    Map<const ICFGNode*, std::vector<std::optional<AbstractValue>>> preAbsTrace;
 };
 
 } // namespace SVF

@@ -812,6 +812,10 @@ const OptionMap<u32_t> Options::AEFunEntry(
 });
 const Option<u32_t> Options::WidenDelay(
     "widen-delay", "Loop Widen Delay", 3);
+const Option<bool> Options::AEReuse(
+    "ae-reuse",
+    "Full-sparse AE: reuse the last result of a WTO component (node or cycle) whose inputs are unchanged",
+    true);
 const OptionMap<u32_t> Options::HandleRecur(
     "handle-recur",
     "Recursion handling mode in abstract execution (Default -widen-narrow)",

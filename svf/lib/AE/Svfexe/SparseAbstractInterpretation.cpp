@@ -27,8 +27,40 @@
 #include "Graphs/SVFG.h"
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/Andersen.h"
+#include "Util/Options.h"
+
+#include <optional>
 
 using namespace SVF;
+
+bool FullSparseAbstractInterpretation::matchValue(std::vector<std::optional<AbstractValue>>& last,
+        u32_t& i, bool save, const AbstractValue* value)
+{
+    if (save)
+    {
+        last.push_back(value ? std::optional<AbstractValue>(*value) : std::nullopt);
+        return true;
+    }
+    if (i >= last.size())
+        return false;
+    const std::optional<AbstractValue>& old = last[i++];
+    return value ? old && old->equals(*value) : !old;
+}
+
+bool FullSparseAbstractInterpretation::matchFreed(std::vector<std::optional<AbstractValue>>& last,
+        u32_t& i, bool save, const AbstractState* pred)
+{
+    if (save)
+    {
+        last.push_back(pred ? std::optional<AbstractValue>(
+                           AddressValue(pred->getFreedAddrs())) : std::nullopt);
+        return true;
+    }
+    if (i >= last.size())
+        return false;
+    const std::optional<AbstractValue>& old = last[i++];
+    return pred ? old && old->addrs.getVals() == pred->getFreedAddrs() : !old;
+}
 
 // FullSparse Obj inputs follow prebuilt routes. Shared SSA def-site access
 // and WTO gather/scatter retain their existing implementations.
@@ -41,10 +73,13 @@ FullSparseAbstractInterpretation::~FullSparseAbstractInterpretation() = default;
 
 void FullSparseAbstractInterpretation::buildSVFG()
 {
-    svfgBuilder = std::make_unique<SVFGBuilder>(true);
-    svfgBuilder->buildFullSVFG(preAnalysis->getPointerAnalysis());
+    // AE reads Obj values only through the route graph, which copies what it
+    // needs from the SVFG. The builder, and with it the SVFG and its MemSSA,
+    // is destroyed on return.
+    SVFGBuilder svfgBuilder(true);
+    svfgBuilder.buildFullSVFG(preAnalysis->getPointerAnalysis());
     objRoutes = std::make_unique<SparseObjGraph>(
-                    *svfgBuilder->getSVFG(), *svfir->getICFG(),
+                    *svfgBuilder.getSVFG(), *svfir->getICFG(),
                     *preAnalysis->getPointerAnalysis(), *svfir);
 }
 
@@ -114,12 +149,216 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
                     continue;
                 input = &refined;
             }
-            joinStates(merged, *input, svfir->getAllFieldsObjVars(
-                           svfir->getBaseObject(sourceNode->base)));
+            for (NodeID base : edge->getBases())
+                joinStates(merged, *input, svfir->getAllFieldsObjVars(
+                               svfir->getBaseObject(base)));
         }
         updateAbsState(node, merged);
     }
     return reachable;
+}
+
+void FullSparseAbstractInterpretation::addReadVars(const SVFStmt* stmt, OrderedSet<const SVFVar*>& vars)
+{
+    vars.insert(stmt->getSrcNode());
+    vars.insert(stmt->getDstNode());
+    if (const MultiOpndStmt* multi = SVFUtil::dyn_cast<MultiOpndStmt>(stmt))
+        for (u32_t k = 0; k < multi->getOpVarNum(); ++k)
+            vars.insert(multi->getOpVar(k));
+    if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt))
+        for (const auto& offset : gep->getOffsetVarAndGepTypePairVec())
+            vars.insert(offset.first);
+    if (const BranchStmt* branch = SVFUtil::dyn_cast<BranchStmt>(stmt))
+        vars.insert(branch->getCondition());
+    if (const SelectStmt* select = SVFUtil::dyn_cast<SelectStmt>(stmt))
+        vars.insert(select->getCondition());
+}
+
+const SVFStmt* FullSparseAbstractInterpretation::getDefStmt(const SVFVar* var)
+{
+    return var->getInEdges().empty() ? nullptr : *var->getInEdges().begin();
+}
+
+bool FullSparseAbstractInterpretation::matchInputs(
+    std::vector<std::optional<AbstractValue>>& last,
+    const std::vector<const ICFGNode*>& nodes, bool save)
+{
+    if (save)
+        last.clear();
+    u32_t i = 0;
+    // Only inputs whose source lies outside nodes are gathered.
+    const Set<const ICFGNode*> inside(nodes.begin(), nodes.end());
+    // Branch edges whose condition this visit checks or refines with.
+    OrderedSet<const IntraCFGEdge*> branches;
+
+    // (1) ICFG predecessors: reachability and freed addresses.
+    for (const ICFGNode* node : nodes)
+        for (const ICFGEdge* edge : node->getInEdges())
+        {
+            const ICFGNode* pred = edge->getSrcNode();
+            const IntraCFGEdge* intra = SVFUtil::dyn_cast<IntraCFGEdge>(edge);
+            if (intra && intra->getCondition())
+                branches.insert(intra);
+            if (inside.count(pred))
+                continue;
+            if (!matchFreed(last, i, save, hasAbsState(pred) ? &getAbsState(pred) : nullptr))
+                return false;
+        }
+
+    // (2) ObjGraph predecessors: the fields of the base Objs on each route.
+    for (const ICFGNode* node : nodes)
+        for (const SparseObjGraph::Edge* edge : objRoutes->getInputs(node))
+        {
+            const ICFGNode* source = edge->getSrcNode()->getICFGNode();
+            if (edge->getSrcNode()->branch)
+                branches.insert(edge->getSrcNode()->branch);
+            if (inside.count(source))
+                continue;
+            const AbstractState* state = hasAbsState(source) ? &getAbsState(source) : nullptr;
+            for (NodeID base : edge->getBases())
+                for (NodeID obj : svfir->getAllFieldsObjVars(svfir->getBaseObject(base)))
+                {
+                    const AbstractValue* read = nullptr;
+                    if (state)
+                    {
+                        const auto value = state->getLocToVal().find(state->getIDFromAddr(
+                                AbstractState::getVirtualMemAddress(obj)));
+                        if (value != state->getLocToVal().end())
+                            read = &value->second;
+                    }
+                    if (!matchValue(last, i, save, read))
+                        return false;
+                }
+        }
+
+    // (3) ValVars, read at their def-sites. They come from the SVFStmts:
+    OrderedSet<const SVFVar*> vars;
+    for (const ICFGNode* node : nodes)
+    {
+        //   (a) the statements of node;
+        for (const SVFStmt* stmt : node->getSVFStmts())
+            addReadVars(stmt, vars);
+        //   (b) the actual parameters of a call, which an external call reads
+        //       without a CallPE;
+        if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node))
+            for (const ValVar* actual : call->getActualParms())
+                vars.insert(actual);
+    }
+    //   (c) for each branch edge of (1) and (2), the statements that define
+    //       its condition: the comparison, and the copy and load behind each
+    //       of its operands.
+    for (const IntraCFGEdge* edge : branches)
+    {
+        vars.insert(edge->getCondition());
+        const SVFStmt* cmp = getDefStmt(edge->getCondition());
+        if (!cmp || !SVFUtil::isa<CmpStmt>(cmp))
+            continue;
+        addReadVars(cmp, vars);
+        for (const SVFVar* operand :
+                {
+                    SVFUtil::cast<CmpStmt>(cmp)->getOpVar(0),
+                    SVFUtil::cast<CmpStmt>(cmp)->getOpVar(1)
+                })
+        {
+            const SVFStmt* def = getDefStmt(operand);
+            if (def && SVFUtil::isa<CopyStmt>(def))
+            {
+                addReadVars(def, vars);
+                def = getDefStmt(def->getSrcNode());
+            }
+            if (def && SVFUtil::isa<LoadStmt>(def))
+                addReadVars(def, vars);
+        }
+    }
+    for (const SVFVar* var : vars)
+    {
+        const ValVar* value = var ? SVFUtil::dyn_cast<ValVar>(var) : nullptr;
+        // A ValVar defined inside nodes is their output, not their input.
+        if (!value || inside.count(getICFGNode(value)))
+            continue;
+        const ICFGNode* def = getICFGNode(value);
+        const AbstractValue* read = nullptr;
+        if (hasAbsState(def))
+        {
+            const auto it = getAbsState(def).getVarToVal().find(value->getId());
+            if (it != getAbsState(def).getVarToVal().end())
+                read = &it->second;
+        }
+        if (!matchValue(last, i, save, read))
+            return false;
+    }
+    return save || i == last.size();
+}
+
+/// The nodes of comp, and of the cycles nested in it, in WTO order.
+static void collectNodes(const ICFGWTOComp* comp, std::vector<const ICFGNode*>& nodes)
+{
+    if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+    {
+        nodes.push_back(singleton->getICFGNode());
+        return;
+    }
+    const ICFGCycleWTO* cycle = SVFUtil::cast<ICFGCycleWTO>(comp);
+    nodes.push_back(cycle->head()->getICFGNode());
+    for (const ICFGWTOComp* sub : cycle->getWTOComponents())
+        collectNodes(sub, nodes);
+}
+
+void FullSparseAbstractInterpretation::handleWTOComponent(
+    const ICFGWTOComp* comp, const CallICFGNode* caller)
+{
+    if (!Options::AEReuse())
+    {
+        AbstractInterpretation::handleWTOComponent(comp, caller);
+        return;
+    }
+    std::vector<const ICFGNode*> nodes;
+    collectNodes(comp, nodes);
+    const ICFGNode* head = nodes.front();
+    // abstractTrace still holds the states of the component's last run
+    // unless another node overwrote one, which drops that node's record.
+    auto last = preAbsTrace.find(head);
+    bool reuse = last != preAbsTrace.end() && matchInputs(last->second, nodes, false);
+    for (u32_t k = 1; reuse && k < nodes.size(); ++k)
+        reuse = preAbsTrace.count(nodes[k]);
+    if (reuse)
+    {
+        // The overflow detector keeps the latest offset of each GEP Obj,
+        // which another GEP may have overwritten since the last run.
+        for (const ICFGNode* node : nodes)
+            if (hasAbsState(node))
+                runDetectors(node);
+        return;
+    }
+    AbstractInterpretation::handleWTOComponent(comp, caller);
+    // Recorded after the run: an input from a callee called inside the
+    // component is the value the run left there.
+    matchInputs(preAbsTrace[head], nodes, true);
+    // A call overwrites its return site.
+    for (const ICFGNode* node : nodes)
+        if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node))
+            preAbsTrace.erase(call->getRetICFGNode());
+}
+
+/// Widening and narrowing write the cycle's ValVars back to their def-sites.
+void FullSparseAbstractInterpretation::forgetDefSites(const ICFGCycleWTO* cycle)
+{
+    for (const ValVar* var : preAnalysis->getCycleValVars(cycle))
+        preAbsTrace.erase(var->getICFGNode());
+}
+
+bool FullSparseAbstractInterpretation::widenCycleState(
+    const AbstractState& prev, const AbstractState& cur, const ICFGCycleWTO* cycle)
+{
+    forgetDefSites(cycle);
+    return SemiSparseAbstractInterpretation::widenCycleState(prev, cur, cycle);
+}
+
+bool FullSparseAbstractInterpretation::narrowCycleState(
+    const AbstractState& prev, const AbstractState& cur, const ICFGCycleWTO* cycle)
+{
+    forgetDefSites(cycle);
+    return SemiSparseAbstractInterpretation::narrowCycleState(prev, cur, cycle);
 }
 
 AbstractState SemiSparseAbstractInterpretation::getFullCycleHeadState(
@@ -223,12 +462,12 @@ const ICFGNode* SemiSparseAbstractInterpretation::getICFGNode(
 {
     // const ValVars are all defined in global node
     if (!var->getICFGNode())
-    {
-        return svfir->getICFG()->getGlobalICFGNode();
+{
+    return svfir->getICFG()->getGlobalICFGNode();
     }
     // for return value of callsite, use the ret-site as def-site
     else if (SVFUtil::isa<CallICFGNode>(var->getICFGNode()) &&
-             SVFUtil::isa<RetValPN>(var))
+                 SVFUtil::isa<RetValPN>(var))
     {
         return SVFUtil::dyn_cast<CallICFGNode>(var->getICFGNode())
                ->getRetICFGNode();

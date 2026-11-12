@@ -105,33 +105,6 @@ protected:
 };
 
 /**
- * @class AEException
- * @brief Exception class for handling errors in Abstract Execution.
- */
-class AEException : public std::exception
-{
-public:
-    /**
-     * @brief Constructor initializes the exception with a message.
-     * @param message The error message.
-     */
-    AEException(const std::string& message)
-        : msg_(message) {}
-
-    /**
-     * @brief Provides the error message.
-     * @return The error message as a C-string.
-     */
-    virtual const char* what() const throw()
-    {
-        return msg_.c_str();
-    }
-
-private:
-    std::string msg_; ///< The error message.
-};
-
-/**
  * @class BufOverflowDetector
  * @brief Detector for identifying buffer overflow issues.
  */
@@ -242,18 +215,18 @@ public:
     IntervalValue getAccessOffset(NodeID objId, const GepStmt* gep);
 
     /**
-     * @brief Adds a bug to the reporter based on an exception.
-     * @param e The exception that was thrown.
+     * @brief Reports a bug, generating its text only for a new location.
      * @param node Pointer to the ICFG node where the bug was detected.
+     * @param stmt Optional statement to describe; otherwise describe node.
      */
-    void addBugToReporter(const AEException& e, const ICFGNode* node)
+    void addBugToReporter(const ICFGNode* node, const SVFStmt* stmt = nullptr)
     {
-        addBugToReporter(e, node, BufferOverflowInfo{});
+        addBugToReporter(node, BufferOverflowInfo{}, stmt);
     }
 
     /// Report an OOB alarm with the buffer size and offset from its check.
-    void addBugToReporter(const AEException& e, const ICFGNode* node,
-                          const BufferOverflowInfo& info)
+    void addBugToReporter(const ICFGNode* node, const BufferOverflowInfo& info,
+                          const SVFStmt* stmt = nullptr)
     {
 
         GenericBug::EventStack eventStack;
@@ -281,7 +254,8 @@ public:
         recoder.addAbsExecBug(GenericBug::FULLBUFOVERFLOW, eventStack,
                               info.bufferLowerBound, info.bufferSize,
                               info.accessOffset.lb().getNumeral(), info.accessOffset.ub().getNumeral());
-        nodeToBugInfo[node] = e.what(); // Record the exception information for the node
+        // Duplicate locations returned above without formatting the IR again.
+        nodeToBugInfo[node] = stmt ? stmt->toString() : node->toString();
     }
 
     /**
@@ -387,11 +361,11 @@ public:
     }
 
     /**
-    * @brief Adds a bug to the reporter based on an exception.
-    * @param e The exception that was thrown.
+    * @brief Reports a bug, generating its text only for a new location.
     * @param node Pointer to the ICFG node where the bug was detected.
+    * @param stmt Optional statement to describe; otherwise describe node.
     */
-    void addBugToReporter(const AEException& e, const ICFGNode* node)
+    void addBugToReporter(const ICFGNode* node, const SVFStmt* stmt = nullptr)
     {
         GenericBug::EventStack eventStack;
         SVFBugEvent sourceInstEvent(SVFBugEvent::EventType::SourceInst, node);
@@ -413,7 +387,8 @@ public:
             bugLoc.insert(loc); // Otherwise, mark this location as reported
         }
         recoder.addAbsExecBug(GenericBug::FULLNULLPTRDEREFERENCE, eventStack, 0, 0, 0, 0);
-        nodeToBugInfo[node] = e.what(); // Record the exception information for the node
+        // Duplicate locations returned above without formatting the IR again.
+        nodeToBugInfo[node] = stmt ? stmt->toString() : node->toString();
     }
 
     /**

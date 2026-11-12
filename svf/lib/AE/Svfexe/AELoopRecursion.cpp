@@ -247,53 +247,52 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
     // Iterate until fixpoint with widening/narrowing on the cycle head.
     bool increasing = true;
     u32_t widen_delay = Options::WidenDelay();
+    AbstractState previous;
+    bool hasPrevious = false;
     for (u32_t cur_iter = 0;; cur_iter++)
     {
-        if (cur_iter >= widen_delay)
+        if (mergeStatesFromPredecessors(cycle_head))
+            handleICFGNode(cycle_head);
+
+        // Keep the state produced at this visit to the cycle head until the
+        // next visit.  The cycle body runs between the two snapshots, so a
+        // change to a body-defined value (for example, a secondary PHI) is
+        // visible to the fixpoint check at the next head visit.
+        AbstractState current = getFullCycleHeadState(cycle);
+        if (!hasPrevious)
         {
-            // getFullCycleHeadState handles dense (returns trace[cycle_head])
-            // and semi-sparse (collects ValVars from def-sites) uniformly.
-            AbstractState prev = getFullCycleHeadState(cycle);
-
-            if (mergeStatesFromPredecessors(cycle_head))
-                handleICFGNode(cycle_head);
-            AbstractState cur = getFullCycleHeadState(cycle);
-
-            if (increasing)
+            // Seed the comparison only after the head has been evaluated.
+            // This also guarantees one complete body traversal when
+            // -widen-delay=0.
+            previous = current;
+            hasPrevious = true;
+        }
+        else if (cur_iter < widen_delay)
+        {
+            previous = current;
+        }
+        else if (increasing)
+        {
+            const bool fixpoint = widenCycleState(previous, current, cycle);
+            previous = getFullCycleHeadState(cycle);
+            if (fixpoint)
             {
-                if (widenCycleState(prev, cur, cycle))
-                {
-                    increasing = false;
-                    continue;
-                }
-            }
-            else
-            {
-                if (narrowCycleState(prev, cur, cycle))
-                    break;
+                // Propagate the final widened state through the body once
+                // before narrowing.  The resulting back-edge state carries
+                // exit constraints that narrowing needs on its first visit.
+                increasing = false;
             }
         }
         else
         {
-            // Before widen_delay: process cycle head with gated pattern
-            if (mergeStatesFromPredecessors(cycle_head))
-                handleICFGNode(cycle_head);
+            const bool fixpoint = narrowCycleState(previous, current, cycle);
+            if (fixpoint)
+                break;
+            previous = getFullCycleHeadState(cycle);
         }
 
         // Process cycle body components (each with gated merge+handle)
         for (const ICFGWTOComp* comp : cycle->getWTOComponents())
-        {
-            if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
-            {
-                const ICFGNode* node = singleton->getICFGNode();
-                if (mergeStatesFromPredecessors(node))
-                    handleICFGNode(node);
-            }
-            else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
-            {
-                if (mergeStatesFromPredecessors(subCycle->head()->getICFGNode()))
-                    handleLoopOrRecursion(subCycle, caller);
-            }
-        }
+            handleWTOComponent(comp, caller);
     }
 }

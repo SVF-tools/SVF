@@ -5,6 +5,10 @@
 
 #include "Graphs/ICFG.h"
 
+#include <deque>
+#include <map>
+#include <memory>
+
 namespace SVF
 {
 
@@ -15,30 +19,42 @@ class SparseObjNode;
 
 typedef GenericEdge<SparseObjNode> GenericSparseObjEdgeTy;
 
-/// An edge carries the source packed Obj to the target ICFG location.
+/// An edge carries a set of packed base Objs from the source ICFG location to
+/// the target ICFG location. The set (label) is interned: edges routing the
+/// same bases share one NodeBS.
 class SparseObjEdge : public GenericSparseObjEdgeTy
 {
 public:
-    SparseObjEdge(SparseObjNode* source, SparseObjNode* target)
-        : GenericSparseObjEdgeTy(source, target, 0) {}
+    SparseObjEdge(SparseObjNode* source, SparseObjNode* target,
+                  const NodeBS* bases)
+        : GenericSparseObjEdgeTy(source, target, 0), bases(bases) {}
 
+    /// Base Obj IDs routed over this edge; each base carries all its fields.
+    const NodeBS& getBases() const
+    {
+        return *bases;
+    }
     std::string toString() const;
+
+private:
+    friend class SparseObjGraph;
+    const NodeBS* bases;
 };
 
 typedef GenericNode<SparseObjNode, SparseObjEdge> GenericSparseObjNodeTy;
 
-/// A normal node represents a packed Obj at one ICFG location.
-/// A non-null branch marks a synthetic node for an outgoing branch edge;
-/// its location remains the branch's ICFG node.
+/// A normal node is one ICFG location, shared by every packed Obj that stops
+/// there. A non-null branch marks the node of one outgoing branch edge; its
+/// location remains the branch's ICFG node, and AE refines the source state
+/// once per branch edge before reading the bases of each outgoing edge.
 class SparseObjNode : public GenericSparseObjNodeTy
 {
 public:
-    SparseObjNode(NodeID id, NodeID base, const ICFGNode* location,
+    SparseObjNode(NodeID id, const ICFGNode* location,
                   const IntraCFGEdge* branch)
-        : GenericSparseObjNodeTy(id, OtherKd), base(base), location(location),
+        : GenericSparseObjNodeTy(id, OtherKd), location(location),
           branch(branch) {}
 
-    NodeID base;
     const ICFGNode* location;
     const IntraCFGEdge* branch;
 
@@ -55,8 +71,11 @@ typedef GenericGraph<SparseObjNode, SparseObjEdge> GenericSparseObjGraphTy;
 /// Fields and array elements of the same base are packed on one route:
 ///   D: a[0] = 1;  S: a[1] = 7;  N: use(a[0]);
 /// Program order gives D -> S -> N, rather than two independent packed inputs
-/// from D and S. A branch edge gets a synthetic node, but the graph neither
-/// computes nor stores intervals; clients check feasibility and refine values.
+/// from D and S. Bases that share a route segment share one labeled edge:
+///   S1: *p = 1 (p -> {a,b});  S2: *q = 2 (q -> {a,b})
+/// gives one edge S1 -{a,b}-> S2. A branch edge gets one node, but the graph
+/// neither computes nor stores intervals; clients check feasibility and
+/// refine values.
 class SparseObjGraph : public GenericSparseObjGraphTy
 {
 public:
@@ -66,6 +85,7 @@ public:
     /// Construction uses static graphs and points-to results, not AE state.
     SparseObjGraph(const SVFG& svfg, ICFG& icfg,
                    PointerAnalysis& pta, const SVFIR& svfir);
+    ~SparseObjGraph() override;
     SparseObjGraph(const SparseObjGraph&) = delete;
     SparseObjGraph& operator=(const SparseObjGraph&) = delete;
 
@@ -76,26 +96,59 @@ public:
     /// Write a DOT graph to <file>.dot through GraphPrinter.
     void dump(const std::string& file);
 
+    const SVFIR& getSVFIR() const
+    {
+        return svfir;
+    }
+
 private:
+    typedef std::pair<const ICFGNode*, const IntraCFGEdge*> NodeKey;
+    typedef std::pair<NodeKey, NodeKey> EdgeKey;
+
     bool isBranch(const ICFGNode* node) const;
-    Node* getOrCreateBaseObjNode(NodeID baseObjId, const ICFGNode* location);
-    Node* getBranchNode(NodeID base, const IntraCFGEdge* branch);
-    void addRouteEdge(Node* source, Node* target);
-    void addEdge(NodeID base, const ICFGNode* source,
-                 const ICFGNode* target, const IntraCFGEdge* branch);
-    void connectFrom(NodeID base, const ICFGNode* source,
-                     const Set<const ICFGNode*>& events,
-                     Set<const ICFGNode*>& newSources);
+    bool isControlBoundary(const ICFGNode* node) const;
+    /// Record that `bases` travel from source (via branch, if non-null) to
+    /// target. Labels accumulate in routeLabels and become edges in finalize.
+    void addRoute(const NodeBS& bases, const ICFGNode* source,
+                  const ICFGNode* target, const IntraCFGEdge* branch);
+    void addRoute(NodeID base, const ICFGNode* source,
+                  const ICFGNode* target, const IntraCFGEdge* branch);
+    /// Walk one function once, carrying base sets instead of one base.
+    void connectFunction(const FunObjVar* fun, const NodeBS& funBases,
+                         const Map<const ICFGNode*, NodeBS>& eventsAt);
+    /// Queue `bases` to start a route segment at `node`, skipping bases
+    /// already processed there.
+    void addSource(const ICFGNode* node, const NodeBS& bases);
+    /// Route the bases that no callee returns from the call to its return site.
+    void connectCallBypass(const CallICFGNode* call, const NodeBS& bases);
+    /// Follow ordinary ICFG nodes from `start` until each base reaches its
+    /// next event or a control boundary.
+    void connectSegment(const FunObjVar* fun, const ICFGNode* source,
+                        const ICFGNode* start, const IntraCFGEdge* branch,
+                        const NodeBS& bases,
+                        const Map<const ICFGNode*, NodeBS>& eventsAt);
+    static const NodeBS& getEvents(const Map<const ICFGNode*, NodeBS>& eventsAt,
+                                   const ICFGNode* node);
+    Node* getOrCreateNode(const ICFGNode* location, const IntraCFGEdge* branch);
+    const NodeBS* intern(const NodeBS& bases);
+    void finalize();
 
     ICFG& icfg;
-    /// Normal nodes are unique by (base, ICFG location); branch nodes by edge.
-    Map<NodeID, Map<const ICFGNode*, Node*>> groupNodes;
-    Map<NodeID, Map<const IntraCFGEdge*, Node*>> branchNodes;
+    const SVFIR& svfir;
+    Map<NodeKey, Node*> nodes;
+    std::map<EdgeKey, NodeBS> routeLabels;
     Map<const ICFGNode*, std::vector<const Edge*>> inputs;
+    /// Interned labels, bucketed by hash.
+    Map<u64_t, std::vector<std::unique_ptr<NodeBS>>> labels;
     /// Bases with a callee-output to caller-return SVFG edge. The second map
     /// distinguishes callees when deciding whether a multi-target call bypasses.
-    Map<const ICFGNode*, Set<NodeID>> returnedGroups;
-    Map<const ICFGNode*, Map<const FunObjVar*, Set<NodeID>>> returnedGroupsByCallee;
+    Map<const ICFGNode*, NodeBS> returnedGroups;
+    Map<const ICFGNode*, Map<const FunObjVar*, NodeBS>> returnedGroupsByCallee;
+
+    /// Worklist of connectFunction for the function being connected.
+    Map<const ICFGNode*, NodeBS> doneSources;
+    Map<const ICFGNode*, NodeBS> pendingSources;
+    std::deque<const ICFGNode*> sourceWorklist;
 };
 
 } // namespace SVF
@@ -105,8 +158,7 @@ namespace SVF
 
 template<>
 struct GenericGraphTraits<SparseObjNode*>
-    :
-    public GenericGraphTraits<GenericNode<SparseObjNode, SparseObjEdge>*>
+    : public GenericGraphTraits<GenericNode<SparseObjNode, SparseObjEdge>*>
 {
 };
 

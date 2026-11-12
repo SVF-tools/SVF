@@ -176,7 +176,7 @@ public:
 
     IntervalValue getGepElementIndex(const GepStmt* gep);
     IntervalValue getGepByteOffset(const GepStmt* gep);
-    AddressValue getGepObjAddrs(const ValVar* pointer, IntervalValue offset);
+    AddressValue getGepObjAddrs(const ValVar* pointer, IntervalValue offset, const ICFGNode* curNode);
 
     /// Read memory through the pointer's address targets.
     virtual AbstractValue loadValue(const ValVar* pointer,
@@ -235,6 +235,9 @@ protected:
     /// as-is.  Semi-sparse subclass: also pull cycle ValVars from def-sites.
     virtual AbstractState getFullCycleHeadState(const ICFGCycleWTO* cycle);
 
+    /// Run every detector on the current state of node.
+    void runDetectors(const ICFGNode* node);
+
     /// Widen prev with cur; write the widened state to trace[cycle_head].
     /// Returns true when next == prev (fixpoint).  Semi-sparse subclass
     /// additionally scatters ValVars to their def-sites.
@@ -264,6 +267,7 @@ protected:
     /// Return false when a carried value contradicts the selected branch.
     bool applyBranchRefinement(const IntraCFGEdge* edge, AbstractState& as);
 
+
 private:
     /// Initialize abstract state for the global ICFG node and process global
     /// statements
@@ -272,14 +276,21 @@ private:
     /// Handle a call site node: dispatch to ext-call, direct-call, or indirect-call handling
     virtual void handleCallSite(const ICFGNode* node);
 
+protected:
     /// Handle a WTO cycle (loop or recursive function) using widening/narrowing iteration
     virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller);
+
+    /// Handle one WTO component: merge and handle a singleton, or merge the
+    /// head of a cycle and iterate the cycle.
+    virtual void handleWTOComponent(const ICFGWTOComp* comp, const CallICFGNode* caller);
+
+private:
 
     /// Handle a function body via worklist-driven WTO traversal starting from funEntry
     void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller);
 
     /// Handle an ICFG node: execute statements; return true if state changed
-    bool handleICFGNode(const ICFGNode* node);
+    void handleICFGNode(const ICFGNode* node);
 
     /// Dispatch an SVF statement (Addr/Binary/Cmp/Load/Store/Copy/Gep/Select/Phi/Call/Ret) to its handler
     virtual void handleSVFStatement(const SVFStmt* stmt);
