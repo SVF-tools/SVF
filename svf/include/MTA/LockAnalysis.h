@@ -42,7 +42,7 @@ namespace SVF
 {
 
 // Forward declaration for the sliced-graph handle analyze() can run on.
-class SlicedSVFIRView;
+class SlicedUnifiedView;
 
 /*!
  * Lock analysis

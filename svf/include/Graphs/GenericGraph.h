@@ -30,10 +30,10 @@
 #ifndef GENERICGRAPH_H_
 #define GENERICGRAPH_H_
 
-#include "SVFIR/SVFType.h"
+#include "SVFValues/SVFType.h"
 #include "Util/iterator.h"
 #include "Graphs/GraphTraits.h"
-#include "SVFIR/SVFValue.h"
+#include "SVFValues/SVFValue.h"
 
 namespace SVF
 {

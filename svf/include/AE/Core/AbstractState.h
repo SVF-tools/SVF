@@ -55,7 +55,7 @@ namespace SVF
 {
 class AbstractState
 {
-    friend class SVFIR2AbsState;
+    friend class PAG2AbsState;
     friend class RelationSolver;
 public:
     typedef Map<u32_t, AbstractValue> VarToAbsValMap;

@@ -52,7 +52,7 @@ DDAPass::~DDAPass()
 }
 
 
-void DDAPass::runOnModule(SVFIR* pag)
+void DDAPass::runOnModule(PAG* pag)
 {
     /// initialization for llvm alias analyzer
     //InitializeAliasAnalysis(this, getDataLayout(&module));
@@ -104,7 +104,7 @@ void DDAPass::selectClient()
 }
 
 /// Create pointer analysis according to specified kind and analyze the module.
-void DDAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
+void DDAPass::runPointerAnalysis(PAG* pag, u32_t kind)
 {
 
     ContextCond::setMaxPathLen(Options::MaxPathLen());
@@ -279,7 +279,7 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
 
 AliasResult DDAPass::alias(NodeID node1, NodeID node2)
 {
-    SVFIR* pag = _pta->getPAG();
+    PAG* pag = _pta->getPAG();
 
     if(pag->isValidTopLevelPtr(pag->getSVFVar(node1)))
         _pta->computeDDAPts(node1);

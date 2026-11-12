@@ -29,7 +29,7 @@
 #include "AE/Svfexe/AbstractInterpretation.h"
 #include "AE/Svfexe/SparseAbstractInterpretation.h"
 #include "AE/Svfexe/AbsExtAPI.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Util/Options.h"
 #include "Util/WorkList.h"
 #include "Graphs/CallGraph.h"
@@ -62,9 +62,9 @@ AbstractInterpretation::AbstractInterpretation()
 {
     stat = new AEStat(this);
     // Run Andersen's pointer analysis and build WTO
-    svfir = PAG::getPAG();
-    icfg = svfir->getICFG();
-    preAnalysis = new AEWTO(svfir, icfg);
+    pag = PAG::getPAG();
+    icfg = pag->getICFG();
+    preAnalysis = new AEWTO(pag, icfg);
     callGraph = preAnalysis->getCallGraph();
     icfg->updateCallGraph(callGraph);
     preAnalysis->initWTO();
@@ -243,7 +243,7 @@ void AbstractInterpretation::handleGlobalNode()
     init = AbstractState();
     // NullPtr has no backing SVFVar. Model it directly as the singleton null
     // address; BlkPtr is initialized directly below for the same reason.
-    init[IRGraph::NullPtr] = AddressValue(NullMemAddr);
+    init[PAGBase::NullPtr] = AddressValue(NullMemAddr);
 
     // Global Node, we just need to handle addr, load, store, copy and gep
     for (const SVFStmt *stmt: node->getSVFStmts())
@@ -584,8 +584,8 @@ bool AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
     {
         s32_t predicate = cmpStmt->getPredicate();
 
-        if (cmpStmt->getOpVarID(0) == IRGraph::NullPtr ||
-                cmpStmt->getOpVarID(1) == IRGraph::NullPtr)
+        if (cmpStmt->getOpVarID(0) == PAGBase::NullPtr ||
+                cmpStmt->getOpVarID(1) == PAGBase::NullPtr)
         {
             // p == NULL / p != NULL: no interval obj to refine.
         }
@@ -714,7 +714,7 @@ bool AbstractInterpretation::isBranchEdgeFeasible(const IntraCFGEdge* edge,
     if (cmpVar->getInEdges().empty())
     {
         const auto* branch = SVFUtil::cast<BranchStmt>(edge->getSrcNode()->getSVFStmts().back());
-        // SVFIRBuilder emits true=1, false=0 for br; switch starts with default=-1.
+        // PAGBuilder emits true=1, false=0 for br; switch starts with default=-1.
         if (branch->getNumSuccessors() == 2 &&
                 branch->getSuccessorCondValue(0) == 1 &&
                 branch->getSuccessorCondValue(1) == 0)
@@ -864,7 +864,7 @@ const FunObjVar* AbstractInterpretation::getCallee(const CallICFGNode* callNode)
         return callee;
 
     // Indirect call: resolve callee through pointer analysis
-    const auto callsiteMaps = svfir->getIndirectCallsites();
+    const auto callsiteMaps = pag->getIndirectCallsites();
     auto it = callsiteMaps.find(callNode);
     if (it == callsiteMaps.end())
         return nullptr;
@@ -873,7 +873,7 @@ const FunObjVar* AbstractInterpretation::getCallee(const CallICFGNode* callNode)
     if (!hasAbsState(callNode))
         return nullptr;
 
-    const AbstractValue& Addrs = getAbsValue(svfir->getSVFVar(call_id), callNode);
+    const AbstractValue& Addrs = getAbsValue(pag->getSVFVar(call_id), callNode);
     if (!Addrs.isAddr() || Addrs.getAddrs().empty())
         return nullptr;
 
@@ -987,7 +987,7 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
     // entry if it actually exists.
     {
         const auto& vmap = getAbsState(stmt->getICFGNode()).getVarToVal();
-        auto it = vmap.find(IRGraph::NullPtr);
+        auto it = vmap.find(PAGBase::NullPtr);
         (void)it; // Suppress warning of unused variable under release build
         assert(it == vmap.end() ||
                (it->second.isAddr() &&

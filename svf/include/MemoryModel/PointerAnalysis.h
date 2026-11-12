@@ -34,7 +34,7 @@
 #include "Graphs/CallGraph.h"
 #include "Graphs/SCC.h"
 #include "MemoryModel/PTATY.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 
 namespace SVF
 {
@@ -53,7 +53,7 @@ public:
     /// Indirect call edges type, map a callsite to a set of callees
     //@{
     typedef Set<const CallICFGNode*> CallSiteSet;
-    typedef SVFIR::CallSiteToFunPtrMap CallSiteToFunPtrMap;
+    typedef PAG::CallSiteToFunPtrMap CallSiteToFunPtrMap;
     typedef Set<const FunObjVar*> FunctionSet;
     typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
     typedef SCCDetection<CallGraph*> CallGraphSCC;
@@ -90,8 +90,8 @@ protected:
     u32_t OnTheFlyIterBudgetForStat;
     //@}
 
-    /// SVFIR
-    static SVFIR* pag;
+    /// PAG
+    static PAG* pag;
     /// Pointer analysis Type
     PTATY ptaTy;
     /// PTA implementation type.
@@ -130,7 +130,7 @@ public:
     }
 
     /// Constructor
-    PointerAnalysis(SVFIR* pag, PTATY ty = PTATY::Default_PTA, bool alias_check = true);
+    PointerAnalysis(PAG* pag, PTATY ty = PTATY::Default_PTA, bool alias_check = true);
 
     /// Type of pointer analysis
     inline PTATY getAnalysisTy() const
@@ -144,9 +144,9 @@ public:
         return ptaImplTy;
     }
 
-    /// Get/set SVFIR
+    /// Get/set PAG
     ///@{
-    inline SVFIR* getPAG() const
+    inline PAG* getPAG() const
     {
         return pag;
     }
@@ -167,7 +167,7 @@ public:
     /// Destructor
     virtual ~PointerAnalysis();
 
-    /// Initialization of a pointer analysis, including building symbol table and SVFIR etc.
+    /// Initialization of a pointer analysis, including building symbol table and PAG etc.
     virtual void initialize();
 
     /// Finalization of a pointer analysis, including checking alias correctness

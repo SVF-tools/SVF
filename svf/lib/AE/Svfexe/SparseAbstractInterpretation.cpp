@@ -23,7 +23,7 @@
 #include "AE/Svfexe/SparseAbstractInterpretation.h"
 #include "AE/Svfexe/AEWTO.h"
 #include "Graphs/SparseObjGraph.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Graphs/SVFG.h"
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/Andersen.h"
@@ -44,8 +44,8 @@ void FullSparseAbstractInterpretation::buildSVFG()
     svfgBuilder = std::make_unique<SVFGBuilder>(true);
     svfgBuilder->buildFullSVFG(preAnalysis->getPointerAnalysis());
     objRoutes = std::make_unique<SparseObjGraph>(
-                    *svfgBuilder->getSVFG(), *svfir->getICFG(),
-                    *preAnalysis->getPointerAnalysis(), *svfir);
+                    *svfgBuilder->getSVFG(), *pag->getICFG(),
+                    *preAnalysis->getPointerAnalysis(), *pag);
 }
 
 void FullSparseAbstractInterpretation::mergeFreedAddrs(AbstractState& dst,
@@ -114,8 +114,8 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
                     continue;
                 input = &refined;
             }
-            joinStates(merged, *input, svfir->getAllFieldsObjVars(
-                           svfir->getBaseObject(sourceNode->base)));
+            joinStates(merged, *input, pag->getAllFieldsObjVars(
+                           pag->getBaseObject(sourceNode->base)));
         }
         updateAbsState(node, merged);
     }
@@ -162,7 +162,7 @@ bool SemiSparseAbstractInterpretation::widenCycleState(
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
     const AbstractState& next = abstractTrace[cycle_head];
     for (const auto& [id, val] : next.getVarToVal())
-        updateAbsValue(svfir->getSVFVar(id), val, cycle_head);
+        updateAbsValue(pag->getSVFVar(id), val, cycle_head);
     return fixpoint;
 }
 
@@ -181,7 +181,7 @@ bool SemiSparseAbstractInterpretation::narrowCycleState(
     const ICFGNode* cycle_head = cycle->head()->getICFGNode();
     const AbstractState& next = abstractTrace[cycle_head];
     for (const auto& [id, val] : next.getVarToVal())
-        updateAbsValue(svfir->getSVFVar(id), val, cycle_head);
+        updateAbsValue(pag->getSVFVar(id), val, cycle_head);
     return false;
 }
 
@@ -224,7 +224,7 @@ const ICFGNode* SemiSparseAbstractInterpretation::getICFGNode(
     // const ValVars are all defined in global node
     if (!var->getICFGNode())
     {
-        return svfir->getICFG()->getGlobalICFGNode();
+        return pag->getICFG()->getGlobalICFGNode();
     }
     // for return value of callsite, use the ret-site as def-site
     else if (SVFUtil::isa<CallICFGNode>(var->getICFGNode()) &&

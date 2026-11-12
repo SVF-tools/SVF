@@ -39,7 +39,7 @@ void CFLVF::buildCFLGraph()
 {
     // Build CFL Graph
     VFCFLGraphBuilder cflGraphBuilder = VFCFLGraphBuilder();
-    if (Options::CFLGraph().empty()) // built from svfir
+    if (Options::CFLGraph().empty()) // built from PAG
     {
         PointerAnalysis::initialize();
         AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
@@ -92,7 +92,7 @@ void CFLVF::finalize()
     if(Options::PrintCFL())
     {
         if (Options::CFLGraph().empty())
-            svfir->dump("IR");
+            pag->dump("IR");
         grammar->dump("Grammar");
         graph->dump("CFLGraph");
     }

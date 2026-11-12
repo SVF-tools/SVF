@@ -1,4 +1,4 @@
-//===- PAGBuilderFromFile.cpp -- SVFIR builder-------------------------------//
+//===- PAGBuilderFromFile.cpp -- PAG builder---------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -27,7 +27,7 @@
  *      Author: 136884
  */
 
-#include "SVFIR/PAGBuilderFromFile.h"
+#include "Graphs/PAGBuilderFromFile.h"
 #include <fstream>	// for PAGBuilderFromFile
 #include <string>	// for PAGBuilderFromFile
 #include <sstream>	// for PAGBuilderFromFile
@@ -38,7 +38,7 @@ using namespace SVFUtil;
 static u32_t gepNodeNumIndex = 100000;
 
 /*
- * You can build a SVFIR from a file written by yourself
+ * You can build a PAG from a file written by yourself
  *
  * The file should follow the format:
  * Node:  nodeID Nodetype
@@ -58,7 +58,7 @@ static u32_t gepNodeNumIndex = 100000;
  */
 // for copy stmt, the enum is COPYVAL, ZEXT, SEXT, BITCAST, TRUNC, FPTRUNC,
 //         FPTOUI, FPTOSI, UITOFP, SITOFP, INTTOPTR, PTRTOINT, UNKNOWN
-SVFIR* PAGBuilderFromFile::build()
+PAG* PAGBuilderFromFile::build()
 {
 
     string line;
@@ -142,7 +142,7 @@ SVFIR* PAGBuilderFromFile::build()
 }
 
 /*!
- * Add SVFIR edge according to a file format
+ * Add PAG edge according to a file format
  */
 void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
                                  APOffset offsetOrCSId, std::string edge)
@@ -152,7 +152,7 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
     PAGNode* srcNode = pag->getGNode(srcID);
     PAGNode* dstNode = pag->getGNode(dstID);
 
-    /// sanity check for SVFIR from txt
+    /// sanity check for PAG from txt
     assert(SVFUtil::isa<ValVar>(dstNode) && "dst not an value node?");
     if(edge=="addr")
         assert(SVFUtil::isa<ObjVar>(srcNode) && "src not an value node?");

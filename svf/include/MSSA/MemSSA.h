@@ -99,8 +99,8 @@ public:
     typedef Map<const MemRegion*, std::vector<MRVer*> > MemRegToVerStackMap;
     typedef Map<const MemRegion*, MRVERSION> MemRegToCounterMap;
 
-    /// SVFIR edge list
-    typedef SVFIR::SVFStmtList SVFStmtList;
+    /// PAG edge list
+    typedef PAG::SVFStmtList SVFStmtList;
 
     /// Statistics
     //@{
@@ -304,8 +304,8 @@ public:
     {
         destroy();
     }
-    /// Return SVFIR
-    inline SVFIR* getPAG();
+    /// Return PAG
+    inline PAG* getPAG();
     /// Return PTA
     inline BVDataPTAImpl* getPTA() const
     {

@@ -9,7 +9,7 @@ namespace SVF
 {
 
 class PointerAnalysis;
-class SVFIR;
+class PAG;
 class SVFG;
 class SparseObjNode;
 
@@ -65,7 +65,7 @@ public:
 
     /// Construction uses static graphs and points-to results, not AE state.
     SparseObjGraph(const SVFG& svfg, ICFG& icfg,
-                   PointerAnalysis& pta, const SVFIR& svfir);
+                   PointerAnalysis& pta, const PAG& pag);
     SparseObjGraph(const SparseObjGraph&) = delete;
     SparseObjGraph& operator=(const SparseObjGraph&) = delete;
 

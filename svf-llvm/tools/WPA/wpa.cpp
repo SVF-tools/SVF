@@ -27,7 +27,7 @@
  */
 
 #include "SVF-LLVM/LLVMUtil.h"
-#include "SVF-LLVM/SVFIRBuilder.h"
+#include "SVF-LLVM/PAGBuilder.h"
 #include "WPA/WPAPass.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
@@ -43,13 +43,13 @@ int main(int argc, char** argv)
         OptionBase::parseOptions(argc, argv, "Whole Program Points-to Analysis",
                                  "[options] <input-bitcode...>");
 
-    // Refers to content of a singleton unique_ptr<SVFIR> in SVFIR.
-    SVFIR* pag;
+    // Refers to content of a singleton unique_ptr<PAG> in PAG.
+    PAG* pag;
 
     LLVMModuleSet::buildSVFModule(moduleNameVec);
 
-    /// Build SVFIR
-    SVFIRBuilder builder;
+    /// Build PAG
+    PAGBuilder builder;
     pag = builder.build();
 
     WPAPass wpa;

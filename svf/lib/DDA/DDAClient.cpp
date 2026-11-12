@@ -77,10 +77,10 @@ void DDAClient::answerQueries(PointerAnalysis* pta)
     stat->setMemUsageAfter(vmrss, vmsize);
 }
 
-OrderedNodeSet& FunptrDDAClient::collectCandidateQueries(SVFIR* p)
+OrderedNodeSet& FunptrDDAClient::collectCandidateQueries(PAG* p)
 {
     setPAG(p);
-    for(SVFIR::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
+    for(PAG::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
             eit = pag->getIndirectCallsites().end(); it!=eit; ++it)
     {
         if (it->first->isVirtualCall())
@@ -175,7 +175,7 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
 
 
 /// Only collect function pointers as query candidates.
-OrderedNodeSet& AliasDDAClient::collectCandidateQueries(SVFIR* pag)
+OrderedNodeSet& AliasDDAClient::collectCandidateQueries(PAG* pag)
 {
     setPAG(pag);
     SVFStmt::SVFStmtSetTy& loads = pag->getSVFStmtSet(SVFStmt::Load);

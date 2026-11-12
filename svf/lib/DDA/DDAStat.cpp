@@ -225,7 +225,7 @@ void DDAStat::performStat()
 
     getNumOfOOBQuery();
 
-    for (SVFIR::const_iterator nodeIt = SVFIR::getPAG()->begin(), nodeEit = SVFIR::getPAG()->end(); nodeIt != nodeEit; nodeIt++)
+    for (PAG::const_iterator nodeIt = PAG::getPAG()->begin(), nodeEit = PAG::getPAG()->end(); nodeIt != nodeEit; nodeIt++)
     {
         PAGNode* pagNode = nodeIt->second;
         if(SVFUtil::isa<ObjVar>(pagNode))
@@ -262,7 +262,7 @@ void DDAStat::performStat()
     PTNumStatMap["PointsToBlkPtr"] = _NumOfBlackholePtr;
     PTNumStatMap["NumOfMustAA"] = _TotalNumOfMustAliases;
     PTNumStatMap["NumOfInfePath"] = _TotalNumOfInfeasiblePath;
-    PTNumStatMap["NumOfStore"] = SVFIR::getPAG()->getPTASVFStmtSet(SVFStmt::Store).size();
+    PTNumStatMap["NumOfStore"] = PAG::getPAG()->getPTASVFStmtSet(SVFStmt::Store).size();
     timeStatMap["MemoryUsageVmrss"] = _vmrssUsageAfter - _vmrssUsageBefore;
     timeStatMap["MemoryUsageVmsize"] = _vmsizeUsageAfter - _vmsizeUsageBefore;
 

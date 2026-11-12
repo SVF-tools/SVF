@@ -39,10 +39,10 @@
 #include <vector>
 #include <memory>
 #include <utility>
-#include "SVFIR/SVFIR.h"
-#include "SVFIR/SVFValue.h"
-#include "SVFIR/SVFStatements.h"
-#include "SVFIR/SVFVariables.h"
+#include "Graphs/PAG.h"
+#include "SVFValues/SVFValue.h"
+#include "SVFValues/SVFStatements.h"
+#include "SVFValues/SVFVariables.h"
 #include "MemoryModel/PointsTo.h"
 #include "MTA/MHP.h"
 #include "MTA/LockAnalysis.h"
@@ -63,7 +63,7 @@ class TCT;
 class MHP;
 class LockAnalysis;
 class SVFStmt;
-class SVFIR;
+class PAG;
 class ICFGNode;
 // Forward declarations for the SlicedMTA slicing pipeline (see SlicedMTA impl).
 class SVFG;
@@ -71,7 +71,7 @@ class FlowSensitive;
 class SlicedSVFGView;
 class MultiStageSlicer;
 class SingleSlicer;
-class SlicedSVFIRView;
+class SlicedUnifiedView;
 class SlicedTCT;
 
 /*!
@@ -89,7 +89,7 @@ public:
 
 
     /// We start the pass here
-    virtual bool runOnModule(SVFIR* module);
+    virtual bool runOnModule(PAG* module);
     /// Compute MHP
     virtual MHP* computeMHP(TCT* tct);
     /// Compute locksets
@@ -134,11 +134,11 @@ public:
     /// Shared equivalence-class race detector (used by both MTA::reportRaces and
     /// the SlicedMTA pipeline). Returns the racy statements and fills outRacePairs.
     static std::set<const SVFStmt*> detectRace(
-        SVFIR* svfir, AndersenBase* pta, MHP* mhp, LockAnalysis* lockAnalysis,
+        PAG* pag, AndersenBase* pta, MHP* mhp, LockAnalysis* lockAnalysis,
         CallGraph* callGraph, std::set<RacePair>& outRacePairs);
 
     /// Escape/points-to helpers for the shared detector.
-    static PointsTo getGlobalObjectVariables(SVFIR* svfir);
+    static PointsTo getGlobalObjectVariables(PAG* pag);
     static PointsTo getPointsToClosure(AndersenBase* pta, const PointsTo& pts);
 
     /// Whether the program has any thread (fork-target) function reachable via a
@@ -181,7 +181,7 @@ private:
     /// Helpers for the equivalence-class race detector.
     //@{
     static void collectRaceOccurrences(
-        SVFIR* svfir, AndersenBase* pta, MHP* mhp,
+        PAG* pag, AndersenBase* pta, MHP* mhp,
         LockAnalysis* lockAnalysis, CallGraph* callGraph,
         const PointsTo& escapedObjects,
         std::vector<RaceOccurrence>& occurrences,
@@ -209,14 +209,14 @@ private:
 /*!
  * Multi-stage on-demand slicing race detection pipeline (MSli).
  *
- * runOnModule drives five stages on a pre-built SVFIR:
- *   1. (caller) build SVFIR + resolve indirect calls into the PAG
+ * runOnModule drives five stages on a pre-built PAG:
+ *   1. (caller) build PAG + resolve indirect calls into the PAG
  *   2. pre-analysis: Andersen, TCT, MHP, lock, candidate race pairs, VFG_pre
  *   3. MTA slicing: slice the thread-aware graph, build the sliced MHP/lock
  *   4. PTA slicing + main flow-sensitive FSAM (FSMPTA) on the slice
  *   5. final race detection on the sliced graph using FSAM points-to
  *
- * It operates entirely on the SVFIR (LLVM-free). The LLVM-aware caller runs the
+ * It operates entirely on the PAG (LLVM-free). The LLVM-aware caller runs the
  * Andersen pre-analysis and materialises its resolved indirect calls into the
  * PAG before invoking runOnModule.
  *
@@ -238,7 +238,7 @@ public:
     SlicedMTA& operator=(const SlicedMTA&) = delete;
 
     /// Run the slicing pipeline with its prepared Andersen pre-analysis.
-    bool runOnModule(SVFIR* pag, AndersenWaveDiff& preAnalysis);
+    bool runOnModule(PAG* pag, AndersenWaveDiff& preAnalysis);
 
 private:
     // --- pipeline stages ---
@@ -250,7 +250,7 @@ private:
 
     /// Pipeline utilities shared by the sliced and whole-program paths.
     //@{
-    static void reportOriginalStatistics(SVFIR* svfir);
+    static void reportOriginalStatistics(PAG* pag);
     static std::set<const ICFGNode*> collectICFGNodes(
         SVFG* svfg, const NodeBS& svfgNodeIds);
     static void reportPTASliceStatistics(
@@ -284,7 +284,7 @@ private:
         LockAnalysis* slicedLockAnalysis);
 
     // --- pipeline state (owned unless noted) ---
-    SVFIR* svfir = nullptr;
+    PAG* pag = nullptr;
     // Main-phase context depth, set by runOnModule; the pre-analysis uses it
     // to reconcile context-truncation-merged thread instances.
     u32_t mainContextDepth;
@@ -309,8 +309,8 @@ private:
     // (not recomputed) for PTA slicing so both stages share V_Single.
     std::set<const ICFGNode*> singleSlicedNodes;
     NodeBS singleSlicedSVFGNodeIds;
-    std::unique_ptr<SlicedSVFIRView> mtaSlicedView;
-    std::unique_ptr<SlicedSVFIRView> ptaSlicedView;
+    std::unique_ptr<SlicedUnifiedView> mtaSlicedView;
+    std::unique_ptr<SlicedUnifiedView> ptaSlicedView;
     std::unique_ptr<SlicedSVFGView> slicedSVFGView;
     std::unique_ptr<FlowSensitive> mainFSMPTA;
     std::unique_ptr<SlicedTCT> slicedTCT;

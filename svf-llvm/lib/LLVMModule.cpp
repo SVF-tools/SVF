@@ -81,7 +81,7 @@ LLVMModuleSet* LLVMModuleSet::llvmModuleSet = nullptr;
 bool LLVMModuleSet::preProcessed = false;
 
 LLVMModuleSet::LLVMModuleSet()
-    : svfir(PAG::getPAG()), typeInference(new ObjTypeInference())
+    : pag(PAG::getPAG()), typeInference(new ObjTypeInference())
 {
 }
 
@@ -148,11 +148,11 @@ void LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleNameVec
 void LLVMModuleSet::buildSymbolTable() const
 {
     double startSymInfoTime = SVFStat::getClk(true);
-    if (!SVFIR::pagReadFromTXT())
+    if (!PAG::pagReadFromTXT())
     {
         /// building symbol table
         DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
-        SymbolTableBuilder builder(svfir);
+        SymbolTableBuilder builder(pag);
         builder.buildMemModel();
     }
     double endSymInfoTime = SVFStat::getClk(true);
@@ -316,7 +316,7 @@ void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
 void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
 {
 
-    // We read SVFIR from LLVM IR
+    // We read PAG from LLVM IR
     if(Options::Graphtxt().empty())
     {
         if(moduleNameVec.empty())
@@ -326,10 +326,10 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
         }
         //assert(!moduleNameVec.empty() && "no LLVM bc file is found!");
     }
-    // We read SVFIR from a user-defined txt instead of parsing SVFIR from LLVM IR
+    // We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
     else
     {
-        SVFIR::setPagFromTXT(Options::Graphtxt());
+        PAG::setPagFromTXT(Options::Graphtxt());
     }
     //
     // LLVMContext objects separate global LLVM settings (from which e.g. types are
@@ -1066,14 +1066,14 @@ void LLVMModuleSet::dumpModulesToFile(const std::string& suffix)
 NodeID LLVMModuleSet::getValueNode(const Value *llvm_value)
 {
     if (SVFUtil::isa<ConstantPointerNull>(llvm_value))
-        return svfir->nullPtrSymID();
+        return pag->nullPtrSymID();
     else if (SVFUtil::isa<UndefValue>(llvm_value))
     {
         // For phi ptr [ @x, ... ], [ undef, ... ], keep @x without adding
         // a black-hole target. Integer and aggregate undef keep their model.
         if (Options::UndefAsNull() && llvm_value->getType()->isPointerTy())
-            return svfir->nullPtrSymID();
-        return svfir->blkPtrSymID();
+            return pag->nullPtrSymID();
+        return pag->blkPtrSymID();
     }
     else
     {
@@ -1270,10 +1270,10 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
     {
         u32_t nf;
         stInfo = collectStructInfo(sty, nf);
-        if (nf > svfir->maxStSize)
+        if (nf > pag->maxStSize)
         {
-            svfir->maxStruct = getSVFType(sty);
-            svfir->maxStSize = nf;
+            pag->maxStruct = getSVFType(sty);
+            pag->maxStSize = nf;
         }
     }
     else
@@ -1281,7 +1281,7 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
         stInfo = collectSimpleTypeInfo(T);
     }
     Type2TypeInfo.emplace(T, stInfo);
-    svfir->addStInfo(stInfo);
+    pag->addStInfo(stInfo);
     return stInfo;
 }
 
@@ -1353,7 +1353,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         svftype = ot;
     }
 
-    svfir->addTypeInfo(svftype);
+    pag->addTypeInfo(svftype);
     LLVMType2SVFType[T] = svftype;
 
     return svftype;

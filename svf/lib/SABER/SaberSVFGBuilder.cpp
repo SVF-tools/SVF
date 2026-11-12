@@ -69,9 +69,9 @@ void SaberSVFGBuilder::buildSVFG()
  */
 void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
 {
-    SVFIR* pag = svfg->getPAG();
+    PAG* pag = svfg->getPAG();
     NodeVector worklist;
-    for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
+    for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
     {
         SVFVar* svfVar = it->second;
         if (SVFUtil::isa<DummyValVar, DummyObjVar>(svfVar))
@@ -119,7 +119,7 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
  */
 PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta, NodeID id, NodeToPTSSMap& cachedPtsMap)
 {
-    SVFIR* pag = svfg->getPAG();
+    PAG* pag = svfg->getPAG();
 
     NodeID baseId = pag->getBaseObjVarID(id);
     NodeToPTSSMap::iterator it = cachedPtsMap.find(baseId);
@@ -234,7 +234,7 @@ bool SaberSVFGBuilder::isStrongUpdate(const SVFGNode* node, NodeID& singleton, B
             // Strong update can be made if this points-to target is not heap, array or field-insensitive.
             if (!pta->isHeapMemObj(singleton) && !pta->isArrayMemObj(singleton))
             {
-                if (SVFIR::getPAG()->getBaseObject(singleton)->isFieldInsensitive() == false
+                if (PAG::getPAG()->getBaseObject(singleton)->isFieldInsensitive() == false
                         && !pta->isLocalVarInRecursiveFun(singleton))
                 {
                     isSU = true;
@@ -293,8 +293,8 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
 /// Add actual parameter SVFGNode for 1st argument of a deallocation like external function
 void SaberSVFGBuilder::AddExtActualParmSVFGNodes(CallGraph* callgraph)
 {
-    SVFIR* pag = SVFIR::getPAG();
-    for(SVFIR::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
+    PAG* pag = PAG::getPAG();
+    for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it)
     {
         CallGraph::FunctionSet callees;
@@ -307,8 +307,8 @@ void SaberSVFGBuilder::AddExtActualParmSVFGNodes(CallGraph* callgraph)
             if (SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun)
                     || SaberCheckerAPI::getCheckerAPI()->isFClose(fun))
             {
-                SVFIR::ValVarList& arglist = it->second;
-                for(SVFIR::ValVarList::const_iterator ait = arglist.begin(), aeit = arglist.end(); ait!=aeit; ++ait)
+                PAG::ValVarList& arglist = it->second;
+                for(PAG::ValVarList::const_iterator ait = arglist.begin(), aeit = arglist.end(); ait!=aeit; ++ait)
                 {
                     const ValVar *svfVar = *ait;
                     if (svfVar->isPointer())

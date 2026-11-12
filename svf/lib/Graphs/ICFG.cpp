@@ -35,7 +35,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-class SVFIR;
+class PAG;
 
 FunEntryICFGNode::FunEntryICFGNode(NodeID id, const FunObjVar* f) : InterICFGNode(id, FunEntryBlock)
 {
@@ -478,12 +478,12 @@ void ICFG::updateCallGraph(CallGraph* callgraph)
 namespace SVF
 {
 template<>
-struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>
+struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
 {
 
     typedef ICFGNode NodeType;
     DOTGraphTraits(bool isSimple = false) :
-        DOTGraphTraits<SVFIR*>(isSimple)
+        DOTGraphTraits<PAG*>(isSimple)
     {
     }
 

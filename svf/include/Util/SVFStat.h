@@ -95,7 +95,7 @@ public:
 
     static double timeOfBuildingLLVMModule;
     static double timeOfBuildingSymbolTable;
-    static double timeOfBuildingSVFIR;
+    static double timeOfBuildingPAG;
 
 private:
     void branchStat();

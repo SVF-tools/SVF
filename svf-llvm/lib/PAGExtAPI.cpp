@@ -1,4 +1,4 @@
-//===- SVFIRExtAPI.cpp -- External function IR of SVF ---------------------------------------------//
+//===- PAGExtAPI.cpp -- External function IR of SVF ---------------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,13 +21,13 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * SVFIRExtAPI.cpp
+ * PAGExtAPI.cpp
  *
  *  Created on: 18, 5, 2023
  *      Author: Shuangxiang Kan
  */
 
-#include "SVF-LLVM/SVFIRBuilder.h"
+#include "SVF-LLVM/PAGBuilder.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
 #include "SVF-LLVM/ObjTypeInference.h"
@@ -179,7 +179,7 @@ void collectMemcpyFields(
     const Type* llvmType,
     const SVFType* svfType,
     const DataLayout& dl,
-    IRGraph* pag,
+    PAGBase* pag,
     std::vector<MemcpyField>& fields,
     APOffset baseByteOffset = 0,
     APOffset baseFldIdx = 0)
@@ -270,7 +270,7 @@ const Type* getMemcpyLayoutType(const Value* baseValue, const Type* fallbackType
 /*!
  * Find the base type and the max possible offset of an object pointed to by (V).
  */
-const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vector<AccessPath> &fields, const Value* szValue)
+const Type* PAGBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vector<AccessPath> &fields, const Value* szValue)
 {
     assert(V);
     const Value* value = getBaseValueForExtArg(V);
@@ -287,7 +287,7 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
     /// would drop the memcpy/memset effect entirely.
     ///
     /// Unsound scalability trade-off: AccessPaths beyond MaxFieldLimit are omitted,
-    /// so their external-memory effects are not represented in the SVFIR.
+    /// so their external-memory effects are not represented in the PAG.
     numOfElems = std::min(numOfElems, std::max(Options::MaxFieldLimit(), u32_t{1}));
 
     LLVMContext& context = LLVMModuleSet::getLLVMModuleSet()->getContext();
@@ -315,7 +315,7 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
  * Add the load/store constraints and temp. nodes for the complex constraint
  * *D = *S (where D/S may point to structs).
  */
-void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue)
+void PAGBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue)
 {
     assert(D && S);
     NodeID vnD= getValueNode(D), vnS= getValueNode(S);
@@ -412,7 +412,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     }
 }
 
-void SVFIRBuilder::handleNondetArgStoreAtExtCall(const CallBase* cs, const CallICFGNode* callICFGNode)
+void PAGBuilder::handleNondetArgStoreAtExtCall(const CallBase* cs, const CallICFGNode* callICFGNode)
 {
     Set<u32_t> storeTopArgs;
     NodeID src = pag->getBlkPtr();
@@ -468,7 +468,7 @@ void SVFIRBuilder::handleNondetArgStoreAtExtCall(const CallBase* cs, const CallI
     }
 }
 
-void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
+void PAGBuilder::handleExtCall(const CallBase* cs, const Function* callee)
 {
     const CallICFGNode *callICFGNode = llvmModuleSet()->getCallICFGNode(cs);
 
@@ -649,9 +649,9 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
             ///    pag->addIndirectCallsites(cs,pag->getValueNode(fun));
         }
         /// If forkedFun does not pass to spawnee as function type but as void pointer
-        /// remember to update inter-procedural callgraph/SVFIR/SVFG etc. when indirect call targets are resolved
+        /// remember to update inter-procedural callgraph/PAG/SVFG etc. when indirect call targets are resolved
         /// We don't connect the callgraph here, further investigation is need to handle mod-ref during SVFG construction.
     }
 
-    /// TODO: inter-procedural SVFIR edges for thread joins
+    /// TODO: inter-procedural PAG edges for thread joins
 }
