@@ -62,13 +62,15 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                                            ae.getGepByteOffset(gep));
 
                 const AddressValue& objAddrs = rhsVal.getAddrs();
+                bool hasUnknownSizeTarget = false;
                 for (const auto& addr : objAddrs)
                 {
+                    // Null/black-hole objects have neither an allocation size nor
+                    // a defining ICFG node that can be inspected below.
                     const NodeID objId = ae.getAbsState(node).getIDFromAddr(addr);
                     if (svfir->isNullOrBlkObj(objId))
                     {
-                        AEException bug(stmt->toString());
-                        addBugToReporter(bug, stmt->getICFGNode());
+                        hasUnknownSizeTarget = true;
                         continue;
                     }
                     u32_t size = 0;
@@ -85,8 +87,7 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                         const ICFGNode* addrNode = svfir->getBaseObject(objId)->getICFGNode();
                         if (!addrNode)
                         {
-                            AEException bug(stmt->toString());
-                            addBugToReporter(bug, stmt->getICFGNode());
+                            hasUnknownSizeTarget = true;
                             continue;
                         }
                         for (const SVFStmt* stmt2 : addrNode->getSVFStmts())
@@ -106,9 +107,15 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                     {
                         AEException bug(stmt->toString());
                         addBugToReporter(bug, stmt->getICFGNode(),
-                        {size, lower, accessOffset});
+                        {IntervalValue(lower, size), accessOffset});
                     }
                 }
+                // Some target has no known allocation size, so report one
+                // alarm with an unbounded size and the GEP's own byte offset.
+                if (hasUnknownSizeTarget)
+                    addBugToReporter(AEException(stmt->toString()), node,
+                                     {IntervalValue(0, IntervalValue::plus_infinity()),
+                                      ae.getGepByteOffset(gep)});
             }
         }
     }
@@ -361,6 +368,7 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
     for (const auto& objAddr : objAddrs)
     {
         NodeID objId = as.getIDFromAddr(objAddr);
+        if (svfir->isNullOrBlkObj(objId)) continue;
         auto obj = svfir->getSVFVar(objId);
 
         if (SVFUtil::isa<BaseObjVar>(obj))
@@ -552,7 +560,7 @@ bool BufOverflowDetector::canSafelyAccessMemory(const ValVar* value, const Inter
         // if the offset is greater than the size, return false
         if (offset.ub().getIntNumeral() >= size)
         {
-            if (info) *info = {size, lower, offset};
+            if (info) *info = {IntervalValue(lower, size), offset};
             return false;
         }
     }
