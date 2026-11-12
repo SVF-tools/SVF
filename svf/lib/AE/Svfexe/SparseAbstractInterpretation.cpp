@@ -115,19 +115,6 @@ void FullSparseAbstractInterpretation::joinStates(AbstractState& dst,
 bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     const ICFGNode* node)
 {
-    // Inputs unchanged since the last visit: merging and handling the node
-    // again would reproduce its current state.
-    if (canSkip(node))
-    {
-        // The overflow detector keeps the latest offset of each GEP Obj,
-        // which another GEP may have overwritten since the last visit.
-        runDetectors(node);
-        return false;
-    }
-    // Record what this visit reads. A cycle head is recorded with its cycle.
-    if (!isCycleHead(node))
-        matchInputs(node, {node}, true);
-
     const auto& graphEdges = objRoutes->getInputs(node);
     AbstractState previous;
     bool hasPrevious = false;
@@ -201,9 +188,9 @@ static const SVFStmt* getDefStmt(const SVFVar* var)
 }
 
 bool FullSparseAbstractInterpretation::matchInputs(
-    const ICFGNode* key, const std::vector<const ICFGNode*>& nodes, bool save)
+    std::vector<std::optional<AbstractValue>>& last,
+    const std::vector<const ICFGNode*>& nodes, bool save)
 {
-    std::vector<std::optional<AbstractValue>>& last = preAbsTrace[key];
     if (save)
         last.clear();
     u32_t i = 0;
@@ -308,73 +295,75 @@ bool FullSparseAbstractInterpretation::matchInputs(
     return save || i == last.size();
 }
 
-/// The nodes of cycle and its nested cycles, in WTO order.
-static void collectCycleNodes(const ICFGCycleWTO* cycle,
-                              std::vector<const ICFGNode*>& nodes)
+/// The nodes of comp, and of the cycles nested in it, in WTO order.
+static void collectNodes(const ICFGWTOComp* comp, std::vector<const ICFGNode*>& nodes)
 {
-    nodes.push_back(cycle->head()->getICFGNode());
-    for (const ICFGWTOComp* comp : cycle->getWTOComponents())
+    if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
     {
-        if (const ICFGCycleWTO* sub = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
-            collectCycleNodes(sub, nodes);
-        else
-            nodes.push_back(SVFUtil::cast<ICFGSingletonWTO>(comp)->getICFGNode());
+        nodes.push_back(singleton->getICFGNode());
+        return;
     }
+    const ICFGCycleWTO* cycle = SVFUtil::cast<ICFGCycleWTO>(comp);
+    nodes.push_back(cycle->head()->getICFGNode());
+    for (const ICFGWTOComp* sub : cycle->getWTOComponents())
+        collectNodes(sub, nodes);
 }
 
-bool FullSparseAbstractInterpretation::isCycleHead(const ICFGNode* node) const
-{
-    const auto wto = preAnalysis->getFuncToWTO().find(node->getFun());
-    return wto != preAnalysis->getFuncToWTO().end() && wto->second->isHead(node);
-}
-
-bool FullSparseAbstractInterpretation::canSkip(const ICFGNode* node)
+void FullSparseAbstractInterpretation::handleWTOComponent(
+    const ICFGWTOComp* comp, const CallICFGNode* caller)
 {
     if (!Options::AEReuse())
-        return false;
-    const auto running = runningCycles.find(node->getFun());
-    if (running != runningCycles.end() && running->second > 0)
-        return false;
-    if (SVFUtil::isa<RetICFGNode>(node))
-        return false;
-    const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node);
-    if (call && !SVFUtil::isExtCall(call->getCalledFunction()))
-        return false;
-    if (isCycleHead(node))
-        return false;
-    return preAbsTrace.count(node) && matchInputs(node, {node}, false);
-}
-
-void FullSparseAbstractInterpretation::handleLoopOrRecursion(
-    const ICFGCycleWTO* cycle, const CallICFGNode* caller)
-{
-    const ICFGNode* head = cycle->head()->getICFGNode();
-    std::vector<const ICFGNode*> nodes;
-    collectCycleNodes(cycle, nodes);
-    // Gather the inputs of the cycle from outside it, at its entry.
-    if (Options::AEReuse() && preAbsTrace.count(head) &&
-            matchInputs(head, nodes, false))
     {
-        // Restore the states of its last run, which an enclosing cycle may
-        // have overwritten since.
-        for (const auto& output : cycleOutputs[head])
-            abstractTrace[output.first] = output.second;
+        AbstractInterpretation::handleWTOComponent(comp, caller);
+        return;
+    }
+    std::vector<const ICFGNode*> nodes;
+    collectNodes(comp, nodes);
+    const ICFGNode* head = nodes.front();
+    // abstractTrace still holds the states of the component's last run
+    // unless another node overwrote one, which drops that node's record.
+    auto last = preAbsTrace.find(head);
+    bool reuse = last != preAbsTrace.end() && matchInputs(last->second, nodes, false);
+    for (u32_t k = 1; reuse && k < nodes.size(); ++k)
+        reuse = preAbsTrace.count(nodes[k]);
+    if (reuse)
+    {
+        // The overflow detector keeps the latest offset of each GEP Obj,
+        // which another GEP may have overwritten since the last run.
         for (const ICFGNode* node : nodes)
             if (hasAbsState(node))
                 runDetectors(node);
         return;
     }
-    ++runningCycles[head->getFun()];
-    SemiSparseAbstractInterpretation::handleLoopOrRecursion(cycle, caller);
-    --runningCycles[head->getFun()];
-    // Recorded after the run: an input from a callee of the cycle is the
-    // value the run left there.
-    matchInputs(head, nodes, true);
-    std::vector<std::pair<const ICFGNode*, AbstractState>>& outputs = cycleOutputs[head];
-    outputs.clear();
+    AbstractInterpretation::handleWTOComponent(comp, caller);
+    // Recorded after the run: an input from a callee called inside the
+    // component is the value the run left there.
+    matchInputs(preAbsTrace[head], nodes, true);
+    // A call overwrites its return site.
     for (const ICFGNode* node : nodes)
-        if (hasAbsState(node))
-            outputs.emplace_back(node, getAbsState(node));
+        if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node))
+            preAbsTrace.erase(call->getRetICFGNode());
+}
+
+/// Widening and narrowing write the cycle's ValVars back to their def-sites.
+void FullSparseAbstractInterpretation::forgetDefSites(const ICFGCycleWTO* cycle)
+{
+    for (const ValVar* var : preAnalysis->getCycleValVars(cycle))
+        preAbsTrace.erase(var->getICFGNode());
+}
+
+bool FullSparseAbstractInterpretation::widenCycleState(
+    const AbstractState& prev, const AbstractState& cur, const ICFGCycleWTO* cycle)
+{
+    forgetDefSites(cycle);
+    return SemiSparseAbstractInterpretation::widenCycleState(prev, cur, cycle);
+}
+
+bool FullSparseAbstractInterpretation::narrowCycleState(
+    const AbstractState& prev, const AbstractState& cur, const ICFGCycleWTO* cycle)
+{
+    forgetDefSites(cycle);
+    return SemiSparseAbstractInterpretation::narrowCycleState(prev, cur, cycle);
 }
 
 AbstractState SemiSparseAbstractInterpretation::getFullCycleHeadState(

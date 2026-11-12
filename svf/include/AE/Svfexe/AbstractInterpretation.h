@@ -280,6 +280,10 @@ protected:
     /// Handle a WTO cycle (loop or recursive function) using widening/narrowing iteration
     virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller);
 
+    /// Handle one WTO component: merge and handle a singleton, or merge the
+    /// head of a cycle and iterate the cycle.
+    virtual void handleWTOComponent(const ICFGWTOComp* comp, const CallICFGNode* caller);
+
 private:
 
     /// Handle a function body via worklist-driven WTO traversal starting from funEntry
