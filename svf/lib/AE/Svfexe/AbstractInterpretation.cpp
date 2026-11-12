@@ -801,20 +801,22 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
     FIFOWorkList<const ICFGWTOComp*> worklist(it->second->getWTOComponents());
 
     while (!worklist.empty())
-    {
-        const ICFGWTOComp* comp = worklist.pop();
+        handleWTOComponent(worklist.pop(), caller);
+}
 
-        if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
-        {
-            const ICFGNode* node = singleton->getICFGNode();
-            if (mergeStatesFromPredecessors(node))
-                handleICFGNode(node);
-        }
-        else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
-        {
-            if (mergeStatesFromPredecessors(cycle->head()->getICFGNode()))
-                handleLoopOrRecursion(cycle, caller);
-        }
+void AbstractInterpretation::handleWTOComponent(const ICFGWTOComp* comp,
+        const CallICFGNode* caller)
+{
+    if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+    {
+        const ICFGNode* node = singleton->getICFGNode();
+        if (mergeStatesFromPredecessors(node))
+            handleICFGNode(node);
+    }
+    else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+    {
+        if (mergeStatesFromPredecessors(cycle->head()->getICFGNode()))
+            handleLoopOrRecursion(cycle, caller);
     }
 }
 

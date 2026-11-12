@@ -293,18 +293,6 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
 
         // Process cycle body components (each with gated merge+handle)
         for (const ICFGWTOComp* comp : cycle->getWTOComponents())
-        {
-            if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
-            {
-                const ICFGNode* node = singleton->getICFGNode();
-                if (mergeStatesFromPredecessors(node))
-                    handleICFGNode(node);
-            }
-            else if (const ICFGCycleWTO* subCycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
-            {
-                if (mergeStatesFromPredecessors(subCycle->head()->getICFGNode()))
-                    handleLoopOrRecursion(subCycle, caller);
-            }
-        }
+            handleWTOComponent(comp, caller);
     }
 }
