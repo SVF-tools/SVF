@@ -206,9 +206,9 @@ SparseObjGraph::~SparseObjGraph() = default;
 bool SparseObjGraph::isBranch(const ICFGNode* node) const
 {
     // Only conditional intra-function ICFG edges count as branches.
-    for (const ICFGEdge* out : node->getOutEdges())
-    {
-        const auto* intra = SVFUtil::dyn_cast<IntraCFGEdge>(out);
+for (const ICFGEdge* out : node->getOutEdges())
+{
+    const auto* intra = SVFUtil::dyn_cast<IntraCFGEdge>(out);
         if (intra && intra->getCondition())
             return true;
     }
@@ -218,7 +218,7 @@ bool SparseObjGraph::isBranch(const ICFGNode* node) const
 bool SparseObjGraph::isControlBoundary(const ICFGNode* node) const
 {
     return isBranch(node) || SVFUtil::isa<CallICFGNode>(node) ||
-           SVFUtil::isa<RetICFGNode>(node);
+    SVFUtil::isa<RetICFGNode>(node);
 }
 
 void SparseObjGraph::addRoute(NodeID base, const ICFGNode* source,
@@ -242,11 +242,11 @@ void SparseObjGraph::addRoute(const NodeBS& bases, const ICFGNode* source,
     if (branch)
     {
         const NodeKey via{source, branch};
-        routeLabels[{from, via}] |= bases;
-        routeLabels[{via, to}] |= bases;
+        routeLabels[ {from, via}] |= bases;
+        routeLabels[ {via, to}] |= bases;
     }
     else
-        routeLabels[{from, to}] |= bases;
+        routeLabels[ {from, to}] |= bases;
 }
 
 void SparseObjGraph::connectFunction(
@@ -402,7 +402,7 @@ const NodeBS& SparseObjGraph::getEvents(
 SparseObjGraph::Node* SparseObjGraph::getOrCreateNode(
     const ICFGNode* location, const IntraCFGEdge* branch)
 {
-    Node*& node = nodes[{location, branch}];
+    Node*& node = nodes[ {location, branch}];
     if (!node)
     {
         node = new Node(getTotalNodeNum(), location, branch);
@@ -439,9 +439,6 @@ void SparseObjGraph::finalize()
         incEdgeNum();
         if (!target->branch)
             inputs[target->location].push_back(edge);
-        const FunObjVar* targetFun = target->location->getFun();
-        if (targetFun && source->location->getFun() != targetFun)
-            functionInputs[targetFun].push_back(edge);
     }
     routeLabels.clear();
 }
@@ -452,14 +449,6 @@ SparseObjGraph::getInputs(const ICFGNode* node) const
     static const std::vector<const Edge*> empty;
     const auto it = inputs.find(node);
     return it == inputs.end() ? empty : it->second;
-}
-
-const std::vector<const SparseObjGraph::Edge*>&
-SparseObjGraph::getFunctionInputs(const FunObjVar* fun) const
-{
-    static const std::vector<const Edge*> empty;
-    const auto it = functionInputs.find(fun);
-    return it == functionInputs.end() ? empty : it->second;
 }
 
 std::string SparseObjGraph::toString() const

@@ -29,16 +29,12 @@
 #include "WPA/Andersen.h"
 #include "Util/Options.h"
 
-#include <cstdlib>
 #include <optional>
 
 using namespace SVF;
 
-/// Compare one value a node reads with the value it read at its last
-/// visit (index i), or record it when save is set. A null value is a value
-/// that is not there (no state, or no entry).
-static bool matchValue(std::vector<std::optional<AbstractValue>>& last,
-                       u32_t& i, bool save, const AbstractValue* value)
+bool FullSparseAbstractInterpretation::matchValue(std::vector<std::optional<AbstractValue>>& last,
+        u32_t& i, bool save, const AbstractValue* value)
 {
     if (save)
     {
@@ -51,9 +47,8 @@ static bool matchValue(std::vector<std::optional<AbstractValue>>& last,
     return value ? old && old->equals(*value) : !old;
 }
 
-/// The freed addresses of a predecessor are compared like a value.
-static bool matchFreed(std::vector<std::optional<AbstractValue>>& last,
-                       u32_t& i, bool save, const AbstractState* pred)
+bool FullSparseAbstractInterpretation::matchFreed(std::vector<std::optional<AbstractValue>>& last,
+        u32_t& i, bool save, const AbstractState* pred)
 {
     if (save)
     {
@@ -163,9 +158,7 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     return reachable;
 }
 
-/// Add the vars that stmt reads. Its LHS is added too; matchInputs drops
-/// the ValVars that the node itself defines.
-static void addReadVars(const SVFStmt* stmt, OrderedSet<const SVFVar*>& vars)
+void FullSparseAbstractInterpretation::addReadVars(const SVFStmt* stmt, OrderedSet<const SVFVar*>& vars)
 {
     vars.insert(stmt->getSrcNode());
     vars.insert(stmt->getDstNode());
@@ -181,8 +174,7 @@ static void addReadVars(const SVFStmt* stmt, OrderedSet<const SVFVar*>& vars)
         vars.insert(select->getCondition());
 }
 
-/// The statement that defines var, if any.
-static const SVFStmt* getDefStmt(const SVFVar* var)
+const SVFStmt* FullSparseAbstractInterpretation::getDefStmt(const SVFVar* var)
 {
     return var->getInEdges().empty() ? nullptr : *var->getInEdges().begin();
 }
@@ -230,7 +222,7 @@ bool FullSparseAbstractInterpretation::matchInputs(
                     if (state)
                     {
                         const auto value = state->getLocToVal().find(state->getIDFromAddr(
-                                               AbstractState::getVirtualMemAddress(obj)));
+                                AbstractState::getVirtualMemAddress(obj)));
                         if (value != state->getLocToVal().end())
                             read = &value->second;
                     }
@@ -262,8 +254,11 @@ bool FullSparseAbstractInterpretation::matchInputs(
         if (!cmp || !SVFUtil::isa<CmpStmt>(cmp))
             continue;
         addReadVars(cmp, vars);
-        for (const SVFVar* operand : {SVFUtil::cast<CmpStmt>(cmp)->getOpVar(0),
-                                      SVFUtil::cast<CmpStmt>(cmp)->getOpVar(1)})
+        for (const SVFVar* operand :
+                {
+                    SVFUtil::cast<CmpStmt>(cmp)->getOpVar(0),
+                    SVFUtil::cast<CmpStmt>(cmp)->getOpVar(1)
+                })
         {
             const SVFStmt* def = getDefStmt(operand);
             if (def && SVFUtil::isa<CopyStmt>(def))
@@ -467,12 +462,12 @@ const ICFGNode* SemiSparseAbstractInterpretation::getICFGNode(
 {
     // const ValVars are all defined in global node
     if (!var->getICFGNode())
-    {
-        return svfir->getICFG()->getGlobalICFGNode();
+{
+    return svfir->getICFG()->getGlobalICFGNode();
     }
     // for return value of callsite, use the ret-site as def-site
     else if (SVFUtil::isa<CallICFGNode>(var->getICFGNode()) &&
-             SVFUtil::isa<RetValPN>(var))
+                 SVFUtil::isa<RetValPN>(var))
     {
         return SVFUtil::dyn_cast<CallICFGNode>(var->getICFGNode())
                ->getRetICFGNode();

@@ -30,7 +30,10 @@ public:
         : GenericSparseObjEdgeTy(source, target, 0), bases(bases) {}
 
     /// Base Obj IDs routed over this edge; each base carries all its fields.
-    const NodeBS& getBases() const { return *bases; }
+    const NodeBS& getBases() const
+    {
+        return *bases;
+    }
     std::string toString() const;
 
 private:
@@ -55,7 +58,10 @@ public:
     const ICFGNode* location;
     const IntraCFGEdge* branch;
 
-    const ICFGNode* getICFGNode() const { return location; }
+    const ICFGNode* getICFGNode() const
+    {
+        return location;
+    }
     std::string toString() const;
 };
 
@@ -85,15 +91,15 @@ public:
 
     /// Return incoming edges at this ICFG location for client-side value flow.
     const std::vector<const Edge*>& getInputs(const ICFGNode* node) const;
-    /// Return packed-Obj routes entering this function from another function
-    /// or from the global node.
-    const std::vector<const Edge*>& getFunctionInputs(const FunObjVar* fun) const;
     /// Describe the static nodes and edges as text, without AE values.
     std::string toString() const;
     /// Write a DOT graph to <file>.dot through GraphPrinter.
     void dump(const std::string& file);
 
-    const SVFIR& getSVFIR() const { return svfir; }
+    const SVFIR& getSVFIR() const
+    {
+        return svfir;
+    }
 
 private:
     typedef std::pair<const ICFGNode*, const IntraCFGEdge*> NodeKey;
@@ -132,7 +138,6 @@ private:
     Map<NodeKey, Node*> nodes;
     std::map<EdgeKey, NodeBS> routeLabels;
     Map<const ICFGNode*, std::vector<const Edge*>> inputs;
-    Map<const FunObjVar*, std::vector<const Edge*>> functionInputs;
     /// Interned labels, bucketed by hash.
     Map<u64_t, std::vector<std::unique_ptr<NodeBS>>> labels;
     /// Bases with a callee-output to caller-return SVFG edge. The second map
