@@ -125,6 +125,23 @@ private:
     bool matchInputs(std::vector<std::optional<AbstractValue>>& inputs,
                      const std::vector<const ICFGNode*>& nodes, bool save);
 
+    // ---- Helpers of matchInputs ----
+    /// Compare one value read with entry i of last (and advance i), or
+    /// append it when save is set. A null value is one that is not there
+    /// (no state, or no entry).
+    static bool matchValue(std::vector<std::optional<AbstractValue>>& last,
+                           u32_t& i, bool save, const AbstractValue* value);
+    /// Compare the freed addresses of a predecessor (null if it has no
+    /// state) like a value.
+    static bool matchFreed(std::vector<std::optional<AbstractValue>>& last,
+                           u32_t& i, bool save, const AbstractState* pred);
+    /// Add the vars that stmt reads. Its LHS is added too; matchInputs drops
+    /// the ValVars defined inside the component.
+    static void addReadVars(const SVFStmt* stmt, OrderedSet<const SVFVar*>& vars);
+    /// The statement that defines var, if any; used to follow a branch
+    /// condition back to its comparison, copy and load.
+    static const SVFStmt* getDefStmt(const SVFVar* var);
+
     void forgetDefSites(const ICFGCycleWTO* cycle);
 
     void buildSVFG();
