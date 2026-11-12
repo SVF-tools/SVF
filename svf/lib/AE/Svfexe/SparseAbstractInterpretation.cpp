@@ -357,8 +357,11 @@ bool FullSparseAbstractInterpretation::widenCycleState(
 bool FullSparseAbstractInterpretation::narrowCycleState(
     const AbstractState& prev, const AbstractState& cur, const ICFGCycleWTO* cycle)
 {
-    forgetDefSites(cycle);
-    return SemiSparseAbstractInterpretation::narrowCycleState(prev, cur, cycle);
+    // At the narrowing fixpoint nothing is written back.
+    const bool fixpoint = SemiSparseAbstractInterpretation::narrowCycleState(prev, cur, cycle);
+    if (!fixpoint)
+        forgetDefSites(cycle);
+    return fixpoint;
 }
 
 AbstractState SemiSparseAbstractInterpretation::getFullCycleHeadState(
