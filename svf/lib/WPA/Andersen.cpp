@@ -581,7 +581,7 @@ bool Andersen::processLoad(NodeID node, const ConstraintEdge* load)
     // pointer values. Its original type must not discard inherited constraints.
     if (pag->isConstantObj(node) ||
         (!pag->getSVFVar(load->getDstID())->isPointer() &&
-         !sccSubNodes(load->getDstID()).hasMultipleElements()))
+         sccSubNodes(load->getDstID()).isSingleElement()))
         return false;
 
     numOfProcessedLoad++;
@@ -605,7 +605,7 @@ bool Andersen::processStore(NodeID node, const ConstraintEdge* store)
     // pointer values. Its original type must not discard inherited constraints.
     if (pag->isConstantObj(node) ||
         (!pag->getSVFVar(store->getSrcID())->isPointer() &&
-         !sccSubNodes(store->getSrcID()).hasMultipleElements()))
+         sccSubNodes(store->getSrcID()).isSingleElement()))
         return false;
 
     numOfProcessedStore++;

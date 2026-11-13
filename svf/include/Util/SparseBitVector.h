@@ -1145,12 +1145,10 @@ public:
         return Elements.empty();
     }
 
-    // Return true if at least two bits are set.
-    bool hasMultipleElements() const
+    // Return true if exactly one bit is set.
+    bool isSingleElement() const
     {
-        if (empty())
-            return false;
-        return find_first() != find_last();
+        return !empty() && find_first() == find_last();
     }
 
     unsigned count() const
