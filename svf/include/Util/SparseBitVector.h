@@ -1145,6 +1145,12 @@ public:
         return Elements.empty();
     }
 
+    // Return true if exactly one bit is set.
+    bool isSingleElement() const
+    {
+        return !empty() && find_first() == find_last();
+    }
+
     unsigned count() const
     {
         unsigned BitCount = 0;
