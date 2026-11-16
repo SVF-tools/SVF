@@ -176,7 +176,7 @@ public:
 
     IntervalValue getGepElementIndex(const GepStmt* gep);
     IntervalValue getGepByteOffset(const GepStmt* gep);
-    AddressValue getGepObjAddrs(const ValVar* pointer, IntervalValue offset, const ICFGNode* curNode);
+    AddressValue getGepObjAddrs(const ICFGNode* node, const ValVar* pointer, IntervalValue offset);
 
     /// Read memory through the pointer's address targets.
     virtual AbstractValue loadValue(const ValVar* pointer,
@@ -256,6 +256,14 @@ protected:
     /// abstractTrace[node]. Returns true if at least one predecessor had state.
     /// FullSparse additionally assembles inputs from direct SVFG predecessors.
     virtual bool mergeStatesFromPredecessors(const ICFGNode* node);
+
+    /// Add to state the ValVars that node's statements read from their PAG
+    /// predecessors. Only the sparse modes need this (SemiSparse overrides it).
+    virtual void mergeSparseValVarsFromPredecessors(const ICFGNode* node, AbstractState& state)
+    {
+        // Empty for dense: ValVars are carried along the ICFG, so those node
+        // reads are already in its state merged from the ICFG predecessors.
+    }
 
     /// Returns true if the branch edge is reachable under the current state.
     /// Pure query: does not update abstract states.
@@ -374,6 +382,14 @@ protected:
     PAG* pag{nullptr};
     AEWTO* preAnalysis{nullptr};
     Map<const ICFGNode*, AbstractState> abstractTrace; ///< per-node trace; owned here
+    /// With -ae-reuse, the merged state of each top-level WTO component's
+    /// head (a node, or a cycle head) when the component last ran.
+    Map<const ICFGNode*, AbstractState> preStates;
+
+    /// Whether comp's input now (its head merged again from its predecessors,
+    /// with a cycle's other nodes' ValVar reads) equals its preState; records
+    /// the new input if not. head's state is restored afterwards.
+    bool isPreStateUnchanged(const ICFGWTOComp* comp);
 
     bool shouldApplyNarrowing(const FunObjVar* fun);
 };
