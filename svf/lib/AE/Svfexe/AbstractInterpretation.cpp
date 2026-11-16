@@ -155,6 +155,7 @@ const FunObjVar* AbstractInterpretation::resolveUserEntry(const CallGraph* callG
         return result;
     };
     std::vector<const FunObjVar*> candidates;
+    std::vector<const FunObjVar*> definitions;
     bool declaration = false;
     bool missingDebug = false;
     for (auto it = callGraph->begin(); it != callGraph->end(); ++it)
@@ -168,11 +169,14 @@ const FunObjVar* AbstractInterpretation::resolveUserEntry(const CallGraph* callG
             ? symbol.substr(0, dot) : symbol;
         if (symbol != name && sourceName != name)
             continue;
-        declaration |= fun->isDeclaration();
+        if (fun->isDeclaration())
+        {
+            declaration = true;
+            continue;
+        }
+        definitions.push_back(fun);
         const auto loc = location(fun);
         missingDebug |= loc.first.empty();
-        if (fun->isDeclaration())
-            continue;
         if (qualified && (file.empty() || loc.first.size() < file.size() ||
                           loc.first.compare(loc.first.size() - file.size(), file.size(), file) != 0 ||
                           (loc.first.size() > file.size() &&
@@ -184,22 +188,25 @@ const FunObjVar* AbstractInterpretation::resolveUserEntry(const CallGraph* callG
         return candidates.front();
 
     std::string message = "AE -ae-entry='" + request + "' ";
-    if (candidates.size() > 1)
+    if (!definitions.empty())
     {
-        message += "is ambiguous. Candidates:\n";
-        for (const FunObjVar* fun : candidates)
+        const bool ambiguous = candidates.size() > 1;
+        message += ambiguous ? "is ambiguous. Candidates:\n"
+                   : "has no definition in " + file + ". Definitions:\n";
+        for (const FunObjVar* fun : ambiguous ? candidates : definitions)
         {
             const auto loc = location(fun);
             message += "  " + fun->getName() + " (" +
                        (loc.first.empty() ? "no debug info" : loc.first + ":" + loc.second) + ")\n";
         }
-        message += "Qualify with file:name (needs -g) or pass the exact LLVM symbol.";
+        if (ambiguous)
+            message += "Qualify with file:name (needs -g) or pass the exact LLVM symbol.";
+        else if (missingDebug)
+            message += "Compile with -g to use a file:name qualifier.";
     }
     else
     {
         message += declaration ? "has no body (declaration only)." : "was not found.";
-        if (qualified && missingDebug)
-            message += " Compile with -g to use a file:name qualifier.";
     }
     SVFUtil::errs() << SVFUtil::errMsg(message + "\n");
     assert(false && "Invalid AE entry function");
