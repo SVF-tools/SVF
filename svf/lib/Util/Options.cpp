@@ -798,7 +798,7 @@ const OptionMap<u32_t> Options::AESparsity(
 });
 const Option<std::string> Options::AEEntry(
     "ae-entry",
-    "Analyze from the named function (LLVM symbol name, mangled for C++). AE only.",
+    "C function name or exact LLVM symbol (mangled for C++); file:name disambiguates static functions, needs -g. AE only.",
     ""
 );
 const OptionMap<u32_t> Options::AEFunEntry(

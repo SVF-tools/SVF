@@ -119,8 +119,8 @@ AbstractInterpretation::~AbstractInterpretation()
 
 const FunObjVar* AbstractInterpretation::resolveUserEntry(const CallGraph* callGraph)
 {
-    const std::string& name = Options::AEEntry();
-    if (name.empty())
+    const std::string& request = Options::AEEntry();
+    if (request.empty())
         return nullptr;
     if (Options::AEFunEntry() == AEFunEntryMode::NO_MAIN)
     {
@@ -130,33 +130,77 @@ const FunObjVar* AbstractInterpretation::resolveUserEntry(const CallGraph* callG
         abort();
     }
 
-    const FunObjVar* match = nullptr;
-    std::string variants;
-    const std::string prefix = name + ".";
+    const auto colon = request.rfind(':');
+    const bool qualified = colon != std::string::npos;
+    const std::string file = qualified ? request.substr(0, colon) : "";
+    const std::string name = qualified ? request.substr(colon + 1) : request;
+    // FunObjVar carries the function's location as: "ln": N, "file": "path".
+    const auto location = [](const FunObjVar* fun)
+    {
+        const std::string loc = fun->getSourceLoc();
+        std::pair<std::string, std::string> result;
+        const auto fileKey = loc.find("\"file\": \"");
+        const auto lineKey = loc.find("\"ln\": ");
+        if (fileKey == std::string::npos || lineKey == std::string::npos)
+            return result;
+        const auto start = fileKey + 9;
+        const auto end = loc.find('"', start);
+        const auto lineStart = lineKey + 6;
+        const auto lineEnd = loc.find_first_not_of("0123456789", lineStart);
+        if (end != std::string::npos && end > start && lineEnd != lineStart)
+        {
+            result.first = loc.substr(start, end - start);
+            result.second = loc.substr(lineStart, lineEnd - lineStart);
+        }
+        return result;
+    };
+    std::vector<const FunObjVar*> candidates;
+    bool declaration = false;
+    bool missingDebug = false;
     for (auto it = callGraph->begin(); it != callGraph->end(); ++it)
     {
         const FunObjVar* fun = it->second->getFunction();
         const std::string& symbol = fun->getName();
-        if (symbol == name)
-            match = fun;
-        else if (symbol.compare(0, prefix.size(), prefix) == 0 &&
-                 symbol.size() > prefix.size() &&
-                 symbol.find_first_not_of("0123456789", prefix.size()) == std::string::npos)
-            variants += " " + symbol;
+        const auto dot = symbol.rfind('.');
+        const std::string sourceName =
+            dot != std::string::npos && dot + 1 < symbol.size() &&
+            symbol.find_first_not_of("0123456789", dot + 1) == std::string::npos
+            ? symbol.substr(0, dot) : symbol;
+        if (symbol != name && sourceName != name)
+            continue;
+        declaration |= fun->isDeclaration();
+        const auto loc = location(fun);
+        missingDebug |= loc.first.empty();
+        if (fun->isDeclaration())
+            continue;
+        if (qualified && (file.empty() || loc.first.size() < file.size() ||
+                          loc.first.compare(loc.first.size() - file.size(), file.size(), file) != 0 ||
+                          (loc.first.size() > file.size() &&
+                           loc.first[loc.first.size() - file.size() - 1] != '/')))
+            continue;
+        candidates.push_back(fun);
     }
-    if (match && !match->isDeclaration())
-    {
-        if (!variants.empty())
-            SVFUtil::errs() << "AE -ae-entry='" << name
-                            << "' selects the exact symbol. Internal-linkage variants:"
-                            << variants << "\n";
-        return match;
-    }
+    if (candidates.size() == 1)
+        return candidates.front();
 
-    std::string message = "AE -ae-entry='" + name + "' ";
-    message += match ? "has no body (declaration only)." : "was not found.";
-    if (!match && !variants.empty())
-        message += " Internal-linkage variants:" + variants;
+    std::string message = "AE -ae-entry='" + request + "' ";
+    if (candidates.size() > 1)
+    {
+        message += "is ambiguous. Candidates:\n";
+        for (const FunObjVar* fun : candidates)
+        {
+            const auto loc = location(fun);
+            message += "  " + fun->getName() + " (" +
+                       (loc.first.empty() ? "no debug info" : loc.first + ":" + loc.second) + ")\n";
+        }
+        message += "Qualify with file:name (needs -g) or pass the exact LLVM symbol.";
+    }
+    else
+    {
+        message += declaration ? "has no body (declaration only)." : "was not found.";
+        if (qualified && missingDebug)
+            message += " Compile with -g to use a file:name qualifier.";
+    }
     SVFUtil::errs() << SVFUtil::errMsg(message + "\n");
     assert(false && "Invalid AE entry function");
     abort();
