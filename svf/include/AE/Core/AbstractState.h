@@ -303,7 +303,7 @@ public:
 
     // lhs == rhs for varToValMap
     bool eqVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs) const;
-    // lhs >= rhs for varToValMap
+    // lhs >= rhs for varToValMap: every value of rhs is contained in lhs's
     bool geqVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs) const;
     // lhs == rhs for AbstractState
     bool equals(const AbstractState&other) const;

@@ -382,14 +382,14 @@ protected:
     PAG* pag{nullptr};
     AEWTO* preAnalysis{nullptr};
     Map<const ICFGNode*, AbstractState> abstractTrace; ///< per-node trace; owned here
-    /// With -ae-reuse, the merged state of each top-level WTO component's
-    /// head (a node, or a cycle head) when the component last ran.
+    /// With -ae-reuse, the input of each top-level WTO component (a node, or
+    /// a cycle) when it last ran, keyed by its head.
     Map<const ICFGNode*, AbstractState> preStates;
 
     /// Whether comp's input now (its head merged again from its predecessors,
-    /// with a cycle's other nodes' ValVar reads) equals its preState; records
-    /// the new input if not. head's state is restored afterwards.
-    bool isPreStateUnchanged(const ICFGWTOComp* comp);
+    /// with a cycle's other nodes' ValVar reads) is contained in its preState;
+    /// records the new input if not. head's state is restored afterwards.
+    bool isCoveredByPreState(const ICFGWTOComp* comp);
 
     bool shouldApplyNarrowing(const FunObjVar* fun);
 };

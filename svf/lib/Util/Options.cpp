@@ -814,7 +814,7 @@ const Option<u32_t> Options::WidenDelay(
     "widen-delay", "Loop Widen Delay", 3);
 const Option<bool> Options::AEReuse(
     "ae-reuse",
-    "AE: skip a top-level WTO component (node or cycle) whose input is unchanged since its last run",
+    "AE: skip a top-level WTO component (node or cycle) whose input is contained in the one it last ran with",
     true);
 const OptionMap<u32_t> Options::HandleRecur(
     "handle-recur",

@@ -337,9 +337,11 @@ bool AbstractState::geqVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMa
     {
         auto it = lhs.find(item.first);
         if (it == lhs.end()) return false;
-        if (!it->second.getInterval().contain(
-                    item.second.getInterval()))
+        if (!item.second.getInterval().containedWithin(it->second.getInterval()))
             return false;
+        for (u32_t addr : item.second.getAddrs())
+            if (!it->second.getAddrs().contains(addr))
+                return false;
     }
     return true;
 }

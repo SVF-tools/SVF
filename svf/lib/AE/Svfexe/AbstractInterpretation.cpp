@@ -804,14 +804,14 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
     {
         const ICFGWTOComp* comp = worklist.pop();
         // With -ae-reuse, a top-level component (a node, or a whole cycle) is
-        // skipped when its head merges to the state recorded at its last run:
-        // abstractTrace still holds what running it again would produce.
-        if (!Options::AEReuse() || !isPreStateUnchanged(comp))
+        // skipped when its input is contained in the one it last ran with:
+        // abstractTrace holds results for that input, which cover this one.
+        if (!Options::AEReuse() || !isCoveredByPreState(comp))
             handleWTOComponent(comp, caller);
     }
 }
 
-bool AbstractInterpretation::isPreStateUnchanged(const ICFGWTOComp* comp)
+bool AbstractInterpretation::isCoveredByPreState(const ICFGWTOComp* comp)
 {
     // The nodes of comp: a node, or all nodes of a cycle.
     Set<const ICFGNode*> nodes;
@@ -852,7 +852,7 @@ bool AbstractInterpretation::isPreStateUnchanged(const ICFGWTOComp* comp)
             mergeSparseValVarsFromPredecessors(node, input);
 
     const auto pre = preStates.find(head);
-    if (pre != preStates.end() && input == pre->second)
+    if (pre != preStates.end() && pre->second >= input)
         return true;
     preStates[head] = std::move(input);
     return false;
