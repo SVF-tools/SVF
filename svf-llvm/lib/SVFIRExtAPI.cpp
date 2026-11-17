@@ -502,6 +502,15 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const Function* callee)
             writeWrnMsg("Arg receiving new object must be pointer type");
         }
     }
+    else if (llvmModuleSet()->hasExtFuncAnnotation(callee, "STRCAT") ||
+             llvmModuleSet()->hasExtFuncAnnotation(callee, "STRCPY"))
+    {
+        // strcpy/strcat: add only ret = dst. Unlike the memcpy branch below, add no
+        // field copies (addComplexConsForExt), because the copied range depends on
+        // the string contents. AbsExtAPI's strcpy/strcat handlers write dst.
+        if(SVFUtil::isa<PointerType>(cs->getType()))
+            addCopyEdge(getValueNode(cs->getArgOperand(0)), getValueNode(cs), CopyStmt::COPYVAL);
+    }
     else if (LLVMUtil::isMemcpyExtFun(callee))
     {
         // Side-effects similar to void *memcpy(void *dest, const void * src, size_t n)
