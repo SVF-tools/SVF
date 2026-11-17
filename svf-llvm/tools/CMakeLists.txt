@@ -22,6 +22,14 @@ foreach(_tool IN LISTS ALL_TOOLS)
   # Link the SvfLLVM library against SVF's core & LLVM libraries
   target_link_libraries(${_tool} PRIVATE SvfCore SvfLLVM)
 
+  if(NOT LLVM_ENABLE_RTTI)
+    if(MSVC)
+      target_compile_options(${_tool} PRIVATE /GR-)
+    else()
+      target_compile_options(${_tool} PRIVATE -fno-rtti)
+    endif()
+  endif()
+
   # On Windows, increaseStackSize() is a no-op (RLIMIT_STACK not available).
   # Set the PE stack reserve to 256 MB at link time to match Linux behaviour.
   if(WIN32)
